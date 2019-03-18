@@ -1,0 +1,8 @@
+#if !defined(__UTILS_CALL_BACK__)
+#define __UTILS_CALL_BACK__
+#define UTILS_CALL_BACK_OK 0
+#define UTILS_CALL_BACK_ERR -1
+#define UTILS_CALL_BACK_ERR_FULL -2
+#define UTILS_CALL_BACK_ERR_NOMEM -3
+#define UTILS_CALL_BACK_ERR_INVALID -4
+#endif

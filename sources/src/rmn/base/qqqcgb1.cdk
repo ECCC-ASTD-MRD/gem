@@ -1,0 +1,7 @@
+      integer ncodemax
+      parameter (ncodemax = 32)
+
+      character*512 cgbinfo(ncodemax)
+      character*256 gdsinfo(ncodemax)
+
+      common /qqqcgb1/ cgbinfo,gdsinfo

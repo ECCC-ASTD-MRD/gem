@@ -1,0 +1,42 @@
+ &theo_cfgs
+  Theo_case_S= 'bubble'
+/
+
+   Dynamics_hydro_L = .true.
+ &dyn_kernel
+   Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+
+ &bubble_cfgs
+  bubble_ni = 101 ,  bubble_nj = 1 , bubble_nk = 100
+  bubble_dx = 10. ,  bubble_dz = 10.
+  bubble_theta      = 303.16
+  bubble_rad        = 25
+/
+
+ &step
+  Step_runstrt_S = "20110122.000000"
+  Fcst_end_S     = "600s"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 5.
+/
+
+ &gem_cfgs
+  LCTL_RXSTAT_S   = 'GLB_8',
+/
+ &out
+  Out3_etik_s   = "BUBBLE_P"
+  Out3_ip3      = -1
+  Out3_close_interval_S= '1h'
+/
+
+ &lam
+  Lam_ctebcs_L  = .true.
+  Lam_blend_H   = 0
+/
+ &dyn_fisl
+  Cstv_bA_8     = 0.5
+  Cstv_tstr_8   = 303.16
+  sol_fft_L=.false.
+/
+

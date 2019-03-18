@@ -1,0 +1,28 @@
+Modifications to correct inversed gaussian grids.
+(in work) Jun 5 2015 (ok for Mark)
+Modifications from Valin to replace wordint with F2CL
+(in work_valin) Sept 10 2015
+Correct bug in ezwdint to allocate latlon vectors Jan 2016
+Replace fstinl with fstinf and fstsui in ez_lireEnrPositionnels Sept 2016
+Correct bug in gdxywdval-memory overlap, gdllfxy-memory leak (Vanh S. ) Jan 2017
+
+IBM (AIX):
+. ssmuse-sh -d hpcs/201402/02/base -d hpcs/ext/xlf_13.1.0.10
+
+
+intel13sp1u2:
+. ssmuse-sh -d hpcs/201402/02/base -d hpcs/201402/02/intel13sp1u2
+
+using Compiler rules from: 
+/users/dor/armn/lib/userlibs/Linux_x86-64/intel13sp1u2/Compiler_rules
+and put link in 
+$HOME/userlibs/Linux_x86-64/intel13sp1u2/Compiler_rules
+to make it the same rules as in librmn.a
+
+For GPSC
+make obj (OPTIMIZ=2)
+
+For HARE (broadwell)
+make obj OPTIMIZ=3 CFLAGS="-fast-transcendentals -no-prec-div -ip -no-prec-sqrt"
+
+make obj

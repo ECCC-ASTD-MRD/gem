@@ -1,0 +1,8 @@
+#include <WhiteBoard.h>
+
+#ifdef WITH_OpenMP
+#include <whiteboard_interface_omp.cdk>
+#endif
+#ifdef WITHOUT_OpenMP
+#include <whiteboard_interface_st.cdk>
+#endif

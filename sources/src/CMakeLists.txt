@@ -1,0 +1,18 @@
+# Build the following components
+add_subdirectory(rmn rmn)
+add_subdirectory(rpncomm rpncomm)
+add_subdirectory(massv massv)
+add_subdirectory(vgrid vgrid)
+add_subdirectory(modelutils modelutils)
+add_subdirectory(rpnphy rpnphy)
+add_subdirectory(gemdyn gemdyn)
+add_subdirectory(main main)
+add_subdirectory(pgsm pgsm)
+add_subdirectory(fststat fststat)
+add_subdirectory(editfst editfst)
+add_subdirectory(cclargs cclargs)
+
+# Declare the dependencies of all the components
+add_dependencies(modelutils vgrid)
+add_dependencies(phy modelutils vgrid)
+add_dependencies(gem phy modelutils vgrid rpncomm rmn massv)

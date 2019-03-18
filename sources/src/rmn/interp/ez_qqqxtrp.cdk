@@ -1,0 +1,12 @@
+      integer voisin, lineair, cubique
+      integer oui, abort, valeur, maximum, minimum
+      parameter (voisin  =   0)
+      parameter (lineair =   1)
+      parameter (cubique =   3)
+      
+      parameter (oui     =   1)
+      parameter (maximum =   4)
+      parameter (minimum =   5)
+      parameter (valeur  =   6)
+      parameter (abort   =  13)
+      

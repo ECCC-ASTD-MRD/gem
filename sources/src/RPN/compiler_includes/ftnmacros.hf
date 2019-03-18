@@ -1,0 +1,73 @@
+#define UNIX
+
+#if defined (ALL64)
+#  define BITMOT 64
+#  define CARMOT 08
+#  define ENTMAX 70 368 744 177 663
+#  define OCW O22
+#else
+#  define BITMOT 32
+#  define CARMOT 04
+#  define ENTMAX 2147483647
+#  define OCW O11
+#endif
+
+#if defined (UNIX)
+#  define IMPNONE IMPLICIT NONE
+#  define EXPBIAS 127
+#  define BITCAR 08
+#  define MEMADR LOC
+#  define CURTIM CLOCK
+#  define HEX(x) Z'x'
+#  define HCAR(x) "x"
+#  define COMPL(x) NOT(x)
+#  define IXOR(x,y) ieor(x,y)
+#  define ixor(x,y) ieor(x,y)
+#  define MASK(x) ishft(-1,BITMOT-(x))
+#  define RMASK(x) ishft(-1,-(BITMOT-(x)))
+#  define RSHIFT(x,y) ishft(x,-(y))
+#  define RXSHIFT(x,y) ishft(x,-(y))
+#  define RYSHIFT(x,y) ishft(x,-(y))
+#  define LXSHIFT(x,y) ishft(x,y)
+#  define LYSHIFT(x,y) ishft(x,y)
+#  define LSHIFT(x,y) ishft(x,y)
+#  define SHCNT(x)  (31-IAND(x,31))
+#  define XTRACBIT  ibits(MOT,BDROIT,LONG)
+#endif
+
+#if defined (NEC)
+#  define EXPBIAS 16433
+#  define HCAR(x) "x"H
+#endif
+
+#if defined (C910) 
+#  define EXPBIAS 127
+#  define RYSHIFT(x,y) rshift(x,y)
+#  define LYSHIFT(x,y) lshift(x,y)
+#  define YMASK(x) lshift(-1,32-(x))
+#  define RYMASK(x) NOT(lshift(-1,(x)))
+#endif
+
+#if defined (HP)
+#  define EXPBIAS 127
+#endif
+
+#define WDNO(x) (1+RSHIFT(x,5))
+#if defined (ALL64)
+#  define  WDNO(x) (1+RSHIFT(x,6))
+#  define  SHCNT(x) (63-IAND(x,63))
+#endif
+#define ICHAMP(x,y,z)\
+RSHIFT( LSHIFT(x, BITMOT-(y)-(z) ), BITMOT-(z) )
+#define IUNPAK(x,y,z)\
+ICHAMP(x(1+(y)/BITMOT),BITMOT-MOD(y,BITMOT)-1,z)
+#define GETBIT(x,y,z)\
+IAND(RSHIFT(x(WDNO(y)),SHCNT(y)),RMASK(z))
+#define INSERT(a,b,c,d)\
+a(1+(c)/BITMOT) = (a(1+(c)/BITMOT) .AND. (.NOT. LSHIFT( RMASK(d),BITMOT-1-MOD(c,BITMOT)))) .OR. LSHIFT(b,BITMOT-1-MOD(c,BITMOT))
+#define PUTBIT(w,x,y,z)\
+w(WDNO(y))=IOR(w(WDNO(y)),LSHIFT(IAND(x,RMASK(z)),SHCNT(y)))
+#define CLRBIT(x,y,z)\
+x(WDNO(y))=IAND(x(WDNO(y)),COMPL(LSHIFT(RMASK(z),SHCNT(y))))
+#define PUTBITC(w,x,y,z)\
+CLRBIT(w,y,z)~~PUTBIT(w,x,y,z)

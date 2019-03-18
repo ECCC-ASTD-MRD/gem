@@ -1,0 +1,115 @@
+# VERSION GEM 5.1.a6
+# modelutils 1.6.a2
+# rpnphy 6.1.a2
+# vgrid 6.3.0
+# gemdyn_5.1.a6
+# RMN_VERSION_NUMBER = 016.2
+# RPNCOMM_VERSION   = _4051612
+
+1) load compiler
+
+# G COMPILER
+# Load G compiler and libraries
+. r.load.dot /ssm/net/hpcs/compilers/gcc-5.1.0/gcc_5.1.0_ubuntu-14.04-amd64-64
+. ssmuse-sh -p /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64
+
+#INTEL COMPILER
+# use EC cmake file
+rm Linux-x86_64-ifort.cmake
+ln -s Linux-x86_64-ifort.cmake.EC Linux-x86_64-ifort.cmake
+# Load INTEL compiler and libraries
+. r.load.dot rpn/utils/16.2.2 # si ça n'est pas déjà fait
+. r.module.dot
+. r.load.dot /ssm/net/hpcs/201402/04/base /ssm/net/hpcs/exp/intel2016/01
+
+#PGI COMPILER 17.10 on lorentz
+# Load PGI compiler and libraries
+PGI=/local/raid/armn/CUDA/PGI/pgi; export PGI
+MANPATH=$MANPATH:$PGI/linux86-64/17.10/man; export MANPATH
+LM_LICENSE_FILE=$PGI/license.dat; export LM_LICENSE_FILE
+PATH=$PGI/linux86-64/17.10/bin:$PATH; export PATH
+export LD_LIBRARY_PATH=$PGI/linux86-64/17.10/lib:$LD_LIBRARY_PATH
+export PATH=$PGI/linux86-64/17.10/mpi/openmpi/bin:$PATH
+export MANPATH=$MANPATH:$PGI/linux86-64/17.10/mpi/openmpi/man
+
+#PGI COMPILER 18.4 on einstein --> compiles (not with -g) and does not run
+cd gem_on_a_stick_5.1.a6/sources
+rm Linux-x86_64-pgi.cmake; ln -s Linux-x86_64-pgi.cmake_18.4 Linux-x86_64-pgi.cmake
+export MODULEPATH=$MODULEPATH:/opt/pgi/modulefiles
+module load PrgEnv-pgi/18.4
+
+2) build GEM
+
+#configure GEM
+#default compiler: gfortran
+cd gem_on_a_stick_5.1.a6/sources/build
+cmake ..
+
+#if you want to compile with another compiler than gfortran:
+cmake -DCOMPILER=ifort ..
+or
+cmake -DCOMPILER=pgfortran ..
+or
+edit the sources/CMakeLists.txt to change the default compiler
+
+#if compiler or compile options are not right:
+cd build
+\rm -rf *
+vi ../sources/Linux-x86_64.cmake
+cmake ..
+
+#build and install GEM
+make -j
+make install
+
+#binaries installed in the directory work/work-OS-NAME_COMPILER-NAME/bin
+#binaries built are: maingemdm.Abs, maingemgrid.Abs, mainyy2global.Abs
+#flipit.Abs, r.fstinfo,voir,editfst,fststat,cclargs_lite,pgsm
+
+3) run GEM
+
+By defaut, GEM on a stick uses a database with a set of datafiles that can
+be downloaded:
+- Execute the script named download-dbase.sh or download directly the
+  datafile at the following address, and untar it:
+  http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz
+
+If you want to use your own dataset, change the variable default_DIR_ATM in
+scripts runprep and runmod, either in the sources/orig-scripts directory, or
+in the work* directory (in the latter case, be advised that any changes to
+the scripts will be erased at the next "make install" step).
+
+cd gem_on_a_stick_5.1.a6/work/work[...]
+
+#default configuration for runprep and runmod is GEM_cfgs
+./runprep
+./runmod -ptopo 2x2x1 (to use 4 cpus for LU, 8 cpus for GY)
+
+#to run bubble case
+./runprep -dircfg Bubble_cfgs
+./runmod -dircfg Bubble_cfgs -ptopo 5x1
+\rm bubble
+./flipit.Abs -i RUNMOD.dir/output/cfg_0000/laststep_0000000120/000-000/dm2011012200-000-000_001 -o bubble
+xrec -imflds bubble
+variable TH, step 120, contour 0
+
+#to run GY_cfgs
+./runprep -dircfg GY_cfgs
+./runmod -dircfg GY_cfgs
+
+4) Tools provided to inspect the outputs
+#Documentation is in internal website:
+https://wiki.cmc.ec.gc.ca/wiki/RPN-SI/RpnUtilities
+
+#Use voir to see what records are produced in the FST files
+./voir -iment RUNMOD.dir/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+
+#Use fststat to look at statistical means on the records
+
+./fststat -fst RUNMOD.dir/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+
+#pgsm is a program to interpolate records to a different grid
+./pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+
+#editfst is a program to manipulate records into another file
+./editfst -s <input FST> -d <output FST> -i <editfst.directives>

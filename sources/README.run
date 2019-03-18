@@ -1,0 +1,57 @@
+#Window for running binaries must have the compiler environment that
+#goes with the binaries created.
+
+cd gem_on_a_stick_5.1.a6/work/work[...]
+#If running OpenMP (OMP_NUM_THREADS > 1) set OMP_STACKSIZE=4G
+#-ptopo [npx] x [npy] x [OMP_NUM_THREADS] where npx, npy is for MPI topology
+
+#default
+./runprep [-dircfg GEM_cfgs]
+./runmod  [-dircfg GEM_cfgs -ptopo 1x1x1]
+
+#LAM
+./runprep -dircfg LAM_cfgs
+./runmod  -dircfg LAM_cfgs -ptopo 2x2x1
+
+#GY (actually uses double cpus)- in this example: uses 8 cpus
+./runprep -dircfg GY_cfgs
+./runmod  -dircfg GY_cfgs -ptopo 2x2x1
+
+#Schaer case
+./runprep -dircfg Schaer_cfgs
+./runmod  -dircfg Schaer_cfgs -ptopo 10x1
+\rm schaer
+./bin/flipit.Abs -i RUNMOD.dir/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-000_004 -o schaer
+#you will need to install and compile xrec
+xrec -imflds schaer
+
+#Bubble case
+./runprep -dircfg Bubble_cfgs
+./runmod  -dircfg Bubble_cfgs -ptopo 5x1
+\rm bubble
+./bin/flipit.Abs -i RUNMOD.dir/output/cfg_0000/laststep_0000000120/000-000/dm2011012200-000-000_001 -o bubble
+#you will need to install and compile xrec
+xrec -imflds bubble
+Choose variable TH, step 120
+Display contour 0
+
+#Tools provided to inspect the outputs
+#Documentation is in internal website:
+https://wiki.cmc.ec.gc.ca/wiki/RPN-SI/RpnUtilities
+
+#Use voir to see what records are produced in the FST files
+./voir -iment RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+
+#Use xrec to see the records visually
+#you will need to install and compile xrec
+xrec -imflds RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+
+#Use fststat to look at statistical means on the records
+./fststat -fst RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+
+#pgsm is a program to interpolate records to a different grid
+./pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+
+#editfst is a program to manipulate records into another file
+./editfst -s <input FST> -d <output FST> -i <editfst.directives>
+

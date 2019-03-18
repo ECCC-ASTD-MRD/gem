@@ -1,0 +1,11 @@
+      integer global, nord, sud, sudnord, nordsud
+      integer absolu, relatif
+      
+      parameter (global = 0)
+      parameter (nord   = 1)
+      parameter (sud    = 2)
+      parameter (sudnord= 0)
+      parameter (nordsud= 1)
+      
+      parameter (absolu = 0)
+      parameter (relatif = 1)

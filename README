@@ -1,0 +1,118 @@
+This file gives basic instructions on how to install and run GEM.
+More details are available in GEM manual (in PDF format).
+-----------------------------------------------------------------
+
+Installing and running GEM - Version 5.1.a6
+Environment and Climate Change Canada
+
+* Installing GEM
+
+To compile and run GEM, you will need:
+- Fortran and C compilers,
+- MPI/OpenMPI library (with development package),
+- BLAS library (with development package),
+- LAPACK library (with development package),
+- basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
+
+Install GEM:
+- Clone or download the git tar file of GEM at GitLab: http://gitlab.com/gem-ec/goas
+- cd goas
+- Execute the script named download-dbase.sh or download directly the
+  datafile at the following address, and untar it:
+  http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz
+
+#gfortran and gcc compilers
+- GEM is already configured by default to use gfortran and gcc compilers
+- make sure the compilers and libraries are in the appropriate
+  PATHS: you may have to initialize ${PATH} and ${LD_LIBRARY_PATH}.
+  Examples (to be changed according to your setup):
+  . On Ubuntu:
+    export PATH=/usr/lib/openmpi/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
+  . On Fedora:
+    export PATH=/usr/lib64/openmpi/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
+
+#INTEL COMPILER
+- by default, a configuration for Intel 19 is used for ifort compiler.
+  You can use a configuration for Intel 16 by changing the symbolic link:
+  - cd goas/sources
+  - rm Linux-x86_64-ifort.cmake
+  - ln -s Linux-x86_64-ifort.cmake.16 Linux-x86_64-ifort.cmake
+- changes to the C and Fortran flags can be done in the Linux-x86_64-ifort.cmake
+- make sure the compilers and libraries are in the appropriate
+  PATHS: you may have to initialize ${PATH} and ${LD_LIBRARY_PATH}.
+
+#PGI compiler
+- by default, a configuration for PGI 17.10 is used.
+  You can use a configuration for PGI 18 by changing the symbolic link:
+  - cd goas/sources
+  - rm Linux-x86_64-pgi.cmake
+  - ln -s Linux-x86_64-pgi.cmake_18.4 Linux-x86_64-pgi.cmake
+- make sure the compilers and libraries are in the appropriate
+  PATHS: you may have to initialize ${PATH} and ${LD_LIBRARY_PATH}.
+  Examples for PGI (to be changed according to your setup):
+  export PGI=/local/CUDA/PGI/pgi
+  export LM_LICENSE_FILE=$PGI/license.dat
+  export PATH=$PGI/bin:$PGI/mpi/openmpi/bin:PATH
+  export LD_LIBRARY_PATH=$PGI/lib:$LD_LIBRARY_PATH
+
+* Compiling and installing GEM
+- cd goas/sources/build
+- cmake ..
+- if you want to compile with another compiler than gfortran:
+  cmake -DCOMPILER=ifort ..
+  or
+  cmake -DCOMPILER=pgfortran ..
+  or
+  edit the sources/CMakeLists.txt to change the default compiler
+- if you get errors messages (for example, compiler or MPI/OpenMPI not
+  found), make sure these tools are exported in their respective PATHS (see
+  above)
+- if compiler or compile options are not right:
+  . remove the content of the build directory
+  . make appropriate changes to the cmake file named according to the
+    compiler you are using, in the sources directory
+  . cmake ..
+    or
+    cmake -DCOMPILER=ifort ..
+    or
+    cmake -DCOMPILER=pgfortran ..
+- make -j
+- make install
+- the following binaries are installed in the directory
+  work-NAME-OF-THE-OS_NAME_OF_THE_COMPILER/bin: maingemdm.Abs, maingemgrid.Abs,
+  mainyy2global.Abs, flipit.Abs, r.fstinfo, voir, editfst, fststat,
+  cclargs_lite, pgsm
+
+* Running GEM
+- cd goas/work*
+- ./runprep (will create a directory named PREP)
+- ./runmod (will run the model and create a directory named
+  RUNMOD.dir with output files)
+  or use ./runmod -ptopo 2x2x1 (to use 4 cpus for GEM-LAM,
+  8 cpus for GEM-Yin-Yang - see manual for details)
+- default configuration for runprep and runmod is GEM_cfgs/cfg_0000
+
+* Tools to inspect the outputs
+- Use voir to see what records are produced in the FST output files:
+./voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+
+- Use fststat to look at statistical means on the records:
+./fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+
+- pgsm is a program to interpolate records to a different grid
+./pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+
+- editfst is a program to manipulate records into another file
+./editfst -s <input FST> -d <output FST> -i <editfst.directives>
+
+You can also install SPI, a scientific and meteorological virtual globe
+offering processing, analysis and visualization capabilities, with a user
+interface similar to Google Earth and NASA World Wind, developed by
+Environment Canada.  SPI can be downloaded at
+http://eer.cmc.ec.gc.ca/software/SPI
+Follow instructions found in INSTALL.txt, in the 7.12.0 directory.
+
+Please see the manual for more details.
+

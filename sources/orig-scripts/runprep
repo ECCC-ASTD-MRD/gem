@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Add a symbolic link if file exists
+[ -e bin/editfst ]    && ln -sf bin/editfst editfst
+[ -e bin/fststat ]    && ln -sf bin/fststat fststat
+[ -e bin/pgsm ]       && ln -sf bin/pgsm pgsm
+[ -e bin/voir ]       && ln -sf bin/voir voir
+[ -e bin/flipit.Abs ] && ln -sf bin/flipit.Abs flipit.Abs
+
+[ -e bin/cclargs_lite ] && ln -sf ../bin/cclargs_lite scripts/cclargs_lite0
+[ -e bin/r.fstinfo ]    && ln -sf ../bin/r.fstinfo scripts/r.fstinfo0
+
+arguments=$*
+echo $0 $arguments
+eval `scripts/cclargs_lite0 -D " " $0 \
+  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -verbose       "0"            "1"         "[verbose mode              ]"\
+  ++ $arguments`
+
+echo ${dircfg}
+#dname=`basename $dircfg`
+dname=cfg_0000
+
+set -ex ; export SETMEX=-ex
+
+export GEM_ON_A_STICK_WORK_DIR=$PWD
+export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
+export PATH=${PWD}/scripts:$PATH
+export TMPDIR=/tmp/$USER
+
+mkdir -p ${TMPDIR}
+mkdir -p PREP
+rm -fr PREP/*
+
+DEST=${PWD}/PREP/output/${dname}
+work=${PWD}/PREP/work
+/bin/rm -rf $DEST ${work} ; mkdir -p $DEST ${work}
+
+# read configuration file
+. ./${dircfg}/${dname}/configexp.cfg
+
+#anal=${default_DIR_ATM}/bcmk/2009042700_000
+anal=${GEM_anal}
+input=${GEM_inrep}
+full_path_nml_file=`readlink -f ${dircfg}/$dname/gem_settings.nml`
+
+[ -e ${GEM_inrep} ] && ln -s ${GEM_inrep} ${DEST}/MODEL_inrep
+
+Um_prep_domain.sh -anal ${GEM_anal} -input ${GEM_inrep} \
+  -o ${DEST} -work ${work} -nmlfile ${full_path_nml_file}
+
+set +ex
+echo "==> runprep done."

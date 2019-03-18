@@ -1,0 +1,42 @@
+!  GMM_USER_FLAGS
+
+      integer, parameter :: GMM_FLAG_RSTR      =     1    ! in restart file
+      integer, parameter :: GMM_FLAG_IZER      =     2    ! init to zero
+      integer, parameter :: GMM_FLAG_INAN      =     4    ! init to NaNs
+      integer, parameter :: GMM_FLAG_IINV      =     8    ! field is invalid and cannot be used
+      integer, parameter :: GMM_FLAG_READ      =    16    ! field has been read from restart
+      integer, parameter :: GMM_FLAG_CRTD      =    32    ! field has been "created" (used to detect multiple create calls when field read from restart)
+      integer, parameter :: GMM_FLAG_STAG_X    =    64    ! Field is staggered along X
+      integer, parameter :: GMM_FLAG_STAG_Y    =   128    ! Field is staggered along Y
+      integer, parameter :: GMM_FLAG_STAG_Z    =   256    ! Field is staggered along Z
+
+      logical, parameter :: GMM_READ_CKPT=.true.   ! read checkpoint
+      logical, parameter :: GMM_WRIT_CKPT=.false.  ! write checkpoint
+
+!  GMM VARIABLE SIZES
+
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32   ! Max. length for variable name
+      integer, parameter :: GMM_META_SIZE =  28
+
+!  GMM_ERROR_CODES
+
+      integer, parameter :: GMM_OK                       = 0     ! Returned status code when everything is OK
+      integer, parameter :: GMM_ERROR                      = -1   ! Generic error code when there is a problem detected
+      integer, parameter :: GMM_KEY_NOT_FOUND            = -2
+      integer, parameter :: GMM_VAR_NOT_FOUND            = -3
+      integer, parameter :: GMM_INCONSISTENT_DIMS        = -4
+      integer, parameter :: GMM_ARRAY_ALREADY_EXISTS     = -5
+      integer, parameter :: GMM_VARIABLE_ALREADY_CREATED = -6
+      integer, parameter :: GMM_POINTER_TABLE_OVERFLOW   = -7
+
+!  GMM_MESSAGE_LEVELS
+
+      integer, parameter :: GMM_MSG_DEBUG      = -1
+      integer, parameter :: GMM_MSG_INFO       =  0
+      integer, parameter :: GMM_MSG_WARN       =  1
+      integer, parameter :: GMM_MSG_ERROR      =  2
+      integer, parameter :: GMM_MSG_SEVERE     =  3
+      integer, parameter :: GMM_MSG_FATAL      =  4
+
+#define GMM_IS_OK(errcode) (errcode >= 0)
+#define GMM_IS_ERROR(errcode) (errcode < 0)

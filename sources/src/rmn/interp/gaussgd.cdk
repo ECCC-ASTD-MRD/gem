@@ -1,0 +1,11 @@
+!--   common gaussgd
+
+      integer maxroots
+      parameter (maxroots=5120)
+
+      real roots(maxroots),lroots(maxroots)
+      
+      common /gaussgd/ roots,lroots
+!----------------------
+
+

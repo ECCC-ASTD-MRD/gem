@@ -1,0 +1,32 @@
+ module gmm_internals
+#include "gmm_constants.hf"
+#include "gmm_internal_constants.inc"
+#include "gmm_definitions.inc"
+#include "gmm_nulls.inc"
+  type p_gmm_metadata
+    SEQUENCE
+    type(gmm_layout), dimension(4) :: l
+    type(gmm_attributes) :: a
+    integer data_type
+    integer pointer_table_index
+    integer *8 array_addr
+    character(len=GMM_MAXNAMELENGTH)  :: name               ! name of the field
+  end type
+  type directory_page
+   type(p_gmm_metadata), dimension(:), pointer :: entry
+  end type
+  type(directory_page), dimension(MAX_PAGES) :: directory
+
+   integer :: used=0                ! total number of entries in directory
+   integer :: table_size=0          ! number of pages in directory
+   integer :: cur_page=0            ! temporary, set by add_directory_entry
+   integer :: cur_entry=0           ! temporary, set by add_directory_entry
+   integer :: last_entry=PAGE_SIZE  ! last entry in last page
+   integer :: file_unit=0
+   logical :: restart_mode=.false.
+   integer :: ordinal=0             ! total number of array creations
+   integer :: gmm_verbose_level = 0
+ end module gmm_internals
+
+!
+

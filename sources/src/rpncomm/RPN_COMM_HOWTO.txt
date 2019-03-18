@@ -1,0 +1,104 @@
+==========================================================================
+                  collect and distribute 2D fields
+==========================================================================
+NOTE:
+     calls described in this section must be performed by ALL PEs in grid
+     in other words thes calls are COLLECTIVE calls
+==========================================================================
+
+1 - =====  define a 2D grid  =====
+
+  -------------------------------------------------------------
+  grid_id = RPN_COMM_create_2dgrid(gni,gnj,mini,maxi,minj,maxj)
+                                   IN  IN   IN   IN   IN   IN
+  -------------------------------------------------------------
+  
+  gni, gnj               : horizontal dimensions of GLOBAL grid
+  mini, maxi, minj, maxj : horizontal dimensions of LOCAL grid
+  
+  real, dimension(gni,gnj,..) :: global
+  real, dimension(mini:maxi,minj:maxj,...) :: local
+  
+  halo sizes are "implicitely defined" via mini and minj
+  1-mini is the maximum halo size along x
+  1-minj is the maximum halo size along y
+  if lni and lnj are the useful dimensions along x and y, it is expected that
+  maxi >= lni+1-mini , maxj >= lnj+1-minj
+
+2a- =====  define a set of IO PEs  =====
+
+  ----------------------------------------------
+  setno = RPN_COMM_create_io_set( npes , method)
+                                   IN      IN
+  ----------------------------------------------
+
+  npes   : number of IO PEs in set
+  method : dispersion algorithm to be used (should be 0 for now)
+  
+  setno  : set number ( -1 if there was an error creating the IO set)
+
+2b- =====  find PE position in IO PE set  =====
+  -----------------------------------
+  grid_me =  RPN_COMM_is_io_pe(setno)
+                                 IN
+  -----------------------------------
+  
+  setno   : IO  PE set number (obtained from RPN_COMM_create_io_set)
+  
+  function result is this PE's ordinal in the communicator associated with setno
+  if this PE is not an IO PE in this set, -1 is returned
+  
+3a- =====  EZ distribute the data from "reader PEs" to all PEs in grid  =====
+
+  ----------------------------------------------------------------------------------------
+  status = RPN_COMM_shuf_ezdist(setno, grid_id, global, dnk, local, lnk, liste_k, liste_o)
+                                  IN      IN      IN    IN     OUT   IN    IN       OUT
+  ----------------------------------------------------------------------------------------
+  
+  status will be RPN_COMM_OK or RPN_COMM_ERROR
+  
+  setno   : IO  PE set number (obtained from RPN_COMM_create_io_set)
+  grid_id : 2D grid descriptor (obtained from RPN_COMM_create_2dgrid
+            (used to obtain the horizontal dimensions of "global" and "local")
+  global  : 2/3D array containing global data to distribute
+            (used only on members of the IO PE set but array MUST EXIST on all PEs)
+  dnk     : 3rd dimension of array "global"  (must have the SAME value on all PEs)
+  local   : 3D array to receive distributed data
+  lnk     : 3rd dimension of array "local"  (must have the SAME value on all PEs)
+  liste_k : array of dimension dnk and containing the list of levels to distribute
+            any unused entry should be set to -1
+            (used only on members of the IO PE set but array MUST EXIST on all PEs)
+  liste_o : LOGICAL flag array, liste_o(k) will be set to .true. if level k has been received
+            (this array should be initialize properly before the call)
+
+3b- =====  EZ collect the data onto "writer PEs" from all PEs in grid  =====
+
+  -------------------------------------------------------------------------------
+  status = RPN_COMM_shuf_ezcoll(setno, grid_id, global, dnk, local, lnk, liste_k)
+                                 IN      IN      OUT    IN     IN   IN     OUT
+  -------------------------------------------------------------------------------
+  
+  status will be RPN_COMM_OK or RPN_COMM_ERROR
+
+  setno   : IO  pE set numer (obtained from RPN_COMM_create_io_set)
+  grid_id : 2D grid descriptor (obtained from RPN_COMM_create_2dgrid
+            (used to obtain the horizontal dimensions of "global" and "local")
+  global  : 2/3D array to receive collected data
+            (used only on members of the IO PE set but array MUST EXIST on all PEs)
+  dnk     : 3rd dimension of array "global"  (must have the SAME value on all PEs)
+  local   : 3D array containing data to distribute
+  lnk     : 3rd dimension of array "local"  (must have the SAME value on all PEs)
+            lnk levels will be collected/distributed over the IO PEs
+  liste_k : INTEGER array, 
+            liste_k(n) is set to k when 2D array level k has been received
+            liste_k should be initialized to 0 before the call (on IO PEs)
+            (used only on members of the IO PE set but array MUST EXIST on all PEs)
+
+NOTES:
+      even if not used/necessary on a given PE
+      array "global" MUST exist ( a dimension(1,1,1) array is OK on non IO PEs )
+      array "liste_o" MUST exist  ( a dimension(1) array is OK on non IO PEs )
+      array "liste_k" MUST exist  ( a dimension(1) array is OK on non IO PEs )
+
+==========================================================================
+==========================================================================

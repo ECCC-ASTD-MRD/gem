@@ -1,0 +1,24 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+!
+      real gws1, cs1o3,  cs1o21
+      real gws2, cs2h2o, cs2o2, cs2o3
+      real gws3, cs3h2o, cs3co2
+      real gws4, cs4h2o, cs4co2
+!
+      integer    mtl
+      parameter (mtl=18)
+!
+      common /bands1/ gws1(6), cs1o3(6),       cs1o21
+      common /bands2/ gws2(4), cs2h2o(5,mtl,4), cs2o2(5,mtl,2), cs2o3(4)
+      common /bands3/ gws3(6), cs3h2o(5,mtl,6), cs3co2(5,mtl,6)
+      common /bands4/ gws4(4), cs4h2o(5,mtl,4), cs4co2(5,mtl,4)
+

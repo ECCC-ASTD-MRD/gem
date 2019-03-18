@@ -1,0 +1,10 @@
+!
+! data for optical properties defined in subroutine datcldop
+      real aws(4,nbs), bws(4,nbs), cws(4,nbs)
+      real awl(5,nbl), bwl(4,nbl), cwl(4,nbl)
+      real ais(2,nbs), bis(4,nbs), cis(4,nbs)
+      real ail(3,nbl), bil(4,nbl), cil(4,nbl)
+!
+      common / watop / aws, bws, cws,awl,bwl,cwl
+      common / iceop / ais, bis, cis, ail, bil, cil
+

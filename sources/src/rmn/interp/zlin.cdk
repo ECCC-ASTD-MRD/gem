@@ -1,0 +1,4 @@
+      real zlin, zz1, zz2, zdx
+      
+      zlin(zz1,zz2,zdx) = zz1 + (zz2 - zz1) * zdx
+      

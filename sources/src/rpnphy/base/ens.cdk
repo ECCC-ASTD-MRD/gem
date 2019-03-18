@@ -1,0 +1,8 @@
+      logical stochphy
+      integer imrkv2
+      real    ptpenvu,ptpenvb,ptpcape,ptptlc,ptpcritw,ptpfacreduc
+
+      common /ensphy_l/ stochphy
+      common /ensphy_i/ imrkv2
+      common /ensphy_r/ ptpenvu , ptpenvb, ptpcape, ptptlc, &
+                        ptpcritw, ptpfacreduc
