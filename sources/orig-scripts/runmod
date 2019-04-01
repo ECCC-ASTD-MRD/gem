@@ -15,7 +15,8 @@ echo ${dircfg}
 echo ${xfer}
 
 set -ex ; export SETMEX=-ex
-export TMPDIR=/tmp/$USER
+export TMPDIR=${TMPDIR-/tmp/$USER}
+mkdir -p ${TMPDIR}
 
 task_basedir="RUNMOD.dir" 
 #dname=`basename $dircfg`
@@ -79,7 +80,7 @@ cd $TASK_INPUT/${dname}
 echo "runmod linking UM_MODEL to Um_model.sh"
 um_model=$(which Um_model.sh)
 [ -e $um_model ] && ln -s $um_model ${TASK_BIN}/UM_MODEL
-[ -e $GEM_ovbin/maingemdm.Abs ] && ln -s $GEM_ovbin/maingemdm.Abs ${TASK_BIN}/ATM_MOD.Abs
+[ -e $GEM_ovbin/maingemdm ] && ln -s $GEM_ovbin/maingemdm ${TASK_BIN}/ATM_MOD
 cd $GEM_ON_A_STICK_WORK_DIR
 
 if [ `uname` = "Darwin" ]

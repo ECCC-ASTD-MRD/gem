@@ -1,24 +1,24 @@
-add_executable(maingemdm.Abs maingemdm.F90)
-target_link_libraries(maingemdm.Abs gem phy modelutils vgrid rpncomm rmn massv
+add_executable(maingemdm maingemdm.F90)
+target_link_libraries(maingemdm gem phy modelutils vgrid rpncomm rmn massv
                       ${MPI_Fortran_LIBRARIES} 
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
-add_dependencies(maingemdm.Abs gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(maingemdm gem phy modelutils vgrid rpncomm rmn massv)
 
-add_executable(maingemgrid.Abs maingemgrid.F90)
-target_link_libraries(maingemgrid.Abs gem phy modelutils vgrid rpncomm rmn massv
+add_executable(maingemgrid maingemgrid.F90)
+target_link_libraries(maingemgrid gem phy modelutils vgrid rpncomm rmn massv
                       ${MPI_Fortran_LIBRARIES} 
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
-add_dependencies(maingemgrid.Abs gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(maingemgrid gem phy modelutils vgrid rpncomm rmn massv)
 
-add_executable(mainyy2global.Abs mainyy2global.F90)
-target_link_libraries(mainyy2global.Abs gem phy modelutils vgrid rmn massv
+add_executable(mainyy2global mainyy2global.F90)
+target_link_libraries(mainyy2global gem phy modelutils vgrid rmn massv
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
-add_dependencies(mainyy2global.Abs gem phy modelutils vgrid rmn massv)
+add_dependencies(mainyy2global gem phy modelutils vgrid rmn massv)
 
-add_executable(flipit.Abs mainflipit.F90)
-target_link_libraries(flipit.Abs modelutils vgrid rmn massv
+add_executable(flipit mainflipit.F90)
+target_link_libraries(flipit modelutils vgrid rmn massv
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
-add_dependencies(flipit.Abs modelutils vgrid rmn massv)
+add_dependencies(flipit modelutils vgrid rmn massv)
 
 add_executable(r.fstinfo fstinfo.f)
 add_executable(voir voir.f90)
@@ -33,7 +33,7 @@ target_link_libraries(voir rmn
                       ${Fortran_LIBRARIES}
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
-install(TARGETS maingemdm.Abs maingemgrid.Abs mainyy2global.Abs flipit.Abs r.fstinfo voir RUNTIME 
+install(TARGETS maingemdm maingemgrid mainyy2global flipit r.fstinfo voir RUNTIME 
         DESTINATION ${ROOT}/../work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/orig-scripts/scripts 
         DESTINATION ${ROOT}/../work/work-${OS}-${COMPILER}-${COMP_VERSION} 

@@ -1,0 +1,6 @@
+*.[oa]
+*~
+gem_dbase
+gem_dbase.tar.gz
+build*
+work/work*

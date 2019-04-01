@@ -18,7 +18,7 @@ printf "######################### \n\n"
 set -ex
 
 GEM_ON_A_STICK_WORK_DIR=`(cd ..; pwd)`
-GEMGRID=${GEM_ON_A_STICK_WORK_DIR}/bin/maingemgrid.Abs
+GEMGRID=${GEM_ON_A_STICK_WORK_DIR}/bin/maingemgrid
 ATM_MODEL_DFILES=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
 
 if [ ! -s gem_settings.nml ] ; then
@@ -26,7 +26,7 @@ if [ ! -s gem_settings.nml ] ; then
   exit
 fi
 
-export TMPDIR=/tmp/$USER
+export TMPDIR=${TMPDIR-/tmp/$USER}
 mkdir -p ${TMPDIR}
 
 ROOT_WORK=${TMPDIR}/grid$$

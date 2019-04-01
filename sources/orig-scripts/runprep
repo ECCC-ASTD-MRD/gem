@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Add a symbolic link if file exists
-[ -e bin/editfst ]    && ln -sf bin/editfst editfst
-[ -e bin/fststat ]    && ln -sf bin/fststat fststat
-[ -e bin/pgsm ]       && ln -sf bin/pgsm pgsm
-[ -e bin/voir ]       && ln -sf bin/voir voir
-[ -e bin/flipit.Abs ] && ln -sf bin/flipit.Abs flipit.Abs
+[ -e bin/editfst ] && ln -sf bin/editfst editfst
+[ -e bin/fststat ] && ln -sf bin/fststat fststat
+[ -e bin/pgsm ]    && ln -sf bin/pgsm pgsm
+[ -e bin/voir ]    && ln -sf bin/voir voir
+[ -e bin/flipit ]  && ln -sf bin/flipit flipit
 
 [ -e bin/cclargs_lite ] && ln -sf ../bin/cclargs_lite scripts/cclargs_lite0
 [ -e bin/r.fstinfo ]    && ln -sf ../bin/r.fstinfo scripts/r.fstinfo0
@@ -26,7 +26,7 @@ set -ex ; export SETMEX=-ex
 export GEM_ON_A_STICK_WORK_DIR=$PWD
 export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
 export PATH=${PWD}/scripts:$PATH
-export TMPDIR=/tmp/$USER
+export TMPDIR=${TMPDIR-/tmp/$USER}
 
 mkdir -p ${TMPDIR}
 mkdir -p PREP

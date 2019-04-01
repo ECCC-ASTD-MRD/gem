@@ -62,12 +62,13 @@ tmp_analysis_path=$PWD/tmp_analysis ; mkdir -p ${tmp_analysis_path}
 cd ${tmp_analysis_path}
 
 # Extract cmc archive file input or link in surface analysis
-local_anal_file=${tmp_analysis_path}/ANALYSIS ; mkdir -p ${local_anal_file}
+local_anal_file=${tmp_analysis_path}/ANALYSIS
 if [ -e "${anal}" ] ; then
       analysis=${anal}
 
    if [ -f ${analysis} ] ; then
         set -x
+        touch ${local_anal_file}
         cp ${analysis} ${local_anal_file}
         set +x
    else

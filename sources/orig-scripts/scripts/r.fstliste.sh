@@ -17,7 +17,6 @@ eval `cclargs_lite0 $0 "[ Utilitaire pour extraires des parametres des fichiers 
  -nosort 0 1 "[Ne pas trier les sorties lorsque unique = 1]"\
  ++ $*`
 #
-#set -ex
 if test ${champs} -eq 1
 then
   r.fstinfo0 -champs
@@ -26,17 +25,9 @@ fi
 #
 list=""
 
-#r.fstinfo0 -izfst ${izfst}
-#echo $? jljl
-#ls -l
-#exit
-
 r.fstinfo0 -izfst ${izfst} -datev =${datev} -vdatev =${vdatev} -etiket "${etiket}" -ip1 =${ip1} -ip2 =${ip2} -ip3 =${ip3} -typvar "${typvar}" -nomvar "${nomvar}" \
  -otxt ${TMPDIR}/fstlist.$$ > /dev/null 2>&1
-cat ${TMPDIR}/fstlist.$$
-exit
 integer infoexit=$?
-echo $? jljl
 if [ $infoexit -ne 0 ]
 then
     echo ${list}
@@ -88,6 +79,6 @@ else
   cat ${TMPDIR}/fstlist.$$
 fi
 
-rm ${TMPDIR}/fstlist.$$
+rm  ${TMPDIR}/fstlist.$$
 exit 0
 

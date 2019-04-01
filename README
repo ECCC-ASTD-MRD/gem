@@ -58,21 +58,25 @@ Install GEM:
   export LD_LIBRARY_PATH=$PGI/lib:$LD_LIBRARY_PATH
 
 * Compiling and installing GEM
-- cd goas/sources/build
+- cd goas/sources
+- mkdir -p build
+- cd build
 - cmake ..
 - if you want to compile with another compiler than gfortran:
   cmake -DCOMPILER=ifort ..
   or
   cmake -DCOMPILER=pgfortran ..
   or
-  edit the sources/CMakeLists.txt to change the default compiler
-- if you get errors messages (for example, compiler or MPI/OpenMPI not
+  edit the sources/CMakeLists.txt to change the default compiler (line 9)
+- if you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure these tools are exported in their respective PATHS (see
   above)
 - if compiler or compile options are not right:
   . remove the content of the build directory
   . make appropriate changes to the cmake file named according to the
-    compiler you are using, in the sources directory
+    Fortran compiler you are using, in the sources directory:
+    Linux-x86_64-gfortran.cmake if you compile with gfortran or
+    Linux-x86_64-ifort.cmake if you compile with ifort
   . cmake ..
     or
     cmake -DCOMPILER=ifort ..
@@ -80,20 +84,35 @@ Install GEM:
     cmake -DCOMPILER=pgfortran ..
 - make -j
 - make install
-- the following binaries are installed in the directory
-  work-NAME-OF-THE-OS_NAME_OF_THE_COMPILER/bin: maingemdm.Abs, maingemgrid.Abs,
-  mainyy2global.Abs, flipit.Abs, r.fstinfo, voir, editfst, fststat,
-  cclargs_lite, pgsm
+- a directory named after the compiler you used and the operating system you
+  compiled on (work-OS_NAME-COMPILER_NAME: for example
+  work-Linux_x86-64-gfortran-8.2.1) is created in the work directory of GEM
+  on a stick, and the following binaries are installed in a bin directory in
+  it: maingemdm.Abs, maingemgrid.Abs, mainyy2global.Abs, flipit.Abs,
+  r.fstinfo, voir, editfst, fststat, cclargs_lite, pgsm
 
 * Running GEM
-- cd goas/work*
+
+- Move to the working directory, named work-[OS-NAME_COMPILER-NAME], for
+  example work-Linux_x86-64-gfortran-8.2.1:
+  cd goas/work-[OS-NAME_COMPILER-NAME]
 - ./runprep (will create a directory named PREP)
 - ./runmod (will run the model and create a directory named
   RUNMOD.dir with output files)
   or use ./runmod -ptopo 2x2x1 (to use 4 cpus for GEM-LAM,
   8 cpus for GEM-Yin-Yang - see manual for details)
+
 - default configuration for runprep and runmod is GEM_cfgs/cfg_0000
 
+- default setup uses the command "mpirun" to run the model.  This command
+  can be modified in the file scripts/Um_model.sh, line 34, either in the
+  original sources of the scripts (sources/orig-scripts/scripts) or in the
+  working directory (work/work-[OS_NAME-COMPILER_NAME]/scripts). In the
+  latter case, be advised that any changes to the scripts will be erased at
+  the next "make install" step. So, if you want your changes to the scripts
+  to be permanent, make them in the sources/orig-scripts/scripts directory,
+  and then rerun the command make install in the sources/build directory.
+ 
 * Tools to inspect the outputs
 - Use voir to see what records are produced in the FST output files:
 ./voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010

@@ -19,11 +19,20 @@ export OMP_NUM_THREADS=$nomp
 
 npe_total=$(( npex * npey * ndom ))
 
-printf "\n Running  ${TASK_BIN}/ATM_MOD.Abs on $npe_total ($npex x $npey) PEs:\n"
+printf "\n Running  ${TASK_BIN}/ATM_MOD on $npe_total ($npex x $npey) PEs:\n"
 printf " OMP_NUM_THREADS=$OMP_NUM_THREADS\n\n"
+if [ $nomp -gt 1 ] ; then 
+export OMP_STACKSIZE=4G
+printf " OMP_STACKSIZE=$OMP_STACKSIZE\n\n"
+fi
 printf " ##### UM_TIMING: Um_model.sh STARTING AT: `date`\n"
 
-CMD="mpirun -np $((npex*npey)) ${TASK_BIN}/ATM_MOD.Abs"
+#for CRAY
+#CMD="aprun -j 1 -n $((npex*npey)) -d $nomp ${TASK_BIN}/ATM_MOD"
+#for Linux
+CMD="mpirun -np $((npex*npey)) ${TASK_BIN}/ATM_MOD"
+
+printf "MPIRUN CMD is `echo $CMD` \n"
 if [[ x$debug != x0 ]] ; then
     CMD="${CMD} -gdb"
 fi

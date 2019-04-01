@@ -14,11 +14,13 @@
 . ssmuse-sh -p /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64
 
 #INTEL COMPILER
-# use EC cmake file
-rm Linux-x86_64-ifort.cmake
-ln -s Linux-x86_64-ifort.cmake.EC Linux-x86_64-ifort.cmake
 # Load INTEL compiler and libraries
-. r.load.dot rpn/utils/16.2.2 # si ça n'est pas déjà fait
+# default version of Intel compiler used: 19.
+# to use version 13, change the link in the sources directory:
+# cd gem_on_a_stick_5.1.a6/sources
+# rm Linux-x86_64-ifort.cmake
+# ln -s Linux-x86_64-ifort.cmake.16 Linux-x86_64-ifort.cmake
+. r.load.dot rpn/utils/16.2.2 # if not already done
 . r.module.dot
 . r.load.dot /ssm/net/hpcs/201402/04/base /ssm/net/hpcs/exp/intel2016/01
 
@@ -42,7 +44,9 @@ module load PrgEnv-pgi/18.4
 
 #configure GEM
 #default compiler: gfortran
-cd gem_on_a_stick_5.1.a6/sources/build
+cd gem_on_a_stick_5.1.a6/sources
+mkdir -p build
+cd build
 cmake ..
 
 #if you want to compile with another compiler than gfortran:
@@ -50,21 +54,33 @@ cmake -DCOMPILER=ifort ..
 or
 cmake -DCOMPILER=pgfortran ..
 or
-edit the sources/CMakeLists.txt to change the default compiler
+edit the sources/CMakeLists.txt to change the default compiler (line 9)
 
 #if compiler or compile options are not right:
 cd build
 \rm -rf *
-vi ../sources/Linux-x86_64.cmake
+
+# make appropriate changes to the cmake file named according to the Fortran
+# compiler you are using, in the sources directory, for example:
+# Linux-x86_64-gfortran.cmake if you compile with gfortran or
+# Linux-x86_64-ifort.cmake if you compile with ifort
+
 cmake ..
+or
+cmake -DCOMPILER=ifort ..
+or
+cmake -DCOMPILER=pgfortran ..
 
 #build and install GEM
 make -j
 make install
 
-#binaries installed in the directory work/work-OS-NAME_COMPILER-NAME/bin
-#binaries built are: maingemdm.Abs, maingemgrid.Abs, mainyy2global.Abs
-#flipit.Abs, r.fstinfo,voir,editfst,fststat,cclargs_lite,pgsm
+a directory named after the compiler you used and the operating system you
+compiled on (work-OS_NAME-COMPILER_NAME, such as work-Linux_x86-64-gfortran-8.2.1)
+is created in the working directory of GEM on a stick, and the following
+binaries are installed in a bin directory in it: maingemdm.Abs,
+maingemgrid.Abs, mainyy2global.Abs, flipit.Abs, r.fstinfo, voir, editfst,
+fststat, cclargs_lite, pgsm
 
 3) run GEM
 
@@ -76,10 +92,10 @@ be downloaded:
 
 If you want to use your own dataset, change the variable default_DIR_ATM in
 scripts runprep and runmod, either in the sources/orig-scripts directory, or
-in the work* directory (in the latter case, be advised that any changes to
+in the working directory (in the latter case, be advised that any changes to
 the scripts will be erased at the next "make install" step).
 
-cd gem_on_a_stick_5.1.a6/work/work[...]
+cd gem_on_a_stick_5.1.a6/work/work[OS-NAME_COMPILER-NAME]
 
 #default configuration for runprep and runmod is GEM_cfgs
 ./runprep
@@ -96,6 +112,15 @@ variable TH, step 120, contour 0
 #to run GY_cfgs
 ./runprep -dircfg GY_cfgs
 ./runmod -dircfg GY_cfgs
+
+default setup uses the command "mpirun" to run the model.  This command can
+be modified in the file scripts/Um_model.sh, line 34, either in the original
+sources of the scripts (sources/orig-scripts/scripts) or in the working
+directory (work/work-[OS_NAME-COMPILER_NAME]/scripts). In the latter case,
+be advised that any changes to the scripts will be erased at the next "make
+install" step. So, if you want your changes to the scripts to be permanent,
+make them in the sources/orig-scripts/scripts directory, and then rerun the
+command make install in the sources/build directory.
 
 4) Tools provided to inspect the outputs
 #Documentation is in internal website:
