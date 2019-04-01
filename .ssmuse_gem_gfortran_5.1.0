@@ -1,0 +1,2 @@
+. r.load.dot /ssm/net/hpcs/compilers/gcc-5.1.0/gcc_5.1.0_ubuntu-14.04-amd64-64
+. ssmuse-sh -p /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64
