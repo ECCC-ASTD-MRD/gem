@@ -19,7 +19,8 @@
                                 F_minx,F_maxx,F_miny,F_maxy,F_nk,F_i0,F_in,F_j0,F_jn,F_k0, &
                                 F_BC_LAM_Aranami_L,F_BC_min_max_L,F_verbose_L)
 
-      use adv_options
+      use adz_BC_deficit
+      use adz_options
       use ctrl
       use dyn_fisl_options
       use glb_ld
@@ -27,6 +28,7 @@
       use gmm_tracers
       use HORgrid_options
       use lun
+      use rstr
       use tr3d
 
       implicit none
@@ -77,30 +79,51 @@
 
       real*8, parameter :: ONE_8=1.d0
 
-      real*8,   save :: KEEP_mass_deficit_8(MAXTR3D) = 0.0d0
-      character(len=4), save :: tracer_name(MAXTR3D) = ''
-
       real, pointer, dimension(:,:,:) :: air_mass_p,air_mass_m
+
+      logical, save :: done_BC_deficit_init_L = .false.
 
       !-----------------------------------------------------------------------------------------
 
-      if (Adv_BC_pexp_n>PEXP_LIST_MAX) call handle_error(-1,'BERMEJO-CONDE','BC PEXP not valid')
+      if (Adz_BC_pexp_n>PEXP_LIST_MAX) call handle_error(-1,'BERMEJO-CONDE','BC PEXP not valid')
 
-      if (Adv_BC_weight>3) call handle_error(-1,'BERMEJO-CONDE','BC WEIGHT not valid')
+      if (Adz_BC_weight>3) call handle_error(-1,'BERMEJO-CONDE','BC WEIGHT not valid')
 
       if (Schm_psadj==0.and.Grd_yinyang_L.and..NOT.Ctrl_testcases_L) &
          call handle_error(-1,'BERMEJO-CONDE','Schm_psadj should be > 0 when YIN-YANG')
 
+      if (MAXTR3D_/=MAXTR3D) call handle_error(-1,'BERMEJO-CONDE','MAXTR3D_/=MAXTR3D')
+
       !Assign a unique id to this tracer, so we can look up the corresponding mass deficit
       !-----------------------------------------------------------------------------------
-      do tracer_id = 1,MAXTR3D
-         if (tracer_name(tracer_id) == F_name_S(4:7)) exit
-      end do
-      if (tracer_id >= MAXTR3D) then
+      if (.not.Rstri_rstn_L) then
+
+         if (.not.done_BC_deficit_init_L) then
+
+            KEEP_mass_deficit_8(1:MAXTR3D_) = 0.0d0
+
+            tracer_name(1:MAXTR3D_) = ''
+
+            done_BC_deficit_init_L = .true.
+
+         end if
+
          do tracer_id = 1,MAXTR3D
-            if (tracer_name(tracer_id) == '') exit
+            if (tracer_name(tracer_id) == F_name_S(4:7)) exit
          end do
-         tracer_name(tracer_id) = F_name_s(4:7)
+         if (tracer_id >= MAXTR3D) then
+            do tracer_id = 1,MAXTR3D
+               if (tracer_name(tracer_id) == '') exit
+            end do
+            tracer_name(tracer_id) = F_name_s(4:7)
+         end if
+
+      else
+
+         do tracer_id = 1,MAXTR3D
+            if (tracer_name(tracer_id) == F_name_S(4:7)) exit
+         end do
+
       end if
 
       LAM_L = .not.Grd_yinyang_L
@@ -126,8 +149,8 @@
       air_mass_p => airm1
       air_mass_m => airm0
 
-      if (     adv_BC_LEGACY_L) p_exp_8 = 1.0
-      if (.not.adv_BC_LEGACY_L) p_exp_8 = Adv_BC_pexp_list(Adv_BC_pexp_n)
+      if (     Adz_BC_LEGACY_L) p_exp_8 = 1.0
+      if (.not.Adz_BC_LEGACY_L) p_exp_8 = Adz_BC_pexp_list(Adz_BC_pexp_n)
 
       !Default values if no Mass correction
       !------------------------------------
@@ -170,15 +193,15 @@
 
          if (Lun_out>0) then
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: P_exponent              =',p_exp_8
-             if (Adv_BC_weight==1) &
+             if (Adz_BC_weight==1) &
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: BC_WEIGHT: ADDITIVE APPROACH'
-             if (Adv_BC_weight==2) &
+             if (Adz_BC_weight==2) &
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: BC_WEIGHT: MULTIPLICATIVE APPROACH'
-             if (Adv_BC_weight==3) &
+             if (Adz_BC_weight==3) &
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: BC_WEIGHT: ADDITIVE APPROACH + Factor pr_k/pr_s'
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: BC_min_max_L            =',F_BC_min_max_L
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass BEFORE B.-C.       =',mass_tot_adv_8/adv_gc_area_8
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass to RESTORE         =',mass_tot_old_8/adv_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass BEFORE B.-C.       =',mass_tot_adv_8/Adz_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass to RESTORE         =',mass_tot_old_8/Adz_gc_area_8
              write(Lun_out,1001) 'TRACERS: Bermejo-Conde: Ori. Diff. of ',ratio_8
          end if
 
@@ -189,7 +212,7 @@
       !---------------------------------------------------
       !Prepare Bermejo-Conde correction: Additive approach
       !---------------------------------------------------
-      if (Adv_BC_weight==1) then
+      if (Adz_BC_weight==1) then
 
 !$omp parallel private(k,i,j,H_minus_L_8) &
 !$omp shared(weight,mass_deficit_8)
@@ -215,7 +238,7 @@
       !---------------------------------------------------------
       !Prepare Bermejo-Conde correction: Multiplicative approach
       !---------------------------------------------------------
-      else if (Adv_BC_weight==2) then
+      else if (Adz_BC_weight==2) then
 
 !$omp parallel private(k,i,j,H_minus_L_8) &
 !$omp shared(weight,mass_deficit_8)
@@ -241,7 +264,7 @@
       !--------------------------------------------------------------------------
       !Prepare Bermejo-Conde correction:  Additive approach with Factor pr_k/pr_s
       !--------------------------------------------------------------------------
-      elseif (Adv_BC_weight==3) then
+      elseif (Adz_BC_weight==3) then
 
         istat = gmm_get(gmmk_pkps_s,pkps)
 
@@ -274,7 +297,7 @@
 
          if (F_verbose_L.and.Lun_out>0) &
          write(Lun_out,1002) 'TRACERS: Bermejo-Conde: Diff. too small             =', &
-                             mass_tot_adv_8/adv_gc_area_8,mass_tot_old_8/adv_gc_area_8,(mass_tot_adv_8-mass_tot_old_8)/adv_gc_area_8
+                             mass_tot_adv_8/Adz_gc_area_8,mass_tot_old_8/Adz_gc_area_8,(mass_tot_adv_8-mass_tot_old_8)/Adz_gc_area_8
 
          return
 
@@ -482,11 +505,11 @@
          if (Lun_out>0) then
 
              if (F_BC_min_max_L) then
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass BEFORE MINMAX      =' ,mass_bc_w_8/adv_gc_area_8
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass  AFTER MINMAX      =' ,mass_bc_l_8/adv_gc_area_8
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass  AFTER PROPORT. MF =' ,mass_tot_out_8/adv_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass BEFORE MINMAX      =' ,mass_bc_w_8/Adz_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass  AFTER MINMAX      =' ,mass_bc_l_8/Adz_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass  AFTER PROPORT. MF =' ,mass_tot_out_8/Adz_gc_area_8
              end if
-             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass    END B.-C.       =' ,mass_tot_out_8/adv_gc_area_8
+             write(Lun_out,1000) 'TRACERS: Bermejo-Conde: Mass    END B.-C.       =' ,mass_tot_out_8/Adz_gc_area_8
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: # pts treated by B.-C.  =' ,g_count(3),'over',G_ni*G_nj*F_nk*iprod
              if (F_BC_min_max_L) then
              write(Lun_out,*)    'TRACERS: Bermejo-Conde: # pts RESET_MIN_BC      =' ,g_count(1)
@@ -495,10 +518,10 @@
              write(Lun_out,1001) 'TRACERS: Bermejo-Conde: Rev. Diff. of ',ratio_8
 
              if (LAM_L.and.F_BC_LAM_Aranami_L.and..not.Ctrl_theoc_L) then
-             write(Lun_out,1004) 'TRACERS: Bermejo-Conde: STATS: N=',mass_out_8/adv_gc_area_8,' O=',mass_old_8/adv_gc_area_8, &
-                                 ' FI=',mass_flux_i_8/adv_gc_area_8,' FO=',mass_flux_o_8/adv_gc_area_8
+             write(Lun_out,1004) 'TRACERS: Bermejo-Conde: STATS: N=',mass_out_8/Adz_gc_area_8,' O=',mass_old_8/Adz_gc_area_8, &
+                                 ' FI=',mass_flux_i_8/Adz_gc_area_8,' FO=',mass_flux_o_8/Adz_gc_area_8
              else
-             write(Lun_out,1005) 'TRACERS: Bermejo-Conde: STATS: N=',mass_out_8/adv_gc_area_8,' O=',mass_old_8/adv_gc_area_8
+             write(Lun_out,1005) 'TRACERS: Bermejo-Conde: STATS: N=',mass_out_8/Adz_gc_area_8,' O=',mass_old_8/Adz_gc_area_8
              end if
 
          end if

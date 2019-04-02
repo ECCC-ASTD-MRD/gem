@@ -18,7 +18,6 @@ module ver
    implicit none
    public
    save
-
 !
 !**comdeck ver.cdk
 !
@@ -95,8 +94,9 @@ module ver
       real*8 Ver_alfat_8,Ver_cst_8,Ver_cstp_8
       real*8 Ver_igt_8,Ver_igt2_8,Ver_ikt_8
       real*8 Ver_zmin_8,Ver_zmax_8
+      real*8 gama_8,epsi_8,mu_8,gg_8, sig
 
-      integer Ver_code
+      integer :: Ver_code
 
       real*8, dimension(:), allocatable :: Ver_gama_8,Ver_epsi_8
       real*8, dimension(:), allocatable :: Ver_FIstr_8,Ver_bzz_8
@@ -106,6 +106,6 @@ module ver
       real*8, dimension(:), allocatable :: Ver_wpM_8,Ver_wmM_8
       real*8, dimension(:), allocatable :: Ver_wpC_8,Ver_wmC_8
 
-      real, dimension(:), allocatable :: Ver_onezero
+      real, dimension(:), allocatable :: Ver_onezero, Ver_zeronk
 
 end module ver

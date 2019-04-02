@@ -25,6 +25,8 @@
       use ldnh
       use sol
       use opr
+      use ptopo
+      use trp
       implicit none
 #include <arch_specific.hf>
 
@@ -38,26 +40,27 @@
 !
       integer i,j,k,ni,nij,iter
       real linfini
-      real*8, dimension (ldnh_maxx,ldnh_maxy,l_nk) :: wk1, wk2, wk3
+      real*8, dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3
       real*8, dimension (l_minx:l_maxx,l_miny:l_maxy,l_nk) :: yyrhs
+      real*8, dimension((trp_12smax-trp_12smin+1)*(trp_22max -trp_22min +1)*(G_nj+Ptopo_npey  )) :: fdg2
 !
 !     ---------------------------------------------------------------
 !
       ni  = ldnh_ni-pil_w-pil_e
       nij = (ldnh_maxy-ldnh_miny+1)*(ldnh_maxx-ldnh_minx+1)
 
-      wk1 = 0.d0
-      wk2 = 0.d0
+      rhs_8 = 0.d0
+      sol_8 = 0.d0
 
-!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,wk1)
+!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,rhs_8)
 !$omp do
       do j=1+pil_s, ldnh_nj-pil_n
          call dgemm ('N','N', ni, G_nk, G_nk, 1.d0, F_rhs_8(1+pil_w,j,1), &
-                     nij, Opr_lzevec_8, G_nk, 0.d0, wk1(1+pil_w,j,1), nij)
+                     nij, Opr_lzevec_8, G_nk, 0.d0, rhs_8(1+pil_w,j,1), nij)
          do k=1,Schm_nith
             do i = 1+pil_w, ldnh_ni-pil_e
-               wk1(i,j,k) = Opr_opsxp0_8(G_ni+F_offi+i) * &
-                            Opr_opsyp0_8(G_nj+F_offj+j) * wk1(i,j,k)
+               rhs_8(i,j,k) = Opr_opsxp0_8(G_ni+F_offi+i) * &
+                            Opr_opsyp0_8(G_nj+F_offj+j) * rhs_8(i,j,k)
             end do
          end do
       end do
@@ -66,17 +69,22 @@
 
       if (Grd_yinyang_L) then
 
-         wk3 = wk1
+         wk3 = rhs_8
 
          do iter=1, Sol_yyg_maxits
 
-            call sol_direct_lam ( wk2, wk1, F_ni, F_nj, F_nk )
-            wk1 = wk3
-            yyrhs(1:l_ni,1:l_nj,:) = -wk2(1:l_ni,1:l_nj,:)
+            call sol_fft_lam ( sol_8, rhs_8,                                    &
+                               ldnh_maxx, ldnh_maxy, ldnh_nj,                   &
+                               trp_12smax, trp_12sn, trp_22max, trp_22n,        &
+                               G_ni, G_nj, G_nk, sol_nk, Ptopo_npex, Ptopo_npey,&
+                               Sol_ai_8, Sol_bi_8, Sol_ci_8, fdg2)
+
+            rhs_8 = wk3
+            yyrhs(1:l_ni,1:l_nj,:) = -sol_8(1:l_ni,1:l_nj,:)
             call rpn_comm_xch_halo_8 (yyrhs,l_minx,l_maxx,l_miny,l_maxy,&
               l_ni,l_nj,l_nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-            call yyg_rhs_xchng (wk1, yyrhs, ldnh_minx, ldnh_maxx   ,&
+            call yyg_rhs_xchng (rhs_8, yyrhs, ldnh_minx, ldnh_maxx   ,&
                                 ldnh_miny, ldnh_maxy, l_minx,l_maxx,&
                                 l_miny,l_maxy, l_nk, iter, linfini)
 
@@ -99,14 +107,18 @@
 
       else
 
-         call sol_direct_lam ( wk2, wk1, F_ni, F_nj, F_nk )
+          call sol_fft_lam ( sol_8, rhs_8,                                    &
+                             ldnh_maxx, ldnh_maxy, ldnh_nj,                   &
+                             trp_12smax, trp_12sn, trp_22max, trp_22n,        &
+                             G_ni, G_nj, G_nk, sol_nk, Ptopo_npex, Ptopo_npey,&
+                             Sol_ai_8, Sol_bi_8, Sol_ci_8, fdg2)
 
       end if
 
-!$omp parallel private (j) shared (g_nk, wk2)
+!$omp parallel private (j) shared (g_nk, sol_8)
 !$omp do
       do j=1+pil_s, ldnh_nj-pil_n
-         call dgemm ('N','T', ni, G_nk, G_nk, 1.d0, wk2(1+pil_w,j,1), &
+         call dgemm ('N','T', ni, G_nk, G_nk, 1.d0, sol_8(1+pil_w,j,1), &
                nij, Opr_zevec_8, G_nk, 0.d0, F_sol_8(1+pil_w,j,1), nij)
       end do
 !$omp enddo

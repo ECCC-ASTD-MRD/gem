@@ -39,7 +39,7 @@
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
-      call tt2virt2 (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call tt2virt (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call gemtime_stop (5)
 !     ________________________________________________________________
 !

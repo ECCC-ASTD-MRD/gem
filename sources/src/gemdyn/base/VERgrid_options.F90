@@ -21,13 +21,17 @@ module VERgrid_options
 
       integer, parameter :: MAXHLEV = 1024
 
-   !# array of model levels ,  0.0 < HYB < 1.0
+   !# array of model levels (pressure),  0.0 < HYB < 1.0
       real, dimension(MAXHLEV) :: hyb = -1
       namelist /vert_layers/ Hyb
 
+   !# array of model levels (height  ),  hyb_H > 0.0
+      real, dimension(MAXHLEV) :: hyb_H = -1
+      namelist /vert_layers/ Hyb_H
+
    !# pair of coefficients (min,max) to control the flattenning of the
    !# vertical coordinate
-      real, dimension(2):: Hyb_rcoef = (/1., 1./)
+      real, dimension(4):: Hyb_rcoef = (/1., 1., -1., -1./)
       namelist /vert_layers  / Hyb_rcoef
       namelist /vert_layers_p/ Hyb_rcoef
 
@@ -54,7 +58,12 @@ contains
          if ( Lun_out >= 0) then
             if ( F_unf == -1 ) then
                write (Lun_out,nml=vert_layers_p)
-               write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+               if (hyb(1) > 0.0) then
+                   write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
+               end if
+               if (hyb_H(1) > 0.0) then
+                   write(lun_out,'(2x,"hyb_H="/5(E15.5,","))') hyb_H(1:g_nk)
+               end if
             end if
             if ( F_unf == -2 ) write (Lun_out,nml=vert_layers)
          end if
@@ -102,6 +111,8 @@ contains
 !
       integer function VERgrid_config()
       use ver
+      use lun
+      use dynkernel_options
       implicit none
 #include <arch_specific.hf>
 
@@ -113,10 +124,18 @@ contains
 
 !     Counting # of vertical levels specified by user
       G_nk = 0
-      do k = 1, maxhlev
-         if (hyb(k) < 0.) exit
-         G_nk = k
-      end do
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
+         do k = 1, maxhlev
+            if (hyb_H(k) < 0.) exit
+            G_nk = k
+         end do
+      else
+         do k = 1, maxhlev
+            if (hyb(k) < 0.) exit
+            G_nk = k
+         end do
+      end if
 
       VERgrid_config = 1
 !

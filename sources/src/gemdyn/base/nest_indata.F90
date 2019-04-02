@@ -17,39 +17,34 @@
 !                    integration for LBC.
 !
       subroutine nest_indata (F_datev_S)
+      use dynkernel_options
+      use fislh_inp_base, only : inp_3dhgts
       use gmm_nest
       use gmm_geof
       use inp_mod
       use glb_ld
       use lun
+      use tdpack
       use gmm_itf_mod
+      use vgrid_wb, only: vgrid_wb_get
+      use vGrid_Descriptors, only : vgrid_descriptor
       use gem_timing
       implicit none
 #include <arch_specific.hf>
 
       character(len=*) F_datev_S
 
-!author
-!     Michel Desgagne   - Spring 2002
-!
-!revision
-! v3_01 - Desgagne M.     - initial version
-! v3_03 - Tanguay M.      - Adjoint Lam configuration
-! v3_30 - Lee V.          - Hollow cubes and acid test for LAM
-! v4_03 - Lee/Desgagne    - ISST
-! v4_05 - Plante A.       - Top nesting
-! v4_05 - Lepine M.       - VMM replacement with GMM
-! v4_10 - Lee V.          - Remove TRNES on tracers,zd,w
-! v4_4  - Plante A.       - Add computation of wt1
-!                           Catch error on gmm
 
 
       integer istat
+      integer, dimension (:), pointer :: ip1_dum
+      type(vgrid_descriptor) :: vgd_dst
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
+      nullify(ip1_dum)
       istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin )
       istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin )
       istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
@@ -58,20 +53,35 @@
       istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin )
       istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
       istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
+      istat = gmm_get (gmmk_sls_s ,sls )
 
       nest_zd_fin=0. ; nest_w_fin=0. ; nest_q_fin= 0.
 
       call gemtime_start ( 26, 'NEST_input', 10 )
-      call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
-                      nest_zd_fin, nest_s_fin, nest_q_fin            ,&
-                      nest_fullme_fin, l_minx,l_maxx,l_miny,l_maxy   ,&
-                      G_nk, .true., 'NEST/', ':F', F_datev_S)
-      call gemtime_stop (26)
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H')then
 
-      call diag_zd_w ( nest_zd_fin, nest_w_fin                       ,&
-                       nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin,&
-                       l_minx,l_maxx,l_miny,l_maxy, G_nk             ,&
-                       .not.Inp_zd_L, .not.Inp_w_L )
+         call fislh_inp_data( nest_u_fin, nest_v_fin, nest_t_fin ,&
+                              nest_q_fin, nest_zd_fin, nest_w_fin, nest_fullme_fin,&
+                              sls,l_minx,l_maxx,l_miny,l_maxy,G_nk ,&
+                              .true., 'NEST/', ':F', F_datev_S)
+         istat = vgrid_wb_get ('ref-m', vgd_dst, ip1_dum )
+         deallocate (ip1_dum); nullify (ip1_dum)
+
+         call fislh_diag_zd_w (nest_zd_fin, nest_w_fin, nest_u_fin, nest_v_fin,&
+                               nest_t_fin, nest_q_fin, &
+                               l_minx, l_maxx, l_miny, l_maxy, G_nk, .true., .true.)
+      else
+         call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
+                         nest_zd_fin, nest_s_fin, nest_q_fin            ,&
+                         nest_fullme_fin, l_minx,l_maxx,l_miny,l_maxy   ,&
+                         G_nk, .true., 'NEST/', ':F', F_datev_S)
+         call gemtime_stop (26)
+
+         call diag_zd_w ( nest_zd_fin, nest_w_fin                       ,&
+                          nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin,&
+                          l_minx,l_maxx,l_miny,l_maxy, G_nk             ,&
+                          .not.Inp_zd_L, .not.Inp_w_L )
+      end if
 !
 !     ---------------------------------------------------------------
 !

@@ -22,7 +22,7 @@ module MODI_WETBULBT
       function WETBULBT(PPA, PTA, PQA) result(PTWBT)
          real, dimension(:), intent(IN)    :: PPA     ! pressure (Pa)
          real, dimension(:), intent(IN)    :: PTA     ! Air  temperature (K) 
-         real, dimension(:), intent(INout) :: PQA     ! Air spedcific humidity (kg/kg)
+         real, dimension(:), intent(IN)    :: PQA     ! Air spedcific humidity (kg/kg)
          real, dimension(size(PPA)) :: PTWBT          ! WBGT in deg C
       end function WETBULBT
    end interface
@@ -53,9 +53,10 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    ! !*      0.1    declarations of arguments
    real, dimension(:), intent(IN)  :: PPA         ! Air pressure (Pa)
    real, dimension(:), intent(IN)  :: PTA          ! Air temperature (K) 
-   real, dimension(:), intent(INout)  :: PQA          ! Air specific humidity (kg/kg) 
+   real, dimension(:), intent(IN)  :: PQA          ! Air specific humidity (kg/kg) 
    real, dimension(size(PPA))      :: PTWBT         ! WBGT in deg K
    ! !*      0.2    declarations of local variables
+   real, dimension(size(PPA)) :: ZQA      ! modified Air specific humidity (kg/kg) 
    real, dimension(size(PPA)) :: ZRH      ! Relative humidity (%)
    real, dimension(size(PPA)) :: ZTD      ! Dew-point temperature (C) at T,P
    real, dimension(size(PPA)) :: ZT       ! temperature (C)
@@ -82,66 +83,51 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    real, external :: TSA
 
    nn=size(ppa)
-   !    1. Compute the Relative Humidity
-   ! ZRH=100.*PQA/QSAT(PTA,PQA,PPA)    ! %
-   ! test
-   !    2. Compute the dew-point temperature ZTD in C (INPUT: ZT,ZRH)
+
+   !    1. Compute the dew-point temperature ZTD in C (INPUT: ZT,ZRH)
 
    ZT=PTA-XTT          ! convert in Celcius
    ZP=0.01*PPA         ! convert in hPa
+   ZQA=PQA             ! local variable
    do i=1,nn
-      qsat=N_QSAT(PTA(i),PQA(i),PPA(i))
-      if(PQA(i)<0)PQA(i)=0.0
-      if(qsat<PQA(i))PQA(i)=qsat
-      ZRH(i)=100.*PQA(i)/qsat
+      qsat=N_QSAT(PTA(i),ZQA(i),PPA(i))
+      if(ZQA(i)<0)ZQA(i)=0.0
+      if(qsat<ZQA(i))ZQA(i)=qsat
+      ZRH(i)=100.*ZQA(i)/qsat
+      !?! ZRH(i)=100.*max(min(ZQA(i),qsat),0.)/qsat
 
       ZTD(i)=DWPT(ZT(i),ZRH(i))
-      !    3. Compute the saturation mixing ratio in g/kg
+      !    2. Compute the saturation mixing ratio in g/kg
       ZAW(i) = W(ZTD(i),ZP(i))
-      ! print*,'MIXING RATIO(TD,P) i g/kg => AW= ',ZAW
-      !
-      !    4. Compute the Dry Adiabat ZAO in C (INPUT:ZT,ZP)
+      !    3. Compute the Dry Adiabat ZAO in C (INPUT:ZT,ZP)
       ZAO(i) = O(ZT(i),ZP(i))
       ZPI(i) = ZP(i)
-      ! print*,'(theta in C) DRY ADIABAT(T,P) => AO= ',ZAO
    enddo
-   !    5. Iterate to determine local pressure ZPI (hPa)
+   !    4. Iterate to determine local pressure ZPI (hPa)
    !       at the intersection of the two curves of saturation mixing ratio 
    !       and dry adiabat (first guess is ZP)
 
    do JJ=1,size(PPA)
       do JITER= 1,10
          ZDIFF(JJ)= 0.02*(TMR(ZAW(JJ),ZPI(JJ))-TDA(ZAO(JJ),ZPI(JJ)))
-         ! print*,'it= ',I,' X= .02*(TMR(AW,PI)-TDA(AO,PI))  = ',X
          if (abs(ZDIFF(JJ)).lt.0.01) GO TO 5
          ZPI(JJ)= ZPI(JJ)*(2.**(ZDIFF(JJ)))
       enddo
-      !    6. Compute temperature on the dry adiabat at ZPI  (Intesrsection point)
+      !    5. Compute temperature on the dry adiabat at ZPI  (Intesrsection point)
 5     ZTI(JJ)= TDA(ZAO(JJ),ZPI(JJ))
-      ! print*,'(theta) DRY ADIABAT(AO,PI) => ZTI= ',ZTI
    enddo
-   ! print*,'T ON A MIXING RATIO LINE (AW,PI) => TMR= ',TMR(ZAW,ZPI)
-   ! print*,'T ON A DRY ADIABAT theta O (AO,P) => TDA= ',TDA(ZAO,ZPI)
 
-
-   !    7. Compute a saturation adiabat from the intersection
+   !    6. Compute a saturation adiabat from the intersection
    !       ==> equivalent potential temperature of a parcel saturated 
    !           at temperature ZTI and pressure ZPI
    do i=1,nn
       ZAOS(i)= OS(ZTI(i),ZPI(i))
       ! print*,'SATURATION DRY ADIABAT thetaEq OS(TI,PI) => ZAOS= ',ZAOS
 
-      !    8. Compute the Wet-bulb temperature (K) of a parcel at ZP given its 
+      !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its 
       !       equivalent potential temperature
       PTWBT(i)= XTT + TSA(ZAOS(i),ZP(i))
-      ! PRINT*,'PTWBT= ',PTWBT-XTT 
    enddo
-   !       DO JJ=1,SIZE(PPA)
-   ! ZDIFF(JJ)= ABS(PTWBT(JJ)-PTA(JJ)) 
-   !  IF ( ZDIFF(JJ) .gt. 10.) THEN
-   ! !   print*,' |T- Twb| = ',ZDIFF(JJ) ,' P T Q= ',JJ, PPA(JJ), PTA(JJ),PQA(JJ)
-   !  ENDIF
-   !      ENDDO 
    return
 end function WETBULBT
 
@@ -194,21 +180,9 @@ real function DWPT(T,RH)
    X = 1.-0.01*RH
 
    !    COMPUTE DEW POINT DEPRESSION.
-   ! TD=(241.88*ALOG(ETA/0.61078) )/( 17.558-ALOG(ETA/0.61078) )
    DPD =(14.55+0.114*T)*X+((2.5+0.007*T)*X)**3+(15.9+0.117*T)*X**14
    DWPT = T-DPD
 
-   !method 2
-   ! saturation vapor pressure  ES:
-   !     PEW    = EXP( XALPW - XBETAW / ZTEMP - XGAMW * LOG( ZTEMP ) )
-   !       TK=T+273.15
-   !       ES=ALIQ*EXP((BLIQ*TK-CLIQ)/(TK-DLIQ))
-   ! !       ES=MIN( ES , 0.5*P )
-   ! ! vapour pressure at PTA,  ETA:
-   !       ETA=RH*ES/100.
-   ! ! Dew point temp,  TD :
-   !       DWPT=(241.88*ALOG(ETA/0.61078) )/( 17.558-ALOG(ETA/0.61078) )
-   ! !       DWPT=DWPT-273.15
    return
 end function DWPT
 

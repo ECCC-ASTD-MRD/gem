@@ -25,6 +25,7 @@
       use gmm_itf_mod
       use wb_itf_mod
       use gem_timing
+      use adz_BC_deficit
       implicit none
 #include <arch_specific.hf>
 
@@ -48,6 +49,7 @@
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
             write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
+            write(Lun_rstrt) KEEP_mass_deficit_8(1:MAXTR3D_),tracer_name(1:MAXTR3D_)
 
             ier = fclos(Lun_rstrt)
 

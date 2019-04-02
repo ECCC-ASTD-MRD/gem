@@ -171,14 +171,14 @@ contains
       if (len_trim(F_name_S) == 0) then
          call msg(MSG_ERROR, '(vgrid_wb_put) need to provide a internal name')
          return
-      endif
+      end if
       overwrite_L = .false.
       if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
 
       if (.not.any(F_type == (/VGRID_GROUND_TYPE, VGRID_SURF_TYPE, VGRID_UPAIR_TYPE, VGRID_UPAIR_M_TYPE, VGRID_UPAIR_T_TYPE/))) then
          call msg(MSG_ERROR, '(vgrid_wb_put) invalid vgrid_wb type: '//trim(F_name_S))
          return
-      endif
+      end if
 
       nullify(i4ptr1d)
       istat    = vgrid_wb_exists(F_name_S, id, id_S, i4ptr1d, itype)
@@ -195,7 +195,7 @@ contains
                exists_L = .false.
             else
                call msg(MSG_INFOPLUS, '(vgrid_wb_put) updating: '//trim(F_name_S))
-            endif
+            end if
          else
             if (.not.(same_L.and.same2_L)) then
                call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params: '//trim(F_name_S))
@@ -203,9 +203,9 @@ contains
             else
                F_id = id
                return
-            endif
-         endif
-      endif IF_EXISTS
+            end if
+         end if
+      end if IF_EXISTS
 
       lip1 = lbound(F_ip1list, 1)
       uip1 = ubound(F_ip1list, 1)
@@ -216,12 +216,12 @@ contains
          i4meta1d%l(1) = gmm_layout(lip1, uip1, 0, 0, uip1-lip1+1)
          i4meta1d%a%uuid1 = itype
          nullify(i4ptr1d)
-         istat = gmm_create(trim(id2_S), i4ptr1d, i4meta1d, GMM_FLAG_RSTR)
+         istat = gmm_create(trim(id2_S), i4ptr1d, i4meta1d, 0)
          if (.not.associated(i4ptr1d)) then
             call msg(MSG_ERROR, '(vgrid_wb_put) cannot allocate mem for ip1list: '//trim(F_name_S))
             return
-         endif
-      endif IF_EXISTS2
+         end if
+      end if IF_EXISTS2
 
       i4ptr1d(:) = F_ip1list(:)
 
@@ -292,7 +292,7 @@ contains
          write(msg_S, '(a, " ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') trim(F_name_S), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
       else
           write(msg_S, '(a)') trim(F_name_S)//" sfcref="//trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
-      endif
+      end if
       call msg(MSG_INFO, '(vgrid_wb) Put: '//trim(msg_S))
 
       overwrite_L = .false.
@@ -306,7 +306,7 @@ contains
          call msg(MSG_WARNING, '(vgrid_wb_put) problem cloning vgrid for: '//trim(F_name_S))
          F_id = RMN_ERR
          return
-      endif
+      end if
 
       sfcfld_S = ' '
       istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
@@ -325,7 +325,7 @@ contains
       r8meta3d = GMM_NULL_METADATA
       do n=1, 3
          r8meta3d%l(n) = gmm_layout(lijk(n), uijk(n), 0, 0, uijk(n)-lijk(n)+1)
-      enddo
+      end do
       r8meta3d%a%uuid1 = transfer(sfcfld_S(1:8),  r8meta3d%a%uuid1)
       r8meta3d%a%uuid2 = transfer(sfcfld_S(9:16), r8meta3d%a%uuid2)
 
@@ -346,7 +346,7 @@ contains
                exists_L = .false.
             else
                call msg(MSG_INFOPLUS, '(vgrid_wb_put) updating: '//trim(F_name_S))
-            endif
+            end if
          else
             if (.not.(same_L.and.same2_L)) then
                call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params: '//trim(F_name_S))
@@ -356,20 +356,20 @@ contains
 !!$            else
 !!$               F_id = id
 !!$               return
-            endif
-         endif
-      endif IF_EXISTS3
+            end if
+         end if
+      end if IF_EXISTS3
 
       IF_EXISTS4: if (exists_L) then
          vtbl2(:, :, :) = vtbl(:, :, :)
       else
-         istat = gmm_create(trim(id2_S), vtbl, r8meta3d, GMM_FLAG_RSTR)
+         istat = gmm_create(trim(id2_S), vtbl, r8meta3d, 0)
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR, '(vgrid_wb_put) problem storing vtbl: '//trim(F_name_S))
             F_id = RMN_ERR
             return
-         endif
-      endif IF_EXISTS4
+         end if
+      end if IF_EXISTS4
 
       sfcfld2_S = F_sfcfld2_S
       istat = wb_put(trim(id2_S)//'/RFLS', sfcfld2_S, WB_REWRITE_MANY)
@@ -408,12 +408,12 @@ contains
       else
          F_istat = vgrid_wb_get_i(vgrid_idx, F_vgrid, F_type=itype, &
               F_sfcfld_S=sfcfld_S, F_name_S=F_name_S, F_sfcfld2_S=sfcfld2_S)
-      endif
+      end if
       if (.not.RMN_IS_OK(F_istat)) then
          itype = -1
          sfcfld_S = ' '
          sfcfld2_S = ' '
-      endif
+      end if
       if (present(F_type)) F_type = itype
       if (present(F_sfcfld_S))  F_sfcfld_S  = sfcfld_S
       if (present(F_sfcfld2_S)) F_sfcfld2_S = sfcfld2_S
@@ -425,10 +425,10 @@ contains
             write(msg_S, '(a, " [type=", i4, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') trim(F_name_S), itype, lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(sfcfld_S)//' '//trim(sfcfld2_S)
          else
             write(msg_S, '(a, " [type=", i4, "]  sfcref=", a)') trim(F_name_S), itype, trim(sfcfld_S)//' '//trim(sfcfld2_S)
-         endif
+         end if
       else
          msg_S = trim(F_name_S) // 'Not Found'
-      endif
+      end if
       call msg(MSG_DEBUG, '(vgrid_wb) get [END] '//trim(msg_S))
       !---------------------------------------------------------------------
       return
@@ -469,7 +469,7 @@ contains
       if (.not.associated(i4ptr1d)) then
          call msg(MSG_INFOPLUS, '(vgrid_wb_get) vgrid not found: '//trim(name_S))
          return
-      endif
+      end if
       if (present(F_type)) F_type = i4meta1d%a%uuid1
       nip1 = size(i4ptr1d)
       if (present(F_ip1list)) then
@@ -480,19 +480,19 @@ contains
             if (istat /= 0) then
                call msg(MSG_ERROR, '(vgrid_wb_get) Cannot allocate memory for ip1list: '//trim(name_S))
                return
-            endif
-         endif
+            end if
+         end if
          if (lbound(F_ip1list, 1) /= lip1 .or. ubound(F_ip1list, 1) < uip1) then
             if (lbound(F_ip1list, 1) /= lip1) then
                call msg(MSG_ERROR, '(vgrid_wb_get) provided ip1list lbound mismatch: '//trim(name_S))
             else
                call msg(MSG_ERROR, '(vgrid_wb_get) provided ip1list size mismatch: '//trim(name_S))
-            endif
+            end if
             return
-         endif
+         end if
          F_ip1list = -1
          F_ip1list(lip1:uip1) = i4ptr1d(lip1:uip1)
-      endif
+      end if
 
       id2_S = trim(PREFIXV_S)//trim(id_S)
       istat = gmm_get(trim(id2_S), vtbl, r8meta3d)
@@ -502,20 +502,20 @@ contains
          if (istat /= VGD_OK) then
             call msg(MSG_ERROR, '(vgrid_wb_get) problem cloning vgrid for: '//trim(F_name_S))
             return
-         endif
+         end if
          if (present(F_sfcfld_S)) then
             tmp_S = ' '
             tmp2_S = ' '
             tmp_S  = transfer(r8meta3d%a%uuid1, tmp_S)
             tmp2_S = transfer(r8meta3d%a%uuid2, tmp2_S)
             F_sfcfld_S = tmp_S(1:8)//tmp2_S(1:8)
-         endif
+         end if
          if (present(F_sfcfld2_S)) then
             F_sfcfld2_S = ' '
             istat = wb_get(trim(id2_S)//'/RFLS', sfcfld2_S)
             if (RMN_IS_OK(istat)) F_sfcfld2_S = sfcfld2_S
-         endif
-      endif
+         end if
+      end if
       F_istat = nip1
       !---------------------------------------------------------------------
       return
@@ -546,14 +546,14 @@ contains
          me = F_ipe
       else
          call rpn_comm_rank(F_comm_S, me, istat)
-      endif
+      end if
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
       ismaster_L = (me == ipe_master)
       nullify(ip1list)
       if (ismaster_L) then
          F_istat = vgrid_wb_get(F_name_S,vgrid,ip1list,itype,sfcfld_S,sfcfld2_S)
-      endif
+      end if
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
       F_istat = vgrid_wb_bcast(vgrid, ip1list, itype ,sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me)
@@ -562,8 +562,8 @@ contains
             F_istat = vgrid_wb_put(F_name_S, itype, ip1list)
          else
             F_istat = vgrid_wb_put(F_name_S, vgrid, ip1list, sfcfld_S, sfcfld2_S)
-         endif
-      endif
+         end if
+      end if
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_bcast_s
@@ -593,7 +593,7 @@ contains
          me = F_ipe
       else
          call rpn_comm_rank(F_comm_S, me, istat)
-      endif
+      end if
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
       sfcfld2_S = ' '
@@ -638,7 +638,7 @@ contains
          me = F_ipe
       else
          call rpn_comm_rank(F_comm_S, me, istat)
-      endif
+      end if
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
       ismaster_L = (me == ipe_master)
@@ -656,11 +656,11 @@ contains
          ibuf(2*STRSIZE+3) = F_itype
          nip1 = size(F_ip1list)
          ibuf(2*STRSIZE+(ADDINT+1):2*STRSIZE+(ADDINT+1)+(nip1-1)) = F_ip1list(:)
-      endif
+      end if
       call rpn_comm_bcast(n123, size(n123), RPN_COMM_INTEGER, ipe_master, F_comm_S, istat)
       if (.not.ismaster_L) then
          allocate(vtbl_8(n123(1), n123(2), n123(3)), stat=istat)
-      endif
+      end if
       call rpn_comm_bcast(vtbl_8, size(vtbl_8), RPN_COMM_REAL8, ipe_master, F_comm_S, istat)
       call rpn_comm_bcast(ibuf, size(ibuf), RPN_COMM_INTEGER, ipe_master, F_comm_S, istat2)
       F_istat = min(F_istat, istat, istat2)
@@ -681,9 +681,9 @@ contains
          if (.not.ok_L)then
             nullify(F_ip1list)
             allocate(F_ip1list(i0:in))
-         endif
+         end if
          F_ip1list(i0:in) = ibuf(2*STRSIZE+(ADDINT+1):2*STRSIZE+(ADDINT+1)+in-i0)
-      endif
+      end if
       if (associated(vtbl_8)) deallocate(vtbl_8, stat=istat)
 !!$      call collect_error(F_istat)
 !!$      if (.not.RMN_IS_OK(F_istat)) return
@@ -698,27 +698,23 @@ contains
       character(len=*), intent(in) :: F_name_S
       integer :: F_id
 
-      integer, parameter :: NWORD=8
-      integer, parameter :: NCHARPERWORD=4
-      integer, parameter :: NCHAR=NWORD*NCHARPERWORD
       integer, external :: f_crc32
-      character(len=NCHAR) :: name_S
+      character(len=32) :: name_S
       integer :: crc, lbuf, n, i0, i1
-      integer :: buf(NCHAR)  !#deliberatly have bigger buffer to prevent crc32 outof bound
+      integer :: buf(8)
       !---------------------------------------------------------------------
       if (len_trim(F_name_S) == 0) then
          F_id = 0
          return
-      endif
+      end if
       crc = 0
       lbuf = size(buf)
       name_S = F_name_S
-      buf = 0
-      do n=1, NWORD
-         i0 = 1+(n-1)*NCHARPERWORD
-         i1 = n*NCHARPERWORD
+      do n=1, lbuf
+         i0 = 1+(n-1)*4
+         i1 = n*4
          buf(n) = transfer(name_S(i0:i1), buf(n))
-      enddo
+      end do
       F_id = abs(f_crc32(crc, buf, lbuf))
       !---------------------------------------------------------------------
       return

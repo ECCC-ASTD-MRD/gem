@@ -373,7 +373,8 @@ contains
 
          ! Now, check for invalidity: an interior range of insufficient size
          if ( (llb_i > 1 .and. lub_i < ge_i .and. (lub_i-llb_i+1) < HALO) .or. &
-              (llb_j > 1 .and. lub_j < ge_j .and. (lub_j-llb_j+1) < HALO)) then
+              (llb_j > 1 .and. lub_j < ge_j .and. (lub_j-llb_j+1) < HALO) .or. &
+              (lub_i < llb_i) .or. (lub_j < llb_j)) then
             loc_max_level = ilevel-1
             exit
          end if

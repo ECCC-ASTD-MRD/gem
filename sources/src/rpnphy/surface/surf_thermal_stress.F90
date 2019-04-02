@@ -221,7 +221,6 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    !  b=Tmrt**4+a*A_T
    !  a= 1.335* 1E8 * va**0.71   / (em  *  D**0.4)
    !  4 solutions but 1 only in the desired range
-   !  ref:  Thorsson et al. (2007), inverse of equations (3) or (4)
    !   f = 1.73205 = 3.0**0.5 =
    !   g = 0.381571 =( 2.0**(1./3.) * 3.0**(2./3.) )**(-1.)
    !  cq = 3.4943 = 4.0 * (2./3.)**(1./3.)
@@ -245,9 +244,8 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
 
    !*       1.    set wind to a minimum value
    !               ---------------------------
-   !ZUA = MAX(0.1,PUA)             ! tests suggest a limit of 0.001
-   !ZUA = MAX(0.5,ZUMOD)            ! limit as in surf routine
-   ZUA = max(0.2,ZUMOD)            ! limit for forced convection
+   ! tests suggest a limit of 0.001 but 0.2 limit for free convection - and a max
+   ZUA = min(max(0.2,ZUMOD),20.0) 
 
    !*       2.    convection coefficient
    !               ---------------------------
@@ -279,15 +277,15 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    !*       4.    optional : verification (reciprocity)
    !               ---------------------------
 
-   ZTRAD2 = ( TGLOBE_BODY_SURF**4.0 +   &
-        ZWORKa*(TGLOBE_BODY_SURF -ZTA) )**0.25
+!   ZTRAD2 = ( TGLOBE_BODY_SURF**4.0 +   &
+!        ZWORKa*(TGLOBE_BODY_SURF -ZTA) )**0.25
 
-   ZDIFF= abs(ZTRAD2 -ZTRAD)
+!   ZDIFF= abs(ZTRAD2 -ZTRAD)
 
-   if (ZDIFF .gt. 0.1) then
+!   if (ZDIFF .gt. 0.1) then
       !#TODO: use of print in the physics must be used only for debugging purpose at it renders listings files unusable (too big) in operational configs
-      print*,'** Tglobe diff is  /',ZDIFF ,'i tr t u ',ZTRAD,ZTA,ZUA
-   endif
+!      print*,'** Tglobe diff is  /',ZDIFF ,'i tr t u ',ZTRAD,ZTA,ZUA
+!   endif
 
    return
 end function TGLOBE_BODY_SURF
@@ -341,13 +339,9 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
    ZTD=DWPT(ZT,ZRH)
    !    2. Compute the saturation mixing ratio in g/kg
    ZAW = W(ZTD,ZP)
-   ! print*,'MIXING RATIO(TD,P) i g/kg => AW= ',ZAW
-
    !    3. Compute the Dry Adiabat ZAO in C (INPUT:ZT,ZP)
    ZAO = O(ZT,ZP)
    ZPI = ZP
-   ! print*,'(theta in C) DRY ADIABAT(T,P) => AO= ',ZAO
-
    !    4. Iterate to determine local pressure ZPI (hPa)
    !       at the intersection of the two curves of saturation mixing ratio
    !       and dry adiabat (first guess is ZP)
@@ -364,7 +358,6 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
    !       ==> equivalent potential temperature of a parcel saturated
    !           at temperature ZTI and pressure ZPI
    ZAOS= OS(ZTI,ZPI)
-   ! print*,'SATURATION DRY ADIABAT thetaEq OS(TI,PI) => ZAOS= ',ZAOS
 
    !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its
    !       equivalent potential temperature
@@ -571,11 +564,7 @@ real function MRT_BODY_SURF(PEMISS_BODY,PQ2,PQ3,PQ4,  &
    ZQSHADE = PQ2+PQ3+PQ4+PQ5+PQ6+PQ7
 
    ! -- MRT
-   !IF (PRESENT(PQ1)  ) THEN
    MRT_BODY_SURF = ((PQ1+ZQSHADE)/PEMISS_BODY/STEFAN)**0.25
-   !ELSE
-   !   MRT_BODY_SURF = (ZQSHADE/PEMISS_BODY/STEFAN)**0.25
-   !ENDIF
 
    return
 end function MRT_BODY_SURF

@@ -47,7 +47,7 @@ contains
    subroutine fstmpio_set_iotype(F_iotype)
       implicit none
       !@objective Set the type of rpn_comm communicator used in ptopo for io
-      !           (PTOPO_BLOC or PTOPO_IO)
+      !           (PTOPO_BLOC or PTOPO_IODIST)
       !@arguments
       integer, intent(in) :: F_iotype
       !*@/

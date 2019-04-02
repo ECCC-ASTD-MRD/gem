@@ -110,7 +110,7 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    real, dimension(n) :: my_ta,my_qa
    real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
-   real, dimension(n) :: zusurfzt, zvsurfzt
+   real, dimension(n) :: zusurfzt, zvsurfzt, zqd
 
    integer I
    real qsat_o_salty, delh, delq
@@ -515,16 +515,18 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    !#TODO: at least 4 times identical code in surface... separeted s/r to call
    IF_THERMAL_STRESS: if (thermal_stress) then
 
-      ! Compute wind at z=zt
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
-           hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
-           tdiaglim=WATER_TDIAGLIM)
-      if (i /= SL_OK) then
-         call physeterror('water', 'error 3 returned by surface layer calculations')
-         return
-      endif
+   ! Compute wind at z=zt
+   i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+        hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
+        tdiaglim=WATER_TDIAGLIM)
+
+   if (i /= SL_OK) then
+      call physeterror('water', 'error 3 returned by surface layer calculations')
+      return
+   endif
 
       do I=1,N
+
          if (abs(zzusl(i)-zu) <= 2.0) then
             zu10(i) = sqrt(uu(i)**2+vv(i)**2)
          else
@@ -532,21 +534,27 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
          endif
 
          ! wind  at SensoR level zubos at z=zt
-         zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
-         ! zusr(i) = zu10(i)
+         if( (abs(zusurfzt(i)) >= 0.1) .and. (abs(zvsurfzt(i)) >= 0.1)) then
+         zusr(i) = sqrt( zusurfzt(i)**2 + zvsurfzt(i)**2)
+         else
+         zusr(i) = zu10(i)
+         endif
+
+            zqd(i) =max( ZQDIAG(i) , 1.e-6)  
 
          zref_sw_surf(i) = alvis_wat(i) * zflusolis(i)
-         zemit_lw_surf(i) = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
+         zemit_lw_surf(i)  = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
               *ztsurf(i)**4
-         zzenith(I) = acos(zcoszeni(I))      ! direct use of bus zenith
+         zzenith(i) = acos(zcoszeni(i))      
          if (zflusolis(i) > 0.0) then
             zzenith(i) = min(zzenith(i), pi/2.)
          else
             zzenith(i) = max(zzenith(i), pi/2.)
          endif
+
       end do
 
-      call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
            ZU10,ZUSR,  ps,                             &
            ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
            ZREF_SW_SURF,ZEMIT_LW_SURF,                 &

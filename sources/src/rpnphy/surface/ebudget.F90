@@ -24,7 +24,8 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
    use tdpack
-   use sfc_options, only: rad_off, atm_external, isba_melting_fix, snow_emiss, &
+   use sfc_options, only: rad_off, atm_external, isba_melting_fix, &
+        isba_no_warm_sn_freez, snow_emiss, &
         snow_emiss_const, isba_soil_emiss, isba_soil_emiss_const
    implicit none
 #include <arch_specific.hf>
@@ -332,10 +333,22 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
 
          TST(I) = min(TRPL,TST(I)+TEMPO)             
 
-      else
+      else if ( (tempo > 0.) .and. (TST(I) >= TRPL ) ) then
+         
+         ! Trying to WARM UP surface temp. that is initially
+         ! above zero by freezing liquid water
+         ! in  snow ... don't let it happen if  isba_no_warm_sn_freez=.TRUE.
 
-         TST(I) = TST(I)+TEMPO
+         if ( .not.  isba_no_warm_sn_freez ) then 
 
+            TST(I) = TST(I)+TEMPO
+
+         endif
+
+      else 
+         
+            TST(I) = TST(I)+TEMPO
+      
       endif
    end do
 

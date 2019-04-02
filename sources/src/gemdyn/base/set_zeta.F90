@@ -16,36 +16,24 @@
 !  s/r set_zeta    - Generates A and B of the hybrid coordinate
 !                    Also sets Z and other related vertical parameters.
 !
-      subroutine set_zeta ( F_hybuser, Nk )
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_put,&
-                                   vgd_levels,vgd_free,VGD_OK,VGD_ERROR,vgd_print
-      use vgrid_wb, only: vgrid_wb_put
-      use gmm_pw
-      use HORgrid_options
+      subroutine set_zeta (F_hybuser, Nk)
+      use cstv
       use dyn_fisl_options
       use dynkernel_options
-      use VERgrid_options
-      use glb_ld
-      use cstv
-      use lun
-      use dimout
-      use out_mod
       use levels
       use ver
+      use VERgrid_options
+      use vGrid_Descriptors
+      use vgrid_wb
       use wb_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-      integer Nk
-      real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
+      integer, intent(in) :: Nk
+      real, dimension(Nk), intent(in) :: F_hybuser        !user-specified hybrid coordinate values
 !
 ! authors
 !      A. Plante & C. Girard - CMC - janvier 2008
-!
-! revision
-!
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_4  - Plante - add standard pressure profils for physics.
 !
 ! object
 !    To return A, B parameters for momentum and thermodynamic levels
@@ -121,8 +109,8 @@
 ! none
 !
 
-      character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
-      character(len=32), parameter  :: VGRID_T_S  = 'ref-t'
+      character(len=32), parameter :: VGRID_M_S  = 'ref-m'
+      character(len=32), parameter :: VGRID_T_S  = 'ref-t'
 
       type(vgrid_descriptor) :: vcoord
       character(len=32) :: REFP0_S, REFP0_LS_S, dumc
@@ -241,6 +229,8 @@
          Ver_z_8%m(k) = Ver_a_8%m(k)-Ver_b_8%m(k)*Cstv_Sstar_8
          Ver_z_8%t(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
       end do
+
+      if ( Schm_autobar_L ) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
 
      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Cstv_Ztop_8

@@ -67,8 +67,8 @@ REAL, DIMENSION(:), INTENT(IN)  :: PT_CAN  ! Air canyon temperature (K)
 REAL, DIMENSION(:), INTENT(IN)  :: PTA     ! Air temperature above the roof (K)  
 REAL, DIMENSION(:), INTENT(IN)  :: PTI_BLD ! Indoor air temperature (K) 
 
-REAL, DIMENSION(:), INTENT(INout)  :: PQ_CAN  ! Canyon specific humidity (kg/kg)
-REAL, DIMENSION(:), INTENT(INout)  :: PQA     ! Air specific humidity over the roof (kg/kg)
+REAL, DIMENSION(:), INTENT(IN)  :: PQ_CAN  ! Canyon specific humidity (kg/kg)
+REAL, DIMENSION(:), INTENT(IN)  :: PQA     ! Air specific humidity over the roof (kg/kg)
 REAL, DIMENSION(:), INTENT(IN)  :: PQI_BLD ! Indoor specific humidity (kg/kg) 
 
 REAL, DIMENSION(:), INTENT(IN)  :: PPA     

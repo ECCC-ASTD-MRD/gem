@@ -116,7 +116,7 @@
       outiter = 0
       nbiter = 0
 
-      conv = 1.d0
+      conv = 0.d0
 
       vv = 0.d0
 
@@ -248,8 +248,8 @@
 
             deallocate ( v_local_prod, v_prod)
 
-            rr(initer,initer)    = sqrt( rr(initer,initer) )
-            vv(:, :, :, initer)  = vv(:, :, :, initer) / rr(initer,initer)
+            rr(initer,initer) = sqrt( rr(initer,initer) )
+            vv(i0:in, j0:jn, 1:l_nk, initer)  = vv(i0:in, j0:jn, 1:l_nk, initer) / rr(initer,initer)
 
             rr(initer,nextit) = rr(initer,nextit) / rr(initer,initer)
 

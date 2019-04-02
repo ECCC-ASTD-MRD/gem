@@ -23,7 +23,7 @@ module phy_input_mod
         inputio_nbvar, inputio_isvarstep, inputio_meta, inputio_get, &
         INPUT_FILES_GEOP, INPUT_FILES_CLIM, INPUTIO_T
    use mu_jdate_mod
-   use ptopo_utils, only: PTOPO_BLOC, PTOPO_IO, ptopo_iotype
+   use ptopo_utils, only: PTOPO_BLOC, PTOPO_IODIST, ptopo_iotype
    use statfld_dm_mod, only: statfld_dm
    use str_mod, only: str_concat, str_encode_num
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
@@ -142,8 +142,6 @@ contains
          return
       endif
 
-      if (input_type == 'OLD') ptopo_iotype = PTOPO_BLOC
-
       !# Re-set the phy read list
       phyinread_n = 0
       phyinread_jdateo = jdateo
@@ -179,23 +177,13 @@ contains
       F_istat = RMN_OK
       if (input_type /= 'DIST') istat = rpn_comm_bloc(ninblocx, ninblocy)
       VARLOOP: do ivar=1,nbvar
-         if (input_type == 'OLD') then
-            istat = input_isvarstep(inputid, ivar, F_step)
-         else
-            istat = inputio_isvarstep(inputobj, ivar, F_step)
-        endif
+         istat = inputio_isvarstep(inputobj, ivar, F_step)
          if (.not.RMN_IS_OK(istat)) then
             cycle VARLOOP !var not requested at this step
          endif
-         if (input_type == 'OLD') then
-            istat = input_meta(inputid, ivar, inname_S, inname2_S, &
-                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
-                 F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
-         else
-            istat = inputio_meta(inputobj%cfg, ivar, inname_S, inname2_S,  &
-                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
-                 F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
-         endif
+         istat = inputio_meta(inputobj%cfg, ivar, inname_S, inname2_S,  &
+              dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
+              F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR,'(phy_input) problem getting input varname')
             cycle VARLOOP
@@ -246,12 +234,8 @@ contains
 !!$            print *,'(phy_input)0 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
 
             nullify(data,data2)
-            if (input_type == 'OLD') then
-               istat = input_get(inputid, ivar, F_step, phy_lcl_gid, vgrid_S, data, data2, F_ovname1_S=inname_S, F_ovname2_S=inname2_S) !#TODO: ovname
-            else
-               istat = inputio_get(inputobj, ivar, F_step, data, data2, &
-                    F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
-            endif
+            istat = inputio_get(inputobj, ivar, F_step, data, data2, &
+                 F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
 !!$            print *,'(phy_input)1 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
             if (.not.(RMN_IS_OK(istat).and. &
                  associated(data).and.&
@@ -358,46 +342,28 @@ contains
          return
       endif
       my_istat = RMN_OK
-      OLD: if (input_type == 'OLD') then
-         inputid = input_new(my_jdateo, my_idt, my_incfg_S)
-         istat = inputid
-         if (RMN_IS_OK(istat)) then
-            call phyinputdiag(inputid)
-            nbvar = input_nbvar(inputid)
-            istat = input_set_basedir(inputid, my_basedir_S)
-            istat = min(input_setgridid(inputid, phy_lclcore_gid), istat)
-         endif
-         if (RMN_IS_OK(istat)) then
-            istat = input_set_filename(inputid, 'geop', my_geoname_S, &
-                 IS_DIR, INPUT_FILES_GEOP)
-            istat = min(istat, &
-                 input_set_filename(inputid, 'ozon', my_ozonename_S, &
-                 IS_DIR, INPUT_FILES_CLIM))
-         endif
-      else !OLD
-         if (input_type == 'BLOC') then
-            iotype = PTOPO_BLOC
-            istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
-                 my_basedir_S, phy_lcl_gid, phy_lclcore_gid, phy_comm_io_id, &
-                 F_li0=1, F_lin=phy_lcl_ni, F_lj0=1, F_ljn=phy_lcl_nj, &
-                 F_iotype=iotype)
-         else
-            iotype = PTOPO_IO !#TODO: rename to DIST
-            istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
-                 my_basedir_S, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id, &
-                 F_li0=phy_lcl_i0, F_lin=phy_lcl_in, F_lj0=phy_lcl_j0, F_ljn=phy_lcl_jn, &
-                 F_iotype=iotype)
-         endif
-         if (RMN_IS_OK(istat)) then
-            call phyinputdiag(inputobj)
-            nbvar = inputio_nbvar(inputobj)
-            istat = inputio_set_filename(inputobj, 'geop', my_geoname_S, &
-                 IS_DIR, INPUT_FILES_GEOP)
-            istat = min(istat, &
-                 inputio_set_filename(inputobj, 'ozon', my_ozonename_S, &
-                 IS_DIR, INPUT_FILES_CLIM))
-         endif
-      endif OLD
+      if (input_type == 'BLOC') then
+         iotype = PTOPO_BLOC
+         istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
+              my_basedir_S, phy_lcl_gid, phy_lclcore_gid, phy_comm_io_id, &
+              F_li0=1, F_lin=phy_lcl_ni, F_lj0=1, F_ljn=phy_lcl_nj, &
+              F_iotype=iotype)
+      else
+         iotype = PTOPO_IODIST
+         istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
+              my_basedir_S, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id, &
+              F_li0=phy_lcl_i0, F_lin=phy_lcl_in, F_lj0=phy_lcl_j0, F_ljn=phy_lcl_jn, &
+              F_iotype=iotype)
+      endif
+      if (RMN_IS_OK(istat)) then
+         call phyinputdiag(inputobj)
+         nbvar = inputio_nbvar(inputobj)
+         istat = inputio_set_filename(inputobj, 'geop', my_geoname_S, &
+              IS_DIR, INPUT_FILES_GEOP)
+         istat = min(istat, &
+              inputio_set_filename(inputobj, 'ozon', my_ozonename_S, &
+              IS_DIR, INPUT_FILES_CLIM))
+      endif
       if (.not.RMN_IS_OK(istat)) &
            call msg(MSG_ERROR, '(phy_input) input module initialization problem')
       my_istat = min(istat, my_istat)

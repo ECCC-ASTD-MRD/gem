@@ -16,12 +16,8 @@
 !**s/p calomeg_w - compute vertical velocity in pressure coordinates
 !                    from advection
 !
-
-
-!
-      subroutine calomeg_w (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
-!
-      use gem_options
+      subroutine calomeg_w (F_ww,F_st1,F_sl,F_wt1,F_tt1,F_lnp,Minx,Maxx,Miny,Maxy,Nk)
+      use dynkernel_options
       use tdpack
       use glb_ld
       use cstv
@@ -33,14 +29,11 @@
       integer, intent(in) :: Minx,Maxx,Miny,Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_ww
       real, dimension(Minx:Maxx,Miny:Maxy),    intent(in)  :: F_st1
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_wt1, F_tt1
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_wt1, F_tt1, F_lnp
       real, dimension(Minx:Maxx,Miny:Maxy),    intent(in)  :: F_sl
 !
 !author
 !     Claude Girard et Andre Plante avril 2008.
-!
-!revision
-! v4.0.4 Andre Plante Nov. 2008 ajout de vsexp.
 !
 !object
 !	compute vertical velocity in hydrostatic pressure coordinates
@@ -52,12 +45,12 @@
 !                w   real vertical wind
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_ww           O                 dpi/dt (Pa/s)
-! F_st1        I                   s at time t1 = exp(PIt1/Zsruf)
-! F_wt1        I                   real vertical wind
-! F_tt1        I                   virtual temperature
+!  Name               Description
+!---------------------------------------------------
+! F_ww               dpi/dt (Pa/s)
+! F_st1               s at time t1 = exp(PIt1/Zsruf)
+! F_wt1               real vertical wind
+! F_tt1               virtual temperature
 !
 
 
@@ -69,11 +62,19 @@
 !$omp parallel private(t1,t2,i,j,k)
 !$omp do
       do k=1,l_nk
-         do j=1,l_nj
-            do i=1,l_ni
-               t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j) + Ver_c_8%t(k)*F_sl(i,j)
+         if(trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            do j=1,l_nj
+               do i=1,l_ni
+                  t1(i,j)= F_lnp(i,j,k)
+               end do
             end do
-         end do
+         else
+            do j=1,l_nj
+               do i=1,l_ni
+                  t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j) + Ver_c_8%t(k)*F_sl(i,j)
+               end do
+            end do
+         end if
          call vsexp(t2,t1,l_ni*l_nj)
          do j=1,l_nj
             do i=1,l_ni

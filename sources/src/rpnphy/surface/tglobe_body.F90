@@ -103,23 +103,19 @@ REAL, DIMENSION(SIZE(PTRAD)) :: PTRAD2 ! body MRT for verification
 REAL, DIMENSION(SIZE(PTRAD)) :: ZDIFF ! body MRT for verification
 INTEGER :: JJ
 ! 
-!constantes :
-!  print*,'CONSTANTES ZCF,ZCG,ZCQ,ZGD,ZGE = ',ZCF,ZCG,ZCQ,ZGD,ZGE
-!  print*,'CONSTANTES zGD,ZGE = ',ZGD,ZGE
-
 !*       1.    set wind to a minimum value
 !               ---------------------------
 !
 !ZUA(:) = MAX(0.1,PUA(:))             ! tests suggest a limit of 0.001
 !ZUA(:) = MAX(1.0,PUA(:))             ! limit as in teb routine
-ZUA(:) =  MAX(0.2,PUA(:))             ! lower limit for forced convection 
+!ZUA(:) =  MAX(0.2,PUA(:))             ! lower limit for forced convection 
+ZUA(:) =  min(MAX(0.2,PUA(:)) ,20.0) 
 
 !*       2.    convection coefficient
 !               ---------------------------
 ! convection coeff set to =  1.100 * 1.0E8 * U**0.6          ASHRAE - Kuehn et al. 1970
  ZWORKA(:) =  1.1* 1.0E8 * ZUA(:) **0.6   / (ZGE  *  ZGD**0.4)
 ! convection coeff set to =  1.335 * 1.0E8 * U**0.71     Thorsson et al., 2009
-!  ZUA(:) = MIN ( ZUA(:) ,11.0)                       ! upper limit for applicability of the resolution
 !  ZWORKA(:) = 1.335 * 1.0E8 * ZUA(:) **0.71   / (ZGE  *  ZGD**0.4)
 
 !*       3.    analytic resolution
@@ -130,13 +126,10 @@ ZWORKB(:) = PTRAD(:) **4. + ZWORKA(:) * PTA(:)
  ZWORKm(:)=9.*ZWORKA(:)**2.
  ZWORKN(:)=27.*ZWORKA(:)**4.
  ZWORKp(:)=256.*ZWORKB(:)**3.
-!  ZWORKq(:)= ZCQ * ZWORKB(:)         
  ZWORKq(:)= 3.4943 * ZWORKB(:)         
 
-! ZWORKE(:)= (ZWORKM(:)+ZCF*(ZWORKN(:)+ZWORKP(:))**0.5)**(1./3.)
 ZWORKE(:)= (ZWORKM(:)+1.73205*(ZWORKN(:)+ZWORKP(:))**0.5)**(1./3.)
 
-! ZWORKK(:)=ZWORKE(:)*ZCG1 -ZWORKQ(:)/ZWORKE(:)
 ZWORKK(:)=ZWORKE(:)*0.381571 -ZWORKQ(:)/ZWORKE(:)
 
 ZWORKI(:)= 0.5 *  ( 2.0 * ZWORKA(:) /  ZWORKK(:)**0.5  - ZWORKK(:))**0.5
@@ -147,17 +140,16 @@ ZWORKJ(:)= 0.5 * ZWORKK(:)**0.5
 !*       4.    optional : verification (reciprocity)
 !               ---------------------------
 !
-PTRAD2(:) = ( PTGLOBE_BODY(:)**4.0 +   &
-             ZWORKa(:)*(PTGLOBE_BODY(:) -PTA(:)) )**0.25
+!PTRAD2(:) = ( PTGLOBE_BODY(:)**4.0 +   &
+!             ZWORKa(:)*(PTGLOBE_BODY(:) -PTA(:)) )**0.25
 
-ZDIFF(:)= abs(PTRAD2(:) -PTRAD(:))
+!ZDIFF(:)= abs(PTRAD2(:) -PTRAD(:))
 
-      DO JJ=1,SIZE(PTRAD)
- IF (ZDIFF(JJ) .gt. 0.1) THEN
-  print*,'** Tglobe diff is  /',ZDIFF(JJ) ,'i tr t u ',JJ, PTRAD(JJ), PTA(JJ),ZUA(JJ)
- ENDIF
-     ENDDO 
-
+!      DO JJ=1,SIZE(PTRAD)
+! IF (ZDIFF(JJ) .gt. 0.1) THEN
+!  print*,'** Tglobe diff is  /',ZDIFF(JJ) ,'i tr t u ',JJ, PTRAD(JJ), PTA(JJ),ZUA(JJ)
+! ENDIF
+!     ENDDO 
 
   END
 

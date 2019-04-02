@@ -42,21 +42,13 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character(len=16) :: datev
-      integer :: stepf,last_step, seconds_since, istat, print_label
+      integer :: stepf,last_step, seconds_since, istat
       real*8 :: dayfrac
 
       real*8, parameter :: sec_in_day = 86400.0d0
 !
 !     ---------------------------------------------------------------
 !
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         assign 1001 to print_label
-      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         assign 1002 to print_label
-      else
-         assign 1003 to print_label
-      end if
-
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Step_runstrt_S,dayfrac)
 
@@ -91,7 +83,19 @@
          seconds_since = model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
-         if (Lun_out > 0) write (Lun_out,print_label) Lctl_step,last_step
+
+         if (Lun_out > 0) then
+
+            select case (trim(Dynamics_Kernel_S))
+               case ('DYNAMICS_EXPO_H')
+                  write (Lun_out,1001) Lctl_step, last_step
+               case ('DYNAMICS_FISL_H')
+                  write (Lun_out,1002) Lctl_step, last_step
+               case default
+                  write (Lun_out,1003) Lctl_step, last_step
+            end select
+
+         end if
 
          call out_outdir()
 
@@ -107,7 +111,7 @@
 
          call canonical_cases ("ERR")
 
-         call iau_apply2 (Step_kount)
+         call iau_apply (Step_kount)
 
          if (Grd_yinyang_L .or. Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL') then
             call yyg_xchng_all()
@@ -115,7 +119,7 @@
 
          if ( Ctrl_phyms_L.or.Dcmip_physics_L ) then
             istat = gmm_get (gmmk_tt1_s, tt1)
-            call tt2virt2 (tt1, .true., &
+            call tt2virt (tt1, .true., &
             l_minx,l_maxx,l_miny,l_maxy, G_nk)
             call itf_phy_UVupdate()
             call pw_update_GPW()
@@ -146,7 +150,7 @@
              /,'=========================================================')
  1002 format(/,'FISL-H: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
              /,'=========================================================')
- 1003 format(/,'DYNAMICS: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
+ 1003 format(/,'FISL-P: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
              /,'=========================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'GEM_RUN: END OF THE TIME LOOP AT TIMESTEP',I8, &

@@ -51,13 +51,13 @@ REAL, DIMENSION(N), INTENT(IN)  :: PEMIT_LW_ROOF !Longwave radiation emitted by 
 REAL, DIMENSION(N), INTENT(IN)  :: PBLD !Building surface fraction
 REAL, DIMENSION(N), INTENT(IN)  :: PBLD_HEIGHT !Building surface fraction
 REAL, DIMENSION(N), INTENT(IN)  :: PWALL_O_HOR !Building surface fraction
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ1
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ2
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ3
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ4
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ5
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ6
-REAL, DIMENSION(N), INTENT(INOUT)  :: PQ7
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ1
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ2
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ3
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ4
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ5
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ6
+REAL, DIMENSION(N), INTENT(OUT)  :: PQ7
 !
 REAL, INTENT(IN) :: ZHB  ! average height of the body
 REAL, INTENT(IN) :: ZAB  !absorption coef of solar radiation by the  body       
@@ -74,7 +74,6 @@ REAL, DIMENSION(N) :: ZFROOF! roof view factor of human body
 REAL, DIMENSION(N) :: ZFSKY !sky view factor of human body
 REAL, DIMENSION(N) :: ZDIRSWBODY !solar radiation received by human body
 REAL, DIMENSION(N) :: ZELEV !solar elevation angle
-REAL, DIMENSION(N) :: ZRADBODY !total radiation received by human body
 
 INTEGER :: JJ
 !
@@ -199,7 +198,6 @@ INTEGER :: JJ
       ZDIRSWBODY(JJ) = PDIR_SW(JJ) * 0.25 /  MAX( COS(PZENITH(JJ)) ,0.1) 
  ENDIF
 
-     ZRADBODY  (JJ) = ZRADBODY(JJ) + ZAB/ZEB*ZDIRSWBODY(JJ)
 !==
   PQ1(JJ)=ZAB* ZDIRSWBODY(JJ)
 !

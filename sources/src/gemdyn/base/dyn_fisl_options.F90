@@ -160,12 +160,6 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Sol_type_S
    namelist /dyn_fisl_p/ Sol_type_S
 
-   !# * True-> use FFT solver if possible
-   !# * False-> use MXMA solver (slower,less precise)
-   logical :: sol_fft_L = .true.
-   namelist /dyn_fisl/ Sol_fft_L
-   namelist /dyn_fisl_p/ Sol_fft_L
-
    !# Epsilon convergence criteria for none Yin-Yang iterative solver
    real*8 :: sol_fgm_eps   = 1.d-07
    namelist /dyn_fisl  / Sol_fgm_eps

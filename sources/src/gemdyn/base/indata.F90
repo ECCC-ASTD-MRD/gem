@@ -16,7 +16,7 @@
 !**s/r indata - Read and process the input data at
 !               beginning of integration
 
-      subroutine indata
+      subroutine indata()
       use ctrl
       use dynkernel_options
       use gem_options
@@ -32,6 +32,7 @@
       use step_options
       use theo_options
       use tr3d
+      use metric
       use gem_timing
       implicit none
 #include <arch_specific.hf>
@@ -60,7 +61,7 @@
       zdt1=0. ; wt1=0. ; qt1= 0.
 
       if ( Ctrl_theoc_L ) then
-         call theo_data (pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0)
+         call theo_data (pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0,sls)
       else if ( Ctrl_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
@@ -82,10 +83,19 @@
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
 
-         call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
-                         zdt1,st1,qt1,fis0               ,&
-                         l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
-                         .false. ,'TR/',':P',Step_runstrt_S )
+         if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+             trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
+            call fislh_inp_data ( pw_uu_plus,pw_vv_plus,pw_tt_plus ,&
+                                  qt1,zdt1,wt1,fis0,sls            ,&
+                                  l_minx,l_maxx,l_miny,l_maxy,G_nk ,&
+                                  .false.,'TR/',':P',Step_runstrt_S )
+         end if
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+            call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
+                            zdt1,st1,qt1,fis0               ,&
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
+                            .false. ,'TR/',':P',Step_runstrt_S )
+         end if
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
                         perturb_nbits, perturb_npts, dimens )
          call gemtime_stop  ( 71 )
@@ -117,9 +127,17 @@
       end do
 
       if (.not. Ctrl_testcases_L) then
-         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
+      end if
+
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+           trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
+         call fislh_metric ()
+         call fislh_diag_zd_w( zdt1,wt1, ut1,vt1,tt1,qt1        ,&
+                               l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                               .not.Inp_zd_L, .not.Inp_w_L )
       end if
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
@@ -135,8 +153,7 @@
 
       call out_outdir()
 
-      call iau_apply2 (0)
-
+      call iau_apply (0)
 
       if ( Ctrl_phyms_L ) call itf_phy_step (0,Lctl_step)
 
@@ -157,7 +174,6 @@
       end
 
       subroutine bitflip (u,v,t,nbits,npts,n)
-      use gem_timing
       implicit none
 
       integer, intent(in) :: n,nbits,npts

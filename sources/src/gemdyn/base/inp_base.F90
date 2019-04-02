@@ -15,7 +15,7 @@
 
 module inp_base
    use iso_c_binding
-   use vertical_interpolation, only: vertint2
+   use vertical_interpolation
    use vGrid_Descriptors
    use gem_options
    use inp_options
@@ -168,7 +168,7 @@ contains
          case ('GEOPOTENTIAL')
             if (Inp_kind == 2  ) nomvar= 'GZ'
             if (Inp_kind == 1  ) nomvar= '@NUL'
-            if (Inp_kind == 5  ) nomvar= '@NUL'
+            if (Inp_kind == 5  ) nomvar= 'GZ'
             if (Inp_kind == 105) nomvar= '@NUL'
             if ( nomvar == 'GZ' ) mult= 10.d0
          case ('UU')

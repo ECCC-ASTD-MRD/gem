@@ -20,8 +20,9 @@
        use step_options
        use hvdif_options
        use geomh
-      use glb_ld
-      use ver
+       use glb_ld
+       use ver
+       use dynkernel_options
        implicit none
 #include <arch_specific.hf>
 
@@ -33,6 +34,7 @@
 !
        eq_nlev = 0
        Href2   = (16000./log(10.))**2 ! (~6950 m)**2
+       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Href2 = 1.0d0
 
 ! Check stability criteria and count level to diffuse.
 
@@ -73,14 +75,14 @@
        if (Eq_ramp_L) then
           pdb = P_lmvd_high_lat - P_lmvd_low_lat
           do j= 1, l_nj
-          do i= 1, l_ni
-             pdtmp = abs(geomh_latrx(i,j))
-             pda   = min(1.0d0,max(0.0d0,(pdtmp-P_lmvd_low_lat)/pdb))
-             pdc   = (3.-2.*pda)*pda*pda
-                     eponmod(i,j) = pdc  * P_lmvd_weigh_high_lat + &
-                     (1. - pdc) * P_lmvd_weigh_low_lat
-             eponmod(i,j) = max(0.0,min(1.0,eponmod(i,j)))
-          end do
+            do i= 1, l_ni
+               pdtmp = abs(geomh_latrx(i,j))
+               pda   = min(1.0d0,max(0.0d0,(pdtmp-P_lmvd_low_lat)/pdb))
+               pdc   = (3.-2.*pda)*pda*pda
+               eponmod(i,j) = pdc  * P_lmvd_weigh_high_lat + &
+                              (1. - pdc) * P_lmvd_weigh_low_lat
+               eponmod(i,j) = max(0.0,min(1.0,eponmod(i,j)))
+            end do
           end do
        else
           eponmod = 1.

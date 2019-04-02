@@ -17,7 +17,7 @@
 
       subroutine stat_mass_tracers (F_time,F_comment_S)
 
-      use adv_options
+      use adz_options
       use dyn_fisl_options
       use glb_ld
       use gmm_itf_mod
@@ -63,9 +63,9 @@
 
       !Evaluation of Mass on SUBSET of YIN available only if ONE processor on Yin
       !--------------------------------------------------------------------------
-      if (Grd_yinyang_L.and.Adv_pil_sub_s>0.and.Ptopo_numproc==1) do_subset_GY_L = .true.
+      if (Grd_yinyang_L.and.Adz_pil_sub_s>0.and.Ptopo_numproc==1) do_subset_GY_L = .true.
 
-      i0_sb = 1+Adv_pil_sub_w ; j0_sb = 1+Adv_pil_sub_s ; in_sb = l_ni-Adv_pil_sub_e; jn_sb = l_nj-Adv_pil_sub_n
+      i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
 
       !Terminator: Initialization
       !--------------------------
@@ -100,7 +100,7 @@
          call mass_tr (tracer_8,fld_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0,in,j0,jn,k0)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,'  C= ', &
-                                                                  tracer_8/Adv_gc_area_8,Tr3d_name_S(n)(1:4),F_comment_S
+                                                                  tracer_8/Adz_gc_area_8,Tr3d_name_S(n)(1:4),F_comment_S
 
          !Print the mass of each tracer scaled by area (SUBSET of YIN)
          !------------------------------------------------------------
@@ -113,7 +113,7 @@
             call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0)
 
             if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
-                                                                     tracer_8/Adv_gs_area_8,Tr3d_name_S(n)(1:4),F_comment_S
+                                                                     tracer_8/Adz_gs_area_8,Tr3d_name_S(n)(1:4),F_comment_S
 
          end if
 
@@ -137,12 +137,12 @@
       call mass_tr (tracer_8,fld_ONE,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0,in,j0,jn,k0)
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,'  C= ', &
-                                                               tracer_8/Adv_gc_area_8,'RHO ',F_comment_S
+                                                               tracer_8/Adz_gc_area_8,'RHO ',F_comment_S
 
       !Same scaling as in STAT_PSADJ
       !-----------------------------
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,'  C= ', &
-                                                               tracer_8/Adv_gc_area_8*grav_8,'RHOg',F_comment_S
+                                                               tracer_8/Adz_gc_area_8*grav_8,'RHOg',F_comment_S
 
       !Print Total Air mass scaled by area (SUBSET of YIN)
       !---------------------------------------------------
@@ -155,7 +155,7 @@
          call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
-                                                                  tracer_8/Adv_gs_area_8,'RHO ',F_comment_S
+                                                                  tracer_8/Adz_gs_area_8,'RHO ',F_comment_S
 
       end if
 

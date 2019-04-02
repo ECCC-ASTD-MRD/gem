@@ -16,14 +16,15 @@
 !**s/r out_thm - output  temperature, humidity and mass fields
 
       subroutine out_thm ( levset, set )
-      use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
-      use vgrid_wb, only: vgrid_wb_get
+      use dynkernel_options
+      use metric
+      use vertical_interpolation
+      use vGrid_Descriptors
+      use vgrid_wb
       use geomh
       use gmm_vt1
       use gmm_pw
       use gmm_geof
-      use HORgrid_options
       use VERgrid_options
       use gem_options
       use out_options
@@ -38,12 +39,11 @@
       use outp
       use outd
       use ver
-      use type_mod
       use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-      integer levset,set
+      integer, intent(in) :: levset, set
 
       type :: stg_i
          integer :: t,m,p
@@ -244,14 +244,23 @@
 
       if ( lastdt /= Lctl_step ) then
 
-         istat = gmm_get(gmmk_qt1_s,qt1)
-         call diag_fi (gzm, st1, tt1, qt1, &
-                     l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+         if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+             trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')then
+            gzm(:,:,1:G_nk+1)=grav_8*zmom(:,:,1:G_nk+1)
+            gzt(:,:,1:G_nk+1)=grav_8*ztht(:,:,1:G_nk+1)
+         else
+            istat = gmm_get(gmmk_qt1_s,qt1)
+            call diag_fi (gzm, st1, tt1, qt1, &
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
-         gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
+            gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
 
-         call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
-                        l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
+            call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
+                            l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
+         end if
+
+         ! TODO fix following error araising when -C floag is on and no physics :
+         !forrtl: severe (408): fort: (2): Subscript #3 of the array VT has value 85 which is greater than the upper bound of 84
          call out_liebman (ttx, htx, vt, gzt, fis0, wlao, &
                         l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk,nk_src)
 
@@ -262,8 +271,8 @@
 !     Calculate PN
       if (pnpn /= 0) then
          call vslog (w2, p0, l_ninj)
-         call pnm2  (w1, vt(l_minx,l_miny,nk_src),fis0,w2,wlao, &
-                ttx,htx,nk_under,l_minx,l_maxx,l_miny,l_maxy,1)
+         call pnm (w1, vt(l_minx,l_miny,nk_src), fis0, w2, wlao, &
+                   ttx, htx, nk_under, l_minx, l_maxx, l_miny, l_maxy, 1)
          if (Outd_filtpass(pnpn,set) > 0) &
              call filter2( w1,Outd_filtpass(pnpn,set),Outd_filtcoef(pnpn,set),&
                            l_minx,l_maxx,l_miny,l_maxy,1)
@@ -286,27 +295,30 @@
               'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
               knd,-1,1,ind0, 1, Outd_nbit(pnp0,set),.false.)
          if(Schm_sleve_L)then
-            ! This is constant during the integration. This could be done just once and saved, is it worthwile??
-            istat = gmm_get (gmmk_sls_s ,sls )
-            ! Pourquoi faire cette copie??
-            w1(:,:)= sls(:,:)
-            ! Must do exchange if calculating in the halos
-            call rpn_comm_xch_halo(w1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                          1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-            call vsexp (w2,w1,l_ninj)
-            do j=l_miny,l_maxy
-               do i=l_minx,l_maxx
-                  w1(i,j) = w2(i,j)*Cstv_pref_8
+            if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' )then
+               ! This is constant during the integration. This could be done just once and saved, is it worthwile??
+               istat = gmm_get (gmmk_sls_s ,sls )
+               ! Pourquoi faire cette copie??
+               w1(:,:)= sls(:,:)
+               ! Must do exchange if calculating in the halos
+               call rpn_comm_xch_halo(w1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
+                                      1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+               call vsexp (w2,w1,l_ninj)
+               do j=l_miny,l_maxy
+                  do i=l_minx,l_maxx
+                     w1(i,j) = w2(i,j)*Cstv_pref_8
+                  end do
                end do
-            end do
-            call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
-              'P0LS',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
-              knd,-1,1,ind0, 1,32,.false.)
-         end if
-      end if
+               call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+                                 'P0LS',Outd_convmult(pnp0,set),&
+                                 Outd_convadd(pnp0,set),knd,-1,1,&
+                                 ind0, 1,32,.false.)
+            end if
+         end if ! Sleve
+      end if ! P0
 
       if (pnww /= 0) then
-         call calomeg_w(myomega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call calomeg_w(myomega,st1,sls,wt1,tt1,wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk)
       end if
 
       if (pnth /= 0) then
@@ -754,6 +766,18 @@
              call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                   'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set), &
                   knd,-1,nko, indo, nko, Outd_nbit(pnww,set),.false. )
+        end if
+
+         if (pnzz /= 0) then
+           call vertint2 ( w5,cible,nko, wt1,wlnph_ta,G_nk         ,&
+                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                            inttype=Out3_vinterp_type_S )
+            if (Outd_filtpass(pnzz,set).gt.0) &
+                call filter2( w5,Outd_filtpass(pnzz,set),Outd_filtcoef(pnzz,set), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
+             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+                  'ZZ  ',Outd_convmult(pnzz,set),Outd_convadd(pnzz,set),&
+                  knd,-1,nko, indo, nko, Outd_nbit(pnzz,set),.false. )
         end if
 
         deallocate(indo,rf,prprlvl,cible)

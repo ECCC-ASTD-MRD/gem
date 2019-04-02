@@ -15,60 +15,53 @@
 
 !**s/r tt2virt - Update physical quantities
 !
-
-!
-      subroutine tt2virt2 (F_t, F_tt2tv, Minx,Maxx,Miny,Maxy,Nk)
-      use gmm_vt1
-      use gmm_vt0
-      use gmm_pw
+      subroutine tt2virt (F_t, F_tt2tv, Minx, Maxx, Miny, Maxy, Nk)
       use glb_ld
       use gmm_itf_mod
+      use gmm_pw
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 !
-      logical F_tt2tv
-      integer Minx,Maxx,Miny,Maxy,Nk
-      real F_t(Minx:Maxx,Miny:Maxy,Nk)
+      logical, intent(in) :: F_tt2tv
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(inout) :: F_t
 !
 !author
 !     Michel Desgagne - Dec 2009
 !
-!revision
-! v4_11 - Desgagne, M.     - First revision
-
-
-      integer istat
+      integer :: istat
       real, pointer, dimension(:,:,:)     :: tvirt,tt,hu
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumpqj
-      character(1) timelevel_S
+      character(1) :: timelevel_S
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
 !     Compute virtual temperature from temperature when tt2tv = .true.
 !     --------------------------------------------
 
-      timelevel_S='P'
+      timelevel_S = 'P'
 
-      nullify (tvirt,tt,hu)
+      nullify (tvirt, tt, hu)
 
       if (.not.F_tt2tv) then
-         istat= gmm_get(gmmk_tt1_s       , tvirt)
+         istat = gmm_get(gmmk_tt1_s, tvirt)
       else
-         istat= gmm_get(gmmk_pw_tt_plus_s,    tt)
+         istat = gmm_get(gmmk_pw_tt_plus_s, tt)
       end if
 
       sumpqj = 0.
 
-      call sumhydro(sumpqj,Minx,Maxx,Miny,Maxy,Nk,timelevel_S)
+      call sumhydro(sumpqj, Minx, Maxx, Miny, Maxy, Nk, timelevel_S)
 
       istat= gmm_get('TR/HU:P', hu)
 
       if (.not.F_tt2tv) then
-         call mfottvh2 ( F_t,tvirt,hu,sumpqj,l_minx,l_maxx,l_miny,l_maxy,&
-                                             l_nk,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 (F_t, tvirt, hu,sumpqj, minx, maxx, miny, maxy, &
+                        l_nk,1, l_ni,1, l_nj, F_tt2tv)
       else
-         call mfottvh2 ( tt ,F_t  ,hu,sumpqj,l_minx,l_maxx,l_miny,l_maxy,&
-                                             l_nk,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 (tt, F_t, hu,sumpqj, minx, maxx, miny, maxy, &
+                        l_nk,1, l_ni, 1, l_nj, F_tt2tv)
       end if
 !
 !     ________________________________________________________________

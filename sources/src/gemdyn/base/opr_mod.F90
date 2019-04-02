@@ -32,7 +32,6 @@ module opr
 ! Opr_opszpm_8       | vertical          mean operator                 |
 ! Opr_opszpl_8       | vertical    towards ln operator                 |
 ! Opr_opszp2_8       | vertical    second der operator                 |
-! Opr_xevec_8        | horizontal eigenvectors                         |
 ! Opr_xeval_8        | horizontal eigenvalues                          |
 ! Opr_zevec_8        | right vertical eigenvectors                     |
 ! Opr_lzevec_8       | left vertical eigenvectors                      !
@@ -44,6 +43,6 @@ module opr
    real*8, dimension(:), allocatable :: Opr_opsxp0_8, Opr_opsyp0_8, Opr_evvec_8 , &
                                         Opr_odvec_8 , Opr_opsxp2_8, Opr_opsyp2_8, &
                                         Opr_opszp0_8, Opr_opszpm_8, Opr_opszpl_8, &
-                                        Opr_opszp2_8, Opr_xevec_8 , Opr_xeval_8 , &
+                                        Opr_opszp2_8, Opr_xeval_8 , &
                                         Opr_zevec_8, Opr_lzevec_8, Opr_zeval_8
 end module opr

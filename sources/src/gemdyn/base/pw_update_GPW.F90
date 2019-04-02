@@ -16,22 +16,22 @@
 !**s/r pw_update - Update physical quantities WZ, GZ, PM and PT
 !
       subroutine pw_update_GPW()
+      use dynkernel_options
+      use gem_timing
+      use glb_ld
       use gmm_geof
       use gmm_itf_mod
-      use glb_ld
       use gmm_pw
       use gmm_vt1
+      use metric
+      use tdpack
       use ver
-      use gem_timing
       implicit none
 #include <arch_specific.hf>
 
 !author
 !     Michel Desgagne - May 2010
 !
-!revision
-! v4_14 - Desgagne, M.     - Initial revision
-
       integer :: k, istat
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________
@@ -53,6 +53,37 @@
       istat = gmm_get(gmmk_fis0_s ,  fis0)
       istat = gmm_get(gmmk_qt1_s  ,   qt1)
 
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+!$omp parallel
+!$omp do
+         do k=1,l_nk
+            pw_wz_plus(:,:,k) = wt1(:,:,k)
+            pw_gz_plus(1:l_ni,1:l_nj,k)= grav_8*zmom(1:l_ni,1:l_nj,k)
+            if(k.eq.1) then
+               pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
+               pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+            end if
+            pw_pm_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pm(1:l_ni,1:l_nj,k))
+            pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar(1:l_ni,1:l_nj,k+1))
+            if(k.eq.l_nk) &
+               pw_p0_plus(1:l_ni,1:l_nj)=exp(pw_log_pm(1:l_ni,1:l_nj,l_nk+1))
+         end do
+!$omp enddo
+!$omp do
+         do k=1,l_nk
+            pw_log_pt(1:l_ni,1:l_nj,k)=0.5*(pw_log_pm(1:l_ni,1:l_nj,k+1)+pw_log_pm(1:l_ni,1:l_nj,k))
+         end do
+!$omp enddo
+         pw_log_pt(1:l_ni,1:l_nj,l_nk+1)=pw_log_pm(1:l_ni,1:l_nj,l_nk+1)
+!$omp do
+         do k=1,l_nk
+            pw_pt_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pt(1:l_ni,1:l_nj,k))
+         end do
+!$omp enddo
+!$omp end parallel
+
+      else
       call diag_fi (fi, st1, tt1, qt1, &
                     l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
@@ -76,6 +107,7 @@
       end do
 !$omp enddo
 !$omp end parallel
+      end if
 
       call gemtime_stop (5)
 !     ________________________________________________________________

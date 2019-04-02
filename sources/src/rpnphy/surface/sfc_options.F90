@@ -131,6 +131,14 @@ module sfc_options
    logical           :: isba_melting_fix = .false.
    namelist /surface_cfgs/ isba_melting_fix
 
+
+   !# If .true., do not consider "latent heat realease due to liquid water 
+   !# refreezing in the snowpack" in the surface energy budget WHEN the 
+   !# superficial surface temperature is above zero.
+   logical           :: isba_no_warm_sn_freez = .false.
+   namelist /surface_cfgs/ isba_no_warm_sn_freez
+
+
    !# Use the vegetation-only roughness length to compute vegetation snow fraction
    logical           :: isba_snow_z0veg = .false.
    namelist /surface_cfgs/ isba_snow_z0veg

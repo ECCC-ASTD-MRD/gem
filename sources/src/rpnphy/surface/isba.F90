@@ -68,8 +68,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: z0tot,   zc1,     zc2,    zcs
    real,dimension(n) :: my_ta,   my_ua,   my_va,  vmod,   vmod0
    real,dimension(n) :: zsca_sw, zref_sw_surf, zemit_lw_surf
-   real,dimension(n) :: zu10, zuobs
-   real,dimension(n) :: zusurfzt, zvsurfzt
+   real,dimension(n) :: zu10, zusr
+   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
    real,dimension(n) :: zzenith
 
    real,pointer,dimension(:) :: cmu
@@ -542,43 +542,50 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    IF_THERMAL_STRESS: if (thermal_stress) then
 
       ! Compute wind at the globe sensor level
-      i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
-           zz0veg,zz0tveg,zdlat,zfcor,optz0=zopt,   &
-           L_min=sl_Lmin_soil,spdlim=vmod, &
-           hghtm_diag=zt,hghtt_diag=zt, &
-           u_diag=zusurfzt,v_diag=zvsurfzt,tdiaglim=ISBA_TDIAGLIM) 
-      if (i /= SL_OK) then
-         call physeterror('isba', 'error 3 returned by sl_sfclayer()')
-         return
-      endif
-      zusurfzt = zusurfzt * vmod0 / vmod
-      zvsurfzt = zvsurfzt * vmod0 / vmod
+   i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
+        zz0veg,zz0tveg,zdlat,zfcor,optz0=zopt,   &
+        L_min=sl_Lmin_soil,spdlim=vmod, &
+        hghtm_diag=zt,hghtt_diag=zt, &
+        u_diag=zusurfzt,v_diag=zvsurfzt,tdiaglim=ISBA_TDIAGLIM) 
 
-      do i=1,n
+  if (i /= SL_OK) then
+      call physeterror('isba', 'error 3 returned by sl_sfclayer()')
+      return
+   endif
+   zusurfzt = zusurfzt * vmod0 / vmod
+   zvsurfzt = zvsurfzt * vmod0 / vmod
+
+      do i=1,N
+
          if (abs(zzusl(i)-zu) <= 2.0) then
             zu10(i) = sqrt(uu(i)**2+vv(i)**2)
          else
             zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
          endif
 
-         ! wind  zubos at z=zt and zu10 at z=zu
-         zuobs(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
-         ! zuobs(i) = zu10(i)    !* log(zt/zz0veg(i))/log(zu/zz0veg(i))
+         ! wind  at SensoR level zubos at z=zt
+         if( (abs(zusurfzt(i)) >= 0.1) .and. (abs(zvsurfzt(i)) >= 0.1)) then
+         zusr(i) = sqrt( zusurfzt(i)**2 + zvsurfzt(i)**2)
+         else
+         zusr(i) = zu10(i)
+         endif
 
-         ! for the mean radiant temperature (including snow covers)
-         zref_sw_surf (i) = zalvis(i) * zfsolis(i)
-         zemit_lw_surf(i) = zfsolis(i) - zref_sw_surf (i) + zfdsi(i) - zrnet_s(i)
+            zqd(i) = max( ZQDIAG(i) , 1.e-6) 
 
-         zzenith(i) = acos(zcoszeni(i))
+         zref_sw_surf (i)  = zalvis(i) * zfsolis(i)
+         zemit_lw_surf(i)  = zfsolis(i) - zref_sw_surf (i) + zfdsi(i) - zrnet_s(i)
+
+         zzenith(i) = acos(zcoszeni(i))      
          if (zfsolis(i) > 0.0) then
             zzenith(i) = min(zzenith(i), pi/2.)
          else
             zzenith(i) = max(zzenith(i), pi/2.)
          endif
-      enddo
 
-      call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
-           ZU10,ZUOBS,  ps,                            &
+      end do
+
+      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+           ZU10, zusr, ps,                             &
            ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
            ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
            Zutcisun ,Zutcishade,                       &

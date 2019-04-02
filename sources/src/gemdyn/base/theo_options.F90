@@ -114,6 +114,7 @@ contains
       implicit none
 
       integer err
+      integer, external :: bubble_cfg
 !
 !     ---------------------------------------------------------------
 !
@@ -147,13 +148,13 @@ contains
 !
 !     ---------------------------------------------------------------
 !
-      subroutine theo_data (F_u, F_v, F_t, F_s, F_q, F_topo)
+      subroutine theo_data (F_u, F_v, F_t, F_s, F_q, F_topo, F_sls)
 
       use glb_ld
       implicit none
 #include <arch_specific.hf>
 
-      real, dimension(*) :: F_u, F_v, F_t, F_s, F_topo, F_q
+      real, dimension(*) :: F_u, F_v, F_t, F_s, F_topo, F_q, F_sls
 
 !
 !---------------------------------------------------------------------
@@ -165,12 +166,12 @@ contains
            .or. Theo_case_S == 'MTN_PINTYNL' &
            .or. Theo_case_S == 'NOFLOW' ) then
 
-         call mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo, &
+         call mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_sls, &
                          l_minx, l_maxx, l_miny, l_maxy, G_nk, Theo_case_S )
 
       elseif ( Theo_case_S == 'BUBBLE' ) then
 
-         call bubble_data ( F_u, F_v, F_t, F_s, F_q, F_topo, &
+         call bubble_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_sls, &
                             l_minx, l_maxx, l_miny, l_maxy, G_nk )
       else
 

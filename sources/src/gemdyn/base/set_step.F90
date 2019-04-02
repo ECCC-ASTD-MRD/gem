@@ -15,23 +15,18 @@
 
 !**s/r set_step - initialization of common block TIMESTEP
 !
-      integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
-      use step_options
-      use gem_options
+      integer function set_step(F_argc, F_argv_S, F_cmdtyp, F_v1, F_v2)
       use ctrl
-      use glb_ld
       use cstv
       use lun
-      use dimout
-      use out_mod
-      use out3
+      use step_options
       use timestep
       implicit none
 #include <arch_specific.hf>
+
+        integer, intent(in) :: F_argc,F_v1,F_v2
+        character(len=*), intent(in) :: F_argv_S(0:F_argc),F_cmdtyp
 !
-        integer F_argc,F_v1,F_v2
-        character(len=*) F_argv_S(0:F_argc),F_cmdtyp
-        character(len=5) :: stuff
 !object
 !       initialization of the common block TIMESTEP. This function is
 !       called when the keyword "steps" is found in the first word
@@ -49,15 +44,15 @@
 !       information to how this is processed, see "SREQUET".
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_argc       I    - number of elements in F_argv_S
-! F_argv_S       I    - array of elements received
-!                     if F_argv_S(ii) contains "[", the value in this
-!                      argument indicates number of elements following it.
-! F_cmdtyp     I    - character command type - not used
-! F_v1         I    - integer parameter 1 - not used
-! F_v2         I    - integer parameter 2 - not used
+!  Name                        Description
+!------------------------------------------------------------
+! F_argc        - number of elements in F_argv_S
+! F_argv_S      - array of elements received
+!                 if F_argv_S(ii) contains "[", the value in this
+!                  argument indicates number of elements following it.
+! F_cmdtyp      - character command type - not used
+! F_v1          - integer parameter 1 - not used
+! F_v2          - integer parameter 2 - not used
 !
 !Notes:
 !
@@ -85,25 +80,24 @@
 ! day of a month so that, depending on the starting date, the first
 ! month could be shorter than expected.
 !
-
-
-      integer i,j,k,ii,num,istep
-      logical month_flag,day_flag,hour_flag,step_flag,found_L
-      real frarg,month,day,hour,rstep
-      integer transtep,transtep2,stepset,argc_out
+      character(len=5) :: stuff
+      integer i, j, k, ii, num, istep
+      logical month_flag, day_flag, hour_flag, step_flag, found_L
+      real frarg, month, day, hour, rstep
+      integer transtep, transtep2, stepset, argc_out
       transtep(frarg) = nint(3600.0 * frarg / Cstv_dt_8)
       transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
 !
-      integer,external ::  transtep3
-      integer,external ::  dcmip_div_X
+      integer,external :: month_since_start
+      integer,external :: dcmip_div_X
 !
       argc_out=min(F_argc,6)
       if (Lun_out > 0) then
           write(Lun_out,*)
           if (argc_out < F_argc) then
-          write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out),'...'
+            write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out),'...'
           else
-          write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out)
+            write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,argc_out)
           end if
       end if
       set_step=0
@@ -127,7 +121,7 @@
       step_flag = .false.
       Timestep_id(j)=stepset
       Timestep_init_L(j)=.false.
-      do 100 ii=2,F_argc
+      do ii=2,F_argc
          if (index(F_argv_S(ii),'[') > 0) then
              stuff=F_argv_S(ii)
              read(stuff(2:4),*) num
@@ -158,12 +152,12 @@
              read(F_argv_S(ii),*)rstep
              if (rstep == -1) then
              i = i-1
-             do 70 istep=lctl_step,Step_total
-             i = i+1
-             Timestep_tbl(i,j)=istep
- 70          continue
+             do istep=lctl_step,Step_total
+               i = i+1
+               Timestep_tbl(i,j)=istep
+             end do
              else
-             Timestep_tbl(i,j)=int(rstep)
+               Timestep_tbl(i,j)=int(rstep)
              end if
          else if (hour_flag) then
              i = i+1
@@ -179,7 +173,7 @@
          else if (month_flag) then
              i = i+1
              read(F_argv_S(ii),*)month
-             Timestep_tbl(i,j)=transtep3(month)
+             Timestep_tbl(i,j)=month_since_start(month)
          else
              if (Lun_out > 0) then
                write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
@@ -188,7 +182,7 @@
              set_step=1
              return
          end if
- 100  continue
+      end do
 
       if (i > MAXSTEP) then
           if (Lun_out > 0) then
@@ -215,19 +209,20 @@
       Timestep_max(Timestep_sets)=istep
 
       if (Lun_out > 0) then
-      write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)
-      write(Lun_out,*) ' Timestep_init_L=',Timestep_init_L(j)
+         write(Lun_out,*) ' Timestep_set(',j,') : Timestep_id=',Timestep_id(j)
+         write(Lun_out,*) ' Timestep_init_L=',Timestep_init_L(j)
          if (Timestep_max(j) > 30) then
-             write(Lun_out,*) ' Timestep=', &
-                      (Timestep_tbl(i,j),i=1,30),',... up to ,',Timestep_tbl(Timestep_max(j),j)
+            write(Lun_out,*) ' Timestep=', &
+               (Timestep_tbl(i,j),i=1,30),',... up to ,',Timestep_tbl(Timestep_max(j),j)
          else
-             write(Lun_out,*) ' Timestep=',(Timestep_tbl(i,j),i=1,Timestep_max(j))
+            write(Lun_out,*) ' Timestep=',(Timestep_tbl(i,j),i=1,Timestep_max(j))
          end if
       end if
+
       return
       end
 
-      integer function transtep3 (month)
+      integer function month_since_start (month)
       use glb_ld
       use cstv
       use lun
@@ -280,8 +275,8 @@
          MOD3 = 0 ; MOD = +3
          ier = newdate( Dts_month1(14), MOD2,MOD3, MOD )
          if (ier /= 0) then
-            if (Lun_out > 0) write(Lun_out,*)'transtep3: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
-            stop ' in transtep3, called by set_step'
+            if (Lun_out > 0) write(Lun_out,*)'month_since_start: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
+            stop ' in month_since_start, called by set_step'
          end if
 
 !        number of hours between that and the start
@@ -292,13 +287,13 @@
 
       if(month == 0) then
 
-         transtep3 = 0
+         month_since_start = 0
 
-      elseif(month == 1) then
+      else if(month == 1) then
 
-         transtep3 = Steps_month1
+         month_since_start = Steps_month1
 
-      elseif(month > 1) then
+      else if(month > 1) then
 
 !        define the current month
          Current_month(2) = Dts_month1(2)+nint( amod( month-1, 12. ) )
@@ -316,13 +311,13 @@
          MOD3 = 0 ; MOD = +3
          ier = newdate( Current_month(14), MOD2,MOD3, MOD )
          if (ier /= 0) then
-            if (Lun_out > 0) write(Lun_out,*)'transtep3: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
-            stop ' in transtep3, called by set_step'
+            if (Lun_out > 0) write(Lun_out,*)'month_since_start: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
+            stop ' in month_since_start, called by set_step'
          end if
 
 !        number of hours between that and the start
          call difdatr( Current_month(14),Dts_month1(14),hours )
-         transtep3 = Steps_month1 + nint(3600.0 * hours / Cstv_dt_8)
+         month_since_start = Steps_month1 + nint(3600.0 * hours / Cstv_dt_8)
 
       end if
 

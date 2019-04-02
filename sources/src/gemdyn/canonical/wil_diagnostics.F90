@@ -18,7 +18,7 @@
       subroutine wil_diagnostics (F_my_step)
 
 
-      use adv_options
+      use adz_options
       use canonical
       use gem_options
       use HORgrid_options
@@ -64,7 +64,7 @@
 
       !---------------------------------------------------------------
 
-      if (Adv_verbose==0) return
+      if (adz_verbose==0) return
 
       if (Williamson_case/=1) return
 
@@ -100,7 +100,7 @@
          call mass_tr (tracer_8,tr_r,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,1)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',"Mass of Mixing  (WET)","TIME T1",'  R= ', &
-                                                                  tracer_8/Adv_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
+                                                                  tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
 
          s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
          s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.

@@ -38,6 +38,7 @@ module ptopo_utils
 !!$   integer, parameter, public :: PTOPO_GRID = 4
    integer, parameter, public :: PTOPO_BLOC = 5
    integer, parameter, public :: PTOPO_IO = 6
+   integer, parameter, public :: PTOPO_IODIST = 6
 
    ! Public var
    integer,public,save :: &
@@ -417,7 +418,7 @@ contains
          F_comm_ipe_io_master = RPN_COMM_MASTER !#TODO: check this
          !#TODO: = ptopo_grid_ipe_blocmaster
          F_communicator_S = RPN_COMM_BLOC_COMM
-      elseif (F_iotype == PTOPO_IO) then
+      elseif (F_iotype == PTOPO_IODIST) then
          F_isiomaster_L = ptopo_isiomaster_L
          F_isiope_L = ptopo_isiope_L
          F_comm_ipe_io_master = ptopo_grid_ipe_io_master

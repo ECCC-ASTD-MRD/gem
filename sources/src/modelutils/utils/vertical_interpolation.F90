@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -23,13 +23,13 @@ contains
 
       subroutine vertint2 ( F_dch,F_dstlev,nkd, F_sch,F_srclev,nks , &
                             Minx,Maxx,Miny,Maxy,F_i0,F_in,F_j0,F_jn, &
-                            varname, inttype, Schumann_list )
+                            varname, inttype, Schumann_list , levtype)
       implicit none
 
 #include <arch_specific.hf>
 
       character(len=*), optional, intent(IN) :: &
-                        varname, inttype, Schumann_list
+                        varname, inttype, Schumann_list, levtype
       integer         ,           intent(IN) :: &
                         Minx,Maxx,Miny,Maxy,F_i0,F_in,F_j0,F_jn,nkd, nks
       real            ,           intent(IN) :: &
@@ -42,8 +42,8 @@ contains
    !@ojective vertical interpolation logp to logp
 
    !@arguments
-   ! F_dch                   Interpolated field           
-   ! F_sch                   source       field           
+   ! F_dch                   Interpolated field
+   ! F_sch                   source       field
    ! F_srclev                source levels (logp)
    ! F_dstlev                destination levels (logp)
    ! F_inttype_S             order of interpolation ('linear' or 'cubic')
@@ -52,10 +52,10 @@ contains
    !@description
    !     General case, we'll care about VT later
    !
-   !     First, we find the level we are by squeezing the destination 
+   !     First, we find the level we are by squeezing the destination
    !     between increasing bot() and decreasing top(). We need log_2_(nks)
-   !     iteration to squeeze it completely (each integer between 1 and 
-   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i 
+   !     iteration to squeeze it completely (each integer between 1 and
+   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i
    !     where c_i = 0 or 1 and i lower or equal than log_2_(nks)
    !
    !     WARNING
@@ -67,8 +67,9 @@ contains
 #include "tdpack_const.hf"
 
       integer, parameter :: MAXLIST=20
-      character*12  Schumann_list_S(MAXLIST)
-      character*521 tmp_list,name
+      character(len=1) :: levtype_S
+      character(len=12)  Schumann_list_S(MAXLIST)
+      character(len=521) tmp_list,name
       logical :: ascending_L, flag
       integer :: i,j,k,iter,niter,lev,lev_lin,k_surf, &
                  k_ciel,nlinbot,n_schum,istat,deb,fin,coma
@@ -78,11 +79,20 @@ contains
                  prsad,prsbd
 !
 !-------------------------------------------------------------------
-!  
+!
+      levtype_S='P'
+      if(present(levtype))then
+         select case(trim(levtype))
+         case('P')
+            levtype_S='P'
+         case('H')
+            levtype_S='H'
+         end select
+      end if
       nlinbot=0
       if (present(inttype)) then
          if (any(trim(inttype) == (/'linear','LINEAR'/))) nlinbot=nkd
-      endif
+      end if
 
       n_schum= 3
       Schumann_list_S(1) = 'TT'
@@ -113,11 +123,11 @@ contains
                if ( n_schum + 1 <= MAXLIST ) then
                   n_schum= n_schum + 1
                   Schumann_list_S(n_schum)= name
-               endif
-            endif
+               end if
+            end if
             goto 55
-         endif
-      endif
+         end if
+      end if
 
       ascending_L = (F_srclev(1,1,1) < F_srclev(1,1,nks))
       k_surf = 1
@@ -125,13 +135,13 @@ contains
       if (.not.ascending_L) then
          k_surf = nks
          k_ciel = 1
-      endif
+      end if
       if (real(int(log(real(nks))/log(2.0))).eq. &
       log(real(nks))/log(2.0)) then
       niter=int(log(real(nks))/log(2.0))
       else
          niter=int(log(real(nks))/log(2.0))+1
-      endif
+      end if
 
 !$omp parallel private(i,j,k,iter,lev,lev_lin,top,bot,topcub,botcub,ref, &
 !$omp                  deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd)  &
@@ -152,10 +162,10 @@ contains
                      top(i,j)=ref(i,j)
                   else
                      bot(i,j)=ref(i,j)
-                  endif
-               enddo
-               enddo
-            enddo
+                  end if
+               end do
+               end do
+            end do
          else
             do iter=1,niter
                do j= F_j0, F_jn
@@ -167,18 +177,18 @@ contains
                      top(i,j)=ref(i,j)
                   else
                      bot(i,j)=ref(i,j)
-                  endif
-               enddo
-               enddo
-            enddo
-         endif
+                  end if
+               end do
+               end do
+            end do
+         end if
 !- adjusting top and bot to ensure we can perform cubic interpolation
          do j= F_j0, F_jn
          do i= F_i0, F_in
             botcub(i,j)=max(    2,bot(i,j))
             topcub(i,j)=min(nks-1,top(i,j))
-         enddo
-         enddo
+         end do
+         end do
 !- cubic or linear interpolation
          do j= F_j0, F_jn
          do i= F_i0, F_in
@@ -200,7 +210,7 @@ contains
                   prxd=(F_dstlev(i,j,k)-F_srclev(i,j,lev_lin))/deltalev
                   F_dch(i,j,k) = (1.0-prxd)*F_sch(i,j,lev_lin  ) &
                   +prxd *F_sch(i,j,lev_lin+1)
-               endif
+               end if
             else
 !- cubic interpolation
                prxd = (F_dstlev(i,j,k)-F_srclev(i,j,lev_lin)) / deltalev
@@ -217,14 +227,15 @@ contains
                F_dch(i,j,k) =  F_sch(i,j,lev_lin  )*prsaf            &
                              + F_sch(i,j,lev_lin+1)*prsbf+prda*prsad &
                              - prdb*prsbd
-            endif
-         enddo
-         enddo
-      enddo
-!$omp enddo
+            end if
+         end do
+         end do
+      end do
+!$omp end do
 
       if (present(varname)) then
       if (any(Schumann_list_S(1:n_schum)==trim(varname))) then
+      if (levtype_S == 'P')then
 !$omp do
          do k=1,nkd
             do j= F_j0, F_jn
@@ -232,13 +243,26 @@ contains
                if(F_srclev(i,j,k_ciel).lt.F_dstlev(i,j,k)) then
                   F_dch(i,j,k) = F_sch(i,j,k_ciel) * exp (  &
                   rgasd_8*stlo_8*(F_dstlev(i,j,k)-F_srclev(i,j,k_ciel)) )
-               endif
-            enddo
-            enddo
-         enddo
-!$omp enddo
-      endif
-      endif
+               end if
+            end do
+            end do
+         end do
+!$omp end do
+      elseif(levtype_S == 'H')then
+!$omp do
+         do k=1,nkd
+            do j= F_j0, F_jn
+            do i= F_i0, F_in
+               if(F_srclev(i,j,k_surf).gt.F_dstlev(i,j,k)) then
+                  F_dch(i,j,k) = F_sch(i,j,k_surf) + grav_8*stlo_8*(F_srclev(i,j,k_surf)-F_dstlev(i,j,k))
+               end if
+            end do
+            end do
+         end do
+!$omp end do
+      end if
+      end if
+      end if
 
 !$omp end parallel
 

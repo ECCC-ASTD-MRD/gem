@@ -17,8 +17,8 @@
 !
       subroutine psadj (F_kount)
       use cstv
+      use dynkernel_options
       use dyn_fisl_options
-      use init_options
       use gem_options
       use geomh
       use glb_ld
@@ -27,27 +27,21 @@
       use gmm_itf_mod
       use gmm_vt0
       use HORgrid_options
+      use init_options
+      use metric
       use psadjust
       use rstr
+      use tdpack
+      use ver
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_kount
 
-!author
-!     Andre Plante from hzd_main
-!
-!revision
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_50 - Qaddouri-PLante   - YY version
-! v4_70 - Tanguay M.        - dry air pressure conservation
-! v4_80 - Tanguay M.        - REAL*8 with iterations and psadj LAM
-!
-
       type(gmm_metadata) :: mymeta
       integer err,i,j,n,istat,MAX_iteration
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_0_8,pr_p0_w_0_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8, pr_p0_w_0_8, pw_log_p0_8
       real*8 l_avg_8(1),g_avg_ps_0_8
       real*8 ll_avg_8(l_ni,l_nj)
       character(len= 9) communicate_S
@@ -64,6 +58,16 @@
             return
          end if
 
+         if ( Schm_psadj == 2 .and. &
+               trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            call gem_error(-1,'psadj', &
+                    'PSADJ=2 is NOT AVAILABLE FOR YY with DYNAMICS_FISL_H')
+            if ( Schm_psadj_print_L ) then
+               call stat_psadj (0,"AFTER DYNSTEP")
+            end if
+
+            return
+         end if
          if ( Schm_psadj <= 2 .and. Cstv_dt_8*F_kount <= Iau_period ) then
             if (Schm_psadj_print_L) then
                call stat_psadj (0,"AFTER DYNSTEP")
@@ -93,7 +97,7 @@
             return
          end if
 
-         if (.not.Init_mode_L) call adv_psadj_LAM_0
+         if (.not.Init_mode_L) call adz_psadj_LAM_0
 
          if ( Schm_psadj_print_L ) then
             call stat_psadj (0,"AFTER DYNSTEP")
@@ -107,38 +111,55 @@
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
       istat = gmm_get(gmmk_fis0_s,fis0)
-      istat = gmm_get(gmmk_st0_s,st0,mymeta)
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+         istat = gmm_get(gmmk_st0_s,st0,mymeta)
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         istat = gmm_get(gmmk_qt0_s,qt0)
+      end if
 
       MAX_iteration = 3
       if (Schm_psadj==1) MAX_iteration = 1
 
       do n= 1,MAX_iteration
 
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
          !Obtain pressure levels
          !----------------------
-         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
          !Compute dry surface pressure (- Cstv_pref_8)
          !--------------------------------------------
-         if (Schm_psadj>=2) then
+            if (Schm_psadj>=2) then
 
-            call dry_sfc_pressure_8 (pr_p0_w_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+               call dry_sfc_pressure_8 (pr_p0_w_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
-         !Compute wet surface pressure (- Cstv_pref_8)
-         !--------------------------------------------
-         else if (Schm_psadj==1) then
+            !Compute wet surface pressure (- Cstv_pref_8)
+            !--------------------------------------------
+            else if (Schm_psadj==1) then
 
-            pr_p0_w_0_8(1:l_ni,1:l_nj) = pr_p0_0_8(1:l_ni,1:l_nj) - Cstv_pref_8
+               pr_p0_w_0_8(1:l_ni,1:l_nj) = pr_p0_0_8(1:l_ni,1:l_nj) - Cstv_pref_8
 
+            end if
+
+         elseif (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            if (Schm_psadj==1) then
+                  pw_log_p0_8(1:l_ni,1:l_nj)=(dble(qt0(1:l_ni,1:l_nj,l_nk+1))/&
+                                             (rgasd_8*Ver_Tstar_8%m(l_nk+1))  &
+                                        +dble(lg_pstar(1:l_ni,1:l_nj,l_nk+1)))
+                  pr_p0_0_8(1:l_ni,1:l_nj) = exp(pw_log_p0_8(1:l_ni,1:l_nj))
+
+                  pr_p0_w_0_8(1:l_ni,1:l_nj) = pr_p0_0_8(1:l_ni,1:l_nj) - &
+                                               Cstv_pref_8
+            end if
          end if
-
          l_avg_8 = 0.0d0
          ll_avg_8 = 0.0d0
          do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            l_avg_8 = l_avg_8 + pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
-            ll_avg_8(i,j) =     pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
-         end do
+            do i=1+pil_w,l_ni-pil_e
+               l_avg_8 = l_avg_8 + pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               ll_avg_8(i,j) = pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+            end do
          end do
 
          if ( Lctl_rxstat_S == 'GLB_8') then
@@ -155,16 +176,21 @@
          !Correct surface pressure in order to preserve air mass
          !------------------------------------------------------
          do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            if(fis0(i,j) > 1.) then
-               pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                 (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*PSADJ_fact_8
-            else
-               pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                 (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*Cstv_psadj_8
-            end if
-            st0(i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
-         end do
+            do i=1+pil_w,l_ni-pil_e
+               if(fis0(i,j) > 1.) then
+                  pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
+                    (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*PSADJ_fact_8
+               else
+                  pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
+                    (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*Cstv_psadj_8
+               end if
+               if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+                  st0(i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
+               else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+                  qt0(i,j,l_nk+1) = rgasd_8*Ver_Tstar_8%m(l_nk+1)*&
+                     (log(pr_p0_0_8(i,j))-lg_pstar(i,j,l_nk+1))
+               end if
+            end do
          end do
 
       end do

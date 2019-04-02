@@ -143,18 +143,9 @@
          call glbpos
          call set_geomh
          call canonical_cases ("SET_GEOM")
-         if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL' ) then
-            err= set_fft ()
-         else
-            err= 0
-         endif
-         call gemtim4 ( Lun_out, 'AFTER set_fft', .false. )
+         call write_status_file3 ('Fft_fast_L=OK')
          if (Ptopo_couleur == 0) then
-         if (err == 0) then
-            call write_status_file3 ('Fft_fast_L=OK')
-         else
-            call write_status_file3 ('Fft_fast_L=ABORT')
-         endif
+            call write_status_file3 ('Fft_fast_L=OK')! TODO : no longer needed
          endif
 
          if (cdm_eigen_S /= 'NONE@#$%') then

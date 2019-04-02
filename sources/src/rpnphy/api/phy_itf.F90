@@ -42,6 +42,6 @@ module phy_itf
   private :: PATHLENGTH, NPATH_DEFAULT, BPATH_DEFAULT
 
   ! Externally-accessible constants and variables
-  integer, parameter :: PHY_COMPATIBILITY_LVL = 16
+  integer, parameter :: PHY_COMPATIBILITY_LVL = 17
 
 end module phy_itf

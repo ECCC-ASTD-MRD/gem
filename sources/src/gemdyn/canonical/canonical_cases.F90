@@ -61,7 +61,7 @@
       integer k,istat,pnip1,flag_r_n,i,j,n
       real, pointer, dimension(:,:,:) :: hu,cl,cl2,tr,tr_r,tr_e
       integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_s_f
-      character*8 dumc
+      character(len=8) :: dumc
       real dcmip_height,dcmip_heightp1
       real bidon(l_minx:l_maxx,l_miny:l_maxy,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
       type(gmm_metadata) :: mymeta3d_nk_u, mymeta3d_nk_v, mymeta3d_nk_t, mymeta2d_s
@@ -402,7 +402,7 @@
       return
 
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &
-               'Hyb_rcoef= ',2f7.2,':'/ &
+               'Hyb_rcoef= ',4f7.2,':'/ &
                2x,'level',10x,'HYB',2x,'~dcmip_HEIGHTS',2x,'~dcmip_DELTA_Z',2x,'IP1')
  1006 format (1x,i4,3x,es16.4,2(6x,f6.0),4x,i10)
 

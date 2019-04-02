@@ -19,13 +19,14 @@
 
       integer function gemdm_config()
       use dynkernel_options
-      use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
-      use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
+      use timestr_mod
+      use mu_jdate_mod
       use step_options
       use HORgrid_options
-      use gem_options
+      use fislh_sol
       use hvdif_options
       use init_options
+      use gem_options
       use lam_options
       use out_options
       use VERgrid_options
@@ -47,11 +48,11 @@
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-      character(len=16)  dumc_S, datev
-      integer i, ipcode, ipkind, err
-      real    pcode,deg_2_rad,sec
-      real*8  dayfrac, sec_in_day
-      parameter (sec_in_day=86400.0d0)
+      character(len=16) :: dumc_S, datev
+      integer :: i, ipcode, ipkind, err
+      real :: pcode,deg_2_rad,sec
+      real*8 :: dayfrac
+      real*8, parameter :: sec_in_day = 86400.0d0
 !
 !-------------------------------------------------------------------
 !
@@ -90,11 +91,27 @@
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
       Level_kind_ip1 = 5
+      Level_version  = 5
 
       if(Schm_sleve_L)then
          Level_version  = 100
-      else
-         Level_version  = 5
+      end if
+
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         Level_kind_ip1 = 21
+         Level_version  = 1
+         Dynamics_hydro_L = .false.
+      end if
+
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         if ( trim(sol_type_S) == 'DIRECT') then
+            isol_d=1.0d0
+            isol_i=0.0d0
+         else
+            isol_i=1.0d0
+            isol_d=0.0d0
+         end if
       end if
 
       if (Grd_yinyang_L) then
@@ -149,7 +166,12 @@
 
       if (Schm_autobar_L) Ctrl_phyms_L = .false.
 
-      call set_zeta ( hyb, G_nk )
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
+          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+          call fislh_hybrid( hyb_H, G_nk)
+      else
+         call set_zeta ( hyb, G_nk )
+      end if
 
       Schm_nith = G_nk
 
@@ -213,6 +235,14 @@
          if (Hzd_smago_lnr(1) > Hzd_smago_lnr(2) .or. Hzd_smago_lnr(1)<0.) Hzd_smago_lnr(1)=Hzd_smago_lnr(2)
          if (Hzd_smago_lnr(3) < Hzd_smago_lnr(2) .or. Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
       end if
+
+      G_ni  = Grd_ni
+      G_nj  = Grd_nj
+
+      G_niu = G_ni
+      G_njv = G_nj - 1
+
+      G_niu = G_ni - 1
 
       if ( Schm_psadj<0 .or. Schm_psadj>2 ) then
          if (lun_out>0) write (Lun_out, 9700)

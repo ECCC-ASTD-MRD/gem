@@ -298,28 +298,28 @@ subroutine gesdict(ni, nk, lindex, lachaine)
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        enttop, entnm, entdc, entpar, entspc, 'E', ni, nk, memgap)
+        enttop, entnm, entdc, entpar, entspc, bus, ni, nk, memgap)
    case("D")
       if (debug_mem_L) memgap = max(ni/5,1)+4
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        dyntop, dynnm, dyndc, dynpar, dynspc, 'E', ni, nk, memgap*2)
+        dyntop, dynnm, dyndc, dynpar, dynspc, bus, ni, nk, memgap*2)
    case("P")
       if (debug_mem_L) memgap = max(ni/5,1)+2
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        pertop, pernm, perdc, perpar, perspc, 'E', ni, nk, memgap*3)
+        pertop, pernm, perdc, perpar, perspc, bus, ni, nk, memgap*3)
    case("V")
       if (debug_mem_L) memgap = max(ni/5,1)
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        voltop, volnm, voldc, volpar, volspc, 'E', ni, nk, memgap*4)
+        voltop, volnm, voldc, volpar, volspc, bus, ni, nk, memgap*4)
    case default
       call physeterror('gesdict', 'Unknown bus: '//trim(string))
       return

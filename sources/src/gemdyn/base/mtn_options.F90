@@ -18,7 +18,6 @@ module mtn_options
    use HORgrid_options
    use VERgrid_options
    use tdpack
-   use metric
    use lun
    use dcst
    use glb_ld
@@ -43,7 +42,7 @@ module mtn_options
    real :: mtn_dz = 300.
    namelist /mtn_cfgs/ mtn_dz
    !#
-   real :: mtn_tzero = 303.16
+   real*8 :: mtn_tzero = 303.15
    namelist /mtn_cfgs/ mtn_tzero
    !#
    real :: mtn_flo = 10.
@@ -63,6 +62,12 @@ module mtn_options
    !#
    real :: mtn_zblen_thk = 0.
    namelist /mtn_cfgs/ mtn_zblen_thk
+   !#
+   real :: mtn_wind_seed = 0.
+   namelist /mtn_cfgs/ mtn_wind_seed
+   !#
+   integer, dimension(2) :: mtn_pos_seed = (/1,1/)
+   namelist /mtn_cfgs/ mtn_pos_seed
 
 contains
 
@@ -132,37 +137,49 @@ contains
 !
       mtn_cfg = -1
 
+      ! establish vertical grid configuration
       pref_8 = 1.d5
 
       G_nk = mtn_nk
-      htop_8 = (mtn_nk+1)*mtn_dz
+      htop_8 = mtn_nk*mtn_dz
 
-      if (hyb(1) < 0.) then
-         if(mtn_nstar < 0.) then       !  isothermal case
-            mtn_nstar=grav_8/sqrt(cpd_8*mtn_tzero)
-         end if
-         if(mtn_nstar == 0.0) then     !  isentropic case
-            c1_8=grav_8/(cpd_8*mtn_tzero)
-            Exner_8=1.d0-c1_8*htop_8
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         if (hyb_H(1) < 0 ) then
+            do k=1,G_nk
+               height_8=htop_8*(1.d0-(dble(k)-.5d0)/G_nk)
+               hyb_H(k)=height_8
+            end do
          else
-            c1_8=grav_8**2/(cpd_8*mtn_tzero*mtn_nstar**2)
-            Exner_8=1.d0-c1_8+c1_8 &
-                       *exp(-mtn_nstar**2/grav_8*htop_8)
+            do k=1024,1,-1
+            if(hyb_H(k) < 0 ) G_nk=k-1
+            end do
          end if
-         ptop_8 = Exner_8**(1.d0/cappa_8)*pref_8
-!        Uniform distribution of levels in terms of height
-         do k=1,G_nk
-            height_8=htop_8*(1.d0-(dble(k)-.5d0)/G_nk)
-            Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/grav_8*height_8)
-            pres_8=Exner_8**(1.d0/cappa_8)*pref_8
-            hyb(k)=(pres_8-ptop_8)/(pref_8-ptop_8)
-            hyb(k) = hyb(k) + (1.-hyb(k))*ptop_8/pref_8
-            if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') hyb(k)=height_8
-         end do
       else
-         do k=1024,1,-1
-         if(hyb(k) < 0) G_nk=k-1
-         end do
+         if (hyb(1) < 0 ) then
+            if(mtn_nstar < 0.)            &!  isothermal case
+               mtn_nstar=grav_8/sqrt(cpd_8*mtn_tzero)
+            if(mtn_nstar == 0.0) then     !  isentropic case
+               c1_8=grav_8/(cpd_8*mtn_tzero)
+               Exner_8=1.d0-c1_8*htop_8
+            else
+               c1_8=grav_8**2/(cpd_8*mtn_tzero*mtn_nstar**2)
+               Exner_8=1.d0-c1_8+c1_8 &
+                          *exp(-mtn_nstar**2/grav_8*htop_8)
+            end if
+            ptop_8 = Exner_8**(1.d0/cappa_8)*pref_8
+!           Uniform distribution of levels in terms of height
+            do k=1,G_nk
+               height_8=htop_8*(1.d0-(dble(k)-.5d0)/G_nk)
+               Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/grav_8*height_8)
+               pres_8=Exner_8**(1.d0/cappa_8)*pref_8
+               hyb(k)=(pres_8-ptop_8)/(pref_8-ptop_8)
+               hyb(k) = hyb(k) + (1.-hyb(k))*ptop_8/pref_8
+            end do
+         else
+            do k=1024,1,-1
+            if(hyb(k) < 0) G_nk=k-1
+            end do
+         end if
       end if
 
       mtn_cfg = 1
@@ -172,7 +189,7 @@ contains
 !
 !     ---------------------------------------------------------------
 !
-      subroutine mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo,&
+      subroutine mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_topo_ls, &
                             Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_theocase_S )
       use gmm_vt1
       use gmm_geof
@@ -194,18 +211,22 @@ contains
            F_t    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
+           F_topo_ls(Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
 
+
       type(gmm_metadata) :: mymeta
-      integer i,j,k,i00,istat
-      real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf
-      real, allocatable, dimension(:,:) :: topo_ls
-      real hauteur, press, pstar, theta, tempo, dx, slp, slpmax, exner
-      real*8 temp1, temp2
+      integer :: i,j,k,i00,istat
+      real    :: a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf
+      real    :: hauteur, press, theta, tempo, dx, slp, slpmax, exner
+      real*8  :: temp1, temp2
+      real*8, parameter :: one=1.d0
+      real, allocatable, dimension(:,:) :: log_pstar, hm
 !
 !     ---------------------------------------------------------------
 !
-      allocate ( topo_ls(l_minx:l_maxx,l_miny:l_maxy) )
+      allocate (log_pstar(l_minx:l_maxx,l_miny:l_maxy), &
+                        hm(l_minx:l_maxx,l_miny:l_maxy) )
 
 !---------------------------------------------------------------------
 !     Initialize orography
@@ -222,15 +243,20 @@ contains
             zfac1= pi_8 * zdi / mtn_hwx1
             F_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
             ! Note : get_s_large_scale takes topo_ls in m2/s2
-            topo_ls(i,j)= mtn_hght/2.* exp(-zfac)*grav_8
+            F_topo_ls(i,j)= mtn_hght* exp(-zfac)
+         else if ( F_theocase_S == 'NOFLOW' ) then
+            F_topo(i,j) = mtn_hght* exp(-zfac)
+            F_topo_ls(i,j)= mtn_hght* exp(-zfac)
          else
             F_topo(i,j) = mtn_hght/(zfac + 1.)
-            topo_ls(i,j)= mtn_hght/2./(zfac + 1.)*grav_8
+            F_topo_ls(i,j)= mtn_hght/(zfac + 1.)
          end if
       end do
       end do
 
-      call get_s_large_scale ( topo_ls, Mminx,Mmaxx,Mminy,Mmaxy )
+      F_topo_ls = F_topo_ls * grav_8
+      call get_s_large_scale ( F_topo_ls, Mminx,Mmaxx,Mminy,Mmaxy )
+      F_topo_ls = F_topo_ls / grav_8
       istat = gmm_get (gmmk_sls_s, sls)
 
 !---------------------------------------------------------------------
@@ -246,19 +272,10 @@ contains
 
        if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
-
-!-----------------------------------------------------------------------
-!        Transform orography from geometric to geopotential height
-!-----------------------------------------------------------------------
-         F_topo = grav_8 * F_topo
-!-----------------------------------------------------------------------
-!        Set metric coefficients
-!-----------------------------------------------------------------------
-         call set_metric
-
          if (     F_theocase_S == 'MTN_SCHAR2' &
              .or. F_theocase_S == 'MTN_PINTY'  &
-             .or. F_theocase_S == 'MTN_PINTY2' ) then
+             .or. F_theocase_S == 'MTN_PINTY2' &
+             .or. F_theocase_S == 'NOFLOW' ) then
 !
 !---------------------------------------
 !        Initialize temperature = const.
@@ -267,18 +284,16 @@ contains
          F_t=mtn_tzero
 !
 !-----------------------------------------------------
-!        Initialize pressure variable  q=RT*log(p/p*)
+!        Initialize pressure variable  q=RTstar*log(p/pstar)
 !-----------------------------------------------------
 !
-         F_q(:,:,1)=0.0
-         do k=1,G_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               if(mc_g3w(i,j,k) == 0.) print*,mc_g3w(i,j,k),i,j,k
-               F_q(i,j,k+1)=F_q(i,j,k)-grav_8*(1.d0-mc_g3w(i,j,k))/mc_g3w(i,j,k)*Ver_dz_8%t(k)
-            end do
-            end do
+         F_q(:,:,G_nk+1)=-grav_8*(Cstv_tstr_8-mtn_tzero)/mtn_tzero*F_topo(:,:)
+         do k=G_nk,1,-1
+            F_q(:,:,k)=F_q(:,:,k+1)+grav_8*(Cstv_tstr_8-mtn_tzero)/mtn_tzero &
+                      *(Ver_dz_8%t(k)+(Ver_b_8%m(k+1)-Ver_b_8%m(k))*F_topo(:,:) +&
+                      (Ver_c_8%m(k+1)-Ver_c_8%m(k))*F_topo_ls(:,:) )
          end do
+
        elseif (     F_theocase_S == 'MTN_SCHAR'   &
                .or. F_theocase_S == 'MTN_PINTYNL' ) then
 !
@@ -289,36 +304,36 @@ contains
          a00 = mtn_nstar**2/grav_8
          capc1 = grav_8**2/(mtn_nstar**2*cpd_8*mtn_tzero)
 
-         do k=1,G_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               hauteur=Ver_z_8%m(k)+Ver_b_8%m(k)*F_topo(i,j)/grav_8
-               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-               theta=mtn_tzero*exp(a00*hauteur)
-               press=1.d5*exner**(1.d0/cappa_8)
-               pstar=1.d5*exp(-grav_8*Ver_z_8%m(k)/(rgasd_8*Cstv_tstr_8))
-               temp1=theta*exner
-               hauteur=Ver_z_8%m(k+1)+Ver_b_8%m(k+1)*F_topo(i,j)/grav_8
-               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-               theta=mtn_tzero*exp(a00*hauteur)
-               temp2=theta*exner
-               F_t(i,j,k)=Ver_wp_8%t(k)*temp2+Ver_wm_8%t(k)*temp1
-               F_q(i,j,k)=rgasd_8*Cstv_tstr_8*log(press/pstar)
-            end do
-            end do
-           !print*,'T=',F_t(1,1,k),'Q=',F_q(1,1,k),press,pstar
-         end do
         !SURFACE
          k=G_nk+1
          do j=1,l_nj
          do i=1,l_ni
-            hauteur=F_topo(i,j)/grav_8
+            hauteur=F_topo(i,j)
+            log_pstar(i,j)=log(1.d5)+grav_8*hauteur/(rgasd_8*Cstv_Tstr_8)
+            hm(i,j)=hauteur
             exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-            theta=mtn_tzero*exp(a00*hauteur)
             press=1.d5*exner**(1.d0/cappa_8)
-            pstar=1.d5
-            F_q(i,j,k)=rgasd_8*Cstv_tstr_8*log(press/pstar)
+            F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
          end do
+         end do
+
+         do k=G_nk,1,-1
+            do j=1,l_nj
+            do i=1,l_ni
+               hauteur=Ver_z_8%m(k)+Ver_b_8%m(k)*F_topo(i,j)+Ver_c_8%m(k)*F_topo_ls(i,j)
+               log_pstar(i,j)=log_pstar(i,j)+grav_8*(hm(i,j)-hauteur)/(rgasd_8*Cstv_Tstr_8)
+               hm(i,j)=hauteur
+
+               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
+               press=1.d5*exner**(1.d0/cappa_8)
+               F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
+
+               hauteur=Ver_z_8%t(k)+Ver_b_8%t(k)*F_topo(i,j)+Ver_c_8%t(k)*F_topo_ls(i,j)
+               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
+               theta=mtn_tzero*exp(a00*hauteur)
+               F_t(i,j,k)=theta*exner
+            end do
+            end do
          end do
 
        else
@@ -375,8 +390,12 @@ contains
 
          F_t(:,:,1:G_nk) = mtn_tzero
 
-!        calculate maximum mountain slope
+      end if
+!
+      end if
 
+      if ( F_theocase_S == 'NOFLOW' ) then
+!        calculate maximum mountain slope
          slpmax=0
          dx=Dcst_rayt_8*Grd_dx*pi_8/180.
          do j=1,l_nj
@@ -386,30 +405,38 @@ contains
          end do
          end do
          slpmax=(180.d0/pi_8)*atan(slpmax)
-
          print*,"SLPMAX=",slpmax," DEGREES"
-
       end if
-!
+
 !-----------------------------------------------------------------------
 !     Transform orography from geometric to geopotential height
 !-----------------------------------------------------------------------
-      F_topo = grav_8 * F_topo
+      F_topo    = grav_8 * F_topo
+      F_topo_ls = grav_8 * F_topo_ls
 !
-      end if
-
 !---------------------------------------------------------------------
 !     Set winds (u,v)
 !---------------------------------------------------------------------
 !
       F_u(:,:,1:G_nk)  = mtn_flo
       F_v(:,:,1:G_nk)  = 0.0
+!
+!-------------------------------------------------
+!        Introduce an horizontal wind perturbation
+!-------------------------------------------------
+!
+      if ( F_theocase_S == 'NOFLOW' ) then
+         do i=1,l_ni
+            if(i+l_i0-1==mtn_pos_seed(1)) F_u(i,:,mtn_pos_seed(2))=mtn_wind_seed
+         end do
+      end if
 
       if (schm_sleve_L) then
          call rpn_comm_xch_halo ( sls, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
                                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       end if
 
+      deallocate(log_pstar,hm)
 !
  9000 format(/,'CREATING INPUT DATA FOR MOUNTAIN WAVE THEORETICAL CASE' &
             /,'======================================================')
