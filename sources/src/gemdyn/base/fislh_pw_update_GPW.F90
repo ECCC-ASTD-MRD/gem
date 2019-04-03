@@ -68,13 +68,13 @@
       do k=1,l_nk
          pw_wz_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= grav_8*zmom(1:l_ni,1:l_nj,k)
-         if(k.eq.1) then
+         if(k == 1) then
             pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
             pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
          end if
          pw_pm_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pm(1:l_ni,1:l_nj,k))
          pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar(1:l_ni,1:l_nj,k+1))
-         if(k.eq.l_nk) then
+         if(k == l_nk) then
             pw_p0_plus(1:l_ni,1:l_nj)=exp(pw_log_pm(1:l_ni,1:l_nj,l_nk+1))
          end if
       end do

@@ -15,6 +15,7 @@
 
 module ver
    use type_mod
+   use vGrid_Descriptors
    implicit none
    public
    save
@@ -87,6 +88,8 @@ module ver
 
       type (vertical)   Ver_hyb
       type (vertical)   Ver_std_p_prof
+
+      type(vgrid_descriptor) :: Ver_vgdobj
 
       real :: Ver_hyb_top
 

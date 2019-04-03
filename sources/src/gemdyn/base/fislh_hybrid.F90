@@ -39,13 +39,12 @@
       integer Nk
       real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
 !
-!Authors: Claude Girard & André Plante, July 2017
+!Authors: Claude Girard & Andre Plante, July 2017
 !
 
       character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S  = 'ref-t'
 
-      type(vgrid_descriptor) :: vcoord
       character(len=32) :: REFP0_S, REFP0_LS_S, dumc
       integer k,istat,pnip1,options_readwrite,options_readonly,ier
       integer, dimension(:), pointer :: wkpti
@@ -73,51 +72,55 @@
               Ver_Tstar_8%m(G_nk+1),   Ver_Tstar_8%t(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
 
-      Ver_code    = 6
+      Ver_code = 6
+
       ! Construct vertical coordinate
-      istat = vgd_new ( vcoord, kind=Level_kind_ip1, version=1, hyb=F_hybuser    , &
-                        rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2), &
-                        rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4), &
-                        dhm=0., dht=0.)
-      if (Lun_debug_L) istat = vgd_print(vcoord)
+      Level_kind_ip1 = 21
+      Level_version  = 1
+
+      istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
+                   version=Level_version, hyb=F_hybuser,&
+               rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
+               rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
+                                         dhm=0., dht=0. )
+
+      if (Lun_debug_L) istat = vgd_print(Ver_vgdobj)
 
       call handle_error_l(istat==VGD_OK,'fislh_hybrid','coordinate construction failed')
 
-      ier = vgd_get(vcoord,'RFLS large scale reference field',rfls_S,quiet=.true.)
+      ier = vgd_get(Ver_vgdobj,'RFLS large scale reference field',rfls_S,quiet=.true.)
       Schm_sleve_L = trim(rfls_S) /= VGD_NO_REF_NOMVAR
-
-!      print*,'istat, VGD_ERROR',istat,VGD_ERROR
 
       ! Retrieve information required to fill model arrays
       nullify(wkpt,wkpti,wkpt8)
-      if (vgd_get(vcoord,'CA_M - vertical A coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CA_M - vertical A coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_a_8%m = wkpt8(1:size(Ver_a_8%m)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CB_M - vertical B coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CB_M - vertical B coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_b_8%m = wkpt8(1:size(Ver_b_8%m)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CA_T - vertical A coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CA_T - vertical A coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_a_8%t = wkpt8(1:size(Ver_a_8%t)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CB_T - vertical B coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CB_T - vertical B coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_b_8%t = wkpt8(1:size(Ver_b_8%t)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CC_M - vertical C coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CC_M - vertical C coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_c_8%m = wkpt8(1:size(Ver_c_8%m)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CC_T - vertical C coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CC_T - vertical C coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_c_8%t = wkpt8(1:size(Ver_c_8%t)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VCDM - vertical coordinate (m)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
       Ver_hyb%m = wkpt(1:size(Ver_hyb%m)); deallocate(wkpt); nullify(wkpt)
-      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VCDT - vertical coordinate (t)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
       Ver_hyb%t = wkpt(1:size(Ver_hyb%t)); deallocate(wkpt); nullify(wkpt)
-      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VIPM - level ip1 list (m)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%m = wkpti(1:size(Ver_ip1%m)); deallocate(wkpti); nullify(wkpti)
-      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%t = wkpti(1:size(Ver_ip1%t)); deallocate(wkpti); nullify(wkpti)
 
 !      print*,'istat, VGD_ERROR',istat,VGD_ERROR
 
       print*,'WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING'
-      if( vgd_stda76(vcoord, Ver_ip1%m, std_p_prof, 'PRESSURE') /= VGD_OK) istat = VGD_ERROR
+      if( vgd_stda76(Ver_vgdobj, Ver_ip1%m, std_p_prof, 'PRESSURE') /= VGD_OK) istat = VGD_ERROR
       Ver_std_p_prof%m=std_p_prof
       deallocate(std_p_prof)
-      if( vgd_stda76(vcoord, Ver_ip1%t, std_p_prof, 'PRESSURE') /= VGD_OK) istat = VGD_ERROR
+      if( vgd_stda76(Ver_vgdobj, Ver_ip1%t, std_p_prof, 'PRESSURE') /= VGD_OK) istat = VGD_ERROR
       Ver_std_p_prof%t=std_p_prof
       deallocate(std_p_prof)
       call handle_error_l(istat==VGD_OK, &
@@ -193,14 +196,14 @@
       Ver_zeronk(G_nk)=0.
 
 !     ----------------------------------------------------------
-!     Save vcoord and ip1m/t for output
+!     Save Ver_vgdobj and ip1m/t for output
 !     ----------------------------------------------------------
       REFP0_S = 'PW_P0:P'  !# gmmk_pw_p0_plus_s !NOTE: could gmmk_* be defined as parameters in a .cdk, this way it could be used here and would be more consistent
       REFP0_LS_S = ' '
       if (Schm_sleve_L) REFP0_LS_S = 'PW_P0_LS'  !# gmmk_pw_p0_ls_s
-      istat = vgrid_wb_put(VGRID_M_S, vcoord, Ver_ip1%m,  &
+      istat = vgrid_wb_put(VGRID_M_S, Ver_vgdobj, Ver_ip1%m,  &
            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
-      istat = vgrid_wb_put(VGRID_T_S, vcoord, Ver_ip1%t,  &
+      istat = vgrid_wb_put(VGRID_T_S, Ver_vgdobj, Ver_ip1%t,  &
            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
 
       options_readwrite = WB_IS_LOCAL

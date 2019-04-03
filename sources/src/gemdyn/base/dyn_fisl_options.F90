@@ -95,8 +95,6 @@ module dyn_fisl_options
 
    !# True-> use SLEVE vertical coordinate
    logical :: Schm_sleve_L = .false.
-   namelist /dyn_fisl  / Schm_sleve_L
-   namelist /dyn_fisl_P/ Schm_sleve_L
 
    !# True-> averaging B and C in SLEVE scheme
    logical :: Schm_bcavg_L = .true.

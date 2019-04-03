@@ -38,6 +38,13 @@
       type(C_PTR), intent(IN), value    :: lv
       integer, intent(IN), value        :: n, m
     end subroutine tricublin_zyx1_m_n
+    subroutine tricublin_zyx1_p(d,f,pxyz,lv,n,m) bind(C,name='Tricublin_zyx1_p')
+      import :: C_PTR
+      type(C_PTR), dimension(*), intent(IN)    :: f, d
+      real, dimension(*), intent(IN)  :: pxyz
+      type(C_PTR), intent(IN), value    :: lv
+      integer, intent(IN), value        :: n, m
+    end subroutine tricublin_zyx1_p
     subroutine tricublin_mono_zyx_n(d,l,mi,ma,f,pxyz,lv,n) bind(C,name='Tricublin_mono_zyx_n')
       import :: C_PTR
       real, dimension(*), intent(OUT)   :: d, l, mi, ma

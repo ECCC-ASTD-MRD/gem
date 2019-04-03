@@ -38,7 +38,7 @@
 
       !--------------------------------------------------------------------
 
-      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    & 
+      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
                                                     p_zabcd_8,p_zbacd_8,&
                                                     p_zcabd_8,p_zdabc_8
 
@@ -56,7 +56,7 @@
 
       !--------------------------------------------------------------------
 
-      if  (F_lev_S /= 't') call handle_error (-1,'adz_tricub_lag3d_conserv','NOT AVAILABLE') 
+      if  (F_lev_S /= 't') call handle_error (-1,'adz_tricub_lag3d_conserv','NOT AVAILABLE')
 
       p_bsz_8   => adv_bsz_8%t
       p_zabcd_8 => adv_zabcd_8%t

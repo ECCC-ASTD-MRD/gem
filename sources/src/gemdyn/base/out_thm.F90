@@ -772,7 +772,7 @@
            call vertint2 ( w5,cible,nko, wt1,wlnph_ta,G_nk         ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
-            if (Outd_filtpass(pnzz,set).gt.0) &
+            if (Outd_filtpass(pnzz,set) > 0) &
                 call filter2( w5,Outd_filtpass(pnzz,set),Outd_filtcoef(pnzz,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
              call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &

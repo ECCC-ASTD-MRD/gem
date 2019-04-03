@@ -89,9 +89,9 @@ module adz_options
    !# True-> Mass Conservation/Shape-preserving for current tracer
    logical :: adz_Mass_Cons_tr_L = .false.
 
-   !# Bermejo-Conde LAM Aranami: Computations related to upstream positions done at each timestep 
-   !# * 0 -> No 
-   !# * 1 -> Yes  
+   !# Bermejo-Conde LAM Aranami: Computations related to upstream positions done at each timestep
+   !# * 0 -> No
+   !# * 1 -> Yes
    integer :: adz_pos_reset = 0
 
    !# South boundary in GY for an embedded LAM
@@ -114,13 +114,13 @@ module adz_options
    real*8 :: adz_gc_area_8,adz_gs_area_8
 
    !# Variable for NONE/Cubic/Quintic Interpolation
-   character(len=12) :: adz_intp_S = 'CUBIC' 
+   character(len=12) :: adz_intp_S = 'CUBIC'
 
    integer, pointer, contiguous, dimension(:) :: ii_w
 
 contains
 
-!**s/r adz_nml - Read namelist adz 
+!**s/r adz_nml - Read namelist adz
 
       integer function adz_nml (F_unf)
       use adv_grid

@@ -37,6 +37,7 @@
       use glb_ld
       use cstv
       use lun
+      use inp_mod
       use out_mod
       use out3
       use levels
@@ -89,20 +90,6 @@
 
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
-
-      Level_kind_ip1 = 5
-      Level_version  = 5
-
-      if(Schm_sleve_L)then
-         Level_version  = 100
-      end if
-
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         Level_kind_ip1 = 21
-         Level_version  = 1
-         Dynamics_hydro_L = .false.
-      end if
 
       if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          if ( trim(sol_type_S) == 'DIRECT') then
@@ -166,12 +153,14 @@
 
       if (Schm_autobar_L) Ctrl_phyms_L = .false.
 
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-          call fislh_hybrid( hyb_H, G_nk)
+      Dynamics_hauteur_L = Dynamics_Kernel_S(14:15) == '_H'
+
+      if (Dynamics_hauteur_L) then
+         Dynamics_hydro_L = .false.
+         call fislh_hybrid ( hyb_H, G_nk)
       else
          call set_zeta ( hyb, G_nk )
-      end if
+      endif
 
       Schm_nith = G_nk
 

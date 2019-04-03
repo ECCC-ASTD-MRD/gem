@@ -83,7 +83,7 @@
          err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':P' ,Adz_stack(n)%src)
          err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':M' ,Adz_stack(n)%dst)
       end do
-      call adz_cubicLag ( Adz_stack, Tr3d_ntrNT, & 
+      call adz_cubicLag ( Adz_stack, Tr3d_ntrNT, &
            Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.false. )
 

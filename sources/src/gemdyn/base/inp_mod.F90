@@ -13,16 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module inp_mod
+   use vGrid_Descriptors
    implicit none
    public
    save
 
+   character(len=1 ) :: Inp_levtype_S
    character(len=16) :: Inp_datev
-   logical Inp_zd_L,Inp_w_L
-   integer Inp_nfiles , Inp_comm_id, Inp_comm_setno,&
-           Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind      ,&
-              Inp_version, Inp_handle , Inp_cmcdate
+   logical Inp_src_hauteur_L, Inp_dst_hauteur_L, Inp_zd_L, Inp_w_L
+   integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
+           Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
+           Inp_version, Inp_handle , Inp_cmcdate
    integer, dimension(:), pointer :: Inp_list_unf => null()
+   type(vgrid_descriptor) :: Inp_vgd_src
    real*8 Inp_pref_a_8
 
    ! Remove the following 2 lines by 2021

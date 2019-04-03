@@ -169,6 +169,79 @@ typedef struct{
   uint32_t offj;   // offset to add to j position (e.g. global to local grid remapping)
 }ztab;
 
+static void cubic_coeff_denom(double *t, double *f, int n){
+  int i, j;
+#if defined(SIMD)
+  __m256d cp1, cm1;
+  static double onep[4] = { 1.0,  1.0,  1.0,  1.0};
+  static double onem[4] = {-1.0, -1.0, -1.0, -1.0};
+  cp1 = _mm256_loadu_pd(onep);
+  cm1 = _mm256_loadu_pd(onem);
+#endif
+  t += 4;    // will store no coefficients for first interval (no point below)
+  j = 0;
+#if defined(SIMD)
+  {
+    __m256d a, b, c, d, ab, ac, ad, bc, bd, cd, v1, v2, v3, v4, t1, t2, t3, t4;
+    for( ; j<n-6 ; j+=4){
+      a  = _mm256_loadu_pd(f+0);
+      b  = _mm256_loadu_pd(f+1);
+      c  = _mm256_loadu_pd(f+2);
+      d  = _mm256_loadu_pd(f+3);
+      ab = _mm256_sub_pd(a,b);
+      ac = _mm256_sub_pd(a,c);
+      ad = _mm256_sub_pd(a,d);
+      bc = _mm256_sub_pd(b,c);
+      bd = _mm256_sub_pd(b,d);
+      cd = _mm256_sub_pd(c,d);
+      v1 = _mm256_mul_pd( ab ,  _mm256_mul_pd( ac , ad) );
+      v2 = _mm256_mul_pd( ab ,  _mm256_mul_pd( bc , bd) );
+      v3 = _mm256_mul_pd( ac ,  _mm256_mul_pd( bc , cd) );
+      v4 = _mm256_mul_pd( ad ,  _mm256_mul_pd( bd , cd) );
+      v1 = _mm256_div_pd(cp1 , v1);     // a1 a2 a3 a4   coefficient a for points 1 2 3 4
+      v2 = _mm256_div_pd(cm1 , v2);     // b1 b2 b3 b4   coefficient b for points 1 2 3 4
+      v3 = _mm256_div_pd(cp1 , v3);     // c1 c2 c3 c4   coefficient c for points 1 2 3 4
+      v4 = _mm256_div_pd(cm1 , v4);     // d1 d2 d3 d4   coefficient d for points 1 2 3 4
+      t1 = _mm256_unpacklo_pd(v1,v2);   // a1 b1 a3 b3
+      t2 = _mm256_unpackhi_pd(v1,v2);   // a2 b2 a4 b4
+      t3 = _mm256_unpacklo_pd(v3,v4);   // c1 d1 c3 d3
+      t4 = _mm256_unpackhi_pd(v3,v4);   // c2 d2 c4 d4
+      _mm_storeu_pd(t+ 0, _mm256_extractf128_pd(t1,0));   // a1 b1  coefficients a b c d for point 1
+      _mm_storeu_pd(t+ 2, _mm256_extractf128_pd(t3,0));   // c1 d1
+      _mm_storeu_pd(t+ 4, _mm256_extractf128_pd(t2,0));   // a2 b2  coefficients a b c d for point 2
+      _mm_storeu_pd(t+ 6, _mm256_extractf128_pd(t4,0));   // c2 d2
+      _mm_storeu_pd(t+ 8, _mm256_extractf128_pd(t1,1));   // a3 b3  coefficients a b c d for point 3
+      _mm_storeu_pd(t+10, _mm256_extractf128_pd(t3,1));   // c3 d3
+      _mm_storeu_pd(t+12, _mm256_extractf128_pd(t2,1));   // a4 b4  coefficients a b c d for point 4
+      _mm_storeu_pd(t+14, _mm256_extractf128_pd(t4,1));   // c4 d4
+      f++;
+      t += 16;
+    }
+  }
+#endif
+  {
+  double a, b, c, d, ab, ac, ad, bc, bd, cd;
+    for( ; j<n-3 ; j++){     // will store no coefficients for the last 2 intervals
+      a = f[0];
+      b = f[1];
+      c = f[2];
+      d = f[3];
+      ab = a - b;
+      ac = a - c;
+      ad = a - d;
+      bc = b - c;
+      bd = b - d;
+      cd = c - d;
+      t[0]  =  1.0/(ab*ac*ad);
+      t[1]  = -1.0/(ab*bc*bd);
+      t[2]  =  1.0/(ac*bc*cd);
+      t[3]  = -1.0/(ad*bd*cd);
+      t += 4;
+      f++;
+    }
+  }
+}
+
 // triple product used for Lagrange cubic polynomials coefficients in the non constant case
 #define TRIPRD(x,a,b,c) ((x-a)*(x-b)*(x-c))
 
@@ -601,6 +674,17 @@ static inline void Tricublin_zyxf1_inline(float *d, float *f1, double *pxyz, int
       integer, intent(IN), value        :: n, m                                  !InTf!
 //****
     end subroutine tricublin_zyx1_m_n                                            !InTf!
+void Tricublin_zyx1_p(float **dp, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
+//****f* librkl/tricublin_zyx1_p  (Fortran version)
+// ARGUMENTS
+    subroutine tricublin_zyx1_p(d,f,pxyz,lv,n,m) bind(C,name='Tricublin_zyx1_p')   !InTf!
+      import :: C_PTR                                                            !InTf!
+      type(C_PTR), dimension(*), intent(IN)    :: f, d                           !InTf!
+      real, dimension(*), intent(IN)  :: pxyz                                    !InTf!
+      type(C_PTR), intent(IN), value    :: lv                                    !InTf!
+      integer, intent(IN), value        :: n, m                                  !InTf!
+//****
+    end subroutine tricublin_zyx1_p                                            !InTf!
 //****f* librkl/tricublin_mono_zyx_n  (Fortran version)
 // ARGUMENTS
     subroutine tricublin_mono_zyx_n(d,l,mi,ma,f,pxyz,lv,n) bind(C,name='Tricublin_mono_zyx_n')   !InTf!
@@ -678,7 +762,7 @@ void Tricublin_zyx1_n(float *d, float *f1, pxpypz *pxyz,  ztab *lv, int n)
 // ARGUMENTS
 void Tricublin_zyx1_n_m(float *d, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
 //****
-{  // multiple field version
+{  // multiple field version with sources pointer lists, d[n][m]  ( Fortran dimension(m,n))
   double cxyz[24];   // interpolation coefficients 4 for each dimension (x, y, z)
   int ixyz;          // unilinear index into array f1 (collapsed dimensions)
   int i;
@@ -700,25 +784,46 @@ void Tricublin_zyx1_n_m(float *d, float **fs, pxpypz *pxyz,  ztab *lv, int n, in
 // ARGUMENTS
 void Tricublin_zyx1_m_n(float *dm, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
 //****
-{  // multiple field version
+{  // multiple field version with sources pointer lists, d[m][n]  ( Fortran dimension(n,m))
   double cxyz[24];   // interpolation coefficients 4 for each dimension (x, y, z)
   int ixyz;          // unilinear index into array f1 (collapsed dimensions)
-  int i;
+  int i, j;
   int n0 = n;
   float *d0;
   int zlinear;       // non zero if linear interpolation
                      // all above computed in Vcoef_pxyz4, used in Tricublin_zyxf1
-  while(n--){
+  for(j=0 ; j<n ; j++){                                                           // loop over n points
     zlinear = Vcoef_pxyz4_inline(cxyz, &ixyz, pxyz->px, pxyz->py, pxyz->pz, lv);  // compute coefficients
-    d0 = dm;
+    d0 = dm;                                                                      // base address for results
     for(i=0 ; i< m ; i++){
       Tricublin_zyxf1_inline(d0, fs[i] + ixyz, cxyz, lv->ni, lv->nij, zlinear);       // interpolate
 //       printf("DEBUG: i = %d, n= %d, offset = %d, value = %f \n",i,n,d0-dm,*d0);
-      d0 = d0 + n0;   // next result
+      d0 = d0 + n0;                                                                   // next result
     }
-    dm++;         // next set of results
+    dm++;        // next set of results
     pxyz += 1;   // next set of positions
 //     return;
+  }
+}
+
+//****f* librkl/Tricublin_zyx1_p
+// Synopsis
+//
+// ARGUMENTS
+void Tricublin_zyx1_p(float **dp, float **fs, pxpypz *pxyz,  ztab *lv, int n, int m)
+//****
+{  // multiple field version with results and sources pointer lists
+  double cxyz[24];   // interpolation coefficients 4 for each dimension (x, y, z)
+  int ixyz;          // unilinear index into array f1 (collapsed dimensions)
+  int i, j;
+  int zlinear;       // non zero if linear interpolation
+                     // all above computed in Vcoef_pxyz4, used in Tricublin_zyxf1
+  for(j=0 ; j<n ; j++){                                                                  // loop over n points
+    zlinear = Vcoef_pxyz4_inline(cxyz, &ixyz, pxyz->px, pxyz->py, pxyz->pz, lv);         // compute coefficients
+    for(i=0 ; i< m ; i++){                                                               // loop over m variables
+      Tricublin_zyxf1_inline(dp[i] + j, fs[i] + ixyz, cxyz, lv->ni, lv->nij, zlinear);   // interpolate
+    }
+    pxyz += 1;   // next set of positions
   }
 }
 

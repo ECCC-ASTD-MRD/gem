@@ -12,10 +12,10 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
- 
-!**s/r adz_conserv_tr - Advection of Tracers + Mass Conservation/Shape-Preservation 
 
-      subroutine adz_conserv_tr () 
+!**s/r adz_conserv_tr - Advection of Tracers + Mass Conservation/Shape-Preservation
+
+      subroutine adz_conserv_tr ()
 
       use adz_mem
       use adz_options
@@ -39,7 +39,7 @@
       integer num,nind_0,nind_2
       integer i0_0,j0_0,in_0,jn_0,i0_2,j0_2,in_2,jn_2,i0_w,j0_w,in_w,jn_w
       integer, pointer, contiguous, dimension(:) :: ii_0,ii_2
-      real, pointer, contiguous, dimension (:,:,:) :: src, dst 
+      real, pointer, contiguous, dimension (:,:,:) :: src, dst
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)   :: bidon,dst_w,store_pilot
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1) :: pr_m,pr_t
       real, dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0
@@ -64,7 +64,7 @@
       err = gmm_get(gmmk_cub_i_s,fld_cub_i)
 
       !-----------------------------------------------
-      !Pre-Compute indices to be used in interpolation 
+      !Pre-Compute indices to be used in interpolation
       !-----------------------------------------------
       Adz_pos_reset = 1
 
@@ -129,7 +129,7 @@
       !----------------------------------------------------------------
       do n=1,Tr3d_ntr
 
-         if (.not.(Tr3d_mono(n)>1.or.Tr3d_mass(n)/=0)) cycle  
+         if (.not.(Tr3d_mono(n)>1.or.Tr3d_mass(n)/=0)) cycle
 
          adz_Mass_Cons_tr_L = .true.
 
@@ -138,10 +138,10 @@
          BC_LAM_flux_1_L = Tr3d_mass(n)==1.and..not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1
          BC_LAM_flux_2_L = Tr3d_mass(n)==1.and..not.Grd_yinyang_L.and.Adz_BC_LAM_flux==2
 
-         Adz_BC_LAM_flux_n = 0 
+         Adz_BC_LAM_flux_n = 0
          if (BC_LAM_flux_1_L) Adz_BC_LAM_flux_n = 1
 
-         !Initialize Bermejo-Conde parameters based on Tr3d_mass 
+         !Initialize Bermejo-Conde parameters based on Tr3d_mass
          !------------------------------------------------------
          BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
 
@@ -177,8 +177,8 @@
 
          dst_w(:,:,:) = dst(:,:,:) !Copy piloting conditions
 
-         !High-order interpolation + storage of MONO/LIN/MAX/MIN + 
-         !estimate FLUX_out/FLUX_in if Bermejo-Conde LAM Flux Aranami 
+         !High-order interpolation + storage of MONO/LIN/MAX/MIN +
+         !estimate FLUX_out/FLUX_in if Bermejo-Conde LAM Flux Aranami
          !-----------------------------------------------------------
          call adz_cubic (dst_w, src, Adz_pxyzt                     ,&
                          l_ni,l_nj,l_nk,l_minx,l_maxx,l_miny,l_maxy,&
@@ -214,14 +214,14 @@
          !----------------
          Adz_Mass_Cons_tr_L = .false.
          Adz_BC_LAM_flux_n = 0
-         Adz_pos_reset = 0 
+         Adz_pos_reset = 0
          Adz_intp_S = 'CUBIC'
 
       end do
 
       deallocate(ii_0)
 
-      if (Adz_BC_LAM_flux==2) deallocate(ii_2) 
+      if (Adz_BC_LAM_flux==2) deallocate(ii_2)
 
       call gemtime_stop (35)
 

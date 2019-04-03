@@ -107,7 +107,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
       ! omp critical section implies synchronization.
       if (.not. fftw_thread_initialized) then
          ii = fftw_init_threads()
-         if (ii .eq. 0) then
+         if (ii == 0) then
             ! The caution about deadlocks is even stronger here.  Since this
             ! is in a critical section, only one thread will ever reach
             ! this point in the event of an error.

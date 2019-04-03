@@ -16,8 +16,7 @@
 !** s/r diag_zd_w_H - Computes model vertical velocities zd and w diagnostically.
 !                     Height-type vertical coordinate
 
-!
-      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_q,  &
+      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_s, F_q,  &
                                   Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
       use metric
       use gmm_geof
@@ -31,41 +30,25 @@
       use ver
       use metric
       use gmm_itf_mod
+      use inp_base, only:inp_3dhgts
       implicit none
 #include <arch_specific.hf>
-!
+
       integer, intent(in) ::  Minx, Maxx, Miny, Maxy, Nk
       logical, intent(in) ::  F_zd_L, F_w_L
+      real, dimension(Minx:Maxx,Miny:Maxy   ),  intent(in ) :: F_s
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
 !
-!author:  Claude Girard, August 2017
-!
-!revision
-!
-!arguments
-!_______________________________________________________
-!        |                                             |
-! NAME   |             DESCRIPTION                     |
-!--------|---------------------------------------------|
-! F_zd   | coordinat vertical motion ( 1/s )           |
-! F_w    | true vertical motion      ( m/s )           |
-!--------|---------------------------------------------|
-! F_u    | x component of velocity                     |
-! F_v    | y component of velocity                     |
-! F_t    | temperature                                 |
-! F_q    | pressure variable                           |
-! F_zd_L | true to compute zdot                        |
-! F_w_L  | true to compute w                           |
-!________|_____________________________________________|
-!
-
       integer :: i, j, k, kp, km, i0, in, j0, jn
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: rau
       real, dimension(Minx:Maxx,Miny:Maxy)    :: rJzX, rJzY, rJzZ
 !     ________________________________________________________________
 !
+      call fislh_pres ( F_q, F_s, F_t, &
+                        l_minx,l_maxx,l_miny,l_maxy, G_nk )
+
       if(.not.(F_zd_L.or.F_w_L)) return
 
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
@@ -173,4 +156,72 @@
 !     ________________________________________________________________
 !
       return
-      end
+
+contains
+      subroutine fislh_pres (F_q, F_ps, F_vt,&
+                             Minx,Maxx,Miny,Maxy,F_nk)
+      use ver
+      implicit none
+      integer                                    , intent(in)  :: Minx,Maxx,Miny,Maxy, F_nk
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk+1), intent(out) :: F_q
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk)  , intent(in)  :: F_vt
+      real, dimension(Minx:Maxx,Miny:Maxy     )  , intent(in)  :: F_ps
+
+      ! Local varibales
+      integer :: i, j, k, err
+      integer, dimension(:), pointer :: ip1_list
+      real, dimension(:,:), pointer :: topo,topols
+      real, dimension(:,:,:), pointer :: zz
+      real*8 :: aaa
+!
+!     ________________________________________________________________
+!
+      nullify(zz,ip1_list)
+
+      err= vgd_get ( Ver_vgdobj, 'VIPM - level ip1 list (m)', ip1_list )
+
+      allocate (topo  (l_minx:l_maxx,l_miny:l_maxy),&
+                topols(l_minx:l_maxx,l_miny:l_maxy),&
+                zz(l_minx:l_maxx,l_miny:l_maxy,size(ip1_list)))
+
+      err= gmm_get (gmmk_sls_s ,sls )
+      err= gmm_get (gmmk_fis0_s,fis0)
+
+      aaa=rgasd_8*Cstv_tstr_8
+      do j=1,l_nj
+      do i=1,l_ni
+         topo  (i,j)= fis0(i,j) / grav_8
+         topols(i,j)= sls (i,j) / grav_8
+         F_q(i,j,G_nk+1)=aaa*log(F_ps(i,j)/1.e5)
+      end do
+      end do
+
+      call inp_3dhgts ( Ver_vgdobj, ip1_list, topo, topols, zz, 1, size(ip1_list))
+      deallocate (topo,topols)
+
+      ! Integrate hydrostatic equation, dq/dz=-gTstar/Tv, to obtain q at momentum levels
+      aaa = grav_8*Cstv_tstr_8
+      do k=G_nk,1,-1
+         do j=1,l_nj
+         do i=1,l_ni
+            F_q(i,j,k) = F_q(i,j,k+1) + aaa*(zz(i,j,k+1) - zz(i,j,k))/F_vt(i,j,k)
+         end do
+         end do
+      end do
+      ! Add gz to obtain qprime, stored in F_q
+      do k=1,G_nk+1
+      do j=1,l_nj
+      do i=1,l_ni
+         F_q(i,j,k)=F_q(i,j,k)+grav_8*zz(i,j,k)
+      end do
+      end do
+      end do
+      deallocate(zz,ip1_list)
+!
+!     ________________________________________________________________
+!
+      return
+      end subroutine fislh_pres
+
+
+      end subroutine fislh_diag_zd_w

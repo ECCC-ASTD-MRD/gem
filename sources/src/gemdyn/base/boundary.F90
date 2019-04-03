@@ -54,18 +54,18 @@
       Afdg1 = 0.0
       Bfdg1 = 0.0
 
-!$omp do 
+!$omp do
       do j=j0,jn
       do i=i0,in
             fdg2(i,j) = mc_css_H_8(i,j) * (F_rt(i,j,Nk)-F_nt(i,j,Nk))
       end do
       end do
-!$omp end do    
- 
+!$omp end do
+
       call rpn_comm_xch_halo( fdg2 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj ,1  , &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-!$omp do 
+!$omp do
       do j=j0 ,jn
       do i=i0u,inu
            Afdg1(i,j) = - mc_Jx(i,j,Nk) * &
@@ -73,9 +73,9 @@
                                               + fdg2(i  ,j)*mc_iJz(i  ,j,Nk) )
       end do
       end do
-!$omp end do    
+!$omp end do
 
-!$omp do      
+!$omp do
       do j=j0v,jnv
       do i=i0 ,in
             Bfdg1(i,j) = - mc_Jy(i,j,Nk) * &
@@ -98,7 +98,7 @@
                 + half * (mc_Ix(i,j,Nk)*(Afdg1(i,j)+Afdg1(i-1,j)))
 !
          bdd_v8 = (Bfdg1 (i,j)*geomh_cyM_8(j)-Bfdg1 (i,j-1)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                + half * (mc_Iy(i,j,Nk)*(Bfdg1(i,j)+Bfdg1(i,j-1))) 
+                + half * (mc_Iy(i,j,Nk)*(Bfdg1(i,j)+Bfdg1(i,j-1)))
 
          F_rhs(i,j,Nk)=F_rhs(i,j,Nk)-Cstv_hco0_8*(add_v8+bdd_v8)
 

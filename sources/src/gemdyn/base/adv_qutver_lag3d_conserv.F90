@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adv_qutver_lag3d_conserv - Quintic Vertical + Store Mono/Lin/Min/Max 
+!**s/r adv_qutver_lag3d_conserv - Quintic Vertical + Store Mono/Lin/Min/Max
 
       subroutine adv_qutver_lag3d_conserv (F_qut,F_mono,F_lin,F_min,F_max,F_in, &
                                            F_x,F_y,F_z,F_num,F_nind,ii,F_nk,F_lev_S)
@@ -38,7 +38,7 @@
 
       !--------------------------------------------------------------------
 
-      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    & 
+      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
                                                     p_zabcd_8,p_zbacd_8,&
                                                     p_zcabd_8,p_zdabc_8,&
                                                     p_zxabcde_8,p_zaxbcde_8,p_zbxacde_8,&
@@ -49,7 +49,7 @@
                  c1, c2, c3, c4, d1, d2, d3, d4, &
                  p1, p2, p3, p4, ra, rb, rc, rd, &
                  x1, x2, x3, x4, e1, e2, e3, e4, &
-                 p0, p5, rx, re, & 
+                 p0, p5, rx, re, &
                  prf1, prf2, capx, capy, capz
       real    :: prmin, prmax
       logical :: zcubic_L, zqutic_L
@@ -64,7 +64,7 @@
 
       !--------------------------------------------------------------------
 
-      if  (F_lev_S /= 't') call handle_error (-1,'adz_qutver_lag3d_conserv','NOT AVAILABLE') 
+      if  (F_lev_S /= 't') call handle_error (-1,'adz_qutver_lag3d_conserv','NOT AVAILABLE')
 
       p_bsz_8   => adv_bsz_8%t
       p_zabcd_8 => adv_zabcd_8%t

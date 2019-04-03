@@ -53,17 +53,17 @@
            "MPI_sum","grid",ierr)
        ro = dsqrt(ro)
 
-       if (iout .gt. 0 .and. its .eq. 0)&
+       if (iout > 0 .and. its == 0)&
            write(iout, 199) its, ro ,eps1
 !      write(6,199) its, ro
         r0=ro
 
-       if (ro .eq. 0.0d0) goto 999
+       if (ro == 0.0d0) goto 999
        t = 1.0d0/ ro
        do 210 j=1, n
           vv(j,1) = vv(j,1)*t
  210   continue
-       if (its .eq. 0) eps1=eps*ro
+       if (its == 0) eps1=eps*ro
 !     ** initialize 1-st term  of rhs of hessenberg system..
        rs(1) = ro
        i = 0
@@ -103,7 +103,7 @@
 !
 
        hh(i1,i) = t
-       if ( t .eq. 0.0d0) goto 58
+       if ( t == 0.0d0) goto 58
        t = 1.0d0/t
        do 57  k=1,n
           vv(k,i1) = vv(k,i1)*t
@@ -139,9 +139,9 @@
 !
        hh(i,i) = c(i)*hh(i,i) + s(i)*hh(i1,i)
        ro = abs(rs(i1))
-       if (iout .gt. 0) &
+       if (iout > 0) &
            write(iout, 199) its, ro , eps1
-       if (i .lt. im .and. (ro .gt. eps1))  goto 4
+       if (i < im .and. (ro > eps1))  goto 4
 !
 !     now compute solution. first solve upper triangular system.
 !
@@ -188,8 +188,8 @@
 !
 !     restart outer loop  when necessary
 !
-       if (ro .le. eps1) goto 990
-       if (its .ge. maxits) goto 991
+       if (ro <= eps1) goto 990
+       if (its >= maxits) goto 991
 !
 !     else compute residual vector and continue..
 !
@@ -200,7 +200,7 @@
  24    continue
        do 25  j=1,i1
           t = rs(j)
-          if (j .eq. 1)  t = t-1.0d0
+          if (j == 1)  t = t-1.0d0
           call daxpy (n, t, vv(1,j), 1,  vv, 1)
  25    continue
  199   format('   its =', i4, ' res. norm =', d20.6, ' eps1 =', d20.6)

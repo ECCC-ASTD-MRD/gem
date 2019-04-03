@@ -79,6 +79,8 @@
       real*8, parameter :: half=0.5d0
 !     ________________________________________________________________
 !
+      F_s(1:l_ni,1:l_nj) = log(F_s(1:l_ni,1:l_nj)/Cstv_pref_8)
+
       if(.not.(F_zd_L.or.F_w_L)) return
 
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)

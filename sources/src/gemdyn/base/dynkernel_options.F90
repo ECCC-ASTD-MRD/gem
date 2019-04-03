@@ -34,6 +34,8 @@ module dynkernel_options
    namelist /dyn_kernel  / Schm_autobar_L
    namelist /dyn_kernel/ Schm_autobar_L
 
+   logical :: Dynamics_hauteur_L, Dynamics_autobar_L
+
 contains
 
 !**s/r dynkernel_nml - Read namelist dyn_kernel

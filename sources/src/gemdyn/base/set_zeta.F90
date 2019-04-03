@@ -109,12 +109,8 @@
 ! none
 !
 
-      character(len=32), parameter :: VGRID_M_S  = 'ref-m'
-      character(len=32), parameter :: VGRID_T_S  = 'ref-t'
-
-      type(vgrid_descriptor) :: vcoord
       character(len=32) :: REFP0_S, REFP0_LS_S, dumc
-      integer k,istat,pnip1,options_readwrite,options_readonly
+      integer k,istat,pnip1,err,options_readwrite,options_readonly
       integer, dimension(:), pointer :: wkpti
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real    height,heightp1
@@ -151,15 +147,36 @@
       Ver_code    = 6
 
       ! Construct vertical coordinate
-      istat = vgd_new ( vcoord, kind=5, version=Level_version, hyb=F_hybuser    , &
-                        rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2)                , &
-                        ptop_out_8=wk_8, pref_8=Cstv_pref_8                     , &
-                        dhm=0., dht=0. , avg_L=Schm_bcavg_L)
-      call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
+      Level_kind_ip1 = 5
+      Level_version  = 5
 
-      Cstv_ptop_8=wk_8
+      Schm_sleve_L= .false. ; err= 0
+      if (   Hyb_rcoef(3) >= 0. .or. Hyb_rcoef(4) >= 0. ) then
+         if( Hyb_rcoef(3) <  0. .or. Hyb_rcoef(4) <  0. ) err= -1
+         Schm_sleve_L= .true. ; Level_version  = 100
+      endif
+      if (err == 0) then
+         if(Schm_sleve_L)then
+            istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
+                         version=Level_version, hyb=F_hybuser,&
+                     rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
+                     rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
+                         ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
+                          dhm=0., dht=0., avg_L=Schm_bcavg_L )
+         else
+            istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
+                         version=Level_version, hyb=F_hybuser,&
+                     rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
+                         ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
+                          dhm=0., dht=0., avg_L=Schm_bcavg_L )
+         endif
+      endif
+      call gem_error (min(err,istat),'SET_ZETA', &
+                  'Incorrect vertical construct, check Hyb, Hyb_rcoef')
 
-      if (Lun_debug_L) istat = vgd_print(vcoord)
+      Cstv_ptop_8= wk_8
+
+      if (Lun_debug_L) istat = vgd_print(Ver_vgdobj)
 
       Cstv_Zsrf_8 = log(Cstv_pSref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
@@ -169,46 +186,46 @@
 
       ! Retrieve information required to fill model arrays
       nullify(wkpt,wkpti,wkpt8)
-      if (vgd_get(vcoord,'CA_M - vertical A coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CA_M - vertical A coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_a_8%m = wkpt8(1:size(Ver_a_8%m)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CB_M - vertical B coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CB_M - vertical B coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_b_8%m = wkpt8(1:size(Ver_b_8%m)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CA_T - vertical A coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CA_T - vertical A coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_a_8%t = wkpt8(1:size(Ver_a_8%t)); deallocate(wkpt8); nullify(wkpt8)
-      if (vgd_get(vcoord,'CB_T - vertical B coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'CB_T - vertical B coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
       Ver_b_8%t = wkpt8(1:size(Ver_b_8%t)); deallocate(wkpt8); nullify(wkpt8)
       if(Schm_sleve_L)then
-         if (vgd_get(vcoord,'CC_M - vertical C coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+         if (vgd_get(Ver_vgdobj,'CC_M - vertical C coefficient (m)',wkpt8) /= VGD_OK) istat = VGD_ERROR
          Ver_c_8%m = wkpt8(1:size(Ver_c_8%m)); deallocate(wkpt8); nullify(wkpt8)
-         if (vgd_get(vcoord,'CC_T - vertical C coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
+         if (vgd_get(Ver_vgdobj,'CC_T - vertical C coefficient (t)',wkpt8) /= VGD_OK) istat = VGD_ERROR
          Ver_c_8%t = wkpt8(1:size(Ver_c_8%t)); deallocate(wkpt8); nullify(wkpt8)
       else
          Ver_c_8%m=zero; Ver_c_8%t=zero
       end if
-      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VCDM - vertical coordinate (m)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
       Ver_hyb%m = wkpt(1:size(Ver_hyb%m)); deallocate(wkpt); nullify(wkpt)
-      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VCDT - vertical coordinate (t)'   ,wkpt) /= VGD_OK) istat = VGD_ERROR
       Ver_hyb%t = wkpt(1:size(Ver_hyb%t)); deallocate(wkpt); nullify(wkpt)
-      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VIPM - level ip1 list (m)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%m = wkpti(1:size(Ver_ip1%m)); deallocate(wkpti); nullify(wkpti)
-      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(Ver_vgdobj,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%t = wkpti(1:size(Ver_ip1%t)); deallocate(wkpti); nullify(wkpti)
 
       call handle_error_l(istat==VGD_OK,'set_zeta','retrieving coordinate info')
       if(Schm_sleve_l)then
-         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
+         istat = vgd_levels(Ver_vgdobj,Ver_ip1%m,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
          Ver_std_p_prof%m=std_p_prof
          deallocate(std_p_prof)
-         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
+         istat = vgd_levels(Ver_vgdobj,Ver_ip1%t,std_p_prof,sfc_field=100000.,sfc_field_ls=100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
          Ver_std_p_prof%t=std_p_prof
       else
-         istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,100000.,in_log=.false.)
+         istat = vgd_levels(Ver_vgdobj,Ver_ip1%m,std_p_prof,100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
          Ver_std_p_prof%m=std_p_prof
          deallocate(std_p_prof)
-         istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,100000.,in_log=.false.)
+         istat = vgd_levels(Ver_vgdobj,Ver_ip1%t,std_p_prof,100000.,in_log=.false.)
          call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
          Ver_std_p_prof%t=std_p_prof
       end if
@@ -342,17 +359,13 @@
       Ver_onezero=1.
       Ver_onezero(1)=0.
 
-!     ----------------------------------------------------------
-!     Save vcoord and ip1m/t for output
-!     ----------------------------------------------------------
       REFP0_S = 'PW_P0:P'  !# gmmk_pw_p0_plus_s !NOTE: could gmmk_* be defined as parameters in a .cdk, this way it could be used here and would be more consistent
       REFP0_LS_S = ' '
       if (Schm_sleve_L) REFP0_LS_S = 'PW_P0_LS'  !# gmmk_pw_p0_ls_s
-      istat = vgrid_wb_put(VGRID_M_S, vcoord, Ver_ip1%m,  &
-           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
-      istat = vgrid_wb_put(VGRID_T_S, vcoord, Ver_ip1%t,  &
-           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
-      istat = vgd_free(vcoord)
+      istat = vgrid_wb_put('ref-m', Ver_vgdobj, Ver_ip1%m,  &
+                           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
+      istat = vgrid_wb_put('ref-t', Ver_vgdobj, Ver_ip1%t,  &
+                           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
 
       options_readwrite = WB_IS_LOCAL
       options_readonly = options_readwrite + WB_REWRITE_NONE
@@ -391,9 +404,8 @@
 
       if (Lun_debug_L) call prgenab()
 
- 1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &
-               'Grd_rcoef= ',2f7.2,':'/ &
-               2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
+ 1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',&
+               'Grd_rcoef= ',4f7.2/2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
  1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
 !
 !     __________________________________________________________________

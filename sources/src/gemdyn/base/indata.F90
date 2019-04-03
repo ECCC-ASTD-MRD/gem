@@ -17,7 +17,6 @@
 !               beginning of integration
 
       subroutine indata()
-      use ctrl
       use dynkernel_options
       use gem_options
       use glb_ld
@@ -25,14 +24,12 @@
       use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
-      use HORgrid_options
       use inp_mod
       use inp_options
       use lun
       use step_options
       use theo_options
       use tr3d
-      use metric
       use gem_timing
       implicit none
 #include <arch_specific.hf>
@@ -61,7 +58,8 @@
       zdt1=0. ; wt1=0. ; qt1= 0.
 
       if ( Ctrl_theoc_L ) then
-         call theo_data (pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0,sls)
+         call theo_data ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
+                          st1, qt1, fis0, sls )
       else if ( Ctrl_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
@@ -78,24 +76,16 @@
          call get_topo ( topo_high, topo_large_scale, &
                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
 
-         call get_s_large_scale (topo_large_scale,l_minx,l_maxx,l_miny,l_maxy)
+         call get_s_large_scale ( topo_large_scale, &
+                                  l_minx,l_maxx,l_miny,l_maxy )
 
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
 
-         if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-             trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
-            call fislh_inp_data ( pw_uu_plus,pw_vv_plus,pw_tt_plus ,&
-                                  qt1,zdt1,wt1,fis0,sls            ,&
-                                  l_minx,l_maxx,l_miny,l_maxy,G_nk ,&
-                                  .false.,'TR/',':P',Step_runstrt_S )
-         end if
-         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-            call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
-                            zdt1,st1,qt1,fis0               ,&
-                            l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
-                            .false. ,'TR/',':P',Step_runstrt_S )
-         end if
+         call inp_data ( pw_uu_plus, pw_vv_plus, wt1, pw_tt_plus,&
+                       zdt1,st1,fis0,l_minx,l_maxx,l_miny,l_maxy,&
+                         G_nk,.false. ,'TR/',':P',Step_runstrt_S )
+
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
                         perturb_nbits, perturb_npts, dimens )
          call gemtime_stop  ( 71 )
@@ -104,6 +94,7 @@
       call gemtime ( Lun_out, 'AFTER INITIAL INPUT', .false. )
 
       call set_dync ( .true., err )
+
       if (Grd_yinyang_L) then
          call yyg_xchng (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                          1, .false., 'CUBIC', .true.)
@@ -135,7 +126,7 @@
       if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
            trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
          call fislh_metric ()
-         call fislh_diag_zd_w( zdt1,wt1, ut1,vt1,tt1,qt1        ,&
+         call fislh_diag_zd_w( zdt1,wt1, ut1,vt1,tt1,st1,qt1    ,&
                                l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                                .not.Inp_zd_L, .not.Inp_w_L )
       end if

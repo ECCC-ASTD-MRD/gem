@@ -195,7 +195,7 @@ contains
       ! memory synchronization
          if (.not. fftw_thread_initialized) then
             ierr = fftw_init_threads()
-            if (ierr .eq. 0) then
+            if (ierr == 0) then
                call gem_error(-1,'make_r2r_dft_plan','Error in FFTW thread initialization')
             end if
             fftw_thread_initialized = .true.
