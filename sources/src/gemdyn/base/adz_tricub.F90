@@ -34,7 +34,8 @@ contains
 
       type(C_PTR),dimension(F_nptr) :: stkpntr
       integer ij,i,j,j1,j2,k,k1,k2,kk,ni,nj,nij,n,n1,n2,np
-      real, dimension(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk,F_nptr), target :: extended
+      real, dimension(Adz_lminx:Adz_lmaxx,&
+                      Adz_lminy:Adz_lmaxy,l_nk,F_nptr) :: extended
       integer :: slice
       real, dimension(l_ni*l_nj*l_nk*F_nptr) :: wrkc,lin,mi,ma
 !

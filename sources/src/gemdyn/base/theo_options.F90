@@ -148,17 +148,37 @@ contains
 !
 !     ---------------------------------------------------------------
 !
-      subroutine theo_data (F_u, F_v, F_t, F_s, F_q, F_topo, F_sls)
-
+      subroutine theo_data
+      use dynkernel_options
       use glb_ld
+      use gmm_itf_mod
+      use gmm_geof
+      use gmm_pw
+      use gmm_vt1
+      use ver
       implicit none
 #include <arch_specific.hf>
 
-      real, dimension(*) :: F_u, F_v, F_t, F_s, F_topo, F_q, F_sls
-
+      integer :: istat,i,j,k,err
+      real*8  :: pp, ex
 !
 !---------------------------------------------------------------------
 !
+      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
+      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
+      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
+      istat = gmm_get (gmmk_ut1_s ,ut1 )
+      istat = gmm_get (gmmk_vt1_s ,vt1 )
+      istat = gmm_get (gmmk_wt1_s ,wt1 )
+      istat = gmm_get (gmmk_tt1_s ,tt1 )
+      istat = gmm_get (gmmk_zdt1_s,zdt1)
+      istat = gmm_get (gmmk_st1_s ,st1 )
+      istat = gmm_get (gmmk_sls_s ,sls )
+      istat = gmm_get (gmmk_fis0_s,fis0)
+      istat = gmm_get (gmmk_qt1_s ,qt1 )
+
+      wt1= 0. ; zdt1= 0.
+
       if (      Theo_case_S == 'MTN_SCHAR'   &
            .or. Theo_case_S == 'MTN_SCHAR2'  &
            .or. Theo_case_S == 'MTN_PINTY'   &
@@ -166,18 +186,63 @@ contains
            .or. Theo_case_S == 'MTN_PINTYNL' &
            .or. Theo_case_S == 'NOFLOW' ) then
 
-         call mtn_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_sls, &
+         call mtn_data ( pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0, sls, &
                          l_minx, l_maxx, l_miny, l_maxy, G_nk, Theo_case_S )
+         call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
 
       elseif ( Theo_case_S == 'BUBBLE' ) then
 
-         call bubble_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_sls, &
-                            l_minx, l_maxx, l_miny, l_maxy, G_nk )
+         fis0= 0.0 ; sls= 0.0
+         pw_uu_plus= 0.0 ; pw_vv_plus= 0.0
+         ut1= 0.0 ; vt1= 0.0 ; st1= 0.
+
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+            call bubble_fislP_data ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,G_nk )
+            qt1= 0.
+
+         else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+            call bubble_fislH_data ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,G_nk )
+            do k=1,g_nk+1
+               do j=1,l_nj
+                  do i=1,l_ni
+                     ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%m(k)
+                     pp=1.d5*ex**(1.d0/cappa_8)
+                     qt1(i,j,k)=rgasd_8*Cstv_Tstr_8*log(pp/1.d5)+grav_8*Ver_z_8%m(k)
+                  end do
+               end do
+            end do
+
+         else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+
+            call bubble_expoH_data ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,G_nk )
+            ! Initialize (horizontally uniform) Exner pressure
+            do k=1,g_nk+1
+               do j=1,l_nj
+                  do i=1,l_ni
+                     qt1(i,j,k) = 1.d0 - grav_8 / (cpd_8 * bubble_theta) * Ver_z_8%m(k)
+                  end do
+               end do
+            end do
+         end if
+
+         err=0
+         if ((l_north).and.(l_nj-2*pil_n+1<1)) err=-1
+         if ((l_east ).and.(l_ni-2*pil_e+1<1)) err=-1
+         if ((l_south).and.(2*pil_s>l_nj)    ) err=-1
+         if ((l_west ).and.(2*pil_w>l_ni)    ) err=-1
+         call gem_error(err,'ABORT in theo_data',&
+                  'Partitionning NOT allowed for MIRROR')
+
       else
 
          call gem_error(-1,'WRONG THEO CASE in theo_data',Theo_case_S)
 
       end if
+
+      call tt2virt ( tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk )
 !
 !---------------------------------------------------------------------
       return

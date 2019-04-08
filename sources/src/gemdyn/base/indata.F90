@@ -34,6 +34,7 @@
       implicit none
 #include <arch_specific.hf>
 
+      logical :: synthetic_data_L
       integer :: k, istat, dimens, err
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: topo_large_scale
       real, dimension(:,:,:), pointer, contiguous :: plus, minus
@@ -55,19 +56,10 @@
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_qt1_s ,qt1 )
 
-      zdt1=0. ; wt1=0. ; qt1= 0.
+      synthetic_data_L = (Ctrl_theoc_L .or. Ctrl_testcases_L)
 
-      if ( Ctrl_theoc_L ) then
-         call theo_data ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
-                          st1, qt1, fis0, sls )
-      else if ( Ctrl_canonical_williamson_L ) then
-         call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk,&
-                         .true.,'TR/',':P',Step_runstrt_S )
-      else if ( Ctrl_canonical_dcmip_L ) then
-         call dcmip_init( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
-                         .true.,'TR/',':P')
+      if (synthetic_data_L) then
+         call synthetic_data ()
       else
          call gemtime_start ( 71, 'INITIAL_input', 2)
          istat= gmm_get (gmmk_topo_low_s , topo_low )
@@ -100,15 +92,15 @@
                          1, .false., 'CUBIC', .true.)
          call yyg_xchng (sls,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
                          1, .false., 'CUBIC', .true. )
-         ! Exchange halos in pilot region
-
-         call yyg_xchng_all()
+         call yyg_xchng_all() !????? plus tard????
       else
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo(sls, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       end if
+
+      if (Dynamics_hauteur_L) call fislh_metric ()
 
       do k=1, Tr3d_ntr
          nullify (plus, minus)
@@ -117,25 +109,14 @@
          minus = plus
       end do
 
-      if (.not. Ctrl_testcases_L) then
+      if (.not. synthetic_data_L) then
          call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
          call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
-      end if
-
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-           trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
-         call fislh_metric ()
-         call fislh_diag_zd_w( zdt1,wt1, ut1,vt1,tt1,st1,qt1    ,&
-                               l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                               .not.Inp_zd_L, .not.Inp_w_L )
-      end if
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-         call diag_zd_w ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
-                          l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                          .not.Inp_zd_L, .not.Inp_w_L )
-      end if
+         call derivate_data ( zdt1,wt1, ut1,vt1,tt1,st1,qt1    ,&
+                              l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                              .not.Inp_zd_L, .not.Inp_w_L )
+      endif
 
       if (.not. Grd_yinyang_L) call nest_init()
 

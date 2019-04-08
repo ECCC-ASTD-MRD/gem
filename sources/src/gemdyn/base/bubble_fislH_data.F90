@@ -15,43 +15,20 @@
 !**s/r bubble_fislH_data - generates initial condition for Robert's bubble
 !                    experiment (Robert 1993 JAS) - FISL height coord.
 !
-      subroutine bubble_fislH_data ( F_u, F_v, F_t, F_s, F_q, F_topo, F_sls,&
-                               Mminx,Mmaxx,Mminy,Mmaxy,nk )
+      subroutine bubble_fislH_data ( F_t, Mminx,Mmaxx,Mminy,Mmaxy,nk )
       use glb_ld
       use bubble_options
-      use dyn_fisl_options
-      use cstv
-      use tdpack
-      use type_mod
       use ver
-      use lun
       implicit none
 #include <arch_specific.hf>
 
-      integer Mminx,Mmaxx,Mminy,Mmaxy,nk
-      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
-           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
-           F_t    (Mminx:Mmaxx,Mminy:Mmaxy,nk), &
-           F_s    (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_sls  (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,nk+1)
+      integer, intent(IN) :: Mminx,Mmaxx,Mminy,Mmaxy,nk
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(OUT) ::  F_t
 
-      integer :: i,j,k,ii,err
-      real*8 :: pp, ex, theta, r,rad
+      integer :: i,j,k,ii
+      real*8 :: theta, ex,r,rad
 !
 !     ---------------------------------------------------------------
-!
-      F_topo(:,:) = 0.0
-      F_sls (:,:) = 0.0
-      F_s   (:,:) = 0.0
-      F_u (:,:,:) = 0.0
-      F_v (:,:,:) = 0.0
-      F_q (:,:,:) = 0.0
-!
-!---------------------------------------------------------------------
-!     Initialize temperature
-!---------------------------------------------------------------------
 !
       if(.not.bubble_gaus_L) then
 
@@ -77,7 +54,6 @@
             do j=1,l_nj
             do i=1,l_ni
                ii=i+l_i0-1
-               theta = bubble_theta
                r = sqrt( ( ((ii)-bubble_ictr) * dble(bubble_dx) )**2 + ( ((k)-bubble_kctr) * dble(bubble_dz) )**2)
                rad = bubble_rad*dble(bubble_dx)
                if ( r <= rad ) then
@@ -92,32 +68,6 @@
          end do
 
       end if
-!
-!---------------------------------------------------------------------
-!     Initialize (horizontally uniform) pressure
-!---------------------------------------------------------------------
-!
-      do k=1,g_nk+1
-         do j=1,l_nj
-         do i=1,l_ni
-            ii=i+l_i0-1
-            ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%m(k)
-            pp=1.d5*ex**(1.d0/cappa_8)
-            F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*log(pp/1.d5)+grav_8*Ver_z_8%m(k)
-         end do
-         end do
-      end do
-
-      err=0
-      if ((l_north).and.(l_nj-2*pil_n+1<1)) err=-1
-      if ((l_east ).and.(l_ni-2*pil_e+1<1)) err=-1
-      if ((l_south).and.(2*pil_s>l_nj)    ) err=-1
-      if ((l_west ).and.(2*pil_w>l_ni)    ) err=-1
-      call gem_error(err,'ABORT in BUBBLE_DATA',&
-          'Partitionning NOT allowed for MIRROR')
-!
- 9000 format(/,'CREATING INPUT DATA FOR BUBBLE FISL (height)THEORETICAL CASE' &
-            /,'====================================-======================')
 !
 !     -----------------------------------------------------------------
 !

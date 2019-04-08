@@ -58,7 +58,7 @@
                    ttx(i,j,k) = vt(i,j,Nk) +       .0005 * ttx(i,j,k)
                else
                    ttx(i,j,k) = vt(i,j,Nk) + stlo_8 * ttx(i,j,k)
-               end if
+               endif
                w2(i,j,k) = 1.0
 
             else
@@ -71,13 +71,26 @@
                   kgrnd = kk
                   ttx(i,j,k) = gz (i,j,kk) - htx(i,j,k)
                   if ( ttx(i,j,k) > 0. ) goto 10
-               end do
- 10            grad = - (vt(i,j,kgrnd) - vt(i,j,kgrnd+1) ) / &
-                        (gz(i,j,kgrnd) - gz(i,j,kgrnd+1) )
+               enddo
+10             continue
+               if(kgrnd == nk)then
+                  ! This happens only is physics is off.
+                  ! When physics is on, gz(nk) = fis0(i,j), so the lowest
+                  ! possible level for which the above test is true will be kgrnd=nk-1,
+                  ! for this case kgrnd+1 is fine.
+                  ! Whithout physics, gz(nk) is just above the surface,
+                  ! therefore, at times, it will be the level chosen with the test above,
+                  ! kgrnd=nk. Without the actual testm this will result in a out of bound
+                  ! index due to kgrnd+1.
+                  ! To solve this we set the gradient to zero.
+                  grad = 0.
+               else
+                  grad = - (vt(i,j,kgrnd) - vt(i,j,kgrnd+1) ) / &
+                       (gz(i,j,kgrnd) - gz(i,j,kgrnd+1) )
+               endif
                ttx(i,j,k) = vt (i,j,kgrnd) + grad * ttx(i,j,k)
                w2(i,j,k) = 0.0
-
-            end if
+            endif
 
          end do
          end do

@@ -214,7 +214,6 @@ contains
            F_topo_ls(Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
 
-
       type(gmm_metadata) :: mymeta
       integer :: i,j,k,i00,istat
       real    :: a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf

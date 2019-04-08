@@ -19,18 +19,13 @@
       subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_s, F_q,  &
                                   Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
       use metric
-      use gmm_geof
       use gem_options
       use dyn_fisl_options
       use geomh
       use tdpack
       use glb_ld
-      use cstv
       use lun
       use ver
-      use metric
-      use gmm_itf_mod
-      use inp_base, only:inp_3dhgts
       implicit none
 #include <arch_specific.hf>
 
@@ -40,21 +35,20 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
-!
+
       integer :: i, j, k, kp, km, i0, in, j0, jn
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: rau
       real, dimension(Minx:Maxx,Miny:Maxy)    :: rJzX, rJzY, rJzZ
 !     ________________________________________________________________
 !
-      call fislh_pres ( F_q, F_s, F_t, &
-                        l_minx,l_maxx,l_miny,l_maxy, G_nk )
-
-      if(.not.(F_zd_L.or.F_w_L)) return
+      if(.not.(F_zd_L.or.F_w_L)) then
+         F_zd = 0.
+         F_w = 0.
+         return
+      endif
 
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
       if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
-
-      ! enlever calcul si F_zd_L=.false.
 !
 ! Halo exchange needed because scope below goes one point in halo
 !
@@ -87,10 +81,10 @@
       do k=1,Nk
          km=max(k-1,1)
          do j=j0-1,jn+1
-         do i=i0-1,in+1
-            rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(i,j,k)) &
-              /(rgasd_8*(Ver_wp_8%m(k)*F_t(i,j,k)+Ver_wm_8%m(k)*F_t(i,j,km)))
-         end do
+            do i=i0-1,in+1
+               rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(i,j,k)) &
+                  /(rgasd_8*(Ver_wp_8%m(k)*F_t(i,j,k)+Ver_wm_8%m(k)*F_t(i,j,km)))
+            end do
          end do
       end do
 
@@ -101,31 +95,32 @@
       do k=1,Nk-1
          km=max(k-1,1)
          do j=j0,jn
-         do i=i0-1,in
-            rJzX(i,j)=0.5d0*(rau(i+1,j,k)*(ztht(i+1,j,k)-ztht(i+1,j,k-1)) &
-                            +rau(i  ,j,k)*(ztht(i  ,j,k)-ztht(i  ,j,k-1)))*Ver_idz_8%m(k)
-         end do
+            do i=i0-1,in
+               rJzX(i,j) = 0.5d0*(rau(i+1,j,k)*(ztht(i+1,j,k)-ztht(i+1,j,k-1)) &
+                                 +rau(i  ,j,k)*(ztht(i  ,j,k)-ztht(i  ,j,k-1)))*Ver_idz_8%m(k)
+            end do
          end do
          do j=j0-1,jn
          do i=i0,in
-            rJzY(i,j)=0.5d0*(rau(i,j+1,k)*(ztht(i,j+1,k)-ztht(i,j+1,k-1)) &
-                            +rau(i,j  ,k)*(ztht(i,j  ,k)-ztht(i,j  ,k-1)))*Ver_idz_8%m(k)
+            rJzY(i,j) = 0.5d0*(rau(i,j+1,k)*(ztht(i,j+1,k)-ztht(i,j+1,k-1)) &
+                              +rau(i,j  ,k)*(ztht(i,j  ,k)-ztht(i,j  ,k-1)))*Ver_idz_8%m(k)
          end do
          end do
          do j=j0,jn
-         do i=i0,in
-            F_zd(i,j,k)=rJzZ(i,j)*F_zd(i,j,km) - Ver_dz_8%m(k)*( &
-                        (rJzX(i  ,j)*F_u(i  ,j,k)                   &
-                        -rJzX(i-1,j)*F_u(i-1,j,k))*geomh_invDX_8(j) &
-                       +(rJzY(i,j  )*F_v(i,j  ,k)*geomh_cyv_8(j  )  &
-                        -rJzY(i,j-1)*F_v(i,j-1,k)*geomh_cyv_8(j-1))*geomh_invDYM_8(j) )
-            rJzZ(i,j)=0.5d0*(rau(i,j,k+1)+rau(i,j,k))* &
-                      (zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
-            F_zd(i,j,k)=F_zd(i,j,k)/rJzZ(i,j)
-         end do
+            do i=i0,in
+               F_zd(i,j,k) = rJzZ(i,j)*F_zd(i,j,km) - Ver_dz_8%m(k)*( &
+                            (rJzX(i  ,j)*F_u(i  ,j,k)                   &
+                            -rJzX(i-1,j)*F_u(i-1,j,k))*geomh_invDX_8(j) &
+                           +(rJzY(i,j  )*F_v(i,j  ,k)*geomh_cyv_8(j  )  &
+                            -rJzY(i,j-1)*F_v(i,j-1,k)*geomh_cyv_8(j-1))*geomh_invDYM_8(j) )
+               rJzZ(i,j) = 0.5d0*(rau(i,j,k+1)+rau(i,j,k))* &
+                          (zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
+               F_zd(i,j,k) = F_zd(i,j,k)/rJzZ(i,j)
+            end do
          end do
       end do
-
+      else
+         F_zd = 0.
       end if
 
       if(F_w_L) then
@@ -136,18 +131,19 @@
          km=max(k-1,1)
          kp=min(k+1,Nk)
          do j=j0,jn
-         do i=i0,in
-            F_w(i,j,k) = 0.25d0* ( &
-                         (F_u(i,j,kp)*mc_Jx(i,j,kp)+F_u(i-1,j,kp)*mc_Jx(i-1,j,kp))   &
-                        +(F_u(i,j,k )*mc_Jx(i,j,k )+F_u(i-1,j,k )*mc_Jx(i-1,j,k ))   &
-                        +(F_v(i,j,kp)*mc_Jy(i,j,kp)+F_v(i,j-1,kp)*mc_Jy(i,j-1,kp))   &
-                        +(F_v(i,j,k )*mc_Jy(i,j,k )+F_v(i,j-1,k )*mc_Jy(i,j-1,k )) ) &
-                        +(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))  &
-                        *(zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
-         end do
+            do i=i0,in
+               F_w(i,j,k) = 0.25d0* ( &
+                           (F_u(i,j,kp)*mc_Jx(i,j,kp)+F_u(i-1,j,kp)*mc_Jx(i-1,j,kp))   &
+                          +(F_u(i,j,k )*mc_Jx(i,j,k )+F_u(i-1,j,k )*mc_Jx(i-1,j,k ))   &
+                          +(F_v(i,j,kp)*mc_Jy(i,j,kp)+F_v(i,j-1,kp)*mc_Jy(i,j-1,kp))   &
+                          +(F_v(i,j,k )*mc_Jy(i,j,k )+F_v(i,j-1,k )*mc_Jy(i,j-1,k )) ) &
+                          +(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))  &
+                          *(zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
+            end do
          end do
       end do
-
+      else
+         F_w = 0.
       end if
 
 1000  format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W_H)')
@@ -156,72 +152,4 @@
 !     ________________________________________________________________
 !
       return
-
-contains
-      subroutine fislh_pres (F_q, F_ps, F_vt,&
-                             Minx,Maxx,Miny,Maxy,F_nk)
-      use ver
-      implicit none
-      integer                                    , intent(in)  :: Minx,Maxx,Miny,Maxy, F_nk
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk+1), intent(out) :: F_q
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk)  , intent(in)  :: F_vt
-      real, dimension(Minx:Maxx,Miny:Maxy     )  , intent(in)  :: F_ps
-
-      ! Local varibales
-      integer :: i, j, k, err
-      integer, dimension(:), pointer :: ip1_list
-      real, dimension(:,:), pointer :: topo,topols
-      real, dimension(:,:,:), pointer :: zz
-      real*8 :: aaa
-!
-!     ________________________________________________________________
-!
-      nullify(zz,ip1_list)
-
-      err= vgd_get ( Ver_vgdobj, 'VIPM - level ip1 list (m)', ip1_list )
-
-      allocate (topo  (l_minx:l_maxx,l_miny:l_maxy),&
-                topols(l_minx:l_maxx,l_miny:l_maxy),&
-                zz(l_minx:l_maxx,l_miny:l_maxy,size(ip1_list)))
-
-      err= gmm_get (gmmk_sls_s ,sls )
-      err= gmm_get (gmmk_fis0_s,fis0)
-
-      aaa=rgasd_8*Cstv_tstr_8
-      do j=1,l_nj
-      do i=1,l_ni
-         topo  (i,j)= fis0(i,j) / grav_8
-         topols(i,j)= sls (i,j) / grav_8
-         F_q(i,j,G_nk+1)=aaa*log(F_ps(i,j)/1.e5)
-      end do
-      end do
-
-      call inp_3dhgts ( Ver_vgdobj, ip1_list, topo, topols, zz, 1, size(ip1_list))
-      deallocate (topo,topols)
-
-      ! Integrate hydrostatic equation, dq/dz=-gTstar/Tv, to obtain q at momentum levels
-      aaa = grav_8*Cstv_tstr_8
-      do k=G_nk,1,-1
-         do j=1,l_nj
-         do i=1,l_ni
-            F_q(i,j,k) = F_q(i,j,k+1) + aaa*(zz(i,j,k+1) - zz(i,j,k))/F_vt(i,j,k)
-         end do
-         end do
-      end do
-      ! Add gz to obtain qprime, stored in F_q
-      do k=1,G_nk+1
-      do j=1,l_nj
-      do i=1,l_ni
-         F_q(i,j,k)=F_q(i,j,k)+grav_8*zz(i,j,k)
-      end do
-      end do
-      end do
-      deallocate(zz,ip1_list)
-!
-!     ________________________________________________________________
-!
-      return
-      end subroutine fislh_pres
-
-
-      end subroutine fislh_diag_zd_w
+      end

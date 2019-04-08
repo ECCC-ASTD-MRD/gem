@@ -46,8 +46,6 @@
       istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
       istat = gmm_get (gmmk_sls_s ,sls )
 
-      nest_zd_fin=0. ; nest_w_fin=0. ; nest_q_fin= 0.
-
       call gemtime_start ( 26, 'NEST_input', 10 )
 
       call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
@@ -55,19 +53,10 @@
                       l_minx,l_maxx,l_miny,l_maxy                    ,&
                       G_nk, .true., 'NEST/', ':F', F_datev_S)
 
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H')then
-
-         call fislh_diag_zd_w (&
-                        nest_zd_fin, nest_w_fin, nest_u_fin, nest_v_fin,&
-                        nest_t_fin , nest_s_fin, nest_q_fin            ,&
-                        l_minx, l_maxx, l_miny, l_maxy, G_nk, .true., .true.)
-      else
-
-         call diag_zd_w ( nest_zd_fin, nest_w_fin, nest_u_fin, &
-                          nest_v_fin,  nest_t_fin, nest_s_fin, &
-                          l_minx,l_maxx,l_miny,l_maxy, G_nk  , &
-                          .not.Inp_zd_L, .not.Inp_w_L )
-      end if
+      call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
+                      nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&
+                              l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                              .not.Inp_zd_L, .not.Inp_w_L )
 
       call gemtime_stop (26)
 !
