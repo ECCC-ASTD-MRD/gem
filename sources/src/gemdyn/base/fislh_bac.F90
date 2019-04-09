@@ -36,6 +36,7 @@
       use cstv
       use ver
       use metric
+      use ctrl
       implicit none
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, in, jn
@@ -56,6 +57,11 @@
       real*8, parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !     __________________________________________________________________
 !
+      if (Ctrl_testcases_adv_L) then
+         call canonical_cases ("BAC")
+         return
+      end if
+
       if (Lun_debug_L) write(Lun_out,1000)
 
       do k=1,l_nk

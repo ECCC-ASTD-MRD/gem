@@ -32,6 +32,13 @@
       implicit none
 #include <arch_specific.hf>
 
+      !object
+      !============================================================
+      !Prepare data for autobarotropic runs (Williamson cases)
+      !------------------------------------------------------------
+      !NOTE: U,V output on Staggered grids
+      !============================================================
+
       integer :: istat, k
       real, dimension (:,:,:), pointer :: hu
       real, dimension (l_minx:l_maxx,l_miny:l_maxy,G_nk) :: gz_t
@@ -68,7 +75,7 @@
 
       !Initialize HU
       !-------------
-      istat = gmm_get ("TR/HU:P",hu)
+      istat = gmm_get ('TR/HU:P',hu)
       hu = 0.
 
       !Initialize d(Zeta)dot and dz/dt
@@ -85,12 +92,11 @@
       istat = gmm_get (gmmk_topo_low_s , topo_low )
       istat = gmm_get (gmmk_topo_high_s, topo_high)
 
-      topo_high(1:l_ni,1:l_nj) =     fis0(1:l_ni,1:l_nj)
+      topo_high(1:l_ni,1:l_nj) =      fis0(1:l_ni,1:l_nj)
       topo_low (1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
 
       !Estimate U-V and T on scalar grids
       !----------------------------------
-
       call hwnd_stag ( pw_uu_plus,pw_vv_plus,ut1,vt1, &
                        l_minx,l_maxx,l_miny,l_maxy,G_nk,.false. )
 

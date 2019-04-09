@@ -15,7 +15,7 @@
 
 !**s/r dcmip_baroclinic_wave_2016 - Setup for Baroclinic wave with Toy Terminal Chemistry (DCMIP 2016)
 
-      subroutine dcmip_baroclinic_wave_2016 (F_u,F_v,F_w,F_tv,F_zd,F_s,F_topo,F_q,F_cl,F_cl2, &
+      subroutine dcmip_baroclinic_wave_2016 (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps,F_cl,F_cl2, &
                                              Mminx,Mmaxx,Mminy,Mmaxy,Nk,Deep,Moist,Pertt,X,F_stag_L)
 
       use baroclinic_wave
@@ -26,6 +26,7 @@
       use lun
       use ver
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -34,24 +35,26 @@
       !arguments
       !---------
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar u
-           F_v   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar v
-           F_w   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_tv  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_zd  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s   (Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_q   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_cl  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_cl2 (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
 
-      integer  :: Deep,      & ! Deep (1) or Shallow (0) test case
-                  Moist,     & ! Moist (1) or Dry (0) test case
-                  Pertt        ! Perturbation type
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
+           F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_cl   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_cl2  (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
 
-      real(8)  :: X            ! Earth scaling parameter
+      integer Deep     ! Deep (1) or Shallow (0) test case
+      integer Moist    ! Moist (1) or non-moist (0) test case
+      integer Pertt    ! Perturbation type
 
-      logical  :: F_stag_L     ! Staggered uv if .T. / Scalar uv if .F.
+      real(8) X        ! Scale factor
+
+      logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
 
       !object
       !===================================================================
@@ -83,9 +86,11 @@
                   thetav,  & ! Virtual potential temperature (K)
                   phis,    & ! Surface Geopotential (m^2 s^-2)
                   ps,      & ! Surface Pressure (Pa)
-                  rho,     & ! density (kg m^-3)
-                  q,       & ! water vapor mixing ratio (kg/kg)
-                  cl,cl2     ! molar mixing ratio of cl and cl2
+                  rho,     & ! Density (kg m^-3)
+                  q,       & ! Water vapor mixing ratio (kg/kg)
+                  cl,cl2     ! Molar mixing ratio of cl and cl2
+
+      logical :: GEM_P_L
 
       real(8), parameter :: radians_to_degrees = 180.0_8/pi
 
@@ -93,12 +98,13 @@
 
       if (Lun_out > 0) write (Lun_out,1000) X
 
-      zcoords = 0  ! p coordinates are specified
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      w = 0 !Vertical Velocity is zero
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
 
-      !Initial conditions: T,ZD,W,Q,S,TOPO
-      !-----------------------------------
+      !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
+      !----------------------------------------
       do kk = 1,Nk
 
          do j = 1,l_nj
@@ -112,15 +118,26 @@
 
                   lon = geomh_x_8(i)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%t(kk),Ver_b_8%t(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%t(kk),Ver_a_8%t(kk),Ver_b_8%t(kk), &
                                              Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
-                  F_tv  (i,j,kk) = tv
-                  F_q   (i,j,kk) = q
-                  F_s   (i,j)    = log(ps/Cstv_pref_8)
-                  F_topo(i,j)    = phis
-                  F_zd  (i,j,kk) = w ! It is zero
-                  F_w   (i,j,kk) = w ! It is zero
+                  F_tv(i,j,kk) = tv
+                  F_qv(i,j,kk) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  w = 0.
+
+                  F_w (i,j,kk) = w
+                  F_zd(i,j,kk) = w ! It is zero
+
+                  if (kk==Nk) F_zd(i,j,kk) = 0.
 
                   lon_d = lon * radians_to_degrees
                   lat_d = lat * radians_to_degrees
@@ -144,15 +161,26 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%t(kk),Ver_b_8%t(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%t(kk),Ver_a_8%t(kk),Ver_b_8%t(kk), &
                                              Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
-                  F_tv  (i,j,kk) = tv
-                  F_q   (i,j,kk) = q
-                  F_s   (i,j)    = log(ps/Cstv_pref_8)
-                  F_topo(i,j)    = phis
-                  F_zd  (i,j,kk) = w ! It is zero
-                  F_w   (i,j,kk) = w ! It is zero
+                  F_tv(i,j,kk) = tv
+                  F_qv(i,j,kk) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  w = 0.
+
+                  F_w (i,j,kk) = w
+                  F_zd(i,j,kk) = w ! It is zero
+
+                  if (kk==Nk) F_zd(i,j,kk) = 0.
 
                   lon_d = lon * radians_to_degrees
                   lat_d = lat * radians_to_degrees
@@ -191,7 +219,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_u(i,j,kk) = u
@@ -208,7 +236,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -238,7 +266,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_v(i,j,kk) = v
@@ -255,7 +283,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
@@ -289,7 +317,7 @@
 
                   lon = geomh_xu_8(i)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_u(i,j,kk) = u
@@ -306,7 +334,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -336,7 +364,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_v(i,j,kk) = v
@@ -353,7 +381,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_a_8%m(kk),Ver_b_8%m(kk), &
+                  call baroclinic_wave_test (Deep,Moist,Pertt,X,lon,lat,p,z,zcoords,Ver_z_8%m(kk),Ver_a_8%m(kk),Ver_b_8%m(kk), &
                                              Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8

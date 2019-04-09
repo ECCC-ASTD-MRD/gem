@@ -28,6 +28,8 @@
       use ctrl
       use VERgrid_options
       use tdpack, only : rgasd_8, cpd_8
+      use dynkernel_options
+      use gmm_pw
 
       use glb_ld
       use cstv
@@ -42,7 +44,7 @@
       character(len=*), intent(in) :: F_action_S
 
       !object
-      !     F_action_S ='SET_GEOM': Print dcmip_HEIGHTS
+      !     F_action_S ='SET_ZETA': Print dcmip_HEIGHTS
       !     F_action_S ='SET_VT'  : Initialize gmm variables
       !     F_action_S ='BAC'     : Back subtitution (WINDS)
       !     F_action_S ='PHY'     : Physics
@@ -68,19 +70,22 @@
       real*8 :: pr_8
       logical Terminator_L
       real*4, parameter :: CLY_REF = 4.*10.**(-6)
+      logical :: GEM_P_L
 
       !-------------------------------------------------------------------------------
 
       if (.not. Ctrl_testcases_L) return
+
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       Terminator_L = Dcmip_Terminator_L.or.Williamson_Terminator_L
 
       !-------------------
       !Print dcmip_HEIGHTS
       !-------------------
-      if (F_action_S=="SET_GEOM") then
+      if (F_action_S=="SET_ZETA") then
 
-         if (Dcmip_case==0) return
+         if (Dcmip_case==0.or.trim(Dynamics_Kernel_S)/='DYNAMICS_FISL_P') return
 
          if (Lun_out > 0) then
             write (Lun_out,1005) G_nk,Hyb_rcoef
@@ -116,6 +121,7 @@
 
          gmmk_pth_s   = 'PTH'
          gmmk_thbase_s= 'THBA'
+         gmmk_thfull_s= 'THFU'
          gmmk_dtv_s   = 'DTV'
 
          gmmk_cly_s  = 'CLY'
@@ -153,6 +159,7 @@
 
          istat = min(gmm_create(gmmk_pth_s,   pth,   mymeta3d_nk_t, flag_r_n),istat)
          istat = min(gmm_create(gmmk_thbase_s,thbase,mymeta3d_nk_t, flag_r_n),istat)
+         istat = min(gmm_create(gmmk_thfull_s,thfull,mymeta3d_nk_t, flag_r_n),istat)
          istat = min(gmm_create(gmmk_dtv_s,   dtv,   mymeta3d_nk_t, flag_r_n),istat)
 
          istat = min(gmm_create(gmmk_cly_s,   cly,   mymeta3d_nk_t, flag_r_n),istat)
@@ -197,6 +204,7 @@
          istat = gmm_get(gmmk_ut0_s, ut0)
          istat = gmm_get(gmmk_vt0_s, vt0)
          istat = gmm_get(gmmk_zdt0_s,zdt0)
+         istat = gmm_get(gmmk_wt0_s, wt0)
 
          if (Williamson_case==1) then
 
@@ -208,15 +216,14 @@
 
          if (Dcmip_case>=11.and.Dcmip_case<=13) then
 
-             if (Dcmip_case==11) call dcmip_tracers11_transport (ut0,vt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==11) call dcmip_tracers11_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-             if (Dcmip_case==12) call dcmip_tracers12_transport (ut0,vt0,zdt0,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==12) call dcmip_tracers12_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon, &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-             if (Dcmip_case==13) call dcmip_tracers13_transport (ut0,vt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==13) call dcmip_tracers13_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
-
              return
 
          end if
@@ -366,6 +373,7 @@
             istat = gmm_get(gmmk_tt1_s,   tt1)
             istat = gmm_get(gmmk_st1_s,   st1)
             istat = gmm_get('TR/'//'HU'//':P',hu)
+            istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
 
             do k=1,G_nk
                do j=1,l_nj
@@ -373,8 +381,13 @@
 
                      !Real potential temperature
                      !--------------------------
-                     pr_8       = exp(Ver_a_8%t(k) + Ver_b_8%t(k)*st1(i,j))
-                     th (i,j,k) = (tt1(i,j,k) / (1.d0 + 0.608d0 * hu(i,j,k))) * (Cstv_pref_8/pr_8) ** (rgasd_8/cpd_8)
+                     if (GEM_P_L) then 
+                        pr_8 = exp(Ver_a_8%t(k) + Ver_b_8%t(k)*st1(i,j))
+                     else
+                        pr_8 = pw_pt_plus(i,j,k)
+                     end if
+
+                     th(i,j,k) = (tt1(i,j,k) / (1.d0 + 0.608d0 * hu(i,j,k))) * (Cstv_pref_8/pr_8) ** (rgasd_8/cpd_8)
 
                      pth(i,j,k) = th(i,j,k) - thbase(i,j,k)
 

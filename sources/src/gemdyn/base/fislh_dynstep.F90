@@ -61,6 +61,9 @@
 
       call fislh_tstpdyn()
 
+      istat = gmm_get (gmmk_qt0_s, qt0)
+      F_q(:,:) = qt0(:,:,l_nk+1)
+
       call psadj ( Step_kount )
 
       call adz_conserv_tr()
@@ -96,9 +99,9 @@
       if (Grd_yinyang_L) call yyg_blend()
 
       if (Schm_psadj /= 0) then
-         istat = gmm_get (gmmk_qt0_s, qt0)
-         F_q(:,:) = qt0(:,:,l_nk+1)
          call fislh_pw_update_GPW(F_q)
+      else
+         call pw_update_GPW()
       end if
 
       call pw_update_UV()

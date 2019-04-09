@@ -93,7 +93,7 @@ CONTAINS
 ! with a prescribed vertical wind velocity which makes the test truly 3D. An unscaled planet (with scale parameter
 ! X = 1) is selected.
 
-SUBROUTINE test1_advection_deformation (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4,time)
+SUBROUTINE test1_advection_deformation (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4,time)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -103,6 +103,7 @@ IMPLICIT NONE
         real(8), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
@@ -111,7 +112,8 @@ IMPLICIT NONE
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
-        integer,  intent(in) :: zcoords         ! 0 or 1 see below
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
@@ -127,9 +129,6 @@ IMPLICIT NONE
                                 q2, &           ! Tracer q2 (kg/kg)
                                 q3, &           ! Tracer q3 (kg/kg)
                                 q4              ! Tracer q4 (kg/kg)
-
-        ! if zcoords = 1, then we use z and output p
-        ! if zcoords = 0, then we use p
 
         real(8), intent(in)  :: time            ! Current time step
 
@@ -182,7 +181,10 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
+                z = Ver_z
+
                 height = z
+
                 p = p0 * exp(-z/H)
 
         else
@@ -251,7 +253,15 @@ IMPLICIT NONE
 !       Zdot GEM
 !-----------------------------------------------------------------------
 
-        zd = - ( g/(Rd*T0) ) * w
+        if (zcoords == 1) then 
+
+           zd = w
+
+        else
+
+           zd = - ( g/(Rd*T0) ) * w
+
+        end if
 
 !-----------------------------------------------------------------------
 !    TEMPERATURE IS CONSTANT 300 K
@@ -372,7 +382,7 @@ END SUBROUTINE test1_advection_deformation
 ! TEST CASE 12 - PURE ADVECTION - 3D HADLEY-LIKE FLOW
 !==========================================================================================
 
-SUBROUTINE test1_advection_hadley (lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+SUBROUTINE test1_advection_hadley (lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -382,6 +392,7 @@ IMPLICIT NONE
         real(8), intent(in)  :: &
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
@@ -390,7 +401,8 @@ IMPLICIT NONE
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
-        integer,  intent(in) :: zcoords         ! 0 or 1 see below
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
@@ -403,9 +415,6 @@ IMPLICIT NONE
                                 rho, &          ! density (kg m^-3)
                                 q, &            ! Specific Humidity (kg/kg)
                                 q1              ! Tracer q1 (kg/kg)
-
-        ! if zcoords = 1, then we use z and output p
-        ! if zcoords = 0, then we use p
 
         real(8), intent(in)  :: time            ! Current time step
 
@@ -448,7 +457,10 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
+                z = Ver_z
+
                 height = z
+
                 p = p0 * exp(-z/H)
 
         else
@@ -519,7 +531,15 @@ IMPLICIT NONE
 !       Zdot GEM
 !-----------------------------------------------------------------------
 
-        zd = - ( g/(Rd*T0) ) * w
+        if (zcoords == 1) then
+
+           zd = w
+
+        else
+
+           zd = - ( g/(Rd*T0) ) * w
+
+        end if
 
 !-----------------------------------------------------------------------
 !     initialize Q, set to zero
@@ -556,7 +576,7 @@ END SUBROUTINE test1_advection_hadley
 ! TEST CASE 13 - HORIZONTAL ADVECTION OF THIN CLOUD-LIKE TRACERS IN THE PRESENCE OF OROGRAPHY
 !==========================================================================================
 
-SUBROUTINE test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_a,Ver_b,pref,hybrid_eta,gc,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
+SUBROUTINE test1_advection_orography (lon,lat,p,z,zcoords,cfv,Ver_z,Ver_a,Ver_b,pref,hybrid_eta,gc,u,v,w,zd,t,tv,phis,ps,rho,q,q1,q2,q3,q4)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -566,30 +586,33 @@ IMPLICIT NONE
         real(8), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z, &            ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref  , &       ! Cstv_pref_8 GEM
                              !!!hyam, &         ! A coefficient for hybrid-eta coordinate, at model level midpoint
                              !!!hybm, &         ! B coefficient for hybrid-eta coordinate, at model level midpoint
-                                gc              ! bar{z} for Gal-Chen coordinate
+                                gc              ! bar{z} for Gal-Chen coordinate [gc = Ver_z GEM-H]
 
         logical, intent(in)  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
                                                 ! if set to .true., then the pressure will be computed via the
 !!!                                             !    hybrid coefficients hyam and hybm, they need to be initialized
-                                                !    hybrid coefficients GEM Ver_a and Ver_b, they need to be initialized
+                                                !    hybrid coefficients GEM-P Ver_a and Ver_b, they need to be initialized
                                                 ! if set to .false. (for pressure-based models): the pressure is already pre-computed
                                                 !    and is an input value for this routine
                                                 ! for height-based models: pressure will always be computed based on the height and
                                                 !    hybrid_eta is not used
 
-        ! Note that we only use hyam and hybm for the hybrid-eta coordiantes, and we only use
-        ! gc for the Gal-Chen coordinates. If not required then they become dummy variables
+        ! Note that we only use hyam and hybm for the hybrid-eta coordinates, and we only use
+        ! gc for the Gal-Chen coordinates [gc = Ver_z GEM-H]. If not required then they become dummy variables
 
         real(8), intent(inout) :: z             ! Height (m)
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
-        integer,  intent(in) :: zcoords         ! 0 or 1 see below
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
+
         integer,  intent(in) :: cfv             ! 0, 1 or 2 see below
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
@@ -607,17 +630,14 @@ IMPLICIT NONE
                                 q3, &           ! Tracer q3 (kg/kg)
                                 q4              ! Tracer q4 (kg/kg)
 
-        ! if zcoords = 1, then we use z and output p
-        ! if zcoords = 0, then we use p
-
         ! if cfv = 0 we assume that our horizontal velocities are not coordinate following
 !!!     ! if cfv = 1 then our velocities follow hybrid eta coordinates and we need to specify w
-        ! if cfv = 1 then our velocities follow hybrid eta GEM coordinates and we need to specify w
-        ! if cfv = 2 then our velocities follow Gal-Chen coordinates and we need to specify w
+        ! if cfv = 1 then our velocities follow hybrid eta GEM-P coordinates and we need to specify w
+        ! if cfv = 2 then our velocities follow Gal-Chen coordinates [gc = Ver_z GEM-H] and we need to specify w
 
-!!!     ! In hybrid-eta coords: p = hyam p0 + hybm ps
-        ! In hybrid-eta GEM coords: p = exp(Ver_a p0 + Ver_b ps)
-        ! In Gal-Chen coords: z = zs + (gc/ztop)*(ztop - zs)
+!!!     ! In hybrid-eta coords      : p = hyam p0 + hybm ps
+        ! In hybrid-eta GEM-P coords: p = exp(Ver_a p0 + Ver_b ps)
+        ! In Gal-Chen coords        : z = zs + (gc/ztop)*(ztop - zs) [gc = Ver_z GEM-H]
 
         ! if other orography-following coordinates are used, the w wind needs to be newly derived for them
 
@@ -692,13 +712,16 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
+                z = Ver_z + Ver_b*zs
+
                 height = z
+
                 p = p0 * exp(-z/H)
 
         else
 
 !!!             if (hybrid_eta) p = hyam*p0 + hybm*ps                 ! compute the pressure based on the surface pressure and hybrid coefficients
-                if (hybrid_eta) p = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM
+                if (hybrid_eta) p = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM-P
 
                 height = H * log(p0/p)
 
@@ -761,14 +784,14 @@ IMPLICIT NONE
 
         elseif (cfv == 1) then
 
-                ! if the horizontal velocities follow hybrid eta GEM coordinates then
+                ! if the horizontal velocities follow hybrid eta GEM-P coordinates then
                 ! the perceived vertical velocity is
 
                 call test1_adv_oro_hyb_eta_GEM_velocity(w)
 
         elseif (cfv == 2) then
 
-                ! if the horizontal velocities follow Gal Chen coordinates then
+                ! if the horizontal velocities follow Gal Chen coordinates [gc = Ver_z GEM-H] then
                 ! the perceived vertical velocity is
 
                 call test1_adv_oro_Gal_Chen_velocity(w)
@@ -783,7 +806,15 @@ IMPLICIT NONE
 !       Zdot GEM
 !-----------------------------------------------------------------------
 
-        zd = - ( g/(Rd*T0) ) * w
+        if (zcoords == 1) then
+
+           zd = w
+
+        else
+
+           zd = - ( g/(Rd*T0) ) * w
+
+        end if
 
 !-----------------------------------------------------------------------
 !     initialize tracers
@@ -862,7 +893,7 @@ IMPLICIT NONE
                 ! Calculate pressure and great circle distance to mountain center
 
 !!!             press = hyam*p0 + hybm*ps
-                press = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM
+                press = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM-P
 
                 r = acos( sin(phim)*sin(lat) + cos(phim)*cos(lat)*cos(lon - lambdam) )
 
@@ -1003,7 +1034,7 @@ END SUBROUTINE test1_advection_orography
 !=========================================================================
 ! Test 2-0:  Steady-State Atmosphere at Rest in the Presence of Orography
 !=========================================================================
-SUBROUTINE test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,hybrid_eta,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+SUBROUTINE test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,hybrid_eta,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -1013,6 +1044,7 @@ IMPLICIT NONE
         real(8), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z, &            ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
@@ -1023,7 +1055,7 @@ IMPLICIT NONE
         logical, intent(in)  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
                                                 ! if set to .true., then the pressure will be computed via the
 !!!                                             !    hybrid coefficients hyam and hybm, they need to be initialized
-                                                !    hybrid coefficients GEM Ver_a and Ver_b, they need to be initialized
+                                                !    hybrid coefficients GEM-P Ver_a and Ver_b, they need to be initialized
                                                 ! if set to .false. (for pressure-based models): the pressure is already pre-computed
                                                 !    and is an input value for this routine
                                                 ! for height-based models: pressure will always be computed based on the height and
@@ -1033,7 +1065,8 @@ IMPLICIT NONE
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
-        integer,  intent(in) :: zcoords         ! 0 or 1 see below
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
@@ -1049,12 +1082,10 @@ IMPLICIT NONE
 
         logical, intent(in)  :: Set_topo_L
 
-        ! if zcoords = 1, then we use z and output p
-        ! if zcoords = 0, then we compute or use p
-        !
-!!!     ! In hybrid-eta coords: p = hyam p0 + hybm ps
-        ! In hybrid-eta GEM coords: p = exp(Ver_a p0 + Ver_b ps)
-        !
+!!!     ! In hybrid-eta coords      : p = hyam p0 + hybm ps
+        ! In hybrid-eta GEM-P coords: p = exp(Ver_a p0 + Ver_b ps)
+        ! In Gal-Chen coords        : z = zs + (gc/ztop)*(ztop - zs) [gc = Ver_z GEM-H]
+
         ! The grid-point based initial data are computed in this routine.
 
 !-----------------------------------------------------------------------
@@ -1141,13 +1172,16 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
-                !height = z
-                !p = p0 * (1.d0 - gamma/T0*z)**exponent
+                z = Ver_z + Ver_b*zs
+
+                height = z
+
+                p = p0 * (1.d0 - gamma/T0*z)**exponent
 
         else
 
 !!!             if (hybrid_eta) p = hyam*p0 + hybm*ps                 ! compute the pressure based on the surface pressure and hybrid coefficients
-                if (hybrid_eta) p = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM
+                if (hybrid_eta) p = exp(Ver_a + Ver_b*log(ps/pref))   ! compute the pressure as in GEM-P
 
                 if(gamma == 0.d0) then
                    height = - Rd*T0/g*log(p/p0)
@@ -1206,7 +1240,7 @@ END SUBROUTINE test2_steady_state_mountain
 ! Tests 2-1 and 2-2:  Non-hydrostatic Mountain Waves over a Schaer-type Mountain
 !=====================================================================================
 
-SUBROUTINE test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+SUBROUTINE test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -1216,6 +1250,7 @@ IMPLICIT NONE
         real(8), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
@@ -1224,9 +1259,11 @@ IMPLICIT NONE
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
 
-        integer,  intent(in) :: zcoords, &      ! 0 or 1 see below
-                                shear           ! 0 or 1 see below
+        integer,  intent(in) :: shear           ! 0 if we use constant u
+                                                ! 0 if we use shear flow 
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
@@ -1240,15 +1277,7 @@ IMPLICIT NONE
 
         real(8), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
 
-        real(8), intent(out) :: f_rayleigh_friction ! Factor in Rayleigh damped layer
-
         logical, intent(in)  :: Set_topo_L
-
-        ! if zcoords = 1, then we use z and output z
-        ! if zcoords = 0, then we use p
-
-        ! if shear = 1, then we use shear flow
-        ! if shear = 0, then we use constant u
 
 !-----------------------------------------------------------------------
 !     test case parameters
@@ -1266,8 +1295,7 @@ IMPLICIT NONE
                                 h0      = 250.d0,               &       ! Height of Mountain
                                 d       = 5000.d0,              &       ! Mountain Half-Width
                                 xi      = 4000.d0,              &       ! Mountain Wavelength
-                                cs      = 0.00025d0,            &       ! Wind Shear (shear=1)
-                                zh      = 20000.d0                      ! Altitude of the Rayleigh damped layer
+                                cs      = 0.00025d0                     ! Wind Shear (shear=1)
 
       real(8) :: height                                                 ! Model level heights
       real(8) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
@@ -1335,7 +1363,10 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
+                z = Ver_z + Ver_b*zs
+
                 height = z
+
                 p = peq*exp( -(ueq*ueq/(2.d0*Rd*Teq))*(sin(lat)**2) - g*height/(Rd*t)    )
 
         else
@@ -1389,12 +1420,6 @@ IMPLICIT NONE
 !-----------------------------------------------------------------------
         tv = t
 
-!-----------------------------------------------------------------------
-!     initialize Factor for Rayleigh friction
-!-----------------------------------------------------------------------
-        f_rayleigh_friction = 0.
-        if (z > zh)  f_rayleigh_friction = sin( (pi/2) *(z-zh)/(ztop-zh) ) **2
-
 END SUBROUTINE test2_schaer_mountain
 
 
@@ -1419,7 +1444,7 @@ END SUBROUTINE test2_schaer_mountain
 !==========
 ! Test 3-1
 !==========
-SUBROUTINE test3_gravity_wave (lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,w,t,tv,phis,ps,rho,q,theta_base)
+SUBROUTINE test3_gravity_wave (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,w,t,tv,phis,ps,rho,q,theta_base,theta_full)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -1429,6 +1454,7 @@ IMPLICIT NONE
         real(8), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,   &          ! Height (m)
+                                Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
@@ -1437,8 +1463,8 @@ IMPLICIT NONE
 
         real(8), intent(inout) :: p             ! Pressure  (Pa)
 
-
-        integer,  intent(in) :: zcoords         ! 0 or 1 see below
+        integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
+                                                ! 1 if z coordinates are specified
 
         real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
@@ -1450,10 +1476,8 @@ IMPLICIT NONE
                                 rho, &          ! density (kg m^-3)
                                 q               ! Specific Humidity (kg/kg)
 
-        ! if zcoords = 1, then we use z and output z
-        ! if zcoords = 0, then we use p
-
-        real(8), intent(out) :: theta_base      ! Base Potential temperature
+        real(8), intent(out) :: theta_base, &   ! Base Potential temperature
+                                theta_full      ! Full Potential temperature              
 
 !-----------------------------------------------------------------------
 !     Already comdeck g in GEM
@@ -1537,7 +1561,10 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
+                z = Ver_z
+
                 height = z
+
                 p = ps*( (bigG/TS)*exp(-N2*height/g)+1.d0 - (bigG/TS)  )**(cp_/Rd)
 
         else
@@ -1582,6 +1609,8 @@ IMPLICIT NONE
         s = (d**2)/(d**2 + r**2)
 
         theta_pert = delta_theta*s*sin(2.d0*pi*height/Lz)
+
+        theta_full = theta_base + theta_pert 
 
         t_pert = theta_pert*(p/p0)**(Rd/cp_)
 

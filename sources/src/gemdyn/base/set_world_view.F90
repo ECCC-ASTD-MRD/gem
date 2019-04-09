@@ -137,7 +137,7 @@
 ! Final configuration
       if (minval(err(:))>=0) err(4) = gemdm_config()
 
-      call canonical_cases ("SET_GEOM")
+      call canonical_cases ("SET_ZETA")
 
       call gem_error ( minval(err(:)),'CONFIGURATION ERROR', &
                       'ABORT in set_world_view' )

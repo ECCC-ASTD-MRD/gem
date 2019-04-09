@@ -47,9 +47,6 @@ MODULE dcmip_initial_conditions_test_4
   !            - newly added if construct prevents division by zero in relative vorticity (zeta)
   !              calculation in case the perturbation center point, its antipode, or the north or
   !              south poles are part of the computational grid
-  !
-  !  Revision
-  !  v4_XX - Tanguay M.        - DCMIP 2012
   !=======================================================================
 
   use dcst
@@ -116,7 +113,7 @@ MODULE dcmip_initial_conditions_test_4
 
 CONTAINS
 
-  SUBROUTINE test4_baroclinic_wave (moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+  SUBROUTINE test4_baroclinic_wave (moist,X,lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
     IMPLICIT NONE
 
@@ -128,14 +125,20 @@ CONTAINS
     REAL(8), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
-                z,          & ! Height (m)
-                eta_GEM,    & ! eta GEM
+!!!             z,          & ! Height (m)
+                Ver_z ,     & ! Ver_z_8     GEM
+                Ver_a ,     & ! Ver_a_8     GEM
+                Ver_b ,     & ! Ver_b_8     GEM
+                pref  ,     & ! Cstv_pref_8 GEM
                 X             ! Scale factor, not used in this version since unscaled EPV is selected
 
 
+    REAL(8), INTENT(INOUT) :: z        ! Height (m)
+
     REAL(8), INTENT(INOUT) :: p        ! Pressure  (Pa)
 
-    INTEGER, INTENT(IN) :: zcoords     ! 0 or 1 see below
+    INTEGER, INTENT(IN) :: zcoords     ! 0 if p coordinates are specified 
+                                       ! 1 if z coordinates are specified
 
     REAL(8), INTENT(OUT) :: &
                 u,          & ! Zonal wind (m s^-1)
@@ -151,6 +154,9 @@ CONTAINS
                 q2            ! Tracer q2 - Ertel's potential vorticity (kg/kg)
 
     REAL(8) :: eta
+
+    REAL(8) :: zs             ! Surface elevation (m)
+
 
     real(8) g ! Already comdeck g in GEM
     save g
@@ -169,13 +175,22 @@ CONTAINS
 !-----------------------------------------------------------------------
     if (zcoords == 0) then
 
-!!!   eta = p / ps
+      p = exp(Ver_a + Ver_b*log(ps/pref))
 
-      eta = eta_GEM
+      eta = p / ps
 
     else
+
+      phis = surface_geopotential(lon,lat)
+
+      zs = phis/g
+
+      z = Ver_z + Ver_b*zs
+
       eta = eta_from_z(lon,lat,z)
+
       p = eta * ps
+
     end if
 
 !-----------------------------------------------------------------------
@@ -417,6 +432,10 @@ CONTAINS
 
       eta_from_z = eta_new
     enddo
+    if (.NOT.ABS(eta_from_z - eta_new) < convergence) then 
+       print *,'CONVERGENCE NOT COMPLETED=',ABS(eta_from_z - eta_new),convergence
+       STOP
+    end if
 
   END FUNCTION eta_from_z
 

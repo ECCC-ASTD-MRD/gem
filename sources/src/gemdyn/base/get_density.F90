@@ -17,15 +17,16 @@
 
       subroutine get_density (F_density,F_mass,F_time,F_minx,F_maxx,F_miny,F_maxy,F_nk,F_k0)
 
+      use dyn_fisl_options
+      use dynkernel_options
+      use geomh
+      use glb_ld
+      use gmm_itf_mod
       use gmm_vt1
       use gmm_vt0
-      use dyn_fisl_options
-      use ctrl
-      use geomh
-      use tdpack
-      use glb_ld
+      use metric
+      use tdpack, only: rgasd_8, grav_8
       use ver
-      use gmm_itf_mod
 
       implicit none
 
@@ -48,25 +49,67 @@
       !----------------------------------------------------------------------
 
       integer :: i,j,k,istat
-      real, dimension(F_minx:F_maxx,F_miny:F_maxy)         :: pr_p0
-      real, dimension(F_minx:F_maxx,F_miny:F_maxy,1:F_nk+1):: pr_m,pr_t
-      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk)    :: sumq
-      real, pointer, dimension(:,:,:) :: tr
+      logical :: GEM_P_L
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy)       :: pr_p0
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1):: pr_m,pr_t,log_pr_m,log_pr_t
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk)  :: sumq
+      real, pointer, dimension(:,:,:) :: tr,w_qt
       real, pointer, dimension(:,:)   :: w2d
       character(len=1) :: timelevel_S
 
       !----------------------------------------------------------------------
 
-      !Recuperate GMM variables at appropriate time
-      !--------------------------------------------
-      if (F_time == 0) istat = gmm_get(gmmk_st0_s,w2d)
-      if (F_time == 1) istat = gmm_get(gmmk_st1_s,w2d)
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       !Obtain pressure levels
       !----------------------
-      call calc_pressure ( pr_m, pr_t, pr_p0, w2d, F_minx, F_maxx, F_miny, F_maxy, F_nk )
+      if (GEM_P_L) then
 
-      pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
+         !Recuperate GMM variables at appropriate time
+         !--------------------------------------------
+         if (F_time == 0) istat = gmm_get(gmmk_st0_s,w2d)
+         if (F_time == 1) istat = gmm_get(gmmk_st1_s,w2d)
+
+         !Obtain pressure levels
+         !----------------------
+         call calc_pressure ( pr_m, pr_t, pr_p0, w2d, F_minx, F_maxx, F_miny, F_maxy, F_nk )
+
+         pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
+
+      else
+
+         !Recuperate GMM variables at appropriate time
+         !--------------------------------------------
+         if (F_time == 0) istat = gmm_get(gmmk_qt0_s,w_qt)
+         if (F_time == 1) istat = gmm_get(gmmk_qt1_s,w_qt)
+
+!$omp parallel private(k,i,j) shared(pr_m,pr_t,log_pr_m,log_pr_t,w_qt)
+!$omp do
+         do k=1,F_nk
+            if (k==1) then
+               log_pr_m(1:l_ni,1:l_nj,k) = (w_qt(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+            end if
+            pr_m(1:l_ni,1:l_nj,k) = exp(log_pr_m(1:l_ni,1:l_nj,k))
+            log_pr_m(1:l_ni,1:l_nj,k+1) = (w_qt(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar(1:l_ni,1:l_nj,k+1))
+            if(k==F_nk) &
+               pr_p0(1:l_ni,1:l_nj)=exp(log_pr_m(1:l_ni,1:l_nj,l_nk+1))
+         end do
+!$omp end do
+         pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
+!$omp do
+         do k=1,F_nk
+            log_pr_t(1:l_ni,1:l_nj,k) = 0.5*(log_pr_m(1:l_ni,1:l_nj,k+1)+log_pr_m(1:l_ni,1:l_nj,k))
+         end do
+!$omp end do
+         log_pr_t(1:l_ni,1:l_nj,F_nk+1) = log_pr_m(1:l_ni,1:l_nj,F_nk+1)
+!$omp do
+         do k=1,F_nk
+            pr_t(1:l_ni,1:l_nj,k) = exp(log_pr_t(1:l_ni,1:l_nj,k))
+         end do
+!$omp end do
+!$omp end parallel
+
+      end if
 
       !Evaluate water tracers if dry mixing ratio
       !------------------------------------------
@@ -91,8 +134,6 @@
 
       !Evaluate Fluid's density and mass
       !---------------------------------
-      if (.NOT.Ctrl_testcases_L) then
-
 !$omp parallel do private(k,i,j) shared(pr_m,sumq)
          do k=F_k0,F_nk
             do j=1,l_nj
@@ -102,20 +143,6 @@
             end do
          end do
 !$omp end parallel do
-
-      else
-
-!$omp parallel do private(k,i,j) shared(pr_t,w2d)
-         do k=F_k0,F_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               F_density(i,j,k) = + pr_t(i,j,k) * (1.0 + Ver_dbdz_8%t(k) * w2d(i,j)) / grav_8
-            end do
-            end do
-         end do
-!$omp end parallel do
-
-      end if
 
 !$omp parallel do private(k,i,j)
       do k=F_k0,F_nk

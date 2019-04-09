@@ -553,9 +553,9 @@ inner:      do kh=1, F_nka_hu
                allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy), &
                           F_su(l_minx:l_maxx,l_miny:l_maxy), &
                           F_sv(l_minx:l_maxx,l_miny:l_maxy) )
-               call gz2p02 ( F_sq, wrk, F_topo, rna     ,&
-                             l_minx,l_maxx,l_miny,l_maxy,&
-                             nk,1,l_ni,1,l_nj )
+               call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
+                            l_minx,l_maxx,l_miny,l_maxy,&
+                            nk,1,l_ni,1,l_nj )
                F_su(:,:) = rna(nk)
                F_sv(:,:) = rna(nk)
                deallocate (rna,wrk,ip1_list) ; nullify (wrk,ip1_list)

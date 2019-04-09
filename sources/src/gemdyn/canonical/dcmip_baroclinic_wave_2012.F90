@@ -15,19 +15,17 @@
 
 !**s/r dcmip_baroclinic_wave_2012 - Setup for Baroclinic Instability on a Small Planet (DCMIP 2012)
 
-      subroutine dcmip_baroclinic_wave_2012 (F_u,F_v,F_zd,F_tv,F_q,F_topo,F_s,F_q1,F_q2, &
+      subroutine dcmip_baroclinic_wave_2012 (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps,F_q1,F_q2, &
                                              Mminx,Mmaxx,Mminy,Mmaxy,Nk,Moist,X,Tracers,F_stag_L)
 
-      use canonical
       use dcmip_initial_conditions_test_4
-      use gem_options
       use geomh
       use glb_ld
       use cstv
       use lun
       use ver
-      use gmm_itf_mod
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -36,21 +34,24 @@
       !arguments
       !---------
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar u
-           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar v
+
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s    (Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_q1   (Mminx:Mmaxx,Mminy:Mmaxy,*),  &
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
+           F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_q1   (Mminx:Mmaxx,Mminy:Mmaxy,*) , &
            F_q2   (Mminx:Mmaxx,Mminy:Mmaxy,*)
 
-      integer  :: Moist      ! Moist (1) or non-moist (0) test case
-      real(8)  :: X          ! Scale factor
-      integer  :: Tracers    ! Tracers (1) or non-tracers (0) test case
+      integer Moist    ! Moist (1) or non-moist (0) test case
+      real(8) X        ! Scale factor
+      integer Tracers  ! Tracers (1) or non-tracers (0) test case
 
-      logical  :: F_stag_L   ! Staggered uv if .T. / Scalar uv if .F.
+      logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
 
       !object
       !==================================================================
@@ -63,42 +64,41 @@
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: &
-                  lon,     & ! Longitude (radians)
+      real(8)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
-                  z,       & ! Height (m)
-                  eta_GEM    ! eta_GEM
+                  z          ! Height (m)
 
       real(8)  :: p          ! Pressure  (Pa)
 
-      integer  :: zcoords    ! 0 or 1 see below
+      integer  :: zcoords    ! 0 if p coordinates are specified
+                             ! 1 if z coordinates are specified
 
-      real(8)  :: &
-                  u,       & ! Zonal wind (m s^-1)
+      real(8)  :: u,       & ! Zonal wind (m s^-1)
                   v,       & ! Meridional wind (m s^-1)
                   w,       & ! Vertical Velocity (m s^-1)
                   t,       & ! Temperature (K)
                   tv,      & ! Virtual Temperature (K)
                   phis,    & ! Surface Geopotential (m^2 s^-2)
                   ps,      & ! Surface Pressure (Pa)
-                  rho,     & ! density (kg m^-3)
+                  rho,     & ! Density (kg m^-3)
                   q,       & ! Specific Humidity (kg/kg)
                   q1,      & ! Tracer q1 - Potential temperature (kg/kg)
                   q2         ! Tracer q2 - Ertel's potential vorticity (kg/kg)
+
+      logical :: GEM_P_L
 
       !-----------------------------------------------------------------------
 
       if (Lun_out > 0) write (Lun_out,1000) Moist,X
 
-      zcoords = 0
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Initial conditions: T,ZD,Q,Q1,Q2,S,TOPO
-      !---------------------------------------
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
+
+      !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
+      !----------------------------------------
       do k = 1,Nk
-
-         !Obtain Eta GEM based on: Zeta - Zeta_s = ln(Eta)
-         !------------------------------------------------
-         eta_GEM = exp(Ver_z_8%t(k) - Cstv_zsrf_8)
 
          do j = 1,l_nj
 
@@ -111,17 +111,27 @@
 
                   lon = geomh_x_8(i)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = w ! It is zero
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                   if (Tracers == 1) then
-                  F_q1  (i,j,k) = q1
-                  F_q2  (i,j,k) = q2
+                     F_q1(i,j,k) = q1
+                     F_q2(i,j,k) = q2
                   end if
 
                end do
@@ -136,17 +146,27 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = w ! It is zero
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                   if (Tracers == 1) then
-                  F_q1  (i,j,k) = q1
-                  F_q2  (i,j,k) = q2
+                     F_q1  (i,j,k) = q1
+                     F_q2  (i,j,k) = q2
                   end if
 
                end do
@@ -165,10 +185,6 @@
       !--------------------------
       do k = 1,Nk
 
-         !Obtain Eta GEM based on: Zeta - Zeta_s = ln(Eta)
-         !------------------------------------------------
-         eta_GEM = exp(Ver_z_8%m(k) - Cstv_zsrf_8)
-
          do j = 1,l_nj
 
             lat   = geomh_y_8(j)
@@ -180,7 +196,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   F_u(i,j,k) = u
 
@@ -196,7 +212,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -214,10 +230,6 @@
       !--------------------------
       do k = 1,Nk
 
-         !Obtain Eta GEM based on: Zeta - Zeta_s = ln(Eta)
-         !------------------------------------------------
-         eta_GEM = exp(Ver_z_8%m(k) - Cstv_zsrf_8)
-
          do j = 1,l_nj
 
             lat   = geomh_y_8(j)
@@ -229,7 +241,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   F_v(i,j,k) = v
 
@@ -245,7 +257,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 
@@ -267,10 +279,6 @@
       !--------------------------
       do k = 1,Nk
 
-         !Obtain Eta GEM based on: Zeta - Zeta_s = ln(Eta)
-         !------------------------------------------------
-         eta_GEM = exp(Ver_z_8%m(k) - Cstv_zsrf_8)
-
          do j = 1,l_nj
 
             lat   = geomh_y_8(j)
@@ -282,7 +290,7 @@
 
                   lon = geomh_xu_8(i)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   F_u(i,j,k) = u
 
@@ -298,7 +306,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -316,10 +324,6 @@
       !--------------------------
       do k = 1,Nk
 
-         !Obtain Eta GEM based on: Zeta - Zeta_s = ln(Eta)
-         !------------------------------------------------
-         eta_GEM = exp(Ver_z_8%m(k) - Cstv_zsrf_8)
-
          do j = 1,l_njv
 
             lat   = geomh_yv_8(j)
@@ -331,7 +335,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   F_v(i,j,k) = v
 
@@ -347,7 +351,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,eta_GEM,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
+                  call test4_baroclinic_wave (Moist,X,lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,q1,q2)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 

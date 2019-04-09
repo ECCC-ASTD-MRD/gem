@@ -13,29 +13,37 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r dcmip_init - Prepare initial conditions (u,v,w,t,zd,s,q,topo) for DCMIP 2012/2016 runs
+!**s/r dcmip_init - Prepare initial conditions (u,v,w,tv,zd,s,q,topo) for DCMIP 2012/2016 runs
 
-      subroutine dcmip_init
+      subroutine dcmip_init ()
+
       use canonical
+      use cstv
       use dcmip_options
+      use dyn_fisl_options
+      use dynkernel_options
       use gem_options
-      use inp_mod
+      use glb_ld
       use gmm_geof
+      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
-      use dyn_fisl_options
-      use glb_ld
+      use inp_mod
+      use tdpack, only : rgasd_8, rgasv_8, grav_8, cpd_8
       use tr3d
-      use gmm_itf_mod
-      use tdpack, only : rgasd_8, rgasv_8
+      use ver
+
       implicit none
+
 #include <arch_specific.hf>
 
       !object
       !======================================================================|
       !Prepare initial conditions for DCMIP 2012/2016 runs                   |
       !----------------------------------------------------------------------|
-      !  case DCMIP 2012   | Pure advection                                  |
+      !NOTE: U,V output on Staggered grids                                   |
+      !----------------------------------------------------------------------|
+      ! case DCMIP 2012    | Pure advection                                  |
       !                    | ------------------------------------------------|
       !                    | 11: 3D deformational flow                       |
       !                    | 12: 3D Hadley-like meridional circulation       |
@@ -66,34 +74,37 @@
 
       !--------------------------------------------------------------------------
 
-      integer istat,istat1,istat2,istat3,istat4,err(2), &
-              Deep,Pertt,Pert,Moist,Shear,Tracers,i,j,k
+      integer :: istat,istat1,istat2,istat3,istat4,err(2), &
+                 Deep,Pertt,Pert,Moist,Shear,Tracers,i,j,k,iter,niter
+
       real, pointer, dimension(:,:,:) :: cl,cl2,qv,qc,qr,q1,q2,q3,q4
       real, dimension(1,1,1) :: empty
-      real  s_u(l_minx:l_maxx,l_miny:l_maxy,G_nk),s_v(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-             tv(l_minx:l_maxx,l_miny:l_maxy,G_nk), tt(l_minx:l_maxx,l_miny:l_maxy,G_nk)
+
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) :: zmom,lg_pstar,log_pt,log_pm,pt_plus,pm_plus
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk)     :: tt
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy)          :: ps
 
       real(8), parameter :: Rd   = Rgasd_8, & ! cte gaz - air sec   [J kg-1 K-1]
                             Rv   = Rgasv_8    ! cte gaz - vap eau   [J kg-1 K-1]
 
-      real(8)  zvir
+      real(8) :: zvir,aaa_8
+
+      logical :: GEM_P_L
 
       !--------------------------------------------------------------------------
 
-      if (Schm_sleve_L ) call handle_error (-1,'DCMIP_init','  SLEVE not available YET  ')
+      if (Schm_sleve_L ) call gem_error(-1,'DCMIP_INIT','  SLEVE not available YET  ')
 
-      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
       istat = gmm_get (gmmk_ut1_s ,ut1 )
       istat = gmm_get (gmmk_vt1_s ,vt1 )
       istat = gmm_get (gmmk_wt1_s ,wt1 )
       istat = gmm_get (gmmk_tt1_s ,tt1 )
       istat = gmm_get (gmmk_zdt1_s,zdt1)
       istat = gmm_get (gmmk_st1_s ,st1 )
-      istat = gmm_get (gmmk_sls_s ,sls )
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_qt1_s ,qt1 )
+
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       !Prescribed d(Zeta)dot and dz/dt
       !-------------------------------
@@ -107,7 +118,8 @@
       !Initialization QC/QR for Precipitation
       !--------------------------------------
       if (Dcmip_prec_type/=-1) then
-         err= 0
+
+         err = 0
          err(1) = gmm_get ('TR/QC:P',qc)
          err(2) = gmm_get ('TR/RW:P',qr)
 
@@ -127,31 +139,27 @@
       !DCMIP 2016: Baroclinic wave with Toy Terminal Chemistry
       !-------------------------------------------------------
       if (Dcmip_case==161) then
-         err= 0
+
+         err = 0
          err(1)= gmm_get ('TR/CL:P', cl )
          err(2)= gmm_get ('TR/CL2:P',cl2)
 
          call gem_error(minval(err),'DCMIP_INIT','Tracers CL/CL2 required when Chemistry')
 
-          !--------------------------------------------------------------------------
-          Deep  = 0           !Deep atmosphere (no=0)
-          Pertt = 0           !Type of perturbation (exponential=0/stream function=1)
-          Moist = Dcmip_moist !Moist=1/Dry=0 Initial conditions
-          !--------------------------------------------------------------------------
+         !--------------------------------------------------------------------------
+         Deep  = 0           !Deep atmosphere (no=0)
+         Pertt = 0           !Type of perturbation (exponential=0/stream function=1)
+         Moist = Dcmip_moist !Moist=1/Dry=0 Initial conditions
+         !--------------------------------------------------------------------------
 
-         call dcmip_baroclinic_wave_2016 (ut1,vt1,wt1,tv,zdt1,st1,fis0,qv,cl,cl2, &
-                  l_minx,l_maxx,l_miny,l_maxy,G_nk,Deep,Moist,Pertt,Dcmip_X,.true.)
-
-         qt1 = 0. !ZERO log of non-hydrostatic perturbation pressure
+         call dcmip_baroclinic_wave_2016 (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,cl,cl2, &
+                                          l_minx,l_maxx,l_miny,l_maxy,G_nk,Deep,Moist,Pertt,Dcmip_X,.true.)
 
       !DCMIP 2016: Tropical cyclone
       !----------------------------
       else if (Dcmip_case==162) then
 
-         call dcmip_tropical_cyclone (ut1,vt1,wt1,tv,zdt1,st1,fis0,qv,&
-                               l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
-
-         qt1 = 0. !ZERO log of non-hydrostatic perturbation pressure
+         call dcmip_tropical_cyclone (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
       !DCMIP 2016: Supercell (Small planet)
       !------------------------------------
@@ -159,16 +167,13 @@
 
          istat = gmm_get(gmmk_thbase_s,thbase)
 
-          !---------------------------------------------------------
-          Pert = 1 !Thermal perturbation included (0 = no / 1 = yes)
-          !---------------------------------------------------------
+         !---------------------------------------------------------
+         Pert = 1 !Thermal perturbation included (0 = no / 1 = yes)
+         !---------------------------------------------------------
 
-         call dcmip_supercell (ut1,vt1,wt1,tv,zdt1,st1,fis0,qv,Pert,thbase,&
-                                    l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+         call dcmip_supercell (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,Pert,thbase,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-         qt1 = 0. !ZERO log of non-hydrostatic perturbation pressure
-
-         !     Initialize u,v,zd,w,tv,qv,qc,rw,theta REFERENCE for Vertical diffusion
+         !Initialize u,v,zd,w,tv,qv,qc,rw,theta REFERENCE for Vertical diffusion
          !----------------------------------------------------------------------
          istat = gmm_get(gmmk_uref_s , uref )
          istat = gmm_get(gmmk_vref_s , vref )
@@ -179,37 +184,25 @@
          istat = gmm_get(gmmk_qrref_s, qrref)
          istat = gmm_get(gmmk_thref_s, thref)
 
-         !     Prepare UREF/VREF (on staggered grids) for DCMIP_VRD
+         !Prepare UREF/VREF (on staggered grids) for DCMIP_VRD
          !----------------------------------------------------
-         if (.not..true.) then
+         uref(1:l_ni-1,1:l_nj,  1:G_nk) =    ut1(1:l_ni-1,1:l_nj,  1:G_nk)
+         vref(1:l_ni,  1:l_nj-1,1:G_nk) =    vt1(1:l_ni,  1:l_nj-1,1:G_nk)
 
-            call hwnd_stag (s_u,s_v,ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
-
-            uref(1:l_ni-1,1:l_nj,  1:G_nk) =    s_u(1:l_ni-1,1:l_nj,  1:G_nk)
-            vref(1:l_ni,  1:l_nj-1,1:G_nk) =    s_v(1:l_ni,  1:l_nj-1,1:G_nk)
-
-         else
-
-            uref(1:l_ni-1,1:l_nj,  1:G_nk) = ut1(1:l_ni-1,1:l_nj,  1:G_nk)
-            vref(1:l_ni,  1:l_nj-1,1:G_nk) = vt1(1:l_ni,  1:l_nj-1,1:G_nk)
-
-         end if
-
-          wref(1:l_ni,  1:l_nj,  1:G_nk) =   wt1 (1:l_ni,  1:l_nj,  1:G_nk)
-         zdref(1:l_ni,  1:l_nj,  1:G_nk) =   zdt1(1:l_ni,  1:l_nj,  1:G_nk)
-         qvref(1:l_ni,  1:l_nj,  1:G_nk) =     qv(1:l_ni,  1:l_nj,  1:G_nk)
-         qcref(1:l_ni,  1:l_nj,  1:G_nk) =     qc(1:l_ni,  1:l_nj,  1:G_nk)
-         qrref(1:l_ni,  1:l_nj,  1:G_nk) =     qr(1:l_ni,  1:l_nj,  1:G_nk)
-         thref(1:l_ni,  1:l_nj,  1:G_nk) = thbase(1:l_ni,  1:l_nj,  1:G_nk)
+          wref(1:l_ni, 1:l_nj,  1:G_nk) =   wt1 (1:l_ni,  1:l_nj,  1:G_nk)
+         zdref(1:l_ni, 1:l_nj,  1:G_nk) =   zdt1(1:l_ni,  1:l_nj,  1:G_nk)
+         qvref(1:l_ni, 1:l_nj,  1:G_nk) =     qv(1:l_ni,  1:l_nj,  1:G_nk)
+         qcref(1:l_ni, 1:l_nj,  1:G_nk) =     qc(1:l_ni,  1:l_nj,  1:G_nk)
+         qrref(1:l_ni, 1:l_nj,  1:G_nk) =     qr(1:l_ni,  1:l_nj,  1:G_nk)
+         thref(1:l_ni, 1:l_nj,  1:G_nk) = thbase(1:l_ni,  1:l_nj,  1:G_nk)
 
       !DCMIP 2012: Steady-State Atmosphere at Rest in the Presence of Orography
       !------------------------------------------------------------------------
       else if (Dcmip_case==20) then
 
-          !Set initial conditions according to prescribed mountain
-          !-------------------------------------------------------
-         call dcmip_steady_state_mountain (ut1,vt1,zdt1,tv,qv,fis0,st1,&
-                         l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.,.true.)
+         !Set initial conditions according to prescribed mountain
+         !-------------------------------------------------------
+         call dcmip_steady_state_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.,.true.)
 
          if (Vtopo_L) then
 
@@ -217,25 +210,21 @@
             istat = gmm_get(gmmk_topo_high_s, topo_high)
 
             topo_low (1:l_ni,1:l_nj) = 0.
-            topo_high(1:l_ni,1:l_nj) = fis0 (1:l_ni,1:l_nj)
-            fis0   (1:l_ni,1:l_nj) = 0.
+            topo_high(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj)
+            fis0     (1:l_ni,1:l_nj) = 0.
 
-              !Reset initial conditions according to topo_low
-              !----------------------------------------------
-            call dcmip_steady_state_mountain (ut1,vt1,zdt1,tv,qv,fis0,st1,&
-                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.,.true.)
+            !Reset initial conditions according to topo_low
+            !----------------------------------------------
+            call dcmip_steady_state_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.,.true.)
 
          end if
-
-         qt1 = 0. !ZERO log of non-hydrostatic perturbation pressure
-         wt1 = 0. !ZERO Dz/Dt
 
       !DCMIP 2012: Pure 3D Advection
       !-----------------------------
       else if (Dcmip_case>=11.and.Dcmip_case<=13) then
 
-          !Get tracers Q1,Q2,Q3,Q4
-          !-----------------------
+         !Get tracers Q1,Q2,Q3,Q4
+         !-----------------------
          istat1 = gmm_get('TR/Q1:P',q1)
          istat2 = gmm_get('TR/Q2:P',q2)
          istat3 = gmm_get('TR/Q3:P',q3)
@@ -245,23 +234,23 @@
          if ((istat1/=0)                                       .and.Dcmip_case==12) goto 999
          if ((istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0).and.Dcmip_case==13) goto 999
 
-          !3D deformational flow
-          !---------------------
-         if (Dcmip_case==11) call dcmip_tracers11_transport (ut1,vt1,zdt1,tv,qv,fis0,st1,q1,q2,q3,q4, &
+         !3D deformational flow
+         !---------------------
+         if (Dcmip_case==11) call dcmip_tracers11_transport (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,q1,q2,q3,q4, &
                                                              l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-          !3D Hadley-like meridional circulation
-          !-------------------------------------
-         if (Dcmip_case==12) call dcmip_tracers12_transport (ut1,vt1,zdt1,tv,qv,fis0,st1,q1,&
+         !3D Hadley-like meridional circulation
+         !-------------------------------------
+         if (Dcmip_case==12) call dcmip_tracers12_transport (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,q1,&
                                                              l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-          !2D solid-body rotation of thin cloud-like tracer in the presence of orography
-          !-----------------------------------------------------------------------------
-         if (Dcmip_case==13) call dcmip_tracers13_transport (ut1,vt1,zdt1,tv,qv,fis0,st1,q1,q2,q3,q4, &
+         !2D solid-body rotation of thin cloud-like tracer in the presence of orography
+         !-----------------------------------------------------------------------------
+         if (Dcmip_case==13) call dcmip_tracers13_transport (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,q1,q2,q3,q4, &
                                                              l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-          !Store REFERENCE at initial time
-          !-------------------------------
+         !Store REFERENCE at initial time
+         !-------------------------------
          istat = gmm_get(gmmk_q1ref_s,q1ref)
          istat = gmm_get(gmmk_q2ref_s,q2ref)
          istat = gmm_get(gmmk_q3ref_s,q3ref)
@@ -274,13 +263,12 @@
 
       !DCMIP 2012: Mountain waves over a Schaer-type mountain on a small planet
       !------------------------------------------------------------------------
-         else if (Dcmip_case==21.or.Dcmip_case==22) then
+      else if (Dcmip_case==21.or.Dcmip_case==22) then
 
-            if (Dcmip_case==21) Shear = 0 !Without wind shear
-            if (Dcmip_case==22) Shear = 1 !With    wind shear
+         if (Dcmip_case==21) Shear = 0 !Without wind shear
+         if (Dcmip_case==22) Shear = 1 !With    wind shear
 
-            call dcmip_Schaer_mountain (ut1,vt1,zdt1,tv,qv,fis0,st1,&
-                 l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.true.,.true.)
+         call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.true.,.true.)
 
          if (Vtopo_L) then
 
@@ -288,30 +276,23 @@
             istat = gmm_get(gmmk_topo_high_s, topo_high)
 
             topo_low (1:l_ni,1:l_nj) = 0.
-            topo_high(1:l_ni,1:l_nj) = fis0 (1:l_ni,1:l_nj)
-            fis0   (1:l_ni,1:l_nj) = 0.
+            topo_high(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj)
+            fis0     (1:l_ni,1:l_nj) = 0.
 
-              !Reset initial conditions according to topo_low
-              !----------------------------------------------
-            call dcmip_Schaer_mountain (ut1,vt1,zdt1,tv,qv,fis0,st1,&
-               l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.false.,.true.)
+            !Reset initial conditions according to topo_low
+            !----------------------------------------------
+            call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.false.,.true.)
 
          end if
-
-         qt1 = 0.               !ZERO log of non-hydrostatic perturbation pressure
-         wt1 = 0.               !ZERO Dz/Dt
 
       !DCMIP 2012: Gravity wave on a small planet along the equator
       !------------------------------------------------------------
       else if (Dcmip_case==31) then
 
          istat = gmm_get(gmmk_thbase_s,thbase)
+         istat = gmm_get(gmmk_thfull_s,thfull)
 
-         call dcmip_gravity_wave (ut1,vt1,zdt1,tv,qv,fis0,st1,thbase,&
-                              l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
-
-         qt1 = 0.               !ZERO log of non-hydrostatic perturbation pressure
-         wt1 = 0.               !ZERO Dz/Dt
+         call dcmip_gravity_wave (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,thbase,thfull,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
       !DCMIP 2012: Dry Baroclinic Instability on a Small Planet with dynamic tracers
       !------------------------------------------------------------------------------------
@@ -319,47 +300,42 @@
       !            Dynamical Tracers: Potential temperature and Ertel's potential vorticity
       !------------------------------------------------------------------------------------
       else if (Dcmip_case==410.or. &
-         Dcmip_case==411.or. &
-         Dcmip_case==412.or. &
-         Dcmip_case==413 ) then
+               Dcmip_case==411.or. &
+               Dcmip_case==412.or. &
+               Dcmip_case==413 ) then
 
-          !-------------------------------------------------------
-         Moist   = Dcmip_moist  ! Moist=1/Dry=0 Initial conditions
-         Tracers = 1            ! Tracers=1/No Tracers=0
-          !-------------------------------------------------------
+         !-------------------------------------------------------
+         Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions
+         Tracers = 1           ! Tracers=1/No Tracers=0
+         !-------------------------------------------------------
 
-          !Dynamical Tracers: Potential temperature and Ertel's potential vorticity
-          !------------------------------------------------------------------------
-         err= 0
+         !Dynamical Tracers: Potential temperature and Ertel's potential vorticity
+         !------------------------------------------------------------------------
+
+         err = 0
          err(1) = gmm_get('TR/Q1:P',q1)
          err(2) = gmm_get('TR/Q2:P',q2)
 
          call gem_error(minval(err),'DCMIP_INIT','Tracers Q1/Q2 required when Dcmip_case=41X')
 
-         call dcmip_baroclinic_wave_2012 (ut1,vt1,zdt1,tv,qv,fis0,st1,q1,q2, &
-               l_minx,l_maxx,l_miny,l_maxy,G_nk,Moist,Dcmip_X,Tracers,.true.)
-
-         qt1 = 0.         !ZERO log of non-hydrostatic perturbation pressure
-         wt1 = 0.               !ZERO Dz/Dt
+         call dcmip_baroclinic_wave_2012 (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,q1,q2, &
+                                          l_minx,l_maxx,l_miny,l_maxy,G_nk,Moist,Dcmip_X,Tracers,.true.)
 
       !DCMIP 2012: Moist Baroclinic Instability driven by Simple Physics
       !-----------------------------------------------------------------
       else if (Dcmip_case==43) then
 
-          !-------------------------------------------------------
-         Moist   = Dcmip_moist  ! Moist=1/Dry=0 Initial conditions
-         Tracers = 0            ! Tracers=1/No Tracers=0
-          !-------------------------------------------------------
+         !-------------------------------------------------------
+         Moist   = Dcmip_moist ! Moist=1/Dry=0 Initial conditions
+         Tracers = 0           ! Tracers=1/No Tracers=0
+         !-------------------------------------------------------
 
-         call dcmip_baroclinic_wave_2012 (ut1,vt1,zdt1,tv,qv,fis0,st1,empty,empty, &
-                       l_minx,l_maxx,l_miny,l_maxy,G_nk,Moist,Dcmip_X,Tracers,.true.)
-
-         qt1 = 0. !ZERO log of non-hydrostatic perturbation pressure
-         wt1 = 0.               !ZERO Dz/Dt
+         call dcmip_baroclinic_wave_2012 (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,empty,empty, &
+                                          l_minx,l_maxx,l_miny,l_maxy,G_nk,Moist,Dcmip_X,Tracers,.true.)
 
       else
 
-         call gem_error(-1,'dcmip_init','DCMIP_CASE 2012/2016 not available')
+         call handle_error(-1,'dcmip_init','DCMIP_CASE 2012/2016 not available')
 
       end if
 
@@ -373,29 +349,123 @@
       do k=1,G_nk
       do j=1,l_nj
       do i=1,l_ni
-         tt(i,j,k) = tv(i,j,k)/(1.d0 + zvir * qv(i,j,k))
+         tt(i,j,k) = tt1(i,j,k)/(1.d0 + zvir * qv(i,j,k))
       end do
       end do
       end do
 
-      !Estimate U-V on scalar grids and Real Temperature
-      !-------------------------------------------------
-!!$      if (.true.) then
-
-         call hwnd_stag ( pw_uu_plus,pw_vv_plus,ut1,vt1, &
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.false. )
-
-         pw_tt_plus(1:l_ni,1:l_nj,1:G_nk) = tt(1:l_ni,1:l_nj,1:G_nk)
-
-         tt1(1:l_ni,1:l_nj,1:G_nk) = tv(1:l_ni,1:l_nj,1:G_nk)
-
-!!$      else
-!!$
-!!$         tt1(1:l_ni,1:l_nj,1:G_nk) = tt(1:l_ni,1:l_nj,1:G_nk)
-!!$
-!!$      end if
-
+      !Estimate U-V on scalar grids and Real Temperature in PW comdeck
       !---------------------------------------------------------------
+      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
+      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
+      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
+
+      call hwnd_stag ( pw_uu_plus,pw_vv_plus,ut1,vt1, &
+                       l_minx,l_maxx,l_miny,l_maxy,G_nk,.false. )
+
+      pw_tt_plus(1:l_ni,1:l_nj,1:G_nk) = tt(1:l_ni,1:l_nj,1:G_nk)
+
+      !GEM-H: Estimate Q (Pressure deviation) as in INP_BASE_H and Virtual temperature (T31 only)
+      !------------------------------------------------------------------------------------------
+      if (.not.GEM_P_L) then
+
+         zmom(:,:,0) = Ver_z_8%m(0)
+
+         do k=1,G_nk
+            zmom(:,:,k) = Ver_z_8%m(k) + Ver_b_8%m(k)*fis0(:,:)/grav_8
+         end do
+
+         zmom(:,:,G_nk+1) = fis0(:,:)/grav_8
+
+         lg_pstar(:,:,G_nk+1) = log(1.d5) - grav_8*zmom(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
+
+         do k=G_nk,1,-1
+            lg_pstar(:,:,k) = lg_pstar(:,:,k+1) + grav_8*(zmom(:,:,k+1)-zmom(:,:,k))/(rgasd_8*Cstv_Tstr_8)
+         end do
+
+         niter = 1
+         if (Dcmip_case==31) niter = 5
+
+         do iter = 1,niter
+
+            !Obtain pressure deviation Q from Surface Pressure and Virtual Temperature
+            !-------------------------------------------------------------------------
+            aaa_8 = rgasd_8 * Cstv_Tstr_8
+
+            do j=1,l_nj
+               do i=1,l_ni
+                  qt1(i,j,G_nk+1) = aaa_8 * log(ps(i,j)/1.e5)
+               end do
+            end do
+
+            aaa_8 = grav_8 * Cstv_Tstr_8
+
+            do k=G_nk,1,-1
+               do j=1,l_nj
+                  do i=1,l_ni
+                     qt1(i,j,k) = qt1(i,j,k+1) + aaa_8 * (zmom(i,j,k+1) - zmom(i,j,k))/tt1(i,j,k)
+                  end do
+               end do
+            end do
+
+            do k=1,G_nk+1
+               do j=1,l_nj
+                  do i=1,l_ni
+                     qt1(i,j,k) = qt1(i,j,k) + grav_8*zmom(i,j,k)
+                  end do
+               end do
+            end do
+
+            if (niter>1) then
+
+               !Obtain Momentum and Thermo pressures
+               !------------------------------------
+               do k=1,G_nk
+
+                  if(k == 1) then
+                     log_pm(1:l_ni,1:l_nj,k) = (qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(1:l_ni,1:l_nj,k))
+                  end if
+
+                  pm_plus(1:l_ni,1:l_nj,k) = exp(log_pm(1:l_ni,1:l_nj,k))
+
+                  log_pm(1:l_ni,1:l_nj,k+1) = (qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(1:l_ni,1:l_nj,k+1))
+
+                  if(k==G_nk) &
+                  ps(1:l_ni,1:l_nj) = exp(log_pm(1:l_ni,1:l_nj,G_nk+1))
+
+               end do
+
+               do k=1,G_nk
+                  log_pt(1:l_ni,1:l_nj,k) = 0.5*(log_pm(1:l_ni,1:l_nj,k+1)+log_pm(1:l_ni,1:l_nj,k))
+               end do
+
+               log_pt(1:l_ni,1:l_nj,G_nk+1) = log_pm(1:l_ni,1:l_nj,G_nk+1)
+
+               do k=1,G_nk
+                  pt_plus(1:l_ni,1:l_nj,k) = exp(log_pt(1:l_ni,1:l_nj,k))
+               end do
+
+               !Obtain revised Virtual Temperature !qv==0
+               !-----------------------------------------
+               do k=1,G_nk
+                  do j=1,l_nj
+                     do i=1,l_ni
+                        tt1(i,j,k) = thfull(i,j,k) * (pt_plus(i,j,k)/Cstv_pref_8) ** (rgasd_8/cpd_8)
+                     end do
+                  end do
+               end do
+
+            end if
+
+         end do
+
+      !GEM-P: ZERO log of non-hydrostatic perturbation pressure
+      !--------------------------------------------------------
+      else
+
+         qt1 = 0.
+
+      end if
 
       return
 

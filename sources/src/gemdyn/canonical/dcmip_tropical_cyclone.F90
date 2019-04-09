@@ -12,10 +12,10 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!
+
 !**s/r dcmip_tropical_cyclone - Setup for Tropical cyclone (DCMIP 2016)
 
-      subroutine dcmip_tropical_cyclone (F_u,F_v,F_w,F_tv,F_zd,F_s,F_topo,F_q, &
+      subroutine dcmip_tropical_cyclone (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps, &
                                          Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
 
       use tropical_cyclone
@@ -25,6 +25,7 @@
       use lun
       use ver
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -33,14 +34,16 @@
       !arguments
       !---------
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar u
-           F_v   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar v
-           F_w   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_tv  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_zd  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s   (Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_q   (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
+
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
+           F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
 
       logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
 
@@ -71,17 +74,22 @@
                   thetav,  & ! Virtual potential temperature (K)
                   phis,    & ! Surface Geopotential (m^2 s^-2)
                   ps,      & ! Surface Pressure (Pa)
-                  rho,     & ! density (kg m^-3)
-                  q          ! water vapor mixing ratio (kg/kg)
+                  rho,     & ! Density (kg m^-3)
+                  q          ! Water vapor mixing ratio (kg/kg)
+
+      logical :: GEM_P_L
 
       !----------------------------------------------------------
 
       if (Lun_out > 0) write (Lun_out,1000)
 
-      zcoords = 0  ! p coordinates are specified
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Initial conditions: T,ZD,W,Q,S,TOPO
-      !-----------------------------------
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
+
+      !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
+      !----------------------------------------
       do k = 1,Nk
 
          do j = 1,l_nj
@@ -95,15 +103,26 @@
 
                   lon = geomh_x_8(i)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k), &
                                               Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = w ! It is zero
-                  F_w   (i,j,k) = w ! It is zero
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  w = 0.
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -117,15 +136,26 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k), &
                                               Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = w ! It is zero
-                  F_w   (i,j,k) = w ! It is zero
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  w = 0.
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -154,7 +184,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_u(i,j,k) = u
@@ -171,7 +201,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -201,7 +231,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_v(i,j,k) = v
@@ -218,7 +248,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
@@ -252,7 +282,7 @@
 
                   lon = geomh_xu_8(i)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_u(i,j,k) = u
@@ -269,7 +299,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -299,7 +329,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,u,v,t,tv,thetav,phis,ps,rho,q)
 
                   F_v(i,j,k) = v
@@ -316,7 +346,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k), &
+                  call tropical_cyclone_test (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k), &
                                               Cstv_pref_8,utt_8,vtt_8,t,tv,thetav,phis,ps,rho,q)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8

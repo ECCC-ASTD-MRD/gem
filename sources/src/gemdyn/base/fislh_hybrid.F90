@@ -33,6 +33,7 @@
       use levels
       use ver
       use wb_itf_mod
+      use dcmip_options
       implicit none
 #include <arch_specific.hf>
 
@@ -152,6 +153,14 @@
 
       Ver_zmin_8 = Ver_z_8%m(G_nk+1)
       Ver_zmax_8 = Ver_z_8%m(0)
+
+      if (Dcmip_case > 0) then
+
+         Cstv_pref_8 = 100000.d0
+
+         Cstv_ptop_8 = Cstv_pref_8 * exp(-Ver_z_8%m(0)/8780.2)
+
+      end if
 
 !     ----------------------
 !     Compute dz, 1/dz, dBdz

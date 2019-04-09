@@ -85,7 +85,7 @@ MODULE tropical_cyclone
        rfpi       = 1000000.d0, & ! Radius within which to use fixed-point iter.
        constTv    = 0.608d0,    & ! Constant for Virtual Temp Conversion
        deltaz     = 2.d-13,     & ! Small number to ensure convergence in FPI
-       epsilon    = 1.d-25,     & ! Small number to aviod dividing by zero in wind calc
+       epsilon    = 1.d-25,     & ! Small number to avoid dividing by zero in wind calc
        exponent = Rd*gamma/grav,& ! exponent
        T0    = Ts0*(1.d0+constTv*q0),             & ! Surface temp
        Ttrop = T0 - gamma*ztrop,                  & ! Tropopause temp
@@ -96,7 +96,7 @@ CONTAINS
 !=======================================================================
 !    Evaluate the tropical cyclone initial conditions
 !=======================================================================
-  SUBROUTINE tropical_cyclone_test(lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,t,tv,thetav,phis,ps,rho,q) &
+  SUBROUTINE tropical_cyclone_test(lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,t,tv,thetav,phis,ps,rho,q) &
     BIND(c, name = "tropical_cyclone_test")
 
     IMPLICIT NONE
@@ -108,6 +108,7 @@ CONTAINS
     REAL(8), INTENT(IN) ::     &
               lon,             &     ! Longitude (radians)
               lat,             &     ! Latitude (radians)
+              Ver_z,           &     ! Ver_z_8 GEM
               Ver_a,           &     ! Ver_a_8 GEM
               Ver_b,           &     ! Ver_b_8 GEM
               pref                   ! Cstv_pref_8 GEM
@@ -116,7 +117,7 @@ CONTAINS
               p,               &     ! Pressure (Pa)
               z                      ! Height (m)
 
-    INTEGER, INTENT(IN) :: zcoords     ! 1 if z coordinates are specified
+    INTEGER, INTENT(IN) :: zcoords   ! 1 if z coordinates are specified
                                      ! 0 if p coordinates are specified
 
     REAL(8), INTENT(OUT) ::    &
@@ -152,7 +153,15 @@ CONTAINS
 
     st1 = log(ps/pref)
 
-    if (zcoords == 0) p = exp(Ver_a + Ver_b*st1)
+    if (zcoords == 1) then
+
+       z = Ver_z
+
+    else
+
+       p = exp(Ver_a + Ver_b*st1)
+
+    end if
 
     !------------------------------------------------
     !   Initialize altitude (z) if pressure provided
@@ -184,7 +193,8 @@ CONTAINS
           n = n+1
           zn = zhere - fpiF(p,gr,zhere)/fpidFdz(gr,zhere)
           if (n > 20) then
-              PRINT *,'FPI did not converge after 20 interations in q & T!!!'
+              print *,'CAUTION: FPI did not converged after 20 iterations:'
+              print *,'abs(zn-zhere)/abs(zn) vs deltaz',abs(zn-zhere)/abs(zn),deltaz
           else if ( abs(zn-zhere)/abs(zn) > deltaz) then
               zhere = zn
               goto 20

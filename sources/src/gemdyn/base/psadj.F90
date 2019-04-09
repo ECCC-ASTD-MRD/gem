@@ -38,7 +38,6 @@
 
       integer, intent(in) :: F_kount
 
-      type(gmm_metadata) :: mymeta
       integer err,i,j,n,istat,MAX_iteration
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
       real*8,dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8, pr_p0_w_0_8, pw_log_p0_8
@@ -112,7 +111,7 @@
 
       istat = gmm_get(gmmk_fis0_s,fis0)
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-         istat = gmm_get(gmmk_st0_s,st0,mymeta)
+         istat = gmm_get(gmmk_st0_s,st0)
       else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          istat = gmm_get(gmmk_qt0_s,qt0)
       end if
