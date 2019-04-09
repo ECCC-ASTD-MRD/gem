@@ -1,3 +1,0 @@
-subroutine adz_tricub_lag3d_mono
-stop 'DEPRICATED adz_tricub_lag3d_mono'
-end subroutine adz_tricub_lag3d_mono
