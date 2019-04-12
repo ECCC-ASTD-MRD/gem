@@ -21,8 +21,8 @@
       use adz_options
       use adv_pos
       use gem_options
-      use gmm_itf_mod
       use gem_timing
+      use gmm_itf_mod
       use gmm_tracers
       use gmm_vt0
       use HORgrid_options
@@ -117,11 +117,11 @@
       pkps = 0.
 
       do k=1,l_nk
-      do j=1,l_nj
-      do i=1,l_ni
-         pkps(i,j,k) = pr_t(i,j,k)/pr_p0(i,j)
-      end do
-      end do
+         do j=1,l_nj
+            do i=1,l_ni
+               pkps(i,j,k) = pr_t(i,j,k) / pr_p0(i,j)
+            end do
+         end do
       end do
 
       !----------------------------------------------------------------
@@ -129,9 +129,9 @@
       !----------------------------------------------------------------
       do n=1,Tr3d_ntr
 
-         if ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) .and. (Tr3d_intp(n) == 'CUBIC') ) cycle 
+         if ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) .and. (Tr3d_intp(n) == 'CUBIC') ) cycle
 
-         Adz_Mass_Cons_tr_L = .not. ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) ) 
+         Adz_Mass_Cons_tr_L = .not. ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) )
 
          Adz_intp_S = Tr3d_intp(n)
 
@@ -180,7 +180,7 @@
          !High-order interpolation + storage of MONO/LIN/MAX/MIN +
          !estimate FLUX_out/FLUX_in if Bermejo-Conde LAM Flux Aranami
          !-----------------------------------------------------------
-         call adz_cubic (dst_w, src, Adz_pxyzt                     ,&
+         call adz_cubic (dst_w, src,                                &
                          l_ni,l_nj,l_nk,l_minx,l_maxx,l_miny,l_maxy,&
                          i0_w, in_w, j0_w, jn_w, Adz_k0,'t',.false.)
 

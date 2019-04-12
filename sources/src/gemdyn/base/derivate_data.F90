@@ -18,9 +18,9 @@
       subroutine derivate_data ( F_zd, F_w, F_u, F_v, F_t, F_s, F_q,&
                                  Minx, Maxx, Miny, Maxy, Nk        ,&
                                  F_zd_L, F_w_L )
-      use glb_ld
       use cstv
       use dynkernel_options
+      use glb_ld
       implicit none
 
       integer, intent(in) ::  Minx, Maxx, Miny, Maxy, Nk
@@ -28,26 +28,29 @@
       real, dimension(Minx:Maxx,Miny:Maxy   ),  intent(inout ):: F_s
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w,F_q
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
-!      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
 !
 !     ________________________________________________________________
 !
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
-         call fislh_pres ( F_q, F_s, F_t, &
-                           Minx, Maxx, Miny, Maxy, Nk)
-         call fislh_diag_zd_w( F_zd, F_w, F_u, F_v, F_t, F_s, F_q,&
-                               Minx, Maxx, Miny, Maxy, Nk,&
-                               F_zd_L, F_w_L)
-      end if
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-         F_q= 0.
-         F_s(1:l_ni,1:l_nj) = log(F_s(1:l_ni,1:l_nj)/Cstv_pref_8)
-         call diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s,&
-                          Minx, Maxx, Miny, Maxy, Nk   ,&
-                          F_zd_L, F_w_L )
-      end if
+      select case ( trim(Dynamics_Kernel_S) )
+         case ('DYNAMICS_FISL_H')
+            call fislh_pres ( F_q, F_s, F_t, &
+                              Minx, Maxx, Miny, Maxy, Nk)
+            call fislh_diag_zd_w( F_zd, F_w, F_u, F_v, F_t, F_q,&
+                                  Minx, Maxx, Miny, Maxy, Nk,&
+                                  F_zd_L, F_w_L)
+
+         case('DYNAMICS_FISL_P')
+            F_q = 0.
+            F_s(1:l_ni,1:l_nj) = log(F_s(1:l_ni,1:l_nj)/Cstv_pref_8)
+            call diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s,&
+                             Minx, Maxx, Miny, Maxy, Nk   ,&
+                             F_zd_L, F_w_L )
+
+         case('DYNAMICS_EXPO_H')
+            stop('Not yet implemented')
+
+      end select
 !
 !     ________________________________________________________________
 !

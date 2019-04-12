@@ -17,7 +17,7 @@
 !       exclusively for staggered model symmetric and  nonsymmetric_ln(Z) version.
 !       no special treatement for singularity. Matrices are non-singulars by construction.
 !
-      subroutine preverln2 ( F_eval_8, F_levec_8, F_evec_8, &
+      subroutine preverln ( F_eval_8, F_levec_8, F_evec_8, &
                              F_nk, KDIM, F_errcode )
       use cstv
       use glb_ld
@@ -26,30 +26,26 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer F_nk, KDIM, F_errcode
-      real*8 F_eval_8(KDIM), F_levec_8(KDIM,KDIM), F_evec_8(KDIM,KDIM)
+      integer :: F_nk, kdim, F_errcode
+      real*8, dimension(kdim), intent(out) :: F_eval_8
+      real*8, dimension(kdim,kdim) :: F_levec_8, F_evec_8
 !
 !author  Abdessamad Qaddouri - 2007
 !
-!revision
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4.60 - Qaddouri A.       - prevents F_evec_8 deviation from "to be negative definite"
-!
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_eval_8     O    - eigenvalues
-! F_evec_8     O    - Right eigenvector matrix
-!F_levec_8     O    - left eigenvector matrix
-! F_wk1_8           - work field
-! F_nk         I    - number of vertical levels
+!  Name                        Description
+!------------------------------------------------------------
+! F_eval_8      - eigenvalues
+! F_evec_8      - Right eigenvector matrix
+!F_levec_8      - left eigenvector matrix
+! F_wk1_8       - work field
+! F_nk          - number of vertical levels
 !
 
-
-      integer i, j, err
-      real*8 zero, one, xxx, yyy
-      parameter(zero=.0d0, one=1.d0)
-      real*8 wk1(KDIM,KDIM), B1(KDIM,KDIM)
+      integer :: i, j, err
+      real*8, parameter :: zero = 0.d0, one = 1.d0
+      real*8 :: xxx, yyy
+      real*8, dimension(KDIM,KDIM) :: wk1, B1
 !
 ! --------------------------------------------------------------------
 !
@@ -89,10 +85,10 @@
 
 ! note:  B1 is modified by nsyeigl
       do j=1,F_nk
-      do i=1,F_nk
-         F_levec_8(i,j)= F_evec_8(i,j)
-         B1(i,j)= wk1(i,j)
-      end do
+         do i=1,F_nk
+            F_levec_8(i,j)= F_evec_8(i,j)
+            B1(i,j)= wk1(i,j)
+         end do
       end do
 
       F_errcode= 0

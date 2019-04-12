@@ -48,7 +48,7 @@
       Adz_BC_LAM_flux_n = 2
       Adz_pos_reset = 1
 
-      call adz_cubic (empty,empty,Adz_pxyzt                     ,&
+      call adz_cubic (empty,empty,                               &
                       l_ni,l_nj,l_nk,l_minx,l_maxx,l_miny,l_maxy,&
                       empty_i,empty_i,empty_i,empty_i,Adz_k0,'t',.false.)
 
@@ -66,5 +66,4 @@
       call psadj_LAM (fld_cub_o,fld_cub_i,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0)
 
       return
-
-      end subroutine adz_psadj_LAM_0
+      end

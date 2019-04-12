@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine adz_cubic ( F_dest,  F_src, F_xyz, F_ni,F_nj,F_nk,&
+      subroutine adz_cubic ( F_dest, F_src, F_ni,F_nj,F_nk,&
                              F_minx,F_maxx,F_miny,F_maxy          ,&
                              F_i0, F_in, F_j0, F_jn               ,&
                              F_k0, F_lev_S, F_mono_L )
@@ -32,7 +32,6 @@
       integer, intent(in) :: F_i0, F_j0, F_in, F_jn, F_k0
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk), intent(in) :: F_src
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk), intent(out) :: F_dest
-      real, dimension(3,F_ni,F_nj,F_nk), intent(in) :: F_xyz
 
       integer NK,num,nind,err,i0_e,in_e,j0_e,jn_e,k
       real, dimension(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,F_nk) :: extended,adv_o,adv_i
@@ -40,8 +39,9 @@
 !
 !---------------------------------------------------------------------
 !
-      if (.not.Adz_Mass_Cons_tr_L.and.Adz_intp_S=="CUBIC") &
-         call handle_error(-1,'ADZ_CUBIC','ADZ_CUBIC OBSOLETE') 
+      if (.not.Adz_Mass_Cons_tr_L.and.Adz_intp_S=="CUBIC") then
+         call handle_error(-1,'ADZ_CUBIC','ADZ_CUBIC OBSOLETE')
+      end if
 
       if (.not.Adz_Mass_Cons_tr_L.and.Adz_intp_S=="QUINTIC") then
 
@@ -58,14 +58,15 @@
 
       else if (Adz_Mass_Cons_tr_L) then
 
-         extended = 0. 
+         extended = 0.
 
-         if (Adz_BC_LAM_flux_n/=2) & 
-         call rpn_comm_xch_halox( F_src, l_minx, l_maxx, l_miny, l_maxy,&
-               l_ni, l_nj, l_nk, Adz_halox, Adz_haloy, .false., .false.,&
-               extended, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
+         if (Adz_BC_LAM_flux_n/=2) then
+            call rpn_comm_xch_halox( F_src, l_minx, l_maxx, l_miny, l_maxy,&
+                  l_ni, l_nj, l_nk, Adz_halox, Adz_haloy, .false., .false.,&
+                  extended, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
+         end if
 
-         num = F_ni*F_nj*F_nk 
+         num = F_ni*F_nj*F_nk
 
          nind = (F_in-F_i0+1)*(F_jn-F_j0+1)*(F_nk-F_k0+1)
 
@@ -75,14 +76,14 @@
 
             !Bermejo-Conde LAM: Apply mask_o/mask_i to Tracer
             !------------------------------------------------
-            if (Adz_BC_LAM_flux_n==1) then 
+            if (Adz_BC_LAM_flux_n==1) then
 
                call adz_BC_LAM_mask (adv_o,adv_i,extended, &
                                      Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_nk)
 
-            !PSADJ LAM: Use mask_o/mask_i based on Tracer=1 
+            !PSADJ LAM: Use mask_o/mask_i based on Tracer=1
             !----------------------------------------------
-            elseif (Adz_BC_LAM_flux_n==2) then 
+            else if (Adz_BC_LAM_flux_n==2) then
 
                adv_o = Adz_BC_LAM_mask_o
                adv_i = Adz_BC_LAM_mask_i
@@ -116,7 +117,7 @@
          if (Adz_intp_S=="CUBIC") then
             call adv_tricub_lag3d_conserv (wrkc,w_mono,w_lin,w_min,w_max,extended, &
                                            pxt,pyt,pzt,num,nind,ii_w,F_nk,F_lev_S)
-         elseif (Adz_intp_S=="QUINTIC") then
+         else if (Adz_intp_S=="QUINTIC") then
             call adv_qutver_lag3d_conserv (wrkc,w_mono,w_lin,w_min,w_max,extended, &
                                            pxt,pyt,pzt,num,nind,ii_w,F_nk,F_lev_S)
          end if
@@ -143,4 +144,4 @@
 !---------------------------------------------------------------------
 !
       return
-      end subroutine adz_cubic
+      end

@@ -16,22 +16,21 @@
 !** s/r diag_zd_w_H - Computes model vertical velocities zd and w diagnostically.
 !                     Height-type vertical coordinate
 
-      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_s, F_q,  &
+      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_q,  &
                                   Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
-      use metric
-      use gem_options
       use dyn_fisl_options
+      use gem_options
       use geomh
-      use tdpack
       use glb_ld
       use lun
+      use metric
+      use tdpack
       use ver
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) ::  Minx, Maxx, Miny, Maxy, Nk
       logical, intent(in) ::  F_zd_L, F_w_L
-      real, dimension(Minx:Maxx,Miny:Maxy   ),  intent(in ) :: F_s
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
@@ -45,7 +44,7 @@
          F_zd = 0.
          F_w = 0.
          return
-      endif
+      end if
 
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
       if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
@@ -53,13 +52,13 @@
 ! Halo exchange needed because scope below goes one point in halo
 !
       call rpn_comm_xch_halo (F_u,  l_minx,l_maxx,l_miny,l_maxy, l_niu,l_nj, Nk,   &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (F_v,  l_minx,l_maxx,l_miny,l_maxy, l_ni,l_njv, Nk,   &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo( F_t,  l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj ,Nk,   &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo( F_q,  l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj ,Nk+1, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
 !     Initializations
 

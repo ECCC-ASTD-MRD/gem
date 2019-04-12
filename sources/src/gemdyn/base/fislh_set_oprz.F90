@@ -16,27 +16,22 @@
 !**s/r set_oprz_H - Computes vertical operators
 
       subroutine fislh_set_oprz (F_errcode)
-      use HORgrid_options
-
-      use glb_ld
-      use tdpack
       use dcst
+      use glb_ld
       use lun
       use opr
       use ver
-      use cstv
       implicit none
 #include <arch_specific.hf>
 
-      integer F_errcode
+      integer, intent(in) :: F_errcode
 
 !Author: Claude Girard, July 2017
 
-
       integer :: k, AA, BB, CC
-      real*8, dimension(G_nk)      :: r_8
+      real*8, dimension(G_nk) :: r_8
       real*8, dimension(G_nk*G_nk) :: br_8, bl_8
-      real*8, parameter ::  one = 1.d0, half = 0.5d0
+      real*8, parameter :: one = 1.d0, half = 0.5d0
 !     __________________________________________________________________
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,9 +43,9 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if (Lun_out > 0) write(Lun_out,1000)
 
-      AA=0
-      BB=G_nk
-      CC=G_nk*2
+      AA = 0
+      BB = G_nk
+      CC = G_nk*2
 !
 !     ~~~~~~~~~~~~~~~~~
 !     Diagonal Operator
@@ -126,7 +121,7 @@
 !     Compute eigenvalues and eigenvector in the vertical
 !     ---------------------------------------------------
 
-      call preverln2 ( r_8, bl_8, br_8, G_nk, G_nk, F_errcode)
+      call preverln ( r_8, bl_8, br_8, G_nk, G_nk, F_errcode)
 !
 !     transfer results back in Opr_* output arrays
 !

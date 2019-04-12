@@ -15,17 +15,16 @@
 !**s/r bubble_fislP_data - generates initial condition for Robert's bubble
 !                    experiment (Robert 1993 JAS) - FISL pressure coord.
 !
-      subroutine bubble_fislP_data ( F_t, Mminx,Mmaxx,Mminy,Mmaxy,nk )
-      use glb_ld
+      subroutine bubble_fislP_data (F_t, Mminx, Mmaxx, Mminy, Mmaxy, nk)
       use bubble_options
       use ver
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(IN) :: Mminx,Mmaxx,Mminy,Mmaxy,nk
-      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(OUT) ::  F_t
+      integer, intent(in) :: Mminx,Mmaxx,Mminy,Mmaxy,nk
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(out) :: F_t
 
-      integer :: i,j,k,ii,err
+      integer :: i, j, k, ii
       real*8 :: pp, ex, theta, r,rad
 !
 !     ---------------------------------------------------------------
@@ -34,41 +33,41 @@
 
          do k=1,g_nk
             do j=1,l_nj
-            do i=1,l_ni
-               ii=i+l_i0-1
-               theta = bubble_theta
-               if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
-                   theta = theta + 0.5d0
-               end if
-               pp = exp(Ver_a_8%t(k))
-               ex = (pp/Cstv_pref_8)**cappa_8
-               F_t(i,j,k) = theta * ex
-            end do
+               do i=1,l_ni
+                  ii=i+l_i0-1
+                  theta = bubble_theta
+                  if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
+                     theta = theta + 0.5d0
+                  end if
+                  pp = exp(Ver_a_8%t(k))
+                  ex = (pp/Cstv_pref_8)**cappa_8
+                  F_t(i,j,k) = theta * ex
+               end do
             end do
          end do
 
       else
 
-      ! Gaussian
+         ! Gaussian
 
          do k=1,g_nk
             do j=1,l_nj
-            do i=1,l_ni
-               ii=i+l_i0-1
-               r = sqrt( (dble((ii)-bubble_ictr)**2 + &
-                          dble((k )-bubble_kctr)**2) )&
-                   * dble(bubble_dx)
-               rad = bubble_rad*dble(bubble_dx)
-               if ( r <= rad ) then
-                   theta = bubble_theta + 0.5d0
-               else
-                   theta = bubble_theta + 0.5d0 * &
-                           exp( -(r - rad)**2 / 100.d0**2 );
-               end if
-               pp = exp(Ver_a_8%t(k))
-               ex = (pp/Cstv_pref_8)**cappa_8
-               F_t(i,j,k) = theta * ex
-            end do
+               do i=1,l_ni
+                  ii=i+l_i0-1
+                  r = sqrt( (dble((ii)-bubble_ictr)**2   &
+                           + dble((k )-bubble_kctr)**2) )&
+                           * dble(bubble_dx)
+                  rad = bubble_rad*dble(bubble_dx)
+                  if ( r <= rad ) then
+                     theta = bubble_theta + 0.5d0
+                  else
+                     theta = bubble_theta + 0.5d0 * &
+                             exp( -(r - rad)**2 / 100.d0**2 );
+                  end if
+                  pp = exp(Ver_a_8%t(k))
+                  ex = (pp/Cstv_pref_8)**cappa_8
+                  F_t(i,j,k) = theta * ex
+               end do
             end do
          end do
 
@@ -77,4 +76,4 @@
 !     -----------------------------------------------------------------
 !
       return
-      end subroutine bubble_fislP_data
+      end
