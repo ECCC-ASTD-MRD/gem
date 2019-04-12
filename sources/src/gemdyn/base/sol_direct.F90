@@ -35,9 +35,6 @@
       real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_8
       real*8, dimension(F_ni,F_nj,F_nk), intent(inout) :: F_sol_8
 !
-!author
-!     Michel Desgagne / Abdessamad Qaddouri -- January 2014
-!
       integer i,j,k,ni,nij,iter
       real linfini
       real*8, dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3

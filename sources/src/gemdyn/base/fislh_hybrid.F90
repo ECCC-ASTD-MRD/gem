@@ -26,6 +26,7 @@
       use VERgrid_options
       use dyn_fisl_options
       use glb_ld
+      use ctrl
       use cstv
       use lun
       use dimout
@@ -33,7 +34,6 @@
       use levels
       use ver
       use wb_itf_mod
-      use dcmip_options
       implicit none
 #include <arch_specific.hf>
 
@@ -61,7 +61,7 @@
                   Ver_a_8%m(G_nk+1),       Ver_a_8%t(G_nk+1), &
                   Ver_b_8%m(G_nk+1),       Ver_b_8%t(G_nk+1), &
                   Ver_c_8%m(G_nk+1),       Ver_c_8%t(G_nk+1), &
-                Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(0:G_nk  ), &
+                Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(0:G_nk+1), &
                                          Ver_z_8%x(0:G_nk  ), &
                  Ver_dz_8%m(G_nk  ),      Ver_dz_8%t(G_nk  ), &
                 Ver_idz_8%m(G_nk  ),     Ver_idz_8%t(G_nk  ), &
@@ -138,9 +138,10 @@
       do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)
       end do
+
      !Define the positions of true thermo levels
       Ver_z_8%t(0) = Ver_z_8%m(0)
-      do k = 1, G_nk
+      do k = 1, G_nk+1
          Ver_z_8%t(k) = Ver_a_8%t(k)
       end do
 
@@ -154,12 +155,9 @@
       Ver_zmin_8 = Ver_z_8%m(G_nk+1)
       Ver_zmax_8 = Ver_z_8%m(0)
 
-      if (Dcmip_case > 0) then
-
+      if ( Ctrl_canonical_dcmip_L ) then
          Cstv_pref_8 = 100000.d0
-
          Cstv_ptop_8 = Cstv_pref_8 * exp(-Ver_z_8%m(0)/8780.2)
-
       end if
 
 !     ----------------------

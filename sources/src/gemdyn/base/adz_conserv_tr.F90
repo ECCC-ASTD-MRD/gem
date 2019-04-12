@@ -129,11 +129,11 @@
       !----------------------------------------------------------------
       do n=1,Tr3d_ntr
 
-         if (.not.(Tr3d_mono(n)>1.or.Tr3d_mass(n)/=0)) cycle
+         if ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) .and. (Tr3d_intp(n) == 'CUBIC') ) cycle 
 
-         adz_Mass_Cons_tr_L = .true.
+         Adz_Mass_Cons_tr_L = .not. ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) ) 
 
-         adz_intp_S = Tr3d_intp(n)
+         Adz_intp_S = Tr3d_intp(n)
 
          BC_LAM_flux_1_L = Tr3d_mass(n)==1.and..not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1
          BC_LAM_flux_2_L = Tr3d_mass(n)==1.and..not.Grd_yinyang_L.and.Adz_BC_LAM_flux==2

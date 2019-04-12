@@ -23,12 +23,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Michel Desgagne - May 2010
-!
-!revision
-! v4_14 - Desgagne, M.     - Initial revision
-
       integer :: istat
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()
 !     ________________________________________________________________

@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**   s/r metric_H - calculate metric coefficients for GEM in height-base coordinates
-   subroutine fislh_metric()
+      subroutine fislh_metric()
       use mtn_options
       use HORgrid_options
       use gmm_geof
@@ -75,27 +75,27 @@
 
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
-         do i=l_minx+1,l_maxx-1
-            mc_Jx (i,j,k)=(zmom(i+1,j,k)-zmom(i,j,k))*geomh_invDX_8(j)
-            mc_Jy (i,j,k)=(zmom(i,j+1,k)-zmom(i,j,k))*geomh_invDY_8
-            mc_iJz(i,j,k)=one/(zmom(i,j,k+1)-zmom(i,j,k))
-         end do
+            do i=l_minx+1,l_maxx-1
+               mc_Jx (i,j,k)=(zmom(i+1,j,k)-zmom(i,j,k))*geomh_invDX_8(j)
+               mc_Jy (i,j,k)=(zmom(i,j+1,k)-zmom(i,j,k))*geomh_invDY_8
+               mc_iJz(i,j,k)=one/(zmom(i,j,k+1)-zmom(i,j,k))
+            end do
          end do
       end do
       ztht(:,:,G_nk)=fis0(:,:)/grav_8
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
-         do i=l_minx+1,l_maxx-1
+            do i=l_minx+1,l_maxx-1
       !     mc_Ix(i,j,k)=log( (ztht(i+1,j,k)-ztht(i+1,j,k-1))/(ztht(i-1,j,k)-ztht(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
       !     mc_Iy(i,j,k)=log( (ztht(i,j+1,k)-ztht(i,j+1,k-1))/(ztht(i,j-1,k)-ztht(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
       !     mc_Iz(i,j,k)=log( (zmom(i,j,k+1)-zmom(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
       !                      /(zmom(i,j,k)-zmom(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
-           mc_Ix(i,j,k)=0.0
-           mc_Iy(i,j,k)=0.0
-           mc_Iz(i,j,k)=0.0
-           mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
+               mc_Ix(i,j,k)=0.0
+               mc_Iy(i,j,k)=0.0
+               mc_Iz(i,j,k)=0.0
+               mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
        !    mc_logJz(i,j,k)=0.0
-         end do
+            end do
          end do
       end do
       ztht(:,:,G_nk)=ver_z_8%t(G_nk)+(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
@@ -123,4 +123,4 @@
 !     ---------------------------------------------------------------
 !
       return
-   end subroutine fislh_metric
+      end

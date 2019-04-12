@@ -19,104 +19,104 @@
 !               nonsymmetric case is for staggered (LN(Z)) model
 !
       subroutine nsyeigl ( F_eval_8, F_Levec_8, F_Revec_8, F_b_8,&
-                                                 NN, NMAX, NWORK )
+                           nn, nmax, nwork )
       implicit none
 #include <arch_specific.hf>
 
-      integer NN, NMAX, NWORK
-      real*8 F_eval_8(NMAX), F_Levec_8(NMAX,NMAX), F_b_8(NMAX,NMAX), &
-             F_Revec_8(NMAX,NMAX)
+      integer, intent(in) :: nn, nmax, nwork
+      real*8, dimension(nmax), intent(out) :: F_eval_8
+      real*8, dimension(nmax,nmax), intent(inout) :: F_Levec_8
+      real*8, dimension(nmax,nmax), intent(in) :: F_b_8
+      real*8, dimension(nmax,nmax), intent(out) :: F_Revec_8
 
 !author  Abdessamad Qaddouri - 2007
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_eval_8     O    - eigenvalues
-! F_Revec_8    O    - Right eigenvector matrix
-! F_levec_8    O    - left eigenvector matrix
+!  Name           Description
+!------------------------------------------------------------
+! F_eval_8      - eigenvalues
+! F_Revec_8     - Right eigenvector matrix
+! F_levec_8     - left eigenvector matrix
 !
 !------------------------------------------------------------------
 
       real*8, external :: ddot
-      integer  i,j,k,INFO
-      real*8 alfr(NMAX),alfi(NMAX),beta(NMAX),wk1(NWORK)
-      real*8 BVL(NMAX,NMAX),dotvl(NN),VL(NMAX,NMAX),b(NMAX,NMAX)
+      integer  i,j,k,info
+      real*8 alfr(nmax),alfi(nmax),beta(nmax),wk1(nwork)
+      real*8 BVL(nmax,nmax),dotvl(nn),vl(nmax,nmax),b(nmax,nmax)
 !
 ! --------------------------------------------------------------------
 !
       INFO= -1 ; b= F_b_8
 
-      call dggev('V','V',NN, F_Levec_8, NMAX, b, NMAX, &
-                 alfr, alfi,beta,VL, NMAX, F_Revec_8, NMAX, &
-                 wk1, NWORK, INFO )
+      call dggev('V','V',nn, F_Levec_8, nmax, b, nmax, &
+                 alfr, alfi,beta,VL, nmax, F_Revec_8, nmax, &
+                 wk1, nwork, info )
       F_Levec_8=VL
 
-! (ALPHAR(j) + ALPHAI(j)*i)/BETA(j) is the jeme eigenvalue
-      do j=1,NMAX
+! (ALPHAR(j) + ALPHAI(j)*i)/BETA(j) is the jth eigenvalue
+      do j=1,nmax
          F_eval_8(j)= ALfR(j)/beta(j)
       end do
 
 ! normalize F_Revec_8
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             BVL(i,j)=0.0
-            do k=1,NN
+            do k=1,nn
                BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
             end do
          end do
       end do
-      do j=1,NN
-         dotvl(j)= ddot(NMAX,F_Revec_8(1,j),1,BVL(1,j),1)
+      do j=1,nn
+         dotvl(j)= ddot(nmax,F_Revec_8(1,j),1,BVL(1,j),1)
       end do
 
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             F_Revec_8(i,j)= F_Revec_8(i,j)/sqrt(dotvl(j))
          end do
       end do
 
 ! normalize F_Levec_8
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             BVL(i,j)=0.0
-            do k=1,NN
+            do k=1,nn
                BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Levec_8(k,j)
             end do
          end do
       end do
-      do j=1,NN
+      do j=1,nn
          dotvl(j)= ddot(NMAX,F_Levec_8(1,j),1,BVL(1,j),1)
       end do
 
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             F_Levec_8(i,j)= F_Levec_8(i,j)/sqrt(dotvl(j))
          end do
       end do
 
 ! normalize for non symmetric case
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             BVL(i,j)=0.0
-            do k=1,NN
+            do k=1,nn
                BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
             end do
          end do
       end do
 
-      do j=1,NN
+      do j=1,nn
          dotvl(j)= ddot(NMAX,F_Levec_8(1,j),1,BVL(1,j),1)
       end do
 
-      do j=1,NN
-         do i=1,NMAX
+      do j=1,nn
+         do i=1,nmax
             F_Levec_8(i,j)= F_Levec_8(i,j)/dotvl(j)
          end do
       end do
-!
-! --------------------------------------------------------------------
-!
+
       return
       end
 

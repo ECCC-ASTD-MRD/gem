@@ -28,13 +28,6 @@
       real*8, intent(out) ::  F_pri_8
       integer :: istat, npts
 
-!
-!author
-!     Michel Desgagne - spring 2012
-!
-!revision
-! v4_50 - Desgagne M.       - initial version
-
       ! With an FFTW backend, this routine needs only to save:
       ! * The transform type
       ! * The transform size

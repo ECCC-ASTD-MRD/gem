@@ -58,18 +58,18 @@
 !$omp          shared (logpres)
 
 !$omp do
-      do 600 j  = 1, l_nj
-         do 500 kk = 1, Nkout
+      do j  = 1, l_nj
+         do kk = 1, Nkout
             pnindex = 0
             prlprso = logpres(kk)
 
             do k= 1, F_nk
-            do i= 1, l_ni
-               if ( prlprso > F_wlnph(i,j,k) ) pnindex(i) = k
-            end do
+               do i= 1, l_ni
+                  if ( prlprso > F_wlnph(i,j,k) ) pnindex(i) = k
+               end do
             end do
 
-            do 300 i= 1, l_ni
+            do i= 1, l_ni
 !******************************************************************************
 !                                                                             *
 ! If:    output pressure   <   hydrostatic pressure on the                    *
@@ -168,9 +168,9 @@
                else if ( pnindex(i) == F_nk ) then
 
                   do pnund=1,F_nundr
-                     if ( F_gzin(i,j,F_nk) > F_gzund(i,j,pnund) ) go to 30
+                     if ( F_gzin(i,j,F_nk) > F_gzund(i,j,pnund) ) exit
                   end do
- 30               prlptop = F_wlnph(i,j,F_nk)
+                  prlptop = F_wlnph(i,j,F_nk)
                   prvttop = F_vtin (i,j,F_nk)
                   prfitop = F_gzin (i,j,F_nk)
 
@@ -184,7 +184,7 @@
                         if ( prlpbot >= prlprso ) then
                            F_vtout(i,j,kk) = prvttop
                            F_gzout(i,j,kk) = prfitop + rgasd_8*prvttop*(prlptop-prlpbot)
-                           go to 300
+                           cycle
                         end if
                      else
                         prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
@@ -193,7 +193,7 @@
                            F_vtout(i,j,kk) = prvttop * &
                            exp ( rgasd_8 * prl * (prlprso-prlptop))
                            F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
-                           go to 300
+                           cycle
                         end if
                      end if
 
@@ -253,12 +253,13 @@
                      F_vtout(i,j,kk)= prfm0 + pre * prfm1
                   end if
                end if
- 300        continue
- 500     continue
- 600  continue
-!$omp enddo
 
+            end do
+         end do
+      end do
+!$omp enddo
 !$omp end parallel
+
 !
 !-------------------------------------------------------------------
 !

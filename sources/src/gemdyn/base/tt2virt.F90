@@ -26,10 +26,7 @@
       logical, intent(in) :: F_tt2tv
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(inout) :: F_t
-!
-!author
-!     Michel Desgagne - Dec 2009
-!
+
       integer :: istat
       real, pointer, dimension(:,:,:)     :: tvirt,tt,hu
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumpqj

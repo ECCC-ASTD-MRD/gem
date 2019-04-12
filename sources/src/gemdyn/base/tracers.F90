@@ -118,7 +118,7 @@
       Tr3d_ntrNT=0 ; Tr3d_ntrM1=0 ; Tr3d_ntrMC=0
 
       do i=1, Tr3d_ntr
-         if ( (Tr3d_mass(i) == 0) .and. (Tr3d_mono(i) < 2) ) then
+         if ( (Tr3d_mass(i) == 0) .and. (Tr3d_mono(i) < 2) .and. (Tr3d_intp(i) == 'CUBIC') )  then
             if (Tr3d_mono(i) == 0) then
                Tr3d_ntrNT= Tr3d_ntrNT + 1
                Tr3d_NT_S(Tr3d_ntrNT) = Tr3d_name_S(i)

@@ -45,8 +45,6 @@
 
 !Author: Claude Girard, July 2017
 
-
-
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
@@ -134,113 +132,109 @@
 !$omp     div,xtmp_8,ytmp_8,w1)
 
 !$omp do
-   do k = 1,l_nk
-      km=max(k-1,1)
-      kp=min(k+1,l_nk)
+      do k = 1,l_nk
+         km=max(k-1,1)
+         kp=min(k+1,l_nk)
 
-      !********************************
-      ! Compute Ru: RHS of U equation *
-      !********************************
-      do j= j0u, jnu
-         do i= i0u, inu
+         !********************************
+         ! Compute Ru: RHS of U equation *
+         !********************************
+         do j= j0u, jnu
+            do i= i0u, inu
 
-           !assuming T at momentum level 1 equal to T at thermo level 3/2
-            barz  = Ver_wp_8%m(k)*F_t(i  ,j,k)+Ver_wm_8%m(k)*F_t(i  ,j,km)
-            barzp = Ver_wp_8%m(k)*F_t(i+1,j,k)+Ver_wm_8%m(k)*F_t(i+1,j,km)
-            t_interp = (barz + barzp)*half/Cstv_Tstr_8
+               !assuming T at momentum level 1 equal to T at thermo level 3/2
+               barz  = Ver_wp_8%m(k)*F_t(i  ,j,k)+Ver_wm_8%m(k)*F_t(i  ,j,km)
+               barzp = Ver_wp_8%m(k)*F_t(i+1,j,k)+Ver_wm_8%m(k)*F_t(i+1,j,km)
+               t_interp = (barz + barzp)*half/Cstv_Tstr_8
 
-            v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
+               v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
-            F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
-                           t_interp * ( F_q(i+1,j,k) - F_q(i,j,k) ) * geomh_invDX_8(j)          &
-                           - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp )  &
-                         + Cstv_Beta_m_8 * t_interp * mc_Jx(i,j,k) * ( &
-                          Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                              +(F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                         +Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)   &
-                                              +(F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) )
-            F_oru(i,j,k) = F_oru(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
+               F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
+                              t_interp * ( F_q(i+1,j,k) - F_q(i,j,k) ) * geomh_invDX_8(j)          &
+                            - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp )  &
+                            + Cstv_Beta_m_8 * t_interp * mc_Jx(i,j,k) * ( &
+                              Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
+                                                 + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
+                            + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)   &
+                                                 + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) )
+               F_oru(i,j,k) = F_oru(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
+            end do
          end do
-      end do
 
-      !********************************
-      ! Compute Rv: RHS of V equation *
-      !********************************
-      do j = j0v, jnv
-         do i = i0v, inv
+         !********************************
+         ! Compute Rv: RHS of V equation *
+         !********************************
+         do j = j0v, jnv
+            do i = i0v, inv
 
-            barz  = Ver_wp_8%m(k)*F_t(i,j  ,k)+Ver_wm_8%m(k)*F_t(i,j  ,km)
-            barzp = Ver_wp_8%m(k)*F_t(i,j+1,k)+Ver_wm_8%m(k)*F_t(i,j+1,km)
-            t_interp = ( barz + barzp)*half/Cstv_Tstr_8
+               barz  = Ver_wp_8%m(k)*F_t(i,j  ,k)+Ver_wm_8%m(k)*F_t(i,j  ,km)
+               barzp = Ver_wp_8%m(k)*F_t(i,j+1,k)+Ver_wm_8%m(k)*F_t(i,j+1,km)
+               t_interp = ( barz + barzp)*half/Cstv_Tstr_8
 
-            u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
+               u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
-            F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
-                           t_interp * ( F_q(i,j+1,k) - F_q(i,j,k) ) * geomh_invDY_8             &
-                           + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp )   &
-                         + Cstv_Beta_m_8 * t_interp * mc_Jy(i,j,k) * ( &
-                          Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                              +(F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
-                         +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)   &
-                                              +(F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) )
-            F_orv(i,j,k) = F_orv(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
+               F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
+                              t_interp * ( F_q(i,j+1,k) - F_q(i,j,k) ) * geomh_invDY_8             &
+                            + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp )   &
+                            + Cstv_Beta_m_8 * t_interp * mc_Jy(i,j,k) * ( &
+                              Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
+                                                 + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
+                            + Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)   &
+                                                 + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) )
+               F_orv(i,j,k) = F_orv(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
+            end do
          end do
-      end do
 
-      !******************************************
-      ! Compute Rw & Rt: RHS of w & T equations *
-      !******************************************
-      xtmp_8(:,:) = one
-      do j = j0, jn
-      do i = i0, in
-         xtmp_8(i,j) = F_t(i,j,k) / real(Cstv_Tstr_8)
-      end do
-      end do
-      call vlog( ytmp_8, xtmp_8, nij )
-      w1=half/(cpd_8*Cstv_Tstr_8)
-      do j= j0, jn
-         do i= i0, in
+         !******************************************
+         ! Compute Rw & Rt: RHS of w & T equations *
+         !******************************************
+         xtmp_8(:,:) = one
+         do j = j0, jn
+            do i = i0, in
+               xtmp_8(i,j) = F_t(i,j,k) / real(Cstv_Tstr_8)
+            end do
+         end do
+         call vlog( ytmp_8, xtmp_8, nij )
+         w1=half/(cpd_8*Cstv_Tstr_8)
+         do j= j0, jn
+            do i= i0, in
 
-            F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) - Cstv_Beta_nh_8 *xtmp_8(i,j)* &
-                            ( (F_q(i,j,k+1)-F_q(i,j,k))*mc_iJz(i,j,k)                 &
+               F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) - Cstv_Beta_nh_8 *xtmp_8(i,j)* &
+                              ( (F_q(i,j,k+1)-F_q(i,j,k))*mc_iJz(i,j,k)                 &
                               -grav_8*( one-one/xtmp_8(i,j) ) )
 
-            F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - w1*(F_q(i,j,k+1)+F_q(i,j,k)) ) &
-                         - Cstv_Beta_8 * mu_8 * F_w(i,j,k)
-            F_ort(i,j,k) = F_ort(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
+               F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - w1*(F_q(i,j,k+1)+F_q(i,j,k)) ) &
+                             - Cstv_Beta_8 * mu_8 * F_w(i,j,k)
+               F_ort(i,j,k) = F_ort(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
 
-            F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) &
-                         - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km) - F_w(i,j,k) )
+               F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) &
+                            - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km) - F_w(i,j,k) )
+            end do
          end do
-      end do
 
-      !*****************************************
-      ! Compute Rc: RHS of continuity equation *
-      !*****************************************
-      w1=epsi_8/grav_8
-      do j= j0, jn
-         do i= i0, in
-            div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)                                 &
-                + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
-                + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))                               &
-                         + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )                             &
-                         + mc_Iz(i,j,k)*(Ver_wpA_8(k)*F_zd(i,j,k)+Ver_wmA_8(k)*Ver_onezero(k)*F_zd(i,j,km))
-            F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz(i,j,k)  &
-                          - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*F_w(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*F_w(i,j,km)) )
-            F_orc(i,j,k) = F_orc(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * &
-                            (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/F_t(i,j,k ) + &
-                            Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/F_t(i,j,km) )
+         !*****************************************
+         ! Compute Rc: RHS of continuity equation *
+         !*****************************************
+         w1=epsi_8/grav_8
+         do j= j0, jn
+            do i= i0, in
+               div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)                                 &
+                   + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
+                   + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
+                   + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))                               &
+                   + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )                             &
+                   + mc_Iz(i,j,k)*(Ver_wpA_8(k)*F_zd(i,j,k)+Ver_wmA_8(k)*Ver_onezero(k)*F_zd(i,j,km))
+               F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz(i,j,k)  &
+                             - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*F_w(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*F_w(i,j,km)) )
+               F_orc(i,j,k) = F_orc(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * &
+                             (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/F_t(i,j,k ) + &
+                             Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/F_t(i,j,km) )
+            end do
          end do
-      end do
 
-   end do
+      end do
 !$omp end do
-
 !$omp  end parallel
-
-!     call glbstat2 ( F_orc,'orc',"rhs_H",l_minx,l_maxx,l_miny,l_maxy, &
-!                     1,G_nk, 5,G_ni-4,5,G_nj-4,1,G_nk )
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_H)')
 !

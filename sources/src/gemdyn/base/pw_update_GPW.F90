@@ -29,9 +29,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Michel Desgagne - May 2010
-!
       integer :: k, istat
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________

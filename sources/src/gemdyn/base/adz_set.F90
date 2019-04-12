@@ -34,6 +34,7 @@
 
       integer  j, k, k0, BCS_BASE, pnz, ext
       real*8, parameter :: EPS_8= 1.D-5
+      real :: verysmall
       real*16 :: smallest_dz,posz
 
       type(gmm_metadata) :: meta, mymeta
@@ -107,14 +108,18 @@
       allocate (  Adz_delz_m(0:l_nk),  Adz_delz_t(0:l_nk), &
                  Adz_odelz_m(0:l_nk), Adz_odelz_t(0:l_nk) )
 
-! Vert coord  : sig =1.d0 for P coord, sig=-1.d0 for H coord
-      sig=(Ver_z_8%m(l_nk)-Ver_z_8%m(1))/(abs(  Ver_z_8%m(l_nk)-Ver_z_8%m(1) ))
+! Vert coord: sig= 1.d0 for P coord, sig= -1.d0 for H coord
+      sig=       (Ver_z_8%m(l_nk)-Ver_z_8%m(1)) / &
+            ( abs(Ver_z_8%m(l_nk)-Ver_z_8%m(1)) )
 
-
+      Adz_delz_m= 9.e33 ; Adz_delz_t= 9.e33
+      verysmall= tiny(verysmall)*1.e5
       do k = 0,l_nk
          kp1 = k+1
-         Adz_delz_m (k) = Ver_z_8%m(kp1)-Ver_z_8%m(k)
-         Adz_delz_t (k) = Ver_z_8%t(kp1)-Ver_z_8%t(k)
+         if (abs(Ver_z_8%m(kp1)-Ver_z_8%m(k))>verysmall) &
+         Adz_delz_m(k) = Ver_z_8%m(kp1)-Ver_z_8%m(k)
+         if (abs(Ver_z_8%t(kp1)-Ver_z_8%t(k))>verysmall) &
+         Adz_delz_t(k) = Ver_z_8%t(kp1)-Ver_z_8%t(k)
          Adz_odelz_m(k) = 1.0d0 / Adz_delz_m(k)
          Adz_odelz_t(k) = 1.0d0 / Adz_delz_t(k)
       end do

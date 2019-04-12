@@ -29,6 +29,7 @@
       use tr3d
       use step_options
       use gmm_itf_mod
+      use cstv
       implicit none
 #include <arch_specific.hf>
 
@@ -39,7 +40,7 @@
       !NOTE: U,V output on Staggered grids
       !============================================================
 
-      integer :: istat, k
+      integer :: istat, k, i, j
       real, dimension (:,:,:), pointer :: hu
       real, dimension (l_minx:l_maxx,l_miny:l_maxy,G_nk) :: gz_t
 !
@@ -64,10 +65,19 @@
 
       !Setup Williamson Case 7: The 21 December 1978 Initial conditions are read
       !-------------------------------------------------------------------------
-      if (Williamson_case==7) &
+      if (Williamson_case==7) then
+
           call inp_data ( ut1, vt1, wt1, tt1  ,&
                           zdt1,st1,fis0,l_minx,l_maxx,l_miny,l_maxy,&
                           G_nk,.true. ,'TR/',':P',Step_runstrt_S )
+
+         do j=1,l_nj
+            do i=1,l_ni
+               st1(i,j) = log (st1(i,j)/Cstv_pref_8)
+            end do
+         end do
+
+      end if
 
       !Initialize T/ZD/W/Q
       !-------------------

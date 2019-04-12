@@ -111,6 +111,9 @@
 //  call tricublin_mono_zyx_n_m(d3,l3,mi3,ma3,f123,pxpypz,lv,NPOINTS,3)  ! monotonic interpolation, 3 arrays
 //****
 
+#define MAX(a,b) ((a) > (b)) ? (a) : (b)
+#define MIN(a,b) ((a) < (b)) ? (a) : (b)
+
 #if defined(__AVX2__) && defined(__x86_64__)
 #include <immintrin.h>
 #endif
@@ -320,6 +323,7 @@ ztab *Vsearch_setup(double *targets, int nk, int ni, int nj)
   int i;
   ztab *lv;
   double pad;
+  int nkl = MAX(nk,4);
 
   lv = malloc(sizeof(ztab));
   if(lv == NULL) return NULL ;
@@ -334,18 +338,22 @@ ztab *Vsearch_setup(double *targets, int nk, int ni, int nj)
 // for(i=0 ; i<nk  ; i++) { printf("%12.7f ",lv->z[i]) ; } ; printf("\n");
   // denominators for Lagrange cubic polynomials coefficients ( entries 1 to n-2 make sense )
   // entries 0 and n-1 are fudged
-  lv->ocz = malloc(4 * nk * sizeof(double));
+  lv->ocz = (double *) malloc(4 * nkl * sizeof(double));
   if(NULL == lv->ocz){    // malloc failed
     free(lv->z);          // deallocate z
     free(lv);             // deallocate lv
     return NULL;
   }
-  denominators( &(lv->ocz[0]) , targets[0], targets[1], targets[2], targets[3]);                 // level 0 coeffs are normally not used
-  for(i=1 ; i<nk - 2   ; i++) {
-    denominators( &(lv->ocz[4*i]) , lv->z[i-1], lv->z[i  ], lv->z[i+1], lv->z[i+2]);
+  if(nk >= 4){             // protect against nk < 4
+    denominators( &(lv->ocz[0]) , targets[0], targets[1], targets[2], targets[3]);                     // level 0 coeffs are normally not used
+    for(i=1 ; i<nk - 2   ; i++) {
+      denominators( &(lv->ocz[4*i]) , lv->z[i-1], lv->z[i  ], lv->z[i+1], lv->z[i+2]);
+    }
+    denominators( &(lv->ocz[4*(nk-2)]) , targets[nk-4], targets[nk-3], targets[nk-2], targets[nk-1]);  // level nk-2 coeffs are normally not used
+    denominators( &(lv->ocz[4*(nk-1)]) , targets[nk-4], targets[nk-3], targets[nk-2], targets[nk-1]);  // level nk-1 coeffs are normally not used
+  }else{
+    for(i=0 ; i<nkl*4 ; i++) lv->ocz[i] = 1.0;            // not used, set to 1.0 to avoid Floating Point errors later on
   }
-  denominators( &(lv->ocz[4*(nk-2)]) , targets[nk-4], targets[nk-3], targets[nk-2], targets[nk-1]);  // level nk-2 coeffs are normally not used
-  denominators( &(lv->ocz[4*(nk-1)]) , targets[nk-4], targets[nk-3], targets[nk-2], targets[nk-1]);  // level nk-1 coeffs are normally not used
 
   lv->ni = ni;           // nb of points along x
   lv->nj = nj;           // nb of points along y
@@ -1007,8 +1015,6 @@ static inline void Tricublin_zyx_mm_d_inline(float *d, float *lin, float *min, f
   }
   lin[0] = dsl[1]*cxyz[13] + dsl[2]*cxyz[14];
   ma = f1[1 + ni + ninjl] ; mi = ma;   // point [1,1,1] of 2x2x2 inner box
-#define MAX(a,b) ((a) > (b)) ? (a) : (b)
-#define MIN(a,b) ((a) < (b)) ? (a) : (b)
   for (i=1 ; i<3 ; i++){              // min max of 2x2x2 inner box
     ma = MAX(ma , f1[i + ni  + ninjl]); ma = MAX(ma , f1[i + ni  + ninj2]);
     mi = MIN(mi , f1[i + ni  + ninjl]); mi = MIN(mi , f1[i + ni  + ninj2]);

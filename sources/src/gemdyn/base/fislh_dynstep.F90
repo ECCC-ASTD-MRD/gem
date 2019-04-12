@@ -68,9 +68,6 @@
 
       call adz_conserv_tr()
 
-
-
-
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the
 !     C        variables at time level t1 -> t0 and rename all the

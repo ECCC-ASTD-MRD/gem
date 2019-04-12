@@ -101,9 +101,9 @@
                           - (F_q(i+1,j,k)-F_q(i,j,k))*geomh_invDX_8(j) &
                           + isol_i*mc_Jx(i,j,k) * ( &
                              Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                                 +(F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)  &
-                                                 +(F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) ))
+                                                + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
+                          + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)  &
+                                               + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) ))
             end do
          end do
 
@@ -116,9 +116,9 @@
                           - (F_q(i,j+1,k)-F_q(i,j,k))*geomh_invDYMv_8(j) &
                           + isol_i*mc_Jy(i,j,k) * ( &
                              Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                                 +(F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
+                                                + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
                             +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)  &
-                                                 +(F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) ))
+                                                + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) ))
             end do
          end do
       end do
@@ -145,6 +145,7 @@
                Buoy = (F_q(i,j,k+1)-F_q(i,j,k))*      &
                       (isol_i*mc_iJz(i,j,k)+isol_d*Ver_idz_8%t(k))  &
                     + F_zd(i,j,k)*Cstv_invT_nh_8 - F_rw(i,j,k) + F_nw(i,j,k)
+
                F_t(i,j,k) = Cstv_Tstr_8 / (one - Buoy / grav_8 )
             end do
          end do
@@ -180,4 +181,3 @@
 !
       return
       end
-

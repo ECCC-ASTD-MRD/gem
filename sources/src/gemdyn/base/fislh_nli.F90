@@ -47,7 +47,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt
       real*8, dimension(ni,nj,Nk),              intent(out)   :: F_rhs
 
-!Author: Claude Girard, July 2017
+!     Author: Claude Girard, July 2017
 
 #include <arch_specific.hf>
 
@@ -100,8 +100,8 @@
 !$omp w1,w2,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
 
 !$omp do
-       do k=1,l_nk
-          km=max(k-1,1)
+      do k=1,l_nk
+         km=max(k-1,1)
 
 !        Compute Nu
 !        ~~~~~~~~~~
@@ -284,7 +284,7 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-             F_nt(i,j,l_nk) = F_nt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1)
+            F_nt(i,j,l_nk) = F_nt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1)
          end do
       end do
 !$omp end do
