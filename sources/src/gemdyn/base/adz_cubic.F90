@@ -45,6 +45,16 @@
 
       if (.not.Adz_Mass_Cons_tr_L.and.Adz_intp_S=="QUINTIC") then
 
+         extended = 0. 
+
+         call rpn_comm_xch_halox( F_src, l_minx, l_maxx, l_miny, l_maxy,&
+               l_ni, l_nj, l_nk, Adz_halox, Adz_haloy, .false., .false.,&
+               extended, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
+
+         num = F_ni*F_nj*F_nk
+
+         nind = (F_in-F_i0+1)*(F_jn-F_j0+1)*(F_nk-F_k0+1)
+
          if (F_mono_L) then
             call adv_qutver_lag3d_mono (wrkc,extended, &
                                         pxt,pyt,pzt,num,nind,ii_w,F_nk,F_lev_S)
@@ -144,4 +154,4 @@
 !---------------------------------------------------------------------
 !
       return
-      end
+      end subroutine adz_cubic

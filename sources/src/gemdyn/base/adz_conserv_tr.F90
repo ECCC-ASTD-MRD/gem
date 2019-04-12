@@ -48,7 +48,12 @@
 
       !-----------------------------------------------------------------------------
 
+      !NO TRACER with Tr3d_mass/=0.or.Tr3d_mono>=2.or.Tr3d_intp/='CUBIC': return 
+      !-------------------------------------------------------------------------
       if (.not.Adz_Mass_Cons_L) return
+
+      !NOTE: Adz_Mass_Cons_L= T is the temporary way to get Tr3d_intp=='QUINTIC' 
+      !-------------------------------------------------------------------------
 
       verbose_L = Adz_verbose/=0
 
@@ -182,7 +187,7 @@
          !-----------------------------------------------------------
          call adz_cubic (dst_w, src,                                &
                          l_ni,l_nj,l_nk,l_minx,l_maxx,l_miny,l_maxy,&
-                         i0_w, in_w, j0_w, jn_w, Adz_k0,'t',.false.)
+                         i0_w, in_w, j0_w, jn_w, Adz_k0,'t',Tr3d_mono(n)==1)
 
          !Bermejo-Conde LAM Flux ZLF
          !--------------------------
@@ -198,11 +203,20 @@
 
          end if
 
+         !Tr3d_intp=='QUINTIC' without conservation 
+         !-----------------------------------------
+         if (.not.Adz_Mass_Cons_tr_L) then
+
+            dst(:,:,:) = dst_w(:,:,:)
+
          !Apply a posteriori Mass-fixer/Shape-Preserving schemes
          !------------------------------------------------------
-         call adz_a_posteriori ('TR/'//trim(Tr3d_name_S(n))//':M',dst,dst_w,fld_mono,fld_lin,fld_min,fld_max, &
-                                 src, fld_cub_o, fld_cub_i, l_minx, l_maxx, l_miny, l_maxy, l_nk, &
-                                 i0_w, in_w, j0_w, jn_w, Adz_k0, Tr3d_mono(n), Tr3d_mass(n))
+         else
+
+            call adz_a_posteriori ('TR/'//trim(Tr3d_name_S(n))//':M',dst,dst_w,fld_mono,fld_lin,fld_min,fld_max, &
+                                    src, fld_cub_o, fld_cub_i, l_minx, l_maxx, l_miny, l_maxy, l_nk, &
+                                    i0_w, in_w, j0_w, jn_w, Adz_k0, Tr3d_mono(n), Tr3d_mass(n))
+         end if
 
          !Bermejo-Conde LAM Flux ZLF: Reset piloting conditions outside CORE
          !------------------------------------------------------------------
@@ -214,10 +228,11 @@
          !----------------
          Adz_Mass_Cons_tr_L = .false.
          Adz_BC_LAM_flux_n = 0
-         Adz_pos_reset = 0
          Adz_intp_S = 'CUBIC'
 
       end do
+
+      Adz_pos_reset = 0
 
       deallocate(ii_0)
 

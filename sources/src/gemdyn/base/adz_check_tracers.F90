@@ -64,7 +64,7 @@
          if (Tr3d_intp(n)/='NONE'.and.Tr3d_intp(n)/='CUBIC'.and.Tr3d_intp(n)/='QUINTIC') &
             call handle_error(-1,'ADZ_CHECK_TRACERS','INTP not valid')
 
-         if (Tr3d_mono(n)>1.or.Tr3d_mass(n)>0) Adz_Mass_Cons_L = .true.
+         if (Tr3d_mass(n)/=0.or.Tr3d_mono(n)>=2.or.Tr3d_intp(n)/='CUBIC') Adz_Mass_Cons_L = .true.
 
          if (BC_activated_L.and..not.Grd_yinyang_L) BC_LAM_L = .true.
 
