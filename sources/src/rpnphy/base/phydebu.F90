@@ -191,12 +191,13 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
          if (phy_error_L) return
 
          if (simisccp) then
+            phy_error_L = .true.
             !# compute the table needed to generate variability
             !  for the  stochastic cloud generator
-            call TABULATE_XCW()
+!!$            call TABULATE_XCW()
 
             !# read in data blocks for ISCCP simulator code
-            call READ_ISCCPDATA()
+!!$            call READ_ISCCPDATA()
             if (phy_error_L) return
          endif
 

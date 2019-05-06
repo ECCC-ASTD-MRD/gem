@@ -23,7 +23,6 @@
       Integer ni, nk, n
       Real dq(ni,nk), tt(ni,nk)
       Real ps(ni,*)
-      Real temp1
 !
 !Author
 !          N. Brunet  (Jan91)

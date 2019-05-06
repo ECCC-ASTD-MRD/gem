@@ -16,7 +16,8 @@
 !**s/r inp_open - Open+link all fst input files valid at F_datev
 !                 and determine vertical structure (kind)
 
-      subroutine inp_open ( F_datev, F_vgd_src )
+      subroutine inp_open ( F_datev )
+      use dynkernel_options
       use vGrid_Descriptors
       use inp_mod
       use path
@@ -24,13 +25,12 @@
       implicit none
 #include <arch_specific.hf>
 
-      character(len=*)          , intent(IN)  :: F_datev
-      type(vgrid_descriptor) , intent(OUT) :: F_vgd_src
+      character(len=*), intent(IN) :: F_datev
 
 #include <rmnlib_basics.hf>
 
       character(len=2048) fn,root
-      integer i,err,err_code,unf,n123(3),ni,nj,nk
+      integer i,err,err_code,unf,n123(3)
       real*8, pointer :: vtbl_8(:,:,:)
 !
 !-----------------------------------------------------------------------
@@ -44,7 +44,8 @@
       if (Inp_iome >= 0) then
          root=trim(Path_input_S)//'/MODEL_INREP/VALID_'//trim(F_datev)
          err= clib_fileexist (trim(root)//'/content')
-         if (err < 0) root=trim(Path_input_S)//'/MODEL_ANALYSIS/VALID_'//trim(F_datev)
+         if (err < 0) root=trim(Path_input_S)//&
+                             '/MODEL_ANALYSIS/VALID_'//trim(F_datev)
          fn = trim(root)//'/content'
          unf= 0
          if (fnom( unf,trim(fn),'SEQ+FMT+OLD',0 ) /= 0) unf= 0
@@ -67,12 +68,12 @@
  33      if ((Inp_nfiles == 0).or.(i /= Inp_nfiles)) err_code= -1
          if (unf > 0) err= fclos(unf)
          if (err_code == 0) then
-           err= fstlnk ( Inp_list_unf, Inp_nfiles )
-           Inp_handle = Inp_list_unf(1)
-            err= vgd_new ( F_vgd_src, unit=Inp_handle, &
+            err= fstlnk ( Inp_list_unf, Inp_nfiles )
+            Inp_handle = Inp_list_unf(1)
+            err= vgd_new ( Inp_vgd_src, unit=Inp_handle, &
                              format='fst', ip1=-1, ip2=-1 )
             if (err == 0) then
-              err= vgd_get ( F_vgd_src, 'VTBL', vtbl_8, quiet=.true.)
+              err= vgd_get ( Inp_vgd_src, 'VTBL', vtbl_8, quiet=.true.)
               n123 = ubound(vtbl_8)
            end if
          end if
@@ -90,25 +91,27 @@
          if (Inp_iome /= 0) allocate(vtbl_8(n123(1),n123(2),n123(3)))
          call rpn_comm_bcast ( vtbl_8,size(vtbl_8), &
              "MPI_DOUBLE_PRECISION", Inp_iobcast, "grid", err )
-         if (Inp_iome /= 0) err= vgd_new ( F_vgd_src, vtbl_8 )
+         if (Inp_iome /= 0) err= vgd_new ( Inp_vgd_src, vtbl_8 )
          deallocate (vtbl_8)
-         err = vgd_get ( F_vgd_src, key='KIND',value=Inp_kind    )
-         err = vgd_get ( F_vgd_src, key='VERS',value=Inp_version )
-         if ( (Inp_kind == 5) .or. ((Inp_kind == 1).and.(Inp_version == 3)) ) then
-            err= vgd_get ( F_vgd_src, key='PREF',value=Inp_pref_a_8 )
+         err = vgd_get ( Inp_vgd_src, key='KIND',value=Inp_kind    )
+         err = vgd_get ( Inp_vgd_src, key='VERS',value=Inp_version )
+         if ( (Inp_kind == 5) .or. &
+             ((Inp_kind == 1).and.(Inp_version == 3)) ) then
+            err= vgd_get ( Inp_vgd_src, key='PREF',value=Inp_pref_a_8 )
          end if
       else
          call gem_error ( -1, 'inp_open', &
                           'Unable to determine vertical structure')
       end if
 
-      if ( (Inp_kind == 5) .and. (Inp_iome >= 0) ) then
-         err= fstinf ( Inp_handle,ni,nj,nk,Inp_cmcdate,' ', &
-                       -1,-1,-1,' ','ST1' )
-         if (err >= 0) Inp_kind= 105
-      end if
-      call rpn_comm_bcast ( Inp_kind, 1, "MPI_INTEGER", Inp_iobcast, &
-                            "grid", err )
+      Inp_src_hauteur_L = (Inp_kind == 21)
+      Inp_dst_hauteur_L = Dynamics_hauteur_L
+      Inp_levtype_S= 'P'
+      if (Inp_dst_hauteur_L) Inp_levtype_S= 'H'
+
+      if (Inp_src_hauteur_L .and. .not.Inp_dst_hauteur_L)&
+      call gem_error ( -1, 'inp_open', &
+           'Input data on heights NOT allowed with dynamics on presure')
 !
 !-----------------------------------------------------------------------
 !

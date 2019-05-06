@@ -82,7 +82,7 @@
 !IMPLICITS
 !
 !***********************************************************************
-      REAL A_PARCEL,B_PARCEL,MAX_T_GRAD,DELTA_UW0,GAMMA_UW0
+      REAL A_PARCEL,B_PARCEL,MAX_T_GRAD
       PARAMETER ( &
        A_PARCEL=0.2 &
       ,B_PARCEL=3.26 &
@@ -94,7 +94,7 @@
         TOPINV(N) &! indicates top of inversion being reached
        ,ABOVE_LCL  ! indicates being above the LCL
 !
-      INTEGER J,K,KP1 &
+      INTEGER J,K &
       ,K_PAR(N)   &! level for start of parcel ascent
       ,KTPAR(N)   &! highest theta level below inversion (at HPAR)
       ,KTINV(N)   &! top level of inversion
@@ -141,12 +141,12 @@
        ,QC_PAR,QC_ENV   &! parcel and environment liquid water
        ,VAP_PRESS       &! Vapour pressure.
        ,T_LCL           &! temperature of LCL
-       ,T_PAR           &! T of parcel
+!!$       ,T_PAR           &! T of parcel
        ,TH_PAR          &! theta of parcel
        ,DPAR_BYDZ       &! parcel thv gradient
        ,DENV_BYDZ       &! environement thv gradient
        ,GAMMA_FA        &! free atmospheric lapse rate
-       ,GAMMA_INV       &! inversion lapse rate
+!!$       ,GAMMA_INV       &! inversion lapse rate
        ,GAMMA_CLD       &! cloud layer lapse rate
        ,WB_SCALE        &! buoyancy flux scaling (m2/s3)
        ,W_CLD           &! cloud layer velocity scale (m/s)

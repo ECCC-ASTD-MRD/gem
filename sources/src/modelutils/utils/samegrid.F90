@@ -57,8 +57,8 @@ function is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
    integer, external :: tst_parpo
    real,parameter :: eps1 = 1.e-4
    real,parameter :: eps2 = 1.e-5
-   integer :: i,j,ideb,jdeb,cnt,ii
-   real :: div,moy,r1,r2
+   integer :: i,j,ideb,jdeb,cnt
+   real :: moy
    ! ---------------------------------------------------------------------
    F_samegrid_L = .false.
 
@@ -131,7 +131,7 @@ function samesubgrid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_yp
    !*@/
    logical,external :: is_samegrid2
    integer,external :: ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
-   integer :: istat,nis,njs,g1,g2,g3,g4,g1s,g2s,g3s,g4s,g1ref,g2ref,g3ref,g4ref
+   integer :: istat,nis,njs,g1,g2,g3,g4,g1s,g2s,g3s,g4s
    integer :: nsubgrids, igrid
    integer,allocatable :: subgridsid(:)
    character(len=1) :: grd_S, gref_S

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -33,13 +33,14 @@ module series_init_mod
    public :: series_init
 
 contains
-   
+
    !/@*
    function series_init(phy_lcl_gid, drv_glb_gid, &
         phydim_ni, phydim_nj, phydim_nk , p_runlgt, phy_lcl_ni, phy_lcl_nj, &
         F_moyhr, F_delt, F_jdate, F_satuco_L, F_master_pe) result(F_istat)
       implicit none
       !@arguments
+      !#TODO: never used: phydim_ni, phydim_nj, p_runlgt
       integer, intent(in) :: phy_lcl_gid, drv_glb_gid
       integer, intent(in) :: phydim_ni, phydim_nj, phydim_nk
       integer, intent(in) :: p_runlgt
@@ -103,7 +104,7 @@ contains
 
       !# Allocate buffers
       call ptopo_init_var()
-    
+ 
       !#TODO: review index order
       mymeta = GMM_NULL_METADATA
       nn = max(1,series_ngeo)  ; mymeta%l(1) = gmm_layout(1,nn,0,0,nn)
@@ -168,8 +169,7 @@ contains
 
 
    !#---- Private functions ------------------------------------------
-   
-   
+ 
    !/@*
    function priv_stnij(phy_lcl_gid, drv_glb_gid, phy_lcl_ni, phy_lcl_nj) &
         result(F_istat)
@@ -186,7 +186,7 @@ contains
       ! 2017-01, S.Chamberland - Major revision
       !*@/
       character(len=128) :: str128
-      integer :: i, k, k2, il, jl, ig, jg, ni, nj, istat, pos(1), nstnl
+      integer :: i, k, k2, il, jl, ni, nj, istat, pos(1)
       real, dimension(:), allocatable :: xl, yl, xg, yg, lat, lon
       type(SER_STN_T), allocatable :: stn_tmp(:)
       integer :: stn_islocal(NSTATMAX), stn_isbloc(NSTATMAX)
@@ -233,7 +233,7 @@ contains
                series_stng(k)%jl = jl
             else
                series_stng(k)%il = STN_MISSING
-               series_stng(k)%jl = STN_MISSING     
+               series_stng(k)%jl = STN_MISSING
             endif
             series_stng(k2) = series_stng(k)
          endif IF_GRID
@@ -307,7 +307,7 @@ contains
             series_stnb(series_nstnb) = series_stng(i)
          endif
       end do
-      
+ 
       F_istat = RMN_OK
       !---------------------------------------------------------------
       return

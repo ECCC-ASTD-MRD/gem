@@ -95,8 +95,6 @@ module dyn_fisl_options
 
    !# True-> use SLEVE vertical coordinate
    logical :: Schm_sleve_L = .false.
-   namelist /dyn_fisl  / Schm_sleve_L
-   namelist /dyn_fisl_P/ Schm_sleve_L
 
    !# True-> averaging B and C in SLEVE scheme
    logical :: Schm_bcavg_L = .true.
@@ -159,12 +157,6 @@ module dyn_fisl_options
    character(len=26) :: sol_type_S = 'DIRECT'
    namelist /dyn_fisl  / Sol_type_S
    namelist /dyn_fisl_p/ Sol_type_S
-
-   !# * True-> use FFT solver if possible
-   !# * False-> use MXMA solver (slower,less precise)
-   logical :: sol_fft_L = .true.
-   namelist /dyn_fisl/ Sol_fft_L
-   namelist /dyn_fisl_p/ Sol_fft_L
 
    !# Epsilon convergence criteria for none Yin-Yang iterative solver
    real*8 :: sol_fgm_eps   = 1.d-07

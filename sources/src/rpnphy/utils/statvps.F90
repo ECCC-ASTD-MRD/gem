@@ -16,11 +16,11 @@
 !**s/r sttvps - calcule la moyenne, la variance, le minimum et
 !               le maximum de toutes les variables du bus busnom
 
-      subroutine statvps (vp,kount,trnch,from,ni,nk,busnom)
+      subroutine statvps0 (vp,kount,trnch,from,ni,busnom)
       implicit none
 #include <arch_specific.hf>
 !
-      integer ni,nk,kount,trnch
+      integer ni,kount,trnch
       character*(*) from
       character*1 busnom
 

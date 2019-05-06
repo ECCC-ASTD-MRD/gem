@@ -22,7 +22,7 @@
 !
       implicit none
 #include <arch_specific.hf>
-!
+!#TODO: never used: dir
       integer ilg, lay, ib, ig, mcont(ilg), lev1, il1, il2
       real taug(ilg,lay), gwgh
 !

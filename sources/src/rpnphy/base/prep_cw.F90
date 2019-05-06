@@ -58,7 +58,7 @@ contains
          nkm1 = nk-1
          call prep_cw_MP(f, fsiz, v, vsiz, ficebl, ni, nk, nkm1)
       else
-         call prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+         call prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ni, nk)
       endif
       if (timings_L) call timing_stop_omp(445)
       call msg_toall(MSG_DEBUG, 'prep_cw [END]')
@@ -68,7 +68,7 @@ contains
 
 
    !/@*
-   subroutine prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+   subroutine prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ni, nk)
       implicit none
 #include <arch_specific.hf>
 
@@ -78,7 +78,6 @@ contains
       ! dsiz     dimension of d
       ! fsiz     dimension of f
       ! vsiz     dimension of v
-      ! ficebl   fraction of ice
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
@@ -89,7 +88,6 @@ contains
 
       integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk
       real, intent(inout), target :: f(fsiz), d(dsiz), v(vsiz)
-      real, intent(in) :: ficebl(ni,nk)
 
       !@Author L. Spacek (Oct 2004)
       !*@/

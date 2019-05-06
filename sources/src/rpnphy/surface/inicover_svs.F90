@@ -249,7 +249,7 @@ subroutine inicover_svs(kount, ni, trnch)
    integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
    real, external :: interpveg
 
-   integer :: i,j,k
+   integer :: i,k
    real :: julien, juliens
 
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc

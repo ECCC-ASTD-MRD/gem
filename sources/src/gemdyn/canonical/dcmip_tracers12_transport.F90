@@ -15,7 +15,7 @@
 
 !**s/r dcmip_tracers12_transport - Setup for 3D Hadley-like meridional circulation (DCMIP 2012)
 
-      subroutine dcmip_tracers12_transport (F_u,F_v,F_zd,F_tv,F_q,F_topo,F_s,F_q1, &
+      subroutine dcmip_tracers12_transport (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps,F_q1, &
                                             Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
 
       use dcmip_2012_init_1_2_3
@@ -25,8 +25,8 @@
       use cstv
       use lun
       use ver
-      use gmm_itf_mod
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -38,10 +38,12 @@
 
       real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy)   , &
            F_q1   (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
 
@@ -58,17 +60,16 @@
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: &
-                  lon,     & ! Longitude (radians)
+      real(8)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
                   z          ! Height (m)
 
       real(8)  :: p          ! Pressure  (Pa)
 
-      integer  :: zcoords    ! 0 or 1 see below
+      integer  :: zcoords    ! 0 if p coordinates are specified
+                             ! 1 if z coordinates are specified
 
-      real(8)  :: &
-                  u,       & ! Zonal wind (m s^-1)
+      real(8)  :: u,       & ! Zonal wind (m s^-1)
                   v,       & ! Meridional wind (m s^-1)
                   w,       & ! Vertical Velocity (m s^-1)
                   zd,      & ! Zdot GEM
@@ -76,24 +77,26 @@
                   tv,      & ! Virtual Temperature (K)
                   phis,    & ! Surface Geopotential (m^2 s^-2)
                   ps,      & ! Surface Pressure (Pa)
-                  rho,     & ! density (kg m^-3)
+                  rho,     & ! Density (kg m^-3)
                   q,       & ! Specific Humidity (kg/kg)
                   q1,      & ! Tracer q1 (kg/kg)
                   time       ! Current time step
 
-      ! if zcoords = 1, then we use z and output p
-      ! if zcoords = 0, then we use p
+      logical :: GEM_P_L
 
       !--------------------------------------------------------
 
       if (Lun_out > 0) write (Lun_out,1000)
 
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
+
       time = Lctl_step * Cstv_dt_8
 
-      zcoords = 0
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
 
-      !Initial conditions: T,ZD,Q,Q1,S,TOPO
-      !------------------------------------
+      !Initial conditions: TV,S,PS,W,ZD,QV,Q1,TOPO
+      !-------------------------------------------
       do k = 1,Nk
 
          do j = 1,l_nj
@@ -107,17 +110,27 @@
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = zd
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = zd
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                   !Tracers
                   !-------
-                  F_q1  (i,j,k) = q1
+                  F_q1(i,j,k) = q1
 
                end do
 
@@ -131,17 +144,27 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
-                  F_tv  (i,j,k) = tv
-                  F_q   (i,j,k) = q
-                  F_s   (i,j)   = log(ps/Cstv_pref_8)
-                  F_topo(i,j)   = phis
-                  F_zd  (i,j,k) = zd
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
+
+                  F_topo(i,j) = phis
+
+                  F_w (i,j,k) = w
+                  F_zd(i,j,k) = zd
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                   !Tracers
                   !-------
-                  F_q1  (i,j,k) = q1
+                  F_q1(i,j,k) = q1
 
                end do
 
@@ -170,7 +193,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   F_u(i,j,k) = u
 
@@ -186,7 +209,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -215,7 +238,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   F_v(i,j,k) = v
 
@@ -231,7 +254,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 
@@ -264,7 +287,7 @@
 
                   lon = geomh_xu_8(i)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   F_u(i,j,k) = u
 
@@ -280,7 +303,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -309,7 +332,7 @@
 
                   lon = geomh_x_8(i)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,u,v,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   F_v(i,j,k) = v
 
@@ -325,7 +348,7 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  call test1_advection_hadley (lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
+                  call test1_advection_hadley (lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,utt_8,vtt_8,w,zd,t,tv,phis,ps,rho,q,q1,time)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 

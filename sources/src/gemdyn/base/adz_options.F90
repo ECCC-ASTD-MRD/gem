@@ -27,11 +27,104 @@ module adz_options
 
    integer Adz_niter
 
+   !# List of available P exponents REAL (size PEXP_LIST_MAX=9)
+   integer, parameter :: PEXP_LIST_MAX = 9
+   real :: adz_BC_pexp_list(PEXP_LIST_MAX) = 1.0
+   namelist /adz_cfgs/ adz_BC_pexp_list
+
+   !# True-> Clipping Min Max + Proportional Mass-Fixer after Bermejo-Conde
+   logical :: adz_BC_min_max_L = .true.
+   namelist /adz_cfgs/ adz_BC_min_max_L
+
+   !# Type of Flux when Bermejo-Conde LAM
+   !# * 1 -> Aranami et al. (2015)
+   !# * 2 -> Zerroukat and Shipway (2017) (ZLF)
+   integer :: Adz_BC_LAM_flux = 1
+   namelist /adz_cfgs/ adz_BC_LAM_flux
+
+   !# Number of neighborhood zones in ILMC
+   integer :: adz_ILMC_sweep_max = 2
+   namelist /adz_cfgs/ adz_ILMC_sweep_max
+
+   !# True-> Clipping Min Max after ILMC
+   logical :: adz_ILMC_min_max_L = .true.
+   namelist /adz_cfgs/ adz_ILMC_min_max_L
+
+   !# Activate printing of conservation diagnostics if /=0
+   integer :: adz_verbose = 0
+   namelist /adz_cfgs/ adz_verbose
+
+   !# True-> Bermejo-Conde LEGACY=T for current tracer
+   !# * T -> mass=1
+   !# * F -> mass=100+weight*10+pexp_n
+   logical :: adz_BC_LEGACY_L
+
+   !# Bermejo-Conde Weight for current tracer
+   !# * 1 -> Additive
+   !# * 2 -> Multiplicative
+   !# * 3 -> Additive+Factor pr_k/pr_s)
+   integer :: adz_BC_weight
+
+   !# P exponent NUMBER for current tracer corresponding to
+   !# rank in adz_BC_pexp_list(PEXP_LIST_MAX) to choose P exponent REAL
+   integer :: adz_BC_pexp_n
+
+   !# Bermejo-Conde LAM: Components
+   !# * 0 -> Advection only
+   !# * 1 -> Advection+Flux
+   !# * 2 -> Flux only
+   integer :: adz_BC_LAM_flux_n = 0
+
+   !# Bermejo-Conde LAM: Pointers mask_o/mask_i
+   real, dimension(:,:,:), allocatable :: Adz_BC_LAM_mask_o, Adz_BC_LAM_mask_i
+
+   !# Bermejo-Conde LAM: Factor applied to Grd_maxcfl in Pilot area
+   !# * 1 -> Default
+   !# * 2 -> Bermejo-Conde Flux ZLF
+   integer :: adz_maxcfl_fact = 1
+
+   !# True-> Mass Conservation/Shape-preserving for at least one tracer
+   logical :: adz_Mass_Cons_L = .false.
+
+   !# True-> Mass Conservation/Shape-preserving for current tracer
+   logical :: adz_Mass_Cons_tr_L = .false.
+
+   !# Bermejo-Conde LAM Aranami: Computations related to upstream positions done at each timestep
+   !# * 0 -> No
+   !# * 1 -> Yes
+   integer :: adz_pos_reset = 0
+
+   !# South boundary in GY for an embedded LAM
+   integer :: adz_pil_sub_s = -1
+   namelist /adz_cfgs/ adz_pil_sub_s
+
+   !# North boundary in GY for an embedded LAM
+   integer :: adz_pil_sub_n = -1
+   namelist /adz_cfgs/ adz_pil_sub_n
+
+   !# West boundary in GY for an embedded LAM
+   integer :: adz_pil_sub_w = -1
+   namelist /adz_cfgs/ adz_pil_sub_w
+
+   !# East boundary in GY for an embedded LAM
+   integer :: adz_pil_sub_e = -1
+   namelist /adz_cfgs/ adz_pil_sub_e
+
+   !# Core/Subset areas
+   real*8 :: adz_gc_area_8,adz_gs_area_8
+
+   !# Variable for NONE/Cubic/Quintic Interpolation
+   character(len=12) :: adz_intp_S = 'CUBIC'
+
+   integer, pointer, contiguous, dimension(:) :: ii_w
+
 contains
 
-!**s/r adz_nml - Read namelist lam
+!**s/r adz_nml - Read namelist adz
 
       integer function adz_nml (F_unf)
+      use adv_grid
+      use HORgrid_options
       use lun
       implicit none
 #include <arch_specific.hf>
@@ -75,6 +168,10 @@ contains
  6007 format (/,' NAMELIST ',A,' IS INVALID'/)
 ! boiler plate - end
 
+      adv_maxcfl= max(1,Grd_maxcfl)
+      adv_halox = adv_maxcfl + 1
+      adv_haloy = adv_halox
+      if (Adz_BC_LAM_flux==2) adz_maxcfl_fact = 2
 !
 !-------------------------------------------------------------------
 !

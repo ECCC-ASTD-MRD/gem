@@ -64,7 +64,7 @@ subroutine thermco3(t,qv,qc,sw,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,be
    !          - Bechtold and Siebesma 1998, JAS 55, 888-895
 
    ! Local variable declarations
-   integer :: j,k,itotal
+   integer :: j,k
    real, dimension(n,nk) :: pres,exner,qsat,dqsat,th,tl,ffice,tfice,dfice,work
    real(kind=8), dimension(n,nk) :: exnerr,work8
 

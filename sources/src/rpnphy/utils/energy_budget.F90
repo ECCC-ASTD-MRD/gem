@@ -160,7 +160,7 @@ contains
       integer :: F_stat                                         !Return status (RMN_OK or RMN_ERR)
 
       ! Local variables
-      integer :: k,istat
+      integer :: istat
       real, dimension(size(F_tt,dim=1),F_nk) :: mydqc,mydqi,myqc,myqi,qw,dqw,cpm,lv,ls,dcpm,dlv,dls,den
       character(len=LONG_CHAR) :: myInttype
       logical :: myAbs
@@ -248,9 +248,9 @@ contains
       integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
 
       ! Local variables
-      integer :: k,nk,istat
-      real, dimension(size(F_tt,dim=1)) :: mass,myrain,mysnow,myshf,mylhf,myrad,src,mult
-      real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi,mydqc,mydqi,mask,tend,qw,cpm,ls,lv,dcpm,dls,dlv,dqw,den,denc
+      integer :: k,istat
+      real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,myshf,mylhf,myrad,src,mult
+      real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi,mydqc,mydqi,qw,cpm,ls,lv,dcpm,dls,dlv,dqw,den,denc
       real(kind=RDOUBLE), dimension(size(F_tt,dim=1)) :: deni,dabseni
       character(len=LONG_CHAR) :: myInttype
       logical :: mymask
@@ -358,9 +358,8 @@ contains
 
       ! Local variables
       integer :: istat
-      real :: norm
       real, dimension(size(F_fld0,dim=1)) :: myrain,mysnow,myshf,mylhf,myrad,src
-      real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi,rv,rc,ri
+      real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi
 
       ! Set return values
       F_stat = EB_ERR
@@ -461,7 +460,6 @@ contains
       integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
 
       ! Local variables
-      integer :: istat
       real, dimension(size(F_hu,dim=1),F_nk) :: qw
       character(len=LONG_CHAR) :: myInttype
 
@@ -514,7 +512,6 @@ contains
       integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
 
       ! Local variables
-      integer :: istat
       real, dimension(size(F_hu,dim=1),F_nk) :: dqw,myqi,mydqc,mydqi
       character(len=LONG_CHAR) :: myInttype
       logical :: myAbs
@@ -579,10 +576,10 @@ contains
       integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
 
       ! Local variables
-      integer :: k,nk,istat
+      integer :: k,istat
       real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,mylhf,src,mult
-      real, dimension(size(F_tt,dim=1),F_nk) :: myqi,mydqc,mydqi,mask,tend,dqw,dqwc
-      real(kind=RDOUBLE), dimension(size(F_tt,dim=1)) :: dpw,dabspw,pwi
+      real, dimension(size(F_tt,dim=1),F_nk) :: myqi,mydqc,mydqi,dqw,dqwc
+      real(kind=RDOUBLE), dimension(size(F_tt,dim=1)) :: dpw,dabspw
       character(len=LONG_CHAR) :: myInttype
 
       ! Set return values

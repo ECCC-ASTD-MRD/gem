@@ -37,10 +37,14 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_dynstep()
-         return
-      end if
+      select case ( trim(Dynamics_Kernel_S) )
+         case ('DYNAMICS_FISL_H')
+            call fislh_dynstep()
+            return
+         case ('DYNAMICS_EXPO_H')
+            call exp_dynstep()
+            return
+      end select
 
       if (Lun_debug_L) write(Lun_out,1000)
       call gemtime_start ( 10, 'DYNSTEP', 1 )
@@ -66,11 +70,9 @@
 
       call tstpdyn
 
-      call tracers_step (.true. )
-
       call psadj ( Step_kount )
 
-      call tracers_step (.false.)
+      call adz_conserv_tr ()
 
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the

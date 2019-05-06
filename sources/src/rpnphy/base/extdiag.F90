@@ -22,6 +22,7 @@ module extdiag
 contains
    !/@*
    subroutine extdiag3(d, f, v, dsiz, fsiz, vsiz, kount, trnch, ni, nk)
+!#TODO: kount never used
       use tdpack_const, only: CAPPA
       use series_mod, only: series_xst, series_isstep, series_isvar
       use phy_options

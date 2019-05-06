@@ -25,6 +25,7 @@
                    LEFF, DWATERDT, & 
                    FTEMP, FVAP, ZQS, FRV, & 
                    ALFAT, ALFAQ, ILMO, HST, TRAD, N)
+!#TODO: SKYVIEW never used
       use tdpack
       use sfclayer_mod, only: sl_sfclayer,SL_OK
       use sfc_options

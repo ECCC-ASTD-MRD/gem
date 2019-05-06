@@ -56,10 +56,10 @@ contains
       !@objective 
       !@arguments
       real,pointer :: F_data(:,:)
-      integer,intent(in) :: F_fileid,F_ip1 !TODO: F_ip1 never used
+      integer,intent(in) :: F_fileid,F_ip1
       character(len=*),intent(in) :: F_nomvar_S,F_gridid_S
       integer,intent(in),optional :: F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3
-      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data 
+      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data
       integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij !# Crop the grid (collected data) to that sub domain and aggregate over dij points
       character(len=*),intent(in),optional :: F_etiket_S,F_typvar_S
       logical,intent(in),optional :: F_rewrite_L,F_writegrid_L
@@ -102,6 +102,7 @@ contains
 
       allocate(data3d(lijk(1):nijk(1),lijk(2):nijk(2),1))
       data3d(:,:,1) = F_data(:,:)
+      ip1list(1) = F_ip1
       F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid_S,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L,nijk(1),nijk(2),ci0,cj0,cin,cjn,cdij)
       deallocate(data3d,stat=istat)
 
@@ -156,6 +157,7 @@ contains
 
       allocate(data3d(lijk(1):nijk(1),lijk(2):nijk(2),1))
       data3d(:,:,1) = F_data(:,:)
+      ip1list(1) = F_ip1
       F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L,nijk(1),nijk(2))
       deallocate(data3d,stat=istat)
 

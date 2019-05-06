@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      Integer ni, nk, n, modp
+      Integer ni, nk, n
       Real hu(ni,nk), es(ni,nk), tt(ni,nk)
       Real ps(ni,*)
 !
@@ -55,9 +55,7 @@
 !*
 !--------------------------------------------------------------------
       Real e, td
-      Real tp, tg, hus
-      Real epsil
-      Integer k, i, iter, niter
+      Integer k, i
 !--------------------------------------------------------------------
 !
 !

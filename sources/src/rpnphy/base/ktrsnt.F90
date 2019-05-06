@@ -18,6 +18,7 @@
       SUBROUTINE KTRSNT3 ( CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
                           QCN,TP,TM,QP,QM,GZM,TQDF,PSP,PSM, &
                           SIGMA, TAU, KSHAL, NI, NK)
+!#TODO: TM,QP, PSM never used
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -107,10 +108,10 @@
 !           PFRAC       FRACTION OF TILE THAT IS PRECIPITATING
 !*
       LOGICAL LO
-      INTEGER IS,IKA,IKB,jk,jkm1,jl,MODP,stat
+      INTEGER IS,IKA,IKB,jk,jkm1,jl,stat
       INTEGER, DIMENSION(NI) :: KMIN
       INTEGER, external :: neark
-      REAL ZTVC,rgrav3,rcpd,rcpv
+      REAL ZTVC,rgrav3,rcpd
       REAL ENTRM,TAUCU,DELTA2,DZETR
       REAL ZCOR,ZQSC,DETRN,ZQ0,ZT0,ZN0
       REAL ZQCD,ZK,ZDH,temp1,temp2, temp3

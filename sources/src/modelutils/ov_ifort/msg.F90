@@ -273,14 +273,13 @@ end subroutine msg_set_redirect2fileUnit
 
 !/@*
 subroutine msg_toall(F_msgLevel,F_Message)
-   use mod_msg, only: isInit_L,canWrite_L,msgUnit,msgFormat,msgLevelMin
+   use mod_msg, only: isInit_L,canWrite_L
    implicit none
    !@arguments
    integer,intent(in) :: F_msgLevel
    character(len=*),intent(in) :: F_Message
    !@author  Stephane Chamberland, 2009-11
    !@*/
-   integer :: msgLevel
    logical :: canWrite_L_bk
    !---------------------------------------------------------------------
    if (.not.isInit_L) call msg_init()

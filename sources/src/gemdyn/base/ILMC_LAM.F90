@@ -18,7 +18,7 @@
       subroutine ILMC_LAM (F_name_S,F_ilmc,F_adv,F_min,F_max,F_minx,F_maxx,F_miny,F_maxy,F_nk, &
                            F_i0,F_in,F_j0,F_jn,F_k0,F_ILMC_min_max_L,F_ILMC_sweep_max,F_verbose_L)
 
-      use adv_options
+      use adz_options
       use array_ilmc
       use dynkernel_options
       use gem_options
@@ -98,7 +98,7 @@
 
          write(Lun_out,*)    'TRACERS: ILMC: ILMC_min_max_L          =',F_ILMC_min_max_L
          write(Lun_out,*)    'TRACERS: ILMC: ILMC_sweep_max          =',F_ILMC_sweep_max
-         write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adv_gc_area_8
+         write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adz_gc_area_8
 
       end if
 
@@ -338,7 +338,7 @@
          if (.not.almost_zero(mass_adv_8)) ratio_8 = mass_deficit_8/mass_adv_8*100.
 
          if (Lun_out>0) then
-         write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adv_gc_area_8
+         write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adz_gc_area_8
          write(Lun_out,*)    'TRACERS: ILMC: # pts OVER/UNDER SHOOT  =',g_reset(3),'over',G_ni*G_nj*F_nk*iprod
          if (F_ILMC_min_max_L) then
          write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MIN_ILMC    =',g_reset(1)

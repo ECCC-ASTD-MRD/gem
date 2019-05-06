@@ -43,7 +43,7 @@ subroutine intozon2(jour, mois)
         (/31,28,31,30,31,30,31,31,30,31,30,31/)
 
    real :: total, ecoule
-   integer :: basem, destm, courm, i, j, k, nlp
+   integer :: basem, destm, j, nlp
    character(len=256) ::tmp_S
    !-----------------------------------------------------------------
    nlp = nlacl*npcl

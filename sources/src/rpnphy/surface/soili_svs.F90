@@ -145,7 +145,7 @@ include "isbapar.cdk"
       REAL EDRYSAND, EWETSAND, EDRYCLAY, EWETCLAY
 
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
-           psnground, psnlowveg, zcs, zcsv, z0_snow_low, z0_snow_high
+           zcs, zcsv, z0_snow_low
 
 !
 !***********************************************************************

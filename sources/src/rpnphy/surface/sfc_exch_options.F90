@@ -39,8 +39,7 @@ contains
       include "isbapar.cdk"
       include "tebcst.cdk"
 
-      integer :: ier, nv, options, iverb, i
-      character(len=512) :: tmp_S
+      integer :: ier, options, iverb, i
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -118,20 +117,6 @@ contains
                  'qwsl','qlwl'/))) thermal_stress = .true.
             i = i+1
          enddo
-      endif
-
-      !#TODO: remove this when thermal_stress is fixed
-      if (thermal_stress) then
-         tmp_S = ''
-         do i = 1, nphyoutlist
-            if (any(phyoutlist_S(i) == (/'dxsu','dxhd','gxsu','gxhd','gtsu', &
-                 'gthd','rtsu','rthd','qssu','qssk','qlsk','qsrd','qlrd',  &
-                 'qwsl','qlwl'/))) &
-                 tmp_S = trim(tmp_S)//' '//phyoutlist_S(i)
-         enddo
-
-         call msg(MSG_ERROR,'(sfc_exch_options) thermal_stress Not yet supported, please remove these from your outcfg.out: '//trim(tmp_S))
-         return
       endif
 
       F_istat = RMN_OK

@@ -1321,7 +1321,7 @@ contains
       integer :: F_istat
       !*@/
       logical :: was_assoc_L
-      integer :: tint, istat
+      integer :: tint
       character(len=256) :: msg_S, tmp_S
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) tint [BEGIN]')

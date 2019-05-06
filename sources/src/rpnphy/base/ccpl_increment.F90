@@ -23,7 +23,6 @@ subroutine ccpl_increment(F_int,F_intprev,F_ext,F_extprev,F_intlev,F_extlev,F_n,
   character*(*) :: F_interp                     !Order of interpolation ('linear' or 'cubic')
 
   ! Internal variables
-  integer :: i,k
   real, dimension(F_n,F_nkext) :: delta_ext
   real, dimension(F_n,F_nkint) :: delta_int
 

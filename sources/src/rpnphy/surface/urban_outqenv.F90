@@ -33,7 +33,7 @@ SUBROUTINE URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, PREF_SW_ROOF,  &
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS, ONLY : XSTEFAN, XPI
+USE MODD_CSTS, ONLY : XPI
 !
 !
 implicit none
@@ -86,8 +86,8 @@ REAL, DIMENSION(SIZE(PDIR_SW)) :: ZFROOF! roof view factor of human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZFSKY !sky view factor of human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIRSWBODY !solar radiation received by human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZELEV !solar elevation angle
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZRADBODY !total radiation received by human body
-INTEGER :: JJ
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZRADBODY !total radiation received by human body
+!!$INTEGER :: JJ
 !REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !IF (LHOOK) CALL DR_HOOK('TRAD_BODY',0,ZHOOK_HANDLE)

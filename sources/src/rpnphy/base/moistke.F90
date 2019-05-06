@@ -107,7 +107,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    !          Uses moist conservative variables (thetal and qw), diagnostic
    !          relations for the mixing and dissipation lengths, and a predictive
    !          equation for moist TKE.
-   
+
    !@Notes
    !          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
    !          and Master thesis of J.Mailhot.
@@ -129,12 +129,12 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    real, parameter :: ICAB=0.4
 
    ! Local variable declarations
-   integer :: ierget,stat,i,j,k
+   integer :: stat,j,k
    integer, dimension(n) :: slk
-   real :: betai,dtfac
+   real :: dtfac
    real, dimension(n) :: e_sfc,beta_sfc
-   real, dimension(n,nk) :: znold,work,te,qce,dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
-        shr_term,shr_ng,zero,buoy_term,weight,tv,exner,zn_blac,zn_boujo,zn_blac_clip,frac, &
+   real, dimension(n,nk) :: znold,te,qce,dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
+        shr_term,shr_ng,zero,buoy_term,weight,tv,exner,zn_blac,zn_boujo,frac, &
         blend_hght,przn,fm,fh
    real, dimension(n,nk,3) :: w_cld
    logical, dimension(n,nk) :: turb_mask
@@ -144,7 +144,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
 
    ! Keep the mixing lenght zn from the previous time step
    znold  = zn
-   
+ 
    ! Initialization
    if(kount.eq.0) then
       do k=1,nk

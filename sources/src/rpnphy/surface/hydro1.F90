@@ -20,6 +20,7 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
      WSAT, WFC, PSN, PSNG, PSNV, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, TST, T2T, &
      WGT, W2T, WFT, WLT, WRT, WST, ALPHAST, RHOST, DRAIN, RUNOFF, RSNOW, N)
+!#TODO: never used: T2, CG, T2T
    use tdpack
    use sfc_options
    implicit none
@@ -151,8 +152,8 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
 
    real :: RSNOW_DAY
 
-   real, dimension(n) :: RR, SR, EV, ETR, EG, RUIR, RUIR2, WRMAX, TEMP, PG, &
-        ES, FNS, RUIG, RUIP, RUIT, WSX, BEXP, IM, I0IM, PGTMP, RVEG, WLMAX, &
+   real, dimension(n) :: RR, SR, EV, ETR, EG, RUIR, RUIR2, WRMAX, PG, &
+        ES, RUIG, RUIP, RUIT, WSX, BEXP, IM, I0IM, PGTMP, RVEG, WLMAX, &
         ANSMIN, RHOSFALL
 
    !***********************************************************************

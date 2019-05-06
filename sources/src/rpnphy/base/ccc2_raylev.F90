@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer ilg, lay, ib, il1, il2, ig
+      integer ilg, lay, il1, il2, ig
       real  taur(ilg,lay), dp(ilg,lay), rmu3(ilg)
 !
 !Authors

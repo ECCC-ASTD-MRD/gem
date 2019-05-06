@@ -19,6 +19,7 @@
                           QM    , TSS   , CWP    , CWM   , PSP   , &
                           PSM   , ILAB  , S      , NI    , NLEV  , &
                           DT    , SATUCO,  CONVEC, prflx , swflx )
+!#TODO: never used: ZCRR  , ZCSR, ZCUCOV, TSS
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -275,13 +276,13 @@
 !           ------------------------------------------------------------
 !
 !
-      real    hfis   , xdpb
+      real    hfis
       real    YMN    , XXP    , XHJ    , XF     , XFPRIM , &
               XCWP1  , XPRADD , DTMELT , XROV   , XRO    , &
               XMIND  , DMELT  , SQMELT , XMELT  , DSNOW  , &
-              EVAPRI , XEVACU , XEVAP  , XPSQ   , xp
-      real    XTP    , XSP    , DU238  , XCLEAR , &
-              XCEVSC , QPREL  , QINCR  , tmp1   , &
+              EVAPRI , XEVAP  , XPSQ   , xp
+      real    DU238  , XCLEAR , &
+              QPREL  , QINCR  , &
               XSCDIF , ICLDDT
       integer KSCFLD , KSCTOP , IT0    , IT0P1
       real    FSCFLD , FSCFKZ , HCP    , HEPS   , HG     , &
@@ -296,19 +297,19 @@
               U00MAX , HU00   , RDT , &
               ICLDDT2dt       , ICLDDTdt , &
               rICLDDT2dt      , rICLDDTdt
-      real    yp, yt, yq, s1, s2, xt, QGTO, xd, xc, yc, ye, &
-              XQMQS, DUOORL
+      real    yp, yt, yq, s1, s2, xt, &
+              DUOORL
       real    tabice, tabde, dpksf, tetae
       integer nlevm1, nlevp1
 
-      integer khbmax , khtmin , liftst, &
-              kcbtopmin, ktmp , &
-              khbmin
+      integer liftst
+
+
 !
 !
-      integer il, jk, icount, &
+      integer il, jk, &
               JNR
-      integer lqonof, KHBP1
+      integer lqonof
       real    temp1         , temp2
 !
       real    TVBEG  , REDUES , TVIRTC
@@ -319,46 +320,24 @@
 !
       integer IVBEG
 !
-      real     XDU    , UKSIZ  , EVCWMX , XACCAD , XACCES , &
+      real     XACCES , &
                XN     , XNPM   , XBNPM  , TPREL  , &
-               QSPREL , XDQ    , XDE    , XPRB   , BFMOD  , &
-               XK     , HFCOX  , XFT    , HFREZX , XHMRCU , &
-               ANVCOV , X      , Y      , HTD    , TEMPA2 , &
-               TEMPAD1
+               QSPREL , XDE    , XPRB   , BFMOD  , &
+               HFCOX  , XFT    , HFREZX , &
+               ANVCOV , X
 !
 !
 !***********************************************************************
 !     AUTOMATIC ARRAYS
 !***********************************************************************
 !
-      logical, dimension(NI     ) :: LOGIC1
-      logical, dimension(NI     ) :: LOGIC2
-      logical, dimension(NI     ) :: SAVEL
-!
-      integer, dimension(NI     ) :: INDCON
       integer, dimension(NI,NLEV) :: IPRTCO
-      integer, dimension(NI     ) :: KTCMTX
-      integer, dimension(NI     ) :: KHFREE
-      integer, dimension(NI     ) :: KHB
       integer, dimension(NI     ) :: KCBTOP
-      integer, dimension(NI     ) :: KHT
-      integer, dimension(NI     ) :: KHTX
-      integer, dimension(NI     ) :: ILKHB
-      integer, dimension(NI     ) :: ILKHT
       integer, dimension(NI     ) :: INDCU
-      integer, dimension(NI     ) :: INDLIFT
-      integer, dimension(NI     ) :: INDFLO
-      integer, dimension(NI     ) :: LIFTLV
-      integer, dimension(NI     ) :: LQCONV
-!
+
       real, dimension(NI,NLEV) :: ACCK
 !LS      REAL, dimension(NI,NLEV) :: HPLOGK
       real, dimension(NI,NLEV) :: CCWM
-      real, dimension(NI,NLEV) :: HPKAP
-      real, dimension(NI,NLEV) :: HTCMT
-      real, dimension(NI,NLEV) :: HTCMTB
-      real, dimension(NI,NLEV) :: HQCMQ
-      real, dimension(NI,NLEV) :: HQCMQB
       real, dimension(NI,NLEV) :: HDCWST
       real, dimension(NI,NLEV) :: HEVAC
       real, dimension(NI,NLEV) :: HEVAPR
@@ -369,23 +348,14 @@
       real, dimension(NI,NLEV) :: HQSAT
       real, dimension(NI,NLEV) :: HSQ
       real, dimension(NI,NLEV) :: HU
-      real, dimension(NI,NLEV) :: MOISTN
-      real, dimension(NI,NLEV) :: HDTCU1
-      real, dimension(NI,NLEV) :: HTC
-      real, dimension(NI,NLEV) :: HQC
-      real, dimension(NI,NLEV) :: HFDTMX
       real, dimension(NI,NLEV) :: CUMASK
       real, dimension(NI,NLEV) :: HDCWAD
-      real, dimension(NI,NLEV) :: HKSIZ
-      real, dimension(NI     ) :: HKSI
       real, dimension(NI,NLEV) :: HTP1
       real, dimension(NI,NLEV) :: HQP1
       real, dimension(NI,NLEV) :: DPK
-      real, dimension(NI     ) :: XDP
       real, dimension(NI,NLEV) :: DLNPDT
       real, dimension(NI,NLEV) :: HDTAD
       real, dimension(NI,NLEV) :: ELOFT
-      real, dimension(NI,NLEV) :: HUQSM1
       real, dimension(NI,NLEV) :: HDQAD
       real, dimension(NI,NLEV) :: HPK
       real, dimension(NI     ) :: HPS
@@ -398,10 +368,8 @@
       real, dimension(NI     ) :: XDIFSC
       real, dimension(NI     ) :: SUPSAT
       real, dimension(NI     ) :: XFRCOA
-      real, dimension(NI     ) :: XQNET
       real, dimension(NI     ) :: XFIX
       real, dimension(NI     ) :: XCST
-      real, dimension(NI     ) :: XCCU
       real, dimension(NI     ) :: YM
       real, dimension(NI     ) :: YMMIN
       real, dimension(NI     ) :: PRCPCU
@@ -412,27 +380,9 @@
       real, dimension(NI     ) :: HEVACU
       real, dimension(NI     ) :: HEVRST
       real, dimension(NI     ) :: HEVCST
-      real, dimension(NI     ) :: TEMPAR
-      real, dimension(NI     ) :: TEMPAD
       real, dimension(NI     ) :: REQCON
-      real, dimension(NI     ) :: HTB
       real, dimension(NI     ) :: HUZ00
-      real, dimension(NI     ) :: HPB
-      real, dimension(NI     ) :: HDPB
-      real, dimension(NI     ) :: ILHDPB
-      real, dimension(NI     ) :: HQB
-      real, dimension(NI     ) :: HTETAE
-      real, dimension(NI     ) :: TCMTMX
-      real, dimension(NI     ) :: XQSUPS
-      real, dimension(NI     ) :: DPSUM
       real, dimension(NI     ) :: PRBMOD
-      real, dimension(NI     ) :: XCU
-      real, dimension(NI     ) :: XQ
-      real, dimension(NI     ) :: SUPKSI
-      real, dimension(NI     ) :: CQI
-      real, dimension(NI     ) :: XSUMT
-      real, dimension(NI     ) :: XSUMQ
-      real, dimension(NI     ) :: XSUM
       real, dimension(NI,NLEV) :: WORK
 !
 !***********************************************************************

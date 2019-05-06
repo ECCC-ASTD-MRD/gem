@@ -73,7 +73,7 @@
     ! internal variables.
     !
     INTEGER  :: ii,i, l, n, lev1p, lev2m
-    REAL*8     :: m_sub_m_turb, m_sub_m_mol, m_sub_m, heatng, dendz2
+    REAL*8     :: m_sub_m_turb, m_sub_m_mol, m_sub_m, dendz2
     REAL*8     :: heatng1(il1:il2)
     REAL*8     :: visc, visc_min
 

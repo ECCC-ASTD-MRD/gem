@@ -16,7 +16,7 @@
 !**s/r dcmip_steady_state_mountain - Setup for Steady-State Atmosphere at Rest
 !                                    in the Presence of Orography (DCMIP 2012)
 
-      subroutine dcmip_steady_state_mountain (F_u,F_v,F_zd,F_tv,F_q,F_topo,F_s, &
+      subroutine dcmip_steady_state_mountain (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps, &
                                               Mminx,Mmaxx,Mminy,Mmaxy,Nk,Set_topo_L,F_stag_L)
 
       use dcmip_2012_init_1_2_3
@@ -25,8 +25,8 @@
       use cstv
       use lun
       use ver
-      use gmm_itf_mod
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -35,76 +35,83 @@
       !arguments
       !---------
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar u
-           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar v
+
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s    (Mminx:Mmaxx,Mminy:Mmaxy),    &
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
+           F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
 
-      logical  :: Set_topo_L ! .T. : Set F_topo to initialize  Topo_High
-                             ! .F. : Use F_topo initialized as Topo_low
+      logical Set_topo_L ! If .T.: Set F_topo to initialize  Topo_High
+                         ! If .F.: Use F_topo initialized as Topo_low
 
-      logical  :: F_stag_L   ! Staggered uv if .T. / Scalar uv if .F.
+      logical F_stag_L   ! Staggered uv if .T. / Scalar uv if .F.
 
       !object
       !======================================================================================
       !   Setup for Steady-State Atmosphere at Rest in the Presence of Orography (DCMIP 2012)
       !======================================================================================
 
-      !----------------------------------------------------------------------------------------------------------------
+      !-----------------------------------------------------------------------------------------------------------
 
       integer i,j,k
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon, &          ! Longitude (radians)
-                  lat, &          ! Latitude (radians)
-                  z               ! Height (m)
-               !!!z,   &          ! Height (m)
-               !!!hyam,&          ! A coefficient for hybrid-eta coordinate, at model level midpoint
-               !!!hybm,&          ! B coefficient for hybrid-eta coordinate, at model level midpoint
-               !!!gc              ! bar{z} for Gal-Chen coordinate
+      real(8)  :: lon,     & ! Longitude (radians)
+                  lat,     & ! Latitude (radians)
+                  z          ! Height (m)
+               !!!z,       & ! Height (m)
+               !!!hyam,    & ! A coefficient for hybrid-eta coordinate, at model level midpoint
+               !!!hybm,    & ! B coefficient for hybrid-eta coordinate, at model level midpoint
 
-      logical  :: hybrid_eta      ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
-                                  ! if set to .true., then the pressure will be computed via the
-                               !!!!    hybrid coefficients hyam and hybm, they need to be initialized
-                                  !    hybrid coefficients GEM Ver_a and Ver_b, they need to be initialized
-                                  ! if set to .false. (for pressure-based models): the pressure is already pre-computed
-                                  !    and is an input value for this routine
-                                  ! for height-based models: pressure will always be computed based on the height and
-                                  !    hybrid_eta is not used
+      logical  :: hybrid_eta ! flag to indicate whether the hybrid sigma-p (eta) coordinate is used
+                             ! if set to .true., then the pressure will be computed via the
+                          !!!!    hybrid coefficients hyam and hybm, they need to be initialized
+                             !    hybrid coefficients GEM-H Ver_a and Ver_b, they need to be initialized
+                             ! if set to .false. (for pressure-based models): the pressure is already pre-computed
+                             !    and is an input value for this routine
+                             ! for height-based models: pressure will always be computed based on the height and
+                             !    hybrid_eta is not used
 
-      real(8)  :: p               ! Pressure  (Pa)
+      real(8)  :: p          ! Pressure  (Pa)
 
-      integer  :: zcoords         ! 0 or 1 see below
+      integer  :: zcoords    ! 0 if p coordinates are specified
+                             ! 1 if z coordinates are specified
 
-      real(8)  :: u, &            ! Zonal wind (m s^-1)
-                  v, &            ! Meridional wind (m s^-1)
-                  w, &            ! Vertical Velocity (m s^-1)
-                  t, &            ! Temperature (K)
-                  tv,&            ! Virtual Temperature (K)
-                  phis, &         ! Surface Geopotential (m^2 s^-2)
-                  ps, &           ! Surface Pressure (Pa)
-                  rho, &          ! density (kg m^-3)
-                  q               ! Specific Humidity (kg/kg)
+      real(8)  :: u,       & ! Zonal wind (m s^-1)
+                  v,       & ! Meridional wind (m s^-1)
+                  w,       & ! Vertical Velocity (m s^-1)
+                  t,       & ! Temperature (K)
+                  tv,      & ! Virtual Temperature (K)
+                  phis,    & ! Surface Geopotential (m^2 s^-2)
+                  ps,      & ! Surface Pressure (Pa)
+                  rho,     & ! Density (kg m^-3)
+                  q          ! Specific Humidity (kg/kg)
 
-      ! if zcoords = 1, then we use z and output p
-      ! if zcoords = 0, then we compute or use p
-      !
-   !!!! In hybrid-eta coords: p = hyam p0 + hybm ps
-      ! In hybrid-eta GEM coords: p = exp(Ver_a p0 + Ver_b ps)
+      logical :: GEM_P_L
 
-      !----------------------------------------------------------------------------------------------------------------
+   !!!! In hybrid-eta coords      : p = hyam p0 + hybm ps
+      ! In hybrid-eta GEM-P coords: p = exp(Ver_a p0 + Ver_b ps)
+      ! In Gal-Chen coords        : z = zs + (gc/ztop)*(ztop - zs) [gc = Ver_z GEM-H]
+
+      !-----------------------------------------------------------------------------------------------------------
 
       if (Lun_out > 0) write (Lun_out,1000) Set_topo_L
 
-      zcoords    = 0
-      hybrid_eta = .TRUE. ! as in GEM
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Initial conditions: T,ZD,Q,S,TOPO
-      !---------------------------------
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
+
+      if (GEM_P_L) hybrid_eta = .TRUE. 
+
+      !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
+      !-----------------------------------------
       do k = 1,Nk
 
          do j = 1,l_nj
@@ -120,16 +127,24 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
                                                     u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_tv(i,j,k) = tv
-                  F_q (i,j,k) = q
-                  F_s (i,j)   = log(ps/Cstv_pref_8)
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
 
+                  F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -145,16 +160,24 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_tv(i,j,k) = tv
-                  F_q (i,j,k) = q
-                  F_s (i,j)   = log(ps/Cstv_pref_8)
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
 
+                  F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -185,7 +208,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
@@ -204,7 +227,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -236,7 +259,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
@@ -255,7 +278,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
@@ -291,7 +314,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
@@ -310,7 +333,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
@@ -342,7 +365,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
@@ -361,7 +384,7 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
+                  call test2_steady_state_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8,hybrid_eta, &
                                                     utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8

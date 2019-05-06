@@ -6,7 +6,7 @@
                               & PTHVELCL, KLCL, KDPL, KPBL, OTRIG,    &
                               & PCAPE, XLAT, MG, MLAC )
 !######################################################################
-
+!#TODO: never used: PDXDY, PHSFLX
 !!**** Determine convective columns as well as the cloudy values of theta,
 !!     and qv at the lifting condensation level (LCL)
 !!
@@ -144,7 +144,7 @@ real, DIMENSION(KLON) :: ZLV, ZCPH! specific heats of vaporisation, dry air
 real, DIMENSION(KLON) :: ZDP      ! pressure between LCL and model layer
 real, DIMENSION(KLON) :: ZTOP     ! estimated cloud top (m)
 real, DIMENSION(KLON,KLEV):: ZCAP ! CAPE at every level for diagnostics
-real,  DIMENSION(KLON) :: ZWORK1, ZWORK2, ZWORK3, ZWORK4 ! work arrays
+real,  DIMENSION(KLON) :: ZWORK1, ZWORK2, ZWORK3 ! work arrays
 LOGICAL, DIMENSION(KLON) :: GTRIG, GTRIG2          ! local arrays for OTRIG
 LOGICAL, DIMENSION(KLON) :: GWORK1                 ! work array
 

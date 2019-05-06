@@ -15,11 +15,8 @@
 
 !** s/r diag_zd_w - Computes model vertical velocities zd and w diagnostically.
 !
-
-!
       subroutine diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s, &
                              Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
-
       use cstv
       use gem_options
       use init_options
@@ -79,7 +76,11 @@
       real*8, parameter :: half=0.5d0
 !     ________________________________________________________________
 !
-      if(.not.(F_zd_L.or.F_w_L)) return
+      if(.not.(F_zd_L.or.F_w_L)) then
+         F_zd = 0.
+         F_w  = 0.
+         return
+      endif
 
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
       if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
@@ -113,15 +114,15 @@
 
       do j=j0,jn
          do i=i0-1,in
-            sbX(i,j) =(F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half+Cstv_Sstar_8)
-            slbX(i,j)=(sls(i,j)+(sls(i+1,j)-sls(i,j))*half+Cstv_Sstar_8)
+            sbX(i,j)  = (F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half+Cstv_Sstar_8)
+            slbX(i,j) = (sls(i,j)+(sls(i+1,j)-sls(i,j))*half+Cstv_Sstar_8)
          end do
       end do
 
       do j=j0-1,jn
          do i=i0,in
-            sbY(i,j) =(F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half+Cstv_Sstar_8)
-            slbY(i,j)=(sls(i,j)+(sls(i,j+1)-sls(i,j))*half+Cstv_Sstar_8)
+            sbY(i,j)  = (F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half+Cstv_Sstar_8)
+            slbY(i,j) = (sls(i,j)+(sls(i,j+1)-sls(i,j))*half+Cstv_Sstar_8)
          end do
       end do
 
@@ -139,16 +140,16 @@
 
          do j=j0,jn
             do i=i0-1,in
-               lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)+Ver_c_8%m(k)*slbX(i,j)
-               pbX=exp(lnpi)
-               UdpX(i,j)=F_u(i,j,k)*pbX*(1.d0+Ver_dbdz_8%m(k)*sbX(i,j)+Ver_dcdz_8%m(k)*slbX(i,j))
+               lnpi = Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)+Ver_c_8%m(k)*slbX(i,j)
+               pbX = exp(lnpi)
+               UdpX(i,j) = F_u(i,j,k)*pbX*(1.d0+Ver_dbdz_8%m(k)*sbX(i,j)+Ver_dcdz_8%m(k)*slbX(i,j))
             end do
          end do
          do j=j0-1,jn
             do i=i0,in
-               lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)+Ver_c_8%m(k)*slbY(i,j)
-               pbY=exp(lnpi)
-               VdpY(i,j)=F_v(i,j,k)*geomh_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j)+Ver_dcdz_8%m(k)*slbY(i,j))
+               lnpi = Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)+Ver_c_8%m(k)*slbY(i,j)
+               pbY = exp(lnpi)
+               VdpY(i,j) = F_v(i,j,k)*geomh_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j)+Ver_dcdz_8%m(k)*slbY(i,j))
             end do
          end do
 
@@ -215,7 +216,8 @@
                end do
             end do
          end do
-
+      else
+         F_zd = 0.
       end if
 
 !     CALCULATION of W
@@ -226,10 +228,10 @@
 
          RoverG=rgasd_8/grav_8
          do k=1,Nk
-            kp=min(k+1,Nk)
+            kp = min(k+1,Nk)
             do j=j0,jn
-               c1=geomh_cyv_8(j  ) ! pgi optimizer is bugged without those 2 lines
-               c2=geomh_cyv_8(j-1)
+               c1 = geomh_cyv_8(j  ) ! pgi optimizer is bugged without those 2 lines
+               c2 = geomh_cyv_8(j-1)
                do i=i0,in
                   !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
                   adv = 0.5 * ( geomh_invDX_8(j) *  &
@@ -245,21 +247,22 @@
                        ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(slbY(i,j  )-(sls(i,j)+Cstv_Sstar_8))   &
                        -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(slbY(i,j-1)-(sls(i,j)+Cstv_Sstar_8)) ) )
                   !pidot=omega
-                  pidot=pi_t(i,j,k)*(Ver_b_8%t(k)*adv + Ver_c_8%t(k)*advl) - div_i(i,j,k)
-                  F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
+                  pidot = pi_t(i,j,k)*(Ver_b_8%t(k)*adv + Ver_c_8%t(k)*advl) - div_i(i,j,k)
+                  F_w(i,j,k) = -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
                   !ksidot=omega/pi
-                  xd(i,j,k)=pidot/pi_t(i,j,k)
+                  xd(i,j,k) = pidot / pi_t(i,j,k)
                end do
             end do
          end do
 
          do j=j0,jn
             do i=i0,in
-               F_w(i,j,Nk)= -RoverG*F_t(i,j,Nk) * ( Ver_wpstar_8(Nk) * &
-                            xd(i,j,Nk) + Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
+               F_w(i,j,Nk) = -RoverG*F_t(i,j,Nk) * ( Ver_wpstar_8(Nk) * &
+                              xd(i,j,Nk) + Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
             end do
          end do
-
+      else
+         F_w = 0.
       end if
 
 1000  format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W)')

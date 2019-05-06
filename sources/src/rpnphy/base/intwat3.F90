@@ -74,7 +74,7 @@
 #include "tdpack_const.hf"
 !
       integer i,k,im,k1,k2,k3,k4
-      real dsg,dpsg,qctemp,qitemp
+      real dsg,dpsg,qctemp
       real s1,s2,s3,s4
       logical scool
 !

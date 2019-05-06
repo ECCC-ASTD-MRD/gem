@@ -55,10 +55,9 @@ subroutine tkealg2(estar,en,zn,ze,dvdz2,buoy_flux,diss,shr,buoy,tau,n,nk)
    !IMPLICITS
 #include "machcon.cdk"
 #include "clefcon.cdk"
-   
+
    ! Local variable declaration
    integer :: j,k
-   integer :: itotal
    real :: clamda
    real, dimension(n,nk) :: b,c,b_over_c,sqrt_tke
    real(kind=8), dimension(n,nk) :: work_8

@@ -223,11 +223,11 @@ contains
 
       integer i,k,ifexfb,iflag
       integer klcl,kmin,kmix,kfrz,kpbl,lc,lcl,ldt
-      integer il,jk,jkk,jkm
+
       integer ldb,let,lmax,low,ltop,ltop1,ltopm1,lvf,lfs,ml
       integer nd,nd1,ndk,ncount,nic,nj,nk,nk1,nm
       integer nstep,ntc,nlayrs,nupnk
-      integer ktop,istat
+      integer ktop
 
       real a1,abe,abeg,aice,ainc,aincm2,aincmx,aliq,au0
       real be,bice,bliq,boterm,cldhgt
@@ -236,14 +236,14 @@ contains
       real devdmf,dmfmin,dmflfs,dptt
       real zlcl
       real betaw,betai,gamw,gami
-      real dpdd,dpddmx,dplin,dpptdf,ddppt,ddinc,dqsdt
-      real dtmp,dtime,dtmlte,dtmltd,dtlcl
+      real dpdd,dpddmx,dpptdf,ddinc,dqsdt
+      real dtmp,dtime,dtmltd,dtlcl
       real dumfdp
       real es,ee,ee1,ee2,emix,effq,enterm
       real f1,f2,fabe,frc,frc1
       real gdt,gdry,liqfrac,icefrac
       real p00,p165,pef,peff,pefmin,pefmax,pefcbh
-      real pmid,ppr,pptflx,pptfl2,pptmlt,pptml2
+      real pmid,ppr,pptflx,pptfl2,pptmlt
       real qenv,qese,qnewic,qnewlq,qnwfrz,qs,qsrh
       real r1,rl,rf,rei,rdd
       real rovg,rocpq,rate,rcbh,rced,rhbc,rhic,rtmp
@@ -251,7 +251,7 @@ contains
       real tvlcl,tlog,tenv,dtenv,tven,tdpt,tbfrz,ktlcl
       real tvavg,tvbar,thata,thtfc,thtudl,thtmin,thttmp
       real ttmp,ttemp,tmpliq,tmpice,ttfrz,trppt,tsat
-      real tdp,tder,tder2,t1rh,topomg
+      real tder,tder2,t1rh
       real oneovg, maxzpar, dpmix, betaent
       real tu10,tu95,tudl
       real ud1,ud2,usr,udlbe,updinc,updin2
@@ -262,29 +262,29 @@ contains
       real dpup , dpdown
       real dqdtdk,dqcdtdk
       real wklcl, wklcld, trigger_energy
-      real kfscale,wz,dwz,int_max,cin,cape,wumean
+      real kfscale,cin,cape,wumean
       real denom,eps,tvdiff
       real oneminc,intdudt,intdvdt,intdp,intu,intv
-      real t1,t2,cmean,dcape,tp,tm,stdw,wlcl0,cow
+      real t1,t2,cmean,dcape,tp,tm,wlcl0
 
 
 
-      real detfrac
+
 
 !                                For the optimisation and
 !                                thermodynamic functions
 
 
-      integer l5,istop,klm,kl,llfc,mxlayr
+      integer l5,klm,kl,llfc,mxlayr
 
-      real dxsq,tmc,rholcl,wabs,zmix,p300,thta,imp,corr,colint,colp,ls,delp
+      real dxsq,rholcl,wabs,zmix,p300,thta,delp
 
       real :: w_wsmin,w_wsmax,wsmax,wsmin
 
       real tpdd
 
-      logical, dimension(ix) :: activ, possib, triggr, trigg2
-      integer, dimension(ix) :: itop, ipbl, idpl, lclg
+      logical, dimension(ix) :: activ
+
       integer, dimension(kx) :: nup
 
       real, dimension(ix) :: dpthmxg, pmixg,  tmixg, qmixg, zdpl,          &
@@ -317,7 +317,7 @@ contains
       real(kind=8), dimension(ix) :: itnd
 
       external tpmix
-      external condload
+      external condload_safe
       external dtfrznew
       external envirtht
       external prof5
@@ -1273,7 +1273,7 @@ contains
 
 !                             Condensation in the updraft.
 
-         call CONDLOAD(RLIQ(NK1),RICE(NK1),WTW,DZZ,BOTERM,ENTERM, &
+         call CONDLOAD_SAFE(RLIQ(NK1),RICE(NK1),WTW,DZZ,BOTERM,ENTERM, &
                        RATE,QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1), &
                        GRAV)
 

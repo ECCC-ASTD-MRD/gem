@@ -43,10 +43,9 @@ contains
       character(len=*), intent(in) :: F_path_S
       integer, intent(in),optional :: F_recurse
       integer, intent(in),optional :: F_filter
-      integer :: F_npaths
       !@author
       !@return
-      integer :: F_fileid
+      integer :: F_npaths
       !@/
       integer,parameter :: NMAXFILES = 2048
       logical :: ok_L

@@ -22,6 +22,7 @@ contains
 
 !/@*
 function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
+!#TODO: seloc never used
    use tdpack, only: DELTA, RGASD
    use phy_status, only: phy_error_L
    use phygridmap, only: ijdrv_phy

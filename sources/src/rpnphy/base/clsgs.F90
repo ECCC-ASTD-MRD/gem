@@ -29,7 +29,7 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    real, dimension(n,nk), intent(in) :: c1              !coefficient C1 in second-order moment closure
    real, dimension(n,nk), intent(in) :: zn              !mixing length (m)
    real, dimension(n,nk), intent(in) :: ze              !dissipation length (m)
-   real, dimension(n,nk), intent(in) :: wz              !gridscale vertical motion (m/s)
+   real, dimension(n,nk), intent(in) :: wz              !gridscale vertical motion (m/s)  !#TODO: never used
    real, dimension(n), intent(in) :: hpbl               !boundary layer height (m)
    real, dimension(n), intent(in) :: hflux              !surface heat flux (W/m2)
    real, dimension(n,nk), intent(in) :: s               !sigma for full levels
@@ -107,7 +107,7 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    real, parameter :: EPS=1e-10,QCMIN=1e-6,QCMAX=1e-3,WHMIN=0.5,WHMAX=1.2
 
    ! Local variables
-   integer :: j,k,itotal,istat
+   integer :: j,k
    real :: fnn_weight,sigmas_cu,hfc
    real(kind=8) :: gravinv
    real, dimension(n) :: wf

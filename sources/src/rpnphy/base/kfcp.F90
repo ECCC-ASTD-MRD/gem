@@ -203,7 +203,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
       integer ldb,let,lmax,low,ltop,ltop1,ltopm1,lvf,lfs,ml
       integer nd,nd1,ndk,ncount,nic,nj,nk,nk1,nm
       integer nstep,ntc,nlayrs,nupnk
-      integer ktop,istat
+      integer ktop
 
       real a1,abe,abeg,aice,ainc,aincm1,aincm2,aincmx,aliq,au0
       real be,bice,bliq,boterm,cldhgt,mult
@@ -212,14 +212,14 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
       real devdmf,dmfmin,dmflfs,dptt
       real zlcl
       real betaw,betai,gamw,gami
-      real dpdd,dpddmx,dplin,dpptdf,ddppt,ddinc,dqsdt
-      real dtmp,dtime,dtmlte,dtmltd,dtlcl
+      real dpdd,dpddmx,dpptdf,ddinc,dqsdt
+      real dtmp,dtime,dtmltd,dtlcl
       real dumfdp
       real es,ee,ee1,ee2,emix,effq,enterm
       real f1,f2,fabe,frc,frc1
       real gdt,gdry,liqfrac,icefrac
       real p00,p165,pef,peff,pefmin,pefmax,pefcbh
-      real pmid,ppr,pptflx,pptfl2,pptmlt,pptml2
+      real pmid,ppr,pptflx,pptfl2,pptmlt
       real qenv,qese,qnewic,qnewlq,qnwfrz,qs,qsrh
       real r1,rl,rf,rei,rdd
       real rovg,rocpq,rate,rcbh,rced,rhbc,rhic,rtmp
@@ -227,7 +227,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
       real tvlcl,tlog,tenv,tven,tdpt,tbfrz
       real tvavg,tvbar,thata,thtfc,thtudl,thtmin,thttmp
       real ttmp,ttemp,tmpliq,tmpice,ttfrz,trppt,tsat
-      real tdp,tder,tder2,t1rh,topomg
+      real tder,tder2,t1rh
       real oneovg, maxzpar, dpmix, betaent
       real tu10,tu95,tudl
       real ud1,ud2,usr,udlbe,updinc,updin2
@@ -251,44 +251,40 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !                                thermodynamic functions
 
 
-      integer l5,istop,klm,kl,llfc,mxlayr
+      integer l5,klm,kl,llfc,mxlayr
 
-      real dxsq,tmc,rholcl,wabs,zmix,p300,thta,imp,corr,colint,colp,ls,delp
+      real dxsq,rholcl,wabs,zmix,p300,thta
 
       real :: w_wsmin,w_wsmax,wsmax,wsmin
 
       real tpdd
 
       logical, dimension(ix) :: activ, possib, triggr, trigg2
-      integer, dimension(ix) :: itop, ipbl, idpl, lclg
+      integer, dimension(ix) :: itop, idpl, lclg
       integer, dimension(kx) :: nup
 
       real, dimension(ix) :: dpthmxg, pmixg,  tmixg, qmixg, zdpl,  zlclg,  &
                              rolcl,   cape,   ztop,  work1, work2, work3,  &
                              theul,   thmixg, tlclg, plclg, wlclg, tenvg,  &
-                             qenvg,   wklcla, psb,   lv
+                             qenvg,   wklcla, psb
       real, dimension(kx) :: ddr,     ddr2,   der,    der2,  detic, detic2, &
-                             detlq,   detlq2, dmf,    dmf2,  dms,   domgdp, &
+                             detlq,   detlq2, dmf,    dmf2,  domgdp, &
                              dtfm,    ems,    emsd,   eqfrc, exn,           &
                              omga,    pptice, pptliq, qadv,  qd,    qdt,    &
-                             qg,      qicout, qlqout, qmid,  qpa,   qu,     &
+                             qg,      qicout, qlqout, qpa,   qu,     &
                              ratio2,  rice,   rliq,   tg,    theted,thetee, &
-                             theteu,  thadv,  thmid,  thpa,  thtad, thtag,  &
+                             theteu,  thadv,  thpa,  thtad, thtag,  &
                              thtau,   thta0,  thtes,  thtesg,tu,    tvd,    &
                              tvg,     tvqu,   tvu,    tz,    udr,   udr2,   &
-                             uer,     uer2,   umf,    umf2,  wd,    wspd,   &
+                             uer,     uer2,   umf,    umf2,  wspd,   &
                              wu,      uu,     vu,     ud,    vd,    ug,     &
                              vg,      upa,    vpa,    uadv,  vadv,  qlpa,   &
                              qipa,    qlg,    qig,    qtpa,  qtdt,  qtg,    &
-                             thpai,   qtpai,  qlpai,  qipai, ta,    tb,     &
-                             tc,      td_thta,td_qt,  td_ql, td_qi, tri_thta,&
-                             tri_qt,  tri_ql, tri_qi, workk, emf,   td_q,   &
-                             tri_q,   qpai
+                             emf
       real, dimension(kx+1)  :: omg
       real, dimension(ix,kx) :: tt0,  tv00,   q00,  u00,    v00,   ww0,    &
                                 dzp,  dpp,    qst1, pp0,    thts, z0g,     &
-                                sigkfc, ql0,  qi0,  qc0
-      real(kind=8), dimension(ix) :: itnd
+                                sigkfc, ql0,  qi0
 
       external tpmix
       external condload

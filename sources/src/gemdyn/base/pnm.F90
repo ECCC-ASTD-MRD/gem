@@ -13,34 +13,22 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pnm2 - calculates MSL pressure
+!**s/r pnm - calculates MSL pressure
 !
+      subroutine pnm( F_pnm,   F_vts,   F_fis, F_lnps, F_la, &
+                      F_vtund, F_fiund, F_und, &
+                      Minx, Maxx, Miny, Maxy, Nk)
 
-!
-	subroutine pnm2( F_pnm,   F_vts,   F_fis, F_lnps, F_la, &
-                         F_vtund, F_fiund, F_und, &
-                         Minx,Maxx,Miny,Maxy, Nk)
-!
       use tdpack
       use glb_ld
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx,Maxx,Miny,Maxy, Nk
-!
-      real F_pnm(Minx:Maxx,Miny:Maxy), F_vts(Minx:Maxx,Miny:Maxy,Nk)
-      real F_fis(Minx:Maxx,Miny:Maxy,Nk)
-      real F_lnps(Minx:Maxx,Miny:Maxy,Nk), F_la (Minx:Maxx,Miny:Maxy)
-!
-      integer F_und
-      real    F_vtund(Minx:Maxx,Miny:Maxy,F_und),F_fiund(Minx:Maxx,Miny:Maxy,F_und)
-!
-!author
-!     andre methot - alain patoine - after pnm1
-!
-!revision
-! v2_00 - Lee V.            - initial MPI version (from pnm2 v1_03)
-! v3_00 - Desgagne & Lee    - Lam configuration
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, F_und
+      real, dimension(Minx:Maxx, Miny:Maxy), intent(out) :: F_pnm
+      real, dimension(Minx:Maxx, Miny:Maxy), intent(in) :: F_la
+      real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(in) :: F_vts, F_fis, F_lnps
+      real, dimension(Minx:Maxx,Miny:Maxy,F_und), intent(in) :: F_vtund, F_fiund
 !
 !object
 !******************************************************************************
@@ -114,20 +102,20 @@
 !******************************************************************************
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_pnm        O    - MSL pressure
-! F_vts        I    - surface virtual temperature
-! F_fis        I    - surface geopotential height
-! F_lnps       I    - surface log of hydrostatic pressure
-! F_la         I    - geographical latitude (radian)
-! F_vtund      I    - virtual temperatures for underground extrapolation
-! F_fiund      I    - geopotential levels for which virtual temperature is
-!                     given for underground extrapolation
-! F_und        I    - number of virtual temperature levels for underground
-!                     extrapolation
-!                   = 0 if no underground temperature is used and the
-!                       the traditional scheme will be used
+!  Name                        Description
+!------------------------------------------------------------
+! F_pnm         - MSL pressure
+! F_vts         - surface virtual temperature
+! F_fis         - surface geopotential height
+! F_lnps        - surface log of hydrostatic pressure
+! F_la          - geographical latitude (radian)
+! F_vtund       - virtual temperatures for underground extrapolation
+! F_fiund       - geopotential levels for which virtual temperature is
+!                 given for underground extrapolation
+! F_und         - number of virtual temperature levels for underground
+!                 extrapolation
+!               = 0 if no underground temperature is used and the
+!                   the traditional scheme will be used
 !
 !notes
 !   All fields in arguments are assumed to be workable on the same grid
@@ -139,80 +127,70 @@
 !   F_vtund(i,j,2) and F_fiund(i,j,2) --> second highest level
 !   ......................................and so on
 !
+      integer :: i, j, pnund,   pn1
+      real :: prl, prvtc, prsmall
+      real :: prlptop, prvttop, prfitop
+      real :: prlpbot, prvtbot, prfibot
 
-!
-
-!     none
-!
-!*
-      integer i, j, pnund,   pn1
-      real    prl, prvtc, prsmall
-      real    prlptop, prvttop, prfitop
-      real    prlpbot, prvtbot, prfibot
-!
-!
       prsmall = .001
+
+      do j= 1, l_nj
+         do i= 1, l_ni
 !
-      do 100 j= 1, l_nj
-      do 100 i= 1, l_ni
-!
-!        calculation of critical temperature
+!           calculation of critical temperature
 !                       --------------------
 !
-         prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * pi_8) )
-!
-!
-         do pnund=1,F_und+1
-            if ( pnund > F_und ) go to 30
-            if ( F_fis(i,j,nk) > F_fiund(i,j,pnund) ) go to 30
-         end do
-!
- 30      continue
-!
-         prlptop = F_lnps(i,j,nk)
-         prvttop = F_vts(i,j,nk)
-         prfitop = F_fis(i,j,nk)
-!
-         do 40 pn1=pnund,F_und
-!
+            prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * pi_8) )
+
+            do pnund=1,F_und+1
+               if ( pnund > F_und ) exit
+               if ( F_fis(i,j,nk) > F_fiund(i,j,pnund) ) exit
+            end do
+
+            prlptop = F_lnps(i,j,nk)
+            prvttop = F_vts(i,j,nk)
+            prfitop = F_fis(i,j,nk)
+
+            do pn1=pnund,F_und
+
+               if ( prvttop <= prvtc ) then
+                    prvtbot = min( F_vtund(i,j,pn1),  prvtc )
+               else
+                    prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
+               end if
+
+               prfibot  = F_fiund (i,j,pn1)
+
+               if ( abs(prvtbot-prvttop) <= prsmall ) then
+                  prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
+               else
+                  prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
+                  prlpbot = prlptop + (log(prvtbot/prvttop)) / (rgasd_8*prl)
+               end if
+
+               prlptop = prlpbot
+               prvttop = F_vtund(i,j,pn1)
+               prfitop = prfibot
+            end do
+
             if ( prvttop <= prvtc ) then
-                 prvtbot = min( F_vtund(i,j,pn1),  prvtc )
+                 prvtbot = min( 1.0d0*prvttop + stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
             else
                  prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
             end if
 !
-            prfibot  = F_fiund (i,j,pn1)
-!
-            if ( abs(prvtbot-prvttop) <= prsmall ) then
-               prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
-            else
-               prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
-               prlpbot = prlptop + (log(prvtbot/prvttop)) / (rgasd_8*prl)
-            end if
-!
-            prlptop = prlpbot
-            prvttop = F_vtund(i,j,pn1)
-            prfitop = prfibot
-!
- 40      continue
-!
-         if ( prvttop <= prvtc ) then
-              prvtbot = min( 1.0d0*prvttop + stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
-         else
-              prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
-         end if
-!
-!        calculation of MSL pressure
+!           calculation of MSL pressure
 !                       ------------
 !
-         if ((abs(prvtbot-prvttop) <= prsmall) .or. (prfitop <= 0.0)) then
-              F_pnm(i,j) = exp (prlptop+prfitop/(rgasd_8*prvttop))
-         else
-              prl = - ( prvttop - prvtbot ) / ( prfitop )
-              F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(rgasd_8*prl))
-         end if
-!
- 100  continue
-!
+            if ((abs(prvtbot-prvttop) <= prsmall) .or. (prfitop <= 0.0)) then
+                 F_pnm(i,j) = exp (prlptop+prfitop/(rgasd_8*prvttop))
+            else
+                 prl = - ( prvttop - prvtbot ) / ( prfitop )
+                 F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(rgasd_8*prl))
+            end if
+
+         end do
+      end do
+
       return
       end

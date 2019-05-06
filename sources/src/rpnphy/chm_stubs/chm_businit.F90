@@ -33,7 +33,8 @@ subroutine chm_businit(F_ni, F_nk)
 ! Subroutine arguments
    integer, intent(in) :: F_ni, F_nk
 
+   if (F_ni < 0) print *,'Called chm_businit stub with:', F_ni, F_nk
 
-  return
+   return
 
 end subroutine chm_businit

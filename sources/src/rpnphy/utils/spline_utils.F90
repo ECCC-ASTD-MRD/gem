@@ -80,7 +80,7 @@ contains
       ! where s = x-x(k) is the distance between x(k) and x(k+1) for the interpolation.
 
       ! Local variables
-      integer :: k,n,nk,istat
+      integer :: k,n,nk
       real, dimension(size(h,dim=1),size(h,dim=2)) :: ta,tb,tc,tr,work
 
       ! Set return status

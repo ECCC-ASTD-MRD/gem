@@ -24,6 +24,7 @@ SUBROUTINE gwspectrum4(kproma , kbdim  , klev   &
                          ,tau    , rmscon , iheatcal &
                          ,kount, trnch               &
                          , std_p_prof, non_oro_pbot)
+!#TODO: never used: tau
     USE mo_gwspectrum, ONLY: kstar, naz
     use phy_status, only: phy_error_L
     implicit none

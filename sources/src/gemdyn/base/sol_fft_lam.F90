@@ -20,7 +20,9 @@
                                F_t1nks, F_t1nk, F_t2nis, F_t2ni, &
                                F_gni, F_gnj, F_gnk, F_nk       , &
                                F_npex1, F_npey1                , &
-                               F_ai, F_bi, F_ci  , F_dg2,F_dwfft )
+                               F_ai, F_bi, F_ci  , F_dg2)
+      use iso_c_binding
+      use gem_fft
       use HORgrid_options
       use gem_options
       use glb_ld
@@ -38,8 +40,12 @@
               F_ai(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_bi(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_ci(1:F_t1nks, 1:F_t2nis, F_gnj)
-      real*8  F_dwfft(1:F_t0njs, 1:F_t1nks, F_gni+2+F_npex1)
+      real*8, allocatable, save ::  F_dwfft(:,:,:)
       real*8  F_dg2  (1:F_t1nks, 1:F_t2nis, F_gnj  +F_npey1)
+
+      ! FFTW plans
+      type(dft_descriptor), save :: forward_plan, reverse_plan
+      real*8 pri ! Normalization constant
 
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -53,7 +59,7 @@
 ! F_t0njs      I    - maximum index on Y for Rhs,Sol
 ! F_t0nj       I    - number of points on local PEy for J (ldnh_nj)
 ! F_t1nks      I    - maximum index on local PEx for K (trp_12smax)
-! F_gnk         I    - G_nk-1 points in z direction globally (Schm_nith)
+! F_gnk        I    - G_nk-1 points in z direction globally (Schm_nith)
 ! F_t1nk       I    - number of points on local PEx for K (trp_12sn)
 ! F_gni        I    - number of points in x direction globally (G_ni)
 ! F_gnj        I    - number of points in y direction globally (G_nj)
@@ -74,14 +80,38 @@
       character(len=4) :: type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
-      real*8  pri
       real*8, parameter :: zero = 0.d0
 !     __________________________________________________________________
 !
                          type_fft = 'QCOS'
       if (Grd_yinyang_L) type_fft = 'SIN'
 
-      call itf_fft_set ( G_ni-Lam_pil_w-Lam_pil_e, type_fft, pri )
+      if (.not. allocated(F_dwfft)) then
+         ! Perform initial setup for the Fourier transforms:
+         ! Allocate the static array used for the transforms + transposes
+         allocate(F_dwfft(1:F_t0njs, 1:F_t1nks, F_gni+2+F_npex1))
+
+         ! Build the transform plans
+         call make_r2r_dft_plan(forward_plan, & ! Plan variable
+                                F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                3, type_fft, DFT_FORWARD)
+         call make_r2r_dft_plan(reverse_plan, & ! Plan variable
+                                F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                3, type_fft, DFT_BACKWARD)
+      end if
+
+      ! Get the appropriate scaling factor.  Begin with the normalization
+      ! constant from the FFT, needed to make a round-trip of transforms
+      ! act as the identity function:
+      pri =  get_dft_norm_factor(G_ni-Lam_pil_w-Lam_pil_e,type_fft)
+
+      ! And then modify the constant based on the discretization, essentially
+      ! dividing by dx.  This calculation is modified from itf_fft_set, which
+      ! is no longer used in the fftw-based interface.
+      pri = pri/(G_xg_8(G_ni-Lam_pil_e+1)-G_xg_8(G_ni-Lam_pil_e))
+
 
 !  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
 !  represent the pilot region along I
@@ -94,7 +124,9 @@
       call rpn_comm_transpose ( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                 1, F_t1nks, F_gnk, F_dwfft, 1, 2 )
 
-!     projection ( wfft = x transposed * g )
+
+      ! Use OpenMP, if configured, to zero out unused portions of the
+      ! transpose array
 !$omp parallel private(i,j,k,jr,p0,pn,piece) &
 !$omp          shared(plon,ptotal,l_pil_w,l_pil_e,pri)
 !$omp do
@@ -104,15 +136,21 @@
          F_dwfft(             1:F_t0njs, F_t1nk+1:F_t1nks,i)= zero
       end do
 !$omp enddo
-!
-!$omp do
-      do k=1, F_nk
-         call itf_fft_drv (F_dwfft(1+pil_s,k,1+Lam_pil_w), &
-                          (F_t0njs-1+1)*(F_t1nks-1+1),1  , &
-                          (F_t0njs-1+1-pil_s-pil_n), -1 )
-      end do
-!$omp enddo
+!$omp end parallel
 
+      ! The FFT routine uses internal parallelism (fftw), so it should be
+      ! called outside of a parallel region
+
+      ! Perform the real->spectral transform; the F_dwfft slice refers to the
+      ! meaningful portion of this array.
+      call execute_r2r_dft_plan(forward_plan, &
+                             F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                             F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
+
+
+      ! Normalize, again with the help of OpenMP.
+!$omp parallel private(i,j,k,jr,p0,pn,piece) &
+!$omp          shared(plon,ptotal,l_pil_w,l_pil_e,pri)
 !$omp do
       do i = 0+Lam_pil_w, F_gni-1-Lam_pil_e
          do k = 1, F_nk
@@ -122,15 +160,18 @@
          end do
       end do
 !$omp enddo
-!
+
+      ! Transpose in preparation for the tridiagonal solve.  Since the
+      ! communication here involves MPI, it should only be called from
+      ! one processor.
 !$omp single
       call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, F_dg2, 2, 2 )
 !$omp end single
-!
       ptotal = F_t2ni-l_pil_e-l_pil_w-1
       plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
 
+      ! Perform the tridiagonal solve
 !$omp do
       do piece=1,Ptopo_npeOpenMP
          p0 = 1+l_pil_w + plon*(piece-1)
@@ -160,24 +201,19 @@
          end do
       end do
 !$omp enddo
-!
-!$omp single
-      call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
-                               1, F_t2nis, F_gni, F_dg2,- 2, 2 )
-!$omp end single
-
-!     inverse projection ( r = x * w )
-
-!$omp do
-      do k=1, F_nk
-         call itf_fft_drv (F_dwfft(1+pil_s,k,1+Lam_pil_w), &
-                          (F_t0njs-1+1)*(F_t1nks-1+1),1  , &
-                          (F_t0njs-1+1-pil_s-pil_n),  1 )
-      end do
-!$omp enddo
-
 !$omp end parallel
 
+      ! Again transpose the data, for inversion of the FFT
+      call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
+                               1, F_t2nis, F_gni, F_dg2,- 2, 2 )
+
+!     inverse projection ( r = x * w )
+      call execute_r2r_dft_plan(reverse_plan, &
+                             F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                             F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
+
+      ! And finally transpose the data into the block structure used
+      ! by the rest of the model
       call rpn_comm_transpose ( Sol, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                      1, F_t1nks, F_gnk,  F_dwfft, -1, 2)
 !     __________________________________________________________________

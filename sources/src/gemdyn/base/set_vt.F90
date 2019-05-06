@@ -165,6 +165,8 @@
       gmmk_lin_s  = 'LIN'
       gmmk_min_s  = 'MIN'
       gmmk_max_s  = 'MAX'
+      gmmk_cub_o_s= 'CUO'
+      gmmk_cub_i_s= 'CUI'
       gmmk_airm1_s= 'AIR1'
       gmmk_airm0_s= 'AIR0'
       gmmk_pkps_s = 'PKPS'
@@ -175,6 +177,8 @@
       istat = min(gmm_create(gmmk_lin_s,  fld_lin,  mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_min_s,  fld_min,  mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_max_s,  fld_max,  mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_cub_o_s,fld_cub_o,mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_cub_i_s,fld_cub_i,mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_airm1_s,airm1,    mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_airm0_s,airm0,    mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pkps_s, pkps,     mymeta3d_nk_t,flag_r_n),istat)

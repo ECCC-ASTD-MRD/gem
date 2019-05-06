@@ -41,7 +41,8 @@ contains
       ! Local variable declarations
       integer :: i,j,newi,newj,i0,in,j0,jn
       real :: newrlat,newrlon
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: srci,srcj,merged,rlat,rlon,xrnd,yrnd
+      integer, dimension(l_minx:l_maxx,l_miny:l_maxy) :: srci,srcj
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: merged,rlat,rlon,xrnd,yrnd
       real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: uadv,vadv,objrlat,objrlon,objage,objmerge,objzlcl
       logical :: newsrc
 
@@ -220,9 +221,10 @@ contains
       use HORgrid_options, only: Grd_lphy_j0,Grd_lphy_jn,Grd_lphy_i0,Grd_lphy_in
       use glb_ld, only: l_minx,l_maxx,l_miny,l_maxy
       implicit none
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy), intent(in) :: F_fld,F_srci,F_srcj
-      integer, intent(in) :: F_i0
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy), intent(in) :: F_fld
       character(len=*), intent(in) :: F_name
+      integer, intent(in) :: F_i0
+      integer, dimension(l_minx:l_maxx,l_miny:l_maxy), intent(in) :: F_srci,F_srcj
       integer :: i,j
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: newfld
 

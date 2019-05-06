@@ -52,7 +52,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    real, save :: tauf   = 0.24
    real, save :: tauday = 24.
 
-   real    :: tempsum, tempclay, tempsand
+   real    :: tempsum
    integer :: i, k, nk1
 
    real, pointer, dimension(:) :: &

@@ -18,6 +18,7 @@
       SUBROUTINE KUO5 ( TE,QE,CRR,CSR,ILAB,CCK,CCB,OMEGAP,CLDW, &
                         TP1,TM1,QP1,QM1,GZM1,PSP1,PSM1, &
                         SIGMA, TAU, N, NI, NK, DBGKUO, SATUCO, CCCTIM, CMELT)
+!#TODO: TM1, DBGKUO, never used
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -159,11 +160,9 @@
       parameter (pc2=0.5)
 !
       LOGICAL LO,EVAP
-      INTEGER IERR
       INTEGER NKP1,NKM1
       INTEGER IS,IKS,IKS2
       INTEGER JK,JL
-      INTEGER HEAPERR
       REAL TEMP1, TEMP2, TEMP3, temp4, temp5, temp6
 !
 !
@@ -191,7 +190,7 @@
       REAL ZCONS5, ZDPM1, ZLDCP0, ZCOR
       REAL ZDP, ZDQK, ZCUPRO, ZCPDL, ZDTK, ZSQFLN, ZNIMP
       REAL ZRFLN0, ZLVDCP, ENTRM
-      real cevap, ccctim, cmelt
+      real ccctim, cmelt
 !
 !*    PHYSICAL CONSTANTS.
 !     -------- ----------

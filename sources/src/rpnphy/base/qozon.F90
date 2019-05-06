@@ -20,11 +20,11 @@
       implicit none
 #include <arch_specific.hf>
       integer i,k,l,ii
-      integer int,lev,levm1,lp1,lref,lstart,nk,nmax,np
+      integer int,lev,lref,lstart,nk,nmax,np
       real oz(nmax,lev),ozzx(nmax,lref),press(np),s(np,nk+1)
       logical lo1
       real ac1, ac2, ac3, pl, slope, tercep, zz
-      real x(np), xm(np), y(np), ym(np),ptop
+      real x(np), xm(np), y(np), ym(np)
       integer is(np), ism(np)
       real pref(lref)
       real ozotoit(NMAX)

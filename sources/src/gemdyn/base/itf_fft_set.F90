@@ -19,37 +19,33 @@
       use tdpack
       use glb_ld
       use glb_pil
-      use fft
+      use gem_fft
       implicit none
 #include <arch_specific.hf>
 !
-      character(len=*) F_type_S
-      integer       F_dim
-      real*8        F_pri_8
-!
-!author
-!     Michel Desgagne - spring 2012
-!
-!revision
-! v4_50 - Desgagne M.       - initial version
+      character(len=*), intent(in) :: F_type_S
+      integer, intent(in) ::  F_dim
+      real*8, intent(out) ::  F_pri_8
+      integer :: istat, npts
 
+      ! With an FFTW backend, this routine needs only to save:
+      ! * The transform type
+      ! * The transform size
+      ! * The normalization constant
 
-      integer, save :: same = -1
-      integer i, npts, istat
-      real*8  del, angle
-      real*8, parameter :: half=0.5, one=1.0, two=2.0
-!     __________________________________________________________________
-!
+      ! In particular, no calculation of trigonometric factors
+      ! is necessary.
+
       istat = 0
       select case (trim(F_type_S))
          case ('PERIODIC')
             npts    = F_dim
-            F_pri_8 = dble(npts) / ( two * pi_8 )
+            F_pri_8 = dble(npts) / ( 2.0d0 * pi_8 )
          case ('SIN')
             npts    = F_dim + 1
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w-1))
-         case ('COS')
-            npts    = F_dim - 1
+         !case ('COS')
+         !   npts    = F_dim - 1
          case ('QSIN' , 'QCOS')
             npts    = F_dim
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w))
@@ -59,38 +55,8 @@
       call handle_error(istat,'itf_fft_set', &
            'received invalid F_type_S'//trim(F_type_S))
 
-      if ((npts==same) .and. (trim(F_type_S)==trim(Fft_type_S))) return
-
       Fft_type_S = F_type_S
       Fft_n      = npts
-      same       = npts
 
-      if (trim(Fft_type_S) /= 'PERIODIC') then
-         Fft_m      = Fft_n/2
-         Fft_nstore = Fft_n + 2
-
-         if (associated(Fft_ssin)) deallocate(Fft_ssin,stat=istat)
-         if (associated(Fft_ccos)) deallocate(Fft_ccos,stat=istat)
-         if (associated(Fft_qsin)) deallocate(Fft_qsin,stat=istat)
-
-         allocate (Fft_ssin(Fft_n-Fft_m-1), &
-                   Fft_ccos(Fft_n-Fft_m-1), Fft_qsin(0:Fft_m-1))
-
-         del = acos( - one )/Fft_n
-
-         do i=1,Fft_n-Fft_m-1
-            angle = i * del
-            Fft_ccos( i ) = cos( angle )
-            Fft_ssin( i ) = sin( angle )
-         end do
-
-         do i=0,Fft_m-1
-            Fft_qsin( i ) = sin( ( i + half ) * del )
-         end do
-      end if
-
-      call setfft8( Fft_n )
-!     __________________________________________________________________
-!
       return
       end

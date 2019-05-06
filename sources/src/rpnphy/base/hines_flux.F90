@@ -20,6 +20,7 @@
        &                  m_min, slope, naz,                           &
        &                  il1, il2, lev1, lev2, nlons, nlevs, nazmth,  &
        &                  kount, trnch, lorms, hflt )
+!#TODO: never used: kount, trnch
     implicit none
 #include <arch_specific.hf>
 

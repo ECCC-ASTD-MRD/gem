@@ -198,30 +198,30 @@
             end if
 
             do i=1,36
-               read(unf0),dumdum(i,1)
+               read(unf0) dumdum(i,1)
             end do
 
             do l=lmin,lmax
                do m=1,l+1
-                  read(unf0),ar_s(lmax-l+1,m)
+                  read(unf0) ar_s(lmax-l+1,m)
                end do
             end do
 
             do l=lmin,lmax
                do m=1,l+1
-                  read(unf0),ai_s(lmax-l+1,m)
+                  read(unf0) ai_s(lmax-l+1,m)
                end do
             end do
 
             do l=lmin,lmax
                do m=1,l+1
-                  read(unf0),br_s(lmax-l+1,m)
+                  read(unf0) br_s(lmax-l+1,m)
                end do
             end do
 
             do l=lmin,lmax
                do m=1,l+1
-                  read(unf0),bi_s(lmax-l+1,m)
+                  read(unf0) bi_s(lmax-l+1,m)
                end do
             end do
 
@@ -344,7 +344,7 @@
       end do
 
       call itf_fft_set(nlon,'PERIODIC',pri_8)
-      call ffft8(wrk1,1,nlon+2,nlat,1)
+      call itf_fft_drv(wrk1,1,nlon+2,nlat,1)
       n=0
       do j=1,nlat
          do i=1,nlon+2

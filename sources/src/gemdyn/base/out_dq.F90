@@ -34,7 +34,7 @@
       integer levset,set
 
       logical write_diag_lev
-      integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset
+      integer i,istat,kind,nko,pndd,pnqq,pnqr,pnxx,gridset
       integer, dimension(:), allocatable :: indo
       real, dimension(:    ), allocatable:: rf
       real, dimension(:,:,:), allocatable:: uu_pres,vv_pres,cible, &
@@ -48,7 +48,7 @@
         if (Outd_var_S(i,set) == 'DD') pndd=i
         if (Outd_var_S(i,set) == 'QQ') pnqq=i
         if (Outd_var_S(i,set) == 'QR') pnqr=i
-      end do
+      enddo
 
       if (pndd+pnqq+pnqr == 0) return
 
@@ -81,14 +81,19 @@
                               Outd_convadd(pndd,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pndd,set),.false.)
             deallocate (div)
-         end if
+         endif
 
          if ((pnqq > 0).or.(pnqr > 0)) then
 
             allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                         qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
-            call cal_vor ( qr, vor, ut1, vt1 , Outd_filtpass(pnqq,set),&
-                           Outd_filtcoef(pnqq,set),(pnqq > 0)        ,&
+            if(pnqq > 0)then
+               pnxx=pnqq
+            else
+               pnxx=pnqr
+            endif
+            call cal_vor ( qr, vor, ut1, vt1 , Outd_filtpass(pnxx,set),&
+                           Outd_filtcoef(pnxx,set),(pnqq > 0)        ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
@@ -107,7 +112,7 @@
                               G_nk, indo,nko, Outd_nbit(pnqr,set),.false.)
             deallocate (vor, qr)
 
-          end if
+          endif
 
       else
 
@@ -122,7 +127,7 @@
             indo(i)= i
             rf  (i)= Level(i,levset)
             cible(:,:,i)= log(rf(i) * 100.0)
-         end do
+         enddo
 
          call vertint2 ( uu_pres,cible,nko, ut1,pw_log_pm,G_nk      ,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_niu,1,l_nj,&
@@ -151,15 +156,20 @@
                               Outd_convadd(pndd,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pndd,set),.false.)
             deallocate (div)
-         end if
+         endif
 
          if ((pnqq > 0).or.(pnqr > 0)) then
 
             allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,nko),&
                         qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
+            if(pnqq > 0)then
+               pnxx=pnqq
+            else
+               pnxx=pnqr
+            endif
             call cal_vor ( qr, vor, uu_pres, vv_pres          ,&
-                           Outd_filtpass(pnqq,set)            ,&
-                           Outd_filtcoef(pnqq,set),(pnqq > 0),&
+                           Outd_filtpass(pnxx,set)            ,&
+                           Outd_filtcoef(pnxx,set),(pnqq > 0),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
@@ -177,11 +187,11 @@
                               Outd_convadd(pnqr,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pnqr,set),.false.)
             deallocate (vor, qr)
-          end if
+          endif
 
           deallocate (rf,cible,uu_pres,vv_pres)
 
-      end if
+      endif
 
       deallocate (indo)
 !

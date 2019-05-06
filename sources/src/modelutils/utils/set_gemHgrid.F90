@@ -57,7 +57,7 @@
       logical F_Grd_yinyang_L,F_Grd_gauss_L, F_LAM, F_Grd_uniform_L, F_print_L 
       integer F_Grd_ni, F_Grd_nj, F_Grd_left, F_Grd_belo, F_Grd_nila,  &
               F_Grd_njla, F_errx, F_erry
-      real   F_Grd_dx, F_Grd_dy, F_r1, F_s1, F_Grd_dxmax, F_Grd_dymax
+      real   F_Grd_dx, F_Grd_dy, F_Grd_dxmax, F_Grd_dymax
       real*8 F_xgi_8(F_Grd_ni), F_ygi_8(F_Grd_nj), &
              F_Grd_x0_8, F_Grd_xl_8, F_Grd_y0_8, F_Grd_yl_8
 !

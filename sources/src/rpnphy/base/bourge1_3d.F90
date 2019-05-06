@@ -77,7 +77,7 @@
 #include "tdpack_const.hf"
 
 !     Bourgouin's parametres (Wea. Forecasting 2000, 15, pp 583-592)
-      real m1,m2,f1,f2,fslope,tmp
+      real m1,m2,f1,f2,fslope
       parameter(m1=5.6,m2=13.2,f1=46.,f2=66.,fslope=.66)
 
       integer i,k,warm(ni)

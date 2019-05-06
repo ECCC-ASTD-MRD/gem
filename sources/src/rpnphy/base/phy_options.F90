@@ -223,15 +223,12 @@ module phy_options
    namelist /physics_cfgs_p/ inilwc
 
    !# Type of input system used
-   !# * 'OLD ' : GEM 4.8 input, MPI blocking based
    !# * 'DIST' : GEM 5.0 input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based
    !# * 'BLOC' : GEM 5.0 input system, RPN_COMM_bloc based
-   character(len=16) :: input_type = 'OLD'
-!!$   character(len=16) :: input_type = 'DIST'
+   character(len=16) :: input_type = 'DIST'
    namelist /physics_cfgs/ input_type
    namelist /physics_cfgs_p/ input_type
-   character(len=*), parameter :: INPUT_TYPE_OPT(3) = (/ &
-        'OLD ', &
+   character(len=*), parameter :: INPUT_TYPE_OPT(2) = (/ &
         'DIST', &
         'BLOC'  &
         /)
@@ -847,7 +844,8 @@ module phy_options
    namelist /physics_cfgs/ sgo_windfac
    namelist /physics_cfgs_p/ sgo_windfac
 
-   !# Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# WARNING: This option is no longuer suppored, will be removed
    logical           :: simisccp     = .false.
    namelist /physics_cfgs/ simisccp
    namelist /physics_cfgs_p/ simisccp
@@ -896,6 +894,7 @@ module phy_options
    !# Select a turbulent orographic form drag scheme
    !# * 'NIL'        : No turbulent orographic form drag scheme
    !# * 'BELJAARS04' : Form drag scheme described by Beljaars et al. (2006; QJRMS)
+   !# WARNING: This option is broken thus disabled- will be fixed in dev branch
    character(len=16) :: tofd         = 'NIL'
    namelist /physics_cfgs/ tofd
    namelist /physics_cfgs_p/ tofd

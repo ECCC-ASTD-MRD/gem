@@ -230,122 +230,121 @@ ZTHC    ,ZRVC    ,ZRCC    ,ZRIC    ,ZWSUB   ,GTRIG1  ,GWORK   ,         &
 IINDEX, IJINDEX, IJSINDEX, IJPINDEX,ZCPH    ,ZLV, ZLS,ZUC     ,ZVC     ,&
 ZCH1    , ZCH1C   , ZWORK3  , GTRIG4
 !$OMP THREADPRIVATE(/deep/)
-#define ALLOCATABLE POINTER
 !*       0.2   Declarations of local allocatable  variables :
 
-integer, DIMENSION(:),ALLOCATABLE  :: IDPL    ! index for parcel departure level
-integer, DIMENSION(:),ALLOCATABLE  :: IPBL    ! index for source layer top
-integer, DIMENSION(:),ALLOCATABLE  :: ILCL    ! index for lifting condensation level
-integer, DIMENSION(:),ALLOCATABLE  :: IETL    ! index for zero buoyancy level
-integer, DIMENSION(:),ALLOCATABLE  :: ICTL    ! index for cloud top level
-integer, DIMENSION(:),ALLOCATABLE  :: ILFS    ! index for level of free sink
-integer, DIMENSION(:),ALLOCATABLE  :: IDBL    ! index for downdraft base level
-integer, DIMENSION(:),ALLOCATABLE  :: IDDT    ! index for downdraft detrainment top level
-integer, DIMENSION(:),ALLOCATABLE  :: IML     ! melting level
+integer, DIMENSION(:),POINTER  :: IDPL    ! index for parcel departure level
+integer, DIMENSION(:),POINTER  :: IPBL    ! index for source layer top
+integer, DIMENSION(:),POINTER  :: ILCL    ! index for lifting condensation level
+integer, DIMENSION(:),POINTER  :: IETL    ! index for zero buoyancy level
+integer, DIMENSION(:),POINTER  :: ICTL    ! index for cloud top level
+integer, DIMENSION(:),POINTER  :: ILFS    ! index for level of free sink
+integer, DIMENSION(:),POINTER  :: IDBL    ! index for downdraft base level
+integer, DIMENSION(:),POINTER  :: IDDT    ! index for downdraft detrainment top level
+integer, DIMENSION(:),POINTER  :: IML     ! melting level
 
-integer, DIMENSION(:), ALLOCATABLE :: ISDPL   ! index for parcel departure level
-integer, DIMENSION(:), ALLOCATABLE :: ISPBL   ! index for source layer top
-integer, DIMENSION(:), ALLOCATABLE :: ISLCL   ! index for lifting condensation level
+integer, DIMENSION(:), POINTER :: ISDPL   ! index for parcel departure level
+integer, DIMENSION(:), POINTER :: ISPBL   ! index for source layer top
+integer, DIMENSION(:), POINTER :: ISLCL   ! index for lifting condensation level
 
-real, DIMENSION(:), ALLOCATABLE    :: ZSTHLCL ! updraft theta at LCL
-real, DIMENSION(:), ALLOCATABLE    :: ZSTLCL  ! updraft temp. at LCL
-real, DIMENSION(:), ALLOCATABLE    :: ZSRVLCL ! updraft rv at LCL
-real, DIMENSION(:), ALLOCATABLE    :: ZSWLCL  ! updraft w at LCL
-real, DIMENSION(:), ALLOCATABLE    :: ZSZLCL  ! LCL height
-real, DIMENSION(:), ALLOCATABLE    :: ZSTHVELCL! envir. theta_v at LCL
-real, DIMENSION(:), ALLOCATABLE    :: ZSDXDY  ! grid area (m^2)
+real, DIMENSION(:), POINTER    :: ZSTHLCL ! updraft theta at LCL
+real, DIMENSION(:), POINTER    :: ZSTLCL  ! updraft temp. at LCL
+real, DIMENSION(:), POINTER    :: ZSRVLCL ! updraft rv at LCL
+real, DIMENSION(:), POINTER    :: ZSWLCL  ! updraft w at LCL
+real, DIMENSION(:), POINTER    :: ZSZLCL  ! LCL height
+real, DIMENSION(:), POINTER    :: ZSTHVELCL! envir. theta_v at LCL
+real, DIMENSION(:), POINTER    :: ZSDXDY  ! grid area (m^2)
 
 ! grid scale variables
-real, DIMENSION(:,:), ALLOCATABLE  :: ZZ      ! height of model layer (m)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZPRES   ! grid scale pressure
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDPRES  ! pressure difference between
+real, DIMENSION(:,:), POINTER  :: ZZ      ! height of model layer (m)
+real, DIMENSION(:,:), POINTER  :: ZPRES   ! grid scale pressure
+real, DIMENSION(:,:), POINTER  :: ZDPRES  ! pressure difference between
                                               ! bottom and top of layer (Pa)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZU      ! grid scale horiz. u component on theta grid
-real, DIMENSION(:,:), ALLOCATABLE  :: ZV      ! grid scale horiz. v component on theta grid
-real, DIMENSION(:,:), ALLOCATABLE  :: ZW      ! grid scale vertical velocity on theta grid
-real, DIMENSION(:,:), ALLOCATABLE  :: ZHSFLX  ! turbulent sensible heat flux (W/m2)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRHO    ! air density
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTT     ! temperature
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTH     ! grid scale theta
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTHV    ! grid scale theta_v
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTHL    ! grid scale enthalpy (J/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTHES, ZTHEST ! grid scale saturated theta_e
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRW     ! grid scale total water (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRV     ! grid scale water vapor (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRC     ! grid scale cloud water (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRI     ! grid scale cloud ice (kg/kg)
-real, DIMENSION(:),   ALLOCATABLE  :: ZDXDY   ! grid area (m^2)
+real, DIMENSION(:,:), POINTER  :: ZU      ! grid scale horiz. u component on theta grid
+real, DIMENSION(:,:), POINTER  :: ZV      ! grid scale horiz. v component on theta grid
+real, DIMENSION(:,:), POINTER  :: ZW      ! grid scale vertical velocity on theta grid
+real, DIMENSION(:,:), POINTER  :: ZHSFLX  ! turbulent sensible heat flux (W/m2)
+real, DIMENSION(:,:), POINTER  :: ZRHO    ! air density
+real, DIMENSION(:,:), POINTER  :: ZTT     ! temperature
+real, DIMENSION(:,:), POINTER  :: ZTH     ! grid scale theta
+real, DIMENSION(:,:), POINTER  :: ZTHV    ! grid scale theta_v
+real, DIMENSION(:,:), POINTER  :: ZTHL    ! grid scale enthalpy (J/kg)
+real, DIMENSION(:,:), POINTER  :: ZTHES, ZTHEST ! grid scale saturated theta_e
+real, DIMENSION(:,:), POINTER  :: ZRW     ! grid scale total water (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZRV     ! grid scale water vapor (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZRC     ! grid scale cloud water (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZRI     ! grid scale cloud ice (kg/kg)
+real, DIMENSION(:),   POINTER  :: ZDXDY   ! grid area (m^2)
 
 ! updraft variables
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUMF    ! updraft mass flux (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUER    ! updraft entrainment (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUDR    ! updraft detrainment (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUPR    ! updraft precipitation in
+real, DIMENSION(:,:), POINTER  :: ZUMF    ! updraft mass flux (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZUER    ! updraft entrainment (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZUDR    ! updraft detrainment (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZUPR    ! updraft precipitation in
                                               ! flux units (kg water / s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUTHL   ! updraft enthalpy (J/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZUTHV   ! updraft theta_v (K)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZWU     ! updraft vertical vel (m/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZURW    ! updraft total water (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZURC    ! updraft cloud water (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZURI    ! updraft cloud ice   (kg/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZURR    ! liquid precipit. (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZUTHL   ! updraft enthalpy (J/kg)
+real, DIMENSION(:,:), POINTER  :: ZUTHV   ! updraft theta_v (K)
+real, DIMENSION(:,:), POINTER  :: ZWU     ! updraft vertical vel (m/s)
+real, DIMENSION(:,:), POINTER  :: ZURW    ! updraft total water (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZURC    ! updraft cloud water (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZURI    ! updraft cloud ice   (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZURR    ! liquid precipit. (kg/kg)
                                               ! produced in  model layer
-real, DIMENSION(:,:), ALLOCATABLE  :: ZURS    ! solid precipit. (kg/kg)
+real, DIMENSION(:,:), POINTER  :: ZURS    ! solid precipit. (kg/kg)
                                               ! produced in  model layer
-real, DIMENSION(:),   ALLOCATABLE  :: ZUTPR   ! total updraft precipitation (kg/s)
-real, DIMENSION(:),   ALLOCATABLE  :: ZMFLCL  ! cloud base unit mass flux(kg/s)
-real, DIMENSION(:),   ALLOCATABLE  :: ZCAPE   ! available potent. energy
-real, DIMENSION(:),   ALLOCATABLE  :: ZTHLCL  ! updraft theta at LCL
-real, DIMENSION(:),   ALLOCATABLE  :: ZTLCL   ! updraft temp. at LCL
-real, DIMENSION(:),   ALLOCATABLE  :: ZRVLCL  ! updraft rv at LCL
-real, DIMENSION(:),   ALLOCATABLE  :: ZWLCL   ! updraft w at LCL
-real, DIMENSION(:),   ALLOCATABLE  :: ZZLCL   ! LCL height
-real, DIMENSION(:),   ALLOCATABLE  :: ZTHVELCL! envir. theta_v at LCL
+real, DIMENSION(:),   POINTER  :: ZUTPR   ! total updraft precipitation (kg/s)
+real, DIMENSION(:),   POINTER  :: ZMFLCL  ! cloud base unit mass flux(kg/s)
+real, DIMENSION(:),   POINTER  :: ZCAPE   ! available potent. energy
+real, DIMENSION(:),   POINTER  :: ZTHLCL  ! updraft theta at LCL
+real, DIMENSION(:),   POINTER  :: ZTLCL   ! updraft temp. at LCL
+real, DIMENSION(:),   POINTER  :: ZRVLCL  ! updraft rv at LCL
+real, DIMENSION(:),   POINTER  :: ZWLCL   ! updraft w at LCL
+real, DIMENSION(:),   POINTER  :: ZZLCL   ! LCL height
+real, DIMENSION(:),   POINTER  :: ZTHVELCL! envir. theta_v at LCL
 
 ! downdraft variables
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDMF    ! downdraft mass flux (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDER    ! downdraft entrainment (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDDR    ! downdraft detrainment (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDTHL   ! downdraft enthalpy (J/kg)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDRW    ! downdraft total water (kg/kg)
-real, DIMENSION(:),   ALLOCATABLE  :: ZMIXF   ! mixed fraction at LFS
-real, DIMENSION(:),   ALLOCATABLE  :: ZTPR    ! total surf precipitation (kg/s)
-real, DIMENSION(:),   ALLOCATABLE  :: ZSPR    ! solid surf precipitation (kg/s)
-real, DIMENSION(:),   ALLOCATABLE  :: ZDTEVR  ! donwndraft evapor. (kg/s)
-real, DIMENSION(:),   ALLOCATABLE  :: ZPREF   ! precipitation efficiency
-real, DIMENSION(:,:), ALLOCATABLE  :: ZDTEVRF ! donwndraft evapor. (kg/s)
-real, DIMENSION(:,:), ALLOCATABLE  :: ZPRLFLX ! liquid precip flux
-real, DIMENSION(:,:), ALLOCATABLE  :: ZPRSFLX ! solid precip flux
+real, DIMENSION(:,:), POINTER  :: ZDMF    ! downdraft mass flux (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZDER    ! downdraft entrainment (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZDDR    ! downdraft detrainment (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZDTHL   ! downdraft enthalpy (J/kg)
+real, DIMENSION(:,:), POINTER  :: ZDRW    ! downdraft total water (kg/kg)
+real, DIMENSION(:),   POINTER  :: ZMIXF   ! mixed fraction at LFS
+real, DIMENSION(:),   POINTER  :: ZTPR    ! total surf precipitation (kg/s)
+real, DIMENSION(:),   POINTER  :: ZSPR    ! solid surf precipitation (kg/s)
+real, DIMENSION(:),   POINTER  :: ZDTEVR  ! donwndraft evapor. (kg/s)
+real, DIMENSION(:),   POINTER  :: ZPREF   ! precipitation efficiency
+real, DIMENSION(:,:), POINTER  :: ZDTEVRF ! donwndraft evapor. (kg/s)
+real, DIMENSION(:,:), POINTER  :: ZPRLFLX ! liquid precip flux
+real, DIMENSION(:,:), POINTER  :: ZPRSFLX ! solid precip flux
 
 ! closure variables
-real, DIMENSION(:,:), ALLOCATABLE  :: ZLMASS  ! mass of model layer (kg)
-real, DIMENSION(:),   ALLOCATABLE  :: ZTIMEA  ! advective time period
-real, DIMENSION(:),   ALLOCATABLE  :: ZTIMEC  ! time during which convection is
+real, DIMENSION(:,:), POINTER  :: ZLMASS  ! mass of model layer (kg)
+real, DIMENSION(:),   POINTER  :: ZTIMEA  ! advective time period
+real, DIMENSION(:),   POINTER  :: ZTIMEC  ! time during which convection is
                                                 ! active at grid point (as ZTIME)
 
-real, DIMENSION(:,:), ALLOCATABLE  :: ZTHC    ! conv. adj. grid scale theta
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRVC    ! conv. adj. grid scale r_w
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRCC    ! conv. adj. grid scale r_c
-real, DIMENSION(:,:), ALLOCATABLE  :: ZRIC    ! conv. adj. grid scale r_i
-real, DIMENSION(:,:), ALLOCATABLE  :: ZWSUB   ! envir. compensating subsidence (Pa/s)
+real, DIMENSION(:,:), POINTER  :: ZTHC    ! conv. adj. grid scale theta
+real, DIMENSION(:,:), POINTER  :: ZRVC    ! conv. adj. grid scale r_w
+real, DIMENSION(:,:), POINTER  :: ZRCC    ! conv. adj. grid scale r_c
+real, DIMENSION(:,:), POINTER  :: ZRIC    ! conv. adj. grid scale r_i
+real, DIMENSION(:,:), POINTER  :: ZWSUB   ! envir. compensating subsidence (Pa/s)
 
-LOGICAL,   DIMENSION(:),ALLOCATABLE  :: GTRIG1  ! logical mask for convection
-LOGICAL,   DIMENSION(:),ALLOCATABLE  :: GWORK   ! logical work array
-integer, DIMENSION(:),ALLOCATABLE  :: IINDEX, IJINDEX, IJSINDEX, IJPINDEX!hor.index
+LOGICAL,   DIMENSION(:),POINTER  :: GTRIG1  ! logical mask for convection
+LOGICAL,   DIMENSION(:),POINTER  :: GWORK   ! logical work array
+integer, DIMENSION(:),POINTER  :: IINDEX, IJINDEX, IJSINDEX, IJPINDEX!hor.index
 
-real, DIMENSION(:),   ALLOCATABLE  :: ZCPH    ! specific heat C_ph
-real, DIMENSION(:),   ALLOCATABLE  :: ZLV, ZLS! latent heat of vaporis., sublim.
+real, DIMENSION(:),   POINTER  :: ZCPH    ! specific heat C_ph
+real, DIMENSION(:),   POINTER  :: ZLV, ZLS! latent heat of vaporis., sublim.
 real                               :: ZES     ! saturation vapor mixng ratio
 
 ! for U, V transport:
-real,  DIMENSION(:,:), ALLOCATABLE :: ZUC     ! horizontal wind u (m/s)
-real,  DIMENSION(:,:), ALLOCATABLE :: ZVC     ! horizontal wind v (m/s)
+real,  DIMENSION(:,:), POINTER :: ZUC     ! horizontal wind u (m/s)
+real,  DIMENSION(:,:), POINTER :: ZVC     ! horizontal wind v (m/s)
 
 ! for Chemical Tracer transport:
-real,  DIMENSION(:,:,:), ALLOCATABLE:: ZCH1    ! grid scale chemical specy (kg/kg)
-real,  DIMENSION(:,:,:), ALLOCATABLE:: ZCH1C   ! conv. adjust. chemical specy 1
-real,  DIMENSION(:,:),   ALLOCATABLE:: ZWORK3  ! work arrays
-LOGICAL, DIMENSION(:,:,:), ALLOCATABLE:: GTRIG4  ! logical mask
+real,  DIMENSION(:,:,:), POINTER:: ZCH1    ! grid scale chemical specy (kg/kg)
+real,  DIMENSION(:,:,:), POINTER:: ZCH1C   ! conv. adjust. chemical specy 1
+real,  DIMENSION(:,:),   POINTER:: ZWORK3  ! work arrays
+LOGICAL, DIMENSION(:,:,:), POINTER:: GTRIG4  ! logical mask
 
 !-------------------------------------------------------------------------------
 RHOH2O = RATM *1.E-2

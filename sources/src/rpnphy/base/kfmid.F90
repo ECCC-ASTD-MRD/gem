@@ -39,7 +39,7 @@ contains
       ! Argument declaration
       integer, intent(in) :: ix                                    !Row length
       integer, intent(in) :: kx                                    !Number of prognostic levels
-      integer, intent(in) :: kount                                 !Time step number
+      integer, intent(in) :: kount                                 !Time step number  !#TODO: never used
       real, intent(in) :: delt                                     !Time step (s)
       real, dimension(:,:), intent(in) :: tp1                      !Dry air temperature (K)
       real, dimension(:,:), intent(in) :: qp1                      !Specific humidity (kg/kg)
@@ -114,11 +114,10 @@ contains
       real, dimension(1,kx) :: pp0c,q00c,qst1c
       real, dimension(ix,kx) :: tt0,tv00,q00,u00,v00,wz0,dzp,dpp,qst1,  &
            pp0,z0g,sigkfc,ql0,qi0,thv0,areaup
-      logical :: need_buoyancy_sorting,need_above_let,need_mixing,      &
-           found_unstable_parcel
-      character(len=8) :: cdmf
-      character(len=2) :: cderl,cderr,cddrl,cddrr
-      character(len=512) :: clfs
+      logical :: need_buoyancy_sorting,need_above_let,need_mixing
+!!$      character(len=8) :: cdmf
+!!$      character(len=2) :: cderl,cderr,cddrl,cddrr
+!!$      character(len=512) :: clfs
 
       ! External subprograms
       external tpmix

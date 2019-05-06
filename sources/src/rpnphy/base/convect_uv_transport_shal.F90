@@ -5,7 +5,7 @@
                                  & PTIMEC, PDXDY, PLMASS, PWSUB,     &
                                  & KFTSTEPS, PTIMC, ITSTEP,GWORK1 ) 
 !#######################################################################
-
+!#TODO: never used: PTIMEC, KFTSTEPS
 !!**** Compute  modified horizontal wind components due to convective event
 !!
 !!
@@ -95,7 +95,7 @@ integer :: IKS            ! vertical dimension
 integer :: JI             ! horizontal loop index
 integer :: JK, JKP        ! vertical loop index
 integer :: JSTEP          ! fractional time loop index
-integer :: JKLD, JKLP, JKMAX ! loop index for levels
+integer :: JKLD, JKLP ! loop index for levels
 
 integer, PARAMETER             :: IUV = 2    ! for u and v
 real, DIMENSION(KLON,KLEV)     :: ZOMG       ! compensat. subsidence (Pa/s)
@@ -104,9 +104,6 @@ real, DIMENSION(KLON)          :: ZTIMEC     ! fractional convective time step
 real, DIMENSION(KLON,KLEV,IUV) :: ZUVMFIN, ZUVMFOUT
                                    ! work arrays for environm. compensat. mass
 real, DIMENSION(KLON,IUV)      :: ZWORK1, ZWORK2, ZWORK3
-
-integer, DIMENSION(KLON)  :: ICOUNT    ! timestep counter
-LOGICAL, DIMENSION(KLON)  :: GWORK3      
 
 !-------------------------------------------------------------------------------
 

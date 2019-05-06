@@ -17,6 +17,7 @@
 !
       SUBROUTINE RIGRAD1(RI,GAMA,GAMAQ,TBL,DUDZ2,T,TVE,Q,QE, &
                          SIGMA, SE, WW,  N, M, NK )
+!#TODO: SE never used
       use tdpack
       implicit none
 #include <arch_specific.hf>

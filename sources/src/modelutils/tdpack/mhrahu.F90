@@ -24,7 +24,7 @@
       Real hu(ni,nk), hr(ni,nk), tt(ni,nk)
       Real ps(ni,*)
 !
-      Logical swtt, swph
+      Logical swph
 !
 !Author
 !          N. Brunet  (Jan91)

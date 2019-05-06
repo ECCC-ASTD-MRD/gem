@@ -17,6 +17,7 @@
 !*@/
 SUBROUTINE OZOREF2(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT, &
            PREF,F)
+!#TODO: PREF never used
    use tdpack, only: PI
    implicit none
 #include <arch_specific.hf>

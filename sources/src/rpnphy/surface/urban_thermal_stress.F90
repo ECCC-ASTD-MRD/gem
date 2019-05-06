@@ -67,8 +67,8 @@ REAL, DIMENSION(:), INTENT(IN)  :: PT_CAN  ! Air canyon temperature (K)
 REAL, DIMENSION(:), INTENT(IN)  :: PTA     ! Air temperature above the roof (K)  
 REAL, DIMENSION(:), INTENT(IN)  :: PTI_BLD ! Indoor air temperature (K) 
 
-REAL, DIMENSION(:), INTENT(INout)  :: PQ_CAN  ! Canyon specific humidity (kg/kg)
-REAL, DIMENSION(:), INTENT(INout)  :: PQA     ! Air specific humidity over the roof (kg/kg)
+REAL, DIMENSION(:), INTENT(IN)  :: PQ_CAN  ! Canyon specific humidity (kg/kg)
+REAL, DIMENSION(:), INTENT(IN)  :: PQA     ! Air specific humidity over the roof (kg/kg)
 REAL, DIMENSION(:), INTENT(IN)  :: PQI_BLD ! Indoor specific humidity (kg/kg) 
 
 REAL, DIMENSION(:), INTENT(IN)  :: PPA     
@@ -156,12 +156,12 @@ REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ11_G
 REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ12_G
 REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ13_G
 !
-REAL :: ZEB_G = 0.957 !emissivity of a globe sensor          WBGT                  
-REAL :: ZEB_H = 0.97  !emissivity of clothed human body      UTCI                 
+REAL :: ZEB_G = 0.957 !emissivity of a globe sensor          WBGT
+REAL :: ZEB_H = 0.97  !emissivity of clothed human body      UTCI
 REAL :: ZAB_H = 0.7   !absorption coef of solar radiation by human body        UTCI
 REAL :: ZAB_G = 0.957 !absorption coef of solar radiation by globe sensor      WBGT
 REAL :: ZHB_H = 1.7  !average height of human person (m)                       UTCI & WBGT
-REAL :: ZHB_G=  2.5  !average height of the globe sensor
+!!$REAL :: ZHB_G=  2.5  !average height of the globe sensor
 REAL :: ZGD = 0.148  ! black globe sensor diameter in m (value given by Matt Wright for PanAm2015)
 INTEGER :: ZOPT
 INTEGER :: ZOPT_BODY

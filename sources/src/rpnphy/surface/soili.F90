@@ -92,7 +92,7 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
    real LAMI, CI, DAY, WCRN, BETAS, Z0SNOW
    real LAMTYP, LAMW, CW
    real, dimension(n) :: LAMS, CW1MAX, ETA, WMAX, SIGSQUARE, BETA, &
-        X, CTYP, LAMC, CGCOR, Z0_PSNV
+        X, Z0_PSNV
 
    !***********************************************************************
    !  Define some constants for the ice

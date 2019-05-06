@@ -27,7 +27,7 @@ contains
   !/@*
   function phy_restart (F_WorR_S, F_spin_L) result(F_istat)
     implicit none
-    
+ !#TODO: F_spin_L never used
     character(len=*),intent(in) :: F_WorR_S
     logical,         intent(in) :: F_spin_L    
     integer :: F_istat  !Return status (RMN_OK or RMN_ERR)

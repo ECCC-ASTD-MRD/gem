@@ -219,7 +219,7 @@
 
          call gemtime_stop (25)
 
-        if (Grd_yinyang_L) then
+         if (Grd_yinyang_L) then
             call yyg_xchng_vec_uv2uv (ut0, vt0,&
                                       l_minx,l_maxx,l_miny,l_maxy,G_nk)
 
@@ -229,16 +229,18 @@
                             G_nk, .false., 'CUBIC', .false.)
             call yyg_xchng (st0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                             1,    .false., 'CUBIC', .false.)
-            if (.not.Dynamics_hydro_L) &
-            call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                            G_nk+1, .false., 'CUBIC', .false.)
+            if (.not.Dynamics_hydro_L) then
+               call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
+                               G_nk+1, .false., 'CUBIC', .false.)
+            end if
         end if
 
       end do
 
-      if (Grd_yinyang_L) &
+      if (Grd_yinyang_L) then
          call yyg_xchng (wt0, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                          G_nk, .false., 'CUBIC', .false.)
+      end if
 
 !     ---------------------------------------------------------------
 !

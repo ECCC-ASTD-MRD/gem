@@ -112,7 +112,7 @@
       outiter = 0
       nbiter = 0
 
-      conv = 1.d0
+      conv = 0.d0
 
       ! Residual of the initial iterate
       call matvec(solution, work_space, level)
@@ -225,7 +225,7 @@
             deallocate ( v_local_prod, v_prod)
 
             rr(initer,initer) = sqrt( rr(initer,initer) )
-            vv(:, :, initer)  = vv(:, :, initer) / rr(initer,initer)
+            vv(i0:in, j0:jn, initer)  = vv(i0:in, j0:jn, initer) / rr(initer,initer)
 
             rr(initer,nextit) = rr(initer,nextit) / rr(initer,initer)
 

@@ -17,6 +17,7 @@
       SUBROUTINE SETVIS3(DSIG,DSH,DSC,DZ,RMUO,QOZSTP, &
                          SIG, T, PSOL, QOZ, XLAT, XLON, HZ, DAYOFYEAR, &
                          LMX, LEV, M, SATUCO)
+!#TODO: SATUCO never used
       implicit none
 #include <arch_specific.hf>
 !

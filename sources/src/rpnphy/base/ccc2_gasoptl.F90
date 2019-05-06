@@ -33,7 +33,7 @@
       real CAN2O,CRMCO2
       integer inptr(ilg,lay), inpt(ilg,lay)
       logical gh
-      integer init1,init2
+      integer init2
 !
 !
 !Authors
@@ -123,7 +123,7 @@
       integer k, i, lc
       real fact
 
-      data init1,init2 /1,2/
+      data init2 /2/
 !
       if (ib .eq. 1)                                                then
 !

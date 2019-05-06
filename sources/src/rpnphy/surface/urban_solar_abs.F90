@@ -250,11 +250,11 @@ REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIR_SW_ROAD  ! direct radiation reaching
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIR_SW_WALL  ! road and wall
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZSCA_SW_ROAD  ! diffuse radiation reaching
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZSCA_SW_WALL  ! road and wall
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZROOF_SW   ! roof, wall and
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZWALL_SW   ! road fractions of SW
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZROAD_SW   ! interacting surf.
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIR_SW_UP ! upward solar rad.
-REAL, DIMENSION(SIZE(PDIR_SW)) :: ZSCA_SW_UP ! from direct or diffuse rad.
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZROOF_SW   ! roof, wall and
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZWALL_SW   ! road fractions of SW
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZROAD_SW   ! interacting surf.
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIR_SW_UP ! upward solar rad.
+!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZSCA_SW_UP ! from direct or diffuse rad.
 !
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZABS_DIR_SW_ROOF      ! solar radiation
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZABS_DIR_SW_ROAD      ! absorbed by roofs,

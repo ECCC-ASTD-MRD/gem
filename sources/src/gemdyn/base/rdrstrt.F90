@@ -23,6 +23,7 @@
       use lun
       use psadjust
       use wb_itf_mod
+      use adz_BC_deficit
       implicit none
 #include <arch_specific.hf>
 
@@ -35,6 +36,7 @@
       rewind (Lun_rstrt)
       read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
       read (Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
+      read (Lun_rstrt) KEEP_mass_deficit_8(1:MAXTR3D_),tracer_name(1:MAXTR3D_)
 
       close(Lun_rstrt)
       call fclos(Lun_rstrt)

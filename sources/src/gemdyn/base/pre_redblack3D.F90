@@ -222,7 +222,8 @@ contains
                ! Finally, we can define iteration bounds on the colour array, by transforming to the global
                ! colour index [(i + di_0-1)/2] and back
                cimin = (1+sol_pil_w+ioffset+di_0)/2 - cgi_0 + 1
-               cimax = (l_ni-sol_pil_e+di_0)/2 - cgi_0 + 1
+               ! Calculate the maximum by counting the number of black points along the line
+               cimax = ((l_ni-sol_pil_e) - (1+sol_pil_w+ioffset))/2 + cimin
                do ci = cimin, cimax
                   i = 2*(ci + cgi_0 - 1) - di_0 + 1
                   rhs_black(ci,j,k) = Rhs(i,j,k) - mat_black(ci,j,k,IDX_WEST)*lhs_red_halo(ci,j,k) &
@@ -243,7 +244,7 @@ contains
 
                ! And the iteration bounds on the colour array are
                cimin = (1+sol_pil_w+ioffset+di_0)/2 - cgi_0 + 1
-               cimax = (l_ni-sol_pil_e+di_0)/2 - cgi_0 + 1
+               cimax = ((l_ni-sol_pil_e) - (1+sol_pil_w+ioffset))/2 + cimin
                do ci = cimin, cimax
                   i = 2*(ci + cgi_0 - 1) - di_0
                   rhs_black(ci,j,k) = Rhs(i,j,k) - mat_black(ci,j,k,IDX_WEST)*lhs_red_halo(ci-1,j,k)  &

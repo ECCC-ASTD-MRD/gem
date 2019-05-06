@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -39,14 +39,13 @@ contains
       !@returns
       integer :: F_istat
       !*@/
-      integer :: istat
       !---------------------------------------------------------------
       F_istat = RMN_OK
       series_paused_L = .true.
 
       !#TODO: Append doesn't seem to work, only close at the end
 !!$      if (series_fileid /= -1) then
-!!$         call msg(MSG_INFO, PKGNAME_S//'Close time series file')         
+!!$         call msg(MSG_INFO, PKGNAME_S//'Close time series file')
 !!$         istat = fclos(series_fileid)
 !!$         series_fileid = -1
 !!$      endif
@@ -67,7 +66,7 @@ contains
       !---------------------------------------------------------------
       return
    end function series_resume
-   
+ 
 
    !/@*
    function series_terminate() result(F_istat)
@@ -84,7 +83,7 @@ contains
 !!$           call series_write(FORCE_L)
 
       if (series_fileid /= -1) then
-         call msg(MSG_INFO, PKGNAME_S//'Close time series file')         
+         call msg(MSG_INFO, PKGNAME_S//'Close time series file')
          istat = fclos(series_fileid)
          series_fileid = -1
       endif

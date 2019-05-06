@@ -77,7 +77,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level 
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
    real, dimension(n) :: my_ta, my_qa
-   real, dimension(n) :: zusurfzt, zvsurfzt
+   real, dimension(n) :: zusurfzt, zvsurfzt, zqd
 
    real,pointer,dimension(:) :: al, albsfc, cmu, ctu, fc_glac
    real,pointer,dimension(:) :: fsol, fv_glac, zemisr
@@ -545,29 +545,36 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
             return
          endif
 
-         do I=1,N
+         do i=1,N
+
             if (abs(zzusl(i)-zu) <= 2.0) then
                zu10(i) = sqrt(uu(i)**2+vv(i)**2)
             else
                zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
             endif
 
-            ! wind  at SensoR level
-            zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
-            ! zusr(i) = zu10(i)
+            ! wind  at SensoR level zusr at z=zt
+            if( (abs(zusurfzt(i)) >= 0.1) .and. (abs(zvsurfzt(i)) >= 0.1)) then
+               zusr(i) = sqrt( zusurfzt(i)**2 + zvsurfzt(i)**2)
+            else
+               zusr(i) = zu10(i)
+            endif
 
-            zref_sw_surf(i) = albsfc(I) * fsol(i)
+            zqd(i) =  max(ZQDIAG(i) , 1.e-6)
+
+            zref_sw_surf(i) = albsfc(i) * fsol(i)
             zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsurf(i)**4
 
             zzenith(i) = acos(zcoszeni(i))
-            if (fsol(I) > 0.0) then
+            if (fsol(i) > 0.0) then
                zzenith(i) = min(zzenith(i), pi/2.)
             else
                zzenith(i) = max(zzenith(i), pi/2.)
             endif
+
          end do
 
-         call SURF_THERMAL_STRESS(ZTDIAG, ZQDIAG,         &
+         call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
               ZU10,ZUSR,  ps,                             &
               ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
               ZREF_SW_SURF,ZEMIT_LW_SURF,                 &

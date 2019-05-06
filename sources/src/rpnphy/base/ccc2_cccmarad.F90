@@ -128,8 +128,7 @@ contains
 
       integer*8 :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
       real*8 :: hz_8
-      real :: hz, hzp, ptopoz, alwcap, fwcap, albrmu
-!!$      real :: ptop
+      real :: hz, ptopoz, alwcap, fwcap, albrmu
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
       logical :: lcsw, lclw, aerosolback,thisstepisrad,nextstepisrad
       integer :: il1, il2

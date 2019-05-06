@@ -71,7 +71,7 @@ subroutine sfc_businit(moyhr,ni,nk)
         snoagen, snoalen, snoma, snoro, stomr, tsoil, vegf, &
         vegfrac, wfc, wsat, wsnow, wveg, wwilt
    integer :: cgsat, dsst, dtdiag, glacier, glsea0, &
-        icedp, sfcwgt, skin_depth, skin_inc, snoal, snoden, &
+        icedp, skin_depth, skin_inc, snoal, snoden, &
         snodp, tglacier, tmice, tnolim, &
         twater, urban, &
         yradsun, yradshade, yutcisun, yutcishade, &

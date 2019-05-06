@@ -45,7 +45,7 @@
 
       call grid_area_mask (geomh_area_8, geomh_mask_8, l_ni, l_nj)
 
-      call adv_check_tracers()
+      call adz_check_tracers()
 !
 !     ---------------------------------------------------------------
 !

@@ -23,6 +23,7 @@ contains
 
    !/@*
    subroutine diagnosurf5(ni, nk, trnch, kount)
+!#TODO: nk, kount never used
       use series_mod, only: series_xst, series_isstep, series_isvar
       use sfc_options
       use sfcbus_mod

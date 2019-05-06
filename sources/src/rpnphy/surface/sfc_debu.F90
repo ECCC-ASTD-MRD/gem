@@ -43,5 +43,6 @@ function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
    !---------------------------------------------------------------------
    !#TODO: remove this useless step
    F_istat = iniptsurf4(p_ni,p_nk)
+   if (p_ni<0) print *,'sfc_init: ',p_ni,p_nj,p_nk
    !----------------------------------------------------------------------
 end function sfc_init

@@ -31,7 +31,9 @@ integer function chm_nml (F_namelist,lun_out)
 !
    character* (*), intent(in) :: F_namelist
    integer,        intent(in) :: lun_out
-   
+ 
    chm_nml = 1
-   
+ 
+   if (F_namelist == '' .and. lun_out >= 0) print *,'Called chm_nml stub with:', F_namelist, lun_out
+
 end function chm_nml

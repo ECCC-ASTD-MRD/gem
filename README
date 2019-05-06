@@ -12,6 +12,7 @@ To compile and run GEM, you will need:
 - MPI/OpenMPI library (with development package),
 - BLAS library (with development package),
 - LAPACK library (with development package),
+- FFTW library (with development package),
 - basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
 Install GEM:

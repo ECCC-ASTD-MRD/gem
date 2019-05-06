@@ -4,6 +4,7 @@
                                  & PUMF, PUER, PUDR, PDMF, PDER, PDDR,      &
                                  & PTIMEC, PDXDY, PMIXF, PLMASS, PWSUB,     &
                                  & KFTSTEPS, PTIMC, ITSTEP,GWORK1 ) 
+!#TODO: never used: PTIMEC
 !#######################################################################
 
 !!**** Compute  modified horizontal wind components due to convective event

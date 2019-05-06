@@ -83,7 +83,7 @@
 
 !
 
-      integer i,j,ier
+      integer ier
       real    xlat1,xlon1,xlat2,xlon2
       real    xlatgf,xlongf,uvcart,xyz
 

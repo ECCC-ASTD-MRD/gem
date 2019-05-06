@@ -81,10 +81,10 @@ contains
       !*@/
       real, parameter :: WEIGHT_BM=0.5
 
-      integer j,k,typet,typem,ierror
-      real dq,rhortvsg,mrhocmu,localstefan
+      integer j,k,typet,typem
+      real rhortvsg,mrhocmu,localstefan
       real tplusnk,qplusnk,uplusnk,vplusnk
-      real maximum, minimum, rsg,du,dv,dsig
+      real rsg,du,dv,dsig
 
 #include "phymkptr.hf"
       include "surface.cdk"

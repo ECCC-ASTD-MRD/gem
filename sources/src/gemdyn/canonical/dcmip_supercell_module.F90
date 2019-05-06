@@ -373,7 +373,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Evaluate the supercell initial conditions
 !-----------------------------------------------------------------------
-  SUBROUTINE supercell_test(lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,t,tv,thetav,ps,rho,q,pert,thbase) &
+  SUBROUTINE supercell_test(lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,t,tv,thetav,ps,rho,q,pert,thbase) &
     BIND(c, name = "supercell_test")
 
     IMPLICIT NONE
@@ -384,6 +384,7 @@ CONTAINS
     REAL(8), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
+                Ver_z,      & ! Ver_z_8 GEM
                 Ver_a,      & ! Ver_a_8 GEM
                 Ver_b,      & ! Ver_b_8 GEM
                 pref          ! Cstv_pref_8 GEM
@@ -445,7 +446,15 @@ CONTAINS
 
     st1 = log(ps/pref)
 
-    if (zcoords == 0) p = exp(Ver_a + Ver_b*st1)
+    if (zcoords == 1) then
+
+       z = Ver_z
+
+    else
+
+       p = exp(Ver_a + Ver_b*st1)
+
+    end if
 
     ! Calculate dependent variables
     if (zcoords == 1) then
