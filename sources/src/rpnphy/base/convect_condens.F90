@@ -3,7 +3,7 @@
                             &  KICE, PPRES, PTHL, PRW, PRCO, PRIO, PZ, OWORK1, &
                             &  PT, PEW, PRC, PRI, PLV, PLS, PCPH   )
 !     ##########################################################################
-
+!#TODO: never used OWORK1
 !!**** Compute temperature cloud and ice water content from enthalpy and r_w
 !!
 !!

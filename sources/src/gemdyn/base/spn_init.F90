@@ -15,7 +15,7 @@
 
 !*s/r spn_init - initialize spectral nudging profile, filter
 
-      subroutine spn_init
+      subroutine spn_init()
       use spn_work_mod
       use HORgrid_options
       use spn_options
@@ -36,35 +36,16 @@
 ! v4_80 - Baek - correction for NK
 
 
-      integer i,j,k,err1,next_down
-      real t_turn, b_turn, pi2, nudging_tau
+      integer :: k,err1
+      real :: t_turn, b_turn, pi2, nudging_tau
 !
 !----------------------------------------------------------------------
 !
       if ( Grd_yinyang_L .or. (Spn_nudging_S == ' ') ) return
 
-      err1= 0
+      err1 = 0
 
-      i = G_ni-Lam_pil_w-Lam_pil_e
-      call itf_fft_nextfactor2 ( i, next_down )
-      if ( i /= G_ni-Lam_pil_w-Lam_pil_e ) then
-         if (Lun_out > 0) write (Lun_out,3001) &
-         'G_ni',G_ni-Lam_pil_w-Lam_pil_e,i,next_down
-         err1= -1
-      end if
-
-      j = G_nj-Lam_pil_s-Lam_pil_n
-      call itf_fft_nextfactor2 ( j, next_down )
-      if ( j /= G_nj-Lam_pil_s-Lam_pil_n ) then
-         if (Lun_out > 0) write (Lun_out,3001) &
-         'G_nj',G_nj-Lam_pil_s-Lam_pil_n,j,next_down
-         err1= -1
-      end if
-
-      if (err1 < 0) call gem_error (-1, 'spn_init', &
-            'Grid configuration not suited for spectral nudging')
-
-      pi2 = atan( 1.0_8 )*2.
+      pi2 = atan( 1.d0 )*2.d0
 
       call up2low( Spn_nudging_S, Spn_nudging_S )
       call low2up( Spn_trans_shape_S, Spn_trans_shape_S )

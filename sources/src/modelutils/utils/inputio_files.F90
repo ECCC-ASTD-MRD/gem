@@ -16,7 +16,7 @@
 !/@
 module inputio_files_mod
    use fstmpio_mod
-   use ptopo_utils, only: PTOPO_IO !#TODO: , PTOPO_BLOC
+   use ptopo_utils, only: PTOPO_IODIST !#TODO: , PTOPO_BLOC
    implicit none
    private
    !@objective
@@ -55,7 +55,7 @@ module inputio_files_mod
    type :: INPUTIO_FILES_T
       logical :: init_L = .false.
       character(len=1024) :: basedir_S
-      integer :: iotype = PTOPO_IO
+      integer :: iotype = PTOPO_IODIST
       integer :: nfiles = 0
       type(INFILE_T) :: files(INPUT_FILES_NMAX)
    end type INPUTIO_FILES_T
@@ -197,7 +197,7 @@ contains
       !----------------------------------------------------------------------
       return
    end function inputio_files_set_basedir
- 
+
 
    !/@*
    function inputio_files_get_idx(F_inputobj, F_name_S) result(F_fileidx)
@@ -378,7 +378,7 @@ contains
       if (F_inputobj%init_L) return
       call msg(MSG_DEBUG, '(inputio_files) init [BEGIN]')
       F_inputobj%init_L = .true.
-      F_inputobj%iotype = PTOPO_IO
+      F_inputobj%iotype = PTOPO_IODIST
       F_inputobj%nfiles = 0
       F_inputobj%basedir_S = '.'
       do ifile=1, INPUT_FILES_NMAX

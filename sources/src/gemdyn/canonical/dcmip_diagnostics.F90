@@ -17,7 +17,7 @@
 
       subroutine dcmip_diagnostics (F_my_step)
 
-      use adv_options
+      use adz_options
       use canonical
       use dcmip_options
       use gmm_vt1
@@ -66,7 +66,7 @@
 
       !---------------------------------------------------------------
 
-      if (Adv_verbose==0) return
+      if (adz_verbose == 0) return
 
       if (.NOT.(Dcmip_case>=11.and.Dcmip_case<=13).and.Dcmip_case/=161.and.Dcmip_case/=163) return
 

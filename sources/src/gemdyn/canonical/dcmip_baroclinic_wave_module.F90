@@ -100,7 +100,7 @@ CONTAINS
 !=======================================================================
 !    Generate the baroclinic instability initial conditions
 !=======================================================================
-  SUBROUTINE baroclinic_wave_test(deep,moist,pertt,X,lon,lat,p,z,zcoords,Ver_a,Ver_b,pref,u,v,t,tv,thetav,phis,ps,rho,q) &
+  SUBROUTINE baroclinic_wave_test(deep,moist,pertt,X,lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,u,v,t,tv,thetav,phis,ps,rho,q) &
     BIND(c, name = "baroclinic_wave_test")
 
     IMPLICIT NONE
@@ -117,6 +117,7 @@ CONTAINS
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 X,          & ! Earth scaling parameter
+                Ver_z,      & ! Ver_z_8 GEM
                 Ver_a,      & ! Ver_a_8 GEM
                 Ver_b,      & ! Ver_b_8 GEM
                 pref          ! Cstv_pref_8 GEM
@@ -152,7 +153,11 @@ CONTAINS
     !   Pressure and temperature
     !------------------------------------------------
     if (zcoords == 1) then
+
+      z = Ver_z
+
       CALL evaluate_pressure_temperature(deep, X, lat, z, p, t)
+
     else
 
       st1 = log(p0/pref) !SAME definition of ps as defined below

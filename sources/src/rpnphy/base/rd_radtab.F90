@@ -42,7 +42,7 @@
 #include "radiation.cdk"
 #include "ozopnt.cdk"
 !
-      integer i,ilir,inbr,mi,mj,mk,code
+      integer ilir,inbr,mi,mj,mk,code
       integer fstinf,fstlir
 !
 !-----------------------------------------------------------------

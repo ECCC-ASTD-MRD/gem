@@ -59,14 +59,6 @@ module init_options
    namelist /init/ Iau_ninblocy
    namelist /init_p/ Iau_ninblocy
 
-   !# IAU Input TYPE
-   !# * 'OLD ' : GEM 4.8 physic's input, MPI blocking based
-   !# * 'IO  ' : new input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based
-   !# * 'BLOC' : new input system, RPN_COMM_bloc based
-   character(len=16) :: Iau_input_type_S = 'OLD'
-   namelist /init/ Iau_input_type_S
-   namelist /init_p/ Iau_input_type_S
-
    !# IAU Input Stats
    logical :: Iau_stats_L = .false.
    namelist /init/ Iau_stats_L

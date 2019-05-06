@@ -1159,7 +1159,7 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer :: istat, lijk(3), uijk(3)
+      integer :: istat
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (associated(F_data)) then

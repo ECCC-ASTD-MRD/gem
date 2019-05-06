@@ -17,13 +17,13 @@
                             lwc, iwc, aird, &
                             cloud, mg, ml, &
                             lmx, nk)
-!
+!#TODO: never used: cloud
       implicit none
 #include <arch_specific.hf>
 !
 #include "nbsnbl.cdk"
 !
-      integer lmx, m, nk, ioptrew
+      integer lmx, nk, ioptrew
       real cloud(lmx,nk), mg(lmx), ml(lmx)
       real lwc(lmx,nk), iwc(lmx,nk)
       real aird(lmx,nk)
@@ -61,9 +61,9 @@
 !
 
 !
-      integer i, j, k
+      integer i, k
       real rec_grav
-      real cut, zrieff(lmx,nk), zrieff_vs(lmx,nk), third
+      real zrieff(lmx,nk), zrieff_vs(lmx,nk), third
       real epsilon,epsilon2,betan,betad
       real rec_cdd(lmx,nk), vs1(lmx,nk)
 !

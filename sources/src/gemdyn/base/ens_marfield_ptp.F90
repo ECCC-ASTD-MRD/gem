@@ -376,7 +376,7 @@
          end do
 
          call itf_fft_set(nlon,'PERIODIC',pri_8)
-         call ffft8(wrk1,1,nlon+2,nlat,1)
+         call itf_fft_drv(wrk1,1,nlon+2,nlat,1)
 
          n=0
          do j=1,nlat

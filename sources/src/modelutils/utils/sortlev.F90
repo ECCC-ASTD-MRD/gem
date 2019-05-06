@@ -21,7 +21,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      integer NK, LV,F_ip1(LV),LVO
+      integer LV,F_ip1(LV),LVO
       real F_rna(LV)
 !
 !REVISION

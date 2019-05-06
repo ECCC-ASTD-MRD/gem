@@ -169,7 +169,7 @@ REAL, DIMENSION(SIZE(PTA)) :: ZWAKE        ! reduction of average wind speed
                                            ! in canyon due to direction average.
 REAL, DIMENSION(SIZE(PTA)) :: ZW_CAN       ! ver. wind in canyon
 REAL, DIMENSION(SIZE(PTA)) :: ZRI          ! Richardson number
-REAL, DIMENSION(SIZE(PTA)) :: ZCDN         ! neutral drag coefficient
+!!$REAL, DIMENSION(SIZE(PTA)) :: ZCDN         ! neutral drag coefficient
 REAL, DIMENSION(SIZE(PTA)) :: ZLE_MAX      ! maximum latent heat flux available
 REAL, DIMENSION(SIZE(PTA)) :: ZLE          ! actual latent heat flux
 !
@@ -179,7 +179,7 @@ INTEGER                   ::  JLOOP, STAT      !!
 !
 REAL,DIMENSION(SIZE(PTA)) :: cmu, ctu, ue, fcor                  ! temp var for sfc layer
 REAL,DIMENSION(SIZE(PTA)) :: z0h_roof,z0h_town,z0h_road,z0h_can  ! local thermal roughness
-REAL,DIMENSION(SIZE(PTA)) :: ztemp  ! temporary array for -not used- diagnostic var (to avoid print in the listing)
+!!$REAL,DIMENSION(SIZE(PTA)) :: ztemp  ! temporary array for -not used- diagnostic var (to avoid print in the listing)
 real,    parameter :: XZT = 2.5  ! height for diag calc. different from zt
 
 INTEGER N

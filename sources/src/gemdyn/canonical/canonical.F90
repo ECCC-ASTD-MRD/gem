@@ -26,6 +26,7 @@ module canonical
 !--------------------|-------------------------------------------------|
 ! pth                | Perturbation real potential temperature         |
 ! thbase             | Basic potential temperature                     |
+! thfull             |  Full potential temperature                     |
 ! dtv                | Perturbation: Virtual temperature - Tstar       |
 !----------------------------------------------------------------------|
 ! cly                | cl + 2*cl2                                      |
@@ -61,6 +62,7 @@ module canonical
 !
       real, pointer, dimension (:,:,:) :: pth   => null()
       real, pointer, dimension (:,:,:) :: thbase=> null()
+      real, pointer, dimension (:,:,:) :: thfull=> null()
       real, pointer, dimension (:,:,:) :: dtv   => null()
 
       real, pointer, dimension (:,:,:) :: cly  => null()
@@ -96,7 +98,7 @@ module canonical
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_pth_s, gmmk_thbase_s, gmmk_dtv_s, &
+      character(len=MAXNAMELENGTH) :: gmmk_pth_s, gmmk_thbase_s, gmmk_thfull_s, gmmk_dtv_s, &
                                 gmmk_cly_s, gmmk_acl_s, gmmk_acl2_s, gmmk_acly_s, &
                                 gmmk_irt_s, gmmk_art_s, gmmk_wrt_s, &
                                 gmmk_uref_s, gmmk_vref_s, gmmk_wref_s, gmmk_zdref_s, &

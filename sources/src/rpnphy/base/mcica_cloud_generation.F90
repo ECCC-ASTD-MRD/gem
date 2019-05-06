@@ -128,8 +128,7 @@
       LOGICAL :: &
        L_TOP, &
        L_BOT, &
-       L_CLD(ILG), &
-       L_CLDSUB(ILG)
+       L_CLD(ILG)
 
 ! Initialize the arrays
 
@@ -447,21 +446,12 @@
        ROG                     ! Total gas constant/gravity
 
       REAL :: &
-       DMULT, &
-       Q_TOT
-
-      REAL :: &
-       X1(ILG)
+       DMULT
 
       REAL :: &
        QI_PROF(ILG,LAY), &
        QC_PROF(ILG,LAY), &
-       ZM(ILG,LAY), &
-       DZ(ILG,LAY)
-
-      INTEGER :: &
-       K, &
-       IND1
+       ZM(ILG,LAY)
 
 ! Zero out fields
       DO IL = IL1,IL2

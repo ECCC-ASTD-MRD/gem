@@ -207,7 +207,7 @@
          call hwnd_stag(phy_uu_tend,phy_vv_tend,tdu,tdv,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
          istat = gmm_get(gmmk_tt1_s, tt1)
-         call tt2virt2 (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         call tt2virt (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
          phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
 
          phy_uu_tend = phy_uu_tend/Cstv_dt_8
@@ -250,7 +250,7 @@
 
       if (cnt > 0) then
          istat = gmm_get(gmmk_tt1_s, tt1)
-         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
          if (Grd_yinyang_L) then
             call yyg_xchng (tt1, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
                             G_nk, .false., 'CUBIC', .false.)

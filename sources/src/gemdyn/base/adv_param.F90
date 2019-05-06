@@ -14,22 +14,20 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
       subroutine adv_param ()
-      use glb_ld
-      use ver
       use adv_grid
       use adv_interp
-      use outgrid
+      use glb_ld
+      use ver
       implicit none
 #include <arch_specific.hf>
 
-   !@objective set 1-D interpolation
-   !@author  alain patoine
-   !@revisions Rabah Aider   august 2017
-   !*@/
+   ! objective set 1-D interpolation
+   !
+   ! Rabah Aider   august 2017
 
       real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0
       integer :: i, j, k, i0, j0, k0, pnx, pny
-      real*8 :: sig,ra,rb,rc,rd,rx,re
+      real*8 :: ra,rb,rc,rd,rx,re
       real*8 :: prhxmn, prhymn, prhzmn, pdfi
       real*8 :: whx(G_ni+2*adv_halox)
       real*8 :: why(G_nj+2*adv_haloy)

@@ -32,7 +32,7 @@
       REAL QC(N)
       REAL QFIX(N)
 
-      REAL X,TVK,TVN,TVBAR,GAMAA,GAMAV,GAMAVS,FAC,DZ,DLNP
+      REAL X,TVK,TVN,TVBAR,GAMAA,GAMAV,GAMAVS,FAC,DZ
       REAL BETA,GAMAS,AA,RGASD_OV_GRAV,GRAV_OV_CPD
 !***********************************************************************
 !     AUTOMATIC ARRAYS

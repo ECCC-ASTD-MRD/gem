@@ -24,14 +24,17 @@
       use gmm_pw
       use gmm_itf_mod
       use rstr
+      use tr3d
       implicit none
 
 #include "gmm_gem_flags.hf"
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
+      include "tricublin_f90.inc"
+
       integer  j, k, k0, BCS_BASE, pnz, ext
       real*8, parameter :: EPS_8= 1.D-5
-      real*8 :: ra,rb,rc,rd
+      real :: verysmall
       real*16 :: smallest_dz,posz
 
       type(gmm_metadata) :: meta, mymeta
@@ -78,7 +81,17 @@
       if(Lam_gbpil_t > 0) Adz_k0t= Adz_k0 - 1
       Adz_k0m= max(Adz_k0t-2,1)
 
+      Adz_num_u= (Adz_inu-Adz_i0u+1)*(Adz_jn -Adz_j0 +1)*(l_nk-Adz_k0 +1)
+      Adz_num_v= (Adz_in -Adz_i0 +1)*(Adz_jnv-Adz_j0v+1)*(l_nk-Adz_k0 +1)
+      Adz_num_q= (Adz_in -Adz_i0 +1)*(Adz_jn -Adz_j0 +1)*(l_nk-Adz_k0 +1)
+      Adz_num_t= (Adz_in -Adz_i0 +1)*(Adz_jn -Adz_j0 +1)*(l_nk-Adz_k0t+1)
+
       Adz_kkmax= l_nk-2
+
+      Adz_cpntr_q= vsearch_setup_plus(Ver_z_8%m(1:G_nk), G_nk,&
+                                 Adz_nit,Adz_njt,1-l_i0,1-l_j0)
+      Adz_cpntr_t= vsearch_setup_plus(Ver_z_8%t(1:G_nk), G_nk,&
+                                 Adz_nit,Adz_njt,1-l_i0,1-l_j0)
 
       BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
@@ -94,33 +107,44 @@
 
       allocate (  Adz_delz_m(0:l_nk),  Adz_delz_t(0:l_nk), &
                  Adz_odelz_m(0:l_nk), Adz_odelz_t(0:l_nk) )
+
+! Vert coord: sig= 1.d0 for P coord, sig= -1.d0 for H coord
+      sig=       (Ver_z_8%m(l_nk)-Ver_z_8%m(1)) / &
+            ( abs(Ver_z_8%m(l_nk)-Ver_z_8%m(1)) )
+
+      Adz_delz_m= 9.e33 ; Adz_delz_t= 9.e33
+      verysmall= tiny(verysmall)*1.e5
       do k = 0,l_nk
          kp1 = k+1
-         Adz_delz_m (k) = Ver_z_8%m(kp1)-Ver_z_8%m(k)
-         Adz_delz_t (k) = Ver_z_8%t(kp1)-Ver_z_8%t(k)
+         if (abs(Ver_z_8%m(kp1)-Ver_z_8%m(k))>verysmall) &
+         Adz_delz_m(k) = Ver_z_8%m(kp1)-Ver_z_8%m(k)
+         if (abs(Ver_z_8%t(kp1)-Ver_z_8%t(k))>verysmall) &
+         Adz_delz_t(k) = Ver_z_8%t(kp1)-Ver_z_8%t(k)
          Adz_odelz_m(k) = 1.0d0 / Adz_delz_m(k)
          Adz_odelz_t(k) = 1.0d0 / Adz_delz_t(k)
       end do
 
-      smallest_dz= minval(Adz_delz_m(1:l_nk))
+      smallest_dz= minval(sig*Adz_delz_m(1:l_nk))
       adz_ovdzm_8 = 1.0d0/smallest_dz
-      pnz = nint(1.0+(Ver_z_8%m(l_nk+1)-Ver_z_8%m(0))*adz_ovdzm_8)
+      pnz = nint(1.0+ (sig*Ver_z_8%m(l_nk+1)-sig*Ver_z_8%m(0))*adz_ovdzm_8)
+      adz_ovdzm_8 = sig/smallest_dz
       allocate ( Adz_search_m(pnz) )
       k0 = 0
       do k= 1, pnz
-         posz = Ver_z_8%m(0) + dble(k-1) * smallest_dz
-         if (posz > Ver_z_8%m(k0+1)) k0 = min(l_nk+1, k0+1)
+         posz = sig*Ver_z_8%m(0) + dble(k-1) * smallest_dz
+         if (posz > sig*Ver_z_8%m(k0+1)) k0 = min(l_nk+1, k0+1)
          Adz_search_m(k) = k0
       end do
 
-      smallest_dz= minval(Adz_delz_t(1:l_nk))
+      smallest_dz= minval(sig*Adz_delz_t(1:l_nk))
       adz_ovdzt_8 = 1.0d0/smallest_dz
-      pnz = nint(1.0+(Ver_z_8%t(l_nk)-Ver_z_8%t(0))*adz_ovdzt_8)
+      pnz = nint(1.0+sig*(Ver_z_8%t(l_nk)-Ver_z_8%t(0))*adz_ovdzt_8)
+      adz_ovdzt_8 = sig/smallest_dz
       allocate ( Adz_search_t(pnz) )
       k0 = 0
       do k= 1, pnz
-         posz = Ver_z_8%t(0) + dble(k-1) * smallest_dz
-         if (posz > Ver_z_8%t(k0+1)) k0 = min(l_nk+1, k0+1)
+         posz = sig*Ver_z_8%t(0) + dble(k-1) * smallest_dz
+         if (posz > sig*Ver_z_8%t(k0+1)) k0 = min(l_nk+1, k0+1)
          Adz_search_t(k) = k0
       end do
 
@@ -130,48 +154,23 @@
          Adz_cy_8(j) = 1.d0 / cos(G_yg_8(l_j0+j-1))
       end do
 
-      allocate( Adz_zabcd_8%t(l_nk), Adz_zabcd_8%m(l_nk),&
-                Adz_zbacd_8%t(l_nk), Adz_zbacd_8%m(l_nk),&
-                Adz_zcabd_8%t(l_nk), Adz_zcabd_8%m(l_nk),&
-                Adz_zdabc_8%t(l_nk), Adz_zdabc_8%m(l_nk) )
-
-      do k= 2, l_nk-2
-         ra = Ver_z_8%m(k-1)
-         rb = Ver_z_8%m(k)
-         rc = Ver_z_8%m(k+1)
-         rd = Ver_z_8%m(k+2)
-         Adz_zabcd_8%m(k) = 1.0/triprod(ra,rb,rc,rd)
-         Adz_zbacd_8%m(k) = 1.0/triprod(rb,ra,rc,rd)
-         Adz_zcabd_8%m(k) = 1.0/triprod(rc,ra,rb,rd)
-         Adz_zdabc_8%m(k) = 1.0/triprod(rd,ra,rb,rc)
-
-         ra = Ver_z_8%t(k-1)
-         rb = Ver_z_8%t(k)
-         rc = Ver_z_8%t(k+1)
-         rd = Ver_z_8%t(k+2)
-         Adz_zabcd_8%t(k) = 1.0/triprod(ra,rb,rc,rd)
-         Adz_zbacd_8%t(k) = 1.0/triprod(rb,ra,rc,rd)
-         Adz_zcabd_8%t(k) = 1.0/triprod(rc,ra,rb,rd)
-         Adz_zdabc_8%t(k) = 1.0/triprod(rd,ra,rb,rc)
-      end do
-
       allocate (&
          Adz_uu_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
          Adz_vv_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
          Adz_ww_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
          Adz_uvw_d(3,Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
-         Adz_uu_arr(l_ni,l_nj,l_nk), Adz_uu_dep(l_ni,l_nj,l_nk),&
-         Adz_vv_arr(l_ni,l_nj,l_nk), Adz_vv_dep(l_ni,l_nj,l_nk),&
-         Adz_ww_arr(l_ni,l_nj,l_nk), Adz_ww_dep(l_ni,l_nj,l_nk) )
+         Adz_uu_arr(l_ni,l_nj,l_nk), Adz_vv_arr(l_ni,l_nj,l_nk), &
+         Adz_ww_arr(l_ni,l_nj,l_nk), Adz_uvw_dep(3,l_ni,l_nj,l_nk) )
 
       Adz_uu_ext=0. ; Adz_vv_ext=0. ; Adz_ww_ext=0.
 
-      allocate (Adz_pxyzmu (3,l_ni,l_nj,l_nk), &
-                Adz_pxyzmv (3,l_ni,l_nj,l_nk), &
-                Adz_pxyzt  (3,l_ni,l_nj,l_nk))
-      Adz_pxyzmu= 0. ; Adz_pxyzmv= 0. ; Adz_pxyzt= 0.
+      allocate(Adz_pm (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
+               Adz_pmu(3,Adz_i0u:Adz_inu, Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
+               Adz_pmv(3,Adz_i0 :Adz_in , Adz_j0v:Adz_jnv,Adz_k0 :l_nk),&
+               Adz_pt (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0t:l_nk) )
 
-      allocate ( Adz_wpxyz(-1:l_ni+2,-1:l_nj+2,l_nk,3) )
+      allocate ( Adz_pxyzt (3,l_ni,l_nj,l_nk),&
+                 Adz_wpxyz(-1:l_ni+2,-1:l_nj+2,l_nk,3) )
       Adz_wpxyz(-1:0,:,:,:)=0. ; Adz_wpxyz(l_ni+1:l_ni+2,:,:,:)=0.
       Adz_wpxyz(:,-1:0,:,:)=0. ; Adz_wpxyz(:,l_nj+1:l_nj+2,:,:)=0.
 
@@ -198,17 +197,12 @@
          if ((istatu/=0).or.(istatv/=0)) Adz_slt_winds= .false.
       end if
 
+      allocate (Adz_stack(max(10,Tr3d_ntr)))
+
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
 !
 !---------------------------------------------------------------------
 !
       return
-contains
-
-      real*8 function triprod(za,zb,zc,zd)
-         real*8, intent(in) :: za,zb,zc,zd
-         triprod = ((za-zb)*(za-zc)*(za-zd))
-      end function triprod
-
       end subroutine adz_set

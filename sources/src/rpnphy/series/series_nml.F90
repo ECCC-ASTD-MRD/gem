@@ -70,7 +70,7 @@ contains
       implicit none
       character(len=*), intent(in) :: m_namelist
       integer :: m_istat
-      character(len=1024) :: msg_S, namelist_S, name_S
+      character(len=1024) :: msg_S, namelist_S
       integer :: istat, unf
       !----------------------------------------------------------------
       m_istat = RMN_ERR
@@ -158,7 +158,7 @@ contains
       integer :: m_istat
 
       integer, external :: msg_getUnit
-      integer :: istat, options, iverb
+      integer :: istat, options
       character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR

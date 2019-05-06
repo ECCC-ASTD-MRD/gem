@@ -13,6 +13,7 @@
                          & OUVTRANS, PUTEN, PVTEN,                             &
                          & OCHTRANS, KCH1, PCH1, PCH1TEN,                      &
                          & PUDR, PDDR, PKKFC, PSP, XLAT, MG, MLAC              ) ! for ERA40
+!#TODO: PURV never used
 !   ############################################################################
        use phy_status, only: phy_error_L
 !
@@ -152,7 +153,7 @@ real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PUMF   ! updraft mass flux   (kg/s 
 real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PDMF   ! downdraft mass flux (kg/s m2)
 real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PPRLFLX! liquid precip flux  (m/s)
 real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PPRSFLX! solid precip flux   (m/s)
-real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PURV   ! water vapor in updraft (kg/kg)
+real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PURV   ! water vapor in updraft (kg/kg)   !#TODO: never used
 !real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PURCI  ! total condensate in updraft (kg/kg)
 real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PURC   !  grid-scale liq condensate in updraft (kg/kg)
 real, DIMENSION(KLON,KLEV), INTENT(INOUT) :: PURI   !  grid-scale ice condensate in updraft (kg/kg)
@@ -228,41 +229,40 @@ ZRITENE, ZPRLTENE, ZPRSTENE, ZUMFE, ZDMFE,  ZURVE, ZURCE, ZURIE, ZPRLFLXE, &
 ZPRSFLXE, ICLTOPE, ICLBASE,  ZUTENE, ZVTENE, ZCH1TENE, ZEDUMMY, IEDUMMY,     &
 ZWEIGHT, ZUDRE, ZDDRE
 !$OMP THREADPRIVATE(/cnvmain/)
-#define ALLOCATABLE POINTER
 !
 !
 !*       0.5   Declarations of additional Ensemble fields:
 !
 integer                             :: KENS     ! number of allowed
                                                   ! additional deep convection calls
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZTTENE   ! convective temperat. tendency (K/s)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZRVTENE  ! convective r_v tendency (1/s)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZRCTENE  ! convective r_c tendency (1/s)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZRITENE  ! convective r_i tendency (1/s)
-real, DIMENSION(:,:),   ALLOCATABLE :: ZPRLTENE ! liquid surf precipitation tendency (kg/s m2)
-real, DIMENSION(:,:),   ALLOCATABLE :: ZPRSTENE ! solid surf precipitation tendency (kg/s m2)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZUMFE    ! updraft mass flux   (kg/s m2)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZDMFE    ! downdraft mass flux (kg/s m2)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZURVE    ! updraft water vapor  (kg/kg)
-!real, DIMENSION(:,:,:), ALLOCATABLE :: ZURCIE   ! updraft condensate   (kg/kg)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZURCE    ! updraft liq condensate   (kg/kg)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZURIE    ! updraft ice condensate   (kg/kg)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZPRLFLXE ! liquid precip flux  (kg/s m2)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZPRSFLXE ! solid precip flux   (kg/s m2)
-real, DIMENSION(:,:),ALLOCATABLE :: ICLTOPE  ! cloud top level (m)
-real, DIMENSION(:,:),ALLOCATABLE :: ICLBASE  ! cloud base level(m)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZUTENE   ! convective u tendency (m/s^2)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZVTENE   ! convective u tendency (m/s^2)
-real, DIMENSION(:,:,:,:),ALLOCATABLE:: ZCH1TENE ! chemical convective tendency
-real, DIMENSION(:),     ALLOCATABLE :: ZEDUMMY  ! field not to be recomputed by ensemble
-integer, DIMENSION(:),  ALLOCATABLE :: IEDUMMY  ! field not to be recomputed by ensemble
-real, DIMENSION(:),     ALLOCATABLE :: ZWEIGHT  ! weighting factor for ensemble members
+real, DIMENSION(:,:,:), POINTER :: ZTTENE   ! convective temperat. tendency (K/s)
+real, DIMENSION(:,:,:), POINTER :: ZRVTENE  ! convective r_v tendency (1/s)
+real, DIMENSION(:,:,:), POINTER :: ZRCTENE  ! convective r_c tendency (1/s)
+real, DIMENSION(:,:,:), POINTER :: ZRITENE  ! convective r_i tendency (1/s)
+real, DIMENSION(:,:),   POINTER :: ZPRLTENE ! liquid surf precipitation tendency (kg/s m2)
+real, DIMENSION(:,:),   POINTER :: ZPRSTENE ! solid surf precipitation tendency (kg/s m2)
+real, DIMENSION(:,:,:), POINTER :: ZUMFE    ! updraft mass flux   (kg/s m2)
+real, DIMENSION(:,:,:), POINTER :: ZDMFE    ! downdraft mass flux (kg/s m2)
+real, DIMENSION(:,:,:), POINTER :: ZURVE    ! updraft water vapor  (kg/kg)
+!real, DIMENSION(:,:,:), POINTER :: ZURCIE   ! updraft condensate   (kg/kg)
+real, DIMENSION(:,:,:), POINTER :: ZURCE    ! updraft liq condensate   (kg/kg)
+real, DIMENSION(:,:,:), POINTER :: ZURIE    ! updraft ice condensate   (kg/kg)
+real, DIMENSION(:,:,:), POINTER :: ZPRLFLXE ! liquid precip flux  (kg/s m2)
+real, DIMENSION(:,:,:), POINTER :: ZPRSFLXE ! solid precip flux   (kg/s m2)
+real, DIMENSION(:,:),POINTER :: ICLTOPE  ! cloud top level (m)
+real, DIMENSION(:,:),POINTER :: ICLBASE  ! cloud base level(m)
+real, DIMENSION(:,:,:), POINTER :: ZUTENE   ! convective u tendency (m/s^2)
+real, DIMENSION(:,:,:), POINTER :: ZVTENE   ! convective u tendency (m/s^2)
+real, DIMENSION(:,:,:,:),POINTER:: ZCH1TENE ! chemical convective tendency
+real, DIMENSION(:),     POINTER :: ZEDUMMY  ! field not to be recomputed by ensemble
+integer, DIMENSION(:),  POINTER :: IEDUMMY  ! field not to be recomputed by ensemble
+real, DIMENSION(:),     POINTER :: ZWEIGHT  ! weighting factor for ensemble members
 real                                :: ZSUM     ! sum of weighting factors
 !
 integer                      :: KLEV1   ! vertical dimension (add sfc as first level)
 ! special for ERA40
 real, DIMENSION(KLON,KLEV+1)          :: ZUDR, ZDDR  ! updraft/downdraft detrainment rates (kg/s m3)
-real, DIMENSION(:,:,:), ALLOCATABLE :: ZUDRE, ZDDRE
+real, DIMENSION(:,:,:), POINTER :: ZUDRE, ZDDRE
 !-------------------------------------------------------------------------------
 !
 !

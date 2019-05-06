@@ -232,7 +232,7 @@
       real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
       real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
       real ubeta0, epsd0, hrcoef, uu3, cut, seuil,specirr,qmr,qmin
-      integer i, k, ib, lev1, maxc,l, jyes, lengath, j, kp1, ig
+      integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig
       logical gh
       integer ilg1,ilg2 !subsize of il1,il2
 !

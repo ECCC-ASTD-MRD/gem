@@ -82,7 +82,7 @@ subroutine yy2global()
    integer err_iunyy,yyfiles
    integer ip1,ip2,ip3,ni,nj,nk,datev,key,len,mni,mnj,xni,xnj
    integer dateo,ni1,nj1,nk1,p1,p2,p3,yni,ynj,gni,gnj,intcode
-   real dx
+
    real*8 deltat_8,h1_8,h2_8,deg2rad_8,dxla_8,dyla_8,rad2deg_8
    integer ig1,ig2,ig3,ig4,scrap,myig1,myig2,myig3,myig4
    integer myni,mynj,myp1,myp2,myp3,pni,pnj
@@ -90,7 +90,7 @@ subroutine yy2global()
 
    character*12 etiket,yyetiket
    character*4 nomvar
-   character*1 typvar,out_S,grtyp,mygrtyp,grref
+   character*1 typvar,grtyp,mygrtyp
    character*17 varlist_S(MAXVAR)
    character*4 myvar_S(MAXVAR),myclip_S,print_S
    character*7 myinterp_S
@@ -119,7 +119,7 @@ subroutine yy2global()
    pi = acos(-1.d0)
    deg2rad_8 = (acos(-1.0d0))/180.
    rad2deg_8 = 180./(acos(-1.0d0))
-   npos=0                                                  
+   npos=0
    iunout=0
    iunyy=0
    iunnml=0
@@ -257,7 +257,7 @@ subroutine yy2global()
       ier = FSTOUV(iunout, 'RND')
       !     print *,'unit',iunout,' for ',trim(globfile_S)
    endif
-   
+ 
    !   Get the complete list of records to do
    allocate(list_yy(nrectot))
    ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'P',' ',list_yy,NYY,nrectot)
@@ -374,7 +374,7 @@ subroutine yy2global()
       ! Mni = size of Yin Xaxis, Mnj = size Yin Yaxis
       mni = yni-(2*xni)
       mnj = ynj-(2*xnj)
-      
+ 
       ! Pni,Pnj = No. of end points X,Y to complete the global grid.
       pni = (xpx(xni)/dxla_8) + 1
       pnj = ((ypx(xnj)+pole)/dyla_8) + 1
@@ -396,7 +396,7 @@ subroutine yy2global()
       !   print *,'ypx(xnj)=',ypx(xnj),'ypx(xnj+mnj+1)=',ypx(xnj+mnj+1)
 
       ! Gni,Gnj = No of points for the global grid
-      gni = mni+pni*2 
+      gni = mni+pni*2
       gnj = mnj+pnj*2
       print *,'Global Yin grid: gni=',gni,' gnj=',gnj
 
@@ -406,7 +406,7 @@ subroutine yy2global()
       G_yglob_8(pnj)=ypx(xnj)
       xglob(pni)=xpx(xni)
       yglob(pnj)=ypx(xnj)
-      
+ 
       print *,'*  '
       print *,'Global takes rotation from YIN: GNI=',GNI,' GNJ=',GNJ
       print *,'*  '
@@ -617,12 +617,12 @@ subroutine yy2global()
          enddo
 
 
-         ier = FSTECR(gg, gWORK, -nbits, iunout, dateo,& 
+         ier = FSTECR(gg, gWORK, -nbits, iunout, dateo,&
               deet, npas, gni, gnj,1,&
               ip1, ip2, ip3, typvar,'UU', yyetiket, 'Z',&
               myp1, myp2, myp3, 0, datyp, .false.)
 
-         ier = FSTECR(vgg, gWORK, -nbits, iunout, dateo,& 
+         ier = FSTECR(vgg, gWORK, -nbits, iunout, dateo,&
               deet, npas, gni, gnj,1,&
               ip1, ip2, ip3, typvar,'VV', yyetiket, 'Z',&
               myp1, myp2, myp3, 0, datyp, .false.)
@@ -669,11 +669,11 @@ subroutine yy2global()
    ! Write out the tictic,tactac and toctoc for new global Z grid
    ! Only one U grid is assumed in input file which is interpolated to new Z grid
    if (ugrid_L) then
-      ier = FSTECR(xglob, gWORK, -32, iunout, dateo,& 
+      ier = FSTECR(xglob, gWORK, -32, iunout, dateo,&
            0, 0, gni, 1,1,&
            myp1, myp2, myp3, 'X','>>', yyetiket, mygrtyp,&
            myig1, myig2, myig3, myig4, 5, .true.)
-      ier = FSTECR(yglob, gWORK, -32, iunout, dateo,& 
+      ier = FSTECR(yglob, gWORK, -32, iunout, dateo,&
            0, 0, 1, gnj,1,&
            myp1, myp2, myp3, 'X','^^', yyetiket, mygrtyp,&
            myig1, myig2, myig3, myig4, 5, .true.)
@@ -769,8 +769,8 @@ subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
    logical clip
    real*8  gg(gni,gnj)
    real*8  g2(ni,nj)
-   real*8  gdx,gdy,x(ni),y(nj)
-   real*8   gx(gni),gy(gnj)
+   real*8  x(ni),y(nj)
+
    real*8 t(len),p(len)
    real*8  udx,udy
 
@@ -788,10 +788,10 @@ subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
               ni,nj,t(k),p(k),x,y,udx,udy)
       elseif (interp.eq.1) then
          call yy_int_lin_lag(gg(i,j),g2,imx(k),imy(k),1,1,  &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
       elseif (interp.eq.2) then
          call yy_int_cub_lag(gg(i,j),g2,imx(k),imy(k),1,1,  &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
       else
          write(0,*)'Error interpolation code!!'
          call qqexit(-1)
@@ -801,7 +801,7 @@ subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
       endif
    enddo
 
-   return 
+   return
 end subroutine yan2global
 
 
@@ -825,7 +825,7 @@ subroutine yanuv2global(gu,gv,gni,gnj,U2,V2,ni,nj, x,y, &
    real*8  gu(gni,gnj),gv(gni,gnj)
    real*8  u2(ni,nj),v2(ni,nj)
    real*8  gu2(gni,gnj),gv2(gni,gnj)
-   real*8  gdx,gdy,x(ni),y(nj)
+   real*8  x(ni),y(nj)
    real*8  s(4,len),t(len),p(len)
    real*8  udx,udy
 
@@ -842,14 +842,14 @@ subroutine yanuv2global(gu,gv,gni,gnj,U2,V2,ni,nj, x,y, &
               ni,nj,t(k),p(k),x,y,udx,udy)
       elseif (interp.eq.1) then
          call yy_int_lin_lag(gu2(i,j),u2,imx(k),imy(k),1,1,  &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
          call yy_int_lin_lag(gv2(i,j),v2,imx(k),imy(k),1,1,  &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
       elseif (interp.eq.2) then
          call yy_int_cub_lag(gu2(i,j),u2,imx(k),imy(k),1,1, &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
          call yy_int_cub_lag(gv2(i,j),v2,imx(k),imy(k),1,1, &
-              ni,nj,t(k),p(k),x,y,udx,udy)
+              ni,nj,t(k),p(k),x,y)
       endif
       gu(i,j)=s(1,k)*gu2(i,j) + s(2,k)*gv2(i,j)
       gv(i,j)=s(4,k)*gv2(i,j) + s(3,k)*gu2(i,j)
@@ -859,20 +859,20 @@ subroutine yanuv2global(gu,gv,gni,gnj,U2,V2,ni,nj, x,y, &
       endif
    enddo
 
-   return 
+   return
 end subroutine yanuv2global
 
 
-subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2) 
+subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y)
    !author Abdessamad Qaddouri Nov.2009
    implicit none
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
-   integer k,i,j,Mx(Ni,Nj),My(Ni,Nj)
-   real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+   integer i,j,Mx(Ni,Nj),My(Ni,Nj)
+   real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
    integer Im, Jm
-   real*8 YY,y1,y2,y3,y4,FF(Ni,Nj),Fi(Ni*Nj)
+   real*8 YY,y1,y2,y3,y4,FF(Ni,Nj)
    real*8 F(Nx,Ny),fx1,fx2,fx3,fx4,x(*),y(*)
-   real*8 Xi(Ni,Nj),Yi(Ni,Nj),h2,h1
+   real*8 Xi(Ni,Nj),Yi(Ni,Nj)
 
    !
    do j =1,Nj
@@ -881,7 +881,7 @@ subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
          My (i,j)= min( max(Imy(i,j)-1,1), Ny - 3 )
       enddo
    enddo
-   !	
+
    Do j=1, Nj
       Do i = 1, Ni
          Im = Mx(i,j)
@@ -896,7 +896,7 @@ subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
          W2  =  XX    *(XX-X3)*(XX-X4)/(X2*(X2-X3)*(X2-X4))
          W3  =  XX    *(XX-X2)*(XX-X4)/(X3*(X3-X2)*(X3-X4))
          W4  =  XX    *(XX-X2)*(XX-X3)/(X4*(X4-X2)*(X4-X3))
-         !           
+
          Fx1 = W1*F(Im ,Jm)+W2*F(Im + 1,Jm )+ W3* F( Im + 2, Jm )+ &
               W4 * F( Im + 3, jm )
          Fx2 =W1*F(Im ,Jm +1)+W2*F(Im +1,jm +1)+W3*F(Im +2,Jm +1 )+ &
@@ -905,7 +905,7 @@ subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
               W4 * F( Im + 3, Jm + 2 )
          Fx4 =W1*F(Im,jm+3)+W2*F(Im+1,jm+3)+W3*F(Im +2,Jm+3)+ &
               W4 * F( Im + 3, Jm + 3 )
-         !           
+
          Y1  = Y(Jm)
          Y2  = Y(Jm+1) - Y1
          Y3  = Y(Jm+2) - Y1
@@ -925,16 +925,16 @@ subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
 end subroutine yy_int_cub_lag
 
 
-subroutine yy_int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2) 
+subroutine yy_int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y)
    !author Abdessamad Qaddouri Nov.2009
    implicit none
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
-   integer k,i,j,Mx(Ni,Nj),My(Ni,Nj)
-   real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+   integer i,j,Mx(Ni,Nj),My(Ni,Nj)
+
    integer Im, Jm
-   real*8 YY,y1,y2,y3,y4,FF(Ni,Nj),Fi(Ni*Nj)
+   real*8 FF(Ni,Nj)
    real*8 F(Nx,Ny),x(*),y(*)
-   real*8 Xi(Ni,Nj),Yi(Ni,Nj),h1,h2
+   real*8 Xi(Ni,Nj),Yi(Ni,Nj)
    real*8 betax,betax1,betay,betay1
 
    do j =1,Nj
@@ -962,14 +962,14 @@ subroutine yy_int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
 end subroutine yy_int_lin_lag
 
 
-subroutine yy_int_near_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2) 
+subroutine yy_int_near_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
    !author Abdessamad Qaddouri Nov.2009
    implicit none
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
-   integer k,i,j,Mx(Ni,Nj),My(Ni,Nj)
-   real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+   integer i,j,Mx(Ni,Nj),My(Ni,Nj)
+
    integer Im, Jm
-   real*8 YY,y1,y2,y3,y4,FF(Ni,Nj),Fi(Ni*Nj)
+   real*8 FF(Ni,Nj)
    real*8 F(Nx,Ny),x(*),y(*)
    real*8 Xi(Ni,Nj),Yi(Ni,Nj),h1,h2
    real*8 betax,betax1,betay,betay1

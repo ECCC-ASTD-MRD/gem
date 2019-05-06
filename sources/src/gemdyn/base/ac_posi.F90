@@ -32,16 +32,17 @@
       integer, intent(in) :: dimgx,dimgy
       real, intent(in) :: xlon(dimgx), ylat(dimgy)
 
-      logical flag_hu,printout_L
-      integer i,k,cnt,iref,jref,pil
-      real latr,lonr
-      real*8 x0, xl, y0, yl
-      real*8, dimension(:), pointer :: ac_xp,ac_yp
-      real*8 xpx(dimgx), ypx(dimgy)
+      logical :: flag_hu,printout_L
+      integer :: i,k,cnt,iref,jref,pil
+      real :: latr,lonr
+      real*8 :: x0, xl, y0, yl
+      real*8, dimension(:), allocatable :: ac_xp, ac_yp
+      real*8, dimension(dimgx) :: xpx
+      real*8, dimension(dimgy) :: ypx
 !
 !---------------------------------------------------------------------
 !
-      nullify(ac_xp,ac_yp)
+
       Grdc_gid= 0 ; Grdc_gjd= 0
       Grdc_gif= 0 ; Grdc_gjf= 0
 
@@ -113,39 +114,43 @@
          if (ac_yp(Grdc_nj) <= ypx(1    )) Grdc_ndt= -1
          if (ac_yp(1      ) >= ypx(dimgy)) Grdc_ndt= -1
 
-         if (Grdc_ndt <= 0) goto 9999
+         if (Grdc_ndt > 0) then
 
-         do i=1,dimgx
-            if (xpx(i) <= ac_xp(1)      ) Grdc_gid=i
-            if (xpx(i) <= ac_xp(Grdc_ni)) Grdc_gif=i
-         end do
+            do i=1,dimgx
+               if (xpx(i) <= ac_xp(1)      ) Grdc_gid=i
+               if (xpx(i) <= ac_xp(Grdc_ni)) Grdc_gif=i
+            end do
 
-         do i=1,dimgy
-            if (ypx(i) <= ac_yp(1)      ) Grdc_gjd=i
-            if (ypx(i) <= ac_yp(Grdc_nj)) Grdc_gjf=i
-         end do
+            do i=1,dimgy
+               if (ypx(i) <= ac_yp(1)      ) Grdc_gjd=i
+               if (ypx(i) <= ac_yp(Grdc_nj)) Grdc_gjf=i
+            end do
 
-         Grdc_gid = Grdc_gid - 2
-         Grdc_gjd = Grdc_gjd - 2
-         Grdc_gif = Grdc_gif + 3
-         Grdc_gjf = Grdc_gjf + 3
+            Grdc_gid = Grdc_gid - 2
+            Grdc_gjd = Grdc_gjd - 2
+            Grdc_gif = Grdc_gif + 3
+            Grdc_gjf = Grdc_gjf + 3
 
-         if (printout_L) then
-            if (Grdc_gid < 1)     write(6,1015) 'WEST'
-            if (Grdc_gjd < 1)     write(6,1015) 'SOUTH'
-            if (Grdc_gif > dimgx) write(6,1015) 'EAST'
-            if (Grdc_gjf > dimgy) write(6,1015) 'NORTH'
+            if (printout_L) then
+               if (Grdc_gid < 1)     write(6,1015) 'WEST'
+               if (Grdc_gjd < 1)     write(6,1015) 'SOUTH'
+               if (Grdc_gif > dimgx) write(6,1015) 'EAST'
+               if (Grdc_gjf > dimgy) write(6,1015) 'NORTH'
+            end if
+
+            Grdc_gid = max(Grdc_gid, 1    )
+            Grdc_gjd = max(Grdc_gjd, 1    )
+            Grdc_gif = min(Grdc_gif, dimgx)
+            Grdc_gjf = min(Grdc_gjf, dimgy)
+
          end if
 
-         Grdc_gid = max(Grdc_gid, 1    )
-         Grdc_gjd = max(Grdc_gjd, 1    )
-         Grdc_gif = min(Grdc_gif, dimgx)
-         Grdc_gjf = min(Grdc_gjf, dimgy)
+         if ( ((Grdc_gif-Grdc_gid+1) < 2) .or. &
+              ((Grdc_gjf-Grdc_gjd+1) < 2) ) then
+              Grdc_ndt = -1
+         end if
 
       end if
-
-      if ( ((Grdc_gif-Grdc_gid+1) < 2) .or. &
-           ((Grdc_gjf-Grdc_gjd+1) < 2) ) Grdc_ndt = -1
 
  9999 if (Grdc_ndt > 0) then
 
@@ -156,19 +161,19 @@
             Grdc_ntr = Tr3d_ntr
          else
             cnt = 0 ;  flag_hu = .false.
-            do 10 k=1,max_trnm
-               if (Grdc_trnm_S(k) == '@#$%') goto 89
+            do k=1,max_trnm
+               if (Grdc_trnm_S(k) == '@#$%') exit
                flag_hu= (trim(Grdc_trnm_S(k)) == 'HU')
                do i=1,Tr3d_ntr
                   if (trim(Grdc_trnm_S(k)) == trim(Tr3d_name_S(i))) then
                      cnt=cnt+1
                      Grdc_trnm_S(cnt) = Tr3d_name_S(i)
-                     goto 10
+                     exit
                   end if
                end do
- 10         continue
+            end do
 
- 89         if (.not.flag_hu) then
+            if (.not.flag_hu) then
                cnt=cnt+1
                Grdc_trnm_S(cnt) = 'HU'
             end if
@@ -193,8 +198,8 @@
 
       if (printout_L) write (6,1200)
 
-      if (associated(ac_xp)) deallocate(ac_xp)
-      if (associated(ac_yp)) deallocate(ac_yp)
+      if (allocated(ac_xp)) deallocate(ac_xp)
+      if (allocated(ac_yp)) deallocate(ac_yp)
 
  1000 format (/,22('#'),' SELF CASCADE CONFIGURATION ',22('#'))
  1001 format ( ' Cascade grid: Tracers to be written for cascade run are: ')

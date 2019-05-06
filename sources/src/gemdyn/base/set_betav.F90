@@ -15,41 +15,34 @@
 
 
 
-      subroutine set_betav(betav_m,betav_t,F_s,F_sl,F_fis, Minx,Maxx,Miny,Maxy,Nk)
+      subroutine set_betav(betav_m, betav_t, F_s, F_sl, Minx, Maxx, Miny, Maxy, Nk)
 
-      use HORgrid_options
-      use gem_options
-      use theo_options
-      use tdpack
-      use dcst
+      use cstv
+      use metric
       use mtn_options
       use tdpack
-      use glb_ld
-      use cstv
+      use theo_options
       use ver
-      use type_mod
-      use glb_pil
 
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(in) :: Minx,Maxx,Miny,Maxy, Nk
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
 
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: betav_m, betav_t
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_s, F_sl
-      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_fis
 !
-      real htop,zblen_bot,zblen_top
+      real :: htop, zblen_bot, zblen_top
 
-      real*8 work1,work2,fact
+      real*8 :: work1, work2, fact
 
-      integer i,j,k
+      integer :: i, j, k
 
-      zblen_top=Ver_z_8%m(0)
+      zblen_top = Ver_z_8%m(0)
 
       fact=1.d0
       if(Theo_case_S == 'MTN_SCHAR' .or. Theo_case_S == 'MTN_SCHAR2' ) then
-         fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(Dcst_rayt_8*pi_8/180.))
+         fact=sqrt(2.0*mtn_flo*Cstv_dt_8/mtn_dx)
       end if
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
@@ -57,12 +50,11 @@
          do k=1,l_nk
             do j=Miny,Maxy
             do i=Minx,Maxx
-               work1=Ver_z_8%m(k)+Ver_b_8%m(k)*F_fis(i,j)/grav_8-zblen_bot
+               work1=zmom(i,j,k)-zblen_bot
                work2=zblen_top-zblen_bot
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_m(i,j,k)=work1*work1*min(1.d0,fact)
-              !work1=Ver_z_8%t(k)+Ver_b_8%t(k)*F_fis(i,j)/Dcst_grav_8-Zblen_hmin
-               work1=Ver_z_8%t(k)-zblen_bot
+               work1=ztht(i,j,k)-Zblen_bot
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_t(i,j,k)=work1*work1*min(1.d0,fact)
             end do

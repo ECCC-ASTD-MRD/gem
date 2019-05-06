@@ -17,18 +17,20 @@ module gmm_tracers
    public
    save
 !
-   real, pointer, contiguous, dimension (:,:,:) :: fld_mono=> null()
-   real, pointer, contiguous, dimension (:,:,:) :: fld_cub => null()
-   real, pointer, contiguous, dimension (:,:,:) :: fld_lin => null()
-   real, pointer, contiguous, dimension (:,:,:) :: fld_min => null()
-   real, pointer, contiguous, dimension (:,:,:) :: fld_max => null()
-   real, pointer, contiguous, dimension (:,:,:) :: airm1   => null()
-   real, pointer, contiguous, dimension (:,:,:) :: airm0   => null()
-   real, pointer, contiguous, dimension (:,:,:) :: pkps    => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_mono => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_cub  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_lin  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_min  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_max  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_cub_o=> null()
+   real, pointer, contiguous, dimension (:,:,:) :: fld_cub_i=> null()
+   real, pointer, contiguous, dimension (:,:,:) :: airm1    => null()
+   real, pointer, contiguous, dimension (:,:,:) :: airm0    => null()
+   real, pointer, contiguous, dimension (:,:,:) :: pkps     => null()
 
    integer, parameter :: MAXNAMELENGTH = 32
 
    character(len=MAXNAMELENGTH) :: gmmk_mono_s, gmmk_cub_s, gmmk_lin_s, gmmk_min_s, gmmk_max_s, &
-                                   gmmk_airm1_s, gmmk_airm0_s, gmmk_pkps_s
+                                   gmmk_cub_o_s, gmmk_cub_i_s, gmmk_airm1_s, gmmk_airm0_s, gmmk_pkps_s
 
 end module gmm_tracers

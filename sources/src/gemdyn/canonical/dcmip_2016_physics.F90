@@ -17,99 +17,97 @@
 
       subroutine dcmip_2016_physics ()
 
-      use DCMIP_2016_physics_module
-      use vertical_interpolation, only: vertint2
-      use step_options
-      use gmm_pw
       use canonical
-      use dcmip_options
-      use gem_options
-      use geomh
-      use tdpack, only : rgasd_8, rgasv_8, cpd_8, grav_8
-      use glb_ld
       use cstv
-      use lun
-      use ver
+      use DCMIP_2016_physics_module
+      use dcmip_options
+      use dyn_fisl_options
+      use dynkernel_options
+      use geomh
+      use glb_ld
       use gmm_itf_mod
+      use gmm_pw
+      use gmm_vt1
+      use gmm_phy
+      use lun
       use ptopo
+      use step_options
 
       implicit none
 
 #include <arch_specific.hf>
 
       !object
-      !======================================================================|
-      !  DCMIP 2016 physics                                                  |
-      !======================================================================|
-      !  prec_type         | Type of precipitation/microphysics              |
-      !                    | ------------------------------------------------|
-      !                    |  0: Large-scale precipitation (Kessler)         |
-      !                    |  1: Large-scale precipitation (Reed-Jablonowski)|
-      !                    | -1: NONE                                        |
-      !----------------------------------------------------------------------|
-      !  pbl_type          | Type of planetary boundary layer                |
-      !                    | ------------------------------------------------|
-      !                    |  0: Reed-Jablonowski Boundary layer             |
-      !                    |  1: Georges Bryan Planetary Boundary Layer      |
-      !                    | -1: NONE                                        |
-      !----------------------------------------------------------------------|
+      !===============================================================|
+      !  DCMIP 2016 physics                                           |
+      !===============================================================|
+      !  prec_type  | Type of precipitation/microphysics              |
+      !             | ------------------------------------------------|
+      !             |  0: Kessler Microphysics                        |
+      !             |  1: Reed-Jablonowski Large-scale precipitation  |
+      !             | -1: NONE                                        |
+      !---------------------------------------------------------------|
+      !  pbl_type   | Type of planetary boundary layer                |
+      !             | ------------------------------------------------|
+      !             |  0: Reed-Jablonowski Boundary layer             |
+      !             |  1: Georges Bryan Boundary Layer                |
+      !             | -1: NONE                                        |
+      !---------------------------------------------------------------|
 
-      !------------------------------------------------------------------------------------------------------------
+      !------------------------------------------------------------------------------!
+      !Subroutines DCMIP 2016 physics (https://doi.org/10.5281/zenodo.1298671)       !
+      !------------------------------------------------------------------------------!
+      !GEM's adaptation to DCMIP 2016 physics:                                       !
+      !1) Combines elements from 2 subroutines: simple_physics_v6/dcmip_physics_z_v1 !
+      !2) PRESSURE not changed ((RHO is changed)                                     !
+      !3) Vertical index increases from BOTTOM to TOP                                ! 
+      !------------------------------------------------------------------------------!
 
-      real(8)  :: uu(l_nk),vv(l_nk),qsv(l_nk),qv(l_nk),qsc(l_nk),qsr(l_nk),rho(l_nk),zm(0:l_nk),zt(0:l_nk),precl, &
-                  pm(0:l_nk),pt(l_nk+1),tv(l_nk),tt(l_nk),wm(l_nk),wp(l_nk),theta(l_nk),exner(l_nk), &
-                  dudt(l_nk),dvdt(l_nk),pdel_mid(l_nk)
+      !---------------------------------------------------------------------------------------------------------------
 
-      real(8)  :: dlnpint,zvir
+      real(8) :: uu(l_nk),vv(l_nk),qsv(l_nk),qsc(l_nk),qsr(l_nk),precl,pm(0:l_nk),pt(l_nk+1),tt(l_nk)
 
-      real(8) not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
+      real(8) :: not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
 
-      integer i,j,k,istat,kk,step_reset,test
+      integer :: i,j,k,istat,kk,step_reset,test
 
-      real, pointer, dimension (:,:,:) :: qsv_p,qsc_p,qsr_p
+      real    :: period_4
 
-      real  pt_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1),    pm_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
-            uu_p(l_minx:l_maxx,l_miny:l_maxy,l_nk)  ,    vv_p(l_minx:l_maxx,l_miny:l_maxy,l_nk)  , &
-           gzt_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1),   gzm_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
-        log_pt_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1),log_pm_p(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
-            p0_p(l_minx:l_maxx,l_miny:l_maxy)
+      real, pointer, dimension (:,:,:) :: qsv_p,qsc_p,qsr_p,ptr3d
 
-      real period_4
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: tdu,tdv,tv_plus,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
 
-      real(8), parameter :: Rd   = Rgasd_8, & ! cte gaz - air sec   [J kg-1 K-1]
-                            Rv   = Rgasv_8, & ! cte gaz - vap eau   [J kg-1 K-1]
-                            cp_  = cpd_8,   & ! chal. spec. air sec [J kg-1 K-1]
-                            grav = grav_8     ! acc. de gravite     [m s-2]
 
-      !------------------------------------------------------------------------------------------------------------
+      logical :: GEM_P_L
+
+      !---------------------------------------------------------------------------------------------------------------
 
       if (Lun_out>0) write (Lun_out,1000)
 
-      !------------------------------------------------------------------------------
-      !Preparation DCMIP physics
-      !------------------------------------------------------------------------------
-      !     u      - zonal wind at model levels (m/s)
-      !     v      - meridional wind at model levels (m/s)
-      !     qv     - water vapor mixing ratio (gm/gm) !WITH RESPECT TO DRY AIR
-      !     qc     - cloud water mixing ratio (gm/gm) !WITH RESPECT TO DRY AIR
-      !     qr     - rain  water mixing ratio (gm/gm) !WITH RESPECT TO DRY AIR
-      !     rho    - dry air density (not mean state as in KW) (kg/m^3)
-      !     dt     - time step (s)
-      !     zm     - heights of MOMENTUM levels in the grid column (m)
-      !     zt     - heights of THERMO levels in the grid column (m)
-      !     pm     - pressure of MOMENTUM levels in the grid column (Pa)
-      !     pt     - pressure of THERMO levels in the grid column (Pa)
-      !     tv     - virtual temperature (K)
-      !     wm     - weight Thermo to Momentum (above M)
-      !     wp     - weight Thermo to Momentum (below M)
-      !     l_nk   - number of levels in the column
-      !     precl  - large-scale precip rate (m/s)
-      !------------------------------------------------------------------------------
+      !----------------------------------------------------!
+      !INPUT/OUTPUT variables for DCMIP_2016 physics       !
+      !----------------------------------------------------!
+      !test      (IN) DCMIP2016 test id of SST (1,2,3)     !
+      !uu     (INOUT) Zonal velocity (m/s)                 !
+      !vv     (INOUT) Meridional velocity (m/s)            !
+      !pt        (IN) Pressure (Pa) !THERMO                !
+      !pm        (IN) Pressure (Pa) !MOMENTUM              !
+      !qsv    (INOUT) Specific humidity (kg/kg)            !
+      !qsc    (INOUT) Cloud water specific (kg/kg)         !
+      !qsr    (INOUT) Rain water specific (kg/kg)          !
+      !tt     (INOUT) Temperature (K)                      !
+      !dt        (IN) Time step (s)                        !
+      !lat       (IN) Latitude of column (radians)         !
+      !l_nk      (IN) Number of levels in the column       !
+      !precl    (OUT) Large-scale precip rate (m/s)        !
+      !pbl_type  (IN) Type of planetary boundary layer     !
+      !prec_type (IN) Type of precipitation/microphysics   !
+      !----------------------------------------------------!
 
-      zvir = (Rv/Rd) - 1 ! Constant for virtual temp. calc. is approx. 0.608
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Copy Scalar winds
-      !-----------------
+      !Copy Scalar winds (Required in itf_phy_UVupdate)
+      !------------------------------------------------
       call itf_phy_copy ()
 
       !Averaging period for Averaged precipitation rate
@@ -124,8 +122,8 @@
 
       test = -1
 
-      !Set Sea surface temperature
-      !---------------------------
+      !Set Sea Surface Temperature (SST)
+      !---------------------------------
       if (Dcmip_case== 43) test = 1
       if (Dcmip_case==161) test = 1
       if (Dcmip_case==162) test = 2
@@ -133,53 +131,29 @@
 
       if (test == -1) call handle_error(-1,'DCMIP_2016_PHYSICS','SST is not prescribed')
 
-      !Get VMM variables
+      !Get GMM variables
       !-----------------
-      istat = gmm_get(gmmk_pw_uu_plus_s , pw_uu_plus )
-      istat = gmm_get(gmmk_pw_vv_plus_s , pw_vv_plus )
-      istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus )
-      istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus )
-      istat = gmm_get(gmmk_pw_p0_plus_s , pw_p0_plus )
-      istat = gmm_get(gmmk_pw_gz_plus_s , pw_gz_plus )
-      istat = gmm_get(gmmk_pw_log_pm_s  , pw_log_pm  )
-      istat = gmm_get(gmmk_pw_log_pt_s  , pw_log_pt  )
-      istat = gmm_get(gmmk_pw_me_plus_s , pw_me_plus )
-      istat = gmm_get(gmmk_pw_tt_plus_s , pw_tt_plus )
+      istat = gmm_get(gmmk_pw_uu_plus_s , pw_uu_plus ) !U wind component on Scalar grid 
+      istat = gmm_get(gmmk_pw_vv_plus_s , pw_vv_plus ) !V wind component on Scalar grid
+      istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus ) !Pressure THERMO
+      istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus ) !Pressure MOMENTUM
+      istat = gmm_get(gmmk_pw_p0_plus_s , pw_p0_plus ) !Surface pressure
+      istat = gmm_get(gmmk_pw_tt_plus_s , pw_tt_plus ) !Real temperature
 
       istat = gmm_get('TR/'//'HU'//':P',qsv_p) !Specific humidity
       istat = gmm_get('TR/'//'QC'//':P',qsc_p) !Cloud water specific
       istat = gmm_get('TR/'//'RW'//':P',qsr_p) !Rain water specific
 
-      istat = gmm_get(gmmk_irt_s,  irt)
-      istat = gmm_get(gmmk_art_s,  art)
-      istat = gmm_get(gmmk_wrt_s,  wrt)
+      istat = gmm_get(gmmk_irt_s,  irt) !Instantaneous precipitation rate
+      istat = gmm_get(gmmk_art_s,  art) !Averaged precipitation rate
+      istat = gmm_get(gmmk_wrt_s,  wrt) !Averaged precipitation rate (WORK FIELD)
 
-      !Get Scalar winds
-      !----------------
-      uu_p(:,:,:) = pw_uu_plus(:,:,:)
-      vv_p(:,:,:) = pw_vv_plus(:,:,:)
-
-      !Get hydrostatic pressure on Momentum/Thermo levels
+      !Retrieve a copy of the PW state before the physics
       !--------------------------------------------------
-      pm_p(:,:,1:l_nk) = pw_pm_plus(:,:,1:l_nk)
-      pt_p(:,:,1:l_nk) = pw_pt_plus(:,:,1:l_nk)
-      p0_p(:,:)        = pw_p0_plus(:,:)
-
-      pm_p(1:l_ni,1:l_nj,l_nk+1) = p0_p(1:l_ni,1:l_nj)
-      pt_p(1:l_ni,1:l_nj,l_nk+1) = p0_p(1:l_ni,1:l_nj)
-
-      !Calculate geopotential on Momentum/Thermo levels
-      !------------------------------------------------
-      gzm_p(:,:,1:l_nk)   = pw_gz_plus(:,:,1:l_nk)
-      gzm_p(:,:,l_nk+1)   = pw_me_plus(:,:)
-
-      log_pm_p(:,:,1:l_nk+1) = pw_log_pm (:,:,1:l_nk+1)
-      log_pt_p(:,:,1:l_nk+1) = pw_log_pt (:,:,1:l_nk+1)
-
-      gzt_p(1:l_ni,1:l_nj,l_nk+1) = gzm_p(1:l_ni,1:l_nj,l_nk+1)
-
-      call vertint2 ( gzt_p, log_pt_p, l_nk, gzm_p, log_pm_p, l_nk+1, &
-                      l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
+      nullify(ptr3d)
+      istat = gmm_get(gmmk_pw_uu_plus_s , ptr3d ) ; pw_uu_plus0 = ptr3d
+      istat = gmm_get(gmmk_pw_vv_plus_s , ptr3d ) ; pw_vv_plus0 = ptr3d
+      istat = gmm_get(gmmk_pw_tt_plus_s , ptr3d ) ; pw_tt_plus0 = ptr3d
 
       !--------------------------------
       !Evaluate latitudes (Not rotated)
@@ -213,9 +187,16 @@
 
       end do
 
-      !------------------
-      !DCMIP 2016 physics
-      !------------------
+      !------------------------------------------------------------------------------!
+      !DCMIP 2016 physics                                                            !
+      !------------------------------------------------------------------------------!
+      !Subroutines DCMIP 2016 physics (https://doi.org/10.5281/zenodo.1298671)       !
+      !------------------------------------------------------------------------------!
+      !GEM's adaptation to DCMIP 2016 physics:                                       !
+      !1) Combines elements from 2 subroutines: simple_physics_v6/dcmip_physics_z_v1 !
+      !2) PRESSURE not changed ((RHO is changed)                                     !
+      !3) Vertical index increases from BOTTOM to TOP                                !
+      !------------------------------------------------------------------------------!
       do j = 1,l_nj
 
          do i = 1,l_ni
@@ -224,111 +205,49 @@
 
                kk = l_nk-k+1
 
-               uu(kk) = uu_p(i,j,k)                                     !U wind component on Scalar grid
-               vv(kk) = vv_p(i,j,k)                                     !V wind component on Scalar grid
+               uu(kk) = pw_uu_plus(i,j,k)  !U wind component on Scalar grid
+               vv(kk) = pw_vv_plus(i,j,k)  !V wind component on Scalar grid
 
-              qsv(kk) = qsv_p(i,j,k)                                    !Specific Humidity (gm/gm)
-              qsc(kk) = qsc_p(i,j,k)                                    !Cloud water specific (gm/gm)
-              qsr(kk) = qsr_p(i,j,k)                                    !Rain water specific (gm/gm)
+               pt(kk) = pw_pt_plus(i,j,k)  !Pressure THERMO
+               pm(kk) = pw_pm_plus(i,j,k)  !Pressure MOMENTUM
 
-               qv(kk) = qsv(kk)/(1.0d0 - qsv(kk))                       !Conversion Specific Humidity to
-                                                                        !Water vapor mixing ratio (gm/gm)
+               tt(kk) = pw_tt_plus(i,j,k)  !Real temperature
 
-               pt(kk) = pt_p(i,j,k)                                     !Pressure on thermodynamic levels
-               pm(kk) = pm_p(i,j,k)                                     !Pressure on momentum      levels
+              qsv(kk) = qsv_p(i,j,k)       !Specific Humidity
+              qsc(kk) = qsc_p(i,j,k)       !Cloud water specific
+              qsr(kk) = qsr_p(i,j,k)       !Rain water specific
 
             end do
 
             !Surface pressure
             !----------------
-            pm(0) = pm_p(i,j,l_nk+1)
+            pm(0) = pw_p0_plus(i,j)
 
             !Top (ESTIMATION)
             !----------------
             pt(l_nk+1) = Cstv_ptop_8
 
-            do k = 1,l_nk !Reverse TOP/BOTTOM
-
-               kk = l_nk-k+1
-
-               !Coefficients for interpolating from Thermo to Momentum
-               !------------------------------------------------------
-               wp(kk) = (pm(kk) - pt(kk+1)) / (pt(kk) - pt(kk+1))        !Below M (LINEAR interpolation PRESSURE)
-               wm(kk) = 1.0d0 - wp(kk)                                   !Above M (LINEAR interpolation PRESSURE)
-
-               tt(kk) =  pw_tt_plus(i,j,k)                               !Real temperature
-               tv(kk) =  (1.d0 + zvir * qsv(kk))*tt(kk)                  !Virtual temperature
-
-               exner(kk) = (pt(kk)/Cstv_pref_8) ** (Rd/cp_)              !Exner pressure
-                 rho(kk) =  pt(kk)/(Rd*tv(kk)*(1.d0 + qv(kk)))           !Dry air density (kg/m^3)
-               theta(kk) =  tt(kk) / exner(kk)                           !Potential temperature
-
-            pdel_mid(kk) =  pm(kk-1) - pm(kk)                            !For RJ large-scale prec.
-
-            end do
-
-            !------------------------------------------
-            !Estimate heights of MOMENTUM/THERMO levels
-            !------------------------------------------
-
-               !Bottom
-               !------
-               zt(0) = 0. !ASSUME NO TOPOGRAPHY
-               zm(0) = 0. !ASSUME NO TOPOGRAPHY
-
-               !Estimate zm
-               !-------------------------------------------------------------------
-               !NOTE1: We did not use here DIAG_FI. It is another OPTION
-               !NOTE2: The revised zm before PBL uses also the following estimation
-               !-------------------------------------------------------------------
-               do kk = 1,l_nk
-                  dlnpint = log(pm(kk-1)) - log(pm(kk))
-                  zm(kk)  = zm(kk-1) + Rd/grav*tt(kk)*(1.d0 + zvir * qsv(kk))*dlnpint
-               end do
-
-               !Estimate zt
-               !-----------
-
-                  do k = 1,l_nk !Reverse TOP/BOTTOM
-
-                     kk = l_nk-k+1
-
-                     zt(kk) = gzt_p(i,j,k)/grav
-
-                  end do
-
-            call DCMIP2016_PHYSICS (test, uu, vv, pt, pm, qsv, qsc, qsr, rho, theta, exner, tt, dudt, dvdt, pdel_mid, &
-                                    Cstv_dt_8, zt, zm, not_rotated_lat(i,j), wm, wp, l_nk, precl, Dcmip_pbl_type, Dcmip_prec_type)
-
-            !-------------------------------------------------------------------
-            !                        UPDATE
-            !-------------------------------------------------------------------
-            !Note: PRESSURE is not changed (RHO is changed) in DCMIP2016_PHYSICS
-            !-------------------------------------------------------------------
-
-           do k = 1,l_nk !Reverse TOP/BOTTOM
-
-              kk = l_nk-k+1
-
-              pw_uu_plus(i,j,k) = uu(kk) !Scalar u
-              pw_vv_plus(i,j,k) = vv(kk) !Scalar v
-
-              qsv_p(i,j,k) = qsv(kk)
-              qsc_p(i,j,k) = qsc(kk)
-              qsr_p(i,j,k) = qsr(kk)
-
-            end do
+            call DCMIP2016_PHYSICS (test, uu, vv, pt, pm, qsv, qsc, qsr, tt,      &
+                                    Cstv_dt_8, not_rotated_lat(i,j), l_nk, precl, &
+                                    Dcmip_pbl_type, Dcmip_prec_type)
 
             do k = 1,l_nk !Reverse TOP/BOTTOM
 
                kk = l_nk-k+1
 
-               pw_tt_plus(i,j,k) = tt(kk) !Real temperature
+               pw_uu_plus(i,j,k) = uu(kk)  !U wind component on Scalar grid
+               pw_vv_plus(i,j,k) = vv(kk)  !V wind component on Scalar grid
+
+               pw_tt_plus(i,j,k) = tt(kk)  !Real temperature
+
+                    qsv_p(i,j,k) = qsv(kk) !Specific Humidity
+                    qsc_p(i,j,k) = qsc(kk) !Cloud water specific
+                    qsr_p(i,j,k) = qsr(kk) !Rain water specific
 
             end do
 
             !Instantaneous precipitation rate (m/s):
-            !Kessler microphysics/Reed-Jablonowski large scale precipitation
+            !Kessler Microphysics/Reed-Jablonowski Large-scale precipitation
             !---------------------------------------------------------------
             if (Dcmip_prec_type >= 0) then
 
@@ -361,6 +280,39 @@
 
       call glbstat2 (art,'ART','LCPR', &
                      l_minx,l_maxx,l_miny,l_maxy,1,1,1,G_ni,1,G_nj,1,1)
+
+      !-------------------------------------------------------------------------------
+      !Compute tendencies and reset physical world if requested (As in itf_phy_update)
+      !-------------------------------------------------------------------------------
+      if (Schm_phycpl_S == 'RHS' .or. Schm_phycpl_S == 'AVG') then
+
+         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
+         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
+         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+
+         tdu(1:l_ni,1:l_nj,1:l_nk) = pw_uu_plus(1:l_ni,1:l_nj,1:l_nk) - pw_uu_plus0(1:l_ni,1:l_nj,1:l_nk)
+         tdv(1:l_ni,1:l_nj,1:l_nk) = pw_vv_plus(1:l_ni,1:l_nj,1:l_nk) - pw_vv_plus0(1:l_ni,1:l_nj,1:l_nk)
+         call hwnd_stag(phy_uu_tend,phy_vv_tend,tdu,tdv,l_minx,l_maxx,l_miny,l_maxy,l_nk,.true.)
+
+         istat = gmm_get(gmmk_tt1_s, tt1)
+         call tt2virt (tv_plus,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv_plus(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
+
+         phy_uu_tend = phy_uu_tend/Cstv_dt_8
+         phy_vv_tend = phy_vv_tend/Cstv_dt_8
+         phy_tv_tend = phy_tv_tend/Cstv_dt_8
+
+         RESET_PW: if (Schm_phycpl_S == 'RHS') then
+            pw_uu_plus = pw_uu_plus0
+            pw_vv_plus = pw_vv_plus0
+            pw_tt_plus = pw_tt_plus0
+         else
+            pw_uu_plus = pw_uu_plus0 + Cstv_bA_m_8*(pw_uu_plus-pw_uu_plus0)
+            pw_vv_plus = pw_vv_plus0 + Cstv_bA_m_8*(pw_vv_plus-pw_vv_plus0)
+            pw_tt_plus = pw_tt_plus0 + Cstv_bA_8*(pw_tt_plus-pw_tt_plus0)
+         end if RESET_PW
+
+      end if
 
       return
 

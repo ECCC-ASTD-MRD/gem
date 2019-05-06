@@ -268,18 +268,18 @@ contains
          call msg(MSG_ERROR,'(phy_nml_check) pbl_dissheat = '//trim(pbl_dissheat)//' : Should be one of: '//trim(msg_S))
          return
       endif
-      
+
       if (.not.any(pbl_func_stab == PBL_FUNC_STAB_OPT)) then
          call str_concat(msg_S,PBL_FUNC_STAB_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) pbl_func_stab = '//trim(pbl_func_stab)//' : Should be one of: '//trim(msg_S))
          return
       endif
-      
+
       if (.not.any(pbl_func_unstab == PBL_FUNC_UNSTAB_OPT)) then
          call str_concat(msg_S,PBL_FUNC_UNSTAB_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) pbl_func_unstab = '//trim(pbl_func_unstab)//' : Should be one of: '//trim(msg_S))
          return
-      endif      
+      endif
 
       if (.not.any(pbl_mlblac_max == PBL_MLBLAC_MAX_OPT)) then
          call str_concat(msg_S,PBL_MLBLAC_MAX_OPT,', ')
@@ -318,7 +318,7 @@ contains
             return
          endif
       endif
-      
+ 
       if (.not.RMN_IS_OK(str_toreal(rew_const,rad_cond_rew))) then
          if (.not.any(rad_cond_rew == RAD_COND_REW_OPT)) then
             call str_concat(msg_S,RAD_COND_REW_OPT,', ')
@@ -348,6 +348,16 @@ contains
      if (.not.any(tofd == TOFD_OPT)) then
          call str_concat(msg_S,TOFD_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (tofd /= 'NIL') then
+         call msg(MSG_ERROR,'(phy_nml_check) TOFD='//trim(tofd)//' -- is broken thus disabled until fixed in the dev version')
+         return
+      endif
+ 
+      if (simisccp) then
+         call msg(MSG_ERROR,'(phy_nml_check) simisccp=.true. -- no longuer supported')
          return
       endif
 

@@ -29,7 +29,8 @@
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in)  :: &
                             uut1, vvt1, zzt1, uut0, vvt0, zzt0
 
-      integer :: iter,i,j,k,kk1,nnk
+      include "tricublin_f90.inc"
+      integer :: iter,i,j,k,kk1,nnk,nb
       integer,dimension(l_ni) :: kk
       real*8, dimension(l_ni) :: xm,ym,zm
       real*8 pos
@@ -44,10 +45,8 @@
 
       do  iter = 1, Adz_niter
 
-         call adz_tricub_wind ( Adz_uu_dep(1,1,Adz_k0m),&
-                                Adz_vv_dep(1,1,Adz_k0m),&
-                                Adz_ww_dep(1,1,Adz_k0m),&
-                     Adz_uvw_d,Adz_pxyzm(1,1,1,Adz_k0m),nnk)
+         call tricublin_zyx3_n ( Adz_uvw_dep,Adz_uvw_d(1,1,1,1), &
+                                 Adz_pxyzm,Adz_cpntr_q,Adz_3dnh )
 
 !- Compute departure positions
 
@@ -55,21 +54,21 @@
              do j= 1, l_nj
                 do i= 1, l_ni
                   xm(i) = dble(i+l_i0-1) - &
-                    ( Cstv_dtD_8 * Adz_uu_dep(i,j,k)  &
+                    ( Cstv_dtD_8 * Adz_uvw_dep(1,i,j,k)  &
                     + Cstv_dtA_8 * Adz_uu_arr(i,j,k) )&
                     * geomh_inv_hx_8
                   ym(i) = dble(j+l_j0-1) - &
-                    ( Cstv_dtD_8 * Adz_vv_dep(i,j,k)  &
+                    ( Cstv_dtD_8 * Adz_uvw_dep(2,i,j,k)  &
                     + Cstv_dtA_8 * Adz_vv_arr(i,j,k) )&
                     * geomh_inv_hy_8
-                  pos = Ver_z_8%m(k) - Cstv_dtzD_8* Adz_ww_dep(i,j,k) &
-                                     - Cstv_dtzA_8* Adz_ww_arr(i,j,k)
+                  pos = Ver_z_8%m(k)- Cstv_dtzD_8* Adz_uvw_dep(3,i,j,k) &
+                                    - Cstv_dtzA_8* Adz_ww_arr(i,j,k)
                   zm(i) = min(max(pos,Ver_zmin_8),Ver_zmax_8)
 
                   kk1 = (zm(i) - ver_z_8%m(0)  ) * adz_ovdzm_8 + 1.d0
                   kk1 = adz_search_m(kk1)
-                  if ( zm(i) > ver_z_8%m(min(kk1+1,l_nk+1))) kk1= kk1 + 1
-                  if ( zm(i) < ver_z_8%m(kk1             ) ) kk1= kk1 - 1
+                  if ( sig * zm(i) > sig* ver_z_8%m(min(kk1+1,l_nk+1)) ) kk1= kk1 + 1
+                  if ( sig * zm(i) < sig* ver_z_8%m(kk1              ) ) kk1= kk1 - 1
                   kk(i) = kk1
                end do
 !DIR$ IVDEP
@@ -81,16 +80,21 @@
                   Adz_pxyzm(2,i,j,k) = min(max(ym(i),Adz_iminposy),&
                                                      Adz_imaxposy)
                   kk1 = min(l_nk+1,max(0,kk(i)))
-                  Adz_wpxyz(i,j,k,3) = (zm(i)-ver_z_8%m(kk1))&
-                                     *Adz_odelz_m(kk1) + dble(kk1)
+                  nb  = max(min(kk1,G_nk-1),1)
+                  Adz_wpxyz(i,j,k,3) = (zm(i)-ver_z_8%m(nb))&
+                                     *Adz_odelz_m(nb) + dble(nb)
                   Adz_pxyzm(3,i,j,k) = Adz_wpxyz(i,j,k,3)
                 end do
             end do
          end do
       end do
+
+      Adz_pm   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0:l_nk)=&
+      Adz_pxyzm(:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0:l_nk)
+
 ! Interpolate Momentun positions on Thermo Level and U V  grid
 
-      call adz_interp_traj (Adz_k0,Adz_k0t)
+      call adz_interp_traj
 
       Adz_niter = Adz_itraj
 !

@@ -19,7 +19,7 @@ SUBROUTINE COUPLING_TEB2(PTSTEP, KYEAR, KMONTH, KDAY, PTIME, PTSUN, PZENITH, PAZ
              PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFU, PSFV,                     &
              PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PLAT                                      )
 !     ###############################################################################
-!
+!#TODO: never used: KYEAR, KMONTH, KDAY, PTIME, PAZIM, PZS
 use sfclayer_mod, only: sl_prelim
 
 !****  *COUPLING_TEB$n * - Driver for TEB 
@@ -63,7 +63,7 @@ USE MODD_TEB,        ONLY :                                                     
                        XSVF_ROAD, XSVF_WALL
 !
 USE MODD_TOWN,       ONLY :                                                     &
-                       NNI, XTOWN,                                              &
+                       XTOWN,                                                   &
                        XU_CANYON,                                               &
                        XRN_ROOF,XH_ROOF,XLE_ROOF,XLES_ROOF,                     &
                        XGFLUX_ROOF,XRUNOFF_ROOF,                                &

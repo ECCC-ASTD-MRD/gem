@@ -17,6 +17,7 @@
 
       subroutine get_s_large_scale (F_topo_ls, Minx, Maxx, Miny, Maxy)
       use cstv
+      use dynkernel_options
       use dyn_fisl_options
       use glb_ld
       use gmm_geof
@@ -32,8 +33,6 @@
 
 !author
 !     A. Plante - Aut 2016
-!
-!revision
 !
 
 ! Local varibales
@@ -69,12 +68,23 @@
 
       oneoRT=1.d0 / (rgasd_8 * Tcdk_8)
 
-      do j=1,l_nj
-         do i=1,l_ni
-            sls(i,j)   = -F_topo_ls(i,j) * oneoRT
-            p0_ls(i,j) = Cstv_pref_8 * exp(sls(i,j))
-         end do
-      end do
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' ) then
+
+           do j=1,l_nj
+              do i=1,l_ni
+                 sls(i,j)   = -F_topo_ls(i,j) * oneoRT
+                 p0_ls(i,j) = Cstv_pref_8 * exp(sls(i,j))
+              end do
+           end do
+      else
+           do j=1,l_nj
+              do i=1,l_ni
+                 sls(i,j)   = F_topo_ls(i,j)
+                 p0_ls(i,j) = 0.0
+              end do
+           end do
+
+      end if
 
 
 1000  format(3X,'COMPUTE LARGE SCALE S: (S/R GET_S_LARGE_SCALE)')

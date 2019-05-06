@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      Integer ni, nk, n, modp
+      Integer ni, nk, n
       Real hr(ni,nk), hu(ni,nk), tt(ni,nk)
       Real ps(ni,*)
       Logical swph

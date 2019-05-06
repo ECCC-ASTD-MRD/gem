@@ -29,9 +29,6 @@
 !author
 !     Plante A.           - May 2004
 !
-!revision
-!
-
       type(gmm_metadata) :: mymeta
       integer :: istat
       real betav_m(l_minx:l_maxx,l_miny:l_maxy,l_nk),betav_t(l_minx:l_maxx,l_miny:l_maxy,l_nk),ubar
@@ -55,8 +52,7 @@
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(fis0)'
 
-      call set_betav(betav_m,betav_t,st1,sls,fis0, &
-                     l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call set_betav (betav_m, betav_t, st1, sls, l_minx, l_maxx, l_miny, l_maxy, l_nk)
 
       ubar= mtn_flo
 

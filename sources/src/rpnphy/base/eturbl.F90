@@ -18,6 +18,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
                          GAMAL,QL,U,V,T,TE,TVE,Q,QCE,QE,H,LH,PS,TS,S,SE, &
                          TAU,KOUNT,GAMAQ,CCS,KT,Z,GZMOM,P_PROF,FRV,XH, &
                          DXDY,TRNCH,N,NK,Z0,IT)
+!#TODO: never  used: QL, H, LH, TS, CCS, IT
       use tdpack, only: CAPPA, DELTA, KARMAN
       use series_mod, only: series_xst
       use phy_options
@@ -36,13 +37,12 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
       real TS(N),S(n,NK),SE(n,NK),P_PROF(NK)
       real TAU
       integer KOUNT
-      real LMN,Z0(N),FIMS
+      real LMN,Z0(N)
       real FRV(N)
-      real KT(N,NK),GAMAQ(N,NK),CCS(N,NK),FITS
+      real KT(N,NK),GAMAQ(N,NK),CCS(N,NK)
       real Z(N,NK),GZMOM(N,NK)
       integer IT
       real EXP_TAU
-      integer IERGET
 
 !@Author J. Cote (RPN 1983)
 !
@@ -202,7 +202,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 !
       real, parameter :: EPSILON_B=1.E-8,PETIT=1.E-6,LMDA=200.
       real ZNOLD(N,NK),beta_sfc(n)
-      real SC,EXP_EXPLIM,TAUINV,BETAI
+      real SC,EXP_EXPLIM,TAUINV
       real, dimension(n,nk) :: zn_blac,zn_boujo,blend_hght
       real, dimension(n,nk,3) :: w_cld
       integer J,K,STAT

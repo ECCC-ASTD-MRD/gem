@@ -93,7 +93,7 @@
       real aird,dp
       real aero,ct
       real rec_grav,rec_rgasd
-      integer i, k, ib, l, j
+      integer i, k, ib, l
 !
 !
 !     for background aerosol based on rpn rad, broad band results

@@ -441,7 +441,7 @@ contains
          case('debug_l')
             istat = str_tobool(m_cfgs(F_id)%debug_L,val_S)
             if (m_cfgs(F_id)%debug_L) then
-               istat = fstopc('MSGLVL','INFORM',.false.)
+               istat = fstopc('MSGLVL','WARNIN',.false.)
             else
                istat = fstopc('MSGLVL','SYSTEM',.false.)
             endif
@@ -637,6 +637,10 @@ contains
       
       varname_S = F_varname_S
       istat = clib_tolower(varname_S)
+
+      if (F_varidx < 1) then
+         call msg(MSG_DEBUG,'(outcfg) outcfg_var_meta: negative value for F_varidx -- Ignored/Unused')
+      endif
 
       if (present(F_ip3)) F_ip3 = m_cfgs(F_id)%ip3
       if (present(F_etk_S)) F_etk_S = m_cfgs(F_id)%etk_S

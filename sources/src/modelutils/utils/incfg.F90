@@ -518,7 +518,6 @@ contains
       integer,intent(in) :: F_id,F_index,F_istep
       integer :: F_istat
       !*@/
-      real(RDOUBLE) :: nhours_8
       integer :: delta,mo0,mo1,yy0,yy1
       integer(IDOUBLE) :: jdatev, step_8, dt_8
       !------------------------------------------------------------------
@@ -986,7 +985,7 @@ contains
       integer,intent(in) :: F_id,F_index
       !*@/
       integer,parameter :: NMAX = 3
-      character(len=1024) :: parts_S(NMAX),tmp_S
+      character(len=1024) :: parts_S(NMAX)
       integer :: val,istat,n
       !------------------------------------------------------------------
       call str_split2list(parts_S,F_string_S,',',NMAX)

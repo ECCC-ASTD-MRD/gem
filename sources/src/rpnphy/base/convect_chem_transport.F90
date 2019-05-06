@@ -5,7 +5,7 @@
                                  & PTIMEC, PDXDY, PMIXF, PLMASS, PWSUB,&
                                  & KFTSTEPS )
 !#######################################################################
-
+!#TODO: never used: KFTSTEPS
 !!**** Compute  modified chemical tracer values due to convective event
 !!
 !!
@@ -96,7 +96,7 @@ integer :: JI             ! horizontal loop index
 integer :: JK, JKP        ! vertical loop index
 integer :: JN             ! chemical tracer loop index
 integer :: JSTEP          ! fractional time loop index
-integer :: JKLD, JKLP, JKMAX ! loop index for levels
+integer :: JKLD, JKLP     ! loop index for levels
 integer, DIMENSION(KLON) :: ITSTEP !fractional convective time step
 
 real, DIMENSION(KLON,KLEV)     :: ZOMG ! compensat. subsidence (Pa/s)

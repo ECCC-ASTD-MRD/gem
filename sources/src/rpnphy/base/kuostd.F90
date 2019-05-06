@@ -18,6 +18,7 @@
       SUBROUTINE KUOSTD ( CTT,CQT,ilab,CCF,DBDT, &
                           TP,TM,QP,QM,GZM,PSP,PSM, &
                           SIGMA, TAU, NI, NK )
+!#TODO: PSM never used
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -78,11 +79,11 @@
 !*
       LOGICAL LO
       INTEGER IS,IKA,IKB,jk,jl
-      REAL ZQCD,ZK,temp1,temp2
+      REAL ZQCD,ZK,temp1
       REAL ZTVC
       REAL ENTRM,TAUCU,CHLS,DELTA2
       REAL ZCOR,ZEPSDP,ZKQ
-      real rCPD,rCPDv,rGRAV3
+      real rCPD,rGRAV3
 !
 !***********************************************************************
 !     AUTOMATIC ARRAYS

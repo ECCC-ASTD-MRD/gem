@@ -580,7 +580,6 @@ contains
       integer,intent(out) :: F_ip2,F_ip2m1,F_ip2p1
       !*@/
       integer :: year
-      real(RDOUBLE) :: nhours_8
       !------------------------------------------------------------------
       F_jdatev = F_jdatev0
       F_jdatevm1 = F_jdatev0

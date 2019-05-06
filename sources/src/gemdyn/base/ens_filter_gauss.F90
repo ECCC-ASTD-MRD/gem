@@ -84,8 +84,8 @@
 !     ============
       call itf_fft_set(G_ni,'PERIODIC',pri8)
       do kz=1,Trp_12dn
-        call ffft8(work_local(l_miny,kz,1),(l_maxy-l_miny+1) &
-             *(Trp_12dmax-Trp_12dmin+1),1, (l_maxy-l_miny+1), -1 )
+        call itf_fft_drv(work_local(l_miny,kz,1),(l_maxy-l_miny+1) &
+                         *(Trp_12dmax-Trp_12dmin+1),1, (l_maxy-l_miny+1), -1 )
       end do
 !
 !     apply the Gaussian bell
@@ -114,8 +114,8 @@
 !     ============
       call itf_fft_set(G_nj,'PERIODIC',pri8)
       do kx=1,Trp_22n
-      call ffft8(ffx_local(Trp_12dmin,kx,1),(Trp_12dmax-Trp_12dmin+1) &
-           *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), -1 )
+      call itf_fft_drv(ffx_local(Trp_12dmin,kx,1),(Trp_12dmax-Trp_12dmin+1) &
+                       *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), -1 )
       end do
 !     Apply the Gaussian bell
       try=1.d0/(pi_8*Dcst_rayt_8)**2
@@ -136,8 +136,8 @@
 !     the way back to the original space
 !     ==================================
       do kx=1,Trp_22n
-      call ffft8(ffx_local(Trp_12dmin,kx,1),(Trp_12dmax-Trp_12dmin+1) &
-           *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), +1 )
+      call itf_fft_drv(ffx_local(Trp_12dmin,kx,1),(Trp_12dmax-Trp_12dmin+1) &
+                       *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), +1 )
       end do
 !
       call rpn_comm_transpose( work_local, l_miny, l_maxy, G_nj, &
@@ -145,8 +145,8 @@
                           Trp_22min , Trp_22max, G_ni, ffx_local, -2, 2 )
       call setfft8(G_ni)
       do kz=1,Trp_12dn
-        call ffft8(work_local(l_miny,kz,1),(l_maxy-l_miny+1) &
-             *(Trp_12dmax-Trp_12dmin+1),1, (l_maxy-l_miny+1), +1 )
+        call itf_fft_drv(work_local(l_miny,kz,1),(l_maxy-l_miny+1) &
+                         *(Trp_12dmax-Trp_12dmin+1),1, (l_maxy-l_miny+1), +1 )
       end do
 !
       call rpn_comm_transpose( psi_local, l_minx, l_maxx, G_ni, &

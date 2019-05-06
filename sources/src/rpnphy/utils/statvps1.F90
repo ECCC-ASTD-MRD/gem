@@ -17,11 +17,11 @@
 !                le maximum d'une variable du bus permanent ou
 !                volatil de la physique et imprime le resultat.
 !
-      subroutine statvps1 (vp,no,from,ni,nk,busnom)
+      subroutine statvps2 (vp,no,from,ni,busnom)
       implicit none
 #include <arch_specific.hf>
 !
-      integer ni,nk,no
+      integer ni,no
       character*(*) from
       character*1 busnom
 

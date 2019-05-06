@@ -115,10 +115,29 @@
          Tr3d_wload(dejala)= .false.
       end if
 
+      Tr3d_ntrNT=0 ; Tr3d_ntrM1=0 ; Tr3d_ntrMC=0
+
+      do i=1, Tr3d_ntr
+         if ( (Tr3d_mass(i) == 0) .and. (Tr3d_mono(i) < 2) .and. (Tr3d_intp(i) == 'CUBIC') )  then
+            if (Tr3d_mono(i) == 0) then
+               Tr3d_ntrNT= Tr3d_ntrNT + 1
+               Tr3d_NT_S(Tr3d_ntrNT) = Tr3d_name_S(i)
+            end if
+            if (Tr3d_mono(i) == 1) then
+               Tr3d_ntrM1= Tr3d_ntrM1 + 1
+               Tr3d_M1_S(Tr3d_ntrM1) = Tr3d_name_S(i)
+            end if
+         else
+            Tr3d_ntrMC= Tr3d_ntrMC + 1
+            Tr3d_MC_S(Tr3d_ntrMC) = Tr3d_name_S(i)
+         endif
+      end do
+
       if (Lun_out > 0) then
          write (Lun_out,1001)
          do i=1,Tr3d_ntr
-            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i),Tr3d_vmin(i),Tr3d_vmax(i),Tr3d_intp(i)
+            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),&
+            Tr3d_mono(i),Tr3d_mass(i),Tr3d_vmin(i),Tr3d_vmax(i),Tr3d_intp(i)
          end do
       end if
 

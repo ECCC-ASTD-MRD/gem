@@ -175,7 +175,7 @@
 !*
 !--------------------------------------------------------------------
       Real q1, dq1, q0, th, ft0, dft0
-      Real latheat, lvt0, lsti, dt, dtpr
+      Real latheat, dt, dtpr
       Real hscp
       Real d, dlp, pr
       Integer iter, n, j

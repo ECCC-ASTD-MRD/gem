@@ -23,12 +23,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Michel Desgagne - May 2010
-!
-!revision
-! v4_14 - Desgagne, M.     - Initial revision
-
       integer :: istat
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()
 !     ________________________________________________________________
@@ -39,7 +33,7 @@
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
-      call tt2virt2 (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call tt2virt (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call gemtime_stop (5)
 !     ________________________________________________________________
 !

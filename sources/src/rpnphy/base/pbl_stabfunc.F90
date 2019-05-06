@@ -341,6 +341,7 @@ contains
    end function l07_fm
       
    real function l07_dfm(v)
+      !#TODO: never used v
       ! Derivative of stability function for momentum wrt Ri (Lock 2007)
       real, intent(in) :: v
       l07_dfm = l07_am

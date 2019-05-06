@@ -47,10 +47,11 @@ module tr3d
    integer, parameter :: MAXTR3D = 250
 
    character(len=4) :: Tr3d_name_S(MAXTR3D), NTR_Tr3d_name_S(MAXTR3D)
+   character(len=4) :: Tr3d_NT_S(MAXTR3D),Tr3d_M1_S(MAXTR3D),Tr3d_MC_S(MAXTR3D)
    character(len=12):: Tr3d_intp  (MAXTR3D)
    logical :: Tr3d_wload(MAXTR3D), Tr3d_hzd (MAXTR3D)
    integer :: Tr3d_mono (MAXTR3D), Tr3d_mass(MAXTR3D)
-   integer :: Tr3d_ntr, NTR_Tr3d_ntr
+   integer :: Tr3d_ntr, Tr3d_ntrNT, Tr3d_ntrM1, Tr3d_ntrMC, NTR_Tr3d_ntr
    real    :: Tr3d_vmin(MAXTR3D),Tr3d_vmax(MAXTR3D)
 
 end module tr3d

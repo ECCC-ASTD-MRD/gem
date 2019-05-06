@@ -17,31 +17,29 @@
 
       subroutine set_oprz (F_errcode)
       use dyn_fisl_options
-      use lam_options
-      use tdpack
       use glb_ld
+      use lam_options
       use lun
+      use tdpack
       use ver
       use opr
       implicit none
 #include <arch_specific.hf>
 
-      integer F_errcode
+      integer :: F_errcode
 
-
-      real*8, parameter ::  one = 1.d0
-      integer k, k0, AA, BB, CC
-      real*8  Falfas_8, Fbetas_8, r_8(G_nk)
+      real*8, parameter :: one = 1.d0
+      integer :: k, k0, AA, BB, CC
+      real*8 :: Falfas_8, Fbetas_8, r_8(G_nk)
       real*8, dimension (G_nk*G_nk) :: br_8, bl_8
 !     __________________________________________________________________
 !
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !     Compute the vertical operators: tri-diagnonal matrices
 !                  O(AA+k): lower diagonal
 !                  O(BB+k):       diagonal
 !                  O(CC+k): upper diagonal
 !           O(AA+k)*P(k-1)+O(BB+k)*P(k)+O(CC+k)*P(k+1)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!
       if (Lun_out > 0) write(Lun_out,1000)
 
       AA=0
@@ -157,7 +155,7 @@
          Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) &
                              + .5d0*Ver_idz_8%m(k0)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)*(one+Ver_alfat_8)
          Opr_opszpm_8(BB+k0) = Opr_opszpm_8(BB+k0) + Ver_wm_8%m(k0) &
-            		     *(Ver_wp_8%t(k0-1)+Ver_wm_8%t(k0-1)*Ver_alfat_8)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)
+                             * (Ver_wp_8%t(k0-1)+Ver_wm_8%t(k0-1)*Ver_alfat_8)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)
       end if
 !
 !     multiplying by 1-cappa
@@ -171,7 +169,7 @@
 !     Compute eigenvalues and eigenvector in the vertical
 !     ---------------------------------------------------
 
-      call preverln2 ( r_8, bl_8, br_8, G_nk, G_nk, F_errcode)
+      call preverln ( r_8, bl_8, br_8, G_nk, G_nk, F_errcode)
 !
 !     transfer results back in Opr_* output arrays
 !

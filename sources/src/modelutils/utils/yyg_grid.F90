@@ -35,7 +35,7 @@
       character*12 lab_S
 
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip3_ts,ip1,ip2,ip3
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer ni1, nj1, nk1, err, nlis,lislon
       parameter (nlis = 1024)
       integer liste(nlis)

@@ -19,7 +19,6 @@
       use iso_c_binding
 
       use adz_options
-      use adv_options
       use coriolis
       use dcmip_options
       use dyn_expo_options
@@ -54,7 +53,7 @@
       include "rpn_comm.inc"
 
       integer, external :: adv_config, gemdm_config, set_io_pes,&
-                           domain_decomp,sol_transpose,set_fft
+                           domain_decomp,sol_transpose
 
       character(len=50) :: LADATE
       integer :: istat,options,wload,hzd,monot,massc,unf
@@ -96,8 +95,7 @@
          if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL' ) then
             err(14) = dyn_fisl_nml (unf)
             err(15) = adz_nml      (unf)
-            err(16) = adv_nml      (unf)
-            err(17) = hvdif_nml    (unf)
+            err(16) = hvdif_nml    (unf)
          else if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_EXPO' ) then
             err(14) = dyn_expo_nml (unf)
          else
@@ -126,7 +124,7 @@
 ! Establish final configuration
 
       err(:) = 0
-      err(1) = HORgrid_config (adv_maxcfl_fact)
+      err(1) = HORgrid_config (adz_maxcfl_fact)
       call theo_cfg() !must absolutely be done here
       err(2) = VERgrid_config ()
 
@@ -139,7 +137,7 @@
 ! Final configuration
       if (minval(err(:))>=0) err(4) = gemdm_config()
 
-      call canonical_cases ("SET_GEOM")
+      call canonical_cases ("SET_ZETA")
 
       call gem_error ( minval(err(:)),'CONFIGURATION ERROR', &
                       'ABORT in set_world_view' )
@@ -157,7 +155,6 @@
       if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL' ) then
          err(1) = dyn_fisl_nml (-1)
          err(1) = adz_nml      (-1)
-         err(1) = adv_nml      (-1)
          err(1) = hvdif_nml    (-1)
       else if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_EXPO' ) then
          err(1) = dyn_expo_nml (-1)
@@ -238,13 +235,11 @@
 
       if (trim(Dynamics_Kernel_S(1:13)) == 'DYNAMICS_FISL') then
          err(1)= sol_transpose ( Ptopo_npex, Ptopo_npey, .false. )
-         err(2)= set_fft()
-         call gem_error ( min(err(1),err(2)),'SET_WORLD_VIEW', &
-                          'sol_transpose or set_fft -- ABORTING')
+         call gem_error (err(1), 'SET_WORLD_VIEW', 'sol_transpose -- ABORTING')
       end if
 
-      call set_coriolis ( geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, &
-                          Grd_rot_8, l_minx,l_maxx,l_miny,l_maxy )
+      call set_coriolis_shallow ( geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, &
+                                  Grd_rot_8, l_minx, l_maxx, l_miny, l_maxy )
 
       call set_opr(' ')
 

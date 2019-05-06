@@ -141,7 +141,6 @@ contains
            zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
            zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx
 
-      real :: ncp_prescribed
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'cnv_main [BEGIN]')
 

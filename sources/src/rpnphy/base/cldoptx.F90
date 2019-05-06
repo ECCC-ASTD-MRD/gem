@@ -23,6 +23,7 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
      cw_rad,ioptix)
    use tdpack, only: GRAV, PI, RGASD
    implicit none
+!#TODO: never used: IWC, satuco, cw_rad
 #include <arch_specific.hf>
    !@OBJECT
    !     computes optical parameters as input to visible and infrared
@@ -142,13 +143,12 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
    integer i,k
    integer ire(m,nk)
    real tuneopw
-   real rei, rec_rei, ki, iwcm1, tuneopi, omi, gi, ssai
+   real rei, rec_rei, ki, tuneopi, omi, gi, ssai
    real dp1,dp2,dp3
    real elsa, emiss
    real third,rec_grav,rec_180,rec_rgasd
    real ct,aero,rlat,eps
-   real zz, No
-   real tcel(m,nk),aird(m,nk),rew(m,nk),rec_cdd(m,nk),kw(m,nk)
+   real aird(m,nk),rew(m,nk),rec_cdd(m,nk),kw(m,nk)
    real kwf_ire(m,nk),kvf_ire(m,nk),ssf_ire(m,nk),gwf_ire(m,nk)
    real ei(m,nk),omw(m,nk),ssaw(m,nk),gw(m,nk)
    real ew(m,nk)

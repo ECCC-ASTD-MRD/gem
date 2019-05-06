@@ -138,7 +138,7 @@
 
       end if
 
-      istat = fstopc('MSGLVL','INFORM',.false.)
+      istat = fstopc('MSGLVL','WARNIN',.false.)
       call gemtime_stop ( 80 )
 
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)

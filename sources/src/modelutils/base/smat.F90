@@ -36,7 +36,6 @@
 ! NT: atan uses and gives x between -pi and pi ( user must do shift if necessary)     
 !
          real*8 x,y,t,p,s(2,2),atan2,asin,cos,sin
-         real*8 det,det1
 
 !
       t=atan2(sin(y),(-cos(y)*cos(x)))

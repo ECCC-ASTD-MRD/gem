@@ -34,7 +34,7 @@ subroutine nml_gem()
    use dynkernel_options
    use dyn_expo_options
    use gem_options
-   use adv_options
+   use adz_options
    use grdc_options
    use hvdif_options
    use init_options
@@ -48,7 +48,7 @@ subroutine nml_gem()
 
    err = dynKernel_nml(-2)
    err = dyn_fisl_nml (-2)
-   err = adv_nml      (-2)
+   err = adz_nml      (-2)
    err = hvdif_nml    (-2)
    err = step_nml     (-2)
    err = gem_nml      (-2)

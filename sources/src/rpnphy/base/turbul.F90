@@ -68,8 +68,8 @@ contains
 
       real, save :: tfilt = 0.1
 
-      integer :: ierget, i, k, stat, ksl(ni)
-      real :: cf1, cf2, eturbtau, zntem, uet, ilmot, &
+      integer :: i, k, stat, ksl(ni)
+      real :: cf1, cf2, eturbtau, uet, ilmot, &
            fhz, fim, fit, hst_local, &
            work2(ni), b(ni,nkm1*4), xb(ni), xh(ni)
 

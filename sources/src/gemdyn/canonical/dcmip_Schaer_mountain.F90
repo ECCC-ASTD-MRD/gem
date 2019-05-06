@@ -15,7 +15,7 @@
 
 !**s/r dcmip_Schaer_mountain - Setup for Mountain waves over a Schaer-type mountain on a small planet (DCMIP 2012)
 
-      subroutine dcmip_Schaer_mountain (F_u,F_v,F_zd,F_tv,F_q,F_topo,F_s, &
+      subroutine dcmip_Schaer_mountain (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps, &
                                         Mminx,Mmaxx,Mminy,Mmaxy,Nk,Shear,Set_topo_L,F_stag_L)
 
       use dcmip_2012_init_1_2_3
@@ -25,8 +25,8 @@
       use cstv
       use lun
       use ver
-      use gmm_itf_mod
       use ptopo
+      use dynkernel_options
 
       implicit none
 
@@ -35,61 +35,70 @@
       !arguments
       !---------
       integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar u
-           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar v
+
+      real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_v    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_tv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Virtual temperature
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s    (Mminx:Mmaxx,Mminy:Mmaxy),    &
+           F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
+           F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
 
-      integer  :: Shear      ! 0 or 1 see below
-      logical  :: Set_topo_L ! If .T.: Set F_topo to initialize  Topo_High
-                             ! If .F.: Use F_topo initialized as Topo_low
+      integer Shear      ! If 0 then we use constant u 
+                         ! If 0 then we use shear flow
 
-      logical  :: F_stag_L   ! Staggered uv if .T. / Scalar uv if .F.
+      logical Set_topo_L ! If .T.: Set F_topo to initialize  Topo_High
+                         ! If .F.: Use F_topo initialized as Topo_low
+
+      logical F_stag_L   ! Staggered uv if .T. / Scalar uv if .F.
 
       !object
       !======================================================================================
       !   Setup for Mountain waves over a Schaer-type mountain on a small planet (DCMIP 2012)
       !======================================================================================
 
-      !------------------------------------------------------------
+      !--------------------------------------------------------
 
       integer i,j,k
 
       real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon, &          ! Longitude (radians)
-                  lat, &          ! Latitude (radians)
-                  z               ! Height (m)
+      real(8)  :: lon,     & ! Longitude (radians)
+                  lat,     & ! Latitude (radians)
+                  z          ! Height (m)
 
-      real(8)  :: p               ! Pressure  (Pa)
+      real(8)  :: p          ! Pressure  (Pa)
 
-      integer  :: zcoords         ! 0 or 1 see below
+      integer  :: zcoords    ! 0 if p coordinates are specified
+                             ! 1 if z coordinates are specified
 
-      real(8)  :: u, &            ! Zonal wind (m s^-1)
-                  v, &            ! Meridional wind (m s^-1)
-                  w, &            ! Vertical Velocity (m s^-1)
-                  t, &            ! Temperature (K)
-                  tv,&            ! Virtual Temperature (K)
-                  phis, &         ! Surface Geopotential (m^2 s^-2)
-                  ps, &           ! Surface Pressure (Pa)
-                  rho, &          ! density (kg m^-3)
-                  q               ! Specific Humidity (kg/kg)
+      real(8)  :: u,       & ! Zonal wind (m s^-1)
+                  v,       & ! Meridional wind (m s^-1)
+                  w,       & ! Vertical Velocity (m s^-1)
+                  t,       & ! Temperature (K)
+                  tv,      & ! Virtual Temperature (K)
+                  phis,    & ! Surface Geopotential (m^2 s^-2)
+                  ps,      & ! Surface Pressure (Pa)
+                  rho,     & ! Density (kg m^-3)
+                  q          ! Specific Humidity (kg/kg)
 
-      real(8) f_rayleigh_friction
+      logical :: GEM_P_L
 
-      !------------------------------------------------------------
+      !--------------------------------------------------------
 
       if (Lun_out > 0.and.Cstv_tstr_8 /= 300.0) call handle_error(-1,'DCMIP_SCHAER_MOUNTAIN','SET TSTR AS T AT EQUATOR')
 
-      if (Lun_out > 0) write (Lun_out,1000) Shear, Set_topo_L
+      if (Lun_out > 0) write (Lun_out,1000) Shear,Set_topo_L
 
-      zcoords = 0
+      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Initial conditions: T,ZD,Q,S,TOPO
-      !---------------------------------
+      zcoords = 1
+      if (GEM_P_L) zcoords = 0
+
+      !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
+      !----------------------------------------
       do k = 1,Nk
 
          do j = 1,l_nj
@@ -105,16 +114,24 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_tv(i,j,k) = tv
-                  F_q (i,j,k) = q
-                  F_s (i,j)   = log(ps/Cstv_pref_8)
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
 
+                  F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -130,16 +147,24 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
-                  F_tv(i,j,k)  = tv
-                  F_q (i,j,k)  = q
-                  F_s (i,j)    = log(ps/Cstv_pref_8)
+                  F_tv(i,j,k) = tv
+                  F_qv(i,j,k) = q
+
+                  if (GEM_P_L) then
+                     F_s (i,j) = log(ps/Cstv_pref_8)
+                  else
+                     F_ps(i,j) = ps
+                  end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
 
+                  F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
+
+                  if (k==Nk) F_zd(i,j,k) = 0.
 
                end do
 
@@ -170,8 +195,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
 
@@ -189,8 +214,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -221,8 +246,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
 
@@ -240,8 +265,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 
@@ -276,8 +301,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
 
@@ -295,8 +320,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -327,8 +352,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
 
@@ -346,8 +371,8 @@
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,f_rayleigh_friction,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 

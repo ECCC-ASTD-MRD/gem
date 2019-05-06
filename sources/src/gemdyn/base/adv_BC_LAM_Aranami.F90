@@ -16,10 +16,9 @@
 
       subroutine adv_BC_LAM_Aranami (F_cub_o,F_in_o,F_cub_i,F_in_i,F_x,F_y,F_z,F_num,F_k0,F_nk,F_lev)
 
-      use gem_timing
       use adv_grid
       use adv_interp
-      use adv_options
+      use adz_options
       use gem_options
       use glb_ld
       use HORgrid_options
@@ -89,8 +88,6 @@
 
       !---------------------------------------------------------------------------------------------------------
 
-      call gemtime_start (77, 'ADV_BC_FLUX', 39)
-
       nullify(ii_o, ii_i)
 
       kkmax = F_nk - 1
@@ -130,7 +127,7 @@
       miny_e = adv_lminy
       maxy_e = adv_lmaxy
 
-      call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e,2) !EXTENSION (CFL)
+      call adz_get_ij0n_ext (i0_e,in_e,j0_e,jn_e,1) !EXTENSION (CFL)
 
       !We do not modify how FLUX_out is calculated
       !-------------------------------------------
@@ -146,7 +143,7 @@
 
       !Computations related to upstream positions done at each timestep
       !----------------------------------------------------------------
-      if (Adv_pos_reset(1)==1) then
+      if (Adz_pos_reset==1) then
 
          !Allocation
          !----------
@@ -418,10 +415,10 @@
 
          end if
 
-         Adv_pos_reset(1) = 0
+         Adz_pos_reset = 0
 
-      end if  !END pos_reset(1)
-      !------------------------
+      end if  !END pos_reset
+      !---------------------
 
       !--------------------------------------------
       !Bermejo-Conde LAM: Estimate FLUX_out/FLUX_in
@@ -577,8 +574,6 @@
          end do
 
       end if
-
-      call gemtime_stop (77)
 
       return
 

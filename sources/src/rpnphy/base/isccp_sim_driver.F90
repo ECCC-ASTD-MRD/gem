@@ -103,7 +103,6 @@
        PHALF(ILG,LEV), &
        EMS_SFC(ILG), &
        TAU_SUB(ILG), &
-       LOGTAU_SUB(ILG), &
        PTOP_SUB(ILG), &
        RAN_NUM(ILG), &
        REI(ILG,LAY), &
@@ -123,8 +122,6 @@
        IND1, &
        IL, &
        ILAY, &
-       ILEV, &
-       ILAYP1, &
        ITAU, &
        IPRES, &
        IT, &
@@ -134,13 +131,11 @@
       REAL :: &
        INVREL, &
        INVREI, &
-       ROG, &
        TAULIQVIS, &
        TAULIQIR, &
        TAUICEVIS, &
        TAUICEIR, &
        TAU_IR, &
-       TEMP, &
        A, &
        B, &
        C, &

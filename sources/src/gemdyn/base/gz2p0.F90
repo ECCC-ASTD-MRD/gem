@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gz2p02 - Compute P0 from GZ from pressure coordinate
+!**s/r gz2p0 - Compute P0 from GZ from pressure coordinate
 !
-      subroutine gz2p02 ( F_ps, F_gz, F_topo, F_rna ,&
-                          Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
-                          F_i0,F_in,F_j0,F_jn )
+      subroutine gz2p0 ( F_ps, F_gz, F_topo, F_rna ,&
+                         Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
+                         F_i0,F_in,F_j0,F_jn )
       use dyn_fisl_options
       use dynkernel_options
       use geomh
@@ -35,13 +35,13 @@
       real, dimension(Nk), intent(in) :: F_rna
 
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_ps         O    - ln(pi_s/z_s)
-! F_gz         I    - geopotential height
-! F_topo       I/O  - topography
-! F_rna        I    - pressure levels from pressure analyse
-! Nk           I    - number of levels from the pressure analyse
+!  Name                       Description
+!-----------------------------------------------------------
+! F_ps         - ln(pi_s/z_s)
+! F_gz         - geopotential height
+! F_topo       - topography
+! F_rna        - pressure levels from pressure analyse
+! Nk           - number of levels from the pressure analyse
 
 
       integer i,j,k,m,NN
@@ -129,7 +129,7 @@
          guess(i) = lna(Nk)-topo(i)/(rgasd_8*250.)
       end do
 
-      call vterp1 (guess,topo,zcol,tcol,lna,acc,NN,Nk)
+      call vterp (guess,topo,zcol,tcol,lna,acc,NN,Nk)
       m=0
       do j=F_j0,F_jn
          do i=F_i0,F_in

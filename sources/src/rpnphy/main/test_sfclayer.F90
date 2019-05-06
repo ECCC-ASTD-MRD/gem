@@ -5,7 +5,7 @@ subroutine test_sfclayer
    integer, parameter :: NI=1,STDERR=0,STDOUT=6
    real :: as_value
    real, dimension(NI) :: t=300.,q=0.01,u=5.,v=10.,p0=1.e5,zm=40.,zt=20.,ts=298.,qs=0.012, &
-        z0m=0.1,z0t=0.1,lat=.7,fcor=1e-4,spd,dir,tv,rho,ilmo,frv,tdiag,qdiag
+        z0m=0.1,z0t=0.1,lat=.7,fcor=1e-4,spd,dir,tv,rho,ilmo,frv,tdiag
  
    ! Begin messaging
    write(STDOUT,*) 'Testing Surface Layer Module'

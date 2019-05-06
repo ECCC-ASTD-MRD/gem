@@ -16,10 +16,11 @@
 
 !/@*
 subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
+!#TODO: trnch never used
    use iso_c_binding
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use sfclayer_mod,   only : sl_prelim,sl_sfclayer,SL_OK
-   use modd_town,      only : nni, xtown,                            &
+   use modd_town,      only : xtown,                            &
         xq_town,                               &
         xu_canyon,                             &
         xrn_roof,xh_roof,xle_roof,xles_roof,   &
@@ -115,7 +116,7 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    integer, parameter :: indx_sfc = indx_urb
    real,    parameter :: xundef   = 999.
 
-   integer :: n, m, nk, i, j, k, hh, mn, ss
+   integer :: n, m, nk, i, hh, mn, ss
 
    real    :: julien
 
@@ -141,13 +142,13 @@ subroutine town(bus, bussiz, ptsurf, ptsurfsiz, dt, trnch, kount, n, m, nk)
    real,          dimension(n,1)   :: zsca_sw    ! diffuse sw for each band
    real,          dimension(n)     :: zvdir       ! direction of the wind
    real,          dimension(n)     :: zvmod       ! module of the wind
-   real,          dimension(n)     :: ribn
-   real,          dimension(n)     :: lzz0
-   real,          dimension(n)     :: lzz0t
-   real,          dimension(n)     :: fm
-   real,          dimension(n)     :: fh
-   real,          dimension(n)     :: dfm
-   real,          dimension(n)     :: dfh
+!!$   real,          dimension(n)     :: ribn
+!!$   real,          dimension(n)     :: lzz0
+!!$   real,          dimension(n)     :: lzz0t
+!!$   real,          dimension(n)     :: fm
+!!$   real,          dimension(n)     :: fh
+!!$   real,          dimension(n)     :: dfm
+!!$   real,          dimension(n)     :: dfh
    real,          dimension(n)     :: lat,lon     ! latitude and longitude
    real,          dimension(n)     :: zuzu
    real, target, dimension(n) ::  zday, zheure, zmin

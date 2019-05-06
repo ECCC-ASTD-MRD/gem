@@ -32,7 +32,7 @@ contains
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(in) ::  kount, trnch, ni, nk, nkm1
+      integer, intent(in) ::  kount, trnch, ni, nk, nkm1  !#TODO: never used: kount, trnch
       real, intent(in) :: cdt1
       real, dimension(:), pointer :: zpmoins, ztlcs, ztscs, zkshal
       real, dimension(:,:), pointer :: &

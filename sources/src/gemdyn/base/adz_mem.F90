@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module adz_mem
+   use ISO_C_BINDING
    use glb_ld
    implicit none
    public
@@ -26,35 +27,37 @@ module adz_mem
       integer :: Adz_i0,Adz_in,Adz_j0,Adz_jn
       integer :: Adz_i0u,Adz_inu,Adz_j0v,Adz_jnv
       integer :: Adz_2dnh, Adz_3dnh, Adz_k0, Adz_k0t, Adz_k0m
-      integer :: Adz_kkmax
+      integer :: Adz_num_u,Adz_num_v,Adz_num_q,Adz_num_t,Adz_kkmax
       integer, dimension(:), pointer, contiguous :: Adz_search_m,&
                                                     Adz_search_t
       real :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
       real*8 :: adz_ovdzm_8, adz_ovdzt_8
-      real*8, dimension(:), pointer, contiguous :: Adz_cy_8, &
+      real*8, dimension(:), pointer :: Adz_cy_8, &
             Adz_delz_m, Adz_delz_t, Adz_odelz_m, Adz_odelz_t
 
-      type :: ADZ_TYPE_SV_R8
-         sequence
-         real*8, dimension(:), pointer, contiguous :: t,m
-      end type ADZ_TYPE_SV_R8
+      type(C_PTR) :: Adz_cpntr_q,Adz_cpntr_t
 
-      type(ADZ_TYPE_SV_R8) :: Adz_zabcd_8, Adz_zbacd_8, &
-                              Adz_zcabd_8, Adz_zdabc_8
+      type Adz_pntr_stack
+         sequence
+         real, dimension(:,:,:), pointer :: src,dst
+      end type Adz_pntr_stack
+
+      type(Adz_pntr_stack), pointer, dimension(:) :: Adz_stack
 
 ! Adz_pxyzm is a history carrying variable: must be part of the restart
 
       real, pointer    , dimension (:,:,:,:), contiguous :: &
                               Adz_pxyzm=>null()
       real, allocatable, dimension (:,:,:,:)             :: &
-                              Adz_pxyzmu,Adz_pxyzmv,Adz_pxyzt
+                              Adz_pxyzt,Adz_uvw_dep
+      real, allocatable, dimension (:,:,:,:)             :: &
+                           Adz_pm,Adz_pmu,Adz_pmv,Adz_pt
 
       real*8, allocatable, dimension (:,:,:,:) :: Adz_wpxyz
 
       real, allocatable, dimension (:,:,:  ) ::       &
                      Adz_uu_ext,Adz_vv_ext,Adz_ww_ext,&
-                     Adz_uu_arr,Adz_vv_arr,Adz_ww_arr,&
-                     Adz_uu_dep,Adz_vv_dep,Adz_ww_dep
+                     Adz_uu_arr,Adz_vv_arr,Adz_ww_arr
 
       real, allocatable, dimension (:,:,:,:) ::  Adz_uvw_d
 

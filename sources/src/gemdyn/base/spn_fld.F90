@@ -71,7 +71,7 @@
 ! Fld_S        I    - name of variable to treat (either of 't','u','v')
 
 
-      external ffft8, rpn_comm_transpose
+      external rpn_comm_transpose
 
       real*8 fdwfft(F_Miny:F_Maxy,F_Minz :F_Maxz ,F_Gni+2+F_npex1)
       real*8   fdg2(F_Minz:F_Maxz,F_Minij:F_Maxij,F_Gnj+2+F_npey1)

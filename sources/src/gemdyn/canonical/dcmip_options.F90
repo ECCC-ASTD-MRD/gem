@@ -18,7 +18,7 @@ module dcmip_options
    save
 
    !# Dcmip case selector
-   !# * Dcmip_case=0 (none)
+   !# * Dcmip_case=0 (NONE)
    !# * Dcmip_case=11 (3D deformational flow)
    !# * Dcmip_case=12 (3D Hadley-like meridional circulation)
    !# * Dcmip_case=13 (2D solid-body rotation of thin cloud-like tracer in the presence of orography)
@@ -26,25 +26,25 @@ module dcmip_options
    !# * Dcmip_case=21 (Mountain waves over a Schaer-type mountain)
    !# * Dcmip_case=22 (As 21 but with wind shear)
    !# * Dcmip_case=31 (Gravity wave along the equator)
-   !# * Dcmip_case=41 (Dry Baroclinic Instability Small Planet)
+   !# * Dcmip_case=41X (Dry Baroclinic Instability Small Planet)
    !# * Dcmip_case=43 (Moist Baroclinic Instability Simple physics)
    !# * Dcmip_case=161 (Baroclinic wave with Toy Terminal Chemistry)
    !# * Dcmip_case=162 (Tropical cyclone)
-   !# * Dcmip_case=163 (Supercell -Small Planet-)
+   !# * Dcmip_case=163 (Supercell Small Planet)
    integer :: Dcmip_case = 0
    namelist /dcmip/ Dcmip_case
 
    !# Type of precipitation/microphysics
    !# * Dcmip_prec_type=-1 (none)
-   !# * Dcmip_prec_type=0 (Large-scale precipitation -Kessler-)
-   !# * Dcmip_prec_type=1 (Large-scale precipitation -Reed-Jablonowski-)
+   !# * Dcmip_prec_type=0 (Kessler Microphysics)
+   !# * Dcmip_prec_type=1 (Reed-Jablonowski Large-scale precipitation)
    integer :: Dcmip_prec_type = -1
    namelist /dcmip/ Dcmip_prec_type
 
    !# Type of planetary boundary layer
    !# * Dcmip_pbl_type=-1 (none)
    !# * Dcmip_pbl_type=0 (Reed-Jablonowski Boundary layer)
-   !# * Dcmip_pbl_type=1 (Georges Bryan Planetary Boundary Layer)
+   !# * Dcmip_pbl_type=1 (Georges Bryan Boundary Layer)
    integer :: Dcmip_pbl_type = -1
    namelist /dcmip/ Dcmip_pbl_type
 

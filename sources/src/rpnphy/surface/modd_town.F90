@@ -51,109 +51,108 @@ XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
 XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
 
 !$OMP THREADPRIVATE(/ttte/)
-#define ALLOCATABLE POINTER
 !
 INTEGER                           :: NNI             ! Number of grid points
-REAL, DIMENSION(:)  , ALLOCATABLE :: XMASK           ! Land/sea maks          
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_LAT        ! Latitude              
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_LON        ! Longitude             
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_ZS         ! Topography            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_TSOIL      ! Soil temperature     
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_TS         ! Surface temperature   
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_TA         ! Air temperature at first level
-REAL, DIMENSION(:)  , ALLOCATABLE :: XINI_QA         ! Air specific humidity at first level
-REAL, DIMENSION(:)  , ALLOCATABLE :: XTOWN           ! Total fraction of urban cover
+REAL, DIMENSION(:)  , POINTER :: XMASK           ! Land/sea maks          
+REAL, DIMENSION(:)  , POINTER :: XINI_LAT        ! Latitude              
+REAL, DIMENSION(:)  , POINTER :: XINI_LON        ! Longitude             
+REAL, DIMENSION(:)  , POINTER :: XINI_ZS         ! Topography            
+REAL, DIMENSION(:)  , POINTER :: XINI_TSOIL      ! Soil temperature     
+REAL, DIMENSION(:)  , POINTER :: XINI_TS         ! Surface temperature   
+REAL, DIMENSION(:)  , POINTER :: XINI_TA         ! Air temperature at first level
+REAL, DIMENSION(:)  , POINTER :: XINI_QA         ! Air specific humidity at first level
+REAL, DIMENSION(:)  , POINTER :: XTOWN           ! Total fraction of urban cover
 !
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFVH           ! Energy concumption for traffic
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFRE           ! Elec concumption for residential areas
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFRH           ! Fuel concumption for residential areas
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFCE           ! Elec concumption for commercial areas
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFCH           ! Fuel concumption for commercial areas
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFIE           ! Elec concumption for industrial areas
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQFIH           ! Fuel concumption for industrial areas
+REAL, DIMENSION(:)  , POINTER :: XQFVH           ! Energy concumption for traffic
+REAL, DIMENSION(:)  , POINTER :: XQFRE           ! Elec concumption for residential areas
+REAL, DIMENSION(:)  , POINTER :: XQFRH           ! Fuel concumption for residential areas
+REAL, DIMENSION(:)  , POINTER :: XQFCE           ! Elec concumption for commercial areas
+REAL, DIMENSION(:)  , POINTER :: XQFCH           ! Fuel concumption for commercial areas
+REAL, DIMENSION(:)  , POINTER :: XQFIE           ! Elec concumption for industrial areas
+REAL, DIMENSION(:)  , POINTER :: XQFIH           ! Fuel concumption for industrial areas
 !
-REAL, DIMENSION(:)  , ALLOCATABLE :: XQ_TOWN         ! Town averaged Specific humidity
-REAL, DIMENSION(:)  , ALLOCATABLE :: XU_CANYON       ! Wind in canyon         
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRN_ROOF        ! Net radiation on roof 
-REAL, DIMENSION(:)  , ALLOCATABLE :: XH_ROOF         ! Sensible heat flux on roof
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLE_ROOF        ! Latent heat flux on roof
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLES_ROOF       ! Sublimation heat flux on roof
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGFLUX_ROOF     ! Storage heat flux on roof
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRUNOFF_ROOF    ! Water runoff from roof        
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRN_ROAD        ! Net radiation on road                
-REAL, DIMENSION(:)  , ALLOCATABLE :: XH_ROAD         ! Sensible heat flux on road     
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLE_ROAD        ! Latent heat flux on road            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLES_ROAD       ! Sublimation heat flux on road
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGFLUX_ROAD     ! Storage heat flux on road       
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRUNOFF_ROAD    ! Water runoff from road 
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRN_WALL        ! Net radiation on wall                
-REAL, DIMENSION(:)  , ALLOCATABLE :: XH_WALL         ! Sensible heat flux on wall     
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLE_WALL        ! Latent heat flux on wall            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGFLUX_WALL     ! Storage heat flux on wall            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRNSNOW_ROOF    ! Net radiation over snow            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XHSNOW_ROOF     ! Sensible heat flux over snow  
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLESNOW_ROOF    ! Latent heat flux over snow   
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGSNOW_ROOF     ! Flux under snow             
-REAL, DIMENSION(:)  , ALLOCATABLE :: XMELT_ROOF      ! Snow melt             
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRNSNOW_ROAD    ! Net radiation over snow            
-REAL, DIMENSION(:)  , ALLOCATABLE :: XHSNOW_ROAD     ! Sensible heat flux over snow  
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLESNOW_ROAD    ! Latent heat flux over snow     
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGSNOW_ROAD     ! Flux under snow        
-REAL, DIMENSION(:)  , ALLOCATABLE :: XMELT_ROAD      ! Snow melt 
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRN             ! Net radiation over town 
-REAL, DIMENSION(:)  , ALLOCATABLE :: XH              ! Sensible heat flux over town
-REAL, DIMENSION(:)  , ALLOCATABLE :: XLE             ! Latent heat flux over town     
-REAL, DIMENSION(:)  , ALLOCATABLE :: XGFLUX          ! Storage heat flux over town          
-REAL, DIMENSION(:)  , ALLOCATABLE :: XEVAP           ! Evaporation                    
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRUNOFF         ! Runoff over ground   
-REAL, DIMENSION(:)  , ALLOCATABLE :: XCH             ! Heat drag             
-REAL, DIMENSION(:)  , ALLOCATABLE :: XRI             ! Richardson number               
-REAL, DIMENSION(:)  , ALLOCATABLE :: XUSTAR          ! Friction velocity              
+REAL, DIMENSION(:)  , POINTER :: XQ_TOWN         ! Town averaged Specific humidity
+REAL, DIMENSION(:)  , POINTER :: XU_CANYON       ! Wind in canyon         
+REAL, DIMENSION(:)  , POINTER :: XRN_ROOF        ! Net radiation on roof 
+REAL, DIMENSION(:)  , POINTER :: XH_ROOF         ! Sensible heat flux on roof
+REAL, DIMENSION(:)  , POINTER :: XLE_ROOF        ! Latent heat flux on roof
+REAL, DIMENSION(:)  , POINTER :: XLES_ROOF       ! Sublimation heat flux on roof
+REAL, DIMENSION(:)  , POINTER :: XGFLUX_ROOF     ! Storage heat flux on roof
+REAL, DIMENSION(:)  , POINTER :: XRUNOFF_ROOF    ! Water runoff from roof        
+REAL, DIMENSION(:)  , POINTER :: XRN_ROAD        ! Net radiation on road                
+REAL, DIMENSION(:)  , POINTER :: XH_ROAD         ! Sensible heat flux on road     
+REAL, DIMENSION(:)  , POINTER :: XLE_ROAD        ! Latent heat flux on road            
+REAL, DIMENSION(:)  , POINTER :: XLES_ROAD       ! Sublimation heat flux on road
+REAL, DIMENSION(:)  , POINTER :: XGFLUX_ROAD     ! Storage heat flux on road       
+REAL, DIMENSION(:)  , POINTER :: XRUNOFF_ROAD    ! Water runoff from road 
+REAL, DIMENSION(:)  , POINTER :: XRN_WALL        ! Net radiation on wall                
+REAL, DIMENSION(:)  , POINTER :: XH_WALL         ! Sensible heat flux on wall     
+REAL, DIMENSION(:)  , POINTER :: XLE_WALL        ! Latent heat flux on wall            
+REAL, DIMENSION(:)  , POINTER :: XGFLUX_WALL     ! Storage heat flux on wall            
+REAL, DIMENSION(:)  , POINTER :: XRNSNOW_ROOF    ! Net radiation over snow            
+REAL, DIMENSION(:)  , POINTER :: XHSNOW_ROOF     ! Sensible heat flux over snow  
+REAL, DIMENSION(:)  , POINTER :: XLESNOW_ROOF    ! Latent heat flux over snow   
+REAL, DIMENSION(:)  , POINTER :: XGSNOW_ROOF     ! Flux under snow             
+REAL, DIMENSION(:)  , POINTER :: XMELT_ROOF      ! Snow melt             
+REAL, DIMENSION(:)  , POINTER :: XRNSNOW_ROAD    ! Net radiation over snow            
+REAL, DIMENSION(:)  , POINTER :: XHSNOW_ROAD     ! Sensible heat flux over snow  
+REAL, DIMENSION(:)  , POINTER :: XLESNOW_ROAD    ! Latent heat flux over snow     
+REAL, DIMENSION(:)  , POINTER :: XGSNOW_ROAD     ! Flux under snow        
+REAL, DIMENSION(:)  , POINTER :: XMELT_ROAD      ! Snow melt 
+REAL, DIMENSION(:)  , POINTER :: XRN             ! Net radiation over town 
+REAL, DIMENSION(:)  , POINTER :: XH              ! Sensible heat flux over town
+REAL, DIMENSION(:)  , POINTER :: XLE             ! Latent heat flux over town     
+REAL, DIMENSION(:)  , POINTER :: XGFLUX          ! Storage heat flux over town          
+REAL, DIMENSION(:)  , POINTER :: XEVAP           ! Evaporation                    
+REAL, DIMENSION(:)  , POINTER :: XRUNOFF         ! Runoff over ground   
+REAL, DIMENSION(:)  , POINTER :: XCH             ! Heat drag             
+REAL, DIMENSION(:)  , POINTER :: XRI             ! Richardson number               
+REAL, DIMENSION(:)  , POINTER :: XUSTAR          ! Friction velocity              
 !
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_IN       ! body MRT inside building (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_SUN      ! body MRT in the exposed street (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_SHADE    ! body MRT in the shaded street (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_RFSUN      ! body MRT on the exposed roof (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRAD_RFSHADE    ! body MRT on the shaded roof (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_IN       ! UTCI inside building
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_OUTSUN   ! UTCI in the exposed street
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_OUTSHADE ! UTCI in the shaded street
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_RFSUN    ! UTCI on the exposed roof
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCI_RFSHADE  ! UTCI on the shaded roof
-REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_OUTSUN    ! WBGT  wet bulb globe temperature in the street (C)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_OUTSHADE  ! WBGT  wet bulb globe temperature in the street (C)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_RFSUN     ! WBGT  wet bulb globe temperature on the roof (C)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XWBGT_RFSHADE   ! WBGT  wet bulb globe temperature on the roof (C)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_IN       ! UTCI inside building
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_OUTSUN   ! UTCI in the exposed street
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_OUTSHADE ! UTCI in the shaded street
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_RFSUN   ! UTCI in the exposed street
-REAL, DIMENSION(:) , ALLOCATABLE    :: XUTCIC_RFSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:) , POINTER    :: XTRAD_IN       ! body MRT inside building (K)
+REAL, DIMENSION(:) , POINTER    :: XTRAD_SUN      ! body MRT in the exposed street (K)
+REAL, DIMENSION(:) , POINTER    :: XTRAD_SHADE    ! body MRT in the shaded street (K)
+REAL, DIMENSION(:) , POINTER    :: XTRAD_RFSUN      ! body MRT on the exposed roof (K)
+REAL, DIMENSION(:) , POINTER    :: XTRAD_RFSHADE    ! body MRT on the shaded roof (K)
+REAL, DIMENSION(:) , POINTER    :: XUTCI_IN       ! UTCI inside building
+REAL, DIMENSION(:) , POINTER    :: XUTCI_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , POINTER    :: XUTCI_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:) , POINTER    :: XUTCI_RFSUN    ! UTCI on the exposed roof
+REAL, DIMENSION(:) , POINTER    :: XUTCI_RFSHADE  ! UTCI on the shaded roof
+REAL, DIMENSION(:) , POINTER    :: XWBGT_OUTSUN    ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:) , POINTER    :: XWBGT_OUTSHADE  ! WBGT  wet bulb globe temperature in the street (C)
+REAL, DIMENSION(:) , POINTER    :: XWBGT_RFSUN     ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:) , POINTER    :: XWBGT_RFSHADE   ! WBGT  wet bulb globe temperature on the roof (C)
+REAL, DIMENSION(:) , POINTER    :: XUTCIC_IN       ! UTCI inside building
+REAL, DIMENSION(:) , POINTER    :: XUTCIC_OUTSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , POINTER    :: XUTCIC_OUTSHADE ! UTCI in the shaded street
+REAL, DIMENSION(:) , POINTER    :: XUTCIC_RFSUN   ! UTCI in the exposed street
+REAL, DIMENSION(:) , POINTER    :: XUTCIC_RFSHADE ! UTCI in the shaded street
 !
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTWETB           ! wet-bulb temperature on the ground (K)
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTWETB_ROOF      ! wet-bulb tempertaure over the roof  (K)
+REAL, DIMENSION(:) , POINTER    :: XTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
+REAL, DIMENSION(:) , POINTER    :: XTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
+REAL, DIMENSION(:) , POINTER    :: XTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
+REAL, DIMENSION(:) , POINTER    :: XTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
+REAL, DIMENSION(:) , POINTER    :: XTWETB           ! wet-bulb temperature on the ground (K)
+REAL, DIMENSION(:) , POINTER    :: XTWETB_ROOF      ! wet-bulb tempertaure over the roof  (K)
 !
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRFZT  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XTRDZT  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XURDZU  ! 
+REAL, DIMENSION(:) , POINTER    :: XTRFZT  ! 
+REAL, DIMENSION(:) , POINTER    :: XTRDZT  ! 
+REAL, DIMENSION(:) , POINTER    :: XURDZU  ! 
 !
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ1  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ2  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ3  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ4  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ5  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ6  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ7  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ8  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ9  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ10  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ11  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ12  ! 
-REAL, DIMENSION(:) , ALLOCATABLE    :: XQ13  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ1  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ2  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ3  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ4  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ5  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ6  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ7  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ8  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ9  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ10  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ11  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ12  ! 
+REAL, DIMENSION(:) , POINTER    :: XQ13  ! 
 
 !
 END MODULE MODD_TOWN

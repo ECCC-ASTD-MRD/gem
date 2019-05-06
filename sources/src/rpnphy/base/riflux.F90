@@ -16,6 +16,7 @@
 !**S/P  RIFLUX
 !
       SUBROUTINE RIFLUX(R,PRI,N,M,NK)
+!#TODO: M never used
       implicit none
 #include <arch_specific.hf>
       INTEGER N,M,NK

@@ -31,7 +31,6 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
 
    integer, external :: get_max_rss
 
-   logical :: canWrite_L
    character(len=256) :: tmp_S
    integer :: i, err, imin, imax, msgLevelMin, msgUnit
    integer :: memory(Ptopo_numproc), memoryt(Ptopo_numproc)
@@ -47,7 +46,7 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
 
    if (canWrite_L) then
       sum   = 0.0
-      sumd2 = 0.0      
+      sumd2 = 0.0
       imin  = 1
       imax  = Ptopo_numproc
       maxd  = memoryt(Ptopo_numproc)/1000000.
@@ -68,7 +67,7 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
       end do
 
       npt_8 = Ptopo_numproc
-      moy = sum / npt_8 
+      moy = sum / npt_8
       var = max(0.d0, 1.d0*(sumd2 + moy*moy*npt_8 - 2.*moy*sum) / npt_8)
       var = sqrt(var)
 
@@ -87,6 +86,10 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
 !!$      write(msgUnit,*) 'Memory each process [Gb]:',memoryt/1000000.
    endif
    !----------------------------------------------------------------
+
+#else
+
+   if (Ptopo_myproc < 0) print *, 'model_mem_usage_stats (stub): ', Ptopo_numproc, Ptopo_myproc
 
 #endif
 

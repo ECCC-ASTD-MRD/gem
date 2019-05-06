@@ -92,7 +92,7 @@
       use canonical
       use gmm_itf_mod
       use glb_ld
-      use adv_options
+      use adz_options
       implicit none
 #include <arch_specific.hf>
 
@@ -119,7 +119,9 @@
          !-------------------------------------------
          call mass_tr (F_tracer_8,cly,F_airmass,minx,maxx,miny,maxy,F_nk,i0,in,j0,jn,F_k0)
 
-         if (F_unout>0.and.F_couleur==0) write(F_unout,1002) 'TRACERS: ',F_type_S,F_time_S,'  C= ',F_tracer_8/Adv_gc_area_8,"CLY ",F_comment_S
+         if (F_unout>0.and.F_couleur==0) then
+            write(F_unout,1002) 'TRACERS: ', F_type_S, F_time_S,'  C= ',F_tracer_8/Adz_gc_area_8,"CLY ",F_comment_S
+         end if
 
          F_cnt = 0
 

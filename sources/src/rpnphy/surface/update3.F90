@@ -22,6 +22,7 @@ subroutine UPDATE3( TS, T2, WG, W2, WF, WL, WR, WS, &
      BM, FQ, ALFAT, ALFAQ, &
      CTU, TH, HU, ZA, &
      N )
+!#TODO: ZA never used
    use sfc_options
    implicit none
 #include <arch_specific.hf>

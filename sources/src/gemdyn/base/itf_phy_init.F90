@@ -128,19 +128,21 @@
 ! Complete physics initialization (see phy_init for interface content)
 
       istat = ptopo_io_set(Inp_npes) !#TODO mv this in phy... pass npes as arg
+      call timing_start2(41, 'PHY_init', 40 )
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
                       'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
                       'model/Hgrid/global', 'model/Hgrid/local'  , &
                       'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
                       G_nk+1, Ver_std_p_prof%m)
+      call timing_stop(41)
 
 ! Option consistency check
       if (WB_IS_OK(wb_get('phy/input_type', input_type_S))) then
          istat = clib_toupper(input_type_S)
-         if (Iau_interval >0. .and. input_type_S /= Iau_input_type_S) then
+         if (Iau_interval >0. .and. input_type_S /= 'DIST') then
             err = RMN_ERR
-            call msg(MSG_ERROR, '(itf_phy_init) input_type for IAU ('//trim(Iau_input_type_S)//') and physics ('//trim(input_type_S)//') must be the same.')
-         end if
+            call msg(MSG_ERROR, '(itf_phy_init) with IAU the physics input type should be DIST.')
+         endif
       end if
 
 ! Initialize filter weights for smoothing

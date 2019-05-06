@@ -23,6 +23,7 @@ contains
 
    !/@*
    subroutine sfc_calcdiag3(f,v,fsiz,vsiz,moyhr,acchr,dt,trnch,kount,step_driver,ni,nk)
+!#TODO: trnch, nk never used
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
       use sfcbus_mod

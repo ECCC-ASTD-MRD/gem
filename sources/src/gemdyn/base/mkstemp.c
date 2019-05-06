@@ -1,0 +1,9 @@
+#include <stdio.h>
+
+int mkstemp_(char *template) {
+   int fd = mkstemp(template);
+
+   // Close the file for now since it will be opened again later
+   close(fd);
+   return fd;
+}

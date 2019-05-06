@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      Integer ni, nk, n, modp
+      Integer ni, nk, n
       Real tw(ni,nk), hu(ni,nk), tt(ni,nk)
       Real ps(ni,*)
       Logical swph, swth
@@ -208,7 +208,7 @@
 !*
 !--------------------------------------------------------------------
       Real q1, dq1, q0, th, ft0, dft0, prn
-      Real dlp, d, qp, dt, dtpr, latheat, hscp
+      Real dlp, d, dt, dtpr, latheat, hscp
       Integer iter, i, k, nn, j
 !--------------------------------------------------------------------
 !

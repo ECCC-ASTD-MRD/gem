@@ -30,6 +30,7 @@ contains
         shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
         bustop, busnm, busdc, buspar, busspc, busname, ni ,nk, memgap) result(F_istat)
+!#TODO: never used: busname
       implicit none
       integer :: F_istat
       character(len=*), intent(in) :: varname, outname, inname, sername, vardesc, shape, busname
@@ -39,7 +40,7 @@ contains
       !*@/
 
       character(len=64) :: prefix_S, basename_S, time_S, ext_S
-      integer :: i, lindex, esp, ind, fmosaik
+      integer :: i, lindex, esp, fmosaik
       ! real :: vmin, vmin0
       !-------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -122,14 +123,13 @@ contains
    !/@*
    function gesdictcheck(inbus, varname, outname, inname, sername, &
         bustop, busnm, busname) result(F_istat)
+!#TODO: never used: inname, sername
       implicit none
       integer :: F_istat
       character(len=*), intent(in) :: inbus, varname, outname, inname, sername, busname
       character(len=*), intent(inout) :: busnm(:,:)
       integer,          intent(inout) :: bustop
       !*@/
-      character(len=256) :: msg_S
-      character(len=16) :: samename, othername
       integer :: i
       !-------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -254,7 +254,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    character(len=60) ::  vardesc
    character(len=256) :: string
    integer :: nmosaic, fmul, dynini, stagg
-   integer :: i, ind, esp, ivmin, ivmax, wload, hzd, monot, massc, istat
+   integer :: i, ivmin, ivmax, wload, hzd, monot, massc, istat
    real :: vmin, vmax
    !-------------------------------------------------------------------
    if (.not.init_L) then
@@ -298,28 +298,28 @@ subroutine gesdict(ni, nk, lindex, lachaine)
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        enttop, entnm, entdc, entpar, entspc, 'E', ni, nk, memgap)
+        enttop, entnm, entdc, entpar, entspc, bus, ni, nk, memgap)
    case("D")
       if (debug_mem_L) memgap = max(ni/5,1)+4
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        dyntop, dynnm, dyndc, dynpar, dynspc, 'E', ni, nk, memgap*2)
+        dyntop, dynnm, dyndc, dynpar, dynspc, bus, ni, nk, memgap*2)
    case("P")
       if (debug_mem_L) memgap = max(ni/5,1)+2
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        pertop, pernm, perdc, perpar, perspc, 'E', ni, nk, memgap*3)
+        pertop, pernm, perdc, perpar, perspc, bus, ni, nk, memgap*3)
    case("V")
       if (debug_mem_L) memgap = max(ni/5,1)
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        voltop, volnm, voldc, volpar, volspc, 'E', ni, nk, memgap*4)
+        voltop, volnm, voldc, volpar, volspc, bus, ni, nk, memgap*4)
    case default
       call physeterror('gesdict', 'Unknown bus: '//trim(string))
       return

@@ -15,16 +15,16 @@
 
 !**s/r pe_all_topo - First initialization steps
 
-      subroutine pe_all_topo
+      subroutine pe_all_topo()
       use iso_c_binding
-      use step_options
-      use ctrl
-      use lun
-      use rstr
-      use path
       use clib_itf_mod
-      use ptopo
+      use ctrl
       use gem_timing
+      use lun
+      use path
+      use ptopo
+      use rstr
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,15 +32,15 @@
 
       integer,parameter :: BUFSIZE=10000
       integer, external :: fnom,wkoffit,OMP_get_max_threads
-      integer, external :: generate_unique_name
 
       character(len=3)   :: mycol_S,myrow_S
-      character(len=33)  :: buffer
       character(len=1024):: fn, scratch_dir
-      integer :: err,unf,nc
+      integer :: err,unf
       integer, dimension(2) :: bcast_ptopo
       integer :: bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
                  bufinphycfg(BUFSIZE)
+
+      integer, external :: mkstemp
 !
 !-------------------------------------------------------------------
 !
@@ -72,7 +72,7 @@
          write (Lun_out, 8256) trim(Path_work_S)
       end if
 
-      err= rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
+      err = rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 !
 ! Initializes OpenMP
 !
@@ -98,15 +98,20 @@
       call RPN_COMM_bcast(bufinphycfg,size(bufinphycfg),"MPI_INTEGER",0,&
                                                  "grid",err )
       if (clib_getenv ('GEM_scratch_dir',scratch_dir) < 0) &
-                                        scratch_dir='/tmp'
-      nc = generate_unique_name(buffer,len(buffer))
-      Path_nml_S      = trim(scratch_dir)//'/model_settings_'&
-                                               //buffer(1:nc)
-      Path_outcfg_S   = trim(scratch_dir)//'/output_settings_'&
-                                               //buffer(1:nc)
-      Path_phyincfg_S = trim(scratch_dir)//'/physics_input_table_'&
-                                               //buffer(1:nc)
+                                         scratch_dir='/tmp'
 
+      Path_nml_S      = trim(scratch_dir)//'/model_settings_'&
+                        //'XXXXXX'//C_NULL_CHAR
+
+      Path_outcfg_S   = trim(scratch_dir)//'/output_settings_'&
+                        //'XXXXXX'//C_NULL_CHAR
+
+      Path_phyincfg_S = trim(scratch_dir)//'/physics_input_table_'&
+                        //'XXXXXX'//C_NULL_CHAR
+
+      err = mkstemp(path_nml_s)
+      err = mkstemp(Path_outcfg_S)
+      err = mkstemp(Path_phyincfg_S)
 
       call array_to_file (bufnml,size(bufnml),trim(Path_nml_S))
       call array_to_file (bufoutcfg,size(bufoutcfg),trim(Path_outcfg_S))

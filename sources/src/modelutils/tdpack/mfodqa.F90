@@ -21,7 +21,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      Integer ni, nk, n, modp
+      Integer ni, nk, n
       Real dq(ni,nk), tt(ni,nk)
       Real ps(ni,*)
 !

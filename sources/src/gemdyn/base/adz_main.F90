@@ -17,7 +17,9 @@
                             rhsc, orhst,  rhst, orhsf, rhsf ,&
                             orhsw, rhsw, Minx,Maxx,Miny,Maxy,&
                             Nk, F_tracers_L )
+      use ISO_C_BINDING
       use adz_mem
+      use adz_tricub
       use dynkernel_options
       use gem_timing
       use gmm_vt0
@@ -31,62 +33,68 @@
 
       logical,intent(in) :: F_tracers_L
       integer,intent(in) :: Minx,Maxx,Miny,Maxy, Nk
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in)  :: &
+      real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(in)  :: &
                              orhsu, orhsv, orhsc, orhst, orhsf, orhsw
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(out) :: &
+      real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(out) :: &
                              rhsu, rhsv, rhsc,  rhst, rhsf, rhsw
-
-      logical :: mono_L
       integer :: n, err
-      real, pointer, contiguous, dimension (:,:,:) :: src,dst
 !
 !     ---------------------------------------------------------------
 !
       call gemtime_start (30, 'ADZ_TRAJEC', 21)
       call adz_traject (pw_uu_moins, pw_vv_moins, zdt1, &
                            ut0     ,    vt0     , zdt0, &
-                       l_minx,l_maxx,l_miny,l_maxy,l_nk)
+                        l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call gemtime_stop (30)
 
       call gemtime_start (31, 'ADZ_INTP_RH', 21)
 
-      call adz_cubic ( rhsu, orhsu, Adz_pxyzmu                    ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0u,Adz_inu, Adz_j0,Adz_jn, Adz_k0, 'm', .false.)
+      Adz_stack(1)%src => orhsu
+      Adz_stack(1)%dst =>  rhsu
+      call adz_cubicLag ( Adz_stack,1,Adz_pmu,Adz_cpntr_q,Adz_num_u,&
+                        Adz_i0u,Adz_inu,Adz_j0,Adz_jn,Adz_k0,.false.)
 
-      call adz_cubic ( rhsv, orhsv, Adz_pxyzmv                    ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0,Adz_in, Adz_j0v,Adz_jnv, Adz_k0, 'm', .false.)
+      Adz_stack(1)%src => orhsv
+      Adz_stack(1)%dst =>  rhsv
+      call adz_cubicLag ( Adz_stack,1,Adz_pmv,Adz_cpntr_q,Adz_num_v,&
+                        Adz_i0,Adz_in,Adz_j0v,Adz_jnv,Adz_k0,.false.)
 
-      call adz_cubic ( rhsc, orhsc, Adz_pxyzm                    ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0,Adz_in, Adz_j0,Adz_jn, Adz_k0, 'm', .false.)
+      Adz_stack(1)%src => orhsc
+      Adz_stack(1)%dst =>  rhsc
+      call adz_cubicLag ( Adz_stack,1,Adz_pm ,Adz_cpntr_q,Adz_num_q,&
+                        Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.false.)
 
-      call adz_cubic ( rhst, orhst, Adz_pxyzt                     ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0,Adz_in, Adz_j0,Adz_jn, Adz_k0t, 't', .false.)
-
-      call adz_cubic ( rhsf, orhsf, Adz_pxyzt                     ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0,Adz_in, Adz_j0,Adz_jn, Adz_k0t, 't', .false.)
-
+      Adz_stack(1)%src => orhst
+      Adz_stack(1)%dst =>  rhst
+      Adz_stack(2)%src => orhsf
+      Adz_stack(2)%dst =>  rhsf
+      n= 2
       if(.not.Dynamics_hydro_L) then
-         call adz_cubic ( rhsw, orhsw, Adz_pxyzt                     ,&
-                          l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                    Adz_i0,Adz_in, Adz_j0,Adz_jn, Adz_k0t, 't', .false.)
-      end if
+         n= 3
+         Adz_stack(n)%src => orhsw
+         Adz_stack(n)%dst =>  rhsw
+      endif
+      call adz_cubicLag ( Adz_stack,n,Adz_pt ,Adz_cpntr_t,Adz_num_t,&
+                        Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t,.false.)
 
       if (F_tracers_L) then
-      do n=1, Tr3d_ntr
-         if ( (Tr3d_mass(n) == 0) .and. (Tr3d_mono(n) < 2) ) then
-            err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':P' ,src)
-            err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':M' ,dst)
-            mono_L = (Tr3d_mono(n)==1)
-            call adz_cubic (dst, src, Adz_pxyzt                   ,&
-                       l_ni,l_nj,l_nk, l_minx,l_maxx,l_miny,l_maxy,&
-                       Adz_i0,Adz_in, Adz_j0,Adz_jn, Adz_k0, 't', mono_L)
-         end if
+
+      do n=1, Tr3d_ntrNT
+         err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':P' ,Adz_stack(n)%src)
+         err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':M' ,Adz_stack(n)%dst)
       end do
+      call adz_cubicLag ( Adz_stack, Tr3d_ntrNT, &
+           Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
+           Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.false. )
+
+      do n=1, Tr3d_ntrM1
+         err= gmm_get('TR/'//trim(Tr3d_M1_S(n))//':P' ,Adz_stack(n)%src)
+         err= gmm_get('TR/'//trim(Tr3d_M1_S(n))//':M' ,Adz_stack(n)%dst)
+      end do
+      call adz_cubicLag ( Adz_stack, Tr3d_ntrM1, &
+            Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
+            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.true. )
+
       end if
 
       call gemtime_stop (31)

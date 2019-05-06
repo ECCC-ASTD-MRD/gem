@@ -79,7 +79,7 @@
 !     AUTOMATIC ARRAYS
 !***********************************************************************
 !
-      real, dimension(ni)    :: wrk11,wrk12,wrk13,wrk14
+      real, dimension(ni)    :: wrk11,wrk12,wrk14
       real, dimension(ni,nk) :: wrk21,wrk22,wrk23,p
 !
 !***********************************************************************

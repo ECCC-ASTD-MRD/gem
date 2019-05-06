@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,7 +18,7 @@ module ptopo_utils
    use iso_c_binding
    implicit none
    private
-   !@objective 
+   !@objective
    !@author  Stephane Chamberland, 2011-03
    !@description
    !   WORLD     COMM is split in pe (not matrix), DOMAIN (not matrix)
@@ -38,6 +38,7 @@ module ptopo_utils
 !!$   integer, parameter, public :: PTOPO_GRID = 4
    integer, parameter, public :: PTOPO_BLOC = 5
    integer, parameter, public :: PTOPO_IO = 6
+   integer, parameter, public :: PTOPO_IODIST = 6
 
    ! Public var
    integer,public,save :: &
@@ -76,7 +77,7 @@ module ptopo_utils
         ptopo_io_npe = 1, &           !- I/O, Nb of PE for I/O on the GRID
         ptopo_io_setno = -1, &        !- I/O, io_set number
         ptopo_io_ipe = -1, &          !- I/O, PE idx in io_set
-        ptopo_io_comm_id = -1, &      !- 
+        ptopo_io_comm_id = -1, &      !-
         ptopo_grid_ipe_io_master = 0  !- GRID, idx of PE's I/O master
 
    logical,public,save :: &
@@ -88,8 +89,8 @@ module ptopo_utils
 
 
 !!$   character(len=1024),public,save :: &
-!!$        ptopo_grid_basedir_S, &      !- basdir 
-!!$        ptopo_pe_basedir_S,   &      !- basdir 
+!!$        ptopo_grid_basedir_S, &      !- basdir
+!!$        ptopo_pe_basedir_S,   &      !- basdir
    !@Description
    !@/
 #include <arch_specific.hf>
@@ -126,7 +127,7 @@ contains
    !/@
    subroutine ptopo_init_var(F_ndomains,F_idomain,F_ngrids,F_igrid)
       implicit none
-      !@objective 
+      !@objective
       !@argument
       integer,intent(in),optional :: F_ndomains,F_idomain,F_ngrids,F_igrid
       !@/
@@ -184,7 +185,7 @@ contains
    !/@
    function ptopo_bloc_set(F_nblocx,F_nblocy,F_bcast_L) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,intent(inout) :: F_nblocx,F_nblocy
       logical,intent(in),optional :: F_bcast_L
@@ -216,7 +217,7 @@ contains
    !/@
    function ptopo_io_set(F_io_npe) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,intent(in) :: F_io_npe
       !@return
@@ -281,7 +282,7 @@ contains
    !/@
    function ptopo_openMP_set(F_npeOpenMP,F_smt_fact) result(F_npeOpenMPout)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,intent(in),optional :: F_npeOpenMP,F_smt_fact
       !@return
@@ -312,7 +313,7 @@ contains
    !/@*
    function ptopo_ismaster_L(F_comm_S) result(F_ismaster_L)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       character(len=*),intent(in) :: F_comm_S
       !@return
@@ -337,7 +338,7 @@ contains
    !/@*
    subroutine ptopo_comm_pe_info(F_comm_S,F_ismaster_L,F_npe,F_npx,F_npy,F_ipe,F_ipx,F_ipy)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       character(len=*),intent(in) :: F_comm_S
       logical,intent(out) :: F_ismaster_L
@@ -417,12 +418,12 @@ contains
          F_comm_ipe_io_master = RPN_COMM_MASTER !#TODO: check this
          !#TODO: = ptopo_grid_ipe_blocmaster
          F_communicator_S = RPN_COMM_BLOC_COMM
-      elseif (F_iotype == PTOPO_IO) then
+      elseif (F_iotype == PTOPO_IODIST) then
          F_isiomaster_L = ptopo_isiomaster_L
          F_isiope_L = ptopo_isiope_L
          F_comm_ipe_io_master = ptopo_grid_ipe_io_master
          F_communicator_S = RPN_COMM_GRID
-!!$      elseif (F_iotype == PTOPO_GRID) then  !#TODO: 
+!!$      elseif (F_iotype == PTOPO_GRID) then  !#TODO:
 !!$         F_isiomaster_L = (ptopo_grid_ipe == RPN_COMM_MASTER)
 !!$         F_isiope_L = RPN_COMM_MASTER
 !!$         F_comm_ipe_io_master = RPN_COMM_MASTER
@@ -509,7 +510,7 @@ contains
       character(len=*),intent(in) :: F_comm_S
       !@return
       integer :: F_istat
-      !@author 
+      !@author
       !@description
       !*@/
       logical :: ismaster_L
@@ -596,7 +597,7 @@ contains
    !/@*
    function ptopo_copyfirst2last_r4_2d(F_fld,F_copyx,F_copyy,F_bloc_L) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       real,pointer :: F_fld(:,:)  !I/O, local data on F_comm_S
       integer,intent(in) :: F_copyx,F_copyy !# number of points to copy along x/y
@@ -682,7 +683,7 @@ contains
    !/@*
    function ptopo_copyfirst2last_r4_3d(F_fld,F_copyx,F_copyy,F_bloc_L) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       real,pointer :: F_fld(:,:,:)  !I/O, local data on F_comm_S
       integer,intent(in) :: F_copyx,F_copyy !# number of points to copy along x/y
@@ -1024,7 +1025,6 @@ contains
       integer,intent(in) :: F_npe
       !@return
       integer :: F_istat
-      !@author ?M.Desgagne?
       !@revision
       !  2010-03, S. Chamberland - split out of gem 4.1.2
       !@description
@@ -1084,7 +1084,6 @@ contains
       integer,intent(in) :: F_npe
       !@return
       integer :: F_istat
-      !@author ?M.Desgagne?
       !@revision
       !  2010-03, S. Chamberland - split out of gem 4.1.2
       !@description

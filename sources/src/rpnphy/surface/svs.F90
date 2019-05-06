@@ -17,6 +17,7 @@
 !** S/P SVS
 !
 subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
+!#TODO: TRNCH never used
    use phy_status, only: phy_error_L
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
@@ -55,7 +56,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !
 !
 
-   integer BUSSIZ, LONCLEF, VSIZ, N, NK, KOUNT, TRNCH
+   integer BUSSIZ, N, NK, KOUNT, TRNCH
    real DT
    real,target :: bus(bussiz)
    integer PTSURFSIZ
@@ -113,7 +114,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !******************************************************
 !
 
-   integer i,k,j,m, masklat50(n)
+   integer i,m, masklat50(n)
 
    real,dimension(n) :: alva, cg, cvpa, del, dwaterdt
    real,dimension(n) :: esnofrac, esvnofrac, eva, gamva, hrsurf

@@ -15,22 +15,21 @@
 
 !**s/r vspng_set - Vertical sponge setup
 
-      subroutine vspng_set
+      subroutine vspng_set()
+      use cstv
       use dcst
+      use dynkernel_options
+      use glb_ld
       use HORgrid_options
       use hvdif_options
       use tdpack
-      use glb_ld
-      use cstv
-      use lun
       use ver
-      use ptopo
       implicit none
 #include <arch_specific.hf>
 
-      integer i,j,k
+      integer :: i,j,k
       real*8, dimension(:), allocatable :: weigh
-      real*8 pis2_8,pbot_8,delp_8,c_8,nutop
+      real*8 :: pis2_8, pbot_8, delp_8, c_8, nutop
 !
 !     ---------------------------------------------------------------
 !
@@ -43,16 +42,23 @@
       Vspng_nk = min(G_nk,Vspng_nk)
       pis2_8   = pi_8/2.0d0
 
-      pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
-      delp_8 = pbot_8 - exp(Ver_z_8%m(1))
-
       allocate ( weigh(Vspng_nk), Vspng_coef_8(Vspng_nk) )
-      do k=1,Vspng_nk
-         weigh(k) = (sin(pis2_8*(pbot_8-exp(Ver_z_8%m(k)))/(delp_8)))**2
-      end do
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H')then
+         pbot_8 = Ver_z_8%m(Vspng_nk+1)
+         delp_8 = Ver_z_8%m(1) - pbot_8
+         do k=1,Vspng_nk
+            weigh(k) = (sin(pis2_8*(Ver_z_8%m(k)-pbot_8)/(delp_8)))**2
+         end do
+      else
+         pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
+         delp_8 = pbot_8 - exp(Ver_z_8%m(1))
+         do k=1,Vspng_nk
+            weigh(k) = (sin(pis2_8*(pbot_8-exp(Ver_z_8%m(k)))/(delp_8)))**2
+         end do
+      end if
 
-      i=G_ni/2
-      j=G_nj/2
+      i = G_ni / 2
+      j = G_nj / 2
       c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
       nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
@@ -67,10 +73,20 @@
 
       do k=1,Vspng_nk
          Vspng_coef_8(k) = weigh(k) * nutop
-         if (Lun_out > 0) write (Lun_out,2005) &
+         if (Lun_out > 0) then
+            if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H')then
+               write (Lun_out,2005) &
+                       Vspng_coef_8(k)      ,&
+                       Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
+                       Ver_std_p_prof%m(k),k
+            else
+               write (Lun_out,2005) &
                        Vspng_coef_8(k)      ,&
                        Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
                        exp(Ver_z_8%m(k)),k
+
+            end if
+         end if
          Vspng_coef_8(k)= Vspng_coef_8(k) * Cstv_dt_8 * Dcst_inv_rayt_8**2
       end do
 

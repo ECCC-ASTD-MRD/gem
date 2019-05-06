@@ -406,7 +406,7 @@ contains
       real, parameter :: C_N=0.516    ! L&H's constants c_n (same as RPN "AA")
 
       ! Local declarations
-      integer :: j,k,km1,n,nk
+      integer :: j,k,n,nk
       integer :: imh       ! counter to allow same code to be used for momentum and heat
       real :: alpha_n,alpha_c,alpha_r ! L&H's constants
       real :: alpha_c_fac             ! ratio of alpha_c to apha_n

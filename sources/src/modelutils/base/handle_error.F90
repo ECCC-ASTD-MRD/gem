@@ -65,7 +65,7 @@ end subroutine handle_error_setdebug
 
 !/@*
 subroutine handle_error_L(F_isOK_L,F_FromSubName,F_Message)
-   use mod_handle_error, only: hasCallBackFn,callBackFnNb
+!!$   use mod_handle_error, only: hasCallBackFn,callBackFnNb
    implicit none
 #include <arch_specific.hf>
    !@objective 
@@ -89,8 +89,9 @@ end subroutine handle_error_L
 
 !/@*
 subroutine handle_error(F_errorCode,F_FromSubName,F_Message)
-use iso_c_binding
-   use mod_handle_error, only: hasCallBackFn,callBackFnNb,debug_L
+   use iso_c_binding
+!!$   use mod_handle_error, only: hasCallBackFn,callBackFnNb,debug_L
+   use mod_handle_error, only: debug_L
    implicit none
 #include <arch_specific.hf>
 #include "stop_mpi.h"
@@ -105,7 +106,7 @@ use iso_c_binding
    !  2009-11,  Stephane Chamberland
 !*@/
    character(len=MSG_MAXLEN) :: message
-   integer :: errcode,errcode2,err
+   integer :: errcode,errcode2
 !!$   integer, external :: callback_call_ftn
    logical :: debug_bk_L
    !---------------------------------------------------------------------

@@ -16,6 +16,7 @@
 
 !/@*
 function iniptsurf4(ni,nk) result(F_istat)
+!#TODO: ni,nk never used
    use sfc_options
    use sfcbus_mod
    implicit none
@@ -55,7 +56,7 @@ function iniptsurf4(ni,nk) result(F_istat)
    character(len=16) :: agrege_out(nb_agrege), &
         glaciers_out(nb_glaciers), water_out(nb_water), ice_out(nb_ice), &
         urb_out(nb_urb), tmp_S
-   integer :: i, j, l, m, ier
+   integer :: j, l, m, ier
  
    ! les variables de sortie du module "soils" ont preseance
    ! sur celles de tous les autres schemas, sauf exceptions

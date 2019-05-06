@@ -23,7 +23,7 @@
 #include <arch_specific.hf>
 
       INTEGER N,NK,TRNCH
-      REAL R(N,NK+1),VAR(N,NK),TVAR(N,NK),TX
+      REAL R(N,NK+1),VAR(N,NK),TVAR(N,NK)
       REAL GAMMA(N,NK),FLUX_NG(N,NK)
       REAL ALPHA(N), BETA(N), PS(N), TAU
       REAL, DIMENSION(N,NK), TARGET :: SG,SELOC,T,Q,COEFK

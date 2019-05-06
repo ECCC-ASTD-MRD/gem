@@ -292,9 +292,6 @@ contains
    function cnv_nml_post_init() result(m_istat)
       implicit none
       integer :: m_istat
-
-      integer :: istat
-      character(len=1024) :: msg_S
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 

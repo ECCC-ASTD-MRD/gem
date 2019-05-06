@@ -53,7 +53,6 @@ Subroutine omega_from_w(dotp,ww,tt,qq,ps,sigma,ni,nk)
 !Modules
 !
 !!
-  Integer                  :: i,k
   Real, Dimension(ni,nk)   :: tv, press
 !
   Call mfotvt(tv,tt,qq,ni,nk,ni)
