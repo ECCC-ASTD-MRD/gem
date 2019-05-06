@@ -17,7 +17,7 @@
       subroutine equivmount (gc,env,sxx,syy,sxy, &
                             ilg,il1,il2, &
                             slope,xcent,mtdir)
-!
+!#TODO: env never used
       implicit none
 #include <arch_specific.hf>
 !

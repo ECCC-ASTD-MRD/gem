@@ -91,6 +91,7 @@ contains
 
      ! Output arguments
      integer :: status                                    !Return status of function
+     character(len=256) :: tmp_S
 
      ! Initialize return value
      status = SL_ERROR
@@ -100,7 +101,8 @@ contains
      case ('stderr','STDERR')
         call msg_toall(MSG_WARNING,'(sl_put_i4) STDERR is ignored by the MSG messaging system')
      case DEFAULT
-        call msg_toall(MSG_WARNING,'(sl_put_i4) cannot set '//trim(key))
+        write(tmp_S, *) val
+        call msg_toall(MSG_WARNING,'(sl_put_i4) cannot set '//trim(key)//'='//trim(tmp_S))
         return
      end select
 
@@ -595,7 +597,7 @@ contains
     real cm,ct
     real x1,x0,y1,y0
     real*8 dthv,tva,tvs
-    real vmin,ribmin,ribmax,hmax,cormin,epsln,ilmax,vlmin,hc,ribc,ilmm
+    real vmin,ribmin,ribmax,hmax,epsln,ilmax,vlmin,hc,ribc,ilmm
     real am,ah,dfm,dfh,g,dg
     real, dimension(n) :: zp,z0rt,z0rm
 
@@ -669,7 +671,7 @@ contains
                + sf_heat(zt(j)+z0rt(j),ilmm,hc,y1) &
                - sf_heat(      z0t (j),ilmm,hc,y0))
           ribc  = zp(j)*ilmm * fh(j) / (fm(j)*fm(j))
-          vlmin = sqrt( max(0., real(1./ribc * grav*zp(j) * dthv/(tvs+0.5*dthv))) )
+          vlmin = sqrt( max(0., 1./ribc * grav*zp(j) * dthv/(tvs+0.5*dthv)) )
        endif
        va(j) = max(va(j), vlmin)
        rib(j) = grav/(tvs+0.5*dthv)*zp(j)*dthv/(va(j)*va(j))

@@ -175,7 +175,7 @@ contains
     integer :: unout
     integer, external :: msg_getUnit
     integer k, kk
-    real d_svs(nl_svs+1), d_soil_texture(nl_stp+1), dl_soil_texture(nl_stp)
+    real d_svs(nl_svs+1), d_soil_texture(nl_stp+1) !#, dl_soil_texture(nl_stp)
 
   
     if ( .not. allocated(weights) ) allocate( weights(nl_svs,nl_stp) )

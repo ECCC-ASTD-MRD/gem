@@ -58,6 +58,9 @@ subroutine chm_exe(busent, busdyn, busper, busvol, &
    real, intent(inout) :: busent(busent_size), busdyn(busdyn_size), busper(busper_size), busvol(busvol_size)
    integer, intent(in) :: timestep, slab_index, step, ni, nk
 
+   if (ni < 0) print *,'Called chm_exe stub with:', busent(1), busdyn(1), busper(1), busvol(1), &
+        busent_size, busdyn_size, busper_size, busvol_size, &
+        timestep, slab_index, step, ni, nk
 
 
    return

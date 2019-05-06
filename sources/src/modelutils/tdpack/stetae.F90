@@ -44,8 +44,8 @@
       Real tl, pl
       Real qsat, chal, teta
       Real es, hu, e, prd
-      Real tn, dp, tb, pb, qsdt, dtst, trm3, cw
-      Real tetaea, dt
+      Real trm3
+      Real tetaea
       Real y, ttc, prm
 !--------------------------------------------------------------------
 !

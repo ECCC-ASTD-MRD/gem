@@ -23,6 +23,7 @@
                            PRFLX , SWFLX ,  F12 ,  FEVP , ICEFRAC, &
                            CLR   , CLS   , &
                            ni   ,  nlev )
+!#TODO: never used: CLR   , CLS
       use tdpack
       use phy_options
       implicit none
@@ -171,11 +172,10 @@
 !  II)      DECLARATIONS
 !           ------------------------------------------------------------
 !
-      REAL    XCOND  , XN     , HDPAD  , ELOFT  , HSQ2   , HDQAD  , &
-              HDQSAD , PRMOD  , HU0MIN , XDE    , XPRB   , BFMOD  , &
+      REAL    XCOND  , XN     , HDPAD  , HSQ2   , HDQAD  , &
+              HDQSAD , HU0MIN , XDE    , XPRB   , BFMOD  , &
               XK     , HFCOX  , XFT    , HFREZX , HFRCOA , HFMRX  , &
-              XFIX   , YM     , YMMIN  , XXP    , XHJ    , XF     , &
-              XFPRIM , ZCWP   , XPRADD , DTMELT , DMELT  , EVAPRI , &
+              ZCWP   , XPRADD , DTMELT , DMELT  , EVAPRI , &
               XEVACU , XP     , QINCR  , HP0    , HE273  , HEDR   , &
               HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
               COALES , SIGMIN
@@ -185,16 +185,15 @@
               COEF   , COVER  , HMR    , ZDCW   , XT     , &
               SIGMAX , T0I    , WEIGHT , x      , y      , z      , &
               TCI    , TSCALE , APRI   , TOPEQ0 , TODPMX , temp1  , &
-              temp2  , HBMRX  ,          XB     , XBB    , XBHU   , xo
+              temp2  , XB     , XBB    , XBHU   , xo
 
       integer il     , jk,inr
-      real xxp_t,xhj_t,xf_t,xfprim_t,xjaa,hsq,huz00t,hu,hcondt
+      real xxp_t,xhj_t,xf_t,xfprim_t,hsq,huz00t,hu,hcondt
       real xwrk,HACCES
 
       INTEGER, dimension(NI,NLEV) :: CUMASK
       REAL, dimension(NI     ) :: HPS
       REAL, dimension(NI     ) :: COVBAR
-      REAL, dimension(NI     ) :: DUSTAB
       REAL, dimension(NI     ) :: PRCPST
       REAL, dimension(NI     ) :: STSNOW
       REAL, dimension(NI     ) :: PRCPCU
@@ -223,9 +222,7 @@
       REAL, dimension(NI     ) :: HBMRXT
       REAL, dimension(NI     ) :: COEFT
       REAL, dimension(NI     ) :: XFIXT
-      REAL*8, dimension(NI     ) :: XTMP
-      REAL*8, dimension(NI     ) :: XTMP1
-!
+
 !***********************************************************************
 !
 !-----------------------------------------------------------------------

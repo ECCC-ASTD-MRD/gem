@@ -17,11 +17,12 @@
       SUBROUTINE NUAGES2 ( CH , CM , CL , C3D , &
                            BASE, Q , T , PS, SHCL, ILMO, S, &
                            TRNCH, N, M, NK, ITASK, SATUCO, STRCLD)
+!#TODO: ITASK never used
       use tdpack
       use series_mod, only: series_xst
       implicit none
 #include <arch_specific.hf>
-      INTEGER N,M,NK,ITASK,IERROR
+      INTEGER N,M,NK,ITASK
       REAL CH(N),CM(N),CL(N),C3D(N,NK),Q(M,NK)
       REAL T(M,NK),PS(N),SHCL(N),ILMO(N),S(n,NK)
       REAL BASE (N)
@@ -89,8 +90,8 @@
 #include "clefcon.cdk"
 
       REAL SST,SCL,SH,SM
-      REAL F,SIG,NEBUL,U,SQRT3
-      INTEGER J,K,KH,KM,KL
+      REAL F,NEBUL,U,SQRT3
+      INTEGER J,K
       INTEGER K1
       LOGICAL REGULAR
       logical flag
@@ -106,7 +107,7 @@
 !
 !***********************************************************************
 !
-      REAL tmpNEBUL,tmp
+      REAL tmpNEBUL
 !
       DATA SST , SCL , SH , SM / 0.225 , 0.905 , 0.395 , 0.710 /
 !

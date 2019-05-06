@@ -56,7 +56,7 @@ contains
       ! Local variable declarations
       integer :: i,k
       real :: fac,wspd
-      real, dimension(n) :: a1,a2
+      real, dimension(n) :: a2
 
       ! Initialize status
       status = RMN_ERR

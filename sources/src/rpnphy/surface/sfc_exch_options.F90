@@ -39,8 +39,7 @@ contains
       include "isbapar.cdk"
       include "tebcst.cdk"
 
-      integer :: ier, nv, options, iverb, i
-      character(len=512) :: tmp_S
+      integer :: ier, options, iverb, i
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
 

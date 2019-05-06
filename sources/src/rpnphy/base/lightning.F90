@@ -49,7 +49,7 @@ subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, 
   !Local variables and parameters:
    integer, dimension(ni,nk-1) :: array_t15
    integer, dimension(ni)      :: index_t15,k_t15
-   integer :: i, k, ik !, nkm1
+   integer :: i, k  !#, ik, nkm1
 
    real, dimension(ni)     :: iiwp, f1
    real :: t15, r1, r2, k1, k2, dsg, dpsg, i_conv, i_grav, tempo

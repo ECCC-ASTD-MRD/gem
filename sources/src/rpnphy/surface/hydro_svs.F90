@@ -150,7 +150,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n,nl_svs)   :: delzvec
   real, dimension(n,nl_svs)   :: asatfc, wsatc, asat0, grkefl
   real, dimension(n,nl_svs)   :: etr_grid
-  real, dimension(n)          :: asat1, basflw, satsfc, subflw , pg, rveg
+  real, dimension(n)          :: asat1, basflw, satsfc, subflw , pg
 
   real, dimension(n)          :: wrt_vl,wrt_vh,rveg_vl,rveg_vh
   ! For the Runge-Kutta method

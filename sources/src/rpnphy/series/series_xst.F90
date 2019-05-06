@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -30,7 +30,7 @@ module series_xst_mod
       module procedure series_xst2d
       module procedure series_xst3d
    end interface series_xst
-   
+ 
    !@Author R. Benoit (RPN 1984)
    !@Revision
    ! 001      J. Cote RPN(January 1985)
@@ -50,7 +50,7 @@ module series_xst_mod
    !            MPI mode, processor 0 needs full lists in call to serwrit2
    ! 010      B. Bilodeau (Jan 2006) - Variable NOM converted in upper case
    ! 2017-01, S.Chamberland - Major revision
-   
+
 contains
 
    !/@*
@@ -62,7 +62,6 @@ contains
       !@return
       logical :: F_istat_L
       !*@/
-      character(len=SER_STRLEN) :: varname_S
       !---------------------------------------------------------------
       F_istat_L = .false.
       if (series_paused_L .or. .not.(series_initok_L .and. series_on_L)) return
@@ -107,7 +106,7 @@ contains
       character(len=*), intent(in) :: F_varname_S
       integer, intent(in) :: F_j        !# Physics slice number
       !*@/
-      integer :: nn, nnl, i, idxvar, jj
+      integer :: nn, nnl, i, idxvar
       !---------------------------------------------------------------
       if (series_nstnl == 0) return
 
@@ -125,7 +124,7 @@ contains
          enddo
       endif
       !---------------------------------------------------------------
-      return 
+      return
    end subroutine series_xst_geo
 
 
@@ -212,8 +211,8 @@ contains
       !*@/
       real :: facs, facf
       logical :: overwrite_L
-      integer :: nn, nnl, idxvar, kount2, i, k, nk, jj
-      !---------------------------------------------------------------      
+      integer :: nn, nnl, idxvar, kount2, i, k, nk
+      !---------------------------------------------------------------
       if (series_nstnl == 0) return
       if (.not.series_isstep(F_varname_S)) return
       facs = 0.

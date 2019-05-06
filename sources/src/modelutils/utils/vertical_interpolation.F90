@@ -59,7 +59,7 @@ contains
    !     where c_i = 0 or 1 and i lower or equal than log_2_(nks)
    !
    !     WARNING
-   !  niter calculation is ok for nks.lt. 2097152: should be ok for now...
+   !  niter calculation is ok for nks < 2097152: should be ok for now...
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
 
@@ -136,7 +136,7 @@ contains
          k_surf = nks
          k_ciel = 1
       end if
-      if (real(int(log(real(nks))/log(2.0))).eq. &
+      if (real(int(log(real(nks))/log(2.0))) == &
       log(real(nks))/log(2.0)) then
       niter=int(log(real(nks))/log(2.0))
       else
@@ -158,7 +158,7 @@ contains
 !     divide by two (the old fashioned way...)
                   ref(i,j)=ishft(top(i,j)+bot(i,j),-1)
 !     adjust top or bot
-                  if(F_dstlev(i,j,k).lt.F_srclev(i,j,ref(i,j))) then
+                  if(F_dstlev(i,j,k) < F_srclev(i,j,ref(i,j))) then
                      top(i,j)=ref(i,j)
                   else
                      bot(i,j)=ref(i,j)
@@ -173,7 +173,7 @@ contains
 !     divide by two (the old fashioned way...)
                   ref(i,j)=ishft(top(i,j)+bot(i,j),-1)
 !     adjust top or bot
-                  if(F_dstlev(i,j,k).gt.F_srclev(i,j,ref(i,j))) then
+                  if(F_dstlev(i,j,k) > F_srclev(i,j,ref(i,j))) then
                      top(i,j)=ref(i,j)
                   else
                      bot(i,j)=ref(i,j)
@@ -199,11 +199,11 @@ contains
 !- Interpolation: either if not enough points to perform cubic interp
 !                 or if linear interpolation is requested use linear
 !                 interpolation and constant extrapolation
-            if((lev.ne.lev_lin).or.(topcub(i,j).ne.top(i,j)).or.k<=nlinbot) then
+            if((lev /= lev_lin).or.(topcub(i,j) /= top(i,j)).or.k<=nlinbot) then
 !- persistancy of this interval
-               if(F_dstlev(i,j,k).le.F_srclev(i,j,k_surf)) then
+               if(F_dstlev(i,j,k) <= F_srclev(i,j,k_surf)) then
                   F_dch(i,j,k) = F_sch(i,j,k_surf)
-               else if(F_dstlev(i,j,k).ge.F_srclev(i,j,k_ciel)) then
+               else if(F_dstlev(i,j,k) >= F_srclev(i,j,k_ciel)) then
                   F_dch(i,j,k) = F_sch(i,j,k_ciel)
                else
 !- linear interpolation
@@ -240,7 +240,7 @@ contains
          do k=1,nkd
             do j= F_j0, F_jn
             do i= F_i0, F_in
-               if(F_srclev(i,j,k_ciel).lt.F_dstlev(i,j,k)) then
+               if(F_srclev(i,j,k_ciel) < F_dstlev(i,j,k)) then
                   F_dch(i,j,k) = F_sch(i,j,k_ciel) * exp (  &
                   rgasd_8*stlo_8*(F_dstlev(i,j,k)-F_srclev(i,j,k_ciel)) )
                end if
@@ -253,7 +253,7 @@ contains
          do k=1,nkd
             do j= F_j0, F_jn
             do i= F_i0, F_in
-               if(F_srclev(i,j,k_surf).gt.F_dstlev(i,j,k)) then
+               if(F_srclev(i,j,k_surf) > F_dstlev(i,j,k)) then
                   F_dch(i,j,k) = F_sch(i,j,k_surf) + grav_8*stlo_8*(F_srclev(i,j,k_surf)-F_dstlev(i,j,k))
                end if
             end do

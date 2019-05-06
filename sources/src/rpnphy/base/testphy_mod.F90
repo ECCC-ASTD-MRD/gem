@@ -62,7 +62,7 @@ contains
 
     ! Set up basic environment
     istat = set_env()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_env')
+    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_env:'//trim(F_type))
 
     ! Set up grid and coordinate
     istat = set_grid()
@@ -143,7 +143,7 @@ contains
 
     ! Internal variables
     integer :: i,ntr,istat
-    real, dimension(:,:), pointer :: ptr2d
+!!$    real, dimension(:,:), pointer :: ptr2d
     real, dimension(:,:,:), pointer :: ptr3d
     character(len=GMM_MAXNAMELENGTH) :: vname,prefix,basename,time,ext
     character(len=GMM_MAXNAMELENGTH), dimension(MAX_TRACERS) :: tr_list
@@ -280,7 +280,7 @@ contains
     real, parameter :: GRAV=9.81,R=287.
 
     ! Internal variables
-    integer :: i,k,istat
+    integer :: k,istat
     integer, dimension(:), pointer :: ip1m,ip1t
     real :: p0
     real, dimension(NK) :: tt
@@ -512,7 +512,7 @@ contains
     istat = gmm_create('DXDY',ptr2d,meta2d)
     call handle_error_l(associated(ptr2d),'itf_phy_geom','Cannot create cell area entry (DXDY)')
     ptr2d = (GRID_DX*deg2rad*RAYT) * (GRID_DX*deg2rad*RAYT*cos(deg2rad*lat))
-  
+ 
     ! Create GMM entry for tendency mask (0. to 1.)
     nullify(ptr2d)
     istat = gmm_create('TDMASK',ptr2d,meta2d)
@@ -529,7 +529,7 @@ contains
        F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn) result(F_istat)
     ! Perform necessary steps before physics folding.  For this
     ! test driver, this simply means returning the data in-place.
-    
+ 
     ! Input arguments
     character(len=*),intent(in) :: F_name_S,F_horiz_interp_S
     integer,intent(in) :: F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn
@@ -542,7 +542,10 @@ contains
 
     ! No folding required for test stub
     F_istat = RMN_OK
-    
+
+    if (F_kn<0) print *,'testphy, prefold_opr called with:',F_name_S,F_horiz_interp_S, &
+       F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn,F_data
+ 
   end function prefold_opr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

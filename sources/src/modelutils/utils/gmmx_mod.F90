@@ -164,7 +164,9 @@ contains
       if (vb_S == 'g') then
          F_istat = priv_newvar_gmm(F_name_S,F_hgrid_S,F_vgrid_S,flags)
       else
-         F_istat = priv_newvar_bus(F_name_S,F_hgrid_S,F_vgrid_S,flags,vb_S)
+         call msg(MSG_ERROR,'(gmmx) newvar - Bus type not yet supported, ignoring: '//trim(F_name_S))
+         F_istat = RMN_ERR
+!!$         F_istat = priv_newvar_bus(F_name_S,F_hgrid_S,F_vgrid_S,flags,vb_S)
       endif
       if (.not.RMN_IS_OK(F_istat)) return
 
@@ -423,8 +425,9 @@ contains
       if (vb_S(1:1) == 'g') then
          call msg(MSG_WARNING,'(gmmx_get_data) var not right type/dim: '//trim(F_name_S))
          F_index = RMN_ERR
-         return         
+         return
       endif
+      nullify(F_ptr)
       F_index = RMN_ERR
       call msg(MSG_ERROR,'(gmmx) Bus type not yet supported')
 
@@ -503,26 +506,26 @@ contains
    end function priv_newvar_gmm
 
 
-   !/@*
-   function priv_newvar_bus(F_name_S,F_hgrid_S,F_vgrid_S,F_flags,F_vb_S) result(F_istat)
-      implicit none
-      !@objective 
-      !@arguments
-      character(len=*),intent(in) :: F_name_S  !- Key (internal var name)
-      character(len=*),intent(in) :: F_hgrid_S,F_vgrid_S !# horiz/verti grid desc
-      character(len=*),intent(in) :: F_vb_S   !# bus name
-      integer,intent(in) :: F_flags
-      !@return
-      integer :: F_istat !- exit status or bus index
-      !@author  S. Chamberland, 2012-01
-      !*@/
-      !---------------------------------------------------------------------
-      F_istat = RMN_ERR
-      call msg(MSG_ERROR,'(gmmx) newvar - Bus type not yet supported, ignoring: '//trim(F_name_S))
-      !TODO-later: implement gmmx for bus
-      !TODO-later: return if F_kv_S(VAL,KEY_VB) is already allocated
-      !---------------------------------------------------------------------
-      return
-   end function priv_newvar_bus
-   
+!!$   !/@*
+!!$   function priv_newvar_bus(F_name_S,F_hgrid_S,F_vgrid_S,F_flags,F_vb_S) result(F_istat)
+!!$      implicit none
+!!$      !@objective 
+!!$      !@arguments
+!!$      character(len=*),intent(in) :: F_name_S  !- Key (internal var name)
+!!$      character(len=*),intent(in) :: F_hgrid_S,F_vgrid_S !# horiz/verti grid desc
+!!$      character(len=*),intent(in) :: F_vb_S   !# bus name
+!!$      integer,intent(in) :: F_flags
+!!$      !@return
+!!$      integer :: F_istat !- exit status or bus index
+!!$      !@author  S. Chamberland, 2012-01
+!!$      !*@/
+!!$      !---------------------------------------------------------------------
+!!$      F_istat = RMN_ERR
+!!$      call msg(MSG_ERROR,'(gmmx) newvar - Bus type not yet supported, ignoring: '//trim(F_name_S))
+!!$      !TODO-later: implement gmmx for bus
+!!$      !TODO-later: return if F_kv_S(VAL,KEY_VB) is already allocated
+!!$      !---------------------------------------------------------------------
+!!$      return
+!!$   end function priv_newvar_bus
+
 end module gmmx_mod

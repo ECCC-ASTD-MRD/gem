@@ -85,7 +85,7 @@
       real groots(NX)
       real ay(NX)
       real*8 G_ygauss_8(NX+1)
-      integer status,j
+      integer j
 !
       F_dxla_8 = F_dxla
       hxmax    = F_dxmax

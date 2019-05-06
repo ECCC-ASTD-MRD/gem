@@ -43,7 +43,7 @@ contains
       integer,parameter:: MYMAX = 2048
 
       character(len=1)  :: bus_S
-      integer :: gmmstat, initval, initval2, ivar, nvars, istat
+      integer :: gmmstat, initval, ivar, nvars, istat
       type(gmm_metadata) :: meta_busent, meta_busper, meta_busdyn, meta_busvol
       type(phymetaplus) :: meta_m
       type(phymeta), pointer :: metalist(:)

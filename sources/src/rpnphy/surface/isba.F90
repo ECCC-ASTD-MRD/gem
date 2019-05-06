@@ -17,6 +17,7 @@
 
 !/@*
 subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
+!#TODO: TRNCH never used
    use phy_status, only: phy_error_L
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options, only: atm_external, atm_tplus, radslope, vamin, sl_Lmin_soil, &
@@ -39,7 +40,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    ! M             horizontal dimension
    ! NK            vertical dimension
 
-   integer BUSSIZ, LONCLEF, VSIZ, N, NK, KOUNT, TRNCH
+   integer BUSSIZ, N, NK, KOUNT, TRNCH
    real DT
    real,target :: bus(bussiz)
    integer PTSURFSIZ
@@ -67,7 +68,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: wft,     wgeq,    wgt,    wlt,    wrt,    wst
    real,dimension(n) :: z0tot,   zc1,     zc2,    zcs
    real,dimension(n) :: my_ta,   my_ua,   my_va,  vmod,   vmod0
-   real,dimension(n) :: zsca_sw, zref_sw_surf, zemit_lw_surf
+   real,dimension(n) :: zref_sw_surf, zemit_lw_surf
    real,dimension(n) :: zu10, zusr
    real,dimension(n) :: zusurfzt, zvsurfzt, zqd
    real,dimension(n) :: zzenith

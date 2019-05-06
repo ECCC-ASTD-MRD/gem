@@ -44,7 +44,6 @@
 ! NK       vertical dimension
 !*
       integer i,k
-      real*8, dimension(ni,nk) :: work8
       real*8, dimension(ni,nk) :: foewad
       real*8, dimension(ni,nk) :: fesid
       real*8, dimension(ni,nk) :: fesmxd

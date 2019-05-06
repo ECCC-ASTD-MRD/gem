@@ -45,6 +45,7 @@ contains
       character(len=*), intent(in) :: F_namelistf_S
       integer, intent(in)          :: F_unout
       cpl_nml= 0
+      if (F_namelistf_S == '' .and. F_unout >=0) print *,'cpl_nml (stub)',F_namelistf_S
       return
       end function cpl_nml
 
@@ -61,6 +62,11 @@ contains
                                    F_i0, F_j0, F_in, F_jn, F_nk
       real   , intent(in)          :: F_dt,F_z0LAT(:)
       cpl_init= 0
+      if (F_path_S == '' .and. F_print_L .and. F_unout > 0) print *,'cpl_init (stub)', &
+           F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
+           F_glb_ni, F_glb_nj, F_lcl_ni, F_lcl_nj     , &
+           F_i0, F_j0, F_in, F_jn, F_nk               , &
+           F_z0mtype, F_z0ttype, F_z0lat
       return
       end function cpl_init
 
@@ -68,6 +74,7 @@ contains
       implicit none
 #include <arch_specific.hf>
       integer, intent(in) :: F_stepcount, F_stepdriver
+      if (F_stepcount < 0 .and. F_stepdriver < 0) print *,'cpl_step (stub)', F_stepcount, F_stepdriver
       return
       end subroutine cpl_step
 
@@ -85,6 +92,8 @@ contains
                                             intent(inout) :: cmu
       logical, optional, intent(out) :: cplu
 
+      cplu = .false.
+      if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_update (stub)', F_f2u, F_name_S, F_pos, F_ni, rho, u, v, vmod, cmu
       return
       end subroutine cpl_update
 
@@ -92,6 +101,7 @@ contains
       implicit none
 #include <arch_specific.hf>
       character(len=*),intent(in) :: F_WorR_S
+      if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_restart (stub)', F_WorR_S
       return
       end subroutine cpl_restart
 
@@ -99,6 +109,7 @@ contains
       implicit none
 #include <arch_specific.hf>
       logical, intent(in) :: F_pcomm_L
+      if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_terminate (stub)', F_pcomm_L
       return
       end subroutine cpl_terminate
 
@@ -106,6 +117,7 @@ contains
       implicit none
 #include <arch_specific.hf>
       character(len=*), intent(in) :: F_mode
+      if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_snapshot (stub)', F_mode
       return
       end subroutine cpl_snapshot
 

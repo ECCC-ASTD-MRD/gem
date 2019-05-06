@@ -16,6 +16,7 @@
 !**S/P SERIE - PROCESSEUR DE SERIES TEMPORELLES DES MODELES SEF, MC2 ET GEM
       SUBROUTINE SERIE2( INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
                          F_DIAG,F_NIG,F_NK_HYBM,F_NK_HYBT)
+!#TODO: F_DIAG never used
       use vGrid_Descriptors, only:vgrid_descriptor,vgd_new,vgd_get,vgd_print,vgd_write,VGD_OK
       implicit none
 #include <arch_specific.hf>

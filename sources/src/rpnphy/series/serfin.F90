@@ -18,6 +18,7 @@
       SUBROUTINE SERFIN(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
                         DGRW, MAP, LAT, LON, &
                         DEGRAD, MODELE, IG)
+!#TODO: MAP never used
       implicit none
 #include <arch_specific.hf>
 !
@@ -79,12 +80,12 @@
 !
 !*
       INTEGER I,J
-      INTEGER IELA,IELAU,IELAV,IELATU
+      INTEGER IELAU,IELAV,IELATU
       INTEGER IELATV,IELAGU,IELAGV
       INTEGER IELAUD,IELAVD,IELAWS,IELAWD
-      SAVE    IELA,IELAU,IELAV,IELATU
+      SAVE    IELAU,IELAV,IELATU
       SAVE    IELATV,IELAGU,IELAGV
-      REAL EPSIL,X,Y,PSIMLON,HNOR,CON
+      REAL EPSIL,X,Y,PSIMLON,HNOR
       REAL DEG2RAD, THETA
 !
 !***********************************************************************

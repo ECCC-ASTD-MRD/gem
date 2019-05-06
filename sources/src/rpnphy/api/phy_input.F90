@@ -277,7 +277,8 @@ contains
          enddo ICATLOOP
       enddo VARLOOP
 
-      F_istat = min(priv_checklist(readlist_nk,readlist_S,nread,F_step),F_istat)
+!!$      F_istat = min(priv_checklist(readlist_nk,readlist_S,nread,F_step),F_istat)
+      F_istat = min(priv_checklist(readlist_S,nread,F_step),F_istat)
 
       if (RMN_IS_OK(F_istat) .and. nread > 0) then
          call msg(MSG_INFO,'(phy_input) All needed var were found')
@@ -567,11 +568,17 @@ contains
    end function priv_fold
 
 
+!!$   function priv_checklist(F_readlist_nk, F_readlist_S, F_nread, F_step) result(F_istat)
+!!$      implicit none
+!!$      !@objective Check if all needed var are read
+!!$      integer,intent(in) :: F_nread,F_step,F_readlist_nk(:)
+      !#TODO: check F_readlist_nk
+
    !/@*
-   function priv_checklist(F_readlist_nk, F_readlist_S, F_nread, F_step) result(F_istat)
+   function priv_checklist(F_readlist_S, F_nread, F_step) result(F_istat)
       implicit none
       !@objective Check if all needed var are read
-      integer,intent(in) :: F_nread,F_step,F_readlist_nk(:)
+      integer,intent(in) :: F_nread,F_step
       character(len=*) :: F_readlist_S(:)
       integer :: F_istat
       !*@/
@@ -614,8 +621,6 @@ contains
             call msg(MSG_ERROR,'(phy_input) Missing mandatory var (physics_input_table missing entry?): '//trim(metalist(ivar)%meta%vname))
          endif
       end do
-
-      !#TODO: check F_readlist_nk
 
       deallocate(metalist,stat=istat)
       ! ---------------------------------------------------------------------

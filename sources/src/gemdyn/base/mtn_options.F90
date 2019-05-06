@@ -141,7 +141,7 @@ contains
       pref_8 = 1.d5
 
       G_nk = mtn_nk
-      htop_8 = mtn_nk*mtn_dz
+      htop_8 = (mtn_nk+1)*mtn_dz
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          if (hyb_H(1) < 0 ) then

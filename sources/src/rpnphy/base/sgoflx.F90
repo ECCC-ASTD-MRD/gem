@@ -22,7 +22,8 @@ subroutine sgoflx7(uu,vv,utend,vtend,ttend,utendgwd4,vtendgwd4,&
                          gc,height,slope,xcent,mtdir, &
                          psurf,fcor, &
                          gwdrag,blocking, &
-			 stabfactor,nldirfactor,cdmin, split_tend_L)
+                         stabfactor,nldirfactor,cdmin, split_tend_L)
+!#TODO: never used: psurf,fcor
       use  tdpack, only: CAPPA, CPD, GRAV, RGASD
       implicit none
 #include <arch_specific.hf>
@@ -120,9 +121,9 @@ subroutine sgoflx7(uu,vv,utend,vtend,ttend,utendgwd4,vtendgwd4,&
 !     AUTOMATIC ARRAYS
 !***********************************************************************
 !
-      REAL*8, dimension(ILG     ) :: VMOD
-      REAL*8, dimension(ILG     ) :: UUB
-      REAL*8, dimension(ILG     ) :: VVB
+!!$      REAL*8, dimension(ILG     ) :: VMOD
+!!$      REAL*8, dimension(ILG     ) :: UUB
+!!$      REAL*8, dimension(ILG     ) :: VVB
       INTEGER, dimension(ILG     ) :: DRAG
       REAL*8, dimension(ILG     ) :: UB
       REAL*8, dimension(ILG     ) :: VB
@@ -185,15 +186,15 @@ subroutine sgoflx7(uu,vv,utend,vtend,ttend,utendgwd4,vtendgwd4,&
 !
       REAL*8, dimension(ILG     ) :: QDvtmp1
       REAL*8, dimension(ILG     ) :: QDvtmp2
-      REAL*8, dimension(ILG     ) :: QDvtmp3
+!!$      REAL*8, dimension(ILG     ) :: QDvtmp3
 !
 !***********************************************************************
 !
       integer i,l,ii,len,lref,lrefm,jyes,jno,it
       real*8 aux,eta,dz,uparl,piotwo,psi,cpsi,spsi,ratio, &
-             fvert,amp,ampmax,vmin,v0,zero,unit,cdblk, &
+             fvert,amp,vmin,v0,zero,unit,cdblk, &
              hmin1,hmin2,gmsi
-      real*8 QDrgas,QDratio, QDgrav,QDhmin2
+      real*8 QDrgas, QDgrav,QDhmin2
       real*8 QDtmp
       real*8 ks2,vent
       real*8 href,nd,fc,phic

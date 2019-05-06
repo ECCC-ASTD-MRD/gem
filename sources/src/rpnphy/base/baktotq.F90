@@ -92,7 +92,6 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    logical, parameter :: COMPUTE_FROM_STATE=.false.
 
    ! Local variables
-   integer :: j,k
    real :: cpdinv,tauinv
    real, dimension(n,nk) :: exner,thl_star,qw_star,acoef,bcoef,ccoef,alpha,beta,qcp,unused,qv
 

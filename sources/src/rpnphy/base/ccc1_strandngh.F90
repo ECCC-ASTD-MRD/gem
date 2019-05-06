@@ -27,7 +27,6 @@
 !
       integer ilg, lay, lev, ib, ig, lev1, il1, il2, i, k, kp1, ng
       integer im, ng2
-      real gw1, cs1o3, cs1o21
       real gwgh, cut, absc
       real tran(ilg,2,lev), atten(ilg), taua(ilg,lay), tauoma(ilg,lay), &
            taucs(ilg,lay), tauomc(ilg,lay), cldfrac(ilg,lay), rmu(ilg), &

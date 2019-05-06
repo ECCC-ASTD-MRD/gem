@@ -197,7 +197,7 @@ contains
       !----------------------------------------------------------------------
       return
    end function inputio_files_set_basedir
- 
+
 
    !/@*
    function inputio_files_get_idx(F_inputobj, F_name_S) result(F_fileidx)

@@ -28,7 +28,7 @@
       integer Ndx , Ndy,imx(Ndx,Ndy),imy(Ndx,Ndy)
       real*8 departx(*),departy(*),hdepartx,hdeparty
       real*8 x(Ndx,Ndy),y(Ndx,Ndy)
-      integer fastloc,i,j
+      integer i,j
 
 !     The chosen point must be less than the working point
 !

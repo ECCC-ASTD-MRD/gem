@@ -17,7 +17,7 @@
       SUBROUTINE DTFRZNEW(TU,P,THTEU,QVAP,QLIQ,QICE,RATIO2,TTFRZ,TBFRZ, &
                      QNWFRZ,RL,FRC1,EFFQ,IFLAG,XLV0,XLV1,XLS0,XLS1, &
          ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
-!
+!#TODO: TTFRZ,TBFRZ never used
 !
       implicit none
 #include <arch_specific.hf>

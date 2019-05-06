@@ -8,7 +8,7 @@
                            RNET,HFLUX,LE,EFLUX,RSNOW, &  
                            RHOSNO, RESA, &  
                            DT,Z0,Z0HSNOW,FCOR,LAT,ZUSL,ZTSL,PSNVHA, N)
-!
+!#TODO: WR never used
       use tdpack
       use sfclayer_mod, only: sl_sfclayer,SL_OK
       use sfc_options
@@ -109,7 +109,7 @@ include "isbapar.cdk"
       REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
       REAL CRMIN, CRMAX, TAUHOUR, RHOE, MYOMEGA
       REAL RSNOW_DAY, RHOICE, ANSMIN
-      REAL FWOOD, MAX_EFLUX
+      REAL MAX_EFLUX
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &

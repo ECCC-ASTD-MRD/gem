@@ -18,6 +18,7 @@ subroutine radfac3(qoz,ozotoit,sig,nlev,nk,lref, &
                            dlat,press,np,npmax,maxlev, &
                            o3f,x1,x2,x3,x4,i1,i2, &
                            s2,s3,nlat,fozo,clat,pref)
+!#TODO: maxlev, s2,s3, never used
    use phy_status, only: phy_error_L
    implicit none
 #include <arch_specific.hf>

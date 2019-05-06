@@ -29,7 +29,7 @@
 
       character*64 fmt,nspace,nspace2,nspace3,tmp1_s,tmp2_s
       logical flag(MAX_instrumented)
-      integer i,j,k,elem,lvl,lvlel(0:100),err,maxlen
+      integer i,j,elem,lvl,lvlel(0:100),err,maxlen
       integer(IDOUBLE),dimension(MAX_instrumented) :: timer_cnt2
       real(RDOUBLE),dimension(MAX_instrumented) :: sum_tb_mn, sum_tb_mx, sum_tb_mn2, sum_tb_mx2
       real(RDOUBLE) :: mymax, mymin
@@ -62,7 +62,7 @@
 
       if (myproc.ne.0) return
 
-!#TODO: Add Mean and Var/Std to timings
+      !#TODO: Add Mean and Var/Std to timings
 
       write(6,'(a)') '________________________________________________________________________________________'
       write(6,'(a)') '|____ TIMINGS __________________________________________________________________________|'

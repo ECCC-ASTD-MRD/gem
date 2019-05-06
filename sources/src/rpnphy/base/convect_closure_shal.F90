@@ -147,7 +147,7 @@ LOGICAL, DIMENSION(KLON),INTENT(OUT)       :: GWORK5! flag for convectiton-activ
 
 integer :: IIE, IKB, IKE  ! horizontal + vertical loop bounds
 integer :: IKS            ! vertical dimension
-integer :: JK, JKP, JKMAX ! vertical loop index
+integer :: JK, JKP        ! vertical loop index
 integer :: JI             ! horizontal loop index
 integer :: JITER,NITER    ! iteration loop index and total number
 integer :: JSTEP          ! fractional time loop index
@@ -175,8 +175,8 @@ real, DIMENSION(KLON)     :: ZZLCL        ! height of LCL
 real, DIMENSION(KLON)     :: ZMFLCL       ! mass flux at the LCL
 real, DIMENSION(KLON)     :: ZTLCL        ! temperature at LCL
 real, DIMENSION(KLON)     :: ZTELCL       ! envir. temper. at LCL
-real, DIMENSION(KLON)     :: ZMSELCL      ! updraft MSE at the LCL (m^2/s^2)
-real, DIMENSION(KLON)     :: ZMSEELCL     ! envir. MSE at the LCL (m^2/s^2)
+!!$real, DIMENSION(KLON)     :: ZMSELCL      ! updraft MSE at the LCL (m^2/s^2)
+!!$real, DIMENSION(KLON)     :: ZMSEELCL     ! envir. MSE at the LCL (m^2/s^2)
 real, DIMENSION(KLON)     :: ZTHEUL       ! theta_e for undilute ascent
 real, DIMENSION(KLON)     :: ZTHES1, ZTHES2! saturation environm. theta_e
 real, DIMENSION(KLON,KLEV) :: ZTHMFIN, ZTHMFOUT, ZRWMFIN, ZRWMFOUT

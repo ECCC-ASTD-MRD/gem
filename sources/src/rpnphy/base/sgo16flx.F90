@@ -117,9 +117,9 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
    
    !  Local variable declarations
    integer :: i, l, ii, len, lref, lrefm, jyes, jno, istat
-   integer, dimension(ilg) :: drag, izt0, iztd   
+   integer, dimension(ilg) :: drag, izt0
 
-   real :: tmp, aux, eta, piotwo, psi, cpsi, spsi, ratio, fvert, fbas, fwind, amp, gmsi, &
+   real :: tmp, aux, eta, piotwo, psi, cpsi, spsi, ratio, fvert, fwind, amp, gmsi, &
         B, C, ks2, vent
    real, dimension(ilg) :: ub, vb, vmodb, env, slp2, slpf, gamma, theta, &
         hblk, uav, vav, velav, nav, fdir, dscale, fdscale, cdf, &

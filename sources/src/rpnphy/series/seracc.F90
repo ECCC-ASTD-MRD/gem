@@ -54,7 +54,7 @@
 !
 !
 !*
-      INTEGER KSURF,A,T,I
+      INTEGER KSURF,A,T
       REAL    ACCUM
 !
 #include "acclist.cdk"

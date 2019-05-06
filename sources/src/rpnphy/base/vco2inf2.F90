@@ -83,7 +83,7 @@
 !parameters
 !
       real aprimec,aprimew
-      integer k,kk,kkk,k2,k3,k4,l
+      integer k,kk,kkk,k2,l
       real voigt
 ! all these parameters in table 1 of internal publication
 ! by garand and mailhot (1990)

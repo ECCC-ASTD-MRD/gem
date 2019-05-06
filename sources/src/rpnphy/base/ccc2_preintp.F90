@@ -20,7 +20,7 @@
 #include <arch_specific.hf>
 !
       integer ilg, lay, il1, il2, jends, k, i, j, inpdif, m, n
-      real pm, p0(ilg)
+      real p0(ilg)  !#, pm
       real dip(ilg,lay), dip0(ilg)
       real pp(ilg,lay), standp(28)
       integer inpt(ilg,lay), inptm(ilg,lay)

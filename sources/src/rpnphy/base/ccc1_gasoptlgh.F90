@@ -19,7 +19,7 @@
                             o3, qq, inpt, mcont, dir, &
                             dip, dt, lev1, gh, &
                             il1, il2, ilg, lay, tg)
-!
+!#TODO: never used: dir
       implicit none
 #include <arch_specific.hf>
 !

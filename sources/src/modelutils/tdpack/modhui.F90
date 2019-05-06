@@ -15,73 +15,83 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/R modhui3  -  MODIFICATION DE HU EN HAUT DE 300 MB
 !
-      SUBROUTINE modhui3(HU,TX,PS,SWPH,NI,NK,N)
-      use tdpack
-      implicit none
+
+SUBROUTINE modhui3(HU,TX,PS,SWPH,NI,NK,N)
+   use tdpack
+   implicit none
 #include <arch_specific.hf>
-!
-      INTEGER NI, NK, N
-      REAL HU(NI,NK), TX(NI,NK)
-      REAL PS(NI,*)
-      REAL ES1,PN1,ES2,PN2
-      LOGICAL SWPH
-!
-!Author
-!     C. GIRARD - MAR 93
-!
-!Revision
-! 001      B. Dugas (Apr 1996) - Modifications for hybrid
-!                                coordinate in sef model
-! 002      G. Pellerin (Mar 1996)   - Revised interpolation above 300mb
-!                                     level with limit above 150mb
-! 003      B. Bilodeau (Jan 2001) - Automatic arrays
-!
-!Object
-!     To recalculate the specific humidity over 300MB.
-!     by using the zeroth order interpolation
-!     and keeping one of the following constant:
-!     A) The relative humidity when the temperature decreases
-!        to simulate what happens below the tropopause.
-!     or
-!     B) The specific humidity when the temperature increases
-!        to simulate what happens above the tropopause.
-!
-!Arguments
-!
-!          -Output-
-! HU       Specific humidity in kg/kg
-!
-!          -Input-
-! TX       temperature in K
-! PS       pressure in pa
-! SWPH     if .TRUE., water and ice phase considered
-!          if .FALSE.,water phase only for all temperatures.
-! NI       Horizontal dimension
-! NK       Vertical dimension
-! N        Number of points to process
-!*
+   INTEGER NI, NK, N
+   REAL HU(NI,NK), TX(NI,NK)
+   REAL PS(NI,*)
+   LOGICAL SWPH
+
+   if (ni < 0) print *,ps(:,1)  !#Note: to keep old itf with PS w/o the warning
+   call modhui4(HU,TX,SWPH,NI,NK,N)
+
+   return
+end SUBROUTINE modhui3
+
+
+SUBROUTINE modhui4(HU,TX,SWPH,NI,NK,N)
+   use tdpack
+   implicit none
+#include <arch_specific.hf>
+
+   INTEGER :: NI, NK, N
+   REAL :: HU(NI,NK), TX(NI,NK)
+   REAL :: PN1,PN2
+   LOGICAL :: SWPH
+ 
+   !Author
+   !     C. GIRARD - MAR 93
+   !
+   !Revision
+   ! 001      B. Dugas (Apr 1996) - Modifications for hybrid
+   !                                coordinate in sef model
+   ! 002      G. Pellerin (Mar 1996)   - Revised interpolation above 300mb
+   !                                     level with limit above 150mb
+   ! 003      B. Bilodeau (Jan 2001) - Automatic arrays
+   !
+   !Object
+   !     To recalculate the specific humidity over 300MB.
+   !     by using the zeroth order interpolation
+   !     and keeping one of the following constant:
+   !     A) The relative humidity when the temperature decreases
+   !        to simulate what happens below the tropopause.
+   !     or
+   !     B) The specific humidity when the temperature increases
+   !        to simulate what happens above the tropopause.
+   !
+   !Arguments
+   !
+   !          -Output-
+   ! HU       Specific humidity in kg/kg
+   !
+   !          -Input-
+   ! TX       temperature in K
+   ! PS       pressure in pa
+   ! SWPH     if .TRUE., water and ice phase considered
+   !          if .FALSE.,water phase only for all temperatures.
+   ! NI       Horizontal dimension
+   ! NK       Vertical dimension
+   ! N        Number of points to process
+   !*
+   !--------------------------------------------------------------------
+
+   REAL :: Qsat,Qnot
+   REAL :: ALPHA, HREL, HRPRIM, QPRIM
+   Real, Dimension(ni,nk) :: PN
+   Real, Dimension(ni,nk) :: PN0
+
+   INTEGER K,K0, I
 !--------------------------------------------------------------------
-!
-      REAL Qsat,Qnot,HRnot
-      REAL ALPHA, HREL, HRPRIM, QPRIM
-      Real, Dimension(ni,nk) :: PN
-      Real, Dimension(ni,nk) :: PN0
-      REAL E, TD
-      INTEGER K,K0, I
-!--------------------------------------------------------------------
-!
-!
-!
+
       DO 10 K0=NK-1,1,-1
-!
          K=K0
-!
          DO I=1,N
             PN0(I,K)=PN(I,K)
          ENDDO
-!
          K=K0+1
-!
          K=K0
          Qnot = 2.5E-6
          DO 300 I=1,N
@@ -103,13 +113,13 @@
             PN2 = PN(I,K)
             ALPHA = (PN1 - 1.5E4) /1.5E4
             QPRIM = ALPHA * HU(I,K+1) + (1.-ALPHA) * Qnot
-!
+
             IF(SWPH) THEN
               HREL = FOHR ( HU(I,K+1) , TX(I,K+1), PN2)
             ELSE
               HREL = FOHRA( HU(I,K+1) , TX(I,K+1), PN2)
             ENDIF
-!
+
             HRPRIM = ALPHA * HREL + (1.-ALPHA) * 0.8
             HU(I,K) = min( QPRIM , HRPRIM * Qsat)
            ENDIF
@@ -117,9 +127,8 @@
            ENDIF
 !--------------------------------------------------------------------
 300      CONTINUE
-!
+
 10    CONTINUE
-!
-!
-      RETURN
-      END
+
+   RETURN
+END SUBROUTINE modhui4

@@ -861,6 +861,9 @@ contains
 !!$         F_ip1list = -1
 !!$         ii = priv_get_ip1s(F_incfgobj, F_index, F_ip1list)
 !!$      endif
+      if (present(F_nip1) .or. present(F_ip1list)) then
+         call msg(MSG_WARNING, '(incfg) Updating nip1, ip1list not yet implemented -- Ignored')
+      endif
 
       if (present(F_vmin)) F_incfgobj%v(F_index)%vmin = F_vmin
       if (present(F_vmax)) F_incfgobj%v(F_index)%vmax = F_vmax
@@ -1223,7 +1226,7 @@ contains
       character(len=*), intent(in) :: F_string_S
       !*@/
       integer, parameter :: NMAX = 3
-      character(len=1024) :: parts_S(NMAX), tmp_S
+      character(len=1024) :: parts_S(NMAX)
       integer :: val, istat, n
       !------------------------------------------------------------------
       call str_split2list(parts_S, F_string_S, ',', NMAX)

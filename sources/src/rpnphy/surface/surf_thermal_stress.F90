@@ -107,7 +107,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
    real, save :: ZAB_H = 0.7   !absorption coef of solar radiation by human body        UTCI
    real, save :: ZAB_G = 0.957 !absorption coef of solar radiation by globe sensor      WBGT
    real, save :: ZHB_H = 1.7  !average height of human person (m)                       UTCI & WBGT
-   real, save :: ZHB_G = 2.5  !average height of the globe sensor
+!!$   real, save :: ZHB_G = 2.5  !average height of the globe sensor
    real, save :: ZGD = 0.148  ! black globe sensor diameter in m (value given by Matt Wright for PanAm2015)
    integer :: ZOPT
    integer :: ZOPT_BODY
@@ -239,8 +239,8 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    real :: ZWORKE ! Term for the resolution of the equation
    real :: ZWORKJ ! Term for the resolution of the equation
    real :: ZWORKI ! Term for the resolution of the equation
-   real :: ZTRAD2 ! body MRT for verification
-   real :: ZDIFF ! body MRT for verification
+!!$   real :: ZTRAD2 ! body MRT for verification
+!!$   real :: ZDIFF ! body MRT for verification
 
    !*       1.    set wind to a minimum value
    !               ---------------------------
@@ -383,7 +383,7 @@ real function UTCI_APPROX_SURF(PTA,PEHPA,PTMRT,PVA)
    real :: Z0, Z1, Z2, Z3, Z4, Z5, Z6, ZF, ZS
    ZS(Z0,Z1,Z2,Z3,Z4,Z5,Z6,ZF) = Z0 + Z1*ZF + Z2*ZF**2 + Z3*ZF**3 + Z4*ZF**4 + Z5*ZF**5 + Z6*ZF**6
    real, dimension(7) :: ZC_TA, ZC_VA, ZC_TMRT, ZC_PA
-   integer :: J1, J2, J3, J4, JJ
+   integer :: J1, J2, J3, J4
 
    ZZ(:,:,:,:)=0.
    ! va
@@ -556,7 +556,6 @@ real function MRT_BODY_SURF(PEMISS_BODY,PQ2,PQ3,PQ4,  &
    real :: PQ5
    real :: PQ6
    real :: PQ7
-   real :: PTRAD_BODY
    real :: ZQSHADE
    real :: PEMISS_BODY
 

@@ -96,9 +96,9 @@ subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
    logical, parameter :: COMPUTE_FROM_CONSERVED=.true.
 
    ! Local variable declarations
-   integer :: j, k, itotal
+   integer :: j, k
    real, dimension(n,nk) :: thl,qw,alpha,beta,a,b,c,dz,dqwdz,dthldz,coefthl,coefqw,ficelocal, &
-        tf,df,unused,thv,tmom,qvmom,qcmom
+        unused,thv,tmom,qvmom,qcmom
 
    ! Compute ice fraction from temperature profile
    call ficemxp2(ficelocal,unused,unused,t,n,nk)

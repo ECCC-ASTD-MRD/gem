@@ -47,7 +47,7 @@ contains
 
       ! Local variables
       integer :: k,nki,nko
-      real, dimension(size(y,dim=1)) :: myZ1i,myZ2i,myZ1,myZ2
+      real, dimension(size(y,dim=1)) :: myZ1i,myZ2i
       real, dimension(size(y,dim=1),size(y,dim=2)) :: yext,zext
       character(len=LONG_CHAR) :: myDirec
 

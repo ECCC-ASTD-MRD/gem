@@ -16,7 +16,7 @@
 !** FUNCTION TPDD
       FUNCTION TPDD(P,THTED,TGS,RS,RD,RH,XLV0,XLV1, &
          ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
-!
+!#TODO: never used: ICE,BICE,CICE,DICE
       implicit none
 #include <arch_specific.hf>
 !

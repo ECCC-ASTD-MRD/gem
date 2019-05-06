@@ -69,7 +69,7 @@ FUNCTION TGLOBE_BODY(PTRAD, PTA, PUA, ZGD, ZGE) RESULT(PTGLOBE_BODY)
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS, ONLY : XTT
+!!$USE MODD_CSTS, ONLY : XTT
 !
 implicit none
 #include <arch_specific.hf>
@@ -99,9 +99,9 @@ REAL, DIMENSION(SIZE(PTRAD)) :: ZWORKK ! Term for the resolution of the equation
 REAL, DIMENSION(SIZE(PTRAD)) :: ZWORKE ! Term for the resolution of the equation
 REAL, DIMENSION(SIZE(PTRAD)) :: ZWORKJ ! Term for the resolution of the equation
 REAL, DIMENSION(SIZE(PTRAD)) :: ZWORKI ! Term for the resolution of the equation
-REAL, DIMENSION(SIZE(PTRAD)) :: PTRAD2 ! body MRT for verification
-REAL, DIMENSION(SIZE(PTRAD)) :: ZDIFF ! body MRT for verification
-INTEGER :: JJ
+!!$REAL, DIMENSION(SIZE(PTRAD)) :: PTRAD2 ! body MRT for verification
+!!$REAL, DIMENSION(SIZE(PTRAD)) :: ZDIFF ! body MRT for verification
+!!$INTEGER :: JJ
 ! 
 !*       1.    set wind to a minimum value
 !               ---------------------------

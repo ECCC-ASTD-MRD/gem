@@ -17,6 +17,7 @@
 !/@*
 subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
      N, M, NK)
+!#TODO: TRNCH, KOUNT never used
    use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
@@ -111,11 +112,11 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
 
    real,pointer,dimension(:,:) :: t
 
-   integer I, J, K
+   integer I, K
    real BETA1, SC
 
    real, save :: CON1,CON2,CON3,CON4,CON5,CON6
-   real, save :: CON7,CON8,CON9,CON10,CON11,CON12
+   real, save :: CON7,CON8,CON9,CON10,CON11
    real, save :: FI0,CONDFI,TFRZW,TMELI,TMELS
    real, save :: ALBOW,ALBDI,ALBMI,ALBDS,ALBMS,EMISW
    real, save :: COEFCOND,COEFHCAP,COEFEXT
@@ -130,8 +131,8 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         2.845E-6 , 2.7E-4 , 233.0 , 0.2   /
    data   CON5     , CON6   , CON7  , CON8  / &
         92.88    , 7.364  , 3.2   , 14.24 /
-   data   CON9     , CON10 , CON11 , CON12 / &
-        19.39    , 0.1   , 0.44  , 0.075 /
+   data   CON9     , CON10 , CON11 / &
+        19.39    , 0.1   , 0.44  /
    data  TFRZW , TMELI , TMELS /  271.2 , 273.05 , 273.15  /
    data  ALBOW   ,  ALBDI  ,  ALBMI ,  ALBDS  ,  ALBMS / &
         0.08    ,  0.57   ,  0.50  ,  0.83   ,  0.77  /

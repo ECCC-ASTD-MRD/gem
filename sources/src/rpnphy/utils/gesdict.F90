@@ -30,6 +30,7 @@ contains
         shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
         bustop, busnm, busdc, buspar, busspc, busname, ni ,nk, memgap) result(F_istat)
+!#TODO: never used: busname
       implicit none
       integer :: F_istat
       character(len=*), intent(in) :: varname, outname, inname, sername, vardesc, shape, busname
@@ -39,7 +40,7 @@ contains
       !*@/
 
       character(len=64) :: prefix_S, basename_S, time_S, ext_S
-      integer :: i, lindex, esp, ind, fmosaik
+      integer :: i, lindex, esp, fmosaik
       ! real :: vmin, vmin0
       !-------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -122,14 +123,13 @@ contains
    !/@*
    function gesdictcheck(inbus, varname, outname, inname, sername, &
         bustop, busnm, busname) result(F_istat)
+!#TODO: never used: inname, sername
       implicit none
       integer :: F_istat
       character(len=*), intent(in) :: inbus, varname, outname, inname, sername, busname
       character(len=*), intent(inout) :: busnm(:,:)
       integer,          intent(inout) :: bustop
       !*@/
-      character(len=256) :: msg_S
-      character(len=16) :: samename, othername
       integer :: i
       !-------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -254,7 +254,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    character(len=60) ::  vardesc
    character(len=256) :: string
    integer :: nmosaic, fmul, dynini, stagg
-   integer :: i, ind, esp, ivmin, ivmax, wload, hzd, monot, massc, istat
+   integer :: i, ivmin, ivmax, wload, hzd, monot, massc, istat
    real :: vmin, vmax
    !-------------------------------------------------------------------
    if (.not.init_L) then

@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 subroutine initown2(ni, nk, trnch)
+!#TODO: nk never used
    use sfc_options
    use sfcbus_mod
    implicit none

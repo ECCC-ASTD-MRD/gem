@@ -23,6 +23,7 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    use sfc_options
    use sfcbus_mod
    implicit none
+!#TODO: never used: trnch
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !@Object Calculate:   - surface roughness length (Z0) over open water
@@ -103,9 +104,9 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    real,pointer,dimension(:) ::  ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
 
 
-   real, dimension(n) :: z0m_adjust,tva,rhoa,vmod,vdir,vmodd
+   real, dimension(n) :: z0m_adjust,rhoa,vmod,vdir,vmodd
    real, dimension(n) :: alpha_w,rho_a,frv_w,frv_a,visc_w,skin_solar,q_bal,skin_q,sst
-   real, dimension(n) :: warm_increment,stab_func,lambda,ud,vdi,gamma
+   real, dimension(n) :: warm_increment,lambda,ud,vdi,gamma
    real, dimension(n) :: this_inc,prev_inc,denom
    real, dimension(n) :: my_ta,my_qa
    real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level

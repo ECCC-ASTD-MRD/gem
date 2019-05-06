@@ -25,6 +25,7 @@ contains
    subroutine condensation3(d, dsiz, f, fsiz, v, vsiz, &
         tplus0, t0, huplus0, q0, qc0, ilab, dbdt, &
         lkfbe, dt, ni, nk, kount, trnch)
+!#TODO: never used
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV
       use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK

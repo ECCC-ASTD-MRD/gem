@@ -34,8 +34,8 @@ function phyent2per(F_readlist_S, F_nread, F_step) result(F_istat)
    integer, parameter :: NVARS_MAX = 256
    integer, parameter :: NAME_ENT = 1
    integer, parameter :: NAME_PER = 2
-   integer :: istat, mysize, ivar, nvar, k
-   character(len=32) :: varname_S, var_duets_S(2,NVARS_MAX)
+   integer :: istat, ivar, nvar
+   character(len=32) :: var_duets_S(2,NVARS_MAX)
    type(phymeta) :: meta_e, meta_p
    real, pointer :: ptr_e(:,:,:), ptr_p(:,:,:)
    ! ---------------------------------------------------------------------

@@ -22,10 +22,10 @@
       character*1024 yin_S,yan_S,in_S
 
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, dty_yy, swa, lng, dlf, ubc, ex1, ex2, ex3, nhgrids
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3, nhgrids
       integer, dimension (:,:,:), allocatable :: igs
 
-      integer i,j,nhours,datev,key,iun1,iun2,iun3,gid,sindx
+      integer i,j,nhours,datev,key,iun1,iun2,iun3,sindx
       integer nlis,lislon, ni1,nj1,nk1,ni,nj,err,lindex
       integer, dimension(:), allocatable :: liste,niv
 

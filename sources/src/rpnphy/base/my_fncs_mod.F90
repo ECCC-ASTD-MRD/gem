@@ -580,7 +580,8 @@ module my_fncs_mod
  real    :: a,gamser,gln,x,eps
  parameter (itmax=100, eps=3.e-7)
  integer :: n
- real :: ap,de1,summ,gammln
+ real :: ap,de1,summ
+!!$ real, external :: gammln
 
  gln=gammln(a)
  if(x.le.0.)then
@@ -671,10 +672,12 @@ END SUBROUTINE gser
 
  implicit none
 
- integer :: i,itmax
- real    :: a,gammcf,gln,x,eps,fpmin
- real    :: an,b,c,d,de1,h,gammln
- parameter (itmax=100,eps=3.e-7)
+ integer :: i
+ real    :: a,gammcf,gln,x,fpmin
+ real    :: an,b,c,d,de1,h
+ integer, parameter :: itmax=100
+ real, parameter :: eps=3.e-7
+!!$ real, external :: gammln
 
  gln=gammln(a)
  b=x+1.-a

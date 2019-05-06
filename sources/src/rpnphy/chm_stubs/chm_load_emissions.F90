@@ -45,6 +45,8 @@ subroutine chm_load_emissions (F_basedir_S, gem_datimeo, i_gem_dt, F_phy_lcl_ni,
    integer, intent(in) :: gem_tstep_num
    integer, intent(in) :: i_gem_dt, F_phy_lcl_ni, F_phydim_ni
 
+   if (F_phydim_ni < 0) print *,'Called chm_load_emissions stub with:', F_basedir_S, gem_datimeo, i_gem_dt, F_phy_lcl_ni, F_phydim_ni, gem_tstep_num
+
    return
 end subroutine chm_load_emissions
 

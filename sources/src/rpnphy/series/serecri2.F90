@@ -20,6 +20,7 @@
                          NPROF,NT,SURFACE,PROFILS,NUM,DLAT,DLON, &
                          STORE, DIAGNOS, DATE, ETIKET, H0, NK, &
                          SATUES, SATUCO,COMPRESS)
+!#TODO: DIAGNOS, SATUES, SATUCO never used
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -101,12 +102,12 @@
 !*
       INTEGER, PARAMETER :: STDERR=0
       CHARACTER*1 VT
-      REAL PS,T,P,Q
+
       REAL, DIMENSION(:,:), ALLOCATABLE :: fldm1
-      INTEGER KSURF,KPROF,JT,IS,ERR
+      INTEGER KSURF,KPROF,ERR
       INTEGER NPAS,IP1,IP2,IP3,IG1,IG2,IG3,IG4,NPAK,DATYP
-      INTEGER IELAQ,IELAT,IELAP0
-      SAVE    IELAQ,IELAT,IELAP0
+!!$      INTEGER IELAQ,IELAT,IELAP0
+!!$      SAVE    IELAQ,IELAT,IELAP0
 
 ! N.B. Profils are what is defined in series_write nk = phydim_nk - 1
 

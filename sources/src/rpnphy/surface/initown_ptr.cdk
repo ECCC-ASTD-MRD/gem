@@ -44,7 +44,6 @@
       real, pointer, dimension(:) :: zsroof_alben
       real, pointer, dimension(:) :: zsroof_emis
       real, pointer, dimension(:) :: zsroof_emisen
-      real, pointer, dimension(:) :: zsroof_nlayer
       real, pointer, dimension(:) :: zsroof_rho
       real, pointer, dimension(:) :: zsroof_rhoen
       real, pointer, dimension(:) :: zsroof_t

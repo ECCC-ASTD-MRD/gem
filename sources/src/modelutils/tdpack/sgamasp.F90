@@ -48,7 +48,7 @@
 !       we compute (- dt/dp): so the result is >0
 !*
 !---------------------------------------------------------------
-      Real latheat, lvt0, lsti, x, z
+      Real latheat, x, z
 !--------------------------------------------------------------------
 !
 !     calcule la chaleur latente

@@ -156,12 +156,12 @@ REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ11_G
 REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ12_G
 REAL, DIMENSION(SIZE(PTI_BLD)) :: PQ13_G
 !
-REAL :: ZEB_G = 0.957 !emissivity of a globe sensor          WBGT                  
-REAL :: ZEB_H = 0.97  !emissivity of clothed human body      UTCI                 
+REAL :: ZEB_G = 0.957 !emissivity of a globe sensor          WBGT
+REAL :: ZEB_H = 0.97  !emissivity of clothed human body      UTCI
 REAL :: ZAB_H = 0.7   !absorption coef of solar radiation by human body        UTCI
 REAL :: ZAB_G = 0.957 !absorption coef of solar radiation by globe sensor      WBGT
 REAL :: ZHB_H = 1.7  !average height of human person (m)                       UTCI & WBGT
-REAL :: ZHB_G=  2.5  !average height of the globe sensor
+!!$REAL :: ZHB_G=  2.5  !average height of the globe sensor
 REAL :: ZGD = 0.148  ! black globe sensor diameter in m (value given by Matt Wright for PanAm2015)
 INTEGER :: ZOPT
 INTEGER :: ZOPT_BODY

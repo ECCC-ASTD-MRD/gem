@@ -100,7 +100,7 @@ contains
       !------------------------------------------------------------------
       !#TODO: should F_vgridout, F_vgridin matter?
       !#TODO: maybe we should check ip list consistency with provided vgrid
-!!$      F_same_L = (F_vgridout == F_vgridin)
+      F_same_L = (F_vgridout == F_vgridin)
 !!$      if (present(F_sublistin)) F_sublistin = 1
 !!$      if (F_same_L) then
 !!$         if (present(F_sublistin)) then

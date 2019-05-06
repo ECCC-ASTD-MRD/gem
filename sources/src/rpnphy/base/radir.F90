@@ -24,17 +24,18 @@
            uco2j, tco2j, wkco2j,trmin,tmem, &
            ozpak1,ozpak2, &
            flsh,flss,fldel,flnk,flnn)
+!#TODO: tt, iopt, ozpak1,ozpak2 never used
       use phy_options
       implicit none
 #include <arch_specific.hf>
 !
 !     variables a une dimension de travail
-      integer nn,nkmax,ni2,nl,ni1,nt,mx,i1,i2,m,ny,j,jind, &
-          indx1,indx2,mxx,no3,ncx,iopt,nk,mc,ip,i,l,it,indx,ny2
+      integer nn,nkmax,ni2,nl,ni1,nt,mx,i1,i2,m,j,jind, &
+          mxx,no3,ncx,iopt,nk,ip,i,l,it
       integer iwing,icen,nco2
 !     variables dimensionnees
       real to,t1,t2,ap,po,elsa,epsil,corfac,eo3,eh2o, &
-           borne,z,aa,bb,w,xnu,rovlap,xmaxlap,bz,a,tx,wc,zx, &
+           borne,z,aa,bb,xnu,bz,a,tx,wc,zx, &
            r,y,wc2
 !
       real tt(nt),tro3(mxx),to3(no3),g1(mxx,nt),g2(mxx,nt), &
@@ -226,10 +227,10 @@
 !
 !
       real stefinv
-      real rwngdbcn,rcendbcn,rwngbcn,rcenbcn,rg1,rg2,rg3
-      real rtro3,rdbo3,rbo3,rth2o
 
-      integer idco2,ido3,idwat,ncen,nc,nwng
+
+
+      integer idco2,ido3,idwat,ncen,nwng
       integer i_tempo
       real xlco2,xlo3,xlwat,aco2wng,aco2cen
       real rido3mx,ridwatmx

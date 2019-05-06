@@ -25,6 +25,7 @@ contains
    subroutine water_integrated1(tt,qq,qc,qi,qr,qgp,qnp,sigma,ps, &
         zicw,ziwv,ziwv700,ziwp,zlwp2,zslwp,zslwp2,zslwp3,zslwp4, &
         ni,nk)
+!#TODO: never used qr,qgp
       use debug_mod, only: init2nan
       use tdpack_const, only: TCDK
       use phy_options

@@ -137,7 +137,7 @@ real, DIMENSION(KLON),     INTENT(OUT):: PCAPE  ! available potent. energy
 
 integer :: IIE, IKB, IKE  ! horizontal and vertical loop bounds
 integer :: JI             ! horizontal loop index
-integer :: JK, JKP, JKMIN   ! vertical loop index
+integer :: JK, JKP   ! vertical loop index
 real    :: ZEPSA, ZCVOCD  ! R_v / R_d, C_pv / C_pd
 real    :: ZCPORD, ZRDOCP ! C_pd / R_d, R_d / C_pd
 real    :: ZRH            ! relative humidity

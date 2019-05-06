@@ -63,7 +63,7 @@ contains
       real, parameter :: HGHT_NEARSFC=2.,RIB_CRIT=0.25,BETA=100.
 
       ! Local variable declarations
-      integer :: i,k,istat
+      integer :: i,k
       real :: svhbl,rib,rib_below,shrsq,hght,hght_below,zp
       real, dimension(n) :: theta_air,spd_air,dir_air,temp_n,hum_n,svn,uwind_n,vwind_n,ustar
 

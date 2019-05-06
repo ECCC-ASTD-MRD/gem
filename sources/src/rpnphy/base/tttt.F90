@@ -17,6 +17,7 @@
 !
        SUBROUTINE TTTT(JJ,W,R1,R2,LMX,ILG,APAD,BPAD,D,AKI)
       implicit none
+!#TODO: AKI never used
 #include <arch_specific.hf>
       INTEGER I,II,ILG,JJ,KI,LMX
       REAL APAD(3,6),BPAD(3,6),D(3),AKI(2)

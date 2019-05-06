@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-      Integer ni, nk, n, modp
+      Integer ni, nk, n
       Real qq(ni,nk), ee(ni,nk)
       Real ps(ni,*)
 !

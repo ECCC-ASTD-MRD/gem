@@ -53,7 +53,7 @@ subroutine fpe_handler(sig, code)
 
 #else
 
-   call msg(MSG_WARNING,'(fpe_handler) Not yet availabale')
+   call msg(MSG_WARNING,'(fpe_handler) Not yet available')
    print *,'ERROR: fpe_handler called with: sig=', sig,', code=', code
    call flush(6)
 

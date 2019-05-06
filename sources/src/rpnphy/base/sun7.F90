@@ -27,6 +27,7 @@
                        reduc, &
                        flss, srd, afldsig, aflsig, R0R, &
                        flkmx, flkmxp, RADFIX, RADFLTR)
+!#TODO: WORKX never used
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,14 +35,14 @@
       INTEGER I,J,K,L,N
       INTEGER KI,IK,K0,K1,JJ,MM
       INTEGER KP1,LP1,KM1,ILG,LMX,JJP,KKI,N2J,IAE
-      INTEGER IABS,KMX,KMXP,KREF,NPTS,KFIN,LIND,KMXM1,IFIN,KKP4
+      INTEGER IABS,KMX,KMXP,KREF,NPTS,KFIN,LIND,IFIN,KKP4
       integer flkmx, flkmxp
-      REAL CONS,CCAR,EXT,RE,WH2O
-      REAL DSHH,DSCC,XNU,VA,ROVLAP,XMAXLAP,CNEB1,CNEB2,FACOR,XMUE
-      REAL PT,TZ,XMPT,BPT,ZC,RE11,RKI,EE
-      REAL A,AA,D,Y,R,R0R
-      REAL REC_Y,REC_101325,REC_VV,REC_35,rec_86400
-      REAL ZEPSCQ,ZEPSCT,ZEPSC,RAYL,XNET,VV,ZZ
+      REAL CONS,CCAR,RE,WH2O
+      REAL DSHH,DSCC,XNU,VA,XMUE
+      REAL PT,XMPT,BPT,ZC,RE11,RKI,EE
+      REAL A,AA,Y,R,R0R
+      REAL REC_Y,REC_101325,REC_35
+      REAL ZEPSCQ,ZEPSCT,ZEPSC,RAYL,XNET
       EXTERNAL TTTT,WFLUX
       EXTERNAL SUN_RADFIX1
       LOGICAL RADFIX,RADFLTR
@@ -52,7 +53,6 @@
 !
       REAL PSOL(LMX),WV(MM,KMX),TM(MM,KMX),QOF(LMX,KMX), &
        CNEB(LMX,KMX),TAUAE(LMX,KMX,5) ,RMUO(LMX),ALBS(LMX)
-      REAL EXP_ZZ(LMX)
       REAL aSIG(LMX,KMX)
       REAL Z(LMX)
 !
@@ -233,10 +233,9 @@
 !***********************************************************************
 
       REAL CH2O,CCO2
-      REAL TAUA(5),PIZA(5),CGA(5),CAER(4,5)
+      REAL TAUA(5),PIZA(5),CGA(5)  !#,CAER(4,5)
       REAL APAD(3,6),BPAD(3,6),DQ(3),AKI(2)
-      real bb
-      SAVE CAER,TAUA,PIZA,CGA,APAD,BPAD,AKI,DQ
+      SAVE TAUA,PIZA,CGA,APAD,BPAD,AKI,DQ !#,CAER
       SAVE CH2O,CCO2
       LOGICAL LO1
 !
@@ -275,11 +274,11 @@
 !
 !-- LONGWAVE (ADAPTED TO THE L.O.A. LONGWAVE SCHEME SPECTRALS INTERVALS)
 !
-      DATA CAER / .038520, .037196, .040532, .054934, &
-                  .12613 , .18313 , .10357 , .064106, &
-                  .012579, .013649, .018652, .025181, &
-                  .011890, .016142, .021105, .028908, &
-                  .013792, .026810, .052203, .066338 /
+!!$      DATA CAER / .038520, .037196, .040532, .054934, &
+!!$                  .12613 , .18313 , .10357 , .064106, &
+!!$                  .012579, .013649, .018652, .025181, &
+!!$                  .011890, .016142, .021105, .028908, &
+!!$                  .013792, .026810, .052203, .066338 /
 !
       DATA CH2O/5.3669274E-3/, CCO2/3.3E-4/
 !

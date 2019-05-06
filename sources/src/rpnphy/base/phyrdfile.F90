@@ -31,7 +31,7 @@
       integer iun,ilir,inbr,status,ierr,max_ndim
       parameter (max_ndim=1000)
       integer dim(max_ndim)
-      integer fnom,fstouv,fstopc,fstfrm,fclos,wkoffit,bufnml(1000000)
+      integer fnom,fstouv,fstopc,fstfrm,fclos,wkoffit
       real, dimension(1) :: dummy
       real, dimension(:), allocatable :: rbuf
 !
@@ -95,7 +95,7 @@
 
  9988 call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
 
-      inbr = fstopc ('MSGLVL','INFORM',.false.)
+      inbr = fstopc ('MSGLVL','WARNIN',.false.)
 
  1001 format (/'READING ',a,' FILE:'/a)
 !

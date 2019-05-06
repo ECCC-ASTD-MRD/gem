@@ -21,14 +21,14 @@
       character*1    family_uencode_S
       character*2    typ_S, grd_S
       character*4    var_S
-      character*12   lab_S, lste_S(2)
-      character*1024 def1_S(2), def2_S(2), yin_S,yan_S,out_S
+      character*12   lab_S
+      character*1024 yin_S,yan_S,out_S
 
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3,ip1,ip2,ip3
       integer p2a, p3a, g2a, g3a
 
-      integer iun1,iun2,iun3,maxni,maxnj,i,n,datev,niyy,vesion_uencode
+      integer iun1,iun2,iun3,maxni,maxnj,i,datev,niyy,vesion_uencode
       integer nlis,lislon, key, ni1,nj1,nk1,ni,nj,err,sindx_yin,sindx
       integer yinlislon,yanlislon,taclislon,j
       integer, dimension(:), allocatable :: liste,niv,yinliste,yanliste,tacliste

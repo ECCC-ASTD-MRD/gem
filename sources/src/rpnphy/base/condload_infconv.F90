@@ -13,7 +13,7 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!** S/P CONDLOAD
+!** S/P CONDLOAD_INFCONV
       SUBROUTINE CONDLOAD_INFCONV(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
                         QNEWIC,QLQOUT,QICOUT,GRAV)
 !
@@ -22,11 +22,11 @@
 #include <arch_specific.hf>
 !
 !
-      REAL BOTERM,DQ,DZ
-      REAL ENTERM,GRAV,OLDQ,PPTDRG
-      REAL QICE,QICOUT,QLIQ,QLQOUT,QNEW
+      REAL BOTERM,CONV,DQ,DZ
+      REAL ENTERM,GRAV,G1,OLDQ,PPTDRG
+      REAL QEST,QICE,QICOUT,QLIQ,QLQOUT,QNEW
       REAL QNEWIC,QNEWLQ,QTOT,RATE
-      REAL RATIO3,RATIO4,WTW
+      REAL RATIO3,RATIO4,WAVG,WTW
 !
 !AUTHOR
 !          Kain and Fritsch   (1988)
@@ -76,6 +76,20 @@
 !
 !
 !
+!                              Estimate the vertical velocity so that
+!                              an average vertical velocity can be
+!                              calculated to estimate the time required
+!                              ascent between model levels.
+!
+      QEST=0.5*(QTOT+QNEW)
+!
+!                              Solve for the vertical motion.
+!
+
+      G1=WTW+BOTERM-ENTERM-2.*GRAV*DZ*QEST/1.5
+      IF(G1.LT.0.0)G1=0.
+      WAVG=(SQRT(WTW)+SQRT(G1))/2.
+!
 !
 !                              RATIO3 is the fraction of liquid water
 !                              in fresh condensate.
@@ -86,15 +100,19 @@
 !                              is allowed to participate in the conversion
 !                              process.
 !
-      RATIO3=QNEWLQ/(QNEW+1.E-10)
+      RATIO3=QNEWLQ/max(QNEW,1.E-10)
       QTOT=QTOT+0.6*QNEW
       OLDQ=QTOT
-      RATIO4=(0.6*QNEWLQ+QLIQ)/(QTOT+1.E-10)
+      RATIO4=(0.6*QNEWLQ+QLIQ)/max(QTOT,1.E-10)
 !
 !                             Apply the rate equation.
 !
-
-      QTOT=0.
+      if (abs(wavg) > epsilon(wavg)) then
+         CONV = RATE*DZ/WAVG ! Compute conversion
+         QTOT = QTOT*EXP(-CONV)
+      else
+         QTOT = 0.
+      endif
 !
 !
 !                             Determine the amount of precipitation that

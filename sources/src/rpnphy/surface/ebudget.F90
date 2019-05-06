@@ -23,6 +23,7 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
      LES, LER, LETR, GFLUX, EFLUX, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
+!#TODO: CD, U, V never used
    use tdpack
    use sfc_options, only: rad_off, atm_external, isba_melting_fix, &
         isba_no_warm_sn_freez, snow_emiss, &
@@ -159,9 +160,9 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    real,parameter :: PETIT = 1.E-7
 
    integer :: i
-   real :: KCOEF, RHOW, RATE, AA, BB, CC, B2M4AC, M
-   real :: MLTRAIN, RAIN1, RAIN2, DTRAIN, PRDT
-   real :: MELTSR,TEMPO,TST_MIN_TRPL
+   real :: KCOEF, RHOW
+   real :: MLTRAIN, RAIN1, RAIN2
+   real :: TEMPO
    real, dimension(n) :: ZQSAT, ZDQSAT, ZQSATT, RORA, A, B, C, TN, &
         ZHV, FREEZFRAC, FREEZG, MELTG, TNMT0, MELTS, WORK, EG, ES, EV, &
         FMLTRAIN, EMISSS, EMISSN

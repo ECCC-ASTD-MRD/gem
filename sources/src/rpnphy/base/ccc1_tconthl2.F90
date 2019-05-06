@@ -23,7 +23,6 @@
 !
       integer ilg, lay, il1, il2, k, i, j, l, lp1, m, mcont, n
       real x1, y1, x2, y2, x11, x21, y21, y11, x12, x22, y12, y22
-      real rr
       real taug(ilg,lay), coef1(5,5,4), coef2(5,5,4)
 !
       real qq(ilg,lay), dp(ilg,lay), dip(ilg,lay), dir(ilg,lay), &

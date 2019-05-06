@@ -21,6 +21,7 @@ subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
      RESA, ILMO, HST, FRV, FTEMP, FVAP, &
      CH, CD, HRSURF, HUSURF, HV, DEL, ZQS, &
      CTU, N)
+!#TODO: PSNZ0 never used
    use tdpack
    use sfclayer_mod, only: sl_sfclayer,SL_OK
    use sfc_options

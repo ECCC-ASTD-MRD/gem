@@ -467,6 +467,9 @@ contains
       fileid = input_files_open1(F_id,F_file_idx)
       if (.not.RMN_IS_OK(fileid)) return
       !TODO: for climatic field, should use F_ip2 instead of F_datev
+      if (F_ip2 /= RMN_ANY_I) then
+         call msg(MSG_WARNING,'(input_files) vgrid, provided ip2 ignored')
+      endif
       nullify(ip1list)
       if (present(F_sfcfld).and.present(F_sfcgridid)) then
          nullify(F_sfcfld)

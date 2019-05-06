@@ -21,6 +21,7 @@ SUBROUTINE OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, PREF_SW_ROOF,    &
                        PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,    &
                        PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,N,OPT,OPT_BODY,          &
                        ZEB,ZAB,ZHB   )
+!#TODO: PREF_SW_ROOF, PEMIT_LW_ROOF neve used
 !
 !    PURPOSE       : Computes the energy budget received by a body over a slab surface 
 !    AUTHOR        :  S. Leroyer   (Original  10/2016)

@@ -108,7 +108,7 @@ include "isbapar.cdk"
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
-           smt, wlt, alphast, rhosfall, rhoslt, smx, rvrun, kdiffu, &
+           smt, wlt, alphast, rhosfall, rhoslt, smx, kdiffu, &
            dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax,  &
            freez_l1, work_l1, work_l2, melt_l1, melt_l2, melt_rain, rsnow_critmass
       
