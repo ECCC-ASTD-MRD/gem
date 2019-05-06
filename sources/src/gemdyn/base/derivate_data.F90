@@ -15,19 +15,19 @@
 
 !** s/r derivate_data
 
-      subroutine derivate_data ( F_zd, F_w, F_u, F_v, F_t, F_s, F_q,&
-                                 Minx, Maxx, Miny, Maxy, Nk        ,&
+      subroutine derivate_data ( F_zd, F_w, F_u, F_v, F_t, F_s, F_q, &
+                                 Minx, Maxx, Miny, Maxy, Nk        , &
                                  F_zd_L, F_w_L )
       use cstv
       use dynkernel_options
       use glb_ld
       implicit none
 
-      integer, intent(in) ::  Minx, Maxx, Miny, Maxy, Nk
-      logical, intent(in) ::  F_zd_L, F_w_L
-      real, dimension(Minx:Maxx,Miny:Maxy   ),  intent(inout ):: F_s
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w,F_q
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      logical, intent(in) :: F_zd_L, F_w_L
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(inout ):: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out)   :: F_zd, F_w,F_q
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_u, F_v, F_t
 !
 !     ________________________________________________________________
 !
@@ -48,7 +48,7 @@
                              F_zd_L, F_w_L )
 
          case('DYNAMICS_EXPO_H')
-            stop('Not yet implemented')
+            stop 'Not yet implemented'
 
       end select
 !
