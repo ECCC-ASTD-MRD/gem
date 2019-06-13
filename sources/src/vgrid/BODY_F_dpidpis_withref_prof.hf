@@ -1,0 +1,33 @@
+     use vgrid_utils, only: up
+     type(vgrid_descriptor), intent(in) :: self                  !Vertical descriptor instance
+     integer, dimension(:), intent(in) :: ip1_list               !Key of prototype field
+     real(kind=REAL_KIND), dimension(:), pointer :: dpidpis                      !Derivative values
+     real(kind=REAL_KIND), optional, intent(in) :: sfc_field                     !Surface field reference for coordinate [none]
+
+     ! Local variables
+     real(kind=REAL_KIND) :: my_sfc_field
+     integer :: stat
+
+     ! Set return value
+     status = VGD_ERROR
+     if(.not.is_valid(self,'SELF'))then
+        write(for_msg,*) 'vgrid structure is not valid in dpidpis_withref_prof'//PROC_SUFF
+        call msg(MSG_ERROR,VGD_PRFX//for_msg)       
+        return
+     endif
+
+     ! Set default values
+     my_sfc_field = VGD_MISSING
+     if (present(sfc_field)) my_sfc_field = sfc_field
+     ! Wrap call to level calculation
+#if defined(REAL_8)
+     stat = diag_withref_prof_8(self,ip1_list,dpidpis,sfc_field=my_sfc_field,dpidpis=.true.)
+#else
+     stat = diag_withref_prof(self,ip1_list,dpidpis,sfc_field=my_sfc_field,dpidpis=.true.)
+#endif
+     if(stat==VGD_ERROR)then
+        write(for_msg,*) 'ERROR with diag_withref_prof'//PROC_SUFF//' in dpidpis_withref_prof'//PROC_SUFF
+        return
+     endif
+     status = VGD_OK
+     return

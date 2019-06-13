@@ -31,8 +31,6 @@
 #define STDA76_N_LAYER 7
 static float stda76_tgrad[STDA76_N_LAYER]     = { -6.5E-3,    0.0,    1.0E-3, 2.8E-3, 0.0,    -2.8E-3, -2.0E-3 };
 static float stda76_zgrad[STDA76_N_LAYER + 1] = { 0., 11000., 20000., 32000., 47000., 51000.,  71000.,  84852. };
-extern float VGD_STDA76_SFC_T = 288.15;
-extern float VGD_STDA76_SFC_P = 101325.;
 
 // Constants
 #define MAX_DESC_REC 10000      //maximum number of descriptor records in a single file
@@ -309,7 +307,7 @@ void c_hypsometric (float *pkp, float pk, float Tk, float gammaT, float zk, floa
   }
 }
 
-static int c_set_stda_layer(int ind, float Tk, float pk, float *zk, float *zkp, float *gammaT, float *pkp, char *zero_lapse_rate) {
+static int c_set_stda_layer(int ind, float Tk, float pk, float *zk, float *zkp, float *gammaT, float *pkp, int *zero_lapse_rate) {
 
   //Andre PLante 2017
   //
@@ -348,7 +346,7 @@ static int c_set_stda_layer(int ind, float Tk, float pk, float *zk, float *zkp, 
 }
 
 static int c_get_stda76(float *Tk, float *pk, float *zk, float *gammaT, 
-			char *zero_lapse_rate){
+			int *zero_lapse_rate){
   int ind;
 
   // Prepare temp, press and height array for the STDA76_N_LAYER + 1
@@ -388,8 +386,7 @@ static int c_get_stda76(float *Tk, float *pk, float *zk, float *gammaT,
 }
 
 int c_stda76_temp_from_press(vgrid_descriptor *self, int *i_val, int nl, float *temp){
-  int k, ind;
-  char zero_lapse_rate;
+  int k, ind, zero_lapse_rate;
   float pkp, Tk, pk, hgts_stda, zk, zkp, gammaT;
   float *levs = NULL;
   
@@ -442,8 +439,7 @@ int c_stda76_temp_from_press(vgrid_descriptor *self, int *i_val, int nl, float *
 }
 
 int c_stda76_temp_pres_from_heights(vgrid_descriptor *self, int *i_val, int nl, float *temp, float *pres, float *sfc_temp, float *sfc_pres){
-  int ind = 0, k;
-  char zero_lapse_rate;
+  int ind = 0, k, zero_lapse_rate;
   float *levs = NULL;
   float zero = 0.f, pk, pkp, Tk, zk, zkp, gammaT;
 
@@ -6386,10 +6382,9 @@ int Cvgd_stda76_pres(vgrid_descriptor *self, int *i_val, int nl, float *pres, fl
 int Cvgd_stda76_hgts_from_pres_list(float *hgts, float *pres,
 						      int nb){
 
-  int i, k;
+  int i, k, zero_lapse_rate[STDA76_N_LAYER];
   float Tk[STDA76_N_LAYER+1], pk[STDA76_N_LAYER+1], zk[STDA76_N_LAYER+1];
   float gammaT[STDA76_N_LAYER];
-  char zero_lapse_rate[STDA76_N_LAYER];
 
   if(c_get_stda76(Tk, pk, zk, gammaT, zero_lapse_rate) == VGD_ERROR){
     return(VGD_ERROR);
@@ -6427,10 +6422,9 @@ int Cvgd_stda76_hgts_from_pres_list(float *hgts, float *pres,
 int Cvgd_stda76_pres_from_hgts_list(float *pres, float *hgts,
 						      int nb){
 
-  int i, k;
+  int i, k, zero_lapse_rate[STDA76_N_LAYER];
   float Tk[STDA76_N_LAYER+1], pk[STDA76_N_LAYER+1], zk[STDA76_N_LAYER+1];
   float gammaT[STDA76_N_LAYER];
-  char zero_lapse_rate[STDA76_N_LAYER];
 
   if(c_get_stda76(Tk, pk, zk, gammaT, zero_lapse_rate) == VGD_ERROR){
     return(VGD_ERROR);
