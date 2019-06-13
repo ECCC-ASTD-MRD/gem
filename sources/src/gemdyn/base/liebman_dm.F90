@@ -21,6 +21,7 @@
       use out_options
       use glb_ld
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,7 +32,7 @@
 
       integer i,j,k,ite,i0,in,ic,j0,jn,jc,ier,count
       real    prfact,prmax(Nk),prmaxall(Nk),prmod,mask(2,Nk),maskall(2,Nk)
-      real*8  sum0(2,Nk),sumall(2,Nk)
+      real(kind=REAL64)  sum0(2,Nk),sumall(2,Nk)
 !     __________________________________________________________________
 !
       call rpn_comm_xch_halo(F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &

@@ -22,32 +22,32 @@
       use glb_ld
       use cstv
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
-      real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,Nk+1)
-      real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
-      real F_fis(Minx:Maxx,Miny:Maxy)     ,F_sl(Minx:Maxx,Miny:Maxy)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, i0, in, j0, jn
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(out) :: F_fip
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(in) :: F_q
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_s, F_fis, F_sl
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_t
 
 !author
 !
 ! Claude Girard
 !
-!revision
-!
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_fip        O    - geopotential perturbation
-! F_s          I    - log(pis/pref)
-! F_t          I    - temperature
-! F_fis        I    - surface geopotential
+!  Name                         Description
+!-------------------------------------------------------------
+! F_fip          - geopotential perturbation
+! F_s            - log(pis/pref)
+! F_t            - temperature
+! F_fis          - surface geopotential
 
 
       integer i,j,k,km
-      real*8, parameter :: one = 1.d0, half = .5d0
-      real*8  qbar,w1
+      real(kind=REAL64), parameter :: one = 1.d0, half = .5d0
+      real(kind=REAL64)  qbar,w1
 !
 !     ---------------------------------------------------------------
 !

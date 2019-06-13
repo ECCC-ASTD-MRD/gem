@@ -19,6 +19,7 @@
       use glb_ld
       use bubble_options
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,7 @@
       real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(OUT) ::  F_t
 
       integer :: i,j,k,ii
-      real*8 :: theta, ex,r,rad
+      real(kind=REAL64) :: theta, ex,r,rad
 !
 !     ---------------------------------------------------------------
 !

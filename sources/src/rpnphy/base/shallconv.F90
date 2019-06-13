@@ -22,28 +22,26 @@ module shallconv
 contains
 
    !/@*
-   subroutine shallconv5(ztmoins, ztplus, zhumoins, zhuplus, &
+   subroutine shallconv5(ztplus, zhumoins, &
         zsigw, zgztherm, zpmoins, &
         ztshal, zhushal, ztlcs, ztscs, zqlsc, zqssc, zkshal, &
-        zfsc, zqcz, zqdifv, kount, trnch, cdt1, ni, nk, nkm1)
+        zfsc, zqcz, zqdifv, cdt1, ni, nk, nkm1)
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, RAUW
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-      integer, intent(in) ::  kount, trnch, ni, nk, nkm1  !#TODO: never used: kount, trnch
+      integer, intent(in) :: ni, nk, nkm1
       real, intent(in) :: cdt1
       real, dimension(:), pointer :: zpmoins, ztlcs, ztscs, zkshal
       real, dimension(:,:), pointer :: &
-           ztmoins, ztplus, zhumoins, zhuplus, zsigw, &
+           ztplus, zhumoins, zsigw, &
            zgztherm, ztshal, zhushal, zqlsc, zqssc, zfsc, zqcz, zqdifv
 
       !@Author A-M Leduc. (March 2002)
       !@Object This is the interface routine for shallow convection schemes
       !@Arguments
-      ! trnch    row number
-      ! kount    timestep number
       ! cdt1     timestep
       ! ni       horizontal running length
       ! nk       vertical dimension
@@ -65,10 +63,10 @@ contains
       if (conv_shal == 'KTRSNT')then
 
          !# Kuo transient shallow convection - it does generate precipitation
-         call ktrsnt3(ztshal, zhushal, zilab, zfsc, zqlsc, &
+         call ktrsnt4(ztshal, zhushal, zilab, zfsc, zqlsc, &
               zqssc, zdbdt,ztlcs,ztscs,zqcz, &
-              ztplus, ztmoins, zhuplus, zhumoins, &
-              geop, zqdifv, zpmoins, zpmoins, &
+              ztplus, zhumoins, &
+              geop, zqdifv, zpmoins, &
               zsigw, cdt1, zkshal, ni, nkm1)
 
          !# Transformation en hauteur d'eau (m) - diviser par densite eau
@@ -80,11 +78,11 @@ contains
       else if (conv_shal == 'KTRSNT_MG') then
 
          !# Kuo transient shallow convection used by the meso-global model (mg)
-         call ktrsnt_mg(ztshal, zhushal, zilab, zfsc, zqlsc, &
+         call ktrsnt_mg2(ztshal, zhushal, zilab, zfsc, zqlsc, &
               zqssc, zdbdt, &
-              ztplus, ztmoins, zhuplus, zhumoins, &
-              geop, zqdifv, zpmoins, zpmoins, &
-              zsigw, cdt1, zkshal, ni, nkm1)
+              ztplus, zhumoins, &
+              geop, zqdifv, zpmoins, &
+              zsigw, zkshal, ni, nkm1)
 
       endif
       call msg_toall(MSG_DEBUG, 'shallconv [END]')

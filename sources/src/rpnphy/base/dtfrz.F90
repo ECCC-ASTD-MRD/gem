@@ -16,7 +16,7 @@
 !** FUNCTION DTFRZ
       FUNCTION DTFRZ (T,P,Q,SD,D273)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       REAL DTFRZ,T,P,Q,SD,D273
 !
 !Author

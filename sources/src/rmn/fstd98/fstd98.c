@@ -18,6 +18,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#define use_old_signed_pack_unpack_code YES
+
 #include <stdio.h>
 #ifdef WIN32    /*CHC/NRC*/
 #include <string.h>
@@ -832,8 +834,8 @@ int c_fstecr(word *field_in, void * work, int npak,
         datyp = 4;
       }
       stdf_entry->datyp = is_missing | 4;  /* turbo compression not supported for this type, revert to normal mode */
-#ifdef use_old_code
-fprintf(stderr,"OLD PACK CODE======================================\n");
+#ifdef use_old_signed_pack_unpack_code
+!! fprintf(stderr,"OLD PACK CODE======================================\n");
       field3 = field;
       if(xdf_short || xdf_byte){
         field3=(word *)alloca(ni*nj*nk*sizeof(word));
@@ -844,7 +846,7 @@ fprintf(stderr,"OLD PACK CODE======================================\n");
       ier = compact_integer(field3,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,3);
 #else
-fprintf(stderr,"NEW PACK CODE======================================\n");
+!! fprintf(stderr,"NEW PACK CODE======================================\n");
       if(xdf_short){
         ier = compact_short(field,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,7);
@@ -1947,8 +1949,8 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
         }
         
       case 4: mode=4;  /* signed integer */
-#ifdef use_old_code
-fprintf(stderr,"OLD UNPACK CODE ======================================\n");
+#ifdef use_old_signed_pack_unpack_code
+!! fprintf(stderr,"OLD UNPACK CODE ======================================\n");
         if(xdf_short || xdf_byte){
           field_out=alloca(nelm*sizeof(int));
           s_field_out=(short *)field;
@@ -1961,7 +1963,7 @@ fprintf(stderr,"OLD UNPACK CODE ======================================\n");
         if(xdf_short){ for (i=0;i<nelm;i++) s_field_out[i]=field_out[i]; } ;
         if(xdf_byte) { for (i=0;i<nelm;i++) b_field_out[i]=field_out[i]; } ;
 #else
-fprintf(stderr,"NEW UNPACK CODE ======================================\n");
+!! fprintf(stderr,"NEW UNPACK CODE ======================================\n");
         if(xdf_short){
           ier = compact_short(field,(void *) NULL,buf->data,nelm,
                               stdf_entry->nbits,0,xdf_stride,8);
@@ -2218,29 +2220,29 @@ int c_fstnbrv(int iun)
  *                          C _ F S T O P C                                  *
  *                                                                           *
  *Object                                                                     *
- *   Print out or set a fstd or xdf global variable option.                  *
+ *   Print out, get, or set a fstd or xdf global variable option.            *
  *                                                                           *
  *Arguments                                                                  *
  *                                                                           *
  *   IN     option   option name to be set/printed                           *
  *   IN     value    option value                                            *
- *   IN     getmode  logical (1: get option, 0: set option)                  *
+ *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
  *                                                                           *
  *****************************************************************************/
+static int turbocomp_mode=0;
+static char *comptab[2] = {"FAST","BEST"};
+static char *msgtab[7] = {"DEBUG","INFORM","WARNIN","ERRORS","FATALE","SYSTEM","CATAST"};
+static int nivmsg[7] = {0,2,4,6,8,10,10};
+
 int c_fstopc(char *option, char *value, int getmode)
 {
   int i;
-  static char *msgtab[7] =
-  {"DEBUG","INFORM","WARNIN","ERRORS","FATALE","SYSTEM","CATAST"};
-  static int nivmsg[7] = {0,2,4,6,8,10,10};
-  static char *comptab[2] = {"FAST","BEST"};
-  static int turbocomp_mode=0;
+  int val = 0;
 
   if (strcmp(option,"MSGLVL") == 0) {
-    if (getmode)
-      fprintf(stdout,"c_fstopc option %s, MSGLVL=%d\n",msgtab[msg_level],
-              nivmsg[msg_level]);
-    else {
+    if (getmode){
+      if (getmode == 2) val = msg_level;
+    }else{
       for (i = 0; i < 7; i++) {
         if (strcmp(msgtab[i],value) == 0) {
           msg_level = i;
@@ -2249,48 +2251,53 @@ int c_fstopc(char *option, char *value, int getmode)
       }
       c_armn_compress_option(option,value);  /* pass msglvl option to compressor */
     }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc MSGLVL option = '%s' , %d\n",msgtab[msg_level],nivmsg[msg_level]);
+    return val;
   }
-  else
-    if (strcmp(option,"TOLRNC") == 0) {
-      if (getmode)
-        fprintf(stdout,"c_fstopc option %s, TOLRNC=%d\n",msgtab[xdf_toler],
-                nivmsg[xdf_toler]);
-      else
-        for (i = 0; i < 7; i++)
-          if (strcmp(msgtab[i],value) == 0) {
-            xdf_toler = i;
-            break;
-          }
-    }
-  else 
-    if (strcmp(option,"PRINTOPT") == 0) {
-      if (getmode)
-        fprintf(stdout,"c_fstopc option PRINTOPT=%s\n",prnt_options);
-      else {
-        sprintf(prnt_options,"%s",value);
-        if (msg_level <= INFORM)
-          fprintf(stdout,"c_fstopc option PRINTOPT set to %s\n",prnt_options);        
+
+  if (strcmp(option,"TOLRNC") == 0) {
+    if (getmode){
+      if (getmode == 2) val = xdf_toler;
+    }else{
+      for (i = 0; i < 7; i++){
+        if (strcmp(msgtab[i],value) == 0) {
+          xdf_toler = i;
+          break;
+        }
       }
     }
-  else 
-    if (strcmp(option,"TURBOCOMP") == 0) {
-      if (getmode)
-        fprintf(stdout,"c_fstopc option TURBOCOMP=%s\n",comptab[turbocomp_mode]);
-      else {
-        for (i = 0; i < 2; i++) {
-          if (strcmp(comptab[i],value) == 0) {
-            turbocomp_mode = i;
-            break;
-          }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc option %s, TOLRNC=%d\n",msgtab[xdf_toler],nivmsg[xdf_toler]);
+    return val;
+  }
+
+  if (strcmp(option,"PRINTOPT") == 0) {
+    if (getmode){
+      if (getmode == 2) val = 0;
+    }else{
+      sprintf(prnt_options,"%s",value);        
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc option PRINTOPT='%s'\n",prnt_options);
+    return val;
+  }
+
+  if (strcmp(option,"TURBOCOMP") == 0) {
+    if (getmode){
+      if (getmode == 2) val = turbocomp_mode;
+    }else{
+      for (i = 0; i < 2; i++) {
+        if (strcmp(comptab[i],value) == 0) {
+          turbocomp_mode = i;
+          break;
         }
-        c_armn_compress_setlevel(turbocomp_mode);
-        if (msg_level <= INFORM)
-          fprintf(stdout,"c_fstopc option TURBOCOMP set to %s\n",comptab[turbocomp_mode]);        
-      }                                               
-    }    
-  else
-    fprintf(stderr,"c_fstopc: unknown option %s\n",option);        
-  return(0);
+      }
+      c_armn_compress_setlevel(turbocomp_mode);
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc option TURBOCOMP=%s\n",comptab[turbocomp_mode]);
+    return val;
+  }    
+
+  fprintf(stderr,"c_fstopc: unknown option %s\n",option);    
+  return(val);
 }
 
 /*splitpoint c_fstopi */
@@ -2298,46 +2305,65 @@ int c_fstopc(char *option, char *value, int getmode)
  *                          C _ F S T O P I                                  *
  *                                                                           * 
  *Object                                                                     * 
- *   Print out or set a fstd or xdf global variable option.                  *
+ *   Print out, get, or set a fstd or xdf global variable option.            *
  *                                                                           * 
  *Arguments                                                                  * 
  *                                                                           * 
  *   IN     option   option name to be set/printed                           * 
  *   IN     value    option value                                            * 
- *   IN     getmode  logical (1: get option, 0: set option)                  * 
+ *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
  *                                                                           * 
  *****************************************************************************/
 int c_fstopi(char *option, int value, int getmode)
 {
   int i;
-  static int nivmsg[7] = {0,2,4,6,8,10,10};
+  int val = 0;
 
   if (strcmp(option,"MSGLVL") == 0) {
-    if (getmode) 
-      fprintf(stdout,"c_fstopi option MSGLVL=%d\n",nivmsg[msg_level]);
-    else
-      for (i = 0; i < 7; i++) 
+    if (getmode){
+      if (getmode == 2) val = msg_level;
+    }else{
+      for (i = 0; i < 7; i++) {
         if (nivmsg[i] == value) {
           msg_level = i;
-          fprintf(stdout,"c_fstopi option MSGLVL set to %d\n",
-                  nivmsg[msg_level]);
           break;
         }
-  }
-  else 
-    if (strcmp(option,"TOLRNC") == 0) {
-      if (getmode)
-        fprintf(stdout,"c_fstopi option TOLRNC=%d\n",nivmsg[xdf_toler]);
-      else
-        for (i = 0; i < 7; i++)
-          if (nivmsg[i] == value) {
-            xdf_toler = i;
-            fprintf(stdout,"c_fstopi option TOLRNC set to %d\n",
-                    nivmsg[xdf_toler]);
-            break;
-          }
+      }
     }
-  return(0);
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopi  MSGLVL option = '%s' , %d\n",msgtab[msg_level],nivmsg[msg_level]);
+    return val;
+  }
+
+  if (strcmp(option,"TOLRNC") == 0) {
+    if (getmode){
+      if (getmode == 2) val = xdf_toler;
+    }else{
+      for (i = 0; i < 7; i++){
+        if (nivmsg[i] == value) {
+          xdf_toler = i;
+          break;
+        }
+      }
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopi option TOLRNC=%d\n",nivmsg[xdf_toler]);
+    return val;
+  }
+
+  if (strcmp(option,"TURBOCOMP") == 0) {
+    if (getmode){
+      if (getmode == 2) val = turbocomp_mode;
+    }else{
+      if(value == 0 || value == 1){
+        turbocomp_mode = value;
+        c_armn_compress_setlevel(turbocomp_mode);
+      }
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopi option TURBOCOMP= '%s' , %d\n",comptab[turbocomp_mode],turbocomp_mode);
+    return val;
+  }
+
+  fprintf(stderr,"c_fstopi: unknown option %s\n",option);    
+  return(val);
 }
 
 /*splitpoint c_fstopl */
@@ -2345,44 +2371,50 @@ int c_fstopi(char *option, int value, int getmode)
  *                          C _ F S T O P L                                  *
  *                                                                           * 
  *Object                                                                     * 
- *   Print out or set a fstd or xdf global variable option.                  *
+ *   Print out, get, or set a fstd or xdf global variable option.            *
  *                                                                           * 
  *Arguments                                                                  * 
  *                                                                           * 
  *   IN     option   option name to be set/printed                           * 
  *   IN     value    option value                                            * 
- *   IN     getmode  logical (1: get option, 0: set option)                  * 
+ *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
  *                                                                           * 
  *****************************************************************************/
 int c_fstopl(char *option, int value, int getmode)
 {
-//  int i;
+  int val = 0;
 
   if (strcmp(option,"FASTIO") == 0) {
-    if (getmode) 
-      fprintf(stdout,"c_fstopl option FASTIO mode ON\n");
-  }
-  else 
-    if (strcmp(option,"IMAGE") == 0) {
-      if (getmode)
-        fprintf(stdout,"c_fstopl option IMAGE_MODE_COPY=%d\n",image_mode_copy);
-      else {
-        image_mode_copy = value;
-        if (msg_level <= ERROR)
-          fprintf(stdout,"c_fstopl option IMAGE_MODE_COPY=%d\n",image_mode_copy);
-      }
+    if (getmode){
+      if (getmode == 2) val = 0;
+    }else{
     }
-    else
-      if (strcmp(option,"REDUCTION32") == 0) {
-        if (getmode)
-          fprintf(stdout,"c_fstopl option REDUCTION32=%d\n",downgrade_32);
-        else {
-          downgrade_32 = value;
-          if (msg_level < ERROR)
-            fprintf(stdout,"c_fstopl option REDUCTION32\n");
-        }
-      }
-  return(0);
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopl FASTIO mode NOT ACTIVE\n");
+    return val;
+  }
+
+  if (strcmp(option,"IMAGE") == 0) {
+    if (getmode){
+      if (getmode == 2) val = image_mode_copy;
+    }else{
+      image_mode_copy = value;        
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopl option IMAGE_MODE_COPY=%d\n",image_mode_copy);
+    return val;
+  }
+
+  if (strcmp(option,"REDUCTION32") == 0) {
+    if (getmode){
+      if (getmode == 2) val = downgrade_32;
+    }else {
+      downgrade_32 = value;
+    }
+    if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopl option REDUCTION32=%d\n",downgrade_32);
+    return val;
+  }
+
+  fprintf(stderr,"c_fstopi: unknown option %s\n",option);    
+  return(val);
 }
       
 
@@ -2391,13 +2423,13 @@ int c_fstopl(char *option, int value, int getmode)
  *                          C _ F S T O P R                                  *
  *                                                                           * 
  *Object                                                                     * 
- *   Print out or set a fstd or xdf global variable option.                  *
+ *   Print out, get, or set a fstd or xdf global variable option.            *
  *                                                                           * 
  *Arguments                                                                  * 
  *                                                                           * 
  *   IN     option   option name to be set/printed                           * 
  *   IN     value    option value                                            * 
- *   IN     getmode  logical (1: get option, 0: set option)                  * 
+ *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
  *                                                                           * 
  *****************************************************************************/
 int c_fstopr(char *option, float value, int getmode)

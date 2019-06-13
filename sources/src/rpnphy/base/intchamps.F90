@@ -16,7 +16,7 @@
 !**s/r intchamps
       subroutine intchamps( ch, chrd, s, srd, n, nk, nkrd)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer n, nk, nkrd
       real chrd(n,nkrd), ch(n,nk), s(n,nk), srd(n,nkrd)

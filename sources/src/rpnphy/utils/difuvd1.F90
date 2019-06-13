@@ -18,7 +18,7 @@
       SUBROUTINE DIFUVD1 (E, SC, A, B, C, U, D, N, NU, NK)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       INTEGER N, NU, NK
       REAL E(N, NK), A(N, NK), B(N, NK), C(N, NK), U(NU, NK), D(N, NK)
       REAL SC

@@ -4,7 +4,7 @@
 void RemplirDeBlancs(char str[],wordint longueur);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-wordint Lire_enrUvercode1(_Grille *gr, ftnfloat *yy, wordint nix)
+void Lire_enrUvercode1(_Grille *gr, ftnfloat *yy, wordint nix)
 {
   wordint ig1refyin,ig2refyin,ig3refyin,ig4refyin;
   wordint ig1refyan,ig2refyan,ig3refyan,ig4refyan;
@@ -41,7 +41,7 @@ wordint Lire_enrUvercode1(_Grille *gr, ftnfloat *yy, wordint nix)
   free(ay);
 }
 
-wordint Lire_enrTicTac(_Grille *gr, ftnfloat *ax, wordint nixnjx, ftnfloat *ay, wordint niynjy, wordint ip3, wordint ip4)
+void Lire_enrTicTac(_Grille *gr, ftnfloat *ax, wordint nixnjx, ftnfloat *ay, wordint niynjy, wordint ip3, wordint ip4)
 {
   wordint i,j,offsetx,offsety;
 

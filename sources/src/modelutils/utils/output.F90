@@ -1,20 +1,22 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 !/@
 module output_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use wb_itf_mod
    use outcfg_mod
    use output_files_mod
    use fstmpi_mod
@@ -35,11 +37,9 @@ module output_mod
    ! Public constants
    !
 !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
 
    interface output_new
@@ -268,9 +268,13 @@ contains
 
                nullify(sfc_field)
                if (present(F_sfc_field_ref)) sfc_field => F_sfc_field_ref
-               nlevels = priv_vinterp(sfc_field,vgrid_in,levels(1:nlevels),nlinbot,v_int_S,F_varname_S,F_data,ip1list_in,data2,ip1list_out_p)
+               nlevels = priv_vinterp(sfc_field,vgrid_in,levels(1:nlevels), &
+                    nlinbot,v_int_S,F_varname_S,F_data,ip1list_in,data2, &
+                    ip1list_out_p)
                if (.not.RMN_IS_OK(nlevels)) then
-                  call msg(MSG_ERROR,trim(msg_S)//' Problem computing vertical interpolation ; lvl='//trim(F_vgrid_S)//' ==> P')
+                  call msg(MSG_ERROR, trim(msg_S)// &
+                       ' Problem computing vertical interpolation ; lvl='// &
+                       trim(F_vgrid_S)//' ==> P')
                   istat = RMN_ERR
                endif
 
@@ -293,7 +297,9 @@ contains
 !!$         gridid_out = priv_outgrid_d(F_id,idx,F_hgrid_S,gi0,gj0,li0,lj0,lni,lnj,dij,periodx_L,periody_L)
 !!$         lin = li0+lni-1 ; ljn = lj0+lnj-1
 !!$
-!!$         !#TODO: what tile is outside requested domain? All tiles need to go through fstmpi_write (mpi hang otherwise)... but some w/o data!!!
+!!$         !#TODO: what tile is outside requested domain?
+!!$         ! All tiles need to go through fstmpi_write (mpi hang otherwise)...
+!!$         ! but some w/o data!!!
 !!$
 !!$         if (.not.RMN_IS_OK(gridid_out)) then
 !!$            call msg(MSG_ERROR,trim(msg_S)//' Problem defining the output grid ; hgrid='//trim(F_hgrid_S))
@@ -341,13 +347,15 @@ contains
             !- WARNING: make call collect_error before any cycle or return to avoid fstmpi_write MPI hang/deadlock
          endif
 
-!!$         print *,trim(F_varname_S),minval(data3),maxval(data3),nlevels,gridid_out,ip1list_out_p(1:nlevels),nbits,ip3 ; call flush(6)
+!!$         print *,trim(F_varname_S),minval(data3),maxval(data3),nlevels, &
+!!$              gridid_out,ip1list_out_p(1:nlevels),nbits,ip3 ; call flush(6)
 
          !TODO: pass vgrid_S (updated with ip1list_out) to have vgrid in file
          !TODO: when model levels, need to write F_sfc_field_ref on same grid
 !!$         F_istat = min(fstmpi_write(fileid,F_varname_S,data3,&
 !!$              gridid_out,ip1list_out_p(1:nlevels),dateo,deet,F_step, &
-!!$              -abs(nbits),dtype,ip3,'P',etk_S,rewrite_L,F_writegrid_L=.true.,F_periodx_L=periodx_L,F_periodx_L=periody_L),F_istat)
+!!$              -abs(nbits),dtype,ip3,'P',etk_S,rewrite_L,F_writegrid_L=.true., &
+!!$              F_periodx_L=periodx_L,F_periodx_L=periody_L),F_istat)
          F_istat = min(&
               & fstmpi_write( &
               &   fileid,F_varname_S,data3, &
@@ -371,9 +379,11 @@ contains
    !==== Private Functions =================================================
 
 !!$   !/@*
-!!$   function priv_outgrid_d(F_id,F_idx,F_hgrid_S,F_gi0,F_gj0,F_li0,F_lj0,F_lni,F_lnj,F_dij,F_periodx_L,F_periody_L) result(F_gridid_out)
+!!$   function priv_outgrid_d(F_id,F_idx,F_hgrid_S,F_gi0,F_gj0,F_li0,F_lj0,F_lni, &
+!!$        F_lnj,F_dij,F_periodx_L,F_periody_L) result(F_gridid_out)
 !!$      implicit none
-!!$      !@objective Return a #-grid corped to user's request with i0,j0,ln,lni of local-mpi tile, li0,lj0 are relative to the croped grid
+!!$      !@objective Return a #-grid corped to user's request with i0,j0,ln,lni 
+!!$      !           of local-mpi tile, li0,lj0 are relative to the croped grid
 !!$      !@arguments
 !!$      integer,intent(in) :: F_id,F_idx
 !!$      character(len=*),intent(in) :: F_hgrid_S
@@ -431,7 +441,8 @@ contains
 !!$      !TODO-later: Make sure provided grid is on full domain with i0,j0,lni,lnj defining the local mpi tile (# style)
 !!$
 !!$      !# Get src grid info
-!!$      istat = hgrid_wb_get(F_hgrid_S,src_grid_id,src_grid_gi0,src_grid_gj0,src_lni,src_lnj,src_hx,src_hy,src_dieze,src_periodx,src_periody)
+!!$      istat = hgrid_wb_get(F_hgrid_S,src_grid_id,src_grid_gi0,src_grid_gj0, &
+!!$           src_lni,src_lnj,src_hx,src_hy,src_dieze,src_periodx,src_periody)
 !!$    if (.not.RMN_IS_OK(istat)) then
 !!$         call msg(MSG_ERROR,'(Output) invalid hgrid')
 !!$         return
@@ -488,9 +499,11 @@ contains
 
 !TODO: priv_outgrid_z needs to be reviewed
 !!$   !/@*
-!!$   function priv_outgrid_z(F_id,F_idx,F_hgrid_S,F_li0,F_lj0,F_lin,F_ljn,F_dij,F_periodx_L,F_periody_L) result(F_gridid_out)
+!!$   function priv_outgrid_z(F_id,F_idx,F_hgrid_S,F_li0,F_lj0,F_lin,F_ljn, &
+!!$        F_dij,F_periodx_L,F_periody_L) result(F_gridid_out)
 !!$      implicit none
-!!$      !@objective Return a Z-grid corped to user's request and to local local-mpi tile, li0,lj0 are relative to the full source grid
+!!$      !@objective Return a Z-grid corped to user's request and to local 
+!!$      !           local-mpi tile, li0,lj0 are relative to the full source grid
 !!$      !@arguments
 !!$      integer,intent(in) :: F_id,F_idx
 !!$      character(len=*),intent(in) :: F_hgrid_S
@@ -519,14 +532,16 @@ contains
 !!$
 !!$      !TODO-later: Make sure provided grid is on full domain with i0,j0,lni,lnj defining the local mpi tile (# style)
 !!$
-!!$      istat = hgrid_wb_get(F_hgrid_S,src_grid_id,src_grid_gi0,src_grid_gj0,src_lni,src_lnj,src_hx,src_hy,src_dieze_L,src_periodx_L,src_periody_L)
+!!$      istat = hgrid_wb_get(F_hgrid_S,src_grid_id,src_grid_gi0,src_grid_gj0, &
+!!$           src_lni,src_lnj,src_hx,src_hy,src_dieze_L,src_periodx_L,src_periody_L)
 !!$    if (.not.RMN_IS_OK(istat)) then
 !!$         call msg(MSG_ERROR,'(Output) invalid hgrid')
 !!$         return
 !!$      endif
 !!$
 !!$      !# Shift indexes (for halos) from grid to data
-!!$ !!$      print '(a,7i6)','(Outgrid) '//trim(F_hgrid_S),src_grid_id,src_grid_gi0,src_grid_gj0,src_lni,src_lnj,src_hx,src_hy ; call flush(6)
+!!$   print '(a,7i6)','(Outgrid) '//trim(F_hgrid_S),src_grid_id,src_grid_gi0, &
+!!$        src_grid_gj0,src_lni,src_lnj,src_hx,src_hy ; call flush(6)
 !!$      src_data_gi0 = src_grid_gi0 - src_hx
 !!$      src_data_gj0 = src_grid_gj0 - src_hy
 !!$      src_data_gin = src_data_gi0 + src_lni - 1 !TODO: double check if hx != 0
@@ -584,10 +599,11 @@ contains
 !!$     !----------------------------------------------------------------------
 !!$      return
 !!$   end function priv_outgrid_z
-   
+
 
    !/@*
-   function priv_level_subset(F_levels,F_data_in,F_level_type_in,F_ip1list_in,F_surf_level_idx,F_data_out,F_ip1list_out) result(F_nip1_out)
+   function priv_level_subset(F_levels,F_data_in,F_level_type_in,F_ip1list_in, &
+        F_surf_level_idx,F_data_out,F_ip1list_out) result(F_nip1_out)
       implicit none
       !@arguments
       real,intent(in) :: F_levels(:)
@@ -658,7 +674,9 @@ contains
 
 
    !/@*
-   function priv_vinterp(F_sfc_field_ref,F_vgrid_in,F_levels,F_nlinbot,F_v_int_S,F_varname_S,F_data_in,F_ip1list_in,F_data_out,F_ip1list_out) result(F_nip1_out)
+   function priv_vinterp(F_sfc_field_ref,F_vgrid_in,F_levels,F_nlinbot, &
+        F_v_int_S,F_varname_S,F_data_in,F_ip1list_in,F_data_out,F_ip1list_out) &
+        result(F_nip1_out)
       implicit none
       !@arguments
       type(vgrid_descriptor),intent(in) :: F_vgrid_in
@@ -677,7 +695,7 @@ contains
       character(len=16) :: sfc_field_S,tmp_S
       !----------------------------------------------------------------------
       F_nip1_out = RMN_ERR
-      
+ 
       nlevels = size(F_levels)
       if (any(F_levels(1:nlevels) <= 0.)) then
          call msg(MSG_ERROR,'(Output) Pres level list not valid (<0)')
@@ -710,7 +728,9 @@ contains
       nlinbot = F_nlinbot
       if (any(F_v_int_S(1:1) == (/'l','L'/))) nlinbot = nlevels
       levels(1:nlevels) = levels(1:nlevels)*PRES_MB2PA
-      call vte_intvertx_isodst(F_data_out,F_data_in,levels_3d_in,levels,size(F_data_in,1) * size(F_data_in,2),size(F_data_in,3),nlevels,F_varname_S,nlinbot)
+      call vte_intvertx_isodst(F_data_out,F_data_in,levels_3d_in,levels, &
+           size(F_data_in,1) * size(F_data_in,2),size(F_data_in,3),nlevels, &
+           F_varname_S,nlinbot)
 
       if (associated(levels_3d_in)) deallocate(levels_3d_in,stat=istat)
 

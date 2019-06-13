@@ -33,10 +33,10 @@
       integer, intent(in) :: F_step_kount, F_lctl_step
 
 !arguments
-!  Name        I/O                 Description
+!  Name                    Description
 !----------------------------------------------------------------
-! F_step_kount  I          step count
-! F_lctl_step   I          step number
+! F_step_kount             step count
+! F_lctl_step              step number
 !----------------------------------------------------------------
 
       include "rpn_comm.inc"
@@ -54,7 +54,7 @@
       if (Lun_out > 0) write (Lun_out,1001) F_lctl_step
 
       if (F_step_kount == 0) then
-         call itf_phy_geom4 (err_geom)
+         call itf_phy_geom (err_geom)
          if (NTR_Tr3d_ntr > 0) then
             err = wb_put('itf_phy/READ_TRACERS', &
                                 NTR_Tr3d_name_S(1:NTR_Tr3d_ntr))

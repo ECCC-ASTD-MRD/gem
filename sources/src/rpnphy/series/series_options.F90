@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_options
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    implicit none
    public
    save
@@ -104,7 +105,7 @@ module series_options
    integer :: series_moyhr = 0
    real    :: series_delt = 0.
    integer :: series_interval_sec = 0
-   integer(8) :: series_jdate = 0
+   integer(INT64) :: series_jdate = 0
    integer :: series_cmcdateo14(14) = 0
    logical :: series_satuco_L = .false.
    logical :: series_satues_L = .false.
@@ -131,7 +132,7 @@ module series_options
    !---- set in ser_step
    logical :: series_end_L = .false.
    integer :: series_kount = 0
-   real*8  :: series_heure_8 = 0.d0
+   real(REAL64) :: series_heure_8 = 0.d0
 
    !----
    logical :: series_paused_L = .false.
@@ -141,7 +142,7 @@ module series_options
 contains
 
    function series_options_init() result(F_istat)
-      implicit none 
+      implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>
       logical, save :: init_L = .false.
@@ -156,7 +157,7 @@ contains
          xst_stn_latlon(i) =  SER_STN_LALO_DEFAULT
          series_stng(i)    =  SER_STN_DEFAULT
          series_stnb(i)    =  SER_STN_DEFAULT
-      enddo      
+      enddo
       return
    end function series_options_init
 

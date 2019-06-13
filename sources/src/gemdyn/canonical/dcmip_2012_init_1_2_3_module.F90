@@ -40,7 +40,7 @@ MODULE dcmip_2012_init_1_2_3
   !
   ! v2: bug fixes in the tracer initialization for height-based models
   ! v3: test 3-1: the density is now initialized with the unperturbed background temperature (not the perturbed temperature)
-  ! v3: constants converted to real*8
+  ! v3: constants converted to real(kind=REAL64)
   ! v4: modified tracers in test 1-1, now with cutoff altitudes. Outside of the vertical domain all tracers are set to 0
   ! v4: modified cos-term in vertical velocity (now cos(2 pi t/tau)) in test 1-1, now completing one full up and down cycle
   ! v4: added subroutine test1_advection_orography for test 1-3
@@ -57,20 +57,20 @@ MODULE dcmip_2012_init_1_2_3
   use dcst
   use tdpack, only : rayt_8, rgasd_8, grav_8, cpd_8, pi_8
 
-  IMPLICIT NONE
+  implicit none
 
 !-----------------------------------------------------------------------
 !     Physical Parameters
 !-----------------------------------------------------------------------
 
-!!!     real(8), parameter ::   a       = 6371220.0d0,  &       ! Earth's Radius (m)
+!!!     real(kind=REAL64), parameter ::   a       = 6371220.0d0,  &       ! Earth's Radius (m)
 !!!                             Rd      = 287.0d0,      &       ! Ideal gas const dry air (J kg^-1 K^1)
 !!!                             g       = 9.80616d0,    &       ! Gravity (m s^2)
 !!!                             grav    = 9.80616d0,    &       ! Gravity (m s^2)
 !!!                             cp      = 1004.5d0,     &       ! Specific heat capacity (J kg^-1 K^1)
 !!!                             pi      = 4.d0*atan(1.d0)       ! pi
 
-        real(8), parameter ::   a_ref   = rayt_8,       &       ! Reference Earth's Radius [m]
+        real(kind=REAL64), parameter ::   a_ref   = rayt_8,       &       ! Reference Earth's Radius [m]
                                 Rd      = Rgasd_8,      &       ! cte gaz - air sec   [J kg-1 K-1]
                                 grav    = grav_8,       &       ! acc. de gravite     [m s-2]
                                 cp_     = cpd_8,        &       ! chal. spec. air sec [J kg-1 K-1]
@@ -80,7 +80,7 @@ MODULE dcmip_2012_init_1_2_3
 !     Additional constants
 !-----------------------------------------------------------------------
 
-        real(8), parameter ::   p0      = 100000.d0             ! reference pressure (Pa)
+        real(kind=REAL64), parameter ::   p0      = 100000.d0             ! reference pressure (Pa)
 
 
 CONTAINS
@@ -100,7 +100,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(kind=REAL64), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -108,14 +108,14 @@ IMPLICIT NONE
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 zd,&            ! Zdot GEM
@@ -130,15 +130,15 @@ IMPLICIT NONE
                                 q3, &           ! Tracer q3 (kg/kg)
                                 q4              ! Tracer q4 (kg/kg)
 
-        real(8), intent(in)  :: time            ! Current time step
+        real(kind=REAL64), intent(in)  :: time            ! Current time step
 
-        real(8) g ! Already comdeck g in GEM
+        real(kind=REAL64) g ! Already comdeck g in GEM
         save g
 
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   tau     = 12.d0 * 86400.d0,     &       ! period of motion 12 days
+        real(kind=REAL64), parameter ::   tau     = 12.d0 * 86400.d0,     &       ! period of motion 12 days
 !!!                             u0      = (2.d0*pi*a)/tau,      &       ! 2 pi a / 12 days
 !!!                             k0      = (10.d0*a)/tau,        &       ! Velocity Magnitude
                                 u0      = (2.d0*pi*a_ref)/tau,  &       ! 2 pi a / 12 days
@@ -155,15 +155,15 @@ IMPLICIT NONE
                                 phi0    = 0.d0,                 &       ! center point in latitudes
                                 phi1    = 0.d0
 
-      real(8) :: height                                                 ! The height of the model levels
-      real(8) :: ptop                                                   ! Model top in p
-      real(8) :: sin_tmp, cos_tmp, sin_tmp2, cos_tmp2                   ! Calculate great circle distances
-      real(8) :: d1, d2, r, r2                                          ! For tracer calculations
-      real(8) :: s, bs                                                  ! Shape function
-      real(8) :: lonp                                                   ! Translational longitude, depends on time
-      real(8) :: ud                                                     ! Divergent part of u
+      real(kind=REAL64) :: height                                                 ! The height of the model levels
+      real(kind=REAL64) :: ptop                                                   ! Model top in p
+      real(kind=REAL64) :: sin_tmp, cos_tmp, sin_tmp2, cos_tmp2                   ! Calculate great circle distances
+      real(kind=REAL64) :: d1, d2, r, r2                                          ! For tracer calculations
+      real(kind=REAL64) :: s, bs                                                  ! Shape function
+      real(kind=REAL64) :: lonp                                                   ! Translational longitude, depends on time
+      real(kind=REAL64) :: ud                                                     ! Divergent part of u
 
-      real(8) :: a
+      real(kind=REAL64) :: a
 
 !-----------------------------------------------------------------------
 
@@ -253,7 +253,7 @@ IMPLICIT NONE
 !       Zdot GEM
 !-----------------------------------------------------------------------
 
-        if (zcoords == 1) then 
+        if (zcoords == 1) then
 
            zd = w
 
@@ -389,7 +389,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: &
+        real(kind=REAL64), intent(in)  :: &
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -397,14 +397,14 @@ IMPLICIT NONE
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 zd,&            ! Zdot GEM
@@ -416,15 +416,15 @@ IMPLICIT NONE
                                 q, &            ! Specific Humidity (kg/kg)
                                 q1              ! Tracer q1 (kg/kg)
 
-        real(8), intent(in)  :: time            ! Current time step
+        real(kind=REAL64), intent(in)  :: time            ! Current time step
 
-        real(8) g ! Already comdeck g in GEM
+        real(kind=REAL64) g ! Already comdeck g in GEM
         save g
 
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   tau     = 1.d0 * 86400.d0,      &       ! period of motion 1 day (in s)
+        real(kind=REAL64), parameter ::   tau     = 1.d0 * 86400.d0,      &       ! period of motion 1 day (in s)
                                 u0      = 40.d0,                &       ! Zonal velocity magnitude (m/s)
                                 w0      = 0.15d0,               &       ! Vertical velocity magnitude (m/s), changed in v5
                                 T0      = 300.d0,               &       ! temperature (K)
@@ -436,10 +436,10 @@ IMPLICIT NONE
                                 z0      = 0.5d0*(z1+z2),        &       ! midpoint (m)
                                 ztop    = 12000.d0                      ! model top (m)
 
-      real(8) :: rho0                                                   ! reference density at z=0 m
-      real(8) :: height                                                 ! Model level heights
+      real(kind=REAL64) :: rho0                                                   ! reference density at z=0 m
+      real(kind=REAL64) :: height                                                 ! Model level heights
 
-      real(8) :: a
+      real(kind=REAL64) :: a
 
 !-----------------------------------------------------------------------
 
@@ -583,7 +583,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(kind=REAL64), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z, &            ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -606,16 +606,16 @@ IMPLICIT NONE
         ! Note that we only use hyam and hybm for the hybrid-eta coordinates, and we only use
         ! gc for the Gal-Chen coordinates [gc = Ver_z GEM-H]. If not required then they become dummy variables
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
         integer,  intent(in) :: cfv             ! 0, 1 or 2 see below
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 zd,&            ! Zdot GEM
@@ -641,13 +641,13 @@ IMPLICIT NONE
 
         ! if other orography-following coordinates are used, the w wind needs to be newly derived for them
 
-        real(8) g ! Already comdeck g in GEM
+        real(kind=REAL64) g ! Already comdeck g in GEM
         save g
 
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   tau     = 12.d0 * 86400.d0,     &       ! period of motion 12 days (s)
+        real(kind=REAL64), parameter ::   tau     = 12.d0 * 86400.d0,     &       ! period of motion 12 days (s)
 !!!                             u0      = 2.d0*pi*a/tau,        &       ! Velocity Magnitude (m/s)
                                 u0      = 2.d0*pi*a_ref/tau,    &       ! Velocity Magnitude (m/s)
                                 T0      = 300.d0,               &       ! temperature (K)
@@ -670,10 +670,10 @@ IMPLICIT NONE
                                 dzp3    = 400.d0,               &       ! thickness of third (topmost) tracer (m)
                                 ztop    = 12000.d0                      ! model top (m)
 
-      real(8) :: height                                                 ! Model level heights (m)
-      real(8) :: r                                                      ! Great circle distance (radians)
-      real(8) :: rz                                                     ! height differences
-      real(8) :: zs                                                     ! Surface elevation (m)
+      real(kind=REAL64) :: height                                                 ! Model level heights (m)
+      real(kind=REAL64) :: r                                                      ! Great circle distance (radians)
+      real(kind=REAL64) :: rz                                                     ! height differences
+      real(kind=REAL64) :: zs                                                     ! Surface elevation (m)
 
 !-----------------------------------------------------------------------
 
@@ -872,9 +872,9 @@ IMPLICIT NONE
 
         SUBROUTINE test1_adv_oro_hyb_eta_GEM_velocity(w)
         IMPLICIT NONE
-        real(8), intent(out) :: w
+        real(kind=REAL64), intent(out) :: w
 
-        real(8) ::      press, &                ! hyam *p0 + hybm *ps
+        real(kind=REAL64) ::      press, &                ! hyam *p0 + hybm *ps
                         r, &                    ! Great Circle Distance
                         dzsdx, &                ! Part of surface height derivative
                         dzsdlambda, &           ! Derivative of zs w.r.t lambda
@@ -884,7 +884,7 @@ IMPLICIT NONE
                         dpsdlambda, &           ! Derivative of ps w.r.t lambda
                         dpsdphi                 ! Derivative of ps w.r.t phi
 
-        real(8) ::      a
+        real(kind=REAL64) ::      a
 
                 !Reference Earth's Radius/X
                 !--------------------------
@@ -949,16 +949,16 @@ IMPLICIT NONE
 
         SUBROUTINE test1_adv_oro_Gal_Chen_velocity(w)
         IMPLICIT NONE
-        real(8), intent(out) :: w
+        real(kind=REAL64), intent(out) :: w
 
-        real(8) ::      r, &                    ! Great Circle Distance
+        real(kind=REAL64) ::      r, &                    ! Great Circle Distance
                         dzsdx, &                ! Part of surface height derivative
                         dzsdlambda, &           ! Derivative of zs w.r.t lambda
                         dzsdphi, &              ! Derivative of zs w.r.t phi
                         dzdlambda, &            ! Derivative of z w.r.t lambda
                         dzdphi                  ! Derivative of z w.r.t phi
 
-        real(8) ::      a
+        real(kind=REAL64) ::      a
 
                 !Reference Earth's Radius/X
                 !--------------------------
@@ -1041,7 +1041,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(kind=REAL64), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z, &            ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -1061,14 +1061,14 @@ IMPLICIT NONE
                                                 ! for height-based models: pressure will always be computed based on the height and
                                                 !    hybrid_eta is not used
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 t, &            ! Temperature (K)
@@ -1078,7 +1078,7 @@ IMPLICIT NONE
                                 rho, &          ! density (kg m^-3)
                                 q               ! Specific Humidity (kg/kg)
 
-        real(8), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
+        real(kind=REAL64), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
 
         logical, intent(in)  :: Set_topo_L
 
@@ -1091,7 +1091,7 @@ IMPLICIT NONE
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   T0      = 300.d0,               &       ! temperature (K)
+        real(kind=REAL64), parameter ::   T0      = 300.d0,               &       ! temperature (K)
                                 gamma   = 0.0065d0,             &       ! temperature lapse rate (K/m)
                                !gamma   = 0.d0,                 &       ! temperature lapse rate (K/m)
                                 lambdam = 3.d0*pi/2.d0,         &       ! mountain longitude center point (radians)
@@ -1101,16 +1101,16 @@ IMPLICIT NONE
                                 zetam   = pi/16.d0,             &       ! mountain oscillation half-width (radians)
                                 ztop    = 12000.d0                      ! model top (m)
 
-      real(8) :: height                                                 ! Model level heights (m)
-      real(8) :: r                                                      ! Great circle distance (radians)
-      real(8) :: zs                                                     ! Surface elevation (m)
-      real(8) :: exponent                                               ! exponent: g/(Rd * gamma)
-      real(8) :: exponent_rev                                           ! reversed exponent
+      real(kind=REAL64) :: height                                                 ! Model level heights (m)
+      real(kind=REAL64) :: r                                                      ! Great circle distance (radians)
+      real(kind=REAL64) :: zs                                                     ! Surface elevation (m)
+      real(kind=REAL64) :: exponent                                               ! exponent: g/(Rd * gamma)
+      real(kind=REAL64) :: exponent_rev                                           ! reversed exponent
 
 !-----------------------------------------------------------------------
 !    Already comdeck g in GEM
 !-----------------------------------------------------------------------
-     real(8) g
+     real(kind=REAL64) g
      save g
 
 !-----------------------------------------------------------------------
@@ -1247,7 +1247,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(kind=REAL64), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,      &       ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -1255,17 +1255,17 @@ IMPLICIT NONE
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
         integer,  intent(in) :: shear           ! 0 if we use constant u
-                                                ! 0 if we use shear flow 
+                                                ! 0 if we use shear flow
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 t, &            ! Temperature (K)
@@ -1275,14 +1275,14 @@ IMPLICIT NONE
                                 rho, &          ! density (kg m^-3)
                                 q               ! Specific Humidity (kg/kg)
 
-        real(8), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
+        real(kind=REAL64), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
 
         logical, intent(in)  :: Set_topo_L
 
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   X       = 500.d0,               &       ! Reduced Earth reduction factor
+        real(kind=REAL64), parameter ::   X       = 500.d0,               &       ! Reduced Earth reduction factor
                                 Om      = 0.d0,                 &       ! Rotation Rate of Earth
 !!!                             as      = a/X,                  &       ! New Radius of small Earth
                                 as      = a_ref/X,              &       ! New Radius of small Earth
@@ -1297,16 +1297,16 @@ IMPLICIT NONE
                                 xi      = 4000.d0,              &       ! Mountain Wavelength
                                 cs      = 0.00025d0                     ! Wind Shear (shear=1)
 
-      real(8) :: height                                                 ! Model level heights
-      real(8) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
-      real(8) :: r                                                      ! Great circle distance
-      real(8) :: zs                                                     ! Surface height
-      real(8) :: c                                                      ! Shear
+      real(kind=REAL64) :: height                                                 ! Model level heights
+      real(kind=REAL64) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
+      real(kind=REAL64) :: r                                                      ! Great circle distance
+      real(kind=REAL64) :: zs                                                     ! Surface height
+      real(kind=REAL64) :: c                                                      ! Shear
 
 !-----------------------------------------------------------------------
 !    Already comdeck g in GEM
 !-----------------------------------------------------------------------
-     real(8) g
+     real(kind=REAL64) g
      save g
 
 !-----------------------------------------------------------------------
@@ -1451,7 +1451,7 @@ IMPLICIT NONE
 !     input/output params parameters at given location
 !-----------------------------------------------------------------------
 
-        real(8), intent(in)  :: lon, &          ! Longitude (radians)
+        real(kind=REAL64), intent(in)  :: lon, &          ! Longitude (radians)
                                 lat, &          ! Latitude (radians)
 !!!                             z,   &          ! Height (m)
                                 Ver_z , &       ! Ver_z_8     GEM
@@ -1459,14 +1459,14 @@ IMPLICIT NONE
                                 Ver_b , &       ! Ver_b_8     GEM
                                 pref            ! Cstv_pref_8 GEM
 
-        real(8), intent(inout) :: z             ! Height (m)
+        real(kind=REAL64), intent(inout) :: z             ! Height (m)
 
-        real(8), intent(inout) :: p             ! Pressure  (Pa)
+        real(kind=REAL64), intent(inout) :: p             ! Pressure  (Pa)
 
         integer,  intent(in) :: zcoords         ! 0 if p coordinates are specified
                                                 ! 1 if z coordinates are specified
 
-        real(8), intent(out) :: u, &            ! Zonal wind (m s^-1)
+        real(kind=REAL64), intent(out) :: u, &            ! Zonal wind (m s^-1)
                                 v, &            ! Meridional wind (m s^-1)
                                 w, &            ! Vertical Velocity (m s^-1)
                                 t, &            ! Temperature (K)
@@ -1476,19 +1476,19 @@ IMPLICIT NONE
                                 rho, &          ! density (kg m^-3)
                                 q               ! Specific Humidity (kg/kg)
 
-        real(8), intent(out) :: theta_base, &   ! Base Potential temperature
-                                theta_full      ! Full Potential temperature              
+        real(kind=REAL64), intent(out) :: theta_base, &   ! Base Potential temperature
+                                theta_full      ! Full Potential temperature
 
 !-----------------------------------------------------------------------
 !     Already comdeck g in GEM
 !-----------------------------------------------------------------------
-        real(8) g
+        real(kind=REAL64) g
         save g
 
 !-----------------------------------------------------------------------
 !     test case parameters
 !-----------------------------------------------------------------------
-        real(8), parameter ::   X       = 125.d0,               &       ! Reduced Earth reduction factor
+        real(kind=REAL64), parameter ::   X       = 125.d0,               &       ! Reduced Earth reduction factor
                                 Om      = 0.d0,                 &       ! Rotation Rate of Earth
 !!!                             as      = a/X,                  &       ! New Radius of small Earth
                                 as      = a_ref/X,              &       ! New Radius of small Earth
@@ -1507,12 +1507,12 @@ IMPLICIT NONE
 !!!                             bigG    = (g*g)/(N2*cp)                 ! Constant
                                 bigG    = (grav*grav)/(N2*cp_)          ! Constant
 
-      real(8) :: height                                                 ! Model level height
-      real(8) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
-      real(8) :: r, s                                                   ! Shape of perturbation
-      real(8) :: TS                                                     ! Surface temperature
-      real(8) :: t_mean, t_pert                                         ! Mean and pert parts of temperature
-      real(8) :: theta_pert                                             ! Pot-temp perturbation
+      real(kind=REAL64) :: height                                                 ! Model level height
+      real(kind=REAL64) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
+      real(kind=REAL64) :: r, s                                                   ! Shape of perturbation
+      real(kind=REAL64) :: TS                                                     ! Surface temperature
+      real(kind=REAL64) :: t_mean, t_pert                                         ! Mean and pert parts of temperature
+      real(kind=REAL64) :: theta_pert                                             ! Pot-temp perturbation
 
 !-----------------------------------------------------------------------
 
@@ -1610,7 +1610,7 @@ IMPLICIT NONE
 
         theta_pert = delta_theta*s*sin(2.d0*pi*height/Lz)
 
-        theta_full = theta_base + theta_pert 
+        theta_full = theta_base + theta_pert
 
         t_pert = theta_pert*(p/p0)**(Rd/cp_)
 

@@ -26,24 +26,21 @@
       use ver
       use sol
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy,nil, njl, &
                              minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3
-      real*8, intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
-      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !       Abdessamad Qaddouri -  2013
 !
-!revision
-! v4_70 - Qaddouri A.       - initial version
-
-
       integer j,i,k,ii,jj,halox,haloy
-      real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
-      real*8  stencil6, stencil7, xxx,yyy, one
-      real*8  fdg1(minx1:maxx1, minx2:maxx2,minx3:maxx3)
+      real(kind=REAL64)  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
+      real(kind=REAL64)  stencil6, stencil7, xxx,yyy, one
+      real(kind=REAL64)  fdg1(minx1:maxx1, minx2:maxx2,minx3:maxx3)
       parameter( one=1.0d0)
 !
 !     ---------------------------------------------------------------

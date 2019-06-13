@@ -26,15 +26,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Gravel              - spring 2003 (after MC2 v_4.9.3)
-!
-!revision
-! v3_11 - Gravel             - initial version
-! v3_30 - Lee V              - changed t0=> t1,nest is after t02t1
-! v4_05 - Lepine M.          - VMM replacement with GMM
-
-
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n
       integer jin, jj

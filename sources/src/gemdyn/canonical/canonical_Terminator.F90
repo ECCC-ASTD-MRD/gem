@@ -19,6 +19,7 @@
 
       use canonical
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -53,6 +54,7 @@
 
       use canonical
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -93,12 +95,13 @@
       use gmm_itf_mod
       use glb_ld
       use adz_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       character(len=*) F_type_S,F_time_S,F_comment_S
       integer F_cnt,minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur
-      real*8 F_tracer_8
+      real(kind=REAL64) F_tracer_8
       real F_airmass(minx:maxx,miny:maxy,F_nk)
 
       logical,external :: wil_check_Terminator,dcmip_check_Terminator
@@ -149,6 +152,7 @@
       use gmm_itf_mod
       use lun
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       !object
@@ -162,22 +166,22 @@
 
       integer i,j,k,istat,lower_value
 
-      real(8) x_a_8,y_a_8,s_8(2,2),rlon_8
+      real(kind=REAL64) x_a_8,y_a_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon,             &  ! Longitude (radians)
+      real(kind=REAL64)  :: lon,             &  ! Longitude (radians)
                   lat,             &  ! Latitude (radians)
                   lon_d,           &  ! Longitude (degrees)
                   lat_d,           &  ! Latitude (degrees)
                   cl_f_8, cl2_f_8, &  ! time rate of change of cl and cl2
                   cl_p_8, cl2_p_8     ! molar mixing ratio of cl and cl2 (TIME M)
 
-      real(8), parameter :: pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164_8
+      real(kind=REAL64), parameter :: pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164_8
 
-      real(8), parameter :: radians_to_degrees = 180.0_8/pi
+      real(kind=REAL64), parameter :: radians_to_degrees = 180.0_8/pi
 
       real, pointer, dimension (:,:,:) :: cl_p,cl2_p
 
-      real(4) lower_value_4,check_4
+      real :: lower_value_4, check_4
 
       !-------------------------------------------------------------------------------
 

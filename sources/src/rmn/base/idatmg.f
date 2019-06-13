@@ -18,8 +18,9 @@
 * * Boston, MA 02111-1307, USA.
 * */
 	integer function idatmg(idate)
-	integer idate(14)
-	call idatmg2(idate)
+	integer idate(14), status
+C	call idatmg2(idate)
+        status = idatmg2(idate)
 	idatmg=idate(14)
 	return
 	end

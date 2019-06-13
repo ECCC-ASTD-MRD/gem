@@ -35,6 +35,7 @@
       use lun
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -45,18 +46,11 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_rc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) ::  F_rw, F_nest_t
 
-!author
-!     Alain Patoine
-!revision
-! v4_40 - Qaddouri/Lee      - expand range of calculation for Yin-Yang only
-! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-! v4.80 - Lee V.            - correction in range for xch halo on Ru, Rv
-
 
       integer :: i, j, k, km, k0t
-      real*8  :: rdiv, w1, w2, w3, w4, w5
+      real(kind=REAL64)  :: rdiv, w1, w2, w3, w4, w5
       real    :: w_rt
-      real*8, parameter :: zero=0.d0, one=1.d0 , &
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0 , &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !
 !     ---------------------------------------------------------------

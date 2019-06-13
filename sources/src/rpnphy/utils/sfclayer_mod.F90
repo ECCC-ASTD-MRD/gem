@@ -1,20 +1,21 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module sfclayer_mod
+  use, intrinsic :: iso_fortran_env, only: REAL64
   use tdpack
   implicit none
   private
@@ -108,7 +109,7 @@ contains
 
      ! Successful completion of subprogram
      status = SL_OK
- 
+
   end function sl_put_i4
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -138,7 +139,7 @@ contains
 
      ! Successful completion of subprogram
      status = SL_OK
-     
+
   end function sl_put_r4
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -168,7 +169,7 @@ contains
 
      ! Successful completion of subprogram
      status = SL_OK
-     
+
   end function sl_put_l
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -209,7 +210,7 @@ contains
 
      ! Successful completion of subprogram
      status = SL_OK
-     
+
   end function sl_put_s
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -448,7 +449,7 @@ contains
 
     ! Adjust minimum wind speed as function of momentum level height if requested
     if (my_min_wind_reduc == 'linear') my_min_wind_speed = min(my_min_wind_speed,max(my_min_wind_speed*hghtm_air/40.,1.e-6))
-    
+
     ! Compute requested wind fields
     if (present(spd_air)) spd_air = max(sqrt(u_air*u_air + v_air*v_air),my_min_wind_speed)
     if (present(dir_air)) dir_air = atan2(v_air,sign(max(abs(u_air),epsilon(u_air)),u_air))
@@ -514,7 +515,7 @@ contains
        lzz0, lzz0t, fm, fh, va, n, optz0 )
 
     implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
     integer n
     real cmu(n),ctu(n),rib(n),fcor(n),ilmo(n)
     real ftemp(n),fvap(n),ta(n),qa(n),zu(n),zt(n),va(n)
@@ -596,13 +597,13 @@ contains
     integer j,it,itmax
     real cm,ct
     real x1,x0,y1,y0
-    real*8 dthv,tva,tvs
+    real(REAL64) :: dthv,tva,tvs
     real vmin,ribmin,ribmax,hmax,epsln,ilmax,vlmin,hc,ribc,ilmm
     real am,ah,dfm,dfh,g,dg
     real, dimension(n) :: zp,z0rt,z0rm
 
     !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     Initialize internal parameters: 
+    !     Initialize internal parameters:
     !     - maximum number of iterations (itmax)
     !     - minimum value of wind speed (vamin)
     !     - minimum absolute value of bulk Richardson number (ribmin)
@@ -618,12 +619,12 @@ contains
     epsln  = 1.0e-05
     ilmax = -1.
     if (lmin > 0.) then
-       ilmax = 1./lmin  
+       ilmax = 1./lmin
        itmax = 5
     endif
     !
     !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 1: Impose minimum value on wind speed (va) and initialize neutral 
+    !     STEP 1: Impose minimum value on wind speed (va) and initialize neutral
     !             stability functions (lzz0 and lzz0t)
     !                 lzz0  = log( (zu+z0 )/z0  ) = log( 1+zu/z0  )
     !                 lzz0t = log( (zt+z0t)/z0t ) = log( 1+zt/z0t )
@@ -660,13 +661,13 @@ contains
        tva    = (1.d0+delta*qa(j))*ta(j)
        tvs    = (1.d0+delta*qg(j))*tg(j)
        dthv   = tva-tvs
-       vlmin  = 0. 
+       vlmin  = 0.
        if (ilmax > 0. .and. dthv > 0.) then
           ilmm   = sign(ilmax,real(dthv))
           hc    = sf_pblheight(zu(j),z0(j),va(j),ilmm,fcor(j),lzz0(j))
           fm(j) =        lzz0 (j) &
                + sf_momentum(zu(j)+z0rm(j),ilmm,hc,x1) &
-               - sf_momentum(      z0  (j),ilmm,hc,x0) 
+               - sf_momentum(      z0  (j),ilmm,hc,x0)
           fh(j) = beta*( lzz0t(j) &
                + sf_heat(zt(j)+z0rt(j),ilmm,hc,y1) &
                - sf_heat(      z0t (j),ilmm,hc,y0))
@@ -688,7 +689,7 @@ contains
 
     !
     !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 3: Calculate inverse length of Monin-Obukhov (ilmo), integrated 
+    !     STEP 3: Calculate inverse length of Monin-Obukhov (ilmo), integrated
     !             stability functions (fm, fh) and boundary-layer height (h)
     !             using an iterative method to solve the equation:
     !                  rib - (fh/fm^2)*zp*ilmo = 0
@@ -703,7 +704,7 @@ contains
     !                  dfm = derivative of fm w.r.t. ilmo
     !
     !------ first guess for fm, fh (chosen as small deviations am,ah from the
-    !       neutral case) and the corresponding first guess for ilmo.  
+    !       neutral case) and the corresponding first guess for ilmo.
     !       TODO: replace this with a function-specific first guess.
     !
     do j=1,n
@@ -720,10 +721,10 @@ contains
     enddo
     !
     !------ iterative solution using Newton-Raphson method
-    !       (no convergence criterion, but fixed number of 
+    !       (no convergence criterion, but fixed number of
     !        iterations = itmax-1)
     !
-    do it=1,itmax 
+    do it=1,itmax
 
        if(optz0.gt.0) then
           !-- new computation of z0 and z0t from the last computed fm
@@ -746,10 +747,10 @@ contains
           h(j)  = sf_pblheight(zu(j),z0(j),va(j),ilmo(j),fcor(j),fm(j))
           fm(j) =        lzz0 (j) &
                + sf_momentum(zu(j)+z0rm(j),ilmo(j),h(j),x1) &
-               - sf_momentum(      z0  (j),ilmo(j),h(j),x0) 
+               - sf_momentum(      z0  (j),ilmo(j),h(j),x0)
           fh(j) = beta*( lzz0t(j) &
                + sf_heat(zt(j)+z0rt(j),ilmo(j),h(j),y1) &
-               - sf_heat(      z0t (j),ilmo(j),h(j),y0)) 
+               - sf_heat(      z0t (j),ilmo(j),h(j),y0))
           dfm =       x1 - x0
           dfh = beta*(y1 - y0)
           if (it.lt.itmax) then
@@ -767,7 +768,7 @@ contains
     !               ue    = (k/fm)*va      ;  cmu = (k/fm)*ue
     !               ftemp = -ctu*(ta-tg)   ;  ctu = (k/fh)*ue
     !               fvap  = -ctu*(qa-qg)
-    !             Note: the momemtum flux is not output separately because it is 
+    !             Note: the momemtum flux is not output separately because it is
     !             simply given by
     !               fmom = cmu*va = (k/fm)*ue*va = ue^2
     !             Finaly, we impose a maximum on the BL height (h).
@@ -788,8 +789,8 @@ contains
     if(optz0.gt.0) then
        !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        !     STEP 5: Calculate aerodynamic (z0) and thermal (z0t) roughness lenghts
-       !              z0 and z0t computed with the last fm for use of the next time step 
-       !             
+       !              z0 and z0t computed with the last fm for use of the next time step
+       !
        call compz0(optz0, z0, z0t, fm, va, fcor, n)
        !
        !
@@ -803,7 +804,7 @@ contains
   subroutine diasurf5(uz,vz,tz,qz,ni,angi,tg,qg,z0,z0t,ilmo,za, &
        h,ue,ftemp,fvap,zu,zt,lat)
     implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
     integer ni
     real zt(ni),zu(ni)
     real uz(ni),vz(ni),tz(ni),qz(ni),za(ni),angi(ni)
@@ -870,7 +871,7 @@ contains
     !
     REAL, dimension(ni) :: lzz0t
     REAL, dimension(ni) :: lzz0
-    
+
     !
     !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !     STEP 1: Initialize neutral stability functions (lzz0 and lzz0t)
@@ -889,7 +890,7 @@ contains
     !       ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
     !       fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
     !
-    !     (b) for vits, this is done reversing the friction velocity equation 
+    !     (b) for vits, this is done reversing the friction velocity equation
     !       ue = cm*vits ==> vits = ue/cm
     !
     do j=1,ni
@@ -925,7 +926,7 @@ contains
        vits  = ue(j)/cm
        !
        !---- diagnostic wind components
-       !     Note: We assume that the wind direction changes in the 
+       !     Note: We assume that the wind direction changes in the
        !           stable layer only, according to the formula
        !             (ang2-ang1)/ang_max = - (z2-z1)/h * sin(lat)
        !
@@ -953,7 +954,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sf_heat(F_z,F_ilmo,F_h,F_deriv) result(F_nfh)
     implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
     !@objective Compute stability function for heat/moisture and its derivative.
     !@arguments
     real, intent(in) :: F_z                 !height (m)
@@ -985,7 +986,7 @@ contains
           b = BH91_B
           c = BH91_C
           d = BH91_D
-          F_nfh = (1.+b*a*F_z*F_ilmo)**1.5 - 1 + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d 
+          F_nfh = (1.+b*a*F_z*F_ilmo)**1.5 - 1 + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d
           F_deriv = a*F_z*F_ilmo*(1.+b*a*F_z*F_ilmo)**0.5 + b*F_z*F_ilmo*EXP(-d*F_z*F_ilmo) &
                - d*F_z*F_ilmo*b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo)
        case ('DELAGE97')
@@ -1005,14 +1006,14 @@ contains
           F_nfh = 1.; F_deriv = 0.
           return
        end select
-       
+
     else
        !------ unstable branch
        a = (1-DG92_CI*F_z*beta*F_ilmo)**(0.33333333)
        select case (sl_stabfunc_unstab)
        case ('DYER74')
           a = (1-16*F_z*F_ilmo)**(0.5)
-          F_nfh = - 2.*LOG(a+1) 
+          F_nfh = - 2.*LOG(a+1)
           F_deriv = (1./a) - 1
        case ('DELAGE92')
           F_nfh = -1.5*LOG(a**2+a+1)+DG92_RAC3*ATAN((2*a+1)/DG92_RAC3)
@@ -1032,7 +1033,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sf_momentum(F_z,F_ilmo,F_h,F_deriv) result(F_nfm)
     implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
     !@objective Compute stability function for momentum and its derivative.
     !@arguments
     real, intent(in) :: F_z                 !height (m)
@@ -1064,9 +1065,9 @@ contains
           b = BH91_B
           c = BH91_C
           d = BH91_D
-          F_nfm = a*F_z*F_ilmo + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d 
+          F_nfm = a*F_z*F_ilmo + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d
           F_deriv = a*F_z*F_ilmo + b*F_z*F_ilmo*EXP(-d*F_z*F_ilmo) &
-               - d*F_z*F_ilmo*b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) 
+               - d*F_z*F_ilmo*b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo)
        case ('DELAGE97')
           hi = 1./F_h
           d  = 4*D97_AS*beta*F_ilmo
@@ -1091,7 +1092,7 @@ contains
        select case (sl_stabfunc_unstab)
        case ('DYER74')
           a = (1-16*F_z*F_ilmo)**(0.25)
-          F_nfm = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)      
+          F_nfm = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)
           F_deriv = (1./a) - 1
        case ('DELAGE92')
           F_nfm = - LOG( (a+1)**2*SQRT(a**2-a+1)*(a**2+a+1)**1.5 ) &
@@ -1112,7 +1113,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sf_pblheight(F_zu,F_z0,F_u,F_ilmo,F_fcor,F_fm) result(F_nhb)
     implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
     !@objective Compute the planetary boundary layer height.
     !@arguments
     real, intent(in) :: F_zu                !height of wind input (m)

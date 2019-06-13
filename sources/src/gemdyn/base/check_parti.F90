@@ -22,15 +22,6 @@
 !
       integer F_si,F_n,F_npe
 !
-!author
-!     Michel Desgagne
-!
-!revision
-! v2_10 - Desgagne M.       - initial version
-! v2_21 - Desgagne M.       - rpn_comm stooge for MPI
-!
-!object
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -39,7 +30,6 @@
 !  F_npe        I         Number of PEs
 !----------------------------------------------------------------
 
-!
       integer part_ok,part_ok_,err
 !
 !-------------------------------------------------------------------

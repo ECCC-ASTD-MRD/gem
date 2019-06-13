@@ -21,8 +21,7 @@ module sfc_main
 contains
 
 !/@*
-function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
-!#TODO: seloc never used
+function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    use tdpack, only: DELTA, RGASD
    use phy_status, only: phy_error_L
    use phygridmap, only: ijdrv_phy
@@ -31,7 +30,7 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
    use sfclayer_mod, only: sl_adjust,SL_OK
    use cpl_itf, only: cpl_update
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !@Object Main interface subroutine for the surface processes
    !@Arguments
@@ -57,7 +56,7 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
 
    integer :: trnch,kount,ni, nk
 
-   real :: dt, rhoair, seloc(ni,nk)
+   real :: dt, rhoair
 
    integer :: F_istat
 
@@ -295,16 +294,16 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
 
       if (schmsol.eq.'ISBA') then
 
-         call isba3 (bus_soil, siz_soil, &
+         call isba4(bus_soil, siz_soil, &
               ptr_soil, nvarsurf, &
-              dt, kount, trnch, &
+              dt, kount, &
               ni_soil, ni_soil, nk-1)
 
       elseif (schmsol.eq.'SVS') then
 
-         call svs (bus_soil, siz_soil, &
+         call svs2(bus_soil, siz_soil, &
               ptr_soil, nvarsurf, &
-              dt, kount, trnch, &
+              dt, kount, &
               ni_soil, ni_soil, nk-1)
 
       endif
@@ -343,10 +342,10 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
       lcl_indx(1,1:ni_water) = rg_water(1:ni_water)
       lcl_indx(2,1:ni_water) = trnch
 
-      call water1( bus_water, siz_water   ,  &
+      call water2(bus_water, siz_water   ,  &
            ptr_water, nvarsurf    ,  &
-           lcl_indx , trnch, kount,  &
-           ni_water , ni_water, nk-1 )
+           lcl_indx , kount,  &
+           ni_water , ni_water, nk-1)
       if (phy_error_L) return
 
       call copybus3(bus_water, siz_water, &
@@ -384,10 +383,10 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
       lcl_indx(1,1:ni_ice) = rg_ice(1:ni_ice)
       lcl_indx(2,1:ni_ice) = trnch
 
-      call seaice2( bus_ice , siz_ice     , &
+      call seaice3(bus_ice , siz_ice     , &
            ptr_ice , nvarsurf    , &
-           lcl_indx, trnch, kount, &
-           ni_ice  , ni_ice, nk-1  )
+           lcl_indx, &
+           ni_ice  , ni_ice, nk-1)
       if (phy_error_L) return
 
       call copybus3(bus_ice, siz_ice, &
@@ -423,9 +422,8 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
            rg_glacier, ni_glacier, &
            ni, indx_glacier, trnch, CP_TO_SFCBUS)
 
-      call glaciers1 ( bus_glacier, siz_glacier, &
+      call glaciers2(bus_glacier, siz_glacier, &
            ptr_glacier, nvarsurf, &
-           trnch, kount, &
            ni_glacier, ni_glacier, nk-1)
       if (phy_error_L) return
 
@@ -461,9 +459,9 @@ function sfc_main2(seloc, trnch, kount, dt, ni, nk) result(F_istat)
            rg_urb, ni_urb, &
            ni, indx_urb, trnch, CP_TO_SFCBUS)
 
-      call town  ( bus_urb, siz_urb, &
+      call town2(bus_urb, siz_urb, &
            ptr_urb, nvarsurf, &
-           dt, trnch, kount, &
+           dt, kount, &
            ni_urb, ni_urb, &
            nk-1)
       if (phy_error_L) return

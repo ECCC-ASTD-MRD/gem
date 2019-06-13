@@ -322,7 +322,7 @@ contains
       ifld = F_ifld
       if (Grd_yinyang_L) then
          call yyg_xchng(ifld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk,&
-                        .false.,'PHYSI', .true.)
+                        .false.,'CUBIC', .true.)
       else
       call rpn_comm_xch_halo(ifld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)

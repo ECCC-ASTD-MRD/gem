@@ -25,6 +25,7 @@ contains
       use glb_ld
       use opr
       use sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,27 +33,23 @@ contains
       integer nil, njl, &   ! Extent of the grid as seen by GMRES, containing no pilot and no halo region
               kidx          ! Index of the vertical level, used for defining the operator
       integer, parameter :: halo=1 ! Extent of the halo region
-      !real*8, Dimension(nil,njl) :: Rhs(nil,njl), & ! Residual of the current problem
+      !real(kind=REAL64), Dimension(nil,njl) :: Rhs(nil,njl), & ! Residual of the current problem
       !                              Lhs(nil,njl)    ! Estimated solution (preconditioner output)
 
       ! Use assumed-shape arrays, so no copy of the array slices is required
-      real*8, Dimension(:,:) :: Rhs(:,:), & ! Residual of the current problem
+      real(kind=REAL64), Dimension(:,:) :: Rhs(:,:), & ! Residual of the current problem
                                 Lhs(:,:)    ! Estimated solution (preconditioner output)
 
-      real*8, Dimension((1-halo):(nil+halo),(1-halo):(njl+halo)) :: work ! Working array, including a halo region
+      real(kind=REAL64), Dimension((1-halo):(nil+halo),(1-halo):(njl+halo)) :: work ! Working array, including a halo region
 !dir$ attributes align:64 :: work
 
 !
 ! author   Christopher Subich - March 2017, adapted from pre_diago and mat_vecs2D by Abdessamad Qaddouri
 !
-!revision
-! v4_5x - Subich C. - Revision for single-plane
-!
-!
       integer j,i,ii,jj ! Iteration and indexing variables
       integer ioffset     ! Row offset for red-black iteration
-      real*8  cst,di_8    ! Parameters used for building the stencil
-      real*8  stencil_pt, stencil_w, & ! Stencil elements: here, west
+      real(kind=REAL64)  cst,di_8    ! Parameters used for building the stencil
+      real(kind=REAL64)  stencil_pt, stencil_w, & ! Stencil elements: here, west
               stencil_e, stencil_s, & ! east, north
               stencil_n              ! south
 

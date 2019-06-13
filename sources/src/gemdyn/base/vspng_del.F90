@@ -23,20 +23,21 @@
       use ldnh
       use trp
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy, nke, ntrp12, ntrp22, fnjb
 
       real   F_sol(Minx:Maxx,Miny:Maxy,*)
-      real*8 F_opsxp0_8(*),F_opsyp0_8(*), &
+      real(kind=REAL64) F_opsxp0_8(*),F_opsyp0_8(*), &
              F_aix_8(nke,ntrp12,*),F_bix_8(nke,ntrp12,*), &
              F_cix_8(nke,ntrp12,*),F_dix_8(nke,ntrp12,*), &
              F_aiy_8(nke,ntrp22,*),F_biy_8(nke,ntrp22,*), &
              F_ciy_8(nke,ntrp22,*)
 !
       integer i, j, k, cnt
-      real*8 w1_8(ldnh_maxx,nke,ldnh_maxy),  &
+      real(kind=REAL64) w1_8(ldnh_maxx,nke,ldnh_maxy),  &
              w2_8(ldnh_maxy,nke,ldnh_maxx),  &
              t1_8(nke,Trp_12emax,G_ni+Ptopo_npex), &
              t2_8(nke,Trp_22emax,G_nj+Ptopo_npey), &

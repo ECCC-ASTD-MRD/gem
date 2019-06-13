@@ -18,7 +18,7 @@
       Function sfopop(t0, tf2, p0)
       use tdpack, only: fopoip
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sfopop, t0, tf2, p0
 !

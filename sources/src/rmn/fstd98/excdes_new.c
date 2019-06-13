@@ -904,7 +904,7 @@ static int match_ip(int in_use, int nelm, int *data, int ip1, int translatable)
   int amatch=0;
   int mode = -1;   /* IP to P,KIND conversion */
   int i, ip, kind1, kind2, kind3;
-  float p1, p2, p3, delta, modulo, error;
+  float p0, p1, p2, p3, delta, modulo, error;
   float *fdata = (float *)data;
 
   if( ! in_use ) return 0;
@@ -916,7 +916,7 @@ static int match_ip(int in_use, int nelm, int *data, int ip1, int translatable)
     ip = data[0];
     if(ip >= 0) {
       ConvertIp(&ip, &p2, &kind2, mode);  /* convert bottom value   */
-    }else{                                /* open bottom  value @   */
+    }else{                                /* open bottom  @ value   */
       p2 = p1;
       kind2 = kind1;
     }
@@ -926,6 +926,9 @@ static int match_ip(int in_use, int nelm, int *data, int ip1, int translatable)
     }else{                                /* open top   value @  */
       p3 = p1;
       kind3 = kind1;
+    }
+    if(p2 > p3){                          // make sure that p2 < p3
+      p0 = p3 ; p3 = p2 ; p2 = p0 ;       // swap p2 and p3 (no pint in swapping kinds as they MUST match
     }
     if(kind1 != kind2 || kind1 != kind3) return 0 ;  /* not same kind, no match */
     if(p1 < p2 || p1 > p3) return 0;       /* out of value range, no match */

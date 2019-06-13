@@ -21,13 +21,14 @@
       use HORgrid_options
       use geomh
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
 
       !arguments
       !---------
-      real*8,            intent(out):: F_mass_tracer_8                            !Mass of Tracer
+      real(kind=REAL64),            intent(out):: F_mass_tracer_8                            !Mass of Tracer
       integer,           intent(in) :: F_minx,F_maxx,F_miny,F_maxy                !Dimension H
       integer,           intent(in) :: F_nk                                       !Number of vertical levels
       integer,           intent(in) :: F_i0,F_in,F_j0,F_jn,F_k0                   !Scope of operator
@@ -40,7 +41,7 @@
       !=======================================================
 
       integer :: i,j,k,err
-      real*8  :: c_mass_8,c_level_8(F_nk),gc_mass_8
+      real(kind=REAL64)  :: c_mass_8,c_level_8(F_nk),gc_mass_8
       character(len= 9) :: communicate_S
 
       !-------------------------------------------------------

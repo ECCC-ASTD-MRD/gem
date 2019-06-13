@@ -18,7 +18,7 @@
 subroutine fillagg(bus,bussiz,ptsurf,ptsurfsiz,indx_sfc,surflen)
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object
    !@Arguments
    !             - Input/Output -

@@ -19,13 +19,6 @@
       use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     Michel Desgagne - Spring 2014
-!
-!revision
-! v4_70 - Desgagne, M.     - Initial revision
-!
 
       integer gmmstat
       character(len=8) , dimension(2), parameter :: pw_uulist = ['PW_UU:P','PW_UU:M']

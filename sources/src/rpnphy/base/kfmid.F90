@@ -25,21 +25,22 @@ contains
         deep_cape, deep_active, cond_prflux, &
         dtdt, dqdt, dudt, dvdt, dqcdt, dqidt, &
         active, zcrr, clouds, rliqout, riceout, rnflx, snoflx, mcd, mpeff, mainc, &
-        delt, kount, ix, kx)
+        delt, ix, kx)
+      use, intrinsic :: iso_fortran_env, only: INT64
       use cnv_options, only: mid_peff, mid_maxcape, mid_dpdd, mid_conserve, &
            mid_minbase, mid_depth, mid_minemf, mid_peff_const, mid_emffrac, &
            mid_emfmod
       use tdpack, only: fohr, RGASD, GRAV, TRPL, PI, CHLF, CPD
       use integrals, only: int_profile, INT_OK
       use debug_mod, only: init2nan
+      use tpdd, only: tpdd1
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       ! Argument declaration
       integer, intent(in) :: ix                                    !Row length
       integer, intent(in) :: kx                                    !Number of prognostic levels
-      integer, intent(in) :: kount                                 !Time step number  !#TODO: never used
       real, intent(in) :: delt                                     !Time step (s)
       real, dimension(:,:), intent(in) :: tp1                      !Dry air temperature (K)
       real, dimension(:,:), intent(in) :: qp1                      !Specific humidity (kg/kg)
@@ -74,7 +75,7 @@ contains
       !@Author Jack Kain and JM Fritsch (Oct 14,1990)
 
       !@Object
-      !          compute the effects of mid-level convection using a modified version of 
+      !          compute the effects of mid-level convection using a modified version of
       !          the Kain-Fritsch convective paramerization scheme.
 
       !Local variable declarations
@@ -97,7 +98,7 @@ contains
            tu10,tu95,tudl,ud1,ud2,usr,udlbe,updinc,updin2,upold,&
            upnew,vmflcl,norm,wlcl,wtw,dpup,     &
            dpdown,dqdtdk,dqcdtdk,denom,tvdiff,intdudt,      &
-           intdvdt,intdp,dxsq,rholcl,wabs,zmix,thta,delp,tpdd,    &
+           intdvdt,intdp,dxsq,rholcl,wabs,zmix,thta,delp,    &
            nuer,nudr,lambda,rhmixg,minemf
       real, dimension(1) :: subcloud_pw, subcloud_pws
       real, dimension(ix) :: dpthmxg,pmixg,tmixg,qmixg,thmixg,tlclg,    &
@@ -122,14 +123,12 @@ contains
       ! External subprograms
       external tpmix
       external condload
-      external dtfrznew
       external envirtht
       external prof5
-      external tpdd
 
       ! Basic parameters
 #include "clefcon.cdk"
-#include "phyinput.cdk"
+      include "phyinput.inc"
 
       ! User-adjustable parameters
       real, parameter :: RAD = 1500.                            !Cloud radius for cloud model (m)
@@ -486,7 +485,7 @@ contains
             TRPPT=0.                            ! total rate of precip. production
             EQFRC(KLCLM1)=1.                    ! fraction of environmental air in mixed parcels
 
-            ! Updraft properties 
+            ! Updraft properties
             TU(KLCLM1)=TLCLG(I)                 ! updraft temperature
             TVU(KLCLM1)=TVLCL                   ! updraft virtual temperature
             QU(KLCLM1)=QMIXG(I)                 ! updraft mixing ratio
@@ -621,7 +620,7 @@ contains
                ! and if the cloud is deep enough, finalize the updraft calculations.
                if(WU(NK1).le.0.) exit UPDRAFT
 
-               ! Update ABE for undilute ascent.  (Note that we still did not 
+               ! Update ABE for undilute ascent.  (Note that we still did not
                ! consider any entrainment effect except for the calculation of w.)
                THTES(NK1)=TT0(I,NK1)*(1.E5/PP0(I,NK1))**(0.2854*(1.-0.28*QST1(I,NK1)))* &
                     exp((3374.6525/TT0(I,NK1)-2.5403)*QST1(I,NK1)*(1.+0.81*QST1(I,NK1)))
@@ -632,13 +631,13 @@ contains
                ! temperature interval (on temperature, water variables, etc...).
                if(FRC1.gt.1.E-6)then
                   ! Phase transition effects
-                  call DTFRZNEW(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
-                       RICE(NK1),RATIO2(NK1),TTFRZ,TBFRZ,QNWFRZ,RL,FRC1,EFFQ, &
+                  call DTFRZNEW2(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
+                       RICE(NK1),RATIO2(NK1),QNWFRZ,RL,FRC1,EFFQ, &
                        IFLAG,XLV0,XLV1,XLS0,XLS1, &
                        ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
                endif
 
-               ! Call subroutine to calculate ENVIRONMENTAL potential temperature 
+               ! Call subroutine to calculate ENVIRONMENTAL potential temperature
                ! within glaciation interval.  THETAE must be calculated with
                ! respect to the same degree of glaciation for all entraining air.
                call ENVIRTHT(PP0(I,NK1),TT0(I,NK1),Q00(I,NK1), &
@@ -656,7 +655,7 @@ contains
                REI=VMFLCL*DPP(i,NK1)*0.03/RAD   ! rate of environmental inflow
                TVQU(NK1)=TU(NK1)*(1.+0.608*QU(NK1)-RLIQ(NK1)-RICE(NK1))
 
-               ! If cloud parcels are virtually colder than the environment, 
+               ! If cloud parcels are virtually colder than the environment,
                ! no entrainment is allowed at this level.
                need_mixing = .true.
                if(TVQU(NK1).le.TV00(I,NK1))then
@@ -694,9 +693,9 @@ contains
                   ! Compute moist virtual temperature of the subparcel
                   TU95=TTMP*(1.+0.608*RTMP-TMPLIQ-TMPICE)
 
-                  ! If the parcel is buoyant with these mixing proportions, then the 
-                  ! critical fraction of environmental air is close to 1.  (In fact, 
-                  ! we set it to 1. in this case). No detrainment in this case, 
+                  ! If the parcel is buoyant with these mixing proportions, then the
+                  ! critical fraction of environmental air is close to 1.  (In fact,
+                  ! we set it to 1. in this case). No detrainment in this case,
                   ! only entrainment.
                   need_buoyancy_sorting = .true.
                   if(TU95.gt.TV00(I,NK1))then
@@ -706,7 +705,7 @@ contains
                      need_buoyancy_sorting = .false.
                   endif
 
-                  ! Calculate the critical fraction of environmental air by creating 
+                  ! Calculate the critical fraction of environmental air by creating
                   ! a supbarcel with 10% updraft and 90* environmental air.
                   BUOYANCY_SORTING: if (need_buoyancy_sorting) then
                      F1=0.10
@@ -730,7 +729,7 @@ contains
                         EQFRC(NK1)=AMIN1(1.0,EQFRC(NK1))
                      endif
 
-                     ! In the simple cases in which the subparcel mixing possibilities are 
+                     ! In the simple cases in which the subparcel mixing possibilities are
                      ! all buoyant or all non-buoyant, no need to integrate the
                      ! Gaussian distribution.
                      FRACTIONAL_MIXING: if (EQFRC(NK1).eq.1) then
@@ -754,26 +753,26 @@ contains
                      UD1=0.        ! detrainment rate from the previuos level
                   endif
 
-                  ! Net entrainment and detrainment rates are given by the average 
+                  ! Net entrainment and detrainment rates are given by the average
                   ! fractional values in the layer.
                   UER(NK1)=0.5*REI*(EE1+EE2)
                   UDR(NK1)=0.5*REI*(UD1+UD2)
 
                endif ENV_MIXING
 
-               ! If the calculated updraft detrainment rate is greater than the 
+               ! If the calculated updraft detrainment rate is greater than the
                ! total updraft mass flux, all cloud mass detrains.  Exit updraft
                ! calculations.
                if(UMF(NK)-UDR(NK1).lt.10.)then
-                  ! If the calculated detrained mass flux is greater than the 
-                  ! total updraft flux, impose total detrainment of updraft 
+                  ! If the calculated detrained mass flux is greater than the
+                  ! total updraft flux, impose total detrainment of updraft
                   ! mass at the previous model level.
                   if (UDLBE > 0.) ABE=ABE-UDLBE*GRAV
                   LET=NK
                   exit UPDRAFT
                endif
 
-               ! New updraft mass flux (remove the part that was detrained - and 
+               ! New updraft mass flux (remove the part that was detrained - and
                ! add the part that was entrained).
                EE1=EE2
                UD1=UD2
@@ -804,13 +803,13 @@ contains
                ! End of updraft calculations.
             enddo UPDRAFT
 
-            ! Check cloud depth.  If the cloud is deep enough, estimate the 
-            ! equilibrium temperature level (ETL) and adjust the mass flux 
-            ! profile at cloud top so that the mass flux decreases to zero 
+            ! Check cloud depth.  If the cloud is deep enough, estimate the
+            ! equilibrium temperature level (ETL) and adjust the mass flux
+            ! profile at cloud top so that the mass flux decreases to zero
             ! as a linear function of pressure difference the LET and cloud top.
             LTOP=NK     ! level below the one where vert. vel. is negative
 
-            ! If the cloud top height is less than the specified minimum height, 
+            ! If the cloud top height is less than the specified minimum height,
             ! go back to the next highest mixed layer to see if a bigger
             ! cloud can be obtained from the parcel.
             CLDHGT=Z0G(I,LTOP)-ZLCL
@@ -838,7 +837,7 @@ contains
 
          ! ABOVE THE LET
 
-         ! If the LET and LTOP are the same, detrain all of the updraft 
+         ! If the LET and LTOP are the same, detrain all of the updraft
          ! mass at this level.
          need_above_let = .true.
          if(LET.eq.LTOP)then
@@ -860,8 +859,8 @@ contains
             enddo
             DUMFDP=UMF(LET)/DPTT
 
-            ! Adjust mass flux profiles, detrainment rates, and precipitation 
-            ! fall rates to reflect the linear decrease in mass flux between 
+            ! Adjust mass flux profiles, detrainment rates, and precipitation
+            ! fall rates to reflect the linear decrease in mass flux between
             ! the LET and cloud top.
             do NK=LET+1,LTOP
                ! A small part is detrained at each level above the LET.
@@ -941,9 +940,9 @@ contains
          LTOP1=LTOP+1
          LTOPM1=LTOP-1
 
-         ! Make sure that the updraft vertical motion is not too small so that 
+         ! Make sure that the updraft vertical motion is not too small so that
          ! the cloud fraction becomes not too large just above the lifting
-         ! condensation level (first level in the cloud above which WU is 
+         ! condensation level (first level in the cloud above which WU is
          ! different from WLCL)
          nk = lc+1
          do while (wu(nk) <= wlcl .and. nk <= ltopm1)
@@ -1016,7 +1015,7 @@ contains
          omg(kx+1) = 0.
          p165 = pp0(i,klcl) - 1.65E4
 
-         ! Initialize some other variables to be used later in the vertical advection 
+         ! Initialize some other variables to be used later in the vertical advection
          ! scheme (from the surface to the cloud top).
          do NK=1,LTOP
             EMS(NK)=DPP(I,NK)*DXSQ/GRAV
@@ -1039,14 +1038,14 @@ contains
 
          ! Precipitation efficiency estimates
          if (mid_peff_const >= 0.) then
-            ! Precipitation efficiency described by Market et al. (2003; WAF; Precipitation 
+            ! Precipitation efficiency described by Market et al. (2003; WAF; Precipitation
             ! Efficiency of Warm-Season Midwestern Mesoscale Convective Systems).  A value
-            ! of ~0.25 is suggested by Fig. 12b of Fankhauser (1998; WRF; Estimates of 
+            ! of ~0.25 is suggested by Fig. 12b of Fankhauser (1998; WRF; Estimates of
             ! Thuderstorm Precipitation Efficiency from Field Measurements in CCOPE) for
             ! elevated convection
             peff = mid_peff_const
          else if (mid_peff == 'BLUESTEIN83') then
-            ! Precipitation efficiency computed from the precipitable water deficit in the 
+            ! Precipitation efficiency computed from the precipitable water deficit in the
             ! subcloud layer (Bluestein and Parks 1983; MWR)
             do k=1,kx
                pp0c(:,k) = pp0(i,k)
@@ -1078,15 +1077,15 @@ contains
          ! 10. DOWNDRAFT PROPERTIES
          ! ========================
 
-         ! Let the representative downdraft originate at the level of minimum saturation 
-         ! equivalent potential temperature (SEQT) in the cloud layer.  Extend downward 
-         ! toward the surface, down to the level of downdraft buoyancy (LDB), where SEQT 
-         ! is less than min(SEQT) in the cloud layer.  Let downdraft detrain over a 
+         ! Let the representative downdraft originate at the level of minimum saturation
+         ! equivalent potential temperature (SEQT) in the cloud layer.  Extend downward
+         ! toward the surface, down to the level of downdraft buoyancy (LDB), where SEQT
+         ! is less than min(SEQT) in the cloud layer.  Let downdraft detrain over a
          ! layer of specified pressure-depth (i.e., DPDD).
          TDER = 0.
 
          ! KMIN is the level of minimum environmental saturation equivalent potential
-         ! temperature.  If the level KMIN is higher than the cloud top then track again 
+         ! temperature.  If the level KMIN is higher than the cloud top then track again
          ! the level between LCL and LTOP.
          if (KMIN >= LTOP) then
             THTMIN=THTES(KLCL)
@@ -1137,7 +1136,7 @@ contains
                  ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
          endif
 
-         ! Find the level of downdraft buoyancy (LDB) ==> level where THETAES 
+         ! Find the level of downdraft buoyancy (LDB) ==> level where THETAES
          ! for the downdraft at the LFS becomes larger then the environmental
          ! THETAES.
          ldb = 1
@@ -1149,7 +1148,7 @@ contains
             endif
          enddo FIND_LDB
 
-         ! Determine the LDT level (level where the downdraft detrains).  This 
+         ! Determine the LDT level (level where the downdraft detrains).  This
          ! level cannot be higher than the downdraft source level (LFS).
          DPDDMX=mid_dpdd
          DPT=0.
@@ -1187,9 +1186,9 @@ contains
                FRC=1.
                THETED(ND)=THETED(ND1)
                QD(ND)=QD(ND1)
-               TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+               TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
                EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
                THTAD(ND)=TZ(ND)*EXN(ND)
             else
@@ -1210,9 +1209,9 @@ contains
                ! at the previous level and entrained air.
                THETED(ND)=(THETED(ND1)*DMF(ND1)+THETEE(ND)*(DER(ND)+DDR(ND)))/DMF(ND)
                QD(ND)=(QD(ND1)*DMF(ND1)+Q00(I,ND)*(DER(ND)+DDR(ND)))/DMF(ND)
-               TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+               TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
                EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
                THTAD(ND)=TZ(ND)*EXN(ND)
             endif
@@ -1274,12 +1273,12 @@ contains
 !!$         enddo DOWNDRAFT
 !!$         TDER=0.
 
-         ! Effect of downdraft reaching the LD B(cooling and moistening).  Relative 
+         ! Effect of downdraft reaching the LD B(cooling and moistening).  Relative
          ! humidity of 90% at this level.
          DOWNDRAFT_DETRAIN: do ND=LDB,LDT
-            TZ(ND)=TPDD(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
+            TZ(ND)=TPDD1(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
                  XLV0,XLV1, &
-                 ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                 ALIQ,BLIQ,CLIQ,DLIQ)
             ES = ALIQ*exp((TZ(ND)*BLIQ-CLIQ)/(TZ(ND)-DLIQ))
             QS = 0.622*ES/(PP0(I,ND)-ES)
             DQSDT=(CLIQ-BLIQ*DLIQ)/((TZ(ND)-DLIQ)*(TZ(ND)-DLIQ))
@@ -1293,14 +1292,14 @@ contains
             QSRH=0.622*ES/(PP0(I,ND)-ES)
             QSRH=max( min( QSRH , 0.050 ) , 1.E-6 )
 
-            ! Check to see if the mixing ratio at specified relative humidity is less 
+            ! Check to see if the mixing ratio at specified relative humidity is less
             ! than the actual mixing ratio.  If so, adjust to give zero evaporation.
             if(QSRH.lt.QD(ND))then
                QSRH=QD(ND)
                T1RH=TZ(ND)
             endif
 
-            ! If this is not the case, use the adjusted values for temperature 
+            ! If this is not the case, use the adjusted values for temperature
             ! and humidity
             TZ(ND)=T1RH
             QS=QSRH
@@ -1357,7 +1356,7 @@ contains
             endif
          endif DOWNDRAFT_LFS
 
-         ! Adjust downdraft mass flux so that evaporation rate in downdraft is 
+         ! Adjust downdraft mass flux so that evaporation rate in downdraft is
          ! consistent with precipitation efficiency relationship
          DOWNDRAFT_ADJUST: if (tder >= 1.) then
             DDINC=DMFLFS/DMF(LFS)                                    ! downdraft increase
@@ -1374,7 +1373,7 @@ contains
             CPR=TRPPT+PPR*(UPDINC-1.)
             TDER=TDER*DDINC
 
-            ! Adjust upward mass flux, mass detrainment rate, and liquid water 
+            ! Adjust upward mass flux, mass detrainment rate, and liquid water
             ! detrainment rates to be consistent with the transfer of the
             ! estimate from the updraft to the downdraft at the LFS.
             do NK=LC,LFS
@@ -1455,9 +1454,9 @@ contains
 
          endif DOWNDRAFT_ADJUST
 
-         ! Set limits on the updraft and downdraft mass fluxes so that the influx 
+         ! Set limits on the updraft and downdraft mass fluxes so that the influx
          ! into convective drafts from a given layer is no more than is available
-         ! in that layer initially.  Also, do not allow updraft detrainment to 
+         ! in that layer initially.  Also, do not allow updraft detrainment to
          ! exceed twice the mass in a layer initially.  Or downdraft detrainment
          ! exceed one time the initial mass in a layer.
          AINCMX=DXDY(I)/(PI*RAD*RAD)
@@ -1469,10 +1468,10 @@ contains
             AINCMX=MIN(AINCMX,AINCM1)
          enddo
 
-         ! If the entrainment rates for the updraft are reasonable physically 
-         ! speaking, then we should have AINCMX > 1, thus AINC=1 most of the time 
+         ! If the entrainment rates for the updraft are reasonable physically
+         ! speaking, then we should have AINCMX > 1, thus AINC=1 most of the time
          ! here.  If, on the other hand, the entrainment rates are so large so that
-         ! AINCMX < 1, then AINC is equal to this fraction.  (This correction is done 
+         ! AINCMX < 1, then AINC is equal to this fraction.  (This correction is done
          ! to avoid removing more air than available).
 
          ! Prescribed total cloud base mass flux for the cell as closure
@@ -1489,7 +1488,7 @@ contains
          endif
          mainc(i) = ainc
 
-         ! Save the relevant variables for a unit updraft and downdraft.  They are 
+         ! Save the relevant variables for a unit updraft and downdraft.  They are
          ! adjusted by the factor AINC to satisfy the closure
 
          ! Adjustment of all the updraft/downdraft characteristics.
@@ -1509,16 +1508,16 @@ contains
             DTFM(K)=0.
          enddo
 
-         ! If the downdraft overdraws the initial mass available at the LFS, 
-         ! allow PEFF to change so that updraft mass flux is not the limiting 
-         ! factor in the total convective mass flux.  This is usually necessary 
+         ! If the downdraft overdraws the initial mass available at the LFS,
+         ! allow PEFF to change so that updraft mass flux is not the limiting
+         ! factor in the total convective mass flux.  This is usually necessary
          ! only when the downdraft is very shallow.
          DMFMIN=UER(LFS)-EMS(LFS)/TIMEC
 
          ! Handle the case of very large (negative) downdraft entrainment rate
          LARGE_DER: if(DER(LFS).lt.DMFMIN .and. DMFMIN.lt.0.)then
 
-            ! RF is the proportionality constant for the decrease of downdraft 
+            ! RF is the proportionality constant for the decrease of downdraft
             ! fluxes.  (RF < 1).
             RF=DMFMIN/DER(LFS)
             do K=LDB,LFS
@@ -1535,7 +1534,7 @@ contains
                UPDIN2=1.
             endif
 
-            ! Recalculate the condensate production rate (CPR) and 
+            ! Recalculate the condensate production rate (CPR) and
             ! precipitation efficiency.
             CPR=TRPPT+PPR*(UPDIN2-1.)
             PEFF=1.-(TDER+(1.-EQFRC(LFS))*DMF(LFS)*(RLIQ(LFS)+RICE(LFS)))/ &
@@ -1559,7 +1558,7 @@ contains
 
          endif LARGE_DER
 
-         ! Evaluate the vertical velocity OMGA (Pa/s) from the entrainment 
+         ! Evaluate the vertical velocity OMGA (Pa/s) from the entrainment
          ! and detrainment rates.  (vertical velocity for the environment).
          DTT=TIMEC
          do NK = 1, LTOP
@@ -1588,7 +1587,7 @@ contains
          ! resulting profile of OMGA is unrealistic and yields bizarre tendencies)
          OMGA(1:LTOP) = OMG(1:LTOP)
 
-         ! Recompute updraft and downdraft mass fluxes to ensure consistency with 
+         ! Recompute updraft and downdraft mass fluxes to ensure consistency with
          ! entr/detr rates
          do nk=lc+1,ltop-1
             umf(nk) = umf(nk-1) + uer(nk) - udr(nk)
@@ -1736,7 +1735,7 @@ contains
             RLIQOUT(I,NK)  = RLIQ(K)
             RICEOUT(I,NK)  = RICE(K)
 
-            ! Compute updraft area 
+            ! Compute updraft area
             if (WU(K).gt.0.1) then
                AREAUP(I,NK) = (UMF(K)*RGASD*TVU(K)) / (PP0(I,K)*WU(K))
             endif

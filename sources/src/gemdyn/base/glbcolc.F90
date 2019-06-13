@@ -22,13 +22,6 @@
       integer bni,bnj,Minx,Maxx,Miny,Maxy,nk
       real F_2rc(bni,bnj,nk), F_2cc(Minx:Maxx,Miny:Maxy,nk)
 
-!author
-!     M. Desgagne - v. lee
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version (from MC2 v4.9)
-! v2_21 - Desgagne M.       - rpn_comm stooge for glbcolc
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------

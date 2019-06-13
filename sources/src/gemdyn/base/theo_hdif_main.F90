@@ -20,6 +20,7 @@
       use HORgrid_options
       use glb_ld
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -55,6 +56,7 @@
       use glb_ld
       use gmm_itf_mod
       use theo_dif
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -66,7 +68,7 @@
 
       integer nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk)
-      real*8 pt25,nu_dif,epsilon,lnr,pwr
+      real(kind=REAL64) pt25,nu_dif,epsilon,lnr,pwr
 
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !     __________________________________________________________________
@@ -105,13 +107,14 @@
       use gem_options
       use glb_ld
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy,lnk,m,n
       real rfd (Minx:Maxx,Miny:Maxy,lnk), &
            sfd (Minx:Maxx,Miny:Maxy,lnk)
-      real*8 nu_dif
+      real(kind=REAL64) nu_dif
 
 !AUTHOR    C. Girard
 !
@@ -120,7 +123,7 @@
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
-      real*8, parameter :: two = 2.d0
+      real(kind=REAL64), parameter :: two = 2.d0
 !
 !----------------------------------------------------------------------
 !

@@ -44,8 +44,8 @@ CONTAINS
 !                    ------------------------------------------------
 !     prec_type (IN) Type of precipitation/microphysics
 !                    ------------------------------------------------
-!                     0 = Kessler Microphysics 
-!                     1 = Reed-Jablonowski Large-scale precipitation 
+!                     0 = Kessler Microphysics
+!                     1 = Reed-Jablonowski Large-scale precipitation
 !                    -1 = NONE
 !                    ------------------------------------------------
 !
@@ -64,7 +64,7 @@ CONTAINS
 !
 !    Klemp, J. B., W. C. Skamarock, W. C., and S.-H. Park, 2015:
 !    Idealized Global Nonhydrostatic Atmospheric Test Cases on a Reduced
-!    Radius Sphere. Journal of Advances in Modeling Earth Systems. 
+!    Radius Sphere. Journal of Advances in Modeling Earth Systems.
 !    doi:10.1002/2015MS000435
 !
 !=======================================================================
@@ -81,34 +81,34 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
 
   INTEGER, INTENT(IN) :: &
-            test         ! DCMIP2016 test index of SST (1,2,3) 
+            test         ! DCMIP2016 test index of SST (1,2,3)
 
-  REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
+  real(kind=REAL64), DIMENSION(nz), INTENT(INOUT) :: &
             u       ,  & ! Zonal velocity (m/s)
             v       ,  & ! Meridional velocity (m/s)
             qsv     ,  & ! Specific humidity (kg/kg)
             qsc     ,  & ! Cloud water specific (kg/kg)
             qsr          ! Rain water specific (kg/kg)
 
-  REAL(8), DIMENSION(nz+1),INTENT(IN) :: &
+  real(kind=REAL64), DIMENSION(nz+1),INTENT(IN) :: &
             pt           ! Pressure (Pa) !THERMO
 
-  REAL(8), DIMENSION(0:nz),INTENT(IN) :: &
+  real(kind=REAL64), DIMENSION(0:nz),INTENT(IN) :: &
             pm           ! Pressure (Pa) !MOMENTUM
 
-  REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
+  real(kind=REAL64), DIMENSION(nz), INTENT(INOUT) :: &
             t            ! Temperature (K)
 
-  REAL(8), INTENT(IN) :: &
+  real(kind=REAL64), INTENT(IN) :: &
             dt           ! Time step (s)
 
-  REAL(8), INTENT(IN) :: &
+  real(kind=REAL64), INTENT(IN) :: &
             lat          ! Latitude of column (radians)
 
   INTEGER, INTENT(IN) :: &
             nz           ! Number of levels in grid column
 
-  REAL(8), INTENT(INOUT) :: &
+  real(kind=REAL64), INTENT(INOUT) :: &
             precl        ! Large-scale precip beneath the grid column (mm)
 
   INTEGER, INTENT(IN) :: &
@@ -118,7 +118,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
   ! Physical Constants - MAY BE MODEL DEPENDENT
   !------------------------------------------------
-  REAL(8), PARAMETER ::      &
+  real(kind=REAL64), PARAMETER ::      &
     one      = 1.d0,         & ! One
     gravit  = 9.80616d0,     & ! Gravity (m/s^2)
     rair    = 287.d0,        & ! Gas constant for dry air (J/kg/K)
@@ -134,12 +134,12 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
   ! Local Constants for Simple Physics
   !------------------------------------------------
-  REAL(8), PARAMETER ::      &
+  real(kind=REAL64), PARAMETER ::      &
     C        = 0.0011d0,     & ! From Simth and Vogl 2008
     SST_TC   = 302.15d0,     & ! Constant Value for SST
     T0       = 273.16d0,     & ! Control temp for calculation of qsat
     e0       = 610.78d0,     & ! Saturation vapor pressure at T0
-    rhow     = 1000.0d0,     & ! Density of Liquid Water 
+    rhow     = 1000.0d0,     & ! Density of Liquid Water
     Cd0      = 0.0007d0,     & ! Constant for Cd calc. Simth and Vogl 2008
     Cd1      = 0.000065d0,   & ! Constant for Cd calc. Simth and Vogl 2008
     Cm       = 0.002d0,      & ! Constant for Cd calc. Simth and Vogl 2008
@@ -161,7 +161,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
   INTEGER :: k
 
-  REAL(8) ::                  &
+  real(kind=REAL64) ::                  &
     zat,                      & ! Altitude of lowest model level (m) !THERMO
     zam,                      & ! Altitude of lowest model level (m) !MOMENTUM
     Tsurf,                    & ! Sea surface temperature (K)
@@ -172,14 +172,14 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
     qsats                       ! Saturation specific humidity at sea surface
 
   ! Matrix coefficients for PBL scheme
-  REAL(8) ::                  &
+  real(kind=REAL64) ::                  &
     CAm,                      & ! Matrix coefficients for PBL scheme
     CAE,                      & ! Matrix coefficients for PBL scheme
     CCm,                      & ! Matrix coefficients for PBL scheme
     CCE                         ! Matrix coefficients for PBL scheme
 
   ! Matrix coefficients for PBL scheme (Array)
-  REAL(8), DIMENSION(nz) ::   &
+  real(kind=REAL64), DIMENSION(nz) ::   &
     CEm,                      & ! Matrix coefficients for PBL scheme
     CEE,                      & ! Matrix coefficients for PBL scheme
     CFu,                      & ! Matrix coefficients for PBL scheme
@@ -187,47 +187,47 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
     CFt,                      & ! Matrix coefficients for PBL scheme
     CFq                         ! Matrix coefficients for PBL scheme
 
-  ! Eddy diffusivity for boundary layer 
-  REAL(8), DIMENSION(nz)     :: &
+  ! Eddy diffusivity for boundary layer
+  real(kind=REAL64), DIMENSION(nz)     :: &
     Km                          ! THERMO
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     Ke                          ! MOMENTUM
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     theta,                    & ! Potential temperature
     exner                       ! Exner function (p/p0)**(R/cp)
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     qv                          ! Water vapor mixing ratio
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     qc                          ! Cloud water mixing ratio
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     qr                          ! Rain water mixing ratio
 
-  REAL(8), DIMENSION(0:nz)   :: &
+  real(kind=REAL64), DIMENSION(0:nz)   :: &
     zt, &                       ! Heights (m) !THERMO
     zm                          ! Heights (m) !MOMENTUM
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
    wm, &                        ! Weight int. THERMO to MOMENTUM (above M)
    wp                           ! Weight int. THERMO to MOMENTUM (below M)
 
-  REAL(8), DIMENSION(nz)     :: &
-    t_m,qsv_m                   ! Temperature/Specific Humidity MOMENTUM 
+  real(kind=REAL64), DIMENSION(nz)     :: &
+    t_m,qsv_m                   ! Temperature/Specific Humidity MOMENTUM
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     dtdt,dqdt                   ! Tendencies used in RJ large-scale prec.
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     rho                         ! Dry air density used in Kessler large-scale prec.
 
-  REAL(8), DIMENSION(nz)     :: &
+  real(kind=REAL64), DIMENSION(nz)     :: &
     dp_t                        ! Layer thickness (Pa) (Thermo) used in RJ large-scale prec.
 
-  REAL(8) :: r_dp_m, r_dp_t, dlnp_m, dlnp_t, rho_m, rho_t, tv_m, tmp
+  real(kind=REAL64) :: r_dp_m, r_dp_t, dlnp_m, dlnp_t, rho_m, rho_t, tv_m, tmp
 
   !Conversion from Specific to Mixing ratio
   !----------------------------------------
@@ -237,7 +237,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
      qr(k) = qsr(k)/(1.0d0 - qsv(k))
   end do
 
-  !Coefficients for linear interpolating from THERMO to MOMENTUM 
+  !Coefficients for linear interpolating from THERMO to MOMENTUM
   !wm=Above M /wp=Below M
   !-------------------------------------------------------------
   do k=1,nz
@@ -261,10 +261,10 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
      zm(k) = zm(k-1) + rair/gravit*t(k)*(1.d0 + zvir * qsv(k))*dlnp_t
   end do
 
-  !Estimate zt = Heights THERMO 
+  !Estimate zt = Heights THERMO
   !----------------------------
   zt(0) = 0.
-  zt(1) = 0.5 * zm(1) 
+  zt(1) = 0.5 * zm(1)
 
   do k=2,nz
      dlnp_m = log(pt(k-1)) - log(pt(k))
@@ -365,7 +365,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
        rho(k) = pt(k)/(rair*t(k)*(one + zvir * qsv(k))*(one + qv(k)))
     end do
 
-    !Estimate Exner function and Potential temperature 
+    !Estimate Exner function and Potential temperature
     !-------------------------------------------------
     do k=1,nz
        exner(k) = (pt(k) / p0)**(rair/cpair)
@@ -431,10 +431,10 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
      zm(k) = zm(k-1) + rair/gravit*t(k)*(1.d0 + zvir * qsv(k))*dlnp_t
   end do
 
-  !Estimate zt = Heights THERMO 
+  !Estimate zt = Heights THERMO
   !----------------------------
   zt(0) = 0.
-  zt(1) = 0.5 * zm(1) 
+  zt(1) = 0.5 * zm(1)
 
   do k=2,nz
      dlnp_m = log(pt(k-1)) - log(pt(k))
@@ -534,7 +534,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
 
   qv(1) = qsv(1) / (one - qsv(1))
 
-  !Estimate Temperature/Specific Humidity MOMENTUM 
+  !Estimate Temperature/Specific Humidity MOMENTUM
   !-----------------------------------------------
     t_m(1)= wp(1)*  t(1) + wm(1)*  t(2)
   qsv_m(1)= wp(1)*qsv(1) + wm(1)*qsv(2)
@@ -618,7 +618,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
      qsv(k) =  CEE(k)*qsv(k+1)+CFq(k)
   end do
 
-  !Convert qsv to qv 
+  !Convert qsv to qv
   !-----------------
   do k=1,nz
     qv(k) = qsv(k) / (one - qsv(k))

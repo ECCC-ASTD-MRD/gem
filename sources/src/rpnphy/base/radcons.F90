@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,12 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 subroutine radcons2(ni, trnch)
+   use tdpack_const
    use phybus, only: entbus, perbus, sla, fsa, c1slop, c2slop, c3slop, c4slop, c5slop
    implicit none
-#include <arch_specific.hf> 
+!!!#include <arch_specific.hf> 
 
    integer ni, trnch
 
@@ -26,8 +27,6 @@ subroutine radcons2(ni, trnch)
    !        slopes. 
    !Arguments
    ! ni            horizontal dimension 
-
-#include "tdpack_const.hf"
 
    integer i, n
    real sum

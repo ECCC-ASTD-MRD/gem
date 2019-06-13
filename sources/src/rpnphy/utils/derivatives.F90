@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,15 +12,15 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module derivatives
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    implicit none
    private
 #include <rmnlib_basics.hf>
 #include <msg.h>
-   
+
    ! Internal parameters
    integer, parameter :: LONG_CHAR=16                           !Long character string length
    real, parameter :: NOT_DEFINED=huge(1.)                      !Undefined value
@@ -33,8 +33,7 @@ module derivatives
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function derivative_pchip(dydz,yi,zi,zo,deriv_min,deriv_max) result(status)
- !#TODO: deriv_min,deriv_max never used
+   function derivative_pchip(dydz,yi,zi,zo) result(status)
       ! Compute derivatives for a profile using PCHIP
       use pchip_utils, only: PCHIP_OK,PCHIP_EXT,pchip_extend,pchip_layers,pchip_coef
       implicit none
@@ -43,13 +42,11 @@ contains
       real, dimension(:,:), intent(in) :: yi                    !Profile values
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic decreasing)
       real, dimension(:,:), intent(in) :: zo                    !Coordinate values for derivative (monotonic decreasing)
-      real, dimension(:), intent(in) :: deriv_min               !Boundary condition derivative at coordinate minimum
-      real, dimension(:), intent(in) :: deriv_max               !Boundary condition  derivative at coordinate maximum
       real, dimension(:,:), intent(out) :: dydz                 !Derivative of profile
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (Mar 2018)    
+      !          R.McTaggart-Cowan (Mar 2018)
 
       !Object
       !          to calculate vertical derivatives of a given profile
@@ -73,10 +70,10 @@ contains
          call msg(MSG_WARNING,'(integral_pchip) Error returned by pchip_extend')
          return
       endif
-      
+
       ! Compute layer thickness and deltas
       istat = pchip_layers(y,z,h,del)
-      
+
       ! Compute interpolating polynomial coefficients
       istat = pchip_coef(h,del,b,c,d)
 
@@ -113,7 +110,7 @@ contains
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (Mar 2018)    
+      !          R.McTaggart-Cowan (Mar 2018)
 
       !Object
       !          to calculate vertical derivatives of a given profile
@@ -131,7 +128,7 @@ contains
       n = size(yi,dim=1)
       nk = size(yi,dim=2)
       nko = size(zo,dim=2)
-         
+
       ! Compute layer thickness and deltas
       istat = spline_layers(yi,zi,h,del)
 
@@ -179,7 +176,7 @@ contains
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (Mar 2018)    
+      !          R.McTaggart-Cowan (Mar 2018)
 
       !Object
       !          Wrap call to derivative calculations.
@@ -199,24 +196,24 @@ contains
       ! Derivative calculation dispatcher
       select case (upper(myType))
       case ('PCHIP')
-         status = derivative_pchip(dydz,yi,zi,zo,myDeriv_min,myDeriv_max)
+         status = derivative_pchip(dydz,yi,zi,zo)
       case ('SPLINE')
          status = derivative_spline(dydz,yi,zi,zo,myDeriv_min,myDeriv_max)
       case DEFAULT
          call msg(MSG_WARNING,'(deriv_profile) invalid type of derivative ('//trim(myType)//') requested')
       end select
-      
+
       ! End of subprogram
       return
    end function deriv_profile
-   
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
       ! Return an upper cased version of a string
-#include <clib_interface_mu.hf>
       character(len=*), intent(in) :: str
       character(len=len_trim(str)) :: uc_str
-      
+
       ! Local variables
       integer :: istat
 

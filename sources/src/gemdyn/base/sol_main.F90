@@ -22,15 +22,16 @@
       use gmm_orh
       use lun
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_ni, F_nj, F_nk, F_iln
-      real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs
-      real*8, dimension(F_ni,F_nj,F_nk), intent(out) :: F_solution
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(out) :: F_solution
 
 !author
-!     Michel Desgagne / Abdessamad Qaddouri -- January 2014
+!     Abdessamad Qaddouri -- January 2014
 !
       logical :: print_conv
       integer :: offi, offj

@@ -18,7 +18,7 @@
       real function utCO2 (ii,jj,ix,nx,NN,NK,SH,S,SC,DEL)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       integer ii, jj, nx, ix
       INTEGER NN,NK
       REAL DEL(NK),SC(NN),S(NN),SH(nx,NK)

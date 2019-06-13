@@ -19,7 +19,7 @@ subroutine vegi(RG, T, TS, HU, PS, W2, RGL, LAI, RSMIN, GAMMA, WWILT, &
    use tdpack
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Calculates the surface stomatal resistance Rs
    !@Arguments
    !          - Input -

@@ -15,12 +15,13 @@
 
 !**s/r dcmip_mult_X - Multiply dt_8 by Earth's radius reduction factor
 
-      real*8 function dcmip_mult_X (dt_8)
+      real(kind=REAL64) function dcmip_mult_X (dt_8)
 
       use dcmip_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 
-      real*8 dt_8
+      real(kind=REAL64) dt_8
 
       if (Dcmip_case>0) then
 

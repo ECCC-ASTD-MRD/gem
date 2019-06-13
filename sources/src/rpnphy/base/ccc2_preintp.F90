@@ -17,7 +17,7 @@
 !
       subroutine ccc2_preintp (inpt, inptm, dip, dip0, pp, il1, il2, ilg,lay)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, il1, il2, jends, k, i, j, inpdif, m, n
       real p0(ilg)  !#, pm

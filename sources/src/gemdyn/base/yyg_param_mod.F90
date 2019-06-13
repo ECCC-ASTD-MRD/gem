@@ -21,6 +21,7 @@ module yyg_param
    use geomh
    use tdpack
    use ptopo
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -33,7 +34,7 @@ module yyg_param
             sendproc, recvproc, recv_len, send_len,  &
             recv_adr, send_adr, recv_i, recv_j    ,  &
             send_ixu, send_iyu, send_ixv, send_iyv
-      real*8,  dimension (:  ), allocatable :: &
+      real(kind=REAL64),  dimension (:  ), allocatable :: &
             send_xu, send_yu, send_xv, send_yv, send_s, &
             send_xxr, send_yyr
    end type YYG_comm_param
@@ -50,7 +51,7 @@ module yyg_param
                                            YYG_urecvuv,YYG_vrecvuv
    real  ,  dimension(:,:), allocatable :: YYG_uvsend, YYG_uvrecv
 
-   real*8,  dimension(:  ), allocatable :: YYG_xg_8 , YYG_yg_8, &
+   real(kind=REAL64),  dimension(:  ), allocatable :: YYG_xg_8 , YYG_yg_8, &
                                            YYG_xgu_8, YYG_ygv_8
 
 contains
@@ -58,15 +59,16 @@ contains
    subroutine yyg_indices ( F_x1,F_y1,F_x2,F_y2, F_xp,F_yp, F_s    ,&
                             F_posx,F_posy, F_pux,F_puy, F_pvx,F_pvy,&
                             F_i0,F_j0, NIU, NJU, NIV, NJV )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_i0,F_j0,NIU, NJU, NIV, NJV
       integer, intent(out) :: F_x1,F_y1,F_x2,F_y2
-      real*8 , intent(in) :: F_posx(*), F_posy(*) ! target positions
-      real*8 , intent(in) :: F_pux (*), F_puy (*) ! u source positions
-      real*8 , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
-      real*8 , intent(out) :: F_xp,F_yp, F_s(4)
+      real(kind=REAL64) , intent(in) :: F_posx(*), F_posy(*) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux (*), F_puy (*) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
+      real(kind=REAL64) , intent(out) :: F_xp,F_yp, F_s(4)
 !
 !----------------------------------------------------------------------
 !
@@ -98,6 +100,7 @@ contains
    end subroutine yyg_indices
 
    subroutine yyg_count ( F_recv,F_send, F_i0,F_j0, F_x1,F_y1,F_x2,F_y2 )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -142,6 +145,7 @@ contains
    end subroutine yyg_count
 
    subroutine yyg_allocate ( F_comm, recv_len,send_len )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -240,14 +244,15 @@ contains
    subroutine yyg_setcomm ( F_comm, F_i0,F_j0, F_recv,F_send,&
                             F_x1,F_y1,F_x2,F_y2, F_xp,F_yp  ,&
                             F_s, F_pux,F_puy, F_pvx,F_pvy )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in)    :: F_i0,F_j0,F_x1,F_y1,F_x2,F_y2
       integer, intent(inout) :: F_recv(*), F_send(*)
-      real*8 , intent(in) :: F_pux (*), F_puy (*) ! u source positions
-      real*8 , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
-      real*8 , intent(in) :: F_xp,F_yp, F_s(2,2)
+      real(kind=REAL64) , intent(in) :: F_pux (*), F_puy (*) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
+      real(kind=REAL64) , intent(in) :: F_xp,F_yp, F_s(2,2)
       type(YYG_comm_param), intent(inout) :: F_comm
 
       integer kk,ki,iu,ju,iv,jv,next,nexts
@@ -313,22 +318,23 @@ contains
                                 F_pux, F_puy, F_pvx, F_pvy, &
                                 NI, NJ, F_halox, F_haloy  , &
                                 NIU, NJU, NIV, NJV, F_inttype_S )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       character(len=*), optional, intent(in) :: F_inttype_S
       integer, intent(in) :: NI, NJ, NIU, NJU, NIV, NJV, &
                              F_halox, F_haloy
-      real*8 , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
-      real*8 , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
-      real*8 , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
+      real(kind=REAL64) , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
       type(YYG_comm_param) , intent(out) :: F_comm
 
       integer i,j
 !,ksend,krecv
       integer imx1,imx2,imy1,imy2
       integer, dimension (:), allocatable :: recv_len,send_len
-      real*8  s(2,2),x_a,y_a
+      real(kind=REAL64)  s(2,2),x_a,y_a
 !
 !     ---------------------------------------------------------------
 !
@@ -451,24 +457,23 @@ contains
       subroutine yyg_initblen ( F_comm, F_posx, F_posy    , &
                                 F_pux, F_puy, F_pvx, F_pvy, &
                                 NI, NJ, NIU, NJU, NIV, NJV )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: NI, NJ, NIU, NJU, NIV, NJV
-      real*8 , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
-      real*8 , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
-      real*8 , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
+      real(kind=REAL64) , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
       type(YYG_comm_param) , intent(out) :: F_comm
 
 !author
 !     Abdessamad Qaddouri/V.Lee - October 2009
-!  PLEASE consult Abdessamad or Vivian before modifying this routine.
-!revision
-!  v4.8  V.Lee - Correction for limiting range in point found on other grid
+
       integer i,j
       integer imx1,imx2,imy1,imy2
       integer, dimension (:), allocatable :: recv_len,send_len
-      real*8  s(2,2),x_a,y_a
+      real(kind=REAL64)  s(2,2),x_a,y_a
 !
 !     ---------------------------------------------------------------
 !
@@ -553,6 +558,7 @@ contains
       subroutine yyg_SendRecv_s ( F_src, F_comm, Minx,Maxx,Miny,Maxy, &
                                   NK, F_interpo_S, mono_L)
       use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -661,6 +667,7 @@ contains
       subroutine yyg_SendRecv_v ( F_u, F_v, F_commU, F_commV, &
                                   Minx,Maxx,Miny,Maxy,NK )
       use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -772,11 +779,12 @@ contains
 
       subroutine yyg_extend_grid ()
       use gem_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer i,j
-      real*8, parameter :: TWO_8 = 2.0d0
+      real(kind=REAL64), parameter :: TWO_8 = 2.0d0
 !
 !-------------------------------------------------------------------
 !
@@ -818,6 +826,7 @@ contains
 
    integer function yyg_proc (F_proc)
 
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer, intent(in) :: F_proc
 !

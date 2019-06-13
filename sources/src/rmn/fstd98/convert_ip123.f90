@@ -196,7 +196,7 @@ function is_level(kind) result(status)  ! is this kind a level ?
   logical :: status
   integer, intent(IN) :: kind
   status = .false.
-  if(kind < 31 .or. kind < 0) status = islevel(kind)==1
+  if(kind <= Max_Kind .and. kind >= 0) status = islevel(kind)==1
 end function is_level
 !===============================================================================================
 function ascending(kind) result(status) ! is this kind "ascending" (larger value higher in atmosphere) ?
@@ -204,7 +204,7 @@ function ascending(kind) result(status) ! is this kind "ascending" (larger value
   logical :: status
   integer, intent(IN) :: kind
   status = .false.
-  if(kind < 31 .or. kind < 0) status = order(kind)==1
+  if(kind <= Max_Kind .and. kind >= 0) status = order(kind)==1
 end function ascending
 !===============================================================================================
 function descending(kind) result(status) ! is this kind "descending" (larger value lower in atmosphere) ?
@@ -212,7 +212,7 @@ function descending(kind) result(status) ! is this kind "descending" (larger val
   logical :: status
   integer, intent(IN) :: kind
   status = .false.
-  if(kind < 31 .or. kind < 0) status = order(kind)==-1
+  if(kind <= Max_Kind .and. kind >= 0) status = order(kind)==-1
 end function descending
 !===============================================================================================
 function is_invalid_kind(kind) result(status) ! is this kind invalid ?

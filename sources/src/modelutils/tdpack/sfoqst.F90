@@ -18,7 +18,7 @@
       Function sfoqst(tt,pr)
       use tdpack, only: foqst
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfoqst, tt, pr
 !
 !Author

@@ -17,7 +17,7 @@
 subroutine rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,ribkg,n,nk)
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    ! Input arguments
    integer, intent(in) :: n,nk                      !slab dimensions

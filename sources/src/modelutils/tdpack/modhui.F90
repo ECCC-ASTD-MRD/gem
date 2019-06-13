@@ -19,7 +19,7 @@
 SUBROUTINE modhui3(HU,TX,PS,SWPH,NI,NK,N)
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    INTEGER NI, NK, N
    REAL HU(NI,NK), TX(NI,NK)
    REAL PS(NI,*)
@@ -35,7 +35,7 @@ end SUBROUTINE modhui3
 SUBROUTINE modhui4(HU,TX,SWPH,NI,NK,N)
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    INTEGER :: NI, NK, N
    REAL :: HU(NI,NK), TX(NI,NK)

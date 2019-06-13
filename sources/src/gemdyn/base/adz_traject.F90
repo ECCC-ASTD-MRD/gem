@@ -22,6 +22,7 @@
       use ver
       use adz_options
       use adz_mem
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -32,8 +33,8 @@
       include "tricublin_f90.inc"
       integer :: iter,i,j,k,kk1,nnk,nb
       integer,dimension(l_ni) :: kk
-      real*8, dimension(l_ni) :: xm,ym,zm
-      real*8 pos
+      real(kind=REAL64), dimension(l_ni) :: xm,ym,zm
+      real(kind=REAL64) pos
 !
 !     ---------------------------------------------------------------
 !
@@ -66,6 +67,7 @@
                   zm(i) = min(max(pos,Ver_zmin_8),Ver_zmax_8)
 
                   kk1 = (zm(i) - ver_z_8%m(0)  ) * adz_ovdzm_8 + 1.d0
+                  kk1 = min(max(1,kk1),ubound(adz_search_m,1))
                   kk1 = adz_search_m(kk1)
                   if ( sig * zm(i) > sig* ver_z_8%m(min(kk1+1,l_nk+1)) ) kk1= kk1 + 1
                   if ( sig * zm(i) < sig* ver_z_8%m(kk1              ) ) kk1= kk1 - 1

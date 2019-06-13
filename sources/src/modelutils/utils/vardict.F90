@@ -15,6 +15,9 @@
 
 !/@*
 module vardict_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_isfile, clib_isreadok
+   use wb_itf_mod
    use str_mod
    implicit none
    !@author Stephane Chamberland, 2012-05
@@ -22,10 +25,8 @@ module vardict_mod
    private
    public :: vardict_add_string,vardict_add,vardict_get,vardict_fromfile,vardict_getlist
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
 
 
@@ -97,19 +98,22 @@ contains
          extra_S(nextra) = trim(kv_S(KEY,n))//'='//trim(kv_S(VAL,n))
       enddo
       nextra = max(1,nextra)
-      F_istat = vardict_add(kv_S(VAL,IDX_NAME),kv_S(VAL,IDX_PKG),kv_S(VAL,IDX_NAMEIN),kv_S(VAL,IDX_NAMEOUT),kv_S(VAL,IDX_UNITS),kv_S(VAL,IDX_DESC),extra_S(1:nextra),print_L)
+      F_istat = vardict_add(kv_S(VAL,IDX_NAME),kv_S(VAL,IDX_PKG),kv_S(VAL,IDX_NAMEIN), &
+           kv_S(VAL,IDX_NAMEOUT),kv_S(VAL,IDX_UNITS),kv_S(VAL,IDX_DESC),extra_S(1:nextra),print_L)
       !---------------------------------------------------------------
       return
    end function vardict_add_string
 
 
    !/@*
-   function vardict_add(F_varname_S,F_pkg_S,F_namein_S,F_nameout_S,F_units_S,F_desc_S,F_extra_S,F_print_L) result(F_istat)
+   function vardict_add(F_varname_S,F_pkg_S,F_namein_S,F_nameout_S, &
+        F_units_S,F_desc_S,F_extra_S,F_print_L) result(F_istat)
       implicit none
       !@objective Register a new var with meta in the system
       !@arguments
       character(len=*),intent(in) :: F_varname_S
-      character(len=*),intent(in),optional :: F_pkg_S,F_namein_S,F_nameout_S,F_units_S,F_desc_S,F_extra_S(:)
+      character(len=*),intent(in),optional :: F_pkg_S,F_namein_S,F_nameout_S, &
+           F_units_S,F_desc_S,F_extra_S(:)
       logical,intent(in),optional :: F_print_L
       !@return
       integer :: F_istat
@@ -181,7 +185,8 @@ contains
 
 
    !/@*
-   function vardict_get(F_varname_S,F_pkg_S,F_namein_S,F_nameout_S,F_units_S,F_desc_S,F_extra_S,F_idx0) result(F_istat)
+   function vardict_get(F_varname_S,F_pkg_S,F_namein_S,F_nameout_S,F_units_S, &
+        F_desc_S,F_extra_S,F_idx0) result(F_istat)
       implicit none
       !@objective Return Metadata for matching elements (wildcard = ' ')
       !@arguments
@@ -356,10 +361,10 @@ contains
 !!$         DOVAR: do n=1,nvar
 !!$            call priv_name(name_S,meta0_S(IDX_PKG),varlist_S(n),PKGFIRST))
 !!$            istat = wb_get(name_S,meta_S,nval)
-!!$            
+!!$
 !!$         enddo DOVAR
 !!$      else
-!!$         
+!!$
 !!$      endif
 !!$      !---------------------------------------------------------------
 !!$      return
@@ -382,14 +387,16 @@ contains
       istat = clib_isfile(trim(F_filename_S))
       istat = min(clib_isreadok(trim(F_filename_S)),istat)
       if (.not.RMN_IS_OK(istat)) then
-         call msg(MSG_WARNING,'(vardict) read dict fromFile, File not found or not readable: '//trim(F_filename_S))
+         call msg(MSG_WARNING,'(vardict) read dict fromFile, File not found or not readable: ' &
+              //trim(F_filename_S))
          return
       endif
-      
+ 
       fileid = 0
       istat = fnom(fileid,F_filename_S,'SEQ/FMT+R/O+OLD',0)
       if (.not.RMN_IS_OK(istat) .or. fileid <= 0) then
-         call msg(MSG_WARNING,'(vardict) read dict fromFile, Problem opening file: '//trim(F_filename_S))
+         call msg(MSG_WARNING,'(vardict) read dict fromFile, Problem opening file: '// &
+              trim(F_filename_S))
          return
       endif
 
@@ -428,14 +435,16 @@ contains
       istat = clib_isfile(trim(F_filename_S))
       istat = min(clib_isreadok(trim(F_filename_S)),istat)
       if (.not.RMN_IS_OK(istat)) then
-         call msg(MSG_WARNING,'(vardict) read dict fromFile, File not found or not readable: '//trim(F_filename_S))
+         call msg(MSG_WARNING,'(vardict) read dict fromFile, File not found or not readable: ' &
+              //trim(F_filename_S))
          return
       endif
-      
+ 
       fileid = 0
       istat = fnom(fileid,F_filename_S,'SEQ/FMT+R/O+OLD',0)
       if (.not.RMN_IS_OK(istat) .or. fileid <= 0) then
-         call msg(MSG_WARNING,'(vardict) read dict fromFile, Problem opening file: '//trim(F_filename_S))
+         call msg(MSG_WARNING,'(vardict) read dict fromFile, Problem opening file: '// &
+              trim(F_filename_S))
          return
       endif
 
@@ -479,7 +488,7 @@ contains
       if (part2_S == ' ') then
          if (part1_S == ' ') then
             write(F_name_S,WBFMT0) trim(prefix_S)
-         else 
+         else
             write(F_name_S,WBFMT1) trim(prefix_S),trim(part1_S)
          endif
       else

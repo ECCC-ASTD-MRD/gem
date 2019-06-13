@@ -25,12 +25,13 @@
       use opr
       use prec
       use trp
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer k,k1,k0
-      real*8  wk(G_nk)
-      real*8 yg_8(G_nj)
+      real(kind=REAL64)  wk(G_nk)
+      real(kind=REAL64) yg_8(G_nj)
 !     __________________________________________________________________
 !
       do k =1, G_nk-Lam_gbpil_T

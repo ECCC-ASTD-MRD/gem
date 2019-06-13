@@ -36,7 +36,7 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    use tendency, only: tendency5
    use turbulence, only: turbulence2
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
    !@arguments
    !          - input -
@@ -106,12 +106,12 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
       call apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
       if (phy_error_L) return
 
-      call surface1(seloc, trnch, kount, delt, ni, nk)
+      call surface1(trnch, kount, delt, ni, nk)
       if (phy_error_L) return
 
    else
 
-      call surface1(seloc, trnch, kount, delt, ni, nk)
+      call surface1(trnch, kount, delt, ni, nk)
       if (phy_error_L) return
 
       call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
@@ -144,16 +144,16 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, trnch, kount, step_driver, ni, nk)
+   call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
    call chm_exe(e, d, f, v, esiz, dsiz, fsiz, vsiz, int(delt), trnch, kount, ni, nk)
    if (phy_error_L) return
 
-   call diagnosurf5(ni, nk, trnch, kount)
+   call diagnosurf5(ni, trnch)
    if (phy_error_L) return
 
-   call extdiag3(d, f, v, dsiz,fsiz, vsiz, kount, trnch, ni, nk)
+   call extdiag3(d, f, v, dsiz,fsiz, vsiz, trnch, ni, nk)
 
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [END]')
    call msg_verbosity(iverb)

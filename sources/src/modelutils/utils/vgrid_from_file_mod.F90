@@ -15,7 +15,9 @@
 
 !/@*
 module vgrid_from_file_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
    use iso_c_binding
+   use rpn_comm_itf_mod
    use VGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
@@ -33,10 +35,9 @@ module vgrid_from_file_mod
    ! Public parameters
    public :: VGRID_FROM_FILE_NORFLD
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
 
    integer, parameter :: VGRID_FROM_FILE_NORFLD = RMN_ERR - 1
    integer, parameter :: MAXLEV=1024, NLEVTYP=2, IKIND_SURF=3
@@ -78,7 +79,7 @@ contains
       !@arguments
       integer,intent(in) :: F_unit                !Input file unit (opened)
       character(len=*),intent(in) :: F_varname_S  !Field name in FST file
-      integer(IDOUBLE),intent(in) :: F_jdatev     !Valid date (jsec)
+      integer(INT64),intent(in) :: F_jdatev     !Valid date (jsec)
       type(vgrid_descriptor),intent(out) :: F_vgrid  !Vgrid of record
       integer,pointer              :: F_iplist(:)  !List of IP1s for the field
       character(len=*),intent(out) :: F_levtype_S  !Short level name
@@ -277,7 +278,7 @@ contains
       !@arguments
       integer,intent(in) :: F_unit                !Input file unit (opened)
       character(len=*),intent(in) :: F_varname_S  !Field name in FST file
-      integer(IDOUBLE),intent(in) :: F_jdatev     !Valid date (jsec)
+      integer(INT64),intent(in) :: F_jdatev     !Valid date (jsec)
       type(vgrid_descriptor),intent(out) :: F_vgrid  !Vgrid of record
       integer,pointer              :: F_iplist(:)  !List of IP1s for the field
       character(len=*),intent(out) :: F_levtype_S  !Short level name
@@ -421,7 +422,7 @@ contains
       !@author Stephane Chamberland, 2013-11
       !@arguments
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
-      integer(IDOUBLE),intent(in) :: F_jdatev        !Valid date (jsec)
+      integer(INT64),intent(in) :: F_jdatev        !Valid date (jsec)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
       logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return
@@ -482,7 +483,7 @@ contains
       !@author Stephane Chamberland, 2013-11
       !@arguments
       integer,intent(in) :: F_unit                   !Input file unit (already opened)
-      integer(IDOUBLE),intent(in) :: F_jdatev        !Valid date (jsec)
+      integer(INT64),intent(in) :: F_jdatev        !Valid date (jsec)
       type(vgrid_descriptor),intent(in) :: F_vgrid   !Vertical grid descriptor of record
       logical,intent(in),optional :: F_rfls_L        !it .T. get Key for Sfc LS Ref Field
       !@return

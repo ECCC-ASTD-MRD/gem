@@ -21,6 +21,7 @@
       use glb_ld
       use cstv
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       !Arguments
@@ -32,9 +33,9 @@
 
       !----------------------------------------------------------
       integer i,j,k,err
-      real*8 avg_8(F_nk+1),g_avg_8(F_nk+1)
+      real(kind=REAL64) avg_8(F_nk+1),g_avg_8(F_nk+1)
       character(len= 9) communicate_S
-      real*8, parameter :: ZERO_8 = 0.0d0
+      real(kind=REAL64), parameter :: ZERO_8 = 0.0d0
       !----------------------------------------------------------
 
       avg_8 = ZERO_8

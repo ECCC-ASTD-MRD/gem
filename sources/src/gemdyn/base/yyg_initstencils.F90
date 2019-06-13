@@ -15,37 +15,26 @@
 !**s/r yyg_initstencils - Computes Yin-Yang BC stencils for the elliptic solver
 !
 
-!
-      subroutine yyg_initstencils
-!
+
+      subroutine yyg_initstencils()
       use gem_options
       use glb_ld
       use glb_pil
       use sol
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
 !author
 !     A. Qaddouri - initial MPI Yin-Yang version
 !
-!revision
-! v4_40 - Qaddouri A.       - initial MPI version
-!
 !object
 !     see ID section above
 !
-!arguments
-!     None
-!
-
-!
-
-!
-!
-      real*8 one, half
+      real(kind=REAL64) one, half
       parameter( one  = 1.d0, half = .5d0 )
-      real*8 di_8,xagauche_8,xadroite_8,yasud_8,yanord_8
+      real(kind=REAL64) di_8,xagauche_8,xadroite_8,yasud_8,yanord_8
       integer Gni,Gnj,i,j,ii,jj
 
 !
@@ -63,20 +52,16 @@
       xagauche_8=one/(G_xg_8(Lam_pil_w+1) - G_xg_8(Lam_pil_w))
       xadroite_8=one/(G_xg_8(G_ni-Lam_pil_w+1) - G_xg_8(G_ni-Lam_pil_w))
 
-
-!
       do j=1,Gnj
          jj=j+Lam_pil_s
-         di_8= sin((G_yg_8(jj+1)+G_yg_8(jj  ))* HALF)- &
-             sin((G_yg_8(jj  )+G_yg_8(jj-1))* HALF)
-         di_8= Opr_opsyp0_8(G_nj+jj) / cos( G_yg_8 (jj) )**2
+         di_8 = sin((G_yg_8(jj+1)+G_yg_8(jj  ))* HALF)- &
+                sin((G_yg_8(jj  )+G_yg_8(jj-1))* HALF)
+         di_8 = Opr_opsyp0_8(G_nj+jj) / cos( G_yg_8 (jj) )**2
 
-!        di_8= di_8 / cos( G_yg_8 (jj) )**2
          Sol_stencil2_8(j)=di_8*xagauche_8
          Sol_stencil3_8(j)=di_8*xadroite_8
-!        print*,'Sol_stencil2_8',Sol_stencil2_8(j),'Sol_stencil3_8(j)',Sol_stencil3_8(j)
       end do
-!
+
       di_8= (sin (G_yg_8(Lam_pil_s+1))-sin(G_yg_8(Lam_pil_s)))/ &
             (cos ((G_yg_8(Lam_pil_s+1)+G_yg_8(Lam_pil_s))*HALF)**2)
       yasud_8 =one/di_8
@@ -84,15 +69,12 @@
       di_8=(sin (G_yg_8(G_nj-Lam_pil_n+1))-sin(G_yg_8(G_nj-Lam_pil_n)))/ &
            (cos((G_yg_8(G_nj-Lam_pil_n+1)+G_yg_8(G_nj-Lam_pil_n))*HALF)**2)
       yanord_8=one/di_8
-!
+
       do i=1,Gni
          ii=i+lam_pil_w
-!        di_8=(G_xg_8(ii+1)-G_xg_8(ii-1))*HALF
          di_8=Opr_opsxp0_8(G_ni+ii)
          Sol_stencil4_8(i)=yasud_8*di_8
          Sol_stencil5_8(i)=yanord_8*di_8
-
-!        print*,'Sol_stencil4_8',Sol_stencil4_8(i),'Sol_stencil5_8(i)',Sol_stencil5_8(i)
 
       end do
 

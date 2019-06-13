@@ -15,12 +15,14 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 function phyfillbus(F_kount) result(F_istat)
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_tolower, clib_toupper
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
    use phyfoldmeta_mod, only: phyfold
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer, intent(in) :: F_kount            !physics timestep number
    integer :: F_istat                        !Function result
@@ -30,8 +32,7 @@ function phyfillbus(F_kount) result(F_istat)
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <gmm.hf>
-#include <clib_interface_mu.hf>
+#include <mu_gmm.hf>
 
    logical, parameter :: NOSHORTMATCH_L = .false.
    integer, parameter :: NVARMAX = 256

@@ -119,13 +119,17 @@ int c_gdgetmask(int gdid, int *mask)
 
 int c_ezsint_m(float *zout, float *zin)
    {
-   }
+       fprintf(stderr, "<ezsint_m> This operation is currently not implemented.\n");
+    return 0;
+   } 
 
 
 /* ------------------------------------------------------------------------- */
 
 int c_ezuvint_m(float *uuout, float *vvout, float *uuin, float *vvin)
    {
+       fprintf(stderr, "<ezuvint_m> This operation is currently not implemented.\n");
+    return 0;
    }
 
 
@@ -156,7 +160,7 @@ int c_ezsint_mdm(float *zout, int *mask_out, float *zin, int *mask_in)
    c_ezsint(zout, zin);
    c_ezsint_mask(mask_out, mask_in);
    f77name(lorenzo_mask_fill)(zout, mask_out, &ni_out, &nj_out, &methode);
-
+   return 0;
 
    }
 
@@ -189,6 +193,7 @@ int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out, float *uuin, float 
    c_ezuvint(uuout, vvout, uuin, vvin);
    f77name(lorenzo_mask_fill)(uuout, mask_out, &ni_out, &nj_out, &methode);
    f77name(lorenzo_mask_fill)(vvout, mask_out, &ni_out, &nj_out, &methode);
+   return 0;
    }
 
 
@@ -239,6 +244,7 @@ int c_ezsint_mask(int *mask_out, int *mask_in)
       y = (float *) Grille[gdrow_out][gdcol_out].gset[idx_gdin].y;
       f77name(qqq_ezsint_mask)(mask_out, x, y, &ni_gdout, &nj_gdout, mask_in, &ni_gdin, &nj_gdin);
       }
+   return 0;
    }
 
 
@@ -246,7 +252,7 @@ int c_ezsint_mask(int *mask_out, int *mask_in)
 
 int f77name(ezget_mask_zones)(int *mask_out, int *mask_in)
    {
-   c_ezget_mask_zones(mask_out, mask_in);
+    return c_ezget_mask_zones(mask_out, mask_in);
    }
 
 
@@ -289,7 +295,7 @@ int c_ezget_mask_zones(int *mask_out, int *mask_in)
     y = (float *) Grille[gdrow_out][gdcol_out].gset[idx_gdin].y;
 
    f77name(qqq_ezget_mask_zones)(mask_out, x, y, &ni_gdout, &nj_gdout, mask_in, &ni_gdin, &nj_gdin);
-
+    return 0;
    }
 
 

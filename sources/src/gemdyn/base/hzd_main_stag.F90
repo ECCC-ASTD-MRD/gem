@@ -27,6 +27,7 @@
       use tr3d
       use gmm_itf_mod
       use gem_timing
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,7 @@
       logical xch_UV,xch_TT,xch_TR,xch_WZD
       integer i,j,k,istat,n
       integer, save :: depth
-      real*8 pis2,fract
+      real(kind=REAL64) pis2,fract
       real, dimension(:)    , pointer, save :: weight=> null()
       real, dimension(:,:,:), pointer       :: tr
 !

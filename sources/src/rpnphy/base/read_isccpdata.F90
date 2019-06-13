@@ -17,7 +17,7 @@
 !*@/
 SUBROUTINE read_isccpdata()
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 !Author
 !          B Dugas     (Apr 2006)
@@ -34,7 +34,7 @@ SUBROUTINE read_isccpdata()
 
       logical ex
       character modeln*10
-      character*256 execdir,fe,fn,modelp
+      character(len=256) execdir,fe,fn,modelp
       integer fio, IER, io
 
 !MODULES

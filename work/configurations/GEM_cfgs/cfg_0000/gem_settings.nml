@@ -70,6 +70,7 @@
   init_dfpl_s     = '6h'
   iau_stats_l      = .true.
 /
+  iau_input_type_s = 'DIST'
 
 
 &out
@@ -149,6 +150,9 @@
 
   pcptype       = 'bourge3d'
 
+  input_type = 'BLOC'
+/
+  input_type = 'DIST'
   phystat_dble_l = .true.
   phystat_2d_l = .false.
   phystat_freq_s = '6h'
@@ -159,8 +163,6 @@
   debug_mem_l     = .false
   debug_trace_l   = .false
 
-  input_type = 'DIST'
-/
 
 
 &series_off

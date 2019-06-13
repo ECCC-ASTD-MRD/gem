@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 module inp_mod
    use vGrid_Descriptors
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -26,7 +27,7 @@ module inp_mod
            Inp_version, Inp_handle , Inp_cmcdate
    integer, dimension(:), pointer :: Inp_list_unf => null()
    type(vgrid_descriptor) :: Inp_vgd_src
-   real*8 Inp_pref_a_8
+   real(kind=REAL64) Inp_pref_a_8
 
    ! Remove the following 2 lines by 2021
    integer Inp_ut1_is_urt1

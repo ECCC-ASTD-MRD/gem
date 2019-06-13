@@ -21,18 +21,19 @@
       use gem_options
       use HORgrid_options
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: Minx,Maxx,Miny,Maxy
-      real*8, intent(in) :: F_x_8 (Minx:Maxx), & ! longitudes in radians PHI grid
+      real(kind=REAL64), intent(in) :: F_x_8 (Minx:Maxx), & ! longitudes in radians PHI grid
                             F_y_8 (Miny:Maxy), & ! latitudes in radians PHI grid
                             F_xu_8(Minx:Maxx), & ! longitudes in radians U grid
                             F_yv_8(Miny:Maxy), & ! latitudes in radians V grid
                             F_rot_8(3,3)         ! rotation matrix of the grid
 
       integer :: i, j
-      real*8  :: s0, ang, c0, sa, ca
+      real(kind=REAL64)  :: s0, ang, c0, sa, ca
       !
       !-------------------------------------------------------------------
       !

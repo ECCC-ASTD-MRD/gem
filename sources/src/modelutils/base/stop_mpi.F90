@@ -14,12 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 !/@*
 subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
-use iso_c_binding
+   use iso_c_binding
+   use rpn_comm_itf_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include "stop_mpi.h"
 #include "msg.h"
-   include "rpn_comm.inc"
+
    !@objective 
    !@arguments
    integer :: F_EndType !STOP_OK, STOP_ERROR

@@ -1,11 +1,15 @@
-      module data_3df
+module data_3df
+      use, intrinsic :: iso_fortran_env
+      implicit none
+
+
       logical, save :: initialized = .false.
       logical, save :: debug = .false.   ! activates lots of debug prints
       integer, save :: v = 2             ! verbosity level, 1-5
       character (len=4), save :: nomvar  ! current variable name
       integer, save :: ni1g,nj1g,nk1,nka_m,nka_t,presstype  ! global dimensions, number of levels , INPUT grid
       real, save :: xlon1,xlat1,xlon2,xlat2  ! area of interest for OUTPUT grid
-      real*8, save, dimension(:), pointer :: xp1,yp1,xu1,yv1, &  ! horizontal coordinate vectors (INPUT grid)
+      real(kind=REAL64), save, dimension(:), pointer :: xp1,yp1,xu1,yv1, &  ! horizontal coordinate vectors (INPUT grid)
                         ana_am_8,ana_bm_8,ana_at_8,ana_bt_8      ! vertical coordinate vectors (INPUT grid)
       character (len=8), save ::  dynophy  ! dynamics/physics marker
       integer, save :: nvar, ntra          ! number of variables and tracers
@@ -13,9 +17,9 @@
       integer, save :: ni0g0, nj0g0, nilg0, njlg0  ! limits in INPUT grid without halo
       integer, save :: ni0g1, nj0g1, nilg1, njlg1  ! limits in INPUT grid with halo (usually wider area that above)
 
-      real*8, save :: xlim_1,xlim_n,ylim_1,ylim_n  ! window of interest in lat' lon' space
-      real*8, save :: delta_x, delta_y, epsi_x, epsi_y
-      real*8, dimension(:), save, pointer :: grid_x, grid_y       ! OUTPUT grid X and Y axis in radians
+      real(kind=REAL64), save :: xlim_1,xlim_n,ylim_1,ylim_n  ! window of interest in lat' lon' space
+      real(kind=REAL64), save :: delta_x, delta_y, epsi_x, epsi_y
+      real(kind=REAL64), dimension(:), save, pointer :: grid_x, grid_y       ! OUTPUT grid X and Y axis in radians
       integer, dimension(:), save, pointer :: tile_x, tile_y      ! start of tiles in OUTPUT grid (OUTPUT index space)
       integer, dimension(:), save, pointer :: iobloc_x, iobloc_y  ! start of OUTPUT grid IO blocks  (OUTPUT index space)
       integer, dimension(:), save, pointer :: start_bloc_x, end_bloc_x  ! start and end of OUTPUT grid IO blocks
@@ -23,10 +27,11 @@
       integer, save :: bloci, blocj  !  number of OUTPUT grid IO blocks along x and y
       integer, save :: worldrank,worldsize
 
-      contains
+contains
+
       logical function it_is_my_job(i,j,blkx,blky)
       implicit none
-      integer, intent(IN) :: i,j,blkx,blky
+      integer, intent(in) :: i,j,blkx,blky
       integer :: globalindex, nperproc, owner
 
       globalindex = (j-1)*blkx + (i-1)
@@ -34,12 +39,20 @@
       owner = 1 + globalindex/nperproc
       it_is_my_job = (owner == worldrank)
       end function it_is_my_job
-      end module data_3df
+
+end module data_3df
+
+
+
+
+
 !
 !     read a set of 3df files and redo the horizontal split with different horizontal limits
 !
       subroutine split3df
       use data_3df
+      use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
       include 'mpif.h'
 
@@ -49,21 +62,19 @@
 
       integer :: g_ni,g_nj,ptopo_npex,ptopo_npey,ptopo_nblocx,ptopo_nblocy,ptopo_sblocx,ptopo_sblocy
       character (len=8), dimension(32) :: ignore
+      logical split, dump, radians
       NAMELIST /split3df_out/ g_ni,g_nj,ptopo_npex,ptopo_npey,ptopo_nblocx,ptopo_nblocy, &
                               xlim_1,xlim_n,ylim_1,ylim_n, ignore, radians
-      logical split, dump, radians
       integer :: ierror
-      real*8 :: tempx, tempy
-      real*8 , parameter :: ONE = 1.0
-      real*8 , parameter :: ZERO = 0.0
-      real*8  :: pi
+      real(kind=REAL64) :: tempx, tempy
+      real(kind=REAL64) , parameter :: ONE = 1.0
+      real(kind=REAL64) , parameter :: ZERO = 0.0
       integer :: i, j,  tilei, tilej, tempi, tempj
 
       call MPI_init(ierror)
       call MPI_comm_size(MPI_COMM_WORLD,worldsize,ierror)
       call MPI_comm_rank(MPI_COMM_WORLD,worldrank,ierror)
 
-      pi = 2.0*asin(ONE)
 !
 !     default values for namelists to be read
 !
@@ -74,9 +85,9 @@
       ptopo_nblocx = 1   ! one file for entire domain
       ptopo_nblocy = 1
       xlim_1 = 0.0       ! lon = 0 -> 360
-      xlim_n = 2.0*pi
-      ylim_1 = -.5*pi    ! lat = -90 -> 90
-      ylim_n = .5*pi
+      xlim_n = 2.0*pi_8
+      ylim_1 = -.5*pi_8    ! lat = -90 -> 90
+      ylim_n = .5*pi_8
       left = 0           ! no halos
       right = 0
       below = 0
@@ -90,10 +101,10 @@
       close(5)
 
       if(.not. radians) then     ! convert limits to radians if supplied in degrees
-        xlim_1=xlim_1*(pi/180.0)
-        xlim_n=xlim_n*(pi/180.0)
-        ylim_1=ylim_1*(pi/180.0)
-        ylim_n=ylim_n*(pi/180.0)
+        xlim_1=xlim_1*(pi_8/180.0)
+        xlim_n=xlim_n*(pi_8/180.0)
+        ylim_1=ylim_1*(pi_8/180.0)
+        ylim_n=ylim_n*(pi_8/180.0)
       endif
       split = out/='' .and. worldsize>1   ! if only one process, no split will be done
       dump = worldsize==1
@@ -276,27 +287,29 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
 999   call MPI_finalize(ierror)   ! THE END !
       stop
       end subroutine split3df
-!
+!
 !==============================================================================
 !==============================================================================
-      logical function ne8(a,b,n) ! true if any element of a is not equal
+      logical function ne8(a, b, n) ! true if any element of a is not equal
+      use, intrinsic :: iso_fortran_env
       implicit none               ! to the corresponding element of b
-      real *8, dimension(n) :: a,b
       integer :: n
+      real(kind=REAL64), dimension(n) :: a, b
 
       integer i
 
       ne8 = .true.
       do i = 1 , n
-        if(a(i) /= b(i)) return  ! a difference has been found, return true
-      enddo
+        if (a(i) /= b(i)) return  ! a difference has been found, return true
+      end do
       ne8 = .false.              ! a and b are identical
       end function ne8
-!
+!
 !==============================================================================
 !==============================================================================
       subroutine read_3df(fn,right,left,below,above,split,dump)  ! called twice, first call is initialization
       use data_3df                                               ! second call is read
+      use, intrinsic :: iso_fortran_env
       implicit none
       include 'mpif.h'
       integer, intent(IN) :: right, left, below, above
@@ -311,12 +324,12 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
       integer, dimension(MAXINFILES) :: inf, ni1s, nj1s, i0s, j0s
       integer :: infile
       integer :: i0, j0, tni, tnj
-      real *8 :: x0, xn, y0, yn
+      real(kind=REAL64) :: x0, xn, y0, yn
       integer :: i, k, totvar, nbits, tnbits, ierror
       integer ni1, nj1, nilg2, njlg2
       integer tni1,tnj1,tnk1,tnka_m,tnka_t,tpresstype
       real :: txlon1,txlat1,txlon2,txlat2
-      real*8, dimension(:), pointer :: txp1,typ1,txu1,tyv1, &
+      real(kind=REAL64), dimension(:), pointer :: txp1,typ1,txu1,tyv1, &
                         tana_am_8,tana_bm_8,tana_at_8,tana_bt_8
       character (len=8) ::  tdynophy
       integer :: tnvar, tntra
@@ -534,6 +547,7 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
 !==============================================================================
       subroutine split_3df(fn,blkx,blky,right,left,below,above,split)  ! write OUTPUT files
       use data_3df
+      use, intrinsic :: iso_fortran_env
       implicit none
       include 'mpif.h'
       integer, intent(IN) :: right, left, below, above

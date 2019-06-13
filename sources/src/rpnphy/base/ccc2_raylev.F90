@@ -18,7 +18,7 @@
       subroutine ccc2_raylev2 (taur, ig, dp, rmu3, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, il1, il2, ig
       real  taur(ilg,lay), dp(ilg,lay), rmu3(ilg)

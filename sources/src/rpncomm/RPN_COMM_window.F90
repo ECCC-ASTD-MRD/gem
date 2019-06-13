@@ -117,7 +117,7 @@ module RPN_COMM_windows
       win_tab(i)%typ = MPI_DATATYPE_NULL            ! and MPI null datatype
       win_tab(i)%win = MPI_WIN_NULL                 ! MPI null window
     enddo
-    call MPI_TYPE_EXTENT(MPI_INTEGER, integer_size, i) ! get size(extent) of MPI_INTEGER
+    call MPI_type_get_extent(MPI_INTEGER, integer_size, i) ! get size(extent) of MPI_INTEGER
   end subroutine init_win_tab
 
 !****if* RPN_COMM_windows/win_ptr
@@ -181,7 +181,7 @@ module RPN_COMM_windows
     call MPI_comm_group(comm,group,ierror)
     if(ierror .ne. MPI_SUCCESS) return     ! error getting group associated with communicator (bad communicator ?)
 
-    call MPI_TYPE_EXTENT(typ, extent, ierror)  ! determine size associated with MPI datatype
+    call MPI_type_get_extent(typ, extent, ierror)  ! determine size associated with MPI datatype
     if(ierror .ne. MPI_SUCCESS) return         !  invalid type ? other error ?
     if( mod(extent,integer_size) .ne. 0 ) return    ! extent of data type must be a multiple of integer size
 

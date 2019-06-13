@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,7 +15,8 @@
 
 !/@
 module fstmpi_write_mod
-use iso_c_binding
+   use iso_c_binding
+   use rpn_comm_itf_mod
    use fst_mod
    use ezgrid_mod
    use ptopo_utils
@@ -27,15 +28,13 @@ use iso_c_binding
    !@description
    ! Public functions
    public :: fstmpi_write
-   ! 
    ! Public constants
    public :: FST_NPAK_DEFAULT,FST_NPAK_FULL32
 !@/
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 
    interface fstmpi_write
       module procedure fstmpi_write_2d_r4
@@ -51,7 +50,9 @@ use iso_c_binding
 contains
 
    !/@
-   function fstmpi_write_2d_r4_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
+   function fstmpi_write_2d_r4_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1, &
+        F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S, &
+        F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -60,7 +61,8 @@ contains
       character(len=*),intent(in) :: F_nomvar_S,F_gridid_S
       integer,intent(in),optional :: F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3
       integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data
-      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij !# Crop the grid (collected data) to that sub domain and aggregate over dij points
+      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij
+      !# Crop the grid (collected data) to that sub domain and aggregate over dij points
       character(len=*),intent(in),optional :: F_etiket_S,F_typvar_S
       logical,intent(in),optional :: F_rewrite_L,F_writegrid_L
       !@author
@@ -77,7 +79,8 @@ contains
       call msg_toall(MSG_DEBUG,'(fstmpi) write_2d_r4_s [BGN]')
       nullify(data3d)
       if (associated(F_data)) data3d => dummy3d
-      F_istat = priv_init(data3d,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(data3d,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       ci0=-1 ; cj0=-1 ; cin=-1 ; cjn=-1 ; cdij=1
@@ -103,7 +106,9 @@ contains
       allocate(data3d(lijk(1):nijk(1),lijk(2):nijk(2),1))
       data3d(:,:,1) = F_data(:,:)
       ip1list(1) = F_ip1
-      F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid_S,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L,nijk(1),nijk(2),ci0,cj0,cin,cjn,cdij)
+      F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid_S,ip1list,dateo, &
+           deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L, &
+           nijk(1),nijk(2),ci0,cj0,cin,cjn,cdij)
       deallocate(data3d,stat=istat)
 
       call msg_toall(MSG_DEBUG,'(fstmpi) write_2d_r4_s [END]')
@@ -113,7 +118,9 @@ contains
 
 
    !/@
-   function fstmpi_write_2d_r4(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj) result(F_istat)
+   function fstmpi_write_2d_r4(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1,F_dateo, &
+        F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L, &
+        F_writegrid_L,F_lni,F_lnj) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -138,7 +145,8 @@ contains
       call msg_toall(MSG_DEBUG,'(fstmpi) write_2d_r4 [BGN]')
       nullify(data3d)
       if (associated(F_data)) data3d => dummy3d
-      F_istat = priv_init(data3d,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(data3d,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       if (present(F_dateo)) dateo = F_dateo
@@ -158,7 +166,8 @@ contains
       allocate(data3d(lijk(1):nijk(1),lijk(2):nijk(2),1))
       data3d(:,:,1) = F_data(:,:)
       ip1list(1) = F_ip1
-      F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L,nijk(1),nijk(2))
+      F_istat = fstmpi_write(F_fileid,F_nomvar_S,data3d,F_gridid,ip1list,dateo, &
+           deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L,nijk(1),nijk(2))
       deallocate(data3d,stat=istat)
 
       call msg_toall(MSG_DEBUG,'(fstmpi) write_2d_r4 [END]')
@@ -168,7 +177,10 @@ contains
 
 
    !/@
-   function fstmpi_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
+   function fstmpi_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S, &
+        F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S, &
+        F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0, &
+        F_cin,F_cjn,F_cdij) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -177,8 +189,9 @@ contains
       integer,intent(in) :: F_fileid,F_ip1list(:)
       character(len=*),intent(in) :: F_nomvar_S,F_gridid_S
       integer,intent(in),optional :: F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3
-      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data 
-      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij !# Crop the grid (collected data) to that sub domain and aggregate over dij points
+      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data
+      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij
+      !# Crop the grid (collected data) to that sub domain and aggregate over dij points
       character(len=*),intent(in),optional :: F_etiket_S,F_typvar_S
       logical,intent(in),optional :: F_rewrite_L,F_writegrid_L
       !@author
@@ -193,7 +206,8 @@ contains
       character(len=32) :: gridid_S
       ! ---------------------------------------------------------------------
       call msg_toall(MSG_DEBUG,'(fstmpi) write_3d_r4_ip1_s [BGN]')
-      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       ci0=-1 ; cj0=-1 ; cin=-1 ; cjn=-1 ; cdij=1
@@ -223,7 +237,8 @@ contains
          F_istat = RMN_ERR
          if (associated(data).and.len_trim(gridid_S)>0) then
             F_istat = RMN_OK
-            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid_S,F_ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid_S,F_ip1list,dateo, &
+                 deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
          endif
       endif
       call collect_error(F_istat) !#TODO: comment
@@ -236,7 +251,9 @@ contains
 
 
    !/@
-   function fstmpi_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj) result(F_istat)
+   function fstmpi_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1list, &
+        F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S, &
+        F_rewrite_L,F_writegrid_L,F_lni,F_lnj) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -258,7 +275,8 @@ contains
       character(len=RMN_VARTYPE_LEN) :: typvar_S
       ! ---------------------------------------------------------------------
       call msg_toall(MSG_DEBUG,'(fstmpi) write_3d_r4_ip1 a[BGN]')
-      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       if (present(F_dateo)) dateo = F_dateo
@@ -281,7 +299,8 @@ contains
       if (ptopo_isblocmaster_L) then
          F_istat = RMN_ERR
          if (associated(data).and.RMN_IS_OK(gridid)) then
-            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid,F_ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid,F_ip1list,dateo, &
+                 deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
          endif
       endif
       !call collect_error(F_istat)
@@ -294,7 +313,10 @@ contains
 
 
    !/@
-   function fstmpi_write_3d_r4_vgd_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
+   function fstmpi_write_3d_r4_vgd_s(F_fileid,F_nomvar_S,F_data,F_gridid_S, &
+        F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S, &
+        F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj,F_ci0,F_cj0, &
+        F_cin,F_cjn,F_cdij) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -302,8 +324,9 @@ contains
       integer,intent(in) :: F_fileid,F_vgridid
       character(len=*),intent(in) :: F_nomvar_S,F_gridid_S
       integer,intent(in),optional :: F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3
-      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data 
-      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij !# Crop the grid (collected data) to that sub domain and aggregate over dij points
+      integer,intent(in),optional :: F_lni,F_lnj   !# Subset dims of F_data
+      integer,intent(in),optional :: F_ci0,F_cj0,F_cin,F_cjn,F_cdij
+      !# Crop the grid (collected data) to that sub domain and aggregate over dij points
       character(len=*),intent(in),optional :: F_etiket_S,F_typvar_S
       logical,intent(in),optional :: F_rewrite_L,F_writegrid_L
       !@author
@@ -318,7 +341,8 @@ contains
       character(len=32) :: gridid_S
       ! ---------------------------------------------------------------------
       call msg_toall(MSG_DEBUG,'(fstmpi) write_3d_r4_vgd_s [BGN]')
-      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       ci0=-1 ; cj0=-1 ; cin=-1 ; cjn=-1 ; cdij=1
@@ -346,7 +370,8 @@ contains
       if (ptopo_isblocmaster_L) then
          F_istat = RMN_ERR
          if (associated(data).and.len_trim(gridid_S)>0) then
-            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid_S,F_vgridid,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid_S,F_vgridid, &
+                 dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
          endif
       endif
       !call collect_error(F_istat)
@@ -359,7 +384,9 @@ contains
 
 
    !/@
-   function fstmpi_write_3d_r4_vgd(F_fileid,F_nomvar_S,F_data,F_gridid,F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj) result(F_istat)
+   function fstmpi_write_3d_r4_vgd(F_fileid,F_nomvar_S,F_data,F_gridid, &
+        F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S, &
+        F_etiket_S,F_rewrite_L,F_writegrid_L,F_lni,F_lnj) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -380,7 +407,8 @@ contains
       character(len=RMN_VARTYPE_LEN) :: typvar_S
       ! ---------------------------------------------------------------------
       call msg_toall(MSG_DEBUG,'(fstmpi) fstmpi_write_3d_r4_vgd [BGN]')
-      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (.not.RMN_IS_OK(F_istat)) return
 
       if (present(F_dateo)) dateo = F_dateo
@@ -402,7 +430,8 @@ contains
       if (ptopo_isblocmaster_L) then
          F_istat = RMN_ERR
          if (associated(data).and.RMN_IS_OK(gridid)) then
-            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid,F_vgridid,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+            F_istat = fst_write(F_fileid,F_nomvar_S,data,gridid,F_vgridid,dateo, &
+                 deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
          endif
       endif
       !call collect_error(F_istat)
@@ -417,7 +446,8 @@ contains
    !==== Private Functions =================================================
 
 
-   function priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L) result(F_istat)
+   function priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+        typvar_S,etiket_S,rewrite_L,writegrid_L) result(F_istat)
       implicit none
       real,pointer :: F_data(:,:,:)
       integer,intent(in) :: F_gridid
@@ -477,7 +507,8 @@ contains
    end function priv_prep
 
 
-   function priv_prep_s(F_dataout,F_grididout_S,F_datain,F_grididin_S,F_nijk,F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
+   function priv_prep_s(F_dataout,F_grididout_S,F_datain,F_grididin_S,F_nijk, &
+        F_ci0,F_cj0,F_cin,F_cjn,F_cdij) result(F_istat)
       implicit none
       integer, parameter :: N_ACHAR = 256
       integer, parameter :: N_SKIP  = 32
@@ -485,13 +516,16 @@ contains
       real,pointer :: F_dataout(:,:,:),dataout(:,:,:),F_datain(:,:,:)
       integer :: F_nijk(:),F_ci0,F_cj0,F_cin,F_cjn,F_cdij,F_istat
       character(len=*) :: F_grididout_S,F_grididin_S
-      integer :: grid_id,grid_gi0,grid_gj0,grid_lni,grid_lnj,grid_hx,grid_hy,grid_dieze,grid_periodx,grid_periody,copyx,copyy
-      integer :: istat,i0,j0,grid_id2,nib,njb,gi0,gj0,gnij(2),gi0c,gj0c,ginc,gjnc,nibc,njbc,gi0bc,gj0bc,li0bc,lj0bc
+      integer :: grid_id,grid_gi0,grid_gj0,grid_lni,grid_lnj,grid_hx,grid_hy,&
+           grid_dieze,grid_periodx,grid_periody,copyx,copyy
+      integer :: istat,i0,j0,grid_id2,nib,njb,gi0,gj0,gnij(2),gi0c,gj0c,ginc, &
+           gjnc,nibc,njbc,gi0bc,gj0bc,li0bc,lj0bc
       logical :: periodx_L, periody_L
       !----------------------------------------------------------------------
       call msg_toall(MSG_DEBUG,'(fstmpi) priv_prep_s [BGN]')
       nullify(F_dataout)
-      F_istat = hgrid_wb_get(F_grididin_S,grid_id,grid_gi0,grid_gj0,grid_lni,grid_lnj,grid_hx,grid_hy,grid_dieze,grid_periodx,grid_periody)
+      F_istat = hgrid_wb_get(F_grididin_S,grid_id,grid_gi0,grid_gj0,grid_lni, &
+           grid_lnj,grid_hx,grid_hy,grid_dieze,grid_periodx,grid_periody)
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
 
@@ -516,7 +550,8 @@ contains
       endif
 
       !# Bloc Collect
-      F_istat = ptopo_collect_dims_ij0(RPN_COMM_BLOC_COMM,F_nijk(1),F_nijk(2),grid_gi0,grid_gj0,nib,njb,i0,j0,gi0,gj0)
+      F_istat = ptopo_collect_dims_ij0(RPN_COMM_BLOC_COMM,F_nijk(1),F_nijk(2), &
+           grid_gi0,grid_gj0,nib,njb,i0,j0,gi0,gj0)
       istat = ezgrid_params(grid_id,gnij)
 
       nullify(F_dataout,dataout)
@@ -582,7 +617,8 @@ contains
       grid_id2 = ezgrid_sub(grid_id,F_ci0,F_cj0,F_cin,F_cjn,F_cdij,F_cdij)
       if (periodx_L .or. periody_L) &
            grid_id2 = ezgrid_addperiod(grid_id2,periodx_L,periody_L)
-      istat = hgrid_wb_put(F_grididout_S,grid_id2,gi0bc,gj0bc,nibc+grid_periodx,njbc+grid_periody,F_quiet_L=.true.)
+      istat = hgrid_wb_put(F_grididout_S,grid_id2,gi0bc,gj0bc,nibc+grid_periodx, &
+           njbc+grid_periody,F_quiet_L=.true.)
 
       call msg_toall(MSG_DEBUG,'(fstmpi) priv_prep_s [END]')
       !----------------------------------------------------------------------

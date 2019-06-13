@@ -23,15 +23,16 @@
       use gmm_vt0
       use ver
       use geomh
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: i,j,k,k00,ii1,jj1
-      real*8 :: aa,bb,cc, xm,ym,zm, xt,yt,zt, wdt,ww,wp,wm
-      real*8 :: lag3, hh, x, x1, x2, x3, x4
-      real*8, dimension(2:l_nk-2) :: w1, w2, w3, w4
+      real(kind=REAL64) :: aa,bb,cc, xm,ym,zm, xt,yt,zt, wdt,ww,wp,wm
+      real(kind=REAL64) :: lag3, hh, x, x1, x2, x3, x4
+      real(kind=REAL64), dimension(2:l_nk-2) :: w1, w2, w3, w4
       real :: zmin_bound, zmax_bound
-      real*8, parameter :: half=0.5d0
+      real(kind=REAL64), parameter :: half=0.5d0
 
       lag3( x, x1, x2, x3, x4 ) = &
         ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
@@ -229,12 +230,14 @@
 
 contains
 
-      real*8 function zindx (posz)
+      real(kind=REAL64) function zindx (posz)
+      use, intrinsic :: iso_fortran_env
       implicit none
-      real*8, intent(inout) :: posz
+      real(kind=REAL64), intent(inout) :: posz
       integer :: kk1,nb
       posz = min(max(posz,Ver_zmin_8),Ver_zmax_8)
       kk1 = (posz - ver_z_8%t(0)  ) * adz_ovdzt_8 + 1.d0
+      kk1 = min(max(1,kk1),ubound(adz_search_t,1))
       kk1 = adz_search_t(kk1)
       if ( sig*posz >  sig*ver_z_8%t(min(kk1+1,l_nk+1))) kk1= kk1 + 1
       if ( sig*posz <  sig*ver_z_8%t(kk1)              ) kk1= kk1 - 1

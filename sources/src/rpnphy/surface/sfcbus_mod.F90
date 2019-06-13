@@ -511,6 +511,7 @@ contains
 
 
    function sfcbus_init() result(F_istat)
+      use clib_itf_mod, only: clib_toupper
       use phy_typedef, only: phymeta
       use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
       use sfc_options, only: schmurb
@@ -519,7 +520,6 @@ contains
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
       integer :: i, istat, mulmax, idxmax
       type(SFCVAR_T) :: vl0(1)

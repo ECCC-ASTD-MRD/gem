@@ -37,7 +37,7 @@ contains
       use phybus
       use radslop, only: radslop3
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object Interface to radiation
       !@Arguments
@@ -121,7 +121,7 @@ contains
 
             !#TODO: should we remove newrad? sill used (ensembles)?
             call newrad6(d, dsiz, f, fsiz, v, vsiz, &
-                 liqwcin, icewcin, liqwp, icewp, cldfrac, &
+                 liqwcin, liqwp, icewp, cldfrac, &
                  delt, kount, &
                  trnch, ni, ni, nkm1, &
                  nk, radnivl(1)-1, radnivl(1), radnivl(2))

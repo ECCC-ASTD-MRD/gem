@@ -29,7 +29,7 @@
 !ARGUMENTS
   use Interp1D_Constants
   implicit none
-#include "Interp1D_Arguments.cdk"
+#include "Interp1D_Arguments.inc"
 !
 !NOTES
 !        See the called routine for more details.

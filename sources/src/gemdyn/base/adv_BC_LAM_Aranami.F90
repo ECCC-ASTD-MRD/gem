@@ -26,6 +26,7 @@
       use ptopo
       use ver
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -76,10 +77,10 @@
 
       integer, pointer, dimension(:) :: ii_o, ii_i
 
-      real*8 :: a1,a2,a3,a4,b1,b2,b3,b4,c1,c2,c3,c4, &
+      real(kind=REAL64) :: a1,a2,a3,a4,b1,b2,b3,b4,c1,c2,c3,c4, &
                 d1,d2,d3,d4,p1,p2,p3,p4,ra,rb,rc,rd
 
-      real*8, dimension(:), pointer :: p_bsz_8,p_zbc_8,p_zabcd_8,p_zbacd_8,p_zcabd_8,p_zdabc_8
+      real(kind=REAL64), dimension(:), pointer :: p_bsz_8,p_zbc_8,p_zabcd_8,p_zbacd_8,p_zcabd_8,p_zdabc_8
       integer,dimension(:), pointer :: p_lcz
 
       logical :: zcubic_L
@@ -579,9 +580,9 @@
 
 contains
 
-      real*8 function triprd(za,zb,zc,zd)
+      real(kind=REAL64) function triprd(za,zb,zc,zd)
          real, intent(in) :: za
-         real*8, intent(in) :: zb,zc,zd
+         real(kind=REAL64), intent(in) :: zb,zc,zd
          triprd = ((dble(za)-zb)*(za-zc)*(za-zd))
       end function triprd
 

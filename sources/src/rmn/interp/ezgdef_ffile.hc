@@ -52,11 +52,11 @@ wordint c_ezgdef_ffile(wordint ni, wordint nj, char *grtyp,
   wordint *subgrid;
   wordint nsubgrids, vercode,read;
 
-  found = -1;
+  found = 0;
   un = 1;
   typeGrille = (char)grtyp[0];
   if (typeGrille != '#' && typeGrille != 'Y' && typeGrille != 'Z' && typeGrille != 'U' && typeGrille != ' ')
-    {
+    { /* no need to look for grid descriptors */
     strcpy(grref, " ");
     return c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, bidon, bidon);
     }
@@ -83,7 +83,11 @@ wordint c_ezgdef_ffile(wordint ni, wordint nj, char *grtyp,
   newgr.fst.ig[IG4] = ig4;
   newgr.idx_last_gdin = -1;
   read=0;
-  LireEnrPositionnels(&newgr, iunit, ig1, ig2, ig3, ig4, read);
+  found=LireEnrPositionnels(&newgr, iunit, ig1, ig2, ig3, ig4, read);
+  if (found < 0) /* problems with finding grid descriptors */
+  {
+     return found;
+  }
   newgrsize = sizeof(_Grille);
   fseed = 0;
   grid_crc = ez_calc_crc((int *)&newgr, &newgrsize, newgr.ax, newgr.ay, newgr.ni, newgr.nj);
@@ -106,6 +110,7 @@ wordint c_ezgdef_ffile(wordint ni, wordint nj, char *grtyp,
       }
     }
 
+    /* define new grid */
     c_gdkey2rowcol(gdid, &gdrow_in, &gdcol_in);
     read=1;
     switch(newgr.grtyp[0])
@@ -113,13 +118,18 @@ wordint c_ezgdef_ffile(wordint ni, wordint nj, char *grtyp,
       case '#':
       case 'U':
       gr = &Grille[gdrow_in][gdcol_in];
-      LireEnrPositionnels(gr, iunit, ig1, ig2, ig3, ig4, read);
+      found=LireEnrPositionnels(gr, iunit, ig1, ig2, ig3, ig4, read);
       break;
 
       default:
-      LireEnrPositionnels(&(Grille[gdrow_in][gdcol_in]),iunit, ig1, ig2, ig3, 0,read);
+      found=LireEnrPositionnels(&(Grille[gdrow_in][gdcol_in]),iunit, ig1, ig2, ig3, 0,read);
       break;
       }
+      if (found < 0) /* problems with reading grid descriptors */
+      {
+          return found;
+      }
+      
 
   c_gdkey2rowcol(gdid, &gdrow_in, &gdcol_in);
   if (*grtyp == 'U')

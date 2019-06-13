@@ -14,10 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module dcst
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-   real*8 :: dcst_rayt_8, dcst_inv_rayt_8, dcst_omega_8
+   real(kind=REAL64) :: dcst_rayt_8, dcst_inv_rayt_8, dcst_omega_8
 
 end module dcst

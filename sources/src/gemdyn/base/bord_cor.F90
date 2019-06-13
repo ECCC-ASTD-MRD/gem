@@ -2,25 +2,21 @@
 !**s/r  bord_cor -  rhs correction in preconditionner
 !
       subroutine  bord_cor (Rhs,lhs, Minx, Maxx, Miny, Maxy, nil, njl, Nk)
-use glb_ld
-use opr
-use sol
+      use glb_ld
+      use opr
+      use sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, nil, njl, Nk
-      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: lhs
-      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: Rhs
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: lhs
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: Rhs
 !
 !author
 !       Abdessamad Qaddouri - December  2006
 !
-!revision
-! v3_30 - Qaddouri A.       - initial version
-!
-
-!
       integer i,j,k,ii,jj
-      real*8 stencil2,stencil3,stencil4,stencil5,di_8
+      real(kind=REAL64) stencil2,stencil3,stencil4,stencil5,di_8
 !
        do k = 1,Nk
           i=1+sol_pil_w

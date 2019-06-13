@@ -18,7 +18,7 @@
       subroutine ccc1_planck (bf, bs, urbf, bf0, urbf0, dbf, tfull, gt, ib, &
                          il1, il2, ilg, lay, lev, xx)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev, i, j, ib, il1, il2, k, km1, kp1
       real dt, xxt, xx0

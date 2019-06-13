@@ -16,7 +16,7 @@
 !/@*
 subroutine model_usage_stats(F_msg_S,F_print_accum_L)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    character(len=*), intent(in) :: F_msg_S
    logical, intent(in) :: F_print_accum_L
 !*@/

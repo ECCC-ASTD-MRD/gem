@@ -164,7 +164,7 @@
         dtyp%p = C_LOC(WORLD_COMM_MPI)            ! signature (to be changed to C MPI data type)
         dtyp%t1 = 0                               ! special index for user defined MPI data types
 !        call MPI_type_get_extent(dtyp_m,lb,extent,ierr)
-        call MPI_type_extent(dtyp_m,extent,ierr)
+        call MPI_type_get_extent(dtyp_m,extent,ierr)
         if(ierr == MPI_SUCCESS) then              ! extent of data type can be calculated
           dtyp%t2 = dtyp_m                        ! Fortran MPI datatype value
         else
@@ -198,7 +198,7 @@
 
         if(dtyp%t1 == 0) then   ! custom user defined MPI data type
 !          call MPI_type_get_extent(dtyp%t2,lb,extent,ierr)   ! computable extent ?
-          call MPI_type_extent(dtyp%t2,extent,ierr)   ! computable extent ?
+          call MPI_type_get_extent(dtyp%t2,extent,ierr)   ! computable extent ?
           valid = (ierr == MPI_SUCCESS)
         else
           valid = type_tab(dtyp%t1)%number == dtyp%t2   ! consistent t1 and t2 ?
@@ -222,7 +222,7 @@
         integer :: ierr
         
 !        call MPI_type_get_extent(dtyp%t2,lb,extent,ierr)   ! computable extent ?
-        call MPI_type_extent(dtyp%t2,extent,ierr)   ! computable extent ?
+        call MPI_type_get_extent(dtyp%t2,extent,ierr)   ! computable extent ?
         if (ierr .ne. MPI_SUCCESS) then
           extent = -1
         else

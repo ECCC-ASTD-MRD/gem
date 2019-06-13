@@ -4,11 +4,12 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-main_gem_monitor_output(int argc, char **argv){
+void main_gem_monitor_output(int argc, char **argv){
 int i, fd;
 char buffer[32768];
 pid_t pp=getppid();

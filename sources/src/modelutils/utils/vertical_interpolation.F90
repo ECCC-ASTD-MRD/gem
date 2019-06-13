@@ -14,10 +14,15 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module vertical_interpolation
+  use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+  use clib_itf_mod, only: clib_toupper
+  use tdpack, only: GRAV_8, RGASD_8, STLO_8
   implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
   private
   public :: vertint2
+
+  include "rmnlib_basics.inc"
 
 contains
 
@@ -26,7 +31,7 @@ contains
                             varname, inttype, Schumann_list , levtype)
       implicit none
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       character(len=*), optional, intent(IN) :: &
                         varname, inttype, Schumann_list, levtype
@@ -63,9 +68,6 @@ contains
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
 
-#include <clib_interface_mu.hf>
-#include "tdpack_const.hf"
-
       integer, parameter :: MAXLIST=20
       character(len=1) :: levtype_S
       character(len=12)  Schumann_list_S(MAXLIST)
@@ -75,7 +77,7 @@ contains
                  k_ciel,nlinbot,n_schum,istat,deb,fin,coma
       integer, dimension (Minx:Maxx,Miny:Maxy) :: top, bot, &
                                                   topcub, botcub, ref
-      real*8  :: deltalev,prxd,prda,prdb,prsaf,prsbf, &
+      real(REAL64) :: deltalev,prxd,prda,prdb,prsaf,prsbf, &
                  prsad,prsbd
 !
 !-------------------------------------------------------------------

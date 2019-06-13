@@ -18,7 +18,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
      lat, ni, nclass)
   use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@Arguments
    !            - Input -

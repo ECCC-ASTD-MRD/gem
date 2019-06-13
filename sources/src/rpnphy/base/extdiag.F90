@@ -21,14 +21,13 @@ module extdiag
 
 contains
    !/@*
-   subroutine extdiag3(d, f, v, dsiz, fsiz, vsiz, kount, trnch, ni, nk)
-!#TODO: kount never used
+   subroutine extdiag3(d, f, v, dsiz, fsiz, vsiz, trnch, ni, nk)
       use tdpack_const, only: CAPPA
       use series_mod, only: series_xst, series_isstep, series_isvar
       use phy_options
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object calculate averages and accumulators of tendencies and diagnostics
       !@Arguments
       !          - Input/Output -
@@ -44,7 +43,7 @@ contains
       ! ni       horizontal running length
       ! nk       vertical dimension
 
-      integer, intent(in) :: dsiz, fsiz, vsiz, kount, trnch, ni, nk
+      integer, intent(in) :: dsiz, fsiz, vsiz, trnch, ni, nk
       real, target, intent(inout) :: d(dsiz), f(fsiz), v(vsiz)
 
       !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1

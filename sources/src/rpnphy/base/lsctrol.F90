@@ -17,7 +17,7 @@
 !
       SUBROUTINE LSCTROL ( ilab, OMEGAP, SIGMA, NI, NK )
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !
       INTEGER NI , NK

@@ -19,10 +19,11 @@
 
       use tdpack
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer kind
-      real*8 wil_galewski_wind_8,evaluated_at_lat_8
+      real(kind=REAL64) wil_galewski_wind_8,evaluated_at_lat_8
 
       !object
       !=========================================================
@@ -35,7 +36,7 @@
 
       !---------------------------------------------------------------
 
-      real*8 umax_8,lat0_8,lat1_8,emag_8,ratio_8,wind_wk_8,vort_wk_8, &
+      real(kind=REAL64) umax_8,lat0_8,lat1_8,emag_8,ratio_8,wind_wk_8,vort_wk_8, &
              part1_8,part2_8,part3_8,lat_8
 
       !---------------------------------------------------------------

@@ -16,10 +16,11 @@
 
 !/@*
 function file_open_existing(F_fileName_S,F_fileType_S) result(F_fileUnit)
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_isfile, CLIB_OK
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
    !@objective Open a file, handle error and return unit
    !@arguments

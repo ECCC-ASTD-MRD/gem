@@ -19,6 +19,7 @@
                           Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       use cstv
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -29,8 +30,6 @@
 !author
 !
 ! claude girard 2013
-!
-!revision
 !
 !object
 !       see id section
@@ -45,8 +44,8 @@
 
 
       integer i,j,k,km
-      real*8  w1, qbar
-      real*8, parameter :: one = 1.d0, half = .5d0
+      real(kind=REAL64)  w1, qbar
+      real(kind=REAL64), parameter :: one = 1.d0, half = .5d0
 !
 !     ---------------------------------------------------------------
 !

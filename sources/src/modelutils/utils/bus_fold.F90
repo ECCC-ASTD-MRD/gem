@@ -1,45 +1,48 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 #include <msg.h>
 
 !/@*
 module bus_fold_mod
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
+   use clib_itf_mod, only: clib_tolower
    implicit none
    private
    public :: bus_fold_set, bus_fold, bus_unfold
-   !@objective Functions to trasfer data from bus/folded space to grided (2d/3d) space and back
+   !@objective Functions to trasfer data from bus/folded space to
+   !           grided (2d/3d) space and back
    !@author Michel Desgagne  -  sping 2010
    !revision
    ! 2012-03 S.Chamberland: split from gemdyn
    !@description
    !TODO-later: describe bus structure
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
    integer,parameter :: MAXBUS = 32
    logical,parameter :: UPDATE_L = .true.
 
-   type :: bus_info 
+   type :: bus_info
       character(len=32) :: name_S  !- Bus name
       real,pointer :: ptr(:,:)     !- ptr to bus
       integer :: bni,bnj           !- bus x,y dims
       integer :: bnikv             !- ubound(ptr,1)
-      integer :: i0,in,j0,jn,k0,kn !- subset of 2d/3d data to fold (bus idx start at 1 always, thus k0=2 introduce a shift)
+      integer :: i0,in,j0,jn,k0,kn !- subset of 2d/3d data to fold (bus idx
+                                   !- start at 1 always, thus k0=2 introduce a shift)
    end type bus_info
 
    type(bus_info),save :: buslist(MAXBUS)
@@ -127,7 +130,9 @@ contains
       buslist(m_nbus)%jn = F_jn
       buslist(m_nbus)%k0 = F_k0
       buslist(m_nbus)%kn = F_kn
-      write(msg_S,'(a,3i8,6(a,i6),a)') trim(F_bus_S)//"(",buslist(m_nbus)%bni,buslist(m_nbus)%bnikv,buslist(m_nbus)%bnj,") <=> (",F_i0,":",F_in,",",F_j0,":",F_jn,",",F_k0,":",F_kn,")"
+      write(msg_S,'(a,3i8,6(a,i6),a)') trim(F_bus_S)//"(", &
+           buslist(m_nbus)%bni,buslist(m_nbus)%bnikv,buslist(m_nbus)%bnj, &
+           ") <=> (",F_i0,":",F_in,",",F_j0,":",F_jn,",",F_k0,":",F_kn,")"
       call msg(MSG_INFO,'(bus_fold) Set: '//trim(msg_S))
       F_istat = RMN_OK
       !---------------------------------------------------------------
@@ -175,7 +180,9 @@ contains
       k0 = 1 ; kn = 1
       bussize = size(F_bus(F_busidx:,1))
       do j=1,ubound(F_bus,2)
-         call bus_fold_row(F_bus(F_busidx:,j),F_data2d,j,F_i0,F_in,F_j0,F_jn,k0,kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
+         call bus_fold_row(F_bus(F_busidx:,j),F_data2d,j,F_i0,F_in,F_j0,F_jn, &
+              k0,kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2),maxxyz(2), &
+              minxyz(3),maxxyz(3))
       enddo
       call msg(MSG_DEBUG,'(bus_fold) bus_fold2d_1 END')
       !---------------------------------------------------------------
@@ -223,7 +230,9 @@ contains
       k0 = 1 ; kn = 1
       bussize = size(F_bus(F_busidx:,1))
       do j=1,ubound(F_bus,2)
-         call bus_unfold_row(F_bus(F_busidx:,j),F_data2d,j,F_i0,F_in,F_j0,F_jn,k0,kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
+         call bus_unfold_row(F_bus(F_busidx:,j),F_data2d,j,F_i0,F_in, &
+              F_j0,F_jn,k0,kn,F_bus_ni,bussize,minxyz(1),maxxyz(1), &
+              minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
       enddo
       call msg(MSG_DEBUG,'(bus_fold) bus_unfold2d_1 END')
       !---------------------------------------------------------------
@@ -270,7 +279,9 @@ contains
       maxxyz = ubound(F_data3d)
       bussize = size(F_bus(F_busidx:,1))
       do j=1,ubound(F_bus,2)
-         call bus_fold_row(F_bus(F_busidx:,j),F_data3d,j,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
+         call bus_fold_row(F_bus(F_busidx:,j),F_data3d,j,F_i0,F_in,F_j0,F_jn, &
+              F_k0,F_kn,F_bus_ni,bussize,minxyz(1),maxxyz(1), &
+              minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
       enddo
       call msg(MSG_DEBUG,'(bus_fold) bus_fold3d_1 END')
       !---------------------------------------------------------------
@@ -317,7 +328,9 @@ contains
       maxxyz = ubound(F_data3d)
       bussize = size(F_bus(F_busidx:,1))
       do j=1,ubound(F_bus,2)
-         call bus_unfold_row(F_bus(F_busidx:,j),F_data3d,j,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2),maxxyz(2),minxyz(3),maxxyz(3))
+         call bus_unfold_row(F_bus(F_busidx:,j),F_data3d,j,F_i0,F_in,F_j0, &
+              F_jn,F_k0,F_kn,F_bus_ni,bussize,minxyz(1),maxxyz(1),minxyz(2), &
+              maxxyz(2),minxyz(3),maxxyz(3))
       enddo
       call msg(MSG_DEBUG,'(bus_fold) bus_unfold3d_1 END')
       !---------------------------------------------------------------
@@ -669,7 +682,8 @@ end module bus_fold_mod
 
 
 !/@*
-subroutine bus_fold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,F_bus_ni,F_bus_nik,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
+subroutine bus_fold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0, &
+     F_kn,F_bus_ni,F_bus_nik,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
    implicit none
    !@Objective  Transfer data3d to bus/folded space
    !@Arguments
@@ -683,7 +697,7 @@ subroutine bus_fold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,
    !revision
    ! 2012-03 S.Chamberland: split from gemdyn
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    integer :: buszise,k0,kn,ij0,nip,njp,offi,offj,ijmax,k,idx0,i,idx,ijp,ip,jp
 !!$   character(len=8) :: row_S
    !---------------------------------------------------------------
@@ -724,7 +738,8 @@ end subroutine bus_fold_row
 
 
 !/@*
-subroutine bus_fold_allrows(F_bus,F_data3d,F_bus_idx,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,F_bus_ni,F_bus_nikv,F_bus_nj,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
+subroutine bus_fold_allrows(F_bus,F_data3d,F_bus_idx,F_i0,F_in,F_j0,F_jn,F_k0, &
+   F_kn,F_bus_ni,F_bus_nikv,F_bus_nj,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
    implicit none
    !@Objective  Transfer data3d to bus/folded space
    !@Arguments
@@ -738,7 +753,7 @@ subroutine bus_fold_allrows(F_bus,F_data3d,F_bus_idx,F_i0,F_in,F_j0,F_jn,F_k0,F_
    !revision
    ! 2012-03 S.Chamberland: split from gemdyn
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    integer :: buszise,k0,kn,ij0,nip,njp,offi,offj,ijmax,k,idx0,i,idx,ijp,ip,jp,bus_off_idx,bus_j
    character(len=9) :: idx_S
    !---------------------------------------------------------------
@@ -785,7 +800,8 @@ end subroutine bus_fold_allrows
 
 
 !/@*
-subroutine bus_unfold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,F_bus_ni,F_bus_nik,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
+subroutine bus_unfold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0, &
+   F_kn,F_bus_ni,F_bus_nik,F_minx,F_maxx,F_miny,F_maxy,F_minz,F_maxz)
    implicit none
    !@Objective  Transfer bus/folded to 3d space
    !@Arguments
@@ -799,7 +815,7 @@ subroutine bus_unfold_row(F_subbus,F_data3d,F_bus_j,F_i0,F_in,F_j0,F_jn,F_k0,F_k
    !revision
    ! 2012-03 S.Chamberland: split from gemdyn
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    integer :: buszise,k0,kn,ij0,nip,njp,offi,offj,ijmax,k,idx0,i,idx,ijp,ip,jp
 !!$   character(len=8) :: row_S
    !---------------------------------------------------------------

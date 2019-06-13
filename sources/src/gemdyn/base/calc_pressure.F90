@@ -29,13 +29,6 @@
       real F_pm(Minx:Maxx,Miny:Maxy,Nk), F_pt(Minx:Maxx,Miny:Maxy,Nk), &
            F_p0(Minx:Maxx,Miny:Maxy)   , F_s (Minx:Maxx,Miny:Maxy)
 
-!author
-!     Michel Desgagne - Summer 2014
-!
-!revision
-! v4_70 - Desgagne, M.     - Initial revision
-
-
       integer i, j, k, istat
       real wk1(l_ni,l_nj,2),wk2(l_ni,l_nj,2)
 !     ________________________________________________________________

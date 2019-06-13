@@ -14,8 +14,8 @@
 *
         version = 
      %  "  RMNLIB  -  VRelease:"//
-     %  " 16.2"//
-     %  " Linux_x86-64/intel-2016.1.156 Thu May 04 18:00:06 EDT 2018"
+     %  " 19.0"//
+     %  " Linux_x86-64/intel-2016.1.156 Mon Apr 22 18:00:06 EDT 2019"
 	if (prnt) print *,version
 	return
 	end

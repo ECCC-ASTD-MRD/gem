@@ -18,16 +18,17 @@
       subroutine yyg_int_cub88 ( F_dest, F_src, Imx,Imy, geomgx,geomgy,&
                                   Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN )
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: Nk,NLEN,Minx,Maxx,Miny,Maxy
       integer, dimension(NLEN), intent(in) :: Imx, Imy
-      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_src
-      real*8, dimension(NLEN*Nk)    , intent(out):: F_dest
-      real*8, dimension(Minx:Maxx), intent(in) :: geomgx
-      real*8, dimension(Miny:Maxy), intent(in) :: geomgy
-      real*8, dimension(NLEN)     , intent(in) :: Xi, Yi
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_src
+      real(kind=REAL64), dimension(NLEN*Nk)    , intent(out):: F_dest
+      real(kind=REAL64), dimension(Minx:Maxx), intent(in) :: geomgx
+      real(kind=REAL64), dimension(Miny:Maxy), intent(in) :: geomgy
+      real(kind=REAL64), dimension(NLEN)     , intent(in) :: Xi, Yi
 !
 !author
 !           Abdessamad Qaddouri - October 2009
@@ -35,9 +36,9 @@
 ! v4_60 - Qaddouri A.   - initial version
 !
        integer k,i,j,Im, Jm
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
-       real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
-       real*8  fx1,fx2,fx3,fx4
+       real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
+       real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
+       real(kind=REAL64)  fx1,fx2,fx3,fx4
 !
 !----------------------------------------------------------------------
 !
@@ -102,16 +103,17 @@
       subroutine yyg_int_cub48 ( F_dest, F_src, Imx,Imy, geomgx,geomgy,&
                                   Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN )
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: Nk,NLEN,Minx,Maxx,Miny,Maxy
       integer, dimension(NLEN), intent(in) :: Imx, Imy
       real  , dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_src
-      real*8, dimension(NLEN*Nk)    , intent(out):: F_dest
-      real*8, dimension(Minx:Maxx), intent(in) :: geomgx
-      real*8, dimension(Miny:Maxy), intent(in) :: geomgy
-      real*8, dimension(NLEN)     , intent(in) :: Xi, Yi
+      real(kind=REAL64), dimension(NLEN*Nk)    , intent(out):: F_dest
+      real(kind=REAL64), dimension(Minx:Maxx), intent(in) :: geomgx
+      real(kind=REAL64), dimension(Miny:Maxy), intent(in) :: geomgy
+      real(kind=REAL64), dimension(NLEN)     , intent(in) :: Xi, Yi
 !
 !author
 !           Abdessamad Qaddouri - October 2009
@@ -119,9 +121,9 @@
 ! v4_60 - Qaddouri A.   - initial version
 !
        integer k,i,j,Im, Jm
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
-       real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
-       real*8  fx1,fx2,fx3,fx4
+       real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
+       real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
+       real(kind=REAL64)  fx1,fx2,fx3,fx4
 !
 !----------------------------------------------------------------------
 !
@@ -186,6 +188,7 @@
       subroutine yyg_int_cub ( F_dest, F_src, Imx,Imy, geomgx,geomgy,   &
                                Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l )
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -194,9 +197,9 @@
       integer, dimension(NLEN), intent(in) :: Imx, Imy
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_src
       real, dimension(NLEN*Nk)    , intent(out):: F_dest
-      real*8, dimension(Minx:Maxx), intent(in) :: geomgx
-      real*8, dimension(Miny:Maxy), intent(in) :: geomgy
-      real*8, dimension(NLEN)     , intent(in) :: Xi, Yi
+      real(kind=REAL64), dimension(Minx:Maxx), intent(in) :: geomgx
+      real(kind=REAL64), dimension(Miny:Maxy), intent(in) :: geomgy
+      real(kind=REAL64), dimension(NLEN)     , intent(in) :: Xi, Yi
 
 !author
 !           Abdessamad Qaddouri - October 2009
@@ -204,9 +207,9 @@
 ! v4_60 - Qaddouri A.   - initial version
 
        integer k,i,j,Im, Jm
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
-       real*8  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
-       real*8  fx1,fx2,fx3,fx4,prmax,prmin
+       real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
+       real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
+       real(kind=REAL64)  fx1,fx2,fx3,fx4,prmax,prmin
 !
 !----------------------------------------------------------------------
 !
@@ -284,23 +287,21 @@
        subroutine yyg_int_lin ( FF,F, Imx,Imy, Geomgx,Geomgy,&
                                 minx,maxx,miny,maxy,Nk,Xi,Yi,NLEN )
        use geomh
+      use, intrinsic :: iso_fortran_env
        implicit none
 #include <arch_specific.hf>
 
        integer minx,miny,maxx,maxy,Nk,NLEN
        integer Imx(NLEN),Imy(NLEN)
        real FF(NLEN*Nk),F(minx:maxx,miny:maxy,Nk)
-       real*8 geomgx(Minx:Maxx),geomgy(Miny:Maxy)
-       real*8 Xi(NLEN),Yi(NLEN)
-!
+       real(kind=REAL64) geomgx(Minx:Maxx),geomgy(Miny:Maxy)
+       real(kind=REAL64) Xi(NLEN),Yi(NLEN)
+
 !author
 !           Abdessamad Qaddouri - October 2009
-!  PLEASE consult Abdessamad or Vivian before modifying this routine.
-!revision
-!  v4_8    V.Lee correction in interpolation (MPI precision sensitive)
-!
+
        integer i,j,k,Im, Jm
-       real*8 betax,betax1,betay,betay1
+       real(kind=REAL64) betax,betax1,betay,betay1
 !
 !     ---------------------------------------------------------------
 !
@@ -335,27 +336,22 @@
        subroutine yyg_int_near ( FF,F, Imx,Imy, Geomgx,Geomgy,&
                                 minx,maxx,miny,maxy,Nk,Xi,Yi,NLEN )
        use geomh
+      use, intrinsic :: iso_fortran_env
        implicit none
 #include <arch_specific.hf>
 
        integer Minx,Maxx,Miny,Maxy,Nk,NLEN
        integer Imx(NLEN),Imy(NLEN)
        real FF(NLEN*Nk),F(Minx:Maxx,Miny:Maxy,Nk)
-       real*8 geomgx(Minx:Maxx),geomgy(Miny:Maxy)
-       real*8 Xi(NLEN),Yi(NLEN)
+       real(kind=REAL64) geomgx(Minx:Maxx),geomgy(Miny:Maxy)
+       real(kind=REAL64) Xi(NLEN),Yi(NLEN)
 
 !
 !author
 !           Abdessamad Qaddouri - October 2009
-!  PLEASE consult Abdessamad or Vivian before modifying this routine.
-!
-!
-!revision
-!  v4_8    V.Lee correction in interpolation (MPI precision sensitive)
-!
-!
+
        integer i,j,k,Im,Jm
-       real*8  betax,betax1,betay,betay1
+       real(kind=REAL64)  betax,betax1,betay,betay1
 !
 !     ---------------------------------------------------------------
 !

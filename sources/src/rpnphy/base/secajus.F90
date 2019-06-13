@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,21 +12,22 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
+
 !**s/r secajus - performs a dry convective adjustment
-!
-      subroutine secajus(tconv, t    , s    , ps,   niter, &
-                         conv , cdt1 , ni   , nk)
-!
-      implicit none
-#include <arch_specific.hf>
-!
-      integer ni,nk, niter
-      real cdt1, conv
-!
-      real ps(ni)
-      real s(ni,nk), t(ni,nk), tconv(ni,nk)
-!
+
+subroutine secajus(tconv, t    , s    , ps,   niter, &
+     conv , cdt1 , ni   , nk)
+   use tdpack_const
+   implicit none
+!!!#include <arch_specific.hf>
+
+   integer ni,nk, niter
+   real cdt1, conv
+
+   real ps(ni)
+   real s(ni,nk), t(ni,nk), tconv(ni,nk)
+
 !Author
 !        Alain Patoine
 !
@@ -58,23 +59,14 @@
 ! cdt1     timestep
 ! ni       field dimension in x-direction
 ! nk       field dimension in z-direction
-!
-!
-!Implicits
-#include "tdpack_const.hf"
-!
-!Modules
-!     none
-!
+
 !*
-      integer nitmax
-      parameter ( nitmax=25 )
-!
+      integer, parameter :: nitmax=25
+
       logical adj
-!
+
       integer i, k, nkm, nkp
-!
-!
+
 !***********************************************************************
 !     AUTOMATIC ARRAYS
 !***********************************************************************

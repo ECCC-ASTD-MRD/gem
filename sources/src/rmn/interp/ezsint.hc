@@ -70,13 +70,14 @@ wordint c_ezsint(ftnfloat *zout, ftnfloat *zin)
 wordint c_ezsint_orig(ftnfloat *zout, ftnfloat *zin)
 {
   wordint gdin, gdout;
-  wordint ier;
+  wordint ier,ierc;
   wordint npts;
   wordint gdrow_in, gdrow_out, gdcol_in, gdcol_out;
   ftnfloat *lzin, *lxzin;
   
   lzin  = NULL;
   lxzin = NULL;
+  ierc  = 0;
   
   if (iset_gdin == UNDEFINED || iset_gdout == UNDEFINED)
     {
@@ -127,7 +128,7 @@ wordint c_ezsint_orig(ftnfloat *zout, ftnfloat *zin)
   if (groptions.polar_correction == OUI)
     {
     ier = ez_defzones(gdin, gdout);
-    ier = ez_corrval(zout, lxzin, gdin, gdout);
+    ierc= ez_corrval(zout, lxzin, gdin, gdout);
     }
   
   if (lzin != zin && lzin != NULL)
@@ -140,5 +141,5 @@ wordint c_ezsint_orig(ftnfloat *zout, ftnfloat *zin)
     free(lxzin);
     }
   
-  return 0;
+  return ierc;
 }

@@ -18,7 +18,7 @@
 subroutine tracers_attributes2(F_attributes_S, F_wload, F_hzd, &
      F_monot, F_massc, F_min)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective
    !@author
    !@arguments
@@ -127,6 +127,7 @@ end subroutine tracers_attributes2
 
 
 module tracers_attributes_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
    use str_mod, only: str_tab2space, str_toint, str_toreal
    private
    public :: tracers_attributes
@@ -136,11 +137,11 @@ contains
    !/@*
    function tracers_attributes(F_attributes_S, F_wload, F_hzd, &
         F_monot, F_massc, F_vmin, F_vmax, F_intp_S, F_ignore_L) result(F_istat)
+      use clib_itf_mod, only: clib_toupper
       implicit none
 #include <msg.h>
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
       !@objective
       !@author
       !@arguments

@@ -27,7 +27,7 @@ function phyent2per(F_readlist_S, F_nread, F_step) result(F_istat)
    character(len=*),intent(in) :: F_readlist_S(F_nread)
    integer :: F_istat
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
    integer, parameter :: STAT_PRECISION = 8

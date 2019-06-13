@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -36,7 +36,7 @@ module fst_write_mod
 !@/
 
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    interface fst_write
       module procedure fst_write_2d_r4
@@ -76,7 +76,9 @@ contains
 
 
    !/@
-   function fst_write_2d_r4_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_2d_r4_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1, &
+        F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S, &
+        F_rewrite_L,F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -102,7 +104,8 @@ contains
       call msg(MSG_DEBUG,'(fst) fst_write_2d_r4 [BGN]')
       nullify(data3d)
       if (associated(F_data)) data3d => dummy3d
-      F_istat = priv_init(data3d,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(data3d,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       ip1 = 0
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
@@ -116,7 +119,8 @@ contains
       if (present(F_rewrite_L)) rewrite_L = F_rewrite_L
       if (present(F_writegrid_L)) writegrid_L = F_writegrid_L
 
-      F_istat = priv_grid_s(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S,writegrid_L,grtyp_S,ig14,lnij,ij0)
+      F_istat = priv_grid_s(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S, &
+           writegrid_L,grtyp_S,ig14,lnij,ij0)
       if (.not.RMN_IS_OK(F_istat)) return
 
       nijk(1:2) = ubound(F_data)
@@ -138,7 +142,9 @@ contains
 
 
    !/@
-   function fst_write_2d_r4(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_2d_r4(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1,F_dateo, &
+        F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L, &
+        F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -164,7 +170,8 @@ contains
       call msg(MSG_DEBUG,'(fst) fst_write_2d_r4 [BGN]')
       nullify(data3d)
       if (associated(F_data)) data3d => dummy3d
-      F_istat = priv_init(data3d,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(data3d,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       ip1 = 0
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
@@ -180,7 +187,8 @@ contains
 
       ij0 = (/1,1/)
       lnij0 = (/huge(1),huge(1)/)
-      F_istat = priv_grid(F_fileid,F_gridid,ij0,lnij0,F_nomvar_S,F_etiket_S,writegrid_L,grtyp_S,ig14,lnij)
+      F_istat = priv_grid(F_fileid,F_gridid,ij0,lnij0,F_nomvar_S,F_etiket_S, &
+           writegrid_L,grtyp_S,ig14,lnij)
       if (.not.RMN_IS_OK(F_istat)) return
 
       nijk(1:2) = ubound(F_data)
@@ -202,7 +210,9 @@ contains
 
 
    !/@
-   function fst_write_3d_r4_vgd_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_3d_r4_vgd_s(F_fileid,F_nomvar_S,F_data,F_gridid_S, &
+        F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S, &
+        F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -225,7 +235,8 @@ contains
       type(vgrid_descriptor),pointer :: myvgrid  !#TODO: pointer?
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [BGN]')
-      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
       if (present(F_dateo)) dateo = F_dateo
@@ -244,7 +255,8 @@ contains
           return
       endif
 
-      F_istat = fst_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = fst_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S, &
+           ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
 
       if (associated(ip1list)) deallocate(ip1list,stat=istat)
 
@@ -260,7 +272,9 @@ contains
 
 
    !/@
-   function fst_write_3d_r4_vgd(F_fileid,F_nomvar_S,F_data,F_gridid,F_vgridid,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_3d_r4_vgd(F_fileid,F_nomvar_S,F_data,F_gridid,F_vgridid, &
+        F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S, &
+        F_rewrite_L,F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -283,7 +297,8 @@ contains
       type(vgrid_descriptor),pointer :: myvgrid  !#TODO: pointer?
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4_vgd [BGN]')
-      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
       if (present(F_dateo)) dateo = F_dateo
@@ -302,7 +317,8 @@ contains
           return
       endif
 
-      F_istat = fst_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,ip1list,dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = fst_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,ip1list, &
+           dateo,deet,npas,npak,dtype,ip3,typvar_S,etiket_S,rewrite_L,writegrid_L)
 
       if (associated(ip1list)) deallocate(ip1list,stat=istat)
 
@@ -318,7 +334,9 @@ contains
 
 
    !/@
-   function fst_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S,F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_3d_r4_ip1_s(F_fileid,F_nomvar_S,F_data,F_gridid_S, &
+        F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S, &
+        F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -334,7 +352,8 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),k,arbitrarykind,lnij(2),ij0(2)
+      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3), &
+           nijk(3),ig14(4),k,arbitrarykind,lnij(2),ij0(2)
       real :: zp1
       logical :: writegrid_L,rewrite_L
       character(len=2) :: grtyp_S
@@ -343,7 +362,8 @@ contains
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4 ip1 [BGN]')
 
-      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,u_ijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,RMN_OK,dateo,deet,npas,npak,dtype,ip3,u_ijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
       if (present(F_dateo)) dateo = F_dateo
@@ -355,7 +375,8 @@ contains
       if (present(F_rewrite_L)) rewrite_L = F_rewrite_L
       if (present(F_writegrid_L)) writegrid_L = F_writegrid_L
 
-      F_istat = priv_grid_s(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S,writegrid_L,grtyp_S,ig14,lnij,ij0)
+      F_istat = priv_grid_s(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S,writegrid_L, &
+           grtyp_S,ig14,lnij,ij0)
       if (.not.RMN_IS_OK(F_istat)) return
 
       l_ijk = lbound(F_data)
@@ -402,7 +423,9 @@ contains
 
 
    !/@
-   function fst_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1list,F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S,F_rewrite_L,F_writegrid_L) result(F_istat)
+   function fst_write_3d_r4_ip1(F_fileid,F_nomvar_S,F_data,F_gridid,F_ip1list, &
+        F_dateo,F_deet,F_npas,F_npak,F_dtype,F_ip3,F_typvar_S,F_etiket_S, &
+        F_rewrite_L,F_writegrid_L) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -418,7 +441,8 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3),ig14(4),k,arbitrarykind,lnij(2),ij0(2),lnij0(2)
+      integer :: npak,dtype,dateo,deet,npas,ip1,ip2,ip3,l_ijk(3),u_ijk(3),nijk(3), &
+           ig14(4),k,arbitrarykind,lnij(2),ij0(2),lnij0(2)
       real :: zp1
       logical :: writegrid_L,rewrite_L
       character(len=2) :: grtyp_S
@@ -426,7 +450,8 @@ contains
       character(len=RMN_VARTYPE_LEN) :: typvar_S
       ! ---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(fst) fst_write_3d_r4 ip1 [BGN]')
-      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,u_ijk,typvar_S,etiket_S,rewrite_L,writegrid_L)
+      F_istat = priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,u_ijk, &
+           typvar_S,etiket_S,rewrite_L,writegrid_L)
       if (present(F_npak)) npak = F_npak
       if (present(F_dtype)) dtype = F_dtype
       if (present(F_dateo)) dateo = F_dateo
@@ -440,7 +465,8 @@ contains
 
       ij0 = (/1,1/)
       lnij0 = (/huge(1),huge(1)/)
-      F_istat = priv_grid(F_fileid,F_gridid,ij0,lnij0,F_nomvar_S,F_etiket_S,writegrid_L,grtyp_S,ig14,lnij)
+      F_istat = priv_grid(F_fileid,F_gridid,ij0,lnij0,F_nomvar_S,F_etiket_S, &
+           writegrid_L,grtyp_S,ig14,lnij)
       if (.not.RMN_IS_OK(F_istat)) return
 
       l_ijk = lbound(F_data)
@@ -489,7 +515,8 @@ contains
    !==== Private Functions =================================================
 
 
-   function priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S,etiket_S,rewrite_L,writegrid_L) result(F_istat)
+   function priv_init(F_data,F_gridid,dateo,deet,npas,npak,dtype,ip3,nijk,typvar_S, &
+        etiket_S,rewrite_L,writegrid_L) result(F_istat)
       implicit none
       real,pointer :: F_data(:,:,:)
       integer,intent(in) :: F_gridid
@@ -515,7 +542,8 @@ contains
    end function priv_init
 
 
-   function priv_grid_S(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S,F_writegrid_L,F_grtyp_S,F_ig14,F_lnij,F_ij0) result(F_istat)
+   function priv_grid_S(F_fileid,F_gridid_S,F_nomvar_S,F_etiket_S,F_writegrid_L, &
+        F_grtyp_S,F_ig14,F_lnij,F_ij0) result(F_istat)
       implicit none
       integer,intent(in) :: F_fileid
       logical,intent(in) :: F_writegrid_L
@@ -525,9 +553,12 @@ contains
       integer :: F_istat
       integer :: gridid,hx,hy,nij(2),isdieze,isperiodx,isperiody
       !----------------------------------------------------------------------
-      F_istat = hgrid_wb_get(F_gridid_S,gridid,F_ij0(1),F_ij0(2),F_lnij(1),F_lnij(2),hx,hy,isdieze,isperiodx,isperiody)
+      F_istat = hgrid_wb_get(F_gridid_S,gridid,F_ij0(1),F_ij0(2), &
+           F_lnij(1),F_lnij(2),hx,hy,isdieze,isperiodx,isperiody)
       F_grtyp_S = 'Z'
-      if (RMN_IS_OK(F_istat)) F_istat = priv_grid(F_fileid,gridid,F_ij0,F_lnij,F_nomvar_S,F_etiket_S,F_writegrid_L,F_grtyp_S,F_ig14,nij)
+      if (RMN_IS_OK(F_istat)) &
+           F_istat = priv_grid(F_fileid,gridid,F_ij0,F_lnij,F_nomvar_S,F_etiket_S, &
+           &                   F_writegrid_L,F_grtyp_S,F_ig14,nij)
      if (any(F_grtyp_S(1:1) == EZGRID_REF_TYPES)) then
         if (m_outgrid_type == FST_DIEZEGRID) then
            if (any(F_grtyp_S(1:1) == (/'z','Z'/))) F_grtyp_S = '#'
@@ -541,7 +572,8 @@ contains
    end function priv_grid_S
 
 
-   function priv_grid(F_fileid,F_gridid,F_ij0,F_lnij,F_nomvar_S,F_etiket_S,F_writegrid_L,F_grtyp_S,F_ig14,F_nij) result(F_istat)
+   function priv_grid(F_fileid,F_gridid,F_ij0,F_lnij,F_nomvar_S,F_etiket_S, &
+        F_writegrid_L,F_grtyp_S,F_ig14,F_nij) result(F_istat)
       implicit none
       integer,intent(in) :: F_fileid,F_gridid,F_lnij(:)
       integer,intent(inout) :: F_ij0(:)

@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module lam_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -64,7 +65,7 @@ module lam_options
    character(len=16) Lam_current_S, Lam_previous_S
    logical Lam_wgt0
    integer Lam_blend_Hx, Lam_blend_Hy
-   real*8  Lam_tdeb, Lam_tfin
+   real(kind=REAL64)  Lam_tdeb, Lam_tfin
 
 contains
 
@@ -72,6 +73,7 @@ contains
 
       integer function lam_nml (F_unf)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -122,6 +124,7 @@ contains
       end function lam_nml
 
    function lam_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

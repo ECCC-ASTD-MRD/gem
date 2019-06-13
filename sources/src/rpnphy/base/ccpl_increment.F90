@@ -1,7 +1,7 @@
 subroutine ccpl_increment(F_int,F_intprev,F_ext,F_extprev,F_intlev,F_extlev,F_n,F_nkint,F_nkext,F_name,F_interp)
 
   implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
   ! Update a column-coupled internal field based on external forcings using the form:
   !    (internal tendency) = (external tendency)
@@ -19,8 +19,8 @@ subroutine ccpl_increment(F_int,F_intprev,F_ext,F_extprev,F_intlev,F_extlev,F_n,
   real, dimension(F_n,F_nkext) :: F_extprev     !State of external driver at last update (external model levels)
   real, dimension(F_n,F_nkint) :: F_intlev      !Pressure of internal component levels for this field (Pa)
   real, dimension(F_n,F_nkext) :: F_extlev      !Pressure of external model levels for this field (Pa)
-  character*(*) :: F_name                       !Name of field (used for extrapolation if necessary)
-  character*(*) :: F_interp                     !Order of interpolation ('linear' or 'cubic')
+  character(len=*) :: F_name                       !Name of field (used for extrapolation if necessary)
+  character(len=*) :: F_interp                     !Order of interpolation ('linear' or 'cubic')
 
   ! Internal variables
   real, dimension(F_n,F_nkext) :: delta_ext

@@ -20,8 +20,11 @@ contains
 
    !/@*
    subroutine physimple_transforms3d(F_var_S,F_var_in_S,values)
+      use, intrinsic :: iso_fortran_env, only: REAL64
+      use clib_itf_mod, only: clib_toupper
+      use tdpack_const
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       real, pointer, dimension(:,:,:)  :: values
       character(len=*), intent(in) :: F_var_S, F_var_in_S
       !@Author Lubos Spacek - October 2009
@@ -30,13 +33,11 @@ contains
       !     conversions of units and simple transformations
       !*@/
 #include <msg.h>
-#include <clib_interface_mu.hf>
-#include "surface.cdk"
-#include "tdpack_const.hf"
+#include <rmnlib_basics.hf>
 
-      real*8,parameter :: ONE_8   = 1.0d0
-      real*8,parameter :: CLXXX_8 = 180.0d0
-      real*8 :: deg2rad_8
+      real(REAL64),parameter :: ONE_8   = 1.0d0
+      real(REAL64),parameter :: CLXXX_8 = 180.0d0
+      real(REAL64) :: deg2rad_8
       character(len=32) :: var_S, var_in_S, msg_S
       integer :: istat
       ! ---------------------------------------------------------------------

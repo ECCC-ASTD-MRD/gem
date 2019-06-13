@@ -22,11 +22,12 @@
                            GNI, GNJ, GNK, F_ai_8, F_bi_8, F_ci_8 )
       use glb_ld
       use glb_pil
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer F_k0, F_i0, Minz, Maxz, Minx, Maxx, F_nk, F_ni, GNI,GNJ,GNK
-      real*8  F_hcon_8(GNK), F_yg_8(GNJ), F_opsyp0_8(3*Gnj), &
+      real(kind=REAL64)  F_hcon_8(GNK), F_yg_8(GNJ), F_opsyp0_8(3*Gnj), &
               F_opsyp2_8(3*Gnj), F_xeval_8(Gni), &
               F_ai_8(Minz:Maxz,Minx:Maxx,GNJ)  , &
               F_bi_8(Minz:Maxz,Minx:Maxx,GNJ)  , &
@@ -34,12 +35,6 @@
 !
 !Author
 !     Abdessamad Qaddouri- JULY 1999
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_40 - Lee/Qaddouri      - for LAM version
-! v3_01 - Desgagne & Lee    - Lam configuration
-! v4_05 - Desgagne          - Major revision + remove call to set_trig21
 !
 !arguments
 !  Name        I/O                 Description
@@ -65,8 +60,8 @@
 
       integer k, kk, i, ii, j
       integer l_pil_w,l_pil_e
-      real*8, parameter :: zero = 0.0, one  = 1.0
-      real*8  a_8(F_nk,Minx:Maxx,GNJ), b_8(F_nk,Minx:Maxx,GNJ), &
+      real(kind=REAL64), parameter :: zero = 0.0, one  = 1.0
+      real(kind=REAL64)  a_8(F_nk,Minx:Maxx,GNJ), b_8(F_nk,Minx:Maxx,GNJ), &
               c_8(F_nk,Minx:Maxx,GNJ), di_8
 !
 !     ---------------------------------------------------------------

@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,15 +12,16 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-    
+!-------------------------------------- LICENCE END ---------------------------
+
 subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
         zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
         zdct_trdmax, zdct_trdmin, zdct_moref, &
         zpmoins, zgz_plus, zsigm, ztplus, zhuplus, ni, nk)
+   use tdpack_const
    use phy_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@Arguments
    ! ni       horizontal running length
@@ -34,13 +35,11 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
    real, dimension(ni,nk), intent(inout) ::  zdct_moref
 
    !@Author Anna Glazer   (Nov 2008), S. Gaudreault (Mar 2012)
-   !@Object IR/RF Refractivity                         
-   !  M = 77.6/T{P+4810e/T} + z/R*10^6 
-   !  e and P in hPa, z and R in m, T in deg K           
+   !@Object IR/RF Refractivity
+   !  M = 77.6/T{P+4810e/T} + z/R*10^6
+   !  e and P in hPa, z and R in m, T in deg K
    !
-   !  ref: Haack & Burk JAM 2001, vol 40 pp 673-687     
-
-#include "tdpack_const.hf"
+   !  ref: Haack & Burk JAM 2001, vol 40 pp 673-687
 
    integer :: k, nk1, sk, sk1, sk2, i
    real :: a1, a2, a3, a4, ee(ni,nk), ppp(ni,nk), pp(ni,nk), geop(ni,nk)

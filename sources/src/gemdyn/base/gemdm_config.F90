@@ -44,6 +44,7 @@
       use rstr
       use wb_itf_mod
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -52,8 +53,8 @@
       character(len=16) :: dumc_S, datev
       integer :: i, ipcode, ipkind, err
       real :: pcode,deg_2_rad,sec
-      real*8 :: dayfrac
-      real*8, parameter :: sec_in_day = 86400.0d0
+      real(kind=REAL64) :: dayfrac
+      real(kind=REAL64), parameter :: sec_in_day = 86400.0d0
 !
 !-------------------------------------------------------------------
 !

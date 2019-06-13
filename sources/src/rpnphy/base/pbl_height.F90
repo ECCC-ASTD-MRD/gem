@@ -27,7 +27,7 @@ contains
       use tdpack_const, only: CAPPA, CPD, EPS1, GRAV
       use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       !@Arguments

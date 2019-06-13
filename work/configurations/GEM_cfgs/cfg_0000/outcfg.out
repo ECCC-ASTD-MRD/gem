@@ -1,5 +1,5 @@
 
- grid=1,model;
+ grid=1,core;
  levels=1,eta, -1;
  levels=2, pres,[1000., 925., 850., 700., 500., 400., 300., 275., 250., 225., 200., 175., 150.,
 125., 100., 84., 70., 60., 50., 38.7, 30., 25., 20., 15.9, 12.6, 10., 8.4,
@@ -25,9 +25,6 @@
  sortie([P0,PN,PT], grid, 1, levels, 1, steps, 5)
  sortie([TT,GZ,ES,UU,VV,WW], grid, 1, levels, 2, steps, 2)
  sortie([TT,GZ,HU,UU,VV,WW,ZDT1,QT1], grid, 1, levels, 1, steps, 2)
- 
- filtre([PN,GZ,TT], coef, 0.5, pass,2)
- filtre([WW,QQ,QR], coef, 0.5, pass,1)
- filtre([ES], coef, 0.1, pass,1)
+
  xnbit([GZ,P0],bits,16)
  xnbit([Z0,ZT],bits,32)

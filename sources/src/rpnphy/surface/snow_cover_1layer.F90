@@ -78,7 +78,7 @@ USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL  XUNDEF
 PARAMETER (XUNDEF=999.)

@@ -40,6 +40,7 @@
       use outd
       use ver
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -64,7 +65,7 @@
 
       real  , parameter :: theta_p0 = 100000.
       real  , parameter :: ES_MAX   = 30.
-      real*8, parameter :: ZERO_8   = 0.0
+      real(kind=REAL64), parameter :: ZERO_8   = 0.0
 
       real w1(l_minx:l_maxx,l_miny:l_maxy), w2(l_minx:l_maxx,l_miny:l_maxy),&
          ptop(l_minx:l_maxx,l_miny:l_maxy), p0(l_minx:l_maxx,l_miny:l_maxy),&
@@ -244,20 +245,30 @@
 
       if ( lastdt /= Lctl_step ) then
 
-         if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-             trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')then
-            gzm(:,:,1:G_nk+1)=grav_8*zmom(:,:,1:G_nk+1)
-            gzt(:,:,1:G_nk+1)=grav_8*ztht(:,:,1:G_nk+1)
-         else
-            istat = gmm_get(gmmk_qt1_s,qt1)
-            call diag_fi (gzm, st1, tt1, qt1, &
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+         select case ( trim(Dynamics_Kernel_S) )
+            case ('DYNAMICS_FISL_H')
+               gzm(:,:,1:G_nk+1) = grav_8*zmom(:,:,1:G_nk+1)
+               gzt(:,:,1:G_nk+1) = grav_8*ztht(:,:,1:G_nk+1)
 
-            gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
+            case ('DYNAMICS_FISL_P')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               call diag_fi (gzm, st1, tt1, qt1, &
+                             l_minx, l_maxx, l_miny, l_maxy, &
+                             G_nk, 1, l_ni, 1, l_nj)
 
-            call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
-                            l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
-         end if
+               gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
+
+               call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
+                               l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
+
+            case ('DYNAMICS_EXPO_H')
+               stop 'DYNAMICS_EXPO_H: not yet implemented'
+!               istat = gmm_get(gmmk_qt1_s,qt1)
+!
+!               gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+!               gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+
+         end select
 
          ! TODO fix following error araising when -C floag is on and no physics :
          !forrtl: severe (408): fort: (2): Subscript #3 of the array VT has value 85 which is greater than the upper bound of 84

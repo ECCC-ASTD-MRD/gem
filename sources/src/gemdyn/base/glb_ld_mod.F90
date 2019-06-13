@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module glb_ld
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -70,7 +71,7 @@ module glb_ld
    logical G_periodx, G_periody
    integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
 !      integer G_halox, G_haloy
-   real*8, dimension(:), allocatable :: G_xg_8, G_yg_8
+   real(kind=REAL64), dimension(:), allocatable :: G_xg_8, G_yg_8
 
    logical l_north, l_south, l_east, l_west, l_mesg_proc
    integer l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0

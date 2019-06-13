@@ -15,14 +15,15 @@
 
 !/@*
 module env_utils
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_getenv
    use str_mod
    implicit none
    private
    public :: env_get
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
    interface env_get
       module procedure env_get_int

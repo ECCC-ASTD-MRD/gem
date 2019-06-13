@@ -16,7 +16,7 @@
 !**FUNCTION TP
       FUNCTION TP (PRESS,THETAE,TGS,D273,RL,QS,PI)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       REAL TP,PRESS,THETAE,TGS,D273,RL,QS,PI
 !
 !Author

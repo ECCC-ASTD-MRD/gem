@@ -41,13 +41,14 @@ MODULE supercell
 !
 !=======================================================================
 
-  IMPLICIT NONE
+  use, intrinsic :: iso_fortran_env
+  implicit none
 
 !=======================================================================
 !    Physical constants
 !=======================================================================
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        a     = 6371220.0d0,           & ! Reference Earth's Radius (m)
        Rd    = 287.0d0,               & ! Ideal gas const dry air (J kg^-1 K^1)
     !!!g     = 9.80616d0,             & ! Gravity (m s^2)
@@ -65,15 +66,15 @@ MODULE supercell
 !=======================================================================
 !    Test case parameters
 !=======================================================================
-  INTEGER(4), PARAMETER ::            &
+  INTEGER, PARAMETER ::            &
        nz         = 30         ,      & ! number of vertical levels in init
        nphi       = 16                  ! number of meridional points in init
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        z1         = 0.0d0      ,      & ! lower sample altitude
        z2         = 50000.0d0           ! upper sample altitude
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        X          = 120.d0     ,      & ! Earth reduction factor
        theta0     = 300.d0     ,      & ! theta at the equatorial surface
        theta_tr   = 343.d0     ,      & ! theta at the tropopause
@@ -82,13 +83,13 @@ MODULE supercell
        pseq       = 100000.0d0          ! surface pressure at equator (Pa)
       !pseq       = 95690.0d0           ! surface pressure at equator (Pa)
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        us         = 30.d0      ,      & ! maximum zonal wind velocity
        uc         = 15.d0      ,      & ! coordinate reference velocity
        zs         = 5000.d0    ,      & ! lower altitude of maximum velocity
        zt         = 1000.d0             ! transition distance of velocity
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        pert_dtheta = 3.d0         ,   & ! perturbation magnitude
     !!!pert_lonc   = 0.d0         ,   & ! perturbation longitude
        pert_lonc   = 180.d0       ,   & ! perturbation longitude !To be at the center of Yin panel
@@ -100,15 +101,15 @@ MODULE supercell
 !-----------------------------------------------------------------------
 !    Coefficients computed from initialization
 !-----------------------------------------------------------------------
-  INTEGER(4)                  :: initialized = 0
+  INTEGER                  :: initialized = 0
 
-  REAL(8), DIMENSION(nphi)    :: phicoord
-  REAL(8), DIMENSION(nz)      :: zcoord
-  REAL(8), DIMENSION(nphi,nz) :: thetavyz
-  REAL(8), DIMENSION(nphi,nz) :: exneryz
-  REAL(8), DIMENSION(nz)      :: qveq
-  REAL(8), DIMENSION(nz)      :: inv_zcoord
-  REAL(8), DIMENSION(nphi)    :: inv_phicoord
+  real(kind=REAL64), DIMENSION(nphi)    :: phicoord
+  real(kind=REAL64), DIMENSION(nz)      :: zcoord
+  real(kind=REAL64), DIMENSION(nphi,nz) :: thetavyz
+  real(kind=REAL64), DIMENSION(nphi,nz) :: exneryz
+  real(kind=REAL64), DIMENSION(nz)      :: qveq
+  real(kind=REAL64), DIMENSION(nz)      :: inv_zcoord
+  real(kind=REAL64), DIMENSION(nphi)    :: inv_phicoord
 
 CONTAINS
 
@@ -121,46 +122,46 @@ CONTAINS
     IMPLICIT NONE
 
     ! d/dphi and int(dphi) operators
-    REAL(8), DIMENSION(nphi,nphi) :: ddphi, intphi
+    real(kind=REAL64), DIMENSION(nphi,nphi) :: ddphi, intphi
 
     ! d/dz and int(dz) operators
-    REAL(8), DIMENSION(nz, nz) :: ddz, intz
+    real(kind=REAL64), DIMENSION(nz, nz) :: ddz, intz
 
     ! Buffer matrices for computing SVD of d/dphi operator
-    REAL(8), DIMENSION(nphi,nphi) :: ddphibak
-    REAL(8), DIMENSION(nphi,nphi) :: svdpu, svdpvt
-    REAL(8), DIMENSION(nphi)      :: svdps
-    REAL(8), DIMENSION(5*nphi)    :: pwork
+    real(kind=REAL64), DIMENSION(nphi,nphi) :: ddphibak
+    real(kind=REAL64), DIMENSION(nphi,nphi) :: svdpu, svdpvt
+    real(kind=REAL64), DIMENSION(nphi)      :: svdps
+    real(kind=REAL64), DIMENSION(5*nphi)    :: pwork
 
     ! Buffer matrices for computing SVD of d/dz operator
-    REAL(8), DIMENSION(nz, nz) :: ddzbak
-    REAL(8), DIMENSION(nz, nz) :: svdzu, svdzvt
-    REAL(8), DIMENSION(nz)     :: svdzs
-    REAL(8), DIMENSION(5*nz)   :: zwork
+    real(kind=REAL64), DIMENSION(nz, nz) :: ddzbak
+    real(kind=REAL64), DIMENSION(nz, nz) :: svdzu, svdzvt
+    real(kind=REAL64), DIMENSION(nz)     :: svdzs
+    real(kind=REAL64), DIMENSION(5*nz)   :: zwork
 
     ! Buffer data for calculation of SVD
-    INTEGER(4) :: lwork, info
+    INTEGER :: lwork, info
 
     ! Sampled values of ueq**2 and d/dz(ueq**2)
-    REAL(8), DIMENSION(nphi, nz) :: ueq2, dueq2
+    real(kind=REAL64), DIMENSION(nphi, nz) :: ueq2, dueq2
 
     ! Buffer matrices for iteration
-    REAL(8), DIMENSION(nphi, nz) :: phicoordmat, dztheta, rhs, irhs
+    real(kind=REAL64), DIMENSION(nphi, nz) :: phicoordmat, dztheta, rhs, irhs
 
     ! Buffer for sampled potential temperature at equator
-    REAL(8), DIMENSION(nz) :: thetaeq
+    real(kind=REAL64), DIMENSION(nz) :: thetaeq
 
     ! Buffer for computed equatorial Exner pressure and relative humidity
-    REAL(8), DIMENSION(nz) :: exnereq, H
+    real(kind=REAL64), DIMENSION(nz) :: exnereq, H
 
     ! Variables for calculation of equatorial profile
-    REAL(8) :: exnereqs, p, T, qvs
+    real(kind=REAL64) :: exnereqs, p, T, qvs
 
     ! Error metric
- !!!REAL(8) :: err
+ !!!real(kind=REAL64) :: err
 
     ! Loop indices
-    INTEGER(4) :: i, k, iter, j, n
+    INTEGER :: i, k, iter, j, n
 
     ! Chebyshev nodes in the phi direction
     do i = 1, nphi
@@ -381,7 +382,7 @@ CONTAINS
     !------------------------------------------------
     !   Input / output parameters
     !------------------------------------------------
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 Ver_z,      & ! Ver_z_8 GEM
@@ -389,14 +390,14 @@ CONTAINS
                 Ver_b,      & ! Ver_b_8 GEM
                 pref          ! Cstv_pref_8 GEM
 
-    REAL(8), INTENT(INOUT) :: &
+    real(kind=REAL64), INTENT(INOUT) :: &
                 p,            & ! Pressure (Pa)
                 z               ! Altitude (m)
 
     INTEGER, INTENT(IN) :: zcoords     ! 1 if z coordinates are specified
                                        ! 0 if p coordinates are specified
 
-    REAL(8), INTENT(OUT) :: &
+    real(kind=REAL64), INTENT(OUT) :: &
                 u,          & ! Zonal wind (m s^-1)
                 v,          & ! Meridional wind (m s^-1)
                 t,          & ! Temperature (K)
@@ -415,13 +416,13 @@ CONTAINS
     !------------------------------------------------
 
     ! Coefficients for computing a polynomial fit in each coordinate
-    REAL(8), DIMENSION(nphi) :: fitphi
-    REAL(8), DIMENSION(nz)   :: fitz
+    real(kind=REAL64), DIMENSION(nphi) :: fitphi
+    real(kind=REAL64), DIMENSION(nz)   :: fitz
 
     ! Absolute latitude
-    REAL(8) :: nh_lat
+    real(kind=REAL64) :: nh_lat
 
-    REAL(8) :: st1
+    real(kind=REAL64) :: st1
 
     ! Check that we are initialized
     if (initialized /= 1) then
@@ -485,7 +486,7 @@ CONTAINS
 !-----------------------------------------------------------------------
   SUBROUTINE supercell_z(lon, lat, z, p, thetav, rho, q, pert, fitphi, do_fitphi, fitz, do_fitz)
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (m)
@@ -494,31 +495,31 @@ CONTAINS
                                  ! 0 if no perturbation should be included
 
     ! Evaluated variables
-    REAL(8), INTENT(OUT) :: p, thetav, rho, q
+    real(kind=REAL64), INTENT(OUT) :: p, thetav, rho, q
 
     ! Coefficients for computing a polynomial fit in each coordinate
-    REAL(8), INTENT(INOUT), DIMENSION(nphi) :: fitphi
-    REAL(8), INTENT(INOUT), DIMENSION(nz)   :: fitz
+    real(kind=REAL64), INTENT(INOUT), DIMENSION(nphi) :: fitphi
+    real(kind=REAL64), INTENT(INOUT), DIMENSION(nz)   :: fitz
 
     INTEGER, INTENT(IN)  :: &
                 do_fitphi,  & !(1) Evaluate lagrangian_polynomial_coeffs in phi
                 do_fitz       !(1) Evaluate lagrangian_polynomial_coeffs in z
 
     ! Northern hemisphere latitude
-    REAL(8) :: nh_lat
+    real(kind=REAL64) :: nh_lat
 
     ! Pointwise Exner pressure
-    REAL(8) :: exner
+    real(kind=REAL64) :: exner
 
     ! Assembled variable values in a column
-    REAL(8), DIMENSION(nz) :: varcol
+    real(kind=REAL64), DIMENSION(nz) :: varcol
 
  !!!! Coefficients for computing a polynomial fit in each coordinate
- !!!REAL(8), DIMENSION(nphi) :: fitphi
- !!!REAL(8), DIMENSION(nz)   :: fitz
+ !!!real(kind=REAL64), DIMENSION(nphi) :: fitphi
+ !!!real(kind=REAL64), DIMENSION(nz)   :: fitz
 
     ! Loop indices
-    INTEGER(4) :: k,n,i,j
+    INTEGER :: k,n,i,j
 
     ! Northern hemisphere latitude
     if (lat <= 0.0d0) then
@@ -594,7 +595,7 @@ CONTAINS
 !-----------------------------------------------------------------------
   SUBROUTINE supercell_p(lon, lat, p, z, thetav, rho, q, pert, fitphi, do_fitphi, fitz, do_fitz)
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 p             ! Pressure (Pa)
@@ -603,23 +604,23 @@ CONTAINS
                                  ! 0 if no perturbation should be included
 
     ! Evaluated variables
-    REAL(8), INTENT(OUT) :: z, thetav, rho, q
+    real(kind=REAL64), INTENT(OUT) :: z, thetav, rho, q
 
     ! Coefficients for computing a polynomial fit in each coordinate
-    REAL(8), INTENT(INOUT), DIMENSION(nphi) :: fitphi
-    REAL(8), INTENT(INOUT), DIMENSION(nz)   :: fitz
+    real(kind=REAL64), INTENT(INOUT), DIMENSION(nphi) :: fitphi
+    real(kind=REAL64), INTENT(INOUT), DIMENSION(nz)   :: fitz
 
     INTEGER, INTENT(IN)  :: &
                 do_fitphi,  & !(1) Evaluate lagrangian_polynomial_coeffs in phi
                 do_fitz       !(1) Evaluate lagrangian_polynomial_coeffs in z
 
     ! Bounding interval and sampled values
-    REAL(8) :: za, zb, zc, pa, pb, pc
+    real(kind=REAL64) :: za, zb, zc, pa, pb, pc
 
     ! Iterate
-    INTEGER(4) :: iter,max_iter
+    INTEGER :: iter,max_iter
 
-    REAL(8) :: gf,dg
+    real(kind=REAL64) :: gf,dg
 
     za = z1
     zb = z2
@@ -700,18 +701,18 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Calculate pointwise z and temperature given pressure
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION thermal_perturbation(lon, lat, z)
+  real(kind=REAL64) FUNCTION thermal_perturbation(lon, lat, z)
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (m)
 
     ! Great circle radius from the perturbation centerpoint
-    REAL(8) :: gr
+    real(kind=REAL64) :: gr
 
     ! Approximately spherical radius from the perturbation centerpoint
-    REAL(8) :: Rtheta
+    real(kind=REAL64) :: Rtheta
 
     gr = a*acos(sin(pert_latc*deg2rad)*sin(lat) + &
          (cos(pert_latc*deg2rad)*cos(lat)*cos(lon-pert_lonc*deg2rad)))
@@ -729,11 +730,11 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Calculate the reference zonal velocity
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION zonal_velocity(z, lat)
+  real(kind=REAL64) FUNCTION zonal_velocity(z, lat)
 
     IMPLICIT NONE
 
-    REAL(8), INTENT(IN) :: z, lat
+    real(kind=REAL64), INTENT(IN) :: z, lat
 
     if (z <= zs - zt) then
       zonal_velocity = us * (z / zs) - uc
@@ -751,11 +752,11 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Calculate pointwise theta at the equator at the given altitude
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION equator_theta(z)
+  real(kind=REAL64) FUNCTION equator_theta(z)
 
     IMPLICIT NONE
 
-    REAL(8), INTENT(IN) :: z
+    real(kind=REAL64), INTENT(IN) :: z
 
     if (z <= z_tr) then
       equator_theta = &
@@ -771,11 +772,11 @@ CONTAINS
 !    Calculate pointwise relative humidity (in %) at the equator at the
 !    given altitude
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION equator_relative_humidity(z)
+  real(kind=REAL64) FUNCTION equator_relative_humidity(z)
 
     IMPLICIT NONE
 
-    REAL(8), INTENT(IN) :: z
+    real(kind=REAL64), INTENT(IN) :: z
 
     if (z <= z_tr) then
       equator_relative_humidity = 1.0d0 - 0.75d0 * (z / z_tr)**(1.25d0)
@@ -789,11 +790,11 @@ CONTAINS
 !    Calculate saturation mixing ratio (in kg/kg) in terms of pressure
 !    (in Pa) and temperature (in K)
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION saturation_mixing_ratio(p, T)
+  real(kind=REAL64) FUNCTION saturation_mixing_ratio(p, T)
 
     IMPLICIT NONE
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 p,        & ! Pressure in Pa
                 T           ! Temperature
 
@@ -814,19 +815,19 @@ CONTAINS
     IMPLICIT NONE
 
     ! Number of points to fit
-    INTEGER(4), INTENT(IN) :: npts
+    INTEGER, INTENT(IN) :: npts
 
     ! Sample points to fit
-    REAL(8), DIMENSION(npts), INTENT(IN) :: x, inv_x
+    real(kind=REAL64), DIMENSION(npts), INTENT(IN) :: x, inv_x
 
     ! Computed coefficients
-    REAL(8), DIMENSION(npts), INTENT(OUT) :: coeffs
+    real(kind=REAL64), DIMENSION(npts), INTENT(OUT) :: coeffs
 
     ! Point at which sample is taken
-    REAL(8), INTENT(IN) :: xs
+    real(kind=REAL64), INTENT(IN) :: xs
 
     ! Loop indices
-    INTEGER(4) :: i, j
+    INTEGER :: i, j
 
     ! Compute the Lagrangian polynomial coefficients
     do i = 1, npts
@@ -851,22 +852,22 @@ CONTAINS
     IMPLICIT NONE
 
     ! Number of points to fit
-    INTEGER(4), INTENT(IN) :: npts
+    INTEGER, INTENT(IN) :: npts
 
     ! Sample points to fit
-    REAL(8), DIMENSION(npts), INTENT(IN) :: x, inv_x
+    real(kind=REAL64), DIMENSION(npts), INTENT(IN) :: x, inv_x
 
     ! Computed coefficients
-    REAL(8), DIMENSION(npts), INTENT(OUT) :: coeffs
+    real(kind=REAL64), DIMENSION(npts), INTENT(OUT) :: coeffs
 
     ! Point at which sample is taken
-    REAL(8), INTENT(IN) :: xs
+    real(kind=REAL64), INTENT(IN) :: xs
 
     ! Loop indices
-    INTEGER(4) :: i, j, imatch
+    INTEGER :: i, j, imatch
 
     ! Buffer sum
-    REAL(8) :: coeffsum, differential
+    real(kind=REAL64) :: coeffsum, differential
 
     ! Check if xs is equivalent to one of the values of x
     imatch = (-1)

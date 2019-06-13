@@ -14,10 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module fislh_sol
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-   real*8 :: isol_i, isol_d
+   real(kind=REAL64) :: isol_i, isol_d
 
 end module fislh_sol

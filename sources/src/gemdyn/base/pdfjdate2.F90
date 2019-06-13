@@ -16,18 +16,13 @@
 !**s/r pdfjdate2 - number of days since "Step_runstrt_S(year) - 1"
       subroutine pdfjdate2 (jdate,yyyy,mo,dd,hh,mm,ss)
       use step_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-      real*8 jdate
-      integer yyyy,mo,dd,hh,mm,ss
+      real(kind=REAL64), intent(out) :: jdate
+      integer, intent(in) :: yyyy, mo, dd, hh, mm, ss
 
-!author
-!    Michel Desgagne - RPN - ?????
-!
-!revision
-! v3_32 - Dugas B.          - use newdate/difdatr rather than jd inline function
-!
-!arguments I/O
+! Arguments
 ! jdate                 (O) - number of days since Jan 01, 00Z of "Step_runstrt_S(year) - 1"
 ! "yyyy mo dd hh mm ss" (I) - calendar date to compare with
 
@@ -39,7 +34,7 @@
 
       integer, save :: stamp0
       integer ier, TIM1, stamp1
-      integer, parameter :: TIM2=0, MOD=3
+      integer, parameter :: TIM2=0, MODE=3
       logical, save :: done=.false.
 
       integer newdate
@@ -52,7 +47,7 @@
          read(Step_runstrt_S,'(I4)') TIM1
          if (TIM1 > 0) TIM1 = TIM1-1
          TIM1 = tim1*10000+0101
-         ier = newdate( stamp0, TIM1,TIM2, MOD )
+         ier = newdate( stamp0, TIM1,TIM2, MODE )
          if (ier /= 0) then
             print *, 'pdfjdate2: error in call to newdate(+3), tim1,tim2= ',TIM1,TIM2
             stop ' in pdfjdate2'
@@ -61,7 +56,7 @@
       end if
 
       TIM1 = (yyyy*100+mo)*100+dd
-      ier = newdate( stamp1, TIM1,TIM2, MOD )
+      ier = newdate( stamp1, TIM1,TIM2, MODE )
 
       if (ier /= 0) then
          print *, 'pdfjdate2: error in call to newdate(+3), tim1,tim2= ',TIM1,TIM2

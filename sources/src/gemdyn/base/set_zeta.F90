@@ -26,6 +26,7 @@
       use vGrid_Descriptors
       use vgrid_wb
       use wb_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -114,9 +115,9 @@
       integer, dimension(:), pointer :: wkpti
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real    height,heightp1
-      real*8  wk_8
-      real*8, parameter :: zero=0.d0, one=1.d0, half=0.5d0
-      real*8, dimension(:), pointer :: wkpt8
+      real(kind=REAL64)  wk_8
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
+      real(kind=REAL64), dimension(:), pointer :: wkpt8
 !     __________________________________________________________________
 !
       allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &

@@ -125,8 +125,10 @@
   kticefrac     = .false.
 
   pcptype       = 'bourge3d'
+  input_type    = 'BLOC'
 
 /
+  input_type    = 'DIST'
   phystat_dble_l  = .true.
   phystat_2d_l    = .false.
   phystat_freq_S  = '3h'

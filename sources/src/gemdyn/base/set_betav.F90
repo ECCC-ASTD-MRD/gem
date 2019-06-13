@@ -24,6 +24,7 @@
       use theo_options
       use ver
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,7 @@
 !
       real :: htop, zblen_bot, zblen_top
 
-      real*8 :: work1, work2, fact
+      real(kind=REAL64) :: work1, work2, fact
 
       integer :: i, j, k
 

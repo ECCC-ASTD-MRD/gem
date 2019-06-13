@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,16 +17,20 @@
 
 !/@*
 module outcfg_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_isfile, clib_tolower, clib_isreadok
    use str_mod, only: str_tab2space,str_rm_quotes,str_toint,str_tobool,str_toreal
    use sort_mod
    use mu_jdate_mod
    implicit none
    private
-   !@objective 
+   !@objective
    !@author Stephane Chamberland, 2011-09
    !@description
    ! Public functions
-   public :: outcfg_new, outcfg_new_4, outcfg_new_8, outcfg_getlist, outcfg_time, outcfg_meta,outcfg_get_idxlist,outcfg_var_meta,outcfg_level_meta,outcfg_grid_meta
+   public :: outcfg_new, outcfg_new_4, outcfg_new_8, outcfg_getlist, &
+        outcfg_time, outcfg_meta,outcfg_get_idxlist,outcfg_var_meta, &
+        outcfg_level_meta,outcfg_grid_meta
    ! Public constants
    integer,parameter,public :: OUTCFG_NCFG_MAX = 8
    integer,parameter,public :: OUTCFG_STRLEN = 16
@@ -40,7 +44,7 @@ module outcfg_mod
    !   case is ignored
    !   recognized keys
    !   * closeopen : time before changing file (default=step,1)
-   !                 accepted format: 
+   !                 accepted format:
    !                   closeopen = UNITS, INTERVAL
    !                     UNITS   : SECONDS, MINUTES, HOURS, DAYS, STEPS, MONTH_1STOF (optional, default=steps)
    !                     INTERVAL: UNITS multiplier [int] (ignored is UNITS = MONTH_1STOF)
@@ -55,27 +59,27 @@ module outcfg_mod
    !                 (override with filtre)
    !                 accepted format: closeopen = UNITS, INTERVAL
    !   * filtre    : specific var filtering override
-   !                 accepted formats: 
+   !                 accepted formats:
    !                   filtre([VARLIST],pass,NPASS,coef,MYCOEF)
    !                   filtre([VARLIST],coef,MYCOEF)
    !                   filtre([VARLIST],pass,NPASS)
-   !                 VARLIST : comma separated list of var 
+   !                 VARLIST : comma separated list of var
    !                 NPASS   : override filt_pass [int]
    !                 MYCOEF  : override filt_coef [float]
    !   * flip_L    : output vertical planes instead of horizontal [T, F]
    !                 (default=false)
-   !   * fullplane_L : output on the full horizontal domain 
+   !   * fullplane_L : output on the full horizontal domain
    !                   instead of block sub-domain [T, F] (default=false)
    !   * grid      : define a named list of output sub-domain
-   !                 accepted format: 
+   !                 accepted format:
    !                   grid = NAME, model
    !                   grid = NAME, core
    !                   grid = NAME, reduc, ????
    !                 TODO
    !   * ip3       : ip3 value [int] (default=0)
    !   * levels    : define a named list of output levels
-   !                 accepted format: 
-   !                   levels = NAME, TODO??? press, cubic, linear, all, -1, surface, diag, 0, [LIST], <lvl0,lvlend,interval> 
+   !                 accepted format:
+   !                   levels = NAME, TODO??? press, cubic, linear, all, -1, surface, diag, 0, [LIST], <lvl0,lvlend,interval>
    !                 TODO
    !   * linbot    : number of bottom levels to vertically interpolate linearly [int]
    !   * nbits     : RPN STD default nb of bits for compression [int <= 32]
@@ -83,21 +87,21 @@ module outcfg_mod
    !   * ndigits   : TODO [int] (default=0)
    !   * rewrite_L : overwrite existing field in file [T, F] (default=F)
    !   * units_S   : Fxc time encoding unit for filename extentions (default=hour)
-   !                 accepted format: 
+   !                 accepted format:
    !                   units_S = UNITS
    !                     UNITS   : SECONDS, MINUTES, HOURS, DAYS, STEPS, MONTH
    !                 if UNIT == month, this trigger closeopen=MONTH_1STOF
    !   * vinterp_S : type of default vertical interpolation [cubic, linear] (deafult=cubic)
    !   * sortie_?  : request output for specific var list at specified sub-grid, levels and steps
-   !                 accepted format: 
+   !                 accepted format:
    !                   sortie_TAG([VARLIST],grid,MYGRID,levels,MYLEVELS,steps,MYSTEPS)
    !                     TAG     : model component's tag (e.g. "p", "d", ...)
    !                     VARLIST : comma separated list of var to output/write
    !                     MYGRID  : previously defined output grid name/tag
    !                     MYLEVELS: previously defined output level set name/tag
    !                     MYSTEPS : previously defined output steps set name/tag
-   !   * steps     : define a named list of output interval/steps 
-   !                 accepted formats: 
+   !   * steps     : define a named list of output interval/steps
+   !                 accepted formats:
    !                   steps = NAME,UNITS,LIST
    !                   steps = NAME,UNITS,[LIST]
    !                   steps = NAME,UNITS,<STEP0,STEPEND,INTERVAL>
@@ -108,20 +112,19 @@ module outcfg_mod
    !                     LIST  : list steps/hours
    !                     STEP0,STEPEND,INTERVAL: loop from step0 to STEPEND with strides of INTERVAL
    !                     init  : ?TODO?
-   !                 Note that steps are converted to steps and 
+   !                 Note that steps are converted to steps and
    !                 might thus be rounded if HOURS is used.
    !   * xnbits    : specific var compression nbits and datyp override
-   !                 accepted formats: 
+   !                 accepted formats:
    !                   xnbits([VARLIST],bits,MYNBITS,datyp,MYDATYP)
    !                   xnbits([VARLIST],bits,MYNBITS)
    !                   xnbits([VARLIST],datyp,MYDATYP)
-   !                 VARLIST : comma separated list of var 
+   !                 VARLIST : comma separated list of var
    !                 MYNBITS : override nbits [int]
    !                 MYDATYP : override datyp [int]
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
    real,parameter :: EPSILON = 1.e-5
    integer,parameter :: NSETS_MAX = 32
@@ -179,7 +182,7 @@ module outcfg_mod
 
    type :: outcfg_T
       character(len=OUTCFG_STRLEN) :: tag_S,etk_S,vinterp_s,units_s
-      integer(IDOUBLE) :: dateo  !Initial date [jdate sec]
+      integer(INT64) :: dateo  !Initial date [jdate sec]
       integer :: dt         !time step length [seconds]
       integer :: ip3, datyp, nbits,ndigits,linbot,filt_pass,closeopen,closeopen_units
       integer :: reduc_core(5)
@@ -236,7 +239,7 @@ contains
       integer :: F_id !config id
       !@author Stephane Chamberland, 2011-09
       !*@/
-      integer(IDOUBLE) :: jdateo
+      integer(INT64) :: jdateo
       logical ::  intags_L
       !----------------------------------------------------------------------
       intags_L = .false.
@@ -259,7 +262,7 @@ contains
       !@arguments
       character(len=*),intent(in) :: F_filename_S !full/rel path of config file
       character(len=*),intent(in) :: F_tag_S
-      integer(IDOUBLE),intent(in) :: F_dateo
+      integer(INT64),intent(in) :: F_dateo
       integer,intent(in) :: F_dt
       integer,intent(in),optional :: F_reduc_core(:)
       logical,intent(in),optional ::  F_intags_L
@@ -389,7 +392,7 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-07
       !*@/
-      integer, external :: str_split2keyval, fstopc
+      integer, external :: str_split2keyval
       integer, parameter :: NMAX = 32
       integer :: istat
       character(len=2048) :: key_S, val_S, string_S, msg_S
@@ -441,9 +444,9 @@ contains
          case('debug_l')
             istat = str_tobool(m_cfgs(F_id)%debug_L,val_S)
             if (m_cfgs(F_id)%debug_L) then
-               istat = fstopc('MSGLVL','WARNIN',.false.)
+               istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
             else
-               istat = fstopc('MSGLVL','SYSTEM',.false.)
+               istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
             endif
             write(msg_S,'(l)') m_cfgs(F_id)%debug_L
             call msg(MSG_INFO,'(outcfg) '//trim(key_S)//': '//trim(msg_S))
@@ -580,10 +583,11 @@ contains
 
 
    !/@*
-   function outcfg_meta(F_id,F_tag_S,F_units_S,F_closeopen,F_ndigits,F_debug_L,F_rewrite_L,F_fullplane_L,F_closeopen_units) result(F_istat)
+   function outcfg_meta(F_id,F_tag_S,F_units_S,F_closeopen,F_ndigits, &
+        F_debug_L,F_rewrite_L,F_fullplane_L,F_closeopen_units) result(F_istat)
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id
       character(len=*),intent(out),optional :: F_tag_S,F_units_S
       integer,intent(out),optional :: F_closeopen,F_closeopen_units,F_ndigits
@@ -596,7 +600,7 @@ contains
       F_istat = RMN_ERR
       if (F_id < 1 .or. F_id > m_ncfgs) return
       F_istat = RMN_OK
-      
+
       if (present(F_tag_S)) F_tag_S = m_cfgs(F_id)%tag_S(2:)
       if (present(F_units_s)) F_units_S = m_cfgs(F_id)%units_S
       if (present(F_closeopen)) F_closeopen = m_cfgs(F_id)%closeopen
@@ -617,7 +621,7 @@ contains
       !TODO: F_varidx not used
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id,F_varidx
       character(len=*),intent(in) :: F_varname_S
       integer,intent(out),optional :: F_datyp,F_nbits,F_filt_pass,F_ip3
@@ -634,7 +638,7 @@ contains
       F_istat = RMN_ERR
       if (F_id < 1 .or. F_id > m_ncfgs) return
       F_istat = RMN_OK
-      
+
       varname_S = F_varname_S
       istat = clib_tolower(varname_S)
 
@@ -685,7 +689,7 @@ contains
    function outcfg_level_meta(F_id,F_varidx,F_lvltype_S,F_v_int_S,F_levels,F_nlevels,F_nlinbot) result(F_istat)
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id,F_varidx
       character(len=*),intent(out) :: F_lvltype_S,F_v_int_S
       real,intent(out) :: F_levels(:)
@@ -721,7 +725,7 @@ contains
    function outcfg_grid_meta(F_id,F_varidx,F_i0,F_j0,F_in,F_jn,F_dij,F_tag_S,F_fullplane_L) result(F_istat)
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id,F_varidx
       integer,intent(out) :: F_i0,F_j0,F_in,F_jn,F_dij
       character(len=*),intent(out) :: F_tag_S
@@ -754,7 +758,7 @@ contains
    function outcfg_time_4(F_id,F_step,F_datev,F_dateo,F_dt,F_iscloseopen_L) result(F_istat)
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id,F_step
       integer,intent(out) :: F_datev,F_dateo,F_dt
       logical,intent(out),optional :: F_iscloseopen_L
@@ -762,7 +766,7 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-04
       !*@/
-      integer(IDOUBLE) :: jdateo, jdatev
+      integer(INT64) :: jdateo, jdatev
       !----------------------------------------------------------------------
       F_datev = RMN_ERR
       F_dateo = RMN_ERR
@@ -784,9 +788,9 @@ contains
    function outcfg_time_8(F_id,F_step,F_datev,F_dateo,F_dt,F_iscloseopen_L) result(F_istat)
       implicit none
       !@objective
-      !@arguments 
+      !@arguments
       integer,intent(in) :: F_id,F_step
-      integer(IDOUBLE),intent(out) :: F_datev,F_dateo
+      integer(INT64),intent(out) :: F_datev,F_dateo
       integer,intent(out) :: F_dt
       logical,intent(out),optional :: F_iscloseopen_L
       !@return
@@ -794,12 +798,12 @@ contains
       !@author Stephane Chamberland, 2011-04
       !*@/
       integer :: yy1, mo1
-      integer(IDOUBLE) :: n_sec_8,step_8, dt_8, jdate1stof 
+      integer(INT64) :: n_sec_8,step_8, dt_8, jdate1stof
       !----------------------------------------------------------------------
       F_istat = RMN_ERR
       if (F_id < 1 .or. F_id > m_ncfgs) return
       F_istat = RMN_OK
-      
+
       step_8   = F_step
       dt_8     = m_cfgs(F_id)%dt
       n_sec_8  = step_8 * dt_8
@@ -855,7 +859,7 @@ contains
          call msg(MSG_WARNING,'(outcfg) File not found or not readable: '//trim(F_filename_S))
          return
       endif
-      
+
       fileid = 0
       istat = fnom(fileid,F_filename_S,'SEQ/FMT+R/O+OLD',0)
       if (.not.RMN_IS_OK(istat) .or. fileid <= 0) then
@@ -957,7 +961,7 @@ contains
       !*@/
       !---------------------------------------------------------------------
       F_out = RMN_ERR
-      
+
       SEL_CLOSE: select case(F_units_S(1:2))
       case('se') !seconds
          F_out = nint(max(1., real(F_in)/real(F_dt)))
@@ -977,7 +981,7 @@ contains
      !---------------------------------------------------------------------
       return
    end function priv_time2steps
-   
+
 
    !/@*
    function priv_parse_levels(F_id,F_str_S) result(F_istat)
@@ -1365,7 +1369,7 @@ contains
                   exit
                endif
             enddo
-            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%g_idx)) return   
+            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%g_idx)) return
          case('step')
             if (ii == nitems) return
             ii = ii + 1
@@ -1375,7 +1379,7 @@ contains
                   exit
                endif
             enddo
-            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%s_idx)) return   
+            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%s_idx)) return
          case('leve')
             if (ii == nitems) return
             ii = ii + 1
@@ -1385,7 +1389,7 @@ contains
                   exit
                endif
             enddo
-            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%l_idx)) return   
+            if (.not.RMN_IS_OK(m_cfgs(F_id)%o(no)%l_idx)) return
          case default !
             if (.not.any(items_S(ii) == (/'[',']'/))) then
                if (nvar == NVAR_MAX) cycle
@@ -1399,7 +1403,7 @@ contains
            .and.RMN_IS_OK(m_cfgs(F_id)%o(no)%g_idx) &
            .and.RMN_IS_OK(m_cfgs(F_id)%o(no)%l_idx))) then
 !!$         call msg(MSG_ERROR,'(outcfg) Invalid sortie directive: '//trim(F_str_S))
-         return         
+         return
       endif
       m_cfgs(F_id)%no = no
       m_cfgs(F_id)%o(no)%n = nvar

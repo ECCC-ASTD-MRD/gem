@@ -76,13 +76,12 @@
       real*8 x1,x2,x3,x4,y1,y2,y3,y4
       real*8 a1,a2,a3,a4,x,y,c1,c2,c3,c4,c5,c6
       real*8 cx(6),cy(6)
+      real*8 z1,z2,z3,z4
       
 #include "ez_qqqxtrp.cdk"
 
 !     definition des fonctions in-line
 
-
-#include "cubic8.cdk"
 
       fa(a1,a2,a3,a4,x,x1,x2,x3)=a1+(x-x1)*(a2+(x-x2)*(a3+a4*(x-x3)))
       fa2(c1,a1,a2)=c1*(a2-a1)

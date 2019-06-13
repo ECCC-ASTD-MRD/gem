@@ -34,6 +34,7 @@
       use gmm_itf_mod
       use path
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -47,7 +48,7 @@
 #include <rmnlib_basics.hf>
 !
        real,    external ::  gasdev
-       real*8 :: polg
+       real(kind=REAL64) :: polg
 
 !
 ! nlat, nlon                 dimension of the Gaussian grid
@@ -57,7 +58,7 @@
       integer :: l ,m, n, nc,np, i, j, indx, ier, gmmstat, istat, gdyy
       real    :: fstd, fstr, tau, sumsp , fact, fact2, offi, offj
       real    :: xfi(l_ni),yfi(l_nj)
-      real*8  :: rad2deg_8,  pri_8
+      real(kind=REAL64)  :: rad2deg_8,  pri_8
       logical, save :: init_done=.false.
       logical :: Init_mc_L
 !
@@ -67,9 +68,9 @@
 ! dt   Pas de temps du modèle (secondes)
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
-      real*8   :: dt, eps, fmax, fmin , fmean
-      real*8,  dimension(:), allocatable :: pspectrum , fact1, fact1n, wrk1
-      real*8,  dimension(:,:,:), allocatable :: p,cc
+      real(kind=REAL64)   :: dt, eps, fmax, fmin , fmean
+      real(kind=REAL64),  dimension(:), allocatable :: pspectrum , fact1, fact1n, wrk1
+      real(kind=REAL64),  dimension(:,:,:), allocatable :: p,cc
       real  ,  dimension(:,:),allocatable :: f, f_str
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(:,:) , allocatable :: sig
@@ -450,12 +451,13 @@ return
 contains
 
  subroutine pleg(l, m, jlat, nlat , plg )
+      use, intrinsic :: iso_fortran_env
  implicit none
 
       integer l,m ,i,j , jlat, nlat
-      real*8  factor , x , plg , lat, theta
-      real*8 , dimension(0:l+1) :: pl
-      real*8, parameter :: ZERO=0.0D0  , ONE_8=1.0d0 , TWO_8=2.0d0
+      real(kind=REAL64)  factor , x , plg , lat, theta
+      real(kind=REAL64) , dimension(0:l+1) :: pl
+      real(kind=REAL64), parameter :: ZERO=0.0D0  , ONE_8=1.0d0 , TWO_8=2.0d0
 !
       if ( m < 0 .OR. m > l ) then
          print*, ' error :  m must non-negative and m <l '
@@ -495,6 +497,7 @@ contains
   end subroutine pleg
 
  subroutine stat(field,nx,ny,nz,msg1,msg2)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: nx,ny,nz
       real :: mean, std

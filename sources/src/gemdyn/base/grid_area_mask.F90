@@ -26,6 +26,7 @@
       use lun
       use tdpack
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -33,8 +34,8 @@
       !arguments
       !---------
       integer,                       intent(in)  :: F_ni,F_nj
-      real*8 , dimension(F_ni,F_nj), intent(out) :: F_area_8
-      real*8 , dimension(F_ni,F_nj), intent(out) :: F_mask_8
+      real(kind=REAL64) , dimension(F_ni,F_nj), intent(out) :: F_area_8
+      real(kind=REAL64) , dimension(F_ni,F_nj), intent(out) :: F_mask_8
 
       !object
       !===========================
@@ -48,12 +49,12 @@
 
       integer, parameter :: MAXB=100000
 
-      real*8 :: blon_8(MAXB+1),blat_8(MAXB+1),iu_8(0:G_ni),jv_8(0:G_nj), &
+      real(kind=REAL64) :: blon_8(MAXB+1),blat_8(MAXB+1),iu_8(0:G_ni),jv_8(0:G_nj), &
                 g_mask_8(G_ni,G_nj),l_mask_8(l_minx:l_maxx,l_miny:l_maxy), &
                 r_ic1_8,r_jc1_8,r_ic2_8,r_jc2_8,h1_8,h2_8,h3_8,ib_8,jb_8, &
                 ic1_8,jc1_8,ic2_8,jc2_8,slope_8,sf_8(2),sp_8(2), &
                 rlat_8,rlon_8,s_8(2,2),x_8,y_8
-      real*8 spa_8(l_ni,l_nj,2)
+      real(kind=REAL64) spa_8(l_ni,l_nj,2)
 
       logical :: almost_zero,nj_even_L,ni_even_L,between_L,line_L
 

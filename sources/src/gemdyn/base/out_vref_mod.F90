@@ -16,6 +16,7 @@
 !*module out_vref - output vertical coordinate tags
 !
 module out_vref
+  use, intrinsic :: iso_fortran_env
   implicit none
   private
 
@@ -39,6 +40,7 @@ contains
     use lun
     use out_mod
     use outgrid
+    use, intrinsic :: iso_fortran_env
     implicit none
 
     integer, intent(in), optional :: ig1,ig2            !override 'out.cdk' values of ig1,ig2
@@ -85,6 +87,7 @@ contains
 
     use lun
     use out_mod
+    use, intrinsic :: iso_fortran_env
     implicit none
 
     real, dimension(:), intent(in) :: F_rf              !List of pressure levels to output
@@ -94,7 +97,7 @@ contains
     ! Local variables
     integer :: k,err,my_ig1,my_ig2
     integer, dimension(size(F_rf)) :: ip1s
-    real*8, dimension(size(F_rf)) :: zero
+    real(kind=REAL64), dimension(size(F_rf)) :: zero
     type(vgrid_descriptor) :: vgd
 
     ! Set default values
@@ -141,6 +144,7 @@ contains
     ! Decide whether or not to write descriptor based on local tile
     use out3
     use ptopo
+      use, intrinsic :: iso_fortran_env
     implicit none
 
     writeDescriptor = (Out3_iome >= 0) .and. (Ptopo_couleur == 0)
@@ -152,6 +156,7 @@ contains
     ! Decide whether or not to report output from the descriptor
     use lun
     use outgrid
+    use, intrinsic :: iso_fortran_env
     implicit none
     integer , parameter :: LEVEL_NTYP=2
     integer :: ig1,ig2

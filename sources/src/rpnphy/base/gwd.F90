@@ -24,6 +24,7 @@ contains
    !/@*
    subroutine gwd9(d, f, vb, sized, sizef, sizev, &
         std_p_prof, tau, kount, trnch, ni, nk, nkm1)
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CAPPA, GRAV, RGASD
       use phy_options
@@ -32,7 +33,7 @@ contains
       use series_mod, only: series_xst
       use tendency, only: apply_tendencies
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@author J.Mailhot RPN(May1990)
       !@Object model the gravity wave drag
       !@Arguments
@@ -83,6 +84,7 @@ contains
       !*@/
 #include <msg.h>
 #include "phymkptr.hf"
+#include <rmnlib_basics.hf>
 
       logical, parameter :: DO_GWDRAG   = .true.
       logical, parameter :: DO_BLOCKING = .true.
@@ -90,9 +92,9 @@ contains
       real, dimension(ni) :: rland
       real, dimension(ni,nkm1) :: work, rte, rs1, rtgm, ttendgw_r4
       real, dimension(ni,nk) :: tvirt
-      real*8, dimension(ni)    :: fcorio, land, launch, mtdir8, pp, slope8, &
+      real(REAL64), dimension(ni) :: fcorio, land, launch, mtdir8, pp, slope8, &
            sxx8, syy8, sxy8, xcent8
-      real*8, dimension(ni,nkm1) :: tt, te, uu, vv, sigma, s1, s2, s3, &
+      real(REAL64), dimension(ni,nkm1) :: tt, te, uu, vv, sigma, s1, s2, s3, &
            utendgw, vtendgw, ttendgw, utendno , vtendno, ttendno
 
       integer :: j, k
@@ -153,7 +155,7 @@ contains
 
       IF_INIT: if (kount == 0) then
          rland = -abs(nint(zmg))
-         call equivmount(rland, zlhtg, zdhdx, zdhdy, zdhdxdy, &
+         call equivmount1(rland, zdhdx, zdhdy, zdhdxdy, &
               ni, 1, ni, zslope, zxcent, zmtdir)
       endif IF_INIT
 
@@ -217,12 +219,12 @@ contains
          fcorio  = zfcor
          land = - abs(nint(zmg))  !# land-water index: -1=land, 0=water
 
-         call sgoflx7(uu, vv, utendgw, vtendgw, ttendgw   , &
+         call sgoflx8(uu, vv, utendgw, vtendgw, ttendgw   , &
               zugwdtd1, zvgwdtd1, te, tt, sigma, s1       , &
               nkm1, ni, 1, ni                             , &
               tau, taufac                                 , &
               land, launch, slope8, xcent8, mtdir8        , &
-              pp, fcorio, DO_GWDRAG, DO_BLOCKING,           &
+              DO_GWDRAG, DO_BLOCKING,           &
               sgo_stabfac, sgo_nldirfac, sgo_cdmin, split_tend_L)
 
          rug = real(utendgw)
@@ -266,14 +268,13 @@ contains
 
       IF_NON_ORO: if (non_oro) then
 
-         call gwspectrum4(ni, ni, nkm1, &
+         call gwspectrum5(ni, ni, nkm1, &
               sigma  , s1     , s2, &
               s3     , pp     , te, &
               tt     , uu     , vv, &
               ttendno, vtendno, utendno, &
               hines_flux_filter, GRAV  , RGASD, &
-              tau    , rmscon , iheatcal,       &
-              kount  , trnch  ,                 &
+              rmscon , iheatcal,       &
               std_p_prof, non_oro_pbot)
          if (phy_error_L) return
 

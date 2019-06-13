@@ -27,6 +27,7 @@
       use step_options
       use gem_timing
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,7 @@
       character(len=2048) :: filen, filen_link, append
       logical :: flag, pe0_master_L, output_L, finalstep_L, end_of_run_L
       integer :: err
-      real*8 :: timeleft, hugetype
+      real(kind=REAL64) :: timeleft, hugetype
       integer, parameter :: unf = 474
 !
 !     ---------------------------------------------------------------

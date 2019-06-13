@@ -19,7 +19,7 @@
       use tdpack
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       INTEGER N,M,NK,j,k,stat
       INTEGER, DIMENSION(N) :: klev

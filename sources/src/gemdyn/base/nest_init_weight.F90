@@ -31,6 +31,7 @@ subroutine nest_init_weight (F_grid)
       use glb_pil
       use var_gmm
       use ptopo
+      use, intrinsic :: iso_fortran_env
   implicit none
 #include <arch_specific.hf>
 
@@ -44,9 +45,9 @@ subroutine nest_init_weight (F_grid)
   integer l_wdeb,l_wfin,l_edeb,l_efin
   integer l_sdeb,l_sfin,l_ndeb,l_nfin,l_tdeb,l_tfin
   integer i, j, k ,ig, jg, nit, njt, shifti, shiftj, shiftk
-  real*8 zero,one,pis2,lx,ly,lz,xx,yy
+  real(kind=REAL64) zero,one,pis2,lx,ly,lz,xx,yy
   parameter (zero=0.d0, one=1.d0)
-  real*8 weight_x(l_ni), weight_y(l_nj), weight_z(G_nk+1)
+  real(kind=REAL64) weight_x(l_ni), weight_y(l_nj), weight_z(G_nk+1)
   real, dimension(:,:,:), pointer, contiguous :: weight=>null()
   character(len=GMM_MAXNAMELENGTH) :: prefix='NEST_POID',gmm_name
   character(len=GMM_MAXNAMELENGTH), dimension(4) :: supported_grids=(/'U','V','M','Q'/)

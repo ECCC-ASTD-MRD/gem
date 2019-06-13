@@ -21,6 +21,7 @@
       use lun
       use step_options
       use timestep
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -229,6 +230,7 @@
       use dimout
       use out_mod
       use out3
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -241,7 +243,7 @@
 ! so that, depending on the starting date, the first month could
 ! be shorter than expected.
 !
-      real*8   hours
+      real(kind=REAL64)   hours
       logical, save :: First_call_L = .true.
       integer, save :: Dts_month1(14),Steps_month1
       integer  Start_date(14),Current_month(14)

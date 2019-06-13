@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,6 +17,8 @@
 
 !/@*
 module incfg_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower, clib_isfile, clib_isreadok
    use str_mod, only: str_tab2space, str_toreal
    use mu_jdate_mod
    implicit none
@@ -28,7 +30,9 @@ module incfg_mod
    !  2013-11 Stephane Chamberland - typvar
    !@description
    ! Public functions
-   public :: incfg_new, incfg_new_4, incfg_new_8, incfg_add, incfg_nbvar, incfg_meta, incfg_isvarstep, incfg_varindex,incfg_time,incfg_add_string,incfg_add_kv,incfg_setgridid,incfg_getgridid
+   public :: incfg_new, incfg_new_4, incfg_new_8, incfg_add, incfg_nbvar, &
+        incfg_meta, incfg_isvarstep, incfg_varindex,incfg_time,incfg_add_string, &
+        incfg_add_kv,incfg_setgridid,incfg_getgridid
    ! Public constants
    integer,parameter,public :: INCFG_STRLEN = 32
    ! File format
@@ -41,10 +45,10 @@ module incfg_mod
    !   * in     : variable name as found in file (mandatory)
    !   * in2    : variable name as found in file, second component of vector fields
    !   * search : list of files to search var in, comma separated (mandatory)
-   !              accepted values: GEOP, CLIM, ANAL, INREP, 
+   !              accepted values: GEOP, CLIM, ANAL, INREP,
    !                               MANAL, MINREP, MINPUT
    !              var are search in until found in files starting from 1st one
-   !              Note: from GEM 4.8 onward, 
+   !              Note: from GEM 4.8 onward,
    !                     MANAL  could be used instead of ANAL (TAKS_INPUT/MODEL_ANALYSIS)
    !                     MINREP should be used instead of INREP (TAKS_INPUT/MODEL_INREP)
    !                     MINPUT could be used to point to TAKS_INPUT/MODEL_INPUT
@@ -57,10 +61,10 @@ module incfg_mod
    !   * hinterp: spatial horiz. interp. technique (defaut=cubic)
    !              accepted values: nearest, linear, cubic
    !   * vinterp: spatial vertical interp. technique (defaut=none)
-   !              accepted values: 
-   !                none, 
-   !                linear, 
-   !                cubic, 
+   !              accepted values:
+   !                none,
+   !                linear,
+   !                cubic,
    !                l-cond (linear conditional, interpolate only if different vgrid or hgrid)
    !                c-cond (cubic  conditional, interpolate only if different vgrid or hgrid)
    !   * tinterp: temporal interp. technique (defaut=none)
@@ -68,33 +72,32 @@ module incfg_mod
    !   * levels : list of levels (defaul=0)
    !              accepted format: FIRST_LEVEL, LAST_LEVEL
    !              LAST_LEVEL is optional
-   !              accepted values: 
-   !                0     (surface), 
-   !                1     (arbitrary level 1), 
-   !                1,26  (arbitrary level 1 to 26), 
-   !                -1    (caller provided list of levels), 
-   !                tdiag (thermo diag level), 
+   !              accepted values:
+   !                0     (surface),
+   !                1     (arbitrary level 1),
+   !                1,26  (arbitrary level 1 to 26),
+   !                -1    (caller provided list of levels),
+   !                tdiag (thermo diag level),
    !                mdiag (momentum diag level)
    !   * cat    : list of categories (for 4D vars) (default=-1)
    !              accepted format: FIRST_CAT, LAST_CAT
    !              LAST_CAT is optional
-   !              accepted values: 
-   !                1     (1st category), 
-   !                1,26  (categories 1 to 26), 
-   !                -1    (caller provided list of categories, all categories), 
+   !              accepted values:
+   !                1     (1st category),
+   !                1,26  (categories 1 to 26),
+   !                -1    (caller provided list of categories, all categories),
    !   * typvar : typvar param of RPN-std files (default=' ')
    !              accepted values: C, A, P, R, ...
    !   * mandatory : define if the var is mandatory or not (defaut=default)
-   !                 accepted values: 
+   !                 accepted values:
    !                 default (up to the caller to decide), true, false
    !   * vmin   : min value of the field... f = max(vmin,f)
    !   * vmax   : max value of the field... f = min(f,vmax)
    !  key "interp" (now hinterp) is still accepted for backward compatibility
    !  key "timeint"(now tinterp) is still accepted for backward compatibility
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
    real,parameter :: EPSILON = 1.e-5
    integer,parameter :: NLIST_MAX = 16
@@ -102,14 +105,15 @@ module incfg_mod
    integer,parameter :: NVAR_MAX = 512
 
    type :: incfg_var_T
-      character(len=INCFG_STRLEN) :: vn(2),file(NFILE_MAX),h_int,v_int,t_int,freq_type,lvl_type,typvar
+      character(len=INCFG_STRLEN) :: vn(2),file(NFILE_MAX),h_int,v_int, &
+           t_int,freq_type,lvl_type,typvar
       integer :: freq_t0,freq_dt,freq_t1,lvl0,lvl1,mandatory,cat0,cat1
       real :: vmin, vmax
    end type incfg_var_T
 
    type :: incfg_T
       integer,pointer :: ip1list(:)  !list of ip1 for lvl=-1
-      integer(IDOUBLE) :: dateo  !Initial date [jdate sec]
+      integer(INT64) :: dateo  !Initial date [jdate sec]
       integer :: dt         !time step length [seconds]
       integer :: n          !number of elements
       integer :: gridid     !dest grid id
@@ -168,7 +172,7 @@ contains
       !@return
       integer :: F_id !config id
       !*@/
-      integer(IDOUBLE) :: jdateo
+      integer(INT64) :: jdateo
       character(len=1024) :: filename_S
       !----------------------------------------------------------------------
       filename_S = ''
@@ -188,7 +192,7 @@ contains
       implicit none
       !@objective
       !@arguments
-      integer(IDOUBLE),intent(in) :: F_dateo
+      integer(INT64),intent(in) :: F_dateo
       integer,intent(in) :: F_dt
       character(len=*),intent(in),optional :: F_filename_S !full/rel path of config file
       integer,intent(in),optional :: F_ip1list(:)
@@ -213,7 +217,8 @@ contains
          allocate(m_list(NLIST_MAX),stat=istat)
          if (istat /= 0) return
          INCFG_VAR_DEFAULT%vn(1:2) = (/'         ','         '/)
-         INCFG_VAR_DEFAULT%file(1:4) = (/'                ','                ','                ','                '/)
+         INCFG_VAR_DEFAULT%file(1:4) = (/'                ','                ', &
+              '                ','                '/)
          INCFG_VAR_DEFAULT%h_int = KNOWN_H_INT(1)
          INCFG_VAR_DEFAULT%v_int = KNOWN_V_INT(1)
          INCFG_VAR_DEFAULT%t_int = KNOWN_T_INT(1)
@@ -331,7 +336,8 @@ contains
       integer :: index, istat,k,ii
       character(len=1024) :: key_S,val_S,string_S
       !----------------------------------------------------------------------
-      write(string_S,*) '(incfg) add_kv [BEGIN]',F_id,trim(F_kv_S(1,1)),':=:',trim(F_kv_S(2,1)),'; ...'
+      write(string_S,*) '(incfg) add_kv [BEGIN]',F_id,trim(F_kv_S(1,1)),':=:', &
+           trim(F_kv_S(2,1)),'; ...'
       call msg(MSG_DEBUG,string_S)
 
       F_istat = priv_check_idx(F_id)
@@ -374,7 +380,8 @@ contains
                     m_list(F_id)%v(index)%h_int = KNOWN_H_INT(ii)
             enddo
             if (m_list(F_id)%v(index)%h_int == ' ') then
-               call msg(MSG_WARNING,'(incfg) using default interp - ignoring unknown interp= '//trim(val_S))
+               call msg(MSG_WARNING,'(incfg) using default interp - ignoring unknown interp= ' &
+                    //trim(val_S))
             endif
          case('vint') !vinterp
             do ii=1,size(KNOWN_V_INT)
@@ -382,7 +389,8 @@ contains
                     m_list(F_id)%v(index)%v_int = KNOWN_V_INT(ii)
             enddo
             if (m_list(F_id)%v(index)%v_int == ' ') then
-               call msg(MSG_WARNING,'(incfg) using default vinterp - ignoring unknown vinterp= '//trim(val_S))
+               call msg(MSG_WARNING,'(incfg) using default vinterp - ignoring unknown vinterp= ' &
+                    //trim(val_S))
             endif
          case('tint') !timeint
             m_list(F_id)%v(index)%t_int = ' '
@@ -392,7 +400,8 @@ contains
             enddo
             if (m_list(F_id)%v(index)%t_int == ' ') then
                m_list(F_id)%v(index)%t_int = KNOWN_T_INT(1)
-               call msg(MSG_WARNING,'(incfg) using default interp - ignoring unknown timeint= '//trim(val_S))
+               call msg(MSG_WARNING,'(incfg) using default interp - ignoring unknown timeint= ' &
+                    //trim(val_S))
             endif
          case('typv') !typvar
             m_list(F_id)%v(index)%typvar = val_S(1:1)
@@ -519,7 +528,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: delta,mo0,mo1,yy0,yy1
-      integer(IDOUBLE) :: jdatev, step_8, dt_8
+      integer(INT64) :: jdatev, step_8, dt_8
       !------------------------------------------------------------------
       F_istat = priv_check_idx(F_id,F_index)
       if (.not.RMN_IS_OK(F_istat)) return
@@ -553,7 +562,10 @@ contains
 
 
    !/@*
-   function incfg_meta(F_id,F_index,F_varname_S,F_varname2_S,F_files_S,F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_lvl0,F_lvl1,F_needonce_L,F_ip1list,F_nip1,F_typvar_S,F_mandatory,F_vmin,F_vmax,F_cat0,F_cat1) result(F_istat)
+   function incfg_meta(F_id,F_index,F_varname_S,F_varname2_S,F_files_S, &
+        F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_lvl0,F_lvl1,F_needonce_L, &
+        F_ip1list,F_nip1,F_typvar_S,F_mandatory,F_vmin,F_vmax,F_cat0,F_cat1) &
+        result(F_istat)
       implicit none
       !@objective
       !@arguments 
@@ -561,7 +573,8 @@ contains
       character(len=*),intent(inout) :: F_varname_S
       character(len=*),intent(inout),optional :: F_varname2_S
       character(len=*),intent(inout),optional :: F_files_S(:)
-      character(len=*),intent(inout),optional :: F_h_int_S,F_v_int_S,F_t_int_S,F_lvl_type_S,F_typvar_S
+      character(len=*),intent(inout),optional :: F_h_int_S,F_v_int_S,F_t_int_S, &
+           F_lvl_type_S,F_typvar_S
       integer,intent(out),optional :: F_lvl0,F_lvl1,F_ip1list(:),F_nip1,F_mandatory,F_cat0,F_cat1
       real,intent(out),optional :: F_vmin, F_vmax
       logical,intent(out),optional :: F_needonce_L
@@ -661,7 +674,7 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-04
       !*@/
-      integer(IDOUBLE) :: jdatev,jdateo
+      integer(INT64) :: jdatev,jdateo
       !----------------------------------------------------------------------
       F_datev = RMN_ERR
       F_dateo = RMN_ERR
@@ -681,17 +694,17 @@ contains
       !@objective
       !@arguments 
       integer,intent(in) :: F_id,F_step
-      integer(IDOUBLE),intent(out) :: F_datev,F_dateo
+      integer(INT64),intent(out) :: F_datev,F_dateo
       integer,intent(out) :: F_dt
       !@return
       integer :: F_istat
       !@author Stephane Chamberland, 2011-04
       !*@/
-      integer(IDOUBLE) :: step_8, dt_8
+      integer(INT64) :: step_8, dt_8
       !----------------------------------------------------------------------
       F_istat = priv_check_idx(F_id)
       if (.not.RMN_IS_OK(F_istat)) return
-      
+ 
       step_8 = F_step
       dt_8   = m_list(F_id)%dt
       F_datev = m_list(F_id)%dateo + step_8 * dt_8
@@ -758,7 +771,7 @@ contains
          call msg(MSG_WARNING,'(incfg) File not found or not readable: '//trim(F_filename_S))
          return
       endif
-      
+ 
       fileid = 0
       istat = fnom(fileid,F_filename_S,'SEQ/FMT+R/O+OLD',0)
       if (.not.RMN_IS_OK(istat) .or. fileid <= 0) then
@@ -799,14 +812,15 @@ contains
       !------------------------------------------------------------------
       call str_split2list(parts_S,F_string_S,',',NFILE_MAX+1)
       ii = 1
-      ITEMLOOP: do 
+      ITEMLOOP: do
          if (ii == NFILE_MAX+1) exit ITEMLOOP
          if (parts_S(ii) == ' ') exit ITEMLOOP
          m_list(F_id)%v(F_index)%file(ii) = parts_S(ii)
          ii = ii + 1
       enddo ITEMLOOP
       if (parts_S(NFILE_MAX+1) /= ' ') &
-           call msg(MSG_WARNING,'(incfg) ignoring extra files (max of 4): '//trim(parts_S(NFILE_MAX+1)))
+           call msg(MSG_WARNING,'(incfg) ignoring extra files (max of 4): '// &
+           trim(parts_S(NFILE_MAX+1)))
       !------------------------------------------------------------------
       return
    end subroutine priv_parse_file
@@ -1055,7 +1069,7 @@ contains
       !----------------------------------------------------------------------
       call msg(MSG_DEBUG,'(incfg) get_ip1 [BEGIN]')
       F_nip1 = RMN_ERR
-      
+ 
       lvl0 = -1
       lvl1 = -1
       if (F_index > 0) then
@@ -1086,7 +1100,8 @@ contains
             if (F_nip1 > nmax) cycle
             if (present(F_ip1list)) then
                zp1 = real(k)
-               call convip(F_ip1list(F_nip1),zp1,ipkind,RMN_CONV_P2IPNEW,' ',.not.RMN_CONV_USEFORMAT_L)
+               call convip(F_ip1list(F_nip1),zp1,ipkind,RMN_CONV_P2IPNEW,' ', &
+                    .not.RMN_CONV_USEFORMAT_L)
             endif
          enddo
       endif

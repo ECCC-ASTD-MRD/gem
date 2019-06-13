@@ -1,20 +1,22 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 !/@*
-function phygetvarlist2(F_varlist_S,F_varname_S,F_outname_S,F_inname_S,F_bus_S,F_init,F_maxvars,F_shortmatch_L) result(F_nvars)
+function phygetvarlist2(F_varlist_S,F_varname_S,F_outname_S,F_inname_S, &
+     F_bus_S,F_init,F_maxvars,F_shortmatch_L) result(F_nvars)
+   use clib_itf_mod, only: clib_tolower, clib_toupper
    use phy_typedef
    implicit none
    !@objective Return list of var matching given conditions
@@ -32,9 +34,9 @@ function phygetvarlist2(F_varlist_S,F_varname_S,F_outname_S,F_inname_S,F_bus_S,F
    !  F_init could be: 0=no init; 1=init; -1=match all
    !  return nb of match items (up to size(F_varlist_S)
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
+
    include "buses.cdk"
    integer :: istat,vnlen,onlen,inlen,iadd
    character(len=PHY_MAXNAMELENGTH) :: varname_S,outname_S,inname_S,bus_s

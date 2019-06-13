@@ -21,7 +21,7 @@
                           il1, il2, ilg, lay, tg)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, ib, ig, mcont, lev1, il1, il2, ng2
       integer k, i, ng, lc, ng3

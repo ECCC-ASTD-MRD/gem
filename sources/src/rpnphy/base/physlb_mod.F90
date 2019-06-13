@@ -19,7 +19,7 @@ module physlb_mod
    private
    public :: physlb1
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 contains
 

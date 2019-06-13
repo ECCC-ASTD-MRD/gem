@@ -19,7 +19,7 @@
                           rmu, inpt, lc, ng, isl, il1, il2, ilg, s1)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lc, ng, isl, il1, il2, i, n, nm1
       real atten(ilg), coef1(5,lc), dp(ilg), o3(ilg), qq(ilg), dip(ilg), &

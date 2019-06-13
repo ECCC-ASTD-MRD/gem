@@ -18,7 +18,7 @@
       SUBROUTINE DVRTDF ( R , X , DS, N , MR , MX , NK )
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       INTEGER N, MR, MX, NK
       REAL R(MR,NK),X(MX,NK),DS(n,NK)
 !

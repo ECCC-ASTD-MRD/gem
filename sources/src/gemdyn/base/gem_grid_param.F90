@@ -20,6 +20,7 @@
                                  F_ni, F_nj, F_dx, F_dy, F_x0_8, F_y0_8  ,&
                                  F_xl_8, F_yl_8, F_overlap, F_yinyang_L  ,&
                                  F_uout, F_err)
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -37,11 +38,11 @@
       real, intent(INOUT) :: F_dx, F_dy       ! grid spacing in x and y directions
       real, intent(IN)    :: F_overlap        ! Overlap extent for Yin-Yang grid
       real, intent(IN   ) :: F_lonr, F_latr   ! coordinates of reference point in rotated space
-      real*8, intent(OUT) :: F_x0_8, F_y0_8   ! coordinates of lower left  corner in rotated space
-      real*8, intent(OUT) :: F_xl_8, F_yl_8   ! coordinates of upper right corner in rotated space
+      real(kind=REAL64), intent(OUT) :: F_x0_8, F_y0_8   ! coordinates of lower left  corner in rotated space
+      real(kind=REAL64), intent(OUT) :: F_xl_8, F_yl_8   ! coordinates of upper right corner in rotated space
 
       integer iref, jref
-      real*8 delta_8, lonr, latr
+      real(kind=REAL64) delta_8, lonr, latr
 !
 !-------------------------------------------------------------------
 !
@@ -129,7 +130,7 @@
       end if
 
  1201 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
-               x,a,' boundary= ',f10.4,x,a/)
+               1x,a,' boundary= ',f10.4,1x,a/)
 !
 !-------------------------------------------------------------------
 !

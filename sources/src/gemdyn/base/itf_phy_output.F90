@@ -35,6 +35,7 @@
       use out_listes
       use out_mod
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -52,7 +53,7 @@
       integer, dimension(:), allocatable :: indo_pres,indo,irff
       integer, dimension(:), pointer     :: ip1m
       logical flag_clos, write_diag_lev, accum_L
-      real*8 avgfact
+      real(kind=REAL64) avgfact
       real, dimension (l_ni,l_nj,G_nk+1), target :: wlnpi_m,wlnpi_t
       real, dimension(:), pointer    :: hybm,hybt
       real, dimension(:), allocatable:: prprlvl,rff
@@ -73,7 +74,7 @@
          end if
       end if
 
-      istat = fstopc('MSGLVL','SYSTEM',.false.)
+      istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
       out_type_S   = 'REGPHY'
 
       p_li0= Grd_lphy_i0 ; p_li1=Grd_lphy_in
@@ -260,7 +261,7 @@
       deallocate(rff,irff,data3d,zero)
       deallocate(hybm,hybt); nullify(hybm,hybt)
 
-      istat = fstopc('MSGLVL','WARNIN',.false.)
+      istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
  8001 format(/,' OUT_PHY- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)

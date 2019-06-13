@@ -16,7 +16,7 @@
 !**s/r raddel
       subroutine raddel( del, s, sh, n, nk, nkp)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer n, nk, nkp
       real del(n,nk), s(n,nkp), sh(n,nk)

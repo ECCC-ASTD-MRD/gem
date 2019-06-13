@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module coriolis
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -27,6 +28,6 @@ module coriolis
    ! Cori_fcorv_8       | coriolis factor computed on the V grid          |
    !----------------------------------------------------------------------
 
-   real*8, dimension(:,:), allocatable :: cori_fcoru_8, cori_fcorv_8
+   real(kind=REAL64), dimension(:,:), allocatable :: cori_fcoru_8, cori_fcorv_8
 
 end module coriolis

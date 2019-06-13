@@ -25,6 +25,7 @@ if [ $nomp -gt 1 ] ; then
 export OMP_STACKSIZE=4G
 printf " OMP_STACKSIZE=$OMP_STACKSIZE\n\n"
 fi
+
 printf " ##### UM_TIMING: Um_model.sh STARTING AT: `date`\n"
 
 #for CRAY

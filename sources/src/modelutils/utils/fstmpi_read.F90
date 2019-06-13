@@ -16,6 +16,7 @@
 !/@
 module fstmpi_read_mod
    use iso_c_binding
+   use rpn_comm_itf_mod
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use ezgrid_mod
@@ -39,8 +40,7 @@ module fstmpi_read_mod
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 
    interface fstmpi_get_gridid !# Name kept for backward compatibility
       module procedure fstmpi_get_hgridid
@@ -81,7 +81,8 @@ contains
       character(len=2) :: typvar_s
       !---------------------------------------------------------------------
       nomvar_S = F_nomvar
-      write(msg_S,'(a,i12,a,3i10,a)') '(fstmpi) Find, looking for: '//nomvar_S(1:4)//' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,']'
+      write(msg_S,'(a,i12,a,3i10,a)') '(fstmpi) Find, looking for: '//nomvar_S(1:4)// &
+           ' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,']'
       call msg(MSG_DEBUG,msg_S)
       call ptopo_init_var()
       F_key = RMN_OK
@@ -105,9 +106,11 @@ contains
          F_datev = mydata(2)
       endif
       if (RMN_IS_OK(F_key)) then
-         write(msg_S,'(a,i12,a,3i10,a,i12,a)') '(fstmpi) Found: '//nomvar_S(1:4)//' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
+         write(msg_S,'(a,i12,a,3i10,a,i12,a)') '(fstmpi) Found: '//nomvar_S(1:4)// &
+              ' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
       else
-         write(msg_S,'(a,i12,a,3i10,a,i12,a)') '(fstmpi) Not Found: '//nomvar_S(1:4)//' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
+         write(msg_S,'(a,i12,a,3i10,a,i12,a)') '(fstmpi) Not Found: '//nomvar_S(1:4)// &
+              ' [datev=',F_datev,'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
       endif
       call msg(MSG_DEBUG,msg_S)
       !---------------------------------------------------------------------

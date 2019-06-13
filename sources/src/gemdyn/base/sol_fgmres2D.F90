@@ -23,31 +23,33 @@
       use sol
       use redblack_2d
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: level
 
       ! Initial guess on input, approximate solution on output
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(inout) :: solution
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(inout) :: solution
 
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod, level)
             use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+      use, intrinsic :: iso_fortran_env
             implicit none
             integer, intent(in) :: level
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: v
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(out) :: prod
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: v
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(out) :: prod
          end subroutine
       end interface
 
       ! Right hand side of the linear system.
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: rhs_b
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: rhs_b
 
       ! Tolerance to achieve. The algorithm terminates when the relative
       ! residual is below tolerance.
-      real*8, intent(in) :: tolerance
+      real(kind=REAL64), intent(in) :: tolerance
 
       ! Restarts the method every maxinner inner iterations.
       integer, intent(in) :: maxinner
@@ -60,11 +62,8 @@
       ! Total number of iteration performed
       integer, intent(out) :: nbiter
 
-      real*8, intent(out) :: conv
+      real(kind=REAL64), intent(out) :: conv
 
-      ! Author
-      !     Stéphane Gaudreault -- March 2018
-      !
       ! References
       !
       ! C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations, SIAM, 1995
@@ -80,19 +79,19 @@
       integer :: i, j, k, k1, ii, jj, ierr
 
       integer :: initer, outiter, nextit, it
-      real*8 :: relative_tolerance, r0
-      real*8 :: norm_residual, norm_b, nu, t
-      real*8, dimension(maxinner+1, maxinner) :: hessenberg
+      real(kind=REAL64) :: relative_tolerance, r0
+      real(kind=REAL64) :: norm_residual, norm_b, nu, t
+      real(kind=REAL64), dimension(maxinner+1, maxinner) :: hessenberg
 
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy) :: work_space
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, maxinner) :: ww
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, maxinner+1) :: vv
-      real*8, dimension(maxinner+1, maxinner+1) :: rr, tt
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy) :: work_space
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, maxinner) :: ww
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, maxinner+1) :: vv
+      real(kind=REAL64), dimension(maxinner+1, maxinner+1) :: rr, tt
 
-      real*8 :: local_dot
-      real*8, dimension(:,:), allocatable :: v_local_prod, v_prod
+      real(kind=REAL64) :: local_dot
+      real(kind=REAL64), dimension(:,:), allocatable :: v_local_prod, v_prod
 
-      real*8, dimension(maxinner+1) :: rot_cos, rot_sin, gg
+      real(kind=REAL64), dimension(maxinner+1) :: rot_cos, rot_sin, gg
 
       logical almost_zero
 

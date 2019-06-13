@@ -21,7 +21,7 @@
                           il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, ib, ig, mcont(ilg), lev1, il1, il2
       real taug(ilg,lay), gw

@@ -14,13 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module prec
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-!revision
-! v3_23 - Qaddouri A.          - initial version
-!
 !______________________________________________________________________
 !                                                                      |
 !PROJECTION OPERATORS and VARIABLES ASSOCIATED WITH THE PRECONDITIONING|
@@ -42,7 +40,7 @@ module prec
 !
    integer :: Prec_ncol,Prec_mycol
 
-   real*8, dimension(:), allocatable :: Prec_xevec_8,Prec_xeval_8
-   real*8, dimension(:), allocatable :: Prec_ai_8,Prec_bi_8,Prec_ci_8
+   real(kind=REAL64), dimension(:), allocatable :: Prec_xevec_8,Prec_xeval_8
+   real(kind=REAL64), dimension(:), allocatable :: Prec_ai_8,Prec_bi_8,Prec_ci_8
 
 end module prec

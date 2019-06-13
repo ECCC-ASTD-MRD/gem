@@ -16,7 +16,7 @@
 
 subroutine blweight2(w,s,ps,n,nk)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    ! Arguments
    integer, intent(in) :: n                             !horizontal dimension

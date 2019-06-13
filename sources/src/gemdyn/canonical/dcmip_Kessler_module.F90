@@ -3,6 +3,9 @@ MODULE Kessler_module
 !Subroutines DCMIP_2016 (https://github.com/ClimateGlobalChange/DCMIP2016)
 !-------------------------------------------------------------------------
 
+   use, intrinsic :: iso_fortran_env
+   implicit none
+
 CONTAINS
 
 !-----------------------------------------------------------------------
@@ -76,33 +79,33 @@ SUBROUTINE KESSLER(theta, qv, qc, qr, rho, pk, dt, z, nz, precl) &
   !   Input / output parameters
   !------------------------------------------------
 
-  REAL(8), DIMENSION(nz), INTENT(INOUT) :: &
+  INTEGER, INTENT(IN) :: nz ! Number of thermodynamic levels in the column
+
+  real(kind=REAL64), DIMENSION(nz), INTENT(INOUT) :: &
             theta   ,     & ! Potential temperature (K)
             qv      ,     & ! Water vapor mixing ratio (gm/gm)
             qc      ,     & ! Cloud water mixing ratio (gm/gm)
             qr              ! Rain  water mixing ratio (gm/gm)
 
-  REAL(8), DIMENSION(nz), INTENT(IN) :: &
+  real(kind=REAL64), DIMENSION(nz), INTENT(IN) :: &
             rho             ! Dry air density (not mean state as in KW) (kg/m^3)
 
-  REAL(8), INTENT(OUT) :: &
+  real(kind=REAL64), INTENT(OUT) :: &
             precl          ! Precipitation rate (m_water / s)
 
-  REAL(8), DIMENSION(nz), INTENT(IN) :: &
+  real(kind=REAL64), DIMENSION(nz), INTENT(IN) :: &
             z       ,     & ! Heights of thermo. levels in the grid column (m)
             pk              ! Exner function (p/p0)**(R/cp)
 
-  REAL(8), INTENT(IN) :: &
+  real(kind=REAL64), INTENT(IN) :: &
             dt              ! Time step (s)
-
-  INTEGER, INTENT(IN) :: nz ! Number of thermodynamic levels in the column
 
   !------------------------------------------------
   !   Local variables
   !------------------------------------------------
   REAL, DIMENSION(nz) :: r, rhalf, velqr, sed, pc
 
-  REAL(8) :: f5, f2x, xk, ern, qrprod, prod, qvs, psl, rhoqr, dt_max, dt0
+  real(kind=REAL64) :: f5, f2x, xk, ern, qrprod, prod, qvs, psl, rhoqr, dt_max, dt0
 
   INTEGER :: k, rainsplit, nt
 

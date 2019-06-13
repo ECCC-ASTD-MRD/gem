@@ -1640,7 +1640,7 @@ ftnword f77name(fstweo)(ftnword *f_iun, ftnword *f_level)
  *Arguments                                                                  * 
  *                                                                           * 
  *  IN  level          ip1 level (float value)                               * 
- *  IN  kind           level kind as defined in convip                       * 
+ *  IN  kind           level kind as defined in convip_plus                  * 
  *                                                                           * 
  *****************************************************************************/
 
@@ -1948,7 +1948,7 @@ static void print_std_parms(stdf_dir_keys *stdf_entry, char *pre, char *option,
       {
         if (strstr(option,"LEVEL")) /* good old level option */
         {
-          f77name(convip)(&iip1,&level,&kind,&mode,c_level,&flag,(F2Cl) 15);
+          f77name(convip_plus)(&iip1,&level,&kind,&mode,c_level,&flag,(F2Cl) 15);
           c_level[15] = '\0';
           snprintf(v_level,sizeof(v_level),"%s","               ");        /* blank initialisation */
           posc=14;

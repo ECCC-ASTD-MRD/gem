@@ -20,9 +20,10 @@
       use wil_options
       use tdpack
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
-      real*8 F_rlon_8, F_rlat_8, F_rotlon_8, F_rotlat_8
+      real(kind=REAL64) F_rlon_8, F_rlat_8, F_rotlon_8, F_rotlat_8
 
       integer F_kind
 
@@ -39,9 +40,9 @@
 
       !---------------------------------------------------------------
 
-      real*8 theta_8,lambda_8,test_8,test1_8,test2_8,alpha_8
+      real(kind=REAL64) theta_8,lambda_8,test_8,test1_8,test2_8,alpha_8
 
-      real*8, parameter :: EPS_8 = 1.0d-06
+      real(kind=REAL64), parameter :: EPS_8 = 1.0d-06
 
       !---------------------------------------------------------------
 

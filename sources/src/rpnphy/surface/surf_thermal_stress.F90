@@ -16,7 +16,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
+subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
      PU10, PUSR, PPS,                                   &
      PDIR_SW, PSCA_SW, PLW_RAD, PZENITH,                &
      PREF_SW_SURF, PEMIT_LW_SURF,                       &
@@ -24,21 +24,21 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
      WBGT_SUN, WBGT_SHADE,                              &
      PTRAD_HSUN, PTRAD_HSHADE,                          &
      PTGLOBE_SUN, PTGLOBE_SHADE, PTWETB,                &
-     PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H ,N       )
+     PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H ,N)
+   use tdpack_const, only: TCDK
+   implicit none
 
    !    PURPOSE       : COMPUTES THERMAL STRESS INDICATORS over a slab surface
    !    AUTHOR        : S. Leroyer   (Original  10/2016)
    !    REFERENCE     : Leroyer et al. (2018) , urban climate
    !    MODIFICATIONS :
    !    METHOD        :
-   !-------------------------------------------------------------------------------
+   !--------------------------------------------------------------------------
 
    !*       0.     DECLARATIONS
    !               ------------
-   implicit none
-   !#TODO: the use of thermoconsts.inc is discontinued, please use tdpack for consitency with the rest of the physics.
-   include "thermoconsts.inc"
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
    !*      0.1    declarations of arguments
    integer, intent(IN)  :: N
@@ -117,7 +117,6 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
    real, external :: WETBULBT_SURF
    real, external :: MRT_BODY_SURF
    real, external :: UTCI_APPROX_SURF
-   external :: OUTQENV
 
    do JJ = 1, N
       ZUNDEF(JJ)=0.0
@@ -129,8 +128,8 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
    ZOPT_BODY=1
 
    ZOPT=1   ! CANOPY
-   call OUTQENV(PSCA_SW, ZUNDEF, PREF_SW_SURF, ZUNDEF,  &
-        ZUNDEF, PEMIT_LW_SURF, ZUNDEF, PLW_RAD,     &
+   call OUTQENV2(PSCA_SW, ZUNDEF, PREF_SW_SURF,  &
+        ZUNDEF, PEMIT_LW_SURF, PLW_RAD,     &
         ZUNDEF, ZUNDEF, ZUNDEF, PDIR_SW, PZENITH,   &
         PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H,  &
         N,ZOPT,ZOPT_BODY,ZEB_H,ZAB_H, ZHB_H )
@@ -141,8 +140,8 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
    ZOPT_BODY=2
 
    ZOPT=1   ! canopy
-   call OUTQENV(PSCA_SW, ZUNDEF, PREF_SW_SURF, ZUNDEF,  &
-        ZUNDEF, PEMIT_LW_SURF, ZUNDEF, PLW_RAD,     &
+   call OUTQENV2(PSCA_SW, ZUNDEF, PREF_SW_SURF,  &
+        ZUNDEF, PEMIT_LW_SURF, PLW_RAD,     &
         ZUNDEF, ZUNDEF, ZUNDEF, PDIR_SW, PZENITH,   &
         PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G,  &
         N,ZOPT,ZOPT_BODY,ZEB_G,ZAB_G, ZHB_H )
@@ -208,8 +207,11 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                               &
 
 end subroutine SURF_THERMAL_STRESS
 
+
 !===================================================================
 real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
+   implicit none
+!!!#include <arch_specific.hf>
 
    !  @Author : S. Leroyer (sept. 2014)
 
@@ -225,8 +227,6 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    !   g = 0.381571 =( 2.0**(1./3.) * 3.0**(2./3.) )**(-1.)
    !  cq = 3.4943 = 4.0 * (2./3.)**(1./3.)
 
-   implicit none
-#include <arch_specific.hf>
    real :: ZTRAD,ZTA,ZUA,ZGD,ZGE
    real :: ZUMOD    ! bounded wind speed
    real :: ZWORKA ! Term for the resolution of the equation
@@ -290,16 +290,17 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    return
 end function TGLOBE_BODY_SURF
 
+
 !===================================================================
 real function WETBULBT_SURF(PPA,PTA,PQA)
+   use tdpack_const, only: TCDK
+   implicit none
+!!!#include <arch_specific.hf>
 
    !  Author : S. Leroyer, EC (sept. 2014)
    !  Computes the psychometric Wet-Bulb Temperature in K (diff with natural ?)
 
-   implicit none
-   !#TODO: the use of thermoconsts.inc is discontinued, please use tdpack for consitency with the rest of the physics.
-   include "thermoconsts.inc"
-#include <arch_specific.hf>
+
    ! !*      0.1    declarations of arguments
    real  :: PPA          ! Air pressure (Pa)
    real  :: PTA          ! Air temperature (K)
@@ -320,7 +321,7 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    ! EXTERNAL FUNCTIONS (see wet_bulb.cdk90)
    real, external :: TPDD
-   real, external :: N_QSAT
+   real, external :: N_QSAT1
    real, external :: DWPT
    real, external :: W
    real, external :: O
@@ -333,7 +334,7 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    ZT=PTA-TCDK          ! convert in Celcius
    ZP=0.01*PPA         ! convert in hPa
-   qsat=N_QSAT(PTA,PQA,PPA)
+   qsat=N_QSAT1(PTA,PPA)
    ZRH=100.*max(min(PQA,qsat),0.)/qsat
 
    ZTD=DWPT(ZT,ZRH)
@@ -370,9 +371,7 @@ end function WETBULBT_SURF
 !===================================================================
 real function UTCI_APPROX_SURF(PTA,PEHPA,PTMRT,PVA)
    implicit none
-   !#TODO: the use of thermoconsts.inc is discontinued, please use tdpack for consitency with the rest of the physics.
-   include "thermoconsts.inc"
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: PTA, PEHPA, PTMRT, PVA
 
    !local variables
@@ -541,13 +540,13 @@ end function UTCI_APPROX_SURF
 !===================================================================
 real function MRT_BODY_SURF(PEMISS_BODY,PQ2,PQ3,PQ4,  &
      PQ5,PQ6,PQ7,PQ1)
+   use tdpack_const, only: STEFAN
+   implicit none
+!!!#include <arch_specific.hf>
+
    !    PURPOSE
    !    Computes the mean radiant temperature from the energy budget received by a body
 
-   implicit none
-   !#TODO: the use of thermoconsts.inc is discontinued, please use tdpack for consitency with the rest of the physics.
-   include "thermoconsts.inc"
-#include <arch_specific.hf>
    !* --  declarations of arguments
    real :: PQ1
    real :: PQ2

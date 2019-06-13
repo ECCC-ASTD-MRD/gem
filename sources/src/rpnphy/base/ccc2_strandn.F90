@@ -19,7 +19,7 @@
                            rmu3, ib, ig, lev1, il1, il2, ilg, lay, lev)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev, ib, ig, lev1, il1, il2
       real tran(ilg,2,lev), attn(ilg), attntop(ilg), rmu(ilg), &

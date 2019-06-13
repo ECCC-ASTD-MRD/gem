@@ -15,66 +15,67 @@
 
 !**s/r eqspng_set
 
-       subroutine eqspng_set
+      subroutine eqspng_set()
 
-       use step_options
-       use hvdif_options
-       use geomh
-       use glb_ld
-       use ver
-       use dynkernel_options
-       implicit none
+      use step_options
+      use hvdif_options
+      use geomh
+      use glb_ld
+      use ver
+      use dynkernel_options
+      use, intrinsic :: iso_fortran_env
+      implicit none
 #include <arch_specific.hf>
 
-       real    :: Href2
-       real*8  :: pdb, pdtmp, pda,  pdc
-       integer :: i,j,k,km,istat
+      real    :: Href2
+      real(kind=REAL64)  :: pdb, pdtmp, pda,  pdc
+      integer :: i,j,k,km,istat
 !
 !     ---------------------------------------------------------------
 !
-       eq_nlev = 0
-       Href2   = (16000./log(10.))**2 ! (~6950 m)**2
-       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Href2 = 1.0d0
+      eq_nlev = 0
+      Href2   = (16000./log(10.))**2 ! (~6950 m)**2
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Href2 = 1.0d0
 
 ! Check stability criteria and count level to diffuse.
 
-       istat = 0
-       do k= 1, size(Eq_sponge)
-          if ( Eq_sponge(k) > epsilon(Eq_sponge(k)) )then
-             if (Step_dt*Eq_sponge(k)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%m(k))>.25)then
-                istat = -1
-                exit
-             end if
-             eq_nlev= eq_nlev+1
-          else
-             exit
-          end if
-       end do
+      istat = 0
+      do k= 1, size(Eq_sponge)
+         if ( Eq_sponge(k) > epsilon(Eq_sponge(k)) )then
+            if (Step_dt*Eq_sponge(k)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%m(k))>.25)then
+               istat = -1
+               exit
+            end if
+            eq_nlev= eq_nlev+1
+         else
+            exit
+         end if
+      end do
 
-       call handle_error(istat, 'equatorial_sponge', &
+      call handle_error(istat, 'equatorial_sponge', &
             'Selected diffusion coeficients making the scheme unsatable, aborting')
 
-       if (eq_nlev <= 0) return
+      if (eq_nlev <= 0) return
 
-       eq_nlev= eq_nlev+1
+      eq_nlev= eq_nlev+1
 
-       allocate ( coef(1:eq_nlev+1), cm(eq_nlev), cp(eq_nlev) )
+      allocate ( coef(1:eq_nlev+1), cm(eq_nlev), cp(eq_nlev) )
 
-       coef(        1)= 0.
-       coef(eq_nlev+1)= 0.
-       coef(2:eq_nlev)= Eq_sponge(1:eq_nlev-1)
+      coef(        1)= 0.
+      coef(eq_nlev+1)= 0.
+      coef(2:eq_nlev)= Eq_sponge(1:eq_nlev-1)
 
-       do k=1,eq_nlev
-          km=max(1,k-1)
-          cp(k)=Step_dt*coef(k+1)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k ))
-          cm(k)=Step_dt*coef(k  )/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(km))
-       end do
+      do k=1,eq_nlev
+         km=max(1,k-1)
+         cp(k)=Step_dt*coef(k+1)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k ))
+         cm(k)=Step_dt*coef(k  )/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(km))
+      end do
 
-       allocate ( eponmod(l_ni,l_nj) )
+      allocate ( eponmod(l_ni,l_nj) )
 
-       if (Eq_ramp_L) then
-          pdb = P_lmvd_high_lat - P_lmvd_low_lat
-          do j= 1, l_nj
+      if (Eq_ramp_L) then
+         pdb = P_lmvd_high_lat - P_lmvd_low_lat
+         do j= 1, l_nj
             do i= 1, l_ni
                pdtmp = abs(geomh_latrx(i,j))
                pda   = min(1.0d0,max(0.0d0,(pdtmp-P_lmvd_low_lat)/pdb))
@@ -83,12 +84,12 @@
                               (1. - pdc) * P_lmvd_weigh_low_lat
                eponmod(i,j) = max(0.0,min(1.0,eponmod(i,j)))
             end do
-          end do
-       else
-          eponmod = 1.
-       end if
+         end do
+      else
+         eponmod = 1.
+      end if
 !
 !     ---------------------------------------------------------------
 !
-       return
-       end subroutine eqspng_set
+      return
+      end subroutine eqspng_set

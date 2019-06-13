@@ -2,10 +2,12 @@
 module testtiming_mod
    public
 
+#include <msg.h>
+
 contains
 
    subroutine testtiming_test1(sum1, val1, val2, ni, nj, nk)
-      integer :: nj
+      integer, intent(in) :: ni, nj, nk
       real :: sum1(ni,nj,nk), val1(ni,nj,nk), val2(ni,nj,nk)
       integer :: j1,j2, j3
       do j3 = 1,nk
@@ -26,7 +28,7 @@ contains
    end subroutine testtiming_test1
 
    subroutine testtiming_test2(sum1, val1, val2, ni, nj, nk)
-      integer :: nj
+      integer, intent(in) :: ni, nj, nk
       real :: sum1(ni,nj,nk), val1(ni,nj,nk), val2(ni,nj,nk)
       sum1 = val1 + val2
       return
@@ -34,7 +36,7 @@ contains
 
 
    subroutine testtiming_test1p(sum1, val1, val2, ni, nj, nk)
-      integer :: nj
+      integer, intent(in) :: ni, nj, nk
       real,pointer :: sum1(:,:,:), val1(:,:,:), val2(:,:,:)
       integer :: j1,j2, j3
       do j3 = 1,nk
@@ -55,18 +57,19 @@ contains
    end subroutine testtiming_test1p
 
    subroutine testtiming_test2p(sum1, val1, val2, ni, nj, nk)
-      integer :: nj
+      integer, intent(in) :: ni, nj, nk
       real,pointer :: sum1(:,:,:), val1(:,:,:), val2(:,:,:)
+      if (ni == 0) print *, ni, nj, nk  !# Avoid compiler unused warning/remark
       sum1 = val1 + val2
       return
    end subroutine testtiming_test2p
 
 
    subroutine testtiming_test1po(sum1, val1, val2, ni, nj, nk)
-      integer :: nj
+      integer, intent(in) :: ni, nj, nk
       real,pointer :: sum1(:,:,:), val1(:,:,:), val2(:,:,:)
       integer :: j1,j2, j3
-!$omp parallel private(ji,j2,j3)
+!$omp parallel private(j1,j2,j3)
 !$omp do
      do j3 = 1,nk
          do j2 = 1,nj
@@ -77,7 +80,7 @@ contains
       enddo
 !$omp end do
 !$omp end parallel
-!$omp parallel private(ji,j2,j3)
+!$omp parallel private(j1,j2,j3)
 !$omp do
       do j3 = 1,nk
          do j2 = 1,nj
@@ -93,7 +96,7 @@ contains
 
    !#NOTE: Apparently there is no wide compiler support for OMP with array notation, it is up to the vendor.
 !!$   subroutine testtiming_test2po(sum1, val1, val2, ni, nj, nk)
-!!$      integer :: nj
+!!$      integer, intent(in) :: ni, nj, nk
 !!$      real,pointer :: sum1(:,:,:), val1(:,:,:), val2(:,:,:)
 !!$!$omp parallel
 !!$      sum1 = val1 + val2

@@ -1,3 +1,6 @@
+!COMP_ARCH=intel-2016.1.156 ; -suppress=-warn all ; -suppress=-std08
+!COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-warn all ; -suppress=-std08
+
 !__________________________________________________________________________________________
 ! This module contains the Predicted Particle Property (P3) bulk microphysics scheme.      !
 !                                                                                          !
@@ -96,12 +99,13 @@
 !------------------------------------------------------------------------------------------!
 #ifdef ECCCGEM
  use iso_c_binding
+ use rpn_comm_itf_mod
 #endif
 
  implicit none
 
 ! Passed arguments:
- character*(*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
+ character(len=*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
  integer,       intent(in)            :: nCat                       !number of free ice categories
  integer,       intent(out), optional :: stat                       !return status of subprogram
  logical,       intent(in), optional  :: abort_on_err               !abort when an error is encountered [.false.]
@@ -121,9 +125,6 @@
                                  dum6,dd,amg,vt,dia,vn,vm
  logical                      :: err_abort
 
-#ifdef ECCCGEM
- include "rpn_comm.inc"
-#endif
 
  !------------------------------------------------------------------------------------------!
 
@@ -1132,8 +1133,6 @@ END subroutine p3_init
  character(len=16), parameter :: model = 'GEM'
 
 !----------------------------------------------------------------------------------------!
-
-!#include "tdpack_const.hf"  !No longer used .. commented code kept in for now
 
    end_status = STATUS_ERROR
 

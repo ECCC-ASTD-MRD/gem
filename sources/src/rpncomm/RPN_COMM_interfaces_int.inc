@@ -206,6 +206,52 @@
         end subroutine RPN_COMM_fast_dist
       end interface
 #endif
+#if ! defined(IN_RPN_COMM_ezwin)
+      interface
+      subroutine RPN_COMM_ezwin_create(sz,comm,mywin,ierr)
+        import :: rpncomm_window
+        integer, intent(IN) :: sz,comm
+        integer, intent(OUT) :: ierr
+        type(rpncomm_window), intent(OUT) :: mywin
+      end subroutine RPN_COMM_ezwin_create
+      function RPN_COMM_ezwin_id(mywin) result(winid)
+        import :: rpncomm_window
+        type(rpncomm_window), intent(IN) :: mywin
+        integer :: winid
+      end function RPN_COMM_ezwin_id
+      function RPN_COMM_ezwin_ptr(mywin) result(winptr)
+        import :: rpncomm_window,    C_PTR
+        type(rpncomm_window), intent(IN) :: mywin
+        type(C_PTR) :: winptr
+      end function RPN_COMM_ezwin_ptr
+      function RPN_COMM_ezwin_size(mywin) result(sz)
+        import :: rpncomm_window
+        type(rpncomm_window), intent(IN) :: mywin
+        integer :: sz
+      end function RPN_COMM_ezwin_size
+      subroutine RPN_COMM_ezwin_fetch_add(mywin, add, fetch, rank, offse&
+     &t, ierr)
+        import :: rpncomm_window
+        type(rpncomm_window), intent(IN) :: mywin
+        integer, intent(IN) :: add, rank, offset
+        integer, intent(OUT) :: fetch, ierr
+      end subroutine RPN_COMM_ezwin_fetch_add
+      subroutine RPN_COMM_ezwin_get(mywin,pz,nw,rank,offset,ierr)
+        import :: rpncomm_window,    C_PTR
+        type(rpncomm_window), intent(IN) :: mywin
+        type(C_PTR), intent(IN), value :: pz
+        integer, intent(IN) :: nw, rank, offset
+        integer, intent(OUT) :: ierr
+      end subroutine RPN_COMM_ezwin_get
+      subroutine RPN_COMM_ezwin_put(mywin,pz,nw,rank,offset,ierr)
+        import :: rpncomm_window,    C_PTR
+        type(rpncomm_window), intent(IN) :: mywin
+        type(C_PTR), intent(IN), value :: pz
+        integer, intent(IN) :: nw, rank, offset
+        integer, intent(OUT) :: ierr
+      end subroutine RPN_COMM_ezwin_put
+      end interface
+#endif
 #if ! defined(IN_RPN_COMM_finalize)
       interface
 !InTf!                                                                                                                                                                                                                                                          
@@ -723,15 +769,6 @@
         implicit none
         integer, intent(OUT) :: status_size
       end subroutine RPN_COMM_status_size
-      end interface
-#endif
-#if ! defined(IN_RPN_COMM_tmg_wrt)
-      interface
-!InTf!                                                                                                                                                                                                                                                          
-      SUBROUTINE RPN_COMM_tmg_wrt(Iun)
-      implicit none
-      integer,intent(IN) :: Iun
-      end SUBROUTINE RPN_COMM_tmg_wrt
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_topo)

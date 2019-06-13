@@ -15,6 +15,8 @@
 
 !/@
 module inputio_files_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_toupper, clib_isdir, clib_isfile, clib_realpath
    use fstmpio_mod
    use ptopo_utils, only: PTOPO_IODIST !#TODO: , PTOPO_BLOC
    implicit none
@@ -35,9 +37,8 @@ module inputio_files_mod
    ! Public Types
    public :: INPUTIO_FILES_T
    !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    integer, parameter :: NMAX_NLIST = 16

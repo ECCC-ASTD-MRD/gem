@@ -32,6 +32,7 @@
       use metric
       use fislh_sol
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -43,8 +44,8 @@
 !
       integer :: i, j, k, km
       real    :: w0
-      real*8  :: div, c1, w1, w2
-      real*8, parameter :: zero=0.d0, one=1.d0, half=0.5d0
+      real(kind=REAL64)  :: div, c1, w1, w2
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !
 !     ---------------------------------------------------------------
 !

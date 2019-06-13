@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,15 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!* s/p bourge1_3d.ftn
-!
-      subroutine bourge1_3d (fneige,fip,t,s,ps,ni,nk)
-!
-      implicit none
-#include <arch_specific.hf>
-      integer ni,nk
-      real fneige(ni,nk+1),fip(ni,nk+1),t(ni,nk),s(ni,nk),ps(ni)
-!
+!-------------------------------------- LICENCE END --------------------------
+
+subroutine bourge1_3d(fneige,fip,t,s,ps,ni,nk)
+   use tdpack_const, only: TCDK, RGASD
+   implicit none
+!!!#include <arch_specific.hf>
+   integer, intent(in) :: ni,nk
+   real fneige(ni,nk+1),fip(ni,nk+1),t(ni,nk),s(ni,nk),ps(ni)
+
 !AUTHOR
 !          Andre Plante, April 2006, based on :
 !          Andre Methot, Andre Plante (2002)
@@ -74,7 +73,6 @@
 !
 !
 !     Physical constants & parameters
-#include "tdpack_const.hf"
 
 !     Bourgouin's parametres (Wea. Forecasting 2000, 15, pp 583-592)
       real m1,m2,f1,f2,fslope

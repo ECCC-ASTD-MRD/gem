@@ -15,11 +15,12 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 subroutine coherence3(ni, trnch)
+   use tdpack_const, only: TRPL, RAUW
    use sfc_options
    use sfcbus_mod
    use svs_configs
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    integer ni, trnch
@@ -37,7 +38,6 @@ subroutine coherence3(ni, trnch)
    !             - Input -
    ! ni          horizontal length of a slab
 
-#include "tdpack_const.hf"
    include "isbapar.cdk"
    include "sfcinput.cdk"
 

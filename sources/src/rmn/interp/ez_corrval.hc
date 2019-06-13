@@ -23,7 +23,7 @@
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 wordint ez_corrval(ftnfloat *zout, ftnfloat *zin, wordint gdin, wordint gdout)
 {
-  wordint i;
+  wordint i,ierc;
   ftnfloat valmax, valmin,fudgeval;
   wordint fudgeval_set;
   wordint degIntCourant;
@@ -48,12 +48,14 @@ wordint ez_corrval(ftnfloat *zout, ftnfloat *zin, wordint gdin, wordint gdout)
   idx_gdin = c_find_gdin(gdin, gdout);
 
   nj = lgdin->j2 - lgdin->j1 +1;
+  ierc = 0; /* no extrapolation */
   
   if (lgdout->gset[idx_gdin].zones[DEHORS].npts > 0)
     {
+    ierc = 2; /* code to indicate extrapolation */
     if (groptions.degre_extrap == ABORT)
       {
-      fprintf(stderr, "<ez_corrval> There are points on the source grid that lie outside the source grid\n");
+      fprintf(stderr, "<ez_corrval> There are points on the destination grid that lie outside the source grid\n");
       fprintf(stderr, "<ez_corrval> aborting at your request!\n\n\n");
       return -1;
       }
@@ -128,7 +130,7 @@ wordint ez_corrval(ftnfloat *zout, ftnfloat *zin, wordint gdin, wordint gdout)
 
   if (groptions.vecteur == VECTEUR)
     {
-    return 0;
+    return ierc;
     }
 
 
@@ -168,5 +170,5 @@ lgdin->grtyp, lgdin->grref,1,1);
     f77name(ez_corrbgd)(zout, &(lgdout->ni), &(lgdout->nj), &(lgdout->fst.ig[IG1]));
     }
 
-  return 0;
+  return ierc;
 }

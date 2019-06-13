@@ -1,6 +1,7 @@
-#define ARGUMENT_TYPE real*4
+#define ARGUMENT_TYPE real
 subroutine low_pass_dwt2d_r4(z,ni,nj,nx,ny)
 ! 2D low pass filter using 53 dwt linear prediction wavelet
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -12,6 +13,7 @@ end subroutine low_pass_dwt2d_r4
 
 subroutine low_pass_dwt2d_r4_4x4(z,ni,nj,nx,ny)
 ! 2D low pass filter using 53 dwt linear prediction wavelet
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -29,6 +31,7 @@ end subroutine low_pass_dwt2d_r4_4x4
 
 subroutine low_pass_quant_dwt2d_r4(z,ni,nj,nx,ny)
 ! 2D low pass filter using 53 dwt linear prediction wavelet
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -42,6 +45,7 @@ end subroutine low_pass_quant_dwt2d_r4
 subroutine quant_low_r4(z,ni,nj,nx,ny)
 ! quantize (2**16 intervals) non zero terms terms in dwt transformed data
 ! this routine assumes the transform layout used by fwd_linear53_dwt2d_r4 / inv_linear53_dwt2d_r4
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -78,6 +82,7 @@ end subroutine quant_low_r4
 subroutine zero_high_dwt2d_r4(z,ni,nj,nx,ny)
 ! zero out all odd (high frequency) terms in dwt transformed data
 ! this routine assumes the transform layout used by fwd_linear53_dwt2d_r4 / inv_linear53_dwt2d_r4
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -97,6 +102,7 @@ subroutine inv_linear53_dwt2d_r4z(z,ni,nj,nx,ny)   ! 2D inverse transform , alon
 ! in place INVERSE lifting transform using linear prediction wavelet for ARGUMENT_TYPE numbers
 ! all odd terms are asumed to be zero
   use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -129,6 +135,7 @@ subroutine inv_linear53_dwt2d_r4z(z,ni,nj,nx,ny)   ! 2D inverse transform , alon
 contains
   subroutine inv_linear53_dwt1d_r4z(f)  ! 1D along i transform
     use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
     implicit none
     ARGUMENT_TYPE, intent(INOUT), dimension(0:ni-1) :: f
 
@@ -150,6 +157,7 @@ end subroutine inv_linear53_dwt2d_r4z
 subroutine inv_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! 2D inverse transform , along j first, then along i
 ! in place INVERSE lifting transform using linear prediction wavelet for ARGUMENT_TYPE numbers
   use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -182,6 +190,7 @@ subroutine inv_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! 2D inverse transform , along
 contains
   subroutine inv_linear53_dwt1d_r4(f)  ! 1D along i transform
     use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
     implicit none
     ARGUMENT_TYPE, intent(INOUT), dimension(0:ni-1) :: f
 
@@ -216,6 +225,7 @@ subroutine fwd_linear53_dwt2d_r4z(z,ni,nj,nx,ny)   ! 2D forward transform, along
 ! in place FORWARD lifting transform using linear prediction wavelet for ARGUMENT_TYPE numbers
 ! all odd terms in transform will be assumed 0 by inverse transform and are not stored
   use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -243,6 +253,7 @@ subroutine fwd_linear53_dwt2d_r4z(z,ni,nj,nx,ny)   ! 2D forward transform, along
   return
 contains
   subroutine fwd_linear53_dwt1d_r4z(f)   ! 1D along i transform
+      use, intrinsic :: iso_fortran_env
     implicit none
     ARGUMENT_TYPE, intent(INOUT), dimension(0:ni-1) :: f
 
@@ -271,6 +282,7 @@ end subroutine fwd_linear53_dwt2d_r4z
 subroutine fwd_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! 2D forward transform, along i first, then along j
 ! in place FORWARD lifting transform using linear prediction wavelet for ARGUMENT_TYPE numbers
   use ISO_C_BINDING
+      use, intrinsic :: iso_fortran_env
   implicit none
   integer, intent(IN) :: ni, nj, nx, ny
   ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
@@ -298,6 +310,7 @@ subroutine fwd_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! 2D forward transform, along 
   return
 contains
   subroutine fwd_linear53_dwt1d_r4(f)   ! 1D along i transform
+      use, intrinsic :: iso_fortran_env
     implicit none
     ARGUMENT_TYPE, intent(INOUT), dimension(0:ni-1) :: f
 
@@ -330,8 +343,8 @@ end subroutine fwd_linear53_dwt2d_r4
 program test
   ARGUMENT_TYPE, dimension(0:NI-1,0:NJ-1) :: z, z0, z1
   integer :: i, j, ni, nj, ni2, nj2, ni4, nj4, ni8, nj8
-  real*8, dimension(NREP) :: T0,T1,T2,T3
-  real*8, external :: MPI_WTIME
+  real(kind=REAL64), dimension(NREP) :: T0,T1,T2,T3
+  real(kind=REAL64), external :: MPI_WTIME
   ni = NI
   nj = NJ
   do j = 0,nj-1

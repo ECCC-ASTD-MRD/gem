@@ -13,6 +13,7 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
+
 !/@*
 subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
      fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
@@ -20,6 +21,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
      u,v,t,tve,q,qe,ps,s,se,sw, &
      z,z0,gzmom,frv,wstar,turbreg, &
      vcoef,dxdy,tau,kount,trnch,n,nk)
+   use, intrinsic :: iso_fortran_env, only: INT64
    use tdpack, only: CAPPA, DELTA, GRAV, KARMAN, RGASD
    use series_mod, only: series_xst
    use phy_options
@@ -27,7 +29,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    use mixing_length, only: ml_tfilt,ml_blend,ml_calc_blac,ml_calc_boujo,ml_calc_lh,ML_LMDA,ML_OK
    use pbl_stabfunc, only: psf_stabfunc, PSF_OK
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !Arguments
    integer, intent(in) :: n                          !horizontal dimension
@@ -36,7 +38,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    integer, intent(in) :: trnch                      !slice number
    real, intent(in) :: tau                           !time step length (s)
    real, dimension(n), intent(in) :: hpbl            !height of the PBL (m)
-   real, dimension(n), intent(in) :: lh              !launching height (m)   
+   real, dimension(n), intent(in) :: lh              !launching height (m)
    real, dimension(n), intent(in) :: ps              !surface pressure (Pa)
    real, dimension(n), intent(in) :: z0              !roughness length (m)
    real, dimension(n), intent(in) :: frv             !friction velocity (m/s)
@@ -123,7 +125,7 @@ subroutine moistke11(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
 #include "surface.cdk"
 #include "machcon.cdk"
 #include "tables.cdk"
-#include "phyinput.cdk"
+   include "phyinput.inc"
 
    ! Local parameter definitions
    real, parameter :: ICAB=0.4

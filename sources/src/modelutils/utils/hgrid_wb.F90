@@ -1,21 +1,23 @@
 !-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@
 module hgrid_wb
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use wb_itf_mod
    use ezgrid_mod
    implicit none
    private
@@ -23,14 +25,14 @@ module hgrid_wb
    !@author Stephane Chamberland, 2012-01
    !@description
    ! Public functions
-   public :: hgrid_wb_put, hgrid_wb_get, hgrid_wb_gmmmeta, HGRID_DIEZE,HGRID_PERIODIC
+   public :: hgrid_wb_put, hgrid_wb_get, hgrid_wb_gmmmeta, &
+        HGRID_DIEZE,HGRID_PERIODIC
    ! Public constants
    !
 !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
 
    integer,parameter :: HGRID_DIEZE = 1
@@ -52,7 +54,7 @@ module hgrid_wb
 !!$   !GMM has/need:
 !!$      integer,dimension(4) :: low,high,halo,halomax,n
 !!$      integer   :: flags
-!!$        GMM_FLAG_STAG_X,GMM_FLAG_STAG_Y,GMM_FLAG_STAG_Z 
+!!$        GMM_FLAG_STAG_X,GMM_FLAG_STAG_Y,GMM_FLAG_STAG_Z
 !!$   !RPN_COMM has:
 !!$      gni,gnj,lni,lnj,minx,maxx,miny,maxy,halox,haloy,i0,j0
 
@@ -62,7 +64,8 @@ contains
 
 
    !/@*
-   function hgrid_wb_put(F_name_S,F_ez_id,F_i0,F_j0,F_lni,F_lnj,F_hx,F_hy,F_dieze,F_periodx,F_periody,F_quiet_L,F_rewrite_L) result(F_id)
+   function hgrid_wb_put(F_name_S,F_ez_id,F_i0,F_j0,F_lni,F_lnj,F_hx,F_hy, &
+        F_dieze,F_periodx,F_periody,F_quiet_L,F_rewrite_L) result(F_id)
       implicit none
       !@objective Store a new grid
       !@arguments

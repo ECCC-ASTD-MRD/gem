@@ -3,8 +3,10 @@
 !COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-C
 
 subroutine yy2global()
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    ! for forecast (P) or analysis (A) fields
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write
+   use clib_itf_mod
    implicit none
 
    !author  Vivian Lee  Jun.2011
@@ -56,26 +58,27 @@ subroutine yy2global()
    ! 116- Add new feature to copy Z grids and their grid parameters to output
    !      and remove option to accept separate Yin, Yang files.
 
-#include <clib_interface_mu.hf>
+   include "rmnlib_basics.inc"
 
-   integer, external :: fnom,fstouv,fstfrm,fstlir,fstluk,fstinf,fstinl,fstlnk
-   integer, external :: fstecr,fstprm,exdb,exfin,longueur
-   integer, external :: ezqkdef,ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
+!!$   integer, external :: fnom,fstouv,fstfrm,fstlir,fstluk,fstinf,fstinl,fstlnk
+!!$   integer, external :: fstecr,fstprm,exdb,exfin
+!!$   integer, external :: ezqkdef,ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
+   integer, external :: longueur
 
    integer, parameter :: maxnfiles=80
    integer, parameter :: maxvar=300
    integer, parameter :: nklemax=6
    integer, parameter :: nrectot=20000
-   real*8,  parameter :: pole_8= 90.0d0
-   real*8,  parameter :: near_pole_8= 89.99999999
-   real  ,  parameter :: pole  = 90.0
+   real(REAL64), parameter :: pole_8= 90.0d0
+   real(REAL64), parameter :: near_pole_8= 89.99999999
+   real,    parameter :: pole  = 90.0
 
    integer npos
    type(vgrid_descriptor) :: vgd
 
-   character*256 defaut(nklemax),liste(0:nklemax-1),val(nklemax)
-   character*256 yyfile_S,globfile_S,nml_S
-   character*256 filelist_yy(maxnfiles)
+   character(len=256) :: defaut(nklemax),liste(0:nklemax-1),val(nklemax)
+   character(len=256) :: yyfile_S,globfile_S,nml_S
+   character(len=256) :: filelist_yy(maxnfiles)
 
    integer i,j,k,m,ier,iunout,iunyy,NYY,iunnml
    integer, allocatable, dimension(:) :: unit_yy
@@ -83,17 +86,17 @@ subroutine yy2global()
    integer ip1,ip2,ip3,ni,nj,nk,datev,key,len,mni,mnj,xni,xnj
    integer dateo,ni1,nj1,nk1,p1,p2,p3,yni,ynj,gni,gnj,intcode
 
-   real*8 deltat_8,h1_8,h2_8,deg2rad_8,dxla_8,dyla_8,rad2deg_8
+   real(REAL64) :: deltat_8,h1_8,h2_8,deg2rad_8,dxla_8,dyla_8,rad2deg_8
    integer ig1,ig2,ig3,ig4,scrap,myig1,myig2,myig3,myig4
    integer myni,mynj,myp1,myp2,myp3,pni,pnj
    integer deet,npas,nbits,datyp,nsubgrids,sgid
 
-   character*12 etiket,yyetiket
-   character*4 nomvar
-   character*1 typvar,grtyp,mygrtyp
-   character*17 varlist_S(MAXVAR)
-   character*4 myvar_S(MAXVAR),myclip_S,print_S
-   character*7 myinterp_S
+   character(len=12) :: etiket,yyetiket
+   character(len=4)  :: nomvar
+   character(len=1)  :: typvar,grtyp,mygrtyp
+   character(len=17) :: varlist_S(MAXVAR)
+   character(len=4)  :: myvar_S(MAXVAR),myclip_S,print_S
+   character(len=7)  :: myinterp_S
    logical myclip(MAXVAR),clipcode,print_L,ugrid_L,yy2enml_L
    integer myinterp(MAXVAR),myvarnum,interp_index,clip_index
    namelist /interp/ varlist_S
@@ -101,15 +104,15 @@ subroutine yy2global()
    integer, allocatable,dimension(:) :: list_yy,subgrid
    real, allocatable, dimension(:,:) :: work,gg,vgg,gwork,zwork,zzwork
    real, allocatable,dimension(:,:) :: workyin,vworkyin,workyinyan,vworkyinyan
-   real*8, allocatable, dimension(:,:) :: workyan_8,gg_8
-   real*8, allocatable, dimension(:,:) :: vworkyan_8,vgg_8
+   real(REAL64), allocatable, dimension(:,:) :: workyan_8,gg_8
+   real(REAL64), allocatable, dimension(:,:) :: vworkyan_8,vgg_8
    real, allocatable, dimension(:) :: xpx,ypx,xglob,yglob
-   real*8,allocatable,dimension(:) :: xpx_8,ypx_8
-   real*8,allocatable,dimension(:) :: G_xglob_8,G_yglob_8
+   real(REAL64),allocatable,dimension(:) :: xpx_8,ypx_8
+   real(REAL64), allocatable,dimension(:) :: G_xglob_8,G_yglob_8
    integer, allocatable,dimension (:) :: yan_imx,yan_imy,yan_i,yan_j
-   real*8,allocatable,dimension (:) :: yan_t,yan_p
-   real*8,allocatable,dimension (:,:) :: yan_s
-   real*8 pi,s(2,2)
+   real(REAL64),allocatable,dimension (:) :: yan_t,yan_p
+   real(REAL64),allocatable,dimension (:,:) :: yan_s
+   real(REAL64) :: pi,s(2,2)
 
    !  s(1,1)=s(1,:)
    !  s(1,2)=s(2,:)
@@ -733,9 +736,9 @@ subroutine yy2global()
 
    ier=fstfrm(iunyy)
    ier=fstfrm(iunout)
-   call fclos(iunyy)
-   call fclos(iunout)
-   if (yy2enml_L) call fclos(iunnml)
+   ier = fclos(iunyy)
+   ier = fclos(iunout)
+   if (yy2enml_L) ier = fclos(iunnml)
    ier = exfin('yy2global','116','NON')
    stop
 
@@ -744,6 +747,7 @@ end subroutine yy2global
 
 subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
      imx,imy,t,p,len,udx,udy,interp,clip)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    !author Abdessamad Qaddouri Nov.2009
    !
    !revision 103- V.Lee Jun.2010 - corr for linear int.
@@ -764,15 +768,17 @@ subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
    ! interp   - 0-nearest, 1-linear, 2-cubic
    !
    implicit none
+   include "rmnlib_basics.inc"
+
    integer len,k
    integer gni,gnj,ni,nj,imx(len),imy(len),ix(len),jx(len),i,j,interp
    logical clip
-   real*8  gg(gni,gnj)
-   real*8  g2(ni,nj)
-   real*8  x(ni),y(nj)
+   real(REAL64) ::  gg(gni,gnj)
+   real(REAL64) ::  g2(ni,nj)
+   real(REAL64) ::  x(ni),y(nj)
 
-   real*8 t(len),p(len)
-   real*8  udx,udy
+   real(REAL64) :: t(len),p(len)
+   real(REAL64) ::  udx,udy
 
    ! interpolate geop to output grid
    !     print *,'x(1)=',x(1),' y(1)=',y(1)
@@ -807,7 +813,7 @@ end subroutine yan2global
 
 subroutine yanuv2global(gu,gv,gni,gnj,U2,V2,ni,nj, x,y, &
      ix,jx,imx,imy,t,p,s,len,udx,udy,interp,clip)
-   !
+   use, intrinsic :: iso_fortran_env, only: REAL64
    !revision V.Lee Nov.2009
    !
    ! gu,gv - sortie sur grille gx,gy
@@ -819,15 +825,17 @@ subroutine yanuv2global(gu,gv,gni,gnj,U2,V2,ni,nj, x,y, &
    ! udx,udy  - h1,h2 dans yin,yan
    !
    implicit none
+   include "rmnlib_basics.inc"
+
    integer len,k
    integer gni,gnj,ni,nj,imx(len),imy(len),i,j,interp,ix(len),jx(len)
    logical clip
-   real*8  gu(gni,gnj),gv(gni,gnj)
-   real*8  u2(ni,nj),v2(ni,nj)
-   real*8  gu2(gni,gnj),gv2(gni,gnj)
-   real*8  x(ni),y(nj)
-   real*8  s(4,len),t(len),p(len)
-   real*8  udx,udy
+   real(REAL64) ::  gu(gni,gnj),gv(gni,gnj)
+   real(REAL64) ::  u2(ni,nj),v2(ni,nj)
+   real(REAL64) ::  gu2(gni,gnj),gv2(gni,gnj)
+   real(REAL64) ::  x(ni),y(nj)
+   real(REAL64) ::  s(4,len),t(len),p(len)
+   real(REAL64) ::  udx,udy
 
    ! interpol geop to defined output grid
 
@@ -864,15 +872,18 @@ end subroutine yanuv2global
 
 
 subroutine yy_int_cub_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    !author Abdessamad Qaddouri Nov.2009
    implicit none
+   include "rmnlib_basics.inc"
+
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
    integer i,j,Mx(Ni,Nj),My(Ni,Nj)
-   real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4
+   real(REAL64) ::  W1,W2,W3,W4,X1,XX,X2,X3,X4
    integer Im, Jm
-   real*8 YY,y1,y2,y3,y4,FF(Ni,Nj)
-   real*8 F(Nx,Ny),fx1,fx2,fx3,fx4,x(*),y(*)
-   real*8 Xi(Ni,Nj),Yi(Ni,Nj)
+   real(REAL64) :: YY,y1,y2,y3,y4,FF(Ni,Nj)
+   real(REAL64) :: F(Nx,Ny),fx1,fx2,fx3,fx4,x(*),y(*)
+   real(REAL64) :: Xi(Ni,Nj),Yi(Ni,Nj)
 
    !
    do j =1,Nj
@@ -926,16 +937,19 @@ end subroutine yy_int_cub_lag
 
 
 subroutine yy_int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    !author Abdessamad Qaddouri Nov.2009
    implicit none
+   include "rmnlib_basics.inc"
+
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
    integer i,j,Mx(Ni,Nj),My(Ni,Nj)
 
    integer Im, Jm
-   real*8 FF(Ni,Nj)
-   real*8 F(Nx,Ny),x(*),y(*)
-   real*8 Xi(Ni,Nj),Yi(Ni,Nj)
-   real*8 betax,betax1,betay,betay1
+   real(REAL64) :: FF(Ni,Nj)
+   real(REAL64) :: F(Nx,Ny),x(*),y(*)
+   real(REAL64) :: Xi(Ni,Nj),Yi(Ni,Nj)
+   real(REAL64) :: betax,betax1,betay,betay1
 
    do j =1,Nj
       do i= 1,Ni
@@ -963,16 +977,19 @@ end subroutine yy_int_lin_lag
 
 
 subroutine yy_int_near_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi,Yi,x,y,h1,h2)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    !author Abdessamad Qaddouri Nov.2009
    implicit none
+   include "rmnlib_basics.inc"
+
    integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
    integer i,j,Mx(Ni,Nj),My(Ni,Nj)
 
    integer Im, Jm
-   real*8 FF(Ni,Nj)
-   real*8 F(Nx,Ny),x(*),y(*)
-   real*8 Xi(Ni,Nj),Yi(Ni,Nj),h1,h2
-   real*8 betax,betax1,betay,betay1
+   real(REAL64) :: FF(Ni,Nj)
+   real(REAL64) :: F(Nx,Ny),x(*),y(*)
+   real(REAL64) :: Xi(Ni,Nj),Yi(Ni,Nj),h1,h2
+   real(REAL64) :: betax,betax1,betay,betay1
    !
    do j =1,Nj
       do i= 1,Ni

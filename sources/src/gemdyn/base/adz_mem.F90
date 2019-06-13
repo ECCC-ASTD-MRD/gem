@@ -16,6 +16,7 @@
 module adz_mem
    use ISO_C_BINDING
    use glb_ld
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -31,8 +32,8 @@ module adz_mem
       integer, dimension(:), pointer, contiguous :: Adz_search_m,&
                                                     Adz_search_t
       real :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
-      real*8 :: adz_ovdzm_8, adz_ovdzt_8
-      real*8, dimension(:), pointer :: Adz_cy_8, &
+      real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8
+      real(kind=REAL64), dimension(:), pointer :: Adz_cy_8, &
             Adz_delz_m, Adz_delz_t, Adz_odelz_m, Adz_odelz_t
 
       type(C_PTR) :: Adz_cpntr_q,Adz_cpntr_t
@@ -53,7 +54,7 @@ module adz_mem
       real, allocatable, dimension (:,:,:,:)             :: &
                            Adz_pm,Adz_pmu,Adz_pmv,Adz_pt
 
-      real*8, allocatable, dimension (:,:,:,:) :: Adz_wpxyz
+      real(kind=REAL64), allocatable, dimension (:,:,:,:) :: Adz_wpxyz
 
       real, allocatable, dimension (:,:,:  ) ::       &
                      Adz_uu_ext,Adz_vv_ext,Adz_ww_ext,&

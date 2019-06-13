@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module hvdif_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -157,7 +158,7 @@ module hvdif_options
    integer Vspng_niter
    real, dimension(:,:), allocatable :: eponmod
    real, dimension(:  ), allocatable :: coef,cm,cp
-   real*8, dimension(:), allocatable :: Vspng_coef_8
+   real(kind=REAL64), dimension(:), allocatable :: Vspng_coef_8
 
 contains
 
@@ -165,6 +166,7 @@ contains
 
       integer function hvdif_nml (F_unf)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -215,6 +217,7 @@ contains
       end function hvdif_nml
 
    function hvdif_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

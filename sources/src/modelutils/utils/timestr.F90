@@ -17,6 +17,8 @@
 
 !/@*
 module timestr_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_toupper
    use str_mod, only: str_toreal,str_normalize
    use mu_jdate_mod, only: jdate_from_cmc, jdate_year, jdate_month
    implicit none
@@ -30,9 +32,8 @@ module timestr_mod
    integer,public :: TIMESTR_NO_MATCH = 0
    integer,public :: TIMESTR_MATCH = 1
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    interface timestr_parse
@@ -66,7 +67,7 @@ module timestr_mod
       module procedure timestr_isstep_int_jdate
    end interface timestr_isstep
 
-   real(RDOUBLE),parameter :: EPSILON_8 = tiny(1.D0)
+   real(REAL64),parameter :: EPSILON_8 = tiny(1.D0)
    real,parameter :: EPSILON_4 = tiny(1.)
 
    character(len=64) :: m_timestr_default_S = 'steps,-1'
@@ -289,15 +290,15 @@ contains
       !@objective Parse time string and return number of seconds equivalent
       implicit none
       !@arguments
-      real(RDOUBLE),    intent(out) :: F_sec
+      real(REAL64),    intent(out) :: F_sec
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in), optional  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in), optional  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
       real :: nunits
-      real(RDOUBLE) :: dt,fact_8
+      real(REAL64) :: dt,fact_8
       character(len=64) :: units_S
 
       F_sec = 0.
@@ -331,12 +332,12 @@ contains
       !@arguments
       real,    intent(out) :: F_sec
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in), optional  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in), optional  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: dt,sec_8
+      real(REAL64) :: dt,sec_8
 
       F_sec = 0.
       dt = 1.
@@ -360,12 +361,12 @@ contains
       !@arguments
       integer,    intent(out) :: F_sec
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in), optional  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in), optional  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: dt,sec_8
+      real(REAL64) :: dt,sec_8
 
       F_sec = 0.
       dt = 1.
@@ -387,14 +388,14 @@ contains
       !@objective Parse time string and return number of seconds equivalent
       implicit none
       !@arguments
-      integer(IDOUBLE), intent(out) :: F_sec
+      integer(INT64), intent(out) :: F_sec
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in), optional  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in), optional  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: dt,sec_8
+      real(REAL64) :: dt,sec_8
 
       F_sec = 0.
       dt = 1.
@@ -416,14 +417,14 @@ contains
       !@objective Parse time string and return number of step equivalent
       implicit none
       !@arguments
-      real(RDOUBLE),    intent(out) :: F_nstep
+      real(REAL64),    intent(out) :: F_nstep
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in)  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in)  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: sec_8
+      real(REAL64) :: sec_8
 
       F_nstep  = -1
       if (present(F_default_S)) then
@@ -451,12 +452,12 @@ contains
       !@arguments
       real,             intent(out) :: F_nstep
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in)  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in)  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: sec_8
+      real(REAL64) :: sec_8
 
       F_nstep  = -1
       if (present(F_default_S)) then
@@ -484,12 +485,12 @@ contains
       !@arguments
       integer,          intent(out) :: F_nstep
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in)  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in)  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: sec_8
+      real(REAL64) :: sec_8
 
       F_nstep  = -1
       if (present(F_default_S)) then
@@ -515,14 +516,14 @@ contains
       !@objective Parse time string and return number of step equivalent
       implicit none
       !@arguments
-      integer(IDOUBLE), intent(out) :: F_nstep
+      integer(INT64), intent(out) :: F_nstep
       character(len=*), intent(in)  :: F_timestr_S
-      real(RDOUBLE),    intent(in)  :: F_dt !# Timestep length [sec]
+      real(REAL64),    intent(in)  :: F_dt !# Timestep length [sec]
       character(len=*), intent(in), optional  :: F_default_S
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE) :: sec_8
+      real(REAL64) :: sec_8
 
       F_nstep  = -1
       if (present(F_default_S)) then
@@ -558,7 +559,7 @@ contains
       !@return
       integer :: F_status
       !*@/
-      integer(IDOUBLE) :: jdateo
+      integer(INT64) :: jdateo
       jdateo = jdate_from_cmc(F_dateo)
       if (present(F_maxstep)) then
          F_status = timestr_prognum_int_jdate(F_prognum,F_units_S,F_interval,jdateo,F_dt,F_step,F_maxstep)
@@ -577,17 +578,17 @@ contains
       integer,          intent(out) :: F_prognum
       character(len=*), intent(in)  :: F_units_S
       real,             intent(in)  :: F_interval
-      integer(IDOUBLE), intent(in)  :: F_jdateo   !# Date of origin [Julian Sec]
+      integer(INT64), intent(in)  :: F_jdateo   !# Date of origin [Julian Sec]
       integer,          intent(in)  :: F_step
       real,             intent(in)  :: F_dt       !# Timestep length [sec]
       integer,optional, intent(in)  :: F_maxstep
       !@return
       integer :: F_status
       !*@/
-      real(RDOUBLE), parameter :: EPSILON_8b = 1.0D-12
+      real(REAL64), parameter :: EPSILON_8b = 1.0D-12
       integer :: interval, mystep,m0,m1,y0,y1,nmonths
-      integer(IDOUBLE) :: jdatev2, istep, dt
-      real(RDOUBLE) :: fact_8
+      integer(INT64) :: jdatev2, istep, dt
+      real(REAL64) :: fact_8
 
       F_status  = RMN_ERR
       F_prognum = 0
@@ -681,7 +682,7 @@ contains
       implicit none
       !@arguments
       character(len=*), intent(in)  :: F_timestr_S
-      integer(IDOUBLE), intent(in)  :: F_jdateo
+      integer(INT64), intent(in)  :: F_jdateo
       integer,          intent(in)  :: F_step
       real,             intent(in)  :: F_dt
       integer,          intent(in), optional  :: F_maxstep
@@ -731,7 +732,7 @@ contains
       integer :: F_status
       !*@/
       integer :: interval,istat,prognum,prognum1,maxstep,gap
-      real(RDOUBLE) :: fact_8, ris_8, seconds_8
+      real(REAL64) :: fact_8, ris_8, seconds_8
 
       F_status  = RMN_ERR
       maxstep = F_step+9999
@@ -799,7 +800,7 @@ contains
       !@arguments
       character(len=*), intent(in)  :: F_units_S
       real,             intent(in)  :: F_interval
-      integer(IDOUBLE), intent(in)  :: F_jdateo
+      integer(INT64), intent(in)  :: F_jdateo
       integer,          intent(in)  :: F_step
       real,             intent(in)  :: F_dt
       integer,optional, intent(in)  :: F_maxstep
@@ -807,7 +808,7 @@ contains
       integer :: F_status
       !*@/
       integer :: interval,istat,prognum,prognum1,maxstep
-      real(RDOUBLE) :: fact_8
+      real(REAL64) :: fact_8
 
       F_status  = RMN_ERR
       maxstep = F_step+9999
@@ -857,11 +858,11 @@ contains
       implicit none
       !@arguments
       character(len=*),       intent(in)  :: F_units_S
-      real(RDOUBLE),optional, intent(in)  :: F_dt_8
+      real(REAL64),optional, intent(in)  :: F_dt_8
       !@return
-      real(RDOUBLE) :: F_fact_8
+      real(REAL64) :: F_fact_8
       !*@/
-      real(RDOUBLE) :: dt_8
+      real(REAL64) :: dt_8
 
       F_fact_8 = -1.D0
       dt_8   = 1.D0

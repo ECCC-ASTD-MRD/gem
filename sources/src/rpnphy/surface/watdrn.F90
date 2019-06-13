@@ -2,6 +2,9 @@ subroutine watdrn( &
      delzw, bcoef, thpora, grksat, grkeff, asatfc, asat0,  &
      asat1, subflw, basflw, satsfc,  &
      ilg, il1, il2, delt)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+#include <rmnlib_basics.hf>
 
    !  * December 4, 2009, Vincent Fortin
    !
@@ -36,8 +39,8 @@ subroutine watdrn( &
    !      to WATDRN in order to ensure that lateral flow does not make
    !      water content drop below field capacity
    !      if asatfc is set to zero this change has no impact
-   !    - computations now done in REAL*8 instead of REAL
-   !      this change has no impact if REAL already defined as REAL*8
+   !    - computations now done in real(REAL64) instead of REAL
+   !      this change has no impact if REAL already defined as real(REAL64)
    !
    !  * August 1, 2014, Vincent Fortin
    !
@@ -128,8 +131,6 @@ subroutine watdrn( &
    !  the time step is not allowed to drop below lateral field
    !  capacity.
 
-   implicit none
-
    ! Input parameters
    integer ilg         ! Size of arrays
    integer il1         ! index of first grid point to process
@@ -157,14 +158,14 @@ subroutine watdrn( &
    real    satsfc(ilg) ! saturated fraction of the surface (0 to 1)
 
    ! Work arrays in double precision
-   real*8  c(ilg)      ! Clapp-Hornberger connectivity index (c>1)
-   real*8  cm1(ilg)    ! c-1
-   real*8  c2m1(ilg)   ! 2*c-1
-   real*8  asatc(ilg)  ! bulk saturation at the critical time tc
-   real*8  asat0d(ilg) ! MIN(1,asat0) because we don't handle supersaturated soils
-   real*8  asat1d(ilg) ! value of asat1 in double precision
-   real*8  tcinv(ilg)  ! inverse of critical time at which seepage face becomes unsaturated
-   real*8  ratiot(ilg) ! ratio tc/t (t0 or t1) if t>tc and t/tc if t<=tc
+   real(REAL64) :: c(ilg)      ! Clapp-Hornberger connectivity index (c>1)
+   real(REAL64) :: cm1(ilg)    ! c-1
+   real(REAL64) :: c2m1(ilg)   ! 2*c-1
+   real(REAL64) :: asatc(ilg)  ! bulk saturation at the critical time tc
+   real(REAL64) :: asat0d(ilg) ! MIN(1,asat0) because we don't handle supersaturated soils
+   real(REAL64) :: asat1d(ilg) ! value of asat1 in double precision
+   real(REAL64) :: tcinv(ilg)  ! inverse of critical time at which seepage face becomes unsaturated
+   real(REAL64) :: ratiot(ilg) ! ratio tc/t (t0 or t1) if t>tc and t/tc if t<=tc
    logical satspf(ilg) ! indicates if seepage face is saturated
                        ! equivalent to knowing if t<=tc
 
@@ -277,7 +278,7 @@ subroutine watdrn( &
       end if
       ! Obtain interflow from the difference in bulk saturation
       subflw(i) = (asat0d(i)-asat1d(i))*thpora(i)*delzw(i)
-      ! Change output precision for asat1d from REAL*8 to REAL
+      ! Change output precision for asat1d from real(REAL64) to REAL
       asat1(i) = asat1d(i)
    enddo
 

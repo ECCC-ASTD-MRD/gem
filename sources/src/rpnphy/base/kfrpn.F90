@@ -33,11 +33,14 @@ contains
      rnflx,snoflx, &
      kount,xlat,mg,mlac,wstar,tstar,tke,kt, &
      coadvu,coadvv,coage,cowlcl,cozlcl,critmask,delt)
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use tdpack_const, only: CHLF, CPD, GRAV, PI, RGASD, TRPL
    use cnv_options
    use phy_options, only: dyninread_list_S
    use debug_mod, only: init2nan
+   use tpdd, only: tpdd1
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    integer ix,kx
@@ -281,8 +284,6 @@ contains
 
       real :: w_wsmin,w_wsmax,wsmax,wsmin
 
-      real tpdd
-
       logical, dimension(ix) :: activ
 
       integer, dimension(kx) :: nup
@@ -318,16 +319,12 @@ contains
 
       external tpmix
       external condload_safe
-      external dtfrznew
       external envirtht
       external prof5
-      external tpdd
 
       ! Basic parameters
-!#TODO: replace include tdpack by use with only list
-#include "tdpack_const.hf"
 #include "clefcon.cdk"
-#include "phyinput.cdk"
+      include "phyinput.inc"
 
       ! User-adjustable parameters
       real, parameter :: DETREG=0.5                             !Level of dynamic detrainment for cloud ensemble
@@ -1317,8 +1314,8 @@ contains
 
          if(FRC1.gt.1.E-6)then
 
-           call DTFRZNEW(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
-                RICE(NK1),RATIO2(NK1),TTFRZ,TBFRZ,QNWFRZ,RL,FRC1,EFFQ, &
+           call DTFRZNEW2(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
+                RICE(NK1),RATIO2(NK1),QNWFRZ,RL,FRC1,EFFQ, &
                 IFLAG,XLV0,XLV1,XLS0,XLS1, &
                 ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
 
@@ -2160,9 +2157,9 @@ contains
           FRC=1.
           THETED(ND)=THETED(ND1)
           QD(ND)=QD(ND1)
-          TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+          TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
           EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
           THTAD(ND)=TZ(ND)*EXN(ND)
         else
@@ -2186,9 +2183,9 @@ contains
 
           THETED(ND)=(THETED(ND1)*DMF(ND1)+THETEE(ND)*DER(ND))/DMF(ND)
           QD(ND)=(QD(ND1)*DMF(ND1)+Q00(I,ND)*DER(ND))/DMF(ND)
-          TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+          TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
           EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
           THTAD(ND)=TZ(ND)*EXN(ND)
         endif
@@ -2202,9 +2199,9 @@ contains
 !                          of 90% at this level.
 
       do 135 ND=LDB,LDT
-        TZ(ND)=TPDD(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
+        TZ(ND)=TPDD1(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
         ES = ALIQ*exp((TZ(ND)*BLIQ-CLIQ)/(TZ(ND)-DLIQ))
         QS = 0.622*ES/(PP0(I,ND)-ES)
         DQSDT=(CLIQ-BLIQ*DLIQ)/((TZ(ND)-DLIQ)*(TZ(ND)-DLIQ))

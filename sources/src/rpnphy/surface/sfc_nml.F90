@@ -16,13 +16,15 @@
 
 !/@*
 function sfc_nml2(F_namelist) result(F_istat)
+   use clib_itf_mod, only: clib_toupper, clib_isreadok
+   use wb_itf_mod
    use str_mod, only: str_concat, str_toreal
    use sfc_options
    use sfcbus_mod
    use cpl_itf, only: cpl_nml
    use sfclayer_mod, only: sl_put, SL_OK
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective Set defaults values and read surface namelist
    !@Arguments
    ! F_namelist    File name containing the namelists to read
@@ -33,11 +35,8 @@ function sfc_nml2(F_namelist) result(F_istat)
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
-#include <clib_interface_mu.hf>
-   include "tebcst.cdk"
 
-   integer, external :: msg_getUnit
+   include "tebcst.cdk"
 
    integer, parameter :: SFC_NML_ERR = RMN_ERR
    integer, parameter :: SFC_NML_OK  = RMN_OK + 1
@@ -313,10 +312,9 @@ contains
 
 
    function sfc_nml_post_init() result(m_istat)
+      use tdpack_const, only: PI
       implicit none
       integer :: m_istat
-
-#include "tdpack_const.hf"
 
       integer :: istat, options, iverb, idxmax
       !----------------------------------------------------------------

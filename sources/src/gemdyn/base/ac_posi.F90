@@ -25,6 +25,7 @@
       use lun
       use tr3d
       use rstr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -35,10 +36,10 @@
       logical :: flag_hu,printout_L
       integer :: i,k,cnt,iref,jref,pil
       real :: latr,lonr
-      real*8 :: x0, xl, y0, yl
-      real*8, dimension(:), allocatable :: ac_xp, ac_yp
-      real*8, dimension(dimgx) :: xpx
-      real*8, dimension(dimgy) :: ypx
+      real(kind=REAL64) :: x0, xl, y0, yl
+      real(kind=REAL64), dimension(:), allocatable :: ac_xp, ac_yp
+      real(kind=REAL64), dimension(dimgx) :: xpx
+      real(kind=REAL64), dimension(dimgy) :: ypx
 !
 !---------------------------------------------------------------------
 !

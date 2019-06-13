@@ -18,13 +18,14 @@
       subroutine eigen ( F_eval_8, F_evec_8, F_b_8, NN, NMAX, NWORK,&
                             F_eigen_filename_S )
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: NN, NMAX, NWORK
       character(len=*), intent(in) :: F_eigen_filename_S
-      real*8, dimension(NN), intent(out) :: F_eval_8
-      real*8, dimension(NMAX,NN), intent(inout) :: F_evec_8, F_b_8
+      real(kind=REAL64), dimension(NN), intent(out) :: F_eval_8
+      real(kind=REAL64), dimension(NMAX,NN), intent(inout) :: F_evec_8, F_b_8
 
 !object
 !    To solve a generalised symmetric eigenproblem
@@ -48,9 +49,9 @@
 
 
       integer :: i, j, k, info, errop, unf, err
-      real*8 :: faz_8, sav_8
-      real*8, dimension(NWORK) :: wk1
-      real*8, parameter :: one_8 = 1.0d0
+      real(kind=REAL64) :: faz_8, sav_8
+      real(kind=REAL64), dimension(NWORK) :: wk1
+      real(kind=REAL64), parameter :: one_8 = 1.0d0
 !
 !--------------------------------------------------------------------
 !

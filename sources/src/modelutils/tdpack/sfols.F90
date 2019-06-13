@@ -18,7 +18,7 @@
       Function sfols(tt)
       use tdpack, only: fols
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sfols, tt
 !

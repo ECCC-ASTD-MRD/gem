@@ -16,15 +16,15 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
-!#TODO: TRNCH never used
+subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
+   use tdpack_const, only: PI
    use phy_status, only: phy_error_L
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options, only: atm_external, atm_tplus, radslope, vamin, sl_Lmin_soil, &
         zu, zt, impflx, thermal_stress, z0tevol
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Multitasking of the surface scheme ISBA
    !@Arguments
    !               - Input/Output -
@@ -34,13 +34,12 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    ! PTSURF        surface pointers
    ! PTSURFSIZ     dimension of ptsurf
    ! KOUNT         number of timestep
-   ! TRNCH         row number
    ! DT            timestep
    ! N             running length
    ! M             horizontal dimension
    ! NK            vertical dimension
 
-   integer BUSSIZ, N, NK, KOUNT, TRNCH
+   integer BUSSIZ, N, NK, KOUNT
    real DT
    real,target :: bus(bussiz)
    integer PTSURFSIZ
@@ -48,8 +47,6 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
    !@Author S. Belair (January 1997)
    !*@/
-
-#include "tdpack_const.hf"
 
    integer SURFLEN
 #define x(fptr,fj,fk) ptsurf(vd%fptr%i)+(fk-1)*surflen+fj-1
@@ -373,14 +370,14 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         zWFC, zRST, &
         N)
 
-   call DRAG6(ztsoil1, zWSOIL1, &
+   call drag7(ztsoil1, zWSOIL1, &
         zWVEG, zthetaa, &
         VMOD, VDIR, hu, &
         ps, zRST, &
         zVEGFRAC, &
         z0h, Z0TOT, zWFC, &
         zPSNG, zPSNV, &
-        PSNZ0, zLAI, zzusl, zztsl, &
+        zLAI, zzusl, zztsl, &
         zdLAT, zFCOR, zRESA, &
         zILMO, zHST, &
         zFRV, zFTEMP, &
@@ -392,16 +389,15 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         N)
    if (phy_error_L) return
 
-   call EBUDGET3(tt, &
+   call ebudget4(tt, &
         ztsoil1, ztsoil2, &
         zWSOIL2, zISOIL, &
         zWSNOW, zSNOMA, DT, &
-        zSNOAL, CD, zRAINRATE, &
+        zSNOAL, zRAINRATE, &
         zfsolis, &
         zALVEG, zALVIS, zemisr, zemsvc,&
         zFDSI, zthetaa, &
         hu, ps, RHOA, &
-        uu, vv, &
         zVEGFRAC, HRSURF, &
         zHV, DEL, &
         zRESA, zRST, &
@@ -452,8 +448,8 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       endif
    endif
 
-   call HYDRO2(DT, tt, ztsoil1, &
-        ztsoil2, zWSOIL1, &
+   call HYDRO3(DT, tt, ztsoil1, &
+        zWSOIL1, &
         zWSOIL2, zISOIL, &
         zWSNOW, zWVEG, &
         zSNOMA, zSNOAL, &
@@ -465,17 +461,17 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         zLEV, zLETR, &
         zLEG, zLES, &
         ZC1, ZC2, zC3REF, &
-        CG, WGEQ, CT, zLAI, zVEGFRAC, &
+        WGEQ, CT, zLAI, zVEGFRAC, &
         zROOTDP, zWSAT, &
         zWFC, zPSN, &
         zPSNG, zPSNV, &
         LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, &
-        TST, T2T, &
+        TST, &
         WGT, W2T, WFT, WLT, WRT, WST, ALPHAST, RHOST, &
         zDRAIN, zOVERFL, &
         RSNOW, N )
 
-   call UPDATE3(ztsoil1, ztsoil2, &
+   call UPDATE4(ztsoil1, ztsoil2, &
         zwsoil1, zWSOIL2, &
         zISOIL, ZWSNOW, &
         zWVEG, ZSNOMA, &
@@ -491,7 +487,7 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         ctu, &
         zthetaa, &
         hu, &
-        zZA, N)
+        N)
 
    !# Compute values at the diagnostic level
    i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
@@ -602,4 +598,4 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         SURFLEN)
 
    return
-end subroutine isba3
+end subroutine isba4

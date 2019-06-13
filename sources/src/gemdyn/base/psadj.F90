@@ -33,16 +33,17 @@
       use rstr
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_kount
 
       integer err,i,j,n,istat,MAX_iteration
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8, pr_p0_w_0_8, pw_log_p0_8
-      real*8 l_avg_8(1),g_avg_ps_0_8
-      real*8 ll_avg_8(l_ni,l_nj)
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8, pr_p0_w_0_8, pw_log_p0_8
+      real(kind=REAL64) l_avg_8(1),g_avg_ps_0_8
+      real(kind=REAL64) ll_avg_8(l_ni,l_nj)
       character(len= 9) communicate_S
 !
 !     ---------------------------------------------------------------

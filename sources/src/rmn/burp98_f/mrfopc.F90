@@ -64,7 +64,7 @@
                IF(INDEX(OPVALC, 'WARNING') .NE. 0) THEN
                   MESSNIV = WARNIN
                ELSE
-                  IF(INDEX(OPVALC, 'ERROR') .NE. 0) THEN
+                  IF(INDEX(OPVALC, 'ERRORS') .NE. 0) THEN
                      MESSNIV = ERROR
                   ELSE
                      IF(INDEX(OPVALC, 'FATAL') .NE. 0) THEN

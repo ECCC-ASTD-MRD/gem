@@ -38,18 +38,11 @@
       real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(inout) :: F_du, F_dv, F_dw, F_dlth
       real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(in) :: F_u, F_v, F_w, F_t
       real, dimension(lminx:lmaxx,lminy:lmaxy),    intent(in) :: F_s, F_sl
+
 !
 !author
-!     Claude Girard
+!     Claude Girard, Syed Husain
 !
-!revision
-! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
-! v5_0 - Husain S.    - added vertically variable background diffusion
-! v5_0 - Husain S.    - modified the discretization of the diffusion operator
-!                       for horizontal wind, implemented Smagorinsky
-!                       diffusion in the split mode ( + bug correction for
-!                       frinctional heating at the first prognostic level)
-
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
@@ -63,7 +56,7 @@
       real :: crit_coef
       logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat, switch_on_wzd
 
-      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
+      if ( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
       smagparam= hzd_smago_param
 
       switch_on_wzd   = (Hzd_lnr <= 0.  .and. switch_on_wzd)

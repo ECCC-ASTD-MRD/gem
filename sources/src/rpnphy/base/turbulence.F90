@@ -34,7 +34,7 @@ contains
       use phybus
       use tendency, only: apply_tendencies
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object
       !@Arguments

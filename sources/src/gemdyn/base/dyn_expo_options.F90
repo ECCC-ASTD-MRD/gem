@@ -15,6 +15,7 @@
 module dyn_expo_options
 !temporaire
    use dyn_fisl_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -27,7 +28,7 @@ module dyn_expo_options
    namelist /dyn_expo_p/ Exp_integrator_S
 
    !# Tolerance to achieve in KIOPS
-   real*8 :: Kiops_tolerance = 1.19209d-07
+   real(kind=REAL64) :: Kiops_tolerance = 1.19209d-07
    namelist /dyn_expo  / Kiops_tolerance
    namelist /dyn_expo_p/ Kiops_tolerance
 
@@ -61,6 +62,7 @@ contains
 
       integer function dyn_expo_nml (F_unf)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -111,6 +113,7 @@ contains
       end function dyn_expo_nml
 
    function dyn_expo_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

@@ -5,11 +5,15 @@
 ! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
 ! - service.rpn@ec.gc.ca
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
-!-------------------------------------------------------------------------- 
+!--------------------------------------------------------------------------
 
 !/@*
 module config_mod
-use iso_c_binding
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use iso_c_binding
+   use rpn_comm_itf_mod
+   use clib_itf_mod, only: clib_realpath, clib_realpath, clib_isfile, clib_getcwd
+   use wb_itf_mod
    implicit none
    private
    !@objective Read options config [dictionary + users config] for MPI jobs
@@ -25,15 +29,9 @@ use iso_c_binding
    public :: config_init, config_path, config_read, config_cp2localdir, config_print
    !@public_vars
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
-
-   integer,parameter :: wb_DICT_FILE = WB_STRICT_DICTIONARY
-   integer,parameter :: wb_CONF_FILE = WB_FORBID_DEFINE
 
    character(len=RMN_PATH_LEN),save :: m_basedir_S = '.'
    integer,save :: m_me_pe     = -1
@@ -46,7 +44,7 @@ contains
       implicit none
       !@objective Initialize config module
       !@arguments
-      character(len=*),intent(in),optional :: F_basedir_S !- 
+      character(len=*),intent(in),optional :: F_basedir_S !-
       !@author
       !  Michel Desgagne, Feb 2008
       !  Ron McTaggart-Cowan, Feb 2008
@@ -163,7 +161,7 @@ contains
          return
       endif
       call msg(MSG_INFO,'(config_read) Reading: '//trim(user_S)//'::'//trim(F_sec_S))
-      
+ 
       F_istat = config_cp2localdir(user_S,basedir_S,force_cp_L)
       if (.not.RMN_IS_OK(F_istat)) then
          F_istat = nocfg_istat
@@ -229,13 +227,17 @@ contains
       endif
 
       !TODO-later: implement this as soon a clib_filemtime exists [int stat (const char *filename, struct stat *buf)]
-      !alt-implementation 1: store [fullpath,pwd] ; cp_flag_L = all(list.ne.'fullpath,pwd') [?Safer since not depedent on risk of user changing fullpath runtime]
-      !alt-implementation 2: store start date [when doing the init above]; cp_flag_L = filemtime(F_filename) < start_time [?Safer since not depedent on risk of user changing fullpath runtime]
+      !alt-implementation 1: store [fullpath,pwd] ;
+      !   cp_flag_L = all(list.ne.'fullpath,pwd') [?Safer since not depedent
+      !   on risk of user changing fullpath runtime]
+      !alt-implementation 2: store start date [when doing the init above];
+      !   cp_flag_L = filemtime(F_filename) < start_time [?Safer since not
+      !   depedent on risk of user changing fullpath runtime]
       cp_flag_L = .true.
 !!$      cp_flag_L = .false.
 !!$      if (clib_isfile(F_filename_S).ne.CLIB_OK) then
 !!$         cp_flag_L = .true.
-!!$      else 
+!!$      else
 !!$         mtime_src = clib_filemtime(F_filename_S)
 !!$         mtime_dst = clib_filemtime(fullpath_S)
 !!$         if (mtime_src > mtime_dst) cp_flag_L = .true.
@@ -277,14 +279,15 @@ contains
       integer,parameter :: MAX_KEYS = 1024
       integer,parameter :: MAX_VALUES = 2048
       integer,parameter :: MAX_PRINT = 64
-      integer :: istat,nkeys,ikey,element_type,typelen,array_size,options,nvals,ii,msgLevelMin,msgUnit
+      integer :: istat,nkeys,ikey,element_type,typelen,array_size,options, &
+           nvals,ii,msgLevelMin,msgUnit
       character(len=WB_MAXNAMELENGTH) :: keys(MAX_KEYS)
       character(len=WB_MAXSTRINGLENGTH) :: cval,caval(MAX_VALUES)
       character(len=MSG_MAXLEN) :: msg_S
       integer :: ival,iaval(MAX_VALUES)
-      integer(IDOUBLE) :: i8val,i8aval(MAX_VALUES)
+      integer(INT64) :: i8val,i8aval(MAX_VALUES)
       real :: rval,raval(MAX_VALUES)
-      real(RDOUBLE) :: r8val,r8aval(MAX_VALUES)
+      real(REAL64) :: r8val,r8aval(MAX_VALUES)
       logical :: bval,baval(MAX_VALUES),canWrite_L
       !---------------------------------------------------------------------
       call msg_getInfo(canWrite_L,msgLevelMin,msgUnit,msg_S)
@@ -311,7 +314,9 @@ contains
                   if (nvals <= MAX_PRINT) then
                      write(msgUnit,*) trim(keys(ikey))//' = ',raval(1:nvals)
                   else
-                     write(msgUnit,*) trim(keys(ikey))//' = ',raval(1:MAX_PRINT/2),', ..., ',raval(nvals-MAX_PRINT/2:nvals)
+                     write(msgUnit,*) trim(keys(ikey))//' = ', &
+                          raval(1:MAX_PRINT/2),', ..., ', &
+                          raval(nvals-MAX_PRINT/2:nvals)
                   endif
                endif
             else
@@ -321,9 +326,11 @@ contains
                else
                   istat = wb_get(keys(ikey),r8aval,nvals)
                   if (nvals <= MAX_PRINT) then
-                     write(msgUnit,*) trim(keys(ikey))//' = ',r8aval(1:nvals)
+                     write(msgUnit,*) trim(keys(ikey))//' = ', &
+                          r8aval(1:nvals)
                   else
-                     write(msgUnit,*) trim(keys(ikey))//' = ',r8aval(1:MAX_PRINT/2),', ..., ',r8aval(nvals-MAX_PRINT/2:nvals)
+                     write(msgUnit,*) trim(keys(ikey))//' = ', &
+                          r8aval(1:MAX_PRINT/2),', ..., ',r8aval(nvals-MAX_PRINT/2:nvals)
                   endif
                endif
             endif
@@ -337,7 +344,9 @@ contains
                   if (nvals <= MAX_PRINT) then
                      write(msgUnit,*) trim(keys(ikey))//' = ',iaval(1:nvals)
                   else
-                     write(msgUnit,*) trim(keys(ikey))//' = ',iaval(1:MAX_PRINT/2),', ..., ',iaval(nvals-MAX_PRINT/2:nvals)
+                     write(msgUnit,*) trim(keys(ikey))//' = ', &
+                          iaval(1:MAX_PRINT/2),', ..., ', &
+                          iaval(nvals-MAX_PRINT/2:nvals)
                   endif
                endif
             else
@@ -349,7 +358,9 @@ contains
                   if (nvals <= MAX_PRINT) then
                      write(msgUnit,*) trim(keys(ikey))//' = ',i8aval(1:nvals)
                   else
-                     write(msgUnit,*) trim(keys(ikey))//' = ',i8aval(1:MAX_PRINT/2),', ..., ',i8aval(nvals-MAX_PRINT/2:nvals)
+                     write(msgUnit,*) trim(keys(ikey))//' = ', &
+                          i8aval(1:MAX_PRINT/2),', ..., ', &
+                          i8aval(nvals-MAX_PRINT/2:nvals)
                   endif
                endif
             endif
@@ -360,9 +371,12 @@ contains
             else
                istat = wb_get(keys(ikey),caval,nvals)
                if (nvals <= MAX_PRINT) then
-                  write(msgUnit,*) trim(keys(ikey))//' = ',('"'//trim(caval(ii))//'", ',ii=1,nvals)
+                  write(msgUnit,*) trim(keys(ikey))//' = ', &
+                       ('"'//trim(caval(ii))//'", ',ii=1,nvals)
                else
-                  write(msgUnit,*) trim(keys(ikey))//' = ',('"'//trim(caval(ii))//'", ',ii=1,MAX_PRINT/2),', ..., ',('"'//trim(caval(ii))//'", ',ii=nvals-MAX_PRINT/2,nvals)
+                  write(msgUnit,*) trim(keys(ikey))//' = ', &
+                       ('"'//trim(caval(ii))//'", ',ii=1,MAX_PRINT/2),', ..., ',&
+                       ('"'//trim(caval(ii))//'", ',ii=nvals-MAX_PRINT/2,nvals)
                endif
             endif
          case(WB_FORTRAN_BOOL)

@@ -22,7 +22,7 @@ module water_integrated
 contains
 
    !/@*
-   subroutine water_integrated1(tt,qq,qc,qi,qr,qgp,qnp,sigma,ps, &
+   subroutine water_integrated1(tt,qq,qc,qi,qnp,sigma,ps, &
         zicw,ziwv,ziwv700,ziwp,zlwp2,zslwp,zslwp2,zslwp3,zslwp4, &
         ni,nk)
 !#TODO: never used qr,qgp
@@ -30,13 +30,13 @@ contains
       use tdpack_const, only: TCDK
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Author L.Spacek, November 2011
       !@Object Calculate integrated quantities of some variables
       !@Arguments
 
       integer               :: ni,nk
-      real,dimension(ni,nk) :: tt,qq,qc,qi,qr,qgp,qnp,sigma
+      real,dimension(ni,nk) :: tt,qq,qc,qi,qnp,sigma
       real,dimension(ni) :: ps,zicw,ziwv,ziwv700,ziwp,zlwp2, &
            zslwp,zslwp2,zslwp3,zslwp4
 
@@ -48,8 +48,6 @@ contains
       ! qq       humidity
       ! qc       total condensate mixing ratio at t+dT
       ! qi       ice mixing ratio (M-Y, K-Y) at t+dT
-      ! qr       rain mixing ratio (microphy) at t+dT
-      ! qgp      graupel mixing ratio (M-Y, K-Y) at t+dT
       ! qnp      snow    mixing ratio (M-Y) at t+dT
       ! sigma    vertical coordinate
       ! ni       horizontal running length

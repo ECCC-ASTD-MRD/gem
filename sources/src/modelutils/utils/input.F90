@@ -15,6 +15,8 @@
 
 !/@*
 module input_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower, clib_toupper
    use fstmpi_mod
    use incfg_mod
    use input_files_mod
@@ -31,14 +33,16 @@ module input_mod
    !@author Stephane Chamberland,2011-04
    !@description
    ! Public functions
-   public :: input_new, input_add, input_nbvar, input_meta, input_isvarstep, input_varindex,input_setgridid,input_getgridid,input_close_files, input_set_basedir, input_set_filename, INPUT_FILES_ANAL, INPUT_FILES_CLIM, INPUT_FILES_GEOP
+   public :: input_new, input_add, input_nbvar, input_meta, input_isvarstep, &
+        input_varindex,input_setgridid,input_getgridid,input_close_files, &
+        input_set_basedir, input_set_filename, INPUT_FILES_ANAL, &
+        INPUT_FILES_CLIM, INPUT_FILES_GEOP
 
    public :: input_get
    ! Public constants
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    interface input_new
@@ -109,7 +113,7 @@ module input_mod
 !!$      sequence
       logical :: needonce_L
       integer :: ni,nj,nk,hgridid,hgrididcore,vtype,dt,hstat
-      integer(IDOUBLE) :: jdatev,jdateo
+      integer(INT64) :: jdatev,jdateo
       integer,pointer :: ip1list(:)
       type(input_ptr_T) :: d(2)
       character(len=INCFG_STRLEN) :: vn(2),hint_S,vint_S,tint_S,sfc_S,vgrid_S,typvar_S
@@ -166,7 +170,8 @@ contains
       nullify(data2)
       F_istat = input_get3d_vect(F_id,F_index,F_step,F_hgridid,F_vgridid_S,F_data,data2,varname_S,varname2_S)
       if (associated(data2)) then
-         call msg(MSG_WARNING,'(input) requesting vectorial field as a scalar, 2nd component ignored: '//trim(varname_S)//' : '//trim(varname2_S))
+         call msg(MSG_WARNING,'(input) requesting vectorial field as a scalar, 2nd component ignored: ' &
+              //trim(varname_S)//' : '//trim(varname2_S))
          deallocate(data2,stat=istat)
          nullify(data2)
       endif
@@ -201,7 +206,8 @@ contains
 
 
    !/@*
-   function input_get3d_vect(F_id,F_index,F_step,F_hgridid,F_vgridid_S,F_data,F_data2,F_varname_S,F_varname2_S,F_ovname1_S, F_ovname2_S) result(F_istat)
+   function input_get3d_vect(F_id,F_index,F_step,F_hgridid,F_vgridid_S,F_data, &
+        F_data2,F_varname_S,F_varname2_S,F_ovname1_S, F_ovname2_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -261,7 +267,8 @@ contains
       endif
       IF_V_INT: if (fld%vint_S /= 'none') then
          IF_VGRID: if (F_vgridid_S == ' ') then
-            call msg(MSG_WARNING,'(input) Cannot interpolate, no dest vgrid provided for: '//trim(fld%vn(1))//' [v_int='//trim(fld%vint_S)//']')
+            call msg(MSG_WARNING,'(input) Cannot interpolate, no dest vgrid provided for: '// &
+                 trim(fld%vn(1))//' [v_int='//trim(fld%vint_S)//']')
             return
          else
             fld%vgrid_S = F_vgridid_S
@@ -269,7 +276,8 @@ contains
             ip1list_alloc_L = .true.
             istat = vgrid_wb_get(F_vgridid_S,vgrid,fld%ip1list,fld%vtype,fld%sfc_S)
             if (.not.RMN_IS_OK(istat)) then
-               call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '//trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
+               call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '// &
+                    trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
                return
             endif
             fld%nk = 0
@@ -283,19 +291,22 @@ contains
                ip1list_alloc_L = .true.
                istat = vgrid_wb_get(F_vgridid_S,vgrid,fld%ip1list)
                if (.not.RMN_IS_OK(istat)) then
-                  call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '//trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
+                  call msg(MSG_WARNING,'(input) Problem getting vgrid meta, cannot get: '//&
+                       trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
                   return
                endif
                fld%nk = 0
                if (associated(fld%ip1list)) fld%nk = size(fld%ip1list)
             else
-               call msg(MSG_WARNING,'(input) Cannot get data, level list unknown, no dest vgrid provided for: '//trim(fld%vn(1)))
+               call msg(MSG_WARNING,'(input) Cannot get data, level list unknown, no dest '// &
+                    'vgrid provided for: '//trim(fld%vn(1)))
                return
             endif
          endif
       endif IF_V_INT
       if (fld%nk < 1) then
-         call msg(MSG_WARNING,'(input) Problem getting vgrid meta, nk < 1, cannot get: '//trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
+         call msg(MSG_WARNING,'(input) Problem getting vgrid meta, nk < 1, cannot get: '// &
+              trim(fld%vn(1))//' [vgrid='//trim(F_vgridid_S)//']')
          return
       endif
 
@@ -354,10 +365,13 @@ contains
          endif
          vn1_S = fld%vn(1); istat = clib_toupper(vn1_S)
          fn1_S = files_S(ii); istat = clib_toupper(fn1_S)
-         if (ii == 1) call msg(MSG_INFO,'(input) Looking for '//trim(vn1_S)//' in file "'//trim(fn1_S)//'" (interpolation h/v/t: '//trim(fld%hint_S)//'/'//trim(fld%vint_S)//'/'//trim(fld%tint_S)//')')
+         if (ii == 1) call msg(MSG_INFO,'(input) Looking for '//trim(vn1_S)//' in file "'// &
+              trim(fn1_S)//'" (interpolation h/v/t: '//trim(fld%hint_S)//'/'// &
+              trim(fld%vint_S)//'/'//trim(fld%tint_S)//')')
          if (ii > 1) then
             fn2_S = files_S(ii-1); istat = clib_toupper(fn2_S)
-            call msg(MSG_INFO,'(input) '//trim(vn1_S)//' not found in "'//trim(fn2_S)//'"; looking in "'//trim(fn1_S)//'"')
+            call msg(MSG_INFO,'(input) '//trim(vn1_S)//' not found in "'//trim(fn2_S)// &
+                 '"; looking in "'//trim(fn1_S)//'"')
          endif
          filetype = input_files_get_type(F_id,fileidx)
          F_istat = priv_input_data(fld,F_id,fileidx,filetype)
@@ -392,7 +406,7 @@ contains
            find_type,trials, &
            ip2m1,ip2p1,hstat_p,hstat_n,hstat_ps,hstat_ns,&
            lijk(3),uijk(3)
-      integer(IDOUBLE) :: findjdatev,myjdatev,jdatevm1,jdatevp1,jdatevp,jdatevn
+      integer(INT64) :: findjdatev,myjdatev,jdatevm1,jdatevp1,jdatevp,jdatevn
       logical :: inrestart_L
       type(input_var_T) :: fld2
       type(input_ptr_T) :: hdata(2),hdatap(2),hdatan(2)
@@ -544,7 +558,9 @@ contains
                          t_int_type,F_varname_S=F_fld%vn(2))
                deallocate(fld2%d(1)%p,fld2%d(2)%p,stat=istat)
             else !TI_STAT
-               call msg(MSG_ERROR,'(input) Problem getting time-int data; for '//trim(F_fld%vn(1))//' (interpolation h/v/t: '//trim(F_fld%hint_S)//'/'//trim(F_fld%vint_S)//'/'//trim(tint_S)//')')
+               call msg(MSG_ERROR,'(input) Problem getting time-int data; for '// &
+                    trim(F_fld%vn(1))//' (interpolation h/v/t: '//trim(F_fld%hint_S)// &
+                    '/'//trim(F_fld%vint_S)//'/'//trim(tint_S)//')')
                F_istat = RMN_ERR
             endif TI_STAT
 
@@ -554,10 +570,14 @@ contains
             istat = time_interp_status(F_fld%vn(1),F_fld%jdatev,t_int_type)
             if (istat > 0 .and. istat < nint(TIME_INTERP_WEIGHT_FACT)) then
                write(tmp_S,'(i6)') (istat*100)/nint(TIME_INTERP_WEIGHT_FACT)
-               call msg(MSG_INFO,'(input) Got time interpolated value for '//trim(F_fld%vn(1))//' (interpolation h/v/t: '//trim(F_fld%hint_S)//'/'//trim(F_fld%vint_S)//'/'//trim(tint_S)//') (t_int_weight='//trim(tmp_S)//'%)')
+               call msg(MSG_INFO,'(input) Got time interpolated value for '// &
+                    trim(F_fld%vn(1))//' (interpolation h/v/t: '//trim(F_fld%hint_S)// &
+                    '/'//trim(F_fld%vint_S)//'/'//trim(tint_S)//') (t_int_weight='//trim(tmp_S)//'%)')
             endif
          else
-            call msg(MSG_WARNING,'(input) Problem getting: '//trim(F_fld%vn(1))//' (interpolation h/v/t: '//trim(F_fld%hint_S)//'/'//trim(F_fld%vint_S)//'/'//trim(tint_S)//')')
+            call msg(MSG_WARNING,'(input) Problem getting: '//trim(F_fld%vn(1))// &
+                 ' (interpolation h/v/t: '//trim(F_fld%hint_S)//'/'//trim(F_fld%vint_S)// &
+                 '/'//trim(tint_S)//')')
          endif
 
       end select IF_TINT
@@ -575,8 +595,8 @@ contains
       !@objective
       !@arguments
       integer,intent(in) :: F_filetype
-      integer(IDOUBLE),intent(in) :: F_jdatev0
-      integer(IDOUBLE),intent(out) :: F_jdatev,F_jdatevm1,F_jdatevp1
+      integer(INT64),intent(in) :: F_jdatev0
+      integer(INT64),intent(out) :: F_jdatev,F_jdatevm1,F_jdatevp1
       integer,intent(out) :: F_ip2,F_ip2m1,F_ip2p1
       !*@/
       integer :: year
@@ -612,7 +632,8 @@ contains
 
 
    !/@*
-   function priv_read_hinterp_clim(F_fld,F_id,F_file_idx,F_fuzztype,F_hdata,F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev) result(F_istat)
+   function priv_read_hinterp_clim(F_fld,F_id,F_file_idx,F_fuzztype,F_hdata, &
+        F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -621,12 +642,12 @@ contains
       type(input_ptr_T) :: F_hdata(2)
       real,pointer :: F_sfcfld(:,:,:)
       character(len=*),intent(out) :: F_vgrid_S,F_sfc_S
-      integer(IDOUBLE),intent(out) :: F_foundjdatev
+      integer(INT64),intent(out) :: F_foundjdatev
       !@return
       integer :: F_istat
       !*@/
       character(len=256) :: tmp_S
-      integer(IDOUBLE) :: findjdatev,jdatevm1,jdatevp1
+      integer(INT64) :: findjdatev,jdatevm1,jdatevp1
       integer :: ip2,ip2m1,ip2p1
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(input) read_interp_clim [BEGIN]')
@@ -650,17 +671,18 @@ contains
 
 
    !/@*
-   function priv_read_hinterp(F_fld,F_id,F_file_idx,F_ip2,F_jdatev,F_datevfuzz,F_fuzztype,F_hdata,F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev) result(F_istat)
+   function priv_read_hinterp(F_fld,F_id,F_file_idx,F_ip2,F_jdatev,F_datevfuzz, &
+        F_fuzztype,F_hdata,F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev) result(F_istat)
       implicit none
       !@objective
       !@arguments
       type(input_var_T),intent(inout) :: F_fld
       integer,intent(in) :: F_id,F_file_idx,F_ip2,F_datevfuzz,F_fuzztype
-      integer(IDOUBLE),intent(in) :: F_jdatev
+      integer(INT64),intent(in) :: F_jdatev
       type(input_ptr_T) :: F_hdata(2)
       real,pointer :: F_sfcfld(:,:,:)
       character(len=*),intent(out) :: F_vgrid_S,F_sfc_S
-      integer(IDOUBLE),intent(out),optional :: F_foundjdatev
+      integer(INT64),intent(out),optional :: F_foundjdatev
       !@return
       integer :: F_istat
       !*@/
@@ -671,7 +693,7 @@ contains
       integer :: datevfuzz,fuzztype,ingridid,ip1,ip2,istat,istat2, &
            k,nk,vtype,lij(3),uij(3),vb0, ikind
       real :: zp1
-      integer(IDOUBLE) :: jdatev2
+      integer(INT64) :: jdatev2
       integer,target :: ip1list0(1)
       integer,pointer :: ip1list(:)
       logical :: ip1list_alloc_L
@@ -732,7 +754,8 @@ contains
                  deallocate(ip1list,stat=istat)
             ip1list => ip1list0
          else
-            call msg(MSG_INFOPLUS,'(input) Problem getting vgrid diag for '//trim(F_fld%vn(1))//' '//trim(F_fld%vn(2)))
+            call msg(MSG_INFOPLUS,'(input) Problem getting vgrid diag for '// &
+                 trim(F_fld%vn(1))//' '//trim(F_fld%vn(2)))
             nk = 1
             zp1 = 1.
             ikind = RMN_CONV_HY
@@ -787,7 +810,8 @@ contains
                  1,ingridid,F_fld%hgridid,F_fld%hgrididcore,'cubic','vRFLD',' ')
             if (.not.RMN_IS_OK(istat)) then
                F_istat = RMN_ERR
-               call msg(MSG_WARNING,'(input) Problem interpolating sfc ref field for '//trim(F_fld%vn(1))//' '//trim(F_fld%vn(2)))
+               call msg(MSG_WARNING,'(input) Problem interpolating sfc ref field for '// &
+                    trim(F_fld%vn(1))//' '//trim(F_fld%vn(2)))
                if (associated(F_sfcfld)) deallocate(F_sfcfld,stat=istat2)
                nullify(F_sfcfld)
             endif

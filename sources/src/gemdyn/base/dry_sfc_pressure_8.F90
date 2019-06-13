@@ -13,28 +13,22 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r dry_sfc_pressure_8 - Compute dry air surface pressure REAL*8
+!**s/r dry_sfc_pressure_8 - Compute dry air surface pressure REAL64
 !
       subroutine dry_sfc_pressure_8 (F_drysfcp0_8, presT_8, p0T_8, &
-                                     Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
+                               Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
       use glb_ld
       use cstv
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       character(len=1) :: F_timelevel_S
       integer Minx,Maxx,Miny,Maxy,Nk
-      real*8 F_drysfcp0_8(Minx:Maxx,Miny:Maxy),presT_8(Minx:Maxx,Miny:Maxy,Nk),&
-             p0T_8(Minx:Maxx,Miny:Maxy)
-
-!author
-!     Michel Desgagne --  fall 2014
-!
-!revision
-! v4_70 - M. Desgagne      - Initial version
-! v4_XX - M. Tanguay       - REAL*8
-
+      real(kind=REAL64) F_drysfcp0_8(Minx:Maxx,Miny:Maxy),&
+                             presT_8(Minx:Maxx,Miny:Maxy,Nk),&
+                               p0T_8(Minx:Maxx,Miny:Maxy)
 
       integer i,j,k,istat
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumq

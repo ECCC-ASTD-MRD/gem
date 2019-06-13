@@ -18,7 +18,7 @@
       subroutine ccc_raylei (taur, ib, dp, il1, il2, ilg, lay)
 
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, ib, il1, il2, ibm1, k, i
       real ri(3), taur(ilg,lay), dp(ilg,lay)

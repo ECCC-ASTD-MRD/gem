@@ -15,18 +15,17 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 
-subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
+subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
      PS, RS, VEG, Z0H, Z0TOT, WFC, &
-     PSNG, PSNV, PSNZ0, LAI, ZUSL, ZTSL, LAT, FCOR, &
+     PSNG, PSNV, LAI, ZUSL, ZTSL, LAT, FCOR, &
      RESA, ILMO, HST, FRV, FTEMP, FVAP, &
      CH, CD, HRSURF, HUSURF, HV, DEL, ZQS, &
      CTU, N)
-!#TODO: PSNZ0 never used
    use tdpack
    use sfclayer_mod, only: sl_sfclayer,SL_OK
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object
    !     Calculates the drag coefficients for heat and momentum transfers
    !     over ground (i.e., Ch and Cd).
@@ -54,7 +53,6 @@ subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    ! WFC       volumetric water content at the field capacity
    ! PSNG      fraction of bare ground covered by snow
    ! PSNV      fraction of vegetation covered by snow
-   ! PSNZ0     snow fraction for roughness length calculations
    ! LAI       leaf area index
    ! ZTSL      reference height for temperature and humidity input
    ! ZUSL      reference height for wind input
@@ -76,7 +74,7 @@ subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    real TS(N), WG(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N)
    real PS(N), RS(N), VEG(N), Z0TOT(N), WFC(N)
    real Z0H(N)
-   real PSNG(N), PSNV(N), PSNZ0(N), LAI(N), ZUSL(N), ZTSL(N)
+   real PSNG(N), PSNV(N), LAI(N), ZUSL(N), ZTSL(N)
    real LAT(N), FCOR(N)
    real RESA(N), ILMO(N), HST(N), FRV(N), FTEMP(N), FVAP(N)
    real CH(N), CD(N), HUSURF(N), HV(N), DEL(N), ZQS(N)
@@ -251,4 +249,4 @@ subroutine DRAG6(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    end do
 
    return
-end subroutine DRAG6
+end subroutine drag7

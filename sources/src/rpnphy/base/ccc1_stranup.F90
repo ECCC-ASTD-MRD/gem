@@ -19,7 +19,7 @@
                           il1, il2, ilg, lay, lev)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev, ib, ig, lev1, il1, il2, lev1m1, k, kp1, i
       real tau, dtr

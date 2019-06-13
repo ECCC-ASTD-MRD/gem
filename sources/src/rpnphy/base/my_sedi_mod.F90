@@ -1,4 +1,5 @@
 module my_sedi_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
 
 !================================================================================!
 !  The following subroutines are used by the schemes in the multimoment package. !
@@ -8,16 +9,20 @@ module my_sedi_mod
 !================================================================================!
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
   private
+
+#ifdef ECCC_MP_MY_SCHEME
+
   public :: SEDI_main_1,SEDI_main_1b,SEDI_main_2,SEDI_ISGH_V33,countColumns_v33, &
             blg4sedi,blg5sedi,countColumns_a,countColumns
 
    contains
 
 !=====================================================================================!
- SUBROUTINE SEDI_main_2(QX,NX,cat,Q,T,DE,iDE,gamfact,epsQ,epsN,afx,bfx,cmx,dmx,      &
+ subroutine SEDI_main_2(QX,NX,cat,Q,T,DE,iDE,gamfact,epsQ,epsN,afx,bfx,cmx,dmx,      &
                         ckQx1,ckQx2,ckQx4,LXP,ni,nk,VxMax,DxMax,dt,DZ,massFlux,      &
                         ktop_sedi,GRAV,massFlux3D)
 
@@ -96,7 +101,7 @@ module my_sedi_mod
    VqMax= 0.
    VnMax= 0.
 
-   DO a= 1,counter
+   do a= 1,counter
       i= activeColumn(a)
 
       VVQ(i,:) = 0.
@@ -113,7 +118,7 @@ module my_sedi_mod
       dtx(i)   = dt/float(npassx(i))
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-      DO nnn= 1,npassx(i)
+      do nnn= 1,npassx(i)
 
          locallim = (nnn==1)
 
@@ -220,16 +225,16 @@ module my_sedi_mod
 
          enddo
 
-       ENDDO  !nnn-loop
+       enddo  !nnn-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
       !compute average mass flux during the full time step: (used to compute the
       !instantaneous sedimentation rate [liq. equiv. volume flux] in the main s/r)
        massFlux(i)= massFlux(i)/float(npassx(i))
 
-    ENDDO  !a(i)-loop
+    enddo  !a(i)-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-CONTAINS
+contains
 
    real function calcVV()
    !Calculates portion of moment-weighted fall velocities
@@ -238,10 +243,10 @@ CONTAINS
       calcVV  = gamfact(i,k)*iLAMxB0
    end function calcVV
 
- END SUBROUTINE SEDI_main_2
+ end subroutine SEDI_main_2
 
 !=====================================================================================!
- SUBROUTINE SEDI_main_1(QX,cat,T,DE,gamfact,epsQ,afx,bfx,icmx,dmx,dtx,cx6,ckQx1,    &
+ subroutine SEDI_main_1(QX,cat,T,DE,gamfact,epsQ,afx,bfx,icmx,dmx,dtx,cx6,ckQx1,    &
                       ckQx2,ckQx4,npassx,ni,nk,VxMax,DxMax,DZ,PR,No_x,ktop_sedi,    &
                       massFlux3D)
 
@@ -254,7 +259,7 @@ CONTAINS
 !     ** ASSUMES INVERSE-EXPONENTIAL DISTRIBTIONS (alpha_x=0) **
 !-------------------------------------------------------------------------------------!
 
-  USE my_fncs_mod
+  use my_fncs_mod
   implicit none
 
 ! PASSING ARGUMENTS:
@@ -287,7 +292,7 @@ CONTAINS
     iNo_x = 1./No_x
     iDxMax= 1./DxMax
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-    DO nnn= 1,npassx
+    do nnn= 1,npassx
 
        RHOQX= DE*QX
        VVQ  = 0.;  VqMax= 0.
@@ -326,13 +331,13 @@ CONTAINS
 
        PR(:)= PR(:) - cx6*VVQ(:,nk)*DE(:,nk)*QX(:,nk)
 
-    ENDDO  !nnn-loop
+    enddo  !nnn-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
- END SUBROUTINE SEDI_main_1
+ end subroutine SEDI_main_1
 
 !=====================================================================================!
- SUBROUTINE SEDI_main_1b(QX,cat,T,DE,iDE,gamfact,epsQ,afx,bfx,icmx,dmx,ckQx1,ckQx4, &
+ subroutine SEDI_main_1b(QX,cat,T,DE,iDE,gamfact,epsQ,afx,bfx,icmx,dmx,ckQx1,ckQx4, &
                          ni,nk,VxMax,DxMax,dt,DZ,massFlux,No_x,ktop_sedi,GRAV,      &
                          massFlux3D)
 
@@ -403,7 +408,7 @@ CONTAINS
    VVQ  = 0.
    VqMax= 0.
 
-   DO a= 1,counter
+   do a= 1,counter
       i= activeColumn(a)
 
       VVQ(i,:) = 0.
@@ -438,7 +443,7 @@ CONTAINS
       dtx(i)   = dt/float(npassx(i))
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-      DO nnn= 1,npassx(i)
+      do nnn= 1,npassx(i)
 
          locallim = (nnn==1)
 
@@ -514,19 +519,19 @@ CONTAINS
         !sum instantaneous flux at each split step: (for division later)
          massFlux(i)= massFlux(i) - VVQ(i,nk)*DE(i,nk)*QX(i,nk)
 
-       ENDDO  !nnn-loop
+       enddo  !nnn-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
       !compute average flux during the full time step: (this will be used to compute
       ! the instantaneous sedimentation rate [volume flux] in the main s/r)
        massFlux(i)= massFlux(i)/float(npassx(i))
 
-    ENDDO  !a(i)-loop
+    enddo  !a(i)-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
- END SUBROUTINE SEDI_main_1b
+ end subroutine SEDI_main_1b
 
 !=====================================================================================!
- SUBROUTINE countColumns_a(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
+ subroutine countColumns_a(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
 
 !    ***  Used by SEDI_main_1, which is ued my my_smom (2.5.1) only ***      !
 
@@ -569,10 +574,10 @@ CONTAINS
 
    enddo  !i-loop
 
- END SUBROUTINE countColumns_a
+ end subroutine countColumns_a
 
 !=====================================================================================!
- SUBROUTINE countColumns(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
+ subroutine countColumns(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
 
 ! Searches the hydrometeor array QX(ni,nk) for non-zero (>minQX) values.
 ! Returns the array if i-indices (activeColumn) for the columns (i)
@@ -615,7 +620,7 @@ CONTAINS
       enddo
    enddo  !i-loop
 
- END SUBROUTINE countColumns
+ end subroutine countColumns
 
 !=====================================================================================!
 
@@ -625,7 +630,7 @@ CONTAINS
 ! 2008-04-15
 
 !=====================================================================================!
- SUBROUTINE SEDI_ISGH_V33(QX,NX,ZX,cat,Q,T,DE,gamfact,epsQ,epsN,epsZ,afx,bfx,cmx,dmx,    &
+ subroutine SEDI_ISGH_V33(QX,NX,ZX,cat,Q,T,DE,gamfact,epsQ,epsN,epsZ,afx,bfx,cmx,dmx,    &
                           dtx,cx6,ALFxfix,Noxfix,LXP,npassx,ni,nk,VxMax,DxMax,DZ,SR,     &
                           scheme,ktop_sedi)
 
@@ -645,7 +650,7 @@ CONTAINS
   real, dimension(ni),    intent(inout) :: SR
   real, dimension(ni,nk), intent(in)    :: DE,DZ
   real,    intent(in)    :: dtx,epsQ,epsN,epsZ,cx6,VxMax,LXP
-  real*8,  intent(in)    :: afx,bfx,cmx,dmx,ALFxfix,Noxfix,DxMax
+  real(REAL64),  intent(in)    :: afx,bfx,cmx,dmx,ALFxfix,Noxfix,DxMax
   integer, intent(in)    :: npassx,ni,nk,scheme,cat !,ktop_sedi
   integer, dimension(ni), intent(in) :: ktop_sedi
 
@@ -655,9 +660,9 @@ CONTAINS
   logical                :: slabHASmass,LOCALLIM,QxPresent
   integer, dimension(ni) :: activeColumn
   real                   :: VqMax,VnMax,Vzmax,cmxSP
-  real*8                 :: ALFx,GX2,GX5,ckQx1,ckQx2,ckQx3,iLAMx,iLAMxB0,tmpdp1,tmpdp2,Dx
+  real(REAL64)                 :: ALFx,GX2,GX5,ckQx1,ckQx2,ckQx3,iLAMx,iLAMxB0,tmpdp1,tmpdp2,Dx
   integer                :: nnn,a,i,k,counter
-  real*8, parameter      :: thrd  = 1.d0/3.d0
+  real(REAL64), parameter      :: thrd  = 1.d0/3.d0
 
 !-------------------------------------------------------------------------------------!
 
@@ -666,10 +671,10 @@ CONTAINS
   !Determine for which slabs and columns sedimentation should be computes:
    call countColumns_v33(QX,ni,nk,epsQ,counter,activeColumn,slabHASmass,ktop_sedi)
 
-   IF (slabHASmass) THEN
+   if (slabHASmass) then
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-    DO nnn= 1,npassx
+    do nnn= 1,npassx
 
        RHOQX= DE*QX
        VVQ= 0.;  VVN= 0.;  VVZ= 0.;  VqMax= 0.;  VnMax= 0.;  VzMax= 0.
@@ -725,7 +730,7 @@ CONTAINS
       QX= RHOQX/DE
 
     ! Prevent levels with zero N and nonzero Q and size-limiter:
-       IF (scheme>1) THEN
+       if (scheme>1) then
        do a= 1,counter
          i=activeColumn(a)
 !        do k= 1,nk
@@ -746,20 +751,20 @@ CONTAINS
            endif
          enddo
        enddo
-       ENDIF !(if scheme>1)
+       endif !(if scheme>1)
 
        SR(:)= SR(:) - cx6*VVQ(:,nk)*DE(:,nk)*QX(:,nk)
 
-    ENDDO  !nnn-loop
+    enddo  !nnn-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-   ENDIF  !slabHASmass
+   endif  !slabHASmass
 
- END SUBROUTINE SEDI_ISGH_V33
+ end subroutine SEDI_ISGH_V33
 
 !=====================================================================================!
 
- SUBROUTINE countColumns_v33(QX,ni,nk,minQX,counter,activeColumn,slabHASmass,ktop_sedi)
+ subroutine countColumns_v33(QX,ni,nk,minQX,counter,activeColumn,slabHASmass,ktop_sedi)
 
 ! Searches the hydrometeor array QX(ni,nk) for non-zero (>minQX) values.
 ! Returns slabHASmass=TRUE if there is a single non-zero value in the array
@@ -805,12 +810,12 @@ CONTAINS
    enddo  !i-loop
 
 
- END SUBROUTINE countColumns_v33
+ end subroutine countColumns_v33
 
 !=====================================================================================!
 !This subroutine is modified from S/P BLG.FTN
 
- SUBROUTINE blg4sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
+ subroutine blg4sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
 
  implicit none
 
@@ -900,8 +905,8 @@ CONTAINS
 
 !#TODO: get LEVMAX from phy_options module
 !     NOMBRE MAXIMUM DE NIVEAUX POUR LA PHYSIQUE
-      INTEGER LEVMAX
-      PARAMETER (LEVMAX = 200)
+      integer LEVMAX
+      parameter (LEVMAX = 200)
 !--
 
 ! LOCAL VARIABLES AND PARAMETERS:
@@ -931,7 +936,7 @@ CONTAINS
      kw= -1
 
     !------------------------------------------------------------------------
-     DO a= 1,counter   !i=1,ni
+     do a= 1,counter   !i=1,ni
         i=activeColumn(a)
 
 !     Compute cell height and final position of the top (zt) and bottom (zb)
@@ -982,16 +987,16 @@ CONTAINS
         enddo
 
 
-     ENDDO !i-loop
+     enddo !i-loop
     !------------------------------------------------------------------------
 
- RETURN
- END SUBROUTINE blg4sedi
+ return
+ end subroutine blg4sedi
 
 !=====================================================================================!
 !This subroutine is modified from S/P BLG.FTN
 
- SUBROUTINE blg5sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
+ subroutine blg5sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
 
  implicit none
 
@@ -1111,7 +1116,7 @@ CONTAINS
      kw= -1
 
     !------------------------------------------------------------------------
-     DO a= 1,counter   !i=1,ni
+     do a= 1,counter   !i=1,ni
         i=activeColumn(a)
 
 !     Compute cell height and final position of the top (zt) and bottom (zb)
@@ -1162,11 +1167,13 @@ CONTAINS
         enddo
 
 
-     ENDDO !i-loop
+     enddo !i-loop
     !------------------------------------------------------------------------
 
- RETURN
- END SUBROUTINE blg5sedi
+ return
+ end subroutine blg5sedi
 !=====================================================================================!
+
+#endif
 
 end module my_sedi_mod

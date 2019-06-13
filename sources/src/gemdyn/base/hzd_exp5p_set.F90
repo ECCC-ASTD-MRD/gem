@@ -25,19 +25,14 @@
       use glb_ld
       use cstv
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
 !author
 !    Abdessamad Qaddouri - summer 2015
 !
-!revision
-! v4_80 - Qaddouri A.      - initial version
-! v4_80 - Lee   - optimization
-!
-
-
-      real*8 coef_8,coef_theta_8,coef_tr_8,nutop_8,c_8,deg2rad_8
+      real(kind=REAL64) coef_8,coef_theta_8,coef_tr_8,nutop_8,c_8,deg2rad_8
 !
 !     ---------------------------------------------------------------
 !

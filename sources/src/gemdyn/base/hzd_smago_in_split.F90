@@ -42,14 +42,6 @@
 !author
 !     Claude Girard and Syed Husain
 !
-!revision
-! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
-! v5_0 - Husain S.    - added vertically variable background diffusion
-! v5_0 - Husain S.    - modified the discretization of the diffusion operator
-!                       for horizontal wind, implemented Smagorinsky
-!                       diffusion in the split mode ( + bug correction for
-!                       frinctional heating at the first prognostic level)
-
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v

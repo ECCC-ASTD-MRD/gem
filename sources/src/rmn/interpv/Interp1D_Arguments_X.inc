@@ -16,7 +16,7 @@
 !        called from C.
 !
 !ARGUMENTS
-#include "Interp1D_Arguments.cdk"
+#include "Interp1D_Arguments.inc"
 
   external flux                         ! s/r to calculate flux at one vert level
   integer, intent(in) :: numExtArraysIn ! size of the array, ExtArraysIn
@@ -58,14 +58,14 @@
 !
 !NOTES
 !        This file is to be included by the line,
-!                    '#include "Interp1D_Arguments_X.cdk" '.
+!                    '#include "Interp1D_Arguments_X.inc" '.
 !
 !        It is assumed that wherever this file is included, the inclusion is
 !        preceded by 'use Interp1D_Constants'.
 !
 !        This file defines the parameters that are unique to the 'extended'
 !        interface.  The original interface has its parameters defined in
-!        Interp1D_Arguments.cdk.
+!        Interp1D_Arguments.inc.
 !
 !!
 

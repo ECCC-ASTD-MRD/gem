@@ -22,6 +22,7 @@
       use glb_ld
       use lun
       use prec
+      use, intrinsic :: iso_fortran_env
       implicit none
       ! Solves a linear system using a Bi-Conjugate Gradient STABilised
       !
@@ -29,34 +30,32 @@
       ! C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations, SIAM, 1995
       ! (https://www.siam.org/books/textbooks/fr16_book.pdf)
       !
-      ! Author
-      !     Stéphane Gaudreault -- June 2014
-      !
       integer, intent(in) :: ni, nj, nk, minx, maxx, miny, maxy, i0, il, j0, jl
       !
       ! The converged solution.
-      real*8, dimension (minx:maxx, miny:maxy, nk), intent(out) :: x
+      real(kind=REAL64), dimension (minx:maxx, miny:maxy, nk), intent(out) :: x
       !
       ! Initial guess for the solution
-      real*8, dimension (minx:maxx, miny:maxy, nk), intent(in) :: x0
+      real(kind=REAL64), dimension (minx:maxx, miny:maxy, nk), intent(in) :: x0
       !
       ! Right hand side of the linear system.
-      real*8, dimension (minx:maxx, miny:maxy, nk), intent(in) :: b
+      real(kind=REAL64), dimension (minx:maxx, miny:maxy, nk), intent(in) :: b
       !
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod)
             use glb_ld, only: l_nk
             use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+      use, intrinsic :: iso_fortran_env
             implicit none
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
       end interface
       !
       ! Tolerance to achieve. The algorithm terminates when either the relative
       ! or the absolute residual is below tolerance.
-      real*8, intent(in) :: tolerance
+      real(kind=REAL64), intent(in) :: tolerance
       !
       ! Maximum number of iterations. Iteration will stop after maxiter steps
       ! even if the specified tolerance has not been achieved.
@@ -64,18 +63,18 @@
       ! Preconditioner
       character(len=*), intent(in) :: precond_S
       !
-      real*8, intent(out) :: conv
+      real(kind=REAL64), intent(out) :: conv
 
       integer :: iter, i, j, k
-      real*8 :: relative_tolerance, alpha, beta, tau, omega
-      real*8 :: rho_old, rho, norm_residual, r0
+      real(kind=REAL64) :: relative_tolerance, alpha, beta, tau, omega
+      real(kind=REAL64) :: rho_old, rho, norm_residual, r0
       logical :: force_restart
 
-      real*8, dimension(minx:maxx, miny:maxy, nk) :: residual, hatr0 ,res_matvec
-      real*8, dimension(minx:maxx, miny:maxy, nk) :: vv, pp, pp_prec, ss, ss_prec, tt
+      real(kind=REAL64), dimension(minx:maxx, miny:maxy, nk) :: residual, hatr0 ,res_matvec
+      real(kind=REAL64), dimension(minx:maxx, miny:maxy, nk) :: vv, pp, pp_prec, ss, ss_prec, tt
 
       logical almost_zero
-      real*8 dist_dotproduct
+      real(kind=REAL64) dist_dotproduct
 
       ! Here we go !
 

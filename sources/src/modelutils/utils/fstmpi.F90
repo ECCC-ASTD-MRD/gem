@@ -16,6 +16,7 @@
 !/@
 module fstmpi_mod
    use iso_c_binding
+   use rpn_comm_itf_mod
    use fst_mod
    use fstmpi_read_mod
    use fstmpi_write_mod
@@ -36,8 +37,7 @@ module fstmpi_mod
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 
 contains
 

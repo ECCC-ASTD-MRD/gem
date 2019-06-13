@@ -22,6 +22,7 @@
       use tdpack
       use glb_ld
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -30,9 +31,9 @@
 
 
       integer i,j, gmmstat
-      real*8, parameter :: one = 1.0d0
-      real*8, parameter :: two = 2.0d0
-      real*8  lt, pio2, f, b
+      real(kind=REAL64), parameter :: one = 1.0d0
+      real(kind=REAL64), parameter :: two = 2.0d0
+      real(kind=REAL64)  lt, pio2, f, b
 !     __________________________________________________________________
 !
       gmmstat = gmm_get(gmmk_topo_low_s , topo_low )

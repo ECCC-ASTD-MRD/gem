@@ -17,7 +17,7 @@
 subroutine mesahr3(hr,es,tt,ps,swph,ni,nk,n)
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer ni, nk, n
    real hr(ni,nk), es(ni,nk), tt(ni,nk)

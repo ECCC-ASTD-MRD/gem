@@ -33,6 +33,7 @@
       use ver
       use lun
       use metric
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -50,10 +51,10 @@
       integer :: j0u, jnu, j0v, jnv
 
       integer :: i, j, k, km, kp, nij, jext, istat
-      real*8  :: div, barz, barzp, u_interp, v_interp, t_interp, w1
-      real*8  :: phy_bA_m_8, phy_bA_t_8
-      real*8, dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
-      real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0
+      real(kind=REAL64)  :: div, barz, barzp, u_interp, v_interp, t_interp, w1
+      real(kind=REAL64)  :: phy_bA_m_8, phy_bA_t_8
+      real(kind=REAL64), dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
+      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
       zero_array=0.
 !

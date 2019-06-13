@@ -13,27 +13,27 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-      subroutine pdfjdate(jdate,yyyy,mo,dd,hh,mm,ss)
-      implicit none
-#include <arch_specific.hf>
-      real*8 jdate
-      integer yyyy,mo,dd,hh,mm,ss
+subroutine pdfjdate(jdate,yyyy,mo,dd,hh,mm,ss)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+!!!#include <arch_specific.hf>
+   include "rmnlib_basics.inc"
+   real(REAL64) :: jdate
+   integer yyyy,mo,dd,hh,mm,ss
 
+   !  calculate julian calendar day
+   !  see cacm letter to editor by fliegel and flandern 1968
+   !  page 657
 
-!
-!  calculate julian calendar day
-!  see cacm letter to editor by fliegel and flandern 1968
-!  page 657
-!
-      integer jd,jyy,jmo,jdd
-      jd(jyy,jmo,jdd)=jdd-32075+1461*(jyy+4800+(jmo-14)/12)/4 &
-           +  367*(jmo-2-(jmo-14)/12*12)/12 - 3 &
-           *((jyy+4900+(jmo-14)/12)/100)/4
+   integer jd,jyy,jmo,jdd
 
+   jd(jyy,jmo,jdd)=jdd-32075+1461*(jyy+4800+(jmo-14)/12)/4 &
+        +  367*(jmo-2-(jmo-14)/12*12)/12 - 3 &
+        *((jyy+4900+(jmo-14)/12)/100)/4
 
-      jdate = jd(yyyy,mo,dd)
-      jdate = jdate + (hh*3600+mm*60+ss)/86400.0
-      return
-      end
+   jdate = jd(yyyy,mo,dd)
+   jdate = jdate + (hh*3600+mm*60+ss)/86400.0
+
+   return
+end subroutine pdfjdate
 

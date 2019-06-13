@@ -21,6 +21,7 @@
       use glb_ld
       use HORgrid_options
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -44,7 +45,7 @@
 #include "msg.h"
 
       !------------------------------------------------------------------------------------------------
-      real*8,  parameter :: EPS_8 = 1.D-5
+      real(kind=REAL64),  parameter :: EPS_8 = 1.D-5
       integer :: BCS_BASE       ! BCS points for Yin-Yang, normal LAM
 
       character(len=MSG_MAXLEN) :: msg_S

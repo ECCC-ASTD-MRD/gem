@@ -76,7 +76,8 @@
 !     clib_isdigit  : return CLIB_OK if char is digit
 !     clib_islower  : return CLIB_OK if char is lowercase
 !     clib_ispunct  : return CLIB_OK if char is a punctuation
-!     clib_isspace  : return CLIB_OK if char is space, form-feed ('\f'), newline ('\n'), carriage return ('\r'), horizontal tab ('\t'), and vertical tab ('\v')
+!     clib_isspace  : return CLIB_OK if char is space, form-feed ('\f'), newline ('\n'), carriage return ('\r'),
+!                     horizontal tab ('\t'), and vertical tab ('\v')
 !     clib_isupper  : return CLIB_OK if char is uppercase
 !     clib_isxdigit : return CLIB_OK if char is hexadecimal digit
 !===================================================================
@@ -240,8 +241,11 @@
       end interface
 
       interface clib_size
-      integer*8 function clib_size_schhide(path)
+      function clib_size_schhide(path)
+      use, intrinsic :: iso_fortran_env, only: INT64
       implicit none
+      include "rmnlib_basics.inc"
+      integer(INT64) :: clib_size_schhide
       character(len=*),intent(IN) :: path
       end function
       end interface
@@ -255,9 +259,11 @@
 
       interface clib_stat
       integer function clib_stat_schhide(path,extra_info)
+      use, intrinsic :: iso_fortran_env, only: INT64
       implicit none
+      include "rmnlib_basics.inc"
       character(len=*),intent(IN) :: path
-      integer *8, dimension(13), intent(OUT) :: extra_info
+      integer(INT64), dimension(13), intent(OUT) :: extra_info
       end function
       end interface
 

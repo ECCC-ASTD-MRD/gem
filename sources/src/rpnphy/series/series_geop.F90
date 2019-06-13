@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_geop_mod
+   use tdpack_const, only: PI
    use phygridmap, only: phydim_ni, phydim_nj
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
    use series_options
@@ -21,17 +22,16 @@ module series_geop_mod
    implicit none
    private
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include "tdpack_const.hf"
 
    public :: series_geop
 
 contains
 
    subroutine series_geop()
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@object Prepares "first record" output for time series.
       !@author Andre Methot - cmc - june 1994 v0_14
       !@revision

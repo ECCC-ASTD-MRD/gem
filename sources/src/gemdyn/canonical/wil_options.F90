@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module wil_options
+      use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -79,7 +80,7 @@ module wil_options
    real :: Williamson_rlat0 = 0.
    namelist /williamson/ Williamson_rlat0
 
-   real*8 :: Williamson_lon_pole_r_8, Williamson_lat_pole_r_8, Williamson_rho_i_8, &
+   real(kind=REAL64) :: Williamson_lon_pole_r_8, Williamson_lat_pole_r_8, Williamson_rho_i_8, &
              Williamson_v0_8, Williamson_ubar_8
 
 contains
@@ -88,6 +89,7 @@ contains
 
       integer function wil_nml (F_unf, F_wil_L)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -139,6 +141,7 @@ contains
       end function wil_nml
 
    function wil_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

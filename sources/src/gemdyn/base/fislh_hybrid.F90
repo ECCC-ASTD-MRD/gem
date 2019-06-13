@@ -34,6 +34,7 @@
       use levels
       use ver
       use wb_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -50,8 +51,8 @@
       integer k,istat,pnip1,options_readwrite,options_readonly,ier
       integer, dimension(:), pointer :: wkpti
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
-      real*8, parameter :: zero=0.d0, one=1.d0, half=0.5d0
-      real*8, dimension(:), pointer :: wkpt8
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
+      real(kind=REAL64), dimension(:), pointer :: wkpt8
       character(len=VGD_LEN_NAME) :: rfls_S
 !     __________________________________________________________________
 !

@@ -18,7 +18,7 @@
 !
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !
       REAL A1,A2,A3,C1,C2,EE,EQ,EY,E45,FE,P,SIGMA,SQRT2P,T1,T2

@@ -20,7 +20,7 @@ subroutine set_igs2 ( F_ig1, F_ig2,                      &
      F_ig1ro,F_ig2ro, F_ig3ro, F_ig4ro, &
      F_i0, F_in, F_is, F_j0, F_jn, F_js )
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer F_ig1, F_ig2, F_ni, F_nj, F_i0, F_in, F_is, F_j0, F_jn, F_js, &
         F_ig1ro,F_ig2ro, F_ig3ro, F_ig4ro

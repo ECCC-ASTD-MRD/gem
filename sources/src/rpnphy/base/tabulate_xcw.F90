@@ -40,7 +40,7 @@
 !!$
 !!$
 !!$      implicit none
-!!$#include <arch_specific.hf>
+!!$!!!#include <arch_specific.hf>
 !!$#include "mcica.cdk"
 !!$
 !!$! Local variables

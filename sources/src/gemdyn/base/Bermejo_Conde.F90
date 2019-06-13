@@ -31,6 +31,7 @@
       use rstr
       use tr3d
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -64,7 +65,7 @@
 
       integer :: i,j,k,err,count(F_k0:F_nk,3),l_count(3),g_count(3),iprod,istat,tracer_id
 
-      real*8 :: mass_old_8,mass_tot_old_8,mass_adv_8,mass_tot_adv_8, &
+      real(kind=REAL64) :: mass_old_8,mass_tot_old_8,mass_adv_8,mass_tot_adv_8, &
                 mass_out_8,mass_tot_out_8,mass_wei_8,mass_bc_w_8,mass_bc_l_8,proportion_8, &
                 mass_deficit_8,lambda_8,correction_8,p_exp_8,H_minus_L_8,ratio_8, &
                 mass_flux_o_8,mass_flux_i_8,mass_bflux_8
@@ -77,7 +78,7 @@
 
       character(len= 9) :: communicate_S
 
-      real*8, parameter :: ONE_8=1.d0
+      real(kind=REAL64), parameter :: ONE_8=1.d0
 
       real, pointer, dimension(:,:,:) :: air_mass_p,air_mass_m
 

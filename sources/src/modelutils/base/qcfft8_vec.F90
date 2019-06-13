@@ -57,185 +57,183 @@
 !     the commons COMFFT8 and COMFFT8X
 !
 !-----------------------------------------------------------------------
-!
-      subroutine qcfft8_vec ( a, inc, jump, lot, isign )
-      implicit none
-#include <arch_specific.hf>
 
-! Input/output variables
-      integer :: inc, jump, lot, isign
-      real(kind=8) ::  a(*)
+subroutine qcfft8_vec(a, inc, jump, lot, isign)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+!!!#include <arch_specific.hf>
+   include "rmnlib_basics.inc"
 
-! Comdec variable declarations
-      integer ::  n, m, nstore
-      pointer ( ptss,ssin(n-m-1) ), ( ptcc,ccos(n-m-1) )
-      pointer ( ptqs,qsin(0:m-1) )
-      common    / comfft8x / ptss, ptcc, ptqs, n, m, nstore
+   ! Input/output variables
+   integer :: inc, jump, lot, isign
+   real(REAL64) :: a(*)
 
-! External functions
-      real(kind=8) ::  ssin, ccos, qsin
+   ! Comdec variable declarations
+   integer :: n, m, nstore
+   pointer ( ptss,ssin(n-m-1) ), ( ptcc,ccos(n-m-1) )
+   pointer ( ptqs,qsin(0:m-1) )
+   common    / comfft8x / ptss, ptcc, ptqs, n, m, nstore
 
-! Internal parameters
-      integer, parameter :: MAX_VEC=511
-      real(kind=8), parameter :: zero=0.0, half=0.5, one=1.0,  &
+   ! External functions
+   real(REAL64) ::  ssin, ccos, qsin
+
+   ! Internal parameters
+   integer, parameter :: MAX_VEC=511
+   real(REAL64), parameter :: zero=0.0, half=0.5, one=1.0,  &
         two=2.0, four=4.0
 
-! Internal variables and parameters
-      integer :: i, j, k, is, k1, kk, j0, jlot, ija, maxVec, mMax
-      real(kind=8) :: ai, as, ya, ys, c, s, rr
-      real(kind=8), dimension(0:nstore-1,MAX_VEC) :: w2,fftData
-      logical :: nIs2m
-!
-!-----------------------------------------------------------------------
-!
+   ! Internal variables and parameters
+   integer :: i, j, k, is, k1, kk, j0, jlot, ija, maxVec, mMax
+   real(REAL64) :: ai, as, ya, ys, c, s, rr
+   real(REAL64), dimension(0:nstore-1,MAX_VEC) :: w2,fftData
+   logical :: nIs2m
+   !-----------------------------------------------------------------------
 
-! Statement functions
-      ija(i,j) = 1 + (j0+j-1)*jump + i*inc
+   ! Statement functions
+   ija(i,j) = 1 + (j0+j-1)*jump + i*inc
 
-! Vector length setup
-      	if (n == 2*m) then
-	  nIs2m = .true.
-        else
-	  nIs2m = .false.
-	endif
-        w2=zero
+   ! Vector length setup
+   if (n == 2*m) then
+      nIs2m = .true.
+   else
+      nIs2m = .false.
+   endif
+   w2=zero
 
-! Begin main loop for a large number of vectors (>MAX_VEC)
-      	do 100 j0=0,lot-1,MAX_VEC
-      	jlot  = min( MAX_VEC, lot - j0 )
+   ! Begin main loop for a large number of vectors (>MAX_VEC)
+   LONGDO: do j0=0,lot-1,MAX_VEC
+      jlot  = min( MAX_VEC, lot - j0 )
 
-! Fill local data array
-      	do j=1,jlot
-	  do i=0,nstore-1
-	    fftData(i,j) = a(ija(i,j))
-	  enddo
-      	enddo
+      ! Fill local data array
+      do j=1,jlot
+         do i=0,nstore-1
+            fftData(i,j) = a(ija(i,j))
+         enddo
+      enddo
 
-      	if ( isign .eq. -1 ) then
+      if ( isign .eq. -1 ) then
 
-! --- Transform from gridpoint to Fourier ---
-	do j=1,jlot
+         ! --- Transform from gridpoint to Fourier ---
+         do j=1,jlot
 !VDIR NOSYNC
-	  do i=0,m-1
-	    is = n-i-1
-	    ai = fftData(i,j)
-	    as = fftData(is,j)
-	    ys = ai + as
-	    ya = two * qsin(i) * (as - ai)
-	    w2(i,j) = ys + ya
-	    w2(n-i-1,j) = ys - ya
-	  enddo
-	enddo
-	if (.not.nIs2m) w2(m,1:jlot) = two * fftData(m,1:jlot)
+            do i=0,m-1
+               is = n-i-1
+               ai = fftData(i,j)
+               as = fftData(is,j)
+               ys = ai + as
+               ya = two * qsin(i) * (as - ai)
+               w2(i,j) = ys + ya
+               w2(n-i-1,j) = ys - ya
+            enddo
+         enddo
+         if (.not.nIs2m) w2(m,1:jlot) = two * fftData(m,1:jlot)
 
-! Call external FFT calculator
-	maxVec = MAX_VEC
-	call ffft8( w2(0:nstore-1,1:jlot), 1, nstore, jlot, -1 )
+         ! Call external FFT calculator
+         maxVec = MAX_VEC
+         call ffft8( w2(0:nstore-1,1:jlot), 1, nstore, jlot, -1 )
 
-! Prepare results for output
-	fftData(0,1:jlot) = half * w2(0,1:jlot)
-	if (nIs2m) then
-	  mMax = m-1
-	else
-	  mMax = m
-	endif
-	do j=1,jlot
-	  do k=1,mMax
-	    kk = 2*k
-	    k1 = kk+1
-	    c = ccos(k)
-	    s = ssin(k)
-	    fftData(kk-1,j) = -s*w2(kk,j) + c*w2(k1,j)
-	    fftData(kk,j) = c*w2(kk,j) + s*w2(k1,j)
-	  enddo
-	enddo
-	if (nIs2m) then
+         ! Prepare results for output
+         fftData(0,1:jlot) = half * w2(0,1:jlot)
+         if (nIs2m) then
+            mMax = m-1
+         else
+            mMax = m
+         endif
+         do j=1,jlot
+            do k=1,mMax
+               kk = 2*k
+               k1 = kk+1
+               c = ccos(k)
+               s = ssin(k)
+               fftData(kk-1,j) = -s*w2(kk,j) + c*w2(k1,j)
+               fftData(kk,j) = c*w2(kk,j) + s*w2(k1,j)
+            enddo
+         enddo
+         if (nIs2m) then
 !VDIR NOSYNC
-	  do j=1,jlot
-	    fftData(2*m-1,j) = -w2(2*m,j)
-	    fftData(n-1,j) = fftData(n-1,j) * half
-	  enddo
-	endif
-	do j=1,jlot
-	  do k=2*m-3,1,-2
-	    fftData(k,j) = fftData(k,j) + fftData(k+2,j)
-	  enddo
-	enddo
+            do j=1,jlot
+               fftData(2*m-1,j) = -w2(2*m,j)
+               fftData(n-1,j) = fftData(n-1,j) * half
+            enddo
+         endif
+         do j=1,jlot
+            do k=2*m-3,1,-2
+               fftData(k,j) = fftData(k,j) + fftData(k+2,j)
+            enddo
+         enddo
 
-	elseif ( isign .eq. +1 ) then
+      elseif ( isign .eq. +1 ) then
 
-! --- Transform from Fourier to gridpoint ---
-	do j=1,jlot
-	  w2(0,j) = fftData(0,j)
-	  w2(1,j) = zero
-	enddo
-	do j=1,jlot
-	  do k=2,n-1,2
-	    w2(k,j) = fftData(k,j) * half
-	  enddo
-	  do k=3,2*m-1,2
-	    w2(k,j) = (fftData(k-2,j) - fftData(k,j) ) * half
-	  enddo 
-	enddo
-	if (nIs2m)  then
-           c = one
-        else
-           c = half
-        endif
-	w2(2*m+1,1:jlot) = fftData(2*m-1,1:jlot) * c
-	do j=1,jlot
-	  do k=1,m
-	    if ( k .lt. m .or. n .ne. 2 * m ) then
-  	      c = ccos(k)
-	      s = ssin(k)
-	    else
-	      c = zero
-	      s = one
-	    endif
-	    kk = 2*k
-	    k1 = kk + 1
-	    rr = w2(kk,j)
-	    w2(kk,j) = c * rr - s * w2(k1,j)
-	    w2(k1,j) = s * rr + c * w2(k1,j)
-	  enddo
-	enddo
+         ! --- Transform from Fourier to gridpoint ---
+         do j=1,jlot
+            w2(0,j) = fftData(0,j)
+            w2(1,j) = zero
+         enddo
+         do j=1,jlot
+            do k=2,n-1,2
+               w2(k,j) = fftData(k,j) * half
+            enddo
+            do k=3,2*m-1,2
+               w2(k,j) = (fftData(k-2,j) - fftData(k,j) ) * half
+            enddo
+         enddo
+         if (nIs2m)  then
+            c = one
+         else
+            c = half
+         endif
+         w2(2*m+1,1:jlot) = fftData(2*m-1,1:jlot) * c
+         do j=1,jlot
+            do k=1,m
+               if ( k .lt. m .or. n .ne. 2 * m ) then
+                  c = ccos(k)
+                  s = ssin(k)
+               else
+                  c = zero
+                  s = one
+               endif
+               kk = 2*k
+               k1 = kk + 1
+               rr = w2(kk,j)
+               w2(kk,j) = c * rr - s * w2(k1,j)
+               w2(k1,j) = s * rr + c * w2(k1,j)
+            enddo
+         enddo
 
-! Call external FFT calculator
-	 maxVec = MAX_VEC
-	 call ffft8( w2(0:nstore-1,1:jlot), 1, nstore, jlot, +1 )
+         ! Call external FFT calculator
+         maxVec = MAX_VEC
+         call ffft8( w2(0:nstore-1,1:jlot), 1, nstore, jlot, +1 )
 
-! Prepare inverted results for output
-	do j=1,jlot
+         ! Prepare inverted results for output
+         do j=1,jlot
 !VDIR NOSYNC
-	  do i=0,m-1
-	    is = n-i-1
-	    ys = ( w2(i,j) + w2(is,j) ) * half
-	    ya = ( w2(is,j) - w2(i,j) ) / ( four * qsin( i ) )
-	    fftData(i,j) = ys + ya
-	    fftData(is,j) = ys - ya
-	  enddo
-	enddo
-	if ( .not.nIs2m )  then
-	  do j=1,jlot
-	    fftData(m,j) = w2(m,j)
-	  enddo
-	endif
+            do i=0,m-1
+               is = n-i-1
+               ys = ( w2(i,j) + w2(is,j) ) * half
+               ya = ( w2(is,j) - w2(i,j) ) / ( four * qsin( i ) )
+               fftData(i,j) = ys + ya
+               fftData(is,j) = ys - ya
+            enddo
+         enddo
+         if ( .not.nIs2m )  then
+            do j=1,jlot
+               fftData(m,j) = w2(m,j)
+            enddo
+         endif
 
-! End of main branch for fwd/reverse transformations
-	endif
+         ! End of main branch for fwd/reverse transformations
+      endif
 
-! Empty local array into output vector
+      ! Empty local array into output vector
 !VDIR NOSYNC
-     	do j=1,jlot
-	  do i=0,nstore-1
-	    a(ija(i,j)) = fftData(i,j)
-	  enddo
-      	enddo
+      do j=1,jlot
+         do i=0,nstore-1
+            a(ija(i,j)) = fftData(i,j)
+         enddo
+      enddo
 
-! End of main loop for number of vectors
-  100 continue
-!
-!-----------------------------------------------------------------------
-!
-      return
-      end
+      ! End of main loop for number of vectors
+   enddo LONGDO
+   !-----------------------------------------------------------------------
+   return
+end subroutine qcfft8_vec

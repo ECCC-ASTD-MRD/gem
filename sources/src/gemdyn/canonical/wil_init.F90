@@ -80,7 +80,7 @@
       integer istat,istat1,istat2,istat3,istat4,i,j
       real, dimension (:,:,:), pointer :: cl,cl2,q1,q2,q3,q4
       real, dimension (Mminx:Mmaxx,Mminy:Mmaxy) :: topo_case5
-      real*4, parameter :: CLY_REF = 4.*10.**(-6)
+      real, parameter :: CLY_REF = 4.*10.**(-6)
 
       !---------------------------------------------------------------
 

@@ -36,6 +36,7 @@
       use lun
       use metric
       use fislh_sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, icln
@@ -45,16 +46,16 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_zd
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt
-      real*8, dimension(ni,nj,Nk),              intent(out)   :: F_rhs
+      real(kind=REAL64), dimension(ni,nj,Nk),              intent(out)   :: F_rhs
 
 !     Author: Claude Girard, July 2017
 
 #include <arch_specific.hf>
 
       integer :: i, j, k, km, kp, i0u, inu, j0v, jnv, nij, onept
-      real*8  :: c0,c1,div,w1,w2,barz,barzp, t_interp, u_interp, v_interp
-      real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
-      real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0
+      real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp, t_interp, u_interp, v_interp
+      real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
+      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
 !     __________________________________________________________________
 !
       if (Lun_debug_L)  write(Lun_out,1000)

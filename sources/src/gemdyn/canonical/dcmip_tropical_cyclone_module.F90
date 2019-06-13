@@ -42,13 +42,14 @@ MODULE tropical_cyclone
 !
 !=======================================================================
 
-  IMPLICIT NONE
+  use, intrinsic :: iso_fortran_env
+  implicit none
 
 !=======================================================================
 !    Physical constants
 !=======================================================================
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        a     = 6371220.0d0,           & ! Reference Earth's Radius (m)
        Rd    = 287.0d0,               & ! Ideal gas const dry air (J kg^-1 K^1)
     !!!g     = 9.80616d0,             & ! Gravity (m s^2)
@@ -66,7 +67,7 @@ MODULE tropical_cyclone
 !=======================================================================
 !    Test case parameters
 !=======================================================================
-  REAL(8), PARAMETER ::         &
+  real(kind=REAL64), PARAMETER ::         &
        rp         = 282000.d0,  & ! Radius for calculation of PS
        dp         = 1115.d0,    & ! Delta P for calculation of PS
        zp         = 7000.d0,    & ! Height for calculation of P
@@ -105,7 +106,7 @@ CONTAINS
     !   Input / output parameters
     !------------------------------------------------
 
-    REAL(8), INTENT(IN) ::     &
+    real(kind=REAL64), INTENT(IN) ::     &
               lon,             &     ! Longitude (radians)
               lat,             &     ! Latitude (radians)
               Ver_z,           &     ! Ver_z_8 GEM
@@ -113,14 +114,14 @@ CONTAINS
               Ver_b,           &     ! Ver_b_8 GEM
               pref                   ! Cstv_pref_8 GEM
 
-    REAL(8), INTENT(INOUT) ::  &
+    real(kind=REAL64), INTENT(INOUT) ::  &
               p,               &     ! Pressure (Pa)
               z                      ! Height (m)
 
     INTEGER, INTENT(IN) :: zcoords   ! 1 if z coordinates are specified
                                      ! 0 if p coordinates are specified
 
-    REAL(8), INTENT(OUT) ::    &
+    real(kind=REAL64), INTENT(OUT) ::    &
               u,               &     ! Zonal wind (m s^-1)
               v,               &     ! Meridional wind (m s^-1)
               t,               &     ! Temperature (K)
@@ -134,7 +135,7 @@ CONTAINS
     !------------------------------------------------
     !   Local variables
     !------------------------------------------------
-    real(8)  :: d1, d2, d, vfac, ufac, height, zhere, gr, f, zn, st1
+    real(kind=REAL64)  :: d1, d2, d, vfac, ufac, height, zhere, gr, f, zn, st1
 
     integer  n
 
@@ -271,9 +272,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    First function for fixed point iterations
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION fpiF(phere, gr, zhere)
+  real(kind=REAL64) FUNCTION fpiF(phere, gr, zhere)
     IMPLICIT NONE
-    REAL(8), INTENT(IN) :: phere, gr, zhere
+    real(kind=REAL64), INTENT(IN) :: phere, gr, zhere
 
       fpiF = phere-(p00-dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz)) &
              *((T0-gamma*zhere)/T0)**(grav/(Rd*gamma))
@@ -283,9 +284,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Second function for fixed point iterations
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION fpidFdz(gr, zhere)
+  real(kind=REAL64) FUNCTION fpidFdz(gr, zhere)
     IMPLICIT NONE
-    REAL(8), INTENT(IN) :: gr, zhere
+    real(kind=REAL64), INTENT(IN) :: gr, zhere
 
       fpidFdz =-exppz*zhere*dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz)/(zp*zp)*((T0-gamma*zhere)/T0)**(grav/(Rd*gamma)) &
                +grav/(Rd*T0)*(p00-dp*exp(-(gr/rp)**exppr)*exp(-(zhere/zp)**exppz))*((T0-gamma*zhere)/T0)**(grav/(Rd*gamma)-1.d0)

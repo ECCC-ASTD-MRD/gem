@@ -34,6 +34,7 @@
       use lun
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -46,25 +47,19 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)      :: F_zd, F_hu, F_rc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out)     :: F_nu, F_nv, F_nt, F_nc, F_nw, F_nf
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(inout) :: F_q
-      real*8, dimension(ni,nj,Nk), intent(out) :: F_rhs
+      real(kind=REAL64), dimension(ni,nj,Nk), intent(out) :: F_rhs
 
-!author
-!     Alain Patoine - split from nli.ftn
 !
-!revision
-! v4_40 - Lee/Qaddouri      - Adjust range of calculation for Yin-Yang
-! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!                           - Explicit integration of metric terms
 
       integer :: i, j, k, km, i0u, inu, j0v, jnv, nij, k0t, onept
       real    :: w_nt
-      real*8  :: c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
+      real(kind=REAL64)  :: c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
                  t_interp, mu_interp, u_interp, v_interp, mydelta_8
-      real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
-      real*8, parameter :: one=1.d0, half=0.5d0, &
+      real(kind=REAL64) , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
+      real(kind=REAL64), parameter :: one=1.d0, half=0.5d0, &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
-      real*8, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, BsPrq, FI
 !     __________________________________________________________________
 !

@@ -15,19 +15,14 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-function iniptsurf4(ni,nk) result(F_istat)
-!#TODO: ni,nk never used
+function iniptsurf5() result(F_istat)
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Initialization of common blocks used in the surface package
    !@Arguments
-   !          - Input -
-   ! NI       horizontal dimension
-   ! NK       vertical dimension
 
-   integer, intent(in) :: ni, nk
    integer :: F_istat
 
    !@Author B. Bilodeau (Sept 1999)
@@ -260,4 +255,4 @@ function iniptsurf4(ni,nk) result(F_istat)
 
    F_istat = RMN_OK
    return
-end function iniptsurf4
+end function iniptsurf5

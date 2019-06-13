@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module sol
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -40,8 +41,8 @@ module sol
 
    real, dimension(:,:,:), allocatable :: Sol_rhs
 
-   real*8, dimension(:), allocatable :: Sol_ai_8,Sol_bi_8,Sol_ci_8
-   real*8, dimension(:), allocatable :: Sol_stencil2_8,Sol_stencil3_8
-   real*8, dimension(:), allocatable :: Sol_stencil4_8,Sol_stencil5_8
+   real(kind=REAL64), dimension(:), allocatable :: Sol_ai_8,Sol_bi_8,Sol_ci_8
+   real(kind=REAL64), dimension(:), allocatable :: Sol_stencil2_8,Sol_stencil3_8
+   real(kind=REAL64), dimension(:), allocatable :: Sol_stencil4_8,Sol_stencil5_8
 
 end module sol

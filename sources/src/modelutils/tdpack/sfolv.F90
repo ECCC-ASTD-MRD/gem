@@ -18,7 +18,7 @@
       Function sfolv(tt)
       use tdpack, only: folv
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sfolv, tt
 !

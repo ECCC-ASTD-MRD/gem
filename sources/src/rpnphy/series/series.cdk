@@ -29,12 +29,6 @@
       type(station_latlon) :: xst_stn_latlon(MAXSTAT)
       common /xst_station_latlon/ xst_stn_latlon
 
-      namelist /series/ P_serg_srprf_s
-      namelist /series/ P_serg_srsrf_s
-      namelist /series/ P_serg_srwri
-      namelist /series/ P_serg_serstp
-      namelist /series/ xst_stn_latlon
-
       integer :: P_serg_ver, P_serg_unf
       character(len=SERG_STRING_LENGTH) :: P_serg_srsrf_s(cnsrsfm), &
                                            P_serg_srprf_s(cnsrpfm)
@@ -67,10 +61,10 @@
       integer, dimension(:,:), pointer :: lastout_surf, lastout_prof
       common /xst_pti/ lastout_surf, lastout_prof
 
-      real*8 :: heure
+      real(REAL64) :: heure
       common /xst_r8/ heure
 
-      character*4 :: surface(NVAR,2), profils(NVAR,2)
+      character(len=4) :: surface(NVAR,2), profils(NVAR,2)
       common /xst_c/ surface, profils
 
       integer, dimension(:), pointer :: jstat,istat_g,jstat_g,statnum
@@ -82,3 +76,8 @@
       common /xst_p/ jstat,istat_g,jstat_g,statnum, &
            ijstat,kam,sers,serp,name
 
+      namelist /series/ P_serg_srprf_s
+      namelist /series/ P_serg_srsrf_s
+      namelist /series/ P_serg_srwri
+      namelist /series/ P_serg_serstp
+      namelist /series/ xst_stn_latlon

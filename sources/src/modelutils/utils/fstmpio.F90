@@ -16,6 +16,7 @@
 !/@
 module fstmpio_mod
    use iso_c_binding
+   use rpn_comm_itf_mod
    use fst_mod
    use fstmpio_rdhint_mod
 !!$   use fstmpio_write_mod
@@ -26,20 +27,21 @@ module fstmpio_mod
    !@author  Stephane Chamberland, 2017-04
    !@description
    ! Public functions
-   public :: fstmpio_set_iotype, fstmpio_open, fstmpio_close, fstmpio_find, fstmpio_getmeta, fstmpio_get_vgrid, fstmpio_rdhint
+   public :: fstmpio_set_iotype, fstmpio_open, fstmpio_close, fstmpio_find, &
+        fstmpio_getmeta, fstmpio_get_vgrid, fstmpio_rdhint
    public :: fstmpio_find_0, fstmpio_find_vect, fstmpio_find_3d_0, fstmpio_find_3d_vect
    public :: fstmpio_rdhint_3d_r4, fstmpio_rdhint_3d_r4_vect, fstmpio_get_hgridid
 
    !#TODO: , fstmpio_write
 
    ! Public constants
-   public :: FST_READONLY, FST_FIND_LT, FST_FIND_LE, FST_FIND_NEAR, FST_FIND_GE, FST_FIND_GT, FST_NPAK_DEFAULT, FST_NPAK_FULL32, FST_FIND_DIAG_T, FST_FIND_DIAG_M
+   public :: FST_READONLY, FST_FIND_LT, FST_FIND_LE, FST_FIND_NEAR, FST_FIND_GE, &
+        FST_FIND_GT, FST_NPAK_DEFAULT, FST_NPAK_FULL32, FST_FIND_DIAG_T, FST_FIND_DIAG_M
 !@/
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 
 contains
 

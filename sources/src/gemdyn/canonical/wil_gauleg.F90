@@ -18,6 +18,7 @@
       subroutine wil_gauleg (x1,x2,x,w,n)
 
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer, intent(in) :: n
@@ -33,9 +34,9 @@
 
       !---------------------------------------------------------------
 
-      real*8, parameter :: EPS_8 = 3.d-14
+      real(kind=REAL64), parameter :: EPS_8 = 3.d-14
       integer :: i,j,m
-      real*8 :: p1_8, p2_8, p3_8, pp_8, xl_8, xm_8, z_8, z1_8
+      real(kind=REAL64) :: p1_8, p2_8, p3_8, pp_8, xl_8, xm_8, z_8, z1_8
 
       !---------------------------------------------------------------
 

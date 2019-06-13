@@ -45,7 +45,7 @@ use cnv_options
 USE YOE_CONVPAR
 
 IMPLICIT NONE
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 !-------------------------------------------------------------------------------
 

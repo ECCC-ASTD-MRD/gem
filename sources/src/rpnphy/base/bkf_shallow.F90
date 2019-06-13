@@ -83,7 +83,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    use cnv_options, only: bkf_tperts, bkf_rads, bkf_kice, bkf_lshalm, bkf_lch1conv, bkf_kch
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !* Declarations of dummy arguments
 

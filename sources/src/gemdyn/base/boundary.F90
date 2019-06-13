@@ -28,22 +28,20 @@
       use opr
       use metric
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy,Nk,ni,nj
       integer, intent(in) :: i0,j0,in,jn,i0u,inu,j0v,jnv
-      real*8, dimension(ni,nj,Nk),             intent(out) :: F_rhs
+      real(kind=REAL64), dimension(ni,nj,Nk),             intent(out) :: F_rhs
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_rt, F_nt
 !author
 !       Abdessamad Qaddouri -  2017
 !
-!revision
-! v5.0 - Qaddouri A.       - initial version
-
       integer :: i,j
-      real*8  :: add_v8,bdd_v8
-      real*8, parameter :: one=1.d0, half=0.5d0, zero=0.d0
+      real(kind=REAL64)  :: add_v8,bdd_v8
+      real(kind=REAL64), parameter :: one=1.d0, half=0.5d0, zero=0.d0
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: fdg2,Afdg1,Bfdg1
 !
 !     ---------------------------------------------------------------

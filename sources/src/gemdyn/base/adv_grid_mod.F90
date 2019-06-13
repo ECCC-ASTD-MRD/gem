@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module adv_grid
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -47,8 +48,8 @@ module adv_grid
    integer :: adv_nit, adv_njt, adv_nijag, adv_int_i_off, adv_int_j_off
    integer :: adv_iimax,adv_jjmax
 
-   real*8, dimension(:), allocatable :: adv_xg_8, adv_yg_8 !glb grid x,y coor
-   real*8, dimension(:), allocatable :: adv_xx_8, adv_yy_8 !local grid x,y coor
-   real*8, dimension(:), allocatable :: adv_cy_8           ! = cos(adv_yy_8)
+   real(kind=REAL64), dimension(:), allocatable :: adv_xg_8, adv_yg_8 !glb grid x,y coor
+   real(kind=REAL64), dimension(:), allocatable :: adv_xx_8, adv_yy_8 !local grid x,y coor
+   real(kind=REAL64), dimension(:), allocatable :: adv_cy_8           ! = cos(adv_yy_8)
 
 end module adv_grid

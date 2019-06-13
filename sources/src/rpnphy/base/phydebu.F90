@@ -17,6 +17,7 @@
 !/@*
 function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use iso_c_binding
+   use rpn_comm_itf_mod
    use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L
    use phy_options
    use phybus, only: entbus, perbus, dynbus, volbus
@@ -24,7 +25,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use module_mp_p3, only: p3_init
    use ghg_mod, only: ghg_init
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Init physics at the beginning of each execution of the model
    !@Arguments
    character(len=*), intent(in) :: F_path_S !# data/tables dir
@@ -99,7 +100,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    !*@/
 #include <msg.h>
 #include <rmnlib_basics.hf>
-   include "rpn_comm.inc"
+
    include "clefcon.cdk"
    include "machcon.cdk"
 

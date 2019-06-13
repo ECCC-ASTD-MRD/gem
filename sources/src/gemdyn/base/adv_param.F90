@@ -18,6 +18,7 @@
       use adv_interp
       use glb_ld
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -25,15 +26,15 @@
    !
    ! Rabah Aider   august 2017
 
-      real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0
+      real(kind=REAL64), parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0
       integer :: i, j, k, i0, j0, k0, pnx, pny
-      real*8 :: ra,rb,rc,rd,rx,re
-      real*8 :: prhxmn, prhymn, prhzmn, pdfi
-      real*8 :: whx(G_ni+2*adv_halox)
-      real*8 :: why(G_nj+2*adv_haloy)
-      real*8, dimension(0:l_nk+1) :: verz_m,whzt,whzm,whzx
+      real(kind=REAL64) :: ra,rb,rc,rd,rx,re
+      real(kind=REAL64) :: prhxmn, prhymn, prhzmn, pdfi
+      real(kind=REAL64) :: whx(G_ni+2*adv_halox)
+      real(kind=REAL64) :: why(G_nj+2*adv_haloy)
+      real(kind=REAL64), dimension(0:l_nk+1) :: verz_m,whzt,whzm,whzx
       real   :: alpha
-      real*8, dimension(l_nk) :: verz_t,verz_x
+      real(kind=REAL64), dimension(l_nk) :: verz_t,verz_x
 !
 !     ---------------------------------------------------------------
 !
@@ -266,13 +267,13 @@
 
 contains
 
-      real*8 function triprod(za,zb,zc,zd)
-         real*8, intent(in) :: za,zb,zc,zd
+      real(kind=REAL64) function triprod(za,zb,zc,zd)
+         real(kind=REAL64), intent(in) :: za,zb,zc,zd
          triprod = ((za-zb)*(za-zc)*(za-zd))
       end function triprod
 
-      real*8 function quiprod(zx,za,zb,zc,zd,ze)
-         real*8, intent(in) :: zx,za,zb,zc,zd,ze
+      real(kind=REAL64) function quiprod(zx,za,zb,zc,zd,ze)
+         real(kind=REAL64), intent(in) :: zx,za,zb,zc,zd,ze
          quiprod = ((zx-za)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze))
       end function quiprod
 

@@ -18,7 +18,7 @@
       Function sfodqs(tt,pr)
       use tdpack, only: foqst, fodqs
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfodqs, tt, pr
 !
 !Author

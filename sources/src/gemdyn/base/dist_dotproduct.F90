@@ -13,22 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-real*8 function dist_dotproduct(x, y, minx, maxx, miny, maxy, i0, il, j0, jl, nk) result(dotprod)
+real(kind=REAL64) function dist_dotproduct(x, y, minx, maxx, miny, maxy, i0, il, j0, jl, nk) result(dotprod)
    ! Distributed dot product
    !
-   !author
-   !     Stéphane Gaudreault -- June 2014
-   !
-   !revision
-   !     v4-80 - Gaudreault S.      - code refactoring
-   !
+   use, intrinsic :: iso_fortran_env
    implicit none
 #include <arch_specific.hf>
 
    integer, intent(in) :: minx, maxx, miny, maxy, i0, il, j0, jl, nk
-   real*8, dimension(minx:maxx, miny:maxy, nk), intent(in) :: x, y
+   real(kind=REAL64), dimension(minx:maxx, miny:maxy, nk), intent(in) :: x, y
 
-   real*8 :: local_dot
+   real(kind=REAL64) :: local_dot
    integer :: i, j, k, ierr
 
    local_dot = 0.0d0

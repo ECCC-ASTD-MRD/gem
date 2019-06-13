@@ -16,192 +16,189 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-SUBROUTINE OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, PREF_SW_ROOF,    &
-                       PEMIT_LW_FAC, PEMIT_LW_GRND, PEMIT_LW_ROOF, PLW_RAD, &
-                       PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,    &
-                       PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,N,OPT,OPT_BODY,          &
-                       ZEB,ZAB,ZHB   )
-!#TODO: PREF_SW_ROOF, PEMIT_LW_ROOF neve used
-!
-!    PURPOSE       : Computes the energy budget received by a body over a slab surface 
-!    AUTHOR        :  S. Leroyer   (Original  10/2016)
-!    REFERENCE     :  Leroyer et al. (2018)
-!    MODIFICATIONS :  
-!    METHOD        :  
-!
-!*       0.     DECLARATIONS
-!
-implicit none
-include "thermoconsts.inc"
-#include <arch_specific.hf>
-!
-!*      0.1    declarations of arguments
-INTEGER, INTENT(IN)  :: N
-INTEGER, INTENT(IN)  :: OPT
-INTEGER, INTENT(IN)  :: OPT_BODY
-REAL, DIMENSION(N), INTENT(IN)  :: PREF_SW_GRND !Solar radiation reflected by ground [road + garden] (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PREF_SW_FAC !Solar radiation reflected by facade [wall + glazing] (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PSCA_SW !Diffuse solar radiation (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PDIR_SW !Direct solar radiation (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PZENITH !solar zenithal angle (rad from vert.)
-REAL, DIMENSION(N), INTENT(IN)  :: PEMIT_LW_FAC !Longwave radiation emitted by the facade [wall + glazing] (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PEMIT_LW_GRND !Longwave radiation emitted by the ground [road + garden] (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PLW_RAD !Atmospheric longwave radiation (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PREF_SW_ROOF !Solar radiation reflected by the roof (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PEMIT_LW_ROOF !Longwave radiation emitted by the roof (W/m²)
-REAL, DIMENSION(N), INTENT(IN)  :: PBLD !Building surface fraction
-REAL, DIMENSION(N), INTENT(IN)  :: PBLD_HEIGHT !Building surface fraction
-REAL, DIMENSION(N), INTENT(IN)  :: PWALL_O_HOR !Building surface fraction
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ1
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ2
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ3
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ4
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ5
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ6
-REAL, DIMENSION(N), INTENT(OUT)  :: PQ7
-!
-REAL, INTENT(IN) :: ZHB  ! average height of the body
-REAL, INTENT(IN) :: ZAB  !absorption coef of solar radiation by the  body       
-REAL, INTENT(IN) :: ZEB  !emissivity of  body                              
-!   ##########################################################################
+subroutine OUTQENV2(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND,    &
+     PEMIT_LW_FAC, PEMIT_LW_GRND, PLW_RAD, &
+     PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,    &
+     PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,N,OPT,OPT_BODY,          &
+     ZEB,ZAB,ZHB)
+   use tdpack_const, only: PI
+   implicit none
+!!!#include <arch_specific.hf>
 
-REAL, DIMENSION(N) :: ZWROAD !width of the road (m)
-REAL, DIMENSION(N) :: ZWROOF !width of the roof (m)                                !!! INPUT ?????
-REAL, DIMENSION(N) :: ZL1, ZL2, ZL4 !lengths for view factor calculation
-REAL, DIMENSION(N) :: ZHD, ZL3, zz, yy, kk !lengths for view factor calculation
-REAL, DIMENSION(N) :: ZFFAC !facade view factor of human body
-REAL, DIMENSION(N) :: ZFGRND !ground view factor of human body
-REAL, DIMENSION(N) :: ZFROOF! roof view factor of human body
-REAL, DIMENSION(N) :: ZFSKY !sky view factor of human body
-REAL, DIMENSION(N) :: ZDIRSWBODY !solar radiation received by human body
-REAL, DIMENSION(N) :: ZELEV !solar elevation angle
+   !    PURPOSE       : Computes the energy budget received by a body over a slab surface
+   !    AUTHOR        : S. Leroyer   (Original  10/2016)
+   !    REFERENCE     : Leroyer et al. (2018)
+   !    MODIFICATIONS :
+   !    METHOD        :
 
-INTEGER :: JJ
-!
-  DO JJ = 1, N
-  !
-  !*  1 - calculation of view factors
- ZFFAC(JJ) =  0.
- ZFGRND(JJ) = 0.
- ZFROOF(JJ) = 0.
- ZFSKY(JJ) = 0.
- PQ1(JJ)=0.0
- PQ2(JJ)=0.0
- PQ3(JJ)=0.0
- PQ4(JJ)=0.0
- PQ5(JJ)=0.0
- PQ6(JJ)=0.0
- PQ7(JJ)=0.0
-!
-!=====================
- IF (OPT .eq. 1) THEN    ! flat surface
-!======================
-    ZFGRND(JJ) = 0.5 
-    ZFSKY(JJ) = 1.0 - ZFGRND(JJ)
+   !*       0.     DECLARATIONS
 
-!======================
-  ELSEIF (OPT .eq. 2) THEN  ! street
-!=======================
+   !*      0.1    declarations of arguments
+   integer, intent(IN)  :: N
+   integer, intent(IN)  :: OPT
+   integer, intent(IN)  :: OPT_BODY
+   real, dimension(N), intent(IN)  :: PREF_SW_GRND !Solar radiation reflected by ground [road + garden] (W/m²)
+   real, dimension(N), intent(IN)  :: PREF_SW_FAC !Solar radiation reflected by facade [wall + glazing] (W/m²)
+   real, dimension(N), intent(IN)  :: PSCA_SW !Diffuse solar radiation (W/m²)
+   real, dimension(N), intent(IN)  :: PDIR_SW !Direct solar radiation (W/m²)
+   real, dimension(N), intent(IN)  :: PZENITH !solar zenithal angle (rad from vert.)
+   real, dimension(N), intent(IN)  :: PEMIT_LW_FAC !Longwave radiation emitted by the facade [wall + glazing] (W/m²)
+   real, dimension(N), intent(IN)  :: PEMIT_LW_GRND !Longwave radiation emitted by the ground [road + garden] (W/m²)
+   real, dimension(N), intent(IN)  :: PLW_RAD !Atmospheric longwave radiation (W/m²)
+   real, dimension(N), intent(IN)  :: PBLD !Building surface fraction
+   real, dimension(N), intent(IN)  :: PBLD_HEIGHT !Building surface fraction
+   real, dimension(N), intent(IN)  :: PWALL_O_HOR !Building surface fraction
+   real, dimension(N), intent(OUT)  :: PQ1
+   real, dimension(N), intent(OUT)  :: PQ2
+   real, dimension(N), intent(OUT)  :: PQ3
+   real, dimension(N), intent(OUT)  :: PQ4
+   real, dimension(N), intent(OUT)  :: PQ5
+   real, dimension(N), intent(OUT)  :: PQ6
+   real, dimension(N), intent(OUT)  :: PQ7
 
-  ZWROAD(JJ) = PBLD_HEIGHT(JJ) * 2. * (1. - PBLD(JJ)) / PWALL_O_HOR(JJ)
-  !
-  ZL1(JJ) = SQRT(ZHB**2                   + (ZWROAD(JJ)/2.)**2)
-  ZL2(JJ) = SQRT( PBLD_HEIGHT(JJ)**2      + (ZWROAD(JJ)/2.)**2)
-  ZL4(JJ) = SQRT((PBLD_HEIGHT(JJ)-ZHB)**2 + (ZWROAD(JJ)/2.)**2)
-  !
-! wall view factor
-  ZFFAC (JJ) = (ZL1(JJ) + ZL2(JJ) - ZWROAD(JJ)/2. - ZL4(JJ)) / (2. * ZHB)
-! ground view factor
-  ZFGRND(JJ) = 0.5*ZWROAD(JJ)/ZHB
-  ZFGRND(JJ) = 0.5 * (ZFGRND(JJ) + 1. - SQRT(ZFGRND(JJ)**2 + 1.) ) 
-! sky view factor 
-  ZFSKY (JJ) = 1. - ZFFAC(JJ) - ZFGRND(JJ)
+   real, intent(IN) :: ZHB  ! average height of the body
+   real, intent(IN) :: ZAB  !absorption coef of solar radiation by the  body
+   real, intent(IN) :: ZEB  !emissivity of  body
+   !   ##########################################################################
 
-!========================
-  ELSEIF (OPT .eq. 3) THEN   ! rooftop
-!========================
- 
-  ZWROAD(JJ) = PBLD_HEIGHT(JJ) * 2. * (1. - PBLD(JJ)) / PWALL_O_HOR(JJ)
-   ZWROOF(JJ) = PBLD_HEIGHT(JJ) * 2. * PBLD(JJ) / PWALL_O_HOR(JJ)
-!
-! roof view factor 
-    ZFROOF(JJ) = 0.5 * ZWROOF(JJ)/ZHB
-    ZFROOF(JJ) = 0.5 * (ZFROOF(JJ) + 1. - SQRT(ZFROOF(JJ)**2 + 1.) )
-!
-! ground (road) view factor --> simplification assume 0 although could be >0 if ZHD>BLDH
-  ZFGRND(JJ) = 0.0   
-!
-! height d of the facade seen by the body on the roof
-  ZHD(JJ) = MIN(PBLD_HEIGHT(JJ), 2.0* ZHB* ZWROAD(JJ)/ZWROOF(JJ) )
-!
-! coefficients to compute facade view factor of one portion of the body zz
-  yy(JJ)=0.5*ZHD(JJ)* ZWROOF(JJ)/ZWROAD(JJ)
-  if (yy(JJ) .gt. ZHB) then
-  yy(JJ)=ZHB
-  endif
-  zz(JJ)=ZHB - yy(JJ)
+   real, dimension(N) :: ZWROAD !width of the road (m)
+   real, dimension(N) :: ZWROOF !width of the roof (m)                                !!! INPUT ?????
+   real, dimension(N) :: ZL1, ZL2, ZL4 !lengths for view factor calculation
+   real, dimension(N) :: ZHD, ZL3, zz, yy, kk !lengths for view factor calculation
+   real, dimension(N) :: ZFFAC !facade view factor of human body
+   real, dimension(N) :: ZFGRND !ground view factor of human body
+   real, dimension(N) :: ZFROOF! roof view factor of human body
+   real, dimension(N) :: ZFSKY !sky view factor of human body
+   real, dimension(N) :: ZDIRSWBODY !solar radiation received by human body
+   real, dimension(N) :: ZELEV !solar elevation angle
 
-   kk(JJ) = ZWROAD(JJ) + (ZWROOF(JJ)/2.)
+   integer :: JJ
 
-   ZL1(JJ) = SQRT( yy(JJ)**2            + kk(JJ)**2 )
-   ZL2(JJ) = SQRT( (ZHD(JJ)+ZHB)**2     + kk(JJ)**2 )  
-   ZL3(JJ) = SQRT( ZHB**2              + kk(JJ)**2 )
-   ZL4(JJ) = SQRT( (ZHD(JJ)+yy(JJ))**2   + kk(JJ)**2 )
+   do JJ = 1, N
 
-! wall view factor (ZHD seen)
-  if (zz(JJ) .lt.  0.1) then 
-  ZFFAC(JJ)  = 0.0
-  else
-  ZFFAC(JJ)  = ( ZL1(JJ) + ZL2(JJ) - ZL3(JJ) - ZL4(JJ) ) / (2. * ZZ(JJ))
-  endif
-!                                                                                      
-! sky view factor  (can be a slighty different from 0.5)
-   ZFSKY(JJ)  = 1.0 - ZFROOF(JJ) - ZFFAC(JJ) - ZFGRND(JJ)
- !========================
- ENDIF
+      !*  1 - calculation of view factors
+      ZFFAC(JJ) =  0.
+      ZFGRND(JJ) = 0.
+      ZFROOF(JJ) = 0.
+      ZFSKY(JJ) = 0.
+      PQ1(JJ)=0.0
+      PQ2(JJ)=0.0
+      PQ3(JJ)=0.0
+      PQ4(JJ)=0.0
+      PQ5(JJ)=0.0
+      PQ6(JJ)=0.0
+      PQ7(JJ)=0.0
 
-! Energy Fluxes (short-wave / longwave)
-!
-! sky
-  PQ2(JJ)=ZAB*PSCA_SW(JJ)*ZFSKY(JJ)
-  PQ3(JJ)=ZEB*PLW_RAD(JJ)*ZFSKY(JJ)
-! ground
-  PQ4(JJ)=ZAB*PREF_SW_GRND (JJ)*ZFGRND(JJ)
-  PQ5(JJ)=ZEB*PEMIT_LW_GRND(JJ)*ZFGRND(JJ)
-! facade
-  PQ6(JJ)=ZAB*PREF_SW_FAC (JJ)*ZFFAC(JJ)
-  PQ7(JJ)=ZEB*PEMIT_LW_FAC(JJ)*ZFFAC(JJ)
-! roof
-!   PQ8(JJ)=ZAB*PREF_SW_ROOF(JJ)*ZFROOF(JJ) 
-!   PQ9(JJ)=ZEB*PEMIT_LW_ROOF(JJ)*ZFROOF(JJ)
+      !=====================
+      if (OPT .eq. 1) then    ! flat surface
+         !======================
+         ZFGRND(JJ) = 0.5
+         ZFSKY(JJ) = 1.0 - ZFGRND(JJ)
 
-!=====================================
-! ADD CONTRIBUTION FROM THE SUN
-! OPT_BODY = 1  human body, for UTCI
-! OPT_BODY = 2  globe sensor, for WBGT
-!======================================
+         !======================
+      elseif (OPT .eq. 2) then  ! street
+         !=======================
+
+         ZWROAD(JJ) = PBLD_HEIGHT(JJ) * 2. * (1. - PBLD(JJ)) / PWALL_O_HOR(JJ)
+
+         ZL1(JJ) = sqrt(ZHB**2                   + (ZWROAD(JJ)/2.)**2)
+         ZL2(JJ) = sqrt( PBLD_HEIGHT(JJ)**2      + (ZWROAD(JJ)/2.)**2)
+         ZL4(JJ) = sqrt((PBLD_HEIGHT(JJ)-ZHB)**2 + (ZWROAD(JJ)/2.)**2)
+
+         ! wall view factor
+         ZFFAC (JJ) = (ZL1(JJ) + ZL2(JJ) - ZWROAD(JJ)/2. - ZL4(JJ)) / (2. * ZHB)
+         ! ground view factor
+         ZFGRND(JJ) = 0.5*ZWROAD(JJ)/ZHB
+         ZFGRND(JJ) = 0.5 * (ZFGRND(JJ) + 1. - sqrt(ZFGRND(JJ)**2 + 1.) )
+         ! sky view factor
+         ZFSKY (JJ) = 1. - ZFFAC(JJ) - ZFGRND(JJ)
+
+         !========================
+      elseif (OPT .eq. 3) then   ! rooftop
+         !========================
+
+         ZWROAD(JJ) = PBLD_HEIGHT(JJ) * 2. * (1. - PBLD(JJ)) / PWALL_O_HOR(JJ)
+         ZWROOF(JJ) = PBLD_HEIGHT(JJ) * 2. * PBLD(JJ) / PWALL_O_HOR(JJ)
+
+         ! roof view factor
+         ZFROOF(JJ) = 0.5 * ZWROOF(JJ)/ZHB
+         ZFROOF(JJ) = 0.5 * (ZFROOF(JJ) + 1. - sqrt(ZFROOF(JJ)**2 + 1.) )
+
+         ! ground (road) view factor --> simplification assume 0 although could be >0 if ZHD>BLDH
+         ZFGRND(JJ) = 0.0
+
+         ! height d of the facade seen by the body on the roof
+         ZHD(JJ) = min(PBLD_HEIGHT(JJ), 2.0* ZHB* ZWROAD(JJ)/ZWROOF(JJ) )
+
+         ! coefficients to compute facade view factor of one portion of the body zz
+         yy(JJ)=0.5*ZHD(JJ)* ZWROOF(JJ)/ZWROAD(JJ)
+         if (yy(JJ) .gt. ZHB) then
+            yy(JJ)=ZHB
+         endif
+         zz(JJ)=ZHB - yy(JJ)
+
+         kk(JJ) = ZWROAD(JJ) + (ZWROOF(JJ)/2.)
+
+         ZL1(JJ) = sqrt( yy(JJ)**2            + kk(JJ)**2 )
+         ZL2(JJ) = sqrt( (ZHD(JJ)+ZHB)**2     + kk(JJ)**2 )
+         ZL3(JJ) = sqrt( ZHB**2              + kk(JJ)**2 )
+         ZL4(JJ) = sqrt( (ZHD(JJ)+yy(JJ))**2   + kk(JJ)**2 )
+
+         ! wall view factor (ZHD seen)
+         if (zz(JJ) .lt.  0.1) then
+            ZFFAC(JJ)  = 0.0
+         else
+            ZFFAC(JJ)  = ( ZL1(JJ) + ZL2(JJ) - ZL3(JJ) - ZL4(JJ) ) / (2. * ZZ(JJ))
+         endif
+
+         ! sky view factor  (can be a slighty different from 0.5)
+         ZFSKY(JJ)  = 1.0 - ZFROOF(JJ) - ZFFAC(JJ) - ZFGRND(JJ)
+         !========================
+      endif
+
+      ! Energy Fluxes (short-wave / longwave)
+
+      ! sky
+      PQ2(JJ)=ZAB*PSCA_SW(JJ)*ZFSKY(JJ)
+      PQ3(JJ)=ZEB*PLW_RAD(JJ)*ZFSKY(JJ)
+      ! ground
+      PQ4(JJ)=ZAB*PREF_SW_GRND (JJ)*ZFGRND(JJ)
+      PQ5(JJ)=ZEB*PEMIT_LW_GRND(JJ)*ZFGRND(JJ)
+      ! facade
+      PQ6(JJ)=ZAB*PREF_SW_FAC (JJ)*ZFFAC(JJ)
+      PQ7(JJ)=ZEB*PEMIT_LW_FAC(JJ)*ZFFAC(JJ)
+      ! roof
+      !   PQ8(JJ)=ZAB*PREF_SW_ROOF(JJ)*ZFROOF(JJ)
+      !   PQ9(JJ)=ZEB*PEMIT_LW_ROOF(JJ)*ZFROOF(JJ)
+
+      !=====================================
+      ! ADD CONTRIBUTION FROM THE SUN
+      ! OPT_BODY = 1  human body, for UTCI
+      ! OPT_BODY = 2  globe sensor, for WBGT
+      !======================================
 
 
-   ZELEV(JJ) = ( PI/2. - PZENITH(JJ)) *180./PI
-   IF (ZELEV(JJ) .lt. 1E-6) then 
-   ZELEV(JJ) = 0.
-   endif
+      ZELEV(JJ) = ( PI/2. - PZENITH(JJ)) *180./PI
+      if (ZELEV(JJ) .lt. 1E-6) then
+         ZELEV(JJ) = 0.
+      endif
 
- IF (OPT_BODY .eq. 1) THEN 
-! the direct solar radiation is weighted by a projected area factor which can be expressed by this equation
-! for a rotationally symmetric human being (Fanger, 1970)               
- ZDIRSWBODY(JJ) = PDIR_SW(JJ) / MAX( COS(PZENITH(JJ)) ,0.1)              &
-            * 0.308 * COS( PI/180. *ZELEV(JJ)* (1.-ZELEV(JJ)**2/48402.) )
- ELSEIF (OPT_BODY .eq. 2) THEN
-! sphere Oashi et al 2014
-!     ZDIRSWBODY(:) = PDIR_SW(:) * 0.25
-! sphere Gaspar and Quintela 2009                      
-      ZDIRSWBODY(JJ) = PDIR_SW(JJ) * 0.25 /  MAX( COS(PZENITH(JJ)) ,0.1) 
- ENDIF
+      if (OPT_BODY .eq. 1) then
+         ! the direct solar radiation is weighted by a projected area factor which can be expressed by this equation
+         ! for a rotationally symmetric human being (Fanger, 1970)
+         ZDIRSWBODY(JJ) = PDIR_SW(JJ) / max( cos(PZENITH(JJ)) ,0.1)              &
+              * 0.308 * cos( PI/180. *ZELEV(JJ)* (1.-ZELEV(JJ)**2/48402.) )
+      elseif (OPT_BODY .eq. 2) then
+         ! sphere Oashi et al 2014
+         !     ZDIRSWBODY(:) = PDIR_SW(:) * 0.25
+         ! sphere Gaspar and Quintela 2009
+         ZDIRSWBODY(JJ) = PDIR_SW(JJ) * 0.25 /  max( cos(PZENITH(JJ)) ,0.1)
+      endif
 
-!==
-  PQ1(JJ)=ZAB* ZDIRSWBODY(JJ)
-!
-    ENDDO
-!
-END SUBROUTINE OUTQENV
+      !==
+      PQ1(JJ)=ZAB* ZDIRSWBODY(JJ)
+
+   enddo
+
+   return
+end subroutine OUTQENV2

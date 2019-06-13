@@ -250,6 +250,7 @@ wordint c_gdinterp(ftnfloat *zout, ftnfloat *zin, wordint gdin, ftnfloat *x, ftn
       break;
       }
    groptions.degre_interp = old_degre_interp;
+   return 0;
 
 }
 

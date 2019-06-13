@@ -15,12 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module sfc_options
+   use, intrinsic :: iso_fortran_env, only: INT64
    implicit none
    public
    save
  
-   integer, parameter, private :: IDOUBLE = 8
-
    !#
    integer, parameter :: CLASS_URB = 21 !# Class "urban"
    integer, parameter :: NCLASS    = 26 !# NUMBER OF CLASSES FOR NATURAL COVERS
@@ -53,7 +52,7 @@ module sfc_options
    logical           :: climat     = .false.
    logical           :: cplocn     = .false.
    real              :: delt       = 0.
-   integer(IDOUBLE)  :: jdateo     = 0
+   integer(INT64)  :: jdateo     = 0
    logical           :: rad_off    = .false.
    logical           :: radslope   = .false.
    logical           :: update_alwater = .false.

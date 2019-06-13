@@ -84,10 +84,10 @@
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk)     :: tt
       real, dimension(l_minx:l_maxx,l_miny:l_maxy)          :: ps
 
-      real(8), parameter :: Rd   = Rgasd_8, & ! cte gaz - air sec   [J kg-1 K-1]
+      real(kind=REAL64), parameter :: Rd   = Rgasd_8, & ! cte gaz - air sec   [J kg-1 K-1]
                             Rv   = Rgasv_8    ! cte gaz - vap eau   [J kg-1 K-1]
 
-      real(8) :: zvir,aaa_8
+      real(kind=REAL64) :: zvir,aaa_8
 
       logical :: GEM_P_L
 

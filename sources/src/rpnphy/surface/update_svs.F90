@@ -8,7 +8,7 @@
         use svs_configs
         use sfc_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 !
 !

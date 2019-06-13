@@ -11,14 +11,15 @@
       use glb_ld
       use ptopo
 
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer, intent(in) :: minx, maxx, miny, maxy, NK
-      real*8, dimension(minx:maxx, miny:maxy,NK), intent(in) :: F_RHS
-      real*8, dimension(minx:maxx, miny:maxy,NK), intent(out) :: F_SOL
+      real(kind=REAL64), dimension(minx:maxx, miny:maxy,NK), intent(in) :: F_RHS
+      real(kind=REAL64), dimension(minx:maxx, miny:maxy,NK), intent(out) :: F_SOL
 
       integer :: icol,P_mycol,i0,j0,in,jn,niloc,njloc
-      real*8, dimension(l_minx:l_maxx, l_miny:l_maxy,NK) :: Rwork_space
-      real*8, dimension(l_minx:l_maxx, l_miny:l_maxy,NK) :: Swork_space
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,NK) :: Rwork_space
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,NK) :: Swork_space
 !author
 !       Abdessamad Qaddouri -  2018
 !

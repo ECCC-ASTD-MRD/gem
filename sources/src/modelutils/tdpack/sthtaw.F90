@@ -18,7 +18,7 @@
       Function sthtaw3(hu,tt,ps,swph,swth)
       use tdpack, only: foqst, foqsa, fodqs, fodqa, cappa, ai, aw, bi, bw, cpd, slp, t1s, t2s
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sthtaw3, hu, tt, ps
       Logical swph, swth
 !
@@ -141,7 +141,7 @@
       Function sthtaw4(hu,tt,ps,swph,swth,ti)
       use tdpack, only: schal, foqst, foqsa, fodqs, fodqa, sgamasp, cappa, ai, aw, bi, bw, cpd, slp, t1s, t2s
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sthtaw4, hu, tt, ps, ti
       Logical swph, swth
 !

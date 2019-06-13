@@ -24,11 +24,12 @@
 
       use glb_ld
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy
-      real*8 F_u_8(Minx:Maxx,Miny:Maxy), F_v_8(Minx:Maxx,Miny:Maxy),  &
+      real(kind=REAL64) F_u_8(Minx:Maxx,Miny:Maxy), F_v_8(Minx:Maxx,Miny:Maxy),  &
              F_x_8 (Minx:Maxx), F_y_8 (Miny:Maxy), &
              F_xu_8(Minx:Maxx), F_yv_8(Miny:Maxy), &
              F_rot_8(3,3)
@@ -45,13 +46,13 @@
 ! F_rot_8      I    - rotation matrix of the grid
 
 
-      real*8 ZERO, ONE, TWO
+      real(kind=REAL64) ZERO, ONE, TWO
       parameter( ZERO = 0.0 )
       parameter( ONE  = 1.0 )
       parameter( TWO  = 2.0 )
 
       integer i, j
-      real*8  c0, sa, ca, s0, ang, coef_8, s(2,2), Y_lat, Y_lon, y_a, x_a
+      real(kind=REAL64)  c0, sa, ca, s0, ang, coef_8, s(2,2), Y_lat, Y_lon, y_a, x_a
 !
 !-------------------------------------------------------------------
 !

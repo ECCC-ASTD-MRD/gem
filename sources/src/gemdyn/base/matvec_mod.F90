@@ -1,25 +1,19 @@
 module matvec
    ! Matrix-vector product subroutines
    !
-   ! Author
-   !     Stephane Gaudreault / Abdessamad Qaddouri -- June 2014
-   !     Abdessamad Qaddouri -- June 2018
+   ! Author: Abdessamad Qaddouri
    !
-   ! Revision
-   !     v4_70 - Gaudreault/Qaddouri      - initial version
-   !     v5_1x - Qaddouri - Add support for internal yin/yang exchange
-   !
-
    use cstv
    use geomh
    use glb_ld
    use ldnh
    use opr
    use sol
+   use, intrinsic :: iso_fortran_env
    implicit none
 #include <arch_specific.hf>
    integer, parameter :: IDX_POINT=1, IDX_WEST=2, IDX_EAST=3, IDX_NORTH=4, IDX_SOUTH=5, IDX_TOP=6, IDX_BOTTOM=7
-   real*8, dimension(:,:,:,:), allocatable :: stencil
+   real(kind=REAL64), dimension(:,:,:,:), allocatable :: stencil
 
    public :: matvec_init, matvec_3d, matvec_yy
    ! Matrix and the other indices are made public for use in the preconditioner
@@ -28,10 +22,11 @@ module matvec
 contains
 
    subroutine matvec_init()
+      use, intrinsic :: iso_fortran_env
       implicit none
 
-      real*8  :: di_8
-      real*8  :: xxx, yyy
+      real(kind=REAL64)  :: di_8
+      real(kind=REAL64)  :: xxx, yyy
       integer :: i, j, k, jj, ii
 
       allocate (stencil(1+sol_pil_w:l_ni-sol_pil_e, 1+sol_pil_s:l_nj-sol_pil_n, 7, l_nk))
@@ -79,12 +74,13 @@ contains
 
 
    subroutine matvec_3d(vec, prod)
+      use, intrinsic :: iso_fortran_env
       implicit none
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: vec
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: vec
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
 
       integer :: i, j, k
-      real*8 :: vector(0:l_ni+1, 0:l_nj+1, l_nk)
+      real(kind=REAL64) :: vector(0:l_ni+1, 0:l_nj+1, l_nk)
 
       !vector = 0.0d0
       !prod = 0.0d0
@@ -164,14 +160,15 @@ contains
       use geomh
       use HORgrid_options, only: Grd_yinyang_L
 
+      use, intrinsic :: iso_fortran_env
       implicit none
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk), intent(in) :: F_vector
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk), intent(out) :: F_prod
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk), intent(in) :: F_vector
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk), intent(out) :: F_prod
 
       integer :: i, j, k, ii, jj
       real linfini
-      real*8, dimension(l_minx:l_maxx, l_miny:l_maxy,0:l_nk+1) :: vector
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk) :: work_8
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,0:l_nk+1) :: vector
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk) :: work_8
 
       vector = 0.0d0
       do k=1,l_nk

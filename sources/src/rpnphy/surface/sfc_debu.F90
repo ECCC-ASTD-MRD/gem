@@ -15,18 +15,13 @@
 !-------------------------------------- LICENCE END --------------------------
 
 !@*
-function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
+function sfc_init1() result(F_istat)
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object initialization of the surface parameters at the beginning
    !        of each execution of the model
    !@Arguments
-   !          - Input -
-   ! N        horizontal dimension
-   ! P_NK       vertical   dimension
-
-   integer,intent(in) :: p_ni,p_nj,p_nk
    integer :: F_istat
 
    !@Author L. Spacek (Fall 2012)
@@ -39,10 +34,9 @@ function sfc_init(p_ni,p_nj,p_nk) result(F_istat)
    !          2) call iniptsurf to construct the surface bus
 !*@/
 #include <rmnlib_basics.hf>
-   integer, external :: iniptsurf4
+   integer, external :: iniptsurf5
    !---------------------------------------------------------------------
    !#TODO: remove this useless step
-   F_istat = iniptsurf4(p_ni,p_nk)
-   if (p_ni<0) print *,'sfc_init: ',p_ni,p_nj,p_nk
+   F_istat = iniptsurf5()
    !----------------------------------------------------------------------
-end function sfc_init
+end function sfc_init1

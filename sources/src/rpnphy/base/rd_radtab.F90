@@ -18,7 +18,7 @@
 !
       subroutine rd_radtab (iun, rbuf, dim, status)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer iun,dim(*),status
       real rbuf(*)

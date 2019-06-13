@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,19 +12,18 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
-subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
+subroutine hydro3(DT, T, TS, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
      RAINRATE, SNOWRATE, T2M, U10M, V10M, &
-     LEV, LETR, LEG, LES, ZC1, ZC2, C3, CG, WGEQ, CT, LAI, VEG, D2, &
+     LEV, LETR, LEG, LES, ZC1, ZC2, C3,  WGEQ, CT, LAI, VEG, D2, &
      WSAT, WFC, PSN, PSNG, PSNV, &
-     LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, TST, T2T, &
+     LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, TST, &
      WGT, W2T, WFT, WLT, WRT, WST, ALPHAST, RHOST, DRAIN, RUNOFF, RSNOW, N)
-!#TODO: never used: T2, CG, T2T
    use tdpack
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object
    !     Calculates the evolution of the water variables, i.e., the superficial
    !     and deep-soil volumetric water content (wg and w2), the equivalent
@@ -36,7 +35,6 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    !          - Input -
    ! DT       timestep
    ! TS       surface temperature
-   ! T2       mean surface temperature
    ! WG       superficial volumetric water content
    ! W2       soil volumetric water content
    ! WF       frozen soil water
@@ -54,7 +52,6 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    ! ZC1      coefficient for the moisture calculations
    ! ZC2      coefficient for the moisture calculations
    ! C3       coefficient for the drainage
-   ! CG       heat capacity coefficient for bare ground
    ! WGEQ     equilibrium volumetric water content
    ! CT       heat capacity coefficient for the total grid
    ! LAI      leaf area index
@@ -71,7 +68,6 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    ! FREEZS   freezing tendency of liquid water in the snow pack
    !          - Input / Output -
    ! TST      new surface temperature
-   ! T2T      new mean surface temperature
    !           - Output -
    ! WGT      new superficial volumetric water content
    ! W2T      new soil volumetric water content
@@ -85,17 +81,17 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    ! RUNOFF   runoff
 
    integer N
-   real DT, T(N), TS(N), T2(N), WG(N), W2(N), WR(N), WS(N)
+   real DT, T(N), TS(N), WG(N), W2(N), WR(N), WS(N)
    real WF(N), WL(N)
    real ALPHAS(N), RHOS(N), RAINRATE(N), SNOWRATE(N)
    real T2M(N), U10M(N), V10M(N)
    real SNODP(N)
    real LEV(N), LETR(N), LEG(N), LES(N), ZC1(N), ZC2(N)
-   real C3(N), CG(N), WGEQ(N), CT(N), LAI(N), VEG(N), D2(N)
+   real C3(N), WGEQ(N), CT(N), LAI(N), VEG(N), D2(N)
    real WSAT(N), WFC(N), PSN(N), PSNG(N), PSNV(N)
    real LEFF(N), DWATERDT(N), DSNOWDT(N), FREEZS(N)
    real RHOMAX(N)
-   real TST(N), T2T(N)
+   real TST(N)
    real WGT(N), W2T(N), WRT(N), WST(N), ALPHAST(N), RHOST(N)
    real WFT(N), WLT(N)
    real DRAIN(N), RUNOFF(N), RSNOW(N)
@@ -172,7 +168,7 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
 
       RR(I) = 1000. * RAINRATE(I)
       SR(I) = 1000. * SNOWRATE(I)
-     
+ 
       ! Freezing rain correction
       if (isba_zr_freeze) then
          if (T(I) <= TRPL .and. TS(I) <= TRPL) then
@@ -183,7 +179,7 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
 
    end do
 
-   
+
 
    ! 1. EVOLUTION OF THE EQUIVALENT WATER CONTENT Wr
    !    --------------------------------------------
@@ -270,7 +266,7 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
       end if
    end do
 
-   ! if Ws < CRITSNOW, force it to 0.0 and refresh properties 
+   ! if Ws < CRITSNOW, force it to 0.0 and refresh properties
    ! (albedo and density) of the snow pack
 
    do I=1,N
@@ -584,4 +580,4 @@ subroutine HYDRO2(DT, T, TS, T2, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
    end do
 
    return
-end subroutine HYDRO2
+end subroutine hydro3

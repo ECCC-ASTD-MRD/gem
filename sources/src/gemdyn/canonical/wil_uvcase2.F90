@@ -23,6 +23,7 @@
       use glb_ld
       use ptopo
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -49,7 +50,7 @@
       !---------------------------------------------------------------
 
       integer i,j,k
-      real*8  ubar_8,sina_8,cosa_8,rlon_8,rlat_8,sint_8,cost_8, &
+      real(kind=REAL64)  ubar_8,sina_8,cosa_8,rlon_8,rlat_8,sint_8,cost_8, &
               s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,               &
               ui_u_8(G_ni,G_nj),ui_v_8(G_ni,G_nj),              &
               vi_u_8(G_ni,G_nj),vi_v_8(G_ni,G_nj),              &

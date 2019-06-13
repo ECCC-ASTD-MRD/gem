@@ -21,7 +21,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
 
    ! Perform (num) in-place Fourier transforms of the array F_vec,
    ! where elements of each transform are separated by (stride)
-   ! REAL*8 units and adjacent arrays are separated by a stride of
+   ! REAL64 units and adjacent arrays are separated by a stride of
    ! (jump).
 
    ! The transform type is given by the global variable Fft_type_S
@@ -30,6 +30,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
 
    use fftw3 ! Incorporate the FFTW module
    use gem_fft, only : Fft_type_S, Fft_n, fftw_thread_initialized
+   use, intrinsic :: iso_fortran_env
    implicit none
 
    integer, intent(in) :: stride, jump, num, direction
@@ -37,8 +38,8 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
    ! The array is passed as a deferred-size array, so there is no guarantee of
    ! alignment.  In fact, in common use this driver often sees a subset of another
    ! array.
-   real*8, intent(inout) ::  F_vec(*)
-   real*8 :: norm_factor
+   real(kind=REAL64), intent(inout) ::  F_vec(*)
+   real(kind=REAL64) :: norm_factor
 
    integer :: ii, jj ! Loop variables for normalization
 
@@ -55,7 +56,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
       fftw_kind(1) = FFTW_RODFT00
       norm_factor = 1.0/sqrt(2.0d0*Fft_n)
       fftw_n(1) = Fft_n-1
-   elseif (Fft_type_S == 'QCOS' .and. direction == -1) then
+   else if (Fft_type_S == 'QCOS' .and. direction == -1) then
       ! DCT selected.  The DCT implied is even about
       ! points 0.5 and Fft_n+0.5, which lie between
       ! the first (1) and last (Fft_n) elements of
@@ -63,7 +64,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
       fftw_kind(1) = FFTW_REDFT10
       norm_factor = 1.0/(1.0d0*Fft_n)
       fftw_n(1) = Fft_n
-   elseif (Fft_type_S == 'QCOS' .and. direction == 1) then
+   else if (Fft_type_S == 'QCOS' .and. direction == 1) then
       ! iDCT selected.  This transform has an implied
       ! even boundary condition about point 0.5 and
       ! an implied odd boundary condition about (Fft_n+0.5),
@@ -78,14 +79,14 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
       do jj=1,num
          F_vec(1+(jj-1)*jump) = F_vec(1+(jj-1)*jump)*2
       end do
-   elseif (Fft_type_S == 'PERIODIC') then
+   else if (Fft_type_S == 'PERIODIC') then
       ! Perform a real-to-complex periodic transform.  The native
       ! fftw routines are NOT drop-in replacements here.
 
       ! FFTW transforms a real input array into a complex output
       ! array, such that the real and imaginary components of each
       ! element are contiguous in memory, whereas the librmn routines
-      ! operate exclusively on a REAL*8 array, and the real and
+      ! operate exclusively on a REAL64 array, and the real and
       ! imaginary components are separated by (stride).
 
       ! These cases are handled by a separate wrapper function, since
@@ -181,6 +182,7 @@ subroutine dft_wrapper(F_vec,stride,jump,num,direction)
    use fftw3 ! FFTW routines
    use gem_fft, only : Fft_n
    use iso_c_binding
+      use, intrinsic :: iso_fortran_env
    implicit none
 
    ! Paramters
@@ -188,7 +190,7 @@ subroutine dft_wrapper(F_vec,stride,jump,num,direction)
                           jump,   &   ! Logical distance between adjacent f_vec arrays (usually 1)
                           num,    &   ! Number of transforms to perform
                           direction   ! -1 for real-to-spectral, 1 for spectral-to-real
-   real*8, intent(inout) ::  F_vec(*) ! Input/output array
+   real(kind=REAL64), intent(inout) ::  F_vec(*) ! Input/output array
 
    ! Local variables
    type(fftw_iodim), dimension(1) :: dims, &    ! Stride and number information for the transform
@@ -236,7 +238,7 @@ subroutine dft_wrapper(F_vec,stride,jump,num,direction)
       call fftw_destroy_plan(my_plan)
 !$omp end critical(fftw_lock)
 
-   elseif (direction == 1) then ! Spectral-to-real transform
+   else if (direction == 1) then ! Spectral-to-real transform
       ! Stride information
       dims(1)%n = Fft_n
       dims(1)%is = 2*stride ! real-to-real (and imag-to-imag) distance is 2*stride on input

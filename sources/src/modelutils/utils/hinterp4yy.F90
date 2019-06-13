@@ -15,6 +15,8 @@
 
 !/@*
 module hinterp4yy_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower
    use ezgrid_mod
    implicit none
    private
@@ -30,9 +32,8 @@ module hinterp4yy_mod
    integer,parameter,public :: HINTERP4YY_OK = 0
    integer,parameter,public :: HINTERP4YY_NONE = 1
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    interface hinterp4yy2d
@@ -58,7 +59,8 @@ contains
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(hinterp4yy2d_scalar) [BEGIN]')
       nullify(outdata2,indata2)
-      F_istat = hinterp4yy2d_vect(F_outdata,outdata2,F_indata,indata2,F_k,F_ingridid,F_outgridid,F_coregridid,F_h_int_S,F_varname_S,' ')
+      F_istat = hinterp4yy2d_vect(F_outdata,outdata2,F_indata,indata2,F_k,F_ingridid, &
+           F_outgridid,F_coregridid,F_h_int_S,F_varname_S,' ')
       call msg(MSG_DEBUG,'(hinterp4yy2d_scalar) [END]')
       !------------------------------------------------------------------
       return
@@ -66,7 +68,8 @@ contains
 
 
    !/@*
-   function hinterp4yy2d_vect(F_outdata,F_outdata2,F_indata,F_indata2,F_k,F_ingridid,F_outgridid,F_coregridid,F_h_int_S,F_varname_S,F_varname2_S) result(F_istat)
+   function hinterp4yy2d_vect(F_outdata,F_outdata2,F_indata,F_indata2,F_k,F_ingridid, &
+        F_outgridid,F_coregridid,F_h_int_S,F_varname_S,F_varname2_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -101,9 +104,12 @@ contains
 
 !!$      if (h_int_S(1:4) == 'near' .and. &
 !!$           .not.any(F_h_int_S(1:1) == (/'n','N'/))) then
-!!$         print *,'(hinterp4yy) Changed from '//trim(F_h_int_S)//' to Nearest horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
+!!$         print *,'(hinterp4yy) Changed from '//trim(F_h_int_S)// &
+!!$              ' to Nearest horizontal interpolation for: '//trim(F_varname_S )//' '// &
+!!$              trim(F_varname2_S )
 !!$      else
-!!$         print *,'(hinterp4yy) Not Changed '//trim(F_h_int_S)//' horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
+!!$         print *,'(hinterp4yy) Not Changed '//trim(F_h_int_S)// &
+!!$              ' horizontal interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S )
 !!$      endif
 
 !!$      print *,'hinterp4yy2d',subgridid,';',trim(onesubgrid_S),';',trim(h_int_S)
@@ -128,7 +134,9 @@ contains
 !!$            print *,'[input] hInterp vect fields: '//trim(F_varname_S )//' '//trim(F_varname2_S ) ; call flush(6)
             F_istat = ezuvint(F_outdata(:,:,F_k),F_outdata2(:,:,F_k),F_indata,F_indata2)
          else
-            call msg(MSG_INFOPLUS,'(hinterp4yy2d_vect) Scalar Hinterp done for vect fields on samegrid for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
+            call msg(MSG_INFOPLUS, &
+                 '(hinterp4yy2d_vect) Scalar Hinterp done for vect fields on samegrid for: '// &
+                 trim(F_varname_S )//' '//trim(F_varname2_S ))
             F_istat = ezsint(F_outdata(:,:,F_k),F_indata)
             F_istat = min(ezsint(F_outdata2(:,:,F_k),F_indata2),F_istat)
         endif

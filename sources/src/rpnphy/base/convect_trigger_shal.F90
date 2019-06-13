@@ -77,7 +77,7 @@ subroutine CONVECT_TRIGGER_SHAL4(KLON, KLEV, &
    use YOE_CONVPAREXT
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !*       0.1   Declarations of dummy arguments :
 

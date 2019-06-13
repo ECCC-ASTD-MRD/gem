@@ -15,7 +15,7 @@ function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,
    use vgrid_wb
    use phy_output_mod, only: phy_output1_4
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
    !@objective

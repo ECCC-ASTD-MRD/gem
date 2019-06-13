@@ -6,7 +6,6 @@ use iso_c_binding
       integer :: F_errorCode
       character(len=*) :: F_FromSubName
       character(len=*) :: F_Message
-      !@author  Michel Desgagne
 
    include "rpn_comm.inc"
       integer :: errcode, err

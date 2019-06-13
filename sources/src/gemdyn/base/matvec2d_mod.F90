@@ -17,16 +17,16 @@ module matvec2d_mod
    ! stencil-vector product subroutines for 2D elliptic problem
    !
    ! Author
-   !     Abdessamad Qaddouri, Stéphane Gaudreault - March 2018
+   !     Abdessamad Qaddouri, Stephane Gaudreault - March 2018
    !
-
+   use, intrinsic :: iso_fortran_env
    implicit none
    private
 
 #include <arch_specific.hf>
 
    integer, parameter :: IDX_POINT=1, IDX_WEST=2, IDX_EAST=3, IDX_NORTH=4, IDX_SOUTH=5
-   real*8, dimension(:,:,:,:), allocatable :: stencil
+   real(kind=REAL64), dimension(:,:,:,:), allocatable :: stencil
 
    public :: matvec2d_init, matvec2d_prod
 
@@ -38,9 +38,10 @@ contains
       use glb_ld
       use opr
       use sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 
-      real*8  :: cst, di_8
+      real(kind=REAL64)  :: cst, di_8
       integer :: i, j, k, jj, ii
 
       allocate (stencil(1+sol_pil_w:l_ni-sol_pil_e, 1+sol_pil_s:l_nj-sol_pil_n, 5, l_nk))
@@ -85,13 +86,14 @@ contains
       use sol            , only: sol_pil_s, sol_pil_n, sol_pil_w, sol_pil_e
       use gem_options    , only: G_halox, G_haloy
       use HORgrid_options, only: Grd_yinyang_L
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer, intent(in) :: level
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: F_vector
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(out) :: F_prod
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(in) :: F_vector
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy), intent(out) :: F_prod
 
       integer :: i, j, halox, haloy
-      real*8, dimension(l_minx:l_maxx,l_miny:l_maxy) :: vector
+      real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: vector
       real linfini
 
       F_prod = 0.d0

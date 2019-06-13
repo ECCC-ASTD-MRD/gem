@@ -42,8 +42,8 @@ integer, parameter :: RMN_CONV_TH = 6
 
 logical, parameter :: RMN_CONV_USEFORMAT_L = .true.
 
-logical, parameter :: RMN_OPT_GET = .true.
-logical, parameter :: RMN_OPT_SET = .false.
+integer, parameter :: RMN_OPT_GET = 1
+integer, parameter :: RMN_OPT_SET = 0
 
 !- newdate mode
 integer, parameter :: RMN_DATE_STAMP2TRUE = 1
@@ -68,7 +68,7 @@ interface
    integer function fstopc(F_option_S,F_value_S,F_get_L)
       character(len=*),intent(in) :: F_option_S
       character(len=*) :: F_value_S !I/O
-      logical,intent(in) :: F_get_L
+      integer,intent(in) :: F_get_L
    end function fstopc
 
    integer function exdb(F_title,F_version,F_ipcode)
@@ -95,7 +95,7 @@ interface
    end function fstouv
 
    integer function fstlnk(F_unitlist,F_nunits)
-      integer,intent(in) :: F_nunits      
+      integer,intent(in) :: F_nunits
       integer,intent(in) :: F_unitlist(F_nunits)
    end function fstlnk
 
@@ -160,7 +160,7 @@ interface
 !!$      real,intent(out) :: uuout(*), vvout(*)
 !!$      real,intent(in) :: uuin(*), vvin(*)
 !!$   end function ezuvint
-   
+
    integer function gdrls(gridid)
       integer,intent(in) :: gridid
    end function gdrls
@@ -182,7 +182,8 @@ interface
 !!$      real,intent(out) :: ax(:), ay(:)
 !!$   end function gdgaxes
 
-   integer function ezgfstp(gridid, nomvarx_S, typvarx_S, etikx_S, nomvary_S, typvary_S, etiky_S, ip1, ip2, ip3, dateo, deet, npas, nbits)
+   integer function ezgfstp(gridid, nomvarx_S, typvarx_S, etikx_S, nomvary_S, typvary_S, etiky_S, &
+                            ip1, ip2, ip3, dateo, deet, npas, nbits)
       integer,intent(in) :: gridid
       character(len=*),intent(out) :: nomvarx_S, typvarx_S, etikx_S, nomvary_S, typvary_S, etiky_S
       integer,intent(out) :: ip1, ip2, ip3, dateo, deet, npas, nbits
@@ -202,13 +203,15 @@ interface
    end function ip1_all
 
    subroutine difdatr(idate1, idate2, nhours)
-      real(8),intent(out) :: nhours  !date difference expressed in hours
+      use, intrinsic :: iso_fortran_env, only: REAL64
+      real(REAL64),intent(out) :: nhours  !date difference expressed in hours
       integer,intent(in)  :: idate1  !CMC date-time stamp integer
       integer,intent(in)  :: idate2  !CMC date-time stamp integer
    end subroutine difdatr
 
    subroutine incdatr(idate_out, idate_in, nhours)
-      real(8),intent(in)  :: nhours
+      use, intrinsic :: iso_fortran_env, only: REAL64
+      real(REAL64),intent(in)  :: nhours
       integer,intent(in)  :: idate_in  !CMC date-time stamp integer
       integer,intent(out) :: idate_out !CMC date-time stamp integer
    end subroutine incdatr
@@ -233,7 +236,9 @@ interface
 
 end interface
 
-integer,external :: fstecr, fstlir, fstluk
+integer,external :: fstecr, fstlir, fstluk, fstnbr
 integer,external :: ezsint, ezuvint, gdgaxes,gdxyfll,gdllfxy,ezgdef_fmem
 integer,external :: newdate
 integer,external :: ezsetval,ezsetival
+integer,external :: ezget_subgridids, ezget_nsubgrids,ezgdef_supergrid
+integer,external :: gdll, msg_getUnit

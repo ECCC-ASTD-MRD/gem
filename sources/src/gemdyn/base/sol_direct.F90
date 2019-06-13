@@ -27,19 +27,20 @@
       use opr
       use ptopo
       use trp
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       logical, intent(in) :: F_print_L
       integer, intent(in) :: F_ni,F_nj,F_nk,F_offi, F_offj
-      real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_8
-      real*8, dimension(F_ni,F_nj,F_nk), intent(inout) :: F_sol_8
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_8
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(inout) :: F_sol_8
 !
       integer i,j,k,ni,nij,iter
       real linfini
-      real*8, dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3
-      real*8, dimension (l_minx:l_maxx,l_miny:l_maxy,l_nk) :: yyrhs
-      real*8, dimension((trp_12smax-trp_12smin+1)*(trp_22max -trp_22min +1)*(G_nj+Ptopo_npey  )) :: fdg2
+      real(kind=REAL64), dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3
+      real(kind=REAL64), dimension (l_minx:l_maxx,l_miny:l_maxy,l_nk) :: yyrhs
+      real(kind=REAL64), dimension((trp_12smax-trp_12smin+1)*(trp_22max -trp_22min +1)*(G_nj+Ptopo_npey  )) :: fdg2
 !
 !     ---------------------------------------------------------------
 !

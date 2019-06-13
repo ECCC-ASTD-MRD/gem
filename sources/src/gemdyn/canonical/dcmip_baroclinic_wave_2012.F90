@@ -48,7 +48,7 @@
            F_q2   (Mminx:Mmaxx,Mminy:Mmaxy,*)
 
       integer Moist    ! Moist (1) or non-moist (0) test case
-      real(8) X        ! Scale factor
+      real(kind=REAL64) X        ! Scale factor
       integer Tracers  ! Tracers (1) or non-tracers (0) test case
 
       logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
@@ -62,18 +62,18 @@
 
       integer i,j,k
 
-      real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
+      real(kind=REAL64) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon,     & ! Longitude (radians)
+      real(kind=REAL64)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
                   z          ! Height (m)
 
-      real(8)  :: p          ! Pressure  (Pa)
+      real(kind=REAL64)  :: p          ! Pressure  (Pa)
 
       integer  :: zcoords    ! 0 if p coordinates are specified
                              ! 1 if z coordinates are specified
 
-      real(8)  :: u,       & ! Zonal wind (m s^-1)
+      real(kind=REAL64)  :: u,       & ! Zonal wind (m s^-1)
                   v,       & ! Meridional wind (m s^-1)
                   w,       & ! Vertical Velocity (m s^-1)
                   t,       & ! Temperature (K)

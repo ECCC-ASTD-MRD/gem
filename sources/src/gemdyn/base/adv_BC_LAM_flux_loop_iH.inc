@@ -18,14 +18,14 @@
       integer :: m, midxk, idxk, midxjk, idxjk, &
                  o1, o2, o3, o4 , ii, jj, kk, ii1, jj1, kk1, sig
 
-      real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
+      real(kind=REAL64)  :: a1, a2, a3, a4, b1, b2, b3, b4, &
                  c1, c2, c3, c4, d1, d2, d3, d4, &
                  p1, p2, p3, p4, &
                  ra, rb, rc, rd, rri, rrj, rrk, p_z00_8
 
       logical :: zcubic_L
 
-      real*8 :: triprd, zb, zc, zd
+      real(kind=REAL64) :: triprd, zb, zc, zd
       real :: za
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 

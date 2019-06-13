@@ -18,7 +18,7 @@
       Function sfopot(t0, p0, pf2)
       use tdpack, only: fopoit
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sfopot, t0, p0, pf2
 !

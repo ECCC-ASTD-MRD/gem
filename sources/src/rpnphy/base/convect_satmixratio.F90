@@ -50,7 +50,7 @@ SUBROUTINE CONVECT_SATMIXRATIO(KLON, PPRES, PT, PEW, PLV, PLS, PCPH)
 USE YOMCST
 
 IMPLICIT NONE
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 !* 1.1  Declarations of dummy arguments :
 

@@ -22,7 +22,7 @@
 !
         use svs_configs
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       INTEGER N, NCLASS
       REAL LAI_NCLASS(N,NCLASS),VEGFRAC(N,NCLASS)

@@ -16,7 +16,7 @@
 integer function samegrid_gid ( F_sgid, F_g1d,F_g2d,F_g3d,F_g4d, &
                                 F_xpd,F_ypd,F_nid,F_njd )
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@arguments
    integer,intent(in) :: F_sgid                     ! Source grid id (ezscint)
@@ -125,7 +125,7 @@ end function samegrid_gid
 
 integer function samegrid_rot ( F_sgid, F_g1d,F_g2d,F_g3d,F_g4d )
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@arguments
    integer,intent(in) :: F_sgid                     ! Source grid id (ezscint)

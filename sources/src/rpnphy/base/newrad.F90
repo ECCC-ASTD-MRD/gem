@@ -23,7 +23,7 @@ contains
 
    !/@*
    subroutine newrad6(d, sized, f, sizef, v, vsiz, &
-                           liqwcin, icewcin, liqwp, icewp, nuage, &
+                           liqwcin, liqwp, icewp, nuage, &
                            tau, kount, &
                            trnch , n , m , nk , &
                            nkp, nkrd, nkprd, inrd)
@@ -35,7 +35,7 @@ contains
       use phy_status, only: phy_error_L
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       integer, intent(in) :: sized,sizef,kount,trnch, vsiz, &
@@ -43,26 +43,24 @@ contains
       integer inrd(nkprd)
       real, target, intent(inout) ::  d(sized), f(sizef), v(vsiz)
       real, target ::  nuage(n*nk)
-      real liqwcin(m,nk), icewcin(m,nk)
+      real liqwcin(m,nk)
       real liqwp(m,nk), icewp(m,nk)
       real, intent(in) :: tau
 
-!Author
+!@Author
 !          L. Garand and J. Mailhot RPN  (June 1989)
-!
-!Revision
+
+!@Revision
 ! 001      see version 5.5.0 for previous history
-!
-!Object
+
+!@Object
 !          to execute a more advanced scheme in finding the infrared
 !          and solar radiation and calculation of clouds
-!
-!Arguments
-!
+
+!@Arguments
 !          - Input/Output -
 ! f        field of permanent physics variables
 ! sizef    dimension of f
-!
 !          - Input -
 ! t        temperature
 ! q        specific humidity
@@ -87,8 +85,8 @@ contains
 ! liqwcin  in-cloud liquid water content
 ! liqwcin  in-cloud ice    water content
 ! nuage    cloud fraction
-!
-!Notes
+
+!@Notes
 !          newrad produces:
 !          Infra-red rate (ti) of cooling
 !          Visible rate (t2) of heating
@@ -113,7 +111,7 @@ contains
 ! Dimensions des champs necessaires
 ! pour l'option de reduction des niveaux
       integer i, kk, rednk, rednkp, redm
-!
+
 
       real v1
       real hz0,hz
@@ -122,16 +120,14 @@ contains
       integer nncl,iopt
       integer nnkp,nnkp2
       real alb, delp
-      real ozpak
 
-!
       real, target, dimension(n*nk)      :: del(n*nk), nef(n*nk)
       real, target, dimension(n*nkp)     :: ss
       real, target, dimension(n*nkp)     :: p0
       real, target, dimension(m*nkrd)    :: t_red, q_red, fn_red
       real, target, dimension(n*nkrd)    :: s_red, p0_red
       real, target, dimension(n*nkprd)   :: ss_red, del_red
-!
+
       logical,      dimension(nk)        :: toit
       real,         dimension(m,nkrd)    :: iwprd, lwprd
       real        , dimension(n*nkp*nkp) :: p1,p2,p14
@@ -139,26 +135,26 @@ contains
                                             q10,q11,q12,q13,q14,q15
       real        , dimension(n)         :: p11,p12,p16,p17,q19,q20,q21,q22,&
                                             q23,q24,q25,q26,q27,q28,q29,q30,&
-                                            q31,q32,q33,q34,q35
+                                            q31,q32,q33,q35
       real        , dimension(n*nkp*2)   :: p13
       real        , dimension(n*nkp*3)   :: p15
       real        , dimension(n*nkp*6)   :: q1,q2
       real        , dimension(n*nkp*3)   :: q3
       real        , dimension(n*nkp*2)   :: q4,q5
       real        , dimension(n*8)       :: q7,q8
-!
+
       real        , dimension(n)         :: sdz,ipb,pbl,ozotoit,dummy1(n),&
                                             dummy2(n),dummy3(n),dummy4(n)
       real        , dimension(n,nk)      :: asy,opd,dzz,ssa
       real        , dimension(n,nk,5)    :: aer
-!
+
       real, pointer, dimension(:)        :: trd, qrd, srd, p0rd, &
                                             delrd, fnrd, ssrd, ps
-!
+
 !     Pointers to busdyn
       real, pointer, dimension(:)   :: t1d, q1d, s1d
       real, pointer, dimension(:,:) :: t, q, s
-!
+
 !     Pointers to busper
       real, pointer, dimension(:)   :: zalvis_ag, zcosas, zcosz, zei, zev, &
                                        zev0, zfdsi, zfdss, zfdss0,  &
@@ -168,11 +164,11 @@ contains
 !     Pointers to busvol
       real, pointer, dimension(:)   :: zap, zcang, ziv
       real, pointer, dimension(:,:) :: ztrad
-!
+
 !***********************************************************************
-!
+
 #include "solcons.cdk"
-!
+
 !     Pointers to busdyn
       t(1:m,1:nk) => d( tmoins:)
       q(1:m,1:nk) => d( humoins:)
@@ -206,7 +202,7 @@ contains
       zctt     (1:n)       => v( ctt:)
       ziv      (1:n)       => v( iv:)
       ztrad    (1:n,1:nkp) => v( trad:)
-!
+
       call raddel(del,ss,s,n,nk,nkp)
 
       ja = n*(nk-1)
@@ -215,45 +211,45 @@ contains
       nnkp  = n*nkp
       nnk   = n*nk
       nnkp2 = n*nkp*nkp
-!
+
 ! date(5)=the hour of the day at the start of the run.
 ! date(6)=hundreds of a second of the day at the start of the run.
-!
+
       call mu_js2ymdhms(jdateo, yy, mo, dd, hh, mn, sec)
       hz0 = hh + float(mn)/60. + float(sec)/3600.
       hz = amod ( hz0+(float(kount)*tau)/3600. , 24. )
-!
-!
+
+
       nncl=n*npcl
-!
+
 ! Compute optical parameters for vis and ir code
 ! includes effective ir cloud amount
 ! and for vis: aerosols, optical depth, asymetry factor,
 ! and single scattering albedo
-!
+
 ! Hauteur de couche limite temporairement mise a 1500 metres
 ! en attendant qu'elle soit passee a newrad
-!
+
       do 7007 i=1,n
       pbl(i)=1500.
  7007 continue
-!
-       call cldoptx5 (liqwcin,icewcin,liqwp,icewp,nuage,t,s,ps, &
+
+       call cldoptx6(liqwcin,liqwp,icewp,nuage,t,s,ps, &
                       f(dlat),f(mg),f(ml),m,n,nk, &
                       pbl,ipb,dzz,sdz, nef,opd,asy, &
                       ztopthw,ztopthi, &
                       zctp,zctt, &
-                      ssa,aer,satuco,cw_rad,ioptix)
+                      ssa,aer,ioptix)
        if (phy_error_L) return
 
 ! Boucle sur le pas de radiation kntrad
-!
-      IF (KOUNT == 0 .OR. MOD(KOUNT-1,KNTRAD) == 0) THEN
-!
-      call radfac3 (p0, ozotoit, s, nkp, nk, npcl, &
-                    f(dlat), ps, n, n, nkp, &
-                    p2, p3, p4, p5, p6, p7, p8, p10, &
-                    p11,nlacl, goz(fozon), goz(clat), &
+
+      if (KOUNT == 0 .or. mod(KOUNT-1,KNTRAD) == 0) then
+
+      call radfac4(p0, ozotoit, s, nkp, nk, npcl, &
+                    f(dlat), ps, n, n,  &
+                    p2, p3, p4, p5, p6, p7, p8, &
+                    nlacl, goz(fozon), goz(clat), &
                     goz(pref))
       if (phy_error_L) return
 
@@ -305,77 +301,76 @@ contains
       iopt=0
       opnua=.true.
 
-      call radir8 ( f(ti) , p7 , p5 , fnrd , trd , qrd , srd , &
+      call radir9(f(ti) , p7 , p5 , fnrd , trd , qrd , srd , &
               f(tsrad),ps,rednkp,rednk,p0rd, &
               rednkp,n,n,redm,ntt,mx,mxx,no3,ncx,nco2, &
               g(g1),g(g2),g(g3),g(th2o),g(tro3), &
               g(yg3), g(bcn),g(dbcn),g(bo3), &
-              g(dbo3),g(to3),g(uu),g(tt), &
-              p1, p2, iopt, opnua, &
+              g(dbo3),g(to3),g(uu), &
+              p1, p2, opnua, &
               p3 , p4 , p5 , p6 , p7 , ssrd, &
               p9 , delrd, p11 , p12, &
               f(nhaut), f(nmoy), f(nbas), &
               p13, p14, p15, p16, p17, &
-              ozpak, ozpak, &
               s,ss,del,nk,nkp)
 
       if( fomic ) then
          call fomichev( f(ti), t,p0,s,ps, m,n,n,nk )
       endif
-!
+
 ! Flux descendant a la surface
 ! ...non corrige pour l'emissivite de la surface (s/r fcrest)
-!
+
       do 501 j=1,n
          zfdsi(j) = p7((nkp-1)*n+j)
          zei  (j) = p5(j)      ! Flux ir au sommet de l'atmosphere (w/m2)
          znt  (j) = p12(j)     ! Nuages totaux
   501 continue
-!
+
 ! Fin du calcul de radiation infrarouge
-!
+
 ! Albedo utilise dans p10
 ! Albedo limite entre 6% et 80%
       do 1212 j=1,n
          p10(j)=amin1(zalvis_ag(j),0.80)
          p10(j)=amax1(p10(j),0.06)
  1212 continue
-!
-!
+
+
 ! Calcul de la variation de la constante solaire
-!
+
       julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
       alf    = julien/365.*2*PI
       r0r    = solcons(alf)
-!
+
 ! Parametres d'entree pour le solaire
-!
-      call setvis3(delrd, p2, p3, p4, p6, &
+
+      call setvis4(delrd, p2, p3, p4, p6, &
                    p0rd,srd,trd,ps,p0rd,f(dlat),f(dlon),hz, &
-                   julien,n,rednk,redm,satuco)
+                   julien,n,rednk,redm)
 
        do i=1,n
            zcosz(i) = p6(i)
        end do
-!
+
       if( reduc ) then
         call rdmoy(p7  ,f(lwc) ,q20,inrd,n,nk,nkrd)
         call rdmoy(p8  ,f(iwc) ,q20,inrd,n,nk,nkrd)
         call rdmoy(lwprd,liqwp ,q20,inrd,n,nk,nkrd)
         call rdmoy(iwprd,icewp ,q20,inrd,n,nk,nkrd)
         call rdmoy(fnrd,nuage  ,q20,inrd,n,nk,nkrd)
-!
-        call cldoptx5 (p7,p8,lwprd,iwprd,fnrd,trd,srd,ps, &
+
+        call cldoptx6(p7,lwprd,iwprd,fnrd,trd,srd,ps, &
                        f(dlat),f(mg),f(ml),n,n,nkrd, &
                        pbl,ipb,dzz,sdz,nef,opd,asy, &
                        ztopthw,ztopthi, &
                        zctp,zctt, &
-                       ssa,aer,satuco,cw_rad,ioptix)
+                       ssa,aer,ioptix)
         if (phy_error_L) return
       else
         fnrd => nuage(1:)
       endif
-!
+
 ! Calcul du cosinus de l'angle solaire a kount+kntrad-1
       hzp=amod(hz0+ (float(kount+kntrad-1)*tau)/3600., 24.)
       call suncos2(f(cosas),dummy1, dummy2, dummy3, dummy4,n, &
@@ -390,16 +385,16 @@ contains
          zev  (j) = 0.0
         zcosas(j) = (p6(j)+zcosas(j))*.5
 487  continue
-!
+
       do 488 k=1,nk
          zt2(:,k) = 0.0
 488   continue
-!
+
 ! Attention! les calculs sont faits pour un temps intermediaire
 ! entre kount et kount+kntrad
-!
 
-      call sun7( p8, p9, f(t20), f(vozo), ozotoit, &
+
+      call sun7b(p8, p9, f(t20), f(vozo), ozotoit, &
                  delrd, p2, p3, &
                  p4, ps, trd, qrd, srd, &
                  p0rd, fnrd, aer, f(cosas), p10, &
@@ -410,7 +405,7 @@ contains
                  ssa, asy, opd, q19, q20, &
                  q21, q22, q23, q24, q25, &
                  q26, q27, q28, q29, q30, &
-                 q31, q32, q33, q34, q35, &
+                 q31, q32, q33, q35, &
                  reduc, &
                  ss, ssrd, del, s, r0r, &
                  nk, nkp, radfix,radfltr)
@@ -419,15 +414,15 @@ contains
 ! ev   : flux montant au sommet.
 ! fdss : flux descendant a la surface.
 ! On corrige le flux solaire au sol pour l'albedo (s/p fcrest)
-!
+
 !vdir nodep
       do 490 j=1,n
          zev0  (j) = p9(j)
          zfdss0(j) = amax1(0.0, p8((nkp-1)*n+j))
          zfdss0(j) = (1.-p10(j)) * zfdss0(j)
  490  continue
-!
-!
+
+
 ! Moduler les flux et les taux par le cosinus de l'angle solaire.
 ! v1 = Rapport des cosinus : angle actuel sur angle moyen.
 ! ap   (albedo planetaire) nul si flux solaire incident < 1 w/m2
@@ -446,7 +441,7 @@ contains
             zap(j) = 0.
          endif
   500   continue
-!
+
         do 5000 k=1,nk
 !vdir nodep
           do 5000 j=1,n
@@ -455,7 +450,7 @@ contains
                 zt2(j,k) = zt20(j,k) * v1
              endif
  5000   continue
-!
+
 !**********************************************************
 ! Cas ou mod(kount-1,kntrad) non zero
       else
@@ -483,7 +478,7 @@ contains
           alb = amax1(alb,0.06)
           zflusolis(j) =zfdss(j)/(1.-alb)
  5010 continue
-!
+
       do 503 k=1,nk
 !vdir nodep
          do 503 j=1,n
@@ -494,7 +489,7 @@ contains
                zt2(j,k) = 0.0
             endif
   503 continue
-!
+
 ! Seulement si radfix est vrai...
       if(radfix) then
          do k=1,nk
@@ -533,10 +528,10 @@ contains
             zap(j) = 0.
          endif
 508   continue
-!
+
       do 509 j=1,n
   509    p1(j)=ziv(j)-zev(j)-zei(j)
-!
+
 ! Extraction pour diagnostics
       call series_xst(zctp, 'bp', trnch)
       call series_xst(zctt, 'be', trnch)
@@ -579,7 +574,7 @@ contains
           ztrad(:,k) =zti(:,k) + zt2(:,k)
        end do
 
-      RETURN
-      END subroutine newrad6
+      return
+      end subroutine newrad6
 
 end module newrad

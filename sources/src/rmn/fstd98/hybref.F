@@ -80,7 +80,7 @@
           print *,'hyb2pres error: fstprm on key',fstkeys(1)
           return
       else
-         call convip (ip1a, lev, kind,-1, blk_S, .false.)
+         call convip_plus (ip1a, lev, kind,-1, blk_S, .false.)
          ip1(1)=ip1a
          hyb(1)=lev
       endif
@@ -94,7 +94,7 @@
      $               'dim mismatch'
              return
          endif
-         call convip (ip1a, lev, kind,-1, blk_S, .false.)
+         call convip_plus (ip1a, lev, kind,-1, blk_S, .false.)
          ip1(k)=ip1a
          hyb(k)=lev
       enddo
@@ -484,7 +484,7 @@
           ierr= fstprm ( l, idayo, deet, npas, nia, nja, k, bit, dty,
      x                 ip1a, ip2a, ip3a, typ, var, labanl,grda,
      $                 ig1a,ig2a,ig3a,ig4a,swa,lng,dlf,ubc,ex1,ex2,ex3 )
-          call convip(ip1a,ptop,kind,-1,blk_S,.false.)
+          call convip_plus(ip1a,ptop,kind,-1,blk_S,.false.)
           if (ptop.lt.0.0.or.ptop.gt.1200..or. kind.ne.2) then
               print *, 'ERROR in read_decode_hyb: Decoding of ip1 in ',
      $                  nom
@@ -559,7 +559,7 @@
           write_encode_hyb = -1
           return
       endif
-      call convip(ip1,ptop,2,+1,blk_S,.false.)
+      call convip_plus(ip1,ptop,2,+1,blk_S,.false.)
       ierr = hybref_to_ig(ig1,ig2,ig3,ig4,rcoef,pref,x1,x2)
       if (ierr.lt.0) then
           print *, 'ERROR in write_encode_hyb: Encoding of ig?? in ',nom
@@ -715,7 +715,7 @@
 *      in case hybm_8(1) is not given!
 *
 *object
-*     To derive pressure fields from levels derived by "convip", the
+*     To derive pressure fields from levels derived by "convip_plus", the
 *     kind value from the ip1 codes and the hybrid reference 
 *     parameters(ptop,rcoef,pref)
 *
@@ -841,7 +841,7 @@
 *
 *object
 *     To derive pressure fields from SEF model levels (value from
-*     IP1 using convip), the ptop (PT), the etatop (E1) and p0
+*     IP1 using convip_plus), the ptop (PT), the etatop (E1) and p0
 *
 *arguments
 * ________________________________________________________________

@@ -44,7 +44,7 @@
 !ARGUMENTS
   use Interp1D_Constants
   implicit none
-#include "Interp1D_Arguments_X.cdk"
+#include "Interp1D_Arguments_X.inc"
 
 !NOTES
 !        Each routine of the set of interpolation routines takes exactly the same

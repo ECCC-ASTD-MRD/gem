@@ -1,19 +1,20 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 module phy_restart_mod
+   use clib_itf_mod, only: clib_toupper
   use cpl_itf, only: cpl_restart
   implicit none
   private
@@ -29,7 +30,7 @@ contains
     implicit none
  !#TODO: F_spin_L never used
     character(len=*),intent(in) :: F_WorR_S
-    logical,         intent(in) :: F_spin_L    
+    logical,         intent(in) :: F_spin_L
     integer :: F_istat  !Return status (RMN_OK or RMN_ERR)
 
     !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Spring 2015
@@ -38,7 +39,6 @@ contains
 
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include <clib_interface_mu.hf>
 
     integer :: istat
     character(len=32) :: WorR_S

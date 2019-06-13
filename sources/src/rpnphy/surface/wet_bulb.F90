@@ -1,27 +1,28 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module MODI_WETBULBT
 
-   !#TODO: no need for an interface here, put the funtion WETBULBT in the module to avoid non consistency between module and function interface
+   !#TODO: no need for an interface here, put the funtion WETBULBT in the
+   !       module to avoid non consistency between module and function interface
 
    interface
       function WETBULBT(PPA, PTA, PQA) result(PTWBT)
          real, dimension(:), intent(IN)    :: PPA     ! pressure (Pa)
-         real, dimension(:), intent(IN)    :: PTA     ! Air  temperature (K) 
+         real, dimension(:), intent(IN)    :: PTA     ! Air  temperature (K)
          real, dimension(:), intent(IN)    :: PQA     ! Air spedcific humidity (kg/kg)
          real, dimension(size(PPA)) :: PTWBT          ! WBGT in deg C
       end function WETBULBT
@@ -31,15 +32,15 @@ end module MODI_WETBULBT
 
 !-----------------------------------------------------------------------------
 function WETBULBT(PPA, PTA, PQA) result(PTWBT)
-   !-----------------------------------------------------------------------------
+   !---------------------------------------------------------------------------
    !    PURPOSE       : Computes the Natural Wet-Bulb Temperature
    !    AUTHOR        : S. Leroyer (03/2014)
    !    REFERENCE     : Stipanuk (1973): ALGORITHMS FOR GENERATING A SKEW-T, LOG P
    !                    DIAGRAM AND COMPUTING SELECTED METEOROLOGICAL QUANTITIES."
    !                    ATMOSPHERIC SCIENCES LABORATORY,U.S. ARMY ELECTRONICS COMMAND
    !                    WHITE SANDS MISSILE RANGE, NEW MEXICO 88002, 33 PAGES
-   !    MODIFICATIONS : L. Spacek (06/2014) 
-   !-------------------------------------------------------------------------------
+   !    MODIFICATIONS : L. Spacek (06/2014)
+   !---------------------------------------------------------------------------
    !
    !*       0.     DECLARATIONS
    !               ------------
@@ -48,21 +49,21 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    ! USE MODE_THERMOS
    ! !
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    ! !
    ! !*      0.1    declarations of arguments
    real, dimension(:), intent(IN)  :: PPA         ! Air pressure (Pa)
-   real, dimension(:), intent(IN)  :: PTA          ! Air temperature (K) 
-   real, dimension(:), intent(IN)  :: PQA          ! Air specific humidity (kg/kg) 
+   real, dimension(:), intent(IN)  :: PTA          ! Air temperature (K)
+   real, dimension(:), intent(IN)  :: PQA          ! Air specific humidity (kg/kg)
    real, dimension(size(PPA))      :: PTWBT         ! WBGT in deg K
    ! !*      0.2    declarations of local variables
-   real, dimension(size(PPA)) :: ZQA      ! modified Air specific humidity (kg/kg) 
+   real, dimension(size(PPA)) :: ZQA      ! modified Air specific humidity (kg/kg)
    real, dimension(size(PPA)) :: ZRH      ! Relative humidity (%)
    real, dimension(size(PPA)) :: ZTD      ! Dew-point temperature (C) at T,P
    real, dimension(size(PPA)) :: ZT       ! temperature (C)
    real, dimension(size(PPA)) :: ZTI      ! temperature (C) on dry adiabat at P
-   real, dimension(size(PPA)) :: ZP       ! pressure (hPa) 
-   real, dimension(size(PPA)) :: ZPI      ! pressure (hPa) intersec. dry adiabat/mixing ratio curves 
+   real, dimension(size(PPA)) :: ZP       ! pressure (hPa)
+   real, dimension(size(PPA)) :: ZPI      ! pressure (hPa) intersec. dry adiabat/mixing ratio curves
    real, dimension(size(PPA)) :: ZAW      ! Mixing ratio (g/kg) at saturation
    real, dimension(size(PPA)) :: ZAO      ! Dry adiabat (C) at T,P (Theta)
    real, dimension(size(PPA)) :: ZAOS     ! Saturation dry adiabat (Theta Equivalent)
@@ -73,7 +74,7 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
 
    ! EXTERNAL FUNCTIONS
    real, external :: TPDD
-   real, external :: N_QSAT
+   real, external :: N_QSAT1
    real, external :: DWPT
    real, external :: W
    real, external :: O
@@ -90,7 +91,7 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    ZP=0.01*PPA         ! convert in hPa
    ZQA=PQA             ! local variable
    do i=1,nn
-      qsat=N_QSAT(PTA(i),ZQA(i),PPA(i))
+      qsat=N_QSAT1(PTA(i),PPA(i))
       if(ZQA(i)<0)ZQA(i)=0.0
       if(qsat<ZQA(i))ZQA(i)=qsat
       ZRH(i)=100.*ZQA(i)/qsat
@@ -104,7 +105,7 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
       ZPI(i) = ZP(i)
    enddo
    !    4. Iterate to determine local pressure ZPI (hPa)
-   !       at the intersection of the two curves of saturation mixing ratio 
+   !       at the intersection of the two curves of saturation mixing ratio
    !       and dry adiabat (first guess is ZP)
 
    do JJ=1,size(PPA)
@@ -118,13 +119,13 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    enddo
 
    !    6. Compute a saturation adiabat from the intersection
-   !       ==> equivalent potential temperature of a parcel saturated 
+   !       ==> equivalent potential temperature of a parcel saturated
    !           at temperature ZTI and pressure ZPI
    do i=1,nn
       ZAOS(i)= OS(ZTI(i),ZPI(i))
       ! print*,'SATURATION DRY ADIABAT thetaEq OS(TI,PI) => ZAOS= ',ZAOS
 
-      !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its 
+      !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its
       !       equivalent potential temperature
       PTWBT(i)= XTT + TSA(ZAOS(i),ZP(i))
    enddo
@@ -132,15 +133,15 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
 end function WETBULBT
 
 
-!!============================================== 
-function N_qsat(T,Q,P)
+!!==============================================
+function N_qsat1(T,P)
    ! THIS FUNCTION RETURNS HUMIDITY AT SATURATION (KG/KG) GIVEN
    ! THE TEMPERATURE (K) AND SPECIFIC HUMIDITY (KG/KG)
    ! AND PRESSURE (Pa)
    implicit none
-#include <arch_specific.hf>
-   real T,Q,P  !#TODO: Q never used
-   real zeps,ZFOES,N_QSAT
+!!!#include <arch_specific.hf>
+   real T,P
+   real zeps,ZFOES,N_QSAT1
 
    !#WARNING: by initializing these var, they are authomatically "saved", make it explicit save (or parameter)
    real, save :: XRD    = 287.05967   ! gaz constant for dry air
@@ -153,16 +154,16 @@ function N_qsat(T,Q,P)
    !*       1.    COMPUTE SATURATION VAPOR PRESSURE
    ZFOES = exp( XALPW - XBETAW/T - XGAMW*log(T)  )
    !*       2.    COMPUTE SATURATION HUMIDITY
-   N_QSAT = ZEPS*ZFOES/P   &
+   N_QSAT1 = ZEPS*ZFOES/P   &
         / (1.+(ZEPS-1.)*ZFOES/P)
    return
-end function N_qsat
+end function N_qsat1
 
 
-!============================================== 
+!==============================================
 real function DWPT(T,RH)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: t,rh,x,dpd
    !    THIS FUNCTION RETURNS THE DEW POINT (CELSIUS) GIVEN THE TEMPERATURE
    !    (CELSIUS) AND RELATIVE HUMIDITY (%). T
@@ -190,12 +191,12 @@ end function DWPT
 !===================================================================
 real function TSA(OS,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !    THIS FUNCTION RETURNS THE TEMPERATURE TSA (CELSIUS) ON A SATURATION
    !    ADIABAT AT PRESSURE P (MILLIBARS). OS IS THE EQUIVALENT POTENTIAL
    !    TEMPERATURE OF THE PARCEL (CELSIUS). SIGN(A,B) REPLACES THE
    !    ALGEBRAIC SIGN OF A WITH THAT OF B.
-   !    B IS AN EMPIRICAL CONSTANT APPROXIMATELY EQUAL TO 0.001 OF THE LATENT 
+   !    B IS AN EMPIRICAL CONSTANT APPROXIMATELY EQUAL TO 0.001 OF THE LATENT
    !    HEAT OF VAPORIZATION FOR WATER DIVIDED BY THE SPECIFIC HEAT AT CONSTANT
    !    PRESSURE FOR DRY AIR.
    integer :: i
@@ -230,7 +231,7 @@ end function TSA
 !===================================================================
 real function W(T,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: t,p,x
    real, external :: esat
    !   THIS FUNCTION RETURNS THE MIXING RATIO (GRAMS OF WATER VAPOR PER
@@ -250,7 +251,7 @@ end function W
 !===================================================================
 real function O(T,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !    THIS FUNCTION RETURNS POTENTIAL TEMPERATURE (CELSIUS) GIVEN
    !    TEMPERATURE T (CELSIUS) AND PRESSURE P (MB) BY SOLVING THE POISSON
    !    EQUATION.
@@ -265,7 +266,7 @@ end function O
 !===================================================================
 real function TDA(O,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: o,p,ok,tdak
    !!    THIS FUNCTION RETURNS THE TEMPERATURE TDA (CELSIUS) ON A DRY ADIABAT
    !    AT PRESSURE P (MILLIBARS). THE DRY ADIABAT IS GIVEN BY
@@ -282,7 +283,7 @@ end function TDA
 !===================================================================
 real function OS(T,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: t,p,b,tk,osk
    real, external :: w
    !    THIS FUNCTION RETURNS THE EQUIVALENT POTENTIAL TEMPERATURE OS
@@ -303,10 +304,10 @@ end function OS
 !===================================================================
 real function TMR(W,P)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: w,p,c1,c2,c3,c4,c5,c6,x,tmrk
    !   THIS FUNCTION RETURNS THE TEMPERATURE (CELSIUS) ON A MIXING
-   !   RATIO LINE W (G/KG) AT PRESSURE P (MB). THE FORMULA IS GIVEN IN 
+   !   RATIO LINE W (G/KG) AT PRESSURE P (MB). THE FORMULA IS GIVEN IN
    !   TABLE 1 ON PAGE 7 OF STIPANUK (1973).
    !
    !   INITIALIZE CONSTANTS
@@ -324,11 +325,11 @@ end function TMR
 !===================================================================
 real function ESAT(T)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    real :: t,tk,p1,p2,c1
    !   THIS FUNCTION RETURNS THE SATURATION VAPOR PRESSURE OVER
    !   WATER (MB) GIVEN THE TEMPERATURE (CELSIUS).
-   !   THE ALGORITHM IS DUE TO NORDQUIST, W.S.,1973: 
+   !   THE ALGORITHM IS DUE TO NORDQUIST, W.S.,1973:
 
    TK = T+273.15
    P1 = 11.344-0.0303998*TK

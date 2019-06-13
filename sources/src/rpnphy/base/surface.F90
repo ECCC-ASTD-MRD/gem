@@ -21,16 +21,15 @@ module surface
 
 contains
 
-   subroutine surface1(seloc, trnch, kount, delt, ni, nk)
+   subroutine surface1(trnch, kount, delt, ni, nk)
       ! Call API for surface schemes
       use sfc_main, only: sfc_main2
       use phy_options, only: fluvert, timings_L
       use phy_status, only: phy_error_L
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       ! Input arguments
-      real, dimension(ni,nk), intent(in) :: seloc       !Sigma coordinate for "work" levels
       integer, intent(in) :: trnch                      !Slice number
       integer, intent(in) :: kount                      !Time step number
       real, intent(in) :: delt                          !Time step (sec)
@@ -39,13 +38,13 @@ contains
 
       ! Internal variables
       integer :: istat
-      
+ 
       ! Do not run surface schemes unless the PBL is active
       if (fluvert == 'NIL') return
-      
+ 
       ! Call main surface driver
       if (timings_L) call timing_start_omp(425, 'surface', 46)
-      istat = sfc_main2(seloc, trnch, kount, delt, ni, nk)
+      istat = sfc_main2(trnch, kount, delt, ni, nk)
       if (timings_L) call timing_stop_omp(425)
       if (phy_error_L .or. .not.RMN_IS_OK(istat)) then
          call physeterror('surface', 'Problem in sfc_main')

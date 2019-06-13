@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
- 
+
 !**s/r dcmip_supercell - Setup for supercell (DCMIP 2016)
 
       subroutine dcmip_supercell (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps,F_pert,F_thbase, &
@@ -57,18 +57,18 @@
 
       integer i,j,k
 
-      real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
+      real(kind=REAL64) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon,     & ! Longitude (radians)
+      real(kind=REAL64)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
                   z          ! Altitude (m)
 
-      real(8)  :: p          ! Pressure  (Pa)
+      real(kind=REAL64)  :: p          ! Pressure  (Pa)
 
       integer  :: zcoords    ! 0 if p coordinates are specified
                              ! 1 if z coordinates are specified
 
-      real(8)  :: u,       & ! Zonal wind (m s^-1)
+      real(kind=REAL64)  :: u,       & ! Zonal wind (m s^-1)
                   v,       & ! Meridional wind (m s^-1)
                   w,       & ! Vertical Velocity (m s^-1)
                   t,       & ! Temperature (K)

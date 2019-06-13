@@ -15,7 +15,8 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 module pchip_utils
-#include <arch_specific.hf>
+   use, intrinsic :: iso_fortran_env, only: INT64
+!!!#include <arch_specific.hf>
    implicit none
    private
 #include <rmnlib_basics.hf>
@@ -99,7 +100,7 @@ contains
          enddo
          if (present(z1)) z1 = zi(:,1) - myZ2i
          if (present(z2)) z2 = zi(:,1) - myZ1i
-      case ('UP') 
+      case ('UP')
          z  = zext
          y  = yext
          if (present(z1)) z1 = myZ1i
@@ -131,8 +132,8 @@ contains
       ! Compute layer properties
       nk = size(y,dim=2)
       do k=nk,2,-1
-         h(:,k)   =  z(:,k-1)-z(:,k) 
-         del(:,k) = (y(:,k-1)-y(:,k))/h(:,k) 
+         h(:,k)   =  z(:,k-1)-z(:,k)
+         del(:,k) = (y(:,k-1)-y(:,k))/h(:,k)
       enddo
       h(:,1)   = h(:,2)
       del(:,1) = del(:,2)
@@ -146,7 +147,7 @@ contains
    function pchip_coef(h,del,b,c,d) result(status)
       ! Compute coefficients for the interpolating polynomial
       real, dimension(:,:), intent(in) :: h                     !Thickness of layers in profile
-      real, dimension(:,:), intent(in) :: del                   !Linear first derivatives of profile       
+      real, dimension(:,:), intent(in) :: del                   !Linear first derivatives of profile
       real, dimension(:,:), intent(out) :: b                    !Coefficient for cubic term
       real, dimension(:,:), intent(out) :: c                    !Coefficient for square term
       real, dimension(:,:), intent(out) :: d                    !Coefficient for linear term
@@ -164,7 +165,7 @@ contains
 
       ! Compute first derivatives at data points
       istat = pchip_slopes(h,del,d)
-      
+ 
       ! Compute coefficients for higher order terms (not used for k==1)
       nk = size(h,dim=2)
       do k=2,nk
@@ -214,7 +215,7 @@ contains
       d(:,1) = ((2.*h(:,2) + h(:,3))*del(:,2) - h(:,2)*del(:,3)) / (h(:,2) + h(:,3))
       where (sign(1.,d(:,2)) /= sign(1.,del(:,2))) d(:,1) = 0.
       where (sign(1.,del(:,2)) /= sign(1.,del(:,3)) .and. abs(d(:,1)) > abs(3*del(:,2))) d(:,1) = 3.*del(:,1)
-      
+ 
       ! Successful completion
       status = PCHIP_OK
       return
@@ -222,11 +223,11 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
       ! Return an upper cased version of a string
-#include <clib_interface_mu.hf>
       character(len=*), intent(in) :: str
       character(len=len_trim(str)) :: uc_str
-      
+ 
       ! Local variables
       integer :: istat
 

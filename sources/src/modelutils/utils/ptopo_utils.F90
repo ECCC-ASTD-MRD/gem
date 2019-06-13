@@ -16,6 +16,8 @@
 !/@
 module ptopo_utils
    use iso_c_binding
+   use rpn_comm_itf_mod
+   use wb_itf_mod
    implicit none
    private
    !@objective
@@ -29,7 +31,10 @@ module ptopo_utils
    !   I/O       COMM is split in pe (not matrix), Sub set of GRID PE used for I/O, optimally placed
 
    ! Public functions
-   public :: ptopo_init_var, ptopo_bloc_set, ptopo_io_set, ptopo_openMP_set, ptopo_ismaster_L, ptopo_collect_dims, ptopo_collect_dims_ij0, ptopo_collect, ptopo_copyfirst2last, ptopo_iprocxy, ptopo_comm_pe_info, ptopo_get_io_params
+   public :: ptopo_init_var, ptopo_bloc_set, ptopo_io_set, ptopo_openMP_set, &
+        ptopo_ismaster_L, ptopo_collect_dims, ptopo_collect_dims_ij0, &
+        ptopo_collect, ptopo_copyfirst2last, ptopo_iprocxy, &
+        ptopo_comm_pe_info, ptopo_get_io_params
 
    ! Public constants
 !!$   integer, parameter, public :: PTOPO_WORLD = 1
@@ -93,11 +98,9 @@ module ptopo_utils
 !!$        ptopo_pe_basedir_S,   &      !- basdir
    !@Description
    !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
 
    interface ptopo_get_io_params
       module procedure ptopo_get_io_params_0
@@ -196,10 +199,12 @@ contains
       !---------------------------------------------------------------------
       call msg(MSG_DEBUG,'(ptopo) bloc_set [BEGIN]')
       F_istat = RMN_OK
-      nblocxy(1:2) = (/max(1,min(F_nblocx,ptopo_grid_npex)),max(1,min(F_nblocy,ptopo_grid_npey))/)
+      nblocxy(1:2) = (/max(1,min(F_nblocx,ptopo_grid_npex)), &
+           max(1,min(F_nblocy,ptopo_grid_npey))/)
       if (present(F_bcast_L)) then
          if (F_bcast_L) then
-            call rpn_comm_bcast(nblocxy,size(nblocxy),RPN_COMM_INTEGER,RPN_COMM_MASTER,RPN_COMM_GRID,istat)
+            call rpn_comm_bcast(nblocxy,size(nblocxy),RPN_COMM_INTEGER, &
+                 RPN_COMM_MASTER,RPN_COMM_GRID,istat)
          endif
       endif
       F_nblocx = nblocxy(1)
@@ -336,7 +341,8 @@ contains
    end function ptopo_ismaster_L
 
    !/@*
-   subroutine ptopo_comm_pe_info(F_comm_S,F_ismaster_L,F_npe,F_npx,F_npy,F_ipe,F_ipx,F_ipy)
+   subroutine ptopo_comm_pe_info(F_comm_S,F_ismaster_L,F_npe,F_npx,F_npy, &
+        F_ipe,F_ipx,F_ipy)
       implicit none
       !@objective
       !@arguments
@@ -386,7 +392,7 @@ contains
       integer :: F_istat
       !*@/
       !---------------------------------------------------------------------
-      F_istat = ptopo_get_io_params_0(ptopo_iotype, F_isiomaster_L, F_isiope_L, &
+      F_istat = ptopo_get_io_params_0(ptopo_iotype, F_isiomaster_L, F_isiope_L,&
            F_comm_ipe_io_master, F_communicator_S)
       !---------------------------------------------------------------------
       return
@@ -438,7 +444,8 @@ contains
 
 
    !/@*
-   function ptopo_collect_dims(F_comm_S,F_nil,F_njl,F_nic,F_njc,F_i0c,F_j0c) result(F_istat)
+   function ptopo_collect_dims(F_comm_S,F_nil,F_njl,F_nic,F_njc,F_i0c,F_j0c) &
+        result(F_istat)
       implicit none
       !@objective Get dims of bloc
       !@arguments
@@ -457,9 +464,13 @@ contains
       F_istat = RMN_ERR
       select case(F_comm_S)
       case(RPN_COMM_GRID)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey,ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,1,1,F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
+         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey, &
+              ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,1,1, &
+              F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
       case(RPN_COMM_BLOC_COMM)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_bloc_npex,ptopo_bloc_npey,ptopo_bloc_ipex,ptopo_bloc_ipey,F_nil,F_njl,1,1,F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
+         F_istat = priv_collect_dims(F_comm_S,ptopo_bloc_npex,ptopo_bloc_npey, &
+              ptopo_bloc_ipex,ptopo_bloc_ipey,F_nil,F_njl,1,1, &
+              F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
       end select
       call msg(MSG_DEBUG,'(ptopo) collect_dims [END]')
       !---------------------------------------------------------------------
@@ -468,7 +479,8 @@ contains
 
 
    !/@*
-   function ptopo_collect_dims_ij0(F_comm_S,F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) result(F_istat)
+   function ptopo_collect_dims_ij0(F_comm_S,F_nil,F_njl,F_gi0,F_gj0, &
+        F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) result(F_istat)
       implicit none
       !@objective Get dims of bloc
       !@arguments
@@ -488,9 +500,13 @@ contains
       F_istat = RMN_ERR
       select case(F_comm_S)
       case(RPN_COMM_GRID)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey,ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c)
+         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey, &
+              ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,F_gi0,F_gj0, &
+              F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c)
       case(RPN_COMM_BLOC_COMM)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_bloc_npex,ptopo_bloc_npey,ptopo_bloc_ipex,ptopo_bloc_ipey,F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c)
+         F_istat = priv_collect_dims(F_comm_S,ptopo_bloc_npex,ptopo_bloc_npey, &
+              ptopo_bloc_ipex,ptopo_bloc_ipey,F_nil,F_njl,F_gi0,F_gj0, &
+              F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c)
       end select
       call msg(MSG_DEBUG,'(ptopo) collect_dims [END]')
       !---------------------------------------------------------------------
@@ -499,7 +515,8 @@ contains
 
 
    !/@*
-   function ptopo_collect_r4_3d(F_fld_b,F_fld_l,F_comm_S,F_i0l,F_j0l,F_lni,F_lnj) result(F_istat)
+   function ptopo_collect_r4_3d(F_fld_b,F_fld_l,F_comm_S,F_i0l,F_j0l, &
+        F_lni,F_lnj) result(F_istat)
       implicit none
       !@objective Merge MPI data-tiles belonging to the same bloc
       !@arguments
@@ -520,7 +537,7 @@ contains
       call ptopo_init_var()
       F_istat = RMN_ERR
       if (.not.associated(F_fld_l)) then
-         print *,'ERROR: (ptopo_collect) .not.associated(F_fld_l)' ; call flush(6)
+         print *,'ERROR: (ptopo_collect) .not.associated(F_fld_l)';call flush(6)
       endif
       lni = ubound(F_fld_l,1)
       lnj = ubound(F_fld_l,2)
@@ -533,12 +550,14 @@ contains
          if (ismaster_L .and. .not.associated(F_fld_b)) &
               print *,'ERROR: (ptopo_collect) .not.associated(F_fld_l)'
 
-         F_istat = priv_collect_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,lni,lnj,F_comm_S,ismaster_L,ptopo_grid_npe)
+         F_istat = priv_collect_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,lni,lnj, &
+              F_comm_S,ismaster_L,ptopo_grid_npe)
       case(RPN_COMM_BLOC_COMM)
          if (ptopo_isblocmaster_L .and. .not.associated(F_fld_b)) then
             print *,'ERROR: (ptopo_collect) .not.associated(F_fld_b)' ; call flush(6)
          endif
-         F_istat = priv_collect_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,lni,lnj,F_comm_S,ptopo_isblocmaster_L,ptopo_bloc_npe)
+         F_istat = priv_collect_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,lni,lnj, &
+              F_comm_S,ptopo_isblocmaster_L,ptopo_bloc_npe)
       end select
       call msg(MSG_DEBUG,'(ptopo) collect_r4_3d [END]')
       !---------------------------------------------------------------------
@@ -547,7 +566,8 @@ contains
 
 
    !/@*
-   function ptopo_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_comm_S,F_i0l,F_j0l,F_lni,F_lnj) result(F_istat)
+   function ptopo_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_comm_S,F_i0l,F_j0l, &
+        F_lni,F_lnj) result(F_istat)
       implicit none
       !@objective Merge MPI data-tiles belonging to the same bloc
       !@arguments
@@ -581,12 +601,14 @@ contains
          if (ismaster_L .and. .not.associated(F_fld2d_b)) then
             print *,'(ptopo_collect) ERROR: .not.associated(F_fld2d_b)' ; call flush(6)
          endif
-         F_istat = priv_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_i0l,F_j0l,lni,lnj,F_comm_S,ismaster_L,ptopo_grid_npe)
+         F_istat = priv_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_i0l,F_j0l,lni,lnj, &
+              F_comm_S,ismaster_L,ptopo_grid_npe)
       case(RPN_COMM_BLOC_COMM)
          if (ptopo_isblocmaster_L .and. .not.associated(F_fld2d_b)) then
             print *,'(ptopo_collect) ERROR: .not.associated(F_fld2d_b)' ; call flush(6)
          endif
-         F_istat = priv_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_i0l,F_j0l,lni,lnj,F_comm_S,ptopo_isblocmaster_L,ptopo_bloc_npe)
+         F_istat = priv_collect_r4_2d(F_fld2d_b,F_fld2d_l,F_i0l,F_j0l,lni,lnj, &
+              F_comm_S,ptopo_isblocmaster_L,ptopo_bloc_npe)
       end select
       call msg(MSG_DEBUG,'(ptopo) collect_r4_2d [END]')
       !---------------------------------------------------------------------
@@ -595,7 +617,8 @@ contains
 
 
    !/@*
-   function ptopo_copyfirst2last_r4_2d(F_fld,F_copyx,F_copyy,F_bloc_L) result(F_istat)
+   function ptopo_copyfirst2last_r4_2d(F_fld,F_copyx,F_copyy,F_bloc_L) &
+        result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -607,7 +630,8 @@ contains
       !@author S. Chamberland, 2014-12
       !@description
       !*@/
-      integer :: copyx,copyy,npe,npx,npy,ipe,ipx,ipy,lijk(2),uijk(2),iproc,istat,ierr,fr_in,fr_i0,to_in,to_i0,bnpe,bnpx,bnpy,bipe,bipx,bipy
+      integer :: copyx,copyy,npe,npx,npy,ipe,ipx,ipy,lijk(2),uijk(2),iproc, &
+           istat,ierr,fr_in,fr_i0,to_in,to_i0,bnpe,bnpx,bnpy,bipe,bipx,bipy
       logical :: ismaster_L
       real,pointer :: datarow1(:,:)
       !---------------------------------------------------------------------
@@ -630,9 +654,11 @@ contains
       endif
 
       if (F_bloc_L) then
-         call ptopo_comm_pe_info(RPN_COMM_BLOC_COMM,ismaster_L,bnpe,bnpx,bnpy,bipe,bipx,bipy)
+         call ptopo_comm_pe_info(RPN_COMM_BLOC_COMM,ismaster_L,bnpe,bnpx,bnpy, &
+              bipe,bipx,bipy)
       else
-         call ptopo_comm_pe_info(RPN_COMM_GRID,ismaster_L,bnpe,bnpx,bnpy,bipe,bipx,bipy)
+         call ptopo_comm_pe_info(RPN_COMM_GRID,ismaster_L,bnpe,bnpx,bnpy,bipe, &
+              bipx,bipy)
          ismaster_L = .true.
       endif
 
@@ -662,10 +688,12 @@ contains
             if (ipx==RPN_COMM_MASTER) then
                datarow1(1:copyx,:) = F_fld(fr_i0:fr_in,:)
                iproc = ptopo_iprocxy((npx-1),ipy,npx)
-               call rpn_comm_send(datarow1,size(datarow1),RPN_COMM_REAL,iproc,TAG,RPN_COMM_GRID,ierr)
+               call rpn_comm_send(datarow1,size(datarow1),RPN_COMM_REAL,iproc, &
+                    TAG,RPN_COMM_GRID,ierr)
             elseif (ipx==npx-1) then
                iproc = ptopo_iprocxy(0,ipy,npx)
-               call rpn_comm_recv(datarow1,size(datarow1),RPN_COMM_REAL,iproc,TAG,RPN_COMM_GRID,istat,ierr)
+               call rpn_comm_recv(datarow1,size(datarow1),RPN_COMM_REAL,iproc, &
+                    TAG,RPN_COMM_GRID,istat,ierr)
                F_fld(to_i0:to_in,:) = datarow1(1:copyx,:)
             endif
             if (associated(datarow1)) deallocate(datarow1,stat=istat)
@@ -681,7 +709,8 @@ contains
 
 
    !/@*
-   function ptopo_copyfirst2last_r4_3d(F_fld,F_copyx,F_copyy,F_bloc_L) result(F_istat)
+   function ptopo_copyfirst2last_r4_3d(F_fld,F_copyx,F_copyy,F_bloc_L) &
+        result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -693,7 +722,8 @@ contains
       !@author S. Chamberland, 2014-12
       !@description
       !*@/
-      integer :: copyx,copyy,npe,npx,npy,ipe,ipx,ipy,lijk(3),uijk(3),iproc,istat,ierr,fr_in,fr_i0,to_in,to_i0,bnpe,bnpx,bnpy,bipe,bipx,bipy
+      integer :: copyx,copyy,npe,npx,npy,ipe,ipx,ipy,lijk(3),uijk(3),iproc, &
+           istat,ierr,fr_in,fr_i0,to_in,to_i0,bnpe,bnpx,bnpy,bipe,bipx,bipy
       logical :: ismaster_L
       real,pointer :: datarow1(:,:,:)
       !---------------------------------------------------------------------
@@ -716,9 +746,11 @@ contains
       endif
 
       if (F_bloc_L) then
-         call ptopo_comm_pe_info(RPN_COMM_BLOC_COMM,ismaster_L,bnpe,bnpx,bnpy,bipe,bipx,bipy)
+         call ptopo_comm_pe_info(RPN_COMM_BLOC_COMM,ismaster_L,bnpe,bnpx,bnpy, &
+              bipe,bipx,bipy)
       else
-         call ptopo_comm_pe_info(RPN_COMM_GRID,ismaster_L,bnpe,bnpx,bnpy,bipe,bipx,bipy)
+         call ptopo_comm_pe_info(RPN_COMM_GRID,ismaster_L,bnpe,bnpx,bnpy,bipe, &
+              bipx,bipy)
          ismaster_L = .true.
       endif
 
@@ -748,10 +780,12 @@ contains
             if (ipx==RPN_COMM_MASTER) then
                datarow1(1:copyx,:,:) = F_fld(fr_i0:fr_in,:,:)
                iproc = ptopo_iprocxy((npx-1),ipy,npx)
-               call rpn_comm_send(datarow1,size(datarow1),RPN_COMM_REAL,iproc,TAG,RPN_COMM_GRID,ierr)
+               call rpn_comm_send(datarow1,size(datarow1),RPN_COMM_REAL, &
+                    iproc,TAG,RPN_COMM_GRID,ierr)
             elseif (ipx==npx-1) then
                iproc = ptopo_iprocxy(0,ipy,npx)
-               call rpn_comm_recv(datarow1,size(datarow1),RPN_COMM_REAL,iproc,TAG,RPN_COMM_GRID,istat,ierr)
+               call rpn_comm_recv(datarow1,size(datarow1),RPN_COMM_REAL, &
+                    iproc,TAG,RPN_COMM_GRID,istat,ierr)
                F_fld(to_i0:to_in,:,:) = datarow1(1:copyx,:,:)
             endif
             if (associated(datarow1)) deallocate(datarow1,stat=istat)
@@ -787,10 +821,13 @@ contains
       !@arguments
       integer,intent(out) :: F_npex,F_npey
       !@/
-      integer :: me,medomm,mex,mey,blocsizex,blocsizey,ismaster,mymaster,mybloc,myblocx,myblocy,blocme,blocmex,blocmey
+      integer :: me,medomm,mex,mey,blocsizex,blocsizey,ismaster,mymaster, &
+           mybloc,myblocx,myblocy,blocme,blocmex,blocmey
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(ptopo) priv_update_bloc [BEGIN]')
-      call rpn_comm_carac(F_npex,F_npey,me,medomm,mex,mey,blocsizex,blocsizey,ismaster,mymaster,mybloc,myblocx,myblocy,blocme,ptopo_domname_S)
+      call rpn_comm_carac(F_npex,F_npey,me,medomm,mex,mey,blocsizex, &
+           blocsizey,ismaster,mymaster,mybloc,myblocx,myblocy,blocme, &
+           ptopo_domname_S)
 
       if (all((/F_npex,F_npey/) > 0)) then
          call rpn_comm_bloctopo(blocme,blocmex,blocmey,blocsizex,blocsizey)
@@ -826,7 +863,8 @@ contains
 
 
    !/@
-   function priv_recv_collect_r4_3d(F_fld_b,F_nil2,F_njl2,F_nk2,F_i0l,F_j0l,F_comm_S,F_iproc) result(F_istat)
+   function priv_recv_collect_r4_3d(F_fld_b,F_nil2,F_njl2,F_nk2,F_i0l,F_j0l, &
+        F_comm_S,F_iproc) result(F_istat)
       implicit none
       !@arguments
       real,pointer :: F_fld_b(:,:,:)            !O, bloc data
@@ -844,7 +882,8 @@ contains
       call msg(MSG_DEBUG,'(ptopo) priv_recv_collect_r4_3d [BEGIN]')
       F_istat = RMN_ERR
       datalen = F_nil2 * F_njl2 * F_nk2
-      call rpn_comm_recv(buf,datalen,RPN_COMM_REAL,F_iproc,TAG,F_comm_S,istat,ierr)
+      call rpn_comm_recv(buf,datalen,RPN_COMM_REAL,F_iproc,TAG,F_comm_S, &
+           istat,ierr)
       if (.not.RMN_IS_OK(ierr)) return
       p_buf => buf
       F_istat = priv_copy_r4_3d(F_fld_b,p_buf,F_i0l,F_j0l,F_nil2,F_njl2)
@@ -855,7 +894,8 @@ contains
 
 
    !/@
-   function priv_recv_collect_r4_2d(F_fld_b,F_nil2,F_njl2,F_i0l,F_j0l,F_comm_S,F_iproc) result(F_istat)
+   function priv_recv_collect_r4_2d(F_fld_b,F_nil2,F_njl2,F_i0l,F_j0l, &
+        F_comm_S,F_iproc) result(F_istat)
       implicit none
       !@arguments
       real,pointer :: F_fld_b(:,:)              !O, bloc data
@@ -873,7 +913,8 @@ contains
       call msg(MSG_DEBUG,'(ptopo) priv_recv_collect_r4_2d [BEGIN]')
       F_istat = RMN_ERR
       datalen = F_nil2 * F_njl2
-      call rpn_comm_recv(buf,datalen,RPN_COMM_REAL,F_iproc,TAG,F_comm_S,istat,ierr)
+      call rpn_comm_recv(buf,datalen,RPN_COMM_REAL,F_iproc,TAG,F_comm_S, &
+           istat,ierr)
       if (.not.RMN_IS_OK(ierr)) return
       p_buf => buf
       F_istat = priv_copy_r4_2d(F_fld_b,p_buf,F_i0l,F_j0l,F_nil2,F_njl2)
@@ -884,7 +925,8 @@ contains
 
 
    !/@
-   function priv_copy_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj) result(F_istat)
+   function priv_copy_r4_3d(F_fld_b,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj) &
+        result(F_istat)
       implicit none
       !@arguments
       real,pointer :: F_fld_b(:,:,:)       !O, bloc data
@@ -918,7 +960,8 @@ contains
 
 
    !/@
-   function priv_copy_r4_2d(F_fld_b,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj) result(F_istat)
+   function priv_copy_r4_2d(F_fld_b,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj) &
+        result(F_istat)
       implicit none
       !@arguments
       real,pointer :: F_fld_b(:,:)       !O, bloc data
@@ -951,7 +994,8 @@ contains
 
    !/@*
    function priv_collect_dims(F_comm_S,F_npex,F_npey,F_ipex,F_ipey, &
-        F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) result(F_istat)
+        F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) &
+        result(F_istat)
       implicit none
       !@objective Get dims of bloc
       !@arguments
@@ -1012,7 +1056,8 @@ contains
 
 
    !/@*
-   function priv_collect_r4_3d(F_fld_c,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj,F_comm_S,F_ismaster_L,F_npe) result(F_istat)
+   function priv_collect_r4_3d(F_fld_c,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj, &
+        F_comm_S,F_ismaster_L,F_npe) result(F_istat)
       implicit none
       !@objective Merge MPI data-tiles belonging to the same comm_S
       !@arguments
@@ -1044,9 +1089,12 @@ contains
 
          DO_IPROC: do iproc = 1, F_npe - 1
 
-            call rpn_comm_recv(params,N_PARAM,RPN_COMM_INTEGER,iproc,TAG,F_comm_S,istat,ierr)
+            call rpn_comm_recv(params,N_PARAM,RPN_COMM_INTEGER,iproc,TAG, &
+                 F_comm_S,istat,ierr)
             if (params(IDX_NIL) * params(IDX_NJL) > 0) then
-               istat = priv_recv_collect_r4_3d(F_fld_c,params(IDX_NIL),params(IDX_NJL),nijk_l(3),params(IDX_I0),params(IDX_J0),F_comm_S,iproc)
+               istat = priv_recv_collect_r4_3d(F_fld_c,params(IDX_NIL), &
+                    params(IDX_NJL),nijk_l(3),params(IDX_I0),params(IDX_J0), &
+                    F_comm_S,iproc)
             endif
 
          enddo DO_IPROC
@@ -1059,8 +1107,11 @@ contains
          params(IDX_NJL) = nijk_l(2)
 
          datalen = nijk_l(1)*nijk_l(2)*nijk_l(3)
-         call rpn_comm_send(params,N_PARAM,RPN_COMM_INTEGER,RPN_COMM_MASTER,tag,F_comm_S,ierr)
-         if (datalen > 0) call rpn_comm_send(F_fld_l(1:nijk_l(1),1:nijk_l(2),:),datalen,RPN_COMM_REAL,RPN_COMM_MASTER,TAG,F_comm_S,ierr)
+         call rpn_comm_send(params,N_PARAM,RPN_COMM_INTEGER,RPN_COMM_MASTER, &
+              tag,F_comm_S,ierr)
+         if (datalen > 0) call rpn_comm_send(F_fld_l(1:nijk_l(1), &
+              1:nijk_l(2),:),datalen,RPN_COMM_REAL,RPN_COMM_MASTER,TAG, &
+              F_comm_S,ierr)
 
       endif IF_MASTER
       F_istat = RMN_OK !TODO-later: check rpn_comm_send/recv status
@@ -1071,7 +1122,8 @@ contains
 
 
    !/@*
-   function priv_collect_r4_2d(F_fld_c,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj,F_comm_S,F_ismaster_L,F_npe) result(F_istat)
+   function priv_collect_r4_2d(F_fld_c,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj, &
+        F_comm_S,F_ismaster_L,F_npe) result(F_istat)
       implicit none
       !@objective Merge MPI data-tiles belonging to the same comm_S
       !@arguments
@@ -1103,9 +1155,12 @@ contains
 
          DO_IPROC: do iproc = 1, F_npe - 1
 
-            call rpn_comm_recv(params,N_PARAM,RPN_COMM_INTEGER,iproc,TAG,F_comm_S,istat,ierr)
+            call rpn_comm_recv(params,N_PARAM,RPN_COMM_INTEGER,iproc,TAG, &
+                 F_comm_S,istat,ierr)
             if (params(IDX_NIL) * params(IDX_NJL) > 0) then
-               istat = priv_recv_collect_r4_2d(F_fld_c,params(IDX_NIL),params(IDX_NJL),params(IDX_I0),params(IDX_J0),F_comm_S,iproc)
+               istat = priv_recv_collect_r4_2d(F_fld_c,params(IDX_NIL), &
+                    params(IDX_NJL),params(IDX_I0),params(IDX_J0), &
+                    F_comm_S,iproc)
             endif
 
          enddo DO_IPROC
@@ -1118,8 +1173,10 @@ contains
          params(IDX_NJL) = nijk_l(2)
 
          datalen = nijk_l(1)*nijk_l(2)
-         call rpn_comm_send(params,N_PARAM,RPN_COMM_INTEGER,RPN_COMM_MASTER,tag,F_comm_S,ierr)
-         if (datalen > 0) call rpn_comm_send(F_fld_l(1:nijk_l(1),1:nijk_l(2)),datalen,RPN_COMM_REAL,RPN_COMM_MASTER,TAG,F_comm_S,ierr)
+         call rpn_comm_send(params,N_PARAM,RPN_COMM_INTEGER,RPN_COMM_MASTER, &
+              tag,F_comm_S,ierr)
+         if (datalen > 0) call rpn_comm_send(F_fld_l(1:nijk_l(1),1:nijk_l(2)), &
+              datalen,RPN_COMM_REAL,RPN_COMM_MASTER,TAG,F_comm_S,ierr)
 
       endif IF_MASTER
       F_istat = RMN_OK  !TODO-later: check rpn_comm_send/recv status

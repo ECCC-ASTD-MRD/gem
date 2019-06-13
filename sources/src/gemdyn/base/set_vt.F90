@@ -28,12 +28,13 @@
       use tr3d
       use gmm_itf_mod
       use var_gmm
+
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
 !@objective Initialization of the commons for time-dependent variable.
 !           Virtual Memory manager initialization
-!@author sylvie gravel - rpn - august 1993
 !@description
 !  Notes:
 !	The level at time t0 is not created explicitly in the
@@ -63,7 +64,7 @@
                             mymeta3d_nk_q, mymeta2d_s, mymetasc_p00
       integer :: i,istat
       integer :: flag_n, flag_r_n
-      integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_m_f,flag_s_f
+      integer(kind=INT64) :: flag_m_t,flag_m_u,flag_m_v,flag_m_f,flag_s_f
       real, pointer, dimension(:,:,:) :: tr
 !
 !     ---------------------------------------------------------------
@@ -228,8 +229,8 @@
       gmmk_pw_me_moins_s = 'PW_ME:M'
       gmmk_pw_p0_moins_s = 'PW_P0:M'
 
-      gmmk_pw_uslt_s     = 'PW_USLT'
-      gmmk_pw_vslt_s     = 'PW_VSLT'
+!!$      gmmk_pw_uslt_s     = 'PW_USLT'
+!!$      gmmk_pw_vslt_s     = 'PW_VSLT'
       gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
       gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
 

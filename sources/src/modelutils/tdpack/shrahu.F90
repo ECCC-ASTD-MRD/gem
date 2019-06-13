@@ -18,7 +18,7 @@
       Function shrahu3(hr,tt,ps,swph)
       use tdpack, only: foew, foewa, foqfe
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real shrahu3, hr, tt, ps
       Logical swph
 !

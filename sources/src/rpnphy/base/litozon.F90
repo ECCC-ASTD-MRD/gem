@@ -19,7 +19,7 @@ subroutine litozon(F_file_S, F_myproc)
    use mu_jdate_mod, only: jdate_month
    use phy_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    character(len=*), intent(in) :: F_file_S
    integer, intent(in) :: F_myproc

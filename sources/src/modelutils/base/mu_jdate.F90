@@ -14,9 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module mu_jdate_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
    use iso_c_binding
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    private
    !@objective Manipulate dates from Gregorian and "cmcdate" formats to "Julian second"
@@ -37,13 +38,13 @@ module mu_jdate_mod
         jdate_year, jdate_month, jdate_day_of_month, &
         jdate_day_of_year, jdate_midmonth
    ! Public constants
-   integer(IDOUBLE), parameter, public :: MU_JDATE_ANY = RMN_ANY_DATE !# -1
+   integer(INT64), parameter, public :: MU_JDATE_ANY = RMN_ANY_DATE !# -1
    integer, parameter, public :: MU_JDATE_LEAP_ON = 0
    integer, parameter, public :: MU_JDATE_LEAP_IGNORED = 1
    integer, parameter, public :: MU_JDATE_PDF_LEN = 16
-   integer(IDOUBLE), parameter, public :: MU_JDATE_MAX_INT = 464269103999_IDOUBLE
+   integer(INT64), parameter, public :: MU_JDATE_MAX_INT = 464269103999_IDOUBLE
    character(len=MU_JDATE_PDF_LEN), parameter, public :: MU_JDATE_MAX_STR = '99991231.235959'
-   integer(IDOUBLE), parameter, public :: MU_JDATE_EPOCH_INT = 0
+   integer(INT64), parameter, public :: MU_JDATE_EPOCH_INT = 0
    character(len=MU_JDATE_PDF_LEN), parameter, public :: MU_JDATE_EPOCH_STR = '-47131124.000000'
    !@/
 
@@ -208,7 +209,7 @@ contains
       implicit none
       !@Objective Convert CMC date-time stamp to 'Julian date in seconds'
       integer, intent(in) :: F_cmcdate
-      integer(IDOUBLE) :: F_jsec_8
+      integer(INT64) :: F_jsec_8
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
       integer :: dat2,dat3,istat,date0
@@ -248,7 +249,7 @@ contains
    function jdate_to_cmc(F_jsec_8) result(F_cmcdate)
       implicit none
       !@Objective Convert 'Julian date in seconds' to CMC date-time stamp
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       integer :: F_cmcdate
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -282,7 +283,7 @@ contains
    !/@*
    function jdate_from_print(F_date_S) result(F_jsec_8)
       character(len=*),intent(in) :: F_date_S
-      integer(IDOUBLE) :: F_jsec_8
+      integer(INT64) :: F_jsec_8
       !@Objective Convert string YYYYMMDD.hhmmss to 'Julian date in seconds'
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -340,7 +341,7 @@ contains
    function jdate_to_print(F_jsec_8) result(F_date_S)
       implicit none
       !@Objective Convert 'Julian date in seconds' to string YYYYMMDD.hhmmss
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       character(len=MU_JDATE_PDF_LEN) :: F_date_S
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -367,7 +368,7 @@ contains
    function jdate_year(F_jsec_8) result(F_year)
       implicit none
       !@Objective Return year value from 'Julian date in seconds'
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       integer :: F_year
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -390,7 +391,7 @@ contains
    function jdate_month(F_jsec_8) result(F_month)
       implicit none
       !@Objective Return month value from 'Julian date in seconds'
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       integer :: F_month
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -413,7 +414,7 @@ contains
    function jdate_day_of_month(F_jsec_8) result(F_day)
       implicit none
       !@Objective Return day of month value from 'Julian date in seconds'
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       integer :: F_day
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -436,7 +437,7 @@ contains
    function jdate_day_of_year(F_jsec_8) result(F_day)
       implicit none
       !@Objective Return day of month value from 'Julian date in seconds'
-      integer(IDOUBLE), intent(in) :: F_jsec_8
+      integer(INT64), intent(in) :: F_jsec_8
       integer :: F_day
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss
@@ -460,7 +461,7 @@ contains
       implicit none
       !@Objective Return mid month jsec value for provided year,month
       integer,intent(in) :: F_year, F_month
-      integer(IDOUBLE) :: F_jsec2_8
+      integer(INT64) :: F_jsec2_8
       !*@/
       integer(C_INT) :: yy,mo,dd,hh,mn,ss, yy2,mo2
       integer(C_LONG_LONG) :: jsec_8_c, jsec2_8_c

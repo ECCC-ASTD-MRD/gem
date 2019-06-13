@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,37 +12,35 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
+
 !** S/P AEROOPPRO - OPTICAL PROPERTIES OF AEROSOLS
-!
-      subroutine ccc_aerooppro (tauae,exta,exoma,exomga,fa,absa, &
-                            tt,shtj,sig,ps,lat,mg,ml,pbl, &
-                            aerosolback,il1,il2,ilg,lay,lev)
-!
-      implicit none
-#include <arch_specific.hf>
+
+subroutine ccc_aerooppro (tauae,exta,exoma,exomga,fa,absa, &
+     tt,shtj,sig,ps,lat,mg,ml,pbl, &
+     aerosolback,il1,il2,ilg,lay,lev)
+   use tdpack_const
+   implicit none
+!!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
-#include "tdpack_const.hf"
 #include "ccc_aeros.cdk"
-!
-      integer ilg,lay,lev,il1,il2
-      real tt(ilg,lay),sig(ilg,lay),shtj(ilg,lev)
-      real ps(ilg),lat(ilg)
-      real mg(ilg),ml(ilg),pbl(ilg)
-      real tauae(ilg,lay,5)
-      logical aerosolback
-!
-!     gathered and other work arrays used generally by solar.
-      real exta(ilg,lay,nbs), exoma(ilg,lay,nbs), exomga(ilg,lay,nbs), &
-           fa(ilg,lay,nbs)
-!
-!     work arrays used generally by longwave.
-      real absa(ilg,lay,nbl)
-!
+
+   integer ilg,lay,lev,il1,il2
+   real tt(ilg,lay),sig(ilg,lay),shtj(ilg,lev)
+   real ps(ilg),lat(ilg)
+   real mg(ilg),ml(ilg),pbl(ilg)
+   real tauae(ilg,lay,5)
+   logical aerosolback
+
+   !     gathered and other work arrays used generally by solar.
+   real exta(ilg,lay,nbs), exoma(ilg,lay,nbs), exomga(ilg,lay,nbs), &
+        fa(ilg,lay,nbs)
+
+   !     work arrays used generally by longwave.
+   real absa(ilg,lay,nbl)
+
 !Author
-!
 !        P. Vaillancourt, RPN (May 2006)
-!
 !Revisions
 !
 ! 001    P. Vaillancourt (Jan 07) - correct bug in calculation of dp closest to surface

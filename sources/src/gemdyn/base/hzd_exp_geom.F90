@@ -22,11 +22,12 @@
       use HORgrid_options
       use hzd_mod
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: j
-      real*8 :: aaa,bbb,ccc,ddd,dx_8
+      real(kind=REAL64) :: aaa,bbb,ccc,ddd,dx_8
 !
 !     ---------------------------------------------------------------
 !

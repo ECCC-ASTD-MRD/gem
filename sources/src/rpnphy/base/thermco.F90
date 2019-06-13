@@ -18,7 +18,7 @@ subroutine thermco3(t,qv,qc,sw,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,be
      type,inmode,n,nk)
    use tdpack   
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    
    ! Arguments
    integer, intent(in) :: n                             !horizontal dimension

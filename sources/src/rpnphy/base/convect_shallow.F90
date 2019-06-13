@@ -1,4 +1,19 @@
-!############################################################################
+!-------------------------------------- LICENCE BEGIN -------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END ---------------------------
+
 subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
      &                      PPABST, PZZ, &
      &                      PTT, PRVT, PRCT, PRIT, PDMSEDT, &
@@ -9,7 +24,6 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
      &                      PUDR, PWSTAR, PCRAD, PDTPERT, &
      &                      PDXDY, PKSHAL, GTRIG, &
      &                      PUT, PVT, PUTEN, PVTEN)
-   !############################################################################
 
 !KICE      => bkf_kice
 !PTADJS    => shal_timeconv_sec
@@ -102,7 +116,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
    use integrals
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !* 0.1 Declarations of dummy arguments :
 
@@ -354,7 +368,7 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
    use integrals
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !* 0.1 Declarations of dummy arguments :
 
@@ -809,11 +823,10 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
             enddo
          enddo
 
-         call CONVECT_CHEM_TRANSPORT(ICONV, KLEV, bkf_kch, ZCH1, ZCH1C, &
+         call CONVECT_CHEM_TRANSPORT1(ICONV, KLEV, bkf_kch, ZCH1, ZCH1C, &
               &  IDPL, IPBL, ILCL, ICTL, ILFS, ILFS, &
               &  ZUMF, ZUER, ZUDR, ZDMF, ZDER, ZDDR, &
-              &  ZTIMEC, ZDXDY, ZDMF(:,1), ZLMASS, ZWSUB, &
-              &  IFTSTEPS)
+              &  ZTIMEC, ZDXDY, ZDMF(:,1), ZLMASS, ZWSUB)
 
          do JN = 1, bkf_kch
             do JK = 1, KLEV
@@ -882,10 +895,10 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
 
       IF_BKF_LSHALM: if (bkf_lshalm) then
 
-         call CONVECT_UV_TRANSPORT_SHAL(ICONV, KLEV, ZU, ZV, ZUC, ZVC, &
+         call CONVECT_UV_TRANSPORT_SHAL1(ICONV, KLEV, ZU, ZV, ZUC, ZVC, &
               &  IDPL, IPBL, ILCL, ICTL,ZUMF, ZUER, ZUDR, &
-              &  ZTIMEC, ZDXDY, ZLMASS, ZWSUB, &
-              &  IFTSTEPS, ZTIMC, ITSTEP, GWORK1)
+              &  ZDXDY, ZLMASS, ZWSUB, &
+              &  ZTIMC, ITSTEP, GWORK1)
 
          do JK = 1, KLEV
             ZUC(1:ICONV,JK) = ( ZUC(1:ICONV,JK)- ZU(1:ICONV,JK) ) / ZTIMEC(1:ICONV)

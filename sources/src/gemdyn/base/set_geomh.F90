@@ -29,6 +29,7 @@
       use ptopo
       use tdpack
       use wb_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -38,11 +39,11 @@
       integer i,j,dimy,istat,ni,nj,offset, glbphy_gid, glbphycore_gid
       real xfi(0:l_ni+1),yfi(0:l_nj+1)
       real gxfi(G_ni),gyfi(G_nj)
-      real*8 posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
-      real*8 rad2deg_8,deg2rad_8,x0,xl,y0,yl
-      real*8 scale_factor, scale_factor_v
-      real*8 Del_xg , Del_yg
-      real*8, parameter :: HALF_8  = 0.5d0, ONE_8   = 1.d0, CLXXX_8 = 180.d0
+      real(kind=REAL64) posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
+      real(kind=REAL64) rad2deg_8,deg2rad_8,x0,xl,y0,yl
+      real(kind=REAL64) scale_factor, scale_factor_v
+      real(kind=REAL64) Del_xg , Del_yg
+      real(kind=REAL64), parameter :: HALF_8  = 0.5d0, ONE_8   = 1.d0, CLXXX_8 = 180.d0
 !
 !     ---------------------------------------------------------------
 !

@@ -18,7 +18,7 @@
       Function sgamatd(td, tt, ti, pr, typv, swph)
       use tdpack, only: schal, rgasd, eps1, grav
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sgamatd
       Real td, tt, ti, pr

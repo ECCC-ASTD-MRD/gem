@@ -27,6 +27,7 @@
       use path
       use clib_itf_mod
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -36,8 +37,8 @@
       character(len=3) :: mycol_S,myrow_S
       logical saverestart, save_additional
       integer err
-      real*8 dayfrac
-      real*8, parameter :: OV_day = 1.d0/86400.0d0
+      real(kind=REAL64) dayfrac
+      real(kind=REAL64), parameter :: OV_day = 1.d0/86400.0d0
 !
 !     ---------------------------------------------------------------
 !

@@ -19,7 +19,7 @@
 !
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !
       REAL ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE

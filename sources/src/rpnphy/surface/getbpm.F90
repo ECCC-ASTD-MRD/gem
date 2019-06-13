@@ -16,7 +16,7 @@
 !**S/P getbpm
       function getbpm()
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       integer getbpm
 !Author   R. Benoit (Sept 93)
 !

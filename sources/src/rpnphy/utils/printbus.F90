@@ -19,7 +19,7 @@ subroutine printbus(F_bus_S)
    implicit none
    character(len=*),intent(in) :: F_bus_S
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include "buses.cdk"
    integer :: i
    ! ---------------------------------------------------------------------

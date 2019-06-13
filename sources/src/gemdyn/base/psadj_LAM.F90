@@ -26,6 +26,7 @@
       use gmm_itf_mod
       use lun
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -47,21 +48,21 @@
       !---------------------------------------------------------------------
 
       real, pointer, contiguous, dimension(:,:,:) :: tr
-      real*8,dimension(Minx:Maxx,Miny:Maxy,F_nk+1):: pr_m_8,pr_t_8
-      real*8,dimension(Minx:Maxx,Miny:Maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_fl_w_8,pr_p0_w_8
+      real(kind=REAL64),dimension(Minx:Maxx,Miny:Maxy,F_nk+1):: pr_m_8,pr_t_8
+      real(kind=REAL64),dimension(Minx:Maxx,Miny:Maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_fl_w_8,pr_p0_w_8
       real,  dimension(Minx:Maxx,Miny:Maxy,F_nk)  :: sumq
       integer :: err,i,j,k,n,istat,MAX_iteration
-      real*8  :: l_avg_8(2),g_avg_8(2),g_avg_ps_w_1_8,g_avg_ps_w_0_8,g_avg_fl_w_0_8
+      real(kind=REAL64)  :: l_avg_8(2),g_avg_8(2),g_avg_ps_w_1_8,g_avg_ps_w_0_8,g_avg_fl_w_0_8
       logical, save :: done_LAM_scale_L = .false.
-      real*8,  save :: PSADJ_LAM_scale_8
+      real(kind=REAL64),  save :: PSADJ_LAM_scale_8
 
       !---------------------------------------------------------------------
 
       if (Lun_out>0) then
          write(Lun_out,*) ''
          write(Lun_out,*) '--------------------------------------'
-         if (Schm_psadj==2) write(Lun_out,*) 'PSADJ LAM is done for DRY AIR (REAL*8)'
-         if (Schm_psadj==1) write(Lun_out,*) 'PSADJ LAM is done for WET AIR (REAL*8)'
+         if (Schm_psadj==2) write(Lun_out,*) 'PSADJ LAM is done for DRY AIR (REAL64)'
+         if (Schm_psadj==1) write(Lun_out,*) 'PSADJ LAM is done for WET AIR (REAL64)'
          write(Lun_out,*) '--------------------------------------'
       end if
 

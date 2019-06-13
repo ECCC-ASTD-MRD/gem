@@ -25,7 +25,7 @@ contains
    function form_drag1(utend,vtend,uwind,vwind,gzmom,sigma_s,z0,tau,n,nk) result(status)
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       !@Arguments

@@ -1,28 +1,29 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
+
 !/@*
 subroutine vte_intvertx3(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_type)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@ojective cubic vertical interpolation from eta/sigma to hybrid
    !@arguments
-   ! F_dch                   Interpolated field           
-   ! F_sch                   source       field           
+   ! F_dch                   Interpolated field
+   ! F_sch                   source       field
    ! F_srclev                source levels
    ! F_dstlev                destination levels
-   ! F_var_S                 name of the variable                  
+   ! F_var_S                 name of the variable
    ! F_type                  order of interpolation ('linear' or 'cubic')
    integer,intent(in) :: n, nkd, nks
    real :: F_dch(n,nkd), F_sch(n,nks), F_srclev(n,nks),F_dstlev(n,nkd)
@@ -37,25 +38,27 @@ subroutine vte_intvertx3(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_type)
    return
 end subroutine vte_intvertx3
 
+
 !/@*
 subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinbot)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@ojective cubic vertical interpolation from eta/sigma to hybrid
    !@arguments
-   ! F_dch                   Interpolated field           
-   ! F_sch                   source       field           
+   ! F_dch                   Interpolated field
+   ! F_sch                   source       field
    ! F_srclev                source levels
    ! F_dstlev                destination levels
-   ! F_var_S                 name of the variable                  
+   ! F_var_S                 name of the variable
    ! F_nlinbot               number of levels at bottom linearly interpolated
    integer,intent(in) :: n, nkd, nks,F_nlinbot
    real :: F_dch(n,nkd), F_sch(n,nks), F_srclev(n,nks),F_dstlev(n,nkd)
    character(len=*) :: F_var_S
    !@author - Methot/Laroche - April 97 - v1_01
    !@revision
-   ! v2_10 - L. Corbeil          - rewrited for optimization, 
+   ! v2_10 - L. Corbeil          - rewrited for optimization,
    ! v2_10                         removed e_vcubique
    ! v2_30 - L. Corbeil          - renamed vte_ (no more called in gemntr)
    ! v2_31 - Lee V.              - F_srclev,F_dstlev is calculated outside
@@ -63,10 +66,10 @@ subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinb
    !@description
    !     General case, we'll care about VT later
    !
-   !     First, we find the level we are by squeezing the destination 
+   !     First, we find the level we are by squeezing the destination
    !     between increasing bot() and decreasing top(). We need log_2_(nks)
-   !     iteration to squeeze it completely (each integer between 1 and 
-   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i 
+   !     iteration to squeeze it completely (each integer between 1 and
+   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i
    !     where c_i = 0 or 1 and i lower or equal than log_2_(nks)
    !
    !     WARNING
@@ -74,10 +77,11 @@ subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinb
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
    !*@/
+   include "rmnlib_basics.inc"
 
    integer :: i,k,iter,niter,lev,lev_lin,k_surf,k_ciel
    integer :: top(n),bot(n),topcub(n),botcub(n),ref(n)
-   real*8 :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
+   real(REAL64) :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
    logical :: ascending_L
    !---------------------------------------------------------------
    ascending_L = (F_srclev(1,1) < F_srclev(1,nks))
@@ -188,25 +192,27 @@ subroutine vte_intvertx4(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinb
    return
 end subroutine vte_intvertx4
 
+
 !/@*
 subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F_nlinbot)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    use tdpack
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@ojective cubic vertical interpolation from eta/sigma to hybrid
    !@arguments
-   ! F_dch                   Interpolated field           
-   ! F_sch                   source       field           
+   ! F_dch                   Interpolated field
+   ! F_sch                   source       field
    ! F_srclev                source levels
    ! F_dstlev                destination levels
-   ! F_var_S                 name of the variable                  
+   ! F_var_S                 name of the variable
    ! F_nlinbot               number of levels at bottom linearly interpolated
    integer,intent(in) :: n, nkd, nks,F_nlinbot
    real :: F_dch(n,nkd), F_sch(n,nks), F_srclev(n,nks),F_dstlev(nkd)
    character(len=*) :: F_var_S
    !@author - Methot/Laroche - April 97 - v1_01
    !@revision
-   ! v2_10 - L. Corbeil          - rewrited for optimization, 
+   ! v2_10 - L. Corbeil          - rewrited for optimization,
    ! v2_10                         removed e_vcubique
    ! v2_30 - L. Corbeil          - renamed vte_ (no more called in gemntr)
    ! v2_31 - Lee V.              - F_srclev,F_dstlev is calculated outside
@@ -214,10 +220,10 @@ subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F
    !@description
    !     General case, we'll care about VT later
    !
-   !     First, we find the level we are by squeezing the destination 
+   !     First, we find the level we are by squeezing the destination
    !     between increasing bot() and decreasing top(). We need log_2_(nks)
-   !     iteration to squeeze it completely (each integer between 1 and 
-   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i 
+   !     iteration to squeeze it completely (each integer between 1 and
+   !     nks can be expressed as a sum of power of 2 such as sum c_i 2^i
    !     where c_i = 0 or 1 and i lower or equal than log_2_(nks)
    !
    !     WARNING
@@ -225,10 +231,11 @@ subroutine vte_intvertx_isodst(F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var_S,F
    !  (Maybe the grid will be that precise in 2010!) (I don't even bother
    !  to add an if statement, for performance purpose...)
    !*@/
+   include "rmnlib_basics.inc"
 
    integer :: i,k,iter,niter,lev,lev_lin,k_surf,k_ciel
    integer :: top(n),bot(n),topcub(n),botcub(n),ref(n)
-   real*8 :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
+   real(REAL64) :: deltalev,prxd,prda,prdb,prsaf,prsbf,prsad,prsbd
    logical :: ascending_L
    !---------------------------------------------------------------
    ascending_L = (F_srclev(1,1) < F_srclev(1,nks))

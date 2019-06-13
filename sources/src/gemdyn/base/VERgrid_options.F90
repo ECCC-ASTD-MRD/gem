@@ -40,7 +40,6 @@ contains
 !**s/r VERgrid_nml - Read namelist vert_layers
 
       integer function VERgrid_nml (F_unf)
-!      use dyn_fisl_options
       use ctrl
       implicit none
 #include <arch_specific.hf>

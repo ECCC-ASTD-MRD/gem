@@ -25,22 +25,23 @@
       use sol
       use opr
       use metric
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy,nil, njl, NK
-      real*8, intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
-      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(out) :: F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !       Abdessamad Qaddouri -  2017
 !
       integer j,i,k,halox,haloy
-      real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0
-      real*8  c_k(Minx:Maxx,Miny:Maxy,Nk),A_k(Minx:Maxx,Miny:Maxy,Nk), B_k(Minx:Maxx,Miny:Maxy,Nk)
-      real*8  cdd_v8(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
+      real(kind=REAL64)  c_k(Minx:Maxx,Miny:Maxy,Nk),A_k(Minx:Maxx,Miny:Maxy,Nk), B_k(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64)  cdd_v8(Minx:Maxx,Miny:Maxy,Nk)
       integer  km, kp
-      real*8  add_v8(Minx:Maxx,Miny:Maxy,Nk)
-      real*8  bdd_v8(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64)  add_v8(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64)  bdd_v8(Minx:Maxx,Miny:Maxy,Nk)
       real   Afdg1(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real   Bfdg1(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real   fdg2(l_minx:l_maxx, l_miny:l_maxy,Nk+1)

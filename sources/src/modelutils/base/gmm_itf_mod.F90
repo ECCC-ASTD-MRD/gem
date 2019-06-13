@@ -8,13 +8,14 @@
 !--------------------------------------------------------------------------
 !/@*
 module gmm_itf_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    implicit none
    public
    !@objective Module form of gmm include file
    !@author  Stephane Chamberland, 2010-06
 !*@/
 
-#include <gmm.hf>
+#include <mu_gmm.hf>
 
 #undef GMM_IS_OK
 #undef GMM_IS_ERROR

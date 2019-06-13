@@ -23,15 +23,16 @@
       use tdpack
       use ver
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: F_errcode
 
-      real*8, parameter :: one = 1.d0
+      real(kind=REAL64), parameter :: one = 1.d0
       integer :: k, k0, AA, BB, CC
-      real*8 :: Falfas_8, Fbetas_8, r_8(G_nk)
-      real*8, dimension (G_nk*G_nk) :: br_8, bl_8
+      real(kind=REAL64) :: Falfas_8, Fbetas_8, r_8(G_nk)
+      real(kind=REAL64), dimension (G_nk*G_nk) :: br_8, bl_8
 !     __________________________________________________________________
 !
 !     Compute the vertical operators: tri-diagnonal matrices

@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -11,10 +11,11 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 !/@*
 module vinterp_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
@@ -28,10 +29,10 @@ module vinterp_mod
    public :: vinterp,vinterp0,vinterp1,vinterp10,vinterp01
    ! Public constants
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 
    interface vinterp
       module procedure vinterp0
@@ -77,7 +78,7 @@ contains
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, null pointer: '//trim(msg_S))
          return
       endif
-      nlinbot = 0 
+      nlinbot = 0
       if (present(F_nlinbot)) nlinbot = F_nlinbot
       nullify(sfcfldout2, sfcfldin2)
       F_istat = vinterp0ls( &
@@ -131,7 +132,7 @@ contains
          call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, null pointer: '//trim(msg_S))
          return
       endif
-      nlinbot = 0 
+      nlinbot = 0
       if (present(F_nlinbot)) nlinbot = F_nlinbot
       nullify(sfcfldin2)
       if (associated(F_sfcfldin) .and. .not.associated(F_sfcfldin,F_sfcfldout)) then
@@ -199,7 +200,8 @@ contains
       else
          !TODO: if vgrid needs sfcfield and sfcfld => null then error
          if (minval(F_sfcfldout) < P0MIN .or. maxval(F_sfcfldout) > P0MAX) then
-            call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, sfcfldout provided sfcfldout has wrong values: '//trim(msg_S))
+            call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, sfcfldout provided '// &
+                 'sfcfldout has wrong values: '//trim(msg_S))
             F_istat = RMN_ERR
             return
          endif
@@ -239,7 +241,8 @@ contains
       else
 
          ! Sort input levels into increasing pressures
-         !#TODO: sorting should be done in vgrid from file, could be ascending or descending depending on model (ascending for GEM), only check monotonicity in here
+         !#TODO: sorting should be done in vgrid from file, could be ascending or
+         ! descending depending on model (ascending for GEM), only check monotonicity in here
          scol = levelsin(1,1,:)
          do k=1,size(scol)
             slist(k,:) = minloc(scol)
@@ -268,17 +271,23 @@ contains
 !!$         enddo
 
 !!$         print *,'(vinterp) '//trim(msg_S)//' nlinbot=',nlinbot,nijkout
-!!$         print *,'(vinterp) '//trim(msg_S)//' sfcfldin=',minval(sfcfldin),maxval(sfcfldin),sum(dble(sfcfldin))/dble(float(size(sfcfldin)))
-!!$         print *,'(vinterp) '//trim(msg_S)//' slevelsin=',minval(slevelsin),maxval(slevelsin),sum(dble(slevelsin))/dble(float(size(slevelsin)))
-!!$         print *,'(vinterp) '//trim(msg_S)//' F_sfcfldout=',minval(F_sfcfldout),maxval(F_sfcfldout),sum(dble(F_sfcfldout))/dble(float(size(F_sfcfldout)))
-!!$         print *,'(vinterp) '//trim(msg_S)//' levelsout=',minval(levelsout),maxval(levelsout),sum(dble(levelsout))/dble(float(size(levelsout)))
-!!$         print *,'(vinterp) '//trim(msg_S)//' sdatain=',minval(sdatain),maxval(sdatain),sum(dble(sdatain))/dble(float(size(sdatain)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' sfcfldin=',minval(sfcfldin),maxval(sfcfldin), &
+!!$              sum(dble(sfcfldin))/dble(float(size(sfcfldin)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' slevelsin=',minval(slevelsin),maxval(slevelsin), &
+!!$              sum(dble(slevelsin))/dble(float(size(slevelsin)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' F_sfcfldout=',minval(F_sfcfldout), &
+!!$              maxval(F_sfcfldout),sum(dble(F_sfcfldout))/dble(float(size(F_sfcfldout)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' levelsout=',minval(levelsout),maxval(levelsout), &
+!!$              sum(dble(levelsout))/dble(float(size(levelsout)))
+!!$         print *,'(vinterp) '//trim(msg_S)//' sdatain=',minval(sdatain),maxval(sdatain), &
+!!$              sum(dble(sdatain))/dble(float(size(sdatain)))
 
          call vte_intvertx4(F_dataout,sdatain,slevelsin,levelsout, &
               nijkout(1)*nijkout(2),nijkin(3),nijkout(3),&
               msg_S,nlinbot)
 
-!!$         print *,'(vinterp) '//trim(msg_S)//' F_dataout=',minval(F_dataout),maxval(F_dataout),sum(F_dataout)/float(size(F_dataout))
+!!$         print *,'(vinterp) '//trim(msg_S)//' F_dataout=',minval(F_dataout), &
+!!$              maxval(F_dataout),sum(F_dataout)/float(size(F_dataout))
 
      endif
 
@@ -401,7 +410,7 @@ contains
       F_istat = RMN_ERR
       msg_S = ''
       if (present(F_msg_S)) msg_S = F_msg_S
-      nlinbot = 0 
+      nlinbot = 0
       if (present(F_nlinbot)) nlinbot = F_nlinbot
 
       nullify(ip1listin, sfcfldout, sfcfldin, sfcfldout2, sfcfldin2)

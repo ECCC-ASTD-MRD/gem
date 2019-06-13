@@ -33,7 +33,7 @@ contains
       use phybus
       use tendency, only: apply_tendencies
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object Interface to convection/condensation
       !@Arguments
       !
@@ -128,7 +128,7 @@ contains
       if (timings_L) call timing_start_omp(435, 'cnv_main', 46)
       call cnv_main3(dbus, dsiz, fbus, fsiz, vbus, vsiz,   &
            t0, q0, qc0, ilab, beta, dt, ni, nk, &
-           kount, trnch)
+           kount)
       if (timings_L) call timing_stop_omp(435)
       if (phy_error_L) return
 
@@ -136,7 +136,7 @@ contains
       if (timings_L) call timing_start_omp(440, 'condensation', 46)
       call condensation3(dbus, dsiz, fbus, fsiz, vbus, vsiz, &
            tplus0, t0, huplus0, q0, qc0, ilab, beta, &
-           lkfbe, dt, ni, nk, kount, trnch)
+           dt, ni, nk, kount, trnch)
       if (timings_L) call timing_stop_omp(440)
       if (phy_error_L) return
 

@@ -19,7 +19,7 @@
       REAL FUNCTION INTERPVEG( JULIEN, TABLE )
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !
       REAL JULIEN

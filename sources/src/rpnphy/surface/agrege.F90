@@ -24,7 +24,7 @@ subroutine agrege2( &
      do_glaciers, do_ice, do_urb)
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer ni, trnch, ptsurfsiz
    integer ptr_soil(ptsurfsiz), ptr_glacier(ptsurfsiz)

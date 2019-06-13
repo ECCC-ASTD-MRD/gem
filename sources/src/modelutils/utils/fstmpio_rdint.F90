@@ -16,6 +16,7 @@
 !/@
 module fstmpio_rdhint_mod
    use iso_c_binding
+   use rpn_comm_itf_mod
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use cmcdate_mod
@@ -41,8 +42,7 @@ module fstmpio_rdhint_mod
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 
    interface fstmpio_find
       module procedure fstmpio_find_0
@@ -90,7 +90,8 @@ contains
       character(len=2) :: typvar_s
       !---------------------------------------------------------------------
       nomvar_S = F_nomvar
-      write(msg_S, '(a, 3i10, a)') '(fstmpio) Find, looking for: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, ']'
+      write(msg_S, '(a, 3i10, a)') '(fstmpio) Find, looking for: '// nomvar_S(1:4)// &
+           ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, ']'
       call msg(MSG_DEBUG, msg_S)
 
       istat = ptopo_get_io_params(isiomaster_L, isiope_L, comm_ipe_io_master, &
@@ -121,9 +122,13 @@ contains
       endif
 
       if (RMN_IS_OK(F_key)) then
-         write(msg_S, '(a, 3i10, a, i12, a)') '(fstmpio) Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, '] [key=', F_key, ']'
+         write(msg_S, '(a, 3i10, a, i12, a)') '(fstmpio) Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, &
+              '] [key=', F_key, ']'
       else
-         write(msg_S, '(a, 3i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, '] [key=', F_key, ']'
+         write(msg_S, '(a, 3i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, &
+              '] [key=', F_key, ']'
       endif
       F_istat = F_key
       call msg(MSG_DEBUG, msg_S)
@@ -159,7 +164,9 @@ contains
       !---------------------------------------------------------------------
       nomvar1_S = F_nomvar1
       nomvar2_S = F_nomvar2
-      write(msg_S, '(a,3i10,a)') '(fstmpio) Find, looking for: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, ']'
+      write(msg_S, '(a,3i10,a)') '(fstmpio) Find, looking for: '//nomvar1_S(1:4)// &
+           ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)// &
+           '] [ip123=', F_ip1, F_ip2, F_ip3, ']'
       call msg(MSG_DEBUG, msg_S)
 
       istat = ptopo_get_io_params(isiomaster_L, isiope_L, comm_ipe_io_master, &
@@ -194,9 +201,13 @@ contains
       endif
 
       if (RMN_IS_OK(F_istat)) then
-         write(msg_S, '(a,3i10,a,i12,i12,a)') '(fstmpio) Found: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, '] [keys=', F_key1, F_key2, ']'
+         write(msg_S, '(a,3i10,a,i12,i12,a)') '(fstmpio) Found: '//nomvar1_S(1:4)// &
+              ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)// &
+              '] [ip123=', F_ip1, F_ip2, F_ip3, '] [keys=', F_key1, F_key2, ']'
       else
-         write(msg_S, '(a,3i10,a,i12,i12,a)') '(fstmpio) Not Found: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, '] [keys=', F_key1, F_key2, ']'
+         write(msg_S, '(a,3i10,a,i12,i12,a)') '(fstmpio) Not Found: '//nomvar1_S(1:4)// &
+              ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', &
+              F_ip1, F_ip2, F_ip3, '] [keys=', F_key1, F_key2, ']'
       endif
       call msg(MSG_DEBUG, msg_S)
       !---------------------------------------------------------------------
@@ -238,7 +249,8 @@ contains
       nomvar_S = F_nomvar1
       ip1_S = '-1'
       if (associated(F_ip1s)) write(ip1_S, '(i10,a)') F_ip1s(1), ', ...'
-      write(msg_S, '(a, 2i10, a)') '(fstmpio) Find, looking for: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, ']'
+      write(msg_S, '(a, 2i10, a)') '(fstmpio) Find, looking for: '//nomvar_S(1:4)// &
+           ' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, ']'
       call msg(MSG_DEBUG, msg_S)
 
       istat = ptopo_get_io_params(isiomaster_L, isiope_L, comm_ipe_io_master, &
@@ -341,9 +353,13 @@ contains
       ip1_S = '-1'
       if (associated(F_ip1s)) write(ip1_S, '(i10,a)') F_ip1s(1), ', ...'
       if (F_nkeys > 0) then
-         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', F_keys1(1), ']'
+         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), &
+              F_ip2, F_ip3, '] [key=', F_keys1(1), ']'
       else
-         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', -1, ']'
+         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), &
+              F_ip2, F_ip3, '] [key=', -1, ']'
       endif
       call msg(MSG_DEBUG, msg_S)
       !---------------------------------------------------------------------
@@ -386,7 +402,9 @@ contains
       nomvar2_S = F_nomvar2
       ip1_S = '-1'
       if (associated(F_ip1s)) write(ip1_S, '(i10,a)') F_ip1s(1), ', ...'
-      write(msg_S, '(a, 2i10, a)') '(fstmpio) Find, looking for: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, ']'
+      write(msg_S, '(a, 2i10, a)') '(fstmpio) Find, looking for: '//nomvar1_S(1:4)// &
+           ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)// &
+           '] [ip123='//trim(ip1_S), F_ip2, F_ip3, ']'
       call msg(MSG_DEBUG, msg_S)
 
       istat = ptopo_get_io_params(isiomaster_L, isiope_L, comm_ipe_io_master, &
@@ -502,9 +520,13 @@ contains
       ip1_S = '-1'
       if (associated(F_ip1s)) write(ip1_S, '(i10,a)') F_ip1s(1), ', ...'
       if (F_nkeys > 0) then
-         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Found: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', F_keys1(1), ']'
+         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Found: '//nomvar1_S(1:4)// &
+              ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)// &
+              '] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', F_keys1(1), ']'
       else
-         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', -1, ']'
+         write(msg_S, '(a, 2i10, a, i12, a)') '(fstmpio) Not Found: '//nomvar1_S(1:4)// &
+              ' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)// &
+              '] [ip123='//trim(ip1_S), F_ip2, F_ip3, '] [key=', -1, ']'
       endif
       call msg(MSG_DEBUG, msg_S)
       !---------------------------------------------------------------------
@@ -613,7 +635,8 @@ contains
 
       !#TODO: mv code below to s/r to be called twice from _vect as well
 
-      !#TODO: ptopo_io_grid_id, is it costly to call rpn_comm_create_2dgrid every time? (Not costly) Can we release a grid_id? (not sure how, MAX_GRIDS=64)
+      !#TODO: ptopo_io_grid_id, is it costly to call rpn_comm_create_2dgrid every time?
+      ! (Not costly) Can we release a grid_id? (not sure how, MAX_GRIDS=64)
       istat = rpn_comm_get_2dgrid(F_rpncomm_gridid, &
            ptopo_grid_npex, ptopo_grid_npey, &
            gni, gnj, mini, maxi, minj, maxj, starti, counti, startj, countj)
@@ -768,7 +791,8 @@ contains
 
       !#TODO: mv code below to s/r to be called twice from _vect as well
 
-      !#TODO: ptopo_io_grid_id, is it costly to call rpn_comm_create_2dgrid every time? (Not costly) Can we release a grid_id? (not sure how, MAX_GRIDS=64)
+      !#TODO: ptopo_io_grid_id, is it costly to call rpn_comm_create_2dgrid every time?
+      ! (Not costly) Can we release a grid_id? (not sure how, MAX_GRIDS=64)
       istat = rpn_comm_get_2dgrid(F_rpncomm_gridid, &
            ptopo_grid_npex, ptopo_grid_npey, &
            gni, gnj, mini, maxi, minj, maxj, starti, counti, startj, countj)
@@ -849,7 +873,8 @@ contains
       !@arguments
       integer, intent(in) :: F_key
       character(len=*), intent(out), optional :: F_nomvar_S, F_etiket_S, F_typvar_S, F_grtyp_S
-      integer, intent(out), optional :: F_dateo, F_deet, F_npas, F_ip1, F_ip2, F_ip3, F_ni, F_nj, F_nk, F_nbits, F_datyp, F_ig1, F_ig2, F_ig3, F_ig4
+      integer, intent(out), optional :: F_dateo, F_deet, F_npas, F_ip1, F_ip2, F_ip3, &
+           F_ni, F_nj, F_nk, F_nbits, F_datyp, F_ig1, F_ig2, F_ig3, F_ig4
       !@author
       !@return
       integer :: F_istat
@@ -1034,7 +1059,7 @@ contains
       itype = 0
       F_lvltyp_S = ' '
       lvltyp_S = ' '
-      call vgrid_nullify(F_vgrid) 
+      call vgrid_nullify(F_vgrid)
       if (isiomaster_L) then
          F_istat = fst_get_vgrid(F_fileid, F_key, F_vgrid, F_ip1s, lvltyp_S)
       endif

@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module cstv
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -53,7 +54,7 @@ module cstv
 ! Cstv_bar1_8        | ZERO  for barotropic case, one  otherwise                                         |
 !--------------------|------------------------------------------------------------------------------------
 !
-      real*8 :: Cstv_dtA_8   ,Cstv_dtD_8    ,Cstv_dtzA_8   ,&
+      real(kind=REAL64) :: Cstv_dtA_8   ,Cstv_dtD_8    ,Cstv_dtzA_8   ,&
                 Cstv_Tau_8   ,Cstv_invT_8   ,Cstv_Beta_8   ,&
                 Cstv_tau_m_8 ,Cstv_invT_m_8 ,Cstv_Beta_m_8 ,&
                 Cstv_tau_nh_8,Cstv_invT_nh_8,Cstv_Beta_nh_8,&

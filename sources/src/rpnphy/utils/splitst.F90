@@ -28,7 +28,7 @@ contains
       use tracers_attributes_mod, only: tracers_attributes
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       character(len=*), intent(in)  :: F_string_S
       character(len=*), intent(out) :: con,cvn,cin,csn,cvd1,cvd2,cvb,cvs
       integer, intent(out) ::  fmul,fmosaik,dynini,stagg

@@ -19,9 +19,10 @@
 
       use tdpack
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
-      real*8 wil_galewski_geo_8,evaluated_at_lat_8
+      real(kind=REAL64) wil_galewski_geo_8,evaluated_at_lat_8
 
       !object
       !=================================================================
@@ -32,7 +33,7 @@
       !---------------------------------------------------------------
 
       integer jj,j_partial
-      real*8   wil_galewski_wind_8,intr_8,wind_8,fonc_8,snlat_8,cslat_8,lat_8
+      real(kind=REAL64)   wil_galewski_wind_8,intr_8,wind_8,fonc_8,snlat_8,cslat_8,lat_8
       external wil_galewski_wind_8
       integer, parameter :: J_MAX = 100
       real bound1,bound2,lat_4, &

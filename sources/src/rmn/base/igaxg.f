@@ -32,6 +32,7 @@
 *         003  M. LEPINE  -  FEVRIER 94 AJOUT DU GRTYP E
 *         004  M. LEPINE  -  NOVEMBRE 94 TRADUCTION DE RATFOR A FORTRAN
 *         005  M. Valin   -  Fev 2013 Bug fix, enlever le then de trop
+*         006  M. Valin   -  Mars 2018 grille +
 *
 *LANGAGE  - FORTRAN
 *
@@ -48,11 +49,13 @@
 *ARGUMENTS
 *   IN    - CGTYP - TYPE DE GRILLE (VOIR OUVRIR)
 *   OUT   - XG1   - ** DESCRIPTEUR DE GRILLE (REEL),
-*   OUT   - XG2   -    IGTYP = 'N', PI, PJ, D60, DGRW
-*   OUT   - XG3   -    IGTYP = 'L', LAT0, LON0, DLAT, DLON,
-*   OUT   - XG4   -    IGTYP = 'A', 'B', 'G', XG1 = 0. GLOBAL,
+*   OUT   - XG2   -    CGTYP = 'N', PI, PJ, D60, DGRW
+*   OUT   - XG3   -    CGTYP = 'L', LAT0, LON0, DLAT, DLON,
+*   OUT   - XG4   -    CGTYP = 'A', 'B', 'G', XG1 = 0. GLOBAL,
 *                                                 = 1. NORD
 *                                                 = 2. SUD **
+*     CGTYP = 'E', LAT1, LON1, LAT2, LON2
+*     CGTYP = '+', LAT, LON, dummy, dummy
 *   IN    - IG1   - DESCRIPTEUR DE GRILLE (ENTIER) VOIR OUVRIR
 *   IN    - IG2   - DESCRIPTEUR DE GRILLE (ENTIER) VOIR OUVRIR
 *   IN    - IG3   - DESCRIPTEUR DE GRILLE (ENTIER) VOIR OUVRIR
@@ -62,6 +65,7 @@
 *
 *-------------------------------------------------------------------
 *
+      real*8 :: XG18, XG28
 
       IF ((CGTYP .EQ. 'N') .OR. (CGTYP .EQ.'S')) THEN
         IF(IG4 .LT. 32768) THEN    ! ANCIEN STYLE DE CODAGE
@@ -136,6 +140,17 @@ C
         XG3 = LG2 / 40.0D0
         XG4 = LG4 / 40.0D0
 *                                 !  GRILLE LAT,LON (GEF)
+      ELSE IF(CGTYP .EQ. '+') THEN
+        XG18 = (IG3*.01_8) - 100.0   ! compatibilite arriere
+        if(IG1.ne.0) XG18 = XG18 + (IG1-1000)*.00001_8  ! correction au 1/100000 de degre
+        XG28 = (IG4*.01_8)           ! compatibilite arriere
+        if(IG2.ne.0) XG28 = XG28 + (IG2-1000)*.00001_8  ! correction au 1/100000 de degre
+        XG1 = XG18
+        XG2 = XG28
+        XG3 = 0.0    ! dummy
+        XG4 = 0.0    ! dummy
+*                                 !  point LAT,LON
+
       ELSE
         WRITE(6,600)
       ENDIF

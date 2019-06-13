@@ -70,7 +70,7 @@
 !
       INTEGER     NBR
       PARAMETER  (NBR = 45 )
-      CHARACTER*4 PERMIS(2,NBR)
+      character(len=4) PERMIS(2,NBR)
 !
       DATA  PERMIS / &
            'AB'  ,'AB', &

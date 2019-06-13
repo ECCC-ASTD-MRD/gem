@@ -15,8 +15,10 @@
 
 !/@*
 function serdim(nstn,n,nk) result(F_dim)
+   use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
    !@object Determine vector dimensions for time-series
    !@params
    ! nstn     number of stations

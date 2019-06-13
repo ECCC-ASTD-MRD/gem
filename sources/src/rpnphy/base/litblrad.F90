@@ -16,9 +16,9 @@
 !/@*
 subroutine litblrad (F_file_S, F_myproc)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-      character *(*) F_file_S
+      character(len=*) F_file_S
       integer F_myproc
 
 !Author

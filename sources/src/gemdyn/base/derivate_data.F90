@@ -40,15 +40,15 @@
                                   Minx, Maxx, Miny, Maxy, Nk,&
                                   F_zd_L, F_w_L)
 
-         case('DYNAMICS_FISL_P')
+         case ('DYNAMICS_FISL_P')
             F_q = 0.
             F_s(1:l_ni,1:l_nj) = log(F_s(1:l_ni,1:l_nj)/Cstv_pref_8)
             call diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s,&
                              Minx, Maxx, Miny, Maxy, Nk   ,&
                              F_zd_L, F_w_L )
 
-         case('DYNAMICS_EXPO_H')
-            stop 'Not yet implemented'
+         case ('DYNAMICS_EXPO_H')
+            stop 'DYNAMICS_EXPO_H: not yet implemented'
 
       end select
 !

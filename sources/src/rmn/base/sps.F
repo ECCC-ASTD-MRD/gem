@@ -61,6 +61,7 @@
 *
 #include "ordr.cdk"
       REAL LAMBDA
+      INTEGER HEM
 *      DATA ORDINT /3/
 #include "lagrange.cdk"
 #include "cubic.cdk"
@@ -145,6 +146,6 @@
 
       RETURN
       ENTRY SLC(LAMBDA,PHI,F,LI,LJ,PI,PJ,D60,DGRW,HEM,PHI1,PHI2)
-      CALL XYFLCC(X,Y,90.-PHI,LAMBDA,D60,DGRW,1,PHI1,PHI2)
+      CALL XYFLCC(X,Y,90.-PHI,LAMBDA,D60,DGRW,1.,PHI1,PHI2)
       GOTO 1
       END

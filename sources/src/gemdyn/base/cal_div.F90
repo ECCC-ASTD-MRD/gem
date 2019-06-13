@@ -28,12 +28,6 @@
       real     F_DD (Minx:Maxx,Miny:Maxy,Nk), &
                F_uu (Minx:Maxx,Miny:Maxy,Nk), &
                F_vv (Minx:Maxx,Miny:Maxy,Nk), F_coefdd
-!author
-!    Michel Desgagne   - summer 2015
-!
-!revision
-! v4_80 - Desgagne M.       - initial version
-
 
       integer i, j, k, i0, in, j0, jn
 !

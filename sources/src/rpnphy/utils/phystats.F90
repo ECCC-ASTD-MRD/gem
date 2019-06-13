@@ -28,7 +28,7 @@ subroutine phystats(F_stepcount, F_delt)
    real,    intent(in) :: F_delt          !Time step length (sec)
    !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Fall 2015
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
    logical, parameter :: NOSHORTMATCH_L = .false.
@@ -100,7 +100,7 @@ subroutine phystats(F_stepcount, F_delt)
                if (RMN_IS_OK(istat)) then
                   call statfld_dm(tmpptr(:,:,k1:k1), msg_S, F_stepcount, 'phystats', stat_precision)
                else
-                  write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
+                  write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
                   call msg(MSG_INFO, msg_S)
                endif
             enddo
@@ -115,7 +115,7 @@ subroutine phystats(F_stepcount, F_delt)
                   if (RMN_IS_OK(istat)) then
                      call statfld_dm(tmpptr(:,:,k0:kn), msg_S, F_stepcount, 'phystats', stat_precision)
                   else
-                     write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
+                     write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
                      call msg(MSG_INFO, msg_S)
                   endif
                enddo
@@ -125,7 +125,7 @@ subroutine phystats(F_stepcount, F_delt)
                if (RMN_IS_OK(istat)) then
                   call statfld_dm(tmpptr, phystat_list_s(ivar), F_stepcount, 'phystats', stat_precision)
                else
-                  write(msg_S,"(i4,x,a16,' Mean:',a)") F_stepcount,trim(phystat_list_s(ivar)),' NaN'
+                  write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(phystat_list_s(ivar)),' NaN'
                   call msg(MSG_INFO, msg_S)
                endif
             endif

@@ -16,6 +16,8 @@
 
 !/@
 module mu_fglob_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_isdir, clib_isfile, clib_glob
    implicit none
    private
    !@objective 
@@ -29,8 +31,7 @@ module mu_fglob_mod
 !@/
 
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 contains
 

@@ -16,7 +16,7 @@
 !**s/p rdmax
       subroutine rdmax( chrd, ch, vmax, inrd, ni, nk, nkrd)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer ni, nk, nkrd
       integer inrd(nkrd)

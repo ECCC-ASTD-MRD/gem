@@ -27,13 +27,14 @@ contains
         liqwcin, icewcin, &
         liqwpin, icewpin, cldfrac, &
         tt, sig, ps, ni, nkm1, nk, mpcat, kount)
+      use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, RGASD
       use phy_options
       use phybus
       implicit none
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       include "nbsnbl.cdk"
 
@@ -90,7 +91,7 @@ contains
 #include "phymkptr.hf"
 
       include "cldop.cdk"
-      include "phyinput.cdk"
+      include "phyinput.inc"
       include "surface.cdk"
       include "nocld.cdk"
 

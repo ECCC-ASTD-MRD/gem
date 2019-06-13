@@ -47,7 +47,7 @@
          return
       end if
 
-      if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',.false.)
+      if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',RMN_OPT_SET)
 
       If (Ptopo_myproc==0) Then
          inttyp      = 'LINEAR'
@@ -73,7 +73,7 @@
          F_topo_ls = 0.0
       end if
 
-      istat = fstopc ('MSGLVL','INFORM',.false.)
+      istat = fstopc ('MSGLVL','INFORM',RMN_OPT_SET)
 !
 !-----------------------------------------------------------------------
 !

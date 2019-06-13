@@ -15,11 +15,14 @@
 
 !/@*
 module underground_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
    private
    public :: vt_on_lieb_levels, mslp, gz_vt_on_pres
    !@Author 2018, Andre Plante
    !*@/
+
+   include "rmnlib_basics.inc"
 
 contains
 
@@ -76,7 +79,7 @@ contains
       ! Obtain vt on liebman levels
       use tdpack, only: grav_8, stlo_8, pi_8
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object 
       !@Arguments
       integer, intent(in) :: Minx,Maxx,Miny,Maxy,ni,nj, nkund, nk
@@ -170,7 +173,7 @@ contains
         Minx, Maxx, Miny, Maxy, ni, nj, Nk, &
         liebxch_iter, G_halox, G_haloy, G_periodx, G_periody)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object 
       !@Arguments
       integer, intent(in) :: F_maxite, Minx, Maxx, Miny, Maxy, NK,&
@@ -284,7 +287,7 @@ contains
         Minx,Maxx,Miny,Maxy,ni,nj, Nk)
       use tdpack, only: grav_8, rgasd_8, stlo_8, pi_8
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Arguments
       !  Name        I/O                 Description
       !----------------------------------------------------------------
@@ -476,7 +479,7 @@ contains
         Minx,Maxx,Miny,Maxy,ni,nj,F_Nk)
       use tdpack, only: grav_8, rgasd_8, stlo_8, pi_8
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object interpolation of geopotential and virtual temperature on
       !        given pressure levels
       !@Arguments
@@ -498,7 +501,7 @@ contains
       real    prlpbot, prvtbot, prfibot
       real    logpres(Nkout)
       real, dimension(F_nundr) :: gzund
-      real*8  invprd
+      real(REAL64) :: invprd
       !-------------------------------------------------------------------
       prsmall= .001
       logpres(1:Nkout) = log(F_pres(1:Nkout))

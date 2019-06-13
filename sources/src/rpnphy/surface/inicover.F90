@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,14 +12,14 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 subroutine inicover2(kount, ni, trnch)
    use mu_jdate_mod, only: jdate_day_of_year
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    integer ni, kount, trnch
@@ -75,13 +75,7 @@ subroutine inicover2(kount, ni, trnch)
    real aldat(nclass), d2dat(nclass), rsminxdat(nclass)
    real laidat(nclass), vegdat(nclass)
    real cvdat(nclass), rgldat(nclass), gammadat(nclass)
-   real alvsdat(nclass), alnidat(nclass),rsmindat(nclass)
-   real qa50dat(nclass),vpdadat(nclass),vpdbdat(nclass)
-   real psgadat(nclass),psgbdat(nclass),z0mdat(nclass)
-   real laimxdat(nclass),laimndat(nclass),vgmasdat(nclass)
-   real rootdat(nclass),fveg(4)
-   integer vgclass(nclass),vg000(nclass)
-   
+ 
    data aldat/ &
         0.13   , 0.70   , 0.13   , 0.14   , 0.12   , &
         0.14   , 0.18   , 0.13   , 0.17   , 0.14   , &
@@ -140,128 +134,6 @@ subroutine inicover2(kount, ni, trnch)
         0.    , 0.     , 0.     , 0.     , 0.     , &
         0.    , 0.     , 0.     , 0.     , 0.     , &
         0.    /
-
-   data rsmindat/ &
-        0.0    , 0.0    , 0.0    , 250.   , 250.   , &
-        263.   , 130.   , 130.   , 122.   , 323.   , &
-        855.   , 500.   , 150.   , 150.   , 100.   , &
-        120.   , 278.   , 90.    , 112.   , 86.    , &
-        0.0    , 200.   , 200.   , 0.0    , 165.   , &
-        855.   /
-
-   data qa50dat/ &
-        30.    , 30.    , 30.    , 30.    , 30.    , &
-        30.    , 50.    , 30.    , 30.    , 30.    , &
-        30.    , 30.    , 35.    , 30.    , 30.    , &
-        30.    , 30.    , 30.    , 30.    , 30.    , &
-        30.    , 50.    , 30.    , 30.    , 30.    , &
-        30.    /
-
-   data vpdadat/ &
-        0.0    , 0.0    , 0.0    , 0.57   , 0.5    , &
-        0.5    , 0.60   , 0.45   , 0.5    , 0.5    , &
-        0.5    , 0.5    , 0.5    , 0.5    , 0.5    , &
-        0.5    , 0.5    , 0.5    , 0.5    , 0.5    , &
-        0.5    , 0.62   , 0.5    , 0.5    , 0.40   , &
-        0.5    /
-
-   data vpdbdat/ &
-        1.0    , 1.0    , 1.0    , 1.0    , 1.0    , &
-        1.0    , 0.5    , 0.0    , 1.0    , 1.0    , &
-        1.0    , 1.0    , 1.0    , 1.0    , 1.0    , &
-        1.0    , 1.0    , 1.0    , 1.0    , 1.0    , &
-        1.0    , 0.4    , 1.0    , 1.0    , 0.6    , &
-        1.0    /
-
-   data psgadat/ &
-        100    , 100    , 100    , 100    , 100    , &
-        100    , 100    , 100    , 100    , 100    , &
-        100    , 100    , 100    , 100    , 100    , &
-        100    , 100    , 100    , 100    , 100    , &
-        100    , 100    , 100    , 100    , 100    , &
-        100    /
-
-   data psgbdat/ &
-        5.    , 5.     , 5.     , 5.     , 5.     , &
-        5.    , 5.     , 5.     , 5.     , 5.     , &
-        5.    , 5.     , 5.     , 5.     , 5.     , &
-        5.    , 5.     , 5.     , 5.     , 5.     , &
-        5.    , 5.     , 5.     , 5.     , 5.     , &
-        5.    /
-
-   data alvsdat/ &
-        0.0    , 0.0    , 0.0    , 0.03   , 0.03   , &
-        0.03   , 0.05   , 0.03   , 0.05   , 0.03   , &
-        0.05   , 0.06   , 0.06   , 0.05   , 0.06   , &
-        0.06   , 0.05   , 0.05   , 0.07   , 0.06   , &
-        0.09   , 0.05   , 0.03   , 0.30   , 0.04   , &
-        0.04   /
-
-   data alnidat/ &
-        0.0    , 0.0    , 0.0    , 0.19   , 0.23   , &
-        0.19   , 0.29   , 0.23   , 0.29   , 0.19   , &
-        0.29   , 0.32   , 0.34   , 0.31   , 0.34   , &
-        0.36   , 0.31   , 0.31   , 0.43   , 0.36   , &
-        0.15   , 0.29   , 0.25   , 0.30   , 0.26   , &
-        0.26   /
-
-   data z0mdat / &
-        0.001  , 0.001  , 0.001  , 1.5    , 3.5    , &
-        1.0    , 2.0    , 3.0    , 0.8    , 0.05   , &
-        0.15   , 0.15   , 0.02   , 0.08   , 0.08   , &
-        0.08   , 0.35   , 0.25   , 0.10   , 0.08   , &
-        1.35   , 0.01   , 0.05   , 0.05   , 1.5    , &
-        0.05   /
-
-   data laimxdat/ &
-        0.0    , 0.0    , 0.0    , 2.0    , 10.    , &
-        2.0    , 6.0    , 10.    , 4.0    , 2.0    , &
-        4.0    , 3.0    , 3.0    , 4.0    , 4.0    , &
-        6.5    , 5.0    , 4.0    , 5.0    , 4.0    , &
-        0.0    , 1.5    , 1.5    , 0.0    , 5.5    , &
-        3.0    /
-
-   data laimndat/ &
-        0.0    , 0.0    , 0.0    , 1.6    , 10.    , &
-        0.5    , 0.5    , 10.    , 4.0    , 2.0    , &
-        0.5    , 3.0    , 3.0    , 4.0    , 0.0    , &
-        0.0    , 0.0    , 0.0    , 0.0    , 0.0    , &
-        0.0    , 1.5    , 1.5    , 0.0    , 1.0    , &
-        3.0    /
-
-   data vgmasdat/ &
-        0.0    , 0.0    , 0.0    , 25.    , 50.    , &
-        15.    , 20.    , 40.    , 15.    , 2.     , &
-        8.     , 8.     , 1.5    , 3.     , 2.     , &
-        2.     , 5.     , 5.     , 2.     , 2.     , &
-        0.     , 0.2    , 1.0    , 0.     , 20.    , &
-        8.     /
-
-   data rootdat/ &
-        0.0    , 0.0    , 0.0    , 1.0    , 5.0    , &
-        1.0    , 2.0    , 5.0    , 5.0    , 0.2    , &
-        1.0    , 5.0    , 1.2    , 1.2    , 1.2    , &
-        1.2    , 1.0    , 1.5    , 2.0    , 5.0    , &
-        0.     , 0.1    , 5.0    , 0.     , 1.2    , &
-        1.2    /
-
-   data vgclass/ &
-        0      , 0      , 0      , 1      , 2      , &
-        1      , 2      , 2      , 2      , 4      , &
-        4      , 4      , 4      , 4      , 3      , &
-        3      , 3      , 3      , 3      , 3      , &
-        5      , 4      , 4      , 5      , 2      , &
-        4      /
-
-   data vg000 / &
-        1      , 1      , 1      , 1      , 1      , &
-        1      , 1      , 1      , 1      , 1      , &
-        1      , 1      , 1      , 1      , 1      , &
-        1      , 1      , 1      , 1      , 1      , &
-        1      , 1      , 1      , 1      , 1      , &
-        1      /
-
-   data fveg/ 0.90,  0.90,   0.70,  0.60 /
 
    !********************************************************************
    !                tables describing the annual evolution of veg fields
@@ -329,16 +201,15 @@ subroutine inicover2(kount, ni, trnch)
 
    !********************************************************************
 
-   integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
+   integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
    real, external :: interpveg
 
-   integer :: i,j
+   integer :: i
    real :: julien, juliens
 
    real, dimension(nclass) :: aldatd, cvdatd, d2datd, gammadatd, &
         laidatdn, laidatds, rgldatd, rsmindatd, &
         vegdatdn, vegdatds
-   real, pointer, dimension (:,:) :: zfcanmx
 
    IF_ISBA: if (schmsol == 'ISBA') then
 

@@ -17,7 +17,7 @@
 subroutine inisoili2(ni, trnch)
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer ni, trnch
 

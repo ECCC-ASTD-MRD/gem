@@ -21,6 +21,7 @@
       use adv_grid
       use adv_interp
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -38,19 +39,19 @@
 
       !--------------------------------------------------------------------
 
-      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
+      real(kind=REAL64) , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
                                                     p_zabcd_8,p_zbacd_8,&
                                                     p_zcabd_8,p_zdabc_8
 
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4, kkmax, n, id
-      real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
+      real(kind=REAL64)  :: a1, a2, a3, a4, b1, b2, b3, b4, &
                  c1, c2, c3, c4, d1, d2, d3, d4, &
                  p1, p2, p3, p4, ra, rb, rc, rd, &
                  prf1, prf2, capx, capy, capz
       real    :: prmin, prmax
       logical :: zcubic_L
 
-      real*8 :: triprd,zb,zc,zd
+      real(kind=REAL64) :: triprd,zb,zc,zd
       real :: za
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 

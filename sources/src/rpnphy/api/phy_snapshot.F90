@@ -15,6 +15,7 @@
 
 !/@*
 module phy_snapshot_mod
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use series_mod, only: series_pause, series_resume
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use cpl_itf, only: cpl_snapshot
@@ -41,7 +42,7 @@ contains
       !*@/
 
 #include <rmnlib_basics.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
 
       type(gmm_metadata) :: meta_busper

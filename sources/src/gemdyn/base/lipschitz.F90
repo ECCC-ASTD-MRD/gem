@@ -15,8 +15,8 @@
 
 !**s/p lipschitz - compute lipschitz stability criterion
 
-      subroutine lipschitz(F_u, F_v, F_w, Minx,Maxx,Miny,Maxy, Nk, &
-                                      F_i0,F_in,F_j0,F_jn)
+      subroutine lipschitz(F_u, F_v, F_w, Minx, Maxx, Miny, Maxy, Nk, &
+                           F_i0, F_in, F_j0, F_jn)
 
       use geomh
       use glb_ld
@@ -26,15 +26,12 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy, Nk
-      integer F_i0,F_in,F_j0,F_jn
-      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), &
-           F_v(Minx:Maxx,Miny:Maxy,Nk)
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      integer, intent(in) :: F_i0, F_in, F_j0, F_jn
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_w, F_u, F_v
+
 !author
 !     Claude Girard & Andre Plante - oct 2006
-!
-!revision
-! v4.7  - Gaudreault S.     - Removing wind images
 !
 !object
 !	compute lipschitz number
@@ -43,19 +40,19 @@
 !***************************************************************************
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_w          I    - model s vertical velocity (pi* coordinates)
-! F_u          I    - model zonal horizontal wind component
-! F_v          I    - model meridional horizontal wind component
-! F_i0         I    - starting point of calculation on W-E axis
-! F_in         I    - ending point of calculation on W-E axis
-! F_j0         I    - starting point of calculation on N-S axis
-! F_jn         I    - ending point of calculation on N-S axis
+!  Name                        Description
+!------------------------------------------------------------
+! F_w           - model s vertical velocity (pi* coordinates)
+! F_u           - model zonal horizontal wind component
+! F_v           - model meridional horizontal wind component
+! F_i0          - starting point of calculation on W-E axis
+! F_in          - ending point of calculation on W-E axis
+! F_j0          - starting point of calculation on N-S axis
+! F_jn          - ending point of calculation on N-S axis
 
 
-      integer i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
-      real dudx, dvdy, dwdz, LipNOu, LipNOv, LipNOw
+      integer :: i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
+      real :: dudx, dvdy, dwdz, LipNOu, LipNOv, LipNOw
 !     __________________________________________________________________
 !
       i0=F_i0

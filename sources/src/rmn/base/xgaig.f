@@ -30,6 +30,7 @@
 *     003  M. Lepine     -  fev  94  introduction du type de grille E
 *     004  M. Lepine     -  nov  94  traduction de ratfor a fortran
 *     005  M. Valin      -  fev 2013 permutation de 2 enonces (ig2<0)
+*     006  M. Valin      -  mars 2018 grille +
 *     
 *LANGAGE- RATFOR
 *     
@@ -50,12 +51,13 @@
 *     OUT   - IG3   - DESCRIPTEUR DE GRILLE (ENTIER) VOIR OUVRIR
 *     OUT   - IG4   - DESCRIPTEUR DE GRILLE (ENTIER) VOIR OUVRIR
 *     IN    - XG1   - ** DESCRIPTEUR DE GRILLE (REEL),
-*     IN    - XG2   -    IGTYP = 'N', PI, PJ, D60, DGRW
-*     IN    - XG3   -    IGTYP = 'L', LAT0, LON0, DLAT, DLON,
-*     IN    - XG4   -    IGTYP = 'A', 'B', 'G', XG1 = 0, GLOBAL
+*     IN    - XG2   -    CGTYP = 'N', PI, PJ, D60, DGRW
+*     IN    - XG3   -    CGTYP = 'L', LAT0, LON0, DLAT, DLON,
+*     IN    - XG4   -    CGTYP = 'A', 'B', 'G', XG1 = 0, GLOBAL
 *     = 1, NORD
 *     = 2, SUD **
-*     IGTYP = 'E', LAT1, LON1, LAT2, LON2
+*     CGTYP = 'E', LAT1, LON1, LAT2, LON2
+*     CGTYP = '+', LAT, LON, dummy, dummy
 *     
 *MESSAGES- "ERREUR DANS LA DESCRIPTION DE LA GRILLE (IG1) (XGAIG)"
 *     "ERREUR, MAUVAISE SPECIFICATION (LAT0) (XGAIG)"
@@ -64,9 +66,12 @@
 *------------------------------------------------------------------
 *     
 *     
-      REAL XXG2,XXG4
+      REAL XXG2,XXG4,XLON
+      REAL*8 :: XLON8, XLAT8
       INTEGER I2B
-      
+      LOGICAL, EXTERNAL :: VALIDE
+      LOGICAL STATUS
+
       IF (CGTYP .EQ. 'N' .OR. CGTYP.EQ.'S') THEN
          IG1 = NINT(XG2 * 10.)
          IG2 = NINT(XG1 * 10.)
@@ -114,8 +119,8 @@
          IG2 = XG2
          IG3 = 0
          IG4 = 0
-         CALL VALIDE("IG1",IG1,0,2) ! VERIFIER SI IG1=0,1,OU 2
-         CALL VALIDE("IG2",IG2,0,1) ! VERIFIER SI IG2=0 OU 1
+         STATUS = VALIDE("IG1",IG1,0,2) ! VERIFIER SI IG1=0,1,OU 2
+         STATUS = VALIDE("IG2",IG2,0,1) ! VERIFIER SI IG2=0 OU 1
          
       ELSE IF(CGTYP .EQ. 'C') THEN   ! C TYPE LAT LON GRID
         IG1 = NINT(180. / XG3)
@@ -153,8 +158,8 @@
         IF (IG3 .LT. 0) WRITE(6,601)
 
       ELSE IF (CGTYP .EQ. 'E')  THEN          !  GRILLE LAT,LON (GEF)
-        CALL VALIDE("XG1",NINT(XG1),-90,90)
-        CALL VALIDE("XG3",NINT(XG3),-90,90)
+        STATUS = VALIDE("XG1",NINT(XG1),-90,90)
+        STATUS = VALIDE("XG3",NINT(XG3),-90,90)
         XXG2 = XG2
         XXG4 = XG4
  500    CONTINUE
@@ -183,6 +188,19 @@ C
         I2B = IAND(IG2,3)
         IG2 = ISHFT(IG2,-2)
         IG4 = IOR(ISHFT(IG4,2),I2B)
+
+      ELSE IF (CGTYP .EQ. '+')  THEN            !  point LAT,LON
+        XLAT8 = XG1
+        STATUS = VALIDE("XG1",NINT(XLAT8),-90,90)   ! -90, +90
+        XLON8 = XG2
+        if(XLON8 < 0) XLON8 = XLON8 + 360.0     ! -180, +180 -> 0, 360
+        STATUS = VALIDE("XG2",NINT(XLON8),0,360)    ! 0, 360
+        IG3  = nint( (XLAT8+100.)*100. )        ! compatibilite arriere, centidegres (10 -> 19000)
+        IG4  = nint( XLON8*100. )               ! compatibilite arriere, centidegres (0 -> 36000)
+        IG1  = nint( (XLAT8+100.)*100000. ) - IG3*1000  ! en 1/100000 de degre
+        IG1  = IG1 + 1000                       ! correction, IG1 pourrait etre < 0  (500 -> 1500)
+        IG2  = nint( XLON8*100000. ) - IG4*1000         ! en 1/100000 de degre
+        IG2  = IG2 + 1000                       ! correction, IG2 pourrait etre < 0  (500 -> 1500)
 
       ELSE
         WRITE(6,602)

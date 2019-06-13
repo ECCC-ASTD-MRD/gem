@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,12 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
  
 function pbl_simple(km,kt,uwind,vwind,gzmom,gztherm,z0,n,nk) result(status)
+   use tdpack_const
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    !Arguments
@@ -41,7 +42,6 @@ function pbl_simple(km,kt,uwind,vwind,gzmom,gztherm,z0,n,nk) result(status)
    !          proposed by Beljaars, Brown and Wood (2004; QJRMS).
    
    !Notes
-#include "tdpack_const.hf"
 
    ! Local parameter definitions
    real, parameter :: LAMBDA=150.

@@ -22,7 +22,7 @@
       Subroutine mfottvh(tt,tv,qq,qh,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Integer ni, nk, n
       Real tt(ni,nk), tv(ni,nk), qq(ni,nk), qh(ni,nk)
 !

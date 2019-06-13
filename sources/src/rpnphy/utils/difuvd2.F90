@@ -18,7 +18,7 @@
       SUBROUTINE DIFUVD2(P, A, B, C, D, DELTA, NP, N, NK)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       INTEGER NP, N, NK
       REAL P(NP,NK), A(N,NK), B(N,NK), C(N,NK), D(N,NK), DELTA(N,NK)
 !

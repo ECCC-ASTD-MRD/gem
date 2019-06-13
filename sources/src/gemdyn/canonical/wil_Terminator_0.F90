@@ -38,18 +38,18 @@
 
       integer i,j,k
 
-      real(8) x_a_8,y_a_8,s_8(2,2),rlon_8
+      real(kind=REAL64) x_a_8,y_a_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon,     & ! Longitude (radians)
+      real(kind=REAL64)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
                   lon_d,   & ! Longitude (degrees)
                   lat_d      ! Latitude (degrees)
 
-      real(8)  :: cl,cl2     ! molar mixing ratio of cl and cl2
+      real(kind=REAL64)  :: cl,cl2     ! molar mixing ratio of cl and cl2
 
-      real(8), parameter :: pi = 3.14159265358979d0 ! pi
+      real(kind=REAL64), parameter :: pi = 3.14159265358979d0 ! pi
 
-      real(8), parameter :: radians_to_degrees = 180.0_8/pi
+      real(kind=REAL64), parameter :: radians_to_degrees = 180.0_8/pi
 
       !-----------------------------------------------------------------------
 

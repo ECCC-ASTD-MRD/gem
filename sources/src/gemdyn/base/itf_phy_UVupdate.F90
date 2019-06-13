@@ -21,13 +21,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!authors
-!     Desgagne, Girard
-
-!revision
-! v4_80 - authors          - initial version
-
-
       integer istat,k
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv
 !

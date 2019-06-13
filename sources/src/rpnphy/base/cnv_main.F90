@@ -23,7 +23,8 @@ contains
 
    !/@*
    subroutine cnv_main3(d, dsiz, f, fsiz, v, vsiz, t0, q0, qc0, ilab, bett, &
-        dt, ni, nk, kount, trnch)
+        dt, ni, nk, kount)
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, RAUW
       use phy_status, only: phy_error_L
@@ -37,7 +38,7 @@ contains
       use tendency, only: apply_tendencies
       use conv_mp_tendencies, only: conv_mp_tendencies1
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@objective Interface to convection/condensation
       !@Arguments
@@ -59,7 +60,7 @@ contains
       ! ilab     flag array: an indication of convective activity from Kuo schemes
       ! bett     estimated averaged cloud fraction growth rate for kuostd
 
-      integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount,trnch
+      integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount
       integer,dimension(ni,nk-1), intent(out) :: ilab
       real,   dimension(ni), intent(out)      :: bett
       real,   dimension(ni,nk-1), intent(inout) :: t0,q0,qc0
@@ -78,12 +79,10 @@ contains
       include "surface.cdk"
       include "comphy.cdk"
 
-      logical, save :: dbgkuo = .false.
-
       real    :: cdt1, rcdt1
       integer :: i,k,niter, ier, nkm1, ier2
 
-      real(RDOUBLE), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
       real, dimension(ni,nk-1) :: zfm, dotp
       !
       !*Set Dimensions for convection call
@@ -272,7 +271,7 @@ contains
 
          ! Pre-scheme state for energy budget
          if (associated(zconesc)) then
-            ier  = eb_en(l_en0,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
             ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_shal))
@@ -281,18 +280,18 @@ contains
          endif
 
          ! Shallow convective scheme (Kuo transient types)
-         call shallconv5(ttm, ttp, qqm, qqp, sigma, zgztherm, psm, &
+         call shallconv5(ttp, qqm, sigma, zgztherm, psm, &
               ztshal, zhushal, ztlcs, ztscs, zqlsc, zqssc, zkshal, &
-              zfsc, zqcz, zqdifv, kount, trnch, dt, ni, nk, nkm1)
+              zfsc, zqcz, zqdifv, dt, ni, nk, nkm1)
          if (phy_error_L) return
 
          ! Impose conservation by adjustment of moisture and temperature tendencies
          SHAL_EARLY_TENDENCY_ADJUSTMENT: if (shal_conserve == 'TEND') then
 
             ! Apply humidity tendency correction for total water conservation
-            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
+            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
             ! Apply temperature tendency correction for liquid water static energy conservation
-            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
+            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_shal))
                return
@@ -307,7 +306,7 @@ contains
          ! Post-scheme energy budget analysis
          if (associated(zconesc)) then
             ! Compute post-scheme state
-            ier  = eb_en(l_en,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
             ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
             if (ier == EB_OK .and. ier2 == EB_OK) then
                ! Compute residuals
@@ -359,12 +358,12 @@ contains
 
          zfm(:,:) = qcp(:,:)
          call omega_from_w(dotp,wz,ttp,qqp,psp,sigma,ni,nkm1)
-         call kuo5(zcte,zcqe,ztlc,ztsc, &
+         call kuo6(zcte,zcqe,ztlc,ztsc, &
               ilab,zfdc,zfbl,dotp,zfm, &
-              ttp,ttm,qqp,qqm, &
+              ttp,qqp,qqm, &
               geop,psp,psm, &
               sigma, cdt1, ni, ni, nkm1, &
-              dbgkuo, satuco, ccctim, cmelt)
+              satuco, ccctim, cmelt)
          if (phy_error_L) return
          if (stcond /= 'NIL' ) &
               zcqce = (zfm -qcp)*rcdt1
@@ -418,18 +417,18 @@ contains
          enddo
          dummy1 = 0.
          dummy2 = 0.
-         call bkf_deep3(ni, nkm1,  kidia, ni, kbdia, ktdia,        &
-              dt, bkf_ldown, bkf_kice,                             &
-              bkf_kens,                                            &
+         call bkf_deep4(ni, nkm1,  kidia, ni, kbdia, ktdia,      &
+              dt, bkf_ldown, bkf_kice,                           &
+              bkf_kens,                                          &
               ppres, zgztherm,zdxdy, phsflx,                     &
-              ttp, qqp, dummy1, dummy2, uu, vv, wz,                &
-              kcount, ztfcp, zhufcp, zprcten, zpriten,             &
-              ztlc,ztsc,                                           &
+              ttp, qqp, dummy1, dummy2, uu, vv, wz,              &
+              kcount, ztfcp, zhufcp, zprcten, zpriten,           &
+              ztlc,ztsc,                                         &
               zumfkfc, zdmfkfc, zkfcrf, zkfcsf, zcapekfc, zztopkfc, zzbasekfc, &
-              purv, zqldi, zqsdi, zfdc,                        &
-              zareaup, zwumaxkfc,                              &
-              kfcmom, zufcp, zvfcp,                                &
-              bkf_lch1conv, bkf_kch, pch1, pch1ten,                &
+              zqldi, zqsdi, zfdc,                          &
+              zareaup, zwumaxkfc,                                &
+              kfcmom, zufcp, zvfcp,                              &
+              bkf_lch1conv, bkf_kch, pch1, pch1ten,              &
               pudr, pddr, zkkfc, psp, zdlat, zmg, zml)
          if (phy_error_L) return
          zqckfc = zprcten + zpriten
@@ -440,8 +439,8 @@ contains
 
          call omega_from_w(dotp,wz,ttp,qqp,psp,sigma,ni,nkm1)
          call lsctrol(ilab, dotp, sigma, ni, nkm1)
-         call kuostd(zcte,zcqe,ilab,zfdc,bett, &
-              ttp,ttm,qqp,qqm,geop,psp,psm, &
+         call kuostd2(zcte,zcqe,ilab,zfdc,bett, &
+              ttp,ttm,qqp,qqm,geop,psp, &
               sigma, cdt1, ni, nkm1)
          if (phy_error_L) return
 
@@ -465,7 +464,7 @@ contains
 
          ! Pre-scheme state for energy budget
          if (associated(zconesc)) then
-            ier  = eb_en(l_en0,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
             ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_shal))
@@ -491,9 +490,9 @@ contains
          SHAL_LATE_TENDENCY_ADJUSTMENT: if (shal_conserve == 'TEND') then
 
             ! Apply humidity tendency correction for total water conservation
-            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
+            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
             ! Apply temperature tendency correction for liquid water static energy conservation
-            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
+            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_shal))
                return
@@ -514,7 +513,7 @@ contains
          ! Post-scheme energy budget analysis
          if (associated(zconesc)) then
             ! Compute post-scheme state
-            ier  = eb_en(l_en,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
             ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
             if (ier == EB_OK .and. ier2 == EB_OK) then
                ! Compute residuals
@@ -538,7 +537,7 @@ contains
 
       ! Pre-deep CPS state for energy budget
       if (associated(zconedc)) then
-         ier  = eb_en(l_en0,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
          ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(convec))
@@ -555,9 +554,9 @@ contains
       DEEP_TENDENCY_ADJUSTMENT: if (deep_conserve == 'TEND') then
 
          ! Apply humidity tendency correction for total water conservation
-         ier  = eb_conserve_pw(zcqe,zcqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
+         ier  = eb_conserve_pw(zcqe,zcqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
          ! Apply temperature tendency correction for liquid water static energy conservation
-         ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
+         ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(convec))
             return
@@ -579,7 +578,7 @@ contains
       ! Post-deep CPS energy budget analysis
       if (associated(zconedc)) then
          ! Compute post-scheme state
-         ier  = eb_en(l_en,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
          ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
          if (ier == EB_OK .and. ier2 == EB_OK) then
             ! Compute residuals
@@ -605,7 +604,7 @@ contains
               cape, cnv_active, cond_prflux, &
               zmte, zmqe, zumid, zvmid, zprctnm, zpritnm, &
               zkmid, ztlcm, zfmc, zqlmi, zqsmi, zkfmrf, zkfmsf, zmcd, zmpeff, zmainc, &
-              delt, kount, ni, nkm1)
+              delt, ni, nkm1)
          if (phy_error_L) return
          zmqce = zprctnm + zpritnm
 
@@ -614,7 +613,7 @@ contains
 
       ! Pre-mid-level convection state for energy budget
       if (associated(zconemc)) then
-         ier  = eb_en(l_en0,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
          ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_mid))
@@ -626,9 +625,9 @@ contains
       MID_TENDENCY_ADJUSTMENT: if (mid_conserve == 'TEND') then
 
          ! Apply humidity tendency correction for total water conservation
-         ier  = eb_conserve_pw(zmqe,zmqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
+         ier  = eb_conserve_pw(zmqe,zmqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
          ! Apply temperature tendency correction for liquid water static energy conservation
-         ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
+         ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_mid))
             return
@@ -648,7 +647,7 @@ contains
       ! Post-mid-level convection energy budget analysis
       if (associated(zconemc)) then
          ! Compute post-scheme state
-         ier  = eb_en(l_en,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
          ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
          if (ier == EB_OK .and. ier2 == EB_OK) then
             ! Compute residuals

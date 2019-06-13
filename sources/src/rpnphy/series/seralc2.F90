@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,44 +12,32 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P SERALC2  -  INITIALISATION DE CERTAINES VARIABLES DES SERIES
-!                  TEMPORELLES
-!
-      SUBROUTINE SERALC2(NI,NJ,NK)
-      implicit none
-#include <arch_specific.hf>
-      INTEGER NI,NJ,NK
-!
-!Author
-!          M. Lepine  -  RFE model code revision project (Feb 87)
-!
-!Revision
-! 001      B. Bilodeau  (July 1991)- Adaptation to UNIX
-! 002      B. Bilodeau  (July 2002)- Initialize SURFACE(M,2) and
-!                                    PROFILS(M,2)
-!
-!Object
-!          to initialize certain variables for time-series
-!
-!Arguments
-!
-!          - Input -
-! NI       1st horizontal dimension
-! NJ       2nd horizontal dimension
-! NK       vertical dimension
-!
-!
-!IMPLICITES
-!
+!-------------------------------------- LICENCE END ----------------------------
+
+subroutine SERALC2(NI,NJ,NK)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+   integer NI,NJ,NK
+
+   !@Author M. Lepine  -  RFE model code revision project (Feb 87)
+   !@Revision
+   ! 001      B. Bilodeau  (July 1991)- Adaptation to UNIX
+   ! 002      B. Bilodeau  (July 2002)- Initialize SURFACE(M,2) and
+   !                                    PROFILS(M,2)
+   !@Object INITIALISATION DE CERTAINES VARIABLES DES SERIES TEMPORELLES
+   !        to initialize certain variables for time-series
+   !@Arguments
+   !          - Input -
+   ! NI       1st horizontal dimension
+   ! NJ       2nd horizontal dimension
+   ! NK       vertical dimension
+
 #include "series.cdk"
-!
-!MODULE
-!
-!*
-!
-      INTEGER i,m,l,k
-!
+
+   integer i,m,l,k
+
       NINJNK(1) = NI
       NINJNK(2) = NJ
       NINJNK(3) = NK
@@ -57,32 +45,32 @@
       nstat_g = 0
       NSURF   = 0
       NPROF   = 0
-      DO 10 I = 1,MXSTT
+      do 10 I = 1,MXSTT
         IJSTAT(I,1) = 0
         JSTAT(I)    = 0
         istat_g(i)  = 0
         jstat_g(i)  = 0
         statnum(i)  = 0
         name(i)     = ''
-  10  CONTINUE
+  10  continue
 
-      DO M=1,MXSRF
+      do M=1,MXSRF
          SURFACE(M,1) = '        '
          SURFACE(M,2) = '        '
-         DO L=1,MXSTT
+         do L=1,MXSTT
             SERS(L,M) = 0.0
          end do
       end do
 
-      DO M=1,MXPRF
+      do M=1,MXPRF
          PROFILS(M,1) = '        '
          PROFILS(M,2) = '        '
-         DO L=1,MXSTT
-         DO K=1,MXNVO
+         do L=1,MXSTT
+         do K=1,MXNVO
             SERP(K,L,M) = 0.0
          end do
          end do
       end do
-!
-      RETURN
-      END
+
+      return
+      end

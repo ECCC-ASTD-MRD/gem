@@ -18,6 +18,7 @@
       subroutine bubble_fislP_data (F_t, Mminx, Mmaxx, Mminy, Mmaxy, nk)
       use bubble_options
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,7 @@
       real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(out) :: F_t
 
       integer :: i, j, k, ii
-      real*8 :: pp, ex, theta, r,rad
+      real(kind=REAL64) :: pp, ex, theta, r,rad
 !
 !     ---------------------------------------------------------------
 !

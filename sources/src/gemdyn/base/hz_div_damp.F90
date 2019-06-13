@@ -23,6 +23,7 @@
       use dyn_fisl_options
       use hvdif_options
       use geomh
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +37,7 @@
 
       integer :: i,j,k
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: div
-      real*8 :: kdiv_damp,kdiv_damp_max
+      real(kind=REAL64) :: kdiv_damp,kdiv_damp_max
 !
 !     ---------------------------------------------------------------
 !

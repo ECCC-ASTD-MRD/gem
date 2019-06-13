@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,12 +12,12 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 module pbl_stabfunc
    ! Calculation and manipulation of stability functions in the PBL
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
    include "surface.cdk"
@@ -39,7 +39,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function psf_stabfunc(rig,z,fm,fh,blend_bottom,blend_top) result(stat)
-      ! PBL stability function matching the surface layer  
+      ! PBL stability function matching the surface layer
       use phy_options, only: pbl_func_stab,pbl_func_unstab
 
       ! Argument declaration
@@ -52,7 +52,7 @@ contains
       integer :: stat                                    !return status
 
       ! Common block
-#include <arch_specific.hf>      
+!!!#include <arch_specific.hf>
       include "clefcon.cdk"
 
       ! Local variables
@@ -105,7 +105,7 @@ contains
          istat = sf_calc(rig,upper_layer.and.stable,l07_fg, &
               l07_fm,l07_dfm,l07_fh,l07_dfh,fm_upper,fh_upper)
       case ('DELAGE97')
-         where (upper_layer .and. stable) 
+         where (upper_layer .and. stable)
             fm_upper = min(1.+d97_as*rig,1./max(epsilon(rig),1.-ASX*rig))
             fh_upper = beta*fm_upper
          endwhere
@@ -126,7 +126,7 @@ contains
 
       ! Unstable case for the upper layers
       istat = PSF_OK
-      UPPER_LAYER_UNSTABLE: select case (pbl_func_unstab)      
+      UPPER_LAYER_UNSTABLE: select case (pbl_func_unstab)
       case ('DYER74')
          where (upper_layer .and. .not.stable)
             fm_upper = (1.-16.*rig)**(-0.25)
@@ -178,8 +178,8 @@ contains
 
       ! Unstable case for the near-surface
       istat = PSF_OK
-      NEAR_SFC_UNSTABLE: select case (sl_func_unstab)      
-      case ('DYER74')         
+      NEAR_SFC_UNSTABLE: select case (sl_func_unstab)
+      case ('DYER74')
          where (near_sfc .and. .not.stable)
             fm_sfc = (1.-16.*rig)**(-0.25)
             fh_sfc = beta*fm_sfc**2
@@ -228,7 +228,7 @@ contains
       real, dimension(:,:), intent(out) :: fm     !stability function values for momentum
       real, dimension(:,:), intent(out) :: fh     !stability function values for heat
       integer :: stat                             !return status
-      
+
       ! Local parameters
       real, parameter :: EPSLN=1e-5               !minimum slope for derivative
       integer, parameter :: ITERMAX=50            !maximum number of interations for solution
@@ -249,7 +249,7 @@ contains
       fh  = 1.
 
       do k=1,nk
-         do i=1,n      
+         do i=1,n
             if (.not.mask(i,k)) cycle
 
             ! First guess
@@ -282,7 +282,7 @@ contains
    end function sf_calc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! Stable-case stability functions proposed by Beljaars and Holtslag (1991) 
+   ! Stable-case stability functions proposed by Beljaars and Holtslag (1991)
 
    real function bh91_fg(rig)
       ! First guess calculation (B-J 1991)
@@ -339,11 +339,11 @@ contains
       real, intent(in) :: v
       l07_fm  = 1. + l07_am*v
    end function l07_fm
-      
+
    real function l07_dfm(v)
-      !#TODO: never used v
       ! Derivative of stability function for momentum wrt Ri (Lock 2007)
-      real, intent(in) :: v
+      real, intent(in) :: v  !Not used
+      if (zua == -99999.9999) print *,'l07_dfm',v  !Avoid compiler complain of not used
       l07_dfm = l07_am
    end function l07_dfm
 

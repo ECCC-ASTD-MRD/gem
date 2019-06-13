@@ -20,7 +20,7 @@ subroutine copybus3(bus_sfc, sfcsiz, &
      indx_sfc, trnch, ramasse)
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    logical ramasse
    integer sfcsiz, indx_sfc, ni, ni_sfc, ptsurfsiz

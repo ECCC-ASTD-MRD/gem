@@ -1,6 +1,8 @@
 #define f77name(a) a##_
 #define f77_name(a) a##_
+#ifndef Little_Endian
 #define Little_Endian
+#endif
 #define PTR_AS_INT long long
 #define INT_32 int
 #define INT_64 long long

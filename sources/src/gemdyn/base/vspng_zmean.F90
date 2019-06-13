@@ -15,25 +15,16 @@
 
 !**   s/r vzpng_zmean - Calculate add/substract mean zonal wind component
 !
-
-!
-      subroutine vspng_zmean( F_pert,F_field,tsum_8,Minx,Maxx,Miny,Maxy, Nk, lmean )
+      subroutine vspng_zmean( F_pert, F_field, tsum_8, Minx, Maxx, Miny, Maxy, Nk, lmean )
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy, Nk
       real F_field(Minx:Maxx,Miny:Maxy,Nk),F_pert(Minx:Maxx,Miny:Maxy,Nk)
-      real*8 tsum_8(l_nj,Nk)
+      real(kind=REAL64) tsum_8(l_nj,Nk)
       logical lmean
-!
-!author
-!     Sylvie Gravel  - April 2006
-!
-!revision
-! v3_30 - Spacek L.      - initial MPI version
-! v4_10 - Tanguay M.     - Replace tsum by tsum_8 as in GEM333
-! v4_13 - Tanguay M.     - Correction real*8 of tsum_8
 !
 !object
 !     The subroutine calculates the zonal mean of the zonal
@@ -41,11 +32,9 @@
 !     the corresponding component. It is supposed to be used only for
 !     non rotated grid.
 !
-
-!
       integer i,j,k
       integer i0,in,j0,jn,k0,kn,njk,err
-      real*8 sum_8(l_nj,Nk),gsum_8(l_nj,Nk)
+      real(kind=REAL64) sum_8(l_nj,Nk),gsum_8(l_nj,Nk)
 !
 !--------------------------------------------------------------------
 !
@@ -56,7 +45,7 @@
       k0 = 1
       kn = Nk
       njk= l_nj*Nk
-!
+
       if(lmean) then
       sum_8(:,:)=0.
 !
@@ -75,7 +64,7 @@
 !
          call rpn_comm_ALLREDUCE ( sum_8, gsum_8, l_nj*Nk, &
                       "MPI_DOUBLE_PRECISION","MPI_SUM","EW",err )
-!
+
          tsum_8=gsum_8/real(G_ni)
 !
 !$omp parallel private(i,j)

@@ -18,7 +18,7 @@
       Function sfottv(tv,qq)
       use tdpack, only: fottv
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfottv, tv, qq
 !
 !Author

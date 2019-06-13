@@ -25,13 +25,12 @@
 wordint c_ezyywdint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin,  ftnfloat *vvin, wordint gdout,wordint gdin)
 {
   int idx_gdin;
-  wordint icode,i,j,k,ivalue;
+  wordint icode,i,j,k,ierc1,ierc2,ierc;
   wordint yancount_yin,yincount_yin, yancount_yan,yincount_yan;
   wordint yin_gdin,yan_gdin,yin_gdout,yan_gdout,yyin,yyout;
   wordint yin_gdrow_in, yin_gdcol_in, yin_gdrow_out, yin_gdcol_out;
   wordint yan_gdrow_in, yan_gdcol_in, yan_gdrow_out, yan_gdcol_out;
   wordint     gdrow_in,     gdcol_in,     gdrow_out,     gdcol_out;
-  wordint yin2yin, yan2yin, yin2yan, yan2yan;
   wordint ni, nj;
   ftnfloat *yin2yin_uuout,*yan2yin_uuout, *yin2yin_vvout,*yan2yin_vvout;
   ftnfloat *yin2yan_uuout,*yan2yan_uuout, *yin2yan_vvout,*yan2yan_vvout;
@@ -43,6 +42,9 @@ wordint c_ezyywdint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin,  ftnfloat 
  /*  need only access to either yin or Yang info for the lat and lon val */
    
   yyin=0; yyout=0;
+  ierc=0;
+  ierc1=0;ierc2=0;
+
   c_gdkey2rowcol(gdin,  &gdrow_in,  &gdcol_in);
   c_gdkey2rowcol(gdout, &gdrow_out, &gdcol_out);
   idx_gdin = c_find_gdin(gdin, gdout);
@@ -88,14 +90,16 @@ wordint c_ezyywdint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin,  ftnfloat 
   if (yyin == 0 && yyout == 1)
     {
     icode = c_ezdefset(yin_gdout,gdin);
-    icode = c_ezwdint_orig(uuout,vvout,uuin,vvin);
+    ierc1 = c_ezwdint_orig(uuout,vvout,uuin,vvin);
     icode = c_ezdefset(yan_gdout,gdin);
-    icode = c_ezwdint_orig(&uuout[(ni*nj)],
+    ierc2 = c_ezwdint_orig(&uuout[(ni*nj)],
                            &vvout[(ni*nj)],uuin,vvin);
-    return icode;
+    if (ierc1 == 2 || ierc2 == 2)
+       {
+        ierc=2;
+       }
+    return ierc;
     }
-
-  k=0;
 
   /* check if one sub grid is identical to one of the sub grids */
   if (yin_gdin == gdout)
@@ -111,62 +115,39 @@ wordint c_ezyywdint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin,  ftnfloat 
                                          &vvin[(lgdin->ni)*(lgdin->nj)]);
      return icode;
      }
-  if (groptions.use_1subgrid == 1)
-     {
-     if (groptions.valeur_1subgrid == yin_gdin)
-        {
-        icode = c_ezdefset(yin_gdout,groptions.valeur_1subgrid);
-        icode = c_ezwdint_orig(uuout,vvout,uuin,vvin);
-        if (yyout == 1)
-           {
-           icode = c_ezdefset(yan_gdout,groptions.valeur_1subgrid);
-           icode = c_ezwdint_orig(&uuout[ni*nj],&vvout[ni*nj],uuin,vvin);
-           }
-        return icode;
-        }
-     if (groptions.valeur_1subgrid == yan_gdin)
-        {
-        icode = c_ezdefset(yin_gdout,groptions.valeur_1subgrid);
-        icode = c_ezwdint_orig(uuout,vvout,&uuin[(lgdin->ni)*(lgdin->nj)],&vvin[(lgdin->ni)*(lgdin->nj)]);
-        if (yyout == 1)
-           {
-           icode = c_ezdefset(yan_gdout,groptions.valeur_1subgrid);
-           icode = c_ezwdint_orig(&uuout[ni*nj],&vvout[ni*nj],&uuin[(lgdin->ni)*(lgdin->nj)],&vvin[(lgdin->ni)*(lgdin->nj)]);
-           }
-        return icode;
-        }
 
-     yin2yin=0; yan2yin=0;
-     yin2yan=0; yan2yan=0;
-     icode = c_ezyy_use1subgrid(gdout,gdin,&yin2yin,&yan2yin,&yin2yan,&yan2yan);
-     if (icode < 0) return icode;
-     if (yin2yin == 1)
+  /* User specifies to use 1 subgrid for interpolation ezsetopt(USE_1SUBGRID) */
+  /* User must specify one specific grid ezsetival(SUBGRIDID) */
+  /* This is only appropriate if the destination grid is non yin-yang grid */
+  if (groptions.use_1subgrid == 1) /* User specifies to use 1 subgrid only */
+     {
+     if (yyout == 1) /* output is a Yin-Yang grid */
         {
-        icode = c_ezdefset(yin_gdout,yin_gdin);
-        icode = c_ezwdint_orig(uuout,vvout,uuin,vvin);
+         fprintf(stderr,"<c_ezyywdint> cannot use 1 subgrid to interpolate to a Yin-Yang grid  Aborting...\n");
+         return -1;
         }
-     if (yan2yin == 1)
+     if (groptions.valeur_1subgrid != yin_gdin &&
+         groptions.valeur_1subgrid != yan_gdin)  /* chosen subgrid is neither Yin or Yang in source grid */
         {
-        icode = c_ezdefset(yin_gdout,yan_gdin);
-        icode = c_ezwdint_orig(uuout,vvout,&uuin[(lgdin->ni)*(lgdin->nj)],&vvin[(lgdin->ni)*(lgdin->nj)]);
+         fprintf(stderr,"<c_ezyywdint> define src subgridid in ezsetival(subgridid)! Aborting...\n");
+         return -1;
         }
-     if (yyout == 1)
+     if (groptions.valeur_1subgrid == yin_gdin) /*Use input Yin grid */
         {
-     if (yin2yan == 1)
+        icode = c_ezdefset(yin_gdout,groptions.valeur_1subgrid);
+        ierc = c_ezwdint_orig(uuout,vvout,uuin,vvin);
+        return ierc;
+        }
+     if (groptions.valeur_1subgrid == yan_gdin) /* Use input Yang grid */
         {
-        icode = c_ezdefset(yan_gdout,yin_gdin);
-        icode = c_ezwdint_orig(&uuout[ni*nj],&vvout[ni*nj],uuin,vvin);
+        icode = c_ezdefset(yin_gdout,groptions.valeur_1subgrid);
+        ierc = c_ezwdint_orig(uuout,vvout,&uuin[(lgdin->ni)*(lgdin->nj)],&vvin[(lgdin->ni)*(lgdin->nj)]);
+        return ierc;
         }
-     if (yan2yan == 1)
-        {
-        icode = c_ezdefset(yin_gdout,yan_gdin);
-        icode = c_ezwdint_orig(&uuout[ni*nj],&vvout[ni*nj],&uuin[(lgdin->ni)*(lgdin->nj)],&vvin[(lgdin->ni)*(lgdin->nj)]);
-        }
-        }
-     return icode;
      }
   /*End of ONE grid option*/
 
+  /* To use both Yin and Yang grids in Yin-yang input grid */
   /* Masquer les grilles YY input pour enlever overlap et calculer les X,Y */
   icode = c_ezyy_calcxy(gdout,gdin);
 

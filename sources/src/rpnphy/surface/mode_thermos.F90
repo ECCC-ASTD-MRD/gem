@@ -125,7 +125,7 @@ CONTAINS
 USE MODD_CSTS
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*       0.1   Declarations of arguments and results
 !
@@ -227,7 +227,7 @@ END FUNCTION QSATW_1D
 USE MODD_CSTS       
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*       0.1   Declarations of arguments and results
 !
@@ -338,7 +338,7 @@ END FUNCTION DQSATW_O_DT_1D
 USE MODD_CSTS       
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*       0.1   Declarations of arguments and results
 !
@@ -446,7 +446,7 @@ END FUNCTION DQSATI_O_DT_1D
 USE MODD_CSTS       
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*       0.1   Declarations of arguments and results
 !

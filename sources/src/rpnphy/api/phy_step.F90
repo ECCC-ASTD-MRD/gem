@@ -21,6 +21,7 @@ contains
 
   !/@*
   function phy_step (F_stepcount, F_stepdriver) result(F_istat)
+    use wb_itf_mod, only: WB_OK, WB_IS_OK, wb_get
     use series_mod, only: series_stepinit, series_stepend
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
     use phy_options, only: delt, cond_infilter, sgo_tdfilter
@@ -40,9 +41,9 @@ contains
     !@revision
     !*@/
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-#include <WhiteBoard.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
+
     include "physteps.cdk"
 
     integer, external :: phyput_input_param, sfc_get_input_param

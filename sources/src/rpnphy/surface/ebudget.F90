@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,24 +12,23 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
-subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
-     WS, DT, ALPHAS, CD, RAINRATE, &
+subroutine ebudget4(T, TS, T2, W2, WF, WL, &
+     WS, DT, ALPHAS, RAINRATE, &
      RG, ALVG, ALBT, EMIST, EMSVC, RAT, THETAA, HU, PS, RHOA, &
-     U, V, VEG, HRSURF, HV, DEL, RESA, RS, CT, &
+     VEG, HRSURF, HV, DEL, RESA, RS, CT, &
      CG, ZCS, PSN, PSNV, PSNG, WSAT, D2, SNODP, &
      TST, T2T, RNET, HFLUX, LE, LEG, LEV, &
      LES, LER, LETR, GFLUX, EFLUX, &
      LEFF, DWATERDT, DSNOWDT, FREEZS, RHOMAX, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
-!#TODO: CD, U, V never used
    use tdpack
    use sfc_options, only: rad_off, atm_external, isba_melting_fix, &
         isba_no_warm_sn_freez, snow_emiss, &
         snow_emiss_const, isba_soil_emiss, isba_soil_emiss_const
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object
    !
    !     Calculates the evolution of the surface and deep-soil temperature
@@ -45,7 +44,6 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    ! WS        equivalent water content of the snow reservoir
    ! DT        timestep
    ! ALPHAS    albedo of snow
-   ! CD        transfer coefficient of momentum
    ! RAINRATE  rainrate
    ! RG        global radiation (downward solar)
    ! ALVG      surface albedo associated with vegetation type
@@ -55,7 +53,6 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    ! HU        specific humidity of air at the lowest level
    ! PS        surface pressure
    ! RHOA      air density near the surface
-   ! U,V       horizontal wind at the lowest level
    ! VEG       fraction of the grid covered by vegetation
    ! HRSURF    relative humidity of the surface
    ! HV        Halstead coefficient (relative humidity of veg. canopy)
@@ -89,11 +86,11 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    ! MELTS_RN  snow melting due to rain (accumulator)
 
    integer N
-   real T(N), TS(N), T2(N), WS(N), DT, ALPHAS(N), CD(N)
+   real T(N), TS(N), T2(N), WS(N), DT, ALPHAS(N)
    real RAINRATE(N)
    real W2(N), WF(N), WL(N), WSAT(N), D2(N), SNODP(N)
    real RG(N), ALVG(N), ALBT(N), RAT(N), THETAA(N)
-   real HU(N), PS(N), RHOA(N), U(N), V(N), VEG(N)
+   real HU(N), PS(N), RHOA(N), VEG(N)
    real HRSURF(N), HV(N), DEL(N), RESA(N), RS(N), CT(N)
    real CG(N), ZCS(N), PSN(N), PSNV(N), PSNG(N)
    real TST(N), T2T(N), RNET(N), HFLUX(N), LE(N)
@@ -107,50 +104,50 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    !@Revisions
    ! 001      S. Belair (November 1998)
    !             Use physics package thermodynamic functions
-   !
+
    ! 002      S. Belair (December 1998)
    !             Correction to the latent heat coefficients due to
    !             soil water freezing.
    !             Calculation of the FREEZG and MELTG tendencies for
    !             soil water freezing and melting.
    !             Tendencies for the surface temperature TS.
-   !
+
    ! 003      S. Belair (January 1999)
    !             Tendencies for melting and freezing of snow
-   !
+
    ! 004      B. Bilodeau (December 1999)
    !             real downward radiation as an argument
    !             different albedos for vegetation and snow as arguments
-   !
+
    ! 005      S. Belair (January 2000)
    !             diagnostic equation for the maximum density of snow
    !             effect of incident rain on the snowpack
-   !
+
    ! 006      B. Bilodeau (January 2001)
    !             Automatic arrays
-   !
+
    ! 007      S. Belair (Fall 2003)
    !             include the effect of soil freeze/thaw
-   !
+
    ! 008      B. Bilodeau (April 2007)
    !             add snow melting diagnostics
-   !
-   ! 009      Olympics Team (2010) 
+
+   ! 009      Olympics Team (2010)
    !             impose condition on snow melt impact on sfc temp.
-   !
+
    ! 010      N. Gauthier (April 2013)
    !             correction to units in computation of max snow density
-   !
+
    ! 011      M. Abrahamowicz (August 2013)
    !             Do not consider RADIA=NIL key when FLUVERT='SURFACE'
-   !             For FLUVERT='SURFACE only: 
+   !             For FLUVERT='SURFACE only:
    !                - Rewrite check on TST adjustment related to snow melt
    !                - Bug fix in snow melt term related to TST adjustment
    !                - Bug fix in snow melt term related to rain melt
    !@Notes
    !***  METHOD
    !*    ------
-   !
+
    !     1- find the grid-averaged albedo, emissivity, and roughness length
    !     2- compute the za, zb, and zc terms involved in the numerical
    !        resolution of the equations for Ts and T2.
@@ -192,7 +189,7 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    case DEFAULT
       emisss(:) = isba_soil_emiss_const
    end select
-   if (rad_off .and. atm_external) then 
+   if (rad_off .and. atm_external) then
       !Do not include radiative forcings
       ALBT = 1.
       EMIST = 0.
@@ -320,36 +317,36 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
       TEMPO=CT(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
       if ( (tempo < 0.) .and. (TST(I) > TRPL ) ) then
 
-         ! Trying to COOL DOWN  surface temp. that is 
+         ! Trying to COOL DOWN  surface temp. that is
          ! initially above zero, below zero by melting snow ...
          ! don't let it happen
 
          TST(I) = max(TRPL,TST(I)+TEMPO)
-         !           
+
       else if ( (tempo > 0.) .and. (TST(I) < TRPL ) ) then
 
          ! Trying to WARM UP surface temp. that is initially
          ! below zero, above zero by freezing liquid water
          ! in  snow ... don't let it happen
 
-         TST(I) = min(TRPL,TST(I)+TEMPO)             
+         TST(I) = min(TRPL,TST(I)+TEMPO)
 
       else if ( (tempo > 0.) .and. (TST(I) >= TRPL ) ) then
-         
+
          ! Trying to WARM UP surface temp. that is initially
          ! above zero by freezing liquid water
          ! in  snow ... don't let it happen if  isba_no_warm_sn_freez=.TRUE.
 
-         if ( .not.  isba_no_warm_sn_freez ) then 
+         if ( .not.  isba_no_warm_sn_freez ) then
 
             TST(I) = TST(I)+TEMPO
 
          endif
 
-      else 
-         
+      else
+
             TST(I) = TST(I)+TEMPO
-      
+
       endif
    end do
 
@@ -361,7 +358,7 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    !  incident rain and the snow pack (since rain is
    !  usually warmer then the snow pack).
 
-   !  It is hypothesized that the temperature of falling water is the 
+   !  It is hypothesized that the temperature of falling water is the
    !  same as that of air at the lowest atmospheric level.
 
    do I=1,N
@@ -378,11 +375,11 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    do I=1,N
       if (T(I).gt.TRPL.and.WS(I).gt.0.0.and. &
            RAINRATE(I).gt.0.) then
-         !        
+
          MLTRAIN = max(  ( T(I)-max(TST(I),TRPL) ) / ( 2.*ZCS(I)*CHLF*DT )  , 0. )
          MELTS(I) = MELTS(I) + FMLTRAIN(I) * MLTRAIN
          MELTS_RN (I) = MELTS_RN (I) + MLTRAIN*DT
-         !        
+
       end if
    end do
 
@@ -529,4 +526,4 @@ subroutine EBUDGET3(T, TS, T2, W2, WF, WL, &
    end do
 
    return
-end subroutine EBUDGET3
+end subroutine ebudget4

@@ -23,21 +23,6 @@
       use gmm_itf_mod
       implicit none
 
-!author
-!     Alain Patoine - april 94
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_30 - Edouard  S.       - remove pi' at the top
-! v2_31 - Desgagne M.       - remove treatment of HU and QC and
-!                             re-introduce tracers
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_21 - Lee V.            - remove TR2D
-! V4    - Girard-Plante     - Staggered version
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! V4_11 - Plante A.         - Add diag var on vertical scope
-!                             recompute fip
-
 #include <arch_specific.hf>
 
       integer n,istat

@@ -20,7 +20,7 @@
       use tdpack
       use series_mod, only: series_xst
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       INTEGER N,NK,TRNCH
       REAL R(N,NK+1),VAR(N,NK),TVAR(N,NK)

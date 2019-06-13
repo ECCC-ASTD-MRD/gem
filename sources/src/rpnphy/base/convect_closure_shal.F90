@@ -83,7 +83,7 @@ use cnv_options
 
 
 IMPLICIT NONE
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #define _ZERO_   0.0
 #define _HALF_   0.5
 #define _ONE_    1.0

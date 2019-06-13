@@ -133,7 +133,7 @@
 #include <sys/stat.h>
 #include <sys/types.h> /* for mkdir & stat */
 #include <libgen.h>
-#include <glob.h>
+// #include <glob.h>
 #include <sys/param.h> /* for MAXPATHLEN = PATH_MAX */
 #include <alloca.h>
 #include <string.h>
@@ -800,7 +800,7 @@ F77_INTEGER CLIB_F77NAME(clib_dirname)(F77_CHARACTER *path,
   status = FTN2C_CSTR2FSTR(path,mydirname,lpath,F77STRLEN(mydirname));  /* copy result */
   return( status<0 ? CLIB_ERROR : CLIB_OK );
 }
-
+#if defined(NO_CLIB_INTERFACE2)
 /* ================================================================
  * Get the list of files in PWD that match a pattern)
  * Return CLIB_OK if success, CLIB_ERROR if not
@@ -834,7 +834,7 @@ F77_INTEGER CLIB_F77NAME(clib_glob)(F77_CHARACTER *filelist,
   globfree(&globbuf);
   return(status);
 }
-
+#endif
 /* ================================================================
  * Convert Char array to lowercase/uppercase
  * ================================================================*/

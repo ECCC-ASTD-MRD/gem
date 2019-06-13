@@ -51,7 +51,7 @@ function output_writestep(F_id,F_step,F_callback) result(F_istat)
    !     ignored: 
    !     action:  callback can modify the data (change units...)
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
    logical,parameter :: NOPRINT = .false.
@@ -112,7 +112,9 @@ function output_writestep(F_id,F_step,F_callback) result(F_istat)
             cycle
          endif
       else
-         call msg(MSG_WARNING,'(Output) Bus var not yet supported, ignoring: '//trim(name_S)//' (ON='//trim(outname_S)//' ; VB='//trim(busname_S)//')')
+         call msg(MSG_WARNING,'(Output) Bus var not yet supported, ignoring: ' &
+              //trim(name_S)//' (ON='//trim(outname_S)//' ; VB='// &
+              trim(busname_S)//')')
          !TODO-later: implement bus unfolding
          F_istat = RMN_ERR
          cycle

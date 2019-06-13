@@ -20,6 +20,7 @@ module hzd_exp
   use HORgrid_options
   use glb_ld
   use glb_pil
+  use, intrinsic :: iso_fortran_env
   implicit none
 #include <arch_specific.hf>
   private
@@ -32,6 +33,7 @@ contains
 
       subroutine hzd_exp_deln ( F_c1, F_hgrid_S, Minx,Maxx,Miny,Maxy,Nk,&
                                 F_vv, F_type_S )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -43,14 +45,9 @@ contains
 !author
 !    Abdessamad Qaddouri - summer 2015
 !
-!revision
-! v4_80 - Qaddouri A.      - initial version
-! v4_80 - Lee   - optimization
-
-
       integer iter1,mm,dpwr,itercnt,Niter
       real c1(Minx:Maxx,Miny:Maxy,Nk), c2(Minx:Maxx,Miny:Maxy,Nk)
-      real*8 coef_8(Nk)
+      real(kind=REAL64) coef_8(Nk)
 !
 !     ---------------------------------------------------------------
 !
@@ -153,6 +150,7 @@ contains
 !**s/r hzd_exp_visco - applies horizontal explicit diffusion 9pt
 !
       subroutine hzd_exp_visco(F_f2hzd, F_grd_S, Minx,Maxx,Miny,Maxy, NK)
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -163,9 +161,9 @@ contains
       integer :: nn, mm
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,Nk) :: wk1
       real :: rnr,pwr
-      real*8 :: nu_dif,lnr,visco
-      real*8, parameter :: epsilon = 1.0d-12
-      real*8, parameter :: pt25=0.25d0
+      real(kind=REAL64) :: nu_dif,lnr,visco
+      real(kind=REAL64), parameter :: epsilon = 1.0d-12
+      real(kind=REAL64), parameter :: pt25=0.25d0
 
 !     __________________________________________________________________
 !

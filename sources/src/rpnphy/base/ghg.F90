@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 module ghg_mod
    use iso_c_binding
+   use rpn_comm_itf_mod
+   use clib_itf_mod, only: clib_isreadok, clib_tolower
    use mu_jdate_mod, only: jdate_year
    use str_mod
    use phy_options
@@ -25,11 +27,9 @@ module ghg_mod
 
    public :: ghg_init
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-   include "rpn_comm.inc"
 
    integer, parameter :: GHG_YEAR = 1
    integer, parameter :: GHG_CO2 = 2
@@ -44,7 +44,7 @@ contains
    function ghg_init(F_path, F_jdateo, F_myproc) result(F_istat)
       implicit none
       character(len=*), intent(in) :: F_path
-      integer(IDOUBLE), intent(in) :: F_jdateo
+      integer(INT64), intent(in) :: F_jdateo
       integer, intent(in) :: F_myproc
       integer :: F_istat
 
@@ -118,7 +118,7 @@ contains
       implicit none
       character(len=*), intent(out) :: F_str
       character(len=*), intent(in) :: F_path
-      integer(IDOUBLE), intent(in) :: F_jdateo
+      integer(INT64), intent(in) :: F_jdateo
       integer :: F_istat
  
       character(len=256), parameter :: GHG_FILENAME = 'ghg-table-1950-2015_v1'

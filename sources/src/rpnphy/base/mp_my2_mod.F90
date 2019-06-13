@@ -13,20 +13,27 @@
 !  Last modified:     2016-01-04                                                !
 !_______________________________________________________________________________!
 
-MODULE mp_my2_mod
+
+module mp_my2_mod
+ use, intrinsic :: iso_fortran_env, only: REAL64
  use phy_status, only: phy_error_L
+
+#include <rmnlib_basics.hf>
 
  private
  public  :: mp_my2_main
+
+#ifdef ECCC_MP_MY_SCHEME
+
  private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
  private :: activate,maxsat,erf  ! Added by C.Jouan april2015
 
- CONTAINS
+ contains
 
 !==============================================================================!
 
- REAL FUNCTION NccnFNC(Win,Tin,Pin,CCNtype)
+ real function NccnFNC(Win,Tin,Pin,CCNtype)
 
 !---------------------------------------------------------------------------!
 ! This function returns number concentration (activated aerosols) as a
@@ -34,7 +41,7 @@ MODULE mp_my2_mod
 ! approach using a hypergeometric function, following Cohard and Pinty (2000a).
 !---------------------------------------------------------------------------!
 
-  IMPLICIT NONE
+  implicit none
 
 ! PASSING PARAMETERS:
   real,    intent(in) :: Win, Tin, Pin
@@ -81,10 +88,10 @@ MODULE mp_my2_mod
 
   endif
 
- END FUNCTION NccnFNC
+ end function NccnFNC
 !======================================================================!
 
-   real FUNCTION SxFNC(Win,Tin,Pin,Qsw,Qsi,CCNtype,WRT)
+   real function SxFNC(Win,Tin,Pin,Qsw,Qsi,CCNtype,WRT)
 
 !---------------------------------------------------------------------------!
 ! This function returns the peak supersaturation achieved during ascent with
@@ -93,7 +100,7 @@ MODULE mp_my2_mod
 ! following Cohard and Pinty (2000a).
 !---------------------------------------------------------------------------!
 
- IMPLICIT NONE
+ implicit none
 
 ! PASSING PARAMETERS:
   integer, intent(IN) :: WRT
@@ -152,25 +159,25 @@ MODULE mp_my2_mod
   endif
   if (Win.le.0.) SxFNC= 1.
 
- END function SxFNC
+ end function SxFNC
 !======================================================================!
 
- real FUNCTION gamma(xx)
+ real function gamma(xx)
 
 !  Modified from "Numerical Recipes"
 
-  IMPLICIT NONE
+  implicit none
 
 ! PASSING PARAMETERS:
   real, intent(IN) :: xx
 
 ! LOCAL PARAMETERS:
   integer  :: j
-  real*8   :: ser,stp,tmp,x,y,cof(6),gammadp
+  real(REAL64)   :: ser,stp,tmp,x,y,cof(6),gammadp
 
 
-  SAVE cof,stp
-  DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
+  save cof,stp
+  data cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
        24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,  &
        -.5395239384953d-5,2.5066282746310005d0/
   x=dble(xx)
@@ -188,10 +195,10 @@ MODULE mp_my2_mod
   gammadp= exp(gammadp)
   gamma  = sngl(gammadp)
 
- END FUNCTION gamma
+ end function gamma
 !======================================================================!
 
- SUBROUTINE gser(gamser,a,x,gln)
+ subroutine gser(gamser,a,x,gln)
 
 ! USES gammln
 
@@ -223,25 +230,25 @@ MODULE mp_my2_mod
 1 gamser=summ*exp(-x+a*log(x)-gln)
  return
 
-END SUBROUTINE gser
+end subroutine gser
 !======================================================================!
 
- real FUNCTION gammln(xx)
+ real function gammln(xx)
 
 !  Returns value of ln(GAMMA(xx)) for xx>0
 !   (modified from "Numerical Recipes")
 
-  IMPLICIT NONE
+  implicit none
 
 ! PASSING PARAMETERS:
   real, intent(IN) :: xx
 
 ! LOCAL PARAMETERS:
   integer  :: j
-  real*8   :: ser,stp,tmp,x,y,cof(6)
+  real(REAL64)   :: ser,stp,tmp,x,y,cof(6)
 
-  SAVE cof,stp
-  DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
+  save cof,stp
+  data cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
        24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,  &
        -.5395239384953d-5,2.5066282746310005d0/
   x=dble(xx)
@@ -257,10 +264,10 @@ END SUBROUTINE gser
 
   gammln= sngl( tmp+log(stp*ser/x)  )
 
- END FUNCTION gammln
+ end function gammln
 !======================================================================!
 
- real FUNCTION gammp(a,x)
+ real function gammp(a,x)
 
 ! USES gcf,gser
 
@@ -279,15 +286,15 @@ END SUBROUTINE gser
  endif
  return
 
- END FUNCTION gammp
+ end function gammp
 !======================================================================!
 
- real FUNCTION erf(x)                ! Added by C.Jouan april2015
+ real function erf(x)                ! Added by C.Jouan april2015
 
  ! USES gammp
  ! Returns the error function erf(x ).
 
- IMPLICIT NONE
+ implicit none
 
  real :: x
 
@@ -298,10 +305,10 @@ END SUBROUTINE gser
  endif
  return
 
- END FUNCTION erf
+ end function erf
 !======================================================================!
 
- SUBROUTINE cfg(gammcf,a,x,gln)
+ subroutine cfg(gammcf,a,x,gln)
 
 ! USES gammln
 
@@ -337,20 +344,20 @@ END SUBROUTINE gser
 1 gammcf=exp(-x+a*log(x)-gln)*h
  return
 
-END SUBROUTINE cfg
+end subroutine cfg
 !======================================================================!
 
- real FUNCTION gamminc(p,xmax)
+ real function gamminc(p,xmax)
 
 ! USES gammp, gammln
 ! Returns incomplete gamma function, gamma(p,xmax)= P(p,xmax)*GAMMA(p)
  real :: p,xmax
  gamminc= gammp(p,xmax)*exp(gammln(p))
 
- end FUNCTION gamminc
+ end function gamminc
 !======================================================================!
 
- real function polysvp(T,TYPE)
+ real function polysvp(T,type)
 
 !--------------------------------------------------------------
 ! Taken from 'module_mp_morr_two_moment.F' (WRFV3.4)
@@ -365,11 +372,11 @@ END SUBROUTINE cfg
 ! TABLE 4 (RIGHT-HAND COLUMN)
 !--------------------------------------------------------------
 
-      IMPLICIT NONE
+      implicit none
 
-      REAL DUM
-      REAL T
-      INTEGER TYPE
+      real DUM
+      real T
+      integer type
 ! ice
       real a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i
       data a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i /&
@@ -389,7 +396,7 @@ END SUBROUTINE cfg
 
 ! ICE
 
-      IF (TYPE.EQ.1) THEN
+      if (type.eq.1) then
 
 !         POLYSVP = 10.**(-9.09718*(273.16/T-1.)-3.56654*                &
 !          LOG10(273.16/T)+0.876793*(1.-T/273.16)+						&
@@ -400,11 +407,11 @@ END SUBROUTINE cfg
       polysvp = a0i + dt*(a1i+dt*(a2i+dt*(a3i+dt*(a4i+dt*(a5i+dt*(a6i+dt*(a7i+a8i*dt)))))))
       polysvp = polysvp*100.
 
-      END IF
+      end if
 
 ! LIQUID
 
-      IF (TYPE.EQ.0) THEN
+      if (type.eq.0) then
 
        dt = max(-80.,t-273.16)
        polysvp = a0 + dt*(a1+dt*(a2+dt*(a3+dt*(a4+dt*(a5+dt*(a6+dt*(a7+a8*dt)))))))
@@ -416,7 +423,7 @@ END SUBROUTINE cfg
 !             8.1328E-3*(10**(-3.49149*(373.16/T-1.))-1.)+				&
 !             LOG10(1013.246))*100.
 
-         END IF
+         end if
 
  end function polysvp
 
@@ -593,7 +600,7 @@ END SUBROUTINE cfg
 
 
 !=====================================================================================!
-  SUBROUTINE sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
+  subroutine sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
                 massFlux_bot,kdir,kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,         &
                 DZ,iDZ,gamfact,kount,afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in)
 
@@ -672,7 +679,7 @@ END SUBROUTINE cfg
    ktop = ktop_sedi  !(i-array)  - for complete column, ktop(:)=1 (GEM) or =nk (WRF)
    call count_columns(QX,ni,epsQ_sedi,counter,activeColumn,kdir,kbot,ktop)
 
-   DO a = 1,counter
+   do a = 1,counter
       i= activeColumn(a)
      !From here, all sedi calcs are done for each column i
 
@@ -681,12 +688,12 @@ END SUBROUTINE cfg
                    GRAV,afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,      &
                    ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
 
-   ENDDO  !a-loop
+   enddo  !a-loop
 
- END SUBROUTINE sedi_wrapper_2
+ end subroutine sedi_wrapper_2
 
 !=====================================================================================!
-SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,    &
+subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,    &
                     dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,GRAV,afx_in,bfx_in,cmx_in,  &
                     ckQx1_in,ckQx2_in,ckQx4_in,BX1d,epsB)
 
@@ -824,7 +831,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    dtx   = dt/float(npassx)
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-   DO nnn= 1,npassx
+   do nnn= 1,npassx
 
       firstPass = (nnn==1)
 
@@ -953,7 +960,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
       enddo
 
-   ENDDO  !nnn-loop
+   enddo  !nnn-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
   !Compute average mass flux during the full time step: (used to compute the
   !instantaneous sedimentation rate [liq. equiv. volume flux] in the main s/r)
@@ -961,7 +968,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-   CONTAINS
+   contains
 
    real function VV_Q()
    !Calculates Q-weighted fall velocity
@@ -977,10 +984,10 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
       VV_Qg   = gamfact1d(k)*iLAMxB0*ckQx1
    end function VV_Qg
 
- END SUBROUTINE sedi_1D
+ end subroutine sedi_1D
 
 !=====================================================================================!
- SUBROUTINE count_columns(QX,ni,minQX,counter,activeColumn,kdir,kbot,ktop)
+ subroutine count_columns(QX,ni,minQX,counter,activeColumn,kdir,kbot,ktop)
 
  !--------------------------------------------------------------------------
  ! Searches the hydrometeor array QX(ni,nk) for non-zero (>minQX) values.
@@ -1028,10 +1035,10 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
       enddo
    enddo
 
- END SUBROUTINE count_columns
+ end subroutine count_columns
 !=======================================================================================!
 
- SUBROUTINE activate( wbar, tair, rhoair, na, am, disp, hygro, n_act, s_max) ! Added by C.Jouan april2015
+ subroutine activate( wbar, tair, rhoair, na, am, disp, hygro, n_act, s_max) ! Added by C.Jouan april2015
 !--------------------------------------------------------------------------------------
 ! Calculates the number and mass of aerosols activated as CCN.
 ! MKS units!
@@ -1040,7 +1047,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 ! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 !--------------------------------------------------------------------------------------
 
-   implicit NONE
+   implicit none
 
 !---------------------------- Arguments --------------------------------
    real, intent(in) :: &
@@ -1143,10 +1150,10 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    x = 2.*( lnsmloc-lnsmax )/( 3.*sq2*alogsig )
    n_act = 0.5 * ( 1.-erf(x) ) * na
    n_act = max( n_act, 0. ) 
- END SUBROUTINE activate
+ end subroutine activate
 !=======================================================================
 
- SUBROUTINE maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
+ subroutine maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
 !=======================================================================
 ! Purpose:
 ! Calculates maximum supersaturation for one aerosol mode.
@@ -1156,7 +1163,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !
 !-----------------------------------------------------------------------
 
-   implicit NONE
+   implicit none
 
    real     :: smc        ! critical supersaturation
    real     :: zeta, eta
@@ -1184,11 +1191,11 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    end if
 
 
- END SUBROUTINE maxsat
+ end subroutine maxsat
 !==============================================================================!
 !_______________________________________________________________________________________!
 
- SUBROUTINE mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              & ! Added by C.Jouan april 2015
+ subroutine mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              & ! Added by C.Jouan april 2015
      sigma,RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,  &
      dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON, &
      snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i1,reff_i2,reff_i3,     &
@@ -1343,7 +1350,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   integer :: i,k,niter,ll,start,kskip_1,ktop,kbot,kdir
 
   real    :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9,tmp10,                    &
-       VDmax,NNUmax,X,D,DEL,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,Ecg,Erg,  &
+       VDmax,NNUmax,X,DEL,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,Ecg,Erg,  &
        NuCONT,GG,Na,Tcc,F1,F2,Kdiff,PSIa,Kn,source,sink,sour,ratio,qvs0,Kstoke,     &
        DELqvs,ft,esi,Si,Simax,Vq,Vn,Vz,LAMr,No_r_DM,No_i,No_s,No_g,No_h,D_sll,      &
        iABi,ABw,VENTr,VENTs,VENTg,VENTi,VENTh,Cdiff,Ka,MUdyn,MUkin,Ng_tail,         &
@@ -1618,7 +1625,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !    (...to be done.  For now, changing condition to IF(TRUE) to compute at each step.)
 
 
-  if (.TRUE.) then
+  if (.true.) then
 
    PI2    = PI*2.
    PIov4  = 0.25*PI
@@ -1955,8 +1962,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 ! Determine the active grid points (i.e. those which scheme should treat):
   activePoint = .false.
-  DO k= ktop-kdir,kbot,-kdir
-     DO i=1,ni
+  do k= ktop-kdir,kbot,-kdir
+     do i=1,ni
         log1= ((QI(i,k)+QG(i,k)+QN(i,k)+QH(i,k))<epsQ)     !no solid  (i,g,s,h)
         log2= ((QC(i,k)+QR(i,k))                  <epsQ)   !no liquid (c,r)
         log3= ((T(i,k)>TRPL) .and. log1)                   !T>0C & no i,g,s,h
@@ -1964,8 +1971,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
         if (.not.( log3 .or. log4 ) .and. icephase_ON) then
           activePoint(i,k)= .true.
         endif
-     ENDDO
-  ENDDO
+     enddo
+  enddo
 
     ! Size distribution parameters:
     !  Note: + 'thrd' should actually be '1/dmx'(but dmx=3 for all categories x)
@@ -1973,9 +1980,9 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
     !          (If Qc=0, CLcy etc. will never be calculated. iLAMx is set to 0
     !           to avoid possible problems due to bugs.)
 
-  DO k= ktop-kdir,kbot,-kdir
-    DO i= 1,ni
-      IF (activePoint(i,k)) THEN
+  do k= ktop-kdir,kbot,-kdir
+    do i= 1,ni
+      if (activePoint(i,k)) then
 
        Tc= T(i,k)-TRPL
        if (Tc<-120. .or. Tc>50.) then
@@ -2399,7 +2406,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
           NCLch= 0.;   NCLrh= 0.;   NCLsh= 0.;   NCLih= 0.
        endif
 
-       IF (T(i,k)>TRPL .and. warmphase_ON) THEN
+       if (T(i,k)>TRPL .and. warmphase_ON) then
           !**********!
           !  T > To  !
           !**********!
@@ -2455,7 +2462,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
           NCNsg= 0.;   NhCNgh= 0.;  NiCNis=0.;   NsCNis=0.
           NIMsi= 0.;   NIMgi= 0.;   NCLir= 0.;   NCLrs= 0.
 
-       ELSE  !----------!
+       else  !----------!
              !  T < To  !
              !----------!
 
@@ -2564,7 +2571,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 
 
-          IF (QI(i,k)>epsQ) THEN
+          if (QI(i,k)>epsQ) then
 
              !Deposition/sublimation:
 !            No_i  = NY(i,k)*iGI31/iLAMi**(1.+alpha_i)
@@ -2660,18 +2667,18 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
              QIMsi= mio*iDE(i,k)*NIMsi
              QIMgi= mio*iDE(i,k)*NIMgi
 
-          ELSE
+          else
 
              QVDvi= 0.;  QCNis= 0.
              QIMsi= 0.;  QIMgi= 0.;   QCLri= 0.;   QCLir= 0.
              NVDvi= 0.;  NCLir= 0.;   NIMsi= 0.
              NiCNis=0.;  NsCNis=0.;   NIMgi= 0.;   NCLri= 0.
 
-          ENDIF
+          endif
           !---------!
           !  SNOW:  !
           !---------!
-          IF (QN(i,k)>epsQ) THEN
+          if (QN(i,k)>epsQ) then
 
             !Deposition/sublimation:
              !note: - snow crystal capacitance is implicitly C = 0.5*D*capFact_s
@@ -2756,16 +2763,16 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
                 QCLrs= 0.;   QCLsr= 0.;   NCLrs= 0.;   NCLsr= 0.
              endif
 
-          ELSE
+          else
 
              QVDvs= 0.;  QCLcs= 0.;  QCNsg= 0.;  QCLsr= 0.;  QCLrs= 0.
              NVDvs= 0.;  NCLcs= 0.;  NCLsr= 0.;  NCLrs= 0.;  NCNsg= 0.
 
-          ENDIF
+          endif
           !------------!
           !  GRAUPEL:  !
           !------------!
-          IF (QG(i,k)>epsQ .and. NG(i,k)>epsN) THEN
+          if (QG(i,k)>epsQ .and. NG(i,k)>epsN) then
 
            !Conversion to hail:    (D_sll given by S-L limit)
              if ( (QCLcg+QCLrg)>0. .and. hail_ON ) then
@@ -2844,16 +2851,16 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
                 QCLgr= 0.;  QCLrg= 0.;  NCLgr= 0.;  NCLrg= 0.
              endif
 
-          ELSE
+          else
 
              QCNgh= 0.;  QCLgr= 0.;  QCLrg= 0.;  NgCNgh= 0.
              NhCNgh= 0.; NCLgr= 0.;  NCLrg= 0.
 
-          ENDIF
+          endif
           !---------!
           !  HAIL:  !
           !---------!
-          IF (QH(i,k)>epsQ) THEN
+          if (QH(i,k)>epsQ) then
 
             !Wet growth:
              if (QHwet<(QCLch+QCLrh+QCLih+QCLsh) .and. Tc>-40.) then
@@ -2868,11 +2875,11 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
              else
                 NSHhr= 0.
              endif
-          ELSE
+          else
              NSHhr= 0.
-          ENDIF
+          endif
 
-       ENDIF  ! ( if Tc<0C Block )
+       endif  ! ( if Tc<0C Block )
 
      !----- Prevent mass transfer from accretion during melting:  ---!
      ! (only if exepcted NX (X=s,g,h) < 0 after source/sinks added)
@@ -3193,9 +3200,9 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   endif                                                              !** DEBUG **
 !=====
 
-      ENDIF  !if (activePoint)
-    ENDDO
-  ENDDO
+      endif  !if (activePoint)
+    enddo
+  enddo
 
   !----------------------------------------------------------------------------------!
   !                    End of ice phase microphysics (Part 2)                        !
@@ -3214,10 +3221,10 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
   ! Part 3a - Warm-rain Coallescence:
 
- IF (warmphase_ON) THEN
+ if (warmphase_ON) then
 
-  DO k= ktop-kdir,kbot,-kdir
-     DO i= 1,ni
+  do k= ktop-kdir,kbot,-kdir
+     do i= 1,ni
 
         RCAUTR= 0.;  CCACCR= 0.;  Dc= 0.;  iLAMc= 0.;  L  = 0.
         RCACCR= 0.;  CCSCOC= 0.;  Dr= 0.;  iLAMr= 0.;  TAU= 0.
@@ -3508,10 +3515,10 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 !==
 
-     ENDDO
-  ENDDO    !cond/evap [k-loop]
+     enddo
+  enddo    !cond/evap [k-loop]
 
- ENDIF  !if warmphase_ON
+ endif  !if warmphase_ON
 
   !----------------------------------------------------------------------------------!
   !                    End of warm-phase microphysics (Part 3)                       !
@@ -3524,7 +3531,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !                            PART 4:  Sedimentation                                !
   !----------------------------------------------------------------------------------!
 
- IF (sedi_ON) THEN
+ if (sedi_ON) then
 
    fluxM_r= 0.;  fluxM_i= 0.;  fluxM_s= 0.;  fluxM_g= 0.;  fluxM_h= 0.
    RT_rn1 = 0.;  RT_rn2 = 0.;  RT_fr1 = 0.;  RT_fr2 = 0.;  RT_sn1 = 0.
@@ -3685,8 +3692,8 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 !   call tmg_start0(98,'mmCalcDIAG')
 
-   IF (precipDiag_ON) THEN
-      DO i= 1,ni
+   if (precipDiag_ON) then
+      do i= 1,ni
 
          DE(i,kbot)= pres(i,kbot)/(RGASD*T(i,kbot))
 
@@ -3722,12 +3729,12 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
             !note: large hail (RT_peL) is a subset of the total hail (RT_pe2)
          endif
 
-      ENDDO
-   ENDIF  !if (precipDiag_ON)
+      enddo
+   endif  !if (precipDiag_ON)
  !
  !++++
 
- ENDIF  ! if (sedi_ON)
+ endif  ! if (sedi_ON)
 
  where (Q<0.) Q= 0.
 
@@ -3817,7 +3824,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   enddo
 
 
-  IF (calcDiag) THEN
+  if (calcDiag) then
 
    !For reflectivity calculations:
      ZEC= minZET
@@ -3900,7 +3907,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
         enddo  !i-loop
      enddo     !k-loop
 
-  ENDIF
+  endif
 
 !-- Convert N from #/m3 to #/kg:
   iDE = (RGASD*T)/pres
@@ -3922,7 +3929,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,900)
   if (phy_error_L) return
 
- END SUBROUTINE mp_my2_main
+ end subroutine mp_my2_main
 
 !___________________________________________________________________________________!
 
@@ -3966,7 +3973,17 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 
 !===================================================================================================!
 
-END MODULE mp_my2_mod
+#else
+
+contains
+
+   subroutine mp_my2_main()
+      call physeterror('mp_my2_main', 'Called a stub')
+   end subroutine mp_my2_main
+
+#endif
+
+end module mp_my2_mod
 
 !________________________________________________________________________________________!
 

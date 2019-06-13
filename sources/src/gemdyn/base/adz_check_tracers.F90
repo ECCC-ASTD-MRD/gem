@@ -29,6 +29,7 @@
       use tdpack
       use tr3d
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -43,11 +44,11 @@
 
       integer :: n,err,i,j
 
-      real*8  :: c_area_8,s_area_8,gc_area_8,gs_area_8
+      real(kind=REAL64)  :: c_area_8,s_area_8,gc_area_8,gs_area_8
 
       logical :: BC_LAM_L,psadj_LAM_flux_L,do_subset_GY_L,BC_activated_L
 
-      real*8, parameter :: QUATRO_8 = 4.0
+      real(kind=REAL64), parameter :: QUATRO_8 = 4.0
 
       !----------------------------------------------------------------
 

@@ -23,6 +23,7 @@ contains
 
    !/@*
    subroutine turbul2(d, dsiz, f, fsiz, v, vsiz, se, kount, trnch, ni, nk, nkm1)
+      use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: CPD, DELTA, GRAV, KARMAN
       use series_mod, only: series_xst
@@ -30,7 +31,7 @@ contains
       use phy_status, only: phy_error_L
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object interface for turbulent kinetic energy calculations
       !@Arguments
@@ -60,7 +61,7 @@ contains
       include "clefcon.cdk"
       include "surface.cdk"
       include "tables.cdk"
-      include "phyinput.cdk"
+      include "phyinput.inc"
 
       integer, external :: neark !#TODO make it a module
 
@@ -101,7 +102,7 @@ contains
       MKPTR1DK(zhst_ag, hst, indx_agrege, f)
       MKPTR1DK(zilmo_ag, ilmo, indx_agrege, f)
       MKPTR1D(zlh, lhtg, f)
-      
+ 
       MKPTR1D(zpmoins, pmoins, f)
       MKPTR1D(zsdtswd, sdtswd, v)
       MKPTR1D(zsdtsws, sdtsws, v)
@@ -174,7 +175,7 @@ contains
 
       if (kount == 0) then
 
-         INIT_TKE: if (any('en'==phyinread_list_s(1:phyinread_n))) then 
+         INIT_TKE: if (any('en'==phyinread_list_s(1:phyinread_n))) then
             tke = max(tke,0.)
          else
             do k=1,nkm1
@@ -254,12 +255,12 @@ contains
          te(:,1:nkm1)  = ztmoins(:,1:nkm1)
          qce(:,1:nkm1) = zqcmoins(:,1:nkm1)
 
-         call eturbl12(tke,enold,zzn,zzd,zrif,zturbreg,zrig,zshear2, &
-              zgte,zilmo_ag,zfbl,zgql,zlwc,zumoins, &
-              zvmoins,tmom,te,ztve,qmom,qce,qe,zh,zlh,zpmoins,ztsurf, &
-              zsigm,se,eturbtau,kount,zgq,zftot,zkt,zze,zgzmom, &
+         call eturbl13(tke,enold,zzn,zzd,zrif,zturbreg,zrig,zshear2, &
+              zgte,zilmo_ag,zfbl,zgql,zumoins, &
+              zvmoins,tmom,te,ztve,qmom,qce,qe,zpmoins, &
+              zsigm,se,eturbtau,kount,zgq,zkt,zze,zgzmom, &
               std_p_prof,zfrv_ag,xh,zdxdy,trnch,ni,nkm1, &
-              zz0_ag,icpu)
+              zz0_ag)
          if (phy_error_L) return
 
          ! implicit diffusion scheme: the diffusion interprets the coefficients of the

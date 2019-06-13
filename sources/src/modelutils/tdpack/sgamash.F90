@@ -18,7 +18,7 @@
       Function sgamash(tt, pr, swph, ti)
       use tdpack, only: grav, cpd, eps1, rgasd, schal, foqst, foqsa
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real tt, pr, ti, sgamash
 !

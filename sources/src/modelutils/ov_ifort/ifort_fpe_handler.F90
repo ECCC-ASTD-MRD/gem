@@ -40,7 +40,7 @@ subroutine fpe_handler(sig, code)
 
 #ifdef WITH_intel
 
-   if (code == FPE$INVALID .or. FPE$ZERODIVIDE .or. FPE$OVERFLOW) then
+   if (code == FPE$INVALID .or. code == FPE$ZERODIVIDE .or. code == FPE$OVERFLOW) then
       call msg_buffer_flush()
    endif
    write(msg_s,*) 'Traceback: Application SIGFPE error! sig=', sig,', code=', code,':'

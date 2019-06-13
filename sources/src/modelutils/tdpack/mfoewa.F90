@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,52 +12,45 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/r mfoewa  -  calcule tension de vapeur saturante ew.
-!              -  (eau seulement)
-!
-      Subroutine mfoewa(ew,tt,ni,nk,n)
-      use tdpack
-      implicit none
-#include <arch_specific.hf>
-      Integer ni, nk, n
-      Real ew(ni,nk), tt(ni,nk)
-!
-!Author
-!          N. Brunet  (Jan91)
-!
-!Revision
-! 001   A. PLante (June 2003) - IBM conversion
-!
-!Object
-!          to calculate the saturation vapour pressure. (Water phase
-!          considered only for all temperatures)
-!
-!Arguments
-!
-!          - Output -
-! ew       saturated vapour pressure in Pa
-!
-!          - Input -
-! tt       temperature in K
-! ni       horizontal dimension
-! nk       vertical dimension
-! n        number of points to process
-!--------------------------------------------------------------------
-      Integer i, k
-      Real*8, Dimension(ni,nk) :: work
-!***********************************************************************
+!-------------------------------------- LICENCE END ---------------------------
 
-      Do k=1,nk
-      Do i=1,n
+subroutine mfoewa(ew,tt,ni,nk,n)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   use tdpack
+   implicit none
+!!!#include <arch_specific.hf>
+   include "rmnlib_basics.inc"
+   !@object calcule tension de vapeur saturante ew. (eau seulement)
+   !        calculate the saturation vapour pressure. (Water phase
+   !        considered only for all temperatures)
+   !@arguments
+   !          - Output -
+   ! ew       saturated vapour pressure in Pa
+   !          - Input -
+   ! tt       temperature in K
+   ! ni       horizontal dimension
+   ! nk       vertical dimension
+   ! n        number of points to process
+   integer ni, nk, n
+   real ew(ni,nk), tt(ni,nk)
+   !@author N. Brunet  (Jan91)
+   !@revision
+   ! 001   A. PLante (June 2003) - IBM conversion
+
+   integer i, k
+   real(REAL64), dimension(ni,nk) :: work
+   !--------------------------------------------------------------------
+   do k=1,nk
+      do i=1,n
          work(i,k)=foewaf(tt(i,k))
-      Enddo
-      Enddo
-      Call vexp(work,work,n*nk)
-      Do k=1,nk
-      Do i=1,n
+      enddo
+   enddo
+   call vexp(work,work,n*nk)
+   do k=1,nk
+      do i=1,n
          ew(i,k)=aerk1w*work(i,k)
-      Enddo
-      Enddo
-!
-    End Subroutine mfoewa
+      enddo
+   enddo
+   !--------------------------------------------------------------------
+   return
+end subroutine mfoewa

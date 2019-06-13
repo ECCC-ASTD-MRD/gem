@@ -32,6 +32,7 @@
       use step_options
       use tdpack
       use glb_pil
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -44,9 +45,6 @@
 !author
 !     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
 !
-!revision
-! v4_80 - Qian, Dugas, Hussain            - initial version
-! v4_80 - Baek - correction for spn_wt, removed unused variables
 !
 !arguments
 !  Name        I/O                 Description
@@ -73,9 +71,9 @@
 
       external rpn_comm_transpose
 
-      real*8 fdwfft(F_Miny:F_Maxy,F_Minz :F_Maxz ,F_Gni+2+F_npex1)
-      real*8   fdg2(F_Minz:F_Maxz,F_Minij:F_Maxij,F_Gnj+2+F_npey1)
-      real*8  pri
+      real(kind=REAL64) fdwfft(F_Miny:F_Maxy,F_Minz :F_Maxz ,F_Gni+2+F_npex1)
+      real(kind=REAL64)   fdg2(F_Minz:F_Maxz,F_Minij:F_Maxij,F_Gnj+2+F_npey1)
+      real(kind=REAL64)  pri
 
       integer gmmstat
       type(gmm_metadata):: metadata

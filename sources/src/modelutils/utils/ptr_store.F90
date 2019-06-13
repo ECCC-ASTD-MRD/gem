@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,6 +15,8 @@
 
 !/@
 module ptr_store
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower
    implicit none
    private
    !@objective 
@@ -27,8 +29,7 @@ module ptr_store
    !
 !@/
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
-#include <clib_interface_mu.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 
    interface ptr_store_new
@@ -78,11 +79,13 @@ contains
          call msg(MSG_ERROR,'(ptr_store) New, Name already in use: '//trim(name_S))
          return
       endif
-      
+ 
       do ii=1,m_nbptr_r4_3d
          if (associated(m_ptr_list_r4_3d(ii)%ptr,F_data)) then
             if (m_ptr_list_r4_3d(ii)%name_S /= ' ') then
-               call msg(MSG_ERROR,'(ptr_store) New, Ptr already registered as '//trim(m_ptr_list_r4_3d(ii)%name_S)//', Cannot rename to: '//trim(name_S))
+               call msg(MSG_ERROR,'(ptr_store) New, Ptr already registered as '&
+                    //trim(m_ptr_list_r4_3d(ii)%name_S)//', Cannot rename to: '&
+                    //trim(name_S))
                return
             else
                !TODO-later: should we allow naming of locked ptr

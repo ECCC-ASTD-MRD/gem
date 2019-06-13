@@ -22,13 +22,12 @@ module sfc_calcdiag
 contains
 
    !/@*
-   subroutine sfc_calcdiag3(f,v,fsiz,vsiz,moyhr,acchr,dt,trnch,kount,step_driver,ni,nk)
-!#TODO: trnch, nk never used
+   subroutine sfc_calcdiag3(f,v,fsiz,vsiz,moyhr,acchr,dt,kount,step_driver,ni)
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
       use sfcbus_mod
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       !@Arguments
@@ -39,12 +38,10 @@ contains
       !          - input -
       ! fsiz     dimension of f
       ! vsiz     dimension of v
-      ! trnch    slice number
       ! kount    timestep number
       ! dt       length of timestep
       ! n        horizontal running length
-      ! nk       vertical dimension
-      integer :: fsiz, vsiz, moyhr, acchr, trnch, kount, step_driver, ni, nk
+      integer :: fsiz, vsiz, moyhr, acchr, kount, step_driver, ni
       real, target :: f(fsiz), v(vsiz)
       real :: dt
       !*@/

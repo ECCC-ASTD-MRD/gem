@@ -76,6 +76,7 @@ void set_timeout_signal( int channel, int option );
 int get_timeout_signal( int channel );
 
 int connect_with_timeout(char *ipaddress, int portno, int timeout);
+int connect_with_timeout_localport(char *ipaddress, int portno, int timeout);
 
 static int maxsize = 1024;
 
@@ -690,6 +691,133 @@ int set_host_and_port(char *channel_file, char *host_and_port)  /*   %ENTRY%   *
      } 
    /* Trying to connect with timeout  */
    res = connect(soc, (struct sockaddr *)&addr, sizeof(addr));
+
+   if (res < 0) 
+     { 
+       if (errno == EINPROGRESS) 
+	 { 
+	   fprintf(stderr, "EINPROGRESS in connect() - selecting\n"); 
+	   do { 
+	     tv.tv_sec = timeout; 
+	     tv.tv_usec = 0; 
+	     FD_ZERO(&myset); 
+	     FD_SET(soc, &myset);
+	     /* monitor fd socket for write operation during timeout */
+	     res = select(soc+1, NULL, &myset, NULL, &tv); 
+
+	     if (res < 0 && errno != EINTR) 
+	       { 
+		 fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno)); 
+		 close(soc); 
+		 return(-1); 
+	       } 
+	     else if (res > 0) 
+	       { 
+		 /* Socket selected for write  */
+		 lon = sizeof(int); 
+		 if (getsockopt(soc, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) 
+		   { 
+		     fprintf(stderr, "Error in getsockopt() %d - %s\n", errno, strerror(errno)); 
+		     close(soc); 
+		     return(-1); 
+		   } 
+		 /* Check the value returned...  */
+		 if (valopt) 
+		   { 
+		   fprintf(stderr, "Error in delayed connection() %d - %s\n", valopt, strerror(valopt));
+		   close(soc); 
+		   return(-1); 
+		 } 
+		 break; 
+	       } 
+	     else 
+	       { 
+		 fprintf(stderr, "Timeout in select() - Cancelling!\n"); 
+		 close(soc); 
+		 return(-1); 
+	       } 
+	   } while (1); 
+	 } 
+       else  /* not EINPROGRESS */
+	 { 
+	   fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno)); 
+	   close(soc); 
+	   return(-1); 
+	 } 
+     } 
+   /* Set to blocking mode again...  */
+   if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+     { 
+       fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+       close(soc); 
+       return(-1); 
+     } 
+   arg &= (~O_NONBLOCK); 
+
+   if( fcntl(soc, F_SETFL, arg) < 0) 
+     { 
+       fprintf(stderr, "Error fcntl(..., F_SETFL) (%s)\n", strerror(errno)); 
+       close(soc); 
+       return(-1); 
+     } 
+   /* I hope that is all  */
+   if(soc > 0)
+     {
+   /*JMB   set buffer sizes for socket and disable Nagle algorithm */
+      set_sock_opt(soc);
+     }
+   return(soc);
+ }
+
+ /*******************************************************/
+ int connect_with_timeout_localport(char *ipaddress, int portno, int timeout) 
+ { 
+   int res; 
+   struct sockaddr_in addr; 
+   long arg; 
+   fd_set myset; 
+   struct timeval tv; 
+   int valopt; 
+   socklen_t lon; 
+   int soc;
+
+   /* Create socket  */
+   soc = socket(AF_INET, SOCK_STREAM, 0); 
+   if (soc < 0) 
+     { 
+       fprintf(stderr, "Error creating socket (%d %s)\n", errno, strerror(errno)); 
+       return(-1); 
+     } 
+
+   addr.sin_family = AF_INET; 
+   addr.sin_port = htons(portno); 
+//   addr.sin_addr.s_addr = inet_addr(ipaddress); //
+   addr.sin_addr.s_addr = INADDR_ANY;
+
+   /* Set non-blocking  */
+   if( (arg = fcntl(soc, F_GETFL, NULL)) < 0) 
+     { 
+       fprintf(stderr, "Error fcntl(..., F_GETFL) (%s)\n", strerror(errno)); 
+       close(soc); 
+       return(-1); 
+     } 
+   arg |= O_NONBLOCK;
+
+   if( fcntl(soc, F_SETFL, arg) < 0) 
+     { 
+       fprintf(stderr, "Error fcntl(..., F_SETFL) (%s)\n", strerror(errno)); 
+       close(soc); 
+       return(-1); 
+     } 
+   /* Trying to connect with timeout  */
+   res = connect(soc, (struct sockaddr *)&addr, sizeof(addr));
+
+   //JMB
+        time_t current_time = time(NULL);
+        struct tm *tm = localtime(&current_time);
+	//        printf("\nCurrent Date and Time:\n");
+	//        printf("%s\n", asctime(tm));
+	fprintf(stderr, "connect_with_timeout_localport: PINGER connect port=<%d> ,res=<%d>  ! Current Date and Time: %s \n", portno,res,asctime(tm));
 
    if (res < 0) 
      { 

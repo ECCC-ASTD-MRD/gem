@@ -1,6 +1,6 @@
 module rootfind
   ! A set of functions provided to help with numerical root-finding
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    implicit none
    private
 #include <rmnlib_basics.hf>

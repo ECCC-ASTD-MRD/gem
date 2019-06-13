@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN --------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,10 +12,11 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ----------------------------
 
 module integrals
-#include <arch_specific.hf>
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+!!!#include <arch_specific.hf>
    implicit none
    private
 #include <rmnlib_basics.hf>
@@ -35,7 +36,7 @@ module integrals
       module procedure integral_solve_sdep
       module procedure integral_solve_sdepsa
    end interface int_solve
-   
+ 
    ! Internal parameters
    integer, parameter :: LONG_CHAR=16                           !Long character string length
    character(len=LONG_CHAR), parameter :: DEFAULT_TYPE='pchip'  !Default integration method
@@ -58,11 +59,12 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
-      real(kind=RDOUBLE), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz') where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to calculate vertical integrals of a given profile
@@ -75,7 +77,7 @@ contains
       real, dimension(:), pointer :: z1iloc,z2iloc
       real, dimension(size(yi,dim=1)) :: z1,z2
       real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: z,y,h,del,b,c,d
-      real(kind=RDOUBLE), dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: A
+      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: A
       logical :: bnd_invert
 
       ! Set error return status
@@ -95,7 +97,7 @@ contains
          z2iloc => z1i
          bnd_invert = .true.
       endif
-         
+ 
       ! Invert input arrays if necessary
       if (pchip_extend(yi,zi,y,z,z1i=z1iloc,z2i=z2iloc,z1=z1,z2=z2,direc='UP') /= PCHIP_OK) then
          call msg(MSG_WARNING,'(integral_pchip) Error returned by pchip_extend')
@@ -104,13 +106,13 @@ contains
 
       ! Compute layer thickness and deltas
       istat = pchip_layers(y,z,h,del)
-      
+
       ! Compute interpolating polynomial coefficients
       istat = pchip_coef(h,del,b,c,d)
-      
+
       ! Find subdomain
       istat = subdomain(z,z1,z2,k1,k2)
-      
+
       ! Integral profile by interpolation
       A = 0.
       do i=1,n
@@ -172,11 +174,12 @@ contains
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
       character(len=*), intent(in) :: type                      !Linear subtype ('linear' or 'step')
-      real(kind=RDOUBLE), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz') where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
 
       !Author
-      !          R. McTaggart-Cowan and A.Zadra (July 2017)    
+      !          R. McTaggart-Cowan and A.Zadra (July 2017)
 
       !Object
       !          to calculate vertical integrals of a given profile
@@ -188,7 +191,7 @@ contains
       real, dimension(:), pointer :: z1iloc,z2iloc
       real, dimension(size(yi,dim=1)) :: z1,z2
       real, dimension(size(yi,dim=1),size(yi,dim=2)+2) :: z,y,zh
-      real(kind=RDOUBLE), dimension(size(yi,dim=1),size(yi,dim=2)+2) :: A
+      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)+2) :: A
       logical :: bnd_invert
 
       ! Set error return status
@@ -214,7 +217,7 @@ contains
          call msg(MSG_WARNING,'(integral_linear) Error returned by pchip_extend')
          return
       endif
-      
+ 
       ! Define layer interfaces
       zh = 0.
       do k=size(z,dim=2),2,-1
@@ -265,18 +268,19 @@ contains
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
       character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(kind=RDOUBLE), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz') where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (July 2017)    
+      !          R.McTaggart-Cowan (July 2017)
 
       !Object
       !          Dispatch requests for vertical integration.
 
       ! Local variables
       character(len=LONG_CHAR) :: myType
-      
+ 
       ! Initialize return value
       status = INT_ERR
 
@@ -301,7 +305,7 @@ contains
          call msg(MSG_WARNING,'(integral_profile_vec_dble) error returned from integration subprogram')
          return
       end if
-         
+
       ! End of subprogram
       return
    end function integral_profile_vec_dble
@@ -316,17 +320,18 @@ contains
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
       character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real, dimension(:,:), intent(out) :: Ai                   !Integrated profile A(z) = int^z (g(z')*y(z')*dz') where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real, dimension(:,:), intent(out) :: Ai                   !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (May 2017)    
+      !          R.McTaggart-Cowan (May 2017)
 
       !Object
       !          Wrap call to double-precision calculation.
 
       ! Local variables
-      real(kind=RDOUBLE), dimension(size(Ai,dim=1),size(Ai,dim=2)) :: Ai_dble
+      real(REAL64), dimension(size(Ai,dim=1),size(Ai,dim=2)) :: Ai_dble
       character(len=LONG_CHAR) :: myType
 
       ! Handle optional arguments
@@ -351,18 +356,18 @@ contains
       real, dimension(:), intent(in) :: z1i                     !Lower limit of integration
       real, dimension(:), intent(in) :: z2i                     !Upper limit of integration
       character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(kind=RDOUBLE), dimension(:), intent(out) :: Si       !Integrated value
+      real(REAL64), dimension(:), intent(out) :: Si       !Integrated value
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to calculate vertical integrals of a given profile
       !          using PCHIP interpolation
 
       ! Local variables
-      real(kind=RDOUBLE), dimension(size(yi,dim=1),size(yi,dim=2)) :: Ai
+      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)) :: Ai
       character(len=LONG_CHAR) :: myType
 
       ! Set error return status
@@ -400,13 +405,13 @@ contains
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (May 2017)    
+      !          R.McTaggart-Cowan (May 2017)
 
       !Object
       !          Wrap call to double-precision calculations.
 
       ! Local variables
-      real(kind=RDOUBLE), dimension(size(Si)) :: Si_dble
+      real(REAL64), dimension(size(Si)) :: Si_dble
       character(len=LONG_CHAR) :: myType
 
       ! Handle optional arguments
@@ -431,11 +436,11 @@ contains
       real, intent(in) :: z1i                                   !Lower limit of integration
       real, intent(in) :: z2i                                   !Upper limit of integration
       character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(kind=RDOUBLE), dimension(:), intent(out) :: Si       !Integrated value
+      real(REAL64), dimension(:), intent(out) :: Si       !Integrated value
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to calculate vertical integrals of a given profile
@@ -479,13 +484,13 @@ contains
       integer :: status                                         !Return status of function
 
       !Author
-      !          R.McTaggart-Cowan (May 2017)    
+      !          R.McTaggart-Cowan (May 2017)
 
       !Object
       !          Wrap call to double-precision calculations.
 
       ! Local variables
-      real(kind=RDOUBLE), dimension(size(Si)) :: Si_dble
+      real(REAL64), dimension(size(Si)) :: Si_dble
       character(len=LONG_CHAR) :: myType
 
       ! Handle optional arguments
@@ -513,24 +518,24 @@ contains
       real, dimension(:), intent(in) :: zidep                   !Departure level for integral
       real, dimension(:), intent(in) :: a                       !Right hand side of integral equation
       character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
-      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a 
+      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
       integer, intent(in), optional :: fd_unittest              !Open file descriptor for unit test results
       logical, dimension(:), intent(out), optional :: found     !Found a solution to the integral equation within the column
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to solve an integral equation using PCHIP interpolation
 
       ! Notes
       !          The result is zci: the value of z at which the equation
-      !                int^z (g(z')*y(z')*dz') = a 
+      !                int^z (g(z')*y(z')*dz') = a
       !          is solved, with weight function g given by
       !                     | 1.  , between zidep and zi(1) or zi(nk) depending on direc
       !              g(z) = |
-      !                     | 0.  , otherwise 
+      !                     | 0.  , otherwise
 
       ! Local variable declaration
       integer :: n,nk,i,k,istat,ku
@@ -549,7 +554,7 @@ contains
       ! Initialize array bounds
       n = size(yi,dim=1)
       nk = size(yi,dim=2)
-      
+ 
       ! For the integral solution a() should always be positive, so negate yi() if necessary
       yyi(:,:) = yi(:,:)
       do i=1,n
@@ -626,7 +631,7 @@ contains
                      write(fd_unittest,*) zloc+dz, floc
                   enddo
                endif
-               
+ 
                ! Check for a possible maximum within the layer
                LOCAL_MAX: if (dff(hlow)*dff(hhigh) < 0.) then
                   if (rf_nrbnd(root,dff,d2ff,(/hlow/),(/hhigh/)) /= RF_OK) then
@@ -668,7 +673,7 @@ contains
       case ('UP')
          zci = zc - zidep
       end select
-      
+ 
       ! Generate solution report on request
       if (present(found)) found(:) = myFound(:)
 
@@ -699,7 +704,7 @@ contains
          real, intent(in) :: x
          d2ff = d(i,k) + 2.*c(i,k) + 3*b(i,k)*x**2
       end function d2ff
-      
+ 
    end function integral_solve_vdep
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -713,11 +718,11 @@ contains
       real, intent(in) :: zidep                                 !Departure level for integral
       real, dimension(:), intent(in) :: a                       !Right hand side of integral equation
       character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
-      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a 
+      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to solve an integral equation using PCHIP interpolation
@@ -751,11 +756,11 @@ contains
       real, intent(in) :: zidep                                 !Departure level for integral
       real, intent(in) :: a                                     !Right hand side of integral equation
       character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
-      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a 
+      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
       integer :: status                                         !Return status of function
 
       !Author
-      !          A.Zadra (Aug 2016)    
+      !          A.Zadra (Aug 2016)
 
       !Object
       !          to solve an integral equation using PCHIP interpolation
@@ -777,14 +782,14 @@ contains
       status = INT_OK
       return
    end function integral_solve_sdepsa
-   
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
       ! Return an upper cased version of a string
-#include <clib_interface_mu.hf>
       character(len=*), intent(in) :: str
       character(len=len_trim(str)) :: uc_str
-      
+
       ! Local variables
       integer :: istat
 

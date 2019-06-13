@@ -30,6 +30,7 @@
 !     v5.1 - Subich C. - Initial version
 
 module multigrid_3d_jac
+   use, intrinsic :: iso_fortran_env
    implicit none
    ! With a sufficiently large halo region, the relaxation can proceed with just
    ! one boundary exchange per relaxation pass.  This comes at the expense of
@@ -54,7 +55,7 @@ module multigrid_3d_jac
    ! The multigrid V-cycle uses an underweighted (k-block) Jacobi iteration for the
    ! relaxation step.  Matlab testing suggested 0.87 was a good value for the weight
    ! parameter, but it remains to see if this can be forever fixed or needs to vary.
-   real*4, parameter :: JACWEIGHT = 0.95
+   real, parameter :: JACWEIGHT = 0.95
 
    ! The multigrid iteration needs the operator not just at the default, finest
    ! level, but also at a number of coarse levels along the way.  It is convenient
@@ -63,7 +64,7 @@ module multigrid_3d_jac
    ! this type corresponds to a multigrid level
    type matrix_info
       ! The matrix on this level, with indexing (i,j,k,STENCIL).
-      real*4, dimension(:,:,:,:), allocatable :: mat
+      real, dimension(:,:,:,:), allocatable :: mat
 !dir$ attributes align: 64 :: mat
 
       ! Cached factors for the tridiagonal solve, derived via the Thomas algorithm:
@@ -72,7 +73,7 @@ module multigrid_3d_jac
       ! lhs(k) = d(k) - cp(k)*lhs(k+1)
       ! where b, m, and cp are derived from the matrix coefficients.  These can be kept
       ! between passes, saving on some repeated floating-point work
-      real*4, dimension(:,:,:), allocatable :: scal, cp, m
+      real, dimension(:,:,:), allocatable :: scal, cp, m
 !dir$ attributes align: 64 :: scal, cp, m
 
       ! The number of global points in i, j, k at this level, using the prefix ge
@@ -125,14 +126,14 @@ contains
       use glb_pil, only: glb_pil_s, glb_pil_w ! Global pilot region sizes
       use sol, only: sol_pil_w, sol_pil_e, sol_pil_s, sol_pil_n ! Local pilot region sizes
 
-      real*8, intent(in), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Rhs
-      real*8, intent(out), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Lhs
+      real(kind=REAL64), intent(in), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Rhs
+      real(kind=REAL64), intent(out), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Lhs
 
       ! Define internal rhs/sol arrays for exchange with the v-cycle.  These arrays
       ! use the global grid numbering, but that numbering may not yet be defined
       ! if grid_info is uninitialized.  So, declare these arrays allocatable:
 
-      real*4, allocatable, dimension(:,:,:) :: rhs_v, sol_v, sol_inc
+      real, allocatable, dimension(:,:,:) :: rhs_v, sol_v, sol_inc
 !dir$ attributes align: 64 :: rhs_v, sol_v, sol_inc
 
       ! This interface routine copies between these array, so define loop variables:
@@ -176,7 +177,7 @@ contains
       sol_inc = 0
 
       ! Copy the incoming RHS to the internal array; this also converts
-      ! it from REAL*8 to REAL*4
+      ! it from REAL64 to REAL32
 
       do k=1,ge_k
          rhs_v(:,alb_j:(llb_j-1),k) = 0 ! Explicitly zero unused parts of RHS
@@ -286,7 +287,7 @@ contains
 
       ! Copy the matrix from 'matrix' in the matvec module, transposing to an
       ! (i,j,k,IDX) ordering, aligning with the grid conventions in this module,
-      ! and downconverting to REAL*4
+      ! and downconverting to REAL32
       do k=1,ge_k
          do j=alb_j,(llb_j-1)
             grid_info(ilevel)%mat(:,j,k,:) = 0
@@ -594,10 +595,10 @@ contains
                              llb_i, lub_i, llb_j, lub_j,       & ! Local bounds, exclusive of halo
                              ge_i, ge_j                          ! Global extents over all processors
       ! Matrix
-      real*4, intent(in) :: mat(alb_i:aub_i,alb_j:aub_j,ge_k,7)
+      real, intent(in) :: mat(alb_i:aub_i,alb_j:aub_j,ge_k,7)
 
       ! Storage arrays for the tridiagonal factors
-      real*4, intent(out), dimension(alb_i:aub_i,alb_j:aub_j,ge_k) :: scal, cp, m
+      real, intent(out), dimension(alb_i:aub_i,alb_j:aub_j,ge_k) :: scal, cp, m
 
       ! Loop variables
       integer :: i, j, k
@@ -662,24 +663,24 @@ contains
       ! On output: if update_rhs is .true., the remaining residual rhs_v - M*sol_v;
       !            if update_rhs is .false., undefined (an intermediate result)
       integer, intent(in) :: mylevel
-      real*4, contiguous, intent(inout) :: rhs_v(grid_info(mylevel)%alb_i:,grid_info(mylevel)%alb_j:,:)
+      real, contiguous, intent(inout) :: rhs_v(grid_info(mylevel)%alb_i:,grid_info(mylevel)%alb_j:,:)
 
       logical, intent(in) :: update_rhs
 
       ! On output, sol_v contains a valid left-hand-side estimate on the region
       ! (llb_i:lub_i,llb_j:lub_j,:), and undefined outside this region
-      real*4, contiguous, intent(out)   :: sol_v(grid_info(mylevel)%alb_i:,grid_info(mylevel)%alb_j:,:)
+      real, contiguous, intent(out)   :: sol_v(grid_info(mylevel)%alb_i:,grid_info(mylevel)%alb_j:,:)
 
 
       ! Fine-grid working array, for storing the solution increment
-      real*4 :: sol_inc(grid_info(mylevel)%alb_i : grid_info(mylevel)%aub_i, &
+      real :: sol_inc(grid_info(mylevel)%alb_i : grid_info(mylevel)%aub_i, &
                         grid_info(mylevel)%alb_j : grid_info(mylevel)%aub_j, &
                         grid_info(mylevel)%ge_k)
 !dir$ attributes align: 64 :: sol_inc
 
       ! Coarse-grid working arrays, defined as allocatable because they are unused
       ! at the coarsest level
-      real*4, allocatable :: rhs_cg(:,:,:), sol_cg(:,:,:)
+      real, allocatable :: rhs_cg(:,:,:), sol_cg(:,:,:)
 !dir$ attributes align: 64 :: rhs_cg, sol_cg
 
       ! Loop and bounds variables
@@ -952,11 +953,11 @@ contains
       integer, intent(in) :: alb_i, aub_i, alb_j, aub_j, ge_k ! Allocated array bounds
       integer, intent(in) :: lb_i, ub_i, lb_j, ub_j ! Array subset
 
-      real*4, intent(in) :: weight ! Underrelaxation weight used for the Jacobi pass
+      real, intent(in) :: weight ! Underrelaxation weight used for the Jacobi pass
 
-      real*4, intent(inout) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! RHS
-      real*4, intent(in)    :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Solution, for M*sol
-      real*4, intent(in)    :: mat(alb_i:aub_i, alb_j:aub_j, ge_k, 7) ! Matrix
+      real, intent(inout) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! RHS
+      real, intent(in)    :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Solution, for M*sol
+      real, intent(in)    :: mat(alb_i:aub_i, alb_j:aub_j, ge_k, 7) ! Matrix
 
       ! Loop variables
       integer :: i, j, k
@@ -998,9 +999,9 @@ contains
       integer, intent(in) :: alb_i, aub_i, alb_j, aub_j, ge_k ! Allocated array bounds
       integer, intent(in) :: lb_i, ub_i, lb_j, ub_j ! Array subset
 
-      real*4, intent(inout) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! RHS
-      real*4, intent(in)    :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Solution, for M*sol
-      real*4, intent(in)    :: mat(alb_i:aub_i, alb_j:aub_j, ge_k, 7) ! Matrix
+      real, intent(inout) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! RHS
+      real, intent(in)    :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Solution, for M*sol
+      real, intent(in)    :: mat(alb_i:aub_i, alb_j:aub_j, ge_k, 7) ! Matrix
 
       ! Loop variables
       integer :: i, j, k
@@ -1056,13 +1057,13 @@ contains
       integer, intent(in) :: alb_i, aub_i, alb_j, aub_j, ge_k ! Allocated array bounds
       integer, intent(in) :: lb_i, ub_i, lb_j, ub_j ! Solved array subset
 
-      real*4, intent(in) :: weight ! Underrelaxation weight
+      real, intent(in) :: weight ! Underrelaxation weight
 
-      real*4, intent(in) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! Input RHS
-      real*4, intent(out) :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Output LHS
-      real*4, intent(in) :: scal(alb_i:aub_i, alb_j:aub_j, ge_k) ! Input matrix LU factors
-      real*4, intent(in) :: cp(alb_i:aub_i, alb_j:aub_j, ge_k)   !
-      real*4, intent(in) :: m(alb_i:aub_i, alb_j:aub_j, ge_k)    !
+      real, intent(in) :: rhs(alb_i:aub_i, alb_j:aub_j, ge_k) ! Input RHS
+      real, intent(out) :: sol(alb_i:aub_i, alb_j:aub_j, ge_k) ! Output LHS
+      real, intent(in) :: scal(alb_i:aub_i, alb_j:aub_j, ge_k) ! Input matrix LU factors
+      real, intent(in) :: cp(alb_i:aub_i, alb_j:aub_j, ge_k)   !
+      real, intent(in) :: m(alb_i:aub_i, alb_j:aub_j, ge_k)    !
 
       ! Loop variables
       integer :: i, j, k
@@ -1070,7 +1071,7 @@ contains
 
       ! Working arrays for the Thomas algorithm; these are overwritten as
       ! part of the tridiagonal solve
-      real*4, dimension(VECLEN,ge_k) :: ds
+      real, dimension(VECLEN,ge_k) :: ds
 
       ! Alignment directives
 !dir$ attributes align: 64 :: ds

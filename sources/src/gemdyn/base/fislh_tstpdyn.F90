@@ -38,12 +38,13 @@
       use gmm_itf_mod
       use yyg_param
       use gem_timing
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, icln
 
-      real*8, dimension (ldnh_maxx-ldnh_minx+1, ldnh_maxy-ldnh_miny+1, l_nk) :: rhs_sol, lhs_sol
+      real(kind=REAL64), dimension (ldnh_maxx-ldnh_minx+1, ldnh_maxy-ldnh_miny+1, l_nk) :: rhs_sol, lhs_sol
       real, pointer, contiguous, dimension(:,:,:)  :: hut1, hut0
 
       real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1, l_nk) :: nl_u, & ! non-linear deviation of U

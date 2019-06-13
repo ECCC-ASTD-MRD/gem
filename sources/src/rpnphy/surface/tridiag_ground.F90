@@ -75,7 +75,7 @@
 !
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !
 !*       0.1 declarations of arguments

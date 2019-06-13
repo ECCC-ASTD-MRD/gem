@@ -23,6 +23,7 @@
       use ptopo
       use tdpack
       use trp
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,19 +40,19 @@
 !     dsp_local - field to filter
 !
 
-      real*8, intent(in) :: bfact, lambda
+      real(kind=REAL64), intent(in) :: bfact, lambda
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk), intent(inout) :: dsp_local
 
 !
       integer kx,kz
       integer i, j, k
       real    err, min_local, min_global
-      real*8  sigma, trx, try, pri8
+      real(kind=REAL64)  sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
-      real*8, dimension(:),     allocatable  :: freqy
-      real*8, dimension(:,:),   allocatable  :: freqx
-      real*8, dimension(:,:,:), allocatable  :: psi_local,work_local,ffx_local
+      real(kind=REAL64), dimension(:),     allocatable  :: freqy
+      real(kind=REAL64), dimension(:,:),   allocatable  :: freqx
+      real(kind=REAL64), dimension(:,:,:), allocatable  :: psi_local,work_local,ffx_local
       logical, save :: init_done
 !
       allocate( freqx(l_nj,G_ni+2),freqy(G_nj+2))
@@ -71,7 +72,7 @@
       sigma=lambda*sqrt(-2.d0*log(bfact))/(2*pi_8);
 !
 !
-!     Transfer to a real*8 array to apply 2D Fourier filter
+!     Transfer to a real(kind=REAL64) array to apply 2D Fourier filter
 !     ===================================================================
 !
       psi_local=dble(dsp_local(:,:,1:l_nk))

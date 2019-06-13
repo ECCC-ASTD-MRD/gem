@@ -28,7 +28,7 @@ contains
       use phybus
       use series_mod, only: series_xst
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Object add the effects of the sloping terrain to the radiation computation.
       !@Arguments

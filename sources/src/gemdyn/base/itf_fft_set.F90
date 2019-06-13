@@ -20,12 +20,13 @@
       use glb_ld
       use glb_pil
       use gem_fft
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       character(len=*), intent(in) :: F_type_S
       integer, intent(in) ::  F_dim
-      real*8, intent(out) ::  F_pri_8
+      real(kind=REAL64), intent(out) ::  F_pri_8
       integer :: istat, npts
 
       ! With an FFTW backend, this routine needs only to save:

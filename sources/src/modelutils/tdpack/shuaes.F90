@@ -18,7 +18,7 @@
       Function shuaes3(hu,tt,ps,swph)
       use tdpack, only: aerk1w, aerk1i, aerk2w, aerk2i, aerk3w, aerk3i, foefq, trpl
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real shuaes3, hu, tt, ps
       Logical swph
 !

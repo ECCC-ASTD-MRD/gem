@@ -16,7 +16,7 @@
       SUBROUTINE SUN_RADFIX1(SIGMA,COSAS1,COSAS2,PSOL,HEAT,TOIT,NI,NK)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       INTEGER NI,NK
       REAL    SIGMA(NI,NK)

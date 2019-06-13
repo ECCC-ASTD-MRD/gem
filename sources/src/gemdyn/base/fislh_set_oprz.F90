@@ -21,6 +21,7 @@
       use lun
       use opr
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -29,9 +30,9 @@
 !Author: Claude Girard, July 2017
 
       integer :: k, AA, BB, CC
-      real*8, dimension(G_nk) :: r_8
-      real*8, dimension(G_nk*G_nk) :: br_8, bl_8
-      real*8, parameter :: one = 1.d0, half = 0.5d0
+      real(kind=REAL64), dimension(G_nk) :: r_8
+      real(kind=REAL64), dimension(G_nk*G_nk) :: br_8, bl_8
+      real(kind=REAL64), parameter :: one = 1.d0, half = 0.5d0
 !     __________________________________________________________________
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -18,7 +18,7 @@
       Function sfoefq(qq,pr)
       use tdpack, only: foefq
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfoefq, qq, pr
 !
 !Author

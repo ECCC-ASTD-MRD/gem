@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module opr
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -40,7 +41,7 @@ module opr
 ! Opr_odvec_8        | odd  eigenvectors                               |
 !----------------------------------------------------------------------
 !
-   real*8, dimension(:), allocatable :: Opr_opsxp0_8, Opr_opsyp0_8, Opr_evvec_8 , &
+   real(kind=REAL64), dimension(:), allocatable :: Opr_opsxp0_8, Opr_opsyp0_8, Opr_evvec_8 , &
                                         Opr_odvec_8 , Opr_opsxp2_8, Opr_opsyp2_8, &
                                         Opr_opszp0_8, Opr_opszpm_8, Opr_opszpl_8, &
                                         Opr_opszp2_8, Opr_xeval_8 , &

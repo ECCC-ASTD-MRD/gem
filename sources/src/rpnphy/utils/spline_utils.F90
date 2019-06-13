@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,10 +12,10 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module spline_utils
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    implicit none
    private
 #include <rmnlib_basics.hf>
@@ -140,11 +140,11 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
       ! Return an upper cased version of a string
-#include <clib_interface_mu.hf>
       character(len=*), intent(in) :: str
       character(len=len_trim(str)) :: uc_str
-      
+ 
       ! Local variables
       integer :: istat
 

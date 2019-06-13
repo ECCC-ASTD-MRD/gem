@@ -28,6 +28,7 @@
       use rstr
       use step_options
       use gem_timing
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -43,9 +44,9 @@
       integer, external :: model_timeout_alarm
       character(len=16) :: datev
       integer :: stepf,last_step, seconds_since, istat
-      real*8 :: dayfrac
+      real(kind=REAL64) :: dayfrac
 
-      real*8, parameter :: sec_in_day = 86400.0d0
+      real(kind=REAL64), parameter :: sec_in_day = 86400.0d0
 !
 !     ---------------------------------------------------------------
 !

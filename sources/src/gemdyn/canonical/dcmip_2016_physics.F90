@@ -60,14 +60,14 @@
       !GEM's adaptation to DCMIP 2016 physics:                                       !
       !1) Combines elements from 2 subroutines: simple_physics_v6/dcmip_physics_z_v1 !
       !2) PRESSURE not changed ((RHO is changed)                                     !
-      !3) Vertical index increases from BOTTOM to TOP                                ! 
+      !3) Vertical index increases from BOTTOM to TOP                                !
       !------------------------------------------------------------------------------!
 
       !---------------------------------------------------------------------------------------------------------------
 
-      real(8) :: uu(l_nk),vv(l_nk),qsv(l_nk),qsc(l_nk),qsr(l_nk),precl,pm(0:l_nk),pt(l_nk+1),tt(l_nk)
+      real(kind=REAL64) :: uu(l_nk),vv(l_nk),qsv(l_nk),qsc(l_nk),qsr(l_nk),precl,pm(0:l_nk),pt(l_nk+1),tt(l_nk)
 
-      real(8) :: not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
+      real(kind=REAL64) :: not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
 
       integer :: i,j,k,istat,kk,step_reset,test
 
@@ -133,7 +133,7 @@
 
       !Get GMM variables
       !-----------------
-      istat = gmm_get(gmmk_pw_uu_plus_s , pw_uu_plus ) !U wind component on Scalar grid 
+      istat = gmm_get(gmmk_pw_uu_plus_s , pw_uu_plus ) !U wind component on Scalar grid
       istat = gmm_get(gmmk_pw_vv_plus_s , pw_vv_plus ) !V wind component on Scalar grid
       istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus ) !Pressure THERMO
       istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus ) !Pressure MOMENTUM

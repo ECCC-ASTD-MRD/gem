@@ -1,4 +1,4 @@
-add_definitions(-DAMD64 -Di386=i386 -DLINUX_X86_64 -DLittle_Endian)
+add_definitions(-DAMD64 -DLINUX_X86_64 -DLittle_Endian -DECCCGEM)
 
 set(CMAKE_C_COMPILER "pgcc")
 set(CMAKE_Fortran_COMPILER "pgfortran")

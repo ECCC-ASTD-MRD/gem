@@ -21,7 +21,7 @@
         use tdpack
         use svs_configs
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       INTEGER N 
       REAL WD(N,NL_SVS), FCD(N, NL_SVS)

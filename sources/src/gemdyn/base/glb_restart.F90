@@ -27,7 +27,7 @@
       external wkoffit
 !
       if (mode == 'W') then
-	stop 'glb_restart WRITE MODE'
+         stop 'glb_restart WRITE MODE'
       else
         if (wkoffit('../restart_glbdyn.bin') == 10)  &
         stop 'glb_restart READ MODE'

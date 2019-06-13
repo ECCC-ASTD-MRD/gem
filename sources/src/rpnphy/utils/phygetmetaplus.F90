@@ -1,30 +1,32 @@
 !-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
 module phygetmetaplus_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_toupper
    use phybus, only: entbus, perbus, dynbus, volbus
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj
    use phy_typedef
    implicit none
    private
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include <gmm.hf>
-#include <clib_interface_mu.hf>
+#include <mu_gmm.hf>
+
    include "buses.cdk"
 
    public :: phygetmetaplus, phygetmetaplus_single, phygetmetaplus_list, phymetaplus
@@ -50,7 +52,7 @@ contains
       implicit none
       !@objective Retreive physic var metadata for first/only matching var
       !@arguments
-      type(phymetaplus), intent(out) :: F_meta    !Physics field metadata 
+      type(phymetaplus), intent(out) :: F_meta    !Physics field metadata
       character(len=*),  intent(in)  :: F_name    !Name of field to retrieve (input, variable or output name)
       character(len=*),  intent(in)  :: F_npath   !Name path to search ['VOI']
       character(len=*),  intent(in)  :: F_bpath   !Bus path to search ['PVD']
@@ -110,7 +112,7 @@ contains
       maxmeta = min(size(meta_tmp),F_maxmeta)
       if (associated(F_meta)) &
            maxmeta = min(size(F_meta),maxmeta)
-      
+
       !# Loop to search for matching record
       full = .false.
       cnt  = 0

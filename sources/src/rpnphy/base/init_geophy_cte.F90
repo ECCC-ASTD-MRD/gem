@@ -16,10 +16,10 @@
 !
       logical function init_geophy_cte ( val, liste, nbre, unout )
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer nbre,unout
-      character * (*) liste(nbre)
+      character(len=*) liste(nbre)
       real val(nbre)
 !
 !author

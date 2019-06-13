@@ -27,8 +27,8 @@ list=""
 
 r.fstinfo0 -izfst ${izfst} -datev =${datev} -vdatev =${vdatev} -etiket "${etiket}" -ip1 =${ip1} -ip2 =${ip2} -ip3 =${ip3} -typvar "${typvar}" -nomvar "${nomvar}" \
  -otxt ${TMPDIR}/fstlist.$$ > /dev/null 2>&1
-integer infoexit=$?
-if [ $infoexit -ne 0 ]
+infoexit=$(($?+0))
+if test ${infoexit} -ne 0
 then
     echo ${list}
     exit $infoexit

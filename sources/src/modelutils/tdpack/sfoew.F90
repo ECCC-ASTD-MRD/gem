@@ -18,7 +18,7 @@
       Function sfoew(tt)
       use tdpack, only: foew
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfoew,tt
 !
 !Author

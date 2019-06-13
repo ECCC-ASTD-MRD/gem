@@ -1,29 +1,31 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!-------------------------------------- LICENCE BEGIN ------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module phy_getmeta_mod
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
+   use clib_itf_mod, only: clib_toupper
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus, PATHLENGTH
-!!$   use phygridmap, only: 
+!!$   use phygridmap, only:
    private
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include <gmm.hf>
-#include <clib_interface_mu.hf>
+#include <mu_gmm.hf>
+
    include "buses.cdk"
 
    public :: phy_getmeta, phy_getmeta_single, phy_getmeta_list, PATHLENGTH
@@ -92,7 +94,7 @@ contains
       !@return
       integer :: F_istat !# number of matching vars (>=0), RMN_ERR on error
       !@author Ron McTaggart-Cowan - Spring 2014
-      !*@/    
+      !*@/
       character(len=PHY_MAXNAMELENGTH) :: npath, bpath
       integer :: istat, maxmeta, i, nmatch
       logical :: quiet, shortmatch, to_alloc

@@ -38,7 +38,7 @@
       subroutine pllwfgfw(spd,dir,xlat,xlon,li,lj,grtyp,ig1,ig2,ig3,ig4)
 
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer   li,lj
       real      spd(li,lj), dir(li,lj), xlat(li,lj),xlon(li,lj)

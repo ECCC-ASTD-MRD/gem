@@ -18,7 +18,7 @@
       Subroutine mfoew(ew,tt,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Integer ni, nk, n
       Real ew(ni,nk), tt(ni,nk)
 !

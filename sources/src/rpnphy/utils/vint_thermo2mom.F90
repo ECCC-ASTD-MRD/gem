@@ -17,7 +17,7 @@
 subroutine vint_thermo2mom(fldout,fldin,vcoef,ni,nk)
    use phygridmap, only: phydim_nk
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Arguments
    integer, intent(in)  :: ni, nk         !# dimensions
    real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
@@ -42,7 +42,7 @@ end subroutine vint_thermo2mom
 subroutine vint_mom2thermo(fldout,fldin,vcoef,ni,nk)
    use phygridmap, only: phydim_nk
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Arguments
    integer, intent(in)  :: ni, nk         !#  dimensions
    real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef

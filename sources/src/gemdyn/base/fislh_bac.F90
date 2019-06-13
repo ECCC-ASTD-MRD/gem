@@ -37,11 +37,12 @@
       use ver
       use metric
       use ctrl
+      use, intrinsic :: iso_fortran_env
       implicit none
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, in, jn
 
-      real*8, dimension(ni,nj,Nk),                intent(in)  :: F_lhs_sol
+      real(kind=REAL64), dimension(ni,nj,Nk),                intent(in)  :: F_lhs_sol
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out) :: F_u,F_v,F_t,F_w,F_zd
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(out) :: F_q
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)  :: F_ru,F_rv,F_rt,F_rw,F_rf
@@ -53,8 +54,8 @@
 
 !
       integer :: i, j, k, km
-      real*8  :: Buoy
-      real*8, parameter :: zero=0.d0, one=1.d0, half=0.5d0
+      real(kind=REAL64)  :: Buoy
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !     __________________________________________________________________
 !
       if (Ctrl_testcases_adv_L) then

@@ -20,7 +20,7 @@
                           dt, inptr, inpt, lev1, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev1, il1, il2, k, i, m, n, l, lp1, r
       real x1, y1, x2, y2, x11, x21, y21, y11, x12, x22, y12, y22

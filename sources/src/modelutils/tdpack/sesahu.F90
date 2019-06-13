@@ -18,7 +18,7 @@
       Function sesahu3(es,tt,ps,swph)
       use tdpack, only: foew, foewa, foqfe
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sesahu3, es, tt, ps
       Logical swph
 !

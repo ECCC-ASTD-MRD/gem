@@ -28,6 +28,7 @@
       use glb_ld
       use glb_pil
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,17 +36,17 @@
       integer F_t1nks, F_gnk,   F_nk  , F_t1nk , F_gni, F_gnj
       integer F_npex1, F_npey1
 
-      real*8  Sol (1:F_t0nis, 1:F_t0njs, F_gnk ), &
+      real(kind=REAL64)  Sol (1:F_t0nis, 1:F_t0njs, F_gnk ), &
               Rhs (1:F_t0nis, 1:F_t0njs, F_gnk ), &
               F_ai(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_bi(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_ci(1:F_t1nks, 1:F_t2nis, F_gnj)
-      real*8, allocatable, save ::  F_dwfft(:,:,:)
-      real*8  F_dg2  (1:F_t1nks, 1:F_t2nis, F_gnj  +F_npey1)
+      real(kind=REAL64), allocatable, save ::  F_dwfft(:,:,:)
+      real(kind=REAL64)  F_dg2  (1:F_t1nks, 1:F_t2nis, F_gnj  +F_npey1)
 
       ! FFTW plans
       type(dft_descriptor), save :: forward_plan, reverse_plan
-      real*8 pri ! Normalization constant
+      real(kind=REAL64) pri ! Normalization constant
 
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -80,7 +81,7 @@
       character(len=4) :: type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
-      real*8, parameter :: zero = 0.d0
+      real(kind=REAL64), parameter :: zero = 0.d0
 !     __________________________________________________________________
 !
                          type_fft = 'QCOS'

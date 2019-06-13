@@ -1,121 +1,110 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
 !of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
 !version 3 or (at your option) any later version that should be found at:
 !http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
+
 !This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 !without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/p vco2inf2
-!
-      subroutine vco2inf2(uco2,tco2,nl,nn,nk,nls,ni1,nmax, &
-       sh,t,ps,s,sc,del,co2ppmv)
-!
-      implicit none
-#include <arch_specific.hf>
-      real a1d,a1g,a2d,a2g,awing
-      integer nl,nn,nk,nls,nmax,ni1
-      real eco2,a1c,a2c,qco2,elsa,z,co2ppmv
-      real uco2(nls,nmax,2),del(nls,nk),sc(nls,nmax),tco2(nls,nmax,nmax)
-      real s(nls,nmax),sh(nls,nk),t(ni1,nk),ps(nls)
-!
-!author
-!          l.garand (1989)
-!
-!revision
-! 001      g.pellerin(mar90)standard documentation
-! 002      louis garand -add co2 wing bands
-! 003      Y. Chartier (dec93) add first dimension nls to compute
-!          transmissivity in local sigma
-! 004      l. garand (march 94) add temperature effects on transmission
-!                     these are important above 50 mb
-! 005      l. garand (april 96) transition from Lorentz to Voigt line shape
-!                     following Giorgetta & Morcrette, MWR, 1995, p. 3381-3383
-! 006      l. garand (november 97) - change CO2 concentration from 330 ppm
-!                                    to 360 ppm
-! 007      b. dugas (sep 2002)     - CO2 ppmv concentration is passed
-!                                    as input parametre co2ppmv
-! 008      b. bilodeau (april 2003) - IBM conversion
-!             - calls to vsexp  routine (from massvp4 library)
-!             - calls to vssqrt routine (from massvp4 library)
-!             - removal of loop 120 on k index; code now has a cost that
-!               is proportional to nk**2 instead of nk**3
-!             - removal of useless exponentiations
-! 009      m. desgagne and m. valin (april 2005) - optimization for OpenMP
-!
-!object
-!          to precalculate the quantities of co2 and the
-!          transmissivity from level to level
-!
-!arguments
-!
-!          - output -
-! uco2     amount of co2 in each layer of thickness del (kg/m2)
-!          third index: 1: wings, 2: center
-! tco2     precalculated transmissivity of co2 from level to level
-!          upper triangle of tco2 is used for the (strong) central band.
-!          the lower triangle of tco2 is used for the average of the
-!          right and left wings)
-!
-!          - input -
-! nl       number of profiles to process
-! nn       number of levels (nk+1)
-! nk       number of layers
-! nls      1st dimension of uco2 and vco2
-! ni1      1st dimension of t
-! nmax     maximum number of flux layers
-! sh       sigma levels at the centre of layers
-! t        temperature (k)
-! ps       surface pressure (newton/m2) for each profile
-! s        sigma levels at the borders of the layers
-! sc       work space
-! del      sigma thickness from level to level
-! ps       surface pressure (N/m2)
-! co2ppmv  co2 concentration in ppmv
-!
-!parameters
-!
-      real aprimec,aprimew
-      integer k,kk,kkk,k2,l
-      real voigt
-! all these parameters in table 1 of internal publication
-! by garand and mailhot (1990)
-!     Beware of eco2! See comment in loop 60
-      parameter (eco2=1.00)
-      parameter (a1c=198.0)
-      parameter (a2c=0.9768)
-      parameter (a1d=4.035)
-      parameter (a2d=0.8224)
-      parameter (a1g=5.439)
-      parameter (a2g=0.9239)
-      parameter (voigt = 60.)
-! temperature coefficienta a' for center and wings in k-1
-! especially important for wings; b' factor neglected
-      parameter (aprimec= 3.1e-3)
-      parameter (aprimew= 15.8e-3)
-!
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      REAL, dimension(NL     ) :: TRAPEZ1
-      REAL, dimension(NL     ) :: TRAPEZ2
-      REAL, dimension(NL     ) :: XT
-      REAL, dimension(NL     ) :: XX
-      REAL*8, dimension(NL     ) :: XP
-      REAL*8, dimension(NL,NN  ) :: TRAPEZE1
-      REAL*8, dimension(NL,NN  ) :: TRAPEZE2
-      REAL, dimension(NL,NN  ) :: XTK
-      REAL, dimension(NL,NN  ) :: XXK
-!
-!***********************************************************************
+!-------------------------------------- LICENCE END --------------------------
+
+subroutine vco2inf2(uco2,tco2,nl,nn,nk,nls,ni1,nmax, &
+     sh,t,ps,s,sc,del,co2ppmv)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+
+   real a1d,a1g,a2d,a2g,awing
+   integer nl,nn,nk,nls,nmax,ni1
+   real eco2,a1c,a2c,qco2,elsa,z,co2ppmv
+   real uco2(nls,nmax,2),del(nls,nk),sc(nls,nmax),tco2(nls,nmax,nmax)
+   real s(nls,nmax),sh(nls,nk),t(ni1,nk),ps(nls)
+
+   !@author l.garand (1989)
+   !@revision
+   ! 001      g.pellerin(mar90)standard documentation
+   ! 002      louis garand -add co2 wing bands
+   ! 003      Y. Chartier (dec93) add first dimension nls to compute
+   !          transmissivity in local sigma
+   ! 004      l. garand (march 94) add temperature effects on transmission
+   !                     these are important above 50 mb
+   ! 005      l. garand (april 96) transition from Lorentz to Voigt line shape
+   !                     following Giorgetta & Morcrette, MWR, 1995, p. 3381-3383
+   ! 006      l. garand (november 97) - change CO2 concentration from 330 ppm
+   !                                    to 360 ppm
+   ! 007      b. dugas (sep 2002)     - CO2 ppmv concentration is passed
+   !                                    as input parametre co2ppmv
+   ! 008      b. bilodeau (april 2003) - IBM conversion
+   !             - calls to vsexp  routine (from massvp4 library)
+   !             - calls to vssqrt routine (from massvp4 library)
+   !             - removal of loop 120 on k index; code now has a cost that
+   !               is proportional to nk**2 instead of nk**3
+   !             - removal of useless exponentiations
+   ! 009      m. desgagne and m. valin (april 2005) - optimization for OpenMP
+   !@object
+   !          to precalculate the quantities of co2 and the
+   !          transmissivity from level to level
+   !@arguments
+   !          - output -
+   ! uco2     amount of co2 in each layer of thickness del (kg/m2)
+   !          third index: 1: wings, 2: center
+   ! tco2     precalculated transmissivity of co2 from level to level
+   !          upper triangle of tco2 is used for the (strong) central band.
+   !          the lower triangle of tco2 is used for the average of the
+   !          right and left wings)
+   !          - input -
+   ! nl       number of profiles to process
+   ! nn       number of levels (nk+1)
+   ! nk       number of layers
+   ! nls      1st dimension of uco2 and vco2
+   ! ni1      1st dimension of t
+   ! nmax     maximum number of flux layers
+   ! sh       sigma levels at the centre of layers
+   ! t        temperature (k)
+   ! ps       surface pressure (newton/m2) for each profile
+   ! s        sigma levels at the borders of the layers
+   ! sc       work space
+   ! del      sigma thickness from level to level
+   ! ps       surface pressure (N/m2)
+   ! co2ppmv  co2 concentration in ppmv
+
+   real aprimec,aprimew
+   integer k,kk,kkk,k2,l
+   real voigt
+   ! all these parameters in table 1 of internal publication
+   ! by garand and mailhot (1990)
+   !     Beware of eco2! See comment in loop 60
+   parameter (eco2=1.00)
+   parameter (a1c=198.0)
+   parameter (a2c=0.9768)
+   parameter (a1d=4.035)
+   parameter (a2d=0.8224)
+   parameter (a1g=5.439)
+   parameter (a2g=0.9239)
+   parameter (voigt = 60.)
+   ! temperature coefficienta a' for center and wings in k-1
+   ! especially important for wings; b' factor neglected
+   parameter (aprimec= 3.1e-3)
+   parameter (aprimew= 15.8e-3)
+
+   real, dimension(NL     ) :: TRAPEZ1
+   real, dimension(NL     ) :: TRAPEZ2
+   real, dimension(NL     ) :: XT
+   real, dimension(NL     ) :: XX
+   real(REAL64), dimension(NL     ) :: XP
+   real(REAL64), dimension(NL,NN  ) :: TRAPEZE1
+   real(REAL64), dimension(NL,NN  ) :: TRAPEZE2
+   real, dimension(NL,NN  ) :: XTK
+   real, dimension(NL,NN  ) :: XXK
+
+   !***********************************************************************
 
 
       qco2 = nint( 547. * ( co2ppmv / 360.d0 ) ) * 1.e-6

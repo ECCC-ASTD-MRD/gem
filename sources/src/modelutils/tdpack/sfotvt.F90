@@ -18,7 +18,7 @@
       Function sfotvt(tt,qq)
       use tdpack, only: fotvt
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfotvt, tt, qq
 !
 !Author

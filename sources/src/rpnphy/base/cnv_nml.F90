@@ -16,10 +16,12 @@
 
 !/@*
 function cnv_nml2(F_namelist) result(F_istat)
+   use clib_itf_mod, only: clib_isreadok, clib_toupper
+   use tdpack_const
    use str_mod, only: str_concat,str_toreal
    use cnv_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Set defaults values and read convection namelist
    !@Arguments
    ! F_namelist    File name containing the namelists to read
@@ -30,8 +32,6 @@ function cnv_nml2(F_namelist) result(F_istat)
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include "tdpack_const.hf"
 
    integer, parameter :: CNV_NML_ERR = RMN_ERR
    integer, parameter :: CNV_NML_OK  = RMN_OK + 1

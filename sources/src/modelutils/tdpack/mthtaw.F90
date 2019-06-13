@@ -18,7 +18,7 @@
       Subroutine mthtaw3(tw,hu,tt,ps,swph,swth,ni,nk,n)
       use tdpack 
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real tw(ni,nk), hu(ni,nk), tt(ni,nk)
@@ -163,7 +163,7 @@
       Subroutine mthtaw4(tw,hu,tt,ps,swph,swth,ti,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Integer ni, nk, n
       Real tw(ni,nk), hu(ni,nk), tt(ni,nk)
       Real ps(ni,*), ti

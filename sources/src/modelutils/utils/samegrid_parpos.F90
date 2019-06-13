@@ -15,7 +15,7 @@
 
 integer function samegrid_parpos (xps,nis, xpd,nid, ideb, epsi)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@arguments
    integer,intent(in) :: nis,nid,ideb

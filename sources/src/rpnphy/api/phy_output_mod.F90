@@ -5,10 +5,13 @@
 ! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
 ! - service.rpn@ec.gc.ca
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
-!-------------------------------------------------------------------------- 
+!--------------------------------------------------------------------------
 
 !/@*
 module phy_output_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_getcwd
+   use wb_itf_mod, only: wb_get
    use phy_itf
    use phygridmap, only: phydim_ni, phydim_nk
    use output_mod
@@ -21,21 +24,19 @@ module phy_output_mod
    use statfld_dm_mod
    implicit none
    private
-   !@objective 
+   !@objective
    !@author Stephane Chamberland, April 2012
    !@revisions
    ! 001    M. Abrahamowicz    August 2013
    !        Test on 4 character instead of 2 for unit conversions
-   !        in phy_output1 
+   !        in phy_output1
    !@public_functions
    public :: phy_output,phy_output0,phy_output1_4,phy_output1_8
    !@public_params
    !@public_vars
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
 
    interface phy_output
@@ -57,8 +58,8 @@ contains
    !*@/
       character(len=*),parameter :: OUTCFG_NAME = 'outcfg.out'
       integer,save :: reduc_core(4)
-      integer(IDOUBLE),save :: jdateo = -1
-      real(RDOUBLE),save :: dt_8 = 0.D0
+      integer(INT64),save :: jdateo = -1
+      real(REAL64),save :: dt_8 = 0.D0
       character(len=1024),save :: outcfg_S,basedir_S
       character(len=1024) :: dateo_S,config_dir0_S,pwd_S
       !---------------------------------------------------------------------
@@ -96,7 +97,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer(IDOUBLE) :: jdateo
+      integer(INT64) :: jdateo
       !---------------------------------------------------------------------
       jdateo = jdate_from_cmc(F_dateo)
       F_istat = phy_output1_8(jdateo,F_dt,F_step,F_outcfg_S,F_basedir_S,F_reduc_core)
@@ -110,7 +111,7 @@ contains
       implicit none
       !@objective
       !@arguments
-      integer(IDOUBLE),intent(in) :: F_dateo
+      integer(INT64),intent(in) :: F_dateo
       integer,intent(in) :: F_dt,F_step,F_reduc_core(4)
       character(len=*),intent(in) :: F_outcfg_S,F_basedir_S
       !@return
@@ -165,7 +166,7 @@ contains
       endif IF_INIT
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      
+
       F_istat = RMN_OK
       n_items = output_getlist(out_id,F_step,mylist_S)
 
@@ -186,7 +187,7 @@ contains
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_WARNING,'(phy_output) Skipping var (not in bus): '//trim(mylist_S(ivar)))
             cycle
-         endif         
+         endif
 
          varname_S = mymeta%vname
          outname_S = mylist_S(ivar)

@@ -77,7 +77,7 @@ local const uInt crc_table[256] = {
 #define DO8(buf)  DO4(buf); DO4(buf);
 
 /* ========================================================================= */
-uLong ZEXPORT crc32(crc, buf, len)
+local uLong ZEXPORT crc32(crc, buf, len)
     uLong crc;
     const Bytef *buf;
     uInt len;

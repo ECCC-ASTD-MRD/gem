@@ -17,7 +17,7 @@
 subroutine aggveghigh(fcover, tablen, tables, aggf, lat, ni, nclass)
   use svs_configs, only : ntypeh, vh_type, furb_vl, epsilon_svs
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@Arguments
    !            - Input -

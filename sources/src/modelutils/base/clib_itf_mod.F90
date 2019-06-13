@@ -8,6 +8,7 @@
 !-------------------------------------------------------------------------- 
 !/@*
 module clib_itf_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
    implicit none
    public
    !@objective Module form of clib_interfaces include file
@@ -18,5 +19,22 @@ module clib_itf_mod
 
    integer,parameter,public :: CLIB_ok = CLIB_OK
    integer,parameter,public :: CLIB_error = CLIB_ERROR
+
+   contains
+
+#undef CLIB_IS_OK
+#undef CLIB_IS_ERROR
+
+      logical function CLIB_IS_OK(errcode)
+         implicit none
+         integer, intent(in) :: errcode
+         CLIB_IS_OK = (errcode >= 0)
+      end function
+
+      logical function CLIB_IS_ERROR(errcode)
+         implicit none
+         integer, intent(in) :: errcode
+         CLIB_IS_ERROR = (errcode < 0)
+      end function
 
 end module clib_itf_mod

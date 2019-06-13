@@ -19,7 +19,7 @@ function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_ista
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, phydim_nk
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    character(len=*), intent(in) :: F_path_S
    logical, intent(in)          :: F_print_L

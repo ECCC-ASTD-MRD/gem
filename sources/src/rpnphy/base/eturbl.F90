@@ -13,211 +13,205 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
+
 !/@*
-subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
-                         GAMAL,QL,U,V,T,TE,TVE,Q,QCE,QE,H,LH,PS,TS,S,SE, &
-                         TAU,KOUNT,GAMAQ,CCS,KT,Z,GZMOM,P_PROF,FRV,XH, &
-                         DXDY,TRNCH,N,NK,Z0,IT)
-!#TODO: never  used: QL, H, LH, TS, CCS, IT
-      use tdpack, only: CAPPA, DELTA, KARMAN
-      use series_mod, only: series_xst
-      use phy_options
-      use phy_status, only: phy_error_L
-      use mixing_length, only: ml_blend,ml_calc_blac,ml_calc_boujo,ML_OK
-      use pbl_stabfunc, only: psf_stabfunc, PSF_OK
-      implicit none
-#include <arch_specific.hf>
+subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
+     GAMAL,U,V,T,TE,TVE,Q,QCE,QE,PS,S,SE, &
+     TAU,KOUNT,GAMAQ,KT,Z,GZMOM,P_PROF,FRV,XH, &
+     DXDY,TRNCH,N,NK,Z0)
+   !#TODO: never  used: QL, H, LH, TS, CCS, IT
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use tdpack, only: CAPPA, DELTA, KARMAN
+   use series_mod, only: series_xst
+   use phy_options
+   use phy_status, only: phy_error_L
+   use mixing_length, only: ml_blend,ml_calc_blac,ml_calc_boujo,ML_OK
+   use pbl_stabfunc, only: psf_stabfunc, PSF_OK
+   implicit none
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-      integer TRNCH,N,NK
-      real EN(N,NK),ENOLD(N,NK),ZN(N,NK),ZD(N,NK),RIF(N,NK),TURBREG(N,NK),RIG(N,NK),SHR2(N,NK)
-      real GAMA(N,NK),FN(N,NK),XH(N)
-      real HOL(N),U(N,NK),V(N,NK)
-      real GAMAL(N,NK),QL(N,NK),DXDY(N)
-      real T(N,NK),TE(N,NK),TVE(N,NK),Q(N,NK),QCE(N,NK),QE(N,NK),H(N),LH(N),PS(N)
-      real TS(N),S(n,NK),SE(n,NK),P_PROF(NK)
-      real TAU
-      integer KOUNT
-      real LMN,Z0(N)
-      real FRV(N)
-      real KT(N,NK),GAMAQ(N,NK),CCS(N,NK)
-      real Z(N,NK),GZMOM(N,NK)
-      integer IT
-      real EXP_TAU
+   integer TRNCH,N,NK
+   real EN(N,NK),ENOLD(N,NK),ZN(N,NK),ZD(N,NK),RIF(N,NK),TURBREG(N,NK),RIG(N,NK),SHR2(N,NK)
+   real GAMA(N,NK),FN(N,NK),XH(N)
+   real HOL(N),U(N,NK),V(N,NK)
+   real GAMAL(N,NK),DXDY(N)
+   real T(N,NK),TE(N,NK),TVE(N,NK),Q(N,NK),QCE(N,NK),QE(N,NK),PS(N)
+   real S(n,NK),SE(n,NK),P_PROF(NK)
+   real TAU
+   integer KOUNT
+   real LMN,Z0(N)
+   real FRV(N)
+   real KT(N,NK),GAMAQ(N,NK)
+   real Z(N,NK),GZMOM(N,NK)
+   real EXP_TAU
 
-!@Author J. Cote (RPN 1983)
-!
-!@Revision
-! 001      J. Cote RPN(Nov 1984)SEF version documentation
-! 002      M. Lepine  -  RFE model code revision project (Feb 87)
-!                      -  Remove COMMON WKL2D1 and pass the
-!                         work field in parameter
-! 003      J.Mailhot RPN(Sep 1985) Series (RIF,BILAN EN)
-! 004      J.Mailhot RPN(Oct 1985) Scaling (ZN,ZE,C)
-! 005      J.Mailhot RPN(Oct 1985) Add countergradient term
-!               Adaptation to revised code G.Pellerin (Oct87)
-! 006      J. Mailhot-G.Pellerin (Nov 87) - Correction to the
-!                vertical diffusion of the turbulent energy
-! 007      J.Mailhot-G.Pellerin (Apr88)
-!               Return to the old formula for stable LAMBDA
-!               (with relaxation term (noise))
-!               countergradient term to zero.
-! 008      MJ L'Heureux  (Mar89) Initializations of fields
-!                                at KOUNT=0
-! 009      R.Benoit (Mar89)   -Y. Delage (May89)
-!               Revision of vertical diffusion
-! 010      Y. Delage (Jan90)
-!                Return DIAGSF and ETURBL coherents with FLXSRF for
-!                the calculation of unstable diffusion coefficients
-! 011      N. Brunet  (May90)
-!                Standardization of thermodynamic functions
-! 012      J.Mailhot RPN(Feb 1990) Shallow convection (GELEYN)
-! 013      G.Pellerin(August90)Adaptation to thermo functions
-! 014      Y. Delage  (Nov 1990) Options of shallow convection
-! 015      Y. Delage  (Nov1990)
-!                  Removal OFA,EA,PRI and BETA
-!                  Replace WC and HOL by ILMO
-! 016      N. Brunet  (May91)
-!                New version of thermodynamic functions
-!                and file of constants
-! 017      B. Bilodeau  (July 1991)- Adaptation to UNIX
-!
-! 018      C. Girard (Nov 1992)
-!          Modification of the shallow convection:
-!          - end of GELHU option
-!          - new significance for GELEYN option
-!          Modification to definitions:
-!          - neutral mixing length
-!          - stability functions
-!          - parameters XX=0., X1=.14
-! 019      B. Bilodeau (May 1994) - New physics interface
-! 020      G. Pellerin (Nov 1994) - New surface layer formulation
-! 021      G. Pellerin (Jan 1995) - Modifier l'extraction de LE
-! 022      G. Pellerin (Jun 1995) - Revert to original rigrad for
-!                          computation of unstable boundary layer
-! 023      B. Bilodeau (Nov 1995) - Replace VK by KARMAN
-! 024      B. Bilodeau and J. Mailhot (Jan 1996) -
-!          Eliminate divisions by zero
-! 024      R. Sarrazin (Jan 1996) - Carry boundary layer pointer in KCL
-! 025      C. Girard (Fev 1996) - Introduce different options for
-!             shalow convection - GELEYN,CONRES,SHALOW
-! 026      A-M.Leduc (Sept 2002) - add QC in arguments and remove ISHLCVT
-!                                  eturbl4--->eturbl5.
-!                                  Add X1 calculation for call to mixlen1.
-! 027      J. Mailhot (Mar 2003) - TKE advection.
-! 028      A. Plante (June 2003) - IBM conversion
-!             - Replace call to CVMG* by if-else statements
-!             - call to exponen4 (to calculate power function '**')
-!             - call to vslog routine (from massvp4 library)
-!             - constants precomputations
-!             - @PROCESS STRICT compilation option added
-! 029      S. Belair  (Mar 2003) - Add F(ZD) in arguments ...> eturbl6
-!             - Use time filter for the Bougeault-Lacarrere mixing length.
-!
-! 030      A. Plante (July 2003) - Correct bug in IBM conversion :
-!             - Virtual temperature was incorrect for MIXLEN1. This was
-!               a problem only if longmel = BOUJO
-! 031      B. Bilodeau (Aug 2003) - exponen4 replaced by vspow
-!                                   call to mixlen2
-! 032      A-M. Leduc (March 2004) - add arguments S ans PS to MIXLEN2--->
-!                                    MIXLEN3
-! 033      Y. Delage (Sept 2004) - Introduce log-linear profile mixing length for
-!                                    near-neutral cases.  Optimisation of KT.
-! 034      L. Spacek (Dec 2007) - add "vertical staggering" option
-!                                 change the name to eturbl7
-! 035      L. Spacek    (Sep 2011)   Eliminate obsolete options
-!Object
-!          to predict EN(turbulent energy) and ZN(mixing length)
-!
-!@Arguments
-!          - Input/Output -
-! EN       turbulent energy
-! ZN       mixing length of the turbulence
-!
-!          - Output -
-! RIF      flux Richardson number
-! RIG      gradient Richardson number
-! SHR2     square of wind shear
-!
-!          - Input -
-! ENOLD    turbulent energy (at time -)
-! ZNOLD    mixing length of the turbulence (at time -)
-! GAMA     countergradient term in the transport coefficient of
-!          Theta and Q
-! HOL      inverse of length of Monin-Obokhov
-! FN       cloud fraction
-! U        east-west component of wind
-! V        north-south component of wind
-! T        temperature
-! TVE      virtual temperature on 'E' levels
-! Q        specific humidity
-! QC       cloud water
-! QE       specific humidity on 'E' levels
-! XH       convective velocity scale (w*)
-! LH       launching height (m)
-!          - Input/Output -
-! H        boundary layer height
-!          - Input -
-! PS
-! S        sigma level
-! SE       sigma level for turbulent energy
-! DSGDZ    sigma intervals
-! TAU      timestep
-! KOUNT    index of timestep
-! KT       ratio of KT on KM (real KT calculated in DIFVRAD)
-! Z        height of sigma level
-! GZMOM    height of sigma momentum levels
-!          - Input -
-! TRNCH    number of the slice
-! N        horizontal dimension
-! M        1st dimension of T, Q, U, V
-! NK       vertical dimension
-! Z0       roughness length
-! IT       number of the task in muli-tasking (1,2,...) =>ZONXST
-!@Notes
-!          EN and ZN contain the values at time T and input U
-!          and V are wind images. C and ZE are over-written.
-!          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
-!          and Master thesis of J.Mailhot.
-!*@/
+   !@Object predict EN(turbulent energy) and ZN(mixing length)
 
+   !@Author J. Cote (RPN 1983)
+
+   !@Revision
+   ! 001      J. Cote RPN(Nov 1984)SEF version documentation
+   ! 002      M. Lepine  -  RFE model code revision project (Feb 87)
+   !                      -  Remove COMMON WKL2D1 and pass the
+   !                         work field in parameter
+   ! 003      J.Mailhot RPN(Sep 1985) Series (RIF,BILAN EN)
+   ! 004      J.Mailhot RPN(Oct 1985) Scaling (ZN,ZE,C)
+   ! 005      J.Mailhot RPN(Oct 1985) Add countergradient term
+   !               Adaptation to revised code G.Pellerin (Oct87)
+   ! 006      J. Mailhot-G.Pellerin (Nov 87) - Correction to the
+   !                vertical diffusion of the turbulent energy
+   ! 007      J.Mailhot-G.Pellerin (Apr88)
+   !               Return to the old formula for stable LAMBDA
+   !               (with relaxation term (noise))
+   !               countergradient term to zero.
+   ! 008      MJ L'Heureux  (Mar89) Initializations of fields
+   !                                at KOUNT=0
+   ! 009      R.Benoit (Mar89)   -Y. Delage (May89)
+   !               Revision of vertical diffusion
+   ! 010      Y. Delage (Jan90)
+   !                Return DIAGSF and ETURBL coherents with FLXSRF for
+   !                the calculation of unstable diffusion coefficients
+   ! 011      N. Brunet  (May90)
+   !                Standardization of thermodynamic functions
+   ! 012      J.Mailhot RPN(Feb 1990) Shallow convection (GELEYN)
+   ! 013      G.Pellerin(August90)Adaptation to thermo functions
+   ! 014      Y. Delage  (Nov 1990) Options of shallow convection
+   ! 015      Y. Delage  (Nov1990)
+   !                  Removal OFA,EA,PRI and BETA
+   !                  Replace WC and HOL by ILMO
+   ! 016      N. Brunet  (May91)
+   !                New version of thermodynamic functions
+   !                and file of constants
+   ! 017      B. Bilodeau  (July 1991)- Adaptation to UNIX
+   !
+   ! 018      C. Girard (Nov 1992)
+   !          Modification of the shallow convection:
+   !          - end of GELHU option
+   !          - new significance for GELEYN option
+   !          Modification to definitions:
+   !          - neutral mixing length
+   !          - stability functions
+   !          - parameters XX=0., X1=.14
+   ! 019      B. Bilodeau (May 1994) - New physics interface
+   ! 020      G. Pellerin (Nov 1994) - New surface layer formulation
+   ! 021      G. Pellerin (Jan 1995) - Modifier l'extraction de LE
+   ! 022      G. Pellerin (Jun 1995) - Revert to original rigrad for
+   !                          computation of unstable boundary layer
+   ! 023      B. Bilodeau (Nov 1995) - Replace VK by KARMAN
+   ! 024      B. Bilodeau and J. Mailhot (Jan 1996) -
+   !          Eliminate divisions by zero
+   ! 024      R. Sarrazin (Jan 1996) - Carry boundary layer pointer in KCL
+   ! 025      C. Girard (Fev 1996) - Introduce different options for
+   !             shalow convection - GELEYN,CONRES,SHALOW
+   ! 026      A-M.Leduc (Sept 2002) - add QC in arguments and remove ISHLCVT
+   !                                  eturbl4--->eturbl5.
+   !                                  Add X1 calculation for call to mixlen1.
+   ! 027      J. Mailhot (Mar 2003) - TKE advection.
+   ! 028      A. Plante (June 2003) - IBM conversion
+   !             - Replace call to CVMG* by if-else statements
+   !             - call to exponen4 (to calculate power function '**')
+   !             - call to vslog routine (from massvp4 library)
+   !             - constants precomputations
+   !             - @PROCESS STRICT compilation option added
+   ! 029      S. Belair  (Mar 2003) - Add F(ZD) in arguments ...> eturbl6
+   !             - Use time filter for the Bougeault-Lacarrere mixing length.
+   !
+   ! 030      A. Plante (July 2003) - Correct bug in IBM conversion :
+   !             - Virtual temperature was incorrect for MIXLEN1. This was
+   !               a problem only if longmel = BOUJO
+   ! 031      B. Bilodeau (Aug 2003) - exponen4 replaced by vspow
+   !                                   call to mixlen2
+   ! 032      A-M. Leduc (March 2004) - add arguments S ans PS to MIXLEN2--->
+   !                                    MIXLEN3
+   ! 033      Y. Delage (Sept 2004) - Introduce log-linear profile mixing length for
+   !                                    near-neutral cases.  Optimisation of KT.
+   ! 034      L. Spacek (Dec 2007) - add "vertical staggering" option
+   !                                 change the name to eturbl7
+   ! 035      L. Spacek    (Sep 2011)   Eliminate obsolete options
+
+   !@Arguments
+   !          - Input/Output -
+   ! EN       turbulent energy
+   ! ZN       mixing length of the turbulence
+   !
+   !          - Output -
+   ! RIF      flux Richardson number
+   ! RIG      gradient Richardson number
+   ! SHR2     square of wind shear
+   !
+   !          - Input -
+   ! ENOLD    turbulent energy (at time -)
+   ! ZNOLD    mixing length of the turbulence (at time -)
+   ! GAMA     countergradient term in the transport coefficient of
+   !          Theta and Q
+   ! HOL      inverse of length of Monin-Obokhov
+   ! FN       cloud fraction
+   ! U        east-west component of wind
+   ! V        north-south component of wind
+   ! T        temperature
+   ! TVE      virtual temperature on 'E' levels
+   ! Q        specific humidity
+   ! QC       cloud water
+   ! QE       specific humidity on 'E' levels
+   ! XH       convective velocity scale (w*)
+   !          - Input -
+   ! PS
+   ! S        sigma level
+   ! SE       sigma level for turbulent energy
+   ! DSGDZ    sigma intervals
+   ! TAU      timestep
+   ! KOUNT    index of timestep
+   ! KT       ratio of KT on KM (real KT calculated in DIFVRAD)
+   ! Z        height of sigma level
+   ! GZMOM    height of sigma momentum levels
+   !          - Input -
+   ! TRNCH    number of the slice
+   ! N        horizontal dimension
+   ! M        1st dimension of T, Q, U, V
+   ! NK       vertical dimension
+   ! Z0       roughness length
+
+   !@Notes
+   !          EN and ZN contain the values at time T and input U
+   !          and V are wind images. C and ZE are over-written.
+   !          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
+   !          and Master thesis of J.Mailhot.
+   !*@/
+ 
 #include "clefcon.cdk"
 #include "surface.cdk"
 #include "machcon.cdk"
-#include "phyinput.cdk"
+   include "phyinput.inc"
 
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      real, dimension(N) :: TEMPO,XB
-      real, dimension(N,2) :: WK
-      real, dimension(N,NK) :: WORK,ZE,C,X,DSGDZ,X1,FM,FH
-      real, dimension(N,4*NK) :: B
-!
-!***********************************************************************
-!
-!     temporary variables used to convert a #@$%!& CVMG.. expression
-!
-      real yuk1,yuk2,dtfac
-!
-      real, parameter :: EPSILON_B=1.E-8,PETIT=1.E-6,LMDA=200.
-      real ZNOLD(N,NK),beta_sfc(n)
-      real SC,EXP_EXPLIM,TAUINV
-      real, dimension(n,nk) :: zn_blac,zn_boujo,blend_hght
-      real, dimension(n,nk,3) :: w_cld
-      integer J,K,STAT
-      integer NKE
-      integer, dimension(N) :: SLK
-      integer, external :: neark
-!      
+   real, dimension(N) :: TEMPO,XB
+   real, dimension(N,2) :: WK
+   real, dimension(N,NK) :: WORK,ZE,C,X,DSGDZ,X1,FM,FH
+   real, dimension(N,4*NK) :: B
+
+   !***********************************************************************
+
+   !     temporary variables used to convert a #@$%!& CVMG.. expression
+
+   real yuk1,yuk2,dtfac
+
+   real, parameter :: EPSILON_B=1.E-8,PETIT=1.E-6,LMDA=200.
+   real ZNOLD(N,NK),beta_sfc(n)
+   real SC,EXP_EXPLIM,TAUINV
+   real, dimension(n,nk) :: zn_blac,zn_boujo,blend_hght
+   real, dimension(n,nk,3) :: w_cld
+   integer J,K,STAT
+   integer NKE
+   integer, dimension(N) :: SLK
+   integer, external :: neark
+
       EXP_EXPLIM=exp(-EXPLIM)
       TAUINV=1.0/TAU
       w_cld = 0.
-!
+
       NKE=NK
-!
+
 !     SHR2  =  ( D VENT / D Z ) ** 2
-!
+
       call ABSDVDZ3(SHR2,U,V,TVE,SE,DSGDZ,S,N,N,NK)
 
       do k=1,NKE
@@ -225,14 +219,14 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
             SHR2(j,k) = SHR2(j,k) + PETIT
          end do
       end do
-!
+
 !     RIG ( NOMBRE DE RICHARDSON GRADIENT)
-!
+
       if (PBL_RIBKG) then
          call rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,PBL_RIBKG,n,nk)
       else
-         call rigrad1(rig, gama, gamaq, xb, shr2, t, tve, q, qe, &
-              s, se, wk, n, n, nk)
+         call rigrad1b(rig, gama, gamaq, xb, shr2, t, tve, q, qe, &
+              s, wk, n, n, nk)
       endif
 
       call series_xst(RIG, 'RI', trnch)
@@ -256,13 +250,13 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 
 
 !                               CALCUL DE LA LONGUEUR DE MELANGE
-!
-!
+
+
        ZNOLD(:,:) = ZN(:,:)
-!
-!
+
+
 !                               A) BLACKADAR (1962)
-!
+
 
       TEMPO = 0.23*SQRT(DXDY) !high resolution (<850m) adjustment to neutral mixing length
 
@@ -282,11 +276,11 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
             zn_blac(j,k) = lmn / fm(j,k)
          enddo
       enddo
-!
+
 !     RIF ( NOMBRE DE RICHARDSON DE FLUX)
-!
+
       RIF = RIG
-      call RIFLUX(RIF,KT,N,N,NK)
+      call RIFLUX2(RIF,KT,N,NK)
 
 !     APPLY HYSTERESIS BASED ON TURBULENCE REGIME
       stat = neark(se,ps,3000.,n,nk,slk) !determine "surface layer" vertical index
@@ -402,26 +396,26 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 
 !     CALCUL DES TERMES ALGEBRIQUES DE L'EQUATION
 !             DE L'ENERGIE TURBULENTE
-!
+
 ! B       - PRODUCTION MECANIQUE ET THERMIQUE DE L'ENERGIE TURBULENTE
 !           PEUT ETRE NEGATIVE OU POSITIVE
 ! C       - DISSIPATION VISQUEUSE DE L'ENERGIE TURBULENTE > 0.0
-!
+
       do 2 K=1,NKE
          do 2 J=1,N
             C(J,K)=BLCONST_CE*ZE(J,K)
-!
+
       ZE(J,K)=(SHR2(J,K)-PETIT)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
       X(J,K)=-SHR2(J,K)*RIF(J,K)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
     2       B(J,K)=(C(J,K)+PETIT)*(ZE(J,K)+X(J,K))
-!
+
       if(KOUNT.eq.0)then
-!
+
 !     SOLUTION STATIONNAIRE
-!
+
 !     ON INITIALISE EN
 !     STATION EST ENLEVE  (+PRECALCUL DE EN)
-!
+
          do 33 K=1,NK
             do 33 J=1,N
    33          X(J,K)=0.0
@@ -447,7 +441,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
                  C(J,K)= sqrt(abs(C(J,K)/B(J,K)))
                  B(J,K)=min(B(J,K)*C(J,K)*TAU,EXPLIM)
                endif
-!
+
              if(B(J,K) > epsilon(B)) then
                yuk1 = -1.0+2.0/(1.0+exp(-AMIN1(abs(B(J,K)),174.))*(-1.0+2.0/ &
                        (1.0+sqrt(EN(J,K))*C(J,K))))
@@ -460,7 +454,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
                yuk1 = sqrt(EN(J,K))*C(J,K)/(1.+0.5*sqrt(EN(J,K))*C(J,K))
                B(J,K) = yuk1
              endif
-!
+
                if(abs(C(J,K)) < epsilon(C)) then
                 B(J,K)=EN(J,K)
                else
@@ -468,7 +462,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
                endif
                if(B(J,K)-PETIT .lt. 0.) B(J,K)=ETRMIN
                C(J,K)=ZE(J,K)+X(J,K)
-!
+
 !              TERMES DE PRODUCTION MECANIQUE ET THERMIQUE NULS SI EN=C
                if ((EN(J,K)-C(J,K)).ne.0.0) then
                   yuk2=abs((B(J,K)-C(J,K)) / (EN(J,K)-C(J,K)))
@@ -479,15 +473,15 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
             enddo
             call vslog(tempo,tempo,n)
             do j=1,n
-!
+
 !     TERME DE PRODUCTION MECANIQUE
-!
+
                ZE(J,K)=-ZE(J,K)*tempo(j) *tauinv
-!
+
 !     TERME DE PRODUCTION THERMIQUE
-!
+
                X(J,K)=-X(J,K)  *tempo(j) *tauinv
-!
+
 !     TERME DE DISSIPATION VISQUEUSE
                C(J,K)=-X(J,K)-ZE(J,K)+(B(J,K)-EN(J,K))*TAUINV
             enddo
@@ -521,7 +515,7 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
          enddo
       enddo
 !     C CONTIENT K(E) ET X1 CONTIENT ZERO
-!
+
       if (pbl_zerobc) then
          ZE(:,NK) = 0.
          C(:,NK) = 0.
@@ -540,8 +534,8 @@ subroutine ETURBL12(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 
 !     NOUVEAU EN
       en = max(ETRMIN,ze+tau*en)
-!
+
       endif
-!
+
       return
       end

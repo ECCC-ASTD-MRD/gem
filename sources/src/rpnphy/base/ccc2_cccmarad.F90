@@ -28,6 +28,7 @@ contains
         trnch, ni, nkm1, nk, &
         liqwcin, icewcin, liqwpin, icewpin, cldfrac)
       use iso_c_binding
+      use, intrinsic :: iso_fortran_env, only: REAL64, INT64
       use debug_mod, only: init2nan
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL2, GRAV, PI, STEFAN
@@ -38,7 +39,7 @@ contains
       use series_mod, only: series_xst, series_isstep
       use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       integer, intent(in) :: dsiz, fsiz, kount, trnch, vsiz, ni, nkm1, nk
@@ -103,7 +104,7 @@ contains
       include "nbsnbl.cdk"
       include "ccc_tracegases.cdk"
       include "tables.cdk"
-      include "phyinput.cdk"
+      include "phyinput.inc"
       include "mcica.cdk"
 
       logical, parameter :: SLOPE_L = .true.
@@ -126,8 +127,8 @@ contains
       real, dimension(ni, nkm1, nbs) :: exta, exoma, exomga, fa, taucs, omcs, gcs
       real, dimension(ni, nkm1, nbl) :: absa, taucl, omcl, gcl
 
-      integer*8 :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
-      real*8 :: hz_8
+      integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
+      real(REAL64) :: hz_8
       real :: hz, ptopoz, alwcap, fwcap, albrmu
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
       logical :: lcsw, lclw, aerosolback,thisstepisrad,nextstepisrad
@@ -417,8 +418,8 @@ contains
          ! from ozone zonal monthly climatology: interpolate to proper date
          ! and grid, calculate total amount above model top (ptop)
 
-         call radfac3(zo3s, zoztoit, sig, nk, nkm1, npcl, zdlat, ps, ni, ni, &
-              nk, p2, p3, p4, p5, p6, p7, p8, p10, p11, nlacl, &
+         call radfac4(zo3s, zoztoit, sig, nk, nkm1, npcl, zdlat, ps, ni, ni, &
+              p2, p3, p4, p5, p6, p7, p8, nlacl, &
               goz(fozon), goz(clat), goz(pref))
          if (phy_error_L) return
 

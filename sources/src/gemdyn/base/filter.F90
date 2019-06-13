@@ -18,6 +18,7 @@
       subroutine filter2 (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
       use gem_options
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,7 @@
 
       integer i, j, k, i0, in, j0, jn, n
       real w1(l_minx:l_maxx,l_miny:l_maxy,nk),coefficient
-      real*8, parameter :: half=0.5d0
+      real(kind=REAL64), parameter :: half=0.5d0
 !
 !-------------------------------------------------------------------
 !

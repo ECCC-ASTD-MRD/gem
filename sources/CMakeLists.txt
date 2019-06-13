@@ -3,10 +3,15 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(GEM_EXPO NONE)
 
-# gfortran is defined here as the default compiler
-# Its value can be changed here, or using the command:
-# cmake -DCOMPILER=ifort or cmake -DCOMPILER=pgfortran
+# cd sources
+# set the compiler by uncommenting one of the following 3 lines:
 set(COMPILER gfortran CACHE INTERNAL compiler)
+#set(COMPILER intel CACHE INTERNAL compiler)
+#set(COMPILER pgi CACHE INTERNAL compiler)
+# which will set the compiler and you can just type:
+# cmake ..
+# make -j
+
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # Include an architecture dependent file that contains settings for a
@@ -65,7 +70,7 @@ include_directories(src/archdep/include/${ARCH}-${COMPILER}
                     ${ROOT}/src/RPN/compiler_includes
                     )
 
-#TODO - link to the local libraries already installed
-#link_directories(${ROOT}/src/archdep/libs/${ARCH})
+#uncomment to link to the local libraries already installed
+#link_directories(${ROOT}/src/archdep/libs/${ARCH}-${COMPILER})
 
 add_subdirectory(src ${BUILD}/src)

@@ -15,16 +15,14 @@
 !-------------------------------------- LICENCE END --------------------------
 
 !/@*
-subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
+subroutine cldoptx6(LWC,LWP,IWP,neb,T,sig,ps, &
      lat,mg,ml,m,lmx,nk, &
      pbl,ipbl,dz,sdz,eneb,opdepth,asymg, &
      topthw,topthi, ctp,ctt, &
-     omegav,tauae,satuco, &
-     cw_rad,ioptix)
+     omegav,tauae,ioptix)
    use tdpack, only: GRAV, PI, RGASD
    implicit none
-!#TODO: never used: IWC, satuco, cw_rad
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@OBJECT
    !     computes optical parameters as input to visible and infrared
    !             radiation also includes aerosol parameterization
@@ -53,7 +51,6 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
    !            and WARM K-Y condensation schemes (cw_rad=1);
    !          * LIQUID water content for MIXED PHASE and
    !            COLD K-Y schemes (cw_rad=2).
-   ! IWC      ICE water content in Kg water/Kg air (only if cw_rad=2)
    !
    !          -Input -
    ! NEB      layer cloud amount (0. to 1.) (LMX,NK)
@@ -69,21 +66,13 @@ subroutine cldoptx5(LWC,IWC,LWP,IWP,neb,T,sig,ps, &
    ! LMX      number of profiles to compute
    ! M        first dimension of temperature (usually LMX)
    ! NK       number of layers
-   ! SATUCO   .TRUE. if water/ice phase for saturation
-   !          .FALSE. if water phase only for saturation
-   ! CW_RAD   = 0 if no cloud water content is provided as input;
-   !          = 1 if total water content is provided (in LWC);
-   !          = 2 if both liquid and ice water contents are provided
-   !              separately (in LWC and IWC respectively).
-   !          CW_RAD is defined in phydebu4, based on STCOND.
    ! IOPTIX   parameterizations for cloud optical properties
    !          = 1 for simpler condensation schemes
    !          = 2 for microphysics schemes
 
-   integer lmx,m,nk,cw_rad,ioptix
-   logical satuco
+   integer lmx,m,nk,ioptix
    real ipbl(lmx)
-   real LWC(LMX,nk), IWC(LMX,nk), LWP(LMX,nk), IWP(LMX,nk)
+   real LWC(LMX,nk), LWP(LMX,nk), IWP(LMX,nk)
    real neb(LMX,nk), t(m,nk), sig(LMX,nk)
    real ps(LMX),lat(LMX),eneb(LMX,nk),mg(LMX),ml(LMX)
    real opdepth(LMX,nk),asymg(LMX,nk),omegav(LMX,nk)

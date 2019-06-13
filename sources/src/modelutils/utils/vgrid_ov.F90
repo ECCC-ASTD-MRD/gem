@@ -23,14 +23,14 @@ module vgrid_ov
    private
    public :: vgrid_nullify, vgrid_associated
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
 contains
 
    !/@*
-   subroutine vgrid_nullify(F_vgd) 
+   subroutine vgrid_nullify(F_vgd)
       implicit none
       !@arguments
       type(vgrid_descriptor),intent(out) :: F_vgd

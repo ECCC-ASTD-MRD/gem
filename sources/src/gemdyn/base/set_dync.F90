@@ -25,6 +25,7 @@
       use matvec
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -33,8 +34,8 @@
 
 
       integer :: k,k0
-      real*8  :: w1, w2, Nstr2_8, cstr2_8
-      real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
+      real(kind=REAL64)  :: w1, w2, Nstr2_8, cstr2_8
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=.5d0
 !
 !     ---------------------------------------------------------------
 

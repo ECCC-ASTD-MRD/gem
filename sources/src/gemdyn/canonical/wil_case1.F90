@@ -26,6 +26,7 @@
       use gmm_itf_mod
       use ptopo
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -56,7 +57,7 @@
       !-----------------------------------------------------------------------------
 
       integer i,j,k
-      real*8  phi0_8,rlon_8,rlat_8,sint_8,cost_8,  &
+      real(kind=REAL64)  phi0_8,rlon_8,rlat_8,sint_8,cost_8,  &
               s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,  &
               sinl1_8,cosl1_8,sinl2_8,cosl2_8,     &
               sint1_8,cost1_8,sint2_8,cost2_8,     &

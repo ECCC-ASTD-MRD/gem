@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,17 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
      wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz,&
      hpar,frv,z0m,fb_surf,gzmom,ze,s,sw,ps,dudz2,ri,&
      dthv,tau,vcoef,n,nk,ncld)
+   use tdpack_const, only: DELTA, GRAV, RGASD
    use phy_options
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !
    ! Arguments
    integer, intent(in) :: n                             !horizontal dimension
@@ -63,7 +64,7 @@ subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
 
    !Author
    !          J. Mailhot (Nov 2000)
-   
+
    !Revision
    ! 001      A.-M. Leduc (Oct 2001) Automatic arrays
    ! 002      J. Mailhot (Jun 2002) Change calling sequence and rename BLCLOUD1
@@ -76,7 +77,7 @@ subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
    !Object
    !          Calculate the boundary layer buoyancy parameters (virtual potential
    !          temperature, buoyancy flux) and the vertical shear squared.
-   
+
    !Notes
    !          Implicit (i.e. subgrid-scale) cloudiness scheme for unified
    !             description of stratiform and shallow, nonprecipitating
@@ -88,8 +89,6 @@ subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
    !            - Bechtold et al. 1992, JAS 49, 1723-1744
    !          The boundary layer cloud properties (cloud fraction, cloud water
    !            content) are computed in the companion S/R CLSGS.
-   
-#include "tdpack_const.hf"   
 
    ! Local parameter definitions
    integer, parameter :: IMPLICIT_CLOUD=0

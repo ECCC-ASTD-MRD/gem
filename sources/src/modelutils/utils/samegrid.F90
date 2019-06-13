@@ -16,7 +16,7 @@
 !/@*
 logical function samegrid(unf, ni,nj, p1,p2,p3,g1,g2,g3,g4,xp,yp)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    integer,intent(in) :: unf, ni,nj, p1,p2,p3, g1,g2,g3,g4
    real,intent(in) :: xp(*), yp(*)
    !@author M.Desgagne
@@ -44,7 +44,7 @@ end function samegrid
 function is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
      nid,njd, g1d, g2d, g3d, g4d, xpd,ypd ) result(F_samegrid_L)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: nis,njs, g1s, g2s, g3s, g4s
    integer,intent(in) :: nid,njd, g1d, g2d, g3d, g4d
@@ -120,7 +120,7 @@ end function is_samegrid2
 !/@*
 function samesubgrid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd) result(F_subgridid)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)
    integer,intent(in) :: F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d
@@ -166,7 +166,7 @@ end function samesubgrid
 !/@*
 function is_samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd) result(F_samegrid_L)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)
    integer,intent(in) :: F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d
@@ -188,7 +188,7 @@ end function is_samegrid_sid
 !/@*
 function tst_parpo(xps,nis, xpd,nid, ideb, epsi) result (F_cnt)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: nis,nid,ideb
    real   ,intent(in) :: xps(nis), xpd(nid), epsi
@@ -216,7 +216,7 @@ end function tst_parpo
 subroutine samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
      nid,njd, g1d, g2d, g3d, g4d, xpd,ypd, inttyp)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@arguments
    character(len=*),intent(inout) ::  inttyp
@@ -241,7 +241,7 @@ end subroutine samegrid2
 !/@*
 subroutine samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd, F_inttyp_S)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@arguments
    character(len=*),intent(inout) :: F_inttyp_S
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)

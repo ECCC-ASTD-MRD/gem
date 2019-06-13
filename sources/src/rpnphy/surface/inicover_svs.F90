@@ -19,7 +19,7 @@ subroutine inicover_svs(kount, ni, trnch)
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    integer ni, kount, trnch
 
@@ -246,7 +246,7 @@ subroutine inicover_svs(kount, ni, trnch)
         3.0   , 3.0   , 3.0                      /
 
    !********************************************************************
-   integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
+   integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
    real, external :: interpveg
 
    integer :: i,k

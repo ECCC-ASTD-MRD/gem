@@ -30,7 +30,7 @@ contains
   !/@*
    subroutine prep_cw3(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Object Save water contents and cloudiness in the permanent bus
       !@Arguments
@@ -70,7 +70,7 @@ contains
    !/@*
    subroutine prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ni, nk)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Object Save water contents and cloudiness in the permanent bus
       !@Arguments
@@ -215,7 +215,7 @@ contains
    !/@*
    subroutine prep_cw_MP(f, fsiz,  v, vsiz, ficebl, ni, nk, nkm1)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Object
       ! When MP schemes are used; merge water contents from "implicit cloud

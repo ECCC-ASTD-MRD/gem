@@ -27,13 +27,14 @@
       use sol
       use opr
       use trp
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
       character(len=*) F_eigen_filename_S
 
       integer i, j, dim, Gni,Gnj,jj
-      real*8  sc_8, gdx_8, aab_8
-      real*8, dimension(:)  ,allocatable :: wk_8, wk2_8
+      real(kind=REAL64)  sc_8, gdx_8, aab_8
+      real(kind=REAL64), dimension(:)  ,allocatable :: wk_8, wk2_8
 !
 !     ---------------------------------------------------------------
 !

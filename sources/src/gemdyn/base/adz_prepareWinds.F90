@@ -21,6 +21,7 @@
       use gem_options
       use glb_ld
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +29,9 @@
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in)  :: &
                             uut1, vvt1, zzt1, uut0, vvt0, zzt0
       integer :: i,j,k,km2,nrow
-      real*8, parameter :: alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
-      real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4
-      real*8  :: lag3, zz, z1, z2, z3, z4
+      real(kind=REAL64), parameter :: alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
+      real(kind=REAL64)  :: xx, x1, x2, x3, x4, w1, w2, w3, w4
+      real(kind=REAL64)  :: lag3, zz, z1, z2, z3, z4
       lag3(zz, z1, z2, z3, z4)= &
                             ( ((zz - z2) * (zz - z3) * (zz - z4) ) / &
                               ((z1 - z2) * (z1 - z3) * (z1 - z4) ) )

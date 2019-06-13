@@ -18,7 +18,7 @@
       subroutine ccc1_preintr (inpr, dir, qq, rhc, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, il1, il2, jendr, k, i, j, l, lp1
       real rrmco2

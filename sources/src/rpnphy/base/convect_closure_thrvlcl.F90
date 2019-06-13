@@ -69,7 +69,7 @@ USE YOE_CONVPAR
 USE YOE_CONVPAREXT
 
 IMPLICIT NONE
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #define _ZERO_   0.0
 #define _ONE_    1.0
 

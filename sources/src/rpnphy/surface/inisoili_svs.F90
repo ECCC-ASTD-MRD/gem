@@ -19,7 +19,7 @@ subroutine inisoili_svs(ni, trnch)
    use svs_configs
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer ni, trnch
 

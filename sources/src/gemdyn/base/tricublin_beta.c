@@ -89,7 +89,7 @@
 //  use ISO_C_BINDING
 //  include "tricublin_f90.inc"
 //  type(C_PTR) :: lv, mv                            ! C pointer opaque descriptor object
-//  real*8, dimension(NK) :: levels                  ! list of positions for the third dimension
+//  real(kind=REAL64), dimension(NK) :: levels                  ! list of positions for the third dimension
 //  real, dimension(-2:NI+4,-1:NJ+3,NK), target   :: f, f1, f2, f3   ! single valued source arrays
 //  real, dimension(3,-2:NI+4,-1:NJ+3,NK), target :: f3              ! triple valued source array
 //  type(C_PTR), dimension(3) :: f123
@@ -262,7 +262,7 @@ static inline void denominators(double *r, double a, double b, double c, double 
 // Synopsis
 //    the function returns an opaque object of type C_PTR, to be passed to  the interpolators
 //
-//    levels      : real*8 array of levels, dimension(nk)
+//    levels      : real(kind=REAL64) array of levels, dimension(nk)
 //    nk          : number of levels
 //    ni, nj      : used to compute indexing into source array(s) for interpolators
 //
@@ -286,7 +286,7 @@ static inline void denominators(double *r, double a, double b, double c, double 
 // Synopsis
 //    the function returns an opaque object of type C_PTR, to be passed to  the interpolators
 //
-//    levels      : real*8 array of levels, dimension(nk)
+//    levels      : real(kind=REAL64) array of levels, dimension(nk)
 //    nk          : number of levels
 //    ni, nj      : used to compute indexing into source array(s) for interpolators
 //    offseti     : used to convert global position along i into local array position

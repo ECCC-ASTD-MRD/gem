@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module gmm_vt0
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -45,7 +46,7 @@ module gmm_vt0
       real, pointer, contiguous, dimension (:,:,:) ::  wt0 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  qt0 => null()
       real, pointer, contiguous, dimension (:,:,:) :: zdt0 => null()
-      real*8,pointer,dimension (:)     ::  p00 => null()
+      real(kind=REAL64),pointer,dimension (:)     ::  p00 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 

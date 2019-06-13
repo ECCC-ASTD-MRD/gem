@@ -23,6 +23,7 @@
                          Minx,Maxx,Miny,Maxy, F_Nk)
       use tdpack
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -44,7 +45,7 @@
       real    prlptop, prvttop, prfitop
       real    prlpbot, prvtbot, prfibot
       real    logpres(Nkout)
-      real*8  invprd
+      real(kind=REAL64)  invprd
 !
 !-------------------------------------------------------------------
 !
@@ -183,8 +184,9 @@
                         prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
                         if ( prlpbot >= prlprso ) then
                            F_vtout(i,j,kk) = prvttop
-                           F_gzout(i,j,kk) = prfitop + rgasd_8*prvttop*(prlptop-prlpbot)
-                           cycle
+                           F_gzout(i,j,kk) = prfitop + rgasd_8*prvttop*(prlptop-prlprso)
+                           go to 300
+!                           cycle ! not good to go to next pn1...
                         end if
                      else
                         prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
@@ -193,7 +195,8 @@
                            F_vtout(i,j,kk) = prvttop * &
                            exp ( rgasd_8 * prl * (prlprso-prlptop))
                            F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
-                           cycle
+                           go to 300
+!                           cycle ! not good
                         end if
                      end if
 
@@ -254,7 +257,7 @@
                   end if
                end if
 
-            end do
+ 300        end do
          end do
       end do
 !$omp enddo

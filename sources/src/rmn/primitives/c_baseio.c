@@ -69,13 +69,8 @@
 #define tell(fd) lseek(fd,0,1)
 #endif
 
-#if defined(__linux__) || defined(__AIX__) || defined( __APPLE__ )
+#if defined(__linux__) || defined(__AIX__)
 #define tell64(fd) lseek64(fd,0,1)
-#endif
-
-#if defined( __APPLE__ )
-#define lseek64 lseek
-#define open64 open
 #endif
 
 #ifdef __CYGWIN__

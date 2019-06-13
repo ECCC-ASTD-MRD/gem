@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module tdpack_const
+   use, intrinsic :: iso_fortran_env, only: REAL64
    public
 
    !# fpp tdpack_const.F90 provides the pre-processing result

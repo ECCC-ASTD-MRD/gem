@@ -24,29 +24,31 @@
       use prec             ! Qaddouri-- Blockwise Red/Black Gauss-Seidel and jacobi preconditioners
       use redblack_3d      ! csubich -- Red/Black (z-column) preconditioner
       use multigrid_3d_jac ! csubich -- Multigrid (column relaxation) preconditioner
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       ! Initial guess on input, approximate solution on output
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(inout) :: solution
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(inout) :: solution
 
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod)
             use glb_ld, only: l_nk
             use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
+      use, intrinsic :: iso_fortran_env
             implicit none
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
-            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
+            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
       end interface
 
       ! Right hand side of the linear system.
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: rhs_b
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: rhs_b
 
       ! Tolerance to achieve. The algorithm terminates when the relative
       ! residual is below tolerance.
-      real*8, intent(in) :: tolerance
+      real(kind=REAL64), intent(in) :: tolerance
 
       ! Restarts the method every maxinner inner iterations.
       integer, intent(in) :: maxinner
@@ -59,11 +61,8 @@
       ! Total number of iteration performed
       integer, intent(out) :: nbiter
 
-      real*8, intent(out) :: conv
+      real(kind=REAL64), intent(out) :: conv
 
-      ! Author
-      !     Stéphane Gaudreault -- May 2018
-      !
       ! References
       !
       ! C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations, SIAM, 1995
@@ -80,22 +79,23 @@
       integer :: i, j, k, k1, ii, jj, ierr
 
       integer :: initer, outiter, nextit, it
-      real*8 :: relative_tolerance, r0
-      real*8 :: norm_residual, norm_b, nu, t
-      real*8, dimension(maxinner+1, maxinner) :: hessenberg
+      real(kind=REAL64) :: relative_tolerance, r0
+      real(kind=REAL64) :: norm_residual, norm_Ax_2, b_Ax, hegedus_scaling, nu, t
+      real(kind=REAL64), dimension(maxinner+1, maxinner) :: hessenberg
 
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: work_space
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner) :: ww
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner+1) :: vv
-      real*8, dimension(maxinner+1, maxinner+1) :: rr, tt
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: work_space
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner) :: ww
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner+1) :: vv
+      real(kind=REAL64), dimension(maxinner+1, maxinner+1) :: rr, tt
 
-      real*8, dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_8
-      real*8, dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_82
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_8
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_82
 
-      real*8 :: local_dot
-      real*8, dimension(:,:), allocatable :: v_local_prod, v_prod
+      real(kind=REAL64) :: local_dot
+      real(kind=REAL64), dimension(3) :: initial_dot, initial_local_dot
+      real(kind=REAL64), dimension(:,:), allocatable :: v_local_prod, v_prod
 
-      real*8, dimension(maxinner+1) :: rot_cos, rot_sin, gg
+      real(kind=REAL64), dimension(maxinner+1) :: rot_cos, rot_sin, gg
 
       logical almost_zero
 
@@ -123,27 +123,42 @@
       ! Residual of the initial iterate
       call matvec(solution, work_space)
 
-      ! Compute ||b*b|| to determine the required error for convergence
-      local_dot = 0.0d0
+      ! Index 1 : Compute ||b*b|| to determine the required error for convergence
+      ! Index 2 : Compute b^T*Ax for Hegedus trick
+      ! Index 3 : Compute ||Ax||^2 for Hegedus trick
+      initial_local_dot = 0.0d0
       do k=1,l_nk
          do j=j0,jn
-!DIR$ SIMD
             do i=i0,in
-               local_dot = local_dot + (rhs_b(i,j,k)*rhs_b(i,j,k))
+               initial_local_dot(1) = initial_local_dot(1) + (rhs_b(i,j,k)*rhs_b(i,j,k))
+               initial_local_dot(2) = initial_local_dot(2) + (rhs_b(i,j,k)*work_space(i,j,k))
+               initial_local_dot(3) = initial_local_dot(3) + (work_space(i,j,k)*work_space(i,j,k))
             end do
          end do
       end do
-      call RPN_COMM_allreduce(local_dot, norm_b, 1, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
 
-      r0 = sqrt(norm_b)
+      call RPN_COMM_allreduce(initial_local_dot, initial_dot, 3, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+
+      r0        = sqrt( initial_dot(1) )
+      b_Ax      = initial_dot(2)
+      norm_Ax_2 = initial_dot(3)
 
       ! Scale tolerance according to the norm of b
       relative_tolerance = tolerance * r0
 
+      ! Rescale initial guess appropriately (Hegedüs trick)
+      if ( .not. almost_zero( norm_Ax_2 ) ) then
+         hegedus_scaling = b_Ax / norm_Ax_2
+      else
+         hegedus_scaling = 1.d0
+      end if
+
       do k=1,l_nk
          do j=j0,jn
             do i=i0,in
-               vv(i,j,k,1) = rhs_b(i,j,k) - work_space(i,j,k)
+               solution(i,j,k) = solution(i,j,k) * hegedus_scaling
+
+               vv(i,j,k,1) = rhs_b(i,j,k) - work_space(i,j,k) * hegedus_scaling
             end do
          end do
       end do

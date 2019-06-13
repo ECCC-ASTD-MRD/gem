@@ -16,7 +16,7 @@
 
 subroutine aggcovernat(fcover, tablen, tables, aggf, lat, ni, nclass)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@Arguments
    !            - Input -

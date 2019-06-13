@@ -28,6 +28,7 @@
       use lun
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -41,29 +42,25 @@
 !authors
 !      C.Girard & A.Plante, August 2011, based on routine uv2psd
 !
-!revision
-!
-! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!
 !arguments
-!______________________________________________________________________
-!        |                                             |           |   |
-! NAME   |             DESCRIPTION                     | DIMENSION |I/O|
-!--------|---------------------------------------------|-----------|---|
-! F_zd   | coordinat vertical motion ( 1/s )           | 3D (Nk)   | o |
-! F_w    | true vertical motion      ( m/s )           | 3D (Nk)   | o |
-!--------|---------------------------------------------|-----------|---|
-! F_u    | x component of velocity                     | 3D (Nk)   | i |
-! F_v    | y component of velocity                     | 3D (Nk)   | i |
-! F_t    | temperature                                 | 3D (Nk)   | i |
-! F_s    | s log of surface pressure over constant     | 2D (1)    | i |
-! F_zd_L | true to compute zdot                        | scal      | i |
-! F_w_L  | true to compute w                           | scal      | i |
-!________|_____________________________________________|___________|___|
+!___________________________________________________________________
+!        |                                             |           |
+! NAME   |             DESCRIPTION                     | DIMENSION |
+!--------|---------------------------------------------|-----------|
+! F_zd   | coordinat vertical motion ( 1/s )           | 3D (Nk)   |
+! F_w    | true vertical motion      ( m/s )           | 3D (Nk)   |
+!--------|---------------------------------------------|-----------|
+! F_u    | x component of velocity                     | 3D (Nk)   |
+! F_v    | y component of velocity                     | 3D (Nk)   |
+! F_t    | temperature                                 | 3D (Nk)   |
+! F_s    | s log of surface pressure over constant     | 2D (1)    |
+! F_zd_L | true to compute zdot                        | scal      |
+! F_w_L  | true to compute w                           | scal      |
+!________|_____________________________________________|___________|
 !
 
       integer i, j, k, kp, i0, in, j0, jn, istat
-      real*8 c1,c2
+      real(kind=REAL64) c1,c2
       real RoverG
       real div (Minx:Maxx,Miny:Maxy,Nk),adv,advl,div_i(Minx:Maxx,Miny:Maxy,0:Nk)
       real pi_t(Minx:Maxx,Miny:Maxy,Nk),lnpi_t(Minx:Maxx,Miny:Maxy,Nk),pidot
@@ -73,7 +70,7 @@
       real slbX (Minx:Maxx,Miny:Maxy),slbY(Minx:Maxx,Miny:Maxy)
       real UdpX(Minx:Maxx,Miny:Maxy),    VdpY(Minx:Maxx,Miny:Maxy)
       real lapse(Minx:Maxx,Miny:Maxy,Nk)
-      real*8, parameter :: half=0.5d0
+      real(kind=REAL64), parameter :: half=0.5d0
 !     ________________________________________________________________
 !
       if(.not.(F_zd_L.or.F_w_L)) then

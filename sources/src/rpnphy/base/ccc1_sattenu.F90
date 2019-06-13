@@ -20,7 +20,7 @@
                           inpt, gh, il1, il2, ilg, s1)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, ib, ig, il1, il2, i, ng, im
       real tau

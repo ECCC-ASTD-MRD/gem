@@ -17,12 +17,6 @@ module gmm_geof
    public
    save
 
-!
-!revision
-! v2_20 - Pellerin P.            - adaptation to physics 3.6.6
-! v3_11 - Gravel S.              - add new field for varying topo
-! v4_03 - Plante A.              - time level on topo for varying topo.
-!
 !______________________________________________________________________
 !                                                                      |
 !  GMM VARIABLES ASSOCIATED WITH GEOPHYSICAL FIELDS (set_geof)         |

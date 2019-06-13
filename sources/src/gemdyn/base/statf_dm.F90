@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module stat_mpi
+  use, intrinsic :: iso_fortran_env
   implicit none
 #include <arch_specific.hf>
   private
@@ -54,6 +55,7 @@ contains
       use glb_ld
       use lun
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       character(len=*) F_nv_S , F_from_S
@@ -76,12 +78,13 @@ contains
       use glb_ld
       use lun
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       character(len=*) F_nv_S , F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
-      real*8 F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)
+      real(kind=REAL64) F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)
 
       include 'statf_dm.inc'
 !

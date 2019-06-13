@@ -17,7 +17,7 @@
 !
       REAL FUNCTION TRAPEZ2(DEL,F,N,NM)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       INTEGER N, NM, I
       REAL F(N),DEL(NM)
 !

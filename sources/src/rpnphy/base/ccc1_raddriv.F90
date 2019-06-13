@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,246 +12,228 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P RADDRIV - MAIN SUBROUTINE FOR RADIATIVE TRANSFER
-!
-      subroutine ccc1_raddriv2(fsg, fsd, fsf, fsv, fsi, &
-                          fatb,fadb,fafb,fctb,fcdb,fcfb, &
-                          albpla, fdl, ful, hrs, hrl, &
-                          cst, csb, clt, clb, par, &
-                          flxds,flxus,flxdl,flxul, &
-                          fslo, fsamoon, ps, shtj, sig, &
-                          tfull, tt, gt, o3, o3top, &
-                          qq, rmu, r0r, salb, em0, taucs, &
-                          omcs, gcs, taucl, omcl, gcl, &
-                          cldfrac, tauae, exta, exoma, exomga, &
-                          fa, absa, lcsw, lclw, &
-                          il1, il2, ilg, lay, lev)
-!
-      use phy_options, only: RAD_NUVBRANDS,rad_atmpath
-      implicit none
+!-------------------------------------- LICENCE END ---------------------------
 
-#include <arch_specific.hf>
+
+subroutine ccc1_raddriv2(fsg, fsd, fsf, fsv, fsi, &
+     fatb,fadb,fafb,fctb,fcdb,fcfb, &
+     albpla, fdl, ful, hrs, hrl, &
+     cst, csb, clt, clb, par, &
+     flxds,flxus,flxdl,flxul, &
+     fslo, fsamoon, ps, shtj, sig, &
+     tfull, tt, gt, o3, o3top, &
+     qq, rmu, r0r, salb, em0, taucs, &
+     omcs, gcs, taucl, omcl, gcl, &
+     cldfrac, tauae, exta, exoma, exomga, &
+     fa, absa, lcsw, lclw, &
+     il1, il2, ilg, lay, lev)
+   use tdpack_const
+   use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   implicit none
+
+!!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
-#include "tdpack_const.hf"
-!
-      integer ilg,lay,lev,il1,il2
-      real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
-           albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
-           cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg)
 
-      real, dimension(ilg,RAD_NUVBRANDS) ::   fatb,fadb,fafb,fctb,fcdb,fcfb
-!
-      real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
-           tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
-           o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
-           em0(ilg)
-!
-      real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
-           taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
-           cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
-!
-      logical lcsw, lclw
-      real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
-!
-!Authors
-!        J. Li, M. Lazare, CCCMA, rt code for gcm4
-!        (Ref: J. Li, H. W. Barker, 2005:
-!        JAS Vol. 62, no. 2, pp. 286\226309)
-!        P. Vaillancourt, D. Talbot, RPN/CMC;
-!        adapted for CMC/RPN physics (May 2006)
-!
-!Revisions
-!  001    P.Vaillancourt, M.Lazare (sep 2006) : displace a1(i,5)
-!  002    P.Vaillancourt           (Apr 08) : use integer variables(ilg1,ilg2) instead of actual integers
-!  003    P.Vaillancourt           (Feb 12) : assume temperature is isothermal above model top
-!  004    P.Vaillancourt           (Feb 12) : impose min on humidity mixing ratio of 1.5e-6 kg/kg for sw and lw
-!
-!Object
-!        Main subroutine that executes ccc radiative transfer
-!        for infrared and solar radiation
-!
-!Arguments
-!              - Output -
-! fsg          downward flux absorbed by ground.
-! fsd          direct downward flux at the surface.
-! fsf          diffuse downward flux at the surface.
-! fsv          visible downward flux at the surface.
-! fsi          near infrared downward flux at the surface.
-! albpla       planetary albedo.
-! ful/fdl      upward lw flux at the top / surface
-! hrs/hrl      solar heating rate / longwave cooling rate
-! cst/csb      net clear sky solar flux at top / surface
-! clt/clb      net clear sky longwave flux at top/surface
-! par          photosynthetic active radiation.
-!
-!              - Input -
-! ps           pressure at ground in unit pa
-! shtj         sigma at model levels
-! sig          sigma at model layer center
-! tfull/tt     temperature at model level / layer center
-! gt           ground temperature
-! o3           ozone mass mixing ratio in (g/g)
-! o3top        accumulated ozone mass above the model top
-! qq           water vapor specific humidity (mass mixing ratio in
-!              some versions)
-! rmu          cosine of solar zenith angle
-! r0r          calculate the variation of solar constant
-! em0          surface emissivity
-! salb         surface albedo
-! taucs/taucl  cloud optical depth for solar/longwave
-! omcs/omcl    cloud single scattering albedo for solar / longwave
-! gcs/gcl      cloud asymmetry factor for solar/longwave
-! cldfrac      cloud fraction
-!
-! tauae        background aerosol optical depth for solar and
-!              longwave
-! exta         extinction coefficient for solar
-! exoma        extinction coefficient times single scattering
-!              albedo for solar
-! exomga       exoma times asymmetry factor for solar
-! fa           square of asymmetry factor for solar
-! absa         absorption coefficient for longwave
-!
-! fslo         solar incoming flux at infrared range (0-2500cm-1)
-! fsamoon      the energy absorbed between toa and model top level
-! lcsw         logical key to control call to sw radiative transfer
-! lclw         logical key to control call to lw radiative transfer
-! il1          1
-! il2          horizontal dimension
-! ilg          horizontal dimension
-! lay          number of model levels
-! lev          number of flux levels (lay+1)
-!
-!Implicites
-!
+   integer ilg,lay,lev,il1,il2
+   real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
+        albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
+        cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg)
+
+   real, dimension(ilg,RAD_NUVBRANDS) ::   fatb,fadb,fafb,fctb,fcdb,fcfb
+
+   real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
+        tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
+        o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
+        em0(ilg)
+
+   real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
+        taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
+        cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
+
+   logical lcsw, lclw
+   real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
+
+   !@Authors
+   !        J. Li, M. Lazare, CCCMA, rt code for gcm4
+   !        (Ref: J. Li, H. W. Barker, 2005:
+   !        JAS Vol. 62, no. 2, pp. 286\226309)
+   !        P. Vaillancourt, D. Talbot, RPN/CMC;
+   !        adapted for CMC/RPN physics (May 2006)
+   !@Revisions
+   !  001    P.Vaillancourt, M.Lazare (sep 2006) : displace a1(i,5)
+   !  002    P.Vaillancourt           (Apr 08) : use integer variables(ilg1,ilg2) instead of actual integers
+   !  003    P.Vaillancourt           (Feb 12) : assume temperature is isothermal above model top
+   !  004    P.Vaillancourt           (Feb 12) : impose min on humidity mixing ratio of 1.5e-6 kg/kg for sw and lw
+   !@Object MAIN SUBROUTINE FOR RADIATIVE TRANSFER
+   !        Main subroutine that executes ccc radiative transfer
+   !        for infrared and solar radiation
+   !@Arguments
+   !              - Output -
+   ! fsg          downward flux absorbed by ground.
+   ! fsd          direct downward flux at the surface.
+   ! fsf          diffuse downward flux at the surface.
+   ! fsv          visible downward flux at the surface.
+   ! fsi          near infrared downward flux at the surface.
+   ! albpla       planetary albedo.
+   ! ful/fdl      upward lw flux at the top / surface
+   ! hrs/hrl      solar heating rate / longwave cooling rate
+   ! cst/csb      net clear sky solar flux at top / surface
+   ! clt/clb      net clear sky longwave flux at top/surface
+   ! par          photosynthetic active radiation.
+   !
+   !              - Input -
+   ! ps           pressure at ground in unit pa
+   ! shtj         sigma at model levels
+   ! sig          sigma at model layer center
+   ! tfull/tt     temperature at model level / layer center
+   ! gt           ground temperature
+   ! o3           ozone mass mixing ratio in (g/g)
+   ! o3top        accumulated ozone mass above the model top
+   ! qq           water vapor specific humidity (mass mixing ratio in
+   !              some versions)
+   ! rmu          cosine of solar zenith angle
+   ! r0r          calculate the variation of solar constant
+   ! em0          surface emissivity
+   ! salb         surface albedo
+   ! taucs/taucl  cloud optical depth for solar/longwave
+   ! omcs/omcl    cloud single scattering albedo for solar / longwave
+   ! gcs/gcl      cloud asymmetry factor for solar/longwave
+   ! cldfrac      cloud fraction
+   ! tauae        background aerosol optical depth for solar and
+   !              longwave
+   ! exta         extinction coefficient for solar
+   ! exoma        extinction coefficient times single scattering
+   !              albedo for solar
+   ! exomga       exoma times asymmetry factor for solar
+   ! fa           square of asymmetry factor for solar
+   ! absa         absorption coefficient for longwave
+   ! fslo         solar incoming flux at infrared range (0-2500cm-1)
+   ! fsamoon      the energy absorbed between toa and model top level
+   ! lcsw         logical key to control call to sw radiative transfer
+   ! lclw         logical key to control call to lw radiative transfer
+   ! il1          1
+   ! il2          horizontal dimension
+   ! ilg          horizontal dimension
+   ! lay          number of model levels
+   ! lev          number of flux levels (lay+1)
+
 #include "ccc_tracegases.cdk"
 #include "ccc_aeros.cdk"
 #include "tables.cdk"
-!
-!     work arrays are defined in subroutines
-!----------------------------------------------------------------------
-!
-!     general work arrays.
-!
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
 
-      integer, dimension(ilg) :: mtop
-      real, dimension(ilg) :: c1
-      real, dimension(ilg) :: c2
-      real, dimension(ilg) :: bs
-      real, dimension(ilg,lay) :: pg
-      real, dimension(ilg,lay) :: qg
-      real, dimension(ilg,lay) :: qgs
-      real, dimension(ilg,lev) :: flxu
-      real, dimension(ilg,lev) :: flxd
-      real, dimension(ilg,lay) :: pp
-      real, dimension(ilg,lay) :: dp
-      real, dimension(ilg,lay) :: dps
-      real, dimension(ilg,lay) :: taur
-      real, dimension(ilg,lay) :: taug
-      real, dimension(ilg,lay) :: taua
-      real, dimension(ilg,lev) :: pfull
-      real, dimension(ilg,lay) :: f1
-      real, dimension(ilg,lay) :: f2
-      real, dimension(ilg,lay) :: anu
-      real, dimension(ilg,lay) :: urbf
-      real, dimension(ilg,lay) :: tauoma
-      real, dimension(ilg,lay) :: tauomga
-      real, dimension(ilg,lay) :: dip
-      real, dimension(ilg,lay) :: dt
-      real, dimension(ilg,lay) :: dts
-      real, dimension(ilg,2,lev) :: refl
-      real, dimension(ilg,2,lev) :: tran
-      real, dimension(ilg,lay,5) :: tauae
-!
-!     gathered and other work arrays used generally by solar.
-!
-      real, dimension(ilg,12) :: a1
-      real, dimension(ilg,12) :: a1g
-      real, dimension(ilg,4,lev) :: cumdtr
-      real, dimension(ilg,lay,nbs) :: exta
-      real, dimension(ilg,lay,nbs) :: exoma
-      real, dimension(ilg,lay,nbs) :: exomga
-      real, dimension(ilg,lay,nbs) :: fa
-      real, dimension(ilg,lay) :: taucsg
-      real, dimension(ilg,lay) :: tauomc
-      real, dimension(ilg,lay) :: tauomgc
-      real, dimension(ilg,lev) :: pfullg
-      real, dimension(ilg,lay) :: o3g
-      real, dimension(ilg,lay) :: cldg
-      real, dimension(ilg,lay) :: cldmg
-      real, dimension(ilg,lay) :: tg
-      real, dimension(ilg) :: o3topg
-      real, dimension(ilg) :: albsur
-      real, dimension(ilg) :: rmug
-      real, dimension(ilg) :: dmix
-      integer, dimension(ilg,lay) :: inptg
-      integer, dimension(ilg,lay) :: inptmg
-      integer, dimension(ilg,lay) :: nblk
-      integer, dimension(ilg) :: isun
-!
-!     work arrays used generally by longwave.
-!
-      real, dimension(ilg,lay,nbl) :: absa
-      real, dimension(ilg,lay) :: tauci
-      real, dimension(ilg,lay) :: omci
-      real, dimension(ilg,lay) :: gci
-      real, dimension(ilg,lay) :: cldm
-      real, dimension(ilg,lev) :: bf
-      integer, dimension(ilg,lay) :: inpt
-      integer, dimension(ilg,lay) :: inptm
-      integer, dimension(ilg,lay) :: inpr
-      integer, dimension(ilg,lay) :: ncd
-      integer, dimension(ilg,lay) :: ncu
-      integer, dimension(ilg) :: nct
-      integer, dimension(ilg) :: nctg
-      integer, dimension(lay) :: ncum
-      integer, dimension(lay) :: ncdm
-!
-!     band information.
-!
-      real, dimension(nbl) :: sfinptl
-      integer, dimension(nbs) :: kgs
-      integer, dimension(nbs) :: kgsgh
-      integer, dimension(nbl) :: kgl
-      integer, dimension(nbl) :: kglgh
-!
-      real, dimension(ilg ) :: tran0
-      real, dimension(ilg ) :: vs_tau
-!
-      real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
-      real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
-      real ubeta0, epsd0, hrcoef, uu3, cut, seuil, qmr, qmin
-      integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig, mcont
-      logical gh
-      integer ilg1,ilg2
-!
-      parameter (seuil=1.e-3)
-      parameter (qmin=1.5e-6)
-!
+   integer, dimension(ilg) :: mtop
+   real, dimension(ilg) :: c1
+   real, dimension(ilg) :: c2
+   real, dimension(ilg) :: bs
+   real, dimension(ilg,lay) :: pg
+   real, dimension(ilg,lay) :: qg
+   real, dimension(ilg,lay) :: qgs
+   real, dimension(ilg,lev) :: flxu
+   real, dimension(ilg,lev) :: flxd
+   real, dimension(ilg,lay) :: pp
+   real, dimension(ilg,lay) :: dp
+   real, dimension(ilg,lay) :: dps
+   real, dimension(ilg,lay) :: taur
+   real, dimension(ilg,lay) :: taug
+   real, dimension(ilg,lay) :: taua
+   real, dimension(ilg,lev) :: pfull
+   real, dimension(ilg,lay) :: f1
+   real, dimension(ilg,lay) :: f2
+   real, dimension(ilg,lay) :: anu
+   real, dimension(ilg,lay) :: urbf
+   real, dimension(ilg,lay) :: tauoma
+   real, dimension(ilg,lay) :: tauomga
+   real, dimension(ilg,lay) :: dip
+   real, dimension(ilg,lay) :: dt
+   real, dimension(ilg,lay) :: dts
+   real, dimension(ilg,2,lev) :: refl
+   real, dimension(ilg,2,lev) :: tran
+   real, dimension(ilg,lay,5) :: tauae
+
+   !     gathered and other work arrays used generally by solar.
+
+   real, dimension(ilg,12) :: a1
+   real, dimension(ilg,12) :: a1g
+   real, dimension(ilg,4,lev) :: cumdtr
+   real, dimension(ilg,lay,nbs) :: exta
+   real, dimension(ilg,lay,nbs) :: exoma
+   real, dimension(ilg,lay,nbs) :: exomga
+   real, dimension(ilg,lay,nbs) :: fa
+   real, dimension(ilg,lay) :: taucsg
+   real, dimension(ilg,lay) :: tauomc
+   real, dimension(ilg,lay) :: tauomgc
+   real, dimension(ilg,lev) :: pfullg
+   real, dimension(ilg,lay) :: o3g
+   real, dimension(ilg,lay) :: cldg
+   real, dimension(ilg,lay) :: cldmg
+   real, dimension(ilg,lay) :: tg
+   real, dimension(ilg) :: o3topg
+   real, dimension(ilg) :: albsur
+   real, dimension(ilg) :: rmug
+   real, dimension(ilg) :: dmix
+   integer, dimension(ilg,lay) :: inptg
+   integer, dimension(ilg,lay) :: inptmg
+   integer, dimension(ilg,lay) :: nblk
+   integer, dimension(ilg) :: isun
+
+   !     work arrays used generally by longwave.
+
+   real, dimension(ilg,lay,nbl) :: absa
+   real, dimension(ilg,lay) :: tauci
+   real, dimension(ilg,lay) :: omci
+   real, dimension(ilg,lay) :: gci
+   real, dimension(ilg,lay) :: cldm
+   real, dimension(ilg,lev) :: bf
+   integer, dimension(ilg,lay) :: inpt
+   integer, dimension(ilg,lay) :: inptm
+   integer, dimension(ilg,lay) :: inpr
+   integer, dimension(ilg,lay) :: ncd
+   integer, dimension(ilg,lay) :: ncu
+   integer, dimension(ilg) :: nct
+   integer, dimension(ilg) :: nctg
+   integer, dimension(lay) :: ncum
+   integer, dimension(lay) :: ncdm
+
+   !     band information.
+
+   real, dimension(nbl) :: sfinptl
+   integer, dimension(nbs) :: kgs
+   integer, dimension(nbs) :: kgsgh
+   integer, dimension(nbl) :: kgl
+   integer, dimension(nbl) :: kglgh
+
+   real, dimension(ilg ) :: tran0
+   real, dimension(ilg ) :: vs_tau
+
+   real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
+   real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
+   real ubeta0, epsd0, hrcoef, uu3, cut, seuil, qmr, qmin
+   integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig, mcont
+   logical gh
+   integer ilg1,ilg2
+
+   parameter (seuil=1.e-3)
+   parameter (qmin=1.5e-6)
+
 !----------------------------------------------------------------------
 !     for hrcoef, 9.80665 / 1004.64 / 100 = 9.761357e-05, in (k / sec),
 !     since we use dp (diff in pressure) instead of diff in meter,
 !     there is a factor 1.02. thus 9.761357e-05 * 1.02 = 9.9565841e-05
 !     uu3 = 3 * u * u, u = 1 / e^0.5
 !----------------------------------------------------------------------
-!
+
       data hrcoef, uu3, cut / 9.9565841e-05, 1.1036383, 0.001 /
-!
+
 !----------------------------------------------------------------------
 !     this code can be extended to about 100 km, if the model top level
 !     is lower than the maximum height, the calculation can be
 !     simplified with less numbers of kgsgh and kglgh accounted
 !     if top is higher than 1000 Pa (10mb), more minor intervals are used
 !----------------------------------------------------------------------
-!
+
       data kgs   / 6, 4, 6, 4 /
       data kgl   / 1, 1, 2, 3, 2, 2, 3, 6, 4 /
-!
+
       if (std_p_prof(1).lt.1000.0)                                         then
 !   for maximum height about 0.005 hPa
 !        data kgsgh / 3, 4, 4, 9 /
@@ -287,7 +269,7 @@
          kglgh(8)=2
          kglgh(9)=3
       endif
-!
+
 !----------------------------------------------------------------------
 !     scale mean (annual) value of solar constant by r0r accounting
 !     for eccentricity (passed through common block "eccent" - see
@@ -327,7 +309,7 @@
       !!print*,'absa',absa
 
       
-!
+
       solarc                    =  consol
       fracs                     =  r0r * solarc / 1366.2035
       x                         =  fracs / pi
@@ -340,11 +322,11 @@
       sfinptl(7)                =  0.29558 * x
       sfinptl(8)                =  0.99624e-01 * x
       sfinptl(9)                =  0.23220e-01 * x
-!
+
 !----------------------------------------------------------------------
 !     initialization
 !----------------------------------------------------------------------
-!
+
       do 20 i = il1, il2
         fsg(i)                  =  0.0
         fsd(i)                  =  0.0
@@ -368,7 +350,7 @@
       fctb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
       fcdb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
       fcfb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-!
+
       do 30 k = 1, lay
        kp1 = k + 1
        do 30 i = il1, il2
@@ -382,11 +364,11 @@
         pfull(i,k)              =  shtj(i,k) * x
         flxds(i,k)              =  0.0
         flxus(i,k)              =  0.0
-!
+
 !----------------------------------------------------------------------
 !     specific humidity to mixing ratio.
 !----------------------------------------------------------------------
-!
+
 !        qg(i,k)                 =  qq(i,k) / (1.0 - qq(i,k))
         qmr                     =  qq(i,k) / (1.0 - qq(i,k))
         qg(i,k)                 =  max(qmr,qmin)
@@ -394,41 +376,41 @@
                                   (shtj(i,kp1) - shtj(i,k))
         dt(i,k)                 =  tt(i,k) - 250.0
   30  continue
-!
-!
+
+
 !----------------------------------------------------------------------
 !     initialize the band-dependant optical property arrays
 !----------------------------------------------------------------------
-!
+
 !    now done in subroutine aerooppro called by cccmarad
-!
+
 !----------------------------------------------------------------------
 !     calculate the cloud parameters for swtran and lwtran
 !     reusing inptg, inptmg, tauomgc space
 !----------------------------------------------------------------------
-!
+
       call ccc_cldifm (cldm, tauomgc, anu, a1, ncd, &
                    ncu, inptg, nct, ncum, ncdm, &
                    cldfrac, pfull, lev1, cut, maxc, &
                    il1, il2, ilg, lay, lev)
-!
-!
+
+
 !----------------------------------------------------------------------
 !     determination of the interpolation points in pressure. inpt for
 !     28 reference levels and inptm for 18 levels
 !     note : remove commented lines at the end of preintp if top is less
 !            than .0005
 !----------------------------------------------------------------------
-!
+
       call ccc1_preintp (inpt, inptm, dip, a1(1,12), pp, il1, il2, ilg, lay)
-!
+
       if (lcsw)                                                     then
-!
+
 !----------------------------------------------------------------------
 !     determine whether grid points are in daylight. gather the
 !     required field for daylight region
 !----------------------------------------------------------------------
-!
+
       jyes = 0
       do 200 i = il1, il2
         if (rmu(i) .gt. seuil)                                      then
@@ -437,11 +419,11 @@
         endif
   200 continue
       lengath = jyes
-!
+
 !----------------------------------------------------------------------
 !     skip unnecessary solar
 !----------------------------------------------------------------------
-!
+
       if (lengath .eq. 0) go to 499
 
 !     use integer variables instead of actual integers
@@ -465,16 +447,16 @@
       do 230 i = ilg1, ilg2
         j = isun(i)
         o3topg(i)               =  o3top(j)
-!
+
 !----------------------------------------------------------------------
 !     c1 and c2 are coefficients for swtran
 !     reusing bf for a factor of anu
 !     reusing dmix for a factor of rmu
 !----------------------------------------------------------------------
-!
+
         c1(i)                   =  0.75 * rmug(i)
         c2(i)                   =  2.0 * c1(i) * rmug(i)
-!
+
         a1g(i,1)                =  a1(j,1)
         a1g(i,2)                =  a1(j,2)
         a1g(i,3)                =  a1(j,3)
@@ -487,7 +469,7 @@
         else
           a1g(i,8)              =  0.0
         endif
-!
+
         a1g(i,9)                =  0.0
         a1g(i,10)               =  0.0
         a1g(i,11)               =  0.0
@@ -501,7 +483,7 @@
           endif
           a1g(i,11)             =  a1g(i,3) / x
         endif
-!
+
         a1g(i,12)               =  a1(j,12)
         nctg(i)                 =  nct(j)
         flxu(i,lev)             =  0.0
@@ -509,11 +491,11 @@
         pfullg(i,lev)           =  pfull(j,lev)
         bf(i,lev)               =  0.0
         dmix(i)                 = (2.0 - rmug(i)) ** 0.40
-!
+
 !----------------------------------------------------------------------
 !     using a1(i,3) for rmu3
 !----------------------------------------------------------------------
-!
+
         x                       =  1.0 - rmug(i)
         a1(i,3)                 =  x * x * x
         a1(i,4)                 =  0.0
@@ -525,9 +507,9 @@
 ! The following line assumes an isothermal temperature above model top for moon layer temperature
         a1(i,5)                 =  tt(j,1) - 250.0
 
-!
+
   230 continue
-!
+
       do 255 k = 1, lay
         kp1 = k + 1
         do 250 i = ilg1, ilg2
@@ -535,25 +517,25 @@
           flxu(i,k)             =  0.0
           flxd(i,k)             =  0.0
           pfullg(i,k)           =  pfull(j,k)
-!
+
 !----------------------------------------------------------------------
 !     convert from specific humidity to mixing ratio.
 !     reusing omci for dipg
 !----------------------------------------------------------------------
-!
+
           qgs(i,k)              =  qg(j,k)
           cldmg(i,k)            =  tauomgc(j,k)
           cldg(i,k)             =  cldfrac(j,k)
           nblk(i,k)             =  inptg(j,k)
-!
+
           o3g(i,k)              =  o3(j,k)
           dts(i,k)              =  dt(j,k)
           pg(i,k)               =  pp(j,k)
           omci(i,k)             =  dip(j,k)
-!
+
           inptg(i,k)            =  inpt(j,k)
           inptmg(i,k)           =  inptm(j,k)
-!
+
 !----------------------------------------------------------------------
 !     here dp = difp / g = rho * dz, where difp is the layer pressure
 !     difference (in mb), g is the gravity constant, rho is air
@@ -564,10 +546,10 @@
 !     1mb = 100 pascal = 1000 dynes / cm^2,
 !     1.02 = (1000 dynes / cm^2) / (980 cm / (second^2)).
 !     ps, surface pressure in unit pascal, so with 0.01 factor
-!
+
 !     reusing bf as a factor for cloud subgrid variability in solar
 !----------------------------------------------------------------------
-!
+
           dps(i,k)              =  dp(j,k)
           if (cldg(i,k) .lt. cut)                                   then
             bf(i,k)             =  0.0
@@ -576,12 +558,12 @@
           endif
   250   continue
   255 continue
-!
+
 !----------------------------------------------------------------------
 !     solar: 4 band for cloud, aerosol, and rayleigh,
 !     20 + 15 (20) monochromatic calculations for gas and radiative
 !     transfer
-!
+
 !     flxu:   all sky sw upward flux.
 !     flxd:   all sky sw downward flux.
 !     fsg:    downward flux absorbed by ground.
@@ -600,18 +582,18 @@
 !     fcdb:  CLEAR SKY ,DOWNWARD AT THE SURFACE DIRECT FLUX, for 6 VIS-UV bands
 !     fcfb:  CLEAR SKY ,DOWNWARD AT THE SURFACE DIFFUSE FLUX, for 6 VIS-UV bands
 !----------------------------------------------------------------------
-!
+
       do 480 ib = 1, nbs
-!
+
       do 300 i = ilg1, ilg2
         j = isun(i)
         albsur(i)               =  salb(j,ib)
   300 continue
-!
+
 !----------------------------------------------------------------------
 !     scaling aerosol optical properties. taua is aerosol optical depth
 !----------------------------------------------------------------------
-!
+
         do 310 k = 1, lay
           if (k.eq.1) then
             do i = ilg1, ilg2
@@ -629,27 +611,27 @@
           a13                   =  tauae(j,k,3) * extab(ib,3)
           taua(i,k)             =  a11 + a12 + a13 + &
                                    exta(j,k,ib) * dps(i,k)
-!
+
           a21                   =  a11 * omab(ib,1)
           a22                   =  a12 * omab(ib,2)
           a23                   =  a13 * omab(ib,3)
           tauoma(i,k)           =  a21 + a22 + a23 + &
                                    exoma(j,k,ib) * dps(i,k)
-!
+
           a31                   =  a21 * gab(ib,1)
           a32                   =  a22 * gab(ib,2)
           a33                   =  a23 * gab(ib,3)
           tauomga(i,k)          =  a31 + a32 + a33 + &
                                    exomga(j,k,ib) * dps(i,k)
-!
+
           f1(i,k)               =  a31 * gab(ib,1) + a32 * gab(ib,2) + &
                                    a33 * gab(ib,3) + fa(j,k,ib)
-!
+
 !----------------------------------------------------------------------
 !     scaling the cloud optical properties due to subgrid variability
 !     and standard scaling for radiative transfer
 !----------------------------------------------------------------------
-!
+
           if (cldg(i,k) .ge. cut)                                   then
             if (k .eq. 1)                                           then
               tauci(i,k)        =  taucs(j,k,ib)
@@ -660,13 +642,13 @@
               x                 =  taucs(j,k,ib) + &
                                    9.2 * vs_tau(i)
             endif
-!
+
             taucsg(i,k)         =  taucs(j,k,ib) / (1.0 + 0.185 * &
                                    x * dmix(i) * bf(i,k))
-!
+
             c20                 =  taucsg(i,k) * omcs(j,k,ib)
             tauomc(i,k)         =  tauoma(i,k) + c20
-!
+
             c30                 =  c20 * gcs(j,k,ib)
             tauomgc(i,k)        =  tauomga(i,k) + c30
             f2(i,k)             =  f1(i,k) + c30 * gcs(j,k,ib)
@@ -677,36 +659,36 @@
             tauomgc(i,k)        =  0.0
             f2(i,k)             =  0.0
           endif
-!
+
   310   continue
-!
+
 !----------------------------------------------------------------------
 !     raylei, near-ir rayleigh scattering, it is independent of ig.
 !     reusing a1(i,1) for moon layer attenuation
 !----------------------------------------------------------------------
-!
+
         if (ib .ne. 1)                                              then
           call ccc_raylei (taur, ib, dps, ilg1, ilg2, ilg, lay)
         endif
-!
+
         gh = .false.
-!
+
         do 400 ig = 1, kgs(ib)
-!
+
           if (ib .eq. 1)                                            then
-!
+
 !----------------------------------------------------------------------
 !     raylev, visible rayleigh scattering, it is dependant on ig.
 !----------------------------------------------------------------------
-!
+
             call ccc1_raylev (taur, ig, dps, a1(1,3), ilg1, ilg2, ilg, lay)
-!
+
 !----------------------------------------------------------------------
 !     solar attenuation above the model top lay. only apply to band
 !     one for o3 and o2. this is true only for model top level above
 !     about 1 mb, water vapor contribution is small.
 !----------------------------------------------------------------------
-!
+
             call ccc1_sattenu (a1, ib, ig, rmug, o3topg, &
                           qgs, pfullg, a1g(1,12),dts, a1(1,5), &
                           inptg, gh, ilg1, ilg2, ilg, a1(1,8))
@@ -715,12 +697,12 @@
               a1(i,1)           =  1.0
   320       continue
           endif
-!
+
 !----------------------------------------------------------------------
 !     downward flux above 1 mb, further flux attenuation factor for
 !     the lower region
 !----------------------------------------------------------------------
-!
+
           if (lev1 .gt. 1)                                          then
             call ccc1_strandn (tran, bs, a1, rmug, dps, o3g, a1(1,3), ib, &
                           ig, lev1, ilg1, ilg2, ilg, lay, lev)
@@ -729,26 +711,26 @@
               bs(i)             =  a1(i,1)
   330       continue
           endif
-!
+
           call ccc1_gasopts (taug, gw,dps, ib, ig, o3g,qgs, inptmg, omci,dts, &
                         a1(1,3), lev1, gh, ilg1, ilg2, ilg, lay, urbf)
-!
+
           call ccc_swtran (refl, tran, cumdtr, bs, taua, &
                        taur, taug, tauoma, tauomga, f1, &
                        f2, taucsg, tauomc, tauomgc, cldg, &
                        cldmg, a1g, rmug, c1, c2, &
                        albsur, nblk, nctg, cut, lev1, &
                        ilg1, ilg2, ilg, lay, lev)
-!
+
           if (lev1 .gt. 1)                                          then
             call ccc1_stranup (refl, dps, o3g, ib, ig, lev1, &
                           ilg1, ilg2, ilg, lay, lev)
           endif
-!
+
 !----------------------------------------------------------------------
 !     gather back the required fields
 !----------------------------------------------------------------------
-!
+
           rgw = gw * fracs
           do 350 i = ilg1, ilg2
             j = isun(i)
@@ -762,7 +744,7 @@
                                    a1(i,1)) * a1(i,2)
             csb(j)              =  csb(j) + (tran(i,1,lev) - &
                                    refl(i,1,lev)) * a1(i,2)
-!
+
             flxu(i,1)           =  flxu(i,1) + refl(i,2,1) * a1(i,2)
             flxd(i,1)           =  flxd(i,1) + tran(i,2,1) * a1(i,2)
 !PV fluxes in VIS_UV sub-bands
@@ -776,12 +758,12 @@
           endif
 
   350     continue
-!
+
 !----------------------------------------------------------------------
 !     heating rate calculation, for stability in calculation, each ig
 !     is done separately. heating rate in (k / sec),
 !----------------------------------------------------------------------
-!
+
           do 375 k = 1, lay
             kp1 = k + 1
             do 370 i = ilg1, ilg2
@@ -790,18 +772,18 @@
                                    refl(i,2,k) + refl(i,2,kp1)) * &
                                    a1(i,2)
               hrs(j,k)          =  hrs(j,k) + hrcoef * dfnet / dps(i,k)
-!
+
               flxu(i,kp1)       =  flxu(i,kp1) + refl(i,2,kp1) * a1(i,2)
               flxd(i,kp1)       =  flxd(i,kp1) + tran(i,2,kp1) * a1(i,2)
   370       continue
   375     continue
-!
+
 !----------------------------------------------------------------------
 !     fsamoon is the energy absorbed between toa and model top level.
 !     a1(i,4) is the adjustment for upward flux from model top level
 !     to toa used for planetary albedo
 !----------------------------------------------------------------------
-!
+
           if (ib .eq. 1)                                            then
             do 380 i = ilg1, ilg2
               j = isun(i)
@@ -810,44 +792,44 @@
               a1(i,4)           =  a1(i,4) - x * refl(i,2,1)
   380       continue
           endif
-!
+
           if (ib .eq. 1 .and. ig .eq. 2)                            then
             do 390 i = ilg1, ilg2
               par(isun(i))      =  flxd(i,lev)
   390       continue
           endif
-!
+
   400   continue
-!
+
 !----------------------------------------------------------------------
 !     in accumulated space with interval close to 1, the extinction
 !     coefficients is extremely large, the calculation process can be
 !     simplified by ignoring scattering, reflection, cloud and aerosol.
 !----------------------------------------------------------------------
-!
+
         gh = .true.
-!
+
         do 450 ig = 1, kgsgh(ib)
-!
+
           call ccc1_sattenu (a1, ib, ig, rmug, o3topg, &
                         qgs, pfullg, a1g(1,12), dts, a1(1,5), &
                         inptg, gh, ilg1, ilg2, ilg, a1(1,8))
-!
+
           call ccc1_strandngh (tran, gwgh, a1, taua, tauoma, &
                           taucsg, tauomc, cldg, rmug, dps, &
                           o3g, qgs, ib, ig, inptg, &
                           omci, dts, lev1, gh, cut, &
                           ilg1, ilg2, ilg, lay, lev, &
                           tauci, urbf)
-!
+
           rgw = gwgh * fracs
-!
+
           do 430 i = ilg1, ilg2
             j = isun(i)
             a1(i,2)             =  rgw * rmug(i)
             cst(j)              =  cst(j) + a1(i,2)
             csb(j)              =  csb(j) + tran(i,1,lev) * a1(i,2)
-!
+
             fsamoon(j)          =  fsamoon(j) + &
                                    a1(i,2) * (1.0 - tran(i,2,1))
             flxd(i,1)           =  flxd(i,1) + a1(i,2) * tran(i,2,1)
@@ -863,34 +845,34 @@
                                    dps(i,k)
   440       continue
   445     continue
-!
+
   450   continue
-!
+
         if (ib .eq. 1)                                              then
           do 460 i = ilg1, ilg2
             fsv(isun(i))        =  flxd(i,lev)
   460     continue
         endif
-!
+
   480 continue
-!
+
 !----------------------------------------------------------------------
 !     gather back required field. for planetary albedo the incoming
 !     energy of 11.9006 * fracs is totally absorbed in longwave part
 !----------------------------------------------------------------------
-!
+
       rsolarc = r0r * solarc
       do 490 i = ilg1, ilg2
         j = isun(i)
         fsg(j)                  =  flxd(i,lev) - flxu(i,lev)
         fsi(j)                  =  flxd(i,lev) - fsv(j)
         fsf(j)                  =  flxd(i,lev) - fsd(j)
-!
+
         cst(j)                  =  cst(j) + fslo(j)
         albpla(j)               = (flxu(i,1) + a1(i,4)) / &
                                   (rsolarc * rmug(i))
   490 continue
-!
+
 !     on veut les flux en sortie
 !     make sure that sw heating rate is never negative
       do k = 1,lev
@@ -907,16 +889,16 @@
       enddo
       enddo
 
-!
+
   499 continue
-!
+
       endif
 !     (lcsw)
-!
+
 !----------------------------------------------------------------------
 !     longwave: 9 band for cloud, aerosol, continuum, and planck.
 !     24+22 monochromatic calculations for gas and radiative transfer
-!
+
 !     flxu: all sky lw upward flux.
 !     flxd: all sky lw downward flux.
 !     ful:  upward lw flux at the top.
@@ -924,14 +906,14 @@
 !     clt:  net clear sky upward flux at the top.
 !     clb:  net clear sky downward flux at the surface.
 !----------------------------------------------------------------------
-!
+
       if (lclw)                                                     then
-!
+
 !----------------------------------------------------------------------
 !     convert from specific humidity to mixing ratio (bounded) and
 !     bound temperature for planck calculation.
 !----------------------------------------------------------------------
-!
+
       do 510 i = il1, il2
 ! The following line extrapolates the temperature above model top for moon layer temperature
 !        a1(i,5)                 =  2.0 * tt(i,1) - tt(i,2) - 250.0
@@ -942,49 +924,49 @@
         mtop(i)                 =  0
         isun(i)                 =  1
   510 continue
-!
+
 !----------------------------------------------------------------------
 !     determination of the highest pressure level for continuum
 !     calculations (> 138.9440 mb). reusing spaces of mtop and isun.
 !----------------------------------------------------------------------
-!
+
       do 520 k = 1, lev
       do 520 i = il1, il2
         flxu(i,k)               =  0.0
         flxd(i,k)               =  0.0
-!
+
         if (pfull(i,k) .ge. 138.9440)                               then
           mtop(i)               =  mtop(i) + 1
           if (mtop(i) .eq. 1) isun(i) =  k
         endif
   520 continue
-!
+
       mcont = lev
-!
+
       do 530 i = il1, il2
         mcont                   =  min (isun(i), mcont)
   530 continue
       mcont = mcont - 1
 !PV to avoid crashing if model top has a pressure higer than 138.9440
       mcont=  max(mcont,1)
-!
+
 !----------------------------------------------------------------------
 !     determination of the interpolation points in the ratio of co2
 !     to water vapor for tlinehc. reuse the space of pg for dir
 !     and reuse tauomc as a work array
 !----------------------------------------------------------------------
-!
+
       call ccc1_preintr (inpr, pg, qg, tauomc, il1, il2, ilg, lay)
-!
+
       do 900 ib = 1, nbl
-!
+
 !----------------------------------------------------------------------
 !     using c1 space for slwf which is the input solar energy in the
 !     infrared region. total 11.9006 w / m^2 from standard
 !     calculation
 !     scaling cloud optical properties for ir scattering calculation
 !----------------------------------------------------------------------
-!
+
         do 605 i = il1, il2
           if (rmu(i) .gt. 0.0)                                      then
             c1(i)               =  rmu(i) * sfinptl(ib)
@@ -992,7 +974,7 @@
             c1(i)               =  0.0
           endif
  605    continue
-!
+
         do 610 k = 1, lay
         do 610 i = il1, il2
           taua(i,k)             =  absa(i,k,ib) * dp(i,k) + &
@@ -1003,7 +985,7 @@
           omci(i,k)             =  0.0
           gci(i,k)              =  0.0
           f2(i,k)               =  0.0
-!
+
           if (cldfrac(i,k) .ge. cut)                                then
             tauci(i,k)          =  taucl(i,k,ib)
             omci(i,k)           =  omcl(i,k,ib) * tauci(i,k)
@@ -1013,23 +995,23 @@
             gci(i,k)            =  - 0.5 * (1.0 - uu3 * gci(i,k))
           endif
   610   continue
-!
+
 !----------------------------------------------------------------------
 !    reusing space o3g for dbf
 !----------------------------------------------------------------------
-!
+
         call ccc1_planck (bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
                      il1, il2, ilg, lay, lev, tg)
-!
+
         gh = .false.
-!
+
         do 700 ig = 1, kgl(ib)
-!
+
           call ccc1_gasoptl (taug, gw, dp, ib, ig, &
                         o3, qg, inpr, inptm, mcont, &
                         pg, dip, dt, lev1, gh, &
                         il1, il2, ilg, lay, tg)
-!
+
           call ccc1_lwtran (refl, tran, c1, tauci, omci, &
                        gci, f2, taua, taug, bf, &
                        bs, urbf, o3g, em0, cldfrac, &
@@ -1038,30 +1020,30 @@
                        il2, ilg, lay, lev, maxc, &
                        taucsg, albsur, f1, tauoma, tauomga, &
                        c2)
-!
+
           pgw = pi * gw
           do 650 k = lev1, lay
             kp1 = k + 1
             do 600 i = il1, il2
               flxu(i,k)         =  flxu(i,k) + refl(i,2,k) * pgw
               flxd(i,k)         =  flxd(i,k) + tran(i,2,k) * pgw
-!
+
               dfnet             =  tran(i,2,k) - tran(i,2,kp1) - &
                                    refl(i,2,k) + refl(i,2,kp1)
               hrl(i,k)          =  hrl(i,k) + &
                                    hrcoef * dfnet / dp(i,k) * pgw
   600       continue
   650     continue
-!
+
           do 660 i = il1, il2
             flxu(i,lev)         =  flxu(i,lev) + refl(i,2,lev) * pgw
             flxd(i,lev)         =  flxd(i,lev) + tran(i,2,lev) * pgw
-!
+
             clt(i)              =  clt(i) - refl(i,1,lev1) * pgw
             clb(i)              =  clb(i) - &
                                   (refl(i,1,lev) - tran(i,1,lev)) * pgw
   660     continue
-!
+
           if (lev1 .gt. 1)                                          then
             do 680 k = lev1 - 1, 1, - 1
               kp1 =  k + 1
@@ -1071,31 +1053,31 @@
   670         continue
   680       continue
           endif
-!
+
   700   continue
-!
+
         if (ib .ne. 6)                                              then
-!
+
           gh = .true.
-!
+
           do 800 ig = 1, kglgh(ib)
-!
-            call ccc1_gasoptlgh (taug, gwgh, dp, ib, ig, &
-                            o3, qg, inpt, mcont, pg, &
+
+            call ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
+                            o3, qg, inpt, mcont, &
                             dip, dt, lev1, gh, &
                             il1, il2, ilg, lay, tg)
-!
+
 !----------------------------------------------------------------------
 !     consider the attenuation for the downward flux above the model
 !     top level. this is important to get the correct cooling rate. if
 !     the model top level pressure is lower than 0.01. this is not
 !     necessary
 !----------------------------------------------------------------------
-!
+
             call ccc1_lattenu (a1, ib, ig, o3top, qg, &
                           pfull, a1(1,12), dt, a1(1,5), inpt, &
                           il1, il2, ilg, a1(1,8), a1(1,9))
-!
+
             do i = il1, il2
               tran0(i)  =  - a1(i,1)
             enddo
@@ -1115,12 +1097,12 @@
                 c2(i)           =  c1(i) * tran0(i)
               endif
   710       continue
-!
+
             call ccc1_lwtragh (refl, tran, c2, tauci, omci, &
                           taua, taug, bf, urbf, cldfrac, &
                           em0, bs, cut, il1, il2, &
                           ilg, lay, lev)
-!
+
             pgw = pi * gwgh
             do 740 k = 1, lay
               kp1 = k + 1
@@ -1133,13 +1115,13 @@
                                    hrcoef * dfnet / dp(i,k) * pgw
   730         continue
   740       continue
-!
+
 !----------------------------------------------------------------------
 !     the attenuation for the upward flux above the model top is not
 !     considered, since the impact on upward flux is very small if the
 !     model top is about 1 mb or higher
 !----------------------------------------------------------------------
-!
+
             do 750 i = il1, il2
               flxu(i,lev)       =  flxu(i,lev) + refl(i,2,lev) * pgw
               flxd(i,lev)       =  flxd(i,lev) + tran(i,2,lev) * pgw
@@ -1147,17 +1129,17 @@
               clb(i)            =  clb(i) - &
                                   (refl(i,1,lev) - tran(i,1,lev)) * pgw
   750       continue
-!
+
   800     continue
-!
+
         endif
   900 continue
-!
+
       do 950 i = il1, il2
         fdl(i)                  =  flxd(i,lev)
         ful(i)                  =  flxu(i,1)
   950 continue
-!
+
 !     on veut les flux en sortie
       do k = 1,lev
       do i = il1,il2
@@ -1165,7 +1147,7 @@
         flxul(i,k)=flxu(i,k)
       enddo
       enddo
-!
+
 !     decommenter cette partie si on fait lclw = false sinon ca plante
 !     else
 !         do i = il1, il2
@@ -1185,6 +1167,7 @@
 !         enddo
       endif
 !     (lclw)
-!
+
       return
       end
+ 

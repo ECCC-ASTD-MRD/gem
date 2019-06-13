@@ -26,38 +26,38 @@
 !
 ! Initialize: Domain, MPI, processor topology and ptopo.cdk
 
-      call init_component
+      call init_component()
 
 ! Establish: model configuration, domain decomposition
 !            and model geometry
 
-      call set_world_view
+      call set_world_view()
 
 ! Initialize the ensemble prevision system
 
-      call itf_ens_init
+      call itf_ens_init()
 
 ! Initialize the physics parameterization package
 
-      call itf_phy_init
+      call itf_phy_init()
 
 ! Initialize tracers
 
-      call tracers
+      call tracers()
 
 ! Setup main memory
 
-      call main_gmm_storage
+      call main_gmm_storage()
 
-      call set_dyn_opr
+      call set_dyn_opr()
 
 ! Run GEM
 
-      call gem_ctrl
+      call gem_ctrl()
 
 ! Terminate
 
-      call stop_world_view
+      call stop_world_view()
 !
 !     ---------------------------------------------------------------
 !

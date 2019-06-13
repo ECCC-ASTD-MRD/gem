@@ -27,6 +27,7 @@
       use lun
       use tr3d
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -41,8 +42,8 @@
       real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
       real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0_8
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pr_m_dyn_8,pr_m_phy_8,pr_t_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pr_m_dyn_8,pr_m_phy_8,pr_t_8
       logical :: source_ps_L
 !
 !-----------------------------------------------------------------
@@ -187,7 +188,7 @@
 
          if (Lun_out>0) write(Lun_out,*) ''
          if (Lun_out>0) write(Lun_out,*) '--------------------------------------'
-         if (Lun_out>0) write(Lun_out,*) 'SOURCE_PS is done for DRY AIR (REAL*8)'
+         if (Lun_out>0) write(Lun_out,*) 'SOURCE_PS is done for DRY AIR (REAL64)'
          if (Lun_out>0) write(Lun_out,*) '--------------------------------------'
          if (Lun_out>0) write(Lun_out,*) ''
 

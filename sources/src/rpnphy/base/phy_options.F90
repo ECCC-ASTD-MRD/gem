@@ -15,25 +15,24 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module phy_options
+   use, intrinsic :: iso_fortran_env, only: INT64
    implicit none
    public
    save
-
-   integer, parameter, private :: IDOUBLE = 8
 
    integer, parameter :: LEVMAX            = 200 !# NOMBRE MAXIMUM DE NIVEAUX POUR LA PHYSIQUE
 
    integer, parameter :: OPT_OPTIX_OLD     = 1
    integer, parameter :: OPT_OPTIX_NEW     = 2
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
-   integer(IDOUBLE), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
+   integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
    logical           :: chemistry    = .false.
    logical           :: climat       = .false.
    character(len=16) :: conv_mid     = 'NIL'
    character(len=16) :: conv_shal    = 'NIL'
    character(len=16) :: convec       = 'NIL'
    integer           :: cw_rad       = 0
-   integer(IDOUBLE)  :: jdateo       = 0
+   integer(INT64)  :: jdateo       = 0
    real              :: delt         = 0.
    character(len=4),  pointer :: dyninread_list_s(:) => NULL()
    logical           :: dynout       = .false.

@@ -16,6 +16,7 @@
 module ver
    use type_mod
    use vGrid_Descriptors
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -53,7 +54,7 @@ module ver
 !----------------------------------------------------------------------|
 ! Ver_std_p_prof%(t,m)| STanDard Pressure PROFile for physics          |
 !----------------------------------------------------------------------|
-! Ver_table_8         | real*8 table containing vgrid descriptors      |
+! Ver_table_8         | real(kind=REAL64) table containing vgrid descriptors      |
 !----------------------------------------------------------------------|
 ! Ver_gama_8          | A parameter function of T*                     |
 ! Ver_epsi_8          | A parameter function of T*: RT*/(g tau)**2     |
@@ -69,7 +70,7 @@ module ver
 !
       type :: V8_tmx
          sequence
-         real*8, dimension(:), pointer, contiguous :: t,m,x
+         real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
       end type V8_tmx
 
       type (V8_tmx) Ver_z_8
@@ -93,21 +94,21 @@ module ver
 
       real :: Ver_hyb_top
 
-      real*8 Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8
-      real*8 Ver_alfat_8,Ver_cst_8,Ver_cstp_8
-      real*8 Ver_igt_8,Ver_igt2_8,Ver_ikt_8
-      real*8 Ver_zmin_8,Ver_zmax_8
-      real*8 gama_8,epsi_8,mu_8,gg_8, sig
+      real(kind=REAL64) Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8
+      real(kind=REAL64) Ver_alfat_8,Ver_cst_8,Ver_cstp_8
+      real(kind=REAL64) Ver_igt_8,Ver_igt2_8,Ver_ikt_8
+      real(kind=REAL64) Ver_zmin_8,Ver_zmax_8
+      real(kind=REAL64) gama_8,epsi_8,mu_8,gg_8, sig
 
       integer :: Ver_code
 
-      real*8, dimension(:), allocatable :: Ver_gama_8,Ver_epsi_8
-      real*8, dimension(:), allocatable :: Ver_FIstr_8,Ver_bzz_8
-      real*8, dimension(:), allocatable :: Ver_czz_8
-      real*8, dimension(:), allocatable :: Ver_wpstar_8,Ver_wmstar_8
-      real*8, dimension(:), allocatable :: Ver_wpA_8,Ver_wmA_8
-      real*8, dimension(:), allocatable :: Ver_wpM_8,Ver_wmM_8
-      real*8, dimension(:), allocatable :: Ver_wpC_8,Ver_wmC_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_gama_8,Ver_epsi_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_FIstr_8,Ver_bzz_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_czz_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_wpstar_8,Ver_wmstar_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_wpA_8,Ver_wmA_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_wpM_8,Ver_wmM_8
+      real(kind=REAL64), dimension(:), allocatable :: Ver_wpC_8,Ver_wmC_8
 
       real, dimension(:), allocatable :: Ver_onezero, Ver_zeronk
 

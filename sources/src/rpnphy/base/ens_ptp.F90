@@ -22,10 +22,11 @@ module ens_ptp
 contains
 
    subroutine ens_ptp2(d,v,f,dsiz,fsiz,vsiz,ni,nk,kount)
+      use tdpack_const
       use phy_options
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer dsiz,fsiz,vsiz,ni,nk,kount
       real, target :: d(dsiz), f(fsiz), v(vsiz)
@@ -73,7 +74,6 @@ contains
       !            1.0
       !
 #include <msg.h>
-#include "tdpack_const.hf"
 #include "ens.cdk"
 
       real, pointer, dimension(:)   :: zabekfc, zmrk2, ztlc

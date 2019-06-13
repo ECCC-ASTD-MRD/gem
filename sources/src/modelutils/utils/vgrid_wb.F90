@@ -17,9 +17,12 @@
 
 !/@
 module vgrid_wb
+   use, intrinsic :: iso_fortran_env, only: REAL64, INt64
    use iso_c_binding
+   use rpn_comm_itf_mod
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
+   use wb_itf_mod
    implicit none
    private
    !@objective Whiteboard (data store) for vgrid + ip1 <=> index association
@@ -51,13 +54,15 @@ module vgrid_wb
    integer, parameter, public :: VGRID_HYBS_KIND = 5 !Hybrid staggered
    integer, parameter, public :: VGRID_HYBS_VER  = 2
 
-   integer, parameter, public :: VGRID_HYBT_KIND = 5 !Hybrid staggered with unstaggered last Thermo level 
+   integer, parameter, public :: VGRID_HYBT_KIND = 5 !Hybrid staggered with unstaggered last Thermo level
    integer, parameter, public :: VGRID_HYBT_VER  = 3
 
-   integer, parameter, public :: VGRID_HYBM_KIND = 5 !Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
+   integer, parameter, public :: VGRID_HYBM_KIND = 5 !Hybrid staggered, first level is a momentum level,
+   !        same number of thermo and momentum levels
    integer, parameter, public :: VGRID_HYBM_VER  = 4
 
-   integer, parameter, public :: VGRID_HYBMD_KIND = 5 !Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels, Diag level heights (m AGL) encoded
+   integer, parameter, public :: VGRID_HYBMD_KIND = 5 !Hybrid staggered, first level is a momentum level,
+   !        same number of thermo and momentum levels, Diag level heights (m AGL) encoded
    integer, parameter, public :: VGRID_HYBMD_VER  = 5
 
 
@@ -82,12 +87,10 @@ module vgrid_wb
         (/'Ground', 'Surf  ', 'UpAir ', 'UpAirT', 'Diag  ', 'DiagT '/)
 
 !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
-#include <WhiteBoard.hf>
-   include "rpn_comm.inc"
 
    character(len=*),parameter :: PREFIXI_S = 'VGWBI/'
    character(len=*),parameter :: PREFIXV_S = 'VGWB/'
@@ -225,7 +228,8 @@ contains
 
       i4ptr1d(:) = F_ip1list(:)
 
-      write(msg_S, '(a, " [type=", a, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") id=", i16.16)') name_S(1:16), VGRID_TYPES_S(itype), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1), id
+      write(msg_S, '(a, " [type=", a, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") id=", i16.16)') &
+           name_S(1:16), VGRID_TYPES_S(itype), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1), id
       call msg(MSG_INFO, '(vgrid_wb) Put: '//trim(msg_S))
       F_id = id
       !---------------------------------------------------------------------
@@ -283,13 +287,15 @@ contains
       character(len=WB_MAXSTRINGLENGTH) :: sfcfld_S, sfcfld2_S, id_S, id2_S
       integer :: istat, lijk(3), uijk(3), n, lip1, uip1
       logical :: overwrite_L, exists_L, same_L, same2_L
-      real(RDOUBLE), pointer :: vtbl(:, :, :), vtbl2(:, :, :)
+      real(REAL64), pointer :: vtbl(:, :, :), vtbl2(:, :, :)
       type(gmm_metadata) :: r8meta3d, r8meta3d2
       !---------------------------------------------------------------------
       if (associated(F_ip1list)) then
          lip1 = lbound(F_ip1list,1)
          uip1 = ubound(F_ip1list,1)
-         write(msg_S, '(a, " ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') trim(F_name_S), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
+         write(msg_S, &
+              '(a, " ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') &
+              trim(F_name_S), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
       else
           write(msg_S, '(a)') trim(F_name_S)//" sfcref="//trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
       endif
@@ -399,7 +405,7 @@ contains
       character(len=256) :: msg_S
       !---------------------------------------------------------------------
       call msg(MSG_DEBUG, '(vgrid_wb) get [BEGIN] '//trim(F_name_S))
-      call vgrid_nullify(F_vgrid) 
+      call vgrid_nullify(F_vgrid)
       vgrid_idx = priv_id(F_name_S)
 
       if (present(F_ip1list)) then
@@ -422,7 +428,9 @@ contains
          if (present(F_ip1list)) then
             lip1 = lbound(F_ip1list,1)
             uip1 = ubound(F_ip1list,1)
-            write(msg_S, '(a, " [type=", i4, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') trim(F_name_S), itype, lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(sfcfld_S)//' '//trim(sfcfld2_S)
+            write(msg_S, &
+                 '(a, " [type=", i4, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') &
+                 trim(F_name_S), itype, lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(sfcfld_S)//' '//trim(sfcfld2_S)
          else
             write(msg_S, '(a, " [type=", i4, "]  sfcref=", a)') trim(F_name_S), itype, trim(sfcfld_S)//' '//trim(sfcfld2_S)
          endif
@@ -456,7 +464,7 @@ contains
       character(len=WB_MAXSTRINGLENGTH) :: sfcfld2_S
       integer :: istat, nip1, lip1, uip1
       integer, pointer :: i4ptr1d(:)
-      real(RDOUBLE), pointer :: vtbl(:, :, :)
+      real(REAL64), pointer :: vtbl(:, :, :)
       type(gmm_metadata) :: i4meta1d, r8meta3d
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -631,7 +639,7 @@ contains
       logical :: ismaster_L, ok_L
       integer :: ibuf(IBUFSIZE), n123(3)
       character(len=STRLEN) :: sfcfld_S, sfcfld2_S
-      real(RDOUBLE), pointer :: vtbl_8(:, :, :)
+      real(REAL64), pointer :: vtbl_8(:, :, :)
       !---------------------------------------------------------------------
       F_istat = RMN_OK
       if (present(F_ipe)) then

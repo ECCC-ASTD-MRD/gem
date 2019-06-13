@@ -48,9 +48,9 @@
 
       real, pointer    , dimension(:,:,:) :: tr,tr_r,cl,cl2
 
-      real*4, parameter :: CLY_REF = 4.*10.**(-6)
+      real, parameter :: CLY_REF = 4.*10.**(-6)
 
-      real(8) norm_1_8,norm_2_8,norm_inf_8,norm_m_8, &
+      real(kind=REAL64) norm_1_8,norm_2_8,norm_inf_8,norm_m_8, &
               s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8, &
               g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8,g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8, &
               w1_8,w2_8,tracer_8

@@ -1,0 +1,10 @@
+Compiled on:
+Fedora 30, Intel 19.0.4.243, cmake version 3.14.5
+Fedora 30, gfortran 9.1.1, cmake version 3.14.5
+
+Fedora 29, gfortran 8.3.1, cmake version 3.14.4
+
+Ubuntu-18.04, gfortran-7.4.0, cmake 3.10.2
+
+Ubuntu 14.04, gfortran 5.1.0, cmake 2.8.12.2
+Ubuntu 14.04, Intel 16.0.1, cmake 2.8.12.2

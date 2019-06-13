@@ -32,7 +32,6 @@ end module mod_msg
 module mod_msg_buffer
    !@author  Stephane Chamberland, 2018-06
    use mod_msg, only: msgUnit, msgFormat
-   use sort_mod, only: sort, SORT_UP, SORT_UNIQUE
    implicit none
    private
    public :: buffer_verbosity, buffer_add, buffer_reset, buffer_flush
@@ -110,12 +109,19 @@ contains
    subroutine buffer_flush()
       implicit none
       !@*/
-      integer :: n, nunits
+      integer :: n, nunits, m
       integer :: units(MSG_NBLEVELS-MSG_NBLEVELS0+1)
 !$omp single
       nunits = MSG_NBLEVELS - buffer_min_level + 1
       units(1:nunits) = msgUnit(buffer_min_level:MSG_NBLEVELS)
-      nunits = sort(units(1:nunits), SORT_UP, SORT_UNIQUE)
+      call isort(units,nunits)
+      ! unique values only
+      m=1
+      do n=2,nunits
+         if (units(n) /= units(n-1)) m = m + 1
+         units(m) = units(n)
+      enddo
+      nunits = m
       do n = 1, nunits
          write(units(n),*) '==== Msg Buffer traceback [BEGIN] =============================='
       enddo
@@ -273,13 +279,14 @@ end subroutine msg_set_redirect2fileUnit
 
 !/@*
 subroutine msg_toall(F_msgLevel,F_Message)
-   use mod_msg, only: isInit_L,canWrite_L
+   use mod_msg, only: isInit_L,canWrite_L,msgUnit,msgFormat,msgLevelMin
    implicit none
    !@arguments
    integer,intent(in) :: F_msgLevel
    character(len=*),intent(in) :: F_Message
    !@author  Stephane Chamberland, 2009-11
    !@*/
+   integer :: msgLevel
    logical :: canWrite_L_bk
    !---------------------------------------------------------------------
    if (.not.isInit_L) call msg_init()

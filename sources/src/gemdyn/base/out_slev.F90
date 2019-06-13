@@ -23,15 +23,6 @@
       real F_level(*)
       logical F_nearsfc_L
 
-!AUTHOR   Michel Desgagne     July 2004 (MC2)
-!
-!REVISION
-! v3_20 - Lee V.            - Adapted for GEMDM
-! v4_40 - Lee V.            - change in argument call for this routine
-!                             in order to select the "bot" levels
-!ARGUMENTS
-!    NAMES       I/O  TYPE  DESCRIPTION
-
       integer k,kk
 !
 !----------------------------------------------------------------------

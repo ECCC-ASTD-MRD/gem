@@ -27,6 +27,7 @@
       use tdpack, only : rgasd_8, grav_8
       use ver
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       !Arguments
@@ -44,11 +45,11 @@
       !----------------------------------------------------------
 
       integer :: i,j,k,istat
-      real*8  :: avg_8,dp_8,dz_8
+      real(kind=REAL64)  :: avg_8,dp_8,dz_8
       logical :: GEM_P_L
       real, dimension(Minx:Maxx,Miny:Maxy)         :: pr_p0
       real, dimension(Minx:Maxx,Miny:Maxy,1:F_nk+1):: pr_m,pr_t
-      real, dimension(Minx:Maxx,Miny:Maxy,0:F_nk+1):: zmom 
+      real, dimension(Minx:Maxx,Miny:Maxy,0:F_nk+1):: zmom
 
       !----------------------------------------------------------
 
@@ -62,7 +63,7 @@
 
          !Evaluate Pressure based on pw_update_GPW
          !----------------------------------------
-         call calc_pressure ( pr_m, pr_t, pr_p0, st1, Minx, Maxx, Miny, Maxy, F_nk ) 
+         call calc_pressure ( pr_m, pr_t, pr_p0, st1, Minx, Maxx, Miny, Maxy, F_nk )
 
          pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
 

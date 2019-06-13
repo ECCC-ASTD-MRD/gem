@@ -1,4 +1,7 @@
-#!/bin/ksh
+#!/bin/bash
+set -ex
+# for the following mpirun
+ulimit -s 512000
 cat <<EOT >make_mpif_include.f90
 program make_mpif_includes
 include 'mpif.h'
@@ -31,7 +34,8 @@ if which poe 1>/dev/null 2>/dev/null ; then
   ./make_mpif_include | grep '#define'  >mpi_stub.h
   rm -f $MP_HOSTFILE
 else
-  ${MPIRUN} -n 1 ./make_mpif_include | grep '#define' >mpi_stub.h
+#  ${MPIRUN} -n 1 ./make_mpif_include | grep '#define' >mpi_stub.h
+  ./make_mpif_include | grep '#define'  >mpi_stub.h
 fi
 rm -f make_mpif_include.f90 make_mpif_include
 if [[ "$1" == fortran || "$1" == all ]] ; then
@@ -311,7 +315,23 @@ if [[ "$1" == fortran || "$1" == all ]] ; then
       return
       end
 !
-      subroutine MPI_type_extent(dtyp_m,extent,ierr)
+      subroutine MPI_comm_free
+      write(6,*) 'MPI_comm_free not authorized in non-mpi mode, ABORT'
+      call ABORT
+      return
+      end
+!
+      subroutine MPI_type_get_extent(dtyp_m,extent,ierr)  ! replaces MPI_type_extent
+      integer,intent(IN) :: dtyp_m
+      !integer, intent(out) :: ierr
+      integer :: ierr
+      integer :: extent
+      write(6,*) 'MPI_type_get_extent not authorized in non-mpi mode, ABORT'
+      call ABORT
+      ierr = -1
+      return
+      end
+      subroutine MPI_type_extent(dtyp_m,extent,ierr)  ! old, deprecated entry
       integer,intent(IN) :: dtyp_m
       !integer, intent(out) :: ierr
       integer :: ierr

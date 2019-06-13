@@ -22,13 +22,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Michel Desgagne - Summer 2013
-!
-!revision
-! v4_70 - Desgagne, M.     - initial version
-
-
       integer istat,k
       real, pointer, dimension (:,:,:) :: uu_copy,vv_copy  => null()
 !     ________________________________________________________________

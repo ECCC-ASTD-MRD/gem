@@ -19,6 +19,7 @@
       subroutine adj_ss2topo (F_ssq0, F_newtopo, F_pres, F_oldtopo, F_vt,&
                               Minx, Maxx, Miny, Maxy, nk, F_i0, F_in, F_j0, F_jn)
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -98,7 +99,7 @@
 
 
       integer :: i,j,k,ik
-      real*8 :: difgz, lapse, ttop, tbot, cons, q1, q2, q3, x0, xm, xp, &
+      real(kind=REAL64) :: difgz, lapse, ttop, tbot, cons, q1, q2, q3, x0, xm, xp, &
                 aa, bb, cc, dd, zak, zbk, zck, invdet
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: vma, vmb, vmc, gz_temp
 !

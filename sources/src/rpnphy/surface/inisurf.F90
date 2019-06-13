@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,15 +12,16 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine inisurf4(kount, ni, nk, trnch)
+   use tdpack_const, only: TRPL, TCDK, RAUW
    use sfc_options
    use sfcbus_mod
    use svs_configs
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !@Object Transfer and initialize geophysical fields for the
    !        surface schemes
@@ -41,7 +42,6 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !       permanent variables.
    !*@/
 
-#include "tdpack_const.hf"
    include "isbapar.cdk"
    include "sfcinput.cdk"
 
@@ -96,11 +96,11 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zsnoalen,snoalen)
    MKPTR1D(zsnoagen,snoagen)
    MKPTR1D(zsnoden,snoden)
-   MKPTR1D(zsnodpl,snodpl) 
+   MKPTR1D(zsnodpl,snodpl)
    MKPTR1D(zsnoma,snoma)
    MKPTR1D(zsnoro,snoro)
    MKPTR1D(zsnvden,snvden)
-   MKPTR1D(zsnvdp,snvdp) 
+   MKPTR1D(zsnvdp,snvdp)
    MKPTR1D(zsnvma,snvma)
    MKPTR1D(ztsrad,tsrad)
    MKPTR1D(ztwater,twater)
@@ -261,7 +261,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
       ! Special operations for the snow variables
       !
       ! Careful here about the units:
-      ! "snoro" is the relative density of snow, 
+      ! "snoro" is the relative density of snow,
       !         i.e., rho_ice / rho_water (no units)
       ! "snoma" is the snow water equivalent in mm (i.e., kg / m2)
       ! "snoal" is the snow albedo determined from the snow age
@@ -284,7 +284,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
       ! 1) if switch "snoalb_anl" is true, then the "i6"
       !    record in the starting standard file (snoalen) contains the snow albedo
       !
-      ! 2) if switch "snoalb_anl" is false, then we use the snow age (snoagen) 
+      ! 2) if switch "snoalb_anl" is false, then we use the snow age (snoagen)
       !    to derive the snow albedo
       !
       IF_SNO_ALB: if (snoalb_anl) then
@@ -325,7 +325,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
          call inicover2(kount, ni, trnch)
       endif
 
-      ! Sand and clay fractions of the soil are taken as simple averages 
+      ! Sand and clay fractions of the soil are taken as simple averages
       ! of the first 3 layers
 
 !VDIR NODEP
@@ -351,7 +351,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
    end if IF_ISBA
 !=========================================================================
-!                                      FOR SVS  ... FOR SVS  ... FOR SVS 
+!                                      FOR SVS  ... FOR SVS  ... FOR SVS
 !=========================================================================
 !
 !
@@ -371,15 +371,15 @@ subroutine inisurf4(kount, ni, nk, trnch)
                zresagr(i)         = 100.
                zresavg(i)         = 50.
                zresasa(i)         = 100.
-               zresasv(i)         = 100.               
-               ! DDeacu: Ensure that slope is positive and set its minimum value             
+               zresasv(i)         = 100.
+               ! DDeacu: Ensure that slope is positive and set its minimum value
                if ( zmg(i).gt.critmask ) then
-                  zslop(i)  = min ( max( abs( zslop(i) ) , 5.e-03 ) , 1.0 ) 
+                  zslop(i)  = min ( max( abs( zslop(i) ) , 5.e-03 ) , 1.0 )
                else
                   zslop(i)  = 0.0
                endif
-               
-            endif      
+
+            endif
 
       END DO
 !
@@ -387,7 +387,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
 !                          Initialize the parameters that depend
 !                          on vegetation
 !
-   
+
       if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
          call inicover_svs(0, ni, trnch)
       endif
@@ -395,12 +395,12 @@ subroutine inisurf4(kount, ni, nk, trnch)
 !
 !
 !
-!                           Sand and clay fractions 
+!                           Sand and clay fractions
 !
 !VDIR NODEP
       kount_zero: if ( kount == 0 ) then
          soil_data: if ( soiltext == "GSDE" .or. soiltext == "SLC" &
-              .or. soiltext == "SOILGRIDS" ) then 
+              .or. soiltext == "SOILGRIDS" ) then
             DO k=1,nl_stp
                DO i=1,ni
                   watmask1: if (zmg(i).lt.critmask) then
@@ -409,32 +409,32 @@ subroutine inisurf4(kount, ni, nk, trnch)
                      zclay  (i,k)    = 0.0
                   else
                      ! OVER LAND
-                     
+
                      if (zsanden(i,k)+zclayen(i,k).lt.critexture) then
                         !                If no sand and clay component
                         !                attribute to these points characteristics
                         !                of typical loamy soils
                         zsand(i,k) = 35.
                         zclay(i,k) = 35.
-                     else 
-                        !                 Minimum of 1% of sand and clay 
-                        zsand(i,k) =  max( zsanden(i,k) , 1.0) 
-                        
+                     else
+                        !                 Minimum of 1% of sand and clay
+                        zsand(i,k) =  max( zsanden(i,k) , 1.0)
+
                         zclay(i,k) =  max( zclayen(i,k) , 1.0)
-                        
+
                         if ( zsand(i,k)+zclay(i,k).gt.100 ) then
-                           ! reduce sand & clay  percentage proportionally 
+                           ! reduce sand & clay  percentage proportionally
                            tempsum= zsand(i,k) + zclay(i,k)
                            zsand(i,k) = zsand(i,k)/tempsum * 100.
                            zclay(i,k) = zclay(i,k)/tempsum * 100.
                         endif
                      endif
                   endif watmask1
-                  
+
                enddo
             enddo
-            ! read in texture, do coherence check 
-            ! initialize soil characteristics 
+            ! read in texture, do coherence check
+            ! initialize soil characteristics
             call inisoili_svs( ni, trnch )
          endif soil_data
 
@@ -456,7 +456,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    ! Note that TEB variables do not support reading for kount>0:  phyincread_list_s
    !  would need to be processed within initown() to implement this support.
    if (kount == 0 .and. schmurb == 'TEB') &
-        call initown2(ni, nk, trnch)
+        call initown3(ni, trnch)
 
    return
 end subroutine inisurf4

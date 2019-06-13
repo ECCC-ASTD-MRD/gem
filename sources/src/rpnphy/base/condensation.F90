@@ -24,8 +24,8 @@ contains
    !/@*
    subroutine condensation3(d, dsiz, f, fsiz, v, vsiz, &
         tplus0, t0, huplus0, q0, qc0, ilab, dbdt, &
-        lkfbe, dt, ni, nk, kount, trnch)
-!#TODO: never used
+        dt, ni, nk, kount, trnch)
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV
       use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
@@ -33,12 +33,14 @@ contains
       use mp_my2_mod,    only: mp_my2_main
       use my_dmom_mod,   only: mydmom_main
       use phy_options
+#ifdef ECCC_MP_MY_SCHEME
       use phy_status, only: phy_error_L
+#endif
       use phybus
       use tendency, only: apply_tendencies
       use water_integrated, only: water_integrated1
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object Interface to convection/condensation
       !@Arguments
@@ -53,7 +55,6 @@ contains
       ! trnch    slice number
       ! tplus0   temperature at t+dT at the beginning of the physics
       ! huplus0  humidity at t+dT at the beginning of the physics
-      ! lkfbe    mass flux-based deep convective scheme is requested
       !
       !          - Input/Output -
       ! d        dynamics input field
@@ -73,7 +74,6 @@ contains
       real,   dimension(ni), intent(inout)      :: dbdt
       real,   dimension(ni,nk-1), intent(inout) :: tplus0,t0,huplus0,q0,qc0
       real,   target, intent(inout)             :: f(fsiz), v(vsiz), d(dsiz)
-      logical, intent(in) :: lkfbe
 
       !@Author L.Spacek, November 2011
       !@Revisions
@@ -99,7 +99,7 @@ contains
       real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d    !diagnostic 3D fields
       real, dimension(ni,nk-1,n_qiType)  :: qi_type    !diagnostic ice particle type  (mp_p3)
 
-      real(RDOUBLE), dimension(ni) :: l_en0,l_en,l_pw0,l_pw,l_enr,l_pwr
+      real(REAL64), dimension(ni) :: l_en0,l_en,l_pw0,l_pw,l_enr,l_pwr
 
       real, dimension(:,:), pointer :: zttm,zhum
 
@@ -146,7 +146,7 @@ contains
       do while (.not.p3_comptend .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/ &
               'ste ','sqe ','sqce','sqre','mtqi', &
-              'w7  ','w9  ','w5  ' &
+              'w7  ','w9  ','w5  ','ta  ' &
               /))) p3_comptend = .true.
          i = i+1
       enddo
@@ -157,9 +157,9 @@ contains
       case('NEWSUND')
 
          !# sundqvist (deuxieme version) :
-         call skocon4(zste, zsqe, zsqce, ztlc, ztsc, a_tls, &
-              a_tss, a_fxp, ccf, ttp, ttm, qqp, &
-              qqm, ztsurf, qcp, qcm, psp, &
+         call skocon5(zste, zsqe, zsqce, a_tls, &
+              a_tss, a_fxp, ttp, ttm, qqp, &
+              qqm, qcp, qcm, psp, &
               psm, ilab, sigma, ni, nkm1, &
               dt, satuco, convec, zrnflx, zsnoflx)
 
@@ -192,20 +192,20 @@ contains
          endif
          zfm1 = zqcpostcnd
          zfm  = qcp
-         call consun1(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
+         call consun2(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
               zcter, zcqer, zcqcer, tlcr  , tscr  , ccf, &
               lttp    , zttm   , lhup     , zhum    , zfm   , zfm1  , &
               psp , psm  , ilab  , dbdt  , sigma, dt  , &
               zrnflx, zsnoflx, zf12 , zfevp  , &
-              zfice, zclr, zcls, ni , nkm1)
+              zfice, ni , nkm1)
 
          ! Adjust tendencies to impose conservation of total water and liquid
          ! water static energy on request.
          ! Apply humidity tendency correction for total water conservation
          ! and of liquid water static energy
          CONSUN_CONSERVATION: if (cond_conserve == 'TEND') then
-            istat1 = eb_conserve_pw(zsqe,zsqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
-            istat2 = eb_conserve_en(zste,zste,zsqe,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
+            istat1 = eb_conserve_pw(zsqe,zsqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
+            istat2 = eb_conserve_en(zste,zste,zsqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
             if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
                call physeterror('condensation', 'Problem correcting for liquid water static energy conservation in condensation')
                return
@@ -228,6 +228,9 @@ contains
 
          !# "old" Milbrandt-Yau 2-moment microphysics (as in HRDPS v4.0.0 - v4.2.0)
          geop = zgztherm*GRAV
+
+#ifdef ECCC_MP_MY_SCHEME
+
          call mydmom_main(ww,&
               ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,psp, &
               ttm,qqm,qcm,qrm,qim,qnm,qgm,qhm,ncm,nrm,nim,nnm,ngm,nhm,psm,sigma,&
@@ -251,7 +254,13 @@ contains
               zrnflx,zsnoflx,zf12,zfevp,zclr,zcls,a_fxp,a_effradc,&
               a_effradi1, a_effradi2, a_effradi3, a_effradi4)
 
+#else
+         call physeterror('condensation', 'MP_MY2_OLD:mydmom_main NOT supported')
+#endif
+
       case('MP_MY2')
+
+#ifdef ECCC_MP_MY_SCHEME
 
          !#  modified (from HRDPS_4.2.0) Milbrandt-Yau 2-moment microphysics (MY2, v2.25.2)
          call mp_my2_main(ww,ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,a_nwfa,     &
@@ -275,6 +284,10 @@ contains
          a_ss05 = diag_3d(:,:,5);   a_ss12 = diag_3d(:,:,12);   a_ss19 = diag_3d(:,:,19)
          a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
          a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
+
+#else
+         call physeterror('condensation', 'MP_MY2:mp_my2_main NOT supported')
+#endif
 
       case('MP_P3')
 
@@ -428,7 +441,7 @@ contains
 
       ! Pre-scheme state for energy budget
       if (associated(zconecnd)) then
-         istat1 = eb_en(l_en0,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         istat1 = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
          istat2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
          if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
             call physeterror('condensation', 'Problem computing preliminary energy budget for '//trim(stcond))
@@ -477,7 +490,7 @@ contains
 
       ! Post-scheme energy budget analysis: post-scheme state and residuals
       if (associated(zconecnd)) then
-         istat1 = eb_en(l_en,ttp,qqp,qcp,zgztherm,sigma,psp,nkm1)
+         istat1 = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
          istat2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
          if (istat1 == EB_OK .and. istat2 == EB_OK) then
             istat1 = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=a_tls,F_snow=a_tss)
@@ -493,7 +506,7 @@ contains
 
       ! Local copies of the MY2 masses are used to avoid passing a nullified
       ! pointer through the interface.
-      call water_integrated1(ttp,qqp,qcp,lqip,lqrp,lqgp,lqnp,sigma,psp, &
+      call water_integrated1(ttp,qqp,qcp,lqip,lqnp,sigma,psp, &
            zicw,ziwv,ziwv700,ziwp,zlwp2,zslwp,zslwp2,zslwp3,zslwp4,ni,nkm1)
 
       ! Store post-scheme state information for "accession" calculations on next step

@@ -25,6 +25,7 @@
       use gmm_pw
       use lun
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,7 @@
 ! Local varibales
 
       integer :: istat, i, j
-      real*8 :: oneoRT
+      real(kind=REAL64) :: oneoRT
       real, dimension(:,:), pointer, contiguous :: p0_ls
 !
 !

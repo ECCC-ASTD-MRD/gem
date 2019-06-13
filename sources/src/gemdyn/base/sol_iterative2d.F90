@@ -25,27 +25,28 @@
       use lun
       use matvec2d_mod
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       logical, intent(in) :: print_conv_L
       integer, intent(in) :: F_ni, F_nj, F_nk, F_offi, F_offj
-      real*8, dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_sol
-      real*8, dimension(F_ni,F_nj,F_nk), intent(out) :: F_lhs_sol
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_sol
+      real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(out) :: F_lhs_sol
 !
 !authors
-!     Abdessamad Qaddouri, Stéphane Gaudreault - March 2018
+!     Abdessamad Qaddouri, Stephane Gaudreault - March 2018
 !     Christopher Subich - November 2018 (initial guess per level)
-
-      integer i, j, k, ni, nij, nk
-      real*8, dimension (ldnh_maxx, ldnh_maxy, l_nk) :: wk_rhs
+!
+      integer :: i, j, k, ni, nij, nk
+      real(kind=REAL64), dimension (ldnh_maxx, ldnh_maxy, l_nk) :: wk_rhs
 
       ! wk_sol is allocatable and saved between invocations, to provide an initial
       ! guess for subsequent calls
-      real*8, dimension (:,:,:), allocatable, save :: wk_sol
+      real(kind=REAL64), dimension (:,:,:), allocatable, save :: wk_sol
 
       integer, dimension(F_nk) :: its
-      real*8, dimension(F_nk) :: conv
+      real(kind=REAL64), dimension(F_nk) :: conv
 
       logical, save :: first_time = .true.
 

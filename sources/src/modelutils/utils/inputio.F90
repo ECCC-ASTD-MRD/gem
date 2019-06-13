@@ -15,6 +15,8 @@
 
 !/@*
 module inputio_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_get, vgd_free, VGD_OK, operator(==)
    use incfg2_mod
    use inputio_files_mod
@@ -47,9 +49,8 @@ module inputio_mod
    public :: INCFG_T, INPUTIO_FILES_T, INPUTIO_T
    !*@/
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
 #define MK_ID2CHAR(ID) trim(achar(65+ID))
@@ -94,7 +95,7 @@ module inputio_mod
       character(len=64) :: vn2_S
       character(len=64) :: vgrid_S
       character(len=64) :: sfc_S(2) !# SFC + SLS
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       logical :: salloc_L, dalloc_L
       real, dimension(:,:,:), pointer :: sfc !# SFC + SLS
       real, dimension(:,:,:), pointer :: psfc !# SFC + SLS
@@ -121,7 +122,7 @@ contains
       !@objective
       !@arguments
       type(INPUTIO_T), intent(out) :: F_inputobj
-      integer(IDOUBLE), intent(in) :: F_jdateo
+      integer(INT64), intent(in) :: F_jdateo
       integer, intent(in) :: F_dt
       character(len=*), intent(in), optional :: F_filename_S !full/rel path of config file
       character(len=*), intent(in), optional :: F_basedir_S
@@ -316,7 +317,7 @@ contains
       !*@/
       integer, parameter :: MAXITER = 4
       integer :: istat, niter, nn
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       type(INCFG_T), pointer :: cfg
       type(INCFG_VAR_T), pointer :: cfgvar
       type(INPUTIO_FILES_T), pointer :: cfgfile
@@ -634,7 +635,7 @@ contains
       !*@/
       integer :: ftype, tint, ip2, ip2m1, ip2p1, datevfuzz, fuzztype, cmcdatev
       integer :: istat, nip1, funit, nn, ntypvar, itypvar
-      integer(IDOUBLE) :: jdatev, jdatev0, jdatevm1, jdatevp1
+      integer(INT64) :: jdatev, jdatev0, jdatevm1, jdatevp1
       integer,target :: ip1list(NMAX_LEVELS)
       type(vgrid_descriptor) :: vgrid, vgrid0
       integer, pointer :: pip1list(:), pk1(:), pk2(:)
@@ -808,7 +809,8 @@ contains
                   istat = fstmpio_find_3d_0(pk1, funit, vn_S, &
                        cmcdatev, pip1list, ip2, RMN_ANY_I, &
                        datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
-                  if (.not.RMN_IS_OK(istat)) then !#TODO: should we do this?, what if the sfc field is date independent like ME
+                  if (.not.RMN_IS_OK(istat)) then
+                     !#TODO: should we do this?, what if the sfc field is date independent like ME
                      cmcdatev = RMN_ANY_DATE
                      istat = fstmpio_find_3d_0(pk1, funit, vn_S, &
                           cmcdatev, pip1list, ip2, RMN_ANY_I, &
@@ -947,8 +949,8 @@ contains
       !@objective
       !@arguments
       integer, intent(in) :: F_filetype
-      integer(IDOUBLE), intent(in) :: F_jdatev0
-      integer(IDOUBLE), intent(out) :: F_jdatev, F_jdatevm1, F_jdatevp1
+      integer(INT64), intent(in) :: F_jdatev0
+      integer(INT64), intent(out) :: F_jdatev, F_jdatevm1, F_jdatevp1
       integer, intent(out) :: F_ip2, F_ip2m1, F_ip2p1
       !*@/
       integer :: year
@@ -993,7 +995,7 @@ contains
    function priv_tint_status(F_cfgvar, F_jdatev, F_fld) result(F_istat)
       implicit none
       type(INCFG_VAR_T), intent(in) :: F_cfgvar
-      integer(IDOUBLE), intent(in) :: F_jdatev
+      integer(INT64), intent(in) :: F_jdatev
       type(inputio_fld_t), intent(inout) :: F_fld
       integer :: F_istat
       !*@/
@@ -1086,7 +1088,7 @@ contains
       integer :: F_istat
       !*@/
       character(len=64) :: vn_S, msg_S
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       integer :: istat
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) tint_get [BEGIN]')
@@ -1159,7 +1161,8 @@ contains
       if (.not.(associated(F_fldin%d1) .and. &
            (F_fldin%vn2_S == ' ' .or. associated(F_fldin%d2)))) then
          write(msg_S, *) F_istat
-         call msg(MSG_DEBUG, '(inputio) vint [END] for "'//trim(F_fldin%vn1_S)//'", No associated ptr '//trim(msg_S))
+         call msg(MSG_DEBUG, '(inputio) vint [END] for "'//trim(F_fldin%vn1_S)// &
+              '", No associated ptr '//trim(msg_S))
          return
       endif
       F_fldout%vgrid_S = F_vgrid_S
@@ -1206,7 +1209,8 @@ contains
          nullify(ip1list)
          istat = vgrid_wb_get(F_vgrid_S, vgrid, ip1list)
          if (.not.RMN_IS_OK(istat)) then
-            call msg(MSG_DEBUG, '(inputio) vint [END] for "'//trim(F_fldin%vn1_S)//'", Problem getting vgrid: '//trim(F_vgrid_S))
+            call msg(MSG_DEBUG, '(inputio) vint [END] for "'//trim(F_fldin%vn1_S)// &
+                 '", Problem getting vgrid: '//trim(F_vgrid_S))
             return
          endif
          istat = vgd_free(vgrid)
@@ -1236,7 +1240,8 @@ contains
          lijk2 = lbound(F_fldout%d1)
          uijk2 = ubound(F_fldout%d1)
          if (.not.(all(lijk == lijk2) .and. all(uijk == uijk2))) then
-            call msg(MSG_ERROR, '(inputio) vint, for "'//trim(F_fldin%vn1_S)//'", provided array 1 has wrong shape')
+            call msg(MSG_ERROR, '(inputio) vint, for "'//trim(F_fldin%vn1_S)// &
+                 '", provided array 1 has wrong shape')
             print *,trim(F_fldin%vn1_S),lijk,":",uijk," != ",lijk2,":",uijk2
             return
          endif
@@ -1244,7 +1249,8 @@ contains
             lijk2 = lbound(F_fldout%d2)
             uijk2 = ubound(F_fldout%d2)
             if (.not.(all(lijk == lijk2) .and. all(uijk == uijk2))) then
-               call msg(MSG_ERROR, '(inputio) vint, for "'//trim(F_fldin%vn1_S)//'", provided array 2 has wrong shape')
+               call msg(MSG_ERROR, '(inputio) vint, for "'//trim(F_fldin%vn1_S)// &
+                    '", provided array 2 has wrong shape')
                print *,trim(F_fldin%vn1_S),lijk,":",uijk," != ",lijk2,":",uijk2
                return
             endif

@@ -18,7 +18,7 @@
       Function sfoqfe(ee,pr)
       use tdpack, only: foqfe
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfoqfe, ee, pr
 !
 !Author

@@ -15,52 +15,41 @@
 
 !**s/r set_ops8 - prepares tri-diagonal basic operators
 !
-
-!
       subroutine set_ops8 (F_oper_8, F_delt_8, F_wt_8, F_period_L,  &
-                                                   NN, MXDM, F_case )
+                           NN, MXDM, F_case )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
-      integer NN, MXDM, F_case
-      real*8  F_oper_8(MXDM,3), F_delt_8(NN), F_wt_8
-      logical F_period_L
-!
-!author
-!     jean cote - 1990
-!
-!revision
-! v2_00 - Desgagne/Lee      - initial MPI version (from setops v1_03)
-!
-!object
-!     See above id.
-!
+      integer, intent(in) :: NN, MXDM, F_case
+      real(kind=REAL64), intent(out) :: F_oper_8(MXDM,3)
+      real(kind=REAL64), intent(in) :: F_delt_8(NN), F_wt_8
+      logical, intent(in) :: F_period_L
+
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_oper_8     O    - operators
-! F_delt_8     I    - distances between grid points
-! F_wt_8       I    - weight (0.0,one,2.0,5.0)=>(explicit,pseudo,f.e,fourth)
-! F_period_L   I    - .true. if periodic
-! NN           I    - number of grid points
-! F_case       I    - 1: second derivative
-!                     2: identity projector
-!                     3: first derivative
-!                     4: first derivative with boundary condition modified
-!                        by integration by part
+!  Name                        Description
+!------------------------------------------------------------
+! F_oper_8      - operators
+! F_delt_8      - distances between grid points
+! F_wt_8        - weight (0.0,one,2.0,5.0)=>(explicit,pseudo,f.e,fourth)
+! F_period_L    - .true. if periodic
+! NN            - number of grid points
+! F_case        - 1: second derivative
+!                 2: identity projector
+!                 3: first derivative
+!                 4: first derivative with boundary condition modified
+!                    by integration by part
 !
 !N.B.: periodic case => F_delt_8(NN) different from zero
 !
 !*
-      real*8 zero, half, one, two
-      parameter( zero = 0.0 )
-      parameter( half = 0.5 )
-      parameter( one  = 1.0 )
-      parameter( two  = 2.0 )
-!
+      real(kind=REAL64), parameter :: zero = 0.d0, &
+                                      half = 0.d5, &
+                                      one  = 1.d0, &
+                                      two  = 2.d0
       integer j
-      real*8  pds, pdt
-!
+      real(kind=REAL64)  pds, pdt
+
       if      ( F_case == 1 ) then
 !               Second Derivative
          if ( F_period_L ) then

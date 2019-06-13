@@ -40,6 +40,7 @@ for fpath in anal input o work headscript nmlfile ; do
        echo "target for ${fpath} is NOT FOUND:" ${target}
    fi
 done
+
 # Prepare abort file in case of early return
 if [[ -n "${abort}" ]] ; then 
    abort_file=${work}/${abort}-$$

@@ -15,44 +15,31 @@
 
 !**s/r glbdist
 !
-
-!
       subroutine glbdist (F_2bc,bni,bnj,F_2rc,Minx,Maxx,Miny,Maxy,nk,hx,hy)
-!
+
       use glb_ld
       implicit none
 #include <arch_specific.hf>
-!
-      integer bni,bnj,Minx,Maxx,Miny,Maxy,nk,hx,hy
-      real F_2bc(bni,bnj,nk), F_2rc(Minx:Maxx,Miny:Maxy,nk)
-!
-!author
-!     M. Desgagne
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version (from MC2 v4.9)
-! v2_21 - Desgagne M.       - rpn_comm stooge for glbdist
-!
-!object
+
+      integer, intent(in) :: bni,bnj,Minx,Maxx,Miny,Maxy,nk,hx,hy
+      real, dimension(bni,bnj,nk), intent(in) :: F_2bc
+      real, dimension(Minx:Maxx,Miny:Maxy,nk), intent(out) :: F_2rc
 !
 !arguments
-!  Name        I/O                 Description
+!  Name                            Description
 !----------------------------------------------------------------
-! F_2bc         I           Global array to distribute
-! bni,bnj       I           Horizontal dimension of F_2bc
-! F_2rc         O           Local reception array
-! Minx,Maxx,Miny,Maxy      I           Horizontal dimension of F_2rc
-! nk            I           Vertical dimension of F_2bc and F_2rc
+! F_2bc                     Global array to distribute
+! bni,bnj                   Horizontal dimension of F_2bc
+! F_2rc                     Local reception array
+! Minx,Maxx,Miny,Maxy       Horizontal dimension of F_2rc
+! nk                        Vertical dimension of F_2bc and F_2rc
 !----------------------------------------------------------------
 !
       integer err
-!----------------------------------------------------------------------
-!
+
       call RPN_COMM_dist (F_2bc,1,bni,1,bnj,bni,bnj,nk,0,0,1, &
                           F_2rc,Minx,Maxx,Miny,Maxy,hx,hy,G_periodx,G_periody,err)
-!
-!----------------------------------------------------------------------
-!
+
       return
       end
 

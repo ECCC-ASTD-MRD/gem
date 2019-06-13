@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,15 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, ni, nk)
-
+   use tdpack_const
    use phy_options
    use phybus
-
    implicit none
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    !@Arguments
    integer, intent(in)                  :: ni,nk      !horizontal/vertical dimensions
@@ -44,7 +43,6 @@ subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, 
    !
    !  ref: McCaul et al., Wea. Forecasting 2009, vol. 40, pp. 709-729
 
-#include "tdpack_const.hf"
 
   !Local variables and parameters:
    integer, dimension(ni,nk-1) :: array_t15

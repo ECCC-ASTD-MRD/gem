@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module adv_interp
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -65,7 +66,7 @@ module adv_interp
 
    type :: ADV_TYPE_V_R8
       sequence
-      real*8, dimension(:), pointer, contiguous :: t,m,x
+      real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_V_R8
 
    type :: ADV_TYPE_V_I
@@ -75,7 +76,7 @@ module adv_interp
 
    type :: ADV_TYPE_SV_R8
       sequence
-      real*8, dimension(:), pointer, contiguous :: t,m,x
+      real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_SV_R8
 
    type :: ADV_TYPE_SV_I
@@ -87,16 +88,16 @@ module adv_interp
    integer,dimension(:),allocatable :: adv_lcx,adv_lcy
    integer :: pnz
 
-   real*8 ::  adv_ovdx_8, adv_ovdy_8, adv_ovdz_8
-   real*8 ::  adv_x00_8,  adv_y00_8
-   real*8 ::  adv_x_8, adv_y_8
-   real*8 ::  adv_xabcd_8, adv_xbacd_8, adv_xcabd_8,adv_xdabc_8, adv_xbc_8
-   real*8 ::  adv_yabcd_8, adv_ybacd_8, adv_ycabd_8,adv_ydabc_8, adv_ybc_8
+   real(kind=REAL64) ::  adv_ovdx_8, adv_ovdy_8, adv_ovdz_8
+   real(kind=REAL64) ::  adv_x00_8,  adv_y00_8
+   real(kind=REAL64) ::  adv_x_8, adv_y_8
+   real(kind=REAL64) ::  adv_xabcd_8, adv_xbacd_8, adv_xcabd_8,adv_xdabc_8, adv_xbc_8
+   real(kind=REAL64) ::  adv_yabcd_8, adv_ybacd_8, adv_ycabd_8,adv_ydabc_8, adv_ybc_8
 
-   real*8, dimension(:), allocatable :: adv_dlx_8, adv_dly_8
-   real*8, dimension(:), allocatable :: adv_bsx_8, adv_bsy_8
+   real(kind=REAL64), dimension(:), allocatable :: adv_dlx_8, adv_dly_8
+   real(kind=REAL64), dimension(:), allocatable :: adv_bsx_8, adv_bsy_8
 
-   real*8, dimension(:), allocatable :: adv_diz_8
+   real(kind=REAL64), dimension(:), allocatable :: adv_diz_8
 
    type(ADV_TYPE_V_R8)  :: adv_dlz_8
    type(ADV_TYPE_SV_R8) :: adv_zbc_8

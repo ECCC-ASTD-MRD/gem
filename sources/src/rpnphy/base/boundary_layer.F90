@@ -24,6 +24,7 @@ contains
    !/@*
    subroutine boundary_layer4(d, f, v, dsiz, fsiz, vsiz, &
         ficebl, seloc, cdt1, kount, trnch, ni, nk)
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use difver, only: difver8
       use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
@@ -33,7 +34,7 @@ contains
       use tendency, only: apply_tendencies
       use turbul, only: turbul2
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Arguments
       !          - Input -
@@ -69,7 +70,7 @@ contains
       integer :: i, istat, istat2, nkm1
       real    :: wk1(ni,nk), wk2(ni,nk), rcdt1
       real, dimension(ni,nk), target :: zero
-      real(RDOUBLE), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
       ! Pointers to busdyn
       real, pointer, dimension(:,:) :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
       ! Pointers to busper
@@ -145,7 +146,7 @@ contains
 
       ! Pre-scheme state for energy budget
       if (associated(zconepbl)) then
-         istat  = eb_en(l_en0,ztplus,zqplus,zqtbl,zgztherm,zsigt,zps,nkm1,F_inttype='linear')
+         istat  = eb_en(l_en0,ztplus,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
          istat2 = eb_pw(l_pw0,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
          if (istat /= EB_OK .or.istat2  /= EB_OK) then
             call physeterror('boundary_layer', 'Problem computing preliminary energy budget for '//trim(fluvert))
@@ -177,10 +178,10 @@ contains
       TENDENCY_ADJUSTMENT: if (pbl_conserve == 'TEND') then
 
          ! Apply humidity tendency correction for total water conservation
-         istat = eb_conserve_pw(zqdifv,zqdifv,ztplus,zqplus,zqtbl,zsigt,zps,nkm1, &
+         istat = eb_conserve_pw(zqdifv,zqdifv,ztplus,zqplus,zsigt,zps,nkm1, &
               F_dqc=zldifv,F_inttype='linear',F_lhf=zfv)
          ! Apply temperature tendency correction for liquid water static energy conservation
-         istat2 = eb_conserve_en(ztdifv,ztdifv,zqdifv,ztplus,zqplus,zqtbl,zgztherm,zsigt,zps,nkm1, &
+         istat2 = eb_conserve_en(ztdifv,ztdifv,zqdifv,ztplus,zqplus,zqtbl,zsigt,zps,nkm1, &
               F_dqc=zldifv,F_inttype='linear',F_shf=zfc,F_lhf=zfv)
          if (istat /= EB_OK .or.istat2  /= EB_OK) then
             call physeterror('boundary_layer', 'Problem correcting for liquid water static energy conservation in boundary_layer')
@@ -200,7 +201,7 @@ contains
       ! Post-scheme energy budget analysis
       if (associated(zconepbl)) then
          ! Compute post-scheme state
-         istat  = eb_en(l_en,ztplus,zqplus,zqtbl,zgztherm,zsigt,zps,nkm1,F_inttype='linear')
+         istat  = eb_en(l_en,ztplus,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
          istat2 = eb_pw(l_pw,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
          if (istat == EB_OK .and. istat2 == EB_OK) then
             ! Compute residuals

@@ -28,7 +28,7 @@ contains
       use series_mod, only: series_xst
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk, trnch
       real, intent(inout), target ::  f(fsiz), d(dsiz), v(vsiz)

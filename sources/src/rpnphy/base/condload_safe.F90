@@ -22,7 +22,7 @@ SUBROUTINE CONDLOAD_SAFE(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
   use ifport
 #endif
   implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
   !
   !
   REAL BOTERM,CONV,DZ

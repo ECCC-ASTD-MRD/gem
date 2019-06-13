@@ -18,7 +18,7 @@
       SUBROUTINE DIFUVD4N (D, F, S, N, NK)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       INTEGER N,NK
       REAL D(N,NK), F(N,NK), S(N,NK)

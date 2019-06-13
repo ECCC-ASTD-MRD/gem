@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------
 
 module phybusalloc
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use phy_getmeta_mod, only: phy_getmeta
    use phy_options, only: debug_mem_L
    use phy_typedef, only: phymeta
@@ -28,13 +29,13 @@ contains
 
    function phybusalloc1(p_nj, entbus, perbus, dynbus, volbus) result(F_istat)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer, intent(in) :: p_nj
       real, pointer, dimension(:,:) :: entbus, dynbus, perbus, volbus
       integer :: F_istat
 
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
       include "buses.cdk"

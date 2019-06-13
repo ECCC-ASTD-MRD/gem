@@ -23,6 +23,7 @@
    use adv_grid
    use adv_interp
    use outgrid
+   use, intrinsic :: iso_fortran_env
    implicit none
 
 #include <arch_specific.hf>
@@ -41,11 +42,11 @@
    integer :: kkmax , idxk, idxjk, ii1, jj1,kk1
    integer :: i,j,k,n,n0,n1,n2,n3,m,nind
    integer :: midxk,midxjk,mni,mnj,mnk,nn
-   real*8  :: p_z00_8
-   real*8  :: rri,rrj,rrk
+   real(kind=REAL64)  :: p_z00_8
+   real(kind=REAL64)  :: rri,rrj,rrk
    integer, dimension(4*nind), intent(out) :: ii    ! index, to be used in tricubic lagrangian interpolations
    integer, dimension(:),pointer, contiguous :: p_lcz
-   real*8,  dimension(:),pointer, contiguous :: p_bsz_8
+   real(kind=REAL64),  dimension(:),pointer, contiguous :: p_bsz_8
 
 !---------------------------------------------------------------------
 

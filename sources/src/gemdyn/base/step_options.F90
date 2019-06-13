@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module step_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -62,7 +63,7 @@ module step_options
    namelist /step/ Step_leapyears_L
 
    !# Length of model timestep (sec)
-   real*8  :: Step_dt = -1.
+   real(kind=REAL64)  :: Step_dt = -1.
    namelist /step/ Step_dt
 
    ! Internal variables NOT in step namelist
@@ -71,7 +72,7 @@ module step_options
            Step_kount, Step_CMCdate0, Step_initial         , &
            Step_bkup_additional, Lctl_step
 
-   real*8  Step_nesdt, Step_maxwall
+   real(kind=REAL64)  Step_nesdt, Step_maxwall
 
 contains
 
@@ -82,6 +83,7 @@ contains
       use lun
       use rstr
       use clib_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -90,7 +92,7 @@ contains
       character(len=64) :: nml_S
       logical nml_must
       integer err
-      real*8 nesdt,nsteps
+      real(kind=REAL64) nesdt,nsteps
 !
 !-------------------------------------------------------------------
 !
@@ -199,6 +201,7 @@ contains
       end function step_nml
 
    function step_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

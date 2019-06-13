@@ -100,9 +100,9 @@ contains
 
     ! Arguments
     character(len=*),intent(in) :: F_grid_S !Arakawa C grid ('U':u-grid,'V':v-grid,'M':mass-grid)
+    integer, intent(in) :: Minx,Maxx,Miny,Maxy, Minz,Maxz                        !domain shape
     real, dimension(Minx:Maxx,Miny:Maxy,Minz:Maxz), intent(inout) :: F_fld       !model field
     real, dimension(Minx:Maxx,Miny:Maxy,Minz:Maxz), intent(in   ) :: F_nest_fld  !nesting field
-    integer, intent(in) :: Minx,Maxx,Miny,Maxy, Minz,Maxz                        !domain shape
     integer, intent(in), optional :: level       !level index to use for weights [use all levels]
 
     ! Local variables
@@ -135,9 +135,9 @@ contains
     ! Apply blending mask to a 2D array.
 
     character(len=*),intent(in) :: F_grid_S                            !Arakawa C grid ('U':u-grid,'V':v-grid,'M':mass-grid)
+    integer, intent(in) :: Minx,Maxx,Miny,Maxy                         !domain shape
     real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_fld       !model field
     real, dimension(Minx:Maxx,Miny:Maxy), intent(in   ) :: F_nest_fld  !nesting field
-    integer, intent(in) :: Minx,Maxx,Miny,Maxy                         !domain shape
     real, dimension(:,:,:), pointer, optional :: weight                !blending weights to use [read from GMM]
     integer, intent(in), optional :: level                             !level index to use for weights [use all levels]
 

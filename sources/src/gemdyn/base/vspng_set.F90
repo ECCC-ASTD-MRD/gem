@@ -24,12 +24,13 @@
       use hvdif_options
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: i,j,k
-      real*8, dimension(:), allocatable :: weigh
-      real*8 :: pis2_8, pbot_8, delp_8, c_8, nutop
+      real(kind=REAL64), dimension(:), allocatable :: weigh
+      real(kind=REAL64) :: pis2_8, pbot_8, delp_8, c_8, nutop
 !
 !     ---------------------------------------------------------------
 !

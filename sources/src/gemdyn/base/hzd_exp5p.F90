@@ -21,6 +21,7 @@
       use gem_options
       use hzd_mod
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -28,20 +29,14 @@
       integer Minx,Maxx,Miny,Maxy,NK,mm,dpwr
       real F_champ(Minx:Maxx,Miny:Maxy,NK)
       real F_temp(Minx:Maxx,Miny:Maxy,NK)
-      real*8 F_coef_8(NK)
+      real(kind=REAL64) F_coef_8(NK)
 
 !author
 !    Abdessamad Qaddouri - summer 2015
 !
-!revision
-! v4_80 - Qaddouri A.      - initial version
-! v4_80 - Desgagne & Lee   - optimization
-!
-
-
       integer i,j,k,i0,in,j0,jn
-      real*8 wk_8 (Minx:Maxx,Miny:Maxy,Nk)
-      real*8, dimension(:,:), pointer :: stencils => null()
+      real(kind=REAL64) wk_8 (Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), dimension(:,:), pointer :: stencils => null()
 !
 !---------------------------------------------------------------------
 !

@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module ens_gmm_var
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -57,7 +58,7 @@ module ens_gmm_var
       integer, pointer, dimension (:,:)       :: dumdum  => null()
 
 ! Legendre polynomial for SKEB Markov chain
-      real*8, pointer, dimension (:,:,:)       ::   plg     => null()
+      real(kind=REAL64), pointer, dimension (:,:,:)       ::   plg     => null()
 
       integer, parameter :: MAXNAMELENGTH    =  32
 

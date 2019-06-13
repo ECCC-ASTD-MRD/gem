@@ -15,6 +15,7 @@
 
 !/@
 recursive function phygetindx(F_varname_S,F_outname_S,F_inname_S,F_bus_S,F_index,F_param,F_npar) result(F_istat)
+   use clib_itf_mod, only: clib_tolower, clib_toupper
    implicit none
    !@objective Return params of var 
    !@arguments
@@ -32,9 +33,9 @@ recursive function phygetindx(F_varname_S,F_outname_S,F_inname_S,F_bus_S,F_index
    !      RMN_ERR on "no match"
    !      nb params on match (then F_varname_S,F_outname_S,F_bus_S,F_index,F_param are filled with values from phys gesdict provided values)
    !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
+
    include "buses.cdk"
 
    integer :: nparams,idx,istat

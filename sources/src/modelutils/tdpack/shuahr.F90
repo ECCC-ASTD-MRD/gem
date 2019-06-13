@@ -18,7 +18,7 @@
       Function shuahr3(hu,tt,ps,swph)
       use tdpack, only: fohr, fohra
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real shuahr3, hu, tt, ps
       Logical swph
 !

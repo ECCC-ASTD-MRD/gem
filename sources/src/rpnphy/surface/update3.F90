@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,20 +12,20 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
-subroutine UPDATE3( TS, T2, WG, W2, WF, WL, WR, WS, &
+subroutine update4(TS, T2, WG, W2, WF, WL, WR, WS, &
      ALPHAS, RHOS, RHOSNO, VMOD, CD, RHOA, &
      HFLUX, EFLUX, TST, T2T, WGT, W2T, &
      WFT, WLT, WRT, WST, &
      ALPHAST, RHOST, &
      BM, FQ, ALFAT, ALFAQ, &
-     CTU, TH, HU, ZA, &
-     N )
-!#TODO: ZA never used
+     CTU, TH, HU, &
+     N)
+   use tdpack_const, only: CPD, RAUW
    use sfc_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer N
    real TS(N), T2(N), WG(N), W2(N), WR(N), WS(N)
@@ -38,7 +38,7 @@ subroutine UPDATE3( TS, T2, WG, W2, WF, WL, WR, WS, &
    real ALPHAST(N), RHOST(N)
    real BM(N), FQ(N)
    real ALFAT(N), ALFAQ(N)
-   real CTU(N), TH(N), HU(N), ZA(N)
+   real CTU(N), TH(N), HU(N)
 
    !@Author S. Belair (January 1997)
    !@Revisions
@@ -91,47 +91,39 @@ subroutine UPDATE3( TS, T2, WG, W2, WF, WL, WR, WS, &
    ! ALFAQ     inhomogeneous boundary term in the diffusion equation for Q
    ! FQ        surface momentum flux
 
-#include "tdpack_const.hf"
+   integer :: I
 
-   integer I
+   do I=1,N
 
-      do I=1,N
+      TS(I)     = TST(I)
+      T2(I)     = T2T(I)
+      WG(I)     = WGT(I)
+      W2(I)     = W2T(I)
+      WF(I)     = WFT(I)
+      WL(I)     = WLT(I)
+      WR(I)     = WRT(I)
+      WS(I)     = WST(I)
+      ALPHAS(I) = ALPHAST(I)
+      RHOS(I)   = RHOST(I)
+      RHOSNO(I) = RHOST(I)*RAUW
 
-        TS(I)     = TST(I)
-        T2(I)     = T2T(I)
-        WG(I)     = WGT(I)
-        W2(I)     = W2T(I)
-        WF(I)     = WFT(I)
-        WL(I)     = WLT(I)
-        WR(I)     = WRT(I)
-        WS(I)     = WST(I)
-        ALPHAS(I) = ALPHAST(I)
-        RHOS(I)   = RHOST(I)
-        RHOSNO(I) = RHOST(I)*RAUW
-!
-        WG(I)     = max( WG(I)   , 0.001  )
-        W2(I)     = max( W2(I)   , 0.001  )
-!
-      end do
-!
-!
-!
-!                   Feedback on the vertical diffusion
-!
-      do I=1,N
-        BM(I)      =  VMOD(I)*CD(I)
-        FQ(I)      =  RHOA(I)*CD(I)*VMOD(I)*VMOD(I)
-        ALFAT(I)   =  -HFLUX(I) / (CPD*RHOA(I))
-        ALFAQ(I)   =  -EFLUX(I)
-        if (IMPFLX) then
-          ALFAT(I)   =   ALFAT(I) - CTU(I)* TH(I)
-          ALFAQ(I)   =   ALFAQ(I) - CTU(I)* HU(I)
-        endif
-      end do
-!
-!
-!
-!
-!
-      return
-      end
+      WG(I)     = max( WG(I)   , 0.001  )
+      W2(I)     = max( W2(I)   , 0.001  )
+
+   end do
+
+   ! Feedback on the vertical diffusion
+
+   do I=1,N
+      BM(I)      =  VMOD(I)*CD(I)
+      FQ(I)      =  RHOA(I)*CD(I)*VMOD(I)*VMOD(I)
+      ALFAT(I)   =  -HFLUX(I) / (CPD*RHOA(I))
+      ALFAQ(I)   =  -EFLUX(I)
+      if (IMPFLX) then
+         ALFAT(I)   =   ALFAT(I) - CTU(I)* TH(I)
+         ALFAQ(I)   =   ALFAQ(I) - CTU(I)* HU(I)
+      endif
+   end do
+
+   return
+end subroutine update4

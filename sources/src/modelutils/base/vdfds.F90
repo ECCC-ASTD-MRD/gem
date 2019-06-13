@@ -18,7 +18,7 @@
 !
       subroutine vdfds (F_g, F_f, F_hr, np, n, F_alfa, F_beta)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer n,np
       real    F_g(np,n), F_f(np,n), F_hr(n), F_alfa, F_beta

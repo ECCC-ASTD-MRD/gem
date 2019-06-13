@@ -22,6 +22,7 @@ module mtn_options
    use dcst
    use glb_ld
    use cstv
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -42,7 +43,7 @@ module mtn_options
    real :: mtn_dz = 300.
    namelist /mtn_cfgs/ mtn_dz
    !#
-   real*8 :: mtn_tzero = 303.15
+   real(kind=REAL64) :: mtn_tzero = 303.15
    namelist /mtn_cfgs/ mtn_tzero
    !#
    real :: mtn_flo = 10.
@@ -72,6 +73,7 @@ module mtn_options
 contains
 
       integer function mtn_nml (F_unf)
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer F_unf
@@ -127,11 +129,12 @@ contains
 !-------------------------------------------------------------------
 !
       integer function mtn_cfg()
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer k
-      real*8 c1_8,Exner_8,height_8,pres_8,ptop_8,pref_8,htop_8
+      real(kind=REAL64) c1_8,Exner_8,height_8,pres_8,ptop_8,pref_8,htop_8
 !
 !     ---------------------------------------------------------------
 !
@@ -201,6 +204,7 @@ contains
       use type_mod
       use ver
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -218,8 +222,8 @@ contains
       integer :: i,j,k,i00,istat
       real    :: a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf
       real    :: hauteur, press, theta, tempo, dx, slp, slpmax, exner
-      real*8  :: temp1, temp2
-      real*8, parameter :: one=1.d0
+      real(kind=REAL64)  :: temp1, temp2
+      real(kind=REAL64), parameter :: one=1.d0
       real, allocatable, dimension(:,:) :: log_pstar, hm
 !
 !     ---------------------------------------------------------------

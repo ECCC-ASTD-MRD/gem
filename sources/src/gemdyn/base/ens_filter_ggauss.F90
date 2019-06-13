@@ -29,10 +29,11 @@
       use glb_pil
       use trp
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
-  real*8                            :: bfact, lambda
+  real(kind=REAL64)                            :: bfact, lambda
   real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: dsp_local
 !
 !author
@@ -53,13 +54,13 @@
 
 
   integer i, j, k
-  real*8  sigma
+  real(kind=REAL64)  sigma
 !     Arrays
   real, dimension(7)                   :: fg
   real, dimension(:,:),   allocatable  :: f2, wk2
   real, dimension(:,:,:), allocatable  :: psi_local
   logical, save :: init_done=.false.
-  real*8 half
+  real(kind=REAL64) half
       parameter( half  = 0.5 )
 
 !

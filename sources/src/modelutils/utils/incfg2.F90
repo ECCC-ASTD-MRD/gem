@@ -17,6 +17,8 @@
 
 !/@*
 module incfg2_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower, clib_isfile, clib_isreadok
    use str_mod, only: str_tab2space, str_toreal
    use mu_jdate_mod
    implicit none
@@ -103,10 +105,10 @@ module incfg2_mod
    !   * cat    : list of categories (for 4D vars) (default=-1)
    !              accepted format: FIRST_CAT, LAST_CAT
    !              LAST_CAT is optional
-   !              accepted values: 
-   !                1     (1st category), 
-   !                1,26  (categories 1 to 26), 
-   !                -1    (caller provided list of categories, all categories), 
+   !              accepted values:
+   !                1     (1st category),
+   !                1,26  (categories 1 to 26),
+   !                -1    (caller provided list of categories, all categories),
    !   * typvar : typvar param of RPN-std files (default=' ')
    !              accepted values: C, A, P, R, ...
    !   * mandatory : define if the var is mandatory or not (defaut=default)
@@ -117,9 +119,8 @@ module incfg2_mod
    !  key "interp" (now hinterp) is still accepted for backward compatibility
    !  key "timeint"(now tinterp) is still accepted for backward compatibility
 !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
    real, parameter :: EPSILON = 1.e-5
    integer, parameter :: NFILE_MAX = 4
@@ -145,7 +146,7 @@ module incfg2_mod
       logical :: init_L
       character(len=64) :: vgrid_m_S, vgrid_t_S
       integer, pointer :: ip1s(:)  !list of ip1 for lvl=-1
-      integer(IDOUBLE) :: jdateo  !Initial date [jdate sec]
+      integer(INT64) :: jdateo  !Initial date [jdate sec]
       integer :: dt         !time step length [seconds]
       integer :: n          !number of elements
       integer :: hgridid     !dest grid id
@@ -178,7 +179,7 @@ contains
       !@objective
       !@arguments
       type(INCFG_T), intent(out) :: F_incfgobj
-      integer(IDOUBLE), intent(in) :: F_jdateo
+      integer(INT64), intent(in) :: F_jdateo
       integer, intent(in) :: F_dt
       character(len=*), intent(in), optional :: F_filename_S !full/rel path of config file
       integer, intent(in), optional :: F_ip1list(:)
@@ -380,7 +381,8 @@ contains
                endif
             enddo
             if (F_incfgobj%v(index)%hint_S == ' ') then
-               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown interp= '//trim(val_S))
+               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown interp= ' &
+                    //trim(val_S))
             endif
          case('vint') !vinterp
             do ii=1, size(INCFG_KNOWN_V_INT)
@@ -390,7 +392,8 @@ contains
                endif
             enddo
             if (F_incfgobj%v(index)%vint_S == ' ') then
-               call msg(MSG_WARNING, '(incfg) using default vinterp - ignoring unknown vinterp= '//trim(val_S))
+               call msg(MSG_WARNING, '(incfg) using default vinterp - ignoring unknown vinterp= ' &
+                    //trim(val_S))
             endif
          case('tint') !timeint
             F_incfgobj%v(index)%tint_S = ' '
@@ -402,7 +405,8 @@ contains
             enddo
             if (F_incfgobj%v(index)%tint_S == ' ') then
                F_incfgobj%v(index)%tint_S = INCFG_KNOWN_T_INT(1)
-               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown timeint= '//trim(val_S))
+               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown timeint= ' &
+                    //trim(val_S))
             endif
          case('typv') !typvar
             F_incfgobj%v(index)%typvar_S = val_S(1:1)
@@ -551,7 +555,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: delta, mo0, mo1, yy0, yy1
-      integer(IDOUBLE) :: jdatev, step_8, dt_8
+      integer(INT64) :: jdatev, step_8, dt_8
       !------------------------------------------------------------------
       F_istat = priv_check_obj(F_incfgobj)
       if (.not.RMN_IS_OK(F_istat)) return
@@ -598,7 +602,7 @@ contains
 !!$      !------------------------------------------------------------------
 !!$      F_indexlist = -1
 !!$      F_istat = priv_check_obj(F_incfgobj)
-!!$ 
+!!$
 !!$      F_istat = 0
 !!$      nbvar = incfg_nbvar(F_incfgobj)
 !!$      do ivar = 1, nbvar
@@ -888,7 +892,7 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-04
       !*@/
-      integer(IDOUBLE) :: jdatev, jdateo
+      integer(INT64) :: jdatev, jdateo
       !----------------------------------------------------------------------
       F_datev = RMN_ERR
       F_dateo = RMN_ERR
@@ -909,14 +913,14 @@ contains
       !@arguments
       type(INCFG_T), intent(inout) :: F_incfgobj
       integer, intent(in) :: F_step
-      integer(IDOUBLE), intent(out) :: F_datev
-      integer(IDOUBLE), intent(out), optional :: F_dateo
+      integer(INT64), intent(out) :: F_datev
+      integer(INT64), intent(out), optional :: F_dateo
       integer, intent(out), optional :: F_dt
       !@return
       integer :: F_istat
       !@author Stephane Chamberland, 2011-04
       !*@/
-      integer(IDOUBLE) :: step_8, dt_8
+      integer(INT64) :: step_8, dt_8
       !----------------------------------------------------------------------
       F_istat = priv_check_obj(F_incfgobj)
       if (.not.RMN_IS_OK(F_istat)) return

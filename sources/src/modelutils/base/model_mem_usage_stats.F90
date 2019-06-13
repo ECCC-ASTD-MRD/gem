@@ -17,15 +17,15 @@
 !/@*
 subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
    use iso_c_binding
+   use rpn_comm_itf_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective Report on memory usage using get_max_rss
    !@arguments
    integer, intent(in) :: Ptopo_numproc, Ptopo_myproc
    !@author M. Desgagne -- Summer 2013
    !*@/
 #include <msg.h>
-#include <rpn_comm.inc>
 
 #if defined (AIX)
 
@@ -34,7 +34,7 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
    character(len=256) :: tmp_S
    integer :: i, err, imin, imax, msgLevelMin, msgUnit
    integer :: memory(Ptopo_numproc), memoryt(Ptopo_numproc)
-   real*8  :: sum, sumd2, moy, var, fijk, mind, maxd, moy, var, npt_8
+   real(REAL64) ::  :: sum, sumd2, moy, var, fijk, mind, maxd, moy, var, npt_8
    !----------------------------------------------------------------
    call msg_getInfo(canWrite_L, msgLevelMin, msgUnit, tmp_S)
    canWrite_L = (Ptopo_myproc == RPN_COMM_MASTER)

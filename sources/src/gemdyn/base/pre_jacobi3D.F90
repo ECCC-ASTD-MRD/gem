@@ -20,23 +20,20 @@
       use glb_ld
       use opr
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer Ni,Nj,Nk
-      real*8 Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk)
-      real*8  ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
-      real*8 evec_local(Ni,Ni)
+      real(kind=REAL64) Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk)
+      real(kind=REAL64)  ai(Ni,Nj,Nk), bi(Ni,Nj,Nk), ci(Ni,Nj,Nk)
+      real(kind=REAL64) evec_local(Ni,Ni)
 
 !author
 !       Abdessamad Qaddouri -  2013
 !
-!revision
-! v4_70 - Qaddouri A.       - initial version
-
-
       integer i,j,k,jr,offi,offj
-      real*8 fdg(Ni,Nj,Nk), w2_8(Ni,Nj,Nk)
+      real(kind=REAL64) fdg(Ni,Nj,Nk), w2_8(Ni,Nj,Nk)
 !
 !     ---------------------------------------------------------------
 

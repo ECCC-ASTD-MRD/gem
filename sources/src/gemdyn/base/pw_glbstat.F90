@@ -26,14 +26,7 @@
 
       character(len=*) name_S
 #include <arch_specific.hf>
-!
-!author
-!     Michel Desgagne - May 2010
-!
-!revision
-! v4_14 - Desgagne, M.     - Initial revision
-!
-!
+
       type(gmm_metadata) :: meta
       integer istat,fld,i,err
       integer, parameter :: nvar=17

@@ -14,7 +14,9 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_init_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use iso_c_binding
+   use rpn_comm_itf_mod
    use mu_jdate_mod, only: jdate_to_cmc
    use ptopo_utils, only: ptopo_init_var, ptopo_isblocmaster_L
    use phygridmap, only: ijphy, phydim_nj, drv_glb_ni, drv_glb_nj
@@ -23,12 +25,10 @@ module series_init_mod
    implicit none
    private
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
-#include "gmm.hf"
-   include "rpn_comm.inc"
+#include "mu_gmm.hf"
 
    public :: series_init
 
@@ -36,20 +36,19 @@ contains
 
    !/@*
    function series_init(phy_lcl_gid, drv_glb_gid, &
-        phydim_ni, phydim_nj, phydim_nk , p_runlgt, phy_lcl_ni, phy_lcl_nj, &
+        phydim_nk , phy_lcl_ni, phy_lcl_nj, &
         F_moyhr, F_delt, F_jdate, F_satuco_L, F_master_pe) result(F_istat)
       implicit none
       !@arguments
       !#TODO: never used: phydim_ni, phydim_nj, p_runlgt
       integer, intent(in) :: phy_lcl_gid, drv_glb_gid
-      integer, intent(in) :: phydim_ni, phydim_nj, phydim_nk
-      integer, intent(in) :: p_runlgt
+      integer, intent(in) :: phydim_nk
       integer, intent(in) :: phy_lcl_ni, phy_lcl_nj
       integer, intent(in) :: F_moyhr
       integer, intent(in) :: F_master_pe
       logical, intent(in) :: F_satuco_L
       real,    intent(in) :: F_delt
-      integer(IDOUBLE), intent(in) :: F_jdate
+      integer(INT64), intent(in) :: F_jdate
       !@returns
       integer :: F_istat
       !@author: ?
@@ -174,7 +173,7 @@ contains
    function priv_stnij(phy_lcl_gid, drv_glb_gid, phy_lcl_ni, phy_lcl_nj) &
         result(F_istat)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@object: compute i,j from lat,lon
       !@params
       integer, intent(in) :: phy_lcl_gid, drv_glb_gid, phy_lcl_ni, phy_lcl_nj

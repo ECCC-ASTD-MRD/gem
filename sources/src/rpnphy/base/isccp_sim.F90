@@ -1,183 +1,163 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
 !of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
 !version 3 or (at your option) any later version that should be found at:
 !http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
+
 !This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 !without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P ISCCP_SIM - PART OF THE ISCCP CLOUD SIMULATOR PACKAGE
-!
-      SUBROUTINE ISCCP_SIM(tau, ptop,                                      &! OUTPUT
-                           il1, il2, npoints, nlev, top_height,            &! INPUT
-                        pfull, phalf, qv, frac_out, dtau_in, dem_in, at, &
-                        skt, emsfc_lw, sunlit)
-      implicit none
-#include <arch_specific.hf>
-!
-!Author
-!
-!
-!        Jason Cole Dec. 16, 2005
-!
-!Revisions
-!
-! 001
-!
-!Object
-!
-! There seems to three distinct parts in the original ISCCP simulator
-! 1. Generation of subgrid columns
-! 2. Computation of cloud top pressure and optical thickness for subcolumns
-! 3. GCM grid results computed using results from 2.
-! I have rewritten the code so that these functions are in seperate subroutines.
-! In the process I have replace the cloud generator with that created by Raisasen
-! and I have added the diagnostic of cloud inhomogeneity following some code
-! from Robert Pincus.
-! I have also modified the code so that it works on only 1 subcolumn at a time to
-!  save memory
-! Jason Cole Dec. 16, 2005
+!-------------------------------------- LICENCE END ---------------------------
 
-! Copyright Steve Klein and Mark Webb 2002 - all rights reserved.
-!
-! This code is available without charge with the following conditions:
-!
-!  1. The code is available for scientific purposes and is not for
-!     commercial use.
-!  2. Any improvements you make to the code should be made available
-!     to the to the authors for incorporation into a future release.
-!  3. The code should not be used in any way that brings the authors
-!     or their employers into disrepute.
+subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
+     il1, il2, npoints, nlev, top_height,             &! INPUT
+     pfull, phalf, qv, frac_out, dtau_in, dem_in, at, &
+     skt, emsfc_lw)
+   implicit none
+!!!#include <arch_specific.hf>
 
-!     NOTE:   the maximum number of levels and columns is set by
-!             the following parameter statement
+   !@Author Jason Cole Dec. 16, 2005
+   !@Object PART OF THE ISCCP CLOUD SIMULATOR PACKAGE
 
-!     -----
-!     Input
-!     -----
-      INTEGER il1, il2                  !  start and end point in horizontal
-      INTEGER npoints                   !  number of model points in the horizontal
-      INTEGER nlev                      !  number of model levels in column
+   ! There seems to three distinct parts in the original ISCCP simulator
+   ! 1. Generation of subgrid columns
+   ! 2. Computation of cloud top pressure and optical thickness for subcolumns
+   ! 3. GCM grid results computed using results from 2.
+   ! I have rewritten the code so that these functions are in seperate subroutines.
+   ! In the process I have replace the cloud generator with that created by Raisasen
+   ! and I have added the diagnostic of cloud inhomogeneity following some code
+   ! from Robert Pincus.
+   ! I have also modified the code so that it works on only 1 subcolumn at a time to
+   !  save memory
+   ! Jason Cole Dec. 16, 2005
 
-      INTEGER sunlit(npoints)           !  1 for day points, 0 for night time
+   ! Copyright Steve Klein and Mark Webb 2002 - all rights reserved.
 
+   ! This code is available without charge with the following conditions:
 
-      REAL pfull(npoints,nlev)                      !  pressure of full model levels (Pascals)
-                                        !  pfull(npoints,1)    is    top level of model
-                                        !  pfull(npoints,nlev) is bottom level of model
+   !  1. The code is available for scientific purposes and is not for
+   !     commercial use.
+   !  2. Any improvements you make to the code should be made available
+   !     to the to the authors for incorporation into a future release.
+   !  3. The code should not be used in any way that brings the authors
+   !     or their employers into disrepute.
 
-      REAL phalf(npoints,nlev+1)        !  pressure of half model levels (Pascals)
-                                        !  phalf(npoints,1)    is    top       of model
-                                        !  phalf(npoints,nlev+1) is the surface pressure
+   !     NOTE:   the maximum number of levels and columns is set by
+   !             the following parameter statement
 
-      REAL qv(npoints,nlev)             !  water vapor specific humidity (kg vapor/ kg air)
-                                        !         on full model levels
+   !     -----
+   !     Input
+   !     -----
+   integer il1, il2                  !  start and end point in horizontal
+   integer npoints                   !  number of model points in the horizontal
+   integer nlev                      !  number of model levels in column
 
-      REAL dtau_in(npoints,nlev)        !  mean 0.67 micron optical depth of stratiform
-                                        !  clouds in each model level
-                                        !  NOTE:  this the cloud optical depth of only the
-                                        !         cloudy part of the grid box, it is not weighted
-                                        !         with the 0 cloud optical depth of the clear
-                                        !         part of the grid box
+   real pfull(npoints,nlev)                      !  pressure of full model levels (Pascals)
+   !  pfull(npoints,1)    is    top level of model
+   !  pfull(npoints,nlev) is bottom level of model
 
-      REAL frac_out(npoints,nlev)       ! Cloud mask 0 = no cloud, 1 = cloud
+   real phalf(npoints,nlev+1)        !  pressure of half model levels (Pascals)
+   !  phalf(npoints,1)    is    top       of model
+   !  phalf(npoints,nlev+1) is the surface pressure
+
+   real qv(npoints,nlev)             !  water vapor specific humidity (kg vapor/ kg air)
+   !         on full model levels
+
+   real dtau_in(npoints,nlev)        !  mean 0.67 micron optical depth of stratiform
+   !  clouds in each model level
+   !  NOTE:  this the cloud optical depth of only the
+   !         cloudy part of the grid box, it is not weighted
+   !         with the 0 cloud optical depth of the clear
+   !         part of the grid box
+
+   real frac_out(npoints,nlev)       ! Cloud mask 0 = no cloud, 1 = cloud
 
 
-      INTEGER top_height                !  1 = adjust top height using both a computed
-                                        !  infrared brightness temperature and the visible
-                                        !  optical depth to adjust cloud top pressure. Note
-                                        !  that this calculation is most appropriate to compare
-                                        !  to ISCCP data during sunlit hours.
-                                        !  2 = do not adjust top height, that is cloud top
-                                        !  pressure is the actual cloud top pressure
-                                        !  in the model
-                                        !  3 = adjust top height using only the computed
-                                        !  infrared brightness temperature. Note that this
-                                        !  calculation is most appropriate to compare to ISCCP
-                                        !  IR only algortihm (i.e. you can compare to nighttime
-                                        !  ISCCP data with this option)
-
-!
-!     The following input variables are used only if top_height = 1 or top_height = 3
-!
-      REAL skt(npoints)                 !  skin Temperature (K)
-      REAL emsfc_lw(npoints)            !  10.5 micron emissivity of surface (fraction)
-      REAL at(npoints,nlev)             !  temperature in each model level (K)
-      REAL dem_in(npoints,nlev)         !  10.5 micron longwave emissivity of stratiform
-                                        !  clouds in each
-                                        !  model level.  Same note applies as in dtau_in.
-!     ------
-!     Output
-!     ------
-
-      REAL tau(npoints)              !  optical thickness in each column
-
-      REAL ptop(npoints)             !  cloud top pressure (mb) in each column
-
-!
-!     ------
-!     Working variables added when program updated to mimic Mark Webb's PV-Wave code
-!     ------
+   integer top_height                !  1 = adjust top height using both a computed
+   !  infrared brightness temperature and the visible
+   !  optical depth to adjust cloud top pressure. Note
+   !  that this calculation is most appropriate to compare
+   !  to ISCCP data during sunlit hours.
+   !  2 = do not adjust top height, that is cloud top
+   !  pressure is the actual cloud top pressure
+   !  in the model
+   !  3 = adjust top height using only the computed
+   !  infrared brightness temperature. Note that this
+   !  calculation is most appropriate to compare to ISCCP
+   !  IR only algortihm (i.e. you can compare to nighttime
+   !  ISCCP data with this option)
 
 
-      REAL dem(npoints),bb(npoints)     !  working variables for 10.5 micron longwave
-                                        !  emissivity in part of
-                                        !  gridbox under consideration
+   !     The following input variables are used only if top_height = 1 or top_height = 3
 
-      REAL ptrop(npoints)
-      REAL attrop(npoints)
-      REAL attropmin (npoints)
-      REAL atmax(npoints)
-      REAL atmin(npoints)
-      REAL btcmin(npoints)
-      REAL transmax(npoints)
+   real skt(npoints)                 !  skin Temperature (K)
+   real emsfc_lw(npoints)            !  10.5 micron emissivity of surface (fraction)
+   real at(npoints,nlev)             !  temperature in each model level (K)
+   real dem_in(npoints,nlev)         !  10.5 micron longwave emissivity of stratiform
+   !  clouds in each
+   !  model level.  Same note applies as in dtau_in.
+   !     ------
+   !     Output
+   !     ------
 
-      INTEGER i,j,ilev,ibox,itrop(npoints)
-      INTEGER match(npoints,nlev-1)
-      INTEGER nmatch(npoints)
-      INTEGER levmatch(npoints)
+   real tau(npoints)              !  optical thickness in each column
 
-!variables needed for water vapor continuum absorption
-      real fluxtop_clrsky(npoints),trans_layers_above_clrsky(npoints)
-      real taumin(npoints)
-      real dem_wv(npoints,nlev), wtmair, wtmh20, Navo, grav, pstd, t0
-      real press(npoints), dpress(npoints), atmden(npoints)
-      real rvh20(npoints), wk(npoints), rhoave(npoints)
-      real rh20s(npoints), rfrgn(npoints)
-      real tmpexp(npoints),tauwv(npoints)
+   real ptop(npoints)             !  cloud top pressure (mb) in each column
 
-      character*1 cchar(6),cchar_realtops(6)
-      integer icycle
-      REAL tb(npoints)
-      REAL emcld(npoints)
-      REAL fluxtop(npoints)
-      REAL trans_layers_above(npoints)
-      real isccp_taumin,fluxtopinit(npoints),tauir(npoints)
 
-      integer num1,jj
-      real rec2p13,tauchk
+   !     ------
+   !     Working variables added when program updated to mimic Mark Webb's PV-Wave code
+   !     ------
 
-      character*10 ftn09
 
-! Specific to GEM implementation
-      REAL tmpexp2D(npoints),tmpexp3D(npoints,nlev)
-      REAL tmplog2D(npoints),tmplog3D(npoints,nlev)
+   real dem(npoints),bb(npoints)     !  working variables for 10.5 micron longwave
+   !  emissivity in part of
+   !  gridbox under consideration
 
-      DATA isccp_taumin / 0.3 /
-      DATA cchar / ' ','-','1','+','I','+'/
-      DATA cchar_realtops / ' ',' ','1','1','I','I'/
+   real ptrop(npoints)
+   real attrop(npoints)
+   real attropmin (npoints)
+   real atmax(npoints)
+   real atmin(npoints)
+   real btcmin(npoints)
+   real transmax(npoints)
 
-      tauchk = -1.*log(0.9999999)
-      rec2p13=1./2.13
+   integer j,ilev,itrop(npoints)
+   integer match(npoints,nlev-1)
+   integer nmatch(npoints)
+   integer levmatch(npoints)
 
-!     ---------------------------------------------------!
+   !variables needed for water vapor continuum absorption
+   real fluxtop_clrsky(npoints),trans_layers_above_clrsky(npoints)
+   real taumin(npoints)
+   real dem_wv(npoints,nlev), wtmair, wtmh20, Navo, grav, pstd, t0
+   real press(npoints), dpress(npoints), atmden(npoints)
+   real rvh20(npoints), wk(npoints), rhoave(npoints)
+   real rh20s(npoints), rfrgn(npoints)
+   real tauwv(npoints)
+
+   integer icycle
+   real tb(npoints)
+   real emcld(npoints)
+   real fluxtop(npoints)
+   real trans_layers_above(npoints)
+   real fluxtopinit(npoints),tauir(npoints)
+
+   real rec2p13,tauchk
+
+   ! Specific to GEM implementation
+   real tmpexp2D(npoints),tmpexp3D(npoints,nlev)
+   real tmplog2D(npoints)
+
+   tauchk = -1.*log(0.9999999)
+   rec2p13=1./2.13
+
+   !     ---------------------------------------------------
 
       if (top_height .eq. 1 .or. top_height .eq. 3) then
 
@@ -207,8 +187,8 @@
 
       end if
 
-!
-!     ---------------------------------------------------!
+
+!     ---------------------------------------------------
 !     COMPUTE CLOUD OPTICAL DEPTH FOR EACH COLUMN and
 !     put into vector tau
 
@@ -228,12 +208,12 @@
          enddo
       enddo ! ilev
 
-!     ---------------------------------------------------!
+!     ---------------------------------------------------
 !     COMPUTE INFRARED BRIGHTNESS TEMPERATURES
 !     AND CLOUD TOP TEMPERATURE SATELLITE SHOULD SEE
-!
+
 !     again this is only done if top_height = 1 or 3
-!
+
 !     fluxtop is the 10.5 micron radiance at the top of the
 !              atmosphere
 !     trans_layers_above is the total transmissivity in the layers
@@ -245,9 +225,9 @@
 
 
 !----------------------------------------------------------------------
-!
+
 !             DO CLEAR SKY RADIANCE CALCULATION FIRST
-!
+
 !compute water vapor continuum emissivity
 !this treatment follows Schwarkzopf and Ramasamy
 !JGR 1999,vol 104, pages 9467-9499.
@@ -266,7 +246,7 @@
             tmpexp3D(j,ilev) = -0.02*(at(j,ilev)-t0)
           end do
         end do
-        CALL VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do 125 ilev=1,nlev
           do j=il1, il2 !1,npoints
@@ -300,7 +280,7 @@
             tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
           end do
         end do
-        CALL VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do ilev=1,nlev
           do j=il1, il2 !1,npoints
@@ -332,7 +312,7 @@
             tmpexp2D(j) = 1307.27/skt(j)
           end do
 
-        CALL VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
+        call VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
 
         do j=il1, il2 !1,npoints
 !add in surface emission
@@ -345,9 +325,9 @@
         enddo
 
 
-!
+
 !           END OF CLEAR SKY CALCULATION
-!
+
 !----------------------------------------------------------------
 
 !loop over columns
@@ -362,7 +342,7 @@
             tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
           end do
         end do
-        CALL VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do ilev=1,nlev
            do j=il1, il2 !1,npoints
@@ -404,7 +384,7 @@
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1307.27/skt(j)
           end do
-          CALL VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
+          call VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
 
         do j=il1, il2 !1,npoints
 !add in surface emission
@@ -432,11 +412,11 @@
 !note choice here of 2.13, as it is primarily ice
 !clouds which have partial emissivity and need the
 !adjustment performed in this section
-!
+
 !If it turns out that the cloud brightness temperature
 !is greater than 260K, then the liquid cloud conversion
 !factor of 2.56 is used.
-!
+
 !Note that this is discussed on pages 85-87 of
 !the ISCCP D level documentation (Rossow et al. 1996)
 
@@ -444,7 +424,7 @@
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1307.27/(attrop(j)-5.)
           end do
-          CALL VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
           do j=il1, il2 !1,npoints
 !compute minimum brightness temperature and optical depth
@@ -464,7 +444,7 @@
              taumin(j) = max(min(transmax(j),0.9999999),0.001)
           enddo
 
-          CALL VSLOG(taumin(il1),taumin(il1),(il2-il1+1))
+          call VSLOG(taumin(il1),taumin(il1),(il2-il1+1))
           do j=il1, il2 !1,npoints
             taumin(j) = -1.0*taumin(j)
           end do
@@ -483,7 +463,7 @@
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = -1. * tauir(j)
           end do
-          CALL VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
                 do j=il1, il2 !1,npoints
                    if (tau(j) .gt. (tauchk            )) then
@@ -511,13 +491,13 @@
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1. + (1./fluxtop(j))
           end do
-          CALL VSLOG(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call VSLOG(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
 ! CLEAR COLUMNS
           do j=il1, il2 !1,npoints
             tmplog2D(j) = 1. + (1./fluxtop_clrsky(j))
           end do
-          CALL VSLOG(tmplog2D(il1),tmplog2D(il1),(il2-il1+1))
+          call VSLOG(tmplog2D(il1),tmplog2D(il1),(il2-il1+1))
 
           do j=il1, il2 !1,npoints
              if (tau(j) .gt. (tauchk            )) then
@@ -537,16 +517,16 @@
 
       end if
 
-!     ---------------------------------------------------!
+!     ---------------------------------------------------
 
-!
-!     ---------------------------------------------------!
+
+!     ---------------------------------------------------
 !     DETERMINE CLOUD TOP PRESSURE
-!
+
 !     again the 2 methods differ according to whether
 !     or not you use the physical cloud top pressure (top_height = 2)
 !     or the radiatively determined cloud top pressure (top_height = 1 or 3)
-!
+
 
 !segregate according to optical thickness
       if (top_height .eq. 1 .or. top_height .eq. 3) then

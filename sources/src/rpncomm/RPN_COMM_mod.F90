@@ -271,7 +271,7 @@ contains  ! routines to manage decomposition table
   call rpn_comm_init_decomposition
 
 !         id l1                   l2                      ns   lg       np
-  t = DEC(0, (npoints+1-npe)/npe, npoints - (npe-1)*t%l1, npe, npoints, npe)
+  t = DEC(0, (npoints+1-npe)/npe, npoints - (npe-1)*t%l1, npe, npoints, npe)   ! ERROR : t%l1 is used before defined, MUST FIX
   if(t%l2 <= 0) then  ! attempt to decompose with "old" method failed
     t%l2 = npoints/npe
     t%ns = 1 + mod(npoints,npe)

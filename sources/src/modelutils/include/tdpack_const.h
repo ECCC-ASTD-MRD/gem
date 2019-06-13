@@ -131,7 +131,7 @@
 
 #ifdef __FORTRAN__
 #define _TDVAR4(N, V) real,   parameter :: N = V
-#define _TDVAR8(N, V) real*8, parameter :: N = V
+#define _TDVAR8(N, V) real(REAL64), parameter :: N = V
 
    _TDVAR4(ai, AI)
    _TDVAR4(aw, AW)

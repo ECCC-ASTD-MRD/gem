@@ -21,17 +21,15 @@
       subroutine statfld3 (F_field, F_nv_S, F_no, F_from_S, &
                            minx,maxx,miny,maxy,mink,maxk, &
                            F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
-!
+
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-!
+
       character(len=*), intent(in) :: F_nv_S , F_from_S
       integer, intent(in) :: minx,maxx,miny,maxy,mink,maxk, &
               F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
       real, dimension(minx:maxx,miny:maxy,mink:maxk), intent(in) :: F_field
-!
-!author
-!     M. Desgagne
 !
 !object
 !     calcule et imprime: la moyenne    (moy)
@@ -55,7 +53,7 @@
 
 
       integer :: i,j,k,imin,jmin,kmin,imax,jmax,kmax
-      real*8 :: sum,sumd2,moy,var,mind,maxd,fijk,npt_8
+      real(kind=REAL64) :: sum,sumd2,moy,var,mind,maxd,fijk,npt_8
       integer :: no
 !
 !--------------------------------------------------------------------

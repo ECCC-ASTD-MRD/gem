@@ -24,23 +24,20 @@
       use cstv
       use sol
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in):: Minx, Maxx, Miny, Maxy,nil, njl, &
                             minx1, maxx1, minx2, maxx2, Nk
-      real*8, intent(out) ::  F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
-      real*8, intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
-      real*8, intent(out) :: fdg1(minx1:maxx1, minx2:maxx2, Nk)
+      real(kind=REAL64), intent(out) ::  F_Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(in) :: F_Sol(Minx:Maxx,Miny:Maxy,Nk)
+      real(kind=REAL64), intent(out) :: fdg1(minx1:maxx1, minx2:maxx2, Nk)
 !author
 !       Abdessamad Qaddouri - December  2006
 !
-!revision
-! v3_30 - Qaddouri A.       - initial version
-
-
       integer j,i,k,ii,jj,halox,haloy
-      real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
+      real(kind=REAL64)  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
 !
 !     ---------------------------------------------------------------
 !

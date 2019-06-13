@@ -22,7 +22,7 @@ module phyunfoldmeta_mod
    private
    public :: phyunfoldmeta, phyunfoldmeta2d, phyunfoldmeta3d, phyunfoldmeta4d, phyunfold
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
@@ -221,7 +221,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
       type(phymetaplus) :: mymetaplus
@@ -252,7 +252,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
       type(phymetaplus) :: mymetaplus
@@ -283,7 +283,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
       type(phymetaplus) :: mymetaplus

@@ -15,10 +15,7 @@
 
 !**s/r pospers - initialise upstream positions at time th as grid point positions
 !
-
-!
       subroutine pospers
-!
       use gmm_vth
       use geomh
       use glb_ld
@@ -27,24 +24,9 @@
       use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     Alain Patoine
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! V4_10 - Plante A.         - Thermo upstream positions
-!
-!object
-!
-!arguments
-!     none
-!
 
-!
       type(gmm_metadata) :: mymeta
       integer i, j, k, ijk, nij,istat
-!*
 !
 !     ---------------------------------------------------------------
 !

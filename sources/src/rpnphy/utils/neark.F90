@@ -17,7 +17,7 @@
 !
 function neark(sig,ps,delp,ni,nk,kindex) result(stat)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    ! Input arguments
    integer, intent(in) :: ni,nk                         !Slab dimensions

@@ -18,7 +18,7 @@
       subroutine ccc1_gasopts (taug, gw, dp, ib, ig, o3, qq, inpt, dip, dt, &
                           rmu3, lev1, gh, il1, il2, ilg, lay, urbf)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, ib, ig, lev1, il1, il2, k, i, m,ng2, ng
       real taug(ilg,lay)

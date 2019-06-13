@@ -23,13 +23,6 @@
       use var_gmm
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     Michel Desgagne  -  February 2010
-!
-!revision
-! v4_12 - Desgagne M.       - initial version
-!
 
       integer :: istat
 !-------------------------------------------------------------------

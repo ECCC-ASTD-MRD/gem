@@ -18,7 +18,7 @@
       Function schal(tt, ti, swph)
       use tdpack, only: chlc, trpl, folv, fols
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real tt, ti, schal
 !

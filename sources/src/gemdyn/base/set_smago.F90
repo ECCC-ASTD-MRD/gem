@@ -25,6 +25,7 @@
       use glb_ld
       use cstv
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -32,13 +33,10 @@
 !author
 !     Syed Husain
 !
-!revision
-! v5_0 - Husain S.    - initial version based on hzd_smago
-
       integer k
-      real*8 top_m, bot_m, top_t, bot_t, pi2
-      real*8 Hzd_smago_bot_lev, Hzd_smago_top_lev
-      real*8 Hzd_smago_min_lnr, Hzd_smago_mean_lnr, Hzd_smago_max_lnr
+      real(kind=REAL64) top_m, bot_m, top_t, bot_t, pi2
+      real(kind=REAL64) Hzd_smago_bot_lev, Hzd_smago_top_lev
+      real(kind=REAL64) Hzd_smago_min_lnr, Hzd_smago_mean_lnr, Hzd_smago_max_lnr
 !
 
       pi2=pi_8/2.d0

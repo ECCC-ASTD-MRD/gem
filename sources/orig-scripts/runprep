@@ -37,7 +37,7 @@ work=${PWD}/PREP/work
 /bin/rm -rf $DEST ${work} ; mkdir -p $DEST ${work}
 
 # read configuration file
-. ./${dircfg}/${dname}/configexp.cfg
+. ${dircfg}/${dname}/configexp.cfg
 
 #anal=${default_DIR_ATM}/bcmk/2009042700_000
 anal=${GEM_anal}

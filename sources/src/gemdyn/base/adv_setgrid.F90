@@ -20,6 +20,7 @@
       use ver
       use adv_grid
       use outgrid
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,7 @@
 #include "constants.h"
 
       integer  i, j
-      real*8 :: prhxmn, prhymn
+      real(kind=REAL64) :: prhxmn, prhymn
 !
 !     ---------------------------------------------------------------
 !

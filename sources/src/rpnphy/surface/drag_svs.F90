@@ -30,7 +30,7 @@
       use svs_configs
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       INTEGER N
       REAL Z0MBG,  Z0M_TO_Z0H

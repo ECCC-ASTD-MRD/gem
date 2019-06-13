@@ -24,6 +24,7 @@
       use out_mod
       use out3
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -36,8 +37,8 @@
       character(len=16) :: datev,fdate
       character(len=1024) :: filen,myformat_S,my_hour
       integer prognum,err,i,indx,len0,len1
-      real*8, parameter :: OV_day = 1.0d0/86400.0d0
-      real*8  dayfrac
+      real(kind=REAL64), parameter :: OV_day = 1.0d0/86400.0d0
+      real(kind=REAL64)  dayfrac
 !
 !------------------------------------------------------------------
 !

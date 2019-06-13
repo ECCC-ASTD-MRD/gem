@@ -23,12 +23,13 @@
       use glb_ld
       use lun
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: F_nk, kdim, F_errcode
-      real*8, dimension(kdim), intent(out) :: F_eval_8
-      real*8, dimension(kdim,kdim) :: F_levec_8, F_evec_8
+      real(kind=REAL64), dimension(kdim), intent(out) :: F_eval_8
+      real(kind=REAL64), dimension(kdim,kdim) :: F_levec_8, F_evec_8
 !
 !author  Abdessamad Qaddouri - 2007
 !
@@ -43,9 +44,9 @@
 !
 
       integer :: i, j, err
-      real*8, parameter :: zero = 0.d0, one = 1.d0
-      real*8 :: xxx, yyy
-      real*8, dimension(KDIM,KDIM) :: wk1, B1
+      real(kind=REAL64), parameter :: zero = 0.d0, one = 1.d0
+      real(kind=REAL64) :: xxx, yyy
+      real(kind=REAL64), dimension(KDIM,KDIM) :: wk1, B1
 !
 ! --------------------------------------------------------------------
 !

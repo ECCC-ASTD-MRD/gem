@@ -24,6 +24,7 @@ contains
    !/@*
    subroutine calcdiag1(tplus0, huplus0, qcplus0, d, f, v, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
       use integrals, only: int_profile, INT_OK
@@ -33,7 +34,7 @@ contains
       use phybus
       use energy_budget, only: eb_en, eb_pw, eb_residual_en, eb_residual_pw, EB_OK
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Arguments
       !          - Input/Output -
       ! d        dynamic bus
@@ -58,8 +59,8 @@ contains
       !*@/
 
 #include <msg.h>
-#include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
+
       include "surface.cdk"
       include "physteps.cdk"
 
@@ -74,7 +75,7 @@ contains
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, vblend, z0m_ec, z0t_ec, esdiagec, &
            tsurfec, qsurfec
-      real(RDOUBLE), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
+      real(REAL64), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
       real, dimension(ni,nk) :: presinv, t2inv, tiinv
       real, dimension(ni,nk-1) :: q_grpl,iiwc
 
@@ -551,19 +552,19 @@ contains
       ! Compute conservation properties
       COMPUTE_EB: if (associated(zconephy)) then
          ! Conserved variable state calculations
-         istat = eb_en(enm,ztmoins,zhumoins,zqcmoins,zgztherm,zsigt,zpplus,nkm1)
+         istat = eb_en(enm,ztmoins,zhumoins,zqcmoins,zsigt,zpplus,nkm1)
          istat1 = eb_pw(pwm,zhumoins,zqcmoins,zsigt,zpplus,nkm1)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing time-minus energy budget')
            return
          endif
-         istat = eb_en(en0,tplus0,huplus0,qcplus0,zgztherm,zsigt,zpplus,nkm1)
+         istat = eb_en(en0,tplus0,huplus0,qcplus0,zsigt,zpplus,nkm1)
          istat1 = eb_pw(pw0,huplus0,qcplus0,zsigt,zpplus,nkm1)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing post-dynamics energy budget')
             return
          endif
-         istat = eb_en(enp,ztplus,zhuplus,zqcplus,zgztherm,zsigt,zpplus,nkm1)
+         istat = eb_en(enp,ztplus,zhuplus,zqcplus,zsigt,zpplus,nkm1)
          istat1 = eb_pw(pwp,zhuplus,zqcplus,zsigt,zpplus,nkm1)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing post-physics energy budget')

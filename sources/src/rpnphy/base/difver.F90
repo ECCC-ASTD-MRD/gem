@@ -31,13 +31,13 @@ contains
       use phybus
       use series_mod, only: series_xst
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object to perform the implicit vertical diffusion
       !@Arguments
       ! 002      A. Zadra (Oct 2015) - add land-water mask (MG) to input
       !                 list of baktotq4
       ! 003      A. Zadra / R. McT-C (Sep 2016) - added nonlocal scaling option
-      !                 based on J. Mailhot/A. Lock (Aug 2012) 
+      !                 based on J. Mailhot/A. Lock (Aug 2012)
 
       !          - Input/Output -
       ! db       dynamic bus
@@ -194,7 +194,7 @@ contains
       MKPTR2Dm1(zpblq1, pblq1, v)
 
       MKPTR3D(zvcoef, vcoef, 2, v)
-      
+ 
       if(zsigt(1,1) > 0) then
          sigef(1:,1:) => zsigt(1:ni,1:nkm1)
          sigex(1:,1:) => zsigt(1:ni,1:nkm1)
@@ -384,8 +384,8 @@ contains
 
       ! Convert conserved variable tendencies to state (T,Q) variable tendencies
       if (fluvert == 'MOISTKE') then
-         call baktotq6 (tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
-              ps,zgztherm,tm,ficelocal,ztve,w,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
+         call baktotq7(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
+              ps,zgztherm,tm,ficelocal,ztve,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
               zfblnonloc,zc1pbl,zzn,zzd,zmg,zvcoef,zpblsigs,zpblq1,tau,ni,nkm1)
       endif
 

@@ -25,6 +25,7 @@ contains
    subroutine phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
         vbus, dbus, fbus, seloc, dt, &
         vsiz, dsiz, fsiz, kount, trnch, ni, nk)
+      use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
       use calcz0_mod, only: calcz0
@@ -37,7 +38,7 @@ contains
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Author L. Spacek (Oct 2011)
       !@Object Setup for physics timestep
       !@Arguments
@@ -68,7 +69,7 @@ contains
 #include <rmnlib_basics.hf>
 #include "phymkptr.hf"
       include "surface.cdk"
-      include "phyinput.cdk"
+      include "phyinput.inc"
 
       logical,parameter:: SHORTMATCH_L = .true.
       integer,parameter:: MYMAX = 2048

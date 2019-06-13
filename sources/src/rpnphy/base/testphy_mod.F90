@@ -1,12 +1,15 @@
 module testphy_mod
   ! Implementation of RPN physics test stub
+  use, intrinsic :: iso_fortran_env, only: INT64, REAL64
   use vgrid_descriptors, only: vgrid_descriptor
+  use clib_itf_mod, only: clib_toupper
+  use wb_itf_mod
   use mu_jdate_mod
   implicit none
   private
 
   ! External definitions
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <rmnlib_basics.hf>
 
   ! External parameters
@@ -105,7 +108,6 @@ contains
     integer :: F_istat                                  !return status
 
     ! External declarations
-#include <WhiteBoard.hf>
 
     ! Internal variables
     integer :: istat
@@ -136,7 +138,6 @@ contains
     integer :: F_istat                                  !return status
 
     ! External declarations
-#include <clib_interface_mu.hf>
 
     ! Internal parameters
     integer, parameter :: MAX_TRACERS=1000
@@ -209,7 +210,7 @@ contains
 
     ! Output variables
     integer :: F_istat                                  !return status
-  
+ 
     ! Local variables
     integer :: i,j,k,gid,ig1,ig2,ig3,ig4,istat
     integer, dimension(:), pointer :: ip1m,ip1t
@@ -218,7 +219,7 @@ contains
     real, dimension(NK) :: hyb
     real(kind=8) :: ptop
     character(len=1) :: gtype
-    
+ 
     ! External subprograms
     integer, external :: ezgdef_fmem
 
@@ -250,7 +251,7 @@ contains
     istat = vgd_new(vcoord,kind=5,version=4,hyb=hyb,rcoef1=1.,rcoef2=1., &
          ptop_8=7.5d0,pref_8=1d5,ptop_out_8=ptop)
     call handle_error_l(istat==VGD_OK,'set_grid','Error constructing vertical coordinate')
-    
+ 
     ! Save vertical grid for physics input
     nullify(ip1m,ip1t)
     istat = vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)
@@ -366,14 +367,13 @@ contains
     integer :: F_istat                                  !return status
 
     ! External declarations
-#include <WhiteBoard.hf>
-    
+ 
     ! Internal parameters
     !#TODO: this modules needs to be updated, we are now at API 17
     integer, parameter :: COMPATIBILITY_LVL=13 !#TODO: was 6... may need to review
 
     ! Internal variables
-    integer(IDOUBLE) :: jdateo
+    integer(INT64) :: jdateo
     integer :: istat,dateo
     integer, dimension(:), pointer :: ip1m
     real, dimension(:), pointer :: std_p_prof
@@ -557,7 +557,6 @@ contains
     integer :: F_istat                                  !return status
 
     ! External declarations
-#include <WhiteBoard.hf>
 
     ! Internal variables
     integer :: istat
@@ -579,7 +578,7 @@ contains
        istat = phy_get(ptr3d,gmmk_pw_tt_plus_s)
        call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (any(abs(ptr3d(:,:,1:NK)-STATE_TT-1.) > epsilon(ptr3d))) then
-          write(PT_STDOUT,'(a,x,f6.3)') '*FAIL: Test double returned an unexpected temperature difference of', &
+          write(PT_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected temperature difference of', &
                maxval(abs(ptr3d(:,:,1:NK)-STATE_TT-1.))
           F_istat = PT_ERR
        endif
@@ -590,11 +589,11 @@ contains
        istat = phy_get(ptr3d,'H',F_npath='O',F_bpath='P',F_meta=pmeta)
        call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (pmeta%nk /= 1) then
-          write(PT_STDOUT,'(a,x,i3)') '*FAIL: Test double returned an unexpected PBL height dimension of',pmeta%nk
+          write(PT_STDOUT,'(a,1x,i3)') '*FAIL: Test double returned an unexpected PBL height dimension of',pmeta%nk
           F_istat = PT_ERR
        endif
        if (any(abs(ptr3d-100.) > epsilon(ptr3d))) then
-          write(PT_STDOUT,'(a,x,f6.3)') '*FAIL: Test double returned an unexpected PBL height error of',maxval(abs(ptr3d-100.))
+          write(PT_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected PBL height error of',maxval(abs(ptr3d-100.))
           F_istat = PT_ERR
        endif
        deallocate(ptr3d); nullify(ptr3d)

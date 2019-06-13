@@ -18,7 +18,7 @@
       Function sgamasp(tt, pr, swph, ti)
       use tdpack, only: foqsa, foqst, schal, rgasd, eps1, cpd, cappa
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real tt, pr, ti, sgamasp
 !

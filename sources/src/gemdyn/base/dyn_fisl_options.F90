@@ -13,42 +13,43 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module dyn_fisl_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
    !# SL off-centering parameter for hydrostatic
-   real*8 :: Cstv_bA_8 = 0.6
+   real(kind=REAL64) :: Cstv_bA_8 = 0.6
    namelist /dyn_fisl  / Cstv_bA_8
    namelist /dyn_fisl_p/ Cstv_bA_8
 
    !# SL off-centering parameter for the momentum equations
-   real*8 :: Cstv_bA_m_8 = 0.6
+   real(kind=REAL64) :: Cstv_bA_m_8 = 0.6
    namelist /dyn_fisl  / Cstv_bA_m_8
    namelist /dyn_fisl_p/ Cstv_bA_m_8
 
    !# SL off-centering parameter for nonhydrostatic
-   real*8 :: Cstv_bA_nh_8 = 0.5
+   real(kind=REAL64) :: Cstv_bA_nh_8 = 0.5
    namelist /dyn_fisl  / Cstv_bA_nh_8
    namelist /dyn_fisl_p/ Cstv_bA_nh_8
 
    !# T* basic state temperature (K)
-   real*8 :: Cstv_Tstr_8 = 240.0
+   real(kind=REAL64) :: Cstv_Tstr_8 = 240.0
    namelist /dyn_fisl  / Cstv_tstr_8
    namelist /dyn_fisl_p/ Cstv_tstr_8
 
    !# Parameter controlling modified epsilon (Ver_epsi_8) [nonhydrostatic part]
-   real*8 :: Cstv_rE_8 = 1.d0
+   real(kind=REAL64) :: Cstv_rE_8 = 1.d0
    namelist /dyn_fisl  / Cstv_rE_8
    namelist /dyn_fisl_p/ Cstv_rE_8
 
    !# another reference pressure
-   real*8 :: Cstv_pSref_8 = 1.d5
+   real(kind=REAL64) :: Cstv_pSref_8 = 1.d5
    namelist /dyn_fisl  / Cstv_pSref_8
    namelist /dyn_fisl_p/ Cstv_pSref_8
 
    !# Fraction of adjustment to be given to the ocean
-   real*8 :: Cstv_psadj_8 = 1.d0
+   real(kind=REAL64) :: Cstv_psadj_8 = 1.d0
    namelist /dyn_fisl  / Cstv_psadj_8
    namelist /dyn_fisl_p/ Cstv_psadj_8
 
@@ -134,16 +135,6 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_wload_L
    namelist /dyn_fisl_p/ Schm_wload_L
 
-   !# Use cubic interpolation in trajectory computation
-   logical :: Schm_cub_traj_L = .true.
-   namelist /dyn_fisl  / Schm_cub_traj_L
-   namelist /dyn_fisl_p/ Schm_cub_traj_L
-
-   !# Use trapezoidal average for advection winds
-   logical :: Schm_trapeze_L = .true.
-!   namelist /dyn_fisl  / Schm_trapeze_L
-!   namelist /dyn_fisl_p/ Schm_trapeze_L
-
    !# Physics coupling strategy
    character(len=16) :: Schm_phycpl_S = 'split'
    namelist /dyn_fisl  / Schm_phycpl_S
@@ -159,12 +150,12 @@ module dyn_fisl_options
    namelist /dyn_fisl_p/ Sol_type_S
 
    !# Epsilon convergence criteria for none Yin-Yang iterative solver
-   real*8 :: sol_fgm_eps   = 1.d-07
+   real(kind=REAL64) :: sol_fgm_eps   = 1.d-07
    namelist /dyn_fisl  / Sol_fgm_eps
    namelist /dyn_fisl_p/ Sol_fgm_eps
 
    !# Epsilon convergence criteria for the Yin-Yang iterative solver
-   real*8 :: sol_yyg_eps   = 1.d-04
+   real(kind=REAL64) :: sol_yyg_eps   = 1.d-04
    namelist /dyn_fisl  / Sol_yyg_eps
    namelist /dyn_fisl_p/ Sol_yyg_eps
 
@@ -212,6 +203,7 @@ contains
 
       integer function dyn_fisl_nml (F_unf)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 #include <clib_interface_mu.hf>
@@ -269,6 +261,7 @@ contains
       end function dyn_fisl_nml
 
    function dyn_fisl_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

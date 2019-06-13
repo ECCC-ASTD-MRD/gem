@@ -60,9 +60,9 @@
 
       integer i,j,k
 
-      real(8) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
+      real(kind=REAL64) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
-      real(8)  :: lon,     & ! Longitude (radians)
+      real(kind=REAL64)  :: lon,     & ! Longitude (radians)
                   lat,     & ! Latitude (radians)
                   z          ! Height (m)
                !!!z,       & ! Height (m)
@@ -78,12 +78,12 @@
                              ! for height-based models: pressure will always be computed based on the height and
                              !    hybrid_eta is not used
 
-      real(8)  :: p          ! Pressure  (Pa)
+      real(kind=REAL64)  :: p          ! Pressure  (Pa)
 
       integer  :: zcoords    ! 0 if p coordinates are specified
                              ! 1 if z coordinates are specified
 
-      real(8)  :: u,       & ! Zonal wind (m s^-1)
+      real(kind=REAL64)  :: u,       & ! Zonal wind (m s^-1)
                   v,       & ! Meridional wind (m s^-1)
                   w,       & ! Vertical Velocity (m s^-1)
                   t,       & ! Temperature (K)
@@ -108,7 +108,7 @@
       zcoords = 1
       if (GEM_P_L) zcoords = 0
 
-      if (GEM_P_L) hybrid_eta = .TRUE. 
+      if (GEM_P_L) hybrid_eta = .TRUE.
 
       !Initial conditions: TV,S,PS,W,ZD,QV,TOPO
       !-----------------------------------------

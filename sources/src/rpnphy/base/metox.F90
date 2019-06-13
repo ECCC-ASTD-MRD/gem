@@ -28,7 +28,7 @@ contains
       use phybus
       use tendency, only: apply_tendencies
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@object Methane oxidation
       ! Produces the specific humidity tendency due to methane
       ! oxidation (based on ECMWF scheme)

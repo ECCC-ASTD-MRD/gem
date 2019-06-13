@@ -15,6 +15,9 @@
 
 !/@
 module output_files_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_isdir, clib_mkdir, clib_realpath
+   use wb_itf_mod
    use outcfg_mod
    use fstmpi_mod
    use ptopo_utils
@@ -25,15 +28,15 @@ module output_files_mod
    !@author Stephane Chamberland, 2014-12
    !@description
    ! Public functionsw
-   public :: output_files_set_basedir, output_files_get_basedir, output_files_close,output_files_open,output_files_set_postproc,output_files_get_closestep,output_files_filename
+   public :: output_files_set_basedir, output_files_get_basedir, &
+        output_files_close,output_files_open,output_files_set_postproc, &
+        output_files_get_closestep,output_files_filename
    ! Public constants
    !
    character(len=*),parameter,public :: OUTPUT_FILES_WBFMT='("O#/",i6.6,"/",a)'
 !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
 
    integer,save :: m_postprocstep(OUTCFG_NCFG_MAX) = -1
@@ -118,7 +121,7 @@ contains
       do itype=1,size(OUTCFG_LVLTYPE)
          fileid = priv_get_fileid(F_id,mystep,OUTCFG_LVLTYPE(itype))
          if (RMN_IS_OK(fileid)) then
-            write(msg_S,'(i6,x,a)') fileid
+            write(msg_S,'(i6,1x,a)') fileid
             call msg(MSG_DEBUG,'(Output) Close file:'//trim(msg_S))
             F_istat = fstmpi_close(fileid)
             istat = priv_set_fileid(F_id,mystep,OUTCFG_LVLTYPE(itype),RMN_ERR)
@@ -164,7 +167,7 @@ contains
          if (RMN_IS_OK(istat)) then
             fileid = fstmpi_open(filename_S)
             if (RMN_IS_OK(fileid)) then
-               write(msg_S,'(i6,x,a)') fileid,trim(filename_S)
+               write(msg_S,'(i6,1x,a)') fileid,trim(filename_S)
                call msg(MSG_DEBUG,'(Output) Open file:'//trim(msg_S))
                istat = priv_set_fileid(F_id,mystep,lvltyp_S(itype),fileid)
             endif
@@ -242,7 +245,7 @@ contains
       !@author Stephane Chamberland, 2011-12
       !*@/
       integer,external :: prog_filename
-      real(RDOUBLE),parameter :: EPSILON_8 = 1.D-12
+      real(REAL64),parameter :: EPSILON_8 = 1.D-12
       integer :: istat,datev,dateo,dt,closeopen,ndigits,prognum,pdate,ptime,hour,minutes,seconds,closeopen_units,delta_year
       character(len=64) :: tag_S,units_S,ext_s
       character(len=1024) :: dirname_S

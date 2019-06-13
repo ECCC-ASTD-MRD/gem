@@ -18,7 +18,7 @@
       Subroutine mfotvt(tv,tt,qq,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Integer ni, nk, n
       Real tv(ni,nk), tt(ni,nk), qq(ni,nk)
 !

@@ -7,8 +7,16 @@
   Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
   Grd_maxcfl = 4
 /
-
  &step
+  Step_runstrt_S = "20090427.000000"
+  Fcst_nesdt_S   = "12h"
+  Fcst_start_S   =  "0h"
+  Step_dt        = 1800.
+  Fcst_gstat_S   =  "1h"
+  Fcst_end_S     = "1h"
+/
+
+ &step1
   Step_runstrt_S = "20090427.000000"
   Fcst_nesdt_S   = "12h"
   Fcst_start_S   =  "0h"
@@ -134,9 +142,10 @@
   diag_twind      = .true.     , refract         = .true.
 
   qco2            = 380.0
+  input_type      = 'BLOC'
 /
-  input_type      = 'DIST'
 
+  input_type      = 'DIST'
   phystat_dble_l  = .true.
   phystat_2d_l    = .false.
   phystat_freq_S  = '3h'

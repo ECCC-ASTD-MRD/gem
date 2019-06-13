@@ -19,7 +19,7 @@ function check_options2() result(F_istat)
    use phy_options
    use cnv_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Check the consistency of some options
    !@Note
    !  Option validation and derived options setting are now done in

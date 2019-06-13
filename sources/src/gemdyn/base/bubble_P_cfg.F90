@@ -19,11 +19,12 @@
       use glb_ld
       use tdpack
       use bubble_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer k
-      real*8 c1_8,Exner_8,height_8,pres_8,pref_8,ptop_8,htop_8
+      real(kind=REAL64) c1_8,Exner_8,height_8,pres_8,pref_8,ptop_8,htop_8
 !
 !     ---------------------------------------------------------------
 !

@@ -18,7 +18,7 @@
       Subroutine mhrahu3(hu,hr,tt,ps,swph,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real hu(ni,nk), hr(ni,nk), tt(ni,nk)

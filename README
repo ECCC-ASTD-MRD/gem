@@ -2,7 +2,35 @@ This file gives basic instructions on how to install and run GEM.
 More details are available in GEM manual (in PDF format).
 -----------------------------------------------------------------
 
-Installing and running GEM - Version 5.1.a6
+Instructions in a nutshell (see below for extended instructions)
+
+git clone http://gitlab.com/gem-ec/goas
+cd goas
+./download-dbase.sh
+
+cd sources
+mkdir -p build
+cd build
+cmake ..
+make -j
+make install
+
+cd ../../work/work-OS_NAME-COMPILER_NAME
+./runprep
+./runmod
+
+./voir -iment RUNMOD.dir/output/cfg0000/ ...
+./fststat -fst RUNMOD.dir/output/cfg0000/ ...
+
+Install SPI, a visualisation program: http://eer.cmc.ec.gc.ca/software/SPI
+
+Install xrec, a visualisation program to display 2D fields:
+https://gitlab.com/gem-ec/xoas
+
+-----------------------------------------------------------------
+Extended instructions:
+
+Installing and running GEM
 Environment and Climate Change Canada
 
 * Installing GEM
@@ -12,7 +40,7 @@ To compile and run GEM, you will need:
 - MPI/OpenMPI library (with development package),
 - BLAS library (with development package),
 - LAPACK library (with development package),
-- FFTW library (with development package),
+- fftw3 library (with development package),
 - basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
 Install GEM:
@@ -35,12 +63,12 @@ Install GEM:
     export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
 
 #INTEL COMPILER
-- by default, a configuration for Intel 19 is used for ifort compiler.
+- by default, a configuration for Intel 19 is used.
   You can use a configuration for Intel 16 by changing the symbolic link:
   - cd goas/sources
-  - rm Linux-x86_64-ifort.cmake
-  - ln -s Linux-x86_64-ifort.cmake.16 Linux-x86_64-ifort.cmake
-- changes to the C and Fortran flags can be done in the Linux-x86_64-ifort.cmake
+  - rm Linux-x86_64-intel.cmake
+  - ln -s Linux-x86_64-intel.cmake.16 Linux-x86_64-intel.cmake
+- changes to the C and Fortran flags can be done in the Linux-x86_64-intel.cmake
 - make sure the compilers and libraries are in the appropriate
   PATHS: you may have to initialize ${PATH} and ${LD_LIBRARY_PATH}.
 
@@ -60,37 +88,36 @@ Install GEM:
 
 * Compiling and installing GEM
 - cd goas/sources
+- gcc and gfortran compilers are set by default
+- if you want to compile with other compilers, modify the file
+  goas/sources/CmakeLists.txt by uncommenting one of the lines 
+  to use the compiler desired:
+  (for example: set(COMPILER intel CACHE INTERNAL compiler)
 - mkdir -p build
 - cd build
 - cmake ..
-- if you want to compile with another compiler than gfortran:
-  cmake -DCOMPILER=ifort ..
-  or
-  cmake -DCOMPILER=pgfortran ..
-  or
-  edit the sources/CMakeLists.txt to change the default compiler (line 9)
+
 - if you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure these tools are exported in their respective PATHS (see
   above)
+
 - if compiler or compile options are not right:
   . remove the content of the build directory
   . make appropriate changes to the cmake file named according to the
     Fortran compiler you are using, in the sources directory:
     Linux-x86_64-gfortran.cmake if you compile with gfortran or
-    Linux-x86_64-ifort.cmake if you compile with ifort
+    Linux-x86_64-intel.cmake if you compile with Intel
   . cmake ..
-    or
-    cmake -DCOMPILER=ifort ..
-    or
-    cmake -DCOMPILER=pgfortran ..
+
 - make -j
 - make install
-- a directory named after the compiler you used and the operating system you
-  compiled on (work-OS_NAME-COMPILER_NAME: for example
-  work-Linux_x86-64-gfortran-8.2.1) is created in the work directory of GEM
-  on a stick, and the following binaries are installed in a bin directory in
-  it: maingemdm.Abs, maingemgrid.Abs, mainyy2global.Abs, flipit.Abs,
-  r.fstinfo, voir, editfst, fststat, cclargs_lite, pgsm
+
+- a directory named after the operating system you compiled on, and the
+  compiler you used (work-OS_NAME-COMPILER_NAME: for example
+  work-Fedora-29-x86_64-gfortran-8.2.1) is created in the work directory of
+  GEM on a stick, and the following binaries are installed in a bin
+  directory in it: maingemdm, maingemgrid, mainyy2global, flipit, r.fstinfo,
+  voir, editfst, fststat, cclargs_lite, pgsm
 
 * Running GEM
 
@@ -134,5 +161,10 @@ Environment Canada.  SPI can be downloaded at
 http://eer.cmc.ec.gc.ca/software/SPI
 Follow instructions found in INSTALL.txt, in the 7.12.0 directory.
 
-Please see the manual for more details.
+You can also install xrec, a visualisation program used to display 2D
+meteorological fields stored in the RPN standard file format, developed by
+Research Informatics Services, Meteorological Research Division, Environment
+and Climate Change Canada. xrec on a stick can be cloned or downloaded at:
+https://gitlab.com/gem-ec/xoas
 
+Please see the manual for more details.

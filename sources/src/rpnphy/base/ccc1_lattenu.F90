@@ -20,7 +20,7 @@
                           il1, il2, ilg, s1, rmu)
 
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer il1, il2, ilg, ib, ig, ng, i
       real atten(ilg), o3(ilg), qq(ilg), dp(ilg), dip(ilg), dt(ilg), &

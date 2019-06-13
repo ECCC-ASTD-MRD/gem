@@ -1,6 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
+!-------------------------------------- LICENCE BEGIN -------------------------                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
 !of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
 !version 3 or (at your option) any later version that should be found at:
@@ -12,17 +10,15 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!** S/P CALCNT
-!
-      subroutine calcNT(liqwpin,icewpin,cloud,ecc,ni,nk,nkp)
-!
-      implicit none
-#include <arch_specific.hf>
-!
-      integer ni,nk,nkp
-      real liqwpin(ni,nk), icewpin(ni,nk), cloud(ni,nk)
-!
+!-------------------------------------- LICENCE END ---------------------------
+
+subroutine calcNT(liqwpin,icewpin,cloud,ecc,ni,nk,nkp)
+   implicit none
+!!!#include <arch_specific.hf>
+
+   integer, intent(in) :: ni,nk,nkp
+   real liqwpin(ni,nk), icewpin(ni,nk), cloud(ni,nk)
+
 !AUTHOR
 !     P. Vaillancourt  (Dec 2008)
 !
@@ -67,9 +63,7 @@
         integer i,k,kind
         real rei, rec_rei, ki
         real elsa, emiss,xnu
-!
-#include "tdpack_const.hf"
-!
+
 ! diffusivity factor of Elsasser
         data elsa/1.66/
 !

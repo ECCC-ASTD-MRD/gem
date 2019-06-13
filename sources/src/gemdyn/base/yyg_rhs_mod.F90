@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module yyg_rhs
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -47,7 +48,7 @@ module yyg_rhs
                Rhsx_recv_len, Rhsx_send_len, &
                Rhsx_recv_adr, Rhsx_send_adr, &
                Rhsx_recv_i   ,Rhsx_recv_j   ,Rhsx_send_imx,Rhsx_send_imy
-   real*8,  dimension (:), allocatable :: &
+   real(kind=REAL64),  dimension (:), allocatable :: &
                Rhsx_send_sten, Rhsx_send_xxr, Rhsx_send_yyr
 
 end module yyg_rhs

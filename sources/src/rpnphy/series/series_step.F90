@@ -22,7 +22,7 @@ module series_step_mod
    implicit none
    private
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    public :: series_stepinit, series_stepend

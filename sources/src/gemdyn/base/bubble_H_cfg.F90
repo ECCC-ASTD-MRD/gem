@@ -18,11 +18,12 @@
       use VERgrid_options
       use bubble_options
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer k
-      real*8 height_8,htop_8
+      real(kind=REAL64) height_8,htop_8
 !
 !     ---------------------------------------------------------------
 !

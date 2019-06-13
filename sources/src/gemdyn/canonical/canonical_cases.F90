@@ -38,6 +38,7 @@
       use ver
       use gmm_itf_mod
       use var_gmm
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       !arguments
@@ -62,14 +63,14 @@
 
       integer k,istat,pnip1,flag_r_n,i,j,n
       real, pointer, dimension(:,:,:) :: hu,cl,cl2,tr,tr_r,tr_e
-      integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_s_f
+      integer(kind=INT64) :: flag_m_t,flag_m_u,flag_m_v,flag_s_f
       character(len=8) :: dumc
       real dcmip_height,dcmip_heightp1
       real bidon(l_minx:l_maxx,l_miny:l_maxy,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
       type(gmm_metadata) :: mymeta3d_nk_u, mymeta3d_nk_v, mymeta3d_nk_t, mymeta2d_s
-      real*8 :: pr_8
+      real(kind=REAL64) :: pr_8
       logical Terminator_L
-      real*4, parameter :: CLY_REF = 4.*10.**(-6)
+      real, parameter :: CLY_REF = 4.*10.**(-6)
       logical :: GEM_P_L
 
       !-------------------------------------------------------------------------------
@@ -381,7 +382,7 @@
 
                      !Real potential temperature
                      !--------------------------
-                     if (GEM_P_L) then 
+                     if (GEM_P_L) then
                         pr_8 = exp(Ver_a_8%t(k) + Ver_b_8%t(k)*st1(i,j))
                      else
                         pr_8 = pw_pt_plus(i,j,k)

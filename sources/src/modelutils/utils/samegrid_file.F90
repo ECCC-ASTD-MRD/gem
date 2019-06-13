@@ -15,7 +15,7 @@
 
 logical function samegrid_file ( unf, p1,p2,p3, g1,g2,g3,g4,xp,yp,ni,nj )
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer,intent(in) :: unf            ! Source file unit number
    integer,intent(in) :: p1,p2,p3       ! Source grid search parameters

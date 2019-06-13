@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,18 +12,19 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
-      SUBROUTINE SUNCOS2(SCOS,SSIN,STAN,BSIN,BCOS,LMX,XLAT,XLON,HZ,DAYOFYEAR, slope_L)
-      implicit none
-#include <arch_specific.hf>
-          INTEGER I,LMX
-          REAL XLAT(LMX),XLON(LMX),SCOS(LMX),HZ,DAYOFYEAR
-          REAL DH,SDEC,CDEC,RDEC,AJOUR,SSIN(LMX),STAN(LMX),BSIN(LMX),BCOS(LMX)
-          REAL A,EOT
-          REAL DAYRAD
-          LOGICAL slope_L
-!
+subroutine SUNCOS2(SCOS,SSIN,STAN,BSIN,BCOS,LMX,XLAT,XLON,HZ,DAYOFYEAR, slope_L)
+   use tdpack_const
+   implicit none
+!!!#include <arch_specific.hf>
+   integer I,LMX
+   real XLAT(LMX),XLON(LMX),SCOS(LMX),HZ,DAYOFYEAR
+   real DH,SDEC,CDEC,RDEC,AJOUR,SSIN(LMX),STAN(LMX),BSIN(LMX),BCOS(LMX)
+   real A,EOT
+   real DAYRAD
+   logical slope_L
+
 !Author
 !          L.Garand (1989)
 !
@@ -61,16 +62,12 @@
 ! DAYOFYEAR  day of year (0 to 366) (real number)
 !
 !*
-!
-!
-#include "tdpack_const.hf"
-!
-!
-      REAL, dimension(LMX) :: tmcos
-      REAL, dimension(LMX) :: tmsin
+
+      real, dimension(LMX) :: tmcos
+      real, dimension(LMX) :: tmsin
 !
       AJOUR=1.
-       IF(DAYOFYEAR.NE.0.) AJOUR=DAYOFYEAR
+       if(DAYOFYEAR.ne.0.) AJOUR=DAYOFYEAR
 
 ! Declinaision solaire de Robertson et Russelo 1968
       dayrad=AJOUR*2.*PI/365
@@ -82,8 +79,8 @@
 ! Declinaison solaire: approximation qui suppose que l'orbite est circulaire
 !      RDEC=0.412*COS((AJOUR+10.)*2.*PI/365.25 -PI)
 
-      SDEC=SIN(RDEC)
-      CDEC=COS(RDEC)
+      SDEC=sin(RDEC)
+      CDEC=cos(RDEC)
 ! correction for "equation of time"
       A = DAYOFYEAR/365.*2.*PI
 ! in minutes
@@ -98,17 +95,17 @@
       call VSCOS(tmcos(1),XLAT(1),LMX)
       call VSSIN(tmsin(1),XLAT(1),LMX)
 !
-      DO I=1,LMX
+      do I=1,LMX
       DH=HZ*PI/12. +XLON(I) -PI + EOT
-      SCOS(I)=AMAX1(tmsin(I)*SDEC + tmcos(I)*CDEC*COS(DH), 0.00001)
+      SCOS(I)=AMAX1(tmsin(I)*SDEC + tmcos(I)*CDEC*cos(DH), 0.00001)
       SCOS(I)=AMIN1(SCOS(I), 1.0)
-      ENDDO
+      enddo
 
 !----------------------------------------------------------
 
-      IF(slope_L) then
+      if(slope_L) then
 
-         DO I=1,LMX
+         do I=1,LMX
 
             DH=HZ*PI/12. +XLON(I) -PI + EOT
 
@@ -123,7 +120,7 @@
 
 !           to calculate Sin B
 
-            BSIN(I)=amin1((CDEC*SIN(DH))/SSIN(I), 1.)
+            BSIN(I)=amin1((CDEC*sin(DH))/SSIN(I), 1.)
             BSIN(I)=amax1(BSIN(I), -1.)
 
 !           to calulate Cos B
@@ -132,10 +129,10 @@
             BCOS(I)=amin1(BCOS(I), 1.)
             BCOS(I)=amax1(BCOS(I), -1.)
 
-         ENDDO
+         enddo
 
-      ENDIF
+      endif
 
-      RETURN
-      END
+      return
+      end
 

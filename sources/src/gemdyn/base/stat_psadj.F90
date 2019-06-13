@@ -33,6 +33,7 @@
       use tdpack, only: rgasd_8
       use ver
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -52,10 +53,10 @@
       real, pointer, dimension (:,:)   :: w2d
       real, pointer, dimension (:,:,:) :: wqt
       integer err,i,j,istat
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_8,pr_p0_dry_8,log_p0_8
-      real*8 l_avg_8(2),g_avg_ps_8(2),scale_8
-      real*8 ll_avg_8(l_ni,l_nj,2),lx_avg_8(l_ni,l_nj)
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_8,pr_p0_dry_8,log_p0_8
+      real(kind=REAL64) l_avg_8(2),g_avg_ps_8(2),scale_8
+      real(kind=REAL64) ll_avg_8(l_ni,l_nj,2),lx_avg_8(l_ni,l_nj)
       character(len= 9) communicate_S
       character(len= 1) in_S
       character(len= 7) time_S

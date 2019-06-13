@@ -23,20 +23,20 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
                            liqwpin, icewpin, cldfrac, &
                            tt, sig, ps, mg, ml, m, &
                            lmx, nk, nkp)
-
-      use phy_options
-      implicit none
-#include <arch_specific.hf>
+   use tdpack_const
+   use phy_options
+   implicit none
+!!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
-      integer, intent(in) :: lmx, m, nk, nkp
-      real taucs(lmx,nk,nbs), omcs(lmx,nk,nbs), gcs(lmx,nk,nbs), &
-           taucl(lmx,nk,nbl), omcl(lmx,nk,nbl), gcl(lmx,nk,nbl)
-      real topthw(lmx), topthi(lmx)
-      real ctp(lmx), ctt(lmx)
-      real liqwcin(lmx,nk), icewcin(lmx,nk)
-      real liqwpin(lmx,nk), icewpin(lmx,nk)
-      real cldfrac(lmx,nk), tt(m,nk),sig(lmx,nk),ps(lmx),mg(lmx),ml(lmx)
+   integer, intent(in) :: lmx, m, nk, nkp
+   real taucs(lmx,nk,nbs), omcs(lmx,nk,nbs), gcs(lmx,nk,nbs), &
+        taucl(lmx,nk,nbl), omcl(lmx,nk,nbl), gcl(lmx,nk,nbl)
+   real topthw(lmx), topthi(lmx)
+   real ctp(lmx), ctt(lmx)
+   real liqwcin(lmx,nk), icewcin(lmx,nk)
+   real liqwpin(lmx,nk), icewpin(lmx,nk)
+   real cldfrac(lmx,nk), tt(m,nk),sig(lmx,nk),ps(lmx),mg(lmx),ml(lmx)
 
 !Authors
 !        p. vaillancourt, d. talbot, j. li, rpn, cmc, cccma; (may 2006)
@@ -86,7 +86,6 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 
       external cldoppro_data
 
-#include "tdpack_const.hf"
 #include "cldop.cdk"
 
 !*********************************************************

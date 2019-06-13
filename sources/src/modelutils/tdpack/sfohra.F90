@@ -18,7 +18,7 @@
       Function sfohra(qq,tt,pr)
       use tdpack, only: fohra
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfohra, qq, tt, pr
 !
 !Author

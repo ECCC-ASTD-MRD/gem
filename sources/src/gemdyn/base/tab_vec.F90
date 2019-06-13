@@ -17,17 +17,15 @@
 !
       subroutine tab_vec (tab,Minx,Maxx,Miny,Maxy,nk, &
                                 vec,i0,in,j0,jn,idir)
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy,nk,i0,in,j0,jn,idir
-      real*8, dimension(Minx:Maxx,Miny:Maxy,nk) :: tab
-      real*8, dimension(*) :: vec(*)
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,nk) :: tab
+      real(kind=REAL64), dimension(*) :: vec(*)
 !
 ! author    Abdessamad Qaddouri - December 2006
-!
-!revision
-! v3_30 - Qaddouri A.       - initial version
 !
       integer iloc,i,j,k,nij
 !

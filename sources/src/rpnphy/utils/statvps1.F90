@@ -19,11 +19,11 @@
 !
       subroutine statvps2 (vp,no,from,ni,busnom)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ni,no
-      character*(*) from
-      character*1 busnom
+      character(len=*) from
+      character(len=1) busnom
 
       real vp(*)
 !
@@ -68,7 +68,7 @@
       real sum,moy,var,vpmin,vpmax
       integer imin,kmin,imax,kmax
       integer il, siz, esp, i0, m, mosaik, mul, stride
-      character*1 busnomc
+      character(len=1) busnomc
 !
 !--------------------------------------------------------------------
 !

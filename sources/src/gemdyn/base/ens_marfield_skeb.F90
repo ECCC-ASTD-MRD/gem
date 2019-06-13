@@ -32,6 +32,7 @@
       use ptopo
       use tdpack
       use step_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -44,7 +45,7 @@
 #include <rmnlib_basics.hf>
 
        real,    external :: gasdev
-       real*8  :: pl
+       real(kind=REAL64)  :: pl
 !
 ! nlat, nlon                 dimension of the Gaussian grid
 ! idum                       Semence du générateur de nombres aléatoires
@@ -54,7 +55,7 @@
       integer :: sig, l ,m, n, i, j, indx, ier, gmmstat, gdyy
       real    :: fstd, tau , sumsp , fact, fact2, offi,offj
       real    :: xfi(l_ni),yfi(l_nj)
-      real*8  :: rad2deg_8, pri_8
+      real(kind=REAL64)  :: rad2deg_8, pri_8
       logical, save :: init_done=.false.
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
@@ -63,10 +64,10 @@
 ! dt   Pas de temps du modèle (secondes)
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
-      real*8    :: dt, eps ,fmax, fmin
-      real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
-      real*8,    dimension(:), allocatable  :: wrk1
-      real*8,    dimension(:,:,:),allocatable :: cc
+      real(kind=REAL64)    :: dt, eps ,fmax, fmin
+      real(kind=REAL64),    dimension(:), allocatable :: pspectrum , fact1, fact1n
+      real(kind=REAL64),    dimension(:), allocatable  :: wrk1
+      real(kind=REAL64),    dimension(:,:,:),allocatable :: cc
       real  ,    dimension(:,:),allocatable :: f
       integer :: ier0,unf0, itstep_s, iperiod_iau
 
@@ -401,13 +402,14 @@
 contains
 
  subroutine pleg(l, m, jlat, nlat, plg )
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer l,m ,i,j ,jlat ,nlat
-      real*8   plg
-      real*8  factor , x  ,lat, theta
-      real*8 , dimension(0:l+1) :: pl
-      real*8, parameter :: ZERO=0.0D0  , ONE_8=1.0d0 , TWO_8=2.0d0
+      real(kind=REAL64)   plg
+      real(kind=REAL64)  factor , x  ,lat, theta
+      real(kind=REAL64) , dimension(0:l+1) :: pl
+      real(kind=REAL64), parameter :: ZERO=0.0D0  , ONE_8=1.0d0 , TWO_8=2.0d0
 
 !-------------------------------------------------------------------------
 !
@@ -449,6 +451,7 @@ contains
 
 
       subroutine stat(field,nx,ny,nz,msg1,msg2)
+      use, intrinsic :: iso_fortran_env
         implicit none
         integer :: nx,ny,nz
         real :: mean, std

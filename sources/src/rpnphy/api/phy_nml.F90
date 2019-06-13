@@ -15,6 +15,8 @@
 !-------------------------------------- LICENCE END --------------------------
 
 module phy_nml_mod
+   use clib_itf_mod, only: clib_isreadok, clib_toupper
+   use wb_itf_mod, only: WB_MSG_FATAL, WB_OK, wb_verbosity, wb_get
    use debug_mod, only: init2nan_L
    use str_mod, only: str_concat, str_toreal
    use series_mod, only: series_nml
@@ -24,11 +26,10 @@ module phy_nml_mod
    private
    public :: phy_nml
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
+
    include "rpnphy_version.inc"
 
 contains

@@ -25,7 +25,7 @@ contains
    subroutine calcz0(mg, z0, z1, z2, z3, z4, uu, vv, ni)
       use tdpack_const, only: PI
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Author V. Lee RPN (September 1995)
       !@Object
       ! CALCZ0 is a routine which recalculates the

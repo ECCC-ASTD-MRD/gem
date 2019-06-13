@@ -14,22 +14,19 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine initown2(ni, nk, trnch)
-!#TODO: nk never used
+subroutine initown3(ni, trnch)
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-   integer ni, nk, trnch
+   integer ni, trnch
 
    !@Author Aude Lemonsu (March 2004)
    !@Object Transfer and initialize initial fields for TEB
    !@Arguments
    !       - Input -
    ! ni       horizontal dimension
-   ! nk       vertical dimension
-   !
 
    real, parameter :: undef = 999
    integer i, k
@@ -185,4 +182,4 @@ subroutine initown2(ni, nk, trnch)
    end do DO_I2
 
    return
-end subroutine initown2
+end subroutine initown3

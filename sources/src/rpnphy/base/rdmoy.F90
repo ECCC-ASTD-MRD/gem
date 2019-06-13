@@ -16,7 +16,7 @@
 !**s/p rdmoy
       subroutine rdmoy( chrd, ch, vtot, inrd, ni, nk, nkrd)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       integer ni, nk, nkrd
       integer inrd(nkrd)

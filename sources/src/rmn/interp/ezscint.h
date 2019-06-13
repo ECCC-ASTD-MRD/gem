@@ -5,6 +5,7 @@
 #include <math.h>
 #include <rpnmacros.h>
 #include <string.h>
+#include <pthread.h>
 
 #define NMAXGRIDS 32
 #define NMAXSETS  NMAXGRIDS * (NMAXGRIDS - 1)

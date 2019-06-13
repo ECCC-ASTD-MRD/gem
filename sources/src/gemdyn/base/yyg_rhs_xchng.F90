@@ -22,12 +22,13 @@
       use sol
       use ptopo
       use yyg_rhs
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: minx,maxx,miny,maxy,lminx,lmaxx,lminy,lmaxy, NK,iter
-      real*8 , dimension(lminx:lmaxx,lminy:lmaxy,Nk), intent(in) :: F_sol_8
-      real*8 , dimension( minx:maxx , miny:maxy ,Nk), intent(inout) :: F_rhs_8
+      real(kind=REAL64) , dimension(lminx:lmaxx,lminy:lmaxy,Nk), intent(in) :: F_sol_8
+      real(kind=REAL64) , dimension( minx:maxx , miny:maxy ,Nk), intent(inout) :: F_rhs_8
       real, intent(out) :: Linfini
 
       integer status,ierr,i,k,kk,kk_proc,m,mm,adr
@@ -35,7 +36,7 @@
       integer request(Ptopo_numproc*2)
       real L1,L2,L3(2),L4(2),infini(Nk)
       real  , dimension (:,:), allocatable :: recv_pil,send_pil
-      real*8, dimension (:  ), allocatable :: send_Rhsx_8
+      real(kind=REAL64), dimension (:  ), allocatable :: send_Rhsx_8
 !
 !----------------------------------------------------------------------
 !

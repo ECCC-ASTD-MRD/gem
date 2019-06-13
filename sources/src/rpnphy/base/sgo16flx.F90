@@ -26,7 +26,7 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
    use phy_options, only: sgo_windfac
    use  tdpack, only: CAPPA, CPD, GRAV, RGASD
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Arguments
    logical, intent(in) :: gwdrag                   ! .true. for gravity wave drag
    logical, intent(in) :: blocking                 ! .true. for low-level blocking

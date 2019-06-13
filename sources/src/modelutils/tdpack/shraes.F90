@@ -18,7 +18,7 @@
       Function shraes3(hr,tt,ps,swph)
       use tdpack, only: shrahu3, shuaes3
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real shraes3, hr, tt, ps
       Logical swph
 !

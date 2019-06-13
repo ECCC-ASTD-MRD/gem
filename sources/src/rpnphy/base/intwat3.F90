@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,22 +12,22 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-! *S/P  INTWAT3
-!
-      SUBROUTINE INTWAT3(ICW,IWV,IWV700,IWP,LWP, &
-                        SLWP,SLWP2,SLWP3,SLWP4, &
-                        T,HU,LWC,IWC,S,PS,N,NK)
-      implicit none
-#include <arch_specific.hf>
-      INTEGER N,NK
-!
-      REAL ICW(N),IWV(N),IWV700(N),IWP(N),LWP(N)
-      REAL SLWP(N),SLWP2(N),SLWP3(N),SLWP4(N)
-      REAL T(N,NK),HU(N,NK)
-      REAL LWC(N,NK),IWC(N,NK)
-      REAL S(N,NK),PS(N)
-!
+!-------------------------------------- LICENCE END ---------------------------
+
+subroutine INTWAT3(ICW,IWV,IWV700,IWP,LWP, &
+     SLWP,SLWP2,SLWP3,SLWP4, &
+     T,HU,LWC,IWC,S,PS,N,NK)
+   use tdpack_const
+   implicit none
+!!!#include <arch_specific.hf>
+   integer N,NK
+
+   real ICW(N),IWV(N),IWV700(N),IWP(N),LWP(N)
+   real SLWP(N),SLWP2(N),SLWP3(N),SLWP4(N)
+   real T(N,NK),HU(N,NK)
+   real LWC(N,NK),IWC(N,NK)
+   real S(N,NK),PS(N)
+
 !Author
 !          R.Sarrazin, G. Pellerin, B. Bilodeau - (Sept 1996)
 !
@@ -67,20 +67,15 @@
 ! PS       surface pressure
 ! N        horizontal dimension
 ! NK       vertical   dimension
-!
-!
-!IMPLICITES
-!
-#include "tdpack_const.hf"
-!
+
       integer i,k,im,k1,k2,k3,k4
       real dsg,dpsg,qctemp
       real s1,s2,s3,s4
       logical scool
-!
+
       data s1,s2,s3,s4/1.,0.8,0.6,0.4/
       data scool/.false./
-!
+
 !**************************************************
 !     AUTOMATIC ARRAYS
 !**************************************************
@@ -224,5 +219,5 @@
            ICW(i)  = LWP(i) + IWP(i)
       end do
 !
-      RETURN
-      END
+      return
+      end

@@ -35,7 +35,7 @@ contains
       use phy_options
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Author  L. Spacek (Oct 2011)
       !@Object Calculates tendencies in physics
 
@@ -134,7 +134,7 @@ contains
       use phy_options
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object Linear combination of two arrays
       !@Arguments
       !          - input -
@@ -185,7 +185,7 @@ contains
       use phy_options
       use phybus
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object Linear combination of two arrays
       !@Arguments
       !          - input -
@@ -238,12 +238,12 @@ contains
    subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, nkscope, F_minval, F_maxval)
       use phy_options
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object Linear combination of two arrays
       !@Arguments
+      integer, intent(in) :: ni, nk, nkscope
       real, dimension(ni)  :: ztdmask
       real, dimension(ni, nk) :: ziten, zivar
-      integer, intent(in) :: ni, nk, nkscope
       real, intent(in), optional :: F_minval, F_maxval
       !*@/
       integer :: k

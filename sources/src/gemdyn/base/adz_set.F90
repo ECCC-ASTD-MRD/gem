@@ -14,17 +14,17 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine adz_set
-      use HORgrid_options
-      use ctrl
-      use glb_ld
-      use adz_options
       use adz_mem
+      use adz_options
+      use ctrl
+      use HORgrid_options
       use lam_options
-      use ver
-      use gmm_pw
       use gmm_itf_mod
+      use gmm_pw
       use rstr
       use tr3d
+      use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include "gmm_gem_flags.hf"
@@ -33,12 +33,12 @@
       include "tricublin_f90.inc"
 
       integer  j, k, k0, BCS_BASE, pnz, ext
-      real*8, parameter :: EPS_8= 1.D-5
+      real(kind=REAL64), parameter :: EPS_8= 1.D-5
       real :: verysmall
-      real*16 :: smallest_dz,posz
+      real(kind=REAL128) :: smallest_dz,posz
 
       type(gmm_metadata) :: meta, mymeta
-      integer*8 :: flag_m_f
+      integer(kind=INT64) :: flag_m_f
       integer :: kp1, flag_r_n, istat,istatu,istatv
 !
 !---------------------------------------------------------------------
@@ -126,7 +126,7 @@
 
       smallest_dz= minval(sig*Adz_delz_m(1:l_nk))
       adz_ovdzm_8 = 1.0d0/smallest_dz
-      pnz = nint(1.0+ (sig*Ver_z_8%m(l_nk+1)-sig*Ver_z_8%m(0))*adz_ovdzm_8)
+      pnz = nint(1.0+ sig*(Ver_z_8%m(l_nk+1)-Ver_z_8%m(0))*adz_ovdzm_8)
       adz_ovdzm_8 = sig/smallest_dz
       allocate ( Adz_search_m(pnz) )
       k0 = 0
@@ -138,7 +138,7 @@
 
       smallest_dz= minval(sig*Adz_delz_t(1:l_nk))
       adz_ovdzt_8 = 1.0d0/smallest_dz
-      pnz = nint(1.0+sig*(Ver_z_8%t(l_nk)-Ver_z_8%t(0))*adz_ovdzt_8)
+      pnz = nint(1.0+ sig*(Ver_z_8%t(l_nk+1)-Ver_z_8%t(0))*adz_ovdzt_8)
       adz_ovdzt_8 = sig/smallest_dz
       allocate ( Adz_search_t(pnz) )
       k0 = 0

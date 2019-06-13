@@ -51,11 +51,13 @@ function RPN_COMM_spread(contxt,source,npts,ndata,dest)  result(status)   !InTf!
   type(spread_context), pointer :: context_entry
   integer, dimension(:), pointer :: offset, order, nlocal
   real, dimension(:,:), allocatable :: source2
-  integer :: i, j, ierr, npoints, npe
+  integer :: i, j, ierr, npoints, npe, shiftmsk
   logical :: debug
 
   debug = .false.
   call c_f_pointer( contxt%p, context_entry)   ! convert C pointer passed by user into a Fortran pointer
+  shiftmsk = ishft(1,context_entry%shiftcnt) - 1
+
   npoints = max(1,context_entry%npoints)      ! 0 length might disturb scatterv, using length of one (1)
   if(context_entry%ntotal .ne. npts .and. context_entry%rootpe == context_entry%myrank) then  ! number of data samples is not consistent
     goto 111
@@ -74,10 +76,11 @@ function RPN_COMM_spread(contxt,source,npts,ndata,dest)  result(status)   !InTf!
   call c_f_pointer( context_entry%order , order , (/context_entry%ntotal/) )    ! restore Fortran pointer to sort index table
   if(debug) then
     if(context_entry%rootpe == context_entry%myrank) npe=size(nlocal)
-    if(context_entry%rootpe == context_entry%myrank) write(0,1)'order=',iand(order(1:npoints:npoints/5),524287)
+    if(context_entry%rootpe == context_entry%myrank) write(0,1)'order=',iand(order(1:npoints:npoints/5),shiftmsk)
     if(context_entry%rootpe == context_entry%myrank) write(0,1)'npe   =',npe
     if(context_entry%rootpe == context_entry%myrank) write(0,1)'nlocal=',nlocal(1:npe:max(1,npe/5))
     if(context_entry%rootpe == context_entry%myrank) write(0,1)'offset=',offset(1:npe:max(1,npe/5))
+    if(context_entry%rootpe == context_entry%myrank) write(0,1)'shift =',context_entry%shiftcnt
     if(context_entry%rootpe == context_entry%myrank) write(0,1)'context_entry%ntotal=',context_entry%ntotal
     write(0,1)'context_entry%npoints=',context_entry%npoints
   endif
@@ -87,7 +90,7 @@ function RPN_COMM_spread(contxt,source,npts,ndata,dest)  result(status)   !InTf!
     if(debug) write(0,1)'source2 shape:',shape(source2)
     do i = offset(1)+1, npts   ! offset(1) contains the number of unused points
     do j = 1, ndata            ! do not bother copuing  them into temporary array source2
-      source2(j,i) = source(iand(order(i),524287),j)    ! reorder and transpose data
+      source2(j,i) = source(iand(order(i),shiftmsk),j)    ! reorder and transpose data
     enddo
     enddo
   else
@@ -142,7 +145,7 @@ function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result(status)      
   type(spread_context), pointer :: context_entry   ! metadata
   integer, dimension(:), pointer :: offset, order, nlocal
 !  integer, external :: RPN_COMM_comm
-  integer :: i, max_pe, n_pes, myrank, ierr, comm
+  integer :: i, max_pe, n_pes, myrank, ierr, comm, shiftcnt
 
   comm = RPN_COMM_comm(com)               ! get MPI communicator
   call mpi_comm_size( comm, n_pes ,ierr )  ! get number of PEs in communicator
@@ -173,6 +176,17 @@ function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result(status)      
   context_entry%order   = c_loc(order(1))         ! pointer to reordering table
   context_entry%offset  = c_loc(offset(1))        ! pointer to offset table
   context_entry%nlocal  = c_loc(nlocal(1))        ! pointer to PE population table
+  context_entry%shiftcnt= 0                       ! point number field width
+  shiftcnt = 0
+  do i = 16, 30                                   ! find if 32 bits can accomodate both point number and PE number
+    if(npts < ishft(1,i) .and. max_pe < ishft(1,32-i)) then   ! both fit
+      context_entry%shiftcnt= i                   ! shiftcount OK
+      shiftcnt = i
+      exit
+    endif
+  enddo
+  if(myrank == rootpe) write(0,*)'INFO: (RPN_COMM_spread_context), shift count =',shiftcnt
+  if(shiftcnt == 0) go to 3                       ! no way to fit both PE number and point number in 32 bits
 
   nlocal = 0
   offset(1)=0
@@ -181,7 +195,7 @@ function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result(status)      
     call I_mrgrnk(pe,order,npts)       ! index sort by target PE number, result in array "order"
     do i = 1, npts
       if(pe(i) >= 0) then              ! point is in grid
-        order(i) = ior( ishft(pe(i),19) , order(i) )       ! add PE number into index array  (max 512000 points)
+        order(i) = ior( ishft(pe(i),shiftcnt) , order(i) ) ! add PE number into index array  (max 512000 points)
         nlocal(pe(i)+1) = nlocal(pe(i)+1) + 1              ! increase count for destination PE i
       else
         offset(1) = offset(1) + 1        ! point not in grid, will sort at b eginning of index, bump first offset
@@ -200,7 +214,7 @@ function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result(status)      
 
 2 call mpi_scatter(nlocal,1,MPI_INTEGER,context_entry%npoints,1,MPI_INTEGER,rootpe,comm,ierr) ! send local count to each PE
   if(ierr .ne. MPI_SUCCESS) status = -2
-  if(context_entry%npoints == -1 .or. ierr .ne. MPI_SUCCESS) goto 3    ! OOPS, target PE number was too large or MPI error
+  if(context_entry%npoints == -1 .or. ierr .ne. MPI_SUCCESS) go to 3    ! OOPS, target PE number was too large or MPI error
 
   status = 0                   ! all is well, return
   return
@@ -211,6 +225,7 @@ function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result(status)      
   deallocate(nlocal)
   deallocate(context_entry)
   contxt%p = C_NULL_PTR           ! and return a NULL contxt pointer
+  status = -1
   return
   
 1 format(A,20I5)

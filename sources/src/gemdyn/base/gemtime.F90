@@ -15,6 +15,7 @@
 
 module gem_timing
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       private
@@ -23,13 +24,13 @@ module gem_timing
 
       integer, parameter :: MAX_instrumented=400
 
-      character*16 nam_subr_S(MAX_instrumented)
+      character(len=16) nam_subr_S(MAX_instrumented)
 
       logical, save :: Gem_timing_dyn_L=.true.
 
       integer timer_cnt(MAX_instrumented), timer_level(MAX_instrumented)
 
-      real*8 tb(MAX_instrumented), sum_tb(MAX_instrumented), total_time
+      real(kind=REAL64) tb(MAX_instrumented), sum_tb(MAX_instrumented), total_time
 
 contains
 
@@ -39,8 +40,8 @@ contains
       integer       , intent(in) :: myproc
 #include <clib_interface_mu.hf>
 
-      character*16 dumc_S
-      real*8 omp_get_wtime
+      character(len=16) dumc_S
+      real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
@@ -62,7 +63,7 @@ contains
       character(len=*), intent(in) :: myname_S
       integer       , intent(in) :: mynum,mylevel
 
-      real*8 omp_get_wtime
+      real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
@@ -84,7 +85,7 @@ contains
 
       integer, intent(in) :: mynum
 
-      real*8 omp_get_wtime
+      real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
@@ -104,12 +105,12 @@ contains
       character(len=*), intent(in) :: msg
       integer       , intent(in) :: myproc
 
-      character*16 name
-      character*64 fmt,nspace
+      character(len=16) name
+      character(len=64) fmt,nspace
       logical flag(MAX_instrumented)
       integer i,j,k,elem,lvl,lvlel(0:100)
 
-      real*8 omp_get_wtime
+      real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
@@ -176,9 +177,9 @@ contains
       logical, save :: timini_L = .false.
       real          users,systs
       real, save :: user0=0.0, syst0=0.0
-      real*8, save ::  START=-1.d0, END, avgtime(10)=0.d0, &
+      real(kind=REAL64), save ::  START=-1.d0, END, avgtime(10)=0.d0, &
                                  ACCUM_w=0.d0, ACCUM_u=0.d0, ACCUM_s=0.d0
-      real*8 omp_get_wtime
+      real(kind=REAL64) omp_get_wtime
 !
 !----------------------------------------------------------------
 !

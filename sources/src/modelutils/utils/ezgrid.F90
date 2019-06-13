@@ -15,7 +15,8 @@
 
 !/@
 module ezgrid_mod
-use iso_c_binding
+   use iso_c_binding
+   use rpn_comm_itf_mod
    use ptopo_utils
    use agg_filter_mod
    implicit none
@@ -37,8 +38,8 @@ use iso_c_binding
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-   include "rpn_comm.inc"
-   integer,external :: gdll,ezget_nsubgrids,ezget_subgridids,ezgdef_supergrid,msg_getUnit
+
+!!$   integer,external :: gdll,ezget_nsubgrids,ezget_subgridids,ezgdef_supergrid,msg_getUnit
    logical,external :: is_samegrid2,is_samegrid_sid
 
    !TODO-later: compute CHARPERBYTE value
@@ -655,7 +656,7 @@ contains
       !Size 
       ! 1 : N = nsubgrids
       ! N * 14 integers : ni,nj,ig1, ig2, ig3, ig4, i0,j0,axni,axnj,ayni,aynj,ichar(grtyp_S),ichar(grref_S)
-      ! N * ?  real*4   : ax,xy
+      ! N * ?  real(REAL64) :: ax,xy
       gridobjsize = 1 + nsubgrids * NINTEGER
       axnij = 0
       aynij = 0
@@ -741,7 +742,8 @@ contains
 !!$      integer,save :: ngrids = 0 
 !!$      integer,save :: grididlist(NMAXGRIDS) = -1
 !!$      integer :: ,n,nij(2),ig14(4)
-      integer :: gridobjsize,istat, ni,nj, ig1,ig2,ig3,ig4,i0,i00,ij0(2),i,j,axnij(2),aynij(2),nsubgrids,igrid,subgridsid(NSUBGRIDS_MAX),vercode
+      integer :: gridobjsize,istat, ni,nj, ig1,ig2,ig3,ig4,i0,i00,ij0(2),i,j, &
+           axnij(2),aynij(2),nsubgrids,igrid,subgridsid(NSUBGRIDS_MAX),vercode
       real :: r4 = 0.
       real,pointer :: ax(:,:),ay(:,:)
       character(len=GRTYPLEN) :: grtyp_S,grref_S

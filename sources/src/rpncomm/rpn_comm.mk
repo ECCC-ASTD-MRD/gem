@@ -18,12 +18,13 @@ TESTS    = TEST_000.Abs TEST_001.Abs TEST_002.Abs TEST_004.Abs \
            TEST_010.Abs TEST_011.Abs
 
 FMODULES = RPN_COMM_mod.o
-LIBNAME  = $(LIB)_$(RPN_COMM_version)
+MPI_VERSION = $(shell $(VPATH)/../tools/mpi_version.sh $(VTAG) )
+LIBNAME  = $(LIB)_$(RPN_COMM_version)$(MPI_VERSION)
 LIBRARY  = $(LIBDIR)/lib$(LIBNAME).a
-STUB_LIBRARY = $(LIBDIR)/lib$(LIB)stubs_$(RPN_COMM_version).a
+STUB_LIBRARY = $(LIBDIR)/lib$(LIB)stubs_$(RPN_COMM_version)$(MPI_VERSION).a
 SOURCES  = $(INCDECKS) $(CDECKS) $(FDECKS) $(HDECKS) $(F90DECKS)
 
-DISTINCLUDES = $(VPATH)/RPN_COMM_interfaces.inc $(VPATH)/rpn_comm.inc $(VPATH)/rpn_comm.inc \
+DISTINCLUDES = $(VPATH)/RPN_COMM_interfaces.inc $(VPATH)/RPN_COMM.inc $(VPATH)/rpn_comm.inc \
                $(VPATH)/RPN_COMM_types.inc $(VPATH)/RPN_COMM_constants.inc \
                $(VPATH)/RPN_COMM_ftoc.inc $(VPATH)/RPN_COMM_is_null.inc
 
@@ -96,7 +97,7 @@ rpn_comm_c_stubs.o: $(VPATH)/rpn_comm_stubs.sh
 $(STUB_LIBRARY): rpn_comm_fortran_stubs.o rpn_comm_c_stubs.o
 	mkdir -p $(LIBDIR)
 	ar rcv $(STUB_LIBRARY) rpn_comm_fortran_stubs.o rpn_comm_c_stubs.o
-	(cd $(LIBDIR) ; ln -sf lib$(LIB)stubs_$(RPN_COMM_version).a lib$(LIB)stubs.a)
+	(cd $(LIBDIR) ; ln -sf lib$(LIB)stubs_$(RPN_COMM_version)$(MPI_VERSION).a lib$(LIB)stubs$(MPI_VERSION).a)
 
 $(LIBRARY): $(OBJECTS)
 	mkdir -p $(LIBDIR)
@@ -104,8 +105,13 @@ $(LIBRARY): $(OBJECTS)
 #	ar rcv $(LIBRARY)_ $(OBJECTS)
 #	ar dv $(LIBRARY)_ TEST_stubs.o rpn_comm_c_stubs.o rpn_comm_fortran_stubs.o
 	mv $(LIBRARY)_ $(LIBRARY)
-	(cd $(LIBDIR) ; ln -sf lib$(LIB)_$(RPN_COMM_version).a  lib$(LIB).a)
+	ar t $(LIBRARY) | sort -u >$(VPATH)/objects.lst
+	(cd $(LIBDIR) ; ln -sf lib$(LIBNAME).a  lib$(LIB)$(MPI_VERSION).a)
 #	cp *.mod $(INCDIR)
+
+checkref:
+	sort -u $(VPATH)/REFERENCE.lst >$(VPATH)/SORTED.lst
+	diff $(VPATH)/SORTED.lst $(VPATH)/objects.lst
 
 #.PHONY:	$(VPATH)/includes
 

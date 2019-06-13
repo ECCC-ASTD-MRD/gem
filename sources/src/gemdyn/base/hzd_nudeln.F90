@@ -17,13 +17,14 @@
       subroutine hzd_nudeln2(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu,m,n)
       use HORgrid_options
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy,lnk,m,n
       real rfd (Minx:Maxx,Miny:Maxy,lnk), &
            sfd (Minx:Maxx,Miny:Maxy,lnk)
-      real*8 nu
+      real(kind=REAL64) nu
 
 !OBJECT
 !
@@ -52,7 +53,7 @@
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
-      real*8 c1,c2,c3,one,two,four
+      real(kind=REAL64) c1,c2,c3,one,two,four
       parameter(one=1.d0,two=2.d0,four=4.d0)
 !
 !----------------------------------------------------------------------

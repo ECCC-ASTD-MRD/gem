@@ -1,5 +1,6 @@
 #include <rpnmacros.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -68,6 +69,7 @@ void f77name(array_to_file)(ftnword *array, ftnword *nw, char *file_name, F2Cl n
   char *buffer;
   int fd;
   int nc;
+  off_t len;
 
   buffer=(char *)malloc(nc_file_name+1);        /* allocate buffer for file name */
   strncpy(buffer,file_name,nc_file_name);       /* copy file name into buffer */
@@ -78,6 +80,7 @@ void f77name(array_to_file)(ftnword *array, ftnword *nw, char *file_name, F2Cl n
     nc_file_name--;
     }
   fd=open(buffer,O_CREAT+O_RDWR,0777);          /* open file for writing */
-  nc=write(fd,(char *)(array+2),array[1]);      /* write data into file */
+  len=write(fd,(char *)(array+2),array[1]);     /* write data into file */
+  ftruncate(fd,len);                            /* make sure to truncate after write */
   close(fd);                                    /* close file */
 }

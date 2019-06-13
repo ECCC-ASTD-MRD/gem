@@ -17,6 +17,7 @@
 
       subroutine gemtim4 ( unf, from, last )
       use step_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -30,9 +31,9 @@
       logical, save :: timini_L = .false.
       real          users,systs
       real, save :: user0=0.0, syst0=0.0
-      real*8, save ::  START=-1.d0, END, avgtime(10)=0.d0, &
+      real(kind=REAL64), save ::  START=-1.d0, END, avgtime(10)=0.d0, &
                                  ACCUM_w=0.d0, ACCUM_u=0.d0, ACCUM_s=0.d0
-      real*8 omp_get_wtime
+      real(kind=REAL64) omp_get_wtime
 !
 !----------------------------------------------------------------
 !

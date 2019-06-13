@@ -18,20 +18,20 @@
 
       subroutine phyrdfile (F_fichier_S, F_read_cb, F_messg_s, F_myproc)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.inc>
 !
-      character* (*) F_fichier_S, F_messg_s
+      character(len=*) F_fichier_S, F_messg_s
       integer F_myproc
       external F_read_cb
 
 !author
 !     M. Desgagne  - January 2014
 
+      integer, parameter :: max_ndim = 1000
       logical found_L
-      integer iun,ilir,inbr,status,ierr,max_ndim
-      parameter (max_ndim=1000)
+      integer iun,ilir,inbr,status,ierr
       integer dim(max_ndim)
-      integer fnom,fstouv,fstopc,fstfrm,fclos,wkoffit
       real, dimension(1) :: dummy
       real, dimension(:), allocatable :: rbuf
 !
@@ -79,7 +79,7 @@
          status = 250
          call F_read_cb (iun,rbuf,dim,status)
          inbr = fstfrm  (iun)
-         inbr = fclos   (iun)    
+         inbr = fclos   (iun)
       endif
 
 9977  call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
@@ -95,7 +95,7 @@
 
  9988 call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
 
-      inbr = fstopc ('MSGLVL','WARNIN',.false.)
+      inbr = fstopc ('MSGLVL','WARNIN',RMN_OPT_SET)
 
  1001 format (/'READING ',a,' FILE:'/a)
 !

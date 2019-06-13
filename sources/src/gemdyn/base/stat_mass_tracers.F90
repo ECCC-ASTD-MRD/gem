@@ -28,6 +28,7 @@
       use tdpack
       use tr3d
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -45,7 +46,7 @@
       !------------------------------------------------------------------------------
 
       integer :: err,n,k0,count,i0,in,j0,jn,i0_sb,in_sb,j0_sb,jn_sb
-      real*8  :: tracer_8
+      real(kind=REAL64)  :: tracer_8
       logical :: do_subset_GY_L
       real, pointer, dimension (:,:,:) :: fld_tr
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: air_mass,bidon,fld_ONE,w_tr

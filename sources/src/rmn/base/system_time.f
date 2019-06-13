@@ -19,9 +19,11 @@
 * */
 	subroutine system_time(yyyymmdd,hhmmss00)
 	implicit none
-	integer yyyymmdd,hhmmss00
+	integer yyyymmdd, hhmmss00
 	external c_time
 	integer c_time
+        integer, external :: newdate
+        integer status
 
 	integer newstamp,istamp,minutes,secs
 	real *8 seconds,hours
@@ -30,7 +32,7 @@
 *
 *	build stamp (new) for jan 1 1980
 *
-	call newdate(istamp,19800101,00000000,3)
+	status = newdate(istamp,[19800101],00000000,3)
 *
 *	get number of seconds since jan 1 1970
 *
@@ -42,7 +44,7 @@
 
 	call incdatr(newstamp,istamp,hours)
 
-	call newdate(newstamp,yyyymmdd,hhmmss00,-3)
+	status = newdate(newstamp,[yyyymmdd],hhmmss00,-3)
 
 	return
 	end

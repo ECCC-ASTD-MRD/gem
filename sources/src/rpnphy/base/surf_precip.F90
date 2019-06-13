@@ -28,7 +28,7 @@ contains
    !/@*
    subroutine surf_precip1(t, tlc, tls, tsc, tss, rainrate, snowrate, ni)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Arguments
       !          - Input -
@@ -194,7 +194,7 @@ contains
    subroutine surf_precip3(t, tlc, tls, tsc, tss, &
         rainrate, snowrate, fneige, fip,ni)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       !@Arguments
       !          - Input -
@@ -247,7 +247,7 @@ contains
       do I=1,ni
          rainrate(I) = 0.
          snowrate(I) = 0.
-         totrate (I) = tlc(I)+tls(I)++tsc(I)+tss(I)
+         totrate (I) = tlc(I)+tls(I)+tsc(I)+tss(I)
       end do
 
       ! OPTIONS:  Depending on the explicit scheme

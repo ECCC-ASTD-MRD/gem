@@ -21,13 +21,14 @@
       use tdpack
       use glb_ld
       use glb_pil
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       character(len=*), intent(in) :: F_eigen_filename_S
       integer, intent(in) :: F_npts, NSTOR
-      real*8, dimension(NSTOR), intent(out) ::  F_eval_8
-      real*8, dimension(NSTOR,3) :: F_xp0_8, F_xp2_8
+      real(kind=REAL64), dimension(NSTOR), intent(out) ::  F_eval_8
+      real(kind=REAL64), dimension(NSTOR,3) :: F_xp0_8, F_xp2_8
 !
 !arguments
 !  Name        I/O                 Description
@@ -40,13 +41,13 @@
 
 
       integer :: i, j
-      real*8 :: a_8(F_npts,F_npts), b_8(F_npts,F_npts), r_8(F_npts)
-      real*8 :: pdfaz
-      real*8, parameter :: one = 1.d0, two = 2.d0
+      real(kind=REAL64) :: a_8(F_npts,F_npts), b_8(F_npts,F_npts), r_8(F_npts)
+      real(kind=REAL64) :: pdfaz
+      real(kind=REAL64), parameter :: one = 1.d0, two = 2.d0
 !
 ! --------------------------------------------------------------------
 !
-!     put input arguments in real*8 arrays
+!     put input arguments in real(kind=REAL64) arrays
 
       F_eval_8 = 0.d0
       a_8 = 0.d0
@@ -73,7 +74,7 @@
          a_8(1:F_npts,1) = pdfaz
       end if
 
-!     put real*8 results in output arguments arrays
+!     put real(kind=REAL64) results in output arguments arrays
 !     NOTE: for non-LAM case, the loops are F_npts=NSTOR
 
       do j = 1,F_npts

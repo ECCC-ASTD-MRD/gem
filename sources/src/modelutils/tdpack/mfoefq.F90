@@ -18,7 +18,7 @@
       Subroutine mfoefq3(ee,qq,ps,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real ee(ni,nk), qq(ni,nk)

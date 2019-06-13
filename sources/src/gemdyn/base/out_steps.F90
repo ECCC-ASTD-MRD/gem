@@ -24,6 +24,7 @@
       use out3
       use outp
       use out_listes
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -32,8 +33,8 @@
       integer, save :: marker
       logical, save :: done = .false., dgflt_L = .true.
       real,   parameter :: eps=1.e-12
-      real*8, parameter :: OV_day = 1.0d0/86400.0d0
-      real*8  dayfrac
+      real(kind=REAL64), parameter :: OV_day = 1.0d0/86400.0d0
+      real(kind=REAL64)  dayfrac
 !
 !     ---------------------------------------------------------------
 !

@@ -27,6 +27,7 @@ contains
         liqwcin, icewcin, liqwpin, icewpin, &
         trav2d,  &
         kount, trnch, ni, nk, nkm1)
+      use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, TCDK
       use phy_options
@@ -65,11 +66,11 @@ contains
       real, intent(inout) :: liqwpin(ni,nk), icewpin(ni,nk)
       real, intent(inout) :: cloud(ni,nk), trav2d(ni,nk)
       !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include "phymkptr.hf"
 
-      include "phyinput.cdk"
+      include "phyinput.inc"
       include "surface.cdk"
       include "nocld.cdk"
 

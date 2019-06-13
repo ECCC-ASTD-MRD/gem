@@ -37,11 +37,12 @@
       use lun
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, ni, nj, Nk, i0, j0, k0, in, jn
-      real*8,  intent(in) :: F_lhs_sol (ni,nj,Nk)
+      real(kind=REAL64),  intent(in) :: F_lhs_sol (ni,nj,Nk)
       real, dimension(Minx:Maxx,Miny:Maxy),      intent(in) :: F_fis, F_sl, F_rb, F_nb
       real, dimension(Minx:Maxx,Miny:Maxy,  Nk), intent(in) :: F_ru, F_rv, F_rt, F_rw,   &
                                                                F_rf, F_nu, F_nv, F_nt, F_nw, F_nf
@@ -52,10 +53,10 @@
 
 
       integer :: i, j, k, km, nij, k0t
-      real*8  :: w1, w2, w3, w4, Pbar, qbar
-      real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
+      real(kind=REAL64)  :: w1, w2, w3, w4, Pbar, qbar
+      real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real  , dimension(Minx:Maxx,Miny:Maxy,Nk+1) :: GP
-      real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=.5d0
 !     __________________________________________________________________
 !
       if (Ctrl_testcases_adv_L) then

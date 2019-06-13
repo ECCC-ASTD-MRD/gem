@@ -11,4 +11,3 @@ set(CMAKE_C_FLAGS "-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback 
 set(CMAKE_Fortran_FLAGS "-g -assume byterecl -convert big_endian -msse3 -fpe0 -fpic -reentrancy threaded -traceback -threads -I. -static-intel -O2 -openmp -DWITH_OpenMP -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -mkl -fp-model source" CACHE STRING "Fortran compiler flags" FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS "-fpic -static-intel -mkl")
-

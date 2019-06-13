@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 int mkstemp_(char *template) {
    int fd = mkstemp(template);

@@ -15,7 +15,9 @@
 
 !/@*
 module statfld_dm_mod
-use iso_c_binding
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   use iso_c_binding
+   use rpn_comm_itf_mod
    use ptopo_utils
    use statfld_mod
    implicit none
@@ -26,10 +28,9 @@ use iso_c_binding
    private
    public :: statfld_dm,statfld_dm_print
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
 
    interface statfld_dm_print
       module procedure statfld_print
@@ -58,7 +59,7 @@ contains
       integer,intent(in) :: F_no,F_rx
       !*@/
       integer :: ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax) 
       call statfld_print(mean,var,rmin,rmax,ijkmin,ijkmax,F_nv_S,F_no,F_from_S,F_rx)
@@ -72,7 +73,7 @@ contains
       implicit none
       !@arguments
       real,intent(in),target :: F_fld(:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       !*@/
       real,pointer :: wk(:,:),pfld(:,:)
@@ -120,7 +121,7 @@ contains
       integer,intent(in) :: F_no,F_rx
       !*@/
       integer :: ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax) 
       call statfld_print(mean,var,rmin,rmax,ijkmin,ijkmax,F_nv_S,F_no,F_from_S,F_rx)
@@ -134,7 +135,7 @@ contains
       implicit none
       !@arguments
       real,intent(in),target :: F_fld(:,:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       !*@/
       real,pointer :: wk(:,:,:),pfld(:,:,:)

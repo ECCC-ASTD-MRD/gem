@@ -22,6 +22,7 @@
       use inp_mod
       use path
       use clib_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +32,7 @@
 
       character(len=2048) fn,root
       integer i,err,err_code,unf,n123(3)
-      real*8, pointer :: vtbl_8(:,:,:)
+      real(kind=REAL64), pointer :: vtbl_8(:,:,:)
 !
 !-----------------------------------------------------------------------
 !

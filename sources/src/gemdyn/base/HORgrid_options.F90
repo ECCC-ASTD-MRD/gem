@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 module HORgrid_options
    use lun
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -91,7 +92,7 @@ module HORgrid_options
             Grd_lphy_gid, Grd_glbcore_gid
    integer Grd_lphy_i0, Grd_lphy_in, Grd_lphy_j0, Grd_lphy_jn, &
            Grd_lphy_ni, Grd_lphy_nj
-   real*8 Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
+   real(kind=REAL64) Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
 
 contains
 
@@ -99,6 +100,7 @@ contains
 
       integer function HORgrid_nml (F_unf)
       use ctrl
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -161,6 +163,7 @@ contains
       use glb_ld
       use glb_pil
       use hgc
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -171,10 +174,10 @@ contains
       character(len=120) :: dumc
       logical :: almost_zero
       integer err
-      real*8 :: a_8, b_8, c_8, d_8
-      real*8, dimension(3) :: xyz1_8, xyz2_8
-      real*8 :: yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
-      real*8, parameter :: epsilon = 1.0d-5
+      real(kind=REAL64) :: a_8, b_8, c_8, d_8
+      real(kind=REAL64), dimension(3) :: xyz1_8, xyz2_8
+      real(kind=REAL64) :: yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
+      real(kind=REAL64), parameter :: epsilon = 1.0d-5
 !
 !-------------------------------------------------------------------
 !
@@ -191,7 +194,7 @@ contains
                'CONFLICTING Grd_NI & Grd_NJ IN NAMELIST grid',&
                '            only one of them can be > 0'
             end if
-            goto 9999
+            return
          end if
          if (Grd_ni <= 0) then
             if (Grd_nj > 0) Grd_ni= (Grd_nj-1)*3 + 1
@@ -200,7 +203,7 @@ contains
             if (Grd_ni > 0) Grd_nj= nint ( real(Grd_ni-1)/3. + 1. )
          end if
 
-         if (yyg_checkrot() < 0) goto 9999
+         if (yyg_checkrot() < 0) return
 
          if (trim(Grd_yinyang_S) == 'YAN') then
             call yyg_yangrot ( dble(Grd_xlat1), dble(Grd_xlon1), &
@@ -216,7 +219,7 @@ contains
             if (Lun_out > 0) then
                write(Lun_out,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             end if
-            goto 9999
+            return
          end if
 
       end if
@@ -225,7 +228,7 @@ contains
          if (Lun_out > 0) then
             write(Lun_out,*) 'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
          end if
-         goto 9999
+         return
       end if
 
       Grd_x0_8=  0.0 ; Grd_xl_8=360.0
@@ -237,12 +240,19 @@ contains
                            Grd_ni, Grd_nj, Grd_dx, Grd_dy         ,&
                            Grd_x0_8, Grd_y0_8, Grd_xl_8, Grd_yl_8 ,&
                            Grd_overlap, Grd_yinyang_L, Lun_out, err)
-      if (err < 0) goto 9999
+      if (err < 0) then
+         if (Lun_out > 0) then
+            write(Lun_out,*) 'ERROR in gem_grid_param'
+         end if
+         return
+      end if
 
       Glb_pil_n = Grd_extension
-      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+      Glb_pil_s = Glb_pil_n
+      Glb_pil_w = Glb_pil_n
+      Glb_pil_e = Glb_pil_n
 
-      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
+      pil_w = 0 ; pil_n = 0 ; pil_e = 0 ; pil_s = 0
       if (l_west ) pil_w= Glb_pil_w
       if (l_north) pil_n= Glb_pil_n
       if (l_east ) pil_e= Glb_pil_e
@@ -261,11 +271,13 @@ contains
       call cigaxg ( Hgc_gxtyp_S,Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,&
                               Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
 
-      if (Lun_out > 0) write(6,1100) trim(Grd_yinyang_S)       , &
-                                      Grd_ni, Grd_x0_8, Grd_xl_8, &
-                                      Grd_nj, Grd_y0_8, Grd_yl_8, &
-                                      Grd_typ_S, Grd_dx ,Grd_dy , &
-                                    Grd_dx*40000./360.,Grd_dy*40000./360.
+      if (Lun_out > 0) then
+         write(6,1100) trim(Grd_yinyang_S), &
+                       Grd_ni, Grd_x0_8, Grd_xl_8, &
+                       Grd_nj, Grd_y0_8, Grd_yl_8, &
+                       Grd_typ_S, Grd_dx ,Grd_dy , &
+                       Grd_dx*40000./360.,Grd_dy*40000./360.
+      end if
 
       if (Lun_out > 0) write (Lun_out,1004) &
                      Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,&
@@ -348,11 +360,12 @@ contains
 !
 !-------------------------------------------------------------------
 !
- 9999 return
+      return
       end function HORgrid_config
 
    !/@*
    function HORgrid_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       !@object Additional initialisation steps before reading the nml
       integer :: F_istat

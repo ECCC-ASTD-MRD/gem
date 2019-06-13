@@ -19,21 +19,18 @@
                                nil,njl, nk, minx1,maxx1,minx2,maxx2 )
       use dyn_fisl_options
       use sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy, njl,nil,nk, minx1,maxx1,minx2,maxx2
-      real*8  wk11(*),wk22(*)
+      real(kind=REAL64)  wk11(*),wk22(*)
 !
 !author
 !     Abdessamad Qaddouri - decembre 2013
 !
-!revision
-! v4_6 - Qaddouri A.      - initial version
-!
-!
       integer i0,in,j0,jn,minx3,maxx3
-      real*8 fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &
+      real(kind=REAL64) fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &
              wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
              wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )
 !

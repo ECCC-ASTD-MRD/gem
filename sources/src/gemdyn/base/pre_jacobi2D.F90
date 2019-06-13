@@ -18,6 +18,7 @@
       subroutine pre_jacobi2D ( lhs, rhs, evec_local, ni, nj, ai, bi, ci, level )
 
       use glb_ld, only: l_nk ! Number of vertical levels
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
       ! csubich: as computed at initialization, ai, bi, and ci are three-dimensional
@@ -25,16 +26,16 @@
       ! as giant one-dimensional arrays.  We need access to the appropriate vertical
       ! index to properly include the effects attribuable to the vertical eigenvalues.
       integer, intent(in) :: ni,nj, level
-      real*8, dimension(ni,nj), intent(out) :: lhs
-      real*8, dimension(ni,nj), intent(in) :: rhs
-      real*8, dimension(ni,nj,l_nk), intent(in) :: ai, bi, ci
-      real*8, dimension(ni,ni), intent(in) :: evec_local
+      real(kind=REAL64), dimension(ni,nj), intent(out) :: lhs
+      real(kind=REAL64), dimension(ni,nj), intent(in) :: rhs
+      real(kind=REAL64), dimension(ni,nj,l_nk), intent(in) :: ai, bi, ci
+      real(kind=REAL64), dimension(ni,ni), intent(in) :: evec_local
 !
 !author
 !       Abdessamad Qaddouri - December  2006
 !
       integer :: i, j, jr
-      real*8, dimension(ni,nj) :: fdg
+      real(kind=REAL64), dimension(ni,nj) :: fdg
 !
 !     ---------------------------------------------------------------
 !

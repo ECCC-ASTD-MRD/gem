@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,16 +12,16 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
-subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
-     tve,wz,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg, &
+subroutine baktotq7(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
+     tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg, &
      vcoef,pblsigs,pblq1,tau,n,nk)
-
+   use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-   ! Arguments
+   !@Arguments
    integer, intent(in) :: n                             !horizontal dimension
    integer, intent(in) :: nk                            !vertical dimension
    real, intent(in) :: tau                              !time step length (s)
@@ -37,7 +37,6 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    real, dimension(n,nk), intent(in) :: dthl            !tendency of theta_l (K/s)
    real, dimension(n,nk), intent(in) :: dqw             !tendency of q_tot (kg/kg/s)
    real, dimension(n,nk), intent(in) :: tve             !virtual temperature on e-levs (K)
-   real, dimension(n,nk), intent(in) :: wz              !gridscale vertical motion (m/s)
    real, dimension(n), intent(in) :: hpbl               !boundary layer height (m)
    real, dimension(n), intent(in) :: hflux              !surface heat flux (W/m2)
    real, dimension(n,nk), intent(in) :: c1              !constant C1 in second-order moment closure
@@ -54,12 +53,10 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    real, dimension(n,nk), intent(out) :: dqc            !tendency of cloud water content (kg/kg/s)
    real, dimension(n,nk), intent(out) :: fngauss        !Gaussian cloud fraction
    real, dimension(n,nk), intent(out) :: pblsigs        !Subgrid moisture variance
-   real, dimension(n,nk), intent(out) :: pblq1          !Normalized saturation deficit 
+   real, dimension(n,nk), intent(out) :: pblq1          !Normalized saturation deficit
 
-   !Author
-   !          J. Mailhot (Nov 2000)
-   
-   !Revision
+   !@Author  J. Mailhot (Nov 2000)
+   !@Revision
    ! 001      A.-M. Leduc (Oct 2001) Automatic arrays
    ! 002      B. Bilodeau and J. Mailhot (Dec 2001) Add a test to
    !                      check the presence of advected explicit cloud water.
@@ -78,15 +75,12 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    !                                 is then passed on to CLSGS4
    ! 010      A. Zadra, R. McT-C (Sep 2016) - implement non-local scaling
    !                      deveoped by J. Mailhot/A. Lock (Aug 2012)
-   
-   !Object
+   !@Object
    !          Transform conservative variables and their tendencies
    !          back to non-conservative variables and tendencies.
    !          Calculate the boundary layer cloud properties (cloud fraction, cloud
    !          water content, flux enhancement factor).
-   
-#include "tdpack_const.hf"
-
+ 
    ! Local parameter definitions
    integer, parameter :: IMPLICIT_CLOUD=0
    logical, parameter :: COMPUTE_FROM_STATE=.false.
@@ -109,7 +103,7 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
         IMPLICIT_CLOUD,COMPUTE_FROM_STATE,n,nk)
 
    ! Retrive updated cloud water content (qcp) from conserved variables
-   call clsgs6(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,wz,hpbl,hflux,s,ps,gztherm,&
+   call clsgs7(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,hpbl,hflux,s,ps,gztherm,&
         mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
 
    ! Convert back to state variables and tendencies
@@ -117,10 +111,10 @@ subroutine baktotq6 (dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    dqc = (max(0.,qcp) - max(0.,qc)) * tauinv
    dqc = max(dqc,-max(0.0,qc)*tauinv) !prevent negative values of qc
    dqc = min(dqc,dqw + max(0.0,qv)*tauinv) !prevent over-depletion of water vapour by PBL cloud
-   qcbl = max(0.,qc) + dqc*tau 
+   qcbl = max(0.,qc) + dqc*tau
    dt = exner*dthl + ((CHLC+fice*CHLF)*CPDINV)*dqc
    dqv = max((dqw-dqc),-max(0.0,qv)*tauinv)
 
    return
-end subroutine baktotq6
+end subroutine baktotq7
 

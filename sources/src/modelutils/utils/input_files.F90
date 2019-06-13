@@ -15,6 +15,8 @@
 
 !/@
 module input_files_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower, clib_isdir, clib_isfile, clib_realpath
    use mu_jdate_mod
    use fstmpi_mod
    use ezgrid_mod
@@ -27,7 +29,8 @@ module input_files_mod
    !@author Stephane Chamberland,2013-03
    !@description
    ! Public functions
-   public :: input_files_get_idx, input_files_get_type, input_files_read, input_files_vgrid,input_files_sfcref
+   public :: input_files_get_idx, input_files_get_type, input_files_read, &
+        input_files_vgrid,input_files_sfcref
    public :: input_files_set_name, input_files_set_basedir, input_files_open, input_files_close
    public :: input_files_set_name0, input_files_set_basedir0, input_files_open0, input_files_close0
    public :: input_files_set_name1, input_files_set_basedir1, input_files_open1, input_files_close1
@@ -38,9 +41,8 @@ module input_files_mod
    integer,parameter,public :: INPUT_FILES_GEOP = 3
    integer,parameter,public :: INPUT_FILES_NTYPES = 3
    !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    interface input_files_set_name
@@ -179,7 +181,8 @@ contains
          m_files(F_id,ifile)%type = type
          call msg(MSG_INFOPLUS,'(input_files) set_name: '//trim(F_key_S)//' => '//trim(F_filename_S))
       else
-         call msg(MSG_WARNING,'(input_files) set_name, not such dir/file: '//trim(m_basedir_S(F_id))//'/'//trim(F_filename_S))
+         call msg(MSG_WARNING,'(input_files) set_name, not such dir/file: '// &
+              trim(m_basedir_S(F_id))//'/'//trim(F_filename_S))
          return
       endif
 
@@ -343,10 +346,12 @@ contains
       endif
       if (m_files(F_id,fileidx)%id < 1) then
          m_files(F_id,fileidx)%id = FILE_AVAIL
-         call msg(MSG_ERROR,'(input_files) Unable to open: '//trim(m_basedir_S(F_id))//'/'//m_files(F_id,fileidx)%name_S)
+         call msg(MSG_ERROR,'(input_files) Unable to open: '//trim(m_basedir_S(F_id))// &
+              '/'//m_files(F_id,fileidx)%name_S)
       else
          F_istat = m_files(F_id,fileidx)%id
-!!$         call msg(MSG_INFOPLUS,'(input_files) opened file: '//trim(m_basedir_S(F_id))//'/'//m_files(F_id,fileidx)%name_S)
+!!$         call msg(MSG_INFOPLUS,'(input_files) opened file: '//trim(m_basedir_S(F_id))// &
+!!$         '/'//m_files(F_id,fileidx)%name_S)
       endif
       call msg(MSG_DEBUG,'(input_files) open [END]')
       !------------------------------------------------------------------
@@ -417,7 +422,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       !------------------------------------------------------------------
       jdatev = jdate_from_cmc(F_datev)
       if (present(F_sfcfld).and.present(F_sfcgridid)) then
@@ -445,7 +450,7 @@ contains
       !@objective
       !@arguments
       integer,intent(in) :: F_id,F_file_idx,F_ip2
-      integer(IDOUBLE),intent(in) :: F_jdatev
+      integer(INT64),intent(in) :: F_jdatev
       character(len=*),intent(in) :: F_varname_S
       character(len=*),intent(out) :: F_vgrid_S
       real,pointer,optional :: F_sfcfld(:,:,:)
@@ -544,7 +549,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       logical :: rfls_L
       !------------------------------------------------------------------
       jdatev = jdate_from_cmc(F_datev)
@@ -564,7 +569,7 @@ contains
       !@objective
       !@arguments
       integer,intent(in) :: F_id,F_file_idx
-      integer(IDOUBLE),intent(in) :: F_jdatev
+      integer(INT64),intent(in) :: F_jdatev
       type(vgrid_descriptor),intent(in) :: F_vgrid
       real,pointer :: F_sfcfld(:,:,:)
       integer,intent(out) :: F_sfcgridid
@@ -650,7 +655,8 @@ contains
 
 
    !/@*
-   function input_files_read_4(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,F_datev,F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S) result(F_istat)
+   function input_files_read_4(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,F_datev, &
+        F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
@@ -663,13 +669,15 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer(IDOUBLE) :: jdatev
+      integer(INT64) :: jdatev
       !------------------------------------------------------------------
       jdatev = jdate_from_cmc(F_datev)
       if (present(F_typvar_S)) then
-         F_istat = input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,jdatev,F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S)
+         F_istat = input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2, &
+              jdatev,F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S)
       else
-         F_istat = input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,jdatev,F_datevfuzz,F_fuzztype,F_ingridid,F_data)
+         F_istat = input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2, &
+              jdatev,F_datevfuzz,F_fuzztype,F_ingridid,F_data)
       endif
       if (RMN_IS_OK(F_istat)) F_datev = jdate_to_cmc(jdatev)
       !------------------------------------------------------------------
@@ -678,14 +686,15 @@ contains
 
 
    !/@*
-   function input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,F_jdatev,F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S) result(F_istat)
+   function input_files_read_8(F_id,F_file_idx,F_varname_S,F_ip1,F_ip2,F_jdatev, &
+        F_datevfuzz,F_fuzztype,F_ingridid,F_data,F_typvar_S) result(F_istat)
       implicit none
       !@objective
       !@arguments
       real,pointer :: F_data(:,:,:)
       integer,intent(in) :: F_id,F_file_idx,F_datevfuzz,F_fuzztype
       integer,intent(inout) :: F_ip1,F_ip2,F_ingridid
-      integer(IDOUBLE),intent(inout) :: F_jdatev
+      integer(INT64),intent(inout) :: F_jdatev
       character(len=*),intent(in) :: F_varname_S
       character(len=*),intent(in),optional :: F_typvar_S
       !@return
@@ -704,12 +713,15 @@ contains
       fileid = input_files_open1(F_id,F_file_idx)
       if (.not.RMN_IS_OK(fileid)) return
       datev = jdate_to_cmc(F_jdatev)
-      key = fstmpi_find(fileid,F_varname_S,datev,F_ip1,F_ip2,RMN_ANY_I,F_datevfuzz,F_fuzztype,F_typvar_S=typvar0_S)
+      key = fstmpi_find(fileid,F_varname_S,datev,F_ip1,F_ip2,RMN_ANY_I,F_datevfuzz, &
+           F_fuzztype,F_typvar_S=typvar0_S)
       if (.not.RMN_IS_OK(key)) then
          datev_S = '-1'
          if (F_jdatev /= MU_JDATE_ANY) datev_S = jdate_to_print(F_jdatev)
          dummy_S = ' '
-         write(dummy_S,'(a4,a,3I9,a,i10,i3,a)') trim(F_varname_S),' (datev='//trim(adjustl(datev_S))//') [ip123=',F_ip1, F_ip2, RMN_ANY_I,', tv='//typvar0_S(1:1)//'] [datefuzz=',F_datevfuzz,F_fuzztype,']'
+         write(dummy_S,'(a4,a,3I9,a,i10,i3,a)') trim(F_varname_S), &
+              ' (datev='//trim(adjustl(datev_S))//') [ip123=',F_ip1, F_ip2, RMN_ANY_I, &
+              ', tv='//typvar0_S(1:1)//'] [datefuzz=',F_datevfuzz,F_fuzztype,']'
          call msg(MSG_INFO,'(input_files) Could not find: '//trim(dummy_S))
          return
       endif
@@ -721,13 +733,18 @@ contains
       dummy_S = ' '
       if (RMN_IS_OK(istat)) then
          if (any(typvar_S(1:1)==(/'C','c'/))) then
-            write(dummy_S,'(a4,a,3I9,a)') trim(nomvar_S),' (datev=-1) [ip123=',F_ip1, F_ip2, ip3,', tv='//typvar0_S(1:1)//']'
+            write(dummy_S,'(a4,a,3I9,a)') trim(nomvar_S),' (datev=-1) [ip123=', &
+                 F_ip1, F_ip2, ip3,', tv='//typvar0_S(1:1)//']'
          else
             nhours = real((dble(deet)*dble(npas))/3600.)
-            write(dummy_S,'(a4,a,F8.1,a,3I9,a)') trim(nomvar_S),' (datev='//trim(adjustl(datev_S))//'; nhours=',nhours,') [ip123=',F_ip1, F_ip2, ip3,', tv='//typvar0_S(1:1)//']'
+            write(dummy_S,'(a4,a,F8.1,a,3I9,a)') trim(nomvar_S),' (datev='// &
+                 trim(adjustl(datev_S))//'; nhours=',nhours,') [ip123=', &
+                 F_ip1, F_ip2, ip3,', tv='//typvar0_S(1:1)//']'
          endif
       else
-         write(dummy_S,'(a4,a,3I9,a,i10,i3,a)') trim(F_varname_S),' (datev='//trim(adjustl(datev_S))//') [ip123=',F_ip1, F_ip2, RMN_ANY_I,', tv='//typvar0_S(1:1)//'] [datefuzz=',F_datevfuzz,F_fuzztype,']'
+         write(dummy_S,'(a4,a,3I9,a,i10,i3,a)') trim(F_varname_S),' (datev='// &
+              trim(adjustl(datev_S))//') [ip123=',F_ip1, F_ip2, RMN_ANY_I,', tv='// &
+              typvar0_S(1:1)//'] [datefuzz=',F_datevfuzz,F_fuzztype,']'
       endif
 
       istat = fstmpi_read(key,F_data)

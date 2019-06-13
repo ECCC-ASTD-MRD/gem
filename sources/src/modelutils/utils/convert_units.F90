@@ -15,6 +15,9 @@
 
 !/@*
 module convert_units_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use clib_itf_mod, only: clib_tolower
+   use tdpack_const, only: GRAV, KNAMS, TCDK
    implicit none
    !@author Stephane Chamberland, 2012-05
    !@Objective Var/Fields units converter
@@ -23,11 +26,9 @@ module convert_units_mod
    !@Description
    !  data = postopr((preopr(data) + add0) * mul + add1)
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
-#include "tdpack_const.hf"
 
    interface convert_units
       module procedure convert_units_r4_2d
@@ -148,7 +149,10 @@ contains
       m_conv(m_nconv)%mul = F_mul
       m_conv(m_nconv)%add0 = F_add0
       m_conv(m_nconv)%add1 = F_add1
-      write(msg_S,'(a,3(1pe13.6,a))') '(convert_units) Add: ['//units_in_S(1:8)//'] ==> ['//units_out_S(1:8)//'] data = '//trim(postopr_S)//'('//trim(preopr_S)//'(data) + ',F_add0,') * ',F_mul,' + ',F_add1,')'
+      write(msg_S,'(a,3(1pe13.6,a))') '(convert_units) Add: ['// &
+           units_in_S(1:8)//'] ==> ['//units_out_S(1:8)//'] data = '// &
+           trim(postopr_S)//'('//trim(preopr_S)//'(data) + ',F_add0, &
+           ') * ',F_mul,' + ',F_add1,')'
       call msg(MSG_INFOPLUS,msg_S)
       !---------------------------------------------------------------
       return
@@ -196,7 +200,7 @@ contains
             reverse_L = .true.
             idx = n
             exit
-         endif         
+         endif
       enddo
       if (idx>0) then
          F_istat = RMN_OK

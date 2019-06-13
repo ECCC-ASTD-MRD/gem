@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module metric
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -24,6 +25,6 @@ module metric
    real, dimension(:,:,:), pointer :: mc_Jx,  mc_Jy,  mc_iJz
    real, dimension(:,:,:), pointer :: mc_logJz
 
-   real*8, dimension(:,:)  , pointer :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8
+   real(kind=REAL64), dimension(:,:)  , pointer :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8
 
 end module metric

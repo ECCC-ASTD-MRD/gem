@@ -24,7 +24,7 @@ contains
    !/@*
    function sigmalev3(vcoef, se, s, st, n, nk) result(F_istat)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Arguments
       integer, intent(in)  :: n, nk          !# array dims
       real,    intent(in)  :: s(n,nk)        !# sigma momentum levels
@@ -63,7 +63,7 @@ contains
    !/@*
    subroutine mweights(atq2m, sigm, sigt, ni, nk, nkscope)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@arguments
       integer, intent(in)  :: ni,nk        !# Array dims
       integer, intent(in)  :: nkscope      !# nk work span
@@ -92,7 +92,7 @@ contains
    !/@*
    subroutine tweights(atq2t, sigm, sigt, ni, nk, nkscope)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@arguments
       integer, intent(in)  :: ni,nk        !# Array dims
       integer, intent(in)  :: nkscope      !# nk work span

@@ -18,6 +18,7 @@
       subroutine bubble_expoH_data ( F_t,Mminx,Mmaxx,Mminy,Mmaxy,nk )
       use glb_ld
       use bubble_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,7 @@
       real F_t    (Mminx:Mmaxx,Mminy:Mmaxy,nk)
 
       integer :: i,j,k,ii
-      real*8 :: theta, r,rad
+      real(kind=REAL64) :: theta, r,rad
 !
 !     ---------------------------------------------------------------
 !

@@ -25,26 +25,21 @@
       use glb_ld
       use sol
       use opr
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer nil,njl,Ni,Nj,Nk,i0,j0
-      real*8  eval_local(Ni),evec_local(Ni,Ni),ai_local(Ni,Nj,Nk), &
+      real(kind=REAL64)  eval_local(Ni),evec_local(Ni,Ni),ai_local(Ni,Nj,Nk), &
               bi_local(Ni,Nj,Nk),ci_local(Ni,Nj,Nk),wk(*)
 !author
 !     Abdessamad Qaddouri  - initial version - December 2006
 !
-!revision
-! v3_30 - Qaddouri A.       - initial version
-! v4_40 - Qaddouri A.       - call prepoic indicating "Dirichlet" for Yin-Yang
-!                             instead of "Neumann" (boundary conditions)
-!
-!
       integer i,j,k,iloc,jloc,ii,jj,pnn,info
-      real*8  a_8(Ni,Ni), b_8(Ni,Ni), d_8(3*Ni-1),  &
+      real(kind=REAL64)  a_8(Ni,Ni), b_8(Ni,Ni), d_8(3*Ni-1),  &
               r_8(Ni),di_8,zero,one,cst,faz_8
       parameter(zero=0.d0,one=1.d0)
-      real*8  fdg1(Ni,Ni),fdg2(Ni,Ni),fdg3(Ni,Ni), &
+      real(kind=REAL64)  fdg1(Ni,Ni),fdg2(Ni,Ni),fdg3(Ni,Ni), &
               a_81(Ni,Nj),b_81(Ni,Nj),c_81(Ni,Nj)
 !
 !     ---------------------------------------------------------------

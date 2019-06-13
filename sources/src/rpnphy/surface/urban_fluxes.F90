@@ -89,7 +89,7 @@ USE MODD_CSTS,ONLY : XCPD, XLVTT, XLSTT, XSTEFAN
 USE MODI_URBAN_LW_COEF
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*      0.1    declarations of arguments
 !

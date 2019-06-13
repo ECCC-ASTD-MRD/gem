@@ -12,4 +12,5 @@
     integer(C_INT) :: comm       ! MPI communicator for this "spread" operation
     integer(C_INT) :: myrank     ! rank ot this PE in comm
     integer(C_INT) :: rootpe     ! rank of root pe for "spread" operration
+    integer(C_INT) :: shiftcnt   ! shift count for PE / point number extraction
   end type spread_context

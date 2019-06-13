@@ -18,6 +18,7 @@
 
 !/@
 module cmcdate_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    implicit none
    private
    !@objective Manipulate CMC dates
@@ -27,9 +28,8 @@ module cmcdate_mod
    public :: cmcdate_toprint,cmcdate_fromprint,cmcdate_month, cmcdate_year,cmcdate_midmonth
    ! Public constants
    !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 
 contains
 
@@ -155,7 +155,7 @@ contains
       !*@/
       character(len=15) :: month_S,year_S,date1_S,date2_S
       integer :: month,year,date1,date2
-      real(RDOUBLE) :: nhours_8
+      real(REAL64) :: nhours_8
       !------------------------------------------------------------------
       F_dateh = RMN_ERR
       if (F_year <= 0 .or. F_year > 3000 .or. F_month < 1 .or. F_month > 12) return

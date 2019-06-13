@@ -23,6 +23,7 @@
       use glb_ld
       use lun
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer F_minx,F_maxx,F_miny,F_maxy,F_nk
@@ -43,14 +44,14 @@
 
       !---------------------------------------------------------------
       integer i,j,k
-      real*8 lat2_8,alph_8,beta_8,hhat_8,ratio1_8,ratio2_8,    &
+      real(kind=REAL64) lat2_8,alph_8,beta_8,hhat_8,ratio1_8,ratio2_8,    &
              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,sint_8,cost_8, &
              xxx_8,expos1_8,expos2_8,rad2deg_8,rlon_8,rlat_8,  &
              hmean_ref_8,hmean_8,latmean_8,                    &
              wil_galewski_geo_8,wil_galewski_mean_8
       external wil_galewski_geo_8,wil_galewski_mean_8
       real    picll(G_ni,G_nj),gzloc(F_minx:F_maxx,F_miny:F_maxy)
-      real*8 ONE_8, CLXXX_8
+      real(kind=REAL64) ONE_8, CLXXX_8
       parameter( ONE_8  = 1.0,CLXXX_8 = 180.0 )
 
       !---------------------------------------------------------------

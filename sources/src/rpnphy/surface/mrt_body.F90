@@ -62,7 +62,7 @@ FUNCTION MRT_BODY(PEMISS_BODY, PQ1, PQ2, PQ3, PQ4, PQ5, PQ6,PQ7, PQ8   &
 USE MODD_CSTS, ONLY : XSTEFAN
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !*      0.1    declarations of arguments
 REAL, DIMENSION(:), INTENT(IN) :: PQ1

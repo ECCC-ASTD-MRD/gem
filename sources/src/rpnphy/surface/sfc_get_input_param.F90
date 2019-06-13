@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,11 +12,13 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 function sfc_get_input_param()  result(istat)
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use wb_itf_mod, only: WB_OK, WB_MSG_INFO, wb_verbosity, wb_get
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !@Object initialization of the surface input parameters
    !@returns
@@ -25,7 +27,7 @@ function sfc_get_input_param()  result(istat)
    !@Revisions
    !*
 #include <msg.h>
-#include <WhiteBoard.hf>
+
    include "sfcinput.cdk"
 
    integer :: nv,iverb

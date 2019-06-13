@@ -17,8 +17,8 @@
 !
       FUNCTION INDSERI ( NOM , LISTE , N )
       implicit none
-#include <arch_specific.hf>
-      CHARACTER *(*) NOM, LISTE(*)
+!!!#include <arch_specific.hf>
+      character(len=*) NOM, LISTE(*)
       INTEGER INDSERI, N
       INTEGER I
 !

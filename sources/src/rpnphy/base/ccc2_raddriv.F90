@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN ------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,49 +12,49 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**S/P RADDRIV - MAIN SUBROUTINE FOR RADIATIVE TRANSFER
-!
-      subroutine ccc2_raddriv1 (fsg, fsd, fsf, fsv, fsi, &
-                          fatb,fadb,fafb,fctb,fcdb,fcfb, &
-                          albpla, fdl, ful, hrs, hrl, &
-                          cst, csb, clt, clb, par, &
-                          flxds,flxus,flxdl,flxul, &
-                          fslo, fsamoon, ps, shtj, sig, &
-                          tfull, tt, gt, o3, o3top, &
-                          qq, co2, ch4, an2o, f11, &
-                          f12, f113, f114,o2,rmu, r0r, salb, em0, taucs, &
-                          omcs, gcs, taucl, omcl, gcl, &
-                          cldfrac, tauae, exta, exoma, exomga, &
-                          fa, absa, lcsw, lclw, &
-                          il1, il2, ilg, lay, lev)
-!
-      use phy_options, only: RAD_NUVBRANDS,rad_atmpath
-      implicit none
-#include <arch_specific.hf>
-#include "nbsnbl.cdk"
-#include "tdpack_const.hf"
-!
-      integer ilg,lay,lev,il1,il2
-      real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
-           albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
-           cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg), em0(ilg)
+!-------------------------------------- LICENCE END --------------------------
 
-      real, dimension(ilg,RAD_NUVBRANDS)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
-!
-      real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
-           tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
-           o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
-           co2(ilg,lay),ch4(ilg,lay), an2o(ilg,lay), f11(ilg,lay),f12(ilg,lay), &
-           f113(ilg,lay), f114(ilg,lay),o2(ilg,lay)
-!
-      real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
-           taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
-           cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
-!
-      logical lcsw, lclw
-      real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
-!
+!**S/P RADDRIV - MAIN SUBROUTINE FOR RADIATIVE TRANSFER
+
+subroutine ccc2_raddriv1 (fsg, fsd, fsf, fsv, fsi, &
+     fatb,fadb,fafb,fctb,fcdb,fcfb, &
+     albpla, fdl, ful, hrs, hrl, &
+     cst, csb, clt, clb, par, &
+     flxds,flxus,flxdl,flxul, &
+     fslo, fsamoon, ps, shtj, sig, &
+     tfull, tt, gt, o3, o3top, &
+     qq, co2, ch4, an2o, f11, &
+     f12, f113, f114,o2,rmu, r0r, salb, em0, taucs, &
+     omcs, gcs, taucl, omcl, gcl, &
+     cldfrac, tauae, exta, exoma, exomga, &
+     fa, absa, lcsw, lclw, &
+     il1, il2, ilg, lay, lev)
+   use tdpack_const
+   use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   implicit none
+!!!#include <arch_specific.hf>
+#include "nbsnbl.cdk"
+
+   integer ilg,lay,lev,il1,il2
+   real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
+        albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
+        cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg), em0(ilg)
+
+   real, dimension(ilg,RAD_NUVBRANDS)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
+
+   real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
+        tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
+        o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
+        co2(ilg,lay),ch4(ilg,lay), an2o(ilg,lay), f11(ilg,lay),f12(ilg,lay), &
+        f113(ilg,lay), f114(ilg,lay),o2(ilg,lay)
+
+   real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
+        taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
+        cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
+
+   logical lcsw, lclw
+   real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
+
 !Authors
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
 !        (Ref: J. Li, H. W. Barker, 2005:
@@ -1214,8 +1214,8 @@
 !
           do 800 ig = 1, kglgh(ib)
 !
-           call ccc2_gasoptlgh6(taug, gwgh, dp, ib, ig, o3, qg, co2, ch4, &
-                           an2o, inpt, mcont, pg, dip, dt, lev1, gh, &
+           call ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qg, co2, ch4, &
+                           an2o, inpt, mcont, dip, dt, lev1, gh, &
                            il1, il2, ilg, lay)
 
 !

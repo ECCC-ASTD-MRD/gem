@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module adz_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -111,7 +112,7 @@ module adz_options
    namelist /adz_cfgs/ adz_pil_sub_e
 
    !# Core/Subset areas
-   real*8 :: adz_gc_area_8,adz_gs_area_8
+   real(kind=REAL64) :: adz_gc_area_8,adz_gs_area_8
 
    !# Variable for NONE/Cubic/Quintic Interpolation
    character(len=12) :: adz_intp_S = 'CUBIC'
@@ -126,6 +127,7 @@ contains
       use adv_grid
       use HORgrid_options
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 

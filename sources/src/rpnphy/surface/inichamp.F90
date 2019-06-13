@@ -18,7 +18,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    integer, intent(in) :: kount, trnch , ni, nk
@@ -33,7 +33,6 @@ subroutine inichamp4(kount, trnch, ni, nk)
    ! nk       vertical dimension
 
 #include <msg.h>
-#include "tdpack_const.hf"
    include "sfcinput.cdk"
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -115,7 +114,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
          land(i)  = - abs( nint( zmg(i) ) )
       enddo
 
-      call equivmount(land, PTR1D(lhtg), PTR1D(dhdx), &
+      call equivmount1(land, PTR1D(dhdx), &
            PTR1D(dhdy), PTR1D(dhdxdy), &
            ni, 1, ni, PTR1D(slope), PTR1D(xcent), PTR1D(mtdir))
 

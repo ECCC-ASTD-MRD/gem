@@ -16,7 +16,7 @@
 !/@*
 subroutine open_status_file3(fn)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    character(len=*),intent(in) :: fn
    !*@/
    integer,external :: fnom
@@ -36,7 +36,7 @@ end subroutine open_status_file3
 !/@*
 subroutine write_status_file3(mesg)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    character(len=*),intent(in) :: mesg
    !*@/
    integer :: iun
@@ -52,7 +52,7 @@ end subroutine write_status_file3
 !/@*
 subroutine close_status_file3()
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !*@/
    integer :: iun
    common /stfile/ iun

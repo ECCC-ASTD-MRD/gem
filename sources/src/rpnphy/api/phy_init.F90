@@ -16,7 +16,8 @@
 
 module phy_init_mod
    use iso_c_binding
-
+   use rpn_comm_itf_mod
+   use wb_itf_mod
    use mu_jdate_mod, only: jdate_from_cmc
    use ptopo_utils, only: ptopo_grid_ipe
    use timestr_mod, only: timestr2step, timestr2sec
@@ -37,11 +38,10 @@ module phy_init_mod
       module procedure phy_init_6grids
    end interface phy_init
 
-#include <arch_specific.hf>
-#include <WhiteBoard.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
+
    include "tables.cdk"
    include "surface.cdk"
    include "ens.cdk"
@@ -126,7 +126,7 @@ contains
       integer :: F_istat !Return status
       !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Spring 2014
       !*@/
-      integer, external :: msg_getUnit, phydebu2, sfc_init, itf_cpl_init
+      integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
 
       logical :: print_L
       integer :: unout, options, itype, isizeof, ntr
@@ -319,7 +319,7 @@ contains
       endif
 
       !# Surface init
-      ier = sfc_init(p_ni, p_nj, F_nk)
+      ier = sfc_init1()
       call collect_error(ier)
       if (.not.RMN_IS_OK(ier)) then
          call msg(MSG_ERROR,'(phy_init) Problem in sfc_debu')
@@ -385,7 +385,7 @@ contains
       !# Init other components
       ier = wb_get('model/outout/pe_master', master_pe)
       F_istat = series_init(phy_lcl_gid, drv_glb_gid, &
-           phydim_ni, phydim_nj, phydim_nk , p_runlgt, phy_lcl_ni, phy_lcl_nj, &
+           phydim_nk, phy_lcl_ni, phy_lcl_nj, &
            moyhr, delt, jdateo, satuco, master_pe)
       if (RMN_IS_OK(F_istat)) then
          if (eb_init(F_lv_temp_dependent=.true.,F_nearsfc_k=(phydim_nk-1)) /= EB_OK) F_istat = RMN_ERR

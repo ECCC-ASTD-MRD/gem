@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r glbsum8 - Do a mpi-bit reproducible global 2D sum on real*8 field
+!**s/r glbsum8 - Do a mpi-bit reproducible global 2D sum on real(kind=REAL64) field
 
       subroutine glbsum8 (F_sum_8,F_field_8,Minx,Maxx,Miny,Maxy,Nk,&
                              Gminx,Gmaxx,Gminy,Gmaxy)
@@ -22,13 +22,14 @@
       use glb_pil
       use HORgrid_options
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
       integer Minx,Maxx,Miny,Maxy,NK,Gminx,Gmaxx,Gminy,Gmaxy
-      real*8, dimension(Minx:Maxx,Miny:Maxy,Nk),intent(in) :: F_field_8
-      real*8, dimension(Nk)                    ,intent(out):: F_sum_8
-      real*8, dimension (:,:,:), allocatable :: wk1_8
-      real*8, dimension(Nk) :: p_sum_8
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk),intent(in) :: F_field_8
+      real(kind=REAL64), dimension(Nk)                    ,intent(out):: F_sum_8
+      real(kind=REAL64), dimension (:,:,:), allocatable :: wk1_8
+      real(kind=REAL64), dimension(Nk) :: p_sum_8
 
       integer err,i,j,k
 !

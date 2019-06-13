@@ -15,16 +15,15 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
+subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
      N, M, NK)
-!#TODO: TRNCH, KOUNT never used
    use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object The multi-level model calculates the temperature profile across a
    !          snow/ice slab and the surface fluxes of heat, moisture, and momentum
    !          over floating ice-covered surfaces (sea/lake).
@@ -35,14 +34,12 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    ! BUSSIZ    size of the surface bus
    ! PTSURF    surface pointers
    ! PTSURFSIZ dimension of ptsurf
-   ! KOUNT     number of timestep
-   ! DELT      timestep
-   ! ICEMELT   switch to control ice and snow melting
+   ! lcl_indx
    ! N         running length
    ! M         horizontal dimension
    ! NK        vertical dimension
 
-   integer BUSSIZ, KOUNT, TRNCH, N, M, NK
+   integer BUSSIZ, N, M, NK
    integer PTSURFSIZ
    integer PTSURF(PTSURFSIZ), lcl_indx(2,n)
    real,target :: bus(bussiz)
@@ -66,7 +63,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
 
    !          When the option ICEMELT = .TRUE. the model allows melting/growth of snow depth
    !          and ice thickness, and open water in summer with a crude oceanic mixed layer.
-   
+
    !          The routine works with an arbitrary number of levels, but needs at least 2
    !          (NL .GE. 2).
    !*@/
@@ -248,7 +245,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
       if (i /= SL_OK) then
          call physeterror('seaice', 'error returned by sl_prelim()')
          return
-      endif 
+      endif
 
       ! Set emissivity values
       select case (snow_emiss)
@@ -290,7 +287,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
          else
             ZSNODP_M(I) = ZSNODP(I)
          endif
-        
+
       end do
 
 !       2.     Initialization of temperature profiles
@@ -325,7 +322,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
       if (i /= SL_OK) then
          call physeterror('seaice', 'error returned by sl_sfclayer()')
          return
-      endif 
+      endif
 
 
 
@@ -401,7 +398,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
        endif
       end do
 
-!                               			ice slab
+!                                                      ice slab
       do K=2,NL
         do I=1,N
           if( HICE(I) .ge. HIMIN ) then
@@ -508,7 +505,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
 
         SCR1(I) = 4. * ZEMISR(I) * STEFAN * TS(I)**3 &
            +  RHOA(I) * CTU(I) * (DQSAT(I) * SCR9(I) + CPD)
-      
+
 
         SCR2(I) = 3. * ZEMISR(I) * STEFAN  * TS(I)**4 &
            + RHOA(I) * CTU(I) * DQSAT(I) * SCR9(I) * TS(I)
@@ -912,7 +909,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
         QSICE(I) = FOQST( TS(I), PS(I) )
       end do
 
-      ! Compute diagnostic quantities at 1.5m 
+      ! Compute diagnostic quantities at 1.5m
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtt_diag=zt_rho,t_diag=my_ta,q_diag=my_qa,tdiaglim=SEAICE_TDIAGLIM)
       if (i /= SL_OK) then
@@ -1048,12 +1045,12 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
          zusr(i) = zu10(i)
          endif
 
-             zqd(i) = max( ZQDIAG(i) , 1.e-6) 
+             zqd(i) = max( ZQDIAG(i) , 1.e-6)
 
             zref_sw_surf(i) = albsfc(i) * fsol(i)
             zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
 
-         zzenith(i) = acos(zcoszeni(i))      
+         zzenith(i) = acos(zcoszeni(i))
          if (fsol(i) > 0.0) then
             zzenith(i) = min(zzenith(i), pi/2.)
          else
@@ -1079,4 +1076,4 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
                      SURFLEN )
 
    return
-end subroutine seaice2
+end subroutine seaice3

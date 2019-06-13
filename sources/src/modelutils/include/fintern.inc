@@ -7,7 +7,7 @@
 !          * revision 01 - mai 94 - n. brunet
 !                          nouvelle version pour faibles pressions
 !          * revision 02 - aout 2000 - j-p toviessi
-!                          calcul en real*8
+!                          calcul en real(REAL64) ::
 !          * revision 03 - sept 2000 - n. brunet
 !                          ajout de nouvelles fonctions
 !          * revision 04 - janv 2000 - j. mailhot

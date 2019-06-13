@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,66 +12,64 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!**s/r mfoqst3  -  calcule humidite specifique saturante.
-!
-      Subroutine mfoqst3(qs,tt,ps,ni,nk,n)
-      use tdpack_const
-      implicit none
-#include <arch_specific.hf>
-!
-      Integer ni, nk, n
-      Real qs(ni,nk), tt(ni,nk)
-      Real ps(ni,*)
-!
-!Author
-!          N. Brunet  (Jan91)
-!
-!Revision
-! 001      B. Bilodeau  (August 1991)- Adaptation to UNIX
-! 002      B. Bilodeau (January 2001) - Automatic arrays
-! 003      L. Spacek   (May 2003)     - IBM conversion
-!                - calls to vexp routine (from massvp4 library)
-!
-!Object
-!          to calculate saturation specific humidity (water and ice
-!          phase considered according to temperature)
-!
-!Arguments
-!
-!          - Output -
-! qs       saturation specific humidity in kg/kg
-!
-!          - Input -
-! tt       temperature in K
-! ps       pression in Pa
-! ni       horizontal dimension
-! nk       vertical dimension
-! n        number of points to process
-!*
-!--------------------------------------------------------------------
-      Integer k, i
-      Real*8 dtemp
-      Real*8, Dimension(ni,nk)      :: xt
+!-------------------------------------- LICENCE END ---------------------------
 
-#define __FORTRAN__
-#include "tdpack_func.h"
+!/@
+subroutine mfoqst3(qs,tt,ps,ni,nk,n)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   use tdpack
+   implicit none
+   !@object calcule humidite specifique saturante.
+!!!#include <arch_specific.hf>
+   include "rmnlib_basics.inc"
+   !@arguments
+   !          - Output -
+   ! qs       saturation specific humidity in kg/kg
+   !
+   !          - Input -
+   ! tt       temperature in K
+   ! ps       pression in Pa
+   ! ni       horizontal dimension
+   ! nk       vertical dimension
+   ! n        number of points to process
+   integer, intent(in) :: ni, nk, n
+   real, intent(out) :: qs(ni,nk)
+   real, intent(in) :: tt(ni,nk)
+   real, intent(in) :: ps(ni,*)
+   !@author N. Brunet  (Jan91)
+   !@revision
+   ! 001      B. Bilodeau  (August 1991)- Adaptation to UNIX
+   ! 002      B. Bilodeau (January 2001) - Automatic arrays
+   ! 003      L. Spacek   (May 2003)     - IBM conversion
+   !                - calls to vexp routine (from massvp4 library)
+   !
+   !@description
+   !          to calculate saturation specific humidity (water and ice
+   !          phase considered according to temperature)
+   !
+   !@/
+   integer k, i
+   real(REAL64) :: dtemp
+   real(REAL64), dimension(ni,nk) :: xt
 
-!***********************************************************************
-      Do k=1,nk
-         Do i=1,ni
-            xt(i,k) = FOEWF(tt(i,k))
-         Enddo
-      Enddo
-!
-      Call vexp(xt,xt,ni*nk)
-!
-      Do k=1,nk
-      Do i=1,n
+!!$#define __FORTRAN__
+!!$#include "tdpack_func.h"
+
+   !--------------------------------------------------------------------
+   do k=1,nk
+      do i=1,ni
+         xt(i,k) = FOEWF(tt(i,k))
+      enddo
+   enddo
+
+   call vexp(xt,xt,ni*nk)
+
+   do k=1,nk
+      do i=1,n
          dtemp = FOMULTS(xt(i,k),tt(i,k))
          qs(i,k) = FOQSTX(ps(i,k),dtemp)
-      Enddo
-      Enddo
-!
-!
-      End Subroutine mfoqst3
+      enddo
+   enddo
+   !--------------------------------------------------------------------
+   return
+end subroutine mfoqst3

@@ -17,6 +17,7 @@
 
       subroutine memusage ( unf )
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,7 @@
       integer, external :: get_max_rss
       integer i, err, imin,imax
       integer memory(Ptopo_numproc),memoryt(Ptopo_numproc)
-      real*8 sum,sumd2,moy,var,fijk,mind,maxd,npt_8
+      real(kind=REAL64) sum,sumd2,moy,var,fijk,mind,maxd,npt_8
 !
 !----------------------------------------------------------------
 !

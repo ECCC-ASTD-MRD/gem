@@ -18,7 +18,7 @@
       Function sttlcl(td, tt)
       use tdpack, only: cpd, eps1, folv
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real sttlcl
       Real td, tt

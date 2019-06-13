@@ -16,7 +16,7 @@
 !/@*
 subroutine fill_halo (f,minx,maxx,miny,maxy,ni,nj,nk)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object 
    !@Arguments
    integer, intent(in) :: minx,maxx,miny,maxy,ni,nj,nk

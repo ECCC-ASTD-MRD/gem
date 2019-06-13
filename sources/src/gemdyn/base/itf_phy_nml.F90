@@ -26,7 +26,7 @@
 #include <arch_specific.hf>
 
       integer, parameter :: COMPATIBILITY_LVL = 17
-		integer err,phy_code
+      integer err,phy_code
 !
 !     ---------------------------------------------------------------
 !

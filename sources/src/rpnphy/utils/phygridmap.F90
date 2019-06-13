@@ -18,7 +18,7 @@ module phygridmap
    implicit none
    private
    public :: mapping2drivergrid, mapphy2mod, mapmod2phy
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer, save, public :: phy_lcl_gid = 0
    integer, save, public :: phy_lcl_ni = 0

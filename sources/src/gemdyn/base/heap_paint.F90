@@ -23,7 +23,7 @@
 #include <arch_specific.hf>
 
       integer :: i,j,k
-      real*4, dimension (:,:,:), pointer :: wrk01
+      real, dimension (:,:,:), pointer :: wrk01
 !
 !     ---------------------------------------------------------------
 !

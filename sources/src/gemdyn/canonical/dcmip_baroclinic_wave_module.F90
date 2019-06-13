@@ -43,13 +43,14 @@ MODULE baroclinic_wave
 !
 !=======================================================================
 
-  IMPLICIT NONE
+  use, intrinsic :: iso_fortran_env
+  implicit none
 
 !=======================================================================
 !    Physical constants
 !=======================================================================
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        a     = 6371220.0d0,           & ! Reference Earth's Radius (m)
        Rd    = 287.0d0,               & ! Ideal gas const dry air (J kg^-1 K^1)
     !!!g     = 9.80616d0,             & ! Gravity (m s^2)
@@ -67,14 +68,14 @@ MODULE baroclinic_wave
 !=======================================================================
 !    Test case parameters
 !=======================================================================
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        T0E        = 310.d0     ,      & ! temperature at equatorial surface (K)
        T0P        = 240.d0     ,      & ! temperature at polar surface (K)
        B          = 2.d0       ,      & ! jet half-width parameter
        K          = 3.d0       ,      & ! jet width parameter
        lapse      = 0.005d0             ! lapse rate parameter
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        pertu0     = 0.5d0      ,      & ! SF Perturbation wind velocity (m/s)
        pertr      = 1.d0/6.d0  ,      & ! SF Perturbation radius (Earth radii)
        pertup     = 1.0d0      ,      & ! Exp. perturbation wind velocity (m/s)
@@ -84,7 +85,7 @@ MODULE baroclinic_wave
        pertz      = 15000.d0   ,      & ! Perturbation height cap
        dxepsilon  = 1.d-5               ! Small value for numerical derivatives
 
-  REAL(8), PARAMETER ::               &
+  real(kind=REAL64), PARAMETER ::               &
        moistqlat  = 2.d0*pi/9.d0,     & ! Humidity latitudinal width
        moistqp    = 34000.d0,         & ! Humidity vertical pressure width
        moisttr    = 0.1d0,            & ! Vertical cut-off pressure for humidity
@@ -113,7 +114,7 @@ CONTAINS
                 moist,      & ! Moist (1) or Dry (0) test case
                 pertt         ! Perturbation type
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 X,          & ! Earth scaling parameter
@@ -122,14 +123,14 @@ CONTAINS
                 Ver_b,      & ! Ver_b_8 GEM
                 pref          ! Cstv_pref_8 GEM
 
-    REAL(8), INTENT(INOUT) :: &
+    real(kind=REAL64), INTENT(INOUT) :: &
                 p,            & ! Pressure (Pa)
                 z               ! Altitude (m)
 
     INTEGER, INTENT(IN) :: zcoords     ! 1 if z coordinates are specified
                                        ! 0 if p coordinates are specified
 
-    REAL(8), INTENT(OUT) :: &
+    real(kind=REAL64), INTENT(OUT) :: &
                 u,          & ! Zonal wind (m s^-1)
                 v,          & ! Meridional wind (m s^-1)
                 t,          & ! Temperature (K)
@@ -143,11 +144,11 @@ CONTAINS
     !------------------------------------------------
     !   Local variables
     !------------------------------------------------
-    REAL(8) :: aref, omegaref
-    REAL(8) :: T0, constH, constC, scaledZ, inttau2, rratio
-    REAL(8) :: inttermU, bigU, rcoslat, omegarcoslat
-    REAL(8) :: eta
-    REAL(8) :: st1
+    real(kind=REAL64) :: aref, omegaref
+    real(kind=REAL64) :: T0, constH, constC, scaledZ, inttau2, rratio
+    real(kind=REAL64) :: inttermU, bigU, rcoslat, omegarcoslat
+    real(kind=REAL64) :: eta
+    real(kind=REAL64) :: st1
 
     !------------------------------------------------
     !   Pressure and temperature
@@ -281,20 +282,20 @@ CONTAINS
 
     INTEGER, INTENT(IN)  :: deep ! Deep (1) or Shallow (0) test case
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 X,          & ! Earth scaling ratio
              !!!lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (m)
 
-    REAL(8), INTENT(OUT) :: &
+    real(kind=REAL64), INTENT(OUT) :: &
                 p,          & ! Pressure (Pa)
                 t             ! Temperature (K)
 
-    REAL(8) :: aref, omegaref
-    REAL(8) :: T0, constA, constB, constC, constH, scaledZ
-    REAL(8) :: tau1, tau2, inttau1, inttau2
-    REAL(8) :: rratio, inttermT
+    real(kind=REAL64) :: aref, omegaref
+    real(kind=REAL64) :: T0, constA, constB, constC, constH, scaledZ
+    real(kind=REAL64) :: tau1, tau2, inttau1, inttau2
+    real(kind=REAL64) :: rratio, inttermT
 
     !--------------------------------------------
     ! Constants
@@ -355,20 +356,20 @@ CONTAINS
 
     INTEGER, INTENT(IN)  :: deep ! Deep (1) or Shallow (0) test case
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 X,          & ! Earth scaling ratio
              !!!lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 p             ! Pressure (Pa)
 
-    REAL(8), INTENT(OUT) :: &
+    real(kind=REAL64), INTENT(OUT) :: &
                 z,          & ! Altitude (m)
                 t             ! Temperature (K)
 
     INTEGER :: ix,max_ix
 
-    REAL(8) :: z0, z1, z2
-    REAL(8) :: p0, p1, p2
+    real(kind=REAL64) :: z0, z1, z2
+    real(kind=REAL64) :: p0, p1, p2
 
     z0 = 0.d0
     z1 = 10000.d0
@@ -408,14 +409,14 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Exponential perturbation function
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION evaluate_exponential(lon, lat, z)
+  real(kind=REAL64) FUNCTION evaluate_exponential(lon, lat, z)
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (meters)
 
-    REAL(8) :: greatcircler, perttaper
+    real(kind=REAL64) :: greatcircler, perttaper
 
     ! Great circle distance
     greatcircler = 1.d0 / pertexpr &
@@ -440,14 +441,14 @@ CONTAINS
 !-----------------------------------------------------------------------
 !    Stream function perturbation function
 !-----------------------------------------------------------------------
-  REAL(8) FUNCTION evaluate_streamfunction(lon, lat, z)
+  real(kind=REAL64) FUNCTION evaluate_streamfunction(lon, lat, z)
 
-    REAL(8), INTENT(IN)  :: &
+    real(kind=REAL64), INTENT(IN)  :: &
                 lon,        & ! Longitude (radians)
                 lat,        & ! Latitude (radians)
                 z             ! Altitude (meters)
 
-    REAL(8) :: greatcircler, perttaper, cospert
+    real(kind=REAL64) :: greatcircler, perttaper, cospert
 
     ! Great circle distance
     greatcircler = 1.d0 / pertr &

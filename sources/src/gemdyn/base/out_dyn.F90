@@ -42,7 +42,7 @@
 !----------------------------------------------------------------------
 !
       call gemtime_start ( 80, 'OUT_DYN', 1)
-      if (.not.Lun_debug_L) istat= fstopc('MSGLVL','SYSTEM',.false.)
+      if (.not.Lun_debug_L) istat= fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
 
       Out_type_S   = 'REGDYN'
 !
@@ -138,7 +138,7 @@
 
       end if
 
-      istat = fstopc('MSGLVL','WARNIN',.false.)
+      istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
       call gemtime_stop ( 80 )
 
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)

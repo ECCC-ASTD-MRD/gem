@@ -15,16 +15,15 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
-     n, m, nk )
+subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
+     n, m, nk)
    use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
    use sfc_options
    use sfcbus_mod
    implicit none
-!#TODO: never used: trnch
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
    !@Object Calculate:   - surface roughness length (Z0) over open water
    !                       (not covered by ice) using Charnock's relation with a
@@ -37,14 +36,13 @@ subroutine water1(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, &
    ! BUSSIZ      dimension of bus
    ! PTSURF      surface pointers
    ! PTSURFSIZ   dimension of ptsurf
-   ! TRNCH       row number
    ! KOUNT       timestep number
    ! N           horizontal dimension (row length)
    ! M           horizontal dimensions of fields
    !             (not used for the moment)
    ! NK          vertical dimension
 
-   integer :: bussiz, kount, trnch, N, M, NK
+   integer :: bussiz, kount, N, M, NK
    real, target :: bus(bussiz)
    integer :: ptsurfsiz
    integer :: ptsurf(ptsurfsiz), lcl_indx(2,n)
@@ -602,4 +600,4 @@ contains
            (nu+1)*karman*frv_w/(base_depth*stab_func) * inc) - zdsst
    end function warm_func
 
-end subroutine water1
+end subroutine water2

@@ -20,7 +20,7 @@
                           dt, inptr, inpt, lev1, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev1, il1, il2
       real taug(ilg,lay), coef1u(5,11), coef1d(5,5,7), &

@@ -23,13 +23,14 @@ contains
 
    !/@*
    subroutine apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+      use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use energy_budget, only: eb_en, eb_pw, eb_residual_en, eb_residual_pw, eb_conserve_en, EB_OK
       use phy_options
       use phybus
       use tendency, only: apply_tendencies
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies
       !@Arguments
       !          - Input -
@@ -55,7 +56,7 @@ contains
       real, dimension(:), pointer :: zconerad,zconqrad, zps, zfusi, zfdsi, zfdss, ziv, &
            zev, zei, ztdmask, znetrad
       real, dimension(:,:), pointer :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad
-      real(RDOUBLE), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
       if (timings_L) call timing_start_omp(422, 'apply_rad_td', 46)
@@ -93,7 +94,7 @@ contains
 
       ! Pre-scheme state for energy budget
       if (associated(zconerad)) then
-         istat  = eb_en(l_en0, ztplus, zqplus, zqcplus, zgztherm, zsigt, zps, nkm1)
+         istat  = eb_en(l_en0, ztplus, zqplus, zqcplus, zsigt, zps, nkm1)
          istat2 = eb_pw(l_pw0, zqplus, zqcplus, zsigt, zps, nkm1)
          if (istat /= EB_OK .or. istat2 /= EB_OK) then
             call physeterror('apply_rad_td', 'Problem computing preliminary energy budget for '//trim(radia))
@@ -113,7 +114,7 @@ contains
 
          ! Apply temperature tendency correction for liquid water static energy conservation
          qrad = 0.
-         istat = eb_conserve_en(ztrad, ztrad, qrad, ztplus, zqplus, zqcplus, zgztherm, zsigt, zps, nkm1, F_rad=znetrad)
+         istat = eb_conserve_en(ztrad, ztrad, qrad, ztplus, zqplus, zqcplus, zsigt, zps, nkm1, F_rad=znetrad)
          if (istat /= EB_OK) then
             call physeterror('apply_rad_td', 'Problem correcting for liquid water static energy conservation')
             return
@@ -127,7 +128,7 @@ contains
       ! Post-scheme energy budget analysis
       if (associated(zconerad)) then
          ! Compute post-scheme state
-         istat  = eb_en(l_en, ztplus, zqplus, zqcplus, zgztherm, zsigt, zps, nkm1)
+         istat  = eb_en(l_en, ztplus, zqplus, zqcplus, zsigt, zps, nkm1)
          istat2 = eb_pw(l_pw, zqplus, zqcplus, zsigt, zps, nkm1)
          if (istat == EB_OK .and. istat2 == EB_OK) then
             ! Compute residuals

@@ -15,6 +15,7 @@
 
 !/@*
 module statfld_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
    !@author Stephane Chamberland, 2012-05
    !@Objective calcule la moyenne, la variance, le minimum et 
@@ -22,7 +23,7 @@ module statfld_mod
    private
    public :: statfld,statfld_print
    !*@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
@@ -38,11 +39,11 @@ module statfld_mod
    end interface
 
    character(len=256),parameter :: STATFORMAT_R4 = &
-        "(i4,x,a16,' Mean:',1pe14.6,' Var:',1pe14.6, "//&
+        "(i4,1x,a16,' Mean:',1pe14.6,' Var:',1pe14.6, "//&
         "' Min:[(',i4,',',i4,',',i3,')',1pe14.6,']',"//&
         "' Max:[(',i4,',',i4,',',i3,')',1pe14.6,'] ',a)"
    character(len=256),parameter :: STATFORMAT_R8 = &
-        "(i4,x,a16,' Mean:',1pe22.12,' Var:',1pe22.12, "//&
+        "(i4,1x,a16,' Mean:',1pe22.12,' Var:',1pe22.12, "//&
         "' Min:[(',i4,',',i4,',',i3,')',1pe22.12,']',"//&
         "' Max:[(',i4,',',i4,',',i3,')',1pe22.12,'] ',a)"
 
@@ -55,7 +56,7 @@ contains
    subroutine statfld_print(F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax,F_nv_S,F_no,F_from_S,F_rx) 
       implicit none
       !@arguments
-      real(RDOUBLE),intent(in) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(in) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(in) :: F_ijkmin(3),F_ijkmax(3),F_no,F_rx
       character(len=*),intent(in) :: F_nv_S, F_from_S
       !*@/
@@ -98,7 +99,7 @@ contains
       integer,intent(in),optional :: F_ijk0(3)
       !*@/
       integer :: ijk0(3),ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -114,12 +115,12 @@ contains
       implicit none
       !@arguments
       real,intent(in) :: F_fld(:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       integer,intent(in),optional :: F_ijk0(3) !for partial F_fld, start index of the field crop
       !*@/
       integer  :: i,j,ijk0(3),lijk(2),uijk(2)
-      real(RDOUBLE) :: mysum,rnijk
+      real(REAL64) :: mysum,rnijk
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -173,7 +174,7 @@ contains
       integer,intent(in),optional :: F_ijk0(3)
       !*@/
       integer :: ijk0(3),ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -189,12 +190,12 @@ contains
       implicit none
       !@arguments
       real,intent(in) :: F_fld(:,:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       integer,intent(in),optional :: F_ijk0(3) !for partial F_fld, start index of the field crop
       !*@/
       integer  :: i,j,k,ijk0(3),lijk(3),uijk(3)
-      real(RDOUBLE) :: mysum,rnijk
+      real(REAL64) :: mysum,rnijk
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -246,13 +247,13 @@ contains
       ! F_from_S      I  Usually the name of the calling subroutine
       ! F_rx          I  Stat precision 4/8
       ! F_ijk0        I  For partial F_fld, start index of the field crop
-      real(RDOUBLE),intent(in) :: F_fld(:,:)
+      real(REAL64),intent(in) :: F_fld(:,:)
       character(len=*),intent(in) :: F_nv_S, F_from_S
       integer,intent(in) :: F_no,F_rx
       integer,intent(in),optional :: F_ijk0(3)
       !*@/
       integer :: ijk0(3),ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -267,13 +268,13 @@ contains
    subroutine statfld_r8_2d(F_fld,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax,F_ijk0) 
       implicit none
       !@arguments
-      real(RDOUBLE),intent(in) :: F_fld(:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(in) :: F_fld(:,:)
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       integer,intent(in),optional :: F_ijk0(3) !for partial F_fld, start index of the field crop
       !*@/
       integer  :: i,j,ijk0(3),lijk(2),uijk(2)
-      real(RDOUBLE) :: mysum,rnijk
+      real(REAL64) :: mysum,rnijk
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -314,13 +315,13 @@ contains
       ! F_from_S      I  Usually the name of the calling subroutine
       ! F_rx          I  Stat precision 4/8
       ! F_ijk0        I  For partial F_fld, start index of the field crop
-      real(RDOUBLE),intent(in) :: F_fld(:,:,:)
+      real(REAL64),intent(in) :: F_fld(:,:,:)
       character(len=*),intent(in) :: F_nv_S, F_from_S
       integer,intent(in) :: F_no,F_rx
       integer,intent(in),optional :: F_ijk0(3)
       !*@/
       integer :: ijk0(3),ijkmin(3),ijkmax(3)
-      real(RDOUBLE) :: mean,var,rmin,rmax
+      real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0
@@ -335,13 +336,13 @@ contains
    subroutine statfld_r8_3d(F_fld,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax,F_ijk0) 
       implicit none
       !@arguments
-      real(RDOUBLE),intent(in) :: F_fld(:,:,:)
-      real(RDOUBLE),intent(out) :: F_mean,F_var,F_rmin,F_rmax
+      real(REAL64),intent(in) :: F_fld(:,:,:)
+      real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
       integer,intent(in),optional :: F_ijk0(3) !for partial F_fld, start index of the field crop
       !*@/
       integer  :: i,j,k,ijk0(3),lijk(3),uijk(3)
-      real(RDOUBLE) :: mysum,rnijk
+      real(REAL64) :: mysum,rnijk
       !---------------------------------------------------------------
       ijk0 = (/1,1,1/)
       if (present(F_ijk0)) ijk0 = F_ijk0

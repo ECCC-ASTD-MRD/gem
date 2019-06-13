@@ -3,7 +3,7 @@ IMPLICIT NONE
  
 SAVE
 ! maybe specifiy values later in su0phy.F90
-CHARACTER*8:: CCUMFSCHEM 
+character(len=8):: CCUMFSCHEM 
 
 integer :: NBDIA            ! starting level (from bottom=1) for convection computat.
 integer :: NENSM            ! number of additional ensemble members for deep

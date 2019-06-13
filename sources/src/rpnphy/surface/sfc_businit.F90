@@ -20,7 +20,7 @@ subroutine sfc_businit(moyhr,ni,nk)
    use sfcbus_mod
    use svs_configs
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
    !        (busent, busdyn, busper and busvol) for the TEB (Urban scheme).
    !@Arguments

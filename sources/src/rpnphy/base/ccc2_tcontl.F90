@@ -19,7 +19,7 @@
                          lc, inpt, mcont, gh, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lc, il1, il2, mcont(ilg)
       real taug(ilg,lay), coef1(5,lc), coef2(5,lc)

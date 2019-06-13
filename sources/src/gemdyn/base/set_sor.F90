@@ -36,13 +36,14 @@
       use wb_itf_mod
       use timestep
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       include "rpn_comm.inc"
 
       integer,external :: srequet
-      real*8, external :: dcmip_mult_X
+      real(kind=REAL64), external :: dcmip_mult_X
 
       integer,parameter :: NBUS = 3
 

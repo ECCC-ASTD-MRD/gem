@@ -58,7 +58,7 @@ wordint c_ezuvint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloat *vv
 wordint c_ezuvint_orig(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloat *vvin)
 {
   wordint gdin,gdout;
-  wordint npts, ier;
+  wordint npts, ier, ierc,ierc1,ierc2;
   ftnfloat *uullout = NULL;
   ftnfloat *vvllout = NULL;
    
@@ -66,6 +66,9 @@ wordint c_ezuvint_orig(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloa
    
   gdin = iset_gdin;
   gdout= iset_gdout;
+  ierc = 0;
+  ierc1 = 0;
+  ierc2 = 0;
   
   c_gdkey2rowcol(gdin,  &gdrow_in,  &gdcol_in);
   c_gdkey2rowcol(gdout, &gdrow_out, &gdcol_out);
@@ -76,14 +79,18 @@ wordint c_ezuvint_orig(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloa
   groptions.vecteur = VECTEUR;
   
   groptions.symmetrie = SYM;
-  c_ezsint(uuout,uuin);
+  ierc1=c_ezsint(uuout,uuin);
   groptions.symmetrie = ANTISYM;
-  c_ezsint(vvout,vvin);
+  ierc2=c_ezsint(vvout,vvin);
   groptions.symmetrie = SYM;
+  if (ierc1 == 2 || ierc2 == 2) 
+      {
+      ierc = 2;
+      }
   
   if (groptions.polar_correction == OUI)
     {
-    ez_corrvec(uuout, vvout, uuin, vvin, gdin, gdout);
+    ier=ez_corrvec(uuout, vvout, uuin, vvin, gdin, gdout);
     }
   
   uullout = (ftnfloat *) malloc(npts*sizeof(ftnfloat));
@@ -98,6 +105,6 @@ wordint c_ezuvint_orig(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloa
   free(uullout);
   free(vvllout);
   
-  return 0;
+  return ierc;
 }
 

@@ -22,15 +22,14 @@ module diagnosurf
 contains
 
    !/@*
-   subroutine diagnosurf5(ni, nk, trnch, kount)
-!#TODO: nk, kount never used
+   subroutine diagnosurf5(ni, trnch)
       use series_mod, only: series_xst, series_isstep, series_isvar
       use sfc_options
       use sfcbus_mod
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-      integer, intent(in) :: ni, nk, trnch, kount
+      integer, intent(in) :: ni, trnch
 
       !@Author  B. Bilodeau (Sept 1999)
       !@Revisions
@@ -46,7 +45,6 @@ contains
       !          number of elements processed in the horizontal
       !          (could be a subset of M in future versions)
       !          (not used for the moment)
-      ! NK       vertical dimension
       ! TRNCH    row number
       !*@/
 #include <msg.h>

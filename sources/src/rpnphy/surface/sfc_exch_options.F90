@@ -19,13 +19,15 @@ module sfcexch_options
    public :: sfcexch_options3
 
 contains
+
    !/@*
    function sfcexch_options3() result(F_istat)
+      use wb_itf_mod
       use sfc_options
       use sfcbus_mod
       use timestr_mod, only: timestr2step
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       integer :: F_istat
       !@Object initialization of the surface parameters at the beginning
       !        of each execution of the model
@@ -35,7 +37,6 @@ contains
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
       include "isbapar.cdk"
       include "tebcst.cdk"
 

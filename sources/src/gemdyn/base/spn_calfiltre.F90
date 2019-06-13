@@ -23,6 +23,7 @@
       use tdpack
       use lun
       use glb_pil
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -31,15 +32,10 @@
 !author
 !     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
 !
-!revision
-! v4_80 - Qian, Dugas, Hussain            - initial version
-! v4_80 - Baek - clarification
-
-
       integer i,j
       integer ni_trunc, ni_truncx, nj_trunc
-      real*8 nix, njx, nkx, nk_cut
-      real*8 WXL, WXS, DX, DY
+      real(kind=REAL64) nix, njx, nkx, nk_cut
+      real(kind=REAL64) WXL, WXS, DX, DY
 !
 !----------------------------------------------------------------------
 !

@@ -17,6 +17,10 @@
 
 !/@
 module gmmx_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower
+   use wb_itf_mod
+   !use gmm_itf_mod
    use vardict_mod
    use str_mod
    use hgrid_wb
@@ -33,12 +37,10 @@ module gmmx_mod
    ! Public constants
    !
 !@/
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
-#include <gmm.hf>
 #include <msg.h>
+#include <mu_gmm.hf>
 
    interface gmmx_new
       module procedure gmmx_new0
@@ -101,7 +103,8 @@ contains
       kv_S(KEY,1:NIDX) = KNOWN_KEYS(1:NIDX)
       nkeys = str_split2keyval(kv_S,F_fullmeta_S,NIDX_MAX)
       if (nkeys < NIDX_MIN .or. any(kv_S(VAL,1:NIDX_MIN) == ' ')) then
-         call msg(MSG_ERROR,'(gmmx) newvar - Mandatory params not all provided for: '//trim(F_fullmeta_S))
+         call msg(MSG_ERROR,'(gmmx) newvar - Mandatory params not all provided for: '// &
+              trim(F_fullmeta_S))
          return
       endif
       meta_S = ' '
@@ -110,7 +113,8 @@ contains
          if (any(kv_S(KEY,n) == KNOWN_KEYS)) cycle
          meta_S = trim(meta_S)//trim(kv_S(KEY,n))//'="'//trim(kv_S(VAL,n))//'";'
       enddo
-      F_istat = gmmx_new(kv_S(VAL,IDX_NAME),kv_S(VAL,IDX_HGRID),kv_S(VAL,IDX_VGRID),kv_S(VAL,IDX_VB),meta_S,flags)
+      F_istat = gmmx_new(kv_S(VAL,IDX_NAME),kv_S(VAL,IDX_HGRID),kv_S(VAL,IDX_VGRID), &
+           kv_S(VAL,IDX_VB),meta_S,flags)
       !---------------------------------------------------------------------
       return
    end function gmmx_new1
@@ -140,11 +144,13 @@ contains
          return
       endif
       if (len_trim(F_hgrid_S) == 0) then
-         call msg(MSG_ERROR,'(gmmx) new - Need to provide an horizontal description hgrid, ignoring: '//trim(F_name_S))
+         call msg(MSG_ERROR,'(gmmx) new - Need to provide an horizontal description '// &
+              'hgrid, ignoring: '//trim(F_name_S))
          return
       endif
       if (len_trim(F_vgrid_S) == 0) then
-         call msg(MSG_ERROR,'(gmmx) new - Need to provide a vertical description vgrid, ignoring: '//trim(F_name_S))
+         call msg(MSG_ERROR,'(gmmx) new - Need to provide a vertical description '// &
+              'vgrid, ignoring: '//trim(F_name_S))
          return
       endif
       vb_S = 'g'
@@ -154,7 +160,8 @@ contains
       name_S = F_name_S
       istat = vardict_get(name_S,vb_S)
       if (RMN_IS_OK(istat)) then
-         call msg(MSG_ERROR,'(gmmx) newvar - Var already exists: '//trim(F_name_S)//' (VB='//trim(vb_S)//')')
+         call msg(MSG_ERROR,'(gmmx) newvar - Var already exists: '//trim(F_name_S)// &
+              ' (VB='//trim(vb_S)//')')
          return
       endif
 
@@ -178,14 +185,18 @@ contains
       F_istat = vardict_add_string(meta_S)
 
 !!$      mylen = min(GMM_MAXNAMELENGTH,WB_MAXNAMELENGTH) - len_trim(PREFIX_S)
-!!$      call msg(MSG_INFO,'(gmmx) VN='//F_name_S(1:mylen)//'; IN='//kv_S(VAL,KEY_IN)(1:MAX_IONAME_LEN)//'; ON='//kv_S(VAL,KEY_ON)(1:MAX_IONAME_LEN)//'; HG='//trim(kv_S(VAL,KEY_HGRID))//'; VG='//trim(kv_S(VAL,KEY_VGRID))//'; UNITS='//trim(kv_S(VAL,KEY_UNITS)))
+!!$      call msg(MSG_INFO,'(gmmx) VN='//F_name_S(1:mylen)//'; IN='// &
+!!$           kv_S(VAL,KEY_IN)(1:MAX_IONAME_LEN)//'; ON='//kv_S(VAL,KEY_ON)(1:MAX_IONAME_LEN)// &
+!!$           '; HG='//trim(kv_S(VAL,KEY_HGRID))//'; VG='//trim(kv_S(VAL,KEY_VGRID))// &
+!!$           '; UNITS='//trim(kv_S(VAL,KEY_UNITS)))
       !---------------------------------------------------------------------
       return
    end function gmmx_new0
 
 
    !/@*
-   function gmmx_meta(F_name_S,F_namein_S,F_nameout_S,F_vb_S,F_hgrid_S,F_vgrid_S,F_units_S,F_desc_S,F_idx0) result(F_istat)
+   function gmmx_meta(F_name_S,F_namein_S,F_nameout_S,F_vb_S,F_hgrid_S, &
+        F_vgrid_S,F_units_S,F_desc_S,F_idx0) result(F_istat)
       implicit none
       !@objective 
       !@arguments
@@ -322,7 +333,7 @@ contains
       if (vb_S(1:1) /= 'g') then
          if (print_L) call msg(MSG_WARNING,'(gmmx) get3d - var not right type/rank: '//trim(name_S))
          F_istat = RMN_ERR
-         return         
+         return
       endif
       F_istat = gmm_getmeta(name_S,mymeta)
       if (.not.RMN_IS_OK(F_istat)) then
@@ -378,7 +389,7 @@ contains
       if (vb_S(1:1) /= 'g') then
          if (print_L) call msg(MSG_WARNING,'(gmmx) get2d - var not right type/rank: '//trim(name_S))
          F_istat = RMN_ERR
-         return         
+         return
       endif
       F_istat = gmm_getmeta(name_S,mymeta)
       if (.not.RMN_IS_OK(F_istat)) then
@@ -464,7 +475,8 @@ contains
       nullify(ip1list,data2d,data3d)
       F_istat = vgrid_wb_get(F_vgrid_S,myvgrid,ip1list,mytype)
       if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_ERROR,'(gmmx) new - Probleme getting vgrid info for: '//trim(F_name_S)//' VGRID='//trim(F_vgrid_S))
+         call msg(MSG_ERROR,'(gmmx) new - Probleme getting vgrid info for: '// &
+              trim(F_name_S)//' VGRID='//trim(F_vgrid_S))
          return
       endif
       istat = vgd_free(myvgrid)
@@ -475,7 +487,8 @@ contains
       deallocate(ip1list,stat=istat)
       F_istat = min(hgrid_wb_gmmmeta(F_hgrid_S,mymeta,kn,k0),F_istat)
       if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_ERROR,'(gmmx) new - Probleme getting hgrid info for: '//trim(F_name_S)//' HGRID='//trim(F_hgrid_S))
+         call msg(MSG_ERROR,'(gmmx) new - Probleme getting hgrid info for: '// &
+              trim(F_name_S)//' HGRID='//trim(F_hgrid_S))
          return
       endif
       name_S = F_name_S
@@ -483,7 +496,8 @@ contains
 
       F_istat = gmm_getmeta(name_S,mymeta2)
       if (RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(gmmx) new - Registering previously created GMM var for: '//trim(F_name_S))
+         call msg(MSG_WARNING,'(gmmx) new - Registering previously created GMM var for: ' &
+              //trim(F_name_S))
          return
       endif
 

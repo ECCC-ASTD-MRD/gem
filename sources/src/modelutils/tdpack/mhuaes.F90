@@ -18,7 +18,7 @@
       Subroutine mhuaes3(es,hu,tt,ps,swph,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real es(ni,nk), hu(ni,nk), tt(ni,nk)

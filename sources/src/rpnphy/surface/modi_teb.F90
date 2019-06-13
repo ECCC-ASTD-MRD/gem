@@ -59,7 +59,7 @@ INTERFACE
             PUTCI_IN, PUTCI_OUTSUN, PUTCI_OUTSHADE, PUTCI_RFSUN, PUTCI_RFSHADE, &
             WBGT_SUN, WBGT_SHADE, WBGT_RFSUN, WBGT_RFSHADE,                     &
             PUTCIC_IN,PUTCIC_OUTSUN,PUTCIC_OUTSHADE,PUTCIC_RFSUN,PUTCIC_RFSHADE &
-            ,PTRFZT,PTRDZT,PURDZU				 	                                &
+            ,PTRFZT,PTRDZT,PURDZU                                &
            ,PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13             )
 !
 !

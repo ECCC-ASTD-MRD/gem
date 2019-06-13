@@ -20,7 +20,10 @@ then
     #remove white spaces
     #OSNAME=${NAME// /}
     OSNAME=`sansespace ${NAME}`
-    OSVERSION="${VERSION_ID}"
+    if [ -n "${VERSION_ID}" ];
+    then
+        OSVERSION="${VERSION_ID}"
+    fi
     OS="${OSNAME}-${OSVERSION}-`uname -p`";
 
 elif [ -x /usr/bin/lsb_release ];

@@ -25,6 +25,7 @@
       use lun
       use ptopo
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -57,7 +58,7 @@
       !-------------------------------------------------------
 
       integer i,j,k
-      real*8  sina_8,cosa_8,                              &
+      real(kind=REAL64)  sina_8,cosa_8,                              &
               ui_u_8(G_ni,G_nj),ui_v_8(G_ni,G_nj),        &
               vi_u_8(G_ni,G_nj),vi_v_8(G_ni,G_nj),        &
               rlon_8,rlat_8,sint_8,cost_8,time_frac_8,    &
@@ -70,9 +71,9 @@
               vloc(F_minx:F_maxx,F_miny:F_maxy), &
               uicll(G_ni,G_nj),vicll(G_ni,G_nj)
 
-      real*8, parameter ::  DIX_8 = 10.0d0
-      real*8, parameter :: FIVE_8 =  5.0d0
-      real*8, parameter ::  TWO_8 =  2.0d0
+      real(kind=REAL64), parameter ::  DIX_8 = 10.0d0
+      real(kind=REAL64), parameter :: FIVE_8 =  5.0d0
+      real(kind=REAL64), parameter ::  TWO_8 =  2.0d0
 
       !-------------------------------------------------------
 

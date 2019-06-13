@@ -51,7 +51,7 @@ function UTCI_APPROX(PTA,PEHPA,PTMRT,PVA) result(PUTCI_APPROX)
    !-------------------------------------------------------------------------------
    !
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !~ type of input of the argument list
    real, dimension(:), intent(IN) :: PTA
    real, dimension(:), intent(IN) :: PEHPA

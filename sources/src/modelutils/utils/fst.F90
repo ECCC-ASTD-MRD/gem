@@ -16,6 +16,8 @@
 
 !/@
 module fst_mod
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_isfile, clib_isdir, clib_isreadok
    use mu_fglob_mod
    use fst_read_mod
    use fst_write_mod
@@ -37,8 +39,7 @@ module fst_mod
 !@/
 
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 contains
 
@@ -55,7 +56,7 @@ contains
       integer :: F_fileid
       !@/
       integer,parameter :: NMAXFILES = 2048, FSTD89 = 1, FSTD98 = 33
-      
+ 
       logical :: readonly_L,dir_ok_L,is_file_L,is_dir_L,can_read_L
       integer :: istat,nfiles,nfiles2,ifile,unitlist(NMAXFILES),ftype
       character(len=32) :: type_S
@@ -81,7 +82,7 @@ contains
          call msg(MSG_WARNING,'(fst_open) not readable: '//trim(F_filename_S))
          return
       endif
-      
+ 
       if (is_dir_L.and..not.dir_ok_L) then
          F_fileid = RMN_ERR
          call msg(MSG_WARNING,'(fst_open) not a file: '//trim(F_filename_S))
@@ -94,7 +95,7 @@ contains
 !!$      if (.not.F_readonly_L) then
 !!$         istat = min(clib_iswriteok(trim(F_filename_S)),istat)
 !!$      endif
-      
+
       !#TODO: accept also filename pattern to be resolved by glob
       if (.not.is_dir_L) then
          istat = fnom(F_fileid,trim(F_filename_S),type_S,0)

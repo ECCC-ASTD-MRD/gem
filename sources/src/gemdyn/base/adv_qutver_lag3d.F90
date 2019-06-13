@@ -20,6 +20,7 @@
       use adv_grid
       use adv_interp
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -33,26 +34,26 @@
 
       !--------------------------------------------------------------------
 
-      real*8 , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
+      real(kind=REAL64) , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
                                                     p_zabcd_8,p_zbacd_8,&
                                                     p_zcabd_8,p_zdabc_8,&
                                                     p_zxabcde_8,p_zaxbcde_8,p_zbxacde_8,&
                                                     p_zcxabde_8,p_zdxabce_8,p_zexabcd_8
 
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4, kkmax, n, id
-      real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
+      real(kind=REAL64)  :: a1, a2, a3, a4, b1, b2, b3, b4, &
                  c1, c2, c3, c4, d1, d2, d3, d4, &
                  p1, p2, p3, p4, ra, rb, rc, rd, &
                  x1, x2, x3, x4, e1, e2, e3, e4, &
                  p0, p5, rx, re
       logical :: zcubic_L, zqutic_L
 
-      real*8 :: triprd,zb,zc,zd
+      real(kind=REAL64) :: triprd,zb,zc,zd
       real :: za
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 
-      real*8 :: quiprd,ze,z2
-      real*4 :: zx
+      real(kind=REAL64) :: quiprd,ze,z2
+      real :: zx
       quiprd(zx,z2,zb,zc,zd,ze)=(zx-z2)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze)
 
       !--------------------------------------------------------------------

@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,14 +12,15 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END --------------------------
 
 subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
      CGSAT, WSAT, WWILT, BCOEF, C1SAT, C2REF, ACOEF, PCOEF, CV, Z0, Z0VEG, &
      CG, ZC1, ZC2, WGEQ, CT, ZCS, PSN, PSNG, PSNV, PSNZ0, Z0TOT, Z0H, Z0HVEG, N)
+   use tdpack_const, only: GRAV, PI
    use sfc_options, only: isba_snow_z0veg
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object
    !     Calculates the coefficients related to the soil (i.e., CG, CT,
    !     ZC1, ZC2, WGEQ) and to the snow canopy (i.e., ZCS, ps, psng,
@@ -85,7 +86,6 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
    ! 006      S. Belair and L.-P. Crevier (February 2001)
    !             Put roughness length of snow equal to Z0
    !             Cap Z0H at 0.2 m
-#include "tdpack_const.hf"
 
    integer i
 
@@ -112,8 +112,8 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
    !         --------------------------------
    !  Actually, the 'C' coefficients in ISBA do not represent heat capacities,
    !  but rather their inverse.  So in the following formulation, CG is large
-   !  when W2 is small, thus leading to small values for the heat capacity.  
-   !  In other words, a small amount of energy will result in great 
+   !  when W2 is small, thus leading to small values for the heat capacity.
+   !  In other words, a small amount of energy will result in great
    !  temperature variations (for drier soils).
 
    do I=1,N

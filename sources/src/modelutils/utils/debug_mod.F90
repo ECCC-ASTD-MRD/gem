@@ -15,10 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module debug_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
    use ieee_arithmetic
    implicit none
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
    private
@@ -52,8 +53,8 @@ module debug_mod
 !!$   !# From gmm_create
 !!$    real      :: NaN
 !!$    integer   :: inan
-!!$    real*8    :: NaN8
-!!$    integer*8 :: inan8
+!!$    real(REAL64) ::    :: NaN8
+!!$    integer(INT64) :: inan8
 !!$
 !!$    equivalence (inan,NaN)
 !!$    equivalence (inan8,NaN8)
@@ -64,8 +65,8 @@ module debug_mod
    real, parameter :: A4 = 1.
    real, parameter, public ::  DEBUG_NAN4 = transfer(-1, A4)
 
-   real(RDOUBLE), parameter :: A8 = 1.D0
-   real(RDOUBLE), parameter, public ::  DEBUG_NAN8 = transfer(Z'7FF0000000000001', A8)
+   real(REAL64), parameter :: A8 = 1.D0
+   real(REAL64), parameter, public ::  DEBUG_NAN8 = transfer(Z'7FF0000000000001', A8)
 
 contains
 
@@ -176,8 +177,8 @@ contains
 
    subroutine init2nan_r8_s(data, data2, data3, data4, data5, data6, data7, data8, data9, dataA)
       implicit none
-      real(RDOUBLE), intent(inout) :: data
-      real(RDOUBLE), intent(inout), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
+      real(REAL64), intent(inout) :: data
+      real(REAL64), intent(inout), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
       !----------------------------------------------------------------
       if (.not.init2nan_L) return
       data = DEBUG_NAN8
@@ -197,8 +198,8 @@ contains
 
    subroutine init2nan_r8_1d(data, data2, data3, data4, data5, data6, data7, data8, data9, dataA)
       implicit none
-      real(RDOUBLE), intent(inout), dimension(:) :: data
-      real(RDOUBLE), intent(inout), dimension(:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
+      real(REAL64), intent(inout), dimension(:) :: data
+      real(REAL64), intent(inout), dimension(:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
       !----------------------------------------------------------------
       if (.not.init2nan_L) return
       data = DEBUG_NAN8
@@ -218,8 +219,8 @@ contains
 
    subroutine init2nan_r8_2d(data, data2, data3, data4, data5, data6, data7, data8, data9, dataA)
       implicit none
-      real(RDOUBLE), intent(inout), dimension(:,:) :: data
-      real(RDOUBLE), intent(inout), dimension(:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
+      real(REAL64), intent(inout), dimension(:,:) :: data
+      real(REAL64), intent(inout), dimension(:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
       !----------------------------------------------------------------
       if (.not.init2nan_L) return
       data = DEBUG_NAN8
@@ -239,8 +240,8 @@ contains
 
    subroutine init2nan_r8_3d(data, data2, data3, data4, data5, data6, data7, data8, data9, dataA)
       implicit none
-      real(RDOUBLE), intent(inout), dimension(:,:,:) :: data
-      real(RDOUBLE), intent(inout), dimension(:,:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
+      real(REAL64), intent(inout), dimension(:,:,:) :: data
+      real(REAL64), intent(inout), dimension(:,:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
       !----------------------------------------------------------------
       if (.not.init2nan_L) return
       data = DEBUG_NAN8
@@ -260,8 +261,8 @@ contains
 
    subroutine init2nan_r8_4d(data, data2, data3, data4, data5, data6, data7, data8, data9, dataA)
       implicit none
-      real(RDOUBLE), intent(inout), dimension(:,:,:,:) :: data
-      real(RDOUBLE), intent(inout), dimension(:,:,:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
+      real(REAL64), intent(inout), dimension(:,:,:,:) :: data
+      real(REAL64), intent(inout), dimension(:,:,:,:), optional :: data2, data3, data4, data5, data6, data7, data8, data9, dataA
       !----------------------------------------------------------------
       if (.not.init2nan_L) return
       data = DEBUG_NAN8

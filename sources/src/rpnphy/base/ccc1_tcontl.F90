@@ -19,7 +19,7 @@
                          lc, inpt, mcont, gh, il1, il2, ilg, lay)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lc, il1, il2, k, i, j, m, n, mcont, nc
       real x1, y1, x2, y2

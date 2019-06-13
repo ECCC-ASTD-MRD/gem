@@ -27,6 +27,7 @@
       use path
       use clib_itf_mod
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       character(len=*) F_WorR_S
@@ -40,8 +41,8 @@
       logical spin_L,have_userbus_L
       integer dim,unf,ier,ibuf(4),datstp,gmmstat,errcode,yela,tousla,dim_infile
       real   rbuf(6)
-      real*8 dayfrac
-      real*8, parameter :: sec_in_day = 86400.0d0
+      real(kind=REAL64) dayfrac
+      real(kind=REAL64), parameter :: sec_in_day = 86400.0d0
       type(gmm_metadata) :: meta_busper
       real, pointer, dimension(:,:) :: BUSPER_3d
 !

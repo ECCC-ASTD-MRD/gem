@@ -15,13 +15,13 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
+subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    use tdpack
    use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Calculate the surface temperature (and specific humidity) and
    !          the surface fluxes of heat, moisture, and momentum over
    !          continental glaciers and ice sheets.
@@ -32,14 +32,11 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    ! BUSSIZ        size of the surface bus
    ! PTSURF        surface pointers
    ! PTSURFSIZ     dimension of ptsurf
-   ! KOUNT         number of timestep
-   ! DELT          timestep
    ! N             running length
    ! M             horizontal dimension
    ! NK            vertical dimension
-   ! ICEMELT       switch to control snow melting
 
-   integer BUSSIZ, KOUNT, TRNCH, N, M, NK
+   integer BUSSIZ, N, M, NK
    integer PTSURFSIZ
    integer PTSURF(PTSURFSIZ)
    real,target :: bus(bussiz)
@@ -62,26 +59,25 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    integer, parameter :: INDX_SFC = INDX_GLACIER
    real, parameter :: ZT_RHO = 1.5              !Height used to compute air density (m)
 
-   real, save :: CON1,CON2,CON3,CON4,CON5,CON6
-   real, save :: CON7,CON8,CON9,CON10,CON11,CON12
+   real, save :: CON10
    real, save :: FI0,CONDFI,TMELICE,TMELSNO
    real, save :: ALBDI,ALBMI,ALBDS,ALBMS,COEFEXT
    real, save :: ROICE,ROSNOW(2)
-   real, save :: HCAPI,HFICE,VHFICE,VHFSNO
+   real, save :: HCAPI,HFICE,VHFSNO
    real, save :: HCAPS,KSDS,KSMS
    real :: EMISICE, EMISNOW
 
    real,dimension(n) :: a,    b,     c,     c2,   ct,   dqsat, rhoa
    real,dimension(n) :: scr1, scr2,  scr3,  scr4, scr5, scr6, scr7, scr8
-   real,dimension(n) :: scr9, scr10, scr11, t2, vmod, vdir, zsnodp_m
-   real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level 
+   real,dimension(n) :: scr10, scr11, t2, vmod, vdir, zsnodp_m
+   real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
    real, dimension(n) :: my_ta, my_qa
    real, dimension(n) :: zusurfzt, zvsurfzt, zqd
 
-   real,pointer,dimension(:) :: al, albsfc, cmu, ctu, fc_glac
+   real,pointer,dimension(:) :: albsfc, cmu, ctu, fc_glac
    real,pointer,dimension(:) :: fsol, fv_glac, zemisr
-   real,pointer,dimension(:) :: hice, hst_glac, hu, ilmo_glac
+   real,pointer,dimension(:) :: hst_glac, hu, ilmo_glac
    real,pointer,dimension(:) :: ps, qsice, th, snorate, tdeep, ts, tt, uu, vv
    real,pointer,dimension(:) :: z0h, z0m
    real,pointer,dimension(:) :: zalfaq, zalfat, zdlat, zfcor, zfdsi
@@ -97,15 +93,11 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 
    logical, parameter :: GLACIER_TDIAGLIM=.false.
 
-   integer I, J
+   integer I
    real DAY, DEEPFRAC
 
-   data  CON1     , CON2   , CON3  , CON4    / &
-         2.845E-6 , 2.7E-4 , 233.0 , 0.2   /
-   data  CON5     , CON6   , CON7  , CON8  / &
-         92.88    , 7.364  , 3.2   , 14.24 /
-   data  CON9     , CON10 , CON11 , CON12 / &
-         19.39    , 0.1   , 0.44  , 0.075 /
+   data  CON10 / &
+         0.1 /
    data  FI0   ,  CONDFI   / &
          0.17  ,  2.034    /
    data  TMELICE , TMELSNO  /  273.05 , 273.15  /
@@ -116,8 +108,8 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
    data  ROICE  / &
          913.0  /
    data  ROSNOW  / 330.0 , 450.0 /
-   data  HCAPI    , HFICE   , VHFICE   , VHFSNO   / &
-         2.062E+3 , 3.34E+5 , 2.679E+8 , 1.097E+8 /
+   data  HCAPI    , HFICE   , VHFSNO   / &
+         2.062E+3 , 3.34E+5 , 1.097E+8 /
    data  HCAPS   , KSDS  , KSMS   / &
          2.04E+3 , 0.325 , 0.665 /
  
@@ -501,7 +493,7 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
 
 !       6.     The fluxes
 !       -----------------
-      
+
       ! Compute diagnostic quantities at 1.5m
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtt_diag=ZT_RHO,t_diag=my_ta,q_diag=my_qa,tdiaglim=GLACIER_TDIAGLIM)
@@ -592,4 +584,4 @@ subroutine glaciers1(BUS, BUSSIZ, PTSURF, PTSURFSIZ, TRNCH, KOUNT, N, M, NK)
            SURFLEN)
 
    return
-end subroutine glaciers1
+end subroutine glaciers2

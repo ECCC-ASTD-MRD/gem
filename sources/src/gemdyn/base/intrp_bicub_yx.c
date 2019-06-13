@@ -1067,8 +1067,8 @@ program test_interp
   real(C_DOUBLE), dimension(4) :: s
   integer :: i, j, k, ix, iy
   integer :: i0, j0
-  integer*8, external :: rdtsc
-  integer*8 :: t1, t2, tmg1(NR), tmg2(nr), tmg3(nr), tmg4(nr)
+  integer(kind=INT64), external :: rdtsc
+  integer(kind=INT64) :: t1, t2, tmg1(NR), tmg2(nr), tmg3(nr), tmg4(nr)
   integer :: nidim, ninjdim
   include 'intrp_bicub_yx.inc'
 

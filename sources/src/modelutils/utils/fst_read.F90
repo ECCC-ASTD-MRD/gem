@@ -16,6 +16,7 @@
 
 !/@
 module fst_read_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
@@ -43,7 +44,7 @@ module fst_read_mod
 !@/
 
 #include <rmnlib_basics.hf>
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    interface fst_get_gridid !# Name kept for backward compatibility
       module procedure fst_get_hgridid
@@ -69,7 +70,7 @@ module fst_read_mod
    integer,parameter :: MYMSG_QUIET = 99
    integer, parameter :: FST_MIN_TIME_RES = 40  !fstinf min time/datev (sec) resolution in search
    integer, parameter :: FST_MIN_TIME_RES_PRE80 = 1840  !fstinf min time/datev (sec) resolution in search
-   real(RDOUBLE), parameter :: SEC_PER_HR = 3600.d0
+   real(REAL64), parameter :: SEC_PER_HR = 3600.d0
 
 contains
 
@@ -99,12 +100,12 @@ contains
       character(len=256) :: msg_S
       integer :: i,istat,keylist(NMAX),nkeys,keys2(NMAX),nkeys2,&
            datevfuzz,fuzzopr,min_time_res
-      integer(IDOUBLE) :: dist64, dist064
+      integer(INT64) :: dist64, dist064
       integer :: ni1,nj1,nk1, datev, datev0, searchdate, &
            dateo,deet,npas,nbits, datyp, ip1, ip2, ip3, &
            ig1, ig2, ig3, ig4, swa, lng, dltf, ubc, extra1, extra2, extra3
 !!$      real :: zp1
-      real(RDOUBLE) :: nhours_8
+      real(REAL64) :: nhours_8
       !---------------------------------------------------------------------
       nomvar_S = F_nomvar
       F_key = RMN_ERR
@@ -153,7 +154,9 @@ contains
 !!$            if (typvar_S /= RMN_ANY_TYP .and. present(F_typvar_S)) then
 !!$               F_typvar_S =  !#TODO:
 !!$            endif
-            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
+            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+                 '] [key=',F_key,']'
             call msg(MSG_DEBUG,msg_S)
             return
          endif
@@ -177,10 +180,13 @@ contains
 !!$               F_typvar_S =  !#TODO:
 !!$            endif
          if (RMN_IS_OK(F_key)) then
-            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
+            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+                 '] [key=',F_key,']'
             call msg(MSG_DEBUG,msg_S)
          else
-            write(msg_S,'(a,3i10,a)') '(fst) Not Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,']'
+            write(msg_S,'(a,3i10,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
+                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,']'
             call msg(MSG_DEBUG, msg_S)
          endif
          return
@@ -211,14 +217,15 @@ contains
               keylist,nkeys,NMAX)
       endif
       if (.not.RMN_IS_OK(istat) .or. nkeys == 0 .or. nkeys == NMAX) then
-         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Not Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
+         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [key=',F_key,']'
          call msg(MSG_DEBUG,msg_S)
          return
       endif
 
-      dist64 = int(datevfuzz, kind=IDOUBLE)
+      dist64 = int(datevfuzz, kind=INT64)
       if (datevfuzz /= huge(datevfuzz)) &
-           dist64 = int(datevfuzz+min_time_res, kind=IDOUBLE)
+           dist64 = int(datevfuzz+min_time_res, kind=INT64)
       do i=1,nkeys
          istat = fstprm(keylist(i), dateo,deet,npas, ni1,nj1,nk1, &
               nbits, datyp, ip1, ip2, ip3, &
@@ -233,7 +240,7 @@ contains
          nhours_8 = (DBLE(deet)*DBLE(npas))/SEC_PER_HR
          call incdatr(datev0,dateo,nhours_8)
          call difdatr(searchdate,datev0,nhours_8) !#TODO: what if searchdate=-1
-         dist064 = nint(real(nhours_8*SEC_PER_HR), kind=IDOUBLE)
+         dist064 = nint(real(nhours_8*SEC_PER_HR), kind=INT64)
          select case(fuzzopr)
          case(FST_FIND_GE)
             dist064 = -dist064
@@ -253,9 +260,13 @@ contains
 
       if (RMN_IS_OK(F_key)) then
          F_datev = datev
-         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [typvar='//typvar1_S(1:2)//'] [key=',F_key,']'
+         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+              '] [typvar='//typvar1_S(1:2)//'] [key=',F_key,']'
       else
-         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Not Found: '//nomvar_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,'] [typvar='//typvar_S(1:2)//'] [key=',F_key,']'
+         write(msg_S,'(a,3i10,a,i12,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
+              ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+              '] [typvar='//typvar_S(1:2)//'] [key=',F_key,']'
       endif
       call msg(MSG_DEBUG,msg_S)
       !---------------------------------------------------------------------
@@ -288,7 +299,9 @@ contains
       !---------------------------------------------------------------------
       nomvar1_S = F_nomvar1
       nomvar2_S = F_nomvar2
-      write(msg_S, '(a,3i10,a)') '(fst) Find vect, looking for: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)//' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, ']'
+      write(msg_S, '(a,3i10,a)') &
+           '(fst) Find vect, looking for: '//nomvar1_S(1:4)//' + '//nomvar2_S(1:4)// &
+           ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=', F_ip1, F_ip2, F_ip3, ']'
       call msg(MSG_DEBUG, msg_S)
       F_istat = RMN_ERR
       F_key1 = RMN_ERR

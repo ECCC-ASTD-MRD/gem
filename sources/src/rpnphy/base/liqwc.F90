@@ -18,7 +18,7 @@
       SUBROUTINE LIQWC(LWC, SIG, T, PSOL, LMX, LEV, MM, SATUCO)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       INTEGER LMX,LEV,MM,J,K
       REAL CLWC,GAMSAT,GAMW,GB

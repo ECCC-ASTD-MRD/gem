@@ -29,11 +29,10 @@ contains
    function gesdictadd(varname, outname, inname, sername, vardesc, &
         shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        bustop, busnm, busdc, buspar, busspc, busname, ni ,nk, memgap) result(F_istat)
-!#TODO: never used: busname
+        bustop, busnm, busdc, buspar, busspc, ni ,nk, memgap) result(F_istat)
       implicit none
       integer :: F_istat
-      character(len=*), intent(in) :: varname, outname, inname, sername, vardesc, shape, busname
+      character(len=*), intent(in) :: varname, outname, inname, sername, vardesc, shape
       integer,          intent(in) :: dynini, stagg, fmul, nmosaic, ivmin, ivmax, wload, hzd, monot, massc, ni ,nk, memgap
       character(len=*), intent(inout) :: busnm(:,:), busdc(:)
       integer,          intent(inout) :: bustop, buspar(:,:), busspc
@@ -121,12 +120,11 @@ contains
 
 
    !/@*
-   function gesdictcheck(inbus, varname, outname, inname, sername, &
+   function gesdictcheck(inbus, varname, outname, &
         bustop, busnm, busname) result(F_istat)
-!#TODO: never used: inname, sername
       implicit none
       integer :: F_istat
-      character(len=*), intent(in) :: inbus, varname, outname, inname, sername, busname
+      character(len=*), intent(in) :: inbus, varname, outname, busname
       character(len=*), intent(inout) :: busnm(:,:)
       integer,          intent(inout) :: bustop
       !*@/
@@ -181,7 +179,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    use gesdictmod, only: gesdictadd, gesdictcheck
    use splitst, only: splitst4
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Arguments
    ! n          horizontal dimension
    ! nk         vertical dimension
@@ -249,7 +247,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    character(len=4) ::   outname,inname,sername
    character(len=3) ::   shape
    character(len=7) ::   struc
-   character(len=16) ::  varname, samename, othername
+   character(len=16) ::  varname
    character(len=48) ::  vdescrp
    character(len=60) ::  vardesc
    character(len=256) :: string
@@ -298,28 +296,28 @@ subroutine gesdict(ni, nk, lindex, lachaine)
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        enttop, entnm, entdc, entpar, entspc, bus, ni, nk, memgap)
+        enttop, entnm, entdc, entpar, entspc, ni, nk, memgap)
    case("D")
       if (debug_mem_L) memgap = max(ni/5,1)+4
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        dyntop, dynnm, dyndc, dynpar, dynspc, bus, ni, nk, memgap*2)
+        dyntop, dynnm, dyndc, dynpar, dynspc, ni, nk, memgap*2)
    case("P")
       if (debug_mem_L) memgap = max(ni/5,1)+2
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        pertop, pernm, perdc, perpar, perspc, bus, ni, nk, memgap*3)
+        pertop, pernm, perdc, perpar, perspc, ni, nk, memgap*3)
    case("V")
       if (debug_mem_L) memgap = max(ni/5,1)
       lindex = gesdictadd( &
         varname, outname, inname, sername, &
         vardesc, shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
         wload, hzd, monot, massc, &
-        voltop, volnm, voldc, volpar, volspc, bus, ni, nk, memgap*4)
+        voltop, volnm, voldc, volpar, volspc, ni, nk, memgap*4)
    case default
       call physeterror('gesdict', 'Unknown bus: '//trim(string))
       return
@@ -329,13 +327,13 @@ subroutine gesdict(ni, nk, lindex, lachaine)
       return
    endif
 
-   istat = gesdictcheck(bus, varname, outname, inname, sername, &
+   istat = gesdictcheck(bus, varname, outname, &
         enttop, entnm, 'E')
-   istat = min(gesdictcheck(bus, varname, outname, inname, sername, &
+   istat = min(gesdictcheck(bus, varname, outname, &
         dyntop, dynnm, 'D'), istat)
-   istat = min(gesdictcheck(bus, varname, outname, inname, sername, &
+   istat = min(gesdictcheck(bus, varname, outname, &
         pertop, pernm, 'P'), istat)
-   istat = min(gesdictcheck(bus, varname, outname, inname, sername, &
+   istat = min(gesdictcheck(bus, varname, outname, &
         voltop, volnm, 'V'), istat)
    if (.not.RMN_IS_OK(istat)) then
       call physeterror('gesdict', 'Problem while checking values')

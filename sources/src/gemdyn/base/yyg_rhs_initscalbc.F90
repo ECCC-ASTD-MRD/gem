@@ -24,22 +24,21 @@
       use sol
       use tdpack
       use yyg_rhs
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
-!  PLEASE consult Abdessamad or Vivian before modifying this routine.
-!
 
       integer i,j,imx,imy,kk,ii,jj,stencil
       integer ki,ksend,krecv,maxsendlen_per_proc
       integer, dimension (:), pointer :: recv_len,send_len
-      real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
-      real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
-      real*8  s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a
-      real*8 TWO_8
+      real(kind=REAL64)  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
+      real(kind=REAL64)  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
+      real(kind=REAL64)  s(2,2),h1,h2
+      real(kind=REAL64)  x_d,y_d,x_a,y_a
+      real(kind=REAL64) TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
 !     Localise could get point way outside of the actual grid in search

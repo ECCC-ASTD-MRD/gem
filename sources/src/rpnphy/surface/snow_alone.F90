@@ -1,54 +1,54 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
 
-      SUBROUTINE SNOW_ALONE (TSNS,TSND,RHOSL,ALPHAS,WL, & 
-                           SNODP,SM, &   
-                           PS,VMOD, VDIR, RHOA,THETAA,RG,RAT, &  
-                           HU,RR,SR,T,T2M, &  
-                           U10M,V10M,TAVG, &  
-                           MELTS_TOT,MELTS_RN, &   
-                           RNET,HFLUX,LE,EFLUX,RSNOW, &  
-                           RHOSNO, RESA, &  
-                           DT,Z0, Z0HSNOW,FCOR, ZUSL,ZTSL, LAT, PSN,N) 
-!
+subroutine SNOW_ALONE(TSNS,TSND,RHOSL,ALPHAS,WL, &
+                           SNODP,SM, &
+                           PS,VMOD, VDIR, RHOA,THETAA,RG,RAT, &
+                           HU,RR,SR,T,T2M, &
+                           U10M,V10M,TAVG, &
+                           MELTS_TOT,MELTS_RN, &
+                           RNET,HFLUX,LE,EFLUX,RSNOW, &
+                           RHOSNO, RESA, &
+                           DT,Z0, Z0HSNOW,FCOR, ZUSL,ZTSL, LAT, PSN,N)
+
       use sfclayer_mod, only: sl_sfclayer,SL_OK
       use tdpack
       use sfc_options
       use svs_configs
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-!
-      INTEGER N
-!
-      REAL TSNS(N), TSND(N), RHOSL(N), ALPHAS(N), WL(N)
-      REAL SNODP(N), SM(N)
 
-      REAL PS(N), VMOD(N), VDIR(N), RHOA(N), THETAA(N), RG(N), RAT(N)
-      REAL HU(N), RR(N), SR(N), T(N), T2M(N)
-      REAL U10M(N), V10M(N)
-      REAL TAVG(N),MELTS_TOT(N), MELTS_RN(N)
-      REAL RNET(N), HFLUX(N), LE(N), EFLUX(N), RSNOW(N)
-      REAL RHOSNO(N), LAT(N), RESA(N)
-      REAL DT,  Z0HSNOW,Z0(N), FCOR(N), ZUSL(N), ZTSL(N),PSN(N)
+      integer N
 
-!
-!
+      real TSNS(N), TSND(N), RHOSL(N), ALPHAS(N), WL(N)
+      real SNODP(N), SM(N)
+
+      real PS(N), VMOD(N), VDIR(N), RHOA(N), THETAA(N), RG(N), RAT(N)
+      real HU(N), RR(N), SR(N), T(N), T2M(N)
+      real U10M(N), V10M(N)
+      real TAVG(N),MELTS_TOT(N), MELTS_RN(N)
+      real RNET(N), HFLUX(N), LE(N), EFLUX(N), RSNOW(N)
+      real RHOSNO(N), LAT(N), RESA(N)
+      real DT,  Z0HSNOW,Z0(N), FCOR(N), ZUSL(N), ZTSL(N),PSN(N)
+
+
+
 !Author
 !             S. Belair & M. Abrahamowicz (May 2009)
-!
+
 !Revisions
-!
+
 ! 001         Bug fixes: M. Abrahamowicz, S.Z. Husain, S. Zhang, N. Gauthier,
-!                        E. Gaborit, V. Vionnet          
+!                        E. Gaborit, V. Vionnet
 !Object
-!             Stand-alone snow model 
-!
+!             Stand-alone snow model
+
 !Arguments
-!
-!
-!
+
+
+
 !             - Input/Output (Prognostic variables of the snow scheme) -
-!
+
 ! TSNS        snow temperature -- S for "skin"
 ! TSND        mean snow temperature -- D for "deep"
 ! RHOSL       density of snow (relative to that of liquid water)
@@ -56,7 +56,7 @@
 ! WL          liquid water in the snow pack
 ! SNODP       snow depth
 ! SM          snow mass (equivalent water content of the snow reservoir)
-!
+
 !             - Input (Forcing) -
 ! PS          Surface pressure
 ! VMOD        wind speed at the model lowest level (ZUSL)
@@ -72,7 +72,7 @@
 ! T2M         2-m air temperature
 ! U10M        U-component of wind at 10 m
 ! V10M        V-component of wind at 10 m
-!
+
 !             - Other inputs -
 ! DT          time step
 ! Z0          momentum roughness length (no snow)
@@ -81,50 +81,50 @@
 ! LAT       latitude
 ! ZUSL        height of wind input(measured from model base at topo height + Z0)
 ! ZTSL        height of temperature and humidity input
-!
+
 !             - Output (Energy and water budgets of the snow pack) -
 ! TAVG        Average snow pack temperature use in melt/freez calc.
 ! MELTS_TOT   total snow melting (accumulator)
 ! MELTS_RN    snow melting due to rain (accumulator)
 ! RNET        net radiation at the snow surface
 ! HFLUX       sensible heat flux from the snow surface
-! EFLUX       water vapor flux from the snow surface 
-! LE          latent heat flux from the snow surface 
+! EFLUX       water vapor flux from the snow surface
+! LE          latent heat flux from the snow surface
 ! RSNOW       liquid water out of the snow pack
 ! RHOSNO      density of snow (kg/m3) for output only
 ! RESA        aerodynamical surface resistance for snow
-!
+
 include "isbapar.cdk"
 
-!
-      INTEGER I
-!
-!
-      REAL LAMI, CICE, DAY
-      
-      REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
-      REAL CRMIN, CRMAX, TAUHOUR, RHOE,  MYOMEGA
-      REAL RSNOW_DAY, RHOICE, ANSMIN, MAX_EFLUX
+
+      integer I
+
+
+      real LAMI, CICE, DAY
+
+      real EMISSN, RAIN1, RAIN2, MLTRAIN
+      real CRMIN, CRMAX, TAUHOUR, RHOE,  MYOMEGA
+      real RSNOW_DAY, RHOICE, ANSMIN, MAX_EFLUX
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
            smt, wlt, alphast, rhosfall, rhoslt, smx, kdiffu, &
            dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax,  &
            freez_l1, work_l1, work_l2, melt_l1, melt_l2, melt_rain, rsnow_critmass
-      
-!
-!
-!
+
+
+
+
 !***********************************************************************
-!
-!
-!
-!                                THE FOLLOWING SHOULD BE PUT IN 
+
+
+
+!                                THE FOLLOWING SHOULD BE PUT IN
 !                                A COMMON COMDECK
-!
-!
-      LAMI    = 2.22 
-      CICE    = 2.106E3  ! specific heat of ice 
+
+
+      LAMI    = 2.22
+      CICE    = 2.106E3  ! specific heat of ice
       DAY     = 86400.
       EMISSN  = 0.97
       CRMIN   = 0.03
@@ -134,81 +134,81 @@ include "isbapar.cdk"
       RHOICE  = 0.9
       ANSMIN  = 0.5
       MYOMEGA   = ( 2*PI )/ DAY
-!
+
       RAIN1   = 2.8e-5 ! mm/s
       RAIN2   = 2.8e-4 ! mm/s
-!
-!
-!
+
+
+
 !*            REFRESH ALL INPUT VARIABLES IF THERE IS NEGLIGIBLE SNOW
 !                -----------------------------------------------------
 !         CHECK THAT THIS INITIALIZATION MAKES SENSE
-!
-      DO I=1,N
-         IF (SM(I).LT.CRITSNOWMASS) THEN
+
+      do I=1,N
+         if (SM(I).lt.CRITSNOWMASS) then
             ALPHAS(I)   = ANSMAX
             RHOSL(I)    = RHOSDEF
             !                             For snow temperature, set it to AIR temperature
 !                             capped at the triple point of water
-            TSNS(I)     = MIN(T(I),TRPL)
-            TSND(I)     = MIN(T(I),TRPL)
+            TSNS(I)     = min(T(I),TRPL)
+            TSND(I)     = min(T(I),TRPL)
 
             !                             To conserve water, send trace snow mass and liquid water in snow pack to runoff before setting mass to zero
 
             RSNOW_CRITMASS(I) = ( SM(I) + WL(I) ) / DT
             !                             Reset snow mass, liquid water and snow depth to zero
-            SM(I)       = 0.  
+            SM(I)       = 0.
             WL(I)       = 0.
-            SNODP(I)    = 0.          
-         ELSE
+            SNODP(I)    = 0.
+         else
             RSNOW_CRITMASS(I) = 0.0
-         END IF
-      END DO
-!
-!
-!
-!
-!
+         end if
+      end do
+
+
+
+
+
 !*       1.     THE HEAT CAPACITY AND THERMAL DIFFUSIVITY OF THE SNOW
 !               -----------------------------
-!
-!                          
-!
-      DO I=1,N
+
+
+
+      do I=1,N
 !                          First calculate the conductivity of snow (Yen,1981)
         LAMS(I) = LAMI * RHOSL(I)**1.88
-!
+
 !                          Heat capacity
-!
-        ZCS(I) = 2.0 * SQRT( PI/(LAMS(I)*RAUW*RHOSL(I)*CICE*DAY))
-!                          
+
+        ZCS(I) = 2.0 * sqrt( PI/(LAMS(I)*RAUW*RHOSL(I)*CICE*DAY))
+
 !                          Thermal diffusivity (You et al., 2014)
-        KDIFFU(I) =  LAMS(I) / ( CICE * RAUW*RHOSL(I)) 
-!
-      END DO
-!
+        KDIFFU(I) =  LAMS(I) / ( CICE * RAUW*RHOSL(I))
+
+      end do
+
 !        2.     SPECIFIC HUMIDITY AT SNOW SURFACE
 !               ----------------------------------------
-!
-!
+
+
 !                       Calculate specific humidity at snow surface
 !                       (For snow, specific & saturation humdity are
 !                       the same as snow is always saturated)
-!
-      DO I=1,N
+
+      do I=1,N
          ZQS(I) = FOQST( TSNS(I), PS(I) )
-      END DO
+      end do
 
 
-!
-!
+
+
 !***     3.     SURFACE TRANSFER COEFFICIENTS FOR HEAT AND MOMENTUM (CH and CD)
 !*             ---------------------------------------------------------------
-!
-!  
-      DO I=1,N
+
+
+      do I=1,N
         Z0H(I)      = Z0HSNOW
-      END DO
+      end do
 
 
 
@@ -222,133 +222,133 @@ include "isbapar.cdk"
          return
       endif
 
-      DO I=1,N
-!
+      do I=1,N
+
         RESA(I) = 1. / CTU(I)
-!
-      END DO
+
+      end do
 
 
-!
-!
-!
+
+
+
 !       4.     TIME INTEGRATION of the SNOW SKIN TEMPERATURE (TSNS)
 !               -------------------------------------------------
-!
+
 !                            Thermodynamic functions
-!
-      DO I=1,N
+
+      do I=1,N
         ZQSAT(I)  = FOQST( TSNS(I),PS(I) )
         ZDQSAT(I) = FODQS( ZQSAT(I),TSNS(I) )
-      END DO
-!
-!
+      end do
+
+
 !                            function zrsra
-!
-      DO I=1,N
+
+      do I=1,N
         RORA(I) = RHOA(I) / RESA(I)
-      END DO
-!
-!     
-!
+      end do
+
+
+
 !                             terms za, zb, and zc for the
 !                                    calculation of tsns(t)
-!
-      DO I=1,N
-!
-        A(I) = 1. / DT + ZCS(I) * &  
-                (4. * EMISSN * STEFAN * (TSNS(I)**3) &   
-                + RORA(I) * ZDQSAT(I) * (CHLC+CHLF) &  
-                + RORA(I) * CPD) &  
-                + 2. * PI / DAY
-!
-        B(I) = 1. / DT + ZCS(I) * &   
-                (3. * EMISSN * STEFAN * (TSNS(I)** 3) &   
-                + RORA(I) * ZDQSAT(I) * (CHLC+CHLF) )
-!
-        C(I) = 2. * PI * TSND(I) / DAY &   
-                + ZCS(I) *  & 
-                ( RORA(I) * CPD * THETAA(I)  &  
-                + RG(I) * (1. - ALPHAS(I)) + EMISSN * RAT(I) &   
-                - RORA(I) &  
-                * (CHLC+CHLF) * (ZQSAT(I)-HU(I)) )
-!
-      END DO
-!
-!
-      DO I=1,N
-         TSNST(I) = ( TSNS(I)*B(I) + C(I) ) / A(I)
-      ENDDO
 
-!
+      do I=1,N
+
+        A(I) = 1. / DT + ZCS(I) * &
+                (4. * EMISSN * STEFAN * (TSNS(I)**3) &
+                + RORA(I) * ZDQSAT(I) * (CHLC+CHLF) &
+                + RORA(I) * CPD) &
+                + 2. * PI / DAY
+
+        B(I) = 1. / DT + ZCS(I) * &
+                (3. * EMISSN * STEFAN * (TSNS(I)** 3) &
+                + RORA(I) * ZDQSAT(I) * (CHLC+CHLF) )
+
+        C(I) = 2. * PI * TSND(I) / DAY &
+                + ZCS(I) *  &
+                ( RORA(I) * CPD * THETAA(I)  &
+                + RG(I) * (1. - ALPHAS(I)) + EMISSN * RAT(I) &
+                - RORA(I) &
+                * (CHLC+CHLF) * (ZQSAT(I)-HU(I)) )
+
+      end do
+
+
+      do I=1,N
+         TSNST(I) = ( TSNS(I)*B(I) + C(I) ) / A(I)
+      enddo
+
+
 !!       5.     DEEP SNOW TEMPERATURE (TSND) AT TIME 'T+DT'
 !               ------------------------------------------
-!
-      DO I=1,N
+
+      do I=1,N
         TSNDT(I) = (TSND(I) + DT*TSNST(I)/DAY) / (1.+DT/DAY)
-      END DO
+      end do
 
 
-!
-!
-!
-!
+
+
+
+
 !*       6.     MELTING AND FREEZING TENDENCIES OF SNOW
 !               ---------------------------------------
-!
-!                             
+
+
 !                             Calculate tendencies using T+ temperatures
 !                             Apply energy related to melt/freez to T+ afterwards
-!
-!
-      DO I=1,N
+
+
+      do I=1,N
 !                             Calculate average snow pack temperature
 !                             assuming no time-depency or shift in phase
-!                             of the sinusoidal thermal wave (of the force-restore) 
+!                             of the sinusoidal thermal wave (of the force-restore)
 !                             penetrating the snow pack (roughly following You et al., 2014)
-!
-!                             
+
+
 !                             Damping depth in m , assuming diurnal forcing dominates
-!                           
-         DAMPD(I) = SQRT(  2 * KDIFFU(I) / MYOMEGA  )
-!                             
-!                             Average snow pack temp. for "superficial/damping" layer 
-!        
-         IF(SNODP(I).GT.0.0) THEN       
-            DMELT(I) = MIN(DAMPD(I),SNODP(I))
+
+         DAMPD(I) = sqrt(  2 * KDIFFU(I) / MYOMEGA  )
+
+!                             Average snow pack temp. for "superficial/damping" layer
+
+         if(SNODP(I).gt.0.0) then
+            DMELT(I) = min(DAMPD(I),SNODP(I))
             BCOEF(I) = ( 1. - exp( - DMELT(I)/DAMPD(I) ) ) * DAMPD(I) / DMELT(I)
-         ELSE
+         else
             DMELT(I) = 0.0
             BCOEF(I) = 0.0
-         ENDIF
+         endif
 
          TAVG(I) = BCOEF(I) * TSNST(I) + (1-BCOEF(I)) * TSNDT(I)
-         
-!      
+
+
 !                         Common portion of the MELT and FREEZ TERMS
-!  
+
          ! "layer 1"
          WORK_L1(I) = (TAVG(I)-TRPL) / ( ZCS(I)*CHLF*DT )
          ! "layer 2"
          WORK_L2(I) = (TSNDT(I)-TRPL) / ( ZCS(I)*CHLF*DT )
-      END DO
-!
-!
-!
+      end do
+
+
+
 !                             MELT tendencies  -- NO FREEZING FOR NOW
 !                             Also calculate the maximum snow density
-!
 
 
-      DO I=1,N
-         
-         ! layer 1 
+
+      do I=1,N
+
+         ! layer 1
          if( work_l1(i).gt.0.0 .and. SM(I).ge.CRITSNOWMASS ) then
             ! have melting
-            MELT_L1(I)  = MIN( WORK_L1(I) , SM(I)*(DMELT(I)/SNODP(I))/DT )
+            MELT_L1(I)  = min( WORK_L1(I) , SM(I)*(DMELT(I)/SNODP(I))/DT )
             RHOMAX(I)   = 0.6
-            FREEZ_L1(I) = 0.0	
-            ! RHOMAX(I) = 600. - 20.47 / (SNODP(I)+EPSILON_SVS) *  & 
+            FREEZ_L1(I) = 0.0
+            ! RHOMAX(I) = 600. - 20.47 / (SNODP(I)+EPSILON_SVS) *  &
             !( 1.-EXP(-SNODP(I)/0.0673))
             !RHOMAX(I) = 0.001 * RHOMAX(I)
          else if( work_l1(i).lt.0.0 .and. SM(I).ge.CRITSNOWMASS ) then
@@ -356,9 +356,9 @@ include "isbapar.cdk"
             MELT_L1(I)   = 0.0
             FREEZ_L1(I)  = 0.0
             RHOMAX(I) = 0.3
-                        
+
             !FREEZ_L1(I)  = MIN( -WORK_L1(I) , WL(I)/DT )
-            !RHOMAX(I) = 450. - 20.47 / (SNODP(I)+EPSILON_SVS) *  & 
+            !RHOMAX(I) = 450. - 20.47 / (SNODP(I)+EPSILON_SVS) *  &
             !  ( 1.-EXP(-SNODP(I)/0.0673))
             !RHOMAX(I) = 0.001 * RHOMAX(I)
          else
@@ -366,344 +366,344 @@ include "isbapar.cdk"
             melt_l1(I)=0.0
             rhomax(I)=RHOSDEF
          endif
-         !
+         
          ! layer 2
-         !
+         
          if(work_l2(i).gt.0.0  .and.  SM(I).ge.CRITSNOWMASS .and.dmelt(i).lt.snodp(i)) then
             ! melting
-            MELT_L2(I)  = MIN( WORK_L2(I) , SM(I)*(((SNODP(I)-DMELT(I))/SNODP(I))/DT ))
+            MELT_L2(I)  = min( WORK_L2(I) , SM(I)*(((SNODP(I)-DMELT(I))/SNODP(I))/DT ))
          else
             MELT_L2(I)  = 0.0
          endif
-        
 
-      END DO
-!
-!
-!
+
+      end do
+
+
+
 !        7.     EFFECT OF RAIN ON TEMPERATURE OF SNOW PACK
 !               ------------------------------------------
-!
+
 !                                When rain is falling on snow,
 !                                melting is accelerated due to heat
 !                                transfers between the incident rain
 !                                and the snow pack (since rain is
 !                                usually warmer then the snow pack).
-!
+
 !                                It is hypothesized that the temperature
 !                                of falling water is the same as that
 !                                of air at diag. level.
-!
-      DO I=1,N
-        IF (RR(I).LT.RAIN1) THEN
+
+      do I=1,N
+        if (RR(I).lt.RAIN1) then
           FMLTRAIN(I) = 0.
-        ELSE IF (RR(I).GT.RAIN2) THEN
+        else if (RR(I).gt.RAIN2) then
           FMLTRAIN(I) = 1.
-        ELSE
+        else
           FMLTRAIN(I) = ( RR(I) - RAIN1 ) / ( RAIN2 - RAIN1 )
-        END IF
-      END DO
-!
-      DO I=1,N
-       
-         IF (T2M(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
+        end if
+      end do
+
+      do I=1,N
+
+         if (T2M(I).gt.TRPL.and.SM(I).gt.0.0.and.RR(I).gt.0.) then
             MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT )
-           
+
             MELT_RAIN(I) = FMLTRAIN(I) * MLTRAIN
-            
-            MELT_RAIN(I) = MIN( MELT_RAIN(I), MAX( (SM(I)*(DMELT(I)/SNODP(I))/DT) - MELT_L1(I),0.0) )
-            
-         ELSE
-            
+
+            MELT_RAIN(I) = min( MELT_RAIN(I), max( (SM(I)*(DMELT(I)/SNODP(I))/DT) - MELT_L1(I),0.0) )
+
+         else
+
             MLTRAIN = 0.0
             MELT_RAIN(I) = 0.0
-        
-        END IF
-      END DO  
-!
-!
-!
-!
+
+        end if
+      end do
+
+
+
+
 !                              Melting-Freezing tendency for the
 !                              SM and WL reservoirs
-!
-      DO I=1,N
+
+      do I=1,N
         DSNOWDT(I) = ( FREEZ_L1(I)  -MELT_L1(I)-MELT_L2(I)-MELT_RAIN(I) ) * DT
-!
+
         MELTS_TOT(I) = MELTS_TOT(I) + (MELT_L1(I)+MELT_L2(I)+MELT_RAIN(I))*DT
         MELTS_RN(I) = MELTS_RN(I) + MELT_RAIN(I)*DT
-      END DO
+      end do
 
-!
-!
+
+
 !        8.     EFFECT OF MELT/FREEZE ON SNOWPACK TEMP.
 !               ------------------------------------------
-!
-!
+
+
 !                              new temperatures Tsns(t) & Tsnd(t) after melting/freezing
-!                            
-!
-      DO I=1,N
+
+
+      do I=1,N
          TSNST(I) = TSNST(I) +   ZCS(I) * CHLF * (FREEZ_L1(I)-MELT_L1(I) )  * DT
          TSNDT(I) = TSNDT(I) +   ZCS(I) * CHLF * (           -MELT_L2(I) ) * DT
-         
-!       ALLOW TEMP. TO GO ABOVE ZERO TO TRY TO CONSERVE ENERGY WITH FORCE-RESTORE !!!
-!       Make sure don't exceed triple pt.                             
-!     
+
+!       ALLOW TEMP. TO GO ABOVE ZERO TO TRY TO CONSERVE ENERGY WITH FORCE-RESTORE !!
+!       Make sure don't exceed triple pt.
+
        ! TSNST(I) = MIN( TSNST(I) , TRPL )
         !TSNDT(I) = MIN( TSNDT(I) , TRPL )
-!
-      END DO      
 
-!
-!
-!
-!
+      end do
+
+
+
+
+
 !        9.     FLUX CALCULATIONS FOR SNOW COVERED SURFACE ONLY
 !               ------------------------------------------------
-!
-!
-      DO I=1,N
+
+
+      do I=1,N
 !                                            recalculate the qsat function
-!
+
         ZQSATT(I) =  FOQST(  TSNST(I)  ,  PS(I)   )
 
-!
+
 !                                            net radiation
-!
-        RNET(I)  = (1. - ALPHAS(I)) * RG(I) + EMISSN *  & 
+
+        RNET(I)  = (1. - ALPHAS(I)) * RG(I) + EMISSN *  &
                  (RAT(I) - STEFAN * (TSNST(I)** 4))
 
-!
+
 !                                            sensible heat flux
-!
+
         HFLUX(I) = RHOA(I) * CPD * (TSNST(I) - THETAA(I)) / RESA(I)
 
 
         FTEMP(I) = ( TSNST(I) - THETAA(I) ) / RESA(I)
-!
+
 !                                            latent heat of evaporation from
 !                                            the snow canopy
-!                                            
-!
+
+
         EFLUX(I) = (ZQSATT(I) - HU(I)) / RESA(I)
 
 !       IMPOSE MAXIMUM on EFLUX, based on available liquid water after melt/freez of reservoir... make sure latent heat consistent with this...
         if(PSN(I).gt.0.0) then
-           MAX_EFLUX= ( (SM(I) + DSNOWDT(I)) / DT + SR(I) )  / RHOA(I) / PSN(I) 
+           MAX_EFLUX= ( (SM(I) + DSNOWDT(I)) / DT + SR(I) )  / RHOA(I) / PSN(I)
         else
            MAX_EFLUX=0.0
         endif
 
-        EFLUX(I)=  MIN( EFLUX(I), MAX_EFLUX )
-              
-!                                   
+        EFLUX(I)=  min( EFLUX(I), MAX_EFLUX )
+
+
         LE(I)    = RHOA(I) * (CHLC+CHLF) * EFLUX(I)
 
-      END DO
+      end do
 
 
-!
-!
-!
+
+
+
 !!       10.     EVOLUTION OF THE SNOW EQUIVALENT WATER CONTENT (Wst)
 !               --------------------------------------------
-!
-!
-      DO I=1,N
-!
-!
+
+
+      do I=1,N
+
+
 !                               evolution of Ws
-!
+
 !            ! DANGER HERE: We use SM as a check of snow presence,
 !            ! In the case of no-snow this variable could be updated
 !            ! anyhow due to the construct of the subroutine, so
-!            ! we add an additional check here i.e. 
-! 
+!            ! we add an additional check here i.e.
+
 !!           CALCULATE SMT VARIABLE IF AND ONLY IF:
 !            A) there is snow i.e. ws >= critsnow
 !         or B) the snow rate is non-zero
-!              
-        IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
-           SMT(I) = SM(I) - DT * (RHOA(I)*PSN(I)*EFLUX(I) - SR(I)) + DSNOWDT(I) 
-           SMT(I) = MAX( SMT(I), 0.0)
-        ELSE
-           SMT(I) = 0.0
-        ENDIF
-        
-      END DO
 
-!
-!
+        if(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) then
+           SMT(I) = SM(I) - DT * (RHOA(I)*PSN(I)*EFLUX(I) - SR(I)) + DSNOWDT(I)
+           SMT(I) = max( SMT(I), 0.0)
+        else
+           SMT(I) = 0.0
+        endif
+
+      end do
+
+
+
 !       11.     EVOLUTION OF LIQUID WATER IN THE SNOW PACK
 !               ------------------------------------------
-!
+
 !                               Calculate the maximum liquid water
 !                               that can be retained in the snow pack
-!
-      DO I=1,N
-        IF (RHOSL(I).LT.RHOE) THEN
+
+      do I=1,N
+        if (RHOSL(I).lt.RHOE) then
           WLMAX(I) = ( CRMIN + (CRMAX-CRMIN)*(RHOE-RHOSL(I))/ RHOE)* SMT(I)
-        ELSE
+        else
           WLMAX(I) = CRMIN * SMT(I)
-        END IF
-      END DO
+        end if
+      end do
 
 
-!
-!
-!                               Calculate runoff of liquid water from 
+
+
+!                               Calculate runoff of liquid water from
 !                               the snow pack
-!
-      DO I=1,N
-        IF (WL(I).LE.WLMAX(I)) THEN
-          RSNOW(I) = ( WL(I) / TAUHOUR ) * EXP( WL(I)-WLMAX(I) )
-        ELSE
+
+      do I=1,N
+        if (WL(I).le.WLMAX(I)) then
+          RSNOW(I) = ( WL(I) / TAUHOUR ) * exp( WL(I)-WLMAX(I) )
+        else
           RSNOW(I) = WLMAX(I) / TAUHOUR + (WL(I)-WLMAX(I)) / DT
-        END IF
-        RSNOW(I) = MAX( 0.      , RSNOW(I) )
-        RSNOW(I) = MIN( (WL(I)-DSNOWDT(I))/DT+RR(I) ,  RSNOW(I) )
-      END DO
-!
-!
+        end if
+        RSNOW(I) = max( 0.      , RSNOW(I) )
+        RSNOW(I) = min( (WL(I)-DSNOWDT(I))/DT+RR(I) ,  RSNOW(I) )
+      end do
+
+
 !                               Calculate the new values for WL and
 !                               for the liquid water reaching the ground
-!
-      DO I=1,N
-         IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
+
+      do I=1,N
+         if(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) then
             !if existing snow, or fresh snow fall
             WLT(I) = WL(I) +  RR(I) * DT - RSNOW(I)* DT - DSNOWDT(I)
-            WLT(I) = MAX( 0., WLT(I) )
-         ELSE
+            WLT(I) = max( 0., WLT(I) )
+         else
             WLT(I) = 0.0
-         ENDIF
-      END DO
-!
-!
-!
+         endif
+      end do
+
+
+
 !!      12.     EVOLUTION OF SNOW ALBEDO
 !               ------------------------
-!
-!
-!
-      DO I=1,N
-        RSNOW_DAY = MIN( RSNOW(I)*DAY, 10. )
-      END DO
-!
+
+
+
+      do I=1,N
+        RSNOW_DAY = min( RSNOW(I)*DAY, 10. )
+      end do
+
 !                                       the evolution of the snow albedo differs
 !                                       if there is melting or not
-!
-      DO I=1,N
-!
-!
-        IF (SMT(I).GT.0.0.AND.DSNOWDT(I).LT.0.0) THEN
-!
+
+      do I=1,N
+
+
+        if (SMT(I).gt.0.0.and.DSNOWDT(I).lt.0.0) then
+
 !                                       when there is freezing
-!
-           ALPHAST(I) = (ALPHAS(I)-ANSMIN)*EXP(-0.01*DT/3600.) &  
-                +  ANSMIN & 
+
+           ALPHAST(I) = (ALPHAS(I)-ANSMIN)*exp(-0.01*DT/3600.) &
+                +  ANSMIN &
                 +  SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
-!
-!
-        ELSE IF (SMT(I).GT.0.0.AND.DSNOWDT(I).GE.0.0) THEN
-!
+
+
+        else if (SMT(I).gt.0.0.and.DSNOWDT(I).ge.0.0) then
+
 !                                       when there is melting
-!
-           ALPHAST(I) = ALPHAS(I) - TODRY*DT/DAY  &   
+
+           ALPHAST(I) = ALPHAS(I) - TODRY*DT/DAY  &
                 + SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
-!
-!
-        ELSE
+
+
+        else
            ALPHAST(I) = ANSMAX
-        ENDIF
+        endif
 !                                       limits of the albedo
-!
-        ALPHAST(I) = MAX( ANSMIN, ALPHAST(I) )       
-        ALPHAST(I) = MIN( ANSMAX, ALPHAST(I) )
-!
-      END DO
-!
-!
-!
+
+        ALPHAST(I) = max( ANSMIN, ALPHAST(I) )
+        ALPHAST(I) = min( ANSMAX, ALPHAST(I) )
+
+      end do
+
+
+
 !*       13.     EVOLUTION OF SNOW DENSITY
 !                -------------------------
-!
-!
+
+
 !                           Density of falling snow
-!
-      DO I=1,N
-        IF (SMT(I).GT.0.0) THEN
+
+      do I=1,N
+        if (SMT(I).gt.0.0) then
            RHOSFALL(I) = 109. + 6.*(T2M(I)-TRPL) +   &
                               26.*(U10M(I)**2+V10M(I)**2)**0.25
-           RHOSFALL(I) = MIN(MAX((RHOSFALL(I)*0.001),RHOMIN), 0.250)
-        ELSE
+           RHOSFALL(I) = min(max((RHOSFALL(I)*0.001),RHOMIN), 0.250)
+        else
            RHOSFALL(I) = RHOSDEF
-        END IF
-      END DO
+        end if
+      end do
 
 
-!
+
 !                           Evolution of the snow density depends
-!                           on 3 factors:  
-!    
+!                           on 3 factors:
+
 !                           - decrease of density due to fresh new snow
 !                           - increase of density due to aging
-!                           - increase of density due to freezing of 
+!                           - increase of density due to freezing of
 !                             liquid water in the snow pack
-!
-!
+
+
 !                           A) decrease due to fresh new snow
-!
-      DO I=1,N
-         SMX(I)   = MAX( SMT(I),SR(I)*DT)
-         IF (SMT(I).GT.0.0) THEN
-!            
-            RHOSLT(I) = ( (SMX(I)-SR(I)*DT) * RHOSL(I)  & 
+
+      do I=1,N
+         SMX(I)   = max( SMT(I),SR(I)*DT)
+         if (SMT(I).gt.0.0) then
+
+            RHOSLT(I) = ( (SMX(I)-SR(I)*DT) * RHOSL(I)  &
                         + (SR(I)*DT) * RHOSFALL(I)) / SMX(I)
-         ELSE
+         else
             ! default
             RHOSLT(I) = RHOSDEF
-         END IF
-      END DO
-!
-!
-!                           B) increase due to aging
-!
-      DO I=1,N
-        IF (SMT(I).GT.0.0.AND.RHOSLT(I).LT.RHOMAX(I)) THEN
-           RHOSLT(I) = (RHOSLT(I)-RHOMAX(I))*EXP(-0.01*DT/3600.)  &  
-                          + RHOMAX(I)
-        END IF
-      END DO
-!
-!
-!                           C) increase due to freezing
-!
-      DO I=1,N
-        IF (SMT(I).GT.0.0) THEN
-          RHOSLT(I) =  ( SMT(I)*RHOSLT(I) + FREEZ_L1(I)*DT*RHOICE ) &  
-                        / ( SMT(I) + FREEZ_L1(I) * DT )
-!                          Make sure within bounds 
-          RHOSLT(I) = MIN( RHOICE, RHOSLT(I) )
-          RHOSLT(I) = MAX( RHOMIN, RHOSLT(I) )
+         end if
+      end do
 
-        END IF
-      END DO
-!
+
+!                           B) increase due to aging
+
+      do I=1,N
+        if (SMT(I).gt.0.0.and.RHOSLT(I).lt.RHOMAX(I)) then
+           RHOSLT(I) = (RHOSLT(I)-RHOMAX(I))*exp(-0.01*DT/3600.)  &
+                          + RHOMAX(I)
+        end if
+      end do
+
+
+!                           C) increase due to freezing
+
+      do I=1,N
+        if (SMT(I).gt.0.0) then
+          RHOSLT(I) =  ( SMT(I)*RHOSLT(I) + FREEZ_L1(I)*DT*RHOICE ) &
+                        / ( SMT(I) + FREEZ_L1(I) * DT )
+!                          Make sure within bounds
+          RHOSLT(I) = min( RHOICE, RHOSLT(I) )
+          RHOSLT(I) = max( RHOMIN, RHOSLT(I) )
+
+        end if
+      end do
+
 !                          Calculate snow depth based on snow density
-!
-      DO I=1,N
+
+      do I=1,N
          SNODP(I) = SMT(I)/(RHOSLT(I)*RAUW)
-!
-!
-      END DO
-!
-!
-!
+
+
+      end do
+
+
+
 !*       14.     UPDATE the PROGNOSTIC VARIABLES
 !                -------------------------------
-!
-      DO I=1,N
+
+      do I=1,N
         TSNS(I)     = TSNST(I)
         TSND(I)     = TSNDT(I)
         WL(I)       = WLT(I)
@@ -711,17 +711,17 @@ include "isbapar.cdk"
         ALPHAS(I)   = ALPHAST(I)
         RHOSL(I)    = RHOSLT(I)
         RHOSNO(I)   = RHOSLT(I)*RAUW
-      END DO
-!
-!
-!
+      end do
+
+
+
 !                  If negligible amount of snow,
-!                  set ALL OUTPUT variables 
+!                  set ALL OUTPUT variables
 !                  to default values and/or zero.
-!                 
-!
-      DO I=1,N
-        IF (SM(I).LT.CRITSNOWMASS) THEN
+
+
+      do I=1,N
+        if (SM(I).lt.CRITSNOWMASS) then
           ALPHAS(I)   = ANSMAX
           RHOSL(I)    = RHOSDEF
           RHOSNO(I)   = RHOSLT(I)*RAUW
@@ -736,13 +736,13 @@ include "isbapar.cdk"
           ! liquid water in snow pack to runoff before setting mass to zero
           RSNOW_CRITMASS(I) = RSNOW_CRITMASS(I) + ( SM(I) + WL(I) ) / DT
           !                             Reset snow mass, liquid water and snow depth to zero
-          SM(I)       = 0.  
+          SM(I)       = 0.
           WL(I)       = 0.
-          SNODP(I)    = 0.            
-        END IF
+          SNODP(I)    = 0.
+        end if
         ! Add trace runoff to runoff variable
         RSNOW(I) = RSNOW(I) + RSNOW_CRITMASS(I)
-      END DO
-!
-      RETURN
-      END
+      end do
+
+      return
+end subroutine SNOW_ALONE

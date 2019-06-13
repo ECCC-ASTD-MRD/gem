@@ -33,6 +33,7 @@
       use lun
       use tdpack
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -45,30 +46,21 @@
       real, dimension(Minx:Maxx,Miny:Maxy,  Nk+1), intent(inout) :: F_q
 
 
-!author
-!     Alain Patoine
-!
-!revision
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
-! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!                           - Explicit integration of metric terms
-
 
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
 
       integer :: i, j, k, km, kq, nij, jext, istat
-      real*8 :: tdiv, BsPqbarz, dlnTstr_8, barz, barzp,  &
+      real(kind=REAL64) :: tdiv, BsPqbarz, dlnTstr_8, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
                 w1, w2, w3, phy_bA_m_8, phy_bA_t_8
-      real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
+      real(kind=REAL64)  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, FI
-      real*8, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
-      real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
+      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
       logical :: smago_in_rhs_L
 !

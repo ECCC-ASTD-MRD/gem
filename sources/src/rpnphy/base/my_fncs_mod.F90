@@ -1,4 +1,5 @@
 module my_fncs_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
 
 !==============================================================================!
 !  The following functions are used by the schemes in the multimoment package. !
@@ -8,9 +9,13 @@ module my_fncs_mod
 !==============================================================================!
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
    private
+
+#ifdef ECCC_MY_SCHEME
+
    public  :: NccnFNC,SxFNC,gamma,NccnFNC_v33,SxFNC_v33,gammaDP,diagAlpha_v33, &
               solveAlpha_v33,gser,gammln,gammp,cfg,gamminc
 
@@ -18,7 +23,7 @@ module my_fncs_mod
 
 !==============================================================================!
 
- REAL FUNCTION NccnFNC(Win,Tin,Pin,CCNtype)
+ real function NccnFNC(Win,Tin,Pin,CCNtype)
 
 !---------------------------------------------------------------------------!
 ! This function returns number concentration (activated aerosols) as a
@@ -73,10 +78,10 @@ module my_fncs_mod
 
   endif
 
- END FUNCTION NccnFNC
+ end function NccnFNC
 !======================================================================!
 
-   real FUNCTION SxFNC(Win,Tin,Pin,Qsw,Qsi,CCNtype,WRT)
+   real function SxFNC(Win,Tin,Pin,Qsw,Qsi,CCNtype,WRT)
 
 !---------------------------------------------------------------------------!
 ! This function returns the peak supersaturation achieved during ascent with
@@ -144,10 +149,10 @@ module my_fncs_mod
   endif
   if (Win.le.0.) SxFNC= 1.
 
- END function SxFNC
+ end function SxFNC
 !======================================================================!
 
- real FUNCTION gamma(xx)
+ real function gamma(xx)
 
 !  Modified from "Numerical Recipes"
 
@@ -158,11 +163,11 @@ module my_fncs_mod
 
 ! LOCAL PARAMETERS:
   integer  :: j
-  real*8   :: ser,stp,tmp,x,y,cof(6),gammadp
+  real(REAL64) :: ser,stp,tmp,x,y,cof(6),gammadp
 
 
-  SAVE cof,stp
-  DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
+  save cof,stp
+  data cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
        24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,  &
        -.5395239384953d-5,2.5066282746310005d0/
   x=dble(xx)
@@ -181,7 +186,7 @@ module my_fncs_mod
 
   gamma  = sngl(gammadp)
 
- END FUNCTION gamma
+ end function gamma
 !======================================================================!
 ! ! !
 ! ! ! -- USED BY DIAGNOSTIC-ALPHA DOUBLE-MOMENT (SINGLE-PRECISION) VERSION --
@@ -298,7 +303,7 @@ module my_fncs_mod
 ! 2008-04-15
 
 !======================================================================!
- REAL FUNCTION NccnFNC_v33(Win,Tin,Pin,AIRTYPE)
+ real function NccnFNC_v33(Win,Tin,Pin,AIRTYPE)
 
 !---------------------------------------------------------------------------!
 ! This function returns number concentration (activated aerosols) as a
@@ -309,8 +314,8 @@ module my_fncs_mod
   implicit none
 
 ! PASSING PARAMETERS:
-  real,    INTENT(IN) :: Win, Tin, Pin
-  integer, INTENT(IN) :: AIRTYPE
+  real,    intent(IN) :: Win, Tin, Pin
+  integer, intent(IN) :: AIRTYPE
 
 ! LOCAL PARAMETERS:
   real :: T,p,x,y,a,b,c,d,e,f,g,h,T2,T3,T4,x2,x3,x4,p2
@@ -353,10 +358,10 @@ module my_fncs_mod
 
   endif
 
- END FUNCTION NccnFNC_v33
+ end function NccnFNC_v33
 !======================================================================!
 
-   real*8 FUNCTION SxFNC_v33(Win,Tin,Pin,Qsw,Qsi,AIRTYPE,WRT)
+   real(REAL64) function SxFNC_v33(Win,Tin,Pin,Qsw,Qsi,AIRTYPE,WRT)
 
 !---------------------------------------------------------------------------!
 ! This function returns the peak supersaturation achieved during ascent with
@@ -368,9 +373,9 @@ module my_fncs_mod
  implicit none
 
 ! PASSING PARAMETERS:
-  integer, INTENT(IN) :: WRT
-  integer, INTENT(IN) :: AIRTYPE
-  real,    INTENT(IN) :: Win, Tin, Pin, Qsw, Qsi
+  integer, intent(IN) :: WRT
+  integer, intent(IN) :: AIRTYPE
+  real,    intent(IN) :: Win, Tin, Pin, Qsw, Qsi
 
 ! LOCAL PARAMETERS:
   real   ::  FOQSA,FOQST,Si,Sw,Qv,T,p,x,a,b,c,d,f,g,h,Pcorr,T2corr,   &
@@ -425,26 +430,26 @@ module my_fncs_mod
   endif
   if (Win.le.0.) SxFNC_v33= 1.
 
- END function SxFNC_v33
+ end function SxFNC_v33
 !======================================================================!
 
- FUNCTION gammaDP(xx)
+ function gammaDP(xx)
 
 !  Modified from "Numerical Recipes"
 
   implicit none
 
 ! PASSING PARAMETERS:
-  DOUBLE PRECISION, INTENT(IN) :: xx
+  double precision, intent(IN) :: xx
 
 ! LOCAL PARAMETERS:
-  DOUBLE PRECISION  :: gammaDP
-  INTEGER  :: j
-  DOUBLE PRECISION  :: ser,stp,tmp,x,y,cof(6)
+  double precision  :: gammaDP
+  integer  :: j
+  double precision  :: ser,stp,tmp,x,y,cof(6)
 
 
-  SAVE cof,stp
-  DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
+  save cof,stp
+  data cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
        24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,  &
        -.5395239384953d-5,2.5066282746310005d0/
   x=xx
@@ -461,18 +466,18 @@ module my_fncs_mod
   gammaDP=tmp+log(stp*ser/x)
   gammaDP= exp(gammaDP)
 
- END FUNCTION gammaDP
+ end function gammaDP
 !======================================================================!
 
- FUNCTION diagAlpha_v33(Dm,x)
+ function diagAlpha_v33(Dm,x)
 
   implicit none
 
   integer :: x
-  real*8  :: diagAlpha_v33,Dm
-  real*8, dimension(5) :: c1,c2,c3,c4
-  real*8, parameter    :: pi = 3.14159265d0
-  real*8, parameter  :: alphaMAX= 80.d0
+  real(REAL64) :: diagAlpha_v33,Dm
+  real(REAL64), dimension(5) :: c1,c2,c3,c4
+  real(REAL64), parameter    :: pi = 3.14159265d0
+  real(REAL64), parameter    :: alphaMAX= 80.d0
   data c1 /19.0d0, 12.0d0, 4.5d0, 5.5d0, 3.7d0/
   data c2 / 0.6d0,  0.7d0, 0.5d0, 0.7d0, 0.3d0/
   data c3 / 1.8d0,  1.7d0, 5.0d0, 4.5d0, 9.0d0/
@@ -481,19 +486,19 @@ module my_fncs_mod
   if (x==5.and.Dm>0.008d0) diagAlpha_v33= 1.d3*Dm-2.6d0
   diagAlpha_v33= min(diagAlpha_v33, alphaMAX)
 
- END function diagAlpha_v33
+ end function diagAlpha_v33
 
 !======================================================================!
 
- FUNCTION solveAlpha_v33(Q,N,Z,Cx,rho)
+ function solveAlpha_v33(Q,N,Z,Cx,rho)
 
  implicit none
 
 ! PASSING PARAMETERS:
-  real, INTENT(IN) :: Q, N, Z, Cx, rho
+  real, intent(IN) :: Q, N, Z, Cx, rho
 
 ! LOCAL PARAMETERS:
-  real*8 :: solveAlpha_v33
+  real(REAL64) :: solveAlpha_v33
   real   :: a,g,a1,g1,g2,tmp1
   integer :: i
   real, parameter :: alphaMax= 40.
@@ -519,7 +524,7 @@ module my_fncs_mod
     stop
   endif
 
-  IF (Q>epsQ .and. N>epsN .and. Z>epsZ ) THEN
+  if (Q>epsQ .and. N>epsN .and. Z>epsZ ) then
 
      tmp1= Cx/(rho*Q)
      g   = tmp1*Z*tmp1*N    ! g = (Z*N)*[Cx / (rho*Q)]^2
@@ -557,17 +562,17 @@ module my_fncs_mod
 
      solveAlpha_v33= max(0.,min(a,alphaMax))
 
-  ELSE
+  else
 
      solveAlpha_v33= 0.
 
-  ENDIF
+  endif
 
- END FUNCTION solveAlpha_v33
+ end function solveAlpha_v33
 
 !======================================================================!
 
- SUBROUTINE gser(gamser,a,x,gln)
+ subroutine gser(gamser,a,x,gln)
 
 ! USES gammln
 
@@ -602,10 +607,10 @@ module my_fncs_mod
 1 gamser=summ*exp(-x+a*log(x)-gln)
  return
 
-END SUBROUTINE gser
+end subroutine gser
 !======================================================================!
 
- real FUNCTION gammln(xx)
+ real function gammln(xx)
 
 !  Returns value of ln(GAMMA(xx)) for xx>0
 !   (modified from "Numerical Recipes")
@@ -617,10 +622,10 @@ END SUBROUTINE gser
 
 ! LOCAL PARAMETERS:
   integer  :: j
-  real*8   :: ser,stp,tmp,x,y,cof(6),gammadp
+  real(REAL64) :: ser,stp,tmp,x,y,cof(6),gammadp
 
-  SAVE cof,stp
-  DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
+  save cof,stp
+  data cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
        24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,  &
        -.5395239384953d-5,2.5066282746310005d0/
   x=dble(xx)
@@ -635,10 +640,10 @@ END SUBROUTINE gser
   enddo
   gammln= sngl( tmp+log(stp*ser/x)  )
 
- END FUNCTION gammln
+ end function gammln
 !======================================================================!
 
- real FUNCTION gammp(a,x)
+ real function gammp(a,x)
 
 ! USES gcf,gser
 
@@ -658,10 +663,10 @@ END SUBROUTINE gser
  endif
  return
 
- END FUNCTION gammp
+ end function gammp
 !======================================================================!
 
- SUBROUTINE cfg(gammcf,a,x,gln)
+ subroutine cfg(gammcf,a,x,gln)
 
 ! USES gammln
 
@@ -700,17 +705,17 @@ END SUBROUTINE gser
 1 gammcf=exp(-x+a*log(x)-gln)*h
  return
 
-END SUBROUTINE cfg
+end subroutine cfg
 !======================================================================!
 
- real FUNCTION gamminc(p,xmax)
+ real function gamminc(p,xmax)
 
 ! USES gammp, gammln
 ! Returns incomplete gamma function, gamma(p,xmax)= P(p,xmax)*GAMMA(p)
  real :: p,xmax
  gamminc= gammp(p,xmax)*exp(gammln(p))
 
- end FUNCTION gamminc
+ end function gamminc
 
 !======================================================================!
 !  real function x_tothe_y(x,y)
@@ -721,5 +726,7 @@ END SUBROUTINE cfg
 !
 !  end function x_tothe_y
 !======================================================================!
+
+#endif
 
 end module my_fncs_mod

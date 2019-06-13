@@ -17,7 +17,7 @@
 !/@*
 subroutine intozon2(jour, mois)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    integer, intent(in) :: jour,mois
    !@Author B. Dugas (Winter 2001) - From litozon2
    !@Object

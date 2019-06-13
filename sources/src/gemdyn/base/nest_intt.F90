@@ -25,6 +25,7 @@
       use tr3d
       use step_options
       use gem_timing
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -34,8 +35,8 @@
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer :: yy,mo,dd,hh,mm,ss,dum,n,istat
       real, pointer, dimension(:,:,:) :: tr_deb,tr_fin,tr
-      real*8 :: dayfrac,tx,dtf,a,b
-      real*8, parameter :: one=1.0d0, sid=86400.0d0, rsid=one/sid
+      real(kind=REAL64) :: dayfrac,tx,dtf,a,b
+      real(kind=REAL64), parameter :: one=1.0d0, sid=86400.0d0, rsid=one/sid
 !
 !     ---------------------------------------------------------------
 !

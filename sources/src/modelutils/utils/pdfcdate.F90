@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!---------------------------------- LICENCE BEGIN ------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -11,35 +11,36 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-      subroutine pdfcdate(yyyy,mo,dd,hh,mm,ss,jdate)
-      implicit none
-#include <arch_specific.hf>
-      real*8 jdate
-      integer yyyy,mo,dd,hh,mm,ss,seconds
+subroutine pdfcdate(yyyy,mo,dd,hh,mm,ss,jdate)
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   implicit none
+!!!#include <arch_specific.hf>
+   include "rmnlib_basics.inc"
+   real(REAL64) :: jdate
+   integer yyyy,mo,dd,hh,mm,ss,seconds
 
-      real*8 f,rj
+   real(REAL64) :: f,rj
 
-      rj = int(jdate)
-      f = jdate - rj
-      seconds = nint(f * 86400.0)
-      
-      ss = mod(seconds, 60)
-      mm = mod(seconds - ss,3600)/60
-      
-      
-      hh = (seconds-60*mm-ss) / 3600
-      if (hh.eq.24) then
-         hh = 0
-         seconds = seconds - 86400
-         rj = rj+1.0
-      endif
-      mm = (seconds - hh * 3600 - ss) / 60
-      
-      call datec(int(rj),yyyy,mo,dd)
-      
-      return
-      end
-      
+   rj = int(jdate)
+   f = jdate - rj
+   seconds = nint(f * 86400.0)
+
+   ss = mod(seconds, 60)
+   mm = mod(seconds - ss,3600)/60
+
+
+   hh = (seconds-60*mm-ss) / 3600
+   if (hh.eq.24) then
+      hh = 0
+      seconds = seconds - 86400
+      rj = rj+1.0
+   endif
+   mm = (seconds - hh * 3600 - ss) / 60
+
+   call datec(int(rj),yyyy,mo,dd)
+
+   return
+end subroutine pdfcdate
+

@@ -18,7 +18,7 @@
 */
 /* 
  * This is a set of routines used to manage the "missing data" feature of the standard file package.
- * These troutines can also be used by other packages, provided that the datatype indicator
+ * These routines can also be used by other packages, provided that the datatype indicator
  * uses values that are the same as the standard file package, namely:
  * 
  *   data type codes
@@ -93,7 +93,7 @@
  * 
  *   this subroutine is used to set the special values used to flag "missing" data for
  *   real, integer, unsigned integer, 8 byte real, 2 byte integer, unsigned 2 byte integer
- *   calling this soubroutine will also activate the package
+ *   calling this subroutine will also activate the package
  * 
  * C interface:
  *   void set_missing_value_flags(float *f, int *i, unsigned int *ui, double *d, short *s, unsigned short *us,

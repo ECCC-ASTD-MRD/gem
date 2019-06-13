@@ -35,11 +35,11 @@
   real, parameter ::  TGL    = 0.2731600000000e+03  ! temp glace dans atm   K
   real, parameter ::  TRPL   = 0.2731600000000e+03  ! point triple - eau    K
 
-  real*8, parameter :: TTNS1  = 610.78D0
-  real*8, parameter :: TTNS3W = 17.269D0
-  real*8, parameter :: TTNS3I = 21.875D0
-  real*8, parameter :: TTNS4W = 35.86D0
-  real*8, parameter :: TTNS4I =  7.66D0
+  real(REAL64), parameter :: TTNS1  = 610.78D0
+  real(REAL64), parameter :: TTNS3W = 17.269D0
+  real(REAL64), parameter :: TTNS3I = 21.875D0
+  real(REAL64), parameter :: TTNS4W = 35.86D0
+  real(REAL64), parameter :: TTNS4I =  7.66D0
 
 !  logical :: bit = .true.
 !end module module_thermoconsts

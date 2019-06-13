@@ -45,6 +45,7 @@
 
 module gem_fft
    use iso_c_binding
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -80,8 +81,9 @@ contains
       ! be applied once during a forward->backward transformation
       ! pair to make the combination an identity.
 
+      use, intrinsic :: iso_fortran_env
       implicit none
-      real*8 :: get_dft_norm_factor ! Result
+      real(kind=REAL64) :: get_dft_norm_factor ! Result
       integer, intent(in) :: length ! Transform length
       character(len=*), intent(in) :: f_type ! transform type
 
@@ -128,6 +130,7 @@ contains
       use fftw3 ! Incorporate the FFTW module
       use iso_c_binding
       use omp_lib, only : omp_get_max_threads
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer, intent(in) :: tdim, &   ! Dimension to transform, 1-3
@@ -136,7 +139,7 @@ contains
       ! Input and output arrays.  These are intent(inout) because the
       ! FFTW planning process performs measurements, overwriting any
       ! data already present.
-      real*8, intent(inout), target :: F_in(:,:,:), F_out(:,:,:)
+      real(kind=REAL64), intent(inout), target :: F_in(:,:,:), F_out(:,:,:)
 
       character(len=*), intent(in) :: f_type ! Transform type
 
@@ -162,7 +165,7 @@ contains
       integer :: fftw_kind(1) ! Type of transform
 
       ! Pointers for pointer math -- see the planning section for discussion
-      real*8, dimension(:), pointer, contiguous :: in_ptr, out_ptr
+      real(kind=REAL64), dimension(:), pointer, contiguous :: in_ptr, out_ptr
 
       ! The FFTW library has several different planning options, which offer
       ! a planning time/execution time tradeoff.  More time speant measuring
@@ -212,7 +215,7 @@ contains
       istrides = 1 ! Sensible default
       ostrides = 1
 
-      ! Pointer math: the stride, in terms of REAL*8 units, corresponds
+      ! Pointer math: the stride, in terms of REAL64 units, corresponds
       ! to the difference in memory location along the relevant dimension
       ! (in bytes) divided by the size of a double (8 bytes).  We only
       ! compute the stride along dimensions where the array is a non-
@@ -327,12 +330,13 @@ contains
 
       use iso_c_binding
       use fftw3
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       type(dft_descriptor), intent(in) :: tdesc ! Transform descriptor
-      real*8, intent(inout),target :: F_in(:,:,:), F_out(:,:,:) ! Input and output array (slices)
+      real(kind=REAL64), intent(inout),target :: F_in(:,:,:), F_out(:,:,:) ! Input and output array (slices)
 
-      real*8, dimension(:), pointer, contiguous :: in_ptr, out_ptr
+      real(kind=REAL64), dimension(:), pointer, contiguous :: in_ptr, out_ptr
 
       if (any(shape(F_in) /= tdesc%tsize)) then
          call gem_error(-1,'execute_r2r_dft_plan','Input array does not match plan size')
@@ -354,6 +358,7 @@ contains
 
       use iso_c_binding
       use fftw3
+      use, intrinsic :: iso_fortran_env
       implicit none
       type(dft_descriptor), intent(inout) :: tdesc
 

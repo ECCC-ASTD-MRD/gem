@@ -18,7 +18,7 @@
       Function stetae(tt, td, pr)
       use tdpack, only: sttlcl, fopoip, fopoit, foqsa, schal, sesahu3, foefq, cpd, tcdk
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Real stetae
       Real tt, td, pr

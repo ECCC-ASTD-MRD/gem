@@ -33,23 +33,24 @@ contains
       use sol, only    : sol_pil_e, sol_pil_w, sol_pil_n, sol_pil_s
       use glb_pil
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       ! Input (Rhs) and output (Lhs) arrays have dimensions given by the ldnh variables
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in)  :: Rhs
-      real*8, dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: Lhs
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in)  :: Rhs
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: Lhs
 
       ! The Red/Black Gauss-seidel algorithm performs line relaxation on the red points first,
       ! then it uses that approximate solution to give an enhanced solution at the black points.
       ! This requires exchange of the red points across processors.  By defining separate working
       ! arrays for x(red) and f(black), we minimize data exchange and enhance contiguous data access
-      real*4, dimension(:,:,:), allocatable, save :: lhs_red_halo, rhs_black
+      real, dimension(:,:,:), allocatable, save :: lhs_red_halo, rhs_black
 !dir$ attributes align: 64:: lhs_red_halo, rhs_black
       integer, save :: cl_ni
 
       ! Similarly, it is very convenient to have local copies of the matrix, similarly-ordered
       ! such that entries for red and black points are separated
-      real*4, save, dimension(:,:,:,:), allocatable :: mat_red, mat_black
+      real, save, dimension(:,:,:,:), allocatable :: mat_red, mat_black
 !dir$ attributes align: 64:: mat_red, mat_black
       logical, save :: matrix_init = .false.
 
@@ -57,7 +58,7 @@ contains
       ! backward substitution.  This destructively modifies the coefficients of the tridiagonal
       ! matrix and the right-hand side, so we want arrays to hold temporary copies.
       integer, parameter :: STRIP_SIZE = 16
-      real*4, dimension(STRIP_SIZE,l_nk) :: as, bs, cs, ds ! Arrays for "strip-mined" Thomas Algorithm
+      real, dimension(STRIP_SIZE,l_nk) :: as, bs, cs, ds ! Arrays for "strip-mined" Thomas Algorithm
       integer :: strip
 
 

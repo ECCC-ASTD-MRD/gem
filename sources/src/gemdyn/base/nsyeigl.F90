@@ -20,14 +20,15 @@
 !
       subroutine nsyeigl ( F_eval_8, F_Levec_8, F_Revec_8, F_b_8,&
                            nn, nmax, nwork )
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: nn, nmax, nwork
-      real*8, dimension(nmax), intent(out) :: F_eval_8
-      real*8, dimension(nmax,nmax), intent(inout) :: F_Levec_8
-      real*8, dimension(nmax,nmax), intent(in) :: F_b_8
-      real*8, dimension(nmax,nmax), intent(out) :: F_Revec_8
+      real(kind=REAL64), dimension(nmax), intent(out) :: F_eval_8
+      real(kind=REAL64), dimension(nmax,nmax), intent(inout) :: F_Levec_8
+      real(kind=REAL64), dimension(nmax,nmax), intent(in) :: F_b_8
+      real(kind=REAL64), dimension(nmax,nmax), intent(out) :: F_Revec_8
 
 !author  Abdessamad Qaddouri - 2007
 !
@@ -40,10 +41,10 @@
 !
 !------------------------------------------------------------------
 
-      real*8, external :: ddot
+      real(kind=REAL64), external :: ddot
       integer  i,j,k,info
-      real*8 alfr(nmax),alfi(nmax),beta(nmax),wk1(nwork)
-      real*8 BVL(nmax,nmax),dotvl(nn),vl(nmax,nmax),b(nmax,nmax)
+      real(kind=REAL64) alfr(nmax),alfi(nmax),beta(nmax),wk1(nwork)
+      real(kind=REAL64) BVL(nmax,nmax),dotvl(nn),vl(nmax,nmax),b(nmax,nmax)
 !
 ! --------------------------------------------------------------------
 !

@@ -17,7 +17,7 @@
 subroutine tkealg2(estar,en,zn,ze,dvdz2,buoy_flux,diss,shr,buoy,tau,n,nk)
 
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    ! Argument declaration
    integer, intent(in) :: n                          !horizontal dimension

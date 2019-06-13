@@ -1,4 +1,5 @@
 subroutine time2sec_main()
+   use, intrinsic :: iso_fortran_env, only: REAL64
   use timestr_mod, only: timestr2sec
   use str_mod, only: str_toreal
   implicit none
@@ -18,7 +19,7 @@ subroutine time2sec_main()
   !  Internal variables
   integer :: npos,istat
   real :: sec,dt
-  real(RDOUBLE) :: dt_8
+  real(REAL64) :: dt_8
   character(len=STRLEN) :: timestr,dtstr
 
   !  Obtain arguments

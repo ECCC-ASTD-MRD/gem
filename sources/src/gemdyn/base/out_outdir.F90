@@ -27,6 +27,7 @@
       use path
       use clib_itf_mod
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -39,7 +40,7 @@
       integer :: err,last_step_post,flag_step_post,stepno, &
                  prognum,prognum1,upperlimit
       real :: interval
-      real*8 :: fatc_8
+      real(kind=REAL64) :: fatc_8
 !
 !----------------------------------------------------------------------
 !

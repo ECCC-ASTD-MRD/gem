@@ -17,7 +17,7 @@
 !/@*
 subroutine str_split(F_part1,F_part2,F_str,F_sep)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective Split a string at first occurence of a separator
    !@arguments
    character(len=*),intent(out) :: F_part1 !part of str before 1st occurence of sep
@@ -44,7 +44,7 @@ end subroutine str_split
 !/@*
 subroutine str_split2list(F_parts,F_str,F_sep,F_nmax)
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective Split a string at first occurence of a separator
    !@arguments
    integer,intent(in) :: F_nmax
@@ -79,6 +79,8 @@ end subroutine str_split2list
 
 !/@*
 function str_split2keyval(F_kv_S,F_string_S,F_nmax) result(F_nkeys)
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use clib_itf_mod, only: clib_tolower
    use str_mod, only: str_tab2space, str_rm_quotes
    implicit none
    !@objective split a config like string (key1=val;key2=val) in a set of key/val
@@ -103,7 +105,6 @@ function str_split2keyval(F_kv_S,F_string_S,F_nmax) result(F_nkeys)
    ! spaces around '=', ';' are ignored
    ! tabs are converted to one space
    !*@/
-#include <clib_interface_mu.hf>
    integer,parameter :: KEY = 1
    integer,parameter :: VAL = 2
    character(len=1024) :: s0_S,key_S,key2_S,key3_S,val_S,list_S(F_nmax)
@@ -112,7 +113,7 @@ function str_split2keyval(F_kv_S,F_string_S,F_nmax) result(F_nkeys)
    s0_S = F_string_S
    call str_tab2space(s0_S)
    s0_S = adjustl(s0_S)
-   
+ 
    F_nkeys = 0
    do n=1,F_nmax
       if (F_kv_S(KEY,n) == '') exit

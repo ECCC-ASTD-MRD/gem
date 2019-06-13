@@ -25,6 +25,7 @@
       use hgc
       use lun
       use path
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -40,7 +41,7 @@
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
       real, dimension(:), allocatable :: xpos, ypos
       real, dimension(:,:), allocatable :: mask,wrk1,wrk2
-      real*8, dimension(:), allocatable :: x_8, y_8
+      real(kind=REAL64), dimension(:), allocatable :: x_8, y_8
 !
 !----------------------------------------------------------------------
 !

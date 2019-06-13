@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -29,12 +29,12 @@ end module mod_handle_error
 
 !/@*
 subroutine collect_error(F_errorCode) !TODO: optional F_comm_S
-use iso_c_binding
+   use iso_c_binding
+   use rpn_comm_itf_mod
    use mod_handle_error, only: debug_L
    implicit none
    integer,intent(inout) :: F_errorCode
-#include <arch_specific.hf>
-   include "rpn_comm.inc"
+!!!#include <arch_specific.hf>
 !*@/
    integer :: errcode,err
    !---------------------------------------------------------------------
@@ -67,7 +67,7 @@ end subroutine handle_error_setdebug
 subroutine handle_error_L(F_isOK_L,F_FromSubName,F_Message)
 !!$   use mod_handle_error, only: hasCallBackFn,callBackFnNb
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective 
    !@arguments
    logical :: F_isOK_L
@@ -90,12 +90,12 @@ end subroutine handle_error_L
 !/@*
 subroutine handle_error(F_errorCode,F_FromSubName,F_Message)
    use iso_c_binding
+   use rpn_comm_itf_mod
 !!$   use mod_handle_error, only: hasCallBackFn,callBackFnNb,debug_L
    use mod_handle_error, only: debug_L
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include "stop_mpi.h"
-   include "rpn_comm.inc"
    !@objective 
    !@arguments
    integer :: F_errorCode
@@ -146,7 +146,7 @@ end subroutine handle_error
 subroutine handle_error_set_callBackFn(F_callBackFn)
    use mod_handle_error, only: hasCallBackFn,callBackFnNb
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@objective Set a fn to be called before stop in case of error
    !@arguments
    integer,external :: F_callBackFn

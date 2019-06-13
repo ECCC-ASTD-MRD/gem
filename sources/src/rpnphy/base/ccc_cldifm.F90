@@ -21,7 +21,7 @@
                          il1, il2, ilg, lay, lev)
 !
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev, lev1, maxc, il1, il2, i,k, km1, l, lp1
       real cut, x, y, z

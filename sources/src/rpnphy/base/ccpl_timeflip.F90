@@ -1,7 +1,7 @@
 subroutine ccpl_timeflip(F_moins,F_plus,F_n,F_nk)
 
   implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
   ! Timeflip for column coupling:
   !   F_moins = F_plus

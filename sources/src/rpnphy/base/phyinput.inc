@@ -1,6 +1,6 @@
  
       integer,parameter :: PHYINREAD_MAX = 512
-      integer(IDOUBLE) :: phyinread_jdateo
+      integer(INT64) :: phyinread_jdateo
       integer :: phyinread_n, phyinread_dt, phyinread_step
       integer :: phyinread_list_nk(PHYINREAD_MAX)
       character(len=32) :: phyinread_list_S(PHYINREAD_MAX)

@@ -27,6 +27,7 @@ module inp_base
    use lun
    use ver
    use tdpack
+   use, intrinsic :: iso_fortran_env
    implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -128,7 +129,8 @@ contains
       logical, dimension (:), allocatable :: zlist_o
       logical :: quiet_L
       integer, parameter :: nlis = 1024
-      integer i, idst, err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
+      integer i, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,cnt
       ! Remove the following line by 2021
       integer ni_dest,nj_dest,ut1_is_urt1
       integer subid,nicore,njcore,datev
@@ -140,7 +142,7 @@ contains
       real   , dimension(:  ), allocatable :: wk3
       real   , dimension(:,:), allocatable :: wk1,wk2
       real   , dimension(:  ), pointer     :: posx,posy
-      real*8 add, mult
+      real(kind=REAL64) add, mult
       common /bcast_i / lislon,nz
 !
 !---------------------------------------------------------------------
@@ -226,9 +228,11 @@ contains
              end if
          end if
 
-         allocate (F_ip1(lislon))
+         call sort_ip1 (liste,liste_sorted,lislon)
+
+         allocate (F_ip1(max(1,lislon)))
          if (lislon > 1) then
-            call sort_ip1 (liste,F_ip1,lislon)
+            F_ip1(1:lislon) = liste_sorted(1:lislon)
          else
             F_ip1(1) = p1
          end if
@@ -406,7 +410,7 @@ contains
       integer, dimension (:), pointer :: ip1_list
       real, dimension (:,:,:), pointer :: wrk
       real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current
-      real*8 diffd
+      real(kind=REAL64) diffd
 !
 !---------------------------------------------------------------------
 !
@@ -595,6 +599,8 @@ inner:      do kh=1, F_nka_hu
       if (associated(F_ip1 )) deallocate (F_ip1 )
       if (associated(F_sq  )) deallocate (F_sq  )
       if (associated(F_gz_q)) deallocate (F_gz_q)
+      if (associated(F_gz_u)) deallocate (F_gz_u)
+      if (associated(F_gz_v)) deallocate (F_gz_v)
       nullify (F_ip1,F_sq,F_gz_q,F_gz_u,F_gz_v,wrk,ip1_list)
 
       err(1) = inp_read_mt ( 'SFCPRES', 'Q', wrk, 1,&
@@ -608,9 +614,8 @@ inner:      do kh=1, F_nka_hu
       else
          message_S= 'MISSING SURFACE P0 DATA'
       endif
-
       err(3)= inp_read_mt ( 'GEOPOTENTIAL', ['Q','U','V'], &
-                             F_gz_q, 3, F_ip1, F_nka )
+                             wrk, 3, F_ip1, F_nka )
       if (err(3) == 0) then
          call convip (F_ip1(F_nka), lev, kind, -1, message_S, .false.)
          limit_near_sfc=abs(lev-1.)
@@ -620,8 +625,13 @@ inner:      do kh=1, F_nka_hu
             message_S= 'Missing field: GZ at hyb or eta = 1.0'
          else
             err(4) = 0
-            F_gz_u => F_gz_q(:,:,  F_nka+1:2*F_nka)
-            F_gz_v => F_gz_q(:,:,2*F_nka+1:3*F_nka)
+            allocate ( F_gz_q(l_minx:l_maxx,l_miny:l_maxy,F_nka),&
+                       F_gz_u(l_minx:l_maxx,l_miny:l_maxy,F_nka),&
+                       F_gz_v(l_minx:l_maxx,l_miny:l_maxy,F_nka) )
+            F_gz_q = wrk(:,:,        1:  F_nka)
+            F_gz_u = wrk(:,:,  F_nka+1:2*F_nka)
+            F_gz_v = wrk(:,:,2*F_nka+1:3*F_nka)
+            deallocate (wrk)
          endif
       else
          message_S= 'MISSING GZ DATA'
@@ -771,7 +781,7 @@ inner:      do kh=1, F_nka_hu
       character(len=12) lab
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
-      integer liste_u(nlis),liste_v(nlis),lislon
+      integer liste_u(nlis),liste_v(nlis),liste_sorted(nlis),lislon
       integer i,err, nz, n1,n2,n3, nrec, cnt, same_rot, ni_dest, nj_dest
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -805,10 +815,12 @@ inner:      do kh=1, F_nka_hu
 !         same_rot= samegrid_rot ( src_gid, &
 !                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
 
-         allocate (F_ip1(lislon))
+         call sort_ip1 (liste_u,liste_sorted,lislon)
+         call sort_ip1 (liste_v,liste_sorted,lislon)
+
+         allocate (F_ip1(max(1,lislon)))
          if (lislon > 1) then
-            call sort_ip1 (liste_u,F_ip1,lislon)
-            call sort_ip1 (liste_v,F_ip1,lislon)
+            F_ip1(1:lislon) = liste_sorted(1:lislon)
          else
             F_ip1(1) = p1
          end if
@@ -1235,7 +1247,6 @@ inner:      do kh=1, F_nka_hu
 !---------------------------------------------------------------------
 !
       nullify (ip1_list, ur, vr, dummy)
-
       if (F_stag_L) then
          call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka )
       else
@@ -1296,6 +1307,7 @@ inner:      do kh=1, F_nka_hu
 
 end module inp_base
       subroutine reshape_wk (src,dst,nix,njx,ni,nj,hx,hy)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer nix,njx,ni,nj,hx,hy
       real src(nix,njx), dst(ni,nj)

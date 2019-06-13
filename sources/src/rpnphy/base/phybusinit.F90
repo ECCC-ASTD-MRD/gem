@@ -16,12 +16,13 @@
 
 !/@*
 subroutine phybusinit(ni,nk)
+   use wb_itf_mod
    use cnv_options
    use phy_options
-   use phy_status, only: phy_error_L 
+   use phy_status, only: phy_error_L
    use phybus
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
    !        (busent, busdyn, busper and busvol) for the entire physics.
    !@Arguments
@@ -34,7 +35,6 @@ subroutine phybusinit(ni,nk)
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
 
-#include <WhiteBoard.hf>
    include "ens.cdk"
    include "surface.cdk"
    include "mcica.cdk"

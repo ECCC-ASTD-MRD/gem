@@ -16,10 +16,11 @@
       subroutine adz_cfl
       use adz_mem
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer :: cfl_i(3,3)
-      real*8  :: cfl_8(3)
+      real(kind=REAL64)  :: cfl_8(3)
 !
 !     ---------------------------------------------------------------
 !
@@ -48,6 +49,7 @@
       use glb_ld
       use ver
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -55,14 +57,14 @@
       integer, intent(in) :: i0, in, j0, jn, k0 !Scope
       real, dimension(3,F_ni,F_nj,F_nk), intent(in) :: F_xyz
       integer, intent(out) :: F_cfl_i(3,3)
-      real*8,  intent(out) :: F_cfl_8(3)
+      real(kind=REAL64),  intent(out) :: F_cfl_8(3)
 
       integer, dimension(3,3,Ptopo_numproc) :: iwk
-      real*8 , dimension(3  ,Ptopo_numproc) :: wk_8
+      real(kind=REAL64) , dimension(3  ,Ptopo_numproc) :: wk_8
 
       integer :: i, j, k, cfl_i(3,3), err, iproc, imax,jmax,kmax
       integer :: imaxH,jmaxH,kmaxH,imaxV,jmaxV,kmaxV
-      real*8  :: x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, Hmax_cfl_8, &
+      real(kind=REAL64)  :: x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, Hmax_cfl_8, &
                  Vmax_cfl_8, max_cfl_8, cfl_8(3)
 !
 !     ---------------------------------------------------------------

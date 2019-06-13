@@ -41,7 +41,7 @@ module cpl_itf
 contains
       integer function cpl_nml (F_namelistf_S, F_unout)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       character(len=*), intent(in) :: F_namelistf_S
       integer, intent(in)          :: F_unout
       cpl_nml= 0
@@ -54,7 +54,7 @@ contains
                                  F_i0, F_j0, F_in, F_jn, F_nk               , &
                                  F_z0mtype, F_z0ttype, F_z0lat)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       character(len=*), intent(in) :: F_path_S,F_z0mtype,F_z0ttype
       logical, intent(in)          :: F_print_L
       integer, intent(in)          :: F_dateo, F_unout                , &
@@ -72,7 +72,7 @@ contains
 
       subroutine cpl_step (F_stepcount, F_stepdriver)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       integer, intent(in) :: F_stepcount, F_stepdriver
       if (F_stepcount < 0 .and. F_stepdriver < 0) print *,'cpl_step (stub)', F_stepcount, F_stepdriver
       return
@@ -80,7 +80,7 @@ contains
 
       subroutine cpl_update (F_f2u, F_name_S, F_pos, F_ni, rho, u, v, vmod, cmu, cplu)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
       character(len=*), intent(in) :: F_name_S
       integer, intent(in)          :: F_ni
@@ -99,7 +99,7 @@ contains
 
       subroutine cpl_restart (F_WorR_S)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       character(len=*),intent(in) :: F_WorR_S
       if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_restart (stub)', F_WorR_S
       return
@@ -107,7 +107,7 @@ contains
 
       subroutine cpl_terminate (F_pcomm_L)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       logical, intent(in) :: F_pcomm_L
       if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_terminate (stub)', F_pcomm_L
       return
@@ -115,7 +115,7 @@ contains
 
       subroutine cpl_snapshot (F_mode)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       character(len=*), intent(in) :: F_mode
       if (CPL_COMPATIBILITY_LVL == 0) print *,'cpl_snapshot (stub)', F_mode
       return

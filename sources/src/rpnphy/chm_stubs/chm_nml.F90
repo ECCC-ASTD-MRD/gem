@@ -29,7 +29,7 @@ integer function chm_nml (F_namelist,lun_out)
 !
 !  Input arguments
 !
-   character* (*), intent(in) :: F_namelist
+   character(len=*), intent(in) :: F_namelist
    integer,        intent(in) :: lun_out
  
    chm_nml = 1

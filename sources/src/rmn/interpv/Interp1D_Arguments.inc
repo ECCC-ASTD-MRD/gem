@@ -61,7 +61,7 @@
 !
 !NOTES
 !        This file is to be included by the line,
-!                    '#include "Interp1D_Arguments.cdk" '.
+!                    '#include "Interp1D_Arguments.inc" '.
 !
 !        It is assumed that wherever this file is included, the inclusion is
 !        preceded by 'use Interp1D_Constants'.

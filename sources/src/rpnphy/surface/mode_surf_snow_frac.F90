@@ -61,7 +61,7 @@ CONTAINS
 !
 USE MODD_SNOW_PAR, ONLY : XWCRN
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW ! snow amount over natural areas (kg/m2)
 REAL, DIMENSION(SIZE(PWSNOW))   :: PPSNG  ! snow fraction over bare ground
@@ -78,7 +78,7 @@ END FUNCTION SNOW_FRAC_GROUND
 !
 USE MODD_SNOW_PAR, ONLY : XWCRN
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PPSNG  ! snow fraction over bare ground
 REAL, DIMENSION(SIZE(PPSNG))    :: PWSNOW ! snow amount over natural areas (kg/m2)
@@ -93,7 +93,7 @@ END FUNCTION WSNOW_FROM_SNOW_FRAC_GROUND
 !     #########################################################
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW ! snow amount over natural areas (kg/m2)
 REAL, DIMENSION(:), INTENT(IN)  :: PZ0VEG ! vegetation roughness length for momentum
@@ -111,7 +111,7 @@ END FUNCTION SNOW_FRAC_VEG
 !     ############################################################
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW ! snow amount over natural areas (kg/m2)
 REAL, DIMENSION(:), INTENT(IN)  :: PPSNG  ! snow fraction over bare ground
@@ -132,7 +132,7 @@ END FUNCTION SNOW_FRAC_NAT
 !     ##############################################################
 !
 USE MODD_SNOW_PAR, ONLY : XWCRN
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROAD ! snow amount over roads (kg/m2) 
 LOGICAL, DIMENSION(:), INTENT(IN)  :: OSNOW    ! T: snow-fall is occuring
@@ -160,7 +160,7 @@ END SUBROUTINE SNOW_FRAC_ROAD
 !     ##############################################################
 !
 USE MODD_SNOW_PAR, ONLY : XWCRN
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROOF ! snow amount over roofs (kg/m2) 
 LOGICAL, DIMENSION(:), INTENT(IN)  :: OSNOW    ! T: snow-fall is occuring

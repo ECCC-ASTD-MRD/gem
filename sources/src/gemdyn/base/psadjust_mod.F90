@@ -14,10 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module psadjust
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-   real*8 :: psadj_g_avg_ps_initial_8, psadj_scale_8, psadj_fact_8
+   real(kind=REAL64) :: psadj_g_avg_ps_initial_8, psadj_scale_8, psadj_fact_8
 
 end module psadjust

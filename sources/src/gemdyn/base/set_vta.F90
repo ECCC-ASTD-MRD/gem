@@ -15,8 +15,6 @@
 
 !**s/r set_vta
 !
-
-!
       subroutine set_vta
       use gmm_vta
       use glb_ld
@@ -25,18 +23,6 @@
       use var_gmm
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     alain patoine - march 1994
-!
-!revision
-! v2_00 - Desgagne/Lee   - initial MPI version (from setvta v1_03)
-! v2_21 - J. P. Toviessi - rename some model output variables
-! v2_30 - Edouard S.     - remove pi' at the top
-! v2_31 - Desgagne M.    - re-introduce 3D tracers*
-! v4_05 - Lepine M.      - VMM replacement with GMM
-!
-
 
       integer :: istat
 !     ---------------------------------------------------------------

@@ -63,11 +63,11 @@
       
       real a1,a2,a3,a4,x,c1,c2,c3,c4,c5,c6
       real fa, fa2, fa3, fa4
+      real dx,dy
       
 !     definition des fonctions in-line
 
 #include "ez_qqqxtrp.cdk"
-#include "cubic.cdk"
 #include "zlin.cdk"
 
       fa(a1,a2,a3,a4,x,x1,x2,x3)=a1+(x-x1)*(a2+(x-x2)*(a3+a4*(x-x3)))

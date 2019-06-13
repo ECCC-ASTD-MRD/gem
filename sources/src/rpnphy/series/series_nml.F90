@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,15 +14,15 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_nml_mod
+   use clib_itf_mod, only: clib_isreadok, clib_toupper
+   use wb_itf_mod
    use series_options
    private
    public :: series_nml
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <msg.h>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
-#include <clib_interface_mu.hf>
 
    integer, parameter, public :: SER_NML_ERR  = RMN_ERR
    integer, parameter, public :: SER_NML_NONE = RMN_OK
@@ -34,7 +34,7 @@ module series_nml_mod
    ! 2017-01, S.Chamberland - Major revision
 
 contains
-   
+
    !/@*
    function series_nml(F_namelistf_S) result(F_istat)
       implicit none

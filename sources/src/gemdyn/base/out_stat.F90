@@ -20,12 +20,6 @@
       implicit none
 #include <arch_specific.hf>
 !
-!author
-!    Michel Desgagne - Fall 2012
-!
-!revision
-! v4_80 - Desgagne M. - Initial version
-!
 !--------------------------------------------------------------------
 !
       print*, 'OUTPUT_STAT: stack size: ', out_stk_size

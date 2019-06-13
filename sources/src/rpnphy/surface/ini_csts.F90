@@ -65,7 +65,7 @@
 USE MODD_CSTS
 !
 implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !  
 !-------------------------------------------------------------------------------
 !

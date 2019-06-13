@@ -16,6 +16,7 @@ module theo_options
       use bubble_options
       use mtn_options
       use ctrl
+      use, intrinsic :: iso_fortran_env
       implicit none
       public
       save
@@ -37,6 +38,7 @@ module theo_options
 contains
 
       integer function theocases_nml (F_unf)
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer F_unf
@@ -111,6 +113,7 @@ contains
 !-------------------------------------------------------------------
 !
       subroutine theo_cfg()
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer err
@@ -156,11 +159,12 @@ contains
       use gmm_pw
       use gmm_vt1
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: istat,i,j,k,err
-      real*8  :: pp, ex
+      real(kind=REAL64)  :: pp, ex
 !
 !---------------------------------------------------------------------
 !

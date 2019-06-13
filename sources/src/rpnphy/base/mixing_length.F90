@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,44 +12,45 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 module mixing_length
    ! Container for calculation and manipulation of mixing and dissipation length scales in the PBL.
-use tdpack
-implicit none
-#include <arch_specific.hf>
+   use, intrinsic :: iso_fortran_env, only: INT64
+   use tdpack, only: GRAV, KARMAN, PI
+   implicit none
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-private
+   private
 
-! External symbols
-integer, external :: neark
+   ! External symbols
+   integer, external :: neark
 
-! API parameters
-integer, parameter, public :: ML_OK=0,ML_ERR=1  !Package return statuses
-real, parameter, public :: ML_LMDA=200.         !Maximum stable asymptotic mixing length for Blackadar (1962) estimate
-real, parameter, public :: ML_LMDAS=40.         !Minimum stable asymptotic mixing length for Lock (2007) estimate
-real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
+   ! API parameters
+   integer, parameter, public :: ML_OK=0,ML_ERR=1  !Package return statuses
+   real, parameter, public :: ML_LMDA=200.         !Maximum stable asymptotic mixing length for Blackadar (1962) estimate
+   real, parameter, public :: ML_LMDAS=40.         !Minimum stable asymptotic mixing length for Lock (2007) estimate
+   real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
 
-! Private parameters
-integer, parameter :: ML_LONG=1024
+   ! Private parameters
+   integer, parameter :: ML_LONG=1024
 
-! Private variables
-character(len=ML_LONG) :: mlblac_max = 'BLAC62' !Asymptotic formulation for Blacadar (1962) mixing length with clipping
+   ! Private variables
+   character(len=ML_LONG) :: mlblac_max = 'BLAC62' !Asymptotic formulation for Blacadar (1962) mixing length with clipping
 
-! API subprograms
-public :: ml_put
-public :: ml_tfilt
-public :: ml_blend
-public :: ml_calc_blac
-public :: ml_calc_boujo
-public :: ml_calc_lh
+   ! API subprograms
+   public :: ml_put
+   public :: ml_tfilt
+   public :: ml_blend
+   public :: ml_calc_blac
+   public :: ml_calc_boujo
+   public :: ml_calc_lh
 
-! Generic procedures
-interface ml_put
-   module procedure ml_put_s
-end interface ml_put
+   ! Generic procedures
+   interface ml_put
+      module procedure ml_put_s
+   end interface ml_put
 
 contains
 
@@ -57,27 +58,27 @@ contains
    function ml_put_s(key,val) result(status)
       use clib_itf_mod, only: clib_toupper, CLIB_OK
       ! Set a variable in the mixing length module
-      
+
       ! Input arguments
       character(len=*), intent(in) :: key                  !Name of key to set
       character(len=*), intent(in) :: val                  !Value of the key
-      
+
       ! Output arguments
       integer :: status                                    !Return status of function
-      
+
       ! Local variables
       character(len=len_trim(val)) :: ucval
-      
+
       ! Initialize return value
       status = ML_ERR
-      
+
       ! Convert value to upper case
       ucval = val
       if (clib_toupper(ucval) /= CLIB_OK) then
          call msg_toall(MSG_ERROR,'(ml_put_s) cannot convert input to upper case: '//trim(val))
          return
       endif
-      
+
       ! Attempt to set value of requested key
       select case (key)
       case ('mlblac_max','MLBLAC_MAX')
@@ -86,12 +87,12 @@ contains
          call msg_toall(MSG_ERROR,'(ml_put_s) cannot set value for '//trim(key)//' to '//trim(ucval))
          return
       end select
-      
+
       ! Successful completion of subprogram
       status = ML_OK
-      
+
    end function ml_put_s
-   
+
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_tfilt(zn,znold,tau,kount) result(stat)
       ! Time filtering of mixing length scale
@@ -104,7 +105,7 @@ contains
       real, dimension(:,:), intent(inout) :: zn         !mixing length (m)
 
       ! Local variables and common blocks
-#include "phyinput.cdk"
+#include "phyinput.inc"
 
       ! Set return status
       stat = ML_ERR
@@ -118,7 +119,7 @@ contains
 
       ! Apply time filter during integration
       if (kount > 0 .and. pbl_zntau > 0.) zn = zn + (znold-zn)*exp(-tau/pbl_zntau)
-      
+
       ! Successful end of subprogram
       stat = ML_OK
       return
@@ -138,11 +139,11 @@ contains
 
       ! Local parameters
       real, parameter :: ZMIX=500.,PLOW=550E2,PHIGH=450E2
-         
+
       ! Local variables and common blocks
       integer :: j,k,nj,nk
       real :: pres
-      
+
       ! Initialization
       nj = size(zn1,dim=1)
       nk = size(zn1,dim=2)
@@ -189,7 +190,7 @@ contains
 
       ! Set return status
       stat = ML_ERR
-      
+
       ! Initialization
       nk = size(zz,dim=2)
 
@@ -211,14 +212,14 @@ contains
          lmda(:,:) = ML_LMDA
          my_przn(:,:) = 1.
       end select
-         
-      ! Adjust mixing length limit for high resolution (<850m) grids (Mason and Brown 1999)     
+
+      ! Adjust mixing length limit for high resolution (<850m) grids (Mason and Brown 1999)
       if (present(dxdy)) then
          do k=1,nk
             lmda(:,k) = min(lmda(:,k),0.23*sqrt(dxdy(:)))
          enddo
       endif
-      
+
       ! Compute Blackadar mixing length
       select case (mlblac_max)
       case ('BLAC62')
@@ -293,7 +294,7 @@ contains
       !           Calculates the mixing length ZN and the dissipation
       !           length ZE based on the Bougeault and Lacarrere method.
       !
-      
+
       ! Local parameters
       real, parameter :: ZN_MIN_BOUJO=1.
 
@@ -308,7 +309,7 @@ contains
 
       ! Set return status
       stat = ML_ERR
-      
+
       ! Initialization
       n = size(th,dim=1)
       nk = size(th,dim=2)
@@ -348,7 +349,7 @@ contains
          elsewhere
             ldown(1:nc,ki) = min(ldown(1:nc,ki),zdep(1:nc))
          endwhere
-  
+
          ! Select final mixing length
          do j=1,n
             nc = indx(j)
@@ -362,7 +363,7 @@ contains
          enddo
 
       enddo
-       
+
       ! Copy values into extremes
       zn(:,1) = zn(:,2)
       zn(:,nk) = zn(:,nk-1)
@@ -375,7 +376,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_calc_lh(l_e,l_m,pri,dthv,en,w_cld,ri,zs,f_cs,hpar) result(stat)
       ! Compute the Lenderink and Hostlag (2004) length scales.
-      
+
       ! Arguments
       real, dimension(:,:), intent(in) :: dthv                  !buoyancy flux (m2/s2)
       real, dimension(:,:), intent(in) :: en                    !turbulent kinetic energy (m2/s2)
@@ -390,17 +391,17 @@ contains
 
       !Author
       !          A. Lock (May 2004)
-      
+
       !Revision
-      
+
       !Object
       !           Calculates the mixing lengths
       !           based on the method of Lenderink and Holtslag (2004)
       !           includes non-local velocity scale contribution in cumulus
-      
+
       !Notes
       !           Based on Mailhot and Lock (2004; LM04)
-     
+
       ! Local parameters
       real, parameter :: B_LH=4.0     ! L&H's constants b
       real, parameter :: C_N=0.516    ! L&H's constants c_n (same as RPN "AA")
@@ -532,8 +533,8 @@ contains
                c_stab_m  = 0.05 * min( 3., 1.+2.*ri(j,k) )   ! 0.25*cs_lh
                c_stab_d  = 0.1  * min( 3., 1.+5.*ri(j,k) )   !~0.5 *cs_lh
                !         ! -------------------------------------------------------------
-               !         ! f_cs is a factor for the coefficient c_s that interpolates 
-               !         ! between the larger original values (f_cs=1) and the smaller 
+               !         ! f_cs is a factor for the coefficient c_s that interpolates
+               !         ! between the larger original values (f_cs=1) and the smaller
                !         ! values proposed by mailhot and lock (2004) from les of gabls.
                !         ! set in nlcalc.
                !         ! -------------------------------------------------------------
@@ -565,8 +566,8 @@ contains
       l_m(:,nk) = 0.
       l_e(:,nk) = 0.
 
-      RETURN
-   END function ml_calc_lh
+      return
+   end function ml_calc_lh
 
 end module mixing_length
 

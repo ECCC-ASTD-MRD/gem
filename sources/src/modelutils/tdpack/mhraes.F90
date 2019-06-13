@@ -18,7 +18,7 @@
       Subroutine mhraes3(es,hr,tt,ps,swph,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real es(ni,nk), hr(ni,nk), tt(ni,nk)

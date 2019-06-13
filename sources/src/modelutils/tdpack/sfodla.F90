@@ -18,7 +18,7 @@
       Function sfodla(tt)
       use tdpack, only: fodla
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Real sfodla, tt
 !
 !Author

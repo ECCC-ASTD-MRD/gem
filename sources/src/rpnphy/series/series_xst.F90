@@ -14,14 +14,14 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_xst_mod
+   use clib_itf_mod, only: clib_toupper
    use series_options
    use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
    implicit none
    private
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
 #include <msg.h>
 
    public :: series_xst_geo, series_xst, series_isstep, series_isvar

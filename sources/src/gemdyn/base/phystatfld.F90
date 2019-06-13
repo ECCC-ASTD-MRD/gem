@@ -21,6 +21,7 @@
                            minx,maxx,miny,maxy,mink,maxk, &
                            F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -51,7 +52,7 @@
 
 
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax
-      real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8
+      real(kind=REAL64) sum,sumd2,moy,var,mind,maxd,fijk,npt_8
       integer no
 !
 !--------------------------------------------------------------------

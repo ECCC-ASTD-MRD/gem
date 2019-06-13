@@ -19,7 +19,7 @@
                           inpt, mcont, dip, dt,rmu3, lev1, gh, &
                           il1, il2, ilg, lay)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       integer ilg, lay, ib, ig, lev1, il1, il2, mcont(ilg)
       real taug(ilg,lay)

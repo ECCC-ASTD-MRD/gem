@@ -7,6 +7,7 @@
       use inp_base, only: inp_3dhgts
       use ver
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer, intent(in)  :: Minx,Maxx,Miny,Maxy, F_nk
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk+1), intent(out) :: F_q
@@ -18,7 +19,7 @@
       integer, dimension(:) , pointer :: ip1_list
       real, dimension(:,:  ), pointer :: topo,topols
       real, dimension(:,:,:), pointer :: zz
-      real*8 :: aaa
+      real(kind=REAL64) :: aaa
 !
 !     ________________________________________________________________
 !

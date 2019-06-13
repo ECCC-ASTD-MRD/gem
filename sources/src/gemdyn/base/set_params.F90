@@ -21,11 +21,12 @@
       use tdpack
       use cstv
       use ver
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
 
-      real*8, parameter :: zero=0.d0, one=1.d0
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0
 !
 !     ---------------------------------------------------------------
 

@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-   subroutine itf_phy_geom4 (F_istat)
+   subroutine itf_phy_geom (F_istat)
    use dcst
    use lam_options
    use gmm_geof
@@ -22,6 +22,7 @@
    use gmm_itf_mod
    use nest_blending, only: nest_blend
    use tdpack
+   use, intrinsic :: iso_fortran_env
    implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,7 @@
    logical :: nest_it
    integer :: i,j,istat
    real, pointer :: wrk1(:,:)
-   real*8, parameter :: deg2rad_8 = pi_8 / 180.d0
+   real(kind=REAL64), parameter :: deg2rad_8 = pi_8 / 180.d0
    real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
            w2(l_minx:l_maxx,l_miny:l_maxy,2)
    type(gmm_metadata) :: mymeta
@@ -100,4 +101,4 @@
 !-------------------------------------------------------------------
 !
    return
-   end subroutine itf_phy_geom4
+   end subroutine itf_phy_geom

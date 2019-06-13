@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module init_options
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -100,7 +101,7 @@ module init_options
    logical Init_mode_L
    integer Init_dfnp, Init_halfspan
    real, dimension(:  ), allocatable :: Init_dfco
-   real*8 Init_dfpl_8
+   real(kind=REAL64) Init_dfpl_8
 
 contains
 
@@ -108,6 +109,7 @@ contains
 
       integer function init_nml (F_unf)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -157,6 +159,7 @@ contains
       return
       end function init_nml
    function init_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

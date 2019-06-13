@@ -1,12 +1,14 @@
 module my_dmom_mod
   use tdpack
   implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
   private
   public :: mydmom_main
 
   contains
+
+#ifdef ECCC_MP_MY_SCHEME
 
 !_______________________________________________________________________________________!
  SUBROUTINE MYDMOM_MAIN(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,PS,TM,QM,QCM,        &
@@ -3098,6 +3100,14 @@ module my_dmom_mod
    end function Nos_Thompson
 
 !===================================================================================================!
+
+#else
+
+SUBROUTINE MYDMOM_MAIN()
+   call physeterror('MYDMOM_MAIN', 'Called a stub')
+end SUBROUTINE MYDMOM_MAIN
+
+#endif
 
 END MODULE my_dmom_mod
 

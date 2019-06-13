@@ -1,21 +1,25 @@
 !-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
 module series_write_mod
+   use, intrinsic :: iso_fortran_env, only: REAL64
    use iso_c_binding
+   use rpn_comm_itf_mod
+   use wb_itf_mod, only: wb_get
+   use tdpack_const, only: GRAV, RGASD
    use series_options
    use phygridmap, only: phydim_nk
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
@@ -27,12 +31,10 @@ module series_write_mod
 
    public :: series_write_geo, series_write
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
-#include "tdpack_const.hf"
+
 contains
 
    !@author Ron McTaggart-Cowan, 2009-04
@@ -46,7 +48,7 @@ contains
       !@objective write geo fields to binary file
       !*@/
       integer :: istat, nn, k, l, m, nk, istep, series_ngeop
-      real(RDOUBLE) :: heure_8
+      real(REAL64) :: heure_8
       character(len=1024) :: msg_S
       !---------------------------------------------------------------
       if (series_paused_L .or. .not.(series_initok_L .and. series_on_L)) return
@@ -144,7 +146,7 @@ contains
       !*@/
 
       integer :: istat, nn, istep, nsteps, kount, k, l, m, nk
-      real(RDOUBLE) :: heure_8
+      real(REAL64) :: heure_8
       character(len=1024) :: msg_S
       character(len=SER_STRLEN_VAR) :: surf_S(NVARMAX), prof_S(NVARMAX)
       !---------------------------------------------------------------
@@ -305,7 +307,7 @@ contains
       integer, intent(in) :: nsurf, nprof, nk
       !*@/
       integer, dimension(:), pointer :: ip1_t, ip1_m
-      real*8, dimension(:,:,:), pointer :: vtbl_t
+      real(REAL64), dimension(:,:,:), pointer :: vtbl_t
       integer :: istat, nn, hgc(4)
       type(vgrid_descriptor) :: vcoord
       real :: dgrw

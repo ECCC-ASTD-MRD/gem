@@ -5,14 +5,14 @@
 #include "tdpack_func.h"
 
    real :: tdpk1, tdpk2, tdpk3, tdpk4, tdpk5, tdpk6
-   real*8 :: tdpk1d, tdpk2d, tdpk3d, tdpk4d, tdpk5d, tdpk6d
+   real(REAL64) :: tdpk1d, tdpk2d, tdpk3d, tdpk4d, tdpk5d, tdpk6d
 
 #ifndef __NO_TDPACK_FUNC__
-   real*8 :: foewf, foew, foewaf, foewa, fodle, foqst, foqstx, foqsa
-   real*8 :: fqsmx, fqsmxx, fodqs, foefq, foqfe, fotvt, fottv, fotvht, fottvh
-   real*8 :: fodqa, fdqsmx, fohr, fohrx, folv, fols, fopoit, fopoip, fodla
-   real*8 :: fohra, fesif, fesi, fdlesi, fesmx, fesmxx, fdlesmx, fdlesmxx
-   real*8 :: maskt, fomults
+   real(REAL64) :: foewf, foew, foewaf, foewa, fodle, foqst, foqstx, foqsa
+   real(REAL64) :: fqsmx, fqsmxx, fodqs, foefq, foqfe, fotvt, fottv, fotvht, fottvh
+   real(REAL64) :: fodqa, fdqsmx, fohr, fohrx, folv, fols, fopoit, fopoip, fodla
+   real(REAL64) :: fohra, fesif, fesi, fdlesi, fesmx, fesmxx, fdlesmx, fdlesmxx
+   real(REAL64) :: maskt, fomults
 #endif
 
    maskt(tdpk1)  = MASKT(tdpk1)

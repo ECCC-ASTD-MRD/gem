@@ -50,6 +50,8 @@ C     de commentaires (desactivation de code).
       Real*8      heures
 *
       External    datmgp,incdatr,jdatec
+      integer, external :: newdate
+      integer status
 *
 *----------------------------------------------------------------
 ***    Calculer le nombre d'heures depuis 
@@ -69,7 +71,7 @@ C     de commentaires (desactivation de code).
 ***    Extraire l'annee, le mois, le jour et l'heure correspondante.
 *
 *     Call datmgp( datim )
-      call newdate(datim(14),is1,is2,-3)
+      status = newdate(datim(14),[is1],is2,-3)
 *
 *     heures = datim(5)
       heures = is2/1000000

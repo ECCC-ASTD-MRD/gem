@@ -15,16 +15,16 @@
 
 subroutine sort_ip1 ( F_keys, F_ip1, F_nka )
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer F_nka
    integer F_keys(F_nka), F_ip1 (F_nka)
 
 #include <rmnlib_basics.hf>
 
-   character*1  tva, grda, blk_S
-   character*4  var
-   character*12 etik_S
+   character(len=1)  :: tva, grda, blk_S
+   character(len=4)  :: var
+   character(len=12) :: etik_S
    integer i,j,k,ni,nj,nk,cnt,err,diag_ip1,diag_key
    integer dateo, deet, ipas, ip1a, ip2a, ip3a, &
         ig1a, ig2a, ig3a, ig4a, bit, datyp , &

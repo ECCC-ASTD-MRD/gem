@@ -61,7 +61,7 @@ USE YOMCST   , ONLY : RPI      ,RCLUM    ,RHPLA    ,RKBOL    ,&
 USE YOMRIP   , ONLY : RTIMST   ,RTIMTR
 
 IMPLICIT NONE
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
 #define _ZERO_   0.0
 #define _HALF_   0.5

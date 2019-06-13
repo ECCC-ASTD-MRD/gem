@@ -18,17 +18,18 @@
       subroutine  fislh_sol_matvec ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
                                      nil, njl, nk )
       use sol
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, njl, nil, nk
-      real*8 :: wk11(*),wk22(*)
+      real(kind=REAL64) :: wk11(*),wk22(*)
 !
 !author
 !     Abdessamad Qaddouri - decembre 2013
 !
       integer i0,in,j0,jn,minx3,maxx3
-      real*8 :: wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
+      real(kind=REAL64) :: wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
                 wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )
 !
 !     ---------------------------------------------------------------

@@ -24,9 +24,11 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
      rliq_int,rice_int, &
      rnflx,snoflx, &
      kount,xlat,mg,mlac,wstar,critmask,delt)
+   use tdpack_const
    use cnv_options
+   use tpdd, only: tpdd1
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
    integer ix,kx
    integer kount
@@ -257,8 +259,6 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
       real :: w_wsmin,w_wsmax,wsmax,wsmin
 
-      real tpdd
-
       logical, dimension(ix) :: activ, possib, triggr, trigg2
       integer, dimension(ix) :: itop, idpl, lclg
       integer, dimension(kx) :: nup
@@ -288,14 +288,10 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
       external tpmix
       external condload
-      external dtfrznew
       external envirtht
       external prof5
-      external tpdd
 
       ! Basic parameters
-!#TODO: replace include tdpack by use with only list
-#include "tdpack_const.hf"
 
       ! User-adjustable parameters
       real, parameter :: DETREG=0.5                             !Level of dynamic detrainment for cloud ensemble
@@ -1365,8 +1361,8 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
          if(FRC1.gt.1.E-6)then
 
-           call DTFRZNEW(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
-                RICE(NK1),RATIO2(NK1),TTFRZ,TBFRZ,QNWFRZ,RL,FRC1,EFFQ, &
+           call DTFRZNEW2(TU(NK1),PP0(I,NK1),THETEU(NK1),QU(NK1),RLIQ(NK1), &
+                RICE(NK1),RATIO2(NK1),QNWFRZ,RL,FRC1,EFFQ, &
                 IFLAG,XLV0,XLV1,XLS0,XLS1, &
                 ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
 
@@ -2180,9 +2176,9 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
           FRC=1.
           THETED(ND)=THETED(ND1)
           QD(ND)=QD(ND1)
-          TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+          TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
           EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
           THTAD(ND)=TZ(ND)*EXN(ND)
         else
@@ -2206,9 +2202,9 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
           THETED(ND)=(THETED(ND1)*DMF(ND1)+THETEE(ND)*DER(ND))/DMF(ND)
           QD(ND)=(QD(ND1)*DMF(ND1)+Q00(I,ND)*DER(ND))/DMF(ND)
-          TZ(ND)=TPDD(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
+          TZ(ND)=TPDD1(PP0(I,ND),THETED(ND),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
           EXN(ND)=(P00/PP0(I,ND))**(0.2854*(1.-0.28*QD(ND)))
           THTAD(ND)=TZ(ND)*EXN(ND)
         endif
@@ -2222,9 +2218,9 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !                          of 90% at this level.
 
       do 135 ND=LDB,LDT
-        TZ(ND)=TPDD(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
+        TZ(ND)=TPDD1(PP0(I,ND),THETED(LDT),TT0(I,ND),QS,QD(ND),1.0, &
                     XLV0,XLV1, &
-                    ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
+                    ALIQ,BLIQ,CLIQ,DLIQ)
         ES = ALIQ*exp((TZ(ND)*BLIQ-CLIQ)/(TZ(ND)-DLIQ))
         QS = 0.622*ES/(PP0(I,ND)-ES)
         DQSDT=(CLIQ-BLIQ*DLIQ)/((TZ(ND)-DLIQ)*(TZ(ND)-DLIQ))

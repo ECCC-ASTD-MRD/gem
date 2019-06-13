@@ -13,11 +13,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END -----------------------------
 module spn_work_mod
+    use, intrinsic :: iso_fortran_env
     implicit none
 
     real,   allocatable, save :: prof(:)
-    real*8, allocatable, save :: fxy(:,:)
-    real*8, allocatable, save :: Ldiff3D(:,:,:)
+    real(kind=REAL64), allocatable, save :: fxy(:,:)
+    real(kind=REAL64), allocatable, save :: Ldiff3D(:,:,:)
 
 end module spn_work_mod
 

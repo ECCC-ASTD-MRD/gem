@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,15 +12,16 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
-subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
-     wz,hpbl,hflux,s,ps,gztherm,mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
+     hpbl,hflux,s,ps,gztherm,mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+   use tdpack_const
    use phy_options
    implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
-   ! Arguments
+   !@Arguments
    integer, intent(in) :: n                             !horizontal dimension
    integer, intent(in) :: nk                            !vertical dimension
    real, dimension(n,nk), intent(in) :: thl             !liquid water potential temperature (K; theta_l)
@@ -29,7 +30,6 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    real, dimension(n,nk), intent(in) :: c1              !coefficient C1 in second-order moment closure
    real, dimension(n,nk), intent(in) :: zn              !mixing length (m)
    real, dimension(n,nk), intent(in) :: ze              !dissipation length (m)
-   real, dimension(n,nk), intent(in) :: wz              !gridscale vertical motion (m/s)  !#TODO: never used
    real, dimension(n), intent(in) :: hpbl               !boundary layer height (m)
    real, dimension(n), intent(in) :: hflux              !surface heat flux (W/m2)
    real, dimension(n,nk), intent(in) :: s               !sigma for full levels
@@ -46,11 +46,10 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    real, dimension(n,nk), intent(out) :: fnn            !flux enhancement * cloud fraction
    real, dimension(n,nk), intent(out) :: fngauss        !Gaussian cloud fraction
    real, dimension(n,nk), intent(out) :: pblsigs        !Subgrid moisture variance
-   real, dimension(n,nk), intent(out) :: pblq1          !Normalized saturation deficit 
+   real, dimension(n,nk), intent(out) :: pblq1          !Normalized saturation deficit
 
    !@Author
    !          J. Mailhot (Jun 2002)
-   
    !@Revision
    ! 001      J. Mailhot (Feb 2003) Clipping at upper levels
    ! 002      S. Belair  (Apr 2003) Minimum values of 50 m for ZE and ZN
@@ -64,14 +63,12 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    !                                 change the name to clsgs3
    ! 006      A. Zadra (Oct 2015) -- add land-water mask (MG) to input and
    !               add a new user-defined reduction parameter
-   !               (which may or may not depend on the land-water fraction) 
+   !               (which may or may not depend on the land-water fraction)
    !               to control the flux enhancement factor (fnn)
    ! 007      A. Zadra / R. McT-C (Sep 2016) - Revisions from Adrian Lock
    !               and Jocelyn Mailhot (2012) (non-local scalings,
    !               clips for sigmas and Q1, remove min of 50m for ZE and ZN)
-   
    !@Object Calculate the boundary layer sub-grid-scale cloud properties
-   
    !@Notes
    !          Implicit (i.e. subgrid-scale) cloudiness scheme for unified
    !             description of stratiform and shallow, nonprecipitating
@@ -84,13 +81,13 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    !          Revisions for non-local scalings based on:
    !            - Lock and Mailhot 2006, BLM 121, 313-338 (LM06)
    !
-   !    The parameters fnn_mask and fnn_reduc are the two parameters 
+   !    The parameters fnn_mask and fnn_reduc are the two parameters
    !    that should be read from the gem_settings
    !       fnn_mask = T/F means "use (do not use) the land-water fraction
    !            to modulate the fnn reduction
    !       fnn_reduc = is the reduction parameter that should vary within
-   !            the range 0. to 1.; 1 means "keep the original estimate"; 
-   !            any value smaller than 1 means " multiply the original fnn 
+   !            the range 0. to 1.; 1 means "keep the original estimate";
+   !            any value smaller than 1 means " multiply the original fnn
    !            by a factor fnn_reduc"
    !
    !            The default values should be
@@ -100,8 +97,6 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    !            The values tested and chosen for the RDPS-10km are
    !              fnn_mask = .true.
    !              fnn_reduc = 0.8
-
-#include "tdpack_const.hf"
 
    ! Local parameters
    real, parameter :: EPS=1e-10,QCMIN=1e-6,QCMAX=1e-3,WHMIN=0.5,WHMAX=1.2
@@ -133,7 +128,7 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    do k=1,nk-1
       sigmas(:,k) = c1coef(:,k) * abs(acoef(:,k)*dqwdz(:,k) - bcoef(:,k)*dthldz(:,k))
    end do
-   
+
    ! Compute the normalized saturation defecit (Q1)
    q1(:,1:nk-1) = ccoef(:,1:nk-1) / ( sigmas(:,1:nk-1) + EPS )
    q1(:,1) = 0. ; q1(:,nk) = 0. ;
@@ -145,15 +140,15 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    ! Compute cloud properties for local or nonlocal scalings
    do k=2,nk-1
       do j=1,n
-         
+
          NONLOCAL: if( pbl_nonloc == 'LOCK06' ) then
-            
+
             ! Compute cloud fractions (LM06)
             if( q1(j,k) > 6.0 ) then
                fngauss(j,k) = 1.0
                fnn(j,k)  = 1.0
             elseif ( q1(j,k) .gt. -6.0 ) then
-               ! Represent Bechtold FN function as 0.5(1+tanh(0.8*Q1)) 
+               ! Represent Bechtold FN function as 0.5(1+tanh(0.8*Q1))
                ! (gives much the same shape as atan but without need for max/min)
                fngauss(j,k) = 0.5*( 1.0 + tanh(0.8*q1(j,k)) )
                ! Use shifted approximate Gaussian for flux enhancement (Eq. 5)
@@ -237,7 +232,7 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
          if (.not.pbl_moistke_legacy_cloud) then
             ! Linear ramp-down of cloud effects from 5 W/m2 to -5 W/m2
             hfc   = 5.
-            wf(j) = 0.5*( 1. + hflux(j)/hfc)         
+            wf(j) = 0.5*( 1. + hflux(j)/hfc)
             wf(j) = max(0.,min(wf(j),1.))
             frac(j,k)     = wf(j)*frac(j,k)
             fnnonloc(j,k) = wf(j)*fnnonloc(j,k)
@@ -285,4 +280,4 @@ subroutine clsgs6(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    fngauss = fngauss*weight
 
    return
-end subroutine clsgs6
+end subroutine clsgs7

@@ -18,7 +18,7 @@
       Subroutine mfottv2(tt,tv,qq,minx,maxx,miny,maxy,nk,i0,in,j0,jn,tt2vt)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       Logical tt2vt
       Integer minx,maxx,miny,maxy,nk,i0,in,j0,jn
       Real tt(minx:maxx,miny:maxy,nk), tv(minx:maxx,miny:maxy,nk), &

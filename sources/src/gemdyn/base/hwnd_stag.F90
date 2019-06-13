@@ -19,6 +19,7 @@
                              NK, F_stag_L )
       use gem_options
       use glb_ld
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,7 @@
 
 
       integer i,j,k, i0u,j0u,inu,jnu, i0v,j0v,inv,jnv
-      real*8, parameter :: half=0.5d0 , hpo=1.5d0 , &
+      real(kind=REAL64), parameter :: half=0.5d0 , hpo=1.5d0 , &
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !
 !     ---------------------------------------------------------------

@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module type_mod
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -24,7 +25,7 @@ module type_mod
 
    type :: vertical_8
       sequence
-      real*8, dimension(:),pointer, contiguous :: t,m
+      real(kind=REAL64), dimension(:),pointer, contiguous :: t,m
    end type vertical_8
 
    type :: vertical_i

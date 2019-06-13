@@ -24,26 +24,30 @@
       use cstv
       use ver
       use gmm_itf_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
-      real F_fi (Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,Nk+1)
-      real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(out) ::  F_fi
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(in) :: F_q
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_t
+
 
 !author: Andre Plante july 2006.
 
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_fi         O    - geopotential
-! F_s          I    - log(pis/pistars)
-! F_t          I    - temperature
-! F_fis        I    - surface geopotential
+!  Name                        Description
+!------------------------------------------------------------
+! F_fi          - geopotential
+! F_s           - log(pis/pistars)
+! F_t           - temperature
+! F_fis         - surface geopotential
 
-      integer i,j,k,km,istat
-      real*8, parameter :: one = 1.d0, half = .5d0
-      real*8  qbar,w1
+      integer :: i,j,k,km,istat
+      real(kind=REAL64), parameter :: one = 1.d0, half = 0.5d0
+      real(kind=REAL64) :: qbar, w1
 !
 !     ---------------------------------------------------------------
 

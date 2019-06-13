@@ -17,7 +17,7 @@
 !
       FUNCTION gasdev(iv,iy,iset,gset,idum)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
 !     author   
 !     Lubos Spacek - February 2009
@@ -58,7 +58,7 @@
 
       FUNCTION ran1(iv,iy,idum)
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
       INTEGER idum,IA,IM,IQ,IR,NTAB,NDIV
       REAL ran1,AM,EPS,RNMX
       PARAMETER (IA=16807,IM=2147483647,AM=1./IM,IQ=127773,IR=2836, &

@@ -18,7 +18,7 @@
       Subroutine mfodqs3(dq,tt,ps,ni,nk,n)
       use tdpack
       implicit none
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 !
       Integer ni, nk, n
       Real dq(ni,nk), tt(ni,nk)

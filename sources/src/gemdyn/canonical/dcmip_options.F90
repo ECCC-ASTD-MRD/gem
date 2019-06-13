@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module dcmip_options
+      use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -81,7 +82,7 @@ module dcmip_options
    namelist /dcmip/ Dcmip_nuZ_tr
 
    !# Earth's radius reduction factor
-   real*8  :: Dcmip_X = 1.d0
+   real(kind=REAL64)  :: Dcmip_X = 1.d0
    namelist /dcmip/ Dcmip_X
 
    !# Reset in Dcmip_set as: Dcmip_vrd_L = Dcmip_nuZ_wd/=0.or.Dcmip_nuZ_tr/=0.or.Dcmip_nuZ_th/=0
@@ -93,6 +94,7 @@ contains
 
       integer function dcmip_nml (F_unf, F_dcmip_L)
       use lun
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -156,6 +158,7 @@ contains
       use glb_ld
       use lun
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -168,7 +171,7 @@ contains
       !   Setup for parameters DCMIP 2012/2016
       !=======================================
 
-      real(8) Rotation
+      real(kind=REAL64) Rotation
 
       if (Dcmip_case==0) return
 
@@ -304,6 +307,7 @@ contains
       end subroutine dcmip_set
 
    function dcmip_options_init() result(F_istat)
+      use, intrinsic :: iso_fortran_env
       implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>

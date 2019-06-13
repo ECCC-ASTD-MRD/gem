@@ -15,8 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module phy_input_mod
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
-
+   use rpn_comm_itf_mod
+   use clib_itf_mod, only: clib_tolower
+   use wb_itf_mod, only: WB_IS_OK, wb_get_meta, wb_get
    use input_mod, only: input_new, input_nbvar, input_set_basedir, &
         input_set_filename, input_setgridid, input_isvarstep, input_meta, input_get
    use inputio_mod, only: inputio_new, inputio_nbvar, inputio_set_filename, &
@@ -43,20 +46,17 @@ module phy_input_mod
    private
    public :: phy_input
 
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
-#include <gmm.hf>
+#include <mu_gmm.hf>
 #include <msg.h>
-   include "rpn_comm.inc"
-   include "phyinput.cdk"
+
+   include "phyinput.inc"
    include "buses.cdk"
 
    integer, external :: phyent2per, phyfillbus
 
    logical, parameter :: IS_DIR = .true.
-   logical, parameter :: FSTOPC_SET = .false.
  
    character(len=32), parameter  :: VGRID_M_S = 'ref-m'
    character(len=32), parameter  :: VGRID_T_S = 'ref-t'
@@ -117,7 +117,7 @@ contains
          return
       endif
 
-      istat = fstopc('MSGLVL','INFORM',FSTOPC_SET)
+      istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
       !# Retrieve input from the model dynamics into the dynamics bus
       istat = phyfillbus(F_step)
@@ -309,7 +309,7 @@ contains
       integer, intent(out) :: my_inputid
       integer, intent(out) :: my_nbvar
       type(INPUTIO_T), intent(out) :: my_inputobj
-      integer(IDOUBLE), intent(in) :: my_jdateo
+      integer(INT64), intent(in) :: my_jdateo
       integer, intent(in) :: my_idt
       character(len=*), intent(in) :: my_incfg_S, my_basedir_S, my_geoname_S, my_ozonename_S
       integer :: my_istat
@@ -465,7 +465,7 @@ contains
       integer, save :: curdd0 = -1
       integer, save :: curmo0 = -1
       integer :: curdd, curmo
-      integer(IDOUBLE) :: dt_8, istep_8, jdatev
+      integer(INT64) :: dt_8, istep_8, jdatev
       ! ---------------------------------------------------------------------
       if (intozot) then
          dt_8    = delt

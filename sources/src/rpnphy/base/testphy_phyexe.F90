@@ -6,7 +6,7 @@ subroutine testphy_phyexe(e,d,f,v,esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk)
   implicit none
 
   ! Architecture-dependent content
-#include <arch_specific.hf>
+!!!#include <arch_specific.hf>
 
   ! Input arguments
   integer, intent(in) :: esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk

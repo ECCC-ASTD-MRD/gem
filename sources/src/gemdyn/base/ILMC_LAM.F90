@@ -29,6 +29,7 @@
       use HORgrid_options
       use lun
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -65,7 +66,7 @@
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
               o_shoot,u_shoot,ratio_max,ratio_min
 
-      real*8 :: mass_adv_8,mass_ilmc_8,ratio_8,mass_deficit_8
+      real(kind=REAL64) :: mass_adv_8,mass_ilmc_8,ratio_8,mass_deficit_8
 
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: new,copy
 

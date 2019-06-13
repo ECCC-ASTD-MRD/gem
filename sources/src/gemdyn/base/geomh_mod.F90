@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
 module geomh
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -62,9 +63,9 @@ module geomh
 ! geomh_area_8       | Area = cos(y)*hx*hy                             |
 ! geomh_mask_8       | Mask to avoid double count of area in YY overlap|
 !----------------------------------------------------------------------
-   real*8 :: geomh_invDY_8, geomh_hx_8, geomh_hy_8, geomh_inv_hx_8, geomh_inv_hy_8
+   real(kind=REAL64) :: geomh_invDY_8, geomh_hx_8, geomh_hy_8, geomh_inv_hx_8, geomh_inv_hy_8
 
-   real*8, dimension(:), allocatable :: &
+   real(kind=REAL64), dimension(:), allocatable :: &
           geomh_x_8    ,geomh_xu_8    ,geomh_y_8     ,geomh_yv_8     ,&
           geomh_sx_8   ,geomh_sy_8    ,geomh_cx_8    ,geomh_cy_8     ,&
           geomh_cy2_8  ,geomh_cyv_8   ,geomh_cyv2_8  ,geomh_cyM_8    ,&
@@ -73,7 +74,7 @@ module geomh
           geomh_invDYM_8,geomh_invDYMv_8,&
           geomh_invDX_8 ,geomh_invDXM_8,geomh_invDXMu_8,geomh_invDXv_8
 
-   real*8, dimension(:,:), allocatable :: geomh_area_8, geomh_mask_8
+   real(kind=REAL64), dimension(:,:), allocatable :: geomh_area_8, geomh_mask_8
 
 !______________________________________________________________________
 !                                                                      |
