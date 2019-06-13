@@ -1,59 +1,57 @@
+SHELL = /bin/bash
 
-ifeq ($(BASE_ARCH),$(EC_ARCH))
-   $(info ERROR: please setup the compilation environment by typing the folowing:)
-   $(info . setup.dot or . setup_gpsc.dot)
-   $(error )
-endif
+include vgrid_version.inc
 
-ifeq ($(USE_EFENCE),1)
-   LEFENCE=-lefence
-endif
 
-include version.dot
+.SUFFIXES :
 
-default: libdescrip.a
+.SUFFIXES : .F90 .c .o .a
 
-dependencies.mk: *.c *.F90 *.h *.hc
-	ls *.hc *.c *.F90 | ./s.dependencies.pl > dependencies.mk ;\
+SHELL = /bin/bash
 
-include dependencies.mk
+CPP = /lib/cpp
 
-%.o: %.F90
-	s.f90 -c -openmp $(MY_FFLAGS) $(FFLAGS) $(LEFENCE) $<
+FFLAGS =
 
-%.o: %.c
-	s.cc -c -openmp $(MY_CFLAGS) $(CFLAGS) $(LEFENCE) $<
+CFLAGS =
 
-libdescrip.a: $(OBJECTS) dependencies.mk vgrid_version
-	rm -f libdescrip.a && ar scru libdescrip.a *.o ;\
+DEFINE = -DFICHSTD98
 
-shared: libdescrip.a
-	if [ $$ORDENV_PLAT != ubuntu-12.04-amd64-64 -a $$ORDENV_PLAT != aix-7.1-ppc7-64 ]; then \
-	   s.f90 -shared -openmp -static -static-intel -o libdescripshared.so *.o -lrmnshared -Wl,-rpath,$(RPN_LIB)/$(ORDENV_PLAT)/lib/$(BASE_ARCH)/$(COMP_ARCH) -Wl,-rpath,$(SHARED_COMP_rpath);\
-	else \
-	   echo "No shared library on $$ORDENV_PLAT anymore due to new incompatible flag -static-intel";\
-	fi
+SUPP_OPT =
 
-vgrid_version:
-	echo "character(len=128) :: vgrid_descriptors_version = \"VGRID $(BH_PULL_SOURCE_GIT_BRANCH) $(COMP_ARCH) $(ORDENV_PLAT) $(shell date)\"" > vgrid_version.hf ;\
-	echo                "char vgrid_descriptors_version[] = \"VGRID $(BH_PULL_SOURCE_GIT_BRANCH) $(COMP_ARCH) $(ORDENV_PLAT) $(shell date)\";" > vgrid_version.hc ;\
+OPTIMIZ = 2 
 
-ssm:
-	../bh_vgrid.py -p $(ORDENV_PLAT) -m $(BH_MODE) -v BH_PULL_SOURCE=$(PWD)/.. -v BH_PULL_SOURCE_GIT_BRANCH=$(BH_PULL_SOURCE_GIT_BRANCH) -v BH_PACKAGE_VERSION=$(BH_PULL_SOURCE_GIT_BRANCH)-$(COMP_ARCH) --local ;\
+#OPTIMIZ = -O 3 -fast
+#C_OPTIMIZ = -O 2
+#F_OPTIMIZ = -O 2
+
+MYLIB = libvgrid_$(VGRID_VERSION).a
+
+default: obj
+
+include $(RPN_TEMPLATE_LIBS)/include/makefile_suffix_rules.inc
+
+OBJET = vgrid_utils.o vgrid.o vgrid_descriptors.o
+
+FICHIERS_F90 = \
+vgrid_utils.F90 vgrid_descriptors.F90
+
+FICHIERS_C = \
+vgrid.c
+
+FICHIERS_H = \
+armnlib.h   vgrid.h
+
+FICHIERS = $(FICHIERS_F90) $(FICHIERS_C)
+
+obj: $(OBJET)
+#Produire les fichiers objets (.o) pour tous les fichiers
+
+genlib: $(OBJET)
+	rm -f $(MYLIB)
+	ar rv $(MYLIB) $(OBJET)
 
 clean:
-	rm -f *.o *.mod ;\
+	rm -f *.o *.mod
 
-clean_ssm: clean_bh
-	rm -f *.ssm ;\
 
-clean_bh:
-	rm -rf vgriddescriptors vgriddescriptors_*  log-*-*-*-*-* report-*-*-*-*-* work-*-*-*-*-* ;\
-
-distclean: clean
-	rm -f libdescrip.a libdescripshared.so ;\
-
-clean_tilde:
-	rm -f *~ ;\
-
-clean_all: distclean clean_ssm clean_bh clean_tilde
