@@ -1,10 +1,8 @@
 message(STATUS "Starting generation of pgsm Makefile")
-
 project(PGSM Fortran)
 
 add_executable(pgsm pgsm.F90 f_pgsm.f90 c_pgsm.c)
 target_link_libraries(pgsm rmn
-                      ${Fortran_LIBRARIES}
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
 add_dependencies(pgsm rmn)

@@ -4,7 +4,6 @@ project(FSTSTAT Fortran)
 
 add_executable(fststat fststatm.f fststat.f statfld4.f)
 target_link_libraries(fststat rmn
-                      ${Fortran_LIBRARIES}
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
 add_dependencies(fststat rmn)

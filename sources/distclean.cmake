@@ -5,11 +5,10 @@ add_custom_command(
     COMMENT "distribution clean"
     COMMAND find
     ARGS    ${CMAKE_CURRENT_BINARY_DIR} "\\(" -name CMakeCache.txt
-            -o -name cmake_install.cmake
-            -o -name Makefile
             -o -name CMakeFiles
+            -o -name Makefile
             -o -name ${BUILD}
-            -o -name bin-${ARCH}
+            -o -name cmake_install.cmake
             -o -name install_manifest.txt
             "\\)" -print | xargs rm -fr
     TARGET  distclean

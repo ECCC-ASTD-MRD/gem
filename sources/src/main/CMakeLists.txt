@@ -15,10 +15,8 @@ set_target_properties(r.fstinfo PROPERTIES LINKER_LANGUAGE Fortran)
 set_target_properties(voir PROPERTIES LINKER_LANGUAGE Fortran)
 
 target_link_libraries(r.fstinfo rmn 
-                      ${Fortran_LIBRARIES}
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 target_link_libraries(voir rmn 
-                      ${Fortran_LIBRARIES}
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
 install(TARGETS mainyy2global flipit r.fstinfo voir RUNTIME 

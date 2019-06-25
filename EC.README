@@ -26,8 +26,9 @@ INTEL:
 #INTEL COMPILER 2019
 #hpcr1-in
 #hpcr2-in
-. r.load.dot hpco/exp/intelpsxe-cluster-19.0.3.199 rpn/base/01.0
-. ssmuse-sh -x hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.2.0--ofed-4.4.2--intel-2019.0.045
+#rutherford
+. r.load.dot /fs/ssm/hpco/exp/intelpsxe-cluster-19.0.3.199 rpn/base/01.0
+. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.2.0--ofed-4.4.2--intel-2019.0.045
 
 #PGI COMPILER 17.10 on lorentz
 # Load PGI compiler and libraries
