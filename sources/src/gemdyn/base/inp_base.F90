@@ -312,7 +312,7 @@ contains
 
             err = ezdefset ( dstf_gid , src_gid )
             err = ezsetopt ('INTERP_DEGREE', interp_S)
-            write(6,1001) 'Interpolating: ',trim(nomvar),', nka= ',&
+            write(output_unit,1001) 'Interpolating: ',trim(nomvar),', nka= ',&
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
 
@@ -322,7 +322,7 @@ contains
                  ni_dest,nj_dest,G_ni,G_nj,G_halox,G_haloy )
          end do
          if (err == 2) then
-            write(6,1002) 'EXTRApolating: ',trim(nomvar),', nka= ',&
+            write(output_unit,1002) 'EXTRApolating: ',trim(nomvar),', nka= ',&
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
@@ -375,7 +375,7 @@ contains
       else
 
          inp_read_mt= -1
-         if ((Inp_iome >= 0).and.(.not.quiet_L)) write(6,'(7a)') &
+         if ((Inp_iome >= 0).and.(.not.quiet_L)) write(output_unit,'(7a)') &
             ' FIELD: ',trim(F_var_S),':',trim(nomvar),' valid: ',&
             Inp_datev, 'NOT FOUND'
 
@@ -862,7 +862,7 @@ inner:      do kh=1, F_nka_hu
                posxv => geomh_lonQ
                posyv => geomh_latF
 
-               write(6,1001) 'Interpolating: UU, nka= ',&
+               write(output_unit,1001) 'Interpolating: UU, nka= ',&
                              lislon,', valid: ',Inp_datev,' on U grid'
                dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
@@ -879,11 +879,11 @@ inner:      do kh=1, F_nka_hu
                   end do
                end if
                if (err == 2) then
-                 write(6,1002) 'EXTRApolating: UU, nka= ',&
+                 write(output_unit,1002) 'EXTRApolating: UU, nka= ',&
                              lislon,', valid: ',Inp_datev,' on U grid'
                end if
 
-               write(6,1001) 'Interpolating: VV, nka= ',&
+               write(output_unit,1001) 'Interpolating: VV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on V grid'
 
                dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
@@ -901,7 +901,7 @@ inner:      do kh=1, F_nka_hu
                   end do
                end if
                if (err == 2) then
-                 write(6,1002) 'EXTRApolating: VV, nka= ',&
+                 write(output_unit,1002) 'EXTRApolating: VV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on V grid'
                end if
                deallocate (uv)
@@ -911,7 +911,7 @@ inner:      do kh=1, F_nka_hu
                posxu => geomh_lonQ
                posyu => geomh_latQ
 
-               write(6,1001) 'Interpolating: UV, nka= ',&
+               write(output_unit,1001) 'Interpolating: UV, nka= ',&
                               lislon,', valid: ',Inp_datev,' on Q grid'
                dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
@@ -928,7 +928,7 @@ inner:      do kh=1, F_nka_hu
                   end do
                end if
                if (err == 2) then
-                 write(6,1002) 'EXTRApolating: UV, nka= ',&
+                 write(output_unit,1002) 'EXTRApolating: UV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on Q grid'
                end if
 
@@ -986,7 +986,7 @@ inner:      do kh=1, F_nka_hu
 
       else
 
-         if (Inp_iome >= 0) write(6,'(3a)') &
+         if (Inp_iome >= 0) write(output_unit,'(3a)') &
                   'Variable: UU,VV valid: ',Inp_datev, 'NOT FOUND'
          call gem_error ( -1, 'inp_read_uv', &
                   'Missing input data: horizontal winds')

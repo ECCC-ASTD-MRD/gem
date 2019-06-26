@@ -25,28 +25,28 @@
       use ptopo
       use rstr
       use step_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       include "rpn_comm.inc"
 
-      integer,parameter :: BUFSIZE=10000
-      integer, external :: fnom,wkoffit,OMP_get_max_threads
+      integer, parameter :: BUFSIZE=10000
+      integer, external :: fnom, wkoffit, OMP_get_max_threads
 
-      character(len=3)   :: mycol_S,myrow_S
+      character(len=3)   :: mycol_S, myrow_S
       character(len=1024):: fn, scratch_dir
-      integer :: err,unf
+      integer :: err, unf
       integer, dimension(2) :: bcast_ptopo
-      integer :: bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
-                 bufinphycfg(BUFSIZE)
+      integer, dimension(BUFSIZE) :: bufnml, bufoutcfg, bufinphycfg
 
       integer, external :: mkstemp
 !
 !-------------------------------------------------------------------
 !
-      lun_out    = -1
-      Lun_debug_L=.false.
-      if (Ptopo_myproc == 0) lun_out= 6
+      lun_out     = -1
+      Lun_debug_L = .false.
+      if (Ptopo_myproc == 0) lun_out = output_unit
 
       call gemtime ( Lun_out, 'STARTING GEMDM', .false. )
       call gemtime_start ( 2, 'INIT_GEM', 1)
@@ -174,46 +174,47 @@
       integer      , intent(in) :: F_npex,F_npey
 
       character(len=2048) ici
-      integer :: i,j,status,err
+      integer :: i,j,ret,err
       integer :: mk_gem_dir
 
       err= clib_getcwd(ici)
       err= clib_chdir(trim(F_path_S))
-!$OMP PARALLEL DO private(i,j,status)
+!$OMP PARALLEL DO private(i,j,ret)
       do j=0,F_npey-1
-      do i=0,F_npex-1
-         status = mk_gem_dir(i,j)
-      end do
+         do i=0,F_npex-1
+            ret = mk_gem_dir(i,j)
+         end do
       end do
 !$OMP END PARALLEL DO
       err= clib_chdir(ici)
 
-return
-end
+      return
+      end
 
-integer function mk_gem_dir(x,y)
-use ISO_C_BINDING
+      integer function mk_gem_dir(x,y)
+      use ISO_C_BINDING
       use lun
       use path
-use gem_timing
-implicit none
-integer, intent(in) :: x, y
-character (len=7) :: name
+      use gem_timing
+      implicit none
+      integer, intent(in) :: x, y
+      character (len=7) :: filename
 
-character (len=1), dimension(8), target :: temp
+      character (len=1), dimension(8), target :: temp
 
-interface
-integer(C_INT) function mkdir(path,mode) bind(C,name='mkdir')
-use ISO_C_BINDING
-type(C_PTR), value :: path
-integer(C_INT), value :: mode
-end function mkdir
-end interface
-write(name,100)x,'-',y
-100 format(I3.3,A1,I3.3)
+      interface
+         integer(C_INT) function mkdir(path,mode) bind(C,name='mkdir')
+            use ISO_C_BINDING
+            type(C_PTR), value :: path
+            integer(C_INT), value :: mode
+         end function mkdir
+      end interface
 
-temp = transfer( trim(name)//achar(0) , temp )
-mk_gem_dir = mkdir(C_LOC(temp),511)
+      write(filename,100)x,'-',y
+100   format(I3.3,A1,I3.3)
 
-return
-end function mk_gem_dir
+      temp = transfer( trim(filename)//achar(0) , temp )
+      mk_gem_dir = mkdir(C_LOC(temp),511)
+
+      return
+      end function mk_gem_dir

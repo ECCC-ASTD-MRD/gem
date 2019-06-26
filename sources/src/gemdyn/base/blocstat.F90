@@ -48,7 +48,7 @@
 
       if (flag) then
 
-         if (Ptopo_myproc == 0) write(6,1000) Lctl_step
+         if (Ptopo_myproc == 0) write(output_unit,1000) Lctl_step
 
          i0 = 1 ; in = G_ni
          j0 = 1 ; jn = G_nj
@@ -88,7 +88,7 @@
 
          if (Lctl_step > 0) call adz_cfl
 
-         if (Ptopo_myproc == 0) write(6,1001)
+         if (Ptopo_myproc == 0) write(output_unit,1001)
 
       end if
 

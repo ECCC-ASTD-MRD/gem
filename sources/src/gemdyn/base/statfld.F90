@@ -72,25 +72,25 @@
       mind  = F_field(F_i0,F_j0,F_k0)
 !
       do k=F_k0,F_kn
-      do j=F_j0,F_jn
-      do i=F_i0,F_in
-         fijk = F_field(i,j,k)
-         sum = sum + fijk
-         sumd2 = sumd2 + fijk*fijk
-         if (fijk > maxd) then
-            maxd = fijk
-            imax = i
-            jmax = j
-            kmax = k
-         end if
-         if (fijk < mind) then
-            mind = fijk
-            imin = i
-            jmin = j
-            kmin = k
-         end if
-      end do
-      end do
+         do j=F_j0,F_jn
+            do i=F_i0,F_in
+               fijk = F_field(i,j,k)
+               sum = sum + fijk
+               sumd2 = sumd2 + fijk*fijk
+               if (fijk > maxd) then
+                  maxd = fijk
+                  imax = i
+                  jmax = j
+                  kmax = k
+               end if
+               if (fijk < mind) then
+                  mind = fijk
+                  imin = i
+                  jmin = j
+                  kmin = k
+               end if
+            end do
+         end do
       end do
 !
       moy = sum / npt_8
@@ -106,10 +106,10 @@
 ! ** On imprime
 !
          if (F_rx < 8) then
-            write(6,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(output_unit,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S
          else
-            write(6,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(output_unit,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S
          end if
 !      end if

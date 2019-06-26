@@ -135,8 +135,8 @@ contains
             end do
             name (len(name)-len(trim(nam_subr_S(elem)))+1:len(name))= &
             trim(nam_subr_S(elem))
-            write (6,trim(fmt)) sum_tb(elem)/total_time*100.,name,'(',elem,')','Wall clock= ',&
-                                sum_tb(elem),'count= ',timer_cnt(elem)
+            write (output_unit,trim(fmt)) sum_tb(elem)/total_time*100.,name,'(',elem,')','Wall clock= ',&
+                   sum_tb(elem),'count= ',timer_cnt(elem)
             flag(elem) = .true. ; lvlel(lvl) = elem
  65         do j = 1,MAX_instrumented
                if ((timer_level(j) == elem) .and. (.not.flag(j)) )then

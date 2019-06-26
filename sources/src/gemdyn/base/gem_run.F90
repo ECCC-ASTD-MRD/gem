@@ -53,7 +53,7 @@
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Step_runstrt_S,dayfrac)
 
-      if (Lun_out > 0) write (6,900) datev
+      if (Lun_out > 0) write (Lun_out,900) datev
 
       call blocstat (.true.)
 

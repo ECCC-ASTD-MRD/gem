@@ -23,6 +23,7 @@
       use cstv
       use ver
       use type_mod
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -108,9 +109,9 @@
       LipNOv=Cstv_dt_8*LipNOv
       LipNOw=Cstv_dt_8*LipNOw
 
-      write(6,101) LipNOu,iu,ju,ku
-      write(6,102) LipNOv,iv,jv,kv
-      write(6,103) LipNOw,iw,jw,kw
+      write(output_unit,101) LipNOu,iu,ju,ku
+      write(output_unit,102) LipNOv,iv,jv,kv
+      write(output_unit,103) LipNOw,iw,jw,kw
   101 format(30x,'Lipschitz number(u)=',F6.2,' [',i4,',',i4,',',i3']')
   102 format(30x,'Lipschitz number(v)=',F6.2,' [',i4,',',i4,',',i3']')
   103 format(30x,'Lipschitz number(w)=',F6.2,' [',i4,',',i4,',',i3']')

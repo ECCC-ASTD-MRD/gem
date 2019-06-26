@@ -17,6 +17,7 @@
       use HORgrid_options
       use clib_itf_mod
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -31,14 +32,14 @@
       err  = -1
 
       if (clib_getenv ('GEM_NDOMAINS',ndomains_S) < 0) then
-         write (6,1001) 'GEM_NDOMAINS'
+         write (output_unit,1001) 'GEM_NDOMAINS'
          return
       end if
 
       indx1= index (ndomains_S,':')
 
       if (indx1 < 1) then
-         write (6,1002) 'GEM_NDOMAINS',ndomains_S
+         write (output_unit,1002) 'GEM_NDOMAINS',ndomains_S
          return
       end if
 
@@ -46,24 +47,24 @@
       read (ndomains_S(indx1+1: ),*,end=33,err=33) dom_fin
 
       goto 101
-  33  write (6,1002) 'GEM_NDOMAINS',ndomains_S
+  33  write (output_unit,1002) 'GEM_NDOMAINS',ndomains_S
       return
 
  101  if (clib_getenv ('DOMAIN_end',last_domain_S) < 0) then
-         write (6,1001) 'DOMAIN_end'
+         write (output_unit,1001) 'DOMAIN_end'
          return
       end if
 
       read (last_domain_S,*,end=43,err=43) last
 
       goto 201
-  43  write (6,1002) 'DOMAIN_end',last_domain_S
+  43  write (output_unit,1002) 'DOMAIN_end',last_domain_S
       return
 
  201  Grd_ndomains = dom_fin - dom_deb + 1
 
       if (Grd_ndomains < 1) then
-         write (6,1003) ndomains,ndomains_S
+         write (output_unit,1003) ndomains,ndomains_S
          return
       end if
 

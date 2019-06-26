@@ -323,8 +323,8 @@ contains
                               ge_i, ge_j, ge_k) ! Global array extents
 
       ! Debugging printouts -- uncomment to receive a per-processor report on grid allocation
-      !write(0,'("Multigrid Level ",I1," initialized, bounds ",2("[",I4,"-",I4,"-",I4,"-",I4,"] "),I3)'), ilevel, alb_i, llb_i, lub_i, aub_i, alb_j, llb_j, lub_j, aub_j, ge_k
-      !write(0,'("              global extents ",4I4.3)'), ge_i, ge_j, ge_k
+      !write(error_unit,'("Multigrid Level ",I1," initialized, bounds ",2("[",I4,"-",I4,"-",I4,"-",I4,"] "),I3)'), ilevel, alb_i, llb_i, lub_i, aub_i, alb_j, llb_j, lub_j, aub_j, ge_k
+      !write(error_unit,'("              global extents ",4I4.3)'), ge_i, ge_j, ge_k
 
       ! Define the local grid bounds at each level.  Along the way, determine the maximum level we
       ! can safely support on this processor -- interior cells need at least HALO points in both
@@ -569,8 +569,8 @@ contains
                                 0, 0) ! Unused -- related to grids that cover the poles
 
          ! Allocation debug printouts
-         !write(0,'("Multigrid Level ",I1," initialized, bounds ",2("[",I4,"-",I4,"-",I4,"-",I4,"] "),I3)'), ilevel, alb_i, llb_i, lub_i, aub_i, alb_j, llb_j, lub_j, aub_j, ge_k
-         !write(0,'("              global extents ",4I4.3)'), ge_i, ge_j, ge_k
+         !write(error_unit,'("Multigrid Level ",I1," initialized, bounds ",2("[",I4,"-",I4,"-",I4,"-",I4,"] "),I3)'), ilevel, alb_i, llb_i, lub_i, aub_i, alb_j, llb_j, lub_j, aub_j, ge_k
+         !write(error_unit,'("              global extents ",4I4.3)'), ge_i, ge_j, ge_k
 
          ! Build the tridiagonal factors
          call build_trid_factors(grid_info(ilevel)%mat, & ! The operator

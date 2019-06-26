@@ -19,41 +19,40 @@
       subroutine hzd_exp5p ( F_champ, F_temp, Minx,Maxx,Miny,Maxy, NK,&
                                         F_coef_8, F_arakawa_S,mm,dpwr )
       use gem_options
-      use hzd_mod
       use glb_ld
+      use hzd_mod
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      character*1 F_arakawa_S
-      integer Minx,Maxx,Miny,Maxy,NK,mm,dpwr
-      real F_champ(Minx:Maxx,Miny:Maxy,NK)
-      real F_temp(Minx:Maxx,Miny:Maxy,NK)
-      real(kind=REAL64) F_coef_8(NK)
+      character(len=1) :: F_arakawa_S
+      integer Minx, Maxx, Miny, Maxy, NK, mm, dpwr
+      real, dimension(Minx:Maxx,Miny:Maxy,NK) :: F_champ, F_temp
+      real(kind=REAL64), dimension(NK) :: F_coef_8
 
 !author
 !    Abdessamad Qaddouri - summer 2015
 !
-      integer i,j,k,i0,in,j0,jn
-      real(kind=REAL64) wk_8 (Minx:Maxx,Miny:Maxy,Nk)
+      integer :: i,j,k,i0,in,j0,jn
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk) :: wk_8
       real(kind=REAL64), dimension(:,:), pointer :: stencils => null()
 !
 !---------------------------------------------------------------------
 !
-      i0  = 2        - G_halox*(1-west )
-      j0  = 2        - G_haloy*(1-south)
-      in  = l_ni - 1 + G_halox*(1-east )
-      jn  = l_nj - 1 + G_haloy*(1-north)
+      i0  = 2        - G_halox * (1 - west )
+      j0  = 2        - G_haloy * (1 - south)
+      in  = l_ni - 1 + G_halox * (1 - east )
+      jn  = l_nj - 1 + G_haloy * (1 - north)
 
       select case (F_arakawa_S)
       case ('M')
          stencils => Hzd_geom_q
       case ('U')
          stencils => Hzd_geom_u
-         in  = l_niu - 1 + G_halox*(1-east )
+         in  = l_niu - 1 + G_halox * (1 - east )
       case ('V')
          stencils => Hzd_geom_v
-         jn  = l_njv - 1 + G_haloy*(1-north)
+         jn  = l_njv - 1 + G_haloy * (1 - north)
       end select
 
       if (mm == 1) then
@@ -69,13 +68,13 @@
 !$omp do
        do k=1,NK
           do j= j0, jn
-          do i= i0, in
-             wk_8(i,j,k)= stencils(j,1)*F_temp(i  ,j  ,k) + &
-                          stencils(j,2)*F_temp(i-1,j  ,k) + &
-                          stencils(j,3)*F_temp(i+1,j  ,k) + &
-                          stencils(j,4)*F_temp(i  ,j-1,k) + &
-                          stencils(j,5)*F_temp(i  ,j+1,k)
-          end do
+            do i= i0, in
+               wk_8(i,j,k)= stencils(j,1) * F_temp(i  ,j  ,k) + &
+                            stencils(j,2) * F_temp(i-1,j  ,k) + &
+                            stencils(j,3) * F_temp(i+1,j  ,k) + &
+                            stencils(j,4) * F_temp(i  ,j-1,k) + &
+                            stencils(j,5) * F_temp(i  ,j+1,k)
+            end do
           end do
        end do
 !$omp end do
@@ -88,9 +87,9 @@
 !$omp do
           do k=1,NK
              do j= j0, jn
-             do i= i0, in
-                F_champ(i,j,k)= F_champ(i,j,k) + F_coef_8(k)*wk_8(i,j,k)
-             end do
+               do i= i0, in
+                  F_champ(i,j,k) = F_champ(i,j,k) + F_coef_8(k) * wk_8(i,j,k)
+               end do
              end do
           end do
 !$omp end do
@@ -102,9 +101,9 @@
 !$omp do
           do k=1,NK
              do j= j0, jn
-             do i= i0, in
-                F_temp(i,j,k)= F_champ(i,j,k) + F_coef_8(k)*wk_8(i,j,k)
-             end do
+               do i= i0, in
+                  F_temp(i,j,k) = F_champ(i,j,k) + F_coef_8(k) * wk_8(i,j,k)
+               end do
              end do
           end do
 !$omp end do

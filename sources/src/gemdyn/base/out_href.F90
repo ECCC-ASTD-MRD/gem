@@ -17,14 +17,13 @@
 
       subroutine out_href3 (F_arakawa_S ,F_x0, F_x1, F_stridex,&
                                          F_y0, F_y1, F_stridey )
-      use HORgrid_options
-      use gem_options
       use geomh
       use glb_ld
+      use hgc
+      use HORgrid_options
       use lun
       use out_mod
       use out3
-      use hgc
       use ptopo
       implicit none
 #include <arch_specific.hf>
@@ -35,17 +34,18 @@
 #include <rmnlib_basics.hf>
 
 !!$      integer, external :: out_samegrd
-      character*1 familly_uencode_S
-      integer err,ni,nis,njs,niyy,ix1,ix2,ix3,ix4, &
-              sindx,i0,in,j0,jn,vesion_uencode
-      real wk
+      character(len=1) :: familly_uencode_S
+      integer :: err,ni,nis,njs,niyy,ix1,ix2,ix3,ix4, &
+               sindx,i0,in,j0,jn,vesion_uencode
+      real :: wk
       real, dimension(:), pointer     :: posx,posy
       real, dimension(:), allocatable :: yy
 
-      character(len=1) nomvar
-      integer nbit,knd,lstep
-      integer ind_o(1)
-      real fa(1,1,1), rf(1)
+      character(len=1) :: nomvar
+      integer :: nbit, knd, lstep
+      integer, dimension(1) :: ind_o
+      real, dimension(1,1,1) :: fa
+      real, dimension(1) :: rf
 
 !
 !----------------------------------------------------------------------
@@ -92,13 +92,11 @@
                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
                       i0,in,F_stridex, j0,jn,F_stridey )
 
-      Out_stride= 1 ! can only be one for now
-      Out_gridi0= i0
-      Out_gridin= in
-      Out_gridj0= j0
-      Out_gridjn= jn
-
-!      if (old_grid_L) return
+      Out_stride = 1 ! can only be one for now
+      Out_gridi0 = i0
+      Out_gridin = in
+      Out_gridj0 = j0
+      Out_gridjn = jn
 
       nis = in - i0 + 1  ;  njs = jn - j0 + 1
       if ( (nis <= 0) .or. (njs <= 0) ) then

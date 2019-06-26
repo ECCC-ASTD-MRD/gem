@@ -20,7 +20,7 @@
       implicit none
 
       integer :: cfl_i(3,3)
-      real(kind=REAL64)  :: cfl_8(3)
+      real(kind=REAL64) :: cfl_8(3)
 !
 !     ---------------------------------------------------------------
 !
@@ -29,11 +29,11 @@
       call adz_courant (Adz_pxyzm, Adz_i0,Adz_in,Adz_j0,Adz_jn, &
                         l_ni,l_nj,Adz_k0,l_nk,cfl_i,cfl_8)
 
-      if (lun_out > 0) write (6,99) 'x,y',cfl_i(1,1),cfl_i(2,1), &
+      if (lun_out > 0) write (output_unit,99) 'x,y',cfl_i(1,1),cfl_i(2,1), &
                                           cfl_i(3,1),sngl(cfl_8(1))
-      if (lun_out > 0) write (6,99) 'z'  ,cfl_i(1,2),cfl_i(2,2), &
+      if (lun_out > 0) write (output_unit,99) 'z'  ,cfl_i(1,2),cfl_i(2,2), &
                                           cfl_i(3,2),sngl(cfl_8(2))
-      if (lun_out > 0) write (6,99) '3D' ,cfl_i(1,3),cfl_i(2,3), &
+      if (lun_out > 0) write (output_unit,99) '3D' ,cfl_i(1,3),cfl_i(2,3), &
                                           cfl_i(3,3),sngl(cfl_8(3))
 
  99   format(' MAX COURANT NUMBER:  ', a3,&

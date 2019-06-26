@@ -20,6 +20,7 @@
       use path
       use cpus_options
       use version
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -58,7 +59,7 @@
       unf= 0
       fn = trim(Path_work_S)//'/model_settings.nml'
       if (fnom (unf,trim(fn), 'SEQ+OLD', 0) == 0) then
-         write (6, 6000) trim( fn )
+         write (output_unit, 6000) trim( fn )
          if (cpus_nml (unf) == 1 ) then
             F_npx = Cpus_npex
             F_npy = Cpus_npey
@@ -66,14 +67,14 @@
          else
             F_npx = 0
             F_npy = 0
-            write (6, 8000)
+            write (output_unit, 8000)
          end if
          err= fclos(unf)
       else
-         write (6, 6001) trim( fn)
+         write (output_unit, 6001) trim( fn)
       end if
 
-      write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
+      write (output_unit,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
                      trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
 
  1001 format (/3x,60('*')/3x,'Package: ',a,5x,'version: ',a/ &

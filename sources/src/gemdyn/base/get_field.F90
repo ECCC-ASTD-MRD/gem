@@ -75,7 +75,7 @@
          goto 999
       end if
 
-      write (6,1000) trim(F_filename_S),unf
+      write (output_unit,1000) trim(F_filename_S),unf
 
       key = fstinf (unf, nis,njs,nk1,-1," ",-1,-1,-1," ",F_nomvar_S)
       if (key < 0) then
@@ -100,14 +100,14 @@
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ",">>")
          if (key < 0) then
-            write (6,9004)
+            write (output_unit,9004)
             goto 999
          end if
          err = fstluk (ax, key, ni1,nj1,nk1)
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ","^^")
          if (key < 0) then
-            write (6,9004)
+            write (output_unit,9004)
             goto 999
          end if
          err = fstluk (ay, key, ni1,nj1,nk1)
@@ -154,13 +154,13 @@
       err = fstfrm (unf)
       err = fclos  (unf)
 
-      write (6,1001) F_nomvar_S, trim(F_inttyp_S)
+      write (output_unit,1001) F_nomvar_S, trim(F_inttyp_S)
 
       err = ezdefset ( dgid, sgid )
       err = ezsetopt ('INTERP_DEGREE', trim(F_inttyp_S))
       err = ezsint   (F_dest, source)
       if (err == 2) then
-         write (6,1002) F_nomvar_S, trim(F_inttyp_S)
+         write (output_unit,1002) F_nomvar_S, trim(F_inttyp_S)
       end if
 
       if (subid >= 0) then
@@ -170,7 +170,7 @@
       end if
 
       if (err < 0) then
-         write (6,9005)
+         write (output_unit,9005)
          goto 999
       end if
 

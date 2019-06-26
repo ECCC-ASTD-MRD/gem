@@ -64,7 +64,7 @@
                 form='unformatted',iostat=errop )
 
          if ( errop == 0 ) then
-            write(6,1001) 'READING', trim(F_eigen_filename_S)
+            write(output_unit,1001) 'READING', trim(F_eigen_filename_S)
             read (unf) F_evec_8,F_eval_8
             close(unf)
          else
@@ -92,7 +92,7 @@
                open ( unf, file=trim(F_eigen_filename_S), &
                       form='unformatted',iostat=errop )
                if ( errop == 0 ) then
-                  write(6,1001) 'WRITING', trim(F_eigen_filename_S)
+                  write(output_unit,1001) 'WRITING', trim(F_eigen_filename_S)
                   write(unf) F_evec_8, F_eval_8
                   close(unf)
                end if

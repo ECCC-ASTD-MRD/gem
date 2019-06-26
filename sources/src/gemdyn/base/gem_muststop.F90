@@ -70,7 +70,7 @@
          call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
          if (pe0_master_L) then
             err = clib_symlink ( trim(filen), trim(filen_link) )
-            write (6,1001) trim(Out_laststep_S),lctl_step,err
+            write (output_unit,1001) trim(Out_laststep_S),lctl_step,err
          end if
 
       end if

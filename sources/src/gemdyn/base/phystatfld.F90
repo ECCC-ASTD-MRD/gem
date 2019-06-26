@@ -106,10 +106,10 @@
 !
 !      if(Lun_out > 0) then
          if (F_rx < 8) then
-            write(6,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(output_unit,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S
          else
-            write(6,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(output_unit,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S
          end if
 !      end if

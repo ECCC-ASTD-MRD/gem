@@ -48,7 +48,7 @@
       Grdc_gif= 0 ; Grdc_gjf= 0
 
       printout_L= prout .and. (.not.Rstri_rstn_L)
-      if (printout_L) write(6, 1000)
+      if (printout_L) write(output_unit, 1000)
 
       if ( (Grdc_ndt < 0) .or. (Grd_yinyang_S == 'YAN') .or. &
            (Grdc_ni == 0) .or. (Grdc_nj == 0) .or.           &
@@ -133,10 +133,10 @@
             Grdc_gjf = Grdc_gjf + 3
 
             if (printout_L) then
-               if (Grdc_gid < 1)     write(6,1015) 'WEST'
-               if (Grdc_gjd < 1)     write(6,1015) 'SOUTH'
-               if (Grdc_gif > dimgx) write(6,1015) 'EAST'
-               if (Grdc_gjf > dimgy) write(6,1015) 'NORTH'
+               if (Grdc_gid < 1)     write(output_unit,1015) 'WEST'
+               if (Grdc_gjd < 1)     write(output_unit,1015) 'SOUTH'
+               if (Grdc_gif > dimgx) write(output_unit,1015) 'EAST'
+               if (Grdc_gjf > dimgy) write(output_unit,1015) 'NORTH'
             end if
 
             Grdc_gid = max(Grdc_gid, 1    )
@@ -182,22 +182,22 @@
          end if
 
          if ((prout).and.(.not.Rstri_rstn_L)) then
-            write (6,1005) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
-            write (6,1006) Grdc_gif-Grdc_gid+1,xpx(Grdc_gid),xpx(Grdc_gif),&
+            write (output_unit,1005) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+            write (output_unit,1006) Grdc_gif-Grdc_gid+1,xpx(Grdc_gid),xpx(Grdc_gif),&
                            Grdc_gjf-Grdc_gjd+1,ypx(Grdc_gjd),ypx(Grdc_gjf)
-            write (6,1001)
-            write (6,'(5(x,a))') Grdc_trnm_S(1:Grdc_ntr)
+            write (output_unit,1001)
+            write (output_unit,'(5(x,a))') Grdc_trnm_S(1:Grdc_ntr)
          end if
 
       else
 
-         if (prout) write (6,1004)
+         if (prout) write (output_unit,1004)
          Grdc_gid= 0 ; Grdc_gjd= 0
          Grdc_gif= 0 ; Grdc_gjf= 0
 
       end if
 
-      if (printout_L) write (6,1200)
+      if (printout_L) write (output_unit,1200)
 
       if (allocated(ac_xp)) deallocate(ac_xp)
       if (allocated(ac_yp)) deallocate(ac_yp)

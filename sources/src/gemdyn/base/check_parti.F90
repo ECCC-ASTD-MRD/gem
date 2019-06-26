@@ -16,7 +16,7 @@
 !**s/r check_parti - Checks domain partitioning
 !
       logical function check_parti (F_si,F_n,F_npe)
-!
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,7 +39,7 @@
       part_ok = 0
       if (F_si >= F_n) part_ok = 1
 !
-      if (part_ok == 1) write (6,900) F_n,F_npe,F_si
+      if (part_ok == 1) write (output_unit,900) F_n,F_npe,F_si
 !
       call rpn_comm_ALLREDUCE (part_ok,part_ok_,1,"MPI_INTEGER", &
                                           "MPI_BOR","grid",err)

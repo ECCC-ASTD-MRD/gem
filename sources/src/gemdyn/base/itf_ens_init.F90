@@ -35,11 +35,11 @@
 !
       unf= 0 ; err_nml= -1
       if (fnom (unf,Path_nml_S, 'SEQ+OLD', 0) == 0) then
-         if (Lun_out > 0) write (6, 6000) trim( Path_nml_S )
+         if (Lun_out > 0) write (Lun_out, 6000) trim( Path_nml_S )
          err_nml= ens_nml(unf)
          ier= fclos(unf)
       else
-         if (Lun_out > 0) write (6, 6001) trim( Path_nml_S )
+         if (Lun_out > 0) write (Lun_out, 6001) trim( Path_nml_S )
       end if
 
       if (err_nml==1) then

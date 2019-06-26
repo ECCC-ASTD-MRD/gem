@@ -16,6 +16,7 @@
       logical function decomp ( F_npts, F_min, F_max, F_lni, F_npartiel, F_halo, F_start,  &
                                 F_alongx_L, F_fill_L, F_npe, F_lowestsize, F_checkparti_L, &
                                 F_relax)
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
@@ -51,7 +52,7 @@
 
       end if
 
-      if (.not.decomp) write (6,1001) F_npts, F_npe
+      if (.not.decomp) write (output_unit,1001) F_npts, F_npe
  1001 format(/' DECOMP: illegal partitionning ====> ',i7,' / ',i7)
 !
 !-------------------------------------------------------------------

@@ -17,6 +17,7 @@
       integer function partition ( F_npts, F_alongxy, F_halo, &
                                    F_min, F_max, F_ni, F_i0 )
       use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
@@ -61,7 +62,7 @@
       end if
 
       if (F_i0 > F_npts)  then
-         write (6,9001) F_npts,npe,trim(Part_type_S)
+         write (output_unit,9001) F_npts,npe,trim(Part_type_S)
          return
       end if
 

@@ -272,7 +272,7 @@ contains
                               Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
 
       if (Lun_out > 0) then
-         write(6,1100) trim(Grd_yinyang_S), &
+         write(Lun_out,1100) trim(Grd_yinyang_S), &
                        Grd_ni, Grd_x0_8, Grd_xl_8, &
                        Grd_nj, Grd_y0_8, Grd_yl_8, &
                        Grd_typ_S, Grd_dx ,Grd_dy , &

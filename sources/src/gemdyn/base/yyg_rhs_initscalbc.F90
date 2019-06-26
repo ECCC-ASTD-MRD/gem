@@ -546,7 +546,7 @@
 !        else
 !            kkproc = kk -1
 !        end if
-!    write(6,1000) 'Rhsx_recv_len',kkproc,Rhsx_recv_len(kk),Rhsx_recv_adr(kk)
+!    write(output_unit,1000) 'Rhsx_recv_len',kkproc,Rhsx_recv_len(kk),Rhsx_recv_adr(kk)
 !   end do
 !Check send lengths to each processor
 
@@ -557,7 +557,7 @@
 !        else
 !            kkproc = kk -1
 !        end if
-! write(6,1000) 'Rhsx_send_len',kkproc,Rhsx_send_len(kk),Rhsx_send_adr(kk)
+! write(output_unit,1000) 'Rhsx_send_len',kkproc,Rhsx_send_len(kk),Rhsx_send_adr(kk)
 !     end do
       deallocate (recv_len,send_len)
 

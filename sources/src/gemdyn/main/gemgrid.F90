@@ -120,10 +120,10 @@
       i1=G_ni ; j1=G_nj
       itile=1 ; jtile=1
 
-      write(6,*) 'LONGITUDE'
-      write(6,778)(i,xpos(i),i=1,G_ni)
-      write(6,*) 'LATITUDE'
-      write(6,778)(i,ypos(i),i=1,G_nj)
+      write(output_unit,*) 'LONGITUDE'
+      write(output_unit,778)(i,xpos(i),i=1,G_ni)
+      write(output_unit,*) 'LATITUDE'
+      write(output_unit,778)(i,ypos(i),i=1,G_nj)
 
       if (Grd_yinyang_L) then
          etk_ext=trim(etk)//'_'//trim(Grd_yinyang_S)
