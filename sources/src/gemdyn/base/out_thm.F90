@@ -262,11 +262,14 @@
                                l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
 
             case ('DYNAMICS_EXPO_H')
-               stop 'DYNAMICS_EXPO_H: not yet implemented'
-!               istat = gmm_get(gmmk_qt1_s,qt1)
-!
-!               gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
-!               gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+               if (Schm_autobar_L) then
+                  istat = gmm_get(gmmk_qt1_s,qt1)
+
+                  gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+                  gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+               else
+                  stop 'DYNAMICS_EXPO_H, out_thm: not yet implemented'
+               end if
 
          end select
 

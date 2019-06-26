@@ -71,7 +71,7 @@
       if ( (Step_nesdt <= 0) .and. (Grd_typ_S(1:1) == 'L') &
                              .and. (.not. Lam_ctebcs_L ) ) then
          if (Lun_out > 0) then
-            write(Lun_out,*)  ' Fcst_nesdt_S must be specified in namelist &step'
+            write(Lun_out,*) ' Fcst_nesdt_S must be specified in namelist &step'
          end if
          return
       end if
@@ -156,12 +156,21 @@
 
       Dynamics_hauteur_L = Dynamics_Kernel_S(14:15) == '_H'
 
-      if (Dynamics_hauteur_L) then
-         Dynamics_hydro_L = .false.
-         call fislh_hybrid ( hyb_H, G_nk)
-      else
-         call set_zeta ( hyb, G_nk )
-      endif
+      select case ( trim(Dynamics_Kernel_S) )
+         case ('DYNAMICS_FISL_P')
+            call set_zeta ( hyb, G_nk )
+         case ('DYNAMICS_FISL_H')
+            Dynamics_hydro_L = .false.
+            call fislh_hybrid ( hyb_H, G_nk)
+
+         case ('DYNAMICS_EXPO_H')
+            if (Schm_autobar_L) then
+               ! TODO : temporary
+               call set_zeta ( hyb, G_nk )
+            else
+               stop 'EXPO gemdm_config : Not yet implemented'
+            end if
+      end select
 
       Schm_nith = G_nk
 

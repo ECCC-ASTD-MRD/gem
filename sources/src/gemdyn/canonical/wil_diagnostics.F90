@@ -17,21 +17,24 @@
 
       subroutine wil_diagnostics (F_my_step)
 
-
       use adz_options
       use canonical
+      use cstv
+      use dynkernel_options
       use gem_options
-      use HORgrid_options
       use geomh
+      use glb_ld
+      use gmm_itf_mod
+      use gmm_vt1
+      use HORgrid_options
+      use lun
+      use ptopo
       use step_options
+      use tdpack
+      use tr3d
       use wil_options
 
-      use glb_ld
-      use cstv
-      use lun
-      use tr3d
-      use gmm_itf_mod
-      use ptopo
+      use, intrinsic :: iso_fortran_env
       implicit none
 
       integer F_my_step
@@ -61,8 +64,84 @@
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk):: bidon,air_mass
 
       logical almost_zero
+      real, dimension(:,: ,: ), pointer , save   :: phi_0
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1):: phi
 
       !---------------------------------------------------------------
+
+      if (Williamson_case==2) then
+         if ( Lctl_step==0) then
+
+         allocate(phi_0(l_minx:l_maxx,l_miny:l_maxy,G_nk+1))
+
+         select case ( trim(Dynamics_Kernel_S) )
+
+            case ('DYNAMICS_FISL_H')
+               stop 'Not yet implemented'
+
+            case('DYNAMICS_FISL_P')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               istat = gmm_get(gmmk_tt1_s,tt1)
+               istat = gmm_get(gmmk_st1_s,st1)
+               call diag_fi (phi_0, st1, tt1, qt1, &
+                             l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+
+            case('DYNAMICS_EXPO_H')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               phi_0(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+
+         end select
+
+      else
+
+         select case ( trim(Dynamics_Kernel_S) )
+
+            case ('DYNAMICS_FISL_H')
+               stop 'Not yet implemented'
+
+            case('DYNAMICS_FISL_P')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               istat = gmm_get(gmmk_tt1_s,tt1)
+               istat = gmm_get(gmmk_st1_s,st1)
+               call diag_fi (phi, st1, tt1, qt1, &
+                             l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+
+            case('DYNAMICS_EXPO_H')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+
+         end select
+
+         s_err_2_8=0.0
+         s_ref_2_8=0.0
+         do j = 1+pil_s,l_nj-pil_n
+            do i = 1+pil_w,l_ni-pil_e
+               s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 + phi_0(i,j,1)**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+            end do
+         end do
+
+         communicate_S = "GRID"
+         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+
+         call RPN_COMM_allreduce(s_err_2_8,  g_err_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+         call RPN_COMM_allreduce(s_ref_2_8,  g_ref_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+
+         !Evaluate Norms
+         !--------------
+         norm_2_8 = 10.**8
+
+         if ( .not.almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
+            if (Lun_out>0.and.Ptopo_couleur==0) then
+               print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
+               write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+               write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
+               write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+               write (Lun_out,*) ' '
+            end if
+         end if
+
+      end if
 
       if (adz_verbose==0) return
 

@@ -100,7 +100,7 @@
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       end if
 
-      if (Dynamics_hauteur_L) call fislh_metric ()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
 
       do k=1, Tr3d_ntr
          nullify (plus, minus)

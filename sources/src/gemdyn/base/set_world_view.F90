@@ -124,13 +124,23 @@
 ! Establish final configuration
 
       err(:) = 0
+
       err(1) = HORgrid_config (adz_maxcfl_fact)
       call theo_cfg() !must absolutely be done here
+
+      call gem_error ( err(1),'Horizontal grid CONFIGURATION ERROR', &
+                      'ABORT in set_world_view' )
+
       err(2) = VERgrid_config ()
+
+      call gem_error ( err(2),'Vertical grid CONFIGURATION ERROR', &
+                      'ABORT in set_world_view' )
 
 ! Establish domain decomposition (mapping subdomains and processors)
       err(3) = domain_decomp (Ptopo_npex, Ptopo_npey, .false.)
 
+      call gem_error ( err(3),'domain decomposition CONFIGURATION ERROR', &
+                      'ABORT in set_world_view' )
 ! Initialize GMM
       call set_gmm()
 

@@ -123,18 +123,36 @@ contains
 
 !     Counting # of vertical levels specified by user
       G_nk = 0
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) then
-         do k = 1, maxhlev
-            if (hyb_H(k) < 0.) exit
-            G_nk = k
-         end do
-      else
-         do k = 1, maxhlev
-            if (hyb(k) < 0.) exit
-            G_nk = k
-         end do
-      end if
+
+      select case ( trim(Dynamics_Kernel_S) )
+         case('DYNAMICS_FISL_P')
+            do k = 1, maxhlev
+               if (hyb(k) < 0.) exit
+               G_nk = k
+            end do
+
+         case ('DYNAMICS_FISL_H')
+            do k = 1, maxhlev
+               if (hyb_H(k) < 0.) exit
+               G_nk = k
+            end do
+
+         case('DYNAMICS_EXPO_H')
+            if (Schm_autobar_L) then
+               ! Temporary
+               do k = 1, maxhlev
+                  if (hyb(k) < 0.) exit
+                  G_nk = k
+               end do
+            else
+               do k = 1, maxhlev
+                  if (hyb_H(k) < 0.) exit
+                  G_nk = k
+               end do
+            end if
+
+      end select
+
 
       VERgrid_config = 1
 !

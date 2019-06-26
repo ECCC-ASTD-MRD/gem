@@ -251,6 +251,8 @@
       else if (F_action_S=="ERR") then
 
          if (Williamson_case==1) call wil_diagnostics (Lctl_step)
+         if (Williamson_case==2) call wil_diagnostics (Lctl_step)
+
 
          if (Dcmip_case>0) call dcmip_diagnostics (Lctl_step)
 
