@@ -74,51 +74,51 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
 
   use Kessler_module
 
-  IMPLICIT NONE
+  implicit none
 
   !------------------------------------------------
   !   Arguments
   !------------------------------------------------
 
-  INTEGER, INTENT(IN) :: &
+  integer, intent(in) :: &
             test         ! DCMIP2016 test index of SST (1,2,3)
 
-  real(kind=REAL64), DIMENSION(nz), INTENT(INOUT) :: &
+  integer, intent(in) :: &
+            nz           ! Number of levels in grid column
+
+  real(kind=REAL64), dimension(nz), intent(inout) :: &
             u       ,  & ! Zonal velocity (m/s)
             v       ,  & ! Meridional velocity (m/s)
             qsv     ,  & ! Specific humidity (kg/kg)
             qsc     ,  & ! Cloud water specific (kg/kg)
             qsr          ! Rain water specific (kg/kg)
 
-  real(kind=REAL64), DIMENSION(nz+1),INTENT(IN) :: &
+  real(kind=REAL64), dimension(nz+1),intent(in) :: &
             pt           ! Pressure (Pa) !THERMO
 
-  real(kind=REAL64), DIMENSION(0:nz),INTENT(IN) :: &
+  real(kind=REAL64), dimension(0:nz),intent(in) :: &
             pm           ! Pressure (Pa) !MOMENTUM
 
-  real(kind=REAL64), DIMENSION(nz), INTENT(INOUT) :: &
+  real(kind=REAL64), dimension(nz), intent(inout) :: &
             t            ! Temperature (K)
 
-  real(kind=REAL64), INTENT(IN) :: &
+  real(kind=REAL64), intent(in) :: &
             dt           ! Time step (s)
 
-  real(kind=REAL64), INTENT(IN) :: &
+  real(kind=REAL64), intent(in) :: &
             lat          ! Latitude of column (radians)
 
-  INTEGER, INTENT(IN) :: &
-            nz           ! Number of levels in grid column
-
-  real(kind=REAL64), INTENT(INOUT) :: &
+  real(kind=REAL64), intent(inout) :: &
             precl        ! Large-scale precip beneath the grid column (mm)
 
-  INTEGER, INTENT(IN) :: &
+  integer, intent(in) :: &
             pbl_type,  & ! Type of planetary boundary layer
             prec_type    ! Type of precipitation/microphysics
 
   !------------------------------------------------
   ! Physical Constants - MAY BE MODEL DEPENDENT
   !------------------------------------------------
-  real(kind=REAL64), PARAMETER ::      &
+  real(kind=REAL64), parameter ::      &
     one      = 1.d0,         & ! One
     gravit  = 9.80616d0,     & ! Gravity (m/s^2)
     rair    = 287.d0,        & ! Gas constant for dry air (J/kg/K)
@@ -134,7 +134,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
   ! Local Constants for Simple Physics
   !------------------------------------------------
-  real(kind=REAL64), PARAMETER ::      &
+  real(kind=REAL64), parameter ::      &
     C        = 0.0011d0,     & ! From Simth and Vogl 2008
     SST_TC   = 302.15d0,     & ! Constant Value for SST
     T0       = 273.16d0,     & ! Control temp for calculation of qsat
@@ -159,7 +159,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
   !------------------------------------------------
   ! Variables used in calculation
   !------------------------------------------------
-  INTEGER :: k
+  integer :: k
 
   real(kind=REAL64) ::                  &
     zat,                      & ! Altitude of lowest model level (m) !THERMO
@@ -179,7 +179,7 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
     CCE                         ! Matrix coefficients for PBL scheme
 
   ! Matrix coefficients for PBL scheme (Array)
-  real(kind=REAL64), DIMENSION(nz) ::   &
+  real(kind=REAL64), dimension(nz) ::   &
     CEm,                      & ! Matrix coefficients for PBL scheme
     CEE,                      & ! Matrix coefficients for PBL scheme
     CFu,                      & ! Matrix coefficients for PBL scheme
@@ -188,43 +188,43 @@ SUBROUTINE DCMIP2016_PHYSICS(test, u, v, pt, pm, qsv, qsc, qsr, t, &
     CFq                         ! Matrix coefficients for PBL scheme
 
   ! Eddy diffusivity for boundary layer
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     Km                          ! THERMO
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     Ke                          ! MOMENTUM
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     theta,                    & ! Potential temperature
     exner                       ! Exner function (p/p0)**(R/cp)
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     qv                          ! Water vapor mixing ratio
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     qc                          ! Cloud water mixing ratio
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     qr                          ! Rain water mixing ratio
 
-  real(kind=REAL64), DIMENSION(0:nz)   :: &
+  real(kind=REAL64), dimension(0:nz)   :: &
     zt, &                       ! Heights (m) !THERMO
     zm                          ! Heights (m) !MOMENTUM
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
    wm, &                        ! Weight int. THERMO to MOMENTUM (above M)
    wp                           ! Weight int. THERMO to MOMENTUM (below M)
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     t_m,qsv_m                   ! Temperature/Specific Humidity MOMENTUM
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     dtdt,dqdt                   ! Tendencies used in RJ large-scale prec.
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     rho                         ! Dry air density used in Kessler large-scale prec.
 
-  real(kind=REAL64), DIMENSION(nz)     :: &
+  real(kind=REAL64), dimension(nz)     :: &
     dp_t                        ! Layer thickness (Pa) (Thermo) used in RJ large-scale prec.
 
   real(kind=REAL64) :: r_dp_m, r_dp_t, dlnp_m, dlnp_t, rho_m, rho_t, tv_m, tmp
