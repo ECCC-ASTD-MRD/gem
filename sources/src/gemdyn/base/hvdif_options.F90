@@ -79,13 +79,13 @@ module hvdif_options
    !# the value at Hzd_smago_lev(2). The third element determines the maximum coefficient
    !# at the model top. Two ramps of COS^2-type are used between Hzd_smago_lev(1) and
    !# Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid.
-   real, dimension(3):: Hzd_smago_lnr = (/-1., 0., -1./)
+   real, dimension(3):: Hzd_smago_lnr = [ -1., 0., -1. ]
    namelist /hvdif  / Hzd_smago_lnr
    namelist /hvdif_p/ Hzd_smago_lnr
 
    !# The levels (bot,top) in the hybrid coordinate where the background diffusion
    !# coefficient varies between the value defined by Hzd_smago_lnr(1) and Hzd_smago_lnr(2).
-   real, dimension(2):: Hzd_smago_lev = (/0.7, 0.4/)
+   real, dimension(2):: Hzd_smago_lev = [ 0.7, 0.4 ]
    namelist /hvdif  / Hzd_smago_lev
    namelist /hvdif_p/ Hzd_smago_lev
 

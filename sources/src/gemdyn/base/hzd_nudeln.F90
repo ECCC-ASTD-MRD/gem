@@ -53,8 +53,8 @@
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)
-      real(kind=REAL64) c1,c2,c3,one,two,four
-      parameter(one=1.d0,two=2.d0,four=4.d0)
+      real(kind=REAL64) :: c1,c2,c3
+      real(kind=REAL64), parameter :: one=1.d0, two=2.d0, four=4.d0
 !
 !----------------------------------------------------------------------
 !

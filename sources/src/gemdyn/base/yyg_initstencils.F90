@@ -32,8 +32,7 @@
 !object
 !     see ID section above
 !
-      real(kind=REAL64) one, half
-      parameter( one  = 1.d0, half = .5d0 )
+      real(kind=REAL64), parameter :: one  = 1.d0, half = .5d0
       real(kind=REAL64) di_8,xagauche_8,xadroite_8,yasud_8,yanord_8
       integer Gni,Gnj,i,j,ii,jj
 

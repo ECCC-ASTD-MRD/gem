@@ -51,8 +51,8 @@
       logical :: write_diag_lev,near_sfc_L,outvar_L
       real hybt_gnk2(1)
       integer ind0(1)
-      integer, dimension(3), save :: lijk = (/-1,-1,-1/)
-      integer, dimension(3), save :: uijk = (/-1,-1,-1/)
+      integer, dimension(3), save :: lijk = [ -1,-1,-1 ]
+      integer, dimension(3), save :: uijk = [ -1,-1,-1 ]
 !
 !----------------------------------------------------------------------
 !

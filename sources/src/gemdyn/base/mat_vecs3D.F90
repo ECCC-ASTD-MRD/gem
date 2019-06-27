@@ -39,9 +39,9 @@
 !
       integer j,i,k,ii,jj,halox,haloy
       real(kind=REAL64)  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
-      real(kind=REAL64)  stencil6, stencil7, xxx,yyy, one
+      real(kind=REAL64)  stencil6, stencil7, xxx,yyy
       real(kind=REAL64)  fdg1(minx1:maxx1, minx2:maxx2,minx3:maxx3)
-      parameter( one=1.0d0)
+      real(kind=REAL64), parameter :: one = 1.0d0
 !
 !     ---------------------------------------------------------------
 !

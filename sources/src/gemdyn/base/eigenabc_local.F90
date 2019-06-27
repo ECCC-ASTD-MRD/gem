@@ -37,8 +37,8 @@
 !
       integer i,j,k,iloc,jloc,ii,jj,pnn,info
       real(kind=REAL64)  a_8(Ni,Ni), b_8(Ni,Ni), d_8(3*Ni-1),  &
-              r_8(Ni),di_8,zero,one,cst,faz_8
-      parameter(zero=0.d0,one=1.d0)
+              r_8(Ni),di_8,cst,faz_8
+      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0
       real(kind=REAL64)  fdg1(Ni,Ni),fdg2(Ni,Ni),fdg3(Ni,Ni), &
               a_81(Ni,Nj),b_81(Ni,Nj),c_81(Ni,Nj)
 !

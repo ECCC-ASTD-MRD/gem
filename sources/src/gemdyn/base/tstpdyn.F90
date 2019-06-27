@@ -130,7 +130,7 @@
 
          call gemtime_stop (20)
 
-         call frstgss ()
+         call firstguess ()
 
 ! Perform time interpolation of Lateral BCs for LAM configurations
 

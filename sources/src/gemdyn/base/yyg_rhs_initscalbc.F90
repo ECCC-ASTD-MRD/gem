@@ -38,8 +38,7 @@
       real(kind=REAL64)  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real(kind=REAL64)  s(2,2),h1,h2
       real(kind=REAL64)  x_d,y_d,x_a,y_a
-      real(kind=REAL64) TWO_8
-      parameter( TWO_8   = 2.0d0 )
+      real(kind=REAL64), parameter :: TWO_8   = 2.0d0
 !
 !     Localise could get point way outside of the actual grid in search
 !     So extend all global arrays: xg_8,yg_8

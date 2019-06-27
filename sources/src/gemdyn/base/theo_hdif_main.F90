@@ -40,9 +40,9 @@
 !  1. One-dimensional Horizontal diffusion *
 !*******************************************
 !
-         call theo_hdif_ctl ( ut1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call theo_hdif_ctl (zdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call theo_hdif_ctl ( wt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call theo_hdif_ctl ( ut1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call theo_hdif_ctl (zdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call theo_hdif_ctl ( wt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
 !
 !     _________________________________________________________________
 !
@@ -68,9 +68,9 @@
 
       integer nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk)
-      real(kind=REAL64) pt25,nu_dif,epsilon,lnr,pwr
+      real(kind=REAL64) :: nu_dif, lnr, pwr
 
-      parameter (epsilon = 1.0d-12, pt25=0.25d0)
+      real(kind=REAL64), parameter :: epsilon = 1.0d-12, pt25=0.25d0
 !     __________________________________________________________________
 !
       lnr = hdif_lnr

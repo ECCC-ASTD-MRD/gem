@@ -30,13 +30,13 @@
 !     associated with the variables at time t0
 
 
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'URT0', 'URT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VRT0', 'VRT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = [ 'URT0', 'URT1' ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = [ 'VRT0', 'VRT1' ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: tt_list  = [ 'TT0' , 'TT1'  ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: st_list  = [ 'ST0' , 'ST1'  ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = [ 'WT0' , 'WT1'  ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qt_list  = [ 'QT0' , 'QT1'  ]
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: zdt_list = [ 'ZDT0', 'ZDT1' ]
       character(len=GMM_MAXNAMELENGTH) , dimension(2) :: tr_list
       integer :: i, istat
 !

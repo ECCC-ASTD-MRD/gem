@@ -31,8 +31,8 @@
       real,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), target :: w4
       real, dimension(:,:  ), pointer :: qdiag
       real, dimension(:,:,:), pointer :: ptr3d
-      integer, dimension(3), save :: lijk = (/-1,-1,-1/)
-      integer, dimension(3), save :: uijk = (/-1,-1,-1/)
+      integer, dimension(3), save :: lijk = [ -1, -1, -1 ]
+      integer, dimension(3), save :: uijk = [ -1, -1, -1 ]
 !
 !-----------------------------------------------------------------
 !

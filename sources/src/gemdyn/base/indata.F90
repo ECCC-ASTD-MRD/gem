@@ -131,7 +131,7 @@
 
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
            trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
-         call frstgss()
+         call firstguess()
       end if
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &

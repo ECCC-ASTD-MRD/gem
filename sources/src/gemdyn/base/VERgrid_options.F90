@@ -31,7 +31,7 @@ module VERgrid_options
 
    !# pair of coefficients (min,max) to control the flattenning of the
    !# vertical coordinate
-      real, dimension(4):: Hyb_rcoef = (/1., 1., -1., -1./)
+      real, dimension(4):: Hyb_rcoef = [ 1., 1., -1., -1. ]
       namelist /vert_layers  / Hyb_rcoef
       namelist /vert_layers_p/ Hyb_rcoef
 

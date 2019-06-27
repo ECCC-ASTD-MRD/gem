@@ -67,7 +67,7 @@ module mtn_options
    real :: mtn_wind_seed = 0.
    namelist /mtn_cfgs/ mtn_wind_seed
    !#
-   integer, dimension(2) :: mtn_pos_seed = (/1,1/)
+   integer, dimension(2) :: mtn_pos_seed = [ 1, 1 ]
    namelist /mtn_cfgs/ mtn_pos_seed
 
 contains

@@ -30,8 +30,7 @@ module levels
 !
 !
 
-      integer MAXLEV
-      PARAMETER (MAXLEV = 201)
+      integer, parameter :: MAXLEV = 201
       real Level(MAXLEV,MAXSET),Level_allpres(MAXSET*MAXLEV)
       integer Level_id(MAXSET),Level_sets,Level_thermo,Level_momentum
       integer Level_max(MAXSET),Level_kind_ip1,Level_kind_diag
