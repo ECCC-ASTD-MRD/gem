@@ -20,17 +20,26 @@ module gem_timing
 
       private
       public :: gemtime_init,gemtime_start,gemtime_stop,&
-                gemtime_terminate,gemtime,Gem_timing_dyn_L
+                gemtime_terminate,gemtime,Gem_timing_dyn_L,&
+                gemlcltime_start,gemlcltime_stop
 
       integer, parameter :: MAX_instrumented=400
+      integer, parameter :: MAX_event=500
 
       character(len=16) nam_subr_S(MAX_instrumented)
+      character(len= 4) lcltime_name_S(MAX_instrumented)
 
-      logical, save :: Gem_timing_dyn_L=.true.
+      logical, save :: Gem_timing_dyn_L, New_timing_dyn_L, &
+                       timing_barrier_L, lcltime_flag_L
 
-      integer timer_cnt(MAX_instrumented), timer_level(MAX_instrumented)
+      integer timer_cnt (MAX_instrumented), timer_level (MAX_instrumented)
+      integer lcltime_id(MAX_instrumented), lcltime_rset(MAX_instrumented),&
+              lcltime_step  (MAX_instrumented,MAX_event),&
+              lcltime_nevent(MAX_instrumented),lcltime_last(MAX_instrumented)
 
       real(kind=REAL64) tb(MAX_instrumented), sum_tb(MAX_instrumented), total_time
+      real(kind=REAL64) lcltime_tb(MAX_instrumented),lcltime_acc(MAX_instrumented)
+      real(kind=REAL64) lcltime_event((MAX_instrumented),MAX_event)
 
 contains
 
@@ -40,14 +49,28 @@ contains
       integer       , intent(in) :: myproc
 #include <clib_interface_mu.hf>
 
-      character(len=16) dumc_S
+      character(len=16) timer_type_S,dumc_S
       real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
-      if (clib_getenv ('GEMDYN_TIMING',dumc_S) < 0) Gem_timing_dyn_L=.false.
+      if (clib_getenv ('GEMDYN_TIMING',timer_type_S) < 0) then
+         Gem_timing_dyn_L = .false.
+         New_timing_dyn_L = .true.
+         timing_barrier_L = .false.
+      else
+         call low2up (timer_type_S,dumc_S)
+         timer_type_S= dumc_S
+         Gem_timing_dyn_L = timer_type_S(1:3) == 'DYN'
+         New_timing_dyn_L = timer_type_S(1:3) == 'NEW'
+         timing_barrier_L = timer_type_S(4:6) == '_WB'
+      endif
+
       if (Gem_timing_dyn_L) then
-         sum_tb= 0; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
+         sum_tb= 0.; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
+         lcltime_id=0. ; lcltime_acc= 0. ; lcltime_name_S= ''
+         lcltime_rset= -1 ; lcltime_last=0 ; lcltime_nevent=0
+         lcltime_flag_L= .false.
          total_time= omp_get_wtime()
       else
          call timing_init2 ( myproc, msg )
@@ -61,18 +84,20 @@ contains
       subroutine gemtime_start ( mynum, myname_S, mylevel )
 
       character(len=*), intent(in) :: myname_S
-      integer       , intent(in) :: mynum,mylevel
+      integer         , intent(in) :: mynum,mylevel
 
+      integer err
       real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
+      if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
       if (Gem_timing_dyn_L) then
          nam_subr_S (mynum) = myname_S
          timer_level(mynum) = mylevel
          tb         (mynum) = omp_get_wtime()
          timer_cnt  (mynum) = timer_cnt(mynum) + 1
-      else
+      else if(New_timing_dyn_L) then
          call timing_start2 ( mynum, myname_S, mylevel )
       endif
 !
@@ -85,13 +110,15 @@ contains
 
       integer, intent(in) :: mynum
 
+      integer err
       real(kind=REAL64) omp_get_wtime
 !
 !-------------------------------------------------------------------
 !
+      if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
       if (Gem_timing_dyn_L) then
-         sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime()    - tb (mynum))
-      else
+         sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime() - tb (mynum))
+      else if(New_timing_dyn_L) then
          call timing_stop (mynum)
       endif
 !
@@ -101,22 +128,65 @@ contains
       end subroutine gemtime_stop
 
       subroutine gemtime_terminate ( myproc, msg )
+      use ptopo
+      use glb_ld
+      use path
+      use out_mod
+      use out_options
 
       character(len=*), intent(in) :: msg
       integer       , intent(in) :: myproc
 
+#include <rmnlib_basics.hf>
+
       character(len=16) name
       character(len=64) fmt,nspace
       logical flag(MAX_instrumented)
-      integer i,j,k,elem,lvl,lvlel(0:100)
+      integer i,j,k,elem,lvl,lvlel(0:100),err,unf
 
       real(kind=REAL64) omp_get_wtime
+      real(kind=REAL64) mytime(Ptopo_npex,Ptopo_npey),gmytime(Ptopo_npex,Ptopo_npey)
+      real lcl_timing(Ptopo_npex,Ptopo_npey),w1(l_minx:l_maxx,l_miny:l_maxy),hyb0(1)
 !
 !-------------------------------------------------------------------
 !
+      if (.not.New_timing_dyn_L .and. .not.Gem_timing_dyn_L) return
+
       if (Gem_timing_dyn_L) then
 
-      if (myproc /= 0) return
+         if (lcltime_flag_L) then
+            call out_open_file ('ti')
+            call out_href3 ( 'Mass_point',1,G_ni,1,1,G_nj,1)
+            if (Ptopo_myproc==0) then
+               unf= 0
+               err= fnom  ( unf, trim(Path_basedir_S)//'/lcl_timing.fst', 'STD+RND', 0 )
+               err= fstouv( unf, 'RND' )
+            endif
+            do i = 1,MAX_instrumented
+               if ( lcltime_nevent(i) > 0 ) then
+                  do j=1,lcltime_nevent(i)
+                     mytime=0. ; mytime(Ptopo_mycol+1,Ptopo_myrow+1)= lcltime_event(i,j)
+                     call rpn_comm_REDUCE ( mytime, gmytime, Ptopo_npex*Ptopo_npey, &
+                     "MPI_DOUBLE_PRECISION","MPI_SUM",0,"grid",err )
+                     if (Ptopo_myproc==0) then
+                        lcl_timing=gmytime
+                        err = fstecr (lcl_timing,lcl_timing,-32,unf,Out_dateo,int(Out_deet),&
+                                lcltime_step(i,j), Ptopo_npex,Ptopo_npey,1,0,0,&
+                                lcltime_step(i,j),'P',lcltime_name_S(i),Out3_etik_S, &
+                                'X',0,0,0,0,5,.false.)
+                     endif
+                     w1 = lcltime_event(i,j)
+                     hyb0(1)=0.0 ; lvlel(0)=1
+                     call out_fstecr3(w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+                        lcltime_name_S(i),1.,0.,2,-1,1,lvlel(0), 1, 32,.false. )
+                  end do
+               endif
+            end do
+            if (Ptopo_myproc==0) err= fstfrm(unf)
+            call out_cfile
+         endif
+
+         if (myproc /= 0) return
 
       print *,'___________________________________________________________'
       print *,'__________________TIMINGS ON PE #0_________________________'
@@ -136,7 +206,7 @@ contains
             name (len(name)-len(trim(nam_subr_S(elem)))+1:len(name))= &
             trim(nam_subr_S(elem))
             write (output_unit,trim(fmt)) sum_tb(elem)/total_time*100.,name,'(',elem,')','Wall clock= ',&
-                   sum_tb(elem),'count= ',timer_cnt(elem)
+                                sum_tb(elem),'count= ',timer_cnt(elem)
             flag(elem) = .true. ; lvlel(lvl) = elem
  65         do j = 1,MAX_instrumented
                if ((timer_level(j) == elem) .and. (.not.flag(j)) )then
@@ -163,6 +233,57 @@ contains
 !
       return
       end subroutine gemtime_terminate
+
+      subroutine gemlcltime_start ( mynum, myname_S, F_rset)
+
+      character(len=*), intent(in) :: myname_S      ! name for the section
+      integer         , intent(in) :: mynum, F_rset ! id and reset frequency
+
+      integer err
+      real(kind=REAL64) omp_get_wtime
+!
+!-------------------------------------------------------------------
+!
+      call rpn_comm_barrier ("GRID", err)
+      lcltime_name_S(mynum) = myname_S
+      lcltime_tb    (mynum) = omp_get_wtime()
+      lcltime_rset  (mynum) = F_rset
+!
+!-------------------------------------------------------------------
+!
+      return
+      end subroutine gemlcltime_start
+
+      subroutine gemlcltime_stop (mynum,F_t0,F_tn)
+      use step_options
+      implicit none
+
+      integer, intent(in) :: mynum     ! id
+      integer, intent(in) :: F_t0,F_tn ! timestep bounds for printing
+
+      integer knt
+      real(kind=REAL64) omp_get_wtime
+!
+!-------------------------------------------------------------------
+!
+      knt= Step_kount-1
+      if ( (lcltime_rset(mynum)<1) .or. &
+           (lcltime_last(mynum)/=Step_kount .and. mod(knt,lcltime_rset(mynum))==0) ) then
+         lcltime_last(mynum)= Step_kount
+         if (knt>=F_t0 .and. knt<=F_tn) then
+            lcltime_nevent(mynum)= lcltime_nevent(mynum)+1
+            lcltime_step (mynum,lcltime_nevent(mynum))= knt
+            lcltime_event(mynum,lcltime_nevent(mynum))= lcltime_acc(mynum)
+            lcltime_flag_L=.true.
+         endif
+         lcltime_acc(mynum)= 0.
+      endif
+      lcltime_acc(mynum)= lcltime_acc(mynum) + (omp_get_wtime() - lcltime_tb(mynum))
+!
+!-------------------------------------------------------------------
+!
+      return
+      end subroutine gemlcltime_stop
 
       subroutine gemtime ( unf, from, last )
       use step_options
