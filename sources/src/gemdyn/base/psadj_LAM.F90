@@ -19,12 +19,16 @@
 
       use cstv
       use dyn_fisl_options
+      use dynkernel_options
       use geomh
       use glb_ld
       use gmm_vt1
       use gmm_vt0
       use gmm_itf_mod
       use lun
+      use metric
+      use tdpack, only : rgasd_8
+      use ver
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -48,9 +52,10 @@
       !---------------------------------------------------------------------
 
       real, pointer, contiguous, dimension(:,:,:) :: tr
-      real(kind=REAL64),dimension(Minx:Maxx,Miny:Maxy,F_nk+1):: pr_m_8,pr_t_8
+      real(kind=REAL64),dimension(Minx:Maxx,Miny:Maxy,F_nk+1):: pr_m_8,pr_t_8,log_pr_m_8
       real(kind=REAL64),dimension(Minx:Maxx,Miny:Maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_fl_w_8,pr_p0_w_8
-      real,  dimension(Minx:Maxx,Miny:Maxy,F_nk)  :: sumq
+      real,             dimension(Minx:Maxx,Miny:Maxy,F_nk)  :: sumq
+      real,             dimension(Minx:Maxx,Miny:Maxy)       :: qts,delps,pw_pm
       integer :: err,i,j,k,n,istat,MAX_iteration
       real(kind=REAL64)  :: l_avg_8(2),g_avg_8(2),g_avg_ps_w_1_8,g_avg_ps_w_0_8,g_avg_fl_w_0_8
       logical, save :: done_LAM_scale_L = .false.
@@ -90,13 +95,11 @@
       !Treat TIME T1
       !-------------
 
-      istat = gmm_get(gmmk_st1_s,st1)
-
-      !Obtain pressure levels
-      !----------------------
-      call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_1_8,st1,Minx,Maxx,Miny,Maxy,F_nk)
-
-      pr_m_8(:,:,F_nk+1) = pr_p0_1_8(:,:)
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+         istat = gmm_get(gmmk_st1_s,st1)
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         istat = gmm_get(gmmk_qt1_s,qt1)
+      end if
 
       !Compute wet (psadj=1)/ dry (psadj=2) surface pressure on CORE
       !-------------------------------------------------------------
@@ -118,8 +121,38 @@
 
       end if
 
-      if (Schm_psadj==1) pr_p0_w_8(:,:) = pr_m_8(:,:,1)
-      if (Schm_psadj==2) pr_p0_w_8(:,:) = 0.0d0
+      !Obtain pressure levels
+      !----------------------
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_1_8,st1,Minx,Maxx,Miny,Maxy,F_nk)
+
+         pr_m_8(:,:,F_nk+1) = pr_p0_1_8(:,:)
+
+         if (Schm_psadj==1) pr_p0_w_8(:,:) = pr_m_8(:,:,1)
+         if (Schm_psadj==2) pr_p0_w_8(:,:) = 0.0d0
+
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+         if (Schm_psadj==1) then
+
+            do k=1,F_nk+1
+               log_pr_m_8(1:l_ni,1:l_nj,k) = (dble(qt1(1:l_ni,1:l_nj,k))/&
+                                             (rgasd_8*Ver_Tstar_8%m(k))  &
+                                             +dble(lg_pstar(1:l_ni,1:l_nj,k)))
+            end do
+
+            do k=1,F_nk+1
+               pr_m_8(1:l_ni,1:l_nj,k) = exp(log_pr_m_8(1:l_ni,1:l_nj,k))
+            end do
+
+            pr_p0_1_8(:,:) = pr_m_8(:,:,F_nk+1)
+
+            pr_p0_w_8(:,:) = pr_m_8(:,:,1)
+
+          end if
+
+      end if
 
 !$omp parallel private(i,j,k) &
 !$omp shared(pr_m_8,pr_p0_w_8,sumq)
@@ -150,45 +183,75 @@
 
       g_avg_ps_w_1_8 = g_avg_8(1) * PSADJ_LAM_scale_8
 
+      !-------------
+      !Treat TIME T0
+      !-------------
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+         istat = gmm_get(gmmk_st0_s,st0)
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         istat = gmm_get(gmmk_qt0_s,qt0)
+      end if
+
+      !Compute wet (psadj=1)/ dry (psadj=2) surface pressure on CORE
+      !-------------------------------------------------------------
+      if (Schm_psadj==2) then
+
+         call sumhydro (sumq,Minx,Maxx,Miny,Maxy,F_nk,'M')
+
+         istat = gmm_get('TR/HU:M',tr)
+
+!$omp parallel do private(k) shared(sumq,tr)
+         do k=F_k0,F_nk
+            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
+         end do
+!$omp end parallel do
+
+      else
+
+         sumq = 0.
+
+      end if
+
       MAX_iteration = 3
       if (Schm_psadj==1) MAX_iteration = 1
 
       do n = 1,MAX_iteration
 
-         !-------------
-         !Treat TIME T0
-         !-------------
-
-         istat = gmm_get(gmmk_st0_s,st0)
-
          !Obtain pressure levels
          !----------------------
-         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,Minx,Maxx,Miny,Maxy,F_nk)
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
 
-         pr_m_8(:,:,F_nk+1) = pr_p0_0_8(:,:)
+            call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,Minx,Maxx,Miny,Maxy,F_nk)
 
-         !Compute wet (psadj=1)/ dry (psadj=2) surface pressure on CORE
-         !-------------------------------------------------------------
-         if (Schm_psadj==2) then
+            pr_m_8(:,:,F_nk+1) = pr_p0_0_8(:,:)
 
-            call sumhydro (sumq,Minx,Maxx,Miny,Maxy,F_nk,'M')
+            if (Schm_psadj==1) pr_p0_w_8(:,:) = pr_m_8(:,:,1)
+            if (Schm_psadj==2) pr_p0_w_8(:,:) = 0.0d0
 
-            istat = gmm_get('TR/HU:M',tr)
+         else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
-!$omp parallel do private(k) shared(sumq,tr)
-            do k=F_k0,F_nk
-               sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
-            end do
-!$omp end parallel do
+            if (n==1) qts(:,:) = qt0(:,:,l_nk+1)
 
-         else
+            if (Schm_psadj==1) then
 
-            sumq = 0.
+               do k=1,F_nk+1
+                  log_pr_m_8(1:l_ni,1:l_nj,k) = (dble(qt0(1:l_ni,1:l_nj,k))/&
+                                                (rgasd_8*Ver_Tstar_8%m(k))  &
+                                                +dble(lg_pstar(1:l_ni,1:l_nj,k)))
+               end do
 
-         end if
+               do k=1,F_nk+1
+                  pr_m_8(1:l_ni,1:l_nj,k) = exp(log_pr_m_8(1:l_ni,1:l_nj,k))
+               end do
 
-         if (Schm_psadj==1) pr_p0_w_8(:,:) = pr_m_8(:,:,1)
-         if (Schm_psadj==2) pr_p0_w_8(:,:) = 0.0d0
+               pr_p0_0_8(:,:) = pr_m_8(:,:,F_nk+1)
+
+               pr_p0_w_8(:,:) = pr_m_8(:,:,1)
+
+             end if
+
+          end if
 
 !$omp parallel private(i,j,k) &
 !$omp shared(pr_m_8,pr_p0_w_8,sumq)
@@ -254,13 +317,53 @@
          pr_p0_0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = pr_p0_0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) + &
                                                             (g_avg_ps_w_1_8 - g_avg_ps_w_0_8) + g_avg_fl_w_0_8
 
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+            end do
+            end do
+         else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               qt0(i,j,F_nk+1) = rgasd_8*Ver_Tstar_8%m(F_nk+1)*&
+               (log(pr_p0_0_8(i,j))-lg_pstar(i,j,F_nk+1))
+            end do
+            end do
+         end if
+
+      end do
+
+      !Adjust qt0 at the other vertical levels
+      !---------------------------------------
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+
+            delps(i,j) = exp(lg_pstar(i,j,l_nk+1))*&
+                        (exp(qt0(i,j,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
+                         exp(qts(i,j)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
          end do
          end do
 
-      end do
+         do k=F_nk,F_k0,-1
+
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+
+               pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(i,j,k))
+
+               qt0(i,j,k) = rgasd_8*Ver_Tstar_8%m(k)*&
+                            (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar(i,j,k))/&
+                            exp(lg_pstar(i,j,l_nk+1)))-lg_pstar(i,j,k))
+
+            end do
+            end do
+
+         end do
+
+      end if
 
       !-----------
       !Diagnostics

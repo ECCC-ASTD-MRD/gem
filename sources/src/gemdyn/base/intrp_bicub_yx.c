@@ -52,7 +52,10 @@ uint64_t rdtsc(void) {   // version rapide "out of order"
 #endif
 }
 #endif
+
+#if defined(__x86_64__) || defined( __i386__ )
 #include <immintrin.h>
+#endif
 
 // use separate multiply and add instructions if fused multiply-add not available
 #if defined(__AVX__) && defined(__x86_64__)

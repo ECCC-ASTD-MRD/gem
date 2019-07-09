@@ -45,6 +45,8 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
 
 !Author: Claude Girard, July 2017
+!        Syed Husain, Jun 2019 (new dyn-phy coupling and
+!                               new eliminatio of variables)
 
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
@@ -52,7 +54,7 @@
 
       integer :: i, j, k, km, kp, nij, jext, istat
       real(kind=REAL64)  :: div, barz, barzp, u_interp, v_interp, t_interp, w1
-      real(kind=REAL64)  :: phy_bA_m_8, phy_bA_t_8
+      real(kind=REAL64)  :: phy_bA_m_8, phy_bA_t_8, iphytv
       real(kind=REAL64), dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
@@ -68,18 +70,22 @@
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
+         iphytv = one         
       else if (Schm_phycpl_S == 'AVG') then
          istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
          istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = Cstv_bA_m_8
          phy_bA_t_8 = Cstv_bA_8
+         iphytv = one         
       else
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
-         phy_tv_tend => zero_array
+!         phy_tv_tend => zero_array
+         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
+         iphytv = zero         
       end if
 
 !     Common coefficients
@@ -206,7 +212,7 @@
 
                F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - w1*(F_q(i,j,k+1)+F_q(i,j,k)) ) &
                              - Cstv_Beta_8 * mu_8 * F_w(i,j,k)
-               F_ort(i,j,k) = F_ort(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
+               F_ort(i,j,k) = F_ort(i,j,k) + iphytv*((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
 
                F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) &
                             - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km) - F_w(i,j,k) )
@@ -219,15 +225,18 @@
          w1=epsi_8/grav_8
          do j= j0, jn
             do i= i0, in
-               div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)                                 &
+               div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)     &
                    + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                   + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
-                   + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))                               &
-                   + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )                             &
-                   + mc_Iz(i,j,k)*(Ver_wpA_8(k)*F_zd(i,j,k)+Ver_wmA_8(k)*Ver_onezero(k)*F_zd(i,j,km))
+!                   + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
+                   + (F_zd(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*F_zd(i,j,km))*Ver_idz_8%m(k) &
+                   + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
+                   + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
+                   + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km))
+
                F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz(i,j,k)  &
                              - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*F_w(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*F_w(i,j,km)) )
-               F_orc(i,j,k) = F_orc(i,j,k) + ((1d0-phy_bA_t_8)/Cstv_bA_8) * &
+               
+               F_orc(i,j,k) = F_orc(i,j,k) + (1d0/Cstv_bA_8) * &
                              (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/F_t(i,j,k ) + &
                              Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/F_t(i,j,km) )
             end do

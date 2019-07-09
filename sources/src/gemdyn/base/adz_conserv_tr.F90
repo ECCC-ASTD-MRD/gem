@@ -20,13 +20,17 @@
       use adz_mem
       use adz_options
       use adv_pos
+      use dynkernel_options
       use gem_options
       use gem_timing
       use gmm_itf_mod
       use gmm_tracers
       use gmm_vt0
       use HORgrid_options
+      use metric
+      use tdpack, only : rgasd_8
       use tr3d
+      use ver 
 
       implicit none
 
@@ -41,7 +45,7 @@
       integer, pointer, contiguous, dimension(:) :: ii_0,ii_2
       real, pointer, contiguous, dimension (:,:,:) :: src, dst
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)   :: bidon,dst_w,store_pilot
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1) :: pr_m,pr_t
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1) :: pr_m,pr_t,log_pr_m,log_pr_t
       real, dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0
       logical :: verbose_L,BC_LAM_flux_1_L,BC_LAM_flux_2_L
       real, dimension(1,1,1), target :: empty
@@ -114,10 +118,35 @@
       !----------------------------------------------------
       !Reset pr_t(k)/pr_s at TIME 0 (used in Bermejo-Conde)
       !----------------------------------------------------
-      err = gmm_get(gmmk_pkps_s,pkps)
-      err = gmm_get(gmmk_st0_s, st0)
 
-      call calc_pressure (pr_m,pr_t,pr_p0,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+         err = gmm_get(gmmk_st0_s, st0)
+
+         call calc_pressure (pr_m,pr_t,pr_p0,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+         err = gmm_get(gmmk_qt0_s, qt0)
+
+         do k=1,l_nk+1
+            log_pr_m(1:l_ni,1:l_nj,k) = (qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+         end do
+
+         pr_p0(1:l_ni,1:l_nj) = exp(log_pr_m(1:l_ni,1:l_nj,l_nk+1))
+
+         do k=1,l_nk
+            log_pr_t(1:l_ni,1:l_nj,k) = 0.5*(log_pr_m(1:l_ni,1:l_nj,k+1)+log_pr_m(1:l_ni,1:l_nj,k))
+         end do
+
+         do k=1,l_nk
+            pr_t(1:l_ni,1:l_nj,k) = exp(log_pr_t(1:l_ni,1:l_nj,k))
+         end do
+
+      end if
+
+      err = gmm_get(gmmk_pkps_s,pkps)
 
       pkps = 0.
 

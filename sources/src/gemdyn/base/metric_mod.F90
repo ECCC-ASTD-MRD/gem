@@ -25,6 +25,6 @@ module metric
    real, dimension(:,:,:), pointer :: mc_Jx,  mc_Jy,  mc_iJz
    real, dimension(:,:,:), pointer :: mc_logJz
 
-   real(kind=REAL64), dimension(:,:)  , pointer :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8
+   real(kind=REAL64), dimension(:,:)  , pointer :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8, mc_cssp_H_8
 
 end module metric

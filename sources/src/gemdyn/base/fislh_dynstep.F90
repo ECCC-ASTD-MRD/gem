@@ -21,7 +21,6 @@
       use glb_ld
       use gmm_itf_mod
       use gmm_orh
-      use gmm_vt0
       use HORgrid_options
       use lun
       use step_options
@@ -33,7 +32,6 @@
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer n, istat, keep_itcn
       real, pointer, dimension(:,:,:) :: tr1
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: F_q
 !
 !     ---------------------------------------------------------------
 !
@@ -61,12 +59,9 @@
 
       call fislh_tstpdyn()
 
-      istat = gmm_get (gmmk_qt0_s, qt0)
-      F_q(:,:) = qt0(:,:,l_nk+1)
-
       call psadj ( Step_kount )
 
-      call adz_conserv_tr()
+      call adz_conserv_tr ()
 
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the
@@ -95,12 +90,7 @@
 
       if (Grd_yinyang_L) call yyg_blend()
 
-      if (Schm_psadj /= 0) then
-         call fislh_pw_update_GPW(F_q)
-      else
-         call pw_update_GPW()
-      end if
-
+      call pw_update_GPW()
       call pw_update_UV()
       call pw_update_T()
 

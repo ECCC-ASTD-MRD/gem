@@ -270,7 +270,7 @@
                   +W3*dble(F_src(Im+2,Jm+3,k)) + W4*dble(F_src(Im+3,Jm+3,k))
 
              F_dest((i-1)*Nk+k)= WW1*fx1 + WW2*fx2 + WW3*fx3 + WW4*fx4
-             if (mono_L) F_dest((i-1)*Nk+k)= max(prmin,min(prmax,F_dest((i-1)*Nk+k)))
+             if (mono_L) F_dest((i-1)*Nk+k)= max(real(prmin), min(real(prmax),F_dest((i-1)*Nk+k)))
 
           end do
        end do

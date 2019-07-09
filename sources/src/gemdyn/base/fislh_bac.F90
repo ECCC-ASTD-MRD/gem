@@ -49,6 +49,7 @@
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)  :: F_nu,F_nv,F_nt,F_nw
 !
 !Author: Claude Girard, July 2017
+!        Syed Husain, June 2019 (major revision)       
 
 #include <arch_specific.hf>
 
@@ -77,8 +78,10 @@
       do j= j0, jn
          do i= i0, in
             F_q(i,j,l_nk+1) = mc_alfas_H_8(i,j) * F_q(i,j,l_nk)   &
-                            - mc_betas_H_8(i,j) * F_q(i,j,l_nk-1) &
-                            + mc_css_H_8(i,j)   * (F_rt(i,j,l_nk)-F_nt(i,j,l_nk))
+                         - mc_betas_H_8(i,j) * F_q(i,j,l_nk-1) &
+                         + mc_css_H_8(i,j)   * (F_rt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rt(i,j,l_nk-1) &
+                            + Cstv_invT_m_8*(F_rf(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rf(i,j,l_nk-1))) &
+                         - mc_css_H_8(i,j)   * (F_nt(i,j,l_nk ) - Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1))
          end do
       end do
 !$omp end do
@@ -126,54 +129,32 @@
 !$omp end do
 
 !$omp do
-      do k=1,l_nk-1
+      do k=1,l_nk
          do j= j0, jn
             do i= i0, in
 
-   !           Compute zdot
-   !           ~~~~~~~~~~~~
-               F_zd(i,j,k) = Cstv_tau_m_8 * ( F_rt(i,j,k) - F_nt(i,j,k) &
-                        - gama_8*((isol_i*mc_iJz(i,j,k) + isol_d*Ver_idz_8%t(k))*&
-                                 (F_q(i,j,k+1)-F_q(i,j,k)) &
-                            - half*mu_8*(F_q(i,j,k+1)+F_q(i,j,k))) )
-
    !           Compute w
    !           ~~~~~~~~~
-               F_w(i,j,k) = - F_rf(i,j,k) + F_zd(i,j,k)
+               F_w(i,j,k) = Cstv_tau_m_8 * ( F_rt(i,j,k) - F_nt(i,j,k) &
+                          - gama_8*((isol_i*mc_iJz(i,j,k) + isol_d*Ver_idz_8%t(k))&
+                            *(F_q(i,j,k+1)-F_q(i,j,k)) &
+                          - half*mu_8*(F_q(i,j,k+1)+F_q(i,j,k))))
+
+   !           Compute zdot
+   !           ~~~~~~~~~~~~
+               F_zd(i,j,k) = (F_rf(i,j,k) + F_w(i,j,k))*Ver_zeronk(k)
+
 
    !           Compute T
    !           ~~~~~~~~~
                Buoy = (F_q(i,j,k+1)-F_q(i,j,k))*      &
                       (isol_i*mc_iJz(i,j,k)+isol_d*Ver_idz_8%t(k))  &
-                    + F_zd(i,j,k)*Cstv_invT_nh_8 - F_rw(i,j,k) + F_nw(i,j,k)
-
-               F_t(i,j,k) = Cstv_Tstr_8 / (one - Buoy / grav_8 )
+                    + F_w(i,j,k)*Cstv_invT_nh_8 - F_rw(i,j,k) + F_nw(i,j,k)
+               F_t(i,j,k) = Cstv_Tstr_8 * (Buoy / grav_8+one )
             end do
          end do
       end do
-!$omp end do
-
-!$omp do
-      do j= j0, jn
-         do i= i0, in
-
-   !        Compute w(N) since zdot(N)=0
-   !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            F_w(i,j,G_nk) = - F_rf(i,j,G_nk) + Ver_wmstar_8(G_nk)*F_zd(i,j,G_nk-1)
-
-            F_zd(i,j,G_nk) = zero
-
-   !        Compute T(N)
-   !        ~~~~~~~~~~~~~
-            Buoy = (F_q(i,j,G_nk+1)-F_q(i,j,G_nk))*     &
-                   (isol_i*mc_iJz(i,j,G_nk) + isol_d*Ver_idz_8%t(G_nk))   &
-                 + F_zd(i,j,G_nk-1)*Ver_wmstar_8(G_nk)*Cstv_invT_nh_8     &
-                 - F_rw(i,j,G_nk) + F_nw(i,j,G_nk)
-            F_t(i,j,G_nk) = Cstv_Tstr_8 / (one - Buoy / grav_8 )
-
-         end do
-      end do
-!$omp end do
+!$omp enddo
 
 !$omp end parallel
 !

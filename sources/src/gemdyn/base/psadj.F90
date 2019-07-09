@@ -39,9 +39,10 @@
 
       integer, intent(in) :: F_kount
 
-      integer err,i,j,n,istat,MAX_iteration
+      integer err,i,j,n,istat,MAX_iteration,k
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8, pr_p0_w_0_8, pw_log_p0_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8,pr_p0_w_0_8,pw_log_p0_8
+      real,             dimension(l_minx:l_maxx,l_miny:l_maxy) :: qts,delps,pw_pm
       real(kind=REAL64) l_avg_8(1),g_avg_ps_0_8
       real(kind=REAL64) ll_avg_8(l_ni,l_nj)
       character(len= 9) communicate_S
@@ -143,6 +144,7 @@
             end if
 
          elseif (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            if (n==1) qts(:,:) = qt0(:,:,l_nk+1)
             if (Schm_psadj==1) then
                   pw_log_p0_8(1:l_ni,1:l_nj)=(dble(qt0(1:l_ni,1:l_nj,l_nk+1))/&
                                              (rgasd_8*Ver_Tstar_8%m(l_nk+1))  &
@@ -194,6 +196,25 @@
          end do
 
       end do
+
+      !Adjust qt0 at the other vertical levels
+      !---------------------------------------
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+         delps(1:l_ni,1:l_nj) = exp(lg_pstar(1:l_ni,1:l_nj,l_nk+1))*&
+                               (exp(qt0(1:l_ni,1:l_nj,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
+                                exp(qts(1:l_ni,1:l_nj)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
+
+         do k=l_nk,1,-1
+
+            pw_pm(1:l_ni,1:l_nj) = exp(qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+
+            qt0(1:l_ni,1:l_nj,k) = rgasd_8*Ver_Tstar_8%m(k)*&
+                                   (log(pw_pm(1:l_ni,1:l_nj)+delps(1:l_ni,1:l_nj)*exp(lg_pstar(1:l_ni,1:l_nj,k))/&
+                                   exp(lg_pstar(1:l_ni,1:l_nj,l_nk+1)))-lg_pstar(1:l_ni,1:l_nj,k))
+         end do
+
+      end if
 
       if (Schm_psadj_print_L) then
          call stat_psadj (0,"AFTER DYNSTEP")

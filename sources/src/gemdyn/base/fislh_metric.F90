@@ -26,8 +26,12 @@
       use metric
       use cstv
       use ver
+      use fislh_sol
       implicit none
 #include <arch_specific.hf>
+!
+!Author: Claude Girard, July 2017 (initial version)
+!        Syed Husain, June 2019 (revision)
 
       integer :: istat,i,j,k
       real, parameter :: zero=0.d0, one=1.d0, half=.5d0
@@ -50,7 +54,8 @@
 
          allocate ( mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy))
+                    mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy))
          done=.true.
       end if
 
@@ -86,39 +91,36 @@
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
             do i=l_minx+1,l_maxx-1
-      !     mc_Ix(i,j,k)=log( (ztht(i+1,j,k)-ztht(i+1,j,k-1))/(ztht(i-1,j,k)-ztht(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
-      !     mc_Iy(i,j,k)=log( (ztht(i,j+1,k)-ztht(i,j+1,k-1))/(ztht(i,j-1,k)-ztht(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
-      !     mc_Iz(i,j,k)=log( (zmom(i,j,k+1)-zmom(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
-      !                      /(zmom(i,j,k)-zmom(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
-               mc_Ix(i,j,k)=0.0
-               mc_Iy(i,j,k)=0.0
-               mc_Iz(i,j,k)=0.0
-               mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
-       !    mc_logJz(i,j,k)=0.0
+               mc_Ix(i,j,k)=log( (ztht(i+1,j,k)-ztht(i+1,j,k-1))/(ztht(i-1,j,k)-ztht(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
+               mc_Iy(i,j,k)=log( (ztht(i,j+1,k)-ztht(i,j+1,k-1))/(ztht(i,j-1,k)-ztht(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
+               mc_Iz(i,j,k)=log( (zmom(i,j,k+1)-zmom(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
+                            /(zmom(i,j,k)-zmom(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
+      !         mc_Ix(i,j,k)=0.0
+      !         mc_Iy(i,j,k)=0.0
+      !         mc_Iz(i,j,k)=0.0
+      !         mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
+               mc_logJz(i,j,k)=0.0
             end do
          end do
       end do
       ztht(:,:,G_nk)=ver_z_8%t(G_nk)+(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
 
-      if (trim(sol_type_S) == 'ITERATIVE_3D') then
+      do j=l_miny+1,l_maxy-1
+         do i=l_minx+1,l_maxx-1
 
-         mc_css_H_8(:,:)   = one/(gama_8*(mc_iJz(:,:,G_nk)-half*mu_8))
+            mc_css_H_8(i,j)   = one/(gama_8*(isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
 
-         mc_alfas_H_8(:,:) = mc_css_H_8(:,:)*(gama_8*(mc_iJz(:,:,G_nk  )+half*mu_8) &
-                          +Ver_wmstar_8(G_nk)*gama_8*(mc_iJz(:,:,G_nk-1)-half*mu_8) )
+            mc_alfas_H_8(i,j) = mc_css_H_8(i,j)*(gama_8*(isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk) &
+                                + half*mu_8) + Ver_wmstar_8(G_nk)*gama_8*(isol_i*mc_iJz(i,j,G_nk-1) &
+                                               + isol_d*Ver_idz_8%t(G_nk-1)-half*mu_8) )
 
-         mc_betas_H_8(:,:) = mc_css_H_8(:,:)* &
-                           Ver_wmstar_8(G_nk)*gama_8*(mc_iJz(:,:,G_nk-1)+half*mu_8)
-      else
+            mc_betas_H_8(i,j) = mc_css_H_8(i,j)* Ver_wmstar_8(G_nk)*gama_8* &
+                                (isol_i*mc_iJz(i,j,G_nk-1)+isol_d*Ver_idz_8%t(G_nk-1)+half*mu_8)
 
-         mc_css_H_8(:,:)   = one/(gama_8*(Ver_idz_8%t(G_nk)-half*mu_8))
-
-         mc_alfas_H_8(:,:) = mc_css_H_8(:,:)*(gama_8*(Ver_idz_8%t(G_nk  )+half*mu_8)   &
-                          +Ver_wmstar_8(G_nk)*gama_8*(Ver_idz_8%t(G_nk-1)-half*mu_8) )
-
-         mc_betas_H_8(:,:) = mc_css_H_8(:,:)* &
-                           Ver_wmstar_8(G_nk)*gama_8*(Ver_idz_8%t(G_nk-1)+half*mu_8)
-      end if
+            mc_cssp_H_8(i,j) = gama_8*(Ver_idz_8%m(G_nk)-epsi_8*Ver_wp_8%m(G_nk))*&
+                               (isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
+         enddo
+      enddo
 
 !     ---------------------------------------------------------------
 !

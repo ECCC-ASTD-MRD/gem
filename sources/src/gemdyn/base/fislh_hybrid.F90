@@ -166,9 +166,10 @@
 !     ----------------------
 
       do k=1,G_nk
-           Ver_dz_8%m(k) = Ver_z_8%x(k) - Ver_z_8%t(k-1)
+!          Ver_dz_8%m(k)  = Ver_z_8%x(k) - Ver_z_8%t(k-1)
+          Ver_dz_8%m(k)  = Ver_z_8%t(k) - Ver_z_8%t(k-1)      
           Ver_idz_8%m(k) = one/Ver_dz_8%m(k)
-           Ver_dz_8%t(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
+          Ver_dz_8%t(k)  = Ver_z_8%m(k+1) - Ver_z_8%m(k)
           Ver_idz_8%t(k) = one/Ver_dz_8%t(k)
       end do
 

@@ -13,10 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r smago_in_rhs - Applies horizontal Smagorinsky-type nonlinear diffusion
+!**s/r hzd_smago_in_split - Applies horizontal Smagorinsky-type nonlinear diffusion
+!                           in the split mode      
 !
       subroutine hzd_smago_in_split (F_u, F_v, F_w, F_t, F_zd, &
-                               F_s, F_sls, lminx, lmaxx, lminy, lmaxy, &
+                               lminx, lmaxx, lminy, lmaxy, &
                                nk, smago_momentum_L)
       use cstv
       use dcst
@@ -24,6 +25,7 @@
       use geomh
       use gmm_itf_mod
       use gmm_smag
+      use gmm_pw
       use glb_ld
       use glb_pil
       use hvdif_options
@@ -37,10 +39,8 @@
 
       integer, intent(in) :: lminx,lmaxx,lminy,lmaxy, nk
       real, dimension(lminx:lmaxx,lminy:lmaxy,nk), intent(inout) :: F_u, F_v, F_w, F_t,F_zd
-      real, dimension(lminx:lmaxx,lminy:lmaxy),    intent(in) :: F_s, F_sls
 !
-!author
-!     Claude Girard and Syed Husain
+!Author:  Claude Girard and Syed Husain
 !
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
@@ -88,12 +88,19 @@
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       end if
          if (switch_on_theta) then
+            istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
             if(Grd_yinyang_L)then
                call yyg_xchng (F_t, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_nk, &
                                .false., 'CUBIC', .true.)
+               call yyg_xchng (pw_pt_plus, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_nk+1, &
+                               .false., 'CUBIC', .true.)
+              
             else
                call rpn_comm_xch_halo( F_t, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+               call rpn_comm_xch_halo( pw_pt_plus, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk+1, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                           
             end if
             ismagprandtl    = 1./Hzd_smago_prandtl
          end if
@@ -131,23 +138,20 @@
       jn  = l_nj - pil_n
 
       istat = gmm_get (gmmk_smag_s, smag)
-
-
-!$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
-!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, pres_t, th, hutmp, &
-!$omp smagcoef_uo, smagcoef_vo, F_du, F_dv, fact) &
-!$omp shared(base_coefM, base_coefT, smag, hu, cdelta2, ismagprandtl,&
-!$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
-!$omp        switch_on_hu, switch_on_fric_heat,switch_on_W, &
-!$omp        switch_on_wzd)
-
-!$omp do
       do k=1,nk
          base_coefM(k)=Hzd_smago_lnrM_8(k)*crit_coef
          base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
       end do
-!$omp enddo
+
+!$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
+!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
+!$omp tension_v, shear_v, smagcoef_z, pres_t, hutmp, &
+!$omp smagcoef_uo, smagcoef_vo, F_du, F_dv) &
+!$omp shared(base_coefM, base_coefT, hu, cdelta2, ismagprandtl,&
+!$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
+!$omp        switch_on_hu, switch_on_fric_heat,switch_on_W, &
+!$omp        switch_on_wzd, fact)
+
 
 !$omp do
       do k=1,nk
@@ -231,7 +235,7 @@
                             + ( (smagcoef_uo(i+1,j)-smagcoef_uo(i,j))*         &
                                  geomh_invDX_8(j) +                            &
                                 (smagcoef_uo(i,j)-smagcoef_uo(i-1,j))*         &
-                                 geomh_invDX_8(j))*0.05d0*tension_u(i,j)*      &
+                                 geomh_invDX_8(j))*0.05d0*tension_u(i,j)       &
                             + ( (smagcoef_uo(i,j+1)-smagcoef_uo(i,j))*         &
                                  geomh_invDY_8 +                               &
                                 (smagcoef_uo(i,j)-smagcoef_uo(i,j-1))*         &
@@ -256,7 +260,7 @@
                             + ( (smagcoef_vo(i+1,j)-smagcoef_vo(i,j))*            &
                                  geomh_invDXv_8(j) +                              &
                                 (smagcoef_vo(i,j)-smagcoef_vo(i-1,j))*            &
-                                 geomh_invDXv_8(j))*0.05d0*shear_v(i,j)*          &
+                                 geomh_invDXv_8(j))*0.05d0*shear_v(i,j)           &
                             - ( (smagcoef_vo(i,j+1)-smagcoef_vo(i,j))*            &
                                  geomh_invDY_8 +                                  &
                                 (smagcoef_vo(i,j)-smagcoef_vo(i,j-1))*            &
@@ -297,8 +301,7 @@
          if (switch_on_THETA) then
             do j=j0-1, jn+1
                do i=i0-1, in+1
-                  pres_t(i,j) = (p_naught/exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)&
-                                + Ver_c_8%t(k) * F_sls(i,j)))**cappa_8
+                  pres_t(i,j) = (p_naught/pw_pt_plus(i,j,k))**cappa_8
                   th(i,j,k)=F_t(i,j,k)*pres_t(i,j)
                end do
             end do

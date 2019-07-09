@@ -195,7 +195,7 @@
          if ( .not. Grd_yinyang_L ) icln=icln+1
          call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c,&
                          ut0, vt0, tt0, zdt0, qt0, &
-                         rhsc, rhst, rhs_sol,&
+                         rhsc, rhst, rhsf, rhs_sol,&
                          l_minx,l_maxx,l_miny,l_maxy,&
                          l_nk, ni, nj, i0, j0, in, jn, icln)
 

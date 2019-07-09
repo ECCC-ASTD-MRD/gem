@@ -20,7 +20,7 @@
 !
       subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc ,        &
                              F_u  , F_v  , F_t  , F_zd , F_q  , &
-                             F_rc , F_rt , F_rhs, &
+                             F_rc , F_rt , F_rf , F_rhs, &
                              Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, icln)
       use HORgrid_options
       use gem_options
@@ -45,10 +45,11 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_zd
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt,F_rf
       real(kind=REAL64), dimension(ni,nj,Nk),              intent(out)   :: F_rhs
 
-!     Author: Claude Girard, July 2017
+!     Author: Claude Girard, July 2017 (initial version)
+!             Syed Husain, June 2019 (revision)
 
 #include <arch_specific.hf>
 
@@ -220,17 +221,17 @@
    !           Compute Nw
    !           ~~~~~~~~~~
                F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz(i,j,k) - &
-                              isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k)) &
-                           -  (xtmp_8(i,j)-one)*grav_8*(one-one/xtmp_8(i,j))
+                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k))
+
    !           Compute Nc
    !           ~~~~~~~~~~
                F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-                                               + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-                                               + mc_Iz(i,j,k)*(Ver_wpA_8(k)*F_zd(i,j,k) + &
-                                                Ver_wmA_8(k)*Ver_onezero(k)*F_zd(i,j,km)) )
+                                            + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
+                                            + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
+                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) )
    !           Compute Nt
    !           ~~~~~~~~~~
-               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (one-one/xtmp_8(i,j)) )
+               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (xtmp_8(i,j)-one) )
 
    !           Compute Nt'
    !           ~~~~~~~~~~~
@@ -247,8 +248,8 @@
          km=max(k-1,1)
          do j = j0, jn
             do i = i0, in
-               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wpA_8(k))*Ver_zeronk(k)
-               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wmA_8(k))*Ver_onezero(k)
+               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wp_8%m(k))
+               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
    !           Compute Nc'
    !           ~~~~~~~~~~~
@@ -285,7 +286,8 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-            F_nt(i,j,l_nk) = F_nt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1)
+            F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) + isol_d * c0 * mc_cssp_H_8(i,j) * &
+                         (F_nt(i,j,l_nk ) - Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1))
          end do
       end do
 !$omp end do
@@ -294,8 +296,8 @@
 
       if ( trim(Sol_type_S) == 'ITERATIVE_3D') then
 
-         call  boundary ( F_rhs,F_rt,F_nt,Minx,Maxx,Miny,Maxy, &
-                          Nk,ni,nj,i0,j0,in,jn,i0u,inu,j0v,jnv )
+         call  boundary ( F_rhs,F_rt,F_rf,F_nt,Minx,Maxx,Miny,Maxy, &
+                          Nk,ni,nj,i0,j0,in,jn )
       end if
 
 

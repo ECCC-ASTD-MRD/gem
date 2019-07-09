@@ -21,6 +21,7 @@
       use gmm_phy
       use HORgrid_options
       use dyn_fisl_options
+      use dynkernel_options
       use adz_options, only: Adz_slt_winds
       use glb_ld
       use cstv
@@ -225,6 +226,14 @@
             pw_tt_plus = pw_tt_plus0 + Cstv_bA_8*(pw_tt_plus-pw_tt_plus0)
          end if RESET_PW
 
+      else
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then !For SPLIT in GEM-H
+            istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+            istat = gmm_get(gmmk_tt1_s, tt1)
+            call tt2virt (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
+            phy_tv_tend = phy_tv_tend/Cstv_dt_8
+         end if         
       end if
 
    else

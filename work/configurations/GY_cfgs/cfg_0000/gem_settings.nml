@@ -1,48 +1,45 @@
- &grid
-  Grd_typ_S = 'GY', Grd_ni = 95
- /
-
- &step
-  Step_runstrt_S = "20090427.000000"
-  Fcst_nesdt_S   = "12h"
-  Fcst_start_S   =  "0h"
-  Step_dt        = 1200.
-  Fcst_gstat_S   =  "1h"
-  Fcst_end_S     = "18h"
-/
-
-  FCST_RSTRT_S="step,    8     "
-  Fcst_end_S     = "2h"
-  Fcst_gstat_S   =  "1p"
-
-   Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
-
- &dyn_kernel
-   Dynamics_hydro_L  = .true.
+&grid
+  grd_typ_s = 'GY', grd_ni = 95
 /
 
 
- &gem_cfgs
-  LCTL_RXSTAT_S   = 'GLB_8',
+&step
+  step_runstrt_s = "20090427.000000"
+  fcst_nesdt_s   = '12'
+  fcst_end_s     = "6h"
+  fcst_gstat_s   = '1h'
+  step_dt        = 1800.
 /
 
- &dyn_fisl
-  Cstv_tstr_8     = 240.0
-  Sol_type_S = 'DIRECT'        , Sol_yyg_eps = 1.e-04
-  Schm_nblendyy   = 1
-  Schm_itcn       = 2          , Schm_wload_L      = .false.
-  Schm_itnlh      = 2
-  Schm_hzdadw_L     = .true.
+
+&dyn_kernel
+  dynamics_hydro_l  = .true.
 /
 
- &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr       = 0.04
-  Vspng_coeftop   =  380000.   , Vspng_nk        = 6
-  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
-  P_lmvd_weigh_high_lat = 0.0
+
+&gem_cfgs
+  lctl_rxstat_s   = 'GLB_8',
 /
 
- &vert_layers
+
+&dyn_fisl
+  cstv_tstr_8     = 240.0
+  sol_type_s = 'DIRECT'        , sol_yyg_eps = 1.e-04
+  schm_nblendyy   = 1
+  schm_itcn       = 2          , schm_wload_l      = .false.
+  schm_itnlh      = 2          ,  schm_hzdadw_l     = .true.
+/
+
+
+&hvdif
+  hzd_pwr         = 6          , hzd_lnr       = 0.04
+  vspng_coeftop   =  380000.   , vspng_nk        = 6
+  eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
+  p_lmvd_weigh_high_lat = 0.0
+/
+
+
+&vert_layers
   hyb=
  0.000100000,  1.600285e-04, 2.561664e-04, 4.070487e-04, 6.320755e-04,
  9.528077e-04, 1.385376e-03, 1.964803e-03, 2.714585e-03, 3.643780e-03,
@@ -64,26 +61,35 @@
 
   hyb_rcoef = 3., 15.
 /
- &init
-  Init_balgm_L    = .false.     , Init_dftr_L     = .false.
-  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
-  Init_dfpl_S     = '6h'
+
+
+&init
+  init_balgm_l    = .false.     , init_dftr_l     = .false.
+  init_dfwin_l    = .true.     , init_dflength_s = '3h'
+  init_dfpl_s     = '6h'
+  iau_stats_l      = .true.
 /
 
- &out
-  Out3_etik_s     = "base"   ,
-  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+
+&out
+  out3_etik_s     = "base"   ,
+  out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
                     4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
                     3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
                     2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
                     1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
-  Out3_nbitg      = 16         , Out3_cliph_L     = .true.    ,
-  Out3_linbot     =  3         ,
-  Out3_close_interval_S= '1h'  , Out3_postproc_fact= 3
-  Out3_npes=1
+  out3_nbitg      = 16         , out3_cliph_l     = .true.    ,
+  out3_linbot     =  3         ,
+  out3_close_interval_s= '1h'  , out3_postproc_fact= 3
 /
 
- &surface_cfgs
+
+&inp
+  inp_npes = 81
+/
+
+
+&surface_cfgs
   schmsol     = 'ISBA'
   icelac      = .true.,    icemelt  = .true.
   limsnodp    = .true.
@@ -93,18 +99,34 @@
   z0ttype     = 'deacu12'
   diusst      = 'fairall'
   adj_i0_snow = .false.
-
 /
 
- &physics_cfgs
+
+&convection_cfgs
+  deep       = 'kfc2'
+  kfcrad     = 1500.
+  kfcdepth   = 3000.
+  kfcmom     = .true.
+  kfctrig4   = 0.,0.,0.05,0.05
+  kfctrigw   = 0.5, 1., 0.03, 0.0
+
+  shal         = 'bechtold'
+  bkf_entrains = 'siebesma03'
+  bkf_detrains = 'cuijpers95'
+  bkf_closures = 'equilibrium'
+  bkf_lshalm   = .true.
+/
+
+
+&physics_cfgs
   radia    = 'cccmarad2',  kntrad_s = '1h'
-  radghg_L = .true.
+  radghg_l = .true.
   radfltr  = .false.
   ts_flxir = .true.     ,  stratos  = .true.
 
   gwdrag   = 'sgo16'
   sgo_phic = 0.15
-  sgo_tdfilter = -1.
+  sgo_tdfilter  = -1.
 
   non_oro           = .true.
   hines_flux_filter = 5
@@ -125,66 +147,51 @@
   kticefrac     = .false.
 
   pcptype       = 'bourge3d'
-  input_type    = 'BLOC'
 
-/
-  input_type    = 'DIST'
-  phystat_dble_l  = .true.
-  phystat_2d_l    = .false.
-  phystat_freq_S  = '3h'
-  phystat_list_s  = 'ALLVARS=EDPV'
+  phystat_dble_l = .true.
+  phystat_2d_l = .false.
+  phystat_freq_s = '6h'
+  phystat_list_s = 'ALLVARS=EDPV'
   phystat_input_l = .true.
-  debug_mem_L     = .true
-  debug_trace_L   = .true
+  timings_l = .true.
 
+  debug_mem_l     = .false
+  debug_trace_l   = .false
 
- &convection_cfgs
-  deep       = 'kfc2'
-  kfcrad     = 1500.
-  kfcdepth   = 3000.
-  kfcmom     = .true.
-  kfctrig4   = 0.,0.,0.05,0.05
-  kfctrigw   = 0.5, 1., 0.03, 0.0
-
-  shal         = 'bechtold'
-  bkf_entrains = 'siebesma03'
-  bkf_detrains = 'cuijpers95'
-  bkf_closures = 'equilibrium'
-  bkf_lshalm   = .true.
-
+  input_type = 'DIST'
 /
 
 
- &series
-  P_serg_srwri     = 5
-  P_serg_serstp    = 1440
+&series_off
+  p_serg_srwri     = 5
+  p_serg_serstp    = 1440
 
-  P_serg_srsrf_s   = 'AE', 'AL', 'AP', 'BE', 'BP', 'DQ', 'EI', 'EV', 'ED',
+  p_serg_srsrf_s   = 'AE', 'AL', 'AP', 'BE', 'BP', 'DQ', 'EI', 'EV', 'ED',
                      'F2', 'FC', 'FI', 'FL', 'FQ', 'FS', 'FU', 'FV',
-		     'G3', 'I6', 'IB', 'IC', 'IE', 'IV',
+           'G3', 'I6', 'IB', 'IC', 'IE', 'IV',
                      'P0', 'RH', 'SE', 'SI', 'TJ', 'TG', 'TP', 'TS', 'VE',
-		     'W1', 'W2', 'W3', 'W4', 'WD', 'WG',
-		     'UDWE', 'VDSN', 'WSPD',
-		     'WGE', 'WGX', 'WGN', 'SDWD', 'SDWS',
-		     'RRN1', 'RRN2', 'RFR1', 'RFR2', 'RSN1', 'RSN2', 'RSN3',
-		     'RPE1', 'RPE2', 'RPEL', 'RSND', 'RS2L', 'RMX', 'RT', 'RC',
-		     'RN1', 'RN2', 'FR1', 'FR2', 'SN1', 'SN2', 'SN3',
-		     'PE1', 'PE2', 'PE2L','AMX', 'SND', 'S2L', 'PR', 'PC',
-		     'RN', 'FR', 'SN', 'PE', 'DN', 'SD',
-		     'A2', 'A4', 'P1', 'P3', 'P2', 'P4', 'RR',
+           'W1', 'W2', 'W3', 'W4', 'WD', 'WG',
+           'UDWE', 'VDSN', 'WSPD',
+           'WGE', 'WGX', 'WGN', 'SDWD', 'SDWS',
+           'RRN1', 'RRN2', 'RFR1', 'RFR2', 'RSN1', 'RSN2', 'RSN3',
+           'RPE1', 'RPE2', 'RPEL', 'RSND', 'RS2L', 'RMX', 'RT', 'RC',
+           'RN1', 'RN2', 'FR1', 'FR2', 'SN1', 'SN2', 'SN3',
+           'PE1', 'PE2', 'PE2L','AMX', 'SND', 'S2L', 'PR', 'PC',
+           'RN', 'FR', 'SN', 'PE', 'DN', 'SD',
+           'A2', 'A4', 'P1', 'P3', 'P2', 'P4', 'RR',
                      'NT', 'H_CB', 'H_ML', 'H_M2', 'H_SN', 'ZEC',
-   		     'VIS', 'VIS1', 'VIS2', 'VIS3',
+              'VIS', 'VIS1', 'VIS2', 'VIS3',
                      'ECC','ECCL','ECCM','ECCH','TCC',
 
 
-  P_serg_srprf_s = 'UUWE', 'VVSN', 'WW', 'GZ', 'EN', 'HU', 'HR',
+  p_serg_srprf_s = 'UUWE', 'VVSN', 'WW', 'GZ', 'EN', 'HU', 'HR',
                    'KM', 'KT', 'NS', 'NU', 'QA', 'QF',
-		   'T2', 'TA', 'TD', 'TF', 'TH', 'TI', 'TT', 'TU', 'TV',
-		   'TW', 'ZET',
-		   'QCT1', 'QGT1', 'QHT1', 'QIT1', 'QNT1', 'QRT1',
-		   'NCT1', 'NGT1', 'NHT1', 'NIT1', 'NNT1', 'NRT1',
+         'T2', 'TA', 'TD', 'TF', 'TH', 'TI', 'TT', 'TU', 'TV',
+         'TW', 'ZET',
+         'QCT1', 'QGT1', 'QHT1', 'QIT1', 'QNT1', 'QRT1',
+         'NCT1', 'NGT1', 'NHT1', 'NIT1', 'NNT1', 'NRT1',
 
-  Xst_stn_latlon =
+  xst_stn_latlon =
          'GSFGB',46.73666667,-48.055,   'HGRH',46.369,-48.4705,     'HIBER',46.75016,-48.78267, 'SROSE',46.79033333,-48.016,
          'TNOVA',46.4755,-48.48083,     'CWWU',47.51616,-52.98083,  'CYQX',48.95,-54.56667,     'CYDF',49.21667,-57.38333,
          'LFVP',46.763,-56.17417,       'CYYT',47.61667,-52.75,     'CYWA',45.95,-77.31667,     'CYCX',45.83333,-66.43333,
@@ -197,26 +204,35 @@
          'CZUM',53.56667,-64.1,         'CYBX',51.45,-57.18333,     'CWSA',43.91667,-60.01667,  'CYRJ',48.51667,-72.26667,
 /
 
-&ensembles0
-     Ens_conf      = .false.        ,
-     Ens_mc_seed   = 1           ,
-     Ens_skeb_conf = .true.     ,
-     Ens_ptp_conf  = .true.       ,
-     Ens_stat      = .true.           ,
-     Ens_skeb_div  = .true.          ,
-     Ens_skeb_dif  = .true.          , Ens_skeb_gwd      = .true.     ,
-     Ens_skeb_bfc  = 1.0d-01         , Ens_skeb_lam      = 3.13e+05   ,
-     Ens_skeb_alph = 0.50            , Ens_skeb_alpt     = 2.0        ,
-     Ens_skeb_nlon = 384             , Ens_skeb_nlat  =  192 ,
-     Ens_skeb_trnl =  60             , Ens_skeb_trnh  =  192 ,
-     Ens_skeb_min  = -1.             , Ens_skeb_max   = 1. ,
-     Ens_skeb_std  = 0.27            , Ens_skeb_tau   = 129600. ,
-     Ens_skeb_str  = 1.39            ,
-     Ens_ptp_ncha  =  1              ,
-     Ens_ptp_nlon  = 16              , Ens_ptp_nlat  =  8 ,
-     Ens_ptp_trnl  =  1              , Ens_ptp_trnh  =  8 ,
-     Ens_ptp_min   = 0.5             , Ens_ptp_max   = 1.5 ,
-     Ens_ptp_std   = 0.27            , Ens_ptp_tau   = 129600. ,
-     Ens_ptp_str = 1.39              ,
-     Ens_ptp_env_u = 0.99            , Ens_ptp_env_b = 0.99 ,
- /
+&ensembles
+     ens_conf      = .false.        ,
+     ens_mc_seed   = 1           ,
+     ens_skeb_conf = .true.     ,
+     ens_ptp_conf  = .true.       ,
+     ens_stat      = .true.           ,
+     ens_skeb_div  = .true.          ,
+     ens_skeb_dif  = .true.          , ens_skeb_gwd      = .true.     ,
+     ens_skeb_bfc  = 1.0d-01         , ens_skeb_lam      = 3.13e+05   ,
+     ens_skeb_alph = 0.50            , ens_skeb_alpt     = 2.0        ,
+     ens_skeb_nlon = 384             , ens_skeb_nlat  =  192 ,
+     ens_skeb_trnl =  60             , ens_skeb_trnh  =  192 ,
+     ens_skeb_min  = -1.             , ens_skeb_max   = 1. ,
+     ens_skeb_std  = 0.27            , ens_skeb_tau   = 129600. ,
+     ens_skeb_str  = 1.39            ,
+     ens_ptp_ncha  =  1              ,
+     ens_ptp_nlon  = 16              , ens_ptp_nlat  =  8 ,
+     ens_ptp_trnl  =  1              , ens_ptp_trnh  =  8 ,
+     ens_ptp_min   = 0.5             , ens_ptp_max   = 1.5 ,
+     ens_ptp_std   = 0.27            , ens_ptp_tau   = 129600. ,
+     ens_ptp_str = 1.39              ,
+     ens_ptp_env_u = 0.99            , ens_ptp_env_b = 0.99 ,
+/
+&__deleted__
+schm_itraj=3,
+iau_input_type_s='DIST',
+/
+&__gemupcfg__
+orig_version=5.1.a5,
+from_version=5.1.a6,
+version=5.1.a7,
+/

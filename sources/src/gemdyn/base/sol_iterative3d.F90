@@ -27,6 +27,7 @@
       use ldnh
       use sol
       use opr
+      use dynkernel_options
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -38,6 +39,7 @@
 
 !author
 !     Abdessamad Qaddouri -- January 2014
+!
       integer :: its
       real(kind=REAL64) :: conv
       real(kind=REAL64), dimension(:,:,:), allocatable, save :: saved_sol
@@ -58,39 +60,50 @@
          allocate(saved_sol(F_ni,F_nj,F_nk))
          saved_sol = 0.d0
          first_time = .false.
-       end if
-
+      end if
 
       if (Grd_yinyang_L) then
 
-            select case(Sol3D_krylov_S)
-               case ('FGMRES')
-                  F_lhs_sol = saved_sol
+         select case(Sol3D_krylov_S)
+            case ('FGMRES')
+               F_lhs_sol = saved_sol
+               call sol_fgmres3d_H ( F_lhs_sol,            F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
 
-                  call sol_fgmres3d ( F_lhs_sol, matvec_yy, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+               if ( F_print_L ) then
+                  write(Lun_out, "(3x,'FGMRES converged at iteration', i4,' to a solution with relative residual',1pe14.7)") its, conv
+               end if
+               saved_sol = F_lhs_sol
 
-                  if (Lun_out > 0)  write(Lun_out, "(3x,'FGMRES converged at iteration', i4,' to a solution with relative residual',1pe14.7)") its, conv
-
-               case ('FBICGSTAB')
-                  its = fbicgstab3d (F_lhs_sol, matvec_yy, F_rhs_sol, saved_sol,&
+            case ('FBICGSTAB')
+               its = fbicgstab3d (F_lhs_sol, matvec_yy, F_rhs_sol, saved_sol,&
                                      l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx  ,&
                                      ldnh_miny, ldnh_maxy, i0, il, j0, jl   ,&
                                      sol_fgm_eps, sol_fgm_maxits            ,&
                                      Sol3D_precond_S, conv)
 
-                  if ( F_print_L ) then
-                     write(Lun_out, "(3x,'FBiCGSTAB converged at iteration', i3,' to a solution with relative residual',1pe14.7)") its, conv
-                  end if
-            end select
+               if ( F_print_L ) then
+                  write(Lun_out, "(3x,'FBiCGSTAB converged at iteration', i3,' to a solution with relative residual',1pe14.7)") its, conv
+               end if
+         end select
       else
 
          select case(Sol3D_krylov_S)
             case ('FGMRES')
-               F_lhs_sol = saved_sol
 
-               call sol_fgmres3d ( F_lhs_sol, matvec_3d, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+               if (Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
+                  F_lhs_sol = saved_sol
+              call sol_fgmres3d_H ( F_lhs_sol,            F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
 
-               if (Lun_out > 0) write(Lun_out, "(3x,'FGMRES converged at iteration', i3,' to a solution with relative residual',1pe14.7)") its, conv
+               else
+                  F_lhs_sol = saved_sol
+
+                  call sol_fgmres3d ( F_lhs_sol, matvec_3d, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+               endif
+
+
+               if ( F_print_L ) then
+                  write(Lun_out, "(3x,'FGMRES converged at iteration', i3,' to a solution with relative residual',1pe14.7)") its, conv
+               end if
 
             case ('FBICGSTAB')
                its = fbicgstab3d (F_lhs_sol, matvec_3d, F_rhs_sol, saved_sol,&

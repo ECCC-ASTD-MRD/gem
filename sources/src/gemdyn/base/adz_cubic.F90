@@ -33,7 +33,7 @@
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk), intent(in) :: F_src
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk), intent(out) :: F_dest
 
-      integer NK,num,nind,err,i0_e,in_e,j0_e,jn_e,k
+      integer :: num, nind, err, i0_e, in_e, j0_e, jn_e, k
       real, dimension(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,F_nk) :: extended,adv_o,adv_i
       real, dimension(F_ni,F_nj,F_nk) :: wrkc,w_mono,w_lin,w_min,w_max,w_cub_o,w_cub_i
 !
@@ -45,7 +45,7 @@
 
       if (.not.Adz_Mass_Cons_tr_L.and.Adz_intp_S=="QUINTIC") then
 
-         extended = 0. 
+         extended = 0.
 
          call rpn_comm_xch_halox( F_src, l_minx, l_maxx, l_miny, l_maxy,&
                l_ni, l_nj, l_nk, Adz_halox, Adz_haloy, .false., .false.,&

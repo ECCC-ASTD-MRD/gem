@@ -15,7 +15,7 @@
 
 !**s/r hzd_smago_main   - applies horizontal diffusion based on the Smagorinsky approach
 
-      subroutine hzd_smago_main
+      subroutine hzd_smago_main()
       use gmm_vt1
       use dyn_fisl_options
       use glb_ld
@@ -31,6 +31,9 @@
 
       implicit none
 #include <arch_specific.hf>
+!
+!Author:  Syed Husain
+!
 
       real, pointer, dimension (:,:,:) :: hu
       logical :: switch_on_THETA, switch_on_hu, switch_on_wzd
@@ -54,11 +57,11 @@
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       istat = gmm_get(gmmk_tt1_s,tt1)
       istat = gmm_get(gmmk_wt1_s,wt1)
-      istat = gmm_get(gmmk_st1_s,st1)
-      istat = gmm_get(gmmk_sls_s,sls)
 
-      call hzd_smago_in_split(ut1,vt1,wt1,tt1,zdt1,st1,sls, &
-         l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.)
+      call pw_update_GPW()
+
+      call hzd_smago_in_split(ut1,vt1,wt1,tt1,zdt1, &
+               l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.)
 
 
       if (Grd_yinyang_L) then

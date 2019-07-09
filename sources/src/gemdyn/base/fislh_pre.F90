@@ -40,7 +40,8 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_ru,F_rv,F_rt
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rw,F_rc,F_rf
 !
-!Author: Claude Girard, July 2017
+!Author: Claude Girard, July 2017 (initial version)
+!        Syed Husain, June 2019 (revision)
 !
       integer :: i, j, k, km
       real    :: w0
@@ -86,16 +87,8 @@
                w0 = Cstv_invT_nh_8*(ztht(i,j,k)-Ver_z_8%t(k))
                F_rf(i,j,k) = F_rf(i,j,k) - w0
 
-!              Compute Rw'
-!              ~~~~~~~~~~~
-               F_rw(i,j,k) = F_rw(i,j,k) + Cstv_invT_nh_8*F_rf(i,j,k)
-
 !              Compute Rt'
 !              ~~~~~~~~~~~
-               F_rt(i,j,k) = F_rt(i,j,k) + mu_8*F_rf(i,j,k)
-
-!              Compute Rt" combining Rt'and Rw'
-!              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                F_rt(i,j,k) = gama_8 * ( c1 * F_rt(i,j,k) + F_rw(i,j,k) )
 
             end do
@@ -109,13 +102,13 @@
          km=max(k-1,1)
          do j= j0, jn
             do i= i0, in
-               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wpA_8(k))*Ver_zeronk(k)
-               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wmA_8(k))*Ver_onezero(k)
+               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wp_8%m(k))
+               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
 !              Compute Rc"
 !              ~~~~~~~~~~~
-               F_rc(i,j,k) = F_rc(i,j,k) + Cstv_invT_m_8*epsi_8*&
-                            (Ver_wp_8%m(k)*F_rf(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*F_rf(i,j,km))
+               F_rc(i,j,k) = F_rc(i,j,k) + Cstv_invT_m_8* &
+                            (F_rf(i,j,k)-Ver_onezero(k)*F_rf(i,j,km))*Ver_idz_8%m(k)
 
 !              Compute Rc"', combining Rc" and Rt"
 !              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +124,9 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-            F_rt(i,j,l_nk) = F_rt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rt(i,j,l_nk-1)
+            F_rc(i,j,l_nk) = F_rc(i,j,l_nk) - isol_d*mc_cssp_H_8(i,j) * &
+                     (F_rt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rt(i,j,l_nk-1) &
+                    + Cstv_invT_m_8*(F_rf(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rf(i,j,l_nk-1)))
          end do
       end do
 !$omp end do

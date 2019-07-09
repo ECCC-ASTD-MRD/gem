@@ -60,6 +60,13 @@
          epsi_8=grav_8/cstr2_8
          gg_8=epsi_8/(grav_8*Cstv_tau_8*Cstv_tau_m_8)
 
+         Ver_css_8   = one/gama_8 &
+                     /(Ver_idz_8%t(G_nk)-mu_8*half)
+         Ver_alfas_8 = Ver_css_8*gama_8* &
+                                       (Ver_idz_8%t(G_nk  )+mu_8*half &
+                   +Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)-mu_8*half) )
+         Ver_betas_8 = Ver_css_8*gama_8* &
+                    Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)+mu_8*half)
          call fislh_set_oprz (F_errcode)
 
       else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then

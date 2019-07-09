@@ -29,10 +29,12 @@
 #include <arch_specific.hf>
 
 !
-!-------------------------------------------------------------------
+!Author:  Syed Husain
 !
       integer :: istat
       logical :: smago_in_rhs_L, switch_on_wzd
+!-------------------------------------------------------------------
+!
       smago_in_rhs_L=.false.
 
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) .and. (.not. smago_in_rhs_L) ) return
@@ -46,11 +48,10 @@
       istat = gmm_get(gmmk_zdt0_s,zdt0)
       istat = gmm_get(gmmk_tt0_s,tt0)
       istat = gmm_get(gmmk_wt0_s,wt0)
-      istat = gmm_get(gmmk_st0_s,st0)
-      istat = gmm_get(gmmk_sls_s,sls)
 
-      call hzd_smago_in_split(ut0,vt0,wt0,tt0,zdt0,st0,sls, &
-         l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+      call hzd_smago_in_split(ut0,vt0,wt0,tt0,zdt0, &
+            l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+
 
       if (Grd_yinyang_L) then
          call yyg_xchng_vec_uv2uv (ut0,vt0,l_minx,l_maxx,l_miny,l_maxy,G_nk)

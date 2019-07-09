@@ -181,34 +181,34 @@
                np=nc+1
 
                do i=1,36
-                  read(unf0),dumdum(i,np)
+                  read(unf0) dumdum(i,np)
                end do
 
                do l=lmin,lmax
                   do m=1,l+1
-                  read(unf0),ar_p(lmax-l+1,m,nc)
+                  read(unf0) ar_p(lmax-l+1,m,nc)
                   end do
                end do
 
                do l=lmin,lmax
                   do m=1,l+1
-                     read(unf0),ai_p(lmax-l+1,m,nc)
+                     read(unf0) ai_p(lmax-l+1,m,nc)
                   end do
                end do
 
                do l=lmin,lmax
                   do m=1,l+1
-                     read(unf0),br_p(lmax-l+1,m,nc)
+                     read(unf0) br_p(lmax-l+1,m,nc)
                   end do
                end do
 
                do l=lmin,lmax
                   do m=1,l+1
-                     read(unf0),bi_p(lmax-l+1,m,nc)
+                     read(unf0) bi_p(lmax-l+1,m,nc)
                   end do
                end do
             end do
-            close(unf0);
+            close(unf0)
 
          end if
       end if
@@ -365,7 +365,7 @@
 
 !  Fourier Transform (inverse)
 
-	      wrk1=0.0
+         wrk1=0.0
          n=-1
          do i=1,nlat
             do j=1,lmax+1

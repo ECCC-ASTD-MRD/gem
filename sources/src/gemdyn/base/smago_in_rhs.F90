@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r smago_in_rhs - Applies horizontal Smagorinsky-type nonlinear diffusion
+!                     in the tendency mode      
 !
       subroutine smago_in_rhs (F_du, F_dv, F_dw, F_dlth, F_u, F_v, F_w, F_t, F_s, &
                                F_sl,lminx, lmaxx, lminy, lmaxy, nk)
@@ -40,9 +41,10 @@
       real, dimension(lminx:lmaxx,lminy:lmaxy),    intent(in) :: F_s, F_sl
 
 !
-!author
-!     Claude Girard, Syed Husain
+!Author:  Claude Girard, Syed Husain (Nov 2017)
 !
+!Bugfix: Syed Husain (Jul 2019)
+!      
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
@@ -180,7 +182,7 @@
                             + ( (smagcoef_uo(i+1,j)-smagcoef_uo(i,j))*         &
                                  geomh_invDX_8(j) +                            &
                                 (smagcoef_uo(i,j)-smagcoef_uo(i-1,j))*         &
-                                 geomh_invDX_8(j))*0.05d0*tension_u(i,j)*      &
+                                 geomh_invDX_8(j))*0.05d0*tension_u(i,j)       &
                             + ( (smagcoef_uo(i,j+1)-smagcoef_uo(i,j))*         &
                                  geomh_invDY_8 +                               &
                                 (smagcoef_uo(i,j)-smagcoef_uo(i,j-1))*         &
@@ -205,7 +207,7 @@
                             + ( (smagcoef_vo(i+1,j)-smagcoef_vo(i,j))*            &
                                  geomh_invDXv_8(j) +                              &
                                 (smagcoef_vo(i,j)-smagcoef_vo(i-1,j))*            &
-                                 geomh_invDXv_8(j))*0.05d0*shear_v(i,j)*          &
+                                 geomh_invDXv_8(j))*0.05d0*shear_v(i,j)           &
                             - ( (smagcoef_vo(i,j+1)-smagcoef_vo(i,j))*            &
                                  geomh_invDY_8 +                                  &
                                 (smagcoef_vo(i,j)-smagcoef_vo(i,j-1))*            &
