@@ -29,14 +29,10 @@
 
       integer :: i,j,k,k00,ii1,jj1
       real(kind=REAL64) :: aa,bb,cc, xm,ym,zm, xt,yt,zt, wdt,ww,wp,wm
-      real(kind=REAL64) :: lag3, hh, x, x1, x2, x3, x4
+      real(kind=REAL64) :: hh, x1, x2, x3, x4
       real(kind=REAL64), dimension(2:l_nk-2) :: w1, w2, w3, w4
       real :: zmin_bound, zmax_bound
       real(kind=REAL64), parameter :: half=0.5d0
-
-      lag3( x, x1, x2, x3, x4 ) = &
-        ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
-        ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
 !
 !---------------------------------------------------------------------
 !
@@ -86,10 +82,10 @@
          x2 = Ver_z_8%m(k  )
          x3 = Ver_z_8%m(k+1)
          x4 = Ver_z_8%m(k+2)
-         w1(k) = lag3( hh, x1, x2, x3, x4 )
-         w2(k) = lag3( hh, x2, x1, x3, x4 )
-         w3(k) = lag3( hh, x3, x1, x2, x4 )
-         w4(k) = lag3( hh, x4, x1, x2, x3 )
+         w1(k) = lagcoef( hh, x1, x2, x3, x4 )
+         w2(k) = lagcoef( hh, x2, x1, x3, x4 )
+         w3(k) = lagcoef( hh, x3, x1, x2, x4 )
+         w4(k) = lagcoef( hh, x4, x1, x2, x3 )
       end do
 
       k00=max(Adz_k0t-1,1)
@@ -98,7 +94,7 @@
 
       do k= max(k00,2), l_nk-2
          do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
             do i= 1, l_ni
                xt = w1(k)*Adz_wpxyz(i,j,k-1,1)+ &
                     w2(k)*Adz_wpxyz(i,j,k  ,1)+ &
@@ -133,7 +129,7 @@
 
       k= l_nk-1
       do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
          do i= 1, l_ni
             xt = (Adz_wpxyz(i,j,k,1)+Adz_wpxyz(i,j,k+1,1))*half
             yt = (Adz_wpxyz(i,j,k,2)+Adz_wpxyz(i,j,k+1,2))*half
@@ -155,7 +151,7 @@
       k= l_nk
       if (Adz_slt_winds) then
          do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
          do i= 1, l_ni
             xt= (geomh_x_8(i) - Dcst_inv_rayt_8 * Cstv_dt_8 * &
                      Adz_uslt(i,j)*Adz_cy_8(j) - G_xg_8(1)) * &
@@ -173,7 +169,7 @@
          end do
       else
          do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
          do i= 1, l_ni
             xt = wp*Adz_wpxyz(i,j,k,1)+wm*Adz_wpxyz(i,j,k-1,1)
             yt = wp*Adz_wpxyz(i,j,k,2)+wm*Adz_wpxyz(i,j,k-1,2)
@@ -189,7 +185,7 @@
       end if
 
       do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
       do i= 1, l_ni
          wdt= (Adz_uvw_dep(3,i,j,k-1)+Adz_uvw_dep(3,i,j,k))*half
          zt = Ver_z_8%t(k)-ww*(Cstv_dtD_8*  wdt &
@@ -201,7 +197,7 @@
 
       if (k00==1) then
          do j= 1, l_nj
-!DIR$ IVDEP
+!!DIR$ IVDEP
             do i= 1, l_ni
                xt = (Adz_wpxyz(i,j,1,1 )+Adz_wpxyz (i,j,2,1))*half
                yt = (Adz_wpxyz(i,j,1,2 )+Adz_wpxyz (i,j,2,2))*half
@@ -223,12 +219,23 @@
 
       Adz_pt   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)=&
       Adz_pxyzt(:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)
+
+      Adz_pb   (:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, Adz_k0t:l_nk)=&
+      Adz_pxyzt(:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, Adz_k0t:l_nk)
 !
 !---------------------------------------------------------------------
 !
       return
 
 contains
+
+      real(kind=REAL64) function lagcoef( x, x1, x2, x3, x4 )
+      implicit none
+      real(kind=REAL64), intent(in) :: x, x1, x2, x3, x4
+      lagcoef = ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
+                ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
+      return
+      end function lagcoef
 
       real(kind=REAL64) function zindx (posz)
       use, intrinsic :: iso_fortran_env

@@ -13,9 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adv_qutver_lag3d_mono- Quintic Vertical + Monotonicity
+!**s/r bicubHQV_lin_min_max - Horizontal:Cubic Vertical:Quintic + Store Lin/Min/Max
 
-      subroutine adv_qutver_lag3d_mono (F_qut,F_in,F_x,F_y,F_z,F_num,F_nind,ii,F_nk,F_lev_S)
+      subroutine bicubHQV_lin_min_max (F_qut,F_lin,F_min,F_max,F_in, &
+                                       F_x,F_y,F_z,F_num,F_nind,ii,F_nk,F_lev_S)
 
       use adv_grid
       use adv_interp
@@ -25,41 +26,35 @@
 
 #include <arch_specific.hf>
 
-      character(len=*), intent(in) :: F_lev_S
-      integer, intent(in) :: F_num,F_nind,F_nk
-      real,dimension(F_num), intent(out) :: F_qut ! High-order SL solution
-      real,dimension(*),     intent(in)  :: F_in  ! Field to interpolate
-      real,dimension(F_num), intent(in)  :: F_x,F_y,F_z
-      integer,dimension(F_nind*4),intent(in) :: ii
-
-      !--------------------------------------------------------------------
+      character(len=*), intent(IN) :: F_lev_S
+      integer, intent(IN) :: F_num,F_nind,F_nk
+      real,dimension(F_num), intent(OUT) :: F_qut ! High-order SL solution
+      real,dimension(F_num), intent(OUT) :: F_lin ! Low-order SL solution
+      real,dimension(F_num), intent(OUT) :: F_min ! MIN over cell
+      real,dimension(F_num), intent(OUT) :: F_max ! MAX over cell
+      real,dimension(*),     intent(IN)  :: F_in  ! Field to interpolate
+      real,dimension(F_num), intent(IN)  :: F_x,F_y,F_z
+      integer,dimension(F_nind*4),intent(IN) :: ii
 
       real(kind=REAL64) , dimension(:), pointer, contiguous :: p_bsz_8,p_zbc_8,    &
-                                                    p_zabcd_8,p_zbacd_8,&
-                                                    p_zcabd_8,p_zdabc_8,&
-                                                    p_zxabcde_8,p_zaxbcde_8,p_zbxacde_8,&
-                                                    p_zcxabde_8,p_zdxabce_8,p_zexabcd_8
+                                                               p_zabcd_8,p_zbacd_8,&
+                                                               p_zcabd_8,p_zdabc_8,&
+                                                               p_zxabcde_8,p_zaxbcde_8,p_zbxacde_8,&
+                                                               p_zcxabde_8,p_zdxabce_8,p_zexabcd_8
 
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4, kkmax, n, id
       real(kind=REAL64)  :: a1, a2, a3, a4, b1, b2, b3, b4, &
                  c1, c2, c3, c4, d1, d2, d3, d4, &
                  p1, p2, p3, p4, ra, rb, rc, rd, &
                  x1, x2, x3, x4, e1, e2, e3, e4, &
-                 p0, p5, rx, re
+                 p0, p5, rx, re, &
+                 prf1, prf2, capx, capy, capz
       real    :: prmin, prmax
       logical :: zcubic_L, zqutic_L
-
-      real(kind=REAL64) :: triprd,zb,zc,zd
-      real :: za
-      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
-
-      real(kind=REAL64) :: quiprd,ze,z2
-      real :: zx
-      quiprd(zx,z2,zb,zc,zd,ze)=(zx-z2)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze)
-
-      !--------------------------------------------------------------------
-
-      if  (F_lev_S /= 't') call handle_error (-1,'adz_qutver_lag3d_conserv','NOT AVAILABLE')
+!
+!---------------------------------------------------------------------
+!
+      if  (F_lev_S /= 't') call gem_error (-1,'bicubHQV_lin_min_max','NOT AVAILABLE')
 
       p_bsz_8   => adv_bsz_8%t
       p_zabcd_8 => adv_zabcd_8%t
@@ -76,21 +71,6 @@
       p_zexabcd_8 => adv_zexabcd_8%t
 
       kkmax = F_nk - 1
-
-!$omp parallel private(id,n,n0,nx,ny,nz,m1,zcubic_L,zqutic_L,&
-!$omp            a1, a2, a3, a4, b1, b2, b3, b4,&
-!$omp            c1, c2, c3, c4, d1, d2, d3, d4,&
-!$omp            p1, p2, p3, p4, ra, rb, rc, rd,&
-!$omp            x1, x2, x3, x4, e1, e2, e3, e4,&
-!$omp            p0, p5, rx, re, &
-!$omp            o1, o2, o3, o4, &
-!$omp            prmin,prmax)&
-!$omp          shared (p_bsz_8,p_zbc_8,p_zabcd_8,&
-!$omp            p_zbacd_8,p_zcabd_8,p_zdabc_8,kkmax,&
-!$omp            p_zxabcde_8,p_zaxbcde_8,p_zbxacde_8,&
-!$omp            p_zcxabde_8,p_zdxabce_8,p_zexabcd_8)
-
-!$omp do
 
       do id=1,F_nind
 
@@ -250,10 +230,45 @@
                F_qut(n) = p2 * b1 + p3 * c1
             endif
 
-            F_qut(n) = max(prmin , min(prmax,F_qut(n)))
+            capx = (F_x(n)-adv_bsx_8(ii(nx))) * adv_xbc_8
+            capy = (F_y(n)-adv_bsy_8(ii(ny))) * adv_ybc_8
+            capz = (F_z(n)-  p_bsz_8(ii(nz))) * p_zbc_8(ii(nz)+1)
+
+            o2 = (ii(nz))*adv_nijag + (ii(ny)-adv_int_j_off-1)*adv_nit + (ii(nx)-adv_int_i_off)
+            o3 = o2 + adv_nit
+
+            prf1 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
+            o2 = o2 + adv_nijag
+            o3 = o3 + adv_nijag
+
+            prf2 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
+            F_lin (n) = max((1. - capz) * prf1 + capz * prf2,0.0d0)
+
+            F_min (n) = prmin
+            F_max (n) = prmax
 
       end do
-!$omp enddo
-!$omp end parallel
+!
+!---------------------------------------------------------------------
+!
+      return
 
-      end subroutine adv_qutver_lag3d_mono
+contains
+
+      real(kind=REAL64) function triprd(za,zb,zc,zd)
+         real, intent(in) :: za
+         real(kind=REAL64), intent(in) :: zb,zc,zd
+         triprd = (za-zb)*(za-zc)*(za-zd)
+      end function triprd
+
+      real(kind=REAL64) function quiprd(zx,za,zb,zc,zd,ze)
+         real, intent(in) :: zx
+         real(kind=REAL64), intent(in) :: za,zb,zc,zd,ze
+         quiprd = (zx-za)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze)
+      end function quiprd
+
+      end subroutine bicubHQV_lin_min_max

@@ -25,10 +25,10 @@ module adz_mem
       integer :: Adz_halox, Adz_haloy !Adzection x/y halo size
       integer :: Adz_lminx, Adz_lmaxx , Adz_lminy, Adz_lmaxy
       integer :: Adz_nit, Adz_njt, Adz_nij, Adz_ioff, Adz_joff
-      integer :: Adz_i0,Adz_in,Adz_j0,Adz_jn
+      integer :: Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb
       integer :: Adz_i0u,Adz_inu,Adz_j0v,Adz_jnv
       integer :: Adz_2dnh, Adz_3dnh, Adz_k0, Adz_k0t, Adz_k0m
-      integer :: Adz_num_u,Adz_num_v,Adz_num_q,Adz_num_t,Adz_kkmax
+      integer :: Adz_num_u,Adz_num_v,Adz_num_q,Adz_num_t,Adz_num_b,Adz_kkmax
       integer, dimension(:), pointer, contiguous :: Adz_search_m,&
                                                     Adz_search_t
       real :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
@@ -40,7 +40,7 @@ module adz_mem
 
       type Adz_pntr_stack
          sequence
-         real, dimension(:,:,:), pointer :: src,dst
+         real, dimension(:,:,:), pointer :: src,dst,pil
       end type Adz_pntr_stack
 
       type(Adz_pntr_stack), pointer, dimension(:) :: Adz_stack
@@ -52,7 +52,7 @@ module adz_mem
       real, allocatable, dimension (:,:,:,:)             :: &
                               Adz_pxyzt,Adz_uvw_dep
       real, allocatable, dimension (:,:,:,:)             :: &
-                           Adz_pm,Adz_pmu,Adz_pmv,Adz_pt
+                           Adz_pm,Adz_pmu,Adz_pmv,Adz_pt,Adz_pb
 
       real(kind=REAL64), allocatable, dimension (:,:,:,:) :: Adz_wpxyz
 
@@ -64,5 +64,7 @@ module adz_mem
 
       real, pointer, dimension (:,:), contiguous :: Adz_uslt  =>null()
       real, pointer, dimension (:,:), contiguous :: Adz_vslt  =>null()
+
+      real, pointer, dimension (:,:,:,:), contiguous :: Adz_post,Adz_flux
 
 end module adz_mem

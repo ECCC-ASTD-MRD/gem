@@ -10,7 +10,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_C_FLAGS "-O2 -g -w -D_REENTRANT -fopenmp" CACHE STRING "C compiler flags" FORCE)
 set(CMAKE_Fortran_FLAGS "-O2 -fdump-core -fbacktrace -g -w -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic -fopenmp" CACHE STRING "Fortran compiler flags" FORCE)
 
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-s -fopenmp -fpic")
+set(CMAKE_EXE_LINKER_FLAGS "-s -fopenmp -fpic")
 
 set(LAPACK_LIBRARIES "-llapack")
 set(BLAS_LIBRARIES "-lblas")

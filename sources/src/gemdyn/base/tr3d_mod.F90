@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module tr3d
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -27,9 +28,9 @@ module tr3d
    !
    !-------------------------------------------------------------------------------------
    !Tr3d_mass = Type of mass conservation
-   !          0                    -> None
-   !          1                    -> Bermejo-Conde LEGACY=T : Bermejo-Conde,2002,MWR,130,423-430
-   !          100+weight*10+pexp_n -> Bermejo-Conde LEGACY=F : Bermejo-Conde,2002,MWR,130,423-430
+   !          0           -> None
+   !          1           -> Bermejo-Conde LEGACY=T : Bermejo-Conde,2002,MWR,130,423-430
+   ! 100+weight*10+pexp_n -> Bermejo-Conde LEGACY=F : Bermejo-Conde,2002,MWR,130,423-430
    !-------------------------------------------------------------------------------------
    !   weight = Weight in Bermejo-Conde
    !          1 -> Additive
@@ -39,19 +40,26 @@ module tr3d
    !-------------------------------------------------------------------------------------
    !
    !-------------------------------------------------------------------------------------
-   !Tr3d_intp = NONE   : H:NONE  V:NONE (No advection)
-   !Tr3d_intp = CUBIC  : H:Cubic V:Cubic
-   !Tr3d_intp = QUINTIC: H:Cubic V:Quintic
+   !Tr3d_intp = 'NONE'    : Hor:NONE  Ver:NONE   (No advection)
+   !Tr3d_intp = 'TRICUB'  : Hor:Cubic Ver:Cubic  (tricubic)
+   !Tr3d_intp = 'BICUBH_QV: Hor:Cubic Ver:Quintic
    !-------------------------------------------------------------------------------------
 
    integer, parameter :: MAXTR3D = 250
 
    character(len=4) :: Tr3d_name_S(MAXTR3D), NTR_Tr3d_name_S(MAXTR3D)
-   character(len=4) :: Tr3d_NT_S(MAXTR3D),Tr3d_M1_S(MAXTR3D),Tr3d_MC_S(MAXTR3D)
+   character(len=4) :: Tr3d_TRICUB_NT_S(MAXTR3D), Tr3d_TRICUB_WP_S(MAXTR3D)
+   character(len=4) :: Tr3d_BICHQV_NT_S(MAXTR3D), Tr3d_BICHQV_WP_S(MAXTR3D)
    character(len=12):: Tr3d_intp  (MAXTR3D)
    logical :: Tr3d_wload(MAXTR3D), Tr3d_hzd (MAXTR3D)
    integer :: Tr3d_mono (MAXTR3D), Tr3d_mass(MAXTR3D)
-   integer :: Tr3d_ntr, Tr3d_ntrNT, Tr3d_ntrM1, Tr3d_ntrMC, NTR_Tr3d_ntr
+   integer :: Tr3d_ntr, NTR_Tr3d_ntr
+   integer :: Tr3d_ntrTRICUB_NT, Tr3d_ntrTRICUB_WP
+   integer :: Tr3d_TRICUB_NT(MAXTR3D), Tr3d_TRICUB_WP(MAXTR3D)
+   integer :: Tr3d_ntrBICHQV_NT, Tr3d_ntrBICHQV_WP
+   integer :: Tr3d_BICHQV_NT(MAXTR3D), Tr3d_BICHQV_WP(MAXTR3D)
    real    :: Tr3d_vmin(MAXTR3D),Tr3d_vmax(MAXTR3D)
+
+   real(kind=REAL64) :: BC_mass_deficit(MAXTR3D) = 0.0d0
 
 end module tr3d

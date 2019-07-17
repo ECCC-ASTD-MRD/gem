@@ -233,7 +233,7 @@
             call tt2virt (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
             phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
             phy_tv_tend = phy_tv_tend/Cstv_dt_8
-         end if         
+         end if
       end if
 
    else

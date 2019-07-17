@@ -40,8 +40,6 @@
       !     (not in NAMELIST)
       !===========================================================================
 
-      !----------------------------------------------------------------
-
       integer :: n,err,i,j
 
       real(kind=REAL64)  :: c_area_8,s_area_8,gc_area_8,gs_area_8
@@ -49,27 +47,26 @@
       logical :: BC_LAM_L,psadj_LAM_flux_L,do_subset_GY_L,BC_activated_L
 
       real(kind=REAL64), parameter :: QUATRO_8 = 4.0
-
-      !----------------------------------------------------------------
-
-      Adz_Mass_Cons_L   = .false.
-      BC_LAM_L          = .false.
+!
+!---------------------------------------------------------------------
+!
+      BC_LAM_L = .false.
 
       do n=1,Tr3d_ntr
 
          BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
 
-         if (Tr3d_intp(n)=='QUINTIC'.and.Schm_autobar_L) &
-            call handle_error(-1,'ADZ_CHECK_TRACERS','INTP (QUINTIC_V) not valid when AUTOBAR')
+         if (Tr3d_intp(n)=='BICUBH_QV'.and.Schm_autobar_L) &
+            call handle_error(-1,'ADZ_CHECK_TRACERS','INTP (BICUBH_QV) not valid when AUTOBAR')
 
-         if (Tr3d_intp(n)/='NONE'.and.Tr3d_intp(n)/='CUBIC'.and.Tr3d_intp(n)/='QUINTIC') &
+         if (Tr3d_intp(n)/='NONE'.and.Tr3d_intp(n)/='TRICUB'.and.Tr3d_intp(n)/='BICUBH_QV') &
             call handle_error(-1,'ADZ_CHECK_TRACERS','INTP not valid')
-
-         if (Tr3d_mass(n)/=0.or.Tr3d_mono(n)>=2.or.Tr3d_intp(n)/='CUBIC') Adz_Mass_Cons_L = .true.
 
          if (BC_activated_L.and..not.Grd_yinyang_L) BC_LAM_L = .true.
 
       end do
+
+      if (Grd_yinyang_L) Adz_BC_LAM_flux = 0
 
       psadj_LAM_flux_L = .false.
       if (Schm_psadj>0.and..not.Grd_yinyang_L) psadj_LAM_flux_L = .true.
@@ -86,6 +83,10 @@
                                 l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
 
       end if
+
+      !Check if Bermejo-Conde LAM Flux=2 is required for at least one tracer
+      !---------------------------------------------------------------------
+      if (BC_LAM_L.and.Adz_BC_LAM_flux==2) Adz_BC_LAM_zlf_L = .true.
 
       !If PIL_SUB is defined in namelist adz_cfgs, adjust according to topology
       !------------------------------------------------------------------------
@@ -143,7 +144,8 @@
       Adz_gc_area_8 = gc_area_8
 
       if (Schm_autobar_L)  Adz_gc_area_8 = Adz_gc_area_8 * (Cstv_pref_8-Cstv_ptop_8) / grav_8
-
+!
+!---------------------------------------------------------------------
+!
       return
-
       end subroutine adz_check_tracers

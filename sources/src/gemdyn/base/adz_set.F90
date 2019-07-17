@@ -105,6 +105,15 @@
       if (l_south) Adz_iminposy = l_j0+     BCS_BASE   + EPS_8
       if (l_north) Adz_imaxposy = l_j0+l_nj-BCS_BASE-1 - EPS_8
 
+      ext = Grd_maxcfl + 1
+
+      Adz_i0b =    1 + BCS_BASE*west
+      Adz_inb = l_ni - BCS_BASE*east
+      Adz_j0b =    1 + BCS_BASE*south
+      Adz_jnb = l_nj - BCS_BASE*north
+
+      Adz_num_b= (Adz_inb -Adz_i0b +1)*(Adz_jnb -Adz_j0b +1)*(l_nk-Adz_k0t+1)
+
       allocate (  Adz_delz_m(0:l_nk),  Adz_delz_t(0:l_nk), &
                  Adz_odelz_m(0:l_nk), Adz_odelz_t(0:l_nk) )
 
@@ -167,7 +176,8 @@
       allocate(Adz_pm (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
                Adz_pmu(3,Adz_i0u:Adz_inu, Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
                Adz_pmv(3,Adz_i0 :Adz_in , Adz_j0v:Adz_jnv,Adz_k0 :l_nk),&
-               Adz_pt (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0t:l_nk) )
+               Adz_pt (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0t:l_nk),&
+               Adz_pb (3,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb,Adz_k0t:l_nk) )
 
       allocate ( Adz_pxyzt (3,l_ni,l_nj,l_nk),&
                  Adz_wpxyz(-1:l_ni+2,-1:l_nj+2,l_nk,3) )

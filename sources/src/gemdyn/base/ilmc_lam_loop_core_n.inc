@@ -17,25 +17,17 @@
 
       do shift=1,SIDE_max_0
 
-!$omp parallel                                             &
-!$omp private(k,ii,o_shoot,u_shoot,ratio_max,ratio_min,    &
-!$omp         m_sweep_max,m_sweep_min,sweep_max,sweep_min, &
-!$omp         m_use_max,m_use_min,i_rd,j_rd,k_rd,i,j,sweep)&
-!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,new,      &
-!$omp         air_mass_m)
-!$omp do
-
-      do k=F_k0+shift-1,F_nk,SIDE_max_0
+      do k=Adz_k0+shift-1,l_nk,SIDE_max_0
 
          do j=jl_c,jr_c
          do i=il_c,ir_c
 
-            o_shoot = max(0.,   new(i,j,k) - F_max(i,j,k))
-            u_shoot = max(0., F_min(i,j,k) -   new(i,j,k))
+            o_shoot = max(0.,  high(i,j,k) - F_max(i,j,k))
+            u_shoot = max(0., F_min(i,j,k) -  high(i,j,k))
 
             if (o_shoot==0..and.u_shoot==0.) cycle
 
-            do sweep = 1,F_ILMC_sweep_max
+            do sweep = 1,Adz_ILMC_sweep_max
 
                if (o_shoot==0..and.u_shoot==0.) cycle
 
@@ -50,10 +42,10 @@
 
                   if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
 
-                  sweep_max(ii) = max(0., F_max(i_rd,j_rd,k_rd) -   new(i_rd,j_rd,k_rd))
+                  sweep_max(ii) = max(0., F_max(i_rd,j_rd,k_rd) -  high(i_rd,j_rd,k_rd))
                   m_sweep_max   = sweep_max(ii) * air_mass_m(i_rd,j_rd,k_rd) + m_sweep_max
 
-                  sweep_min(ii) = max(0.,   new(i_rd,j_rd,k_rd) - F_min(i_rd,j_rd,k_rd))
+                  sweep_min(ii) = max(0.,  high(i_rd,j_rd,k_rd) - F_min(i_rd,j_rd,k_rd))
                   m_sweep_min   = sweep_min(ii) * air_mass_m(i_rd,j_rd,k_rd) + m_sweep_min
 
                end do
@@ -67,7 +59,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   new(i,j,k) = max(new(i,j,k) - real(m_use_max/air_mass_m(i,j,k)),F_min(i,j,k))
+                   high(i,j,k) = max(high(i,j,k) - real(m_use_max/air_mass_m(i,j,k)),F_min(i,j,k))
 
                    ratio_max = m_use_max/m_sweep_max
 
@@ -79,7 +71,8 @@
 
                       if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
 
-                      if (sweep_max(ii)>0.) new(i_rd,j_rd,k_rd) = min(new(i_rd,j_rd,k_rd) + real(sweep_max(ii)*ratio_max),F_max(i_rd,j_rd,k_rd))
+                      if (sweep_max(ii)>0.) high(i_rd,j_rd,k_rd) = min(high(i_rd,j_rd,k_rd) + &
+                                                                   real(sweep_max(ii)*ratio_max),F_max(i_rd,j_rd,k_rd))
 
                    end do
 
@@ -89,7 +82,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   new(i,j,k) = min(new(i,j,k) + real(m_use_min/air_mass_m(i,j,k)),F_max(i,j,k))
+                   high(i,j,k) = min(high(i,j,k) + real(m_use_min/air_mass_m(i,j,k)),F_max(i,j,k))
 
                    ratio_min = m_use_min/m_sweep_min
 
@@ -101,14 +94,15 @@
 
                       if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
 
-                      if (sweep_min(ii)>0.) new(i_rd,j_rd,k_rd) = max(new(i_rd,j_rd,k_rd) - real(sweep_min(ii)*ratio_min),F_min(i_rd,j_rd,k_rd))
+                      if (sweep_min(ii)>0.) high(i_rd,j_rd,k_rd) = max(high(i_rd,j_rd,k_rd) - &
+                                                                   real(sweep_min(ii)*ratio_min),F_min(i_rd,j_rd,k_rd))
 
                    end do
 
                endif
 
-               o_shoot = max(0.,   new(i,j,k) - F_max(i,j,k))
-               u_shoot = max(0., F_min(i,j,k) -   new(i,j,k))
+               o_shoot = max(0.,  high(i,j,k) - F_max(i,j,k))
+               u_shoot = max(0., F_min(i,j,k) -  high(i,j,k))
 
                if (o_shoot==0..and.u_shoot==0.) cycle
 
@@ -120,8 +114,6 @@
          end do
 
       end do
-!$omp end do
-!$omp end parallel
 
       end do ! do shift
 

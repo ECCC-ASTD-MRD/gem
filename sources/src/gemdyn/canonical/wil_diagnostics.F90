@@ -49,7 +49,7 @@
 
       integer istat,i,j,k,n,ierr,istat1,istat2
 
-      real, pointer    , dimension(:,:,:) :: tr,tr_r,cl,cl2
+      real, pointer, dimension(:,:,:) :: tr,tr_r,cl,cl2
 
       real, parameter :: CLY_REF = 4.*10.**(-6)
 
@@ -72,73 +72,72 @@
       if (Williamson_case==2) then
          if ( Lctl_step==0) then
 
-         allocate(phi_0(l_minx:l_maxx,l_miny:l_maxy,G_nk+1))
+            allocate(phi_0(l_minx:l_maxx,l_miny:l_maxy,G_nk+1))
 
-         select case ( trim(Dynamics_Kernel_S) )
+            select case ( trim(Dynamics_Kernel_S) )
+               case ('DYNAMICS_FISL_H')
+                  stop 'Not yet implemented'
 
-            case ('DYNAMICS_FISL_H')
-               stop 'Not yet implemented'
+               case('DYNAMICS_FISL_P')
+                  istat = gmm_get(gmmk_qt1_s,qt1)
+                  istat = gmm_get(gmmk_tt1_s,tt1)
+                  istat = gmm_get(gmmk_st1_s,st1)
+                  call diag_fi (phi_0, st1, tt1, qt1, &
+                                l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
-            case('DYNAMICS_FISL_P')
-               istat = gmm_get(gmmk_qt1_s,qt1)
-               istat = gmm_get(gmmk_tt1_s,tt1)
-               istat = gmm_get(gmmk_st1_s,st1)
-               call diag_fi (phi_0, st1, tt1, qt1, &
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+               case('DYNAMICS_EXPO_H')
+                  istat = gmm_get(gmmk_qt1_s,qt1)
+                  phi_0(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
 
-            case('DYNAMICS_EXPO_H')
-               istat = gmm_get(gmmk_qt1_s,qt1)
-               phi_0(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+            end select
 
-         end select
+         else
 
-      else
+            select case ( trim(Dynamics_Kernel_S) )
 
-         select case ( trim(Dynamics_Kernel_S) )
+               case ('DYNAMICS_FISL_H')
+                  stop 'Not yet implemented'
 
-            case ('DYNAMICS_FISL_H')
-               stop 'Not yet implemented'
+               case('DYNAMICS_FISL_P')
+                  istat = gmm_get(gmmk_qt1_s,qt1)
+                  istat = gmm_get(gmmk_tt1_s,tt1)
+                  istat = gmm_get(gmmk_st1_s,st1)
+                  call diag_fi (phi, st1, tt1, qt1, &
+                                l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
-            case('DYNAMICS_FISL_P')
-               istat = gmm_get(gmmk_qt1_s,qt1)
-               istat = gmm_get(gmmk_tt1_s,tt1)
-               istat = gmm_get(gmmk_st1_s,st1)
-               call diag_fi (phi, st1, tt1, qt1, &
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+                  case('DYNAMICS_EXPO_H')
+                     istat = gmm_get(gmmk_qt1_s,qt1)
+                     phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
 
-            case('DYNAMICS_EXPO_H')
-               istat = gmm_get(gmmk_qt1_s,qt1)
-               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+               end select
 
-         end select
+               s_err_2_8=0.0
+               s_ref_2_8=0.0
+               do j = 1+pil_s,l_nj-pil_n
+                  do i = 1+pil_w,l_ni-pil_e
+                     s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+                     s_ref_2_8 = s_ref_2_8 + phi_0(i,j,1)**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+                  end do
+               end do
 
-         s_err_2_8=0.0
-         s_ref_2_8=0.0
-         do j = 1+pil_s,l_nj-pil_n
-            do i = 1+pil_w,l_ni-pil_e
-               s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
-               s_ref_2_8 = s_ref_2_8 + phi_0(i,j,1)**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
-            end do
-         end do
+               communicate_S = "GRID"
+               if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-         communicate_S = "GRID"
-         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+               call RPN_COMM_allreduce(s_err_2_8,  g_err_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+               call RPN_COMM_allreduce(s_ref_2_8,  g_ref_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
 
-         call RPN_COMM_allreduce(s_err_2_8,  g_err_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
-         call RPN_COMM_allreduce(s_ref_2_8,  g_ref_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+               !Evaluate Norms
+               !--------------
+               norm_2_8 = 10.**8
 
-         !Evaluate Norms
-         !--------------
-         norm_2_8 = 10.**8
-
-         if ( .not.almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
-            if (Lun_out>0.and.Ptopo_couleur==0) then
-               print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
-               write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-               write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
-               write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-               write (Lun_out,*) ' '
-            end if
+               if ( .not. almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
+               if (Lun_out>0.and.Ptopo_couleur==0) then
+                  print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
+                  write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+                  write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
+                  write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+                  write (Lun_out,*) ' '
+               end if
          end if
 
       end if
@@ -155,7 +154,7 @@
 
       do n=1,Tr3d_ntr
 
-         if (.NOT.((Tr3d_name_S(n)(1:2)=='Q1').or. &
+         if (.not.((Tr3d_name_S(n)(1:2)=='Q1').or. &
                    (Tr3d_name_S(n)(1:2)=='Q2').or. &
                    (Tr3d_name_S(n)(1:2)=='Q3').or. &
                    (Tr3d_name_S(n)(1:2)=='Q4'))) cycle
@@ -179,7 +178,7 @@
          call mass_tr (tracer_8,tr_r,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,1)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',"Mass of Mixing  (WET)","TIME T1",'  R= ', &
-                                                                  tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
+                                                               tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
 
          s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
          s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.
@@ -235,7 +234,7 @@
 
          !Print Norms
          !-----------
-         if (Lun_out>0.and.Ptopo_couleur==0) then
+         if (Lun_out>0 .and. Ptopo_couleur==0) then
             if (Tr3d_name_S(n)(1:2)=='Q1') name_S = 'TRACER Q1 '
             if (Tr3d_name_S(n)(1:2)=='Q2') name_S = 'TRACER Q2 '
             if (Tr3d_name_S(n)(1:2)=='Q3') name_S = 'TRACER Q3 '
@@ -273,24 +272,24 @@
 
          do k=1,G_nk
             do j = 1+pil_s,l_nj-pil_n
-            do i = 1+pil_w,l_ni-pil_e
+               do i = 1+pil_w,l_ni-pil_e
 
-               s_err_1_8 = s_err_1_8 + abs(cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-               s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_err_1_8 = s_err_1_8 + abs(cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
 
-               s_err_2_8 = s_err_2_8 +    (cly(i,j,k) - clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
-               s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_err_2_8 = s_err_2_8 +    (cly(i,j,k) - clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
 
-               s_err_m_8 = s_err_m_8 +    (cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-               s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_err_m_8 = s_err_m_8 +    (cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+                  s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
 
-               w1_8 = abs(cly(i,j,k) - clyref(i,j,k))
-               w2_8 = abs(             clyref(i,j,k))
+                  w1_8 = abs(cly(i,j,k) - clyref(i,j,k))
+                  w2_8 = abs(             clyref(i,j,k))
 
-               s_err_inf_8 = max(s_err_inf_8, w1_8)
-               s_ref_inf_8 = max(s_ref_inf_8, w2_8)
+                  s_err_inf_8 = max(s_err_inf_8, w1_8)
+                  s_ref_inf_8 = max(s_ref_inf_8, w2_8)
 
-            end do
+               end do
             end do
          end do
 
@@ -317,7 +316,7 @@
 
          !Print Norms
          !-----------
-         if (Lun_out>0.and.Ptopo_couleur==0) then
+         if (Lun_out>0 .and. Ptopo_couleur==0) then
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
             write (Lun_out,1001) "TRACER CLY ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L1    = ',norm_1_8
             write (Lun_out,1001) "TRACER CLY ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8

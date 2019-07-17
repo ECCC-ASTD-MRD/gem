@@ -70,14 +70,14 @@
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
-         iphytv = one         
+         iphytv = one
       else if (Schm_phycpl_S == 'AVG') then
          istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
          istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = Cstv_bA_m_8
          phy_bA_t_8 = Cstv_bA_8
-         iphytv = one         
+         iphytv = one
       else
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
@@ -85,7 +85,7 @@
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
-         iphytv = zero         
+         iphytv = zero
       end if
 
 !     Common coefficients
@@ -235,7 +235,7 @@
 
                F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz(i,j,k)  &
                              - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*F_w(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*F_w(i,j,km)) )
-               
+
                F_orc(i,j,k) = F_orc(i,j,k) + (1d0/Cstv_bA_8) * &
                              (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/F_t(i,j,k ) + &
                              Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/F_t(i,j,km) )

@@ -41,59 +41,59 @@
       YYG_lnj= l_nj
       YYG_pe_indx = Ptopo_gindx
 
-      call yyg_initblen ( YYG_BLEN_q2q            , &
-                          YYG_xg_8(1), YYG_yg_8(1), &
-                          YYG_xg_8, YYG_yg_8      , &
-                          YYG_xg_8, YYG_yg_8      , &
+      call yyg_initblen ( YYG_BLEN_q2q      , &
+                          YYG_xg_8, YYG_yg_8, &
+                          YYG_xg_8, YYG_yg_8, &
+                          YYG_xg_8, YYG_yg_8, &
                           G_ni, G_nj , &
                           G_ni, G_nj , &
                           G_ni ,G_nj  )
 
-      call yyg_initblen ( YYG_BLEN_uv2u             , &
-                          YYG_xgu_8(1), YYG_yg_8 (1), &
-                          YYG_xgu_8, YYG_yg_8       , &
-                          YYG_xg_8 , YYG_ygv_8      , &
+      call yyg_initblen ( YYG_BLEN_uv2u       , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
                           G_niu, G_nj , &
                           G_niu, G_nj , &
                           G_ni , G_njv  )
 
-      call yyg_initblen ( YYG_BLEN_uv2v             , &
-                          YYG_xg_8 (1), YYG_ygv_8(1), &
-                          YYG_xgu_8, YYG_yg_8       , &
-                          YYG_xg_8 , YYG_ygv_8      , &
+      call yyg_initblen ( YYG_BLEN_uv2v       , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
                           G_ni , G_njv, &
                           G_niu, G_nj , &
                           G_ni , G_njv  )
 
       call yyg_initcomm ( YYG_PILT_q2q,  &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          G_ni, G_nj , 0,0         , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          G_ni, G_nj , 0,0   , &
                           G_ni, G_nj , &
                           G_ni ,G_nj  )
 
-      call yyg_initcomm ( YYG_PILT_uv2u             , &
-                          YYG_xgu_8(1), YYG_yg_8 (1), &
-                          YYG_xgu_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8 (1), YYG_ygv_8(1), &
-                          G_niu, G_nj , 0,0         , &
+      call yyg_initcomm ( YYG_PILT_uv2u       , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          G_niu, G_nj , 0,0   , &
                           G_niu, G_nj , &
                           G_ni , G_njv  )
 
-      call yyg_initcomm ( YYG_PILT_uv2v             , &
-                          YYG_xg_8 (1), YYG_ygv_8(1), &
-                          YYG_xgu_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8 (1), YYG_ygv_8(1), &
-                          G_ni , G_njv, 0,0         , &
+      call yyg_initcomm ( YYG_PILT_uv2v       , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          G_ni , G_njv, 0,0   , &
                           G_niu, G_nj , &
                           G_ni , G_njv  )
 
-      call yyg_initcomm ( YYG_NEAR_q2q             , &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          YYG_xg_8(1), YYG_yg_8 (1), &
-                          G_ni, G_nj , 0,0         , &
+      call yyg_initcomm ( YYG_NEAR_q2q       , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          G_ni, G_nj , 0,0   , &
                           G_ni, G_nj , &
                           G_ni ,G_nj , F_inttype_S='NEAR' )
 
@@ -108,10 +108,10 @@
          YYG_pe_indx(4,k)= Ptopo_gindx(4,k)+G_halox*north
       end do
 
-      call yyg_initcomm ( YYG_HALO_q2q                 ,&
-                          YYG_xg_8(1), YYG_yg_8 (1)    ,&
-                          YYG_xg_8(1), YYG_yg_8 (1)    ,&
-                          YYG_xg_8(1), YYG_yg_8 (1)    ,&
+      call yyg_initcomm ( YYG_HALO_q2q           ,&
+                          YYG_xg_8, YYG_yg_8     ,&
+                          YYG_xg_8, YYG_yg_8     ,&
+                          YYG_xg_8, YYG_yg_8     ,&
                           G_ni, G_nj , G_halox, G_haloy,&
                           G_ni, G_nj , &
                           G_ni ,G_nj  )

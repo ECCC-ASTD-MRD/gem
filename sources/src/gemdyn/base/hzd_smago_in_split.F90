@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r hzd_smago_in_split - Applies horizontal Smagorinsky-type nonlinear diffusion
-!                           in the split mode      
+!                           in the split mode
 !
       subroutine hzd_smago_in_split (F_u, F_v, F_w, F_t, F_zd, &
                                lminx, lmaxx, lminy, lmaxy, &
@@ -94,13 +94,13 @@
                                .false., 'CUBIC', .true.)
                call yyg_xchng (pw_pt_plus, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_nk+1, &
                                .false., 'CUBIC', .true.)
-              
+
             else
                call rpn_comm_xch_halo( F_t, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
                call rpn_comm_xch_halo( pw_pt_plus, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk+1, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-                           
+
             end if
             ismagprandtl    = 1./Hzd_smago_prandtl
          end if

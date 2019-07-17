@@ -28,7 +28,7 @@
       integer, intent(in) :: F_errcode
 
 !Author: Claude Girard, July 2017 (initial version)
-!        Syed Husain, June 2019 (revision)         
+!        Syed Husain, June 2019 (revision)
 
       integer :: k, AA, BB, CC
       real(kind=REAL64), dimension(G_nk) :: r_8
@@ -100,8 +100,8 @@
                              +gama_8*(epsi_8*Ver_wp_8%m(k)*Ver_idz_8%t(k)   - half*mu_8*Ver_idz_8%m(k))
          Opr_opszpl_8(CC+k) =-gama_8*(epsi_8*Ver_wp_8%m(k)*Ver_idz_8%t(k)   + half*mu_8*Ver_idz_8%m(k))
       end do
-      Opr_opszpl_8(AA+G_nk) =+gama_8*(epsi_8*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1)+ & 
-                                      epsi_8*Ver_wp_8%m(G_nk)*Ver_betas_8*Ver_idz_8%t(G_nk)+ & 
+      Opr_opszpl_8(AA+G_nk) =+gama_8*(epsi_8*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1)+ &
+                                      epsi_8*Ver_wp_8%m(G_nk)*Ver_betas_8*Ver_idz_8%t(G_nk)+ &
                                       half*mu_8*Ver_idz_8%m(G_nk)*(one+Ver_betas_8))
       Opr_opszpl_8(BB+G_nk) =-gama_8*(epsi_8*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1) + &
                                       epsi_8*Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk  )*(Ver_alfas_8-one) + &

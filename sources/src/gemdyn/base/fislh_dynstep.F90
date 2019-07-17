@@ -61,7 +61,7 @@
 
       call psadj ( Step_kount )
 
-      call adz_conserv_tr ()
+      call adz_tracers ()
 
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the

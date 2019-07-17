@@ -320,20 +320,20 @@
 
 !$omp parallel private(m,j)
 !$omp do
- 	   do m=1,lmax+1
+      do m=1,lmax+1
          do j=1,nlat
             cc(1,j,m)=0.d0
             cc(2,j,m)=0.d0
             cc(1,j,m)=cc(1,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ar_s(1:lmax-lmin+1,m))
             cc(2,j,m)=cc(2,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ai_s(1:lmax-lmin+1,m))
          end do
- 	   end do
+      end do
 !$omp end do
 !$omp end parallel
 
 ! Fourier Transform (inverse)
 
-	   wrk1=0.0
+      wrk1=0.0
       n=-1
       do i=1,nlat
          do j=1,lmax+1

@@ -16,7 +16,8 @@
 !**s/r calc_pressure - Compute pressure on momentum and thermodynamic
 !                      levels and also surface pressure.
 !
-      subroutine calc_pressure (F_pm, F_pt, F_p0, F_s, Minx,Maxx,Miny,Maxy,Nk)
+      subroutine calc_pressure ( F_pm, F_pt, F_p0, F_s, &
+                                 Minx,Maxx,Miny,Maxy, Nk )
       use gmm_vt1
       use gmm_geof
       use glb_ld
@@ -25,36 +26,41 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,Nk
-      real F_pm(Minx:Maxx,Miny:Maxy,Nk), F_pt(Minx:Maxx,Miny:Maxy,Nk), &
-           F_p0(Minx:Maxx,Miny:Maxy)   , F_s (Minx:Maxx,Miny:Maxy)
+      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(IN ) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(OUT) :: F_p0
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(OUT) :: F_pm, F_pt
 
       integer i, j, k, istat
-      real wk1(l_ni,l_nj,2),wk2(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
       istat = gmm_get (gmmk_sls_s ,sls )
 
-!$omp parallel private(wk1,wk2,i,j)
+!$omp parallel
 !$omp do
-      do k=1,l_nk+1
+      do k=1,l_nk
          do j=1,l_nj
          do i=1,l_ni
-            wk1(i,j,1) = Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j) + Ver_c_8%m(k) * sls(i,j)
-            wk1(i,j,2) = Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j) + Ver_c_8%t(k) * sls(i,j)
+            F_pm(i,j,k) = exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                              +Ver_c_8%m(k) * sls(i,j))
+            F_pt(i,j,k) = exp( Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)&
+                              +Ver_c_8%t(k) * sls(i,j))
          end do
          end do
-         call vsexp(wk2(1,1,1), wk1(1,1,1), 2*l_ni*l_nj)
-         if (k < l_nk+1) then
-            F_pm(1:l_ni,1:l_nj,k) = wk2(1:l_ni,1:l_nj,1)
-            F_pt(1:l_ni,1:l_nj,k) = wk2(1:l_ni,1:l_nj,2)
-         else
-            F_p0(1:l_ni,1:l_nj)= wk2(1:l_ni,1:l_nj,1)
-         end if
+      end do
+!$omp enddo
+
+      k= l_nk+1
+!$omp do
+      do j=1,l_nj
+         do i=1,l_ni
+            F_p0(i,j)= exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                           +Ver_c_8%m(k) * sls(i,j))
+        end do
       end do
 !$omp enddo
 !$omp end parallel
 !     ________________________________________________________________
 !
       return
-      end
+      end subroutine calc_pressure

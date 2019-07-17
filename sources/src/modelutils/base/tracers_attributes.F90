@@ -161,7 +161,7 @@ contains
       integer, save :: default_massc = 0
       real, save :: default_vmin  = -1*huge(1.)
       real, save :: default_vmax  = huge(1.)
-      character(len=32), save :: default_intp_S  = 'CUBIC'
+      character(len=32), save :: default_intp_S  = 'TRICUB'
 
       character(len=2048) :: attributes_S, list_S(NMAX), &
            key_S, val_S, intp_S

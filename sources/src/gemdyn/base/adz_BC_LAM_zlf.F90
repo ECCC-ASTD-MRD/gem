@@ -18,7 +18,9 @@
       subroutine adz_BC_LAM_zlf (F1,F2,F_minx,F_maxx,F_miny,F_maxy,F_ni,F_nj,F_nk,F_setup)
 
       use glb_ld
+      use HORgrid_options
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -35,13 +37,20 @@
       !     Various setups to prepare Bermejo-Conde LAM with ZLF
       !=========================================================
 
-      integer i0_0,j0_0,in_0,jn_0,i0_1,j0_1,in_1,jn_1,i0_2,j0_2,in_2,jn_2
-
+      integer :: i0_0,j0_0,in_0,jn_0,i0_1,j0_1,in_1,jn_1,i0_2,j0_2,in_2,jn_2,ext,BCS_BASE
+!
+!---------------------------------------------------------------------
+!
       !In F1: Set ZERO piloting conditions outside EXTENSION (CFL)
       !-----------------------------------------------------------
       if (F_setup==1) then
 
-         call adz_get_ij0n_ext (i0_1,in_1,j0_1,jn_1,1)
+         ext = Grd_maxcfl + 1
+
+         i0_1 =    1 + pil_w - ext*west
+         in_1 = l_ni - pil_e + ext*east
+         j0_1 =    1 + pil_s - ext*south
+         jn_1 = l_nj - pil_n + ext*north
 
          if (l_west)  F1(1     :i0_1-1,1     :F_nj,  1:F_nk) = 0.
          if (l_east)  F1(in_1+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
@@ -52,7 +61,10 @@
       !--------------------------------------------------
       else if (F_setup==2) then
 
-         call adz_get_ij0n_ext (i0_0,in_0,j0_0,jn_0,0)
+         i0_0 = 1    + pil_w
+         in_0 = l_ni - pil_e
+         j0_0 = 1    + pil_s
+         jn_0 = l_nj - pil_n
 
          if (l_west)  F2(1     :i0_0-1,1     :F_nj,  1:F_nk) = F1(1     :i0_0-1,1     :F_nj,  1:F_nk)
          if (l_east)  F2(in_0+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_0+1:F_ni,  1     :F_nj,  1:F_nk)
@@ -63,7 +75,12 @@
       !----------------------------------------------------------------
       else if (F_setup==3) then
 
-         call adz_get_ij0n_ext (i0_2,in_2,j0_2,jn_2,2)
+         BCS_BASE = 4
+
+         i0_2 =    1 + BCS_BASE*west
+         in_2 = l_ni - BCS_BASE*east
+         j0_2 =    1 + BCS_BASE*south
+         jn_2 = l_nj - BCS_BASE*north
 
          if (l_west)  F1(1     :i0_2-1,1     :F_nj,  1:F_nk) = 0.
          if (l_east)  F1(in_2+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
@@ -74,7 +91,10 @@
       !----------------------------------------------------------
       else if (F_setup==4) then
 
-         call adz_get_ij0n_ext (i0_0,in_0,j0_0,jn_0,0)
+         i0_0 = 1    + pil_w
+         in_0 = l_ni - pil_e
+         j0_0 = 1    + pil_s
+         jn_0 = l_nj - pil_n
 
          if (l_west)  F1(1     :i0_0-1,1     :F_nj,  1:F_nk) = F2(1     :i0_0-1,1     :F_nj,  1:F_nk)
          if (l_east)  F1(in_0+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_0+1:F_ni,  1     :F_nj,  1:F_nk)
@@ -83,10 +103,11 @@
 
       else
 
-         call handle_error (-1,'ADZ_BC_LAM_ZLF','SETUP not defined')
+         call gem_error (-1,'ADZ_BC_LAM_ZLF','SETUP not defined')
 
       end if
-
+!
+!---------------------------------------------------------------------
+!
       return
-
       end subroutine adz_BC_LAM_zlf

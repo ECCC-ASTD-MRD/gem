@@ -13,11 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r calc_pressure_8 - Compute pressure on momentum and thermodynamic
-!                        levels and also surface pressure.
-
-      subroutine calc_pressure_8 ( F_pm_8, F_pt_8, F_p0_8, F_s, &
-                                   Minx,Maxx,Miny,Maxy,Nk )
+!**s/r calc_pressure_8 - see calc_pressure
+!
+      subroutine calc_pressure_8 ( F_pm, F_pt, F_p0, F_s, &
+                                   Minx,Maxx,Miny,Maxy, Nk )
       use gmm_vt1
       use gmm_geof
       use glb_ld
@@ -27,40 +26,42 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,Nk
-      real(kind=REAL64) F_pm_8(Minx:Maxx,Miny:Maxy,Nk), &
-                        F_pt_8(Minx:Maxx,Miny:Maxy,Nk), &
-                        F_p0_8(Minx:Maxx,Miny:Maxy)
-      real F_s (Minx:Maxx,Miny:Maxy)
-
-      integer :: i, j, k, istat
-      real(kind=REAL64), dimension(l_ni,l_nj,2) :: wk1_8, wk2_8
+      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(IN ) :: F_s
+      real (kind=REAL64),dimension(Minx:Maxx,Miny:Maxy   ),intent(OUT)::&
+                                                                    F_p0
+      real (kind=REAL64),dimension(Minx:Maxx,Miny:Maxy,Nk),intent(OUT)::&
+                                                              F_pm, F_pt
+      integer i, j, k, istat
 !     ________________________________________________________________
 !
       istat = gmm_get (gmmk_sls_s ,sls )
 
-!$omp parallel private(wk1_8,wk2_8,i,j,k)
+!$omp parallel
 !$omp do
-      do k=1,l_nk+1
+      do k=1,l_nk
          do j=1,l_nj
-            do i=1,l_ni
-               wk1_8(i,j,1) = Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j) + Ver_c_8%m(k) * sls(i,j)
-               wk1_8(i,j,2) = Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j) + Ver_c_8%t(k) * sls(i,j)
-               wk2_8(i,j,1) = exp(wk1_8(i,j,1))
-               wk2_8(i,j,2) = exp(wk1_8(i,j,2))
-            end do
+         do i=1,l_ni
+            F_pm(i,j,k) = exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                              +Ver_c_8%m(k) * sls(i,j))
+            F_pt(i,j,k) = exp( Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)&
+                              +Ver_c_8%t(k) * sls(i,j))
          end do
+         end do
+      end do
+!$omp enddo
 
-         if (k < l_nk+1) then
-            F_pm_8(1:l_ni,1:l_nj,k) = wk2_8(1:l_ni,1:l_nj,1)
-            F_pt_8(1:l_ni,1:l_nj,k) = wk2_8(1:l_ni,1:l_nj,2)
-         else
-            F_p0_8(1:l_ni,1:l_nj) = wk2_8(1:l_ni,1:l_nj,1)
-         end if
+      k= l_nk+1
+!$omp do
+      do j=1,l_nj
+         do i=1,l_ni
+            F_p0(i,j)= exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                           +Ver_c_8%m(k) * sls(i,j))
+        end do
       end do
 !$omp enddo
 !$omp end parallel
 !     ________________________________________________________________
 !
       return
-      end
+      end subroutine calc_pressure_8

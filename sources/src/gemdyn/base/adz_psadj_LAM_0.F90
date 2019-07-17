@@ -19,9 +19,7 @@
       subroutine adz_psadj_LAM_0 ()
 
       use adz_mem
-      use adz_options
-      use gmm_itf_mod
-      use gmm_tracers
+      use tr3d
 
       implicit none
 
@@ -35,35 +33,22 @@
       !     Reference: Aranami et al.,2015,QJRMS,141,1795-1803
       !=================================================================
 
-      !-----------------------------------------------------------------
-
-      integer :: empty_i,err
-      real, dimension(1,1,1) :: empty
-
-      !-----------------------------------------------------------------
-
+      real :: empty
+      integer :: empty_i
+!
+!---------------------------------------------------------------------
+!
       !Estimate FLUX_out/FLUX_in using Tracer=1
       !----------------------------------------
-      Adz_Mass_Cons_tr_L = .true.
-      Adz_BC_LAM_flux_n = 2
-      Adz_pos_reset = 1
-
-      call adz_cubic (empty,empty,                               &
-                      l_ni,l_nj,l_nk,l_minx,l_maxx,l_miny,l_maxy,&
-                      empty_i,empty_i,empty_i,empty_i,Adz_k0,'t',.false.)
-
-      !Reset to DEFAULT
-      !----------------
-      Adz_Mass_Cons_tr_L = .false.
-      Adz_BC_LAM_flux_n = 0
-      Adz_pos_reset = 0
+      call adz_BC_LAM_Aranami (empty,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
+                               empty_i,MAXTR3D+1)
 
       !Adjust surface pressure
       !-----------------------
-      err = gmm_get(gmmk_cub_o_s,fld_cub_o)
-      err = gmm_get(gmmk_cub_i_s,fld_cub_i)
-
-      call psadj_LAM (fld_cub_o,fld_cub_i,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0)
-
+      call psadj_LAM (Adz_flux(l_minx,l_miny,1,1),Adz_flux(l_minx,l_miny,1,2),&
+                      l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0)
+!
+!---------------------------------------------------------------------
+!
       return
       end

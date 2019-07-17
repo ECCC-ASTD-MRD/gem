@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r smago_in_rhs - Applies horizontal Smagorinsky-type nonlinear diffusion
-!                     in the tendency mode      
+!                     in the tendency mode
 !
       subroutine smago_in_rhs (F_du, F_dv, F_dw, F_dlth, F_u, F_v, F_w, F_t, F_s, &
                                F_sl,lminx, lmaxx, lminy, lmaxy, nk)
@@ -44,7 +44,7 @@
 !Author:  Claude Girard, Syed Husain (Nov 2017)
 !
 !Bugfix: Syed Husain (Jul 2019)
-!      
+!
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v

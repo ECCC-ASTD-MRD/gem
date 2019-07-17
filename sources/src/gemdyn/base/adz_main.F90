@@ -15,29 +15,24 @@
 
       subroutine adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc ,&
                             rhsc, orhst,  rhst, orhsf, rhsf ,&
-                            orhsw, rhsw, Minx,Maxx,Miny,Maxy,&
-                            Nk, F_tracers_L )
+                            orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
       use ISO_C_BINDING
       use adz_mem
-      use adz_tricub
+      use adz_interp_rhs_mod
       use dynkernel_options
       use gem_timing
       use gmm_vt0
       use gmm_vt1
       use gmm_pw
-      use gmm_itf_mod
-      use gmm_tracers
-      use tr3d
       implicit none
 #include <arch_specific.hf>
 
-      logical,intent(in) :: F_tracers_L
       integer,intent(in) :: Minx,Maxx,Miny,Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(in)  :: &
                              orhsu, orhsv, orhsc, orhst, orhsf, orhsw
       real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(out) :: &
                              rhsu, rhsv, rhsc,  rhst, rhsf, rhsw
-      integer :: n, err
+      integer :: n
 !
 !     ---------------------------------------------------------------
 !
@@ -51,18 +46,18 @@
 
       Adz_stack(1)%src => orhsu
       Adz_stack(1)%dst =>  rhsu
-      call adz_cubicLag ( Adz_stack,1,Adz_pmu,Adz_cpntr_q,Adz_num_u,&
-                        Adz_i0u,Adz_inu,Adz_j0,Adz_jn,Adz_k0,.false.)
+      call adz_tricub_rhs ( Adz_stack,1,Adz_pmu,Adz_cpntr_q,Adz_num_u,&
+                            Adz_i0u,Adz_inu,Adz_j0,Adz_jn,Adz_k0 )
 
       Adz_stack(1)%src => orhsv
       Adz_stack(1)%dst =>  rhsv
-      call adz_cubicLag ( Adz_stack,1,Adz_pmv,Adz_cpntr_q,Adz_num_v,&
-                        Adz_i0,Adz_in,Adz_j0v,Adz_jnv,Adz_k0,.false.)
+      call adz_tricub_rhs ( Adz_stack,1,Adz_pmv,Adz_cpntr_q,Adz_num_v,&
+                            Adz_i0,Adz_in,Adz_j0v,Adz_jnv,Adz_k0 )
 
       Adz_stack(1)%src => orhsc
       Adz_stack(1)%dst =>  rhsc
-      call adz_cubicLag ( Adz_stack,1,Adz_pm ,Adz_cpntr_q,Adz_num_q,&
-                        Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.false.)
+      call adz_tricub_rhs ( Adz_stack,1,Adz_pm ,Adz_cpntr_q,Adz_num_q,&
+                            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
 
       Adz_stack(1)%src => orhst
       Adz_stack(1)%dst =>  rhst
@@ -74,28 +69,8 @@
          Adz_stack(n)%src => orhsw
          Adz_stack(n)%dst =>  rhsw
       endif
-      call adz_cubicLag ( Adz_stack,n,Adz_pt ,Adz_cpntr_t,Adz_num_t,&
-                        Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t,.false.)
-
-      if (F_tracers_L) then
-
-      do n=1, Tr3d_ntrNT
-         err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':P' ,Adz_stack(n)%src)
-         err= gmm_get('TR/'//trim(Tr3d_NT_S(n))//':M' ,Adz_stack(n)%dst)
-      end do
-      call adz_cubicLag ( Adz_stack, Tr3d_ntrNT, &
-           Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
-           Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.false. )
-
-      do n=1, Tr3d_ntrM1
-         err= gmm_get('TR/'//trim(Tr3d_M1_S(n))//':P' ,Adz_stack(n)%src)
-         err= gmm_get('TR/'//trim(Tr3d_M1_S(n))//':M' ,Adz_stack(n)%dst)
-      end do
-      call adz_cubicLag ( Adz_stack, Tr3d_ntrM1, &
-            Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
-            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,.true. )
-
-      end if
+      call adz_tricub_rhs ( Adz_stack,n,Adz_pt ,Adz_cpntr_t,Adz_num_t,&
+                            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t )
 
       call gemtime_stop (31)
 !

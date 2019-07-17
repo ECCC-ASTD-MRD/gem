@@ -49,7 +49,7 @@
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)  :: F_nu,F_nv,F_nt,F_nw
 !
 !Author: Claude Girard, July 2017
-!        Syed Husain, June 2019 (major revision)       
+!        Syed Husain, June 2019 (major revision)
 
 #include <arch_specific.hf>
 

@@ -15,7 +15,6 @@
 
 subroutine sort_ip1 ( F_keys, F_ip1, F_nka )
    implicit none
-!!!#include <arch_specific.hf>
 
    integer F_nka
    integer F_keys(F_nka), F_ip1 (F_nka)
@@ -34,7 +33,7 @@ subroutine sort_ip1 ( F_keys, F_ip1, F_nka )
    !
    ! --------------------------------------------------------------------
    !
-   cnt= 0 ; diag_ip1= 0
+   cnt= 0 ; diag_ip1= 0 ; kind= -1
 
    do k= 1, F_nka
       err = fstprm ( F_keys(k), dateo, deet, ipas, ni, nj, nk,&

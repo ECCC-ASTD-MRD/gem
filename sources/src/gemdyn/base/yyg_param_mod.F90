@@ -65,9 +65,9 @@ contains
 
       integer, intent(in) :: F_i0,F_j0,NIU, NJU, NIV, NJV
       integer, intent(out) :: F_x1,F_y1,F_x2,F_y2
-      real(kind=REAL64) , intent(in) :: F_posx(*), F_posy(*) ! target positions
-      real(kind=REAL64) , intent(in) :: F_pux (*), F_puy (*) ! u source positions
-      real(kind=REAL64) , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
+      real(kind=REAL64) , intent(in) :: F_posx(1-G_ni:2*G_ni), F_posy(1-G_nj:2*G_nj) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux (1-G_ni:2*G_ni), F_puy (1-G_nj:2*G_nj) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (1-G_ni:2*G_ni), F_pvy (1-G_nj:2*G_nj) ! v source positions
       real(kind=REAL64) , intent(out) :: F_xp,F_yp, F_s(4)
 !
 !----------------------------------------------------------------------
@@ -78,12 +78,12 @@ contains
       F_xp= F_xp+pi_8
       ! find the global lower indexes (imx1,imy1) for cubic
       ! interpolation of u-component to target location (x_a,y_a)
-      call localise ( F_x1,F_y1, F_xp,F_yp,&
-                      F_pux,F_puy, geomh_hx_8,geomh_hy_8,1,1 )
+      call localise2 ( F_x1,F_y1, F_xp,F_yp,&
+                      F_pux,F_puy, geomh_hx_8,geomh_hy_8,1,1,G_ni,G_nj )
       ! find the global lower indexes (imx2,imy2) for cubic
       ! interpolation of v-component to target location (x_a,y_a)
-      call localise ( F_x2,F_y2, F_xp,F_yp,&
-                      F_pvx,F_pvy, geomh_hx_8,geomh_hy_8,1,1 )
+      call localise2 ( F_x2,F_y2, F_xp,F_yp,&
+                      F_pvx,F_pvy, geomh_hx_8,geomh_hy_8,1,1,G_ni,G_nj )
       ! impose global limits to these indexes
       F_x1 = min(max(F_x1-YYG_low_CoL,glb_pil_w+1),&
                      NIU -glb_pil_e-YYG_high_CoL)
@@ -250,8 +250,8 @@ contains
 
       integer, intent(in)    :: F_i0,F_j0,F_x1,F_y1,F_x2,F_y2
       integer, intent(inout) :: F_recv(*), F_send(*)
-      real(kind=REAL64) , intent(in) :: F_pux (*), F_puy (*) ! u source positions
-      real(kind=REAL64) , intent(in) :: F_pvx (*), F_pvy (*) ! v source positions
+      real(kind=REAL64) , intent(in) :: F_pux (1-G_ni:2*G_ni), F_puy (1-G_nj:2*G_nj) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (1-G_ni:2*G_ni), F_pvy (1-G_nj:2*G_nj) ! v source positions
       real(kind=REAL64) , intent(in) :: F_xp,F_yp, F_s(2,2)
       type(YYG_comm_param), intent(inout) :: F_comm
 
@@ -325,14 +325,12 @@ contains
       character(len=*), optional, intent(in) :: F_inttype_S
       integer, intent(in) :: NI, NJ, NIU, NJU, NIV, NJV, &
                              F_halox, F_haloy
-      real(kind=REAL64) , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
-      real(kind=REAL64) , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
-      real(kind=REAL64) , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
+      real(kind=REAL64) , intent(in) :: F_posx(1-G_ni:2*G_ni), F_posy(1-G_nj:2*G_nj) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux (1-G_ni:2*G_ni), F_puy (1-G_nj:2*G_nj) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (1-G_ni:2*G_ni), F_pvy (1-G_nj:2*G_nj) ! v source positions
       type(YYG_comm_param) , intent(out) :: F_comm
 
-      integer i,j
-!,ksend,krecv
-      integer imx1,imx2,imy1,imy2
+      integer i,j,imx1,imx2,imy1,imy2
       integer, dimension (:), allocatable :: recv_len,send_len
       real(kind=REAL64)  s(2,2),x_a,y_a
 !
@@ -462,16 +460,15 @@ contains
 #include <arch_specific.hf>
 
       integer, intent(in) :: NI, NJ, NIU, NJU, NIV, NJV
-      real(kind=REAL64) , intent(in) :: F_posx(NI), F_posy(NJ) ! target positions
-      real(kind=REAL64) , intent(in) :: F_pux(*), F_puy(*)     ! u source positions
-      real(kind=REAL64) , intent(in) :: F_pvx(*), F_pvy(*)     ! v source positions
+      real(kind=REAL64) , intent(in) :: F_posx(1-G_ni:2*G_ni), F_posy(1-G_nj:2*G_nj) ! target positions
+      real(kind=REAL64) , intent(in) :: F_pux (1-G_ni:2*G_ni), F_puy (1-G_nj:2*G_nj) ! u source positions
+      real(kind=REAL64) , intent(in) :: F_pvx (1-G_ni:2*G_ni), F_pvy (1-G_nj:2*G_nj) ! v source positions
       type(YYG_comm_param) , intent(out) :: F_comm
 
 !author
 !     Abdessamad Qaddouri/V.Lee - October 2009
 
-      integer i,j
-      integer imx1,imx2,imy1,imy2
+      integer i,j,imx1,imx2,imy1,imy2
       integer, dimension (:), allocatable :: recv_len,send_len
       real(kind=REAL64)  s(2,2),x_a,y_a
 !
@@ -541,8 +538,7 @@ contains
 
             call yyg_setcomm ( F_comm, i,j, recv_len,send_len,&
                                imx1,imy1,imx2,imy2, x_a,y_a,s,&
-                               F_pux(G_ni+1),F_puy(G_nj+1)   ,&
-                               F_pvx(G_ni+1),F_pvy(G_nj+1) )
+                               F_pux, F_puy, F_pvx, F_pvy )
          end if
 
       end do
@@ -788,8 +784,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      allocate (YYG_xg_8 (1-G_ni:2*G_ni  ),YYG_yg_8 (1-G_nj:2*G_nj  ),&
-                YYG_xgu_8(1-G_ni:2*G_ni-1),YYG_ygv_8(1-G_nj:2*G_nj-1) )
+      allocate (YYG_xg_8 (1-G_ni:2*G_ni),YYG_yg_8 (1-G_nj:2*G_nj),&
+                YYG_xgu_8(1-G_ni:2*G_ni),YYG_ygv_8(1-G_nj:2*G_nj) )
 
       do i=1,G_ni
          YYG_xg_8(i) = G_xg_8(i)

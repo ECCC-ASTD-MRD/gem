@@ -141,8 +141,7 @@
 
       call adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc, rhsc, orhst,&
                       rhst, orhsf, rhsf, orhsw, rhsw              ,&
-                      l_minx,l_maxx,l_miny,l_maxy, l_nk           ,&
-                      (Orh_icn==Schm_itcn) )
+                      l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
       call gemtime_stop(21)
 

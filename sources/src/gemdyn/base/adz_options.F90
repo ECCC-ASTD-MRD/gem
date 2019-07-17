@@ -70,12 +70,6 @@ module adz_options
    !# rank in adz_BC_pexp_list(PEXP_LIST_MAX) to choose P exponent REAL
    integer :: adz_BC_pexp_n
 
-   !# Bermejo-Conde LAM: Components
-   !# * 0 -> Advection only
-   !# * 1 -> Advection+Flux
-   !# * 2 -> Flux only
-   integer :: adz_BC_LAM_flux_n = 0
-
    !# Bermejo-Conde LAM: Pointers mask_o/mask_i
    real, dimension(:,:,:), allocatable :: Adz_BC_LAM_mask_o, Adz_BC_LAM_mask_i
 
@@ -84,16 +78,8 @@ module adz_options
    !# * 2 -> Bermejo-Conde Flux ZLF
    integer :: adz_maxcfl_fact = 1
 
-   !# True-> Mass Conservation/Shape-preserving for at least one tracer
-   logical :: adz_Mass_Cons_L = .false.
-
-   !# True-> Mass Conservation/Shape-preserving for current tracer
-   logical :: adz_Mass_Cons_tr_L = .false.
-
-   !# Bermejo-Conde LAM Aranami: Computations related to upstream positions done at each timestep
-   !# * 0 -> No
-   !# * 1 -> Yes
-   integer :: adz_pos_reset = 0
+   !# True-> Bermejo-Conde Flux ZLF is required for at least one tracer
+   logical :: adz_BC_LAM_zlf_L = .false.
 
    !# South boundary in GY for an embedded LAM
    integer :: adz_pil_sub_s = -1
@@ -114,11 +100,6 @@ module adz_options
    !# Core/Subset areas
    real(kind=REAL64) :: adz_gc_area_8,adz_gs_area_8
 
-   !# Variable for NONE/Cubic/Quintic Interpolation
-   character(len=12) :: adz_intp_S = 'CUBIC'
-
-   integer, pointer, contiguous, dimension(:) :: ii_w
-
 contains
 
 !**s/r adz_nml - Read namelist adz
@@ -127,7 +108,6 @@ contains
       use adv_grid
       use HORgrid_options
       use lun
-      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 

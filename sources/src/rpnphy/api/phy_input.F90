@@ -57,7 +57,7 @@ module phy_input_mod
    integer, external :: phyent2per, phyfillbus
 
    logical, parameter :: IS_DIR = .true.
- 
+
    character(len=32), parameter  :: VGRID_M_S = 'ref-m'
    character(len=32), parameter  :: VGRID_T_S = 'ref-t'
    character(len=32), parameter  :: PHY_VGRID_M_S = 'phy-m'
@@ -73,7 +73,7 @@ contains
    function phy_input(pre_fold_opr_clbk, F_step, F_incfg_S, F_basedir_S, &
         F_geoname_S) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,external :: pre_fold_opr_clbk
       integer,intent(in) :: F_step
@@ -266,8 +266,8 @@ contains
                     &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
             endif
 
-            if (associated(data)) deallocate(data,stat=istat2)
-            if (associated(data2)) deallocate(data2,stat=istat2)
+!            if (associated(data)) deallocate(data,stat=istat2)
+!            if (associated(data2)) deallocate(data2,stat=istat2)
 
             call collect_error(istat)
             if (.not.RMN_IS_OK(istat)) then
@@ -450,7 +450,7 @@ contains
             call msg(MSG_INFO,'(phy_input) No list of dyn read tracers found')
          endif
       endif
-      if (associated(my_list_s) .and. my_step /= 0) my_list_s(:) = ''  
+      if (associated(my_list_s) .and. my_step /= 0) my_list_s(:) = ''
       ! ---------------------------------------------------------------------
       return
    end subroutine priv_dyninreadlist

@@ -17,9 +17,9 @@
 
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
+      use adz_mem
       use geomh
       use gem_options
-      use glb_ld
       use ctrl
       use lun
       use tr3d
@@ -71,7 +71,7 @@
          Tr3d_hzd (dejala)= pmeta(i)%hzd   ; Tr3d_wload(dejala)= pmeta(i)%wload
          Tr3d_mono(dejala)= pmeta(i)%monot ; Tr3d_mass (dejala)= pmeta(i)%massc
          Tr3d_vmin(dejala)= pmeta(i)%vmin  ; Tr3d_vmax (dejala)= pmeta(i)%vmax
-         Tr3d_intp(dejala)= 'CUBIC'
+         Tr3d_intp(dejala)= 'TRICUB'
       end do
 
       do i=1,MAXTR3D
@@ -110,28 +110,41 @@
          Tr3d_hzd   (Tr3d_ntr)= .false. ; Tr3d_wload(Tr3d_ntr)= .false.
          Tr3d_mono  (Tr3d_ntr)= 0       ; Tr3d_mass (Tr3d_ntr)= 0
          Tr3d_vmin  (Tr3d_ntr)= 0.      ; Tr3d_vmax (Tr3d_ntr)= huge(1.)
-         Tr3d_intp  (Tr3d_ntr)= 'CUBIC'
+         Tr3d_intp  (Tr3d_ntr)= 'TRICUB'
       else
          Tr3d_wload(dejala)= .false.
       end if
 
-      Tr3d_ntrNT=0 ; Tr3d_ntrM1=0 ; Tr3d_ntrMC=0
+      Tr3d_ntrTRICUB_NT= 0 ; Tr3d_ntrTRICUB_WP= 0
+      Tr3d_ntrBICHQV_NT= 0 ; Tr3d_ntrBICHQV_WP= 0
 
       do i=1, Tr3d_ntr
-         if ( (Tr3d_mass(i) == 0) .and. (Tr3d_mono(i) < 2) .and. (Tr3d_intp(i) == 'CUBIC') )  then
-            if (Tr3d_mono(i) == 0) then
-               Tr3d_ntrNT= Tr3d_ntrNT + 1
-               Tr3d_NT_S(Tr3d_ntrNT) = Tr3d_name_S(i)
-            end if
-            if (Tr3d_mono(i) == 1) then
-               Tr3d_ntrM1= Tr3d_ntrM1 + 1
-               Tr3d_M1_S(Tr3d_ntrM1) = Tr3d_name_S(i)
-            end if
-         else
-            Tr3d_ntrMC= Tr3d_ntrMC + 1
-            Tr3d_MC_S(Tr3d_ntrMC) = Tr3d_name_S(i)
+         if (Tr3d_intp(i) == 'TRICUB') then
+            if ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
+               Tr3d_ntrTRICUB_NT= Tr3d_ntrTRICUB_NT+1
+               Tr3d_TRICUB_NT_S(Tr3d_ntrTRICUB_NT)= Tr3d_name_S(i)
+               Tr3d_TRICUB_NT  (Tr3d_ntrTRICUB_NT)= i
+            else
+               Tr3d_ntrTRICUB_WP= Tr3d_ntrTRICUB_WP+1
+               Tr3d_TRICUB_WP_S(Tr3d_ntrTRICUB_WP)= Tr3d_name_S(i)
+               Tr3d_TRICUB_WP  (Tr3d_ntrTRICUB_WP)= i
+            endif
+         endif
+         if (Tr3d_intp(i) == 'BICUBH_QV') then
+            if ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
+               Tr3d_ntrBICHQV_NT= Tr3d_ntrBICHQV_NT+1
+               Tr3d_BICHQV_NT_S(Tr3d_ntrBICHQV_NT)= Tr3d_name_S(i)
+               Tr3d_BICHQV_NT  (Tr3d_ntrBICHQV_NT)= i
+            else
+               Tr3d_ntrBICHQV_WP= Tr3d_ntrBICHQV_WP+1
+               Tr3d_BICHQV_WP_S(Tr3d_ntrBICHQV_WP)= Tr3d_name_S(i)
+               Tr3d_BICHQV_WP  (Tr3d_ntrBICHQV_WP)= i
+            endif
          endif
       end do
+
+      allocate (adz_post(l_minx:l_maxx,l_miny:l_maxy,l_nk,3*max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)),&
+                adz_flux(l_minx:l_maxx,l_miny:l_maxy,l_nk,2*max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
 
       if (Lun_out > 0) then
          write (Lun_out,1001)
