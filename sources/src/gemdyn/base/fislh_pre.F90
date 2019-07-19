@@ -18,13 +18,12 @@
 !            -  Height-type vertical coordinate
 
 !
-      subroutine fislh_pre ( F_ru ,F_rv ,F_rt ,F_rw ,F_rc, F_rf, &
+      subroutine fislh_pre ( F_ru ,F_rv ,F_rt ,F_rw ,F_rc, F_rf, F_fis, &
                             Minx, Maxx, Miny, Maxy, i0, j0, in, jn, Nk )
       use HORgrid_options
       use gem_options
       use geomh
       use tdpack
-      use gmm_itf_mod
       use glb_ld
       use lun
       use cstv
@@ -39,6 +38,7 @@
       integer, intent(in) :: Minx,Maxx,Miny,Maxy, i0, j0, in, jn, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_ru,F_rv,F_rt
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rw,F_rc,F_rf
+      real, dimension(Minx:Maxx,Miny:Maxy),     intent(in)    :: F_fis
 !
 !Author: Claude Girard, July 2017 (initial version)
 !        Syed Husain, June 2019 (revision)
@@ -80,11 +80,11 @@
                     + isol_i*half*(mc_Ix(i,j,k)*(F_ru(i,j,k)+F_ru(i-1,j,k)) &
                                +mc_Iy(i,j,k)*(F_rv(i,j,k)+F_rv(i,j-1,k)) )
 
-               F_rc(i,j,k) = div - Cstv_invT_m_8 * F_rc(i,j,k)
+               F_rc(i,j,k) = div - Cstv_invT_m_8 * F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j)
 
 !              Compute Rf'
 !              ~~~~~~~~~~~
-               w0 = Cstv_invT_nh_8*(ztht(i,j,k)-Ver_z_8%t(k))
+               w0 = Cstv_invT_nh_8*(ztht(i,j,k)-Ver_z_8%t(k))*Cstv_bar1_8
                F_rf(i,j,k) = F_rf(i,j,k) - w0
 
 !              Compute Rt'

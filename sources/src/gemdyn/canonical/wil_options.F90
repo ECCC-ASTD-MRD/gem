@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module wil_options
-      use, intrinsic :: iso_fortran_env
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -81,7 +81,23 @@ module wil_options
    namelist /williamson/ Williamson_rlat0
 
    real(kind=REAL64) :: Williamson_lon_pole_r_8, Williamson_lat_pole_r_8, Williamson_rho_i_8, &
-             Williamson_v0_8, Williamson_ubar_8
+                        Williamson_v0_8, Williamson_ubar_8
+
+   !# Used when Williamson_case=9 [MATSUNO Shamir et al.,2019,GMD,12,2181-2193]
+   !# * Williamson_k         (Spherical wave-number (dimensionless))
+   !# * Williamson_n         (Wave-mode (dimensionless))
+   !# * Williamson_amp_8     (Wave amplitude (m/sec))
+   !# * Williamson_wave_type (Choose ROSSBY waves or WIG waves or EIG waves)
+   integer :: Williamson_k = 5
+   integer :: Williamson_n = 1
+   real(kind=REAL64) :: Williamson_amp_8 = 1E-5
+   character(len=6)  :: Williamson_wave_type = 'ROSSBY'
+   namelist /williamson/ Williamson_k,Williamson_n,Williamson_amp_8,Williamson_wave_type
+
+   !# Used when Williamson_case=9 [MATSUNO Shamir et al.,2019,GMD,12,2181-2193]
+   !# * Williamson_mean_depth_8 (Layer_mean_depth_8 (m))
+   !# * Williamson_omega_8      (Wave frequency (rad/sec))
+   real(kind=REAL64) :: Williamson_mean_depth_8,Williamson_omega_8
 
 contains
 

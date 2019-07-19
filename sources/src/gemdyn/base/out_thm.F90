@@ -247,9 +247,14 @@
 
          select case ( trim(Dynamics_Kernel_S) )
             case ('DYNAMICS_FISL_H')
-               gzm(:,:,1:G_nk+1) = grav_8*zmom(:,:,1:G_nk+1)
-               gzt(:,:,1:G_nk+1) = grav_8*ztht(:,:,1:G_nk+1)
-
+               if ( Schm_autobar_L ) then
+                  istat = gmm_get(gmmk_qt1_s,qt1)
+                  gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0 / Cstv_invFI_8
+                  gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0 / Cstv_invFI_8
+               else
+                  gzm(:,:,1:G_nk+1) = grav_8 * zmom(:,:,1:G_nk+1)
+                  gzt(:,:,1:G_nk+1) = grav_8 * ztht(:,:,1:G_nk+1)
+               end if
             case ('DYNAMICS_FISL_P')
                istat = gmm_get(gmmk_qt1_s,qt1)
                call diag_fi (gzm, st1, tt1, qt1, &
@@ -262,7 +267,7 @@
                                l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
 
             case ('DYNAMICS_EXPO_H')
-               if (Schm_autobar_L) then
+               if ( Schm_autobar_L ) then
                   istat = gmm_get(gmmk_qt1_s,qt1)
 
                   gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
@@ -542,7 +547,7 @@
 
          if (pnwe /= 0) then
          !
-         ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
+         ! Compute WE (Normalized velocity in eta) mainly used by EER Lagrangian Dispertion Model
          !
          ! ZETA = ZETAs + ln(hyb)
          !

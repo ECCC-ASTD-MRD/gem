@@ -507,6 +507,8 @@ inner:      do kh=1, F_nka_hu
 
       subroutine inp_src_surface ( F_sq,F_su,F_sv,F_gz_q,F_gz_u,F_gz_v,&
                                    F_topo,F_ip1,F_nka_gz,F_nka )
+      use dynkernel_options
+
       implicit none
 
       integer, intent(in) :: F_nka
@@ -529,7 +531,7 @@ inner:      do kh=1, F_nka_hu
       if (associated(F_sv)) deallocate (F_sv)
       nullify (F_sq,F_su,F_sv,ip1_list,wrk)
 
-      if (Inp_dst_hauteur_L) then
+      if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
          call inp_src_gz ( F_sq,F_gz_q,F_gz_u,F_gz_v,F_ip1,F_nka_gz)
          return
       endif
@@ -546,7 +548,7 @@ inner:      do kh=1, F_nka_hu
          deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
 
       else
-         if (Inp_kind == 2) then
+         if (Inp_kind == 2.or.Schm_autobar_L) then
             err = inp_read_mt ( 'GEOPOTENTIAL', 'Q', wrk, 1,&
                                  ip1_list, nk )
             if (nk == F_nka) then
@@ -1045,6 +1047,9 @@ inner:      do kh=1, F_nka_hu
 
       subroutine inp_src_levels ( F_dest, F_nk, F_ip1, F_vgd, F_sfc,&
                          F_sfcL, F_gz, F_gz_ip1, Minx,Maxx,Miny,Maxy)
+
+      use dynkernel_options
+
       implicit none
 
       type(vgrid_descriptor) , intent(in ) :: F_vgd
@@ -1061,7 +1066,7 @@ inner:      do kh=1, F_nka_hu
 !---------------------------------------------------------------------
 !
       F_nk= ubound(F_ip1,1)
-      if (Inp_dst_hauteur_L) then
+      if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
          istat= inp_match_heights (F_dest, F_gz, F_ip1, F_gz_ip1, &
                        Minx,Maxx,Miny,Maxy,F_nk, ubound(F_gz_ip1,1))
       else

@@ -18,8 +18,9 @@
       subroutine mass_tr (F_mass_tracer_8,F_tracer,F_air_mass,F_minx,F_maxx,F_miny,F_maxy,F_nk, &
                           F_i0,F_in,F_j0,F_jn,F_k0)
 
-      use HORgrid_options
+      use dynkernel_options
       use geomh
+      use HORgrid_options
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -28,7 +29,7 @@
 
       !arguments
       !---------
-      real(kind=REAL64),            intent(out):: F_mass_tracer_8                            !Mass of Tracer
+      real(kind=REAL64), intent(out):: F_mass_tracer_8                            !Mass of Tracer
       integer,           intent(in) :: F_minx,F_maxx,F_miny,F_maxy                !Dimension H
       integer,           intent(in) :: F_nk                                       !Number of vertical levels
       integer,           intent(in) :: F_i0,F_in,F_j0,F_jn,F_k0                   !Scope of operator
@@ -43,27 +44,39 @@
       integer :: i,j,k,err
       real(kind=REAL64)  :: c_mass_8,c_level_8(F_nk),gc_mass_8
       character(len= 9) :: communicate_S
-
-      !-------------------------------------------------------
+!
+!---------------------------------------------------------------------
+!
+      c_mass_8 = 0.0d0
 
       !Evaluate Local Mass
       !-------------------
-!$omp parallel do private(k,i,j) shared(c_level_8)
-      do k=F_k0,F_nk
-         c_level_8(k) = 0.0d0
+      if (Schm_autobar_L) then
+
          do j=F_j0,F_jn
-         do i=F_i0,F_in
-            c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * F_air_mass(i,j,k) * geomh_mask_8(i,j)
+            do i=F_i0,F_in
+               c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_mask_8(i,j)
+            end do
          end do
+
+      else
+
+         do k=F_k0,F_nk
+            c_level_8(k) = 0.0d0
+            do j=F_j0,F_jn
+               do i=F_i0,F_in
+                  c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * F_air_mass(i,j,k) * geomh_mask_8(i,j)
+               end do
+            end do
          end do
-      end do
-!$omp end parallel do
 
-      c_mass_8 = 0.0d0
+         c_mass_8 = 0.0d0
 
-      do k=F_k0,F_nk
-         c_mass_8 = c_mass_8 + c_level_8(k)
-      end do
+         do k=F_k0,F_nk
+            c_mass_8 = c_mass_8 + c_level_8(k)
+         end do
+
+      end if
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
@@ -73,7 +86,8 @@
       call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
       F_mass_tracer_8 = gc_mass_8
-
+!
+!---------------------------------------------------------------------
+!
       return
-
       end subroutine mass_tr

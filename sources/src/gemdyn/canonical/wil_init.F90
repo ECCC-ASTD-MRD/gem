@@ -15,31 +15,34 @@
 
 !**s/r wil_init - Prepare initial conditions (u,v,gz,s,topo) for Williamson cases
 
-      subroutine wil_init (F_u,F_v,F_gz,F_s,F_topo,F_trprefix_S,F_trsuffix_S,Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
+      subroutine wil_init (F_u,F_v,F_gz,F_s,F_topo,F_q,F_trprefix_S,F_trsuffix_S,&
+                           Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
 
       use canonical
-      use wil_options
-      use step_options
-      use dyn_fisl_options
-      use tdpack
-      use glb_ld
       use cstv
-      use ver
+      use dynkernel_options
+      use dyn_fisl_options
+      use glb_ld
       use gmm_itf_mod
-
+      use step_options
+      use tdpack
+      use ver
+      use wil_options
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
 
       !arguments
       !---------
-      integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
-      real F_u   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
-           F_v   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
-           F_gz  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
-           F_s   (Mminx:Mmaxx,Mminy:Mmaxy),    &
-           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
-      character(len=*) F_trprefix_S, F_trsuffix_S
+      integer, intent(in)  :: Mminx,Mmaxx,Mminy,Mmaxy,Nk
+      real,    intent(out) :: F_u   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
+                              F_v   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
+                              F_gz  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !HEIGHT (m)
+                              F_s   (Mminx:Mmaxx,Mminy:Mmaxy),    &
+                              F_topo(Mminx:Mmaxx,Mminy:Mmaxy),    &
+                              F_q   (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1)
+      character(len=*), intent(in) :: F_trprefix_S, F_trsuffix_S
 
       logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
 
@@ -58,6 +61,8 @@
       !                    |  Williamson et al.,1992,JCP,102,211-224         |
       !                    |8=Galewsky's barotropic wave                     |
       !                    |  Galewsky et al.,2004,Tellus,56A,429-440        |
+      !                    |9=The Matsuno baroclinic wave test case          |
+      !                    |  Shamir et al.,2019,GMD,12,2181-2193            |
       !--------------------|-------------------------------------------------|
       ! Williamson_NAIR    |Use when Williamson_case=1                       |
       !--------------------|-------------------------------------------------|
@@ -74,16 +79,13 @@
       !                    |Lauritzen et al.,2015,GMD,8,1299-1313            |
       !----------------------------------------------------------------------|
 
-
-      !---------------------------------------------------------------
-
-      integer istat,istat1,istat2,istat3,istat4,i,j
+      integer :: istat,istat1,istat2,istat3,istat4,i,j,k
       real, dimension (:,:,:), pointer :: cl,cl2,q1,q2,q3,q4
       real, dimension (Mminx:Mmaxx,Mminy:Mmaxy) :: topo_case5
       real, parameter :: CLY_REF = 4.*10.**(-6)
-
-      !---------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       if (Williamson_case==7) return
 
       !Setup 2D Advection runs
@@ -199,6 +201,13 @@
           call wil_uvcase8 (F_u,F_v,Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
       end if
 
+      !Setup Williamson Case 9 == The Matsuno baroclinic wave test case
+      !----------------------------------------------------------------
+      if (Williamson_case==9) then
+          call wil_case9   (F_gz,   Mminx,Mmaxx,Mminy,Mmaxy,Nk,Lctl_step)
+          call wil_uvcase9 (F_u,F_v,Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L,Lctl_step)
+      end if
+
       !Initialize log(surface pressure) and Topo
       !-----------------------------------------
       F_s    = 0.
@@ -210,14 +219,32 @@
 
       !Initialize log(surface pressure)
       !--------------------------------
-      do j=1,l_nj
-      do i=1,l_ni
-         F_s(i,j) = (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
-                    /(Rgasd_8*Cstv_Tstr_8) &
-                    +Ver_z_8%m(1)-Cstv_Zsrf_8
-      end do
-      end do
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
 
+         do j=1,l_nj
+           do i=1,l_ni
+              F_s(i,j) = (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
+                         /(Rgasd_8*Cstv_Tstr_8) &
+                         +Ver_z_8%m(1)-Cstv_Zsrf_8
+           end do
+         end do
+
+      !Initialize PHI perturbation in q
+      !--------------------------------
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+        do k=1,G_nk+1
+           do j=1,l_nj
+              do i=1,l_ni
+                 F_q(i,j,k) = grav_8*F_gz(i,j,1) - 1.0d0/Cstv_invFI_8
+              end do
+            end do
+        end do
+
+      end if
+!
+!---------------------------------------------------------------------
+!
       return
 
   999 call handle_error(-1,'WIL_INIT','Inappropriate list of tracers')

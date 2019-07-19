@@ -21,7 +21,6 @@
       use canonical
       use cstv
       use dynkernel_options
-      use gem_options
       use geomh
       use glb_ld
       use gmm_itf_mod
@@ -37,107 +36,94 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer F_my_step
+      !arguments
+      !---------
+      integer, intent(in) :: F_my_step
 
       !object
       !================================================================================
       !   Evaluate Error norms L1,L2,LMASS,L_inf for Williamson's cases
       !================================================================================
 
-
-      !---------------------------------------------------------------
-
-      integer istat,i,j,k,n,ierr,istat1,istat2
+      integer :: istat,i,j,n,ierr,istat1,istat2
 
       real, pointer, dimension(:,:,:) :: tr,tr_r,cl,cl2
 
       real, parameter :: CLY_REF = 4.*10.**(-6)
 
-      real(kind=REAL64) norm_1_8,norm_2_8,norm_inf_8,norm_m_8, &
+      real(kind=REAL64) :: norm_1_8,norm_2_8,norm_inf_8,norm_m_8, &
               s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8, &
               g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8,g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8, &
               w1_8,w2_8,tracer_8
 
-      character(len= 12) name_S
-      character(len= 9)  communicate_S
+      character(len= 12) :: name_S
+      character(len= 9)  :: communicate_S
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk):: bidon,air_mass
+      real, dimension(1,1,1) :: bidon
 
-      logical almost_zero
-      real, dimension(:,: ,: ), pointer , save   :: phi_0
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1):: phi
+      logical :: almost_zero
 
-      !---------------------------------------------------------------
-
+      real, dimension(:,:,:), pointer, save :: phi_0
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: phi
+!
+!---------------------------------------------------------------------
+!
       if (Williamson_case==2) then
-         if ( Lctl_step==0) then
 
-            allocate(phi_0(l_minx:l_maxx,l_miny:l_maxy,G_nk+1))
+         select case ( trim(Dynamics_Kernel_S) )
 
-            select case ( trim(Dynamics_Kernel_S) )
-               case ('DYNAMICS_FISL_H')
-                  stop 'Not yet implemented'
+            case ('DYNAMICS_FISL_H')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1)
 
-               case('DYNAMICS_FISL_P')
-                  istat = gmm_get(gmmk_qt1_s,qt1)
-                  istat = gmm_get(gmmk_tt1_s,tt1)
-                  istat = gmm_get(gmmk_st1_s,st1)
-                  call diag_fi (phi_0, st1, tt1, qt1, &
-                                l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+            case('DYNAMICS_FISL_P')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               istat = gmm_get(gmmk_tt1_s,tt1)
+               istat = gmm_get(gmmk_st1_s,st1)
+               call diag_fi (phi, st1, tt1, qt1, &
+                             l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
-               case('DYNAMICS_EXPO_H')
-                  istat = gmm_get(gmmk_qt1_s,qt1)
-                  phi_0(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+            case('DYNAMICS_EXPO_H')
+               istat = gmm_get(gmmk_qt1_s,qt1)
+               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
 
-            end select
+         end select
 
-         else
+         if (Lctl_step==0) then
 
-            select case ( trim(Dynamics_Kernel_S) )
+            allocate (phi_0(l_minx:l_maxx,l_miny:l_maxy,G_nk+1))
 
-               case ('DYNAMICS_FISL_H')
-                  stop 'Not yet implemented'
+            phi_0 = phi
 
-               case('DYNAMICS_FISL_P')
-                  istat = gmm_get(gmmk_qt1_s,qt1)
-                  istat = gmm_get(gmmk_tt1_s,tt1)
-                  istat = gmm_get(gmmk_st1_s,st1)
-                  call diag_fi (phi, st1, tt1, qt1, &
-                                l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
+         end if
 
-                  case('DYNAMICS_EXPO_H')
-                     istat = gmm_get(gmmk_qt1_s,qt1)
-                     phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
+         s_err_2_8=0.0
+         s_ref_2_8=0.0
+         do j = 1+pil_s,l_nj-pil_n
+            do i = 1+pil_w,l_ni-pil_e
+               s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 +               phi_0(i,j,1) **2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+            end do
+         end do
 
-               end select
+         communicate_S = "GRID"
+         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-               s_err_2_8=0.0
-               s_ref_2_8=0.0
-               do j = 1+pil_s,l_nj-pil_n
-                  do i = 1+pil_w,l_ni-pil_e
-                     s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
-                     s_ref_2_8 = s_ref_2_8 + phi_0(i,j,1)**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
-                  end do
-               end do
+         call RPN_COMM_allreduce(s_err_2_8,  g_err_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+         call RPN_COMM_allreduce(s_ref_2_8,  g_ref_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
 
-               communicate_S = "GRID"
-               if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+         !Evaluate Norms
+         !--------------
+         norm_2_8 = 10.**8
 
-               call RPN_COMM_allreduce(s_err_2_8,  g_err_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
-               call RPN_COMM_allreduce(s_ref_2_8,  g_ref_2_8,  1,"MPI_double_precision","MPI_SUM",communicate_S,ierr)
+         if ( .not.almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
 
-               !Evaluate Norms
-               !--------------
-               norm_2_8 = 10.**8
-
-               if ( .not. almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
-               if (Lun_out>0.and.Ptopo_couleur==0) then
-                  print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
-                  write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-                  write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
-                  write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-                  write (Lun_out,*) ' '
-               end if
+         if (Lun_out>0.and.Ptopo_couleur==0) then
+            print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
+            write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+            write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
+            write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
+            write (Lun_out,*) ' '
          end if
 
       end if
@@ -149,8 +135,6 @@
       if (F_my_step<Step_total.and.(Williamson_NAIR==1.or.Williamson_NAIR==2).and..not.Williamson_Terminator_L) return
 
       if (Lun_out>0.and.Ptopo_couleur==0) write (Lun_out,1000)
-
-      call get_density (bidon,air_mass,1,l_minx,l_maxx,l_miny,l_maxy,G_nk,1) !TIME T1
 
       do n=1,Tr3d_ntr
 
@@ -175,39 +159,33 @@
          if (Williamson_Nair==0) call wil_case1(tr_r,l_minx,l_maxx,l_miny,l_maxy,G_nk,0,Lctl_step)
          if (Williamson_Nair==3) call wil_case1(tr_r,l_minx,l_maxx,l_miny,l_maxy,G_nk,5,Lctl_step)
 
-         call mass_tr (tracer_8,tr_r,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,1)
+         call mass_tr (tracer_8,tr_r,bidon,l_minx,l_maxx,l_miny,l_maxy,l_nk,1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,1)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',"Mass of Mixing  (WET)","TIME T1",'  R= ', &
-                                                               tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
+                                                                  tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
 
          s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
          s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.
 
-         do k = 1,G_nk
+         do j = 1+pil_s,l_nj-pil_n
+            do i = 1+pil_w,l_ni-pil_e
 
-            do j = 1+pil_s,l_nj-pil_n
+               s_err_1_8 = s_err_1_8 + abs(tr(i,j,1) - tr_r(i,j,1))    * geomh_mask_8(i,j)
+               s_ref_1_8 = s_ref_1_8 + abs(            tr_r(i,j,1))    * geomh_mask_8(i,j)
 
-               do i = 1+pil_w,l_ni-pil_e
+               s_err_2_8 = s_err_2_8 +    (tr(i,j,1) - tr_r(i,j,1))**2 * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 +    (            tr_r(i,j,1))**2 * geomh_mask_8(i,j)
 
-                  s_err_1_8 = s_err_1_8 + abs(tr(i,j,k) - tr_r(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_1_8 = s_ref_1_8 + abs(            tr_r(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+               s_err_m_8 = s_err_m_8 +    (tr(i,j,1) - tr_r(i,j,1))    * geomh_mask_8(i,j)
+               s_ref_m_8 = s_ref_m_8 +    (            tr_r(i,j,1))    * geomh_mask_8(i,j)
 
-                  s_err_2_8 = s_err_2_8 +    (tr(i,j,k) - tr_r(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_2_8 = s_ref_2_8 +    (            tr_r(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
+               w1_8 = abs( tr(i,j,1) - tr_r(i,j,1) )
+               w2_8 = abs(             tr_r(i,j,1) )
 
-                  s_err_m_8 = s_err_m_8 +    (tr(i,j,k) - tr_r(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_m_8 = s_ref_m_8 +    (            tr_r(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-
-                  w1_8 = abs( tr(i,j,k) - tr_r(i,j,k) )
-                  w2_8 = abs(             tr_r(i,j,k) )
-
-                  s_err_inf_8 = max( s_err_inf_8, w1_8 )
-                  s_ref_inf_8 = max( s_ref_inf_8, w2_8 )
-
-               end do
+               s_err_inf_8 = max( s_err_inf_8, w1_8 )
+               s_ref_inf_8 = max( s_ref_inf_8, w2_8 )
 
             end do
-
          end do
 
          communicate_S = "GRID"
@@ -259,7 +237,7 @@
          !--------------
          istat = gmm_get (gmmk_cly_s, cly)
 
-         cly(1:l_ni,1:l_nj,1:G_nk) = cl(1:l_ni,1:l_nj,1:G_nk) + 2.0d0 * cl2(1:l_ni,1:l_nj,1:G_nk)
+         cly(1:l_ni,1:l_nj,1) = cl(1:l_ni,1:l_nj,1) + 2.0d0 * cl2(1:l_ni,1:l_nj,1)
 
          !Initialize CLY REFERENCE
          !------------------------
@@ -270,26 +248,24 @@
          s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
          s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.
 
-         do k=1,G_nk
-            do j = 1+pil_s,l_nj-pil_n
-               do i = 1+pil_w,l_ni-pil_e
+         do j = 1+pil_s,l_nj-pil_n
+            do i = 1+pil_w,l_ni-pil_e
 
-                  s_err_1_8 = s_err_1_8 + abs(cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+               s_err_1_8 = s_err_1_8 + abs(cly(i,j,1) - clyref(i,j,1))    * geomh_mask_8(i,j)
+               s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,1))    * geomh_mask_8(i,j)
 
-                  s_err_2_8 = s_err_2_8 +    (cly(i,j,k) - clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,k))**2 * air_mass(i,j,k) * geomh_mask_8(i,j)
+               s_err_2_8 = s_err_2_8 +    (cly(i,j,1) - clyref(i,j,1))**2 * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,1))**2 * geomh_mask_8(i,j)
 
-                  s_err_m_8 = s_err_m_8 +    (cly(i,j,k) - clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
-                  s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,k))    * air_mass(i,j,k) * geomh_mask_8(i,j)
+               s_err_m_8 = s_err_m_8 +    (cly(i,j,1) - clyref(i,j,1))    * geomh_mask_8(i,j)
+               s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,1))    * geomh_mask_8(i,j)
 
-                  w1_8 = abs(cly(i,j,k) - clyref(i,j,k))
-                  w2_8 = abs(             clyref(i,j,k))
+               w1_8 = abs(cly(i,j,1) - clyref(i,j,1))
+               w2_8 = abs(             clyref(i,j,1))
 
-                  s_err_inf_8 = max(s_err_inf_8, w1_8)
-                  s_ref_inf_8 = max(s_ref_inf_8, w2_8)
+               s_err_inf_8 = max(s_err_inf_8, w1_8)
+               s_ref_inf_8 = max(s_ref_inf_8, w2_8)
 
-               end do
             end do
          end do
 
@@ -328,8 +304,9 @@
 
       end if
 
-      !-----------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       return
 
  1000 format( &

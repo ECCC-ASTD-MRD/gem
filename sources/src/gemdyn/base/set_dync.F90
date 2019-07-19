@@ -46,6 +46,7 @@
       Cstv_hco0_8 = Dcst_rayt_8**2
       Cstv_hco1_8 = zero
       Cstv_hco2_8 = one
+      Cstv_hco3_8 = one
      !Tstar is kept constant
       Ver_Tstar_8%t(1:G_nk)   = Cstv_Tstr_8
       Ver_Tstar_8%m(1:G_nk+1) = Cstv_Tstr_8
@@ -67,6 +68,17 @@
                    +Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)-mu_8*half) )
          Ver_betas_8 = Ver_css_8*gama_8* &
                     Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)+mu_8*half)
+
+         Cstv_bar0_8 = zero
+         Cstv_bar1_8 = one
+         if(Schm_autobar_L) then
+            Cstv_bar0_8 = Cstv_invFI_8/(Cstv_tau_8*Cstv_tau_m_8)
+            Cstv_bar1_8 = zero
+            Cstv_hco1_8 = Cstv_bar0_8
+            Cstv_hco2_8 = zero
+            Cstv_hco3_8 = zero
+         end if
+
          call fislh_set_oprz (F_errcode)
 
       else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then

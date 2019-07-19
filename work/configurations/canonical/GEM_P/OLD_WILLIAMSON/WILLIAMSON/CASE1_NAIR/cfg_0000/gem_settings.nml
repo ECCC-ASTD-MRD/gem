@@ -1,0 +1,67 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
+  Grd_overlap     = 2         ,
+  Grd_maxcfl      = 5         ,
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L = .true.
+  Schm_autobar_L   = .true.
+/
+
+ &step
+  Fcst_end_S     = "12D"
+  Fcst_gstat_s   = '3600S'
+  Step_dt        = 3600.
+/
+
+ &adz_cfgs
+  adz_itraj = 3
+  adz_verbose=1,
+/
+
+ &gem_cfgs
+  LCTL_RXSTAT_S   = 'GLB_8',
+  Tr3d_list_S =  'Q1,mono=0,mass=0,hzd=0',
+                 'Q2,mono=0,mass=0,hzd=0',
+                 'Q3,mono=0,mass=0,hzd=0',
+                 'Q4,mono=0,mass=0,hzd=0',
+/
+
+ &dyn_fisl
+  Sol_type_S = 'DIRECT'        ,
+
+  Cstv_tstr_8     = 273.15     ,
+
+  Schm_itcn       = 2          , Schm_wload_L      = .false.
+  Schm_itnlh      = 2          ,
+                                 Schm_hzdadw_L     = .false.
+/
+
+ &hvdif
+  Hzd_lnr         = .0         ,
+  Vspng_nk        = 0          ,
+/
+
+ &vert_layers
+  hyb = 0.5,0.7,0.9            ,
+  hyb_rcoef       = 1.,1.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '6h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "NAIR"     ,
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S= '12D' ,
+  Out3_postproc_fact   = 1     ,
+/
+
+ &williamson
+  Williamson_case = 1, Williamson_NAIR = 1,
+/

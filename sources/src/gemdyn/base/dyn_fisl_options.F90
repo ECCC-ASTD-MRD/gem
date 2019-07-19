@@ -38,6 +38,9 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Cstv_tstr_8
    namelist /dyn_fisl_p/ Cstv_tstr_8
 
+   !# Inverse of PHI* basic state geopotential (m**2/s**2) used in GEM-H autobar
+   real(kind=REAL64) :: Cstv_invFI_8
+
    !# Parameter controlling modified epsilon (Ver_epsi_8) [nonhydrostatic part]
    real(kind=REAL64) :: Cstv_rE_8 = 1.d0
    namelist /dyn_fisl  / Cstv_rE_8

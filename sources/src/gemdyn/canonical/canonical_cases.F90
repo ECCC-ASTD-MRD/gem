@@ -328,9 +328,15 @@
             istat = gmm_get (gmmk_acl2_s, acl2)
             istat = gmm_get (gmmk_acly_s, acly)
 
-            call dcmip_avg_column_integrated (acl ,cl, l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            call dcmip_avg_column_integrated (acl2,cl2,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            call dcmip_avg_column_integrated (acly,cly,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+            if (Schm_autobar_L) then
+               acl (:,:) = cl (:,:,1)
+               acl2(:,:) = cl2(:,:,1)
+               acly(:,:) = cly(:,:,1)
+            else
+               call dcmip_avg_column_integrated (acl ,cl, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+               call dcmip_avg_column_integrated (acl2,cl2,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+               call dcmip_avg_column_integrated (acly,cly,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+            end if
 
          end if
 

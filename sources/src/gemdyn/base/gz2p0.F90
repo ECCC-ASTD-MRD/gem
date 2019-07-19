@@ -51,7 +51,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Schm_autobar_L) then
+      if (Schm_autobar_L.and.trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
          F_topo = 0.
          do j=1,l_nj
             do i=1,l_ni
@@ -59,6 +59,13 @@
                            /(Rgasd_8*Cstv_Tstr_8) &
                            +Ver_z_8%m(1)-Cstv_Zsrf_8
                F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8
+            end do
+         end do
+         return
+      else if (Schm_autobar_L.and.trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         do j=1,l_nj
+            do i=1,l_ni
+               F_ps(i,j) = grav_8*F_gz(i,j,1)
             end do
          end do
          return

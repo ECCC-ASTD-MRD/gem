@@ -32,6 +32,8 @@
       integer :: k, istat
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________
+
+      if (Schm_autobar_L) return
 !
       call gemtime_start ( 5, 'PW_UPDATE', 0)
 

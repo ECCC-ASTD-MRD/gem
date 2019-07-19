@@ -1,0 +1,76 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
+  Grd_overlap     = 2         ,
+  Grd_maxcfl      = 5         ,
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L  = .false.
+  Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+
+ &step
+  Fcst_end_S     = "144h"
+  Fcst_gstat_s   = '48p'
+  Step_dt        = 1800.
+/
+
+ &adz_cfgs
+  adz_itraj = 3
+  adz_verbose=0,
+/
+
+ &gem_cfgs
+  Lctl_rxstat_S = 'GLB_8'
+
+  Stat_liste  = 'ALL_DYN_T1', 'ALL_TR_T1',
+/
+
+ &dyn_fisl
+  Sol_type_S = 'DIRECT'   ,
+
+  Cstv_tstr_8     = 240.0 ,
+
+  Cstv_bA_8       = 0.5        ,
+  Cstv_bA_m_8     = 0.5        ,
+  Cstv_bA_nh_8    = 0.5        ,
+
+                                 Schm_nblendyy     = -1
+  Schm_itcn       = 2          , Schm_wload_L      = .false.
+  Schm_itnlh      = 2          ,
+                                 Schm_hzdadw_L     = .false.
+/
+
+ &hvdif
+  Hzd_pwr         = 6          , Hzd_lnr       = 0.04
+  Vspng_nk        = 0          ,
+/
+
+ &vert_layers
+  hyb=
+  0.2118043,0.2250931,0.2390492,0.2536979,0.2690651,0.2851775,0.3020625,
+  0.3197481,0.3382630,0.3576366,0.3778992,0.3990814,0.4212150,0.4443324,
+  0.4684665,0.4936514,0.5199216,0.5473125,0.5758604,0.6056023,0.6365760,
+  0.6688203,0.7023745,0.7372791,0.7735751,0.8113047,0.8505108,0.8912372,
+  0.9335286,0.977430
+
+  hyb_rcoef       = 0.,2.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "PT20_L30" ,
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S = '1D'
+  Out3_postproc_fact    = 1
+/
+
+ &dcmip
+ Dcmip_case = 20,
+/

@@ -1,0 +1,88 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
+  Grd_overlap     = 2         ,
+  Grd_maxcfl      = 5         ,
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L  = .false.
+  Dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+/
+
+ &step
+  Fcst_end_S     = "288h"
+  Fcst_gstat_s   = '24h'
+  Step_dt        = 3600.
+/
+
+ &adz_cfgs
+  adz_itraj = 3
+  adz_verbose=0,
+/
+
+ &gem_cfgs
+  Lctl_rxstat_S = 'GLB_8'
+
+  Tr3d_list_S =  'Q1,mono=0,mass=0,hzd=0',
+                 'Q2,mono=0,mass=0,hzd=0',
+                 'Q3,mono=0,mass=0,hzd=0',
+                 'Q4,mono=0,mass=0,hzd=0',
+
+  Stat_liste  = 'ALL_DYN_T1', 'ALL_TR_T1',
+/
+
+ &dyn_fisl
+  Sol_type_S = 'DIRECT'   ,
+
+  Cstv_tstr_8     = 300.0 ,
+
+  Cstv_bA_8       = 0.5        ,
+  Cstv_bA_m_8     = 0.5        ,
+  Cstv_bA_nh_8    = 0.5        ,
+
+                                 Schm_nblendyy     = -1
+  Schm_itcn       = 2          , Schm_wload_L      = .false.
+  Schm_itnlh      = 2          ,
+                                 Schm_hzdadw_L     = .false.
+/
+
+ &hvdif
+  Hzd_lnr         = 0.         ,
+  Vspng_nk        = 0          ,
+/
+
+ &vert_layers
+  hyb=
+  0.2608177,0.2729746,0.2856981,0.2990147,0.3129520,0.3275390,0.3428058,
+  0.3587842,0.3755074,0.3930101,0.4113286,0.4305009,0.4505669,0.4715681,
+  0.4935483,0.5165529,0.5406298,0.5658290,0.5922027,0.6198057,0.6486953,
+  0.6789314,0.7105769,0.7436975,0.7783617,0.8146418,0.8526128,0.8923537,
+  0.9339470,0.9774789
+
+  hyb_H=
+  0.11800000E+05,0.11400000E+05,0.11000000E+05,0.10600000E+05,0.10200000E+05,0.98000000E+04,0.94000000E+04,
+  0.90000000E+04,0.86000000E+04,0.82000000E+04,0.78000000E+04,0.74000000E+04,0.70000000E+04,0.66000000E+04,
+  0.62000000E+04,0.58000000E+04,0.54000000E+04,0.50000000E+04,0.46000000E+04,0.42000000E+04,0.38000000E+04,
+  0.34000000E+04,0.30000000E+04,0.26000000E+04,0.22000000E+04,0.18000000E+04,0.14000000E+04,0.10000000E+04,
+  0.60000000E+03,0.20000000E+03,
+
+  hyb_rcoef       = 1.,1.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "HT13_L30" ,
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S = '12d'
+  Out3_postproc_fact    = 1
+/
+
+ &dcmip
+ Dcmip_case = 13,
+/

@@ -1,0 +1,9 @@
+grid=1,core;
+
+levels=1,eta, -1;
+
+steps=1,hour,<0,288,24>;
+
+sortie([GZ,UU,VV,ME,Q1,Q2,Q3,Q4,CL,CL2,CLY],       grid,1,levels,1,steps,1)
+sortie([QR1,QR2,QR3,QR4,QE1,QE2,QE3,QE4,CLYR,CLYE],grid,1,levels,1,steps,1)
+sortie([P0,ACL,ACL2,ACLY],                         grid,1,levels,1,steps,1)

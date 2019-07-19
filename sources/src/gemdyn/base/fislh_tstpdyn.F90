@@ -121,8 +121,8 @@
          call gemtime_start ( 20, 'RHS', 10 )
 
 !        Compute the right-hand sides of the governing equations
-         call fislh_rhs ( orhsu, orhsv, orhst, orhsw, orhsc, orhsf, &
-                          ut1,   vt1,   tt1,   wt1,  zdt1,   qt1, &
+         call fislh_rhs ( orhsu, orhsv, orhst, orhsw, orhsc, orhsf,     &
+                          ut1,   vt1,   tt1,   wt1,  zdt1,   qt1, fis0, &
                           l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
          call gemtime_stop (20)
@@ -173,8 +173,8 @@
 
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
-      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, &
-                      l_minx,l_maxx,l_miny,l_maxy,        &
+      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, fis0, &
+                      l_minx,l_maxx,l_miny,l_maxy,              &
                       i0, j0, in, jn, l_nk)
 
       call gemtime_stop (22)
@@ -192,10 +192,10 @@
 !        to obtain final right-hand side of the elliptic problem
          icln=Orh_icn*iln
          if ( .not. Grd_yinyang_L ) icln=icln+1
-         call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c,&
-                         ut0, vt0, tt0, zdt0, qt0, &
-                         rhsc, rhst, rhsf, rhs_sol,&
-                         l_minx,l_maxx,l_miny,l_maxy,&
+         call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c   ,&
+                         ut0, vt0, tt0, zdt0, qt0       ,&
+                         rhsc, rhst, rhsf, fis0, rhs_sol,&
+                         l_minx,l_maxx,l_miny,l_maxy    ,&
                          l_nk, ni, nj, i0, j0, in, jn, icln)
 
          call gemtime_stop (23)

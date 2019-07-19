@@ -13,21 +13,20 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r wil_case6 - To setup Williamson Case 6: Rossby-Haurwitz wave (GEOPOTENTIAL)
+!**s/r wil_case6 - To setup Williamson Case 6: Rossby-Haurwitz wave (HEIGHT)
 
       subroutine wil_case6 (F_gz,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
       use gem_options
-      use tdpack
-
-      use glb_ld
       use lun
+      use glb_ld
       use ptopo
+      use tdpack
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer F_minx,F_maxx,F_miny,F_maxy,F_nk
-      real    F_gz(F_minx:F_maxx,F_miny:F_maxy,F_nk)
+      integer, intent(in)  :: F_minx,F_maxx,F_miny,F_maxy,F_nk
+      real,    intent(out) :: F_gz(F_minx:F_maxx,F_miny:F_maxy,F_nk)
 
       !authors
       !     Abdessamad Qaddouri and Vivian Lee
@@ -36,23 +35,20 @@
       ! v5_00 - Tanguay M. - Clean Up
       !
       !object
-      !====================================================================
-      !     To setup Williamson Case 6: Rossby-Haurwitz wave (GEOPOTENTIAL)
+      !==============================================================
+      !     To setup Williamson Case 6: Rossby-Haurwitz wave (HEIGHT)
       !     Williamson et al.,1992,JCP,102,211-224
-      !====================================================================
+      !==============================================================
 
-
-      !---------------------------------------------------------------
-
-      integer i,j,k,R_case
-      real(kind=REAL64)  phi0_8,dlon_8,K_Case_8,OMG_8,                                &
+      integer :: i,j,k,R_case
+      real(kind=REAL64) :: phi0_8,dlon_8,K_Case_8,OMG_8,                   &
               rlon_8,rlat_8,time_8, sint_8,cost_8,phiay_8,phiby_8,phicy_8, &
               s_8(2,2),x_a_8,y_a_8,                                        &
               phia_8(G_nj),phib_8(G_nj),phic_8(G_nj)
-      real    picll(G_ni,G_nj),gzloc(F_minx:F_maxx,F_miny:F_maxy)
-
-      !---------------------------------------------------------------
-
+      real :: picll(G_ni,G_nj),gzloc(F_minx:F_maxx,F_miny:F_maxy)
+!
+!---------------------------------------------------------------------
+!
       if (Lun_out>0) write(Lun_out,*) ''
       if (Lun_out>0) write(Lun_out,*) '--------------------------------------------'
       if (Lun_out>0) write(Lun_out,*) 'WILLIAMSON CASE6, Williamson et al. (1992)  '
@@ -77,14 +73,14 @@
 
             cost_8 = cos(rlat_8)
 
-            !Compute latitude-dependent factors for geopotential
-            !---------------------------------------------------
-            phia_8(j) = 0.5*OMG_8*(2.0*omega_8+OMG_8)*cost_8*cost_8 +      &
+            !Compute latitude-dependent factors for height
+            !---------------------------------------------
+            phia_8(j) = 0.5*OMG_8*(2.0*omega_8+OMG_8)*cost_8*cost_8 +           &
                         0.25*K_Case_8*K_Case_8*cost_8**(2*R_Case) *             &
                         ((R_Case+1)*cost_8*cost_8+(2*R_Case*R_Case-R_Case-2) -  &
                         2.0*R_Case*R_Case/(cost_8*cost_8))
             phib_8(j) = (2.0*(omega_8+OMG_8)*K_Case_8)/((R_Case+1)*(R_Case+2))* &
-                        cost_8**R_Case*                                              &
+                        cost_8**R_Case*                                         &
                         ((R_Case*R_Case+2*R_Case+2)-(R_Case+1)**2*cost_8*cost_8)
             phic_8(j) = 0.25*K_Case_8*K_Case_8*cost_8**(2*R_Case)* &
                         ((R_Case+1)*cost_8*cost_8-(R_Case+2))
@@ -97,12 +93,12 @@
                cost_8 = cos(rlat_8)
 
                picll(i,j) = phi0_8 + (rayt_8*rayt_8*(phia_8(j)+phib_8(j) &
-                            * cos(R_Case*(rlon_8-dlon_8))+phic_8(j)                &
+                            * cos(R_Case*(rlon_8-dlon_8))+phic_8(j)      &
                             * cos(2*R_Case*(rlon_8-dlon_8))))/grav_8
 
-            enddo
+            end do
 
-         enddo
+         end do
 
       !Compute tracer for YAN
       !----------------------
@@ -121,13 +117,13 @@
 
                cost_8 = cos(rlat_8)
 
-               !Compute latitude-dependent factors for geopotential
-               !---------------------------------------------------
-               phiay_8 = 0.5*OMG_8*(2.0*omega_8+OMG_8)*cost_8*cost_8 +     &
+               !Compute latitude-dependent factors for height
+               !---------------------------------------------
+               phiay_8 = 0.5*OMG_8*(2.0*omega_8+OMG_8)*cost_8*cost_8 +          &
                          0.25*K_Case_8*K_Case_8*cost_8**(2*R_Case) *            &
                          ((R_Case+1)*cost_8*cost_8+(2*R_Case*R_Case-R_Case-2) - &
                          2.0*R_Case*R_Case/(cost_8*cost_8))
-               phiby_8 = (2.0*(omega_8+OMG_8)*K_Case_8)/                   &
+               phiby_8 = (2.0*(omega_8+OMG_8)*K_Case_8)/                        &
                          ((R_Case+1)*(R_Case+2))*cost_8**R_Case*                &
                          ((R_Case*R_Case+2*R_Case+2)-(R_Case+1)**2*cost_8*cost_8)
                phicy_8 = 0.25*K_Case_8*K_Case_8*cost_8**(2*R_Case)*             &
@@ -136,21 +132,21 @@
                sint_8 = sin(rlat_8)
 
                picll(i,j) = phi0_8 + (rayt_8*rayt_8*(phiay_8+phiby_8 &
-                            * cos(R_Case*(rlon_8-dlon_8))+phicy_8              &
+                            * cos(R_Case*(rlon_8-dlon_8))+phicy_8    &
                             * cos(2*R_Case*(rlon_8-dlon_8))))/grav_8
-            enddo
+            end do
 
-         enddo
+         end do
 
-      endif
+      end if
 
       call glbdist (picll,G_ni,G_nj,gzloc,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
 
       do k=1,F_nk
          F_gz(1:l_ni,1:l_nj,k) = gzloc(1:l_ni,1:l_nj)
-      enddo
-
-      !---------------------------------------------------------------
-
+      end do
+!
+!---------------------------------------------------------------------
+!
       return
       end

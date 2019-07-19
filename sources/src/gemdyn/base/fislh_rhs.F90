@@ -17,8 +17,8 @@
 !             and save the results for next iteration in the o's
 !           - Height-type vertical coordinate
 !
-      subroutine fislh_rhs ( F_oru, F_orv, F_ort, F_orw, F_orc, F_orf, &
-                             F_u  ,   F_v,   F_t,   F_w,  F_zd,   F_q, &
+      subroutine fislh_rhs ( F_oru, F_orv, F_ort, F_orw, F_orc, F_orf     , &
+                             F_u  ,   F_v,   F_t,   F_w,  F_zd, F_q, F_fis, &
                              Minx,Maxx,Miny,Maxy, Nk )
       use HORgrid_options
       use gem_options
@@ -43,10 +43,11 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u,F_v,F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_w,F_zd
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
+      real, dimension(Minx:Maxx,Miny:Maxy),     intent(in)    :: F_fis
 
 !Author: Claude Girard, July 2017
 !        Syed Husain, Jun 2019 (new dyn-phy coupling and
-!                               new eliminatio of variables)
+!                               new elimination of variables)
 
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
@@ -81,7 +82,7 @@
       else
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
-!         phy_tv_tend => zero_array
+!        phy_tv_tend => zero_array
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
@@ -202,7 +203,7 @@
             end do
          end do
          call vlog( ytmp_8, xtmp_8, nij )
-         w1=half/(cpd_8*Cstv_Tstr_8)
+         w1=Cstv_bar1_8*half/(cpd_8*Cstv_Tstr_8)
          do j= j0, jn
             do i= i0, in
 
@@ -214,7 +215,7 @@
                              - Cstv_Beta_8 * mu_8 * F_w(i,j,k)
                F_ort(i,j,k) = F_ort(i,j,k) + iphytv*((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
 
-               F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) &
+               F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
                             - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km) - F_w(i,j,k) )
             end do
          end do
@@ -222,12 +223,12 @@
          !*****************************************
          ! Compute Rc: RHS of continuity equation *
          !*****************************************
-         w1=epsi_8/grav_8
+         w1=Cstv_bar1_8*epsi_8/grav_8
          do j= j0, jn
             do i= i0, in
                div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)     &
                    + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-!                   + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
+!                  + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
                    + (F_zd(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*F_zd(i,j,km))*Ver_idz_8%m(k) &
                    + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
                    + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
@@ -239,12 +240,13 @@
                F_orc(i,j,k) = F_orc(i,j,k) + (1d0/Cstv_bA_8) * &
                              (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/F_t(i,j,k ) + &
                              Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/F_t(i,j,km) )
+               F_orc(i,j,k) = F_orc(i,j,k) + (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one)
             end do
          end do
 
       end do
 !$omp end do
-!$omp  end parallel
+!$omp end parallel
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_H)')
 !

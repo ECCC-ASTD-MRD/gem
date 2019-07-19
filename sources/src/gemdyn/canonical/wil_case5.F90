@@ -13,21 +13,20 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r wil_case5 - To setup Williamson Case 5: Zonal Flow over an isolated mountain (GEOPOTENTIAL)
+!**s/r wil_case5 - To setup Williamson Case 5: Zonal Flow over an isolated mountain (HEIGHT)
 
       subroutine wil_case5 (F_gz,F_mtn,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
       use gem_options
-      use tdpack
-
       use glb_ld
       use lun
       use ptopo
+      use tdpack
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer F_minx,F_maxx,F_miny,F_maxy,F_nk
-      real    F_gz(F_minx:F_maxx,F_miny:F_maxy,F_nk),F_mtn(F_minx:F_maxx,F_miny:F_maxy)
+      integer, intent(in)  :: F_minx,F_maxx,F_miny,F_maxy,F_nk
+      real,    intent(out) :: F_gz(F_minx:F_maxx,F_miny:F_maxy,F_nk),F_mtn(F_minx:F_maxx,F_miny:F_maxy)
 
       !authors
       !     Abdessamad Qaddouri and Vivian Lee
@@ -36,24 +35,21 @@
       ! v5_00 - Tanguay M. - Clean Up
       !
       !object
-      !====================================================================================
-      !     To setup Williamson Case 5: Zonal Flow over an isolated mountain (GEOPOTENTIAL)
+      !==============================================================================
+      !     To setup Williamson Case 5: Zonal Flow over an isolated mountain (HEIGHT)
       !     Williamson et al.,1992,JCP,102,211-224
-      !====================================================================================
+      !==============================================================================
 
-
-      !---------------------------------------------------------------
-
-      integer i,j,k
-      real(kind=REAL64)  phi0_8,ubar_8,sina_8,cosa_8,phiamp_8, &
-              rlon_8,rlat_8,sint_8,cost_8,          &
-              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,   &
+      integer :: i,j,k
+      real(kind=REAL64) :: phi0_8,ubar_8,sina_8,cosa_8,phiamp_8, &
+              rlon_8,rlat_8,sint_8,cost_8,                       &
+              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,                &
               mounta_8,radius_8,dist_8,lambdc_8,thetc_8
-      real    mount(G_ni,G_nj),mtloc(F_minx:F_maxx,F_miny:F_maxy), &
+      real :: mount(G_ni,G_nj),mtloc(F_minx:F_maxx,F_miny:F_maxy), &
               picll(G_ni,G_nj),gzloc(F_minx:F_maxx,F_miny:F_maxy)
-
-      !---------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       if (Lun_out>0) write(Lun_out,*) ''
       if (Lun_out>0) write(Lun_out,*) '--------------------------------------------'
       if (Lun_out>0) write(Lun_out,*) 'WILLIAMSON CASE5, Williamson et al. (1992)  '
@@ -98,11 +94,11 @@
                    mount(i,j) = mounta_8*(1.0 - dist_8/radius_8)
                else
                    mount(i,j) = 0.0
-               endif
+               end if
 
-            enddo
+            end do
 
-         enddo
+         end do
 
       !Compute tracer for YAN
       !----------------------
@@ -133,13 +129,13 @@
                    mount(i,j) = mounta_8*(1.0 - dist_8/radius_8)
                else
                    mount(i,j) = 0.0
-               endif
+               end if
 
-            enddo
+            end do
 
-         enddo
+         end do
 
-      endif
+      end if
 
       call glbdist (picll,G_ni,G_nj,gzloc,F_minx,F_maxx,F_miny,F_maxy,1,G_halox,G_haloy)
 
@@ -147,11 +143,11 @@
 
       do k=1,F_nk
          F_gz(1:l_ni,1:l_nj,k) = gzloc(1:l_ni,1:l_nj)
-      enddo
+      end do
 
       F_mtn(1:l_ni,1:l_nj) = mtloc(1:l_ni,1:l_nj)
-
-      !---------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       return
       end

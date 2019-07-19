@@ -50,6 +50,7 @@ module cstv
 ! Cstv_hco0_8        | Helmholtz constant                                                                |
 ! Cstv_hco1_8        | Helmholtz constant                                                                |
 ! Cstv_hco2_8        | Helmholtz constant                                                                |
+! Cstv_hco3_8        | Helmholtz constant                                                                |
 ! Cstv_bar0_8        | value for barotropic case, ZERO otherwise                                         |
 ! Cstv_bar1_8        | ZERO  for barotropic case, one  otherwise                                         |
 !--------------------|------------------------------------------------------------------------------------
@@ -61,6 +62,7 @@ module cstv
                 Cstv_Sstar_8 ,Cstv_pref_8   ,Cstv_dtzD_8   ,&
                 Cstv_ptop_8  ,Cstv_Ztop_8   ,Cstv_Zsrf_8   ,&
                 Cstv_hco0_8  ,Cstv_hco1_8   ,Cstv_hco2_8   ,&
-                Cstv_bar0_8  ,Cstv_bar1_8   ,Cstv_dt_8
+                Cstv_bar0_8  ,Cstv_bar1_8   ,Cstv_dt_8     ,&
+                Cstv_hco3_8
 
 end module cstv

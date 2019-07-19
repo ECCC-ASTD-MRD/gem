@@ -28,6 +28,7 @@
       use tdpack, only: rgasd_8, grav_8
       use ver
 
+      use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
@@ -46,68 +47,38 @@
       !     Evaluate Fluid's density and mass
       !======================================
 
-      !----------------------------------------------------------------------
-
       integer :: i,j,k,istat
       logical :: GEM_P_L
       real, dimension(F_minx:F_maxx,F_miny:F_maxy)       :: pr_p0
-      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1):: pr_m,pr_t,log_pr_m,log_pr_t
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1):: pr_m,pr_t
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk)  :: sumq
       real, pointer, dimension(:,:,:) :: tr,w_qt
       real, pointer, dimension(:,:)   :: w2d
       character(len=1) :: timelevel_S
-
-      !----------------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
-      !Obtain pressure levels
-      !----------------------
+      !Obtain momentum pressure levels at appropriate time
+      !---------------------------------------------------
       if (GEM_P_L) then
 
-         !Recuperate GMM variables at appropriate time
-         !--------------------------------------------
          if (F_time == 0) istat = gmm_get(gmmk_st0_s,w2d)
          if (F_time == 1) istat = gmm_get(gmmk_st1_s,w2d)
 
-         !Obtain pressure levels
-         !----------------------
          call calc_pressure ( pr_m, pr_t, pr_p0, w2d, F_minx, F_maxx, F_miny, F_maxy, F_nk )
 
          pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
 
       else
 
-         !Recuperate GMM variables at appropriate time
-         !--------------------------------------------
          if (F_time == 0) istat = gmm_get(gmmk_qt0_s,w_qt)
          if (F_time == 1) istat = gmm_get(gmmk_qt1_s,w_qt)
 
-!$omp parallel private(k,i,j) shared(pr_m,pr_t,log_pr_m,log_pr_t,w_qt)
-!$omp do
-         do k=1,F_nk
-            if (k==1) then
-               log_pr_m(1:l_ni,1:l_nj,k) = (w_qt(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
-            end if
-            pr_m(1:l_ni,1:l_nj,k) = exp(log_pr_m(1:l_ni,1:l_nj,k))
-            log_pr_m(1:l_ni,1:l_nj,k+1) = (w_qt(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar(1:l_ni,1:l_nj,k+1))
-            if(k==F_nk) &
-               pr_p0(1:l_ni,1:l_nj)=exp(log_pr_m(1:l_ni,1:l_nj,l_nk+1))
+         do k=1,F_nk+1
+            pr_m(1:l_ni,1:l_nj,k) = exp( (w_qt(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k)) )
          end do
-!$omp end do
-         pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
-!$omp do
-         do k=1,F_nk
-            log_pr_t(1:l_ni,1:l_nj,k) = 0.5*(log_pr_m(1:l_ni,1:l_nj,k+1)+log_pr_m(1:l_ni,1:l_nj,k))
-         end do
-!$omp end do
-         log_pr_t(1:l_ni,1:l_nj,F_nk+1) = log_pr_m(1:l_ni,1:l_nj,F_nk+1)
-!$omp do
-         do k=1,F_nk
-            pr_t(1:l_ni,1:l_nj,k) = exp(log_pr_t(1:l_ni,1:l_nj,k))
-         end do
-!$omp end do
-!$omp end parallel
 
       end if
 
@@ -124,27 +95,22 @@
 
          istat = gmm_get('TR/HU:'//timelevel_S,tr)
 
-!$omp parallel do private(k) shared(sumq,tr)
          do k=1,l_nk
             sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
          end do
-!$omp end parallel do
 
       end if
 
       !Evaluate Fluid's density and mass
       !---------------------------------
-!$omp parallel do private(k,i,j) shared(pr_m,sumq)
-         do k=F_k0,F_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               F_density(i,j,k) = + (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k) / grav_8
-            end do
-            end do
+      do k=F_k0,F_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            F_density(i,j,k) = + (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k) / grav_8
          end do
-!$omp end parallel do
+         end do
+      end do
 
-!$omp parallel do private(k,i,j)
       do k=F_k0,F_nk
          do j=1,l_nj
          do i=1,l_ni
@@ -152,8 +118,8 @@
          end do
          end do
       end do
-!$omp end parallel do
-
+!
+!---------------------------------------------------------------------
+!
       return
-
       end subroutine get_density

@@ -123,8 +123,6 @@
 
             Adz_gs_area_8 = gs_area_8
 
-            if (Schm_autobar_L)  Adz_gs_area_8 = Adz_gs_area_8 * (Cstv_pref_8-Cstv_ptop_8) / grav_8
-
          end if
 
       else
@@ -142,8 +140,6 @@
       end if
 
       Adz_gc_area_8 = gc_area_8
-
-      if (Schm_autobar_L)  Adz_gc_area_8 = Adz_gc_area_8 * (Cstv_pref_8-Cstv_ptop_8) / grav_8
 !
 !---------------------------------------------------------------------
 !

@@ -31,7 +31,6 @@ module dynkernel_options
 
    !# True-> auto barotropic option
    logical :: Schm_autobar_L = .false.
-   namelist /dyn_kernel  / Schm_autobar_L
    namelist /dyn_kernel/ Schm_autobar_L
 
    logical :: Dynamics_hauteur_L, Dynamics_autobar_L

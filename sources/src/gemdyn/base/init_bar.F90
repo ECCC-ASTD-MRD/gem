@@ -40,7 +40,7 @@
       !NOTE: U,V output on Staggered grids
       !============================================================
 
-      integer :: istat, k, i, j
+      integer :: istat, k
       real, dimension (:,:,:), pointer :: hu
       real, dimension (l_minx:l_maxx,l_miny:l_maxy,G_nk) :: gz_t
 !
@@ -71,17 +71,29 @@
                           zdt1,st1,fis0,l_minx,l_maxx,l_miny,l_maxy,&
                           G_nk,.true. ,'TR/',':P',Step_runstrt_S )
 
-         do j=1,l_nj
-            do i=1,l_ni
-               st1(i,j) = log (st1(i,j)/Cstv_pref_8)
+         !Initialize log(surface pressure)
+         !--------------------------------
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+            st1(1:l_ni,1:l_nj) = log(st1(1:l_ni,1:l_nj)/Cstv_pref_8)
+
+         !Initialize PHI perturbation in q
+         !--------------------------------
+         else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+            do k=1,G_nk+1
+               qt1(1:l_ni,1:l_nj,k) = st1(1:l_ni,1:l_nj) - 1.0d0/Cstv_invFI_8
             end do
-         end do
+
+         end if
 
       end if
 
       !Initialize T/ZD/W/Q
       !-------------------
-      tt1 = Cstv_Tstr_8 ; zdt1 = 0. ; wt1 = 0. ; qt1 = 0.
+      tt1 = Cstv_Tstr_8 ; zdt1 = 0. ; wt1 = 0.
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') qt1 = 0.
 
       !Initialize HU
       !-------------
@@ -95,7 +107,7 @@
 
       !Prepare initial conditions (staggered u-v,gz,s,topo) for Williamson cases
       !-------------------------------------------------------------------------
-      call wil_init (ut1,vt1,gz_t,st1,fis0,'TR/',':P',l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+      call wil_init (ut1,vt1,gz_t,st1,fis0,qt1,'TR/',':P',l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
       !Required for CASE5 LAM version
       !------------------------------

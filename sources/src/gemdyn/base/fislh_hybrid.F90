@@ -24,6 +24,7 @@
       use gmm_pw
       use HORgrid_options
       use VERgrid_options
+      use dynkernel_options
       use dyn_fisl_options
       use glb_ld
       use ctrl
@@ -34,6 +35,7 @@
       use levels
       use ver
       use wb_itf_mod
+      use tdpack, only: grav_8
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -140,11 +142,17 @@
          Ver_z_8%m(k) = Ver_a_8%m(k)
       end do
 
-     !Define the positions of true thermo levels
+      !Set Inverse of PHI* basic state geopotential (m**2/s**2) for GEM-H autobar
+      !--------------------------------------------------------------------------
+      Cstv_invFI_8 = one/(grav_8*Ver_z_8%m(1))
+
+      !Define the positions of true thermo levels
       Ver_z_8%t(0) = Ver_z_8%m(0)
       do k = 1, G_nk+1
          Ver_z_8%t(k) = Ver_a_8%t(k)
       end do
+
+      if ( Schm_autobar_L ) Ver_z_8%t(G_nk) = Ver_z_8%t(G_nk+1)
 
      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Ver_z_8%m(0)
@@ -166,7 +174,7 @@
 !     ----------------------
 
       do k=1,G_nk
-!          Ver_dz_8%m(k)  = Ver_z_8%x(k) - Ver_z_8%t(k-1)
+!         Ver_dz_8%m(k)  = Ver_z_8%x(k) - Ver_z_8%t(k-1)
           Ver_dz_8%m(k)  = Ver_z_8%t(k) - Ver_z_8%t(k-1)
           Ver_idz_8%m(k) = one/Ver_dz_8%m(k)
           Ver_dz_8%t(k)  = Ver_z_8%m(k+1) - Ver_z_8%m(k)
@@ -188,11 +196,14 @@
 !
       Ver_wmstar_8 = zero
       Ver_wpstar_8 = one
-      Ver_wmstar_8(G_nk)=(Ver_z_8%x(G_nk)-Ver_z_8%t(G_nk)) &
-                        /(Ver_z_8%x(G_nk)-Ver_z_8%x(G_nk-1))
-      Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
-      Ver_wmA_8(G_nk)  = Ver_wp_8%m(G_nk)*Ver_wmstar_8(G_nk)+Ver_wm_8%m(G_nk)
-      Ver_wpA_8(G_nk)  = one-Ver_wmA_8(G_nk)
+
+      if ( .not.Schm_autobar_L ) then
+         Ver_wmstar_8(G_nk)=(Ver_z_8%x(G_nk)-Ver_z_8%t(G_nk)) &
+                           /(Ver_z_8%x(G_nk)-Ver_z_8%x(G_nk-1))
+         Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
+         Ver_wmA_8(G_nk)  = Ver_wp_8%m(G_nk)*Ver_wmstar_8(G_nk)+Ver_wm_8%m(G_nk)
+         Ver_wpA_8(G_nk)  = one-Ver_wmA_8(G_nk)
+      end if
 
 !     -------------------------------------------------------
 !     Initialize Ver_onezero

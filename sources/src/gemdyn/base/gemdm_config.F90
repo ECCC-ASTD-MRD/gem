@@ -19,6 +19,7 @@
 
       integer function gemdm_config()
       use dynkernel_options
+      use dyn_fisl_options
       use timestr_mod
       use mu_jdate_mod
       use step_options
@@ -291,7 +292,8 @@
 
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
-         Dynamics_hydro_L = .true.
+         if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' ) Dynamics_hydro_L = .true.
+         if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Schm_phycpl_S = 'split'
          call wil_set (Schm_topo_L,Ctrl_testcases_adv_L,Lun_out,err)
          if (err < 0) return
          if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L

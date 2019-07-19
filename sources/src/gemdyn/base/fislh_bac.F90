@@ -26,6 +26,7 @@
                              Minx, Maxx, Miny, Maxy, ni, nj, Nk, i0, j0, in, jn )
       use fislh_sol
       use gem_options
+      use dynkernel_options
       use dyn_fisl_options
       use geomh
       use HORgrid_options
@@ -138,7 +139,7 @@
                F_w(i,j,k) = Cstv_tau_m_8 * ( F_rt(i,j,k) - F_nt(i,j,k) &
                           - gama_8*((isol_i*mc_iJz(i,j,k) + isol_d*Ver_idz_8%t(k))&
                             *(F_q(i,j,k+1)-F_q(i,j,k)) &
-                          - half*mu_8*(F_q(i,j,k+1)+F_q(i,j,k))))
+                          - Cstv_bar1_8*half*mu_8*(F_q(i,j,k+1)+F_q(i,j,k))))
 
    !           Compute zdot
    !           ~~~~~~~~~~~~
@@ -155,6 +156,10 @@
          end do
       end do
 !$omp enddo
+
+      if (Schm_autobar_L) then
+         F_t=Cstv_Tstr_8 ; F_zd=0. ! not necessary but safer
+      end if
 
 !$omp end parallel
 !

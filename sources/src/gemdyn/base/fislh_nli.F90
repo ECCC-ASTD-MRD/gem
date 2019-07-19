@@ -18,9 +18,9 @@
 !
 !**********************************************************************
 !
-      subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc ,        &
+      subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc , &
                              F_u  , F_v  , F_t  , F_zd , F_q  , &
-                             F_rc , F_rt , F_rf , F_rhs, &
+                             F_rc , F_rt , F_rf , F_fis, F_rhs, &
                              Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, icln)
       use HORgrid_options
       use gem_options
@@ -46,7 +46,8 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_zd
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt,F_rf
-      real(kind=REAL64), dimension(ni,nj,Nk),              intent(out)   :: F_rhs
+      real, dimension(Minx:Maxx,Miny:Maxy),     intent(in)    :: F_fis
+      real(kind=REAL64), dimension(ni,nj,Nk),   intent(out)   :: F_rhs
 
 !     Author: Claude Girard, July 2017 (initial version)
 !             Syed Husain, June 2019 (revision)
@@ -54,7 +55,7 @@
 #include <arch_specific.hf>
 
       integer :: i, j, k, km, kp, i0u, inu, j0v, jnv, nij, onept
-      real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp, t_interp, u_interp, v_interp
+      real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
 !     __________________________________________________________________
@@ -228,7 +229,10 @@
                F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
                                             + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
                                             + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
-                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) )
+                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
+                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
+                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
+                                    (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
    !           Compute Nt
    !           ~~~~~~~~~~
                F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (xtmp_8(i,j)-one) )

@@ -66,11 +66,11 @@
       zmom(:,:,0)=ver_z_8%m(0)
 
       do k=1,G_nk
-         zmom(:,:,k)=ver_z_8%m(k)+(Ver_b_8%m(k)*fis0(:,:)+Ver_c_8%m(k)*sls(:,:))/grav_8
-         ztht(:,:,k)=ver_z_8%t(k)+(Ver_b_8%t(k)*fis0(:,:)+Ver_c_8%t(k)*sls(:,:))/grav_8
+         zmom(:,:,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*fis0(:,:)+Ver_c_8%m(k)*sls(:,:))/grav_8
+         ztht(:,:,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0(:,:)+Ver_c_8%t(k)*sls(:,:))/grav_8
       end do
-      zmom(:,:,G_nk+1)=fis0(:,:)/grav_8
-      ztht(:,:,G_nk+1)=fis0(:,:)/grav_8
+      zmom(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
+      ztht(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
 
       lg_pstar(:,:,G_nk+1)=log(1.d5)-grav_8*zmom(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
 
@@ -87,7 +87,7 @@
             end do
          end do
       end do
-      ztht(:,:,G_nk)=fis0(:,:)/grav_8
+      ztht(:,:,G_nk)=Cstv_bar1_8*fis0(:,:)/grav_8
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
             do i=l_minx+1,l_maxx-1
@@ -95,15 +95,15 @@
                mc_Iy(i,j,k)=log( (ztht(i,j+1,k)-ztht(i,j+1,k-1))/(ztht(i,j-1,k)-ztht(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
                mc_Iz(i,j,k)=log( (zmom(i,j,k+1)-zmom(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
                             /(zmom(i,j,k)-zmom(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
-      !         mc_Ix(i,j,k)=0.0
-      !         mc_Iy(i,j,k)=0.0
-      !         mc_Iz(i,j,k)=0.0
-      !         mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
+      !        mc_Ix(i,j,k)=0.0
+      !        mc_Iy(i,j,k)=0.0
+      !        mc_Iz(i,j,k)=0.0
+      !        mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
                mc_logJz(i,j,k)=0.0
             end do
          end do
       end do
-      ztht(:,:,G_nk)=ver_z_8%t(G_nk)+(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
+      ztht(:,:,G_nk)=ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
 
       do j=l_miny+1,l_maxy-1
          do i=l_minx+1,l_maxx-1
@@ -121,6 +121,21 @@
                                (isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
          enddo
       enddo
+
+      if (Schm_autobar_L) then
+         mc_Jx   (:,:,:) = 0.
+         mc_Jy   (:,:,:) = 0.
+         mc_iJz  (:,:,:) = 1.
+         mc_Ix   (:,:,:) = 0.
+         mc_Iy   (:,:,:) = 0.
+         mc_Iz   (:,:,:) = 0.
+         mc_logJz(:,:,:) = 0.
+
+         mc_alfas_H_8(:,:) = 1.0d0
+         mc_betas_H_8(:,:) = 0.0d0
+         mc_css_H_8  (:,:) = 0.0d0
+         mc_cssp_H_8 (:,:) = 0.0d0
+      end if
 
 !     ---------------------------------------------------------------
 !
