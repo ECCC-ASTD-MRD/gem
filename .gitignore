@@ -6,3 +6,5 @@ gem_dbase
 gem_dbase.tar.gz
 build*
 work/work*
+sources/src/gemdyn/expo
+!sources/src/gemdyn/expo/exp_stubs.F90
