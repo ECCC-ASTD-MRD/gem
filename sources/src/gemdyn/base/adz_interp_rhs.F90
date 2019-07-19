@@ -137,8 +137,9 @@ contains
               Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
       end do
 
+      linmima_l = .false.
       if (present(F_post)) then
-         linmima_l= .true.
+         linmima_l = .true.
          call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
       end if
 
