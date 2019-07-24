@@ -88,7 +88,7 @@
          end do
       end do
 
-998   F_sorties(0)= cnt
+      F_sorties(0) = cnt
 
       call PIKSRT (liste_m,2,cnt_m)
       call PIKSRT (liste_p,2,cnt_p)

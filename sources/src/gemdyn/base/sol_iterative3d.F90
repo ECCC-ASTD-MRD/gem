@@ -120,11 +120,5 @@
 
       saved_sol = F_lhs_sol
 
- 1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
- 1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
- 9001 format (3x,'WARNING: iterative YYG solver DID NOT converge to requested criteria:: ',1pe14.7)
-!
-!     ---------------------------------------------------------------
-!
       return
    end

@@ -110,10 +110,6 @@
 
  1000 format(/' In SPN_INIT, Spn_nudging_S = ',A8/)
  1001 format(/' In SPN_INIT, unknown Spn_trans_shape_S ',A8/)
- 1002 format(/' In SPN_INIT, Cstv_dt_8 =  ',F12.4/)
- 1003 format(/' In SPN_INIT, Spn_trans_shape_S ',A8/)
- 3001 format (' ====> ',a,' = ',i6,' NOT FACTORIZABLE' &
-              /'Neighboring factorizable dimensions are: ',i6,' and',i6)
 !
 !----------------------------------------------------------------------
 !

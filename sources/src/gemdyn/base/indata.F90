@@ -101,6 +101,7 @@
       end if
 
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_metric()
 
       do k=1, Tr3d_ntr
          nullify (plus, minus)
@@ -140,7 +141,6 @@
 !     ---------------------------------------------------------------
 !
  1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))
- 1002 format(/,' FILE ',A,'_gfilemap.txt IS NOT AVAILABLE --CONTINUE--',/,/)
 
       return
       end

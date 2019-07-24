@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**   s/r metric_H - calculate metric coefficients for GEM in height-base coordinates
+!**   s/r fislh_metric - calculate metric coefficients for GEM in height-base coordinates
       subroutine fislh_metric()
       use mtn_options
       use HORgrid_options

@@ -80,7 +80,7 @@
 
    !!!Href2   = (16000./log(10.))**2 ! (~6950 m)**2
       Href2   = (8780.2)**2          !DCMIP_height (as in SET_GEOM)
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') Href2 = 1.0d0
+      if (Dynamics_hauteur_L) Href2 = 1.0d0
 
       nuZeta_wd = abs(Dcmip_nuZ_wd)/Href2
       nuZeta_th = abs(Dcmip_nuZ_th)/Href2

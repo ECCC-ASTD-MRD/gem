@@ -449,27 +449,5 @@ contains
 
   end subroutine pleg
 
-
-      subroutine stat(field,nx,ny,nz,msg1,msg2)
-      use, intrinsic :: iso_fortran_env
-        implicit none
-        integer :: nx,ny,nz
-        real :: mean, std
-        character(len=*) :: msg1,msg2
-        real, dimension(nx,ny,nz) :: field
-
-        mean=sum(field)/(nx*ny*nz)
-        std=sqrt(sum((field-mean)**2)/(nx*ny*nz-1))
-
-        if (Lun_out > 0) then
-           write(Lun_out,99)Lctl_step,msg1,mean,std,minloc(field),minval(field),maxloc(field),maxval(field),msg2
-        end if
-
- 99     format (i4,a4,' Mean:',e14.7,' Std:',e14.7, &
-              ' Min:[(',i3,',',i3,',',i3,')', &
-              e14.7,']',' Max:[(',i3,',',i3,',',i3,')', &
-              e14.7,']',a6)
-      end subroutine stat
-
 end subroutine ens_marfield_skeb
 

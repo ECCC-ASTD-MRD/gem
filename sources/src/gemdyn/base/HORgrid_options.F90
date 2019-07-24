@@ -343,10 +343,6 @@ contains
 
       HORgrid_config = 1
 
- 1201 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
-               ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
- 1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
-               ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
  1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
                 21x,'IG1-4: ',4i8)
  1100 FORMAT (/,1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &
@@ -354,9 +350,6 @@ contains
         /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES' &
         /1X,' GRIDTYPE= ',a,'     DX= ',F11.5,'   DY= ',F11.5,' degrees' &
         /14X,               '     DX= ',F11.5,'   DY= ',F11.5 ' km'/)
- 7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
- 7060 format (/,' Namelist &grid NOT AVAILABLE in FILE: ',a/)
- 7070 format (/,' NAMELIST &grid IS INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
 !

@@ -112,7 +112,6 @@
 
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
               ' was released for postprocessing at timestep: ',i9,'symlink err=',I4)
- 1002 format (' SAVING A RESTART AT TIMESTEP: ',i7,' valid: ',a)
 !
 !     ---------------------------------------------------------------
 !

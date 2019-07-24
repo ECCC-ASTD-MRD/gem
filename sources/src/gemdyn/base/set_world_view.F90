@@ -241,7 +241,7 @@
       call heap_paint()
 
 ! Initialize geometry of the model
-      call set_geomh
+      call set_geomh()
 
       if (trim(Dynamics_Kernel_S(1:13)) == 'DYNAMICS_FISL') then
          err(1)= sol_transpose ( Ptopo_npex, Ptopo_npey, .false. )

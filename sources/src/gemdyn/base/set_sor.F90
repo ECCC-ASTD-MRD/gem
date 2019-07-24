@@ -198,10 +198,6 @@
 
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
-  902 format('|',1x,'OUTPUT',1x,'|',2x,'PHYSIC NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
- 1000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
- 1001 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'|CHEMICAL VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
- 1002 format('|',5X,a9,' Bus ',40x, '|')
  1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  2001 format('* Note: NO filter is applied to 3D fields on M levels')

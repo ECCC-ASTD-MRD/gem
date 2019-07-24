@@ -154,7 +154,7 @@
 
       if ( Schm_autobar_L ) Ver_z_8%t(G_nk) = Ver_z_8%t(G_nk+1)
 
-     !Define the positions of zeta_dot
+      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Ver_z_8%m(0)
       do k = 1, G_nk-1
          Ver_z_8%x(k) = Ver_z_8%t(k)

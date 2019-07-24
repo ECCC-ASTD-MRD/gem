@@ -52,6 +52,18 @@
       istat = gmm_get(gmmk_fis0_s ,  fis0)
       istat = gmm_get(gmmk_qt1_s  ,   qt1)
 
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         pw_wz_plus = 0.
+         pw_gz_plus = 0.
+         pw_pm_plus = 0.
+         pw_pt_plus = 0.
+         pw_me_plus = 0.
+         pw_p0_plus = 0.
+         pw_log_pm = 0.
+         pw_log_pt = 0.
+         return ! Not yet implemented
+      end if
+
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
 !$omp parallel

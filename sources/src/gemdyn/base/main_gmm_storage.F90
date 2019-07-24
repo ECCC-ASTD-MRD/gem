@@ -15,13 +15,14 @@
 
 !**s/r main_gmm_storage - Allocate model gmm storage
 
-      subroutine main_gmm_storage
+      subroutine main_gmm_storage()
+      use dynkernel_options
+      use glb_ld
       use gmm_geof
+      use gmm_itf_mod
       use HORgrid_options
       use init_options
-      use glb_ld
       use lun
-      use gmm_itf_mod
       use var_gmm
       implicit none
 #include <arch_specific.hf>
@@ -32,27 +33,30 @@
 !
       if (Lun_out > 0) write(Lun_out,2000)
 
-!     Initialize the time-dependent variables comdecks
+!     Initialize the time-dependent variables modules
 !     -------------------------------------------------
-      call heap_paint
+      call heap_paint()
 
-      call set_vt( )
+      call set_vt()
 
       if (Grd_yinyang_L) then
-         call yyg_init
+         call yyg_init()
          call yyg_initstencils()
          call yyg_rhs_initscalbc()
       else
-         call nest_set_gmmvar
+         call nest_set_gmmvar()
       end if
 
-!     Initialize right hand sides comdeck
+!     Initialize right hand sides modules
 !     -----------------------------------
-      call set_rhs( )
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
+           trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
+         call set_rhs()
+      end if
 
-!     Initialize digital filter variables comdecks
+!     Initialize digital filter variables modules
 !     --------------------------------------------
-      if ( Init_mode_L ) call set_vta( )
+      if ( Init_mode_L ) call set_vta()
 
       gmmk_fis0_s      = 'FIS0'
       gmmk_sls_s       = 'SLS'

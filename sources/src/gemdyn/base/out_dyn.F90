@@ -143,7 +143,6 @@
 
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
  7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')
- 8001 format(/,' OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)
 !
 !--------------------------------------------------------------------
 !

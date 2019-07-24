@@ -152,11 +152,5 @@
 
       end do
 
-
-!
-!----------------------------------------------------------------------
- 1000 format (/,19('#'),' NEST_BCS STAT ',i6,1X,19('#'))
- 1001 format(3X,'NEST Boundary ConditionS: (S/R NEST_BCS)')
-!
       return
       end

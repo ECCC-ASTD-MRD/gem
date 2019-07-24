@@ -264,12 +264,11 @@
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
- 8001 format(/,' OUT_PHY- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)
  7002 format(/,' OUT_PHY- NO PHYSICS OUTPUT FOR STEP (',I8,')')
 !
 !----------------------------------------------------------------------
 !
- 999  return
+      return
       end
 
 

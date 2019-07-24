@@ -163,14 +163,9 @@
          case ('DYNAMICS_FISL_H')
             Dynamics_hydro_L = .false.
             call fislh_hybrid ( hyb_H, G_nk)
-
          case ('DYNAMICS_EXPO_H')
-            if (Schm_autobar_L) then
-               ! TODO : temporary
-               call set_zeta ( hyb, G_nk )
-            else
-               stop 'EXPO gemdm_config : Not yet implemented'
-            end if
+            Dynamics_hydro_L = .false.
+            call exp_hybrid ( hyb_H, G_nk )
       end select
 
       Schm_nith = G_nk

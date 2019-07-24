@@ -92,8 +92,10 @@
                   write (Lun_out,1001) Lctl_step, last_step
                case ('DYNAMICS_FISL_H')
                   write (Lun_out,1002) Lctl_step, last_step
-               case default
+               case ('DYNAMICS_FISL_P')
                   write (Lun_out,1003) Lctl_step, last_step
+               case default
+                  stop 'Something has gone horribly wrong. Back away slowly'
             end select
 
          end if

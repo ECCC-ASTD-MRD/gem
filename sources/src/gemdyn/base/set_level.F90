@@ -266,13 +266,11 @@
 
       if (Lun_out > 0) then
 
-      write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
-      write(Lun_out,*) ' Level_type=',Level_typ_S(j)
-      write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
+         write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
+         write(Lun_out,*) ' Level_type=',Level_typ_S(j)
+         write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
 
       end if
-!
- 6002 format(' SET_LEVEL WARNING: pressure level out of range =',e12.5)
 !
 !     ---------------------------------------------------------------
 !

@@ -24,3 +24,15 @@ end
 subroutine exp_set_vt()
 return
 end
+
+subroutine exp_hybrid ( F_hybuser, Nk )
+integer Nk
+real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
+stop 'exp_hybrid : not yet implemented (stub)'
+return
+end
+
+subroutine exp_metric()
+stop 'exp_metric : not yet implemented (stub)'
+return
+end

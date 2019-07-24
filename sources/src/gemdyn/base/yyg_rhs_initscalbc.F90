@@ -561,9 +561,7 @@
       deallocate (recv_len,send_len)
 
 
- 1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
- 1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
- 1002 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3,'sten=',i3)
+! 1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
 
       return
       end
