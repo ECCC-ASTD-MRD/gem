@@ -50,24 +50,25 @@ double Rpn_comm_wtime()
   return (*fn)() - time0;
 }
 
+static int t0_ = 0;
 /* returns time stamp counter as a 64 bit real number */
 #if defined(linux)
 typedef unsigned long long ticks;
-static int t0_=0;
 static ticks t0;
 static double cpu_mult=1.0E-9;  /* 1GHz */
 static ticks getticks(void)
 {
-     unsigned a, d;
-     asm("cpuid");
-     asm volatile("rdtsc" : "=a" (a), "=d" (d));
+  struct timespec ts;
 
-     return (((ticks)a) | (((ticks)d) << 32));
+  if ( clock_gettime(CLOCK_MONOTONIC, &ts) != 0 ) {
+    fprintf(stderr, "clock_gettime(CLOCK_MONOTONIC, &ts) system call failed!\n");
+    return 1;
+  }
+  return ts.tv_sec + ts.tv_nsec * 10.0e-9;
 }
 
 #endif
 #if defined(AIX)
-static int t0_=0;
 static timebasestruct_t t0;
 #endif
 
@@ -89,20 +90,21 @@ double rpn_comm_tsc()
   if(t0_ == 0) {
     if( (cpuInfo = fopen("/proc/cpuinfo", "r")) != NULL  ) {
       while(1) {
-	junk=fgets(buffer,sizeof(buffer),cpuInfo);
-	if(buffer[4]=='M' && buffer[5]=='H' && buffer[6]=='z') {
-	  while(*pbuf != ':') pbuf++; pbuf++;
-	  sscanf(pbuf,"%f",&freq);
-	  freq *= 1000000.0;
-	  cpu_mult = 1.0 / freq;
-	  printf("freq = %f Hz, cpu_mult=%G\n",freq,cpu_mult);
-	  break;
-	}
+        junk=fgets(buffer,sizeof(buffer),cpuInfo);
+        if(buffer[4]=='M' && buffer[5]=='H' && buffer[6]=='z') {
+          while(*pbuf != ':') pbuf++;
+          pbuf++;
+          sscanf(pbuf,"%f",&freq);
+          freq *= 1000000.0;
+          cpu_mult = 1.0 / freq;
+          printf("freq = %f Hz, cpu_mult=%G\n",freq,cpu_mult);
+          break;
+        }
       }
       fclose(cpuInfo);
     }
-    t0=getticks();
-    t0_=1;
+    t0 = getticks();
+    t0_ = 1;
   }
   value = getticks();
   temp = value - t0;
@@ -132,7 +134,7 @@ double rpn_comm_tsc()
   temp = dummy_time;
   dummy_time += 1.0E-09;
 #endif
-return temp;
+  return temp;
 }
 
 /* returns time of day as a 64 bit real number */
