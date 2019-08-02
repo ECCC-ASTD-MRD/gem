@@ -31,7 +31,11 @@ printf " ##### UM_TIMING: Um_model.sh STARTING AT: `date`\n"
 #for CRAY
 #CMD="aprun -j 1 -n $((npex*npey)) -d $nomp ${TASK_BIN}/ATM_MOD"
 #for Linux
-CMD="mpirun -np $((npex*npey)) ${TASK_BIN}/ATM_MOD"
+
+# Dirty little hack to select a working communicator on p9gpu
+mpirun --version | grep -q "IBM Spectrum MPI" && MPIRUN_PARAMS="-display-map --display-allocation -pami_noib"
+
+CMD="mpirun ${MPIRUN_PARAMS} -np $((npex*npey)) ${TASK_BIN}/ATM_MOD"
 
 printf "MPIRUN CMD is `echo $CMD` \n"
 if [[ x$debug != x0 ]] ; then
