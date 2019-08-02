@@ -342,7 +342,7 @@ contains
          fid = F_fileids(min(ikey, nfids))
          istat = fstmpi_read_3d_r4(F_keys1(ikey), indata1, fid, ingridid, &
               F_realloc_L=realloc_L)
-         nomvar1_S = '??' !#TODO get nomvar from fst_read or getmeta
+         nomvar1_S = '\?\?' !#TODO get nomvar from fst_read or getmeta
          if (.not.RMN_IS_OK(istat)) then
             F_status(ikey) = RMN_ERR
             call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar1_S))
@@ -350,7 +350,7 @@ contains
          endif
          istat = fstmpi_read_3d_r4(F_keys2(ikey), indata2, fid, ingridid, &
               F_realloc_L=realloc_L)
-         nomvar2_S = '??' !#TODO get nomvar from fst_read or getmeta
+         nomvar2_S = '\?\?' !#TODO get nomvar from fst_read or getmeta
          if (.not.RMN_IS_OK(istat)) then
             F_status(ikey) = RMN_ERR
             call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar2_S))
