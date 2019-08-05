@@ -69,9 +69,23 @@
          Ver_betas_8 = Ver_css_8*gama_8* &
                     Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)+mu_8*half)
 
+!
+         Ver_alfat_8 = one
+         Ver_cst_8   = zero
+         Ver_cstp_8  = zero
+
+         k0=1+Lam_gbpil_T
+         if (Schm_opentop_L) then
+            w1= Ver_idz_8%t(k0-1)*(Ver_idz_8%m(k0)+Ver_wm_8%m(k0)*epsi_8)
+            w2= mu_8*half*(Ver_idz_8%m(k0)+Ver_wm_8%m(k0)*epsi_8)
+            Ver_cst_8   =  one / (-(mu_8* Cstv_tau_nh_8)*Ver_idz_8%t(k0-1) + half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))
+            Ver_alfat_8 =(-(mu_8* Cstv_tau_nh_8)*Ver_idz_8%t(k0-1) - half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))*Ver_cst_8
+            Ver_cstp_8  = gama_8*(w1 + w2)*Ver_cst_8
+         end if
+
          Cstv_bar0_8 = zero
          Cstv_bar1_8 = one
-         if(Schm_autobar_L) then
+         if (Schm_autobar_L) then
             Cstv_bar0_8 = Cstv_invFI_8/(Cstv_tau_8*Cstv_tau_m_8)
             Cstv_bar1_8 = zero
             Cstv_hco1_8 = Cstv_bar0_8
@@ -100,7 +114,7 @@
          Ver_cstp_8  = zero
 
          k0=1+Lam_gbpil_T
-         if(Schm_opentop_L) then
+         if (Schm_opentop_L) then
             w1 = Ver_idz_8%t(k0-1)* &
                   (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one+Ver_epsi_8(k0-1))) &
                + half*Ver_epsi_8(k0-1)* &
@@ -128,7 +142,7 @@
 
          Cstv_bar0_8 = zero
          Cstv_bar1_8 = one
-         if(Schm_autobar_L) then
+         if (Schm_autobar_L) then
             Cstv_bar0_8 = Cstv_invT_8**2/Ver_FIstr_8(1)
             Cstv_bar1_8 = zero
             Ver_alfas_8 = one

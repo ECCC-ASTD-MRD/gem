@@ -20,8 +20,8 @@
 !
       subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc , &
                              F_u  , F_v  , F_t  , F_zd , F_q  , &
-                             F_rc , F_rt , F_rf , F_fis, F_rhs, &
-                             Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, icln)
+                             F_rc , F_rt , F_rf , F_fis, F_rhs, F_nb ,&
+                             Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, k0, in, jn, icln)
       use HORgrid_options
       use gem_options
       use dyn_fisl_options
@@ -39,7 +39,8 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, in, jn, icln
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, k0, in, jn, icln
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(out)   :: F_nb
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nu,F_nv,F_nw
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nt,F_nc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
@@ -51,10 +52,11 @@
 
 !     Author: Claude Girard, July 2017 (initial version)
 !             Syed Husain, June 2019 (revision)
+!             Abdessamad Qaddouri, July 2019 (opentop)
 
 #include <arch_specific.hf>
 
-      integer :: i, j, k, km, kp, i0u, inu, j0v, jnv, nij, onept
+      integer :: i, j, k, k0t, km, kp, i0u, inu, j0v, jnv, nij, onept
       real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
@@ -76,6 +78,9 @@
       c0 = Dcst_rayt_8**2
 
       c1 = grav_8 * Cstv_tau_8
+
+      k0t=k0
+      if (Schm_opentop_L) k0t=k0-1
 
       nij = (in - i0 +1)*(jn - j0 +1)
 
@@ -103,7 +108,7 @@
 !$omp w1,w2,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
 
 !$omp do
-      do k=1,l_nk
+      do k=k0, l_nk
          km=max(k-1,1)
 
 !        Compute Nu
@@ -154,7 +159,20 @@
                                                  +(F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) )
             end do
          end do
+   !           Compute Nc
+   !           ~~~~~~~~~~
+         do j= j0, jn
+            do i= i0, in
 
+               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
+                                             + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
+                                             + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
+                                               Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
+                                               (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
+                                               ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
+                                               (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
+            end do
+         end do
       end do
 !$omp end do
 
@@ -207,7 +225,7 @@
       end if
 
 !$omp do
-      do k=1,l_nk
+      do k=k0t,l_nk
 
          km=max(k-1,1)
          do j= j0, jn
@@ -226,16 +244,18 @@
 
    !           Compute Nc
    !           ~~~~~~~~~~
-               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-                                            + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-                                            + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
-                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
-                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
-                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
-                                    (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
+!               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
+!                                            + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
+!                                            + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
+!                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
+!                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
+!                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
+!                                    (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
    !           Compute Nt
    !           ~~~~~~~~~~
                F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (xtmp_8(i,j)-one) )
+
+               if (Schm_opentop_L.and.k == k0t) F_nb(i,j) = F_nt(i,j,k0t)-mu_8*Cstv_tau_nh_8* F_nw(i,j,k0t)
 
    !           Compute Nt'
    !           ~~~~~~~~~~~
@@ -248,7 +268,7 @@
 !$omp end do
 
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
          km=max(k-1,1)
          do j = j0, jn
             do i = i0, in
@@ -275,7 +295,7 @@
 !$omp end do
 
 !$omp do
-      do k=1,l_nk
+      do k=k0,l_nk
          do j= j0, jn
             do i= i0, in
                F_rhs(i,j,k) =  c0 * ( F_rc(i,j,k) - F_nc(i,j,k) )
@@ -283,6 +303,20 @@
          end do
       end do
 !$omp end do
+!
+      if(Schm_opentop_L) then
+         c1= Dcst_rayt_8**2
+         F_rhs(:,:,1:k0t) = 0.0
+!$omp do
+         do j= j0, jn
+            do i= i0, in
+               F_rhs(i,j,k0)= F_rhs(i,j,k0) -  c1* Ver_cstp_8 * F_nb(i,j)
+            end do
+         end do
+!$omp enddo
+      end if
+!
+
 
 !     Apply bottom boundary conditions
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

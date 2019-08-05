@@ -21,9 +21,9 @@
 
       subroutine fislh_bac ( F_lhs_sol, &
                              F_u   , F_v  , F_t  , F_w , F_zd  , F_q , &
-                             F_ru  , F_rv , F_rt , F_rw , F_rf ,       &
-                             F_nu  , F_nv , F_nt , F_nw ,              &
-                             Minx, Maxx, Miny, Maxy, ni, nj, Nk, i0, j0, in, jn )
+                             F_ru  , F_rv , F_rt , F_rw , F_rf , F_rb, &
+                             F_nu  , F_nv , F_nt , F_nw , F_nb,          &
+                             Minx, Maxx, Miny, Maxy, ni, nj, Nk, i0, j0,k0, in, jn )
       use fislh_sol
       use gem_options
       use dynkernel_options
@@ -41,21 +41,24 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 !
-      integer, intent(in) :: Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, in, jn
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0,in, jn
 
       real(kind=REAL64), dimension(ni,nj,Nk),                intent(in)  :: F_lhs_sol
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out) :: F_u,F_v,F_t,F_w,F_zd
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(out) :: F_q
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)  :: F_ru,F_rv,F_rt,F_rw,F_rf
       real,   dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)  :: F_nu,F_nv,F_nt,F_nw
+      real, dimension(Minx:Maxx,Miny:Maxy),       intent(in) ::  F_rb ,F_nb
 !
 !Author: Claude Girard, July 2017
 !        Syed Husain, June 2019 (major revision)
+!        Abdessamad Qaddouri, July 2019 (opentop)
+
 
 #include <arch_specific.hf>
 
 !
-      integer :: i, j, k, km
+      integer :: i, j, k, km, k0t
       real(kind=REAL64)  :: Buoy
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !     __________________________________________________________________
@@ -66,8 +69,11 @@
       end if
 
       if (Lun_debug_L) write(Lun_out,1000)
+      k0t=k0
+      if ( Schm_opentop_L ) k0t=k0-1
 
-      do k=1,l_nk
+
+      do k=k0, l_nk
          do j= j0, jn
             do i= i0, in
                F_q(i,j,k) = sngl(F_lhs_sol(i,j,k))
@@ -87,14 +93,29 @@
       end do
 !$omp end do
 !
+!
+      if ( Schm_opentop_L ) then
+         F_q(:,:,1:k0-2) = 0.0
+!$omp do
+         do j= j0, jn
+            do i= i0, in
+               F_q(i,j,k0-1) = Ver_alfat_8 * F_lhs_sol(i,j,k0) &
+                         - Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+            end do
+         end do
+!$omp enddo
+      end if
+!
+
+!$omp single
       call rpn_comm_xch_halo(F_q,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
+!$omp end single
 
 !$omp parallel private(km,Buoy)
 !
 !$omp do
-      do k=1,l_nk
+      do k=k0, l_nk
          km=max(k-1,1)
 
          do j= j0, jn
@@ -130,7 +151,7 @@
 !$omp end do
 
 !$omp do
-      do k=1,l_nk
+      do k=k0t, l_nk
          do j= j0, jn
             do i= i0, in
 

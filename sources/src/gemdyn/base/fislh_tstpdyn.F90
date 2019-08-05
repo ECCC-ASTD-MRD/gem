@@ -52,6 +52,9 @@
                                                                   nl_t, & ! non-linear deviation of T -> X
                                                                   nl_c, & ! non-linear portion of continuity equation
                                                                   nl_w    ! non-linear deviation of vertical motion
+      real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1) :: nl_b
+
+
 !
 !     ---------------------------------------------------------------
 !
@@ -173,9 +176,10 @@
 
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
-      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, fis0, &
+      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, rhsb, nest_t,fis0, &
                       l_minx,l_maxx,l_miny,l_maxy,              &
-                      i0, j0, in, jn, l_nk)
+                      i0, j0, k0, in, jn, l_nk)
+
 
       call gemtime_stop (22)
 
@@ -192,11 +196,12 @@
 !        to obtain final right-hand side of the elliptic problem
          icln=Orh_icn*iln
          if ( .not. Grd_yinyang_L ) icln=icln+1
+
          call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c   ,&
                          ut0, vt0, tt0, zdt0, qt0       ,&
-                         rhsc, rhst, rhsf, fis0, rhs_sol,&
+                         rhsc, rhst, rhsf, fis0, rhs_sol,nl_b,&
                          l_minx,l_maxx,l_miny,l_maxy    ,&
-                         l_nk, ni, nj, i0, j0, in, jn, icln)
+                         l_nk, ni, nj, i0, j0, k0, in, jn, icln)
 
          call gemtime_stop (23)
 
@@ -212,10 +217,10 @@
 !        Back subtitution
          call fislh_bac (lhs_sol                           ,&
                          ut0 , vt0 , tt0 , wt0 , zdt0, qt0 ,&
-                         rhsu, rhsv, rhst, rhsw, rhsf      ,&
-                         nl_u, nl_v, nl_t, nl_w            ,&
-                         l_minx, l_maxx, l_miny, l_maxy    ,&
-                         ni, nj, l_nk, i0, j0, in, jn)
+                         rhsu, rhsv, rhst, rhsw, rhsf ,rhsb ,&
+                         nl_u, nl_v, nl_t, nl_w, nl_b       ,&
+                         l_minx, l_maxx, l_miny, l_maxy     ,&
+                         ni, nj, l_nk, i0, j0, k0,in, jn)
 
          call gemtime_stop (25)
 
