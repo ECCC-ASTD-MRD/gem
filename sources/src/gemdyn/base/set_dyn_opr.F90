@@ -16,6 +16,7 @@
 !**   s/r set_dyn_opr - initialize operators and some constant parameters
 
       subroutine set_dyn_opr()
+      use dynkernel_options
       use geomh
       use glb_ld
       implicit none
@@ -39,9 +40,11 @@
 
       call eqspng_set()
 
-      call adv_setgrid()
-      call adv_param()
-      call adz_set ()
+      if ( Dynamics_FISL_L ) then
+         call adv_setgrid()
+         call adv_param()
+         call adz_set ()
+      end if
 
       call grid_area_mask (geomh_area_8, geomh_mask_8, l_ni, l_nj)
 

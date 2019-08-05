@@ -176,26 +176,6 @@
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
       end if
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-
-         gmmk_ut2_s   = 'UT2'
-         gmmk_vt2_s   = 'VT2'
-         gmmk_qt2_s   = 'QT2'
-         gmmk_zdt2_s  = 'ZDT2'
-
-         istat = GMM_OK
-
-         istat = min(gmm_create(gmmk_ut2_s , ut2 , mymeta3d_nk_u , flag_r_n),istat)
-         istat = min(gmm_create(gmmk_vt2_s , vt2 , mymeta3d_nk_v , flag_r_n),istat)
-         istat = min(gmm_create(gmmk_qt2_s , qt2 , mymeta3d_nk_v , flag_r_n),istat)
-         istat = min(gmm_create(gmmk_zdt2_s, zdt2, mymeta3d_nk_t , flag_r_n),istat)
-
-         if (GMM_IS_ERROR(istat)) then
-            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t2)')
-         end if
-
-      end if
-
       gmmk_pw_uu_plus_s  = 'PW_UU:P'
       gmmk_pw_vv_plus_s  = 'PW_VV:P'
       gmmk_pw_wz_plus_s  = 'PW_WZ:P'

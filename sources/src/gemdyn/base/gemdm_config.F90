@@ -155,6 +155,7 @@
 
       if (Schm_autobar_L) Ctrl_phyms_L = .false.
 
+      Dynamics_FISL_L    = Dynamics_Kernel_S(1:13)  == 'DYNAMICS_FISL'
       Dynamics_hauteur_L = Dynamics_Kernel_S(14:15) == '_H'
 
       select case ( trim(Dynamics_Kernel_S) )

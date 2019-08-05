@@ -86,7 +86,7 @@
 !            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
 !         end if
 
-         if (Lctl_step > 0) call adz_cfl
+         if (Dynamics_FISL_L .and. Lctl_step > 0) call adz_cfl
 
          if (Ptopo_myproc == 0) write(output_unit,1001)
 

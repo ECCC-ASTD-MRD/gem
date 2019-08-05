@@ -142,10 +142,6 @@
          Ver_z_8%m(k) = Ver_a_8%m(k)
       end do
 
-      !Set Inverse of PHI* basic state geopotential (m**2/s**2) for GEM-H autobar
-      !--------------------------------------------------------------------------
-      Cstv_invFI_8 = one/(grav_8*Ver_z_8%m(1))
-
       !Define the positions of true thermo levels
       Ver_z_8%t(0) = Ver_z_8%m(0)
       do k = 1, G_nk+1
@@ -163,6 +159,10 @@
 
       Ver_zmin_8 = Ver_z_8%m(G_nk+1)
       Ver_zmax_8 = Ver_z_8%m(0)
+
+      !Set Inverse of PHI* basic state geopotential (m**2/s**2) for GEM-H autobar
+      !--------------------------------------------------------------------------
+      Cstv_invFI_8 = one/(grav_8*Ver_z_8%m(1))
 
       if ( Ctrl_canonical_dcmip_L ) then
          Cstv_pref_8 = 100000.d0

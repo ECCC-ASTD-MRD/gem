@@ -223,10 +223,10 @@ contains
 
             call bubble_expoH_data ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,G_nk )
             ! Initialize (horizontally uniform) Exner pressure
-            do k=1,g_nk+1
+            do k=1,g_nk
                do j=1,l_nj
                   do i=1,l_ni
-                     qt1(i,j,k) = 1.d0 - grav_8 / (cpd_8 * bubble_theta) * Ver_z_8%m(k)
+                     qt1(i,j,k) = ( 1.d0 - grav_8 / (cpd_8 * bubble_theta) * Ver_z_8%m(k) ) * cpd_8
                   end do
                end do
             end do

@@ -98,10 +98,6 @@ subroutine flipit()
          call sort_ip1 ( liste2, liste_ip1, lislon2 )
          call convip (liste_ip1(lislon2), pcode, ipkind, -1, ' ', .false. )
          kd=lislon2; kf=1; kp=-1
-         if(pcode > 1.0)then
-            ! We are in heights
-            kd=1; kf=lislon2; kp=1
-         endif
          cnt2=0
          do k=kd,kf,kp
             cnt2=cnt2+1

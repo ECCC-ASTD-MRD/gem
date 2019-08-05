@@ -10,7 +10,6 @@ real     F_QR (Minx:Maxx,Miny:Maxy,Nk), &
 return
 end
 
-
 subroutine exp_dynstep()
 return
 end
@@ -18,10 +17,6 @@ end
 integer function exp_nml(F_namelistf_S)
 character(len=*) F_namelistf_S
 exp_nml = 0
-return
-end
-
-subroutine exp_set_vt()
 return
 end
 
@@ -34,5 +29,10 @@ end
 
 subroutine exp_metric()
 stop 'exp_metric : not yet implemented (stub)'
+return
+end
+
+subroutine exp_set_vt()
+stop 'exp_set_vt : not yet implemented (stub)'
 return
 end

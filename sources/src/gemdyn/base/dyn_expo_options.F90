@@ -47,10 +47,15 @@ module dyn_expo_options
    namelist /dyn_expo  / Kiops_krylov_size_max
    namelist /dyn_expo_p/ Kiops_krylov_size_max
 
-   !# Free parameter to control artificial diffusion in upwind advection scheme
+   !# Free parameter to control horizontal artificial diffusion in upwind advection scheme
    real :: adv_alpha_hor = 0.5
    namelist /dyn_expo  / adv_alpha_hor
    namelist /dyn_expo_p/ adv_alpha_hor
+
+   !# Free parameter to control vertical artificial diffusion in upwind advection scheme
+   real :: adv_alpha_ver = 0.5
+   namelist /dyn_expo  / adv_alpha_ver
+   namelist /dyn_expo_p/ adv_alpha_ver
 
 !temporaire
    namelist /dyn_expo  / Cstv_tstr_8

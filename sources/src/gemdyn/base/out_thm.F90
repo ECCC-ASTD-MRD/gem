@@ -273,7 +273,9 @@
                   gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
                   gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
                else
-                  stop 'DYNAMICS_EXPO_H, out_thm: not yet implemented'
+                  ! TODO : SG reviser
+                  gzm(:,:,1:G_nk+1) = grav_8 * zmom(:,:,1:G_nk+1)
+                  gzt(:,:,1:G_nk+1) = grav_8 * ztht(:,:,1:G_nk+1)
                end if
 
          end select

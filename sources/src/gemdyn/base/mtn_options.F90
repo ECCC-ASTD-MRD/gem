@@ -216,7 +216,7 @@ contains
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_topo (Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_topo_ls(Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk)
+           F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1)
 
       type(gmm_metadata) :: mymeta
       integer :: i,j,k,i00,istat
@@ -228,6 +228,8 @@ contains
 !
 !     ---------------------------------------------------------------
 !
+      if (Lun_out > 0) write (Lun_out,9000)
+
       allocate (log_pstar(l_minx:l_maxx,l_miny:l_maxy), &
                         hm(l_minx:l_maxx,l_miny:l_maxy) )
 
@@ -237,24 +239,24 @@ contains
 
       xcntr = int(float(Grd_ni-1)*0.5)+1
       do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         i00 = i + l_i0 - 1
-         zdi  = float(i00)-xcntr
-         zfac = (zdi/mtn_hwx)**2
-         if (      F_theocase_S == 'MTN_SCHAR' &
-             .or.  F_theocase_S == 'MTN_SCHAR2' ) then
-            zfac1= pi_8 * zdi / mtn_hwx1
-            F_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
-            ! Note : get_s_large_scale takes topo_ls in m2/s2
-            F_topo_ls(i,j)= mtn_hght* exp(-zfac)
-         else if ( F_theocase_S == 'NOFLOW' ) then
-            F_topo(i,j) = mtn_hght* exp(-zfac)
-            F_topo_ls(i,j)= mtn_hght* exp(-zfac)
-         else
-            F_topo(i,j) = mtn_hght/(zfac + 1.)
-            F_topo_ls(i,j)= mtn_hght/(zfac + 1.)
-         end if
-      end do
+         do i=l_minx,l_maxx
+            i00 = i + l_i0 - 1
+            zdi  = float(i00)-xcntr
+            zfac = (zdi/mtn_hwx)**2
+            if (      F_theocase_S == 'MTN_SCHAR' &
+                .or.  F_theocase_S == 'MTN_SCHAR2' ) then
+               zfac1= pi_8 * zdi / mtn_hwx1
+               F_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
+               ! Note : get_s_large_scale takes topo_ls in m2/s2
+               F_topo_ls(i,j)= mtn_hght* exp(-zfac)
+            else if ( F_theocase_S == 'NOFLOW' ) then
+               F_topo(i,j) = mtn_hght* exp(-zfac)
+               F_topo_ls(i,j)= mtn_hght* exp(-zfac)
+            else
+               F_topo(i,j) = mtn_hght/(zfac + 1.)
+               F_topo_ls(i,j)= mtn_hght/(zfac + 1.)
+            end if
+         end do
       end do
 
       F_topo_ls = F_topo_ls * grav_8
@@ -310,32 +312,32 @@ contains
         !SURFACE
          k=G_nk+1
          do j=1,l_nj
-         do i=1,l_ni
-            hauteur=F_topo(i,j)
-            log_pstar(i,j)=log(1.d5)+grav_8*hauteur/(rgasd_8*Cstv_Tstr_8)
-            hm(i,j)=hauteur
-            exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-            press=1.d5*exner**(1.d0/cappa_8)
-            F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
-         end do
+            do i=1,l_ni
+               hauteur=F_topo(i,j)
+               log_pstar(i,j)=log(1.d5)+grav_8*hauteur/(rgasd_8*Cstv_Tstr_8)
+               hm(i,j)=hauteur
+               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
+               press=1.d5*exner**(1.d0/cappa_8)
+               F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
+            end do
          end do
 
          do k=G_nk,1,-1
             do j=1,l_nj
-            do i=1,l_ni
-               hauteur=Ver_z_8%m(k)+Ver_b_8%m(k)*F_topo(i,j)+Ver_c_8%m(k)*F_topo_ls(i,j)
-               log_pstar(i,j)=log_pstar(i,j)+grav_8*(hm(i,j)-hauteur)/(rgasd_8*Cstv_Tstr_8)
-               hm(i,j)=hauteur
+               do i=1,l_ni
+                  hauteur=Ver_z_8%m(k)+Ver_b_8%m(k)*F_topo(i,j)+Ver_c_8%m(k)*F_topo_ls(i,j)
+                  log_pstar(i,j)=log_pstar(i,j)+grav_8*(hm(i,j)-hauteur)/(rgasd_8*Cstv_Tstr_8)
+                  hm(i,j)=hauteur
 
-               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-               press=1.d5*exner**(1.d0/cappa_8)
-               F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
+                  exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
+                  press=1.d5*exner**(1.d0/cappa_8)
+                  F_q(i,j,k)=rgasd_8*Cstv_Tstr_8*(log(press)-log_pstar(i,j))
 
-               hauteur=Ver_z_8%t(k)+Ver_b_8%t(k)*F_topo(i,j)+Ver_c_8%t(k)*F_topo_ls(i,j)
-               exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
-               theta=mtn_tzero*exp(a00*hauteur)
-               F_t(i,j,k)=theta*exner
-            end do
+                  hauteur=Ver_z_8%t(k)+Ver_b_8%t(k)*F_topo(i,j)+Ver_c_8%t(k)*F_topo_ls(i,j)
+                  exner=1.d0-capc1*(1.d0-exp(-a00*hauteur))
+                  theta=mtn_tzero*exp(a00*hauteur)
+                  F_t(i,j,k)=theta*exner
+               end do
             end do
          end do
 
@@ -357,38 +359,38 @@ contains
          a01 = (cpd_8*mtn_tzero*a00)/grav_8
          capc1 = grav_8**2/(mtn_nstar**2*cpd_8*mtn_tzero)
          do j=l_miny,l_maxy
-         do i=l_minx,l_maxx
-            psurf=Cstv_pref_8*(1.-capc1 &
-                  +capc1*exp(-a00*F_topo(i,j)))**(1./cappa_8)
-            F_s(i,j) = log(psurf/Cstv_pref_8)
-         end do
+            do i=l_minx,l_maxx
+               psurf=Cstv_pref_8*(1.-capc1 &
+                     +capc1*exp(-a00*F_topo(i,j)))**(1./cappa_8)
+               F_s(i,j) = log(psurf/Cstv_pref_8)
+            end do
          end do
 !
          do k=1,g_nk
             do j=1,l_nj
-            do i=1,l_ni
-               tempo = exp(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j)+Ver_c_8%m(k)*sls(i,j))
-               a02 = (tempo/Cstv_pref_8)**cappa_8
-               hauteur=-log((capc1-1.+a02)/capc1)/a00
-               temp1=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
-               tempo = exp(Ver_a_8%m(k+1)+Ver_b_8%m(k+1)*F_s(i,j)+Ver_c_8%m(k+1)*sls(i,j))
-               a02 = (tempo/Cstv_pref_8)**cappa_8
-               hauteur=-log((capc1-1.+a02)/capc1)/a00
-               temp2=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
-               F_t(i,j,k)=Ver_wp_8%t(k)*temp2+Ver_wm_8%t(k)*temp1
-            end do
+               do i=1,l_ni
+                  tempo = exp(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j)+Ver_c_8%m(k)*sls(i,j))
+                  a02 = (tempo/Cstv_pref_8)**cappa_8
+                  hauteur=-log((capc1-1.+a02)/capc1)/a00
+                  temp1=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+                  tempo = exp(Ver_a_8%m(k+1)+Ver_b_8%m(k+1)*F_s(i,j)+Ver_c_8%m(k+1)*sls(i,j))
+                  a02 = (tempo/Cstv_pref_8)**cappa_8
+                  hauteur=-log((capc1-1.+a02)/capc1)/a00
+                  temp2=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+                  F_t(i,j,k)=Ver_wp_8%t(k)*temp2+Ver_wm_8%t(k)*temp1
+               end do
             end do
          end do
 !
       else   ! MTN_PINTY or MTN_PINTY2 or NOFLOW
 
          do j=l_miny,l_maxy
-         do i=l_minx,l_maxx
-            psurf = Cstv_pref_8 *  &
-                      exp( -grav_8 * F_topo(i,j)/ &
-                           (Rgasd_8 * mtn_tzero ) )
-            F_s(i,j) = log(psurf/Cstv_pref_8)
-         end do
+            do i=l_minx,l_maxx
+               psurf = Cstv_pref_8 *  &
+                         exp( -grav_8 * F_topo(i,j)/ &
+                              (Rgasd_8 * mtn_tzero ) )
+               F_s(i,j) = log(psurf/Cstv_pref_8)
+            end do
          end do
 
          F_t(:,:,1:G_nk) = mtn_tzero
@@ -402,10 +404,10 @@ contains
          slpmax=0
          dx=Dcst_rayt_8*Grd_dx*pi_8/180.
          do j=1,l_nj
-         do i=1,l_ni
-            slp=abs(F_topo(i,j)-F_topo(i-1,j))/dx
-            slpmax=max(slp,slpmax)
-         end do
+            do i=1,l_ni
+               slp=abs(F_topo(i,j)-F_topo(i-1,j))/dx
+               slpmax=max(slp,slpmax)
+            end do
          end do
          slpmax=(180.d0/pi_8)*atan(slpmax)
          print*,"SLPMAX=",slpmax," DEGREES"

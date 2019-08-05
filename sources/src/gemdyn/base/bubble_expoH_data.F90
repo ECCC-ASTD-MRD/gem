@@ -32,16 +32,16 @@
 !
       if(.not.bubble_gaus_L) then
 
-         do k=1,g_nk
+         do k=1,g_nk-1
             do j=1,l_nj
-            do i=1,l_ni
-               ii=i+l_i0-1
-               theta = bubble_theta
-               if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
-                   theta = theta + 0.5d0
-               end if
-               F_t(i,j,k) = theta
-            end do
+               do i=1,l_ni
+                  ii=i+l_i0-1
+                  theta = bubble_theta
+                  if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
+                      theta = theta + 0.5d0
+                  end if
+                  F_t(i,j,k) = theta
+               end do
             end do
          end do
 
@@ -49,22 +49,22 @@
 
       ! Gaussian
 
-         do k=1,g_nk
+         do k=1,g_nk-1
             do j=1,l_nj
-            do i=1,l_ni
-               ii=i+l_i0-1
-               r = sqrt( ( ((ii)-bubble_ictr) * dble(bubble_dx) )**2 + ( ((k)-bubble_kctr) * dble(bubble_dz) )**2)
-               rad = bubble_rad*dble(bubble_dx)
-               if ( r <= rad ) then
-                   theta = bubble_theta + 0.5d0
-               else
-                   theta = bubble_theta + 0.5d0 * exp( -(r - rad)**2 / 100.d0**2 );
-               end if
-               F_t(i,j,k) = theta
-            end do
+               do i=1,l_ni
+                  ii=i+l_i0-1
+                  theta = bubble_theta
+                  r = sqrt( ( ((ii)-bubble_ictr) * dble(bubble_dx) )**2 + ( ((k)-bubble_kctr) * dble(bubble_dz) )**2)
+                  rad = bubble_rad*dble(bubble_dx)
+                  if ( r <= rad ) then
+                      theta = bubble_theta + 0.5d0
+                  else
+                      theta = bubble_theta + 0.5d0 * exp( -(r - rad)**2 / 100.d0**2 );
+                  end if
+                  F_t(i,j,k) = theta
+               end do
             end do
          end do
-
       end if
 !
 !     -----------------------------------------------------------------

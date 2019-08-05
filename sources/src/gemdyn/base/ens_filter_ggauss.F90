@@ -151,11 +151,5 @@
          /,'GAUSSIAN FILTER     ','     LAMBDA  ','         B    ', &
            '       SIGMA', &
          /,64('='),/,20X,3E14.6)
- 1010 format( &
-         /,'LATITUDE  FILTER VALUES FOR 1ST ROW WAVENUMBERS - DIRECTION G_NI', &
-         /,64('='),/,7x,5i14,/)
  1011 format(f7.2,7e14.7)
- 1012 format( &
-         /,'LONGITUDE FILTER VALUES FOR WAVENUMBERS - DIRECTION G_NJ', &
-         /,56('='),/,7x,5i14,/,f7.2,5e14.7)
       end subroutine ens_filter_ggauss

@@ -30,7 +30,6 @@
 
       if ( Ctrl_theoc_L ) then
 
-!         if ( hdif_lnr > 0. ) call theo_hdif_main()
          if ( mtn_zblen_thk > 0. ) call height_sponge()
 
          call slabsym()

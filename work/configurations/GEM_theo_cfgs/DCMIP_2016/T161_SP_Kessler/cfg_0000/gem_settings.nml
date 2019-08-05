@@ -1,5 +1,5 @@
  &grid
-  Grd_typ_S       = 'GY'      , Grd_nj          = 95 
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
   Grd_overlap     = 2         ,
   Grd_maxcfl      = 5         ,
 /
@@ -36,7 +36,6 @@
 
  &dyn_fisl
   Sol_type_S = 'DIRECT'   ,
-  Sol_fft_L  = .false.    ,
 
   Cstv_tstr_8     = 240.0 ,
 

@@ -15,7 +15,7 @@
 
 !** s/r synthetic_data
 
-      subroutine synthetic_data ()
+      subroutine synthetic_data()
       use theo_options
       use ctrl
       implicit none
@@ -23,11 +23,11 @@
 !-------------------------------------------------------------------
 !
       if ( Ctrl_theoc_L ) then
-         call theo_data
+         call theo_data()
       else if ( Ctrl_canonical_williamson_L ) then
-         call init_bar
+         call init_bar()
       else if ( Ctrl_canonical_dcmip_L ) then
-         call dcmip_init
+         call dcmip_init()
       endif
 !
 !-------------------------------------------------------------------

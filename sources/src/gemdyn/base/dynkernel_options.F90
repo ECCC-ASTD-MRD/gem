@@ -33,7 +33,7 @@ module dynkernel_options
    logical :: Schm_autobar_L = .false.
    namelist /dyn_kernel/ Schm_autobar_L
 
-   logical :: Dynamics_hauteur_L, Dynamics_autobar_L
+   logical :: Dynamics_hauteur_L, Dynamics_FISL_L, Dynamics_autobar_L
 
 contains
 

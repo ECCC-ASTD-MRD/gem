@@ -32,7 +32,6 @@
  &dyn_fisl
   Cstv_tstr_8    = 240.
   Cstv_bA_8      = 0.5
-  sol_fft_L=.false.
 /
  &gem_cfgs
   Vtopo_length_S = '2400s'

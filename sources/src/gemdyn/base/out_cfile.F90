@@ -1,4 +1,4 @@
-      subroutine out_cfile
+      subroutine out_cfile()
       use out_mod
       use out3
       implicit none
@@ -20,8 +20,6 @@
          call fclos(Out_unf)
          Out_unf = 0
       end if
-
- 102  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS CLOSED')
 !----------------------------------------------------------------------
       return
       end

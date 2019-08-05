@@ -130,10 +130,7 @@
 
       if ( Ctrl_phyms_L ) call itf_phy_step (0,Lctl_step)
 
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
-           trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
-         call firstguess()
-      end if
+      if ( Dynamics_FISL_L ) call firstguess()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
