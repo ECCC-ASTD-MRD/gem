@@ -4,18 +4,18 @@
 # add a symbolic link for gem_dbase 
 # create build directory according to the compiler called
 
+. r.load.dot /fs/ssm/hpco/exp/intelpsxe-cluster-19.0.3.199 rpn/base/01.0
+. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.2.0--ofed-4.4.2--intel-2019.0.045
+
 if [ `hostname -d` = "cmc.ec.gc.ca" ];
 # in eccc network
 then
-  . r.load.dot /ssm/net/hpcs/201402/04/base /ssm/net/hpcs/exp/intel2016/01;
-  GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
-  [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
+    GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
+    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
 else
   if [ `hostname -d` = "science.gc.ca" ];
   # in science network
   then
-    . ssmuse-sh -x main/opt/intelcomp/intelcomp-2016.1.156;
-    . ssmuse-sh -x main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156;
     GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
     [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
   fi

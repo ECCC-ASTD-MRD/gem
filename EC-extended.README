@@ -1,106 +1,71 @@
-This file gives basic instructions on how to compile and run GEM on a stick.
-----------------------------------------------------------------------------
-
-Instructions in a nutshell (see below for extended instructions)
-
-Most common use: Intel 16 on a workstation
-
 1) load compiler
 
-. .ssmuse_intel_16
+# G COMPILER
+# Load G compiler and libraries
+. r.load.dot /ssm/net/hpcs/compilers/gcc-5.1.0/gcc_5.1.0_ubuntu-14.04-amd64-64
+. ssmuse-sh -p /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64
 
-2) build GEM
-
-cd gem_on_a_stick_[version]/sources/build-intel-16.0.1.150
-cmake ..
-make -j
-make install
-
-3) run GEM
-
-cd gem_on_a_stick_[version]/work/work-Linux_x86-64-intel-16.0.1.150
-
-#default configuration for runprep and runmod is GEM_cfgs
-./runprep
-./runmod -ptopo 2x2x1 (to use 4 cpus for LU, 8 cpus for GY)
-
-4) to use Visual Studio Code:
-./vis-studio
-
-#code will try to build (== cmake), but asks where the compilers are:
-# select "[Unspecified]" at the end of the list
-# click on "Build" at the bottom of code window
-# Type Ctrl+Maj+P (or go to "Afficher -> Palette de commandes"
-# and then type Cmake: Install
-
-# you can open a terminal within Code and go to the working directory to run GEM
-
-5) Using gfortran
-To use gfortran, you can either type FOR EVERY BUILD:
-cmake -DCOMPILER=gfortran ..
-or edit the sources/CMakelists.txt file, uncomment the following line:
-# set(COMPILER gfortran CACHE INTERNAL compiler)
-
-and comment the following line:
-set(COMPILER intel CACHE INTERNAL compiler)
-
------------------------------------------------------------------
-
-Extended instructions:
-
-1) load compiler and create build directory
-
-# INTEL COMPILER 2016
-# EC workstation
+#INTEL COMPILER 2016
+#EC workstation
 # Load INTEL compiler and libraries
-. .ssmuse_intel_16
+# default version of Intel compiler used: 19.
+# to use version 13, change the link in the sources directory:
+# cd gem_on_a_stick_5.1.a6/sources
+# rm Linux-x86_64-intel.cmake
+# ln -s Linux-x86_64-intel.cmake.16 Linux-x86_64-intel.cmake
+# changes to the C and Fortran flags can be done in the Linux-x86_64-intel.cmake
+#. r.load.dot rpn/utils/16.2.2 # if not already done
+#. r.module.dot
+. r.load.dot /ssm/net/hpcs/201402/04/base /ssm/net/hpcs/exp/intel2016/01
 
-# eccc-ppp* 
+#eccc-ppp* 
 INTEL:
 . ssmuse-sh -x main/opt/intelcomp/intelcomp-2016.1.156
 . ssmuse-sh -x main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156
 
-# INTEL COMPILER 2019
-# hpcr1-in
-# hpcr2-in
-# rutherford
+#INTEL COMPILER 2019
+#hpcr1-in
+#hpcr2-in
+#rutherford
+. r.load.dot /fs/ssm/hpco/exp/intelpsxe-cluster-19.0.3.199 rpn/base/01.0
+. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.2.0--ofed-4.4.2--intel-2019.0.045
 
-# default version of Intel compiler used: 16.
-# to use version 19, change the link in the sources directory:
+#PGI COMPILER 17.10 on lorentz
+# Load PGI compiler and libraries
+PGI=/local/raid/armn/CUDA/PGI/pgi; export PGI
+MANPATH=$MANPATH:$PGI/linux86-64/17.10/man; export MANPATH
+LM_LICENSE_FILE=$PGI/license.dat; export LM_LICENSE_FILE
+PATH=$PGI/linux86-64/17.10/bin:$PATH; export PATH
+export LD_LIBRARY_PATH=$PGI/linux86-64/17.10/lib:$LD_LIBRARY_PATH
+export PATH=$PGI/linux86-64/17.10/mpi/openmpi/bin:$PATH
+export MANPATH=$MANPATH:$PGI/linux86-64/17.10/mpi/openmpi/man
+
+#PGI COMPILER 18.4 on einstein --> compiles (not with -g) and does not run
 cd gem_on_a_stick_[version]/sources
-rm Linux-x86_64-intel.cmake
-ln -s Linux-x86_64-intel.cmake.19 Linux-x86_64-intel.cmake
-
-# changes to the C and Fortran flags can be done in the Linux-x86_64-intel.cmake
-#. r.load.dot /fs/ssm/hpco/exp/intelpsxe-cluster-19.0.3.199 rpn/base/01.0
-#. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.2.0--ofed-4.4.2--intel-2019.0.045
-. .ssmuse_intel_19
-
-# Using GNU COMPILER
-# Load G compiler and libraries
-. .ssmuse_gfortran_5.1.0
-or
-. .ssmuse_gfortran_7.4.0
-
-# default compiler: Intel
-# if you want to compile with another compiler:
-# modify sources/CMakelists.txt for desired compiler (line 8)
-# make sure link of Linux*.cmake matches right compiler version
-# eg: ln -s Linux-x86_64-intel.cmake.16 Linux-x86_64-intel.cmake
+rm Linux-x86_64-pgi.cmake; ln -s Linux-x86_64-pgi.cmake_18.4 Linux-x86_64-pgi.cmake
+export MODULEPATH=$MODULEPATH:/opt/pgi/modulefiles
+module load PrgEnv-pgi/18.4
 
 2) build GEM
 
 #configure GEM
-cd gem_on_a_stick_[version]/sources/build-intel[...]
+cd gem_on_a_stick_[version]/sources/
+#default compiler: gfortran
+#if you want to compile with another compiler:
+#modify sources/CMakelists.txt for desired compiler (line 9)
+#make sure link of Linux*.cmake matches right compiler version
+#eg: ln -s Linux-x86_64-intel.cmake.16 Linux-x86_64-intel.cmake
+mkdir -p build
+cd build
 cmake ..
 
 #if compiler or compile options are not right:
 # make appropriate changes to the cmake file named according to the Fortran
 # compiler you are using, in the sources directory, for example:
+# Linux-x86_64-gfortran.cmake if you compile with gfortran or
 # Linux-x86_64-intel.cmake if you compile with Intel
-# Linux-x86_64-gfortran.cmake if you compile with gfortran
 
-cd gem_on_a_stick_[version]/sources/build-intel[...]
+cd gem_on_a_stick_[version]/sources/build
 \rm -rf *
 cmake ..
 

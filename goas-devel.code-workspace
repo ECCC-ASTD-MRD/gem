@@ -1,0 +1,17 @@
+{
+        "folders": [
+        {
+          "name": "GoaS-devel",
+          "path": "sources",
+          "telemetry.enableCrashReporter": false,
+          "telemetry.enableTelemetry": false
+
+                }
+        ],
+        "settings": {
+           "cmake.buildDirectory": "${workspaceRoot}/build-intel-16.0.1.150",
+           "telemetry.enableTelemetry": false,
+           "telemetry.enableCrashReporter": false,
+	   "cmake.configureOnOpen": true,
+        }
+}
