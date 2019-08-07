@@ -26,7 +26,7 @@ module phy_restart_mod
 contains
 
   !/@*
-  function phy_restart (F_WorR_S, F_spin_L) result(F_istat)
+  function phy_restart(F_WorR_S, F_spin_L) result(F_istat)
     implicit none
  !#TODO: F_spin_L never used
     character(len=*),intent(in) :: F_WorR_S
@@ -55,9 +55,13 @@ contains
     if (WorR_S == PHY_RESTART_WRITE) then
     endif
 
+    if (F_spin_L) then
+       print *, 'F_spin_L ignored'
+    endif
+
 ! coupling may have something to do for restart
 
-    call cpl_restart (WorR_S)
+    call cpl_restart(WorR_S)
 
     F_istat = RMN_OK
 

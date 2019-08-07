@@ -42,15 +42,17 @@
       if(.not.done) then
          allocate ( zmom(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
                     ztht(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                lg_pstar(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
+                    zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
 
-         allocate ( mc_Jx (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Jy (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_iJz(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                  mc_logJz(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Ix (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Iy (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Iz (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+         allocate ( mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                  mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
 
          allocate ( mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
@@ -62,80 +64,86 @@
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_sls_s,sls)
 
-      ztht(:,:,0)=ver_z_8%m(0)
-      zmom(:,:,0)=ver_z_8%m(0)
+      ztht_8(:,:,0)=ver_z_8%m(0)
+      zmom_8(:,:,0)=ver_z_8%m(0)
 
       do k=1,G_nk
-         zmom(:,:,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*fis0(:,:)+Ver_c_8%m(k)*sls(:,:))/grav_8
-         ztht(:,:,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0(:,:)+Ver_c_8%t(k)*sls(:,:))/grav_8
+         zmom_8(:,:,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*fis0(:,:)+Ver_c_8%m(k)*sls(:,:))/grav_8
+         ztht_8(:,:,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0(:,:)+Ver_c_8%t(k)*sls(:,:))/grav_8
       end do
-      zmom(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
-      ztht(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
+      zmom_8(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
+      ztht_8(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
 
-      lg_pstar(:,:,G_nk+1)=log(1.d5)-grav_8*zmom(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
+      lg_pstar_8(:,:,G_nk+1)=log(1.d5)-grav_8*zmom_8(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
 
       do k=G_nk,1,-1
-         lg_pstar(:,:,k)=lg_pstar(:,:,k+1)+grav_8*(zmom(:,:,k+1)-zmom(:,:,k))/(rgasd_8*Cstv_Tstr_8)
+         lg_pstar_8(:,:,k)=lg_pstar_8(:,:,k+1)+grav_8*(zmom_8(:,:,k+1)-zmom_8(:,:,k))/(rgasd_8*Cstv_Tstr_8)
       end do
 
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
             do i=l_minx+1,l_maxx-1
-               mc_Jx (i,j,k)=(zmom(i+1,j,k)-zmom(i,j,k))*geomh_invDX_8(j)
-               mc_Jy (i,j,k)=(zmom(i,j+1,k)-zmom(i,j,k))*geomh_invDY_8
-               mc_iJz(i,j,k)=one/(zmom(i,j,k+1)-zmom(i,j,k))
+               mc_Jx_8 (i,j,k)=(zmom_8(i+1,j,k)-zmom_8(i,j,k))*geomh_invDX_8(j)
+               mc_Jy_8 (i,j,k)=(zmom_8(i,j+1,k)-zmom_8(i,j,k))*geomh_invDY_8
+               mc_iJz_8(i,j,k)=one/(zmom_8(i,j,k+1)-zmom_8(i,j,k))
             end do
          end do
       end do
-      ztht(:,:,G_nk)=Cstv_bar1_8*fis0(:,:)/grav_8
+      ztht_8(:,:,G_nk)=Cstv_bar1_8*fis0(:,:)/grav_8
       do k=1,G_nk
          do j=l_miny+1,l_maxy-1
             do i=l_minx+1,l_maxx-1
-               mc_Ix(i,j,k)=log( (ztht(i+1,j,k)-ztht(i+1,j,k-1))/(ztht(i-1,j,k)-ztht(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
-               mc_Iy(i,j,k)=log( (ztht(i,j+1,k)-ztht(i,j+1,k-1))/(ztht(i,j-1,k)-ztht(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
-               mc_Iz(i,j,k)=log( (zmom(i,j,k+1)-zmom(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
-                            /(zmom(i,j,k)-zmom(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
-      !        mc_Ix(i,j,k)=0.0
-      !        mc_Iy(i,j,k)=0.0
-      !        mc_Iz(i,j,k)=0.0
-      !        mc_logJz(i,j,k)=log( (ztht(i,j,k)-ztht(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
-               mc_logJz(i,j,k)=0.0
+               mc_Ix_8(i,j,k)=log( (ztht_8(i+1,j,k)-ztht_8(i+1,j,k-1))/(ztht_8(i-1,j,k)-ztht_8(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
+               mc_Iy_8(i,j,k)=log( (ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(ztht_8(i,j-1,k)-ztht_8(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
+               mc_Iz_8(i,j,k)=log( (zmom_8(i,j,k+1)-zmom_8(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
+                            /(zmom_8(i,j,k)-zmom_8(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
+      !        mc_Ix_8(i,j,k)=0.0
+      !        mc_Iy_8(i,j,k)=0.0
+      !        mc_Iz_8(i,j,k)=0.0
+      !        mc_logJz_8(i,j,k)=log( (ztht_8(i,j,k)-ztht_8(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
+               mc_logJz_8(i,j,k)=0.0
             end do
          end do
       end do
-      ztht(:,:,G_nk)=ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
+      ztht_8(:,:,G_nk)=ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
 
       do j=l_miny+1,l_maxy-1
          do i=l_minx+1,l_maxx-1
 
-            mc_css_H_8(i,j)   = one/(gama_8*(isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
+            mc_css_H_8(i,j)   = one/(gama_8*(isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
 
-            mc_alfas_H_8(i,j) = mc_css_H_8(i,j)*(gama_8*(isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk) &
-                                + half*mu_8) + Ver_wmstar_8(G_nk)*gama_8*(isol_i*mc_iJz(i,j,G_nk-1) &
+            mc_alfas_H_8(i,j) = mc_css_H_8(i,j)*(gama_8*(isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk) &
+                                + half*mu_8) + Ver_wmstar_8(G_nk)*gama_8*(isol_i*mc_iJz_8(i,j,G_nk-1) &
                                                + isol_d*Ver_idz_8%t(G_nk-1)-half*mu_8) )
 
             mc_betas_H_8(i,j) = mc_css_H_8(i,j)* Ver_wmstar_8(G_nk)*gama_8* &
-                                (isol_i*mc_iJz(i,j,G_nk-1)+isol_d*Ver_idz_8%t(G_nk-1)+half*mu_8)
+                                (isol_i*mc_iJz_8(i,j,G_nk-1)+isol_d*Ver_idz_8%t(G_nk-1)+half*mu_8)
 
             mc_cssp_H_8(i,j) = gama_8*(Ver_idz_8%m(G_nk)-epsi_8*Ver_wp_8%m(G_nk))*&
-                               (isol_i*mc_iJz(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
+                               (isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
          enddo
       enddo
 
       if (Schm_autobar_L) then
-         mc_Jx   (:,:,:) = 0.
-         mc_Jy   (:,:,:) = 0.
-         mc_iJz  (:,:,:) = 1.
-         mc_Ix   (:,:,:) = 0.
-         mc_Iy   (:,:,:) = 0.
-         mc_Iz   (:,:,:) = 0.
-         mc_logJz(:,:,:) = 0.
+         mc_Jx_8   (:,:,:) = 0.
+         mc_Jy_8   (:,:,:) = 0.
+         mc_iJz_8  (:,:,:) = 1.
+         mc_Ix_8   (:,:,:) = 0.
+         mc_Iy_8   (:,:,:) = 0.
+         mc_Iz_8   (:,:,:) = 0.
+         mc_logJz_8(:,:,:) = 0.
 
          mc_alfas_H_8(:,:) = 1.0d0
          mc_betas_H_8(:,:) = 0.0d0
          mc_css_H_8  (:,:) = 0.0d0
          mc_cssp_H_8 (:,:) = 0.0d0
       end if
+
+      ! We keep a copy in single precision only for cascade outputs
+      do k=1,G_nk
+         zmom(:,:,k) = real(zmom_8(:,:,k))
+         ztht(:,:,k) = real(ztht_8(:,:,k))
+      end do
 
 !     ---------------------------------------------------------------
 !

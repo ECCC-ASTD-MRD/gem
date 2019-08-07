@@ -1,4 +1,10 @@
-  interface                                                                                       !InTf!
+   interface                                                                                      !InTf!
+    subroutine set_intrp_bicub_off_yx(qx,qy) bind(C,name='set_intrp_bicub_off_yx')                !InTf!
+      integer, intent(IN), value :: qx,qy                                                         !InTf!
+    end subroutine set_intrp_bicub_off_yx                                                         !InTf!
+    subroutine set_intrp_bicub_off_quv(qx,qy,ux,uy,vx,vy) bind(C,name='set_intrp_bicub_off_quv')  !InTf!
+      integer, intent(IN), value :: qx,qy,ux,uy,vx,vy                                             !InTf!
+    end subroutine set_intrp_bicub_off_quv                                                        !InTf!
     subroutine set_intrp_bicub_yx(x1,x2,y1,y2) bind(C,name='set_intrp_bicub_yx')                  !InTf!
       integer, intent(IN), value :: x1,x2,y1,y2                                                   !InTf!
     end subroutine set_intrp_bicub_yx                                                             !InTf!
@@ -35,4 +41,4 @@
       real(C_DOUBLE), intent(IN), dimension(*) :: s                                               !InTf!
       integer(C_INT), intent(IN), value :: ni, ninj, nk                                           !InTf!
     end subroutine intrp_bicub_yx_uv                                                              !InTf!
-  end interface                                                                                   !InTf!
+   end interface                                                                                  !InTf!

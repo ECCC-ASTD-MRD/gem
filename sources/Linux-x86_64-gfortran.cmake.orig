@@ -8,7 +8,7 @@ set(MPI_Fortran_COMPILER "mpif90")
 set(CMAKE_BUILD_TYPE "Debug")
 
 set(CMAKE_C_FLAGS "-O2 -g -w -D_REENTRANT -fopenmp" CACHE STRING "C compiler flags" FORCE)
-set(CMAKE_Fortran_FLAGS "-O2 -fdump-core -fbacktrace -finit-real=nan -g -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic -fopenmp -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument" CACHE STRING "Fortran compiler flags" FORCE)
+set(CMAKE_Fortran_FLAGS "-O2 -fdump-core -fbacktrace -finit-real=nan -g -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic -fopenmp -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals" CACHE STRING "Fortran compiler flags" FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS "-s -fopenmp -fpic")
 

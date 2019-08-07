@@ -297,10 +297,10 @@ contains
                F_comm%send_iyv(next)=jv
                F_comm%send_xxr(next)=F_xp
                F_comm%send_yyr(next)=F_yp
-               F_comm%send_xu(next)= (F_xp-F_pux(Ptopo_gindx(1,Ptopo_myproc+1)+iu-1))*geomh_inv_hx_8 + iu
-               F_comm%send_yu(next)= (F_yp-F_puy(Ptopo_gindx(3,Ptopo_myproc+1)+ju-1))*geomh_inv_hy_8 + ju
-               F_comm%send_xv(next)= (F_xp-F_pvx(Ptopo_gindx(1,Ptopo_myproc+1)+iv-1))*geomh_inv_hx_8 + iv
-               F_comm%send_yv(next)= (F_yp-F_pvy(Ptopo_gindx(3,Ptopo_myproc+1)+jv-1))*geomh_inv_hy_8 + jv
+               F_comm%send_xu(next)= (F_xp-F_pux(F_x1))*geomh_inv_hx_8+F_x1
+               F_comm%send_yu(next)= (F_yp-F_puy(F_y1))*geomh_inv_hy_8+F_y1
+               F_comm%send_xv(next)= (F_xp-F_pvx(F_x2))*geomh_inv_hx_8+F_x2
+               F_comm%send_yv(next)= (F_yp-F_pvy(F_y2))*geomh_inv_hy_8+F_y2
                F_comm%send_s (nexts  )=F_s(1,1)
                F_comm%send_s (nexts+1)=F_s(1,2)
                F_comm%send_s (nexts+2)=F_s(2,1)
@@ -567,14 +567,14 @@ contains
       include "intrp_bicub_yx.inc"
 
       integer tag2, ireq, kk, m, mm, kk_proc, adr, ind1, ind2, ierr
-      integer request(Ptopo_numproc*2)
+      integer request(Ptopo_numproc*3)
 !
 !     ---------------------------------------------------------------
 !
       call rpn_comm_xch_halo (F_src, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-      tag2=14 ; ireq=0
+      tag2=14 ; ireq=0 ; request = 0
 
 ! Posting the receive requests
       do kk= 1, F_comm%recvmaxproc

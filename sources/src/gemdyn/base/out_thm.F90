@@ -121,7 +121,7 @@
          if (Outd_var_S(ii,set) == 'TH') pnth=ii
       end do
 
-      if (pnpt /= 0.and.Hyb_rcoef(2) /= 1.0) pnpt=0
+      if (pnpt /= 0 .and. Hyb_rcoef(2) /= 1.0) pnpt=0
 
       psum=pnpn+pnp0+pnpt+pnla+pnlo+pnme+pnmx
       psum=psum +  &
@@ -252,8 +252,8 @@
                   gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0 / Cstv_invFI_8
                   gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0 / Cstv_invFI_8
                else
-                  gzm(:,:,1:G_nk+1) = grav_8 * zmom(:,:,1:G_nk+1)
-                  gzt(:,:,1:G_nk+1) = grav_8 * ztht(:,:,1:G_nk+1)
+                  gzm(:,:,1:G_nk+1) = grav_8 * zmom_8(:,:,1:G_nk+1)
+                  gzt(:,:,1:G_nk+1) = grav_8 * ztht_8(:,:,1:G_nk+1)
                end if
             case ('DYNAMICS_FISL_P')
                istat = gmm_get(gmmk_qt1_s,qt1)
@@ -274,8 +274,8 @@
                   gzt(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) * grav_8
                else
                   ! TODO : SG reviser
-                  gzm(:,:,1:G_nk+1) = grav_8 * zmom(:,:,1:G_nk+1)
-                  gzt(:,:,1:G_nk+1) = grav_8 * ztht(:,:,1:G_nk+1)
+                  gzm(:,:,1:G_nk+1) = grav_8 * zmom_8(:,:,1:G_nk+1)
+                  gzt(:,:,1:G_nk+1) = grav_8 * ztht_8(:,:,1:G_nk+1)
                end if
 
          end select

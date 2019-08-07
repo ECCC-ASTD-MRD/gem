@@ -19,12 +19,13 @@ module metric
    public
    save
 
-   real, dimension(:,:,:), pointer :: zmom, ztht, lg_pstar
+   real, dimension(:,:,:), allocatable :: zmom, ztht ! We keep a copy in single precision only for cascade outputs
+   real(kind=REAL64), dimension(:,:,:), allocatable :: zmom_8, ztht_8, lg_pstar_8
 
-   real, dimension(:,:,:), pointer :: mc_Ix, mc_Iy, mc_Iz
-   real, dimension(:,:,:), pointer :: mc_Jx,  mc_Jy,  mc_iJz
-   real, dimension(:,:,:), pointer :: mc_logJz
+   real(kind=REAL64), dimension(:,:,:), allocatable :: mc_Ix_8, mc_Iy_8, mc_Iz_8
+   real(kind=REAL64), dimension(:,:,:), allocatable :: mc_Jx_8,  mc_Jy_8,  mc_iJz_8
+   real(kind=REAL64), dimension(:,:,:), allocatable :: mc_logJz_8
 
-   real(kind=REAL64), dimension(:,:)  , pointer :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8, mc_cssp_H_8
+   real(kind=REAL64), dimension(:,:)  , allocatable :: mc_css_H_8, mc_alfas_H_8, mc_betas_H_8, mc_cssp_H_8
 
 end module metric

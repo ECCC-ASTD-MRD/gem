@@ -77,108 +77,108 @@ subroutine fomichev(taux, t,oz,sh,ps, ni1,ni2,nl,nk)
 
    external precl,pcool
 
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-! Insertion du code radiatif de Fomichev (Tire de MAM3)
-! (V.I. Fomichev et J.-P. Blanchet, 1995, Atmosphere-Ocean, pp.513-531)
+   ! Insertion du code radiatif de Fomichev (Tire de MAM3)
+   ! (V.I. Fomichev et J.-P. Blanchet, 1995, Atmosphere-Ocean, pp.513-531)
 
-! Ce code n'est pris en compte qu'a partir de 39mb. De 39mb a 7mb il remplace
-! graduellement le code original pour rester le seul utilise a partir de 7 mb
+   ! Ce code n'est pris en compte qu'a partir de 39mb. De 39mb a 7mb il remplace
+   ! graduellement le code original pour rester le seul utilise a partir de 7 mb
 
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-!     MATRIX PARAMETERIZATION FOR COOLING RATES IN 15 UM CO2 AND
-!     9.6 UM O3 BAND IS USED:
+   !     MATRIX PARAMETERIZATION FOR COOLING RATES IN 15 UM CO2 AND
+   !     9.6 UM O3 BAND IS USED:
 
-      do il = 1,nl
+   do il = 1,nl
 
-!     Attention, dans Fomichev, on calcule du sol vers le toit alors que
-!     dans GEM c'est le contraire. On inverse donc les index sur les niveaux.
-!     La grille thermodynamique de MAM3 est sur les 1/2 niveaux alors que pour GEM
-!     il n'y a pas de difference (xo(i) n'est pas calcule avec la moyenne des niveaux
-!     i et i+1 contrairement a MAM3).
+      !     Attention, dans Fomichev, on calcule du sol vers le toit alors que
+      !     dans GEM c'est le contraire. On inverse donc les index sur les niveaux.
+      !     La grille thermodynamique de MAM3 est sur les 1/2 niveaux alors que pour GEM
+      !     il n'y a pas de difference (xo(i) n'est pas calcule avec la moyenne des niveaux
+      !     i et i+1 contrairement a MAM3).
 
-              do i = 1, nk
-          xo(i) = alog(1000./(sh(il,nk-i+1)*ps(il)*0.01))  ! ps est en Pa
-        enddo
+      do i = 1, nk
+         xo(i) = alog(1000./(sh(il,nk-i+1)*ps(il)*0.01))  ! ps est en Pa
+      enddo
 
-        call PRECL(xo, xf, xhf, PDR, PCD, IDR, ICD, nk)
+      call PRECL(xo, xf, xhf, PDR, PCD, IDR, ICD, nk)
 
-!     temperature&ozone interpolation to parameterizations grid
-!     convert ozone mixing ratio in ppmv
+      !     temperature&ozone interpolation to parameterizations grid
+      !     convert ozone mixing ratio in ppmv
 
-!     oz est en kg/kg. [ppmv] = 28.964/48 *1.e6 [kg/kg] = .6034e6 [kg/kg]
+      !     oz est en kg/kg. [ppmv] = 28.964/48 *1.e6 [kg/kg] = .6034e6 [kg/kg]
 
-!     De 1000mb a .02mb
+      !     De 1000mb a .02mb
 
-              do i = 1,45
-                if(xf(i).le.xo(nk)) then
+      do i = 1,45
+         if(xf(i).le.xo(nk)) then
             ik = nk - IDR(i)
             o3f(i) = (PDR(1,i)*oz(il,ik+1)+PDR(2,i)*oz(il,ik)+ &
-                              PDR(3,i)*oz(il,ik-1))*.6034e6
+                 PDR(3,i)*oz(il,ik-1))*.6034e6
             tf(i) = PDR(1,i)*t(il,ik+1)+PDR(2,i)*t(il,ik)+ &
-                                  PDR(3,i)*t(il,ik-1)
+                 PDR(3,i)*t(il,ik-1)
          else
             o3f(i) = oz(il,1)*.6034e6
             tf(i) = t(il,1)
          end if
-        enddo
+      enddo
 
-!     Au-dessus de 0.02mb
+      !     Au-dessus de 0.02mb
 
-        do i = 46, 69
+      do i = 46, 69
          if(xf(i).le.xo(nk)) then
             ik = nk - IDR(i)
             tf(i) = PDR(1,i)*t(il,ik+1)+PDR(2,i)*t(il,ik)+ &
-                                  PDR(3,i)*t(il,ik-1)
+                 PDR(3,i)*t(il,ik-1)
          else
             tf(i) = t(il,1)
          end if
-        enddo
-
-!     Calculate cooling rates for input grid:
-
-!     Convertit le taux de refroidissement de Fomichev, qui est
-!     en cm**2/s**3 (erg/g/s), en K/s. Les valeurs positives sortant
-!     de pcool correspondent a un rechauffement alors que les valeurs
-!     negatives correspondent a un refroidissement parce que pcool
-!     calcule un taux de rechauffement (comme son nom l'indique !).
-
-        call pcool(hfo,xf,tf,o3f)
-
-        do i = 1, nk
-
-          if(xo(i).le.3.25) goto 9998   ! Plus bas que 38.77mb
-
-          if(xo(i).le.5.00) then        ! Entre 38.77mb et 6.74mb
-
-           ik = ICD(i)
-           hf = 8.6e-3/86400.*(PCD(1,i)*hfo(ik)+PCD(2,i)*hfo(ik+1)+ &
-                                         PCD(3,i)*hfo(ik+2))
-           vsp = (xo(i)-3.25)/1.75
-           taux(il,nk-i+1) = taux(il,nk-i+1)*(1.-vsp) + hf*vsp
-
-          else                          ! Plus haut que 6.74mb
-
-           ik = ICD(i)
-           taux(il,nk-i+1)= 8.6e-3/86400.*(PCD(1,i)*hfo(ik)+ &
-                     PCD(2,i)*hfo(ik+1)+PCD(3,i)*hfo(ik+2))
-
-          end if
-
- 9998     continue
-
-        enddo
       enddo
 
-      return
+      !     Calculate cooling rates for input grid:
 
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      !     Convertit le taux de refroidissement de Fomichev, qui est
+      !     en cm**2/s**3 (erg/g/s), en K/s. Les valeurs positives sortant
+      !     de pcool correspondent a un rechauffement alors que les valeurs
+      !     negatives correspondent a un refroidissement parce que pcool
+      !     calcule un taux de rechauffement (comme son nom l'indique !).
 
-      end
+      call pcool(hfo,xf,tf,o3f)
+
+      do i = 1, nk
+
+         if(xo(i).le.3.25) goto 9998   ! Plus bas que 38.77mb
+
+         if(xo(i).le.5.00) then        ! Entre 38.77mb et 6.74mb
+
+            ik = ICD(i)
+            hf = 8.6e-3/86400.*(PCD(1,i)*hfo(ik)+PCD(2,i)*hfo(ik+1)+ &
+                 PCD(3,i)*hfo(ik+2))
+            vsp = (xo(i)-3.25)/1.75
+            taux(il,nk-i+1) = taux(il,nk-i+1)*(1.-vsp) + hf*vsp
+
+         else                          ! Plus haut que 6.74mb
+
+            ik = ICD(i)
+            taux(il,nk-i+1)= 8.6e-3/86400.*(PCD(1,i)*hfo(ik)+ &
+                 PCD(2,i)*hfo(ik+1)+PCD(3,i)*hfo(ik+2))
+
+         end if
+
+9998     continue
+
+      enddo
+   enddo
+
+   return
+
+   !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+end subroutine fomichev
 
 
- 
+
 subroutine DETINT(X,XN,N,Z,Z1,Z2,K)
    use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
@@ -210,27 +210,28 @@ subroutine DETINT(X,XN,N,Z,Z1,Z2,K)
    ! Z2       interpolation coefficients (weight) for XN(K+2)
    !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-      K=1
-      L1=N-1
-    1 I=int((K+L1)/2.)
-      if(I.eq.K) goto 4
-      if(X-XN(I)) 2,3,3
-    2 L1=I
-      goto 1
-    3 K=I
-      goto 1
-    4 continue
+   K=1
+   L1=N-1
+1  I=int((K+L1)/2.)
+   if(I.eq.K) goto 4
+   if (X-XN(I) < 0.) then
+      L1=I
+   else
+      K=I
+   endif
+   goto 1
+4  continue
 
-      A=(X-XN(K+1))/(XN(K)-XN(K+2))
-      A1=((X-XN(K))/(XN(K)-XN(K+1)))*(1.+A)
-      A2=((X-XN(K))/(XN(K+1)-XN(K+2)))*A
+   A=(X-XN(K+1))/(XN(K)-XN(K+2))
+   A1=((X-XN(K))/(XN(K)-XN(K+1)))*(1.+A)
+   A2=((X-XN(K))/(XN(K+1)-XN(K+2)))*A
 
-      Z=1.+A1
-      Z1=-A1-A2
-      Z2=A2
+   Z=1.+A1
+   Z1=-A1-A2
+   Z2=A2
 
-      return
-      end
+   return
+end subroutine DETINT
 
 
 subroutine PRECL(X, XR, XC, PDR, PCD, IDR, ICD, N)
@@ -267,37 +268,37 @@ subroutine PRECL(X, XR, XC, PDR, PCD, IDR, ICD, N)
    ! ICD(N)     indexes of levels for interpolation from XC(63) to X(N)
 
 
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-!     to form PDR(3,69),IDR(69) arrays
+   !     to form PDR(3,69),IDR(69) arrays
 
-      do 3 I=1,69
-       if(XR(I).le.X(1)) then
+   do I=1,69
+      if(XR(I).le.X(1)) then
          PDR(1,I) = 1.
          PDR(2,I) = 0.
          PDR(3,I) = 0.
          IDR(I) = 1
-       else
+      else
          call DETINT(XR(I),X,N,Z,Z1,Z2,K)
          PDR(1,I)=Z
          PDR(2,I)=Z1
          PDR(3,I)=Z2
          IDR(I)=K
-       end if
-    3 continue
+      end if
+   enddo
 
-!     to form the PCD(3,KX),ICD(KX) arrays
+   !     to form the PCD(3,KX),ICD(KX) arrays
 
-      do 4 I=1,N
-       call DETINT(X(I),XC,61,Z,Z1,Z2,K)
-       PCD(1,I)=Z
-       PCD(2,I)=Z1
-       PCD(3,I)=Z2
-       ICD(I)=K
-    4 continue
+   do I=1,N
+      call DETINT(X(I),XC,61,Z,Z1,Z2,K)
+      PCD(1,I)=Z
+      PCD(2,I)=Z1
+      PCD(3,I)=Z2
+      ICD(I)=K
+   enddo
 
-      return
-      end
+   return
+end subroutine PRECL
 
 
 subroutine PCOOL(H,X,T,O3)
@@ -362,9 +363,9 @@ subroutine PCOOL(H,X,T,O3)
 
    integer KO
    data KO/0/
- 
+
    ! USSA-1976 model: vmr for N2, O2, O, x= 11.5-17, 0.25.
- 
+
    data SN2/.7816E+00, .7814E+00, .7812E+00, .7810E+00, .7807E+00, &
         .7804E+00, .7800E+00, .7793E+00, .7785E+00, .7776E+00, &
         .7768E+00, .7763E+00, .7758E+00, .7753E+00, .7748E+00, &
@@ -487,95 +488,104 @@ subroutine PCOOL(H,X,T,O3)
    integer I,J,II,JJ,IM
    real(REAL64) :: TT,ZO,H1,H2,H3,FJ,AA1,AA2,D1,D2
 
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-      do 1 I=1,45
-        FU(I)=exp(-960.24/T(I))
-    1   FO3(I)=exp(-1500./T(I))
-      do 2 I=46,69
-    2   FU(I)=exp(-960.24/T(I))
-      do I=46,50
-        FO3(I)=0.0
+   do I=1,45
+      FU(I)=exp(-960.24/T(I))
+      FO3(I)=exp(-1500./T(I))
+   enddo
+   do I=46,69
+      FU(I)=exp(-960.24/T(I))
+   enddo
+   do I=46,50
+      FO3(I)=0.0
+   enddo
+
+   ! if ko=-1 then use Dickinson (1984) value for rate coefficient for
+   !          the deactivation CO2(010) by O
+   !    ko=0  then use Shved et al. (1991) value
+   !    ko=1  then use Sharma&Wintersteiner (1990) value.
+
+   do I=1,23
+      TT=T(I+46)
+      if (KO.eq.-1) then
+         ZO = 0.5E7
+      else if (KO.eq.0) then
+         ZO = 3.5E7
+      else
+         ZO = (2.57E9*sqrt(TT)+1.70E13*exp(-76.75*TT**(-1./3.)))/TT
+      endif
+      AL(I)=1.5638/(1.5638+exp(-X(I+46))*(SN2(I)*(2.9*TT*TT-1060.*TT+ &
+           145000.)+O2(I)*(4.23*TT*TT-1490.*TT+180000.)+O(I)*ZO))
+   enddo
+
+   ! *********************************************************************
+   ! calculate the heating rates for layer below s.h.p. = 11.5
+   !   15 um CO2 + 9.6 um O3:
+
+   do I=1,9
+      H1=FU(1)*AU(I,1)
+      H2=FU(1)*BU(I,1)
+      H3=FO3(1)*AO3(I,1)
+      II=I+8
+
+      do J=2,6
+         JJ=II+IG(J)
+         H1=H1+AU(I,J)*FU(JJ)
+         H2=H2+BU(I,J)*FU(JJ)
+         H3=H3+AO3(I,J)*FO3(JJ)
       enddo
 
-! if ko=-1 then use Dickinson (1984) value for rate coefficient for
-!          the deactivation CO2(010) by O
-!    ko=0  then use Shved et al. (1991) value
-!    ko=1  then use Sharma&Wintersteiner (1990) value.
+      H(I)=H1+H2*FU(II)+H3*O3(II)
+   enddo
 
-      do 3 I=1,23
-        TT=T(I+46)
-        if (KO.eq.-1) then
-          ZO = 0.5E7
-        else if (KO.eq.0) then
-          ZO = 3.5E7
-        else
-          ZO = (2.57E9*sqrt(TT)+1.70E13*exp(-76.75*TT**(-1./3.)))/TT
-        endif
-    3   AL(I)=1.5638/(1.5638+exp(-X(I+46))*(SN2(I)*(2.9*TT*TT-1060.*TT+ &
-            145000.)+O2(I)*(4.23*TT*TT-1490.*TT+180000.)+O(I)*ZO))
+   do I=10,35
+      H1=0.
+      H2=0.
+      H3=0.
+      II=I+8
 
-! *********************************************************************
-! calculate the heating rates for layer below s.h.p. = 11.5
-!   15 um CO2 + 9.6 um O3:
+      do J=1,6
+         JJ=II+IG(J)
+         H1=H1+AU(I,J)*FU(JJ)
+         H2=H2+BU(I,J)*FU(JJ)
+         H3=H3+AO3(I,J)*FO3(JJ)
+      enddo
 
-      do 4 I=1,9
-        H1=FU(1)*AU(I,1)
-        H2=FU(1)*BU(I,1)
-        H3=FO3(1)*AO3(I,1)
-        II=I+8
+      H(I)=H1+H2*FU(II)+H3*O3(II)
+   enddo
 
-        do 5 J=2,6
-          JJ=II+IG(J)
-          H1=H1+AU(I,J)*FU(JJ)
-          H2=H2+BU(I,J)*FU(JJ)
-    5     H3=H3+AO3(I,J)*FO3(JJ)
+   !   above p.s.h. = 10.5 only 15 um CO2 band is considered
 
-    4   H(I)=H1+H2*FU(II)+H3*O3(II)
+   do I=36,39
+      H1=0.
+      H2=0.
+      II=I+8
 
-      do 6 I=10,35
-        H1=0.
-        H2=0.
-        H3=0.
-        II=I+8
+      do J=1,6
+         FJ=FU(II+IG(J))
+         H1=H1+AU(I,J)*FJ
+         H2=H2+BU(I,J)*FJ
+      enddo
 
-        do 7 J=1,6
-          JJ=II+IG(J)
-          H1=H1+AU(I,J)*FU(JJ)
-          H2=H2+BU(I,J)*FU(JJ)
-    7     H3=H3+AO3(I,J)*FO3(JJ)
+      H(I)=H1+H2*FU(II)
+   enddo
 
-    6   H(I)=H1+H2*FU(II)+H3*O3(II)
+   ! calculate the heating rate above s.p.h. = 11.5 (the 15 um CO2 band only)
+   !  using the reccurence formula and boundary condition at p.s.h. = 11.5
 
-!   above p.s.h. = 10.5 only 15 um CO2 band is considered
+   H1=H(39)/(CO2(1)*(1.-AL(1)))*1.1008E-10
 
-      do 8 I=36,39
-        H1=0.
-        H2=0.
-        II=I+8
+   do I=2,23
+      IM=I-1
+      AA1=1.-AL(IM)*(1.-.25*XL(I)-.75*XL(IM))
+      AA2=1.-AL(I)*(1.-.75*XL(I)-.25*XL(IM))
+      D1=-.25*(XL(I)+3.*XL(IM))
+      D2=.25*(3.*XL(I)+XL(IM))
+      H2=(AA1*H1-D1*FU(IM+46)-D2*FU(I+46))/AA2
+      H(I+38)=H2*CO2(I)*(1.-AL(I))*8.6301E9
+      H1=H2
+   enddo
 
-        do 9 J=1,6
-          FJ=FU(II+IG(J))
-          H1=H1+AU(I,J)*FJ
-    9     H2=H2+BU(I,J)*FJ
-
-    8   H(I)=H1+H2*FU(II)
-
-! calculate the heating rate above s.p.h. = 11.5 (the 15 um CO2 band only)
-!  using the reccurence formula and boundary condition at p.s.h. = 11.5
-
-      H1=H(39)/(CO2(1)*(1.-AL(1)))*1.1008E-10
-
-      do 10 I=2,23
-        IM=I-1
-        AA1=1.-AL(IM)*(1.-.25*XL(I)-.75*XL(IM))
-        AA2=1.-AL(I)*(1.-.75*XL(I)-.25*XL(IM))
-        D1=-.25*(XL(I)+3.*XL(IM))
-        D2=.25*(3.*XL(I)+XL(IM))
-        H2=(AA1*H1-D1*FU(IM+46)-D2*FU(I+46))/AA2
-        H(I+38)=H2*CO2(I)*(1.-AL(I))*8.6301E9
-   10   H1=H2
-
-
-      return
-      end
+   return
+end subroutine PCOOL

@@ -319,7 +319,8 @@ contains
 
       ! Distribute object property field to neighbours
       if (Grd_yinyang_L) then
-         call yyg_xchng(F_fld,l_minx,l_maxx,l_miny,l_maxy,1,.false.,'NEAREST',.true.)
+         call yyg_xchng(F_fld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,.false., &
+              'NEAREST',.true.)
       else
          call rpn_comm_xch_halo(F_fld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)

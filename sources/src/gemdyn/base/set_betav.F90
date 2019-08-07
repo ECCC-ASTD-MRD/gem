@@ -51,11 +51,11 @@
          do k=1,l_nk
             do j=Miny,Maxy
             do i=Minx,Maxx
-               work1=zmom(i,j,k)-zblen_bot
+               work1=zmom_8(i,j,k)-zblen_bot
                work2=zblen_top-zblen_bot
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_m(i,j,k)=work1*work1*min(1.d0,fact)
-               work1=ztht(i,j,k)-Zblen_bot
+               work1=ztht_8(i,j,k)-Zblen_bot
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_t(i,j,k)=work1*work1*min(1.d0,fact)
             end do

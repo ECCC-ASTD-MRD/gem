@@ -1,3 +1,5 @@
+!COMP_ARCH=intel-2016.1.156 ; -suppress=-std08
+!COMP_ARCH=PrgEnv-intel-5.2.82  ; -suppress=-std08
 !-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
@@ -51,631 +53,620 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
    real mg(ix),mlac(ix),wstar(ix)
    real critmask, delt
 
-!@Author Jack Kain and JM Fritsch (Oct 14,1990)
-
-!@Revision
-! 001      Stephane Belair and Zonghui Huo (Dec.1994)
-!               inclusion into the RPN physics package
-! 002      Stephane Belair (Nov. 1998) documentation of the code
-! 003      Gerard Pellerin (Dec.1998) optimisation trigger
-! 004      Richard Moffet  (Fev. 1999) RPN/CMC thermodynamic functions
-! 005      Andre Methot correct bugs with NCA update and < 0
-! 006      R. Moffet and S. Belair (Jan. 2000)
-!                   Cleaning of the code
-! 007      S. Belair (Nov. 2000)  new output diagnostics
-! 008      A.-M. Leduc (Jan 2001) Automatic arrays
-! 009      S. Belair (Apr. 2001)  force detrainment in the upper portion
-!                                 of the updraft
-! 010      S.Belair, G.Lemay, A-M Leduc (Apr 2001) Debugging
-! 011      S.Belair (July 2001) convective transport of momentum
-! 012      A-M. Leduc (Nov 2001) kfcp1 -->kfcp2 (changed arguments in call+
-!                                NCA becomes FLAGCONV)
-! 013      A-M. Leduc (Feb 2002) reactivation of cloud fraction.
-! 014      S. Belair, A-M. Leduc (nov 2002) add convective 1D counter kkfc.
-!                                argument kkfc added, kfcp2-->kfcp3.
-! 015      K. Winger (nov 2002) conservation of water.
-! 016      A-M. Leduc (Dec 2002) add switch ikfcpcp
-! 017      L. Spacek (Sep 2003) do loop 107 changes LFS to LFS-1
-! 018      A-M. Leduc (Sep 2003) Initialize LDB and minimize value of wabs.
-! 019      L.Spacek (Dec 2003) loops 260,261 D/UMFOUT(kx-nk+1)=D/UMF(nk)
-! 020      B. Bilodeau (Feb 2004) NUP is declared NK instead of IX
-! 021      S. Belair (Fall 2003) Output precipitation fluxes
-! 022      B. Bilodeau (Mar 2004) Add rliq_int and rice_int
-! 023      B. Bilodeau (Mar 2004) Add "ramp" for wklcl
-! 024      L.Spacek (May 2004)    In convective loop test
-!                                 the vertical loop to ITOP instead LMAX
-!                                 JKP replaced by LC+1
-! 025      L.Spacek (Nov 2004)    cloud clean-up, multiplication of RLIQOUT
-!                                 RICEOUT by CLOUDS
-! 026      B. Bilodeau (Dec 2004) Correct KKFC bug
-! 027      B. Bilodeau (Jan 2005) Move the normalization of pcpn fluxes
-!                                 after ZCRR is recalculated
-! 028      D. Figueras Nieto (Fev 2005) add D/UMFOUT(kx-nk+1)=D/UMF(nk)
-!                                       loop 170
-! 029      D. Talbot (Spring 2005) wklcl = 0.02 at end of trigger function
-!                    to make the scheme more active
-! 030      B.Dugas (Jun 2005)     Add surface modulation of WKLCL via KFCTRIGA
-! 031      B. Bilodeau and S. Belair (Aug 2005) -
-!                       Correct RLIQOUT and RICEOUT bug.
-!                       Limit cloud fraction to values between (0.,1.)
-! 032      R. McTaggart-Cowan and M. Desgagne (Jul 2006) -
-!                       Revert back to a more vectorizable form
-!                       for Vector processors
-! 033      K. Winger (Sep 2004)   Correct normalization of precipitation fluxes
-
-! 034      A-M. Leduc (Feb 2009) Add latitudinal variation to WKLCL over the ocean
-!                      using logical key kfctriglat. Add arguments MG ,  Mlac and
-!                      xlat in call. kfcp4 becomes kfcp5.
-! 035      L. Spacek (Feb 2009)  Add UD=0, VD=0 in loop 117
-! 036      L. Spacek    (Sep 2011)   Eliminate obsolete options
-! 037      P. Vaillancourt,A.Zadra,M.Roch  (Dec 2012)
-!              Correction to avoid division by zero problem
-!              Internal report available(~armppva/RapportsInternes.html)
-! 038      S. Gravel (Oct 2013)
-!              Introduce logical key kfcprod to calculate production term used
-!              by aqueous phase chemistry
-! 039      P. Vaillancourt,V. Lee  (May 2014)
-!              Correction to avoid division by zero problem when TU10-TVQU(NK1)=0
-! 040      P. Vaillancourt (Dec 2014)
-!              Output solid and liq precip fluxes independently; change units of
-!              updraft and downdraft mass fluxes for output
-!Object
-!          compute the effects of deep convection using
-!          the Kain-Fritsch convective paramerization scheme.(MKS units)
-
-!Arguments
-
-!          - Input -
-! IX       X dimension of the model grid (NI)
-! KX       Z dimension of the model grid (NK)
-
-!          - Input/Output -
-! FLAGCONV   counter for whether convection is activated?
-
-!          - Input -
-! PS       surface pressure
-! TP1      temperature at time (T+1)
-! QP1      specific humidity at time (T+1)
-! UB       wind in X direction at time (T+1)
-! VB       wind in Y direction at time (T+1)
-! SCR3     vertical velocity at time (T+1)
-
-!          - Input/Output
-! DTDT     convective effects of heating
-! DQDT     convective effects of moistening
-! DUDT     convective effects on u-momentum
-! DVDT     convective effects of v-momentum
-! DQCDT    cloud water due to the Kain and Fritsch scheme
-! DQIDT    cloud ice due to the Kain and Fritsch scheme
-! DQRDT    rain water/ snow due to the Kain and Fritsch scheme
-
-!          - Input -
-! GZM      geopotential
-! SIGT     thermo sigma levels of the model
-! DXDY     area of each tile of the grid
-! XLAT     latitude(radians)
-! MG       land-sea mask
-! MLAC     fraction of lakes (mask)
-
-!          - Output -
-! ZCRR     convective rainfall rate
-
-
-!          - Input -
-! RAD      radius of the convective updraft at cloud base
-! CDEPTH   minimum cloud depth
-
-!          - Output (diagnostics) -
-! CAPEOUT  available buoyant energy
-! AREAUP   cloud coverage area (m^2)
-! CLOUDS   cloud fractional coverage area (fraction between 0 and 1)
-! DMFOUT   downdraft mass flux
-! PEFFOUT  precipitation efficiency
-! UMFOUT   updraft mass flux
-! ZBASEOUT cloud base height (i.e., LCL height)
-! ZTOPOUT  cloud base top
-! WUMAXOUT maximum velocity in the convective updrafts (m/s)
-! RLIQOUT  mixing ratio of liquid water in the updrafts (kg/kg)
-! RICEOUT  mixing ratio of ice in the updrafts (kg/kg)
-! RLIQ_INT vertical integral of RLIQOUT
-! RICE_INT vertical integral of RICEOUT
-
-
-!  References:
-!  Fritsch and Chappell (1980), J. Atmos. Sci., 1722-1733.
-!  Zhang and Fritsch (1986), J. Atmos. Sci., 1913-1943.
-!  Kain and Fritsch (1990), J. Atmos. Sci., 2784-2802.
-
-
-!THINGS THAT REMAINS TO BE DONE IN THIS SCHEME:
-!=============================================
-
-! 1) Verify the sensitivity to RAD (=3000 for the moment)
-
-! 2) Convert to "mixing ratios" at the beginning of the
-!    subroutine
-
-! 3) Allow detrainment of ice nucleis, as well as cloud water
-
-!*
-
-      integer i,k,ifexfb,iflag
-      integer klcl,kmin,kmix,kfrz,kpbl,lc,lcl,ldt
-      integer il,jk,jkk,jkm
-      integer ldb,let,lmax,low,ltop,ltop1,ltopm1,lvf,lfs,ml
-      integer nd,nd1,ndk,ncount,nic,nj,nk,nk1,nm
-      integer nstep,ntc,nlayrs,nupnk
-      integer ktop
-
-      real a1,abe,abeg,aice,ainc,aincm1,aincm2,aincmx,aliq,au0
-      real be,bice,bliq,boterm,cldhgt,mult
-      real c5,cbh,cice,cliq,clvf,cndtnf,cpm,cporq,cpr,cv
-      real dabe,dq,dlp,dpt,dtt,dtt1,dzz,dliq,dice
-      real devdmf,dmfmin,dmflfs,dptt
-      real zlcl
-      real betaw,betai,gamw,gami
-      real dpdd,dpddmx,dpptdf,ddinc,dqsdt
-      real dtmp,dtime,dtmltd,dtlcl
-      real dumfdp
-      real es,ee,ee1,ee2,emix,effq,enterm
-      real f1,f2,fabe,frc,frc1
-      real gdt,gdry,liqfrac,icefrac
-      real p00,p165,pef,peff,pefmin,pefmax,pefcbh
-      real pmid,ppr,pptflx,pptfl2,pptmlt
-      real qenv,qese,qnewic,qnewlq,qnwfrz,qs,qsrh
-      real r1,rl,rf,rei,rdd
-      real rovg,rocpq,rate,rcbh,rced,rhbc,rhic,rtmp
-      real stab,shsign,sumflx
-      real tvlcl,tlog,tenv,tven,tdpt,tbfrz
-      real tvavg,tvbar,thata,thtfc,thtudl,thtmin,thttmp
-      real ttmp,ttemp,tmpliq,tmpice,ttfrz,trppt,tsat
-      real tder,tder2,t1rh
-      real oneovg, maxzpar, dpmix, betaent
-      real tu10,tu95,tudl
-      real ud1,ud2,usr,udlbe,updinc,updin2
-      real upold,upnew
-      real vws,vmflcl
-      real wlcl,wkl,wsigne,wsq,wtw
-      real xls0,xls1,xlv0,xlv1
-      real dpup , dpdown
-      real dqdtdk,dqcdtdk
-      real wklcl, wklcld
-      real kfscale
-      real denom,epsilon,tvdiff
-      real oneminc,intdudt,intdvdt,intdp
-      real t1,t2,cmean,dcape,tp,tm
-
-
-
-      real detfrac
-
-!                                For the optimisation and
-!                                thermodynamic functions
-
-
-      integer l5,klm,kl,llfc,mxlayr
-
-      real dxsq,rholcl,wabs,zmix,p300,thta
-
-      real :: w_wsmin,w_wsmax,wsmax,wsmin
-
-      logical, dimension(ix) :: activ, possib, triggr, trigg2
-      integer, dimension(ix) :: itop, idpl, lclg
-      integer, dimension(kx) :: nup
-
-      real, dimension(ix) :: dpthmxg, pmixg,  tmixg, qmixg, zdpl,  zlclg,  &
-                             rolcl,   cape,   ztop,  work1, work2, work3,  &
-                             theul,   thmixg, tlclg, plclg, wlclg, tenvg,  &
-                             qenvg,   wklcla, psb
-      real, dimension(kx) :: ddr,     ddr2,   der,    der2,  detic, detic2, &
-                             detlq,   detlq2, dmf,    dmf2,  domgdp, &
-                             dtfm,    ems,    emsd,   eqfrc, exn,           &
-                             omga,    pptice, pptliq, qadv,  qd,    qdt,    &
-                             qg,      qicout, qlqout, qpa,   qu,     &
-                             ratio2,  rice,   rliq,   tg,    theted,thetee, &
-                             theteu,  thadv,  thpa,  thtad, thtag,  &
-                             thtau,   thta0,  thtes,  thtesg,tu,    tvd,    &
-                             tvg,     tvqu,   tvu,    tz,    udr,   udr2,   &
-                             uer,     uer2,   umf,    umf2,  wspd,   &
-                             wu,      uu,     vu,     ud,    vd,    ug,     &
-                             vg,      upa,    vpa,    uadv,  vadv,  qlpa,   &
-                             qipa,    qlg,    qig,    qtpa,  qtdt,  qtg,    &
-                             emf
-      real, dimension(kx+1)  :: omg
-      real, dimension(ix,kx) :: tt0,  tv00,   q00,  u00,    v00,   ww0,    &
-                                dzp,  dpp,    qst1, pp0,    thts, z0g,     &
-                                sigkfc, ql0,  qi0
-
-      external tpmix
-      external condload
-      external envirtht
-      external prof5
-
-      ! Basic parameters
-
-      ! User-adjustable parameters
-      real, parameter :: DETREG=0.5                             !Level of dynamic detrainment for cloud ensemble
-      real, parameter :: DETTOT=0.                              !Total dynamic detrainment for cloud ensemble
-      logical, parameter :: DOWNDRAFT=.true.                    !Include downdraft calculations
-      logical, parameter :: TOTAL_WATER=.false.                 !Use total water and condensate in mass flux equations
-
-      ! Local variables
-      real :: rad, cdepth, timec, timer
-      real :: nuer,nudr,lambda
-      cdepth = kfcdepth
-
-!     "RAMP" FOR WKLCL :
-!     ================
-
-!     WKLCL WILL INCREASE FROM KFCTRIG4(3) TO KFCTRIG4(4)
-!     BETWEEN TIMESTEPS KFCTRIG4(1) AND KFCTRIG4(2)
-
-      if      (KOUNT .le. int(KFCTRIG4(1))) then
-         WKLCL = KFCTRIG4(3)
-      else if (KOUNT .gt. int(KFCTRIG4(2))) then
-         WKLCL = KFCTRIG4(4)
-      else
-!        LINEAR INTERPOLATION
-         WKLCL = KFCTRIG4(3) +  (real(KOUNT)  - KFCTRIG4(1))  / &
-                                (KFCTRIG4(2)  - KFCTRIG4(1))  * &
-                                (KFCTRIG4(4)  - KFCTRIG4(3))
-      endif
-
-
-!      Latitudinal ramp for WKLCL :
-!     ============================
-
-!     WKLCL will take on different values:
-!     over land and lakes: we kee the value set by the "ramp" above
-!     over sea water:
-!       for |lat| >= TRIGLAT(2) we keep value set by the "ramp" above
-!       for |lat| <= TRIGLAT(1) we use the new value KFCTRIGL
-!       and linear interpolation in between TRIGLAT(1) and TRIGLAT(2)
-
-      WKLCLA(:) = WKLCL
-
-      if (KFCTRIGLAT) then
-
-
-         do I=1,IX
-
-
-          if (abs(XLAT(I)) .le. TRIGLAT(1).and. &
-              MG(I) .le. critmask .and. &
-              MLAC(I) .le. critmask) then
-            WKLCLA(I)= KFCTRIGL
-          else if (abs(XLAT(I)).gt.TRIGLAT(1) .and. &
-                   abs(XLAT(I)).lt.TRIGLAT(2) .and. &
-                   MG(I) .le. critmask .and. &
-                   MLAC(I) .le. critmask) then
-           WKLCLA(I)= ( ((abs(XLAT(I))-TRIGLAT(1))/ &
-                      (TRIGLAT(2)-TRIGLAT(1)))* &
-                   (WKLCL-KFCTRIGL) ) + KFCTRIGL
-          else
-            WKLCLA(I)= WKLCL
-          endif
-
-         end do
-
-      endif
-
-!      Convective velocity scale ramp for WKLCL :
-!     ============================================
-
-!     REPLACES the latitudinal ramp above.
-
-!     WKLCL will take on different values:
-!     over land and lakes: we keep the value set by the "ramp" above
-!     over sea water:
-!       for wstar <= KFCTRIGW(1) we use KFCTRIGW(3)
-!       for wstar >= KFCTRIGW(2) we use KFCTRIGW(4)
-!       and linear interpolation in between KFCTRIGW(1) and KFCTRIGW(2)
-
-      if (any(abs(kfctrigw) > 0.)) then
-         wsmin = kfctrigw(1)
-         wsmax = kfctrigw(2)
-         w_wsmin = kfctrigw(3)
-         w_wsmax = kfctrigw(4)
-         WKLCLA = min(max(w_wsmin + (wstar - wsmin) / (wsmax - wsmin) * (w_wsmax - w_wsmin) , min(w_wsmin,w_wsmax)), max(w_wsmin,w_wsmax))
-         where(mg > CRITMASK .or. mlac > CRITMASK) wklcla = WKLCL
-      endif
-
-!===================================================
-
-      if (KFCTRIGA.gt.0.0) then
-!        (B. Dugas, June 15 2005)
-
-!        IN WHAT FOLLOWS, WE ASSUME THAT
-
-!           KFCTRIG * RESOLUTION = CONSTANT,
-
-!         SO THAT
-
-!           KFCTRIG(RES2) = KFCTRIG(RES1) * RES1 / RES2
-
-!        THE 0.17 AND 0.01 LIMITS ARE THOSE THAT ARE DEEMED
-!        TO BE APPROPRIATE FOR 10KM AND 170KM, RESPECTIVELY.
-!        THESE LAST TWO VALUES DEFINE THE RESOLUTION INTERVAL
-!        AT WHICH THIS KF CONVECTION CODE WILL BE USED IN THE
-!        SGMIP AND/OR OPERATIONAL FRAMEWORK
-
-!        CONVERT KFCTRIGA TO METRES
-         KFSCALE = 1000. * KFCTRIGA
-
-         WKLCLA(:) = min( 0.17, &
-                          max( 0.01, &
-                               WKLCLA(:) * KFSCALE &
-                               / sqrt( DXDY(:) ) &
-                             ) &
-                        )
-
-      endif
-
-
-
-!     2.  USEFUL PARAMETERS
-!     =====================
-
-      EPSILON = 1.E-8
-      P00     = 1.E5
-      CV      = 717.
-      RHIC    = 1.
-      RHBC    = 0.90
-      TTFRZ =   268.16
-      TBFRZ   = 248.16
-      C5      = 1.0723E-3
-      RATE    = 0.01
-      MAXZPAR = 3.5E3
-      DPMIX   = 60.E2
-      BETAENT = 1.05
-      PEFMIN  = 0.2
-      PEFMAX = 0.9
-
-      ROVG   = RGASD/GRAV
-      GDRY   = -GRAV/CPD
-      ONEOVG = 101.9368
-      KL     = KX
-      KLM    = KL-1
-
-      BETAW = 6822.459384
-      GAMW  = 5.13948
-      BETAI = 6295.421
-      GAMI  = 0.56313
-      ONEMINC = 0.3 !PV Hor pressure gradient effects on CMT; original value of C=0.7 suggested in Gregory et al. 1997
-      ONEMINC = 1.0 !PV Hor pressure gradient effects on CMT; value of C=0.0 suggested in Romps(2012)
-
-
-!                          Define constants for calculation
-!                          of latent heating
-
-      XLV0 = 3.147E+6
-      XLV1 = 2369.
-      XLS0 = 2.905E+6
-      XLS1 = 259.532
-
-
-
-!                          Define constants for calculation of
-!                          saturation vapor pressure according
-!                          to Buck (JAM, December 1981)
-
-      ALIQ = 613.3
-      BLIQ = 17.502
-      CLIQ = 4780.8
-      DLIQ = 32.19
-      AICE = 613.2
-      BICE = 22.452
-      CICE = 6133.0
-      DICE = 0.61
-
-
-!                        Flag for feedback to explicit moisture
-!                        IFEXFB = O  No feedback of the convective
-!                                    scheme on the grid-scale
-!                                    cloud and rainwater variables
-!                        IFEXFB = 1  production term calculated for
-!                                    potential feedback calculation
-!PV note: feedback is not and should not be allowed for grid scale rainwater
-!         unless kfcp code is modified
-
-      IFEXFB = 0
-      if (kfcprod) IFEXFB = 1
-
-!     =============================================================
-
-
-!      4. INPUT A VERTICAL SOUNDING (ENVIRONMENTAL)
-!      ============================================
-!PV used to be done inifcp
-        do I = 1, IX
-          PSB(I)=PS(I)*1.E-3
-          SIGKFC(I,KX  ) = SIGT(I,KX-1)+0.75*(SIGT(I,KX)-SIGT(I,KX-1))
-        enddo
-        DO K=1,KX-1
-           DO I=1,IX
-            SIGKFC(I,K) = SIGT(I,K)
-           END DO
-        END DO
-!
-
-        do K = 1, KX
-          NK = KX-K+1
-            do I = 1, IX
-
-
-!                         The sounding
-
-
-!                         In the RPN physics, the K indices goes
-!                         from 1 at the top of the model to KX
-!                         at the surface.
-!                         In the Kain-Fritsch subroutine, we use
-!                         the opposite (of course).
-!                         The switch is done in this loop.
-
-           PP0(I,K) = 1.E3*(SIGKFC(I,NK)*PSB(I))
-           TT0(I,K) = TP1(I,NK)
-           U00(I,K) = UB(I,NK)
-           V00(I,K) = VB(I,NK)
-           Q00(I,K) = max(qp1(i,nk),1.0E-10 )
-           QL0(I,K) = 0.
-           QI0(I,K) = 0.
-
-!                        add the definition of z0g (geopotential height)
-!                        from gzm(geopotential)
-
-           Z0G(I,K) = GZM(I,NK)/grav
-
-
-
-!                         If Q0 is above saturation value, reduce it
-!                         to saturation level
-
-           ES=ALIQ*exp((BLIQ*TT0(I,K)-CLIQ)/(TT0(I,K)-DLIQ))
-           ES=min( ES, 0.5*PP0(I,K) )
-           QST1(I,K)=0.622*ES/(PP0(I,K)-ES)
-           QST1(I,K) = max( min(QST1(I,K),0.050) , 1.E-6 )
-           Q00(I,K)  = min(QST1(I,K),Q00(I,K))
-           TV00(I,K) = TT0(I,K) * (1. + 0.608*Q00(I,K) )
-           WW0(I,K)  = SCR3(I,NK)
-
-       end do
-      end do
+   !@Author Jack Kain and JM Fritsch (Oct 14,1990)
+
+   !@Revision
+   ! 001      Stephane Belair and Zonghui Huo (Dec.1994)
+   !               inclusion into the RPN physics package
+   ! 002      Stephane Belair (Nov. 1998) documentation of the code
+   ! 003      Gerard Pellerin (Dec.1998) optimisation trigger
+   ! 004      Richard Moffet  (Fev. 1999) RPN/CMC thermodynamic functions
+   ! 005      Andre Methot correct bugs with NCA update and < 0
+   ! 006      R. Moffet and S. Belair (Jan. 2000)
+   !                   Cleaning of the code
+   ! 007      S. Belair (Nov. 2000)  new output diagnostics
+   ! 008      A.-M. Leduc (Jan 2001) Automatic arrays
+   ! 009      S. Belair (Apr. 2001)  force detrainment in the upper portion
+   !                                 of the updraft
+   ! 010      S.Belair, G.Lemay, A-M Leduc (Apr 2001) Debugging
+   ! 011      S.Belair (July 2001) convective transport of momentum
+   ! 012      A-M. Leduc (Nov 2001) kfcp1 -->kfcp2 (changed arguments in call+
+   !                                NCA becomes FLAGCONV)
+   ! 013      A-M. Leduc (Feb 2002) reactivation of cloud fraction.
+   ! 014      S. Belair, A-M. Leduc (nov 2002) add convective 1D counter kkfc.
+   !                                argument kkfc added, kfcp2-->kfcp3.
+   ! 015      K. Winger (nov 2002) conservation of water.
+   ! 016      A-M. Leduc (Dec 2002) add switch ikfcpcp
+   ! 017      L. Spacek (Sep 2003) do loop 107 changes LFS to LFS-1
+   ! 018      A-M. Leduc (Sep 2003) Initialize LDB and minimize value of wabs.
+   ! 019      L.Spacek (Dec 2003) loops 260,261 D/UMFOUT(kx-nk+1)=D/UMF(nk)
+   ! 020      B. Bilodeau (Feb 2004) NUP is declared NK instead of IX
+   ! 021      S. Belair (Fall 2003) Output precipitation fluxes
+   ! 022      B. Bilodeau (Mar 2004) Add rliq_int and rice_int
+   ! 023      B. Bilodeau (Mar 2004) Add "ramp" for wklcl
+   ! 024      L.Spacek (May 2004)    In convective loop test
+   !                                 the vertical loop to ITOP instead LMAX
+   !                                 JKP replaced by LC+1
+   ! 025      L.Spacek (Nov 2004)    cloud clean-up, multiplication of RLIQOUT
+   !                                 RICEOUT by CLOUDS
+   ! 026      B. Bilodeau (Dec 2004) Correct KKFC bug
+   ! 027      B. Bilodeau (Jan 2005) Move the normalization of pcpn fluxes
+   !                                 after ZCRR is recalculated
+   ! 028      D. Figueras Nieto (Fev 2005) add D/UMFOUT(kx-nk+1)=D/UMF(nk)
+   !                                       loop 170
+   ! 029      D. Talbot (Spring 2005) wklcl = 0.02 at end of trigger function
+   !                    to make the scheme more active
+   ! 030      B.Dugas (Jun 2005)     Add surface modulation of WKLCL via KFCTRIGA
+   ! 031      B. Bilodeau and S. Belair (Aug 2005) -
+   !                       Correct RLIQOUT and RICEOUT bug.
+   !                       Limit cloud fraction to values between (0.,1.)
+   ! 032      R. McTaggart-Cowan and M. Desgagne (Jul 2006) -
+   !                       Revert back to a more vectorizable form
+   !                       for Vector processors
+   ! 033      K. Winger (Sep 2004)   Correct normalization of precipitation fluxes
+
+   ! 034      A-M. Leduc (Feb 2009) Add latitudinal variation to WKLCL over the ocean
+   !                      using logical key kfctriglat. Add arguments MG ,  Mlac and
+   !                      xlat in call. kfcp4 becomes kfcp5.
+   ! 035      L. Spacek (Feb 2009)  Add UD=0, VD=0 in loop 117
+   ! 036      L. Spacek    (Sep 2011)   Eliminate obsolete options
+   ! 037      P. Vaillancourt,A.Zadra,M.Roch  (Dec 2012)
+   !              Correction to avoid division by zero problem
+   !              Internal report available(~armppva/RapportsInternes.html)
+   ! 038      S. Gravel (Oct 2013)
+   !              Introduce logical key kfcprod to calculate production term used
+   !              by aqueous phase chemistry
+   ! 039      P. Vaillancourt,V. Lee  (May 2014)
+   !              Correction to avoid division by zero problem when TU10-TVQU(NK1)=0
+   ! 040      P. Vaillancourt (Dec 2014)
+   !              Output solid and liq precip fluxes independently; change units of
+   !              updraft and downdraft mass fluxes for output
+   !Object
+   !          compute the effects of deep convection using
+   !          the Kain-Fritsch convective paramerization scheme.(MKS units)
+
+   !@Arguments
+   !          - Input -
+   ! IX       X dimension of the model grid (NI)
+   ! KX       Z dimension of the model grid (NK)
+   !          - Input/Output -
+   ! FLAGCONV   counter for whether convection is activated?
+   !          - Input -
+   ! PS       surface pressure
+   ! TP1      temperature at time (T+1)
+   ! QP1      specific humidity at time (T+1)
+   ! UB       wind in X direction at time (T+1)
+   ! VB       wind in Y direction at time (T+1)
+   ! SCR3     vertical velocity at time (T+1)
+   !          - Input/Output
+   ! DTDT     convective effects of heating
+   ! DQDT     convective effects of moistening
+   ! DUDT     convective effects on u-momentum
+   ! DVDT     convective effects of v-momentum
+   ! DQCDT    cloud water due to the Kain and Fritsch scheme
+   ! DQIDT    cloud ice due to the Kain and Fritsch scheme
+   ! DQRDT    rain water/ snow due to the Kain and Fritsch scheme
+   !          - Input -
+   ! GZM      geopotential
+   ! SIGT     thermo sigma levels of the model
+   ! DXDY     area of each tile of the grid
+   ! XLAT     latitude(radians)
+   ! MG       land-sea mask
+   ! MLAC     fraction of lakes (mask)
+   !          - Output -
+   ! ZCRR     convective rainfall rate
+   !          - Input -
+   ! RAD      radius of the convective updraft at cloud base
+   ! CDEPTH   minimum cloud depth
+   !          - Output (diagnostics) -
+   ! CAPEOUT  available buoyant energy
+   ! AREAUP   cloud coverage area (m^2)
+   ! CLOUDS   cloud fractional coverage area (fraction between 0 and 1)
+   ! DMFOUT   downdraft mass flux
+   ! PEFFOUT  precipitation efficiency
+   ! UMFOUT   updraft mass flux
+   ! ZBASEOUT cloud base height (i.e., LCL height)
+   ! ZTOPOUT  cloud base top
+   ! WUMAXOUT maximum velocity in the convective updrafts (m/s)
+   ! RLIQOUT  mixing ratio of liquid water in the updrafts (kg/kg)
+   ! RICEOUT  mixing ratio of ice in the updrafts (kg/kg)
+   ! RLIQ_INT vertical integral of RLIQOUT
+   ! RICE_INT vertical integral of RICEOUT
+
+   !  References:
+   !  Fritsch and Chappell (1980), J. Atmos. Sci., 1722-1733.
+   !  Zhang and Fritsch (1986), J. Atmos. Sci., 1913-1943.
+   !  Kain and Fritsch (1990), J. Atmos. Sci., 2784-2802.
+
+
+   !THINGS THAT REMAINS TO BE DONE IN THIS SCHEME:
+   !=============================================
+
+   ! 1) Verify the sensitivity to RAD (=3000 for the moment)
+
+   ! 2) Convert to "mixing ratios" at the beginning of the
+   !    subroutine
+
+   ! 3) Allow detrainment of ice nucleis, as well as cloud water
+
+   !*
+
+   integer i,k,ifexfb,iflag
+   integer klcl,kmin,kmix,kfrz,kpbl,lc,lcl,ldt
+   integer il,jk,jkk,jkm
+   integer ldb,let,lmax,low,ltop,ltop1,ltopm1,lvf,lfs,ml
+   integer nd,nd1,ndk,ncount,nic,nj,nk,nk1,nm
+   integer nstep,ntc,nlayrs,nupnk
+   integer ktop
+
+   real a1,abe,abeg,aice,ainc,aincm1,aincm2,aincmx,aliq,au0
+   real be,bice,bliq,boterm,cldhgt,mult
+   real c5,cbh,cice,cliq,clvf,cndtnf,cpm,cporq,cpr,cv
+   real dabe,dq,dlp,dpt,dtt,dtt1,dzz,dliq,dice
+   real devdmf,dmfmin,dmflfs,dptt
+   real zlcl
+   real betaw,betai,gamw,gami
+   real dpdd,dpddmx,dpptdf,ddinc,dqsdt
+   real dtmp,dtime,dtmltd,dtlcl
+   real dumfdp
+   real es,ee,ee1,ee2,emix,effq,enterm
+   real f1,f2,fabe,frc,frc1
+   real gdt,gdry,liqfrac,icefrac
+   real p00,p165,pef,peff,pefmin,pefmax,pefcbh
+   real pmid,ppr,pptflx,pptfl2,pptmlt
+   real qenv,qese,qnewic,qnewlq,qnwfrz,qs,qsrh
+   real r1,rl,rf,rei,rdd
+   real rovg,rocpq,rate,rcbh,rced,rhbc,rhic,rtmp
+   real stab,shsign,sumflx
+   real tvlcl,tlog,tenv,tven,tdpt,tbfrz
+   real tvavg,tvbar,thata,thtfc,thtudl,thtmin,thttmp
+   real ttmp,ttemp,tmpliq,tmpice,ttfrz,trppt,tsat
+   real tder,tder2,t1rh
+   real oneovg, maxzpar, dpmix, betaent
+   real tu10,tu95,tudl
+   real ud1,ud2,usr,udlbe,updinc,updin2
+   real upold,upnew
+   real vws,vmflcl
+   real wlcl,wkl,wsigne,wsq,wtw
+   real xls0,xls1,xlv0,xlv1
+   real dpup , dpdown
+   real dqdtdk,dqcdtdk
+   real wklcl, wklcld
+   real kfscale
+   real denom,epsilon,tvdiff
+   real oneminc,intdudt,intdvdt,intdp
+   real t1,t2,cmean,dcape,tp,tm
+ 
+   real detfrac
+
+   !                                For the optimisation and
+   !                                thermodynamic functions
+
+
+   integer l5,klm,kl,llfc,mxlayr
+
+   real dxsq,rholcl,wabs,zmix,p300,thta
+
+   real :: w_wsmin,w_wsmax,wsmax,wsmin
+
+   logical, dimension(ix) :: activ, possib, triggr, trigg2
+   integer, dimension(ix) :: itop, idpl, lclg
+   integer, dimension(kx) :: nup
+
+   real, dimension(ix) :: dpthmxg, pmixg,  tmixg, qmixg, zdpl,  zlclg,  &
+        rolcl,   cape,   ztop,  work1, work2, work3,  &
+        theul,   thmixg, tlclg, plclg, wlclg, tenvg,  &
+        qenvg,   wklcla, psb
+   real, dimension(kx) :: ddr,     ddr2,   der,    der2,  detic, detic2, &
+        detlq,   detlq2, dmf,    dmf2,  domgdp, &
+        dtfm,    ems,    emsd,   eqfrc, exn,           &
+        omga,    pptice, pptliq, qadv,  qd,    qdt,    &
+        qg,      qicout, qlqout, qpa,   qu,     &
+        ratio2,  rice,   rliq,   tg,    theted,thetee, &
+        theteu,  thadv,  thpa,  thtad, thtag,  &
+        thtau,   thta0,  thtes,  thtesg,tu,    tvd,    &
+        tvg,     tvqu,   tvu,    tz,    udr,   udr2,   &
+        uer,     uer2,   umf,    umf2,  wspd,   &
+        wu,      uu,     vu,     ud,    vd,    ug,     &
+        vg,      upa,    vpa,    uadv,  vadv,  qlpa,   &
+        qipa,    qlg,    qig,    qtpa,  qtdt,  qtg,    &
+        emf
+   real, dimension(kx+1)  :: omg
+   real, dimension(ix,kx) :: tt0,  tv00,   q00,  u00,    v00,   ww0,    &
+        dzp,  dpp,    qst1, pp0,    thts, z0g,     &
+        sigkfc, ql0,  qi0
+
+   external tpmix
+   external condload
+   external envirtht
+   external prof5
+
+   ! Basic parameters
+
+   ! User-adjustable parameters
+   real, parameter :: DETREG=0.5                             !Level of dynamic detrainment for cloud ensemble
+   real, parameter :: DETTOT=0.                              !Total dynamic detrainment for cloud ensemble
+   logical, parameter :: DOWNDRAFT=.true.                    !Include downdraft calculations
+   logical, parameter :: TOTAL_WATER=.false.                 !Use total water and condensate in mass flux equations
+
+   ! Local variables
+   real :: rad, cdepth, timec, timer
+   real :: nuer,nudr,lambda
+
+   cdepth = kfcdepth
+
+   !     "RAMP" FOR WKLCL :
+   !     ================
+
+   !     WKLCL WILL INCREASE FROM KFCTRIG4(3) TO KFCTRIG4(4)
+   !     BETWEEN TIMESTEPS KFCTRIG4(1) AND KFCTRIG4(2)
+
+   if      (KOUNT .le. int(KFCTRIG4(1))) then
+      WKLCL = KFCTRIG4(3)
+   else if (KOUNT .gt. int(KFCTRIG4(2))) then
+      WKLCL = KFCTRIG4(4)
+   else
+      !        LINEAR INTERPOLATION
+      WKLCL = KFCTRIG4(3) +  (real(KOUNT)  - KFCTRIG4(1))  / &
+           (KFCTRIG4(2)  - KFCTRIG4(1))  * &
+           (KFCTRIG4(4)  - KFCTRIG4(3))
+   endif
+
+
+   !      Latitudinal ramp for WKLCL :
+   !     ============================
+
+   !     WKLCL will take on different values:
+   !     over land and lakes: we kee the value set by the "ramp" above
+   !     over sea water:
+   !       for |lat| >= TRIGLAT(2) we keep value set by the "ramp" above
+   !       for |lat| <= TRIGLAT(1) we use the new value KFCTRIGL
+   !       and linear interpolation in between TRIGLAT(1) and TRIGLAT(2)
+
+   WKLCLA(:) = WKLCL
+
+   if (KFCTRIGLAT) then
 
 
       do I=1,IX
-        DPP(I,1)   = ( SIGKFC(I,KX)-SIGKFC(I,KX-1) ) * PSB(I)*1.E3
-        DPP(I,KX)  = ( SIGKFC(I,2) -SIGKFC(I,1)    ) * PSB(I)*1.E3
+
+
+         if (abs(XLAT(I)) .le. TRIGLAT(1).and. &
+              MG(I) .le. critmask .and. &
+              MLAC(I) .le. critmask) then
+            WKLCLA(I)= KFCTRIGL
+         else if (abs(XLAT(I)).gt.TRIGLAT(1) .and. &
+              abs(XLAT(I)).lt.TRIGLAT(2) .and. &
+              MG(I) .le. critmask .and. &
+              MLAC(I) .le. critmask) then
+            WKLCLA(I)= ( ((abs(XLAT(I))-TRIGLAT(1))/ &
+                 (TRIGLAT(2)-TRIGLAT(1)))* &
+                 (WKLCL-KFCTRIGL) ) + KFCTRIGL
+         else
+            WKLCLA(I)= WKLCL
+         endif
+
       end do
 
+   endif
 
-      do K=2,KX-1
-        NK = KX-K+1
-        do I=1,IX
-           DPUP      = ( SIGKFC(I,NK)-SIGKFC(I,NK-1) ) * PSB(I)*1.E3
-           DPDOWN    = ( SIGKFC(I,NK+1)-SIGKFC(I,NK) ) * PSB(I)*1.E3
-           DPP(I,K)  = 0.5 * (DPUP+DPDOWN)
-        end do
+   !      Convective velocity scale ramp for WKLCL :
+   !     ============================================
+
+   !     REPLACES the latitudinal ramp above.
+
+   !     WKLCL will take on different values:
+   !     over land and lakes: we keep the value set by the "ramp" above
+   !     over sea water:
+   !       for wstar <= KFCTRIGW(1) we use KFCTRIGW(3)
+   !       for wstar >= KFCTRIGW(2) we use KFCTRIGW(4)
+   !       and linear interpolation in between KFCTRIGW(1) and KFCTRIGW(2)
+
+   if (any(abs(kfctrigw) > 0.)) then
+      wsmin = kfctrigw(1)
+      wsmax = kfctrigw(2)
+      w_wsmin = kfctrigw(3)
+      w_wsmax = kfctrigw(4)
+      WKLCLA = min(max(w_wsmin + (wstar - wsmin) / (wsmax - wsmin) * (w_wsmax - w_wsmin) , min(w_wsmin,w_wsmax)), max(w_wsmin,w_wsmax))
+      where(mg > CRITMASK .or. mlac > CRITMASK) wklcla = WKLCL
+   endif
+
+   !===================================================
+
+   if (KFCTRIGA.gt.0.0) then
+      !        (B. Dugas, June 15 2005)
+
+      !        IN WHAT FOLLOWS, WE ASSUME THAT
+
+      !           KFCTRIG * RESOLUTION = CONSTANT,
+
+      !         SO THAT
+
+      !           KFCTRIG(RES2) = KFCTRIG(RES1) * RES1 / RES2
+
+      !        THE 0.17 AND 0.01 LIMITS ARE THOSE THAT ARE DEEMED
+      !        TO BE APPROPRIATE FOR 10KM AND 170KM, RESPECTIVELY.
+      !        THESE LAST TWO VALUES DEFINE THE RESOLUTION INTERVAL
+      !        AT WHICH THIS KF CONVECTION CODE WILL BE USED IN THE
+      !        SGMIP AND/OR OPERATIONAL FRAMEWORK
+
+      !        CONVERT KFCTRIGA TO METRES
+      KFSCALE = 1000. * KFCTRIGA
+
+      WKLCLA(:) = min( 0.17, &
+           max( 0.01, &
+           WKLCLA(:) * KFSCALE &
+           / sqrt( DXDY(:) ) &
+           ) &
+           )
+
+   endif
+
+
+
+   !     2.  USEFUL PARAMETERS
+   !     =====================
+
+   EPSILON = 1.E-8
+   P00     = 1.E5
+   CV      = 717.
+   RHIC    = 1.
+   RHBC    = 0.90
+   TTFRZ =   268.16
+   TBFRZ   = 248.16
+   C5      = 1.0723E-3
+   RATE    = 0.01
+   MAXZPAR = 3.5E3
+   DPMIX   = 60.E2
+   BETAENT = 1.05
+   PEFMIN  = 0.2
+   PEFMAX = 0.9
+
+   ROVG   = RGASD/GRAV
+   GDRY   = -GRAV/CPD
+   ONEOVG = 101.9368
+   KL     = KX
+   KLM    = KL-1
+
+   BETAW = 6822.459384
+   GAMW  = 5.13948
+   BETAI = 6295.421
+   GAMI  = 0.56313
+   ONEMINC = 0.3 !PV Hor pressure gradient effects on CMT; original value of C=0.7 suggested in Gregory et al. 1997
+   ONEMINC = 1.0 !PV Hor pressure gradient effects on CMT; value of C=0.0 suggested in Romps(2012)
+
+
+   !                          Define constants for calculation
+   !                          of latent heating
+
+   XLV0 = 3.147E+6
+   XLV1 = 2369.
+   XLS0 = 2.905E+6
+   XLS1 = 259.532
+
+
+
+   !                          Define constants for calculation of
+   !                          saturation vapor pressure according
+   !                          to Buck (JAM, December 1981)
+
+   ALIQ = 613.3
+   BLIQ = 17.502
+   CLIQ = 4780.8
+   DLIQ = 32.19
+   AICE = 613.2
+   BICE = 22.452
+   CICE = 6133.0
+   DICE = 0.61
+
+
+   !                        Flag for feedback to explicit moisture
+   !                        IFEXFB = O  No feedback of the convective
+   !                                    scheme on the grid-scale
+   !                                    cloud and rainwater variables
+   !                        IFEXFB = 1  production term calculated for
+   !                                    potential feedback calculation
+   !PV note: feedback is not and should not be allowed for grid scale rainwater
+   !         unless kfcp code is modified
+
+   IFEXFB = 0
+   if (kfcprod) IFEXFB = 1
+
+   !     =============================================================
+
+
+   !      4. INPUT A VERTICAL SOUNDING (ENVIRONMENTAL)
+   !      ============================================
+   !PV used to be done inifcp
+   do I = 1, IX
+      PSB(I)=PS(I)*1.E-3
+      SIGKFC(I,KX  ) = SIGT(I,KX-1)+0.75*(SIGT(I,KX)-SIGT(I,KX-1))
+   enddo
+   do K=1,KX-1
+      do I=1,IX
+         SIGKFC(I,K) = SIGT(I,K)
       end do
+   end do
+   !
 
-!*                         pass gzm as argument, so don't need to calculate z0g here,
-!                          only need to calculate the dzp (thickness) from the inverted z0g.
-
-        do K = 2, KX
-        do I = 1, IX
-           DZP(I,K-1) = Z0G(I,K)-Z0G(I,K-1)
-        end do
-        end do
-
-!                        at the top: do not put the thickness to zero but instead
-!                        put the level kx-1 in kx
-
-        do I=1,IX
-           DZP(I,KX) = DZP(I,KX-1)
-        end do
+   do K = 1, KX
+      NK = KX-K+1
+      do I = 1, IX
 
 
-!*
-
-!       5. COUNTER "FLAGCONV"
-!       ================
+         !                         The sounding
 
 
-!                          If FLAGCONV > 0
-!                          ==> convection is already activated
-!                              the tendencies on T, Q, QC, and
-!                              QR do not change.
-!                              Go to the next column
+         !                         In the RPN physics, the K indices goes
+         !                         from 1 at the top of the model to KX
+         !                         at the surface.
+         !                         In the Kain-Fritsch subroutine, we use
+         !                         the opposite (of course).
+         !                         The switch is done in this loop.
 
-!                          If FLAGCONV =< 0
-!                          ==> convective tendencies and diagnostics
-!                              are put to "0"
+         PP0(I,K) = 1.E3*(SIGKFC(I,NK)*PSB(I))
+         TT0(I,K) = TP1(I,NK)
+         U00(I,K) = UB(I,NK)
+         V00(I,K) = VB(I,NK)
+         Q00(I,K) = max(qp1(i,nk),1.0E-10 )
+         QL0(I,K) = 0.
+         QI0(I,K) = 0.
 
+         !                        add the definition of z0g (geopotential height)
+         !                        from gzm(geopotential)
 
-        do I = 1, IX
-          ACTIV(I) = .false.
-
-          if (FLAGCONV(I).eq.1.) KKFC(I)=1.
-
-          if (FLAGCONV(I).le.0) then
-
-            RLIQ_INT(I) = 0.
-            RICE_INT(I) = 0.
-
-            do K=1,KX
-              DTDT(I,K)  = 0.0
-              DQDT(I,K)  = 0.0
-              DQCDT(I,K) = 0.0
-              DQIDT(I,K) = 0.0
-              DUDT(I,K)  = 0.0
-              DVDT(I,K)  = 0.0
-              DQRDT(I,K) = 0.0
-
-              UMFOUT(I,K) = 0.
-              DMFOUT(I,K) = 0.
-
-              RLIQOUT(I,K) = 0.
-              RICEOUT(I,K) = 0.
-
-              RNFLX(I,K)   = 0.
-              SNOFLX(I,K)  = 0.
-
-              AREAUP(I,K) = 0.
-              CLOUDS(I,K) = 0.
-
-            end do
-
-            ZCRR(I) = 0.0
-
-            CAPEOUT(I)  = 0.
-            PEFFOUT(I)  = 0.
-            ZBASEOUT(I) = 0.
-            ZTOPOUT(I)  = 0.
-            WUMAXOUT(I) = 0.
-
-          else if (FLAGCONV(I).gt.0) then
-            ACTIV(I) = .true.
-            FLAGCONV(I) = FLAGCONV(I) - 1
-            ZCRR(I) = 1000.*ZCRR(I)
-
-          endif
-        end do
+         Z0G(I,K) = GZM(I,NK)/grav
 
 
 
-!**************************BEGINNING OF KF TRIGGER *********************
+         !                         If Q0 is above saturation value, reduce it
+         !                         to saturation level
 
-!                                Initialize
-        do IL = 1, IX
-          IDPL(IL) = 1
-          JK = IDPL(IL)
-          ZDPL(IL) = Z0G(IL,JK)
-          TRIGG2(IL)=.false.
-        end do
+         ES=ALIQ*exp((BLIQ*TT0(I,K)-CLIQ)/(TT0(I,K)-DLIQ))
+         ES=min( ES, 0.5*PP0(I,K) )
+         QST1(I,K)=0.622*ES/(PP0(I,K)-ES)
+         QST1(I,K) = max( min(QST1(I,K),0.050) , 1.E-6 )
+         Q00(I,K)  = min(QST1(I,K),Q00(I,K))
+         TV00(I,K) = TT0(I,K) * (1. + 0.608*Q00(I,K) )
+         WW0(I,K)  = SCR3(I,NK)
 
-!                                Compute THTS
-       do K = 1, KX
-       do IL = 1,IX
+      end do
+   end do
+
+
+   do I=1,IX
+      DPP(I,1)   = ( SIGKFC(I,KX)-SIGKFC(I,KX-1) ) * PSB(I)*1.E3
+      DPP(I,KX)  = ( SIGKFC(I,2) -SIGKFC(I,1)    ) * PSB(I)*1.E3
+   end do
+
+
+   do K=2,KX-1
+      NK = KX-K+1
+      do I=1,IX
+         DPUP      = ( SIGKFC(I,NK)-SIGKFC(I,NK-1) ) * PSB(I)*1.E3
+         DPDOWN    = ( SIGKFC(I,NK+1)-SIGKFC(I,NK) ) * PSB(I)*1.E3
+         DPP(I,K)  = 0.5 * (DPUP+DPDOWN)
+      end do
+   end do
+
+   !*                         pass gzm as argument, so don't need to calculate z0g here,
+   !                          only need to calculate the dzp (thickness) from the inverted z0g.
+
+   do K = 2, KX
+      do I = 1, IX
+         DZP(I,K-1) = Z0G(I,K)-Z0G(I,K-1)
+      end do
+   end do
+
+   !                        at the top: do not put the thickness to zero but instead
+   !                        put the level kx-1 in kx
+
+   do I=1,IX
+      DZP(I,KX) = DZP(I,KX-1)
+   end do
+
+
+   !*
+
+   !       5. COUNTER "FLAGCONV"
+   !       ================
+
+
+   !                          If FLAGCONV > 0
+   !                          ==> convection is already activated
+   !                              the tendencies on T, Q, QC, and
+   !                              QR do not change.
+   !                              goto the next column
+
+   !                          If FLAGCONV =< 0
+   !                          ==> convective tendencies and diagnostics
+   !                              are put to "0"
+
+
+   do I = 1, IX
+      ACTIV(I) = .false.
+
+      if (FLAGCONV(I).eq.1.) KKFC(I)=1.
+
+      if (FLAGCONV(I).le.0) then
+
+         RLIQ_INT(I) = 0.
+         RICE_INT(I) = 0.
+
+         do K=1,KX
+            DTDT(I,K)  = 0.0
+            DQDT(I,K)  = 0.0
+            DQCDT(I,K) = 0.0
+            DQIDT(I,K) = 0.0
+            DUDT(I,K)  = 0.0
+            DVDT(I,K)  = 0.0
+            DQRDT(I,K) = 0.0
+
+            UMFOUT(I,K) = 0.
+            DMFOUT(I,K) = 0.
+
+            RLIQOUT(I,K) = 0.
+            RICEOUT(I,K) = 0.
+
+            RNFLX(I,K)   = 0.
+            SNOFLX(I,K)  = 0.
+
+            AREAUP(I,K) = 0.
+            CLOUDS(I,K) = 0.
+
+         end do
+
+         ZCRR(I) = 0.0
+
+         CAPEOUT(I)  = 0.
+         PEFFOUT(I)  = 0.
+         ZBASEOUT(I) = 0.
+         ZTOPOUT(I)  = 0.
+         WUMAXOUT(I) = 0.
+
+      else if (FLAGCONV(I).gt.0) then
+         ACTIV(I) = .true.
+         FLAGCONV(I) = FLAGCONV(I) - 1
+         ZCRR(I) = 1000.*ZCRR(I)
+
+      endif
+   end do
+
+
+
+   !**************************BEGINNING OF KF TRIGGER *********************
+
+   !                                Initialize
+   do IL = 1, IX
+      IDPL(IL) = 1
+      JK = IDPL(IL)
+      ZDPL(IL) = Z0G(IL,JK)
+      TRIGG2(IL)=.false.
+   end do
+
+   !                                Compute THTS
+   do K = 1, KX
+      do IL = 1,IX
          THTS(IL,K) = TT0(IL,K)*(1.E5/PP0(IL,K))**(0.2854* &
-                      (1.-0.28*QST1(IL,K)))* &
-                      exp((3374.6525/TT0(IL,K)-2.5403)*QST1(IL,K)* &
-                      (1.+0.81*QST1(IL,K)))
-       end do
-       end do
+              (1.-0.28*QST1(IL,K)))* &
+              exp((3374.6525/TT0(IL,K)-2.5403)*QST1(IL,K)* &
+              (1.+0.81*QST1(IL,K)))
+      end do
+   end do
 
-!                                Highest TOP
+   !                                Highest TOP
 !VDIR NOLSTVAL
-      do K = 2, KX
+   do K = 2, KX
       do IL = 1, IX
-        if(Z0G(IL,K) - Z0G(IL,1) .lt. MAXZPAR ) ITOP(IL)=K
+         if(Z0G(IL,K) - Z0G(IL,1) .lt. MAXZPAR ) ITOP(IL)=K
       end do
-      end do
+   end do
 
-!                                Begin convection test loop
+   !                                Begin convection test loop
 !VDIR NOLSTVAL
-      do JKK= 1, KX
-         do IL = 1,IX
-!         WKLCL = WKLCLA(IL)
+   do JKK= 1, KX
+      do IL = 1,IX
+         !         WKLCL = WKLCLA(IL)
          POSSIB(IL)= ZDPL(IL) - Z0G(IL,1) .lt. MAXZPAR
 
          if(POSSIB(IL)) then
@@ -685,33 +676,33 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
             DPTHMXG(IL)=0.
             TRIGGR(IL)=.false.
          endif
-         end do
+      end do
 
-!                             Construct mixed layer
+      !                             Construct mixed layer
 
 !VDIR NOLSTVAL
-         do JK = JKK, KX-1
-            JKM = JK + 1
-            do IL = 1,IX
+      do JK = JKK, KX-1
+         JKM = JK + 1
+         do IL = 1,IX
             if(POSSIB(IL) .and. DPTHMXG(IL) .lt. DPMIX) then
                ZDPL(IL) = Z0G(IL,JKK)
                IDPL(IL) = JKK
-!               IPBL(IL) = JK
+               !               IPBL(IL) = JK
                ROCPQ=0.2854*(1.-0.28*Q00(IL,JK))
                THMIXG(IL)=THMIXG(IL) +DPP(IL,JK)*TT0(IL,JK)* &
-                (P00/PP0(IL,JK))**ROCPQ
+                    (P00/PP0(IL,JK))**ROCPQ
                QMIXG(IL)= QMIXG(IL) +DPP(IL,JK)*Q00(IL,JK)
                PMIXG(IL)= PMIXG(IL) +DPP(IL,JK)*PP0(IL,JK)
                DPTHMXG(IL)=DPTHMXG(IL)+DPP(IL,JK)
             endif
-            end do
          end do
+      end do
 
 
-!                             Determine temperature and pressure
-!                             at LCL
+      !                             Determine temperature and pressure
+      !                             at LCL
 
-         do IL = 1,IX
+      do IL = 1,IX
          if(POSSIB(IL)) then
             THMIXG(IL)=THMIXG(IL)/DPTHMXG(IL)
             QMIXG(IL)=QMIXG(IL)/DPTHMXG(IL)
@@ -722,40 +713,40 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
             EMIX=QMIXG(IL)*PMIXG(IL)/(0.622+QMIXG(IL))
             TLOG=ALOG(EMIX/ALIQ)
             TDPT=(CLIQ-DLIQ*TLOG)/(BLIQ-TLOG)
-!            WORK1(IL)=TDPT
+            !            WORK1(IL)=TDPT
             TLCLG(IL)=TDPT-(.212+1.571E-3*(TDPT-TRPL)-4.36E-4* &
-                (TMIXG(IL)-TRPL))* &
-                (TMIXG(IL)-TDPT)
+                 (TMIXG(IL)-TRPL))* &
+                 (TMIXG(IL)-TDPT)
             TLCLG(IL)=min(TLCLG(IL),TMIXG(IL))
             TVLCL= TLCLG(IL) * ( 1. + 0.608 * QMIXG(IL) )
             CPORQ=1./ROCPQ
             PLCLG(IL)=P00*(TLCLG(IL)/THMIXG(IL))**CPORQ
          endif
-         end do
+      end do
 
 
-!                           Set to saturation value
+      !                           Set to saturation value
 
-!                           Determine vertical loop index
-!                           at LCL and DPL
+      !                           Determine vertical loop index
+      !                           at LCL and DPL
 
 !VDIR NOLSTVAL
-         do JK = JKK, KX-1
+      do JK = JKK, KX-1
          do IL = 1,IX
             if (POSSIB(IL) .and. PLCLG(IL) .lt. PP0(IL,JK) ) then
-            LCLG(IL) = JK +1
+               LCLG(IL) = JK +1
             endif
          end do
-         end do
+      end do
 
 
-!                           Estimate height and environment THETAV
-!                           at LCL
+      !                           Estimate height and environment THETAV
+      !                           at LCL
 
-          do IL = 1,IX
-          JK = LCLG(IL)
-          JKM= JK -1
-          if (POSSIB(IL) ) then
+      do IL = 1,IX
+         JK = LCLG(IL)
+         JKM= JK -1
+         if (POSSIB(IL) ) then
             DLP = ALOG(PLCLG(IL)/PP0(IL,JKM))/ALOG(PP0(IL,JK)/PP0(IL,JKM))
             TENVG(IL) = TT0(IL,JKM)+(TT0(IL,JK)-TT0(IL,JKM))*DLP
             QENVG(IL) = Q00(IL,JKM)+(Q00(IL,JK)-Q00(IL,JKM))*DLP
@@ -764,96 +755,91 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
             ZLCLG(IL) = Z0G(IL,JKM)+ROVG*TVBAR*ALOG(PP0(IL,JKM)/PLCLG(IL))
             TVAVG = 0.5*(TV00(IL,JK)+ TENVG(IL)*(1.+0.608*QENVG(IL)))
             PLCLG(IL) = PP0(IL,JK)* &
-                     exp(GRAV/(RGASD*TVAVG)*(Z0G(IL,JK)-ZLCLG(IL)))
+                 exp(GRAV/(RGASD*TVAVG)*(Z0G(IL,JK)-ZLCLG(IL)))
             TVLCL = TLCLG(IL) * (1.+0.608*QMIXG(IL))
             ROLCL(IL) = PLCLG(IL)/(RGASD*TVLCL)
 
-!                           Compute grid-scale vertical
-!                           velocity perturbation
+            !                           Compute grid-scale vertical
+            !                           velocity perturbation
 
             WKL = WW0(IL,JKM)+(WW0(IL,JK)-WW0(IL,JKM))*DLP-WKLCLA(IL)
             WSIGNE = WKL/(abs(WKL)+1.E-10)
             WORK1(IL)=4.64*WSIGNE*(abs(WKL)+1.E-10)**0.3333333
 
 
-!                           Compute vertical velocity
-!                           at the LCL
+            !                           Compute vertical velocity
+            !                           at the LCL
 
             LC = IDPL(IL)
             GDT =GRAV*WORK1(IL)*(ZLCLG(IL)-Z0G(IL,LC))/(TV00(IL,LC)+TVEN)
             WLCLG(IL) = 1.+.5*WSIGNE*sqrt(abs(GDT)+1.E-10)
 
 
-!                           Check to see if cloud is buoyant
+            !                           Check to see if cloud is buoyant
             if( TLCLG(IL)+WORK1(IL).gt.TENVG(IL) &
-                .and. WLCLG(IL) .gt. 0.) TRIGGR(IL)=.true.
+                 .and. WLCLG(IL) .gt. 0.) TRIGGR(IL)=.true.
 
-          endif
-
-
-!                          Look for parcels that produce sufficient
-!                          cloud depth.  Cloud top level is where
-!                          CAPE is less than critical value
+         endif
 
 
-          CAPE(IL)=0.
-          THEUL(IL)=TMIXG(IL)*(1.E5/PMIXG(IL))** &
-                    (0.2854*(1.-0.28*QMIXG(IL)))* &
-                    exp((3374.6525/TLCLG(IL)-2.5403)* &
-                    QMIXG(IL)*(1.+0.81*QMIXG(IL)))
-          end do
+         !                          Look for parcels that produce sufficient
+         !                          cloud depth.  Cloud top level is where
+         !                          CAPE is less than critical value
 
-          MULT = GRAV
-          do IL = 1,IX
 
-          if (TRIGGR(IL)) then
+         CAPE(IL)=0.
+         THEUL(IL)=TMIXG(IL)*(1.E5/PMIXG(IL))** &
+              (0.2854*(1.-0.28*QMIXG(IL)))* &
+              exp((3374.6525/TLCLG(IL)-2.5403)* &
+              QMIXG(IL)*(1.+0.81*QMIXG(IL)))
+      end do
+
+      MULT = GRAV
+      do IL = 1,IX
+
+         if (TRIGGR(IL)) then
             JK = LCLG(IL)
             ZTOP(IL) = Z0G(IL,JK)
             WORK3(IL)=0.
 
             do LC  = JK,KX-2
-              DZZ = Z0G(IL,LC+1)-Z0G(IL,LC)
-              WORK1(IL) =((2.*THEUL(IL))/(THTS(IL,LC+1)+THTS(IL,LC))-1.)*DZZ
-              CAPE(IL) = CAPE(IL)+WORK1(IL)*MULT
-!                                     FACTOR BETAENT FOR ENTRAINEMENT
-              WORK2(IL) = 1.333*GRAV*CAPE(IL) + BETAENT * WLCLG(IL)*WLCLG(IL)
-              WORK2(IL) = sign(1.,WORK2(IL))
-              WORK3(IL) = WORK3(IL) + min(0., WORK2(IL))
-              WORK3(IL) = max(-1.,WORK3(IL))
+               DZZ = Z0G(IL,LC+1)-Z0G(IL,LC)
+               WORK1(IL) =((2.*THEUL(IL))/(THTS(IL,LC+1)+THTS(IL,LC))-1.)*DZZ
+               CAPE(IL) = CAPE(IL)+WORK1(IL)*MULT
+               !                                     FACTOR BETAENT FOR ENTRAINEMENT
+               WORK2(IL) = 1.333*GRAV*CAPE(IL) + BETAENT * WLCLG(IL)*WLCLG(IL)
+               WORK2(IL) = sign(1.,WORK2(IL))
+               WORK3(IL) = WORK3(IL) + min(0., WORK2(IL))
+               WORK3(IL) = max(-1.,WORK3(IL))
 
-              ZTOP(IL) = Z0G(IL,LC)*0.5*(1+WORK2(IL))*(1+WORK3(IL)) &
-                       + ZTOP(IL)*0.5*(1-WORK2(IL))
-!                                IF CLDHGT > CDEPTH FLAG AGAIN
-              if( ZTOP(IL)-ZLCLG(IL) .ge. CDEPTH &
-                         .and. .not.TRIGG2(IL) ) then
-                TRIGG2(IL)=.true.
-              endif
+               ZTOP(IL) = Z0G(IL,LC)*0.5*(1+WORK2(IL))*(1+WORK3(IL)) &
+                    + ZTOP(IL)*0.5*(1-WORK2(IL))
+               !                                IF CLDHGT > CDEPTH FLAG AGAIN
+               if( ZTOP(IL)-ZLCLG(IL) .ge. CDEPTH &
+                    .and. .not.TRIGG2(IL) ) then
+                  TRIGG2(IL)=.true.
+               endif
             end do
-          endif
-!               END OF CONVECTIVE LOOP TEST
-       end do
+         endif
+         !               END OF CONVECTIVE LOOP TEST
       end do
-!*
+   end do
 
-
-!*********************** END OF KF TRIGGER ***********************
-
-
-
-
-!                             The few points for which convective
-!                             activity is possible are determined and
-!                             are indicated by the TRIGG2 and ACTIV
-!                             logical variables.
-
-!                             For the columns with TRIGG2 = .true. and
-!                                                   ACTIV = .false.
-!                             ... do the whole Kain-Fritsch calculations ...
-
-
+ 
+   !*********************** END OF KF TRIGGER ***********************
+ 
+   !                             The few points for which convective
+   !                             activity is possible are determined and
+   !                             are indicated by the TRIGG2 and ACTIV
+   !                             logical variables.
+ 
+   !                             For the columns with TRIGG2 = .true. and
+   !                                                   ACTIV = .false.
+   !                             ... do the whole Kain-Fritsch calculations ...
+ 
       do 325 I = 1, IX
 
-        if ( .not. TRIGG2 (I) .or. ACTIV(I) ) GO TO 325
+        if ( .not. TRIGG2 (I) .or. ACTIV(I) ) goto 325
 
 
       KTOP = ITOP(I)
@@ -916,7 +902,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
 !                           No levels (or parcels) in the lowest
 !                           300 mb were found to be unstable
-!                           ==> go to the next grid point
+!                           ==> goto the next grid point
 
         if (LOW.gt.LLFC) goto 325
         LC=LOW
@@ -1005,7 +991,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
         do 29 NK = LC,KL
          KLCL=NK
-29       if(PLCLG(I).ge.PP0(I,NK))GO TO 35
+29       if(PLCLG(I).ge.PP0(I,NK))goto 35
 
         goto 325
 
@@ -1053,13 +1039,13 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !                               Parcel is convectively unstable
 !                               Calculate the tendencies
 
-        if (TLCLG(I)+DTLCL.gt.TENV) GO TO 45
+        if (TLCLG(I)+DTLCL.gt.TENV) goto 45
 
 
 !                                Parcel not buoyant.
-!                                Go to the next column.
+!                                goto the next column.
 
-        if(KPBL.ge.LLFC)GO TO 325
+        if(KPBL.ge.LLFC)goto 325
         goto 25
 
 
@@ -2261,7 +2247,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 141     continue
 
         if (.not.DOWNDRAFT) TDER = 0.
-        DOWNDRAFT_OFF: IF (TDER < 1.) then
+        DOWNDRAFT_OFF: if (TDER < 1.) then
 
 !                          No evaporation then no downdraft.
 
@@ -2503,7 +2489,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !         DLP=ALOG((PP0(I,NK)-0.5*DPP(I,NK))/PP0(I,NK))/ALOG(PP0(I,NK+1)/PP0(I,NK))
 !         THMID(NK+1)=THTA0(NK)+(THTA0(NK+1)-THTA0(NK))*DPLIN
 !170      QMID(NK+1)=Q00(I,NK)+(Q00(I,NK+1)-Q00(I,NK))*DLP
-170      CONTINUE
+170      continue
 
 !      do NK=ML+1,LTOP-1
 !        PPTMLT=PPTMLT+PPTICE(NK+1)
@@ -2693,15 +2679,15 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
       do 498 NK=1,LTOP
         THTAG(NK)=THPA(NK)
         if (TOTAL_WATER) then
-           QLG(NK)=MAX(QLPA(NK),0.)
-           QIG(NK)=MAX(QIPA(NK),0.)
-           QTG(NK)=MAX(QTPA(NK),0.)
+           QLG(NK)=max(QLPA(NK),0.)
+           QIG(NK)=max(QIPA(NK),0.)
+           QTG(NK)=max(QTPA(NK),0.)
            QG(NK) = max(QTG(NK) - (QLG(NK)+QIG(NK)),0.)
         else
            QLG(NK)=QL0(I,NK)
            QIG(NK)=QI0(I,NK)
            QTG(NK)=Q00(I,NK)+QLG(NK)+QIG(NK)
-           QG(NK)=MAX(QPA(NK),0.)
+           QG(NK)=max(QPA(NK),0.)
         endif
 498   continue
 
@@ -2823,7 +2809,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
         TVLCL=TLCLG(I)*(1.+0.608*QMIXG(I))
         do 235 NK = LC,KL
           KLCL=NK
-235       if(PLCLG(I).ge.PP0(I,NK))GO TO 240
+235       if(PLCLG(I).ge.PP0(I,NK))goto 240
 240     K=KLCL-1
         DLP=ALOG(PLCLG(I)/PP0(I,K))/ALOG(PP0(I,KLCL)/PP0(I,K))
 
@@ -2901,7 +2887,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
 !     IF THE COLUMN IS STABILIZED, THEN OUT OF THE ITERATION LOOP.
 
-      if(FABE.le.1.05-STAB.and.FABE.ge.0.95-STAB)GO TO 265
+      if(FABE.le.1.05-STAB.and.FABE.ge.0.95-STAB)goto 265
       if(NCOUNT.gt.10)then
          goto 265
       endif
@@ -3029,7 +3015,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
 !     REDO THE CALCULATIONS FOR CONVECTIVE ADJUSTMENT.
 
-      GO TO 175
+      goto 175
 
 265   continue
 

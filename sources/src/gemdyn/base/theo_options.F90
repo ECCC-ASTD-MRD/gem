@@ -45,7 +45,8 @@ contains
 
 !#include <rmnlib_basics.hf>
       logical nml_must
-      character(len=64) :: nml_S,dumc_S
+      character(len=64) :: nml_S
+      character(len=15) :: dumc_S
 !
 !-------------------------------------------------------------------
 !

@@ -175,7 +175,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine PRIV_get_weight_info(F_grid,F_gmm_name,F_ni,F_nj)
+  subroutine PRIV_get_weight_info(F_grid, F_gmm_name, F_ni, F_nj)
     ! Return information about the weight field associated with the requested grid
     use glb_ld
     use gmm_itf_mod
@@ -184,21 +184,27 @@ contains
 
     character(len=*), intent(in) :: F_grid              !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
     character(len=*), intent(out) :: F_gmm_name         !name of GMM weight variable
-    integer, intent(out), optional :: F_ni,F_nj         !i,j dimensions of the weight field
-    integer :: my_ni,my_nj
+    integer, intent(out), optional :: F_ni, F_nj        !i,j dimensions of the weight field
+    integer :: my_ni, my_nj
 
+    my_ni = 0
+    my_nj = 0 ! shut up compiler warnings
     select case (trim(F_grid))
     case ('M')
-       my_ni = l_ni ; my_nj = l_nj
+       my_ni = l_ni
+       my_nj = l_nj
        F_gmm_name = gmmk_nest_weightm_s
     case ('U')
-       my_ni = l_niu; my_nj = l_nj
+       my_ni = l_niu
+       my_nj = l_nj
        F_gmm_name = gmmk_nest_weightu_s
     case ('V')
-       my_ni = l_ni ; my_nj = l_njv
+       my_ni = l_ni
+       my_nj = l_njv
        F_gmm_name = gmmk_nest_weightv_s
     case ('Q')
-       my_ni = l_ni ; my_nj = l_nj
+       my_ni = l_ni
+       my_nj = l_nj
        F_gmm_name = gmmk_nest_weightq_s
     case DEFAULT
        call gem_error(-1,'blending::get_weight_info',&

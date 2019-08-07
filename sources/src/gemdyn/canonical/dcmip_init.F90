@@ -80,7 +80,7 @@
       real, pointer, dimension(:,:,:) :: cl,cl2,qv,qc,qr,q1,q2,q3,q4
       real, dimension(1,1,1) :: empty
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) :: zmom,lg_pstar,log_pt,log_pm,pt_plus,pm_plus
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) :: zmom_8,lg_pstar,log_pt,log_pm,pt_plus,pm_plus
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk)     :: tt
       real, dimension(l_minx:l_maxx,l_miny:l_maxy)          :: ps
 
@@ -369,18 +369,18 @@
       !------------------------------------------------------------------------------------------
       if (.not.GEM_P_L) then
 
-         zmom(:,:,0) = Ver_z_8%m(0)
+         zmom_8(:,:,0) = Ver_z_8%m(0)
 
          do k=1,G_nk
-            zmom(:,:,k) = Ver_z_8%m(k) + Ver_b_8%m(k)*fis0(:,:)/grav_8
+            zmom_8(:,:,k) = Ver_z_8%m(k) + Ver_b_8%m(k)*fis0(:,:)/grav_8
          end do
 
-         zmom(:,:,G_nk+1) = fis0(:,:)/grav_8
+         zmom_8(:,:,G_nk+1) = fis0(:,:)/grav_8
 
-         lg_pstar(:,:,G_nk+1) = log(1.d5) - grav_8*zmom(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
+         lg_pstar(:,:,G_nk+1) = log(1.d5) - grav_8*zmom_8(:,:,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
 
          do k=G_nk,1,-1
-            lg_pstar(:,:,k) = lg_pstar(:,:,k+1) + grav_8*(zmom(:,:,k+1)-zmom(:,:,k))/(rgasd_8*Cstv_Tstr_8)
+            lg_pstar(:,:,k) = lg_pstar(:,:,k+1) + grav_8*(zmom_8(:,:,k+1)-zmom_8(:,:,k))/(rgasd_8*Cstv_Tstr_8)
          end do
 
          niter = 1
@@ -403,7 +403,7 @@
             do k=G_nk,1,-1
                do j=1,l_nj
                   do i=1,l_ni
-                     qt1(i,j,k) = qt1(i,j,k+1) + aaa_8 * (zmom(i,j,k+1) - zmom(i,j,k))/tt1(i,j,k)
+                     qt1(i,j,k) = qt1(i,j,k+1) + aaa_8 * (zmom_8(i,j,k+1) - zmom_8(i,j,k))/tt1(i,j,k)
                   end do
                end do
             end do
@@ -411,7 +411,7 @@
             do k=1,G_nk+1
                do j=1,l_nj
                   do i=1,l_ni
-                     qt1(i,j,k) = qt1(i,j,k) + grav_8*zmom(i,j,k)
+                     qt1(i,j,k) = qt1(i,j,k) + grav_8*zmom_8(i,j,k)
                   end do
                end do
             end do

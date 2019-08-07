@@ -62,7 +62,7 @@
          call canonical_cases ("OUT")
 
          ! Precompute diagnostic level values
-         call itf_phy_diag ()
+         call itf_phy_diag()
 
          do jj=1, outd_sorties(0,Lctl_step)
 
@@ -129,8 +129,8 @@
          if ( ontimec ) then
 
             call out_open_file ('casc')
-            call out_dyn_casc
-            call out_cfile
+            call out_dyn_casc()
+            call out_cfile()
 
          end if
 

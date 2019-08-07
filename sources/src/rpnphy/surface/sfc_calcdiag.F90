@@ -121,7 +121,7 @@ contains
                endif
             endif IF_MOYHR
 
-            !VDIR NODEP
+!VDIR NODEP
             do i = 1, ni
 
                !# Accumulation of evaporation (in kg/m2)

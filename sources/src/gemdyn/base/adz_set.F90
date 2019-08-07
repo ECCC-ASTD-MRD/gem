@@ -17,7 +17,9 @@
       use adz_mem
       use adz_options
       use ctrl
+      use gem_options
       use HORgrid_options
+      use geomh
       use lam_options
       use gmm_itf_mod
       use gmm_pw
@@ -32,8 +34,9 @@
 
       include "tricublin_f90.inc"
 
-      integer  j, k, k0, BCS_BASE, pnz, ext
+      integer  j, k, k0, BCS_BASE, pnz, ext, halom
       real(kind=REAL64), parameter :: EPS_8= 1.D-5
+      real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
       real(kind=REAL128) :: smallest_dz,posz
 
@@ -158,10 +161,20 @@
       end do
 
       allocate ( Adz_cy_8(Adz_lminy:Adz_lmaxy) )
+      halom= max(Adz_haloy,G_haloy)
+      allocate ( lat(1-halom:G_nj+halom+1))
+      lat(1-G_haloy:G_nj+G_haloy+1)= G_yg_8(1-G_haloy:G_nj+G_haloy+1)
+      do j= Adz_lminy, -G_haloy
+         lat(j)= G_yg_8(1-G_haloy) + (j-1+G_haloy) * geomh_hy_8
+      end do
+      do j = G_nj+G_haloy+2, Adz_lmaxy
+         lat(j)= G_yg_8(G_nj+G_haloy) + (j-G_nj-G_haloy) * geomh_hy_8
+      end do
 
       do j = Adz_lminy, Adz_lmaxy
-         Adz_cy_8(j) = 1.d0 / cos(G_yg_8(l_j0+j-1))
+         Adz_cy_8(j) = 1.d0 / cos(lat(l_j0+j-1))
       end do
+      deallocate(lat)
 
       allocate (&
          Adz_uu_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &

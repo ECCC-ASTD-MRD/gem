@@ -85,36 +85,36 @@
 
       do j=j0,jn
          do i=i0,in
-            Cfdg1(i,j) =  gama_8*(fdg2(i,j)*mc_iJz(i  ,j,Nk )&
+            Cfdg1(i,j) =  gama_8*(fdg2(i,j)*mc_iJz_8(i  ,j,Nk )&
                    -mu_8*half*fdg2(i,j))
          end do
       end do
 
       do j=1+sol_pil_s_ext, l_nj-sol_pil_n
          do i=1+sol_pil_w_ext, l_ni-sol_pil_e_ext
-            Afdg1(i,j) = - mc_Jx(i,j,Nk) * &
-                          Ver_wp_8%m(Nk)*half*( fdg2(i+1,j)*mc_iJz(i+1,j,Nk) &
-                                              + fdg2(i  ,j)*mc_iJz(i  ,j,Nk) )
+            Afdg1(i,j) = - mc_Jx_8(i,j,Nk) * &
+                          Ver_wp_8%m(Nk)*half*( fdg2(i+1,j)*mc_iJz_8(i+1,j,Nk) &
+                                              + fdg2(i  ,j)*mc_iJz_8(i  ,j,Nk) )
          end do
       end do
 
       do j=1+sol_pil_s_ext, l_nj-sol_pil_n_ext
          do i=1+sol_pil_w_ext, l_ni-sol_pil_e
-            Bfdg1(i,j) = - mc_Jy(i,j,Nk) * &
-                        Ver_wp_8%m(Nk)*half*( fdg2(i,j+1)*mc_iJz(i,j+1,Nk) &
-                                            + fdg2(i,j  )*mc_iJz(i,j  ,Nk) )
+            Bfdg1(i,j) = - mc_Jy_8(i,j,Nk) * &
+                        Ver_wp_8%m(Nk)*half*( fdg2(i,j+1)*mc_iJz_8(i,j+1,Nk) &
+                                            + fdg2(i,j  )*mc_iJz_8(i,j  ,Nk) )
          end do
       end do
 
       do j=j0,jn
          do i=i0,in
             add_v8 = (Afdg1 (i,j)-Afdg1 (i-1,j))*geomh_invDXM_8(j) &
-                     + half * (mc_Ix(i,j,Nk)*(Afdg1(i,j)+Afdg1(i-1,j)))
+                     + half * (mc_Ix_8(i,j,Nk)*(Afdg1(i,j)+Afdg1(i-1,j)))
             bdd_v8 = (Bfdg1 (i,j)*geomh_cyM_8(j)-Bfdg1 (i,j-1)*&
                      geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                     + half * (mc_Iy(i,j,Nk)*(Bfdg1(i,j)+Bfdg1(i,j-1)))
+                     + half * (mc_Iy_8(i,j,Nk)*(Bfdg1(i,j)+Bfdg1(i,j-1)))
             cdd_v8=Cfdg1(i,j)*Ver_idz_8%m(Nk)&
-                     +(mc_Iz(i,j,Nk)-epsi_8)*(Ver_wp_8%m(Nk)*Cfdg1(i,j))
+                     +(mc_Iz_8(i,j,Nk)-epsi_8)*(Ver_wp_8%m(Nk)*Cfdg1(i,j))
             F_rhs(i,j,Nk)=F_rhs(i,j,Nk)-Cstv_hco0_8*(add_v8+bdd_v8+cdd_v8)
 
          end do

@@ -123,7 +123,7 @@
          !-----------------------
          log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = (dble(wqt(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1))/&
                                                            (rgasd_8*Ver_Tstar_8%m(l_nk+1))  &
-                                                          + dble(lg_pstar(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1)))
+                                                          + dble(lg_pstar_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1)))
          pr_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = exp(log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n))
 
          pr_p0_dry_8 = 0.0 !NOT COMPLETED GEM-H

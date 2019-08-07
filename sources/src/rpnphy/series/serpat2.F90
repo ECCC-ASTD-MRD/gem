@@ -48,21 +48,21 @@ subroutine SERPAT2(ST , VT , T , NT , NK , &
 
    integer K,L,M
 
-      if (NSTAT .le. 0) return
-      if (.not. INITOK) return
+   if (NSTAT .le. 0) return
+   if (.not. INITOK) return
 
-      do 3 L=1,NSTAT
+   do L=1,NSTAT
 
-      do 1 M=1,NSURF
+      do M=1,NSURF
+         ST(T,M,L) = SERS(L,M)
+      enddo
 
-    1    ST(T,M,L) = SERS(L,M)
+      do M=1,NPROF
+         do  K=1,NK
+            VT(K,T,M,L) = SERP(K,L,M)
+         enddo
+      enddo
+   enddo
 
-      do 2 M=1,NPROF
-         do 2 K=1,NK
-
-    2       VT(K,T,M,L) = SERP(K,L,M)
-
-    3 continue
-
-      return
-      end
+   return
+end subroutine SERPAT2

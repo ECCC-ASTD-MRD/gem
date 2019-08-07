@@ -50,65 +50,67 @@ subroutine SERACC(VS,HH,NSURF,NT,SURFACE,TSMOYHR,SRWRI)
 
 #include "acclist.cdk"
 
-!     If the model output interval is shorter than the
-!     time series output interval **OR** if TSMOYHR is
-!     not a multiple of SRWRI, nothing can be done.
-      if (TSMOYHR*3600.lt.SRWRI .or. mod(TSMOYHR*3600,SRWRI).ne.0) return
+   !     If the model output interval is shorter than the
+   !     time series output interval **OR** if TSMOYHR is
+   !     not a multiple of SRWRI, nothing can be done.
+   if (TSMOYHR*3600.lt.SRWRI .or. mod(TSMOYHR*3600,SRWRI).ne.0) return
 
-!     If the model and time series output interval is the same
-!     only the second output step must be taken care of
-      if (TSMOYHR*3600.eq.SRWRI .and. NT.ge.2) then
+   !     If the model and time series output interval is the same
+   !     only the second output step must be taken care of
+   if (TSMOYHR*3600.eq.SRWRI .and. NT.ge.2) then
 
-!       If the time series output interval is larger than delta t
-        if ( NT .ge. 3 ) then
-          if ( HH(2)-HH(1) .ne. HH(3)-HH(2) ) then
+      !       If the time series output interval is larger than delta t
+      if ( NT .ge. 3 ) then
+         if ( HH(2)-HH(1) .ne. HH(3)-HH(2) ) then
 
-!           Loop over all surface variables
-            do 10 KSURF=1,NSURF
+            !           Loop over all surface variables
+            do KSURF=1,NSURF
 
-!             Loop over all accumulators
-              do 10 A=1,NBR
+               !             Loop over all accumulators
+               do A=1,NBR
 
-!               If variable is an accumulator substract first time step
-!               from second time series output step
-!               (The model always outputs the first time step in each job
-!                regardless of the output interval.)
-                if (SURFACE(KSURF).eq.PERMIS(2,A)) then
-                  VS(2,KSURF) = VS(2,KSURF) - VS(1,KSURF)
-                end if
+                  !               If variable is an accumulator substract first time step
+                  !               from second time series output step
+                  !               (The model always outputs the first time step in each job
+                  !                regardless of the output interval.)
+                  if (SURFACE(KSURF).eq.PERMIS(2,A)) then
+                     VS(2,KSURF) = VS(2,KSURF) - VS(1,KSURF)
+                  end if
 
-10          continue
-          end if
-        end if
-
-!     If the model output interval is longer than the time series output interval
-!     recalculate all accumulators
-      else
-
-!       Loop over all surface variables
-        do 20 KSURF=1,NSURF
-
-!         Loop over all accumulators
-          do 20 A=1,NBR
-
-!           If variable is an accumulator
-            if (SURFACE(KSURF).eq.PERMIS(2,A)) then
-              ACCUM = 0.0
-
-!             Loop over all output time steps
-              do 30 T=1,NT
-                VS(T,KSURF) = VS(T,KSURF) - ACCUM
-                if (modulo(HH(T),dble(TSMOYHR)).lt.-0.001 .or. &
-                    modulo(HH(T),dble(TSMOYHR)).gt.0.001) then
-                  ACCUM = ACCUM + VS(T,KSURF)
-                else
-                  ACCUM = 0.0
-                endif
-30            continue
-            endif
-20      continue
+               enddo
+            enddo
+         end if
       end if
 
+      !     If the model output interval is longer than the time series output interval
+      !     recalculate all accumulators
+   else
 
-      return
-      end
+      !       Loop over all surface variables
+      do KSURF=1,NSURF
+
+         !         Loop over all accumulators
+         do A=1,NBR
+
+            !           If variable is an accumulator
+            if (SURFACE(KSURF).eq.PERMIS(2,A)) then
+               ACCUM = 0.0
+
+               !             Loop over all output time steps
+               do T=1,NT
+                  VS(T,KSURF) = VS(T,KSURF) - ACCUM
+                  if (modulo(HH(T),dble(TSMOYHR)).lt.-0.001 .or. &
+                       modulo(HH(T),dble(TSMOYHR)).gt.0.001) then
+                     ACCUM = ACCUM + VS(T,KSURF)
+                  else
+                     ACCUM = 0.0
+                  endif
+               enddo
+            endif
+         enddo
+      enddo
+   end if
+
+
+   return
+end subroutine SERACC

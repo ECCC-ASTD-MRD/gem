@@ -128,11 +128,11 @@
 
    !           Adding vertical coordinate metric terms
    !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               F_nu(i,j,k) = F_nu(i,j,k) - (t_interp - one*isol_i) * mc_Jx(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                                 +(F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)   &
-                                                 +(F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) )
+               F_nu(i,j,k) = F_nu(i,j,k) - (t_interp - one*isol_i) * mc_Jx_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
+                                                 +(F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
+                                                 +(F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )
             end do
          end do
 
@@ -152,11 +152,11 @@
 
    !           Adding vertical coordinate metric terms
    !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               F_nv(i,j,k) = F_nv(i,j,k) - (t_interp - one*isol_i) * mc_Jy(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                                 +(F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)   &
-                                                 +(F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) )
+               F_nv(i,j,k) = F_nv(i,j,k) - (t_interp - one*isol_i) * mc_Jy_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
+                                                 +(F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
+                                                 +(F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )
             end do
          end do
    !           Compute Nc
@@ -164,9 +164,9 @@
          do j= j0, jn
             do i= i0, in
 
-               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-                                             + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-                                             + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
+               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
+                                             + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
+                                             + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
                                                Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
                                                (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
                                                ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
@@ -239,14 +239,14 @@
 
    !           Compute Nw
    !           ~~~~~~~~~~
-               F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz(i,j,k) - &
+               F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz_8(i,j,k) - &
                            isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k))
 
    !           Compute Nc
    !           ~~~~~~~~~~
-!               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-!                                            + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-!                                            + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
+!               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
+!                                            + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
+!                                            + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
 !                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
 !                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
 !                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
@@ -272,16 +272,16 @@
          km=max(k-1,1)
          do j = j0, jn
             do i = i0, in
-               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wp_8%m(k))
-               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
+               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
+               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
    !           Compute Nc'
    !           ~~~~~~~~~~~
                div = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomh_invDXM_8(j) &
                    + (F_nv(i,j,k)*geomh_cyM_8(j)-F_nv(i,j-1,k)* &
                       geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                    + isol_i*(half * ( mc_Ix(i,j,k)*(F_nu(i,j,k)+F_nu(i-1,j,k)) &
-                                     + mc_Iy(i,j,k)*(F_nv(i,j,k)+F_nv(i,j-1,k)) ))
+                    + isol_i*(half * ( mc_Ix_8(i,j,k)*(F_nu(i,j,k)+F_nu(i-1,j,k)) &
+                                     + mc_Iy_8(i,j,k)*(F_nv(i,j,k)+F_nv(i,j-1,k)) ))
 
                F_nc(i,j,k) = div - F_nc(i,j,k)*Cstv_invT_m_8
 

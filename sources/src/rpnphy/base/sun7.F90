@@ -294,11 +294,11 @@ subroutine sun7b(FDOWN,FUP,HEAT,VOZO,OZOTOIT, &
          fldsig(J,KI)=afldsig(J,K)
       enddo
    enddo
- 
+
    KFIN=KMX*.5
-   do 701 K=1,KFIN
+   do K=1,KFIN
       KI=KMX-K+1
-      do 702 J=1,LMX
+      do J=1,LMX
          A=WV(J,K)
          WV(J,K)=WV(J,KI)
          WV(J,KI)=A
@@ -340,817 +340,817 @@ subroutine sun7b(FDOWN,FUP,HEAT,VOZO,OZOTOIT, &
          TAUAE(J,K,5)=TAUAE(J,KI,5)
          TAUAE(J,KI,5)=A
 
- 702  continue
-
- 701  continue
-
-
-      do 704 I=1,KFIN
-         do 704 J=1,LMX
-            IK=KMX-I+1
-            A=DSIG(J,I)
-            DSIG(J,I)=DSIG(J,IK)
-            DSIG(J,IK)=A
-            A=DSH(J,I)
-            DSH(J,I)=DSH(J,IK)
-            DSH(J,IK)=A
-            A=DSC(J,I)
-            DSC(J,I)=DSC(J,IK)
-            DSC(J,IK)=A
-            SIG(J,I)=aSIG(J,IK)
-            SIG(J,IK)=aSIG(J,I)
- 704  continue
-
-      CCAR=CCO2*0.0088509
-      CONS = GRAV/CPD
+      enddo
+   enddo
 
 
-!-----------------------------------------------------------------------
+   do I=1,KFIN
+      do J=1,LMX
+         IK=KMX-I+1
+         A=DSIG(J,I)
+         DSIG(J,I)=DSIG(J,IK)
+         DSIG(J,IK)=A
+         A=DSH(J,I)
+         DSH(J,I)=DSH(J,IK)
+         DSH(J,IK)=A
+         A=DSC(J,I)
+         DSC(J,I)=DSC(J,IK)
+         DSC(J,IK)=A
+         SIG(J,I)=aSIG(J,IK)
+         SIG(J,IK)=aSIG(J,I)
+      enddo
+   enddo
+
+   CCAR=CCO2*0.0088509
+   CONS = GRAV/CPD
 
 
-!-- THRESHOLDS FOR CLOUDINESS, HUMIDITY, CLOUD OPTICAL THICKNESS
-
-      ZEPSC =1.E-02
-      ZEPSCQ=1.E-10
-      ZEPSCT=1.E-03
-
-      RAYL=0.06
+   !-----------------------------------------------------------------------
 
 
-!         Y  : MAGNIFICATION FACTOR
-!         UD : DOWNWARD RADIATION
-!         UM : UPWARD RADIATION
+   !-- THRESHOLDS FOR CLOUDINESS, HUMIDITY, CLOUD OPTICAL THICKNESS
 
-!     INTERACTIONS BETWEEN OZONE ABSORPTION AND SCATTERING ARE NEGLECTED
+   ZEPSC =1.E-02
+   ZEPSCQ=1.E-10
+   ZEPSCT=1.E-03
 
-!     ABSORBER AMOUNT IN THE K TH LAYER
-!     H2O : UD(1,K)
-!     CO2 : UD(2,K)
+   RAYL=0.06
 
-      IABS = 3
 
-      REC_35=1./35.
+   !         Y  : MAGNIFICATION FACTOR
+   !         UD : DOWNWARD RADIATION
+   !         UM : UPWARD RADIATION
 
-!     si on introduit ce vsqrt sun6 plante car on perd en precision
-!     CALL VSQRT(RMU,1224.*RMUO*RMUO+1.,ILG)
-!     DO I=1,ILG
-!     RMU(I)=SQRT(1224.*RMUO(I)*RMUO(I)+1.)*REC_35
-!     RMU(I)=RMU(I)*REC_35
-!     ENDDO
+   !     INTERACTIONS BETWEEN OZONE ABSORPTION AND SCATTERING ARE NEGLECTED
 
-      do 1 I=1,ILG
+   !     ABSORBER AMOUNT IN THE K TH LAYER
+   !     H2O : UD(1,K)
+   !     CO2 : UD(2,K)
+
+   IABS = 3
+
+   REC_35=1./35.
+
+   !     si on introduit ce vsqrt sun6 plante car on perd en precision
+   !     CALL VSQRT(RMU,1224.*RMUO*RMUO+1.,ILG)
+   !     DO I=1,ILG
+   !     RMU(I)=SQRT(1224.*RMUO(I)*RMUO(I)+1.)*REC_35
+   !     RMU(I)=RMU(I)*REC_35
+   !     ENDDO
+
+   do I=1,ILG
       C1I(I,KMXP)=0.
       UD(I,3,KMXP)=0.
       RMU(I)=sqrt(1224.*RMUO(I)*RMUO(I)+1.)*REC_35
       W(I) = OZOTOIT(I)/RMU(I)
       NUME  = SOMME(APAD(IABS,1),APAD(IABS,2),APAD(IABS,3),APAD(IABS,4), &
-                     APAD(IABS,5),APAD(IABS,6),W(I))
+           APAD(IABS,5),APAD(IABS,6),W(I))
       DENOMI= SOMME(BPAD(IABS,1),BPAD(IABS,2),BPAD(IABS,3),BPAD(IABS,4), &
-                     BPAD(IABS,5),BPAD(IABS,6),W(I))
+           BPAD(IABS,5),BPAD(IABS,6),W(I))
 
-!     POUR TENIR COMPTE DE L'ABSORPTION DU RAYONNEMENT SOLAIRE
-!     CAUSEE PAR L'OZONE AU-DESSUS DU TOIT DU MODELE, REACTIVER
-!     LA LIGNE SUIVANTE. ELLE L'EST DEJA SI RADFIX EST FAUX
+      !     POUR TENIR COMPTE DE L'ABSORPTION DU RAYONNEMENT SOLAIRE
+      !     CAUSEE PAR L'OZONE AU-DESSUS DU TOIT DU MODELE, REACTIVER
+      !     LA LIGNE SUIVANTE. ELLE L'EST DEJA SI RADFIX EST FAUX
       if (RADFIX) then
          vozo(i) = 1.
       else
          vozo(i) = DIV(NUME,DENOMI,DQ(IABS))
       endif
+   enddo
 
- 1    continue
-
-!     OZONE ABSORPTION ABOVE MODEL ROOF (NON-OPTIMIZED CODE)
-!     CALL TTTT(IABS,W,VOZO,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+   !     OZONE ABSORPTION ABOVE MODEL ROOF (NON-OPTIMIZED CODE)
+   !     CALL TTTT(IABS,W,VOZO,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
 
 
-!-----------------------------------------------------------------------
-!-- CALCULATES OZONE AMOUNTS FOR DOWNWARD LOOKING PATHS (SEC=1./RMU)
+   !-----------------------------------------------------------------------
+   !-- CALCULATES OZONE AMOUNTS FOR DOWNWARD LOOKING PATHS (SEC=1./RMU)
 
-      do 3 K=1,KMX
+   do K=1,KMX
       KP1=K+1
       L=KMXP-K
       LP1=L+1
-      do 2 I=1,ILG
-      UD(I,3,L)=UD(I,3,LP1)+QOF(I,L)/RMU(I)
- 2    continue
- 3    continue
+      do I=1,ILG
+         UD(I,3,L)=UD(I,3,LP1)+QOF(I,L)/RMU(I)
+      enddo
+   enddo
 
-!-----------------------------------------------------------------------
-!  CALCULATES OZONE AMOUNTS FOR UPWARD LOOKING PATHS (SEC=1.66)
+   !-----------------------------------------------------------------------
+   !  CALCULATES OZONE AMOUNTS FOR UPWARD LOOKING PATHS (SEC=1.66)
 
-      Y=.6024
-      REC_Y=1./Y
-      do 4 I=1,ILG
+   Y=.6024
+   REC_Y=1./Y
+   do I=1,ILG
       UM(I,1)=UD(I,3,1)
- 4    continue
+   enddo
 
-      do 6 K=2,KMXP
+   do K=2,KMXP
       KM1=K-1
-      do 5 I=1,ILG
-      UM(I,K)=UM(I,KM1)+QOF(I,KM1)*REC_Y
- 5    continue
- 6    continue
+      do I=1,ILG
+         UM(I,K)=UM(I,KM1)+QOF(I,KM1)*REC_Y
+      enddo
+   enddo
 
-!-----------------------------------------------------------------------
-!   CALCULATES AMOUNTS OF WATER VAPOR AND UNIFORMLY MIXED GASES (O2+CO2)
-!   FOR A VERTICAL PATH
+   !-----------------------------------------------------------------------
+   !   CALCULATES AMOUNTS OF WATER VAPOR AND UNIFORMLY MIXED GASES (O2+CO2)
+   !   FOR A VERTICAL PATH
 
-      REC_101325=1./101325.
-      do 8 K=1,KMX
+   REC_101325=1./101325.
+   do K=1,KMX
       KP1=K+1
-      do 7 I=1,ILG
-!     TZ=TM(I,K)
-!     Z = TCDK/TZ
-      Z(I) = TCDK/TM(I,K)
- 7    continue
+      do I=1,ILG
+         !     TZ=TM(I,K)
+         !     Z = TCDK/TZ
+         Z(I) = TCDK/TM(I,K)
+      enddo
 
       call VSPOWN1  (UDI1,Z,0.45,ILG)
       call VSPOWN1  (UDI2,Z,1.375,ILG)
       do I=1,ILG
-      WH2O=AMAX1(WV(I,K),1.E-8)
-      DSHH= DSH(I,K) * CH2O*WH2O
-!     DSCC= DSC(I,K) * CCAR*REC_101325
-      DSCC=DSC(I,K)*CCAR
-!     UD(I,1,K)= PSOL(I) * DSHH * Z**0.45
-!     UD(I,2,K)= PSOL(I) * DSCC * Z**1.375
-!     UD(I,1,K)= PSOL(I) * DSHH * (exp(0.45 *log(Z)))
-!     UD(I,2,K)= PSOL(I) * DSCC * (exp(1.375*log(Z)))
-      UD(I,1,K)= PSOL(I) * DSHH * UDI1(I)
-      UD(I,2,K)= PSOL(I) * DSCC * UDI2(I)
+         WH2O=AMAX1(WV(I,K),1.E-8)
+         DSHH= DSH(I,K) * CH2O*WH2O
+         !     DSCC= DSC(I,K) * CCAR*REC_101325
+         DSCC=DSC(I,K)*CCAR
+         !     UD(I,1,K)= PSOL(I) * DSHH * Z**0.45
+         !     UD(I,2,K)= PSOL(I) * DSCC * Z**1.375
+         !     UD(I,1,K)= PSOL(I) * DSHH * (exp(0.45 *log(Z)))
+         !     UD(I,2,K)= PSOL(I) * DSCC * (exp(1.375*log(Z)))
+         UD(I,1,K)= PSOL(I) * DSHH * UDI1(I)
+         UD(I,2,K)= PSOL(I) * DSCC * UDI2(I)
       enddo
- 8    continue
+   enddo
 
 
-!-----------------------------------------------------------------------
-!   C1I(*) TOTAL CLOUDINESS ABOVE LEVEL K ASSUMING A RANDOM OVERLAPPING
-!    OF THE CLOUD LAYERS, TAKING INTO ACCOUNT THE ACTUAL OPTICAL
-!    THICKNESS OF THE CLOUD (VIA THE FORWARD SCATTERING PEAK)
+   !-----------------------------------------------------------------------
+   !   C1I(*) TOTAL CLOUDINESS ABOVE LEVEL K ASSUMING A RANDOM OVERLAPPING
+   !    OF THE CLOUD LAYERS, TAKING INTO ACCOUNT THE ACTUAL OPTICAL
+   !    THICKNESS OF THE CLOUD (VIA THE FORWARD SCATTERING PEAK)
 
 
-      do 9 I=1,ILG
+   do I=1,ILG
       R23(I)=0.
       C1I(I,KMXP)=0.
- 9    continue
-!     DO 11 K=1,KMX
-!     L=KMXP-K
-!     DO 10 I=1,ILG
-!-- 0.28 = 1.- PIZERO*G*G
-!     CORR=1.-EXP(-0.28*TAU(I,L)/RMU(I))
-!     R23(I)=1.-(1.-CNEB(I,L)*CORR)*(1.-R23(I))
-!     C1I(I,L)=R23(I)
-!     IF(I.EQ.1)WRITE(6,77)L,C1I(I,L),TAU(I,L),CNEB(I,L)
-! 77  FORMAT(1X,'C1I TAU NEB:',I6,3E12.4)
-!10   CONTINUE
-!11   CONTINUE
+   enddo
+   !     DO 11 K=1,KMX
+   !     L=KMXP-K
+   !     DO 10 I=1,ILG
+   !-- 0.28 = 1.- PIZERO*G*G
+   !     CORR=1.-EXP(-0.28*TAU(I,L)/RMU(I))
+   !     R23(I)=1.-(1.-CNEB(I,L)*CORR)*(1.-R23(I))
+   !     C1I(I,L)=R23(I)
+   !     IF(I.EQ.1)WRITE(6,77)L,C1I(I,L),TAU(I,L),CNEB(I,L)
+   ! 77  FORMAT(1X,'C1I TAU NEB:',I6,3E12.4)
+   !10   CONTINUE
+   !11   CONTINUE
 
 
 
 
-      do i=1,ilg
-! te2 is memory of level for new cloud layer
-! where maximum overlap occurs
-! tr1 records the mimimum transmittance in that cloud
-         te2(i)=1.
-         tr1(i)=1.
-      end do
+   do i=1,ilg
+      ! te2 is memory of level for new cloud layer
+      ! where maximum overlap occurs
+      ! tr1 records the mimimum transmittance in that cloud
+      te2(i)=1.
+      tr1(i)=1.
+   end do
 
-      do 904 J=1,KMXP
-      do 904 I=1,ILG
- 904  RAY(I,J)=1.
-      do 711 J=2,KMXP
+   do J=1,KMXP
+      do I=1,ILG
+         RAY(I,J)=1.
+      enddo
+   enddo
+   do J=2,KMXP
       LIND=MAX0(1,KMX-(J-2)+1)
       LIND=MIN0(LIND,KMX)
-      do 710 I=1,ILG
-      K=KMX-(J-1)+1
-      XNU=1.-CNEB(I,K)
-      VA=CNEB(I,LIND)
-      if(va.lt.0.01)then
-       te2(i)=ray(i,k)
-       tr1(i)=xnu
-      else
-       tr1(i)=min(tr1(i),xnu)
-      endif
-      ray(i,j)=tr1(i)*te2(i)
- 710   continue
- 711  continue
-!  RAY EST LE VECTEUR NUAGES DU SOMMET AUX AUTRES NIVEAUX
-!  AVEC RANDOM OVERLAP POUR COUCHES SEPAREES ET FULL OVERLAP
-!  POUR COUCHES ADJACENTES
+      do I=1,ILG
+         K=KMX-(J-1)+1
+         XNU=1.-CNEB(I,K)
+         VA=CNEB(I,LIND)
+         if(va.lt.0.01)then
+            te2(i)=ray(i,k)
+            tr1(i)=xnu
+         else
+            tr1(i)=min(tr1(i),xnu)
+         endif
+         ray(i,j)=tr1(i)*te2(i)
+      enddo
+   enddo
+   !  RAY EST LE VECTEUR NUAGES DU SOMMET AUX AUTRES NIVEAUX
+   !  AVEC RANDOM OVERLAP POUR COUCHES SEPAREES ET FULL OVERLAP
+   !  POUR COUCHES ADJACENTES
 
-      do 712 K=1,KMXP
-      do 712 I=1,ILG
-      FUP(I,K)=1.-RAY(I,KMXP-K+1)
-!     IF(I.EQ.1)WRITE(6,9004)K,FUP(I,K)
-!9004 FORMAT(' NOUV C1I: ',I5,2X,E12.4)
- 712  continue
+   do K=1,KMXP
+      do I=1,ILG
+         FUP(I,K)=1.-RAY(I,KMXP-K+1)
+         !     IF(I.EQ.1)WRITE(6,9004)K,FUP(I,K)
+         !9004 FORMAT(' NOUV C1I: ',I5,2X,E12.4)
+      enddo
+   enddo
 
 
-         do 410 K = 1, KMX
-         do 409 I=1,ILG
+   do K = 1, KMX
+      do I=1,ILG
          RE2(I)=0.
          RE1(I)=0.
          C1I(I,K)=FUP(I,K)
          FDOWN(I,K)=CNEB(I,K)
          PIZAZ(I,K) = 0.
- 409     continue
- 410  continue
+      enddo
+   enddo
 
-!     IF(1.EQ.1)GO TO 630
-!     DO 412 K=1,KMX
-!        L=KMXP-K
-!        K P 1 = K + 1
-!        DO 411 I=1,ILG
-!           C NEB 1 =CNEB(I,KMX-K+1)
-! . . . . COMPUTES A DOWNWARD REDUCED CLOUDINESS TO CANCELL RANDOM OVERL
-!           C NEB 2 = CVMGT (0.,(RAY(I,KP1)-RAY(I,K) )/
-!    1                      AMAX1(1. -RAY(I,K), 0.001)    ,
-!    2                        RAY(I,K) .GE. 0.999          )
-!           FDOWN(I,L) = (1. - RE1(I)) * C NEB 1 + RE1(I) * C NEB 2
-!           FDOWN(I,L) = AMIN1(FDOWN(I,L),CNEB1)
-!           RE2(I) = RE2(I) + TAU(I,L)
-!           PIZAZ(I,L) = PIZAZ(I,L) + TAU(I,L)*(CNEB1-FDOWN(I,L))
-!           FACOR = 1. - OMEGAT(I,L)*CG(I,L)*CG(I,L)
-!           RE1(I) = 1. - EXP(-FACOR * RE2(I) / RMU(I))
-!           C1I(I,L) = RAY(I,KP1) * RE1(I)
-!411     CONTINUE
-!412  CONTINUE
+   !     IF(1.EQ.1)GO TO 630
+   !     DO 412 K=1,KMX
+   !        L=KMXP-K
+   !        K P 1 = K + 1
+   !        DO 411 I=1,ILG
+   !           C NEB 1 =CNEB(I,KMX-K+1)
+   ! . . . . COMPUTES A DOWNWARD REDUCED CLOUDINESS TO CANCELL RANDOM OVERL
+   !           C NEB 2 = CVMGT (0.,(RAY(I,KP1)-RAY(I,K) )/
+   !    1                      AMAX1(1. -RAY(I,K), 0.001)    ,
+   !    2                        RAY(I,K) .GE. 0.999          )
+   !           FDOWN(I,L) = (1. - RE1(I)) * C NEB 1 + RE1(I) * C NEB 2
+   !           FDOWN(I,L) = AMIN1(FDOWN(I,L),CNEB1)
+   !           RE2(I) = RE2(I) + TAU(I,L)
+   !           PIZAZ(I,L) = PIZAZ(I,L) + TAU(I,L)*(CNEB1-FDOWN(I,L))
+   !           FACOR = 1. - OMEGAT(I,L)*CG(I,L)*CG(I,L)
+   !           RE1(I) = 1. - EXP(-FACOR * RE2(I) / RMU(I))
+   !           C1I(I,L) = RAY(I,KP1) * RE1(I)
+   !411     CONTINUE
+   !412  CONTINUE
 
-!     DO 422 I=1,ILG
-!422    RE1(I)=0.
-!     DO 423 J=1,KMX
-!     DO 424 I=1,ILG
-!424  RE1(I)=RE1(I)+FDOWN(I,J)
-!423    CONTINUE
+   !     DO 422 I=1,ILG
+   !422    RE1(I)=0.
+   !     DO 423 J=1,KMX
+   !     DO 424 I=1,ILG
+   !424  RE1(I)=RE1(I)+FDOWN(I,J)
+   !423    CONTINUE
 
-!     KMX M 1 = KMX - 1
-!     DO 416 K = 1, KMX M 1
-!         L = KMXP - K
-!         DO 415 I = 1,ILG
-!           FUP(I,L) = TAU (I,L)
-!           IF (FDOWN(I,L) .GT. .01)THEN
-!             TAU (I,L) = (TAU(I,L) * FDOWN(I,L) + PIZAZ(I,L-1)) /
-!    1                                FDOWN(I,L)
-!           TAU(I,L)= FDOWN(I,L)*RE2(I)/RE1(I)
-!           tau(i,l) = min(tau(i,l),150.)
-!             OMEGAT(I,L) = 1. - (1.-OMEGAT(I,L))*FUP(I,L)/TAU(I,L)
-!             OMEGAT(I,L) = AMAX1(OMEGAT(I,L),0.9936)
-!             omegat(i,l) = amin1 ( omegat(i,l) , 0.999999 )
-!           END IF
-! 415     CONTINUE
-! 416 CONTINUE
+   !     KMX M 1 = KMX - 1
+   !     DO 416 K = 1, KMX M 1
+   !         L = KMXP - K
+   !         DO 415 I = 1,ILG
+   !           FUP(I,L) = TAU (I,L)
+   !           IF (FDOWN(I,L) .GT. .01)THEN
+   !             TAU (I,L) = (TAU(I,L) * FDOWN(I,L) + PIZAZ(I,L-1)) /
+   !    1                                FDOWN(I,L)
+   !           TAU(I,L)= FDOWN(I,L)*RE2(I)/RE1(I)
+   !           tau(i,l) = min(tau(i,l),150.)
+   !             OMEGAT(I,L) = 1. - (1.-OMEGAT(I,L))*FUP(I,L)/TAU(I,L)
+   !             OMEGAT(I,L) = AMAX1(OMEGAT(I,L),0.9936)
+   !             omegat(i,l) = amin1 ( omegat(i,l) , 0.999999 )
+   !           END IF
+   ! 415     CONTINUE
+   ! 416 CONTINUE
 
-!630     CONTINUE
+   !630     CONTINUE
 
 
 
-!-----------------------------------------------------------------------
-!-- OPTICAL PARAMETERS FOR THE MIXING OF AEROSOLS
+   !-----------------------------------------------------------------------
+   !-- OPTICAL PARAMETERS FOR THE MIXING OF AEROSOLS
 
-      do 115 K=1,KMX
-      do 111 I=1,ILG
-      CGAZ(I,K)=0.
-      PIZAZ(I,K)=0.
-      TAUAZ(I,K)=0.
- 111  continue
-      do 113 IAE=1,5
-      do 112 I=1,ILG
-      TAUAZ(I,K)=TAUAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)
-      PIZAZ(I,K)=PIZAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)*PIZA(IAE)
-      CGAZ(I,K)=CGAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)*PIZA(IAE)*CGA(IAE)
- 112  continue
- 113  continue
-      do 114 I=1,ILG
-      CGAZ(I,K)=CGAZ(I,K)/PIZAZ(I,K)
-      PIZAZ(I,K)=PIZAZ(I,K)/TAUAZ(I,K)
- 114  continue
- 115  continue
+   do K=1,KMX
+      do I=1,ILG
+         CGAZ(I,K)=0.
+         PIZAZ(I,K)=0.
+         TAUAZ(I,K)=0.
+      enddo
+      do IAE=1,5
+         do I=1,ILG
+            TAUAZ(I,K)=TAUAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)
+            PIZAZ(I,K)=PIZAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)*PIZA(IAE)
+            CGAZ(I,K)=CGAZ(I,K)+TAUAE(I,K,IAE)*TAUA(IAE)*PIZA(IAE)*CGA(IAE)
+         enddo
+      enddo
+      do I=1,ILG
+         CGAZ(I,K)=CGAZ(I,K)/PIZAZ(I,K)
+         PIZAZ(I,K)=PIZAZ(I,K)/TAUAZ(I,K)
+      enddo
+   enddo
 
-!------------------------------------------------------------------
-!  REFLECTIVITIES AND TRANSMITTIVITIES ARE FIRST CALCULATED WITHOUT
-!   GASEOUS ABSORPTION, I.E., FOR A PURELY SCATTERING ATMOSPHERE
-!   INCLUDING RAYLEIGH, CLOUDS, AEROSOLS
+   !------------------------------------------------------------------
+   !  REFLECTIVITIES AND TRANSMITTIVITIES ARE FIRST CALCULATED WITHOUT
+   !   GASEOUS ABSORPTION, I.E., FOR A PURELY SCATTERING ATMOSPHERE
+   !   INCLUDING RAYLEIGH, CLOUDS, AEROSOLS
 
-!     SURFACE CONDITIONS    ALBS
+   !     SURFACE CONDITIONS    ALBS
 
-      do 12 I=1,ILG
+   do I=1,ILG
       REFZ(I,2,1)=ALBS(I)
       REFZ(I,1,1)=ALBS(I)
- 12   continue
+   enddo
 
-      Y=1.66
- 312  format( 5X,'REFZ1',10X,'REFZ2',12X,'TR1',13X,'TR2',/)
+   Y=1.66
+312 format( 5X,'REFZ1',10X,'REFZ2',12X,'TR1',13X,'TR2',/)
 
-      do K=2,KMXP
+   do K=2,KMXP
       KM1=K-1
       do I=1,ILG
-      RNEB(I)=FDOWN(I,KM1)
-!      RE1(I)=0.
-!      TR1(I)=0.
-!      RE2(I)=0.
-!      TE2(I)=0.
+         RNEB(I)=FDOWN(I,KM1)
+         !      RE1(I)=0.
+         !      TR1(I)=0.
+         !      RE2(I)=0.
+         !      TE2(I)=0.
 
-!--   EQUIVALENT ZENITH ANGLE OBTAINED AS A MIX OF THE ZENITH ANGLE FOR
-!     DIRECT RADIATION AND OF THE DIFFUSE (SEC=1.66) ZENITH ANGLE
-!     DEPENDING ON THE OVERHEAD CLOUDINESS
+         !--   EQUIVALENT ZENITH ANGLE OBTAINED AS A MIX OF THE ZENITH ANGLE FOR
+         !     DIRECT RADIATION AND OF THE DIFFUSE (SEC=1.66) ZENITH ANGLE
+         !     DEPENDING ON THE OVERHEAD CLOUDINESS
 
-      XMUE=(1.-C1I(I,K))/RMU(I)+C1I(I,K)*1.66
+         XMUE=(1.-C1I(I,K))/RMU(I)+C1I(I,K)*1.66
 
-      RMUE(I,K)=1./XMUE
+         RMUE(I,K)=1./XMUE
 
-!     REFLECTIVITY OF LAYER KM1 DUE TO RAYLEIGH SCATTERING
+         !     REFLECTIVITY OF LAYER KM1 DUE TO RAYLEIGH SCATTERING
 
-      R=RAYL*DSIG(I,KM1)
+         R=RAYL*DSIG(I,KM1)
 
-!-- ORIGINAL FORMULA (FOUQUART)
-!     RAY(I,KM1)=0.5*R/(RMUE(I,K)+R)
+         !-- ORIGINAL FORMULA (FOUQUART)
+         !     RAY(I,KM1)=0.5*R/(RMUE(I,K)+R)
 
-!-- TANRE'S FORMULA
-!     RAY(I,KM1)= R / (2.*RMUE(I,K) + R)
+         !-- TANRE'S FORMULA
+         !     RAY(I,KM1)= R / (2.*RMUE(I,K) + R)
 
-!-- BURIEZ' FORMULA, JUIN 82
-!     R=DSIG(I,KM1)
-!     RAY(I,KM1)=0.0536*R/(RMUE(I,K)+0.063+0.055*R)
+         !-- BURIEZ' FORMULA, JUIN 82
+         !     R=DSIG(I,KM1)
+         !     RAY(I,KM1)=0.0536*R/(RMUE(I,K)+0.063+0.055*R)
 
-!-- TANRE'S FORMULA MODIFYING THE CONTRIBUTION OF RAYLEIGH SCATTERING
-!    TO ACCOUNT FOR AEROSOLS
+         !-- TANRE'S FORMULA MODIFYING THE CONTRIBUTION OF RAYLEIGH SCATTERING
+         !    TO ACCOUNT FOR AEROSOLS
 
-      PT=R+PIZAZ(I,KM1)*TAUAZ(I,KM1)
-      XMPT=(1.-PIZAZ(I,KM1))*TAUAZ(I,KM1)
-      BPT=0.5*(1.-TAUAZ(I,KM1)*CGAZ(I,KM1)/(R+TAUAZ(I,KM1)))*PT
-      TRA(I,KM1)=1./(1.+XMPT*XMUE+BPT*XMUE)
-      RAY(I,KM1)=TRA(I,KM1)*BPT*XMUE
+         PT=R+PIZAZ(I,KM1)*TAUAZ(I,KM1)
+         XMPT=(1.-PIZAZ(I,KM1))*TAUAZ(I,KM1)
+         BPT=0.5*(1.-TAUAZ(I,KM1)*CGAZ(I,KM1)/(R+TAUAZ(I,KM1)))*PT
+         TRA(I,KM1)=1./(1.+XMPT*XMUE+BPT*XMUE)
+         RAY(I,KM1)=TRA(I,KM1)*BPT*XMUE
 
-!-- INTRODUCING THE EFFECT OF A CLOUD LAYER IN THE SCATTERING PROCESS
+         !-- INTRODUCING THE EFFECT OF A CLOUD LAYER IN THE SCATTERING PROCESS
 
-      K0=0
-      K1=1
-      LO1=RNEB(I).gt.ZEPSC
-      if (LO1) then
-         ZC = 0.
-      else
-         ZC = 1.
-      endif
-      KK(I)=int(ZC)
-      if (LO1) then
-         TAU(I,KM1) = AMAX1(TAU(I,KM1),ZEPSCT)
-      else
-         TAU(I,KM1) = 0.
-      endif
+         K0=0
+         K1=1
+         LO1=RNEB(I).gt.ZEPSC
+         if (LO1) then
+            ZC = 0.
+         else
+            ZC = 1.
+         endif
+         KK(I)=int(ZC)
+         if (LO1) then
+            TAU(I,KM1) = AMAX1(TAU(I,KM1),ZEPSCT)
+         else
+            TAU(I,KM1) = 0.
+         endif
 
-      W(I) = OMEGAT(I,KM1)
-      TO1(I)=TAU(I,KM1)/W(I)
-      REF(I)=REFZ(I,1,KM1)
-      GG(I)=CG(I,KM1)
-      RMUZ(I)=RMUE(I,K)
+         W(I) = OMEGAT(I,KM1)
+         TO1(I)=TAU(I,KM1)/W(I)
+         REF(I)=REFZ(I,1,KM1)
+         GG(I)=CG(I,KM1)
+         RMUZ(I)=RMUE(I,K)
       enddo
 
       call WFLUX (REF, GG, W, TO1, RE1, TR1, RMUZ, RE2, TE2,LMX,ILG)
 
-!    REFZ(1,KM1): REFLECTIVITY OF LAYER KM1
-!       FOR A NON-REFLECTING UNDERLYING LAYER  R=0.
-!    REFZ(2,KM1): FOR A REFLECTING (R#0.) UNDERLYING LAYER
+      !    REFZ(1,KM1): REFLECTIVITY OF LAYER KM1
+      !       FOR A NON-REFLECTING UNDERLYING LAYER  R=0.
+      !    REFZ(2,KM1): FOR A REFLECTING (R#0.) UNDERLYING LAYER
 
-      do 14 I=1,ILG
-      REFZ(I,1,K)=(1.-RNEB(I))*(RAY(I,KM1)+REFZ(I,1,KM1)* &
-       (  TRA(I,KM1) ))+ RNEB(I)*RE2(I)
-      TR(I,1,KM1)=RNEB(I)*TE2(I)+(  TRA(I,KM1) )*(1.-RNEB(I))
-      REFZ(I,2,K)=(1.-RNEB(I))*(RAY(I,KM1)+KK(I)*REFZ(I,2,KM1)* &
-       (  TRA(I,KM1) ))+ RNEB(I)*RE1(I)
-      TR(I,2,KM1)=RNEB(I)*TR1(I)+(1.-RNEB(I))*(  TRA(I,KM1) )
- 14   continue
+      do I=1,ILG
+         REFZ(I,1,K)=(1.-RNEB(I))*(RAY(I,KM1)+REFZ(I,1,KM1)* &
+              (  TRA(I,KM1) ))+ RNEB(I)*RE2(I)
+         TR(I,1,KM1)=RNEB(I)*TE2(I)+(  TRA(I,KM1) )*(1.-RNEB(I))
+         REFZ(I,2,K)=(1.-RNEB(I))*(RAY(I,KM1)+KK(I)*REFZ(I,2,KM1)* &
+              (  TRA(I,KM1) ))+ RNEB(I)*RE1(I)
+         TR(I,2,KM1)=RNEB(I)*TR1(I)+(1.-RNEB(I))*(  TRA(I,KM1) )
+      enddo
+   enddo
+
+   do JJ=1,2
+
+      !  RJ : DOWNWARD
+      !  RK : UPWARD
+
+      do I=1,ILG
+         RJ(I,JJ,KMXP)=1.
+         RK(I,JJ,KMXP)=REFZ(I,JJ,KMXP)
       enddo
 
-      do 19 JJ=1,2
+      do K=1,KMX
+         L=KMXP-K
+         LP1=L+1
+         do I=1,ILG
+            RE11=RJ(I,JJ,LP1)*TR(I,JJ,L)
+            RJ(I,JJ,L)=RE11
+            RK(I,JJ,L)=RE11*REFZ(I,JJ,L)
+         enddo
+      enddo
+   enddo
 
-!  RJ : DOWNWARD
-!  RK : UPWARD
+   !----------------------------------------------------------------
+   !  REFLECTIVITIES AND TRANSMITTIVITIES ARE NOW CALCULATED WITH A
+   !  SIMULATED GASEOUS ABSORPTION USING AN EMPIRICAL GREY ABSORPTION
+   !  COEFFICIENTS  AKI(IABS)
 
-      do 16 I=1,ILG
-      RJ(I,JJ,KMXP)=1.
-      RK(I,JJ,KMXP)=REFZ(I,JJ,KMXP)
- 16   continue
+   !  IABS=1  WATER VAPOR  ; IABS=2  UNIFORMLY MIXED GASES
 
-      do 18 K=1,KMX
-      L=KMXP-K
-      LP1=L+1
-      do 17 I=1,ILG
-      RE11=RJ(I,JJ,LP1)*TR(I,JJ,L)
-      RJ(I,JJ,L)=RE11
-      RK(I,JJ,L)=RE11*REFZ(I,JJ,L)
- 17   continue
- 18   continue
- 19   continue
+   N=2
 
-!----------------------------------------------------------------
-!  REFLECTIVITIES AND TRANSMITTIVITIES ARE NOW CALCULATED WITH A
-!  SIMULATED GASEOUS ABSORPTION USING AN EMPIRICAL GREY ABSORPTION
-!  COEFFICIENTS  AKI(IABS)
-
-!  IABS=1  WATER VAPOR  ; IABS=2  UNIFORMLY MIXED GASES
-
-      N=2
-
-      do 28 IABS=1,2
+   DO28: do IABS=1,2
       RKI=AKI(IABS)
 
-      do 20 I=1,ILG
-      REFZ(I,2,1)=ALBS(I)
-      REFZ(I,1,1)=ALBS(I)
- 20   continue
-
-      do 23 K=2,KMXP
-      KM1=K-1
-      do i=1,ilg
-       AA=UD(I,IABS,KM1)
-       TO1(I) = RKI*aa
-       s(i)=-RKI*AA*y
-       g(i)=-RKI*AA/RMUE(I,K)
-       RMUZ(I)=RMUE(I,K)
+      do I=1,ILG
+         REFZ(I,2,1)=ALBS(I)
+         REFZ(I,1,1)=ALBS(I)
       enddo
-      call vsexp(s,s,ilg)
-      call vsexp(g,g,ilg)
-      do 21 I=1,ILG
-      RNEB(I)=FDOWN(I,KM1)
-!      AA=UD(I,IABS,KM1)
-!      S(I)=EXP(-RKI*AA*Y)
-!      G(I)=EXP(-RKI*AA/RMUE(I,K))
-!      TR1(I)=0.
-!      RE1(I)=0.
-!      TE2(I)=0.
-!      RE2(I)=0.
 
-      LO1=RNEB(I).gt.ZEPSC
-      if (LO1) then
-         ZC = 0.
-      else
-         ZC = 1.
-      endif
-      KK(I)=int(ZC)
-      if (LO1) then
-         TAU(I,KM1) = AMAX1(TAU(I,KM1),ZEPSCT)
-      else
-         TAU(I,KM1) = 0.
-      endif
+      DO23: do K=2,KMXP
+         KM1=K-1
+         do i=1,ilg
+            AA=UD(I,IABS,KM1)
+            TO1(I) = RKI*aa
+            s(i)=-RKI*AA*y
+            g(i)=-RKI*AA/RMUE(I,K)
+            RMUZ(I)=RMUE(I,K)
+         enddo
+         call vsexp(s,s,ilg)
+         call vsexp(g,g,ilg)
+         do I=1,ILG
+            RNEB(I)=FDOWN(I,KM1)
+            !      AA=UD(I,IABS,KM1)
+            !      S(I)=EXP(-RKI*AA*Y)
+            !      G(I)=EXP(-RKI*AA/RMUE(I,K))
+            !      TR1(I)=0.
+            !      RE1(I)=0.
+            !      TE2(I)=0.
+            !      RE2(I)=0.
 
-
-!      TO1(I) = RKI*AA + TAU(I,KM1)/OMEGAT(I,KM1)
-      TO1(I) = TO1(i) + TAU(I,KM1)/OMEGAT(I,KM1)
-      W(I)=TAU(I,KM1)/TO1(I)
-      REF(I)=REFZ(I,1,KM1)
-      GG(I)=CG(I,KM1)
-!      RMUZ(I)=RMUE(I,K)
- 21   continue
-
-      call WFLUX (REF, GG, W, TO1, RE1, TR1, RMUZ, RE2, TE2,LMX,ILG)
-
-      do 22 I=1,ILG
-      REFZ(I,2,K)=(1.-RNEB(I))*(RAY(I,KM1)+KK(I)*REFZ(I,2,KM1)* &
-       (  TRA(I,KM1) ))*G(I)*S(I)+RNEB(I)*RE1(I)
-      TR(I,2,KM1)=(1.-RNEB(I))*(  TRA(I,KM1) )*G(I)+RNEB(I)*TR1(I)
-      REFZ(I,1,K)=(1.-RNEB(I))*(RAY(I,KM1)+REFZ(I,1,KM1)* &
-       (  TRA(I,KM1) ))*G(I)*S(I)+RNEB(I)*RE2(I)
-      TR(I,1,KM1)=(1.-RNEB(I))*(  TRA(I,KM1) )*G(I)+RNEB(I)*TE2(I)
- 22   continue
- 23   continue
- 318  continue
-
-      do 27  KREF=1,2
-      N=N+1
-
-      do 24 I=1,ILG
-      RJ(I,N,KMXP)=1.
-      RK(I,N,KMXP)=REFZ(I,KREF,KMXP)
- 24   continue
-
-      do 26 K=1,KMX
-      L=KMXP-K
-      LP1=L+1
-      do 25 I=1,ILG
-      RE11=RJ(I,N,LP1)*TR(I,KREF,L)
-      RJ(I,N,L)=RE11
-      RK(I,N,L)=RE11*REFZ(I,KREF,L)
- 25   continue
- 26   continue
- 27   continue
- 28   continue
+            LO1=RNEB(I).gt.ZEPSC
+            if (LO1) then
+               ZC = 0.
+            else
+               ZC = 1.
+            endif
+            KK(I)=int(ZC)
+            if (LO1) then
+               TAU(I,KM1) = AMAX1(TAU(I,KM1),ZEPSCT)
+            else
+               TAU(I,KM1) = 0.
+            endif
 
 
+            !      TO1(I) = RKI*AA + TAU(I,KM1)/OMEGAT(I,KM1)
+            TO1(I) = TO1(i) + TAU(I,KM1)/OMEGAT(I,KM1)
+            W(I)=TAU(I,KM1)/TO1(I)
+            REF(I)=REFZ(I,1,KM1)
+            GG(I)=CG(I,KM1)
+            !      RMUZ(I)=RMUE(I,K)
+         enddo
 
-!-----------------------------------------------------------------------
-!   UPWARD (RK) AND DOWNWARD (RJ) FLUXES ARE NOW CALCULATED
-!    WITHOUT GASEOUS ABSORPTION     : N= 1 , 2
-!    WITH GASEOUS ABSORPTION BY H2O : N= 3 , 4
-!    WITH GASEOUS ABSORPTION BY CO2 : N= 5 , 6
-!    N= 1, 3, 5 : NON-REFLECTING UNDERLYING LAYER
-!    N= 2, 4, 6 :  REFLECTING UNDERLYING LAYER
+         call WFLUX (REF, GG, W, TO1, RE1, TR1, RMUZ, RE2, TE2,LMX,ILG)
 
-!  EFFECTIVE ABSORBER AMOUNTS    UEFF= - LN (F(K)/F(0))/K
+         do I=1,ILG
+            REFZ(I,2,K)=(1.-RNEB(I))*(RAY(I,KM1)+KK(I)*REFZ(I,2,KM1)* &
+                 (  TRA(I,KM1) ))*G(I)*S(I)+RNEB(I)*RE1(I)
+            TR(I,2,KM1)=(1.-RNEB(I))*(  TRA(I,KM1) )*G(I)+RNEB(I)*TR1(I)
+            REFZ(I,1,K)=(1.-RNEB(I))*(RAY(I,KM1)+REFZ(I,1,KM1)* &
+                 (  TRA(I,KM1) ))*G(I)*S(I)+RNEB(I)*RE2(I)
+            TR(I,1,KM1)=(1.-RNEB(I))*(  TRA(I,KM1) )*G(I)+RNEB(I)*TE2(I)
+         enddo
+      enddo DO23
 
-!----- EE IS AN ADJUSTABLE THRESHOLD DEPENDING ON THE COMPUTER PRECISION
-!       ADDED TO 'RJ' TO PREVENT LOGARITHM OF ZERO
+      do KREF=1,2
+         N=N+1
 
-      EE=1.E-10
-      do 32 K=1,KMXP
-      do 31 JJ=1,5,2
-      JJP =JJ+1
-      do 30 I=1,ILG
-      RJ(I,JJ,K)=        RJ(I,JJ,K) - RJ(I,JJP ,K)
-      RK(I,JJ,K)=        RK(I,JJ,K) - RK(I,JJP ,K)
-      RJ(I,JJ,K)= AMAX1( RJ(I,JJ,K) , EE )
-      RK(I,JJ,K)= AMAX1( RK(I,JJ,K) , EE )
- 30   continue
- 31   continue
- 32   continue
+         do I=1,ILG
+            RJ(I,N,KMXP)=1.
+            RK(I,N,KMXP)=REFZ(I,KREF,KMXP)
+         enddo
 
-      do 35 K=1,KMXP
-      do 34 JJ=2,6,2
-      do 33 I=1,ILG
-!     RJ(I,JJ,K)= EE + RJ(I,JJ,K)
-!     RK(I,JJ,K)= EE + RK(I,JJ,K)
-      RJ(I,JJ,K)= AMAX1( RJ(I,JJ,K) , EE )
-      RK(I,JJ,K)= AMAX1( RK(I,JJ,K) , EE )
- 33   continue
- 34   continue
- 35   continue
+         do K=1,KMX
+            L=KMXP-K
+            LP1=L+1
+            do I=1,ILG
+               RE11=RJ(I,N,LP1)*TR(I,KREF,L)
+               RJ(I,N,L)=RE11
+               RK(I,N,L)=RE11*REFZ(I,KREF,L)
+            enddo
+         enddo
+      enddo
+   enddo DO28
 
- 149  continue
 
-      do 42 K=1,KMXP
+
+   !-----------------------------------------------------------------------
+   !   UPWARD (RK) AND DOWNWARD (RJ) FLUXES ARE NOW CALCULATED
+   !    WITHOUT GASEOUS ABSORPTION     : N= 1 , 2
+   !    WITH GASEOUS ABSORPTION BY H2O : N= 3 , 4
+   !    WITH GASEOUS ABSORPTION BY CO2 : N= 5 , 6
+   !    N= 1, 3, 5 : NON-REFLECTING UNDERLYING LAYER
+   !    N= 2, 4, 6 :  REFLECTING UNDERLYING LAYER
+
+   !  EFFECTIVE ABSORBER AMOUNTS    UEFF= - LN (F(K)/F(0))/K
+
+   !----- EE IS AN ADJUSTABLE THRESHOLD DEPENDING ON THE COMPUTER PRECISION
+   !       ADDED TO 'RJ' TO PREVENT LOGARITHM OF ZERO
+
+   EE=1.E-10
+   do K=1,KMXP
+      do JJ=1,5,2
+         JJP =JJ+1
+         do I=1,ILG
+            RJ(I,JJ,K)=        RJ(I,JJ,K) - RJ(I,JJP ,K)
+            RK(I,JJ,K)=        RK(I,JJ,K) - RK(I,JJP ,K)
+            RJ(I,JJ,K)= AMAX1( RJ(I,JJ,K) , EE )
+            RK(I,JJ,K)= AMAX1( RK(I,JJ,K) , EE )
+         enddo
+      enddo
+   enddo
+
+   do K=1,KMXP
+      do JJ=2,6,2
+         do I=1,ILG
+            !     RJ(I,JJ,K)= EE + RJ(I,JJ,K)
+            !     RK(I,JJ,K)= EE + RK(I,JJ,K)
+            RJ(I,JJ,K)= AMAX1( RJ(I,JJ,K) , EE )
+            RK(I,JJ,K)= AMAX1( RK(I,JJ,K) , EE )
+         enddo
+      enddo
+   enddo
+
+   DO42: do K=1,KMXP
       KKI=1
 
-      do 40 JJ=1,2
-      RKI=1.0/AKI(JJ)
+      DO40: do JJ=1,2
+         RKI=1.0/AKI(JJ)
 
-      do 39 N=1,2
-      N2J=N+2*JJ
-      KKP4=KKI+4
+         DO39: do N=1,2
+            N2J=N+2*JJ
+            KKP4=KKI+4
 
-!  EFFECTIVE ABSORBER AMOUNT
-      do 36 I=1,ILG
-!      W(I)=ALOG(RJ(I,N,K)/RJ(I,N2J,K))/RKI
-       W(I)=RJ(I,N,K)/RJ(I,N2J,K)
- 36   continue
-      call vslog(w,w,ilg)
-      do i=1,ilg
-      w(i)=w(i)*rki
-      NUME  = SOMME(APAD(JJ,1),APAD(JJ,2),APAD(JJ,3),APAD(JJ,4), &
-                     APAD(JJ,5),APAD(JJ,6),W(I))
-      DENOMI= SOMME(BPAD(JJ,1),BPAD(JJ,2),BPAD(JJ,3),BPAD(JJ,4), &
-                     BPAD(JJ,5),BPAD(JJ,6),W(I))
-      R1(I) = DIV(NUME,DENOMI,DQ(JJ))
-      RUEF(I,KKI)=W(I)
+            !  EFFECTIVE ABSORBER AMOUNT
+            do I=1,ILG
+               !      W(I)=ALOG(RJ(I,N,K)/RJ(I,N2J,K))/RKI
+               W(I)=RJ(I,N,K)/RJ(I,N2J,K)
+            enddo
+            call vslog(w,w,ilg)
+            do i=1,ilg
+               w(i)=w(i)*rki
+               NUME  = SOMME(APAD(JJ,1),APAD(JJ,2),APAD(JJ,3),APAD(JJ,4), &
+                    APAD(JJ,5),APAD(JJ,6),W(I))
+               DENOMI= SOMME(BPAD(JJ,1),BPAD(JJ,2),BPAD(JJ,3),BPAD(JJ,4), &
+                    BPAD(JJ,5),BPAD(JJ,6),W(I))
+               R1(I) = DIV(NUME,DENOMI,DQ(JJ))
+               RUEF(I,KKI)=W(I)
+            enddo
+
+            !  TRANSMISSION FUNCTION
+            !     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
+            !     CALL TTTT(JJ,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+
+            do I=1,ILG
+               RL(I,KKI)=R1(I)
+               !     W(I)=ALOG(RK(I,N,K)/RK(I,N2J,K))/RKI
+               W(I)=RK(I,N,K)/RK(I,N2J,K)
+            enddo
+            call vslog(w,w,ilg)
+            do i=1,ilg
+               w(i)=w(i)*rki
+               NUME  = SOMME(APAD(JJ,1),APAD(JJ,2),APAD(JJ,3),APAD(JJ,4), &
+                    APAD(JJ,5),APAD(JJ,6),W(I))
+               DENOMI= SOMME(BPAD(JJ,1),BPAD(JJ,2),BPAD(JJ,3),BPAD(JJ,4), &
+                    BPAD(JJ,5),BPAD(JJ,6),W(I))
+               R1(I) = DIV(NUME,DENOMI,DQ(JJ))
+            enddo
+
+            !     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
+            !     CALL TTTT(JJ,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+
+            do I=1,ILG
+               RL(I,KKP4)=R1(I)
+               RUEF(I,KKP4)=W(I)
+            enddo
+
+            KKI=KKI+1
+         enddo DO39
+      enddo DO40
+
+
+      ! UPWARD AND DOWNWARD FLUXES WITH H2O AND CO2 ABSORPTION
+
+      do I=1,ILG
+         FDOWN(I,K)=RJ(I,1,K)*RL(I,1)*RL(I,3) &
+              +RJ(I,2,K)*RL(I,2)*RL(I,4)
+         FUP(I,K)=RK(I,1,K)*RL(I,5)*RL(I,7) &
+              +RK(I,2,K)*RL(I,6)*RL(I,8)
+      enddo
+   enddo DO42
+
+   !-----------------------------------------------------------------------
+   !    OZONE ABSORPTION
+
+   IABS=3
+   do K=1,KMXP
+      do I=1,ILG
+         W(I)=UD(I,3,K)
+         NUME  = SOMME(APAD(IABS,1),APAD(IABS,2),APAD(IABS,3),APAD(IABS,4), &
+              APAD(IABS,5),APAD(IABS,6),W(I))
+         DENOMI= SOMME(BPAD(IABS,1),BPAD(IABS,2),BPAD(IABS,3),BPAD(IABS,4), &
+              BPAD(IABS,5),BPAD(IABS,6),W(I))
+         R1(I) = DIV(NUME,DENOMI,DQ(IABS))
       enddo
 
-!  TRANSMISSION FUNCTION
-!     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
-!     CALL TTTT(JJ,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+      !     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
+      !     CALL TTTT(IABS,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
 
-      do 37 I=1,ILG
-      RL(I,KKI)=R1(I)
-!     W(I)=ALOG(RK(I,N,K)/RK(I,N2J,K))/RKI
-      W(I)=RK(I,N,K)/RK(I,N2J,K)
- 37   continue
-      call vslog(w,w,ilg)
-      do i=1,ilg
-      w(i)=w(i)*rki
-      NUME  = SOMME(APAD(JJ,1),APAD(JJ,2),APAD(JJ,3),APAD(JJ,4), &
-                     APAD(JJ,5),APAD(JJ,6),W(I))
-      DENOMI= SOMME(BPAD(JJ,1),BPAD(JJ,2),BPAD(JJ,3),BPAD(JJ,4), &
-                     BPAD(JJ,5),BPAD(JJ,6),W(I))
-      R1(I) = DIV(NUME,DENOMI,DQ(JJ))
+      do I=1,ILG
+         FDOWN(I,K) = R1(I)*CONSOL*R0R*VOZO(I)*RMUO(I)*FDOWN(I,K)
+         W(I)=UM(I,K)
+         NUME  = SOMME(APAD(IABS,1),APAD(IABS,2),APAD(IABS,3),APAD(IABS,4), &
+              APAD(IABS,5),APAD(IABS,6),W(I))
+         DENOMI= SOMME(BPAD(IABS,1),BPAD(IABS,2),BPAD(IABS,3),BPAD(IABS,4), &
+              BPAD(IABS,5),BPAD(IABS,6),W(I))
+         R1(I) = DIV(NUME,DENOMI,DQ(IABS))
       enddo
 
-!     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
-!     CALL TTTT(JJ,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+      !     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
+      !     CALL TTTT(IABS,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
 
-      do 38 I=1,ILG
-      RL(I,KKP4)=R1(I)
-      RUEF(I,KKP4)=W(I)
- 38   continue
+      do I=1,ILG
+         FUP(I,K) = R1(I)*CONSOL*R0R*RMUO(I)*FUP(I,K)
+      enddo
+   enddo
 
-      KKI=KKI+1
- 39   continue
- 40   continue
+   !**** NET FLUX AND HEATING RATES (DEG.K / DAY)
 
+   do I=1,ILG
+      !     ALBP(I)=FUP(I,KMXP)/FDOWN(I,KMXP)
+      !     FSOL(I)=FDOWN(I,1)-FUP(I,1)
+   enddo
 
-! UPWARD AND DOWNWARD FLUXES WITH H2O AND CO2 ABSORPTION
+   do K=1,KMXP
+      do I=1,ILG
+         !     Q(I,K)=FUP(I,K)-FDOWN(I,K)
+      enddo
+   enddo
 
-      do 41 I=1,ILG
-      FDOWN(I,K)=RJ(I,1,K)*RL(I,1)*RL(I,3) &
-       +RJ(I,2,K)*RL(I,2)*RL(I,4)
-      FUP(I,K)=RK(I,1,K)*RL(I,5)*RL(I,7) &
-       +RK(I,2,K)*RL(I,6)*RL(I,8)
- 41   continue
- 42   continue
+   !     En mode reduction, interpoler fup et fdown aux niveaux de flux complets
 
-!-----------------------------------------------------------------------
-!    OZONE ABSORPTION
+   if( reduc ) then
 
-      IABS=3
-      do 46 K=1,KMXP
-      do 43 I=1,ILG
-      W(I)=UD(I,3,K)
-      NUME  = SOMME(APAD(IABS,1),APAD(IABS,2),APAD(IABS,3),APAD(IABS,4), &
-                     APAD(IABS,5),APAD(IABS,6),W(I))
-      DENOMI= SOMME(BPAD(IABS,1),BPAD(IABS,2),BPAD(IABS,3),BPAD(IABS,4), &
-                     BPAD(IABS,5),BPAD(IABS,6),W(I))
-      R1(I) = DIV(NUME,DENOMI,DQ(IABS))
- 43   continue
+      !       La condition .gt. de intchamps exige qu'on passe
+      !       des champs dans le sens normal (1=haut,kmx=bas).
+      !       Il faut inverser les flux a interpoler.
 
-!     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
-!     CALL TTTT(IABS,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
+      IFIN=KMXP*.5
 
-      do 44 I=1,ILG
-      FDOWN(I,K) = R1(I)*CONSOL*R0R*VOZO(I)*RMUO(I)*FDOWN(I,K)
-      W(I)=UM(I,K)
-      NUME  = SOMME(APAD(IABS,1),APAD(IABS,2),APAD(IABS,3),APAD(IABS,4), &
-                     APAD(IABS,5),APAD(IABS,6),W(I))
-      DENOMI= SOMME(BPAD(IABS,1),BPAD(IABS,2),BPAD(IABS,3),BPAD(IABS,4), &
-                     BPAD(IABS,5),BPAD(IABS,6),W(I))
-      R1(I) = DIV(NUME,DENOMI,DQ(IABS))
- 44   continue
+      do I=1,IFIN
+         KI=KMXP-I+1
 
-!     CET APPEL A ETE REMPLACE PAR LES FONCTIONS-FORMULE SOMME ET DIV.
-!     CALL TTTT(IABS,W,R1,WORKX,LMX,ILG,APAD,BPAD,DQ,AKI)
-
-      do 45 I=1,ILG
-      FUP(I,K) = R1(I)*CONSOL*R0R*RMUO(I)*FUP(I,K)
- 45   continue
- 46   continue
-
-!**** NET FLUX AND HEATING RATES (DEG.K / DAY)
-
-      do 47 I=1,ILG
-!     ALBP(I)=FUP(I,KMXP)/FDOWN(I,KMXP)
-!     FSOL(I)=FDOWN(I,1)-FUP(I,1)
- 47   continue
-
-      do 49 K=1,KMXP
-      do 48 I=1,ILG
-!     Q(I,K)=FUP(I,K)-FDOWN(I,K)
- 48   continue
- 49   continue
-
-!     En mode reduction, interpoler fup et fdown aux niveaux de flux complets
-
-      if( reduc ) then
-
-!       La condition .gt. de intchamps exige qu'on passe
-!       des champs dans le sens normal (1=haut,kmx=bas).
-!       Il faut inverser les flux a interpoler.
-
-        IFIN=KMXP*.5
-
-        do I=1,IFIN
-          KI=KMXP-I+1
-
-          do J=1,LMX
+         do J=1,LMX
             A=FUP(J,I)
             FUP(J,I)=FUP(J,KI)
             FUP(J,KI)=A
             A=FDOWN(J,I)
             FDOWN(J,I)=FDOWN(J,KI)
             FDOWN(J,KI)=A
-          enddo
-        enddo
+         enddo
+      enddo
 
-        call intchamps(flfdown,fdown,flss,srd,lmx,flkmxp,kmxp)
-        call intchamps(flfup,fup,flss,srd,lmx,flkmxp,kmxp)
+      call intchamps(flfdown,fdown,flss,srd,lmx,flkmxp,kmxp)
+      call intchamps(flfup,fup,flss,srd,lmx,flkmxp,kmxp)
 
-!       Inverser le resultat avant de poursuivre les calculs.
+      !       Inverser le resultat avant de poursuivre les calculs.
 
-        IFIN=flkmxp*.5 + 1
+      IFIN=flkmxp*.5 + 1
 
-        do I=1,IFIN
-          KI=flkmxp-I+1
+      do I=1,IFIN
+         KI=flkmxp-I+1
 
-          do J=1,LMX
+         do J=1,LMX
             FUP(J,I)=flFUP(J,KI)
             FUP(J,KI)=flFUP(J,I)
             FDOWN(J,I)=flFDOWN(J,KI)
             FDOWN(J,KI)=flFDOWN(J,I)
-          enddo
-        enddo
-
-      endif
-
-!     SMOOTHING OF FLUXES If RADFLTR IS TRUE
-
-      do K=1,flkmxp
-        do I=1,ILG
-          RMUE(I,K)=FUP(I,K)
-          RAY(I,K)=FDOWN(I,K)
-        enddo
+         enddo
       enddo
 
+   endif
 
-      if ( RADFLTR ) then
-         do K=2,flKMX
+   !     SMOOTHING OF FLUXES If RADFLTR IS TRUE
+
+   do K=1,flkmxp
+      do I=1,ILG
+         RMUE(I,K)=FUP(I,K)
+         RAY(I,K)=FDOWN(I,K)
+      enddo
+   enddo
+
+
+   if ( RADFLTR ) then
+      do K=2,flKMX
          do I=1,ILG
-           FUP(I,K)=0.25*(RMUE(I,K+1)+RMUE(I,K-1)) + 0.5*RMUE(I,K)
-           FDOWN(I,K) = 0.25*(RAY(I,K+1)+RAY(I,K-1)) + 0.5*RAY(I,K)
+            FUP(I,K)=0.25*(RMUE(I,K+1)+RMUE(I,K-1)) + 0.5*RMUE(I,K)
+            FDOWN(I,K) = 0.25*(RAY(I,K+1)+RAY(I,K-1)) + 0.5*RAY(I,K)
          enddo
-         enddo
-      else
-         do K=2,flKMX
+      enddo
+   else
+      do K=2,flKMX
          do I=1,ILG
-           FUP(I,K)= RMUE(I,K)
-           FDOWN(I,K) = RAY(I,K)
+            FUP(I,K)= RMUE(I,K)
+            FDOWN(I,K) = RAY(I,K)
          enddo
-         enddo
-      endif
+      enddo
+   endif
 
 
-!     Calcul des taux (HEAT)
+   !     Calcul des taux (HEAT)
 
-      do K=1,flKMX
-        L=flkmxp-K
-        LP1=L+1
+   do K=1,flKMX
+      L=flkmxp-K
+      LP1=L+1
 
-        TOIT(L) = L.eq.flkmxp-1
+      TOIT(L) = L.eq.flkmxp-1
 
-        do I=1,ILG
+      do I=1,ILG
 
-           XNET=FUP(I,L)-FDOWN(I,L) - (FUP(I,LP1)-FDOWN(I,LP1))
-           RE=RMUE(I,L)-RAY(I,L)-(RMUE(I,LP1)-RAY(I,LP1))
-           if ( L.eq.1) XNET= RE
+         XNET=FUP(I,L)-FDOWN(I,L) - (FUP(I,LP1)-FDOWN(I,LP1))
+         RE=RMUE(I,L)-RAY(I,L)-(RMUE(I,LP1)-RAY(I,LP1))
+         if ( L.eq.1) XNET= RE
 
-!          AU NIVEAU DE LA SURFACE ON UTILISE LES FLUX SANS SMOOTHING
+         !          AU NIVEAU DE LA SURFACE ON UTILISE LES FLUX SANS SMOOTHING
 
-           HEAT(I,L)=max(CONS*XNET/(PSOL(I)*flDSIG(I,L)),0.)
-
-        enddo
+         HEAT(I,L)=max(CONS*XNET/(PSOL(I)*flDSIG(I,L)),0.)
 
       enddo
 
-      if(RADFIX) then
-         call SUN_RADFIX1(flSIG,RMUO,RMUO,PSOL,HEAT,TOIT,ILG,flkmx)
-      endif
+   enddo
 
-!     INVERT BACK most INPUTS
-      KFIN=KMX*.5
-      do 801 K=1,KFIN
+   if(RADFIX) then
+      call SUN_RADFIX1(flSIG,RMUO,RMUO,PSOL,HEAT,TOIT,ILG,flkmx)
+   endif
+
+   !     INVERT BACK most INPUTS
+   KFIN=KMX*.5
+   do K=1,KFIN
       KI=KMX-K+1
-      do 802 J=1,LMX
-      A=DZ(J,K)
-      DZ(J,K)=DZ(J,KI)
-      DZ(J,KI)=A
-      A=WV(J,K)
-      WV(J,K)=WV(J,KI)
-      WV(J,KI)=A
-      A=TM(J,K)
-      TM(J,K)=TM(J,KI)
-      TM(J,KI)=A
-      A=QOF(J,K)
-      QOF(J,K)=QOF(J,KI)
-      QOF(J,KI)=A
-      A=CNEB(J,K)
-      CNEB(J,K)=CNEB(J,KI)
-      CNEB(J,KI)=A
+      do J=1,LMX
+         A=DZ(J,K)
+         DZ(J,K)=DZ(J,KI)
+         DZ(J,KI)=A
+         A=WV(J,K)
+         WV(J,K)=WV(J,KI)
+         WV(J,KI)=A
+         A=TM(J,K)
+         TM(J,K)=TM(J,KI)
+         TM(J,KI)=A
+         A=QOF(J,K)
+         QOF(J,K)=QOF(J,KI)
+         QOF(J,KI)=A
+         A=CNEB(J,K)
+         CNEB(J,K)=CNEB(J,KI)
+         CNEB(J,KI)=A
 
- 802  continue
- 801  continue
-
-      do 804 I=1,KFIN
-         do 804 J=1,LMX
-            IK=KMX-I+1
-            A=DSIG(J,I)
-            DSIG(J,I)=DSIG(J,IK)
-            DSIG(J,IK)=A
-            A=DSH(J,I)
-            DSH(J,I)=DSH(J,IK)
-            DSH(J,IK)=A
-            A=DSC(J,I)
-            DSC(J,I)=DSC(J,IK)
-            DSC(J,IK)=A
- 804  continue
-
-      IFIN=flKMXP*.5
-
-      do I=1,IFIN
-        KI=flKMXP-I+1
-
-        do J=1,LMX
-          A=FUP(J,I)
-          FUP(J,I)=FUP(J,KI)
-          FUP(J,KI)=A
-          A=FDOWN(J,I)
-          FDOWN(J,I)=FDOWN(J,KI)
-          FDOWN(J,KI)=A
-        enddo
       enddo
+   enddo
 
-      ifin=flkmx*.5
-
-      do i=1,ifin
-        ki=flkmx-i+1
-
-        do j=1,lmx
-          a = heat(j,i)
-          heat(j,i) = heat(j,ki)
-          heat(j,ki) = a
-        enddo
+   do I=1,KFIN
+      do J=1,LMX
+         IK=KMX-I+1
+         A=DSIG(J,I)
+         DSIG(J,I)=DSIG(J,IK)
+         DSIG(J,IK)=A
+         A=DSH(J,I)
+         DSH(J,I)=DSH(J,IK)
+         DSH(J,IK)=A
+         A=DSC(J,I)
+         DSC(J,I)=DSC(J,IK)
+         DSC(J,IK)=A
       enddo
+   enddo
 
-      return
-      end
+   IFIN=flKMXP*.5
+
+   do I=1,IFIN
+      KI=flKMXP-I+1
+
+      do J=1,LMX
+         A=FUP(J,I)
+         FUP(J,I)=FUP(J,KI)
+         FUP(J,KI)=A
+         A=FDOWN(J,I)
+         FDOWN(J,I)=FDOWN(J,KI)
+         FDOWN(J,KI)=A
+      enddo
+   enddo
+
+   ifin=flkmx*.5
+
+   do i=1,ifin
+      ki=flkmx-i+1
+
+      do j=1,lmx
+         a = heat(j,i)
+         heat(j,i) = heat(j,ki)
+         heat(j,ki) = a
+      enddo
+   enddo
+
+   return
+end subroutine sun7b

@@ -179,7 +179,7 @@ contains
             tke = max(tke,0.)
          else
             do k=1,nkm1
-               !vdir nodep
+!vdir nodep
                do i=1,ni
                   tke(i,k)= max( etrmin, blconst_cu*zfrv_ag(i)**2 * &
                        exp(-(zze(i,k)- zze(i,nkm1))/zh(i)) )
@@ -189,7 +189,7 @@ contains
 
          if (advectke) then
             do k=1,nkm1
-               !vdir nodep
+!vdir nodep
                do i=1,ni
                   zenmoins(i,k) = tke(i,k)
                end do
@@ -204,7 +204,7 @@ contains
       endif
 
       do k=1,nkm1
-         !vdir nodep
+!vdir nodep
          do i=1,ni
             if (advectke) then
                enold(i,k) = max(zenmoins(i,k),etrmin)
@@ -301,7 +301,7 @@ contains
       endif
 
       do k=1,nkm1-1
-         !vdir nodep
+!vdir nodep
          do i=1,ni
             !# IBM conv. ; pas d'avantage a precalculer sqrt ci-dessous
             zkm(i,k) = blconst_ck*zzn(i,k)*sqrt(tke(i,k))

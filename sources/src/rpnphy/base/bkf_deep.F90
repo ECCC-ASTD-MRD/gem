@@ -221,7 +221,7 @@ subroutine bkf_deep4(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA, &
         ZRITENE, ZPRLTENE, ZPRSTENE, ZUMFE, ZDMFE,  ZURVE, ZURCE, ZURIE, ZPRLFLXE, &
         ZPRSFLXE, ICLTOPE, ICLBASE,  ZUTENE, ZVTENE, ZCH1TENE, ZEDUMMY, IEDUMMY,     &
         ZWEIGHT, ZUDRE, ZDDRE
-   !$OMP THREADPRIVATE(/cnvmain/)
+!$OMP THREADPRIVATE(/cnvmain/)
 
 
    !*       0.5   Declarations of additional Ensemble fields:

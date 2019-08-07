@@ -52,47 +52,46 @@ subroutine OZOREF3(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT,F)
 
    FAC = 180./PI
 
-   do 145 J=1,NP
+   do J=1,NP
       IB=0
       XLATI= FLOAT( nint(DLAT(J)*FAC) )
 
-      do 140 I=1,NLAT
+      do I=1,NLAT
          if( XLATI.lt.ALAT(I) .and. IB.eq.0 ) IB=I
-140   continue
+      enddo
 
-        if ( XLATI.eq. 90.0 ) IB=NLAT
+      if ( XLATI.eq. 90.0 ) IB=NLAT
 
-        if(IB.le.1) then
-          write(6,6030) XLATI
-          write(6,*) (ALAT(I),i=1,NLAT)
-          call physeterror('ozoref', 'O3 Inpol out bounds in latitude')
-          return
- 6030     format(1X,' O3 INPOL OUT BOUNDS IN LATITUDE:',E12.4)
-        endif
-        LBL(J)=IB-1
-  145 continue
+      if(IB.le.1) then
+         write(6,6030) XLATI
+         write(6,*) (ALAT(I),i=1,NLAT)
+         call physeterror('ozoref', 'O3 Inpol out bounds in latitude')
+         return
+6030     format(1X,' O3 INPOL OUT BOUNDS IN LATITUDE:',E12.4)
+      endif
+      LBL(J)=IB-1
+   enddo
 
-!  interpolate to desired latitudes
-!  and transform into kg/kg using CONV:
-!  1.E-6 converts PPMV to PPV , 48.0=M(O3), 28.964= M(dry air)
+   !  interpolate to desired latitudes
+   !  and transform into kg/kg using CONV:
+   !  1.E-6 converts PPMV to PPV , 48.0=M(O3), 28.964= M(dry air)
 
-      CONV = 1.E-6*48./28.964
+   CONV = 1.E-6*48./28.964
 
+   do L=1,LREF
+      do J=1,NP
+         K=LBL(J)
+         A1=ALAT(K)
+         A2=ALAT(K+1)
+         F1=F(K,L)
+         F2=F(K+1,L)
+         DL=DLAT(J)  *FAC
+         SLOPE = (F2-F1)/(A2-A1)
+         B = F1 - SLOPE*A1
+         OZON = SLOPE*DL + B
+         O3F(J,L)=OZON*CONV
+      enddo
+   enddo
 
-      do 160 L=1,LREF
-      do 160 J=1,NP
-      K=LBL(J)
-      A1=ALAT(K)
-      A2=ALAT(K+1)
-      F1=F(K,L)
-      F2=F(K+1,L)
-      DL=DLAT(J)  *FAC
-      SLOPE = (F2-F1)/(A2-A1)
-      B = F1 - SLOPE*A1
-      OZON = SLOPE*DL + B
-      O3F(J,L)=OZON*CONV
-  160 continue
-
-
-      return
-      end
+   return
+end subroutine OZOREF3

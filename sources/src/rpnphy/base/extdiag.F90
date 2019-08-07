@@ -142,7 +142,7 @@ contains
       ! Potential temperature
       if (series_isvar('TH')) then
          do k=1, nk
-            !vdir nodep
+!vdir nodep
             do i=1, ni
                p(i, k) = zsigw(i, k)*zpmoins(i)
                work2d1(i, k) = 1.e-5*p(i, k)
@@ -164,7 +164,7 @@ contains
          ! respect to water only (since td may be compared to observed tephigram).
          call mhuaes3(work2d1, zhuplus, ztplus, p, .false., ni, nk, ni)
          do k=1, nk
-            !vdir nodep
+!vdir nodep
             do i=1, ni
                work2d1(i, k) = min( &
                     ztplus(i, k), &
@@ -177,7 +177,7 @@ contains
 
       !# Moisture: Eliminate negative values
       if (series_isvar('HR')) then
-         !vdir nodep
+!vdir nodep
          do k=1, nk
             do i=1, ni
                work2d1(i, k) = max(0.0, zhuplus(i, k))

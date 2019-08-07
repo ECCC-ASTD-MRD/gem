@@ -296,7 +296,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       subcld(il,1) = 0.
    end do
 
-   !VDIR NOLSTVAL
+!VDIR NOLSTVAL
    do jk = 2, nlev
       do il = 1, ni
          subcld(il,jk) = subcld(il,jk-1)

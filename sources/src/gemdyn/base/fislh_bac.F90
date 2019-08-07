@@ -125,11 +125,11 @@
    !           ~~~~~~~~~
                F_u(i,j,k) = Cstv_tau_m_8*(F_ru(i,j,k)-F_nu(i,j,k)  &
                           - (F_q(i+1,j,k)-F_q(i,j,k))*geomh_invDX_8(j) &
-                          + isol_i*mc_Jx(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                                + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                          + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)  &
-                                               + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) ))
+                          + isol_i*mc_Jx_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
+                                                + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
+                          + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz_8(i+1,j,km)  &
+                                               + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz_8(i  ,j,km) ) ))
             end do
          end do
 
@@ -140,11 +140,11 @@
    !           ~~~~~~~~~
                F_v(i,j,k) = Cstv_tau_m_8*(F_rv(i,j,k)-F_nv(i,j,k) &
                           - (F_q(i,j+1,k)-F_q(i,j,k))*geomh_invDYMv_8(j) &
-                          + isol_i*mc_Jy(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                                + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)  &
-                                                + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) ))
+                          + isol_i*mc_Jy_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
+                                                + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz_8(i,j+1,km)  &
+                                                + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz_8(i,j  ,km) ) ))
             end do
          end do
       end do
@@ -158,7 +158,7 @@
    !           Compute w
    !           ~~~~~~~~~
                F_w(i,j,k) = Cstv_tau_m_8 * ( F_rt(i,j,k) - F_nt(i,j,k) &
-                          - gama_8*((isol_i*mc_iJz(i,j,k) + isol_d*Ver_idz_8%t(k))&
+                          - gama_8*((isol_i*mc_iJz_8(i,j,k) + isol_d*Ver_idz_8%t(k))&
                             *(F_q(i,j,k+1)-F_q(i,j,k)) &
                           - Cstv_bar1_8*half*mu_8*(F_q(i,j,k+1)+F_q(i,j,k))))
 
@@ -170,7 +170,7 @@
    !           Compute T
    !           ~~~~~~~~~
                Buoy = (F_q(i,j,k+1)-F_q(i,j,k))*      &
-                      (isol_i*mc_iJz(i,j,k)+isol_d*Ver_idz_8%t(k))  &
+                      (isol_i*mc_iJz_8(i,j,k)+isol_d*Ver_idz_8%t(k))  &
                     + F_w(i,j,k)*Cstv_invT_nh_8 - F_rw(i,j,k) + F_nw(i,j,k)
                F_t(i,j,k) = Cstv_Tstr_8 * (Buoy / grav_8+one )
             end do

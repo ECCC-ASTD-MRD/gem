@@ -75,53 +75,54 @@ subroutine setvis4(DSIG,DSH,DSC,DZ,RMUO,QOZSTP, &
 
    real DUMMY1(lmx),DUMMY2(lmx),DUMMY3(lmx),DUMMY4(lmx)
 
-      KMX=LEV-1
-!    CALCUL DES EPAISSEURS
+   KMX=LEV-1
+   !    CALCUL DES EPAISSEURS
 
-      do 30 i=1,lmx
-         A2=(SIG(i,1)+SIG(i,2))/2.
-         A1=2.*SIG(i,1)-A2
-!        A1=AMAX1(A1,1.E-8)
-!        la ligne suivante peut etre substituee a la ligne precedente
-         A1=AMAX1(A1,sig(i,1)/2.)
-!        DSIG(i,1)=A2-A1
-         DSH(i,1)=A2**1.9-A1**1.9
-         DSC(i,1)=A2**1.75-A1**1.75
- 30   continue
-      do 126 K=2,KMX
-         do 31 i=1,lmx
-            A1=(SIG(i,K)+SIG(i,K-1))/2.
-            A2=(SIG(i,K)+SIG(i,K+1))/2.
-!           DSIG(i,K)=A2-A1
-            DSH(i,K)= A2**1.9 - A1**1.9
-            DSC(i,K)= A2**1.75-A1**1.75
- 31      continue
- 126  continue
+   do i=1,lmx
+      A2=(SIG(i,1)+SIG(i,2))/2.
+      A1=2.*SIG(i,1)-A2
+      !        A1=AMAX1(A1,1.E-8)
+      !        la ligne suivante peut etre substituee a la ligne precedente
+      A1=AMAX1(A1,sig(i,1)/2.)
+      !        DSIG(i,1)=A2-A1
+      DSH(i,1)=A2**1.9-A1**1.9
+      DSC(i,1)=A2**1.75-A1**1.75
+   enddo
+   do K=2,KMX
+      do i=1,lmx
+         A1=(SIG(i,K)+SIG(i,K-1))/2.
+         A2=(SIG(i,K)+SIG(i,K+1))/2.
+         !           DSIG(i,K)=A2-A1
+         DSH(i,K)= A2**1.9 - A1**1.9
+         DSC(i,K)= A2**1.75-A1**1.75
+      enddo
+   enddo
 
-      do 32 i=1,lmx
-         A2=(SIG(i,KMX)+SIG(i,KMX+1))/2.
-!        DSIG(i,LEV)=1.- A2
-         DSH(i,LEV)=1.- A2 **1.9
-         DSC(i,LEV)=1.- A2 **1.75
- 32   continue
+   do i=1,lmx
+      A2=(SIG(i,KMX)+SIG(i,KMX+1))/2.
+      !        DSIG(i,LEV)=1.- A2
+      DSH(i,LEV)=1.- A2 **1.9
+      DSC(i,LEV)=1.- A2 **1.75
+   enddo
 
-      do 1 J=1,LEV
-      do 2 I=1,LMX
- 2     DZ(I,J) = DSIG(i,J)*RGASD*T(I,J)/GRAV/SIG(i,J)
- 1    continue
+   do J=1,LEV
+      do I=1,LMX
+         DZ(I,J) = DSIG(i,J)*RGASD*T(I,J)/GRAV/SIG(i,J)
+      enddo
+   enddo
 
-!     COSINUS ANGLE SOLAIRE
-      call SUNCOS2(RMUO,DUMMY1,DUMMY2,DUMMY3,DUMMY4, &
-              LMX,XLAT,XLON,HZ,DAYOFYEAR,.false.)
+   !     COSINUS ANGLE SOLAIRE
+   call SUNCOS2(RMUO,DUMMY1,DUMMY2,DUMMY3,DUMMY4, &
+        LMX,XLAT,XLON,HZ,DAYOFYEAR,.false.)
 
 
-!     OZONE EN CMSTP
-      do 7 J=1,LEV
-      do 8 I=1,LMX
-!   INVERSE DE CONVERSION DANS RADFACE
-      QOZSTP(I,J) = QOZ(I,J)*PSOL(I)*DSIG(i,J)/GRAV/2.144E-2
-  8   continue
-  7   continue
+   !     OZONE EN CMSTP
+   do J=1,LEV
+      do I=1,LMX
+         !   INVERSE DE CONVERSION DANS RADFACE
+         QOZSTP(I,J) = QOZ(I,J)*PSOL(I)*DSIG(i,J)/GRAV/2.144E-2
+      enddo
+   enddo
 
-      return
-      end
+   return
+end subroutine setvis4

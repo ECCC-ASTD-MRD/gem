@@ -79,11 +79,10 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
 
    real, dimension(1,nt)  :: lat1, lon1, x1, y1
    real, dimension(nk,nt) :: lat2, lon2, x2, y2
- 
-   !***********************************************************************
- 
-   DEG2RAD = PI/180.
 
+   !***********************************************************************
+
+   DEG2RAD = PI/180.
 
    !  UU , VV , TU , TV , VE
    IELAU=INDSERI('UUWE',PROFILS,NPROF)
@@ -93,47 +92,52 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
    IELAGU=INDSERI('GU',PROFILS,NPROF)
    IELAGV=INDSERI('GV',PROFILS,NPROF)
 
-   if ( MODELE.eq.'EFR' ) then
+   if (MODELE == 'EFR') then
 
       !  FORMULES PRISES DANS 'LONGITUDE LATITUDE GRIDS'(D.ROBERTSON,'78)
 
       EPSIL=1.E-30
 
       if ( IELAU*IELAV.gt.0 ) then
-         do 46 J=1,NT
-         do 46 I=1,NK
-            X=VV(I,J,IELAU)
-            Y=VV(I,J,IELAV)
-            PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
-            HNOR=sqrt(X**2+Y**2)
-            VV(I,J,IELAU)=HNOR*sin(PSIMLON)
-   46       VV(I,J,IELAV)=-HNOR*cos(PSIMLON)
+         do J=1,NT
+            do I=1,NK
+               X=VV(I,J,IELAU)
+               Y=VV(I,J,IELAV)
+               PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
+               HNOR=sqrt(X**2+Y**2)
+               VV(I,J,IELAU)=HNOR*sin(PSIMLON)
+               VV(I,J,IELAV)=-HNOR*cos(PSIMLON)
+            enddo
+         enddo
       endif
       if ( IELATU*IELATV.gt.0 ) then
-         do 47 J=1,NT
-         do 47 I=1,NK
-            X=VV(I,J,IELATU)
-            Y=VV(I,J,IELATV)
-            PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
-            HNOR=sqrt(X**2+Y**2)
-            VV(I,J,IELATU)=HNOR*sin(PSIMLON)
-   47       VV(I,J,IELATV)=-HNOR*cos(PSIMLON)
+         do J=1,NT
+            do I=1,NK
+               X=VV(I,J,IELATU)
+               Y=VV(I,J,IELATV)
+               PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
+               HNOR=sqrt(X**2+Y**2)
+               VV(I,J,IELATU)=HNOR*sin(PSIMLON)
+               VV(I,J,IELATV)=-HNOR*cos(PSIMLON)
+            enddo
+         enddo
       endif
       if ( IELAGU*IELAGV.gt.0 ) then
-         do 48 J=1,NT
-         do 48 I=1,NK
-            X=VV(I,J,IELAGU)
-            Y=VV(I,J,IELAGV)
-            PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
-            HNOR=sqrt(X**2+Y**2)
-            VV(I,J,IELAGU)=HNOR*sin(PSIMLON)
-   48       VV(I,J,IELAGV)=-HNOR*cos(PSIMLON)
-
+         do J=1,NT
+            do I=1,NK
+               X=VV(I,J,IELAGU)
+               Y=VV(I,J,IELAGV)
+               PSIMLON=-(DGRW+LON)*DEGRAD+atan2(Y+EPSIL,X+EPSIL)
+               HNOR=sqrt(X**2+Y**2)
+               VV(I,J,IELAGU)=HNOR*sin(PSIMLON)
+               VV(I,J,IELAGV)=-HNOR*cos(PSIMLON)
+            enddo
+         enddo
       endif
 
-      else if (MODELE.eq.'GEF') then
+   else if (MODELE == 'GEF') then
 
-      if ( IELAU*IELAV.gt.0 ) then
+      if (IELAU*IELAV.gt.0) then
 
          do J=1,NT
             do I=1,NK
@@ -157,7 +161,7 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
 
       endif
 
-      if ( IELATU*IELATV.gt.0 ) then
+      if (IELATU*IELATV.gt.0) then
 
 
          do J=1,NT
@@ -182,8 +186,7 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
 
       endif
 
-      if ( IELAGU*IELAGV.gt.0 ) then
-
+      if (IELAGU*IELAGV.gt.0) then
 
          do J=1,NT
             do I=1,NK
@@ -207,55 +210,55 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
 
       endif
 
-      endif
+   endif
 
-!    Time-serie values of surface variables requested : either the pair
-!    UDWE, VDSN or WSPD, WD
+   !    Time-serie values of surface variables requested : either the pair
+   !    UDWE, VDSN or WSPD, WD
 
-      IELAUD=INDSERI('UDWE',SURFACE,NSURF)
-      IELAVD=INDSERI('VDSN',SURFACE,NSURF)
-      IELAWS=INDSERI('WSPD',SURFACE,NSURF)
-      IELAWD=INDSERI('WD',  SURFACE,NSURF)
+   IELAUD=INDSERI('UDWE',SURFACE,NSURF)
+   IELAVD=INDSERI('VDSN',SURFACE,NSURF)
+   IELAWS=INDSERI('WSPD',SURFACE,NSURF)
+   IELAWD=INDSERI('WD',  SURFACE,NSURF)
 
-      if (MODELE.eq.'GEF') then
+   if (MODELE.eq.'GEF') then
 
-         if ( IELAUD*IELAVD.gt.0 ) then
-            do J=1,NT
-               LAT1(1,J) = LAT
-               LON1(1,J) = LON
-               X1  (1,J) = VS(J,IELAUD)
-               Y1  (1,J) = VS(J,IELAVD)
-            end do
+      if (IELAUD*IELAVD.gt.0) then
+         do J=1,NT
+            LAT1(1,J) = LAT
+            LON1(1,J) = LON
+            X1  (1,J) = VS(J,IELAUD)
+            Y1  (1,J) = VS(J,IELAVD)
+         end do
 
-            call PLLWFGFW(X1,Y1,LAT1,LON1,1,NT, &
+         call PLLWFGFW(X1,Y1,LAT1,LON1,1,NT, &
               'E',IG(1),IG(2),IG(3),IG(4))
 
-            do J=1,NT
-               THETA = PI/2 - Y1(1,J)*DEG2RAD
-               VS(J,IELAUD) = -X1(1,J)*cos(THETA)
-               VS(J,IELAVD) = -X1(1,J)*sin(THETA)
-            end do
+         do J=1,NT
+            THETA = PI/2 - Y1(1,J)*DEG2RAD
+            VS(J,IELAUD) = -X1(1,J)*cos(THETA)
+            VS(J,IELAVD) = -X1(1,J)*sin(THETA)
+         end do
 
-         endif
-         if ( IELAWS*IELAWD.gt.0 ) then
-            do J=1,NT
-               LAT1(1,J) = LAT
-               LON1(1,J) = LON
-               X1  (1,J) = VS(J,IELAUD)
-               Y1  (1,J) = VS(J,IELAVD)
-            end do
+      endif
+      if ( IELAWS*IELAWD.gt.0 ) then
+         do J=1,NT
+            LAT1(1,J) = LAT
+            LON1(1,J) = LON
+            X1  (1,J) = VS(J,IELAUD)
+            Y1  (1,J) = VS(J,IELAVD)
+         end do
 
-            call PLLWFGFW(X1,Y1,LAT1,LON1,1,NT, &
+         call PLLWFGFW(X1,Y1,LAT1,LON1,1,NT, &
               'E',IG(1),IG(2),IG(3),IG(4))
 
-            do J=1,NT
-               VS(J,IELAWS) = X1(1,J)
-               VS(J,IELAWD) = Y1(1,J)
-            end do
-
-         endif
+         do J=1,NT
+            VS(J,IELAWS) = X1(1,J)
+            VS(J,IELAWD) = Y1(1,J)
+         end do
 
       endif
 
-      return
-      end
+   endif
+
+   return
+end subroutine serfin2

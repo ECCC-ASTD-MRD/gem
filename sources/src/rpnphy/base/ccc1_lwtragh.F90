@@ -34,7 +34,7 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
    real xu(ilg,2,lay), xd(ilg,2,lay), dtr(ilg,2,lay), fy(ilg,2,lev), &
         fx(ilg,2,lev)
    real(REAL64) :: dtr_vs(ilg,lay)
- 
+
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
    !        (Ref: J. Li, H. W. Barker, 2005:
@@ -79,7 +79,7 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
    ! fy       upward flux for pure clear portion (1) and pure cloud  portion (2)
    ! fx       the same as fy but for the downward flux
    !----------------------------------------------------------------------
- 
+
    data  ru / 1.6487213 /
 
    !----------------------------------------------------------------------
@@ -93,99 +93,100 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
    !     singularity for xd and xu has been considered as li jas 2002
    !----------------------------------------------------------------------
 
-      do 90 k = 2, lev
-        km1 = k - 1
-        do 90 i = il1, il2
-          taul1(i,km1)    =  taual(i,km1) + taug(i,km1)
-          rtaul1(i,km1)   =  taul1(i,km1) * ru
-          dtr_vs(i,km1)   =  - rtaul1(i,km1)
-  90  continue
+   do k = 2, lev
+      km1 = k - 1
+      do i = il1, il2
+         taul1(i,km1)    =  taual(i,km1) + taug(i,km1)
+         rtaul1(i,km1)   =  taul1(i,km1) * ru
+         dtr_vs(i,km1)   =  - rtaul1(i,km1)
+      enddo
+   enddo
 
-      call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
+   call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
 
-      do 100 i = il1, il2
-        fd(i,1,1)         =  slwf(i)
-        fd(i,2,1)         =  slwf(i)
-        fx(i,1,1)         =  slwf(i)
-        fx(i,2,1)         =  slwf(i)
+   DO100: do i = il1, il2
+      fd(i,1,1)         =  slwf(i)
+      fd(i,2,1)         =  slwf(i)
+      fx(i,1,1)         =  slwf(i)
+      fx(i,2,1)         =  slwf(i)
 
-        dtr(i,1,1)        =  dtr_vs(i,1)
-        ubeta             =  urbf(i,1) / (taul1(i,1) + 1.e-20)
-        epsd              =  ubeta + 1.0
-        epsu              =  ubeta - 1.0
+      dtr(i,1,1)        =  dtr_vs(i,1)
+      ubeta             =  urbf(i,1) / (taul1(i,1) + 1.e-20)
+      epsd              =  ubeta + 1.0
+      epsu              =  ubeta - 1.0
 
-        if (abs(epsd) .gt. 0.001)                                   then
-          xd(i,1,1)       = (bf(i,2) - bf(i,1) * dtr(i,1,1)) / epsd
-        else
-          xd(i,1,1)       =  rtaul1(i,1) * bf(i,1) * dtr(i,1,1)
-        endif
-        if (abs(epsu) .gt. 0.001)                                   then
-          xu(i,1,1)       = (bf(i,2) * dtr(i,1,1) - bf(i,1)) / epsu
-        else
-          xu(i,1,1)       =  rtaul1(i,1) * bf(i,2) * dtr(i,1,1)
-        endif
+      if (abs(epsd) .gt. 0.001)                                   then
+         xd(i,1,1)       = (bf(i,2) - bf(i,1) * dtr(i,1,1)) / epsd
+      else
+         xd(i,1,1)       =  rtaul1(i,1) * bf(i,1) * dtr(i,1,1)
+      endif
+      if (abs(epsu) .gt. 0.001)                                   then
+         xu(i,1,1)       = (bf(i,2) * dtr(i,1,1) - bf(i,1)) / epsu
+      else
+         xu(i,1,1)       =  rtaul1(i,1) * bf(i,2) * dtr(i,1,1)
+      endif
 
-        fd(i,1,2)         =  fd(i,1,1) * dtr(i,1,1) + xd(i,1,1)
+      fd(i,1,2)         =  fd(i,1,1) * dtr(i,1,1) + xd(i,1,1)
 
-        if (cldfrac(i,1) .lt. cut)                                  then
-          fx(i,1,2)       =  fd(i,1,2)
-          fx(i,2,2)       =  fd(i,1,2)
-          fd(i,2,2)       =  fd(i,1,2)
-        else
-          taul2           =  tauci(i,1) + taul1(i,1)
-          cow             =  1.0 - omci(i,1) / taul2
-          ctaul2          =  cow * taul2
-          crtaul2         =  ctaul2 * ru
-          dtr(i,2,1)      =  exp (- crtaul2)
-          ubeta           =  urbf(i,1) / (ctaul2)
-          epsd            =  ubeta + 1.0
-          epsu            =  ubeta - 1.0
+      if (cldfrac(i,1) .lt. cut)                                  then
+         fx(i,1,2)       =  fd(i,1,2)
+         fx(i,2,2)       =  fd(i,1,2)
+         fd(i,2,2)       =  fd(i,1,2)
+      else
+         taul2           =  tauci(i,1) + taul1(i,1)
+         cow             =  1.0 - omci(i,1) / taul2
+         ctaul2          =  cow * taul2
+         crtaul2         =  ctaul2 * ru
+         dtr(i,2,1)      =  exp (- crtaul2)
+         ubeta           =  urbf(i,1) / (ctaul2)
+         epsd            =  ubeta + 1.0
+         epsu            =  ubeta - 1.0
 
-          if (abs(epsd) .gt. 0.001)                                 then
+         if (abs(epsd) .gt. 0.001)                                 then
             xd(i,2,1)     = (bf(i,2) - bf(i,1) * dtr(i,2,1)) / epsd
-          else
+         else
             xd(i,2,1)     =  crtaul2 * bf(i,1) * dtr(i,2,1)
-          endif
-          if (abs(epsu) .gt. 0.001)                                 then
+         endif
+         if (abs(epsu) .gt. 0.001)                                 then
             xu(i,2,1)     = (bf(i,2) * dtr(i,2,1) - bf(i,1)) / epsu
-          else
+         else
             xu(i,2,1)     =  crtaul2 * bf(i,2) * dtr(i,2,1)
-          endif
+         endif
 
-          fx(i,1,2)       =  fx(i,1,1) * dtr(i,1,1) + xd(i,1,1)
-          fx(i,2,2)       =  fx(i,2,1) * dtr(i,2,1) + xd(i,2,1)
-          fd(i,2,2)       =  fx(i,1,2) + &
-                             cldfrac(i,1) * (fx(i,2,2) - fx(i,1,2))
-        endif
-  100 continue
+         fx(i,1,2)       =  fx(i,1,1) * dtr(i,1,1) + xd(i,1,1)
+         fx(i,2,2)       =  fx(i,2,1) * dtr(i,2,1) + xd(i,2,1)
+         fd(i,2,2)       =  fx(i,1,2) + &
+              cldfrac(i,1) * (fx(i,2,2) - fx(i,1,2))
+      endif
+   enddo DO100
 
-      do 250 k = 3, lev
-        km1 = k - 1
-        km2 = km1 - 1
-        do 200 i = il1, il2
-          dtr(i,1,km1)    =  dtr_vs(i,km1)
-          ubeta           =  urbf(i,km1) / (taul1(i,km1) + 1.e-20)
-          epsd            =  ubeta + 1.0
-          epsu            =  ubeta - 1.0
+   DO250: do k = 3, lev
+      km1 = k - 1
+      km2 = km1 - 1
+      do i = il1, il2
+         dtr(i,1,km1)    =  dtr_vs(i,km1)
+         ubeta           =  urbf(i,km1) / (taul1(i,km1) + 1.e-20)
+         epsd            =  ubeta + 1.0
+         epsu            =  ubeta - 1.0
 
-          if (abs(epsd) .gt. 0.001)                                 then
+         if (abs(epsd) .gt. 0.001)                                 then
             xd(i,1,km1)   = (bf(i,k) - bf(i,km1) * dtr(i,1,km1)) / epsd
-          else
+         else
             xd(i,1,km1)   =  rtaul1(i,km1) * bf(i,km1) * dtr(i,1,km1)
-          endif
-          if (abs(epsu) .gt. 0.001)                                 then
+         endif
+         if (abs(epsu) .gt. 0.001)                                 then
             xu(i,1,km1)   = (bf(i,k) * dtr(i,1,km1) - bf(i,km1)) / epsu
-          else
+         else
             xu(i,1,km1)   =  rtaul1(i,km1) * bf(i,k) * dtr(i,1,km1)
-          endif
+         endif
 
-          fd(i,1,k)       =  fd(i,1,km1) * dtr(i,1,km1) + xd(i,1,km1)
+         fd(i,1,k)       =  fd(i,1,km1) * dtr(i,1,km1) + xd(i,1,km1)
 
-          if (cldfrac(i,km1) .lt. cut)                              then
+         if (cldfrac(i,km1) .lt. cut)                              then
             fd(i,2,k)     =  fd(i,2,km1) * dtr(i,1,km1) + xd(i,1,km1)
             fx(i,1,k)     =  fd(i,2,k)
             fx(i,2,k)     =  fd(i,2,k)
-          else
+         else
             taul2         =  tauci(i,km1) + taul1(i,km1)
             cow           =  1.0 - omci(i,km1) / taul2
             ctaul2        =  cow * taul2
@@ -196,88 +197,88 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
             epsu          =  ubeta - 1.0
 
             if (abs(epsd) .gt. 0.001)                               then
-              xd(i,2,km1) = (bf(i,k) - bf(i,km1) * dtr(i,2,km1)) / epsd
+               xd(i,2,km1) = (bf(i,k) - bf(i,km1) * dtr(i,2,km1)) / epsd
             else
-              xd(i,2,km1) =  crtaul2 * bf(i,km1) * dtr(i,2,km1)
+               xd(i,2,km1) =  crtaul2 * bf(i,km1) * dtr(i,2,km1)
             endif
             if (abs(epsu) .gt. 0.001)                               then
-              xu(i,2,km1) = (bf(i,k) * dtr(i,2,km1) - bf(i,km1)) / epsu
+               xu(i,2,km1) = (bf(i,k) * dtr(i,2,km1) - bf(i,km1)) / epsu
             else
-              xu(i,2,km1) =  crtaul2 * bf(i,k) * dtr(i,2,km1)
+               xu(i,2,km1) =  crtaul2 * bf(i,k) * dtr(i,2,km1)
             endif
 
             if (cldfrac(i,km1) .le. cldfrac(i,km2))                 then
-              fx(i,1,k)   = ( fx(i,2,km1) + (1.0 - cldfrac(i,km2)) / &
-                            max(1.0 - cldfrac(i,km1),1.e-10) * &
-                            (fx(i,1,km1) - fx(i,2,km1)) ) * &
-                             dtr(i,1,km1) + xd(i,1,km1)
-              fx(i,2,k)   =  fx(i,2,km1) * dtr(i,2,km1) + xd(i,2,km1)
+               fx(i,1,k)   = ( fx(i,2,km1) + (1.0 - cldfrac(i,km2)) / &
+                    max(1.0 - cldfrac(i,km1),1.e-10) * &
+                    (fx(i,1,km1) - fx(i,2,km1)) ) * &
+                    dtr(i,1,km1) + xd(i,1,km1)
+               fx(i,2,k)   =  fx(i,2,km1) * dtr(i,2,km1) + xd(i,2,km1)
             else if (cldfrac(i,km1) .gt. cldfrac(i,km2))            then
-              fx(i,1,k)   =  fx(i,1,km1) * dtr(i,1,km1) + xd(i,1,km1)
-              fx(i,2,k)   = (fx(i,1,km1)+cldfrac(i,km2)/cldfrac(i,km1) * &
-                            (fx(i,2,km1) - fx(i,1,km1))) * &
-                             dtr(i,2,km1) + xd(i,2,km1)
+               fx(i,1,k)   =  fx(i,1,km1) * dtr(i,1,km1) + xd(i,1,km1)
+               fx(i,2,k)   = (fx(i,1,km1)+cldfrac(i,km2)/cldfrac(i,km1) * &
+                    (fx(i,2,km1) - fx(i,1,km1))) * &
+                    dtr(i,2,km1) + xd(i,2,km1)
             endif
 
             fd(i,2,k)     =  fx(i,1,k) + cldfrac(i,km1) * (fx(i,2,k) - &
-                             fx(i,1,k))
-          endif
-  200   continue
-  250 continue
+                 fx(i,1,k))
+         endif
+      enddo
+   enddo DO250
 
-      do 300 i = il1, il2
-        fu(i,1,lev)      =  fd(i,1,lev) + em0(i) * (bs(i) - fd(i,1,lev))
-        fy(i,1,lev)      =  fx(i,1,lev) + em0(i) * (bs(i) - fx(i,1,lev))
-        fy(i,2,lev)      =  fx(i,2,lev) + em0(i) * (bs(i) - fx(i,2,lev))
+   do i = il1, il2
+      fu(i,1,lev)      =  fd(i,1,lev) + em0(i) * (bs(i) - fd(i,1,lev))
+      fy(i,1,lev)      =  fx(i,1,lev) + em0(i) * (bs(i) - fx(i,1,lev))
+      fy(i,2,lev)      =  fx(i,2,lev) + em0(i) * (bs(i) - fx(i,2,lev))
 
-        if (cldfrac(i,lay) .gt. cut)                                then
-          fu(i,2,lev)    =  fy(i,1,lev) + &
-                            cldfrac(i,lay) * (fy(i,2,lev) - fy(i,1,lev))
-        else
-          fu(i,2,lev)    =  fy(i,2,lev)
-        endif
+      if (cldfrac(i,lay) .gt. cut)                                then
+         fu(i,2,lev)    =  fy(i,1,lev) + &
+              cldfrac(i,lay) * (fy(i,2,lev) - fy(i,1,lev))
+      else
+         fu(i,2,lev)    =  fy(i,2,lev)
+      endif
 
-        fu(i,1,lay)      =  fu(i,1,lev) * dtr(i,1,lay) + xu(i,1,lay)
+      fu(i,1,lay)      =  fu(i,1,lev) * dtr(i,1,lay) + xu(i,1,lay)
 
-        if (cldfrac(i,lay) .lt. cut)                                then
-          fu(i,2,lay)    =  fu(i,2,lev) * dtr(i,1,lay) + xu(i,1,lay)
-          fy(i,1,lay)    =  fu(i,2,lay)
-          fy(i,2,lay)    =  fu(i,2,lay)
-        else
-          fy(i,1,lay)    =  fy(i,1,lev) * dtr(i,1,lay) + xu(i,1,lay)
-          fy(i,2,lay)    =  fy(i,2,lev) * dtr(i,2,lay) + xu(i,2,lay)
-          fu(i,2,lay)    =  fy(i,1,lay) + &
-                            cldfrac(i,lay) * (fy(i,2,lev) - fy(i,1,lev))
-        endif
-  300 continue
+      if (cldfrac(i,lay) .lt. cut)                                then
+         fu(i,2,lay)    =  fu(i,2,lev) * dtr(i,1,lay) + xu(i,1,lay)
+         fy(i,1,lay)    =  fu(i,2,lay)
+         fy(i,2,lay)    =  fu(i,2,lay)
+      else
+         fy(i,1,lay)    =  fy(i,1,lev) * dtr(i,1,lay) + xu(i,1,lay)
+         fy(i,2,lay)    =  fy(i,2,lev) * dtr(i,2,lay) + xu(i,2,lay)
+         fu(i,2,lay)    =  fy(i,1,lay) + &
+              cldfrac(i,lay) * (fy(i,2,lev) - fy(i,1,lev))
+      endif
+   enddo
 
-      do 450 k = lev - 2, 1, - 1
-        kp1 = k + 1
-        do 400 i = il1, il2
-          fu(i,1,k)      =  fu(i,1,kp1) * dtr(i,1,k) + xu(i,1,k)
+   do k = lev - 2, 1, - 1
+      kp1 = k + 1
+      do i = il1, il2
+         fu(i,1,k)      =  fu(i,1,kp1) * dtr(i,1,k) + xu(i,1,k)
 
-          if (cldfrac(i,k) .lt. cut)                                then
+         if (cldfrac(i,k) .lt. cut)                                then
             fu(i,2,k)    =  fu(i,2,kp1) * dtr(i,1,k) + xu(i,1,k)
             fy(i,1,k)    =  fu(i,2,k)
             fy(i,2,k)    =  fu(i,2,k)
-          else
+         else
             if (cldfrac(i,k) .lt. cldfrac(i,kp1))                   then
-              fy(i,1,k)  = ( fy(i,2,kp1) + (1.0 - cldfrac(i,kp1)) / &
-                           (1.0 - cldfrac(i,k)) * (fy(i,1,kp1) - &
-                            fy(i,2,kp1)) ) * dtr(i,1,k) + xu(i,1,k)
-              fy(i,2,k)  =  fy(i,2,kp1) * dtr(i,2,k) + xu(i,2,k)
+               fy(i,1,k)  = ( fy(i,2,kp1) + (1.0 - cldfrac(i,kp1)) / &
+                    (1.0 - cldfrac(i,k)) * (fy(i,1,kp1) - &
+                    fy(i,2,kp1)) ) * dtr(i,1,k) + xu(i,1,k)
+               fy(i,2,k)  =  fy(i,2,kp1) * dtr(i,2,k) + xu(i,2,k)
             else
-              fy(i,1,k)  =  fy(i,1,kp1) * dtr(i,1,k) + xu(i,1,k)
-              fy(i,2,k)  = ( fy(i,1,kp1) + cldfrac(i,kp1)/cldfrac(i,k) * &
-                           (fy(i,2,kp1) - fy(i,1,kp1)) ) * dtr(i,2,k) + &
-                            xu(i,2,k)
+               fy(i,1,k)  =  fy(i,1,kp1) * dtr(i,1,k) + xu(i,1,k)
+               fy(i,2,k)  = ( fy(i,1,kp1) + cldfrac(i,kp1)/cldfrac(i,k) * &
+                    (fy(i,2,kp1) - fy(i,1,kp1)) ) * dtr(i,2,k) + &
+                    xu(i,2,k)
             endif
 
             fu(i,2,k)    =  fy(i,1,k) + &
-                            cldfrac(i,k) * (fy(i,2,k) - fy(i,1,k))
-          endif
-  400   continue
-  450 continue
+                 cldfrac(i,k) * (fy(i,2,k) - fy(i,1,k))
+         endif
+      enddo
+   enddo
 
-      return
-      end
+   return
+end subroutine ccc1_lwtragh

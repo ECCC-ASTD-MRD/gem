@@ -81,7 +81,7 @@
             km=max(k-1,1)
             do j=j0-1,jn+1
                do i=i0-1,in+1
-                  rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(i,j,k)) &
+                  rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k)) &
                              / (rgasd_8*(Ver_wp_8%m(k)*F_t(i,j,k)+Ver_wm_8%m(k)*F_t(i,j,km)))
                end do
             end do
@@ -95,14 +95,14 @@
             km=max(k-1,1)
             do j=j0,jn
                do i=i0-1,in
-                  rJzX(i,j) = 0.5d0*(rau(i+1,j,k)*(ztht(i+1,j,k)-ztht(i+1,j,k-1)) &
-                            + rau(i  ,j,k)*(ztht(i  ,j,k)-ztht(i  ,j,k-1)))*Ver_idz_8%m(k)
+                  rJzX(i,j) = 0.5d0*(rau(i+1,j,k)*(ztht_8(i+1,j,k)-ztht_8(i+1,j,k-1)) &
+                            + rau(i  ,j,k)*(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1)))*Ver_idz_8%m(k)
                end do
             end do
             do j=j0-1,jn
                do i=i0,in
-                  rJzY(i,j) = 0.5d0*(rau(i,j+1,k)*(ztht(i,j+1,k)-ztht(i,j+1,k-1)) &
-                            +rau(i,j  ,k)*(ztht(i,j  ,k)-ztht(i,j  ,k-1)))*Ver_idz_8%m(k)
+                  rJzY(i,j) = 0.5d0*(rau(i,j+1,k)*(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1)) &
+                            +rau(i,j  ,k)*(ztht_8(i,j  ,k)-ztht_8(i,j  ,k-1)))*Ver_idz_8%m(k)
                end do
             end do
             do j=j0,jn
@@ -113,7 +113,7 @@
                               +(rJzY(i,j  )*F_v(i,j  ,k)*geomh_cyv_8(j  )  &
                                -rJzY(i,j-1)*F_v(i,j-1,k)*geomh_cyv_8(j-1))*geomh_invDYM_8(j) )
                   rJzZ(i,j) = 0.5d0*(rau(i,j,k+1)+rau(i,j,k))* &
-                              (zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
+                              (zmom_8(i,j,k+1)-zmom_8(i,j,k))*Ver_idz_8%t(k)
                   F_zd(i,j,k) = F_zd(i,j,k)/rJzZ(i,j)
                end do
             end do
@@ -132,12 +132,12 @@
             do j=j0,jn
                do i=i0,in
                   F_w(i,j,k) = 0.25d0* ( &
-                              (F_u(i,j,kp)*mc_Jx(i,j,kp)+F_u(i-1,j,kp)*mc_Jx(i-1,j,kp))   &
-                             +(F_u(i,j,k )*mc_Jx(i,j,k )+F_u(i-1,j,k )*mc_Jx(i-1,j,k ))   &
-                             +(F_v(i,j,kp)*mc_Jy(i,j,kp)+F_v(i,j-1,kp)*mc_Jy(i,j-1,kp))   &
-                             +(F_v(i,j,k )*mc_Jy(i,j,k )+F_v(i,j-1,k )*mc_Jy(i,j-1,k )) ) &
+                              (F_u(i,j,kp)*mc_Jx_8(i,j,kp)+F_u(i-1,j,kp)*mc_Jx_8(i-1,j,kp))   &
+                             +(F_u(i,j,k )*mc_Jx_8(i,j,k )+F_u(i-1,j,k )*mc_Jx_8(i-1,j,k ))   &
+                             +(F_v(i,j,kp)*mc_Jy_8(i,j,kp)+F_v(i,j-1,kp)*mc_Jy_8(i,j-1,kp))   &
+                             +(F_v(i,j,k )*mc_Jy_8(i,j,k )+F_v(i,j-1,k )*mc_Jy_8(i,j-1,k )) ) &
                              +(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))  &
-                             *(zmom(i,j,k+1)-zmom(i,j,k))*Ver_idz_8%t(k)
+                             *(zmom_8(i,j,k+1)-zmom_8(i,j,k))*Ver_idz_8%t(k)
                end do
             end do
          end do

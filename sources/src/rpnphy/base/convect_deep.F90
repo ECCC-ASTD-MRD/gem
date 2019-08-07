@@ -243,7 +243,7 @@ subroutine CONVECT_DEEP2(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA,          &
         ZTHC    ,ZRVC    ,ZRCC    ,ZRIC    ,ZWSUB   ,GTRIG1  ,GWORK   ,         &
         IINDEX, IJINDEX, IJSINDEX, IJPINDEX,ZCPH    ,ZLV, ZLS,ZUC     ,ZVC     ,&
         ZCH1    , ZCH1C   , ZWORK3  , GTRIG4
-   !$OMP THREADPRIVATE(/deep/)
+!$OMP THREADPRIVATE(/deep/)
    !*       0.2   Declarations of local allocatable  variables :
 
    integer, dimension(:),pointer  :: IDPL    ! index for parcel departure level

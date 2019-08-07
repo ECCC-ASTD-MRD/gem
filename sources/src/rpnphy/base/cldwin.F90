@@ -73,7 +73,7 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
    real YPU0,XWFLO,XSIGMA,YPSGBT,YPUSG1,YPUS,YPTCI,XTTM,XW1
 
    integer NIK,K,I
- 
+
    real, parameter :: PU0 = 0.85
    real, parameter :: PUS = 1.0
    real, parameter :: PMR = 0.2E-3
@@ -101,61 +101,63 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
 
    NIK = NI * NK
 
-!-----------------------------------------------------------
+   !-----------------------------------------------------------
 
-!      INITIALISATION OF THE CLOUD WATER CONTAIN
-!      USING EMPIRICAL RELATION BETWEEN RELATIVE
-!      HUMIDITY AND PARTIAL CLOUD COVER.
+   !      INITIALISATION OF THE CLOUD WATER CONTAIN
+   !      USING EMPIRICAL RELATION BETWEEN RELATIVE
+   !      HUMIDITY AND PARTIAL CLOUD COVER.
 
-!___1) COMPUTE RELATIVE HUMIDITY
+   !___1) COMPUTE RELATIVE HUMIDITY
 
 
-!     -----------------------------------------
-      if(SATUCO) then
-      do 100 K=1,NK
-      do 100 I=1,NI
+   !     -----------------------------------------
+   if (SATUCO) then
+      do K=1,NK
+         do I=1,NI
 
-      TRAV(I,K) = HU(I,K) / &
-         FOQST( T(I,K) , PS(I)*SIGMA(I,K))
+            TRAV(I,K) = HU(I,K) / &
+                 FOQST( T(I,K) , PS(I)*SIGMA(I,K))
 
-      TRAV(I,K) = max( 0.0 , min(TRAV(I,K),1.0) )
+            TRAV(I,K) = max( 0.0 , min(TRAV(I,K),1.0) )
 
- 100  continue
-      else
-      do 101 K=1,NK
-      do 101 I=1,NI
+         enddo
+      enddo
+   else
+      do K=1,NK
+         do I=1,NI
 
-      TRAV(I,K) = HU(I,K) / &
-         FOQSA( T(I,K) , PS(I)*SIGMA(I,K))
+            TRAV(I,K) = HU(I,K) / &
+                 FOQSA( T(I,K) , PS(I)*SIGMA(I,K))
 
-      TRAV(I,K) = max( 0.0 , min(TRAV(I,K),1.0) )
+            TRAV(I,K) = max( 0.0 , min(TRAV(I,K),1.0) )
 
- 101  continue
-      endif
+         enddo
+      enddo
+   endif
 
-      do 10 K=1,NK
+   DOK: do K=1,NK
 
-! correction to pu0 near ground
+      ! correction to pu0 near ground
 
       TEMP1 = 0.75
-      do 77 I=1,NI
+      do I=1,NI
          WPU0(I)=PU0
-! 0.5 on continent, 1.0 over ocean
+         ! 0.5 on continent, 1.0 over ocean
          if( SIGMA(I,K) .ge. PSGBT ) &
               WPU0(I)=FUNB0(PU0,TEMP1,SIGMA(I,K),PSGBT,PUSBG1)
- 77   continue
+      enddo
 
-! correction to pu0 for low temperatures
+      ! correction to pu0 for low temperatures
 
-      do 79 I=1,NI
-        if (T(I,K).le.PTCI) then
-           TEMP1 = WPU0(I)
-           WPU0(I) = FUNC0(PUS,PTCI,TEMP1,T(I,K))
-        endif
- 79   continue
+      do I=1,NI
+         if (T(I,K).le.PTCI) then
+            TEMP1 = WPU0(I)
+            WPU0(I) = FUNC0(PUS,PTCI,TEMP1,T(I,K))
+         endif
+      enddo
 
 
-!___2) COMPUTE PARTIAL CLOUD COVER
+      !___2) COMPUTE PARTIAL CLOUD COVER
 
 
 
@@ -167,7 +169,7 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
             else
                BM(I,K) = 0.
             endif
- 
+
          enddo
 
 
@@ -179,13 +181,13 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
       endif DIAG_FTOT
 
 
-!___3) ESTIMATE CLOUD WATER CONTAIN FROM PARTIAL CLOUD
-!      COVER.
+      !___3) ESTIMATE CLOUD WATER CONTAIN FROM PARTIAL CLOUD
+      !      COVER.
 
       DIAG_LWC: if (.not.any('lwc'==phyinread_list_s(1:phyinread_n))) then
          do I=1,NI
 
-! reduce pmr for cold temperature
+            ! reduce pmr for cold temperature
 
             if( T(I,K) .lt. 268. ) then
                WMR=PMR/(1.0+0.5*(268.-T(I,K))**0.5)
@@ -202,9 +204,7 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
          enddo
       endif DIAG_LWC
 
- 10   continue
-
-!--------------------------------------------------------
-
-      return
-      end
+   enddo DOK
+   !--------------------------------------------------------
+   return
+end subroutine CLDWIN

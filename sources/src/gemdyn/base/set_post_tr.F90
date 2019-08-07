@@ -77,7 +77,7 @@
          err = gmm_get(gmmk_qt0_s, qt0)
 
          do k=1,l_nk+1
-            log_pr_m(1:l_ni,1:l_nj,k) = (qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+            log_pr_m(1:l_ni,1:l_nj,k) = (qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(1:l_ni,1:l_nj,k))
          end do
 
          pr_p0(1:l_ni,1:l_nj) = exp(log_pr_m(1:l_ni,1:l_nj,l_nk+1))

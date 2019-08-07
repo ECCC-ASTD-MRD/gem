@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,7 +12,8 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
+
 !/@ RMNLIB - Library of useful routines for C and FORTRAN programming
 ! * Copyright (C) 1975-2001  Division de Recherche en Prevision Numerique
 ! *                          Environnement Canada
@@ -32,87 +33,75 @@
 ! * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ! * Boston, MA 02111-1307, USA.
 ! @/
-!**s/p llwfgfw - converts from u-v (grid) wind components to
-!                standard meteorological speed and direction
-!
-      subroutine pllwfgfw(spd,dir,xlat,xlon,li,lj,grtyp,ig1,ig2,ig3,ig4)
 
-      implicit none
+subroutine pllwfgfw(spd,dir,xlat,xlon,li,lj,grtyp,ig1,ig2,ig3,ig4)
+   implicit none
 !!!#include <arch_specific.hf>
 
-      integer   li,lj
-      real      spd(li,lj), dir(li,lj), xlat(li,lj),xlon(li,lj)
-      character grtyp
-      integer   ig1,ig2,ig3,ig4
-!
-!auteur- y. chartier - april 94
-!
-!mise-a-jour:
-! B.Dugas (dec 2005): ajouter un appel a EZ_CROT et corriger la doc
-!
-!langage- fortran
-!
-!objet(pllwfgfw)
-!     - passe de vent de grille (composantes u et v)
-!     - a vitesse et direction.
-!
-!librairies
-!
-!appel- call pllwfgfw(spd,dir,xlat,xlon,li,lj,grtyp,ig1,ig2,ig3,ig4)
-!
-!modules- cigaxg
-!
-!arguments
-!     in/out - spd   - a l'entree contient la composante u
-!                      a la sortie la vitesse.
-!     in/out - dir   - a l'entree contient la composante v
-!                      a la sortie la direction
-!     in     - xlat  - latitudes (vraies) ou sont ces vents
-!     in     - xlon  - longitudes (vraies) ou sont ces vents
-!     in     - li    - premiere dimension des champs spd et dir
-!     in     - lj    - deuxieme dimension des champs spd et dir
-!     in     - grtyp - type de grille (utilise au decodage des igx)
-!     in     - igx   - pour x=1,2,3,4: descripteurs de grille codes
-!
-!-------------------------------------------------------------
-!
+   integer   li,lj
+   real      spd(li,lj), dir(li,lj), xlat(li,lj),xlon(li,lj)
+   character grtyp
+   integer   ig1,ig2,ig3,ig4
 
-      real r(3,3),ri(3,3)
+   !@auteur y. chartier - april 94
 
-      common /qqqmrot/ r,ri
+   !@revision
+   ! B.Dugas (dec 2005): ajouter un appel a EZ_CROT et corriger la doc
 
-!
+   !@objet
+   !     - passe de vent de grille (composantes u et v)
+   !     - a vitesse et direction.
+   ! converts from u-v (grid) wind components to
+   !                standard meteorological speed and direction
 
-      integer ier
-      real    xlat1,xlon1,xlat2,xlon2
-      real    xlatgf,xlongf,uvcart,xyz
+   !@arguments
+   !     in/out - spd   - a l'entree contient la composante u
+   !                      a la sortie la vitesse.
+   !     in/out - dir   - a l'entree contient la composante v
+   !                      a la sortie la direction
+   !     in     - xlat  - latitudes (vraies) ou sont ces vents
+   !     in     - xlon  - longitudes (vraies) ou sont ces vents
+   !     in     - li    - premiere dimension des champs spd et dir
+   !     in     - lj    - deuxieme dimension des champs spd et dir
+   !     in     - grtyp - type de grille (utilise au decodage des igx)
+   !     in     - igx   - pour x=1,2,3,4: descripteurs de grille codes
+   !-------------------------------------------------------------
 
-      pointer( xlatgp  , xlatgf(li,*) )
-      pointer( xlongp  , xlongf(li,*) )
-      pointer( uvcartp , uvcart( 3,*) )
-      pointer( xyzp    ,    xyz( 3,*) )
 
-      call hpalloc( xlatgp,   li*lj,ier,0 )
-      call hpalloc( xlongp,   li*lj,ier,0 )
-      call hpalloc( uvcartp,3*li*lj,ier,0 )
-      call hpalloc( xyzp,   3*li*lj,ier,0 )
+   real r(3,3),ri(3,3)
 
-      call cigaxg    ( grtyp, xlat1, xlon1, xlat2, xlon2, &
-                              ig1  , ig2  , ig3  , ig4  )
-      call ez_crot   ( r,ri,  xlon1, xlat1, xlon2, xlat2 )
+   common /qqqmrot/ r,ri
 
-      call ez_gfxyfll( xlon,xlat,xlongf,xlatgf, li*lj, &
-                       xlat1,xlon1, xlat2, xlon2 )
+   integer ier
+   real    xlat1,xlon1,xlat2,xlon2
+   real    xlatgf,xlongf,uvcart,xyz
 
-      call ez_vrotf2 ( spd,dir, xlon,xlat,xlongf,xlatgf, &
-                                ri,xyz,uvcart,li,lj )
+   pointer( xlatgp  , xlatgf(li,*) )
+   pointer( xlongp  , xlongf(li,*) )
+   pointer( uvcartp , uvcart( 3,*) )
+   pointer( xyzp    ,    xyz( 3,*) )
 
-      call ez_llwfgdw( spd,dir, xlongf,li,lj, 'L',0,0,0,0 )
+   call hpalloc( xlatgp,   li*lj,ier,0 )
+   call hpalloc( xlongp,   li*lj,ier,0 )
+   call hpalloc( uvcartp,3*li*lj,ier,0 )
+   call hpalloc( xyzp,   3*li*lj,ier,0 )
 
-      call hpdeallc( xlatgp ,ier,0 )
-      call hpdeallc( xlongp ,ier,0 )
-      call hpdeallc( uvcartp,ier,0 )
-      call hpdeallc( xyzp   ,ier,0 )
+   call cigaxg(grtyp, xlat1, xlon1, xlat2, xlon2, &
+        ig1  , ig2  , ig3  , ig4)
+   call ez_crot(r,ri,  xlon1, xlat1, xlon2, xlat2)
 
-      return
-      end
+   call ez_gfxyfll(xlon,xlat,xlongf,xlatgf, li*lj, &
+        xlat1,xlon1, xlat2, xlon2)
+
+   call ez_vrotf2(spd,dir, xlon,xlat,xlongf,xlatgf, &
+        ri,xyz,uvcart,li,lj)
+
+   call ez_llwfgdw(spd,dir, xlongf,li,lj, 'L',0,0,0,0)
+
+   call hpdeallc(xlatgp ,ier,0)
+   call hpdeallc(xlongp ,ier,0)
+   call hpdeallc(uvcartp,ier,0)
+   call hpdeallc(xyzp   ,ier,0)
+
+   return
+end subroutine pllwfgfw

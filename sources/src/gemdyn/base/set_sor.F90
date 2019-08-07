@@ -47,7 +47,7 @@
 
       integer,parameter :: NBUS = 3
 
-      character(len=8) :: unit_S
+      character(len=9) :: unit_S
       character(len=256) :: fn
       logical iela
       integer pnerror,i,k,j,ierr

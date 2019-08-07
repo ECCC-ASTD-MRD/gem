@@ -1447,7 +1447,7 @@ END subroutine p3_init
     Loop_SCPF_k: do k = ktop-kdir,kbot,-kdir
 
        Sigma = Pres(k)/Pres(kbot)                     ! Corresponding Sigma level
-       RHoo  = RHoo_min + slope*( Sigma-SIG_min )     ! Compute critical relative humidity
+       RHoo  = RHoo_min - slope*( Sigma-SIG_min )     ! Compute critical relative humidity
        RHoo  = max( RHoo_min, min( RHoo_max, RHoo ) ) ! bounded
 
        !------------------------------------------------------------

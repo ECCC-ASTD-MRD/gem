@@ -100,7 +100,7 @@
       do k = 1,Nk
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
-               c_k(i,j,k) =  gama_8*((fdg2(i,j,k+1)-fdg2(i,j,k))*mc_iJz(i  ,j,k )&
+               c_k(i,j,k) =  gama_8*((fdg2(i,j,k+1)-fdg2(i,j,k))*mc_iJz_8(i  ,j,k )&
                    -mu_8*half*(fdg2(i,j,k+1)+fdg2(i,j,k)))
 
             end do
@@ -111,7 +111,7 @@
       do j=1+sol_pil_s, njl-sol_pil_n
          do i=1+sol_pil_w, nil-sol_pil_e
             cdd_v8(i,j,k)=(c_k(i,j,k))*Ver_idz_8%m(k)&
-                  +(mc_Iz(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)) -gg_8* fdg2(i,j,k)
+                  +(mc_Iz_8(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)) -gg_8* fdg2(i,j,k)
          end do
       end do
 
@@ -119,7 +119,7 @@
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                cdd_v8(i,j,k)=(c_k(i,j,k)-c_k(i,j,k-1))*Ver_idz_8%m(k)&
-                     +(mc_Iz(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)+Ver_wm_8%m(k)*c_k(i,j,k-1)) &
+                     +(mc_Iz_8(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)+Ver_wm_8%m(k)*c_k(i,j,k-1)) &
                      -gg_8* fdg2(i,j,k)
 
             end do
@@ -134,22 +134,22 @@
          do j=1+sol_pil_s_ext, l_nj-sol_pil_n
             do i=1+sol_pil_w_ext, l_ni-sol_pil_e_ext
 
-               Afdg1(i,j,k) =(fdg2(i+1,j,k) - fdg2(i,j,k) ) * geomh_invDX_8(j)   - mc_Jx(i,j,k) * (  &
-                          Ver_wp_8%m(k)*half*( (fdg2(i+1,j,kp)-fdg2(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                           +(fdg2(i  ,j,kp)-fdg2(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                         +Ver_wm_8%m(k)*half*( (fdg2(i+1,j,k  )-fdg2(i+1,j,km))*mc_iJz(i+1,j,km)   &
-                                           +(fdg2(i  ,j,k  )-fdg2(i  ,j,km))*mc_iJz(i  ,j,km) ) )
+               Afdg1(i,j,k) =(fdg2(i+1,j,k) - fdg2(i,j,k) ) * geomh_invDX_8(j)   - mc_Jx_8(i,j,k) * (  &
+                          Ver_wp_8%m(k)*half*( (fdg2(i+1,j,kp)-fdg2(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
+                                           +(fdg2(i  ,j,kp)-fdg2(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
+                         +Ver_wm_8%m(k)*half*( (fdg2(i+1,j,k  )-fdg2(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
+                                           +(fdg2(i  ,j,k  )-fdg2(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )
             end do
          end do
 
          do j=1+sol_pil_s_ext, l_nj-sol_pil_n_ext
             do i=1+sol_pil_w_ext, l_ni-sol_pil_e
 
-               Bfdg1(i,j,k) =(fdg2(i,j+1,k) - fdg2(i,j,k) ) * geomh_invDYMv_8(j)  - mc_Jy(i,j,k) * ( &
-                          Ver_wp_8%m(k)*half*( (fdg2(i,j+1,kp)-fdg2(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                           +(fdg2(i,j  ,kp)-fdg2(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
-                         +Ver_wm_8%m(k)*half*( (fdg2(i,j+1,k  )-fdg2(i,j+1,km))*mc_iJz(i,j+1,km)   &
-                                           +(fdg2(i,j  ,k  )-fdg2(i,j  ,km))*mc_iJz(i,j  ,km) ) )
+               Bfdg1(i,j,k) =(fdg2(i,j+1,k) - fdg2(i,j,k) ) * geomh_invDYMv_8(j)  - mc_Jy_8(i,j,k) * ( &
+                          Ver_wp_8%m(k)*half*( (fdg2(i,j+1,kp)-fdg2(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
+                                           +(fdg2(i,j  ,kp)-fdg2(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
+                         +Ver_wm_8%m(k)*half*( (fdg2(i,j+1,k  )-fdg2(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
+                                           +(fdg2(i,j  ,k  )-fdg2(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )
             end do
          end do
       end do
@@ -158,11 +158,11 @@
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                add_v8(i,j,k) =   (Afdg1 (i,j,k)-Afdg1 (i-1,j,k))*geomh_invDXM_8(j) &
-                         + half * ( mc_Ix(i,j,k)*(Afdg1(i,j,k)+Afdg1(i-1,j,k)))
+                         + half * ( mc_Ix_8(i,j,k)*(Afdg1(i,j,k)+Afdg1(i-1,j,k)))
 
                bdd_v8(i,j,k) = (Bfdg1 (i,j,k)*geomh_cyM_8(j)-Bfdg1 (i,j-1,k)*&
                            geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                         + half * (mc_Iy(i,j,k)*(Bfdg1(i,j,k)+Bfdg1(i,j-1,k)) )
+                         + half * (mc_Iy_8(i,j,k)*(Bfdg1(i,j,k)+Bfdg1(i,j-1,k)) )
             end do
          end do
       end do

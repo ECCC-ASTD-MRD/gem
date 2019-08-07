@@ -16,42 +16,39 @@
 !**s/r out_dyn_casc - model output for cascade
 
       subroutine out_dyn_casc()
-      use dyn_fisl_options
       use dynkernel_options
-      use glb_ld
-      use gmm_geof
-      use gmm_itf_mod
-      use gmm_pw
-      use gmm_vt1
-      use grdc_options
-      use levels
-      use metric
-      use out3
-      use out_mod
-      use out_options
-      use out_vref
-      use outp
-      use tdpack
-      use vertical_interpolation
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
+      use out_vref, only: out_vref_itf
+      use vertical_interpolation
+      use gmm_vt1
+      use gmm_pw
+      use gmm_geof
+      use grdc_options
+      use out_options
+      use tdpack
+      use glb_ld
+      use levels
+      use tr3d
+      use metric
+      use out_mod
+      use out3
+      use outp
+      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
 
       character(len=512) varname
-      integer :: k, istat, indo(G_nk+2)
+      integer k,istat,indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
+      real conv
       real, dimension(:    ), pointer :: hybm,hybt,hybt_w
-      real, dimension(:,:,:), pointer, contiguous :: tr2, tdiag, udiag, &
-                                                     vdiag, wlnph_ta, &
-                                                     wlnph_m
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: tr1
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: gzm, gzt
+      real, dimension(:,:  ), pointer :: tr1,tdiag,udiag,vdiag
+      real, dimension(:,:,:), pointer :: tr2,gzm,gzt,wlnph_ta,wlnph_m
       type(vgrid_descriptor) :: vcoord
-      real, dimension(1) :: hybm_gnk2, hybt_gnk2, hyb0
-      integer, dimension(1) :: ind0
-      real :: conv
+      real hybm_gnk2(1),hybt_gnk2(1),hyb0(1)
+      integer ind0(1)
 !
 !------------------------------------------------------------------
 !
@@ -71,14 +68,13 @@
       do k=1,G_nk+2
          indo(k) = k
       end do
-
       nullify (ip1m,hybm,hybt,hybt_w)
       istat = vgrid_wb_get('ref-m',vcoord,ip1m)
       deallocate(ip1m); nullify(ip1m)
       istat = vgd_get (vcoord,'VCDM - vertical coordinate (m)',hybm)
       istat = vgd_get (vcoord,'VCDT - vertical coordinate (t)',hybt)
       istat = vgd_free(vcoord)
-
+      allocate(tr1(l_minx:l_maxx,l_miny:l_maxy))
       hyb0(1)=0.0
       hybm_gnk2(1)=hybm(G_nk+2)
       hybt_gnk2(1)=hybt(G_nk+2)
@@ -91,23 +87,20 @@
       call out_href3 ( 'Mass_point', Grdc_gid, Grdc_gif, 1,&
                                      Grdc_gjd, Grdc_gjf, 1 )
 
-      call out_vref_itf ( etiket=Out3_etik_S )
+      call out_vref_itf  ( etiket=Out3_etik_S )
 
-      conv = -tcdk_8
+      conv= -tcdk_8
 
       call out_fstecr3 ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                          'TT  ',1., conv,Level_kind_ip1,-1,G_nk,indo,&
                          G_nk,Grdc_nbits,.false. )
-      if (Out3_sfcdiag_L) then
+      if (Out3_sfcdiag_L) &
          call out_fstecr3 ( tdiag,l_minx,l_maxx,l_miny,l_maxy ,&
                             hybt_gnk2, 'TT  ', 1., conv,4,-1,1,&
                             ind0,1,Grdc_nbits, .false. )
-      end if
 
-      if (.not. Schm_autobar_L) then
-         call out_fstecr3 ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
-                            'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
-      end if
+      call out_fstecr3 ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+                   'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
 
       call out_fstecr3 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&
                          'WT1 ',1., 0.,Level_kind_ip1,-1,G_nk  ,&
@@ -117,26 +110,19 @@
                          indo,G_nk,Grdc_nbits,.false. )
 
       if ( Dynamics_hauteur_L ) then
-         if (.not. Schm_autobar_L) then
-            conv = 0.1d0
-            call out_fstecr3 ( zmom(l_minx,l_miny,1), l_minx,l_maxx,&
-                    l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-            call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
-                    l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-            call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
-                    l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo(G_nk+1),1,Grdc_nbits,.false. )
-         else
-            conv = 0.1d0 / grav_8
-            istat = gmm_get(gmmk_qt1_s,qt1)
-            gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0/Cstv_invFI_8
-            call out_fstecr3 ( gzm(l_minx,l_miny,1), l_minx,l_maxx ,&
-                    l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-         end if
+         conv = 0.1d0
+         call out_fstecr3 ( zmom(l_minx,l_miny,1), l_minx,l_maxx,&
+                 l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
+                 -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
+         call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
+                 l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
+                 -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
+         call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
+                 l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
+                 -1,G_nk+1,indo(G_nk+1),1,Grdc_nbits,.false. )
       else
+         allocate ( gzt (l_minx:l_maxx,l_miny:l_maxy,G_nk+1),&
+                    gzm (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
          istat = gmm_get(gmmk_qt1_s      , qt1     )
          istat = gmm_get(gmmk_pw_log_pt_s, wlnph_ta)
          istat = gmm_get(gmmk_pw_log_pm_s, wlnph_m )
@@ -155,6 +141,7 @@
          call out_fstecr3 ( gzt(l_minx,l_miny,1), l_minx,l_maxx ,&
                  l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo(G_nk+1),1,Grdc_nbits,.false. )
+         deallocate(gzm,gzt)
       endif
 
       do k=1,Grdc_ntr
@@ -189,7 +176,7 @@
                     'VV  ' , conv, 0., 4,-1,1,ind0,1,Grdc_nbits,.false. )
       end if
 
-      deallocate (hybm,hybt)
+      deallocate (hybm,hybt,tr1)
 !
 !------------------------------------------------------------------
 !

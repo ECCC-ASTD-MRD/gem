@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -26,7 +26,7 @@ module fstmpi_read_mod
    use vgrid_wb
    implicit none
    private
-   !@objective 
+   !@objective
    !@author  Stephane Chamberland, 2011-06
    !@description
    ! Public functions
@@ -342,7 +342,7 @@ contains
          fid = F_fileids(min(ikey, nfids))
          istat = fstmpi_read_3d_r4(F_keys1(ikey), indata1, fid, ingridid, &
               F_realloc_L=realloc_L)
-         nomvar1_S = '\?\?' !#TODO get nomvar from fst_read or getmeta
+         nomvar1_S = '  ' !#TODO get nomvar from fst_read or getmeta
          if (.not.RMN_IS_OK(istat)) then
             F_status(ikey) = RMN_ERR
             call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar1_S))
@@ -350,7 +350,7 @@ contains
          endif
          istat = fstmpi_read_3d_r4(F_keys2(ikey), indata2, fid, ingridid, &
               F_realloc_L=realloc_L)
-         nomvar2_S = '\?\?' !#TODO get nomvar from fst_read or getmeta
+         nomvar2_S = '  ' !#TODO get nomvar from fst_read or getmeta
          if (.not.RMN_IS_OK(istat)) then
             F_status(ikey) = RMN_ERR
             call msg(MSG_WARNING, '(fstmpi) rdhint: Problem reading: '//trim(nomvar2_S))
@@ -507,7 +507,7 @@ contains
    !/@
    function fstmpi_get_vgrid(F_fileid,F_key,F_vgrid,F_ip1list,F_lvltyp_S) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,intent(in) :: F_fileid,F_key
       type(vgrid_descriptor),intent(out) :: F_vgrid
@@ -520,7 +520,7 @@ contains
       integer :: itype
       ! ---------------------------------------------------------------------
       F_istat = RMN_OK
-      call vgrid_nullify(F_vgrid) 
+      call vgrid_nullify(F_vgrid)
       itype = 0
       if (ptopo_isblocmaster_L) then
          F_istat = fst_get_vgrid(F_fileid,F_key,F_vgrid,F_ip1list,F_lvltyp_S)

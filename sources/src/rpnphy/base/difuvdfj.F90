@@ -87,243 +87,254 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    character(len=16) :: msg_S
    external DIFUVD1, DIFUVD2
 
-      st(i)=s(i,1)-0.5*(s(i,2)-s(i,1))
-      sb(i)=1.
+   st(i)=s(i,1)-0.5*(s(i,2)-s(i,1))
+   sb(i)=1.
 
-      if (type.le.2) then
-         NKX=NK
-         SCK1=1
-         if (type.eq.2) then
-               SCK1=0
-         endif
-      else if (type.eq.3 .or. type.eq.4) then
-         NKX=NK-1
-      else if (type.eq.5 .or. type.eq.6) then
-         NKX=NK
-      else
-         write(msg_S, *) type
-         call physeterror('difuvdfj', 'Type inconnu: '//trim(msg_S))
-         return
+   if (type.le.2) then
+      NKX=NK
+      SCK1=1
+      if (type.eq.2) then
+         SCK1=0
       endif
-
-! (1) CONSTRUIRE L'OPERATEUR TRIDIAGONAL DE DIFFUSION N=(A,B,C)
-!                ET LE TERME CONTRE-GRADIENT (DANS D)
-
-      if (type.le.2) then
-
-!     K=1
-
-         HM=0
-         do 10 I=1,N
-            HP=S(i,2)-S(i,1)
-            HD(I)=SK(i,1)-ST(i)
-            A(I,1)=0
-            C(I,1)=SCK1*KU(I,1)/(HP*HD(I))
-            B(I,1)=-A(I,1)-C(I,1)
-10          D(I,1)=SCK1*(KU(I,1)*GU(I,1)+JNG(I,1))/HD(I)
-
-!     K=2...NK-1
-
-         do K=2,NK-1,1
-            do I=1,N
-!              THE FOLLOWING LHS ARE IN REAL
-               VHM(I,K)=S(I,K)-S(I,K-1)
-               VHP(I,K)=S(I,K+1)-S(I,K)
-               HD(I)=SK(I,K)-SK(I,K-1)
-!           THE FOLLOWING LHS ARE IN real(REAL64)
-               RHD(I,K)=HD(I)
-               RHMD(I,K)=VHM(I,K)*HD(I)
-               RHPD(I,K)=VHP(I,K)*HD(I)
-            enddo
-         enddo
-         call VREC(RHD (1,2), RHD(1,2),N*(NK-2))
-         call VREC(RHMD(1,2),RHMD(1,2),N*(NK-2))
-         call VREC(RHPD(1,2),RHPD(1,2),N*(NK-2))
-         do K=2,NK-1,1
-            do I=1,N
-               A(I,K)=KU(I,K-1)*RHMD(I,K)
-               C(I,K)=KU(I,K)*RHPD(I,K)
-               B(I,K)=-A(I,K)-C(I,K)
-               D(I,K)=( KU(I,K)*GU(I,K)-KU(I,K-1)*GU(I,K-1) &
-                             +JNG(I,K)-JNG(I,K-1) )*RHD(I,K)
-            enddo
-         enddo
-
-!     K=NK
-
-         HP=0
-         do 12 I=1,N
-            HM=S(i,NK)-S(i,NK-1)
-            HD(I)=SB(i)-SK(i,NK-1)
-            A(I,NK)=KU(I,NK-1)/(HM*HD(I))
-            C(I,NK)=0
-            B(I,NK)=-A(I,NK)-C(I,NK)
-12          D(I,NK)=(0-KU(I,NK-1)*GU(I,NK-1)-JNG(I,NK-1))/HD(I)
-
-      else if (type.eq.3 .or. type.eq.4 .or. type.eq.5 .or. type.eq.6) then
-
-!     TYPE='E' or 'EB' or 'ET'
-
-!     K=1
-
-         do 13 I=1,N
-            HM=SK(i,1)-ST(i)
-            HP=SK(i,2)-SK(i,1)
-            HD(I)=S(i,2)-S(i,1)
-!        Limiting Conditions at S=ST: U=0(for 'E' or 'EB')`
-!**         KUM=0.5*KU(I,1)
-!        Limiting Conditions at S=S(1): J=0(for 'E' or 'EB' or 'ET')
-            KUM=0
-            KUP=0.5*(KU(I,1)+KU(I,2))
-            A(I,1)=KUM/(HM*HD(I))
-            C(I,1)=KUP/(HP*HD(I))
-            B(I,1)=-A(I,1)-C(I,1)
-13          D(I,1)=(KUP*(GU(I,1)+GU(I,2))-KUM*GU(I,1) &
-                        +(JNG(I,1)+JNG(I,2)) )/(2.*HD(I))
-
-!     K=2...NKX-1
-
-         do K=2,NKX-1,1
-            do I=1,N
-!              THE FOLLOWING LHS ARE IN REAL
-               VHM(I,K)=SK(I,K)-SK(I,K-1)
-               VHP(I,K)=SK(I,K+1)-SK(I,K)
-               HD(I)=S(I,K+1)-S(I,K)
-            enddo
-            if (K==NK-1 .and. type==6) then !VIRTUAL LEVEL FOR TYPE='ST'
-               do I=1,N
-                  HD(I) = 0.5*(SK(I,K+1)+SK(I,K))-S(I,K)
-               enddo
-            endif
-            do I=1,N
-!	       THE FOLLOWING LHS ARE IN real(REAL64)
-               RHD(I,K)=HD(I)
-               RHMD(I,K)=VHM(I,K)*HD(I)
-               RHPD(I,K)=VHP(I,K)*HD(I)
-            enddo
-         enddo
-         call VREC( RHD(1,2), RHD(1,2),N*(NKX-2))
-         call VREC(RHMD(1,2),RHMD(1,2),N*(NKX-2))
-         call VREC(RHPD(1,2),RHPD(1,2),N*(NKX-2))
-         do K=2,NKX-1,1
-            do I=1,N
-               KUM=0.5*(KU(I,K-1)+KU(I,K))
-               KUP=0.5*(KU(I,K+1)+KU(I,K))
-               A(I,K)=KUM*RHMD(I,K)
-               C(I,K)=KUP*RHPD(I,K)
-               B(I,K)=-A(I,K)-C(I,K)
-               D(I,K)=.5*(KUP*(GU(I,K)+GU(I,K+1)) &
-                      -KUM*(GU(I,K-1)+GU(I,K)) &
-                       +(JNG(I,K)+JNG(I,K+1)) &
-                       -(JNG(I,K-1)+JNG(I,K)))*RHD(I,K)
-            enddo
-         enddo
-
-!     K=NKX
-
-        if (type.eq.3 .or. type.eq.5 .or. type.eq.6) then
-
-!       TYPE='E' or 'ET' or 'ST'
-
-           if (type.eq.6) then !virtual level for TYPE='ST'
-              do I=1,N
-                 HD(I)=SB(i)-0.5*(SK(i,NKX)+SK(i,NKX-1))
-              enddo
-           else
-              do I=1,N
-                 HD(I)=SB(i)-S(i,NKX)
-              enddo
-           endif
-           do I=1,N
-              HM=SK(i,NKX)-SK(i,NKX-1)
-              KUM=0.5*(KU(I,NKX)+KU(I,NKX-1))
-              KUP=0
-              A(I,NKX)=KUM/(HM*HD(I))
-              C(I,NKX)=0
-              B(I,NKX)=-A(I,NKX)-C(I,NKX)
-              D(I,NKX)=(0-KUM*(GU(I,NKX)+GU(I,NKX-1)) &
-                           -(JNG(I,NKX)+JNG(I,NKX-1)) )/(2.*HD(I))
-           enddo
-
-        else if (type.eq.4) then
-
-!       TYPE='EB'
-
-           do I=1,N
-              HM=SK(i,NK-1)-SK(i,NK-2)
-              HP=SB(i)-SK(i,NK-1)
-              HD(I)=S(i,NK)-S(i,NK-1)
-              KUM=0.5*(KU(I,NK-1)+KU(I,NK-2))
-              KUP=0.5*(KU(I,NK)+KU(I,NK-1))
-              A(I,NKX)=KUM/(HM*HD(I))
-              B(I,NKX)=-A(I,NKX) -KUP/(HP*HD(I))
-              C(I,NKX)=0
-              D(I,NKX)=(KUP*(GU(I,NK)+GU(I,NK-1)) &
-                       -KUM*(GU(I,NK-1)+GU(I,NK-2)) &
-                       +(JNG(I,NK)+JNG(I,NK-1)) &
-                       -(JNG(I,NK-1)*JNG(I,NK-2)))/(2.*HD(I)) &
-                       +KUP*ALFA(I)/(HD(I)*HP)
-           enddo
-
-        endif
-
-      endif
-
-
-! (2) CALCULER LE COTE DROIT D=TAU*(N(U)+R+D/DS(KU*GU+JNG))
-
-      call DIFUVD1 (D, 1., A, B, C, U, D, N, NU, NKX)
-      do 20 K=1,NKX
-         do 20 I=1,N
-20       D(I,K)=TAU*(D(I,K)+R(I,K))
-
-! (3) CALCULER OPERATEUR DU COTE GAUCHE
-
-      do 30 K=1,NKX
-         do 30 I=1,N
-            A(I,K)= -F*TAU*A(I,K)
-            B(I,K)=1-F*TAU*B(I,K)
-30          C(I,K)= -F*TAU*C(I,K)
-
-! (4) AJOUTER TERME DE FLUX DE SURFACE
-
-      SFCFLUX = .true.
-      select case (type)
-      case (:2) !TYPE='U'/'UT'
-         do I=1,N
-            HD(I) = SB(i) - SK(i,NK-1)
-         enddo
-      case (5) !TYPE='ET'
-         do I=1,N
-            HD(I) = SB(i) - S(i,NKX)
-         enddo
-      case (6) !TYPE='ST'
-         do I=1,N
-            HD(I) = SB(i) - 0.5*(SK(i,NKX)+SK(i,NKX-1))
-         enddo
-      case DEFAULT
-         SFCFLUX = .false.
-      end select
-      if (SFCFLUX) then
-         do I=1,N
-            B(I,NKX)=B(I,NKX)-TAU*BETA(I)/HD(I)
-            D(I,NKX)=D(I,NKX)+(ALFA(I)+BETA(I)*U(I,NKX))*TAU/HD(I)
-         enddo
-      endif
-
-! (5) RESOUDRE SYSTEME TRIDIAGONAL [A,B,C] X = D. METTRE X DANS TU.
-
-      call DIFUVD2 (TU, A, B, C, D, D, NU, N, NKX)
-
-! (6) OBTENIR TENDANCE
-
-      do 60 K=1,NKX
-         do 60 I=1,N
-60       TU(I,K)=TU(I,K)/TAU
-!     K=NKX+1..NK
-      do 70 K=NKX+1,NK
-         do 70 I=1,N
-70       TU(I,K)=0
-
+   else if (type.eq.3 .or. type.eq.4) then
+      NKX=NK-1
+   else if (type.eq.5 .or. type.eq.6) then
+      NKX=NK
+   else
+      write(msg_S, *) type
+      call physeterror('difuvdfj', 'Type inconnu: '//trim(msg_S))
       return
-      end
+   endif
+
+   ! (1) CONSTRUIRE L'OPERATEUR TRIDIAGONAL DE DIFFUSION N=(A,B,C)
+   !                ET LE TERME CONTRE-GRADIENT (DANS D)
+
+   if (type.le.2) then
+
+      !     K=1
+
+      HM=0
+      do I=1,N
+         HP=S(i,2)-S(i,1)
+         HD(I)=SK(i,1)-ST(i)
+         A(I,1)=0
+         C(I,1)=SCK1*KU(I,1)/(HP*HD(I))
+         B(I,1)=-A(I,1)-C(I,1)
+         D(I,1)=SCK1*(KU(I,1)*GU(I,1)+JNG(I,1))/HD(I)
+      enddo
+
+      !     K=2...NK-1
+
+      do K=2,NK-1,1
+         do I=1,N
+            !              THE FOLLOWING LHS ARE IN REAL
+            VHM(I,K)=S(I,K)-S(I,K-1)
+            VHP(I,K)=S(I,K+1)-S(I,K)
+            HD(I)=SK(I,K)-SK(I,K-1)
+            !           THE FOLLOWING LHS ARE IN real(REAL64)
+            RHD(I,K)=HD(I)
+            RHMD(I,K)=VHM(I,K)*HD(I)
+            RHPD(I,K)=VHP(I,K)*HD(I)
+         enddo
+      enddo
+      call VREC(RHD (1,2), RHD(1,2),N*(NK-2))
+      call VREC(RHMD(1,2),RHMD(1,2),N*(NK-2))
+      call VREC(RHPD(1,2),RHPD(1,2),N*(NK-2))
+      do K=2,NK-1,1
+         do I=1,N
+            A(I,K)=KU(I,K-1)*RHMD(I,K)
+            C(I,K)=KU(I,K)*RHPD(I,K)
+            B(I,K)=-A(I,K)-C(I,K)
+            D(I,K)=( KU(I,K)*GU(I,K)-KU(I,K-1)*GU(I,K-1) &
+                 +JNG(I,K)-JNG(I,K-1) )*RHD(I,K)
+         enddo
+      enddo
+
+      !     K=NK
+
+      HP=0
+      do I=1,N
+         HM=S(i,NK)-S(i,NK-1)
+         HD(I)=SB(i)-SK(i,NK-1)
+         A(I,NK)=KU(I,NK-1)/(HM*HD(I))
+         C(I,NK)=0
+         B(I,NK)=-A(I,NK)-C(I,NK)
+         D(I,NK)=(0-KU(I,NK-1)*GU(I,NK-1)-JNG(I,NK-1))/HD(I)
+      enddo
+
+   else if (type.eq.3 .or. type.eq.4 .or. type.eq.5 .or. type.eq.6) then
+
+      !     TYPE='E' or 'EB' or 'ET'
+
+      !     K=1
+
+      do I=1,N
+         HM=SK(i,1)-ST(i)
+         HP=SK(i,2)-SK(i,1)
+         HD(I)=S(i,2)-S(i,1)
+         !        Limiting Conditions at S=ST: U=0(for 'E' or 'EB')`
+         !**         KUM=0.5*KU(I,1)
+         !        Limiting Conditions at S=S(1): J=0(for 'E' or 'EB' or 'ET')
+         KUM=0
+         KUP=0.5*(KU(I,1)+KU(I,2))
+         A(I,1)=KUM/(HM*HD(I))
+         C(I,1)=KUP/(HP*HD(I))
+         B(I,1)=-A(I,1)-C(I,1)
+         D(I,1)=(KUP*(GU(I,1)+GU(I,2))-KUM*GU(I,1) &
+              +(JNG(I,1)+JNG(I,2)) )/(2.*HD(I))
+      enddo
+
+      !     K=2...NKX-1
+
+      do K=2,NKX-1,1
+         do I=1,N
+            !              THE FOLLOWING LHS ARE IN REAL
+            VHM(I,K)=SK(I,K)-SK(I,K-1)
+            VHP(I,K)=SK(I,K+1)-SK(I,K)
+            HD(I)=S(I,K+1)-S(I,K)
+         enddo
+         if (K==NK-1 .and. type==6) then !VIRTUAL LEVEL FOR TYPE='ST'
+            do I=1,N
+               HD(I) = 0.5*(SK(I,K+1)+SK(I,K))-S(I,K)
+            enddo
+         endif
+         do I=1,N
+            !       THE FOLLOWING LHS ARE IN real(REAL64)
+            RHD(I,K)=HD(I)
+            RHMD(I,K)=VHM(I,K)*HD(I)
+            RHPD(I,K)=VHP(I,K)*HD(I)
+         enddo
+      enddo
+      call VREC( RHD(1,2), RHD(1,2),N*(NKX-2))
+      call VREC(RHMD(1,2),RHMD(1,2),N*(NKX-2))
+      call VREC(RHPD(1,2),RHPD(1,2),N*(NKX-2))
+      do K=2,NKX-1,1
+         do I=1,N
+            KUM=0.5*(KU(I,K-1)+KU(I,K))
+            KUP=0.5*(KU(I,K+1)+KU(I,K))
+            A(I,K)=KUM*RHMD(I,K)
+            C(I,K)=KUP*RHPD(I,K)
+            B(I,K)=-A(I,K)-C(I,K)
+            D(I,K)=.5*(KUP*(GU(I,K)+GU(I,K+1)) &
+                 -KUM*(GU(I,K-1)+GU(I,K)) &
+                 +(JNG(I,K)+JNG(I,K+1)) &
+                 -(JNG(I,K-1)+JNG(I,K)))*RHD(I,K)
+         enddo
+      enddo
+
+      !     K=NKX
+
+      if (type.eq.3 .or. type.eq.5 .or. type.eq.6) then
+
+         !       TYPE='E' or 'ET' or 'ST'
+
+         if (type.eq.6) then !virtual level for TYPE='ST'
+            do I=1,N
+               HD(I)=SB(i)-0.5*(SK(i,NKX)+SK(i,NKX-1))
+            enddo
+         else
+            do I=1,N
+               HD(I)=SB(i)-S(i,NKX)
+            enddo
+         endif
+         do I=1,N
+            HM=SK(i,NKX)-SK(i,NKX-1)
+            KUM=0.5*(KU(I,NKX)+KU(I,NKX-1))
+            KUP=0
+            A(I,NKX)=KUM/(HM*HD(I))
+            C(I,NKX)=0
+            B(I,NKX)=-A(I,NKX)-C(I,NKX)
+            D(I,NKX)=(0-KUM*(GU(I,NKX)+GU(I,NKX-1)) &
+                 -(JNG(I,NKX)+JNG(I,NKX-1)) )/(2.*HD(I))
+         enddo
+
+      else if (type.eq.4) then
+
+         !       TYPE='EB'
+
+         do I=1,N
+            HM=SK(i,NK-1)-SK(i,NK-2)
+            HP=SB(i)-SK(i,NK-1)
+            HD(I)=S(i,NK)-S(i,NK-1)
+            KUM=0.5*(KU(I,NK-1)+KU(I,NK-2))
+            KUP=0.5*(KU(I,NK)+KU(I,NK-1))
+            A(I,NKX)=KUM/(HM*HD(I))
+            B(I,NKX)=-A(I,NKX) -KUP/(HP*HD(I))
+            C(I,NKX)=0
+            D(I,NKX)=(KUP*(GU(I,NK)+GU(I,NK-1)) &
+                 -KUM*(GU(I,NK-1)+GU(I,NK-2)) &
+                 +(JNG(I,NK)+JNG(I,NK-1)) &
+                 -(JNG(I,NK-1)*JNG(I,NK-2)))/(2.*HD(I)) &
+                 +KUP*ALFA(I)/(HD(I)*HP)
+         enddo
+
+      endif
+
+   endif
+
+
+   ! (2) CALCULER LE COTE DROIT D=TAU*(N(U)+R+D/DS(KU*GU+JNG))
+
+   call DIFUVD1(D, 1., A, B, C, U, D, N, NU, NKX)
+   do K=1,NKX
+      do I=1,N
+         D(I,K)=TAU*(D(I,K)+R(I,K))
+      enddo
+   enddo
+
+   ! (3) CALCULER OPERATEUR DU COTE GAUCHE
+
+   do K=1,NKX
+      do I=1,N
+         A(I,K)= -F*TAU*A(I,K)
+         B(I,K)=1-F*TAU*B(I,K)
+         C(I,K)= -F*TAU*C(I,K)
+      enddo
+   enddo
+
+   ! (4) AJOUTER TERME DE FLUX DE SURFACE
+
+   SFCFLUX = .true.
+   select case (type)
+   case (:2) !TYPE='U'/'UT'
+      do I=1,N
+         HD(I) = SB(i) - SK(i,NK-1)
+      enddo
+   case (5) !TYPE='ET'
+      do I=1,N
+         HD(I) = SB(i) - S(i,NKX)
+      enddo
+   case (6) !TYPE='ST'
+      do I=1,N
+         HD(I) = SB(i) - 0.5*(SK(i,NKX)+SK(i,NKX-1))
+      enddo
+   case DEFAULT
+      SFCFLUX = .false.
+   end select
+   if (SFCFLUX) then
+      do I=1,N
+         B(I,NKX)=B(I,NKX)-TAU*BETA(I)/HD(I)
+         D(I,NKX)=D(I,NKX)+(ALFA(I)+BETA(I)*U(I,NKX))*TAU/HD(I)
+      enddo
+   endif
+
+   ! (5) RESOUDRE SYSTEME TRIDIAGONAL [A,B,C] X = D. METTRE X DANS TU.
+
+   call DIFUVD2(TU, A, B, C, D, D, NU, N, NKX)
+
+   ! (6) OBTENIR TENDANCE
+
+   do K=1,NKX
+      do I=1,N
+         TU(I,K)=TU(I,K)/TAU
+      enddo
+   enddo
+   !     K=NKX+1..NK
+   do K=NKX+1,NK
+      do I=1,N
+         TU(I,K)=0
+      enddo
+   enddo
+
+   return
+end subroutine DIFUVDFj1

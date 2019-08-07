@@ -177,7 +177,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    !          Refer to J.Mailhot and R.Benoit JAS 39 (1982)Pg2249-2266
    !          and Master thesis of J.Mailhot.
    !*@/
- 
+
 #include "clefcon.cdk"
 #include "surface.cdk"
 #include "machcon.cdk"
@@ -204,317 +204,324 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    integer, dimension(N) :: SLK
    integer, external :: neark
 
-      EXP_EXPLIM=exp(-EXPLIM)
-      TAUINV=1.0/TAU
-      w_cld = 0.
+   EXP_EXPLIM=exp(-EXPLIM)
+   TAUINV=1.0/TAU
+   w_cld = 0.
 
-      NKE=NK
+   NKE=NK
 
-!     SHR2  =  ( D VENT / D Z ) ** 2
+   !     SHR2  =  ( D VENT / D Z ) ** 2
 
-      call ABSDVDZ3(SHR2,U,V,TVE,SE,DSGDZ,S,N,N,NK)
+   call ABSDVDZ3(SHR2,U,V,TVE,SE,DSGDZ,S,N,N,NK)
 
-      do k=1,NKE
-         do j=1,N
-            SHR2(j,k) = SHR2(j,k) + PETIT
-         end do
+   do k=1,NKE
+      do j=1,N
+         SHR2(j,k) = SHR2(j,k) + PETIT
       end do
+   end do
 
-!     RIG ( NOMBRE DE RICHARDSON GRADIENT)
+   !     RIG ( NOMBRE DE RICHARDSON GRADIENT)
 
-      if (PBL_RIBKG) then
-         call rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,PBL_RIBKG,n,nk)
-      else
-         call rigrad1b(rig, gama, gamaq, xb, shr2, t, tve, q, qe, &
-              s, wk, n, n, nk)
-      endif
+   if (PBL_RIBKG) then
+      call rigrad3(shr2,tve,qe,zn,ps,se,z,rig,gama,gamaq,PBL_RIBKG,n,nk)
+   else
+      call rigrad1b(rig, gama, gamaq, xb, shr2, t, tve, q, qe, &
+           s, wk, n, n, nk)
+   endif
 
-      call series_xst(RIG, 'RI', trnch)
+   call series_xst(RIG, 'RI', trnch)
 
-!           AJOUT DE L'EFFET DE LA CONVECTION RESTREINTE
+   !           AJOUT DE L'EFFET DE LA CONVECTION RESTREINTE
 
-      do k=1,NKE
-         do j=1,N
-            FN(j,k) = 0.
-            GAMAL(j,k) = 0.
-            WORK(j,k) = 0.
-         end do
+   do k=1,NKE
+      do j=1,N
+         FN(j,k) = 0.
+         GAMAL(j,k) = 0.
+         WORK(j,k) = 0.
       end do
+   end do
 
-      if( PBL_SHAL == 'CONRES' ) then
-         call CONRES1(RIG,GAMA,GAMAQ,WORK,T,TVE,Q,QE,PS, &
-                     HOL,S,SE,SHR2,WK,N,N,NK)
-      endif
+   if( PBL_SHAL == 'CONRES' ) then
+      call CONRES1(RIG,GAMA,GAMAQ,WORK,T,TVE,Q,QE,PS, &
+           HOL,S,SE,SHR2,WK,N,N,NK)
+   endif
 
-      call series_xst(RIG, 'RM', trnch)
-
-
-!                               CALCUL DE LA LONGUEUR DE MELANGE
+   call series_xst(RIG, 'RM', trnch)
 
 
-       ZNOLD(:,:) = ZN(:,:)
+   !                               CALCUL DE LA LONGUEUR DE MELANGE
 
 
-!                               A) BLACKADAR (1962)
+   ZNOLD(:,:) = ZN(:,:)
 
 
-      TEMPO = 0.23*SQRT(DXDY) !high resolution (<850m) adjustment to neutral mixing length
+   !                               A) BLACKADAR (1962)
 
-      ! Compute the PBL stability functions
-      stat = psf_stabfunc(rig,z,fm,fh, &
-           blend_bottom=pbl_slblend_layer(1),blend_top=pbl_slblend_layer(2))
-      kt = fm/fh  !temporary storage for the inverse Prandtl number
-      if (stat /= PSF_OK) then
-         call physeterror('eturbl', 'error returned by PBL stability functions')
-         return
-      endif
 
-      ! Compute the Blackadar (1962) mixing length
-      do k=1,nke
-         do j=1,n
-            lmn = min(KARMAN*(z(j,k)+z0(j)),min(tempo(j),LMDA))
-            zn_blac(j,k) = lmn / fm(j,k)
-         enddo
+   TEMPO = 0.23*SQRT(DXDY) !high resolution (<850m) adjustment to neutral mixing length
+
+   ! Compute the PBL stability functions
+   stat = psf_stabfunc(rig,z,fm,fh, &
+        blend_bottom=pbl_slblend_layer(1),blend_top=pbl_slblend_layer(2))
+   kt = fm/fh  !temporary storage for the inverse Prandtl number
+   if (stat /= PSF_OK) then
+      call physeterror('eturbl', 'error returned by PBL stability functions')
+      return
+   endif
+
+   ! Compute the Blackadar (1962) mixing length
+   do k=1,nke
+      do j=1,n
+         lmn = min(KARMAN*(z(j,k)+z0(j)),min(tempo(j),LMDA))
+         zn_blac(j,k) = lmn / fm(j,k)
       enddo
+   enddo
 
-!     RIF ( NOMBRE DE RICHARDSON DE FLUX)
+   !     RIF ( NOMBRE DE RICHARDSON DE FLUX)
 
-      RIF = RIG
-      call RIFLUX2(RIF,KT,N,NK)
+   RIF = RIG
+   call RIFLUX2(RIF,KT,N,NK)
 
-!     APPLY HYSTERESIS BASED ON TURBULENCE REGIME
-      stat = neark(se,ps,3000.,n,nk,slk) !determine "surface layer" vertical index
-      if (kount == 0) then
-         INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
-            do k=1,nk
-               do j=1,n
-                  if (k <= slk(j)) then
-                     if (RIF(j,k) > PBL_RICRIT(1)) then
-                        TURBREG(j,k) = LAMINAR
-                     else
-                        TURBREG(j,k) = TURBULENT
-                     endif
+   !     APPLY HYSTERESIS BASED ON TURBULENCE REGIME
+   stat = neark(se,ps,3000.,n,nk,slk) !determine "surface layer" vertical index
+   if (kount == 0) then
+      INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
+         do k=1,nk
+            do j=1,n
+               if (k <= slk(j)) then
+                  if (RIF(j,k) > PBL_RICRIT(1)) then
+                     TURBREG(j,k) = LAMINAR
                   else
                      TURBREG(j,k) = TURBULENT
                   endif
-               enddo
-            enddo
-         endif INIT_TURB
-      endif
-      do k=1,nk             !do not apply to the lowest levels
-         if (p_prof(k) < 60000.) cycle
-         do j=1,n
-            ABOVE_SFCLAYER: if (k <= slk(j)) then
-               if (RIF(j,k) < PBL_RICRIT(1)) then
+               else
                   TURBREG(j,k) = TURBULENT
-               elseif (RIF(j,k) > PBL_RICRIT(2)) then
-                  TURBREG(j,k) = LAMINAR
                endif
-               if (RIF(j,k) > PBL_RICRIT(1) .and. nint(TURBREG(j,k)) == LAMINAR) RIF(j,k) = max(RIF(j,k),1.)
-               if (RIF(j,k) < PBL_RICRIT(2) .and. nint(TURBREG(j,k)) == TURBULENT) RIF(j,k) = min(RIF(j,k),1.)
-            endif ABOVE_SFCLAYER
+            enddo
          enddo
+      endif INIT_TURB
+   endif
+   do k=1,nk             !do not apply to the lowest levels
+      if (p_prof(k) < 60000.) cycle
+      do j=1,n
+         ABOVE_SFCLAYER: if (k <= slk(j)) then
+            if (RIF(j,k) < PBL_RICRIT(1)) then
+               TURBREG(j,k) = TURBULENT
+            elseif (RIF(j,k) > PBL_RICRIT(2)) then
+               TURBREG(j,k) = LAMINAR
+            endif
+            if (RIF(j,k) > PBL_RICRIT(1) .and. nint(TURBREG(j,k)) == LAMINAR) RIF(j,k) = max(RIF(j,k),1.)
+            if (RIF(j,k) < PBL_RICRIT(2) .and. nint(TURBREG(j,k)) == TURBULENT) RIF(j,k) = min(RIF(j,k),1.)
+         endif ABOVE_SFCLAYER
       enddo
+   enddo
 
-      call series_xst(RIF, 'RF', trnch)
+   call series_xst(RIF, 'RF', trnch)
 
-!                                Calculate the mixing length
-!                                according to Bougeault and
-!                                Lacarrere (1989)
+   !                                Calculate the mixing length
+   !                                according to Bougeault and
+   !                                Lacarrere (1989)
 
-      IF_BOUJO: if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
-         call VSPOWN1 (X1,SE,-CAPPA,N*NK)
-         do K=1,NK
+   IF_BOUJO: if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
+      call VSPOWN1 (X1,SE,-CAPPA,N*NK)
+      do K=1,NK
          do J=1,N
             !# Virtual potential temperature (THV)
             X1(J,K)=TE(J,K)*(1.0+DELTA*QE(J,K)-QCE(J,K))*X1(J,K)
          end do
-         end do
-         if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= ML_OK) then
-            call physeterror('eturbl', 'error returned by B-L mixing length estimate')
-            return
-         endif
-         blend_hght(:,:nk-1) = gzmom(:,2:)
-         blend_hght(:,nk) = 0.
-         zn_boujo = max(zn_boujo,1.)
-         if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, se, ps) /= ML_OK) then
-            call physeterror('eturbl', 'error returned by mixing length blending')
-            return
-         endif
-         if (longmel == 'TURBOUJO') then
-            where (nint(turbreg) == LAMINAR) zn = zn_blac ! Use local (Blackadar) mixing length for laminar flows
-         endif
-      else
-         zn = zn_blac
-      endif IF_BOUJO
-
-!     No time filtering at kount=0 since this step is used for initialization only
-      if(KOUNT == 0)then
-         if (any('zn'==phyinread_list_s(1:phyinread_n))) zn(1:n,1:nke) = znold(1:n,1:nke)
-      else
-         IF_ZN_TIME_RELAX: if (PBL_ZNTAU > 0.) then
-            EXP_TAU = exp(-TAU/PBL_ZNTAU)
-            do K=1,NKE
-               do J=1,N
-                  ZN(J,K) = ZN(J,K) + (ZNOLD(J,K)-ZN(J,K))*EXP_TAU
-               end do
-            end do
-         endif IF_ZN_TIME_RELAX
+      end do
+      if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= ML_OK) then
+         call physeterror('eturbl', 'error returned by B-L mixing length estimate')
+         return
       endif
+      blend_hght(:,:nk-1) = gzmom(:,2:)
+      blend_hght(:,nk) = 0.
+      zn_boujo = max(zn_boujo,1.)
+      if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, se, ps) /= ML_OK) then
+         call physeterror('eturbl', 'error returned by mixing length blending')
+         return
+      endif
+      if (longmel == 'TURBOUJO') then
+         where (nint(turbreg) == LAMINAR) zn = zn_blac ! Use local (Blackadar) mixing length for laminar flows
+      endif
+   else
+      zn = zn_blac
+   endif IF_BOUJO
 
-      if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
+   !     No time filtering at kount=0 since this step is used for initialization only
+   if(KOUNT == 0)then
+      if (any('zn'==phyinread_list_s(1:phyinread_n))) zn(1:n,1:nke) = znold(1:n,1:nke)
+   else
+      IF_ZN_TIME_RELAX: if (PBL_ZNTAU > 0.) then
+         EXP_TAU = exp(-TAU/PBL_ZNTAU)
          do K=1,NKE
             do J=1,N
-               ZE(J,K) = ZN(J,K) * ( 1. - min( RIF(J,K) , 0.4) ) &
-                    / ( 1. - 2.*min( RIF(J,K) , 0.4) )
-               ZE(J,K) = max ( ZE(J,K) , 1.E-6 )
+               ZN(J,K) = ZN(J,K) + (ZNOLD(J,K)-ZN(J,K))*EXP_TAU
             end do
          end do
-      else
-         do K=1,NKE
-            do J=1,N
-               ZE(J,K)=max(ZN(J,K),1.E-6)
-            end do
-         end do
-      end if
+      endif IF_ZN_TIME_RELAX
+   endif
 
-      if (PBL_DISS == 'LIM50') ze(:,1:nke) = min(ze(:,1:nke),50.)
-
-      ZD(:,1:NKE) = ZE(:,1:NKE)
-
-      call series_xst(ZN, 'L1', trnch)
-      call series_xst(ZE, 'L2', trnch)
-
-      call series_xst(ZE, 'LE', trnch)
-
+   if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
       do K=1,NKE
-        do J=1,N
-          ZE(J,K)=1./ZE(J,K)
-       enddo
-    enddo
+         do J=1,N
+            ZE(J,K) = ZN(J,K) * ( 1. - min( RIF(J,K) , 0.4) ) &
+                 / ( 1. - 2.*min( RIF(J,K) , 0.4) )
+            ZE(J,K) = max ( ZE(J,K) , 1.E-6 )
+         end do
+      end do
+   else
+      do K=1,NKE
+         do J=1,N
+            ZE(J,K)=max(ZN(J,K),1.E-6)
+         end do
+      end do
+   end if
+
+   if (PBL_DISS == 'LIM50') ze(:,1:nke) = min(ze(:,1:nke),50.)
+
+   ZD(:,1:NKE) = ZE(:,1:NKE)
+
+   call series_xst(ZN, 'L1', trnch)
+   call series_xst(ZE, 'L2', trnch)
+
+   call series_xst(ZE, 'LE', trnch)
+
+   do K=1,NKE
+      do J=1,N
+         ZE(J,K)=1./ZE(J,K)
+      enddo
+   enddo
 
 
-!     CALCUL DES TERMES ALGEBRIQUES DE L'EQUATION
-!             DE L'ENERGIE TURBULENTE
+   !     CALCUL DES TERMES ALGEBRIQUES DE L'EQUATION
+   !             DE L'ENERGIE TURBULENTE
 
-! B       - PRODUCTION MECANIQUE ET THERMIQUE DE L'ENERGIE TURBULENTE
-!           PEUT ETRE NEGATIVE OU POSITIVE
-! C       - DISSIPATION VISQUEUSE DE L'ENERGIE TURBULENTE > 0.0
+   ! B       - PRODUCTION MECANIQUE ET THERMIQUE DE L'ENERGIE TURBULENTE
+   !           PEUT ETRE NEGATIVE OU POSITIVE
+   ! C       - DISSIPATION VISQUEUSE DE L'ENERGIE TURBULENTE > 0.0
 
-      do 2 K=1,NKE
-         do 2 J=1,N
-            C(J,K)=BLCONST_CE*ZE(J,K)
+   do K=1,NKE
+      do J=1,N
+         C(J,K)=BLCONST_CE*ZE(J,K)
 
-      ZE(J,K)=(SHR2(J,K)-PETIT)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
-      X(J,K)=-SHR2(J,K)*RIF(J,K)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
-    2       B(J,K)=(C(J,K)+PETIT)*(ZE(J,K)+X(J,K))
+         ZE(J,K)=(SHR2(J,K)-PETIT)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
+         X(J,K)=-SHR2(J,K)*RIF(J,K)*ZN(J,K)*BLCONST_CK/(C(J,K)+PETIT)
+         B(J,K)=(C(J,K)+PETIT)*(ZE(J,K)+X(J,K))
+      enddo
+   enddo
 
-      if(KOUNT.eq.0)then
+   if(KOUNT.eq.0)then
 
-!     SOLUTION STATIONNAIRE
+      !     SOLUTION STATIONNAIRE
 
-!     ON INITIALISE EN
-!     STATION EST ENLEVE  (+PRECALCUL DE EN)
+      !     ON INITIALISE EN
+      !     STATION EST ENLEVE  (+PRECALCUL DE EN)
 
-         do 33 K=1,NK
-            do 33 J=1,N
-   33          X(J,K)=0.0
+      do K=1,NK
+         do J=1,N
+            X(J,K)=0.0
+         enddo
+      enddo
 
-         call series_xst(X, 'EM', trnch)
-         call series_xst(X, 'EB', trnch)
-         call series_xst(X, 'ED', trnch)
-         call series_xst(X, 'ET', trnch)
-         call series_xst(X, 'ER', trnch)
+      call series_xst(X, 'EM', trnch)
+      call series_xst(X, 'EB', trnch)
+      call series_xst(X, 'ED', trnch)
+      call series_xst(X, 'ET', trnch)
+      call series_xst(X, 'ER', trnch)
 
-      else
+   else
 
-!     SOLUTION DE LA PARTIE ALGEBRIQUE DE L'EQUATION
-!               DE L'ENERGIE TURBULENTE
+      !     SOLUTION DE LA PARTIE ALGEBRIQUE DE L'EQUATION
+      !               DE L'ENERGIE TURBULENTE
 
-         do 4 K=1,NKE
-            do J=1,N
+      DO4: do K=1,NKE
+         do J=1,N
 
-               if(abs(B(J,K)) < EPSILON_B) then
-                 C(J,K)= C(J,K)*TAU
-                 B(J,K)=0.
-               else
-                 C(J,K)= sqrt(abs(C(J,K)/B(J,K)))
-                 B(J,K)=min(B(J,K)*C(J,K)*TAU,EXPLIM)
-               endif
+            if(abs(B(J,K)) < EPSILON_B) then
+               C(J,K)= C(J,K)*TAU
+               B(J,K)=0.
+            else
+               C(J,K)= sqrt(abs(C(J,K)/B(J,K)))
+               B(J,K)=min(B(J,K)*C(J,K)*TAU,EXPLIM)
+            endif
 
-             if(B(J,K) > epsilon(B)) then
+            if(B(J,K) > epsilon(B)) then
                yuk1 = -1.0+2.0/(1.0+exp(-AMIN1(abs(B(J,K)),174.))*(-1.0+2.0/ &
-                       (1.0+sqrt(EN(J,K))*C(J,K))))
+                    (1.0+sqrt(EN(J,K))*C(J,K))))
                B(J,K) = yuk1
-             else if(B(J,K) < -epsilon(B)) then
+            else if(B(J,K) < -epsilon(B)) then
                yuk1 = tan(min(TANLIM,max( atan( sqrt(EN(J,K))*C(J,K) ) &
-                             +0.5*B(J,K) , 0.0 ) ) )
+                    +0.5*B(J,K) , 0.0 ) ) )
                B(J,K) = yuk1
-             else
+            else
                yuk1 = sqrt(EN(J,K))*C(J,K)/(1.+0.5*sqrt(EN(J,K))*C(J,K))
                B(J,K) = yuk1
-             endif
+            endif
 
-               if(abs(C(J,K)) < epsilon(C)) then
-                B(J,K)=EN(J,K)
-               else
-                B(J,K)=(B(J,K)/C(J,K))**2
-               endif
-               if(B(J,K)-PETIT .lt. 0.) B(J,K)=ETRMIN
-               C(J,K)=ZE(J,K)+X(J,K)
+            if(abs(C(J,K)) < epsilon(C)) then
+               B(J,K)=EN(J,K)
+            else
+               B(J,K)=(B(J,K)/C(J,K))**2
+            endif
+            if(B(J,K)-PETIT .lt. 0.) B(J,K)=ETRMIN
+            C(J,K)=ZE(J,K)+X(J,K)
 
-!              TERMES DE PRODUCTION MECANIQUE ET THERMIQUE NULS SI EN=C
-               if ((EN(J,K)-C(J,K)).ne.0.0) then
-                  yuk2=abs((B(J,K)-C(J,K)) / (EN(J,K)-C(J,K)))
-                  tempo(j)=max(yuk2,exp_explim)
-               else
-                  TEMPO(j) = 1.0
-               endif
-            enddo
-            call vslog(tempo,tempo,n)
-            do j=1,n
+            !              TERMES DE PRODUCTION MECANIQUE ET THERMIQUE NULS SI EN=C
+            if ((EN(J,K)-C(J,K)).ne.0.0) then
+               yuk2=abs((B(J,K)-C(J,K)) / (EN(J,K)-C(J,K)))
+               tempo(j)=max(yuk2,exp_explim)
+            else
+               TEMPO(j) = 1.0
+            endif
+         enddo
+         call vslog(tempo,tempo,n)
+         do j=1,n
 
-!     TERME DE PRODUCTION MECANIQUE
+            !     TERME DE PRODUCTION MECANIQUE
 
-               ZE(J,K)=-ZE(J,K)*tempo(j) *tauinv
+            ZE(J,K)=-ZE(J,K)*tempo(j) *tauinv
 
-!     TERME DE PRODUCTION THERMIQUE
+            !     TERME DE PRODUCTION THERMIQUE
 
-               X(J,K)=-X(J,K)  *tempo(j) *tauinv
+            X(J,K)=-X(J,K)  *tempo(j) *tauinv
 
-!     TERME DE DISSIPATION VISQUEUSE
-               C(J,K)=-X(J,K)-ZE(J,K)+(B(J,K)-EN(J,K))*TAUINV
-            enddo
- 4       continue
-            do 41 J=1,N
-               ZE(J,NK)=0.0
-               X (J,NK)=0.0
-               C (J,NK)=0.0
-               EN(J,NK)=0.0
-   41        continue
+            !     TERME DE DISSIPATION VISQUEUSE
+            C(J,K)=-X(J,K)-ZE(J,K)+(B(J,K)-EN(J,K))*TAUINV
+         enddo
+      enddo DO4
 
-         call series_xst(ZE, 'EM', trnch)
-         call series_xst(X,  'EB', trnch)
-         call series_xst(C,  'ED', trnch)
+      do J=1,N
+         ZE(J,NK)=0.0
+         X (J,NK)=0.0
+         C (J,NK)=0.0
+         EN(J,NK)=0.0
+      enddo
 
-!     SOLUTION DE LA PARTIE DIFFUSIVE (E-F) DE L'EQUATION
-!                   DE L'ENERGIE TURBULENTE
+      call series_xst(ZE, 'EM', trnch)
+      call series_xst(X,  'EB', trnch)
+      call series_xst(C,  'ED', trnch)
 
-         do 5 K=1,NK
-            do 5 J=1,N
-               SC=pbl_tkediff*CLEFAE*BLCONST_CK
-!     (E*-EN)/TAU
-               X(J,K)=X(J,K)+C(J,K)+ZE(J,K)
-               ZE(J,K)=B(J,K)
-    5          C(J,K)=SC*ZN(J,K)*sqrt(ENOLD(J,K))*DSGDZ(j,k)**2
+      !     SOLUTION DE LA PARTIE DIFFUSIVE (E-F) DE L'EQUATION
+      !                   DE L'ENERGIE TURBULENTE
 
-!     METTRE X1 A ZERO
+      do K=1,NK
+         do J=1,N
+            SC=pbl_tkediff*CLEFAE*BLCONST_CK
+            !     (E*-EN)/TAU
+            X(J,K)=X(J,K)+C(J,K)+ZE(J,K)
+            ZE(J,K)=B(J,K)
+            C(J,K)=SC*ZN(J,K)*sqrt(ENOLD(J,K))*DSGDZ(j,k)**2
+         enddo
+      enddo
+
+      !     METTRE X1 A ZERO
       do K=1,NK
          do J=1,N
             X1(J,K)=0
          enddo
       enddo
-!     C CONTIENT K(E) ET X1 CONTIENT ZERO
+      !     C CONTIENT K(E) ET X1 CONTIENT ZERO
 
       if (pbl_zerobc) then
          ZE(:,NK) = 0.
@@ -532,10 +539,10 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
       call DIFUVDFj1 (EN,ZE,C,X1,X1,X1,XB,beta_sfc,S,SE,dtfac*TAU,4,1.,N,N,N,NKE)
       if (phy_error_L) return
 
-!     NOUVEAU EN
+      !     NOUVEAU EN
       en = max(ETRMIN,ze+tau*en)
 
-      endif
+   endif
 
-      return
-      end
+   return
+end subroutine ETURBL13

@@ -66,31 +66,39 @@
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
+!$omp parallel
+!$omp do
          do k=1,l_nk
             pw_wz_plus(:,:,k) = wt1(:,:,k)
-            pw_gz_plus(1:l_ni,1:l_nj,k)= grav_8*zmom(1:l_ni,1:l_nj,k)
-
+            pw_gz_plus(1:l_ni,1:l_nj,k)= grav_8*zmom_8(1:l_ni,1:l_nj,k)
+            
             if(k == 1) then
                pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
             end if
-            pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar(1:l_ni,1:l_nj,k))
+            pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(1:l_ni,1:l_nj,k))
             pw_pm_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pm(1:l_ni,1:l_nj,k))
 
             if (k == l_nk) then
-               pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar(1:l_ni,1:l_nj,k+1))
+               pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar_8(1:l_ni,1:l_nj,k+1))
                pw_p0_plus(1:l_ni,1:l_nj)=exp(pw_log_pm(1:l_ni,1:l_nj,l_nk+1))
             end if
          end do
-
+!$omp enddo
+!$omp do
          do k=1,l_nk
             pw_log_pt(1:l_ni,1:l_nj,k)=0.5*(pw_log_pm(1:l_ni,1:l_nj,k+1)+pw_log_pm(1:l_ni,1:l_nj,k))
+            if (k == l_nk) then
+               pw_log_pt(1:l_ni,1:l_nj,k+1)=pw_log_pm(1:l_ni,1:l_nj,k+1)
+            end if
          end do
-
-         pw_log_pt(1:l_ni,1:l_nj,l_nk+1)=pw_log_pm(1:l_ni,1:l_nj,l_nk+1)
-
+!$omp enddo
+         
+!$omp do
          do k=1,l_nk
             pw_pt_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pt(1:l_ni,1:l_nj,k))
          end do
+!$omp enddo
+!$omp end parallel
 
       else
          call diag_fi (fi, st1, tt1, qt1, &

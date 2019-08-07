@@ -160,11 +160,11 @@
                F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
                               t_interp * ( F_q(i+1,j,k) - F_q(i,j,k) ) * geomh_invDX_8(j)          &
                             - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp )  &
-                            + Cstv_Beta_m_8 * t_interp * mc_Jx(i,j,k) * ( &
-                              Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz(i+1,j,k )   &
-                                                 + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz(i  ,j,k ) ) &
-                            + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz(i+1,j,km)   &
-                                                 + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz(i  ,j,km) ) )
+                            + Cstv_Beta_m_8 * t_interp * mc_Jx_8(i,j,k) * ( &
+                              Ver_wp_8%m(k)*half*( (F_q(i+1,j,k+1)-F_q(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
+                                                 + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
+                            + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
+                                                 + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )
                F_oru(i,j,k) = F_oru(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
             end do
          end do
@@ -184,11 +184,11 @@
                F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
                               t_interp * ( F_q(i,j+1,k) - F_q(i,j,k) ) * geomh_invDY_8             &
                             + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp )   &
-                            + Cstv_Beta_m_8 * t_interp * mc_Jy(i,j,k) * ( &
-                              Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz(i,j+1,k )   &
-                                                 + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz(i,j  ,k ) ) &
-                            + Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz(i,j+1,km)   &
-                                                 + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz(i,j  ,km) ) )
+                            + Cstv_Beta_m_8 * t_interp * mc_Jy_8(i,j,k) * ( &
+                              Ver_wp_8%m(k)*half*( (F_q(i,j+1,k+1)-F_q(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
+                                                 + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
+                            + Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
+                                                 + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )
                F_orv(i,j,k) = F_orv(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
             end do
          end do
@@ -208,14 +208,14 @@
             do i= i0, in
 
                F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) - Cstv_Beta_nh_8 *xtmp_8(i,j)* &
-                              ( (F_q(i,j,k+1)-F_q(i,j,k))*mc_iJz(i,j,k)                 &
+                              ( (F_q(i,j,k+1)-F_q(i,j,k))*mc_iJz_8(i,j,k)                 &
                               -grav_8*( one-one/xtmp_8(i,j) ) )
 
                F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - w1*(F_q(i,j,k+1)+F_q(i,j,k)) ) &
                              - Cstv_Beta_8 * mu_8 * F_w(i,j,k)
                F_ort(i,j,k) = F_ort(i,j,k) + iphytv*((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
 
-               F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
+               F_orf(i,j,k) = Cstv_invT_nh_8 * (ztht_8(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
                             - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km) - F_w(i,j,k) )
             end do
          end do
@@ -230,11 +230,11 @@
                    + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
 !                  + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
                    + (F_zd(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*F_zd(i,j,km))*Ver_idz_8%m(k) &
-                   + half * ( mc_Ix(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
-                   + mc_Iy(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
-                   + mc_Iz(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km))
+                   + half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
+                   + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
+                   + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km))
 
-               F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz(i,j,k)  &
+               F_orc (i,j,k) = Cstv_invT_8 *  w1 * F_q(i,j,k) +   Cstv_invT_8 * mc_logJz_8(i,j,k)  &
                              - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*F_w(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*F_w(i,j,km)) )
 
                F_orc(i,j,k) = F_orc(i,j,k) + (1d0/Cstv_bA_8) * &

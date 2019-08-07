@@ -166,6 +166,22 @@
          nb = l_nj-pil_n-3 ; nbu = nb
          nbv= l_njv-pil_n-3
       end if
+
+      wb  =max(wb  +l_i0-1,    1+Glb_pil_w  )
+      eb  =min(eb  +l_i0-1, G_ni-Glb_pil_e-3)
+      sb  =max(sb  +l_j0-1,    1+Glb_pil_s  )
+      nb  =min(nb  +l_j0-1, G_nj-Glb_pil_n-3)
+      wbu =max(wbu +l_i0-1,    1+Glb_pil_w  )
+      ebu =min(ebu +l_i0-1, G_ni-Glb_pil_e-4)
+      sbu =max(sbu +l_j0-1,    1+Glb_pil_s  )
+      nbu =min(nbu +l_j0-1, G_nj-Glb_pil_n-3)
+      wbv =max(wbv +l_i0-1,    1+Glb_pil_w  )
+      ebv =min(ebv +l_i0-1, G_ni-Glb_pil_e-3)
+      sbv =max(sbv +l_j0-1,    1+Glb_pil_s  )
+      nbv =min(nbv +l_j0-1, G_nj-Glb_pil_n-4)
+
+      call set_intrp_bicub_off_yx (1-l_i0,1-l_j0)
+
       call set_intrp_bicub_quv (wb ,eb ,sb ,nb ,&
                                 wbu,ebu,sbu,nbu,&
                                 wbv,ebv,sbv,nbv)

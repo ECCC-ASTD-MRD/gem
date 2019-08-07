@@ -18,6 +18,7 @@
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
+      use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld
       use init_options
       use lun
@@ -43,7 +44,8 @@
 
       integer,external :: itf_phy_prefold_opr
 
-      integer err_geom, err_input, err_step, err_smooth, err
+      integer :: err_geom, err_input, err_step, err_smooth, err
+      logical :: cloudobj
 !
 !     ---------------------------------------------------------------
 !
@@ -82,6 +84,13 @@
            ipf_smooth_fld('TR/HU:P','HUPS') &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+
+      ! Advect cloud objects
+      if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.
+      if (cloudobj .and. F_lctl_step > 0) then
+         if (cldobj_displace() /= CLDOBJ_OK) &
+              call gem_error (-1,'itf_phy_step','Problem with cloud object displacement')
+      endif
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
       !call itf_phy_glbstat('befphy')
