@@ -672,7 +672,7 @@ contains
                + sf_heat(zt(j)+z0rt(j),ilmm,hc,y1) &
                - sf_heat(      z0t (j),ilmm,hc,y0))
           ribc  = zp(j)*ilmm * fh(j) / (fm(j)*fm(j))
-          vlmin = sqrt( max(0.D0, 1./ribc * grav*zp(j) * dthv/(tvs+0.5*dthv)) )
+          vlmin = sqrt( max(0d0, 1d0/ribc * grav*zp(j) * dthv/(tvs+0.5*dthv)) )
        endif
        va(j) = max(va(j), vlmin)
        rib(j) = grav/(tvs+0.5*dthv)*zp(j)*dthv/(va(j)*va(j))
