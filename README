@@ -8,14 +8,14 @@ git clone http://gitlab.com/gem-ec/goas
 cd goas
 ./download-dbase.sh
 
-cd sources
+cd work
 mkdir -p build
 cd build
-cmake ..
+cmake ../../sources
 make -j
 make install
 
-cd ../../work/work-OS_NAME-COMPILER_NAME
+cd ../work/work-OS_NAME-COMPILER_NAME
 ./runprep
 ./runmod
 
@@ -90,7 +90,7 @@ Install GEM:
 - cd goas/sources
 - gcc and gfortran compilers are set by default
 - if you want to compile with other compilers, modify the file
-  goas/sources/CmakeLists.txt by uncommenting one of the lines 
+  goas/sources/CmakeLists.txt by uncommenting one of the lines
   to use the compiler desired:
   (for example: set(COMPILER intel CACHE INTERNAL compiler)
 - mkdir -p build
@@ -140,7 +140,7 @@ Install GEM:
   the next "make install" step. So, if you want your changes to the scripts
   to be permanent, make them in the sources/orig-scripts/scripts directory,
   and then rerun the command make install in the sources/build directory.
- 
+
 * Tools to inspect the outputs
 - Use voir to see what records are produced in the FST output files:
 ./voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
