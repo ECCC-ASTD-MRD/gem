@@ -101,6 +101,8 @@
 
       end if
 
+      if (nf==0) return
+
       !Estimate FLUX_out/FLUX_in using TRICUB semi-Lagrangian advection
       !----------------------------------------------------------------
       nptr_F = nf
