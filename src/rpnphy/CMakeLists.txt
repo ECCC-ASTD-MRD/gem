@@ -10,7 +10,7 @@ file(GLOB FTNSRC */*.F90)
 
 add_compile_options( "${EXTRA_FLAGS}" )
 include_directories(series)
-include_directories(${ROOT}/src/modelutils/include)
-include_directories(AFTER include base utils ${ROOT}/src/modelutils/include)
+include_directories(${ROOT}/../src/modelutils/include)
+include_directories(AFTER include base utils ${ROOT}/../src/modelutils/include)
 
 add_library (phy STATIC ${FTNSRC})

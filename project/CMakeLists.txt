@@ -78,20 +78,20 @@ find_library(BLAS_LIBRARIES
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
-message(STATUS "arch-dependent include directory: src/archdep/include/${ARCH}-${COMPILER}")
+message(STATUS "arch-dependent include directory: ${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}")
 
-include_directories(src/archdep/include/${ARCH}-${COMPILER}
+include_directories(${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
                     ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules
                     ${MPI_Fortran_INCLUDE_PATH}
-                    ${ROOT}/src/rpncomm
-                    ${ROOT}/src/rmn/PUBLIC_INCLUDES
-                    ${ROOT}/src/RPN/compiler_includes
+                    ${ROOT}/../src/rpncomm
+                    ${ROOT}/../src/rmn/PUBLIC_INCLUDES
+                    ${ROOT}/../src/RPN/compiler_includes
                     )
 
 #uncomment to link to the local libraries already installed
-#link_directories(${ROOT}/src/archdep/libs/${ARCH}-${COMPILER})
+#link_directories(${ROOT}/../src/archdep/libs/${ARCH}-${COMPILER})
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_subdirectory(src ${BUILD}/src)
+add_subdirectory(${ROOT}/../src ${BUILD}/src)

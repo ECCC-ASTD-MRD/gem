@@ -11,13 +11,13 @@ cd goas
 cd work
 mkdir -p build
 cd build
-cmake ../../sources
+cmake ../../project
 make -j
 make install
 
 cd ../work/work-OS_NAME-COMPILER_NAME
-./runprep
-./runmod
+./runprep -dircfg configurations/GY_cfgs
+./runmod -dircfg configurations/GY_cfgs
 
 ./voir -iment RUNMOD.dir/output/cfg0000/ ...
 ./fststat -fst RUNMOD.dir/output/cfg0000/ ...
