@@ -55,7 +55,7 @@
 
          do j=F_j0,F_jn
             do i=F_i0,F_in
-               c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_mask_8(i,j)
+               c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_area_8(i,j) *geomh_mask_8(i,j)
             end do
          end do
 

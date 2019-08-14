@@ -66,7 +66,7 @@
          if (dejala==0) then
             Tr3d_ntr = Tr3d_ntr + 1
             dejala   = Tr3d_ntr
-            Tr3d_name_S(dejala)= basename_S
+            Tr3d_name_S(dejala)= basename_S(1:4)
          end if
          Tr3d_hzd (dejala)= pmeta(i)%hzd   ; Tr3d_wload(dejala)= pmeta(i)%wload
          Tr3d_mono(dejala)= pmeta(i)%monot ; Tr3d_mass (dejala)= pmeta(i)%massc
@@ -117,6 +117,8 @@
 
       Tr3d_ntrTRICUB_NT= 0 ; Tr3d_ntrTRICUB_WP= 0
       Tr3d_ntrBICHQV_NT= 0 ; Tr3d_ntrBICHQV_WP= 0
+
+      if (Tr3d_ntr > MAXTR3D) call gem_error (-1, 'TRACERS', 'Tr3d_ntr > MAXTR3D: WE STOP')
 
       do i=1, Tr3d_ntr
          if (Tr3d_intp(i) == 'TRICUB') then

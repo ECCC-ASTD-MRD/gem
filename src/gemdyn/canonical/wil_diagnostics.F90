@@ -21,6 +21,7 @@
       use canonical
       use cstv
       use dynkernel_options
+      use dyn_fisl_options
       use geomh
       use glb_ld
       use gmm_itf_mod
@@ -52,14 +53,12 @@
       real, parameter :: CLY_REF = 4.*10.**(-6)
 
       real(kind=REAL64) :: norm_1_8,norm_2_8,norm_inf_8,norm_m_8, &
-              s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8, &
-              g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8,g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8, &
-              w1_8,w2_8,tracer_8
+              s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8,&
+              g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8,g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8,&
+              w1_8,w2_8
 
       character(len= 12) :: name_S
       character(len= 9)  :: communicate_S
-
-      real, dimension(1,1,1) :: bidon
 
       logical :: almost_zero
 
@@ -74,7 +73,7 @@
 
             case ('DYNAMICS_FISL_H')
                istat = gmm_get(gmmk_qt1_s,qt1)
-               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1)
+               phi(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0/Cstv_invFI_8
 
             case('DYNAMICS_FISL_P')
                istat = gmm_get(gmmk_qt1_s,qt1)
@@ -97,8 +96,8 @@
 
          end if
 
-         s_err_2_8=0.0
-         s_ref_2_8=0.0
+         s_err_2_8=0.0 ; s_ref_2_8=0.0
+
          do j = 1+pil_s,l_nj-pil_n
             do i = 1+pil_w,l_ni-pil_e
                s_err_2_8 = s_err_2_8 + (phi(i,j,1) - phi_0(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
@@ -119,7 +118,6 @@
          if ( .not.almost_zero(g_ref_2_8) ) norm_2_8 = sqrt(g_err_2_8/g_ref_2_8)
 
          if (Lun_out>0.and.Ptopo_couleur==0) then
-            print*,'g_err_2_8,g_ref_2_8', g_err_2_8, g_ref_2_8
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
             write (Lun_out,1001) "WILLCASE2 ",'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
@@ -159,25 +157,20 @@
          if (Williamson_Nair==0) call wil_case1(tr_r,l_minx,l_maxx,l_miny,l_maxy,G_nk,0,Lctl_step)
          if (Williamson_Nair==3) call wil_case1(tr_r,l_minx,l_maxx,l_miny,l_maxy,G_nk,5,Lctl_step)
 
-         call mass_tr (tracer_8,tr_r,bidon,l_minx,l_maxx,l_miny,l_maxy,l_nk,1+pil_w,l_ni-pil_e,1+pil_s,l_nj-pil_n,1)
-
-         if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',"Mass of Mixing  (WET)","TIME T1",'  R= ', &
-                                                                  tracer_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
-
          s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
          s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.
 
          do j = 1+pil_s,l_nj-pil_n
             do i = 1+pil_w,l_ni-pil_e
 
-               s_err_1_8 = s_err_1_8 + abs(tr(i,j,1) - tr_r(i,j,1))    * geomh_mask_8(i,j)
-               s_ref_1_8 = s_ref_1_8 + abs(            tr_r(i,j,1))    * geomh_mask_8(i,j)
+               s_err_1_8 = s_err_1_8 + abs(tr(i,j,1) - tr_r(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_1_8 = s_ref_1_8 + abs(            tr_r(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-               s_err_2_8 = s_err_2_8 +    (tr(i,j,1) - tr_r(i,j,1))**2 * geomh_mask_8(i,j)
-               s_ref_2_8 = s_ref_2_8 +    (            tr_r(i,j,1))**2 * geomh_mask_8(i,j)
+               s_err_2_8 = s_err_2_8 +    (tr(i,j,1) - tr_r(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 +    (            tr_r(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-               s_err_m_8 = s_err_m_8 +    (tr(i,j,1) - tr_r(i,j,1))    * geomh_mask_8(i,j)
-               s_ref_m_8 = s_ref_m_8 +    (            tr_r(i,j,1))    * geomh_mask_8(i,j)
+               s_err_m_8 = s_err_m_8 +    (tr(i,j,1) - tr_r(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_m_8 = s_ref_m_8 +    (            tr_r(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
                w1_8 = abs( tr(i,j,1) - tr_r(i,j,1) )
                w2_8 = abs(             tr_r(i,j,1) )
@@ -213,6 +206,10 @@
          !Print Norms
          !-----------
          if (Lun_out>0 .and. Ptopo_couleur==0) then
+
+            write(Lun_out,1002) 'TRACERS: ',"Mass of Mixing  (WET)","TIME T1",'  R= ', &
+                                g_ref_m_8/adz_gc_area_8,Tr3d_name_S(n)(1:4),"REFERENCE"
+
             if (Tr3d_name_S(n)(1:2)=='Q1') name_S = 'TRACER Q1 '
             if (Tr3d_name_S(n)(1:2)=='Q2') name_S = 'TRACER Q2 '
             if (Tr3d_name_S(n)(1:2)=='Q3') name_S = 'TRACER Q3 '
@@ -224,6 +221,7 @@
             write (Lun_out,1001) name_S,'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L_inf = ',norm_inf_8
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
             write (Lun_out,*) ' '
+
          end if
 
       end do
@@ -251,14 +249,14 @@
          do j = 1+pil_s,l_nj-pil_n
             do i = 1+pil_w,l_ni-pil_e
 
-               s_err_1_8 = s_err_1_8 + abs(cly(i,j,1) - clyref(i,j,1))    * geomh_mask_8(i,j)
-               s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,1))    * geomh_mask_8(i,j)
+               s_err_1_8 = s_err_1_8 + abs(cly(i,j,1) - clyref(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_1_8 = s_ref_1_8 + abs(             clyref(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-               s_err_2_8 = s_err_2_8 +    (cly(i,j,1) - clyref(i,j,1))**2 * geomh_mask_8(i,j)
-               s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,1))**2 * geomh_mask_8(i,j)
+               s_err_2_8 = s_err_2_8 +    (cly(i,j,1) - clyref(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_2_8 = s_ref_2_8 +    (             clyref(i,j,1))**2 * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-               s_err_m_8 = s_err_m_8 +    (cly(i,j,1) - clyref(i,j,1))    * geomh_mask_8(i,j)
-               s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,1))    * geomh_mask_8(i,j)
+               s_err_m_8 = s_err_m_8 +    (cly(i,j,1) - clyref(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               s_ref_m_8 = s_ref_m_8 +    (             clyref(i,j,1))    * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
                w1_8 = abs(cly(i,j,1) - clyref(i,j,1))
                w2_8 = abs(             clyref(i,j,1))
@@ -303,7 +301,6 @@
          end if
 
       end if
-
 !
 !---------------------------------------------------------------------
 !
@@ -313,6 +310,6 @@
       /,'EVALUATE WILLIAMSON ERROR NORMS: (S/R WIL_DIAGNOSTICS)',   &
       /,'======================================================',/,/)
  1001 format(A12,1X,A14,F10.4,A20,E14.7)
- 1002 format(1X,A9,A21,1X,A7,A5,E19.12,1X,A4,1X,A16)
+ 1002 format(A9,A21,1X,A7,A5,E19.12,1X,A4,1X,A16)
 
       end subroutine wil_diagnostics
