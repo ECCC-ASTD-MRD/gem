@@ -35,7 +35,7 @@
       real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_Rhs
       real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_Sol
 !author
-!       Abdessamad Qaddouri -  2017
+!       Abdessamad Qaddouri -  2019
 !
       integer j, i, k, halox, haloy
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0

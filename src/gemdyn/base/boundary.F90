@@ -39,7 +39,7 @@
       real(kind=REAL64), dimension(ni,nj,Nk),             intent(out) :: F_rhs
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_rt, F_nt, F_rf
 !author
-!       Abdessamad Qaddouri -  2017
+!       Abdessamad Qaddouri -  2019
 !
       integer :: i,j
       real(kind=REAL64)  :: add_v8,bdd_v8,cdd_v8
