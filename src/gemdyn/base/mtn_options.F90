@@ -67,6 +67,9 @@ module mtn_options
    real :: mtn_wind_seed = 0.
    namelist /mtn_cfgs/ mtn_wind_seed
    !#
+   real, dimension(4):: mtn_rcoef = [ 1., 1., -1., -1. ]
+   namelist /mtn_cfgs/ mtn_rcoef
+   !#
    integer, dimension(2) :: mtn_pos_seed = [ 1, 1 ]
    namelist /mtn_cfgs/ mtn_pos_seed
 
@@ -145,6 +148,7 @@ contains
 
       G_nk = mtn_nk
       htop_8 = (mtn_nk+1)*mtn_dz
+      Hyb_rcoef = mtn_rcoef
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          if (hyb_H(1) < 0 ) then
