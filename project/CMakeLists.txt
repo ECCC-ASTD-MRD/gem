@@ -58,23 +58,6 @@ else()
     add_definitions(-DWITHOUT_OpenMP)
 endif()
 
-find_package(MPI REQUIRED)
-
-find_package(FFTW REQUIRED)
-
-find_library(LAPACK_LIBRARIES
-   NAMES lapack
-   PATHS /usr/lib64
-         /usr/lib
-         ENV LD_LIBRARY_PATH
-)
-find_library(BLAS_LIBRARIES
-   NAMES blas
-   PATHS /usr/lib64
-         /usr/lib
-         ENV LD_LIBRARY_PATH
-)
-
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
@@ -82,11 +65,10 @@ message(STATUS "arch-dependent include directory: ${ROOT}/../src/archdep/include
 
 include_directories(${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
                     ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules
-                    ${MPI_Fortran_INCLUDE_PATH}
                     ${ROOT}/../src/rpncomm
                     ${ROOT}/../src/rmn/PUBLIC_INCLUDES
                     ${ROOT}/../src/RPN/compiler_includes
-                    )
+                   )
 
 #uncomment to link to the local libraries already installed
 #link_directories(${ROOT}/../src/archdep/libs/${ARCH}-${COMPILER})
