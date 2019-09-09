@@ -1,0 +1,6 @@
+ grid=1,core;
+ levels=1,eta, -1;
+
+ steps=1,step,<0,960,40>;
+
+ sortie([GZ,P0,UU,VV,WT1,TT1,HU,QC,RW,ART,IRT],grid,1,levels,1,steps,1)

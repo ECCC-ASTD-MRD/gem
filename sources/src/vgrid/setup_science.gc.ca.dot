@@ -1,0 +1,59 @@
+# To use efence set USE_EFENCE to 1, you need the libefence.a in your $LD_LIBRARY_PATH. Typical place is ~/userlibs/Linux_x86-64/intel-2016.1.156/libefence.a
+export USE_EFENCE=0
+export EF_ALLOW_MALLOC_0=1 # Pour eviter les erreur de efence avec 0 byte allocation
+
+# Pour d.valgrind
+#. ssmuse-sh -d eccc/cmd/cmda/utils/16.2-4/
+
+case "${ORDENV_PLAT}" in
+
+   ubuntu-14.04-amd64-64)
+      export BH_MODE=intel
+      HPCS_BASE=/fs/ssm/hpco/tmp/eccc/201402/03/base
+      HPCS_COMP=/fs/ssm/hpco/exp/intel-2016.1.156
+      HPCS_CODE_TOOL=/fs/ssm/hpco/exp/jdm536/code-tools/code-tools_2.0_all
+      RPN_LIB=/fs/ssm/eccc/mrd/rpn/libs/16.2
+      BH_PACKAGE=/fs/ssm/hpco/exp/bh/bh_0.17_all
+      export MY_FFLAGS="-openmp -fp-model source -warn all ${MY_FFLAGS}"
+      export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+      . ssmuse-sh -d ${HPCS_BASE} -d ${HPCS_COMP} -p ${HPCS_CODE_TOOL}
+      . ssmuse-sh -d ${RPN_LIB}
+      . ssmuse-sh -p ${BH_PACKAGE}
+      # For shared librairy creation
+      export RPN_LIB
+      #export SHARED_COMP_rpath=/fs/ssm/hpco/exp/intel-2016.1.156/intelcomp_2016.1.156-01_multi/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64
+      export SHARED_COMP_rpath=${INTELCOMP_HOME}/lib/intel64
+      :;;
+
+   sles-11-haswell-64-xc40)
+      BH_HOST=hare
+      BH_MODE=intel
+      BH_PACKAGE=/fs/ssm/hpco/exp/bh/bh_0.17_all
+      RPN_LIB=/fs/ssm/eccc/mrd/rpn/libs/16.2
+      export MY_FFLAGS="-openmp -fp-model source -warn all ${MY_FFLAGS}"
+      export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+      . ssmuse-sh -d ${RPN_LIB}
+      . ssmuse-sh -p ${BH_PACKAGE}
+      export SHARED_COMP_rpath=/fs/ssm/hpco/exp/intel-2016.1.156/intelcomp_2016.1.156-01_multi/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64
+      :;;
+   sles-11-broadwell-64-xc40)
+      # Pour obtenir l'architecture broadwell faire :
+      # . r.env.dot --arch sles-11-broadwell-64-xc40
+      BH_HOST=hare
+      BH_MODE=intel
+      BH_PACKAGE=/fs/ssm/hpco/exp/bh/bh_0.17_all
+      RPN_LIB=/fs/ssm/eccc/mrd/rpn/libs/16.2
+      export MY_FFLAGS="-openmp -fp-model source -warn all ${MY_FFLAGS}"
+      export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+      . ssmuse-sh -d ${RPN_LIB}
+      . ssmuse-sh -p ${BH_PACKAGE}
+      export SHARED_COMP_rpath=/fs/ssm/hpco/exp/intel-2016.1.156/intelcomp_2016.1.156-01_multi/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64
+      :;;
+
+   "") echo "ERROR: variable ORDENV_PLAT not set"
+       echo "       Please review setup.dot for your platform"
+       :;;
+
+    *) echo platform ${ORDENV_PLAT} not suported, please review setup.dot
+       :;;
+esac

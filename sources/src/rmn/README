@@ -1,0 +1,5 @@
+made soft link in PUBLIC_INCLUDES for fnom.h: 
+
+ PUBLIC_INCLUDES/fnom.h ->INTRALIB_INCLUDES/fnom.h
+as it exists in compiler_includes 
+

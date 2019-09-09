@@ -71,6 +71,6 @@ include_directories(src/archdep/include/${ARCH}-${COMPILER}
                     )
 
 #uncomment to link to the local libraries already installed
-#link_directories(${ROOT}/src/archdep/libs/${ARCH}-${COMPILER})
+link_directories(${ROOT}/src/archdep/libs/${ARCH}-${COMPILER})
 
 add_subdirectory(src ${BUILD}/src)

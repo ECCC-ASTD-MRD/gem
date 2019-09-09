@@ -1,0 +1,7 @@
+current=`pwd`
+for package in `cat rmnlib.packing_list`
+do
+  cd $package
+  make tarball $*
+  cd $current
+done

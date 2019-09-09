@@ -1,0 +1,18 @@
+version=100
+
+@ptopo_cfgs
+#mandatory(desc)
+options(WB_REWRITE_UNTIL)
+define(npx[i4,0])
+define(npy[i4,0])
+define(nblocx[i4,0])
+define(nblocy[i4,0])
+define(ninblocx[i4,0])
+define(ninblocy[i4,0])
+npx = 1
+npy = 1
+nblocx = -1
+nblocy = -1
+ninblocx = -1
+ninblocy = -1
+@

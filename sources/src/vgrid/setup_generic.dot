@@ -1,0 +1,5 @@
+TEMPO=$(s.locate --lib rmnshared)
+export RPN_SHARED_LIB=${TEMPO%/*}
+[[ -d ${RPN_SHARED_LIB} ]] && return
+echo "ERROR: RPN_SHARED_LIB='${RPN_SHARED_LIB}' not pointing to a directory"
+false

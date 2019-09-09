@@ -1,0 +1,80 @@
+echo "Acquiring compilation tools"
+
+. ./version.dot
+export BH_PULL_SOURCE_GIT_BRANCH
+
+unset MY_FFLAGS MY_CFLAGS
+
+#===================================================
+# SIGSEGV with some optimizations, see details below
+#---------------------------------------------------
+# Note taken Sept 25th 2017 
+# No problem with Xlf compiler on AIX, no problem with gcc on ubuntu
+# On ubuntu-12.04-amd64-64 intel13sp1u2 no problem with -00
+# On ubuntu-12.04-amd64-64 intel13sp1u2 problems with -O1 with tests:
+#    constructor_gen_5002_5003_5005 (1587  vgrid.c)
+#    get_set_diag_height            (1589  vgrid.c)
+#    set_write_5002                 (1587  vgrid.c)
+#    test_allow_reshape             (1587  vgrid.c)
+#    test_vgd_free                  (1587  vgrid.c)
+#    write_5002                     (1587  vgrid.c)
+# On ubuntu-12.04-amd64-64 intel13sp1u2 problems with -O2
+#    constructor_gen_5100 new test  (1398  vgrid.c)
+# On ubuntu-12.04-amd64-64 intel13sp1u2 problems with -O3
+#    constructor_gen_5100 new test  (1398  vgrid.c)
+#
+# On ubuntu-14.04-amd64-64 cote EC machine einstein intel-2016.1.156 no problem with -00
+# On ubuntu-14.04-amd64-64 cote EC machine einstein intel-2016.1.156 no problem with -01
+# On ubuntu-14.04-amd64-64 cote EC machine einstein intel-2016.1.156 no problem with -02
+# On ubuntu-14.04-amd64-64 cote EC machine einstein intel-2016.1.156 no problem with -03
+#
+# On ubuntu-14.04-amd64-64 cote science machine eccc-ppp2 intel-2016.1.156 no problem with -00
+# On ubuntu-14.04-amd64-64 cote science machine eccc-ppp2 intel-2016.1.156 no problem with -01
+# On ubuntu-14.04-amd64-64 cote science machine eccc-ppp2 intel-2016.1.156 no problem with -02
+# On ubuntu-14.04-amd64-64 cote science machine eccc-ppp2 intel-2016.1.156 no problem with -03
+#
+# I checkout the code tagged 6.1.5 which is the one used that was producing the error on 18 sep 2016 on gpsc-in but could not
+# reproduce the error.
+#
+# Previous notes on the same problem
+# Les erreurs semblent lier a c_vgd_construct, apres le malloc sur la structure vgrid le yabbe est aux vaches pour certaines optoimisations,
+# Note avec -O1 sur ubuntu-12.04-amd64-64 intel13sp1u2 les tests suivants donnent un SIGSEGV a la ligne entre () (OK avec -O2 (defaul) OK avec -O3)
+# constructor_build_all(1422) constructor_gen_5002_5003_5005(1422) get_set_diag_height(1424) read_write_read_all(1422)
+# set_write_5002(1424) test_allow_reshape(1424) test_vgd_free(1424) write_5002(1424)
+# Pour write_5002, dans Cvgd_new_build_vert, l<initialisations de (*self)->valid  et autre ne fonctionne pas!
+# les parametres de Cvgd_new_build_vert sot change par le call a *self = c_vgd_construct(); ligne 1028
+#    Je recompile en sortant de c_vgd_construct sans rien y faire et les parametres sont ok
+#    Je recompile en ne faisant que l<allocation de vgrid et ca change les parametres! (kind, version, nk, ip1 ip2)
+#
+# Le 18 sep 2016 sur gpsc-in avec intel16 ubuntu-14.04-amd64-64 les tests suivants plantent avec -O2 (OK avec -O0, OK avec -O1, OK avec -O3)
+#constructor_gen_1002_5001   ligne 1232
+#levels_toplevel_value
+#levels_withref
+#levels_withref_profile_all
+#use_legacy
+#c_levels
+#c_use_new_read
+#
+# March 2018, crash with test get_put_get_all compiler PrgEnv-intel-5.2.82 on sles-11-haswell-64-xc4 sles-11-broadwell-64-xc4 with optimization -O2, ok with -O0 -O1 -O3
+#             if I put compilation flag -heap-arrays its ok.
+#             Fine with intel16 ubuntu-14.04-amd64-64 for all optinizarin levels.
+#
+# April 2018, found problem with flip_transfer_* functions with compuler PGI 14.01. The functions were rewritten
+# by M Valin and the SIGSEGV described in March 2018 above is gone.
+
+if [ ${ORDENV_PLAT} == aix-7.1-ppc7-64 ];then	
+   . ./setup_cmc.ec.gc.ca.dot
+elif [ "$(hostname -d)" = cmc.ec.gc.ca ];then
+   . ./setup_cmc.ec.gc.ca.dot
+elif [ "$(hostname -d)" = science.gc.ca -o $ORDENV_PLAT = sles-11-haswell-64-xc40 -o $ORDENV_PLAT = sles-11-broadwell-64-xc40 ];then
+   . ./setup_science.gc.ca.dot
+else
+   echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+   echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+   echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+   echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+   echo Domain $(hostname -d) not supported
+fi
+
+export MY_FFLAGS BH_HOST BH_MODE RPN_LIB SHARED_RNM_SSM_PREF SHARED_RNM_EXT
+

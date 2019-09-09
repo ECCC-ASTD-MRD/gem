@@ -1,0 +1,137 @@
+. ssmuse-sh -p hpcs/tools/master/bh_0.17_all
+
+case "${ORDENV_PLAT}" in
+
+   ubuntu-12.04-amd64-64)
+      #MY_FFLAGS="-C -g -O0 -lefence"
+      #MY_CFLAGS="-g -O0 -lefence"
+      export BH_MODE=intel
+      HPCS_BASE=hpcs/201402/02/base
+      HPCS_COMP=hpcs/201402/02/intel13sp1u2
+      RPN_LIB=rpn/libs/15.2
+      export MY_FFLAGS="-openmp -fp-model source  -warn all ${MY_FFLAGS}"
+      export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+      . ssmuse-sh -d ${HPCS_BASE} -d ${HPCS_COMP} -d ${RPN_LIB}
+      export RPN_LIB
+      export SHARED_RNM_SSM_PREF=/ssm/net/
+      export SHARED_RNM_EXT=_015.2
+      export SHARED_COMP_rpath=${INTELCOMP_HOME}/lib/intel64
+      :;;
+
+   ubuntu-14.04-amd64-64)
+      export BH_MODE=intel
+      #VGRID_COMPILER=intel13sp1u2
+      VGRID_COMPILER=intel2016
+      #VGRID_COMPILER=gcc-5.1.0
+      #VGRID_COMPILER=gcc-4.9.1
+      #VGRID_COMPILER=pgi17.10
+      #VGRID_COMPILER=pgi1401
+      if [ ${VGRID_COMPILER} == intel13sp1u2 ];then
+         #MY_FFLAGS="-C -g -O0 -lefence"
+         #MY_CFLAGS="-g -O0 -lefence"
+         HPCS_BASE=hpcs/201402/02/base
+         HPCS_COMP=hpcs/201402/02/${VGRID_COMPILER}
+         RPN_LIB=rpn/libs/15.2
+         export SHARED_RNM_EXT=_015.2	 
+        . ssmuse-sh -d ${HPCS_BASE} -d ${HPCS_COMP} -d ${RPN_LIB}
+	export MY_FFLAGS="-openmp -fp-model source -warn all ${MY_FFLAGS}"
+        export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+      elif [ ${VGRID_COMPILER} == intel2016 ];then
+         # Must use -O1 with intel2016
+         HPCS_BASE=/ssm/net/hpcs/201402/04/base
+         HPCS_COMP=/ssm/net/hpcs/exp/intel2016/01
+         RPN_LIB=rpn/libs/16.2
+         export SHARED_RNM_EXT=_016.2
+         . r.load.dot ${HPCS_BASE} ${HPCS_COMP}
+	 . r.load.dot rpn/libs/16.2 
+         export MY_FFLAGS="-openmp -fp-model source  -warn all ${MY_FFLAGS}"
+         export MY_CFLAGS="-openmp -fp-model precise -w3 ${MY_CFLAGS}"
+     elif [ ${VGRID_COMPILER} == gcc-4.9.1 ];then
+        . r.load.dot /ssm/net/env/master/ssmuse_1.4_all
+        export COMP_ARCH=gfortran
+        export EC_ARCH=${BASE_ARCH}/${COMP_ARCH}
+        . r.load.dot /ssm/net/hpcs/201402/04/base
+        . r.load.dot /ssm/net/hpcs/compilers/gcc-4.9.1/gcc_4.9.1_ubuntu-14.04-amd64-64
+        . r.load.dot /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64 
+	# To get rmnlib.h
+	. ssmuse-sh -p /ssm/net/rpn/libs/16.2/compiler-includes_4.11_all
+	export GFORTRAN_INCLUDE=/users/dor/armn/bou/ords/RPN_COMM_4.5.16.10/bh_scripts/LIBRMN/librmn-gfortran_016.2_ubuntu-14.04-amd64-64/include/Linux_x86-64/gfortran
+	export GFORTRAN_LIB=/users/dor/armn/bou/ords/RPN_COMM_4.5.16.10/bh_scripts/LIBRMN/librmn-gfortran_016.2_ubuntu-14.04-amd64-64/lib/Linux_x86-64/gfortran
+	MY_FFLAGS=-I${GFORTRAN_INCLUDE}
+      elif [ ${VGRID_COMPILER} == gcc-5.1.0 ];then
+        . r.load.dot /ssm/net/env/master/ssmuse_1.4_all
+        export COMP_ARCH=gfortran
+        export EC_ARCH=${BASE_ARCH}/${COMP_ARCH}
+        . r.load.dot /ssm/net/hpcs/201402/04/base
+        . r.load.dot /ssm/net/hpcs/compilers/gcc-5.1.0/gcc_5.1.0_ubuntu-14.04-amd64-64
+        . r.load.dot /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64 
+	# To get rmnlib.h
+	. ssmuse-sh -p /ssm/net/rpn/libs/16.2/compiler-includes_4.11_all
+	export GFORTRAN_INCLUDE=/users/dor/armn/bou/ords/RPN_COMM_4.5.16.10/bh_scripts/LIBRMN/librmn-gfortran_016.2_ubuntu-14.04-amd64-64/include/Linux_x86-64/gfortran
+	export GFORTRAN_LIB=/users/dor/armn/bou/ords/RPN_COMM_4.5.16.10/bh_scripts/LIBRMN/librmn-gfortran_016.2_ubuntu-14.04-amd64-64/lib/Linux_x86-64/gfortran
+	MY_FFLAGS=-I${GFORTRAN_INCLUDE}
+
+      elif [ ${VGRID_COMPILER} == pgi1401 ];then
+           . ssmuse-sh -d hpcs/201402/02/base -d hpcs/201402/02/pgi1401
+           . ssmuse-sh -p  /ssm/net/hpcs/201402/master/pgi_14.1
+           . ssmuse-sh -d rpn/libs/16.2
+           echo "============ " ${EC_ARCH}
+	   export LD_LIBRARY_PATH=/users/dor/afsg/apm/ords/cmdn/vgrid_6/tests:${LD_LIBRARY_PATH}
+	   export RMN=rmn_016.2_pgi_1401
+           export EC_INCLUDE_PATH=${EC_INCLUDE_PATH}:/ssm/net/rpn/libs/16.2/librmn-xlf131010_016.2_aix-7.1-ppc7-64/include/AIX-powerpc7/xlf13
+	   export GFORTRAN_LIB=/users/dor/afsg/apm/ords/cmdn/vgrid_6/tests
+
+      elif [ ${VGRID_COMPILER} == pgi17.10 ];then	
+        if [ ${TRUE_HOST} != gaia ];then
+           echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+           echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+           echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+           echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+           echo "Must be on host gaia"
+        fi
+        . ssmuse-sh -d hpcs/201402/02/base
+        . ssmuse-sh -p  /ssm/net/hpcs/201402/master/pgi_14.1
+        . ssmuse-sh -d rpn/libs/16.2
+        . ssmuse-sh -d rpn/utils/16.2.2
+        s.use /opt/pgi/linux86-64/17.10/bin/pgf95 as pgf95
+        s.use /opt/pgi/linux86-64/17.10/bin/pgcc as pgcc
+        s.use /opt/pgi/linux86-64/2017/mpi/openmpi-2.1.2/bin/.bin/mpif77 as mpif77
+        s.use /opt/pgi/linux86-64/2017/mpi/openmpi-2.1.2/bin/.bin/mpif90 as mpif90
+        s.use /opt/pgi/linux86-64/2017/mpi/openmpi-2.1.2/bin/.bin/mpicc as mpicc
+	export RMN=rmn_016.2
+        export LD_LIBRARY_PATH=/opt/pgi/linux86-64/2017/mpi/openmpi/lib:/opt/pgi/linux86-64/17.10/lib:${LD_LIBRARY_PATH}
+        export EC_LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$EC_LD_LIBRARY_PATH
+        export GFORTRAN_INCLUDE=/data/ords/armn/armnbou/librmn_pgi17.10_gaia/LIBRMN_INCLUDES
+	export GFORTRAN_LIB=/data/ords/armn/armnbou/librmn_pgi17.10_gaia
+	#export GFORTRAN_LIB=/users/dor/armn/bou/ords/librmn_pgi17.10_test/Linux_x86-64/pgi1401
+	MY_FFLAGS=-I${GFORTRAN_INCLUDE}	
+      else
+         echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+         echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+         echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+         echo "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR"
+         echo "Compiler not supported: " ${VGRID_COMPILER}
+      fi
+      export RPN_LIB
+      export SHARED_RNM_SSM_PREF=/ssm/net/
+      export SHARED_COMP_rpath=${INTELCOMP_HOME}/lib/intel64
+      :;;
+
+   aix-7.1-ppc7-64)
+      r.use gmake as make
+      export BH_MODE=xlf13
+      HPCS_BASE=hpcs/201402/02/base
+      HPCS_COMP=hpcs/ext/xlf_13.1.0.10
+      RPN_LIB=rpn/libs/15.2
+      export MY_FFLAGS="${MY_FFLAGS}"
+      export MY_CFLAGS="${MY_FFLAGS}"
+      . ssmuse-sh -d ${HPCS_BASE} -d ${HPCS_COMP} -d ${RPN_LIB}
+      :;;
+
+   "") echo "ERROR: variable ORDENV_PLAT not set"
+       echo "       Please review setup.dot for your platform"
+       :;;
+
+    *) echo platform ${ORDENV_PLAT} not suported, please review setup.dot
+       :;;
+esac
