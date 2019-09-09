@@ -32,14 +32,14 @@ export GEM_ovbin=${GEM_ON_A_STICK_WORK_DIR}/bin
 
 export AFSISIO=${default_DIR_ATM}
 
-export TASK_BASEDIR=${PWD}/$task_basedir
+export TASK_BASEDIR=${PWD}/${task_basedir}
 export TASK_INPUT=${TASK_BASEDIR}/input
 export TASK_BIN=${TASK_BASEDIR}/bin
 export TASK_WORK=${TASK_BASEDIR}/work
 export TASK_OUTPUT=${TASK_BASEDIR}/output
 
-if [ -d ${task_basedir}/work ] ; then
-    restart=`find -L ${task_basedir}/work -type f -name "gem_restart" | wc -l`
+if [ -d ${TASK_WORK} ] ; then
+    restart=`find -L ${TASK_WORK} -type f -name "gem_restart" | wc -l`
 fi
 if [ $restart -gt 0 ] ; then
    printf "Running in NORMAL RESTART mode\n"
@@ -54,8 +54,8 @@ if [ $restart -gt 0 ] ; then
 fi
 
 echo "NORMAL RUNMOD SETUP and START"
-mkdir -p $task_basedir
-/bin/rm -rf ${task_basedir}/*
+mkdir -p ${TASK_BASEDIR}
+/bin/rm -rf ${TASK_BASEDIR}/*
 
 mkdir -p $TASK_INPUT/${dname} $TASK_WORK/${dname} $TASK_OUTPUT/${dname} $TASK_BIN
 
