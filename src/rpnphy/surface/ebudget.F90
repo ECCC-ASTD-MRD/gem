@@ -25,7 +25,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
    use tdpack
    use sfc_options, only: rad_off, atm_external, isba_melting_fix, &
-        isba_no_warm_sn_freez, snow_emiss, &
+        snow_emiss, &
         snow_emiss_const, isba_soil_emiss, isba_soil_emiss_const
    implicit none
 !!!#include <arch_specific.hf>
@@ -337,11 +337,12 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
          ! above zero by freezing liquid water
          ! in  snow ... don't let it happen if  isba_no_warm_sn_freez=.TRUE.
 
-         if ( .not.  isba_no_warm_sn_freez ) then
-
-            TST(I) = TST(I)+TEMPO
-
-         endif
+!!$         if ( .not.  isba_no_warm_sn_freez ) then
+!!$
+!!$            TST(I) = TST(I)+TEMPO
+!!$
+!!$         endif
+         continue
 
       else
 
