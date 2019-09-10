@@ -1,0 +1,85 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
+  Grd_overlap     = 2         ,
+  Grd_maxcfl      = 5         ,
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L  = .false.
+  Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+
+ &step
+  Fcst_end_S     = "288h"
+  Fcst_gstat_s   = '24h'
+  Step_dt        = 3600.
+/
+
+ &adz_cfgs
+  adz_itraj = 3
+  adz_verbose=0,
+/
+
+ &gem_cfgs
+  Lctl_rxstat_S = 'GLB_8'
+
+  Tr3d_list_S =  'Q1,mono=0,mass=0,hzd=0',
+                 'Q2,mono=0,mass=0,hzd=0',
+                 'Q3,mono=0,mass=0,hzd=0',
+                 'Q4,mono=0,mass=0,hzd=0',
+
+  Stat_liste  = 'ALL_DYN_T1', 'ALL_TR_T1',
+/
+
+ &dyn_fisl
+  Sol_type_S = 'DIRECT'   ,
+
+  Cstv_tstr_8     = 300.0 ,
+
+  Cstv_bA_8       = 0.5        ,
+  Cstv_bA_m_8     = 0.5        ,
+  Cstv_bA_nh_8    = 0.5        ,
+
+                                 Schm_nblendyy     = -1
+  Schm_itcn       = 2          , Schm_wload_L      = .false.
+  Schm_itnlh      = 2          ,
+                                 Schm_hzdadw_L     = .false.
+/
+
+ &hvdif
+  Hzd_lnr         = 0.         ,
+  Vspng_nk        = 0          ,
+/
+
+ &vert_layers
+  hyb=
+  0.2578640,0.2638052,0.2698832,0.2761013,0.2824627,0.2889706,0.2956285,
+  0.3024398,0.3094080,0.3165367,0.3238297,0.3312907,0.3389236,0.3467324,
+  0.3547211,0.3628939,0.3712549,0.3798086,0.3885594,0.3975118,0.4066704,
+  0.4160401,0.4256256,0.4354320,0.4454644,0.4557278,0.4662278,0.4769696,
+  0.4879590,0.4992015,0.5107031,0.5224697,0.5345074,0.5468224,0.5594212,
+  0.5723102,0.5854962,0.5989860,0.6127866,0.6269052,0.6413490,0.6561257,
+  0.6712428,0.6867082,0.7025299,0.7187162,0.7352753,0.7522160,0.7695471,
+  0.7872774,0.8054162,0.8239730,0.8429573,0.8623789,0.8822481,0.9025751,
+  0.9233704,0.9446448,0.9664093,0.9886753
+
+  hyb_rcoef       = 1.,1.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "PT13_L60" ,
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S = '12d'
+  Out3_postproc_fact    = 1
+/
+
+ &dcmip
+ Dcmip_case = 13,
+/

@@ -1,0 +1,22 @@
+{
+        "folders": [
+        {
+          "name": "GoaS-devel",
+          "path": "project",
+          "telemetry.enableCrashReporter": false,
+          "telemetry.enableTelemetry": false
+
+        },
+        {
+            // Source code
+            "name": "GEM",
+            "path": "src"
+        },
+        ],
+        "settings": {
+           "cmake.buildDirectory": "${workspaceRoot}/build-intel-16.0.1.150",
+           "telemetry.enableTelemetry": false,
+           "telemetry.enableCrashReporter": false,
+	   "cmake.configureOnOpen": true,
+        }
+}

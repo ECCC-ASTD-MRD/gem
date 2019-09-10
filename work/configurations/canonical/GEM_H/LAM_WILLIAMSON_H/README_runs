@@ -1,0 +1,3 @@
+go_pilot_lam_rev.ksh         CASE5 1 GY 0 LAM (Pour generer conditions PILOT)
+go_pilot_lam_rev.ksh         CASE5 0 GY 1 LAM (Pour tourner LAM)
+go_pilot_lam_rev_NO_PREP.ksh CASE5 0 GY 1 LAM (Pour tourner LAM runmod ONLY)

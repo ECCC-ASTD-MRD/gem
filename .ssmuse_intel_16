@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Load compiler and libraries
-# and add a symbolic link for gem_dbase
+# add a symbolic link for gem_dbase 
+# create build directory according to the compiler called
 
 if [ `hostname -d` = "cmc.ec.gc.ca" ];
 # in eccc network
@@ -19,3 +20,10 @@ else
     [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
   fi
 fi
+
+COMP_VERSION=`sources/compiler.sh intel`
+BUILD_DIR=build-intel-$COMP_VERSION
+echo mkdir -p sources/$BUILD_DIR
+mkdir -p sources/$BUILD_DIR
+
+sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/$BUILD_DIR\",/" goas-devel.code-workspace

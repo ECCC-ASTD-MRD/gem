@@ -3,6 +3,8 @@
 *.swp
 *.swo
 gem_dbase
-gem_dbase.tar.gz*
+gem_dbase.tar.gz
 build*
 work/work*
+src/gemdyn/expo
+!src/gemdyn/expo/exp_stubs.F90

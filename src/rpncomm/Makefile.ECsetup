@@ -1,0 +1,35 @@
+
+ifeq "$(BASE_ARCH)" "$(EC_ARCH)"
+$(error FATAL: EC_ARCH is equal to BASE_ARCH, no compiler architecture is defined, ABORTING)
+endif
+
+$(info including Makefile for EC setup)
+# this is for sites using the EC setup
+
+CFLAGS =  -O 2
+FCFLAGS = -O 2
+
+CC=s.cc
+ifeq "$(SERIAL)" ""
+  MPI_FLAG = -mpi
+  MPI_SERIAL_LIB = 
+else
+  SERIAL_MPI=$(VPATH)/../serial-mpi
+  MPI_FLAG = -I$(SERIAL_MPI)/include -L$(SERIAL_MPI)/lib/$(EC_ARCH)
+  MPI_SERIAL_LIB = -lmpi-serial
+endif
+$(info === MPI_FLAG = $(MPI_FLAG) ===)
+# use s.f77 with IBM fortran compiler because of fixed format
+ifeq (/xlf,$(findstring /xlf,$(EC_ARCH)))
+ FC=s.f77
+ MPIFC = s.f77 $(MPI_FLAG)
+else
+ FC=s.f90
+ MPIFC = s.f90 $(MPI_FLAG)
+endif
+F90C=s.f90
+MPICC = s.cc $(MPI_FLAG)
+MPIF90C = s.f90 $(MPI_FLAG)
+
+# end of EC setup
+

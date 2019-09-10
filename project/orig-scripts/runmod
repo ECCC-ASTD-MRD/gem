@@ -1,0 +1,102 @@
+#!/bin/bash
+
+export PATH=${PWD}/scripts:$PATH
+
+# Retrieve command line arguments
+arguments=$*
+echo $0 $arguments
+eval `scripts/cclargs_lite0 -D " " $0 \
+  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -ptopo         ""             "" "[MPI&OMP PEs topology (npex x npey x nomp) ]"\
+  -debug         "0"          "1"         "[Debug session]"\
+  -xfer          ""             "" "[location of output files]"\
+  ++ $arguments`
+
+echo ${dircfg}
+echo ${xfer}
+
+set -ex ; export SETMEX=-ex
+export TMPDIR=${TMPDIR-/tmp/$USER}
+mkdir -p ${TMPDIR}
+
+task_basedir="RUNMOD.dir" 
+#dname=`basename $dircfg`
+dname=cfg_0000
+
+export GEM_ON_A_STICK_WORK_DIR=$PWD
+export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
+export GEM_ovbin=${GEM_ON_A_STICK_WORK_DIR}/bin
+
+# read configuration file
+. ${dircfg}/${dname}/configexp.cfg
+
+export AFSISIO=${default_DIR_ATM}
+
+export TASK_BASEDIR=${PWD}/${task_basedir}
+export TASK_INPUT=${TASK_BASEDIR}/input
+export TASK_BIN=${TASK_BASEDIR}/bin
+export TASK_WORK=${TASK_BASEDIR}/work
+export TASK_OUTPUT=${TASK_BASEDIR}/output
+
+if [ -d ${TASK_WORK} ] ; then
+    restart=`find -L ${TASK_WORK} -type f -name "gem_restart" | wc -l`
+fi
+if [ $restart -gt 0 ] ; then
+   printf "Running in NORMAL RESTART mode\n"
+   if [ `uname` = "Darwin" ]
+   then
+       ulimit -s 65532
+   else
+       ulimit -s unlimited
+   fi
+   Um_runmod.sh -ptopo ${ptopo} -debug ${debug} $*
+   exit 0
+fi
+
+echo "NORMAL RUNMOD SETUP and START"
+mkdir -p ${TASK_BASEDIR}
+/bin/rm -rf ${TASK_BASEDIR}/*
+
+mkdir -p $TASK_INPUT/${dname} $TASK_WORK/${dname} $TASK_OUTPUT/${dname} $TASK_BIN
+
+cd $TASK_INPUT/${dname}
+[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS ]      && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS .
+[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d ]    && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d    MODEL_ANALYSIS
+[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d ] && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d MODEL_INREP
+
+case "${dircfg}" in
+    /*) DIRCFG_PATH="${dircfg}"; ;;
+     *) DIRCFG_PATH="${GEM_ON_A_STICK_WORK_DIR}/${dircfg}"; ;;
+esac
+
+[ -e ${DIRCFG_PATH}/${dname}/configexp.cfg ] && ln -s ${DIRCFG_PATH}/${dname}/configexp.cfg .
+[ -e ${DIRCFG_PATH}/${dname}/gem_settings.nml ] && ln -s ${DIRCFG_PATH}/${dname}/gem_settings.nml model_settings.nml
+[ -e ${DIRCFG_PATH}/${dname}/outcfg.out ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
+[ -e ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC physics_input_table
+
+[ -e $GEM_climato ] && ln -s $GEM_climato CLIMATO
+[ -e $GEM_geophy ] && ln -s $GEM_geophy GEOPHY
+[ -e ${default_DIR_ATM}/datafiles/modeldata ] && ln -s ${default_DIR_ATM}/datafiles/modeldata MODEL_INPUT
+
+[ -e $GEM_ozone ] && ln -s $GEM_ozone ozone_clim.fst
+[ -e $GEM_radtab ] && ln -s $GEM_radtab rad_table.fst
+[ -e $GEM_const ] && ln -s $GEM_const constantes
+
+echo "runmod linking UM_MODEL to Um_model.sh"
+um_model=$(which Um_model.sh)
+[ -e $um_model ] && ln -s $um_model ${TASK_BIN}/UM_MODEL
+[ -e $GEM_ovbin/maingemdm ] && ln -s $GEM_ovbin/maingemdm ${TASK_BIN}/ATM_MOD
+cd $GEM_ON_A_STICK_WORK_DIR
+
+if [ `uname` = "Darwin" ]
+then
+    ulimit -s 65532
+else
+    ulimit -s unlimited
+fi
+Um_runmod.sh -ptopo ${ptopo} -debug ${debug} $*
+
+if [[ -n ${xfer} ]]; then
+    mkdir -p ${xfer}
+    mv RUNMOD.dir/output/cfg_00*/last*/*/* ${xfer}/
+fi

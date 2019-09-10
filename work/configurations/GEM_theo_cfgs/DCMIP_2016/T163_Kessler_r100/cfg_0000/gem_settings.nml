@@ -1,0 +1,94 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 95
+  Grd_overlap     = 2         ,
+  Grd_maxcfl      = 5         ,
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L  = .false.
+/
+
+ &step
+  Fcst_end_S     = "240h"
+  Fcst_gstat_s   = '24h'
+  Step_dt        = 1800.
+/
+
+ &adz_cfgs
+  adz_itraj = 3
+/
+
+ &adv_cfgs
+  adv_verbose=1,
+/
+
+ &gem_cfgs
+  Lctl_rxstat_S = 'GLB_8'
+
+  Tr3d_list_S =  'QC,mono=1,mass=0,hzd=1',
+                 'RW,mono=1,mass=0,hzd=1',
+                 'HU,mono=1,mass=0,hzd=1',
+
+  Stat_liste  = 'ALL_DYN_T1', 'ALL_TR_T1',
+/
+
+ &dyn_fisl
+  Sol_type_S = 'DIRECT'   ,
+
+  Cstv_tstr_8     = 240.0 ,
+
+  Cstv_bA_8       = 0.6        ,
+  Cstv_bA_m_8     = 0.6        ,
+  Cstv_bA_nh_8    = 0.6        ,
+
+                                 Schm_nblendyy     = -1
+  Schm_itcn       = 2          , Schm_wload_L      = .false.
+  Schm_itnlh      = 2          ,
+                                 Schm_hzdadw_L     = .false.
+/
+
+ &hvdif
+  Hzd_pwr         = 2          , Hzd_lnr         = 0.349368550740457168E-01,
+  Hzd_pwr_tr      = 2          , Hzd_lnr_tr      = 0.104810565222137150,
+
+  Vspng_nk        = 6          , Vspng_coeftop   =  380000.
+/
+
+ &vert_layers
+  hyb=
+                        0.10546454,0.11164466,0.11818692,0.12511256,
+  0.13244403,0.14020512,0.14842100,0.15711832,0.16632530,0.17607180,
+  0.18638943,0.19731167,0.20887394,0.22111374,0.23407079,0.24778710,
+  0.26230718,0.27767812,0.29394978,0.31117495,0.32940949,0.34871256,
+  0.36914677,0.39077840,0.41367762,0.43791872,0.46358032,0.49074567,
+  0.51950288,0.54994523,0.58217148,0.61628614,0.65239990,0.69062989,
+  0.73110011,0.77394185,0.81929407,0.86730389,0.91812704,0.97192837
+
+  hyb_rcoef       = 1.,1.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "T163_R100",
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S = '240h'
+  Out3_postproc_fact    = 1
+
+  Out3_npex = 1,
+  Out3_npey = 2,
+/
+
+ &dcmip
+ Dcmip_case  = 163,
+ Dcmip_X     = 120.,
+ Dcmip_prec_type = 0
+ Dcmip_pbl_type  = -1
+ Dcmip_nuZ_wd= -500.
+ Dcmip_nuZ_tr= -1500.
+/
