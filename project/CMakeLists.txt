@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8.12)
-#cmake_minimum_required(VERSION 2.8.7)
 
 project(GEM_EXPO NONE)
 
@@ -44,7 +43,6 @@ set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extensi
 # Enable distclean target
 include("distclean.cmake")
 
-set(FTNSRC "" CACHE INTERNAL "" FORCE)
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules CACHE STRING "Where Fortran modules go")
 
 message("Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
