@@ -25,6 +25,7 @@
       use hgc
       use lun
       use path
+      use gem_timing, only : gemtime
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -229,7 +230,7 @@
 
       deallocate (x_8, y_8, xpos, ypos)
 
-      call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
+      call gemtime ( Lun_out, 'AFTER set_opr', .false. )
 
       call memusage (6)
 

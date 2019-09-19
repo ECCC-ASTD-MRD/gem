@@ -13,6 +13,7 @@
       use path
       use ptopo
       use version
+      use gem_timing, only : gemtime
       implicit none
 
 #include <rmnlib_basics.hf>
@@ -118,7 +119,7 @@
             endif
          end do
          end do
-         call gemtim4 ( Lun_out, 'AFTER domain_decomp', .false. )
+         call gemtime ( Lun_out, 'AFTER domain_decomp', .false. )
       endif
 
       if (cnt == 1) then
@@ -134,7 +135,7 @@
          end do
          write(npex_S,'(i6.6)') max_io_pes
          if (Ptopo_couleur == 0) call write_status_file3 ('MAX_PES_IO='//trim(npex_S))
-         call gemtim4 ( Lun_out, 'AFTER io_pe_valid', .false. )
+         call gemtime ( Lun_out, 'AFTER io_pe_valid', .false. )
       endif
 
       if ( (cdm_grid_L) .or. (cdm_eigen_S /= 'NONE@#$%') ) then
@@ -150,13 +151,13 @@
 
          if (cdm_eigen_S /= 'NONE@#$%') then
             call set_opr (cdm_eigen_S)
-            call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
+            call gemtime ( Lun_out, 'AFTER set_opr', .false. )
          endif
 
          if (cdm_grid_L) then
             call set_params
             call set_dync ( .false., err )
-            call gemtim4 ( Lun_out, 'AFTER set_dync', .false. )
+            call gemtime ( Lun_out, 'AFTER set_dync', .false. )
             if (Ptopo_couleur == 0) then
                if (err == 0) then
                   call write_status_file3 ('SOLVER=OK')
@@ -173,7 +174,7 @@
          call close_status_file3 ()
       endif
 
-      call gemtim4 ( Lun_out, 'END OF CHECKDMPART', .true. )
+      call gemtime ( Lun_out, 'END OF CHECKDMPART', .true. )
       call memusage (Lun_out)
 
       if (Lun_out > 0) &
