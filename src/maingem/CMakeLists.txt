@@ -3,13 +3,13 @@ include(FindMPI OPTIONAL)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 
+if (WITH_OPENMP)
+   set(ompLibs "-lfftw3_omp")
+endif()
+
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm gem phy modelutils vgrid rpncomm rmn massv
-               ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} -lfftw3_omp -lfftw3 )
-
-#target_link_libraries(maingemdm gem phy modelutils
-#               -ldescrip -lrpn_comm -lrmnMP -lmassv
-#               ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} -lfftw3_omp -lfftw3 )
+               ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} ${ompLibs} -lfftw3 )
 
 add_dependencies(maingemdm gem phy modelutils vgrid rpncomm rmn massv)
 

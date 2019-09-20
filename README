@@ -87,15 +87,16 @@ Install GEM:
   export LD_LIBRARY_PATH=$PGI/lib:$LD_LIBRARY_PATH
 
 * Compiling and installing GEM
-- cd goas/sources
+- cd work
 - gcc and gfortran compilers are set by default
 - if you want to compile with other compilers, modify the file
-  goas/sources/CmakeLists.txt by uncommenting one of the lines
+  project/CmakeLists.txt by uncommenting one of the lines
   to use the compiler desired:
   (for example: set(COMPILER intel CACHE INTERNAL compiler)
 - mkdir -p build
 - cd build
-- cmake ..
+- You can add "-DWITH_OPENMP=0" to cmake's command line to disable OpenMP
+- cmake ../../project
 
 - if you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure these tools are exported in their respective PATHS (see

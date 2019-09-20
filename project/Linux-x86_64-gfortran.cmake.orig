@@ -1,4 +1,4 @@
-add_definitions(-DAMD64 -DLINUX_X86_64 -DLittle_Endian -DECCCGEM)
+add_definitions(-DLittle_Endian -DECCCGEM)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_Fortran_COMPILER "gfortran")
@@ -7,10 +7,21 @@ set(MPI_C_COMPILER "mpicc")
 set(MPI_Fortran_COMPILER "mpif90")
 set(CMAKE_BUILD_TYPE "Debug")
 
-set(CMAKE_C_FLAGS "-O2 -g -w -D_REENTRANT -fopenmp" CACHE STRING "C compiler flags" FORCE)
-set(CMAKE_Fortran_FLAGS "-O2 -fdump-core -fbacktrace -finit-real=nan -g -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic -fopenmp -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals" CACHE STRING "Fortran compiler flags" FORCE)
+if (WITH_OPENMP)
+   list(APPEND compFlags "-fopenmp -ffast-math")
+   list(APPEND ldFlags "-fopenmp")
+endif()
 
-set(CMAKE_EXE_LINKER_FLAGS "-s -fopenmp -fpic")
+if (WITH_OPENACC)
+   # ACK CELL A RATION
+   list(APPEND compFlags "-fopenacc -foffload=-lm -fopt-info-optimized-omp")
+   list(APPEND ldFlags "-fopenacc -foffload=-lm")
+endif()
+
+set(CMAKE_C_FLAGS "-O2 -g -march=native -w -D_REENTRANT ${compFlags}" CACHE STRING "C compiler flags" FORCE)
+set(CMAKE_Fortran_FLAGS "-O2 -ffpe-trap=invalid,zero,overflow -g -march=native -fdump-core -fbacktrace -finit-real=nan -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic  -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals ${compFlags}" CACHE STRING "Fortran compiler flags" FORCE)
+
+set(CMAKE_EXE_LINKER_FLAGS "-s ${ldFlags} -fpic")
 
 set(LAPACK_LIBRARIES "-llapack")
 set(BLAS_LIBRARIES "-lblas")

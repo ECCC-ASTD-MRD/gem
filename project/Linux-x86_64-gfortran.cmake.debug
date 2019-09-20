@@ -1,4 +1,4 @@
-add_definitions(-DAMD64 -Di386 -DLINUX_X86_64 -DLittle_Endian)
+add_definitions(-Di386 -DLittle_Endian)
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_Fortran_COMPILER "gfortran")
@@ -6,6 +6,17 @@ set(CMAKE_Fortran_COMPILER "gfortran")
 set(MPI_C_COMPILER "mpicc")
 set(MPI_Fortran_COMPILER "mpif90")
 set(CMAKE_BUILD_TYPE "Debug")
+
+if (WITH_OPENMP)
+   list(APPEND compFlags "-fopenmp -ffast-math")
+   list(APPEND ldFlags "-fopenmp")
+endif()
+
+if (WITH_OPENACC)
+   # ACK CELL A RATION
+   list(APPEND compFlags "-fopenacc -foffload=-lm -fopt-info-optimized-omp")
+   list(APPEND ldFlags "-fopenacc -foffload=-lm")
+endif()
 
 # find_package(MPI) in CMakeLists.txt should be enough to find them
 #set(MPI_Fortran_LIBRARIES    "-L/usr/lib64/openmpi/lib -lmpi_mpifh")

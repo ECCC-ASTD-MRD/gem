@@ -107,6 +107,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
       ! FFTW, and we don't need to repeat the init_threads call.  The
       ! omp critical section implies synchronization.
       if (.not. fftw_thread_initialized) then
+#ifdef WITH_OpenMP
          ii = fftw_init_threads()
          if (ii == 0) then
             ! The caution about deadlocks is even stronger here.  Since this
@@ -114,6 +115,7 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
             ! this point in the event of an error.
             stop 'Error in FFTW thread initialization'
          end if
+#endif
          fftw_thread_initialized = .true.
       end if
 !$omp end critical(fftw_lock)
@@ -122,7 +124,9 @@ subroutine itf_fft_drv( F_vec, stride, jump, num, direction)
    ! Perform a real transform, using the fftw_plan_many_r2r interface.
    ! FFTW plan creation is not thread-safe, but ESTIMATE should be fast
 !$omp critical(fftw_lock)
+#ifdef WITH_OpenMP
    call fftw_plan_with_nthreads(1)
+#endif
    my_plan = fftw_plan_many_r2r(1, fftw_n, num, & ! Rank 1, transform size, number of transforms
                                 F_vec, fftw_n, stride, jump, & ! Input array, physical size, element separation, array separation
                                 F_vec, fftw_n, stride, jump, & ! Same for output
@@ -211,7 +215,9 @@ subroutine dft_wrapper(F_vec,stride,jump,num,direction)
 
       ! FFTW plan creation is not thread-safe
 !$omp critical(fftw_lock)
+#ifdef WITH_OpenMP
       call fftw_plan_with_nthreads(1)
+#endif
       my_plan = fftw_plan_guru_split_dft_r2c(1,dims,1,batch_dims, & ! Dimensioning information
                                              F_vec,F_vec,F_vec(1+stride), & ! Input, output real, output imag
                                              FFTW_ESTIMATE+FFTW_PRESERVE_INPUT) ! FFTW parameters
@@ -250,7 +256,9 @@ subroutine dft_wrapper(F_vec,stride,jump,num,direction)
       batch_dims(1)%os = jump
 
 !$omp critical(fftw_lock)
+#ifdef WITH_OpenMP
       call fftw_plan_with_nthreads(1)
+#endif
       my_plan = fftw_plan_guru_split_dft_c2r(1,dims,1,batch_dims, & ! Dimensioning information
                                              F_vec,F_vec(1+stride),F_vec, & ! Input real, input imag, output
                                              FFTW_ESTIMATE+FFTW_PRESERVE_INPUT) ! FFTW parameters

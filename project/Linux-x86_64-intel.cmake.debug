@@ -1,4 +1,4 @@
-add_definitions(-DAMD64 -Di386 -DLINUX_X86_64 -DLittle_Endian)
+add_definitions(-Di386 -DLittle_Endian)
 
 set(CMAKE_C_COMPILER "icc")
 set(CMAKE_Fortran_COMPILER "ifort")
@@ -6,17 +6,21 @@ set(CMAKE_Fortran_COMPILER "ifort")
 set(MPI_C_COMPILER "mpicc")
 set(MPI_Fortran_COMPILER "mpif90")
 
+if (WITH_OPENMP)
+   list(APPEND compFlags "-qopenmp")
+endif()
+
 #set(MPI_C_LIBRARIES        "-L/ssm/net/hpcs/exp/intel2016/01/ubuntu-14.04-amd64-64/lib -lmpi")
 #set(MPI_C_INCLUDE_PATH "/ssm/net/hpcs/exp/intel2016/01/ubuntu-14.04-amd64-64/include")
 
 #set(MPI_Fortran_LIBRARIES  "-L/ssm/net/hpcs/exp/intel2016/01/ubuntu-14.04-amd64-64/lib/ -lmpi -lmpi_f77 -lmpi_f90")
 #set(MPI_Fortran_INCLUDE_PATH "/ssm/net/hpcs/exp/intel2016/01/ubuntu-14.04-amd64-64/include")
 
-set(CMAKE_C_FLAGS "-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback -msse3 -fp-model precise -D_REENTRANT -D_THREAD_SAFE -openmp -DWITH_intel -DAMD64 -DLINUX_X86_64 -DWITH_OpenMP" CACHE STRING "C compiler flags" FORCE)
+set(CMAKE_C_FLAGS "-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback -msse3 -fp-model precise -D_REENTRANT -D_THREAD_SAFE -DWITH_intel -DAMD64 -DLINUX_X86_64 -DWITH_OpenMP ${compFlags}" CACHE STRING "C compiler flags" FORCE)
 
-set(MPI_C_COMPILE_FLAGS "-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback -msse3 -D_REENTRANT -D_THREAD_SAFE -openmp -mpi -DLittle_Endian -DWITH_intel -DAMD64 -DLINUX_X86_64 -DWITH_OpenMP" "C compiler flags" FORCE)
+set(MPI_C_COMPILE_FLAGS "-Wl,--allow-shlib-undefined -Wtrigraphs -fpic -I. -traceback -msse3 -D_REENTRANT -D_THREAD_SAFE -mpi -DLittle_Endian -DWITH_intel -DAMD64 -DLINUX_X86_64 -DWITH_OpenMP ${compFlags}" "C compiler flags" FORCE)
 
-set(CMAKE_Fortran_FLAGS "-std2003 -assume byterecl -convert big_endian -msse3 -fpe0 -fpic -reentrancy threaded -traceback -threads -I.  -static-intel -openmp -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -mkl -fp-model source" CACHE STRING "Fortran compiler flags" FORCE)
+set(CMAKE_Fortran_FLAGS "-std2003 -assume byterecl -convert big_endian -msse3 -fpe0 -fpic -reentrancy threaded -traceback -threads -I.  -static-intel -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -mkl -fp-model source ${compFlags}" CACHE STRING "Fortran compiler flags" FORCE)
 
 set(MPI_Fortran_COMPILE_FLAGS "-mpi" FORCE)
 

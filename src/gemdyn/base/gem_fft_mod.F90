@@ -197,10 +197,12 @@ contains
       ! Re-check the initialization flag, since omp critical implies
       ! memory synchronization
          if (.not. fftw_thread_initialized) then
+#ifdef WITH_OpenMP
             ierr = fftw_init_threads()
             if (ierr == 0) then
                call gem_error(-1,'make_r2r_dft_plan','Error in FFTW thread initialization')
             end if
+#endif
             fftw_thread_initialized = .true.
          end if
 !$omp end critical(fftw_lock)
@@ -312,7 +314,9 @@ contains
       ! to absolutely ensure proper operation this is also a critical section.
 
 !$omp critical(fftw_lock)
+#ifdef WITH_OpenMP
       call fftw_plan_with_nthreads(omp_get_max_threads())
+#endif
       tdesc%plan = fftw_plan_guru_r2r(1,dims, & ! Transform rank and length/stride info
                                       2,batch_dims, & ! Batching lengh/stride info
                                       in_ptr, out_ptr, & ! Input and output arrays

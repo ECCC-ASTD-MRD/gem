@@ -48,12 +48,25 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules 
 message("Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
 message("Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
 
-# TODO: Convert this to a module
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    add_definitions(-DWITH_OpenMP)
+# To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
+set(WITH_OPENMP ON CACHE INTERNAL WITH_OPENMP)
+if (WITH_OPENMP)
+   find_package(OpenMP)
+   if (OPENMP_FOUND)
+       add_definitions(-DWITH_OpenMP)
+   else()
+      message(FATAL_ERROR "OpenMP was requested, but was not found!")
+   endif()
 else()
-    add_definitions(-DWITHOUT_OpenMP)
+   message("Building WITHOUT OpenMP")
+   add_definitions(-DWITHOUT_OpenMP)
+endif()
+
+if (WITH_OPENACC)
+   find_package(OpenACC)
+   if (OPENACC_NOTFOUND)
+      message(FATAL_ERROR "OpenACC was requested, but was not found!")
+   endif()
 endif()
 
 # Include an architecture dependent file that contains include files for a
@@ -73,5 +86,8 @@ include_directories(${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Too see the make commands
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory(${ROOT}/../src ${BUILD}/src)
