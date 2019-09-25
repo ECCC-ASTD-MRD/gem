@@ -53,10 +53,6 @@
       halox=1
       haloy=halox
 
-!$omp parallel private (i,j,jj,ii,di_8,stencil1,&
-!$omp        stencil2,stencil3,stencil4,stencil5,stencil6,stencil7,cst)
-
-!$omp do
       do k = 1, nk
          fdg1(:,:,k) = .0d0
          do j=1+sol_pil_s, njl-sol_pil_n
@@ -65,14 +61,10 @@
          end do
          end do
       end do
-!$omp enddo
 
-!$omp single
       call rpn_comm_xch_halon (fdg1,minx1,maxx1,minx2,maxx2,nil,njl, &
                          Nk+2,halox,haloy,G_periodx,G_periody,nil,0,2)
-!$omp end single
 
-!$omp do
       do k=1, NK
          cst= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
          do j=1+sol_pil_s, njl-sol_pil_n
@@ -96,7 +88,7 @@
                stencil6=Cstv_hco0_8*(Opr_opszp2_8(k)+Opr_opszpl_8(k)+xxx*Opr_opszpm_8(k))
                stencil7=Cstv_hco0_8*(Opr_opszp2_8(2*G_nk+k)+Opr_opszpl_8(2*G_nk+k)+xxx*Opr_opszpm_8(2*G_nk+k))
 
-! Matrix*vector
+               ! Matrix*vector
                F_Rhs(i,j,k)=stencil1*fdg1(i  ,j  ,k  ) +&
                             stencil2*fdg1(i-1,j  ,k  ) +&
                             stencil3*fdg1(i+1,j  ,k  ) +&
@@ -107,9 +99,6 @@
             end do
          end do
       end do
-!$omp enddo
-
-!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

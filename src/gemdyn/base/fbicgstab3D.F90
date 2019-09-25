@@ -124,11 +124,6 @@
             beta = (rho / rho_old) * (alpha / omega)
          end if
 
-!$omp parallel private (i,j,k) &
-!$omp          shared(pp, residual, alpha, beta, omega, &
-!$omp                  vv, ss, tt, x, pp_prec, ss_prec)
-
-!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -136,9 +131,7 @@
                end do
             end do
          end do
-!$omp enddo
 
-!$omp single
          select case(precond_S)
             case ('JACOBI')
                call pre_jacobi3D (pp_prec(i0:il,j0:jl,:), pp(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -160,9 +153,7 @@
          else
             alpha = rho / tau
          end if
-!$omp end single
 
-!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -170,9 +161,7 @@
                end do
             end do
          end do
-!$omp enddo
 
-!$omp single
          select case(precond_S)
             case ('JACOBI')
                   call pre_jacobi3D (ss_prec(i0:il,j0:jl,:), ss(i0:il,j0:jl,:), Prec_xevec_8, &
@@ -196,9 +185,7 @@
 
          rho_old = rho
          rho = -omega * (dist_dotproduct(hatr0, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk))
-!$omp end single
 
-!$omp do
          do k=1,nk
             do j=j0,jl
                do i=i0,il
@@ -208,8 +195,7 @@
                end do
             end do
          end do
-!$omp enddo
-!$omp end parallel
+
          norm_residual = sqrt(dist_dotproduct(residual, residual, minx, maxx, miny, maxy, &
                                                i0, il, j0, jl, nk))
 

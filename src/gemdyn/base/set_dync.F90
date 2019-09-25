@@ -39,6 +39,11 @@
 !
 !     ---------------------------------------------------------------
 
+      Cstv_bar1_8 = one
+      if (Schm_autobar_L) then
+         Cstv_bar1_8 = zero
+      end if
+
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
          return
       end if
@@ -47,7 +52,7 @@
       Cstv_hco1_8 = zero
       Cstv_hco2_8 = one
       Cstv_hco3_8 = one
-     !Tstar is kept constant
+      !Tstar is kept constant
       Ver_Tstar_8%t(1:G_nk)   = Cstv_Tstr_8
       Ver_Tstar_8%m(1:G_nk+1) = Cstv_Tstr_8
 
@@ -69,7 +74,6 @@
          Ver_betas_8 = Ver_css_8*gama_8* &
                     Ver_wmstar_8(G_nk)*(Ver_idz_8%t(G_nk-1)+mu_8*half)
 
-!
          Ver_alfat_8 = one
          Ver_cst_8   = zero
          Ver_cstp_8  = zero
@@ -84,10 +88,8 @@
          end if
 
          Cstv_bar0_8 = zero
-         Cstv_bar1_8 = one
          if (Schm_autobar_L) then
             Cstv_bar0_8 = Cstv_invFI_8/(Cstv_tau_8*Cstv_tau_m_8)
-            Cstv_bar1_8 = zero
             Cstv_hco1_8 = Cstv_bar0_8
             Cstv_hco2_8 = zero
             Cstv_hco3_8 = zero
@@ -141,10 +143,8 @@
          Ver_cssp_8  = Ver_css_8 * ( w1 - w2 )
 
          Cstv_bar0_8 = zero
-         Cstv_bar1_8 = one
          if (Schm_autobar_L) then
             Cstv_bar0_8 = Cstv_invT_8**2/Ver_FIstr_8(1)
-            Cstv_bar1_8 = zero
             Ver_alfas_8 = one
             Ver_css_8   = zero
             Ver_cssp_8  = zero

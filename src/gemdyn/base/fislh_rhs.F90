@@ -82,7 +82,6 @@
       else
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
-!        phy_tv_tend => zero_array
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
@@ -135,11 +134,6 @@
       if (l_north) jnu = l_njv-1-jext
       if (l_north) jnv = l_njv-1-jext
 
-!$omp parallel private(km,kp,barz,barzp, &
-!$omp     u_interp,v_interp,t_interp, &
-!$omp     div,xtmp_8,ytmp_8,w1)
-
-!$omp do
       do k = 1,l_nk
          km=max(k-1,1)
          kp=min(k+1,l_nk)
@@ -228,7 +222,6 @@
             do i= i0, in
                div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)     &
                    + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-!                  + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
                    + (F_zd(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*F_zd(i,j,km))*Ver_idz_8%m(k) &
                    + half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
                    + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
@@ -245,8 +238,6 @@
          end do
 
       end do
-!$omp end do
-!$omp end parallel
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_H)')
 !

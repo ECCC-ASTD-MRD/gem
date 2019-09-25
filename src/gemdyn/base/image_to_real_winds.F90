@@ -23,16 +23,14 @@
    implicit none
 #include <arch_specific.hf>
 
-   integer                                  , intent(IN)     :: Minx,Maxx,Miny,Maxy,F_nk
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(IN OUT) :: F_u, F_v
+   integer                                  , intent(in)     :: Minx,Maxx,Miny,Maxy,F_nk
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(inout) :: F_u, F_v
 
 
    ! Local variables
    integer :: i,j,k
    real :: c1
 
-!$omp parallel private(c1)
-!$omp do
    do k = 1, F_nk
       do j = 1, l_nj
          c1 = Dcst_rayt_8 / geomh_cy_8(j)
@@ -41,8 +39,7 @@
          end do
       end do
    end do
-!$omp enddo
-!$omp do
+
    do k = 1, F_nk
       do j = 1, l_njv
          c1 = Dcst_rayt_8 / geomh_cyv_8(j)
@@ -51,8 +48,6 @@
          end do
       end do
    end do
-!$omp enddo
-!$omp end parallel
 
    return
 

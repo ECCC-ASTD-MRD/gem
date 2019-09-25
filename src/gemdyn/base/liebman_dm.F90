@@ -31,8 +31,7 @@
               F_mask  (Minx:Maxx,Miny:Maxy,NK)
 
       integer i,j,k,ite,i0,in,ic,j0,jn,jc,ier,count
-      real    prfact,prmax(Nk),prmaxall(Nk),prmod,mask(2,Nk),maskall(2,Nk)
-      real(kind=REAL64)  sum0(2,Nk),sumall(2,Nk)
+      real    prfact,prmax(Nk),prmaxall(Nk),prmod
 !     __________________________________________________________________
 !
       call rpn_comm_xch_halo(F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
@@ -41,23 +40,15 @@
       prfact   = 1.75 * 0.25
       prmaxall = 1000.
 
-!$omp parallel shared (i0,in,ic,j0,jn,jc,prmax,prmaxall,prfact, &
-!$omp                  count,sum0,sumall,mask,maskall)          &
-!$omp          private (i,j,k,ite,prmod)
-
-!$omp single
       i0 = 1 ; in = l_ni ; ic = 1
       j0 = 1 ; jn = l_nj ; jc = 1
-!$omp end single
 
       do ite=1,F_maxite
-!$omp do
+
          do k=1,Nk
             prmax(k) = 0.0
          end do
-!$omp enddo
 
-!$omp do
          do k=1,Nk
             if ( prmaxall(k) > F_conv ) then
                do j=j0,jn,jc
@@ -72,9 +63,7 @@
                end do
             end if
          end do
-!$omp enddo
 
-!$omp single
          if ((i0 == 1   ).and.(j0 == 1   )) then
             i0=l_ni ; in=1 ; ic=-1
          end if
@@ -96,18 +85,17 @@
          do k=1,Nk
             if ( prmaxall(k) < F_conv ) count = count + 1
          end do
-!$omp end single
+
 
          if ( count == Nk ) exit
 
-!$omp single
+
          if (mod(ite,Out3_liebxch_iter) == 0) &
          call rpn_comm_xch_halo( F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!$omp end single
 
       end do
-!$omp end parallel
+
 !     __________________________________________________________________
 !
       return

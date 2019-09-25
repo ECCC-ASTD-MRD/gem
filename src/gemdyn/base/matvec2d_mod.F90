@@ -46,9 +46,6 @@ contains
 
       allocate (stencil(1+sol_pil_w:l_ni-sol_pil_e, 1+sol_pil_s:l_nj-sol_pil_n, 5, l_nk))
 
-
-!$omp parallel private (i,j,k,jj,ii,cst,di_8)
-!$omp do
       do  k=1, l_nk
 
          cst = Cstv_hco1_8 + Cstv_hco0_8 * Opr_zeval_8(k)
@@ -75,8 +72,7 @@ contains
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
+
    end subroutine matvec2d_init
 
 

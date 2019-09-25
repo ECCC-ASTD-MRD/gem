@@ -34,8 +34,6 @@ contains
       xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
-!$omp parallel private (i,j,k,jj,ii,di_8) shared(xxx, yyy)
-!$omp do
       do k=1, l_nk
          do j=1+sol_pil_s, l_nj-sol_pil_n
             jj=j+l_j0-1
@@ -68,8 +66,7 @@ contains
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
+
    end subroutine matvec_init
 
 
@@ -82,13 +79,7 @@ contains
       integer :: i, j, k
       real(kind=REAL64) :: vector(0:l_ni+1, 0:l_nj+1, l_nk)
 
-      !vector = 0.0d0
-      !prod = 0.0d0
-
-!$omp parallel private (i,j,k) shared(vector, prod)
-!$omp do
       do k = 1, l_nk
-         !vector(:,:,k) = 0.0d0
          vector(:,0:sol_pil_s,k) = 0
          do j=1+sol_pil_s, l_nj-sol_pil_n
             vector(0:sol_pil_w,j,k) = 0
@@ -99,14 +90,10 @@ contains
          end do
          vector(:,(l_nj-sol_pil_n+1):(l_nj+1),k) = 0
       end do
-!$omp enddo
 
-!$omp single
       call rpn_comm_xch_halon (vector, 0, l_ni+1, 0, l_nj+1, l_ni, l_nj, l_nk, &
                                1, 1, G_periodx, G_periody, l_ni, 0, 2)
-!$omp end single
 
-!$omp do
       do k=1,l_nk
          if (k == 1) then
             do j=1+sol_pil_s, l_nj-sol_pil_n
@@ -147,8 +134,8 @@ contains
             end do
          end if
       end do
-!$omp enddo
-!$omp end parallel
+
+
    end subroutine matvec_3d
 
    ! matvec_yy (was matvec3d_prod) -- implement matrix-vector product with yin/yang grid exchange

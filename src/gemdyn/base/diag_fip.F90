@@ -51,51 +51,42 @@
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private(qbar,w1,km)
-
-!$omp do
       do j=j0,jn
          do i=i0,in
             F_fip(i,j,G_nk+1)= F_fis(i,j)
          end do
       end do
-!$omp enddo
 
       if (Dynamics_hydro_L) then
 
-!$omp do
-      do j=j0,jn
-         do k= G_nk,1,-1
-            w1= rgasd_8*Ver_dz_8%t(k)
-            do i= i0,in
-               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
-                            +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                            +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+         do j=j0,jn
+            do k= G_nk,1,-1
+               w1= rgasd_8*Ver_dz_8%t(k)
+               do i= i0,in
+                  F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
+                               +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                               +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+               end do
             end do
          end do
-      end do
-!$omp enddo
 
       else
 
-!$omp do
-      do j=j0,jn
-         do k= G_nk,1,-1
-            km= max(1,k-1)
-            w1= rgasd_8*Ver_dz_8%t(k)
-            do i= i0,in
-               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
-               qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)
-               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one &
-                            +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                            +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+         do j=j0,jn
+            do k= G_nk,1,-1
+               km= max(1,k-1)
+               w1= rgasd_8*Ver_dz_8%t(k)
+               do i= i0,in
+                  qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
+                  qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)
+                  F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one &
+                               +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                               +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+               end do
             end do
          end do
-      end do
-!$omp enddo
 
       end if
-!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

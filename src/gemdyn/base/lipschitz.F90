@@ -74,36 +74,34 @@
       LipNOv=0.0
       LipNOw=0.0
 
-!$omp do
       do k=1,l_nk
          km=max(k-1,1)
          do j= j0, F_jn
-         do i= i0, F_in
-            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomh_invcy_8(j)*geomh_invDX_8(j)
-            if(dudx > LipNOu) then
-               iu=i
-               ju=j
-               ku=k
-               LipNOu=dudx
-            end if
-            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomh_invcy_8(j)*geomh_invDY_8
-            if(dvdy > LipNOv) then
-               iv=i
-               jv=j
-               kv=k
-               LipNOv=dvdy
-            end if
-            dwdz=abs(F_w(i,j,k)-F_w(i,j,km))*ver_idz_8%m(km)
-            if(dwdz > LipNOw) then
-               iw=i
-               jw=j
-               kw=k
-               LipNOw=dwdz
-            end if
-         end do
+            do i= i0, F_in
+               dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomh_invcy_8(j)*geomh_invDX_8(j)
+               if(dudx > LipNOu) then
+                  iu=i
+                  ju=j
+                  ku=k
+                  LipNOu=dudx
+               end if
+               dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomh_invcy_8(j)*geomh_invDY_8
+               if(dvdy > LipNOv) then
+                  iv=i
+                  jv=j
+                  kv=k
+                  LipNOv=dvdy
+               end if
+               dwdz=abs(F_w(i,j,k)-F_w(i,j,km))*ver_idz_8%m(km)
+               if(dwdz > LipNOw) then
+                  iw=i
+                  jw=j
+                  kw=k
+                  LipNOw=dwdz
+               end if
+            end do
          end do
       end do
-!$omp enddo
 
       LipNOu=Cstv_dt_8*LipNOu
       LipNOv=Cstv_dt_8*LipNOv

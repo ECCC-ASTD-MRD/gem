@@ -85,23 +85,11 @@
 
       istat = gmm_get (gmmk_smag_s, smag)
 
-
-!$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
-!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, &
-!$omp smagcoef_uo, smagcoef_vo,fact) &
-!$omp shared(base_coefM, base_coefT, smag, hu, cdelta2, ismagprandtl,&
-!$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
-!$omp        switch_on_hu, switch_on_fric_heat,switch_on_wzd)
-
-!$omp do
       do k=1,nk
          base_coefM(k)=Hzd_smago_lnrM_8(k)*crit_coef
          base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
       end do
-!$omp end do
 
-!$omp do
       do k=1,nk
 
          do j=j0-2, jn+2
@@ -216,7 +204,6 @@
             end do
          end do
 
-
          if (.not.Dynamics_hydro_L .and. switch_on_wzd) then
 
             fact=Cstv_dt_8*Cstv_invT_nh_8
@@ -280,11 +267,10 @@
          end if
 
       end do
-!$omp end do
 
       if (switch_on_fric_heat) then
          fact=Cstv_dt_8*Cstv_invT_8/cdelta2**2/cpd_8
-!$omp do
+
          do k=1, nk
             if(k /= nk) then
                do j=j0, jn
@@ -302,9 +288,8 @@
                end do
             end if
          end do
-!$omp end do
+
       end if
-!$omp end parallel
 
       return
       end subroutine smago_in_rhs

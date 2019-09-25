@@ -66,25 +66,20 @@
       call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_njv,G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-!
       if (Schm_opentop_L) then
-!$omp do
+
          do j= j0, jn
             do i= i0, in
                F_rb(i,j) = F_rt(i,j,k0t)-mu_8*Cstv_tau_nh_8* F_rw(i,j,k0t)
-
             end do
          end do
-!$omp enddo
+
       end if
 
 !*************************************
 ! Combination of governing equations *
 !*************************************
 
-!$omp parallel private(km,div,w1,w2)
-
-!$omp do
       do k=k0, l_nk
 
          do j= j0, jn
@@ -105,9 +100,7 @@
          end do
 
       end do
-!$omp end do
 
-!$omp do
       do k=k0t, l_nk
          do j= j0, jn
             do i= i0, in
@@ -124,10 +117,7 @@
          end do
 
       end do
-!$omp end do
 
-
-!$omp do
       do k=k0,l_nk
          km=max(k-1,1)
          do j= j0, jn
@@ -147,12 +137,12 @@
             end do
          end do
       end do
-!$omp end do
+
       if (Schm_opentop_L) then
 !        Apply opentop boundary conditions
 
          w1=Cstv_invT_8/Ver_Tstar_8%t(k0t)
-!$omp do
+
          do j= j0, jn
             do i= i0, in
                F_rb(i,j) = F_rb(i,j) - (one/Cstv_tau_8+mu_8*Cstv_tau_nh_8*grav_8)*(F_nest_t(i,j,k0t)&
@@ -160,13 +150,11 @@
                F_rc(i,j,k0) = F_rc(i,j,k0  ) + Ver_cstp_8 * F_rb(i,j)
             end do
          end do
-!$omp enddo
 
       end if
 
 !     Apply lower boundary conditions
 !
-!$omp do
       do j= j0, jn
          do i= i0, in
             F_rc(i,j,l_nk) = F_rc(i,j,l_nk) - isol_d*mc_cssp_H_8(i,j) * &
@@ -174,9 +162,6 @@
                     + Cstv_invT_m_8*(F_rf(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rf(i,j,l_nk-1)))
          end do
       end do
-!$omp end do
-
-!$omp end parallel
 
 1000  format(3X,'UPDATE  THE RIGHT-HAND-SIDES: (S/R PRE_H)')
 !

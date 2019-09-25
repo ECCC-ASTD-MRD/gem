@@ -104,10 +104,6 @@
       if (l_east ) inu = inu + onept
       if (l_north) jnv = jnv + onept
 
-!$omp parallel private(km,kp,barz,barzp,div, &
-!$omp w1,w2,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
-
-!$omp do
       do k=k0, l_nk
          km=max(k-1,1)
 
@@ -174,7 +170,6 @@
             end do
          end do
       end do
-!$omp end do
 
       if (.not.Grd_yinyang_L) then
 
@@ -182,49 +177,48 @@
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
          if (l_west) then
-!$omp do
+
             do k=1,l_nk
                do j=j0,jn
                   F_nu(pil_w,j,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
          if (l_east) then
-!$omp do
+
             do k=1,l_nk
                do j=j0,jn
                   F_nu(l_ni-pil_e,j,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
 
 !        Set  Nv=0  on the north and south boundaries  of the LAM grid
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
          if (l_south) then
-!$omp do
+
             do k=1,l_nk
                do i=i0,in
                   F_nv(i,pil_s,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
          if (l_north) then
-!$omp do
+
             do k=1,l_nk
                do i=i0,in
                   F_nv(i,l_nj-pil_n,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
 
       end if
 
-!$omp do
       do k=k0t,l_nk
 
          km=max(k-1,1)
@@ -265,9 +259,7 @@
          end do
 
       end do
-!$omp end do
 
-!$omp do
       do k=k0,l_nk
          km=max(k-1,1)
          do j = j0, jn
@@ -292,9 +284,7 @@
             end do
          end do
       end do
-!$omp end do
 
-!$omp do
       do k=k0,l_nk
          do j= j0, jn
             do i= i0, in
@@ -302,35 +292,28 @@
             end do
          end do
       end do
-!$omp end do
-!
+
       if(Schm_opentop_L) then
          c1= Dcst_rayt_8**2
          F_rhs(:,:,1:k0t) = 0.0
-!$omp do
+
          do j= j0, jn
             do i= i0, in
                F_rhs(i,j,k0)= F_rhs(i,j,k0) -  c1* Ver_cstp_8 * F_nb(i,j)
             end do
          end do
-!$omp enddo
-      end if
-!
 
+      end if
 
 !     Apply bottom boundary conditions
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!$omp do
       do j= j0, jn
          do i= i0, in
             F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) + isol_d * c0 * mc_cssp_H_8(i,j) * &
                          (F_nt(i,j,l_nk ) - Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1))
          end do
       end do
-!$omp end do
-
-!$omp end parallel
 
       if ( trim(Sol_type_S) == 'ITERATIVE_3D') then
 

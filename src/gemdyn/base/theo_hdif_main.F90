@@ -127,13 +127,11 @@
 !
 !----------------------------------------------------------------------
 !
-         id = 1    + pil_w
-         jd = 1    + pil_s
-         iff= l_ni - pil_e
-         jf = l_nj - pil_n
+      id = 1    + pil_w
+      jd = 1    + pil_s
+      iff= l_ni - pil_e
+      jf = l_nj - pil_n
 
-!$omp parallel private (i,j,k,wk,i0,j0,in,jn)
-!$omp do
       do k=1,lnk
          i0= id-1 ; in= iff+1
          j0= jd-1 ; jn= jf +1
@@ -162,8 +160,6 @@
             sfd(id:iff,jd:jf,k) = rfd(id:iff,jd:jf,k) + wk(id:iff,jd:jf)
          end if
       end do
-!$omp enddo
-!$omp end parallel
 !
 !----------------------------------------------------------------------
 !

@@ -80,8 +80,7 @@
             end do
          end do
       end do
-!
-!$omp do
+
       do j= j0, jn
          do i= i0, in
             F_q(i,j,l_nk+1) = mc_alfas_H_8(i,j) * F_q(i,j,l_nk)   &
@@ -91,30 +90,22 @@
                          - mc_css_H_8(i,j)   * (F_nt(i,j,l_nk ) - Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1))
          end do
       end do
-!$omp end do
-!
-!
+
       if ( Schm_opentop_L ) then
          F_q(:,:,1:k0-2) = 0.0
-!$omp do
+
          do j= j0, jn
             do i= i0, in
                F_q(i,j,k0-1) = Ver_alfat_8 * F_lhs_sol(i,j,k0) &
                          - Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
             end do
          end do
-!$omp enddo
-      end if
-!
 
-!$omp single
+      end if
+
       call rpn_comm_xch_halo(F_q,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!$omp end single
 
-!$omp parallel private(km,Buoy)
-!
-!$omp do
       do k=k0, l_nk
          km=max(k-1,1)
 
@@ -148,9 +139,7 @@
             end do
          end do
       end do
-!$omp end do
 
-!$omp do
       do k=k0t, l_nk
          do j= j0, jn
             do i= i0, in
@@ -176,13 +165,12 @@
             end do
          end do
       end do
-!$omp enddo
+
 
       if (Schm_autobar_L) then
          F_t=Cstv_Tstr_8 ; F_zd=0. ! not necessary but safer
       end if
 
-!$omp end parallel
 !
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC_H)')
 !     __________________________________________________________________

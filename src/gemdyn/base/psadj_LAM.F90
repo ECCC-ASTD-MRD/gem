@@ -77,9 +77,9 @@
 
          l_avg_8(1) = 0.0d0
          do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            l_avg_8(1) = l_avg_8(1) + geomh_area_8(i,j) * geomh_mask_8(i,j)
-         end do
+            do i=1+pil_w,l_ni-pil_e
+               l_avg_8(1) = l_avg_8(1) + geomh_area_8(i,j) * geomh_mask_8(i,j)
+            end do
          end do
 
          call RPN_COMM_allreduce (l_avg_8(1), PSADJ_LAM_scale_8, 1, &
@@ -109,11 +109,9 @@
 
          istat = gmm_get('TR/HU:P',tr)
 
-!$omp parallel do private(k) shared(sumq,tr)
          do k=F_k0,F_nk
             sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
          end do
-!$omp end parallel do
 
       else
 
@@ -154,9 +152,6 @@
 
       end if
 
-!$omp parallel private(i,j,k) &
-!$omp shared(pr_m_8,pr_p0_w_8,sumq)
-!$omp do
       do j=1+pil_s,l_nj-pil_n
          do k=F_k0,F_nk
             do i=1+pil_w,l_ni-pil_e
@@ -164,19 +159,17 @@
             end do
          end do
       end do
-!$omp end do
-!$omp end parallel
 
       !Estimate air mass on CORE
       !-------------------------
       l_avg_8(1) = 0.0d0
 
       do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
+         do i=1+pil_w,l_ni-pil_e
 
-         l_avg_8(1) = l_avg_8(1) + pr_p0_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+            l_avg_8(1) = l_avg_8(1) + pr_p0_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-      end do
+         end do
       end do
 
       call RPN_COMM_allreduce (l_avg_8,g_avg_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
@@ -201,11 +194,9 @@
 
          istat = gmm_get('TR/HU:M',tr)
 
-!$omp parallel do private(k) shared(sumq,tr)
          do k=F_k0,F_nk
             sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
          end do
-!$omp end parallel do
 
       else
 
@@ -253,9 +244,6 @@
 
           end if
 
-!$omp parallel private(i,j,k) &
-!$omp shared(pr_m_8,pr_p0_w_8,sumq)
-!$omp do
          do j=1+pil_s,l_nj-pil_n
             do k=F_k0,F_nk
                do i=1+pil_w,l_ni-pil_e
@@ -263,36 +251,32 @@
                end do
             end do
          end do
-!$omp end do
-!$omp end parallel
 
          !Compute FLUX on NEST+CORE
          !-------------------------
-!$omp parallel private(i,j,k) &
-!$omp shared(pr_m_8,pr_fl_w_8,sumq,F_cub_i,F_cub_o)
-!$omp do
+
          do j=1,l_nj
             pr_fl_w_8(:,j) = 0.0d0
             do k=F_k0,F_nk
-            do i=1,l_ni
-               pr_fl_w_8(i,j) = pr_fl_w_8(i,j) + (1.-sumq(i,j,k)) * (pr_m_8(i,j,k+1) - pr_m_8(i,j,k)) &
-                                * (F_cub_i(i,j,k) - F_cub_o(i,j,k))
-            end do
+               do i=1,l_ni
+                  pr_fl_w_8(i,j) = pr_fl_w_8(i,j) + (1.-sumq(i,j,k)) * (pr_m_8(i,j,k+1) - pr_m_8(i,j,k)) &
+                                   * (F_cub_i(i,j,k) - F_cub_o(i,j,k))
+               end do
             end do
          end do
-!$omp end do
-!$omp end parallel
+
+
 
          !Estimate air mass on CORE
          !-------------------------
          l_avg_8(1) = 0.0d0
 
          do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+            do i=1+pil_w,l_ni-pil_e
 
-            l_avg_8(1) = l_avg_8(1) + pr_p0_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+               l_avg_8(1) = l_avg_8(1) + pr_p0_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
-         end do
+            end do
          end do
 
          !Estimate FLUX mass on NEST+CORE
@@ -300,11 +284,9 @@
          l_avg_8(2) = 0.0d0
 
          do j=1,l_nj
-         do i=1,l_ni
-
-            l_avg_8(2) = l_avg_8(2) + pr_fl_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
-
-         end do
+            do i=1,l_ni
+               l_avg_8(2) = l_avg_8(2) + pr_fl_w_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
+            end do
          end do
 
          call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
@@ -319,16 +301,16 @@
 
          if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
             do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
-            end do
+               do i=1+pil_w,l_ni-pil_e
+                  st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+               end do
             end do
          else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
             do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               qt0(i,j,F_nk+1) = rgasd_8*Ver_Tstar_8%m(F_nk+1)*&
-               (log(pr_p0_0_8(i,j))-lg_pstar_8(i,j,F_nk+1))
-            end do
+               do i=1+pil_w,l_ni-pil_e
+                  qt0(i,j,F_nk+1) = rgasd_8*Ver_Tstar_8%m(F_nk+1)*&
+                  (log(pr_p0_0_8(i,j))-lg_pstar_8(i,j,F_nk+1))
+               end do
             end do
          end if
 
@@ -339,26 +321,26 @@
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
          do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+            do i=1+pil_w,l_ni-pil_e
 
-            delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
-                        (exp(qt0(i,j,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
-                         exp(qts(i,j)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
-         end do
+               delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
+                           (exp(qt0(i,j,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
+                            exp(qts(i,j)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
+            end do
          end do
 
          do k=F_nk,F_k0,-1
 
             do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
+               do i=1+pil_w,l_ni-pil_e
 
-               pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(i,j,k))
+                  pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(i,j,k))
 
-               qt0(i,j,k) = rgasd_8*Ver_Tstar_8%m(k)*&
-                            (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
-                            exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
+                  qt0(i,j,k) = rgasd_8*Ver_Tstar_8%m(k)*&
+                               (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
+                               exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
 
-            end do
+               end do
             end do
 
          end do

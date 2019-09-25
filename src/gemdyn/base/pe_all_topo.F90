@@ -179,13 +179,13 @@
 
       err= clib_getcwd(ici)
       err= clib_chdir(trim(F_path_S))
-!$OMP PARALLEL DO private(i,j,ret)
+
       do j=0,F_npey-1
          do i=0,F_npex-1
             ret = mk_gem_dir(i,j)
          end do
       end do
-!$OMP END PARALLEL DO
+
       err= clib_chdir(ici)
 
       return

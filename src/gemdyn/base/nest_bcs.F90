@@ -43,43 +43,43 @@
       gmmstat = gmm_get (gmmk_nest_v_s, nest_v)
 
       if (l_west) then
-!$omp do
+
          do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-               rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
+            do j= 1+pil_s, l_nj-pil_n
+                  rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
+            end do
          end do
-         end do
-!$omp enddo
+
       end if
 
       if (l_east) then
-!$omp do
+
          do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-            rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
+            do j= 1+pil_s, l_nj-pil_n
+               rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
+            end do
          end do
-         end do
-!$omp enddo
+
       end if
 
       if (l_south) then
-!$omp do
+
          do k=1,l_nk
-         do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
+            do i= 1+pil_w, l_ni-pil_e
+               rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
+            end do
          end do
-         end do
-!$omp enddo
+
       end if
 
       if (l_north) then
-!$omp do
+
          do k=1,l_nk
-         do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
+            do i= 1+pil_w, l_ni-pil_e
+               rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
+            end do
          end do
-         end do
-!$omp enddo
+
       end if
 !
 !----------------------------------------------------------------------

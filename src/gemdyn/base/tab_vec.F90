@@ -34,13 +34,8 @@
       nij=(in-i0+1)*(jn-j0+1)
 !
       if (idir == 1) then
-!$omp parallel private(i,j,iloc) shared(nij)
-!$omp do
          do k = 1  , nk
-!           iloc=iloc+1
-!           vec(iloc)  =tab(i,j,k)
             iloc=(k-1)*nij
-!           call dcopy(nij,tab(i0,j0,k),1,vec(iloc),1)
             do j=j0,jn
                do i=i0,in
                   iloc=iloc+1
@@ -48,16 +43,9 @@
                end do
             end do
          end do
-!$omp enddo
-!$omp end parallel
       else if (idir == (-1)) then
-!$omp parallel private(i,j,iloc)  shared(nij)
-!$omp do
          do k = 1  , nk
-!           iloc=iloc+1
-!           tab(i,j,k) =vec(iloc)
             iloc=(k-1)*nij
-!           call dcopy(nij,vec(iloc),1,tab(i0,j0,k),1)
             do j=j0,jn
                do i=i0,in
                   iloc=iloc+1
@@ -65,8 +53,6 @@
                end do
             end do
          end do
-!$omp enddo
-!$omp end parallel
       end if
 !
 !     ---------------------------------------------------------------
