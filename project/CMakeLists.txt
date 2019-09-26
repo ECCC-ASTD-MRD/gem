@@ -2,25 +2,53 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(GEM_EXPO NONE)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
-
-# cd sources
-# set the compiler by uncommenting one of the following 3 lines:
+# set the compiler suite by uncommenting one of the following 3 lines:
 set(COMPILER gfortran CACHE INTERNAL compiler)
 #set(COMPILER intel CACHE INTERNAL compiler)
 #set(COMPILER pgi CACHE INTERNAL compiler)
 # which will set the compiler and you can just type:
-# cmake ..
-# make -j
-
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # Include an architecture dependent file that contains settings for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
 set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-include("${ARCH}-${COMPILER}.cmake")
+
 message(STATUS "include ${ARCH}-${COMPILER}.cmake")
+include("${ARCH}-${COMPILER}.cmake")
+
+# The full path of the compiler for <LANG> must be set in CMAKE_<LANG>_COMPILER
+# before calling enable_language(<LANG>)
+
+# Enable the two languages that are used
+enable_language(C)
+enable_language(Fortran)
+
+message(STATUS "HAMSTER=${HAMSTER}")
+setup_compiler()
+message(STATUS "HAMSTER=${HAMSTER}")
+
+# TODO: This isn't used presently.  Check to see if we need it
+# set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
+
+# To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
+set(WITH_OPENMP ON CACHE INTERNAL WITH_OPENMP)
+if (WITH_OPENMP)
+   find_package(OpenMP)
+   if (NOT OPENMP_FOUND)
+      message(FATAL_ERROR "OpenMP was requested, but was not found!")
+   endif()
+else()
+   message("Building WITHOUT OpenMP")
+endif()
+
+if (WITH_OPENACC)
+   find_package(OpenACC)
+   if (OPENACC_NOTFOUND)
+      message(FATAL_ERROR "OpenACC was requested, but was not found!")
+   endif()
+endif()
+
 
 # get name and version of operating system
 execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/os.sh" OUTPUT_VARIABLE OS)
@@ -33,56 +61,28 @@ message(STATUS "Compiler version is: ${COMPILER} ${COMP_VERSION}")
 set(BUILD build)
 set(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Enable the two languages that are used
-enable_language(C)
-enable_language(Fortran)
-set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
-
-# message(STATUS "CMAKE_<LANG>_COMPILER_VERSION: ${CMAKE_C_COMPILER_VERSION}")
-#message(STATUS "COMPILER_BASE_NAME: ${COMPILER_BASE_NAME}")
 # Enable distclean target
 include("distclean.cmake")
 
+set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
+
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules CACHE STRING "Where Fortran modules go")
 
-message("Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
-message("Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
-
-# To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
-set(WITH_OPENMP ON CACHE INTERNAL WITH_OPENMP)
-if (WITH_OPENMP)
-   find_package(OpenMP)
-   if (OPENMP_FOUND)
-       add_definitions(-DWITH_OpenMP)
-   else()
-      message(FATAL_ERROR "OpenMP was requested, but was not found!")
-   endif()
-else()
-   message("Building WITHOUT OpenMP")
-   add_definitions(-DWITHOUT_OpenMP)
-endif()
-
-if (WITH_OPENACC)
-   find_package(OpenACC)
-   if (OPENACC_NOTFOUND)
-      message(FATAL_ERROR "OpenACC was requested, but was not found!")
-   endif()
-endif()
+message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
 
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
 message(STATUS "arch-dependent include directory: ${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}")
 
-include_directories(${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
-                    ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules
-                    ${ROOT}/../src/rpncomm
-                    ${ROOT}/../src/rmn/PUBLIC_INCLUDES
-                    ${ROOT}/../src/RPN/compiler_includes
-                   )
-
-#uncomment to link to the local libraries already installed
-#link_directories(${ROOT}/../src/archdep/libs/${ARCH}-${COMPILER})
+include_directories(
+   ${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
+   ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules
+   ${ROOT}/../src/rpncomm
+   ${ROOT}/../src/rmn/PUBLIC_INCLUDES
+   ${ROOT}/../src/RPN/compiler_includes
+)
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
