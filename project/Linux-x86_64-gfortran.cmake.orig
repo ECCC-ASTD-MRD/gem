@@ -1,27 +1,49 @@
-add_definitions(-DLittle_Endian -DECCCGEM)
+# CMAKE_<LANG>_COMPILER variables MUST contain the full path of the compiler for <LANG>
 
-set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_Fortran_COMPILER "gfortran")
+find_program(CMAKE_C_COMPILER gcc)
+find_program(CMAKE_Fortran_COMPILER gfortran)
 
-set(MPI_C_COMPILER "mpicc")
-set(MPI_Fortran_COMPILER "mpif90")
-set(CMAKE_BUILD_TYPE "Debug")
+add_definitions(-DLittle_Endian)
 
-if (WITH_OPENMP)
-   list(APPEND compFlags "-fopenmp -ffast-math")
-   list(APPEND ldFlags "-fopenmp")
-endif()
+# CMAKE_BUILD_TYPE cab be one of Debug, Release, RelWithDebInfo, MinSizeRel
+set(CMAKE_BUILD_TYPE "Release")
 
-if (WITH_OPENACC)
-   # ACK CELL A RATION
-   list(APPEND compFlags "-fopenacc -foffload=-lm -fopt-info-optimized-omp")
-   list(APPEND ldFlags "-fopenacc -foffload=-lm")
-endif()
+function(setup_compiler)
+   # All the compiler specific configuration must be put here.
+   # This function will be called AFTER enable_language is called
+   # This is required since commands such as find_package will fail if
+   # languages have not been enabled yet
 
-set(CMAKE_C_FLAGS "-O2 -g -march=native -w -D_REENTRANT ${compFlags}" CACHE STRING "C compiler flags" FORCE)
-set(CMAKE_Fortran_FLAGS "-O2 -ffpe-trap=invalid,zero,overflow -g -march=native -fdump-core -fbacktrace -finit-real=nan -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic  -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals ${compFlags}" CACHE STRING "Fortran compiler flags" FORCE)
+   # We need the following packages for gcc/gfortran
+   # It doesn't look like this does much since the variables aren't available in
+   # the src/*/CMakeLists.txt files
+   find_package(MPI REQUIRED)
+   find_package(BLAS REQUIRED)
+   find_package(LAPACK REQUIRED)
 
-set(CMAKE_EXE_LINKER_FLAGS "-s ${ldFlags} -fpic")
+   # The documentation states that included files will be evaluated in the scope
+   # of the caller
 
-set(LAPACK_LIBRARIES "-llapack")
-set(BLAS_LIBRARIES "-lblas")
+   # Dump all the stuff that can be defined by the FindBLAS module
+   foreach(_varName BLAS_FOUND BLAS_LINKER_FLAGS BLAS_LIBRARIES BLAS95_LIBRARIES BLAS95_FOUND  BLA_STATIC BLA_VENDOR BLA_F95)
+      message(STATUS "${_varName}=${${_varName}}")
+   endforeach()
+
+   # FIXME: How do we specify compiler specific flags?
+   add_compile_options(-march=native -w -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffpe-trap=invalid,zero,overflow -fdump-core -fbacktrace -finit-real=nan -ffree-line-length-none -fpic  -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals)
+endfunction(setup_compiler)
+
+# if (WITH_OPENACC)
+#    # ACK CELL A RATION
+#    list(APPEND compFlags "-fopenacc -foffload=-lm -fopt-info-optimized-omp")
+#    list(APPEND ldFlags "-fopenacc -foffload=-lm")
+# endif()
+
+# set(CMAKE_C_FLAGS "-O2 -g -march=native -w" CACHE STRING "C compiler flags" FORCE)
+
+# set(CMAKE_Fortran_FLAGS "-O2 -ffpe-trap=invalid,zero,overflow -g -march=native -fdump-core -fbacktrace -finit-real=nan -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fpic  -Wall -Wextra -Wno-conversion -Wno-unused-parameter -Wno-unused-dummy-argument -Wno-compare-reals ${OpenMP_Fortran_FLAGS}" CACHE STRING "Fortran compiler flags" FORCE)
+# 
+# set(CMAKE_EXE_LINKER_FLAGS "-s ${ldFlags} -fpic")
+# 
+# set(LAPACK_LIBRARIES "-llapack")
+# set(BLAS_LIBRARIES "-lblas")
