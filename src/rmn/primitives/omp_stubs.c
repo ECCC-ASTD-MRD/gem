@@ -1,5 +1,5 @@
 //! Functions stubs for when OpenMP is not enabled to allow the code to compile and work
-#ifdef WITHOUT_OpenMP
+#ifndef _OPENMP
    // Define OpenMP function stubs so that GEM can build and
    // work, with reduced non-essential functionnality.
 

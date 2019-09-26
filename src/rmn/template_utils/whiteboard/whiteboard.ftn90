@@ -35,7 +35,7 @@
 !** end of rpn-doc sections
 
 
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
 #define OMPSUFFIX _omp
 #else
 #define OMPSUFFIX _st
@@ -562,7 +562,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -601,7 +601,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -654,7 +654,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -693,7 +693,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -746,7 +746,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -785,7 +785,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -838,7 +838,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -877,7 +877,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -930,7 +930,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -969,7 +969,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1022,7 +1022,7 @@ integer function CAT(wb_put_,TYPE2CHAR,OMPSUFFIX)(key,value,options0,wb) result(
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1061,7 +1061,7 @@ integer function CAT(wb_put_,TYPE2CHAR,_a,OMPSUFFIX)(key,value,options0,wb) resu
   integer*8 :: my_wb
   integer :: options
   integer,external :: f_wb_put
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1117,7 +1117,7 @@ integer function CAT(wb_read,OMPSUFFIX)(prefix_name,file,section,mode,wb) result
 #ifndef INTERFACEONLY
   integer*8 :: my_wb
   integer,external :: f_wb_read
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1275,7 +1275,7 @@ integer function CAT(wb_checkpoint,OMPSUFFIX)(wb) result(status)
 #ifndef INTERFACEONLY
   integer*8 :: my_wb
   integer,external :: f_wb_checkpoint
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1313,7 +1313,7 @@ integer function CAT(wb_reload,OMPSUFFIX)(wb) result(status)
 #ifndef INTERFACEONLY
   integer*8 :: my_wb
   integer,external :: f_wb_reload
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1390,7 +1390,7 @@ integer function CAT(wb_lock,OMPSUFFIX)(prefix_match,wb) result(status)
 #ifndef INTERFACEONLY
   integer*8 :: my_wb
   integer,external :: f_wb_lock
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1426,7 +1426,7 @@ integer function CAT(wb_error_handler,OMPSUFFIX)(handler_function) result(status
 !       integer, intent(in) :: error_severity,error_code
 !** end of rpn-doc sections
 #ifndef INTERFACEONLY
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1464,7 +1464,7 @@ integer function CAT(wb_broadcast_init,OMPSUFFIX)(pe_root,pe_me,domain,bcst_func
 !  broadcast
 !** end of rpn-doc sections
 #ifndef INTERFACEONLY
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1504,7 +1504,7 @@ integer function CAT(wb_broadcast,OMPSUFFIX)(key,ispattern,wb) result(status)
   integer*8 :: my_wb
   integer :: ispattern0
   integer,external :: f_wb_bcst
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1540,7 +1540,7 @@ integer function CAT(wb_verbosity,OMPSUFFIX)(level) result(status)
 !** end of rpn-doc sections
 #ifndef INTERFACEONLY
   integer,external :: f_wb_verbosity
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1572,7 +1572,7 @@ integer function CAT(wb_new,OMPSUFFIX)(wb) result(status)
 !** end of rpn-doc sections
 #ifndef INTERFACEONLY
   integer,external :: f_wb_new
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
@@ -1604,7 +1604,7 @@ integer function CAT(wb_free,OMPSUFFIX)(wb) result(status)
 !** end of rpn-doc sections
 #ifndef INTERFACEONLY
   integer,external :: f_wb_free
-#ifdef WITH_OpenMP
+#ifdef _OPENMP
   integer,external :: omp_get_num_threads
   if (omp_get_num_threads() > 1) then
      status = WB_ERROR 
