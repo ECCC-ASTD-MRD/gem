@@ -146,7 +146,7 @@
          Out3_nbitg=16
       end if
       Out3_lieb_nk = 0
-      do i = 1, MAXELEM
+      do i = 1, MAXELEM_mod
          if (Out3_lieb_levels(i) <= 0.) EXIT
          Out3_lieb_nk = Out3_lieb_nk + 1
       end do

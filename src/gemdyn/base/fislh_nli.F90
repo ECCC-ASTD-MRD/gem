@@ -56,7 +56,7 @@
 
 #include <arch_specific.hf>
 
-      integer :: i, j, k, k0t, km, kp, i0u, inu, j0v, jnv, nij, onept
+      integer :: i, j, k, k0t, km, i0u, inu, j0v, jnv, nij, onept
       real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0

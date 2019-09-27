@@ -150,6 +150,7 @@
       ! Construct vertical coordinate
       Level_kind_ip1 = 5
       Level_version  = 5
+      istat = 0
 
       Schm_sleve_L= .false. ; err= 0
       if (   Hyb_rcoef(3) >= 0. .or. Hyb_rcoef(4) >= 0. ) then

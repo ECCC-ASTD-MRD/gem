@@ -51,6 +51,7 @@
             npts    = F_dim
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w))
          case DEFAULT
+            npts = -1
             istat = -1
       end select
       call handle_error(istat,'itf_fft_set', &

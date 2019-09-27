@@ -35,6 +35,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      o_sets = -1
       if (trim(F_component_S) == 'DYN' ) then
          o_sets =  Outd_sets
          o_step => Outd_step

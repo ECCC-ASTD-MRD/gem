@@ -47,8 +47,9 @@
 !
 !----------------------------------------------------------------------
 !
-      nis= g_if - g_id + 1
-      njs= g_jf - g_jd + 1
+      nis = g_if - g_id + 1
+      njs = g_jf - g_jd + 1
+      wk_njs = -1
       if ( (nis < 1) .or. (njs < 1) ) return
 
       if (out_type_S == 'REGDYN') then

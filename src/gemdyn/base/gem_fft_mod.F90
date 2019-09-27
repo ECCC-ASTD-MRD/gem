@@ -87,6 +87,7 @@ contains
       integer, intent(in) :: length ! Transform length
       character(len=*), intent(in) :: f_type ! transform type
 
+      get_dft_norm_factor = -999.d0 ! shut up compiler warning
       if (f_type == 'SIN') then
          get_dft_norm_factor = 0.5d0/(length+1)
       elseif (f_type == 'QCOS') then
