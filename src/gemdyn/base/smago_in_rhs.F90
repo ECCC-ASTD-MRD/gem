@@ -61,6 +61,8 @@
       if ( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
       smagparam= hzd_smago_param
 
+      stop ('smago_in_rhs is broken')
+
       switch_on_wzd   = (Hzd_lnr <= 0.  .and. switch_on_wzd)
       switch_on_THETA = (Hzd_smago_prandtl > 0. .and. Hzd_lnr_theta <= 0.)
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0..and. Hzd_lnr_tr <= 0.)
