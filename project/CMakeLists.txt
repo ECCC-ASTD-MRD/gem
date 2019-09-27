@@ -88,6 +88,6 @@ include_directories(${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Too see the make commands
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory(${ROOT}/../src ${BUILD}/src)
