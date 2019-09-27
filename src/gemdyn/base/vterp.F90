@@ -73,34 +73,39 @@
          elseif (F_fx(i) > F_f(i,1)) then
             stop 'vterp : valeur a interpoler trop grande'
          else
-
-            if (F_fx(i) > F_f(i,n)) then
-               f1 = F_f(i,n-1)
-               f0 = F_f(i,n)
-               g1 = F_g(i,n-1)
-               g0 = F_g(i,n)
-               y1 = F_y(n-1)
-               y0 = F_y(n)
-               dy = y1-y0
-               a  = +f1/dy
-               b  = -f0/dy
-               c  = (g0+g1)/dy**2 - 2.*(f1-f0)/dy**3
-               cd = (y1*g0+y0*g1-(a+b)*(y1+y0))/dy**2
-! Newton formula iteration loop
-               do
-                  p  = F_x(i)-y0
-                  q  = F_x(i)-y1
-                  r  = c*F_x(i)-cd
-                  er = a*p+b*q+p*q*r-F_fx(i)
-                  if (abs(er) < F_acc) exit
-                  der = a+b+p*r+q*r+c*p*q
-                  F_x(i)  = F_x(i) -er/der
-               end do
-            end if
-
+            ! INTERPOLATION
+            do n=2,nn
+               if (F_fx(i) > F_f(i,n)) then
+                  f1 = F_f(i,n-1)
+                  f0 = F_f(i,n)
+                  g1 = F_g(i,n-1)
+                  g0 = F_g(i,n)
+                  y1 = F_y(n-1)
+                  y0 = F_y(n)
+                  dy = y1-y0
+                  a  = +f1/dy
+                  b  = -f0/dy
+                  c  = (g0+g1)/dy**2 - 2.*(f1-f0)/dy**3
+                  cd = (y1*g0+y0*g1-(a+b)*(y1+y0))/dy**2
+                  !Newton formula iteration loop
+                  do
+                     p  = F_x(i)-y0
+                     q  = F_x(i)-y1
+                     r  = c*F_x(i)-cd
+                     er = a*p+b*q+p*q*r-F_fx(i)
+                     if (abs(er) < F_acc) goto 40
+                     der = a+b+p*r+q*r+c*p*q
+                     F_x(i)  = F_x(i) -er/der
+                  end do
+               end if
+            end do
          end if
 
-      end do
+40       continue
 
+      end do
+!
+!     ---------------------------------------------------------------
+!
       return
       end
