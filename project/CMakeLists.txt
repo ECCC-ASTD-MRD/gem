@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
 project(GEM_EXPO NONE)
 
@@ -9,6 +9,10 @@ set(COMPILER gfortran CACHE INTERNAL compiler)
 # which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
+# CMAKE_BUILD_TYPE cab be one of Debug, Release, RelWithDebInfo, MinSizeRel
+set(CMAKE_BUILD_TYPE "Release")
+message(STATUS "Configuring for ${CMAKE_BUILD_TYPE}")
+
 # Include an architecture dependent file that contains settings for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
@@ -17,38 +21,45 @@ set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "include ${ARCH}-${COMPILER}.cmake")
 include("${ARCH}-${COMPILER}.cmake")
 
-# The full path of the compiler for <LANG> must be set in CMAKE_<LANG>_COMPILER
-# before calling enable_language(<LANG>)
-
-# Enable the two languages that are used
-enable_language(C)
-enable_language(Fortran)
-
-message(STATUS "HAMSTER=${HAMSTER}")
-setup_compiler()
-message(STATUS "HAMSTER=${HAMSTER}")
 
 # TODO: This isn't used presently.  Check to see if we need it
 # set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
 # To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
-set(WITH_OPENMP ON CACHE INTERNAL WITH_OPENMP)
+option(WITH_OPENMP "Build with OpenMP support" ON)
 if (WITH_OPENMP)
    find_package(OpenMP)
    if (NOT OPENMP_FOUND)
       message(FATAL_ERROR "OpenMP was requested, but was not found!")
    endif()
+   if(OpenMP_C_FLAGS)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+   endif()
+   if(OpenMP_Fortran_FLAGS)
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+   endif()
 else()
-   message("Building WITHOUT OpenMP")
+   message(STATUS "Building WITHOUT OpenMP")
 endif()
 
+message(STATUS "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
+
+option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)
    find_package(OpenACC)
    if (OPENACC_NOTFOUND)
       message(FATAL_ERROR "OpenACC was requested, but was not found!")
    endif()
+   if(OpenACC_C_FLAGS)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenACC_C_FLAGS}")
+   endif()
+   if(OpenACC_Fortran_FLAGS)
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenACC_Fortran_FLAGS}")
+   endif()
+else()
+   message(STATUS "Building WITHOUT OpenACC")
 endif()
-
 
 # get name and version of operating system
 execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/os.sh" OUTPUT_VARIABLE OS)
