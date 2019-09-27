@@ -40,7 +40,7 @@
 !
       call gemtime_start ( 99, 'BLOCSTAT', 1 )
 
-      if (.not.done) call set_statliste
+      if (.not.done) call set_statliste()
 
       flag = .false.
       if (Step_gstat > 0) flag = (mod(Lctl_step,Step_gstat) == 0)
@@ -86,7 +86,7 @@
 !            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
 !         end if
 
-         if (Dynamics_FISL_L .and. Lctl_step > 0) call adz_cfl
+         if (Dynamics_FISL_L .and. Lctl_step > 0) call adz_cfl()
 
          if (Ptopo_myproc == 0) write(output_unit,1001)
 

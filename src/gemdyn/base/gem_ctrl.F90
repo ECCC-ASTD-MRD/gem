@@ -39,7 +39,7 @@
 
       if ( .not. Rstri_rstn_L ) then
 
-         call indata
+         call indata()
 
       else
 
@@ -47,8 +47,8 @@
 
       end if
 
-      call spn_init ()
-      call set_smago ()
+      call spn_init()
+      call set_smago()
 
       call gemtime ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call gemtime_stop ( 2 )
