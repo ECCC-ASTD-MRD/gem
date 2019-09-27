@@ -27,10 +27,14 @@ stop 'exp_hybrid : not yet implemented (stub)'
 return
 end
 
-subroutine exp_geometry()
-stop 'exp_geometry : not yet implemented (stub)'
-return
-end
+module exp_geom
+   public :: exp_geometry
+   contains
+   subroutine exp_geometry()
+   stop 'exp_geometry : not yet implemented (stub)'
+   return
+   end subroutine exp_geometry
+end module exp_geom
 
 subroutine exp_set_vt()
 stop 'exp_set_vt : not yet implemented (stub)'

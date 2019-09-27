@@ -18,6 +18,7 @@
 
       subroutine indata()
       use dynkernel_options
+      use exp_geom
       use gem_options
       use glb_ld
       use gmm_geof
@@ -101,7 +102,7 @@
       end if
 
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_metric()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_geometry()
 
       do k=1, Tr3d_ntr
          nullify (plus, minus)
