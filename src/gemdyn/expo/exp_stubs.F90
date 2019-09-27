@@ -27,8 +27,8 @@ stop 'exp_hybrid : not yet implemented (stub)'
 return
 end
 
-subroutine exp_metric()
-stop 'exp_metric : not yet implemented (stub)'
+subroutine exp_geometry()
+stop 'exp_geometry : not yet implemented (stub)'
 return
 end
 
