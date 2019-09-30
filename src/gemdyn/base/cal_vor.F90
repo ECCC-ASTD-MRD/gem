@@ -38,13 +38,6 @@
 !
 !----------------------------------------------------------------------
 !
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         call exp_cal_vor(F_QR,F_QQ, F_uu,F_vv,            &
-                           F_filtqq, F_coefqq, F_absvor_L, &
-                           Minx,Maxx,Miny,Maxy,Nk )
-         return
-      end if
-
       i0 = 1
       in = l_niu
       j0 = 1
@@ -52,13 +45,11 @@
 
       do k = 1 , Nk
          do j = j0, jn
-         do i = i0, in
-            F_QR(i,j,k) = &
-            ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomh_invDXv_8(j)) &
-          - ( (F_uu(i,j+1,k)*geomh_cy_8(j+1)  &
-             - F_uu(i,j  ,k)*geomh_cy_8(j  )) &
-             * geomh_invDY_8 * geomh_invcyv_8(j))
-         end do
+            do i = i0, in
+               F_QR(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomh_invDXv_8(j)) &
+                           - ( (F_uu(i,j+1,k)*geomh_cy_8(j+1) - F_uu(i,j  ,k)*geomh_cy_8(j  )) &
+                           * geomh_invDY_8 * geomh_invcyv_8(j))
+            end do
          end do
          F_QR(1:i0-1,:,k) = 0. ; F_QR(in+1:l_ni,:,k)= 0.
          F_QR(:,1:j0-1,k) = 0. ; F_QR(:,jn+1:l_nj,k)= 0.
@@ -71,10 +62,10 @@
          deg2rad= pi_8/180.d0
          do k =  1, Nk
             do j = j0, jn
-            do i = i0, in
-               F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*Dcst_omega_8 &
-                           * sin(geomh_latrx(i,j)*deg2rad)
-            end do
+               do i = i0, in
+                  F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*Dcst_omega_8 &
+                             * sin(geomh_latrx(i,j)*deg2rad)
+               end do
             end do
             F_QQ(1:i0-1,:,k) = 0. ; F_QQ(in+1:l_ni,:,k)= 0.
             F_QQ(:,1:j0-1,k) = 0. ; F_QQ(:,jn+1:l_nj,k)= 0.
