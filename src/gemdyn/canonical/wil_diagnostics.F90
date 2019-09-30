@@ -126,7 +126,7 @@
 
       end if
 
-      if (adz_verbose==0) return
+      if (Dynamics_FISL_L .and. adz_verbose==0) return
 
       if (Williamson_case/=1) return
 
