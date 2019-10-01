@@ -66,7 +66,7 @@
       if ( (Hzd_lnR_tr > 0) .and. (Hzd_pwr_tr > 0) )  then
          nutop_8 = 1./4. * Hzd_lnR_tr**(2./Hzd_pwr_tr)
          Hzd_Niter_tr = max(int(8.d0*nutop_8+0.9999999),1)
-         coef_tr_8=nutop_8/max(1.,float(hzd_niter_tr))* &
+         coef_tr_8 = nutop_8 / max(1.,float(hzd_niter_tr)) * &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_tr(G_nk))
          Hzd_coef_8_tr(1:G_nk) = coef_tr_8*(Dcst_inv_rayt_8**2)*Cstv_dt_8
