@@ -109,8 +109,8 @@
 !        Compute Rt" & Rf"
 !        ~~~~~~~~~~~~~~~~~
 
-         w1 = cappa_8 /( Rgasd_8 * Ver_Tstar_8%t(k) )
-         w2 = Cstv_invT_m_8 / ( cappa_8 + Ver_epsi_8(k) )
+         w1 = cappa_8 /( Rgasd_8 * Cstv_Tstr_8 )
+         w2 = Cstv_invT_m_8 / ( cappa_8 + epsi_8 )
          do j= j0, jn
             do i= i0, in
    !           Combine Rt and Rw
@@ -149,8 +149,8 @@
          km=max(k-1,1)
          w1= Ver_idz_8%m(k) + Ver_wp_8%m(k)
          w2=(Ver_idz_8%m(k) - Ver_wm_8%m(k))*Ver_onezero(k)
-         w3=Ver_wpA_8(k)*Ver_epsi_8(k)
-         w4=Ver_wmA_8(k)*Ver_epsi_8(km)*Ver_onezero(k)
+         w3=Ver_wpA_8(k)*epsi_8
+         w4=Ver_wmA_8(k)*epsi_8*Ver_onezero(k)
          do j= j0, jn
             do i= i0, in
                F_rc(i,j,k) = F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j) &
@@ -164,11 +164,11 @@
 
 !        Apply opentop boundary conditions
 
-         w1=Cstv_invT_8/Ver_Tstar_8%t(k0t)
+         w1=Cstv_invT_8/Cstv_Tstr_8
 
          do j= j0, jn
             do i= i0, in
-               F_rb(i,j) = F_rt(i,j,k0t) - Ver_ikt_8*(F_rb(i,j) - w1*(F_nest_t(i,j,k0t)-Ver_Tstar_8%t(k0t)))
+               F_rb(i,j) = F_rt(i,j,k0t) - Ver_ikt_8*(F_rb(i,j) - w1*(F_nest_t(i,j,k0t)-Cstv_Tstr_8))
                F_rc(i,j,k0  ) = F_rc(i,j,k0  ) - Ver_cstp_8 * F_rb(i,j)
             end do
          end do
@@ -177,7 +177,7 @@
 
 !     Apply lower boundary conditions
 !
-      w1 = Cstv_invT_8*Cstv_invT_m_8 / ( Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
+      w1 = Cstv_invT_8*Cstv_invT_m_8 / ( Rgasd_8 * Cstv_Tstr_8 )
 
       do j= j0, jn
          do i= i0, in

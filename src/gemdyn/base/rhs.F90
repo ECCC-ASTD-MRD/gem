@@ -51,16 +51,14 @@
       integer :: j0u, jnu, j0v, jnv
 
       integer :: i, j, k, km, kq, nij, jext, istat
-      real(kind=REAL64) :: tdiv, BsPqbarz, dlnTstr_8, barz, barzp,  &
+      real(kind=REAL64) :: tdiv, BsPqbarz, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
                 w1, w2, phy_bA_m_8, phy_bA_t_8
       real(kind=REAL64)  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, FI
-      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,l_nk) :: Afis
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
-      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
-                           alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
+      real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       logical :: smago_in_rhs_L
 !
 !     ---------------------------------------------------------------
@@ -151,31 +149,12 @@
                       i0u,inu+1,j0v,jnv+1)
       end if
 
-      if(Schm_eulmtn_L) then
-
-         do k=1,l_nk
-            do j=j0,jn
-               do i=i0,in
-                     Afis(i,j,k)= (alpha1*F_u(i-2,j,k) + alpha2*F_u(i-1,j,k) +     &
-                                   alpha2*F_u(i,j,k)   + alpha1*F_u(i+1,j,k) ) *     &
-                                 (  F_fis(i-2,j)/12.0d0        - 2.0d0*F_fis(i-1,j)/3.0d0                    &
-                                  + 2.0d0*F_fis(i+1,j)/3.0d0   - F_fis(i+2,j)/12.0d0 ) * geomh_invDXMu_8(j)  &
-                               +  (alpha1*F_v(i,j-2,k) + alpha2*F_v(i,j-1,k)   +     &
-                                   alpha2*F_v(i,j  ,k) + alpha1*F_v(i,j+1,k))  *     &
-                                 (  F_fis(i,j-2)/12.0d0        - 2.0d0*F_fis(i,j-1)/3.0d0                    &
-                                  + 2.0d0*F_fis(i,j+1)/3.0d0   - F_fis(i,j+2)/12.0d0 ) * geomh_invDYMv_8(j)
-               end do
-            end do
-         end do
-
-      end if
-
       do k=1,l_nk+1
          kq=max(2,k)
          do j=j0v,jnv+1
             do i=i0u,inu+1
-               BsPq(i,j,k) = Ver_b_8%m(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                            +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) + F_q(i,j,k)
+               BsPq(i,j,k) = Ver_b_8%m(k)*F_s(i,j) &
+                            +Ver_c_8%m(k)*F_sl(i,j) + F_q(i,j,k)
             end do
          end do
       end do
@@ -247,7 +226,7 @@
          xtmp_8(:,:) = one
          do j = j0, jn
             do i = i0, in
-               xtmp_8(i,j) = F_t(i,j,k) / Ver_Tstar_8%t(k)
+               xtmp_8(i,j) = F_t(i,j,k) / Cstv_Tstr_8
             end do
          end do
          call vlog( ytmp_8, xtmp_8, nij )
@@ -264,8 +243,8 @@
          xtmp_8(:,:) = one
          do j = j0, jn
             do i = i0, in
-               xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * (F_s(i,j) +Cstv_Sstar_8) &
-                                 + Ver_dcdz_8%m(k) * (F_sl(i,j)+Cstv_Sstar_8)
+               xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)  &
+                                 + Ver_dcdz_8%m(k) * F_sl(i,j)
             end do
          end do
          call vlog( ytmp_8, xtmp_8, nij)
@@ -275,21 +254,11 @@
                     + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
                     + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
                     + Ver_wpC_8(k) * F_zd(i,j,k) + Ver_wmC_8(k) * Ver_onezero(k) * F_zd(i,j,km)
-               F_orc (i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                                                           +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8)) + ytmp_8(i,j) ) &
+               F_orc (i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*(Ver_b_8%m(k)*F_s(i,j)  &
+                                                           +Ver_c_8%m(k)*F_sl(i,j)) + ytmp_8(i,j) ) &
                              - Cstv_Beta_8 * tdiv
             end do
          end do
-
-         if (Schm_eulmtn_L) then
-            w1=one/(Rgasd_8*Ver_Tstar_8%m(l_nk))
-            do j = j0, jn
-               do i = i0, in
-                  F_orc(i,j,k) = F_orc(i,j,k) + Cstv_invT_8 * w1 * F_fis(i,j) +  &
-                                  Cstv_Beta_8 * w1 * Afis(i,j,k)
-               end do
-            end do
-         end if
 
    !********************************************
    ! Compute Rw: RHS of  w equation            *
@@ -310,29 +279,12 @@
                w1=Ver_wpstar_8(k)*FI(i,j,k+1)+Ver_wmstar_8(k)*half*(FI(i,j,k)+FI(i,j,km))
                w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
                F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*FI(i,j,k) )  &
-                            + Cstv_Beta_8 * Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
+                            + Cstv_Beta_8 * Rgasd_8 * Cstv_Tstr_8 * w2 &
                             + Cstv_Beta_8 * grav_8 * F_w(i,j,k)
             end do
          end do
 
-         if(Cstv_Tstr_8 < 0.) then
-            w1=one/Ver_Tstar_8%t(k)
-            dlnTstr_8=w1*(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
-            do j = j0, jn
-               do i = i0, in
-                  w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-                  F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dlnTstr_8
-               end do
-            end do
-         end if
-
       end do
-
-      if (hzd_div_damp > 0.0) then
-         call hz_div_damp ( F_oru, F_orv, F_u, F_v, &
-                            i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
-                            l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      end if
 
       if (smago_in_rhs_L) then
          call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &

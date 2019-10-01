@@ -228,8 +228,8 @@
             do j=j0-1, jn+1
                do i=i0-1, in+1
                   mypi(i,j)=exp(cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*&
-                             (F_s(i,j)+Cstv_Sstar_8)+Ver_c_8%m(k)*&
-                             (F_sl(i,j)+Cstv_Sstar_8)))
+                             (F_s(i,j)+0.d0)+Ver_c_8%m(k)*&
+                             (F_sl(i,j)+0.d0)))
                   th(i,j)=F_t(i,j,k)/mypi(i,j)
                end do
             end do

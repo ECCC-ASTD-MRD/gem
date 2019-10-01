@@ -112,14 +112,14 @@
 
       do k=k0t,l_nk
          km = max(k-1,k0t)
-         w1 = Cstv_tau_m_8*Rgasd_8*Ver_Tstar_8%t(k)/grav_8
+         w1 = Cstv_tau_m_8*Rgasd_8*Cstv_Tstr_8/grav_8
          do j= j0, jn
             do i= i0, in
                Pbar = Ver_wpstar_8(k)*GP(i,j,k+1) &
                     + Ver_wmstar_8(k)*half*(GP(i,j,k)+GP(i,j,km))
                Pbar = Ver_wp_8%t(k)*Pbar+Ver_wm_8%t(k)*GP(i,j,k)
                F_w(i,j,k) = w1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
-               + Ver_gama_8(k) * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
+               + gama_8 * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
                                         + cappa_8 * Pbar ) )
             end do
          end do
@@ -185,11 +185,11 @@
 
 !     Compute s
 !     ~~~~~~~~~
-      w1 = one/(Rgasd_8*Ver_Tstar_8%m(l_nk+1))
+      w1 = one/(Rgasd_8*Cstv_Tstr_8)
 
       do j= j0, jn
          do i= i0, in
-            F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rE_8*F_q(i,j,l_nk+1)-Cstv_Sstar_8
+            F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-F_q(i,j,l_nk+1)
          end do
       end do
 
@@ -201,8 +201,8 @@
 !                Open Top(k0t /= 1):  F_zd(i,j,k0t) is computed
 
       do k=k0t,l_nk-1
-         w1=Ver_gama_8(k)*Ver_idz_8%t(k)
-         w2=Ver_gama_8(k)*Ver_epsi_8(k)
+         w1=gama_8*Ver_idz_8%t(k)
+         w2=gama_8*epsi_8
          w3=Cstv_invT_8*Cstv_bar1_8
          do j= j0, jn
             do i= i0, in
@@ -210,8 +210,8 @@
                qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
                F_zd(i,j,k)=-Cstv_tau_m_8*( F_rt(i,j,k)- F_nt(i,j,k) &
                           + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
-                          - w3 * ( Ver_b_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                                  +Ver_c_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8)+Cstv_rE_8*qbar )
+                          - w3 * ( Ver_b_8%t(k)*F_s(i,j) &
+                                  +Ver_c_8%t(k)*F_sl(i,j)+qbar)
             end do
          end do
       end do
@@ -221,12 +221,12 @@
 
       do k=k0t,l_nk
          km=max(k-1,1)
-         w1=Rgasd_8*Ver_Tstar_8%m(k)
+         w1=Rgasd_8*Cstv_Tstr_8
          do j= j0, jn
             do i= i0, in
-               GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                                      +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) &
-                                      +Cstv_rE_8*F_q(i,j,k) )
+               GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)  &
+                                      +Ver_c_8%m(k)*F_sl(i,j) &
+                                      +F_q(i,j,k) )
             end do
          end do
       end do
@@ -253,15 +253,15 @@
          call vexp( xtmp_8, ytmp_8, nij )
          do j= j0, jn
             do i= i0, in
-               xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                                           +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))
+               xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j)  &
+                                           +Ver_dcdz_8%t(k)*F_sl(i,j))
             end do
          end do
          call vrec ( ytmp_8, xtmp_8, nij )
          w1=Ver_idz_8%t(k)/rgasd_8
          do j= j0, jn
             do i= i0, in
-               F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstar_8%t(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))
+               F_t(i,j,k)=ytmp_8(i,j)*(Cstv_Tstr_8-w1*(GP(i,j,k+1)-GP(i,j,k)))
             end do
          end do
       end do

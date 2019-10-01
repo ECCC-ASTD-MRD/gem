@@ -257,20 +257,6 @@
          return
       end if
 
-
-!     Check for modified epsilon/ super epsilon
-      if ( Cstv_rE_8 /= 1.0d0 ) then
-         if (Cstv_Tstr_8 < 0. ) then
-             if (lun_out>0) write (Lun_out, 9680) 'Cstv_rE_8'
-            return
-         end if
-
-         if (Schm_opentop_L) then
-            if (lun_out>0) write (Lun_out, 9681) 'Cstv_rE_8'
-            return
-         end if
-      end if
-
       if ( Cstv_bA_8 < Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
       if ( Cstv_bA_nh_8 < Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
 

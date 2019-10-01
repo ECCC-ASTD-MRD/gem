@@ -136,7 +136,7 @@
 
             do k=1,F_nk+1
                log_pr_m_8(1:l_ni,1:l_nj,k) = (dble(qt1(1:l_ni,1:l_nj,k))/&
-                                             (rgasd_8*Ver_Tstar_8%m(k))  &
+                                             (rgasd_8*Cstv_Tstr_8)  &
                                              +dble(lg_pstar_8(1:l_ni,1:l_nj,k)))
             end do
 
@@ -228,7 +228,7 @@
 
                do k=1,F_nk+1
                   log_pr_m_8(1:l_ni,1:l_nj,k) = (dble(qt0(1:l_ni,1:l_nj,k))/&
-                                                (rgasd_8*Ver_Tstar_8%m(k))  &
+                                                (rgasd_8*Cstv_Tstr_8)  &
                                                 +dble(lg_pstar_8(1:l_ni,1:l_nj,k)))
                end do
 
@@ -308,7 +308,7 @@
          else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
-                  qt0(i,j,F_nk+1) = rgasd_8*Ver_Tstar_8%m(F_nk+1)*&
+                  qt0(i,j,F_nk+1) = rgasd_8*Cstv_Tstr_8*&
                   (log(pr_p0_0_8(i,j))-lg_pstar_8(i,j,F_nk+1))
                end do
             end do
@@ -324,8 +324,8 @@
             do i=1+pil_w,l_ni-pil_e
 
                delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
-                           (exp(qt0(i,j,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
-                            exp(qts(i,j)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
+                           (exp(qt0(i,j,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
+                            exp(qts(i,j)/(rgasd_8*Cstv_Tstr_8)))
             end do
          end do
 
@@ -334,9 +334,9 @@
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
 
-                  pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(i,j,k))
+                  pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k))
 
-                  qt0(i,j,k) = rgasd_8*Ver_Tstar_8%m(k)*&
+                  qt0(i,j,k) = rgasd_8*Cstv_Tstr_8*&
                                (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
                                exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
 

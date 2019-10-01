@@ -20,6 +20,7 @@
       use dynkernel_options
       use tdpack
       use glb_ld
+      use dyn_fisl_options
       use cstv
       use ver
       use, intrinsic :: iso_fortran_env
@@ -64,8 +65,8 @@
                w1= rgasd_8*Ver_dz_8%t(k)
                do i= i0,in
                   F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
-                               +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                               +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+                               +Ver_dbdz_8%t(k)*F_s(i,j)  &
+                               +Ver_dcdz_8%t(k)*F_sl(i,j))-Cstv_Tstr_8)
                end do
             end do
          end do
@@ -80,8 +81,8 @@
                   qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
                   qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)
                   F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one &
-                               +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
-                               +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
+                               +Ver_dbdz_8%t(k)*F_s(i,j)  &
+                               +Ver_dcdz_8%t(k)*F_sl(i,j))-Cstv_Tstr_8)
                end do
             end do
          end do

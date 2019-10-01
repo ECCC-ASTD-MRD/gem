@@ -134,9 +134,6 @@
                Ver_dcdz_8%m(G_nk  ),    Ver_dcdz_8%t(G_nk  ), &
                  Ver_wp_8%m(G_nk  ),      Ver_wp_8%t(G_nk  ), &
                  Ver_wm_8%m(G_nk  ),      Ver_wm_8%t(G_nk  ), &
-              Ver_Tstar_8%m(G_nk+1),   Ver_Tstar_8%t(G_nk  ), &
-                                          Ver_gama_8(G_nk  ), &
-                 Ver_epsi_8(G_nk  ),     Ver_FIstr_8(G_nk+1), &
                   Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ), &
@@ -164,13 +161,13 @@
                      rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                      rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
                          ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
-                          dhm=0., dht=0., avg_L=Schm_bcavg_L )
+                          dhm=0., dht=0., avg_L=.true. )
          else
             istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
                          version=Level_version, hyb=F_hybuser,&
                      rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                          ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
-                          dhm=0., dht=0., avg_L=Schm_bcavg_L )
+                          dhm=0., dht=0., avg_L=.true. )
          endif
       endif
       call gem_error (min(err,istat),'SET_ZETA', &
@@ -180,9 +177,8 @@
 
       if (Lun_debug_L) istat = vgd_print(Ver_vgdobj)
 
-      Cstv_Zsrf_8 = log(Cstv_pSref_8)
+      Cstv_Zsrf_8 = log(Cstv_pref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
-      Cstv_Sstar_8 = log(Cstv_pref_8/Cstv_pSref_8)
       Ver_zmin_8 = Cstv_Ztop_8
       Ver_zmax_8 = Cstv_Zsrf_8
 
@@ -245,8 +241,8 @@
       Ver_z_8%m(0) = Cstv_Ztop_8
       Ver_z_8%t(0) = Cstv_Ztop_8
       do k = 1, G_nk+1
-         Ver_z_8%m(k) = Ver_a_8%m(k)-Ver_b_8%m(k)*Cstv_Sstar_8
-         Ver_z_8%t(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
+         Ver_z_8%m(k) = Ver_a_8%m(k)
+         Ver_z_8%t(k) = Ver_a_8%t(k)
       end do
 
       if ( Schm_autobar_L ) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
@@ -254,7 +250,7 @@
      !Define the positions of zeta_dot
       Ver_z_8%x(0) = Cstv_Ztop_8
       do k = 1, G_nk-1
-         Ver_z_8%x(k) = Ver_a_8%t(k)-Ver_b_8%t(k)*Cstv_Sstar_8
+         Ver_z_8%x(k) = Ver_a_8%t(k)
       end do
       Ver_z_8%x(G_nk)=Cstv_Zsrf_8
 

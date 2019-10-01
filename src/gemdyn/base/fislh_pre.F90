@@ -141,12 +141,12 @@
       if (Schm_opentop_L) then
 !        Apply opentop boundary conditions
 
-         w1=Cstv_invT_8/Ver_Tstar_8%t(k0t)
+         w1=Cstv_invT_8/Cstv_Tstr_8
 
          do j= j0, jn
             do i= i0, in
                F_rb(i,j) = F_rb(i,j) - (one/Cstv_tau_8+mu_8*Cstv_tau_nh_8*grav_8)*(F_nest_t(i,j,k0t)&
-                                                  -Ver_Tstar_8%t(k0t))/Ver_Tstar_8%t(k0t)
+                                                  -Cstv_Tstr_8)/Cstv_Tstr_8
                F_rc(i,j,k0) = F_rc(i,j,k0  ) + Ver_cstp_8 * F_rb(i,j)
             end do
          end do

@@ -19,6 +19,7 @@
 
       use cstv
       use dynkernel_options
+      use dyn_fisl_options
       use geomh
       use glb_ld
       use glb_pil
@@ -122,7 +123,7 @@
          !Obtain surface pressure
          !-----------------------
          log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = (dble(wqt(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1))/&
-                                                           (rgasd_8*Ver_Tstar_8%m(l_nk+1))  &
+                                                           (rgasd_8*Cstv_Tstr_8)  &
                                                           + dble(lg_pstar_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1)))
          pr_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = exp(log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n))
 

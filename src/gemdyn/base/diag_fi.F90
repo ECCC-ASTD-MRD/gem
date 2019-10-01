@@ -67,8 +67,8 @@
                w1= rgasd_8*Ver_dz_8%t(k)
                do i= i0,in
                   F_fi(i,j,k)= F_fi(i,j,k+1)+w1*F_t(i,j,k) &
-                        * (one+Ver_dbdz_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                        + Ver_dcdz_8%t(k)*(sls(i,j)+Cstv_Sstar_8))
+                        * (one+Ver_dbdz_8%t(k)*F_s(i,j) &
+                        + Ver_dcdz_8%t(k)*sls(i,j))
                end do
             end do
          end do
@@ -83,8 +83,8 @@
                   qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
                   qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)
                   F_fi(i,j,k)= F_fi(i,j,k+1)+w1*F_t(i,j,k)*exp(-qbar) &
-                        * (one+Ver_dbdz_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                        + Ver_dcdz_8%t(k)*(sls(i,j)+Cstv_Sstar_8))
+                        * (one+Ver_dbdz_8%t(k)*F_s(i,j) &
+                        + Ver_dcdz_8%t(k)*sls(i,j))
                end do
             end do
          end do

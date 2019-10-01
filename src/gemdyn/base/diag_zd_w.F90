@@ -111,15 +111,15 @@
 
       do j=j0,jn
          do i=i0-1,in
-            sbX(i,j)  = (F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half+Cstv_Sstar_8)
-            slbX(i,j) = (sls(i,j)+(sls(i+1,j)-sls(i,j))*half+Cstv_Sstar_8)
+            sbX(i,j)  = (F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half)
+            slbX(i,j) = (sls(i,j)+(sls(i+1,j)-sls(i,j))*half)
          end do
       end do
 
       do j=j0-1,jn
          do i=i0,in
-            sbY(i,j)  = (F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half+Cstv_Sstar_8)
-            slbY(i,j) = (sls(i,j)+(sls(i,j+1)-sls(i,j))*half+Cstv_Sstar_8)
+            sbY(i,j)  = (F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half)
+            slbY(i,j) = (sls(i,j)+(sls(i,j+1)-sls(i,j))*half)
          end do
       end do
 
@@ -127,7 +127,7 @@
 
       do j=j0,jn
          do i=i0,in
-            pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+(F_s(i,j)+Cstv_Sstar_8))
+            pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+F_s(i,j))
          end do
       end do
 
@@ -163,8 +163,8 @@
 
          do j=j0,jn
             do i=i0,in
-               lnpi_t(i,j,k) = Ver_z_8%t(k) + Ver_b_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                                            + Ver_c_8%t(k)*(sls(i,j)+Cstv_Sstar_8)
+               lnpi_t(i,j,k) = Ver_z_8%t(k) + Ver_b_8%t(k)*F_s(i,j) &
+                                            + Ver_c_8%t(k)*sls(i,j)
                pi_t(i,j,k) = exp(lnpi_t(i,j,k))
             end do
          end do
@@ -208,8 +208,8 @@
                   ! therefore Ver_c_8 is not present since this part of ln(pi) Bl*sl is constant.
                   F_zd(i,j,k) = ( Ver_b_8%t(k)*div_i(i,j,Nk)/pi_s(i,j) &
                               - div_i(i,j,k)/pi_t(i,j,k) ) /           &
-                              (1.+Ver_dbdz_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                                 +Ver_dcdz_8%t(k)*(sls(i,j)+Cstv_Sstar_8) )
+                              (1.+Ver_dbdz_8%t(k)*F_s(i,j) &
+                                 +Ver_dcdz_8%t(k)*sls(i,j) )
                end do
             end do
          end do
@@ -232,17 +232,17 @@
                do i=i0,in
                   !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
                   adv = 0.5 * ( geomh_invDX_8(j) *  &
-                      ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-(F_s(i,j)+Cstv_Sstar_8))   &
-                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-(F_s(i,j)+Cstv_Sstar_8)) ) &
+                      ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-(F_s(i,j)+0.d0))   &
+                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-(F_s(i,j)+0.d0)) ) &
                       + geomh_invcy_8(j) * geomh_invDY_8 *  &
-                      ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-(F_s(i,j)+Cstv_Sstar_8))   &
-                      -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-(F_s(i,j)+Cstv_Sstar_8)) ) )
+                      ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-(F_s(i,j)+0.d0))   &
+                      -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-(F_s(i,j)+0.d0)) ) )
                   advl = 0.5 * ( geomh_invDX_8(j) *  &
-                       ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(slbX(i  ,j)-(sls(i,j)+Cstv_Sstar_8))   &
-                       -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(slbX(i-1,j)-(sls(i,j)+Cstv_Sstar_8)) ) &
+                       ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(slbX(i  ,j)-(sls(i,j)+0.d0))   &
+                       -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(slbX(i-1,j)-(sls(i,j)+0.d0)) ) &
                        + geomh_invcy_8(j) * geomh_invDY_8 *  &
-                       ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(slbY(i,j  )-(sls(i,j)+Cstv_Sstar_8))   &
-                       -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(slbY(i,j-1)-(sls(i,j)+Cstv_Sstar_8)) ) )
+                       ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(slbY(i,j  )-(sls(i,j)+0.d0))   &
+                       -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(slbY(i,j-1)-(sls(i,j)+0.d0)) ) )
                   !pidot=omega
                   pidot = pi_t(i,j,k)*(Ver_b_8%t(k)*adv + Ver_c_8%t(k)*advl) - div_i(i,j,k)
                   F_w(i,j,k) = -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
