@@ -1,4 +1,5 @@
-! DELETE ME Shallow water
+! Delete this file to run EXPO
+
 subroutine exp_dynstep()
 return
 end
@@ -14,16 +15,12 @@ stop 'exp_set_vt : not yet implemented (stub)'
 return
 end
 
-
-! END Shallow water
-
 subroutine exp_hybrid ( F_hybuser, Nk )
 integer Nk
 real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
 stop 'exp_hybrid : not yet implemented (stub)'
 return
 end
-
 
 module exp_geom
    public :: exp_geometry
