@@ -1,0 +1,51 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 90
+  Grd_overlap     = 0         ,
+/
+
+ &dyn_kernel
+   Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
+   Schm_autobar_L = .true.
+/
+
+&dyn_expo
+   adv_alpha_hor = 0.5
+/
+
+ &step
+  Fcst_end_S     = "144h"
+  Fcst_gstat_s   = '1h'
+  Step_dt        = 1800.
+/
+
+ &gem_cfgs
+  LCTL_RXSTAT_S   = 'GLB_8',
+/
+
+ &hvdif
+  Hzd_lnr         = .0         ,
+  Vspng_nk        = 0          ,
+/
+
+ &vert_layers
+  hyb = 0.5,0.7,0.9            ,
+  hyb_rcoef       = 1.,1.      ,
+/
+
+ &init
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '6h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "CASE8"    ,
+  Out3_nbitg      = 32         ,
+
+  Out3_close_interval_S= '144h',
+  Out3_postproc_fact   = 1     ,
+/
+
+ &williamson
+  Williamson_case = 8,
+/
