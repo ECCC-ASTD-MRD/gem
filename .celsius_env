@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export PATH=/local/raid/armn/armnsam/soft/bin:$PATH
+export LD_LIBRARY_PATH=/local/raid/armn/armnsam/soft/lib:/local/raid/armn/armnsam/soft/lib64:$LD_LIBRARY_PATH
+export GFORTRAN_ERROR_BACKTRACE=1
