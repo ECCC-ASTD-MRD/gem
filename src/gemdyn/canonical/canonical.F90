@@ -121,46 +121,49 @@ contains
       implicit none
 #include <arch_specific.hf>
 
-      logical F_dcmip_L,F_wil_L
+      logical F_dcmip_L, F_wil_L
       integer F_unf
 
-      integer err,err_dcmip,err_wil
-!
+      integer err, err_dcmip, err_wil
+
 !-------------------------------------------------------------------
-!
+
       if ( F_unf < 0 ) then
-         canonical_nml= 0
-         if ( Lun_out >= 0) then
-            if (Canonical_dcmip_L) err= dcmip_nml (-1,F_dcmip_L)
-            if (Canonical_williamson_L) &
-                                   err=   wil_nml (-1,F_wil_L)
+         canonical_nml = 0
+         if ( Lun_out >= 0 ) then
+            if (Canonical_dcmip_L) err = dcmip_nml (-1, F_dcmip_L)
+            if (Canonical_williamson_L) err = wil_nml (-1, F_wil_L)
          endif
          return
       endif
 
       canonical_nml = -1
-      F_dcmip_L= .false. ; F_wil_L= .false.
+      F_dcmip_L = .false.
+      F_wil_L = .false.
 
-      err_dcmip= dcmip_nml (F_unf, Canonical_dcmip_L     )
-      err_wil  = wil_nml   (F_unf, Canonical_williamson_L)
+      err_dcmip = dcmip_nml(F_unf, Canonical_dcmip_L)
+      err_wil = wil_nml(F_unf, Canonical_williamson_L)
 
-      if ((err_dcmip == 1).and.(err_wil == 1)) then
+      if ( (err_dcmip == 1) .and. (err_wil == 1) ) then
          canonical_nml = 1
-         F_dcmip_L= Canonical_dcmip_L
-           F_wil_L= Canonical_williamson_L
+         F_dcmip_L = Canonical_dcmip_L
+         F_wil_L = Canonical_williamson_L
       endif
 
+      ! FIXME: Ubber dirty hack to fix a bug that shows up with gfortran with -O2
+      Step_runstrt_S = 'NIL'
+
       ! Williamson case 7 require an analysis ...
-      if (Ctrl_canonical_dcmip_L .or. (Ctrl_canonical_williamson_L.and.Williamson_case/=7)) then
+      if (Ctrl_canonical_dcmip_L .or. (Ctrl_canonical_williamson_L .and. Williamson_case /= 7)) then
          Step_runstrt_S='20170215.000000'
       end if
 
-      if (Ctrl_canonical_williamson_L.and.Williamson_case==7) then
+      if (Ctrl_canonical_williamson_L .and. Williamson_case == 7) then
          Step_runstrt_S='19781221.000000'
       end if
-!
+
 !-------------------------------------------------------------------
-!
+
       return
       end
 
