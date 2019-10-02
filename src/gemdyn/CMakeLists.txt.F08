@@ -1,4 +1,6 @@
-message(STATUS "Starting generation of gemdyn Makefile")
+# This file isn't used when compiling with GCC 7.4.0 or 9.2.0
+
+message(STATUS "Starting generation of gemdyn F08 Makefile")
 project(GEMDYN Fortran)
 
 include(FindMPI OPTIONAL)
