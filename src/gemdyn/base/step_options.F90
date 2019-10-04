@@ -108,6 +108,7 @@ contains
 
       step_nml= -1 ; nml_must= .true. ; nml_S= 'step'
 
+      print *, '================================================ HAMSTER'
       rewind(F_unf)
       read (F_unf, nml=step, end= 1001, err=1003)
       step_nml= 0 ; goto 1000
@@ -121,7 +122,8 @@ contains
       goto 1000
  1003 if (Lun_out >= 0) write (Lun_out, 6007) trim(nml_S)
 
- 1000 if (step_nml < 0 ) return
+ 1000 print *, 'Step_runstrt_S=', Step_runstrt_S
+      if (step_nml < 0 ) return
       if ((Lun_out>=0).and.(step_nml==0)) write (Lun_out, 6004) trim(nml_S)
       step_nml= -1
 

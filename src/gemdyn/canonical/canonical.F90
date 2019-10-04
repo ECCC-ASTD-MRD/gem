@@ -150,9 +150,6 @@ contains
          F_wil_L = Canonical_williamson_L
       endif
 
-      ! FIXME: Ubber dirty hack to fix a bug that shows up with gfortran with -O2
-      Step_runstrt_S = 'NIL'
-
       ! Williamson case 7 require an analysis ...
       if (Ctrl_canonical_dcmip_L .or. (Ctrl_canonical_williamson_L .and. Williamson_case /= 7)) then
          Step_runstrt_S='20170215.000000'

@@ -61,6 +61,7 @@
 !
       gemdm_config = -1
 
+      print *, 'Step_runstrt_S=', Step_runstrt_S
       if (Step_runstrt_S == 'NIL') then
          if (lun_out>0) then
             write (Lun_out, 6005)
