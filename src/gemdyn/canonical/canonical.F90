@@ -59,7 +59,7 @@ module canonical
 ! clyref             |CLY REFERENCE                                    |
 ! clyerr             |CLY ERROR                                        |
 !----------------------------------------------------------------------|
-!
+
       real, pointer, dimension (:,:,:) :: pth   => null()
       real, pointer, dimension (:,:,:) :: thbase=> null()
       real, pointer, dimension (:,:,:) :: thfull=> null()
@@ -108,6 +108,7 @@ module canonical
                                 gmmk_q3err_s, gmmk_q4err_s, gmmk_clyerr_s
 
       logical Canonical_dcmip_L, Canonical_williamson_L
+
 contains
 
 !**s/r canonical_nml - Read namelist canonical
@@ -149,6 +150,10 @@ contains
          F_dcmip_L = Canonical_dcmip_L
          F_wil_L = Canonical_williamson_L
       endif
+
+      ! FIXME: Ugly workaround for Step_runstrt_S not being initialized when
+      ! optimization (-O2) is enabled.  This print makes everything work.
+      print *, 'canonical.Step_runstrt_S = ', Step_runstrt_S
 
       ! Williamson case 7 require an analysis ...
       if (Ctrl_canonical_dcmip_L .or. (Ctrl_canonical_williamson_L .and. Williamson_case /= 7)) then
