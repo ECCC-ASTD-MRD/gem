@@ -1,9 +1,7 @@
-# CMAKE_<LANG>_COMPILER variables MUST contain the full path of the compiler for <LANG>
-find_program(CMAKE_C_COMPILER gcc)
-find_program(CMAKE_Fortran_COMPILER gfortran)
-
 # The full path of the compiler for <LANG> must be set in CMAKE_<LANG>_COMPILER
 # before calling enable_language(<LANG>)
+find_program(CMAKE_C_COMPILER gcc)
+find_program(CMAKE_Fortran_COMPILER gfortran)
 
 # I don't know why, but enable_language exmpties CMAKE_BUILD_TYPE!
 # We therefore have to back it up and restore it after enable_language
@@ -21,23 +19,11 @@ set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 
 add_definitions(-DLittle_Endian)
 
-# We need the following packages for gcc/gfortran
-#find_package(MPI REQUIRED)
-# LAPACK requires BLAS so we dont't need an explicit find_package for BLAS
-# FindLAPACK does not search for the library in the LD_LIBRARY_PATH
-#find_package(LAPACK REQUIRED)
-
-#find_library(LAPACK_LIBRARIES lapack HINTS ENV LD_LIBRARY_PATH)
 set(LAPACK_LIBRARIES "lapack")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 
-
-#find_library(BLAS_LIBRARIES blas HINTS ENV LD_LIBRARY_PATH)
 set(BLAS_LIBRARIES "blas")
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
-
-# FIXME: How do we specify compiler specific flags with add_compile_options()?
-# gcc gives warnings about some unknown flags that exist only for gfortran
 
 set(CMAKE_C_FLAGS "-march=native -w -Wall -Wextra -fpic")
 set(CMAKE_C_FLAGS_DEBUG "-g")
