@@ -84,7 +84,6 @@
          err( 3) = theocases_nml   (unf)
          err( 4) = HORgrid_nml     (unf)
          err( 5) = VERgrid_nml     (unf)
-         print *, 'HAMSTER - Calling step_nml'
          err( 6) = step_nml        (unf)
          err( 7) = dynKernel_nml   (unf)
          err( 8) = gem_nml         (unf)
@@ -154,7 +153,6 @@
                       'ABORT in set_world_view' )
 
       err(1) = dynKernel_nml   (-1)
-      print *, 'HAMSTER2 - Calling step_nml'
       err(1) = step_nml        (-1)
       err(1) = gem_nml         (-1)
       err(1) = HORgrid_nml     (-1)
