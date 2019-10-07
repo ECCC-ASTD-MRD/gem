@@ -10,7 +10,7 @@ set(COMPILER gfortran CACHE INTERNAL compiler)
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE cab be one of Debug, Release, RelWithDebInfo, MinSizeRel
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE}")
 
 # Include an architecture dependent file that contains settings for a
