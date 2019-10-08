@@ -32,11 +32,11 @@ add_definitions(-DLittle_Endian -DWITH_intel)
 #     corei7-avx
 #     core2
 
-set(CMAKE_C_FLAGS "-march=core-avx2 -mkl -Wl,--allow-shlib-undefined -Wtrigraphs -fpic -traceback -fp-model precise ${compFlags}" CACHE STRING "C compiler flags" FORCE)
+set(CMAKE_C_FLAGS "-march=skylake-avx512 -mkl -Wl,--allow-shlib-undefined -Wtrigraphs -fpic -traceback -fp-model precise ${compFlags}" CACHE STRING "C compiler flags" FORCE)
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS "-march=core-avx2 -mkl -assume byterecl -convert big_endian -fpe0 -fpic -reentrancy threaded -traceback -threads -static-intel -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -fp-model source ${compFlags}" CACHE STRING "Fortran compiler flags" FORCE)
+set(CMAKE_Fortran_FLAGS "-march=skylake-avx512 -mkl -assume byterecl -convert big_endian -fpe0 -fpic -reentrancy threaded -traceback -threads -static-intel -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -fp-model source ${compFlags}" CACHE STRING "Fortran compiler flags" FORCE)
 set(CMAKE_Fortran_FLAGS_DEBUG "-g")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
