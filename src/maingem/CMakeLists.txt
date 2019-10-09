@@ -39,4 +39,4 @@ target_link_libraries(maingemgrid
 add_dependencies(maingemgrid gem phy modelutils vgrid rpncomm rmn massv)
 
 install(TARGETS maingemdm maingemgrid RUNTIME 
-        DESTINATION ${ROOT}/../work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+        DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

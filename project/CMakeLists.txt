@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 
 project(GEM_EXPO NONE)
 
@@ -72,30 +72,30 @@ message(STATUS "Operating system is: ${OS}")
 execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/compiler.sh ${COMPILER}" OUTPUT_VARIABLE COMP_VERSION)
 message(STATUS "Compiler version is: ${COMPILER} ${COMP_VERSION}")
 
-set(BUILD build)
-set(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-
 # Enable distclean target
 include("distclean.cmake")
 
 set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules CACHE STRING "Where Fortran modules go")
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/modules CACHE STRING "Where Fortran modules go")
 
 message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
 
+get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY CACHE)
+message(STATUS "ROOT=${ROOT}")
+
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
-message(STATUS "arch-dependent include directory: ${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}")
+message(STATUS "arch-dependent include directory: ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}")
 
 include_directories(
-   ${ROOT}/../src/archdep/include/${ARCH}-${COMPILER}
-   ${CMAKE_CURRENT_BINARY_DIR}/${BUILD}/modules
-   ${ROOT}/../src/rpncomm
-   ${ROOT}/../src/rmn/PUBLIC_INCLUDES
-   ${ROOT}/../src/RPN/compiler_includes
+   ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}
+   ${CMAKE_CURRENT_BINARY_DIR}/build/modules
+   ${ROOT}/src/rpncomm
+   ${ROOT}/src/rmn/PUBLIC_INCLUDES
+   ${ROOT}/src/RPN/compiler_includes
 )
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
@@ -104,4 +104,34 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Too see the make commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_subdirectory(${ROOT}/../src ${BUILD}/src)
+add_subdirectory(${ROOT}/src build/src)
+
+install(
+   DIRECTORY ${ROOT}/scripts/scripts
+   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   USE_SOURCE_PERMISSIONS
+)
+install(
+   FILES ${ROOT}/scripts/runprep
+   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+install(
+   FILES ${ROOT}/scripts/runmod
+   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+install(
+   FILES ${ROOT}/scripts/mybatchjob.pbs
+      DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+      PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+)
+install(
+   FILES ${ROOT}/doc/README.run
+   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+)
+install(
+   CODE "execute_process(COMMAND
+      /bin/ln -sf ${ROOT}/work/configurations ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION} ) "
+)

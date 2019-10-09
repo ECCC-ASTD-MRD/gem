@@ -10,4 +10,4 @@ target_link_libraries(pgsm
 
 add_dependencies(pgsm rmn)
 
-install(TARGETS pgsm RUNTIME DESTINATION ${ROOT}/../work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+install(TARGETS pgsm RUNTIME DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

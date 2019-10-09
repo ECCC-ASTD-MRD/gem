@@ -12,4 +12,4 @@ target_link_libraries(editfst
 
 add_dependencies(editfst rmn)
 
-install(TARGETS editfst RUNTIME DESTINATION ${ROOT}/../work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+install(TARGETS editfst RUNTIME DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

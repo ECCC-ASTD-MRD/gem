@@ -11,8 +11,8 @@ add_compile_options( "${EXTRA_FLAGS}" )
 
 add_library (gem STATIC ${FTNSRC} ${CSRC})
 target_include_directories(gem PRIVATE
-   ${ROOT}/../src/rpnphy/include
-   ${ROOT}/../src/modelutils/include
+   ${ROOT}/src/rpnphy/include
+   ${ROOT}/src/modelutils/include
    include
    base
 )
