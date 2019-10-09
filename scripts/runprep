@@ -39,6 +39,11 @@ work=${PWD}/PREP/work
 # read configuration file
 . ${dircfg}/${dname}/configexp.cfg
 
+if [[ ! -e "${default_DIR_ATM}" ]]; then
+  echo >&2 "Cannot find ${default_DIR_ATM}. See README.md for instructions."
+  exit 1
+fi
+
 #anal=${default_DIR_ATM}/bcmk/2009042700_000
 anal=${GEM_anal}
 input=${GEM_inrep}
