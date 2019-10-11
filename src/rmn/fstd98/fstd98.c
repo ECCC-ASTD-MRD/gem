@@ -2852,49 +2852,46 @@ int c_fst_version()
  *                                                                           * 
  *****************************************************************************/
 
-int c_fstvoi(int iun,char *options)
-{
-   int index,index_fnom,i,j,width,nrec,nw,end_of_file;
-   file_table_entry *f;
-   xdf_dir_page * curpage;
-   word *entry;
-   stdf_dir_keys *stdf_entry;
-   seq_dir_keys *seq_entry;
+int c_fstvoi(int iun, char* options) {
+   int index, index_fnom, i, j, width, nrec, nw, end_of_file;
+   file_table_entry* file_entry;
+   xdf_dir_page* curpage;
+   word* entry;
+   stdf_dir_keys* stdf_entry;
+   seq_dir_keys* seq_entry;
    stdf_special_parms cracked;
-   xdf_record_header *header;
+   xdf_record_header* header;
    char string[20];
-//   char nomvar[5], typvar[3];
-//   char cdt[6]={'X','R','I','C','S','E'};
    ftnword f_datev;
    double nhours;
-   int deet,npas,run;
+   int deet, npas, run;
    unsigned int datexx;
-   long long deetnpas,i_nhours;
+   long long deetnpas, i_nhours;
  
    index_fnom = fnom_index(iun);
    if (index_fnom == -1) {
-      sprintf(errmsg,"file (unit=%d) is not connected with fnom",iun);
-      return(error_msg("c_fstvoi",ERR_NO_FNOM,ERROR));
-      }
+      sprintf(errmsg, "file (unit=%d) is not connected with fnom", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FNOM, ERROR));
+   }
 
    if ((index = file_index(iun)) == ERR_NO_FILE) {
-     sprintf(errmsg,"file (unit=%d) is not open",iun);
-     return(error_msg("c_fstvoi",ERR_NO_FILE,ERROR));
-     }
+      sprintf(errmsg, "file (unit=%d) is not open", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FILE, ERROR));
+   }
 
-   f = file_table[index];
+   file_entry = file_table[index];
 
-   if (! f->cur_info->attr.std) {
-     sprintf(errmsg,"file (unit=%d) is not a RPN standard file",iun);
-     return(error_msg("c_fstvoi",ERR_NO_FILE,ERROR));
-     }
-   
+   if (! file_entry->cur_info->attr.std) {
+      sprintf(errmsg, "file (unit=%d) is not a RPN standard file", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FILE, ERROR));
+   }
+
    nrec = 0;
-   width = W64TOWD(f->primary_len);
-   if (! f->xdf_seq) {
-     for (i=0; i < f->npages; i++) {
-       entry = (f->dir_page[i])->dir.entry;
-       for (j=0; j < (f->dir_page[i])->dir.nent; j++) {
+   width = W64TOWD(file_entry->primary_len);
+   if (! file_entry->xdf_seq) {
+     for (i=0; i < file_entry->npages; i++) {
+       entry = (file_entry->dir_page[i])->dir.entry;
+       for (j=0; j < (file_entry->dir_page[i])->dir.nent; j++) {
          header = (xdf_record_header *) entry;
          if (header->idtyp < 112) {
            stdf_entry = (stdf_dir_keys *) entry;
@@ -2905,34 +2902,34 @@ int c_fstvoi(int iun,char *options)
          }
          entry += width;
        }
-       curpage = &((f->dir_page[i])->dir);
+       curpage = &((file_entry->dir_page[i])->dir);
      } /* end for i */
    }
    else { /* xdf sequential */
      end_of_file = 0;
      while (! end_of_file) {
-       nw = c_waread2(iun,f->head_keys,f->cur_addr,width);
-       header = (xdf_record_header *) f->head_keys;
+       nw = c_waread2(iun,file_entry->head_keys,file_entry->cur_addr,width);
+       header = (xdf_record_header *) file_entry->head_keys;
        if ((header->idtyp >= 112) || (nw < W64TOWD(1))) {
          if ((header->idtyp >= 112) && (header->idtyp < 127)) {
-            f->cur_addr += W64TOWD(1);
+            file_entry->cur_addr += W64TOWD(1);
          }
          end_of_file = 1;
          break;
        }
-       if (f->fstd_vintage_89) {   /* old sequential standard */
+       if (file_entry->fstd_vintage_89) {   /* old sequential standard */
          if ((stdf_entry = calloc(1,sizeof(stdf_dir_keys))) == NULL) {
            sprintf(errmsg,"memory is full");
            return(error_msg("c_fstvoi",ERR_MEM_FULL,ERRFATAL));
          }
-         seq_entry = (seq_dir_keys *) f->head_keys;
+         seq_entry = (seq_dir_keys *) file_entry->head_keys;
          if (seq_entry->dltf) {
-           f->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
+           file_entry->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
            continue;
          }
          if (seq_entry->eof > 0) {
            if (seq_entry->eof < 15)
-           f->cur_addr += W64TOWD(1);
+           file_entry->cur_addr += W64TOWD(1);
            end_of_file = 1;           
            break;
          }
@@ -2987,62 +2984,58 @@ int c_fstvoi(int iun,char *options)
          npas = stdf_entry->npas;
          deetnpas = npas ; deetnpas = deetnpas * deet ;
          if ((deetnpas % 3600) != 0) {
-           /*
-            *  recompute datev to take care of rounding used with 1989 version
-            *  de-octalise the date_stamp
-            */
-           run = stdf_entry->date_stamp & 0x7;
-           datexx = (stdf_entry->date_stamp >> 3) * 10 + run;
-           
-           f_datev = (ftnword) datexx;
-           i_nhours = (deetnpas - ((deetnpas+1800)/3600)*3600);
-           nhours = i_nhours;
-           nhours = (nhours / 3600.0);
-           f77name(incdatr)(&f_datev,&f_datev,&nhours);
-           datexx = (unsigned int) f_datev;
-           /*
-            *  re-octalise the date_stamp
-            */
-           stdf_entry->date_stamp = 8 * (datexx/10) + (datexx % 10);
+            /* recompute datev to take care of rounding used with 1989 version
+             * de-octalise the date_stamp */
+            run = stdf_entry->date_stamp & 0x7;
+            datexx = (stdf_entry->date_stamp >> 3) * 10 + run;
+
+            f_datev = (ftnword) datexx;
+            i_nhours = (deetnpas - ((deetnpas+1800)/3600)*3600);
+            nhours = i_nhours;
+            nhours = (nhours / 3600.0);
+            f77name(incdatr)(&f_datev,&f_datev,&nhours);
+            datexx = (unsigned int) f_datev;
+            /* re-octalise the date_stamp */
+            stdf_entry->date_stamp = 8 * (datexx/10) + (datexx % 10);
          }
          sprintf(string,"%5d-",nrec);
          print_std_parms(stdf_entry,string,options,((nrec % 70) == 0));
          nrec++;
-         f->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
+         file_entry->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
          free(stdf_entry);
        } /* end if fstd_vintage_89 */
        else {
          if ((header->idtyp < 1) || (header->idtyp > 127)) {
-           f->cur_addr += W64TOWD(header->lng);
+           file_entry->cur_addr += W64TOWD(header->lng);
            continue;
          }
-         stdf_entry = (stdf_dir_keys *) f->head_keys;
+         stdf_entry = (stdf_dir_keys *) file_entry->head_keys;
          sprintf(string,"%5d-",nrec);
          print_std_parms(stdf_entry,string,options,((nrec % 70) == 0));
          nrec++;
-         f->cur_addr += W64TOWD(header->lng);
+         file_entry->cur_addr += W64TOWD(header->lng);
        }
      } /* end while */
    }
    fprintf(stdout,"\nSTATISTICS for file %s, unit=%d\n\n",
            FGFDT[index_fnom].file_name,iun);
-   if (f->fstd_vintage_89) 
+   if (file_entry->fstd_vintage_89) 
      sprintf(string,"Version 1989");
    else
      sprintf(string,"Version 1998");
-   if (f->xdf_seq) 
+   if (file_entry->xdf_seq) 
      fprintf(stdout,"%d records in sequential RPN standard file (%s)\n",
              nrec,string);
    else {
-     if (! f->fstd_vintage_89) {
-       fprintf(stdout,"Number of directory entries \t %d\n",f->header->nrec);
+     if (! file_entry->fstd_vintage_89) {
+       fprintf(stdout,"Number of directory entries \t %d\n",file_entry->header->nrec);
        fprintf(stdout,"Number of valid records     \t %d\n",nrec);
        fprintf(stdout,"File size                   \t %d Words\n",
-               W64TOWD(f->header->fsiz));
-       fprintf(stdout,"Number of writes            \t %d\n",f->header->nxtn);
-       fprintf(stdout,"Number of rewrites          \t %d\n",f->header->nrwr);
+               W64TOWD(file_entry->header->fsiz));
+       fprintf(stdout,"Number of writes            \t %d\n",file_entry->header->nxtn);
+       fprintf(stdout,"Number of rewrites          \t %d\n",file_entry->header->nrwr);
        fprintf(stdout,"Number of erasures          \t %d\n",
-               f->header->neff - f->header->nrwr);
+               file_entry->header->neff - file_entry->header->nrwr);
      }
      fprintf(stdout,"\n%d records in random RPN standard file (%s)\n\n",
              nrec,string);
