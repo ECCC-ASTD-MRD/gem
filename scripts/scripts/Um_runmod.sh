@@ -48,35 +48,35 @@ for i in ${TASK_INPUT}/cfg_* ; do
 done
 
 for i in ${TASK_INPUT}/cfg_* ; do
-  dname=`basename $i`
-  mkdir -p ${TASK_OUTPUT}/$dname ${TASK_WORK}/$dname
+  cfgname=`basename $i`
+  mkdir -p ${TASK_OUTPUT}/$cfgname ${TASK_WORK}/$cfgname
   if [ "$GRDTYP" == "GY" ] ; then
-    mkdir -p ${TASK_WORK}/$dname/YIN ${TASK_WORK}/$dname/YAN
+    mkdir -p ${TASK_WORK}/$cfgname/YIN ${TASK_WORK}/$cfgname/YAN
   fi
-  if [ -e ${TASK_INPUT}/${dname}/configexp.cfg ] ; then
-    cp ${TASK_INPUT}/${dname}/configexp.cfg ${TASK_OUTPUT}/$dname
+  if [ -e ${TASK_INPUT}/${cfgname}/configexp.cfg ] ; then
+    cp ${TASK_INPUT}/${cfgname}/configexp.cfg ${TASK_OUTPUT}/$cfgname
   fi
   if [ -e ${dircfg}/cfg_all/BATCH_config.cfg ] ; then
-    cat ${dircfg}/cfg_all/BATCH_config.cfg >> ${TASK_OUTPUT}/$dname/configexp.cfg
+    cat ${dircfg}/cfg_all/BATCH_config.cfg >> ${TASK_OUTPUT}/$cfgname/configexp.cfg
   fi
-  /bin/rm -f ${TASK_WORK}/$dname/theoc
+  /bin/rm -f ${TASK_WORK}/$cfgname/theoc
   if [ ${theoc} -gt 0 ] ; then
-    touch ${TASK_WORK}/$dname/theoc
+    touch ${TASK_WORK}/$cfgname/theoc
   fi
 
-  if [[ ! -e ${TASK_WORK}/$dname/model_settings.nml ]] ; then echo TRUE for model_settings.nml in ${TASK_WORK}/$dname ; fi
+  if [[ ! -e ${TASK_WORK}/$cfgname/model_settings.nml ]] ; then echo TRUE for model_settings.nml in ${TASK_WORK}/$cfgname ; fi
   # Do not overwrite an existing model_settings.nml since a parent script (i.e. Maestro task Runmod) may have modified it
-  if [[ ! -e ${TASK_WORK}/$dname/model_settings.nml ]] ; then cp ${TASK_INPUT}/${dname}/model_settings.nml ${TASK_WORK}/$dname ; fi
-  if [[ -e ${TASK_INPUT}/${dname}/output_settings ]] ; then
-    cp ${TASK_INPUT}/${dname}/output_settings ${TASK_WORK}/$dname
+  if [[ ! -e ${TASK_WORK}/$cfgname/model_settings.nml ]] ; then cp ${TASK_INPUT}/${cfgname}/model_settings.nml ${TASK_WORK}/$cfgname ; fi
+  if [[ -e ${TASK_INPUT}/${cfgname}/output_settings ]] ; then
+    cp ${TASK_INPUT}/${cfgname}/output_settings ${TASK_WORK}/$cfgname
   fi
-  if [[ -e ${TASK_INPUT}/${dname}/coupleur_settings.nml ]] ; then 
-    cp ${TASK_INPUT}/${dname}/coupleur_settings.nml ${TASK_WORK}/$dname
+  if [[ -e ${TASK_INPUT}/${cfgname}/coupleur_settings.nml ]] ; then 
+    cp ${TASK_INPUT}/${cfgname}/coupleur_settings.nml ${TASK_WORK}/$cfgname
   fi
 
 
-  chmod u+w ${TASK_WORK}/${dname}/model_settings.nml
-  cat >> ${TASK_WORK}/$dname/model_settings.nml <<EOF
+  chmod u+w ${TASK_WORK}/${cfgname}/model_settings.nml
+  cat >> ${TASK_WORK}/$cfgname/model_settings.nml <<EOF
 
  &cpus
   Cpus_npex    = $npex    ,  Cpus_npey    = $npey
@@ -85,8 +85,8 @@ for i in ${TASK_INPUT}/cfg_* ; do
 
 EOF
 
-  if [ -s ${TASK_INPUT}/${dname}/BUSPER.tar ] ; then
-    (mkdir -p ${TASK_WORK}/$dname/busper ; cd ${TASK_WORK}/$dname/busper ; tar xvf ${TASK_INPUT}/${dname}/BUSPER.tar)
+  if [ -s ${TASK_INPUT}/${cfgname}/BUSPER.tar ] ; then
+    (mkdir -p ${TASK_WORK}/$cfgname/busper ; cd ${TASK_WORK}/$cfgname/busper ; tar xvf ${TASK_INPUT}/${cfgname}/BUSPER.tar)
   fi
 
 done
@@ -140,12 +140,12 @@ while [ $DOM -le $DOMAIN_end ] ; do
   file2watch=${TASK_BASEDIR}/output/cfg_${domain_number}/output_ready
   mkdir -p ${TASK_WORK}/post_process_output_cfg_${domain_number}
 
-# Run main program wrapper
+  # Run main program wrapper
   set +ex
-  
+
   printf "\n LAUNCHING Um_model.sh for domain: cfg_${domain_number} $(date)\n\n"
   ${TASK_BIN}/UM_MODEL -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
-                                    -ndom $ndomains -debug $debug 
+                                    -ndom $ndomains -debug $debug
 
   set ${SETMEX:-+ex}
 
@@ -159,6 +159,3 @@ printf "\n DONE LAUNCHING all domains $(date)\n\n"
 /bin/rm -rf ${TASK_WORK}/busper
 
 printf "\n=====>  Um_runmod.sh ends: `date` ###########\n\n"
-
-# End of task
-
