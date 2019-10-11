@@ -37,10 +37,10 @@ mpirun --version | grep -q "IBM Spectrum MPI" && MPIRUN_PARAMS="-display-map --d
 
 CMD="mpirun ${MPIRUN_PARAMS} -np $((npex*npey)) ${TASK_BIN}/ATM_MOD"
 
-printf "MPIRUN CMD is `echo $CMD` \n"
 if [[ x$debug != x0 ]] ; then
     CMD="${CMD} -gdb"
 fi
+echo -e "MPIRUN CMD is: $CMD\n"
 $CMD
 
 set +ex
