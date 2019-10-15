@@ -127,10 +127,7 @@
                     -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
             call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
                     l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-            call out_fstecr3 ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
-                    l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo(G_nk+1),1,Grdc_nbits,.false. )
+                    -1,G_nk+1,indo,G_nk+1,Grdc_nbits,.false. )
          else
             conv = 0.1d0 / grav_8
             istat = gmm_get(gmmk_qt1_s,qt1)

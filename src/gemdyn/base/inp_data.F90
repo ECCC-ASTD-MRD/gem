@@ -103,7 +103,7 @@
       nullify (trp)
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
 
-      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka_hu         ,&
+      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka            ,&
                       l_minx,l_maxx,l_miny,l_maxy, 1,l_ni, 1,l_nj,&
                 inttype=Inp_vertintype_tracers_S, levtype=Inp_levtype_S )
 

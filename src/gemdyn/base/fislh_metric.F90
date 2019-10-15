@@ -140,7 +140,7 @@
       end if
 
       ! We keep a copy in single precision only for cascade outputs
-      do k=1,G_nk
+      do k=1,G_nk+1
          zmom(:,:,k) = real(zmom_8(:,:,k))
          ztht(:,:,k) = real(ztht_8(:,:,k))
       end do
