@@ -15,13 +15,17 @@
 
 module gem_timing
 
+      use ISO_C_BINDING
       use, intrinsic :: iso_fortran_env
       implicit none
+#include <time_trace.hf>
 
-      private
+!      private
       public :: gemtime_init,gemtime_start,gemtime_stop,&
                 gemtime_terminate,gemtime,Gem_timing_dyn_L,&
                 gemlcltime_start,gemlcltime_stop
+
+      type(time_context) :: gem_time_trace
 
       integer, parameter :: MAX_instrumented=400
       integer, parameter :: MAX_event=500
@@ -72,6 +76,7 @@ contains
          lcltime_rset= -1 ; lcltime_last=0 ; lcltime_nevent=0
          lcltime_flag_L= .false.
          total_time= omp_get_wtime()
+         call time_trace_init (gem_time_trace)
       else
          call timing_init2 ( myproc, msg )
       endif
@@ -185,6 +190,8 @@ contains
             if (Ptopo_myproc==0) err= fstfrm(unf)
             call out_cfile
          endif
+
+         call time_trace_dump_text(gem_time_trace, 'time_list', Ptopo_myproc)
 
          if (myproc /= 0) return
 
