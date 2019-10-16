@@ -52,8 +52,6 @@ module glb_ld
    logical :: l_east
    !> .true. if subdomain owns global west  boundary
    logical :: l_west
-   !> NOT USED
-   logical :: l_mesg_proc
 
    !> Local # of grid points on X (scalar grid)
    integer :: l_ni
@@ -78,13 +76,6 @@ module glb_ld
    integer :: l_miny
    !> Maximum value for second index of main 3D var
    integer :: l_maxy
-
-   !> NOT USED
-   integer :: l_dimmsg
-   !> NOT USED
-   integer :: l_dim2d
-   !> NOT USED
-   integer :: l_dim3d
 
    !> # of points on global north boundary for pilot
    integer :: pil_n
