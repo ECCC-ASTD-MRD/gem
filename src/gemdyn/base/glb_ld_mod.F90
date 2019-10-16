@@ -25,15 +25,15 @@ module glb_ld
    logical :: G_periodx
    !> .true. if periodic on Y
    logical :: G_periody
-   !> Global # of grid points along X  (scalar grid)
+   !> Global number of grid points along X  (scalar grid)
    integer :: G_ni
-   !> Global # of grid points along Y  (scalar grid)
+   !> Global number of grid points along Y  (scalar grid)
    integer :: G_nj
    !> Total number of computational vertical levels
    integer :: G_nk
-   !> Global # of grid points along X (U grid)
+   !> Global number of grid points along X (U grid)
    integer :: G_niu
-   !> Global # of grid points along Y (V grid)
+   !> Global number of grid points along Y (V grid)
    integer :: G_njv
    !> Largest l_ni of all subdomain
    integer :: G_lnimax
@@ -53,15 +53,15 @@ module glb_ld
    !> .true. if subdomain owns global west  boundary
    logical :: l_west
 
-   !> Local # of grid points on X (scalar grid)
+   !> Local number of grid points on X (scalar grid)
    integer :: l_ni
-   !> Local # of grid points on Y (scalar grid)
+   !> Local number of grid points on Y (scalar grid)
    integer :: l_nj
    !> Total number of computational vertical levels
    integer :: l_nk
-   !> Local # of grid points on X (U grid)
+   !> Local number of grid points on X (U grid)
    integer :: l_niu
-   !> Local # of grid points on Y (V grid)
+   !> Local number of grid points on Y (V grid)
    integer :: l_njv
    !> left global index of local subdomain
    integer :: l_i0
@@ -77,13 +77,13 @@ module glb_ld
    !> Maximum value for second index of main 3D var
    integer :: l_maxy
 
-   !> # of points on global north boundary for pilot
+   !> Number of points on global north boundary for pilot
    integer :: pil_n
-   !> # of points on global south boundary for pilot
+   !> Number of points on global south boundary for pilot
    integer :: pil_s
-   !> # of points on global west  boundary for pilot
+   !> Number of points on global west  boundary for pilot
    integer :: pil_w
-   !> # of points on global east  boundary for pilot
+   !> Number of points on global east  boundary for pilot
    integer :: pil_e
 
    !> 1 if touching north boundary
