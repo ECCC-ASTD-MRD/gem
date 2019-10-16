@@ -19,30 +19,8 @@ module glb_ld
    public
    save
 
-!______________________________________________________________________
-!                                                                      |
 !  VARIABLES FOR GLOBAL(G) and LOCAL(L) reference                      |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! G_periodx          | .true. if periodic on X                         |
-! G_periody          | .true. if periodic on Y                         |
-! G_ni               | global # of grid points along X  (scalar grid)  |
-! G_nj               | global # of grid points along Y  (scalar grid)  |
-! G_nk               | total number of computational vertical levels   |
-! G_niu              | global # of grid points along X  (U      grid)  |
-! G_njv              | global # of grid points along Y  (V      grid)  |
-! G_lnimax           | largest l_ni of all subdomain                   |
-! G_lnjmax           | largest l_nj of all subdomain                   |
-! G_halox            | number of points for the halo on X              |
-! G_haloy            | number of points for the halo on y              |
-! G_xg_8             | longitudes of the scalar grid in radians        |
-! G_yg_8             | latitudes  of the scalar grid in radians        |
-! l_north            | .true. if subdomain owns global north boundary  |
-! l_south            | .true. if subdomain owns global south boundary  |
-! l_east             | .true. if subdomain owns global east  boundary  |
-! l_west             | .true. if subdomain owns global west  boundary  |
+
 ! l_mesg_proc        | NOT USED                                        |
 ! l_ni               | local # of grid points on X (scalar grid)       |
 ! l_nj               | local # of grid points on Y (scalar grid)       |
@@ -68,13 +46,47 @@ module glb_ld
 ! west               | =1 if touching west  boundary                   |
 !----------------------------------------------------------------------
 
-   logical G_periodx, G_periody
-   integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
-!      integer G_halox, G_haloy
-   real(kind=REAL64), dimension(:), allocatable :: G_xg_8, G_yg_8
+   !> .true. if periodic on X
+   logical :: G_periodx
+   !> .true. if periodic on Y
+   logical :: G_periody
+   !> Global # of grid points along X  (scalar grid)
+   integer :: G_ni
+   !> Global # of grid points along Y  (scalar grid)
+   integer :: G_nj
+   !> Total number of computational vertical levels
+   integer :: G_nk
+   !> Global # of grid points along X (U grid)
+   integer :: G_niu
+   !> Global # of grid points along Y (V grid)
+   integer :: G_njv
+   !> Largest l_ni of all subdomain
+   integer :: G_lnimax
+   !> Largest l_nj of all subdomain
+   integer :: G_lnjmax
+   !> Longitudes of the scalar grid in radians
+   real(kind=REAL64), dimension(:), allocatable :: G_xg_8
+   !> Latitudes  of the scalar grid in radians
+   real(kind=REAL64), dimension(:), allocatable :: G_yg_8
 
-   logical l_north, l_south, l_east, l_west, l_mesg_proc
-   integer l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0
+   !> .true. if subdomain owns global north boundary
+   logical :: l_north
+   !> .true. if subdomain owns global south boundary
+   logical :: l_south
+   !> .true. if subdomain owns global east  boundary
+   logical :: l_east
+   !> .true. if subdomain owns global west  boundary
+   logical :: l_west
+   !> NOT USED
+   logical :: l_mesg_proc
+
+   integer :: l_ni
+   integer :: l_nj
+   integer :: l_nk
+   integer :: l_niu
+   integer :: l_njv
+   integer :: l_i0
+   integer :: l_j0
    integer l_minx, l_maxx, l_miny, l_maxy
    integer l_dimmsg, l_dim2d, l_dim3d
    integer pil_n,pil_s,pil_w,pil_e,north,south,east,west
