@@ -19,32 +19,7 @@ module glb_ld
    public
    save
 
-!  VARIABLES FOR GLOBAL(G) and LOCAL(L) reference                      |
-
-! l_mesg_proc        | NOT USED                                        |
-! l_ni               | local # of grid points on X (scalar grid)       |
-! l_nj               | local # of grid points on Y (scalar grid)       |
-! l_nk               | total number of computational vertical levels   |
-! l_niu              | local # of grid points on X (U      grid)       |
-! l_njv              | local # of grid points on Y (V      grid)       |
-! l_i0               | left   global index of local subdomain          |
-! l_j0               | bottom global index of local subdomain          |
-! l_minx             | minimum value for first  index of main 3D var.  |
-! l_maxx             | maximum value for first  index of main 3D var.  |
-! l_miny             | minimum value for second index of main 3D var.  |
-! l_maxy             | maximum value for second index of main 3D var.  |
-! l_dimmsg           | NOT USED                                        |
-! l_dim2d            | NOT USED                                        |
-! l_dim3d            | NOT USED                                        |
-! pil_n              | # of points on global north boundary for pilot  |
-! pil_s              | # of points on global south boundary for pilot  |
-! pil_w              | # of points on global west  boundary for pilot  |
-! pil_e              | # of points on global east  boundary for pilot  |
-! north              | =1 if touching north boundary                   |
-! south              | =1 if touching south boundary                   |
-! east               | =1 if touching east  boundary                   |
-! west               | =1 if touching west  boundary                   |
-!----------------------------------------------------------------------
+   ! Variables for global(G) and local(L) reference
 
    !> .true. if periodic on X
    logical :: G_periodx
@@ -80,15 +55,53 @@ module glb_ld
    !> NOT USED
    logical :: l_mesg_proc
 
+   !> Local # of grid points on X (scalar grid)
    integer :: l_ni
+   !> Local # of grid points on Y (scalar grid)
    integer :: l_nj
+   !> Total number of computational vertical levels
    integer :: l_nk
+   !> Local # of grid points on X (U grid)
    integer :: l_niu
+   !> Local # of grid points on Y (V grid)
    integer :: l_njv
+   !> left global index of local subdomain
    integer :: l_i0
+   !> Bottom global index of local subdomain
    integer :: l_j0
-   integer l_minx, l_maxx, l_miny, l_maxy
-   integer l_dimmsg, l_dim2d, l_dim3d
-   integer pil_n,pil_s,pil_w,pil_e,north,south,east,west
+
+   !> Mminimum value for first  index of main 3D var
+   integer :: l_minx
+   !> Maximum value for first  index of main 3D var
+   integer :: l_maxx
+   !> Minimum value for second index of main 3D var
+   integer :: l_miny
+   !> Maximum value for second index of main 3D var
+   integer :: l_maxy
+
+   !> NOT USED
+   integer :: l_dimmsg
+   !> NOT USED
+   integer :: l_dim2d
+   !> NOT USED
+   integer :: l_dim3d
+
+   !> # of points on global north boundary for pilot
+   integer :: pil_n
+   !> # of points on global south boundary for pilot
+   integer :: pil_s
+   !> # of points on global west  boundary for pilot
+   integer :: pil_w
+   !> # of points on global east  boundary for pilot
+   integer :: pil_e
+
+   !> 1 if touching north boundary
+   integer :: north
+   !> 1 if touching south boundary
+   integer :: south
+   !> 1 if touching east  boundary
+   integer :: east
+   !> 1 if touching west  boundary
+   integer :: west
 
 end module glb_ld
