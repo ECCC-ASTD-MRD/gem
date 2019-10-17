@@ -80,6 +80,7 @@
                              Schm_sleve_L,l_minx,l_maxx,l_miny,l_maxy,&
                              nka_tt,1,l_ni,1,l_nj )
 
+      nullify (srclev,dstlev)
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,max(nka_tt,nka_hu)),&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk))
 

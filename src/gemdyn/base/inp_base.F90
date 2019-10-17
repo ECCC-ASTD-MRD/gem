@@ -117,7 +117,7 @@ contains
       logical         , optional,intent(in)  :: F_quiet_L
       integer                   ,intent(in ) :: F_nd
       integer                   ,intent(out) :: F_nka
-      integer, dimension(:    ), pointer,intent  (out) :: F_ip1
+      integer, dimension(:    ), pointer,intent(inout) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
 
 !     local variables
@@ -773,8 +773,8 @@ inner:      do kh=1, F_nka_hu
 
       character(len=*)                  , intent(in)  :: F_target_S
       integer                           , intent(out) :: F_nka
-      integer, dimension(:    ), pointer, intent(out) :: F_ip1
-      real   , dimension(:,:,:), pointer, intent(out) :: F_u, F_v
+      integer, dimension(:    ), pointer, intent(inout) :: F_ip1
+      real   , dimension(:,:,:), pointer, intent(inout) :: F_u, F_v
 
 !     local variables
       integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
@@ -1112,7 +1112,7 @@ inner:      do kh=1, F_nka_hu
       integer, intent(in)    :: Minx,Maxx,Miny,Maxy,nki
       integer, dimension (:), pointer, intent(in) :: &
                              F_ip1_list_i,F_ip1_list_o
-      real, dimension (:,:,:), pointer, intent(out) :: F_ho
+      real, dimension (:,:,:), pointer, intent(inout) :: F_ho
       real, dimension (Minx:Maxx,Miny:Maxy,nki), intent(in) :: F_hi
       integer, parameter :: INP_OK = 0, INP_ERROR = -1
 
@@ -1200,7 +1200,7 @@ inner:      do kh=1, F_nka_hu
       integer                , intent(IN) :: k0,kn
       integer, dimension(:)    , pointer, intent(in ) :: F_ip1
       real   , dimension(:,:  ), pointer, intent(in ) :: F_sfc,F_sfcL
-      real   , dimension(:,:,:), pointer, intent(out) :: F_dest
+      real   , dimension(:,:,:), pointer, intent(inout) :: F_dest
 
 !     local variables
       integer :: istat

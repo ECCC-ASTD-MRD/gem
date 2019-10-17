@@ -19,6 +19,7 @@
       use dyn_fisl_options
       use dynkernel_options
       use glb_ld
+      use HORgrid_options
       use gmm_geof
       use gmm_itf_mod
       use gmm_pw
@@ -32,6 +33,7 @@
       use out_vref
       use outp
       use tdpack
+      use phy_itf, only: phy_get
       use vertical_interpolation
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
@@ -43,10 +45,10 @@
       integer :: k, istat, indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
       real, dimension(:    ), pointer :: hybm,hybt,hybt_w
-      real, dimension(:,:  ), pointer :: tdiag,udiag,vdiag
-      real, dimension(:,:,:), pointer :: tr2,wlnph_ta,wlnph_m
+      real, dimension(:,:  ), pointer :: tdiag,udiag,vdiag,qdiag
+      real, dimension(:,:,:), pointer :: ptr3d,tr2,wlnph_ta,wlnph_m
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: tr1
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,1:G_nk+1),target :: tr1
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: gzm, gzt
       type(vgrid_descriptor) :: vcoord
       real, dimension(1) :: hybm_gnk2, hybt_gnk2, hyb0
@@ -109,7 +111,7 @@
 
       if (.not. Schm_autobar_L) then
          call out_fstecr3 ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
-                            'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
+                   'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
       end if
 
       call out_fstecr3 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&
@@ -165,13 +167,22 @@
                             Grdc_trnm_S(k),1.,0.,Level_kind_ip1,-1,&
                             G_nk, indo, G_nk, Grdc_nbits,.false. )
          if ( Out3_sfcdiag_L ) then
-            tr1(:,:) = tr2(:,:,G_nk)
-            call itf_phy_sfcdiag ( tr1,l_minx,l_maxx,l_miny,l_maxy,&
-                                   varname,istat,.true. )
-            if (istat == 0) &
-            call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy, &
-                               hybt_gnk2,Grdc_trnm_S(k),1.,0.,4, &
-                               -1,1,ind0,1,Grdc_nbits,.false. )
+            if (trim(varname)=='TR/HU:P') then
+               istat = gmm_get(gmmk_diag_hu_s,qdiag)
+               if (istat == 0) &
+               call out_fstecr3 ( qdiag ,l_minx,l_maxx,l_miny,l_maxy, &
+                                  hybt_gnk2,Grdc_trnm_S(k),1.,0.,4, &
+                                  -1,1,ind0,1,Grdc_nbits,.false. )
+            else
+               tr1(:,:,G_nk+1) = tr2(:,:,G_nk)
+               ptr3d => tr1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:G_nk+1)
+               istat = phy_get(ptr3d, varname, F_npath='VO', F_bpath='D')
+               if (istat == 0) &
+               call out_fstecr3 ( tr1(l_minx,l_miny,G_nk+1), &
+                                l_minx,l_maxx,l_miny,l_maxy, &
+                                hybt_gnk2,Grdc_trnm_S(k),1.,0.,4, &
+                                -1,1,ind0,1,Grdc_nbits,.false. )
+            endif
          end if
       end do
 
