@@ -21,7 +21,6 @@
       use gem_options
       use glb_ld
       use gmm_itf_mod
-      use gmm_orh
       use init_options
       use HORgrid_options
       use lun
@@ -32,7 +31,7 @@
 #include <arch_specific.hf>
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer n, istat, keep_itcn
+      integer n, istat, icn, keep_itcn
       real, pointer, dimension(:,:,:) :: tr1
 !
 !     ---------------------------------------------------------------
@@ -55,9 +54,9 @@
 
       call psadj_init ( Step_kount )
 
-      do Orh_icn = 1,Schm_itcn-1
+      do icn = 1,Schm_itcn-1
 
-         call tstpdyn
+         call tstpdyn (icn)
 
          call hzd_momentum()
          call hzd_smago_momentum()
@@ -66,9 +65,7 @@
 
       if (Lun_debug_L) write(Lun_out,1006)
 
-      Orh_icn=Schm_itcn
-
-      call tstpdyn
+      call tstpdyn (Schm_itcn)
 
       call psadj ( Step_kount )
 

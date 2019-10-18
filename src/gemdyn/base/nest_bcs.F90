@@ -15,17 +15,17 @@
 
 !**s/r nest_bcs
 
-      subroutine nest_bcs
+      subroutine nest_bcs ( F_rhsu, F_rhsv, Minx, Maxx, Miny, Maxy, Nk )
       use gmm_nest
-      use gmm_rhsc
       use lam_options
       use glb_ld
       use cstv
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
-
-      integer i,j,k,gmmstat
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: &
+                                               F_rhsu, F_rhsv
+      integer i,j,k
 !
 !----------------------------------------------------------------------
 !
@@ -37,49 +37,36 @@
 ! Apply HORIZONTAL BOUNDARY CONDITIONS
 !**************************************
 
-      gmmstat = gmm_get (gmmk_rhsu_s  , rhsu  )
-      gmmstat = gmm_get (gmmk_rhsv_s  , rhsv  )
-      gmmstat = gmm_get (gmmk_nest_u_s, nest_u)
-      gmmstat = gmm_get (gmmk_nest_v_s, nest_v)
-
       if (l_west) then
-
          do k=1,l_nk
-            do j= 1+pil_s, l_nj-pil_n
-                  rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
-            end do
+         do j= 1+pil_s, l_nj-pil_n
+               F_rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
          end do
-
+         end do
       end if
 
       if (l_east) then
-
          do k=1,l_nk
-            do j= 1+pil_s, l_nj-pil_n
-               rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
-            end do
+         do j= 1+pil_s, l_nj-pil_n
+            F_rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
          end do
-
+         end do
       end if
 
       if (l_south) then
-
          do k=1,l_nk
-            do i= 1+pil_w, l_ni-pil_e
-               rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
-            end do
+         do i= 1+pil_w, l_ni-pil_e
+            F_rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
          end do
-
+         end do
       end if
 
       if (l_north) then
-
          do k=1,l_nk
-            do i= 1+pil_w, l_ni-pil_e
-               rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
-            end do
+         do i= 1+pil_w, l_ni-pil_e
+            F_rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
          end do
-
+         end do
       end if
 !
 !----------------------------------------------------------------------

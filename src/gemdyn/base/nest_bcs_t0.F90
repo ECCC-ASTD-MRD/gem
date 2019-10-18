@@ -36,26 +36,6 @@
 !
       using_qt0 = ( .not.Dynamics_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
 
-      istat = gmm_get(gmmk_nest_u_s ,nest_u )
-      istat = gmm_get(gmmk_nest_v_s ,nest_v )
-      istat = gmm_get(gmmk_nest_t_s ,nest_t )
-      istat = gmm_get(gmmk_nest_s_s ,nest_s )
-      istat = gmm_get(gmmk_nest_w_s ,nest_w )
-      istat = gmm_get(gmmk_nest_zd_s,nest_zd)
-
-      istat = gmm_get(gmmk_ut0_s , ut0 )
-      istat = gmm_get(gmmk_vt0_s , vt0 )
-      istat = gmm_get(gmmk_tt0_s , tt0 )
-      istat = gmm_get(gmmk_st0_s , st0 )
-      istat = gmm_get(gmmk_wt0_s , wt0 )
-      istat = gmm_get(gmmk_zdt0_s,zdt0 )
-
-      if ( using_qt0 ) then
-         istat = gmm_get(gmmk_nest_q_s,nest_q)
-
-         istat = gmm_get(gmmk_qt0_s,qt0)
-      end if
-
       if (l_north) then
          ut0 (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_u (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk)
          vt0 (1:l_ni ,l_nj-pil_n  :l_njv,1:G_nk) = nest_v (1:l_ni ,l_nj-pil_n  :l_njv,1:G_nk)
@@ -151,6 +131,8 @@
          end if
 
       end do
-
+!
+!----------------------------------------------------------------------
+!
       return
       end

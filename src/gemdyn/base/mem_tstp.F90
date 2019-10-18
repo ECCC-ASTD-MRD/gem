@@ -12,39 +12,26 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+module mem_tstp
+   use, intrinsic :: iso_fortran_env
+   implicit none
+   public
+   save
 
-!**s/r firstguess - Copy data from time level t1 that will be used as a
-!                   first guess at time level t0
+      real, allocatable,  dimension (:,:  ) :: rhsb
+      real, allocatable,  dimension (:,:,:) :: rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp
+!      real, allocatable,  dimension (:,:,:) :: ruw1 
+!      real, allocatable,  dimension (:,:,:) :: rvw1 
+!      real, allocatable,  dimension (:,:,:) :: ruw2 
+!      real, allocatable,  dimension (:,:,:) :: rvw2 
+!      real, allocatable,  dimension (:,:,:) :: rhsx 
+!      real, allocatable,  dimension (:,:,:) :: rhsq 
 
-      subroutine firstguess()
-      use gmm_itf_mod
-      use gmm_vt0
-      use gmm_vt1
-      use tr3d
-      implicit none
-#include <arch_specific.hf>
+      real, allocatable,  dimension (:,:,:) :: orhsu,orhsv,orhst,orhsc,orhsw,orhsf
 
-      integer :: istat, k
-      real, pointer, contiguous, dimension(:,:,:) :: plus, minus
-!
-!     ---------------------------------------------------------------
-!
-      do k=1,Tr3d_ntr
-         nullify (plus, minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':M', minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':P', plus )
-         minus = plus
-      end do
+      real, allocatable,  dimension (:,:  ) :: nl_b
+      real, allocatable,  dimension (:,:,:) :: nl_u,nl_v,nl_t,nl_c,nl_w,nl_f
 
-      tt0  = tt1
-      zdt0 = zdt1
-      wt0  = wt1
-      ut0  = ut1
-      vt0  = vt1
-      qt0  = qt1
-      st0  = st1
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+      real(kind=REAL64), allocatable, dimension (:,:,:) :: rhs_sol, lhs_sol
+
+end module mem_tstp

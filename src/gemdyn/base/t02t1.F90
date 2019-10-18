@@ -59,5 +59,23 @@
          istat = gmm_shuffle(tr_list)
       end do
 
+      istat = gmm_get (gmmk_ut0_s , ut0)
+      istat = gmm_get (gmmk_vt0_s , vt0)
+      istat = gmm_get (gmmk_tt0_s , tt0)
+      istat = gmm_get (gmmk_st0_s , st0)
+      istat = gmm_get (gmmk_wt0_s , wt0)
+      istat = gmm_get (gmmk_qt0_s , qt0)
+      istat = gmm_get (gmmk_zdt0_s, zdt0)
+
+      istat = gmm_get (gmmk_ut1_s , ut1)
+      istat = gmm_get (gmmk_vt1_s , vt1)
+      istat = gmm_get (gmmk_tt1_s , tt1)
+      istat = gmm_get (gmmk_st1_s , st1)
+      istat = gmm_get (gmmk_wt1_s , wt1)
+      istat = gmm_get (gmmk_qt1_s , qt1)
+      istat = gmm_get (gmmk_zdt1_s, zdt1)
+!
+!     ---------------------------------------------------------------
+!
       return
       end

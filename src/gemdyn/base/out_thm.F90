@@ -72,7 +72,7 @@
          deg2rad,zd2etad
 
       real, dimension(:,:  ), pointer    :: tdiag,qdiag
-      real, dimension(:,:,:), pointer    :: hut1, wlnph_m, wlnph_ta
+      real, dimension(:,:,:), pointer    :: gmm_hut1, wlnph_m, wlnph_ta
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
                                             tt_pres,vt_pres,w5,w6,cible,&
                                             gzm,gzt,ttx,htx,ffwe       ,&
@@ -134,8 +134,8 @@
       if (pnth /= 0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
-      nullify (hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
-      istat= gmm_get('TR/'//'HU'//':P', hut1      )
+      nullify (gmm_hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
+      istat= gmm_get('TR/'//'HU'//':P', gmm_hut1      )
       istat= gmm_get(gmmk_tt1_s       , tt1       )
       istat= gmm_get(gmmk_wt1_s       , wt1       )
       istat= gmm_get(gmmk_fis0_s      , fis0      )
@@ -155,7 +155,7 @@
       if (Out3_sfcdiag_L) nk_src= l_nk+1
 
 !     Obtain HU from HUT1 and physics diag level
-      hu(:,:,1:l_nk) = hut1(:,:,1:l_nk)
+      hu(:,:,1:l_nk) = gmm_hut1(:,:,1:l_nk)
       hu(:,:,l_nk+1) = qdiag
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
@@ -457,10 +457,8 @@
              end if
          end if
 
-         if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) then
-            allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
-            t8 = 0
-         end if
+         if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) &
+               allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
          if (pntw /= 0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
@@ -503,9 +501,9 @@
 !            Calculate TD (tt=TT,t8=old ES, t8=TD=TT-ES)
                do k= 1,nk_src
                   do j= 1,l_nj
-                     do i= 1,l_ni
-                        t8(i,j,k) = tt(i,j,k) - t8(i,j,k)
-                     end do
+                  do i= 1,l_ni
+                     t8(i,j,k) = tt(i,j,k) - t8(i,j,k)
+                  end do
                   end do
                end do
                call out_fstecr(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
@@ -526,9 +524,9 @@
             if ( Out3_cliph_L ) then
                do k= 1,nk_src
                   do j= 1,l_nj
-                     do i= 1,l_ni
-                        t8(i,j,k)= max ( min( t8(i,j,k), 1.0 ), 0. )
-                     end do
+                  do i= 1,l_ni
+                     t8(i,j,k)= max ( min( t8(i,j,k), 1.0 ), 0. )
+                  end do
                   end do
                end do
             end if
@@ -575,9 +573,9 @@
             do k=1,G_nk-1
                zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
                do j= 1, l_nj
-                  do i= 1, l_ni
-                     ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
-                  end do
+               do i= 1, l_ni
+                  ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
+               end do
                end do
             end do
             call out_fstecr(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&

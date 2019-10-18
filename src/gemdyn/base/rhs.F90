@@ -27,7 +27,6 @@
       use hvdif_options
       use geomh
       use glb_ld
-      use gmm_itf_mod
       use gmm_phy
       use HORgrid_options
       use lun
@@ -45,12 +44,11 @@
       real, dimension(Minx:Maxx,Miny:Maxy,  Nk), intent(out)   :: F_oru, F_orv, F_orc, F_ort, F_orw, F_orf
       real, dimension(Minx:Maxx,Miny:Maxy,  Nk+1), intent(inout) :: F_q
 
-
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
 
-      integer :: i, j, k, km, kq, nij, jext, istat
+      integer :: i, j, k, km, kq, nij, jext
       real(kind=REAL64) :: tdiv, BsPqbarz, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
                 w1, w2, phy_bA_m_8, phy_bA_t_8
@@ -68,15 +66,9 @@
       zero_array = 0.
 
       if (Schm_phycpl_S == 'RHS') then
-         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
-         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
       else if (Schm_phycpl_S == 'AVG') then
-         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
-         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = Cstv_bA_m_8
          phy_bA_t_8 = Cstv_bA_8
       else
@@ -92,21 +84,6 @@
 !     Common coefficients
 
       jext = Grd_bsc_ext1 + 1
-
-!     Exchanging halos for derivatives & interpolation
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call rpn_comm_xch_halo( F_u , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_v , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_t , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_s , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      if (.not.Dynamics_hydro_L) then
-         call rpn_comm_xch_halo(  F_q, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1,&
-                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      end if
 
       nij = l_ni*l_nj
 

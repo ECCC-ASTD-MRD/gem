@@ -28,7 +28,6 @@
       use tr3d
       use gmm_itf_mod
       use var_gmm
-
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -128,6 +127,22 @@
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')
       end if
 
+      istat = gmm_get (gmmk_ut0_s , ut0)
+      istat = gmm_get (gmmk_vt0_s , vt0)
+      istat = gmm_get (gmmk_tt0_s , tt0)
+      istat = gmm_get (gmmk_st0_s , st0)
+      istat = gmm_get (gmmk_wt0_s , wt0)
+      istat = gmm_get (gmmk_qt0_s , qt0)
+      istat = gmm_get (gmmk_zdt0_s, zdt0)
+      istat = gmm_get (gmmk_p00_s , p00)
+      istat = gmm_get (gmmk_ut1_s , ut1)
+      istat = gmm_get (gmmk_vt1_s , vt1)
+      istat = gmm_get (gmmk_tt1_s , tt1)
+      istat = gmm_get (gmmk_st1_s , st1)
+      istat = gmm_get (gmmk_wt1_s , wt1)
+      istat = gmm_get (gmmk_qt1_s , qt1)
+      istat = gmm_get (gmmk_zdt1_s, zdt1)
+
       gmmk_xth_s = 'XTH'
       gmmk_yth_s = 'YTH'
       gmmk_zth_s = 'ZTH'
@@ -142,6 +157,9 @@
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
       end if
+      istat = gmm_get(gmmk_xth_s , xth)
+      istat = gmm_get(gmmk_yth_s , yth)
+      istat = gmm_get(gmmk_zth_s , zth)
 
       istat = GMM_OK
 
@@ -167,14 +185,19 @@
       gmmk_airm0_s= 'AIR0'
       gmmk_pkps_s = 'PKPS'
 
-      istat = GMM_OK
       istat = min(gmm_create(gmmk_airm1_s,airm1,    mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_airm0_s,airm0,    mymeta3d_nk_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pkps_s, pkps,     mymeta3d_nk_t,flag_r_n),istat)
+      istat = gmm_get(gmmk_airm1_s,airm1)
+      istat = gmm_get(gmmk_airm0_s,airm0)
+      istat = gmm_get(gmmk_pkps_s, pkps )
 
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
       end if
+
+      istat = gmm_get('TR/HU:M' ,hut1)
+      istat = gmm_get('TR/HU:P' ,hut0)
 
       gmmk_pw_uu_plus_s  = 'PW_UU:P'
       gmmk_pw_vv_plus_s  = 'PW_VV:P'
@@ -197,8 +220,6 @@
       gmmk_pw_me_moins_s = 'PW_ME:M'
       gmmk_pw_p0_moins_s = 'PW_P0:M'
 
-!!$      gmmk_pw_uslt_s     = 'PW_USLT'
-!!$      gmmk_pw_vslt_s     = 'PW_VSLT'
       gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
       gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
 
@@ -226,11 +247,11 @@
 
       istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk ,flag_r_n),istat)
 
       istat = min(gmm_create(gmmk_pw_pt_moins_s ,pw_pt_moins ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk ,flag_r_n),istat)
 
       istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ,flag_r_n),istat)
@@ -249,6 +270,32 @@
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
       end if
 
+      istat = gmm_get(gmmk_pw_uu_plus_s  ,pw_uu_plus)
+      istat = gmm_get(gmmk_pw_vv_plus_s  ,pw_vv_plus)
+      istat = gmm_get(gmmk_pw_wz_plus_s  ,pw_wz_plus)
+      istat = gmm_get(gmmk_pw_tt_plus_s  ,pw_tt_plus)
+      istat = gmm_get(gmmk_pw_pt_plus_s  ,pw_pt_plus)
+      istat = gmm_get(gmmk_pw_gz_plus_s  ,pw_gz_plus)
+      istat = gmm_get(gmmk_pw_pm_plus_s  ,pw_pm_plus)
+      istat = gmm_get(gmmk_pw_me_plus_s  ,pw_me_plus)
+      istat = gmm_get(gmmk_pw_p0_plus_s  ,pw_p0_plus)
+      istat = gmm_get(gmmk_pw_log_pm_s  ,pw_log_pm)
+      istat = gmm_get(gmmk_pw_log_pt_s  ,pw_log_pt)
+      istat = gmm_get(gmmk_pw_uu_moins_s  ,pw_uu_moins)
+      istat = gmm_get(gmmk_pw_vv_moins_s  ,pw_vv_moins)
+      istat = gmm_get(gmmk_pw_tt_moins_s  ,pw_tt_moins)
+      istat = gmm_get(gmmk_pw_pt_moins_s  ,pw_pt_moins)
+      istat = gmm_get(gmmk_pw_gz_moins_s  ,pw_gz_moins)
+      istat = gmm_get(gmmk_pw_pm_moins_s  ,pw_pm_moins)
+      istat = gmm_get(gmmk_pw_me_moins_s  ,pw_me_moins)
+      istat = gmm_get(gmmk_pw_p0_moins_s  ,pw_p0_moins)
+      istat = gmm_get(gmmk_pw_p0_ls_s    ,pw_p0_ls)
+      istat = gmm_get(gmmk_pw_uslt_s     ,pw_uslt)
+      istat = gmm_get(gmmk_pw_vslt_s     ,pw_vslt)
+      istat = gmm_get(gmmk_pw_uu_copy_s  ,pw_uu_copy)
+      istat = gmm_get(gmmk_pw_vv_copy_s  ,pw_vv_copy)
+      istat = gmm_get(gmmk_smag_s   ,smag)
+
       call canonical_cases ("SET_VT")
 
       gmmk_phy_uu_tend_s  = 'UPT'
@@ -260,7 +307,9 @@
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
       end if
-
+!      istat = gmm_get(gmmk_phy_uu_tend_s , phy_uu_tend)
+!      istat = gmm_get(gmmk_phy_vv_tend_s , phy_vv_tend)
+!      istat = gmm_get(gmmk_phy_tt_tend_s , phy_tt_tend)
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
          call exp_set_vt()
