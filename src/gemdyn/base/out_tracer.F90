@@ -63,7 +63,7 @@
          knd=Level_kind_ip1
 !        Setup the indexing for output
          allocate (indo( min(Level_max(levset),Level_thermo) ))
-         call out_slev2(Level(1,levset), Level_max(levset), &
+         call out_slev(Level(1,levset), Level_max(levset), &
                        Level_thermo,indo,nko,near_sfc_L)
          write_diag_lev= near_sfc_L .and. out3_sfcdiag_L
 
@@ -119,12 +119,12 @@
                   end do
                   end do
                end if
-               call out_fstecr3(w4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
+               call out_fstecr(w4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                        Outd_var_S(ii,set),Outd_convmult(ii,set)    ,&
                        Outd_convadd(ii,set),knd,-1,G_nk,indo,nko   ,&
                        Outd_nbit(ii,set),.false. )
                if (model_nk > G_nk) &
-                  call out_fstecr3 ( w4(l_minx,l_miny,G_nk+1)       ,&
+                  call out_fstecr ( w4(l_minx,l_miny,G_nk+1)       ,&
                             l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2   ,&
                             Outd_var_S(ii,set),Outd_convmult(ii,set),&
                             Outd_convadd(ii,set),Level_kind_diag    ,&
@@ -195,7 +195,7 @@
                end if
 
                if (Outd_filtpass(ii,set) > 0) &
-                    call filter2( tr5,Outd_filtpass(ii,set), &
+                    call filter( tr5,Outd_filtpass(ii,set), &
                                       Outd_filtcoef(ii,set), &
                             l_minx,l_maxx,l_miny,l_maxy, nko)
                if (Out3_cliph_L) then
@@ -208,7 +208,7 @@
                   end do
                end if
 
-               call out_fstecr3 ( tr5,l_minx,l_maxx,l_miny,l_maxy,rf      , &
+               call out_fstecr ( tr5,l_minx,l_maxx,l_miny,l_maxy,rf      , &
                                   Outd_var_S(ii,set),Outd_convmult(ii,set), &
                                   Outd_convadd(ii,set),knd,-1 , &
                                   nko, indo, nko               , &

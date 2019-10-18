@@ -105,7 +105,7 @@
          if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
          if (Vtopo_L) then
             gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-            call var_topo2 (fis0, real(Lctl_step), l_minx,l_maxx,l_miny,l_maxy)
+            call var_topo (fis0, real(Lctl_step), l_minx,l_maxx,l_miny,l_maxy)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          end if

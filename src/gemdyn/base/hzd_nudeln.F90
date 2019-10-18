@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r hzd_nudeln
 
-      subroutine hzd_nudeln2(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu,m,n)
+      subroutine hzd_nudeln(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu,m,n)
       use HORgrid_options
       use glb_ld
       use, intrinsic :: iso_fortran_env

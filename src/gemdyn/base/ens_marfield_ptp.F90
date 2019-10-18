@@ -421,7 +421,7 @@
          end if
 
          if(Ens_stat)then
-            call glbstat2 (fgem_str(:,:,nc),'MCPTP','STR',&
+            call glbstat (fgem_str(:,:,nc),'MCPTP','STR',&
             1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
          end if
 

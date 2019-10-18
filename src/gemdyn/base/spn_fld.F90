@@ -104,9 +104,9 @@
               fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
 
-!     call glbstat2 ( fld3d,'TTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld3d,'TTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat2 ( fld_nest3d,'NTTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld_nest3d,'NTTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if
@@ -121,14 +121,14 @@
               fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
 
-!     call glbstat2 ( fld3d,'UT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld3d,'UT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni-1,1,G_nj,1,F_nk )
-!     call glbstat2 ( fld_nest3d,'NUT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld_nest3d,'NUT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni-1,1,G_nj,1,F_nk )
 
-!     call glbstat2 ( fld3d,'UTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld3d,'UTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat2 ( fld_nest3d,'NUTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld_nest3d,'NUTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if
@@ -142,13 +142,13 @@
          Ldiff3D (F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)= &
               fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
-!     call glbstat2 ( fld3d,'VT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld3d,'VT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj-1,1,F_nk )
-!     call glbstat2 ( fld_nest3d,'NVT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld_nest3d,'NVT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj-1,1,F_nk )
-!     call glbstat2 ( fld3d,'VTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld3d,'VTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat2 ( fld_nest3d,'NVTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
+!     call glbstat ( fld_nest3d,'NVTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
 !                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if

@@ -15,8 +15,8 @@
 
 !**s/r out_stkecr
 
-      subroutine out_stkecr2 ( fa,lminx,lmaxx,lminy,lmaxy, &
-                               meta,nplans, g_id,g_if,g_jd,g_jf )
+      subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy, &
+                              meta,nplans, g_id,g_if,g_jd,g_jf )
       use iso_c_binding
       use out_collector, only: block_collect_fullp, Bloc_me
       use HORgrid_options

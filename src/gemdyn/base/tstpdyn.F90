@@ -158,7 +158,7 @@
          else
             if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) then
                gmmstat = gmm_get(gmmk_fis0_s,fis0)
-               call var_topo2 (fis0, real(Lctl_step),&
+               call var_topo (fis0, real(Lctl_step),&
                                l_minx,l_maxx,l_miny,l_maxy)
                if (Grd_yinyang_L) then
                   call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &

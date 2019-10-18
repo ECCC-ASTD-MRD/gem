@@ -275,10 +275,10 @@
 
       end if
 
-      call glbstat2 (irt,'IRT','LCPR', &
+      call glbstat (irt,'IRT','LCPR', &
                      l_minx,l_maxx,l_miny,l_maxy,1,1,1,G_ni,1,G_nj,1,1)
 
-      call glbstat2 (art,'ART','LCPR', &
+      call glbstat (art,'ART','LCPR', &
                      l_minx,l_maxx,l_miny,l_maxy,1,1,1,G_ni,1,G_nj,1,1)
 
       !-------------------------------------------------------------------------------

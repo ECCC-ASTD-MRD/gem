@@ -15,7 +15,7 @@
 
 !**s/r filter - 2-delta x filter
 
-      subroutine filter2 (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
+      subroutine filter (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
       use gem_options
       use glb_ld
       use, intrinsic :: iso_fortran_env

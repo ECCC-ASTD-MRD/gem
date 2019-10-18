@@ -59,7 +59,7 @@
 
          kind= Level_kind_ip1
          allocate (indo( min(Level_max(levset),Level_momentum) ))
-         call out_slev2 ( Level(1,levset), Level_max(levset), &
+         call out_slev ( Level(1,levset), Level_max(levset), &
                           Level_momentum , indo,nko,write_diag_lev )
 
          call rpn_comm_xch_halo (ut1,l_minx,l_maxx,l_miny,l_maxy,&
@@ -73,10 +73,10 @@
                            Outd_filtcoef(pndd,set)                ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
-            call out_href3 ( 'Mass_point', &
+            call out_href ( 'Mass_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
-            call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy        ,&
+            call out_fstecr( div, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pndd,set),.false.)
@@ -96,17 +96,17 @@
                            Outd_filtcoef(pnxx,set),(pnqq > 0)        ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
-            call out_href3 ( 'F_point', &
+            call out_href ( 'F_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
             if (pnqq > 0) &
-            call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
+            call out_fstecr( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
                               Outd_convadd(pnqq,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pnqq,set),.false.)
             if (pnqr > 0) &
-            call out_fstecr3( qr, l_minx,l_maxx,l_miny,l_maxy         ,&
+            call out_fstecr( qr, l_minx,l_maxx,l_miny,l_maxy         ,&
                               Ver_hyb%m,'QR  ',Outd_convmult(pnqr,set),&
                               Outd_convadd(pnqr,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pnqr,set),.false.)
@@ -148,10 +148,10 @@
                            Outd_filtcoef(pndd,set),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
-            call out_href3 ( 'Mass_point', &
+            call out_href ( 'Mass_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
-            call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr( div, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pndd,set),.false.)
@@ -172,17 +172,17 @@
                            Outd_filtcoef(pnxx,set),(pnqq > 0),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
-            call out_href3 ( 'F_point', &
+            call out_href ( 'F_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
             if (pnqq > 0) &
-            call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QQ  ',Outd_convmult(pnqq,set),&
                               Outd_convadd(pnqq,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pnqq,set),.false.)
             if (pnqr > 0) &
-            call out_fstecr3 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr ( qr, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QR  ',Outd_convmult(pnqr,set),&
                               Outd_convadd(pnqr,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pnqr,set),.false.)

@@ -15,8 +15,8 @@
 
 !*s/r out_href - write horizontal positional parameters
 
-      subroutine out_href3 (F_arakawa_S ,F_x0, F_x1, F_stridex,&
-                                         F_y0, F_y1, F_stridey )
+      subroutine out_href (F_arakawa_S ,F_x0, F_x1, F_stridex,&
+                                        F_y0, F_y1, F_stridey )
       use geomh
       use glb_ld
       use hgc
@@ -50,7 +50,7 @@
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr3 ( fa,1,1,1,1,rf,nomvar,wk,wk,knd,lstep,1,ind_o,1,nbit,.true. )
+      call out_fstecr ( fa,1,1,1,1,rf,nomvar,wk,wk,knd,lstep,1,ind_o,1,nbit,.true. )
 
 ! to be completed if at all usefull
 !      old_grid_L= out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&

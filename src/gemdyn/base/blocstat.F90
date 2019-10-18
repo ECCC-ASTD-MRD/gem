@@ -65,14 +65,14 @@
                nullify (wk2d,wk3d)
                if (tmp_meta%l(3)%high == tmp_meta%l(3)%low) then
                   istat = gmm_get(stat_liste(n), wk2d, mymeta)
-                  call glbstat2 (wk2d,stat_varname,'', &
+                  call glbstat (wk2d,stat_varname,'', &
                                  tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
                                  tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
                                  1,1, &
                                  i0,in-inn,j0,jn-jnn, 1,1)
                else
                   istat = gmm_get(stat_liste(n), wk3d, mymeta)
-                  call glbstat2 (wk3d,stat_varname,'', &
+                  call glbstat (wk3d,stat_varname,'', &
                                 tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                 tmp_meta%l(3)%low,tmp_meta%l(3)%high,&

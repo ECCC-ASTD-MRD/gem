@@ -58,13 +58,13 @@
          if (meta%l(3)%high <= 1) then
             nullify(wk2d)
             istat= gmm_get(laliste(fld),wk2d)
-            call glbstat2 (wk2d, laliste(fld)(4:), name_S,&
+            call glbstat (wk2d, laliste(fld)(4:), name_S,&
                        l_minx,l_maxx, l_miny,l_maxy, 1,1,&
                        1,G_ni,1,G_nj,1, 1)
          else
             nullify(wk3d)
             istat= gmm_get(laliste(fld),wk3d)
-            call glbstat2 (wk3d, laliste(fld)(4:), name_S,&
+            call glbstat (wk3d, laliste(fld)(4:), name_S,&
                        l_minx,l_maxx, l_miny,l_maxy, 1,meta%l(3)%high,&
                        1,G_ni,1,G_nj,1, meta%l(3)%high)
          end if
@@ -73,12 +73,12 @@
       do i=1,Tr3d_ntr
          nullify(wk3d)
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',wk3d)
-         call glbstat2 (wk3d,trim(Tr3d_name_S(i))//':M', name_S,&
+         call glbstat (wk3d,trim(Tr3d_name_S(i))//':M', name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
                         1,G_ni,1,G_nj,1, G_nk)
          nullify(wk3d)
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',wk3d)
-         call glbstat2 (wk3d,trim(Tr3d_name_S(i))//':P', name_S,&
+         call glbstat (wk3d,trim(Tr3d_name_S(i))//':P', name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
                         1,G_ni,1,G_nj,1, G_nk)
       end do

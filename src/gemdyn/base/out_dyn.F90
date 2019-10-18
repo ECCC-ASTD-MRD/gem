@@ -77,7 +77,7 @@
 
             call out_open_file (trim(prefix))
 
-            call out_href3 ( 'Mass_point'                , &
+            call out_href ( 'Mass_point'                , &
                   OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                   OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 

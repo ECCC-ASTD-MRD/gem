@@ -161,7 +161,7 @@ contains
 
          if (lcltime_flag_L) then
             call out_open_file ('ti')
-            call out_href3 ( 'Mass_point',1,G_ni,1,1,G_nj,1)
+            call out_href ( 'Mass_point',1,G_ni,1,1,G_nj,1)
             if (Ptopo_myproc==0) then
                unf= 0
                err= fnom  ( unf, trim(Path_basedir_S)//'/lcl_timing.fst', 'STD+RND', 0 )
@@ -182,7 +182,7 @@ contains
                      endif
                      w1 = lcltime_event(i,j)
                      hyb0(1)=0.0 ; lvlel(0)=1
-                     call out_fstecr3(w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+                     call out_fstecr(w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
                         lcltime_name_S(i),1.,0.,2,-1,1,lvlel(0), 1, 32,.false. )
                   end do
                endif
