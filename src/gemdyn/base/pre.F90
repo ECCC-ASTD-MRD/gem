@@ -153,9 +153,9 @@
          w4=Ver_wmA_8(k)*epsi_8*Ver_onezero(k)
          do j= j0, jn
             do i= i0, in
-               F_rc(i,j,k) = F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j) &
-                              - w1 * F_rt(i,j,k) + w2 * F_rt(i,j,km) &
-                              - w3 * F_rf(i,j,k) - w4 * F_rf(i,j,km)
+               F_rc(i,j,k) = F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j) + &
+                             (- w1 * F_rt(i,j,k) + w2 * F_rt(i,j,km)  &
+                              - w3 * F_rf(i,j,k) - w4 * F_rf(i,j,km)) * Cstv_bar1_8
             end do
          end do
       end do

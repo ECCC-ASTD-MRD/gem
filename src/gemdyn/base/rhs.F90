@@ -291,6 +291,28 @@
                           F_sl,l_minx,l_maxx,l_miny,l_maxy,G_nk )
       end if
 
+      !Reinforce F_oru/F_orv constant in vertical when AUTOBAR
+      !-------------------------------------------------------
+      if (Schm_autobar_L) then
+
+         do k=2,l_nk
+            do j=j0u,jnu
+               do i=i0u,inu
+                  F_oru(i,j,k) = F_oru(i,j,1)
+               end do
+            end do
+         end do
+
+         do k=2,l_nk
+            do j=j0v,jnv
+               do i=i0v,inv
+                  F_orv(i,j,k) = F_orv(i,j,1)
+               end do
+            end do
+         end do
+
+      end if
+
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 !
 !     ---------------------------------------------------------------

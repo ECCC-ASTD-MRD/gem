@@ -384,8 +384,8 @@
          do j = j0, jn
             do i = i0, in
                F_rhs(i,j,k) =  c1 * ( F_rc(i,j,k) - F_nc(i,j,k) &
-                                     + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km)  &
-                                     + w3 * F_nf(i,j,k) + w4 * F_nf(i,j,km)  )
+                                     + (w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km)  &
+                                     +  w3 * F_nf(i,j,k) + w4 * F_nf(i,j,km)) * Cstv_bar1_8 )
             end do
          end do
       end do
