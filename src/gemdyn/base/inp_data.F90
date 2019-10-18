@@ -168,12 +168,7 @@
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
             end if
             ut1_L= ( err == 0 )
-         ! Remove the .and. part of this test by 2021
-            if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) then
-              call image_to_real_winds ( F_u,F_v, l_minx,l_maxx,&
-                                         l_miny,l_maxy, G_nk )
-            end if
-      end if
+         end if
       end if
 
       if ((.not. urt1_L) .and. (.not. ut1_L)) then

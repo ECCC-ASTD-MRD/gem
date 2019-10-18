@@ -184,6 +184,7 @@ contains
          l_id= Ptopo_gindx(1,Bloc_peid(0)+1)
          l_jd= Ptopo_gindx(3,Bloc_peid(0)+1)
 
+         f2rc = 0.
          do k = 1, Nk
             do j = 1, l_nj
                do i = 1, l_ni
@@ -295,6 +296,7 @@ contains
             nkk= (blk_dist(2,Bloc_mybloc)-blk_dist(1,Bloc_mybloc)+1)
             nz = nkk
             allocate (zlist(nz), buf(Bloc_maxdim*nkk,0:Bloc_nblocs-1))
+            buf = 0.
             do i=1,nz
                zlist(i) = blk_dist(1,Bloc_mybloc) + i - 1
             end do

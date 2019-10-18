@@ -131,8 +131,7 @@ contains
       integer, parameter :: nlis = 1024
       integer i, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
               liste_sorted(nlis),lislon,cnt
-      ! Remove the following line by 2021
-      integer ni_dest,nj_dest,ut1_is_urt1
+      integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -150,8 +149,6 @@ contains
       inp_read_mt= -1
       F_nka= -1 ; local_nk= 0
       add= 0.d0 ; mult= 1.d0
-      ! Remove the following line by 2021
-      ut1_is_urt1 = -1
       if (associated(F_ip1 )) deallocate (F_ip1 )
       if (associated(F_dest)) deallocate (F_dest)
       nullify (F_ip1,F_dest)
@@ -256,12 +253,11 @@ contains
          allocate (wk2(G_ni*G_nj,(nz+1)*F_nd))
          allocate (wk1(n1*n2,max(local_nk,1)))
 
+         wk2 = 0.
          cnt= 0
          do i= kstart, kstart+local_nk-1
             cnt= cnt+1
             err= fstluk (wk1(1,cnt), liste(i), n1,n2,n3)
-            ! Remove the following line by 2021
-            ut1_is_urt1 = inp_is_real_wind (wk1(1,cnt),n1*n2,nomvar)
          end do
 
          interp_S= 'CUBIC'
@@ -330,14 +326,12 @@ contains
          deallocate (wk1,wk3)
       else
          allocate (wk2(1,1))
+         wk2 = 0.
       end if
 
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err ) !NOTE: bcas listlon AND nz
       F_nka= lislon
-      ! Remove the following line by 2021
-      call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
-                                "MPI_INTEGER", "MPI_MAX", "grid", err )
 
       if (F_nka > 0) then
 

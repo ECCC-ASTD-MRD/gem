@@ -457,8 +457,10 @@
              end if
          end if
 
-         if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) &
-               allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
+         if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) then
+            allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
+            t8 = 0
+         end if
 
          if (pntw /= 0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
@@ -501,9 +503,9 @@
 !            Calculate TD (tt=TT,t8=old ES, t8=TD=TT-ES)
                do k= 1,nk_src
                   do j= 1,l_nj
-                  do i= 1,l_ni
-                     t8(i,j,k) = tt(i,j,k) - t8(i,j,k)
-                  end do
+                     do i= 1,l_ni
+                        t8(i,j,k) = tt(i,j,k) - t8(i,j,k)
+                     end do
                   end do
                end do
                call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
@@ -524,9 +526,9 @@
             if ( Out3_cliph_L ) then
                do k= 1,nk_src
                   do j= 1,l_nj
-                  do i= 1,l_ni
-                     t8(i,j,k)= max ( min( t8(i,j,k), 1.0 ), 0. )
-                  end do
+                     do i= 1,l_ni
+                        t8(i,j,k)= max ( min( t8(i,j,k), 1.0 ), 0. )
+                     end do
                   end do
                end do
             end if
@@ -573,9 +575,9 @@
             do k=1,G_nk-1
                zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
                do j= 1, l_nj
-               do i= 1, l_ni
-                  ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
-               end do
+                  do i= 1, l_ni
+                     ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
+                  end do
                end do
             end do
             call out_fstecr3(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
