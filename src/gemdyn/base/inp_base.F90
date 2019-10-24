@@ -204,6 +204,7 @@ contains
       if ( nomvar == '@NUL' ) return
 
       nz= -1
+      maxdim_wk2 = 1
       if (Inp_iome >= 0) then
          vcode= -1
          nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &

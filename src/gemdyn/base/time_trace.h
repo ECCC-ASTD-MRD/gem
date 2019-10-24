@@ -2,12 +2,12 @@
 //  Hopefully useful software for FORTRAN and C
 //  Copyright (C) 2019  Division de Recherche en Prevision Numerique
 //                      Environnement Canada
-// 
+//
 //  This is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
 //  License as published by the Free Software Foundation,
 //  version 2.1 of the License.
-// 
+//
 //  This software is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -136,9 +136,9 @@ interface
     import :: C_PTR , C_INT, time_context
     implicit none
     type(time_context), intent(IN), value :: t              ! opaque time context pointer (passed to other routines)
+    integer(C_INT), intent(IN), value :: n                  ! size of array and larray
     type(C_PTR), dimension(n), intent(OUT) :: array         ! to receive pointers to buffers
     integer(C_INT), dimension(n), intent(OUT) :: larray     ! to receive lengths of buffers
-    integer(C_INT), intent(IN), value :: n                  ! size of array and larray 
   end subroutine time_trace_get_buffers
 
 end interface
