@@ -123,13 +123,8 @@
          if (l_north) l_pil_e= Lam_pil_e
       end if
 
-      call time_trace_step(gem_time_trace, 1)
-
-      call time_trace_barr(gem_time_trace, 1, .true., MPI_COMM_WORLD, MPI_BARRIER)
-
       call rpn_comm_transpose ( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                 1, F_t1nks, F_gnk, F_dwfft, 1, 2 )
-      call time_trace_barr(gem_time_trace, 2, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
       ! Use OpenMP, if configured, to zero out unused portions of the
       ! transpose array
@@ -144,7 +139,6 @@
 !$omp enddo
 !$omp end parallel
 
-      call time_trace_barr(gem_time_trace, 3, .true., MPI_COMM_WORLD, MPI_BARRIER)
       ! The FFT routine uses internal parallelism (fftw), so it should be
       ! called outside of a parallel region
 
@@ -153,8 +147,6 @@
       call execute_r2r_dft_plan(forward_plan, &
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
-
-      call time_trace_barr(gem_time_trace, 4, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
       ! Normalize, again with the help of OpenMP.
 !$omp parallel private(i,j,k,jr,p0,pn,piece) &
@@ -168,7 +160,6 @@
          end do
       end do
 !$omp enddo
-      call time_trace_barr(gem_time_trace, 5, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
       ! Transpose in preparation for the tridiagonal solve.  Since the
       ! communication here involves MPI, it should only be called from
@@ -177,7 +168,7 @@
       call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, F_dg2, 2, 2 )
 !$omp end single
-      call time_trace_barr(gem_time_trace, 6, .true., MPI_COMM_WORLD, MPI_BARRIER)
+
       ptotal = F_t2ni-l_pil_e-l_pil_w-1
       plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
 
@@ -212,25 +203,21 @@
       end do
 !$omp enddo
 !$omp end parallel
-      call time_trace_barr(gem_time_trace, 7, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
       ! Again transpose the data, for inversion of the FFT
       call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, F_dg2,- 2, 2 )
-      call time_trace_barr(gem_time_trace, 8, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
 !     inverse projection ( r = x * w )
       call execute_r2r_dft_plan(reverse_plan, &
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
-      call time_trace_barr(gem_time_trace, 9, .true., MPI_COMM_WORLD, MPI_BARRIER)
 
       ! And finally transpose the data into the block structure used
       ! by the rest of the model
       call rpn_comm_transpose ( Sol, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                      1, F_t1nks, F_gnk,  F_dwfft, -1, 2)
 
-      call time_trace_barr(gem_time_trace, 10, .true., MPI_COMM_WORLD, MPI_BARRIER)
 !     __________________________________________________________________
 !
       return
