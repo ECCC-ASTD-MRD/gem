@@ -25,14 +25,12 @@
       use gem_fft
       use HORgrid_options
       use gem_options
-      use gem_timing
       use glb_ld
       use glb_pil
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-      include 'mpif.h'
 !
       integer F_t0nis, F_t0njs, F_t0nj, F_t2nis, F_t2ni
       integer F_t1nks, F_gnk,   F_nk  , F_t1nk , F_gni, F_gnj
@@ -49,7 +47,6 @@
       ! FFTW plans
       type(dft_descriptor), save :: forward_plan, reverse_plan
       real(kind=REAL64), save :: pri ! Normalization constant
-      external :: MPI_barrier
 
 !author    Abdessamad Qaddouri- JULY 1999
 !
