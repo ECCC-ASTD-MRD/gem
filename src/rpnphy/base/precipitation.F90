@@ -68,7 +68,8 @@ contains
       integer, dimension(ni,nk-1) :: ilab
       real :: irhow
       real, dimension(ni) :: beta
-      real, dimension(ni,nk-1) :: t0,q0,qc0,press
+      real, dimension(ni,nk) :: press
+      real, dimension(ni,nk-1) :: t0,q0,qc0
 
       real, dimension(:), pointer :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
       real, dimension(:,:), pointer :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
@@ -142,7 +143,7 @@ contains
 
       ! Eliminate cloud tendencies at upper levels and in dry regions on user request
       if (climat .or. stratos) then
-         press(:,:) = zsigt(:,1:nkm1) * spread(zpmoins(:), dim=2, ncopies=nkm1)
+         press(:,:) = zsigt(:,:) * spread(zpmoins(:), dim=2, ncopies=nk)
          where(press < TOPC .or. zhumoins <= MINQ)
             zcte = 0.
             zste = 0.

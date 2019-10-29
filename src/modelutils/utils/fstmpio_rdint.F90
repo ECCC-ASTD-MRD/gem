@@ -326,7 +326,7 @@ contains
             else
                allocate(F_keys1(F_nkeys), stat=istat)
             endif
-            F_keys1 = mydata(5:5+F_nkeys-1)
+            F_keys1(1:F_nkeys) = mydata(5:5+F_nkeys-1)
          endif
          if (nip1s > 0) then
             if (.not.associated(F_ip1s)) then
@@ -336,7 +336,7 @@ contains
                call msg(MSG_WARNING, '(fstmpio) find - provided ip1 list too small')
 !!$               F_nkeys = RMN_ERR
             else
-               F_ip1s = mydata(NMAX/2:NMAX/2+nip1s-1)
+               F_ip1s(1:nip1s) = mydata(NMAX/2:NMAX/2+nip1s-1)
             endif
          endif
       endif IF_SLAVE
@@ -484,7 +484,7 @@ contains
             else
                allocate(F_keys1(F_nkeys), stat=istat)
             endif
-            F_keys1 = mydata(5:5+F_nkeys-1)
+            F_keys1(1:F_nkeys) = mydata(5:5+F_nkeys-1)
             if (associated(F_keys2)) then
                if (size(F_keys2) < F_nkeys) then
                   call msg(MSG_WARNING, '(fstmpio) find - provided key list too small')
@@ -493,7 +493,7 @@ contains
             else
                allocate(F_keys2(F_nkeys), stat=istat)
             endif
-            F_keys2 = mydata(NMAX/3:NMAX/3+F_nkeys-1)
+            F_keys2(1:F_nkeys) = mydata(NMAX/3:NMAX/3+F_nkeys-1)
          endif
          if (nip1s > 0) then
             if (.not.associated(F_ip1s)) then
@@ -503,7 +503,7 @@ contains
                call msg(MSG_WARNING, '(fstmpio) find - provided ip1 list too small')
 !!$               F_nkeys = RMN_ERR
             else
-               F_ip1s = mydata(2*NMAX/3:2*NMAX/3+nip1s-1)
+               F_ip1s(1:nip1s) = mydata(2*NMAX/3:2*NMAX/3+nip1s-1)
             endif
          endif
       endif IF_SLAVE

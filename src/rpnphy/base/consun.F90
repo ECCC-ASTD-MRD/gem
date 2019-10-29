@@ -263,17 +263,14 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    do il = 1, ni
       DPRG(il,1) = 0.5 * ( HPK(il,2) - HPK(il,1) ) / GRAV
+      DPRG(il,nlev) = ( 0.5 * ( HPK(il,nlev) - HPK(il,nlev-1) ) &
+           + S(il,nlev+1) * HPS(il) - HPK(il,nlev) ) / GRAV
    end do
 
    do jk  = 2, nlev-1
       do il  = 1, ni
          DPRG(il,jk) = 0.5 * ( HPK(il,jk+1) - HPK(il,jk-1) ) / GRAV
       end do
-   end do
-
-   do il = 1, ni
-      DPRG(il,nlev) = ( 0.5 * ( HPK(il,nlev) - HPK(il,nlev-1) ) &
-           + S(il,nlev+1) * HPS(il) - HPK(il,nlev) ) / GRAV
    end do
 
    !           SUNQVIST stratiform condensation scheme
@@ -285,17 +282,23 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !           FROM KUO ilab DEFINE cumask
    !           FROM cumask CALCULATE subcld
 
-   do jk = 1, nlev
-      do il = 1, ni
-         cumask(il,jk)                        = 1
-         if( ilab(il,jk).eq.2 ) cumask(il,jk) = 0
-      end do
-   end do
+!!$   do jk = 1, nlev
+!!$      do il = 1, ni
+!!$         cumask(il,jk)                        = 1
+!!$         if( ilab(il,jk).eq.2 ) cumask(il,jk) = 0
+!!$      end do
+!!$   end do
+   where (ilab == 2)
+      cumask = 0
+   elsewhere
+      cumask = 1
+   end where
 
    do il =1, ni
       subcld(il,1) = 0.
    end do
 
+!#TODO: review
 !VDIR NOLSTVAL
    do jk = 2, nlev
       do il = 1, ni
@@ -379,19 +382,23 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       do il = 1, ni
          PRESP(il,jk)=S(il,jk)*PSP(il)
          PRESM(il,jk)=S(il,jk)*PSM(il)
-      enddo
-   enddo
-   call mfoqst3(HQSAT, TM,PRESM,NI,NLEV,NI)
-   call mfoqst3(HQSATP,TP,PRESP,NI,NLEV,NI)
-   do jk = 1, nlev
-      do il = 1, ni
-         temp1 = TM(il,jk)
-         HLDCP(il)=-(((max(temp1,tci)-tci)/tscale)**2)
-      enddo
-
-      call vsexp(HLDCP,HLDCP,ni)
-
-      do il = 1, ni
+!!$      enddo
+!!$   enddo
+!!$   call mfoqst3(HQSAT, TM,PRESM,NI,NLEV,NI)
+!!$   call mfoqst3(HQSATP,TP,PRESP,NI,NLEV,NI)
+!!$   do jk = 1, nlev
+!!$      do il = 1, ni
+         !#TODO: check if use of macro instead of function call would be best
+         HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
+         HQSATP(il,jk) = foqst(TP(il,jk),PRESP(il,jk))
+         HLDCP(il) = exp(-(((max(TM(il,jk),tci)-tci)/tscale)**2))
+!!$         temp1 = TM(il,jk)
+!!$         HLDCP(il)=-(((max(temp1,tci)-tci)/tscale)**2)
+!!$      enddo
+!!$
+!!$      call vsexp(HLDCP,HLDCP,ni)
+!!$
+!!$      do il = 1, ni
 
          xwrk= max(((apri*(HLDCP(il)-1.0))+1.0),0.0)
          HLDCP(il)=(CHLC + (CHLF * xwrk))/CPD
@@ -414,6 +421,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-HUZ00t) )
          SCF(il,jk) = amax1( SCF(il,jk)-CCF(il,jk) , 0. )
+         !#TODO: use mask
          if( SCF(il,jk) .eq. 0. ) then
             HCONDt = - CWP(il,jk) * rTAU * cumask(il,jk)
          else
@@ -471,16 +479,19 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !  D)       CALCULATIONS
 
       do il = 1, ni
-         temp1 = TM(il,jk)
          HELDR = HEDR * CPD * HLDCP(il)
-         xdet(il)=HELDR*(T0I - 1./temp1)
-         xdet1(il)=HEDLDR*(T0I - 1./temp1)
-      enddo
-
-      call vsexp(xdet,xdet,ni)
-      call vsexp(xdet1,xdet1,ni)
-
-      do il = 1, ni
+         xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
+         xdet1(il) = exp(HEDLDR*(T0I - 1. / TM(il,jk)))
+!!$         temp1 = TM(il,jk)
+!!$         HELDR = HEDR * CPD * HLDCP(il)
+!!$         xdet(il)=HELDR*(T0I - 1./temp1)
+!!$         xdet1(il)=HEDLDR*(T0I - 1./temp1)
+!!$      enddo
+!!$
+!!$      call vsexp(xdet,xdet,ni)
+!!$      call vsexp(xdet1,xdet1,ni)
+!!$
+!!$      do il = 1, ni
 
          CONET = amax1( 0. , CTT(il,jk) + HSCT(il) / DPRG(il,jk) )
          HSCT(il) = HSCT(il)+(amax1(0.,CTT(il,jk))-CONET)*DPRG(il,jk)
@@ -503,6 +514,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          xde = max(0.0,min(((HE273/temp1*xdet(il)* &
               (1. - xdet1(il)))*9.248487), 1.0))
          XPRB = xprbt(il)
+         !#TODO: use mask
          if (temp1 > 250.) then
             XFT = Z1(temp1)
          else
@@ -559,12 +571,13 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !           ------------------------------------------------------------
       do inr=1,5
          do il=1,ni
-            xdet(il)=(-min(ymt(il)*ymt(il),25.0))
-         enddo
-
-         call vsexp(xdet,xdet,ni)
-
-         do il=1,ni
+            xdet(il) = exp(-min(ymt(il)*ymt(il), 25.0))
+!!$            xdet(il)=(-min(ymt(il)*ymt(il),25.0))
+!!$         enddo
+!!$
+!!$         call vsexp(xdet,xdet,ni)
+!!$
+!!$         do il=1,ni
             xxp_t = xdet(il)
             xhj_t=1 + coeft(il)*(1-xxp_t)
             xf_t = xhj_t*ymt(il) -xfixt(il)
@@ -579,13 +592,14 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !           ------------------------------------------------------------
 
       do il = 1, ni
-         temp1 = TP(il,jk)
-         xdet(il)=-(((max(temp1,tci)-tci)/tscale)**2)
-      enddo
-
-      call vsexp(xdet,xdet,ni)
-
-      do il=1,ni
+         xdet(il) = exp(-(((max(TP(il,jk), tci) - tci)/tscale)**2))
+!!$         temp1 = TP(il,jk)
+!!$         xdet(il)=-(((max(temp1,tci)-tci)/tscale)**2)
+!!$      enddo
+!!$
+!!$      call vsexp(xdet,xdet,ni)
+!!$
+!!$      do il=1,ni
          ZCWP = amax1( 2. * HBMRXt(il) * YMt(il) - CWM(il,jk) , 0. )
 
          ZDCW = ( ZCWP - CWP(il,jk) ) * rTAU
@@ -593,6 +607,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          XPRADD = DPRG(il,jk) * amax1( CONETt(il) - ZDCW , 0. )
 
          !           we make sure that no infinitesimal precipitation is generated
+         !#TODO: use mask
          if (abs(conett(il)-zdcw).le.abs(spacing(zdcw))) xpradd = 0.
 
          SWT(il,jk) = ZDCW * cumask(il,jk)
@@ -600,6 +615,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          !           Diagnostics for AURAMS
 
          F12(il,jk) = amax1( CONETt(il) - ZDCW , 0. )
+         !#TODO: use mask
          if (ZCWP.lt.1.0e-09) F12(il,jk)=0.0
          ICEFRAC(il,jk) = max(((apri*(xdet(il)-1.0))+1.0),0.0)
 
@@ -672,6 +688,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          EVAPRI = amin1( PRCP - XP ,  XBB * HDPMX(il) )
 
+         !#TODO: use mask
          if (PRCPST(il).gt.0.) FEVP(il,jk) = EVAPRI/(PRCPST(il)+1.0E-28)
 
          PRCPST(il) = amax1( 0. , PRCPST(il) - EVAPRI )
@@ -717,9 +734,9 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    do il = 1, ni
       SRR(il) = PRCPST(il) - STSNOW(il)
       SSR(il) = STSNOW(il)
-   end do
-
-   do il = 1, ni
+!!$   end do
+!!$
+!!$   do il = 1, ni
       CRR(il) = PRCPCU(il) - CUSNOW(il)
       CSR(il) = CUSNOW(il)
    end do
