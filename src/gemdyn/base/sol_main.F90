@@ -15,25 +15,22 @@
 
 !**s/r sol_main - Main driver for the elliptic solver
 !
-      subroutine sol_main ( F_rhs, F_solution, F_ni, F_nj, F_nk, F_iln )
+      subroutine sol_main ( F_rhs, F_solution, F_ni, F_nj, F_nk, F_conv_L )
       use ctrl
       use dyn_fisl_options
-      use gem_options
-      use gmm_orh
       use lun
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(in) :: F_ni, F_nj, F_nk, F_iln
+      logical, intent(in) :: F_conv_L
+      integer, intent(in) :: F_ni, F_nj, F_nk
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(out) :: F_solution
-
 !author
 !     Abdessamad Qaddouri -- January 2014
 !
-      logical :: print_conv
       integer :: offi, offj
 !
 !     ---------------------------------------------------------------
@@ -42,24 +39,19 @@
 
       if (Lun_debug_L) write(Lun_out,1000)
 
-      print_conv = (F_iln == Schm_itnlh ) .and. &
-                   (Orh_icn == Schm_itcn) .and. &
-                   (Ptopo_couleur == 0  ) .and. &
-                   (Lun_out > 0)
-
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 
       if (trim(Sol_type_S) == 'DIRECT') then
          call sol_direct ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
-                           print_conv, offi, offj )
+                           F_conv_L, offi, offj )
 
       else if (trim(Sol_type_S) == 'ITERATIVE_2D') then
             call sol_iterative2d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
-                                   print_conv, offi, offj )
+                                   F_conv_L, offi, offj )
       else ! 'ITERATIVE_3D'
             call sol_iterative3d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
-                                   print_conv )
+                                   F_conv_L )
       end if
 
  1000 format( 5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')

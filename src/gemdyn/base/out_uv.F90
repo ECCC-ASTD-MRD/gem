@@ -83,7 +83,7 @@
          kind=Level_kind_ip1
 !        Setup the indexing for output
          allocate (indo(G_nk+1))
-         call out_slev2 ( Level(1,levset), Level_max(levset), &
+         call out_slev ( Level(1,levset), Level_max(levset), &
                           Level_momentum,indo,nko,near_sfc_L)
 
          write_diag_lev= near_sfc_L .and. out3_sfcdiag_L
@@ -100,18 +100,18 @@
          ind0(1)=1
 
          if ( (pnuu /= 0) .or. (pnvv /= 0) ) then
-            call out_fstecr3(pw_uu_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
+            call out_fstecr(pw_uu_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
                    'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnuu,set),.false. )
-            call out_fstecr3(pw_vv_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
+            call out_fstecr(pw_vv_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
                    'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnvv,set),.false. )
             if (write_diag_lev) then
-               call out_fstecr3(udiag, l_minx,l_maxx,l_miny,l_maxy,&
+               call out_fstecr(udiag, l_minx,l_maxx,l_miny,l_maxy,&
                                 hybm_gnk2, 'UU', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
                                 ind0,1,Outd_nbit(pnuu,set),.false. )
-               call out_fstecr3(vdiag, l_minx,l_maxx,l_miny,l_maxy,&
+               call out_fstecr(vdiag, l_minx,l_maxx,l_miny,l_maxy,&
                                 hybm_gnk2, 'VV', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
                                 ind0,1,Outd_nbit(pnuu,set),.false. )
@@ -127,7 +127,7 @@
                end do
                end do
             end do
-            call out_fstecr3(uu,l_minx,l_maxx,l_miny,l_maxy,hybm      ,&
+            call out_fstecr(uu,l_minx,l_maxx,l_miny,l_maxy,hybm      ,&
                  'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
                  kind,-1,G_nk, indo, nko, Outd_nbit(pnuv,set),.false. )
             if (write_diag_lev) then
@@ -137,7 +137,7 @@
                                    vdiag(i,j)*vdiag(i,j))
                end do
                end do
-               call out_fstecr3(uu,l_minx,l_maxx,l_miny,l_maxy, hybm_gnk2,&
+               call out_fstecr(uu,l_minx,l_maxx,l_miny,l_maxy, hybm_gnk2,&
                        'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnuv,set),.false. )
             end if
@@ -194,10 +194,10 @@
             end do
             end do
             if (Outd_filtpass(pnuv,set) > 0) &
-               call filter2( uv_pres,Outd_filtpass(pnuv,set),&
+               call filter( uv_pres,Outd_filtpass(pnuv,set),&
                              Outd_filtcoef(pnuv,set), &
                              l_minx,l_maxx,l_miny,l_maxy,nko)
-            call out_fstecr3(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
+            call out_fstecr(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
                  'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
                  kind,-1,nko, indo, nko, Outd_nbit(pnuv,set),.false. )
             deallocate (uv_pres)
@@ -205,17 +205,17 @@
 
          if ( (pnuu /= 0) .or. (pnvv /= 0) )then
             if (Outd_filtpass(pnuu,set) > 0) &
-                call filter2( uu_pres,Outd_filtpass(pnuu,set),&
+                call filter( uu_pres,Outd_filtpass(pnuu,set),&
                               Outd_filtcoef(pnuu,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko)
-            call out_fstecr3(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
+            call out_fstecr(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
                  'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
                  kind,-1,nko, indo, nko, Outd_nbit(pnuu,set),.false. )
             if (Outd_filtpass(pnvv,set) > 0) &
-                 call filter2( vv_pres,Outd_filtpass(pnvv,set),&
+                 call filter( vv_pres,Outd_filtpass(pnvv,set),&
                                Outd_filtcoef(pnvv,set), &
                                l_minx,l_maxx,l_miny,l_maxy,nko)
-            call out_fstecr3(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
+            call out_fstecr(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf   ,&
                  'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
                  kind,-1,nko, indo, nko, Outd_nbit(pnvv,set),.false. )
          end if

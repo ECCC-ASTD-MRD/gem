@@ -133,7 +133,7 @@
 
       if ( Dynamics_FISL_L ) call firstguess()
 
-      call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
+      call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 !
 !     ---------------------------------------------------------------

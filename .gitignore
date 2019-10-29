@@ -8,3 +8,4 @@ build*
 work/work*
 src/gemdyn/expo
 !src/gemdyn/expo/exp_stubs.F90
+doc/html

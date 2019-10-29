@@ -55,7 +55,7 @@
          F_QR(:,1:j0-1,k) = 0. ; F_QR(:,jn+1:l_nj,k)= 0.
       end do
 
-      if (F_filtqq > 0) call filter2 ( F_QR, F_filtqq,F_coefqq, &
+      if (F_filtqq > 0) call filter ( F_QR, F_filtqq,F_coefqq, &
                                   l_minx,l_maxx,l_miny,l_maxy,Nk )
 
       if (F_absvor_L)then

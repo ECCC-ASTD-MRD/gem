@@ -206,7 +206,7 @@ contains
 
       do mm=1,nn
 
-         call hzd_nudeln2(F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
+         call hzd_nudeln(F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
                                                    Nk, visco, mm,nn )
 
          if (mm /= nn) then

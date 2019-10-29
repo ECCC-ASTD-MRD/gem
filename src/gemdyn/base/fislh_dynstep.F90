@@ -13,14 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r dynstep -  Control of the dynamical timestep of the model
+!**s/r fislh_dynstep - Control of the dynamical timestep of the model
 
       subroutine fislh_dynstep()
       use dyn_fisl_options
       use gem_options
       use glb_ld
       use gmm_itf_mod
-      use gmm_orh
       use HORgrid_options
       use lun
       use step_options
@@ -30,7 +29,7 @@
 #include <arch_specific.hf>
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer n, istat, keep_itcn
+      integer n, istat, icn, keep_itcn
       real, pointer, dimension(:,:,:) :: tr1
 !
 !     ---------------------------------------------------------------
@@ -44,9 +43,9 @@
 
       call psadj_init ( Step_kount )
 
-      do Orh_icn = 1,Schm_itcn-1
+      do icn = 1,Schm_itcn-1
 
-         call fislh_tstpdyn()
+         call fislh_tstpdyn (icn)
 
          call hzd_momentum()
          call hzd_smago_momentum()
@@ -55,9 +54,7 @@
 
       if (Lun_debug_L) write(Lun_out,1006)
 
-      Orh_icn=Schm_itcn
-
-      call fislh_tstpdyn()
+      call fislh_tstpdyn (Schm_itcn)
 
       call psadj ( Step_kount )
 

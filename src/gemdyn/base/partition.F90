@@ -43,6 +43,8 @@
       partition = -1
       F_i0 = F_npts + 1
 
+      val1 = 0
+
       if (Part_type_S == 'ALLEQUALLBUT1') then
          val1 = (F_npts + npe - 1)/npe
          val2 =  F_npts -(npe - 1)*val1

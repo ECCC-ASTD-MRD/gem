@@ -15,9 +15,9 @@
 
 !**s/r out_fstecr
 
-      subroutine out_fstecr3 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,&
-                               mul,add,kind,lstep,nkfa,ind_o,nk_o  ,&
-                               nbit,F_empty_stk_L )
+      subroutine out_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,&
+                              mul,add,kind,lstep,nkfa,ind_o,nk_o  ,&
+                              nbit,F_empty_stk_L )
       use ISO_C_BINDING
       use step_options
       use gem_options
@@ -36,14 +36,14 @@
       include 'convert_ip123.inc'
 
 Interface
-subroutine out_stkecr2 ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &
+subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &
                          g_id,g_if,g_jd,g_jf )
       use out_meta
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
       type (meta_fstecr), dimension(:), pointer :: meta
-End Subroutine out_stkecr2
+End Subroutine out_stkecr
 End Interface
 
       type(FLOAT_IP) :: RP1,RP2,RP3
@@ -71,7 +71,7 @@ End Interface
 
       if (F_empty_stk_L) then
          if ( istk > 0) then
-            call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
+            call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                meta,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )
             if (istk < out_stk_size) out_stk_part= out_stk_part + 1
@@ -120,7 +120,7 @@ End Interface
          meta(istk)%nbits= nbit
          meta(istk)%dtyp = 134
          if (istk == out_stk_size) then
-            call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
+            call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                meta,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )
             istk=0

@@ -12,39 +12,26 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-! Remove this function by 2021 since there will be no more archive left with UT1 in m/s
-
-!**s/r inp_is_real_wind - Detect if UT1 input is real wind
-
-integer function inp_is_real_wind ( F_u, F_n, F_var_S) result(status)
-
+module mem_tstp
+   use, intrinsic :: iso_fortran_env
    implicit none
-#include <arch_specific.hf>
+   public
+   save
 
-   integer :: F_n
-   real, dimension(F_n) :: F_u
-   character(len=*) :: F_var_S
+      real, allocatable,  dimension (:,:  ) :: rhsb
+      real, allocatable,  dimension (:,:,:) :: rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp
+!      real, allocatable,  dimension (:,:,:) :: ruw1 
+!      real, allocatable,  dimension (:,:,:) :: rvw1 
+!      real, allocatable,  dimension (:,:,:) :: ruw2 
+!      real, allocatable,  dimension (:,:,:) :: rvw2 
+!      real, allocatable,  dimension (:,:,:) :: rhsx 
+!      real, allocatable,  dimension (:,:,:) :: rhsq 
 
-   ! Local variables
+      real, allocatable,  dimension (:,:,:) :: orhsu,orhsv,orhst,orhsc,orhsw,orhsf
 
-   integer :: i
-   ! Largest real wind in the atmosphere is of the order of 1000 m/s
-   ! image wind = real wind * cos(lat) / rayt
-   ! Therefore lastest image wind is 1.0E+03 / 1.0E+06 = 1.0E-03
-   real, parameter :: max_image_wind = 1.0E-03
+      real, allocatable,  dimension (:,:  ) :: nl_b
+      real, allocatable,  dimension (:,:,:) :: nl_u,nl_v,nl_t,nl_c,nl_w,nl_f
 
-   status = -1
+      real(kind=REAL64), allocatable, dimension (:,:,:) :: rhs_sol, lhs_sol
 
-   if( trim(F_var_S) /= 'UT1' .and. trim(F_var_S) /= 'VT1' ) return
-
-   do i = 1, F_n
-      if( abs( F_u(i) ) > max_image_wind )then
-         status = 1
-         return
-      end if
-   end do
-
-   return
-
-end function inp_is_real_wind
+end module mem_tstp

@@ -80,6 +80,7 @@
                              Schm_sleve_L,l_minx,l_maxx,l_miny,l_maxy,&
                              nka_tt,1,l_ni,1,l_nj )
 
+      nullify (srclev,dstlev)
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,max(nka_tt,nka_hu)),&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk))
 
@@ -103,7 +104,7 @@
       nullify (trp)
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
 
-      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka_hu         ,&
+      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka            ,&
                       l_minx,l_maxx,l_miny,l_maxy, 1,l_ni, 1,l_nj,&
                 inttype=Inp_vertintype_tracers_S, levtype=Inp_levtype_S )
 
@@ -167,12 +168,7 @@
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
             end if
             ut1_L= ( err == 0 )
-         ! Remove the .and. part of this test by 2021
-            if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) then
-              call image_to_real_winds ( F_u,F_v, l_minx,l_maxx,&
-                                         l_miny,l_maxy, G_nk )
-            end if
-      end if
+         end if
       end if
 
       if ((.not. urt1_L) .and. (.not. ut1_L)) then

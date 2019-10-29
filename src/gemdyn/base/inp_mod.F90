@@ -28,7 +28,4 @@ module inp_mod
    integer, dimension(:), pointer :: Inp_list_unf => null()
    type(vgrid_descriptor) :: Inp_vgd_src
    real(kind=REAL64) Inp_pref_a_8
-
-   ! Remove the following 2 lines by 2021
-   integer Inp_ut1_is_urt1
 end module inp_mod

@@ -15,13 +15,17 @@
 
 module gem_timing
 
+      use ISO_C_BINDING
       use, intrinsic :: iso_fortran_env
       implicit none
+#include <time_trace.hf>
 
-      private
+!      private
       public :: gemtime_init,gemtime_start,gemtime_stop,&
                 gemtime_terminate,gemtime,Gem_timing_dyn_L,&
                 gemlcltime_start,gemlcltime_stop
+
+      type(time_context) :: gem_time_trace
 
       integer, parameter :: MAX_instrumented=400
       integer, parameter :: MAX_event=500
@@ -72,6 +76,7 @@ contains
          lcltime_rset= -1 ; lcltime_last=0 ; lcltime_nevent=0
          lcltime_flag_L= .false.
          total_time= omp_get_wtime()
+         call time_trace_init (gem_time_trace)
       else
          call timing_init2 ( myproc, msg )
       endif
@@ -156,7 +161,7 @@ contains
 
          if (lcltime_flag_L) then
             call out_open_file ('ti')
-            call out_href3 ( 'Mass_point',1,G_ni,1,1,G_nj,1)
+            call out_href ( 'Mass_point',1,G_ni,1,1,G_nj,1)
             if (Ptopo_myproc==0) then
                unf= 0
                err= fnom  ( unf, trim(Path_basedir_S)//'/lcl_timing.fst', 'STD+RND', 0 )
@@ -177,7 +182,7 @@ contains
                      endif
                      w1 = lcltime_event(i,j)
                      hyb0(1)=0.0 ; lvlel(0)=1
-                     call out_fstecr3(w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+                     call out_fstecr(w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
                         lcltime_name_S(i),1.,0.,2,-1,1,lvlel(0), 1, 32,.false. )
                   end do
                endif
@@ -185,6 +190,8 @@ contains
             if (Ptopo_myproc==0) err= fstfrm(unf)
             call out_cfile
          endif
+
+         call time_trace_dump_text(gem_time_trace, 'time_list', Ptopo_myproc)
 
          if (myproc /= 0) return
 
