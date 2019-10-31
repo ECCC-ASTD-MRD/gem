@@ -84,21 +84,18 @@
          if (Rhsx_send_len(kk) > 0) then
              adr=Rhsx_send_adr(kk)+1
              call yyg_int_cub88 ( send_Rhsx_8,F_sol_8                ,&
-                             Rhsx_send_imx(adr:adr+Rhsx_send_len(kk)),&
-                             Rhsx_send_imy(adr:adr+Rhsx_send_len(kk)),&
+                             Rhsx_send_imx(adr:adr+Rhsx_send_len(kk)-1),&
+                             Rhsx_send_imy(adr:adr+Rhsx_send_len(kk)-1),&
                              geomh_x_8,geomh_y_8,l_minx              ,&
                              l_maxx,l_miny,l_maxy, NK                ,&
-                             Rhsx_send_xxr(adr:adr+Rhsx_send_len(kk)),&
-                             Rhsx_send_yyr(adr:adr+Rhsx_send_len(kk)),&
+                             Rhsx_send_xxr(adr:adr+Rhsx_send_len(kk)-1),&
+                             Rhsx_send_yyr(adr:adr+Rhsx_send_len(kk)-1),&
                              Rhsx_send_len(kk) )
              mm=0
              do m=1,Rhsx_send_len(kk)
                 do k=1,NK
                    mm=mm+1
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8(mm))-Sol_rhs(mm,1,kk)))
-!                   Sol_rhs(mm,1,kk)=real(send_Rhsx_8(mm))
-!                   send_pil(mm,KK)=real(send_Rhsx_8(mm)*Rhsx_send_sten(adr+m-1))
-
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8(mm))
                    send_pil(mm,KK)=real(send_Rhsx_8(mm)*Rhsx_send_sten(adr+m-1))
                 end do

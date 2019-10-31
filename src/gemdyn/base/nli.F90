@@ -19,7 +19,7 @@
 !
       subroutine nli ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
                        F_u  , F_v  , F_t    , F_s  , F_zd , F_q   , &
-                       F_rhs, F_rc , F_sl   , F_fis, F_nb , F_hu  , &
+                       F_rhs, F_rc , F_sl   , F_fis, F_nb ,         &
                        Minx, Maxx, Miny, Maxy, Nk , ni, nj,         &
                        i0, j0, in, jn, k0, icln )
       use coriolis
@@ -44,7 +44,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in)    :: F_fis, F_sl
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out)   :: F_nb
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout)   :: F_u, F_v, F_t
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)      :: F_zd, F_hu, F_rc
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)      :: F_zd, F_rc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out)     :: F_nu, F_nv, F_nt, F_nc, F_nw, F_nf
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(inout) :: F_q
       real(kind=REAL64), dimension(ni,nj,Nk), intent(out) :: F_rhs

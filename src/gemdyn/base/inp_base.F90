@@ -129,8 +129,8 @@ contains
       logical, dimension (:), allocatable :: zlist_o
       logical :: quiet_L
       integer, parameter :: nlis = 1024
-      integer i, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
-              liste_sorted(nlis),lislon,cnt
+      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,cnt, maxdim_wk2
       integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
@@ -203,8 +203,10 @@ contains
 
       if ( nomvar == '@NUL' ) return
 
+      nz= -1
+      maxdim_wk2 = 1
       if (Inp_iome >= 0) then
-         vcode= -1 ; nz= -1
+         vcode= -1
          nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
                        ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
          if (lislon == 0) goto 999
@@ -250,7 +252,8 @@ contains
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
          allocate (wk3(ni_dest*nj_dest))
-         allocate (wk2(G_ni*G_nj,(nz+1)*F_nd))
+         maxdim_wk2 = (nz+1)*F_nd
+         allocate (wk2(G_ni*G_nj,maxdim_wk2))
          allocate (wk1(n1*n2,max(local_nk,1)))
 
          wk2 = 0.
@@ -327,6 +330,7 @@ contains
       else
          allocate (wk2(1,1))
          wk2 = 0.
+         maxdim_wk2 = 1
       end if
 
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
@@ -353,11 +357,12 @@ contains
          zlist_o= .FALSE.
 
          do idst=1, F_nd
-         zlist_o= .FALSE.
-         err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id ,&
-                                      wk2(1,(idst-1)*(nz+1)+1), nz,&
-                           F_dest(l_minx,l_miny,(idst-1)*lislon+1),&
-                                            lislon, zlist, zlist_o )
+            k= min((idst-1)*(nz+1)+1,maxdim_wk2)
+            zlist_o= .FALSE.
+            err = RPN_COMM_shuf_ezdist ( &
+                           Inp_comm_setno, Inp_comm_id, wk2(1,k), nz,&
+                           F_dest(l_minx,l_miny,(idst-1)*lislon+1)  ,&
+                           lislon, zlist, zlist_o )
          end do
          deallocate (wk2,zlist,zlist_o)
 

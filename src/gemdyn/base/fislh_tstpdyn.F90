@@ -56,6 +56,11 @@
       call rpn_comm_xch_halo( qt1,  l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk+1, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
+      ! Avoid non-associated pointer
+      if (Grd_yinyang_L) then
+         nest_t => ut1
+      end if
+
       i0= 1   +pil_w
       in= l_ni-pil_e
       j0= 1   +pil_s

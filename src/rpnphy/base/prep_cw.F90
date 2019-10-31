@@ -265,7 +265,7 @@ contains
       MKPTR2D(zqlmi, qlmi, v)
       MKPTR2D(zqlsc, qlsc, v)
       MKPTR2D(zqsdi, qsdi, f)
-      MKPTR2D(zqsmi, qsmi, f)
+      MKPTR2D(zqsmi, qsmi, v)
       MKPTR2D(zqssc, qssc, v)
       MKPTR2D(zqtbl, qtbl, f)
 
@@ -288,9 +288,9 @@ contains
       endif
 
       if (conv_mid == 'NIL') then
-         zqlmi => zero(1:ni,1:nk)
-         zqsmi => zero(1:ni,1:nk)
-         zfmc => zero(1:ni,1:nk)
+         zqlmi => zero(1:ni,1:nkm1)
+         zqsmi => zero(1:ni,1:nkm1)
+         zfmc => zero(1:ni,1:nkm1)
       endif
 
       if (fluvert /= 'MOISTKE') then

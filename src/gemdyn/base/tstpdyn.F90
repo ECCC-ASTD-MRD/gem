@@ -60,6 +60,12 @@
                                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       end if
 
+      ! Avoid non-associated pointers
+      if (Grd_yinyang_L) then
+         nest_t => ut1
+         nest_q => ut1
+      end if
+
       i0= 1   +pil_w
       in= l_ni-pil_e
       j0= 1   +pil_s
@@ -144,8 +150,7 @@
          if ( .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f          ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc,&
-                   sls, fis0, nl_b, hut0                       ,&
-                   l_minx,l_maxx,l_miny,l_maxy                 ,&
+                   sls, fis0, nl_b, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
          call gemtime_stop (23)

@@ -266,8 +266,8 @@ contains
                     &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
             endif
 
-!            if (associated(data)) deallocate(data,stat=istat2)
-!            if (associated(data2)) deallocate(data2,stat=istat2)
+            !if (associated(data)) deallocate(data,stat=istat2)
+            !if (associated(data2)) deallocate(data2,stat=istat2)
 
             call collect_error(istat)
             if (.not.RMN_IS_OK(istat)) then
@@ -508,12 +508,16 @@ contains
       character(len=64) :: msg_S, name_S
       integer :: minxyz(3), maxxyz(3), istat, k, stat_precision
       real, pointer :: data2(:,:,:)
+      real, allocatable :: dataarr(:,:,:)
       ! ---------------------------------------------------------------------
       minxyz = lbound(my_data)
       maxxyz = ubound(my_data)
       call physimple_transforms3d(my_varname_S, my_inname_S, my_data)
-      my_istat = pre_fold_opr_clbk(my_data, my_varname_S, my_horiz_interp_S, &
+      allocate(dataarr(minxyz(1):maxxyz(1),minxyz(2):maxxyz(2),minxyz(3):maxxyz(3)))
+      dataarr = my_data
+      my_istat = pre_fold_opr_clbk(dataarr, my_varname_S, my_horiz_interp_S, &
            minxyz(1), maxxyz(1), minxyz(2), maxxyz(2), minxyz(3), maxxyz(3))
+      deallocate(dataarr)
 
       my_data = min(max(my_vmin, my_data), my_vmax)
 
