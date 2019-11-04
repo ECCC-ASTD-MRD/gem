@@ -212,4 +212,6 @@ developed by Research Informatics Services, Meteorological Research Division,
 Environment and Climate Change Canada.
 
 
-Please see the [GEM's manual](doc/GEM-manual.pdf) for more details.
+# Using Visual Studio Code
+
+A script (`vstudio`), which launches [Visual Studio Code](https://code.visualstudio.com/), is provided for your connivence.
