@@ -214,4 +214,6 @@ Environment and Climate Change Canada.
 
 # Using Visual Studio Code
 
-A script (`vstudio`), which launches [Visual Studio Code](https://code.visualstudio.com/), is provided for your connivence.
+If [Visual Studio Code](https://code.visualstudio.com/) is available on your
+system, the `vstudio` script will launch it with and automatically open
+relevant files.
