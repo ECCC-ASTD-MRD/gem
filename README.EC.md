@@ -33,7 +33,6 @@ and version in it's name.
 ```
    . .eccc_setup_gfortran_5.1
 ```
-{: .language-bash}
 
 
 ## Ubuntu 18.04
@@ -55,7 +54,6 @@ and version in it's name.
 ```
    . .eccc_setup_intel_19
 ```
-{: .language-bash}
 
 Since gfortran 7.4 is available through the system packages, there should be
 no need to load any SSM package to use this compiler.
@@ -107,3 +105,4 @@ Compiles when debugging is not enabled, but the resulting executables will not w
 
 ## xlf 16 on p9gpu-1 and p9gpu-2
 
+TODO!
