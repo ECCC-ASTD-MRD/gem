@@ -23,7 +23,6 @@ and version in it's name.
 ```
    . .eccc_setup_intel_16
 ```
-{: .language-bash}
 
 
 To configure your environment for the gfortran 5.1 compiler, source
