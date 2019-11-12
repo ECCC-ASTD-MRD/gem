@@ -330,7 +330,7 @@
 
          outiter = outiter + 1
 
-         if (norm_residual <= relative_tolerance .or. outiter > maxouter) then
+         if (norm_residual <= relative_tolerance .or. outiter >= maxouter) then
             return
          end if
 
