@@ -14,6 +14,8 @@
       subroutine statfldx(nomvar, typvar, ip1, ip2, ip3, date, etiket, &
          f, ni, nj, nk)
 
+      ! Part of Fortran 2003 Standard
+      use IEEE_ARITHMETIC
       implicit none
 
       character*4, intent(in) :: nomvar
@@ -97,31 +99,20 @@
           e11.4, ']', ' Max:[(', i4, ',', i4, '):', &
           e11.4, ']')
 
-! On essaie de detecter la presence de Nan
-#ifdef AIX
-      if (moy /= moy) then
+      ! On essaie de detecter la presence de Nan
+      if (.not. IEEE_IS_NORMAL(moy)) then
          print *, '**** NaN detected'
       end if
-#else
-      if (isnan(moy)) then
-         print *, '**** NaN detected'
-      end if
-#endif
-         do k=1,nk
-            do j=1,nj
-               do i=1,ni
-#ifdef AIX
-                  if (f(i,j,k) /= f(i,j,k)) then
-                     write (6,20) i,j,k
-                  end if
-#else
-                  if (isnan(f(i,j,k))) then
-                     write (6,20) i,j,k
-                  end if
-#endif
-               end do
+
+      do k = 1, nk
+         do j = 1, nj
+            do i = 1, ni
+               if (.not. IEEE_IS_NORMAL(f(i,j,k))) then
+                  write (6,20) i,j,k
+               end if
             end do
          end do
+      end do
 
  20 format(' ','**** NaN at grid point(', i4.4,',',i4.4,',',i3.3,')')
 
