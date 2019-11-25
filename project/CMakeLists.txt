@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(GEM_EXPO NONE)
 
 # set the compiler suite by uncommenting one of the following 3 lines:
-set(COMPILER gfortran CACHE STRING compiler)
+set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER intel CACHE compiler)
 #set(COMPILER pgi CACHE compiler)
 # which will set the compiler and you can just type:
