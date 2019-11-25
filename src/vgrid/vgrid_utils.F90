@@ -18,24 +18,24 @@
 ! * Boston, MA 02111-1307, USA.
 
 module vgrid_utils
-   
+
    implicit none
    private
 
    ! Public utilities
    public :: get_allocate                        !allocation of array values
-   public :: get_error,put_error                 !get/put error messaging 
+   public :: get_error,put_error                 !get/put error messaging
    public :: same_vec                            !check for equivalence of arrays
    public :: up                                  !convert string to upper-case
 
    ! Public vgrid_descriptor constants
 #include "vgrid_descriptors.hf"
-   
+
    ! Private constants
    integer, parameter :: LONG_STRING=1024        !number of characters in a long string
-   
+
    ! Private variables
-   
+
    interface get_allocate
       module procedure get_allocate_i1d
       module procedure get_allocate_r1d
@@ -43,7 +43,7 @@ module vgrid_utils
       module procedure get_allocate_r81d
       module procedure get_allocate_r83d
    end interface get_allocate
-   
+
    interface same_vec
       module procedure same_vec_i
       module procedure same_vec_r
@@ -64,7 +64,7 @@ contains
       logical :: allow_reshape_L
       character(len=*) :: msg_S
       !Local variables
-      logical :: alloc_lev_L   
+      logical :: alloc_lev_L
       external msg
       istat=-1
       alloc_lev_L=.false.
@@ -94,7 +94,7 @@ contains
          istat=0
       endif
    end function get_allocate_i1d
-   
+
    integer function get_allocate_r1d(key_S,value,len,allow_reshape_L,msg_S) result(istat)
       ! Allocate space for the result value and report error
       implicit none
@@ -134,7 +134,7 @@ contains
          istat=0
       endif
    end function get_allocate_r1d
-   
+
    integer function get_allocate_r81d(key_S,value,len,allow_reshape_L,msg_S) result(istat)
       ! Allocate space for the result value and report error
       implicit none
@@ -220,7 +220,7 @@ contains
     equal = .true.
     return
   end function same_vec_r
- 
+
   logical function same_vec_r8(vec1,vec2) result(equal)
     ! Check for equality between a pair of pointer vectors
     implicit none
@@ -390,9 +390,9 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! Get/Put support functions
-  
+
   real function get_error(key,quiet) result(value)
-    ! Write error message and return a missing value     
+    ! Write error message and return a missing value
     implicit none
     character(len=*), intent(in) :: key
     logical, optional, intent(in) :: quiet      !Do not print massages
@@ -401,7 +401,7 @@ contains
     external msg
     level_msg=MSG_CRITICAL
     if (present(quiet)) then
-       if(quiet)level_msg=MSG_QUIET    
+       if(quiet)level_msg=MSG_QUIET
     endif
     write(for_msg,*) 'Attempt to retrieve invalid key '//trim(key)//' returns VGD_MISSING'
     call msg(level_msg,for_msg)
