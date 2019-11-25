@@ -25,11 +25,11 @@ message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 set(BLAS_LIBRARIES "blas")
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 
-set(CMAKE_C_FLAGS "-Minfo=all -lpthread -fpic -Kieee -Ktrap=inv,divz,ovf,unf -fast -Mvect")
+set(CMAKE_C_FLAGS "-Minfo=all -lpthread -fpic -Kieee -Ktrap=inv,divz,ovf,unf,fp -traceback -fast -Mvect")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS " -Minfo=all -fpic -byteswapio -Kieee -Ktrap=inv,divz,ovf,unf -fast -Mvect")
+set(CMAKE_Fortran_FLAGS " -Minfo=all -fpic -byteswapio -Kieee -Ktrap=inv,divz,ovf,unf,fp -traceback -fast -Mvect")
 set(CMAKE_Fortran_FLAGS_DEBUG "-g")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
