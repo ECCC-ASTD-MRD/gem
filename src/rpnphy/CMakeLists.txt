@@ -10,6 +10,11 @@ file(GLOB FTNSRC */*.F90)
 add_compile_options( "${EXTRA_FLAGS}" )
 
 add_library (phy STATIC ${FTNSRC})
+
+target_link_libraries(phy
+   modelutils
+)
+
 target_include_directories(phy PRIVATE
    base
    include
