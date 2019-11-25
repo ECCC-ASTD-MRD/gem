@@ -11,10 +11,10 @@ add_compile_options( "${EXTRA_FLAGS}" )
 
 add_library (phy STATIC ${FTNSRC})
 target_include_directories(phy PRIVATE
-   series
-   ${ROOT}/src/modelutils/include
-   include
    base
+   include
+   series
+   surface
    utils
    ${ROOT}/src/modelutils/include
 )
