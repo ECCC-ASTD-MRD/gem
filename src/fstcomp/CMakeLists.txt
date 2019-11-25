@@ -1,6 +1,9 @@
 message(STATUS "Starting generation of fstcomp Makefile")
 
-add_executable(fstcomp statfldx.f90 fstcomp.f)
+file(GLOB FTNSRC LIST_DIRECTORIES false RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.F90 *.F *.f *.f90)
+message(STATUS "${FTNSRC}")
+
+add_executable(fstcomp ${FTNSRC})
 target_link_libraries(fstcomp
    rmn
 )
