@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 2.8.12)
 project(GEM_EXPO NONE)
 
 # set the compiler suite by uncommenting one of the following 3 lines:
-set(COMPILER gfortran CACHE INTERNAL compiler)
-#set(COMPILER intel CACHE INTERNAL compiler)
-#set(COMPILER pgi CACHE INTERNAL compiler)
+set(COMPILER gfortran CACHE STRING compiler)
+#set(COMPILER intel CACHE compiler)
+#set(COMPILER pgi CACHE compiler)
 # which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
-# CMAKE_BUILD_TYPE cab be one of Debug, Release, RelWithDebInfo, MinSizeRel
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+# CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
+set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE}")
 
 # Include an architecture dependent file that contains settings for a
@@ -55,13 +55,13 @@ if (WITH_OPENACC)
       message(FATAL_ERROR "OpenACC was requested, but was not found!")
    endif()
    if(OpenACC_C_FLAGS)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenACC_C_FLAGS} -fopt-info-optimized-omp")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenACC_C_FLAGS} ${OpenACC_extra_FLAGS}")
    endif()
    if(OpenACC_Fortran_FLAGS)
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenACC_Fortran_FLAGS}")
    elseif(OpenACC_C_FLAGS)
       # Fallback on C flags and hope it also works for Fortran
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenACC_C_FLAGS} -fopt-info-optimized-omp")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenACC_C_FLAGS} ${OpenACC_extra_FLAGS}")
    endif()
 else()
    message(STATUS "Building WITHOUT OpenACC")

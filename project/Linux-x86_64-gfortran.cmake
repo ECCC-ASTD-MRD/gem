@@ -32,3 +32,9 @@ set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_Fortran_FLAGS "-march=native -Wall -Wextra -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fbacktrace -fconvert=big-endian -fcray-pointer -fdump-core -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -finit-real=nan -fno-second-underscore -frecord-marker=4")
 set(CMAKE_Fortran_FLAGS_DEBUG "-g")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+
+# There might be extra OpenMP and OpenACC flags which are specific to each compiler,
+# that are not added the find_package(OpenACC)
+# It doesn't matter if we defined them even if OpenACC isn't used because the
+# OpenACC_extra_FLAGS variable just won't be used
+set(OpenACC_extra_FLAGS "-fopt-info-optimized-omp")
