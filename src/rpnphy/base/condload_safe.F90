@@ -54,7 +54,7 @@ subroutine condload_safe(qliq, qice, wtw, dz, buoyancy, enterm, rate, &
    implicit none
 
    real, intent(inout) :: qliq, qice, wtw
-   real, intent(in) :: dz, buoyancy, enterm, rate, qnewlq, qnewic
+   real, intent(in) :: dz, buoyancy, enterm, rate, qnewlq, qnewic, grav
    real, intent(out) :: qlqout, qicout
 
    real :: g1, qnew, qest, qtot, wavg
