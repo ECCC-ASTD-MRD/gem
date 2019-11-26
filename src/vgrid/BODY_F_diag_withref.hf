@@ -1,32 +1,38 @@
       use vgrid_utils, only: get_allocate
       ! Given referent, compute physical levelling information from the vertical description
-      type(vgrid_descriptor), intent(in) :: self                  !Vertical descriptor instance
-      integer, target, dimension(:), intent(in) :: ip1_list               !Key of prototype field
-      real(kind=REAL_KIND), dimension(:,:,:), pointer :: levels                   !Physical level values
-      real(kind=REAL_KIND), dimension(:,:), optional, target, intent(in) :: sfc_field     !Surface field reference for coordinate [none]
-      real(kind=REAL_KIND), dimension(:,:), optional, target, intent(in) :: sfc_field_ls  !Surface field large scale reference for coordinate [none]
-      logical, optional, intent(in) :: in_log                     !Compute levels in ln() [.false.]
-      logical, optional, intent(in) :: dpidpis                    !Compute partial derivative of hydrostatic pressure (pi) with
-      !   respect to surface hydrostatic pressure(pis) [.false.]
-      
+      !> Vertical descriptor instance
+      type(vgrid_descriptor), intent(in) :: self
+      !> Key of prototype field
+      integer, target, dimension(:), intent(in) :: ip1_list
+      !> Physical level values
+      real(kind=REAL_KIND), dimension(:,:,:), pointer :: levels
+      !> Surface field reference for coordinate [none]
+      real(kind=REAL_KIND), dimension(:,:), optional, target, intent(in) :: sfc_field
+      !> Surface field large scale reference for coordinate [none]
+      real(kind=REAL_KIND), dimension(:,:), optional, target, intent(in) :: sfc_field_ls
+      !> Compute levels in ln() [.false.]
+      logical, optional, intent(in) :: in_log
+      !> Compute partial derivative of hydrostatic pressure (pi) with
+      logical, optional, intent(in) :: dpidpis
+
       ! Local variables
       integer istat,ni,nj,nk,error
       real(kind=REAL_KIND), dimension(:,:), pointer :: my_sfc_field, my_sfc_field_ls
-      real(kind=REAL_KIND), dimension(:,:,:), pointer :: my_levels 
+      real(kind=REAL_KIND), dimension(:,:,:), pointer :: my_levels
       type (c_ptr) :: ip1_list_CP ,levels_CP ,sfc_field_CP, sfc_field_ls_CP
       integer :: in_log_int, dpidpis_int
       logical :: my_dpidpis, alloc_my_sfc_field_L, alloc_my_sfc_field_ls_L, alloc_my_levels_L
 
       ! Set error status
       status = VGD_ERROR
-      
+
       if(.not.is_valid(self,'SELF'))then
          write(for_msg,*) 'vgrid structure is not valid in diag_withref'//PROC_SUFF
-         call msg(MSG_ERROR,VGD_PRFX//for_msg)       
+         call msg(MSG_ERROR,VGD_PRFX//for_msg)
          return
       endif
-      
-      ! Set default values      
+
+      ! Set default values
       in_log_int = 0
       if (present(in_log))then
          if(in_log)then
@@ -43,21 +49,21 @@
       else
          dpidpis_int = 0
       endif
-      
+
       alloc_my_sfc_field_L = .false.; alloc_my_sfc_field_ls_L = .false.; alloc_my_levels_L = .false.
 
       if (present(sfc_field)) then
 
          ni = size(sfc_field,dim=1); nj = size(sfc_field,dim=2); nk = size(ip1_list)
 
-#ifdef WITH_intel
-!        is_contiguous is not Fortran 2008 standard but Intel
+#ifdef __INTEL_COMPILER
+         ! is_contiguous is not Fortran 2008 standard, but Intel supports it
          if(is_contiguous(sfc_field))then
             my_sfc_field => sfc_field
          else
 #endif
 
-!        Copy in and out 
+            ! Copy in and out
             alloc_my_sfc_field_L = .true.
             allocate(my_sfc_field(ni,nj),stat=error)
             if (error /= 0) then
@@ -67,8 +73,8 @@
             endif
             my_sfc_field(1:ni,1:nj) = sfc_field(1:ni,1:nj)
 
-#ifdef WITH_intel
-         endif 
+#ifdef __INTEL_COMPILER
+         endif
 #endif
 
       else
@@ -80,7 +86,7 @@
             ni = 1; nj = 1; nk = size(ip1_list)
          endif
       endif
-      
+
       if (present(sfc_field_ls)) then
          if(  ni /= size(sfc_field_ls,dim=1) .or. &
               nj /= size(sfc_field_ls,dim=2) )then
@@ -89,13 +95,13 @@
             return
          endif
 
-#ifdef WITH_intel
-!        is_contiguous is not Fortran 2008 standard but Intel
+#ifdef __INTEL_COMPILER
+         ! is_contiguous is not Fortran 2008 standard, but Intel supports it
          if(is_contiguous(sfc_field_ls))then
             my_sfc_field_ls => sfc_field_ls
          else
 #endif
-!        Copy in and out instead
+            ! Copy in and out instead
             alloc_my_sfc_field_ls_L = .true.
             allocate(my_sfc_field_ls(ni,nj),stat=error)
             if (error /= 0) then
@@ -105,7 +111,7 @@
             endif
             my_sfc_field_ls(1:ni,1:nj) = sfc_field_ls(1:ni,1:nj)
 
-#ifdef WITH_intel
+#ifdef __INTEL_COMPILER
          endif
 #endif
       else
@@ -137,13 +143,13 @@
          endif
       endif
 
-#ifdef WITH_intel
-!        is_contiguous is not Fortran 2008 standard but Intel
+#ifdef __INTEL_COMPILER
+      ! is_contiguous is not Fortran 2008 standard, but Intel supports it
       if(is_contiguous(levels))then
          my_levels => levels
       else
 #endif
-!        Copy in and out instead
+         ! Copy in and out instead
          alloc_my_levels_L = .true.
          allocate(my_levels(ni,nj,nk),stat=error)
          if (error /= 0) then
@@ -152,10 +158,10 @@
             return
          endif
 
-#ifdef WITH_intel
+#ifdef __INTEL_COMPILER
       endif
 #endif
-      
+
       ip1_list_CP  = c_loc(ip1_list)
       levels_CP    = c_loc(my_levels(1,1,1))
       sfc_field_CP = C_NULL_PTR
@@ -183,7 +189,7 @@
          levels(1:ni,1:nj,1:nk) = my_levels(1:ni,1:nj,1:nk)
          deallocate(my_levels)
       end if
-      
+
       ! Set status and return
       status = VGD_OK
       return
