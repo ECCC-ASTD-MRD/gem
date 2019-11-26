@@ -350,6 +350,7 @@
             end do
             end do
          end do
+      if ( .not. Out3_sfcdiag_L) th(:,:,G_nk+1) = th(:,:,G_nk)
       end if
 
       if (Level_typ_S(levset) == 'M') then  ! Output on model levels
