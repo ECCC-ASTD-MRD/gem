@@ -343,7 +343,7 @@
       end if
 
       if (pnth /= 0) then
-         do k= 1, nk_src
+         do k= 1, G_nk+1
             do j= 1,l_nj
             do i= 1,l_ni
                th(i,j,k)= tt(i,j,k)*(theta_p0/exp(wlnph_ta(i,j,k)))**cappa_8
