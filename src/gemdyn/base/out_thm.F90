@@ -343,13 +343,14 @@
       end if
 
       if (pnth /= 0) then
-         do k= 1, G_nk+1
+         do k= 1, nk_src
             do j= 1,l_nj
             do i= 1,l_ni
                th(i,j,k)= tt(i,j,k)*(theta_p0/exp(wlnph_ta(i,j,k)))**cappa_8
             end do
             end do
          end do
+      if ( .not. Out3_sfcdiag_L) th(:,:,G_nk+1) = th(:,:,G_nk)
       end if
 
       if (Level_typ_S(levset) == 'M') then  ! Output on model levels
