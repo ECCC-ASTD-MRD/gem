@@ -161,7 +161,8 @@
                Buoy = (F_q(i,j,k+1)-F_q(i,j,k))*      &
                       (isol_i*mc_iJz_8(i,j,k)+isol_d*Ver_idz_8%t(k))  &
                     + F_w(i,j,k)*Cstv_invT_nh_8 - F_rw(i,j,k) + F_nw(i,j,k)
-               F_t(i,j,k) = Cstv_Tstr_8 * (Buoy / grav_8+one )
+               F_t(i,j,k) = Cstv_Tstr_8 / (one - Buoy / grav_8 )
+
             end do
          end do
       end do

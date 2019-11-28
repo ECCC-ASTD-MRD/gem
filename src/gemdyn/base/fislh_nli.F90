@@ -224,7 +224,7 @@
          km=max(k-1,1)
          do j= j0, jn
             do i= i0, in
-               xtmp_8(i,j) = F_t(i,j,k)/real(Cstv_Tstr_8)
+               xtmp_8(i,j) = F_t(i,j,k)/Cstv_Tstr_8
             end do
          end do
          call vlog ( ytmp_8, xtmp_8, nij )
@@ -234,20 +234,12 @@
    !           Compute Nw
    !           ~~~~~~~~~~
                F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz_8(i,j,k) - &
-                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k))
-
-   !           Compute Nc
+                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k)) &
+                           -  (xtmp_8(i,j)-one)*grav_8*(one-one/xtmp_8(i,j))
    !           ~~~~~~~~~~
-!               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-!                                            + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-!                                            + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
-!                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
-!                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
-!                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
-!                                    (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
    !           Compute Nt
    !           ~~~~~~~~~~
-               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (xtmp_8(i,j)-one) )
+               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (one-one/xtmp_8(i,j)) )
 
                if (Schm_opentop_L.and.k == k0t) F_nb(i,j) = F_nt(i,j,k0t)-mu_8*Cstv_tau_nh_8* F_nw(i,j,k0t)
 
