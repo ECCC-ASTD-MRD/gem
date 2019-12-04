@@ -136,5 +136,5 @@ install(
 )
 install(
    CODE "execute_process(COMMAND
-      /bin/ln -sf ${ROOT}/work/configurations ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION} ) "
+      /bin/ln -sf ${ROOT}/configurations ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION} ) "
 )
