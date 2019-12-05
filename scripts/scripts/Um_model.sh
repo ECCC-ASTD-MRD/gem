@@ -35,6 +35,10 @@ printf " ##### UM_TIMING: Um_model.sh STARTING AT: `date`\n"
 # Dirty little hack to select a working communicator on p9gpu
 mpirun --version | grep -q "IBM Spectrum MPI" && MPIRUN_PARAMS="-display-map --display-allocation -pami_noib"
 
+# CMD="mpirun ${MPIRUN_PARAMS} -np $((npex*npey)) --output-filename atmMod /local/raid/armn/armnsam/soft/bin/valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --redzone-size=4096 --show-error-list=yes ${TASK_BIN}/ATM_MOD"
+
+# CMD="mpirun ${MPIRUN_PARAMS} -np $((npex*npey)) --output-filename atmMod ${TASK_BIN}/ATM_MOD"
+
 CMD="mpirun ${MPIRUN_PARAMS} -np $((npex*npey)) ${TASK_BIN}/ATM_MOD"
 
 if [[ x$debug != x0 ]] ; then
