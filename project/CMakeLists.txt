@@ -25,6 +25,8 @@ include("${ARCH}-${COMPILER}.cmake")
 # TODO: This isn't used presently.  Check to see if we need it
 # set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
+option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
+
 # To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
 option(WITH_OPENMP "Build with OpenMP support" ON)
 if (WITH_OPENMP)

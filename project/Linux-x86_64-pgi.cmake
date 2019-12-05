@@ -29,8 +29,14 @@ set(CMAKE_C_FLAGS "-Minfo=all -lpthread -fpic -Kieee -Ktrap=inv,divz,ovf,unf,fp 
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS " -Minfo=all -fpic -byteswapio -Kieee -Ktrap=inv,divz,ovf,unf,fp -traceback -fast -Mvect")
+set(CMAKE_Fortran_FLAGS "-Minfo=all -fpic -byteswapio -Kieee -Ktrap=inv,divz,ovf,unf,fp -traceback -fast -Mvect")
 set(CMAKE_Fortran_FLAGS_DEBUG "-g")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-fpic -Wl,--allow-shlib-undefined")
+
+if (EXTRA_CHECKS)
+   # With PGI activating bound checking makes the binary very slow!
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Mbounds")
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mbounds")
+endif()
