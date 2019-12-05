@@ -13,52 +13,33 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemdm - Main entry point for the GEMDM model
-!
-! Formal scientific documentation for this version can be found at
-!
-      subroutine gemdm()
-      implicit none
+!> Main entry point for the GEM model
+subroutine gemdm()
+   implicit none
 #include <arch_specific.hf>
-!
-!     ---------------------------------------------------------------
-!
-! Initialize: Domain, MPI, processor topology and ptopo.cdk
 
-      call init_component()
+   ! Initialize: Domain, MPI, processor topology and ptopo.cdk
+   call init_component()
 
-! Establish: model configuration, domain decomposition
-!            and model geometry
+   ! load configuration, domain decomposition and model geometry
+   call set_world_view()
 
-      call set_world_view()
+   ! Initialize the ensemble prevision system
+   call itf_ens_init()
 
-! Initialize the ensemble prevision system
+   ! Initialize the physics parameterization package
+   call itf_phy_init()
 
-      call itf_ens_init()
+   ! Initialize tracers
+   call tracers()
 
-! Initialize the physics parameterization package
+   ! Setup main memory
+   call main_gmm_storage()
+   call set_dyn_opr()
 
-      call itf_phy_init()
+   ! Run GEM
+   call gem_ctrl()
 
-! Initialize tracers
-
-      call tracers()
-
-! Setup main memory
-
-      call main_gmm_storage()
-
-      call set_dyn_opr()
-
-! Run GEM
-
-      call gem_ctrl()
-
-! Terminate
-
-      call stop_world_view()
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+   ! Finalize
+   call stop_world_view()
+end

@@ -13,9 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r itf_ens_init - initialize ensemble prevision system
-
-      subroutine itf_ens_init
+!> initialize ensemble prevision system
+subroutine itf_ens_init
       use ens_options
       use glb_ld
       use lun
@@ -26,37 +25,34 @@
 #include <rmnlib_basics.hf>
 
       integer err_nml, ier, unf
-!
+
 !-------------------------------------------------------------------
-!
-      if (Lun_out > 0) write(Lun_out,1000)
-!
-! Read namelist &ensembles from file model_settings
-!
-      unf= 0 ; err_nml= -1
-      if (fnom (unf,Path_nml_S, 'SEQ+OLD', 0) == 0) then
-         if (Lun_out > 0) write (Lun_out, 6000) trim( Path_nml_S )
-         err_nml= ens_nml(unf)
-         ier= fclos(unf)
+
+      if (Lun_out > 0) write(Lun_out, 1000)
+
+      ! Read namelist &ensembles from file model_settings
+      unf = 0
+      err_nml = -1
+      if (fnom (unf, Path_nml_S, 'SEQ+OLD', 0) == 0) then
+         if (Lun_out > 0) write (Lun_out, 6000) trim(Path_nml_S)
+         err_nml = ens_nml(unf)
+         ier = fclos(unf)
       else
-         if (Lun_out > 0) write (Lun_out, 6001) trim( Path_nml_S )
+         if (Lun_out > 0) write (Lun_out, 6001) trim(Path_nml_S)
       end if
 
-      if (err_nml==1) then
+      if (err_nml == 1) then
          if (Lun_out > 0) write(Lun_out,1010)
          return
       end if
 
-      call handle_error (err_nml,'itf_ens_init','Problem with ens_nml')
+      call handle_error (err_nml, 'itf_ens_init', 'Problem with ens_nml')
 
       call ens_setmem (l_ni, l_nj, l_nk, Lun_out)
 
  1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))
  1010 format(/,'NO ENSEMBLES REQUIRED       (S/R ITF_ENS_INIT)'/(46('=')))
- 6000 format (' READING &ensembles namelists from FILE: '/A)
- 6001 format (/,' Namelist FILE: ',A,' NOT AVAILABLE'/)
-!
-!-------------------------------------------------------------------
-!
-      return
-      end
+ 6000 format(' READING &ensembles namelists from FILE: '/A)
+ 6001 format(/,' Namelist FILE: ',A,' NOT AVAILABLE'/)
+
+end subroutine itf_ens_init

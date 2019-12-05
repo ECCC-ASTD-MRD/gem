@@ -98,10 +98,10 @@ contains
    end subroutine gemtime_init
 
 
-   subroutine gemtime_start ( mynum, myname_S, mylevel )
+   subroutine gemtime_start ( id, name, level )
 
-      character(len=*), intent(in) :: myname_S
-      integer, intent(in) :: mynum, mylevel
+      character(len=*), intent(in) :: name
+      integer, intent(in) :: id, level
 
       integer :: err
       real(kind=REAL64) :: omp_get_wtime
@@ -109,32 +109,32 @@ contains
       if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
 
       if (Gem_timing_dyn_L) then
-         nam_subr_S (mynum) = myname_S
-         timer_level(mynum) = mylevel
-         tb         (mynum) = omp_get_wtime()
-         timer_cnt  (mynum) = timer_cnt(mynum) + 1
+         nam_subr_S (id) = name
+         timer_level(id) = level
+         tb         (id) = omp_get_wtime()
+         timer_cnt  (id) = timer_cnt(id) + 1
       else if(New_timing_dyn_L) then
-         call timing_start2 ( mynum, myname_S, mylevel )
+         call timing_start2 ( id, name, level )
       endif
 
    end subroutine gemtime_start
 
 
-   subroutine gemtime_stop (mynum)
+   subroutine gemtime_stop (id)
 
-      integer, intent(in) :: mynum
+      integer, intent(in) :: id
 
-      integer err
-      real(kind=REAL64) omp_get_wtime
+      integer :: err
+      real(kind=REAL64) :: omp_get_wtime
 
       !-------------------------------------------------------------------
 
       if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
 
       if (Gem_timing_dyn_L) then
-         sum_tb(mynum) = sum_tb(mynum) + (omp_get_wtime() - tb(mynum))
+         sum_tb(id) = sum_tb(id) + (omp_get_wtime() - tb(id))
       else if(New_timing_dyn_L) then
-         call timing_stop (mynum)
+         call timing_stop (id)
       endif
 
    end subroutine gemtime_stop
@@ -206,50 +206,51 @@ contains
 
          if (myproc /= 0) return
 
-      print *,'___________________________________________________________'
-      print *,'__________________TIMINGS ON PE #0_________________________'
+         print *,'___________________________________________________________'
+         print *,'__________________TIMINGS ON PE #0_________________________'
 
-      flag = .false.
-      total_time = omp_get_wtime() - total_time
+         flag = .false.
+         total_time = omp_get_wtime() - total_time
 
-      do i = 1, MAX_instrumented
-         lvl = 0
-         elem = i
+         do i = 1, MAX_instrumented
+            lvl = 0
+            elem = i
  55      if ( (trim(nam_subr_S(elem)) /= '') .and. (.not.flag(elem)) ) then
 
 
-            write (nspace, '(i3)') 5 * lvl + 1
-            fmt = '(f6.2,"%",' // trim(nspace) // 'x,a,1x,a,i3,a,3x,a,1pe13.6,2x,a,i8)'
+               write (nspace, '(i3)') 5 * lvl + 1
+               fmt = '(f6.2,"%",' // trim(nspace) // 'x,a,1x,a,i3,a,3x,a,1pe13.6,2x,a,i8)'
 
-            ! Fill name with dots
-            do k = 1, len(name)
-               name(k:k) = '.'
-            end do
-            ! Right-justify the name
-            name (len(name) - len(trim(nam_subr_S(elem))) + 1:len(name)) = &
-               trim(nam_subr_S(elem))
+               ! Fill name with dots
+               do k = 1, len(name)
+                  name(k:k) = '.'
+               end do
+               ! Right-justify the name
+               name (len(name) - len(trim(nam_subr_S(elem))) + 1:len(name)) = &
+                  trim(nam_subr_S(elem))
 
-            write (output_unit, trim(fmt)) &
-              sum_tb(elem) / total_time * 100.0, name, '(', elem, ')', &
-              'Wall clock= ', sum_tb(elem), 'count= ', timer_cnt(elem)
-            flag(elem) = .true.
-            lvlel(lvl) = elem
+               write (output_unit, trim(fmt)) &
+                  sum_tb(elem) / total_time * 100.0, name, '(', elem, ')', &
+                  'Wall clock= ', sum_tb(elem), 'count= ', timer_cnt(elem)
+
+               flag(elem) = .true.
+               lvlel(lvl) = elem
  65         do j = 1, MAX_instrumented
-               if ((timer_level(j) == elem) .and. (.not.flag(j)) ) then
-                  lvl = lvl + 1
-                  elem = j
-                  goto 55
+                  if ((timer_level(j) == elem) .and. (.not.flag(j)) ) then
+                     lvl = lvl + 1
+                     elem = j
+                     goto 55
+                  endif
+               end do
+               lvl = lvl - 1
+               if (lvl >= 0) then
+                  elem = lvlel(lvl)
+                  goto 65
                endif
-            end do
-            lvl = lvl - 1
-            if (lvl >= 0) then
-               elem = lvlel(lvl)
-               goto 65
             endif
-         endif
-      end do
+         end do
 
-      print *,'___________________________________________________________'
+         print *,'___________________________________________________________'
 
       else
          call timing_terminate2 ( myproc, msg )
@@ -258,10 +259,10 @@ contains
    end subroutine gemtime_terminate
 
 
-   subroutine gemlcltime_start ( mynum, myname_S, F_rset)
+   subroutine gemlcltime_start ( id, name, F_rset)
 
-      character(len=*), intent(in) :: myname_S      ! name for the section
-      integer         , intent(in) :: mynum, F_rset ! id and reset frequency
+      character(len=*), intent(in) :: name      ! name for the section
+      integer         , intent(in) :: id, F_rset ! id and reset frequency
 
       integer :: err
       real(kind=REAL64) :: omp_get_wtime
@@ -269,19 +270,19 @@ contains
       !-------------------------------------------------------------------
 
       call rpn_comm_barrier ("GRID", err)
-      lcltime_name_S(mynum) = myname_S
-      lcltime_tb    (mynum) = omp_get_wtime()
-      lcltime_rset  (mynum) = F_rset
+      lcltime_name_S(id) = name
+      lcltime_tb    (id) = omp_get_wtime()
+      lcltime_rset  (id) = F_rset
 
    end subroutine gemlcltime_start
 
 
-   subroutine gemlcltime_stop (mynum, F_t0, F_tn)
+   subroutine gemlcltime_stop (id, F_t0, F_tn)
       use step_options
       implicit none
 
-      integer, intent(in) :: mynum     ! id
-      integer, intent(in) :: F_t0,F_tn ! timestep bounds for printing
+      integer, intent(in) :: id     ! id
+      integer, intent(in) :: F_t0, F_tn ! timestep bounds for printing
 
       integer knt
       real(kind=REAL64) omp_get_wtime
@@ -289,18 +290,18 @@ contains
       !-------------------------------------------------------------------
 
       knt= Step_kount-1
-      if ( (lcltime_rset(mynum) < 1) .or. &
-           (lcltime_last(mynum) /= Step_kount .and. mod(knt,lcltime_rset(mynum))==0) ) then
-         lcltime_last(mynum)= Step_kount
+      if ( (lcltime_rset(id) < 1) .or. &
+           (lcltime_last(id) /= Step_kount .and. mod(knt,lcltime_rset(id))==0) ) then
+         lcltime_last(id)= Step_kount
          if (knt >= F_t0 .and. knt <= F_tn) then
-            lcltime_nevent(mynum) = lcltime_nevent(mynum) + 1
-            lcltime_step (mynum, lcltime_nevent(mynum)) = knt
-            lcltime_event(mynum, lcltime_nevent(mynum)) = lcltime_acc(mynum)
+            lcltime_nevent(id) = lcltime_nevent(id) + 1
+            lcltime_step (id, lcltime_nevent(id)) = knt
+            lcltime_event(id, lcltime_nevent(id)) = lcltime_acc(id)
             lcltime_flag_L = .true.
          endif
-         lcltime_acc(mynum) = 0d0
+         lcltime_acc(id) = 0d0
       endif
-      lcltime_acc(mynum)= lcltime_acc(mynum) + (omp_get_wtime() - lcltime_tb(mynum))
+      lcltime_acc(id)= lcltime_acc(id) + (omp_get_wtime() - lcltime_tb(id))
 
    end subroutine gemlcltime_stop
 

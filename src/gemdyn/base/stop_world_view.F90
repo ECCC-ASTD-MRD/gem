@@ -13,9 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r stop_world_view - Update status file and stop MPI
-
-      subroutine stop_world_view
+!> Update status file and stop MPI
+subroutine stop_world_view
       use phy_itf, only: phy_terminate
       use step_options
       use gem_options
@@ -33,16 +32,16 @@
       character(len=256) :: postjob_S
       logical continue_L
       integer err
-!
+
 !-------------------------------------------------------------------
-!
+
       if (Ctrl_phyms_L) err = phy_terminate()
 
-      continue_L= (Step_kount < Step_total)
+      continue_L = (Step_kount < Step_total)
 
       if (Lun_out > 0) then
-         write (postjob_S,34) Lctl_step
-         postjob_S='_endstep='//trim(postjob_S)
+         write (postjob_S, 34) Lctl_step
+         postjob_S = '_endstep=' // trim(postjob_S)
          call write_status_file3 (postjob_S)
          if (continue_L) then
             call write_status_file3 ('_status=RS')
@@ -59,9 +58,9 @@
          err = clib_remove('gmm_restart')
       end if
 
-      err= clib_remove(trim(Path_nml_S))
-      err= clib_remove(trim(Path_outcfg_S))
-      err= clib_remove(trim(Path_phyincfg_S))
+      err = clib_remove(trim(Path_nml_S))
+      err = clib_remove(trim(Path_outcfg_S))
+      err = clib_remove(trim(Path_phyincfg_S))
 
       call gemtime ( Lun_out, 'END OF RUN', .true. )
       call memusage ( Lun_out )
@@ -76,8 +75,4 @@
       call rpn_comm_FINALIZE(err)
 
  34   format (i10.10)
-!
-!-------------------------------------------------------------------
-!
-      return
-      end
+end subroutine stop_world_view
