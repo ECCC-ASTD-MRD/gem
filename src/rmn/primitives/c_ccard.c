@@ -42,7 +42,7 @@
        char *clefin;
        int cletype;
     };
-
+
 /*******************************************************************
  *    recuperation des parametres d'appel a un programme           *
  *******************************************************************/
@@ -236,7 +236,7 @@ void c_ccard(char **argv,int argc,char **cle,char val[][NCARMAX],
   if (retourne_npos)
     (*npos) = npos_interne;
 }
-
+
 /********************************************************
  *  chercher une clefs dans la liste de noms de clefs   *
  *  et retourner sa position dans la liste.             *
@@ -265,7 +265,7 @@ int c_jfc_cherche_la_clef(char *nom,struct c_jfc_definition cle[],int n)
   return(-1);
 }
 
-
+
 /****************************************************************
  *  extraire les elements d'une liste                           *
  ****************************************************************/
@@ -331,7 +331,7 @@ void c_jfc_les_valeurs(struct c_jfc_definition clefs[], char **argv,
     
     }
 } 
-
+
 /******************************************************
  *  traduire un nom a des MAJUScules                  *
  ******************************************************/
@@ -354,7 +354,7 @@ void c_jfc_tradup(char *nom,char *nommaj)
     nommaj++;  nom++;
     } 
 }
-
+
 /**************************************************************
  *    determiner le type de clef MAJUScule/MINUScule/tel quel *
  **************************************************************/
@@ -386,7 +386,7 @@ int c_jfc_majmin(char *arg)
   return(MAJUS);
   
 }
-
+
 /*******************************************************************
  * traduire une valeur a MAJUScule/MINUScule selon le type de clef *
  *******************************************************************/
@@ -415,7 +415,7 @@ void c_jfc_traduire(char *cle,int cletype)
     }
 }
 
-
+
 /******************************************************
  *       imprimer sur stderr la sequence d'appel      *
  ******************************************************/
@@ -452,7 +452,7 @@ void sequence_appel(struct c_jfc_definition defo[],char *scriptnom,int n)
   fprintf(stderr,"\n");
 }
 
-
+
 /*****************************************************
  *   recuperation des parametres positionels         *
  *   lors de l'appel a un programme.                 *

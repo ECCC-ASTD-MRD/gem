@@ -1149,7 +1149,7 @@
     return
   end function update_table_entry
   end module pointer_table_data_381
-!!===================== gmm_checkpoint_all =====================
+!!===================== gmm_checkpoint_all =====================
   integer function gmm_checkpoint_all(read_or_write)
 !
 !        checkpoint read or write for all known types
@@ -1266,7 +1266,7 @@
     file_unit=0
   gmm_checkpoint_all = GMM_OK
   end function gmm_checkpoint_all
-!!===================== gmm_checkpoint =====================
+!!===================== gmm_checkpoint =====================
 !        if  read_or_write is READ_CKPT (.true.) , read one checkpoint group of records
 !        if  read_or_write is WRIT_CKPT (.false.) , write all groups of records to checkpoint file
 !
@@ -2640,9 +2640,9 @@
 !
   endif
   end subroutine gmm_checkpoint_381
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
    integer function gmm_create184(iname,p,field_meta,flags_arg)
    use gmm_internals
    use pointer_table_data_184
@@ -6114,7 +6114,7 @@
   endif
   return
   end subroutine check_directory_entry
-!!
+!!
 ! find entry called name in directory starting from beginning of directory (the hard way)
 ! upon exit cur_page and cur_entry are nonzero if desired entry found
 ! ==============================================================================================
@@ -6263,7 +6263,7 @@
 !     F_meta%a%flags = F_code(j)
     return
  end function gmm_decodemeta
-!!===================== gmm_get (interface) =====================
+!!===================== gmm_get (interface) =====================
 !
   integer function gmm_get184(iname,p,m)
   use gmm_internals
@@ -7735,9 +7735,9 @@
    F_istat = GMM_OK
    return
 end function gmm_updatemeta
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
   integer function gmm_update_tpi_key2(indx,datatype, key)
     implicit none
@@ -7807,7 +7807,7 @@ end function gmm_updatemeta
       gmm_update_tpi_key2 = gmm_update_tpi_key381(indx, key)
   end select dtype
   end function gmm_update_tpi_key2
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
   integer function gmm_update_tpi_key184(indx, key)
   use gmm_internals
   use pointer_table_data_184

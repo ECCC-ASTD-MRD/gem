@@ -139,7 +139,7 @@ static char *dummy="??";
   return &kind_chars[3*kind];
 }
 
-
+
 
 /*splitpoint c_fstapp */
 /*****************************************************************************
@@ -224,7 +224,7 @@ int c_fstapp(int iun, char *option)
   f->nxtadr = f->cur_addr;
   return(0);
 }
-
+
 /*splitpoint c_fstckp */
 /*****************************************************************************
  *                            C _ F S T C K P                                *
@@ -256,7 +256,7 @@ int c_fstckp(int iun)
   ier = c_xdfcls(iun);
   return(ier);
 }
-
+
 /*splitpoint c_fst_data_length */
 /*****************************************************************************
  *                  C _ F S T _ D A T A _ L E N G T H                        *
@@ -314,7 +314,7 @@ int c_fst_data_length(int length_type)
 return(0);
 }
 
-
+
 /*
 void *fst_encode_missing_value(void *field,void *field2,int nvalues,int datatype,int nbits,int is_byte,int is_short,int is_double);
 void fst_decode_missing_value(void *field,int nvalues,int datatype,int is_byte,int is_short,int is_double);
@@ -1099,7 +1099,7 @@ int c_fst_edit_dir(int handle,
 {
   return c_fst_edit_dir_plus(handle,date,deet,npas,-1,-1,-1,ip1,ip2,ip3,in_typvar,in_nomvar,in_etiket," ",ig1,ig2,ig3,ig4,-1);
 }
-
+
 /*splitpoint c_fsteff */
 /*****************************************************************************
  *                         C _ F S T E F F                                   *
@@ -1143,7 +1143,7 @@ int c_fsteff(int handle)
   ier = c_xdfdel(handle);
   return(ier);
 }
-
+
 /*splitpoint c_fsteof */
 /*****************************************************************************
  *                            C _ F S T E O F                                *
@@ -1193,7 +1193,7 @@ int c_fsteof(int iun)
 
   return(eof);
 }
-
+
 /*splitpoint c_fstfrm */
 /*****************************************************************************
  *                         C _ F S T F R M                                   *
@@ -1214,7 +1214,7 @@ int c_fstfrm(int iun)
   ier = c_xdfcls(iun);
   return(ier);
 }
-
+
 /*splitpoint c_fstinf */
 /*****************************************************************************
  *                        C _ F S T I N F                                    *
@@ -1248,7 +1248,7 @@ int c_fstinf(int iun, int *ni, int *nj, int *nk, int datev,char *in_etiket,
                       in_typvar,in_nomvar);
   return(err);
 }
-
+
 /*splitpoint c_fstinfx */
 /*****************************************************************************
  *                       C _ F S T I N F X                                   *
@@ -1459,7 +1459,7 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
   free(search_mask);
   return(handle);
 }
-
+
 /*splitpoint c_fstinl */
 /*****************************************************************************
  *                        C _ F S T I N L                                    *
@@ -1606,7 +1606,7 @@ int c_fstlic(word *field, int iun, int niin, int njin, int nkin,
   ier = c_fstlir(field,iun,&ni,&nj,&nk,datein,etiketin,ip1in,ip2in,
                  ip3in,typvarin,nomvarin);
   return(ier);
-}
+}
 /*splitpoint c_fstlir */
 /*****************************************************************************
  *                        C _ F S T L I R                                    *
@@ -1642,7 +1642,7 @@ int c_fstlir(word *field, int iun, int *ni, int *nj, int *nk,
                       typvar,nomvar);
   return(key);
 }
-
+
 /*splitpoint c_fstlirx */
 /*****************************************************************************
  *                      C _ F S T L I R X                                    *
@@ -2057,7 +2057,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
   xdf_byte = 0;
   return(handle);
 }
-
+
 /*splitpoint c_fstmsq */
 /*****************************************************************************
  *                        C _ F S T M S Q                                    *
@@ -2135,7 +2135,7 @@ int c_fstmsq(int iun, int *mip1, int *mip2, int *mip3, char *metiket,
   }
   return(0);
 }
-
+
 /*splitpoint c_fstnbr */
 /*****************************************************************************
  *                          C _ F S T N B R                                  *
@@ -2214,7 +2214,7 @@ int c_fstnbrv(int iun)
   return(f->header->nrec);
 
 }
-
+
 /*splitpoint c_fstopc */
 /*****************************************************************************
  *                          C _ F S T O P C                                  *
@@ -2299,7 +2299,7 @@ int c_fstopc(char *option, char *value, int getmode)
   fprintf(stderr,"c_fstopc: unknown option %s\n",option);
   return(val);
 }
-
+
 /*splitpoint c_fstopi */
 /*****************************************************************************
  *                          C _ F S T O P I                                  *
@@ -2365,7 +2365,7 @@ int c_fstopi(char *option, int value, int getmode)
   fprintf(stderr,"c_fstopi: unknown option %s\n",option);
   return(val);
 }
-
+
 /*splitpoint c_fstopl */
 /*****************************************************************************
  *                          C _ F S T O P L                                  *
@@ -2417,7 +2417,7 @@ int c_fstopl(char *option, int value, int getmode)
   return(val);
 }
 
-
+
 /*splitpoint c_fstopr */
 /*****************************************************************************
  *                          C _ F S T O P R                                  *
@@ -2437,7 +2437,7 @@ int c_fstopr(char *option, float value, int getmode)
   /* no current float variable to be set for now */
   return(0);
 }
-
+
 /*splitpoint c_fstouv */
 /*****************************************************************************
  *                         C _ F S T O U V                                   *
@@ -2603,7 +2603,7 @@ int c_fstprm(int handle,
   free(stdf_entry);
   return(ier);
 }
-
+
 /*splitpoint c_fstreset_ip_flags */
 /*****************************************************************************
  *                 C _ F S T R E S E T _ I P _ F L A G S                     *
@@ -2618,7 +2618,7 @@ void c_fstreset_ip_flags()
   int ier;
   ier = init_ip_vals();
 }
-
+
 /*splitpoint c_fstrwd */
 /*****************************************************************************
  *                           C _ F S T R W D                                 *
@@ -2663,7 +2663,7 @@ int c_fstrwd(int iun)
   f->valid_pos = 0;
   return(0);
 }
-
+
 /*splitpoint c_fstskp */
 /*****************************************************************************
  *                            C _ F S T S K P                                *
@@ -2780,7 +2780,7 @@ int c_fstskp(int iun, int nrec)
   }
   return(0);
 }
-
+
 /*splitpoint c_fstsui */
 /*****************************************************************************
  *                         C _ F S T S U I                                   *
@@ -3042,7 +3042,7 @@ int c_fstvoi(int iun, char* options) {
    }
    return(0);
 }
-
+
 /*splitpoint c_fstweo */
 /*****************************************************************************
  *                            C _ F S T W E O                                *
@@ -3098,7 +3098,7 @@ int c_fstweo(int iun, int level)
   f->nxtadr = f->cur_addr;
   return(0);
 }
-
+
 /*splitpoint c_fst_env_var */
 /*****************************************************************************
  *                         C _ F S T _ E N V _ V A R                         *
@@ -3159,7 +3159,7 @@ void c_fst_env_var(char *cle, int index, char *content)
 */
 }
 
-
+
 /*splitpoint c_ip1_all */
 /*****************************************************************************
  *                          C _ I P 1 _ A L L                                *
@@ -3207,7 +3207,7 @@ int c_ip1_all(float level, int kind)
   return(ip_new);
 }
 
-
+
 /*splitpoint c_ip2_all */
 /*****************************************************************************
  *                          C _ I P 2 _ A L L                                *
@@ -3253,7 +3253,7 @@ int c_ip2_all(float level, int kind)
     }
   return(ip_new);
 }
-
+
 
 /*splitpoint c_ip3_all */
 /*****************************************************************************
@@ -3300,7 +3300,7 @@ int c_ip3_all(float level, int kind)
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip1_val */
 /*****************************************************************************
  *                          C _ I P 1 _ V A L                                *
@@ -3333,7 +3333,7 @@ int c_ip1_val(float level, int kind)
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip2_val */
 /*****************************************************************************
  *                          C _ I P 2 _ V A L                                *
@@ -3366,7 +3366,7 @@ int c_ip2_val(float level, int kind)
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip3_val */
 /*****************************************************************************
  *                          C _ I P 3 _ V A L                                *
@@ -3400,7 +3400,7 @@ int c_ip3_val(float level, int kind)
   return(ip_new);
 }
 
-
+
 /*splitpoint crack_std_parms */
 /*****************************************************************************
  *                      C R A C K _ S T D _ P A R M S                        *
@@ -3467,7 +3467,7 @@ static void crack_std_parms(stdf_dir_keys *stdf_entry,
   cracked_parms->hhmmss = 0;
 }
 
-
+
 /*splitpoint init_ip_vals */
 /*****************************************************************************
  *                             I N I T _ I P _ V A L S                       *
