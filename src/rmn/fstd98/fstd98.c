@@ -835,7 +835,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       }
       stdf_entry->datyp = is_missing | 4;  /* turbo compression not supported for this type, revert to normal mode */
 #ifdef use_old_signed_pack_unpack_code
-!! fprintf(stderr,"OLD PACK CODE======================================\n");
+// fprintf(stderr,"OLD PACK CODE======================================\n");
       field3 = field;
       if(xdf_short || xdf_byte){
         field3=(word *)alloca(ni*nj*nk*sizeof(word));
@@ -846,7 +846,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       ier = compact_integer(field3,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,3);
 #else
-!! fprintf(stderr,"NEW PACK CODE======================================\n");
+// fprintf(stderr,"NEW PACK CODE======================================\n");
       if(xdf_short){
         ier = compact_short(field,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,7);
@@ -1950,7 +1950,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
 
       case 4: mode=4;  /* signed integer */
 #ifdef use_old_signed_pack_unpack_code
-!! fprintf(stderr,"OLD UNPACK CODE ======================================\n");
+// fprintf(stderr,"OLD UNPACK CODE ======================================\n");
         if(xdf_short || xdf_byte){
           field_out=alloca(nelm*sizeof(int));
           s_field_out=(short *)field;
@@ -1963,7 +1963,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
         if(xdf_short){ for (i=0;i<nelm;i++) s_field_out[i]=field_out[i]; } ;
         if(xdf_byte) { for (i=0;i<nelm;i++) b_field_out[i]=field_out[i]; } ;
 #else
-!! fprintf(stderr,"NEW UNPACK CODE ======================================\n");
+// fprintf(stderr,"NEW UNPACK CODE ======================================\n");
         if(xdf_short){
           ier = compact_short(field,(void *) NULL,buf->data,nelm,
                               stdf_entry->nbits,0,xdf_stride,8);
