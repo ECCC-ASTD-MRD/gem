@@ -28,9 +28,7 @@
       REAL PSOL(LMX)   ,HT(LMX,LEV)
       LOGICAL LHIG(LMX,LEV), SATUCO
       REAL P0, REC_CAPPA, REC_RGASD
-
-      real :: tmp2d(lmx,lev)
-
+!
 !Author
 !          L.Garand (1989)
 !
@@ -97,12 +95,10 @@
       ELSE
          CALL mfoqsa3 (GA,T,P,LMX,LEV,LMX)
       END IF
-
-      tmp2d = p0/p
-      call vspown1(exp1_cappa, tmp2d, cappa, lev*lmx)
-      tmp2d = p/p0
-      call vspown1(exp2_cappa, tmp2d, cappa, lev*lmx)
-
+!
+      CALL VSPOWN1  (EXP1_CAPPA,P0/P,CAPPA,LEV*LMX)
+      CALL VSPOWN1  (EXP2_CAPPA,P/P0,CAPPA,LEV*LMX)
+!
       DO J=1,LEV
       DO K=1,LMX
               GA(K,J) = HT(K,J)*GA(K,J)/(CAPPA*T(K,J))

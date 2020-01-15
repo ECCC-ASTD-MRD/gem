@@ -15,7 +15,6 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module derivatives
-   use clib_itf_mod, only: clib_toupper
 !!!#include <arch_specific.hf>
    implicit none
    private
@@ -54,7 +53,7 @@ contains
       !          using PCHIP interpolation
 
       ! Local variable declaration
-      integer :: n,nko,nkext,i,k,ko
+      integer :: n,nko,nkext,i,k,ko,istat
       real :: s
       real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: y,z,h,del,b,c,d
 
@@ -73,10 +72,10 @@ contains
       endif
 
       ! Compute layer thickness and deltas
-      call pchip_layers(y,z,h,del)
+      istat = pchip_layers(y,z,h,del)
 
       ! Compute interpolating polynomial coefficients
-      call pchip_coef(h,del,b,c,d)
+      istat = pchip_coef(h,del,b,c,d)
 
       ! Compute derivatives
       do i=1,n
@@ -183,7 +182,6 @@ contains
       !          Wrap call to derivative calculations.
 
       ! Local variables
-      integer :: istat
       real, dimension(size(zi,dim=1)) :: myDeriv_min,myDeriv_max
       character(len=LONG_CHAR) :: myType
 
@@ -196,8 +194,7 @@ contains
       if (present(deriv_max)) myDeriv_max = deriv_max
 
       ! Derivative calculation dispatcher
-      istat = clib_toupper(myType)
-      select case (myType)
+      select case (upper(myType))
       case ('PCHIP')
          status = derivative_pchip(dydz,yi,zi,zo)
       case ('SPLINE')
@@ -209,5 +206,23 @@ contains
       ! End of subprogram
       return
    end function deriv_profile
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
+      ! Return an upper cased version of a string
+      character(len=*), intent(in) :: str
+      character(len=len_trim(str)) :: uc_str
+
+      ! Local variables
+      integer :: istat
+
+      ! Upper case string
+      uc_str = str
+      istat = clib_toupper(uc_str)
+
+      ! End of subprogram
+      return
+   end function upper
 
 end module derivatives

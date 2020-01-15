@@ -43,7 +43,7 @@ subroutine SOILI_SVS (WD, &
    real RHOSV(N), Z0MVH(N), VEGH(N), VEGL(N), SVM(N)
    real CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
    real Z0(N)
-   real CG(N), WTA(N,svs_tilesp1)
+   real CG(N), WTA(N,indx_svs_ag)
    real PSNGRVL(N)
    real Z0H(N), ALGR(N), CLAY(N), SAND(N)
    real DECI(N), EVER(N), LAID(N)

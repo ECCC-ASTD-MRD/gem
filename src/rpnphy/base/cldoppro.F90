@@ -95,7 +95,7 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       real, dimension(lmx,nk) :: trans_exp
       logical, dimension(lmx) :: top
       real, dimension(m,nk) :: zrieff
-!!$      real, dimension(m,nk) :: zrieff_vs
+      real, dimension(m,nk) :: zrieff_vs
       real, dimension(m,nk) :: aird
       real, dimension(m,nk) :: rew
       real, dimension(m,nk) :: rei
@@ -115,15 +115,15 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 
 !*********************************************************
 
-      real, parameter :: THIRD = 0.3333333 !#TODO 1./3.
-
       integer i, j, k, kind,ip,l
-      real rec_grav, cut
+      real rec_grav, cut, third
       real epsilon,epsilon2,betan,betad
       real rew2,rew3,dg,dg2,dg3,tausw,omsw,gsw,tausi,omsi,gsi,y1,y2,taulw
       real omlw,glw,tauli,omli,gli
       real xnu
-
+!
+      data third/0.3333333/
+      save third
       rec_grav=1./grav
 !
 !
@@ -159,17 +159,15 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       select case (rad_cond_rew)
       case ('BARKER')
          ! Radius as in newrad: from H. Barker based on aircraft data (range 4-17um from Slingo)
-!!$         vs1(:,:) = liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
-!!$         call vspown1(rew, vs1, third, nk*lmx)
-!!$         rew(:,:) = min(max(4., 754.6*rew(:,:)), 17.0)
-         rew = min(max(4., 754.6 * (liqwcin*aird*rec_cdd)**THIRD), 17.0)
+         vs1(:,:) = liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
+         call vspown1(rew, vs1, third, nk*lmx)
+         rew(:,:) = min(max(4., 754.6*rew(:,:)), 17.0)
       case ('NEWRAD')
          ! Radius as in newrad: corresponds to so called new optical properties
          vs1(:,:) = (1.0 + liqwcin(:,:) * 1.e4) &
               * liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
-!!$         call vspown1(rew, vs1,third, nk*lmx)
-!!$         rew(:,:) =  min(max(2.5, 3000.*rew(:,:)), 50.0)
-         rew =  min(max(2.5, 3000. * vs1**THIRD), 50.0)
+         call vspown1(rew, vs1,third, nk*lmx)
+         rew(:,:) =  min(max(2.5, 3000.*rew(:,:)), 50.0)
       case ('ROTSTAYN03')
          ! Radius according to Rotstayn and Liu (2003)
          do k = 1, nk
@@ -192,13 +190,12 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       select case (rad_cond_rei)
       case ('CCCMA') 
          ! Units of icewcin must be in g/m3 for this parameterization of rei (in microns)
-!!$         zrieff_vs(:,:) = 1000. * icewcin(:,:) * aird(:,:)
-!!$         call vspown1(zrieff, zrieff_vs, 0.216, nk*lmx)
-         zrieff(:,:) = (1000. * icewcin * aird)**0.216
+         zrieff_vs(:,:) = 1000. * icewcin(:,:) * aird(:,:)
+         call vspown1(zrieff, zrieff_vs, 0.216, nk*lmx)
          where (icewcin(:,:) >= 1.e-9)
-            zrieff = 83.8 * (1000. * icewcin * aird)**0.216
+            zrieff(:,:) = 83.8 * zrieff(:,:)
          elsewhere
-            zrieff = 20.
+            zrieff(:,:) = 20.
          endwhere
          rei(:,:) =  max(min(zrieff(:,:), 50.0), 20.0)
       case ('SIGMA')
@@ -362,15 +359,14 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 !
         do k = 1, nk
           do i = 1, lmx
-!!$            vs1(i,k) = - 1.64872 * taucl(i,k,6)
-             trans_exp(i,k) = exp(- 1.64872 * taucl(i,k,6))
+            vs1(i,k) = - 1.64872 * taucl(i,k,6)
             if (sig(i,k).le.0.4) ih(i) = k
             if (sig(i,k).le.0.7) ib(i) = k
 
           enddo
         enddo
 
-!!$        call vsexp ( trans_exp, vs1, lmx*nk )
+        call vsexp ( trans_exp, vs1, lmx*nk )
 
         do i = 1, lmx
           ctp (i)   = 110000.

@@ -16,7 +16,6 @@
 
 module pchip_utils
    use, intrinsic :: iso_fortran_env, only: INT64
-   use clib_itf_mod, only: clib_toupper
 !!!#include <arch_specific.hf>
    implicit none
    private
@@ -48,7 +47,7 @@ contains
       integer :: status                                         !Return status
 
       ! Local variables
-      integer :: k,nki,nko,istat,i
+      integer :: k,nki,nko
       real, dimension(size(y,dim=1)) :: myZ1i,myZ2i
       real, dimension(size(y,dim=1),size(y,dim=2)) :: yext,zext
       character(len=LONG_CHAR) :: myDirec
@@ -85,18 +84,15 @@ contains
       endif
 
       ! Extend arrays to integration bounds
-      do i=1,size(yext,dim=1)
-         yext(i,2:nko-1) = yi(i,:)
-         yext(i,1) = yi(i,1)
-         yext(i,nko) = yi(i,nki)
-         zext(i,2:nko-1) = zi(i,:)
-         zext(i,1) = max(myZ2i(i), 2*zi(i,1)-zi(i,2))
-         zext(i,nko) = min(myZ1i(i), 2*zi(i,nki)-zi(i,nki-1))
-      enddo
+      yext(:,2:nko-1) = yi
+      yext(:,1) = yi(:,1)
+      yext(:,nko) = yi(:,nki)
+      zext(:,2:nko-1) = zi
+      zext(:,1) = max(myZ2i,2*zi(:,1)-zi(:,2))
+      zext(:,nko) = min(myZ1i,2*zi(:,nki)-zi(:,nki-1))
 
       ! Invert arrays if necessary
-      istat = clib_toupper(myDirec)
-      select case (myDirec)
+      select case (upper(myDirec))
       case ('DOWN')
          do k=1,nko
             z(:,nko-k+1) = zi(:,1) - zext(:,k)
@@ -119,78 +115,89 @@ contains
    end function pchip_extend
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   subroutine pchip_layers(y,z,h,del)
+   function pchip_layers(y,z,h,del) result(status)
       ! Compute layer thicknesses and deltas
       real, dimension(:,:), intent(in) :: y                     !Value of extended input profile (with vertical "halos")
       real, dimension(:,:), intent(in) :: z                     !Vertical coordinate (with vertical "halos")
       real, dimension(:,:), intent(out) :: h                    !Thickness of layers in profile
       real, dimension(:,:), intent(out) :: del                  !Linear first derivatives of profile
-      
+      integer :: status                                         !Return status
+
       ! Local variables
-      integer :: k,nk,i
+      integer :: k,nk
+
+      ! Set return status
+      status = PCHIP_ERR
 
       ! Compute layer properties
       nk = size(y,dim=2)
       do k=nk,2,-1
-         do i=1,size(h,dim=1)
-            h(i,k)   =  z(i,k-1)-z(i,k)
-            del(i,k) = (y(i,k-1)-y(i,k))/h(i,k)
-         enddo
+         h(:,k)   =  z(:,k-1)-z(:,k)
+         del(:,k) = (y(:,k-1)-y(:,k))/h(:,k)
       enddo
       h(:,1)   = h(:,2)
       del(:,1) = del(:,2)
 
+      ! Successful completion
+      status = PCHIP_OK
       return
-   end subroutine pchip_layers
+   end function pchip_layers
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   subroutine pchip_coef(h,del,b,c,d)
+   function pchip_coef(h,del,b,c,d) result(status)
       ! Compute coefficients for the interpolating polynomial
       real, dimension(:,:), intent(in) :: h                     !Thickness of layers in profile
       real, dimension(:,:), intent(in) :: del                   !Linear first derivatives of profile
       real, dimension(:,:), intent(out) :: b                    !Coefficient for cubic term
       real, dimension(:,:), intent(out) :: c                    !Coefficient for square term
       real, dimension(:,:), intent(out) :: d                    !Coefficient for linear term
+      integer :: status                                         !Return status
 
       ! The interpolating polynomial has the form :
       !           P(x) = y + d*s + c*s^2 + b*s^3
       ! where s = x-x(k) is the distance between x(k) and x(k+1) for the interpolation.
 
       ! Local variables
-      integer :: k,i
+      integer :: k,nk,istat
+
+      ! Set return status
+      status = PCHIP_ERR
 
       ! Compute first derivatives at data points
-      call pchip_slopes(h,del,d)
+      istat = pchip_slopes(h,del,d)
  
       ! Compute coefficients for higher order terms (not used for k==1)
-      do k=2,size(h,dim=2)
-         do i=1,size(c,dim=1)
-            c(i,k) = (3.*del(i,k) - 2.*d(i,k) - d(i,k-1)) / h(i,k)
-            b(i,k) = (d(i,k) - 2.*del(i,k) + d(i,k-1) ) / (h(i,k)**2)
-         enddo
-     enddo
-      c(:,1) = 0.
-      b(:,1) = 0.
+      nk = size(h,dim=2)
+      do k=2,nk
+         c(:,k) = (3.*del(:,k) - 2.*d(:,k) - d(:,k-1)) / h(:,k)
+         b(:,k) = (d(:,k) - 2.*del(:,k) + d(:,k-1) ) / (h(:,k)**2)
+      enddo
+      c(:,1) = 0.; b(:,1) = 0.
 
+      ! Successful completion
+      status = PCHIP_OK
       return
-   end subroutine pchip_coef
+   end function pchip_coef
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   subroutine pchip_slopes(h,del,d)
+   function pchip_slopes(h,del,d) result(status)
       ! Compute profile slopes
       real, dimension(:,:), intent(in) :: h,del
       real, dimension(:,:), intent(out) :: d
+      integer :: status
 
       ! Local variables
-      integer :: nk,i,k
+      integer :: n,nk,i,k
       real :: w1,w2
 
-      nk = size(h,dim=2)
-      do i=1,size(h,dim=1)
+      ! Set return status
+      status = PCHIP_ERR
 
-         ! Compute slopes at interior points
+      ! Compute slopes at interior points
+      n = size(h,dim=1)
+      nk = size(h,dim=2)
+      do i=1,n
          do k=(nk-1),2,-1
-            !#TODO: replace if by mask
             if (del(i,k) == 0. .or. del(i,k+1) == 0. .or. sign(1.,del(i,k))*sign(1.,del(i,k+1)) < 0. ) then
                d(i,k) = 0.
             else
@@ -199,18 +206,37 @@ contains
                d(i,k) = (w1+w2)*del(i,k+1)*del(i,k) / (del(i,k)*w1+del(i,k+1)*w2)
             endif
          enddo
-
-         ! Compute slopes at end points
-         d(i,1) = ((2.*h(i,2) + h(i,3))*del(i,2) - h(i,2)*del(i,3)) / (h(i,2) + h(i,3))
-         if (sign(1.,d(i,2)) /= sign(1.,del(i,2))) d(i,1) = 0.
-         if (sign(1.,del(i,2)) /= sign(1.,del(i,3)) .and. abs(d(i,1)) > abs(3*del(i,2))) d(i,1) = 3.*del(i,1)
-         d(i,nk) = ((2.*h(i,nk) + h(i,nk-1))*del(i,nk) - h(i,nk)*del(i,nk-1)) / (h(i,nk) + h(i,nk-1))
-         if (sign(1.,d(i,nk)) /= sign(1.,del(i,nk))) d(i,nk) = 0.
-         if (sign(1.,del(i,nk)) /= sign(1.,del(i,nk-1)) .and. abs(d(i,nk)) < abs(3*del(i,nk))) d(i,nk) = 3.*del(i,nk)
-
       enddo
+
+      ! Compute slopes at end points
+      d(:,nk) = ((2.*h(:,nk) + h(:,nk-1))*del(:,nk) - h(:,nk)*del(:,nk-1)) / (h(:,nk) + h(:,nk-1))
+      where (sign(1.,d(:,nk)) /= sign(1.,del(:,nk))) d(:,nk) = 0.
+      where (sign(1.,del(:,nk)) /= sign(1.,del(:,nk-1)) .and. abs(d(:,nk)) < abs(3*del(:,nk))) d(:,nk) = 3.*del(:,nk)
+      d(:,1) = ((2.*h(:,2) + h(:,3))*del(:,2) - h(:,2)*del(:,3)) / (h(:,2) + h(:,3))
+      where (sign(1.,d(:,2)) /= sign(1.,del(:,2))) d(:,1) = 0.
+      where (sign(1.,del(:,2)) /= sign(1.,del(:,3)) .and. abs(d(:,1)) > abs(3*del(:,2))) d(:,1) = 3.*del(:,1)
  
+      ! Successful completion
+      status = PCHIP_OK
       return
-   end subroutine pchip_slopes
+   end function pchip_slopes
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   function upper(str) result(uc_str)
+      use clib_itf_mod, only: clib_toupper
+      ! Return an upper cased version of a string
+      character(len=*), intent(in) :: str
+      character(len=len_trim(str)) :: uc_str
+ 
+      ! Local variables
+      integer :: istat
+
+      ! Upper case string
+      uc_str = str
+      istat = clib_toupper(uc_str)
+
+      ! End of subprogram
+      return
+   end function upper
 
 end module pchip_utils

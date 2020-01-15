@@ -80,6 +80,7 @@
                 rhsf(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 rhsp(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 rhsb(l_minx:l_maxx,l_miny:l_maxy))
+      rhsu=0.;rhsv=0.;rhst=0.;rhsc=0.;rhsw=0.;rhsf=0.;rhsp=0.;rhsb=0.
 
       allocate (orhsu(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsv(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
@@ -87,6 +88,7 @@
                 orhsc(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsw(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsf(l_minx:l_maxx,l_miny:l_maxy,l_nk))
+      orhsu=0.;orhsv=0.;orhst=0.;orhsc=0.;orhsw=0.;orhsf=0.
 
       allocate (nl_u(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
                 nl_v(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&

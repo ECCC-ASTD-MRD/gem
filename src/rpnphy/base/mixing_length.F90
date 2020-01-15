@@ -94,7 +94,6 @@ contains
    end function ml_put_s
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   !#TODO: always return true! One liner... should be inline (marco or compiler-inline)
    integer function ml_tfilt(zn,znold,tau,kount) result(stat)
       ! Time filtering of mixing length scale
       use phy_options, only: pbl_zntau
@@ -127,7 +126,6 @@ contains
    end function ml_tfilt
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   !#TODO: always return true!
    integer function ml_blend(znblend,zn1,zn2,zz,sigma,ps) result(stat)
       ! Blend two mixing lengths using a prescribed vertical profile
 
@@ -170,7 +168,6 @@ contains
    end function ml_blend
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   !#TODO: always return true!
    integer function ml_calc_blac(zn,rig,w_cld,zz,z0,fm,hpbl,lh,dxdy,przn) result(stat)
       ! Compute the Blackadar (1962) mixing length scale
 

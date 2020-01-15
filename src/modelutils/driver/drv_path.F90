@@ -41,7 +41,7 @@ module drv_path_mod
         drv_path_output_S = '.'
    !@Description
    !@/
-
+!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
@@ -136,6 +136,13 @@ contains
       drv_path_config_dir_S = drv_path_work_S
       call priv_add_path_element('config_dir',drv_path_config_dir_S,' ')
 
+!!$      path_ind_S = trim(path_input_S)//'/MODEL_INPUT' !TODO-later:
+!!$      path_ind_S = trim(path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)
+!!$      path_phy_S = trim(path_input_S)//'/'
+!!$      err = clib_getcwd(pwd_S)
+!!$      Path_nml_S    = trim(pwd_S)//'/model_settings'
+!!$      Path_outcfg_S = trim(pwd_S)//'/output_settings'
+!!$      Path_phyincfg_S = trim(pwd_S)//'/physics_input_table'
       call msg(MSG_DEBUG,'[END] drv_path_set')
       !---------------------------------------------------------------------
       return

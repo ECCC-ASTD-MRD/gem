@@ -56,7 +56,7 @@ subroutine ebudget_svs1(TSA, WD1, WF, &
    real WD1(N), WF(N)
    real RG(N), ALVG(N), RAT(N), THETAA(N), FCOR(N)
    real ZUSL(N), ZTSL(N)
-   real HU(N), PS(N), RHOA(N), WTA(N,svs_tilesp1), Z0(N), Z0H(N)
+   real HU(N), PS(N), RHOA(N), WTA(N,indx_svs_ag), Z0(N), Z0H(N)
    real HV(N), DEL(N), RS(N)
    real CG(N), CVP(N),  PSNG(N), EMIS(N)
    real LAI(N), GAMVEG(N), ALGR(N), EMGR(N)

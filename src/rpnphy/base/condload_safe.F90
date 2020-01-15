@@ -5,7 +5,7 @@
 !of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
 !version 3 or (at your option) any later version that should be found at:
 !http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-
+!
 !This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 !without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
@@ -13,96 +13,113 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-
-!> Perform the precipitation fallout
-!>
-!> @param[inout] qliq Liquid water in the cloud layer as input
-!>    liquid water after the precipitation fallout as output
-!> @param[inout] qice Cloud ice in the cloud layer as input
-!>    cloud ice after the precipitation fallout as output
-!> @param[inout] wtw W*W of the updraft as input new vertical
-!>    velocity with the condensation load effect as output
-!>
-!> @param[in] dz Row number
-!> @param[in] buoyancy Buoyancy term for the updraft
-!> @param[in] enterm Entrainment term for the updraft
-!> @param[in] rate Rate of precipitation fallout production in the
-!>          updraft (= 0.01)
-!> @param[in] qnewlq Fresh liquid water condensate in the updraft
-!> @param[in] qnewic Fresh cloud ice in the updraft
-!>
-!> @param[out] qlqout Precipitation fallout (liquid water)
-!> @param[out] qicout Precipitation fallout (cloud ice)
-!>
-!>
-!>  9/18/88...This precipitation fallout scheme is based on the scheme
-!>  used by Ogura and Cho (1973). Liquid water fallout from a parcel
-!>  is calculated using the equation dq=-rate*q*dt, but to simulate a
-!>  quasi-continuous process, and to eliminate a dependency on vertical
-!>  resolution, this is expressed as q=q*exp(-rate*dz).
-!>
-!> @date 1998
-!> @author Kain and Fritsch
-!> @author Stephane Belair
-!> @author A-M Leduc
-subroutine condload_safe(qliq, qice, wtw, dz, buoyancy, enterm, rate, &
-   qnewlq, qnewic, qlqout, qicout, grav)
-
-#ifdef __INTEL_COMPILER
-   use ifport
+!** S/P CONDLOAD_SAFE
+SUBROUTINE CONDLOAD_SAFE(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
+     QNEWIC,QLQOUT,QICOUT,GRAV)
+  !
+  !
+#ifdef WITH_intel
+  use ifport
 #endif
-   implicit none
+  implicit none
+!!!#include <arch_specific.hf>
+  !
+  !
+  REAL BOTERM,CONV,DZ
+  REAL ENTERM,GRAV,G1
+  REAL QEST,QICE,QICOUT,QLIQ,QLQOUT,QNEW
+  REAL QNEWIC,QNEWLQ,QTOT,RATE
+  REAL RATIO3,RATIO4,WAVG,WTW
+  integer(2) control,control_nodivzero,status
+  !
+  !AUTHOR
+  !          Kain and Fritsch   (1988)
+  !
+  !REVISION
+  ! 001      Stephane Belair (1994)
+  ! 002      A-M Leduc       (2001)  Adaptation to physics 3.7
+  !
+  !OBJECT
+  !          to perform the precipitation fallout
+  !
+  !ARGUMENTS
+  !
+  !          - INPUT/OUTPUT -
+  ! QLIQ     liquid water in the cloud layer as input
+  !          liquid water after the precipitation fallout as output
+  ! QICE     cloud ice in the cloud layer as input
+  !          cloud ice after the precipitation fallout as output
+  ! WTW      W*W of the updraft as input
+  !          new vertical velocity with the condensation load
+  !          effect as output
+  !
+  !          - INPUT -
+  ! DZ       row number
+  ! BOTERM   buoyancy term for the updraft
+  ! ENTERM   entrainment term for the updraft
+  ! RATE     rate of precipitation fallout production in the
+  !          updraft (= 0.01)
+  ! QNEWLQ   fresh liquid water condensate in the updraft
+  ! QNEWIC   fresh cloud ice in the updraft
+  !
+  !          - Output -
+  ! QLQOUT   precipitation fallout (liquid water)
+  ! QICOUT   precipitation fallout (cloud ice)
+  !
+  !
+  !Notes
+  !  9/18/88...This precipitation fallout scheme is based on the scheme
+  !  used by Ogura and Cho (1973). Liquid water fallout from a parcel
+  !  is calculated using the equation dq=-rate*q*dt, but to simulate a
+  !  quasi-continuous process, and to eliminate a dependency on vertical
+  !  resolution, this is expressed as q=q*exp(-rate*dz).
+  !*
+  !
+  QTOT=QLIQ+QICE
+  QNEW=QNEWLQ+QNEWIC
+  !
+  !
+  !
+  !                              Estimate the vertical velocity so that
+  !                              an average vertical velocity can be
+  !                              calculated to estimate the time required
+  !                              ascent between model levels.
+  !
+  QEST=0.5*(QTOT+QNEW)
+  !
+  !                              Solve for the vertical motion.
+  !
 
-   real, intent(inout) :: qliq, qice, wtw
-   real, intent(in) :: dz, buoyancy, enterm, rate, qnewlq, qnewic, grav
-   real, intent(out) :: qlqout, qicout
-
-   real :: g1, qnew, qest, qtot, wavg
-   ! These varaibles have values assigned, but never used
-   ! I guess they exist to test the FP operations status
-   real :: conv, ratio3, ratio4
-   integer(2) :: control, control_nodivzero, status
-
-   qtot = qliq + qice
-   qnew = qnewlq + qnewic
-
-   ! Estimate the vertical velocity so that
-   ! an average vertical velocity can be
-   ! calculated to estimate the time required
-   ! ascent between model levels.
-
-   qest = 0.5 * (qtot + qnew)
-
-   ! Solve for the vertical motion.
-
-   g1 = wtw + buoyancy - enterm - 2.0 * grav * dz * qest / 1.5
-   if (g1 .lt. 0.0) g1 = 0.0
-   wavg = (sqrt(wtw) + sqrt(g1)) / 2.0
-
-   ! Conversion
-#ifdef __INTEL_COMPILER
-   call getcontrolfpqq(control)
-   control_nodivzero = ior(control, FPCW$ZERODIVIDE)
-   call setcontrolfpqq(control_nodivzero)
-   ! Run all possible div-by-zero calculations.
-   conv = rate * dz / wavg
-   ratio3 = qnewlq / (qnew + 1.E-10)
-   qtot = qtot + 0.6 * qnew
-   ratio4 = (0.6 * qnewlq + qliq) / (qtot + 1.E-10)
-   call getstatusfpqq(status)
-   call clearstatusfpqq()
-   call setcontrolfpqq(control)
-   if (iand(status, FPSW$ZERODIVIDE) > 0) then
-      call condload_infconv(qliq, qice, wtw, dz, buoyancy, enterm, &
-         rate,qnewlq, qnewic, qlqout, qicout, grav)
-   else
-      call condload(qliq, qice, wtw, dz, buoyancy, enterm, rate, &
-         qnewlq, qnewic, qlqout, qicout, grav)
-   endif
+  G1=WTW+BOTERM-ENTERM-2.*GRAV*DZ*QEST/1.5
+  IF(G1.LT.0.0)G1=0.
+  WAVG=(SQRT(WTW)+SQRT(G1))/2.
+  !
+  !                              Conversion
+  !
+#ifdef WITH_intel
+  call getcontrolfpqq(control)
+  control_nodivzero = ior(control,FPCW$ZERODIVIDE)
+  call setcontrolfpqq(control_nodivzero)
+  ! Run all possible div-by-zero calculations.
+  CONV=RATE*DZ/WAVG
+  RATIO3=QNEWLQ/(QNEW+1.E-10)
+  QTOT=QTOT+0.6*QNEW
+  RATIO4=(0.6*QNEWLQ+QLIQ)/(QTOT+1.E-10)
+  call getstatusfpqq(status)
+  call clearstatusfpqq()
+  call setcontrolfpqq(control)
+  if (iand(status,FPSW$ZERODIVIDE) > 0) then
+     call condload_infconv(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
+          QNEWIC,QLQOUT,QICOUT,GRAV)
+  else
+     call condload(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
+          QNEWIC,QLQOUT,QICOUT,GRAV)
+  endif
 #else
-   call condload(qliq, qice, wtw, dz, buoyancy, enterm, rate, qnewlq, &
-      qnewic, qlqout, qicout, grav)
+  call condload(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
+       QNEWIC,QLQOUT,QICOUT,GRAV)
 #endif
 
-   return
-end subroutine condload_safe
+  ! End of safe wrapper
+  return
+end SUBROUTINE CONDLOAD_SAFE

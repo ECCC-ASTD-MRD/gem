@@ -16,8 +16,6 @@ module svs_configs
   implicit none
 
   ! INDEXES FOR SVS SURFACES
-  integer, parameter :: svs_tilesp1  = 5 ! SVS tile + 1 for aggregated value
-  !
   integer, parameter :: indx_svs_ag  = 1 ! AGGREGATED VALUE
   integer, parameter :: indx_svs_bg  = 2 ! BARE GROUND
   integer, parameter :: indx_svs_vg  = 3 ! VEGETATION (NOT COVERED BY SNOW)
@@ -328,7 +326,7 @@ contains
 
     integer I, NI
     real, dimension(ni) :: FVH,FVL,FSNVH,FSN
-    real, dimension(ni,svs_tilesp1) :: WT
+    real, dimension(ni,indx_svs_ag) :: WT
     real, parameter ::  min_wt=0.001 ! [1.=100%] minimum value of weight, otherwise set to zero.
 
     do I=1,NI

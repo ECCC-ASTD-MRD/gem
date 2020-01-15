@@ -458,7 +458,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
          call PHTSYN_SVS ( BUS(x(LAIVF26,1,1))  , BUS(x(VEGF   ,1,1)), &
                         BUS(x(TVEGE  ,1,1))  , ps , &
                         BUS(x(RESAVG ,1,1))  , hu , &
-                        zFSOLIS              , BUS(x(WSOIL ,1,1)), &
+                        BUS(x(RNET_S ,1,1))  , BUS(x(WSOIL ,1,1)), &
                         BUS(x(FROOTD ,1,1))  , SUNCOSA            , &
                         BUS(x(WFC    ,1,1))  , BUS(x(WWILT  ,1,1)), &
                         MASKLAT50            , BUS(x(VGCTEM ,1,1))  , &

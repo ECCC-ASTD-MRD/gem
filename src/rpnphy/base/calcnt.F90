@@ -57,8 +57,6 @@ subroutine calcNT(liqwpin,icewpin,cloud,ecc,ni,nk,nkp)
       real, dimension(ni) :: ecc
       real, dimension(ni,nkp) :: ff
 
-      real, dimension(ni,nk  ) :: tmp2d
-
 !
 !***********************************************************************
 !
@@ -73,12 +71,10 @@ subroutine calcNT(liqwpin,icewpin,cloud,ecc,ni,nk,nkp)
       REI = 15.
       REC_REI = 1. / 15.
       KI = .0003 + 1.290 * REC_REI
-
-      tmp2d = -0.087*elsa*liqwpin
-      call vsexp(ew, tmp2d, nk*ni)
-      tmp2d = -elsa*ki*icewpin
-      call vsexp(ei, tmp2d, nk*ni)
-
+!
+      CALL VSEXP (EW,-0.087*elsa*liqwpin,nk*ni)
+      CALL VSEXP (EI,-elsa*ki*icewpin,nk*ni)
+!
       do k=1,nk
       do I=1,ni
             EW(i,k) = 1. - EW(i,k)
