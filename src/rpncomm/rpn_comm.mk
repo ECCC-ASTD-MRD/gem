@@ -18,7 +18,11 @@ TESTS    = TEST_000.Abs TEST_001.Abs TEST_002.Abs TEST_004.Abs \
            TEST_010.Abs TEST_011.Abs
 
 FMODULES = RPN_COMM_mod.o
+ifeq "$(SERIAL)" ""
 MPI_VERSION = $(shell $(VPATH)/../tools/mpi_version.sh $(VTAG) )
+else
+MPI_VERSION = $(shell $(VPATH)/../tools/mpi_version.sh -none )
+endif
 LIBNAME  = $(LIB)_$(RPN_COMM_version)$(MPI_VERSION)
 LIBRARY  = $(LIBDIR)/lib$(LIBNAME).a
 STUB_LIBRARY = $(LIBDIR)/lib$(LIB)stubs_$(RPN_COMM_version)$(MPI_VERSION).a
@@ -40,6 +44,13 @@ tests:	$(TESTS)
 
 stublib: $(STUB_LIBRARY)
 
+ifeq "$(SERIAL)" ""
+with-stubs: $(LIBRARY) stublib
+	echo "WARNING: not in serial mode, stubs insertion will not be done"
+else
+with-stubs: $(LIBRARY)
+	(cd $(VPATH)/../serial-mpi/stubs ; rm -f *.o ; s.cc -c -I../include rpn_comm_c_stubs.c ; s.f90 -c -I../include rpn_comm_fortran_stubs.F90 ; ar rcv $(LIBRARY) *.o ; rm -f *.o ;)
+endif
 #lib: $(LIBRARY)
 
 inc: $(LIBRARY).inc

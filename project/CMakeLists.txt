@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(GEM NONE)
 
+cmake_policy(SET CMP0066 NEW)
+cmake_policy(SET CMP0056 NEW)
+
 # set the compiler suite by uncommenting one of the following 3 lines:
 set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER intel CACHE compiler)

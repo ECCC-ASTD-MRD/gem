@@ -79,23 +79,6 @@ link:
 - Make sure the compilers and libraries are in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH)
 
-### PGI compiler
-- A configuration for PGI 17.10 is provided by default.  Version 18 can be used
-  by changing a symbolic link:
-    ```
-        cd goas/sources
-        rm Linux-x86_64-pgi.cmake
-        ln -s Linux-x86_64-pgi.cmake_18.4 Linux-x86_64-pgi.cmake
-    ```
-- Make sure the compilers and libraries paths are in the appropriate
-  environment variables (PATH and LD_LIBRARY_PATH).
-  Here are some examples which will need to be adapted for your specific setup:
-    ```
-        export PGI=/local/CUDA/PGI/pgi
-        export LM_LICENSE_FILE=$PGI/license.dat
-        export PATH=$PGI/bin:$PGI/mpi/openmpi/bin:PATH
-        export LD_LIBRARY_PATH=$PGI/lib:$LD_LIBRARY_PATH
-    ```
 
 
 ## Compiling and installing GEM

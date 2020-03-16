@@ -555,41 +555,41 @@ contains
 
    !TODO-later: split out into ezgrid_mpi
    !/@
-   function ezgrid_bcast(F_gridid,F_comm_S,F_from) result(F_grididout)
+   function ezgrid_bcast(F_gridid, F_comm_S, F_from) result(F_grididout)
       implicit none
       !@objective MPI broadcast gridid
       !@arguments
-      integer,intent(in) :: F_gridid
-      character(len=*),intent(in) :: F_comm_S
-      integer,intent(in),optional :: F_from
+      integer, intent(in) :: F_gridid
+      character(len=*), intent(in) :: F_comm_S
+      integer,intent(in), optional :: F_from
       !@author
       !@return
       integer :: F_grididout
       !@/
       logical :: ismaster_L
-      integer :: istat,ns(2),me,master,mysize
-      integer,pointer :: griddata(:)
+      integer :: istat, ns(2), me, master, mysize
+      integer, pointer :: griddata(:)
       ! ---------------------------------------------------------------------
-      call msg_toall(MSG_DEBUG,'(ezgrid_bcast) [BEGIN]')
+      call msg_toall(MSG_DEBUG, '(ezgrid_bcast) [BEGIN]')
       F_grididout = RMN_ERR
 
       master = RPN_COMM_MASTER
       if (present(F_from)) master = F_from
-      call rpn_comm_rank(F_comm_S,me,istat)
+      call rpn_comm_rank(F_comm_S, me, istat)
       ismaster_L = (me == master)
-      
+
       nullify(griddata)
       if (ismaster_L) then
-         istat = ezgrid_serialize(F_gridid,griddata)
+         istat = ezgrid_serialize(F_gridid, griddata)
          ns(1) = size(griddata)
          ns(2) = istat
       endif
       mysize = size(ns)
-      call rpn_comm_bcast(ns,mysize,RPN_COMM_INTEGER,master,F_comm_S,istat)
-      istat = min(ns(2),istat)
+      call rpn_comm_bcast(ns, mysize, RPN_COMM_INTEGER, master, F_comm_S, istat)
+      istat = min(ns(2), istat)
       call collect_error(istat)
-      if (.not.RMN_IS_OK(istat)) then
-         call msg(MSG_ERROR,'(ezgrid_bcast) serialization error, cannot bcast')
+      if (.not. RMN_IS_OK(istat)) then
+         call msg(MSG_ERROR, '(ezgrid_bcast) serialization error, cannot bcast')
          return
       endif
       istat = 0
@@ -615,7 +615,7 @@ contains
          F_grididout = F_gridid
       endif
 
-      deallocate(griddata,stat=istat)
+      deallocate(griddata, stat=istat)
       call msg_toall(MSG_DEBUG,'(ezgrid_bcast) [END]')
       ! ---------------------------------------------------------------------
       return

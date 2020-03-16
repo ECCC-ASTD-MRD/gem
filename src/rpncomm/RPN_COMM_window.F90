@@ -19,7 +19,7 @@
 ! !/
 #define IN_RPN_COMM_window
 #if defined(WITH_DOC)
-!****P* rpn_comm/windows  simplified/restricted version of MPI one sided communications
+!****P* rpn_comm/windows  (simplified/restricted version of MPI one sided communications package)
 ! DESCRIPTION
 !   This is a simplified and restricted version of MPI-2 one sided communications.
 !
@@ -108,6 +108,7 @@ module RPN_COMM_windows
 !******
     implicit none
     integer :: i
+    integer(kind=MPI_ADDRESS_KIND) :: lb
 
     if(ASSOCIATED(win_tab)) return                  ! already initialized, nothing to do
     allocate(win_tab(RPN_COMM_MAX_WINDOWS))         ! allocate for up to RPN_COMM_MAX_WINDOWS windows
@@ -117,7 +118,7 @@ module RPN_COMM_windows
       win_tab(i)%typ = MPI_DATATYPE_NULL            ! and MPI null datatype
       win_tab(i)%win = MPI_WIN_NULL                 ! MPI null window
     enddo
-    call MPI_type_get_extent(MPI_INTEGER, integer_size, i) ! get size(extent) of MPI_INTEGER
+    call MPI_type_get_extent(MPI_INTEGER, lb, integer_size, i) ! get size(extent) of MPI_INTEGER
   end subroutine init_win_tab
 
 !****if* RPN_COMM_windows/win_ptr
@@ -173,6 +174,7 @@ module RPN_COMM_windows
 
     integer :: i, extent, ierror, group
     integer(kind=MPI_ADDRESS_KIND) win_size  ! may be wider than a default integer
+    integer(kind=MPI_ADDRESS_KIND) :: lb
 
     if(.not. associated(win_tab)) call init_win_tab  ! create and initialize window table if necessary
     ierr = RPN_COMM_ERROR                  ! preset for failure
@@ -181,7 +183,7 @@ module RPN_COMM_windows
     call MPI_comm_group(comm,group,ierror)
     if(ierror .ne. MPI_SUCCESS) return     ! error getting group associated with communicator (bad communicator ?)
 
-    call MPI_type_get_extent(typ, extent, ierror)  ! determine size associated with MPI datatype
+    call MPI_type_get_extent(typ, lb, extent, ierror)  ! determine size associated with MPI datatype
     if(ierror .ne. MPI_SUCCESS) return         !  invalid type ? other error ?
     if( mod(extent,integer_size) .ne. 0 ) return    ! extent of data type must be a multiple of integer size
 

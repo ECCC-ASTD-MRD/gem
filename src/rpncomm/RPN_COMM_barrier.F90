@@ -82,7 +82,7 @@
         implicit none
         integer , intent(IN) :: level  ! >= 0, set detail level,  <0 get data from last barrier call !InTf!
         integer , intent(IN) :: nvalues                                                              !InTf!
-        real *8, dimension(nvalues), intent(OUT) :: values                                           !InTf!
+        real(kind=kind(1.d0)), dimension(nvalues), intent(OUT) :: values                                           !InTf!
 
         RPN_COMM_barrier_data = -1  ! precondition to error
 

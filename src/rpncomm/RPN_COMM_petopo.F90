@@ -294,7 +294,7 @@
       use rpn_comm
       implicit none                                                !InTf!
       integer, intent(IN) :: x,y,grd,sgrd                          !InTf!
-      character *(*), intent(IN) :: communicator                   !InTf!
+      character (len=*), intent(IN) :: communicator                   !InTf!
 
       integer ordinal
 

@@ -35,7 +35,7 @@ if which poe 1>/dev/null 2>/dev/null ; then
   rm -f $MP_HOSTFILE
 else
 #  ${MPIRUN} -n 1 ./make_mpif_include | grep '#define' >mpi_stub.h
-  ./make_mpif_include | grep '#define'  >mpi_stub.h
+  ./make_mpif_include | grep '#define' >mpi_stub.h
 fi
 rm -f make_mpif_include.f90 make_mpif_include
 if [[ "$1" == fortran || "$1" == all ]] ; then

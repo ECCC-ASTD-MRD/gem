@@ -4,18 +4,18 @@
 #endif
 #if ! defined(IN_RPN_COMM_C_interface)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_chdir(string)
       implicit none
       character (len=*) :: string
       end function RPN_COMM_chdir
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_env_var(varname,value)
       implicit none
       character (len=*), intent(IN) :: varname
       character (len=*), intent(OUT) :: value
       end subroutine RPN_COMM_env_var
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_hostid()
       implicit none
       end function RPN_COMM_hostid
@@ -23,31 +23,31 @@
 #endif
 #if ! defined(IN_RPN_COMM_WTIME)
       interface
-!InTf!                                                                                                                                                                                                                                                          
-        real*8 function RPN_COMM_wtime()
+!InTf!
+        real(kind=kind(1.d0)) function RPN_COMM_wtime()
         implicit none
         end function RPN_COMM_wtime
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_barrier)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         SUBROUTINE RPN_COMM_barrier(com,ierr)
         implicit none
         integer, intent(OUT) :: ierr
         character(len=*), intent(IN) ::  com
       end SUBROUTINE RPN_COMM_barrier
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         integer function RPN_COMM_barrier_data(level,values,nvalues)
         integer , intent(IN) :: level
         integer , intent(IN) :: nvalues
-        real *8, dimension(nvalues), intent(OUT) :: values
+        real(kind=kind(1.d0)), dimension(nvalues), intent(OUT) :: values
         end function RPN_COMM_barrier_data
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_bcast)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_bcastc(buffer,count,datatype,root,com,ierr)
       implicit none
       integer, intent(IN) :: count,root
@@ -59,18 +59,18 @@
 #endif
 #if ! defined(IN_RPN_COMM_bloc)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_bloc(nblocx,nblocy)
       implicit none
       integer, intent(IN) :: nblocx, nblocy
       end function RPN_COMM_bloc
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_bloc_find(nblocx,nblocy,set)
       implicit none
       integer, intent(IN) :: nblocx, nblocy
       logical, intent(IN) :: set
       end function RPN_COMM_bloc_find
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_bloc_create(nblocx,nblocy)
       implicit none
       integer, intent(IN) :: nblocx, nblocy
@@ -79,7 +79,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_bloctopo)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_bloctopo(blocme,blocmex,blocmey,blocsizex,bloc&
      &sizey)
       implicit none
@@ -90,7 +90,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_carac)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_carac(npex,npey,me,medomm,mex,mey,sizex,sizey,&
      &ismaster, mymaster, mybloc, myblocx,myblocy,blocme,domname)
       implicit none
@@ -103,7 +103,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_colors)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_colors(comm)
       implicit none
       character(len=*) :: comm
@@ -112,19 +112,19 @@
 #endif
 #if ! defined(IN_RPN_COMM_comm)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_comm(com)
       implicit none
       character(len=*), intent(IN) :: com
       end function RPN_COMM_comm
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_custom_comm(mpicom,name,mode)
       implicit none
       character(len=*), intent(IN) :: name
       integer, intent(IN) :: mpicom
       integer, intent(IN) :: mode
       end function RPN_COMM_custom_comm
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         subroutine RPN_COMM_i_comm(ctyp_c,ctyp,mcom)
             import :: rpncomm_communicator
         type(rpncomm_communicator), intent(OUT) :: ctyp
@@ -135,7 +135,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_const)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
           subroutine RPN_COMM_const(IER)
           implicit none
           integer, intent(OUT) :: IER
@@ -144,35 +144,35 @@
 #endif
 #if ! defined(IN_RPN_COMM_datyp)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         integer function RPN_COMM_datyp_indx(data_int)
         implicit none
         character(len=*), intent(IN) :: data_int
         end function RPN_COMM_datyp_indx
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         integer function RPN_COMM_datyp(data_int)
         implicit none
         character(len=*), intent(IN) :: data_int
         end function RPN_COMM_datyp
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         subroutine RPN_COMM_i_datyp(dtyp_c,dtyp)
             import :: rpncomm_datatype
         type(rpncomm_datatype), intent(OUT) :: dtyp
         character(len=*), intent(IN) :: dtyp_c
         end subroutine RPN_COMM_i_datyp
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         subroutine RPN_COMM_i_user_datyp(dtyp_m,dtyp)
             import :: rpncomm_datatype
         type(rpncomm_datatype), intent(OUT) :: dtyp
         integer, intent(IN) :: dtyp_m
         end subroutine RPN_COMM_i_user_datyp
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         function RPN_COMM_i_valid_datyp(dtyp) result(valid)
             import :: rpncomm_datatype
         type(rpncomm_datatype), intent(IN) :: dtyp
         logical :: valid
         end function RPN_COMM_i_valid_datyp
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         function RPN_COMM_i_datyp_extent(dtyp) result(extent)
             import :: rpncomm_datatype
         type(rpncomm_datatype), intent(IN) :: dtyp
@@ -182,7 +182,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_defo)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_defo(com)
         implicit none
         character(len=*), intent(IN) ::  com
@@ -254,7 +254,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_finalize)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_finalize(ierr)
       implicit none
       integer, intent(OUT) ::  ierr
@@ -263,12 +263,12 @@
 #endif
 #if ! defined(IN_RPN_COMM_grank)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         logical function RPN_COMM_grank(com)
         implicit none
         character(len=*), intent(IN) :: com
         end function RPN_COMM_grank
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         logical function RPN_COMM_ngrank(group)
         implicit none
         integer, intent(IN) :: group
@@ -294,7 +294,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_group)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_group(com,rgroup,rcom)
         import :: rpncomm_group
         import :: rpncomm_communicator
@@ -303,7 +303,7 @@
       type(rpncomm_group), intent(OUT) :: rgroup
       type(rpncomm_communicator), optional, intent(IN) :: rcom
       end subroutine RPN_COMM_i_group
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_group(com)
       implicit none
       character(len=*), intent(IN) :: com
@@ -312,7 +312,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_haloflip)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_haloflip(g,minx,maxx,miny,maxy,ni,nj,nk,halox,&
      &haloy,ggni)
         implicit none
@@ -324,25 +324,25 @@
 #endif
 #if ! defined(IN_RPN_COMM_init)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_mydomain (call_back, mydomain)
       implicit none
       external :: call_back
       integer, intent(OUT) :: mydomain
       end subroutine RPN_COMM_mydomain
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_world_set(world_comm)
       implicit none
       integer, intent(IN) ::  world_comm
       end subroutine RPN_COMM_world_set
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_init(Userinit,Pelocal,Petotal,Pex,Pey)
       implicit none
       integer, intent(out)   :: Pelocal,Petotal
       integer, intent(inout) :: Pex,Pey
       external Userinit
       end SUBROUTINE RPN_COMM_init
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       INTEGER FUNCTION RPN_COMM_init_multigrid(Userinit,Pelocal,Petotal,&
      &Pex,Pey,MultiGrids)
       implicit none
@@ -351,7 +351,7 @@
       integer, intent(inout) :: Pex,Pey
       integer, intent(in)    :: MultiGrids
       end FUNCTION RPN_COMM_init_multigrid
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       INTEGER FUNCTION RPN_COMM_init_multi_level(Userinit,Pelocal,Petota&
      &l,Pex,Pey,MultiGrids,Grids)
       implicit none
@@ -467,7 +467,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_limit)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_limit_2(my_id, npe, gmin, gmax,lmini,lma&
      &xi,count, offset,relax)!InTf!
       implicit none
@@ -475,7 +475,7 @@
       integer, intent(OUT) :: lmini,lmaxi
       integer, intent(OUT) :: count(npe),offset(npe)
       end function RPN_COMM_limit_2
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_limit(my_id, npe, gmin, gmax, lmini,lmax&
      &i,count, offset)
       implicit none
@@ -487,7 +487,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_low2up)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         SUBROUTINE RPN_COMM_UP2LOW(S1,S2)
         implicit none
         character (len=*), intent(IN) :: S1
@@ -497,7 +497,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_mype)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_mype(Me,Me_x,Me_y)
       implicit none
       integer, intent(OUT) ::  Me,Me_x,Me_y
@@ -506,7 +506,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_oper)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         integer function RPN_COMM_oper(op)
         implicit none
         character(len=*), intent(IN) :: op
@@ -525,13 +525,13 @@
 #endif
 #if ! defined(IN_RPN_COMM_options)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_option_L(name_S,value_L)
       implicit none
       character(len=*), intent(IN) :: name_S
       logical, intent(IN) :: value_L
       end function RPN_COMM_option_L
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_option(name_S,value)
       implicit none
       character(len=*), intent(IN) :: name_S
@@ -541,32 +541,32 @@
 #endif
 #if ! defined(IN_RPN_COMM_optn)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_optn(op_type,op_ival,op_rval,op_cval)
       implicit none
       character(len=*), intent(IN) :: op_type, op_cval
       integer, intent(IN) :: op_ival
-      real *4, intent(IN) :: op_rval
+      real(kind=kind(1.0)), intent(IN) :: op_rval
       end SUBROUTINE RPN_COMM_optn
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_petopo)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_set_petopo(sizx,sizy)
       implicit none
       integer, intent(IN) :: sizx,sizy
       end subroutine RPN_COMM_set_petopo
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_petopo(pex,pey)
       implicit none
       integer, intent(IN) :: pex,pey
       end function RPN_COMM_petopo
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_get_pe(x,y,grd,sgrd,communicator)
       implicit none
       integer, intent(IN) :: x,y,grd,sgrd
-      character *(*), intent(IN) :: communicator
+      character (len=*), intent(IN) :: communicator
       end function RPN_COMM_get_pe
       end interface
 #endif
@@ -692,7 +692,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_qadl)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_qadl(ipe,ni,nj,i0,in,j0,jn)
       implicit none
           integer, intent(OUT) :: i0,in,j0,jn
@@ -702,7 +702,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_rank)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_rank( com, rank ,ierr )
       implicit none
       character(len=*),intent(in) :: com
@@ -713,7 +713,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_size)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         SUBROUTINE RPN_COMM_size( com, size ,ierr )
       implicit none
       integer, intent(OUT) :: ierr,size
@@ -723,7 +723,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_split)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_split(mex,nx,nxg,minx,maxx,nxl,nxlmax,ha&
      &lox,nx0,fill)
       implicit none
@@ -733,9 +733,24 @@
       end function RPN_COMM_split
       end interface
 #endif
+#if ! defined(IN_RPN_COMM_split_by_node)
+      interface
+!InTf!
+      subroutine RPN_COMM_split_by_node(origcomm, nodecomm, peercomm, no&
+     &derank, peerrank, isiz, err)
+        integer, intent(IN)  :: origcomm
+        integer, intent(OUT) :: nodecomm
+        integer, intent(OUT) :: peercomm
+        integer, intent(OUT) :: noderank
+        integer, intent(OUT) :: peerrank
+        integer, intent(OUT) :: isiz
+        integer, intent(OUT) :: err
+      end subroutine RPN_COMM_split_by_node
+      end interface
+#endif
 #if ! defined(IN_RPN_COMM_spread)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_spread(contxt,source,npts,ndata,dest)  result(st&
      &atus)
         use ISO_C_BINDING
@@ -747,7 +762,7 @@
         real, dimension(:,:), pointer, intent(INOUT) :: dest
         integer :: status
       end function RPN_COMM_spread
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_spread_context(contxt,com,rootpe,pe,npts) result&
      &(status)
         use ISO_C_BINDING
@@ -764,7 +779,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_status_size)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         subroutine RPN_COMM_status_size(status_size)
         implicit none
         integer, intent(OUT) :: status_size
@@ -773,7 +788,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_topo)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_topo_2(nxg,minx,maxx,nxl,nxlmax,halo,nx0&
      &,alongx,fill,relax,abort)
       implicit none
@@ -781,7 +796,7 @@
       logical, intent(in) :: alongx,fill,abort
       integer, intent(out):: minx,maxx,nxl,nxlmax,nx0
         end  function RPN_COMM_topo_2
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_topo(nxg,minx,maxx,nxl,nxlmax,halo,nx0,a&
      &longx,fill)
       implicit none
@@ -793,7 +808,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_topo_xy)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       integer function RPN_COMM_topo_xy(nig,njg,mini,maxi,minj,maxj,nil,&
      &njl,haloi,haloj,peri,perj)
       implicit none
@@ -805,7 +820,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_unit)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         subroutine RPN_COMM_unit(unit)
         implicit none
         integer, intent(IN) ::  unit
@@ -814,7 +829,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_window)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_group(window,pes_to,pes_from,ierr)
         import :: rpncomm_window
         type(rpncomm_window), intent(IN) :: window
@@ -822,7 +837,7 @@
         integer, dimension(:), intent(IN) :: pes_from
         integer, intent(OUT) :: ierr
       end subroutine RPN_COMM_i_win_group
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_oper(window,oper,ierr)
         import :: rpncomm_window
         import :: rpncomm_operator
@@ -830,7 +845,7 @@
         type(rpncomm_operator), intent(IN) :: oper
         integer, intent(OUT) :: ierr
       end subroutine RPN_COMM_i_win_oper
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_create(window,dtype,siz,com,array,ierr)
         import :: C_PTR
         import :: rpncomm_window, rpncomm_datatype, rpncomm_communicator
@@ -840,16 +855,16 @@
         integer, intent(IN) :: siz
         type(rpncomm_communicator), intent(IN) :: com
         type(C_PTR), intent(IN), value :: array
-! VOID$ array                                                                                                                                                                                                                                                   
+! VOID$ array
       end subroutine RPN_COMM_i_win_create
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_free(window,ierr)
         import :: C_PTR
         import :: rpncomm_window
         integer, intent(OUT) :: ierr
         type(rpncomm_window), intent(INOUT) :: window
       end subroutine RPN_COMM_i_win_free
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_open(window,active,ierr)
         import :: C_PTR
         import :: rpncomm_window
@@ -857,14 +872,14 @@
         type(rpncomm_window), intent(IN) :: window
         logical, intent(IN) :: active
       end subroutine RPN_COMM_i_win_open
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_close(window,ierr)
         import :: C_PTR
         import :: rpncomm_window
         integer, intent(OUT) :: ierr
         type(rpncomm_window), intent(IN) :: window
       end subroutine RPN_COMM_i_win_close
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_i_valid_win(window,ierr) result(is_valid)
         import :: C_PTR
         import :: rpncomm_window
@@ -872,7 +887,7 @@
         type(rpncomm_window), intent(IN) :: window
         logical :: is_valid
       end function RPN_COMM_i_valid_win
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_i_win_check(window,ierr) result(is_open)
         import :: C_PTR
         import :: rpncomm_window
@@ -880,7 +895,7 @@
         type(rpncomm_window), intent(IN) :: window
         logical :: is_open
       end function RPN_COMM_i_win_check
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_i_win_get_ptr(window,ierr) result(ptr)
         import :: C_PTR
         import :: rpncomm_window
@@ -888,14 +903,14 @@
         type(rpncomm_window), intent(IN) :: window
         type(C_PTR) :: ptr
       end function RPN_COMM_i_win_get_ptr
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       function RPN_COMM_i_win_get_size(window,ierr) result(siz)
         import :: rpncomm_window
         integer, intent(OUT) :: ierr
         type(rpncomm_window), intent(IN) :: window
         integer :: siz
       end function RPN_COMM_i_win_get_size
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_put_r(window,larray,targetpe,offset,nele&
      &m,ierr)
         import :: C_PTR
@@ -907,7 +922,7 @@
         integer, intent(IN) :: offset
         integer, intent(IN) :: nelem
       end subroutine RPN_COMM_i_win_put_r
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_acc_r(window,larray,targetpe,offset,nele&
      &m,oper,ierr)
         import :: C_PTR
@@ -921,7 +936,7 @@
         integer, intent(IN) :: offset
         integer, intent(IN) :: nelem
       end subroutine RPN_COMM_i_win_acc_r
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_put_l(window,larray,offset,nelem,ierr)
         import :: C_PTR
         import :: rpncomm_window
@@ -931,7 +946,7 @@
         integer, intent(IN) :: offset
         integer, intent(IN) :: nelem
       end subroutine RPN_COMM_i_win_put_l
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_get_r(window,larray,target,offset,nelem,&
      &ierr)
         import :: C_PTR
@@ -943,7 +958,7 @@
         integer, intent(IN) :: offset
         integer, intent(IN) :: nelem
       end subroutine RPN_COMM_i_win_get_r
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       subroutine RPN_COMM_i_win_get_l(window,larray,offset,nelem,ierr)
         import :: C_PTR
         import :: rpncomm_window
@@ -957,7 +972,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_xch_halo)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
       SUBROUTINE RPN_COMM_exchange_halo(pattern,array,periodx,periody,pe&
      &riodp,npol_row)
           import ::  rpncomm_pattern, c_ptr
@@ -971,7 +986,7 @@
 #endif
 #if ! defined(IN_RPN_COMM_shmget)
       interface
-!InTf!                                                                                                                                                                                                                                                          
+!InTf!
         function rpn_comm_shmget(comm,size) result(where)
         use ISO_C_BINDING
         implicit none
