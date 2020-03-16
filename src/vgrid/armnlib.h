@@ -35,7 +35,7 @@ void f77name(cxgaig)(char *grtyp,
 void f77name(cigaxg)(char *grtyp,
     F77_REAL *xg1,F77_REAL *xg2,F77_REAL *xg3,F77_REAL *xg4,
     F77_INTEGER *ig1,F77_INTEGER *ig2,F77_INTEGER *ig3,F77_INTEGER *ig4);
-void f77name(convip)(F77_INTEGER *ipnew,F77_REAL *level,F77_INTEGER *fkind,
+void f77name(convip_plus)(F77_INTEGER *ipnew,F77_REAL *level,F77_INTEGER *fkind,
     F77_INTEGER *fmode,char *strg,F77_INTEGER *flag,F77_INTEGER strglen);
 int f77name(newdate)(F77_INTEGER *fdat1,F77_INTEGER *fdat2,
     F77_INTEGER *fdat3,F77_INTEGER *fmode);

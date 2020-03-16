@@ -23,7 +23,7 @@
 	implicit none                                              !InTf!
 	character(len=*), intent(IN) :: op_type, op_cval           !InTf!
 	integer, intent(IN) :: op_ival                             !InTf!
-	real *4, intent(IN) :: op_rval                             !InTf!
+	real(kind=kind(1.0)), intent(IN) :: op_rval                             !InTf!
 !*
 !        include 'rpn_comm.h'
 !        include 'mpif.h'

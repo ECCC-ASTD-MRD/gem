@@ -67,6 +67,7 @@ contains
     integer, intent(IN) :: mpicom            ! MPI integer communicator
     integer :: indx
 
+    if(.not. associated(com_tab)) call init_com_tab
     if(max_com_index < MAX_COMM_TAB) then
       max_com_index = max_com_index + 1
       com_tab(max_com_index)%number = mpicom
@@ -113,6 +114,7 @@ end module rpncomm_com
       character(len=32) comm
       integer :: i, indx
 
+      if(.not. associated(com_tab)) call init_com_tab
       call rpn_comm_low2up(com,comm)
 !print *,'DEBUG: avant indx_com_tab'
       indx = indx_com_tab(comm)

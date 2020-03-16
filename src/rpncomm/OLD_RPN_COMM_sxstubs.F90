@@ -1,6 +1,5 @@
 !/* RPN_COMM - Library of useful routines for C and FORTRAN programming
-! * Copyright (C) 1975-2013 Division de Recherche en Prevision
-! Numerique
+! * Copyright (C) 1975-2015  Division de Recherche en Prevision Numerique
 ! *                          Environnement Canada
 ! *
 ! * This library is free software; you can redistribute it and/or
@@ -18,26 +17,44 @@
 ! * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ! * Boston, MA 02111-1307, USA.
 ! */
-!InTf!
-        real(kind=kind(1.d0)) function RPN_COMM_wtime()            !InTf!
-        implicit none                               !InTf!
-!
-        include 'mpif.h'
-!
-        integer :: myrank, ierr
-        logical,save :: display = .TRUE.
-!
-        if (display) then
-           call MPI_COMM_RANK(MPI_COMM_WORLD, myrank,ierr)
-           if (myrank == 0) then
-              write (6,100) MPI_Wtick()
-           endif
-           display = .FALSE.
-        endif
-
-        RPN_COMM_wtime = MPI_Wtime()
-
- 100    format ('RPN_COMM_wtime timer resolution:',ES9.2,' s')
-        return
-        end function RPN_COMM_wtime                  !InTf!
-
+! 
+      complex *16 function r8ivecc()
+      r8ivecc=0
+      return
+      end
+      complex *16 function r8ifpec()
+      r8ifpec=0
+      return
+      end
+      complex *16 function r8irtc()
+      r8irtc=0
+      return
+      end
+      complex *16 function r8icpc()
+      r8icpc=0
+      return
+      end
+      complex *16 function r8iitm()
+      r8iitm=0
+      return
+      end
+      complex *16 function r8icmcc()
+      r8icmcc=0
+      return
+      end
+      complex *16 function r8ibccc()
+      r8ibccc=0
+      return
+      end
+      complex *16 function r8isex()
+      r8isex=0
+      return
+      end
+      complex *16 function r8isvx()
+      r8isvx=0
+      return
+      end
+      complex *16 function r8imvl()
+      r8imvl=1
+      return
+      end

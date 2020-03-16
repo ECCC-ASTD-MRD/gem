@@ -200,7 +200,8 @@
          do j=iymin,iymax
          do i=ixmin,ixmax
            garr(isz,nil*ipe+i,njl*jpe+j,k)=&
-           temp(isz,i+halox,j+haloy,k,ipe+nx*jpe+1)
+           temp(isz,i+halox,j+haloy,k,1+pe_id(ipe,jpe))  ! use proper mapping table instead of hardwired linear mapping
+!            temp(isz,i+halox,j+haloy,k,ipe+nx*jpe+1)    ! BUGGED code
          enddo
          enddo
          enddo

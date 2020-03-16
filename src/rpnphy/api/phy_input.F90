@@ -266,8 +266,8 @@ contains
                     &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
             endif
 
-            if (associated(data)) deallocate(data,stat=istat2)
-            if (associated(data2)) deallocate(data2,stat=istat2)
+!            if (associated(data)) deallocate(data,stat=istat2)
+!            if (associated(data2)) deallocate(data2,stat=istat2)
 
             call collect_error(istat)
             if (.not.RMN_IS_OK(istat)) then

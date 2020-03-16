@@ -80,6 +80,7 @@
         if(t%pe_mycol  /= pe_mycol)  cycle
         RPN_COMM_bloc_find = i
         if(set) then  ! set value of variables in module rpn_comm from block distribution table entry 
+          if(.not. associated(com_tab)) call init_com_tab
           BLOC_master     = t%BLOC_master
           BLOC_exist      = t%BLOC_exist
           BLOC_SIZEX      = t%BLOC_SIZEX
@@ -125,6 +126,8 @@
 !     
       RPN_COMM_bloc_create = -1
       nblocs=nblocx*nblocy
+
+      if(.not. associated(com_tab)) call init_com_tab
 !
 !      if(nblocs.eq.1.and.(BLOC_SIZEX*BLOC_SIZEY.eq.1)) then
 !         RPN_COMM_bloc_create = 0
