@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <ctype.h>
 
 #ifndef _XOPEN_SOURCE_EXTENDED
 #define _XOPEN_SOURCE_EXTENDED 
 #endif
 #ifdef NOUI
-int vmenu()
+vmenu()
 {
 printf("cclargs ERROR: Interactive mode NOT SUPPORTED\n");
 exit(1);
@@ -59,8 +57,8 @@ struct definition
     enum typecle type;
 };
 
-
-int main(argc, argv)
+
+main(argc, argv)
 int argc;
 char **argv;
 {
@@ -248,7 +246,7 @@ if(interp== shell) {
 }
 
 
-
+
 /*********************************************************************
  *   initialiser les noms de clefs et les valeurs de defaut          *
  *********************************************************************/
@@ -382,7 +380,7 @@ int *status;
 
 
 
-
+
 /**********************************************************
  *    traitement des arguments en mode positionnel        *
  **********************************************************/
@@ -441,7 +439,7 @@ char **argv;
 }
 
 
-
+
 /*********************************************************************
  *       traitement des arguments en mode equivalence                *
  *********************************************************************/
@@ -539,7 +537,7 @@ int *status;
 }
 
 
-
+
 /*********************************************************
  *             valider un nom de clef                    *
  *********************************************************/
@@ -581,7 +579,7 @@ struct definition defo[];
 }
 
 
-
+
 /**************************************************************
  *     dresser une liste de valeurs de clefs                  *
  **************************************************************/
@@ -645,7 +643,7 @@ enum typecle type;
 } 
 
 
-
+
 /*****************************************************
  *       enlever les deux points d'une chaine        *
  *****************************************************/
@@ -664,7 +662,7 @@ char *arg;
 }
 
 
-
+
 /********************************************************
  *          determiner le type de clef                  *
  ********************************************************/
@@ -698,7 +696,7 @@ char *arg;
 }
 
 
-
+
 /**********************************************************
  *    convertir une valeur de clef selon le type          *
  **********************************************************/
@@ -736,7 +734,7 @@ char *arg;
 }
 
 
-
+
 /******************************************************
  *       imprimer sur stderr la sequence d'appel      *
  ******************************************************/
@@ -779,7 +777,7 @@ char *scriptnom;
 }
 
 
-
+
 /*************************************************************
  *      imprimer les valeurs finales des clefs               *
  *************************************************************/
@@ -836,7 +834,7 @@ struct definition defo[];
 }
 
 
-
+
 /**********************************************************
  *    traitement des arguments  apres le signe --         *
  **********************************************************/
@@ -872,7 +870,7 @@ char **argv;
 
 }
 
-
+
 /*********************************************************************
  *   fonction servant a passer en mode interactif via vmenu          *
  *********************************************************************/
@@ -943,7 +941,7 @@ char *scriptnom, *help_general;
       while(obligatoire(defo));   
 }
 
-
+
 /*******************************************************************
  *   obtenir le nom du script faisant l'appel a cclargs            *
  *******************************************************************/
@@ -981,7 +979,7 @@ int size;
    }
 }
 
-
+
 /************************************************************
  *    fonction servant a verifier si toutes les clefs       *
  *           obligatoires on obtenu une valeur              *

@@ -1,5 +1,7 @@
 !COMP_ARCH=intel-2016.1.156 ; -suppress=-std08
 !COMP_ARCH=PrgEnv-intel-5.2.82  ; -suppress=-std08
+!COMP_ARCH=intel-19.0.3.199 ; -suppress=-std08
+!COMP_ARCH=PrgEnv-intel-6.0.5  ; -suppress=-std08
 !-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
