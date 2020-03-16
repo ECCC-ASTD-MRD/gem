@@ -1,65 +1,63 @@
-C*DECK FSTCOMP
-***PROGRAM FSTCOMP - COMPARAISON DE 2 FICHIERS STANDARDS
-*
+! COMPARAISON DE 2 FICHIERS STANDARDS
       PROGRAM  FSTCOMP
       IMPLICIT NONE
-*
-*AUTEURS
-*     V1.0 ORIGINALE (COMPSTD)   M. LEPINE   (MARS 87)
-*REVISIONS
-* 001 V1.? AJOUT DU MARQUAGE EN CAS D'ERREUR PLUS GRANDE QUE LA LIMITE
-*          SPECIFIEE
-* 002 V4.0 VERSION UNIX/FST). Y BOURASSA (JAN 91)
-* 003 V4.1 POSSIBILITE D'IGNORER LES TYPVAR,NOMVAT,ETIKET,IP1,IP2 ET IP3
-*          LORS DE LA RECHERCHE DANS B. Y BOURASSA (JAN 91)
-* 004 V4.2 MODIFICATIONS AUX SORTIES. Y BOURASSA (FEV 91)
-* 005 V4.3 ACCEPTE LES FICHIERS BINAIRES. Y BOURASSA (AVR 91)
-* 006 V4.4 APPEL A CCARD (AUG 91)
-* 007 V5.0 APPEL A LOW2UP AORES CCARD, BUG DANS 2IE PARAMS
-* 008 V5.1 (JUIL 92)
-* 009 V6.0 (M. Lepine, Jan. 93) tenir compte du format IEEE
-* 010 V6.1 (V. Lee, Dec. 1997) infinite loop when NI/NJ/NK does not match.
-* 011 V6.2 (M. Lepine, avr. 1998) reload avec librmnbeta
-* 012 V6.3 (M. Lepine, avr. 1998) reload avec fstd98
-* 013 V6.4 (M. Lepine, avr. 1998) reload avec fstd98 et librmn32stack_LR.a
-* 014 V6.5 (M. Valin,  avr. 1999) certains calculs faits en real*8
-* 015 V6.6 (M. Lepine, Mai  2000) appel a incdatr au lieu de incdat
-* 016 V6.7 (M. Lepine, Oct  2000) reload pour datev (fstd89)
-* 017 V6.8 (M. Lepine, Jan  2002) mods pour tenir compte des extensions fstd2000
-* 018 V6.9 (M. Lepine, Fev  2003) appel a convip pour afficher les niveaux
-* 019 V7.0 (M. Lepine, Jan  2004) option reduction32 pour type E64, correction de format
-* 019 V7.1 (M. Lepine, Oct  2004) Ajout datatype compresse (>128) et datatype 6
-* 020 V7.2 (M. Lepine, Fev  2005) Reload avec librmn_x
-* 021 V7.3 (M. Lepine, Mars 2005) Ajout de la fonctionnalite des fichiers remote
-* 022 V7.4 (M. Lepine, Fev  2006) Appel a ip1_all 
-* 023 V7.5 (M. Lepine, Mai  2006) Reload, bug fix float_packer 
-* 024 V7.6 (Y. Chartier, Oct. 2006) Reload pour compresseur point flottant
-* 025 V7.7 (M. Lepine, Fev. 2007) Comparaison avec l'erreur du a l'algorithme de compaction 
-* 026 V7.8 (M. Lepine, Juin 2007) Reload avec librmn_009
-* 027 V7.9 (M. Lepine, Avr. 2010) Correction pour affichage de facteur de correlation negatif
-* 028 V8.0 (M. Lepine, Juin 2011) Variables d'exception au convip du IP1
-* 026 V8.1 (M. Lepine, Mai  2012) Reload avec librmn_013
-* 027 V8.2 (M. Lepine, Nov  2012) En cas d'erreur, retourner un code d'erreur avec qqexit
-* 028 V8.3 (M. Lepine, Mars 2014) Utilisation du fichier $ARMNLIB/data/exception_vars
-* 029 V8.4 (M. Lepine, Juil 2014) Remettre ARMNLIB a la place de ARMNLIB_DATA
-* 030 V8.5 (M. Lepine, Dec  2014) Reload avec librmn_015.1
-* 031 V8.6 (M. Lepine, Fev  2015) Reload avec librmn_015.2
-* 031 V8.7a (M. Lepine, Mars  2016) Reload avec librmn_Alpha_016
-* 032 V8.7a (M. Lepine, Avril  2016) Ajout de l'option pour ignorer la verification de grille
-* 033 V8.8 (M. Lepine, Dec  2016) Ajout de statistiques additionnelles
-* 034 V8.9 (M. Lepine, Jan  2017) Eviter le traitement des enregistrements '!!' qui contiennent
-*                                 un melange d'entiers, reels et caracteres
-*
-*OBJET(FSTCOMP)
-*     ETABLIT DES STATISTIQUES DE COMPARAISON ENTRE DEUX FICHIERS
-*     STANDARDS SEQUENTIEL OU ACCES DIRECT, PRODUIT UN RAPPORT.
-*
-*MODULES
+
+!AUTEURS
+!     V1.0 ORIGINALE (COMPSTD)   M. LEPINE   (MARS 87)
+!REVISIONS
+! 001 V1.? AJOUT DU MARQUAGE EN CAS D'ERREUR PLUS GRANDE QUE LA LIMITE
+!          SPECIFIEE
+! 002 V4.0 VERSION UNIX/FST). Y BOURASSA (JAN 91)
+! 003 V4.1 POSSIBILITE D'IGNORER LES TYPVAR,NOMVAT,ETIKET,IP1,IP2 ET IP3
+!          LORS DE LA RECHERCHE DANS B. Y BOURASSA (JAN 91)
+! 004 V4.2 MODIFICATIONS AUX SORTIES. Y BOURASSA (FEV 91)
+! 005 V4.3 ACCEPTE LES FICHIERS BINAIRES. Y BOURASSA (AVR 91)
+! 006 V4.4 APPEL A CCARD (AUG 91)
+! 007 V5.0 APPEL A LOW2UP AORES CCARD, BUG DANS 2IE PARAMS
+! 008 V5.1 (JUIL 92)
+! 009 V6.0 (M. Lepine, Jan. 93) tenir compte du format IEEE
+! 010 V6.1 (V. Lee, Dec. 1997) infinite loop when NI/NJ/NK does not match.
+! 011 V6.2 (M. Lepine, avr. 1998) reload avec librmnbeta
+! 012 V6.3 (M. Lepine, avr. 1998) reload avec fstd98
+! 013 V6.4 (M. Lepine, avr. 1998) reload avec fstd98 et librmn32stack_LR.a
+! 014 V6.5 (M. Valin,  avr. 1999) certains calculs faits en real*8
+! 015 V6.6 (M. Lepine, Mai  2000) appel a incdatr au lieu de incdat
+! 016 V6.7 (M. Lepine, Oct  2000) reload pour datev (fstd89)
+! 017 V6.8 (M. Lepine, Jan  2002) mods pour tenir compte des extensions fstd2000
+! 018 V6.9 (M. Lepine, Fev  2003) appel a convip pour afficher les niveaux
+! 019 V7.0 (M. Lepine, Jan  2004) option reduction32 pour type E64, correction de format
+! 019 V7.1 (M. Lepine, Oct  2004) Ajout datatype compresse (>128) et datatype 6
+! 020 V7.2 (M. Lepine, Fev  2005) Reload avec librmn_x
+! 021 V7.3 (M. Lepine, Mars 2005) Ajout de la fonctionnalite des fichiers remote
+! 022 V7.4 (M. Lepine, Fev  2006) Appel a ip1_all
+! 023 V7.5 (M. Lepine, Mai  2006) Reload, bug fix float_packer
+! 024 V7.6 (Y. Chartier, Oct. 2006) Reload pour compresseur point flottant
+! 025 V7.7 (M. Lepine, Fev. 2007) Comparaison avec l'erreur du a l'algorithme de compaction
+! 026 V7.8 (M. Lepine, Juin 2007) Reload avec librmn_009
+! 027 V7.9 (M. Lepine, Avr. 2010) Correction pour affichage de facteur de correlation negatif
+! 028 V8.0 (M. Lepine, Juin 2011) Variables d'exception au convip du IP1
+! 026 V8.1 (M. Lepine, Mai  2012) Reload avec librmn_013
+! 027 V8.2 (M. Lepine, Nov  2012) En cas d'erreur, retourner un code d'erreur avec qqexit
+! 028 V8.3 (M. Lepine, Mars 2014) Utilisation du fichier $ARMNLIB/data/exception_vars
+! 029 V8.4 (M. Lepine, Juil 2014) Remettre ARMNLIB a la place de ARMNLIB_DATA
+! 030 V8.5 (M. Lepine, Dec  2014) Reload avec librmn_015.1
+! 031 V8.6 (M. Lepine, Fev  2015) Reload avec librmn_015.2
+! 031 V8.7a (M. Lepine, Mars  2016) Reload avec librmn_Alpha_016
+! 032 V8.7a (M. Lepine, Avril  2016) Ajout de l'option pour ignorer la verification de grille
+! 033 V8.8 (M. Lepine, Dec  2016) Ajout de statistiques additionnelles
+! 034 V8.9 (M. Lepine, Jan  2017) Eviter le traitement des enregistrements '!!' qui contiennent
+!                                 un melange d'entiers, reels et caracteres
+
+!OBJET(FSTCOMP)
+!     ETABLIT DES STATISTIQUES DE COMPARAISON ENTRE DEUX FICHIERS
+!     STANDARDS SEQUENTIEL OU ACCES DIRECT, PRODUIT UN RAPPORT.
+
+!MODULES
       EXTERNAL FSTLUK, FSTOUV, FSTFRM, FSTVOI, CCARD, FNOM,
      X         FSTINF, INCDATR, RCMP1D, FSTSUI, EXFIN, FSTOPC,  EXDB,
      X         FSTPRM, FSTNBR, ICMP1D, FSTRWD, ABORT, LOW2UP, convip_plus,
      %         fstopl, ip1_all, qqexit, longueur
-*
+
       CHARACTER*1  GRTYPA, GRTYPB
       CHARACTER*2  TYPVAR, TYPVAB
       CHARACTER*4  NOMVAR, NOMVAB
@@ -94,7 +92,6 @@ C*DECK FSTCOMP
 
       REAL, ALLOCATABLE, DIMENSION (:) :: XX1,XX2
 
-*      DATA exception_vars /'^^  >>  !!  '/
       DATA exception_vars /'^^  >>  !!   ^>  '/
 
       DATA CLE  /'A:', 'B:', 'L',    'AS',  'BS ',  'AF', 'BF',  'LI',
@@ -113,7 +110,7 @@ C*DECK FSTCOMP
      X         / 0, ' ',    ' ',    ' ',   4*-1/
       DATA        ECRIT/ .FALSE. /
 
-*     VALIDE QUAND LA CLE 'X'.NE.'R'
+!     VALIDE QUAND LA CLE 'X'.NE.'R'
       DATA TABLO/ 2, 1, 2, 3, 2, 1, 1,
      X            1, 1, 3, 3, 3, 1, 1,
      X            2, 3, 2, 3, 2, 3, 3,
@@ -121,14 +118,10 @@ C*DECK FSTCOMP
      X            2, 3, 2, 3, 2, 3, 3,
      X            1, 1, 3, 3, 3, 1, 1,
      X            1, 1, 3, 3, 3, 1, 1 /
-*     0=BINAIRE 1=REEL 2=ENTIER 3=CARACTERE 4=ENTIER SANS SIGNE 5=IEEE
-*     NOTE:QUAND LA CLE('X'.EQ.'R') DATA TABLO(0,0)=1
+!     0=BINAIRE 1=REEL 2=ENTIER 3=CARACTERE 4=ENTIER SANS SIGNE 5=IEEE
+!     NOTE:QUAND LA CLE('X'.EQ.'R') DATA TABLO(0,0)=1
 
-C*IF DEF, NEC64
-C      DEF1(8) = '-13'
-C      DEF2(8) = '-13'
-C*ENDIF
-*     EXTRACTION DES CLES DE LA SEQUENCE D'APPEL
+!     EXTRACTION DES CLES DE LA SEQUENCE D'APPEL
 
       include 'version.inc'
 
@@ -138,8 +131,8 @@ C*ENDIF
          CALL LOW2UP(DEF1(I), DEF1(I))
     1    CONTINUE
       READ(DEF1(8), '(I8)') LIMITE
-      READ(DEF1(21),'(I8)') PACK_ERR 
-      
+      READ(DEF1(21),'(I8)') PACK_ERR
+
       VA = DEF1(13) .NE. 'NON'
       IF(VA .AND. (DEF1(13).NE.'VA')) DEF1(1) = DEF1(13)
       VB = DEF1(14) .NE. 'NON'
@@ -191,11 +184,11 @@ C*ENDIF
       L = FSTOPC('MSGLVL', DEF1(11), .FALSE.)
       ier = fstopl('REDUCTION32',.true.,.false.)
 
-      CALL GETENV('ARMNLIB',ARMNLIB_var)
+      CALL GETENV('ARMNLIB', ARMNLIB_var)
       lvar = LONGUEUR(ARMNLIB_var)
       IF (lvar .gt. 0) THEN
         iunexpv=0
-	ier = fnom(iunexpv,
+      ier = fnom(iunexpv,
      %     ARMNLIB_var(1:lvar)//'/data/exception_vars_ok',
      %     'SEQ+FTN+FMT+OLD+R/O',0)
         IF (ier .lt. 0) THEN
@@ -205,10 +198,10 @@ C*ENDIF
           READ(iunexpv,'(a)') exception_vars
         ENDIF
       ENDIF
-*      print *,'Debug exception_vars=',exception_vars
-      
-*     SI A=RND & B=SEQ CHANGE [A POUR B] & [B POUR A]
-      IF((BF.OR.BS) .AND. .NOT.(AF.OR.AS)) THEN
+!      print *,'Debug exception_vars=',exception_vars
+
+!     SI A=RND & B=SEQ CHANGE [A POUR B] & [B POUR A]
+      IF ((BF.OR.BS) .AND. .NOT.(AF.OR.AS)) THEN
          NOMD    = DEF1(1)
          DEF1(1) = DEF1(2)
          DEF1(2) = NOMD
@@ -226,7 +219,7 @@ C*ENDIF
       IF(DI .AND. (DEF1(1).EQ.DEF1(2)))
      X   WRITE(6,*)' ATTENTION ON COMPARE LE FICHIER "A" AVEC LUI-MEME'
 
-*     OUVRE LE FICHIER 1
+!     OUVRE LE FICHIER 1
       NA = DEF1(1)
       L  = FNOM  (1, DEF1(1), NOMA//'+OLD+R/O+REMOTE', 0)
       IF (L .LT. 0) THEN
@@ -246,7 +239,7 @@ C*ENDIF
          IF(N1 .EQ. 0) GO TO 90
       ENDIF
 
-*     OUVRE LE FICHIER 2
+!     OUVRE LE FICHIER 2
       NB = DEF1(2)
       L  = FNOM  (2, DEF1(2), NOMB//'+OLD+R/O+REMOTE', 0)
       IF (L .LT. 0) THEN
@@ -266,13 +259,13 @@ C*ENDIF
          IF(N2 .EQ. 0) GOTO 80
       ENDIF
 
-*     ECRIRE L'ENTETE DE PAGE
-      IF (PACK_ERR .eq. 0) THEN      
+!     ECRIRE L'ENTETE DE PAGE
+      IF (PACK_ERR .eq. 0) THEN
          WRITE(6,600)
       ELSE
          WRITE(6,700)
       ENDIF
-*     RESERVE LA MEMOIRE
+!     RESERVE LA MEMOIRE
       IF(AS .OR. AF) THEN
          L  = FSTRWD(1)
       ENDIF
@@ -281,16 +274,14 @@ C*ENDIF
   10  MX = N
       ALLOCATE(XX1(MX))
       ALLOCATE(XX2(MX))
-*      CALL MEMOIRH(BUF, X1, MX)
-*      CALL MEMOIRH(BUF, X2, MX)
 
-*     RAMASSE LES IDENTIFICATEURS DU RECORD KA
+!     RAMASSE LES IDENTIFICATEURS DU RECORD KA
   20  L = FSTPRM(KA, DATE, DEET, NPAS, NI, NJ, NK, NBITS, DATYPA,
      X           IP1, IP2, IP3, TYPVAR, NOMVAR, ETIKET, GRTYPA,
      X           IG1, IG2, IG3, IG4, SWA, LNG, DLTF, UBC, EX1,
      X           EX2, EX3)
       IF (NOMVAR == '!!') GOTO 35
-*     SI LA DATE EST A CONSIDERER
+!     SI LA DATE EST A CONSIDERER
       IF( TD ) THEN
          IF(DATE .EQ. 0) THEN
             IDATE = 0
@@ -303,16 +294,16 @@ C*ENDIF
             ENDIF
          ENDIF
       ENDIF
-*     SI L'ETIKETTE EST A CONSIDERER
+!     SI L'ETIKETTE EST A CONSIDERER
       IF( TE ) ETIKB = ETIKET
 
-*     SI LE TYPEVAR EST A CONSIDERER
+!     SI LE TYPEVAR EST A CONSIDERER
       IF( TT ) TYPVAB = TYPVAR
 
-*     SI LE NOMVAR EST A CONSIDERER
+!     SI LE NOMVAR EST A CONSIDERER
       IF( TN ) NOMVAB = NOMVAR
 
-*     SI LE IP1 EST A CONSIDERER
+!     SI LE IP1 EST A CONSIDERER
       IF( P1 ) then
         IF (INDEX(exception_vars,nomvar) .ne. 0) then
           IP1B = IP1
@@ -324,10 +315,10 @@ C*ENDIF
         ENDIF
       ENDIF
 
-*     SI LE IP2 EST A CONSIDERER
+!     SI LE IP2 EST A CONSIDERER
       IF( P2 ) IP2B = IP2
 
-*     SI LE IP3 EST A CONSIDERER
+!     SI LE IP3 EST A CONSIDERER
       IF( P3 ) IP3B = IP3
 
       IF(BS .OR. BF) L = FSTRWD(2)
@@ -338,18 +329,18 @@ C*ENDIF
          GOTO 60
       ENDIF
 
-*     VERIFICATION DES DIMENSIONS DE LA GRILLE SI PRESENT
+!     VERIFICATION DES DIMENSIONS DE LA GRILLE SI PRESENT
       IF((NI.NE.I) .OR. (NJ.NE.J) .OR. (NK.NE.K)) THEN
          WRITE(6,603)KA,KB,NOMVAB,I, J, K, NI, NJ, NK
          GOTO 60
       ENDIF
 
-*     RAMASSE LES IDENTIFICATEURS DU RECORD KB
+!     RAMASSE LES IDENTIFICATEURS DU RECORD KB
       L = FSTPRM(KB, DATE, DEET, NPAS, I, J, K, NBIT2, DATYPB,
      X           IP1, IP2, IP3, TYPVAR, NOMVAR, ETIKET, GRTYPB, IB1,
      X           IB2, IB3, IB4, SWA, LNG, DLTF, UBC, EX1, EX2, EX3)
 
-*     VERIFICATION DES PARAMETRES DE LA GRILLE
+!     VERIFICATION DES PARAMETRES DE LA GRILLE
       IF (TG) THEN
         IF((GRTYPA.NE. GRTYPB) .OR. (IG1.NE.IB1) .OR. (IG2.NE.IB2) .OR.
      X     (IG3.NE.IB3) .OR. (IG4.NE.IB4)) THEN
@@ -362,10 +353,8 @@ C*ENDIF
       IF(NBIT2 .NE. NBITS) PRINT*,'NBITSA=',NBITS,' NBITSB=',NBIT2
       IF ( DI ) PRINT*,'COMPARE DATYPA=',DATYPA,'  @  DATYPB=',DATYPB
 
-*     TOUT EST OK LIT ET COMPARE
+!     TOUT EST OK LIT ET COMPARE
       L = FSTLUK(XX1, KA, NI, NJ, NK)
-*      L = FSTLUK(BUF(X1), KA, NI, NJ, NK)
-*      L = FSTLUK(BUF(X2), KB, NI, NJ, NK)
       L = FSTLUK(XX2, KB, NI, NJ, NK)
       IF ((mod(DATYPA,128) .ne. 1) .and. (mod(DATYPA,128) .ne. 6)) THEN
         PACK_ERR2 = 0
@@ -377,7 +366,7 @@ C*ENDIF
   30  WRITE(6,*)' *  PAS DE COMPARAISON  *  DATYPA=',DATYPA,
      X                                    ' DATYPB=',DATYPB
       GO TO 60
-  35  WRITE(6,*)' **   SKIPPING RECORD "!!", CAN''T COMPARE  **' 
+  35  WRITE(6,*)' **   SKIPPING RECORD "!!", CAN''T COMPARE  **'
       GO TO 60
   40  CALL RCMP1D(XX1, XX2, N, 6, KA, KB, NOMVAR, ETIKB,
      X            IP1, IP2, IP3, LIMITE, MIN(NBITS,NBIT2), PACK_ERR2,
@@ -391,12 +380,10 @@ C*ENDIF
          IF(N .LE. MX) GO TO 20
          DEALLOCATE(XX1)
          DEALLOCATE(XX2)
-*         CALL MEMOIRH(BUF, X1, 0)
-*         CALL MEMOIRH(BUF, X2, 0)
          GOTO 10
       ENDIF
 
-   70 IF(VA.AND..NOT.AF .OR. VB.AND..NOT.BF) THEN
+   70 IF (VA .AND. .NOT. AF .OR. VB .AND. .NOT. BF) THEN
          IF(.NOT.DI) L = FSTOPC('MSGLVL', 'INFORM', .FALSE.)
          IF( VA ) THEN
             IF( AS ) L = FSTRWD(1)
@@ -429,18 +416,17 @@ C*ENDIF
      X       ' ',A40,' GRTYP IG1@4=', A1,1X, 4I6)
   603 FORMAT(2I6,A4,' -LES DIMENSIONS TROUVEES SONT',3I5,
      %       ' CHERCHE',3I5)
-     
+
   700 FORMAT('  NOM    ETIKET           IP1',
      X       '            IP2       IP3  E-REL-MAX',
      X       '  E-REL-MOY    VAR-A      C-COR        MOY-A',
      X       '        BIAIS      E-MAX      E-MOY     TOLERANCE')
 
-     
+
       STOP
       END
-C*DECK RCMP1D
-***S/P RCMP1D  COMPARAISON DE DEUX CHAMPS REELS DE UNE DIMENSION
-*
+
+! COMPARAISON DE DEUX CHAMPS REELS DE UNE DIMENSION
       SUBROUTINE RCMP1D(A, B, N, IUN, NUMA, NUMB, NOMVAR, ETIKET, IP1,
      X                  IP2, IP3, LIMITE, NBITS, PACK_ERR, EXCEPTION,
      x                  DATE, TYPVAR, NI, NJ, NK)
@@ -454,25 +440,24 @@ C*DECK RCMP1D
       CHARACTER*4 NOMVAR
       CHARACTER*2 TYPVAR
       REAL     A(N), B(N), MAXABS, SUMABS, ERRABS
-*
-*AUTEURS  VERSION ORIGINALE (REALCMP)  M.VALIN DRPN 1987
-*         VERSION (RCMP1D)  Y.BOURASSA DRPN JAN 1990
-*         Ajout de l'argument exception - M. Lepine Mars 2014
-*
-*ARGUMENTS
-* ENTRE  A,B     CHAMPS REELS A COMPARER
-*   "    N       DIMENSION DE A ET B
-*   "    IUN     UNITE SUR LAQUELLE ON ECRIT LES RESULTATS
-*   "    NUMA    NUMERO DE L'ENREGISTREMENT SUR FICHIER A
-*   "    NUMB    NUMERO DE L'ENREGISTREMENT SUR FICHIER B
-*   "    NOMVAR  NOM DE VARIABLE
-*   "    ETIKET  ETIKET DU CHAMP A COMPARER
-*   "    IP1@3   PARAMETRES DE SELECTION
-*   "    LIMITE  ERREUR MAXIMUM TOLOREE
-*   "    NBITS   NOMBRE DE BITS UTILISE POUR LE PACKING
-*   "    PACK_ERR NOMBRE D'UNITE D'ERREUR DU A L'ALGORITHME DE PACKING
-*                 A UTILISER POUR DETERMINER SI "A" COMPARE A "B"
-**
+
+!AUTEURS  VERSION ORIGINALE (REALCMP)  M.VALIN DRPN 1987
+!         VERSION (RCMP1D)  Y.BOURASSA DRPN JAN 1990
+!         Ajout de l'argument exception - M. Lepine Mars 2014
+
+!ARGUMENTS
+! ENTRE  A,B     CHAMPS REELS A COMPARER
+!   "    N       DIMENSION DE A ET B
+!   "    IUN     UNITE SUR LAQUELLE ON ECRIT LES RESULTATS
+!   "    NUMA    NUMERO DE L'ENREGISTREMENT SUR FICHIER A
+!   "    NUMB    NUMERO DE L'ENREGISTREMENT SUR FICHIER B
+!   "    NOMVAR  NOM DE VARIABLE
+!   "    ETIKET  ETIKET DU CHAMP A COMPARER
+!   "    IP1@3   PARAMETRES DE SELECTION
+!   "    LIMITE  ERREUR MAXIMUM TOLOREE
+!   "    NBITS   NOMBRE DE BITS UTILISE POUR LE PACKING
+!   "    PACK_ERR NOMBRE D'UNITE D'ERREUR DU A L'ALGORITHME DE PACKING
+!                 A UTILISER POUR DETERMINER SI "A" COMPARE A "B"
       INTEGER   I, kind, irange
       CHARACTER*15 Level
       REAL      rlevel
@@ -513,8 +498,6 @@ C*DECK RCMP1D
          IF(AA .NE. BB) THEN
             if (aa .ne. 0.) ratio = (max(aa,bb) - min(aa,bb)) / aa * 100
             if (ratio > ratio_max) ratio_max = ratio
-!            write(6,888) 'Debug difference A vs B au point I=',i,
-!     %       'AA, AA-BB=',aa,aa-bb
             nbdiff = nbdiff +1
  888        format(a,i8,2x,a,e14.7,2x,e14.7)
             ERRABS = ABS(AA-BB)
@@ -530,7 +513,6 @@ C*DECK RCMP1D
             ERR    = ERR+DERR
          ENDIF
    10    CONTINUE
-!      print *,'Debug nbdiff = ',nbdiff,' sur un total de ',n
 
       RANGE_A = MAX_A - MIN_A
       RANGE_B = MAX_B - MIN_B
@@ -550,10 +532,8 @@ C*DECK RCMP1D
       SUMABS = SUMABS/FN
       VARA   = SA2/FN
       VARB   = SB2/FN
-!      print *,'Debug+ sab avant=',sab
       IF(SA2*SB2 .NE. 0.) THEN
          SAB    = SAB/SQRT(SA2*SB2)
-!      print *,'Debug+ sa2,sb2,sqtr,sab=',sa2,sb2,SQRT(SA2*SB2),sab
       ELSEIF(SA2.EQ.0. .AND. SB2.EQ.0.) THEN
          SAB = 1.0
       ELSEIF(SA2 .EQ. 0.) THEN
@@ -561,14 +541,13 @@ C*DECK RCMP1D
       ELSE
          SAB = SQRT(VARA)
       ENDIF
-!      print *,'Debug+ sa2,sb2,vara,varb,sab=',sa2,sb2,vara,varb,sab
       IF (EXCEPTION) THEN
         WRITE(level,'(i5)') ip1
       ELSE
         CALL convip_plus(ip1,rlevel,kind,-1,level,.true.)
       ENDIF
       ERR_UNIT = RANGE_A / DEUX_EXP_NB
-      
+
       IF ((ERRMAX .LE. ERRLIM) .and. (PACK_ERR .eq.0)) THEN
          WRITE(IUN,600) NOMVAR, ETIKET, level, IP2, IP3,
      X                  ERRMAX, ERR, VARA, SAB, ABAR, BBAR-ABAR,
@@ -578,7 +557,7 @@ C*DECK RCMP1D
            WRITE(IUN,602) NOMVAR, ETIKET, level, IP2, IP3,
      X                  ERRMAX, ERR, VARA, SAB, ABAR, BBAR-ABAR,
      X                  MAXABS, SUMABS, PACK_ERR*ERR_UNIT
-         ELSE       
+         ELSE
             WRITE(IUN,603) NOMVAR, ETIKET, level, IP2, IP3,
      X                  ERRMAX, ERR, VARA, SAB, ABAR, BBAR-ABAR,
      X                  MAXABS, SUMABS, PACK_ERR*ERR_UNIT
@@ -588,7 +567,7 @@ C*DECK RCMP1D
      X                  ERRMAX, ERR, VARA, SAB, ABAR, BBAR-ABAR,
      X                  MAXABS, SUMABS
       ENDIF
- 
+
       if ((nbdiff .ne. 0) .and. (PACK_ERR .gt. 0)) then
         write(6,900) '  <Difference> Number of elements differing is',
      %    nbdiff, ' out of ',n,
@@ -597,16 +576,8 @@ C*DECK RCMP1D
         call statfldx(nomvar,typvar,ip1,ip2,ip3,date,etiket,A,ni,nj,nk)
         call statfldx(nomvar,typvar,ip1,ip2,ip3,date,etiket,B,ni,nj,nk)
         write(6,*) ' '
-!        write(6,901) 'Err_Max=',ratio_max
-! 901    format(a,e8.2,'%')
-!        write(6,889) 'Debug MIN_A, MAX_A, MIN_B - MIN_A = ',MIN_A,
-!     %                    MAX_A, MIN_B - MIN_A, MAX_B - MAX_A
-! 889    format(a,2x,e14.7,2x,e14.7,2x,e14.7,2x,e14.7)
       endif
 
-*  600 FORMAT('  CLEA CLEB NOM  ETIKET    IP1 IP2 IP3  E-REL-MAX',
-*     X       '  E-REL-MOY   VAR-A       C-COR         MOY-A',
-*     X       '         BIAIS      E-MAX      E-MOY')
   600 FORMAT(' ', '  ', A4, '  ', A12, a15, 2I9, 4(1X,1PE10.4),
      X       2(1X,1PE12.4), 2(1X,1PE10.4) )
   601 FORMAT(' ', ' <', A4, '> ', A12, a15, 2I9, 3(1X,1PE10.4),
@@ -618,9 +589,9 @@ C*DECK RCMP1D
 
       RETURN
       END
-C*DECK ICMP1D
-***S/P ICMP1D DIFFERENCES ENTRE DEUX CHAMPS ENTIERS DE UNE DIMENSION
-*
+
+
+! DIFFERENCES ENTRE DEUX CHAMPS ENTIERS DE UNE DIMENSION
       SUBROUTINE ICMP1D(A, B, N, IUN, NUMA, NUMB, NOMVAR, ETIKET, IP1,
      X                  IP2, IP3, EXCEPTION)
 
@@ -628,20 +599,20 @@ C*DECK ICMP1D
       INTEGER     N, A(N), B(N), IUN, NUMA, NUMB, IP1, IP2, IP3
       CHARACTER*12 ETIKET
       CHARACTER*4 NOMVAR
-*
-*AUTEURS  VERSION ORIGINALE (INTEMP)  M.VALIN DRPN 1987
-*         VERSION (ICMP1D)  Y.BOURASSA DRPN JAN 1990
-*
-*ARGUMENTS
-* ENTRE  A,B     CHAMPS ENTIERS A COMPARER
-*   "    N       DIMENSION DE A ET B
-*   "    IUN     UNITE SUR LAQUELLE ON ECRIT LES RESULTATS
-*   "    NUMA    NUMERO DE L'ENREGISTREMENT SUR FICHIER A
-*   "    NUMB    NUMERO DE L'ENREGISTREMENT SUR FICHIER B
-*   "    NOMVAR  NOM DE VARIABLE
-*   "    ETIKET  ETIKET DE L'ENREGISTREMENT
-*   "    IP1@3   PARAMETRES DE SELECTION
-**
+
+!AUTEURS  VERSION ORIGINALE (INTEMP)  M.VALIN DRPN 1987
+!         VERSION (ICMP1D)  Y.BOURASSA DRPN JAN 1990
+
+!ARGUMENTS
+! ENTRE  A,B     CHAMPS ENTIERS A COMPARER
+!   "    N       DIMENSION DE A ET B
+!   "    IUN     UNITE SUR LAQUELLE ON ECRIT LES RESULTATS
+!   "    NUMA    NUMERO DE L'ENREGISTREMENT SUR FICHIER A
+!   "    NUMB    NUMERO DE L'ENREGISTREMENT SUR FICHIER B
+!   "    NOMVAR  NOM DE VARIABLE
+!   "    ETIKET  ETIKET DE L'ENREGISTREMENT
+!   "    IP1@3   PARAMETRES DE SELECTION
+!*
       INTEGER I, J, K, MD, NC, kind
       CHARACTER*15 Level
       REAL      rlevel
@@ -679,7 +650,7 @@ C*DECK ICMP1D
 
       RETURN
       END
-      
+
       character *128 function product_id_tag()
       product_id_tag='$Id: fstcomp.f 178 2015-02-26 14:44:36Z armnlib $'
       return
