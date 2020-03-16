@@ -51,21 +51,19 @@
          inv = l_ni
          j0v = 1     + south
          jnv = l_njv - north
+
          call rpn_comm_xch_halo (F_su,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo (F_sv,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-!$omp parallel private(i,j,k) &
-!$omp shared (i0u,j0u,inu,jnu,i0v,j0v,inv,jnv,F_su,F_du)
-!$omp do
          do k = 1,Nk
             do j = j0u, jnu
-            do i = i0u, inu
-               F_du(i,j,k) =  ( F_su(i-1,j,k) + F_su(i+2,j,k) )*alpha1 &
-                            + ( F_su(i  ,j,k) + F_su(i+1,j,k) )*alpha2
+               do i = i0u, inu
+                  F_du(i,j,k) =  ( F_su(i-1,j,k) + F_su(i+2,j,k) )*alpha1 &
+                               + ( F_su(i  ,j,k) + F_su(i+1,j,k) )*alpha2
 
-            end do
+               end do
             end do
             if (l_west) then
                do j = j0u, jnu
@@ -80,10 +78,10 @@
             end if
 
             do j = j0v, jnv
-            do i = i0v, inv
-               F_dv(i,j,k) =  ( F_sv(i,j-1,k) + F_sv(i,j+2,k) )*alpha1 &
-                            + ( F_sv(i,j  ,k) + F_sv(i,j+1,k) )*alpha2
-            end do
+               do i = i0v, inv
+                  F_dv(i,j,k) =  ( F_sv(i,j-1,k) + F_sv(i,j+2,k) )*alpha1 &
+                               + ( F_sv(i,j  ,k) + F_sv(i,j+1,k) )*alpha2
+               end do
             end do
             if (l_south) then
                do i = i0v, inv
@@ -97,8 +95,6 @@
                end do
             end if
          end do
-!$omp enddo
-!$omp end parallel
 
       else
 
@@ -115,15 +111,13 @@
          call rpn_comm_xch_halo (F_sv,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_njv,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-!$omp parallel private(i,j,k) &
-!$omp shared (i0u,j0u,inu,jnu,i0v,j0v,inv,jnv,F_su,F_du)
-!$omp do
+
          do k = 1,Nk
             do j = j0u, jnu
-            do i = i0u, inu
-               F_du(i,j,k) =  ( F_su(i-2,j,k) + F_su(i+1,j,k) )*alpha1 &
-                            + ( F_su(i-1,j,k) + F_su(i  ,j,k) )*alpha2
-            end do
+               do i = i0u, inu
+                  F_du(i,j,k) =  ( F_su(i-2,j,k) + F_su(i+1,j,k) )*alpha1 &
+                               + ( F_su(i-1,j,k) + F_su(i  ,j,k) )*alpha2
+               end do
             end do
             if (l_west) then
                do j = j0u, jnu
@@ -139,10 +133,10 @@
             end if
 
             do j = j0v, jnv
-            do i = i0v, inv
-               F_dv(i,j,k) =  ( F_sv(i,j-2,k) + F_sv(i,j+1,k) )*alpha1 &
-                            + ( F_sv(i,j-1,k) + F_sv(i  ,j,k) )*alpha2
-            end do
+               do i = i0v, inv
+                  F_dv(i,j,k) =  ( F_sv(i,j-2,k) + F_sv(i,j+1,k) )*alpha1 &
+                               + ( F_sv(i,j-1,k) + F_sv(i  ,j,k) )*alpha2
+               end do
             end do
             if (l_south) then
                do i = i0v, inv
@@ -157,8 +151,6 @@
                end do
             end if
          end do
-!$omp enddo
-!$omp end parallel
 
       end if
 !

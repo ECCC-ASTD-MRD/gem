@@ -46,7 +46,7 @@
 
       ! FFTW plans
       type(dft_descriptor), save :: forward_plan, reverse_plan
-      real(kind=REAL64) pri ! Normalization constant
+      real(kind=REAL64), save :: pri ! Normalization constant
 
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -78,16 +78,16 @@
 ! F_dwfft      I    - work field
 
 
-      character(len=4) :: type_fft
-      integer i, j, k, jr, l_pil_w, l_pil_e
+      character(len=4), save :: type_fft
+      integer i, j, k, jr
+      integer, save :: l_pil_w, l_pil_e
       integer piece, p0, pn, plon, ptotal
       real(kind=REAL64), parameter :: zero = 0.d0
 !     __________________________________________________________________
 !
-                         type_fft = 'QCOS'
-      if (Grd_yinyang_L) type_fft = 'SIN'
-
       if (.not. allocated(F_dwfft)) then
+                            type_fft = 'QCOS'
+         if (Grd_yinyang_L) type_fft = 'SIN'
          ! Perform initial setup for the Fourier transforms:
          ! Allocate the static array used for the transforms + transposes
          allocate(F_dwfft(1:F_t0njs, 1:F_t1nks, F_gni+2+F_npex1))
@@ -101,30 +101,27 @@
                                 F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
                                 F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
                                 3, type_fft, DFT_BACKWARD)
-      end if
 
       ! Get the appropriate scaling factor.  Begin with the normalization
       ! constant from the FFT, needed to make a round-trip of transforms
       ! act as the identity function:
-      pri =  get_dft_norm_factor(G_ni-Lam_pil_w-Lam_pil_e,type_fft)
+         pri =  get_dft_norm_factor(G_ni-Lam_pil_w-Lam_pil_e,type_fft)
 
       ! And then modify the constant based on the discretization, essentially
       ! dividing by dx.  This calculation is modified from itf_fft_set, which
       ! is no longer used in the fftw-based interface.
-      pri = pri/(G_xg_8(G_ni-Lam_pil_e+1)-G_xg_8(G_ni-Lam_pil_e))
-
-
+         pri = pri/(G_xg_8(G_ni-Lam_pil_e+1)-G_xg_8(G_ni-Lam_pil_e))
 !  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
 !  represent the pilot region along I
 
-      l_pil_w=0
-      l_pil_e=0
-      if (l_south) l_pil_w= Lam_pil_w
-      if (l_north) l_pil_e= Lam_pil_e
+         l_pil_w=0
+         l_pil_e=0
+         if (l_south) l_pil_w= Lam_pil_w
+         if (l_north) l_pil_e= Lam_pil_e
+      end if
 
       call rpn_comm_transpose ( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                 1, F_t1nks, F_gnk, F_dwfft, 1, 2 )
-
 
       ! Use OpenMP, if configured, to zero out unused portions of the
       ! transpose array
@@ -148,7 +145,6 @@
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
                              F_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
 
-
       ! Normalize, again with the help of OpenMP.
 !$omp parallel private(i,j,k,jr,p0,pn,piece) &
 !$omp          shared(plon,ptotal,l_pil_w,l_pil_e,pri)
@@ -169,6 +165,7 @@
       call rpn_comm_transpose( F_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, F_dg2, 2, 2 )
 !$omp end single
+
       ptotal = F_t2ni-l_pil_e-l_pil_w-1
       plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
 
@@ -217,6 +214,7 @@
       ! by the rest of the model
       call rpn_comm_transpose ( Sol, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
                                      1, F_t1nks, F_gnk,  F_dwfft, -1, 2)
+
 !     __________________________________________________________________
 !
       return

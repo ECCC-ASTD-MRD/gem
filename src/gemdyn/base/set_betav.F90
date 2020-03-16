@@ -37,6 +37,8 @@
 
       real(kind=REAL64) :: work1, work2, fact
 
+      real(kind=REAL64), parameter :: local_tstr_8 = 270.d0
+
       integer :: i, j, k
 
       zblen_top = Ver_z_8%m(0)
@@ -63,7 +65,7 @@
          end do
       else
          htop = (mtn_nk+1)*mtn_dz
-         zblen_bot=Cstv_Zsrf_8-grav_8*(htop-mtn_zblen_thk)/(287.*Cstv_tstr_8)
+         zblen_bot=Cstv_Zsrf_8-grav_8*(htop-mtn_zblen_thk)/(287.d0 * local_tstr_8)
          do k=1,l_nk
             do j=Miny,Maxy
             do i=Minx,Maxx

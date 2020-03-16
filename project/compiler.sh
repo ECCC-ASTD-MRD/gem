@@ -3,7 +3,7 @@
 COMP_VERSION="Unknown_Compiler"
 
 case $1 in
-    gfortran)
+    gnu)
         COMP_VERSION=`gfortran --version | head -n 1 | sed "s/.*) \([^ ]*\).*$/\1/"`
         ;;
     intel)

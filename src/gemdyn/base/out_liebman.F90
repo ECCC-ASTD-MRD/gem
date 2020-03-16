@@ -34,9 +34,7 @@
 !
 !----------------------------------------------------------------------
 !
-!$omp parallel private (grad, kgrnd) shared (w2)
-!$omp do
-
+      kgrnd = 0
       do k=1,Out3_lieb_nk
          do j=1,l_nj
             do i=1,l_ni
@@ -94,8 +92,6 @@
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
 
       call out_padbuf (ttx,l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
 

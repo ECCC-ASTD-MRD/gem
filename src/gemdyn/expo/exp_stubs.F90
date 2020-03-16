@@ -1,14 +1,4 @@
-subroutine exp_cal_vor ( F_QR,F_QQ, F_uu,F_vv          , &
-                         F_filtqq, F_coefqq, F_absvor_L, &
-                         Minx,Maxx,Miny,Maxy,Nk )
-logical  F_absvor_L
-integer  F_filtqq, Minx,Maxx,Miny,Maxy,Nk
-real     F_QR (Minx:Maxx,Miny:Maxy,Nk), &
-         F_QQ (Minx:Maxx,Miny:Maxy,Nk), &
-         F_uu (Minx:Maxx,Miny:Maxy,Nk), &
-         F_vv (Minx:Maxx,Miny:Maxy,Nk), F_coefqq
-return
-end
+! Delete this file to run EXPO
 
 subroutine exp_dynstep()
 return
@@ -20,6 +10,11 @@ exp_nml = 0
 return
 end
 
+subroutine exp_set_vt()
+stop 'exp_set_vt : not yet implemented (stub)'
+return
+end
+
 subroutine exp_hybrid ( F_hybuser, Nk )
 integer Nk
 real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
@@ -27,12 +22,10 @@ stop 'exp_hybrid : not yet implemented (stub)'
 return
 end
 
-subroutine exp_metric()
-stop 'exp_metric : not yet implemented (stub)'
-return
-end
-
-subroutine exp_set_vt()
-stop 'exp_set_vt : not yet implemented (stub)'
-return
-end
+module exp_geom
+   public :: exp_geometry
+   contains
+   subroutine exp_geometry()
+   return
+   end subroutine exp_geometry
+end module exp_geom

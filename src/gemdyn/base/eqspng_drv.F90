@@ -78,8 +78,6 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
 
 ! eq_nlev is generally small (about 10) so we do the parallel section on j.
 
-!$omp parallel private(kp,km,i,k)
-!$omp do
    do j=1,l_nj
       do k=1,eq_nlev
          kp=min(eq_nlev,k+1)
@@ -94,8 +92,6 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
       F_u(1:l_ni,j,1:eq_nlev)=uu(1:l_ni,j,1:eq_nlev)
       F_v(1:l_ni,j,1:eq_nlev)=vv(1:l_ni,j,1:eq_nlev)
    end do
-!$omp enddo
-!$omp end parallel
 
    deallocate(uu,vv)
 

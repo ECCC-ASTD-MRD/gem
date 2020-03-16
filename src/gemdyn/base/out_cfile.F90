@@ -11,7 +11,7 @@
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr3 ( dummy,dummy,dummy,dummy,dummy,dummy,&
+      call out_fstecr ( dummy,dummy,dummy,dummy,dummy,dummy,&
                          dummy,dummy,dummy,dummy,dummy,dummy,&
                          dummy,dummy,dummy, .true. )
 

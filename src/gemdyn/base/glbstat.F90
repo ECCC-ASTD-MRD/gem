@@ -13,9 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine glbstat2 ( F_field, F_var_S, F_from_S   , &
-                            Minx,Maxx,Miny,Maxy,Mink,Maxk, &
-                            F_i0,F_in,F_j0,F_jn,F_k0,F_kn )
+      subroutine glbstat ( F_field, F_var_S, F_from_S   , &
+                           Minx,Maxx,Miny,Maxy,Mink,Maxk, &
+                           F_i0,F_in,F_j0,F_jn,F_k0,F_kn )
       use stat_mpi, only: statf_dm
       use gem_options
       use step_options
@@ -61,7 +61,7 @@
          call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
 
          if (Ptopo_myproc == 0)  then
-            call statfld3 (wk1 ,F_var_S, Lctl_step, F_from_S, &
+            call statfld (wk1 ,F_var_S, Lctl_step, F_from_S, &
                            1,G_ni, 1,G_nj, Mink,Maxk, &
                            F_i0,F_j0,F_k0, F_in,F_jn,F_kn,rx)
          end if

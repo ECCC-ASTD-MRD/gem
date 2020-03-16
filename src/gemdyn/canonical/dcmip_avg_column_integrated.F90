@@ -18,6 +18,7 @@
       subroutine dcmip_avg_column_integrated (F_avg_tr,F_tr,Minx,Maxx,Miny,Maxy,F_nk)
 
       use dynkernel_options
+      use dyn_fisl_options
       use glb_ld
       use gmm_itf_mod
       use gmm_vt1
@@ -61,12 +62,12 @@
 
          pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
 
-      else 
+      else
 
          istat = gmm_get(gmmk_qt1_s, qt1)
 
          do k=1,F_nk+1
-            pr_m(1:l_ni,1:l_nj,k) = exp( (qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(1:l_ni,1:l_nj,k)) )
+            pr_m(1:l_ni,1:l_nj,k) = exp( (qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k)) )
          end do
 
       end if

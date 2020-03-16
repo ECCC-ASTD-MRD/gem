@@ -15,14 +15,13 @@
 
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
-      subroutine fislh_tstpdyn()
+      subroutine fislh_tstpdyn (F_icn)
       use glb_ld
       use glb_pil
       use gmm_vt1
       use gmm_vt0
       use gmm_nest
-      use gmm_rhsc
-      use gmm_orh
+      use mem_tstp
       use gmm_geof
       use gmm_pw
       use gmm_vth
@@ -35,80 +34,31 @@
       use ldnh
       use lun
       use tdpack
-      use gmm_itf_mod
       use yyg_param
       use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, icln
+      integer, intent(IN) :: F_icn
 
-      real(kind=REAL64), dimension (ldnh_maxx-ldnh_minx+1, ldnh_maxy-ldnh_miny+1, l_nk) :: rhs_sol, lhs_sol
-      real, pointer, contiguous, dimension(:,:,:)  :: hut1, hut0
-
-      real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1, l_nk) :: nl_u, & ! non-linear deviation of U
-                                                                  nl_v, & ! non-linear deviation of V
-                                                                  nl_t, & ! non-linear deviation of T -> X
-                                                                  nl_c, & ! non-linear portion of continuity equation
-                                                                  nl_w    ! non-linear deviation of vertical motion
-      real, dimension (l_maxx-l_minx+1, l_maxy-l_miny+1) :: nl_b
-
-
+      logical :: print_conv
+      integer i0, in, j0, jn, k0, ni, nj, iln, icln
 !
 !     ---------------------------------------------------------------
 !
-      gmmstat = gmm_get (gmmk_ut0_s, ut0)
-      gmmstat = gmm_get (gmmk_vt0_s, vt0)
-      gmmstat = gmm_get (gmmk_tt0_s, tt0)
-      gmmstat = gmm_get (gmmk_st0_s, st0)
-      gmmstat = gmm_get (gmmk_wt0_s, wt0)
-      gmmstat = gmm_get (gmmk_qt0_s, qt0)
-      gmmstat = gmm_get (gmmk_zdt0_s, zdt0)
-      gmmstat = gmm_get (gmmk_fis0_s, fis0)
+      call rpn_comm_xch_halo( ut1 , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk  , &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( vt1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk  , &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( tt1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk  , &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( qt1,  l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk+1, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-      gmmstat = gmm_get (gmmk_sls_s ,sls )
-
-      gmmstat = gmm_get (gmmk_ut1_s, ut1)
-      gmmstat = gmm_get (gmmk_vt1_s, vt1)
-      gmmstat = gmm_get (gmmk_tt1_s, tt1)
-      gmmstat = gmm_get (gmmk_st1_s, st1)
-      gmmstat = gmm_get (gmmk_wt1_s, wt1)
-      gmmstat = gmm_get (gmmk_qt1_s, qt1)
-      gmmstat = gmm_get (gmmk_zdt1_s, zdt1)
-
-      gmmstat = gmm_get (gmmk_orhsu_s, orhsu)
-      gmmstat = gmm_get (gmmk_orhsv_s, orhsv)
-      gmmstat = gmm_get (gmmk_orhst_s, orhst)
-      gmmstat = gmm_get (gmmk_orhsc_s, orhsc)
-      gmmstat = gmm_get (gmmk_orhsf_s, orhsf)
-      gmmstat = gmm_get (gmmk_orhsw_s, orhsw)
-
-      gmmstat = gmm_get (gmmk_rhsu_s, rhsu)
-      gmmstat = gmm_get (gmmk_rhsv_s, rhsv)
-      gmmstat = gmm_get (gmmk_rhst_s, rhst)
-      gmmstat = gmm_get (gmmk_rhsc_s, rhsc)
-      gmmstat = gmm_get (gmmk_rhsf_s, rhsf)
-      gmmstat = gmm_get (gmmk_rhsw_s, rhsw)
-      gmmstat = gmm_get (gmmk_rhsb_s, rhsb)
-
-      gmmstat = gmm_get('TR/HU:M' ,hut1)
-      gmmstat = gmm_get('TR/HU:P' ,hut0)
-
-      gmmstat = gmm_get(gmmk_pw_uu_moins_s, pw_uu_moins)
-      gmmstat = gmm_get(gmmk_pw_vv_moins_s, pw_vv_moins)
-
-      gmmstat = gmm_get(gmmk_xth_s , xth)
-      gmmstat = gmm_get(gmmk_yth_s , yth)
-      gmmstat = gmm_get(gmmk_zth_s , zth)
-
-      if (.not. Grd_yinyang_L) then
-         gmmstat = gmm_get (gmmk_nest_t_s, nest_t )
-         gmmstat = gmm_get (gmmk_nest_q_s, nest_q )
-         gmmstat = gmm_get (gmmk_nest_fullme_s,nest_fullme)
-      else
+      ! Avoid non-associated pointer
+      if (Grd_yinyang_L) then
          nest_t => ut1
-         nest_q => ut1
       end if
 
       i0= 1   +pil_w
@@ -119,7 +69,7 @@
 
       if (Lun_debug_L) write(Lun_out,1000)
 
-      if ( Orh_icn == 1 ) then  ! Compute RHS
+      if ( F_icn == 1 ) then  ! Compute RHS
 
          call gemtime_start ( 20, 'RHS', 10 )
 
@@ -134,7 +84,8 @@
 
 ! Perform time interpolation of Lateral BCs for LAM configurations
 
-         if ( .not. Grd_yinyang_L ) call nest_bcs ()
+         if ( .not. Grd_yinyang_L ) call nest_bcs (rhsu, rhsv, &
+                              l_minx,l_maxx,l_miny,l_maxy, l_nk)
 
       end if
 
@@ -150,7 +101,7 @@
 
       call gemtime_start (22, 'PRE', 10)
 
-      if ( Orh_icn == 1 ) then
+      if ( F_icn == 1 ) then
          if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
             fis0(1:l_ni,1:l_nj)= nest_fullme(1:l_ni,1:l_nj)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
@@ -158,9 +109,8 @@
                                     G_periodx,G_periody,l_ni,0)
          else
             if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) then
-               gmmstat = gmm_get(gmmk_fis0_s,fis0)
-               call var_topo2 (fis0, real(Lctl_step),&
-                               l_minx,l_maxx,l_miny,l_maxy)
+               call var_topo (fis0, real(Lctl_step),&
+                              l_minx,l_maxx,l_miny,l_maxy)
                if (Grd_yinyang_L) then
                   call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
                                   l_ni,l_nj, 1, .false., 'CUBIC', .true.)
@@ -194,7 +144,7 @@
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
-         icln=Orh_icn*iln
+         icln=F_icn*iln
          if ( .not. Grd_yinyang_L ) icln=icln+1
 
          call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c   ,&
@@ -208,7 +158,11 @@
          call gemtime_start ( 24, 'SOL', 10 )
 
 !        Solve the elliptic problem
-         call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, iln)
+         print_conv = (iln   == Schm_itnlh ) .and. &
+                      (F_icn == Schm_itcn  ) .and. &
+                      (Ptopo_couleur == 0  ) .and. &
+                      (Lun_out > 0)
+         call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, print_conv)
 
          call gemtime_stop (24)
 

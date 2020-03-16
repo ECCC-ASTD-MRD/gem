@@ -35,21 +35,11 @@ module dyn_fisl_options
 
    !# T* basic state temperature (K)
    real(kind=REAL64) :: Cstv_Tstr_8 = 240.0
-   namelist /dyn_fisl  / Cstv_tstr_8
-   namelist /dyn_fisl_p/ Cstv_tstr_8
+   namelist /dyn_fisl  / Cstv_Tstr_8
+   namelist /dyn_fisl_p/ Cstv_Tstr_8
 
    !# Inverse of PHI* basic state geopotential (m**2/s**2) used in GEM-H autobar
    real(kind=REAL64) :: Cstv_invFI_8
-
-   !# Parameter controlling modified epsilon (Ver_epsi_8) [nonhydrostatic part]
-   real(kind=REAL64) :: Cstv_rE_8 = 1.d0
-   namelist /dyn_fisl  / Cstv_rE_8
-   namelist /dyn_fisl_p/ Cstv_rE_8
-
-   !# another reference pressure
-   real(kind=REAL64) :: Cstv_pSref_8 = 1.d5
-   namelist /dyn_fisl  / Cstv_pSref_8
-   namelist /dyn_fisl_p/ Cstv_pSref_8
 
    !# Fraction of adjustment to be given to the ocean
    real(kind=REAL64) :: Cstv_psadj_8 = 1.d0
@@ -100,20 +90,10 @@ module dyn_fisl_options
    !# True-> use SLEVE vertical coordinate
    logical :: Schm_sleve_L = .false.
 
-   !# True-> averaging B and C in SLEVE scheme
-   logical :: Schm_bcavg_L = .true.
-   namelist /dyn_fisl  / Schm_bcavg_L
-   namelist /dyn_fisl_P/ Schm_bcavg_L
-
    !# True-> to use topography
    logical :: Schm_Topo_L = .true.
    namelist /dyn_fisl  / Schm_Topo_L
    namelist /dyn_fisl_p/ Schm_Topo_L
-
-   !# True-> variable cappa in thermodynamic equation
-   logical :: Schm_capa_var_L = .false.
-   namelist /dyn_fisl  / Schm_capa_var_L
-   namelist /dyn_fisl_p/ Schm_capa_var_L
 
    !# * 0   ->          NO advection
    !# * 1   -> traditional advection
@@ -122,11 +102,6 @@ module dyn_fisl_options
    integer :: Schm_advec = 1
    namelist /dyn_fisl  / Schm_advec
    namelist /dyn_fisl_p/ Schm_advec
-
-   !# True-> Eulerian treatment of mountains in the continuity equation
-   logical :: Schm_eulmtn_L = .false.
-   namelist /dyn_fisl  / Schm_eulmtn_L
-   namelist /dyn_fisl_p/ Schm_eulmtn_L
 
    !# True-> Modify slightly code behaviour to ensure bitpattern
    !# reproduction in restart mode using FST file

@@ -15,7 +15,7 @@
 
 !**s/r out_slev
 !
-      subroutine out_slev2 (F_level,F_levmax,F_nk,F_indo,F_nko,F_nearsfc_L)
+      subroutine out_slev (F_level,F_levmax,F_nk,F_indo,F_nko,F_nearsfc_L)
       implicit none
 #include <arch_specific.hf>
 

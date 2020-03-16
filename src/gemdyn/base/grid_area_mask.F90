@@ -42,8 +42,6 @@
       !     Evaluate area and mask
       !===========================
 
-      !------------------------------------------------------------------------
-
       integer :: i,j,n,r_j1,r_j2,r_i1,r_i2,r_ish,r_jsh,i_north,j_north, &
                  i_middle,j_middle,err,i1,j1,i2,j2,i_sh,j_sh
 
@@ -57,9 +55,9 @@
       real(kind=REAL64) spa_8(l_ni,l_nj,2)
 
       logical :: almost_zero,nj_even_L,ni_even_L,between_L,line_L
-
-      !------------------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       do j = 1,F_nj
          do i = 1,F_ni
             F_area_8(i,j) = geomh_hx_8 * cos(geomh_y_8(j)) * geomh_hy_8
@@ -427,13 +425,13 @@
            call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
       end if
 
-      if (Adz_verbose==1.and.Lun_out>0) then
-         write(Lun_out,*) ''
-         write(Lun_out,*) 'MASK AREA Iteration#0  = ',sf_8(1) + sf_8(2)
-         write(Lun_out,*) 'MASK AREA SF(1)        = ',sf_8(1)
-         write(Lun_out,*) 'MASK AREA SF(2)        = ',sf_8(2)
-         write(Lun_out,*) 'MASK AREA target       = ',2.0*pi_8
-         write(Lun_out,*) 'MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
+      if (Lun_out>0) then
+         write(Lun_out,1001)
+         write(Lun_out,1002) 'MASK AREA Iteration#0  = ',sf_8(1) + sf_8(2)
+         write(Lun_out,1002) 'MASK AREA SF(1)        = ',sf_8(1)
+         write(Lun_out,1002) 'MASK AREA SF(2)        = ',sf_8(2)
+         write(Lun_out,1002) 'MASK AREA target       = ',2.0*pi_8
+         write(Lun_out,1002) 'MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
          write(Lun_out,*) ''
       end if
 
@@ -473,12 +471,12 @@
            call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
       end if
 
-      if (Adz_verbose==1.and.Lun_out>0) then
-         write(Lun_out,*) 'MASK AREA Iteration#1  = ',sf_8(1) + sf_8(2)
-         write(Lun_out,*) 'MASK AREA SF(1)        = ',sf_8(1)
-         write(Lun_out,*) 'MASK AREA SF(2)        = ',sf_8(2)
-         write(Lun_out,*) 'MASK AREA target       = ',2.0*pi_8
-         write(Lun_out,*) 'MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
+      if (Lun_out>0) then
+         write(Lun_out,1002) 'MASK AREA Iteration#1  = ',sf_8(1) + sf_8(2)
+         write(Lun_out,1002) 'MASK AREA SF(1)        = ',sf_8(1)
+         write(Lun_out,1002) 'MASK AREA SF(2)        = ',sf_8(2)
+         write(Lun_out,1002) 'MASK AREA target       = ',2.0*pi_8
+         write(Lun_out,1002) 'MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
       end if
 
       do j = 1,F_nj
@@ -487,5 +485,11 @@
          end do
       end do
 
+ 1001 format(/,'INITIALIZATING MASK BOUNDARY (S/R GRID_AREA_MASS)', &
+             /,'=================================================')
+ 1002 format(2X,A25,e22.15)
+!
+!---------------------------------------------------------------------
+!
       return
       end

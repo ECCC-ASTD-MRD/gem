@@ -18,6 +18,7 @@
 
       subroutine indata()
       use dynkernel_options
+      use exp_geom
       use gem_options
       use glb_ld
       use gmm_geof
@@ -101,7 +102,7 @@
       end if
 
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_metric()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_geometry()
 
       do k=1, Tr3d_ntr
          nullify (plus, minus)
@@ -132,7 +133,7 @@
 
       if ( Dynamics_FISL_L ) call firstguess()
 
-      call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
+      call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 !
 !     ---------------------------------------------------------------

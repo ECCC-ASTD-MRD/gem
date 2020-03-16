@@ -40,9 +40,6 @@
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 
-!$omp parallel private(i,j,k,jr) shared(offi,offj,fdg,w2_8)
-
-!$omp do
       do j=1,Nj
          call dgemm ( 'N','N', Ni, nk, nk, 1.0D0,     &
                       rhs(1,j,1), Ni*Nj, Opr_lzevec_8,&
@@ -54,9 +51,7 @@
             end do
          end do
      end do
-!$omp enddo
 
-!$omp do
       do k=1,Nk
          call dgemm ( 'T','N',Ni,Nj,Ni,1.0d0,evec_local,Ni,&
                       w2_8(1,1,k),Ni,0.0d0,fdg(1,1,k),Ni)
@@ -80,17 +75,12 @@
          call dgemm ( 'N','N',Ni,Nj,Ni,1.0d0,evec_local,Ni,&
                       fdg(1,1,k),Ni,0.d0,w2_8(1,1,k),Ni )
       end do
-!$omp enddo
 
-!$omp do
       do j=1,Nj
          call dgemm ( 'N','T', Ni, nk, nk, 1.0D0,     &
                       w2_8(1,j,1), Ni*Nj, Opr_zevec_8,&
                       G_nk,0.0d0, Sol (1,j,1), Ni*Nj  )
       end do
-!$omp enddo
-
-!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

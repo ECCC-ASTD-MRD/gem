@@ -23,28 +23,16 @@
       use inp_mod
       use glb_ld
       use lun
-      use gmm_itf_mod
       use vGrid_Descriptors, only : vgrid_descriptor
       use gem_timing
       implicit none
 #include <arch_specific.hf>
 
-      character(len=*) F_datev_S
-      integer istat
+      character(len=*), intent(IN) :: F_datev_S
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
-
-      istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin )
-      istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin )
-      istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
-      istat = gmm_get(gmmk_nest_t_fin_s ,nest_t_fin )
-      istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
-      istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin )
-      istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
-      istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
-      istat = gmm_get (gmmk_sls_s ,sls )
 
       call gemtime_start ( 26, 'NEST_input', 10 )
 

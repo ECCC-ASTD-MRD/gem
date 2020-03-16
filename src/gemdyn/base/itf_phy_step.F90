@@ -111,7 +111,7 @@
       !call pw_glbstat('PW_AFT')
 
       call gemtime_start ( 48, 'PHY_output', 40 )
-      call itf_phy_output2 ( F_lctl_step )
+      call itf_phy_output ( F_lctl_step )
       call gemtime_stop  ( 48 )
 
       if ( Init_mode_L ) then

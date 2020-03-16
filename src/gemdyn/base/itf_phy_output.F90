@@ -15,7 +15,7 @@
 
 !**s/r itf_phy_output
 
-      subroutine itf_phy_output2 (stepno)
+      subroutine itf_phy_output (stepno)
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
@@ -114,7 +114,7 @@
          end if
          allocate ( indo( min(Level_max(levset),Level_momentum ) ) )
 
-         call out_slev2 (Level(1,levset), Level_max(levset), &
+         call out_slev (Level(1,levset), Level_max(levset), &
                          Level_momentum,indo,nko,write_diag_lev)
 
          if (Level_typ_S(levset) == 'P') then
@@ -141,7 +141,7 @@
          grille_y0 = max( 1   +Grd_bsc_ext1, OutGrid_y0(gridset) )
          grille_y1 = min( G_nj-Grd_bsc_ext1, OutGrid_y1(gridset) )
 
-         call out_href3 ( 'Mass_point',grille_x0,grille_x1,1,&
+         call out_href ( 'Mass_point',grille_x0,grille_x1,1,&
                                        grille_y0,grille_y1,1 )
 
          if (Level_typ_S(levset) == 'M') then
@@ -172,7 +172,7 @@
                   istat = phy_get ( ptr3d, Outp_var_S(ii,kk), &
                                     F_npath='O', F_bpath='PVED')
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
-                  call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, rff  ,&
+                  call out_fstecr ( data3d, 1,l_ni, 1,l_nj, rff  ,&
                           Outp_var_S(ii,kk),Outp_convmult(ii,kk)  ,&
                           Outp_convadd(ii,kk), knd, last_timestep,&
                           cnt,irff,cnt,Outp_nbit(ii,kk),.false. )
@@ -193,26 +193,26 @@
                   if (Level_typ_S(levset) == 'M') then
 
                      if (pmeta%stag > 0) then ! thermo
-                        call out_fstecr3 (data3d                       ,&
+                        call out_fstecr (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybt                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
-                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
+                           call out_fstecr (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybt_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
                                  1,ind0,1,Outp_nbit(ii,kk),.false. )
                         end if
                      else  ! momentum
-                        call out_fstecr3 (data3d                       ,&
+                        call out_fstecr (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybm                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
-                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
+                           call out_fstecr (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybm_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_diag,last_timestep,&
@@ -229,7 +229,7 @@
                                      lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
                              1,l_ni, 1,l_nj, inttype=Out3_vinterp_type_S)
 
-                     call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
+                     call out_fstecr ( buso_pres, 1,l_ni, 1,l_nj      ,&
                            level(1,levset),Outp_var_S(ii,kk)           ,&
                            Outp_convmult(ii,kk),Outp_convadd(ii,kk),2,last_timestep,&
                            nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk),&

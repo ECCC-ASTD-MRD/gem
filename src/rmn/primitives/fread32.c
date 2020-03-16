@@ -78,7 +78,7 @@ size_t fread16(void *ptr, size_t size, size_t nitems, FILE *stream)
     nr = fread(ptr,size,nitems,stream);
   return((size_t) nr);
 }
-
+
 /***************************************************************************** 
  *                            F R E A D 3 2                                  *
  *                                                                           * 
@@ -118,7 +118,7 @@ size_t fread32(void *ptr, size_t size, size_t nitems, FILE *stream)
 
   return((size_t) nr);
 }
-
+
 /***************************************************************************** 
  *                            F R E A D 6 4                                  *
  *                                                                           * 
@@ -169,7 +169,7 @@ size_t fread64(void *ptr, size_t size, size_t nitems, FILE *stream)
 
   return((size_t) nr);
 }
-
+
 /***************************************************************************** 
  *                          F W R I T E 1 6                                  *
  *                                                                           * 
@@ -215,7 +215,7 @@ size_t fwrite16(void *ptr, size_t size, size_t nitems, FILE *stream)
 
   return((size_t) nr);
 }
-
+
 /***************************************************************************** 
  *                          F W R I T E 3 2                                  *
  *                                                                           * 
@@ -261,7 +261,7 @@ size_t fwrite32(void *ptr, size_t size, size_t nitems, FILE *stream)
 
   return((size_t) nr);
 }
-
+
 /***************************************************************************** 
  *                          F W R I T E 6 4                                  *
  *                                                                           * 

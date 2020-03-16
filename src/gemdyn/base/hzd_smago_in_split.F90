@@ -143,17 +143,6 @@
          base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
       end do
 
-!$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
-!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, pres_t, hutmp, &
-!$omp smagcoef_uo, smagcoef_vo, F_du, F_dv) &
-!$omp shared(base_coefM, base_coefT, hu, cdelta2, ismagprandtl,&
-!$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
-!$omp        switch_on_hu, switch_on_fric_heat,switch_on_W, &
-!$omp        switch_on_wzd, fact)
-
-
-!$omp do
       do k=1,nk
 
          do j=j0-2, jn+2
@@ -341,11 +330,10 @@
          end if
 
       end do
-!$omp enddo
 
       if (switch_on_fric_heat) then
          fact=Cstv_dt_8/cdelta2**2/cpd_8
-!$omp do
+
          do k=1, nk
             if(k /= nk) then
                do j=j0, jn
@@ -362,10 +350,8 @@
                end do
             end if
          end do
-!$omp enddo
-      end if
 
-!$omp end parallel
+      end if
 
       return
       end subroutine hzd_smago_in_split

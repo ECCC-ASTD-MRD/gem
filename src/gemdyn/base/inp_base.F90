@@ -117,7 +117,7 @@ contains
       logical         , optional,intent(in)  :: F_quiet_L
       integer                   ,intent(in ) :: F_nd
       integer                   ,intent(out) :: F_nka
-      integer, dimension(:    ), pointer,intent  (out) :: F_ip1
+      integer, dimension(:    ), pointer,intent(inout) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
 
 !     local variables
@@ -129,10 +129,9 @@ contains
       logical, dimension (:), allocatable :: zlist_o
       logical :: quiet_L
       integer, parameter :: nlis = 1024
-      integer i, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
-              liste_sorted(nlis),lislon,cnt
-      ! Remove the following line by 2021
-      integer ni_dest,nj_dest,ut1_is_urt1
+      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,cnt, maxdim_wk2
+      integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -150,8 +149,6 @@ contains
       inp_read_mt= -1
       F_nka= -1 ; local_nk= 0
       add= 0.d0 ; mult= 1.d0
-      ! Remove the following line by 2021
-      ut1_is_urt1 = -1
       if (associated(F_ip1 )) deallocate (F_ip1 )
       if (associated(F_dest)) deallocate (F_dest)
       nullify (F_ip1,F_dest)
@@ -206,8 +203,10 @@ contains
 
       if ( nomvar == '@NUL' ) return
 
+      nz= -1
+      maxdim_wk2 = 1
       if (Inp_iome >= 0) then
-         vcode= -1 ; nz= -1
+         vcode= -1
          nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
                        ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
          if (lislon == 0) goto 999
@@ -253,15 +252,15 @@ contains
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
          allocate (wk3(ni_dest*nj_dest))
-         allocate (wk2(G_ni*G_nj,(nz+1)*F_nd))
+         maxdim_wk2 = (nz+1)*F_nd
+         allocate (wk2(G_ni*G_nj,maxdim_wk2))
          allocate (wk1(n1*n2,max(local_nk,1)))
 
+         wk2 = 0.
          cnt= 0
          do i= kstart, kstart+local_nk-1
             cnt= cnt+1
             err= fstluk (wk1(1,cnt), liste(i), n1,n2,n3)
-            ! Remove the following line by 2021
-            ut1_is_urt1 = inp_is_real_wind (wk1(1,cnt),n1*n2,nomvar)
          end do
 
          interp_S= 'CUBIC'
@@ -330,14 +329,13 @@ contains
          deallocate (wk1,wk3)
       else
          allocate (wk2(1,1))
+         wk2 = 0.
+         maxdim_wk2 = 1
       end if
 
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err ) !NOTE: bcas listlon AND nz
       F_nka= lislon
-      ! Remove the following line by 2021
-      call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
-                                "MPI_INTEGER", "MPI_MAX", "grid", err )
 
       if (F_nka > 0) then
 
@@ -359,11 +357,12 @@ contains
          zlist_o= .FALSE.
 
          do idst=1, F_nd
-         zlist_o= .FALSE.
-         err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id ,&
-                                      wk2(1,(idst-1)*(nz+1)+1), nz,&
-                           F_dest(l_minx,l_miny,(idst-1)*lislon+1),&
-                                            lislon, zlist, zlist_o )
+            k= min((idst-1)*(nz+1)+1,maxdim_wk2)
+            zlist_o= .FALSE.
+            err = RPN_COMM_shuf_ezdist ( &
+                           Inp_comm_setno, Inp_comm_id, wk2(1,k), nz,&
+                           F_dest(l_minx,l_miny,(idst-1)*lislon+1)  ,&
+                           lislon, zlist, zlist_o )
          end do
          deallocate (wk2,zlist,zlist_o)
 
@@ -439,7 +438,7 @@ contains
 
       call difdatsd (diffd,Step_runstrt_S,F_datev)
       step_current = diffd*86400.d0 / Step_dt + Step_initial
-      call var_topo2 ( F_topo, step_current, &
+      call var_topo ( F_topo, step_current, &
                        l_minx,l_maxx,l_miny,l_maxy )
 
       if ( associated(F_meqr) .and. .not. Grd_yinyang_L) then
@@ -773,8 +772,8 @@ inner:      do kh=1, F_nka_hu
 
       character(len=*)                  , intent(in)  :: F_target_S
       integer                           , intent(out) :: F_nka
-      integer, dimension(:    ), pointer, intent(out) :: F_ip1
-      real   , dimension(:,:,:), pointer, intent(out) :: F_u, F_v
+      integer, dimension(:    ), pointer, intent(inout) :: F_ip1
+      real   , dimension(:,:,:), pointer, intent(inout) :: F_u, F_v
 
 !     local variables
       integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
@@ -1112,7 +1111,7 @@ inner:      do kh=1, F_nka_hu
       integer, intent(in)    :: Minx,Maxx,Miny,Maxy,nki
       integer, dimension (:), pointer, intent(in) :: &
                              F_ip1_list_i,F_ip1_list_o
-      real, dimension (:,:,:), pointer, intent(out) :: F_ho
+      real, dimension (:,:,:), pointer, intent(inout) :: F_ho
       real, dimension (Minx:Maxx,Miny:Maxy,nki), intent(in) :: F_hi
       integer, parameter :: INP_OK = 0, INP_ERROR = -1
 
@@ -1200,7 +1199,7 @@ inner:      do kh=1, F_nka_hu
       integer                , intent(IN) :: k0,kn
       integer, dimension(:)    , pointer, intent(in ) :: F_ip1
       real   , dimension(:,:  ), pointer, intent(in ) :: F_sfc,F_sfcL
-      real   , dimension(:,:,:), pointer, intent(out) :: F_dest
+      real   , dimension(:,:,:), pointer, intent(inout) :: F_dest
 
 !     local variables
       integer :: istat

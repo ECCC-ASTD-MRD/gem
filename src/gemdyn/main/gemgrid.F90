@@ -25,23 +25,26 @@
       use hgc
       use lun
       use path
+      use geomh
       use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       integer, external :: gemdm_config, domain_decomp
-      character(len=120) :: outfile,etk,etk_ext
+      character(len=120) :: ofile,ofileU,ofileV,ofileR,etk,etk_ext
       character(len=2024) :: fn
       logical :: radians
-      integer :: unf,unf1,unf2,err,npack,i
+      integer :: unf,unf1,unf2,unf3,unf4,unf5,unf6,err,npack
 
       logical, parameter :: gauss_L = .false.
-      integer :: itile,jtile,i0,j0,i1,j1,ip1,ip2
+      integer :: i,j,i0,j0,ip1,ip2
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
-      real, dimension(:), allocatable :: xpos, ypos
+      real, dimension(:), allocatable :: xposu, yposv, xpos,ypos
       real, dimension(:,:), allocatable :: mask,wrk1,wrk2
       real(kind=REAL64), dimension(:), allocatable :: x_8, y_8
+      real(kind=REAL64), parameter :: HALF_8  = 0.5d0
+
 !
 !----------------------------------------------------------------------
 !
@@ -52,8 +55,18 @@
       Step_dt = 1.
       radians = .false.
 
-      outfile = 'tape1'
-      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') outfile = 'tape2'
+
+      ofile = 'tape1'
+      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofile= 'tape2'
+
+      ofileU = 'tapeU1'
+      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofileU= 'tapeU2'
+
+      ofileV = 'tapeV1'
+      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofileV= 'tapeV2'
+
+      ofileR = 'tapeRot'
+      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofileR= 'tapeRot'
 
       unf = 0
       if (fnom (unf,fn, 'SEQ+OLD', 0) == 0) then
@@ -91,14 +104,21 @@
 
       G_ni = Grd_ni ; G_nj = Grd_nj ; G_nk = 2
 
-      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
+      allocate (x_8(Grd_ni+1), y_8(Grd_nj+1), xpos(Grd_ni+1), ypos(Grd_nj+1) &
+                                            , xposU(Grd_ni ), yposV(Grd_nj ) )
 
-      call set_gemHgrid4 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy  , &
+      call set_gemHgrid4 ( x_8, y_8, G_ni+1, G_nj+1, Grd_dx, Grd_dy  , &
                            Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8, &
                            Grd_yinyang_L )
 
-      xpos(1:G_ni) = x_8(1:G_ni)
-      ypos(1:G_nj) = y_8(1:G_nj)
+      xpos(1:G_ni+1) = x_8(1:G_ni+1)
+      ypos(1:G_nj+1) = y_8(1:G_nj+1)
+
+      write(6,*) 'LONGITUDE'
+      write(6,778)(i,xpos(i),i=1,G_ni+1)
+      write(6,*) 'LATITUDE'
+      write(6,778)(i,ypos(i),i=1,G_nj+1)
+
 
       call set_igs2 ( ip1,ip2, xpos,ypos,G_ni,G_nj             ,&
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
@@ -106,24 +126,15 @@
 
       Grd_ip3 = 0
 
-      err = clib_remove(outfile)
+      err = clib_remove(ofile)
 
       unf1= 0
-      if (fnom(unf1,outfile,'RND',0) >= 0) then
+      if (fnom(unf1,ofile,'RND',0) >= 0) then
          err= fstouv (unf1, 'RND')
       else
-         print *,'problem opening', trim(outfile)
+         print *,'problem opening', trim(ofile)
          stop
       endif
-
-      i0=1    ; j0=1
-      i1=G_ni ; j1=G_nj
-      itile=1 ; jtile=1
-
-      write(output_unit,*) 'LONGITUDE'
-      write(output_unit,778)(i,xpos(i),i=1,G_ni)
-      write(output_unit,*) 'LATITUDE'
-      write(output_unit,778)(i,ypos(i),i=1,G_nj)
 
       if (Grd_yinyang_L) then
          etk_ext=trim(etk)//'_'//trim(Grd_yinyang_S)
@@ -143,14 +154,95 @@
       err = fstfrm(unf1)
       err = fclos (unf1)
 
+! U V grids
+      do i= 1, G_ni
+         xposU(i) = (x_8(i) + x_8(i+1)) * HALF_8
+      enddo
+      do j= 1, G_nj
+         yposV(j) = (y_8(j) + y_8(j+1)) * HALF_8
+      enddo
+
+!U grid
+      call set_igs2 ( ip1,ip2, xposU,ypos,G_ni,G_nj             ,&
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                      1,G_ni,1,1,G_nj,1)
+
+      err = clib_remove(ofileU)
+
+      unf2= 0
+      if (fnom(unf2,ofileU,'RND',0) >= 0) then
+         err= fstouv (unf2, 'RND')
+      else
+         print *,'problem opening', trim(ofileU)
+         stop
+      endif
+
+      err = fstecr ( xposU,xposU, npack, unf2, 0, 0, 0, G_ni, 1, 1 , &
+                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err = fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, G_nj, 1 , &
+                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      err = fstfrm(unf2)
+      err = fclos (unf2)
+! V grid
+      err = clib_remove(ofileV)
+
+      call set_igs2 ( ip1,ip2, xpos,yposV,G_ni,G_nj             ,&
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                      1,G_ni,1,1,G_nj,1)
+      unf3= 0
+      if (fnom(unf3,ofileV,'RND',0) >= 0) then
+         err= fstouv (unf3, 'RND')
+      else
+         print *,'problem opening', trim(ofileV)
+         stop
+      endif
+
+      err = fstecr ( xpos,xpos, npack, unf3, 0, 0, 0, G_ni, 1, 1 , &
+                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err = fstecr ( yposV,yposV, npack, unf3, 0, 0, 0, 1, G_nj, 1 , &
+                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      err = fstfrm(unf3)
+      err = fclos (unf3)
+
+!Rotational grid
+      err = clib_remove(ofileR)
+
+      call set_igs2 ( ip1,ip2, xposU,yposV,G_ni,G_nj             ,&
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                      1,G_ni,1,1,G_nj,1)
+      unf3= 0
+      if (fnom(unf3,ofileR,'RND',0) >= 0) then
+         err= fstouv (unf3, 'RND')
+      else
+         print *,'problem opening', trim(ofileR)
+         stop
+      endif
+
+      err = fstecr ( xposU,xposU, npack, unf3, 0, 0, 0, G_ni, 1, 1 , &
+                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      err = fstecr ( yposV,yposV, npack, unf3, 0, 0, 0, 1, G_nj, 1 , &
+                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      err = fstfrm(unf3)
+      err = fclos (unf3)
+
+
       err = domain_decomp (1, 1, .false.)
       call set_gmm
       call nest_set_gmmvar
-      unf2=0
-      if (fnom(unf2,trim(outfile)//'_core','RND',0) >= 0) then
-         err= fstouv (unf2, 'RND')
+      unf4=0
+      if (fnom(unf4,trim(ofile)//'_core','RND',0) >= 0) then
+         err= fstouv (unf4, 'RND')
       else
-         print *,'problem opening', trim(outfile//'_core')
+         print *,'problem opening', trim(ofile//'_core')
          stop
       endif
 
@@ -167,16 +259,16 @@
       call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,ni,nj, &
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,ni,1,1,nj,1)
-      err= fstecr ( xpos,xpos, npack, unf2, 0, 0, 0, ni, 1, 1, &
+      err= fstecr ( xpos,xpos, npack, unf4, 0, 0, 0, ni, 1, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, nj, 1, &
+      err= fstecr ( ypos,ypos, npack, unf4, 0, 0, 0, 1, nj, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-      unf1 = 0
-      err  = fnom(unf1,outfile,'RND',0)
-      err  = fstouv (unf1, 'RND')
+      unf5 = 0
+      err  = fnom(unf5,ofile,'RND',0)
+      err  = fstouv (unf5, 'RND')
 
       allocate (mask(G_ni, G_nj))
       allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
@@ -185,21 +277,21 @@
       call nest_blend (wrk2,wrk1,l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
       mask(1:G_ni,1:G_nj) = wrk2(1:G_ni,1:G_nj)
 
-      err = fstecr ( mask,mask, npack, unf1, 0, 0, 0, G_ni, G_nj, 1, &
+      err = fstecr ( mask,mask, npack, unf5, 0, 0, 0, G_ni, G_nj, 1, &
                      0,0,0,'X','MSKC',etk_ext,'Z'    , &
                      ip1,ip2,Grd_ip3,0, 5, .true. )
       deallocate (mask,wrk1,wrk2)
 
-      err= fstfrm(unf1)
-      err= fclos (unf1)
-      err= fstfrm(unf2)
-      err= fclos (unf2)
+      err= fstfrm(unf4)
+      err= fclos (unf4)
+      err= fstfrm(unf5)
+      err= fclos (unf5)
 
-      unf1=0
-      if (fnom(unf1,trim(outfile)//'_free','RND',0) >= 0) then
-         err= fstouv (unf1, 'RND')
+      unf6=0
+      if (fnom(unf6,trim(ofile)//'_free','RND',0) >= 0) then
+         err= fstouv (unf6, 'RND')
       else
-         print *,'problem opening', trim(outfile//'_core')
+         print *,'problem opening', trim(ofile//'_core')
          stop
       endif
 
@@ -217,17 +309,19 @@
                       xpos,ypos,ni,nj, &
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,ni,1,1,nj,1)
-      err = fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, ni, 1, 1, &
+      err = fstecr ( xpos,xpos, npack, unf6, 0, 0, 0, ni, 1, 1, &
                      Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                      Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, nj, 1, &
+      err = fstecr ( ypos,ypos, npack, unf6, 0, 0, 0, 1, nj, 1, &
                      Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                      Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-      err = fstfrm(unf1)
-      err = fclos (unf1)
+      err = fstfrm(unf6)
+      err = fclos (unf6)
 
       deallocate (x_8, y_8, xpos, ypos)
+      deallocate (xposU, yposV )
+
 
       call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
 

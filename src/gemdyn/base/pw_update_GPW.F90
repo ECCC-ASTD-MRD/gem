@@ -17,6 +17,7 @@
 !
       subroutine pw_update_GPW()
       use dynkernel_options
+      use dyn_fisl_options
       use gem_timing
       use glb_ld
       use gmm_geof
@@ -71,15 +72,15 @@
          do k=1,l_nk
             pw_wz_plus(:,:,k) = wt1(:,:,k)
             pw_gz_plus(1:l_ni,1:l_nj,k)= grav_8*zmom_8(1:l_ni,1:l_nj,k)
-            
+
             if(k == 1) then
                pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
             end if
-            pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(1:l_ni,1:l_nj,k))
+            pw_log_pm(1:l_ni,1:l_nj,k)=(qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k))
             pw_pm_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pm(1:l_ni,1:l_nj,k))
 
             if (k == l_nk) then
-               pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Ver_Tstar_8%m(k+1))+lg_pstar_8(1:l_ni,1:l_nj,k+1))
+               pw_log_pm(1:l_ni,1:l_nj,k+1)=(qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k+1))
                pw_p0_plus(1:l_ni,1:l_nj)=exp(pw_log_pm(1:l_ni,1:l_nj,l_nk+1))
             end if
          end do
@@ -92,7 +93,7 @@
             end if
          end do
 !$omp enddo
-         
+
 !$omp do
          do k=1,l_nk
             pw_pt_plus(1:l_ni,1:l_nj,k)=exp(pw_log_pt(1:l_ni,1:l_nj,k))

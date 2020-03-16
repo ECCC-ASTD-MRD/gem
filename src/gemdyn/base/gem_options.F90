@@ -76,8 +76,8 @@ module gem_options
    !# ** 100+weight*10+pexp_n -> Bermejo-Conde LEGACY=F
    !# * intp  = Type of interpolation in advection (NOT case sensitive)
    !# ** none -> No advection
-   !# ** cubic -> 3D Cubic Lagrange
-   !# ** quintic -> Horizontal Cubic + Vertical Quintic
+   !# ** tricub -> 3D Cubic Lagrange
+   !# ** bicubh_qv -> Horizontal Cubic + Vertical Quintic
    !# List of sub-parameters
    !# * weight = Weight in Bermejo-Conde
    !# ** 1 -> Additive

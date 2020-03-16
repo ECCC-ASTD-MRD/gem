@@ -2,17 +2,27 @@
 #ifndef VGRID_H
 #define VGRID_H
 
-#define VGD_OK       0
-#define VGD_ERROR    -1
-#define VGD_MISSING  -9999.
-#define VGD_LEN_NAME 5
-#define VGD_LEN_RFLD 5
-#define VGD_LEN_RFLS 5
-#define VGD_LEN_ETIK 13
-#define VGD_LEN_TYPVAR 3
-#define VGD_LEN_GRTYP  2
+#define VGD_OK          0
+#define VGD_ERROR      -1
+#define VGD_MISSING -9999.0
+#define VGD_LEN_NAME    5
+#define VGD_LEN_RFLD    5
+#define VGD_LEN_RFLS    5
+#define VGD_LEN_ETIK   13
+#define VGD_LEN_TYPVAR  3
+#define VGD_LEN_GRTYP   2
 #define VGD_NO_REF_NOMVAR "    "
+
+// WARNING  WARNING  WARNING  WARNING  WARNING WARNING  WARNING WARNING
+// There is a PGI bug that influences the following declarations!
+// Only the last one (VGD_STDA76_SFC_P) in vgrid_descriptors.F90 will
+// have the assigned value and will be accessible outside that file!
+// Both definitions must be kept in sync!
+#ifdef __PGI
+float VGD_STDA76_SFC_T = 288.15;
+#else
 extern float VGD_STDA76_SFC_T;
+#endif
 extern float VGD_STDA76_SFC_P;
 
 

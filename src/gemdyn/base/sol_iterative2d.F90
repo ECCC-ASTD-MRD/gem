@@ -62,8 +62,6 @@
          wk_sol = 0.d0
       end if
 
-!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,wk_rhs)
-!$omp do
       do j=1+pil_s, ldnh_nj-pil_n
          call dgemm ('N','N', ni, G_nk, G_nk, 1.d0, F_rhs_sol(1+pil_w,j,1), &
                      nij, Opr_lzevec_8, G_nk, 0.d0, wk_rhs(1+pil_w,j,1), nij)
@@ -74,8 +72,6 @@
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
 
       nk = G_nk - Lam_gbpil_T
 
@@ -100,14 +96,10 @@
          end do
       end if
 
-!$omp parallel private (j) shared (g_nk, wk_sol)
-!$omp do
       do j=1+pil_s, ldnh_nj-pil_n
          call dgemm ('N','T', ni, G_nk, G_nk, 1.d0, wk_sol(1+pil_w,j,1), &
                       nij, Opr_zevec_8, G_nk, 0.d0, F_lhs_sol(1+pil_w,j,1), nij)
       end do
-!$omp enddo
-!$omp end parallel
 
  1004 format (3x,'level',i3, ' : FGMRES converged at iteration', i3,' to a solution with relative residual',1pe14.7)
 !

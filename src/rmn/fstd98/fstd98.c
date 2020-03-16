@@ -41,7 +41,7 @@
 #define Max_Ipvals 50
 
 static int ip_nb[3] = {0,0,0};
-static int ip1s_flag = 0; 
+static int ip1s_flag = 0;
 static int ip2s_flag = 0;
 static int ip3s_flag = 0;
 static int dejafait_1=0, dejafait_2=0;
@@ -53,12 +53,12 @@ static int link_n;
 static int stdf_version = 200001;
 static int downgrade_32=0;    /* downgrade 64 bit field to 32 bit field when reading */
 static char *ARMNLIB=NULL;    /* ARMNLIB environment variable */
-static char *debug_filename=NULL;   /* print on debug file when available */  
+static char *debug_filename=NULL;   /* print on debug file when available */
 static char *requetes_filename=NULL;  /* filter file, desire/exclure */
 static int remap_table[2][10];    /* used for datatype remapping */
 static int nb_remap=0;            /* number of datatype remapping,  0 = no remapping */
 static char prnt_options[128]="NINJNK+DATESTAMPO+IP1+IG1234";   /* what is printed with fstecr */
-static void crack_std_parms(stdf_dir_keys *stdf_entry, 
+static void crack_std_parms(stdf_dir_keys *stdf_entry,
         stdf_special_parms *cracked_parms);
 static void print_std_parms(stdf_dir_keys *stdf_entry,
                             char *pre, char *option,int header);
@@ -66,8 +66,8 @@ static void print_std_parms(stdf_dir_keys *stdf_entry,
 static int kinds_table_init = 1;
 static char kind_chars[96];
 
-static char *kinds_table[] = 
-{ 
+static char *kinds_table[] =
+{
   "??", "??", "??", "??", "??", "??", "??", "??",
   "??", "??", "??", "??", "??", "??", "??", "??",
   "??", "??", "??", "??", "??", "??", "??", "??",
@@ -81,8 +81,8 @@ void DecodeMissingValue(void *field,int nvalues,int datatype,int is_byte,int is_
 
 /*splitpoint aaaa_comment */
 /*****************************************************************************
- *                                                                           * 
- *                              F S T D 9 8                                  * 
+ *                                                                           *
+ *                              F S T D 9 8                                  *
  *                                                                           *
  *             RPN standard file system software version 1998.               *
  *                                                                           *
@@ -139,20 +139,20 @@ static char *dummy="??";
   return &kind_chars[3*kind];
 }
 
-
+
 
 /*splitpoint c_fstapp */
-/***************************************************************************** 
+/*****************************************************************************
  *                            C _ F S T A P P                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Position at the end of a sequential file for an append.                 *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  IN  option  kept for backward compatibility                              * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  IN  option  kept for backward compatibility                              *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstapp(int iun, char *option)
@@ -224,18 +224,18 @@ int c_fstapp(int iun, char *option)
   f->nxtadr = f->cur_addr;
   return(0);
 }
-
+
 /*splitpoint c_fstckp */
-/***************************************************************************** 
+/*****************************************************************************
  *                            C _ F S T C K P                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Checkpoint. Clear buffers, rewrite headers.                             *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *                                                                           *
  *****************************************************************************/
 int c_fstckp(int iun)
 {
@@ -251,59 +251,59 @@ int c_fstckp(int iun)
     sprintf(errmsg,"file (unit=%d) is not open",iun);
     return(error_msg("c_fstckp",ERR_NO_FILE,ERROR));
   }
-  
+
   xdf_checkpoint = 1;           /* checkpoint mode, not a complete close */
   ier = c_xdfcls(iun);
   return(ier);
 }
-
+
 /*splitpoint c_fst_data_length */
-/***************************************************************************** 
+/*****************************************************************************
  *                  C _ F S T _ D A T A _ L E N G T H                        *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Gives information on data lenght of the elements passed to fstecr       *
  *   and fstlir (double, short integer, byte ...)                            *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  length_type     data length kind                                     * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  length_type     data length kind                                     *
  *                      1: byte                                              *
  *                      2: short (16 bits)                                   *
  *                      4: regular 32 bits                                   *
  *                      8: double (64 bits)                                  *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 int c_fst_data_length(int length_type)
 {
-  
+
   switch (length_type) {
 
-    case 1: 
+    case 1:
       xdf_byte = 1;
       xdf_short = 0;
       xdf_double = 0;
       break;
-    
-    case 2: 
-      xdf_byte = 0;      
+
+    case 2:
+      xdf_byte = 0;
       xdf_short = 1;
       xdf_double = 0;
-      
+
       break;
-    
-    case 4: 
+
+    case 4:
       xdf_byte = 0;
       xdf_short = 0;
       xdf_double = 0;
       break;
-    
+
     case 8:
       xdf_byte = 0;
       xdf_short = 0;
       xdf_double = 1;
       break;
-      
+
     default:
       fprintf(stderr,"c_fst_data_length invalid length type=%d",length_type);
       xdf_byte = 0;
@@ -314,46 +314,46 @@ int c_fst_data_length(int length_type)
 return(0);
 }
 
-
+
 /*
 void *fst_encode_missing_value(void *field,void *field2,int nvalues,int datatype,int nbits,int is_byte,int is_short,int is_double);
 void fst_decode_missing_value(void *field,int nvalues,int datatype,int is_byte,int is_short,int is_double);
 */
 /*splitpoint c_fstecr */
-/***************************************************************************** 
+/*****************************************************************************
  *                           C _ F S T E C R                                 *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Writes record to file.                                                  *
- *                                                                           * 
+ *                                                                           *
  *Revision                                                                   *
  *   Sept 2011 - Deltat, becomes a long long (deet*npas > 32bit)             *
  *   Mar  2013 - M.Valin  missing values, turbo compression, byte/short mods *
  *                                                                           *
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  field   field to write to the file                                   * 
- *  IN  work    work field (kept for backward compatibility)                 * 
- *  IN  npak    number of bits kept for the elements of the field (-npak)    * 
- *  IN  iun     unit number associated to the file                           * 
- *  IN  date    date time stamp                                              * 
- *  IN  deet    length of a time step in seconds                             * 
- *  IN  npas    time step number                                             * 
- *  IN  ni      first dimension of the data field                            * 
- *  IN  nj      second dimension of the data field                           * 
- *  IN  nk      third dimension of the data field                            * 
- *  IN  ip1     vertical level                                               * 
- *  IN  ip2     forecast hour                                                * 
- *  IN  ip3     user defined identifier                                      * 
- *  IN  typvar  type of field (forecast, analysis, climatology)              * 
- *  IN  nomvar  variable name                                                * 
- *  IN  etiket  label                                                        * 
- *  IN  grtyp   type of geographical projection                              * 
- *  IN  ig1     first grid descriptor                                        * 
- *  IN  ig2     second grid descriptor                                       * 
- *  IN  ig3     third grid descriptor                                        * 
- *  IN  ig4     fourth grid descriptor                                       * 
- *  IN  datyp   data type of the elements                                    * 
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  field   field to write to the file                                   *
+ *  IN  work    work field (kept for backward compatibility)                 *
+ *  IN  npak    number of bits kept for the elements of the field (-npak)    *
+ *  IN  iun     unit number associated to the file                           *
+ *  IN  date    date time stamp                                              *
+ *  IN  deet    length of a time step in seconds                             *
+ *  IN  npas    time step number                                             *
+ *  IN  ni      first dimension of the data field                            *
+ *  IN  nj      second dimension of the data field                           *
+ *  IN  nk      third dimension of the data field                            *
+ *  IN  ip1     vertical level                                               *
+ *  IN  ip2     forecast hour                                                *
+ *  IN  ip3     user defined identifier                                      *
+ *  IN  typvar  type of field (forecast, analysis, climatology)              *
+ *  IN  nomvar  variable name                                                *
+ *  IN  etiket  label                                                        *
+ *  IN  grtyp   type of geographical projection                              *
+ *  IN  ig1     first grid descriptor                                        *
+ *  IN  ig2     second grid descriptor                                       *
+ *  IN  ig3     third grid descriptor                                        *
+ *  IN  ig4     fourth grid descriptor                                       *
+ *  IN  datyp   data type of the elements                                    *
  *          0: binary, transparent                                           *
  *          1: floating point                                                *
  *          2: unsigned integer                                              *
@@ -369,7 +369,7 @@ void fst_decode_missing_value(void *field,int nvalues,int datatype,int is_byte,i
  *      +128 : second stage packer active                                    *
  *      +64  : missing value convention used                                 *
  *  IN  rewrit  rewrite flag (true=rewrite existing record, false=append)    *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 int c_fstecr(word *field_in, void * work, int npak,
                         int iun, int date,
@@ -399,7 +399,7 @@ int c_fstecr(word *field_in, void * work, int npak,
   int in_datyp = in_datyp_ori & 0xFFBF ; /* suppress missing value flag (64) */
   int sizefactor ; /* number of bytes per data item */
   int IEEE_64=0  ; /* flag 64 bit IEEE (type 5 or 8) */
-  
+
   file_table_entry *f;
   stdf_dir_keys *stdf_entry;
   buffer_interface_ptr buffer;
@@ -423,7 +423,7 @@ int c_fstecr(word *field_in, void * work, int npak,
     is_missing = 0;   /* missing values not supported for complex type */
     in_datyp = 8; /* extra compression not supported for complex type */
   }
- 
+
   l1 = strlen(in_typvar);
   l2 = strlen(in_nomvar);
   l3 = strlen(in_etiket);
@@ -495,7 +495,7 @@ int c_fstecr(word *field_in, void * work, int npak,
 
     if ( ((in_datyp & 0xF) == 5) && (nbits == 64) ) IEEE_64=1;  /* 64 bits real IEEE */
     if ( ((in_datyp & 0xF) == 8) && (nbits == 64) ) IEEE_64=1;  /* 64 bits complex IEEE */
-        
+
   /* validate range of arguments */
   VALID(ni,1,NI_MAX,"ni","c_fstecr")
   VALID(nj,1,NJ_MAX,"nj","c_fstecr")
@@ -523,12 +523,12 @@ int c_fstecr(word *field_in, void * work, int npak,
     datev = (unsigned int) f_datev;
   }
 
-  if ((npak == 0) || (npak == 1)) 
+  if ((npak == 0) || (npak == 1))
     datyp = 0;                     /* no compaction */
-  
+
   /* allocate and initialize a buffer interface for xdfput */
   /* an extra 512 bytes are allocated for cluster alignment purpose (seq) */
-  
+
   if (! image_mode_copy)
     for (i=0; i < nb_remap; i++)
       if (datyp == remap_table[0][i]) {
@@ -556,53 +556,53 @@ int c_fstecr(word *field_in, void * work, int npak,
     datyp = 1;
     }
   switch (datyp) {
-  
+
     case 6:
       c_float_packer_params(&header_size,&stream_size,&p1out,&p2out,ni*nj*nk);
       nw = ((header_size+stream_size) * 8 + 63) / 64;
       header_size /= sizeof(INT_32);
       stream_size /= sizeof(INT_32);
       break;
-  
+
     case 8:
       nw = 2 * ((ni * nj * nk *nbits + 63) / 64);
       break;
-      
+
     case 129:
       nw = (ni*nj*nk*Max(nbits,16) + 128 + 32 + 63) / 64;         /* 120 bits (floatpack header)+8, 32 bits (extra header) */
       break;
-    
+
     case 130:
       nw = (ni*nj*nk*Max(nbits,16) +32 + 63) / 64;                /* 32 bits (extra header) */
       break;
-    
+
     case 134:
       c_float_packer_params(&header_size,&stream_size,&p1out,&p2out,ni*nj*nk);
       nw = ((header_size+stream_size) * 8 + 32 + 63) / 64;
       stream_size /= sizeof(INT_32);
       header_size /= sizeof(INT_32);
       break;
-      
+
     default:
       nw = (ni*nj*nk*nbits + 120 + 63) / 64;
       break;
     } /* end switch */
-    
+
   nw = W64TOWD(nw);
-  
+
   keys_len = W64TOWD((f->primary_len + f->info_len));
   buffer = (buffer_interface_ptr) alloca((10+keys_len+nw+128)*sizeof(word));
-  if (buffer) 
+  if (buffer)
     memset(buffer,0,(10+keys_len+nw+128)*sizeof(word));
   else {
     sprintf(errmsg,"memory is full, was trying to allocate %ld bytes",
             (10+keys_len+nw+128)*sizeof(word));
-    return(error_msg("c_fstecr",ERR_MEM_FULL,ERRFATAL));    
+    return(error_msg("c_fstecr",ERR_MEM_FULL,ERRFATAL));
   }
   buffer->nwords = 10 + keys_len + nw;
   buffer->nbits = (keys_len + nw) * bitmot;
   buffer->record_index = RECADDR;
-  buffer->data_index = buffer->record_index + 
+  buffer->data_index = buffer->record_index +
                        W64TOWD((f->primary_len + f->info_len));
   buffer->iun = iun;
   buffer->aux_index = buffer->record_index + W64TOWD(f->primary_len);
@@ -620,7 +620,7 @@ int c_fstecr(word *field_in, void * work, int npak,
   stdf_entry->ni = ni;
   stdf_entry->gtyp = grtyp[0];
   stdf_entry->nj = nj;
-  stdf_entry->datyp = datyp | is_missing;  /* propagate missing values flag        */ 
+  stdf_entry->datyp = datyp | is_missing;  /* propagate missing values flag        */
          /* this value may be changed later in the code to eliminate improper flags */
   stdf_entry->nk = nk;
   stdf_entry->ubc = 0;
@@ -632,28 +632,28 @@ int c_fstecr(word *field_in, void * work, int npak,
   stdf_entry->ig2b = ig2 >> 8;
   stdf_entry->ig3 = ig3;
   stdf_entry->ig2c = ig2 & 0xff;
-  stdf_entry->etik15 = 
+  stdf_entry->etik15 =
     (ascii6(etiket[0]) << 24) |
     (ascii6(etiket[1]) << 18) |
     (ascii6(etiket[2]) << 12) |
     (ascii6(etiket[3]) <<  6) |
     (ascii6(etiket[4]));
   stdf_entry->pad1 = 0;
-  stdf_entry->etik6a = 
+  stdf_entry->etik6a =
     (ascii6(etiket[5]) << 24) |
     (ascii6(etiket[6]) << 18) |
     (ascii6(etiket[7]) << 12) |
     (ascii6(etiket[8])<<  6) |
     (ascii6(etiket[9]));
   stdf_entry->pad2 = 0;
-  stdf_entry->etikbc = 
+  stdf_entry->etikbc =
     (ascii6(etiket[10]) <<  6) |
     (ascii6(etiket[11]));
-  stdf_entry->typvar = 
+  stdf_entry->typvar =
     (ascii6(typvar[0]) <<  6) |
     (ascii6(typvar[1]));
   stdf_entry->pad3 = 0;
-  stdf_entry->nomvar = 
+  stdf_entry->nomvar =
     (ascii6(nomvar[0]) << 18) |
     (ascii6(nomvar[1]) << 12) |
     (ascii6(nomvar[2]) <<  6) |
@@ -725,7 +725,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       break;
 
     case 1: case 129:             /* floating point */
-      if ((datyp > 128) && (nbits <= 16)) {      /* use an additionnal compression scheme */    
+      if ((datyp > 128) && (nbits <= 16)) {      /* use an additionnal compression scheme */
         packfunc(field,&(buffer->data[keys_len+1]),&(buffer->data[keys_len+5]),
                 ni*nj*nk,nbits+64*Max(16,nbits),0,xdf_stride,1,0,&tempfloat);     /* nbits>64 flags a different packing */
         compressed_lng = armn_compress(&(buffer->data[keys_len+5]),ni,nj,nk,nbits,1);
@@ -740,13 +740,13 @@ int c_fstecr(word *field_in, void * work, int npak,
            nbytes = 16+ compressed_lng;
     /*        fprintf(stderr,"Debug+ apres armn_compress nbytes=%d\n",nbytes); */
            nw = (nbytes * 8 + 63) / 64;
-           nw = W64TOWD(nw); 
+           nw = W64TOWD(nw);
            buffer->data[keys_len] = nw;
     /*        fprintf(stderr,"Debug+ pack buffer->data[keys_len]=%d\n",buffer->data[keys_len]); */
            buffer->nbits = (keys_len + nw) * bitmot;
            }
          }
-      else    
+      else
         {
           packfunc(field,&(buffer->data[keys_len]),&(buffer->data[keys_len+3]),
                    ni*nj*nk,nbits,24,xdf_stride,1,0,&tempfloat);
@@ -764,18 +764,18 @@ int c_fstecr(word *field_in, void * work, int npak,
           nbits = stdf_entry->nbits;
           memcpy(&(buffer->data[keys_len+offset]),field,ni*nj*nk*2);
         }
-        else if (xdf_byte) {        
-          stdf_entry->nbits = Min(8,nbits); 
+        else if (xdf_byte) {
+          stdf_entry->nbits = Min(8,nbits);
           nbits = stdf_entry->nbits;
           memcpy_8_16(&(buffer->data[keys_len+offset]),field,ni*nj*nk);
         }
         else {
           memcpy_32_16(&(buffer->data[keys_len+offset]),field,nbits,ni*nj*nk);
-/*          
+/*
           ier = compact_integer(field,(void *) NULL,&(buffer->data[keys_len+offset]),
                                 ni*nj*nk,nbits,0,xdf_stride,1);
-*/                                
-        }                      
+*/
+        }
         c_armn_compress_setswap(0);
         compressed_lng = armn_compress(&(buffer->data[keys_len+offset]),ni,nj,nk,nbits,1);
         c_armn_compress_setswap(1);
@@ -788,9 +788,9 @@ int c_fstecr(word *field_in, void * work, int npak,
           nbytes = 4 + compressed_lng;
        /*   fprintf(stderr,"Debug+ fstecr armn_compress compressed_lng=%d\n",compressed_lng); */
           nw = (nbytes * 8 + 63) / 64;
-          nw = W64TOWD(nw); 
+          nw = W64TOWD(nw);
           buffer->data[keys_len] = nw;
-          buffer->nbits = (keys_len + nw) * bitmot;                      
+          buffer->nbits = (keys_len + nw) * bitmot;
         }
       }
       else {
@@ -803,7 +803,7 @@ int c_fstecr(word *field_in, void * work, int npak,
         else if (xdf_byte) {
           ier = compact_char(field,(void *) NULL,&(buffer->data[keys_len]),
                              ni*nj*nk,Min(8,nbits),0,xdf_stride,9);
-          stdf_entry->nbits = Min(8,nbits); 
+          stdf_entry->nbits = Min(8,nbits);
           nbits = stdf_entry->nbits;
         }
         else {
@@ -813,7 +813,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       }
       break;
       }
-    
+
     case 3: case 131:              /* character */
       {
         int nc = (ni*nj+3)/4;
@@ -827,7 +827,7 @@ int c_fstecr(word *field_in, void * work, int npak,
         stdf_entry->nbits = 8;
         break;
       }
-      
+
     case 4: case 132:              /* signed integer */
       if(datyp==132) {
         WARNPRINT fprintf(stderr,"WARNING: extra compression not supported, data type %d reset to %d\n",stdf_entry->datyp,is_missing | 4);
@@ -835,7 +835,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       }
       stdf_entry->datyp = is_missing | 4;  /* turbo compression not supported for this type, revert to normal mode */
 #ifdef use_old_signed_pack_unpack_code
-!! fprintf(stderr,"OLD PACK CODE======================================\n");
+// fprintf(stderr,"OLD PACK CODE======================================\n");
       field3 = field;
       if(xdf_short || xdf_byte){
         field3=(word *)alloca(ni*nj*nk*sizeof(word));
@@ -846,7 +846,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       ier = compact_integer(field3,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,3);
 #else
-!! fprintf(stderr,"NEW PACK CODE======================================\n");
+// fprintf(stderr,"NEW PACK CODE======================================\n");
       if(xdf_short){
         ier = compact_short(field,(void *) NULL,&(buffer->data[keys_len]),ni*nj*nk,
                             nbits,0,xdf_stride,7);
@@ -859,7 +859,7 @@ int c_fstecr(word *field_in, void * work, int npak,
       }
 #endif
       break;
-      
+
     case 5: case 8: case 133:  case 136:            /* IEEE and IEEE complex representation */
       {
         ftnword f_ni = (ftnword) ni;
@@ -873,7 +873,7 @@ int c_fstecr(word *field_in, void * work, int npak,
           stdf_entry->datyp = 8;
         }
         if (datyp == 133) {
-          /* use an additionnal compression scheme */    
+          /* use an additionnal compression scheme */
           compressed_lng = c_armn_compress32(&(buffer->data[keys_len+1]), field, ni,nj,nk,nbits);
           if (compressed_lng < 0)
            {
@@ -881,10 +881,10 @@ int c_fstecr(word *field_in, void * work, int npak,
              f77name(ieeepak)(field,&(buffer->data[keys_len]),&f_ni,&f_njnk,&f_minus_nbits,
                               &f_zero,&f_one);
            }
-          else {           
+          else {
             nbytes = 16 + compressed_lng;
             nw = (nbytes * 8 + 63) / 64;
-            nw = W64TOWD(nw); 
+            nw = W64TOWD(nw);
             buffer->data[keys_len] = nw;
             buffer->nbits = (keys_len + nw) * bitmot;
             }
@@ -899,7 +899,7 @@ int c_fstecr(word *field_in, void * work, int npak,
 
     case 6: case 134:             /* floating point, new packers */
       {
-        if ((datyp > 128) && (nbits <= 16)) {      /* use an additionnal compression scheme */    
+        if ((datyp > 128) && (nbits <= 16)) {      /* use an additionnal compression scheme */
           c_float_packer(field,nbits,&(buffer->data[keys_len+1]),&(buffer->data[keys_len+1+header_size]),ni*nj*nk);
           compressed_lng = armn_compress(&(buffer->data[keys_len+1+header_size]),ni,nj,nk,nbits,1);
           if (compressed_lng < 0)
@@ -907,24 +907,24 @@ int c_fstecr(word *field_in, void * work, int npak,
              stdf_entry->datyp = 6;
              c_float_packer(field,nbits,&(buffer->data[keys_len]),&(buffer->data[keys_len+header_size]),ni*nj*nk);
            }
-          else { 
+          else {
             nbytes = 16 + (header_size*4) + compressed_lng;
         /*   fprintf(stderr,"Debug+ apres armn_compress nbytes=%d\n",nbytes); */
             nw = (nbytes * 8 + 63) / 64;
-            nw = W64TOWD(nw); 
+            nw = W64TOWD(nw);
             buffer->data[keys_len] = nw;
         /*   fprintf(stderr,"Debug+ pack buffer->data[keys_len]=%d\n",buffer->data[keys_len]); */
             buffer->nbits = (keys_len + nw) * bitmot;
           }
 
         }
-        else {   
+        else {
           c_float_packer(field,nbits,&(buffer->data[keys_len]),&(buffer->data[keys_len+header_size]),ni*nj*nk);
 /*          fprintf(stderr,"Debug+ fstecr apres float_packer buffer->data=%8X\n",buffer->data[keys_len]); */
         }
         break;
       }
-       
+
     case 7: case 135:              /* character string */
       if(datyp==135) {
         WARNPRINT fprintf(stderr,"WARNING: extra compression not available, data type %d reset to %d\n",stdf_entry->datyp,7);
@@ -934,14 +934,14 @@ int c_fstecr(word *field_in, void * work, int npak,
       ier = compact_char(field,(void *) NULL,&(buffer->data[keys_len]),
                             ni*nj*nk,8,0,xdf_stride,9);
       break;
-                  
+
     default: sprintf(errmsg,"(unit=%d) invalid datyp=%d",iun,datyp);
       return(error_msg("c_fstecr",ERR_BAD_DATYP,ERROR));
-      
+
     } /* end switch */
   }   /* end if image mode copy */
 
-   
+
   /* write record to file and add entry to directory */
   ier = c_xdfput(iun,handle,buffer);
   if (msg_level <= INFORM) {
@@ -959,13 +959,13 @@ int c_fstecr(word *field_in, void * work, int npak,
 /*****************************************************************************
  *                     C _ F S T _ E D I T _ D I R                           *
  *                                                                           *
- *Object                                                                     * 
+ *Object                                                                     *
  *   Edits the directory content of a RPN standard file.                     *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  handle     handle to the directory entry to edit                     * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  handle     handle to the directory entry to edit                     *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fst_edit_dir_plus(int handle,
@@ -989,9 +989,9 @@ int c_fst_edit_dir_plus(int handle,
   char nomvar[5]={' ',' ',' ',' ','\0'};
   char grtyp[2]={' ','\0'};
 
- 
+
   index = INDEX_FROM_HANDLE(handle);
-   
+
   if ((index < 0) || (index >= MAX_XDF_FILES)) {
     sprintf(errmsg,"invalid handle=%d",handle);
     return(error_msg("c_fst_edit_dir",ERR_BAD_HNDL,ERROR));
@@ -1003,7 +1003,7 @@ int c_fst_edit_dir_plus(int handle,
     sprintf(errmsg,"file (unit=%d) is not a RPN standard file",f->iun);
     return(error_msg("c_fst_edit_dir",ERR_NO_FILE,ERROR));
   }
-   
+
   if (f->xdf_seq) {
     sprintf(errmsg,"file (unit=%d) is not a RPN standard file",f->iun);
     return(error_msg("c_fst_edit_dir",ERR_NO_FILE,ERROR));
@@ -1048,29 +1048,29 @@ int c_fst_edit_dir_plus(int handle,
   if (ig3 != -1) stdf_entry->ig3 = ig3;
   if (ig4 != -1) stdf_entry->ig4 = ig4;
   if (strcmp(etiket,"            ") !=0 ) {
-    stdf_entry->etik15 = 
+    stdf_entry->etik15 =
       (ascii6(etiket[0]) << 24) |
       (ascii6(etiket[1]) << 18) |
       (ascii6(etiket[2]) << 12) |
       (ascii6(etiket[3]) <<  6) |
       (ascii6(etiket[4]));
-    stdf_entry->etik6a = 
+    stdf_entry->etik6a =
       (ascii6(etiket[5]) << 24) |
       (ascii6(etiket[6]) << 18) |
       (ascii6(etiket[7]) << 12) |
       (ascii6(etiket[8])<<  6) |
       (ascii6(etiket[9]));
-    stdf_entry->etikbc = 
+    stdf_entry->etikbc =
       (ascii6(etiket[10]) <<  6) |
       (ascii6(etiket[11]));
   }
   if (strcmp(typvar,"  ") != 0) {
-    stdf_entry->typvar = 
+    stdf_entry->typvar =
       (ascii6(typvar[0]) <<  6) |
       (ascii6(typvar[1]));
   }
   if (strcmp(nomvar,"    ") != 0) {
-    stdf_entry->nomvar = 
+    stdf_entry->nomvar =
       (ascii6(nomvar[0]) << 18) |
       (ascii6(nomvar[1]) << 12) |
       (ascii6(nomvar[2]) <<  6) |
@@ -1099,18 +1099,18 @@ int c_fst_edit_dir(int handle,
 {
   return c_fst_edit_dir_plus(handle,date,deet,npas,-1,-1,-1,ip1,ip2,ip3,in_typvar,in_nomvar,in_etiket," ",ig1,ig2,ig3,ig4,-1);
 }
-
+
 /*splitpoint c_fsteff */
-/***************************************************************************** 
+/*****************************************************************************
  *                         C _ F S T E F F                                   *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Deletes the record associated to handle.                                *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  handle  handle to the record to delete                               * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  handle  handle to the record to delete                               *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fsteff(int handle)
@@ -1143,18 +1143,18 @@ int c_fsteff(int handle)
   ier = c_xdfdel(handle);
   return(ier);
 }
-
+
 /*splitpoint c_fsteof */
-/***************************************************************************** 
+/*****************************************************************************
  *                            C _ F S T E O F                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Return the level of end of file for the sequential file.                *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *                                                                           *
  *****************************************************************************/
 int c_fsteof(int iun)
 {
@@ -1178,7 +1178,7 @@ int c_fsteof(int iun)
 
   if (!f->xdf_seq)
     return(0);
-  
+
   eof = 0;
   if (!f->fstd_vintage_89) {
     header = (xdf_record_header *) f->head_keys;
@@ -1187,24 +1187,24 @@ int c_fsteof(int iun)
   }
   else {
     seq_entry = (seq_dir_keys *) f->head_keys;
-    if (seq_entry->eof > 0) 
+    if (seq_entry->eof > 0)
       eof = (seq_entry->eof == 31) ? 15 : seq_entry->eof;
   }
 
   return(eof);
 }
-
+
 /*splitpoint c_fstfrm */
-/***************************************************************************** 
+/*****************************************************************************
  *                         C _ F S T F R M                                   *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Closes a RPN standard file.                                             *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstfrm(int iun)
@@ -1214,28 +1214,28 @@ int c_fstfrm(int iun)
   ier = c_xdfcls(iun);
   return(ier);
 }
-
+
 /*splitpoint c_fstinf */
-/***************************************************************************** 
+/*****************************************************************************
  *                        C _ F S T I N F                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Locate the next record that matches the research keys.                  *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  OUT ni      dimension 1 of the data field                                * 
- *  OUT nj      dimension 2 of the data field                                * 
- *  OUT nk      dimension 3 of the data field                                * 
- *  IN  datev   valid date                                                   * 
- *  IN  etiket  label                                                        * 
- *  IN  ip1     vertical level                                               * 
- *  IN  ip2     forecast hour                                                * 
- *  IN  ip3     user defined identifier                                      * 
- *  IN  typvar  type of field                                                * 
- *  IN  nomvar  variable name                                                * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  OUT ni      dimension 1 of the data field                                *
+ *  OUT nj      dimension 2 of the data field                                *
+ *  OUT nk      dimension 3 of the data field                                *
+ *  IN  datev   valid date                                                   *
+ *  IN  etiket  label                                                        *
+ *  IN  ip1     vertical level                                               *
+ *  IN  ip2     forecast hour                                                *
+ *  IN  ip3     user defined identifier                                      *
+ *  IN  typvar  type of field                                                *
+ *  IN  nomvar  variable name                                                *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstinf(int iun, int *ni, int *nj, int *nk, int datev,char *in_etiket,
@@ -1248,32 +1248,32 @@ int c_fstinf(int iun, int *ni, int *nj, int *nk, int datev,char *in_etiket,
                       in_typvar,in_nomvar);
   return(err);
 }
-
+
 /*splitpoint c_fstinfx */
-/***************************************************************************** 
+/*****************************************************************************
  *                       C _ F S T I N F X                                   *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Locate the next record that matches the research keys.                  *
- *   The search begins at the position given by handle.                      * 
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  handle  handle from which the search begins                          * 
- *  IN  iun     unit number associated to the file                           * 
- *  OUT ni      dimension 1 of the data field                                * 
- *  OUT nj      dimension 2 of the data field                                * 
- *  OUT nk      dimension 3 of the data field                                * 
+ *   The search begins at the position given by handle.                      *
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  handle  handle from which the search begins                          *
+ *  IN  iun     unit number associated to the file                           *
+ *  OUT ni      dimension 1 of the data field                                *
+ *  OUT nj      dimension 2 of the data field                                *
+ *  OUT nk      dimension 3 of the data field                                *
  *  IN  datev   valid date stamp                                             *
- *              last 3 bits ignored, used to be run number                   * 
+ *              last 3 bits ignored, used to be run number                   *
  *              search resolution drops to 40s                               *
- *  IN  etiket  label                                                        * 
- *  IN  ip1     vertical level                                               * 
- *  IN  ip2     forecast hour                                                * 
- *  IN  ip3     user defined identifier                                      * 
- *  IN  typvar  type of field                                                * 
- *  IN  nomvar  variable name                                                * 
- *                                                                           * 
+ *  IN  etiket  label                                                        *
+ *  IN  ip1     vertical level                                               *
+ *  IN  ip2     forecast hour                                                *
+ *  IN  ip3     user defined identifier                                      *
+ *  IN  typvar  type of field                                                *
+ *  IN  nomvar  variable name                                                *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
@@ -1364,7 +1364,7 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
 
   stdf_entry->ip3 = ip3;
   if ((ip3 == -1) || (ip3s_flag)) search_mask->ip3 = 0;
-  
+
   stdf_entry->nomvar = (ascii6(nomvar[0]) << 18) |
                        (ascii6(nomvar[1]) << 12) |
                        (ascii6(nomvar[2]) <<  6) |
@@ -1400,7 +1400,7 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
   if (handle == -2)  /* means handle not specified */
     if (f->xdf_seq)
       handle = c_xdfloc2(iun,-1,pkeys,16,pmask);
-    else 
+    else
       handle = c_xdfloc2(iun,0,pkeys,16,pmask);
   else {
     if (handle > 0) {
@@ -1414,18 +1414,18 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
     }
     handle = c_xdfloc2(iun,handle,pkeys,16,pmask);
   }
-          
+
   if (handle < 0) {
     if (msg_level == TRIVIAL)
       fprintf(stdout,"c_fstinf: (unit=%d) record not found, errcode=%d\n",
               iun,handle);
-    if (ip1s_flag || ip2s_flag || ip3s_flag) ier = init_ip_vals();          
+    if (ip1s_flag || ip2s_flag || ip3s_flag) ier = init_ip_vals();
     free(stdf_entry);
     free(search_mask);
     return(handle);
   }
   ier = c_xdfprm(handle,&addr,&lng,&idtyp,pkeys,16);
-  
+
   if (ip1s_flag || ip2s_flag || ip3s_flag) {
     int nomatch = 1;
     while ((handle >=  0) && (nomatch)) {
@@ -1434,7 +1434,7 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
         if (ip_is_equal(ip1,stdf_entry->ip1,1) == 0)
           nomatch = 1;
         else if ((ip2s_flag) && (ip2 >= 0))
-           if (ip_is_equal(ip2,stdf_entry->ip2,2) == 0) 
+           if (ip_is_equal(ip2,stdf_entry->ip2,2) == 0)
              nomatch = 1;
            else if ((ip3s_flag) && (ip3 >= 0))
              if (ip_is_equal(ip3,stdf_entry->ip3,3) == 0)
@@ -1459,27 +1459,27 @@ int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
   free(search_mask);
   return(handle);
 }
-
+
 /*splitpoint c_fstinl */
-/***************************************************************************** 
+/*****************************************************************************
  *                        C _ F S T I N L                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Locates all the records that matches the research keys.                 *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  OUT ni      dimension 1 of the data field                                * 
- *  OUT nj      dimension 2 of the data field                                * 
- *  OUT nk      dimension 3 of the data field                                * 
- *  IN  datev   valid date                                                   * 
- *  IN  etiket  label                                                        * 
- *  IN  ip1     vertical level                                               * 
- *  IN  ip2     forecast hour                                                * 
- *  IN  ip3     user defined identifier                                      * 
- *  IN  typvar  type of field                                                * 
- *  IN  nomvar  variable name                                                * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  OUT ni      dimension 1 of the data field                                *
+ *  OUT nj      dimension 2 of the data field                                *
+ *  OUT nk      dimension 3 of the data field                                *
+ *  IN  datev   valid date                                                   *
+ *  IN  etiket  label                                                        *
+ *  IN  ip1     vertical level                                               *
+ *  IN  ip2     forecast hour                                                *
+ *  IN  ip3     user defined identifier                                      *
+ *  IN  typvar  type of field                                                *
+ *  IN  nomvar  variable name                                                *
  *  OUT liste   list of handle to the records                                *
  *  OUT infon   number of elements for the list (number of records found)    *
  *  OUT nmax    dimension of list as given by caller                         *
@@ -1530,33 +1530,33 @@ int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev, char *etiket,
 }
 
 /*splitpoint c_fstlic */
-/***************************************************************************** 
+/*****************************************************************************
  *                        C _ F S T L I C                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Search for a record that matches the research keys and check that the   *
  *   remaining parmeters match the record descriptors                        *
  *                                                                           *
- *Arguments                                                                  * 
- *                                                                           * 
- *  OUT field    data field to be read                                       * 
- *  IN  iun      unit number associated to the file                          * 
- *  IN  niin     dimension 1 of the data field                               * 
- *  IN  njin     dimension 2 of the data field                               * 
- *  IN  nkin     dimension 3 of the data field                               * 
- *  IN  datein   valid date                                                  * 
- *  IN  etiketin label                                                       * 
- *  IN  ip1in    vertical level                                              * 
- *  IN  ip2in    forecast hour                                               * 
- *  IN  ip3in    user defined identifier                                     * 
- *  IN  typvarin type of field                                               * 
- *  IN  nomvarin variable name                                               * 
- *  IN  ig1      first grid descriptor                                       * 
- *  IN  ig2      second grid descriptor                                      * 
- *  IN  ig3      third grid descriptor                                       * 
- *  IN  ig4      fourth grid descriptor                                      * 
- *  IN  grtypin  type of geographical projection                             * 
- *                                                                           * 
+ *Arguments                                                                  *
+ *                                                                           *
+ *  OUT field    data field to be read                                       *
+ *  IN  iun      unit number associated to the file                          *
+ *  IN  niin     dimension 1 of the data field                               *
+ *  IN  njin     dimension 2 of the data field                               *
+ *  IN  nkin     dimension 3 of the data field                               *
+ *  IN  datein   valid date                                                  *
+ *  IN  etiketin label                                                       *
+ *  IN  ip1in    vertical level                                              *
+ *  IN  ip2in    forecast hour                                               *
+ *  IN  ip3in    user defined identifier                                     *
+ *  IN  typvarin type of field                                               *
+ *  IN  nomvarin variable name                                               *
+ *  IN  ig1      first grid descriptor                                       *
+ *  IN  ig2      second grid descriptor                                      *
+ *  IN  ig3      third grid descriptor                                       *
+ *  IN  ig4      fourth grid descriptor                                      *
+ *  IN  grtypin  type of geographical projection                             *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstlic(word *field, int iun, int niin, int njin, int nkin,
@@ -1606,29 +1606,29 @@ int c_fstlic(word *field, int iun, int niin, int njin, int nkin,
   ier = c_fstlir(field,iun,&ni,&nj,&nk,datein,etiketin,ip1in,ip2in,
                  ip3in,typvarin,nomvarin);
   return(ier);
-}
+}
 /*splitpoint c_fstlir */
-/***************************************************************************** 
+/*****************************************************************************
  *                        C _ F S T L I R                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Reads the next record that matches the research keys.                   *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  OUT field   data field to be read                                        * 
- *  IN  iun     unit number associated to the file                           * 
- *  OUT ni      dimension 1 of the data field                                * 
- *  OUT nj      dimension 2 of the data field                                * 
- *  OUT nk      dimension 3 of the data field                                * 
- *  IN  datev   valid date                                                   * 
- *  IN  etiket  label                                                        * 
- *  IN  ip1     vertical level                                               * 
- *  IN  ip2     forecast hour                                                * 
- *  IN  ip3     user defined identifier                                      * 
- *  IN  typvar  type of field                                                * 
- *  IN  nomvar  variable name                                                * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  OUT field   data field to be read                                        *
+ *  IN  iun     unit number associated to the file                           *
+ *  OUT ni      dimension 1 of the data field                                *
+ *  OUT nj      dimension 2 of the data field                                *
+ *  OUT nk      dimension 3 of the data field                                *
+ *  IN  datev   valid date                                                   *
+ *  IN  etiket  label                                                        *
+ *  IN  ip1     vertical level                                               *
+ *  IN  ip2     forecast hour                                                *
+ *  IN  ip3     user defined identifier                                      *
+ *  IN  typvar  type of field                                                *
+ *  IN  nomvar  variable name                                                *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstlir(word *field, int iun, int *ni, int *nj, int *nk,
@@ -1636,22 +1636,22 @@ int c_fstlir(word *field, int iun, int *ni, int *nj, int *nk,
                  int ip1, int ip2, int ip3, char *typvar, char *nomvar)
 {
   int key,handle;
-  
+
   handle = -2;  /* means handle will be discarded */
   key = c_fstlirx(field,handle,iun,ni,nj,nk,datev,etiket,ip1,ip2,ip3,
                       typvar,nomvar);
   return(key);
 }
-
+
 /*splitpoint c_fstlirx */
-/***************************************************************************** 
+/*****************************************************************************
  *                      C _ F S T L I R X                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Reads the next record that matches the research keys.                   *
- *   The search begins at the position given by handle.                      * 
- *                                                                           * 
- *Arguments                                                                  * 
+ *   The search begins at the position given by handle.                      *
+ *                                                                           *
+ *Arguments                                                                  *
  *                                                                           *
  *  OUT field   data field to be read                                        *
  *  IN  iun     unit number associated to the file                           *
@@ -1797,7 +1797,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
   if ((xdf_datatyp == 1) || (xdf_datatyp == 5))
     lng = (xdf_double) ? 2*lng : lng;
 
-    
+
   if ((xdf_datatyp == 6) || (xdf_datatyp == 134)) {       /* new packer */
     c_float_packer_params(&header_size,&stream_size,&p1out,&p2out,(*ni)*(*nj)*(*nk));
     header_size /= sizeof(INT_32);
@@ -1811,8 +1811,8 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
 /*   fprintf(stderr,"Debug+ fstluk ni=%d nj=%d nk=%d lng=%d lng2=%d\n",*ni,*nj,*nk,lng,lng2); */
     }
   else
-    lng2 = lng; 
-    
+    lng2 = lng;
+
 /*  printf("Debug+ fstluk lng2 = %d\n",lng2); */
   /* allocate 8 more bytes in case of realingment for 64 bit data */
   if ((work_field = alloca(8+(lng2+10)*sizeof(word))) == NULL) {
@@ -1879,11 +1879,11 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
         if (stdf_entry->datyp > 128) {
 /*          fprintf(stderr,"Debug+ unpack buf->data=%d\n",*(buf->data)); */
           nbytes = armn_compress(buf->data+5,*ni,*nj,*nk,stdf_entry->nbits,2);
-/*          fprintf(stderr,"Debug+ buf->data+4+(nbytes/4)-1=%X buf->data+4+(nbytes/4)=%X \n", 
+/*          fprintf(stderr,"Debug+ buf->data+4+(nbytes/4)-1=%X buf->data+4+(nbytes/4)=%X \n",
               *(buf->data+4+(nbytes/4)-1),*(buf->data+4+(nbytes/4))); */
           packfunc(field,buf->data+1,buf->data+5,
                    nelm,stdf_entry->nbits+64*Max(16,stdf_entry->nbits),0,xdf_stride,FLOAT_UNPACK,0,
-                   &tempfloat);     
+                   &tempfloat);
         }
         else
           packfunc(field,buf->data,buf->data+3,
@@ -1935,7 +1935,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
             mode = 2;
             ier = compact_integer(field,(void *) NULL,buf->data+offset,nelm,
                                   stdf_entry->nbits,0,xdf_stride,mode);
-          }                        
+          }
         }
         break;
         }
@@ -1947,10 +1947,10 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
                               32,0,xdf_stride,mode);
         break;
         }
-        
+
       case 4: mode=4;  /* signed integer */
 #ifdef use_old_signed_pack_unpack_code
-!! fprintf(stderr,"OLD UNPACK CODE ======================================\n");
+// fprintf(stderr,"OLD UNPACK CODE ======================================\n");
         if(xdf_short || xdf_byte){
           field_out=alloca(nelm*sizeof(int));
           s_field_out=(short *)field;
@@ -1963,7 +1963,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
         if(xdf_short){ for (i=0;i<nelm;i++) s_field_out[i]=field_out[i]; } ;
         if(xdf_byte) { for (i=0;i<nelm;i++) b_field_out[i]=field_out[i]; } ;
 #else
-!! fprintf(stderr,"NEW UNPACK CODE ======================================\n");
+// fprintf(stderr,"NEW UNPACK CODE ======================================\n");
         if(xdf_short){
           ier = compact_short(field,(void *) NULL,buf->data,nelm,
                               stdf_entry->nbits,0,xdf_stride,8);
@@ -1976,7 +1976,7 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
         }
 #endif
         break;
-        
+
       case 5: case 8: mode=2;  /* IEEE representation */
         {
           register INT_32 temp32,*src,*dest;
@@ -2010,32 +2010,32 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
       case 6: case 134:  /* floating point, new packers */
         {
           int nbits;
-          
+
           if (stdf_entry->datyp > 128) {
             nbytes = armn_compress(buf->data+1+header_size,*ni,*nj,*nk,stdf_entry->nbits,2);
-  /*          fprintf(stderr,"Debug+ buf->data+4+(nbytes/4)-1=%X buf->data+4+(nbytes/4)=%X \n", 
+  /*          fprintf(stderr,"Debug+ buf->data+4+(nbytes/4)-1=%X buf->data+4+(nbytes/4)=%X \n",
                 *(buf->data+4+(nbytes/4)-1),*(buf->data+4+(nbytes/4))); */
-            c_float_unpacker(field,buf->data+1,buf->data+1+header_size,nelm,&nbits);     
+            c_float_unpacker(field,buf->data+1,buf->data+1+header_size,nelm,&nbits);
           }
           else {
             c_float_unpacker(field,buf->data,buf->data+header_size,nelm,&nbits);
             }
           break;
         }
-        
+
       case 133:  /* floating point, new packers */
           nbytes = c_armn_uncompress32(field, buf->data+1, *ni,*nj,*nk,stdf_entry->nbits);
           break;
-      
+
       case 7: mode=10;  /* character string */
 /*        printf("Debug fstluk compact_char xdf_stride=%d nelm =%d\n",xdf_stride,nelm); */
         ier = compact_char(field,(void *) NULL,buf->data,nelm,
                               8,0,xdf_stride,mode);
         break;
-                  
+
       default: sprintf(errmsg,"invalid datyp=%d",stdf_entry->datyp);
         return(error_msg("c_fstluk",ERR_BAD_DATYP,ERROR));
-      
+
       } /* end switch */
   }
 
@@ -2057,23 +2057,23 @@ int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
   xdf_byte = 0;
   return(handle);
 }
-
+
 /*splitpoint c_fstmsq */
-/***************************************************************************** 
+/*****************************************************************************
  *                        C _ F S T M S Q                                    *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Mask a portion of the research keys.                                    *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *   IN    iun     unit number associated to the file                        * 
- * IN/OUT  mip1    mask for vertical level                                   * 
- * IN/OUT  mip2    mask for forecast hour                                    * 
- * IN/OUT  mip3    mask for ip3 (user defined identifier)                    * 
- * IN/OUT  metiket mask for label                                            * 
- *   IN    getmode logical (1: getmode 0:set mode)                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *   IN    iun     unit number associated to the file                        *
+ * IN/OUT  mip1    mask for vertical level                                   *
+ * IN/OUT  mip2    mask for forecast hour                                    *
+ * IN/OUT  mip3    mask for ip3 (user defined identifier)                    *
+ * IN/OUT  metiket mask for label                                            *
+ *   IN    getmode logical (1: getmode 0:set mode)                           *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstmsq(int iun, int *mip1, int *mip2, int *mip3, char *metiket,
@@ -2117,13 +2117,13 @@ int c_fstmsq(int iun, int *mip1, int *mip2, int *mip3, char *metiket,
     search_mask->ip1 = ~(*mip1) & 0xfffffff;
     search_mask->ip2 = ~(*mip2) & 0xfffffff;
     search_mask->ip3 = ~(*mip3) & 0xfffffff;
-    search_mask->etik15 = 
+    search_mask->etik15 =
       (isignore(metiket[0]) << 24) |
       (isignore(metiket[1]) << 18) |
       (isignore(metiket[2]) << 12) |
       (isignore(metiket[3]) <<  6) |
       (isignore(metiket[4]));
-    search_mask->etik6a = 
+    search_mask->etik6a =
       (isignore(metiket[5]) << 24) |
       (isignore(metiket[6]) << 18) |
       (isignore(metiket[7]) << 12) |
@@ -2135,7 +2135,7 @@ int c_fstmsq(int iun, int *mip1, int *mip2, int *mip3, char *metiket,
   }
   return(0);
 }
-
+
 /*splitpoint c_fstnbr */
 /*****************************************************************************
  *                          C _ F S T N B R                                  *
@@ -2214,7 +2214,7 @@ int c_fstnbrv(int iun)
   return(f->header->nrec);
 
 }
-  
+
 /*splitpoint c_fstopc */
 /*****************************************************************************
  *                          C _ F S T O P C                                  *
@@ -2274,7 +2274,7 @@ int c_fstopc(char *option, char *value, int getmode)
     if (getmode){
       if (getmode == 2) val = 0;
     }else{
-      sprintf(prnt_options,"%s",value);        
+      sprintf(prnt_options,"%s",value);
     }
     if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc option PRINTOPT='%s'\n",prnt_options);
     return val;
@@ -2294,25 +2294,25 @@ int c_fstopc(char *option, char *value, int getmode)
     }
     if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopc option TURBOCOMP=%s\n",comptab[turbocomp_mode]);
     return val;
-  }    
+  }
 
-  fprintf(stderr,"c_fstopc: unknown option %s\n",option);    
+  fprintf(stderr,"c_fstopc: unknown option %s\n",option);
   return(val);
 }
-
+
 /*splitpoint c_fstopi */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ F S T O P I                                  *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Print out, get, or set a fstd or xdf global variable option.            *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *   IN     option   option name to be set/printed                           * 
- *   IN     value    option value                                            * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *   IN     option   option name to be set/printed                           *
+ *   IN     value    option value                                            *
  *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 int c_fstopi(char *option, int value, int getmode)
 {
@@ -2362,23 +2362,23 @@ int c_fstopi(char *option, int value, int getmode)
     return val;
   }
 
-  fprintf(stderr,"c_fstopi: unknown option %s\n",option);    
+  fprintf(stderr,"c_fstopi: unknown option %s\n",option);
   return(val);
 }
-
+
 /*splitpoint c_fstopl */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ F S T O P L                                  *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Print out, get, or set a fstd or xdf global variable option.            *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *   IN     option   option name to be set/printed                           * 
- *   IN     value    option value                                            * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *   IN     option   option name to be set/printed                           *
+ *   IN     value    option value                                            *
  *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 int c_fstopl(char *option, int value, int getmode)
 {
@@ -2397,7 +2397,7 @@ int c_fstopl(char *option, int value, int getmode)
     if (getmode){
       if (getmode == 2) val = image_mode_copy;
     }else{
-      image_mode_copy = value;        
+      image_mode_copy = value;
     }
     if(getmode == 1 || msg_level <= INFORM) fprintf(stdout,"c_fstopl option IMAGE_MODE_COPY=%d\n",image_mode_copy);
     return val;
@@ -2413,31 +2413,31 @@ int c_fstopl(char *option, int value, int getmode)
     return val;
   }
 
-  fprintf(stderr,"c_fstopi: unknown option %s\n",option);    
+  fprintf(stderr,"c_fstopi: unknown option %s\n",option);
   return(val);
 }
-      
-
+
+
 /*splitpoint c_fstopr */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ F S T O P R                                  *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Print out, get, or set a fstd or xdf global variable option.            *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *   IN     option   option name to be set/printed                           * 
- *   IN     value    option value                                            * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *   IN     option   option name to be set/printed                           *
+ *   IN     value    option value                                            *
  *   IN     getmode  (1: print option, 0: set option, 2: get option)         *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 int c_fstopr(char *option, float value, int getmode)
 {
   /* no current float variable to be set for now */
   return(0);
 }
-
+
 /*splitpoint c_fstouv */
 /*****************************************************************************
  *                         C _ F S T O U V                                   *
@@ -2464,7 +2464,7 @@ int c_fstouv(int iun, char *options)
 /*    printf("DEBUG++ fstouv appel a c_env_var_cracker\n"); */
     c_env_var_cracker("FST_OPTIONS", c_fst_env_var, "C");    /* obtain options from environment variable */
     C_requetes_init(requetes_filename,debug_filename);
-    ier = init_ip_vals();  
+    ier = init_ip_vals();
   }
   i = fnom_index(iun);
   if (i == -1) {
@@ -2478,20 +2478,20 @@ int c_fstouv(int iun, char *options)
     sprintf(appl,"%s","STDS");      /* standard sequential */
 
   FGFDT[i].attr.std = 1;  /* force attribute to standard file */
-  if (FGFDT[i].attr.remote) 
+  if (FGFDT[i].attr.remote)
     if ((FGFDT[i].eff_file_size == 0) && (! FGFDT[i].attr.old))
       ier = c_xdfopn(iun,"CREATE",(word_2 *) &stdfkeys,16,(word_2 *) &stdf_info_keys,2,appl);
     else
       ier = c_xdfopn(iun,"R-W",(word_2 *) &stdfkeys,16,(word_2 *) &stdf_info_keys,2,appl);
-  else      
+  else
     if (((iwko=c_wkoffit(FGFDT[i].file_name,strlen(FGFDT[i].file_name))) == -2) &&
        (! FGFDT[i].attr.old)) {
-      ier = c_xdfopn(iun,"CREATE",(word_2 *) &stdfkeys,16,(word_2 *) &stdf_info_keys,2,appl); 
+      ier = c_xdfopn(iun,"CREATE",(word_2 *) &stdfkeys,16,(word_2 *) &stdf_info_keys,2,appl);
       }
     else {
       ier = c_xdfopn(iun,"R-W",(word_2 *) &stdfkeys,16,(word_2 *) &stdf_info_keys,2,appl);
       }
-      
+
   if (ier < 0) return(ier);
   nrec = c_fstnbr(iun);
   return(nrec);
@@ -2503,39 +2503,39 @@ int c_fstouv(int iun, char *options)
  *                                                                           *
  *Object                                                                     *
  *   Get all the description informations of the record.                     *
- *                                                                           * 
- *Rev 001 - M. Lepine - Oct 2002, returns extra1 as the validity datestamp   * 
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  handle  positioning information to the record                        * 
- *  OUT date    date time stamp                                              * 
- *  OUT deet    length of a time step in seconds                             * 
- *  OUT npas    time step number                                             * 
- *  OUT ni      first dimension of the data field                            * 
- *  OUT nj      second dimension of the data field                           * 
- *  OUT nk      third dimension of the data field                            * 
- *  OUT nbits   number of bits kept for the elements of the field            * 
- *  OUT datyp   data type of the elements                                    * 
- *  OUT ip1     vertical level                                               * 
- *  OUT ip2     forecast hour                                                * 
- *  OUT ip3     user defined identifier                                      * 
- *  OUT typvar  type of field (forecast, analysis, climatology)              * 
- *  OUT nomvar  variable name                                                * 
- *  OUT etiket  label                                                        * 
- *  OUT grtyp   type of geographical projection                              * 
- *  OUT ig1     first grid descriptor                                        * 
- *  OUT ig2     second grid descriptor                                       * 
- *  OUT ig3     third grid descriptor                                        * 
- *  OUT ig4     fourth grid descriptor                                       * 
- *  OUT swa     starting word address                                        * 
- *  OUT lng     record length                                                * 
- *  OUT dltf    delete flag                                                  * 
- *  OUT ubc     unused bit count                                             * 
- *  OUT extra1  extra parameter                                              * 
- *  OUT extra2  extra parameter                                              * 
- *  OUT extra3  extra parameter                                              * 
- *                                                                           * 
+ *                                                                           *
+ *Rev 001 - M. Lepine - Oct 2002, returns extra1 as the validity datestamp   *
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  handle  positioning information to the record                        *
+ *  OUT date    date time stamp                                              *
+ *  OUT deet    length of a time step in seconds                             *
+ *  OUT npas    time step number                                             *
+ *  OUT ni      first dimension of the data field                            *
+ *  OUT nj      second dimension of the data field                           *
+ *  OUT nk      third dimension of the data field                            *
+ *  OUT nbits   number of bits kept for the elements of the field            *
+ *  OUT datyp   data type of the elements                                    *
+ *  OUT ip1     vertical level                                               *
+ *  OUT ip2     forecast hour                                                *
+ *  OUT ip3     user defined identifier                                      *
+ *  OUT typvar  type of field (forecast, analysis, climatology)              *
+ *  OUT nomvar  variable name                                                *
+ *  OUT etiket  label                                                        *
+ *  OUT grtyp   type of geographical projection                              *
+ *  OUT ig1     first grid descriptor                                        *
+ *  OUT ig2     second grid descriptor                                       *
+ *  OUT ig3     third grid descriptor                                        *
+ *  OUT ig4     fourth grid descriptor                                       *
+ *  OUT swa     starting word address                                        *
+ *  OUT lng     record length                                                *
+ *  OUT dltf    delete flag                                                  *
+ *  OUT ubc     unused bit count                                             *
+ *  OUT extra1  extra parameter                                              *
+ *  OUT extra2  extra parameter                                              *
+ *  OUT extra3  extra parameter                                              *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstprm(int handle,
@@ -2587,7 +2587,7 @@ int c_fstprm(int handle,
   /*  strcpy(typvar,cracked.typvar);
   strcpy(nomvar,cracked.nomvar);
   strcpy(etiket,cracked.etiket);
-  strcpy(grtyp,cracked.gtyp); 
+  strcpy(grtyp,cracked.gtyp);
   strncpy(typvar,cracked.typvar,1);
   strncpy(nomvar,cracked.nomvar,2);
   strncpy(etiket,cracked.etiket,8);
@@ -2603,33 +2603,33 @@ int c_fstprm(int handle,
   free(stdf_entry);
   return(ier);
 }
-
+
 /*splitpoint c_fstreset_ip_flags */
-/***************************************************************************** 
+/*****************************************************************************
  *                 C _ F S T R E S E T _ I P _ F L A G S                     *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Reset all the flags previously set by ip(1-3)_val                       *
- *                                                                           * 
- *                                                                           * 
+ *                                                                           *
+ *                                                                           *
  *****************************************************************************/
 void c_fstreset_ip_flags()
 {
   int ier;
   ier = init_ip_vals();
 }
-
+
 /*splitpoint c_fstrwd */
-/***************************************************************************** 
+/*****************************************************************************
  *                           C _ F S T R W D                                 *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Rewinds a RPN standard sequential file.                                 *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *                                                                           *
  *****************************************************************************/
 int c_fstrwd(int iun)
 {
@@ -2663,19 +2663,19 @@ int c_fstrwd(int iun)
   f->valid_pos = 0;
   return(0);
 }
-
+
 /*splitpoint c_fstskp */
-/***************************************************************************** 
+/*****************************************************************************
  *                            C _ F S T S K P                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Skip nrec records forward or backward in the sequential file.           *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  IN  nrec    number of records to skip (negative nrec means backward)     * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  IN  nrec    number of records to skip (negative nrec means backward)     *
+ *                                                                           *
  *****************************************************************************/
 int c_fstskp(int iun, int nrec)
 {
@@ -2716,7 +2716,7 @@ int c_fstskp(int iun, int nrec)
         cur_pos = f->cur_addr;
         f->cur_addr += W64TOWD(header64.lng);
         c_waread(iun,&postfix,f->cur_addr,W64TOWD(2));
-        if ((postfix.idtyp == 0) && (postfix.lng == 2) && 
+        if ((postfix.idtyp == 0) && (postfix.lng == 2) &&
             (postfix.addr == -1))
           f->cur_addr += W64TOWD(2);  /* skip postfix also */
         else {
@@ -2731,7 +2731,7 @@ int c_fstskp(int iun, int nrec)
       for (i=0; i < nrec; i++) {
         if ((f->cur_addr - W64TOWD(2)) > f->seq_bof) {
           c_waread(iun,&postfix,(f->cur_addr - W64TOWD(2)),W64TOWD(2));
-          if ((postfix.idtyp == 0) && (postfix.lng == 2) && 
+          if ((postfix.idtyp == 0) && (postfix.lng == 2) &&
               (postfix.addr == -1))
             f->cur_addr = W64TOWD( (postfix.prev_addr-1) )+1;
           else {
@@ -2780,21 +2780,21 @@ int c_fstskp(int iun, int nrec)
   }
   return(0);
 }
-
+
 /*splitpoint c_fstsui */
-/***************************************************************************** 
+/*****************************************************************************
  *                         C _ F S T S U I                                   *
- *                                                                           * 
+ *                                                                           *
  *Object                                                                     *
- *   Finds the next record that matches the last search criterias            * 
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  OUT ni      dimension 1 of the data field                                * 
- *  OUT nj      dimension 2 of the data field                                * 
- *  OUT nk      dimension 3 of the data field                                * 
- *                                                                           * 
+ *   Finds the next record that matches the last search criterias            *
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  OUT ni      dimension 1 of the data field                                *
+ *  OUT nj      dimension 2 of the data field                                *
+ *  OUT nk      dimension 3 of the data field                                *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstsui(int iun, int *ni, int *nj, int *nk)
@@ -2843,58 +2843,55 @@ int c_fst_version()
 /*****************************************************************************
  *                       C _ F S T V O I                                     *
  *                                                                           *
- *Object                                                                     * 
+ *Object                                                                     *
  *   Prints out the directory content of a RPN standard file.                *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *                                                                           *
  *****************************************************************************/
 
-int c_fstvoi(int iun,char *options)
-{
-   int index,index_fnom,i,j,width,nrec,nw,end_of_file;
-   file_table_entry *f;
-   xdf_dir_page * curpage;
-   word *entry;
-   stdf_dir_keys *stdf_entry;
-   seq_dir_keys *seq_entry;
+int c_fstvoi(int iun, char* options) {
+   int index, index_fnom, i, j, width, nrec, nw, end_of_file;
+   file_table_entry* file_entry;
+   xdf_dir_page* curpage;
+   word* entry;
+   stdf_dir_keys* stdf_entry;
+   seq_dir_keys* seq_entry;
    stdf_special_parms cracked;
-   xdf_record_header *header;
+   xdf_record_header* header;
    char string[20];
-//   char nomvar[5], typvar[3];
-//   char cdt[6]={'X','R','I','C','S','E'};
    ftnword f_datev;
    double nhours;
-   int deet,npas,run;
+   int deet, npas, run;
    unsigned int datexx;
-   long long deetnpas,i_nhours;
- 
+   long long deetnpas, i_nhours;
+
    index_fnom = fnom_index(iun);
    if (index_fnom == -1) {
-      sprintf(errmsg,"file (unit=%d) is not connected with fnom",iun);
-      return(error_msg("c_fstvoi",ERR_NO_FNOM,ERROR));
-      }
+      sprintf(errmsg, "file (unit=%d) is not connected with fnom", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FNOM, ERROR));
+   }
 
    if ((index = file_index(iun)) == ERR_NO_FILE) {
-     sprintf(errmsg,"file (unit=%d) is not open",iun);
-     return(error_msg("c_fstvoi",ERR_NO_FILE,ERROR));
-     }
+      sprintf(errmsg, "file (unit=%d) is not open", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FILE, ERROR));
+   }
 
-   f = file_table[index];
+   file_entry = file_table[index];
 
-   if (! f->cur_info->attr.std) {
-     sprintf(errmsg,"file (unit=%d) is not a RPN standard file",iun);
-     return(error_msg("c_fstvoi",ERR_NO_FILE,ERROR));
-     }
-   
+   if (! file_entry->cur_info->attr.std) {
+      sprintf(errmsg, "file (unit=%d) is not a RPN standard file", iun);
+      return(error_msg("c_fstvoi", ERR_NO_FILE, ERROR));
+   }
+
    nrec = 0;
-   width = W64TOWD(f->primary_len);
-   if (! f->xdf_seq) {
-     for (i=0; i < f->npages; i++) {
-       entry = (f->dir_page[i])->dir.entry;
-       for (j=0; j < (f->dir_page[i])->dir.nent; j++) {
+   width = W64TOWD(file_entry->primary_len);
+   if (! file_entry->xdf_seq) {
+     for (i=0; i < file_entry->npages; i++) {
+       entry = (file_entry->dir_page[i])->dir.entry;
+       for (j=0; j < (file_entry->dir_page[i])->dir.nent; j++) {
          header = (xdf_record_header *) entry;
          if (header->idtyp < 112) {
            stdf_entry = (stdf_dir_keys *) entry;
@@ -2905,35 +2902,35 @@ int c_fstvoi(int iun,char *options)
          }
          entry += width;
        }
-       curpage = &((f->dir_page[i])->dir);
+       curpage = &((file_entry->dir_page[i])->dir);
      } /* end for i */
    }
    else { /* xdf sequential */
      end_of_file = 0;
      while (! end_of_file) {
-       nw = c_waread2(iun,f->head_keys,f->cur_addr,width);
-       header = (xdf_record_header *) f->head_keys;
+       nw = c_waread2(iun,file_entry->head_keys,file_entry->cur_addr,width);
+       header = (xdf_record_header *) file_entry->head_keys;
        if ((header->idtyp >= 112) || (nw < W64TOWD(1))) {
          if ((header->idtyp >= 112) && (header->idtyp < 127)) {
-            f->cur_addr += W64TOWD(1);
+            file_entry->cur_addr += W64TOWD(1);
          }
          end_of_file = 1;
          break;
        }
-       if (f->fstd_vintage_89) {   /* old sequential standard */
+       if (file_entry->fstd_vintage_89) {   /* old sequential standard */
          if ((stdf_entry = calloc(1,sizeof(stdf_dir_keys))) == NULL) {
            sprintf(errmsg,"memory is full");
            return(error_msg("c_fstvoi",ERR_MEM_FULL,ERRFATAL));
          }
-         seq_entry = (seq_dir_keys *) f->head_keys;
+         seq_entry = (seq_dir_keys *) file_entry->head_keys;
          if (seq_entry->dltf) {
-           f->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
+           file_entry->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
            continue;
          }
          if (seq_entry->eof > 0) {
            if (seq_entry->eof < 15)
-           f->cur_addr += W64TOWD(1);
-           end_of_file = 1;           
+           file_entry->cur_addr += W64TOWD(1);
+           end_of_file = 1;
            break;
          }
          stdf_entry->deleted = 0;
@@ -2948,7 +2945,7 @@ int c_fstvoi(int iun,char *options)
          stdf_entry->datyp = seq_entry->datyp;
          stdf_entry->nk = seq_entry->nk;
          stdf_entry->ubc = 0;
-         stdf_entry->npas = (seq_entry->npas2 << 16) | 
+         stdf_entry->npas = (seq_entry->npas2 << 16) |
            seq_entry->npas1;
          stdf_entry->pad7 = 0;
          stdf_entry->ig4 = seq_entry->ig4;
@@ -2957,14 +2954,14 @@ int c_fstvoi(int iun,char *options)
          stdf_entry->ig2b = seq_entry->ig2 >> 8;
          stdf_entry->ig3 = seq_entry->ig3;
          stdf_entry->ig2c = seq_entry->ig2 & 0xff;
-         stdf_entry->etik15 = 
+         stdf_entry->etik15 =
            (ascii6(seq_entry->etiq14 >> 24) << 24) |
            (ascii6((seq_entry->etiq14 >> 16) & 0xff) << 18) |
            (ascii6((seq_entry->etiq14 >>  8) & 0xff) << 12) |
            (ascii6((seq_entry->etiq14      ) & 0xff) <<  6) |
            (ascii6((seq_entry->etiq56 >>  8) & 0xff));
          stdf_entry->pad1 = 0;
-         stdf_entry->etik6a = 
+         stdf_entry->etik6a =
            (ascii6((seq_entry->etiq56      ) & 0xff) << 24) |
            (ascii6((seq_entry->etiq78 >>  8) & 0xff) << 18) |
            (ascii6((seq_entry->etiq78      ) & 0xff) << 12);
@@ -2972,7 +2969,7 @@ int c_fstvoi(int iun,char *options)
          stdf_entry->etikbc = 0;
          stdf_entry->typvar = ascii6(seq_entry->typvar) << 6;
          stdf_entry->pad3 = 0;
-         stdf_entry->nomvar = 
+         stdf_entry->nomvar =
            (ascii6((seq_entry->nomvar >>  8) & 0xff) << 18) |
            (ascii6((seq_entry->nomvar      ) & 0xff) << 12);
          stdf_entry->pad4 = 0;
@@ -2987,81 +2984,77 @@ int c_fstvoi(int iun,char *options)
          npas = stdf_entry->npas;
          deetnpas = npas ; deetnpas = deetnpas * deet ;
          if ((deetnpas % 3600) != 0) {
-           /*
-            *  recompute datev to take care of rounding used with 1989 version
-            *  de-octalise the date_stamp
-            */
-           run = stdf_entry->date_stamp & 0x7;
-           datexx = (stdf_entry->date_stamp >> 3) * 10 + run;
-           
-           f_datev = (ftnword) datexx;
-           i_nhours = (deetnpas - ((deetnpas+1800)/3600)*3600);
-           nhours = i_nhours;
-           nhours = (nhours / 3600.0);
-           f77name(incdatr)(&f_datev,&f_datev,&nhours);
-           datexx = (unsigned int) f_datev;
-           /*
-            *  re-octalise the date_stamp
-            */
-           stdf_entry->date_stamp = 8 * (datexx/10) + (datexx % 10);
+            /* recompute datev to take care of rounding used with 1989 version
+             * de-octalise the date_stamp */
+            run = stdf_entry->date_stamp & 0x7;
+            datexx = (stdf_entry->date_stamp >> 3) * 10 + run;
+
+            f_datev = (ftnword) datexx;
+            i_nhours = (deetnpas - ((deetnpas+1800)/3600)*3600);
+            nhours = i_nhours;
+            nhours = (nhours / 3600.0);
+            f77name(incdatr)(&f_datev,&f_datev,&nhours);
+            datexx = (unsigned int) f_datev;
+            /* re-octalise the date_stamp */
+            stdf_entry->date_stamp = 8 * (datexx/10) + (datexx % 10);
          }
          sprintf(string,"%5d-",nrec);
          print_std_parms(stdf_entry,string,options,((nrec % 70) == 0));
          nrec++;
-         f->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
+         file_entry->cur_addr += W64TOWD( (((seq_entry->lng + 3) >> 2)+15) );
          free(stdf_entry);
        } /* end if fstd_vintage_89 */
        else {
          if ((header->idtyp < 1) || (header->idtyp > 127)) {
-           f->cur_addr += W64TOWD(header->lng);
+           file_entry->cur_addr += W64TOWD(header->lng);
            continue;
          }
-         stdf_entry = (stdf_dir_keys *) f->head_keys;
+         stdf_entry = (stdf_dir_keys *) file_entry->head_keys;
          sprintf(string,"%5d-",nrec);
          print_std_parms(stdf_entry,string,options,((nrec % 70) == 0));
          nrec++;
-         f->cur_addr += W64TOWD(header->lng);
+         file_entry->cur_addr += W64TOWD(header->lng);
        }
      } /* end while */
    }
    fprintf(stdout,"\nSTATISTICS for file %s, unit=%d\n\n",
            FGFDT[index_fnom].file_name,iun);
-   if (f->fstd_vintage_89) 
+   if (file_entry->fstd_vintage_89)
      sprintf(string,"Version 1989");
    else
      sprintf(string,"Version 1998");
-   if (f->xdf_seq) 
+   if (file_entry->xdf_seq)
      fprintf(stdout,"%d records in sequential RPN standard file (%s)\n",
              nrec,string);
    else {
-     if (! f->fstd_vintage_89) {
-       fprintf(stdout,"Number of directory entries \t %d\n",f->header->nrec);
+     if (! file_entry->fstd_vintage_89) {
+       fprintf(stdout,"Number of directory entries \t %d\n",file_entry->header->nrec);
        fprintf(stdout,"Number of valid records     \t %d\n",nrec);
        fprintf(stdout,"File size                   \t %d Words\n",
-               W64TOWD(f->header->fsiz));
-       fprintf(stdout,"Number of writes            \t %d\n",f->header->nxtn);
-       fprintf(stdout,"Number of rewrites          \t %d\n",f->header->nrwr);
+               W64TOWD(file_entry->header->fsiz));
+       fprintf(stdout,"Number of writes            \t %d\n",file_entry->header->nxtn);
+       fprintf(stdout,"Number of rewrites          \t %d\n",file_entry->header->nrwr);
        fprintf(stdout,"Number of erasures          \t %d\n",
-               f->header->neff - f->header->nrwr);
+               file_entry->header->neff - file_entry->header->nrwr);
      }
      fprintf(stdout,"\n%d records in random RPN standard file (%s)\n\n",
              nrec,string);
    }
    return(0);
 }
-
+
 /*splitpoint c_fstweo */
-/***************************************************************************** 
+/*****************************************************************************
  *                            C _ F S T W E O                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Writes a logical end of file on a sequential file.                      *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  iun     unit number associated to the file                           * 
- *  IN  level   level of logical end of file                                 * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  iun     unit number associated to the file                           *
+ *  IN  level   level of logical end of file                                 *
+ *                                                                           *
  *****************************************************************************/
 
 int c_fstweo(int iun, int level)
@@ -3105,27 +3098,27 @@ int c_fstweo(int iun, int level)
   f->nxtadr = f->cur_addr;
   return(0);
 }
-
+
 /*splitpoint c_fst_env_var */
-/***************************************************************************** 
+/*****************************************************************************
  *                         C _ F S T _ E N V _ V A R                         *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Process all sub options from FST_OPTIONS environment variable           *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  cle     suboption name                                               * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  cle     suboption name                                               *
  *  IN  index   index of suboption values                                    *
  *  IN  content suboption value                                              *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 
 void c_fst_env_var(char *cle, int index, char *content)
 {
 //  int i;
   char *carac;
-  
+
 /*
   fprintf(stderr, "c_fst_env_var(), fstoption: %s\n", cle);
   fprintf(stderr, "c_fst_env_var(),    index = %d\n", index);
@@ -3144,12 +3137,12 @@ void c_fst_env_var(char *cle, int index, char *content)
     remap_table[(index-1) % 2][(index-1) / 2] = atoi(content);
     /*fprintf(stderr,"Debug+ remap_table[%d][%d]=%d\n",(index-1)%2,(index-1)/2,remap_table[(index-1) % 2][(index-1) / 2]); */
     nb_remap = index / 2;
-    } 
+    }
    else if (strcasecmp(cle,"DEBUGFILE") == 0) {
     debug_filename = malloc(256);
     strncpy(debug_filename,content,256);
 /*    fprintf(stderr,"Debug+ debug_filename=%s\n",debug_filename); */
-    } 
+    }
    else if (strcasecmp(cle,"FST_FILTER_FILE") == 0) {
     requetes_filename = malloc(256);
     strncpy(requetes_filename,content,256);
@@ -3157,38 +3150,38 @@ void c_fst_env_var(char *cle, int index, char *content)
     }
   else
     fprintf(stderr, "c_fst_env_var(), cle %s non reconnue, index=%d valeur=%s\n",cle,index,content);
-  
-/*    
-  for (i=0; i<nb_remap; i++) 
+
+/*
+  for (i=0; i<nb_remap; i++)
     fprintf(stderr,"datatyp %d remap to %d\n",remap_table[0][i],remap_table[1][i]);
 
   fprintf(stderr, "-----------------------------------------------\n");
-*/  
+*/
 }
 
-
+
 /*splitpoint c_ip1_all */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 1 _ A L L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates all possible coded ip1 values for a given level               *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip1 level (float value)                               * 
- *  IN  kind           level kind as defined in convip                       * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip1 level (float value)                               *
+ *  IN  kind           level kind as defined in convip                       *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip1_all(float level, int kind)
 {
   int ip_old, ip_new, mode, flag;
   char s[128];
-  
+
   ip1s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[0][ip_nb[0]] = ip_new;
@@ -3199,13 +3192,13 @@ int c_ip1_all(float level, int kind)
     }
 
   mode = 3;
-  if (kind < 4) 
+  if (kind < 4)
     ConvipPlus(&ip_old,&level,&kind,&mode);
   else
     ip_old = -9999;     /* no valid value for oldtype */
   ips_tab[0][ip_nb[0]] = ip_old;
   ip_nb[0]++;
- 
+
   if (ip_nb[0] > Max_Ipvals) {
     fprintf(stderr,"ip1 table full (i1_ind=%d)\n",ip_nb[0]);
     return(-1);
@@ -3214,29 +3207,29 @@ int c_ip1_all(float level, int kind)
   return(ip_new);
 }
 
-
+
 /*splitpoint c_ip2_all */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 2 _ A L L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates all possible coded ip2 values for a given level               *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip2 level (float value)                               * 
- *  IN  kind           level kind as defined in convip                       * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip2 level (float value)                               *
+ *  IN  kind           level kind as defined in convip                       *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip2_all(float level, int kind)
 {
   int ip_old, ip_new, mode, flag;
   char s[128];
-  
+
   ip2s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[1][ip_nb[1]] = ip_new;
@@ -3247,43 +3240,43 @@ int c_ip2_all(float level, int kind)
     }
 
   mode = 3;
-  if (kind < 4) 
+  if (kind < 4)
     ConvipPlus(&ip_old,&level,&kind,&mode);
   else
     ip_old = -9999;     /* no valid value for oldtype */
   ips_tab[1][ip_nb[1]] = ip_old;
   ip_nb[1]++;
- 
+
   if (ip_nb[1] > Max_Ipvals) {
     fprintf(stderr,"ip2 table full (i2_ind=%d)\n",ip_nb[1]);
     return(-1);
     }
   return(ip_new);
 }
-
+
 
 /*splitpoint c_ip3_all */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 3 _ A L L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates all possible coded ip3 values for a given ip3                 *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip3  (float value)                                    * 
- *  IN  kind           level kind as defined in convip                       * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip3  (float value)                                    *
+ *  IN  kind           level kind as defined in convip                       *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip3_all(float level, int kind)
 {
   int ip_old, ip_new, mode, flag;
   char s[128];
-  
+
   ip3s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[2][ip_nb[2]] = ip_new;
@@ -3294,42 +3287,42 @@ int c_ip3_all(float level, int kind)
     }
 
   mode = 3;
-  if (kind < 4) 
+  if (kind < 4)
     ConvipPlus(&ip_old,&level,&kind,&mode);
   else
     ip_old = -9999;     /* no valid value for oldtype */
   ips_tab[2][ip_nb[2]] = ip_old;
   ip_nb[2]++;
- 
+
   if (ip_nb[2] > Max_Ipvals) {
     fprintf(stderr,"ip3 table full (i3_ind=%d)\n",ip_nb[2]);
     return(-1);
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip1_val */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 1 _ V A L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates coded ip1 value for a given level (shorthand for convip)      *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip1 level (float value)                               * 
- *  IN  kind           level kind as defined in convip                       * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip1 level (float value)                               *
+ *  IN  kind           level kind as defined in convip                       *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip1_val(float level, int kind)
 {
   int ip_new, mode, flag;
   char s[128];
-  
+
   ip1s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[0][ip_nb[0]] = ip_new;
@@ -3340,29 +3333,29 @@ int c_ip1_val(float level, int kind)
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip2_val */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 2 _ V A L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates coded ip2 value for a given level (shorthand for convip)      *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip2  (float value)                                    * 
- *  IN  kind           kind as defined in convip                             * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip2  (float value)                                    *
+ *  IN  kind           kind as defined in convip                             *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip2_val(float level, int kind)
 {
   int ip_new, mode, flag;
   char s[128];
-  
+
   ip2s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[1][ip_nb[1]] = ip_new;
@@ -3373,29 +3366,29 @@ int c_ip2_val(float level, int kind)
     }
   return(ip_new);
 }
-
+
 /*splitpoint c_ip3_val */
-/***************************************************************************** 
+/*****************************************************************************
  *                          C _ I P 3 _ V A L                                *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Generates coded ip3 value for a ip3 (shorthand for convip)              *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  level          ip3  (float value)                                    * 
- *  IN  kind           kind as defined in convip                             * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  level          ip3  (float value)                                    *
+ *  IN  kind           kind as defined in convip                             *
+ *                                                                           *
  *****************************************************************************/
 
 int c_ip3_val(float level, int kind)
 {
   int ip_new, mode, flag;
   char s[128];
-  
+
   ip3s_flag = 1;
   flag = 0;
-  
+
   mode = 2;
   ConvipPlus(&ip_new,&level,&kind,&mode);
   ips_tab[2][ip_nb[2]] = ip_new;
@@ -3407,22 +3400,22 @@ int c_ip3_val(float level, int kind)
   return(ip_new);
 }
 
-
+
 /*splitpoint crack_std_parms */
-/***************************************************************************** 
+/*****************************************************************************
  *                      C R A C K _ S T D _ P A R M S                        *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Reassembles the splited variables.                                      *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
- *  IN  stdf_entry     directory entry that contains the parameters          * 
- * OUT  cracked_parms  reassembled parameters                                * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  stdf_entry     directory entry that contains the parameters          *
+ * OUT  cracked_parms  reassembled parameters                                *
+ *                                                                           *
  *****************************************************************************/
 
-static void crack_std_parms(stdf_dir_keys *stdf_entry, 
+static void crack_std_parms(stdf_dir_keys *stdf_entry,
                     stdf_special_parms *cracked_parms)
 {
   int i, run;
@@ -3430,7 +3423,7 @@ static void crack_std_parms(stdf_dir_keys *stdf_entry,
   double r8_diff;
   ftnword ftn_date;
   int diff;
-  
+
   for (i=0; i <= 4; i++)
     cracked_parms->etiket[i] = ((stdf_entry->etik15 >> ((4-i)*6)) & 0x3f) + 32;
 
@@ -3445,9 +3438,9 @@ static void crack_std_parms(stdf_dir_keys *stdf_entry,
     cracked_parms->nomvar[i] = ((stdf_entry->nomvar >> ((3-i)*6)) & 0x3f) + 32;
 
   cracked_parms->nomvar[4] = '\0';
-  
+
   cracked_parms->typvar[0] = ((stdf_entry->typvar >> 6) & 0x3f) + 32;
-  cracked_parms->typvar[1] = ((stdf_entry->typvar  & 0x3f)) + 32;  
+  cracked_parms->typvar[1] = ((stdf_entry->typvar  & 0x3f)) + 32;
   cracked_parms->typvar[2] = '\0';
 
   cracked_parms->gtyp[0] = stdf_entry->gtyp;
@@ -3472,53 +3465,53 @@ static void crack_std_parms(stdf_dir_keys *stdf_entry,
 /*    f77name(incdat)(&cracked_parms->date_stamp,&datexx,&diff); */
   cracked_parms->aammjj = 0;
   cracked_parms->hhmmss = 0;
-} 
+}
 
-
+
 /*splitpoint init_ip_vals */
-/***************************************************************************** 
+/*****************************************************************************
  *                             I N I T _ I P _ V A L S                       *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Reset to zeros ip1-2-3 tables and counters              l               *
- *                                                                           * 
+ *                                                                           *
  *****************************************************************************/
 
 int init_ip_vals()
 {
   int i,j;
-  
-  for (i=0; i<Max_Ipvals; i++) 
+
+  for (i=0; i<Max_Ipvals; i++)
     for (j=0; j<3; j++)
       ips_tab[j][i] = -1;
-  
+
   for (j=0; j<3; j++)
     ip_nb[j] = 0;
-    
+
   ip1s_flag = 0;
   ip2s_flag = 0;
-  ip3s_flag = 0;  
+  ip3s_flag = 0;
   return(0);
 }
 
 
 /*splitpoint ip_is_equal */
-/***************************************************************************** 
+/*****************************************************************************
  *                          I P _ I S _ E Q U A L                            *
- *                                                                           * 
- *Object                                                                     * 
+ *                                                                           *
+ *Object                                                                     *
  *   Compares different coded values of an ip for equality                   *
- *                                                                           * 
- *Arguments                                                                  * 
- *                                                                           * 
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
  *  IN  target         must be first value in the table of coded value to    *
  *                     compare with                                          *
  *  IN  ip             current ip record value to compare                    *
  *  IN  ind            index (1,2 or 3) representing ip1, ip2 or ip3         *
- *                     comparaisons                                          * 
- *                                                                           * 
+ *                     comparaisons                                          *
+ *                                                                           *
  *****************************************************************************/
- 
+
 int ip_is_equal(int target, int ip, int ind)
 {
   int kind1, kind2, exp1, exp2, nb, j;
@@ -3530,8 +3523,8 @@ int ip_is_equal(int target, int ip, int ind)
                      1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0,
                      100000000.0, 1000000000.0, 10000000000.0, 100000000000.0};
 */
-  /* ipold_0_9: table of old ip1 0-9 (mb) values encoded oldstyle with convip */            
-  int ipold_0_9[10] = {0,1820,1840,1860,1880,1900,1920,1940,1960,1980};                   
+  /* ipold_0_9: table of old ip1 0-9 (mb) values encoded oldstyle with convip */
+  int ipold_0_9[10] = {0,1820,1840,1860,1880,1900,1920,1940,1960,1980};
 
   ind--;       /* ind is passed in base 1, for ip1 ip2 or ip3 */
   if (target != ips_tab[ind][0]) {
@@ -3539,8 +3532,8 @@ int ip_is_equal(int target, int ip, int ind)
     fprintf(stderr,"target = %d ips_tab[%d]=%d\n",target,ind,ips_tab[ind][0]);
     return(0);
     }
-  
-  nb = ip_nb[ind];            /* number of elements in ip[1-2-3] table */ 
+
+  nb = ip_nb[ind];            /* number of elements in ip[1-2-3] table */
   for (j=0; j<nb; j++) {
     target = ips_tab[ind][j] ;
     if (ip == target) return(1);
@@ -3557,7 +3550,7 @@ int ip_is_equal(int target, int ip, int ind)
       mantis2 = target & 0xFFFFF;
       if (mantis2 > 1000000) mantis2 = -(mantis2 - 1000000);
       if ((mantis1 ^ mantis2) < 0) continue;                /* mantis1 and mantis2 must be same signed */
-/*      
+/*
       level = mantis1 / exptab[exp1];
       target_level = mantis2 / exptab[exp2];
       printf("Debug ip_is_equal level=%f\n           target_level=%f\n",level,target_level);
@@ -3574,13 +3567,13 @@ int ip_is_equal(int target, int ip, int ind)
           exp1++;
           mantis1 *= 10;
           }
-/*          
+/*
       printf("Debug kind1=%d kind2=%d exp1=%d exp2=%d\n",kind1,kind2,exp1,exp2);
       printf("Debug\n     mantis1=%Ld\n     mantis2=%Ld\n",mantis1,mantis2);
 */
       if (labs(mantis1-mantis2) <= 1) return(1);
       }
-  } 
+  }
   return(0);
 }
 

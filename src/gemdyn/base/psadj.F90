@@ -147,7 +147,7 @@
             if (n==1) qts(:,:) = qt0(:,:,l_nk+1)
             if (Schm_psadj==1) then
                   pw_log_p0_8(1:l_ni,1:l_nj)=(dble(qt0(1:l_ni,1:l_nj,l_nk+1))/&
-                                             (rgasd_8*Ver_Tstar_8%m(l_nk+1))  &
+                                             (rgasd_8*Cstv_Tstr_8)  &
                                         +dble(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))
                   pr_p0_0_8(1:l_ni,1:l_nj) = exp(pw_log_p0_8(1:l_ni,1:l_nj))
 
@@ -189,7 +189,7 @@
                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
                   st0(i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
                else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-                  qt0(i,j,l_nk+1) = rgasd_8*Ver_Tstar_8%m(l_nk+1)*&
+                  qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8*&
                      (log(pr_p0_0_8(i,j))-lg_pstar_8(i,j,l_nk+1))
                end if
             end do
@@ -202,14 +202,14 @@
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
          delps(1:l_ni,1:l_nj) = exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1))*&
-                               (exp(qt0(1:l_ni,1:l_nj,l_nk+1)/(rgasd_8*Ver_Tstar_8%m(l_nk+1)))-&
-                                exp(qts(1:l_ni,1:l_nj)/(rgasd_8*Ver_Tstar_8%m(l_nk+1))))
+                               (exp(qt0(1:l_ni,1:l_nj,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
+                                exp(qts(1:l_ni,1:l_nj)/(rgasd_8*Cstv_Tstr_8)))
 
          do k=l_nk,1,-1
 
-            pw_pm(1:l_ni,1:l_nj) = exp(qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Ver_Tstar_8%m(k))+lg_pstar_8(1:l_ni,1:l_nj,k))
+            pw_pm(1:l_ni,1:l_nj) = exp(qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k))
 
-            qt0(1:l_ni,1:l_nj,k) = rgasd_8*Ver_Tstar_8%m(k)*&
+            qt0(1:l_ni,1:l_nj,k) = rgasd_8*Cstv_Tstr_8*&
                                    (log(pw_pm(1:l_ni,1:l_nj)+delps(1:l_ni,1:l_nj)*exp(lg_pstar_8(1:l_ni,1:l_nj,k))/&
                                    exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))-lg_pstar_8(1:l_ni,1:l_nj,k))
          end do

@@ -42,7 +42,6 @@ module cstv
 ! Cstv_Beta_8        | ratio Beta=(1-bA)/bA                                                              |
 ! Cstv_Beta_m_8      | ratio Beta=(1-bA_m)/bA_m                                                          |
 ! Cstv_Beta_nh_8     | ratio Beta=(1-bA_nh)/bA_nh                                                        |
-! Cstv_Sstar_8       | S*                                                                                |
 ! Cstv_pref_8        | a reference pressure : 100000 PASCALS                                             |
 ! Cstv_ptop_8        | pressure at the top                                                               |
 ! Cstv_Ztop_8        | ln(ptop)                                                                          |
@@ -59,7 +58,7 @@ module cstv
                 Cstv_Tau_8   ,Cstv_invT_8   ,Cstv_Beta_8   ,&
                 Cstv_tau_m_8 ,Cstv_invT_m_8 ,Cstv_Beta_m_8 ,&
                 Cstv_tau_nh_8,Cstv_invT_nh_8,Cstv_Beta_nh_8,&
-                Cstv_Sstar_8 ,Cstv_pref_8   ,Cstv_dtzD_8   ,&
+                Cstv_pref_8   ,Cstv_dtzD_8                 ,&
                 Cstv_ptop_8  ,Cstv_Ztop_8   ,Cstv_Zsrf_8   ,&
                 Cstv_hco0_8  ,Cstv_hco1_8   ,Cstv_hco2_8   ,&
                 Cstv_bar0_8  ,Cstv_bar1_8   ,Cstv_dt_8     ,&

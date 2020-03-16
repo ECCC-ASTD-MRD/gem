@@ -114,17 +114,17 @@
 !     Diffusion backscatter
 !
       if(Ens_stat)then
-         call glbstat2 (F_ut1,'URT1','AT BEG', &
+         call glbstat (F_ut1,'URT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_vt1,'VRT1','AT BEG', &
+         call glbstat (F_vt1,'VRT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difut1,'DUT1','AT BEG', &
+         call glbstat (F_difut1,'DUT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difvt1,'DVT1','AT BEG', &
+         call glbstat (F_difvt1,'DVT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_ugwdt1,'UGW1','AT BEG', &
+         call glbstat (F_ugwdt1,'UGW1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_vgwdt1,'VGW1','AT BEG', &
+         call glbstat (F_vgwdt1,'VGW1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
@@ -145,9 +145,9 @@
 
 
       if(Ens_stat)then
-         call glbstat2 (F_difut1,'DUT1','DIFF', &
+         call glbstat (F_difut1,'DUT1','DIFF', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difvt1,'DVT1','DIFF', &
+         call glbstat (F_difvt1,'DVT1','DIFF', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 !
@@ -171,20 +171,20 @@
 
 
       if(Ens_stat)then
-         call glbstat2 (F_difut1,'DUT1','GWD', &
+         call glbstat (F_difut1,'DUT1','GWD', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difvt1,'DVT1','GWD', &
+         call glbstat (F_difvt1,'DVT1','GWD', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
       dsp_local=dsp_dif+dsp_gwd
 
       if(Ens_stat)then
-         call glbstat2 (dsp_dif,'DSP','DIF', &
+         call glbstat (dsp_dif,'DSP','DIF', &
           l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-          call glbstat2 (dsp_gwd,'DSP','GWD', &
+          call glbstat (dsp_gwd,'DSP','GWD', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-          call glbstat2 (dsp_local,'DSP','TOT', &
+          call glbstat (dsp_local,'DSP','TOT', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
@@ -196,7 +196,7 @@
 
 
       if(Ens_stat)then
-         call glbstat2 (dsp_local,'DSP','FLTTOT', &
+         call glbstat (dsp_local,'DSP','FLTTOT', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
@@ -210,7 +210,7 @@
                                  mcsph1(1:l_ni,1:l_nj,1:E_nk)
 
       if(Ens_stat)then
-         call glbstat2 (dsp_local,'DSP','FLTTO2', &
+         call glbstat (dsp_local,'DSP','FLTTO2', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
@@ -252,13 +252,13 @@
 
 
       if(Ens_stat)then
-         call glbstat2 (F_ut1,'URT1','AT END', &
+         call glbstat (F_ut1,'URT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_vt1,'VRT1','AT END', &
+         call glbstat (F_vt1,'VRT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difut1,'DUT1','AT END', &
+         call glbstat (F_difut1,'DUT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_difvt1,'DVT1','AT END', &
+         call glbstat (F_difvt1,'DVT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 
@@ -291,9 +291,9 @@
 
 
       if(Ens_stat)then
-         call glbstat2 (ensdiv,'DVRG','FRCING', &
+         call glbstat (ensdiv,'DVRG','FRCING', &
               l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (ensvor,'VORT','FRCING', &
+         call glbstat (ensvor,'VORT','FRCING', &
               l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       end if
 

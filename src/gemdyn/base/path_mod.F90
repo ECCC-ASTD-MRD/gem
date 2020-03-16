@@ -13,31 +13,30 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+!> Variables associated with the paths/directories (set_world_view)
 module path
    implicit none
    public
    save
-!______________________________________________________________________
-!                                                                      |
-!  VARIABLES ASSOCIATED WITH THE PATHs/DIRECTORIES (set_world_view1)   |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Path_nml_S         | path to namelist directory                      |
-! Path_basedir_S     | path to base directory                          |
-! Path_input_S       | path to input directory                         |
-! Path_ind_S         | path to indata directory                        |
-! Path_output_S      | path to output directory                        |
-! Path_work_S        | path to work directory                          |
-! Path_xchg_S        | path to the "exchange" directory with 3D-Var    |
-! Path_outcfg_S      | path and name of the file "output_settings"     |
-! Path_phy_S         | path to physics files                           |
-! Path_phyincfg_S    | path to physics_input_table                     |
-! Path_casc_S        | path to write 3df files for self-nesting        |
-!----------------------------------------------------------------------
-!
-   character(len=1024) :: Path_nml_S,Path_basedir_S,Path_input_S
-   character(len=1024) :: Path_ind_S,Path_output_S,Path_work_S,Path_xchg_S
-   character(len=1024) :: Path_outcfg_S,Path_phy_S,Path_phyincfg_S
+
+   !> Path to namelist directory
+   character(len=1024) :: Path_nml_S
+   !> Path to base directory
+   character(len=1024) :: Path_basedir_S
+   !> Path to input directory
+   character(len=1024) :: Path_input_S
+   !> Path to indata directory
+   character(len=1024) :: Path_ind_S
+   !> Path to output directory
+   character(len=1024) :: Path_output_S
+   !> Path to work directory
+   character(len=1024) :: Path_work_S
+   !> Path to the "exchange" directory with 3D-Var
+   character(len=1024) :: Path_xchg_S
+   !> Path and name of the file "output_settings"
+   character(len=1024) :: Path_outcfg_S
+   !> Path to physics files
+   character(len=1024) :: Path_phy_S
+   !> Path to physics_input_table
+   character(len=1024) :: Path_phyincfg_S
 end module path

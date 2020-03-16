@@ -126,7 +126,7 @@
 
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
-      call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
+      call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
 
       do ii=1,Outd_var_max(set)
       do  i=1,nkeys
@@ -150,15 +150,15 @@
 
             select case (trim(class_var(id,2)))
             case('UU')
-               call out_href3 ( 'U_point', &
+               call out_href ( 'U_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case('VV')
-               call out_href3 ( 'V_point', &
+               call out_href ( 'V_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case default
-               call out_href3 ( 'Mass_point', &
+               call out_href ( 'Mass_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             end select
@@ -167,14 +167,14 @@
             istat = gmm_getmeta(keylist(i),tmp_meta)
             if (tmp_meta%l(3)%high <= 1) then
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
-               call out_fstecr3 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+               call out_fstecr (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                        hyb0,keylist(i),Outd_convmult(ii,set) ,&
                                        Outd_convadd(ii,set),Level_kind_ip1,&
                                        -1,1,ind0,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
-               call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+               call out_fstecr (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                level_type,keylist(i),Outd_convmult(ii,set),&
                                       Outd_convadd(ii,set),Level_kind_ip1 ,&
@@ -182,7 +182,7 @@
                ! Special treatment for QT1 which is now scoping 1:G_nk+1
                if ( (trim(keylist(i)) == 'QT1') .and. (G_nk == nko) ) then
                   indo(1) = G_nk+1
-                  call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                  call out_fstecr (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                          tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                   level_type,keylist(i),Outd_convmult(ii,set),&
                                          Outd_convadd(ii,set),Level_kind_ip1 ,&

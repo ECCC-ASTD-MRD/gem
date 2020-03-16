@@ -52,7 +52,7 @@ typedef struct {
 
 static Twin_Buffer TB[Max_File];
 
-
+
 /***************************************************************************** 
  *                            F N O M _ I N D E X                            *
  *                                                                           * 
@@ -107,7 +107,7 @@ static void init_TB_package(int inutile)
   done = 1;
 }
 
-
+
 /****************************************************************************
  *                          O P E N _ D B _ F I L E                         *
  *                                                                          *
@@ -168,7 +168,7 @@ ftnword f77name(open_db_file)(ftnword *iun)
   
 } /* end open_db_file */
 
-
+
 /****************************************************************************
  *                       R E A D _ D B _ F I L E                            *
  *                                                                          *
@@ -239,7 +239,7 @@ ftnword f77name(read_db_file)( ftnword *iun, ftnword *bucket, ftnword *NB)
 }/* end read_db_file */
 
 
-
+
 /****************************************************************************
  *                        W R I T E _ D B _ F I L E                         *
  *                                                                          *
@@ -316,7 +316,7 @@ ftnword f77name(write_db_file)(ftnword *iun,ftnword *bucket,ftnword *NB)
    return (TB[f].nb_elmt_ecrit);
 }
 
-
+
 /****************************************************************************
  *                     R E W I N D _ D B _ F I L E                          *
  *                                                                          *
@@ -368,7 +368,7 @@ ftnword f77name(rewind_db_file)(ftnword *iun)
    TB[f].pos_in = 0;
    return(0);
 }
-
+
 /****************************************************************************
  *                        C L O S E _ D B _ F I L E                         *
  *                                                                          *

@@ -61,6 +61,8 @@
       if ( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
       smagparam= hzd_smago_param
 
+      stop ('smago_in_rhs is broken')
+
       switch_on_wzd   = (Hzd_lnr <= 0.  .and. switch_on_wzd)
       switch_on_THETA = (Hzd_smago_prandtl > 0. .and. Hzd_lnr_theta <= 0.)
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0..and. Hzd_lnr_tr <= 0.)
@@ -85,23 +87,11 @@
 
       istat = gmm_get (gmmk_smag_s, smag)
 
-
-!$omp parallel private(i,j,k,tension_z,shear,tension_u,shear_u,&
-!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, &
-!$omp smagcoef_uo, smagcoef_vo,fact) &
-!$omp shared(base_coefM, base_coefT, smag, hu, cdelta2, ismagprandtl,&
-!$omp        ismagprandtl_hu, crit_coef, switch_on_THETA, &
-!$omp        switch_on_hu, switch_on_fric_heat,switch_on_wzd)
-
-!$omp do
       do k=1,nk
          base_coefM(k)=Hzd_smago_lnrM_8(k)*crit_coef
          base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
       end do
-!$omp end do
 
-!$omp do
       do k=1,nk
 
          do j=j0-2, jn+2
@@ -216,7 +206,6 @@
             end do
          end do
 
-
          if (.not.Dynamics_hydro_L .and. switch_on_wzd) then
 
             fact=Cstv_dt_8*Cstv_invT_nh_8
@@ -239,8 +228,8 @@
             do j=j0-1, jn+1
                do i=i0-1, in+1
                   mypi(i,j)=exp(cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*&
-                             (F_s(i,j)+Cstv_Sstar_8)+Ver_c_8%m(k)*&
-                             (F_sl(i,j)+Cstv_Sstar_8)))
+                             (F_s(i,j)+0.d0)+Ver_c_8%m(k)*&
+                             (F_sl(i,j)+0.d0)))
                   th(i,j)=F_t(i,j,k)/mypi(i,j)
                end do
             end do
@@ -280,11 +269,10 @@
          end if
 
       end do
-!$omp end do
 
       if (switch_on_fric_heat) then
          fact=Cstv_dt_8*Cstv_invT_8/cdelta2**2/cpd_8
-!$omp do
+
          do k=1, nk
             if(k /= nk) then
                do j=j0, jn
@@ -302,9 +290,8 @@
                end do
             end if
          end do
-!$omp end do
+
       end if
-!$omp end parallel
 
       return
       end subroutine smago_in_rhs

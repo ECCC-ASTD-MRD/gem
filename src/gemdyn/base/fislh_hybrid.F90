@@ -73,7 +73,6 @@
                  Ver_wp_8%m(G_nk  ),      Ver_wm_8%m(G_nk  ), &
                 Ver_onezero(G_nk+1),      Ver_zeronk(G_nk  ), &
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
-              Ver_Tstar_8%m(G_nk+1),   Ver_Tstar_8%t(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
 
       Ver_code = 6

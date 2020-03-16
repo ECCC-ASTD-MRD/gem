@@ -41,6 +41,7 @@ module gmm_vt1
       real, pointer, contiguous, dimension (:,:,:) ::  wt1 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  qt1 => null()
       real, pointer, contiguous, dimension (:,:,:) :: zdt1 => null()
+      real, pointer, contiguous, dimension (:,:,:) :: hut1 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 

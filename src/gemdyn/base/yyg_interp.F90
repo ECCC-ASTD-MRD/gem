@@ -35,18 +35,18 @@
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 !
-       integer k,i,j,Im, Jm
+       integer k,i,Im, Jm
        real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
        real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
        real(kind=REAL64)  fx1,fx2,fx3,fx4
 !
 !----------------------------------------------------------------------
 !
-!$omp parallel private (k,i,j,im,jm, &
-!$omp          W1,W2,W3,W4,X1,XX,X2,X3,X4, &
-!$omp          WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4,&
-!$omp          fx1,fx2,fx3,fx4)
-!$omp do
+
+
+
+
+
    Do i=1,NLEN
        Im  = iMx(i)
        Jm  = iMy(i)
@@ -90,8 +90,8 @@
           F_dest((i-1)*Nk+k)  = WW1*fx1+WW2*fx2+WW3*fx3+WW4*fx4
        end do
       end do
-!$omp enddo
-!$omp end parallel
+
+
 !
 !----------------------------------------------------------------------
 !
@@ -120,18 +120,18 @@
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 !
-       integer k,i,j,Im, Jm
+       integer k,i,Im, Jm
        real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
        real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
        real(kind=REAL64)  fx1,fx2,fx3,fx4
 !
 !----------------------------------------------------------------------
 !
-!$omp parallel private (k,i,j,im,jm, &
-!$omp          W1,W2,W3,W4,X1,XX,X2,X3,X4, &
-!$omp          WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4,&
-!$omp          fx1,fx2,fx3,fx4)
-!$omp do
+
+
+
+
+
    Do i=1,NLEN
        Im  = iMx(i)
        Jm  = iMy(i)
@@ -175,8 +175,8 @@
           F_dest((i-1)*Nk+k)  = WW1*fx1+WW2*fx2+WW3*fx3+WW4*fx4
        end do
       end do
-!$omp enddo
-!$omp end parallel
+
+
 !
 !----------------------------------------------------------------------
 !
@@ -206,19 +206,14 @@
 !revision
 ! v4_60 - Qaddouri A.   - initial version
 
-       integer k,i,j,Im, Jm
+       integer k,i,Im, Jm
        real(kind=REAL64)  W1,W2,W3,W4,X1,XX,X2,X3,X4
        real(kind=REAL64)  WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4
        real(kind=REAL64)  fx1,fx2,fx3,fx4,prmax,prmin
 !
 !----------------------------------------------------------------------
 !
-!$omp parallel private (k,i,j,im,jm, &
-!$omp     W1,W2,W3,W4,X1,XX,X2,X3,X4, &
-!$omp     WW1,WW2,WW3,WW4,YY,y1,y2,y3,y4,&
-!$omp     fx1,fx2,fx3,fx4,prmax,prmin)
-!$omp do
-       Do i=1,NLEN
+       do i=1,nlen
           Im  = iMx(i)
           Jm  = iMy(i)
 
@@ -244,7 +239,7 @@
           WW3  =  yy    *(yy-y2)*(yy-y4)/(y3*(y3-y2)*(y3-y4))
           WW4  =  yy    *(yy-y2)*(yy-y3)/(y4*(y4-y2)*(y4-y3))
 
-          Do k=1,Nk
+          do k=1,nk
 
              if (mono_l) then
                 prmax=max(F_src(Im,Jm,k),F_src(Im+1,Jm,k),F_src(Im+2,Jm,k),F_src(Im+3,jm,k)   ,&
@@ -274,8 +269,6 @@
 
           end do
        end do
-!$omp enddo
-!$omp end parallel
 !
 !----------------------------------------------------------------------
 !
@@ -300,16 +293,12 @@
 !author
 !           Abdessamad Qaddouri - October 2009
 
-       integer i,j,k,Im, Jm
+       integer i,k,Im, Jm
        real(kind=REAL64) betax,betax1,betay,betay1
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private (i,j,k,im,jm, &
-!$omp     betax,betax1,betay,betay1)
-!$omp do
-
-       Do i=1,NLEN
+       do i=1,nlen
 
           Im = Imx(i)
           Jm = Imy(i)
@@ -317,14 +306,11 @@
           betax1= (1.0d0-betax)
           betay=(Yi(i)-Geomgy(Jm))*geomh_inv_hy_8
           betay1=1.0d0-betay
-          Do k=1,Nk
+          do k=1,nk
              FF((i-1)*Nk+k) = betay1*(betax1*F(Im,Jm  ,k)+betax*F(Im+1,Jm  ,k))&
                              +betay *(betax1*F(Im,Jm+1,k)+betax*F(Im+1,Jm+1,k))
           end do
        end do
-
-!$omp enddo
-!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !
@@ -350,15 +336,12 @@
 !author
 !           Abdessamad Qaddouri - October 2009
 
-       integer i,j,k,Im,Jm
+       integer i,k,Im,Jm
        real(kind=REAL64)  betax,betax1,betay,betay1
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private (i,j,k,im,jm,       &
-!$omp      betax,betax1,betay,betay1)
-!$omp do
-       Do i=1,NLEN
+       do i=1,nlen
           Im = imx(i)
           Jm = imy(i)
 
@@ -381,14 +364,11 @@
              betay=1.0d0
              betay1=0.0d0
           end if
-          Do k=1,Nk
+          do k=1,nk
              FF((i-1)*Nk+k)= betay1*(betax1*F(Im,Jm,k)+betax*F(Im+1,Jm,k))+ &
              betay*(betax1*F(Im,Jm+1,k)+betax*F(Im+1,Jm+1,k))
           end do
        end do
-
-!$omp enddo
-!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

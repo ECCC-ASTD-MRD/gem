@@ -53,11 +53,6 @@ module hvdif_options
    namelist /hvdif  / Hzd_pwr_tr
    namelist /hvdif_p/ Hzd_pwr_tr
 
-   !# Fraction of the maximum divergence damping - range(0.0-1.0)
-   real :: Hzd_div_damp = -1.
-   namelist /hvdif  / Hzd_div_damp
-   namelist /hvdif_p/ Hzd_div_damp
-
    !# Main Smagorinsky control parameter (usual range 0.1-0.3)
    real :: Hzd_smago_param= -1.
    namelist /hvdif  / Hzd_smago_param

@@ -54,7 +54,7 @@
          F_DD(:,1:j0-1,k) = 0. ; F_DD(:,jn+1:l_nj,k)= 0.
       end do
 
-      if (F_filtdd > 0) call filter2 ( F_DD, F_filtdd,F_coefdd, &
+      if (F_filtdd > 0) call filter ( F_DD, F_filtdd,F_coefdd, &
                                   l_minx,l_maxx,l_miny,l_maxy,Nk )
 !
 !----------------------------------------------------------------------

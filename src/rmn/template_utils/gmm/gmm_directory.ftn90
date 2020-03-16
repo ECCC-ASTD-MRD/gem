@@ -45,7 +45,7 @@
   endif
   return
   end subroutine check_directory_entry
-!!
+!!
 ! find entry called name in directory starting from beginning of directory (the hard way)
 ! upon exit cur_page and cur_entry are nonzero if desired entry found
 ! ==============================================================================================

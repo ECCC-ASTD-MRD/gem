@@ -253,6 +253,8 @@
       external newdate,datmgp2
 
 !----------------------------------------------------------------
+      month_since_start = -1
+
       if(first_call_L) then
 
          First_call_L   = .false.

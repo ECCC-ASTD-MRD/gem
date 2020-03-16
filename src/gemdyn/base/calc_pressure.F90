@@ -27,39 +27,34 @@
 #include <arch_specific.hf>
 
       integer, intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
-      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(IN ) :: F_s
-      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(OUT) :: F_p0
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(OUT) :: F_pm, F_pt
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(in ) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(out) :: F_p0
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_pm, F_pt
 
       integer i, j, k, istat
 !     ________________________________________________________________
 !
       istat = gmm_get (gmmk_sls_s ,sls )
 
-!$omp parallel
-!$omp do
       do k=1,l_nk
          do j=1,l_nj
-         do i=1,l_ni
-            F_pm(i,j,k) = exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
-                              +Ver_c_8%m(k) * sls(i,j))
-            F_pt(i,j,k) = exp( Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)&
-                              +Ver_c_8%t(k) * sls(i,j))
-         end do
+            do i=1,l_ni
+               F_pm(i,j,k) = exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                                 +Ver_c_8%m(k) * sls(i,j))
+               F_pt(i,j,k) = exp( Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)&
+                                 +Ver_c_8%t(k) * sls(i,j))
+            end do
          end do
       end do
-!$omp enddo
 
       k= l_nk+1
-!$omp do
+
       do j=1,l_nj
          do i=1,l_ni
-            F_p0(i,j)= exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
-                           +Ver_c_8%m(k) * sls(i,j))
+            F_p0(i,j) = exp( Ver_a_8%m(k) + Ver_b_8%m(k) * F_s(i,j)&
+                           + Ver_c_8%m(k) * sls(i,j))
         end do
       end do
-!$omp enddo
-!$omp end parallel
 !     ________________________________________________________________
 !
       return

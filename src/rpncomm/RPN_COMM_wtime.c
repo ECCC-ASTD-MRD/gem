@@ -60,11 +60,11 @@ static ticks getticks(void)
 {
   struct timespec ts;
 
-  if ( clock_gettime(CLOCK_MONOTONIC, &ts) != 0 ) {
-    fprintf(stderr, "clock_gettime(CLOCK_MONOTONIC, &ts) system call failed!\n");
+  if ( clock_gettime(CLOCK_REALTIME, &ts) != 0 ) {
+    fprintf(stderr, "clock_gettime(CLOCK_REALTIME, &ts) system call failed!\n");
     return 1;
   }
-  return ts.tv_sec + ts.tv_nsec * 10.0e-9;
+  return ts.tv_sec + ts.tv_nsec * 1.0e-9;
 }
 
 #endif

@@ -72,7 +72,7 @@
          deg2rad,zd2etad
 
       real, dimension(:,:  ), pointer    :: tdiag,qdiag
-      real, dimension(:,:,:), pointer    :: hut1, wlnph_m, wlnph_ta
+      real, dimension(:,:,:), pointer    :: gmm_hut1, wlnph_m, wlnph_ta
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
                                             tt_pres,vt_pres,w5,w6,cible,&
                                             gzm,gzt,ttx,htx,ffwe       ,&
@@ -134,8 +134,8 @@
       if (pnth /= 0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
-      nullify (hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
-      istat= gmm_get('TR/'//'HU'//':P', hut1      )
+      nullify (gmm_hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
+      istat= gmm_get('TR/'//'HU'//':P', gmm_hut1      )
       istat= gmm_get(gmmk_tt1_s       , tt1       )
       istat= gmm_get(gmmk_wt1_s       , wt1       )
       istat= gmm_get(gmmk_fis0_s      , fis0      )
@@ -155,7 +155,7 @@
       if (Out3_sfcdiag_L) nk_src= l_nk+1
 
 !     Obtain HU from HUT1 and physics diag level
-      hu(:,:,1:l_nk) = hut1(:,:,1:l_nk)
+      hu(:,:,1:l_nk) = gmm_hut1(:,:,1:l_nk)
       hu(:,:,l_nk+1) = qdiag
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
@@ -189,25 +189,25 @@
       knd=2
 
       if (pnme /= 0)then
-            call out_fstecr3(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+            call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
          end if
       if (pnmx /= 0)then
-            call out_fstecr3(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+            call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnmx,set),.false. )
          end if
       if (pnpt /= 0) &
-          call out_fstecr3(ptop,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+          call out_fstecr(ptop,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'PT  ',Outd_convmult(pnpt,set),Outd_convadd(pnpt,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnpt,set),.false. )
       if (pnla /= 0) &
-          call out_fstecr3(geomh_latrx,1,l_ni,1,l_nj,hyb0, &
+          call out_fstecr(geomh_latrx,1,l_ni,1,l_nj,hyb0, &
               'LA  ',Outd_convmult(pnla,set),Outd_convadd(pnla,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnla,set),.false. )
       if (pnlo /= 0) &
-          call out_fstecr3(geomh_lonrx,1,l_ni,1,l_nj,hyb0, &
+          call out_fstecr(geomh_lonrx,1,l_ni,1,l_nj,hyb0, &
               'LO  ',Outd_convmult(pnlo,set),Outd_convadd(pnlo,set),&
               knd,-1,1, ind0, 1, Outd_nbit(pnlo,set),.false. )
 !_______________________________________________________________________
@@ -295,9 +295,9 @@
          call pnm (w1, vt(l_minx,l_miny,nk_src), fis0, w2, wlao, &
                    ttx, htx, nk_under, l_minx, l_maxx, l_miny, l_maxy, 1)
          if (Outd_filtpass(pnpn,set) > 0) &
-             call filter2( w1,Outd_filtpass(pnpn,set),Outd_filtcoef(pnpn,set),&
+             call filter( w1,Outd_filtpass(pnpn,set),Outd_filtcoef(pnpn,set),&
                            l_minx,l_maxx,l_miny,l_maxy,1)
-         call out_fstecr3( w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+         call out_fstecr( w1,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'PN  ',Outd_convmult(pnpn,set),Outd_convadd(pnpn,set), &
               knd,-1,1, ind0, 1, Outd_nbit(pnpn,set),.false. )
       end if
@@ -310,9 +310,9 @@
          end do
          end do
          if (Outd_filtpass(pnp0,set) > 0)&
-         call filter2( w1,Outd_filtpass(pnp0,set),Outd_filtcoef(pnp0,set), &
+         call filter( w1,Outd_filtpass(pnp0,set),Outd_filtcoef(pnp0,set), &
                        l_minx,l_maxx,l_miny,l_maxy,1)
-         call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+         call out_fstecr (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
               'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
               knd,-1,1,ind0, 1, Outd_nbit(pnp0,set),.false.)
          if(Schm_sleve_L)then
@@ -330,7 +330,7 @@
                      w1(i,j) = w2(i,j)*Cstv_pref_8
                   end do
                end do
-               call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+               call out_fstecr (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                                  'P0LS',Outd_convmult(pnp0,set),&
                                  Outd_convadd(pnp0,set),knd,-1,1,&
                                  ind0, 1,32,.false.)
@@ -343,7 +343,7 @@
       end if
 
       if (pnth /= 0) then
-         do k= 1, nk_src
+         do k= 1, G_nk+1
             do j= 1,l_nj
             do i= 1,l_ni
                th(i,j,k)= tt(i,j,k)*(theta_p0/exp(wlnph_ta(i,j,k)))**cappa_8
@@ -357,7 +357,7 @@
 !       Setup the indexing for output
          knd= Level_kind_ip1
          allocate ( indo(G_nk+1) )
-         call out_slev2 ( Level(1,levset), Level_max(levset), &
+         call out_slev ( Level(1,levset), Level_max(levset), &
                           Level_momentum,indo,nko,near_sfc_L)
          write_diag_lev= near_sfc_L .and. out3_sfcdiag_L
 
@@ -377,14 +377,14 @@
          hybt_gnk2(1)=hybt(G_nk+2)
 
          if (pngz /= 0)then
-            call out_fstecr3(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+            call out_fstecr(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
-            call out_fstecr3(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call out_fstecr(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
             if (near_sfc_L) then
-               call out_fstecr3(gzt(l_minx,l_miny,G_nk+1)    , &
+               call out_fstecr(gzt(l_minx,l_miny,G_nk+1)    , &
                     l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,1,ind0,1,Outd_nbit(pngz,set),.false.)
@@ -392,22 +392,22 @@
          end if
 
          if (pnvt /= 0)then
-            call out_fstecr3(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call out_fstecr(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnvt,set),.false. )
             if (write_diag_lev) then
-               call out_fstecr3(vt(l_minx,l_miny,G_nk+1),&
+               call out_fstecr(vt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                     'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
                     Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnvt,set),.false. )
             end if
          end if
          if (pnth /= 0) then
-               call out_fstecr3(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+               call out_fstecr(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pnth,set),.false. )
                if (write_diag_lev) then
-                  call out_fstecr3(th(l_minx,l_miny,G_nk+1),&
+                  call out_fstecr(th(l_minx,l_miny,G_nk+1),&
                                   l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnth,set),.false. )
@@ -415,11 +415,11 @@
          end if
 
          if (pntt /= 0)then
-            call out_fstecr3(tt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call out_fstecr(tt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'TT  ' ,Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
                  knd,-1, G_nk+1,indo,nko,Outd_nbit(pntt,set),.false. )
             if (write_diag_lev) then
-               call out_fstecr3(tt(l_minx,l_miny,G_nk+1),&
+               call out_fstecr(tt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                  'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set),&
                  Level_kind_diag,-1,1,ind0,1,Outd_nbit(pntt,set),.false. )
@@ -443,14 +443,14 @@
          end if
 
          if (pnpx /= 0)then
-             call out_fstecr3(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+             call out_fstecr(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                   'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
                   knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
-             call out_fstecr3(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+             call out_fstecr(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                   'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
                   knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
              if (near_sfc_L) then
-                call out_fstecr3(px_ta(l_minx,l_miny,G_nk+1), &
+                call out_fstecr(px_ta(l_minx,l_miny,G_nk+1), &
                                 l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
                      'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
                      knd,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
@@ -464,11 +464,11 @@
 !        Calculate THETAW TW (t8=TW) (px=PX)
              call mthtaw4 (t8,hu,tt, px_ta,satues_l, &
                            .true.,trpl_8,l_ninj,nk_src,l_ninj)
-             call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+             call out_fstecr(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                   'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
                   knd,-1,G_nk+1, indo, nko, Outd_nbit(pntw,set),.false. )
              if (write_diag_lev) then
-                call out_fstecr3(t8(l_minx,l_miny,G_nk+1),&
+                call out_fstecr(t8(l_minx,l_miny,G_nk+1),&
                      l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                      'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set),&
                      Level_kind_diag,-1,1,ind0,1, Outd_nbit(pntw,set),.false. )
@@ -486,11 +486,11 @@
             end if
 
             if (pnes /= 0) then
-               call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+               call out_fstecr(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pnes,set),.false. )
                if (write_diag_lev) then
-                  call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
+                  call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                                   l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnes,set),.false. )
@@ -506,11 +506,11 @@
                   end do
                   end do
                end do
-               call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+               call out_fstecr(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pntd,set),.false. )
                if (write_diag_lev) then
-                  call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
+                  call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                        l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pntd,set),.false. )
@@ -530,11 +530,11 @@
                   end do
                end do
             end if
-            call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call out_fstecr(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnhr,set),.false. )
             if (write_diag_lev) then
-               call out_fstecr3(t8(l_minx,l_miny,G_nk+1), &
+               call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                     'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
                     Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnhr,set),.false. )
@@ -542,7 +542,7 @@
          end if
 
          if (pnww /= 0) then
-            call out_fstecr3(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
+            call out_fstecr(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
                  knd,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
          end if
@@ -578,14 +578,14 @@
                end do
                end do
             end do
-            call out_fstecr3(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
+            call out_fstecr(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
                  'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
                  knd,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
             deallocate (ffwe)
          end if
 
          if (pnzz /= 0) then
-            call out_fstecr3(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
+            call out_fstecr(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'ZZ  ',Outd_convmult(pnzz,set),Outd_convadd(pnzz,set),&
                  knd,-1,G_nk,indo,nko,Outd_nbit(pnzz,set),.false. )
          end if
@@ -646,10 +646,10 @@
 
         if (pngz /= 0) then
            if (Outd_filtpass(pngz,set) > 0)then
-              call filter2( w5,Outd_filtpass(pngz,set),Outd_filtcoef(pngz,set), &
+              call filter( w5,Outd_filtpass(pngz,set),Outd_filtcoef(pngz,set), &
                             l_minx,l_maxx,l_miny,l_maxy,nko)
            end if
-           call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+           call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set), &
               knd,-1,nko,indo,nko,Outd_nbit(pngz,set),.false. )
         end if
@@ -684,9 +684,9 @@
                            px_pres,satues_l, &
                            .true.,trpl_8,l_ninj,nko,l_ninj)
             if (Outd_filtpass(pntw,set) > 0) &
-                call filter2( w5,Outd_filtpass(pntw,set),Outd_filtcoef(pntw,set), &
+                call filter( w5,Outd_filtpass(pntw,set),Outd_filtcoef(pntw,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-            call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
                 knd,-1,nko, indo, nko, Outd_nbit(pntw,set),.false. )
         end if
@@ -712,18 +712,18 @@
                  end do
                  end do
               end do
-              call filter2( td_pres,Outd_filtpass(pntd,set),Outd_filtcoef(pntd,set), &
+              call filter( td_pres,Outd_filtpass(pntd,set),Outd_filtcoef(pntd,set), &
                             l_minx,l_maxx,l_miny,l_maxy, nko )
-              call out_fstecr3(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+              call out_fstecr(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                 knd,-1,nko,indo,nko,Outd_nbit(pntd,set),.false. )
             end if
 
             if (pnes /= 0) then
                 if (Outd_filtpass(pnes,set) > 0) &
-                    call filter2( w5,Outd_filtpass(pnes,set),Outd_filtcoef(pnes,set), &
+                    call filter( w5,Outd_filtpass(pnes,set),Outd_filtcoef(pnes,set), &
                                   l_minx,l_maxx,l_miny,l_maxy,nko )
-                call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+                call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                    'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
                    knd,-1,nko,indo,nko,Outd_nbit(pnes,set),.false.)
             end if
@@ -743,18 +743,18 @@
               end do
            end if
            if (Outd_filtpass(pnhr,set) > 0) &
-                call filter2( w5,Outd_filtpass(pnhr,set),Outd_filtcoef(pnhr,set), &
+                call filter( w5,Outd_filtpass(pnhr,set),Outd_filtcoef(pnhr,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-           call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+           call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set), &
                 knd,-1,nko, indo, nko, Outd_nbit(pnhr,set),.false. )
         end if
 
         if (pnvt /= 0) then
             if (Outd_filtpass(pnvt,set) > 0) &
-                call filter2( vt_pres,Outd_filtpass(pnvt,set),Outd_filtcoef(pnvt,set), &
+                call filter( vt_pres,Outd_filtpass(pnvt,set),Outd_filtcoef(pnvt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-            call out_fstecr3(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set), &
                  knd,-1,nko,indo, nko, Outd_nbit(pnvt,set),.false. )
         end if
@@ -763,16 +763,16 @@
             call vertint2 ( w5,cible,nko, th,wlnph_ta,G_nk+1          ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                            inttype=Out3_vinterp_type_S )
-            call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set), &
                  knd,-1,nko, indo, nko, Outd_nbit(pnth,set),.false. )
          end if
 
         if (pntt /= 0) then
             if (Outd_filtpass(pntt,set) > 0) &
-                call filter2( tt_pres,Outd_filtpass(pntt,set),Outd_filtcoef(pntt,set), &
+                call filter( tt_pres,Outd_filtpass(pntt,set),Outd_filtcoef(pntt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-            call out_fstecr3(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
+            call out_fstecr(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
                  'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
                  knd,-1,nko, indo, nko, Outd_nbit(pntt,set),.false. )
         end if
@@ -782,9 +782,9 @@
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
             if (Outd_filtpass(pnww,set) > 0) &
-                call filter2( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
+                call filter( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+             call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                   'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set), &
                   knd,-1,nko, indo, nko, Outd_nbit(pnww,set),.false. )
         end if
@@ -794,9 +794,9 @@
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
             if (Outd_filtpass(pnzz,set) > 0) &
-                call filter2( w5,Outd_filtpass(pnzz,set),Outd_filtcoef(pnzz,set), &
+                call filter( w5,Outd_filtpass(pnzz,set),Outd_filtcoef(pnzz,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
-             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
+             call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                   'ZZ  ',Outd_convmult(pnzz,set),Outd_convadd(pnzz,set),&
                   knd,-1,nko, indo, nko, Outd_nbit(pnzz,set),.false. )
         end if

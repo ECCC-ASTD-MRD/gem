@@ -67,7 +67,12 @@
          select case(Sol3D_krylov_S)
             case ('FGMRES')
                F_lhs_sol = saved_sol
-               call sol_fgmres3d_H ( F_lhs_sol,            F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+
+               if ( Dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
+                  call sol_fgmres3d (F_lhs_sol, matvec_yy, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+               elseif  ( Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
+                  call sol_fgmres3d_H (F_lhs_sol,          F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+               endif
 
                if ( F_print_L ) then
                   write(Lun_out, "(3x,'FGMRES converged at iteration', i4,' to a solution with relative residual',1pe14.7)") its, conv

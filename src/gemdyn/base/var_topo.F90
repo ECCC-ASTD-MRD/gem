@@ -16,7 +16,7 @@
 !**s/r var_topo - varies topography incrementally from analysis
 !                 topography to target topography
 
-      subroutine var_topo2 (F_topo, F_step, Minx,Maxx,Miny,Maxy)
+      subroutine var_topo (F_topo, F_step, Minx,Maxx,Miny,Maxy)
       use gmm_geof
       use gem_options
       use tdpack

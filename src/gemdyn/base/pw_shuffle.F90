@@ -17,6 +17,7 @@
 !
       subroutine pw_shuffle
       use gmm_itf_mod
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
@@ -39,6 +40,25 @@
       gmmstat = gmm_shuffle (pw_gzlist)
       gmmstat = gmm_shuffle (pw_melist)
       gmmstat = gmm_shuffle (pw_p0list)
+
+      gmmstat = gmm_get(gmmk_pw_uu_plus_s  ,pw_uu_plus)
+      gmmstat = gmm_get(gmmk_pw_vv_plus_s  ,pw_vv_plus)
+      gmmstat = gmm_get(gmmk_pw_tt_plus_s  ,pw_tt_plus)
+      gmmstat = gmm_get(gmmk_pw_pm_plus_s  ,pw_pm_plus)
+      gmmstat = gmm_get(gmmk_pw_pt_plus_s  ,pw_pt_plus)
+      gmmstat = gmm_get(gmmk_pw_gz_plus_s  ,pw_gz_plus)
+      gmmstat = gmm_get(gmmk_pw_me_plus_s  ,pw_me_plus)
+      gmmstat = gmm_get(gmmk_pw_p0_plus_s  ,pw_p0_plus)
+
+      gmmstat = gmm_get(gmmk_pw_uu_moins_s  ,pw_uu_moins)
+      gmmstat = gmm_get(gmmk_pw_vv_moins_s  ,pw_vv_moins)
+      gmmstat = gmm_get(gmmk_pw_tt_moins_s  ,pw_tt_moins)
+      gmmstat = gmm_get(gmmk_pw_pt_moins_s  ,pw_pt_moins)
+      gmmstat = gmm_get(gmmk_pw_gz_moins_s  ,pw_gz_moins)
+      gmmstat = gmm_get(gmmk_pw_pm_moins_s  ,pw_pm_moins)
+      gmmstat = gmm_get(gmmk_pw_me_moins_s  ,pw_me_moins)
+      gmmstat = gmm_get(gmmk_pw_p0_moins_s  ,pw_p0_moins)
+
 !     ________________________________________________________________
 !
       return

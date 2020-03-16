@@ -146,7 +146,7 @@
          Out3_nbitg=16
       end if
       Out3_lieb_nk = 0
-      do i = 1, MAXELEM
+      do i = 1, MAXELEM_mod
          if (Out3_lieb_levels(i) <= 0.) EXIT
          Out3_lieb_nk = Out3_lieb_nk + 1
       end do
@@ -255,20 +255,6 @@
       if (Lam_gbpil_T <= 0 .and. Lam_blend_T > 0) then
          if (lun_out>0)write (Lun_out, 9580)
          return
-      end if
-
-
-!     Check for modified epsilon/ super epsilon
-      if ( Cstv_rE_8 /= 1.0d0 ) then
-         if (Cstv_Tstr_8 < 0. ) then
-             if (lun_out>0) write (Lun_out, 9680) 'Cstv_rE_8'
-            return
-         end if
-
-         if (Schm_opentop_L) then
-            if (lun_out>0) write (Lun_out, 9681) 'Cstv_rE_8'
-            return
-         end if
       end if
 
       if ( Cstv_bA_8 < Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8

@@ -38,14 +38,29 @@
       real(kind=REAL64), parameter :: EPS_8= 1.D-5
       real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
-      real(kind=REAL128) :: smallest_dz,posz
+
+! PGI does not known about REAL128, but it doesn't complain about real*16
+! All the other compilers we have encountered so far are happy with REAL128
+#ifdef __PGI
+      ! Despite being a Fortran 2003 standard compliant way of specifying
+      ! a Quad precisions, PGI doesn't like the following declaration:
+      !  real(selected_real_kind(33, 4931))
+      ! It complains with:
+      ! PGF90-S-0081-Illegal selector - KIND value must be non-negative
+      real*16 :: smallest_dz, posz
+      ! According to PGI Fortran Reference Guide, the biggest supported real
+      ! is real*8.  I therefore don't even know if we get more than a real*8
+      ! with the declaration above.
+#else
+      real(kind=REAL128) :: smallest_dz, posz
+#endif
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
-      integer :: kp1, flag_r_n, istat,istatu,istatv
-!
+      integer :: kp1, flag_r_n, istat, istatu, istatv
+
 !---------------------------------------------------------------------
-!
+
       Adz_maxcfl= max(1,Grd_maxcfl)
       Adz_halox = Adz_maxcfl + 1
       Adz_haloy = Adz_halox
@@ -224,8 +239,6 @@
 
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
-!
-!---------------------------------------------------------------------
-!
+
       return
       end subroutine adz_set

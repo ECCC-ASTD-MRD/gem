@@ -141,7 +141,8 @@ contains
 #include <rmnlib_basics.hf>
 
       ! Argument declaration
-      real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(inout) :: F_data    !Full physics tendency on physics grid
+!!$      real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(inout) :: F_data    !Full physics tendency on physics grid
+      real, pointer :: F_data(:,:,:)
       character(len=*), intent(in) :: F_name                                                            !Name of V-bus tendency variable to smooth
       integer, intent(in), optional :: F_fid                                                            !Filter ID (currently 1 or 2)
 

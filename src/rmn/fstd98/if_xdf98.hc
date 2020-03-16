@@ -51,7 +51,7 @@ ftnword f77name(qdferr)(char *subname,char *msg,ftnword *ferrlevl,
 
    return((ftnword) error_msg(c_subname,errcode,errlevl));
 }
-
+
 /*splitpoint qdfind */
 /***************************************************************************** 
  *                              Q D F I N D                                  * 
@@ -65,7 +65,7 @@ ftnword f77name(qdfind)(ftnword *iun)
    
    return((ftnword) ind);
 }
-
+
 /*splitpoint qdfmsig */
 /***************************************************************************** 
  *                            Q D F M S I G                                  * 
@@ -82,7 +82,7 @@ ftnword f77name(qdfmsig)(ftnword *fiun,char *appl,F2Cl l1)
 
    return(c_qdfmsig(iun,c_appl));
 }
-
+
 /*splitpoint qdfput */
 /***************************************************************************** 
  *                              Q D F P U T                                  * 
@@ -114,7 +114,7 @@ ftnword  f77name(qdfrstr)(ftnword *f_inp, ftnword *f_outp)
   ier = c_qdfrstr(inp,outp);
   return((ftnword) ier);
 }
-
+
 /*splitpoint rewind_file */
 /***************************************************************************** 
  *                          R E W I N D _ F I L E                            * 
@@ -157,7 +157,7 @@ static INT_32 rewind_file(int file_index, int handle)
    }
    return(0);
 }
-
+
 /*splitpoint xdfadd */
 /***************************************************************************** 
  *                              X D F A D D                                  * 
@@ -186,7 +186,7 @@ ftnword f77name(xdfadd)(word *buf,word *donnees,
 
 }
 
-
+
 /*splitpoint xdfcle */
 /***************************************************************************** 
  *                                X D F C L E                                *
@@ -209,7 +209,7 @@ ftnword f77name(xdfcle)(char *fkeyname,ftnword *fbit1,ftnword *flkey,
    
    return(err);
 }
-
+
 /*splitpoint xdfcls */
 /***************************************************************************** 
  *                              X D F C L S                                  * 
@@ -221,7 +221,7 @@ ftnword f77name(xdfcls)(ftnword *fiun)
 
    return(c_xdfcls(iun));
 }
-
+
 /*splitpoint xdfcut */
 /***************************************************************************** 
  *                              X D F C U T                                  * 
@@ -243,7 +243,7 @@ ftnword f77name(xdfcut)(word *buf,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfdel */
 /***************************************************************************** 
  *                              X D F D E L                                  * 
@@ -255,7 +255,7 @@ ftnword f77name(xdfdel)(ftnword *fhandle)
 
    return((ftnword) c_xdfdel(handle));
 }
-
+
 /*splitpoint xdfget */
 /***************************************************************************** 
  *                              X D F G E T                                  * 
@@ -274,7 +274,7 @@ ftnword f77name(xdfget)(ftnword *fhandle, word *buf)
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfgop */
 /***************************************************************************** 
  *                              X D F G O P                                  * 
@@ -299,7 +299,7 @@ ftnword f77name(xdfgop)(char *foptname, char *foptc, ftnword *foptv,
    return((ftnword) err);
 
 }
-
+
 /*splitpoint xdfhdr */
 /***************************************************************************** 
  *                              X D F H D R                                  * 
@@ -339,7 +339,7 @@ ftnword f77name(xdfhdr)(word *buf,ftnword *addr,ftnword *lng,
 
    return ((ftnword) ier);
 }
-
+
 /*splitpoint xdfimp */
 /***************************************************************************** 
  *                              X D F I M P                                  * 
@@ -385,7 +385,7 @@ ftnword f77name(xdfimp)(ftnword *fiun,ftnword *stat,ftnword *fnstat,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfini */
 /***************************************************************************** 
  *                              X D F I N I                                  * 
@@ -416,7 +416,7 @@ ftnword f77name(xdfini)(ftnword *fiun,word *buf,ftnword *fidtyp,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfins */
 /***************************************************************************** 
  *                              X D F I N S                                  * 
@@ -444,7 +444,7 @@ ftnword f77name(xdfins)(word *buf,word *donnees,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdflnk */
 /***************************************************************************** 
  *                              X D F L N K                                  * 
@@ -458,7 +458,7 @@ ftnword f77name(xdflnk)(ftnword *liste, ftnword *fn)
    return((ftnword) ier);
 
 }
-
+
 /*splitpoint xdfloc */
 /***************************************************************************** 
  *                              X D F L O C                                  * 
@@ -481,7 +481,7 @@ ftnword f77name(xdfloc)(ftnword *fiun, ftnword *fhandle, ftnword *primk,
    return((ftnword) c_xdfloc(iun,handle,l_primk,nprim));
 
 }
-
+
 /*splitpoint xdfopn */
 /***************************************************************************** 
  *                              X D F O P N                                  * 
@@ -520,7 +520,7 @@ ftnword f77name(xdfopn)(ftnword *fiun, char *mode,
    ier = c_xdfopn(iun,c_mode,primk,npri,infok,naux,c_appl);
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfopt */
 /***************************************************************************** 
  *                              X D F O P T                                  * 
@@ -542,7 +542,7 @@ ftnword f77name(xdfopt)(char *foptname, char *foptc, ftnword *foptv,
 
    return((ftnword) c_xdfopt(optname,optc,optv));
 }
-
+
 /*splitpoint xdfprm */
 /***************************************************************************** 
  *                              X D F P R M                                  * 
@@ -566,7 +566,7 @@ ftnword f77name(xdfprm)(ftnword *fhandle,ftnword *addr,ftnword *lng,
 
    return ((ftnword) ier);
 }
-
+
 /*splitpoint xdfput */
 /***************************************************************************** 
  *                              X D F P U T                                  * 
@@ -587,7 +587,7 @@ ftnword f77name(xdfput)(ftnword *fiun, ftnword *fhandle,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfrep */
 /***************************************************************************** 
  *                              X D F R E P                                  * 
@@ -615,7 +615,7 @@ ftnword f77name(xdfrep)(word *buf,word *donnees,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfsta */
 /***************************************************************************** 
  *                              X D F S T A                                  * 
@@ -665,7 +665,7 @@ ftnword f77name(xdfsta)(ftnword *fiun,ftnword *stat,ftnword *fnstat,
    return((ftnword) ier);
    
 }
-
+
 /*splitpoint xdfupd */
 /***************************************************************************** 
  *                              X D F U P D                                  * 
@@ -692,7 +692,7 @@ ftnword f77name(xdfupd)(ftnword *fiun,word *buf,ftnword *fidtyp,
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint xdfuse */
 /***************************************************************************** 
  *                              X D F U S E                                  * 
@@ -705,7 +705,7 @@ ftnword f77name(xdfuse)(ftnword *fsrc_unit, ftnword *fdest_unit)
    return((ftnword)c_xdfuse(src_unit,dest_unit));
 
 }
-
+
 /*splitpoint xdfxtr */
 /***************************************************************************** 
  *                              X D F X T R                                  * 
@@ -733,7 +733,7 @@ ftnword f77name(xdfxtr)(word *buf,word *donnees,
 #endif
    return((ftnword) ier);
 }
-
+
 
 /***************************************************************************** 
  *                            S E C A T E U R                                *
@@ -756,7 +756,7 @@ ftnword f77name(secateur)(char *filename, ftnword *f_where, F2Cl l1)
   ier = c_secateur(filename,where);
   return((ftnword) ier);
 }
-
+
 
 /***************************************************************************** 
  *                        C _ S E C A T E U R                                *

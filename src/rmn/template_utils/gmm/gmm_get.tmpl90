@@ -19,7 +19,7 @@
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
 
-!!===================== gmm_get (interface) =====================
+!!===================== gmm_get (interface) =====================
 !
 #ifdef INTERFACEONLY
       interface gmm_get

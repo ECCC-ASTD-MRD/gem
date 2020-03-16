@@ -138,7 +138,7 @@
             if (Schm_psadj==1) then
                istat = gmm_get(gmmk_qt1_s  ,   qt1)
                pw_log_p0_8(1:l_ni,1:l_nj)=(dble(qt1(1:l_ni,1:l_nj,l_nk+1))/&
-                        (rgasd_8*Ver_Tstar_8%m(l_nk+1))+dble(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))
+                        (rgasd_8*Cstv_Tstr_8)+dble(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))
                pr_p0_1_8(1:l_ni,1:l_nj) = dble(exp(pw_log_p0_8(1:l_ni,1:l_nj)))
                pr_p0_w_1_8(1:l_ni,1:l_nj) = pr_p0_1_8(1:l_ni,1:l_nj) - Cstv_pref_8
             end if

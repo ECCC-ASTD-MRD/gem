@@ -97,65 +97,57 @@
       real, dimension(Minx:Maxx,Miny:Maxy,nk), intent(in) :: F_vt, F_pres
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_ssq0
 
-
       integer :: i,j,k,ik
       real(kind=REAL64) :: difgz, lapse, ttop, tbot, cons, q1, q2, q3, x0, xm, xp, &
-                aa, bb, cc, dd, zak, zbk, zck, invdet
+                           aa, bb, cc, dd, zak, zbk, zck, invdet
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: vma, vmb, vmc, gz_temp
 !
 !     ---------------------------------------------------------------
 !
 
-do j=F_j0,F_jn
-   do i=F_i0,F_in
-      gz_temp(i,j,nk) = F_oldtopo(i,j)
-   end do
-end do
+      do j=F_j0,F_jn
+         do i=F_i0,F_in
+            gz_temp(i,j,nk) = F_oldtopo(i,j)
+         end do
+      end do
 
-!$omp parallel private(q1,q2,q3,x0,xm,xp,aa,bb, &
-!$omp                  cc,dd,invdet,i,j,k)      &
-!$omp          shared (vma, vmb, vmc)
-
-!$omp do
       do k = 1,Nk
          do j = F_j0, F_jn
             do i = F_i0, F_in
                x0=F_pres(i,j,k)
                if (k == 1) then
-                  xm=F_pres(i,j,1)
-                  xp=F_pres(i,j,2)
-                  aa=F_pres(i,j,3)-x0
-                  bb=F_pres(i,j,2)-x0
-               elseif (k == nk) then
-                  xm=F_pres(i,j,Nk-1)
-                  xp=F_pres(i,j,Nk)
-                  aa=F_pres(i,j,Nk-1)-x0
-                  bb=F_pres(i,j,Nk-2)-x0
+                  xm = F_pres(i,j,1)
+                  xp = F_pres(i,j,2)
+                  aa = F_pres(i,j,3)-x0
+                  bb = F_pres(i,j,2)-x0
+               else if (k == nk) then
+                  xm = F_pres(i,j,Nk-1)
+                  xp = F_pres(i,j,Nk)
+                  aa = F_pres(i,j,Nk-1)-x0
+                  bb = F_pres(i,j,Nk-2)-x0
                else
-                  xm=F_pres(i,j,k-1)
-                  xp=F_pres(i,j,k+1)
-                  aa=xm-x0
-                  bb=xp-x0
+                  xm = F_pres(i,j,k-1)
+                  xp = F_pres(i,j,k+1)
+                  aa = xm-x0
+                  bb = xp-x0
                end if
 
-               q1=log(xp/xm)
-               q2=xp-xm
-               q3=(xp*xp - xm*xm)*0.5
+               q1 = log(xp/xm)
+               q2 = xp-xm
+               q3 = (xp*xp - xm*xm)*0.5
 
-               q3=q3-x0*(2.0*q2-x0*q1)
-               q2=q2-x0*q1
-               cc=aa*aa
-               dd=bb*bb
-               invdet= aa*dd-bb*cc
-               invdet= 0.5/invdet
-               vma(i,j,k)=(dd*q2-bb*q3)*invdet
-               vmc(i,j,k)=(aa*q3-cc*q2)*invdet
-               vmb(i,j,k)=q1*0.5-vma(i,j,k)-vmc(i,j,k)
+               q3 = q3-x0*(2.0*q2-x0*q1)
+               q2 = q2-x0*q1
+               cc = aa*aa
+               dd = bb*bb
+               invdet = aa*dd-bb*cc
+               invdet = 0.5/invdet
+               vma(i,j,k) = (dd*q2-bb*q3)*invdet
+               vmc(i,j,k) = (aa*q3-cc*q2)*invdet
+               vmb(i,j,k) = q1*0.5-vma(i,j,k)-vmc(i,j,k)
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
 
       do j= F_j0, F_jn
 

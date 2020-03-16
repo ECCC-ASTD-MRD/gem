@@ -78,6 +78,14 @@
       istat = gmm_create(gmmk_nest_q_s , nest_q , meta3d_nk1)
       istat = gmm_create(gmmk_nest_zd_s, nest_zd, meta3d_nk)
       istat = gmm_create(gmmk_nest_fullme_s, nest_fullme, meta2d   )
+      istat = gmm_get(gmmk_nest_u_s , nest_u)
+      istat = gmm_get(gmmk_nest_v_s , nest_v)
+      istat = gmm_get(gmmk_nest_t_s , nest_t)
+      istat = gmm_get(gmmk_nest_s_s , nest_s)
+      istat = gmm_get(gmmk_nest_w_s , nest_w)
+      istat = gmm_get(gmmk_nest_q_s , nest_q)
+      istat = gmm_get(gmmk_nest_zd_s , nest_zd)
+      istat = gmm_get(gmmk_nest_fullme_s, nest_fullme)
 
       if (.not. Lam_ctebcs_L) then
          istat = gmm_create(gmmk_nest_u_deb_s , nest_u_deb , meta3d_nk)
@@ -88,6 +96,14 @@
          istat = gmm_create(gmmk_nest_q_deb_s , nest_q_deb , meta3d_nk1)
          istat = gmm_create(gmmk_nest_zd_deb_s, nest_zd_deb, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_deb_s, nest_fullme_deb, meta2d   )
+         istat = gmm_get(gmmk_nest_u_deb_s , nest_u_deb)
+         istat = gmm_get(gmmk_nest_v_deb_s , nest_v_deb)
+         istat = gmm_get(gmmk_nest_t_deb_s , nest_t_deb)
+         istat = gmm_get(gmmk_nest_s_deb_s , nest_s_deb)
+         istat = gmm_get(gmmk_nest_w_deb_s , nest_w_deb)
+         istat = gmm_get(gmmk_nest_q_deb_s , nest_q_deb)
+         istat = gmm_get(gmmk_nest_zd_deb_s , nest_zd_deb)
+         istat = gmm_get(gmmk_nest_fullme_deb_s, nest_fullme_deb)
 
          istat = gmm_create(gmmk_nest_u_fin_s , nest_u_fin , meta3d_nk)
          istat = gmm_create(gmmk_nest_v_fin_s , nest_v_fin , meta3d_nk)
@@ -97,6 +113,14 @@
          istat = gmm_create(gmmk_nest_q_fin_s , nest_q_fin , meta3d_nk1)
          istat = gmm_create(gmmk_nest_zd_fin_s, nest_zd_fin, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_fin_s, nest_fullme_fin, meta2d   )
+         istat = gmm_get(gmmk_nest_u_fin_s , nest_u_fin)
+         istat = gmm_get(gmmk_nest_v_fin_s , nest_v_fin)
+         istat = gmm_get(gmmk_nest_t_fin_s , nest_t_fin)
+         istat = gmm_get(gmmk_nest_s_fin_s , nest_s_fin)
+         istat = gmm_get(gmmk_nest_w_fin_s , nest_w_fin)
+         istat = gmm_get(gmmk_nest_q_fin_s , nest_q_fin)
+         istat = gmm_get(gmmk_nest_zd_fin_s , nest_zd_fin)
+         istat = gmm_get(gmmk_nest_fullme_fin_s, nest_fullme_fin)
       end if
 
       do i=1,Tr3d_ntr

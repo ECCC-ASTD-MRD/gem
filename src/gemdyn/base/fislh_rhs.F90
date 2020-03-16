@@ -26,7 +26,6 @@
       use coriolis
       use geomh
       use tdpack
-      use gmm_itf_mod
       use gmm_phy
       use glb_ld
       use cstv
@@ -53,7 +52,7 @@
       integer :: i0u, inu, i0v, inv
       integer :: j0u, jnu, j0v, jnv
 
-      integer :: i, j, k, km, kp, nij, jext, istat
+      integer :: i, j, k, km, kp, nij, jext
       real(kind=REAL64)  :: div, barz, barzp, u_interp, v_interp, t_interp, w1
       real(kind=REAL64)  :: phy_bA_m_8, phy_bA_t_8, iphytv
       real(kind=REAL64), dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
@@ -66,24 +65,16 @@
       if (Lun_debug_L) write (Lun_out,1000)
 
       if (Schm_phycpl_S == 'RHS') then
-         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
-         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
          iphytv = one
       else if (Schm_phycpl_S == 'AVG') then
-         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
-         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = Cstv_bA_m_8
          phy_bA_t_8 = Cstv_bA_8
          iphytv = one
       else
          phy_uu_tend => zero_array
          phy_vv_tend => zero_array
-!        phy_tv_tend => zero_array
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
          iphytv = zero
@@ -92,19 +83,7 @@
 !     Common coefficients
 
       jext = Grd_bsc_ext1 + 1
-
-!     Exchanging halos for derivatives & interpolation
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call rpn_comm_xch_halo( F_u , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk  , &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_v , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk  , &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_t , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk  , &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_q,  l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk+1, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      nij = l_ni*l_nj
+      nij  = l_ni*l_nj
 
 !     Indices to compute Rc, Rt, Rw
       i0 = 1
@@ -135,11 +114,6 @@
       if (l_north) jnu = l_njv-1-jext
       if (l_north) jnv = l_njv-1-jext
 
-!$omp parallel private(km,kp,barz,barzp, &
-!$omp     u_interp,v_interp,t_interp, &
-!$omp     div,xtmp_8,ytmp_8,w1)
-
-!$omp do
       do k = 1,l_nk
          km=max(k-1,1)
          kp=min(k+1,l_nk)
@@ -228,7 +202,6 @@
             do i= i0, in
                div = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j)     &
                    + (F_v (i,j,k)*geomh_cyM_8(j)-F_v (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-!                  + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)*Ver_wpstar_8(k)      &
                    + (F_zd(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*F_zd(i,j,km))*Ver_idz_8%m(k) &
                    + half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))        &
                    + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) )      &
@@ -245,8 +218,6 @@
          end do
 
       end do
-!$omp end do
-!$omp end parallel
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS_H)')
 !

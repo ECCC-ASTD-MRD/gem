@@ -18,9 +18,9 @@
 !                 le maximum d un champs et imprime le resultat.
 !
 
-      subroutine statfld3 (F_field, F_nv_S, F_no, F_from_S, &
-                           minx,maxx,miny,maxy,mink,maxk, &
-                           F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
+      subroutine statfld (F_field, F_nv_S, F_no, F_from_S, &
+                          minx,maxx,miny,maxy,mink,maxk, &
+                          F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
 
       use, intrinsic :: iso_fortran_env
       implicit none

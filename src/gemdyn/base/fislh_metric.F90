@@ -20,7 +20,6 @@
       use gmm_geof
       use geomh
       use tdpack
-      use gmm_itf_mod
       use glb_ld
       use lun
       use metric
@@ -33,7 +32,7 @@
 !Author: Claude Girard, July 2017 (initial version)
 !        Syed Husain, June 2019 (revision)
 
-      integer :: istat,i,j,k
+      integer :: i,j,k
       real, parameter :: zero=0.d0, one=1.d0, half=.5d0
       logical,save :: done = .false.
 !
@@ -60,9 +59,6 @@
                     mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy))
          done=.true.
       end if
-
-      istat = gmm_get (gmmk_fis0_s,fis0)
-      istat = gmm_get (gmmk_sls_s,sls)
 
       ztht_8(:,:,0)=ver_z_8%m(0)
       zmom_8(:,:,0)=ver_z_8%m(0)
@@ -140,7 +136,7 @@
       end if
 
       ! We keep a copy in single precision only for cascade outputs
-      do k=1,G_nk
+      do k=1,G_nk+1
          zmom(:,:,k) = real(zmom_8(:,:,k))
          ztht(:,:,k) = real(ztht_8(:,:,k))
       end do

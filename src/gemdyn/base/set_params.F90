@@ -69,9 +69,8 @@
       Ver_igt_8    = Cstv_invT_8/grav_8
       Ver_ikt_8    = Cstv_invT_m_8/cappa_8
       if(Dynamics_hydro_L) Ver_igt_8=zero
-      ! Modified epsilon
-      Ver_igt2_8   = Cstv_rE_8*Ver_igt_8*(Cstv_invT_nh_8/grav_8)
-      Ver_igt_8    = Cstv_rE_8*Ver_igt_8 ! Modified epsilon
+
+      Ver_igt2_8   = Ver_igt_8*(Cstv_invT_nh_8/grav_8)
 !
 !     ---------------------------------------------------------------
 !

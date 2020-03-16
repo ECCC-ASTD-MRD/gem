@@ -56,7 +56,7 @@
 
 #include <arch_specific.hf>
 
-      integer :: i, j, k, k0t, km, kp, i0u, inu, j0v, jnv, nij, onept
+      integer :: i, j, k, k0t, km, i0u, inu, j0v, jnv, nij, onept
       real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
@@ -104,10 +104,6 @@
       if (l_east ) inu = inu + onept
       if (l_north) jnv = jnv + onept
 
-!$omp parallel private(km,kp,barz,barzp,div, &
-!$omp w1,w2,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
-
-!$omp do
       do k=k0, l_nk
          km=max(k-1,1)
 
@@ -174,7 +170,6 @@
             end do
          end do
       end do
-!$omp end do
 
       if (.not.Grd_yinyang_L) then
 
@@ -182,49 +177,48 @@
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
          if (l_west) then
-!$omp do
+
             do k=1,l_nk
                do j=j0,jn
                   F_nu(pil_w,j,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
          if (l_east) then
-!$omp do
+
             do k=1,l_nk
                do j=j0,jn
                   F_nu(l_ni-pil_e,j,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
 
 !        Set  Nv=0  on the north and south boundaries  of the LAM grid
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
          if (l_south) then
-!$omp do
+
             do k=1,l_nk
                do i=i0,in
                   F_nv(i,pil_s,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
          if (l_north) then
-!$omp do
+
             do k=1,l_nk
                do i=i0,in
                   F_nv(i,l_nj-pil_n,k) = 0.
                end do
             end do
-!$omp end do
+
          end if
 
       end if
 
-!$omp do
       do k=k0t,l_nk
 
          km=max(k-1,1)
@@ -240,20 +234,12 @@
    !           Compute Nw
    !           ~~~~~~~~~~
                F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz_8(i,j,k) - &
-                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k))
-
-   !           Compute Nc
+                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k)) &
+                           -  (xtmp_8(i,j)-one)*grav_8*(one-one/xtmp_8(i,j))
    !           ~~~~~~~~~~
-!               F_nc(i,j,k) = isol_d * ( half * ( mc_Ix_8(i,j,k)*(F_u(i,j,k)+F_u(i-1,j,k))   &
-!                                            + mc_Iy_8(i,j,k)*(F_v(i,j,k)+F_v(i,j-1,k)) ) &
-!                                            + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*F_zd(i,j,k) + &
-!                                             Ver_wm_8%m(k)*Ver_onezero(k)*F_zd(i,j,km)) ) + &
-!                             (1.0d0-Cstv_bar1_8) * Cstv_invT_8 * &
-!                             ( log ((F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8 + one) - &
-!                                    (F_q(i,j,k) - F_fis(i,j))*Cstv_invFI_8  )
    !           Compute Nt
    !           ~~~~~~~~~~
-               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (xtmp_8(i,j)-one) )
+               F_nt(i,j,k) = Cstv_invT_8*( ytmp_8(i,j) - (one-one/xtmp_8(i,j)) )
 
                if (Schm_opentop_L.and.k == k0t) F_nb(i,j) = F_nt(i,j,k0t)-mu_8*Cstv_tau_nh_8* F_nw(i,j,k0t)
 
@@ -265,9 +251,7 @@
          end do
 
       end do
-!$omp end do
 
-!$omp do
       do k=k0,l_nk
          km=max(k-1,1)
          do j = j0, jn
@@ -292,9 +276,7 @@
             end do
          end do
       end do
-!$omp end do
 
-!$omp do
       do k=k0,l_nk
          do j= j0, jn
             do i= i0, in
@@ -302,35 +284,28 @@
             end do
          end do
       end do
-!$omp end do
-!
+
       if(Schm_opentop_L) then
          c1= Dcst_rayt_8**2
          F_rhs(:,:,1:k0t) = 0.0
-!$omp do
+
          do j= j0, jn
             do i= i0, in
                F_rhs(i,j,k0)= F_rhs(i,j,k0) -  c1* Ver_cstp_8 * F_nb(i,j)
             end do
          end do
-!$omp enddo
-      end if
-!
 
+      end if
 
 !     Apply bottom boundary conditions
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!$omp do
       do j= j0, jn
          do i= i0, in
             F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) + isol_d * c0 * mc_cssp_H_8(i,j) * &
                          (F_nt(i,j,l_nk ) - Ver_wmstar_8(G_nk)*F_nt(i,j,l_nk-1))
          end do
       end do
-!$omp end do
-
-!$omp end parallel
 
       if ( trim(Sol_type_S) == 'ITERATIVE_3D') then
 
