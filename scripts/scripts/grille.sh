@@ -40,14 +40,14 @@ cp gem_settings.nml ${WORKDIR}/model_settings.nml
 ngrids=1
 GRDTYP=$(./Um_fetchnml2.sh Grd_typ_s grid gem_settings.nml)
 if [ "$GRDTYP" == "GY" ] ; then 
-  export GEM_YINYANG=YES
-  ngrids=2
-  mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
-  ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
-  ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+   export GEM_YINYANG=YES
+   ngrids=2
+   mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
+   ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
 else
-  mkdir -p ${WORKDIR}/000-000
-  ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
+   mkdir -p ${WORKDIR}/000-000
+   ln -s ${ATM_MODEL_DFILES}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
 fi
 
 export TASK_INPUT=${ROOT_WORK}
@@ -69,13 +69,14 @@ find ${WORKDIR} -type f -name "eigenv_v1_*" -exec mv {} ${OUTPUT}/ \;
 
 #================== View the grid(s) ================
 function launch_spi {
-   if ! which SPI;then
+   if ! which SPI; then
       echo "==================================================="
       echo "   Error!"
       echo "   Please load a version of SPI."
       echo "   Search the wiki for SPI to learn how to load it."
       echo "   Aborting"
       echo "==================================================="
+      rm -rf $TMPDIR
       exit 1
    fi
    SPI -field $*
@@ -89,7 +90,7 @@ elif [ $spi -eq 1 ]; then
 fi
 
 if [ -n "$viewer" ] ; then
-  cat > ${OUTPUT}/p.dir <<pgsm100
+   cat > ${OUTPUT}/directives.pgsm << EOF
  sortie (std,1000,a)
  compac=-12
  etiksrt='GRID'
@@ -101,31 +102,33 @@ if [ -n "$viewer" ] ; then
  setintx(cubique)
  champ('ME')
 end
-pgsm100
-  tmp1=''
-  if [ -s ${OUTPUT}/tape1 ] ; then
-    ./r.fstliste.sh -izfst ${OUTPUT}/tape1 -nomvar ">>" | sed 's/\:/ /g' > ${OUTPUT}/liste
-    ip1=`cat ${OUTPUT}/liste | awk '{print $3}'`
-    ip2=`cat ${OUTPUT}/liste | awk '{print $4}'`
-    ip3=`cat ${OUTPUT}/liste | awk '{print $5}'`
-    ETK=`cat ${OUTPUT}/liste | awk '{print $9}'`
-    cat ${OUTPUT}/p.dir | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > ${OUTPUT}/p1.dir
-    tmp1=${OUTPUT}/tmp1$$
-    cp ${OUTPUT}/tape1 ${tmp1}
-    pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp1} -i ${OUTPUT}/p1.dir
-  fi
-  tmp2=''
-  if [ -s ${OUTPUT}/tape2 ] ; then
-    ./r.fstliste.sh -izfst  ${OUTPUT}/tape2 -nomvar ">>" | sed 's/\:/ /g' > ${OUTPUT}/liste
-    ip1=`cat ${OUTPUT}/liste | awk '{print $3}'`
-    ip2=`cat ${OUTPUT}/liste | awk '{print $4}'`
-    ip3=`cat ${OUTPUT}/liste | awk '{print $5}'`
-    ETK=`cat ${OUTPUT}/liste | awk '{print $9}'`
-    cat ${OUTPUT}/p.dir | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > ${OUTPUT}/p2.dir
-    tmp2=${OUTPUT}/tmp2$$
-    cp ${OUTPUT}/tape2 ${tmp2}
-    pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp2} -i ${OUTPUT}/p2.dir
-  fi
-  $viewer ${tmp1} ${tmp2}
-  /bin/rm -f ${OUTPUT}/p.dir ${OUTPUT}/p1.dir ${OUTPUT}/p2.dir ${OUTPUT}/liste ${tmp1} ${tmp2}
+EOF
+   tmp1=''
+   if [ -s ${OUTPUT}/tape1 ] ; then
+      ./r.fstliste.sh -izfst ${OUTPUT}/tape1 -nomvar ">>" | sed 's/\:/ /g' > ${OUTPUT}/liste
+      ip1=`cat ${OUTPUT}/liste | awk '{print $3}'`
+      ip2=`cat ${OUTPUT}/liste | awk '{print $4}'`
+      ip3=`cat ${OUTPUT}/liste | awk '{print $5}'`
+      ETK=`cat ${OUTPUT}/liste | awk '{print $9}'`
+      cat ${OUTPUT}/directives.pgsm | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > ${OUTPUT}/p1.dir
+      tmp1=${OUTPUT}/tmp1$$
+      cp ${OUTPUT}/tape1 ${tmp1}
+      pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp1} -i ${OUTPUT}/p1.dir
+   fi
+   tmp2=''
+   if [ -s ${OUTPUT}/tape2 ] ; then
+      ./r.fstliste.sh -izfst  ${OUTPUT}/tape2 -nomvar ">>" | sed 's/\:/ /g' > ${OUTPUT}/liste
+      ip1=`cat ${OUTPUT}/liste | awk '{print $3}'`
+      ip2=`cat ${OUTPUT}/liste | awk '{print $4}'`
+      ip3=`cat ${OUTPUT}/liste | awk '{print $5}'`
+      ETK=`cat ${OUTPUT}/liste | awk '{print $9}'`
+      cat ${OUTPUT}/directives.pgsm | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > ${OUTPUT}/p2.dir
+      tmp2=${OUTPUT}/tmp2$$
+      cp ${OUTPUT}/tape2 ${tmp2}
+      pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp2} -i ${OUTPUT}/p2.dir
+   fi
+   $viewer ${tmp1} ${tmp2}
+   /bin/rm -f ${OUTPUT}/directives.pgsm ${OUTPUT}/p1.dir ${OUTPUT}/p2.dir ${OUTPUT}/liste ${tmp1} ${tmp2}
 fi
+
+rm -rf $TMPDIR
