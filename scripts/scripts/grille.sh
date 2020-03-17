@@ -11,11 +11,12 @@ eval `cclargs_lite0 -D $0 \
   -xrec     "0"     "1"     "[Visualize grid with xrec                ]"\
   -spi      "0"     "1"     "[Visualize grid with spi                 ]"\
   ++ $*`
-#
+
+set -ex
+
 printf "\n######################### \n"
 printf " GRILLE utility for GEM \n"
 printf "######################### \n\n"
-set -ex
 
 GEM_ON_A_STICK_WORK_DIR=`(cd ..; pwd)`
 GEMGRID=${GEM_ON_A_STICK_WORK_DIR}/bin/maingemgrid
@@ -57,7 +58,7 @@ export DOMAIN_end=1
 export DOMAIN_total=1
 export GEM_NDOMAINS=1:1
 
-#================== Produce Grid Pos Rec ================
+# Produce Grid Pos Rec
 /bin/rm -f tape1 tape1_core tape1_free tape2 tape2_core tape2_free 2> /dev/null
 
 mpirun -np 1 ${GEMGRID}
@@ -67,7 +68,7 @@ find ${WORKDIR} -type f -name "eigenv_v1_*" -exec mv {} ${OUTPUT}/ \;
 
 /bin/rm -rf $ROOT_WORK
 
-#================== View the grid(s) ================
+# View the grid(s)
 function launch_spi {
    if ! which SPI; then
       echo "==================================================="
