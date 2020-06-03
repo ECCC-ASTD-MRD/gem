@@ -293,6 +293,8 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 
 EXTENSION_MAPPING      = inc=FortranFree \
                          F90=FortranFree \
+                         F08=FortranFree \
+                         cdk90=FortranFree \
                          hf=FortranFree \
                          hc=C
 
@@ -863,9 +865,13 @@ FILE_PATTERNS          = *.c \
                          *.ucf \
                          *.qsf \
                          *.F90 \
+                         *.F \
+                         *.F08 \
                          *.ftn90 \
                          *.cdk \
-                         *.hf
+                         *.cdk90 \
+                         *.hf \
+                         *.hc
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
