@@ -291,8 +291,10 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      = inc=Fortran \
-                         F90=FortranFree
+EXTENSION_MAPPING      = inc=FortranFree \
+                         F90=FortranFree \
+                         hf=FortranFree \
+                         hc=C
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
