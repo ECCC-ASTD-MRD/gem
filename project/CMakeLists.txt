@@ -44,6 +44,7 @@ if (WITH_OPENMP)
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
    else()
       # If we can't find Fortran flags, fallback on C flags
+      message(WARNING "OpenMP couldn't find Fortran OpenMP Flags.  Falling back on C Flags.")
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
    endif()
 else()
