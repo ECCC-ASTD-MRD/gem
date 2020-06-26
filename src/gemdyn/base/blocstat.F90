@@ -23,6 +23,7 @@
       use gmm_itf_mod
       use ptopo
       use gem_timing
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 
@@ -54,6 +55,8 @@
          j0 = 1 ; jn = G_nj
 
          do n=1,stat_nombre
+            indx = index(stat_liste(n),"TR/")
+            if (indx == 0) then
             istat = gmm_getmeta(stat_liste(n),tmp_meta)
             if (istat == 0) then
                indx = index(stat_liste(n),"TR/")*3 + 1
@@ -80,6 +83,16 @@
                                 tmp_meta%l(3)%low,tmp_meta%l(3)%high)
                end if
             end if
+            else
+               stat_varname = stat_liste(n)(4:)
+               nullify(wk3d)
+               istat = tr_get (stat_varname,wk3d)
+               if (istat>0) then
+                  call glbstat (wk3d,stat_varname,'', &
+                             l_minx,l_maxx,l_miny,l_maxy,1,G_nk,&
+                             i0,in,j0,jn,1,G_nk)
+               endif
+            endif
          end do
 
 !         if ((Ptopo_numproc == 1).and.(Ctrl_theoc_L)) then

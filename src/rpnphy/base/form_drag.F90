@@ -51,7 +51,7 @@ contains
 
       ! Local parameter definitions
       real, parameter :: N1=-1.9,N2=-2.8,K1=3e-3,KFLT=3.5e-4,IH=1.02e-3, &
-           CM=0.1,ALPHA=12.,BETA=1.,CMD=5e-3,CCORR=0.6
+           CM=0.1,BETA=1.,CMD=5e-3,CCORR=0.6
 
       ! Local variable declarations
       integer :: i,k
@@ -67,7 +67,7 @@ contains
       ! Implicit calculation of TOFD wind tendencies (Eq. 16 of Beljaars et al. (2004))
       do k=1,nk-1
          do i=1,n
-            fac = ALPHA*BETA*CMD*CCORR*2.019*exp(-((gzmom(i,k)+z0(i))/1500.)**1.5)*a2(i)*(gzmom(i,k)+z0(i))**(-1.2)
+            fac = tofd_alpha*BETA*CMD*CCORR*2.019*exp(-((gzmom(i,k)+z0(i))/1500.)**1.5)*a2(i)*(gzmom(i,k)+z0(i))**(-1.2)
             wspd = sqrt(uwind(i,k)*uwind(i,k)+vwind(i,k)*vwind(i,k))
             utend(i,k) = -fac*wspd*uwind(i,k) / (1.+fac*wspd*tau)
             vtend(i,k) = -fac*wspd*vwind(i,k) / (1.+fac*wspd*tau)

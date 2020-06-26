@@ -16,6 +16,11 @@
 module adz_interp_rhs_mod
   use ISO_C_BINDING
   use adz_mem
+  use adz_options
+  use gem_timing
+  use HORgrid_options
+  use tr3d
+  use ptopo
   implicit none
   public
 
@@ -26,7 +31,7 @@ contains
 
       integer, intent(in) :: F_nptr,F_num,F_i0,F_in,F_j0,F_jn,F_k0
       real, dimension(*), intent(in ) :: F_xyz
-      integer, dimension(*), intent(in), optional :: F_post
+      type(meta_tracers), dimension(F_nptr), intent(in), optional :: F_post
       type(Adz_pntr_stack), dimension(F_nptr), intent(inout) :: F_stk
       type(C_PTR), intent(in) :: F_geom
 
@@ -41,6 +46,9 @@ contains
 !
 !---------------------------------------------------------------------
 !
+      Adz_cnt_int= Adz_cnt_int+1
+! This next loop should use a normal rpn_comm_xch_halo
+! once SLOD is completed
       do n=1,F_nptr
          call rpn_comm_xch_halox( F_stk(n)%src, l_minx,l_maxx    ,&
               l_miny,l_maxy, l_ni,l_nj,l_nk, Adz_halox,Adz_haloy ,&
@@ -48,12 +56,21 @@ contains
               Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
          stkpntr(n)= c_loc(extended(1,1,1,n))
       end do
+      call time_trace_barr(gem_time_trace, 10500+Adz_cnt_int,&
+                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
 
       linmima_l = .false.
       if (present(F_post)) then
          linmima_l= .true.
-         call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+         call gemtime_start (83, 'C_BCFLUX_TR', 37)
+         if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
+            call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,&
+                                  Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+         endif
+         call gemtime_stop  (83)
       end if
+
+      if (linmima_l) call gemtime_start (84, 'TRICUBLIN', 37)
 
       ni = F_in-F_i0+1
       nj = F_jn-F_j0+1
@@ -81,9 +98,9 @@ contains
                do i=F_i0,F_in
                   ij= ij+1
                   F_stk(n)%dst(i,j,k)= wrkc(ij)
-                  Adz_post(i,j,k,(n-1)*3+1)= lin (ij)
-                  Adz_post(i,j,k,(n-1)*3+2)= mi  (ij)
-                  Adz_post(i,j,k,(n-1)*3+3)= ma  (ij)
+                  Adz_post(n)%lin(i,j,k)= max(mi(ij),min(ma(ij),lin(ij)))
+                  Adz_post(n)%min(i,j,k)= mi  (ij)
+                  Adz_post(n)%max(i,j,k)= ma  (ij)
                end do
                end do
             end do
@@ -107,6 +124,73 @@ contains
          endif
          n1=n2+1
       end do
+      if (linmima_l) call gemtime_stop (84)
+      call time_trace_barr(gem_time_trace, 10600+adz_cnt_int,&
+                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
+
+!!$      if (F_export%COMM_handle(1)>0) &
+!!$      call RPN_COMM_waitall_nostat(F_export%COMM_handle(1),&
+!!$                                   F_export%COMM_handle(2),ierr)
+!!$      F_export%COMM_handle(1) = 0
+!!$
+!!$      nr = sum(F_export%recv)
+!!$
+!!$! clip the requests
+!!$      do i=1, 3*nr, 3
+!!$         F_export%req(i  )= min(max(F_export%req(i  ),&
+!!$                            Adz_iminposx),Adz_imaxposx)
+!!$         F_export%req(i+1)= min(max(F_export%req(i+1),&
+!!$                            Adz_iminposy),Adz_imaxposy)
+!!$      end do
+!!$
+!!$      ireq=0
+!!$
+!!$! Receive interpolated requests from each neighbor (pre-post receive)
+!!$      cnt=0
+!!$      do kk= 1, 8
+!!$         if ((Adz_exppe(kk)>=0).and.(F_export%send(kk)>0)) then
+!!$            ireq = ireq+1
+!!$            call RPN_COMM_IRecv (F_export%resu(cnt+1)            ,&
+!!$                                 F_export%send(kk), 'MPI_REAL'   ,&
+!!$                                 Adz_exppe(kk),tag2+Adz_exppe(kk),&
+!!$                                 'GRID', request(ireq), ierr)
+!!$            cnt= cnt+F_export%send(kk)
+!!$         endif
+!!$      end do
+!!$
+!!$! perform requested interpolation
+!!$      if (F_mono_L) then
+!!$         call adz_tricub_lag3d_mono (F_export%intp, F_src, &
+!!$                                     F_export%req, nr, F_lev_S)
+!!$      else
+!!$         call adz_tricub_lag3d      (F_export%intp, F_src(1,1,1), &
+!!$                                     F_export%req, nr, F_lev_S)
+!!$      endif
+!!$
+!!$! Send interpolated requests to each neighbor
+!!$      cnt=0
+!!$      do kk= 1, 8
+!!$         if ((Adz_exppe(kk)>=0).and.(F_export%recv(kk)>0)) then
+!!$             ireq = ireq+1
+!!$             call RPN_COMM_ISend ( F_export%intp(cnt+1)            ,&
+!!$                                   F_export%recv(kk), 'MPI_REAL'   ,&
+!!$                                   Adz_exppe(kk), tag2+Ptopo_myproc,&
+!!$                                   'GRID', request(ireq), ierr )
+!!$              cnt= cnt+F_export%recv(kk)
+!!$         endif
+!!$      end do
+!!$      call RPN_COMM_waitall_nostat(ireq,request,ierr)
+!!$
+!!$! Use interpolated values sent by neighbors
+!!$      nr = sum(F_export%send)
+!!$      dim = l_ni * l_nj
+!!$      do kk=1, nr
+!!$         k = F_export%ijk(kk)/dim - 1 + min(mod(F_export%ijk(kk),dim),1)
+!!$         jj= F_export%ijk(kk)-k*dim
+!!$         j = jj/l_ni - 1 + min(mod(jj,l_ni),1)
+!!$         i = jj - j*l_ni
+!!$         F_dest(i,j+1,k+1) = F_export%resu(kk)
+!!$      end do
 !
 !---------------------------------------------------------------------
 !
@@ -119,7 +203,7 @@ contains
 
       integer, intent(in) :: F_nptr,F_num,F_i0,F_in,F_j0,F_jn,F_k0
       real, dimension(*), intent(in) :: F_pxt,F_pyt,F_pzt
-      integer, dimension(*), intent(in), optional :: F_post
+      type(meta_tracers), dimension(F_nptr), intent(in), optional :: F_post
       type(Adz_pntr_stack), dimension(F_nptr),  intent(inout) :: F_stk
 
       logical linmima_l
@@ -140,7 +224,9 @@ contains
       linmima_l = .false.
       if (present(F_post)) then
          linmima_l = .true.
-         call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+         if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
+            call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+         endif
       end if
 
       allocate (ii_w(4*F_num))
@@ -160,9 +246,9 @@ contains
                   do i=F_i0,F_in
                      ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
                      F_stk(n)%dst(i,j,k)= wrkc(ijk)
-                     Adz_post(i,j,k,(n-1)*3+1)= lin (ijk)
-                     Adz_post(i,j,k,(n-1)*3+2)= mi  (ijk)
-                     Adz_post(i,j,k,(n-1)*3+3)= ma  (ijk)
+                     Adz_post(n)%lin(i,j,k)= max(mi(ijk),min(ma(ijk),lin(ijk)))
+                     Adz_post(n)%min(i,j,k)= mi  (ijk)
+                     Adz_post(n)%max(i,j,k)= ma  (ijk)
                   end do
                end do
             end do

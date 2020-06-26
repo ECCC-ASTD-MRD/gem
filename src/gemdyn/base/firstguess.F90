@@ -17,32 +17,17 @@
 !                   first guess at time level t0
 
       subroutine firstguess()
-      use gmm_itf_mod
       use gmm_vt0
       use gmm_vt1
-      use tr3d
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
-
-      integer :: istat, k
-      real, pointer, contiguous, dimension(:,:,:) :: plus, minus
 !
 !     ---------------------------------------------------------------
 !
-      do k=1,Tr3d_ntr
-         nullify (plus, minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':M', minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':P', plus )
-         minus = plus
-      end do
-
-      tt0  = tt1
-      zdt0 = zdt1
-      wt0  = wt1
-      ut0  = ut1
-      vt0  = vt1
-      qt0  = qt1
-      st0  = st1
+      tt0 = tt1 ; zdt0 = zdt1 ; wt0 = wt1
+      ut0 = ut1 ; vt0  = vt1  ; qt0 = qt1
+      st0 = st1 ; trt0(:) = trt1(:)
 !
 !     ---------------------------------------------------------------
 !

@@ -18,6 +18,7 @@
 * * Boston, MA 02111-1307, USA.
 * */
 ***FONCTION Fstcvt2 HOLLERITH A CARACTERE OU L'INVERSE
+*
       INTEGER FUNCTION Fstcvt2( NOM, TYP, ETIK, GRTP, CNOM, CTYP,CETIK,
      % CGRTP, HOLACAR)
       IMPLICIT NONE
@@ -27,7 +28,7 @@
       CHARACTER *(*) CTYP, CGRTP
       CHARACTER *(*) CETIK
       LOGICAL HOLACAR
-
+*
 *AUTEUR  P. SARRAZIN   NOV  1989
 *
 *REVISION   000 NOUVELLE VERSION NOVEMBRE 1989
@@ -54,65 +55,75 @@
 *  OUT IN    CGRTP     CARACTRE *1
 *  IN        HOLACAR   LOGICAL .TRUE.  HOLLERITH A CARATERE
 *                      LOGICAL .FALSE. CARACTERE A HOLLERITH
+*
+*
+**
 
       INTEGER I
+*
 
       Fstcvt2 = 0
       IF((HOLACAR))THEN
 
+*
 *       TRANSFER STRING D'UNE LOCATION HOLLERITH EN CARACTERE
-
+*
          IF((NOM.EQ. -1))THEN
             CNOM = ' '
-         ELSE
+         ELSE 
             IF (LEN(CNOM) .GT. 2) THEN
               WRITE(CNOM,'(A4)') NOM
             ELSE
               WRITE(CNOM,'(A2)') NOM
             ENDIF
-         ENDIF
+         ENDIF 
          IF((TYP.EQ. -1))THEN
             CTYP = ' '
-         ELSE
+         ELSE 
             IF (LEN(CTYP) .GT. 1) THEN
                WRITE(CTYP,'(A2)') TYP
             ELSE
                WRITE(CTYP,'(A1)') TYP
             ENDIF
-         ENDIF
+         ENDIF 
          IF((GRTP.EQ. -1))THEN
             CGRTP = ' '
-         ELSE
+         ELSE 
             WRITE(CGRTP,'(A1)') GRTP
-         ENDIF
+         ENDIF 
          CETIK = ' '
          IF((ETIK(1).EQ. -1))THEN
             CETIK = ' '
-         ELSE
+         ELSE 
             IF (LEN(CETIK) .GT. 8) THEN
                WRITE(CETIK,600)(ETIK(I),I=1,3)
             ELSE
                WRITE(CETIK,601)(ETIK(I),I=1,2)
             ENDIF
-         ENDIF
-      ELSE
+         ENDIF 
+      ELSE 
 
-*       TRANSFER STRING D'UNE LOCATION CARACTERE EN HOLLERITH*
+*
+*       TRANSFER STRING D'UNE LOCATION CARACTERE EN HOLLERITH
+*
          READ(CNOM,'(A4)') NOM
          IF((CNOM.EQ. ' '))THEN
             NOM = -1
+*
 
-         ENDIF
+         ENDIF 
          READ(CTYP,'(A2)') TYP
          IF((CTYP.EQ. ' '))THEN
             TYP = -1
+*
 
-         ENDIF
+         ENDIF 
          READ(CGRTP,'(A1)') GRTP
          IF((CGRTP.EQ. ' '))THEN
             GRTP = -1
+*
 
-         ENDIF
+         ENDIF 
          IF (LEN(CETIK) .GT. 8) THEN
             READ(CETIK,600) (ETIK(I),I=1,3)
          ELSE
@@ -120,11 +131,12 @@
          ENDIF
          IF((CETIK.EQ. ' '))THEN
             ETIK(1) = -1
-         ENDIF
+         ENDIF 
 
-      ENDIF
-600   FORMAT(3A4)
-601   FORMAT(2A4)
+*
+      ENDIF 
+600   FORMAT(3A04)
+601   FORMAT(2A04)
 666   FORMAT(' HOLLERITH NOM=',A4,' TYP=',A2,' GRTP=',A1,' ETIK= ',
      %A12)
 668   FORMAT(' HOLLERITH NOM=',A4,' TYP=',A2,' GRTP=',A1,' ETIK= ',

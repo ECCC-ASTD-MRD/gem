@@ -18,26 +18,26 @@
       subroutine canonical_cases (F_action_S)
 
       use canonical
+      use cstv
+      use ctrl
       use dcmip_options
-      use wil_options
-      use step_options
-      use gem_options
+      use dyn_fisl_options
+      use dynkernel_options
+      use glb_ld
+      use gmm_itf_mod
       use gmm_vt0
       use gmm_vt1
-      use dyn_fisl_options
-      use ctrl
-      use VERgrid_options
-      use tdpack, only : rgasd_8, cpd_8
-      use dynkernel_options
       use gmm_pw
-
-      use glb_ld
-      use cstv
       use lun
+      use mem_tracers
+      use step_options
+      use tdpack, only : rgasd_8, cpd_8
       use tr3d
-      use ver
-      use gmm_itf_mod
       use var_gmm
+      use ver
+      use VERgrid_options
+      use wil_options
+
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -45,6 +45,7 @@
       character(len=*), intent(in) :: F_action_S
 
       !object
+      !========================================================================
       !     F_action_S ='SET_ZETA': Print dcmip_HEIGHTS
       !     F_action_S ='SET_VT'  : Initialize gmm variables
       !     F_action_S ='BAC'     : Back subtitution (WINDS)
@@ -52,32 +53,27 @@
       !     F_action_S ='VRD'     : Vertical Diffusion
       !     F_action_S ='ERR'     : Evaluate Errors/Diagnostics
       !     F_action_S ='OUT'     : Output dependent variables on standard file
-      !================================================================================
+      !========================================================================
 
 #include "gmm_gem_flags.hf"
 #include <msg.h>
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
-      !-------------------------------------------------------------------------------
-
-      integer k,istat,pnip1,flag_r_n,i,j,n
-      real, pointer, dimension(:,:,:) :: hu,cl,cl2,tr,tr_r,tr_e
+      type(gmm_metadata) :: mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk_t,mymeta2d_s
+      integer ::  istat,flag_r_n,i,j,k,n,pnip1
       integer(kind=INT64) :: flag_m_t,flag_m_u,flag_m_v,flag_s_f
+      real, pointer, dimension(:,:,:) :: hu,cl,cl2,tr,tr_r,tr_e
       character(len=8) :: dumc
-      real dcmip_height,dcmip_heightp1
-      real bidon(l_minx:l_maxx,l_miny:l_maxy,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
-      type(gmm_metadata) :: mymeta3d_nk_u, mymeta3d_nk_v, mymeta3d_nk_t, mymeta2d_s
+      real :: dcmip_height,dcmip_heightp1
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: bidon,th
       real(kind=REAL64) :: pr_8
-      logical Terminator_L
+      logical :: Terminator_L
       real, parameter :: CLY_REF = 4.*10.**(-6)
-      logical :: GEM_P_L
-
-      !-------------------------------------------------------------------------------
-
+!
+!     ---------------------------------------------------------------
+!
       if (.not. Ctrl_testcases_L) return
-
-      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       Terminator_L = Dcmip_Terminator_L.or.Williamson_Terminator_L
 
@@ -110,15 +106,15 @@
 
          flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER
 
-         flag_m_t = FLAG_LVL_T                  !thermo
-         flag_m_u = FLAG_LVL_M+GMM_FLAG_STAG_X  !momentum u
-         flag_m_v = FLAG_LVL_M+GMM_FLAG_STAG_Y  !momentum v
-         flag_s_f = 0                           !2d-surf
+         flag_m_t = FLAG_LVL_T                  !thermo   lvl, T
+         flag_m_u = FLAG_LVL_M+GMM_FLAG_STAG_X  !momentum lvl, u-pt
+         flag_m_v = FLAG_LVL_M+GMM_FLAG_STAG_Y  !momentum lvl, v-pt
+         flag_s_f = 0                           !2d-surf  lvl, phi-pt
 
-         mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_u)
-         mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_v)
-         mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_t)
-         mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
+         mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk ,flag_m_u)
+         mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk ,flag_m_v)
+         mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk ,flag_m_t)
+         mymeta2d_s     = SET_GMMUSR_FLAG(meta2d    ,flag_s_f)
 
          gmmk_pth_s   = 'PTH'
          gmmk_thbase_s= 'THBA'
@@ -195,17 +191,42 @@
          istat = min(gmm_create(gmmk_clyerr_s,clyerr,mymeta3d_nk_t, flag_r_n),istat)
 
          if (GMM_IS_ERROR(istat)) &
-             call msg(MSG_ERROR,'set_vt ERROR at gmm_create(V_TEST*)')
+             call msg(MSG_ERROR,'set_vt ERROR at gmm_create(CANO)')
+
+         istat = gmm_get(gmmk_pth_s   , pth)
+         istat = gmm_get(gmmk_thbase_s, thbase)
+         istat = gmm_get(gmmk_thfull_s, thfull)
+         istat = gmm_get(gmmk_dtv_s   , dtv)
+         istat = gmm_get(gmmk_cly_s   , cly)
+         istat = gmm_get(gmmk_acl_s   , acl)
+         istat = gmm_get(gmmk_acl2_s  , acl2)
+         istat = gmm_get(gmmk_acly_s  , acly)
+         istat = gmm_get(gmmk_irt_s   , irt)
+         istat = gmm_get(gmmk_art_s   , art)
+         istat = gmm_get(gmmk_wrt_s   , wrt)
+         istat = gmm_get(gmmk_uref_s  , uref)
+         istat = gmm_get(gmmk_vref_s  , vref)
+         istat = gmm_get(gmmk_wref_s  , wref)
+         istat = gmm_get(gmmk_zdref_s , zdref)
+         istat = gmm_get(gmmk_qvref_s , qvref)
+         istat = gmm_get(gmmk_qcref_s , qcref)
+         istat = gmm_get(gmmk_qrref_s , qrref)
+         istat = gmm_get(gmmk_thref_s , thref)
+         istat = gmm_get(gmmk_q1ref_s , q1ref)
+         istat = gmm_get(gmmk_q2ref_s , q2ref)
+         istat = gmm_get(gmmk_q3ref_s , q3ref)
+         istat = gmm_get(gmmk_q4ref_s , q4ref)
+         istat = gmm_get(gmmk_q1err_s , q1err)
+         istat = gmm_get(gmmk_q2err_s , q2err)
+         istat = gmm_get(gmmk_q3err_s , q3err)
+         istat = gmm_get(gmmk_q4err_s , q4err)
+         istat = gmm_get(gmmk_clyref_s, clyref)
+         istat = gmm_get(gmmk_clyerr_s, clyerr)
 
       !------------------------
       !Back subtitution (WINDS)
       !------------------------
       else if (F_action_S=="BAC") then
-
-         istat = gmm_get(gmmk_ut0_s, ut0)
-         istat = gmm_get(gmmk_vt0_s, vt0)
-         istat = gmm_get(gmmk_zdt0_s,zdt0)
-         istat = gmm_get(gmmk_wt0_s, wt0)
 
          if (Williamson_case==1) then
 
@@ -217,13 +238,16 @@
 
          if (Dcmip_case>=11.and.Dcmip_case<=13) then
 
-             if (Dcmip_case==11) call dcmip_tracers11_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==11) call dcmip_tracers11_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon, &
+                                                                 bidon,bidon,bidon,bidon,bidon,            &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-             if (Dcmip_case==12) call dcmip_tracers12_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==12) call dcmip_tracers12_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon, &
+                                                                 bidon,bidon,                              &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-             if (Dcmip_case==13) call dcmip_tracers13_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon,bidon, &
+             if (Dcmip_case==13) call dcmip_tracers13_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon, &
+                                                                 bidon,bidon,bidon,bidon,bidon,            &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
              return
 
@@ -253,7 +277,6 @@
          if (Williamson_case==1) call wil_diagnostics (Lctl_step)
          if (Williamson_case==2) call wil_diagnostics (Lctl_step)
 
-
          if (Dcmip_case>0) call dcmip_diagnostics (Lctl_step)
 
       !-------------------------------------------
@@ -274,17 +297,17 @@
 
                if (Tr3d_name_S(n)(1:2)/='Q1'.and.(Williamson_NAIR==0.or.Williamson_NAIR==3)) cycle
 
-               istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr)
+               tr => tracers_P(n)%pntr
 
-               if (Tr3d_name_S(n)(1:2)=='Q1') istat = gmm_get(gmmk_q1ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q2') istat = gmm_get(gmmk_q2ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q3') istat = gmm_get(gmmk_q3ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q4') istat = gmm_get(gmmk_q4ref_s,tr_r)
+               if (Tr3d_name_S(n)(1:2)=='Q1') tr_r => q1ref
+               if (Tr3d_name_S(n)(1:2)=='Q2') tr_r => q2ref
+               if (Tr3d_name_S(n)(1:2)=='Q3') tr_r => q3ref
+               if (Tr3d_name_S(n)(1:2)=='Q4') tr_r => q4ref
 
-               if (Tr3d_name_S(n)(1:2)=='Q1') istat = gmm_get(gmmk_q1err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q2') istat = gmm_get(gmmk_q2err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q3') istat = gmm_get(gmmk_q3err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q4') istat = gmm_get(gmmk_q4err_s,tr_e)
+               if (Tr3d_name_S(n)(1:2)=='Q1') tr_e => q1err
+               if (Tr3d_name_S(n)(1:2)=='Q2') tr_e => q2err
+               if (Tr3d_name_S(n)(1:2)=='Q3') tr_e => q3err
+               if (Tr3d_name_S(n)(1:2)=='Q4') tr_e => q4err
 
                !Initialize REFERENCE at TIME>0
                !------------------------------
@@ -301,33 +324,23 @@
 
          if (Terminator_L) then
 
-            istat = gmm_get ('TR/CL:P' , cl )
-            istat = gmm_get ('TR/CL2:P', cl2)
+            istat = tr_get('CL:P',cl)
+            istat = tr_get('CL2:P',cl2)
 
             !Initialize CLY
             !--------------
-            istat = gmm_get (gmmk_cly_s, cly)
-
             cly(1:l_ni,1:l_nj,1:G_nk) = cl(1:l_ni,1:l_nj,1:G_nk) + 2.0d0 * cl2(1:l_ni,1:l_nj,1:G_nk)
 
             !Initialize CLY REFERENCE
             !------------------------
-            istat = gmm_get (gmmk_clyref_s, clyref)
-
             clyref(1:l_ni,1:l_nj,1:G_nk) =  CLY_REF
 
             !Initialize CLY ERROR
             !--------------------
-            istat = gmm_get (gmmk_clyerr_s, clyerr)
-
             clyerr(1:l_ni,1:l_nj,1:G_nk) = cly(1:l_ni,1:l_nj,1:G_nk) - clyref(1:l_ni,1:l_nj,1:G_nk)
 
             !Initialize Average Column Integrated of CL/CL2/CLY
             !--------------------------------------------------
-            istat = gmm_get (gmmk_acl_s,  acl )
-            istat = gmm_get (gmmk_acl2_s, acl2)
-            istat = gmm_get (gmmk_acly_s, acly)
-
             if (Schm_autobar_L) then
                acl (:,:) = cl (:,:,1)
                acl2(:,:) = cl2(:,:,1)
@@ -353,17 +366,17 @@
 
                if (Lctl_step/=Step_total) cycle
 
-               istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr)
+               tr => tracers_P(n)%pntr
 
-               if (Tr3d_name_S(n)(1:2)=='Q1') istat = gmm_get(gmmk_q1ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q2') istat = gmm_get(gmmk_q2ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q3') istat = gmm_get(gmmk_q3ref_s,tr_r)
-               if (Tr3d_name_S(n)(1:2)=='Q4') istat = gmm_get(gmmk_q4ref_s,tr_r)
+               if (Tr3d_name_S(n)(1:2)=='Q1') tr_r => q1ref
+               if (Tr3d_name_S(n)(1:2)=='Q2') tr_r => q2ref
+               if (Tr3d_name_S(n)(1:2)=='Q3') tr_r => q3ref
+               if (Tr3d_name_S(n)(1:2)=='Q4') tr_r => q4ref
 
-               if (Tr3d_name_S(n)(1:2)=='Q1') istat = gmm_get(gmmk_q1err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q2') istat = gmm_get(gmmk_q2err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q3') istat = gmm_get(gmmk_q3err_s,tr_e)
-               if (Tr3d_name_S(n)(1:2)=='Q4') istat = gmm_get(gmmk_q4err_s,tr_e)
+               if (Tr3d_name_S(n)(1:2)=='Q1') tr_e => q1err
+               if (Tr3d_name_S(n)(1:2)=='Q2') tr_e => q2err
+               if (Tr3d_name_S(n)(1:2)=='Q3') tr_e => q3err
+               if (Tr3d_name_S(n)(1:2)=='Q4') tr_e => q4err
 
                !Initialize ERROR
                !----------------
@@ -377,12 +390,7 @@
          !--------------------------------------------------
          if (Dcmip_case==31.or.Dcmip_case==163) then
 
-            istat = gmm_get(gmmk_pth_s,   pth)
-            istat = gmm_get(gmmk_thbase_s,thbase)
-            istat = gmm_get(gmmk_tt1_s,   tt1)
-            istat = gmm_get(gmmk_st1_s,   st1)
-            istat = gmm_get('TR/'//'HU'//':P',hu)
-            istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
+            hu => tracers_P(Tr3d_hu)%pntr
 
             do k=1,G_nk
                do j=1,l_nj
@@ -390,11 +398,7 @@
 
                      !Real potential temperature
                      !--------------------------
-                     if (GEM_P_L) then
-                        pr_8 = exp(Ver_a_8%t(k) + Ver_b_8%t(k)*st1(i,j))
-                     else
-                        pr_8 = pw_pt_plus(i,j,k)
-                     end if
+                     pr_8 = pw_pt_plus(i,j,k)
 
                      th(i,j,k) = (tt1(i,j,k) / (1.d0 + 0.608d0 * hu(i,j,k))) * (Cstv_pref_8/pr_8) ** (rgasd_8/cpd_8)
 
@@ -408,9 +412,6 @@
 
          !Prepare Perturbation of Virtual Temperature
          !-------------------------------------------
-         istat = gmm_get(gmmk_dtv_s, dtv)
-         istat = gmm_get(gmmk_tt1_s, tt1)
-
          dtv(1:l_ni,1:l_nj,1:G_nk) = tt1(1:l_ni,1:l_nj,1:G_nk) - Cstv_Tstr_8
 
       else
@@ -418,9 +419,9 @@
          call handle_error(-1,'CANONICAL_CASES','F_action_S unknown')
 
       end if
-
-      !-------------------------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       return
 
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &

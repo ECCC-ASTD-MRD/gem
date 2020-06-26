@@ -39,6 +39,7 @@ contains
       use phybus
       use tendency, only: apply_tendencies
       use water_integrated, only: water_integrated1
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -192,12 +193,12 @@ contains
          endif
          zfm1 = zqcpostcnd
          zfm  = qcp
-         call consun2(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
+         call consun3(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
               zcter, zcqer, zcqcer, tlcr  , tscr  , ccf, &
               lttp    , zttm   , lhup     , zhum    , zfm   , zfm1  , &
               psp , psm  , ilab  , dbdt  , sigma, dt  , &
               zrnflx, zsnoflx, zf12 , zfevp  , &
-              zfice, ni , nkm1)
+              zfice, zmrk2, ni , nkm1)
 
          ! Adjust tendencies to impose conservation of total water and liquid
          ! water static energy on request.

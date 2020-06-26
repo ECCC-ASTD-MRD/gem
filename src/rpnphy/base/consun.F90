@@ -14,14 +14,15 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
+subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
      CTT  ,  CQT  ,  CWT  ,  CRR  ,  CSR  ,  CCF , &
      TP   ,  TM   ,  QP   ,  QM   ,  CWP  ,  CWM , &
      PSP  ,  PSM  , ilab  ,  DBDT ,  S    , TAU  , &
      PRFLX, SWFLX ,  F12 ,  FEVP , ICEFRAC, &
-     ni   ,  nlev)
+     MRK2, ni   ,  nlev)
    use tdpack
    use phy_options
+   use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -37,7 +38,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
         PSP(ni)         , PSM(ni)         , &
         DBDT(ni)        , S(ni,*)         , &
         TAU             , F12(ni,nlev)    , FEVP(ni,nlev), &
-        ICEFRAC(ni,nlev)
+        ICEFRAC(ni,nlev), MRK2(ni,ens_nc2d)
 
    integer ilab(ni,nlev)
 
@@ -94,6 +95,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    ! FEVP    evaporation of precipitation
    ! F12     cloud to rainwater collection tendency
    ! ICEFRAC  ice fraction
+   ! MRK2    Markov chains for stochastic perturbations
    ! ilab     label array from convective scheme
    ! ni      number of grid points in the horizontal
    ! nlev    number of levels
@@ -153,7 +155,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !           ------------------------------------------------------------
 
    real    XCOND  , XN     , HDPAD  , HSQ2   , HDQAD  , &
-        HDQSAD , HU0MIN , XDE    , XPRB   , BFMOD  , &
+        HDQSAD , XDE    , XPRB   , BFMOD  , &
         XK     , HFCOX  , XFT    , HFREZX , HFRCOA , HFMRX  , &
         ZCWP   , XPRADD , DTMELT , DMELT  , EVAPRI , &
         XEVACU , XP     , QINCR  , HP0    , HE273  , HEDR   , &
@@ -161,11 +163,11 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
         COALES , SIGMIN
    real    CBFEFF , CTFRZ1 , HCCU   , HMRCU  , HCST   , &
         STPEVP , HKMELT , XDT    , DSNMAX , XSNOW  , &
-        HU0MAX , rTAU   , SNOW   , PRCP   , CONET  , &
+        rTAU   , SNOW   , PRCP   , CONET  , &
         COEF   , COVER  , HMR    , ZDCW   , XT     , &
         SIGMAX , T0I    , WEIGHT , x      , y      , z      , &
         TCI    , TSCALE , APRI   , TOPEQ0 , TODPMX , temp1  , &
-        temp2  , XB     , XBB    , XBHU   , xo
+        temp2  , XB     , XBB    , xo
 
    integer il     , jk,inr
    real xxp_t,xhj_t,xf_t,xfprim_t,hsq,huz00t,hu,hcondt
@@ -202,6 +204,9 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real, dimension(NI     ) :: HBMRXT
    real, dimension(NI     ) :: COEFT
    real, dimension(NI     ) :: XFIXT
+   real, dimension(NI     ) :: HU0MAX
+   real, dimension(NI     ) :: HU0MIN
+   real, dimension(NI     ) :: XBHU
 
    !***********************************************************************
    !-----------------------------------------------------------------------
@@ -263,17 +268,14 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    do il = 1, ni
       DPRG(il,1) = 0.5 * ( HPK(il,2) - HPK(il,1) ) / GRAV
+      DPRG(il,nlev) = ( 0.5 * ( HPK(il,nlev) - HPK(il,nlev-1) ) &
+           + S(il,nlev+1) * HPS(il) - HPK(il,nlev) ) / GRAV
    end do
 
    do jk  = 2, nlev-1
       do il  = 1, ni
          DPRG(il,jk) = 0.5 * ( HPK(il,jk+1) - HPK(il,jk-1) ) / GRAV
       end do
-   end do
-
-   do il = 1, ni
-      DPRG(il,nlev) = ( 0.5 * ( HPK(il,nlev) - HPK(il,nlev-1) ) &
-           + S(il,nlev+1) * HPS(il) - HPK(il,nlev) ) / GRAV
    end do
 
    !           SUNQVIST stratiform condensation scheme
@@ -285,12 +287,11 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !           FROM KUO ilab DEFINE cumask
    !           FROM cumask CALCULATE subcld
 
-   do jk = 1, nlev
-      do il = 1, ni
-         cumask(il,jk)                        = 1
-         if( ilab(il,jk).eq.2 ) cumask(il,jk) = 0
-      end do
-   end do
+   where (ilab == 2)
+      cumask = 0
+   elsewhere
+      cumask = 1
+   end where
 
    do il =1, ni
       subcld(il,1) = 0.
@@ -317,12 +318,11 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !  B)       PARAMATER VALUES IN SI UNITS
 
-   HU0MIN = cond_hu0min
-   HU0MAX = cond_hu0max
+   HU0MIN(:) = ens_spp_get('hu0min', mrk2, cond_hu0min)
+   HU0MAX(:) = ens_spp_get('hu0max', mrk2, cond_hu0max)
    SIGMIN = 0.7
    SIGMAX = 0.9
-
-   XBHU = ( HU0MAX - HU0MIN ) / ( SIGMAX - SIGMIN )
+   XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
    xo = 1.e-12
 
    !***********************************************************************
@@ -379,19 +379,9 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       do il = 1, ni
          PRESP(il,jk)=S(il,jk)*PSP(il)
          PRESM(il,jk)=S(il,jk)*PSM(il)
-      enddo
-   enddo
-   call mfoqst3(HQSAT, TM,PRESM,NI,NLEV,NI)
-   call mfoqst3(HQSATP,TP,PRESP,NI,NLEV,NI)
-   do jk = 1, nlev
-      do il = 1, ni
-         temp1 = TM(il,jk)
-         HLDCP(il)=-(((max(temp1,tci)-tci)/tscale)**2)
-      enddo
-
-      call vsexp(HLDCP,HLDCP,ni)
-
-      do il = 1, ni
+         HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
+         HQSATP(il,jk) = foqst(TP(il,jk),PRESP(il,jk))
+         HLDCP(il) = exp(-(((max(TM(il,jk),tci)-tci)/tscale)**2))
 
          xwrk= max(((apri*(HLDCP(il)-1.0))+1.0),0.0)
          HLDCP(il)=(CHLC + (CHLF * xwrk))/CPD
@@ -405,15 +395,17 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          HU = amin1( HU, 1. )
          HU = amax1( HU, 0. )
 
-         HUZ00t= HU0MIN + XBHU * ( S(il,jk) - SIGMIN )
-         HUZ00t= max( HU0MIN, min( HU0MAX, HUZ00t ) )
+         HUZ00t= HU0MIN(il) + XBHU(il) * ( S(il,jk) - SIGMIN )
+         HUZ00t= max( HU0MIN(il), min( HU0MAX(il), HUZ00t ) )
 
          x = 1.+ 0.15 * max( 0., 238. - TM(il,jk) )
-         x = ( HU0MAX - HUZ00t ) * ( 1. - 1. / x )
-         HUZ00t= AMIN1( HUZ00t + x , HU0MAX )
+         x = ( HU0MAX(il) - HUZ00t ) * ( 1. - 1. / x )
+         HUZ00t= AMIN1( HUZ00t + x , HU0MAX(il) )
 
          SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-HUZ00t) )
          SCF(il,jk) = amax1( SCF(il,jk)-CCF(il,jk) , 0. )
+!!$         mask = sign(1., -1.*abs(SCF(il,jk)))+1./2.
+!!$         HCONDt = mask * (- CWP(il,jk) * rTAU * cumask(il,jk))
          if( SCF(il,jk) .eq. 0. ) then
             HCONDt = - CWP(il,jk) * rTAU * cumask(il,jk)
          else
@@ -471,16 +463,9 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !  D)       CALCULATIONS
 
       do il = 1, ni
-         temp1 = TM(il,jk)
          HELDR = HEDR * CPD * HLDCP(il)
-         xdet(il)=HELDR*(T0I - 1./temp1)
-         xdet1(il)=HEDLDR*(T0I - 1./temp1)
-      enddo
-
-      call vsexp(xdet,xdet,ni)
-      call vsexp(xdet1,xdet1,ni)
-
-      do il = 1, ni
+         xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
+         xdet1(il) = exp(HEDLDR*(T0I - 1. / TM(il,jk)))
 
          CONET = amax1( 0. , CTT(il,jk) + HSCT(il) / DPRG(il,jk) )
          HSCT(il) = HSCT(il)+(amax1(0.,CTT(il,jk))-CONET)*DPRG(il,jk)
@@ -559,12 +544,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !           ------------------------------------------------------------
       do inr=1,5
          do il=1,ni
-            xdet(il)=(-min(ymt(il)*ymt(il),25.0))
-         enddo
-
-         call vsexp(xdet,xdet,ni)
-
-         do il=1,ni
+            xdet(il) = exp(-min(ymt(il)*ymt(il), 25.0))
             xxp_t = xdet(il)
             xhj_t=1 + coeft(il)*(1-xxp_t)
             xf_t = xhj_t*ymt(il) -xfixt(il)
@@ -579,13 +559,7 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
       !           ------------------------------------------------------------
 
       do il = 1, ni
-         temp1 = TP(il,jk)
-         xdet(il)=-(((max(temp1,tci)-tci)/tscale)**2)
-      enddo
-
-      call vsexp(xdet,xdet,ni)
-
-      do il=1,ni
+         xdet(il) = exp(-(((max(TP(il,jk), tci) - tci)/tscale)**2))
          ZCWP = amax1( 2. * HBMRXt(il) * YMt(il) - CWM(il,jk) , 0. )
 
          ZDCW = ( ZCWP - CWP(il,jk) ) * rTAU
@@ -717,9 +691,6 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    do il = 1, ni
       SRR(il) = PRCPST(il) - STSNOW(il)
       SSR(il) = STSNOW(il)
-   end do
-
-   do il = 1, ni
       CRR(il) = PRCPCU(il) - CUSNOW(il)
       CSR(il) = CUSNOW(il)
    end do
@@ -740,4 +711,4 @@ subroutine CONSUN2(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !***********************************************************************
 
-end subroutine CONSUN2
+end subroutine CONSUN3

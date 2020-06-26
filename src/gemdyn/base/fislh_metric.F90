@@ -26,13 +26,16 @@
       use cstv
       use ver
       use fislh_sol
+      use gem_options
+      use lam_options
+      use dyn_fisl_options  
       implicit none
 #include <arch_specific.hf>
 !
 !Author: Claude Girard, July 2017 (initial version)
 !        Syed Husain, June 2019 (revision)
 
-      integer :: i,j,k
+      integer :: i,j,k, k0
       real, parameter :: zero=0.d0, one=1.d0, half=.5d0
       logical,save :: done = .false.
 !
@@ -57,8 +60,16 @@
                     mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy))
+
+         if (Schm_opentop_L) then
+            allocate ( mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_cstp_8 (l_minx:l_maxx,l_miny:l_maxy))
+         end if
          done=.true.
       end if
+      
+      if (Schm_opentop_L) k0=1+Lam_gbpil_T
 
       ztht_8(:,:,0)=ver_z_8%m(0)
       zmom_8(:,:,0)=ver_z_8%m(0)
@@ -117,6 +128,19 @@
 
             mc_cssp_H_8(i,j) = gama_8*(Ver_idz_8%m(G_nk)-epsi_8*Ver_wp_8%m(G_nk))*&
                                (isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
+            
+            if (Schm_opentop_L) then
+               mc_cst_8(i,j)    = one / (-(mu_8* Cstv_tau_nh_8)*(isol_d*Ver_idz_8%t(k0-1) &
+                                 +isol_i*mc_iJz_8(i,j,k0-1)) & 
+                                 + half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))
+               mc_alfat_8(i,j)  = (-(mu_8* Cstv_tau_nh_8)*(isol_d*Ver_idz_8%t(k0-1)+isol_i*mc_iJz_8(i,j,k0-1))  &
+                                 - half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))*Ver_cst_8
+               mc_cstp_8(i,j)   = mc_cst_8(i,j) * gama_8 * &
+                                 ((isol_d*Ver_idz_8%t(k0-1)+isol_i*mc_iJz_8(i,j,k0-1))*&
+                                 (Ver_idz_8%m(k0)+Ver_wm_8%m(k0)*epsi_8) + &
+                                  mu_8*half*(Ver_idz_8%m(k0)+Ver_wm_8%m(k0)*epsi_8) )
+            end if
+
          enddo
       enddo
 
@@ -133,6 +157,13 @@
          mc_betas_H_8(:,:) = 0.0d0
          mc_css_H_8  (:,:) = 0.0d0
          mc_cssp_H_8 (:,:) = 0.0d0
+         
+         if (Schm_opentop_L) then 
+            mc_alfat_8  (:,:) = 1.0d0
+            mc_cst_8    (:,:) = 0.0d0
+            mc_cstp_8   (:,:) = 0.0d0
+         end if
+
       end if
 
       ! We keep a copy in single precision only for cascade outputs

@@ -62,7 +62,7 @@
 !
 !-------------------------------------------------------------
 !
-!
+!aout 2019 ! Modernisation du code - Y. Chartier  
 
 
 !
@@ -99,42 +99,42 @@
       if (grtyp .eq. 'N') then
          call cigaxg(grtyp,xg1,xg2,xg3,xg4,ig1,ig2,ig3,ig4)
 
-         do 10 i=1,li
-            do 20 j=1,lj
+         do j=1,lj
+            do i=1,li
                psi =xlon(i,j)+xg4-z2(i,j)
                u = cos(psi*dgtord)*z1(i,j)
                v = sin(psi*dgtord)*z1(i,j)
                z1(i,j) = u
                z2(i,j) = v
- 20         continue
- 10      continue
+           enddo
+        enddo
          return
       endif
 
       if (grtyp .eq. 'S') then
          call cigaxg(grtyp,xg1,xg2,xg3,xg4,ig1,ig2,ig3,ig4)
-         do 30 i=1,li
-            do 40 j=1,lj
+            do j=1,lj
+               do i=1,li
                psi =180.0 - xlon(i,j)+xg4-z2(i,j)
                u = cos(psi*dgtord)*z1(i,j)
                v = sin(psi*dgtord)*z1(i,j)
                z1(i,j) = u
                z2(i,j) = v
- 40         continue
- 30      continue
+            enddo
+         enddo
          return
       endif
 
       if (grtyp.eq.'A'.or.grtyp.eq.'B'.or.grtyp.eq.'G'.or.      grtyp.eq.'L') then
-         do 50 i=1,li
-            do 60 j=1,lj
+            do j=1,lj
+               do  i=1,li
                psi = 270.0 - z2(i,j)
                u = cos(psi*dgtord)*z1(i,j)
                v = sin(psi*dgtord)*z1(i,j)
                z1(i,j) = u
                z2(i,j) = v
- 60         continue
- 50      continue
+            enddo
+         enddo
          return
       endif
 

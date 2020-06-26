@@ -20,12 +20,12 @@ module mem_tstp
 
       real, allocatable,  dimension (:,:  ) :: rhsb
       real, allocatable,  dimension (:,:,:) :: rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp
-!      real, allocatable,  dimension (:,:,:) :: ruw1 
-!      real, allocatable,  dimension (:,:,:) :: rvw1 
-!      real, allocatable,  dimension (:,:,:) :: ruw2 
-!      real, allocatable,  dimension (:,:,:) :: rvw2 
-!      real, allocatable,  dimension (:,:,:) :: rhsx 
-!      real, allocatable,  dimension (:,:,:) :: rhsq 
+!      real, allocatable,  dimension (:,:,:) :: ruw1
+!      real, allocatable,  dimension (:,:,:) :: rvw1
+!      real, allocatable,  dimension (:,:,:) :: ruw2
+!      real, allocatable,  dimension (:,:,:) :: rvw2
+!      real, allocatable,  dimension (:,:,:) :: rhsx
+!      real, allocatable,  dimension (:,:,:) :: rhsq
 
       real, allocatable,  dimension (:,:,:) :: orhsu,orhsv,orhst,orhsc,orhsw,orhsf
 

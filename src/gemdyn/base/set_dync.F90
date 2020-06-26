@@ -145,7 +145,7 @@
       if (F_check_and_stop_L) then
          call gem_error (F_errcode,'set_dync',&
               'VERTICAL LAYERING and TIMESTEP INCOMPATIBILITY')
-         call set_sol
+         call set_sol ()
          if (Sol_type_S == 'ITERATIVE_3D') call matvec_init
       end if
 !

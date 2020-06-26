@@ -114,7 +114,7 @@
       integer k,istat,pnip1,err,options_readwrite,options_readonly
       integer, dimension(:), pointer :: wkpti
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
-      real    height,heightp1
+      real height,heightp1,flat
       real(kind=REAL64)  wk_8
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
       real(kind=REAL64), dimension(:), pointer :: wkpt8
@@ -147,8 +147,14 @@
       ! Construct vertical coordinate
       Level_kind_ip1 = 5
       Level_version  = 5
-      istat = 0
 
+      if (Hyb_flat < 0.) then
+         flat = F_hybuser(1)
+      else
+         flat = min(max(0.,Hyb_flat),1.)
+      endif
+
+      istat = 0
       Schm_sleve_L= .false. ; err= 0
       if (   Hyb_rcoef(3) >= 0. .or. Hyb_rcoef(4) >= 0. ) then
          if( Hyb_rcoef(3) <  0. .or. Hyb_rcoef(4) <  0. ) err= -1
@@ -161,13 +167,13 @@
                      rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                      rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
                          ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
-                          dhm=0., dht=0., avg_L=.true. )
+                  dhm=0., dht=0., avg_L=.true., hyb_flat=flat )
          else
             istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
                          version=Level_version, hyb=F_hybuser,&
                      rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                          ptop_out_8=wk_8, pref_8=Cstv_pref_8 ,&
-                          dhm=0., dht=0., avg_L=.true. )
+                  dhm=0., dht=0., avg_L=.true., hyb_flat=flat )
          endif
       endif
       call gem_error (min(err,istat),'SET_ZETA', &
@@ -382,6 +388,7 @@
       istat= wb_put('model/Vgrid/vcode'    ,Ver_code       ,options_readonly)
 
       if (Lun_out > 0) then
+         write (Lun_out,1004) Cstv_ptop_8
          write (Lun_out,1005) G_nk,Hyb_rcoef
          do k=1,G_nk
             height = -16000./log(10.)*log(Ver_hyb%m(k))
@@ -402,7 +409,8 @@
 
       if (Lun_debug_L) call prgenab()
 
- 1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',&
+ 1004 format (/'PRESSURE at the MODEL LID (PTOP)= ',es15.5,' Pa')
+ 1005 format ( 'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',&
                'Grd_rcoef= ',4f7.2/2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
  1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
 !

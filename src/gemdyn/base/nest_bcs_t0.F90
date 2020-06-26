@@ -19,17 +19,15 @@
       use dynkernel_options
       use dyn_fisl_options
       use lam_options
-      use gmm_itf_mod
-      use gmm_nest
+      use mem_nest
+      use mem_tracers
       use gmm_vt0
       use glb_ld
       use tr3d
       implicit none
 #include <arch_specific.hf>
 
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer i,j,n,istat
-      real, pointer, dimension(:,:,:) :: tr,tr0
+      integer i,j,n,deb
       logical :: using_qt0
 !
 !----------------------------------------------------------------------
@@ -105,32 +103,30 @@
       end if
 
       do n=1,Tr3d_ntr
-         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-         istat = gmm_get(tr_name,tr)
-         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
-         istat = gmm_get(tr_name,tr0)
+         deb= (n-1)*G_nk + 1
 
-         if (l_north) then
-            tr0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = tr (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
-         end if
+         if (l_north) &
+         tracers_M(n)%pntr (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = &
+         nest_tr(1:l_ni,l_nj-pil_n+1:l_nj,deb:deb+G_nk-1)
 
-         if (l_east) then
-            tr0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = tr (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
-         end if
+         if (l_east ) &
+         tracers_M(n)%pntr (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = &
+         nest_tr(l_ni-pil_e+1:l_ni,1:l_nj,deb:deb+G_nk-1)
 
-         if (l_south) then
-            tr0 (1:l_ni ,1:pil_s ,1:G_nk) = tr (1:l_ni ,1:pil_s ,1:G_nk)
-         end if
+         if (l_south) &
+         tracers_M(n)%pntr (1:l_ni ,1:pil_s ,1:G_nk) = &
+         nest_tr (1:l_ni,1:pil_s,deb:deb+G_nk-1)
 
-         if (l_west) then
-            tr0 (1:pil_w ,1:l_nj ,1:G_nk) = tr (1:pil_w ,1:l_nj ,1:G_nk)
-         end if
+         if (l_west ) &
+         tracers_M(n)%pntr (1:pil_w ,1:l_nj ,1:G_nk) = &
+         nest_tr (1:pil_w,1:l_nj,deb:deb+G_nk-1)
 
          if (Schm_opentop_L) then
-            tr0 (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1) = tr (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1)
+            tracers_M(n)%pntr (1:l_ni, 1:l_nj, 1:Lam_gbpil_t-1) = &
+            nest_tr (1:l_ni,1:l_nj,deb:deb+Lam_gbpil_t-2)
          end if
 
-      end do
+      enddo
 !
 !----------------------------------------------------------------------
 !

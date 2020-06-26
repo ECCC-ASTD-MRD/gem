@@ -1149,7 +1149,7 @@
     return
   end function update_table_entry
   end module pointer_table_data_381
-!!===================== gmm_checkpoint_all =====================
+!!===================== gmm_checkpoint_all =====================
   integer function gmm_checkpoint_all(read_or_write)
 !
 !        checkpoint read or write for all known types
@@ -1266,7 +1266,7 @@
     file_unit=0
   gmm_checkpoint_all = GMM_OK
   end function gmm_checkpoint_all
-!!===================== gmm_checkpoint =====================
+!!===================== gmm_checkpoint =====================
 !        if  read_or_write is READ_CKPT (.true.) , read one checkpoint group of records
 !        if  read_or_write is WRIT_CKPT (.false.) , write all groups of records to checkpoint file
 !
@@ -2221,7 +2221,7 @@
       do j=1,PAGE_SIZE
         if (iand(GMM_FLAG_RSTR,directory(i)%entry(j)%a%flags) .ne. 0.and.directory(i)%entry(j)%data_type == 242) then
           if (gmm_verbose_level == GMM_MSG_DEBUG) then
-            print *,'writing field ',directory(i)%entry(j)%name
+            print *,'writing field ',directory(i)%entry(j)%name, ' flag=',directory(i)%entry(j)%a%flags, 'rstr=',GMM_FLAG_RSTR, 'izero=',GMM_FLAG_IZER
           endif
           write(file_unit)242
           write(file_unit)directory(i)%entry(j)%name
@@ -2640,9 +2640,9 @@
 !
   endif
   end subroutine gmm_checkpoint_381
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
    integer function gmm_create184(iname,p,field_meta,flags_arg)
    use gmm_internals
    use pointer_table_data_184
@@ -4956,9 +4956,12 @@
    endif
    localattr = attrs
    lcl_name = trim(iname)
+   if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW flag1=',localattr%flags
    localattr%flags = iand(localattr%flags,FLAGS_KEPT_ON_CREATE)
+   if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW flag2=',localattr%flags
 !   call find_directory_entry(localattr%name,key)     ! is there a field with this name that exists ?
    call find_directory_entry(lcl_name,key)
+   if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW: cur_page=',cur_page,' cur_entry=',cur_entry
    if (cur_page .ne. 0 .and. cur_entry .ne. 0) then
       if (associated(p)) then
          print *,'ERROR: gmm_create called with existing p and array has already been created'
@@ -5012,6 +5015,7 @@
 !  ==========  HOW SERIOUS AN ERROR IS THIS ? ===============
       endif
       call add_directory_entry
+   if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 adding entry for PW_P0_LW: cur_page=',cur_page,' cur_entry=',cur_entry
    endif
    ordinal = ordinal + 1
    key = ishft((cur_page-1),PAGE_NB_SHFT) + ishft((cur_entry-1),NTRY_NB_SHFT)
@@ -5021,9 +5025,11 @@
    directory(cur_page)%entry(cur_entry)%name = lcl_name
    directory(cur_page)%entry(cur_entry)%a%key = key
    directory(cur_page)%entry(cur_entry)%a%flags = ior(localattr%flags,GMM_FLAG_CRTD)
+   if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW: flag3=',directory(cur_page)%entry(cur_entry)%a%flags, 'local=',localattr%flags,'gmm_flag_crtd=',GMM_FLAG_CRTD
    directory(cur_page)%entry(cur_entry)%l(1:2) = dims(1:2)
    directory(cur_page)%entry(cur_entry)%data_type = 242
    if (associated(p)) then
+      if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW: pointer given is associated'
       if (gmm_verbose_level == GMM_MSG_DEBUG) &
         print *,'GMM_CREATE: using user supplied array'
       lcl_pti = lgmm_get_nxt_avail_ptr()
@@ -5031,6 +5037,7 @@
       ier = add_table_entry(p, key)
 ! ======= must check that certain attributes are not requested (e.g. FLAG_RSTR) and that size is consistent
    else
+      if(lcl_name(1:8).eq.'PW_P0_LW') print *,'gmm_create 242 for PW_P0_LW: allocate for new pointer and set table index'
       lcl_pti = lgmm_get_nxt_avail_ptr()
       directory(cur_page)%entry(cur_entry)%pointer_table_index = lcl_pti
       allocate(p(dims(1)%low:dims(1)%high,&
@@ -6114,7 +6121,7 @@
   endif
   return
   end subroutine check_directory_entry
-!!
+!!
 ! find entry called name in directory starting from beginning of directory (the hard way)
 ! upon exit cur_page and cur_entry are nonzero if desired entry found
 ! ==============================================================================================
@@ -6263,7 +6270,7 @@
 !     F_meta%a%flags = F_code(j)
     return
  end function gmm_decodemeta
-!!===================== gmm_get (interface) =====================
+!!===================== gmm_get (interface) =====================
 !
   integer function gmm_get184(iname,p,m)
   use gmm_internals
@@ -7735,9 +7742,9 @@
    F_istat = GMM_OK
    return
 end function gmm_updatemeta
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
   integer function gmm_update_tpi_key2(indx,datatype, key)
     implicit none
@@ -7807,7 +7814,7 @@ end function gmm_updatemeta
       gmm_update_tpi_key2 = gmm_update_tpi_key381(indx, key)
   end select dtype
   end function gmm_update_tpi_key2
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
   integer function gmm_update_tpi_key184(indx, key)
   use gmm_internals
   use pointer_table_data_184

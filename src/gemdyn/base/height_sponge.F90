@@ -13,54 +13,33 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
 !**s/r  pressure_sponge -  Performs vertical blending
 !
       subroutine height_sponge()
-      use gmm_vt1
+      use gmm_vt0
       use gmm_geof
       use gem_options
       use theo_options
-      use gmm_itf_mod
       use glb_ld
       use dcst
       implicit none
 #include <arch_specific.hf>
-!author
-!     Plante A.           - May 2004
-!
-      type(gmm_metadata) :: mymeta
-      integer :: istat
-      real betav_m(l_minx:l_maxx,l_miny:l_maxy,l_nk),betav_t(l_minx:l_maxx,l_miny:l_maxy,l_nk),ubar
+
+      real betav_m(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+           betav_t(l_minx:l_maxx,l_miny:l_maxy,l_nk),ubar
 
 !----------------------------------------------------------------------
 
-      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(wt1)'
-      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_st1_s,st1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
-      istat = gmm_get(gmmk_sls_s,sls,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(sls)'
-      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(fis0)'
-
-      call set_betav (betav_m, betav_t, st1, sls, l_minx, l_maxx, l_miny, l_maxy, l_nk)
+      call set_betav (betav_m, betav_t, st0, sls, l_minx, l_maxx,&
+                      l_miny, l_maxy, l_nk)
 
       ubar= mtn_flo
 
       if(Theo_case_S /= 'MTN_SCHAR' ) then
-         call apply (ut1, ubar, betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         call apply (ut0, ubar, betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
       end if
 
-      call apply (wt1, 0., betav_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+      call apply (wt0, 0., betav_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
 
 !----------------------------------------------------------------------
       return
@@ -75,7 +54,6 @@
 #include <arch_specific.hf>
 
       integer :: Minx,Maxx,Miny,Maxy, Nk
-
 
       real ff(Minx:Maxx,Miny:Maxy,Nk),valu,betav(Minx:Maxx,Miny:Maxy,Nk)
 

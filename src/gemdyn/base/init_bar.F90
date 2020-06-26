@@ -16,21 +16,24 @@
 !**s/r init_bar - prepare data for autobarotropic runs (Williamson cases)
 
       subroutine init_bar ()
+
+      use cstv
+      use ctrl
+      use dyn_fisl_options
       use dynkernel_options
+      use gem_options
+      use glb_ld
       use gmm_geof
       use gmm_pw
       use gmm_vt1
       use inp_mod
-      use dyn_fisl_options
-      use ctrl
-      use gem_options
-      use wil_options
-      use glb_ld
-      use tr3d
+      use mem_tracers
       use step_options
-      use gmm_itf_mod
-      use cstv
+      use tr3d
+      use wil_options
+
       implicit none
+
 #include <arch_specific.hf>
 
       !object
@@ -40,7 +43,7 @@
       !NOTE: U,V output on Staggered grids
       !============================================================
 
-      integer :: istat, k
+      integer :: k
       real, dimension (:,:,:), pointer :: hu
       real, dimension (l_minx:l_maxx,l_miny:l_maxy,G_nk) :: gz_t
 !
@@ -50,26 +53,13 @@
 
       if (Schm_sleve_L) call gem_error (-1,'INIT_BAR','  SLEVE not available YET')
 
-      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
-      istat = gmm_get (gmmk_ut1_s ,ut1 )
-      istat = gmm_get (gmmk_vt1_s ,vt1 )
-      istat = gmm_get (gmmk_wt1_s ,wt1 )
-      istat = gmm_get (gmmk_tt1_s ,tt1 )
-      istat = gmm_get (gmmk_zdt1_s,zdt1)
-      istat = gmm_get (gmmk_st1_s ,st1 )
-      istat = gmm_get (gmmk_sls_s ,sls )
-      istat = gmm_get (gmmk_fis0_s,fis0)
-      istat = gmm_get (gmmk_qt1_s ,qt1 )
-
       !Setup Williamson Case 7: The 21 December 1978 Initial conditions are read
       !-------------------------------------------------------------------------
       if (Williamson_case==7) then
 
-          call inp_data ( ut1, vt1, wt1, tt1  ,&
-                          zdt1,st1,fis0,l_minx,l_maxx,l_miny,l_maxy,&
-                          G_nk,.true. ,'TR/',':P',Step_runstrt_S )
+         call inp_data ( ut1, vt1, wt1, tt1  ,&
+                         zdt1,st1,trt1,fis0,.true.,Step_runstrt_S,&
+                         l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
 
          !Initialize log(surface pressure)
          !--------------------------------
@@ -97,7 +87,8 @@
 
       !Initialize HU
       !-------------
-      istat = gmm_get ('TR/HU:P',hu)
+      hu => tracers_P(Tr3d_hu)%pntr
+
       hu = 0.
 
       !Initialize d(Zeta)dot and dz/dt
@@ -107,13 +98,10 @@
 
       !Prepare initial conditions (staggered u-v,gz,s,topo) for Williamson cases
       !-------------------------------------------------------------------------
-      call wil_init (ut1,vt1,gz_t,st1,fis0,qt1,'TR/',':P',l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
+      call wil_init (ut1,vt1,gz_t,st1,fis0,qt1,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
       !Required for CASE5 LAM version
       !------------------------------
-      istat = gmm_get (gmmk_topo_low_s , topo_low )
-      istat = gmm_get (gmmk_topo_high_s, topo_high)
-
       topo_high(1:l_ni,1:l_nj) =      fis0(1:l_ni,1:l_nj)
       topo_low (1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
 

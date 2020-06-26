@@ -160,7 +160,7 @@ real :: ZEB_H = 0.97  !emissivity of clothed human body      UTCI
 real :: ZAB_H = 0.7   !absorption coef of solar radiation by human body        UTCI
 real :: ZAB_G = 0.957 !absorption coef of solar radiation by globe sensor      WBGT
 real :: ZHB_H = 1.7  !average height of human person (m)                       UTCI & WBGT
-!!$REAL :: ZHB_G=  2.5  !average height of the globe sensor
+real :: ZHB_G=  1.7  !2.5 panam  ! average height of the globe sensor
 real :: ZGD = 0.148  ! black globe sensor diameter in m (value given by Matt Wright for PanAm2015)
 integer :: ZOPT
 integer :: ZOPT_BODY
@@ -202,7 +202,7 @@ ZUNDEF(:)=0.0
                PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
                PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G,            &
                PQ8_G,PQ9_G,PQ10_G,PQ11_G,PQ12_G,PQ13_G,              &
-               ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_H )
+               ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_G )
 
  ZOPT=3   ! roof
      call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, ZUNDEF, PREF_SW_ROOF,  &
@@ -210,7 +210,7 @@ ZUNDEF(:)=0.0
                PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
                PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G,            &
                PQ8_G,PQ9_G,PQ10_G,PQ11_G,PQ12_G,PQ13_G,              &
-               ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_H )
+               ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_G )
 
 !========================================================
 ! COMPUTE THE MEAN RADIANT TEMPERATURES

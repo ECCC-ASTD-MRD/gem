@@ -18,8 +18,7 @@
       subroutine nest_intt()
       use cstv
       use lam_options
-      use gmm_itf_mod
-      use gmm_nest
+      use mem_nest
       use glb_ld
       use lun
       use tr3d
@@ -32,11 +31,10 @@
       integer,external ::  newdate
 
       character(len=16) :: datev
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer :: yy,mo,dd,hh,mm,ss,dum,n,istat
-      real, pointer, dimension(:,:,:) :: tr_deb,tr_fin,tr
+      integer :: yy,mo,dd,hh,mm,ss,dum
       real(kind=REAL64) :: dayfrac,tx,dtf,a,b
-      real(kind=REAL64), parameter :: one=1.0d0, sid=86400.0d0, rsid=one/sid
+      real(kind=REAL64), parameter :: one=1.0d0, &
+                       sid=86400.0d0, rsid=one/sid
 !
 !     ---------------------------------------------------------------
 !
@@ -88,13 +86,7 @@
          nest_q_deb  = nest_q_fin
          nest_zd_deb = nest_zd_fin
          nest_fullme_deb = nest_fullme_fin
-         do n=1,Tr3d_ntr
-            tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-            istat = gmm_get(tr_name,tr_fin)
-            tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':A'
-            istat = gmm_get(tr_name,tr_deb)
-            tr_deb = tr_fin
-         end do
+         nest_tr_deb = nest_tr_fin
 
          call nest_indata ( Lam_current_S )
 
@@ -107,26 +99,7 @@
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
 
-      if (Lun_debug_L) write(Lun_out,'(/"In nest_intt, temporal interpolation parametres A,B =",1p2e24.16/)') a,b
-
-      nest_u (1:l_ni,1:l_nj,1:G_nk) = a*nest_u_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_u_fin (1:l_ni,1:l_nj,1:G_nk)
-      nest_v (1:l_ni,1:l_nj,1:G_nk) = a*nest_v_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_v_fin (1:l_ni,1:l_nj,1:G_nk)
-      nest_t (1:l_ni,1:l_nj,1:G_nk) = a*nest_t_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_t_fin (1:l_ni,1:l_nj,1:G_nk)
-      nest_s (1:l_ni,1:l_nj       ) = a*nest_s_deb (1:l_ni,1:l_nj       ) + b*nest_s_fin (1:l_ni,1:l_nj       )
-      nest_w (1:l_ni,1:l_nj,1:G_nk) = a*nest_w_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_w_fin (1:l_ni,1:l_nj,1:G_nk)
-      nest_q (1:l_ni,1:l_nj,1:G_nk+1) = a*nest_q_deb (1:l_ni,1:l_nj,1:G_nk+1) + b*nest_q_fin (1:l_ni,1:l_nj,1:G_nk+1)
-      nest_zd(1:l_ni,1:l_nj,1:G_nk) = a*nest_zd_deb(1:l_ni,1:l_nj,1:G_nk) + b*nest_zd_fin(1:l_ni,1:l_nj,1:G_nk)
-      nest_fullme(1:l_ni,1:l_nj       ) = a*nest_fullme_deb(1:l_ni,1:l_nj       ) + b*nest_fullme_fin (1:l_ni,1:l_nj      )
-
-      do n=1,Tr3d_ntr
-         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-         istat = gmm_get(tr_name,tr_fin)
-         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-         istat = gmm_get(tr_name,tr)
-         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':A'
-         istat = gmm_get(tr_name,tr_deb)
-         tr (1:l_ni,1:l_nj,1:G_nk) = a*tr_deb(1:l_ni,1:l_nj,1:G_nk) + b*tr_fin(1:l_ni,1:l_nj,1:G_nk)
-      end do
+      nest_now = a*nest_deb + b*nest_fin
 
       call gemtime_stop ( 28 )
 !

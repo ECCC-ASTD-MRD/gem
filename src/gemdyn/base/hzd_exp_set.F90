@@ -56,9 +56,9 @@
          end if
       end if
 
-      call hzd_exp_geom
+      call hzd_exp_geom ()
 
-      call hzd_exp5p_set
+      call hzd_exp5p_set ()
 
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &
                '(S/R HZD_SET)',/,60('='))

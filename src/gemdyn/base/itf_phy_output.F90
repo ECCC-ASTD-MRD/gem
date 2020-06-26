@@ -254,7 +254,7 @@
                  (Level_typ_S(levset) == Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
          end if
 
-         if (flag_clos) call out_cfile
+         if (flag_clos) call out_cfile ()
 
       end do
 

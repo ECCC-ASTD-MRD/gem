@@ -1,3 +1,5 @@
+// s.cc -DWITH_TEST_PROGRAM r.file_is_type.c -lrmn
+
 /* RMNLIB - Library of useful routines for C and FORTRAN programming
  * Copyright (C) 1975-2001  Division de Recherche en Prevision Numerique
  *                          Environnement Canada
@@ -26,6 +28,9 @@
  *MODIFICATION : ERIC MICHAUD - JANV 1995                                    *
  *Modification : M. Lepine - Juil 2011 (reconnaissance fichiers NetCDF)      *
  *Modification : M. Lepine - Juil 2011 (bug fix get_mode)                    *
+ *Modification : M. Valin  - Jan  2020 (reconnaissance fichiers CMCARC)      *
+ *                                     enleve dependance rmnlib              *
+ *                                     creation du programme r.file_is_type  *
  *                                                                           *
  *OBJET                                                                      *
  *     DETERMINER QUEL EST LE TYPE D'UN FICHIER                              *
@@ -73,6 +78,8 @@
  *        33     FICHIER STANDARD RANDOM 98                                  *
  *        34     FICHIER STANDARD SEQUENTIEL 98                              *
  *        35     FICHIER NETCDF                                              * 
+ *        36     FICHIER CMCARC v4                                           *
+ *        37     FICHIER CMCARC v5                                           *
  *                                                                           *
  *****************************************************************************/
 
@@ -117,6 +124,11 @@
 #define WKF_RANDOM98              33
 #define WKF_SEQUENTIEL98          34
 #define WKF_NETCDF                35
+#define WKF_CMCARC4               36
+#define WKF_CMCARC5               37
+
+#define CMCARC_SIGN "CMCARCHS"     /* signature du debut d'un fichier cmcarc */
+#define CMCARC_SIGN_V5 "CMCARCH5"  /* signature du debut d'un fichier cmcarc version 5 */
 
 #define SIGN_STD89_RND  012525252525   
 #define SIGN_STD89_SEQ  025252525252
@@ -152,10 +164,13 @@
 
 
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
 #include <sys/types.h>
+
 #ifdef should_never_be_true
 #include <X11/Xmd.h>
 #else
@@ -169,9 +184,47 @@
 #define B32 :32
 #endif
 
-#include <rpnmacros.h>
+static int endian_int=1;
+static char *little_endian=(char *)&endian_int;
+/***************************************************************************** 
+ *                            F R E A D 3 2                                  *
+ *                                                                           * 
+ *Object                                                                     * 
+ *   Reads nitems elements of data, each size bytes long                     *
+ *   and swap each bytes for each 4 bytes elements                           *
+ *                                                                           * 
+ *Arguments                                                                  * 
+ *                                                                           * 
+ *  IN  ptr     pointer to array to receive  data                            * 
+ *  IN  size    size in bytes of elements of data                            * 
+ *  IN  nitems  number of items to read                                      * 
+ *  IN  stream  file pointer                                                 * 
+ *                                                                           * 
+ *****************************************************************************/
+static size_t fread32(void *ptr, size_t size, size_t nitems, FILE *stream)
+{
+  size_t nr;
+  int i, n4=(size*nitems)/4;    /* number of 4 bytes */
+  uint32_t *pt4 = (uint32_t *) ptr;
 
+  if (*little_endian) {
+    if ((size & 3) != 0) {
+      fprintf(stderr,"fread64 error: size=%d must be a multiple of 4\n",size);
+      return(-1);
+    }
+    
+    nr = fread(ptr,size,nitems,stream);
+    
+    for (i=0; i < n4; i++) {
+      *pt4 = (*pt4>>24) | (*pt4<<24) | ((*pt4>>8)&0xFF00) | ((*pt4&0xFF00)<<8);
+      pt4++;
+    }
+  }
+  else
+    nr = fread(ptr,size,nitems,stream);
 
+  return((size_t) nr);
+}
 
 /*  RRBX stuff */
  
@@ -296,7 +349,7 @@ FILE *pf;
 int lng;
 {
    int mot;
-   INT_32 offset;
+   int32_t offset;
 
    offset = lng +4;
    fseek(pf,offset,0);
@@ -311,13 +364,14 @@ int lng;
 
 /********************************************/
 
-wordint
+int32_t
 c_wkoffit(char *nom,int l1) 
 {
    FILE *pf;
    char nom2[4096], nom3[4096], *pn2, *pn3;
+   char cbuf[1024];
    int buffer[1024], *ptbuf, lowc=0;
-   INT_32 pos,lngf;
+   int32_t pos,lngf;
    int longnom;
 
    longnom = ( ( l1 <= 4095 ) ? l1 : 4095 );
@@ -339,113 +393,116 @@ c_wkoffit(char *nom,int l1)
        if (islower(*pn2)) {
          *pn3 = *pn2;
          lowc = 1;
-       }
-       else
+       } else {
          *pn3 = tolower(*pn2);
+       }
        pn2++;
        pn3++;
      }
      *pn2 = '\0';
      *pn3 = '\0';
-     if (lowc == 0)
-       strcpy(nom2,nom3);
+     if (lowc == 0) strcpy(nom2,nom3);
    }
    pf = fopen(nom2,"rb");
-   if (pf == (FILE *) NULL)
+   if (pf == (FILE *) NULL){
       return(-3);
-   else {
+   } else {
 
      /* positionnement a la fin du fichier */
       fseek(pf,pos,2);       
       lngf=ftell(pf);
       if (lngf == 0) return(retour(pf,-2));
 
-     /* positionnement au debut du fichier */
+     /* positionnement et lecture au debut du fichier */
+      fseek(pf,pos,0); 
+      fread(cbuf, 1024, 1, pf);           // suite de caracteres
       fseek(pf,pos,0);     
-      fread32(ptbuf,sizeof(int),1024,pf);
+      fread32(ptbuf,sizeof(int),1024,pf); // suite d'entiers 32 bits
+
+     /* CMCARC v5 */
+      if( strncmp(cbuf+17,CMCARC_SIGN_V5,8) == 0 ) {
+        return retour(pf,WKF_CMCARC5);
+      }
+
+     /* CMCARC v4 */
+      if( strncmp(cbuf+9,CMCARC_SIGN,8) == 0 ) {
+        return retour(pf,WKF_CMCARC4);
+      }
 
      /* RANDOM89 */
-      if (*ptbuf == SIGN_STD89_RND && *(ptbuf+1) == SIGN_STD89_RND)
-	 return(retour(pf,WKF_RANDOM89));
-      else
+      if (*ptbuf == SIGN_STD89_RND && *(ptbuf+1) == SIGN_STD89_RND){
+          return(retour(pf,WKF_RANDOM89));
+      }
 
      /* CCRN */
-      if (*(ptbuf) == 64 && *(ptbuf+17) == 64 && *(ptbuf+2) == 0x20202020)
+      if (*(ptbuf) == 64 && *(ptbuf+17) == 64 && *(ptbuf+2) == 0x20202020){
          return(retour(pf,WKF_CCRN));
-      else
+      }
 
      /* CCRN-RPN */
-      if (*(ptbuf+2) == 0x504b3834 && isftnbin(pf,*ptbuf))  /* PK84 */
+      if (*(ptbuf+2) == 0x504b3834 && isftnbin(pf,*ptbuf)){  /* PK84 */
          return(retour(pf,WKF_CCRN_RPN));
-      else
+      }
 
      /* SEQUENTIEL89 */
-      if (*(ptbuf+28) == SIGN_STD89_SEQ && *(ptbuf+29) == SIGN_STD89_SEQ)
+      if (*(ptbuf+28) == SIGN_STD89_SEQ && *(ptbuf+29) == SIGN_STD89_SEQ){
          return(retour(pf,WKF_SEQUENTIEL89));
-      else
+      }
 
      /* SEQUENTIELFORTRAN89 */ 
       if (*(ptbuf+29) == SIGN_STD89_SEQ && *(ptbuf+30) == SIGN_STD89_SEQ
-                       && isftnbin(pf,*ptbuf))
+                       && isftnbin(pf,*ptbuf)) {
          return(retour(pf,WKF_SEQUENTIELFORTRAN89));
-      else
+      }
  
     /* STANDARD 98 RANDOM */
-      if (*(ptbuf+3) == 'STDR') 
+      if (*(ptbuf+3) == 'STDR') {
          return(retour(pf,WKF_RANDOM98));
-      else
+      }
 
     /* STANDARD 98 SEQUENTIEL */
-      if (*(ptbuf+3) == 'STDS') 
+      if (*(ptbuf+3) == 'STDS') {
          return(retour(pf,WKF_SEQUENTIEL98));
-      else
+      }
 
     /* BURP */
-      if ((*(ptbuf+3) == 'BRP0') || (*(ptbuf+3) == 'bRp0'))
+      if ((*(ptbuf+3) == 'BRP0') || (*(ptbuf+3) == 'bRp0')){
          return(retour(pf,WKF_BURP));
-      else
+      }
 
     /* GRIB */
-      if (*(ptbuf) == 0x47524942)   
+      if (*(ptbuf) == 0x47524942)   {
          return(retour(pf,WKF_GRIB));
-      else
+      }
 
     /* BUFR */
-      if (*(ptbuf) == 0x42554652)  
+      if (*(ptbuf) == 0x42554652)  {
          return(retour(pf,WKF_BUFR));
-      else
+      }
 
     /* NetCDF classic format */
-      if (*(ptbuf) == 'CDF\001')
+      if (*(ptbuf) == 'CDF\001'){
          return(retour(pf,WKF_NETCDF));
-      else
+      }
 	
     /* NetCDF 64-bit offset format */
-      if (*(ptbuf) == 'CDF\002')
+      if (*(ptbuf) == 'CDF\002'){
          return(retour(pf,WKF_NETCDF));
-      else
+      }
 
     /* BLOK */
-      if (*(ptbuf) == 0x424c4f4b)   
+      if (*(ptbuf) == 0x424c4f4b)   {
          return(retour(pf,WKF_BLOK));
-      else
+      }
 
     /* FORTRAN */
-      if (isftnbin(pf,*ptbuf))
+      if (isftnbin(pf,*ptbuf)){
          return(retour(pf,WKF_FORTRAN));
-      else {
+      }
    
     /* INCONNU  */
-	     return(retour(pf,test_fichier (nom2) ));
-      }
+      return(retour(pf,test_fichier (nom2) ));
    }
-}
-
-wordint f77name(wkoffit)(char *nom, F2Cl fl1)
-{
-  int l1=fl1;
-  
-  return(c_wkoffit(nom,l1));
 }
 
 /****************************************************/
@@ -511,7 +568,7 @@ char *nom;
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A PostScript
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A PostScript
  *
  */
 
@@ -579,7 +636,7 @@ char *path;
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A XWDFile
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A XWDFile
  *
  */
 
@@ -630,7 +687,7 @@ char *path;
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A GIF
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A GIF
  *
  */
 
@@ -668,12 +725,12 @@ char *path;
  *
  */
 
- static get_mode ( fp, depth, height, width, length )
+ static int get_mode ( fp, depth, height, width, length )
  FILE  *fp;
  int  *depth ;
  int  *height ;
  int  *width ;
- INT_32 *length;
+ int32_t *length;
      {
      int cpt = 0;
      int kmwndx = 0 ;
@@ -682,7 +739,7 @@ char *path;
      static char sigkmw[] = "PLOT$Z";
 
      register char *data = buf;
-     INT_32  curpos;
+     int32_t  curpos;
 
 /*
  *  verifie dans les 350 premiers caracteres si on trouve
@@ -757,7 +814,7 @@ if (cpt < 10) mode = 0 ;
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A KMW
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A KMW
  *
  */
 
@@ -767,7 +824,7 @@ char *path;
    FILE *fp;
    int height,width, depth;
    int ierr=0;
-   INT_32 length;
+   int32_t length;
 
    if( (fp = fopen( path, "rb")) == NULL ) return(ierr);
 
@@ -795,7 +852,7 @@ char *path;
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A RRBX FILE
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A RRBX FILE
  *
  */
 
@@ -844,7 +901,7 @@ static  int isrrbx( path )
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A SUNRASTER
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A SUNRASTER
  *
  */
 
@@ -912,7 +969,7 @@ static  int isrrbx( path )
  *
  *  langage   :  C
  *
- *  objet     :  THIS MODULE TEST IF A FILE IS A PPM
+ *  objet     :  THIS MODULE TESTS IF A FILE IS A PPM
  *
  */
 
@@ -979,7 +1036,7 @@ char    in_sequence = FALSE;
 char    pass_seq;
 char    plus_sign;              /* for relative values */
 char    strip_seq = FALSE;
-INT_32    flen;
+int32_t    flen;
 char    buffer[256];
 
 /*
@@ -1383,4 +1440,31 @@ static int ReadFileType(fname)
   return rv;
 }
 
+#if defined(WITH_TEST_PROGRAM)
 
+int main(int argc, char **argv){
+  int i, code;
+  if(argc < 3) {
+    printf("USAGE: %s filename type_1 .... type_n\n", argv[0]);
+    return 1;
+  }
+  code = c_wkoffit(argv[1], strlen(argv[1]));
+//   printf("type code = %d\n",code);
+  for(i=2 ; i<argc ; i++){
+    if(atoi(argv[i]) == code) return 0;
+  }
+  return 1;
+}
+
+#else
+
+// not utility, provide Fortran callable entry point
+#include <rpnmacros.h>
+wordint f77name(wkoffit)(char *nom, F2Cl fl1)
+{
+  int l1=fl1;
+  
+  return(c_wkoffit(nom,l1));
+}
+
+#endif

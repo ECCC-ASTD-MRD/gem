@@ -30,7 +30,6 @@
       use geomh
       use glb_ld
       use gmm_itf_mod
-      use gmm_nest
       use HORgrid_options
       use lun
       use tdpack

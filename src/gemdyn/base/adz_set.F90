@@ -18,11 +18,13 @@
       use adz_options
       use ctrl
       use gem_options
+      use glb_pil
       use HORgrid_options
       use geomh
       use lam_options
       use gmm_itf_mod
       use gmm_pw
+      use ptopo
       use rstr
       use tr3d
       use ver
@@ -34,33 +36,18 @@
 
       include "tricublin_f90.inc"
 
-      integer  j, k, k0, BCS_BASE, pnz, ext, halom
+      integer  i, j, k, n, k0, BCS_BASE, pnz, ext, halom
       real(kind=REAL64), parameter :: EPS_8= 1.D-5
       real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
-
-! PGI does not known about REAL128, but it doesn't complain about real*16
-! All the other compilers we have encountered so far are happy with REAL128
-#ifdef __PGI
-      ! Despite being a Fortran 2003 standard compliant way of specifying
-      ! a Quad precisions, PGI doesn't like the following declaration:
-      !  real(selected_real_kind(33, 4931))
-      ! It complains with:
-      ! PGF90-S-0081-Illegal selector - KIND value must be non-negative
-      real*16 :: smallest_dz, posz
-      ! According to PGI Fortran Reference Guide, the biggest supported real
-      ! is real*8.  I therefore don't even know if we get more than a real*8
-      ! with the declaration above.
-#else
-      real(kind=REAL128) :: smallest_dz, posz
-#endif
+      real(kind=REAL128) :: smallest_dz,posz
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
-      integer :: kp1, flag_r_n, istat, istatu, istatv
-
+      integer :: dim, kp1, flag_r_n, istat,istatu,istatv
+!
 !---------------------------------------------------------------------
-
+!
       Adz_maxcfl= max(1,Grd_maxcfl)
       Adz_halox = Adz_maxcfl + 1
       Adz_haloy = Adz_halox
@@ -69,6 +56,14 @@
       Adz_lmaxx = l_ni + Adz_halox
       Adz_lminy = 1    - Adz_haloy
       Adz_lmaxy = l_nj + Adz_haloy
+! Above lines should be replaced by the following when SLOD
+! is completed. Adz_maxcfl should also no longer be needed.
+!!$      Adz_halox = G_halox
+!!$      Adz_haloy = G_haloy
+!!$      Adz_lminx = l_minx
+!!$      Adz_lmaxx = l_maxx
+!!$      Adz_lminy = l_miny
+!!$      Adz_lmaxy = l_maxy
 
       Adz_nit = Adz_lmaxx - Adz_lminx + 1
       Adz_njt = Adz_lmaxy - Adz_lminy + 1
@@ -114,6 +109,30 @@
       BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
 
+      allocate (Adz_Xlim(2,0:Ptopo_npex), Adz_Ylim(2,0:Ptopo_npey))
+      do i=0, Ptopo_npex-1
+         Adz_Xlim(1,i) = Ptopo_gindx(1,Ptopo_colrow(Ptopo_couleur,i,0)+1)
+         Adz_Xlim(2,i) = Ptopo_gindx(2,Ptopo_colrow(Ptopo_couleur,i,0)+1)
+      end do
+      do i=0, Ptopo_npey-1
+         Adz_Ylim(1,i) = Ptopo_gindx(3,Ptopo_colrow(Ptopo_couleur,0,i)+1)
+         Adz_Ylim(2,i) = Ptopo_gindx(4,Ptopo_colrow(Ptopo_couleur,0,i)+1)
+      end do
+      Adz_Xlim(1,0) = 1 +BCS_BASE
+      Adz_Xlim(2,Ptopo_npex-1) = Ptopo_gindx&
+                            (2,Ptopo_colrow(Ptopo_couleur,Ptopo_npex-1,0)+1) -BCS_BASE
+      Adz_Ylim(1,0) = 1 +BCS_BASE
+      Adz_Ylim(2,Ptopo_npey-1) = Ptopo_gindx&
+                            (4,Ptopo_colrow(Ptopo_couleur,0,Ptopo_npey-1)+1) -BCS_BASE
+      Adz_Xlim(1,Ptopo_npex) = Adz_Xlim(2,Ptopo_npex-1)
+      Adz_Ylim(1,Ptopo_npey) = Adz_Ylim(2,Ptopo_npey-1)
+
+! FOR SLOD
+!!$      Adz_iminposx = l_i0+   1-Adz_halox   + EPS_8
+!!$      Adz_imaxposx = l_i0+l_ni+Adz_halox-2 - EPS_8
+!!$      Adz_iminposy = l_j0+   1-Adz_haloy   + EPS_8
+!!$      Adz_imaxposy = l_j0+l_nj+Adz_haloy-2 - EPS_8
+
       Adz_iminposx = l_i0+adz_lminx   + EPS_8
       Adz_imaxposx = l_i0+adz_lmaxx-2 - EPS_8
       Adz_iminposy = l_j0+adz_lminy   + EPS_8
@@ -123,6 +142,11 @@
       if (l_south) Adz_iminposy = l_j0+     BCS_BASE   + EPS_8
       if (l_north) Adz_imaxposy = l_j0+l_nj-BCS_BASE-1 - EPS_8
 
+      Adz_yyminposx = 2    + Glb_pil_w     + EPS_8
+      Adz_yymaxposx = G_ni - Glb_pil_e - 1 - EPS_8
+      Adz_yyminposy = 2    + Glb_pil_s     + EPS_8
+      Adz_yymaxposy = G_nj - Glb_pil_n - 1 - EPS_8
+
       ext = Grd_maxcfl + 1
 
       Adz_i0b =    1 + BCS_BASE*west
@@ -130,7 +154,7 @@
       Adz_j0b =    1 + BCS_BASE*south
       Adz_jnb = l_nj - BCS_BASE*north
 
-      Adz_num_b= (Adz_inb -Adz_i0b +1)*(Adz_jnb -Adz_j0b +1)*(l_nk-Adz_k0t+1)
+      Adz_num_b= (Adz_inb -Adz_i0b +1)*(Adz_jnb -Adz_j0b +1)*(l_nk-Adz_k0+1)
 
       allocate (  Adz_delz_m(0:l_nk),  Adz_delz_t(0:l_nk), &
                  Adz_odelz_m(0:l_nk), Adz_odelz_t(0:l_nk) )
@@ -237,8 +261,123 @@
 
       allocate (Adz_stack(max(10,Tr3d_ntr)))
 
+     !if (.not.Grd_yinyang_L) allocate(Adz_stack(max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP))%pil &
+     !                                 (l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      !This works but not the previous when Tr3d_ntrTRICUB_WP>2 (Dont know why...)
+      !---------------------------------------------------------------------------
+      if (.not.Grd_yinyang_L) then
+
+         do n = 1,max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)
+
+            allocate(Adz_stack(n)%pil(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+         end do
+
+      end if
+
+      !Allocation Conservation Postprocessing
+      !--------------------------------------
+      allocate (adz_flux     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
+      allocate (adz_flux_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
+      allocate (adz_flux_BQWP(max(1,Tr3d_ntrBICHQV_WP)))
+
+      do n = 1,max(1,Tr3d_ntrTRICUB_WP)
+
+         allocate(adz_flux_3CWP(n)%fo(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_flux_3CWP(n)%fi(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      end do
+
+      do n = 1,max(1,Tr3d_ntrBICHQV_WP)
+
+         allocate(adz_flux_BQWP(n)%fo(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_flux_BQWP(n)%fi(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      end do
+
+      allocate (adz_post     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
+      allocate (adz_post_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
+      allocate (adz_post_BQWP(max(1,Tr3d_ntrBICHQV_WP)))
+
+      do n = 1,max(1,Tr3d_ntrTRICUB_WP)
+
+         allocate(adz_post_3CWP(n)%lin(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_post_3CWP(n)%min(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_post_3CWP(n)%max(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      end do
+
+      do n = 1,max(1,Tr3d_ntrBICHQV_WP)
+
+         allocate(adz_post_BQWP(n)%lin(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_post_BQWP(n)%min(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+         allocate(adz_post_BQWP(n)%max(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      end do
+
+      allocate (adz_bc(1+Tr3d_ntrTRICUB_WP+Tr3d_ntrBICHQV_WP))
+
+      do n = 1,1+Tr3d_ntrTRICUB_WP+Tr3d_ntrBICHQV_WP
+
+         allocate(adz_bc(n)%w(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+
+      end do
+
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
 
+      dim = l_ni*l_nj*l_nk
+      allocate ( Adz_expq%ijk (  dim  ), Adz_expq%gpos(3*dim,8),&
+                 Adz_expq%resu(  dim  ), Adz_expq%req ( dim   ),&
+                 Adz_expq%intp(  dim  )                        ,&
+                 Adz_expu%ijk (  dim  ), Adz_expu%gpos(3*dim,8),&
+                 Adz_expu%resu(  dim  ), Adz_expu%req ( dim   ),&
+                 Adz_expu%intp(  dim  )                        ,&
+                 Adz_expv%ijk (  dim  ), Adz_expv%gpos(3*dim,8),&
+                 Adz_expv%resu(  dim  ), Adz_expv%req ( dim   ),&
+                 Adz_expv%intp(  dim  )                        ,&
+                 Adz_expt%ijk (  dim  ), Adz_expt%gpos(3*dim,8),&
+                 Adz_expt%resu(  dim  ), Adz_expt%req ( dim   ),&
+                 Adz_expt%intp(  dim  )                        ,&
+                 Adz_expq%COMM_handle(Ptopo_numproc)           ,&
+                 Adz_expu%COMM_handle(Ptopo_numproc)           ,&
+                 Adz_expv%COMM_handle(Ptopo_numproc)           ,&
+                 Adz_expt%COMM_handle(Ptopo_numproc)            )
+
+      Adz_exppe = -1
+! later in the one-sided MPI in GY
+!!$      if (Ptopo_myrow>0) then
+!!$         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(1)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow-1)
+!!$         if (Ptopo_mycol>0           ) Adz_exppe(3)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow-1)
+!!$                                       Adz_exppe(2)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol  ,Ptopo_myrow-1)
+!!$      endif
+!!$      if (Ptopo_myrow<Ptopo_npey-1) then
+!!$         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(7)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow+1)
+!!$         if (Ptopo_mycol>0           ) Adz_exppe(5)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow+1)
+!!$                                       Adz_exppe(6)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol  ,Ptopo_myrow+1)
+!!$      endif
+!!$      if (Ptopo_mycol>0              ) Adz_exppe(4)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow  )
+!!$      if (Ptopo_mycol<Ptopo_npex-1   ) Adz_exppe(8)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow  )
+
+      if (Ptopo_myrow>0) then
+         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(1)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow-1)
+         if (Ptopo_mycol>0           ) Adz_exppe(3)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow-1)
+                                       Adz_exppe(2)=Ptopo_colrow(0,Ptopo_mycol  ,Ptopo_myrow-1)
+      endif
+      if (Ptopo_myrow<Ptopo_npey-1) then
+         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(7)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow+1)
+         if (Ptopo_mycol>0           ) Adz_exppe(5)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow+1)
+                                       Adz_exppe(6)=Ptopo_colrow(0,Ptopo_mycol  ,Ptopo_myrow+1)
+      endif
+      if (Ptopo_mycol>0              ) Adz_exppe(4)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow  )
+      if (Ptopo_mycol<Ptopo_npex-1   ) Adz_exppe(8)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow  )
+!
+!---------------------------------------------------------------------
+!
       return
+
+ 1000 format(/,'=================================================',/,A31,I2,/,&
+               '=================================================' )
+
       end subroutine adz_set

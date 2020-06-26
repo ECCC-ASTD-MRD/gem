@@ -2,13 +2,13 @@
                              Minx,Maxx,Miny,Maxy,F_nk)
       use glb_ld
       use dyn_fisl_options
-      use gmm_itf_mod
       use gmm_geof
       use inp_base, only: inp_3dhgts
       use ver
       use tdpack
       use, intrinsic :: iso_fortran_env
       implicit none
+
       integer, intent(in)  :: Minx,Maxx,Miny,Maxy, F_nk
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk+1), intent(out) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk)  , intent(in)  :: F_vt
@@ -30,9 +30,6 @@
       allocate (topo  (l_minx:l_maxx,l_miny:l_maxy),&
                 topols(l_minx:l_maxx,l_miny:l_maxy),&
                 zz(l_minx:l_maxx,l_miny:l_maxy,size(ip1_list)))
-
-      err= gmm_get (gmmk_sls_s ,sls )
-      err= gmm_get (gmmk_fis0_s,fis0)
 
       aaa=rgasd_8*Cstv_tstr_8
       do j=1,l_nj

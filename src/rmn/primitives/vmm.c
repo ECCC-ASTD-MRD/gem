@@ -93,7 +93,7 @@ PRIVATE int obtient_environ();
 #else
 #    define INTBAR(x) *(BLOCKS[x].memadr+BLOCKS[x].size-2)=(*(BLOCKS[x].memadr+BLOCKS[x].size-1))=BARVAL
 #endif
-
+
 #define SEGMENT_MASK 65535 /* Masques pour le tableau de blocs pour */
 #define SEGMENT_SHIFT 16  /* le chargement par segment */
 #define WEIGHT_MASK 31
@@ -288,7 +288,7 @@ static int tableau_eject[MAXBLOCKS]; /* tableau ordonne des blocs du segment a
                                         utiliser pour un load */
 static char cd_repertoire[128]= "./";       /* repertoire de travail pour les fichiers de controle */
       
-
+
 
 /***s/p calc_checksum
 *
@@ -324,7 +324,7 @@ calc_checksum(int bkno)
      return(checks);
 }
 
-
+
 
 /***s/p collapse_blocks
 *
@@ -372,7 +372,7 @@ collapse_blocks(int i, int inext)
    }
  
 
-
+
 /***s/p ecrit_bloc
 *
 *objet(ecrit_bloc)
@@ -434,7 +434,7 @@ ecrit_bloc(int bkno,int classe,wordint *memadresse,
 
       nb_ecritures++;
 } 
-
+
 /***s/p ecrit_vmm_controle
  *
  *objet(ecrit_vmm_controle)
@@ -518,7 +518,7 @@ ecrit_vmm_controle()
    }
 
 }
-
+
 /***s/p eject_block
 *
 *objet(eject_block)
@@ -615,7 +615,7 @@ eject_block(int bkno,int save,int fait_checksum)
    return(BLOCKS[bkno].size);
    }
 
-
+
 /***s/p eject_from_tableau - ejecter les blocs d'un segment
  *
  * Auteur James Caveen - mai 1994
@@ -654,7 +654,7 @@ PRIVATE int
 }
 
 
-
+
 /*** fichier_vide - verifier si un fichier contient quelque chose
  *
  * Auteur : J. Caveen - juin 1994
@@ -686,7 +686,7 @@ fichier_vide(char *nom)
    return(retour);
 }
 
-
+
 /***s/p imprime 
  *
  * Auteur James Caveen - mai 1994
@@ -720,7 +720,7 @@ void imprime()
      }
 }
 
-
+
 /***s/p impval - imprimer les valeurs d'un champ autour du marqueur de bloc
  *
  * Auteur: J. Caveen - avril 1994
@@ -780,7 +780,7 @@ void
     fprintf(fdout,"\nTRUE FLOAT VALUE OF BLOCK DELIMITOR: %f\n", *fvaleur);
 }
 
-
+
 /***s/p imprime_structures
  *
  *objet(imprime_structures)
@@ -873,7 +873,7 @@ imprime_structures(int mode)
               break;
        }
 }
-
+
 /***s/p lit_bloc
 *
 *objet(lit_bloc)
@@ -943,7 +943,7 @@ lit_bloc(int bkno,unsigned int classe,wordint *memadresse,
 
        nb_lectures++;
 } 
-
+
 /***s/p lit_vmm_controle
 *objet(lit_vmm_controle) relire les structures du fichier Vmm_controle
 *
@@ -1060,7 +1060,7 @@ lit_vmm_controle()
      for (i = 0; i < NCLASSE; i++)
            wp_Vmm[i] = (wp_Vmm[i] < 2 ? 2 : wp_Vmm[i]);
 }
-
+
 /***s/p obtient_environ
 *
 *objet(obtient_environ)
@@ -1204,7 +1204,7 @@ PRIVATE int obtient_environ()
 
       return(longueur);
 }
-
+
 /***s/p ouvre_ou_ferme_controle
 *
 *objet(ouvre_ou_ferme_controle)
@@ -1280,7 +1280,7 @@ ouvre_ou_ferme_controle(int ouvre, int premiere_fois, char *fonction)
 }
 
 
-
+
 /***s/p pack_blocks
 *
 *objet(pack_blocks)
@@ -1326,7 +1326,7 @@ pack_blocks(int *biggest_free_block_index)
    return(big);
    }
             
-
+
 /***s/p pack_segment
 *
 *objet(pack_segment)
@@ -1401,7 +1401,7 @@ pack_segment(int bkno, int *biggest_free_block_index)
    return(big);
    }
 
-
+
 /***s/p qvmindex_from_key
 *
 *objet(qvmindex_from_key)
@@ -1429,7 +1429,7 @@ qvmindex_from_key(complete_key inkey)
     return ( inkey.key.key_major == NAMES[SLICES[laclef].name_table_index].major_key ? laclef : -BADINKEY);
 }
                  
-
+
 /***s/p qvmlod
 *
 *objet(qvmlod)
@@ -1760,7 +1760,7 @@ qvmlod(complete_key inlkey[], wordint *nkey)
    return 0;
 }
 
-
+
 
 /***s/p reserve_disk_space 
 *    objet(reserve_disk_space) - reserver la memoire disque pour
@@ -1838,7 +1838,7 @@ reserve_disk_space(int bkno)
 
 }
 
-
+
 
 /***s/p strfind
 *
@@ -1889,7 +1889,7 @@ return(PositionTrouvee);
 }
 
 
-
+
 /***s/p swap_blocks
 *
 *objet(swap_blocks)
@@ -1969,7 +1969,7 @@ swap_blocks(int i,int inext)
 */
    }
 
-
+
 /***s/p trie_le_tableau - trier un tableau par ordre croissant
  *
  * Auteur : J. Caveen - mai 1994
@@ -2001,7 +2001,7 @@ trie_le_tableau(int *table,int longueur)
    }
 }
 
-
+
 /***s/p trouve_best_fit
  *
  *  Auteur : James Caveen -  mai 1994
@@ -2045,7 +2045,7 @@ int trouve_best_fit(int size)
      return(best_fit);
 }
 
-
+
 /***s/p trouve_best_free - trouver le meilleur bloc memoire pour 
  *                         charger un champ.
  * Auteur James Caveen - mai 1994
@@ -2117,7 +2117,7 @@ int trouve_best_free(int size)
 
 
 
-
+
 /***s/p trouve_best_segment - trouver le meilleur segment pouvant 
  *                           contenir un bloc de grosseur size
  *                           Un segment est une suite de blocs compris
@@ -2276,7 +2276,7 @@ trouve_best_segment(int size, int *tableau_eject_index)
     return (bkno);
 
 }
-
+
 /***s/p verbar
 *
 *objet(verbar)
@@ -2387,7 +2387,7 @@ PRIVATE int
     return(0);
 }
 
-
+
 /***s/p vmmallc2
 *
 *objet(vmmallc2)
@@ -2553,7 +2553,7 @@ f77name(vmmallc)(wordint *memry)
   return(ier);
 }
 
-
+
 /***s/p vmmatt
 *
 *objet(vmmatt)
@@ -2668,7 +2668,7 @@ f77name(vmmatt)(char *namevar,wordint *lpiece,wordint *npiece,char *attr,F2Cl l1
    keyout.key.key_minor = 0;
    return (keyout.clef);
 }
-
+
 /***s/p vmmcks
 *
 *objet(vmmcks)
@@ -2726,7 +2726,7 @@ f77name(vmmcks)(complete_key *inkey, wordint *mode)
      return (check_sum);
 }
 
-
+
 /***s/p vmmcpk
  *
  *objet(vmmcpk)
@@ -2786,7 +2786,7 @@ wordint f77name(vmmcpk)()
    ouvre_ou_ferme_controle(0,0,"VMMCPK");
    return 0;
 }
-
+
 /***s/p vmmcre
 *
 *objet(vmmcre)
@@ -3058,7 +3058,7 @@ f77name(vmmcre)(char innamevar[],wordint *lpiece,wordint *npiece,
 
    return (keyout.clef);
 }
-
+
 
 /***s/p vmmdbg
 *
@@ -3154,7 +3154,7 @@ f77name(vmmdbg)(char command[],complete_key inlkey[], wordint *nkey,F2Cl l1)
   return(0);
   }
 
-
+
 /***s/p vmmdiag
 *
 *objet(vmmdiag)
@@ -3188,7 +3188,7 @@ f77name(vmmdiag)()
    fprintf(fdout," VMMDIAG-NUMBER OF DISK WRITES : %d\n",nb_ecritures);
    return (0) ;
 }
-
+
 /***s/p vmmdmp
 *
 *objet(vmmdmp)
@@ -3220,7 +3220,7 @@ f77name(vmmdmp)(unsigned wordint *mode)
          }
 	 return(0);
 }
-
+
 /***s/p vmmerr
 *
 *objet(vmmerr)
@@ -3369,7 +3369,7 @@ vmmerr(char *fonction,wordint valeur)
 
       return( (int) (-valeur));
 }
-
+
 /***s/p vmmfgt
 *
 *objet(vmmfgt)
@@ -3430,7 +3430,7 @@ f77name(vmmfgt)(complete_key inlkey[], wordint *nkey)
 
        return 0;
 }
-
+
 
 /***s/p vmmget
 *
@@ -3535,7 +3535,7 @@ f77name(vmmget)(complete_key  *inkey, void **pointeur,wordint *tablo)
                                champs_bloques_max : champs_bloques ;
           return 0;
 }
-
+
 /***s/p vmmhpa
 *
 *objet(vmmhpa)
@@ -3597,7 +3597,7 @@ f77name(vmmhpa)(void **ptr,wordint *memry,wordint *mode)
       return(0);
     }
    }
-
+
 /***s/p vmmhpd
 *
 *objet(vmmhpd)
@@ -3645,7 +3645,7 @@ f77name(vmmhpd)(void **ptr)
    free(pointeur);
    return(0);
    }
-
+
 /***s/p vmmint
 *
 *objet(vmmint)
@@ -3728,7 +3728,7 @@ int f77name(vmmint)()
        
        return (ier == 0 ? ier : vmmerr("VMMINT",CONTROLE_DAMAGE));
 }
-
+
 /***s/p vmmlck
 *
 *objet(vmmlck)
@@ -3800,7 +3800,7 @@ f77name(vmmlck)(complete_key inlkey[], wordint *nkey)
                             champs_bloques_max : champs_bloques ;
        return 0;
 }
-
+
 /***s/p vmmlod
 *
 *objet(vmmlod)
@@ -3879,7 +3879,7 @@ f77name(vmmlod)(complete_key inlkey[], wordint *nkey)
 }
                   
 
-
+
 /***s/p vmmlse
 *
 *objet(vmmlse)
@@ -3915,7 +3915,7 @@ f77name(vmmlse)()
 	    biggest_free_block_size = BLOCKS[i].size;
    return(biggest_free_block_size);
    }
-
+
 
 /***s/p vmmpak
 *
@@ -3948,7 +3948,7 @@ f77name(vmmpak)()
 
    return(0);
    }
-
+
       
 /***s/p vmmpwd
 *
@@ -4004,7 +4004,7 @@ f77name(vmmpwd)(wordint *mot_passe, wordint *mode)
 
          return (0);
 }
-
+
 /***s/p vmmrls
 *
 *objet(vmmrls)
@@ -4067,7 +4067,7 @@ f77name(vmmrls)(complete_key inlkey[], wordint *nkey)
        
        return 0;
 }
-
+
 /***s/p vmmrnm
 *
 *objet(vmmrnm)
@@ -4132,7 +4132,7 @@ f77name(vmmrnm)(complete_key *oldkey,char *newname, F2Cl l1)
      return 0;
 }
 
-
+
 /***s/p vmmsav
 *
 *objet(vmmsav)
@@ -4220,7 +4220,7 @@ f77name(vmmsav)(complete_key inlkey[], wordint *nkey)
 
 
                 
-
+
 /***s/p vmmuld
 *
 *objet(vmmuld)
@@ -4343,7 +4343,7 @@ f77name(vmmuld)(complete_key inlkey[], wordint *nkey)
        }
        return 0;
 }
-
+
 /***s/p vmmulk
 *
 *objet(vmmulk)
@@ -4439,7 +4439,7 @@ f77name(vmmulk)(complete_key inlkey[], wordint *nkey)
 
        return 0;
 }
-
+
 /***s/p vmmuln
 *
 *objet(vmmuln)
@@ -4539,7 +4539,7 @@ f77name(vmmuln)(complete_key inlkey[], wordint *nkey)
 }
 
 
-
+
 /***s/p vmmwho
 *
 *objet(vmmwho)
@@ -4595,7 +4595,7 @@ f77name(vmmwho)(wordint *adr)
       }
   return 0; /*CHC/NRC*/
 }
-
+
 /***s/p vmmckmx
 *
 *objet(vmmckmx)
@@ -4738,7 +4738,7 @@ wordint f77name(vmmckmx)()
    ouvre_ou_ferme_controle(0,0,"VMMCKMX");
    return 0;
 }
-
+
 /***s/p vmmdel
 *
 *objet(vmmdel)
@@ -4776,7 +4776,7 @@ wordint f77name(vmmdel)(int yes) {
 
    return (0);
 }
-
+
 /***s/p vmmend
 *
 *objet(vmmend)
@@ -4887,4 +4887,4 @@ f77name(vmmend)()
 
    return(0);
    }
-
+

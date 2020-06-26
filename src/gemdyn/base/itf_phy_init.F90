@@ -55,7 +55,7 @@
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
-      real :: zu,zt,cond_sig,gwd_sig
+      real :: zu,zt,cond_sig,gwd_sig,lhn_sig
       real, dimension(:,:), pointer :: ptr2d
 
       integer,parameter :: tlift= 0
@@ -120,10 +120,9 @@
 ! We put mandatory variables in the WhiteBoard
 
       err= 0
-      err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/TLIFT'       , tlift        , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
-      err= min(wb_put('itf_phy/dcmip_case'  , dcmip_case   , WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/slt_winds'   , Adz_slt_winds, WB_REWRITE_AT_RESTART), err)
 
 ! Complete physics initialization (see phy_init for interface content)
 
@@ -148,9 +147,11 @@
 ! Initialize filter weights for smoothing
       if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
       if (.not.WB_IS_OK(wb_get('phy/sgo_tdfilter',gwd_sig))) gwd_sig=-1.
-      err = min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig), err)
+      if (.not.WB_IS_OK(wb_get('phy/lhn_filter',lhn_sig))) lhn_sig=-1.
+      err = min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig, F_sig3=lhn_sig), err)
       err = min(wb_put('dyn/cond_infilter',cond_sig,WB_REWRITE_AT_RESTART), err)
       err = min(wb_put('dyn/sgo_tdfilter',gwd_sig,WB_REWRITE_AT_RESTART), err)
+      err = min(wb_put('dyn/lhn_filter',lhn_sig,WB_REWRITE_AT_RESTART), err)
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)
@@ -193,15 +194,15 @@
       gmmk_pw_vslt_s     = 'PW_VSLT'
       have_slt_winds = (phy_getmeta(pmeta,gmmk_pw_uslt_s,F_npath='V',F_bpath='V') > 0 .and. &
            phy_getmeta(pmeta,gmmk_pw_vslt_s,F_npath='V',F_bpath='V') > 0)
-      if (Adz_slt_winds .and. .not.have_slt_winds) &
+      if (Adz_slt_winds .and. .not.have_slt_winds) then
            call gem_error ( -1,'itf_phy_init','use of surface layer winds requeseted without physics support' )
-
+      endif
 ! Print table of variables requested for output
 
       if (Lun_out > 0) write(Lun_out,1001)
       multxmosaic = 0
 
-      DO_BUS: do ibus = 1,NBUS
+      do ibus = 1,NBUS
          bus0_S = BUS_LIST_S(ibus)
          if (Lun_out > 0)  then
             write(Lun_out,1006)
@@ -228,12 +229,12 @@
                     Level_typ_S(Outp_lev(k))
             end do
          end do
-      end do DO_BUS
+      end do
 !     maximum size of slices with one given field that is multiple+mosaic
       Outp_multxmosaic = multxmosaic+10
       if (Lun_out > 0)  write(Lun_out,1006)
 
-      call heap_paint
+      call heap_paint ()
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
              /,'====================================================')

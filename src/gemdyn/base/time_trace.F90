@@ -91,7 +91,7 @@ subroutine time_trace_dump_text(t, filename, ordinal)   ! dump timings int file 
 end subroutine time_trace_dump_text
 
 #if defined SELF_TEST
-program test_trace
+program test_trace   ! Fortran test program for library (C and Fortran code)
   use ISO_C_BINDING
   implicit none
 #include <time_trace.hf>
@@ -102,16 +102,21 @@ program test_trace
   integer, parameter :: MPI_COMM_WORLD = 0
   integer, parameter :: MPI_COMM_NULL = -1
 #endif
-  integer :: i, tag, rank
+  integer :: i, tag, rank, nbeads, nbent, nused, nprc, prc, j
   type(time_context) :: t
   type(C_PTR), dimension(10) :: array
   integer(C_INT), dimension(10) :: larray
+  integer(C_INT), dimension(:,:), allocatable :: blob
+  integer(C_INT), dimension(:), pointer   :: local
+  integer(C_INT), dimension(:,:), allocatable, target :: global
   external :: MPI_barrier
 
   rank = 0
+  nprc = 1
 #if ! defined(NO_MPI)
   call MPI_init(ierr)
   call MPI_comm_rank(MPI_COMM_WORLD, rank, ierr)
+  call MPI_comm_size(MPI_COMM_WORLD, nprc, ierr)
 #endif
   call time_trace_init(t)
   print *,'-----------------------------'
@@ -135,11 +140,59 @@ program test_trace
   call time_trace_dump_binary(t, 'time_list', rank)
   call time_trace_get_buffers(t, array, larray, 10)
   write(6,'(10I6)')larray
+  array(1) = C_NULL_PTR
+  array(1) = time_trace_get_buffer_data(t, nbeads, nbent, 1)
+  if(C_ASSOCIATED(array(1))) then
+    print *,'nbeads =',nbeads,' , nbent =',nbent
+    call time_trace_single_text(array(1), nbent, 'time_dump'//achar(0), rank + 1)
+  else
+    print *,'ERROR getting timing data'
+    goto 777
+  endif
+  call c_f_pointer(array(1), local, [nbent])  ! C pointer to Fortran pointer
+  if(rank == 0) then
+    allocate(global(nbent,max(nprc,2)))
+    print *,'global allocated ',nbent,max(nprc,2)
+  endif
+#if ! defined(NO_MPI)
+  call MPI_gather(local, nbent, MPI_INTEGER, global, nbent, MPI_INTEGER, 0, MPI_COMM_WORLD,ierr)
+#else
+  global(:,1) = local
+  global(:,2) = local
+#endif
+  if(rank == 0) then
+!     print *,'nbeads =',nbeads,' , nbent =',nbent
+!     call time_trace_single_text(array(1), nbent, 'time_dump'//achar(0), 1)
+    allocate(blob(2+2*nprc+2,100))
+    print *,'blob allocated ',2+2*nprc+2,100
+    blob = 0
+!     nused = time_trace_expand(array(1), nbent, blob, blob(3,1), 6, 14, 0)
+    nused = time_trace_expand(C_LOC(global(1,1)), nbent, blob, blob(3,1), 2+2*nprc+2, 14, 0)
+    print *,'nused =',nused
+
+    do prc = 2, nprc
+!       nused = time_trace_expand(array(1), nbent, blob, blob(5,1), 6, 14, 1)
+      nused = time_trace_expand(C_LOC(global(1,prc)), nbent, blob, blob(1+2*prc,1), 2+2*nprc+2, 14, 1)
+      print *,'nused =',nused
+    enddo
+
+    do i = 1, abs(nused)
+      if(blob(2,i) == -1) then   ! step flag, combine 2 unsigned 32 bit integers into a 64 bit integer
+        print 100,blob(1,i), blob(2,i), &
+                  ((i8_from_2_i4(blob(2*j+1,i), blob(2*j+2,i)), 0) , j=1,nprc)
+      else
+        print 101,blob(1:2+nprc*2,i)
+      endif
+    enddo
+  endif
+777 continue
 #if ! defined(NO_MPI)
   call MPI_finalize(ierr)
 #endif
 
   stop
+100 format(2I10,5(I18,I2))
+101 format(12I10)
 end program
 #if defined(NO_MPI)
   subroutine MPI_barrier(dummy1, dummy2)

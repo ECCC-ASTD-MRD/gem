@@ -79,9 +79,9 @@ module geomh
    real(kind=REAL64), dimension(:), allocatable :: geomh_invDYMv_8
    !> Inverse DELTAX = 1/d(lambda)
    real(kind=REAL64), dimension(:), allocatable :: geomh_invDX_8
-   !> SPECIAL for MODEL core only - 
+   !> SPECIAL for MODEL core only -
    real(kind=REAL64), dimension(:), allocatable :: geomh_invDXM_8
-   !> SPECIAL for MODEL core only - 
+   !> SPECIAL for MODEL core only -
    real(kind=REAL64), dimension(:), allocatable :: geomh_invDXMu_8
    !> Inverse DELTAX for v points (ex: for vorticity)
    real(kind=REAL64), dimension(:), allocatable :: geomh_invDXv_8
@@ -90,6 +90,8 @@ module geomh
    real(kind=REAL64), dimension(:,:), allocatable :: geomh_area_8
    !> Mask to avoid double count of area in YY overlap
    real(kind=REAL64), dimension(:,:), allocatable :: geomh_mask_8
+   !> Area_Mask = Area*Mask
+   real(kind=REAL64), dimension(:,:), allocatable :: geomh_area_mask_8
 
    integer :: geomh_minx
    integer :: geomh_maxx

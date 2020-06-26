@@ -29,6 +29,7 @@ contains
     use physlb_mod, only: physlb1
     use cpl_itf   , only: cpl_step
     use phybus, only: entbus, perbus, dynbus, volbus
+    use ens_perturb, only: ens_spp_stepinit, ENS_OK
     implicit none
 
     !@objective Apply the physical processes: CMC/RPN package
@@ -74,6 +75,9 @@ contains
     if (.not.RMN_IS_OK(istat)) &
          call msg(MSG_ERROR,'(phy_step) Problem in series step init')
 
+    if (ens_spp_stepinit(F_stepcount) /= ENS_OK) &
+         call msg(MSG_ERROR,'(phy_step) Problem in ensemble step init')
+    
     pslic = 0
     step_kount  = F_stepcount
     step_driver = F_stepdriver

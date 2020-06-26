@@ -56,7 +56,7 @@ void backto64(ftnword *field, word *temp, int nelm)
     exit(1);
 #endif
 }
-
+
 /*splitpoint fstapp */
 /***************************************************************************** 
  *                             F S T A P P                                   *
@@ -78,7 +78,7 @@ ftnword f77name(fstapp)(ftnword *f_iun, char *option, F2Cl lng)
   ier = c_fstapp(iun,option);    /* option not used anymore by c_fstapp */
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstckp */
 /***************************************************************************** 
  *                                F S T C K P                                *
@@ -99,7 +99,7 @@ ftnword f77name(fstckp)(ftnword *f_iun)
   ier = c_fstckp(iun);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstcvt */
 /***************************************************************************** 
  *                                F S T C V T                                *
@@ -131,7 +131,7 @@ ftnword f77name(fstcvt)(ftnword *name, ftnword *type, ftnword *etik, ftnword *gr
   ier = f77name(fstcvt2)(name,type,etik,grtyp,cname,ctype,cetik,cgrtyp,holocar,l1,l2,l3,l4);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fst_data_length */
 /***************************************************************************** 
  *                      F S T _ D A T A _ L E N G T H                        *
@@ -156,7 +156,7 @@ ftnword f77name(fst_data_length)(int *f_length_type)
   ier = c_fst_data_length(length_type);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstecr */
 /***************************************************************************** 
  *                              F S T E C R                                  *
@@ -523,7 +523,7 @@ ftnword f77name(fsteff)(ftnword *f_handle)
   ier = c_fsteff(handle);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fsteof */
 /***************************************************************************** 
  *                             F S T E O F                                   *
@@ -544,7 +544,7 @@ ftnword f77name(fsteof)(ftnword *f_iun)
   eof = c_fsteof(iun);
   return((ftnword) eof);
 }
-
+
 /*splitpoint fstfrm */
 /***************************************************************************** 
  *                              F S T F R M                                  *
@@ -563,7 +563,7 @@ ftnword f77name(fstfrm)(ftnword *f_iun)
   int iun = *f_iun;
   return ((ftnword) c_fstfrm(iun));
 }
-
+
 /*splitpoint fstinf */
 /***************************************************************************** 
  *                              F S T I N F                                  *
@@ -615,7 +615,7 @@ ftnword f77name(fstinf)(ftnword *f_iun, ftnword *f_ni, ftnword *f_nj,
   *f_nk = (ftnword) nk;
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstinfx */
 /***************************************************************************** 
  *                              F S T I N F X                                *
@@ -667,7 +667,7 @@ ftnword f77name(fstinfx)(ftnword *f_handle, ftnword *f_iun,
   *f_nk = (ftnword) nk;
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstinl */
 /***************************************************************************** 
  *                              F S T I N L                                  *
@@ -723,7 +723,7 @@ ftnword f77name(fstinl)(ftnword *f_iun, ftnword *f_ni, ftnword *f_nj,
   return((ftnword) ier);
 }
 
-
+
 /*splitpoint fstlic */
 /***************************************************************************** 
  *                             F S T L I C                                   *
@@ -784,7 +784,7 @@ ftnword f77name(fstlic)(word *field, ftnword *f_iun,
                      typvar,nomvar,ig1,ig2,ig3,ig4,grtyp);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstlir */
 /***************************************************************************** 
  *                              F S T L I R                                  *
@@ -963,7 +963,7 @@ ftnword f77name(fstlir_b)(void *bytes, ftnword *f_iun,
   xdf_byte = 0;
   return(ier);
 }
-
+
 /*splitpoint fstlirx */
 /***************************************************************************** 
  *                              F S T L I R X                                *
@@ -1024,7 +1024,7 @@ ftnword f77name(fstlirx)(word *field, ftnword *f_handle, ftnword *f_iun,
   *f_nk = (ftnword) nk;
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstlis */
 /***************************************************************************** 
  *                            F S T L I S                                    *
@@ -1061,7 +1061,7 @@ ftnword f77name(fstlis)(word *field, ftnword *f_iun,
   return((ftnword) ier);
 }
 
-
+
 /*splitpoint fstlnk */
 /***************************************************************************** 
  *                              F S T L N K                                  *
@@ -1087,7 +1087,7 @@ ftnword f77name(fstlnk)(ftnword *liste, ftnword *f_n)
   ier = c_xdflnk(link_list,link_n);
   return ((ftnword) ier);
 }
-
+
 /*splitpoint fstluk */
 /***************************************************************************** 
  *                              F S T L U K                                  *
@@ -1124,7 +1124,7 @@ ftnword f77name(fstluk)(word *field, ftnword *f_handle,
   *f_nk = (ftnword) nk;
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstmsq */
 /***************************************************************************** 
  *                            F S T M S Q                                    *
@@ -1163,7 +1163,7 @@ ftnword f77name(fstmsq)(ftnword *f_iun, ftnword *f_mip1, ftnword *f_mip2,
   }
   return(err);
 }
-
+
 /*splitpoint fstnbr */
 /***************************************************************************** 
  *                              F S T N B R                                  *
@@ -1182,7 +1182,7 @@ ftnword f77name(fstnbr)(ftnword *f_iun)
   int iun = *f_iun;
   return ((ftnword) c_fstnbr(iun));
 }  
-
+
 /*splitpoint fstnbrv */
 /***************************************************************************** 
  *                              F S T N B R V                                *
@@ -1202,7 +1202,7 @@ ftnword f77name(fstnbrv)(ftnword *f_iun)
   int iun = *f_iun;
   return ((ftnword) c_fstnbrv(iun));
 }  
-
+
 /*splitpoint fstopc */
 /*****************************************************************************
  *                              F S T O P C                                  *
@@ -1245,7 +1245,7 @@ ftnword f77name(fstopc)(char *f_option, char *f_value, ftnword *f_getmode,
   ier = c_fstopc(option,value,getmode);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstopi */
 /*****************************************************************************
  *                              F S T O P I                                  *
@@ -1302,7 +1302,7 @@ ftnword f77name(fstopl)(char *f_option, ftnword *f_value, ftnword * f_getmode,
   ier = c_fstopl(option,value,getmode);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstopr */
 /***************************************************************************** 
  *                              F S T O P R                                  *
@@ -1332,7 +1332,7 @@ ftnword f77name(fstopr)(char *f_option, ftnfloat *f_value, ftnword * f_getmode,
   ier = c_fstopr(option,value,getmode);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstouv */
 /*****************************************************************************
  *                              F S T O U V                                  *
@@ -1452,7 +1452,7 @@ ftnword f77name(fstprm)(ftnword *f_handle,
   string_copy(f_grtyp,grtyp,l4);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstrwd */
 /***************************************************************************** 
  *                   F S T R E S E T _ I P _ F L A G S                       *
@@ -1467,7 +1467,7 @@ void f77name(fstreset_ip_flags)()
   ier = init_ip_vals();
 }
 
-
+
 /*splitpoint fstrwd */
 /***************************************************************************** 
  *                               F S T R W D                                 *
@@ -1487,7 +1487,7 @@ ftnword f77name(fstrwd)(ftnword *f_iun)
   err = c_fstrwd(iun);
   return((ftnword) err);
 }
-
+
 /*splitpoint fstskp */
 /***************************************************************************** 
  *                                F S T S K P                                *
@@ -1509,7 +1509,7 @@ ftnword f77name(fstskp)(ftnword *f_iun, ftnword *f_nrec)
   ier = c_fstskp(iun,nrec);
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstsui */
 /***************************************************************************** 
  *                            F S T S U I                                    *
@@ -1537,7 +1537,7 @@ ftnword f77name(fstsui)(ftnword *f_iun,
   *f_nk = (ftnword) nk;
   return((ftnword) ier);
 }
-
+
 /*splitpoint fstunl */
 /***************************************************************************** 
  *                              F S T U N L                                  *
@@ -1559,7 +1559,7 @@ ftnword f77name(fstunl)()
   ier = c_xdfunl(link_list,link_n);
   return ((ftnword) ier);
 }  
-
+
 /*splitpoint fst_version */
 /***************************************************************************** 
  *                           F S T  _ V E R S I O N                          *
@@ -1573,7 +1573,7 @@ wordint f77name(fst_version)()
 {
   return((wordint) stdf_version);
 }
-
+
 /*splitpoint fstvoi */
 /***************************************************************************** 
  *                              F S T V O I                                  *
@@ -1607,7 +1607,7 @@ ftnword f77name(fstvoi)(ftnword *f_iun,char *f_options, F2Cl ll1)
 
   return ((ftnword) c_fstvoi(iun,options));
 }
-
+
 /*splitpoint fstweo */
 /***************************************************************************** 
  *                             F S T W E O                                   *
@@ -1629,7 +1629,7 @@ ftnword f77name(fstweo)(ftnword *f_iun, ftnword *f_level)
   ier = c_fstweo(iun,level);
   return((ftnword) ier);
 }
-
+
 /*splitpoint ip1_all */
 /***************************************************************************** 
  *                             I P 1 _ A L L                                 *
@@ -1698,7 +1698,7 @@ ftnword f77name(ip3_val)(ftnfloat *f_level, ftnword *f_kind)
   return((ftnword) ip3);
 }
 
-
+
 /*splitpoint fst_can_translate_name */
 static char exception_vars[256]="~^[<>!^]";  /* by default ignore names starting with >!^ */
 static int read_done=0;
@@ -2030,7 +2030,7 @@ static void print_std_parms(stdf_dir_keys *stdf_entry, char *pre, char *option,
           v_deet,v_npas,v_dty,
           v_grid);
 }
-
+
 /*splitpoint zzz_stub */
 /***************************************************************************** 
  *                               S T U B                                     *

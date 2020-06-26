@@ -16,12 +16,16 @@
 !**s/r set_sol - Computes matrices a,b,c for the elliptic solver
 
       subroutine set_sol
+      use HORgrid_options
+      use glb_pil
       use lam_options
       use dyn_fisl_options
       use glb_ld
       use cstv
       use lun
       use sol
+      use ldnh
+      use ptopo
       use opr
       use prec
       use trp
@@ -74,12 +78,32 @@
                               Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
                         sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
       else
+
          yg_8(1:G_nj)=G_yg_8(1:G_nj)
          call sol_abc ( wk,yg_8,Opr_opsyp0_8, &
                         Opr_opsyp2_8,Opr_xeval_8 , &
              trp_12smin, trp_12smax,  sol_nk, trp_12sn0, &
              trp_22min , trp_22max , trp_22n, trp_22n0 , &
              G_ni,G_nj,G_nk, Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+         Sol_type_fft = 'QCOS'
+         if (Grd_yinyang_L) Sol_type_fft = 'SIN'
+
+         allocate( Sol_dwfft(1:ldnh_maxy , 1:trp_12smax, G_ni+2+Ptopo_npex),&
+                   Sol_dg2  (1:trp_12smax, 1:trp_22max , G_nj  +Ptopo_npey) )
+         call make_r2r_dft_plan(forward_plan, & ! Plan variable
+             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                3, Sol_type_fft, DFT_FORWARD)
+         call make_r2r_dft_plan(reverse_plan, & ! Plan variable
+             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                3, Sol_type_fft, DFT_BACKWARD)
+         Sol_pri= get_dft_norm_factor(G_ni-Lam_pil_w-Lam_pil_e,Sol_type_fft)
+         Sol_pri= Sol_pri/(G_xg_8(G_ni-Lam_pil_e+1)-G_xg_8(G_ni-Lam_pil_e))
+         Sol_pil_w=0 ; Sol_pil_e=0
+         if (l_south) Sol_pil_w= Lam_pil_w
+         if (l_north) Sol_pil_e= Lam_pil_e
+
       end if
 
  1001 format(/,'WILL USE FGMRES 2D ITERATIVE SOLVER WITH ',a, &

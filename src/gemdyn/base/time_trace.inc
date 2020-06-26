@@ -72,4 +72,43 @@ interface
     integer(C_INT), intent(IN), value :: n                  ! size of array and larray 
   end subroutine time_trace_get_buffers
 
+  function time_trace_get_buffer_data(t, nbuf, nent, consolidate) result(p) bind(C,name='TimeTraceGetBufferData')
+    import :: C_PTR , C_INT, time_context
+    implicit none
+    type(time_context), intent(IN), value :: t              ! opaque time context pointer (passed to other routines)
+    integer(C_INT), intent(OUT) :: nbuf                     ! number of time trace buffers in this context
+    integer(C_INT), intent(OUT) :: nent                     ! total number of entries (one entry == one 32 bit integer)
+    integer(C_INT), intent(IN), value :: consolidate        ! if non zero, consolidate all buffers into one
+    type(C_PTR) :: p
+  end function time_trace_get_buffer_data
+
+  subroutine time_trace_single_text(data, nbent, filename, ordinal) bind(C,name='TimeTraceSingleText')
+    import :: C_PTR , C_INT
+    implicit none
+    type(C_PTR), intent(IN), value :: data
+    integer(C_INT), intent(IN), value :: nbent
+    character(len=1), dimension(*), intent(IN) :: filename
+    integer(C_INT), intent(IN), value :: ordinal
+  end subroutine time_trace_single_text
+
+  function time_trace_expand(data, nbent, ref, out, linesize, lines, ver) result(n) bind(C,name='TimeTraceExpand')
+    import :: C_PTR , C_INT
+    implicit none
+    type(C_PTR), intent(IN), value :: data
+    integer(C_INT), intent(IN), value :: nbent
+    integer(C_INT), dimension(4,lines), intent(INOUT) :: ref
+    integer(C_INT), dimension(4,lines), intent(OUT) :: out
+    integer(C_INT), intent(IN), value :: linesize
+    integer(C_INT), intent(IN), value :: lines
+    integer(C_INT), intent(IN), value :: ver
+    integer(C_INT) :: n
+  end function time_trace_expand
+
+  function i8_from_2_i4(a,b) result(i8) bind(C, name='I8From2I4')
+    import :: C_LONG_LONG , C_INT
+    implicit none
+    integer(C_INT), intent(IN), value :: a, b
+    integer(C_LONG_LONG) :: i8
+  end function i8_from_2_i4
+
 end interface

@@ -184,14 +184,23 @@ subroutine inisurf4(kount, ni, nk, trnch)
       if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
          ztsrad(i) = ztsoil(i,1)
       endif
-      if (any('z0en' == phyinread_list_s(1:phyinread_n))) then
+      if (z0veg_only) zz0en(i) = zz0veg(i)
+      if (z0veg_only .or. any('z0en' == phyinread_list_s(1:phyinread_n))) then
          zz0 (i,indx_soil   ) = max(zz0en(i),z0min)
-         zz0 (i,indx_glacier) = max(zz0en(i),Z0GLA)
+         if (z0veg_only) then
+            zz0 (i,indx_glacier) = Z0GLA
+         else
+            zz0 (i,indx_glacier) = max(zz0en(i),Z0GLA)
+         endif
          zz0 (i,indx_water  ) = z0sea
          zz0 (i,indx_ice    ) = z0ice
          zz0 (i,indx_agrege ) = max(zz0en(i),z0min)
          zz0t(i,indx_soil   ) = max(zz0en(i),z0min)
-         zz0t(i,indx_glacier) = max(zz0en(i),Z0GLA)
+         if (z0veg_only)  then
+            zz0t(i,indx_glacier) = Z0GLA
+         else
+            zz0t(i,indx_glacier) = max(zz0en(i),Z0GLA)
+         endif
          zz0t(i,indx_water  ) = z0sea
          zz0t(i,indx_ice    ) = z0ice
          zz0t(i,indx_agrege ) = max(zz0en(i),z0min)

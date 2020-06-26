@@ -27,6 +27,8 @@
       use opr
       use ptopo
       use trp
+      use adz_mem
+      use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -36,11 +38,10 @@
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) :: F_rhs_8
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(inout) :: F_sol_8
 !
-      integer i,j,k,ni,nij,iter
+      integer i,j,k,ni,nij,iter,n
       real linfini
       real(kind=REAL64), dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3
       real(kind=REAL64), dimension (l_minx:l_maxx,l_miny:l_maxy,l_nk) :: yyrhs
-      real(kind=REAL64), dimension((trp_12smax-trp_12smin+1)*(trp_22max -trp_22min +1)*(G_nj+Ptopo_npey  )) :: fdg2
 !
 !     ---------------------------------------------------------------
 !
@@ -49,6 +50,9 @@
 
       rhs_8 = 0.d0
       sol_8 = 0.d0
+      n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
+      call time_trace_barr(gem_time_trace, 1, Gem_trace_barr,&
+                           Ptopo_intracomm, MPI_BARRIER)
 
 !$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,rhs_8)
 !$omp do
@@ -64,6 +68,8 @@
       end do
 !$omp enddo
 !$omp end parallel
+      call time_trace_barr(gem_time_trace, 11000+n, Gem_trace_barr,&
+                           Ptopo_intracomm, MPI_BARRIER)
 
       if (Grd_yinyang_L) then
 
@@ -71,11 +77,11 @@
 
          do iter=1, Sol_yyg_maxits
 
-            call sol_fft_lam ( sol_8, rhs_8,                                    &
-                               ldnh_maxx, ldnh_maxy, ldnh_nj,                   &
-                               trp_12smax, trp_12sn, trp_22max, trp_22n,        &
-                               G_ni, G_nj, G_nk, sol_nk, Ptopo_npex, Ptopo_npey,&
-                               Sol_ai_8, Sol_bi_8, Sol_ci_8, fdg2)
+            call sol_fft_lam ( sol_8, rhs_8,                            &
+                               ldnh_maxx, ldnh_maxy, ldnh_nj,           &
+                               trp_12smax, trp_12sn, trp_22max, trp_22n,&
+                               G_ni, G_nj, G_nk, sol_nk,                &
+                               Sol_ai_8, Sol_bi_8, Sol_ci_8 )
 
             rhs_8 = wk3
             yyrhs(1:l_ni,1:l_nj,:) = -sol_8(1:l_ni,1:l_nj,:)
@@ -105,11 +111,11 @@
 
       else
 
-          call sol_fft_lam ( sol_8, rhs_8,                                    &
-                             ldnh_maxx, ldnh_maxy, ldnh_nj,                   &
-                             trp_12smax, trp_12sn, trp_22max, trp_22n,        &
-                             G_ni, G_nj, G_nk, sol_nk, Ptopo_npex, Ptopo_npey,&
-                             Sol_ai_8, Sol_bi_8, Sol_ci_8, fdg2)
+          call sol_fft_lam ( sol_8, rhs_8,                            &
+                             ldnh_maxx, ldnh_maxy, ldnh_nj,           &
+                             trp_12smax, trp_12sn, trp_22max, trp_22n,&
+                             G_ni, G_nj, G_nk, sol_nk,                &
+                             Sol_ai_8, Sol_bi_8, Sol_ci_8 )
 
       end if
 
@@ -121,6 +127,8 @@
       end do
 !$omp enddo
 !$omp end parallel
+      call time_trace_barr(gem_time_trace, 11800+n, Gem_trace_barr,&
+                           Ptopo_intracomm, MPI_BARRIER)
 
  1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
  1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)

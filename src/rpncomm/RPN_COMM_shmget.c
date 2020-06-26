@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/types.h>
@@ -12,16 +13,45 @@
 
 #ifdef MUST_NEVER_BE_TRUE
 !InTf!
-        function rpn_comm_shmget(comm,size) result(where)     !InTf!
-        use ISO_C_BINDING                                     !InTf!
+        function rpn_comm_shmget(comm,size) result(where) bind(C,name='RPNCOMM_Shmget')     !InTf!
+        import :: C_INT, C_PTR                                !InTf!
         implicit none                                         !InTf!
-          integer(C_INT), intent(IN) :: comm                  !InTf!   ! RPN_COMM communicator
-          integer(C_INT), intent(IN) :: size                  !InTf!   ! size in bytes of shared memory area
+          integer(C_INT), intent(IN), value :: comm           !InTf!   ! RPN_COMM Fortran communicator
+          integer(C_INT), intent(IN), value :: size           !InTf!   ! size in bytes of shared memory area
           type(C_PTR) :: where                                !InTf!   ! pointer to shared memory area
         end function rpn_comm_shmget                          !InTf!
+!InTf!
+        function rpn_comm_numasplit(comm, mode, numacomm, numarank) result(size) bind(C,name='RPNCOMM_Numa_split')     !InTf!
+        import :: C_INT                                       !InTf!
+        implicit none                                         !InTf!
+          integer(C_INT), intent(IN), value :: comm           !InTf!   ! RPN_COMM Fortran communicator to split
+          integer(C_INT), intent(IN), value :: mode           !InTf!   ! 0 : split by node, 1 : split by socket
+          integer(C_INT), intent(OUT) :: numacomm             !InTf!   ! new communicator
+          integer(C_INT), intent(OUT) :: numarank             !InTf!   ! rank in new communicator
+          integer(C_INT) :: size                              !InTf!   ! size of new communicator
+        end function rpn_comm_numasplit                       !InTf!
 #endif
 
-void *f_rpn_comm_shmget(int comm, unsigned int shm_size)
+static int socket = -1;
+static int core   = -1;
+
+static void get_core_and_socket(){  // get socket/core info if available
+  if(socket >= 0) return ;          // already initialized
+#if defined(__x86_64__) &&  defined(__linux__)
+   uint32_t lo, hi, c;
+   // rdtscp instruction
+   // EDX:EAX contain TimeStampCounter
+   // ECX contains IA32_TSC_AUX[31:0] (MSR_TSC_AUX value set by OS, lower 32 bits contain socket+core)
+   __asm__ volatile("rdtscp" : "=a" (lo), "=d" (hi), "=c" (c));
+    socket = (c>>12) & 0xFFF;
+    core   =  c      & 0xFFF;
+#else
+  socket = 0xFFFF;                     // no socket/core info available
+  core   = 0xFFFF;
+#endif
+}
+
+void *RPNCOMM_Shmget(int comm, unsigned int shm_size)
 {
   size_t size=shm_size;
   int id;
@@ -52,3 +82,85 @@ void *f_rpn_comm_shmget(int comm, unsigned int shm_size)
   return ptr;                                        /* return pointer tio shared memory area */
 }
 
+typedef struct{
+  MPI_Fint fcom;
+  MPI_Fint ncom;
+  int mode;
+  int rank;
+  int size;
+}cacheentry;
+static int nused = 0;
+#define MAX_CACHE 16
+static cacheentry cache[MAX_CACHE];
+
+int RPNCOMM_Numa_split(MPI_Fint origcomm, int mode, MPI_Fint *numacomm, int *numarank){
+  MPI_Comm comm;
+  MPI_Comm Tempcomm, Numacomm, Nodecomm;
+  int i, myhost, myhost0, myhost1, err, myrank, newrank, newsize;
+
+  for(i=0 ; i<nused ; i++){
+    if(cache[i].fcom == origcomm && cache[i].mode == mode){
+      *numacomm = cache[i].ncom;
+      *numarank = cache[i].rank;
+      return cache[i].size ;
+    }
+  }
+  // not found in cache, split original Fortran communicator
+  comm = MPI_Comm_f2c(origcomm);
+  myhost  = gethostid();
+  myhost0 = myhost & 0x7FFFFFFF;
+  myhost1 = (myhost >> 31) & 0x1;
+  err = MPI_Comm_rank(comm, &myrank);
+  err = MPI_Comm_split(comm,     myhost0, myrank, &Tempcomm);  // split using lower 31 bits
+  err = MPI_Comm_split(Tempcomm, myhost1, myrank, &Nodecomm);  // resplit using upper bit
+  err = MPI_Comm_free(&Tempcomm);                              // free unused communicator
+
+  if(mode == 0) { // node split
+    err = MPI_Comm_rank(Nodecomm, &newrank);     // rank on node
+    err = MPI_Comm_size(Nodecomm, &newsize);     // size of new communicator
+    *numacomm = MPI_Comm_c2f(Nodecomm);
+  }else{          // NUMA(socket) split
+    get_core_and_socket();
+    err = MPI_Comm_split(Nodecomm, socket, myrank, &Numacomm);  // resplit node into NUMA (socket)
+    err = MPI_Comm_free(&Nodecomm);                             // free unused communicator
+    err = MPI_Comm_rank(Numacomm, &newrank);     // rank on NUMA/socket
+    err = MPI_Comm_size(Numacomm, &newsize);     // size of new communicator
+    *numacomm = MPI_Comm_c2f(Numacomm);
+  }
+  *numarank = newrank;
+
+  if(nused < MAX_CACHE){   // if cache table is not full
+    cache[nused].fcom = origcomm;
+    cache[nused].ncom = *numacomm;
+    cache[nused].mode = mode;
+    cache[nused].rank = newrank;
+    cache[nused].size = newsize;
+    nused++;
+  }
+  return newsize;
+}
+#if defined(SELF_TEST)
+int main(int argc, char **argv){
+  MPI_Fint origcomm, numacomm;
+  int numarank, npes, myrank;
+  int *addr;
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+  npes = RPNCOMM_Numa_split(MPI_Comm_c2f(MPI_COMM_WORLD), 1, &numacomm, &numarank);  // socket split
+  printf("size = %d, rank = %d, core = %d, socket = %d\n",npes,numarank, core, socket);
+  addr = (int *) RPNCOMM_Shmget(numacomm, 32768);
+  printf("address = %p\n",addr);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(numarank == 0) {
+    addr[0] = myrank;
+    addr[1] = 2345;
+    addr[2] = 3456;
+    addr[3] = 4567;
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("addr[0:3] = %d %d %d %d\n",addr[0], addr[1], addr[2], addr[3]);
+  MPI_Finalize();
+}
+#endif

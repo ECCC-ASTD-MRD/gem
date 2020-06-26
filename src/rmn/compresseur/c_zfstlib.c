@@ -320,7 +320,8 @@ void c_fstunzip(unsigned int *fld, unsigned int *zfld, int ni, int nj, int nbits
       fprintf(stderr, "**************************************************************************\n");
       fprintf(stderr, "****                                                                  ****\n");
       fprintf(stderr, "****  Unknown compression algorithm...                                ****\n");
-      fprintf(stderr, "****  Contact MRB computer support for advice... service.rpn@ec.gc.ca ****\n");
+      fprintf(stderr, "****  Contact MRB computer support for advice...                      ****\n");
+      fprintf(stderr, "****  ec.service.rpn.ec@canada.ca                                     ****\n");
       fprintf(stderr, "****  Exiting now...                                                  ****\n");
       fprintf(stderr, "****                                                                  ****\n");
       fprintf(stderr, "**************************************************************************\n");

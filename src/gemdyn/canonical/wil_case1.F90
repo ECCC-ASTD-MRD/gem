@@ -17,14 +17,13 @@
 
       subroutine wil_case1 (F_tr,F_minx,F_maxx,F_miny,F_maxy,F_nk,The_tracer,F_istep)
 
-      use wil_options
-      use gem_options
-      use tdpack
-      use glb_ld
       use cstv
+      use gem_options
+      use glb_ld
       use lun
-      use gmm_itf_mod
       use ptopo
+      use tdpack
+      use wil_options
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -33,8 +32,8 @@
 
       !arguments
       !---------
-      integer F_minx,F_maxx,F_miny,F_maxy,F_nk,The_tracer,F_istep
-      real    F_tr(F_minx:F_maxx,F_miny:F_maxy,F_nk)
+      integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy,F_nk,The_tracer,F_istep
+      real, intent(out) :: F_tr(F_minx:F_maxx,F_miny:F_maxy,F_nk)
 
       !authors
       !     Abdessamad Qaddouri and Vivian Lee
@@ -43,7 +42,7 @@
       ! v5_00 - Tanguay M. - New Testcases
       !
       !object
-      !----------------------------------------------------------------------|
+      !=======================================================================
       ! Williamson_NAIR    |=0=Solid body rotation of a cosine bell          |
       !                    |   Williamson et al.,1992,JCP,102,211-224        |
       !                    |=1=Deformational Non-divergent winds             |
@@ -52,28 +51,28 @@
       !                    |   Lauritzen et al.,2012,GMD,5,887-901           |
       !                    |=3=Deformational Flow for Circular vortex        |
       !                    |   Nair and Machenhauer,2002,MWR,130,649-667     |
-      !----------------------------------------------------------------------|
+      !=======================================================================
 
-      !-----------------------------------------------------------------------------
+      integer :: i,j,k
+      real(kind=REAL64):: phi0_8,rlon_8,rlat_8,sint_8,cost_8,        &
+                          s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,        &
+                          sinl1_8,cosl1_8,sinl2_8,cosl2_8,           &
+                          sint1_8,cost1_8,sint2_8,cost2_8,           &
+                          rlon1_8,rlat1_8,rlon2_8,rlat2_8,           &
+                          x_8,y_8,z_8,x1_8,y1_8,z1_8,x2_8,y2_8,z2_8, &
+                          radius_8,dist_8,rrlata_8,rrlona_8,         &
+                          rlat0_8,rlon0_8,dist1_8,dist2_8,           &
+                          rlonr_8,rlatr_8,rho_8,vt_8,wil_omega_8,    &
+                          rlona_8,rlata_8,rlon_r_8,rlat_r_8,         &
+                          rlon_nr_8,rlat_nr_8,clon0_8,clat0_8,       &
+                          time_8,gamma_8,phi1_8,phi2_8
 
-      integer i,j,k
-      real(kind=REAL64)  phi0_8,rlon_8,rlat_8,sint_8,cost_8,  &
-              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,  &
-              sinl1_8,cosl1_8,sinl2_8,cosl2_8,     &
-              sint1_8,cost1_8,sint2_8,cost2_8,     &
-              rlon1_8,rlat1_8,rlon2_8,rlat2_8,     &
-              x_8,y_8,z_8,                         &
-              x1_8,y1_8,z1_8,x2_8,y2_8,z2_8,       &
-              radius_8,dist_8,rrlata_8,rrlona_8,   &
-              rlat0_8,rlon0_8,dist1_8,dist2_8,phi1_8,phi2_8, &
-              rlonr_8,rlatr_8,rho_8,vt_8,wil_omega_8,time_8,gamma_8, &
-              rlona_8,rlata_8,rlon_r_8,rlat_r_8,rlon_nr_8,rlat_nr_8,clon0_8,clat0_8
-      real    picll(G_ni,G_nj),trloc(F_minx:F_maxx,F_miny:F_maxy)
+      real :: picll(G_ni,G_nj),trloc(F_minx:F_maxx,F_miny:F_maxy)
 
-      logical,save :: done_L=.false.
-
-      !-----------------------------------------------------------------------------
-
+      logical, save :: done_L=.false.
+!
+!---------------------------------------------------------------------
+!
       !----------------------------------------------------
       !Williamson et al.,1992,JCP,102,211-224 [Cosine bell]
       !----------------------------------------------------
@@ -535,7 +534,9 @@
 
                   rlon_8 = G_xg_8(i)
 
-                  rlonr_8 = atan2( cos(rlat_8)*sin(rlon_8-rlon0_8), cos(rlat_8)*sin(rlat0_8)*cos(rlon_8-rlon0_8)-cos(rlat0_8)*sin(rlat_8) )
+                  rlonr_8 = atan2( cos(rlat_8)*sin(rlon_8-rlon0_8), &
+                                   cos(rlat_8)*sin(rlat0_8)*cos(rlon_8-rlon0_8)-cos(rlat0_8)*sin(rlat_8) )
+
                   if (rlonr_8 < 0.0d0) rlonr_8 = rlonr_8 + 2.*pi_8
 
                   rlatr_8 = asin( sin(rlat_8)*sin(rlat0_8) + cos(rlat_8)*cos(rlat0_8)*cos(rlon_8-rlon0_8) )
@@ -568,7 +569,9 @@
 
                   rlon_8 = rlon_8 + acos(-1.d0)
 
-                  rlonr_8 = atan2( cos(rlat_8)*sin(rlon_8-rlon0_8), cos(rlat_8)*sin(rlat0_8)*cos(rlon_8-rlon0_8)-cos(rlat0_8)*sin(rlat_8) )
+                  rlonr_8 = atan2( cos(rlat_8)*sin(rlon_8-rlon0_8), &
+                                   cos(rlat_8)*sin(rlat0_8)*cos(rlon_8-rlon0_8)-cos(rlat0_8)*sin(rlat_8) )
+
                   if (rlonr_8 < 0.0d0) rlonr_8 = rlonr_8 + 2.*pi_8
 
                   rlatr_8 = asin( sin(rlat_8)*sin(rlat0_8) + cos(rlat_8)*cos(rlat0_8)*cos(rlon_8-rlon0_8) )
@@ -601,6 +604,8 @@
 
       if ( Williamson_Nair==0.or.Williamson_Nair==3                   ) done_L = .TRUE.
       if ((Williamson_Nair==1.or.Williamson_Nair==2).and.The_tracer==4) done_L = .TRUE.
-
+!
+!---------------------------------------------------------------------
+!
       return
       end

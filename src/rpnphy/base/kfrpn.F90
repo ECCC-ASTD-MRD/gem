@@ -32,13 +32,14 @@ contains
         rliq_int,rice_int, &
         rnflx,snoflx, &
         kount,xlat,mg,mlac,wstar,tstar,tke,kt, &
-        coadvu,coadvv,coage,cowlcl,cozlcl,critmask,delt)
+        coadvu,coadvv,coage,cowlcl,cozlcl,mrk2,critmask,delt)
       use, intrinsic :: iso_fortran_env, only: INT64
       use tdpack_const, only: CHLF, CPD, GRAV, PI, RGASD, TRPL
       use cnv_options
       use phy_options, only: dyninread_list_S
       use debug_mod, only: init2nan
       use tpdd, only: tpdd1
+      use ens_perturb, only: ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -64,7 +65,7 @@ contains
       real mg(ix),mlac(ix),wstar(ix),tstar(ix),tke(ix,kx),kt(ix,kx)
       real coadvu(ix),coadvv(ix),coage(ix),cowlcl(ix),cozlcl(ix)
       real critmask, delt
-      real, dimension(:,:), pointer :: wklclp
+      real, dimension(:,:), pointer :: wklclp, mrk2
 
       !@Author Jack Kain and JM Fritsch (Oct 14,1990)
 
@@ -264,7 +265,7 @@ contains
       real xls0,xls1,xlv0,xlv1
       real dpup , dpdown
       real dqdtdk,dqcdtdk
-      real wklcl, wklcld, trigger_energy
+      real wklcld, trigger_energy
       real kfscale,cin,cape,wumean
       real denom,eps,tvdiff
       real oneminc,intdudt,intdvdt,intdp,intu,intv
@@ -291,7 +292,8 @@ contains
       real, dimension(ix) :: dpthmxg, pmixg,  tmixg, qmixg, zdpl,          &
            rolcl,   ztop,  work1, work2, work3,          &
            theul,   thmixg, tlclg, plclg, wlclg, tenvg,  &
-           qenvg,   wklcla, psb,   lv,    thvmixg,tkemixg, work4
+           qenvg,   wklcla, psb,   lv,    thvmixg,tkemixg, work4, &
+           trigs,   trige, radmult, dpddmult
       real, dimension(kx) :: ddr,     ddr2,   der,    der2,  detic, detic2, &
            detlq,   detlq2, dmf,    dmf2,  domgdp, &
            dtfm,    ems,    emsd,   eqfrc, exn,           &
@@ -316,6 +318,7 @@ contains
            sigkfc, ql0,  qi0,  qc0,    thv0, tke0,    &
            kt0,  wklcl0
       real(kind=8), dimension(ix) :: itnd
+      character(len=64), dimension(ix) :: deeptrig
 
       external tpmix
       external condload_safe
@@ -336,8 +339,6 @@ contains
       real :: rad, cdepth, timec, timer
       real :: nuer,nudr,lambda
       logical :: use_kfc2_config,mixing_ratio
-
-      character(len=16) :: trigger_type='original' !original,kain04,scaled,tke
 
       call init2nan(dpthmxg, pmixg,  tmixg, qmixg, zdpl)
       call init2nan(rolcl,   ztop,  work1, work2, work3)
@@ -360,7 +361,7 @@ contains
       call init2nan(tc,      td_thta,td_qt,  td_ql, td_qi, tri_thta)
       call init2nan(tri_qt,  tri_ql, tri_qi, workk, emf,   td_q)
       call init2nan(tri_q,   qpai,   td_u,   td_v,  tri_u, tri_v)
-      call init2nan(upai,    vpai, omg)
+      call init2nan(upai,    vpai, omg, radmult, dpddmult)
       call init2nan(itnd)
       call init2nan(tt0,  tv00,   q00,  u00,    v00,   ww0)
       call init2nan(dzp,  dpp,    qst1, pp0,    thts, z0g)
@@ -377,18 +378,17 @@ contains
 
       !     WKLCL WILL INCREASE FROM KFCTRIG4(3) TO KFCTRIG4(4)
       !     BETWEEN TIMESTEPS KFCTRIG4(1) AND KFCTRIG4(2)
-
-      if      (KOUNT .le. int(KFCTRIG4(1))) then
-         WKLCL = KFCTRIG4(3)
-      else if (KOUNT .gt. int(KFCTRIG4(2))) then
-         WKLCL = KFCTRIG4(4)
+      
+      trigs(:) = kfctrig4(3)
+      trige(:) = ens_spp_get('kfctrig4', mrk2, default=kfctrig4(4)) 
+      if (kount <= int(kfctrig4(1))) then
+         wklcla(:) = trigs(:)
+      else if (kount > int(kfctrig4(2))) then
+         wklcla(:) = trige(:)
       else
-         !        LINEAR INTERPOLATION
-         WKLCL = KFCTRIG4(3) +  (real(KOUNT)  - KFCTRIG4(1))  / &
-              (KFCTRIG4(2)  - KFCTRIG4(1))  * &
-              (KFCTRIG4(4)  - KFCTRIG4(3))
+         wklcla(:) = trigs(:) + (real(kount) - kfctrig4(1)) / &
+              (kfctrig4(2) - kfctrig4(1)) * (trige(:) - trigs(:))
       endif
-
 
       !      Latitudinal ramp for WKLCL :
       !     ============================
@@ -399,9 +399,7 @@ contains
       !       for |lat| >= TRIGLAT(2) we keep value set by the "ramp" above
       !       for |lat| <= TRIGLAT(1) we use the new value KFCTRIGL
       !       and linear interpolation in between TRIGLAT(1) and TRIGLAT(2)
-
-      WKLCLA(:) = WKLCL
-
+      
       if (KFCTRIGLAT) then
 
 
@@ -418,9 +416,7 @@ contains
                  MLAC(I) .le. critmask) then
                WKLCLA(I)= ( ((abs(XLAT(I))-TRIGLAT(1))/ &
                     (TRIGLAT(2)-TRIGLAT(1)))* &
-                    (WKLCL-KFCTRIGL) ) + KFCTRIGL
-            else
-               WKLCLA(I)= WKLCL
+                    (WKLCLA(I)-KFCTRIGL) ) + KFCTRIGL
             endif
 
          end do
@@ -444,9 +440,10 @@ contains
          wsmax = kfctrigw(2)
          w_wsmin = kfctrigw(3)
          w_wsmax = kfctrigw(4)
-         WKLCLA = min(max(w_wsmin + (wstar - wsmin) / (wsmax - wsmin) * (w_wsmax - w_wsmin) , &
-              min(w_wsmin,w_wsmax)), max(w_wsmin,w_wsmax))
-         where(mg > CRITMASK .or. mlac > CRITMASK) wklcla = WKLCL
+         where (mg <= CRITMASK .and. mlac <= CRITMASK)
+            WKLCLA = min(max(w_wsmin + (wstar - wsmin) / (wsmax - wsmin) * (w_wsmax - w_wsmin) , &
+                 min(w_wsmin,w_wsmax)), max(w_wsmin,w_wsmax))
+         endwhere
       endif
 
       !===================================================
@@ -565,6 +562,11 @@ contains
 
       IFEXFB = 0
       if (kfcprod) IFEXFB = 1
+
+      ! Retrieve stochastic parameter information on request
+      radmult(:) = ens_spp_get('crad_mult', mrk2, 1.)
+      dpddmult(:) = ens_spp_get('dpdd_mult', mrk2, 1.)
+      deeptrig(:) = ens_spp_get('deeptrig', mrk2, 'ORIGINAL')
 
       !     =============================================================
 
@@ -755,7 +757,7 @@ contains
          !     Establish local cloud properties
          rad = kfcrad
          if (mg(i) <= CRITMASK .or. mlac(i) <= CRITMASK) rad = kfcradw
-
+         rad = rad * radmult(i)
          !                                Highest TOP
          do K = 2, KX
             if(Z0G(I,K) - Z0G(I,1) .lt. MAXZPAR ) KTOP=K
@@ -935,27 +937,27 @@ contains
 
          !                               Check to see if the parcel is buoyant
 
-         select case (trigger_type)
-         case ('original')
+         select case (deeptrig(i))
+         case ('ORIGINAL')
             WKLCLD=WKLCLA(I)
             wklclout(i) = wklcld
             WKL = WW0(I,KLCLM1)+(WW0(I,KLCL)-WW0(I,KLCLM1))*DLP-WKLCLD
             WABS = abs(WKL)+1.E-10
             WSIGNE = WKL/WABS
             DTLCL = 4.64*WSIGNE*WABS**0.33
-         case ('tke')
+         case ('TKE')
             dzz = z0g(i,klcl)-z0g(i,KLCLM1)
             dtenv = (thv0(i,klcl)-thv0(i,KLCLM1))/dzz
             ktlcl = kt0(i,KLCLM1)+(kt0(i,klcl)-kt0(i,KLCLM1))*dlp
             dtlcl = min(10.*ktlcl*dtenv/sqrt(tkemixg(i)),3.)
-         case ('kain04')
+         case ('KAIN04')
             wkl = 100.*(ww0(i,KLCLM1)+(ww0(i,klcl)-ww0(i,KLCLM1))*dlp) - &
                  2.*min(zlcl/2000.,1.)  !cm/s
             dtlcl = sign(1.*(abs(wkl))**(1./3.),wkl)
-         case ('scaled')
+         case ('SCALED')
             dtlcl = tstar(i)
          case DEFAULT
-            call physeterror('kfrpn', 'no trigger type '//trim(trigger_type))
+            call physeterror('kfrpn', 'no trigger type '//trim(deeptrig(i)))
             return
          end select
 
@@ -1006,8 +1008,8 @@ contains
 
          QESE=0.622*ES/(PLCLG(I)-ES)
          QESE=max( min( QESE , 0.050 ) , 1.E-6 )
-         select case (trigger_type)
-         case ('original')
+         select case (deeptrig(i))
+         case ('ORIGINAL')
             GDT=GRAV*DTLCL*(ZLCL-Z0G(I,LC))/(TV00(I,LC)+TVEN)
             WLCL=1.+.5*WSIGNE*sqrt(abs(GDT)+1.E-10)
             if (deep_cloudobj) then
@@ -1026,7 +1028,7 @@ contains
                   coage(i) = 0.     !New initiation is stronger
                endif
             endif
-         case ('tke')
+         case ('TKE')
             wkl = ww0(i,KLCLM1)+(ww0(i,klcl)-ww0(i,KLCLM1))*dlp
 !!$         stdw = sqrt(tkemixg(i))
 !!$         int_max = 100
@@ -1039,13 +1041,13 @@ contains
 !!$         wlcl = wlcl / (2.*sqrt(PI)*stdw)
 !!$         if (wlcl < 0.1) wlcl = 0.  !at least 10 cm/s updraft ascent
             wlcl = wkl + 1.*sqrt(tkemixg(i))
-         case ('kain04')
+         case ('KAIN04')
             gdt = (zlcl-z0g(i,lc))*dtlcl/tven
             wlcl = 1. + 1.1*sqrt(max(gdt,0.))
-         case ('scaled')
+         case ('SCALED')
             wlcl = wstar(i)
          case DEFAULT
-            call physeterror('kfrpn', 'no trigger type '//trim(trigger_type))
+            call physeterror('kfrpn', 'no trigger type '//trim(deeptrig(i)))
             return
          end select
          THTES(KLCLM1)=TENV*(1.E5/PLCLG(I))**(0.2854*(1.-0.28*QESE))* &
@@ -2109,7 +2111,7 @@ contains
          !                             Determine the LDT level (level where the
          !                             downdraft detrains).  This level cannot be
          !                             higher than the downdraft source level (LFS).
-110      DPDDMX=kfcdpdd
+110      DPDDMX=kfcdpdd * dpddmult(i)
          DPT=0.
          NK=LDB
          LDT=-1
@@ -3110,7 +3112,7 @@ contains
          !     for the vertical advection calculations
          !    note: same as loop 495 but for winds
 
-         if (KFCMOM) then
+         CMT: if (KFCMOM) then
 
             do NK=1,LTOP
                UPA(NK)=U00(I,NK)
@@ -3309,7 +3311,15 @@ contains
                DVDT(I,K) = DVDT(I,K) - INTDVDT*GRAV/INTDP
             end do
 
-         endif
+         else
+
+            ! If CMT is inactive, initialize updated wind profile as original
+            do K=1,KX
+               UG(K) = U00(I,K)
+               VG(K) = V00(I,K)
+            enddo
+            
+         endif CMT
 
          !     Update the convective counter FLAGCONV
 

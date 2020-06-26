@@ -17,23 +17,19 @@
 
       subroutine pw_update_T()
       use glb_ld
-      use gmm_itf_mod
       use gmm_pw
       use gem_timing
       implicit none
 #include <arch_specific.hf>
 
-      integer :: istat
-      real, pointer, dimension (:,:,:)  :: pw_tt  => null()
 !     ________________________________________________________________
 !
       call gemtime_start ( 5, 'PW_UPDATE', 0)
-      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt    )
 !
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
-      call tt2virt (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call tt2virt (pw_tt_plus, .false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call gemtime_stop (5)
 !     ________________________________________________________________
 !

@@ -158,16 +158,28 @@ contains
       nomvar = F_var_S ; ip1= -1
       select case (F_var_S)
          case ('OROGRAPHY')
-            if (Inp_kind == 2  ) nomvar= '@NUL'
+            if (Inp_kind == 2  ) then
+               nomvar= '@NUL'
+               if (Inp_src_PX_L) then
+                  nomvar= 'GZ' ; surface_level= 1. ; p1=5
+                  call convip ( ip1, surface_level,p1,1,dumc,.false. )
+               endif
+            endif
             if (Inp_kind == 1 ) then
                nomvar= 'GZ' ; ip1= 12000
+               if (Inp_src_PX_L) then
+                  nomvar= 'GZ' ; surface_level= 1. ; p1=5
+                  call convip ( ip1, surface_level,p1,1,dumc,.false. )
+               endif
             endif
             if (Inp_kind == 5 ) then
                nomvar= 'GZ' ; surface_level= 1.
                call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
             endif
             if ( Inp_src_hauteur_L ) then
-               nomvar= 'GZ' ; surface_level= 0.
+               nomvar= 'GZ'
+               if (Inp_kind==21) surface_level= 0.
+               if (Inp_kind==5 ) surface_level= 1.
                call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
             endif
             if ( nomvar == 'GZ' ) mult= 10.d0 * grav_8
@@ -184,11 +196,9 @@ contains
             if (Inp_src_hauteur_L ) nomvar= 'TT'
             if ( nomvar == 'TT' ) add= tcdk_8
          case ('GEOPOTENTIAL')
-            if (Inp_kind == 2  ) nomvar= 'GZ'
-            if (Inp_kind == 1  ) nomvar= '@NUL'
-            if (Inp_kind == 5  ) nomvar= 'GZ'
-            if (Inp_src_hauteur_L ) nomvar= 'GZ'
-            if ( nomvar == 'GZ' ) mult= 10.d0
+            nomvar= 'GZ' ; mult= 10.d0
+         case ('PX')
+            mult= 100.d0
          case ('UU')
             mult= knams_8
          case ('VV')
@@ -311,7 +321,7 @@ contains
 
             err = ezdefset ( dstf_gid , src_gid )
             err = ezsetopt ('INTERP_DEGREE', interp_S)
-            write(output_unit,1001) 'Interpolating: ',trim(nomvar),', nka= ',&
+            write(output_unit,1001) 'Interpolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
 
@@ -321,7 +331,7 @@ contains
                  ni_dest,nj_dest,G_ni,G_nj,G_halox,G_haloy )
          end do
          if (err == 2) then
-            write(output_unit,1002) 'EXTRApolating: ',trim(nomvar),', nka= ',&
+            write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
@@ -379,8 +389,7 @@ contains
             Inp_datev, 'NOT FOUND'
 
       end if
- 1001 format (3a,i3,5a)
- 1002 format (3a,i3,5a)
+ 1001 format (2a,':',2a,i3,5a)
 !
 !---------------------------------------------------------------------
 !
@@ -396,7 +405,7 @@ contains
       use gmm_itf_mod
       use HORgrid_options
       use lam_options
-      use nest_blending, only: nest_blend
+      use mem_nest
       use step_options
       implicit none
 
@@ -405,10 +414,10 @@ contains
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_topo
       real, dimension (:,:), pointer    , intent(inout) :: F_meqr
 
-      integer err,nka
+      integer i,j,err,nka
       integer, dimension (:), pointer :: ip1_list
       real, dimension (:,:,:), pointer :: wrk
-      real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current
+      real step_current
       real(kind=REAL64) diffd
 !
 !---------------------------------------------------------------------
@@ -443,9 +452,12 @@ contains
 
       if ( associated(F_meqr) .and. .not. Grd_yinyang_L) then
       if ( Lam_blendoro_L ) then
-         topo_temp(1:l_ni,1:l_nj)= F_meqr(1:l_ni,1:l_nj)
-         call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-                           l_miny,l_maxy, 'M', level=G_nk+1 )
+      do j=1,l_nj
+      do i=1,l_ni
+        F_topo(i,j)= F_topo(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
+                     F_meqr(i,j)*nest_weightm(i,j,G_nk+1)
+      enddo
+      enddo
       end if
       end if
 !
@@ -483,20 +495,18 @@ contains
       allocate (F_tv(l_minx:l_maxx,l_miny:l_maxy,F_nka_tt))
       F_tv=F_tt
 
-      if (Inp_kind /= 105) then ! Not in self cascade mode
-         do kt=1, F_nka_tt
-inner:      do kh=1, F_nka_hu
-               if (F_TT_ip1(kt) == F_HU_ip1(kh)) then
-                  call mfottv2 ( &
-                          F_tv(l_minx,l_miny,kt),F_tv(l_minx,l_miny,kt),&
-                          F_hu(l_minx,l_miny,kh),l_minx,l_maxx         ,&
-                                 l_miny,l_maxy,1, 1,l_ni,1,l_nj, .true. )
-                  exit inner
-               end if
-            end do inner
-         end do
-      end if
-!
+      do kt=1, F_nka_tt
+         inner:      do kh=1, F_nka_hu
+         if (F_TT_ip1(kt) == F_HU_ip1(kh)) then
+            call mfottv2 ( &
+               F_tv(l_minx,l_miny,kt),F_tv(l_minx,l_miny,kt),&
+               F_hu(l_minx,l_miny,kh),l_minx,l_maxx         ,&
+               l_miny,l_maxy,1, 1,l_ni,1,l_nj, .true. )
+            exit inner
+         end if
+      end do inner
+      end do
+!     
 !---------------------------------------------------------------------
 !
       return
@@ -504,21 +514,16 @@ inner:      do kh=1, F_nka_hu
 
 !**s/r inp_src_surface - Read surface information from input dataset
 
-      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_gz_q,F_gz_u,F_gz_v,&
-                                   F_topo,F_ip1,F_nka_gz,F_nka )
+      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_topo,F_nka )
       use dynkernel_options
 
       implicit none
 
       integer, intent(in) :: F_nka
-      integer, intent(out):: F_nka_gz
-      integer, dimension (:    ), pointer, intent(inout) :: F_ip1
-      real   , dimension (:,:,:), pointer, intent(inout) :: &
-                                         F_gz_q,F_gz_u,F_gz_v
       real   , dimension (:,:), pointer, intent(inout) :: F_sq,F_su,F_sv
       real   , dimension (*  ),          intent(in   ) :: F_topo
 
-      integer err,k,nk,kind
+      integer err,i,j,k,nk,kind
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
       real   , dimension (:    ), allocatable :: rna
@@ -531,7 +536,22 @@ inner:      do kh=1, F_nka_hu
       nullify (F_sq,F_su,F_sv,ip1_list,wrk)
 
       if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
-         call inp_src_gz ( F_sq,F_gz_q,F_gz_u,F_gz_v,F_ip1,F_nka_gz)
+
+         err = -1
+         nullify (wrk,ip1_list)
+
+         err = inp_read_mt ( 'SFCPRES', 'Q', wrk, 1,&
+                                ip1_list, nk )
+
+         if (associated(wrk)) then
+            allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy) )
+            F_sq(:,:) = wrk(:,:,1)
+            deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
+            err = 0
+         endif
+
+         call gem_error ( err,'inp_src_gz', 'MISSING SURFACE P0 DATA')
+
          return
       endif
 
@@ -548,6 +568,16 @@ inner:      do kh=1, F_nka_hu
 
       else
          if (Inp_kind == 2.or.Schm_autobar_L) then
+            if (Inp_src_PX_L) then
+               allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
+                          F_su(l_minx:l_maxx,l_miny:l_maxy),&
+                          F_sv(l_minx:l_maxx,l_miny:l_maxy) )
+               F_sq(:,:) = PX3d%valq(:,:,PX3d%nk)
+               F_su(:,:) = PX3d%valu(:,:,PX3d%nk)
+               F_sv(:,:) = PX3d%valv(:,:,PX3d%nk)
+               err=0
+            else
+
             err = inp_read_mt ( 'GEOPOTENTIAL', 'Q', wrk, 1,&
                                  ip1_list, nk )
             if (nk == F_nka) then
@@ -561,11 +591,22 @@ inner:      do kh=1, F_nka_hu
                call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
                             l_minx,l_maxx,l_miny,l_maxy,&
                             nk,1,l_ni,1,l_nj )
-               F_su(:,:) = rna(nk)
-               F_sv(:,:) = rna(nk)
+               do j=1,l_nj
+                  do i=1,l_ni-1
+                     F_su(i,j)= F_sq(i,j) + F_sq(i+1,j) * 0.5d0
+                  end do
+                  F_su(l_ni,j)= F_sq(l_ni,j)
+               end do
+               do j=1,l_nj-1
+                  do i=1,l_ni
+                     F_sv(i,j)= F_sq(i,j) + F_sq(i,j+1) * 0.5d0
+                  end do
+               end do
+               F_sv (:,l_nj)= F_sq(:,l_nj)
                deallocate (rna,wrk,ip1_list) ; nullify (wrk,ip1_list)
             else
                err = -1
+            end if
             end if
          end if
       endif
@@ -577,75 +618,7 @@ inner:      do kh=1, F_nka_hu
       return
       end subroutine inp_src_surface
 
-!**s/r inp_src_gz - Read surface information from input dataset
-
-      subroutine inp_src_gz (F_sq,F_gz_q,F_gz_u,F_gz_v,F_ip1,F_nka)
-      implicit none
-
-      integer, intent(out)  :: F_nka
-      integer, dimension (:    ), pointer, intent(inout) :: F_ip1
-      real   , dimension (:,:  ), pointer, intent(inout) :: F_sq
-      real   , dimension (:,:,:), pointer, intent(inout) :: &
-                                         F_gz_q,F_gz_u,F_gz_v
-
-      character(len=128) :: message_S
-      integer err(4), nk, kind
-      integer, dimension (:    ), pointer     :: ip1_list
-      real   , dimension (:,:,:), pointer     :: wrk
-      real lev, limit_near_sfc
-!
-!---------------------------------------------------------------------
-!
-      err = -1
-      if (associated(F_ip1 )) deallocate (F_ip1 )
-      if (associated(F_sq  )) deallocate (F_sq  )
-      if (associated(F_gz_q)) deallocate (F_gz_q)
-      if (associated(F_gz_u)) deallocate (F_gz_u)
-      if (associated(F_gz_v)) deallocate (F_gz_v)
-      nullify (F_ip1,F_sq,F_gz_q,F_gz_u,F_gz_v,wrk,ip1_list)
-
-      err(1) = inp_read_mt ( 'SFCPRES', 'Q', wrk, 1,&
-                             ip1_list, nk )
-
-      if (associated(wrk)) then
-         allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy) )
-         F_sq(:,:) = wrk(:,:,1)
-         deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
-         err(2) = 0
-      else
-         message_S= 'MISSING SURFACE P0 DATA'
-      endif
-      err(3)= inp_read_mt ( 'GEOPOTENTIAL', ['Q','U','V'], &
-                             wrk, 3, F_ip1, F_nka )
-      if (err(3) == 0) then
-         call convip (F_ip1(F_nka), lev, kind, -1, message_S, .false.)
-         limit_near_sfc=abs(lev-1.)
-         if (Inp_src_hauteur_L) limit_near_sfc=lev
-         if( limit_near_sfc > epsilon(lev)) then
-            err(4) = -1
-            message_S= 'Missing field: GZ at hyb or eta = 1.0'
-         else
-            err(4) = 0
-            allocate ( F_gz_q(l_minx:l_maxx,l_miny:l_maxy,F_nka),&
-                       F_gz_u(l_minx:l_maxx,l_miny:l_maxy,F_nka),&
-                       F_gz_v(l_minx:l_maxx,l_miny:l_maxy,F_nka) )
-            F_gz_q = wrk(:,:,        1:  F_nka)
-            F_gz_u = wrk(:,:,  F_nka+1:2*F_nka)
-            F_gz_v = wrk(:,:,2*F_nka+1:3*F_nka)
-            deallocate (wrk)
-         endif
-      else
-         message_S= 'MISSING GZ DATA'
-      endif
-
-      call gem_error ( minval(err),'inp_src_gz', message_S)
-!
-!---------------------------------------------------------------------
-!
-      return
-      end subroutine inp_src_gz
-
-!**s/r inp_surface - compute destination surface information
+!**s/r inp_dst_surface - compute destination surface information
 
       subroutine inp_dst_surface (F_p0,F_q,F_u,F_v,F_lsq,F_lsu,F_lsv  ,&
                                   F_ip1list, F_sq0, F_me, F_tv        ,&
@@ -689,7 +662,7 @@ inner:      do kh=1, F_nka_hu
                 F_v(l_minx:l_maxx,l_miny:l_maxy) )
 
       if ( associated(F_me) .and. sfcTT_L &
-                            .and. .not.Inp_src_hauteur_L) then
+                            .and. (Inp_kind /= 21) ) then
          if (lun_out > 0) then
             write(lun_out,'(" PERFORMING surface pressure adjustment")')
          end if
@@ -1013,8 +986,8 @@ inner:      do kh=1, F_nka_hu
       real   , dimension(:,:,:), pointer, intent(inout) :: F_dest
 
 !     local variables
-      integer istat
-      logical inlog
+      integer istat, nka, kind,i,j,k
+      logical inlog, vgd
       real, dimension (:,:  ), pointer :: pres,presl
       real, dimension (:,:,:), pointer :: ptr3d
 !
@@ -1027,15 +1000,40 @@ inner:      do kh=1, F_nka_hu
 
       pres  => F_sfc (1:l_ni,1:l_nj      )
       ptr3d => F_dest(1:l_ni,1:l_nj,k0:kn)
+      vgd = vgd_get ( F_vgd, key='KIND',value=kind,quiet=.true. )==VGD_OK
 
-      if ( associated (F_sfcL) ) then
-         presl=> F_sfcL (1:l_ni,1:l_nj)
-         istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, sfc_field=pres, &
-                            sfc_field_ls=presl, in_log=inlog)
+      if (vgd) then
+      
+         if ( associated (F_sfcL) ) then
+            presl=> F_sfcL (1:l_ni,1:l_nj)
+            istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d,sfc_field=pres,&
+                               sfc_field_ls=presl, in_log=inlog)
+         else
+            istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, pres, &
+                               in_log=inlog)
+         end if
+
       else
-         istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, pres, &
-                            in_log=inlog)
-      end if
+
+         nka= kn-k0+1
+         istat= inp_match (F_dest, PX3d%valq, F_ip1, PX3d%ip1, &
+                l_minx,l_maxx,l_miny,l_maxy,nka, PX3d%nk)
+         if (nka /= kn-k0+1) then
+            istat=-1
+         else
+            if (inlog) then
+            do k=1,nka
+               do j=1,l_nj
+                  do i=1,l_ni
+                     F_dest(i,j,k) = log(F_dest(i,j,k))
+                  end do
+               end do
+            end do
+            endif
+         endif
+
+      endif
+
       call handle_error_l(istat==VGD_OK,'inp_3dpres',&
                           'Error computing pressure')
 !
@@ -1065,8 +1063,8 @@ inner:      do kh=1, F_nka_hu
 !---------------------------------------------------------------------
 !
       F_nk= ubound(F_ip1,1)
-      if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
-         istat= inp_match_heights (F_dest, F_gz, F_ip1, F_gz_ip1, &
+      if (Inp_src_hauteur_L.and..not.Schm_autobar_L) then
+         istat= inp_match (F_dest, F_gz, F_ip1, F_gz_ip1, &
                        Minx,Maxx,Miny,Maxy,F_nk, ubound(F_gz_ip1,1))
       else
          call inp_3dpres ( F_vgd,  F_ip1,  F_sfc,  F_sfcL, F_dest, &
@@ -1102,9 +1100,9 @@ inner:      do kh=1, F_nka_hu
 !
 !---------------------------------------------------------------------
 !
-!**s/r inp_match_heights - To match heights
+!**s/r inp_match - To match heights
 !
-      integer function inp_match_heights ( F_ho, F_hi, F_ip1_list_o, &
+      integer function inp_match ( F_ho, F_hi, F_ip1_list_o, &
             F_ip1_list_i, Minx,Maxx,Miny,Maxy, nko, nki) result(status)
 
       integer, intent(inout) :: nko
@@ -1135,7 +1133,7 @@ inner:      do kh=1, F_nka_hu
             ! Pour le moment sort_ip1 ne garde que le dernier kind = 4
             ! de la liste. Donc cette erreur ne se produira pas.
             if( index_diag_AGL /= -1 )&
-                 call gem_error (-1,'inp_match_heights',&
+                 call gem_error (-1,'inp_match',&
                         'more than one diagnostic level, review code')
             index_diag_AGL = ko
             F_ho(:,:,ko) = F_hi(:,:,nki) + lev
@@ -1151,7 +1149,7 @@ inner:      do kh=1, F_nka_hu
          if(.not. found_L)then
             write(message_S,*)'Missing field: GZ for ip1 = ',&
                  F_ip1_list_o(ko)
-            call gem_error (-1,'inp_match_heights',message_S)
+            call gem_error (-1,'inp_match',message_S)
          end if
       end do
 
@@ -1191,7 +1189,7 @@ inner:      do kh=1, F_nka_hu
 !---------------------------------------------------------------------
 !
       return
-      end function inp_match_heights
+      end function inp_match
 
       subroutine inp_3dhgts ( F_vgd, F_ip1, F_sfc, F_sfcL, F_dest,k0,kn )
 
@@ -1261,7 +1259,6 @@ inner:      do kh=1, F_nka_hu
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
       allocate (ip1_target(1:G_nk))
       ip1_target(1:G_nk)= Ver_ip1%m(1:G_nk)
-
       if (F_stag_L) then
 
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssur,&
@@ -1308,6 +1305,79 @@ inner:      do kh=1, F_nka_hu
 !
       return
       end subroutine inp_hwnd
+
+      logical function inp_src_vert3d (F_var_S, F_3dv)
+      implicit none
+
+      character(len=*), intent(IN) :: F_var_S
+      type(Inp_vrt3d), intent(inout) :: F_3dv
+
+      character(len=4  ) :: dumc
+      integer, parameter :: nlis = 1024
+      integer err_mt, lislon
+      real level
+      real, dimension(:,:,:), pointer :: val
+!!$ 0 	KIND_ABOVE_SEA 	height (m) above mean sea level 	(-20,000 -> 100,000)
+!!$ 1 	KIND_SIGMA 	sigma coordinates 	(0.0 -> 1.0)
+!!$ 2 	KIND_PRESSURE 	pressure (mb) 	(0 -> 1100)
+!!$ 3 	KIND_ARBITRARY 	arbitrary number, no units 	(-4.8e8 -> 1.0e10)
+!!$ 4 	KIND_ABOVE_GND 	height (m) above ground 	(-20,000 -> 100,000)
+!!$ 5 	KIND_HYBRID 	hybrid coordinates 	(0.0 -> 1.0)
+!!$ 6 	KIND_THETA 	theta coordinates 	(1 -> 200,000)
+!!$10 	KIND_HOURS 	time (hours) 	(0.0 -> 1.0e10)
+!!$15 	KIND_SAMPLES 	reserved (integer value) 	(0 -> 1 999 999)
+!!$17 	KIND_MTX_IND 	conversion matrix x subscript
+!!$                     (shared with kind=1) (1.0 -> 1.0e10)
+!!$21 	KIND_M_PRES 	pressure-meters (shared with kind=5)
+!!$                   	(0 -> 1,000,000) fact=1E+4 
+!
+!---------------------------------------------------------------------
+!
+      F_3dv%nk= -1 ; F_3dv%kind= -1
+      if (associated(F_3dv%valq)) deallocate (F_3dv%valq)
+      if (associated(F_3dv%valu)) deallocate (F_3dv%valu)
+      if (associated(F_3dv%valv)) deallocate (F_3dv%valv)
+      nullify (F_3dv%valq,F_3dv%valu,F_3dv%valv,val)
+      inp_src_vert3d = .false.
+
+      err_mt = inp_read_mt (trim(F_var_S),['Q','U','V'], val,3,&
+                         F_3dv%ip1, lislon,F_quiet_L=.true.)
+      inp_src_vert3d= (err_mt == 0)
+
+      if (inp_src_vert3d) then
+!!$do k=1,lislon
+!!$         call convip (F_3dv%ip1(k), level, &
+!!$                      F_3dv%kind, -1,dumc,.false. )
+!!$print*, k,F_3dv%ip1(k), level,F_3dv%kind
+!!$                   end do
+!!$call gem_error(-1,'','')
+         F_3dv%nk= lislon
+         call convip (F_3dv%ip1(F_3dv%nk), level, &
+                      F_3dv%kind, -1,dumc,.false. )
+!!$         limit_near_sfc= abs(level-1.)
+!!$         if (F_3dv%kind==21) limit_near_sfc=level  
+!!$         if (F_3dv%kind==2 ) limit_near_sfc=0.
+!!$         if( limit_near_sfc > epsilon(level)) then
+!!$            err= -1
+!!$            message_S= 'Missing near surface '//trim(F_var_S)
+!!$         else
+            allocate (F_3dv%valq(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk))
+            allocate (F_3dv%valu(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk))
+            allocate (F_3dv%valv(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk))
+            F_3dv%valq(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,           1:  F_3dv%nk)
+            F_3dv%valu(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,  F_3dv%nk+1:2*F_3dv%nk)
+            F_3dv%valv(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,2*F_3dv%nk+1:3*F_3dv%nk)
+!         endif
+!         deallocate (val)
+      endif
+      if (associated(val)) deallocate (val)
+      nullify (val)
+!      call gem_error ( err,'inp_src_vert3d', message_S)
+!
+!---------------------------------------------------------------------
+!
+       return
+       end function inp_src_vert3d
 
 end module inp_base
       subroutine reshape_wk (src,dst,nix,njx,ni,nj,hx,hy)

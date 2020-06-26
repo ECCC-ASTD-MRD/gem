@@ -109,10 +109,8 @@
                             ind0,1,Grdc_nbits, .false. )
       end if
 
-      if (.not. Schm_autobar_L) then
-         call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+      call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                    'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
-      end if
 
       call out_fstecr ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&
                          'WT1 ',1., 0.,Level_kind_ip1,-1,G_nk  ,&

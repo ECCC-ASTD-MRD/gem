@@ -87,7 +87,6 @@ module HORgrid_options
    character(len=12) :: Grd_yinyang_S
    logical Grd_roule, Grd_yinyang_L
    integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
-   integer Grd_ndomains, Grd_mydomain
    integer Grd_local_gid, Grd_lclcore_gid, Grd_global_gid, &
             Grd_lphy_gid, Grd_glbcore_gid
    integer Grd_lphy_i0, Grd_lphy_in, Grd_lphy_j0, Grd_lphy_jn, &

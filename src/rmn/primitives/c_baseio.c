@@ -129,7 +129,7 @@ static char *little_endian=(char *)&endian_int;
 static char *AFSISIO=NULL;
 static char *ARMNLIB=NULL;
 static char *LOCALDIR="./";
-
+
 /****************************************************************************
 *                   C _ F R E T O U R ,   F R E T O U R                     *
 *****************************************************************************
@@ -146,7 +146,7 @@ static char *LOCALDIR="./";
 int c_fretour(int iun){ return(0) ; }
 ftnword f77name(fretour)(ftnword *fiun){ return(0) ; }
 
-
+
 /****************************************************************************
 *                         D U M P _ F I L E _ E N T R Y                     *
 *****************************************************************************
@@ -272,7 +272,7 @@ static int find_file_entry(char *caller, int iun)
    return(-1);
 /*   } */
 }
-
+
 /****************************************************************************
 *                            C _ F N O M , F N O M                          *
 *****************************************************************************
@@ -651,7 +651,7 @@ ftnword f77name(fnom)(ftnword *iun,char *nom,char *type,ftnword *flrec,F2Cl l1,F
    return (tmp);
 }
 
-
+
 /****************************************************************************
 *                            C _ F C L O S,   F C L O S                     *
 *****************************************************************************
@@ -745,7 +745,7 @@ static int c_qqqfscr(char *type)
       }
    return(iun);
 }
-
+
 /****************************************************************************
 *                             Q Q Q F N O M                                 *
 *****************************************************************************
@@ -850,7 +850,7 @@ static int qqcclos(int indf)
   close(lfd);
   return(0);
 }
-
+
 /****************************************************************************
 *  C _ W A O P E N ,   C _ W A O P E N 2 ,   W A O P E N 2 ,   W A O P E N  *
 *****************************************************************************
@@ -966,7 +966,7 @@ void f77name(waclos)(ftnword *fiun)
    iun=c_waclos2(iun);
 }
 
-
+
 /****************************************************************************
 *   C _ W A W R I T ,   C _ W A W R I T 2 ,   W A W R I T ,   W A W R I T 2 *
 *****************************************************************************
@@ -1038,7 +1038,7 @@ ftnword f77name(wawrit2)(ftnword *fiun,void *buf,unsigned ftnword *fadr,ftnword 
    return(c_wawrit2(iun,buf,adr,nmots));
 #endif
 }
-
+
 /****************************************************************************
 * C _ W A R E A D ,   C _ W A R E A D 2 ,   W A R E A D ,   W A R E A D 2   *
 *****************************************************************************
@@ -1112,7 +1112,7 @@ ftnword f77name(waread2)(ftnword *fiun,void *buf,unsigned ftnword *fadr,
    return(c_waread2(iun,buf,adr,nmots));
 #endif
 }
-
+
 /****************************************************************************
 *                      C _ W A S I Z E ,   W A S I Z E                      *
 *****************************************************************************
@@ -1188,7 +1188,7 @@ ftnword f77name(numblks)(ftnword *fiun)     /* return file size in KiloBytes */
    return(c_numblks(iun));
 }
 
-
+
 /****************************************************************************
 *                             E X I S T E                                   *
 *****************************************************************************
@@ -1225,7 +1225,7 @@ ftnword f77name(existe)(char *nom,F2Cl llng)
    else
       return(1);                     /* file exists */
 }
-
+
 /****************************************************************************
 *                    C _ O P E N D A ,   O P E N D A                        *
 *****************************************************************************
@@ -1387,7 +1387,7 @@ void f77name(writda)(ftnword *iun,ftnword *bufptr,ftnword *ns,ftnword *is)
    c_writda(liun,bufptr,lns,lis);
    BLKSIZE=save;
 }
-
+
 /***************************************************************************
 *                     C _ G E T F D S C ,   G E T F D S C                  *
 ****************************************************************************
@@ -1667,7 +1667,7 @@ ftnword f77name(sqputs)(ftnword *iun, char  *bufptr, ftnword *nchar, F2Cl llbuf)
       return( c_sqputs(*iun, bufptr , lbuf));
 }
 
-
+
 /****************************************************************************
 *                           S C R A P _ P A G E                             *
 *****************************************************************************
@@ -1768,7 +1768,7 @@ static void process_decay()
       wafile[j].page[i].last_access++;
     }
 }
-
+
 /****************************************************************************
 *                        G E T _ N E W _ P A G E                            *
 *****************************************************************************
@@ -1846,7 +1846,7 @@ static void wa_pages_flush(int ind)
       scrap_page(ind,ind);
       }
 }
-
+
 /****************************************************************************
 *                              F I L E P O S                                *
 *****************************************************************************
@@ -1991,7 +1991,7 @@ static long long filepos(int indf)
 /*  return((tell(FGFDT[indf].fd))/sizeof(word)); */
 }
 
-
+
 /****************************************************************************
 *                              Q Q C O P E N                                *
 *****************************************************************************
@@ -2068,7 +2068,7 @@ if (! init) {
 }
 /*    end of INITIALIZATION section    */
 if (FGFDT[indf].attr.remote) return(0);  /* file will be open by fnom_rem_connect */
-
+
 FGFDT[indf].fd = -1;
 ind = 0;
 while ((wafile[ind].file_desc != -1) && (ind < MAXWAFILES))
@@ -2145,7 +2145,7 @@ else {  /* not a CMCARC type file */
   FGFDT[indf].fd = fd;
   FGFDT[indf].open_flag = 1;
 }
-
+
 dim = 0;
 dim = LSEEK(fd, dim, L_XTND);
 FGFDT[indf].file_size = dim / sizeof(word);
@@ -2203,7 +2203,7 @@ for (i=0;i<MAXWAFILES;i++){
     i,wafile[i].file_desc,wafile[i].nb_page_in_use,wafile[i].offset);
    }
 }
-
+
 /****************************************************************************
 *                         W A _ P A G E _ R E A D                           *
 *****************************************************************************
@@ -2291,7 +2291,7 @@ static void wa_page_read(int fd,word *buf,unsigned int adr,int nmots,int indf)
           fprintf(stderr,"Debug WA_PAGE_READ lecture disque adr=%d\n",wafile[ind].page[i].wa0);
           }
        }
-
+
 /*
   COPIER DANS BUF LA SECTION DESIREE
 */
@@ -2366,7 +2366,7 @@ unsigned ftnword f77name(hljust) (unsigned ftnword *moth, ftnword *ncar)
    sc = 8 * ( sizeof(ftnword) - *ncar );
    return (sc<=0 ? *moth : (*moth) << sc);
 }
-
+
 /****************************************************************************
 *                       W A _ P A G E _ W R I T E                           *
 *****************************************************************************
@@ -2429,7 +2429,7 @@ static void wa_page_write(int fd,word *buf,unsigned int adr,int nmots,int indf)
   SI LA REQUETE NE PART PAS DU DEBUT DE LA PAGE POUR SE TERMINER
   A LA FIN DE FICHIER OU PLUS, ALORS IL FAUT RELIRE LA PAGE EN QUESTION
 */
-     if ((adr > wafile[ind].page[i].wa0) || 
+     if ((adr > wafile[ind].page[i].wa0) || 
           ((adr+nmots != wafile[ind].page[i].wa0+WA_PAGE_SIZE) && 
            (adr+nmots < FGFDT[indf].file_size))) {
          WSEEK(fd,wafile[ind].page[i].wa0-1,L_SET);
@@ -2511,7 +2511,7 @@ static void wa_page_write(int fd,word *buf,unsigned int adr,int nmots,int indf)
                }
       }
 
-
+
 /****************************************************************************
 *                              Q Q C W A W R                                *
 *****************************************************************************
@@ -2653,7 +2653,7 @@ else {
     }
 } /* end else remote */
 }
-
+
 /****************************************************************************
 *                              Q Q C W A R D                                *
 *****************************************************************************

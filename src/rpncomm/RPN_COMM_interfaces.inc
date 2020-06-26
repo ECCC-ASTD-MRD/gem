@@ -200,6 +200,19 @@
       implicit none
       integer, intent(OUT) ::  ierr
       end SUBROUTINE RPN_COMM_finalize
+       end interface
+       interface RPN_COMM_get_my_domain
+      function RPN_COMM_get_my_domain_1(call_back) result (domain)
+        external :: call_back
+        integer :: domain
+      end function RPN_COMM_get_my_domain_1
+      function RPN_COMM_get_my_domain_2(ndomains, offset) result (domain&
+     &)
+        integer, intent(IN) :: ndomains, offset
+        integer :: domain
+      end function RPN_COMM_get_my_domain_2
+       end interface RPN_COMM_get_my_domain
+       interface
 !InTf!
         logical function RPN_COMM_grank(com)
         implicit none
@@ -252,6 +265,12 @@
       integer, intent(OUT) :: mydomain
       end subroutine RPN_COMM_mydomain
 !InTf!
+      subroutine RPN_COMM_world_get(world_comm) BIND(C,name='RPN_COMM_Wo&
+     &rld_Get')
+      implicit none
+      integer, intent(OUT) ::  world_comm
+      end subroutine RPN_COMM_world_get
+!InTf!
       subroutine RPN_COMM_world_set(world_comm)
       implicit none
       integer, intent(IN) ::  world_comm
@@ -288,6 +307,50 @@
       integer, intent(IN) :: seconds
       integer :: seconds_since
       end function RPN_COMM_set_timeout_alarm
+       end interface
+       interface RPN_COMM_gridinit
+      FUNCTION RPN_COMM_init1(Userinit,Pelocal,Petotal) result(grid)
+        external Userinit
+        integer, intent(out)   :: Pelocal,Petotal
+        integer :: grid
+      end FUNCTION RPN_COMM_init1
+      FUNCTION RPN_COMM_init2(Pelocal,Petotal,Pex,Pey) result(grid)
+        integer, intent(out)   :: Pelocal,Petotal
+        integer, intent(inout) :: Pex,Pey
+        integer :: grid
+      end FUNCTION RPN_COMM_init2
+      FUNCTION RPN_COMM_init_multigrid1(Userinit,Pelocal,Petotal,MultiGr&
+     &ids) result(grid)
+        external Userinit
+        integer, intent(out)   :: Pelocal,Petotal
+        integer, intent(in)    :: MultiGrids
+        integer :: grid
+      end FUNCTION RPN_COMM_init_multigrid1
+      FUNCTION RPN_COMM_init_multigrid2(Pelocal,Petotal,Pex,Pey,MultiGri&
+     &ds) result(grid)
+        integer, intent(out)   :: Pelocal,Petotal
+        integer, intent(inout) :: Pex,Pey
+        integer, intent(in)    :: MultiGrids
+        integer :: grid
+      end FUNCTION RPN_COMM_init_multigrid2
+      FUNCTION RPN_COMM_init_multi_level1(Userinit,Pelocal,Petotal,Multi&
+     &Grids,Grids) result(grid)
+        external Userinit
+        integer, intent(out)   :: Pelocal,Petotal
+        integer, intent(in)    :: MultiGrids
+        integer, intent(in)    :: Grids
+        integer :: grid
+      end FUNCTION RPN_COMM_init_multi_level1
+      FUNCTION RPN_COMM_init_multi_level2(Pelocal,Petotal,Pex,Pey,MultiG&
+     &rids,Grids) result(grid)
+        integer, intent(out)   :: Pelocal,Petotal
+        integer, intent(inout) :: Pex,Pey
+        integer, intent(in)    :: MultiGrids
+        integer, intent(in)    :: Grids
+        integer :: grid
+      end FUNCTION RPN_COMM_init_multi_level2
+       end interface RPN_COMM_gridinit
+       interface
         subroutine RPN_COMM_make_io_pe_list(x,y,npes,pe_nx,pe_ny,method)
           integer, intent(IN) :: npes
           integer, dimension(npes), intent(OUT) :: x
@@ -607,6 +670,18 @@
         integer, intent(OUT) :: isiz
         integer, intent(OUT) :: err
       end subroutine RPN_COMM_split_by_node
+      subroutine RPN_COMM_split_by_socket(origcomm, nodecomm, sockcomm, &
+     &peercomm, noderank, sockrank, peerrank, isiz, err)
+        integer, intent(IN)  :: origcomm
+        integer, intent(OUT) :: nodecomm
+        integer, intent(OUT) :: sockcomm
+        integer, intent(OUT) :: peercomm
+        integer, intent(OUT) :: noderank
+        integer, intent(OUT) :: sockrank
+        integer, intent(OUT) :: peerrank
+        integer, intent(OUT) :: isiz
+        integer, intent(OUT) :: err
+      end subroutine RPN_COMM_split_by_socket
 !InTf!
       function RPN_COMM_spread(contxt,source,npts,ndata,dest)  result(st&
      &atus)
@@ -666,6 +741,15 @@
         implicit none
         integer, intent(IN) ::  unit
         end subroutine RPN_COMM_unit
+      subroutine RPN_COMM_win_allocate_shared(comm, msize, win, baseptr,&
+     & err)
+        import :: C_PTR
+        integer, intent(IN)  :: comm
+        integer, intent(IN)  :: msize
+        integer, intent(OUT) :: win
+        type(C_PTR), intent(OUT) :: baseptr
+        integer, intent(OUT)  :: err
+      end subroutine RPN_COMM_win_allocate_shared
 !InTf!
       subroutine RPN_COMM_i_win_group(window,pes_to,pes_from,ierr)
         import :: rpncomm_window
@@ -816,11 +900,23 @@
       integer, intent(IN), OPTIONAL :: npol_row
       end SUBROUTINE RPN_COMM_exchange_halo
 !InTf!
-        function rpn_comm_shmget(comm,size) result(where)
-        use ISO_C_BINDING
+        function rpn_comm_shmget(comm,size) result(where) bind(C,name='R&
+     &PNCOMM_Shmget')
+        import :: C_INT, C_PTR
         implicit none
-          integer(C_INT), intent(IN) :: comm
-          integer(C_INT), intent(IN) :: size
+          integer(C_INT), intent(IN), value :: comm
+          integer(C_INT), intent(IN), value :: size
           type(C_PTR) :: where
         end function rpn_comm_shmget
+!InTf!
+        function rpn_comm_numasplit(comm, mode, numacomm, numarank) resu&
+     &lt(size) bind(C,name='RPNCOMM_Numa_split')
+        import :: C_INT
+        implicit none
+          integer(C_INT), intent(IN), value :: comm
+          integer(C_INT), intent(IN), value :: mode
+          integer(C_INT), intent(OUT) :: numacomm
+          integer(C_INT), intent(OUT) :: numarank
+          integer(C_INT) :: size
+        end function rpn_comm_numasplit
       end interface

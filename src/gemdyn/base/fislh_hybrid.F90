@@ -52,6 +52,7 @@
       character(len=32) :: REFP0_S, REFP0_LS_S, dumc
       integer k,istat,pnip1,options_readwrite,options_readonly,ier
       integer, dimension(:), pointer :: wkpti
+      real flat
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
       real(kind=REAL64), dimension(:), pointer :: wkpt8
@@ -80,12 +81,18 @@
       ! Construct vertical coordinate
       Level_kind_ip1 = 21
       Level_version  = 1
-
+      
+      if (Hyb_flat < 0.) then
+         flat = F_hybuser(1)
+      else
+         flat = min(max(0.,Hyb_flat),1.)
+      endif
+      
       istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
                    version=Level_version, hyb=F_hybuser,&
                rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
-                                         dhm=0., dht=0. )
+                          dhm=0., dht=0., hyb_flat=flat )
 
       if (Lun_debug_L) istat = vgd_print(Ver_vgdobj)
 

@@ -33,7 +33,7 @@ void f77name(buf89a0)(word *buf)
   c_buf89a0(buf);
 #endif
 }
-
+
 /*splitpoint getbuf8 */
 /***************************************************************************** 
  *                            G E T B U F 8                                  * 
@@ -51,7 +51,7 @@ ftnword f77name(getbuf8)(word *buf)
 #endif
   return((ftnword) n);
 }
-
+
 /*splitpoint genvdt8 */
 /***************************************************************************** 
  *                            G E N V D T 8                                  * 
@@ -71,7 +71,7 @@ void f77name(genvdt8)(ftnword *val)
     xdf_enforc8 = 0;
   }
 }
-
+
 /*splitpoint mrbadd */
 /***************************************************************************** 
  *                              M R B A D D                                  * 
@@ -114,7 +114,7 @@ ftnword f77name(mrbadd)(word *buf, ftnword *f_bkno, ftnword *f_nele,
    *f_bkno = (ftnword) bkno;
    return(err);
 }
-
+
 /*splitpoint mrbdel */
 /***************************************************************************** 
  *                              M R B D E L                                  * 
@@ -134,7 +134,7 @@ ftnword f77name(mrbdel)(word *buf, ftnword *f_number)
    return((ftnword) ier);
    
 }
-
+
 /*splitpoint mrbhdr */
 /***************************************************************************** 
  *                              M R B H D R                                  *
@@ -184,7 +184,7 @@ int ier, l1;
    string_copy(f_stnid,stnid,l1);
    return((ftnword) ier);
 }
-
+
 /*splitpoint mrblen */
 /***************************************************************************** 
  *                              M R B L E N                                  * 
@@ -205,7 +205,7 @@ ftnword f77name(mrblen)(word *buf, ftnword *f_lbits, ftnword *f_left)
    return((ftnword) err);
    
 }
-
+
 /*splitpoint mrbloc */
 /***************************************************************************** 
  *                              M R B L O C                                  * 
@@ -227,7 +227,7 @@ ftnword f77name(mrbloc)(word *buf, ftnword *f_bfam, ftnword *f_bdesc,
 #endif
    return ((ftnword) ier);
 }
-
+
 /*splitpoint mrbrep */
 /***************************************************************************** 
  *                              M R B R E P                                  * 
@@ -248,7 +248,7 @@ ftnword f77name(mrbrep)(word *buf, ftnword *f_blkno, word *tblval)
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint mrbxtr */
 /***************************************************************************** 
  *                              M R B X T R                                  * 
@@ -286,9 +286,9 @@ ftnword f77name(mrfapp)(ftnword *f_iun)
   ier = c_mrfapp(iun);
   return((ftnword) ier);
 }
+
 
-
-
+
 /*splitpoint mrfget */
 /***************************************************************************** 
  *                              M R F G E T                                  * 
@@ -306,7 +306,7 @@ ftnword f77name(mrfget)(ftnword *f_handle, word *buf)
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint mrfput */
 /***************************************************************************** 
  *                              M R F P U T                                  * 
@@ -325,7 +325,7 @@ ftnword f77name(mrfput)(ftnword *f_iun, ftnword *f_handle, word *buf)
 #endif
    return((ftnword) ier);
 }
-
+
 /*splitpoint mrfrwd */
 /***************************************************************************** 
  *                               M R F R W D                                 *

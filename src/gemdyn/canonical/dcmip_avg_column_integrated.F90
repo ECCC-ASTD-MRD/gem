@@ -17,15 +17,8 @@
 
       subroutine dcmip_avg_column_integrated (F_avg_tr,F_tr,Minx,Maxx,Miny,Maxy,F_nk)
 
-      use dynkernel_options
-      use dyn_fisl_options
       use glb_ld
-      use gmm_itf_mod
-      use gmm_vt1
-      use lun
-      use metric
-      use tdpack, only : rgasd_8
-      use ver
+      use gmm_pw
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -42,35 +35,15 @@
       !     Evaluate Average Column Integrated of F_tr
       !===============================================
 
-      integer :: i,j,k,istat
+      integer :: i,j,k
+      real, pointer, dimension(:,:,:) :: pm
       real(kind=REAL64) :: avg_8,dp_8
-      logical :: GEM_P_L
-      real, dimension(Minx:Maxx,Miny:Maxy)         :: pr_p0
-      real, dimension(Minx:Maxx,Miny:Maxy,1:F_nk+1):: pr_m,pr_t
 !
 !---------------------------------------------------------------------
 !
-      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
-
-      !Obtain momentum pressure levels
-      !-------------------------------
-      if (GEM_P_L) then
-
-         istat = gmm_get(gmmk_st1_s,st1)
-
-         call calc_pressure ( pr_m, pr_t, pr_p0, st1, Minx, Maxx, Miny, Maxy, F_nk )
-
-         pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)
-
-      else
-
-         istat = gmm_get(gmmk_qt1_s, qt1)
-
-         do k=1,F_nk+1
-            pr_m(1:l_ni,1:l_nj,k) = exp( (qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k)) )
-         end do
-
-      end if
+      !Obtain Pressure Momentum at TIME M
+      !----------------------------------
+      pm => pw_pm_plus
 
       F_avg_tr(:,:) = 0.
 
@@ -78,7 +51,7 @@
       do i=1,l_ni
          avg_8 = 0.0d0
          do k=1,F_nk
-            dp_8 = (pr_m(i,j,k+1) - pr_m(i,j,k))
+            dp_8 = (pm(i,j,k+1) - pm(i,j,k))
             avg_8 = avg_8 + dp_8
             F_avg_tr(i,j) = F_avg_tr(i,j) + F_tr(i,j,k) * dp_8
          end do

@@ -233,15 +233,16 @@ contains
             endif
 !!$            print *,'(phy_input)0 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
 
-            nullify(data,data2)
+            nullify(data, data2)
             istat = inputio_get(inputobj, ivar, F_step, data, data2, &
                  F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
 !!$            print *,'(phy_input)1 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
-            if (.not.(RMN_IS_OK(istat).and. &
-                 associated(data).and.&
+            if (.not.(RMN_IS_OK(istat) .and. &
+                 associated(data) .and. &
                  (inname2_S == ' ' .or. associated(data2)))) then
                if (associated(data)) deallocate(data,stat=istat)
                if (associated(data2)) deallocate(data2,stat=istat)
+               nullify(data, data2)
                if (ismandatory == 0) then
                   call msg(MSG_WARNING,'(phy_input) missing optional var: '//trim(inname_S)//' : '//trim(varname_S)//' ('//trim(inname2_S)//' : '//trim(varname2_S)//')')
                   cycle VARLOOP
@@ -266,8 +267,11 @@ contains
                     &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
             endif
 
-!            if (associated(data)) deallocate(data,stat=istat2)
-!            if (associated(data2)) deallocate(data2,stat=istat2)
+#ifdef __INTEL_COMPILER            
+            if (associated(data)) deallocate(data,stat=istat2)
+            if (associated(data2)) deallocate(data2,stat=istat2)
+#endif
+            nullify(data, data2)
 
             call collect_error(istat)
             if (.not.RMN_IS_OK(istat)) then
@@ -508,14 +512,17 @@ contains
       character(len=64) :: msg_S, name_S
       integer :: minxyz(3), maxxyz(3), istat, k, stat_precision
       real, pointer :: data2(:,:,:)
+      real, allocatable, target :: dataarr(:,:,:)
       ! ---------------------------------------------------------------------
       minxyz = lbound(my_data)
       maxxyz = ubound(my_data)
       call physimple_transforms3d(my_varname_S, my_inname_S, my_data)
-      my_istat = pre_fold_opr_clbk(my_data, my_varname_S, my_horiz_interp_S, &
+      allocate(dataarr(minxyz(1):maxxyz(1),minxyz(2):maxxyz(2),minxyz(3):maxxyz(3)))
+      dataarr(:,:,:) = my_data(:,:,:)
+      my_istat = pre_fold_opr_clbk(dataarr, my_varname_S, my_horiz_interp_S, &
            minxyz(1), maxxyz(1), minxyz(2), maxxyz(2), minxyz(3), maxxyz(3))
-
-      my_data = min(max(my_vmin, my_data), my_vmax)
+      
+      dataarr(:,:,:) = min(max(my_vmin, dataarr(:,:,:)), my_vmax)
 
       name_S = my_varname_S
       if (my_icat > 1) write(name_S,'(a,a,i2.2,a)') trim(my_varname_S),'[',my_icat,']'
@@ -525,24 +532,24 @@ contains
          if (phystat_2d_l) then
             do k = minxyz(3), maxxyz(3)
                write(msg_S,'(a,i4.4)') trim(my_inname_S)//' => '//trim(name_S)//' ',k
-               data2 => my_data(:,:,k:k)
+               data2 => dataarr(:,:,k:k)
                call statfld_dm(data2, msg_S, my_step, 'phy_input', stat_precision)
             enddo
          else
             write(msg_S,'(a)') trim(my_inname_S)//' => '//trim(name_S)
-            call statfld_dm(my_data, msg_S, my_step, 'phy_input', stat_precision)
+            call statfld_dm(dataarr, msg_S, my_step, 'phy_input', stat_precision)
          endif
       endif IF_STATS
 
       if (maxxyz(3) == minxyz(3) .and. my_nk > 1) then
          !# Put read data into diag level
-         data2(1:,1:,my_nk:) => my_data(:,:,minxyz(3):)
+         data2(1:,1:,my_nk:) => dataarr(:,:,minxyz(3):)
          minxyz = lbound(data2)
          maxxyz = ubound(data2)
          maxxyz(3) = my_nk
          minxyz(3) = maxxyz(3)
       else
-         data2(1:,1:,1:) => my_data(:,:,:)
+         data2(1:,1:,1:) => dataarr(:,:,:)
          minxyz = lbound(data2)
          maxxyz = ubound(data2)
       endif
@@ -552,6 +559,7 @@ contains
       else
          istat = phyfold(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz, my_icat)
       endif
+      deallocate(dataarr)      
       !#TODO: WARNING: (phyfold) Horizontal sub domaine Not yet supported
       if (.not.RMN_IS_OK(istat)) then
          my_istat = RMN_ERR

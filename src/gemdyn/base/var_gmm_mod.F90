@@ -19,11 +19,10 @@ module var_gmm
    public
    save
 
-   type(gmm_metadata) :: metasc      ! (1) (scalar)
-   type(gmm_metadata) :: meta1d      ! (l_ni*l_nj*l_nk)
-   type(gmm_metadata) :: meta2d      ! (l_minx:l_maxx, lminy:lmaxy)
-   type(gmm_metadata) :: meta3d_nk   ! (l_minx:l_maxx, lminy:l_maxy, 1:l_nk  )
-   type(gmm_metadata) :: meta3d_nk1  ! (l_minx:l_maxx, lminy:l_maxy, 1:l_nk+1)
-   type(gmm_metadata) :: meta3d_0nk  ! (l_minx:l_maxx, lminy:l_maxy, 0:l_nk  )
-   type(gmm_metadata) :: meta3d_0nk1 ! (l_minx:l_maxx, lminy:l_maxy, 0:l_nk+1)
+   type(gmm_metadata) :: meta2d      ! (l_minx:l_maxx, l_miny:l_maxy          )
+   type(gmm_metadata) :: meta3d_nk   ! (l_minx:l_maxx, l_miny:l_maxy, 1:l_nk  )
+   type(gmm_metadata) :: meta3d_nk1  ! (l_minx:l_maxx, l_miny:l_maxy, 1:l_nk+1)
+   type(gmm_metadata) :: meta3d_0nk  ! (l_minx:l_maxx, l_miny:l_maxy, 0:l_nk  )
+   type(gmm_metadata) :: meta3d_0nk1 ! (l_minx:l_maxx, l_miny:l_maxy, 0:l_nk+1)
+
 end module var_gmm

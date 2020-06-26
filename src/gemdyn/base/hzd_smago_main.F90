@@ -20,7 +20,6 @@
       use dyn_fisl_options
       use glb_ld
       use lun
-      use gmm_itf_mod
       use gmm_smag
       use hzd_mod
       use tr3d
@@ -28,17 +27,14 @@
       use hvdif_options
       use HORgrid_options
       use gmm_geof
-
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 !
 !Author:  Syed Husain
 !
-
-      real, pointer, dimension (:,:,:) :: hu
       logical :: switch_on_THETA, switch_on_hu, switch_on_wzd
       logical yyblend, smago_in_rhs_L
-      integer istat
 !
 !-------------------------------------------------------------------
 !
@@ -49,20 +45,12 @@
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. (Hzd_lnr_tr <= 0.)
       switch_on_wzd   = (Hzd_lnr <= 0.)
 
-
       if (Lun_debug_L) write (Lun_out,1000)
 
-      istat = gmm_get(gmmk_ut1_s,ut1)
-      istat = gmm_get(gmmk_vt1_s,vt1)
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_tt1_s,tt1)
-      istat = gmm_get(gmmk_wt1_s,wt1)
-
-      call pw_update_GPW()
+      call pw_update_GW()
 
       call hzd_smago_in_split(ut1,vt1,wt1,tt1,zdt1, &
                l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.)
-
 
       if (Grd_yinyang_L) then
          call yyg_xchng_vec_uv2uv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -72,9 +60,8 @@
          end if
 
          if (switch_on_hu) then
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(1))//':P' ,hu)
-            call yyg_xchng (hu , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk,&
-                               .false., 'CUBIC', .false.)
+            call yyg_xchng (tracers_P(Tr3d_hu)%pntr,l_minx,l_maxx,l_miny,l_maxy,&
+                            l_ni,l_nj,G_nk,.false., 'CUBIC', .false.)
          end if
 
          if (switch_on_wzd) then

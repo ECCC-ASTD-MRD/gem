@@ -22,7 +22,6 @@
       use gem_options
       use glb_ld
       use gmm_geof
-      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
       use inp_mod
@@ -32,30 +31,17 @@
       use theo_options
       use tr3d
       use gem_timing
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 
       logical :: synthetic_data_L
-      integer :: k, istat, dimens, err
+      integer :: dimens, err
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: topo_large_scale
-      real, dimension(:,:,:), pointer, contiguous :: plus, minus
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out > 0) write (Lun_out,1000)
-
-      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
-      istat = gmm_get (gmmk_ut1_s ,ut1 )
-      istat = gmm_get (gmmk_vt1_s ,vt1 )
-      istat = gmm_get (gmmk_wt1_s ,wt1 )
-      istat = gmm_get (gmmk_tt1_s ,tt1 )
-      istat = gmm_get (gmmk_zdt1_s,zdt1)
-      istat = gmm_get (gmmk_st1_s ,st1 )
-      istat = gmm_get (gmmk_sls_s ,sls )
-      istat = gmm_get (gmmk_fis0_s,fis0)
-      istat = gmm_get (gmmk_qt1_s ,qt1 )
 
       synthetic_data_L = (Ctrl_theoc_L .or. Ctrl_testcases_L)
 
@@ -63,8 +49,6 @@
          call synthetic_data ()
       else
          call gemtime_start ( 71, 'INITIAL_input', 2)
-         istat= gmm_get (gmmk_topo_low_s , topo_low )
-         istat= gmm_get (gmmk_topo_high_s, topo_high)
 
          call get_topo ( topo_high, topo_large_scale, &
                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
@@ -75,9 +59,9 @@
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
 
-         call inp_data ( pw_uu_plus, pw_vv_plus, wt1, pw_tt_plus,&
-                       zdt1,st1,fis0,l_minx,l_maxx,l_miny,l_maxy,&
-                         G_nk,.false. ,'TR/',':P',Step_runstrt_S )
+         call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
+                         zdt1,st1,trt1,fis0,.false.,Step_runstrt_S,&
+                         l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
 
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
                         perturb_nbits, perturb_npts, dimens )
@@ -89,10 +73,8 @@
       call set_dync ( .true., err )
 
       if (Grd_yinyang_L) then
-         call yyg_xchng (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                         1, .false., 'CUBIC', .true.)
-         call yyg_xchng (sls,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
-                         1, .false., 'CUBIC', .true. )
+         call yyg_int_xch_scal (fis0, 1, .false., 'CUBIC', .true.)
+         call yyg_int_xch_scal (sls , 1, .false., 'CUBIC', .true. )
          call yyg_xchng_all() !????? plus tard????
       else
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&
@@ -104,12 +86,7 @@
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_geometry()
 
-      do k=1, Tr3d_ntr
-         nullify (plus, minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':M',minus)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':P',plus )
-         minus = plus
-      end do
+      trt0 = trt1
 
       if (.not. synthetic_data_L) then
          call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
@@ -122,8 +99,12 @@
 
       if (.not. Grd_yinyang_L) call nest_init()
 
-      call pw_update_GPW()
-      call pw_init()
+      call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
+                      pw_pm_plus_8,pw_p0_plus_8, &
+                      l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
+
+      call pw_update_GW()
+      call pw_init     ()
 
       call out_outdir()
 

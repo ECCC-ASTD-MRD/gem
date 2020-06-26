@@ -41,7 +41,7 @@
                do k=1,G_nk+1
                   F_q(1:l_ni,1:l_nj,k) = F_s(1:l_ni,1:l_nj) - 1.0d0/Cstv_invFI_8
                end do
-               F_zd = 0. ; F_w = 0. 
+               F_zd = 0. ; F_w = 0.
                return
             end if
             call fislh_pres ( F_q, F_s, F_t, &

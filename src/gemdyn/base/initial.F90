@@ -18,13 +18,13 @@
       subroutine initial (F_rstrt_L)
       use step_options
       use gmm_geof
+      use gmm_pw
       use gem_options
       use init_options
       use tdpack
       use glb_ld
       use cstv
       use lun
-      use gmm_itf_mod
       use rstr
       implicit none
 #include <arch_specific.hf>
@@ -37,8 +37,7 @@
 ! F_rstrt_L         TRUE if a restart is required
 !----------------------------------------------------------
 
-      type(gmm_metadata) :: meta2d
-      integer n, gmmstat
+      integer n
       real    prn, promegc, prsum, prwin1, prwin2
 !
 !     ---------------------------------------------------------------
@@ -97,19 +96,21 @@
       if ((Step_kount == Init_dfnp-1).and.(.not.F_rstrt_L)) then
          Init_mode_L = .false.
          call ta2t1tx()
-         call pw_update_GPW
-         call pw_update_UV
-         call pw_update_T
+         call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
+                         pw_pm_plus_8,pw_p0_plus_8, &
+                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
+         call pw_update_GW ()
+         call pw_update_UV ()
+         call pw_update_T  ()
          Lctl_step = Lctl_step  - Init_halfspan
          Step_kount= Step_kount - Init_halfspan
          if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
          if (Vtopo_L) then
-            gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
             call var_topo (fis0, real(Lctl_step), l_minx,l_maxx,l_miny,l_maxy)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          end if
-         call adz_inittraj
+         call adz_inittraj ()
          if (Lun_out > 0) write(Lun_out,1050) Lctl_step
       end if
 

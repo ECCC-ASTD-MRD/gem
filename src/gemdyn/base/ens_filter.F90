@@ -74,7 +74,7 @@
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
 
-    call ens_marfield_ptp
+    call ens_marfield_ptp ()
 
      if (Ens_skeb_conf) then
 

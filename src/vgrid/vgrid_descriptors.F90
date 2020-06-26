@@ -235,10 +235,10 @@ module vGrid_Descriptors
          type(c_ptr), value :: vgd1_CP, vgd2_CP
       end function f_vgdcmp
 
-      integer(c_int) function f_new_read(vgd,unit,ip1,ip2,kind,version) bind(c, name='Cvgd_new_read')
+      integer(c_int) function f_new_read(vgd,unit,ip1,ip2,kind,version,quiet) bind(c, name='Cvgd_new_read2')
          use iso_c_binding, only : c_ptr, c_int, c_char
          type(c_ptr) :: vgd
-         integer (c_int), value :: unit, ip1, ip2, kind, version
+         integer (c_int), value :: unit, ip1, ip2, kind, version, quiet
       end function f_new_read
       
       integer(c_int) function f_new_from_table(vgd, table_CP, ni, nj, nk) bind(c, name='Cvgd_new_from_table')
@@ -249,12 +249,12 @@ module vGrid_Descriptors
       end function f_new_from_table
 
       integer(c_int) function f_new_gen(vgd,kind,version,hyb_CP,size_hyb,rcoef1_CP,rcoef2_CP,rcoef3_CP,rcoef4_CP,ptop_8_CP,pref_8_CP,ptop_out_8_CP, &
-           ip1,ip2,dhm_CP,dht_CP,dhw_CP,avg) bind(c, name='Cvgd_new_gen2')
+           ip1,ip2,dhm_CP,dht_CP,dhw_CP,avg,hyb_flat_CP) bind(c, name='Cvgd_new_gen3')
          use iso_c_binding, only : c_ptr, c_int
          type(c_ptr) :: vgd
          integer (c_int), value :: kind, version, size_hyb
          type(c_ptr), value :: hyb_CP,rcoef1_CP,rcoef2_CP,rcoef3_CP,rcoef4_CP,ptop_8_CP,pref_8_CP,ptop_out_8_CP
-         type(c_ptr), value :: dhm_CP,dht_CP,dhw_CP
+         type(c_ptr), value :: dhm_CP,dht_CP,dhw_CP,hyb_flat_CP
          integer (c_int), value :: ip1,ip2,avg
       end function f_new_gen
       
@@ -390,7 +390,7 @@ module vGrid_Descriptors
    
 contains
    
-   integer function new_read(self,unit,format,ip1,ip2,kind,version) result(status)
+   integer function new_read(self,unit,format,ip1,ip2,kind,version,quiet) result(status)
       use vgrid_utils, only: up
       ! Coordinate constructor - read from a file and initialize instance
       type(vgrid_descriptor), intent(inout) :: self !Vertical descriptor instance
@@ -399,15 +399,25 @@ contains
       integer, target,optional :: ip1,ip2                 !ip1,2 values of the desired descriptors
       integer, target,optional, intent(in) :: kind        ! Level kind requested by user.
       integer, target,optional, intent(in) :: version     ! Level version requested by user.
+      logical, optional, intent(in) :: quiet              !Do not print massages
       
       ! Local variables
-      integer :: ni,nj,nk, istat, error, l_ip1, l_ip2, l_kind, l_version
+      integer :: ni,nj,nk, istat, error, l_ip1, l_ip2, l_kind, l_version, level_msg, l_quiet
       character(len=100) :: myformat
       real(kind=8), dimension(:,:,:), pointer :: table_8
 
       nullify(table_8)
 
       status = VGD_ERROR
+
+      l_quiet = 0
+      level_msg=MSG_ERROR
+      if (present(quiet))then
+         if(quiet) then
+            l_quiet = 1
+            level_msg=MSG_QUIET
+         endif
+      endif
 
       myformat='FST'
       if (present(format)) myformat = trim(up(format))
@@ -434,30 +444,30 @@ contains
             l_version = -1
          endif
          
-         if( f_new_read(self%cptr, unit, l_ip1, l_ip2, l_kind, l_version) == VGD_ERROR )then
-            print*,'(F_vgd) ERROR: In new_read, problem with f_new_read'
+         if( f_new_read(self%cptr, unit, l_ip1, l_ip2, l_kind, l_version, l_quiet) == VGD_ERROR )then
+            write(for_msg,*) ' in new_read, problem with f_new_read'
+            call msg(level_msg,VGD_PRFX//for_msg)
             return
          endif
       case ('BIN')
          read(unit) ni,nj,nk
          allocate(table_8(ni,nj,nk),stat=istat)
          if (istat /= 0) then
-            write(for_msg,*) 'unable to allocate table_8'
+            write(for_msg,*) ' in new_read unable to allocate table_8'
             call msg(MSG_ERROR,VGD_PRFX//for_msg)
             return
          endif
          read(unit) table_8
-         print*,'table_8(1:3,1,1)',table_8(1:3,1,1)
          
          error = new_from_table(self,table_8)
          if (error < 0) then
-            write(for_msg,*) 'In new_read, problem creating record information'
+            write(for_msg,*) ' in new_read, problem creating record information'
             call msg(MSG_ERROR,VGD_PRFX//for_msg)
             return
          endif
          ! Warn user on invalid input format specification
       case DEFAULT
-         write(for_msg,*) 'invalid constructor format request ',trim(myformat)
+         write(for_msg,*) ' in new_read invalid constructor format request ',trim(myformat)
          call msg(MSG_ERROR,VGD_PRFX//for_msg)
          return
       end select
@@ -487,7 +497,7 @@ contains
       
     end function new_from_table
 
-   integer function new_gen(self,kind,version,hyb,rcoef1,rcoef2,rcoef3,rcoef4,ptop_8,pref_8,ptop_out_8,ip1,ip2,stdout_unit,dhm,dht,dhw,avg_L) result(status)
+   integer function new_gen(self,kind,version,hyb,rcoef1,rcoef2,rcoef3,rcoef4,ptop_8,pref_8,ptop_out_8,ip1,ip2,stdout_unit,dhm,dht,dhw,avg_L,hyb_flat) result(status)
       implicit none
 
       ! Coordinate constructor - build vertical descriptor from hybrid coordinate entries
@@ -504,12 +514,13 @@ contains
       logical, optional :: avg_L                           !Obtain thermo A, B and C by averaging momentum ones (Temporary for Vcode 5100)
                                                            !   If this option becoms permenant, some code will have to be added
                                                            !   to check this option for vcode 5100 only.
+      real, target, optional,intent(in) :: hyb_flat        ! Hyb value at or above witch B momentum is flat
       ! Local variables
       type(c_ptr) :: hyb_CP, rcoef1_CP, rcoef2_CP, rcoef3_CP, rcoef4_CP, ptop_8_CP, ptop_out_8_CP, pref_8_CP
-      type(c_ptr) :: stdout_unit_CP, dhm_CP, dht_CP, dhw_CP
+      type(c_ptr) :: stdout_unit_CP, dhm_CP, dht_CP, dhw_CP, hyb_flat_CP
       integer :: my_ip1, my_ip2, my_avg
       hyb_CP = c_loc(hyb)
-
+      
       status = VGD_ERROR;
       ! Assign optional argument to C_NULL_PTR
       if(present(rcoef1))then
@@ -588,17 +599,22 @@ contains
             my_avg=0
          endif
       endif
+      if(present(hyb_flat))then
+         hyb_flat_CP = c_loc(hyb_flat)
+      else
+         hyb_flat_CP = C_NULL_PTR
+      endif
       
       if(.not.c_associated(self%cptr))then
          self%cptr = C_NULL_PTR
       endif
 
-      if(f_new_gen(self%cptr,kind,version,hyb_CP,size(hyb),rcoef1_CP,rcoef2_CP,rcoef3_CP,rcoef4_CP,ptop_8_CP,pref_8_CP,ptop_out_8_CP,my_ip1,my_ip2,dhm_CP,dht_CP,dhw_CP,my_avg) == VGD_ERROR)then
+      if(f_new_gen(self%cptr,kind,version,hyb_CP,size(hyb),rcoef1_CP,rcoef2_CP,rcoef3_CP,rcoef4_CP,ptop_8_CP,pref_8_CP,ptop_out_8_CP,my_ip1,my_ip2,dhm_CP,dht_CP,dhw_CP,my_avg,hyb_flat_CP) == VGD_ERROR)then
          print*,'(F_vgd) ERROR in new_gen, problem with f_new_gen'
          return
       endif
       status = VGD_OK
-   end function new_gen
+    end function new_gen
 
    integer function new_build_vert(self,kind,version,nk,ip1,ip2, &
         ptop_8,pref_8,rcoef1,rcoef2,rcoef3,rcoef4,a_m_8,b_m_8,a_t_8,b_t_8, &

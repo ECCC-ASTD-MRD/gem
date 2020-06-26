@@ -16,11 +16,11 @@
 !**s/r adz_BC_LAM_zlf_0 - Call setups to prepare Bermejo-Conde LAM with ZLF:
 !                         F_number=1: Before adz_post_tr / F_number=2: After adz_post_tr
 
-      subroutine adz_BC_LAM_zlf_0 (F_post_S,F_post_itr,F_nptr,F_number)
+      subroutine adz_BC_LAM_zlf_0 (F_nptr,F_number)
 
       use adz_mem
       use adz_options
-      use gmm_itf_mod
+      use gem_timing
       use tr3d
 
       use, intrinsic :: iso_fortran_env
@@ -30,9 +30,7 @@
 
       !arguments
       !---------
-      integer, intent(IN) :: F_nptr,F_number
-      integer, dimension(F_nptr), intent(IN) :: F_post_itr
-      character(len=4), dimension(F_nptr), intent(IN) :: F_post_S
+      integer, intent(in) :: F_nptr,F_number
 
       !object
       !===========================================================================
@@ -43,12 +41,14 @@
       !           advections over extended zone are done for all tracers
       !===========================================================================
 
-      integer :: n,err,itr
+      integer :: n
       real, dimension(1,1,1) :: empty
 !
 !---------------------------------------------------------------------
 !
       if (.not.Adz_BC_LAM_zlf_L) return
+
+      call gemtime_start (85, 'ZLF_0______', 36)
 
       !-----------------------------------------------------
       !Prepare Bermejo-Conde LAM with ZLF before adz_post_tr
@@ -56,10 +56,6 @@
       if (F_number==1) then
 
          do n=1,F_nptr
-
-            itr = F_post_itr(n)
-
-            err = gmm_get( 'TR/'//trim(F_post_S(n))//':B',Adz_stack(n)%pil )
 
             !ZERO piloting conditions of SRC outside EXTENSION (CFL)
             !-------------------------------------------------------
@@ -84,8 +80,6 @@
 
          do n=1,F_nptr
 
-            itr = F_post_itr(n)
-
             !Bermejo-Conde LAM Flux ZLF: Reset piloting conditions of DST outside CORE
             !-------------------------------------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%dst,Adz_stack(n)%pil,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,4)
@@ -93,6 +87,8 @@
          end do
 
       end if
+
+      call gemtime_stop  (85)
 !
 !---------------------------------------------------------------------
 !

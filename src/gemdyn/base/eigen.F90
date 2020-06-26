@@ -15,15 +15,14 @@
 
 !**s/r geneigl - solves a generalised symmetric eigenproblem
 
-      subroutine eigen ( F_eval_8, F_evec_8, F_b_8, NN, NMAX, NWORK,&
-                            F_eigen_filename_S )
+      subroutine eigen ( F_eval_8, F_evec_8, F_b_8, NN, NMAX, NWORK )
       use ptopo
+      use path
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: NN, NMAX, NWORK
-      character(len=*), intent(in) :: F_eigen_filename_S
       real(kind=REAL64), dimension(NN), intent(out) :: F_eval_8
       real(kind=REAL64), dimension(NMAX,NN), intent(inout) :: F_evec_8, F_b_8
 
@@ -47,7 +46,8 @@
 !      Only upper triangular parts of A and B need to be specified
 !      A and  B are overwritten
 
-
+      character(len=8   ) tridi_signature_8, signa_1, signa_2
+      character(len=1024) fn
       integer :: i, j, k, info, errop, unf, err
       real(kind=REAL64) :: faz_8, sav_8
       real(kind=REAL64), dimension(NWORK) :: wk1
@@ -55,16 +55,19 @@
 !
 !--------------------------------------------------------------------
 !
-      unf= 0
+      signa_1= tridi_signature_8(F_evec_8,NMAX,NN)
+      signa_2= tridi_signature_8(F_b_8   ,NMAX,NN)
+      fn= trim(Path_input_S)//'/CACHE'//'/eigenv_v1_'//&
+                     signa_1//'_'//signa_2//'.bin'
 
       F_eval_8 = 0.d0
 
       if (Ptopo_myproc == 0) then
-         open ( unf,file=trim(F_eigen_filename_S),status='OLD', &
+         unf= 0
+         open ( unf,file=trim(fn),status='OLD', &
                 form='unformatted',iostat=errop )
-
          if ( errop == 0 ) then
-            write(output_unit,1001) 'READING', trim(F_eigen_filename_S)
+            write(output_unit,1001) 'READING', trim(fn)
             read (unf) F_evec_8,F_eval_8
             close(unf)
          else
@@ -89,10 +92,11 @@
                end do
             end do
             if (Ptopo_couleur == 0) then
-               open ( unf, file=trim(F_eigen_filename_S), &
+               unf= 0
+               open ( unf, file=trim(fn), &
                       form='unformatted',iostat=errop )
                if ( errop == 0 ) then
-                  write(output_unit,1001) 'WRITING', trim(F_eigen_filename_S)
+                  write(output_unit,1001) 'WRITING', trim(fn)
                   write(unf) F_evec_8, F_eval_8
                   close(unf)
                end if
@@ -109,3 +113,30 @@
 !
       return
       end
+
+character(len=8) function tridi_signature_8(A,NMAX,NN) ! CRC32 signature of a real*8 tridiagonal matrix
+      use, intrinsic :: iso_fortran_env
+implicit none
+integer, intent(IN) :: NMAX    ! storage dimension
+integer, intent(IN) :: NN      ! useful dimension ( <= NMAX )
+real(kind=REAL64), dimension(NMAX,NN), intent(IN) :: A
+
+integer :: f_crc32
+external :: f_crc32
+real(kind=REAL64), dimension(3,NN) :: sig
+integer :: i
+character (len=8) :: result
+
+do I = 1 , NN  ! get diagonals
+  sig(1,I) = A(max(1,i-1),i)     ! upper diagonal (duplicating first point)
+  sig(2,i) = A(I,I)              ! main diagonal
+  sig(3,i) = A(min(NN,i+1),i)    ! lower diagonal (duplicating last point)
+enddo
+i = f_crc32(0,sig,NN*3*8)        ! get 32 bit Byte CRC
+write(result,100)i               ! transform into 8 character HEX string
+100 format(Z8.8)
+
+tridi_signature_8 = result
+
+return
+end function tridi_signature_8

@@ -25,11 +25,11 @@
       use dynkernel_options
       use geomh
       use glb_ld
-      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
       use gmm_phy
       use lun
+      use mem_tracers
       use ptopo
       use step_options
 
@@ -63,8 +63,6 @@
       !3) Vertical index increases from BOTTOM to TOP                                !
       !------------------------------------------------------------------------------!
 
-      !---------------------------------------------------------------------------------------------------------------
-
       real(kind=REAL64) :: uu(l_nk),vv(l_nk),qsv(l_nk),qsc(l_nk),qsr(l_nk),precl,pm(0:l_nk),pt(l_nk+1),tt(l_nk)
 
       real(kind=REAL64) :: not_rotated_lat(l_ni,l_nj),lat,rlon_8,s_8(2,2),x_a_8,y_a_8
@@ -77,11 +75,10 @@
 
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: tdu,tdv,tv_plus,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
 
-
       logical :: GEM_P_L
-
-      !---------------------------------------------------------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       if (Lun_out>0) write (Lun_out,1000)
 
       !----------------------------------------------------!
@@ -133,27 +130,28 @@
 
       !Get GMM variables
       !-----------------
-      istat = gmm_get(gmmk_pw_uu_plus_s , pw_uu_plus ) !U wind component on Scalar grid
-      istat = gmm_get(gmmk_pw_vv_plus_s , pw_vv_plus ) !V wind component on Scalar grid
-      istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus ) !Pressure THERMO
-      istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus ) !Pressure MOMENTUM
-      istat = gmm_get(gmmk_pw_p0_plus_s , pw_p0_plus ) !Surface pressure
-      istat = gmm_get(gmmk_pw_tt_plus_s , pw_tt_plus ) !Real temperature
+      !pw_uu_plus !U wind component on Scalar grid
+      !pw_vv_plus !V wind component on Scalar grid
+      !pw_pm_plus !Pressure MOMENTUM
+      !pw_pt_plus !Pressure THERMO
+      !pw_p0_plus !Surface pressure
+      !pw_tt_plus !Real temperature
 
-      istat = gmm_get('TR/'//'HU'//':P',qsv_p) !Specific humidity
-      istat = gmm_get('TR/'//'QC'//':P',qsc_p) !Cloud water specific
-      istat = gmm_get('TR/'//'RW'//':P',qsr_p) !Rain water specific
+      istat = tr_get('HU:P',qsv_p) !Specific humidity
+      istat = tr_get('QC:P',qsc_p) !Cloud water specific
+      istat = tr_get('RW:P',qsr_p) !Rain water specific
 
-      istat = gmm_get(gmmk_irt_s,  irt) !Instantaneous precipitation rate
-      istat = gmm_get(gmmk_art_s,  art) !Averaged precipitation rate
-      istat = gmm_get(gmmk_wrt_s,  wrt) !Averaged precipitation rate (WORK FIELD)
+      !irt !Instantaneous precipitation rate
+      !art !Averaged precipitation rate
+      !wrt !Averaged precipitation rate (WORK FIELD)
 
       !Retrieve a copy of the PW state before the physics
       !--------------------------------------------------
       nullify(ptr3d)
-      istat = gmm_get(gmmk_pw_uu_plus_s , ptr3d ) ; pw_uu_plus0 = ptr3d
-      istat = gmm_get(gmmk_pw_vv_plus_s , ptr3d ) ; pw_vv_plus0 = ptr3d
-      istat = gmm_get(gmmk_pw_tt_plus_s , ptr3d ) ; pw_tt_plus0 = ptr3d
+
+      ptr3d => pw_uu_plus ; pw_uu_plus0 = ptr3d
+      ptr3d => pw_vv_plus ; pw_vv_plus0 = ptr3d
+      ptr3d => pw_tt_plus ; pw_tt_plus0 = ptr3d
 
       !--------------------------------
       !Evaluate latitudes (Not rotated)
@@ -286,15 +284,10 @@
       !-------------------------------------------------------------------------------
       if (Schm_phycpl_S == 'RHS' .or. Schm_phycpl_S == 'AVG') then
 
-         istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
-         istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
-         istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
-
          tdu(1:l_ni,1:l_nj,1:l_nk) = pw_uu_plus(1:l_ni,1:l_nj,1:l_nk) - pw_uu_plus0(1:l_ni,1:l_nj,1:l_nk)
          tdv(1:l_ni,1:l_nj,1:l_nk) = pw_vv_plus(1:l_ni,1:l_nj,1:l_nk) - pw_vv_plus0(1:l_ni,1:l_nj,1:l_nk)
          call hwnd_stag(phy_uu_tend,phy_vv_tend,tdu,tdv,l_minx,l_maxx,l_miny,l_maxy,l_nk,.true.)
 
-         istat = gmm_get(gmmk_tt1_s, tt1)
          call tt2virt (tv_plus,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
          phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv_plus(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
 
@@ -313,7 +306,9 @@
          end if RESET_PW
 
       end if
-
+!
+!---------------------------------------------------------------------
+!
       return
 
  1000 format( &

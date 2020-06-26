@@ -21,6 +21,7 @@
       use phy_itf, only : phy_put
 
       use ens_gmm_dim
+      use ens_gmm_var, only: mcutraj, mcvtraj, mcwtraj
       use step_options
       use ens_gmm_var
       use ens_options
@@ -34,6 +35,8 @@
       use gmm_itf_mod
       use path
       use ptopo
+      use ens_spp, only: spp_list, spp_ncha
+      use clib_itf_mod, only: clib_toupper
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -46,15 +49,16 @@
 !
 
 #include <rmnlib_basics.hf>
+#include <WhiteBoard.hf>
 !
        real,    external ::  gasdev
        real(kind=REAL64) :: polg
 
 !
 ! nlat, nlon                 dimension of the Gaussian grid
-! idum                       Semence du générateur de nombres aléatoires
+! idum                       Semence du g?n?rateur de nombres al?atoires
 !
-      integer :: nlat, nlon, lmin, lmax
+      integer :: nlat, nlon, lmin, lmax, dlen
       integer :: l ,m, n, nc,np, i, j, indx, ier, gmmstat, istat, gdyy
       real    :: fstd, fstr, tau, sumsp , fact, fact2, offi, offj
       real    :: xfi(l_ni),yfi(l_nj)
@@ -65,19 +69,28 @@
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
-! dt   Pas de temps du modèle (secondes)
-! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
+! dt   Pas de temps du mod?le (secondes)
+! tau  Temps de d?corr?lation du champ al?atoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
       real(kind=REAL64)   :: dt, eps, fmax, fmin , fmean
       real(kind=REAL64),  dimension(:), allocatable :: pspectrum , fact1, fact1n, wrk1
       real(kind=REAL64),  dimension(:,:,:), allocatable :: p,cc
+      real, dimension(2) :: spp_range
+      real, dimension(Ens_ptp_ncha+spp_ncha) :: vfmin, vfmax, vfstd, vfstr, vtau, veps
       real  ,  dimension(:,:),allocatable :: f, f_str
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
+      integer, dimension(2) :: spp_trn
+      integer, dimension(Ens_ptp_ncha+spp_ncha) :: vlmin, vlmax, vnlon, vnlat
       integer, dimension(:,:) , allocatable :: sig
-      integer ::itstep_s, iperiod_iau, ier0,unf0
+      integer ::itstep_s, iperiod_iau, ier0,unf0, nch2d, spp_indx, stat
+      character(len=WB_MAXNAMELENGTH) :: prefix, key, spp_type
+      character(len=WB_MAXNAMELENGTH), dimension(Ens_ptp_ncha+spp_ncha) :: vname
 !
 !-------------------------------------------------------------------
 !
+      nch2d = Ens_ptp_ncha + spp_ncha
+      if (nch2d == 0) return
+
       dt=real(Cstv_dt_8)
       rad2deg_8=180.0d0/pi_8
       itstep_s=step_dt*step_kount
@@ -112,17 +125,72 @@
       if (Ens_iau_mc) then
          if ( .not. Ens_first_init_mc) Init_mc_L = .false.
       end if
-
+      
+      spp_indx = 0
+      do nc=1,nch2d
+         if (nc <= Ens_ptp_ncha) then
+            ! Add chains for PTP
+            vname(nc) = 'PTP'
+            vlmin(nc) = Ens_ptp_trnl(nc)
+            vlmax(nc) = Ens_ptp_trnh(nc)
+            vnlon(nc) = Ens_ptp_nlon(nc)
+            vnlat(nc) = Ens_ptp_nlat(nc)
+            vfmin(nc) = Ens_ptp_min(nc)
+            vfmax(nc) = Ens_ptp_max(nc)
+            vfstd(nc) = Ens_ptp_std(nc)
+            vfstr(nc) = Ens_ptp_str(nc)
+            vtau(nc) = Ens_ptp_tau(nc)
+         else
+            ! Add chains for SPP
+            spp_indx = spp_indx + 1
+            vname(nc) = spp_list(spp_indx)
+            prefix = 'spp/'//trim(vname(nc))//'/'
+            stat = clib_toupper(vname(nc))
+            stat = WB_OK
+            key = trim(prefix)//'spp_trn'
+            stat = min(wb_get(key, spp_trn, dlen), stat)
+            vlmin(nc) = minval(spp_trn)
+            vlmax(nc) = maxval(spp_trn)
+            key = trim(prefix)//'spp_nlon'
+            stat = min(wb_get(key, vnlon(nc)), stat)
+            key = trim(prefix)//'spp_nlat'
+            stat = min(wb_get(key, vnlat(nc)), stat)
+            key = trim(prefix)//'spp_std'
+            stat = min(wb_get(key, vfstd(nc)), stat)
+            key = trim(prefix)//'spp_str'
+            stat = min(wb_get(key, vfstr(nc)), stat)
+            key = trim(prefix)//'spp_tau'
+            stat = min(wb_get(key, vtau(nc)), stat)
+            key = trim(prefix)//'spp_type'
+            stat = min(wb_get(key, spp_type), stat)            
+            if (spp_type == 'DISCRETE') then
+               vfmin(nc) = 0. ; vfmax(nc) = 1.
+            else
+               key = trim(prefix)//'spp_range'
+               stat = min(wb_get(key, spp_range, dlen), stat)
+               vfmin(nc) = minval(spp_range)
+               vfmax(nc) = maxval(spp_range)  
+            endif
+            if (WB_IS_ERROR(stat)) then
+               write(Lun_out, *) 'Error retrieving chain specifications for '// &
+                    trim(spp_list(spp_indx))
+               return
+            endif
+         endif
+         vtau(nc) = vtau(nc) / 2.146
+         veps(nc) = exp(-dt/vtau(nc))
+      enddo
+      
       if (step_kount == 1 ) then
          if (Init_mc_L) then
-            do nc=1,Ens_ptp_ncha
-               lmin = Ens_ptp_trnl(nc)
-               lmax = Ens_ptp_trnh(nc)
-               nlon = Ens_ptp_nlon(nc)
-               nlat = Ens_ptp_nlat(nc)
-               fstd = Ens_ptp_std(nc)
-               tau  = Ens_ptp_tau(nc)/2.146
-               eps  = exp(-dt/tau)
+            do nc=1,nch2d
+               lmin = vlmin(nc)
+               lmax = vlmax(nc)
+               nlon = vnlon(nc)
+               nlat = vnlat(nc)
+               fstd = vfstd(nc)
+               tau  = vtau(nc)
+               eps  = veps(nc)
 
 !  Bruit blanc en nombre d'ondes
                allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
@@ -130,7 +198,7 @@
                   pspectrum(l)=1.D0
                end do
 
-! Normalisation du spectre pour que la variance du champ aléatoire soit std**2
+! Normalisation du spectre pour que la variance du champ al?atoire soit std**2
                sumsp=0.D0
                do l=lmin,lmax
                   sumsp=sumsp+pspectrum(l)
@@ -152,7 +220,7 @@
                paidum=-(Ens_mc_seed + 1000*nc)
 
 ! Initial values  of spectral coefficients
-               ar_p=0.d0;br_p=0.d0;ai_p=0.d0;bi_p=0.d0
+               ar_p(:,:,nc)=0.d0;br_p(:,:,nc)=0.d0;ai_p(:,:,nc)=0.d0;bi_p(:,:,nc)=0.d0
 
                do l=lmin,lmax
                   br_p(lmax-l+1,1,nc)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)
@@ -175,9 +243,9 @@
                stop
             end if
 
-            do nc=1,Ens_ptp_ncha
-               lmin = Ens_ptp_trnl(nc)
-               lmax = Ens_ptp_trnh(nc)
+            do nc=1,nch2d
+               lmin = vlmin(nc)
+               lmax = vlmax(nc)
                np=nc+1
 
                do i=1,36
@@ -215,23 +283,21 @@
 
 ! Begin Markov chains
 
-      allocate(fgem_str(l_ni, l_nj,Ens_ptp_ncha))
+      allocate(fgem_str(l_ni, l_nj, nch2d))
 
-      do nc=1,Ens_ptp_ncha
-
-         lmin = Ens_ptp_trnl(nc)
-         lmax = Ens_ptp_trnh(nc)
-         nlon = Ens_ptp_nlon(nc)
-         nlat = Ens_ptp_nlat(nc)
-         fmin = Ens_ptp_min(nc)
-         fmax = Ens_ptp_max(nc)
-         fstd = Ens_ptp_std(nc)
-         fstr = Ens_ptp_str(nc)
-         tau  =  Ens_ptp_tau(nc)/2.146
-         eps  = exp(-dt/tau)
-
-         np=nc+1
-
+      CONSTRUCT_CHAINS: do nc=1,nch2d
+         lmin = vlmin(nc)
+         lmax = vlmax(nc)
+         nlon = vnlon(nc)
+         nlat = vnlat(nc)
+         fmin = vfmin(nc)
+         fmax = vfmax(nc)
+         fstd = vfstd(nc)
+         fstr = vfstr(nc)
+         tau = vtau(nc)
+         eps = veps(nc)
+         np = nc+1
+         
 ! Random generator function
          paiv  => dumdum(1,np)
          paiy  => dumdum(33,np)
@@ -295,7 +361,7 @@
                   end do
                end do
 
-               if (nc == Ens_ptp_ncha) close(unf0)
+               if (nc == nch2d) close(unf0)
             end if
          end if
 
@@ -324,7 +390,7 @@
          allocate(sig(lmax-lmin+1, 0:lmax))
 
 ! Associated Legendre polynomials
-         p=0.D0
+         p(1:nlat,1:lmax-lmin+1,0:lmax)=0.D0
          do l=lmin,lmax
             fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
             do m=0,l
@@ -336,10 +402,9 @@
                end do
             end do
          end do
-         cc=0.D0
 
-!$omp parallel private(m,j)
-!$omp do
+         cc(1:2,1:nlat,1:lmax+1)=0.D0
+
          do m=1,lmax+1
             do j=1,nlat/2
                cc(1,j,m)        = 0.d0
@@ -348,7 +413,7 @@
                cc(2,nlat-j+1,m) = 0.d0
                cc(1,j,m)        = cc(1,j,m) &
                                 + Dot_product(p(j,1:lmax-lmin+1,m-1), &
-                                  ar_p(1:lmax-lmin+1,m,nc))
+                                ar_p(1:lmax-lmin+1,m,nc))
                cc(1,nlat-j+1,m) = cc(1,nlat-j+1,m) &
                                 + Dot_product(p(j,1:lmax-lmin+1,m-1), &
                                ar_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
@@ -360,12 +425,10 @@
                                  ai_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
             end do
          end do
-!$omp end do
-!$omp end parallel
 
 !  Fourier Transform (inverse)
 
-         wrk1=0.0
+         wrk1(:)=0.0
          n=-1
          do i=1,nlat
             do j=1,lmax+1
@@ -412,7 +475,7 @@
 !  Check the limits, stretch, and add mean if stretching asked
 !  for the physics perturbation
 
-         if(Ens_ptp_str(nc)/=0.0)then
+         if(fstr /= 0.0)then
             fmean=(fmin+fmax)/2.
             f_str=ERF(f/(fstr*fstd)/SQRT(2.)) *(fmax-fmin)/2. + fmean
             ier = ezsint(fgem_str(:,:,nc),f_str)
@@ -426,10 +489,16 @@
          end if
 
          deallocate(f,f_str)
-      end do
+
+         ! Dynamics perturbations are intercepted here         
+         if (vname(nc) == 'ADV_UTRAJ') mcutraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+         if (vname(nc) == 'ADV_VTRAJ') mcvtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+         if (vname(nc) == 'ADV_WTRAJ') mcwtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+         
+      end do CONSTRUCT_CHAINS
 
       ptr3d => fgem_str(Grd_lphy_i0:Grd_lphy_in, &
-                        Grd_lphy_j0:Grd_lphy_jn, 1:Ens_ptp_ncha)
+                        Grd_lphy_j0:Grd_lphy_jn, 1:nch2d)
       istat = phy_put(ptr3d,'mrk2',F_npath='V',F_bpath='P')
 
       deallocate(fgem_str)

@@ -198,6 +198,7 @@ typedef struct
 typedef struct
 {
   wordint index;
+  wordint grid_index;
   wordint flags;
   wordint i1, i2, j1, j2;
   wordint ni,nj;

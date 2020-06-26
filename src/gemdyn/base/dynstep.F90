@@ -19,20 +19,15 @@
       use dynkernel_options
       use dyn_fisl_options
       use gem_options
-      use glb_ld
-      use gmm_itf_mod
-      use init_options
       use HORgrid_options
       use lun
       use step_options
-      use tr3d
       use gem_timing
+      use theo_options
       implicit none
 #include <arch_specific.hf>
 
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer n, istat, icn, keep_itcn
-      real, pointer, dimension(:,:,:) :: tr1
+      integer icn, keep_itcn
 !
 !     ---------------------------------------------------------------
 !
@@ -59,7 +54,6 @@
          call tstpdyn (icn)
 
          call hzd_momentum()
-         call hzd_smago_momentum()
 
       end do
 
@@ -67,38 +61,23 @@
 
       call tstpdyn (Schm_itcn)
 
+      if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
+
       call psadj ( Step_kount )
-
+                      
       call adz_tracers ()
-
-!     ------------------------------------------------------------
-!     C	  When the timestep is completed, rename all the
-!     C        variables at time level t1 -> t0 and rename all the
-!     C        variables at time level t0 -> t1 for the next timestep
-!     ------------------------------------------------------------
 
       call t02t1()
 
-      if (Grd_yinyang_L) then
-         do n= 1, Tr3d_ntr
-            tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name, tr1)
-            call yyg_xchng (tr1, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                            G_nk, .true., 'CUBIC', .false.)
-         end do
-      else
-         call nest_gwa()
-         call spn_main()
-      end if
+      call HOR_bndry ()
 
       call canonical_cases ("VRD")
 
-      call hzd_main_stag()
-      call hzd_smago_main()
+      call hzd_main ()
 
       if (Grd_yinyang_L) call yyg_blend()
 
-      call pw_update_GPW()
+      call pw_update_GW()
       call pw_update_UV()
       call pw_update_T()
 

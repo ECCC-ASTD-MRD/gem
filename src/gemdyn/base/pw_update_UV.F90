@@ -18,22 +18,15 @@
 
       subroutine pw_update_UV()
       use glb_ld
-      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
       use gem_timing
       implicit none
 #include <arch_specific.hf>
 
-      integer :: istat
 !     ________________________________________________________________
 !
       call gemtime_start ( 5, 'PW_UPDATE', 0)
-
-      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get (gmmk_ut1_s       , ut1       )
-      istat = gmm_get (gmmk_vt1_s       , vt1       )
 
       call hwnd_stag ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
                        l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)

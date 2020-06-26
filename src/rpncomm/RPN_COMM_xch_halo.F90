@@ -198,15 +198,15 @@
       return
       end function RPN_COMM_xch_halo_test
 !=======================================================================
-!InTf
-      SUBROUTINE RPN_COMM_exchange_halo(pattern,array,periodx,periody,periodp,npol_row)  !InTf
+
+      SUBROUTINE RPN_COMM_exchange_halo(pattern,array,periodx,periody,periodp,npol_row)
       use rpn_comm
 
-      implicit none                                                                      !InTf
-      type(rpncomm_pattern), intent(IN) :: pattern                                       !InTf
-      type(c_ptr), intent(IN) :: array                                                   !InTf
-      logical, intent(IN), OPTIONAL  :: periodx,periody, periodp                         !InTf
-      integer, intent(IN), OPTIONAL :: npol_row                                          !InTf
+      implicit none
+      type(rpncomm_pattern), intent(IN) :: pattern
+      type(c_ptr), intent(IN) :: array
+      logical, intent(IN), OPTIONAL  :: periodx,periody, periodp
+      integer, intent(IN), OPTIONAL :: npol_row
       integer, dimension(:), pointer :: g
       integer :: minx,maxx,miny,maxy,ni,nj,nk,halox,haloy,gni
       type(rpncomm_field), pointer :: f
@@ -232,7 +232,7 @@
         if(periodp) call RPN_COMM_haloflip(g,minx,maxx,miny,maxy,ni,nj,nk,halox,haloy,gni)
       endif
 
-      end SUBROUTINE RPN_COMM_exchange_halo                                              !InTf
+      end SUBROUTINE RPN_COMM_exchange_halo
 
       SUBROUTINE RPN_COMM_exchange_ew(g,minx,maxx,miny,maxy,ni,nj,nk,halox,periodx,ew3d)
       use rpn_comm

@@ -15,18 +15,20 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P CLDIFM - GASEOUS CALCULATION
 !
-      subroutine ccc_cldifm (cldmin, cldmax, anu, a1, ncd, &
+      subroutine ccc_cldifm1 (cldmin, cldmax, anu, a1, ncd, &
                          ncu, nblk, nct, ncum, ncdm, &
-                         cldfrac, pfull, lev1, cut, maxc, &
+                         cldfrac, pfull, mrk2, lev1, cut, maxc, &
                          il1, il2, ilg, lay, lev)
+        use ens_perturb, only: ens_nc2d, ens_spp_get
 !
       implicit none
 !!!#include <arch_specific.hf>
 !
       integer ilg, lay, lev, lev1, maxc, il1, il2, i,k, km1, l, lp1
       real cut, x, y, z
+      real, dimension(ilg) :: anumult
       real cldmin(ilg,lay), cldmax(ilg,lay), anu(ilg,lay), a1(ilg,12), &
-           cldfrac(ilg,lay), pfull(ilg,lev), c1(ilg)
+           cldfrac(ilg,lay), pfull(ilg,lev), c1(ilg), mrk2(ilg,ens_nc2d)
 !
       integer ncd(ilg,lay), ncu(ilg,lay), nblk(ilg,lay), nct(ilg), &
               ncum(lay), ncdm(lay), levc(ilg,lay), intg1(ilg), &
@@ -55,6 +57,7 @@
 !         - Input -
 ! cldfrac cloud fraction
 ! pfull   pressure at model levels
+! mrk2    Markov chains for parameter perturbations      
 ! cut     cloud fraction limit below which no cloud is considered
 ! il1     1
 ! il2     horizontal dimension
@@ -92,6 +95,9 @@
         c1(i)                   =  0.0
         levc(i,1)               =  1
    10 continue
+
+! Retrieve stochastic parameter information on request
+      anumult = ens_spp_get('hetero_mult', mrk2, 1.)        
 !
 !----------------------------------------------------------------------
 !     determine the highest cloud location. nct is the upper level of
@@ -110,6 +116,7 @@
           else
             anu(i,k)            =  4.0
           endif
+          anu(i,k) = anu(i,k) * anumult(i)
 !
 !----------------------------------------------------------------------
 !     minimum anu, it is extremely important to ensure consistency

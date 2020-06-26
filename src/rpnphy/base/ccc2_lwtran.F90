@@ -148,11 +148,9 @@ subroutine ccc2_lwtran4 (fu, fd, slwf, tauci, omci, &
       do i = il1, il2
          taul1(i,km1)            =  taual(i,km1) + taug(i,km1)
          rtaul1(i,km1)           =  taul1(i,km1) * ru
-         dtr_vs(i,k-l2+1)        =  - rtaul1(i,km1)
+         dtr_vs(i,k-l2+1)        =  exp(dble(-rtaul1(i,km1)))
       enddo
    enddo
-
-   call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-l2+1))
 
    do k = l2, maxc
       km1 = k - 1

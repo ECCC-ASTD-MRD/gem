@@ -81,26 +81,33 @@
            ipf_smooth_fld('PW_TT:M','TTMS'), &
            ipf_smooth_fld('TR/HU:M','HUMS'), &
            ipf_smooth_fld('PW_TT:P','TTPS'), &
-           ipf_smooth_fld('TR/HU:P','HUPS') &
+           ipf_smooth_fld('TR/HU:P','HUPS'), &
+           ipf_smooth_fld('rt'   ,'sm2d',3), &
+           ipf_smooth_fld('tcond','smta',3) &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
 
       ! Advect cloud objects
       if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.
       if (cloudobj .and. F_lctl_step > 0) then
-         if (cldobj_displace() /= CLDOBJ_OK) &
+         if (cldobj_displace() /= CLDOBJ_OK) then
               call gem_error (-1,'itf_phy_step','Problem with cloud object displacement')
+         endif
       endif
 
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
       !call itf_phy_glbstat('befphy')
 
       call gemtime_start ( 46, 'PHY_step', 40 )
+      call time_trace_barr (gem_time_trace, 1, Gem_trace_barr,&
+                            Ptopo_intracomm, MPI_BARRIER)
       err_step = phy_step ( F_step_kount, F_lctl_step )
-      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
+      call time_trace_barr(gem_time_trace, 12000,&
+                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
+!      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
       call gemtime_stop  ( 46 )
 
-      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
+!      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
       !call itf_phy_glbstat('aftphy')
 
       call set_num_threads ( Ptopo_nthreads_dyn, F_step_kount )

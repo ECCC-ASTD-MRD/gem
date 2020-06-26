@@ -84,15 +84,10 @@ use MODD_TOWN, only : XQ_TOWN
 
 use MODE_THERMOS
 
-use MODI_SURFACE_RI
-use MODI_SURFACE_CD
-use MODI_SURFACE_AERO_COND
-
 implicit none
 !!!#include <arch_specific.hf>
 
 !*      0.1    declarations of arguments
-
 
 real,               intent(IN)    :: PTSTEP         ! time-step
 real, dimension(:), intent(IN)    :: PT_CANYON      ! canyon air temperature
@@ -154,8 +149,6 @@ real, dimension(:), intent(OUT)   :: ztrfzt ! output for diasurf T,q at z=zt ove
 real, dimension(:), intent(OUT)   :: ztrdzt ! output for diasurf T,q at z=zt over road
 real, dimension(:), intent(OUT)   :: zuzt  ! output for diasurf u,v at z=zt over roof
 real, dimension(:), intent(OUT)   :: zvzt  ! output for diasurf u,v at z=zt over roof
-!REAL, DIMENSION(:), INTENT(OUT)   :: zurdzt ! output for diasurf T,q at z=zt over road
-!REAL, DIMENSION(:), INTENT(OUT)   :: zvrdzt ! output for diasurf T,q at z=zt over road
 
 !*      0.2    declarations of local variables
 
@@ -167,8 +160,6 @@ real, dimension(size(PTA)) :: ZDIRCOSZW    ! orography slope cosine (=1 in TEB)
 real, dimension(size(PTA)) :: ZWAKE        ! reduction of average wind speed
                                            ! in canyon due to direction average.
 real, dimension(size(PTA)) :: ZW_CAN       ! ver. wind in canyon
-real, dimension(size(PTA)) :: ZRI          ! Richardson number
-!!$REAL, DIMENSION(SIZE(PTA)) :: ZCDN         ! neutral drag coefficient
 real, dimension(size(PTA)) :: ZLE_MAX      ! maximum latent heat flux available
 real, dimension(size(PTA)) :: ZLE          ! actual latent heat flux
 
@@ -176,11 +167,10 @@ real, dimension(size(PTA)) :: ZU_STAR, ZW_STAR !
 real, dimension(size(PTA)) :: ZQ0              !
 integer                   ::  JLOOP, STAT      !
 
-real,dimension(size(PTA)) :: cmu, ctu, ue, fcor                  ! temp var for sfc layer
+real,dimension(size(PTA)) :: cmu, ctu, ue, fcor               ! temp var for sfc layer
 real,dimension(size(PTA)) :: z0h_roof,z0h_town,z0h_road,z0h_can  ! local thermal roughness
-!!$REAL,DIMENSION(SIZE(PTA)) :: ztemp  ! temporary array for -not used- diagnostic var (to avoid print in the listing)
-real,    parameter :: XZT = 2.5  ! height for diag calc. different from zt
-
+real,    parameter :: XZT = 2.5  ! height for diag calc. for the sensor level
+real,    parameter :: xundef   = 999.
 integer N
    logical, parameter :: TOWN_TDIAGLIM = .false.
 
@@ -188,9 +178,10 @@ integer N
 
 
 ZDIRCOSZW=1. ! no orography slope effect taken into account in TEB
-
-fcor(:)=1.0372462E-04  !really ... we can't do better than this?
+! TO DO : pass in arguments since subroutine town where a local pointer is defined
+fcor(:)=1.0372462E-04  
 N=size(PTA)
+PRI(:)=xundef
 !-------------------------------------------------------------------------------
 
 !*      1.     roof and road saturation specific humidity
@@ -295,8 +286,6 @@ stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEI
         PCD(:) = (cmu(:)/ue(:))**2
 
 
-PRI = ZRI
-
 !-------------------------------------------------------------------------------
 
 !*      6.     Drag coefficient for heat fluxes between roofs and atmosphere
@@ -305,15 +294,21 @@ PRI = ZRI
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF,PZREF, &
-     PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue,&
-     tdiaglim=TOWN_TDIAGLIM,   &
-     hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt)
+     PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue, &
+     hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt,  &
+     tdiaglim=TOWN_TDIAGLIM)
 
               PAC_ROOF(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:)
 
-
-
-
+   if (stat /= SL_OK) then
+      call physeterror('urban_drag roof', 'error returned by sl_sfclayer()')
+      return
+   endif
+!
+WHERE (PZREF(:)<=(zt+1.0)) ztrfzt(:) = PTA(:)    !/PEXNA(:)
+WHERE (PZREF(:)<=zt) zuzt(:)   = PVMOD(:)/ 2**0.5
+WHERE (PZREF(:)<=zt) zvzt(:)   = PVMOD(:)/ 2**0.5
+!
 ZLE_MAX(:)     = PWS_ROOF(:) / PTSTEP * XLVTT
 ZLE    (:)     =(PQSAT_ROOF(:) - PQA(:))                     &
                  * PAC_ROOF(:) * PDELT_ROOF(:) * XLVTT * PRHOA(:)
@@ -336,7 +331,12 @@ stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/2.,PZREF+PBLD_HEI
      PT_CANYON/PEXNS,PQ_CANYON,PZ0_TOWN,Z0H_can,PLAT,fcor,optz0=1,coefm=cmu,coeft=ctu,ue=ue,&
      tdiaglim=TOWN_TDIAGLIM)
 
-      PAC_TOP(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:)
+   if (stat /= SL_OK) then
+      call physeterror('urban_drag canyon', 'error returned by sl_sfclayer()')
+      return
+   endif
+
+   PAC_TOP(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:)
 
 !-------------------------------------------------------------------------------
 
@@ -383,13 +383,20 @@ do JLOOP=1,3
 
 
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
-stat = sl_sfclayer(PT_CANYON/PEXNS,PQ_CANYON,PU_CAN+ZW_CAN,PVDIR,PBLD_HEIGHT/2.,PBLD_HEIGHT/2., &
+! compute T at z=xzt above the road
+  stat = sl_sfclayer(PT_CANYON/PEXNS,PQ_CANYON,PU_CAN+ZW_CAN,PVDIR,PBLD_HEIGHT/2.,PBLD_HEIGHT/2., &
      PTS_ROAD/PEXNS,PQ_CANYON,PZ0_ROAD,Z0H_ROAD,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue, &
-     tdiaglim=TOWN_TDIAGLIM,hghtt_diag=zt,t_diag=ztrdzt)
+     hghtt_diag=zt,t_diag=ztrdzt,tdiaglim=TOWN_TDIAGLIM)
 
-        PAC_ROAD(:) = (cmu(:)*ctu(:)/ue(:)**2)  * (PU_CAN(:)+ZW_CAN(:))
+   if (stat /= SL_OK) then
+      call physeterror('urban_drag road', 'error returned by sl_sfclayer()')
+      return
+   endif
 
+   PAC_ROAD(:) = (cmu(:)*ctu(:)/ue(:)**2)  * (PU_CAN(:)+ZW_CAN(:))
 
+WHERE (PBLD_HEIGHT(:)<=(zt*2.0)) ztrdzt(:) = PT_CANYON(:) 
+!
   ZQ0(:)     = (PTS_ROAD(:) - PT_CANYON(:)) * PAC_ROAD(:) &
               +(PTS_WALL(:) - PT_CANYON(:)) * PAC_WALL(:) * PWALL_O_ROAD(:)
 

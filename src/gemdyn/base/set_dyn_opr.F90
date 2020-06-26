@@ -46,7 +46,7 @@
          call adz_set ()
       end if
 
-      call grid_area_mask (geomh_area_8, geomh_mask_8, l_ni, l_nj)
+      call grid_area_mask (geomh_area_8,geomh_mask_8,geomh_area_mask_8,l_ni,l_nj)
 
       call adz_check_tracers()
 !

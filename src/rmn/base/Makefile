@@ -66,7 +66,7 @@ fDECKS= \
          sqadsq.f         valide.f \
          vpolagr.f \
          windv.f        xgaig.f \
-         system_time.f  mxm.f\
+         system_time.F90  mxm.f\
 	 cvmgm.f          cvmgn.f        cvmgp.f         cvmgt.f\
          cvmgz.f          nr_rand.f      fft_m4.f
 

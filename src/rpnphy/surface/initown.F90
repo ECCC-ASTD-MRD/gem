@@ -40,30 +40,30 @@ subroutine initown3(ni, trnch)
       if(zblden(i).le.0.0.or.zpaven(i).le.0.0)then
          zurban(i) = 0.0
       else
-         zurban (i) = min(zblden(i)+zpaven(i), 1.0)
+         zurban (i) = min(max(zblden(i)+zpaven(i), 0.0), 1.0)
       endif
       if(zurban(i).gt.0.0) then
-         zbld  (i) = zblden (i) / zurban (i)
-         zpav  (i) = zpaven (i) / zurban (i)
+         zbld  (i) =  (min(max(zblden (i), 0.0), 1.0)) / zurban (i)
+         zpav  (i) =  (min(max(zpaven (i), 0.0), 1.0)) / zurban (i)
       else
          zbld  (i) = 0.0
          zpav  (i) = 0.0
       endif
 
-! min and max
-      zwall_o_hor  (i) = max(zwall_o_horen(i), 0.009)
-      zbld_height  (i) = min(max(zbld_heighten(i), 3.0), 30.0)
+! == min and max values ==
+      zwall_o_hor  (i) = min(max(zwall_o_horen(i), 0.01),  5.0)
+      zbld_height  (i) = min(max(zbld_heighten(i), 3.0), 40.0)
       zz0_town     (i) = min(max(zz0_townen   (i), 0.1), 15.0)
 
-      zz0_road     (i) = zz0_roaden   (i)
-      zz0_roof     (i) = zz0_roofen   (i)
+      zz0_road     (i) = min(max(zz0_roaden   (i), 0.05),  2.0)
+      zz0_roof     (i) = min(max(zz0_roofen   (i), 0.05),  2.0)
 
-      zemis_road   (i) = zemis_roaden (i)
-      zemis_roof   (i) = zemis_roofen (i)
-      zemis_wall   (i) = zemis_wallen (i)
-      zalb_road    (i) = zalb_roaden  (i)
-      zalb_roof    (i) = zalb_roofen  (i)
-      zalb_wall    (i) = zalb_wallen  (i)
+      zemis_road   (i) = min(max(zemis_roaden (i), 0.0),  1.0)
+      zemis_roof   (i) = min(max(zemis_roofen (i), 0.0),  1.0)
+      zemis_wall   (i) = min(max(zemis_wallen (i), 0.0),  1.0)
+      zalb_road    (i) = min(max(zalb_roaden  (i), 0.0),  1.0)
+      zalb_roof    (i) = min(max(zalb_roofen  (i), 0.0),  1.0)
+      zalb_wall    (i) = min(max(zalb_wallen  (i), 0.0),  1.0)
 
       if (zurban(i) > 0.0) then
          ! calculate canyon aspect ration and sky view factors.
@@ -74,20 +74,18 @@ subroutine initown3(ni, trnch)
       endif
 
       do k=1,3
-         zhc_road (i,k) = zhc_roaden (i,k)
-         ztc_road (i,k) = ztc_roaden (i,k)
-         zd_road  (i,k) = zd_roaden  (i,k)
+         ztc_road (i,k) = min(max(ztc_roaden (i,k),  0.05), 50.0)
+         zhc_road (i,k) = min(max(zhc_roaden (i,k), 1.0e6), 4.0e6)
+         zd_road  (i,k) = min(max(zd_roaden  (i,k),  0.02), 50.0)
 
-         ztc_roof (i,k) = ztc_roofen (i,k)
-         zhc_roof (i,k) = zhc_roofen (i,k)
-         zd_roof  (i,k) = zd_roofen  (i,k)
+         ztc_roof (i,k) = min(max(ztc_roofen (i,k),  0.05), 50.0)
+         zhc_roof (i,1) = min(max(zhc_roofen (i,1), 1.0e3), 4.0e6) 
+         zd_roof  (i,k) = min(max(zd_roofen  (i,k),  0.02), 50.0)
 
-
-         zhc_wall (i,k) = zhc_wallen (i,k)
-         ztc_wall (i,k) = ztc_wallen (i,k)
-         zd_wall  (i,k) = zd_wallen  (i,k)
+         ztc_wall (i,k) = min(max(ztc_wallen (i,k),  0.05), 50.0)
+         zhc_wall (i,k) = min(max(zhc_wallen (i,k), 2.0e5), 4.0e6)
+         zd_wall  (i,k) = min(max(zd_wallen  (i,k),  0.02), 50.0)
       end do
-      zhc_roof (i,1)    = max(zhc_roofen(i,1), 1.e6)
 
       zh_industry  (i) = zbld (i)*  0.0
       zh_traffic   (i) = zpav (i)*  0.0
@@ -98,7 +96,6 @@ subroutine initown3(ni, trnch)
       zws_road (i) = zws_roaden (i)
       zti_road (i) = zti_roaden (i)
       zti_bld  (i) = zti_blden  (i)
-
 
       do k=1,3
          zt_roof (i,k) = zt_roofen (i,k)

@@ -42,7 +42,7 @@
       !=======================================================
 
       integer :: i,j,k,err
-      real(kind=REAL64)  :: c_mass_8,c_level_8(F_nk),gc_mass_8
+      real(kind=REAL64) :: c_mass_8,gc_mass_8
       character(len= 9) :: communicate_S
 !
 !---------------------------------------------------------------------
@@ -55,25 +55,18 @@
 
          do j=F_j0,F_jn
             do i=F_i0,F_in
-               c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_area_8(i,j) *geomh_mask_8(i,j)
+               c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_area_mask_8(i,j)
             end do
          end do
 
       else
 
          do k=F_k0,F_nk
-            c_level_8(k) = 0.0d0
             do j=F_j0,F_jn
                do i=F_i0,F_in
-                  c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * F_air_mass(i,j,k) * geomh_mask_8(i,j)
+                  c_mass_8 = c_mass_8 + F_tracer(i,j,k) * F_air_mass(i,j,k) * geomh_mask_8(i,j)
                end do
             end do
-         end do
-
-         c_mass_8 = 0.0d0
-
-         do k=F_k0,F_nk
-            c_mass_8 = c_mass_8 + c_level_8(k)
          end do
 
       end if

@@ -17,32 +17,11 @@
 
       subroutine pw_init
       use gmm_pw
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-
-      integer istat
-
 !     ________________________________________________________________
 !
-      istat = gmm_get ( gmmk_pw_uu_plus_s  , pw_uu_plus  )
-      istat = gmm_get ( gmmk_pw_vv_plus_s  , pw_vv_plus  )
-      istat = gmm_get ( gmmk_pw_tt_plus_s  , pw_tt_plus  )
-      istat = gmm_get ( gmmk_pw_gz_plus_s  , pw_gz_plus  )
-      istat = gmm_get ( gmmk_pw_pm_plus_s  , pw_pm_plus  )
-      istat = gmm_get ( gmmk_pw_pt_plus_s  , pw_pt_plus  )
-      istat = gmm_get ( gmmk_pw_me_plus_s  , pw_me_plus  )
-      istat = gmm_get ( gmmk_pw_p0_plus_s  , pw_p0_plus  )
-      istat = gmm_get ( gmmk_pw_uu_moins_s , pw_uu_moins )
-      istat = gmm_get ( gmmk_pw_vv_moins_s , pw_vv_moins )
-      istat = gmm_get ( gmmk_pw_tt_moins_s , pw_tt_moins )
-      istat = gmm_get ( gmmk_pw_gz_moins_s , pw_gz_moins )
-      istat = gmm_get ( gmmk_pw_pm_moins_s , pw_pm_moins )
-      istat = gmm_get ( gmmk_pw_pt_moins_s , pw_pt_moins )
-      istat = gmm_get ( gmmk_pw_me_moins_s , pw_me_moins )
-      istat = gmm_get ( gmmk_pw_p0_moins_s , pw_p0_moins )
-
       pw_uu_moins = pw_uu_plus
       pw_vv_moins = pw_vv_plus
       pw_tt_moins = pw_tt_plus

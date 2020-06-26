@@ -62,7 +62,7 @@
       if (l_north) l_njv = l_nj - 1
       if (l_east ) l_niu = l_ni - 1
 
-      if (.not.F_checkparti_L) call glbpos
+      if (.not.F_checkparti_L) call glbpos ()
 
       if (Lctl_debug_L) write(Lun_out,2000) Ptopo_myrow,Ptopo_mycol,&
                           l_ni,l_nj,l_i0,l_i0+l_ni-1,l_j0,l_j0+l_nj-1

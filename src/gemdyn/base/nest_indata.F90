@@ -18,11 +18,12 @@
 
       subroutine nest_indata (F_datev_S)
       use dynkernel_options
-      use gmm_nest
+      use mem_nest
       use gmm_geof
       use inp_mod
       use glb_ld
       use lun
+      use tr3d
       use vGrid_Descriptors, only : vgrid_descriptor
       use gem_timing
       implicit none
@@ -37,9 +38,9 @@
       call gemtime_start ( 26, 'NEST_input', 10 )
 
       call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
-                      nest_zd_fin, nest_s_fin, nest_fullme_fin       ,&
-                      l_minx,l_maxx,l_miny,l_maxy                    ,&
-                      G_nk, .true., 'NEST/', ':F', F_datev_S)
+                      nest_zd_fin, nest_s_fin, nest_tr_fin,&
+                      nest_fullme_fin,.true.,F_datev_S    ,&
+                      l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
 
       call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
                       nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&

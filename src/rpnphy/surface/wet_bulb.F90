@@ -167,19 +167,7 @@ real function DWPT(T,RH)
    real :: t,rh,x,dpd
    !    THIS FUNCTION RETURNS THE DEW POINT (CELSIUS) GIVEN THE TEMPERATURE
    !    (CELSIUS) AND RELATIVE HUMIDITY (%). T
-
-   !#WARNING: by initializing these var, they are authomatically "saved", make it explicit save (or parameter)
-!!$   real, save :: ALIQ     =613.3   !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: BLIQ     =17.502  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: CLIQ     =4780.8  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: DLIQ     =32.19  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: AICE     =613.2  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: BICE     =22.452  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: CICE     =6133.0  !  (constant for calcul. of saturation vapor pressure)
-!!$   real, save :: DICE     =0.61  !  (constant for calcul. of saturation vapor pressure)
-
    X = 1.-0.01*RH
-
    !    COMPUTE DEW POINT DEPRESSION.
    DPD =(14.55+0.114*T)*X+((2.5+0.007*T)*X)**3+(15.9+0.117*T)*X**14
    DWPT = T-DPD

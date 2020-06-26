@@ -19,25 +19,22 @@
       subroutine inp_open ( F_datev )
       use dynkernel_options
       use vGrid_Descriptors
-      use inp_mod
       use path
       use clib_itf_mod
+      use inp_base
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       character(len=*), intent(IN) :: F_datev
 
-#include <rmnlib_basics.hf>
-
-      character(len=2048) fn,root
+      character(len=2048) fn,root,mesg
       integer i,err,err_code,unf,n123(3)
       real(kind=REAL64), pointer :: vtbl_8(:,:,:)
 !
 !-----------------------------------------------------------------------
 !
-      Inp_handle= -1 ; Inp_nfiles= 0 ; err_code= 0
-      nullify (vtbl_8) ; n123= -1 ; i=0
+      Inp_handle= -1 ; Inp_nfiles= 0 ; err_code= 0 ; i= 0
 
       Inp_datev= F_datev
       call datp2f ( Inp_cmcdate, F_datev )
@@ -71,19 +68,30 @@
          if (err_code == 0) then
             err= fstlnk ( Inp_list_unf, Inp_nfiles )
             Inp_handle = Inp_list_unf(1)
-            err= vgd_new ( Inp_vgd_src, unit=Inp_handle, &
-                             format='fst', ip1=-1, ip2=-1 )
-            if (err == 0) then
-              err= vgd_get ( Inp_vgd_src, 'VTBL', vtbl_8, quiet=.true.)
-              n123 = ubound(vtbl_8)
-           end if
-         end if
-      end if
-
+         endif
+      endif
+      
       call gem_error ( err_code, 'inp_open', &
-                       'Problems opening input files' )
+                      'Problems opening input files' )
+      nullify (vtbl_8) ; n123= -1
+      Inp_dst_hauteur_L = Dynamics_hauteur_L
+      
+      if (Inp_dst_hauteur_L) then
+         Inp_src_GZ_L= inp_src_vert3d ('GEOPOTENTIAL',GZ3d)
+      else
+         Inp_src_PX_L= inp_src_vert3d ('PX',PX3d)
+      endif
 
-      call rpn_comm_bcast ( n123, 3, "MPI_INTEGER", Inp_iobcast, &
+      if (Inp_iome >= 0) then
+            err= vgd_new ( Inp_vgd_src, unit=Inp_handle, &
+                           format='fst', ip1=-1, ip2=-1 )
+            if (err == 0) then
+               err= vgd_get ( Inp_vgd_src, 'VTBL', vtbl_8, quiet=.true.)
+               n123(1:3) = ubound(vtbl_8)
+            end if
+      endif
+
+      call rpn_comm_bcast ( n123, 4, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err )
 
       Inp_kind= -1
@@ -100,19 +108,39 @@
              ((Inp_kind == 1).and.(Inp_version == 3)) ) then
             err= vgd_get ( Inp_vgd_src, key='PREF',value=Inp_pref_a_8 )
          end if
+         if (Lun_out > 0) write(lun_out,9000) 'VGD: kind= ',Inp_kind
       else
-         call gem_error ( -1, 'inp_open', &
+         if (Inp_src_PX_L) then
+            Inp_kind = PX3d%kind
+            if (Lun_out > 0)write(lun_out,9000) 'SRC_VERT3DPX: kind= ',&
+                                                Inp_kind
+         else if (Inp_src_GZ_L) then
+            Inp_kind = GZ3d%kind
+            if (Lun_out > 0)write(lun_out,9000) 'SRC_VERT3DGZ: kind= ',&
+                                                 Inp_kind
+         else
+            call gem_error ( -1, 'inp_open', &
                           'Unable to determine vertical structure')
+         endif
       end if
+ 9000 format(a,i3)
 
-      Inp_src_hauteur_L = (Inp_kind == 21)
-      Inp_dst_hauteur_L = Dynamics_hauteur_L
+      Inp_src_hauteur_L = (Inp_kind == 21) .or. Inp_src_GZ_L
+      
       Inp_levtype_S= 'P'
       if (Inp_dst_hauteur_L) Inp_levtype_S= 'H'
+      
+      err= 0
+      if (Inp_src_hauteur_L .and. .not.Inp_dst_hauteur_L) then
+         mesg= 'Input data on heights NOT allowed with dynamics on presure'
+         err= -1
+      endif
 
-      if (Inp_src_hauteur_L .and. .not.Inp_dst_hauteur_L)&
-      call gem_error ( -1, 'inp_open', &
-           'Input data on heights NOT allowed with dynamics on presure')
+      if (Inp_src_PX_L .and. Inp_dst_hauteur_L) then
+         mesg= 'Input data with PX vertical descriptors NOT allowed with dynamics on heights'
+         err= -1
+      endif
+      call gem_error (err, 'inp_open', trim(mesg))
 !
 !-----------------------------------------------------------------------
 !

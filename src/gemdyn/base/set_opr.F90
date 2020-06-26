@@ -15,7 +15,7 @@
 
 !**s/r set_opr - initialize the commons containing model operators
 
-      subroutine set_opr (F_eigen_filename_S)
+      subroutine set_opr
       use dynkernel_options
       use HORgrid_options
       use gem_options
@@ -30,7 +30,6 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-      character(len=*) F_eigen_filename_S
 
       integer i, j, dim, Gni,Gnj,jj
       real(kind=REAL64)  sc_8, gdx_8, aab_8
@@ -156,7 +155,7 @@
 
          if (Grd_yinyang_L) then
             call set_poic  (Opr_xeval_8, Opr_opsxp0_8, &
-                            Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+                            Opr_opsxp2_8, Gni, G_ni)
          end if
 
       end if

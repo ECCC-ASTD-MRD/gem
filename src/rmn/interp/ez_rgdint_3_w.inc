@@ -45,7 +45,7 @@
 !  wrap est est le facteur de "wrap around" dans le cadre d'une grille globale
 !  pour une grille de type 'A' ou 'G', wrap = 2
 !  pour une grille de type 'B', wrap = 1
-!  dans tous les autres case wrap = 0
+!  dans tous les autres cas wrap = 0
 !
 !===========================================
 !

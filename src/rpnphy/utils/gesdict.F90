@@ -17,14 +17,33 @@
 module gesdictmod
    implicit none
    private
-   public :: gesdictadd, gesdictcheck
+   public :: gesdictlock, gesdictislock, gesdictadd, gesdictcheck
 
 #include <rmnlib_basics.hf>
 #include <msg.h>
    include "buses.cdk"
 
+   logical, save :: buslck = .false.
+   
 contains
- 
+
+   !/@*
+   subroutine gesdictlock()
+      implicit none
+      !*@/
+      buslck = .true.
+      return
+   end subroutine gesdictlock
+
+   !/@*
+   function gesdictislock() result(F_istat)
+      implicit none
+      logical :: F_istat
+      !*@/
+      F_istat = buslck
+      return
+   end function gesdictislock
+
    !/@*
    function gesdictadd(varname, outname, inname, sername, vardesc, &
         shape, dynini, stagg, fmul, nmosaic, ivmin, ivmax, &
@@ -176,7 +195,7 @@ end module gesdictmod
 !/@*
 subroutine gesdict(ni, nk, lindex, lachaine)
    use phy_options, only: debug_mem_L
-   use gesdictmod, only: gesdictadd, gesdictcheck
+   use gesdictmod, only: gesdictislock, gesdictadd, gesdictcheck
    use splitst, only: splitst4
    implicit none
 !!!#include <arch_specific.hf>
@@ -261,7 +280,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
       entspc = 0; dynspc = 0; perspc = 0; volspc = 0
    endif
 
-   if (buslck) then
+   if (gesdictislock()) then
       call physeterror('gesdict', 'Call to gesdict after buses have been allocated')
       return
    endif

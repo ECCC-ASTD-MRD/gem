@@ -14,54 +14,23 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r digflt -  Compute digitally filtered fields
-!
+
      subroutine digflt
       use step_options
       use gmm_vt1
       use gmm_vta
       use init_options
       use glb_ld
-      use tr3d
-      use gmm_itf_mod
+      use mem_tracers
       implicit none
 
 #include <arch_specific.hf>
 
-      integer i, j, k, n, istat
+      integer i, j, k
       real dfcoef
-      real, pointer, dimension(:,:,:) :: tr,tra
 !     __________________________________________________________________
 !
       dfcoef = Init_dfco ( abs( (Init_halfspan - Step_kount ) ) )
-
-      istat = gmm_get(gmmk_uta_s,uta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(uta)'
-      istat = gmm_get(gmmk_ut1_s,ut1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vta_s,vta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vta)'
-      istat = gmm_get(gmmk_vt1_s,vt1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_tta_s,tta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tta)'
-      istat = gmm_get(gmmk_tt1_s,tt1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_zdta_s,zdta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdta)'
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdt1)'
-      istat = gmm_get(gmmk_sta_s,sta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(sta)'
-      istat = gmm_get(gmmk_st1_s,st1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_wta_s,wta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wta)'
-      istat = gmm_get(gmmk_wt1_s,wt1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wt1)'
-      istat = gmm_get(gmmk_qt1_s,qt1)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qt1)'
-      istat = gmm_get(gmmk_qta_s,qta)
-      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
 
       do k= 1, l_nk
       do j= 1, l_nj
@@ -87,24 +56,11 @@
 !     Passive tracers (no passive tracers in linear model)
 !***************************************************************
 
-      do n=1,Tr3d_ntr
-
-         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra)
-         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr )
-
-         if ( Init_dftr_L ) then
-            do k=1,G_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               tra(i,j,k) = tra(i,j,k) + dfcoef * tr(i,j,k)
-            end do
-            end do
-            end do
-         elseif ( Step_kount == Init_halfspan ) then
-            tra(1:l_ni,1:l_nj,1:G_nk) = tr(1:l_ni,1:l_nj,1:G_nk)
-         end if
-
-      end do
+      if ( Init_dftr_L ) then
+         trdf = trdf + dfcoef * trt1
+      else
+         if ( Step_kount == Init_halfspan ) trdf = trt1
+      endif
 !     __________________________________________________________________
 !
       return

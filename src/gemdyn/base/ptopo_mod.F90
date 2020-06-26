@@ -73,6 +73,7 @@ module ptopo
    integer Ptopo_world_myproc, Ptopo_world_numproc
    logical Ptopo_last_domain_L
 
-   integer, dimension(:,:), allocatable :: Ptopo_gindx
+   integer, dimension(  :,:), allocatable :: Ptopo_gindx
+   integer, dimension(:,:,:), allocatable :: Ptopo_colrow
 
 end module ptopo

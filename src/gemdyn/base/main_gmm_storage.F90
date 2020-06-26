@@ -46,7 +46,7 @@
          call yyg_initstencils()
          call yyg_rhs_initscalbc()
       else
-         call nest_set_gmmvar()
+         call nest_set_mem
       end if
 
 !     Initialize digital filter variables modules

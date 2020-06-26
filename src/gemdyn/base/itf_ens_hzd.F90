@@ -26,6 +26,7 @@
       use glb_ld
       use cstv
       use gmm_itf_mod
+      use ens_spp, only: spp_ncha
       implicit none
 #include <arch_specific.hf>
 !
@@ -112,7 +113,7 @@
 ! Case II: ens_skeb_conf = .false. however, in the same time
 !          ens_ptp_conf  = .true.
 !
-      elseif (ens_ptp_conf .and. .not.ens_skeb_conf )then
+      elseif ((ens_ptp_conf .or. spp_ncha>0) .and. .not.ens_skeb_conf )then
 
          if (mode == "SAVE") then
             goto 999

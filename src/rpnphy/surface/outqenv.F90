@@ -167,16 +167,13 @@ subroutine OUTQENV2(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND,    &
       ! facade
       PQ6(JJ)=ZAB*PREF_SW_FAC (JJ)*ZFFAC(JJ)
       PQ7(JJ)=ZEB*PEMIT_LW_FAC(JJ)*ZFFAC(JJ)
-      ! roof
-      !   PQ8(JJ)=ZAB*PREF_SW_ROOF(JJ)*ZFROOF(JJ)
-      !   PQ9(JJ)=ZEB*PEMIT_LW_ROOF(JJ)*ZFROOF(JJ)
+      ! roof => see urban_outqenv
 
       !=====================================
       ! ADD CONTRIBUTION FROM THE SUN
       ! OPT_BODY = 1  human body, for UTCI
       ! OPT_BODY = 2  globe sensor, for WBGT
       !======================================
-
 
       ZELEV(JJ) = ( PI/2. - PZENITH(JJ)) *180./PI
       if (ZELEV(JJ) .lt. 1E-6) then
@@ -189,8 +186,6 @@ subroutine OUTQENV2(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND,    &
          ZDIRSWBODY(JJ) = PDIR_SW(JJ) / max( cos(PZENITH(JJ)) ,0.1)              &
               * 0.308 * cos( PI/180. *ZELEV(JJ)* (1.-ZELEV(JJ)**2/48402.) )
       elseif (OPT_BODY .eq. 2) then
-         ! sphere Oashi et al 2014
-         !     ZDIRSWBODY(:) = PDIR_SW(:) * 0.25
          ! sphere Gaspar and Quintela 2009
          ZDIRSWBODY(JJ) = PDIR_SW(JJ) * 0.25 /  max( cos(PZENITH(JJ)) ,0.1)
       endif

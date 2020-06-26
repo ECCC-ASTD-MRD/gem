@@ -19,21 +19,23 @@
 
       use adz_options
       use canonical
+      use cstv
       use dcmip_options
+      use geomh
+      use glb_ld
       use gmm_vt1
       use HORgrid_options
-      use geomh
-      use step_options
-
-      use glb_ld
-      use cstv
       use lun
-      use tr3d
-      use gmm_itf_mod
+      use mem_tracers
       use ptopo
+      use step_options
+      use tr3d
+
       implicit none
 
-      integer F_my_step
+      !arguments
+      !---------
+      integer, intent(in) :: F_my_step
 
       !object
       !==============================================================================
@@ -44,35 +46,35 @@
       !   CASE 163: Maximum vertical velocity                              at each  T
       !==============================================================================
 
-
-      !---------------------------------------------------------------
-
-      integer istat,i,j,k,ierr,n
+      integer :: istat,i,j,k,ierr,n
       real, pointer, dimension(:,:,:) :: cl,cl2,tr,tr_r
 
       real, parameter :: CLY_REF = 4.*10.**(-6)
 
-      real(kind=REAL64) norm_1_8,norm_2_8,norm_m_8,norm_inf_8,abs_8, &
-              s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8,s_max_8, &
-              g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8,g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8,g_max_8, &
-              w1_8,w2_8
+      real(kind=REAL64) :: norm_1_8,norm_2_8,norm_m_8,norm_inf_8,abs_8,w1_8,w2_8, &
+                           s_err_m_8,s_ref_m_8,s_err_inf_8,s_ref_inf_8,s_max_8,   &
+                           g_err_m_8,g_ref_m_8,g_err_inf_8,g_ref_inf_8,g_max_8,   &
+                           s_err_1_8,s_ref_1_8,s_err_2_8,s_ref_2_8,               &
+                           g_err_1_8,g_ref_1_8,g_err_2_8,g_ref_2_8
 
-      character(len= 12) name_S
-      character(len= 9)  communicate_S
+      character(len= 12) :: name_S
+      character(len= 9)  :: communicate_S
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk):: bidon,air_mass
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: air_mass
 
-      logical almost_zero
-
-      !---------------------------------------------------------------
-
-      if (adz_verbose == 0) return
+      logical :: almost_zero
+!
+!---------------------------------------------------------------------
+!
+      if (Adz_verbose == 0) return
 
       if (.NOT.(Dcmip_case>=11.and.Dcmip_case<=13).and.Dcmip_case/=161.and.Dcmip_case/=163) return
 
       if ((Dcmip_case>=11.and.Dcmip_case<=13).and.F_my_step<Step_total) return
 
-      call get_density (bidon,air_mass,1,l_minx,l_maxx,l_miny,l_maxy,G_nk,1) !TIME T1
+      !Reset Air Mass at TIME P
+      !------------------------
+      call get_air_mass (air_mass,1,l_minx,l_maxx,l_miny,l_maxy,l_nk,1)
 
       !--------------------------------------------------------------------------
       !CASE 11: Pure advection - 3D deformational flow
@@ -96,12 +98,12 @@
                       (Tr3d_name_S(n)(1:2)=='Q3').or. &
                       (Tr3d_name_S(n)(1:2)=='Q4'))) cycle
 
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr)
+            tr => tracers_P(n)%pntr
 
-            if (Tr3d_name_S(n)(1:2)=='Q1') istat = gmm_get(gmmk_q1ref_s,tr_r)
-            if (Tr3d_name_S(n)(1:2)=='Q2') istat = gmm_get(gmmk_q2ref_s,tr_r)
-            if (Tr3d_name_S(n)(1:2)=='Q3') istat = gmm_get(gmmk_q3ref_s,tr_r)
-            if (Tr3d_name_S(n)(1:2)=='Q4') istat = gmm_get(gmmk_q4ref_s,tr_r)
+            if (Tr3d_name_S(n)(1:2)=='Q1') tr_r => q1ref
+            if (Tr3d_name_S(n)(1:2)=='Q2') tr_r => q2ref
+            if (Tr3d_name_S(n)(1:2)=='Q3') tr_r => q3ref
+            if (Tr3d_name_S(n)(1:2)=='Q4') tr_r => q4ref
 
             s_err_1_8 = 0.; s_err_2_8 = 0.; s_err_m_8 = 0.; s_err_inf_8 = 0.
             s_ref_1_8 = 0.; s_ref_2_8 = 0.; s_ref_m_8 = 0.; s_ref_inf_8 = 0.
@@ -158,10 +160,10 @@
             !Print Norms
             !-----------
             if (Lun_out>0.and.Ptopo_couleur==0) then
-                if (Tr3d_name_S(n)(1:2)=='Q1') name_S = 'TRACER Q1 '
-                if (Tr3d_name_S(n)(1:2)=='Q2') name_S = 'TRACER Q2 '
-                if (Tr3d_name_S(n)(1:2)=='Q3') name_S = 'TRACER Q3 '
-                if (Tr3d_name_S(n)(1:2)=='Q4') name_S = 'TRACER Q4 '
+                if (Tr3d_name_S(n)(1:2)=='Q1') name_S = 'TRACER Q1  '
+                if (Tr3d_name_S(n)(1:2)=='Q2') name_S = 'TRACER Q2  '
+                if (Tr3d_name_S(n)(1:2)=='Q3') name_S = 'TRACER Q3  '
+                if (Tr3d_name_S(n)(1:2)=='Q4') name_S = 'TRACER Q4  '
                 write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
                 write (Lun_out,1001) name_S,'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L1    = ',norm_1_8
                 write (Lun_out,1001) name_S,'TIME (days) = ',(F_my_step*Cstv_dt_8)/3600./24.,' ERROR NORM L2    = ',norm_2_8
@@ -184,9 +186,8 @@
 
          if (Lun_out>0) write (Lun_out,1000)
 
-         istat = gmm_get ('TR/CL:P' , cl )
-         istat = gmm_get ('TR/CL2:P', cl2)
-         istat = gmm_get (gmmk_cly_s, cly)
+         istat = tr_get('CL:P',cl)
+         istat = tr_get('CL2:P',cl2)
 
          cly(1:l_ni,1:l_nj,1:G_nk) = cl(1:l_ni,1:l_nj,1:G_nk) + 2.0d0 * cl2(1:l_ni,1:l_nj,1:G_nk)
 
@@ -261,8 +262,6 @@
 
          if (Lun_out>0) write (Lun_out,1002)
 
-         istat = gmm_get (gmmk_wt1_s,   wt1)
-
          s_max_8 = 0.0D0
 
          do k = 1,G_nk
@@ -286,15 +285,16 @@
          !-----------
          if (Lun_out>0.and.Ptopo_couleur==0) then
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-            write (Lun_out,1001) "FIELD WT1  ",'TIME (days) = ',(F_my_step*Cstv_dt_8*Dcmip_X)/3600./24.,' MAX.VERT.VELOCITY= ',g_max_8
+            write (Lun_out,1001) "FIELD WT1  ",'TIME (days) = ',(F_my_step*Cstv_dt_8*Dcmip_X)/3600./24., &
+                                 ' MAX.VERT.VELOCITY= ',g_max_8
             write (Lun_out,*) ' +++++++++++++++++++++++++++++++++++++++++++'
             write (Lun_out,*) ' '
          end if
 
       end if
-
-      !-----------------------------------------------------------------
-
+!
+!---------------------------------------------------------------------
+!
       return
 
  1000 format( &
@@ -311,7 +311,10 @@
       /,'EVALUATE ERROR NORMS Q1 (Pure advection - 3D Hadley-like meridional circulation): (S/R DCMIP_DIAGNOSTICS)',   &
       /,'=========================================================================================================',/,/)
  1005 format( &
-      /,'EVALUATE ERROR NORMS Q1-Q2-Q3-Q4 (Pure advection - 2D solid-body rot. of thin cloud-like tracer): (S/R DCMIP_DIAGNOSTICS)',   &
-      /,'=========================================================================================================================',/,/)
+      /,'EVALUATE ERROR NORMS Q1-Q2-Q3-Q4 (Pure advection - 2D solid-body rot. of thin cloud-like tracer): ',   &
+        '(S/R DCMIP_DIAGNOSTICS)',   &
+      /,'==================================================================================================',   &
+        '=======================',   &
+      /,/)
 
       end subroutine dcmip_diagnostics

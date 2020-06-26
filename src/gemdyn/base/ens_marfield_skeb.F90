@@ -129,16 +129,11 @@
             do m=0,l
                sig=(-1.D0)**(l+m)
 
-!$omp parallel private(j)  &
-!$omp shared (l,m,nlat,lmax,sig,fact)
-!$omp  do
                do j=1,nlat/2
                   call pleg (l, m, j, nlat, pl)
                   plg(j,lmax-l+1,m+1)=pl*fact
                   plg(nlat-j+1,lmax-l+1,m+1)=pl*fact*sig
                end do
-!$omp end do
-!$omp end parallel
             end do
          end do
 
@@ -170,10 +165,10 @@
             paidum=> dumdum(36,1)
             paidum=-Ens_mc_seed
 ! Valeurs initiales des coefficients spectraux
-            ar_s=0.d0
-            br_s=0.d0
-            ai_s=0.d0
-            bi_s=0.d0
+            ar_s(:,:)=0.d0
+            br_s(:,:)=0.d0
+            ai_s(:,:)=0.d0
+            bi_s(:,:)=0.d0
 
             do l=lmin,lmax
                br_s(lmax-l+1,1)=fact1(l)*gasdev(paiv,paiy,paiset,pagset,paidum)
@@ -316,10 +311,8 @@
       allocate(wrk1( nlat * (nlon+2)))
       allocate(f(nlon, nlat) )
 
-      cc=0.D0
+      cc(1:2,1:nlat,1:lmax+1)=0.D0
 
-!$omp parallel private(m,j)
-!$omp do
       do m=1,lmax+1
          do j=1,nlat
             cc(1,j,m)=0.d0
@@ -328,12 +321,10 @@
             cc(2,j,m)=cc(2,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ai_s(1:lmax-lmin+1,m))
          end do
       end do
-!$omp end do
-!$omp end parallel
 
 ! Fourier Transform (inverse)
 
-      wrk1=0.0
+      wrk1(:)=0.0
       n=-1
       do i=1,nlat
          do j=1,lmax+1

@@ -47,37 +47,43 @@ void EliminerGrille(wordint gdid)
     {
     if (Grille[gdrow_id][gdcol_id].flags & LAT)
         {
-        free(Grille[gdrow_id][gdcol_id].lat);
-        free(Grille[gdrow_id][gdcol_id].lon);
-        Grille[gdrow_id][gdcol_id].lat = NULL;
-        Grille[gdrow_id][gdcol_id].lon = NULL;
+        if (Grille[gdrow_id][gdcol_id].lat != NULL)
+           {
+           free(Grille[gdrow_id][gdcol_id].lat);
+           free(Grille[gdrow_id][gdcol_id].lon);
+           }
         }
 
     if (Grille[gdrow_id][gdcol_id].flags & AX)
         {
-        free(Grille[gdrow_id][gdcol_id].ax);
-        free(Grille[gdrow_id][gdcol_id].ay);
-        Grille[gdrow_id][gdcol_id].ax = NULL;
-        Grille[gdrow_id][gdcol_id].ay = NULL;
-        }
+        if (Grille[gdrow_id][gdcol_id].ax != NULL)
+           {
+           free(Grille[gdrow_id][gdcol_id].ax);
+           free(Grille[gdrow_id][gdcol_id].ay);
+           }
+        }        
 
     if (Grille[gdrow_id][gdcol_id].ncx != NULL)
         {
-        free(Grille[gdrow_id][gdcol_id].ncx);
-        free(Grille[gdrow_id][gdcol_id].ncy);
-        Grille[gdrow_id][gdcol_id].ncx = NULL;
-        Grille[gdrow_id][gdcol_id].ncy = NULL;
+        if (Grille[gdrow_id][gdcol_id].ncx != NULL)
+           {
+           free(Grille[gdrow_id][gdcol_id].ncx);
+           free(Grille[gdrow_id][gdcol_id].ncy);
+           }
         }
-    Grille[gdrow_id][gdcol_id].flags = (int)0;
+ 
+    for (i=0; i < Grille[gdrow_id][gdcol_id].n_gdin_for; i++)
+        {
+        index = ez_find_gdin_in_gset(gdid, Grille[gdrow_id][gdcol_id].gdin_for[i]);
+        c_ezfreegridset(Grille[gdrow_id][gdcol_id].gdin_for[i], index);
+        }
+        
+      gr_list[Grille[gdrow_id][gdcol_id].grid_index] = (_Grille *) NULL;
+      memset(&(Grille[gdrow_id][gdcol_id]),(int)NULL, sizeof(_Grille));      
+      nGrilles--;
     }
    
 
-   for (i=0; i < Grille[gdrow_id][gdcol_id].n_gdin_for; i++)
-      {
-      index = ez_find_gdin_in_gset(gdid, Grille[gdrow_id][gdcol_id].gdin_for[i]);
-      c_ezfreegridset(Grille[gdrow_id][gdcol_id].gdin_for[i], index);
-      }
-      nGrilles--;
 #ifdef MUTEX
 // JP
    pthread_mutex_unlock(&EZ_MTX);

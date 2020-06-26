@@ -23,6 +23,7 @@
       use gem_timing
       use gmm_vt0
       use gmm_vt1
+      use gem_timing
       use gmm_pw
       implicit none
 #include <arch_specific.hf>
@@ -37,8 +38,8 @@
 !     ---------------------------------------------------------------
 !
       call gemtime_start (30, 'ADZ_TRAJEC', 21)
-      call adz_traject (pw_uu_moins, pw_vv_moins, zdt1, &
-                           ut0     ,    vt0     , zdt0, &
+      call adz_traject (pw_uu_plus, pw_vv_plus, zdt1, &
+                        ut0       ,    vt0    , zdt0, &
                         l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call gemtime_stop (30)
 

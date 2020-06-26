@@ -15,16 +15,17 @@
 !-------------------------------------- LICENCE END --------------------------
 
 !/@*
-subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
+subroutine sgo16flx3(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
      tth, ttf, ss, ssh,  &
      ilev, ilg, il1, il2,  &
      tau, taufac,  &
      gc, height, slope, xcent, mtdir,  &
-     cdmin, fc, phic, stabfactor, nldirfactor,  &
+     cdmin, fc, phic, stabfactor, nldirfactor, mrk2, &
      gwdrag, blocking, split_tend_L)
    use integrals, only: int_profile, int_solve, INT_OK
    use phy_options, only: sgo_windfac
-   use  tdpack, only: CAPPA, CPD, GRAV, RGASD
+   use tdpack, only: CAPPA, CPD, GRAV, RGASD
+   use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
    !@Arguments
@@ -53,6 +54,7 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
    real, dimension(ilg,ilev), intent(in) :: ttf    ! virtual temperature at mom levels 
    real, dimension(ilg,ilev), intent(in) :: ss     ! sigma at thermo levels
    real, dimension(ilg,ilev), intent(in) :: ssh    ! sigma at mom levels
+   real, dimension(ilg,ens_nc2d), intent(in) :: mrk2 !Markov chains for perturbations
    real, dimension(ilg,ilev), intent(out) :: utend ! total tendency for u
    real, dimension(ilg,ilev), intent(out) :: vtend ! total tendency for v
    real, dimension(ilg,ilev), intent(out) :: ttend ! total tendency for t
@@ -123,7 +125,7 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
         B, C, ks2, vent
    real, dimension(ilg) :: ub, vb, vmodb, env, slp2, slpf, gamma, theta, &
         hblk, uav, vav, velav, nav, fdir, dscale, fdscale, cdf, &
-        ampd, uavd, vavd, velavd, navd
+        ampd, uavd, vavd, velavd, navd, vphic, phicni
    real, dimension(ilg, ilev) :: u, v, tf, th, s, sh, sexpk, shexpk, bvf, &
         bvfreq, veln, asq, asqi, asqs, dfac, depfac, denfac, grad, zb, &
         utendgwd, vtendgwd, utendllb, vtendllb, utendtot, vtendtot
@@ -135,7 +137,7 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
    utend(il1:il2,:) = 0.
    vtend(il1:il2,:) = 0.
    ttend(il1:il2,:) = 0.
-
+   
    !-------------------------------------------------------------------
    !     Find and gather active grid columns
 
@@ -157,12 +159,16 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
 
    if (jyes <= 0) return
 
+   !     Retrieve stochastic perturbations on request
+   phicni = ens_spp_get('sgo_phic', mrk2, default=phic)
+   
    do i=1,len
       ii = drag(i) + il1 - 1
       env(i)   = height(ii) 
       slp2(i)  = slope(ii)
       gamma(i) = xcent(ii)
       theta(i) = mtdir(ii)
+      vphic(i) = phicni(ii)
    enddo
 
    do i=1,len
@@ -433,11 +439,10 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
            0.*env(1:jyes),env(1:jyes))
       nav(1:jyes) = nav(1:jyes)/max(env(1:jyes),hmin2)
       nav(1:jyes) = max(nav(1:jyes),nmin)
-
+      
       !     Compute blocking height
-
       hblk(1:jyes) = max(fc*env(1:jyes) & 
-           - phic*velav(1:jyes)/nav(1:jyes), 0.)
+           - vphic(1:jyes)*velav(1:jyes)/nav(1:jyes), 0.)
 
       !--------------------------------------------------------------------
       !     Compute directional factor 
@@ -602,4 +607,4 @@ subroutine sgo16flx2(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
 
    !--------------------------------------------------------------------
    return
-end subroutine sgo16flx2
+end subroutine sgo16flx3

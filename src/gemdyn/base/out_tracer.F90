@@ -27,6 +27,7 @@
       use out3
       use phy_itf, only: phy_get
       use tr3d
+      use mem_tracers
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor, vgd_get, vgd_free, VGD_OK, VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
@@ -47,7 +48,7 @@
       real,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), target :: w4
       real,dimension(:,:,:), allocatable :: cible
       real, dimension(:,:  ), pointer :: qdiag
-      real, dimension(:,:,:), pointer :: tr1,tr5,ptr3d
+      real, dimension(:,:,:), pointer :: tr5,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
       real hybt_gnk2(1)
       integer ind0(1)
@@ -82,26 +83,22 @@
             outvar_L=.false.
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
-                  nullify (tr1)
                   fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
                   indxtr=n
-                  istat = gmm_get(fullname,tr1)
-                  if (.not. GMM_IS_ERROR(istat)) then
-                     outvar_L=.true.
-                  end if
+                  outvar_L=.true.
                   exit
                end if
             end do
 
             if (outvar_L) then
-               w4(:,:,1:G_nk) = tr1(:,:,1:G_nk)
+               w4(:,:,1:G_nk) = tracers_P(indxtr)%pntr(:,:,1:G_nk)
                model_nk = G_nk
                if (write_diag_lev) then
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
                      istat = gmm_get(gmmk_diag_hu_s,qdiag)
                      if (istat == 0) w4(:,:,G_nk+1) = qdiag(:,:)
                   else
-                     w4(:,:,G_nk+1) = tr1(:,:,G_nk)
+                     w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if
@@ -119,6 +116,7 @@
                   end do
                   end do
                end if
+
                call out_fstecr(w4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                        Outd_var_S(ii,set),Outd_convmult(ii,set)    ,&
                        Outd_convadd(ii,set),knd,-1,G_nk,indo,nko   ,&
@@ -158,26 +156,21 @@
             outvar_L=.false.
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set) == trim(Tr3d_name_S(n))) then
-                  nullify (tr1)
                   fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
                   indxtr=n
-                  istat = gmm_get(fullname,tr1)
-                  if (.not.GMM_IS_ERROR(istat)) then
-                     outvar_L=.true.
-                  end if
+                  outvar_L=.true.
                   exit
                end if
             end do
 
             if (outvar_L) then
-
-               w4(:,:,1:G_nk) = tr1(:,:,1:G_nk)
+               w4(:,:,1:G_nk) = tracers_P(indxtr)%pntr(:,:,1:G_nk)
                if (out3_sfcdiag_L) then
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
                      istat = gmm_get(gmmk_diag_hu_s,qdiag)
                      if (istat == 0) w4(:,:,G_nk+1) = qdiag(:,:)
                   else
-                     w4(:,:,G_nk+1) = tr1(:,:,G_nk)
+                     w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if

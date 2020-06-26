@@ -19,7 +19,7 @@
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
 
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
 #define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
 #ifdef INTERFACEONLY
@@ -41,7 +41,7 @@
 
 
 #ifndef INTERFACEONLY
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
   integer function gmm_update_tpi_key2(indx,datatype, key)
     implicit none
@@ -65,7 +65,7 @@
   end function gmm_update_tpi_key2
 #endif
 
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
 
 !!@LOOP
 #define EXTENSION Cat(DATACODE,DATALENGTH,DIM)

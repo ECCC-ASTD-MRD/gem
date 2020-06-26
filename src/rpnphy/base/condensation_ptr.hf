@@ -184,6 +184,8 @@
    MKPTR2Dm1(zrnflx, rnflx, f)
    MKPTR2Dm1(zsnoflx, snoflx, f)
 
+   MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+
    MKPTR1D(zicw, icw, v)
    MKPTR1D(ziwv, iwv, v)
    MKPTR1D(ziwv700, iwv700, v)

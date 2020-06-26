@@ -34,6 +34,7 @@ contains
         vbus, dbus, rcdt1, vsiz, dsiz, kount, ni, nk)
       use phy_options
       use phybus
+      use ens_perturb, only: ptp_L
       implicit none
 !!!#include <arch_specific.hf>
       !@Author  L. Spacek (Oct 2011)
@@ -60,7 +61,6 @@ contains
       ! vbus     physics tendencies and other output fields from the physics
       !*@/
 #include <msg.h>
-#include "ens.cdk"
 
       integer :: i, k
       real, pointer, dimension(:,:) :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
@@ -110,7 +110,7 @@ contains
          zhuphytd(i,nk) = zqdifv(i,nk)
       end do
 
-      if (stochphy .and. kount >= 1) then
+      if (ptp_L .and. kount >= 1) then
          do k=1,nk
             do i=1,ni
                zuplus (i,k) = uplus0 (i,k)

@@ -18,8 +18,8 @@
       subroutine dry_sfc_pressure_8 (F_drysfcp0_8, presT_8, p0T_8, &
                                Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
       use glb_ld
-      use cstv
-      use gmm_itf_mod
+      use tr3d
+      use mem_tracers
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -29,15 +29,19 @@
       real(kind=REAL64) F_drysfcp0_8(Minx:Maxx,Miny:Maxy),&
                              presT_8(Minx:Maxx,Miny:Maxy,Nk),&
                                p0T_8(Minx:Maxx,Miny:Maxy)
-
-      integer i,j,k,istat
+      integer i,j,k
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumq
       real, pointer, dimension(:,:,:)         :: tr
 !     ________________________________________________________________
 !
-      call sumhydro (sumq,Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
-
-      istat = gmm_get('TR/HU:'//F_timelevel_S,tr)
+      if (F_timelevel_S == 'P') then
+         call sumhydro (sumq,Minx,Maxx,Miny,Maxy,Nk,Tr3d_ntr, trt1)
+         tr=>tracers_P(Tr3d_hu)%pntr
+      endif
+      if (F_timelevel_S == 'M') then
+         call sumhydro (sumq,Minx,Maxx,Miny,Maxy,Nk,Tr3d_ntr, trt0)
+         tr=>tracers_M(Tr3d_hu)%pntr
+      endif
 
       do k=1,Nk
          sumq(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)= &
@@ -55,7 +59,7 @@
          end do
          do i=1+pil_w,l_ni-pil_e
             F_drysfcp0_8(i,j)= F_drysfcp0_8(i,j) + &
-                 (1.-sumq(i,j,Nk))*(p0T_8(i,j) - presT_8(i,j,Nk)) - Cstv_pref_8
+                 (1.-sumq(i,j,Nk))*(p0T_8(i,j) - presT_8(i,j,Nk))
          end do
       end do
 

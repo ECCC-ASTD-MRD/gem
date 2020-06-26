@@ -173,7 +173,7 @@
          xtmp_8(:,:) = one
          do j = j0, jn
             do i = i0, in
-               xtmp_8(i,j) = F_t(i,j,k) / real(Cstv_Tstr_8)
+               xtmp_8(i,j) = F_t(i,j,k)/Cstv_Tstr_8
             end do
          end do
          call vlog( ytmp_8, xtmp_8, nij )

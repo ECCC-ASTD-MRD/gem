@@ -14,10 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-subroutine baktotq7(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
-     tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg, &
+subroutine baktotq8(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
+     tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg,mrk2, &
      vcoef,pblsigs,pblq1,tau,n,nk)
    use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
+   use ens_perturb, only: ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -43,7 +44,8 @@ subroutine baktotq7(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    real, dimension(n,nk), intent(in) :: zn              !mixing length (m)
    real, dimension(n,nk), intent(in) :: ze              !dissipation length (m)
    real, dimension(n),    intent(in) :: mg              !land-sea mask
-   real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation
+   real, dimension(n,ens_nc2d), intent(in) :: mrk2      !Markov chains for stochastic parameters
+   real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation   
    real, dimension(n,nk), intent(inout) :: fnn          !flux enhancement * cloud fraction
    real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
    real, dimension(n,nk), intent(out) :: fn             !cloud fraction
@@ -103,8 +105,8 @@ subroutine baktotq7(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
         IMPLICIT_CLOUD,COMPUTE_FROM_STATE,n,nk)
 
    ! Retrive updated cloud water content (qcp) from conserved variables
-   call clsgs7(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,hpbl,hflux,s,ps,gztherm,&
-        mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+   call clsgs8(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,hpbl,hflux,s,ps,gztherm,&
+        mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
 
    ! Convert back to state variables and tendencies
    qv = qw - max(0.,qc)
@@ -116,5 +118,5 @@ subroutine baktotq7(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    dqv = max((dqw-dqc),-max(0.0,qv)*tauinv)
 
    return
-end subroutine baktotq7
+end subroutine baktotq8
 

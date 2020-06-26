@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------
 
 
-subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
+subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fatb,fadb,fafb,fctb,fcdb,fcfb, &
      albpla, fdl, ful, hrs, hrl, &
      cst, csb, clt, clb, par, &
@@ -26,10 +26,11 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
      f12, f113, f114,o2,rmu, r0r, salb, em0, taucs, &
      omcs, gcs, taucl, omcl, gcl, &
      cldfrac, tauae, exta, exoma, exomga, &
-     fa, absa, lcsw, lclw, &
+     fa, absa, lcsw, lclw, mrk2, luvonly, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
    use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   use ens_perturb, only: ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -51,7 +52,9 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
         taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
         cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
 
-   logical lcsw, lclw
+   real, dimension(ilg, ens_nc2d) :: mrk2
+   logical lcsw, lclw, luvonly
+
    real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
 
    !@Authors
@@ -115,6 +118,7 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
    ! fsamoon      the energy absorbed between toa and model top level
    ! lcsw         logical key to control call to sw radiative transfer
    ! lclw         logical key to control call to lw radiative transfer
+   ! mrk2         Markov chains for stochastic parameter perturbations
    ! il1          1
    ! il2          horizontal dimension (ni)
    ! ilg          horizontal dimension (il2-il1+1)
@@ -442,9 +446,9 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
    !     reusing inptg, inptmg, tauomgc space
    !----------------------------------------------------------------------
 
-   call ccc_cldifm (cldm, tauomgc, anu, a1, ncd, &
+   call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
-        cldfrac, pfull, lev1, cut, maxc, &
+        cldfrac, pfull, mrk2, lev1, cut, maxc, &
         il1, il2, ilg, lay, lev)
 
 
@@ -925,6 +929,8 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
 
          enddo DO400
 
+        if (ib == 1 .and. luvonly) return
+
          !----------------------------------------------------------------------
          !     in accumulated space with interval close to 1, the extinction
          !     coefficients is extremely large, the calculation process can be
@@ -1028,6 +1034,8 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
       enddo
 
 499   continue
+
+      if (luvonly) return
 
    endif
    !     (lcsw)
@@ -1321,4 +1329,4 @@ subroutine ccc2_raddriv1(fsg, fsd, fsf, fsv, fsi, &
    !     (lclw)
 
    return
-end subroutine ccc2_raddriv1
+end subroutine ccc2_raddriv3

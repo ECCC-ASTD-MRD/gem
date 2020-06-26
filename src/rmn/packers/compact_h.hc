@@ -180,7 +180,7 @@ void *compact_FLOAT_4_8(void *unpackedArrayOfFloat, void *packedHeader, void *pa
      ***************************************/
     wordSize = 8 * sizeof(word);
 
-
+
     if ( opCode == FLOAT_PACK )   
       /********************************************************************
        *                                                                  *
@@ -733,7 +733,7 @@ void *compact_FLOAT_4_8(void *unpackedArrayOfFloat, void *packedHeader, void *pa
     return (word *)arrayOfInt;
  
   }
-
+
 
   else if ( opCode == FLOAT_UNPACK ) 
     /**********************************************************************************
@@ -1033,7 +1033,7 @@ void *compact_FLOAT_4_8(void *unpackedArrayOfFloat, void *packedHeader, void *pa
 
       };/* if */
     
-
+
     /******************************************************************
      *                                                                *
      *   optimization used on NEC                                     *

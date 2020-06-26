@@ -22,6 +22,7 @@
       use ens_options
       use gmm_itf_mod
       use var_gmm
+      use ens_spp, only: spp_ncha, spp_lmax, spp_mmax, MAX_NSPP
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,37 +39,60 @@
 !#include "ens_gmm_dim.cdk"
 !#include "ens_param.cdk"
 
-      integer :: istat
+      integer :: istat, nch2d, lmax, mmax
 !-------------------------------------------------------------------
 !
+      gmmk_mcutraj_s= 'MCUTRAJ'
+      gmmk_mcvtraj_s= 'MCVTRAJ'
+      gmmk_mcwtraj_s= 'MCWTRAJ'
+      
+      istat = gmm_create(gmmk_mcutraj_s,mcutraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcutraj'
+      istat = gmm_create(gmmk_mcvtraj_s,mcvtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcvtraj'
+      istat = gmm_create(gmmk_mcwtraj_s,mcwtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcwtraj'
+
+      istat = gmm_get(gmmk_mcutraj_s,mcutraj)
+      if (GMM_IS_ERROR(istat))write(*,6005)'mcutraj'
+      istat = gmm_get(gmmk_mcvtraj_s,mcvtraj)
+      if (GMM_IS_ERROR(istat))write(*,6005)'mcvtraj'
+      istat = gmm_get(gmmk_mcwtraj_s,mcwtraj)
+      if (GMM_IS_ERROR(istat))write(*,6005)'mcwtraj'
+      mcwtraj = 1.
+      
       if (.not.Ens_conf) return
 
       if (Lun_out > 0) write(Lun_out,6010)
 
+      nch2d = Ens_ptp_ncha + spp_ncha
+      lmax = max(Ens_ptp_lmax, spp_lmax)
+      mmax = max(Ens_ptp_mmax, spp_mmax)
+      
       call gmm_build_meta3D(meta3d_sh2,          &
                             1,l_ni,0,0,l_ni,     &
                             1,l_nj,0,0,l_nj,     &
                             1,l_nk,0,0,l_nk,     &
                             0,GMM_NULL_FLAGS)
-       call gmm_build_meta3D(meta3d_ar_p,                      &
-                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
-                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
-                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+      call gmm_build_meta3D(meta3d_ar_p,         &
+                            1,lmax,0,0,lmax,     &
+                            1,mmax,0,0,mmax,     &
+                            1,nch2d,0,0,nch2d,   &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_br_p,                       &
-                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
-                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
-                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+      call gmm_build_meta3D(meta3d_br_p,         &
+                            1,lmax,0,0,lmax,     &
+                            1,mmax,0,0,mmax,     &
+                            1,nch2d,0,0,nch2d,   &
                             0,GMM_NULL_FLAGS)
-     call gmm_build_meta3D(meta3d_ai_p,                      &
-                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
-                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
-                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+      call gmm_build_meta3D(meta3d_ai_p,         &
+                            1,lmax,0,0,lmax,     &
+                            1,mmax,0,0,mmax,     &
+                            1,nch2d,0,0,nch2d,   &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_bi_p,                       &
-                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
-                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
-                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+      call gmm_build_meta3D(meta3d_bi_p,         &
+                            1,lmax,0,0,lmax,     &
+                            1,mmax,0,0,mmax,     &
+                            1,nch2d,0,0,nch2d,   &
                             0,GMM_NULL_FLAGS)
 
       call gmm_build_meta2D(meta2d_ar_s,                      &
@@ -96,8 +120,9 @@
 
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &
-                            1,2*MAX2DC,0,0,2*MAX2DC,&
+                            1,2*(MAX2DC+MAX_NSPP),0,0,2*(MAX2DC+MAX_NSPP),&
                             0,GMM_NULL_FLAGS)
+      
       gmmk_mcsph1_s= 'MCSPH1'
       gmmk_difut1_s= 'DIFUT1'
       gmmk_difvt1_s= 'DIFVT1'
@@ -160,7 +185,9 @@
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 
+      
  6000 format('ens_set_mem at gmm_create(',A,')')
+ 6005 format('ens_set_mem at gmm_get(',A,')')     
  6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SETMEM)' &
              /(55('=')))
 !

@@ -38,13 +38,18 @@
       call MPI_INITIALIZED(mpi_started,ierr)
       if (.not. mpi_started ) call MPI_init(ierr)
 
-      call mpi_comm_size (MPI_COMM_WORLD,pe_tot2,ierr)
-      call mpi_comm_rank (MPI_COMM_WORLD,pe_me2 ,ierr)
+      if( .not. WORLD_COMM_MPI_INIT ) then ! world not set before, use MPI_COMM_WORLD
+           WORLD_COMM_MPI_INIT=.true.
+           WORLD_COMM_MPI=MPI_COMM_WORLD
+      endif
+
+      call mpi_comm_size (WORLD_COMM_MPI,pe_tot2,ierr)
+      call mpi_comm_rank (WORLD_COMM_MPI,pe_me2 ,ierr)
 
       call call_back (ndomains, offset, err)
 
       call mpi_allreduce &
-     &   (err,err_all,1,MPI_INTEGER,MPI_MIN,MPI_COMM_WORLD,ierr)
+     &   (err,err_all,1,MPI_INTEGER,MPI_MIN,WORLD_COMM_MPI,ierr)
 
       if (err_all.lt.0) then
          if (pe_me2.eq.0) write (6,1001) 
@@ -61,6 +66,20 @@
      &(/'===> rpn_comm_mydomain: RPN_COMM already initialized --- ABORTING ---'/)
       return
       end subroutine RPN_COMM_mydomain                               !InTf!
+!===================================================================
+!InTf!
+      subroutine RPN_COMM_world_get(world_comm) BIND(C,name='RPN_COMM_World_Get')   !InTf!
+      use rpn_comm
+      implicit none                                                !InTf!
+      integer, intent(OUT) ::  world_comm                          !InTf!
+
+      if( WORLD_COMM_MPI_INIT ) then  ! RPN_COMM_world_set has been called
+        world_comm = WORLD_COMM_MPI
+      else
+        world_comm = MPI_COMM_WORLD
+      endif
+      return
+      end subroutine RPN_COMM_world_get                            !InTf!
 !===================================================================
 !InTf!
       subroutine RPN_COMM_world_set(world_comm)                    !InTf!

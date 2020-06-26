@@ -34,9 +34,6 @@
       character(len=60) perdc(maxbus),voldc(maxbus)
       common   /busesc/ entdc, dyndc, perdc, voldc
 
-      logical buslck
-      common /busesl/ buslck
-
       integer entpar(maxbus,BUSPAR_MAXPAR),dynpar(maxbus,BUSPAR_MAXPAR)
       integer perpar(maxbus,BUSPAR_MAXPAR),volpar(maxbus,BUSPAR_MAXPAR)
       common /busesi/ entpar,dynpar,perpar,volpar

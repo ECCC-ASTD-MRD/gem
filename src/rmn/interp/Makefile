@@ -21,10 +21,8 @@ DEFINE = -DFICHSTD98
 SUPP_OPT =
 
 OPTIMIZ = 2 
+#OPTIMIZ = -O 0 -debug -opt='-fpe0 -traceback'
 
-#OPTIMIZ = -O 3 -fast
-#C_OPTIMIZ = -O 2
-#F_OPTIMIZ = -O 2
 
 CPPFLAGS = -I$(RPN_TEMPLATE_LIBS)/include
 
@@ -39,9 +37,6 @@ TARRLS = beta
 .PRECIOUS: $(RMNLIB) $(MALIB)
 
 default: obj
-
-.DEFAULT:
-	co $@
 
 include $(RPN_TEMPLATE_LIBS)/include/makefile_suffix_rules.inc
 
@@ -65,11 +60,11 @@ FICHIERS = $(FICHIERS_F90) $(FICHIERS_C)
 #libezscint: f_ezscint.o c_ezscint.o
 #	ar rv libezscint-590.a.fl c_ezscint.o f_ezscint.o
 
-#f_ezscint.o: f_ezscint.F90
-##	s.compile -src f_ezscint.F90 $(F_OPTIMIZ)
+f_ezscint.o: f_ezscint.F90
+	s.compile -src f_ezscint.F90 $(OPTIMIZ)
 
-#c_ezscint.o: c_ezscint.c
-#	s.compile -src c_ezscint.c $(C_OPTIMIZ)
+c_ezscint.o: c_ezscint.c
+	s.compile -src c_ezscint.c $(OPTIMIZ)
 
 obj: $(OBJET)
 #Produire les fichiers objets (.o) pour tous les fichiers

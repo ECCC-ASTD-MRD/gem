@@ -98,7 +98,7 @@
       IF (FTW.EQ.0.) RETURN
       BIAS2 = X / FTW
       Y = Y / FTW
-      STD = SQRT(max(0d0,Y-BIAS2*BIAS2))
+      STD = SQRT(max(0.0,Y-BIAS2*BIAS2))
       BIAS = BIAS2
 *
 *---------------------------------------------------------------------------

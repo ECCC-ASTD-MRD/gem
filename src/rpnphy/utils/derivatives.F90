@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module derivatives
+   use clib_itf_mod, only: clib_toupper
 !!!#include <arch_specific.hf>
    implicit none
    private
@@ -182,6 +183,7 @@ contains
       !          Wrap call to derivative calculations.
 
       ! Local variables
+      integer :: istat
       real, dimension(size(zi,dim=1)) :: myDeriv_min,myDeriv_max
       character(len=LONG_CHAR) :: myType
 
@@ -194,7 +196,8 @@ contains
       if (present(deriv_max)) myDeriv_max = deriv_max
 
       ! Derivative calculation dispatcher
-      select case (upper(myType))
+      istat = clib_toupper(myType)
+      select case (myType)
       case ('PCHIP')
          status = derivative_pchip(dydz,yi,zi,zo)
       case ('SPLINE')
@@ -206,23 +209,5 @@ contains
       ! End of subprogram
       return
    end function deriv_profile
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function upper(str) result(uc_str)
-      use clib_itf_mod, only: clib_toupper
-      ! Return an upper cased version of a string
-      character(len=*), intent(in) :: str
-      character(len=len_trim(str)) :: uc_str
-
-      ! Local variables
-      integer :: istat
-
-      ! Upper case string
-      uc_str = str
-      istat = clib_toupper(uc_str)
-
-      ! End of subprogram
-      return
-   end function upper
 
 end module derivatives

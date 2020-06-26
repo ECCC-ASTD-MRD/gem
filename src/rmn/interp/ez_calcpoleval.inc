@@ -32,7 +32,9 @@
          do i=1,ni-1
             poleval = poleval + z(i)*(ax(i+1)-ax(i))
          enddo
-         poleval = poleval / 360.0
+         if ((ax(ni)-ax(1)) /= 0.0) then
+            poleval = poleval / (ax(ni)-ax(1))
+         endif
          return
       endif
 

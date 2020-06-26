@@ -16,45 +16,25 @@
 
       subroutine nest_init ()
       use lam_options
+      use glb_ld
       use gmm_vt1
-      use gmm_nest
+      use mem_nest
       use gmm_geof
       use lun
-      use gmm_itf_mod
       use step_options
       use tr3d
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer n,yy,mo,dd,hh,mm,ss,dum,istat
-      real, pointer, dimension(:,:,:) :: tr1,trf
+      integer n,yy,mo,dd,hh,mm,ss,dum,deb
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write(Lun_out,1000)
 
-      istat = gmm_get(gmmk_ut1_s ,ut1 )
-      istat = gmm_get(gmmk_vt1_s ,vt1 )
-      istat = gmm_get(gmmk_tt1_s ,tt1 )
-      istat = gmm_get(gmmk_st1_s ,st1 )
-      istat = gmm_get(gmmk_wt1_s ,wt1 )
-      istat = gmm_get(gmmk_qt1_s ,qt1 )
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_fis0_s,fis0)
-
-!     copying values from UT1 to nest_u variables
-
       if (Lam_ctebcs_L) then
 !     LAM with same (constant) pilot conditions
-         istat = gmm_get(gmmk_nest_u_s ,nest_u )
-         istat = gmm_get(gmmk_nest_v_s ,nest_v )
-         istat = gmm_get(gmmk_nest_t_s ,nest_t )
-         istat = gmm_get(gmmk_nest_s_s ,nest_s )
-         istat = gmm_get(gmmk_nest_w_s ,nest_w )
-         istat = gmm_get(gmmk_nest_q_s ,nest_q )
-         istat = gmm_get(gmmk_nest_zd_s,nest_zd)
-         istat = gmm_get(gmmk_nest_fullme_s,nest_fullme)
          nest_u  = ut1
          nest_v  = vt1
          nest_t  = tt1
@@ -65,23 +45,12 @@
          nest_fullme = fis0
 
          do n=1,Tr3d_ntr
-            tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name,tr1)
-            tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-            istat = gmm_get(tr_name,trf)
-            trf = tr1
+            deb = (n-1) * l_nk
+            nest_tr(l_minx:l_maxx,l_miny:l_maxy,deb+1:deb+l_nk) = tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
          end do
 
       else
 !     ordinary LAM with future pilot conditions
-         istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin )
-         istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin )
-         istat = gmm_get(gmmk_nest_t_fin_s ,nest_t_fin )
-         istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin )
-         istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
-         istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
-         istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
-         istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
          nest_u_fin  = ut1
          nest_v_fin  = vt1
          nest_t_fin  = tt1
@@ -91,14 +60,11 @@
          nest_zd_fin = zdt1
          nest_fullme_fin = fis0
          do n=1,Tr3d_ntr
-            tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name,tr1)
-            tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-            istat = gmm_get(tr_name,trf)
-            trf = tr1
+            deb = (n-1) * l_nk + 1
+            nest_tr_fin(l_minx:l_maxx,l_miny:l_maxy,deb:deb+l_nk-1) = tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
          end do
 
-      end if
+      endif
 
       Lam_previous_S= ''
       Lam_current_S = Step_runstrt_S

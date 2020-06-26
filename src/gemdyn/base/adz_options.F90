@@ -55,6 +55,10 @@ module adz_options
    integer :: adz_verbose = 0
    namelist /adz_cfgs/ adz_verbose
 
+   !# Monitoring in SET_POST_TR
+   !# * 1 -> SET_POST_TR has just been launched
+   integer :: adz_set_post_tr = 0
+
    !# True-> Bermejo-Conde LEGACY=T for current tracer
    !# * T -> mass=1
    !# * F -> mass=100+weight*10+pexp_n

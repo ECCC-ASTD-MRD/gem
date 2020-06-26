@@ -17,7 +17,7 @@
       subroutine gemgrid()
       use clib_itf_mod
       use step_options
-      use nest_blending
+      use mem_nest
       use glb_ld
       use HORgrid_options
       use VERgrid_options
@@ -41,7 +41,7 @@
       integer :: i,j,i0,j0,ip1,ip2
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
       real, dimension(:), allocatable :: xposu, yposv, xpos,ypos
-      real, dimension(:,:), allocatable :: mask,wrk1,wrk2
+      real, dimension(:,:), allocatable :: mask
       real(kind=REAL64), dimension(:), allocatable :: x_8, y_8
       real(kind=REAL64), parameter :: HALF_8  = 0.5d0
 
@@ -99,27 +99,31 @@
       Step_runstrt_S = '20160825.000000'
       err = HORgrid_nml (-1)
       err = VERgrid_nml (-1)
+      Step_nesdt= 1.
 
       err = gemdm_config ()
 
       G_ni = Grd_ni ; G_nj = Grd_nj ; G_nk = 2
 
-      allocate (x_8(Grd_ni+1), y_8(Grd_nj+1), xpos(Grd_ni+1), ypos(Grd_nj+1) &
-                                            , xposU(Grd_ni ), yposV(Grd_nj ) )
+      allocate ( x_8(Grd_ni+1), y_8(Grd_nj+1) , &
+                 xpos (Grd_ni) , ypos (Grd_nj), &
+                 xposU(Grd_ni ), yposV(Grd_nj) )
 
-      call set_gemHgrid4 ( x_8, y_8, G_ni+1, G_nj+1, Grd_dx, Grd_dy  , &
+      call set_gemHgrid4 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy  , &
                            Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8, &
                            Grd_yinyang_L )
+      x_8(G_ni+1) = x_8(G_ni)+ Grd_dx
+      y_8(G_nj+1) = y_8(G_nj)+ Grd_dy
 
-      xpos(1:G_ni+1) = x_8(1:G_ni+1)
-      ypos(1:G_nj+1) = y_8(1:G_nj+1)
+      xpos(1:G_ni) = x_8(1:G_ni)
+      ypos(1:G_nj) = y_8(1:G_nj)
 
-      write(6,*) 'LONGITUDE'
-      write(6,778)(i,xpos(i),i=1,G_ni+1)
-      write(6,*) 'LATITUDE'
-      write(6,778)(i,ypos(i),i=1,G_nj+1)
+      write(*,*) 'LONGITUDE'
+      write(*,778)(i,xpos(i),i=1,G_ni)
+      write(*,*) 'LATITUDE'
+      write(*,778)(i,ypos(i),i=1,G_nj)
 
-
+!Mass grid
       call set_igs2 ( ip1,ip2, xpos,ypos,G_ni,G_nj             ,&
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
                       1,G_ni,1,1,G_nj,1)
@@ -154,7 +158,6 @@
       err = fstfrm(unf1)
       err = fclos (unf1)
 
-! U V grids
       do i= 1, G_ni
          xposU(i) = (x_8(i) + x_8(i+1)) * HALF_8
       enddo
@@ -210,7 +213,7 @@
       err = fstfrm(unf3)
       err = fclos (unf3)
 
-!Rotational grid
+!F grid
       err = clib_remove(ofileR)
 
       call set_igs2 ( ip1,ip2, xposU,yposV,G_ni,G_nj             ,&
@@ -236,8 +239,8 @@
 
 
       err = domain_decomp (1, 1, .false.)
-      call set_gmm
-      call nest_set_gmmvar
+      call set_gmm ()
+      call nest_set_mem ()
       unf4=0
       if (fnom(unf4,trim(ofile)//'_core','RND',0) >= 0) then
          err= fstouv (unf4, 'RND')
@@ -271,16 +274,17 @@
       err  = fstouv (unf5, 'RND')
 
       allocate (mask(G_ni, G_nj))
-      allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
-      allocate (wrk2(l_minx:l_maxx,l_miny:l_maxy))
-      wrk2=1. ; wrk1=0.
-      call nest_blend (wrk2,wrk1,l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
-      mask(1:G_ni,1:G_nj) = wrk2(1:G_ni,1:G_nj)
+
+      do j=1,G_nj
+         do i=1,G_ni
+            mask(i,j)= 1.-nest_weightm(i,j,G_nk+1)
+         enddo
+      enddo
 
       err = fstecr ( mask,mask, npack, unf5, 0, 0, 0, G_ni, G_nj, 1, &
                      0,0,0,'X','MSKC',etk_ext,'Z'    , &
                      ip1,ip2,Grd_ip3,0, 5, .true. )
-      deallocate (mask,wrk1,wrk2)
+      deallocate (mask)
 
       err= fstfrm(unf4)
       err= fclos (unf4)

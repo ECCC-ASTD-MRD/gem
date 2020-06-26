@@ -16,15 +16,16 @@
 
 
 !/@*
-subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
+subroutine cldoppro4(taucs, omcs, gcs, taucl, omcl, gcl, &
                            topthw, topthi,ecc,tcc, &
                            nlow,nmid,nhigh, &
                            ctp, ctt, liqwcin, icewcin, &
                            liqwpin, icewpin, cldfrac, &
-                           tt, sig, ps, mg, ml, m, &
+                           tt, sig, ps, mg, ml, mrk2, m, &
                            lmx, nk, nkp)
    use tdpack_const
    use phy_options
+   use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -37,6 +38,7 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
    real liqwcin(lmx,nk), icewcin(lmx,nk)
    real liqwpin(lmx,nk), icewpin(lmx,nk)
    real cldfrac(lmx,nk), tt(m,nk),sig(lmx,nk),ps(lmx),mg(lmx),ml(lmx)
+   real, dimension(lmx,ens_nc2d), intent(in) :: mrk2
 
 !Authors
 !        p. vaillancourt, d. talbot, j. li, rpn, cmc, cccma; (may 2006)
@@ -77,6 +79,7 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 ! ps       surface pressure (n/m2) (lmx)
 ! mg       ground cover (ocean=0.0,land <= 1.)  (lmx)
 ! ml       fraction of lakes (0.-1.) (lmx)
+! mrk2     Markov chains for stochastic perturbations   
 ! lmx      number of profiles to compute
 ! m        first dimension of temperature (usually lmx)
 ! nk       number of layers
@@ -95,7 +98,6 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       real, dimension(lmx,nk) :: trans_exp
       logical, dimension(lmx) :: top
       real, dimension(m,nk) :: zrieff
-      real, dimension(m,nk) :: zrieff_vs
       real, dimension(m,nk) :: aird
       real, dimension(m,nk) :: rew
       real, dimension(m,nk) :: rei
@@ -108,6 +110,7 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       real, dimension(lmx) :: nlow
       real, dimension(lmx) :: nmid
       real, dimension(lmx) :: nhigh
+      real, dimension(lmx) :: reifac
       real, dimension(lmx,nkp,nkp) :: ff
       integer, dimension(lmx     ) :: ih
       integer, dimension(lmx     ) :: ib
@@ -115,15 +118,15 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 
 !*********************************************************
 
+      real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
+      
       integer i, j, k, kind,ip,l
-      real rec_grav, cut, third
+      real rec_grav, cut
       real epsilon,epsilon2,betan,betad
       real rew2,rew3,dg,dg2,dg3,tausw,omsw,gsw,tausi,omsi,gsi,y1,y2,taulw
       real omlw,glw,tauli,omli,gli
       real xnu
-!
-      data third/0.3333333/
-      save third
+
       rec_grav=1./grav
 !
 !
@@ -159,15 +162,12 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       select case (rad_cond_rew)
       case ('BARKER')
          ! Radius as in newrad: from H. Barker based on aircraft data (range 4-17um from Slingo)
-         vs1(:,:) = liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
-         call vspown1(rew, vs1, third, nk*lmx)
-         rew(:,:) = min(max(4., 754.6*rew(:,:)), 17.0)
+         rew(:,:) = min(max(4., 754.6 * (liqwcin*aird*rec_cdd)**THIRD), 17.0)
       case ('NEWRAD')
          ! Radius as in newrad: corresponds to so called new optical properties
          vs1(:,:) = (1.0 + liqwcin(:,:) * 1.e4) &
               * liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
-         call vspown1(rew, vs1,third, nk*lmx)
-         rew(:,:) =  min(max(2.5, 3000.*rew(:,:)), 50.0)
+         rew(:,:) =  min(max(2.5, 3000. * vs1**THIRD), 50.0)
       case ('ROTSTAYN03')
          ! Radius according to Rotstayn and Liu (2003)
          do k = 1, nk
@@ -190,8 +190,7 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
       select case (rad_cond_rei)
       case ('CCCMA') 
          ! Units of icewcin must be in g/m3 for this parameterization of rei (in microns)
-         zrieff_vs(:,:) = 1000. * icewcin(:,:) * aird(:,:)
-         call vspown1(zrieff, zrieff_vs, 0.216, nk*lmx)
+         zrieff(:,:) = (1000. * icewcin * aird)**0.216
          where (icewcin(:,:) >= 1.e-9)
             zrieff(:,:) = 83.8 * zrieff(:,:)
          elsewhere
@@ -203,8 +202,14 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
          rei(:,:) = max(sig(:,:)-0.25, 0.0)*60. + 15.
       case DEFAULT
          ! Radius is a user-specified constant (in microns)
-         rei = rei_const
+         rei(:,:) = rei_const
       end select
+
+      ! Adjust the effective radius using stochastic perturbations
+      reifac(:) = ens_spp_get('rei_mult', mrk2, default=1.)
+      do k=1, nk
+         rei(:,k) = reifac(:) * rei(:,k)
+      enddo
 
 !----------------------------------------------------------------------
 !     cloud radiative properties for radiation.
@@ -359,14 +364,12 @@ subroutine cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
 !
         do k = 1, nk
           do i = 1, lmx
-            vs1(i,k) = - 1.64872 * taucl(i,k,6)
+            trans_exp(i,k) = exp(- 1.64872 * taucl(i,k,6))
             if (sig(i,k).le.0.4) ih(i) = k
             if (sig(i,k).le.0.7) ib(i) = k
 
           enddo
         enddo
-
-        call vsexp ( trans_exp, vs1, lmx*nk )
 
         do i = 1, lmx
           ctp (i)   = 110000.

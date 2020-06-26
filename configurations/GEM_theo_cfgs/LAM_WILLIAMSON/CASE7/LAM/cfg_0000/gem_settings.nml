@@ -45,6 +45,7 @@
 
  &dyn_fisl
   Sol_type_S = 'DIRECT'        ,
+  Sol_fft_L  = .false.         ,
 
   Cstv_bA_8       = 0.5        ,
 

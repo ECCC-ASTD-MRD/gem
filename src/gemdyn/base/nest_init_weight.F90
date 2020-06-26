@@ -13,224 +13,188 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
-!
 !***s/r nest_init_weight:Initialize a 3D matrix of weight (values between 0 and 1) that
 !                        will be used to compute the weight of the piloting field. 1 means
 !                        that the piloting field is taken entirely 0 means that piloting
 !                        field has no influence (center of domain) [0.0-1.0] means that
 !                        there is a blending between piloting field and original field
 !
-      subroutine nest_init_weight (F_grid)
-      use gmm_nest
+subroutine nest_init_weight (F_weight,F_si,F_sj,F_sk,Minx,Maxx,Miny,Maxy,Nk)
       use gem_options
       use lam_options
       use grdc_options
       use glb_ld
-      use gmm_itf_mod
       use glb_pil
-      use var_gmm
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      ! Arguments
-      character(len=*), intent(in) :: F_grid !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
+  ! Arguments
+      integer, intent(IN) :: F_si,F_sj,F_sk,Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_weight
 
-      ! Local variables
-      type(gmm_metadata) :: mymeta
-      integer w1,w2,e1,e2,s1,s2,n1,n2,t1,t2,istat
-      integer l_wdeb,l_wfin,l_edeb,l_efin
-      integer l_sdeb,l_sfin,l_ndeb,l_nfin,l_tdeb,l_tfin
-      integer i, j, k ,ig, jg, nit, njt, shifti, shiftj, shiftk
-      real(kind=REAL64) pis2,lx,ly,lz,xx,yy
-      real(kind=REAL64), parameter :: zero=0.d0, one=1.d0
-      real(kind=REAL64) weight_x(l_ni), weight_y(l_nj), weight_z(G_nk+1)
-      real, dimension(:,:,:), pointer, contiguous :: weight=>null()
-      character(len=GMM_MAXNAMELENGTH) :: prefix='NEST_POID', gmm_name
-      character(len=GMM_MAXNAMELENGTH), dimension(4) :: supported_grids = [ 'U','V','M','Q' ]
-      real, dimension(G_ni,G_nj) :: wk1
+  ! Local variables
+  integer w1,w2,e1,e2,s1,s2,n1,n2,t1,t2
+  integer l_wdeb,l_wfin,l_edeb,l_efin
+  integer l_sdeb,l_sfin,l_ndeb,l_nfin,l_tdeb,l_tfin
+  integer i, j, k ,ig, jg, nit, njt, shifti, shiftj, shiftk
+  real(kind=REAL64) pis2,lx,ly,lz,xx,yy
+  real(kind=REAL64), parameter :: zero=0.d0, one=1.d0
+  real(kind=REAL64) weight_x(l_ni), weight_y(l_nj), weight_z(G_nk+1)
+  real wk1(G_ni,G_nj)
 
-      !
-      !----------------------------------------------------------------------
-      !
-      call handle_error_l (any(supported_grids == trim(F_grid)),'nest_init_weight',&
-                               'Unsupported grid requested: '//trim(F_grid))
+  !
+  !----------------------------------------------------------------------
+  !
+  shifti = F_si; shiftj = F_sj; shiftk = F_sk
 
+  pis2 = acos(zero)
 
-      gmm_name = trim(prefix)//trim(F_grid)
-      shifti = 0; shiftj = 0; shiftk = 0
-      select case (trim(F_grid))
-      case ('U')
-         gmmk_nest_weightu_s = gmm_name
-         weight => nest_weightu
-         shifti = -1
-      case ('V')
-         gmmk_nest_weightv_s = gmm_name
-         weight => nest_weightv
-         shiftj = -1
-      case ('M')
-         gmmk_nest_weightm_s = gmm_name
-         weight => nest_weightm
-         shiftk = -1
-      case ('Q')
-         gmmk_nest_weightq_s = gmm_name
-         weight => nest_weightq
-         shiftk = -1
-      end select
+  F_weight = 0.
 
-      istat = gmm_create(gmm_name,weight,meta3d_nk1)
-      if (GMM_IS_ERROR(istat)) print *,'nest_init_weight ERROR at gmm_create(weight)'
-      istat = gmm_get(gmm_name,weight,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nest_init_weight ERROR at gmm_get(weight)'
+  lx = dble(Lam_blend_Hx+1)
+  ly = dble(Lam_blend_Hy+1)
+  lz = dble(Lam_blend_T +1)
 
-      pis2 = acos(zero)
+  weight_x = 0. ; weight_y = 0. ; weight_z = 0.
 
-      weight = 0.
+  w1 = Glb_pil_w
+  w2 = w1 + Lam_blend_Hx
 
-      lx = dble(Lam_blend_Hx+1)
-      ly = dble(Lam_blend_Hy+1)
-      lz = dble(Lam_blend_T +1)
+  e1 = G_ni - Glb_pil_e + 1 + shifti
+  e2 = e1   - Lam_blend_Hx
 
-      weight_x = 0. ; weight_y = 0. ; weight_z = 0.
+  s1 = Glb_pil_s
+  s2 = s1 + Lam_blend_Hy
 
-      w1 = Glb_pil_w
-      w2 = w1 + Lam_blend_Hx
+  n1 = G_nj - Glb_pil_n + 1 + shiftj
+  n2 = n1   - Lam_blend_Hy
 
-      e1 = G_ni - Glb_pil_e + 1 + shifti
-      e2 = e1   - Lam_blend_Hx
+  t1 = Lam_gbpil_T + shiftk
+  t2 = t1 + Lam_blend_T
 
-      s1 = Glb_pil_s
-      s2 = s1 + Lam_blend_Hy
+  l_wdeb = max(1   , 2   -Ptopo_gindx(1,Ptopo_myproc+1  ))
+  l_wfin = min(l_ni,w2   -Ptopo_gindx(1,Ptopo_myproc+1)+1)
+  l_edeb = max(1   ,e2   -Ptopo_gindx(1,Ptopo_myproc+1)+1)
+  l_efin = min(l_ni,G_ni -Ptopo_gindx(1,Ptopo_myproc+1)+1)
 
-      n1 = G_nj - Glb_pil_n + 1 + shiftj
-      n2 = n1   - Lam_blend_Hy
+  l_sdeb = max(1   , 2   -Ptopo_gindx(3,Ptopo_myproc+1  ))
+  l_sfin = min(l_nj,s2   -Ptopo_gindx(3,Ptopo_myproc+1)+1)
+  l_ndeb = max(1   ,n2   -Ptopo_gindx(3,Ptopo_myproc+1)+1)
+  l_nfin = min(l_nj,G_nj -Ptopo_gindx(3,Ptopo_myproc+1)+1)
 
-      t1 = Lam_gbpil_T + shiftk
-      t2 = t1 + Lam_blend_T
+  l_tdeb = 1
+  l_tfin = min(G_nk+1,t2)
 
-      l_wdeb = max(1   , 2   -Ptopo_gindx(1,Ptopo_myproc+1  ))
-      l_wfin = min(l_ni,w2   -Ptopo_gindx(1,Ptopo_myproc+1)+1)
-      l_edeb = max(1   ,e2   -Ptopo_gindx(1,Ptopo_myproc+1)+1)
-      l_efin = min(l_ni,G_ni -Ptopo_gindx(1,Ptopo_myproc+1)+1)
+  if (l_wfin > l_edeb) stop 'ABORT nest_init_weight l_wfin > l_edeb'
+  if (l_sfin > l_ndeb) stop 'ABORT nest_init_weight l_sfin > l_ndeb'
 
-      l_sdeb = max(1   , 2   -Ptopo_gindx(3,Ptopo_myproc+1  ))
-      l_sfin = min(l_nj,s2   -Ptopo_gindx(3,Ptopo_myproc+1)+1)
-      l_ndeb = max(1   ,n2   -Ptopo_gindx(3,Ptopo_myproc+1)+1)
-      l_nfin = min(l_nj,G_nj -Ptopo_gindx(3,Ptopo_myproc+1)+1)
+  do i = l_wdeb, l_wfin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     j  = max(w1,ig)
+     weight_x(i) = (cos(pis2*(j-w1)/lx))**2
+  end do
+  do i = l_edeb, l_efin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     j  = min(e1,ig)
+     weight_x(i) = max(weight_x(i),(cos(pis2*(e1-j)/lx))**2)
+  end do
+  do i = l_sdeb, l_sfin
+     ig = i + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     j  = max(s1,ig)
+     weight_y(i) = (cos(pis2*(j-s1)/ly))**2
+  end do
+  do i = l_ndeb, l_nfin
+     ig = i + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     j  = min(n1,ig)
+     weight_y(i) = max(weight_y(i),(cos(pis2*(n1-j)/ly))**2)
+  end do
 
-      l_tdeb = 1
-      l_tfin = min(G_nk+1,t2)
+  do j=1,l_nj
+  do i=1,l_ni
+     F_weight(i,j,1) = min(1.0d0, weight_x(i) + weight_y(j))
+  end do
+  end do
 
-      if (l_wfin > l_edeb) stop 'ABORT nest_init_weight l_wfin > l_edeb'
-      if (l_sfin > l_ndeb) stop 'ABORT nest_init_weight l_sfin > l_ndeb'
+  nit  = G_ni-Glb_pil_e
+  njt  = G_nj-Glb_pil_n
 
-      do i = l_wdeb, l_wfin
-         ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-         j  = max(w1,ig)
-         weight_x(i) = (cos(pis2*(j-w1)/lx))**2
-      end do
-      do i = l_edeb, l_efin
-         ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-         j  = min(e1,ig)
-         weight_x(i) = max(weight_x(i),(cos(pis2*(e1-j)/lx))**2)
-      end do
-      do i = l_sdeb, l_sfin
-         ig = i + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-         j  = max(s1,ig)
-         weight_y(i) = (cos(pis2*(j-s1)/ly))**2
-      end do
-      do i = l_ndeb, l_nfin
-         ig = i + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-         j  = min(n1,ig)
-         weight_y(i) = max(weight_y(i),(cos(pis2*(n1-j)/ly))**2)
-      end do
+  !south-west
+  do j = l_sdeb, l_sfin
+  do i = l_wdeb, l_wfin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     xx = (dble(w2+1-ig)/lx)**2
+     yy = (dble(s2+1-jg)/ly)**2
+     F_weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
+  end do
+  end do
 
-      do j=1,l_nj
-         do i=1,l_ni
-            weight(i,j,1) = min(1.0d0, weight_x(i) + weight_y(j))
-         end do
-      end do
+  !south-east
+  do j = l_sdeb, l_sfin
+  do i = l_edeb, l_efin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     xx = (dble(ig-e2+1)/lx)**2
+     yy = (dble(s2+1-jg)/ly)**2
+     F_weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
+     end do
+  end do
 
-      nit  = G_ni-Glb_pil_e
-      njt  = G_nj-Glb_pil_n
+  !north-west
+  do j = l_ndeb, l_nfin
+  do i = l_wdeb, l_wfin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     xx = (dble(w2+1-ig)/lx)**2
+     yy = (dble(jg-n2+1)/ly)**2
+     F_weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
+     end do
+  end do
 
-      !south-west
-      do j = l_sdeb, l_sfin
-         do i = l_wdeb, l_wfin
-            ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-            jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-            xx = (dble(w2+1-ig)/lx)**2
-            yy = (dble(s2+1-jg)/ly)**2
-            weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
-         end do
-      end do
+  !north-east
+  do j = l_ndeb, l_nfin
+  do i = l_edeb, l_efin
+     ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
+     jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
+     xx = (dble(ig-e2+1)/lx)**2
+     yy = (dble(jg-n2+1)/ly)**2
+     F_weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
+     end do
+  end do
 
-      !south-east
-      do j = l_sdeb, l_sfin
-         do i = l_edeb, l_efin
-            ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-            jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-            xx = (dble(ig-e2+1)/lx)**2
-            yy = (dble(s2+1-jg)/ly)**2
-            weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
-         end do
-      end do
+  !Top
+  do k = l_tdeb, l_tfin
+     j = max(t1,k)
+     weight_z(k) = (cos(pis2*(j-t1)/lz))**2
+  end do
 
-      !north-west
-      do j = l_ndeb, l_nfin
-         do i = l_wdeb, l_wfin
-            ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-            jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-            xx = (dble(w2+1-ig)/lx)**2
-            yy = (dble(jg-n2+1)/ly)**2
-            weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
-         end do
-      end do
-
-      !north-east
-      do j = l_ndeb, l_nfin
-         do i = l_edeb, l_efin
-            ig = i + Ptopo_gindx(1,Ptopo_myproc+1) - 1
-            jg = j + Ptopo_gindx(3,Ptopo_myproc+1) - 1
-            xx = (dble(ig-e2+1)/lx)**2
-            yy = (dble(jg-n2+1)/ly)**2
-            weight(i,j,1) = (cos(pis2*(one-min(one, sqrt(xx+yy) ))))**2
-         end do
-      end do
-
-      !Top
-      do k = l_tdeb, l_tfin
-         j = max(t1,k)
-         weight_z(k) = (cos(pis2*(j-t1)/lz))**2
-      end do
-
-      !!TODO: remove this section when BCs treatment re-formulated
-      call glbcolc (wk1,G_ni,G_nj,weight,l_minx,l_maxx,l_miny,l_maxy,1)
-      if (Ptopo_myproc == 0) then
-         do i = w2, e2
-            wk1(i,s2) = 0.
-            wk1(i,n2) = 0.
-         end do
-         do j = s2, n2
-            wk1(w2,j) = 0.
-            wk1(e2,j) = 0.
-         end do
-      end if
-      call glbdist (wk1,G_ni,G_nj,weight,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
-      !!
-      Lam_wgt0 = .false.
-      do k=G_nk+1,1,-1
-         do j= 1, l_nj
-            do i= 1, l_ni
-               weight(i,j,k) = max (weight(i,j,1), real(weight_z(k)))
-               if (weight(i,j,k) > 0.) Lam_wgt0 = .true.
-            end do
-         end do
-      end do
-!
-!----------------------------------------------------------------------
-!
+!!!!TODO: remove this section when BCs treatment re-formulated
+  call glbcolc (wk1,G_ni,G_nj,F_weight,l_minx,l_maxx,l_miny,l_maxy,1)
+  if (Ptopo_myproc == 0) then
+     do i = w2, e2
+        wk1(i,s2) = 0.
+        wk1(i,n2) = 0.
+     end do
+     do j = s2, n2
+        wk1(w2,j) = 0.
+        wk1(e2,j) = 0.
+     end do
+  endif
+  call glbdist (wk1,G_ni,G_nj,F_weight,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
+!!!!
+  Lam_wgt0 = .false.
+  do k=G_nk+1,1,-1
+  do j= 1, l_nj
+  do i= 1, l_ni
+     F_weight(i,j,k) = max (F_weight(i,j,1) ,real(weight_z(k)))
+     if (F_weight(i,j,k) > 0.) Lam_wgt0 = .true.
+  end do
+  end do
+  end do
+  !
+  !----------------------------------------------------------------------
+  !
 
 end subroutine nest_init_weight

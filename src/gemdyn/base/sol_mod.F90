@@ -15,6 +15,7 @@
 
 module sol
    use, intrinsic :: iso_fortran_env
+   use gem_fft
    implicit none
    public
    save
@@ -35,6 +36,8 @@ module sol
 ! Sol_stencil2_8,3,4,5 | stencils for Yin-Yang  (Qaddouri)             |
 !----------------------------------------------------------------------
 
+   character(len=4) :: Sol_type_fft
+
    integer :: sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
    integer :: sol_niloc,sol_njloc,sol_nloc,sol_nk
    integer :: sol_i0,sol_in,sol_j0,sol_jn
@@ -44,5 +47,9 @@ module sol
    real(kind=REAL64), dimension(:), allocatable :: Sol_ai_8,Sol_bi_8,Sol_ci_8
    real(kind=REAL64), dimension(:), allocatable :: Sol_stencil2_8,Sol_stencil3_8
    real(kind=REAL64), dimension(:), allocatable :: Sol_stencil4_8,Sol_stencil5_8
+   real(kind=REAL64), dimension(:,:,:), allocatable :: Sol_dwfft, Sol_dg2
+   real(kind=REAL64) :: Sol_pri
+
+   type(dft_descriptor) :: forward_plan, reverse_plan
 
 end module sol

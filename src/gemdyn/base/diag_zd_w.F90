@@ -17,21 +17,18 @@
 !
       subroutine diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s, &
                              Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
-      use cstv
       use gem_options
       use init_options
-      use dyn_fisl_options
       use geomh
       use glb_ld
       use gmm_geof
-      use gmm_itf_mod
       use lun
       use tdpack
       use ver
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-!
+
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_u, F_v
@@ -58,8 +55,7 @@
 ! F_w_L  | true to compute w                           | scal      |
 !________|_____________________________________________|___________|
 !
-
-      integer i, j, k, kp, i0, in, j0, jn, istat
+      integer i, j, k, kp, i0, in, j0, jn
       real(kind=REAL64) c1,c2
       real RoverG
       real div (Minx:Maxx,Miny:Maxy,Nk),adv,advl,div_i(Minx:Maxx,Miny:Maxy,0:Nk)
@@ -73,29 +69,12 @@
       real(kind=REAL64), parameter :: half=0.5d0
 !     ________________________________________________________________
 !
-      if(.not.(F_zd_L.or.F_w_L)) then
-         F_zd = 0.
-         F_w  = 0.
-         return
-      endif
-
-      if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
-      if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
-
-      ! enlever calcul si F_zd_L=.false.
-!
-! Halo exchange needed because scope below goes one point in halo
-!
-      call rpn_comm_xch_halo (F_s, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj , 1,   &
+      call rpn_comm_xch_halo (F_s, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj , 1,&
                               G_halox, G_haloy, G_periodx, G_periody, l_ni, 0)
-      call rpn_comm_xch_halo (F_u, l_minx, l_maxx, l_miny, l_maxy, l_niu,l_nj, Nk,   &
+      call rpn_comm_xch_halo (F_u, l_minx, l_maxx, l_miny, l_maxy, l_niu,l_nj, Nk,&
                               G_halox, G_haloy, G_periodx, G_periody, l_ni, 0)
-      call rpn_comm_xch_halo (F_v, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_njv, Nk,   &
+      call rpn_comm_xch_halo (F_v, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_njv, Nk,&
                               G_halox, G_haloy, G_periodx, G_periody, l_ni, 0)
-
-      istat = gmm_get (gmmk_sls_s ,sls )
-
-!     Initializations
 
 !     local grid setup for final results
       i0 = 1
@@ -107,7 +86,7 @@
       if (l_south) j0 = 2
       if (l_north) jn = l_njv
 
-!     CALCULATION of sbX, sbY, i.e. F_s on U and V points
+! Compute sbX, sbY, i.e. F_s on U and V points
 
       do j=j0,jn
          do i=i0-1,in
@@ -123,7 +102,7 @@
          end do
       end do
 
-!     CALCULATION of pi_s
+! Compute pi_s
 
       do j=j0,jn
          do i=i0,in
@@ -133,8 +112,7 @@
 
       do k = 1, Nk
 
-!        CALCULATION of U*dpi/dz and V*dpi/dz
-
+! Compute U*dpi/dz and V*dpi/dz
          do j=j0,jn
             do i=i0-1,in
                lnpi = Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)+Ver_c_8%m(k)*slbX(i,j)
@@ -150,8 +128,7 @@
             end do
          end do
 
-!        CALCULATION of DIV(V*dpi/dz)
-
+! Compute DIV(V*dpi/dz)
          do j=j0,jn
             do i=i0,in
                div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomh_invDX_8(j) &
@@ -159,8 +136,7 @@
             end do
          end do
 
-!        CALCULATION of lnpi_t and pi_t
-
+! Compute lnpi_t and pi_t
          do j=j0,jn
             do i=i0,in
                lnpi_t(i,j,k) = Ver_z_8%t(k) + Ver_b_8%t(k)*F_s(i,j) &
@@ -172,11 +148,11 @@
       end do
 
       if (Zdot_divHLM_L) then
-!     Compute lapse rate
+! Compute lapse rate
          call verder (lapse,F_t,lnpi_t,2.0,2.0,l_minx,l_maxx,l_miny,l_maxy, &
                                           Nk,i0,in,j0,jn)
 
-!     Scale divergence by the lapse rate
+! Scale divergence by the lapse rate
          do k=1,Nk
             do j=j0,jn
                do i=i0,in
@@ -186,8 +162,7 @@
          end do
       end if
 
-!     INTEGRATION OF THE DIVERGENCE IN THE VERTICAL
-
+! Vertical integral of divergence
       div_i(i0:in,j0:jn,0)=0.
       do k=1,Nk
          do j=j0,jn
@@ -197,10 +172,9 @@
          end do
       end do
 
-!     CALCULATION of ZDOT
-
+! Compute ZDOT
       if (F_zd_L) then
-
+         if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
          do k=1,Nk-1
             do j=j0,jn
                do i=i0,in
@@ -213,16 +187,13 @@
                end do
             end do
          end do
-      else
-         F_zd = 0.
       end if
 
-!     CALCULATION of W
-
+! Compute W
       if (F_w_L) then
+         if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
 
 !        Compute W=-omega/(g*ro)      ro=p/RT
-
          RoverG=rgasd_8/grav_8
          do k=1,Nk
             kp = min(k+1,Nk)
@@ -258,8 +229,6 @@
                               xd(i,j,Nk) + Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
             end do
          end do
-      else
-         F_w = 0.
       end if
 
 1000  format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W)')

@@ -64,8 +64,7 @@
       end if
 
 !     del2 explicit
-!$omp parallel private(i,j,k) shared (i0,in,j0,jn,wk_8,stencils)
-!$omp do
+
        do k=1,NK
           do j= j0, jn
             do i= i0, in
@@ -77,14 +76,11 @@
             end do
           end do
        end do
-!$omp end do
-!$omp end parallel
 
       if (mm == dpwr) then
 
 !     Apply diffusion operator
-!$omp parallel private(i,j,k) shared(i0,in,j0,jn,wk_8)
-!$omp do
+
           do k=1,NK
              do j= j0, jn
                do i= i0, in
@@ -92,13 +88,11 @@
                end do
              end do
           end do
-!$omp end do
-!$omp end parallel
+
           F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
 
       else
-!$omp parallel private(i,j,k) shared(i0,in,j0,jn,wk_8)
-!$omp do
+
           do k=1,NK
              do j= j0, jn
                do i= i0, in
@@ -106,8 +100,6 @@
                end do
              end do
           end do
-!$omp end do
-!$omp end parallel
 
       end if
 !

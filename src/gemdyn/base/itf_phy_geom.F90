@@ -20,7 +20,7 @@
    use geomh
    use glb_ld
    use gmm_itf_mod
-   use nest_blending, only: nest_blend
+   use mem_nest
    use tdpack
    use, intrinsic :: iso_fortran_env
    implicit none
@@ -35,8 +35,6 @@
    integer :: i,j,istat
    real, pointer :: wrk1(:,:)
    real(kind=REAL64), parameter :: deg2rad_8 = pi_8 / 180.d0
-   real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
-           w2(l_minx:l_maxx,l_miny:l_maxy,2)
    type(gmm_metadata) :: mymeta
 !
 !-------------------------------------------------------------------
@@ -85,14 +83,16 @@
    nullify(wrk1)
    istat = gmm_create('TDMASK',wrk1,mymeta)
    if (RMN_IS_OK(istat)) then
-      w1 = 1.
+      wrk1(1:l_ni,1:l_nj) = 1.
       nest_it = ( Lam_0ptend_L .and. &
                 ((Lam_blend_Hx > 0).or.(Lam_blend_Hy > 0)) )
       if ( nest_it ) then
-         w2 = 0.
-         call nest_blend (w1(:,:,1),w2(:,:,1),l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
+         do j=1,l_nj
+            do i=1,l_ni
+               wrk1(i,j)= 1.-nest_weightm(i,j,G_nk+1)
+            enddo
+         enddo
       end if
-      wrk1(1:l_ni,1:l_nj) = w1(1:l_ni,1:l_nj,1)
    else
       F_istat= RMN_ERR
       call msg(MSG_ERROR,'(itf_phy_geom) Problem creating TDMASK')

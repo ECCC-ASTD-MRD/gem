@@ -1,5 +1,7 @@
   int k,*ind,ij,ijk;
   double lvl;
+  float hyb;
+  int kind;
   char message[128];
 
   strcpy(message,"(Cvgd) ERROR in ");
@@ -45,6 +47,21 @@
 #endif
     }
   }
+
+  //Force surface pressure to be equal to sfc_field
+  //Needed by CMDW. 
+  if(! in_log) {
+    for(k=0; k < nk; k++){
+      hyb = c_convip_IP2Level(ip1_list[k],&kind);
+      if(fabs(hyb-1.0) < 0.000001 && kind==1){
+        ijk=k*ni*nj;
+        for(ij=0; ij < ni*nj; ij++, ijk++){
+          levels[ijk] = sfc_field[ij];
+        }
+      }
+    }
+  }
+ 
   free(ind);
   
   return(VGD_OK);

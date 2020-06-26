@@ -36,19 +36,28 @@ module phy_options
    real              :: delt         = 0.
    character(len=4),  pointer :: dyninread_list_s(:) => NULL()
    logical           :: dynout       = .false.
+   logical           :: ebdiag       = .false.
+   logical           :: ecdiag       = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
    integer           :: ioptix       = OPT_OPTIX_OLD
    integer           :: kntrad       = 1
+   integer           :: kntraduv     = -1
+   logical           :: llight       = .false.
+   logical           :: llinoz       = .false.
+   logical           :: llingh       = .false.
+   logical           :: lrefract     = .false.
    logical           :: offline      = .false.
+   logical           :: out_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
    logical           :: reduc        = .false.
    character(len=16) :: schmsol      = 'ISBA'
+   logical           :: slt_winds    = .false.
    logical           :: tdiaglim     = .false.
    integer           :: tlift        = 0
    integer           :: nphyoutlist  = 0
    character(len=32), pointer :: phyoutlist_S(:) => NULL()
-
+   
    !# Time length (hours) for special time accumulated physics variables
    integer           :: acchr        = 0
    namelist /physics_cfgs/ acchr
@@ -242,16 +251,15 @@ module phy_options
    namelist /physics_cfgs/ kntrad_S
    namelist /physics_cfgs_p/ kntrad_S
 
+   !# Time between UV radiation calculation (units D,H,M,S,P)
+   character(len=16) :: kntraduv_S     = ''
+   namelist /physics_cfgs/ kntraduv_S
+   namelist /physics_cfgs_p/ kntraduv_S
+   
    !# Compute ice fraction in KTRSNT_MG if .true.
    logical           :: kticefrac    = .true.
    namelist /physics_cfgs/ kticefrac
    namelist /physics_cfgs_p/ kticefrac
-
-   !# Compute lightning diagnostics if .true.
-   !# (currently for Milbrandt-Yau microphysics only)
-   logical           :: lightning_diag = .false.
-   namelist /physics_cfgs/ lightning_diag
-   namelist /physics_cfgs_p/ lightning_diag
 
    !# Add methane oxydation as source of humidity in the stratosphere if .true.
    logical           :: lmetox       = .false.
@@ -491,19 +499,13 @@ module phy_options
  
    !# Class of stability functions (stable case) to use in the PBL
    !# * 'DELAGE97  ' : Use functions described by Delage (1997; BLM)
-   !# * 'LOUIS79   ' : Use functions described by Louis (1979; BLM)
-   !# * 'DERBY97   ' : Use functions described by Derbyshire (1997; Cardignton Tech Note)
-   !# * 'BELJAARS99' : Use functions described by Beljaars and Viterbo (1999; Clear and Cloudy Boundary Layers)
    !# * 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)
    !# * 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO
    character(len=16) :: pbl_func_stab = 'DELAGE97'
    namelist /physics_cfgs/ pbl_func_stab
    namelist /physics_cfgs_p/ pbl_func_stab
-   character(len=*), parameter :: PBL_FUNC_STAB_OPT(6) = (/ &
+   character(len=*), parameter :: PBL_FUNC_STAB_OPT(3) = (/ &
         'DELAGE97  ', &
-        'LOUIS79   ', &
-        'DERBY97   ', &
-        'BELJAARS99', &
         'BELJAARS91', &
         'LOCK07    '  &
         /)
@@ -763,6 +765,41 @@ module phy_options
    namelist /physics_cfgs/ radghg_L
    namelist /physics_cfgs_p/ radghg_L
 
+   !# Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only)
+   logical           :: rad_linoz_L  = .false.
+   namelist /physics_cfgs/ rad_linoz_L
+   namelist /physics_cfgs_p/ rad_linoz_L
+
+   !# LINOZ prognostic stratospheric ozone
+   !# * 'NIL     ' :
+   !# * 'OZONE   ' :
+   !# * 'GHG     ' :
+   !# * 'OZONEGHG' :
+   character(len=10) :: linoz_chm    = 'NIL'
+   namelist /physics_cfgs/ linoz_chm
+   namelist /physics_cfgs_p/ linoz_chm
+   character(len=*), parameter :: LINOZ_CHM_OPT(4) = (/ &
+        'NIL     ', &
+        'OZONE   ', &
+        'GHG     ', &
+        'OZONEGHG'  &
+        /)
+
+   !# UV Method Optical properties of liquid cloud from condensation scheme for radiation
+   !# * 'NIL'        : No UV calculation
+   !# * 'IntegFit'   : Integration over the four UV bands with integrand weighting
+   !# * 'LinearFit'  : Fitted sum of the four UV broadband irradiances
+   !# * 'BandRatio'  : Scaling of input clear-sky UV index
+   character(len=10) :: iuv_method   = 'IntegFit'
+   namelist /physics_cfgs/ iuv_method
+   namelist /physics_cfgs_p/ iuv_method
+   character(len=*), parameter :: IUV_METHOD_OPT(4) = (/ &
+        'NIL      ', &
+        'INTEGFIT ', &
+        'LINEARFIT', &
+        'BANDRATIO'  &
+        /)
+
    !# Radiation scheme
    !# * 'NIL      ': no radiation scheme
    !# * 'NEWRAD   ': complete radiation scheme
@@ -787,11 +824,6 @@ module phy_options
    logical           :: radslope     = .false.
    namelist /physics_cfgs/ radslope
    namelist /physics_cfgs_p/ radslope
-
-   !# Additional output for low level refraction
-   logical           :: refract      = .false.
-   namelist /physics_cfgs/ refract
-   namelist /physics_cfgs_p/ refract
 
    !# Launching level value of GW RMS wind (m/s) from non-orographic origin
    real              :: rmscon       = 1.0
@@ -902,11 +934,42 @@ module phy_options
         'BELJAARS04'  &
         /)
 
+   !# BELJAARS04 turbulent orographic form drag scheme alpha parameter
+   real :: tofd_alpha = 12.
+   namelist /physics_cfgs/ tofd_alpha
+   namelist /physics_cfgs_p/ tofd_alpha
+
+
    !# (newrad only) Use TT(12000) instead of skin temp in downward IR
    !# flux calculation if .true.
    logical           :: ts_flxir     = .false.
    namelist /physics_cfgs/ ts_flxir
    namelist /physics_cfgs_p/ ts_flxir
+
+   !# use Latent Heat Nudging for the assmilation of radar-inferred precipitation rates
+   !# * 'NIL'   : No Latent Heat Nudging
+   !# * 'IRPCP' : Latent heat nudging from radar-inferred precipitation rates
+   character(len=16) :: lhn         = 'NIL'
+   namelist /physics_cfgs/ lhn
+   namelist /physics_cfgs_p/ lhn
+   character(len=*), parameter :: LHN_OPT(2) = (/ &
+        'NIL  ', &
+        'IRPCP'  &
+        /)
+
+   !# Standard deviation length scale (gridpoints) of Gaussian smoother
+   !# applied to RDPR, PR and TA before the application of Latent Heat Nudging
+   !# No smoothing applied when -ve
+   real           :: lhn_filter    = -1.
+   namelist /physics_cfgs/ lhn_filter
+   namelist /physics_cfgs_p/ lhn_filter
+
+   !# Modulation factor for the magnitude of Latent Heat Nudging being applied
+   !# modulated_tendencies = lhn_weight*(LHN tendencies)
+   real           :: lhn_weight    = 0.
+   namelist /physics_cfgs/ lhn_weight
+   namelist /physics_cfgs_p/ lhn_weight
+
 
 contains
 

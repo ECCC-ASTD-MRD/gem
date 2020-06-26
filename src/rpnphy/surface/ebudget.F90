@@ -298,16 +298,16 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
          FREEZS(I) = min( -WORK(I), WL(I)/DT )
          !   RHOMAX(I) = 450. - 20470. / (SNODP(I)+PETIT) * &
          !  ( 1.-EXP(-SNODP(I)/67.3))
-         RHOMAX(I) = 450. - 20.47 / (SNODP(I)+PETIT) * &
-              ( 1.-exp(-SNODP(I)/0.0673))
+         RHOMAX(I) = 450. - 204.7 / (SNODP(I)+PETIT) * &
+              ( 1.-exp(-SNODP(I)/0.673))
          RHOMAX(I) = 0.001 * RHOMAX(I)
       else
          MELTS(I)  = min( WORK(I) , WS(I)/DT )
          FREEZS(I) = 0.0
          !   RHOMAX(I) = 600. - 20470. / (SNODP(I)+PETIT) * &
          !  ( 1.-EXP(-SNODP(I)/67.3))
-         RHOMAX(I) = 600. - 20.47 / (SNODP(I)+PETIT) * &
-              ( 1.-exp(-SNODP(I)/0.0673))
+         RHOMAX(I) = 600. - 204.7 / (SNODP(I)+PETIT) * &
+              ( 1.-exp(-SNODP(I)/0.673))
          RHOMAX(I) = 0.001 * RHOMAX(I)
       end if
    end do

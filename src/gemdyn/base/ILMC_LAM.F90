@@ -15,18 +15,15 @@
 
 !**s/r ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013)
 
-      subroutine ILMC_LAM ( F_ns, F_itr, F_i0, F_in, F_j0, F_jn )
+      subroutine ILMC_LAM ( F_ns, F_name_S, F_i0, F_in, F_j0, F_jn )
 
       use adz_mem
       use adz_options
-      use array_ilmc
       use dynkernel_options
       use gem_options
-      use gmm_itf_mod
+      use gem_timing
       use gmm_tracers
-      use HORgrid_options
-      use lun
-      use tr3d
+      use ilmc_lam_array
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -35,7 +32,8 @@
 
       !arguments
       !---------
-      integer, intent(IN) :: F_ns, F_itr, F_i0, F_in, F_j0, F_jn
+      character(len=*), intent(in)  :: F_name_S
+      integer, intent(in) :: F_ns, F_i0, F_in, F_j0, F_jn
 
       !object
       !===============================================================================================================
@@ -46,88 +44,54 @@
 
       logical, save :: done_allocate_L=.false.
 
-      integer :: SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,iprod, &
-                 shift,j1,j2,reset(Adz_k0:l_nk,3),l_reset(3),g_reset(3),w1,w2,size,n, &
-                 il,ir,jl,jr,il_c,ir_c,jl_c,jr_c,istat
+      integer :: i,j,k,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,j1,j2, &
+                 reset(Adz_k0:l_nk,5),w1,w2,size,n,il,ir,jl,jr
 
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
               o_shoot,u_shoot,ratio_max,ratio_min
 
-      real(kind=REAL64) :: mass_adv_8,mass_ilmc_8,ratio_8,mass_deficit_8
+      real, pointer, dimension(:,:,:) :: F_ilmc,air_mass_m
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: high,copy,F_min,F_max
-
-      logical :: limit_i_L,almost_zero
-
-      character(len=9) :: communicate_S
-
-      real, pointer, dimension(:,:,:) :: air_mass_m
-
-      character(len=8) :: name_S
-
-      real, pointer, dimension(:,:,:) :: F_ilmc
+      logical :: limit_i_L
 !
 !---------------------------------------------------------------------
 !
-      name_S = 'TR/'//trim(Tr3d_name_S(F_itr))//':M'
+      call gemtime_start (73, 'ILMC_', 38)
 
+      !Localize Tracer TIME M requiring ILMC monotonicity
+      !--------------------------------------------------
       F_ilmc => Adz_stack(F_ns)%dst
 
-      F_min(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) = Adz_post(l_minx:l_maxx,l_miny:l_maxy,1:l_nk,(F_ns-1)*3+2) !USE POINTER
-      F_max(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) = Adz_post(l_minx:l_maxx,l_miny:l_maxy,1:l_nk,(F_ns-1)*3+3) !USE POINTER
+      if (Adz_verbose>0) call ilmc_lam_write (1)
 
-      if (Adz_verbose>0.and.Lun_out>0) then
-
-         write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-         write(Lun_out,*) 'TRACERS: ILMC: Reset Monotonicity without changing Mass of SL advection: ',name_S(4:6)
-
-      end if
-
-      !Reset AIR MASS at TIME_M
-      !------------------------
-      istat = gmm_get(gmmk_airm0_s,airm0)
-
+      !Recall AIR MASS at TIME_M
+      !-------------------------
       air_mass_m => airm0
 
-      high(:,:,:) = F_ilmc(:,:,:)
+      if (Adz_verbose>0) call ilmc_lam_write (2)
 
-      call mass_tr (mass_adv_8,high,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+      !Horizontal grid: MIN/MAX and [F_i0,F_in] x [F_j0,F_jn]
+      !------------------------------------------------------
+      il = l_minx ; ir = l_maxx ; jl = l_miny ; jr = l_maxy
 
-      if (Adz_verbose>0.and.Lun_out>0) then
-
-         write(Lun_out,*)    'TRACERS: ILMC: ILMC_min_max_L          =',Adz_ILMC_min_max_L
-         write(Lun_out,*)    'TRACERS: ILMC: ILMC_sweep_max          =',Adz_ILMC_sweep_max
-         write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adz_gc_area_8
-
-      end if
-
-      !CORE
-      !----
-      il_c = F_i0
-      ir_c = F_in
-      jl_c = F_j0
-      jr_c = F_jn
-
-      !Horizontal grid: MIN/MAX and CORE limits
-      !----------------------------------------
-      il = l_minx
-      ir = l_maxx
-      jl = l_miny
-      jr = l_maxy
-      if (l_west)  il = il_c
-      if (l_east)  ir = ir_c
-      if (l_south) jl = jl_c
-      if (l_north) jr = jr_c
+      if (l_west)  il = F_i0
+      if (l_east)  ir = F_in
+      if (l_south) jl = F_j0
+      if (l_north) jr = F_jn
 
       !Allocation and Define surrounding cells for each sweep
       !------------------------------------------------------
       if (.NOT.done_allocate_L) then
 
-         allocate (sweep_rd(Adz_ILMC_sweep_max,l_ni,l_nj,l_nk))
+         call gemtime_start (93, 'ALLOC_', 73)
+
+         !Allocation
+         !----------
+         allocate (sweep_rd(Adz_ILMC_sweep_max,il:ir,jl:jr,l_nk))
 
          do k=1,l_nk
-            do j=jl_c,jr_c
-            do i=il_c,ir_c
+            do j=jl,jr
+            do i=il,ir
             do n=1,Adz_ILMC_sweep_max
 
                w1   = 2*n + 1
@@ -143,33 +107,34 @@
             end do
          end do
 
+         !Define surrounding cells for each sweep
+         !---------------------------------------
          do k=Adz_k0,l_nk
 
-            kx_m = k
-            kx_p = k
+            kx_m = k ; kx_p = k
 
-            do j=jl_c,jr_c
-            do i=il_c,ir_c
+            do j=jl,jr
+            do i=il,ir
 
                do sweep = 1,Adz_ILMC_sweep_max
 
                   sweep_rd(sweep,i,j,k)%cell = 0
 
                   if (.NOT.Schm_autobar_L) then
-                     kx_m = max(k-sweep,Adz_k0)
-                     kx_p = min(k+sweep,l_nk)
+
+                     kx_m = max(k-sweep,Adz_k0) ; kx_p = min(k+sweep,l_nk)
+
                   end if
 
-                  j1 = max(j-sweep,jl)
-                  j2 = min(j+sweep,jr)
+                  j1 = max(j-sweep,jl) ; j2 = min(j+sweep,jr)
 
                   do jx = j1,j2
 
                      do kx = kx_m,kx_p
 
+                        limit_i_L = (jx/=j-sweep.and.jx/=j+sweep)
 
-                        limit_i_L = (jx/=j-sweep.and.jx/=j+sweep) .and. &
-                                    ((.NOT.Schm_autobar_L.and.(kx>k-sweep.and.k<k+sweep)).or.Schm_autobar_L)
+                        if (.NOT.Schm_autobar_L) limit_i_L = limit_i_L.and.(kx>k-sweep.and.kx<k+sweep)
 
                         do ix = max(i-sweep,il),min(i+sweep,ir)
 
@@ -196,87 +161,54 @@
 
          done_allocate_L = .true.
 
+         call gemtime_stop  (93)
+
       end if
 
-      !Fill Halos of MIN/MAX (NOTE: Fill Halo of air_mass_m DONE in adv_tracers)
-      !-------------------------------------------------------------------------
-      call rpn_comm_xch_halo (F_min,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call gemtime_start (94, 'X_HALO', 73)
 
-      call rpn_comm_xch_halo (F_max,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      !Fill Halos of F_ILMC/MIN/MAX (NOTE: Fill Halo of air_mass_m was DONE in set_post_tr)
+      !------------------------------------------------------------------------------------
+      if (Adz_set_post_tr==1) &
+      call rpn_comm_xch_halo (air_mass_m,        l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
+      call rpn_comm_xch_halo (F_ilmc,            l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
+      call rpn_comm_xch_halo (Adz_post(F_ns)%min,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
+      call rpn_comm_xch_halo (Adz_post(F_ns)%max,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
 
-      !Evaluate admissible distance between threads
-      !--------------------------------------------
-      SIDE_max_0 = (2*Adz_ILMC_sweep_max + 1)*2+1
+      Adz_set_post_tr = 0
 
-      reset = 0
+      call gemtime_stop  (94)
+
+      reset = 0 ! Use to accumulate DIAGNOSTICS in LOOP
 
       !-----------------------------------------------------------------------------------
-      !LOOP1: Compute ILMC solution F_ilmc while preserving mass: USE ELEMENTS INSIDE CORE
+      !LOOP: Compute ILMC solution while preserving mass: USE ELEMENTS inside/outside CORE
       !-----------------------------------------------------------------------------------
-      call ilmc_lam_loop_core_y ()
+      call gemtime_start (96, 'LOOP__', 73)
+      call ilmc_lam_loop ()
+      call gemtime_stop  (96)
 
-      !Fill Halo of HIGH
-      !-----------------
-      call rpn_comm_xch_halo (high,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
-      !Set NESTING boundary of HIGH to ZERO since Adjoint is done after LOOP2
-      !----------------------------------------------------------------------
-      if (l_west)  high(l_minx:il-1,l_miny:l_maxy,Adz_k0:l_nk) = 0.
-      if (l_east)  high(ir+1:l_maxx,l_miny:l_maxy,Adz_k0:l_nk) = 0.
-      if (l_south) high(l_minx:l_maxx,l_miny:jl-1,Adz_k0:l_nk) = 0.
-      if (l_north) high(l_minx:l_maxx,jr+1:l_maxy,Adz_k0:l_nk) = 0.
-
-      copy = high
-
-      !-------------------------------------------------------------------------------------------------
-      !LOOP2: Compute ILMC solution F_ilmc while preserving mass: USE ELEMENTS INSIDE HALO (internal PE)
-      !-------------------------------------------------------------------------------------------------
-      call ilmc_lam_loop_core_n ()
-
-      !Recover perturbation HIGH in HALO
-      !---------------------------------
-      do k=Adz_k0,l_nk
-         do j=jl,jr
-            do i=il,ir
-               if ((i>=il_c.and.i<=ir_c).and.(j>=jl_c.and.j<=jr_c)) cycle
-               high(i,j,k) = high(i,j,k) - copy(i,j,k)
-            end do
-         end do
-      end do
-
-      copy = high
-
-      !Adjoint of Fill Halo of HIGH
-      !----------------------------
-      call rpn_comm_adj_halo (copy,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
-      !Initialize F_ilmc while maintaining NESTING values
-      !--------------------------------------------------
-      F_ilmc(il_c:ir_c,jl_c:jr_c,Adz_k0:l_nk) = copy(il_c:ir_c,jl_c:jr_c,Adz_k0:l_nk)
+      call gemtime_start (98, 'MINMAX', 73)
 
       !Reset Min-Max Monotonicity if requested
       !---------------------------------------
       if (Adz_ILMC_min_max_L) then
 
          do k=Adz_k0,l_nk
-            do j=jl_c,jr_c
-            do i=il_c,ir_c
+            do j=F_j0,F_jn
+            do i=F_i0,F_in
 
-               if (F_ilmc(i,j,k) < F_min(i,j,k)) then
+               if (F_ilmc(i,j,k) < Adz_post(F_ns)%min(i,j,k)) then
 
-                   reset (k,1)   = reset(k,1) + 1
-                   F_ilmc(i,j,k) = F_min(i,j,k)
+                   reset (k,3)   = reset(k,3) + 1
+                   F_ilmc(i,j,k) = Adz_post(F_ns)%min(i,j,k)
 
                end if
 
-               if (F_ilmc(i,j,k) > F_max(i,j,k)) then
+               if (F_ilmc(i,j,k) > Adz_post(F_ns)%max(i,j,k)) then
 
-                   reset(k,2)    = reset(k,2) + 1
-                   F_ilmc(i,j,k) = F_max(i,j,k)
+                   reset(k,4)    = reset(k,4) + 1
+                   F_ilmc(i,j,k) = Adz_post(F_ns)%max(i,j,k)
 
                end if
 
@@ -286,7 +218,66 @@
 
       end if
 
-      if (Adz_verbose>0) then
+      call gemtime_stop  (98)
+
+      if (Adz_verbose>0) call ilmc_lam_write (3)
+
+      call gemtime_stop  (73)
+!
+!---------------------------------------------------------------------
+!
+      return
+
+contains
+
+      include 'ilmc_lam_loop.inc'
+!
+!---------------------------------------------------------------------
+!
+!**s/r ILMC_LAM_write - Write ILMC_LAM diagnostics based on F_numero if verbose is activated
+
+      subroutine ILMC_LAM_write (F_numero)
+
+      use HORgrid_options
+      use lun
+      use tr3d
+
+      implicit none
+
+      !arguments
+      !---------
+      integer, intent(in) :: F_numero
+
+      integer :: err,iprod,l_reset(5),g_reset(5)
+
+      real(kind=REAL64), save :: mass_adv_8
+
+      real(kind=REAL64) :: mass_ilmc_8,ratio_8,mass_deficit_8
+
+      logical :: almost_zero
+
+      character(len=9) :: communicate_S
+!
+!---------------------------------------------------------------------
+!
+      if (F_numero==1.and.Lun_out>0) then
+
+         write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+         write(Lun_out,*) 'TRACERS: ILMC: Reset Monotonicity without changing Mass of SL advection: ',F_name_S(4:6)
+
+      elseif (F_numero==2) then
+
+         call mass_tr (mass_adv_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+
+         if (Lun_out>0) then
+
+            write(Lun_out,*)    'TRACERS: ILMC: ILMC_min_max_L          =',Adz_ILMC_min_max_L
+            write(Lun_out,*)    'TRACERS: ILMC: ILMC_sweep_max          =',Adz_ILMC_sweep_max
+            write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adz_gc_area_8
+
+         end if
+
+      elseif (F_numero==3) then
 
          !Print Min-Max Monotonicity
          !--------------------------
@@ -303,9 +294,11 @@
             l_reset(1) = reset(k,1) + l_reset(1)
             l_reset(2) = reset(k,2) + l_reset(2)
             l_reset(3) = reset(k,3) + l_reset(3)
+            l_reset(4) = reset(k,4) + l_reset(4)
+            l_reset(5) = reset(k,5) + l_reset(5)
          end do
 
-         call RPN_COMM_allreduce (l_reset,g_reset,3,"MPI_INTEGER","MPI_SUM",communicate_S,err)
+         call RPN_COMM_allreduce (l_reset,g_reset,5,"MPI_INTEGER","MPI_SUM",communicate_S,err)
 
          !Print Masses
          !------------
@@ -317,27 +310,26 @@
          if (.not.almost_zero(mass_adv_8)) ratio_8 = mass_deficit_8/mass_adv_8*100.
 
          if (Lun_out>0) then
-         write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adz_gc_area_8
-         write(Lun_out,*)    'TRACERS: ILMC: # pts OVER/UNDER SHOOT  =',g_reset(3),'over',G_ni*G_nj*l_nk*iprod
-         if (Adz_ILMC_min_max_L) then
-         write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MIN_ILMC    =',g_reset(1)
-         write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX_ILMC    =',g_reset(2)
-         end if
-         write(Lun_out,1001) 'TRACERS: ILMC: Rev. Diff. of ',ratio_8
+            write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adz_gc_area_8
+            write(Lun_out,*)    'TRACERS: ILMC: # pts OVER/UNDER SHOOT  =',g_reset(5),'over',G_ni*G_nj*l_nk*iprod
+            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET MIN many PE =',g_reset(1)
+            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX many PE =',g_reset(2)
+            if (Adz_ILMC_min_max_L) then
+               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MIN_ILMC    =',g_reset(3)
+               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX_ILMC    =',g_reset(4)
+            end if
+            write(Lun_out,1001) 'TRACERS: ILMC: Rev. Diff. of ',ratio_8
          end if
 
       end if
-
- 1000 format(1X,A40,E20.12)
- 1001 format(1X,A29,E11.4,'%')
 !
-!---------------------------------------------------------------------
+!----------------------------------------------------------------
 !
       return
 
-contains
+ 1000 format(1X,A40,E20.12)
+ 1001 format(1X,A29,E11.4,'%')
 
-      include 'ilmc_lam_loop_core_y.inc'
-      include 'ilmc_lam_loop_core_n.inc'
+      end subroutine ILMC_LAM_write
 
-      end
+      end subroutine ILMC_LAM

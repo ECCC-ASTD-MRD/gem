@@ -16,7 +16,7 @@
 !**s/r nest_bcs
 
       subroutine nest_bcs ( F_rhsu, F_rhsv, Minx, Maxx, Miny, Maxy, Nk )
-      use gmm_nest
+      use mem_nest
       use lam_options
       use glb_ld
       use cstv

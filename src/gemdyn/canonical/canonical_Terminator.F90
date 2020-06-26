@@ -18,25 +18,22 @@
       subroutine canonical_terminator_0 (F_cnt)
 
       use canonical
-      use gmm_itf_mod
+
       use, intrinsic :: iso_fortran_env
       implicit none
 
 #include <arch_specific.hf>
 
-      integer F_cnt
+      integer, intent(out) :: F_cnt
 
-      logical,external :: wil_check_Terminator,dcmip_check_Terminator
-      logical Terminator_L
-      integer err
+      logical, external :: wil_check_Terminator,dcmip_check_Terminator
+      logical :: Terminator_L
 !
 !-------------------------------------------------------------------
 !
       Terminator_L = wil_check_Terminator() .or. dcmip_check_Terminator()
 
       if ( Terminator_L ) then
-
-         err = gmm_get(gmmk_cly_s, cly)
 
          F_cnt = 0
          cly = 0.
@@ -53,27 +50,25 @@
       subroutine canonical_terminator_1 (F_src,F_name_S,F_cnt,minx,maxx,miny,maxy,F_ni,F_nj,F_nk)
 
       use canonical
-      use gmm_itf_mod
+
       use, intrinsic :: iso_fortran_env
       implicit none
+
 #include <arch_specific.hf>
 
-      character(len=*) F_name_S
-      integer F_cnt,minx,maxx,miny,maxy,F_ni,F_nj,F_nk
-      real F_src(minx:maxx,miny:maxy,F_nk)
+      character(len=*), intent(in) :: F_name_S
+      integer, intent(in) :: minx,maxx,miny,maxy,F_ni,F_nj,F_nk
+      integer, intent(inout) :: F_cnt
+      real, intent(in) :: F_src(minx:maxx,miny:maxy,F_nk)
 
-
-      logical,external :: wil_check_Terminator,dcmip_check_Terminator
-      logical Terminator_L
-      integer err
+      logical, external :: wil_check_Terminator,dcmip_check_Terminator
+      logical :: Terminator_L
 !
 !-------------------------------------------------------------------
 !
       Terminator_L = wil_check_Terminator() .or. dcmip_check_Terminator()
 
       if ( Terminator_L ) then
-
-         err = gmm_get(gmmk_cly_s, cly)
 
          if (F_name_S(1:6)=='TR/CL:' ) cly(1:F_ni,1:F_nj,1:F_nk) = cly(1:F_ni,1:F_nj,1:F_nk) +     F_src(1:F_ni,1:F_nj,1:F_nk)
          if (F_name_S(1:6)=='TR/CL:' ) F_cnt = F_cnt + 1
@@ -89,24 +84,27 @@
 
 !**s/r canonical_terminator_2
 
-      subroutine canonical_terminator_2 (F_airmass,F_tracer_8,F_cnt,minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur,F_type_S,F_time_S,F_comment_S)
+      subroutine canonical_terminator_2 (F_airmass,F_tracer_8,F_cnt,minx,maxx,miny,maxy,F_nk,F_k0, &
+                                         F_unout,F_couleur,F_type_S,F_time_S,F_comment_S)
 
-      use canonical
-      use gmm_itf_mod
-      use glb_ld
       use adz_options
+      use canonical
+      use glb_ld
+
       use, intrinsic :: iso_fortran_env
       implicit none
+
 #include <arch_specific.hf>
 
-      character(len=*) F_type_S,F_time_S,F_comment_S
-      integer F_cnt,minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur
-      real(kind=REAL64) F_tracer_8
-      real F_airmass(minx:maxx,miny:maxy,F_nk)
+      character(len=*), intent(in) :: F_type_S,F_time_S,F_comment_S
+      integer, intent(in) :: minx,maxx,miny,maxy,F_nk,F_k0,F_unout,F_couleur
+      integer, intent(inout) :: F_cnt
+      real(kind=REAL64), intent(out) :: F_tracer_8
+      real, intent(in) :: F_airmass(minx:maxx,miny:maxy,F_nk)
 
       logical,external :: wil_check_Terminator,dcmip_check_Terminator
-      logical Terminator_L
-      integer err,i0,in,j0,jn
+      logical :: Terminator_L
+      integer :: i0,in,j0,jn
 !
 !-------------------------------------------------------------------
 !
@@ -115,8 +113,6 @@
       i0 = 1+pil_w ; j0 = 1+pil_s ; in = l_ni-pil_e ; jn = l_nj-pil_n
 
       if ( Terminator_L .and. F_cnt==2 ) then
-
-         err = gmm_get(gmmk_cly_s, cly)
 
          !Print the mass of CLY scaled by area (CORE)
          !-------------------------------------------
@@ -142,16 +138,16 @@
       subroutine canonical_Terminator ()
 
       use canonical
-      use wil_options
-      use dcmip_options
-      use Terminator
-
       use cstv
+      use dcmip_options
       use geomh
       use glb_ld
-      use gmm_itf_mod
       use lun
+      use mem_tracers
       use ptopo
+      use Terminator
+      use wil_options
+
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -161,19 +157,16 @@
       !  Lauritzen et al.,2015,GMD,8,1299-1313
       !===================================================
 
+      integer :: i,j,k,istat,lower_value
 
-      !-------------------------------------------------------------------------------
+      real(kind=REAL64) :: x_a_8,y_a_8,s_8(2,2),rlon_8
 
-      integer i,j,k,istat,lower_value
-
-      real(kind=REAL64) x_a_8,y_a_8,s_8(2,2),rlon_8
-
-      real(kind=REAL64)  :: lon,             &  ! Longitude (radians)
-                  lat,             &  ! Latitude (radians)
-                  lon_d,           &  ! Longitude (degrees)
-                  lat_d,           &  ! Latitude (degrees)
-                  cl_f_8, cl2_f_8, &  ! time rate of change of cl and cl2
-                  cl_p_8, cl2_p_8     ! molar mixing ratio of cl and cl2 (TIME M)
+      real(kind=REAL64) :: lon,             &  ! Longitude (radians)
+                           lat,             &  ! Latitude (radians)
+                           lon_d,           &  ! Longitude (degrees)
+                           lat_d,           &  ! Latitude (degrees)
+                           cl_f_8, cl2_f_8, &  ! time rate of change of cl and cl2
+                           cl_p_8, cl2_p_8     ! molar mixing ratio of cl and cl2 (TIME P)
 
       real(kind=REAL64), parameter :: pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164_8
 
@@ -182,9 +175,9 @@
       real, pointer, dimension (:,:,:) :: cl_p,cl2_p
 
       real :: lower_value_4, check_4
-
-      !-------------------------------------------------------------------------------
-
+!
+!-------------------------------------------------------------------
+!
       !Set admissible lowest value
       !---------------------------
       if (Canonical_williamson_L) lower_value = Williamson_lower_value
@@ -196,10 +189,8 @@
 
       if (Lun_out>0) write (Lun_out,1000) lower_value_4
 
-      istat = gmm_get('TR/'//'CL'//':P', cl_p )
-      istat = gmm_get('TR/'//'CL2'//':P',cl2_p)
-
-      istat = gmm_get(gmmk_cly_s,cly)
+      istat = tr_get('CL:P',cl_p)
+      istat = tr_get('CL2:P',cl2_p)
 
       do k = 1,l_nk
 
@@ -265,9 +256,9 @@
          end do
 
       end do
-
-      !-------------------------------------------------------------------------------
-
+!
+!-------------------------------------------------------------------
+!
       return
 
  1000 format( &

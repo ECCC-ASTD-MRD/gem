@@ -132,7 +132,7 @@
 
 !              Compute Rc"', combining Rc" and Rt"
 !              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               F_rc(i,j,k) = F_rc(i,j,k) + w1 * F_rt(i,j,k) - w2 * F_rt(i,j,km)
+               F_rc(i,j,k) = F_rc(i,j,k) + (w1 * F_rt(i,j,k) - w2 * F_rt(i,j,km)) * Cstv_bar1_8
 
             end do
          end do
@@ -145,7 +145,9 @@
             do i= i0, in
                F_rb(i,j) = F_rb(i,j) - (one/Cstv_tau_8+mu_8*Cstv_tau_nh_8*grav_8)*(F_nest_t(i,j,k0t)&
                                                   -Cstv_Tstr_8)/F_nest_t(i,j,k0t)
-               F_rc(i,j,k0) = F_rc(i,j,k0  ) + Ver_cstp_8 * F_rb(i,j)
+               if (trim(Sol_type_S) == 'DIRECT') then
+                  F_rc(i,j,k0) = F_rc(i,j,k0  ) + mc_cstp_8(i,j) * F_rb(i,j)
+               end if
             end do
          end do
 

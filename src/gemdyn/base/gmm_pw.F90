@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module gmm_pw
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -47,6 +48,11 @@ module gmm_pw
       real, pointer, contiguous, dimension (:,:,:) :: pw_uu_copy  => null()
       real, pointer, contiguous, dimension (:,:,:) :: pw_vv_copy  => null()
 
+      real(kind=REAL64), pointer, dimension (:,:,:) :: pw_pm_moins_8 => null()
+      real(kind=REAL64), pointer, dimension (:,:,:) :: pw_pm_plus_8  => null()
+      real(kind=REAL64), pointer, dimension (:,:)   :: pw_p0_moins_8 => null()
+      real(kind=REAL64), pointer, dimension (:,:)   :: pw_p0_plus_8  => null()
+
       integer, parameter :: MAXNAMELENGTH = 32
 
       character(len=MAXNAMELENGTH) :: &
@@ -55,12 +61,14 @@ module gmm_pw
          gmmk_pw_wz_plus_s, gmmk_pw_wz_moins_s,&
          gmmk_pw_tt_plus_s, gmmk_pw_tt_moins_s,&
          gmmk_pw_pm_plus_s, gmmk_pw_pm_moins_s,&
+         gmmk_pw_pm_plus_8_s, gmmk_pw_pm_moins_8_s,&
          gmmk_pw_pt_plus_s, gmmk_pw_pt_moins_s,&
          gmmk_pw_gz_plus_s, gmmk_pw_gz_moins_s,&
          gmmk_pw_log_pm_s , gmmk_pw_log_pt_s  ,&
          gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s ,&
          gmmk_pw_me_plus_s, gmmk_pw_me_moins_s,&
          gmmk_pw_p0_plus_s, gmmk_pw_p0_moins_s,&
+         gmmk_pw_p0_plus_8_s, gmmk_pw_p0_moins_8_s,&
          gmmk_pw_p0_ls_s  , gmmk_pw_uslt_s    ,&
          gmmk_pw_vslt_s
 

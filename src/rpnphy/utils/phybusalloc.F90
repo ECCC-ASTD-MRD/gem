@@ -16,6 +16,7 @@
 
 module phybusalloc
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
+   use gesdictmod, only: gesdictlock
    use phy_getmeta_mod, only: phy_getmeta
    use phy_options, only: debug_mem_L
    use phy_typedef, only: phymeta
@@ -51,7 +52,7 @@ contains
       !---------------------------------------------------------------
       F_istat = RMN_ERR
 
-      buslck = .true.
+      call gesdictlock()
 
       esp_busent = entpar(enttop,BUSPAR_I0) + entpar(enttop,BUSPAR_NIK) - 1
       esp_busper = perpar(pertop,BUSPAR_I0) + perpar(pertop,BUSPAR_NIK) - 1

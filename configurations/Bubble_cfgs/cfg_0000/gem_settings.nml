@@ -35,7 +35,6 @@
   Lam_blend_H   = 0
 /
  &dyn_fisl
-  Cstv_bA_8     = 0.5
   Cstv_tstr_8   = 303.16
 /
 

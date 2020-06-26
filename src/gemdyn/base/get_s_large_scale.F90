@@ -21,7 +21,6 @@
       use dyn_fisl_options
       use glb_ld
       use gmm_geof
-      use gmm_itf_mod
       use gmm_pw
       use lun
       use tdpack
@@ -38,10 +37,8 @@
 
 ! Local varibales
 
-      integer :: istat, i, j
+      integer ::  i, j
       real(kind=REAL64) :: oneoRT
-      real, dimension(:,:), pointer, contiguous :: p0_ls
-!
 !
 ! From the hydrostic equation and the perfect gaz law we have
 !
@@ -57,9 +54,6 @@
 ! We take To=Tcdk
 !-----------------------------------------------------------------------
 
-      istat = gmm_get (gmmk_sls_s     ,   sls )
-      istat = gmm_get (gmmk_pw_p0_ls_s, p0_ls )
-
       if (.not.Schm_sleve_L) then
          sls = 0.0
          return
@@ -74,19 +68,18 @@
            do j=1,l_nj
               do i=1,l_ni
                  sls(i,j)   = -F_topo_ls(i,j) * oneoRT
-                 p0_ls(i,j) = Cstv_pref_8 * exp(sls(i,j))
+                 pw_p0_ls(i,j) = Cstv_pref_8 * exp(sls(i,j))
               end do
            end do
       else
            do j=1,l_nj
               do i=1,l_ni
                  sls(i,j)   = F_topo_ls(i,j)
-                 p0_ls(i,j) = 0.0
+                 pw_p0_ls(i,j) = 0.0
               end do
            end do
 
       end if
-
 
 1000  format(3X,'COMPUTE LARGE SCALE S: (S/R GET_S_LARGE_SCALE)')
 

@@ -342,6 +342,14 @@ module sfc_options
    real              :: zu = 10.
    namelist /surface_cfgs/ zu
 
+   !# Adjust wind diagnostic in TEB with building height  if .true.
+   logical           :: urb_diagwind = .false.
+!!$   namelist /surface_cfgs/ urb_diagwind
+
+   !# Adjust temperature diagnostic in TEB in the street  if .true.
+   logical           :: urb_diagtemp = .false.
+!!$   namelist /surface_cfgs/ urb_diagtemp
+
 contains
 
    function sfc_options_init() result(F_istat)

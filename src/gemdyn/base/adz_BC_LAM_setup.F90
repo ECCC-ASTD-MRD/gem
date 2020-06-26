@@ -47,8 +47,8 @@
 
       fld_ONE(1:F_ni,1:F_nj,1:F_nk) = 1.
 
-      !For Flux_out: Set mixing ratio = 0 on NEST at TIME T1
-      !-----------------------------------------------------
+      !For Flux_out: Set mixing ratio = 0 on NEST
+      !------------------------------------------
       work = 0.
 
       do k=1,F_nk
@@ -61,8 +61,8 @@
 
       in_o = work
 
-      !For Flux_in: Set mixing ratio = 0 on CORE at TIME T1
-      !----------------------------------------------------
+      !For Flux_in: Set mixing ratio = 0 on CORE
+      !-----------------------------------------
       work = fld_ONE
 
       do k=1,F_nk

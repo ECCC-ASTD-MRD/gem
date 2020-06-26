@@ -25,7 +25,7 @@ contains
         deep_cape, deep_active, cond_prflux, &
         dtdt, dqdt, dudt, dvdt, dqcdt, dqidt, &
         active, zcrr, clouds, rliqout, riceout, rnflx, snoflx, mcd, mpeff, mainc, &
-        delt, ix, kx)
+        mrk2, delt, ix, kx)
       use, intrinsic :: iso_fortran_env, only: INT64
       use cnv_options, only: mid_peff, mid_maxcape, mid_dpdd, mid_conserve, &
            mid_minbase, mid_depth, mid_minemf, mid_peff_const, mid_emffrac, &
@@ -34,6 +34,7 @@ contains
       use integrals, only: int_profile, INT_OK
       use debug_mod, only: init2nan
       use tpdd, only: tpdd1
+      use ens_perturb, only: ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -55,6 +56,7 @@ contains
       real, dimension(:), intent(in) :: deep_cape                  !CAPE from deep convective scheme (J/kg/m2)
       real, dimension(:), intent(in) :: deep_active                !Deep convective activity mask (0 or 1)
       real, dimension(:,:), intent(in) :: cond_prflux              !Precipitation flux from gridscale scheme
+      real, dimension(:,:), pointer :: mrk2                        !Markov chains for stochastic perturbations
       real, dimension(:,:), intent(out) :: dtdt                    !Temperature tendency (K/s)
       real, dimension(:,:), intent(out) :: dqdt                    !Humidity tendency (kg/kg/s)
       real, dimension(:,:), intent(out) :: dudt                    !U-component wind tendency (m/s2)
@@ -99,10 +101,10 @@ contains
            upnew,vmflcl,norm,wlcl,wtw,dpup,     &
            dpdown,dqdtdk,dqcdtdk,denom,tvdiff,intdudt,      &
            intdvdt,intdp,dxsq,rholcl,wabs,zmix,thta,delp,    &
-           nuer,nudr,lambda,rhmixg,minemf
+           nuer,nudr,lambda,rhmixg,rad
       real, dimension(1) :: subcloud_pw, subcloud_pws
       real, dimension(ix) :: dpthmxg,pmixg,tmixg,qmixg,thmixg,tlclg,    &
-           plclg,psb,thvmixg
+           plclg,psb,thvmixg,minemf,radmult,dpddmult
       real, dimension(kx) :: ddr,der,detic,detlq,dmf,domgdp,dtfm,ems,   &
            emsd,eqfrc,exn,omga,pptice,pptliq,qadv,qd,qdt,qg,qicout,     &
            qlqout,qpa,qu,ratio2,rice,rliq,tg,theted,thetee,theteu,thadv,&
@@ -131,7 +133,7 @@ contains
       include "phyinput.inc"
 
       ! User-adjustable parameters
-      real, parameter :: RAD = 1500.                            !Cloud radius for cloud model (m)
+      real, parameter :: RADIUS = 1500.                         !Cloud radius for cloud model (m)
       real, parameter :: WLCL_MULT = 1.                         !Multiplier of wz_env to get cloud base vertical motion r(realted to width of vertical motion spectrum)
       real, parameter :: RHMIN = -1.                            !Relative humidity threshold for triggering (fraction)
       real, parameter :: DPMIX = 10e2                           !Depth of the mixing layer (Pa)
@@ -210,7 +212,11 @@ contains
       ! The time scale for this closure is set by the time step
       timec = delt
 
-
+      ! Stochastic perturbations of sensitive parameters
+      minemf(:) = ens_spp_get('mid_minemf', mrk2, mid_minemf)
+      radmult(:) = ens_spp_get('crad_mult', mrk2, 1.) 
+      dpddmult(:) = ens_spp_get('dpdd_mult', mrk2, 1.)
+      
       ! 4. INPUT A VERTICAL SOUNDING (ENVIRONMENTAL)
       ! ============================================
       do I = 1, IX
@@ -307,14 +313,13 @@ contains
          ! ===================
 
          ! Parameterize the minimum environmental mass flux on request
-         minemf = mid_minemf
          if (mid_emfmod == 'LATITUDE') then
-            minemf = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * minemf
+            minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * minemf(i)
          endif
 
          ! Find the first level that meets the vertical motion criterion
          k = 1
-         do while (dxdy(i)*wz0(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf .and. k < kx)
+         do while (dxdy(i)*wz0(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf(i) .and. k < kx)
             k = k+1
          enddo
          if (k < kx) then
@@ -471,6 +476,7 @@ contains
             ! =============================
 
             ! Initial updraft properties at the LCL
+            RAD = RADIUS * RADMULT(I)
             WU(KLCLM1)=WLCL
             AU0=PI*RAD*RAD                      ! area of updraft at cloud base
             UMF(KLCLM1)=RHOLCL*AU0*WU(KLCLM1)   ! updraft mass flux
@@ -813,7 +819,6 @@ contains
             ! go back to the next highest mixed layer to see if a bigger
             ! cloud can be obtained from the parcel.
             CLDHGT=Z0G(I,LTOP)-ZLCL
-            mcd(i) = cldhgt
             if(CLDHGT < mid_depth .or. ABE < 1.)then
                do NK=KLCLM1,LTOP
                   UMF(NK)=0.
@@ -1150,7 +1155,7 @@ contains
 
          ! Determine the LDT level (level where the downdraft detrains).  This
          ! level cannot be higher than the downdraft source level (LFS).
-         DPDDMX=mid_dpdd
+         DPDDMX=mid_dpdd * dpddmult(i)
          DPT=0.
          NK=LDB
          LDT=-1
@@ -1859,6 +1864,9 @@ contains
             DQIDT(I,NK) = max( DQIDT(I,NK) , 0. )
          enddo
 
+         ! Extract diagnostics
+         mcd(i) = cldhgt
+         
          ! Diagnose precipitation fluxes for assimilation purposes
          SUMFLX = 0.
          RNFLX(I,1)  = 0.

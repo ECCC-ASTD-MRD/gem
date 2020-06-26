@@ -15,19 +15,19 @@
 
 !**s/r wil_init - Prepare initial conditions (u,v,gz,s,topo) for Williamson cases
 
-      subroutine wil_init (F_u,F_v,F_gz,F_s,F_topo,F_q,F_trprefix_S,F_trsuffix_S,&
-                           Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
+      subroutine wil_init (F_u,F_v,F_gz,F_s,F_topo,F_q,Mminx,Mmaxx,Mminy,Mmaxy,Nk,F_stag_L)
 
       use canonical
       use cstv
       use dynkernel_options
       use dyn_fisl_options
       use glb_ld
-      use gmm_itf_mod
+      use mem_tracers
       use step_options
       use tdpack
       use ver
       use wil_options
+
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -36,15 +36,13 @@
       !arguments
       !---------
       integer, intent(in)  :: Mminx,Mmaxx,Mminy,Mmaxy,Nk
+      logical, intent(in)  :: F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
       real,    intent(out) :: F_u   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
                               F_v   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Scalar if F_stag_L=.F.
                               F_gz  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !HEIGHT (m)
                               F_s   (Mminx:Mmaxx,Mminy:Mmaxy),    &
                               F_topo(Mminx:Mmaxx,Mminy:Mmaxy),    &
                               F_q   (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1)
-      character(len=*), intent(in) :: F_trprefix_S, F_trsuffix_S
-
-      logical F_stag_L ! Staggered uv if .T. / Scalar uv if .F.
 
       !object
       !--------------------|-------------------------------------------------|
@@ -96,30 +94,28 @@
 
             !Initialize Q1
             !-------------
-            istat = gmm_get (trim(F_trprefix_S)//"Q1"//trim(F_trsuffix_S),q1)
+            istat = tr_get('Q1:P',q1)
 
-            if (istat/=0.and.Williamson_Nair==0) goto 999
-            if (istat/=0.and.Williamson_Nair==3) goto 999
+            if (istat<=0.and.Williamson_Nair==0) call handle_error(-1,'WIL_INIT','Tracer Q1 missing')
+            if (istat<=0.and.Williamson_Nair==3) call handle_error(-1,'WIL_INIT','Tracer Q1 missing')
 
             if (Williamson_Nair==0) call wil_case1(q1,Mminx,Mmaxx,Mminy,Mmaxy,Nk,0,Lctl_step)
             if (Williamson_Nair==3) call wil_case1(q1,Mminx,Mmaxx,Mminy,Mmaxy,Nk,5,Lctl_step)
 
             !Initialize Q1 REFERENCE
             !-----------------------
-            istat = gmm_get(gmmk_q1ref_s,q1ref)
-
             q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk)
 
             else if (Williamson_Nair==1.or.Williamson_Nair==2) then
 
             !Initialize Q1,Q2,Q3,Q4
             !----------------------
-            istat1 = gmm_get (trim(F_trprefix_S)//"Q1"//trim(F_trsuffix_S),q1)
-            istat2 = gmm_get (trim(F_trprefix_S)//"Q2"//trim(F_trsuffix_S),q2)
-            istat3 = gmm_get (trim(F_trprefix_S)//"Q3"//trim(F_trsuffix_S),q3)
-            istat4 = gmm_get (trim(F_trprefix_S)//"Q4"//trim(F_trsuffix_S),q4)
+            istat1 = tr_get('Q1:P',q1)
+            istat2 = tr_get('Q2:P',q2)
+            istat3 = tr_get('Q3:P',q3)
+            istat4 = tr_get('Q4:P',q4)
 
-            if (istat1/=0.or.istat2/=0.or.istat3/=0.or.istat4/=0) goto 999
+            if (istat1<=0.or.istat2<=0.or.istat3<=0.or.istat4<=0) call handle_error(-1,'WIL_INIT','Tracers Q1/Q2/Q3/Q4 missing')
 
             call wil_case1(q1,Mminx,Mmaxx,Mminy,Mmaxy,Nk,1,Lctl_step)
             call wil_case1(q2,Mminx,Mmaxx,Mminy,Mmaxy,Nk,2,Lctl_step)
@@ -128,11 +124,6 @@
 
             !Initialize Q1,Q2,Q3,Q4 REFERENCE
             !--------------------------------
-            istat1 = gmm_get(gmmk_q1ref_s,q1ref)
-            istat2 = gmm_get(gmmk_q2ref_s,q2ref)
-            istat3 = gmm_get(gmmk_q3ref_s,q3ref)
-            istat4 = gmm_get(gmmk_q4ref_s,q4ref)
-
             q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk)
             q2ref(1:l_ni,1:l_nj,1:Nk) = q2(1:l_ni,1:l_nj,1:Nk)
             q3ref(1:l_ni,1:l_nj,1:Nk) = q3(1:l_ni,1:l_nj,1:Nk)
@@ -146,25 +137,21 @@
 
          !Setup Terminator's case: Initialize CL/CL2 tracers
          !--------------------------------------------------
-         istat1 = gmm_get (trim(F_trprefix_S)//"CL"//trim(F_trsuffix_S), cl )
-         istat2 = gmm_get (trim(F_trprefix_S)//"CL2"//trim(F_trsuffix_S),cl2)
+         istat1 = tr_get('CL:P',cl)
+         istat2 = tr_get('CL2:P',cl2)
 
-         if (Williamson_Terminator_L.and.(istat1/=0.or.istat2/=0)) call handle_error (-1,'INIT_BAR','Tracers CL/CL2 are missing')
+         if (Williamson_Terminator_L.and.(istat1<=0.or.istat2<=0)) call handle_error (-1,'INIT_BAR','Tracers CL/CL2 missing')
 
-         if (istat1==0.and.istat2==0) then
+         if (istat1>0.and.istat2>0) then
 
             call wil_Terminator_0 (cl,cl2,Mminx,Mmaxx,Mminy,Mmaxy,Nk)
 
             !Initialize CLY
             !--------------
-            istat = gmm_get (gmmk_cly_s,cly)
-
             cly(1:l_ni,1:l_nj,1:Nk) = cl(1:l_ni,1:l_nj,1:Nk) + 2.0d0 * cl2(1:l_ni,1:l_nj,1:Nk)
 
             !Initialize CLY REFERENCE
             !------------------------
-            istat = gmm_get(gmmk_clyref_s,clyref)
-
             clyref(1:l_ni,1:l_nj,1:Nk) =  CLY_REF
 
          end if
@@ -246,7 +233,4 @@
 !---------------------------------------------------------------------
 !
       return
-
-  999 call handle_error(-1,'WIL_INIT','Inappropriate list of tracers')
-
       end

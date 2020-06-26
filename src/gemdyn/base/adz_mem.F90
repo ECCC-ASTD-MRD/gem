@@ -29,9 +29,12 @@ module adz_mem
       integer :: Adz_i0u,Adz_inu,Adz_j0v,Adz_jnv
       integer :: Adz_2dnh, Adz_3dnh, Adz_k0, Adz_k0t, Adz_k0m
       integer :: Adz_num_u,Adz_num_v,Adz_num_q,Adz_num_t,Adz_num_b,Adz_kkmax
+      integer :: Adz_icn, Adz_itnl, Adz_cnt_traj, Adz_cnt_int
       integer, dimension(:), pointer, contiguous :: Adz_search_m,&
                                                     Adz_search_t
       real :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
+      real :: Adz_yyminposx,Adz_yymaxposx,Adz_yyminposy,Adz_yymaxposy
+      real, dimension(:,:), allocatable :: Adz_Xlim, Adz_Ylim
       real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8
       real(kind=REAL64), dimension(:), pointer :: Adz_cy_8, &
             Adz_delz_m, Adz_delz_t, Adz_odelz_m, Adz_odelz_t
@@ -65,6 +68,54 @@ module adz_mem
       real, pointer, dimension (:,:), contiguous :: Adz_uslt  =>null()
       real, pointer, dimension (:,:), contiguous :: Adz_vslt  =>null()
 
-      real, pointer, dimension (:,:,:,:), contiguous :: Adz_post,Adz_flux
+
+      type post
+           sequence
+           real, dimension(:,:,:), pointer :: lin
+           real, dimension(:,:,:), pointer :: min
+           real, dimension(:,:,:), pointer :: max
+      end type post
+
+      type(post), pointer, dimension(:) :: Adz_post,Adz_post_3CWP,Adz_post_BQWP
+
+      type flux
+           sequence
+           real, dimension(:,:,:), pointer :: fo
+           real, dimension(:,:,:), pointer :: fi
+      end type flux
+
+      type(flux), pointer, dimension(:) :: Adz_flux,Adz_flux_3CWP,Adz_flux_BQWP
+
+      type bc
+           sequence
+           integer :: n
+           integer :: wp
+           integer :: pexp_n
+           integer :: weight
+           character(len=8)  :: name_S
+           real(kind=REAL64) :: mass_deficit
+           logical :: LEGACY_L
+           real, dimension(:,:,:), pointer :: p
+           real, dimension(:,:,:), pointer :: m
+           real, dimension(:,:,:), pointer :: w
+           real, dimension(:,:,:), pointer :: fo
+           real, dimension(:,:,:), pointer :: fi
+           real, dimension(:,:,:), pointer :: lin
+           real, dimension(:,:,:), pointer :: min
+           real, dimension(:,:,:), pointer :: max
+      end type bc
+
+      type(bc), pointer, dimension(:) :: Adz_bc
+
+      type :: ADZ_SLOD
+         sequence
+         integer, dimension (8) :: send, recv
+         integer, dimension (:  ), allocatable :: ijk,COMM_handle
+         real   , dimension (:  ), allocatable :: req, intp, resu
+         real   , dimension (:,:), allocatable :: gpos
+      end type ADZ_SLOD
+      type(ADZ_SLOD) :: Adz_expq, Adz_expu, Adz_expv, Adz_expt
+
+      integer, dimension (8) :: Adz_exppe
 
 end module adz_mem

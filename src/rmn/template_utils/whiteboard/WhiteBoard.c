@@ -1484,39 +1484,6 @@ int c_wb_read(WhiteBoard *WB, char *filename, char *package, char *section, int 
    infile=fopen(localfname,"r");      /* try to open file */
    if(infile==NULL) WB_ERR_EXIT(WB_MSG_ERROR,WB_ERR_READ);  /* OOPS, cannot open/read file */
 
-   ntoken = wb_get_token(Token,infile,MISC_BUFSZ-1,0);  /* get version keyword */
-   if( strncmp((char *)Token,"VERSION",7) !=0 ) {
-      if( message_level<=WB_MSG_ERROR )
-         fprintf(stderr,"proper version marker not found in directive file\n");
-      fclose(infile) ;
-      WB_ERR_EXIT(WB_MSG_ERROR,WB_ERR_READ);
-      }
-
-   ntoken = wb_get_token(Token,infile,MISC_BUFSZ-1,0);  /* get = sign */
-   if( strncmp((char *)Token,"=",1) !=0 ) {
-      if( message_level<=WB_MSG_ERROR )
-         fprintf(stderr,"proper version marker not found in directive file\n");
-      fclose(infile) ;
-      WB_ERR_EXIT(WB_MSG_ERROR,WB_ERR_READ);
-      }
-
-   ntoken = wb_get_token(Token,infile,MISC_BUFSZ-1,0);  /* get version */
-   items = sscanf((char *)Token,"%d%n",&version,&nread);        /* translate to integer */
-
-   if( nread!= ntoken || items != 1) {                          /* sscanf error */
-      if( message_level<=WB_MSG_ERROR )
-         fprintf(stderr,"proper version marker not found in directive file\n");
-      fclose(infile) ;
-      WB_ERR_EXIT(WB_MSG_ERROR,WB_ERR_READ);
-      }
-   if( version > 100 ) {
-      if( message_level<=WB_MSG_ERROR )
-         fprintf(stderr,"directive file is version %d, this is a version 100 directive reader\n",version);
-      fclose(infile) ;
-      extra_error_message = "Bad directive file version";
-      WB_ERR_EXIT(WB_MSG_ERROR,WB_ERR_READ);
-      }
-   wb_flush_line(infile);
    extra_error_message = NULL;
 
    while(1){   /* loop until desired section "@xxxx" is found or end of directive file */

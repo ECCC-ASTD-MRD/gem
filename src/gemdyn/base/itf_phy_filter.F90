@@ -25,6 +25,7 @@ module itf_phy_filter
    integer, save :: hw = 0                           !Filter half-width (gridpoints)
    real, pointer, save :: wt_gauss1(:,:,:) => NULL() !Filter weights for each point
    real, pointer, save :: wt_gauss2(:,:,:) => NULL() !Filter weights for each point
+   real, pointer, save :: wt_gauss3(:,:,:) => NULL() !Filter weights for each point
    logical, save :: initialized = .false.            !Status indicators for package
 
    ! Public API
@@ -35,7 +36,7 @@ module itf_phy_filter
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ipf_init(F_sig, F_sig2) result(F_status)
+   integer function ipf_init(F_sig, F_sig2, F_sig3) result(F_status)
       use gem_options, only: G_halox,G_haloy
       ! Prepare filter weights for smoothing
       implicit none
@@ -46,9 +47,10 @@ contains
       ! Argument declaration
       real, intent(in), optional :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
       real, intent(in), optional :: F_sig2              !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
+      real, intent(in), optional :: F_sig3              !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
 
       ! Local variables
-      real :: mysig1, mysig2
+      real :: mysig1, mysig2, mysig3
 
       ! Initialize return status
       F_status = RMN_ERR
@@ -58,6 +60,8 @@ contains
       if (present(F_sig)) mysig1 = F_sig
       mysig2 = -1.
       if (present(F_sig2)) mysig2 = F_sig2
+      mysig3 = -1.
+      if (present(F_sig3)) mysig3 = F_sig3
 
       ! Confirm package initialization status
       if (initialized) then
@@ -67,7 +71,7 @@ contains
       initialized = .true.
 
       ! No weighting if no smoothing is to be done
-      if (mysig1 <= 0. .and. mysig2 <= 0.) then
+      if (mysig1 <= 0. .and. mysig2 <= 0. .and. mysig3 <= 0.) then
          F_status = RMN_OK
          return
       end if
@@ -78,6 +82,7 @@ contains
       ! Initialize all filters
       call ipf_init_stencil(mysig1, wt_gauss1)
       call ipf_init_stencil(mysig2, wt_gauss2)
+      call ipf_init_stencil(mysig3, wt_gauss3)
 
       ! End of subprogram
       F_status = RMN_OK
@@ -226,12 +231,17 @@ contains
       ! Argument declaration
       character(len=*), intent(in) :: F_iname                   !Name of the field to smooth
       character(len=*), intent(in) :: F_oname                   !Name of the field in which to store smoothed result
-      integer, intent(in), optional :: F_fid                    !Filter ID (currently 1 or 2)
+      integer, intent(in), optional :: F_fid                    !Filter ID (currently 1,2 or 3)
 
       ! Local variables
       real, dimension(:,:,:), pointer :: fld
+      real, dimension(:,:), pointer :: fld2d_rt,fld2d_rdpr,fld2d_rdqi
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: flds
+      real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn), target :: flds2d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: ifld
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rt
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rdpr
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rdqi
       integer :: iend(3), fid
       logical :: apply_filter
 
@@ -244,6 +254,7 @@ contains
       apply_filter = .false.
       if (fid == 1 .and. associated(wt_gauss1)) apply_filter = .true.
       if (fid == 2 .and. associated(wt_gauss2)) apply_filter = .true.
+      if (fid == 3 .and. associated(wt_gauss3)) apply_filter = .true.
 
       ! Only apply smoothing if necessary
       if (.not.apply_filter) then
@@ -252,11 +263,72 @@ contains
       end if
 
       ! Retrieve selected input field
-      ifld = 0.
-      fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-      iend = (/-1,-1,l_nk/)
-      F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-      if (F_status < 0) return
+      if (trim(F_iname) == 'rt') then
+
+        !this is code is just there to test if smoothing is a good idea for LHN
+        !
+        !Three 2D variables are read and put in a 3D array for smoothing.
+        !this is just a workaround the fact that there is not yet a 2D verison of the gaussian filter
+        !function.
+        !
+
+        !get rt  =  model precip rate
+        ifld2d_rt = 0.
+        fld2d_rt => ifld2d_rt(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+        iend = (/-1,-1,1/)
+        F_status = phy_get(fld2d_rt,'rt',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+        if (F_status < 0) then
+           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rt')
+           return
+        endif
+
+        !get rdpr  =  radar precip rate
+        ifld2d_rdpr = 0.
+        fld2d_rdpr => ifld2d_rdpr(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+        iend = (/-1,-1,1/)
+        F_status = phy_get(fld2d_rdpr,'rdpr',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+        if (F_status < 0) then
+           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rdpr')
+           return
+        endif
+
+        !get rdqi = radar quality index
+        ifld2d_rdqi = 0.
+        fld2d_rdqi => ifld2d_rdqi(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
+        iend = (/-1,-1,1/)
+        F_status = phy_get(fld2d_rdqi,'rdqi',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+        if (F_status < 0) then
+           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rdqi')
+           return
+        endif
+
+        !get rt3d
+        ifld = 0.
+        fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
+        iend = (/-1,-1,l_nk/)
+        F_status = phy_get(fld,'rt3d',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+        if (F_status < 0) then
+           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rt3d')
+           return
+        endif
+
+        !replace top layers of rt3d with 2d fields
+        fld(:,:,1) = fld2d_rt
+        fld(:,:,2) = fld2d_rdpr
+        fld(:,:,3) = fld2d_rdqi
+
+      else
+
+         ifld = 0.
+         fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
+         iend = (/-1,-1,l_nk/)
+         F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+         if (F_status < 0) then
+            call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem in phy_get')
+            return
+         endif
+
+      endif
 
       ! Apply smoothing operator
       if (gaussian_filter(flds,ifld,fid) /= RMN_OK) then
@@ -290,7 +362,7 @@ contains
       ! Argument declaration
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(out) :: F_ofld !Smoothed output field
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), intent(in) :: F_ifld                      !Input field to smooth
-      integer, intent(in) :: F_fid                                                                 !Filter ID (currently 1 or 2)
+      integer, intent(in) :: F_fid                                                                 !Filter ID (currently 1,2 or 3)
 
       ! Local variables
       integer :: i,j,k,ii,jj,cnt
@@ -311,6 +383,7 @@ contains
       nullify(wt_gauss)
       if (F_fid == 1 .and. associated(wt_gauss1)) wt_gauss => wt_gauss1
       if (F_fid == 2 .and. associated(wt_gauss2)) wt_gauss => wt_gauss2
+      if (F_fid == 3 .and. associated(wt_gauss3)) wt_gauss => wt_gauss3
 
       ! Only apply smoothing if necessary
       if (.not.associated(wt_gauss)) then
@@ -322,8 +395,7 @@ contains
       ! Exchange halos for smoothing operation
       ifld = F_ifld
       if (Grd_yinyang_L) then
-         call yyg_xchng(ifld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk,&
-                        .false.,'CUBIC', .true.)
+         call yyg_int_xch_scal(ifld,G_nk, .false.,'CUBIC', .true.)
       else
       call rpn_comm_xch_halo(ifld,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)

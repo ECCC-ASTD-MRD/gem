@@ -38,6 +38,7 @@ contains
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -261,12 +262,12 @@ contains
 
       else
 
-         call cldoppro3(taucs, omcs, gcs, taucl, omcl, gcl, &
+         call cldoppro4(taucs, omcs, gcs, taucl, omcl, gcl, &
               ztopthw, ztopthi, zecc,ztcc, &
               zeccl, zeccm, zecch, &
               zctp, zctt, liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, zmg, zml, ni, &
+              temp, sig, ps, zmg, zml, zmrk2, ni, &
               ni, nkm1, nk)
       endif
 
@@ -473,7 +474,7 @@ contains
 
          ! actual call to the Li & Barker (2005) radiation
 
-         call ccc1_raddriv2 (zfsg,zfsd0,zfsf0,zfsv0,zfsi0, &
+         call ccc1_raddriv3 (zfsg,zfsd0,zfsf0,zfsv0,zfsi0, &
               zfatb0,zfadb0,zfafb0,zfctb0,zfcdb0,zfcfb0, &
               albpla,fdl,ful,zt20, zti, &
               zcstt,zcsb,zclt,zclb,zparr0, &
@@ -483,7 +484,7 @@ contains
               qq, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
               cldfrac, tauae, exta, exoma, exomga, &
-              fa, absa, lcsw, lclw, &
+              fa, absa, lcsw, lclw, zmrk2, &
               il1, il2, ni, nkm1, nk)
 
          ! ti (t2): infrared (solar) cooling (heating) rate

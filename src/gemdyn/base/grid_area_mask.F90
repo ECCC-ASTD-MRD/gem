@@ -15,17 +15,14 @@
 
 !**s/r grid_area_mask - Evaluate area and mask
 
-      subroutine grid_area_mask (F_area_8,F_mask_8,F_ni,F_nj)
-
+      subroutine grid_area_mask (F_area_8,F_mask_8,F_area_mask_8,F_ni,F_nj)
       use adz_options
       use geomh
       use glb_ld
       use glb_pil
       use HORgrid_options
-      use gem_options
       use lun
       use tdpack
-
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -36,6 +33,7 @@
       integer,                       intent(in)  :: F_ni,F_nj
       real(kind=REAL64) , dimension(F_ni,F_nj), intent(out) :: F_area_8
       real(kind=REAL64) , dimension(F_ni,F_nj), intent(out) :: F_mask_8
+      real(kind=REAL64) , dimension(F_ni,F_nj), intent(out) :: F_area_mask_8
 
       !object
       !===========================
@@ -55,9 +53,12 @@
       real(kind=REAL64) spa_8(l_ni,l_nj,2)
 
       logical :: almost_zero,nj_even_L,ni_even_L,between_L,line_L
+      logical :: glbsum_L
 !
 !---------------------------------------------------------------------
 !
+      glbsum_L=.true.
+
       do j = 1,F_nj
          do i = 1,F_ni
             F_area_8(i,j) = geomh_hx_8 * cos(geomh_y_8(j)) * geomh_hy_8
@@ -70,6 +71,8 @@
       if (.not.Grd_yinyang_L) then
 
          F_mask_8 = 1.d0
+
+         F_area_mask_8 = F_area_8
 
          return
 
@@ -418,7 +421,7 @@
 
       !MPI reduce to get the global value for sp into sf
       !-------------------------------------------------
-      if ( Lctl_rxstat_S == 'GLB_8') then
+      if ( glbsum_L ) then
            call glbsum8 (sf_8,spa_8,1,l_ni,1,l_nj,2,          &
                    1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
       else
@@ -464,7 +467,7 @@
 
       !MPI reduce to get the global value for sp into sf
       !-------------------------------------------------
-      if ( Lctl_rxstat_S == 'GLB_8') then
+      if ( glbsum_L ) then
            call glbsum8 (sf_8,spa_8,1,l_ni,1,l_nj,2,          &
                    1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
       else
@@ -478,6 +481,12 @@
          write(Lun_out,1002) 'MASK AREA target       = ',2.0*pi_8
          write(Lun_out,1002) 'MASK AREA error        = ',sf_8(1) + sf_8(2) - 2.0*pi_8
       end if
+
+      do j = 1,F_nj
+         do i = 1,F_ni
+            F_area_mask_8(i,j) = F_area_8(i,j) * l_mask_8(i,j)
+         end do
+      end do
 
       do j = 1,F_nj
          do i = 1,F_ni

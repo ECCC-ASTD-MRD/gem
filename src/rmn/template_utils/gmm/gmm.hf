@@ -64,7 +64,7 @@
       type(gmm_layout), parameter, dimension(4)     :: GMM_NULL_LAYOUTS = (/GMM_NULL_LAYOUT, GMM_NULL_LAYOUT, GMM_NULL_LAYOUT, GMM_NULL_LAYOUT/)
       type(gmm_attributes), parameter               :: GMM_NULL_ATTRIB=gmm_attributes(GMM_KEY_NOT_FOUND,0,0,0,0)
       type(gmm_metadata), parameter                 :: GMM_NULL_METADATA=gmm_metadata(GMM_NULL_LAYOUTS , GMM_NULL_ATTRIB)
-!!===================== gmm_checkpoint_all =====================
+!!===================== gmm_checkpoint_all =====================
       interface
 !
 !        if  read_or_write is READ_CKPT (.true.) , read full checkpoint (all types)
@@ -74,7 +74,7 @@
       logical read_or_write
       end function gmm_checkpoint_all
       end interface 
-!!===================== gmm_checkpoint =====================
+!!===================== gmm_checkpoint =====================
       interface 
 !
       integer function gmm_checkpoint184(read_or_write)
@@ -141,7 +141,7 @@
 !        if  read_or_write is READ_CKPT (.true.) , read one checkpoint group of records
 !        if  read_or_write is WRIT_CKPT (.false.) , write all groups of records to checkpoint file
 !
-!!===================== gmm_create (interface) =====================
+!!===================== gmm_create (interface) =====================
 !
       interface gmm_create
       integer function gmm_create184(iname,p,field_meta,flags_arg)
@@ -585,7 +585,7 @@
       integer, intent(in), optional :: flags_arg
       end function gmm_create381
       end interface
-!!===================== gmm_create (code) =====================
+!!===================== gmm_create (code) =====================
 !
 !
 !
@@ -650,7 +650,7 @@
          integer ::  F_istat  !status
          end function gmm_decodemeta
        end interface
-!!===================== gmm_get (interface) =====================
+!!===================== gmm_get (interface) =====================
 !
       interface gmm_get
       integer function gmm_getmeta2(iname,m)

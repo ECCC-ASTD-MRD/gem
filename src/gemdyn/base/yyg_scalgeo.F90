@@ -42,8 +42,7 @@
       tab_dstf = 0.
       tab_dstf(1:l_ni,1:l_nj,1:Nk)= F_src(1:l_ni,1:l_nj,1:Nk)
 
-      call yyg_xchng (tab_dstf, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
-                         Nk, .false., trim(UPinterp_S), .false.)
+      call yyg_int_xch_scal (tab_dstf, Nk, .false., trim(UPinterp_S), .false.)
 
       F_src(1:l_ni,1:l_nj,1:Nk)= tab_dstf(1:l_ni,1:l_nj,1:Nk)
 !

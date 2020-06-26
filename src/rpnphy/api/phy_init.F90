@@ -29,6 +29,8 @@ module phy_init_mod
    use phygridmap
    use series_mod, only: series_init
    use sfcexch_options, only: sfcexch_options3
+   use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptptlc, ptpcritw, &
+        ptpfacreduc, ens_nc2d, ens_spp_init, ENS_OK
    private
    public :: phy_init
 
@@ -44,7 +46,6 @@ module phy_init_mod
 
    include "tables.cdk"
    include "surface.cdk"
-   include "ens.cdk"
 
    integer, parameter :: HALO = 0
    integer, parameter :: RELAX_MODE = 0
@@ -129,7 +130,7 @@ contains
       integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
 
       logical :: print_L
-      integer :: unout, options, itype, isizeof, ntr
+      integer :: unout, options, itype, isizeof, ntr, i
       integer :: ier, p_ni, p_nj, master_pe
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
@@ -158,6 +159,11 @@ contains
       delt   = F_dt
       ier    = timestr2step(kntrad, kntrad_S, dble(delt))
       kntrad = max(1,kntrad)
+      if (kntraduv_S /= '') then
+         ier    = timestr2step(kntraduv, kntraduv_S, dble(delt))
+         kntraduv = max(1,kntraduv)
+         kntraduv = 1  !# Note: temporary fix until values > 1 are working
+      endif
 
       !# Update convective timescales to include timestep support
       if (deep_timeent_sec > 0.) ier = timestr2sec(deep_timeent_sec,deep_timeent,dble(F_dt))
@@ -175,12 +181,25 @@ contains
          if (.not.WB_IS_OK(ier)) nphyoutlist = 0
       endif
 
+      do i=1,nphyoutlist
+         out_linoz = any(phyoutlist_S(i) == (/ &
+              'ado1', 'ao3 ', 'ao3c', 'azoc', 'ayoc', 'ado3', 'azo3', 'azof', &
+              'ayof', 'ayo3', 'ado4', 'ado6', 'ado7', 'adch', 'azch', 'ach4', &
+              'aych', 'adf1', 'azf1', 'af11', 'ayf1', 'adf2', 'azf2', 'af12', &
+              'ayf2', 'adn2', 'azn2', 'an2o', 'ayn2' &
+              /))
+         if (out_linoz) exit
+      enddo
+
       ier = wb_get('itf_phy/DYNOUT', dynout)
       if (.not.WB_IS_OK(ier)) dynout = .false.
 
       ier = wb_get('itf_phy/TLIFT', Tlift)
       if (.not.WB_IS_OK(ier)) Tlift = 0
 
+      ier = wb_get('itf_phy/slt_winds', slt_winds)
+      if (.not.WB_IS_OK(ier)) slt_winds = .false.
+      
       !# Store local core grid information
       ier = hgrid_wb_get(F_lclcore_S, phy_lclcore_gid)
       if (.not.RMN_IS_OK(ier)) then
@@ -252,6 +271,7 @@ contains
       ier = min(wb_put('phy/climat'  ,climat   , options),ier)
       ier = min(wb_put('phy/cond_infilter', cond_infilter, options), ier)
       ier = min(wb_put('phy/sgo_tdfilter', sgo_tdfilter, options), ier)
+      ier = min(wb_put('phy/lhn_filter', lhn_filter, options), ier)
       ier = min(wb_put('phy/convec'  ,convec   , options),ier)
       ier = min(wb_put('phy/delt'    ,delt     , options),ier)
       ier = min(wb_put('phy/flux_consist', pbl_flux_consistency, options), ier)
@@ -276,17 +296,21 @@ contains
       endif
 
       !# Stochastic physic init
+      if (ens_spp_init() /= ENS_OK) then
+         call msg(MSG_ERROR, '(phy_init) Problem initializing SPP perturbations')
+         return
+      endif
+      ptp_nc = 0
       if (WB_IS_OK(ier)) &
-           ier = wb_get_meta('ens/STOCHPHY', itype, isizeof, ntr, options)
+           ier = wb_get_meta('ens/PTP', itype, isizeof, ntr, options)
       if (WB_IS_OK(ier)) then
-         ier = min(wb_get('ens/STOCHPHY', stochphy), ier)
+         ier = min(wb_get('ens/PTP', ptp_L), ier)
       else
-         imrkv2 = 1
-         stochphy = .false.
+         ptp_L = .false.
          ier = WB_OK
       endif
-      if (WB_IS_OK(ier) .and. stochphy) then
-         ier = min(wb_get('ens/IMRKV2'     , imrkv2)     ,ier)
+      if (WB_IS_OK(ier) .and. ptp_L) then
+         ier = min(wb_get('ens/PTP_NC'     , ptp_nc)     ,ier)
          ier = min(wb_get('ens/PTPENVU'    , ptpenvu)    ,ier)
          ier = min(wb_get('ens/PTPENVB'    , ptpenvb)    ,ier)
          ier = min(wb_get('ens/PTPCAPE'    , ptpcape)    ,ier)
@@ -302,6 +326,7 @@ contains
          call msg(MSG_ERROR,'(phy_init) Problem initializing stochastic physics')
          return
       endif
+      ens_nc2d = max(ptp_nc + spp_nc, 1)
 
       !# Main physic init
       ier = phydebu2(p_ni, p_nj, F_nk, F_path_S)

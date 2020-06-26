@@ -27,6 +27,8 @@
       use opr
       use ptopo
       use metric
+      use lam_options
+      use dyn_fisl_options
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -35,18 +37,23 @@
       real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_Rhs
       real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_Sol
 !author
-!       Abdessamad Qaddouri -  2019
+!       Abdessamad Qaddouri -  initilal version 2019
+!       Abdessamad Qaddouri,   May 2020 (opentop)
+!
 !
       integer j, i, k, halox, haloy
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk) ::  add_v8, bdd_v8, cdd_v8, c_k
       real, dimension(l_minx:l_maxx, l_miny:l_maxy,Nk) :: Afdg1, Bfdg1
       real, dimension(l_minx:l_maxx, l_miny:l_maxy,Nk+1) :: fdg2
-      integer  km, kp
+      integer  km, kp,k0,k0t
       integer sol_pil_w_ext, sol_pil_e_ext, sol_pil_s_ext, sol_pil_n_ext
 !
 !     ---------------------------------------------------------------
 !
+      k0=1+Lam_gbpil_T
+      k0t=k0
+      if (Schm_opentop_L) k0t=k0-1
       F_Rhs = 0.0d0
 
       halox=1
@@ -73,7 +80,7 @@
          if (l_north) sol_pil_n_ext= sol_pil_n+1
       endif
 
-      do k = 1, nk
+      do k = k0, nk
          fdg2(:,:,k) = 0.0
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
@@ -88,6 +95,13 @@
                               - mc_betas_H_8(i,j) * F_sol(i,j,NK-1)
          end do
       end do
+      if (Schm_opentop_L) then
+      do j=1+sol_pil_s, njl-sol_pil_n
+         do i=1+sol_pil_w, nil-sol_pil_e
+           fdg2(i,j,k0t) =  mc_alfat_8(i,j)* F_sol(i,j,k0)   
+         end do
+      end do
+      endif
 
       if ( Grd_yinyang_L) then
           call yyg_xchng (fdg2, l_minx,l_maxx,l_miny,l_maxy, &
@@ -97,7 +111,7 @@
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
        endif
 
-      do k = 1,Nk
+      do k = k0t,Nk
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                c_k(i,j,k) =  gama_8*((fdg2(i,j,k+1)-fdg2(i,j,k))*mc_iJz_8(i  ,j,k )&
@@ -107,15 +121,20 @@
          end do
       end do
 
-      k=1
+      k=k0
       do j=1+sol_pil_s, njl-sol_pil_n
          do i=1+sol_pil_w, nil-sol_pil_e
             cdd_v8(i,j,k)=(c_k(i,j,k))*Ver_idz_8%m(k)&
                   +(mc_Iz_8(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)) -gg_8* fdg2(i,j,k)
+            if (Schm_opentop_L) then
+               cdd_v8(i,j,k)=(c_k(i,j,k)-c_k(i,j,k-1))*Ver_idz_8%m(k)&
+                     +(mc_Iz_8(i,j,k)-epsi_8)*(Ver_wp_8%m(k)*c_k(i,j,k)+Ver_wm_8%m(k)*c_k(i,j,k-1)) &
+                     -gg_8* fdg2(i,j,k)           
+            end if
          end do
       end do
 
-      do k = 2,Nk
+      do k = k0+1,Nk
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                cdd_v8(i,j,k)=(c_k(i,j,k)-c_k(i,j,k-1))*Ver_idz_8%m(k)&
@@ -127,7 +146,7 @@
       end do
 
 
-      do k = 1,Nk
+      do k = k0,Nk
          km=max(k-1,1)
          kp=k+1
 
@@ -154,7 +173,7 @@
          end do
       end do
 
-      do k = 1, nk
+      do k =k0, nk
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                add_v8(i,j,k) =   (Afdg1 (i,j,k)-Afdg1 (i-1,j,k))*geomh_invDXM_8(j) &
@@ -167,7 +186,7 @@
          end do
       end do
 
-      do k=1, NK
+      do k=k0, NK
          do j=1+sol_pil_s, njl-sol_pil_n
             do i=1+sol_pil_w, nil-sol_pil_e
                F_Rhs(i,j,k)=Cstv_hco0_8*(add_v8(i,j,k)+bdd_v8(i,j,k)+cdd_v8(i,j,k))

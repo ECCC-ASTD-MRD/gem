@@ -14,65 +14,73 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r nest_HOR_gwa
-!
+
       subroutine nest_HOR_gwa()
       use dynkernel_options
       use lam_options
-      use gmm_itf_mod
-      use gmm_nest
       use gmm_vt1
+      use mem_nest
+      use mem_tracers
       use glb_ld
-      use nest_blending
       use tr3d
       implicit none
 #include <arch_specific.hf>
 
-      integer n, gmmstat
-      real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
+      integer i,j,k
       logical :: using_qt1
+      integer :: n,deb
 !
 !----------------------------------------------------------------------
 !
-      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
+      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) goto 999
 
       using_qt1 = ( .not.Dynamics_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
-!
-! Blending main dynamics variables + tracers
-!
-      gmmstat = gmm_get (gmmk_ut1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_u_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'U')
 
-      gmmstat = gmm_get (gmmk_vt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_v_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'V')
+      do k=1,G_nk
+      do j=1,l_nj
+      do i=1,l_niu
+         ut1(i,j,k) = ut1(i,j,k)*(1.-nest_weightu(i,j,k)) + nest_u(i,j,k)*nest_weightu(i,j,k)
+      enddo
+      enddo
 
-      gmmstat = gmm_get (gmmk_tt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_t_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
-
-      call nest_blend (gmmk_st1_s  ,gmmk_nest_s_s  ,'M')
-
-      gmmstat = gmm_get (gmmk_zdt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_zd_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
-
-      gmmstat = gmm_get (gmmk_wt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_w_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+      do j=1,l_njv
+      do i=1,l_ni
+         vt1(i,j,k) = vt1(i,j,k)*(1.-nest_weightv(i,j,k)) + nest_v(i,j,k)*nest_weightv(i,j,k)
+      enddo
+      enddo
+      do j=1,l_nj
+      do i=1,l_ni
+         tt1(i,j,k) =  tt1(i,j,k)*(1.-nest_weightm(i,j,k)) + nest_t (i,j,k)*nest_weightm(i,j,k)
+         wt1(i,j,k) =  wt1(i,j,k)*(1.-nest_weightm(i,j,k)) + nest_w (i,j,k)*nest_weightm(i,j,k)
+         zdt1(i,j,k)= zdt1(i,j,k)*(1.-nest_weightm(i,j,k)) + nest_zd(i,j,k)*nest_weightm(i,j,k)
+      enddo
+      enddo
+      enddo
 
       if ( using_qt1 ) then
-         gmmstat = gmm_get (gmmk_qt1_s   , fld3d     )
-         gmmstat = gmm_get (gmmk_nest_q_s, fld_nest3d)
-         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk+1, 'Q')
-      end if
+      do k=1,G_nk+1
+      do j=1,l_nj
+      do i=1,l_ni
+         qt1(i,j,k) = qt1(i,j,k)*(1.-nest_weightm(i,j,k)) + nest_q(i,j,k)*nest_weightm(i,j,k)
+      enddo
+      enddo
+      enddo
+      endif
+
+      do j=1,l_nj
+      do i=1,l_ni
+        st1(i,j)= st1(i,j)*(1.-nest_weightm(i,j,G_nk+1)) + nest_s(i,j)*nest_weightm(i,j,G_nk+1)
+      enddo
+      enddo
 
       do n=1,Tr3d_ntr
-         gmmstat = gmm_get ('TR/'//trim(Tr3d_name_S(n))//':P'  , fld3d     )
-         gmmstat = gmm_get ('NEST/'//trim(Tr3d_name_S(n))//':C', fld_nest3d)
-         call nest_blend (fld3d,fld_nest3d,l_minx,l_maxx,l_miny,l_maxy,1,G_nk, 'M')
-      end do
-
+         deb= (n-1)*G_nk + 1
+         tracers_P(n)%pntr(1:l_ni,1:l_nj,1:G_nk) = &
+         tracers_P(n)%pntr(1:l_ni,1:l_nj,1:G_nk)*(1.-nest_weightm(1:l_ni,1:l_nj,1:G_nk)) + &
+                   nest_tr(1:l_ni,1:l_nj,deb:deb+G_nk-1)*nest_weightm(1:l_ni,1:l_nj,1:G_nk)
+      enddo
+      
+ 999  call spn_main()
 !
 !----------------------------------------------------------------------
 !

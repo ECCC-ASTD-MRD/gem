@@ -18,20 +18,16 @@
       subroutine hzd_smago_momentum()
       use gem_options
       use glb_ld
-      use gmm_itf_mod
       use gmm_geof
       use gmm_vt0
       use hvdif_options
       use HORgrid_options
       use lun
-
       implicit none
 #include <arch_specific.hf>
-
 !
 !Author:  Syed Husain
 !
-      integer :: istat
       logical :: smago_in_rhs_L, switch_on_wzd
 !-------------------------------------------------------------------
 !
@@ -42,12 +38,6 @@
       if (Lun_debug_L) write (Lun_out,1000)
 
       switch_on_wzd   = (Hzd_lnr <= 0.)
-
-      istat = gmm_get(gmmk_ut0_s,ut0)
-      istat = gmm_get(gmmk_vt0_s,vt0)
-      istat = gmm_get(gmmk_zdt0_s,zdt0)
-      istat = gmm_get(gmmk_tt0_s,tt0)
-      istat = gmm_get(gmmk_wt0_s,wt0)
 
       call hzd_smago_in_split(ut0,vt0,wt0,tt0,zdt0, &
             l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)

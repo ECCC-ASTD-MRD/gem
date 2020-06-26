@@ -73,9 +73,6 @@
       c2 = nu**2
       c3 = nu*four*(nu-one)
 
-!$omp parallel private (i,j,k,wk,i0,j0,in,jn) &
-!$omp shared(c1,c2,c3,id,jd,iff,jf)
-!$omp do
       do k=1,lnk
          i0= id-1 ; in= iff+1
          j0= jd-1 ; jn= jf +1
@@ -112,8 +109,7 @@
             sfd(id:iff,jd:jf,k) = rfd(id:iff,jd:jf,k) + wk(id:iff,jd:jf)
          end if
       end do
-!$omp enddo
-!$omp end parallel
+
 !
 !----------------------------------------------------------------------
 !

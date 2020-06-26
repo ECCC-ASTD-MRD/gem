@@ -27,7 +27,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer ier
+      integer ier, n1,n2
 !
 !     ---------------------------------------------------------------
 !
@@ -36,7 +36,9 @@
       rewind (Lun_rstrt)
       read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
       read (Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
-      read (Lun_rstrt) BC_mass_deficit(1:MAXTR3D)
+      read (Lun_rstrt) n1,n2
+      allocate (BCMD_3C(n1), BCMD_BQ(n2))
+      read (Lun_rstrt) BCMD_3C, BCMD_BQ
 
       close(Lun_rstrt)
       call fclos(Lun_rstrt)

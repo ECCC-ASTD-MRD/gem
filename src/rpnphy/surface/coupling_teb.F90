@@ -187,17 +187,17 @@ contains
       !  Anthropogenic fluxes (except building heating)
       ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - - - -
 
-      ZBEGIN_TRAFFIC_TIME = 21600.
-      ZEND_TRAFFIC_TIME   = 64800.
+!      ZBEGIN_TRAFFIC_TIME = 21600.
+!      ZEND_TRAFFIC_TIME   = 64800.
 
-      where(       PTSUN>ZBEGIN_TRAFFIC_TIME   &
-           .and.  PTSUN<ZEND_TRAFFIC_TIME     )
+!      where(       PTSUN>ZBEGIN_TRAFFIC_TIME   &
+!           .and.  PTSUN<ZEND_TRAFFIC_TIME     )
          ZH_TRAFFIC  (:) = XH_TRAFFIC   (:)
          ZLE_TRAFFIC (:) = XLE_TRAFFIC  (:)
-      elsewhere
-         ZH_TRAFFIC  (:) = 0.
-         ZLE_TRAFFIC (:) = 0.
-      end where
+!      elsewhere
+!         ZH_TRAFFIC  (:) = 0.
+!         ZLE_TRAFFIC (:) = 0.
+!      end where
 
       !-------------------------------------------------------------------------
       ! Over Urban surfaces/towns:

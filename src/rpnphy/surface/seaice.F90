@@ -1020,7 +1020,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       !   8.     Heat Stress Indices
       !------------------------------------
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
-      IF_TERMAL_STRESS: if (thermal_stress) then
+      IF_THERMAL_STRESS: if (thermal_stress) then
 
       i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
@@ -1069,7 +1069,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
               ztglbsun, ztglbshade, ztwetb,               &
               ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
               ZQ6,ZQ7, N)
-      endif IF_TERMAL_STRESS
+      endif IF_THERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &

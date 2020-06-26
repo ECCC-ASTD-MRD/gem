@@ -20,8 +20,9 @@
       use glb_pil
       use gmm_vt1
       use gmm_vt0
-      use gmm_nest
+      use mem_nest
       use mem_tstp
+      use adz_mem
       use gmm_geof
       use gmm_pw
       use gmm_vth
@@ -83,7 +84,7 @@
                     ut1, vt1, wt1               ,&
                     tt1, st1, zdt1, qt1, sls, fis0     ,&
                     l_minx,l_maxx,l_miny,l_maxy, l_nk )
-
+         Adz_cnt_traj= 0 ; Adz_cnt_int= 0
          call gemtime_stop (20)
 
          call firstguess ()
@@ -98,11 +99,10 @@
 !     Perform Semi-Lagrangian advection
 
       call gemtime_start (21, 'ADZ_MAIN', 10)
-
+      Adz_icn= F_icn
       call adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc, rhsc, orhst,&
                       rhst, orhsf, rhsf, orhsw, rhsw              ,&
                       l_minx,l_maxx,l_miny,l_maxy, l_nk )
-
       call gemtime_stop(21)
 
       call gemtime_start (22, 'PRE', 10)
@@ -117,8 +117,7 @@
                call var_topo (fis0, real(Lctl_step),&
                               l_minx,l_maxx,l_miny,l_maxy)
                if (Grd_yinyang_L) then
-                  call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
-                                  l_ni,l_nj, 1, .false., 'CUBIC', .true.)
+                  call yyg_int_xch_scal (fis0, 1, .false., 'CUBIC', .true.)
                else
                call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
                   l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -146,7 +145,7 @@
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
-         icln=F_icn*iln
+         icln=F_icn*iln ; Adz_itnl= iln
          if ( .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f          ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc,&
@@ -183,23 +182,18 @@
             call yyg_xchng_vec_uv2uv (ut0, vt0,&
                                       l_minx,l_maxx,l_miny,l_maxy,G_nk)
 
-            call yyg_xchng (tt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                            G_nk, .false., 'CUBIC', .false.)
-            call yyg_xchng (zdt0, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                            G_nk, .false., 'CUBIC', .false.)
-            call yyg_xchng (st0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                            1,    .false., 'CUBIC', .false.)
+            call yyg_int_xch_scal (tt0 , G_nk, .false., 'CUBIC', .false.)
+            call yyg_int_xch_scal (zdt0, G_nk, .false., 'CUBIC', .false.)
+            call yyg_int_xch_scal (st0 , 1,    .false., 'CUBIC', .false.)
             if (.not.Dynamics_hydro_L) then
-               call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                               G_nk+1, .false., 'CUBIC', .false.)
+               call yyg_int_xch_scal (qt0 , G_nk+1, .false., 'CUBIC', .false.)
             end if
         end if
 
       end do
 
       if (Grd_yinyang_L) then
-         call yyg_xchng (wt0, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                         G_nk, .false., 'CUBIC', .false.)
+         call yyg_int_xch_scal (wt0, G_nk, .false., 'CUBIC', .false.)
       end if
 
 !     ---------------------------------------------------------------

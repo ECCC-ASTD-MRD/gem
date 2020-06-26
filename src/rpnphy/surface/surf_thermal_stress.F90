@@ -107,7 +107,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
    real, save :: ZAB_H = 0.7   !absorption coef of solar radiation by human body        UTCI
    real, save :: ZAB_G = 0.957 !absorption coef of solar radiation by globe sensor      WBGT
    real, save :: ZHB_H = 1.7  !average height of human person (m)                       UTCI & WBGT
-!!$   real, save :: ZHB_G = 2.5  !average height of the globe sensor
+   real, save :: ZHB_G = 1.7  ! 2.5 !panam  !average height of the globe sensor
    real, save :: ZGD = 0.148  ! black globe sensor diameter in m (value given by Matt Wright for PanAm2015)
    integer :: ZOPT
    integer :: ZOPT_BODY
@@ -144,7 +144,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
         ZUNDEF, PEMIT_LW_SURF, PLW_RAD,     &
         ZUNDEF, ZUNDEF, ZUNDEF, PDIR_SW, PZENITH,   &
         PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G,  &
-        N,ZOPT,ZOPT_BODY,ZEB_G,ZAB_G, ZHB_H )
+        N,ZOPT,ZOPT_BODY,ZEB_G,ZAB_G, ZHB_G )
 
    do JJ = 1, N
       !========================================================
@@ -223,9 +223,6 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    !  b=Tmrt**4+a*A_T
    !  a= 1.335* 1E8 * va**0.71   / (em  *  D**0.4)
    !  4 solutions but 1 only in the desired range
-   !   f = 1.73205 = 3.0**0.5 =
-   !   g = 0.381571 =( 2.0**(1./3.) * 3.0**(2./3.) )**(-1.)
-   !  cq = 3.4943 = 4.0 * (2./3.)**(1./3.)
 
    real :: ZTRAD,ZTA,ZUA,ZGD,ZGE
    real :: ZUMOD    ! bounded wind speed
@@ -239,25 +236,25 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    real :: ZWORKE ! Term for the resolution of the equation
    real :: ZWORKJ ! Term for the resolution of the equation
    real :: ZWORKI ! Term for the resolution of the equation
+! optional for verification 4.
 !!$   real :: ZTRAD2 ! body MRT for verification
 !!$   real :: ZDIFF ! body MRT for verification
+! real, save :: zcf = 1.73205     ! f = 3.0**0.5
+! real, save :: zcg = 0.381571    ! g = ( 2.0**(1./3.) * 3.0**(2./3.) )**(-1.) 
+! real, save :: zcq = 3.4943      ! cq = 4.0 * (2./3.)**(1./3.)
 
-   !*       1.    set wind to a minimum value
-   !               ---------------------------
-   ! tests suggest a limit of 0.001 but 0.2 limit for free convection - and a max
-   ZUA = min(max(0.2,ZUMOD),20.0) 
+!*       1.    set limits for the  wind value
+!               ---------------------------
+!  note: some tests suggest a lower limit of 0.001 
+   ZUA = min(max(0.2,ZUMOD),15.0) 
 
    !*       2.    convection coefficient
    !               ---------------------------
-   ! convection coeff set to =  1.100 * 1.0E8 * U**0.6          ASHRAE - Kuehn et al. 1970
+! convection coeff set to =  1.100 * 1.0E8 * U**0.6    ISO-ASHRAE - Kuehn et al. 1970
    ZWORKA =  1.1* 1.0E8 * ZUA **0.6   / (ZGE  *  ZGD**0.4)
-   ! convection coeff set to =  1.335 * 1.0E8 * U**0.71     Thorsson et al., 2009
-   !  ZUA = MIN ( ZUA ,11.0)                       ! upper limit for applicability of the resolution
-   !  ZWORKA = 1.335 * 1.0E8 * ZUA **0.71   / (ZGE  *  ZGD**0.4)
 
    !*       3.    analytic resolution
    !               -------------------
-
    ZWORKB = ZTRAD **4. + ZWORKA * ZTA
 
    ZWORKm=9.*ZWORKA**2.

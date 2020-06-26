@@ -47,11 +47,11 @@ module gmm_vt0
       real, pointer, contiguous, dimension (:,:,:) ::  qt0 => null()
       real, pointer, contiguous, dimension (:,:,:) :: zdt0 => null()
       real, pointer, contiguous, dimension (:,:,:) :: hut0 => null()
-      real(kind=REAL64),pointer,dimension (:)     ::  p00 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, &
-                                      gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s, gmmk_vt0_s, gmmk_p00_s
+      character(len=MAXNAMELENGTH) :: gmmk_wt0_s, gmmk_tt0_s, &
+           gmmk_zdt0_s, gmmk_st0_s , gmmk_qt0_s , gmmk_ut0_s, &
+           gmmk_vt0_s , gmmk_pmt0_s, gmmk_ptt0_s, gmmk_pst0_s
 
 end module gmm_vt0

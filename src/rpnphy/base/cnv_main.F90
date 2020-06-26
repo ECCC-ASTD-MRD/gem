@@ -37,6 +37,7 @@ contains
       use kfmid, only: kfmid1
       use tendency, only: apply_tendencies
       use conv_mp_tendencies, only: conv_mp_tendencies1
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -138,7 +139,7 @@ contains
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
            zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
-           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx
+           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'cnv_main [BEGIN]')
@@ -260,6 +261,7 @@ contains
       MKPTR2Dm1(zqsmi, qsmi, v)
       MKPTR2Dm1(zumfkfc, umfkfc, f)
 
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
 
       call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
       call init2nan(zfm, dotp, dummy1, dummy2, geop)
@@ -401,7 +403,7 @@ contains
               zrliq_int, zrice_int, &
               zkfcrf, zkfcsf, &
               kount,zdlat,zmg,zml,zwstar,ztstar,zen,zkt, &
-              zcoadvu,zcoadvv,zcoage,zcowlcl,zcozlcl,critmask,delt)
+              zcoadvu,zcoadvv,zcoage,zcowlcl,zcozlcl,zmrk2,critmask,delt)
          if (phy_error_L) return
          ztlc = zrckfc
          zqckfc = zprcten + zpriten
@@ -604,7 +606,7 @@ contains
               cape, cnv_active, cond_prflux, &
               zmte, zmqe, zumid, zvmid, zprctnm, zpritnm, &
               zkmid, ztlcm, zfmc, zqlmi, zqsmi, zkfmrf, zkfmsf, zmcd, zmpeff, zmainc, &
-              delt, ni, nkm1)
+              zmrk2, delt, ni, nkm1)
          if (phy_error_L) return
          zmqce = zprctnm + zpritnm
 

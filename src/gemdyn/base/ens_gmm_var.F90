@@ -25,6 +25,9 @@ module ens_gmm_var
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
+! mcutraj            | 2D Markov chain: u-wind trajectory perturbation |
+! mcvtraj            | 2D Markov chain: v-wind trajectory perturbation |
+! mcwtraj            | 2D Markov chain: w-wind trajectory perturbation |
 ! mcsph1             | 3D Markov chain                                 |
 ! difut1             | horizontal diffusion u-tendency                 |
 ! difvt1             | horizontal diffusion v-tendency                 |
@@ -33,17 +36,21 @@ module ens_gmm_var
 !----------------------------------------------------------------------
 !
 !
+! dimension (LDIST_SHAPE)
+      real, pointer, dimension (:,:)         :: mcutraj => null()
+      real, pointer, dimension (:,:)         :: mcvtraj => null()
+      real, pointer, dimension (:,:)         :: mcwtraj => null()
 ! dimension (l_ni, l_nj ,(l_nk+2))
-      real, pointer, dimension (:,:,:)     :: mcsph1  => null()
+      real, pointer, dimension (:,:,:)       :: mcsph1  => null()
 ! dimension LDIST_SHAPE,  l_nk+1)
-      real,    pointer, dimension (:,:,:)     :: difut1  => null()
-      real,    pointer, dimension (:,:,:)     :: difvt1  => null()
-      real,    pointer, dimension (:,:,:)     :: diout1  => null()
-      real,    pointer, dimension (:,:,:)     :: diovt1  => null()
-      real,    pointer, dimension (:,:,:)     :: ugwdt1  => null()
-      real,    pointer, dimension (:,:,:)     :: vgwdt1  => null()
-      real,    pointer, dimension (:,:,:)     :: ensdiv  => null()
-      real,    pointer, dimension (:,:,:)     :: ensvor  => null()
+      real, pointer, dimension (:,:,:)       :: difut1  => null()
+      real, pointer, dimension (:,:,:)       :: difvt1  => null()
+      real, pointer, dimension (:,:,:)       :: diout1  => null()
+      real, pointer, dimension (:,:,:)       :: diovt1  => null()
+      real, pointer, dimension (:,:,:)       :: ugwdt1  => null()
+      real, pointer, dimension (:,:,:)       :: vgwdt1  => null()
+      real, pointer, dimension (:,:,:)       :: ensdiv  => null()
+      real, pointer, dimension (:,:,:)       :: ensvor  => null()
 ! special shapes for spectral coefficients
       real, pointer, dimension (:,:,:)       :: ar_p     => null()
       real, pointer, dimension (:,:,:)       :: ai_p     => null()
@@ -62,6 +69,7 @@ module ens_gmm_var
 
       integer, parameter :: MAXNAMELENGTH    =  32
 
+      character(len=MAXNAMELENGTH) :: gmmk_mcutraj_s,gmmk_mcvtraj_s,gmmk_mcwtraj_s
       character(len=MAXNAMELENGTH) :: gmmk_mcsph1_s
       character(len=MAXNAMELENGTH) :: gmmk_difut1_s,gmmk_difvt1_s
       character(len=MAXNAMELENGTH) :: gmmk_diout1_s,gmmk_diovt1_s

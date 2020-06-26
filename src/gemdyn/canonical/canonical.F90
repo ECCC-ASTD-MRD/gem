@@ -60,54 +60,54 @@ module canonical
 ! clyerr             |CLY ERROR                                        |
 !----------------------------------------------------------------------|
 
-      real, pointer, dimension (:,:,:) :: pth   => null()
-      real, pointer, dimension (:,:,:) :: thbase=> null()
-      real, pointer, dimension (:,:,:) :: thfull=> null()
-      real, pointer, dimension (:,:,:) :: dtv   => null()
+      real, pointer, contiguous, dimension (:,:,:) :: pth   => null()
+      real, pointer, contiguous, dimension (:,:,:) :: thbase=> null()
+      real, pointer, contiguous, dimension (:,:,:) :: thfull=> null()
+      real, pointer, contiguous, dimension (:,:,:) :: dtv   => null()
 
-      real, pointer, dimension (:,:,:) :: cly  => null()
-      real, pointer, dimension (:,:)   :: acl  => null()
-      real, pointer, dimension (:,:)   :: acl2 => null()
-      real, pointer, dimension (:,:)   :: acly => null()
+      real, pointer, contiguous, dimension (:,:,:) :: cly  => null()
+      real, pointer, contiguous, dimension (:,:)   :: acl  => null()
+      real, pointer, contiguous, dimension (:,:)   :: acl2 => null()
+      real, pointer, contiguous, dimension (:,:)   :: acly => null()
 
-      real, pointer, dimension (:,:)   :: irt  => null()
-      real, pointer, dimension (:,:)   :: art  => null()
-      real, pointer, dimension (:,:)   :: wrt  => null()
+      real, pointer, contiguous, dimension (:,:)   :: irt  => null()
+      real, pointer, contiguous, dimension (:,:)   :: art  => null()
+      real, pointer, contiguous, dimension (:,:)   :: wrt  => null()
 
-      real, pointer, dimension (:,:,:) :: uref => null()
-      real, pointer, dimension (:,:,:) :: vref => null()
-      real, pointer, dimension (:,:,:) :: wref => null()
-      real, pointer, dimension (:,:,:) ::zdref => null()
-      real, pointer, dimension (:,:,:) ::qvref => null()
-      real, pointer, dimension (:,:,:) ::qcref => null()
-      real, pointer, dimension (:,:,:) ::qrref => null()
-      real, pointer, dimension (:,:,:) ::thref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: uref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: vref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: wref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::zdref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::qvref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::qcref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::qrref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::thref => null()
 
-      real, pointer, dimension (:,:,:) :: q1ref => null()
-      real, pointer, dimension (:,:,:) :: q2ref => null()
-      real, pointer, dimension (:,:,:) :: q3ref => null()
-      real, pointer, dimension (:,:,:) :: q4ref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q1ref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q2ref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q3ref => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q4ref => null()
 
-      real, pointer, dimension (:,:,:) :: q1err => null()
-      real, pointer, dimension (:,:,:) :: q2err => null()
-      real, pointer, dimension (:,:,:) :: q3err => null()
-      real, pointer, dimension (:,:,:) :: q4err => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q1err => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q2err => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q3err => null()
+      real, pointer, contiguous, dimension (:,:,:) :: q4err => null()
 
-      real, pointer, dimension (:,:,:) ::clyref => null()
-      real, pointer, dimension (:,:,:) ::clyerr => null()
+      real, pointer, contiguous, dimension (:,:,:) ::clyref => null()
+      real, pointer, contiguous, dimension (:,:,:) ::clyerr => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_pth_s, gmmk_thbase_s, gmmk_thfull_s, gmmk_dtv_s, &
-                                gmmk_cly_s, gmmk_acl_s, gmmk_acl2_s, gmmk_acly_s, &
-                                gmmk_irt_s, gmmk_art_s, gmmk_wrt_s, &
-                                gmmk_uref_s, gmmk_vref_s, gmmk_wref_s, gmmk_zdref_s, &
-                                gmmk_qvref_s, gmmk_qcref_s, gmmk_qrref_s, gmmk_thref_s, &
-                                gmmk_q1ref_s, gmmk_q2ref_s, gmmk_q3ref_s, gmmk_q4ref_s, &
-                                gmmk_clyref_s, gmmk_q1err_s, gmmk_q2err_s, &
-                                gmmk_q3err_s, gmmk_q4err_s, gmmk_clyerr_s
+      character(len=MAXNAMELENGTH) :: gmmk_pth_s, gmmk_thbase_s, gmmk_thfull_s, gmmk_dtv_s,   &
+                                      gmmk_cly_s, gmmk_acl_s, gmmk_acl2_s, gmmk_acly_s,       &
+                                      gmmk_irt_s, gmmk_art_s, gmmk_wrt_s,                     &
+                                      gmmk_uref_s, gmmk_vref_s, gmmk_wref_s, gmmk_zdref_s,    &
+                                      gmmk_qvref_s, gmmk_qcref_s, gmmk_qrref_s, gmmk_thref_s, &
+                                      gmmk_q1ref_s, gmmk_q2ref_s, gmmk_q3ref_s, gmmk_q4ref_s, &
+                                      gmmk_clyref_s, gmmk_q1err_s, gmmk_q2err_s,              &
+                                      gmmk_q3err_s, gmmk_q4err_s, gmmk_clyerr_s
 
-      logical Canonical_dcmip_L, Canonical_williamson_L
+      logical :: Canonical_dcmip_L, Canonical_williamson_L
 
 contains
 

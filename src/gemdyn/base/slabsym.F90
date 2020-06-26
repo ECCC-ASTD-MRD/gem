@@ -13,62 +13,37 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r slabsym - symmetrical boundary conditions for theoretical
-!               cases
+!**s/r slabsym - symmetrical boundary conditions for theoretical cases
 !
       subroutine slabsym ()
-      use gmm_vt1
-      use gem_options
+      use gmm_vt0
       use glb_ld
-      use lun
-      use tr3d
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-      type(gmm_metadata) :: mymeta
-      integer err,i,j,k,n
-      integer jin, jj
-      real, pointer, dimension(:,:,:) :: tr
+      integer i,j,k,jin,jj
 !
 !----------------------------------------------------------------------
-!
-      err = gmm_get(gmmk_ut1_s,ut1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(ut1)'
-      err = gmm_get(gmmk_vt1_s,vt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(vt1)'
-      err = gmm_get(gmmk_wt1_s,wt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(wt1)'
-      err = gmm_get(gmmk_tt1_s,tt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(tt1)'
-      err = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(zdt1)'
-      err = gmm_get(gmmk_st1_s,st1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(st1)'
-      err = gmm_get(gmmk_wt1_s,wt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(wt1)'
-      err = gmm_get(gmmk_qt1_s,qt1,mymeta)
-      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(qt1)'
 !
       if (l_north) then
          do k=1,G_nk
             jin = l_nj-pil_n-1
             jj  = l_nj-pil_n
             do i=1,l_ni
-               vt1  (i,jj,k) = vt1  (i,jin,k)
+               vt0  (i,jj,k) = vt0  (i,jin,k)
             end do
             jin = l_nj-pil_n
             do j=1,pil_n
             jj  = l_nj-pil_n+j
             do i=1,l_ni
-               vt1 (i,jj,k) = vt1 (i,jin,k)
-               tt1 (i,jj,k) = tt1 (i,jin,k)
-               wt1 (i,jj,k) = wt1 (i,jin,k)
-               zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k) = qt1 (i,jin,k)
+               vt0 (i,jj,k) = vt0 (i,jin,k)
+               tt0 (i,jj,k) = tt0 (i,jin,k)
+               wt0 (i,jj,k) = wt0 (i,jin,k)
+               zdt0(i,jj,k) = zdt0(i,jin,k)
+               qt0 (i,jj,k) = qt0 (i,jin,k)
             end do
             do i=1,l_niu
-               ut1 (i,jj,k) = ut1 (i,jin,k)
+               ut0 (i,jj,k) = ut0 (i,jin,k)
             end do
             end do
          end do
@@ -76,26 +51,26 @@
          do j=1,pil_n
          jj  = l_nj-pil_n+j
          do i=1,l_ni
-            st1(i,jj)        = st1(i,jin)
-            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
+            st0(i,jj)        = st0(i,jin)
+            qt0(i,jj,G_nk+1) = qt0(i,jin,G_nk+1)
          end do
          end do
       end if
-!
+
       if (l_south) then
          do k=1,G_nk
             jin = pil_s+1
             do j=1,pil_s
             jj  = pil_s-j+1
             do i=1,l_ni
-               vt1 (i,jj,k) = vt1 (i,jin,k)
-               wt1 (i,jj,k) = wt1 (i,jin,k)
-               tt1 (i,jj,k) = tt1 (i,jin,k)
-               zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k) = qt1 (i,jin,k)
+               vt0 (i,jj,k) = vt0 (i,jin,k)
+               wt0 (i,jj,k) = wt0 (i,jin,k)
+               tt0 (i,jj,k) = tt0 (i,jin,k)
+               zdt0(i,jj,k) = zdt0(i,jin,k)
+               qt0 (i,jj,k) = qt0 (i,jin,k)
             end do
             do i=1,l_niu
-               ut1 (i,jj,k) = ut1 (i,jin,k)
+               ut0 (i,jj,k) = ut0 (i,jin,k)
             end do
             end do
          end do
@@ -103,41 +78,13 @@
          do j=1,pil_s
          jj  = pil_s-j+1
          do i=1,l_ni
-            st1(i,jj)        = st1(i,jin)
-            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
+            st0(i,jj)        = st0(i,jin)
+            qt0(i,jj,G_nk+1) = qt0(i,jin,G_nk+1)
          end do
          end do
       end if
 !
-      do n=1,Tr3d_ntr
-         nullify(tr)
-         err = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,mymeta)
-         if (err == 0) then
-         if (l_north)      then
-            do k=1,G_nk
-               jin = l_nj-pil_n
-               do j=1,pil_n
-                  jj  = l_nj-pil_n+j
-                  do i=1,l_ni
-                     tr(i,jj,k) = tr(i,jin,k)
-                  end do
-               end do
-            end do
-         end if
-         if (l_south) then
-            do k=1,G_nk
-               jin = pil_s+1
-               do j=1,pil_s
-                  jj  = pil_s-j+1
-                  do i=1,l_ni
-                     tr(i,jj,k) = tr(i,jin,k)
-                  end do
-               end do
-            end do
-         end if
-         end if
-      end do
-!
 !----------------------------------------------------------------------
+!
       return
       end

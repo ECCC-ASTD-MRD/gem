@@ -19,98 +19,77 @@ subroutine calcNT(liqwpin,icewpin,cloud,ecc,ni,nk,nkp)
    integer, intent(in) :: ni,nk,nkp
    real liqwpin(ni,nk), icewpin(ni,nk), cloud(ni,nk)
 
-!AUTHOR
-!     P. Vaillancourt  (Dec 2008)
-!
-!REVISION
-!
-! 001
-!
-!OBJECT
-!     Reproduce variable NT - effective cloud cover - as it is when using the newrad radiative transfer scheme
-!     See code in cldoptx4 from L. Garand for more details
-!
-!ARGUMENTS
-!          - Output -
-! ECC     effective cloud amount
-!
-!          -Input -
-!     liqwpin  in-cloud liquid water path (g/m^2)
-!     icewpin  in-cloud ice    water path (g/m^2)
-!     cloud    layer cloud amount (0. to 1.) (LMX,NK)
-!     ni  horizontal dimension
-!     nk  number of layers
-!     nkp  number of layers +1
-!
-!MODULES
-!
-!
-!***********************************************************************
-!     AUTOMATIC ARRAYS
-!***********************************************************************
-!
-      real, dimension(ni,nk  ) :: ew
-      real, dimension(ni,nk  ) :: ei
-      real, dimension(ni,nk  ) :: eneb
-      real, dimension(ni) :: trmin
-      real, dimension(ni) :: tmem
-      real, dimension(ni) :: ecc
-      real, dimension(ni,nkp) :: ff
+   !@AUTHOR
+   !     P. Vaillancourt  (Dec 2008)
+   !
+   !@OBJECT
+   !     Reproduce variable NT - effective cloud cover - as it is when using the newrad radiative transfer scheme
+   !     See code in cldoptx4 from L. Garand for more details
+   !
+   !@ARGUMENTS
+   !          - Output -
+   ! ECC     effective cloud amount
+   !
+   !          -Input -
+   !     liqwpin  in-cloud liquid water path (g/m^2)
+   !     icewpin  in-cloud ice    water path (g/m^2)
+   !     cloud    layer cloud amount (0. to 1.) (LMX,NK)
+   !     ni  horizontal dimension
+   !     nk  number of layers
+   !     nkp  number of layers +1
 
-!
-!***********************************************************************
-!
-        integer i,k,kind
-        real rei, rec_rei, ki
-        real elsa, emiss,xnu
+   !***********************************************************************
+   real, dimension(ni,nk  ) :: ew
+   real, dimension(ni,nk  ) :: ei
+   real, dimension(ni,nk  ) :: eneb
+   real, dimension(ni) :: trmin
+   real, dimension(ni) :: tmem
+   real, dimension(ni) :: ecc
+   real, dimension(ni,nkp) :: ff
 
-! diffusivity factor of Elsasser
-        data elsa/1.66/
-!
-!
-      REI = 15.
-      REC_REI = 1. / 15.
-      KI = .0003 + 1.290 * REC_REI
-!
-      CALL VSEXP (EW,-0.087*elsa*liqwpin,nk*ni)
-      CALL VSEXP (EI,-elsa*ki*icewpin,nk*ni)
-!
-      do k=1,nk
+   integer :: i,k,kind
+   real :: emiss,xnu
+
+   ! diffusivity factor of Elsasser
+   real, parameter :: ELSA = 1.66
+   real, parameter :: REI = 15.
+   real, parameter :: REC_REI = 1. / REI
+   real, parameter :: KI = .0003 + 1.290 * REC_REI
+ 
+   do k=1,nk
       do I=1,ni
-            EW(i,k) = 1. - EW(i,k)
-            EI(i,k) = 1. - EI(i,k)
-            EMISS = 1. - (1.-EI(i,k))* (1.-EW(i,k))
-            ENEB(i,k)= cloud(i,k)*emiss
+         EW(i,k) = 1. - exp(-0.087 * ELSA * liqwpin(i,k))
+         EI(i,k) = 1. - exp(-ELSA * KI * icewpin(i,k))
+         EMISS   = 1. - (1.-EI(i,k)) * (1.-EW(i,k))
+         ENEB(i,k) = cloud(i,k)*emiss
       end do
-      end do
-!
-!
-!...  maximum random overlap
+   end do
+   
+   !...  maximum random overlap
 
-      do I=1,ni
-            ff(i,1)=1.
-            tmem(i)=1.
-            trmin(i)=1.
+   do i=1,ni
+      ff(i,1) = 1.
+      tmem(i) = 1.
+      trmin(i) = 1.
+   enddo
+   do k=2,nkp
+      kind = k-2
+      kind = max0(kind,1)
+      do i=1,ni
+         xnu = 1.-eneb(i,k-1)
+         if (cloud(i,kind) < 0.01) then
+            tmem(i) = ff(i,k-1)
+            trmin(i) = xnu
+         else
+            trmin(i) = min(trmin(i), xnu)
+         endif
+         ff(i,k) = tmem(i) * trmin(i)
       enddo
-      do k=2,nkp
-            kind=k-2
-            kind=max0(kind,1)
-            do I=1,ni
-               xnu=1.-eneb(i,k-1)
-               if(cloud(i,kind).lt.0.01) then
-                 tmem(i)= ff(i,k-1)
-                 trmin(i)= xnu
-               else
-                 trmin(i)=min(trmin(i),xnu)
-               endif
-               ff(i,k)= tmem(i) * trmin(i)
-            enddo
-      enddo
-!
-      do  i=1,ni
-         ecc(i)=1.-ff(i,nkp)
-      enddo
+   enddo
 
+   do  i=1,ni
+      ecc(i) = 1.-ff(i,nkp)
+   enddo
 
-      return
-      end
+   return
+end subroutine calcNT

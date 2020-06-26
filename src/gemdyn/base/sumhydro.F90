@@ -13,22 +13,21 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r sumhydrom - Sum over Hydrometeors (GMM)
+!**s/r sumhydro - Sum over Hydrometeors
 !
-      subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
+      subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,ntr,F_tracers)
       use dyn_fisl_options
       use glb_ld
       use tr3d
-      use gmm_itf_mod
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 
-      integer minx,maxx,miny,maxy,nk
-      character(1) F_timelevel_S
-      real F_qh(minx:maxx,miny:maxy,nk)
+      integer, intent(in) :: minx,maxx,miny,maxy,nk,ntr
+      real, intent(in ) :: F_tracers(minx:maxx,miny:maxy,nk,ntr)
+      real, intent(out) :: F_qh(minx:maxx,miny:maxy,nk)
 
-      integer i, j, k, n,istat
-      real, pointer, dimension(:,:,:)     :: tr
+      integer i, j, k, n
 !     ________________________________________________________________
 !
       F_qh = 0.
@@ -38,20 +37,16 @@
 !     Sum over Hydrometeors
       do n = 1, Tr3d_ntr
          if (Tr3d_wload (n)) then
-            nullify (tr)
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr)
-
             do k = 1, l_nk
                do j = 1, l_nj
                   do i = 1, l_ni
-                     F_qh(i,j,k)=F_qh(i,j,k)+tr(i,j,k)
+                     F_qh(i,j,k)=F_qh(i,j,k)+F_tracers(i,j,k,n)
                   end do
                end do
             end do
          end if
       end do
-
 !     ________________________________________________________________
 !
       return
-      end
+      end subroutine sumhydro

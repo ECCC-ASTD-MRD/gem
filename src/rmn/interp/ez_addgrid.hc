@@ -41,12 +41,15 @@ int c_ez_addgrid(int grid_index, _Grille *newgr)
 #endif
 // JP
   newgr->access_count++;
+  newgr->grid_index = grid_index;
   
   cur_gr = gr_list[grid_index];
   if (cur_gr == NULL)
     {
     gdindex = nGrilles;
     c_gdkey2rowcol(gdindex, &gdrow, &gdcol);
+    Grille[gdrow][gdcol].grid_index = grid_index;
+  
     gr_list[grid_index] = &Grille[gdrow][gdcol];
     }
   else

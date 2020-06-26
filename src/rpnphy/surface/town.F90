@@ -73,7 +73,8 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use modd_csts
    use modi_coupling_teb2, only: coupling_teb2
    use modi_sunpos
-   use sfc_options, only: atm_external, jdateo, zu, zt, impflx
+   use sfc_options, only: atm_external, jdateo, zu, zt, impflx &
+        ,urb_diagwind, urb_diagtemp
    use sfcbus_mod
    implicit none
 !!!#include <arch_specific.hf>
@@ -141,18 +142,11 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    real,          dimension(n,1)   :: zsca_sw    ! diffuse sw for each band
    real,          dimension(n)     :: zvdir       ! direction of the wind
    real,          dimension(n)     :: zvmod       ! module of the wind
-!!$   real,          dimension(n)     :: ribn
-!!$   real,          dimension(n)     :: lzz0
-!!$   real,          dimension(n)     :: lzz0t
-!!$   real,          dimension(n)     :: fm
-!!$   real,          dimension(n)     :: fh
-!!$   real,          dimension(n)     :: dfm
-!!$   real,          dimension(n)     :: dfh
    real,          dimension(n)     :: lat,lon     ! latitude and longitude
    real,          dimension(n)     :: zuzu
    real, target, dimension(n) ::  zday, zheure, zmin
-   LOGICAL diagwind_interp
-   diagwind_interp=.FALSE.
+!!$LOGICAL diagwind_interp
+!!$diagwind_interp=.FALSE.
 !---------------------------------------------------------------------------
 
    !# in  offline mode the t-step 0 is (correctly) not performed
@@ -449,9 +443,9 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       do i=1,n
     !# in  offline mode no forcing of diffuse (scattered) radiation
     if (atm_external) then
-    !#     about 13 % (Leroyer et al. 2018, urban climate)
-        zdir_sw  (i,1) = 0.87*psol_sw(i,1)
-        zsca_sw  (i,1) = 0.13*psol_sw(i,1)
+    !# about 13-15 % (Leroyer et al. 2018, urban climate), we should consider a diurnal cycle sunset/sunrise
+        zdir_sw  (i,1) = 0.85*psol_sw(i,1)
+        zsca_sw  (i,1) = 0.15*psol_sw(i,1)
     else
         zdir_sw  (i,1) = pdir_sw(i,1)
         zsca_sw  (i,1) = psca_sw(i,1)
@@ -516,9 +510,9 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 !   Compute town surface layer var. (for alfat alfaq ctu...)
 !-----------------------------------------------------------------------------
    !# Compute town surface layer var. (for alfat alfaq ctu...)
-   i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf, &
+   i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf,  &
         zz0,zz0t,zdlat,zfcor,optz0=0,hghtm_diag=zu,hghtt_diag=zt,      &
-        ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,         &
+        ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,          &
         coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag)
 
    if (i /= SL_OK) then
@@ -554,7 +548,11 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 ! => humidity
         zqdiag(i) = xq_canyon(i)
 ! => temperature
-      if (xbld_height(i) .le. (zt*2.0) ) then
+        if( urb_diagtemp ) then 
+!        ztdiag(i)=xtrdzt(i)
+           ztdiag(i)=xt_canyon(i)
+        endif
+      if (xbld_height(i) .le. (zt*2.0) ) then 
         ztdiag(i) = xt_canyon(i)
       endif
 ! => wind (default diag is u_diag from above sl_sfclayer)
@@ -564,18 +562,18 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         zvdiag(i) = xu_canyon(i) *SIN(zvdir(i))
       endif
 
-      if(diagwind_interp) then
+      if( urb_diagwind ) then
 !  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
 !                               => Uz U10 = (30/H-2) Utop + 3/H(H-10) Ucan
       if( xbld_height(i) .gt. zu .and. xbld_height(i) .lt. (zu*3.0/2.0) )  then
-        zuzu(i) =  (3.0 * zu /xbld_height(i) -2.) * zvmod(i)                  &
+        zuzu(i) =  (3.0 * zu /xbld_height(i) -2.) * zvmod(i)             &
            * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town (i))   &
            / LOG( (zvmod(i) + 1.* xbld_height(i)/3.) / xz0_town   (i))   &
            + (3.* ( xbld_height(i) -zu )/ xbld_height(i) ) * xu_canyon(i)
         zudiag(i) = zuzu(i) *COS(zvdir(i))
         zvdiag(i) = zuzu(i) *SIN(zvdir(i))
       elseif (xbld_height(i) .le. 10.0 ) then
-!                            => log law. above roof level -  same as in urban_drag
+!  => log law. above roof level -  same as in urban_drag
   zuzu(i) =  zvmod(i)                                                   &
            * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town(i))   &
            / LOG( ( puref(i)  + 1.* xbld_height(i)/3.) / xz0_town(i))

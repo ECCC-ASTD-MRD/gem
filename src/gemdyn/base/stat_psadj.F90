@@ -13,26 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r stat_psadj - Print dry/wet air mass
+!**s/r stat_psadj - Print Wet/Dry air mass at appropriate time
 
       subroutine stat_psadj (F_time,F_comment_S)
 
-      use cstv
-      use dynkernel_options
-      use dyn_fisl_options
       use geomh
       use glb_ld
-      use glb_pil
-      use gmm_itf_mod
-      use gmm_vt1
-      use gmm_vt0
-      use gem_options
+      use gmm_pw
       use HORgrid_options
       use lun
-      use metric
+      use psadjust
       use ptopo
-      use tdpack, only: rgasd_8
-      use ver
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -45,56 +36,23 @@
       character(len=*), intent(in) :: F_comment_S  !Comment
 
       !object
-      !===========================
-      !     Print dry/wet air mass
-      !===========================
+      !===============================================
+      !     Print Wet/Dry air mass at appropriate time
+      !===============================================
 
-      !---------------------------------------------------------------
-
-      real, pointer, dimension (:,:)   :: w2d
-      real, pointer, dimension (:,:,:) :: wqt
-      integer err,i,j,istat
-      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_8,pr_p0_dry_8,log_p0_8
-      real(kind=REAL64) l_avg_8(2),g_avg_ps_8(2),scale_8
-      real(kind=REAL64) ll_avg_8(l_ni,l_nj,2),lx_avg_8(l_ni,l_nj)
-      character(len= 9) communicate_S
-      character(len= 1) in_S
-      character(len= 7) time_S
-
-      !---------------------------------------------------------------
-
-      !Estimate area
-      !-------------
-      l_avg_8(1) = 0.0d0
-      lx_avg_8 = 0.0d0
-      do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         l_avg_8(1) = l_avg_8(1) + geomh_area_8(i,j) * geomh_mask_8(i,j)
-         lx_avg_8(i,j) =           geomh_area_8(i,j) * geomh_mask_8(i,j)
-      end do
-      end do
-
+      integer :: err,i,j
+      real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8
+      real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
+      real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
+      real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_wet_8,g_avg_ps_dry_8
+      character(len= 9) :: communicate_S
+      character(len= 1) :: in_S
+      character(len= 7) :: time_S
+!
+!---------------------------------------------------------------------
+!
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
-      if ( Lctl_rxstat_S == 'GLB_8') then
-         call glbsum8 (l_avg_8(1),lx_avg_8,1,l_ni,1,l_nj,1,          &
-                   1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
-         if (Grd_yinyang_L) communicate_S = "GRIDPEERS"
-      end if
-
-      call RPN_COMM_allreduce (l_avg_8, scale_8, 1, &
-        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-      scale_8 = 1.0d0/scale_8
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-         if (F_time==1) istat = gmm_get(gmmk_st1_s,w2d)
-         if (F_time==0) istat = gmm_get(gmmk_st0_s,w2d)
-      elseif (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         if (F_time==1) istat = gmm_get(gmmk_qt1_s,wqt)
-         if (F_time==0) istat = gmm_get(gmmk_qt0_s,wqt)
-      end if
 
       if (F_time==1) in_S = 'P'
       if (F_time==0) in_S = 'M'
@@ -102,77 +60,41 @@
       if (F_time==1) time_S = "TIME T1"
       if (F_time==0) time_S = "TIME T0"
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+      !Obtain Wet surface pressure/Pressure Momentum at appropriate time
+      !-----------------------------------------------------------------
+      if (F_time==1) p0_wet_8 => pw_p0_plus_8
+      if (F_time==1) pm_8     => pw_pm_plus_8
+      if (F_time==0) p0_wet_8 => pw_p0_moins_8
+      if (F_time==0) pm_8     => pw_pm_moins_8
 
-         !Obtain pressure levels
-         !----------------------
-         call calc_pressure_8 ( pr_m_8, pr_t_8, pr_p0_8, w2d, &
-                                l_minx,l_maxx,l_miny,l_maxy,l_nk )
+      !Compute Dry Surface pressure at appropriate time
+      !------------------------------------------------
+      call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,in_S)
 
-         !Compute dry surface pressure (- Cstv_pref_8)
-         !--------------------------------------------
-         call dry_sfc_pressure_8 ( pr_p0_dry_8, pr_m_8, pr_p0_8, &
-                                   l_minx,l_maxx,l_miny,l_maxy,l_nk,in_S)
+      !Estimate Wet/Dry air mass on CORE
+      !---------------------------------
+      l_avg_8(1:2) = 0.0d0
 
-         !Add Cstv_pref_8 to dry surface pressure
-         !---------------------------------------
-         pr_p0_dry_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = pr_p0_dry_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) + Cstv_pref_8
-
-      elseif (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-
-         !Obtain surface pressure
-         !-----------------------
-         log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = (dble(wqt(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1))/&
-                                                           (rgasd_8*Cstv_Tstr_8)  &
-                                                          + dble(lg_pstar_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,l_nk+1)))
-         pr_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n) = exp(log_p0_8(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n))
-
-         pr_p0_dry_8 = 0.0 !NOT COMPLETED GEM-H
-
-      end if
-
-      !Compute dry air mass
-      !--------------------
-      l_avg_8(1) = 0.0d0
-      ll_avg_8(:,:,1) = 0.0d0
       do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * geomh_area_8(i,j) &
-                                                    * geomh_mask_8(i,j)
-         ll_avg_8(i,j,1) =         pr_p0_dry_8(i,j) * geomh_area_8(i,j) &
-                                                    * geomh_mask_8(i,j)
-      end do
+         do i=1+pil_w,l_ni-pil_e
+
+            l_avg_8(1) = l_avg_8(1) + p0_wet_8(i,j) * geomh_area_mask_8(i,j)
+            l_avg_8(2) = l_avg_8(2) + p0_dry_8(i,j) * geomh_area_mask_8(i,j)
+
+         end do
       end do
 
-      !Compute wet air mass
-      !--------------------
-      l_avg_8(2) = 0.0d0
-      ll_avg_8(:,:,2) = 0.0d0
-      do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         l_avg_8(2) = l_avg_8(2) + pr_p0_8(i,j) * geomh_area_8(i,j) &
-                                                * geomh_mask_8(i,j)
-         ll_avg_8(i,j,2) =         pr_p0_8(i,j) * geomh_area_8(i,j) &
-                                                * geomh_mask_8(i,j)
-      end do
-      end do
+      call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      if ( Lctl_rxstat_S == 'GLB_8') then
-         call glbsum8 (l_avg_8,ll_avg_8,1,l_ni,1,l_nj,2,          &
-                   1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
-         if (Grd_yinyang_L) communicate_S = "GRIDPEERS"
-      end if
-      call RPN_COMM_allreduce ( l_avg_8,g_avg_ps_8,&
-                 2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-      g_avg_ps_8(:) = g_avg_ps_8(:) * scale_8
+      g_avg_ps_wet_8 = g_avg_8(1) * PSADJ_scale_8
+      g_avg_ps_dry_8 = g_avg_8(2) * PSADJ_scale_8
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,*) ""
-      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "DRY air mass",time_S,g_avg_ps_8(1),F_comment_S
-      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "WET air mass",time_S,g_avg_ps_8(2),F_comment_S
-
-      !---------------------------------------------------------------
-
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "WET air mass",time_S,g_avg_ps_wet_8,F_comment_S
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "DRY air mass",time_S,g_avg_ps_dry_8,F_comment_S
+!
+!---------------------------------------------------------------------
+!
       return
 
  1000 format(1X,A12,1X,A7,1X,E19.12,1X,A16)

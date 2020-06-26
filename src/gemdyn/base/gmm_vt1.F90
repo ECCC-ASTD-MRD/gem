@@ -45,7 +45,8 @@ module gmm_vt1
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s , &
-                                      gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
+      character(len=MAXNAMELENGTH) :: gmmk_wt1_s, gmmk_tt1_s, &
+           gmmk_zdt1_s, gmmk_st1_s , gmmk_qt1_s , gmmk_ut1_s, &
+           gmmk_vt1_s , gmmk_pmt1_s, gmmk_ptt1_s, gmmk_pst1_s
 
 end module gmm_vt1

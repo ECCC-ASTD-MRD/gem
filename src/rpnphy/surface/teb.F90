@@ -498,7 +498,7 @@ real, dimension(:), intent(OUT)   :: WBGT_RFSHADE     ! WBGT  wet bulb globe tem
 
  real, dimension(:), intent(OUT)   :: PTRFZT           ! T at z=zt above the RooF
  real, dimension(:), intent(OUT)   :: PTRDZT           ! T at z=zt above the RoaD
- real, dimension(:), intent(OUT)   :: PURDZU           ! U at z=zt above the RoaD
+ real, dimension(:), intent(OUT)   :: PURDZU           ! U at z=zu above the RoaD
 
  real, dimension(:), intent(OUT)   :: PQ1       ! energy fluxes received by a body (here for a human)
  real, dimension(:), intent(OUT)   :: PQ2
@@ -602,7 +602,7 @@ real, dimension(size(PTA)) :: ZEMI_LW_WALL
 real, dimension(size(PTA)) :: ZEMI_LW_ROOF
 
 real, dimension(size(PTA)) :: ZU10           ! wind speed at 10 m AGL
-real, dimension(size(PTA)) :: ZUOBS          ! wind speed at 2.5 m ARL
+real, dimension(size(PTA)) :: ZUSR           ! wind speed at sensor level at ~2.5 m ARL
 real, dimension(size(PTA)) :: PURFZU         ! U at z=zu above the RooF (zu=zt in urban_drag)
 real, dimension(size(PTA)) :: PVRFZU         ! V at z=zu above the RooF (zu=zt in urban_drag)
 
@@ -918,10 +918,8 @@ PRESA_TOWN(:) = 1. / ( PBLD(:) * ZAC_ROOF(:)  + ( 1. - PBLD(:)) * ZAC_TOP (:))
 
 !*     13.     Compute thermal indices
 !              --------------------------------
-   if ( thermal_stress ) then
-! input: Wind module effectively at 10 m AGL
-! note ; we may take zu instead of 10 ? but inidices built with 10-m wind speed...
-
+   IF_THERMAL_STRESS: if ( thermal_stress ) then
+! input: Indices built with 10-m wind speed (note: could replace 10 by zu)
      do JJ=1,size(PTA)
  if( PBLD_HEIGHT(JJ) .le. 10.)  then
 ! log law. above roof level -  same as in urban_drag
@@ -940,18 +938,13 @@ else
 ZU10(JJ) = PU_CANYON(JJ)
  endif
     enddo
-!* IMPOSE MINIMUM OF 0.01 for PU10 ????
+!* re-write 10-m wind above road (not stable from urban_drag) 
  PURDZU(:) = max(ZU10(:),0.01)
 
-! ZUobs at zu=zt  for globe temperature calculation over the roof
-!  ZUOBS (JJ) = MAX(SQRT(PURFZU(JJ)**2+PVRFZU(JJ)**2),0.01)
-  ZUOBS (:) = max( PVMOD(:)               &
-           * log(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
-           / log( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
-!  ZUOBS (:) = ZU10(:)
-
-! WHERE (zuobs(:) <= 1.0) print*,'error  u near-roof= zuobs(:) <= 1.0'
-! WHERE (zuobs(:) >= 20.0) print*,'error  u near-roof= zuobs(:) >= 20.0'
+! wind at the sensor level height at 2.5 m above the roof level
+ ZUSR (:) = MAX( PVMOD(:)               &
+           * LOG(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
+           / LOG( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
 
 ! input: longwave infrared rad
  ZEMI_LW_WALL(:) = XSTEFAN * PEMIS_WALL(:) * PT_WALL(:,1)**4
@@ -973,48 +966,18 @@ ZU10(JJ) = PU_CANYON(JJ)
                      PT_ROOF(:,IROOF) + (23. + XTT)  )             &
                     / (PWALL_O_HOR(:) / PBLD(:) + 1. + 1.)
 
-! ZUobs at zu=zt  for globe temperature calculation over the roof
-!  ZUOBS (JJ) = MAX(SQRT(PURFZU(JJ)**2+PVRFZU(JJ)**2),0.01)
-  ZUOBS (:) = max( PVMOD(:)               &
-           * log(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
-           / log( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
-!  ZUOBS (:) = ZU10(:)
-
-! WHERE (zuobs(:) <= 1.0) print*,'error  u near-roof= zuobs(:) <= 1.0'
-! WHERE (zuobs(:) >= 20.0) print*,'error  u near-roof= zuobs(:) >= 20.0'
-
-! input: longwave infrared rad
- ZEMI_LW_WALL(:) = XSTEFAN * PEMIS_WALL(:) * PT_WALL(:,1)**4
- ZEMI_LW_ROAD(:) = XSTEFAN * PEMIS_ROAD(:) * PT_ROAD(:,1)**4
- ZEMI_LW_ROOF(:) = XSTEFAN * PEMIS_ROOF(:) * PT_ROOF(:,1)**4
-! add snow contribution
- ZEMI_LW_SNOW_ROAD(:) = XSTEFAN * ZESNOW_ROAD(:) * ZTSSNOW_ROAD(:)**4
- ZEMI_LW_SNOW_ROOF(:) = XSTEFAN * ZESNOW_ROOF(:) * ZTSSNOW_ROOF(:)**4
-! total contrib ?
-  ZEMI_LW_TOT_ROAD(:) = ZDF_ROAD(:) * ZEMI_LW_ROAD(:) + ZDN_ROAD(:) * ZEMI_LW_SNOW_ROAD(:)
-  ZEMI_LW_TOT_ROOF(:) = ZDF_ROOF(:) * ZEMI_LW_ROOF(:) + ZDN_ROOF(:) * ZEMI_LW_SNOW_ROOF(:)
-
-! input:  radiative temperature inside buildings (no BEM version) check 19
-!       ZTS_FLOOR(:) = 19. + XTT
- IWALL = size(PT_WALL,2)
- IROOF = size(PT_ROOF,2)
-
-      PTRAD_IN(:) = (PWALL_O_HOR(:) / PBLD(:) * PT_WALL(:,IWALL)+ &
-                     PT_ROOF(:,IROOF) + (19. + XTT)  )             &
-                    / (PWALL_O_HOR(:) / PBLD(:) + 1. + 1.)
-
  call URBAN_THERMAL_STRESS(PT_CANYON, PQ_CANYON, PTI_BLD, PQ_CANYON,    &
-             PU_CANYON,PURDZU, ZVMOD, ZVMOD, PPS, PPA,                  &
+             PU_CANYON,PURDZU, ZUSR, ZVMOD, PPS, PPA,                   &
              ZREF_SW_TOT_ROAD, ZREF_SW_WALL, PSCA_SW_RAD, PDIR_SW_RAD,  &
              PZENITH, ZEMI_LW_WALL, ZEMI_LW_TOT_ROAD,PLW_RAD,PTRAD_IN,  &
-              ZTA, ZQA, ZREF_SW_TOT_ROOF, ZEMI_LW_TOT_ROOF,              &
+              ZTA, ZQA, ZREF_SW_TOT_ROOF, ZEMI_LW_TOT_ROOF,             &
              PBLD, PBLD_HEIGHT, PWALL_O_HOR,                            &
              PUTCI_IN, PUTCI_OUTSUN, PUTCI_OUTSHADE,                    &
              PUTCI_RFSUN, PUTCI_RFSHADE,                                &
              WBGT_SUN,WBGT_SHADE,WBGT_RFSUN,WBGT_RFSHADE,               &
              PTRAD_SUN, PTRAD_SHADE, PTRAD_RFSUN, PTRAD_RFSHADE,        &
              PTRAD_GSUN, PTRAD_GSHADE, PTRAD_GRFSUN, PTRAD_GRFSHADE,    &
-             PTGLOBE_SUN, PTGLOBE_SHADE,                               &
+             PTGLOBE_SUN, PTGLOBE_SHADE,                                &
              PTGLOBE_RFSUN,PTGLOBE_RFSHADE,PTWETB, PTWETB_ROOF,         &
              PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13 )
 
@@ -1032,7 +995,7 @@ PUTCIC_OUTSHADE(:) = PUTCI_OUTSHADE(:)
 PUTCIC_RFSUN(:)    = PUTCI_RFSUN(:)
 PUTCIC_RFSHADE(:)  = PUTCI_RFSHADE(:)
 
- endif
+ endif IF_THERMAL_STRESS
 !-------------------------------------------------------------------------------
 
 end subroutine TEB2

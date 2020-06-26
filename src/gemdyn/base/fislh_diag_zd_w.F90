@@ -40,17 +40,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy)    :: rJzX, rJzY, rJzZ
 !     ________________________________________________________________
 !
-      if(.not.(F_zd_L.or.F_w_L)) then
-         F_zd = 0.
-         F_w = 0.
-         return
-      end if
-
-      if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
-      if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
-!
-! Halo exchange needed because scope below goes one point in halo
-!
+      if ( (F_zd_L.or.F_w_L) ) then
       call rpn_comm_xch_halo (F_u,  l_minx,l_maxx,l_miny,l_maxy, l_niu,l_nj, Nk,   &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (F_v,  l_minx,l_maxx,l_miny,l_maxy, l_ni,l_njv, Nk,   &
@@ -59,9 +49,8 @@
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo( F_q,  l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj ,Nk+1, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
-!     Initializations
-
+      endif
+                           
 !     local grid setup for final results
       i0 = 1
       in = l_ni
@@ -73,8 +62,9 @@
       if(l_north) jn = jn-1
 
       if (F_zd_L) then
+         if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
 
-!     CALCULATION of rau=p/(Rd*Tv)
+! Compute rau=p/(Rd*Tv)
 
          rau=0.
          do k=1,Nk
@@ -87,7 +77,7 @@
             end do
          end do
 
-!        CALCULATION of Zdot
+! Compute Zdot
 
          F_zd=0.0
          rJzZ=0.0
@@ -118,13 +108,12 @@
                end do
             end do
          end do
-      else
-         F_zd = 0.
       end if
 
       if(F_w_L) then
+         if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
 
-!        CALCULATION of W depending on Zdot
+! Compute W (which depends on previous computation of Zdot)
 
          do k=1,Nk
             km=max(k-1,1)
@@ -141,8 +130,6 @@
                end do
             end do
          end do
-      else
-         F_w = 0.
       end if
 
  1000 format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W_H)')

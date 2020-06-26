@@ -46,40 +46,12 @@
       call gemtime_start ( 70, 'MUSTOP', 1 )
 
       pe0_master_L = (Ptopo_myproc == 0) .and. (Ptopo_couleur == 0)
-      filen      = trim(Path_output_S)//'/output_ready_MASTER'
-      filen_link = trim(Path_output_S)//'/output_ready'
-      output_L = .false.
-      finalstep_L = Step_kount == F_finalstep
-      end_of_run_L = (finalstep_L .and. (.not.Init_mode_L))
-
-      if ( Out_post_L .or. end_of_run_L ) then
-         output_L= .true.
-         if (pe0_master_L) then
-            append=''
-            if (finalstep_L .and. Ptopo_last_domain_L) append='^last'
-            open  ( unf,file=filen,access='SEQUENTIAL',&
-                    form='FORMATTED',position='APPEND' )
-            write (unf,'(3(a))') 'NORMAL_OUTPUT ','NA ',trim(Out_laststep_S)//trim(append)
-            close (unf)
-         end if
-      end if
-
-      ! Send a signal to gem_monitor_output
-      if ( output_L .and. (.not.finalstep_L) ) then
-
-         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
-         if (pe0_master_L) then
-            err = clib_symlink ( trim(filen), trim(filen_link) )
-            write (output_unit,1001) trim(Out_laststep_S),lctl_step,err
-         end if
-
-      end if
 
       gem_muststop = .false.
       ! Get timeleft to determine if we can continue
       if (Lctl_cktimeleft_L) then
          if (pe0_master_L) then
-            filen=trim(Path_basedir_S)//'/time_left'
+            filen=trim(Path_work_S)//'/../time_left'
 
             open (unf,file=trim(filen),access='SEQUENTIAL',&
                   status='OLD',iostat=err,form='FORMATTED')
@@ -103,6 +75,34 @@
          end if
       end if
 
+      filen      = trim(Path_output_S)//'/output_ready_MASTER'
+      filen_link = trim(Path_output_S)//'/output_ready'
+      finalstep_L = Step_kount == F_finalstep
+      end_of_run_L= (finalstep_L .and. (.not.Init_mode_L))
+
+      if ( Out_post_L .or. end_of_run_L .or. gem_muststop) then
+         if (pe0_master_L) then
+            append=''
+            if (finalstep_L .and. Ptopo_last_domain_L) append='^last'
+            open  ( unf,file=filen,access='SEQUENTIAL',&
+                    form='FORMATTED',position='APPEND' )
+            write (unf,'(3(a))') 'NORMAL_OUTPUT ','NA ',trim(Out_laststep_S)//trim(append)
+            close (unf)
+         end if
+      end if
+
+      ! Send a signal to gem_monitor_output
+      output_L = Out_post_L .or. end_of_run_L
+      if ( output_L .and. (.not.finalstep_L) ) then
+
+         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
+         if (pe0_master_L) then
+            err = clib_symlink ( trim(filen), trim(filen_link) )
+            write (output_unit,1001) trim(Out_laststep_S),lctl_step
+         end if
+
+      end if
+
       gem_muststop = gem_muststop .and. .not.end_of_run_L
 
       if (gem_muststop) call wrrstrt()
@@ -110,8 +110,12 @@
       call gemtime ( Lun_out, 'CURRENT TIMESTEP', .false. )
       call gemtime_stop (70)
 
+      if ( (Step_kount>0) .and. (Gem_trace_ctrl>0) .and.&
+           (mod(Step_kount,Gem_trace_freq)==0) ) &
+           call gemtime_trace_dump ()
+
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
-              ' was released for postprocessing at timestep: ',i9,'symlink err=',I4)
+              ' was released for postprocessing at timestep: ',i9)
 !
 !     ---------------------------------------------------------------
 !

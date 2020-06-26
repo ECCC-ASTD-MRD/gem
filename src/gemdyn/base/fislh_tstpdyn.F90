@@ -20,7 +20,7 @@
       use glb_pil
       use gmm_vt1
       use gmm_vt0
-      use gmm_nest
+      use mem_nest
       use mem_tstp
       use gmm_geof
       use gmm_pw
@@ -119,9 +119,9 @@
                                           l_ni,l_nj,1,G_halox,G_haloy,&
                                           G_periodx,G_periody,l_ni,0)
                end if
-               call fislh_metric()
             end if
          end if
+         if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) call fislh_metric()
       end if
 
 !     Combine some rhs to obtain the linear part
@@ -149,7 +149,7 @@
 
          call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c   ,&
                          ut0, vt0, tt0, zdt0, qt0       ,&
-                         rhsc, rhst, rhsf, fis0, rhs_sol,nl_b,&
+                         rhsc, rhst, rhsf, fis0, rhs_sol,rhsb,nl_b,&
                          l_minx,l_maxx,l_miny,l_maxy    ,&
                          l_nk, ni, nj, i0, j0, k0, in, jn, icln)
 

@@ -30,6 +30,7 @@ contains
       use phy_status, only: phy_error_L
       use phybus
       use series_mod, only: series_xst
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
       !@Object to perform the implicit vertical diffusion
@@ -110,7 +111,7 @@ contains
       real, pointer, dimension(:,:) :: zgq, zgql, zgte, zkm, zkt, zqtbl, ztve, &
            zwtng, zwqng, zuwng, zvwng, zfbl, zfblgauss, zfblnonloc, zfnn, &
            zzd, zzn, zfc, zfv, zc1pbl, zturbqf, zturbtf, zturbuf, zturbvf, &
-           zturbuvf
+           zturbuvf, zmrk2
       real, pointer, dimension(:,:,:) :: zvcoef
 
       !---------------------------------------------------------------------
@@ -145,6 +146,7 @@ contains
 
       MKPTR2DN(zfc, fc, ni, nagrege, v)
       MKPTR2DN(zfv, fv, ni, nagrege, v)
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
 
       MKPTR2D(zturbqf, turbqf, v)
       MKPTR2D(zturbtf, turbtf, v)
@@ -384,9 +386,9 @@ contains
 
       ! Convert conserved variable tendencies to state (T,Q) variable tendencies
       if (fluvert == 'MOISTKE') then
-         call baktotq7(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
+         call baktotq8(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
               ps,zgztherm,tm,ficelocal,ztve,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
-              zfblnonloc,zc1pbl,zzn,zzd,zmg,zvcoef,zpblsigs,zpblq1,tau,ni,nkm1)
+              zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zpblsigs,zpblq1,tau,ni,nkm1)
       endif
 
       ! Compute tendency for condensate diffusion

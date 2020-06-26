@@ -21,6 +21,7 @@ subroutine phybusinit(ni,nk)
    use phy_options
    use phy_status, only: phy_error_L
    use phybus
+   use ens_perturb, only: ens_nc2d 
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -35,11 +36,9 @@ subroutine phybusinit(ni,nk)
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
 
-   include "ens.cdk"
    include "surface.cdk"
    include "mcica.cdk"
    include "clefcon.cdk"
-   include "buses.cdk"
 
    character(len=6)  :: nag, ntp, nmar, wwz, nuv, isss
    integer :: ier, iverb, nsurf, i
@@ -52,12 +51,13 @@ subroutine phybusinit(ni,nk)
    logical :: lgwdsm
    logical :: lccc2
    logical :: lghg, ltrigtau
-   logical :: llight, lcndsm
+   logical :: liuv
+   logical :: lmoyhroz, lmoyhrgh
+   logical :: lcndsm
    logical :: lcons, lmoycons
+   logical :: lhn_init
 
    !---------------------------------------------------------------------
-
-   buslck = .false.
 
    iverb = wb_verbosity(WB_MSG_INFO)
 
@@ -76,7 +76,7 @@ subroutine phybusinit(ni,nk)
    write(nuv,'(a,i2)') 'A*', RAD_NUVBRANDS
 
    !# nmar is the number of 2d Markov fields
-   write(nmar,'(a,i2)') 'A*', imrkv2
+   write(nmar,'(a,i2)') 'A*', ens_nc2d
 
    lcn_mpx  = (stcond(1:2) == 'MP')
    lcn_none = .not.lcn_mpx
@@ -111,15 +111,57 @@ subroutine phybusinit(ni,nk)
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
-   llight  = lightning_diag
+   lmoyhroz =(lmoyhr .and. llinoz .and. out_linoz)
+   lmoyhrgh =(lmoyhr .and. llingh .and. out_linoz)
    lcndsm  = (cond_infilter > 0.)
    ltrigtau = (kfctrigtau > 0.)
+   liuv    = (any(radia == (/&
+        'CCCMARAD ', &
+        'CCCMARAD2'  &
+        /)) .and. kntraduv_S /= '')      
 
+   
    wwz = '1'
    if (offline) wwz = '0'
    isss = '0'
    if (tofd /= 'NIL') isss = '1'
 
+   ! Activate energy budget diagnostics only if outputs are requested by the user
+   i = 1
+   do while (.not.ebdiag .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == &
+           (/'t2i ', 't2im', 'tii ', 'tiim', 'q1i ', 'q1im', 'q2i ', 'q2im'/) &
+           )) ebdiag = .true.
+      i = i+1
+   enddo
+
+   ! Activate ECMWF diagnostics only if outputs are requested by the user
+   i = 1
+   do while (.not.ecdiag .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
+      i = i+1
+   enddo
+   
+   ! Activate lightning diagnostics only if outputs are requested by the user
+   llight = .false.
+   if (any(stcond(1:5) == (/'MP_P3 ', 'MP_MY2'/))) then
+      do while (.not.llight .and. i <= nphyoutlist)
+         if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
+         i = i+1
+      enddo
+   endif
+   
+   ! Activate refractivity diagnostics only if outputs are requested by the user
+   lrefract = .false.
+   do while (.not.lrefract .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'dcbh', 'dcnb', 'dcll', &
+           'dc1m', 'dc1i', 'dcmr', &
+           'dc2m', 'dc2i', 'dcst', &
+           'dcth', 'dc3m', 'dc3i' &
+           /))) lrefract = .true.
+      i = i+1
+   enddo
 
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
@@ -143,6 +185,8 @@ subroutine phybusinit(ni,nk)
    enddo
    lmoycons = (lcons .and. lmoyhr)
 
+   lhn_init = (lhn /= 'NIL')
+   
 #include "phyvar.hf"
    if (phy_error_L) return
 

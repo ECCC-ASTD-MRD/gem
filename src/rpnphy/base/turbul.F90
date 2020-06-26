@@ -30,6 +30,7 @@ contains
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -83,7 +84,7 @@ contains
            ztve, zze, zzn, zwtng, zwqng, zuwng, zvwng, zqcmoins, zhumoins, &
            zsigm, zsigt, zsigw, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
            zftot, zlwc, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
-           zrig, zshear2, zvcoef, zqmoins, zc1pbl, zbuoy
+           zrig, zshear2, zvcoef, zqmoins, zc1pbl, zbuoy, zmrk2
 
       real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce, qe
       !----------------------------------------------------------------
@@ -154,6 +155,8 @@ contains
       MKPTR2D(zzd, zd, f)
       MKPTR2D(zze, ze, v)
       MKPTR2D(zzn, zn, f)
+
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
 
       if (advectke) then
          MKPTR2D(zenmoins, enmoins, d)
@@ -240,11 +243,11 @@ contains
          zuwng = 0.
          zvwng = 0.
 
-         call moistke11(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zkt,zqtbl,zc1pbl,zfnn, &
+         call moistke12(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zkt,zqtbl,zc1pbl,zfnn, &
               zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
               zumoins,zvmoins,ztmoins,ztve,zhumoins,qe,zpmoins,zsigm,se,zsigw, &
               zze,zz0_ag,zgzmom,zfrv_ag,zwstar,zturbreg, &
-              zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
+              zmrk2,zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
          if (phy_error_L) return
 
       else

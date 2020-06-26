@@ -27,8 +27,11 @@
          do j = 1, l_nj
             do i = 1, l_ni
                Adz_pxyzm(1,i,j,k) = i + l_i0 - 1
+               Adz_wpxyz(i,j,k,1) = Adz_pxyzm(1,i,j,k)
                Adz_pxyzm(2,i,j,k) = j + l_j0 - 1
+               Adz_wpxyz(i,j,k,2) = Adz_pxyzm(2,i,j,k)
                Adz_pxyzm(3,i,j,k) = k
+               Adz_wpxyz(i,j,k,3) = Adz_pxyzm(3,i,j,k)
             end do
          end do
       end do

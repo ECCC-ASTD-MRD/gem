@@ -319,13 +319,18 @@ ftnword rpn_comm_softbarrier_init(ftnword *ftn_comm)  /* bind to port, return po
 #endif
 	return(MPI_Comm_c2f(comm));
 }
+
+static int WORLD_COMM_MPI = -1;
+void RPN_COMM_World_Get(int *);
+
 #pragma weak rpn_comm_softbarrier_init_all__=rpn_comm_softbarrier_init_all
 #pragma weak rpn_comm_softbarrier_init_all_=rpn_comm_softbarrier_init_all
 ftnword rpn_comm_softbarrier_init_all__();
 ftnword rpn_comm_softbarrier_init_all_();
 ftnword rpn_comm_softbarrier_init_all(){
-	ftnword world=MPI_Comm_c2f(MPI_COMM_WORLD);
-	return(rpn_comm_softbarrier_init(&world));
+  RPN_COMM_World_Get(&WORLD_COMM_MPI);        // get effective world communicator (Fortran)
+// 	ftnword world=MPI_Comm_c2f(WORLD_COMM_MPI);
+	return(rpn_comm_softbarrier_init(&WORLD_COMM_MPI));
 }
 
 /* sequence of operations

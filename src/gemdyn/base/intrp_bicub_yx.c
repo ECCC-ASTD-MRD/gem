@@ -130,8 +130,8 @@ void set_intrp_bicub_yx(int qxmin, int qxmax, int qymin, int qymax){
   qmaxy = qymax - 1 ;
 }
 // set bounds for 'q' (scalars), 'u', and 'v' grids
-void set_intrp_bicub_quv(int qxmin, int qxmax, int qymin, int qymax, 
-                         int uxmin, int uxmax, int uymin, int uymax, 
+void set_intrp_bicub_quv(int qxmin, int qxmax, int qymin, int qymax,
+                         int uxmin, int uxmax, int uymin, int uymax,
                          int vxmin, int vxmax, int vymin, int vymax){
   // qxmin is in "origin 1", qminx is in "origin 0", same for other limits
   // uxmin is in "origin 1", uminx is in "origin 0", same for other limits
@@ -155,7 +155,7 @@ void set_intrp_bicub_quv(int qxmin, int qxmax, int qymin, int qymax,
 
 /*
            interpolate a column from a 3D source array f, put results in array r (ru, rv for winds)
-  
+
    f       3D Fortran indexed source array, real*4, dimension(mini:maxi,minj:maxj,nk)
            ni = (maxi-mini-1)
            ninj = (maxi-mini-1)*(maxj-minj-1)
@@ -170,17 +170,17 @@ void set_intrp_bicub_quv(int qxmin, int qxmax, int qymin, int qymax,
    yyu     j coordinate in i j fractional index space of desired column ( yyu(l) is assumed >= minj+1 )
    yyv     j coordinate in i j fractional index space of desired column ( yyv(l) is assumed >= minj+1 )
    s       rotation matrix for the wind components (intrp_bicub_yx_vec, intrp_bicub_yx_uv)
-  
+
    f is assumed to point to the address of f(1,1,1)  (Fortran indexing)
    xx, yy positions are in fractional indes space (origin 1)
    the value at (1.0, 1.0) is f(1,1,1)
-  
+
    xx = 2.5, yy = 2.5 would be the center ot the square formed by
    f(2,2,k) f(3,2,k) f(2,3,k) f(3.3.k)  (where 1 <= k <= nk)
 
    x and y coordinates are assumed to be within bounds set via a call to set_intrp_bicub_yx or set_intrp_bicub_quv
    3 sets of bounds are used, one for scalars, one for u and one for v
-  
+
    to call from FORTRAN, the following interface is used
 
    interface                                                                                      !InTf!
@@ -667,11 +667,11 @@ void intrp_bicub_yx_uv(float *u, float *v, float *ru, float *rv, int ni, int nin
 }
 
 // "monotonic" version, the result must be between the max and min values of the 2x2 center
-// of the 4x4 subarray used to interpolate 
+// of the 4x4 subarray used to interpolate
 // SIMD version now consistent with  non SIMD version
 void intrp_bicub_yx_s_mono(float *f, float *r, int ni, int ninj, int nk, double xx, double yy){
 #if defined(__AVX__) && defined(__x86_64__) && !defined(NO_SIMD)
-  __m256d fd0, fd1, fd2, fd3, fwx, fwy0, fwy1, fwy2, fwy3, fdt, fmi, fma ; 
+  __m256d fd0, fd1, fd2, fd3, fwx, fwy0, fwy1, fwy2, fwy3, fdt, fmi, fma ;
   __m128  fr0, fr1, fr2, fr3, frt ; ;       // frt is used as a scalar, fr0->fr3 are 128 bit aliases for fd0->fd3
   __m128d ft0, ft1, rmi, rma ;
   double dd0[4], dd1[4], dd2[4], dd3[4] ;
@@ -748,7 +748,7 @@ void intrp_bicub_yx_s_mono(float *f, float *r, int ni, int ninj, int nk, double 
     rma = _mm_max_sd(rma,_mm_permute_pd(_mm256_extractf128_pd(fma,1),0x0)) ;  // max with low element of high part [1, 1] [2, 3]
     rmi = _mm_min_sd(rmi,_mm_permute_pd(_mm256_extractf128_pd(fmi,1),0x0)) ;  // min with low element of high part [1, 1] [2, 3]
     // rma/rmi[0] = max/min( fma[1], fma [2]),   rma/rmi[1] will be ognored
-    
+
     // interpolation along i: multiply by coefficients along x , then sum elements (using vector folding)
     fdt = _mm256_mul_pd(fdt,fwx) ;
     ft1 = _mm256_extractf128_pd(fdt,1) ;    // fdt[2]                      fdt[3]
@@ -1018,7 +1018,7 @@ program test_interp   !! embedded Fortran test program
   print 102,r(1,1:NP),r(NK,1:NP)
   print *," delta"
   print 102,(r(1,1:NP)-FXY(x(:),y(:),1)),(r(NK,1:NP)-FXY(x(:),y(:),NK))
-  print 103,(r(1,1:NP)-FXY(x(:),y(:), 1))  / FXY(x(:),y(:), 1) , & 
+  print 103,(r(1,1:NP)-FXY(x(:),y(:), 1))  / FXY(x(:),y(:), 1) , &
             (r(NK,1:NP)-FXY(x(:),y(:),NK))  / FXY(x(:),y(:),NK)
 
   do i = 1 , NP
@@ -1042,7 +1042,7 @@ program test_interp   !! embedded Fortran test program
   print 102,r(1,1:NP),r(NK,1:NP)
   print *," delta"
   print 102,(r(1,1:NP)-FXY(x(:),y(:),1)),(r(NK,1:NP)-FXY(x(:),y(:),NK))
-  print 103,(r(1,1:NP)-FXY(x(:),y(:), 1))  / FXY(x(:),y(:), 1) , & 
+  print 103,(r(1,1:NP)-FXY(x(:),y(:), 1))  / FXY(x(:),y(:), 1) , &
             (r(NK,1:NP)-FXY(x(:),y(:),NK))  / FXY(x(:),y(:),NK)
   print *," gotuv (second line : first line + 1.0)"
   print 102,r1(1,1:NP),r1(NK,1:NP)

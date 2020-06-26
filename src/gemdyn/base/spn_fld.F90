@@ -20,14 +20,12 @@
                            F_Minz, F_Maxz, F_Nk, F_Nkl, F_Gni, F_Gnj, &
                            F_Minij, F_Maxij, F_nij, F_nij0,      &
                            F_npex1, F_npey1, Fld_S )
-
       use cstv
       use gem_options
       use spn_options
       use glb_ld
-      use gmm_itf_mod
       use gmm_vt1
-      use gmm_nest
+      use mem_nest
       use spn_work_mod
       use step_options
       use tdpack
@@ -75,9 +73,7 @@
       real(kind=REAL64)   fdg2(F_Minz:F_Maxz,F_Minij:F_Maxij,F_Gnj+2+F_npey1)
       real(kind=REAL64)  pri
 
-      integer gmmstat
-      type(gmm_metadata):: metadata
-      real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
+      real, dimension(:,:,:), pointer :: fld3d=>null()
       integer i,  j, k
       integer ii,jj,kk
 
@@ -96,60 +92,28 @@
 
       if (Fld_S == 't') then
 
-         gmmstat = gmm_getmeta (gmmk_tt1_s, metadata)
-         gmmstat = gmm_get (gmmk_tt1_s, fld3d, metadata)
-         gmmstat = gmm_get (gmmk_nest_t_s, fld_nest3d, metadata)
-
+         fld3d => tt1
          Ldiff3D (F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)= &
-              fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
+              nest_t(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
-
-!     call glbstat ( fld3d,'TTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat ( fld_nest3d,'NTTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if
 
       if (Fld_S == 'u') then
 
-         gmmstat = gmm_getmeta (gmmk_ut1_s, metadata)
-         gmmstat = gmm_get (gmmk_ut1_s, fld3d, metadata)
-         gmmstat = gmm_get (gmmk_nest_u_s, fld_nest3d, metadata)
-
+         fld3d => ut1
          Ldiff3D (F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)= &
-              fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
+              nest_u(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
-
-!     call glbstat ( fld3d,'UT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni-1,1,G_nj,1,F_nk )
-!     call glbstat ( fld_nest3d,'NUT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni-1,1,G_nj,1,F_nk )
-
-!     call glbstat ( fld3d,'UTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat ( fld_nest3d,'NUTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if
 
       if (Fld_S == 'v') then
 
-         gmmstat = gmm_getmeta (gmmk_vt1_s, metadata)
-         gmmstat = gmm_get (gmmk_vt1_s, fld3d, metadata)
-         gmmstat = gmm_get (gmmk_nest_v_s, fld_nest3d, metadata)
-
+         fld3d => vt1
          Ldiff3D (F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)= &
-              fld_nest3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
+              nest_v(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk) - &
                    fld3d(F_Minx:F_Maxx,F_Miny:F_Maxy,1:F_Nk)
-!     call glbstat ( fld3d,'VT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj-1,1,F_nk )
-!     call glbstat ( fld_nest3d,'NVT1',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj-1,1,F_nk )
-!     call glbstat ( fld3d,'VTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
-!     call glbstat ( fld_nest3d,'NVTA',"spnfld",F_minx,F_maxx,F_miny,F_maxy, &
-!                     1,F_nk, 1,G_ni,1,G_nj,1,F_nk )
 
       end if
 
@@ -163,8 +127,6 @@
 ! projection ( wfft = x transposed * g )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!$omp parallel
-!$omp do
       do i= 1,F_Gni               ! trimming in X
          do k= F_Minz, F_Nkl
             do j= F_Njl+1-pil_n,F_Maxy
@@ -185,38 +147,27 @@
             end do
          end do
       end do
-!$omp enddo
 
-
-!$omp single
       call itf_fft_set( F_Gni-Lam_pil_w-Lam_pil_e,'QCOS',pri )
-!$omp end single
 
-!$omp do
       do k=1,F_Nkl                ! do forward fft in X direction
          call itf_fft_drv( fdwfft(1+pil_s,k,1+Lam_pil_w), &
          (F_Maxy-F_Miny+1)*(F_Maxz-F_Minz+1),1,       &
          (F_Maxy-F_Miny+1-pil_s-pil_n), -1 )
       end do
-!$omp enddo
 
-!$omp single
 ! do transpose from (j,k,i) to (k,i,j)
       call rpn_comm_transpose                          &
       ( fdwfft, F_Miny,  F_Maxy,  F_Gnj, (F_Maxz-F_Minz+1), &
       F_Minij, F_Maxij, F_Gni, fdg2, 2, 2 )
       call itf_fft_set( F_Gnj-Lam_pil_s-Lam_pil_n,'QCOS',pri )
-!$omp end single
 
-!$omp do
       do k=1,F_nij              ! do forward fft in Y direction
          call itf_fft_drv( fdg2(1,k,1+Lam_pil_s),     &
          (F_Maxz-F_Minz+1)*(F_Maxij-F_Minij+1),1, &
          (F_Maxz-F_Minz+1), -1 )
       end do
-!$omp enddo
 
-!$omp do
       do jj=1,G_nj+2            ! do filter in X-Y direction
          do ii=1,F_nij
             do kk=F_Minz,F_Maxz
@@ -224,36 +175,28 @@
             end do
          end do
       end do
-!$omp enddo
 
-!$omp do
       do k=1,F_nij              ! do backward fft in Y direction
          call itf_fft_drv( fdg2(1,k,1+Lam_pil_s),     &
          (F_Maxz-F_Minz+1)*(F_Maxij-F_Minij+1),1, &
          (F_Maxz-F_Minz+1), +1 )
       end do
-!$omp enddo
 
-!$omp single
 ! do backward transpose from (k,i,j) to (j,k,i)
       call rpn_comm_transpose                          &
       ( fdwfft, F_Miny,  F_Maxy,  F_Gnj, (F_Maxz-F_Minz+1), &
       F_Minij, F_Maxij, F_Gni, fdg2, -2, 2 )
       call itf_fft_set( F_Gni-Lam_pil_w-Lam_pil_e,'QCOS',pri )
-!$omp end single
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! inverse projection ( r = x * w )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!$omp do
       do k=1, F_Nkl               ! do backward fft in X direction
          call itf_fft_drv( fdwfft(1+pil_s,k,1+Lam_pil_w), &
          (F_Maxy-F_Miny+1)*(F_Maxz-F_Minz+1),1,       &
          (F_Maxy-F_Miny+1-pil_s-pil_n), +1 )
       end do
-!$omp enddo
-!$omp end parallel
 
 ! do backward transpose from (j,k,i) to (i,j,k)
       call rpn_comm_transpose                         &

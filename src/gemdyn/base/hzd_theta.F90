@@ -22,22 +22,17 @@
       use tdpack
       use glb_ld
       use lun
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
 
-      integer istat,k
+      integer k
       real, parameter :: p_naught=100000., eps=1.0e-5
       real :: pres_t(l_ni,l_nj,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
 !
 !-------------------------------------------------------------------
 !
-      istat = gmm_get(gmmk_tt1_s       ,        tt1)
-      istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
 
-!$omp parallel private(k) shared (pres_t,th)
-!$omp do
       do k=1,G_nk
          pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
          call vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
@@ -51,19 +46,14 @@
          th(1:l_ni,l_miny:0     ,k) = tcdk_8
          th(1:l_ni,l_nj+1:l_maxy,k) = tcdk_8
       end do
-!$omp enddo
-!$omp end parallel
 
       call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
-!$omp parallel private(k) shared (pres_t,th)
-!$omp do
       do k=1,G_nk
          tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &
                                 pres_t(1:l_ni,1:l_nj,k)
       end do
-!$omp enddo
-!$omp end parallel
+
 !
 !-------------------------------------------------------------------
 !

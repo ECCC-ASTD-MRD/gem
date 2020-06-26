@@ -119,8 +119,7 @@
       Opr_opszpl_8(CC+G_nk) = 0.d0
       if (Schm_opentop_L) then 
          Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) &
-                              +Ver_wm_8%m(k0)*Ver_idz_8%t(k0-1)*gama_8*epsi_8*(one-Ver_alfat_8)
-!                             - Ver_wm_8%m(k0)*Ver_idz_8%t(k0-1)*gama_8*epsi_8*(one-Ver_alfat_8)
+                             - Ver_wm_8%m(k0)*Ver_idz_8%t(k0-1)*gama_8*epsi_8*(one-Ver_alfat_8)
          Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) &
                              + half*mu_8*gama_8*Ver_idz_8%m(k0)*(one+Ver_alfat_8)
       end if

@@ -155,9 +155,8 @@
 #ifdef WITH_intel
       endif
 #endif
-      
       ip1_list_CP  = c_loc(ip1_list)
-      levels_CP    = c_loc(my_levels(1,1,1))
+      levels_CP    = c_loc(my_levels(lbound(my_levels,1),lbound(my_levels,2),1))
       sfc_field_CP = C_NULL_PTR
       if (present(sfc_field)) sfc_field_CP = c_loc(my_sfc_field(1,1))
       sfc_field_ls_CP = C_NULL_PTR

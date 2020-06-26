@@ -25,22 +25,15 @@
       use dyn_fisl_options
       use glb_ld
       use lun
-      use gmm_itf_mod
       implicit none
 #include <arch_specific.hf>
 
-
       logical, save :: switch_on_hzd= .true.
-      integer istat
 !
 !-------------------------------------------------------------------
 !
       if (Schm_hzdadw_L .and. switch_on_hzd) then
-          if (Lun_debug_L) write (Lun_out,1000)
-
-         istat= gmm_get(gmmk_zdt0_s,zdt0)
-         istat= gmm_get(gmmk_ut0_s ,ut0 )
-         istat= gmm_get(gmmk_vt0_s ,vt0 )
+         if (Lun_debug_L) write (Lun_out,1000)
 
          call hzd_ctrl4 ( ut0, vt0, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 (zdt0, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -48,14 +41,16 @@
          if (Grd_yinyang_L) then
             call yyg_xchng (zdt0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                             G_nk, .false., 'CUBIC', .false.)
-            call yyg_xchng_vec_uv2uv (ut0,vt0,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+            call yyg_xchng_vec_uv2uv (ut0,vt0,l_minx,l_maxx,&
+                                      l_miny,l_maxy,G_nk)
          end if
-
       end if
+
+      call hzd_smago_momentum()
 
 1000  format(5X,'DIFFUSION ON U,V,ZD: (S/R HZD_MOMENTUM)')
 !
 !-------------------------------------------------------------------
 !
       return
-      end
+      end subroutine hzd_momentum

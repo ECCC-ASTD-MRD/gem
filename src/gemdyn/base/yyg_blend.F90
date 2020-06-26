@@ -21,21 +21,14 @@
       use step_options
       use gmm_vt1
       use glb_ld
-      use gmm_itf_mod
       use yyg_param
       implicit none
 #include <arch_specific.hf>
-
-      integer istat
 !
 !----------------------------------------------------------------------
 !
       if (Schm_nblendyy                 >  0) then
       if (mod(Step_kount,Schm_nblendyy) == 0) then
-
-         istat = gmm_get(gmmk_ut1_s , ut1)
-         istat = gmm_get(gmmk_vt1_s , vt1)
-         istat = gmm_get(gmmk_zdt1_s,zdt1)
 
          call gemtime_start ( 7, 'YYG_BLEND', 0)
 

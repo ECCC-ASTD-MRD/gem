@@ -17,6 +17,7 @@
 module sfclayer_mod
   use, intrinsic :: iso_fortran_env, only: REAL64
   use tdpack
+  use sfclayer_funcs
   implicit none
   private
 
@@ -35,31 +36,17 @@ module sfclayer_mod
   real,    parameter :: DEFAULT_HGHTM_DIAG = 10.            !Default anemometer level
   real,    parameter :: DEFAULT_L_MIN = -1.                 !Default minimum M-O length
 
-  ! Private parameters for the Beljaars and Holtslag (1991) stability functions (stable)
-  real, parameter :: BH91_A = 1.                            !A coefficient
-  real, parameter :: BH91_B = 2./3.                         !B coefficient
-  real, parameter :: BH91_C = 5.                            !C coefficient
-  real, parameter :: BH91_D = 0.35                          !D coefficient
-
-  ! Private parameters for the Lock (2007) stability functions (stable)
-  real, parameter :: L07_AH = 1.                            !AH coefficient [was 4 in Lock (2007)]
-  real, parameter :: L07_AM = 1.                            !AM coefficient [was 4 in Lock (2007)]
-
-  ! Private parameters for the Delage (1997) stability functions (stable)
-  real, parameter :: D97_AS = 12.                           !AS coefficient
-
-  ! Private parameters for the Delage and Girard (1991) stability functions (unstable)
-  real, parameter :: DG92_CI = 40.                          !CI coefficient
-  real, parameter :: DG92_RAC3 = 1.732050776                !RAC3 coefficient
-
   ! Private variables
-  real    :: beta = 1.                                      !Prandtl number for a neutral profile
-  real    :: rineutral = 0.                                 !Width of neutral Ri regime
-  logical :: tdiaglim_default = .false.                     !Default value for inversion limiter
-  logical :: z0ref = .true.                                 !Use a reference roughness (max of z0m and z0t)
-  character(len=SL_LONG) :: sl_stabfunc_stab = 'DELAGE97'   !Class of stability functions for the stable case
-  character(len=SL_LONG) :: sl_stabfunc_unstab = 'DELAGE92' !Class of stability functions for the unstable case
+  real, save    :: beta = 1.                                !Prandtl number for a neutral profile
+  real, save    :: rineutral = 0.                           !Width of neutral Ri regime
+  logical, save :: tdiaglim_default = .false.               !Default value for inversion limiter
+  logical, save :: z0ref = .true.                           !Use a reference roughness (max of z0m and z0t)
 
+  ! Private procedures
+  procedure(stability_function), pointer, save :: &
+       sf_stable => sf_stable_delage97, &                   !Stability functions (stable surface layer)
+       sf_unstable => sf_unstable_delage92                  !Stability functions (unstable surface layer)
+  
   ! Public subprograms
   public :: sl_put          !Set module variables
   public :: sl_get          !Retrieve module variables/parameters
@@ -79,7 +66,7 @@ module sfclayer_mod
      module procedure sl_get_r4
      module procedure sl_get_l
   end interface sl_get
-
+  
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -200,9 +187,15 @@ contains
      ! Attempt to set value of requested key
      select case (key)
      case ('sl_stabfunc_stab','SL_STABFUNC_STAB')
-        sl_stabfunc_stab = ucval
+        if (sf_get(sf_stable, 'stable', ucval) /= SF_OK) then
+           call msg_toall(MSG_WARNING,'(sl_put_s) cannot acquire stable SF for '//trim(val))
+           return
+        endif
      case ('sl_stabfunc_unstab','SL_STABFUNC_UNSTAB')
-        sl_stabfunc_unstab = ucval
+        if (sf_get(sf_unstable, 'unstable', ucval) /= SF_OK) then
+           call msg_toall(MSG_WARNING,'(sl_put_s) cannot acquire unstable SF for '//trim(val))
+           return
+        endif
      case DEFAULT
         call msg_toall(MSG_WARNING,'(sl_put_s) cannot set '//trim(key))
        return
@@ -215,6 +208,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sl_get_r4(key,val) result(status)
+     use sfclayer_funcs
      ! Retrieve a variable or parameter from the module
 
      ! Input arguments
@@ -310,7 +304,7 @@ contains
     real, dimension(:), intent(in) :: lat                       !Latitude (rad)
     real, dimension(:), intent(in) :: fcor                      !Coriolis factor (/s)
     logical, intent(in), optional :: tdiaglim                   !Limit temperature inversion in lowest layer [get 'tdiaglim']
-    real, intent(in), optional :: L_min                         !Minimum stable Monin-Obukhov length [none]
+    real, intent(in), optional :: L_min                         !Minimum stable Obukhov length [none]
     integer, intent(in), optional :: optz0                      !Alternative roughness length adjustment [0]
     real, intent(in), optional :: hghtm_diag                    !Diagnostic level height for momentum (m) [10.]
     real, dimension(:), intent(in), optional :: hghtm_diag_row  !Diagnostic heights for momentum (m; supercedes hghtm_diag)
@@ -319,7 +313,7 @@ contains
 
     ! Output arguments
     integer :: status                                           !Return status of function
-    real, dimension(:), intent(out), optional :: ilmo           !Inverse of the Monin-Obukov length (/m)
+    real, dimension(:), intent(out), optional :: ilmo           !Inverse of the Obukov length (/m)
     real, dimension(:), intent(out), optional :: h              !Boundary layer height (m)
     real, dimension(:), intent(out), optional :: ue             !Friction velocity (m/s)
     real, dimension(:), intent(out), optional :: flux_t         !Temperature flux (Km/s)
@@ -363,14 +357,14 @@ contains
     if (present(L_min)) my_L_min = L_min
 
     ! Compute surface fluxes on request
-    call flxsurf5(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
+    call flxsurf(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
          fcor,t_air,q_air,hghtm_air,hghtt_air,spd_air,t_sfc,q_sfc,my_h,z0m,z0t,my_L_min, &
          my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0)
 
     ! Diagnostic level calculations
     if (any((/present(hghtm_diag),present(hghtt_diag),present(hghtm_diag_row),present(hghtt_diag_row)/))) then
        ! Compute diagnostic level quantities
-       call diasurf5(my_u_diag,my_v_diag,my_t_diag,my_q_diag,size(t_air), &
+       call diasurf(my_u_diag,my_v_diag,my_t_diag,my_q_diag,size(t_air), &
             dir_air,t_sfc,q_sfc,z0m,z0t,my_ilmo,hghtm_air,my_h,my_ue,my_flux_t, &
             my_flux_q,my_hghtm_diag,my_hghtt_diag,lat)
        ! Apply diagnostic adjustments if requested
@@ -509,649 +503,354 @@ contains
  end function sl_adjust
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine flxsurf5(cmu, ctu, rib, ftemp, fvap, ilmo, &
-       ue, fcor, ta , qa , zu, zt, vmod, &
-       tg , qg , h , z0 , z0t, lmin, &
-       lzz0, lzz0t, fm, fh, va, n, optz0 )
-
-    implicit none
+  subroutine flxsurf(cmu, ctu, rib, ftemp, fvap, ilmo, &
+       ue, fcor, ta , qa , zu, zt, vmod, tg , qg , h , z0 , z0t,  &
+       lmin, lzz0, lzz0t, fm, fh, va, n, optz0)
+    use sfclayer_funcs, only: stability_function, D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
-    integer n
-    real cmu(n),ctu(n),rib(n),fcor(n),ilmo(n)
-    real ftemp(n),fvap(n),ta(n),qa(n),zu(n),zt(n),va(n)
-    real tg(n),qg(n),h(n),z0(n),ue(n),vmod(n)
-    real z0t(n),lzz0(n),lzz0t(n)
-    real fm(n),fh(n)
-    real lmin
-    integer optz0
-    !
-    !Author
-    !          Y.Delage (Jul 1990)
-    !Revision
-    ! 001      G. Pellerin (Jun 94) New function for unstable case
-    ! 002      G. Pellerin (Jui 94) New formulation for stable case
-    ! 003      B. Bilodeau (Nov 95) Replace VK by KARMAN
-    ! 004      M. Desgagne (Dec 95) Add safety code in function ff
-    !                               and ensures that RIB is non zero
-    ! 005      R. Sarrazin (Jan 96) Correction for H
-    ! 006      C. Girard (Nov 95) - Diffuse T instead of Tv
-    ! 007      G. Pellerin (Feb 96) Revised calculation for H (stable)
-    ! 008      G. Pellerin (Feb 96) Remove corrective terms to CTU
-    ! 009      Y. Delage and B. Bilodeau (Jul 97) - Cleanup
-    ! 010      Y. Delage (Feb 98) - Addition of HMIN
-    ! 011      D. Talbot and Y. Delage (Jan 02) -
-    !             Correct bug of zero divide by dg in loop 35
-    ! 012      Y. Delage (Oct 03) - Set top of surface layer at ZU +Z0
-    !                   - Output UE instead of UE**2 and rename subroutine
-    !                   - Change iteration scheme for stable case
-    !                   - Introduce log-linear profile for near-neutral stable cases
-    !                   - set VAMIN inside flxsurf and initialise ILMO and H
-    !                   - Put stability functions into local functions via stabfunc.cdk
-    ! 013      Y. Delage (Sep 04) - Input of wind and temperature/humidity
-    !                                at different levels
-    ! 014      R. McTaggart-Cowan and B. Bilodeau (May 2006) -
-    !             Clean up stabfunc.cdk
-    ! 015      L. Spacek (Dec 07) - Correction of the log-linear profile
-    !                               Double precision for rib calculations
-    ! 016      A. Zadra (Feb 11) - clean-up and generalization
-    ! 017      A. Zadra (Sep 11) - convert to fortran 90
-    ! 018      S. Leroyer (Apr 11) - Argument optz0  for options for roughness lenghts computation
-    ! 019      M. Abrahmowicz (May 13) - optz0=0 now means no extra roughness calculation (no call to compz0)
-    !
-    !Object
-    !          to calculate surface layer transfer coefficients and fluxes
-    !
-    !Arguments
-    !
-    !          - Output -
-    ! cmu      transfer coefficient of momentum times UE
-    ! ctu      transfer coefficient of temperature times UE
-    ! rib      bulk Richardson number
-    ! ftemp    temperature flux
-    ! fvap     vapor flux
-    ! ilmo     (1/length of Monin-Obukov)
-    ! ue       friction velocity
-    ! h        height of the boundary layer
-    ! fm       momentum stability function
-    ! fh       heat stability function
-    ! lzz0     log ((zu+z0)/z0)
-    ! lzz0t    log ((zt+z0t)/z0t)
-    !
-    !          - Input -
-    ! fcor     Coriolis factor
-    ! zu       height of wind input (measured from model base at topo height + Z0)
-    ! zt       height of temperature and humidity input
-    ! ta       potential temperature at ZT
-    ! qa       specific humidity at ZT
-    ! va       wind speed at ZU
-    ! tg       surface temperature
-    ! qg       specific humidity at the surface
-    ! z0       roughness length for momentum      flux calculations
-    ! z0t      roughness length for heat/moisture flux calculations
-    ! n        horizontal dimension
-    ! optz0    option for z0, z0t formulations -- optz0=0 : NO EXTRA CALCULATIONS.
-    !
-    !
-    EXTERNAL COMPZ0
-    !
-    integer j,it,itmax
-    real cm,ct
-    real x1,x0,y1,y0
-    real(REAL64) :: dthv,tva,tvs
-    real vmin,ribmin,ribmax,hmax,epsln,ilmax,vlmin,hc,ribc,ilmm
-    real am,ah,dfm,dfh,g,dg
-    real, dimension(n) :: zp,z0rt,z0rm
+    ! Represent surface layer similarity state, turbulent tranfer coefficients and fluxes
 
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     Initialize internal parameters:
-    !     - maximum number of iterations (itmax)
-    !     - minimum value of wind speed (vamin)
-    !     - minimum absolute value of bulk Richardson number (ribmin)
-    !     - maximum absolute value of bulk Richardson number (ribmax)
-    !     - maximum value of boundary layer depth (hmax)
-    !     - minimum value of inverse Monin-Obukhov length (epsln)
-    !
+    ! Input arguments
+    integer, intent(in) :: n                                    !Grid dimension
+    real, dimension(:), intent(in) :: ta                        !Lowest level potential temperature (K)
+    real, dimension(:), intent(in) :: qa                        !Lowest level specific humidity (kg/kg)
+    real, dimension(:), intent(in) :: vmod                      !Lowest-level wind speed (m/s)
+    real, dimension(:), intent(in) :: zu                        !Height of the lowest momentum level (m)
+    real, dimension(:), intent(in) :: zt                        !Height of the lowest thermodynamic level (m)
+    real, dimension(:), intent(in) :: tg                        !Surface air temperature (K)
+    real, dimension(:), intent(in) :: qg                        !Surface specific humidity (kg/kg)
+    real, dimension(:), intent(in) :: z0                        !Momentum roughness length (m)
+    real, dimension(:), intent(in) :: z0t                       !Thermal roughness length (m)
+    real, dimension(:), intent(in) :: fcor                      !Coriolis factor (/s)
+    real, intent(in) :: lmin                                    !Minimum stable Obukhov length [none]
+    integer, intent(in) :: optz0                                !Alternative roughness length adjustment [0]
+
+    ! Output arguments
+    real, dimension(:), intent(out) :: ilmo                     !Inverse of the Obukov length (/m)
+    real, dimension(:), intent(out) :: h                        !Boundary layer height (m)
+    real, dimension(:), intent(out) :: ue                       !Friction velocity (m/s)
+    real, dimension(:), intent(out) :: ftemp                    !Temperature flux (Km/s)
+    real, dimension(:), intent(out) :: fvap                     !Moisture flux (kgm/kgs)
+    real, dimension(:), intent(out) :: cmu                      !Momentum exchange coefficient (m/s)
+    real, dimension(:), intent(out) :: ctu                      !Thermal exchange coefficient (m/s)
+    real, dimension(:), intent(out) :: rib                      !Bulk Richardson number
+    real, dimension(:), intent(out) :: lzz0                     !Log of adjusted momentum roughness
+    real, dimension(:), intent(out) :: lzz0t                    !Log of adjusted thermodynamic roughness
+    real, dimension(:), intent(out) :: fm                       !Integrated momentum stability function
+    real, dimension(:), intent(out) :: fh                       !Integrated thermodynamic stability function
+    real, dimension(:), intent(out) :: va                       !Adjusted lowest-level wind speed (m/s)
+
+    ! Internal parameters
+    real, parameter :: VMIN=1.e-6                               !Minimum wind speed
+    real, parameter :: RIBMIN=1.e-5                             !Minimum absolute bulk Richardson number
+    real, parameter :: RIBMAX=1.e5                              !Maximum absolute bulk Richardson number
+    real, parameter :: HMAX=1500.                               !Maximum PBL height estimate
+    real, parameter :: EPSLN=1e-5                               !Small value
+    
+    ! Internal variables
+    integer :: j, it, itmax
+    real :: cm, ct, zp
+    real :: ilmoj, fmj, fhj, hj, z0j, z0tj, zuj, ztj, vaj, fcorj
+    real :: z0rmj, z0rtj, lzz0j, lzz0tj, ribj
+    real(REAL64) :: dthv, tva, tvs
+    real :: ilmax, vlmin, hc, ribc, ilmm
+    real :: am, ah, dfm, dfh, g, dg
+    real, dimension(n) :: z0rt, z0rm
+    procedure(stability_function), pointer :: sf
+    
+    ! Setup for numerical solution
     itmax  = 3
-    vmin   = 1.0e-6
-    ribmin = 1.0e-05
-    ribmax = 1.0e5
-    hmax   = 1500.0
-    epsln  = 1.0e-05
     ilmax = -1.
     if (lmin > 0.) then
        ilmax = 1./lmin
        itmax = 5
     endif
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 1: Impose minimum value on wind speed (va) and initialize neutral
-    !             stability functions (lzz0 and lzz0t)
-    !                 lzz0  = log( (zu+z0 )/z0  ) = log( 1+zu/z0  )
-    !                 lzz0t = log( (zt+z0t)/z0t ) = log( 1+zt/z0t )
-    !             z0, z0t are from the previous time step
-    !
+
+    ! Establish reference roughness length estimates
     if (z0ref) then
-       z0rm(:) = max(z0(:),z0t(:))
-       z0rt(:) = z0rm(:)
+       do j=1,n
+          z0rm(j) = max(z0(j),z0t(j))
+          z0rt(j) = z0rm(j)
+       enddo
     else
        z0rm(:) = z0(:)
        z0rt(:) = z0t(:)
     endif
+
+    ! Compute neutral stability functions
     do j=1,n
-       va(j)    = MAX(vmod(j),vmin)
-       lzz0 (j) = (z0rm(j)+zu(j))/z0(j)
-       lzz0t(j) = (z0rt(j)+zt(j))/z0t(j)
-!!$       lzz0 (j) = 1+zu(j)/z0(j)
-!!$       lzz0t(j) = 1+zt(j)/z0t(j)
+       lzz0(j) = (z0rm(j) + zu(j)) / z0(j)
+       lzz0t(j) = (z0rt(j) + zt(j)) / z0t(j)
     enddo
-    call vslog(lzz0t,lzz0t,n)
-    call vslog(lzz0 ,lzz0 ,n)
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 2: Calculate bulk Richardson number (rib)
-    !              rib = A/(B^2)
-    !              A = (g/tvm)*(tva-tvs)/zt = buoyancy term
-    !                 tva = atmospheric virtual temperature
-    !                 tvs = surface virtual temperature
-    !                 tvm = 0.5*(tva+tvs)
-    !              B = va/zu = shear
-    !
-    do j=1,n
-       zp(j)  = zu(j)**2/zt(j)
-       tva    = (1.d0+delta*qa(j))*ta(j)
-       tvs    = (1.d0+delta*qg(j))*tg(j)
-       dthv   = tva-tvs
+    call vslog(lzz0t, lzz0t, n)
+    call vslog(lzz0, lzz0, n)
+
+    ! Update estimate of the Obukhov length and stability functions
+    ROW: do j=1,n
+      
+       ! Copy inputs to scalars as an optimization
+       z0j = z0(j)
+       z0tj = z0t(j)
+       z0rmj = z0rm(j)
+       z0rtj = z0rt(j)
+       fcorj = fcor(j)
+       lzz0j = lzz0(j)
+       lzz0tj = lzz0t(j)
+       zuj = zu(j)
+       ztj = zt(j)
+       
+       ! Compute bulk Ri and consistent lowest-level wind
+       vaj = max(vmod(j), VMIN)
+       zp  = zuj**2 / ztj
+       tva = (1.d0 + delta * qa(j)) * ta(j)
+       tvs = (1.d0 + delta * qg(j)) * tg(j)
+       dthv   = tva - tvs
        vlmin  = 0.
-       if (ilmax > 0. .and. dthv > 0.) then
-          ilmm   = sign(ilmax,real(dthv))
-          hc    = sf_pblheight(zu(j),z0(j),va(j),ilmm,fcor(j),lzz0(j))
-          fm(j) =        lzz0 (j) &
-               + sf_momentum(zu(j)+z0rm(j),ilmm,hc,x1) &
-               - sf_momentum(      z0  (j),ilmm,hc,x0)
-          fh(j) = beta*( lzz0t(j) &
-               + sf_heat(zt(j)+z0rt(j),ilmm,hc,y1) &
-               - sf_heat(      z0t (j),ilmm,hc,y0))
-          ribc  = zp(j)*ilmm * fh(j) / (fm(j)*fm(j))
-          vlmin = sqrt( max(0.D0, 1./ribc * grav*zp(j) * dthv/(tvs+0.5*dthv)) )
+       ! Apply Obukhov length limiter under stable conditions
+       if (lmin > 0. .and. dthv > 0.) then
+          ilmm = sign(ilmax, real(dthv))
+          hc = pblheight(zuj, z0j, vaj, ilmm, fcorj, lzz0j)
+          sf => sf_stable
+          call sf(fmj, fhj, lzz0j, lzz0tj, ilmm, hc, beta, &
+               F_zm=(/zuj+z0rmj, z0j/), F_zh=(/ztj+z0rtj, z0tj/))
+          ribc = zp * ilmm * fhj / fmj**2
+          ! Wind speed is adjusted to keep Obukhov length above the minimum
+          vlmin = sqrt( max(0.d0, 1./ribc * GRAV * zp * dthv/(tvs + 0.5*dthv)) )
        endif
-       va(j) = max(va(j), vlmin)
-       rib(j) = grav/(tvs+0.5*dthv)*zp(j)*dthv/(va(j)*va(j))
-       rib(j) = sign(max(abs(rib(j)),ribmin),rib(j))
-       rib(j) = sign(min(abs(rib(j)),ribmax),rib(j))
-    enddo
+       vaj = max(vaj, vlmin)       
+       ribj = GRAV / (tvs + 0.5*dthv) * zp * dthv/vaj**2
+       ribj = sign(max(abs(ribj), RIBMIN), ribj)
+       ribj = sign(min(abs(ribj), RIBMAX), ribj)
+       
+       ! Prescribe a smooth-surface neutral regime below a threshold bulk Ri
+       if (rineutral > 0. .and. z0j < 0.01 .and. abs(ribj) < rineutral) ribj = 0.
 
-    ! Prescribe a smooth-surface neutral regime below a threshold bulk Ri
-    if (rineutral > 0.) then
-       where (z0 < 0.01 .and. abs(rib) < rineutral)
-          rib = 0.
-       endwhere
-    endif
-
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 3: Calculate inverse length of Monin-Obukhov (ilmo), integrated
-    !             stability functions (fm, fh) and boundary-layer height (h)
-    !             using an iterative method to solve the equation:
-    !                  rib - (fh/fm^2)*zp*ilmo = 0
-    !             This is done by defining an auxiliary function
-    !                  g(ilmo) = rib - (fh/fm^2)*zp*ilmo
-    !             and finding its zero using a Newton-Raphson method
-    !                  ilmo_(n+1) = ilmo_n - g/dg
-    !             where
-    !                  dg  = derivative of g w.r.t. ilmo
-    !                      = -fh/(fm^2)*zp*(1+dfh/fh-2*dfm/fm)
-    !                  dfh = derivative of fh w.r.t. ilmo
-    !                  dfm = derivative of fm w.r.t. ilmo
-    !
-    !------ first guess for fm, fh (chosen as small deviations am,ah from the
-    !       neutral case) and the corresponding first guess for ilmo.
-    !       TODO: replace this with a function-specific first guess.
-    !
-    do j=1,n
-       if(rib(j).ge.0.)  then
-          am = 2.5*D97_AS*rib(j)/MAX(      2*z0(j)     ,1.0)
-          ah = 2.5*D97_AS*rib(j)/MAX(SQRT(z0(j)*z0t(j)),1.0)
+       ! First guess of neutral stability function adjustments and Obukhov length
+       ! uses the Delage (1997) stability functions
+       if (ribj >= 0.)  then
+          am = 2.5*D97_AS * ribj / max(2*z0j, 1.0)
+          ah = 2.5*D97_AS * ribj / max(sqrt(z0j*z0tj), 1.0)
        else
-          am = -MIN(0.7+LOG(1-rib(j)),lzz0 (j)-1)
-          ah = -MIN(0.7+LOG(1-rib(j)),lzz0t(j)-1)
+          am = -min(0.7 + log(1.-ribj), lzz0j-1.)
+          ah = -min(0.7 + log(1.-ribj), lzz0tj-1.)
        endif
-       fm(j)   =       lzz0 (j) + am
-       fh(j)   = beta*(lzz0t(j) + ah)
-       ilmo(j) = rib(j)*fm(j)*fm(j)/(zp(j)*fh(j))
-    enddo
-    !
-    !------ iterative solution using Newton-Raphson method
-    !       (no convergence criterion, but fixed number of
-    !        iterations = itmax-1)
-    !
-    do it=1,itmax
+       fmj = lzz0j + am
+       fhj = beta * (lzz0tj + ah)
+       ilmoj = ribj * fmj * fmj / (zp*fhj)
+       
+       ! Find the (inverse) Obukhov length (byproducts: PBL height, integrated stability functions)
+       ITERATIONS: do it=1,itmax
 
-       if(optz0.gt.0) then
-          !-- new computation of z0 and z0t from the last computed fm
-          ! and repeat step 1 for new lzz0 lzz0t
-          call compz0(optz0, z0, z0t, fm, va, fcor,n)
-          !
-          do j=1,n
-             lzz0 (j) = (z0rm(j)+zu(j))/z0(j)
-             lzz0t(j) = (z0rt(j)+zt(j))/z0t(j)
-!!$             lzz0 (j) = 1+zu(j)/z0(j)
-!!$             lzz0t(j) = 1+zt(j)/z0t(j)
-          enddo
-          call vslog(lzz0t,lzz0t,n)
-          call vslog(lzz0 ,lzz0 ,n)
-       endif
-       !
-       do j=1,n
-          if (rib(j).ge.0.) ilmo(j) = MAX( epsln,ilmo(j))
-          if (rib(j).lt.0.) ilmo(j) = MIN(-epsln,ilmo(j))
-          h(j)  = sf_pblheight(zu(j),z0(j),va(j),ilmo(j),fcor(j),fm(j))
-          fm(j) =        lzz0 (j) &
-               + sf_momentum(zu(j)+z0rm(j),ilmo(j),h(j),x1) &
-               - sf_momentum(      z0  (j),ilmo(j),h(j),x0)
-          fh(j) = beta*( lzz0t(j) &
-               + sf_heat(zt(j)+z0rt(j),ilmo(j),h(j),y1) &
-               - sf_heat(      z0t (j),ilmo(j),h(j),y0))
-          dfm =       x1 - x0
-          dfh = beta*(y1 - y0)
-          if (it.lt.itmax) then
-             g  = rib(j) - fh(j)/(fm(j)*fm(j))*zp(j)*ilmo(j)
-             dg = -fh(j)/(fm(j)*fm(j))*zp(j)*(1+dfh/fh(j)-2*dfm/fm(j))
-             dg = sign(max(abs(dg),epsln),dg)
-             ilmo(j) = ilmo(j) - g/dg
+          ! Update roughness and neutral stability functions on request
+          if(optz0 > 0) then
+             call compz0(optz0, z0j, z0tj, fmj, vaj, fcorj, 1)
+             lzz0j = log((z0rmj + zuj) / z0j)
+             lzz0tj = log((z0rtj + ztj) / z0tj)
           endif
-       enddo
-    enddo
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 4: Calculate friction velocity (ue), transfer coefficients (cmu,ctu),
-    !             temperature and vapor fluxes (ftemp, fvap):
-    !               ue    = (k/fm)*va      ;  cmu = (k/fm)*ue
-    !               ftemp = -ctu*(ta-tg)   ;  ctu = (k/fh)*ue
-    !               fvap  = -ctu*(qa-qg)
-    !             Note: the momemtum flux is not output separately because it is
-    !             simply given by
-    !               fmom = cmu*va = (k/fm)*ue*va = ue^2
-    !             Finaly, we impose a maximum on the BL height (h).
-    !
-    do j=1,n
-       cm       = karman/fm(j)
-       ct       = karman/fh(j)
-       ue(j)    = cm*va(j)
-       cmu(j)   = cm*ue(j)
-       ctu(j)   = ct*ue(j)
-       ftemp(j) = -ctu(j)*(ta(j)-tg(j))
-       fvap(j)  = -ctu(j)*(qa(j)-qg(j))
-       !
-       h(j)     = MIN(h(j),hmax)
-    enddo
-    !
-    !
-    if(optz0.gt.0) then
-       !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       !     STEP 5: Calculate aerodynamic (z0) and thermal (z0t) roughness lenghts
-       !              z0 and z0t computed with the last fm for use of the next time step
-       !
-       call compz0(optz0, z0, z0t, fm, va, fcor, n)
-       !
-       !
-    endif
-    !
-    !
+          
+          ! Ensure that the Obukhov length is finite
+          ilmoj = sign(max(abs(ilmoj), EPSLN), ilmoj)
+          
+          ! Estimate PBL height based on surface layer properties
+          hj  = pblheight(zuj, z0j, vaj, ilmoj, fcorj, fmj)
+          
+          ! Update stability functions using appropriate stability branch
+          if (ilmoj > 0.) then
+             sf => sf_stable
+          else
+             sf => sf_unstable
+          endif
+          call sf(fmj, fhj, lzz0j, lzz0tj, ilmoj, hj, beta, &
+               F_zm=(/zuj+z0rmj, z0j/), F_zh=(/ztj+z0rtj, z0tj/), &
+               F_dfm=dfm, F_dfh=dfh)
+          ! Use Newton-Raphson iterations to solve the equation
+          !   rib - (fh/fm^2)*zp*ilmo = 0
+          ! This is done by defining an auxiliary function
+          !   g(ilmo) = rib - (fh/fm^2)*zp*ilmo
+          ! and finding its zero using a Newton-Raphson method
+          !   ilmo_(n+1) = ilmo_n - g/dg
+          ! where
+          !   dg  = derivative of g w.r.t. ilmo
+          !       = -fh/(fm^2)*zp*(1+dfh/fh-2*dfm/fm)
+          if (it < itmax) then
+             g = ribj - fhj / (fmj * fmj) * zp * ilmoj
+             dg = -fhj / (fmj*fmj) * zp * (1. + dfh/fhj - 2.*dfm/fmj)
+             dg = sign(max(abs(dg),EPSLN),dg)
+             ilmoj = ilmoj - g/dg
+          endif
+          
+       enddo ITERATIONS
+
+       ! Diagnose surface layer properties
+       fm(j) = fmj                              !Integrated momentum stability function
+       fh(j) = fhj                              !Integrated heat stability function
+       rib(j) = ribj                            !Bulk Richardson number
+       ilmo(j) = ilmoj                          !Inverse Obukhov length
+       h(j) = hj                                !Boundary layer height estimate
+       va(j) = vaj                              !Adjusted first-level wind speed
+
+       ! Diagnose turbulent surface exhange properties
+       cm = karman / fmj                        !Momentum exchange coefficient
+       ct = karman / fhj                        !Heat exchange coefficient
+       ue(j) = cm * vaj                         !Friction velocity
+       cmu(j) = cm * ue(j)                      !Momentum exchange coefficient * ustar
+       ctu(j) = ct * ue(j)                      !Heat exchange coefficient * ustar
+       ftemp(j) = -ctu(j) * (ta(j) - tg(j))     !Turbulent temperature flux estimate
+       fvap(j) = -ctu(j) * (qa(j) - qg(j))      !Turbulent moisture flux estimate
+       h(j)     = min(hj, HMAX)                 !Boundary layer height estimate
+       
+    enddo ROW
+
+    ! Recompute consistent roughness length estimates on request
+    if(optz0.gt.0) call compz0(optz0, z0, z0t, fm, va, fcor, n)
+
+    ! End of subprogram
     return
-  end subroutine flxsurf5
+  end subroutine flxsurf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine diasurf5(uz,vz,tz,qz,ni,angi,tg,qg,z0,z0t,ilmo,za, &
-       h,ue,ftemp,fvap,zu,zt,lat)
-    implicit none
+  subroutine diasurf(uz, vz, tz, qz, ni, angi, tg, qg, z0, z0t, ilmo, za, &
+       h, ue, ftemp, fvap, zu, zt, lat)
+    use sfclayer_funcs, only: stability_function, D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
-    integer ni
-    real zt(ni),zu(ni)
-    real uz(ni),vz(ni),tz(ni),qz(ni),za(ni),angi(ni)
-    real tg(ni),qg(ni),ue(ni),ftemp(ni),fvap(ni)
-    real lat(ni),ilmo(ni),z0t(ni),z0(ni),h(ni)
-    !
-    !Author
-    !          Yves Delage  (Aug1990)
-    !
-    !Revision
-    ! 001      G. Pellerin(JUN94)
-    !          Adaptation to new surface formulation
-    ! 002      B. Bilodeau (Nov 95) - Replace VK by KARMAN
-    ! 003      R. Sarrazin (Jan 96) - Prevent problems if zu < za
-    ! 004      G. Pellerin (Feb 96) - Rewrite stable formulation
-    ! 005      Y. Delage and B. Bilodeau (Jul 97) - Cleanup
-    ! 006      Y. Delage (Feb 98) - Addition of HMIN
-    ! 007      G. Pellerin (Mai 03) - Conversion IBM
-    !               - calls to vslog routine (from massvp4 library)
-    ! 008      Y. Delage (Oct 03) - Change UE2 by UE and rename subroutine
-    !             - Introduce log-linear profile for near-neutral cases
-    !             - Put stability functions into local functions via stabfunc.cdk
-    ! 009      R. McTaggart-Cowan and B. Bilodeau (May 2006)
-    !             - Clean up stabfunc.cdk
-    ! 010      A. Zadra (Apr 11) - clean up, simplify and add comments
-    ! 011      A. Zadra (Sep 11) - convert to fortran 90
-    !
-    !Object
-    !          to calculate the diagnostic values of U, V, T, Q
-    !          near the surface (ZU and ZT)
-    !
-    !Arguments
-    !
-    !          - Output -
-    ! uz       U component of the wind at z=zu
-    ! vz       V component of the wind at z=zu
-    ! tz       temperature in kelvins at z=zt
-    ! qz       specific humidity at z=zt
-    !
-    !          - Input -
-    ! ni       number of points to process
-    ! angi     wind direction at z=za (rad)
-    ! tg       temperature at the surface (z=0) in Kelvins
-    ! qg       specific humidity
-    ! ps       surface pressure at the surface
-    ! ilmo     inverse of Monin-Obukhov lenth
-    ! h        height of boundary layer
-    ! ue       friction velocity
-    ! z0       roughness lenth for winds
-    ! z0t      roughness lenth for temperature and moisture
-    ! ftemp    temperature flux at surface
-    ! fvap     vapour flux at surface
-    ! za       height of the lowest momentum level (m)
-    ! zu       height for computation of wind components
-    ! zt       height for computation of temperature and moisture
-    ! lat      latitude
-    !
-    real, parameter :: ANGMAX = 0.85
-    !
-    integer j
-    real fh,fm,x0,x1,y0,y1,h1,h2,h3,hh
-    real ct,ctu,cm,vits
-    real dang,ang,hi
-    !
-    REAL, dimension(ni) :: lzz0t
-    REAL, dimension(ni) :: lzz0
+    ! Compute state variables at the diagnostic level
 
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 1: Initialize neutral stability functions (lzz0 and lzz0t)
-    !
+    ! Input arguments
+    integer, intent(in) :: ni                                   !Grid dimension
+    real, dimension(:), intent(in) :: angi                      !Lowest level wind direction (rad)
+    real, dimension(:), intent(in) :: tg                        !Surface air temperature (K)
+    real, dimension(:), intent(in) :: qg                        !Surface specific humidity (kg/kg)
+    real, dimension(:), intent(in) :: z0                        !Momentum roughness length (m)
+    real, dimension(:), intent(in) :: z0t                       !Thermal roughness length (m)
+    real, dimension(:), intent(in) :: ilmo                      !Inverse of the Obukov length (/m)
+    real, dimension(:), intent(in) :: za                        !Height of the lowest momentum level (m)
+    real, dimension(:), intent(in) :: h                         !Boundary layer height (m)
+    real, dimension(:), intent(in) :: ue                        !Friction velocity (m/s)
+    real, dimension(:), intent(in) :: ftemp                     !Temperature flux (Km/s)
+    real, dimension(:), intent(in) :: fvap                      !Moisture flux (kgm/kgs)
+    real, dimension(:), intent(in) :: zu                        !Diagnostic heights for momentum (m)
+    real, dimension(:), intent(in) :: zt                        !Diagnostic heights for thermdynamics (m)
+    real, dimension(:), intent(in) :: lat                       !Latitude (rad)
+
+    ! Output arguments
+    real, dimension(:), intent(out) :: tz                       !Diagnostic level temperature (K)
+    real, dimension(:), intent(out) :: qz                       !Diagnostic level moisture (kg/kg)
+    real, dimension(:), intent(out) :: uz                       !Diagnostic level u-wind (m/s)
+    real, dimension(:), intent(out) :: vz                       !Diagnostic level v-wind (m/s)
+
+    ! Internal parameters
+    real, parameter :: ANGMAX = 0.85                            !Maximum frictional deflection (rad)
+    
+    ! Internal variables
+    integer :: j
+    real :: fh, fm, h1, h2, h3, hh, ct, ctu, cm, vits, dang, ang, hi
+    real, dimension(ni) :: lzz0t, lzz0
+    procedure(stability_function), pointer :: sf
+
+    ! Initialize neutral stability functions
     do j=1,ni
-       lzz0 (j) = 1+zu(j)/z0(j)
-       lzz0t(j) = 1+zt(j)/z0t(j)
+       lzz0(j) = 1 + zu(j) / z0(j)
+       lzz0t(j) = 1 + zt(j) / z0t(j)
     enddo
-    call vslog(lzz0t,lzz0t,ni)
-    call vslog(lzz0 ,lzz0 ,ni)
-    !
-    !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !     STEP 2: Compute diagnostic fields, given the fluxes (ftemp,fvap,ue):
-    !
-    !     (a) for tz and qz, this is done by reversing the flux equations
-    !       ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
-    !       fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
-    !
-    !     (b) for vits, this is done reversing the friction velocity equation
-    !       ue = cm*vits ==> vits = ue/cm
-    !
-    do j=1,ni
-       !
-       !---- integrated stability functions and transfer coefficients
-       !     for the diagnostic layers
-       if ( ilmo(j).gt.0.) then
-          h1    = (za(j)+10.*z0(j))*factn
-          h2    = h(j)
-          h3    = factn/(4*D97_AS*beta*ilmo(j))
-          hh    = MAX(hmin,h1,h2,h3)
+    call vslog(lzz0t, lzz0t, ni)
+    call vslog(lzz0, lzz0, ni)
+    
+    ! Compute state variables at the diagnostic levels
+    ROW: do j=1,ni
+
+       ! Combine boundary layer height estimates under stable conditions
+       if (ilmo(j) > 0.) then
+          h1 = (za(j) + 10.*z0(j)) * factn
+          h2 = h(j)
+          h3 = factn / (4.*D97_AS*beta * ilmo(j))
+          hh = max(HMIN, h1, h2, h3)
        else
-          hh    = h(j)
+          hh = h(j)
        endif
-       !
-       fm    =        lzz0 (j) &
-            + sf_momentum(zu(j)+z0(j),ilmo(j),hh,x1) &
-            - sf_momentum(      z0(j),ilmo(j),hh,x0)
-       fh    = beta*( lzz0t(j) &
-            + sf_heat(zt(j)    +z0t(j),ilmo(j),hh,y1) &
-            - sf_heat(          z0t(j),ilmo(j),hh,y0))
-       ct    = karman/fh
-       cm    = karman/fm
-       !
-       !---- diagnostic temperature tz and specific humidity qz
-       !
-       ctu   = ct*ue(j)
-       tz(j) = tg(j) - ftemp(j)/ctu - grav/cpd*zt(j)
+       
+       ! Compute integrated stability functions
+       if (ilmo(j) > 0.) then
+          sf => sf_stable
+       else
+          sf => sf_unstable
+       endif
+       call sf(fm, fh, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
+            F_zm=(/zu(j)+z0(j), z0(j)/), F_zh=(/zt(j)+z0t(j), z0t(j)/))
+
+       ! Compute exchange coefficients
+       ct = karman / fh
+       cm = karman / fm
+
+       ! Diagnose temperature and moisture by reversing the bluk flux equations
+       !   ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
+       !   fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
+       ctu = ct * ue(j)
+       tz(j) = tg(j) - ftemp(j)/ctu - GRAV/CPD * zt(j)
        qz(j) = qg(j) - fvap (j)/ctu
-       !
-       !---- diagnostic wind speed
-       !
+
+       ! Diagnose wind speed by reversing the friction velocity equation
+       !   ue = cm*vits ==> vits = ue/cm
        vits  = ue(j)/cm
-       !
-       !---- diagnostic wind components
-       !     Note: We assume that the wind direction changes in the
-       !           stable layer only, according to the formula
-       !             (ang2-ang1)/ang_max = - (z2-z1)/h * sin(lat)
-       !
-       !
-       !     (1) angle difference between levels zu and za (dang)
+
+       ! Frictional turning only under stable conditions
        if (ilmo(j).gt.0.) then
-          hi = 1./MAX(hmin,hh)
+          hi = 1./MAX(HMIN,hh)
        else
           hi = 0.
        endif
-       dang = (za(j)-zu(j)) * hi * ANGMAX * SIN(lat(j))
-       !
-       !     (2) angle at diagnostic level zu
+
+       ! Diagnose wind components by computing frictional turning angle
+       dang = (za(j)-zu(j)) * hi * ANGMAX * sin(lat(j))
        ang = angi(j) + dang
-       !
-       !     (3) wind components at diagnostic level zu
        uz(j) = vits*COS(ang)
        vz(j) = vits*SIN(ang)
-       !
-    enddo
-    !
+       
+    enddo ROW
+
+    ! End of subprogram
     return
-  end subroutine diasurf5
+  end subroutine diasurf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function sf_heat(F_z,F_ilmo,F_h,F_deriv) result(F_nfh)
-    implicit none
+  function pblheight(F_zu, F_z0, F_u, F_ilmo, F_fcor, F_fm) result(F_nhb)
+    use sfclayer_funcs, only: D97_AS
 !!!#include <arch_specific.hf>
-    !@objective Compute stability function for heat/moisture and its derivative.
-    !@arguments
-    real, intent(in) :: F_z                 !height (m)
-    real, intent(in) :: F_ilmo              !inverse of Monin-Obukhov length (1/m)
-    real, intent(in) :: F_h                 !height of the PBL (m)
-    real, intent(out) :: F_deriv            !derivative of stability function w.r.t. log(F_ilmo)
-    real :: F_nfh                           !primitive of stability function (excluding neutral term)
-    !@author  A. Zadra, 2011-10
-    !@revisions
-    !  2011-10, A. Zadra; original code
-    !@description
-    !   Fusion of stability functions for heat based on PSI and FHI,
-    !   also outputing its derivative w.r.t. log(ILMO).
-    !   Stable branch: default based on Delage 1997, BLM 82, 23-48
-    !   Unstable branch: default based on Delage & Girard 1992, BLM 58, 19-31
-    !*@/
-
-    REAL hi,a,b,c,d,ah
-    !
-    if (F_ilmo.ge.0.) then
-       !------ stable branch
-       select case (sl_stabfunc_stab)
-       case ('LOCK07')
-          ah = L07_AH
-          F_nfh = (1.+ 0.5*ah*F_z*F_ilmo)**2
-          F_deriv = ah*F_z*F_ilmo*(1.+ 0.5*ah*F_z*F_ilmo)
-       case ('BELJAARS91')
-          a = BH91_A
-          b = BH91_B
-          c = BH91_C
-          d = BH91_D
-          F_nfh = (1.+b*a*F_z*F_ilmo)**1.5 - 1 + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d
-          F_deriv = a*F_z*F_ilmo*(1.+b*a*F_z*F_ilmo)**0.5 + b*F_z*F_ilmo*EXP(-d*F_z*F_ilmo) &
-               - d*F_z*F_ilmo*b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo)
-       case ('DELAGE97')
-          hi = 1./F_h
-          d  = 4*D97_AS*beta*F_ilmo
-          c  = d*hi - hi**2
-          b  = d - 2*hi
-          a  = SQRT(1 + b*F_z - c*F_z**2)
-          F_nfh = 0.5*( a - F_z*hi - LOG(1+b*F_z*0.5+a) &
-               - b/(2*SQRT(c))*ASIN((b-2*c*F_z)/d) )
-          F_deriv = 0.5*( 1/(2*a)*((d*F_z-b*hi/c)*(1-F_z*hi) &
-               - d*F_z*(1-F_z*hi+a)/(1+0.5*b*F_z+a)) &
-               -(d**2*hi/(4*c**1.5))*ASIN((b-2*c*F_z)/d) )
-       case DEFAULT
-          call msg_toall(MSG_WARNING, '(sf_heat) unknown SL stable function '// &
-               trim(sl_stabfunc_stab))
-          F_nfh = 1.; F_deriv = 0.
-          return
-       end select
-
-    else
-       !------ unstable branch
-       a = (1-DG92_CI*F_z*beta*F_ilmo)**(0.33333333)
-       select case (sl_stabfunc_unstab)
-       case ('DYER74')
-          a = (1-16*F_z*F_ilmo)**(0.5)
-          F_nfh = - 2.*LOG(a+1)
-          F_deriv = (1./a) - 1
-       case ('DELAGE92')
-          F_nfh = -1.5*LOG(a**2+a+1)+DG92_RAC3*ATAN((2*a+1)/DG92_RAC3)
-          F_deriv = (1./a) - 1
-       case DEFAULT
-          call msg_toall(MSG_WARNING, '(sf_heat) unknown SL unstable function '// &
-               trim(sl_stabfunc_unstab))
-          F_nfh = 1.; F_deriv = 0.
-          return
-       end select
-
-    endif
-
-    return
-  end function sf_heat
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function sf_momentum(F_z,F_ilmo,F_h,F_deriv) result(F_nfm)
-    implicit none
-!!!#include <arch_specific.hf>
-    !@objective Compute stability function for momentum and its derivative.
-    !@arguments
-    real, intent(in) :: F_z                 !height (m)
-    real, intent(in) :: F_ilmo              !inverse of Monin-Obukhov length (1/m)
-    real, intent(in) :: F_h                 !height of the PBL (m)
-    real, intent(out) :: F_deriv            !derivative of stability function w.r.t. log(F_ilmo)
-    real :: F_nfm                           !primitive of stability function (excluding neutral term)
-    !@author  A. Zadra, 2011-10
-    !@revisions
-    !  2011-10, A. Zadra; original code
-    !@description
-    !   Fusion of stability functions for momemtum based on PSI and FMI,
-    !   also outputing the derivative w.r.t. the log(ILMO).
-    !   Stable branch: default based on Delage 1997, BLM 82, 23-48
-    !   Unstable branch: default based on Delage & Girard 1992, BLM 58, 19-31
-    !*@/
-
-    REAL hi,a,b,c,d,am
-    !
-    if (F_ilmo.ge.0.) then
-       !------ stable branch
-       select case (sl_stabfunc_stab)
-       case ('LOCK07')
-          am = L07_AM
-          F_nfm = am*F_z*F_ilmo
-          F_deriv = am*F_z*F_ilmo
-       case ('BELJAARS91')
-          a = BH91_A
-          b = BH91_B
-          c = BH91_C
-          d = BH91_D
-          F_nfm = a*F_z*F_ilmo + b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo) + b*c/d
-          F_deriv = a*F_z*F_ilmo + b*F_z*F_ilmo*EXP(-d*F_z*F_ilmo) &
-               - d*F_z*F_ilmo*b*(F_z*F_ilmo-c/d)*EXP(-d*F_z*F_ilmo)
-       case ('DELAGE97')
-          hi = 1./F_h
-          d  = 4*D97_AS*beta*F_ilmo
-          c  = d*hi - hi**2
-          b  = d - 2*hi
-          a  = SQRT(1 + b*F_z - c*F_z**2)
-          F_nfm = 0.5*( a - F_z*hi - LOG(1+b*F_z*0.5+a) &
-               - b/(2*SQRT(c))*ASIN((b-2*c*F_z)/d) )
-          F_deriv = 0.5*( 1/(2*a)*((d*F_z-b*hi/c)*(1-F_z*hi) &
-               - d*F_z*(1-F_z*hi+a)/(1+0.5*b*F_z+a)) &
-               -(d**2*hi/(4*c**1.5))*ASIN((b-2*c*F_z)/d) )
-       case DEFAULT
-          call msg_toall(MSG_WARNING, '(sf_momentum) unknown SL stable function '// &
-               trim(sl_stabfunc_stab))
-          F_nfm = 1.; F_deriv = 0.
-          return
-       end select
-
-    else
-       !------ unstable branch
-       a =(1-DG92_CI*F_z*beta*F_ilmo)**(0.16666666)
-       select case (sl_stabfunc_unstab)
-       case ('DYER74')
-          a = (1-16*F_z*F_ilmo)**(0.25)
-          F_nfm = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)
-          F_deriv = (1./a) - 1
-       case ('DELAGE92')
-          F_nfm = - LOG( (a+1)**2*SQRT(a**2-a+1)*(a**2+a+1)**1.5 ) &
-               +DG92_RAC3*ATAN((a**2-1)/(DG92_RAC3*a))
-          F_deriv = (1./a) - 1
-       case DEFAULT
-          call msg_toall(MSG_WARNING, '(sf_momentum) unknown SL unstable function '// &
-               trim(sl_stabfunc_unstab))
-          F_nfm = 1.; F_deriv = 0.
-          return
-       end select
-
-    endif
-
-    return
-  end function sf_momentum
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function sf_pblheight(F_zu,F_z0,F_u,F_ilmo,F_fcor,F_fm) result(F_nhb)
-    implicit none
-!!!#include <arch_specific.hf>
-    !@objective Compute the planetary boundary layer height.
-    !@arguments
+    ! Compute the planetary boundary layer height.
+    
+    ! Input arguments
     real, intent(in) :: F_zu                !height of wind input (m)
     real, intent(in) :: F_z0                !roughness length for momentum (m)
     real, intent(in) :: F_u                 !wind speed at F_zu (m/s)
-    real, intent(in) :: F_ilmo              !inverse of Monin-Obukhov length (1/m)
+    real, intent(in) :: F_ilmo              !inverse of Obukhov length (1/m)
     real, intent(in) :: F_fcor              !Coriolis factor (1/s)
     real, intent(in) :: F_fm                !integrated stability function for momemtum
+
+    ! Output arguments
     real :: F_nhb                           !height of the PBL (m)
-    !@author  A. Zadra, 2011-10
-    !@revisions
-    !  2011-10, A. Zadra; original code
-    !@description
-    !   Compute the planetary boundary layer height for
-    !   both stable and unstable cases.
-    !*@/
-    real,    parameter :: BS = 1.
-    real h1,h2,h3,cormin,f
-    !
-    cormin = 0.7e-4
-    !
-    f = MAX(ABS(F_fcor),cormin)
-    !
-    if (F_ilmo.ge.0.) then
-       !------ stable branch
-       h1 = (F_zu+10.*F_z0)*factn
-       h2 = BS*SQRT(karman*F_u/(F_ilmo*f*F_fm))
-       h3 = factn/(4*D97_AS*beta*F_ilmo)
-       !
-       F_nhb = MAX(hmin,h1,h2,h3)
+
+    ! Local parameters
+    real, parameter :: BS = 1.              !stability function coefficient (stable)
+    real, parameter :: CORMIN = .7e-4       !minimum Coriolis parameter value (/s)
+
+    ! Local variables
+    real :: h1, h2, h3, f
+
+    ! Boundary layer height estimate based on surface layer quantities
+    f = max(abs(F_fcor), cormin)
+    if (F_ilmo >= 0.) then
+       ! Stable branch
+       h1 = (F_zu + 10.*F_z0) * factn
+       h2 = BS * SQRT(karman * F_u / (F_ilmo*f*F_fm))
+       h3 = factn / (4*D97_AS * beta * F_ilmo)
+       F_nhb = MAX(HMIN, h1, h2, h3)
     else
-       !------ unstable branch
-       h1 = 0.3*(F_u*karman/F_fm)/f
-       !
-       F_nhb = MAX(hmin,h1)
+       ! Unstable branch
+       h1 = 0.3 * (F_u * karman / F_fm) / f
+       F_nhb = max(HMIN, h1)
     endif
-    !
+    
+    ! End of subprogram
     return
-  end function sf_pblheight
+  end function pblheight
 
 end module sfclayer_mod

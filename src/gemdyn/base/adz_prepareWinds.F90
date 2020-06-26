@@ -21,6 +21,8 @@
       use gem_options
       use glb_ld
       use ver
+      use gem_timing
+      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -48,6 +50,16 @@
                                l_ni, l_nj, l_nk, Adz_halox, Adz_haloy ,&
                                .false.,.false., Adz_ww_ext, Adz_lminx ,&
                                Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, nrow)
+      call rpn_comm_xch_halo( uut0,l_minx,l_maxx,l_miny,l_maxy,&
+                               l_niu,l_nj,l_nk,G_halox,G_haloy,&
+                               G_periodx,G_periody,G_niu,0)
+      call rpn_comm_xch_halo( vvt0,l_minx,l_maxx,l_miny,l_maxy,&
+                               l_ni,l_njv,l_nk,G_halox,G_haloy,&
+                               G_periodx,G_periody,G_ni,0)
+
+      call time_trace_barr(gem_time_trace,10000+Adz_icn,Gem_trace_barr,&
+                           Ptopo_intracomm, MPI_BARRIER)
+
       do k =1, l_nk
          do j =1-Adz_haloy, l_nj+Adz_haloy
             do i =1-Adz_halox, l_ni+Adz_halox
@@ -57,12 +69,6 @@
          end do
       end do
 
-      call rpn_comm_xch_halo( uut0,l_minx,l_maxx,l_miny,l_maxy,&
-                               l_niu,l_nj,l_nk,G_halox,G_haloy,&
-                               G_periodx,G_periody,G_niu,0)
-      call rpn_comm_xch_halo( vvt0,l_minx,l_maxx,l_miny,l_maxy,&
-                               l_ni,l_njv,l_nk,G_halox,G_haloy,&
-                               G_periodx,G_periody,G_ni,0)
       do k =1, l_nk
          do j =1, l_nj
             do i =1, l_ni
@@ -119,6 +125,11 @@
             Adz_ww_arr(i,j,l_nk)= w2 * zzt0(i,j,l_nk-1)
          end do
       end do
+
+      call adz_perturbWinds(alpha1, alpha2)
+      
+      call time_trace_barr(gem_time_trace,10100+Adz_icn,Gem_trace_barr,&
+                           Ptopo_intracomm, MPI_BARRIER)
 !
 !     ---------------------------------------------------------------
 !

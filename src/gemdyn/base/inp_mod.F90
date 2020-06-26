@@ -13,19 +13,31 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module inp_mod
-   use vGrid_Descriptors
-   use, intrinsic :: iso_fortran_env
-   implicit none
-   public
-   save
+      use iso_c_binding
+      use vGrid_Descriptors
+      use, intrinsic :: iso_fortran_env
+      implicit none
+      public
+      save
 
-   character(len=1 ) :: Inp_levtype_S
-   character(len=16) :: Inp_datev
-   logical Inp_src_hauteur_L, Inp_dst_hauteur_L, Inp_zd_L, Inp_w_L
-   integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
-           Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
-           Inp_version, Inp_handle , Inp_cmcdate
-   integer, dimension(:), pointer :: Inp_list_unf => null()
-   type(vgrid_descriptor) :: Inp_vgd_src
-   real(kind=REAL64) Inp_pref_a_8
+      character(len=1 ) :: Inp_levtype_S
+      character(len=16) :: Inp_datev
+      logical Inp_src_hauteur_L, Inp_dst_hauteur_L, Inp_src_PX_L,&
+      Inp_src_GZ_L, Inp_zd_L, Inp_w_L
+      integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
+      Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
+      Inp_version, Inp_handle , Inp_cmcdate
+      integer, dimension(:), pointer :: Inp_list_unf => null()
+      integer :: Inp_PX_kind, Inp_GZ_kind, Inp_PX_nka, Inp_GZ_nka
+      type(vgrid_descriptor) :: Inp_vgd_src
+      real(kind=REAL64) Inp_pref_a_8
+
+      type Inp_vrt3d
+      sequence
+         integer nk,kind
+         integer, dimension(:), pointer :: ip1
+         real, dimension(:,:,:), pointer :: valq,valu,valv
+      end type Inp_vrt3d
+      type(Inp_vrt3d) :: GZ3d, PX3d
+
 end module inp_mod

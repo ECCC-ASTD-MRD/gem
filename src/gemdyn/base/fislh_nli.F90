@@ -20,7 +20,7 @@
 !
       subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc , &
                              F_u  , F_v  , F_t  , F_zd , F_q  , &
-                             F_rc , F_rt , F_rf , F_fis, F_rhs, F_nb ,&
+                             F_rc , F_rt , F_rf , F_fis, F_rhs, F_rb,F_nb ,&
                              Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, k0, in, jn, icln)
       use HORgrid_options
       use gem_options
@@ -41,6 +41,7 @@
 
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, k0, in, jn, icln
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out)   :: F_nb
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in)    :: F_rb
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nu,F_nv,F_nw
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nt,F_nc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
@@ -224,7 +225,7 @@
          km=max(k-1,1)
          do j= j0, jn
             do i= i0, in
-               xtmp_8(i,j) = F_t(i,j,k)/real(Cstv_Tstr_8)
+               xtmp_8(i,j) = F_t(i,j,k)/Cstv_Tstr_8
             end do
          end do
          call vlog ( ytmp_8, xtmp_8, nij )
@@ -271,7 +272,7 @@
 
    !           Compute Nc"
    !           ~~~~~~~~~~~
-               F_nc(i,j,k) = F_nc(i,j,k) + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km)
+               F_nc(i,j,k) = F_nc(i,j,k) + (w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km)) * Cstv_bar1_8
 
             end do
          end do
@@ -285,13 +286,11 @@
          end do
       end do
 
-      if(Schm_opentop_L) then
-         c1= Dcst_rayt_8**2
+      if((Schm_opentop_L) .and. trim(Sol_type_S) == 'DIRECT') then
          F_rhs(:,:,1:k0t) = 0.0
-
          do j= j0, jn
             do i= i0, in
-               F_rhs(i,j,k0)= F_rhs(i,j,k0) -  c1* Ver_cstp_8 * F_nb(i,j)
+               F_rhs(i,j,k0)= F_rhs(i,j,k0) -  c0* mc_cstp_8(i,j) * F_nb(i,j)
             end do
          end do
 
@@ -311,6 +310,11 @@
 
          call  boundary ( F_rhs,F_rt,F_rf,F_nt,Minx,Maxx,Miny,Maxy, &
                           Nk,ni,nj,i0,j0,in,jn )
+         if (Schm_opentop_L) then
+          F_rhs(:,:,1:k0t) = 0.0
+          call  boundary_Top(F_rhs,F_rb,F_nb,Minx,Maxx,Miny,Maxy, &
+                          Nk,ni,nj,i0,j0,in,jn )
+         endif
       end if
 
 

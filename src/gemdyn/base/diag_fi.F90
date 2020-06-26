@@ -23,7 +23,6 @@
       use glb_ld
       use cstv
       use ver
-      use gmm_itf_mod
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -33,7 +32,6 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(in) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_s
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_t
-
 
 !author: Andre Plante july 2006.
 
@@ -45,14 +43,11 @@
 ! F_t           - temperature
 ! F_fis         - surface geopotential
 
-      integer :: i,j,k,km,istat
+      integer :: i,j,k,km
       real(kind=REAL64), parameter :: one = 1.d0, half = 0.5d0
       real(kind=REAL64) :: qbar, w1
 !
 !     ---------------------------------------------------------------
-
-      istat = gmm_get (gmmk_fis0_s,fis0)
-      istat = gmm_get (gmmk_sls_s ,sls )
 
       do j=j0,jn
          do i=i0,in
@@ -90,7 +85,6 @@
          end do
 
       end if
-
 !
 !     ---------------------------------------------------------------
 !

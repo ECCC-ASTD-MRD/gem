@@ -6,8 +6,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <malloc.h>
-
-
 /*
  contents of test file test_array_file.f90 follow
 
@@ -19,8 +17,6 @@
  stop
  end
 */
-
-
 /*
   FORTRAN callable subroutine array_from_file, read a file into a FORTRAN integer array
 
@@ -37,31 +33,28 @@
 */
 void f77name(array_from_file)(ftnword *array, ftnword *nw, char *file_name, F2Cl nc_file_name)
 {
-   char* buffer;
-   int fd;
+  char *buffer;
+  int fd;
 
-   buffer = (char *)malloc(nc_file_name + 1);        /* allocate buffer for file name */
-   strncpy(buffer, file_name, nc_file_name);       /* copy file name into buffer */
-   buffer[nc_file_name] = '\0';
-   nc_file_name--;                               /* and eliminate trailing blanks */
-   while (buffer[nc_file_name] == ' ' && nc_file_name > 0 ) {
-      buffer[nc_file_name] = '\0';
-      nc_file_name--;
-   }
-   fd = open(buffer, O_RDONLY);                     /* open file read only */
-   free(buffer);
-   buffer = NULL;
-   array[1] = read(fd, (char *)(array+2), (*nw-2)*sizeof(ftnword));  /* read data from file up to array capacity */
-   array[0] = 2 + ((array[1]+sizeof(ftnword)-1)) / sizeof(ftnword);  /* set las index used in array */
-   close(fd);
+  buffer=(char *)malloc(nc_file_name+1);        /* allocate buffer for file name */
+  strncpy(buffer,file_name,nc_file_name);       /* copy file name into buffer */
+  buffer[nc_file_name]='\0';
+  nc_file_name--;                               /* and eliminate trailing blanks */
+  while ( buffer[nc_file_name]==' ' && nc_file_name>0 ) {
+    buffer[nc_file_name]='\0';
+    nc_file_name--;
+    }
+  fd=open(buffer,O_RDONLY);                     /* open file read only */
+  array[1]=read(fd,(char *)(array+2),(*nw-2)*sizeof(ftnword));  /* read data from file up to array capacity */
+  array[0]=2 + ((array[1]+sizeof(ftnword)-1))/sizeof(ftnword);  /* set las index used in array */
+  close(fd);
 }
-
 
 /*
   FORTRAN callable subroutine array_to_file, write an "file in FORTRAN integer array" to a file
   this file should have been previously read by array_from_file
 
-  call array_to_file(array, nw, file_name)
+  call array_to_file(array,nw,file_name)
   integer array(nw)
   character *(*) file_name
 
@@ -71,25 +64,23 @@ void f77name(array_from_file)(ftnword *array, ftnword *nw, char *file_name, F2Cl
 
   if the file is too big to fit into array, array(1) = nw-2
 */
-void f77name(array_to_file)(ftnword* array, ftnword* nw, char* file_name, F2Cl nc_file_name)
+void f77name(array_to_file)(ftnword *array, ftnword *nw, char *file_name, F2Cl nc_file_name)
 {
-   char* buffer;
-   int fd;
-   int nc;
-   off_t len;
+  char *buffer;
+  int fd;
+  int nc;
+  off_t len;
 
-   buffer = (char *)malloc(nc_file_name + 1);        /* allocate buffer for file name */
-   strncpy(buffer, file_name, nc_file_name);       /* copy file name into buffer */
-   buffer[nc_file_name] = '\0';
-   nc_file_name--;                               /* and eliminate trailing blanks */
-   while ( buffer[nc_file_name] == ' ' && nc_file_name > 0 ) {
-      buffer[nc_file_name] = '\0';
-      nc_file_name--;
-   }
-   fd = open(buffer, O_CREAT + O_RDWR, 0777);          /* open file for writing */
-   len = write(fd, (char *)(array + 2), array[1]);     /* write data into file */
-   free(buffer);
-   buffer = NULL;
-   ftruncate(fd, len);                            /* make sure to truncate after write */
-   close(fd);                                    /* close file */
+  buffer=(char *)malloc(nc_file_name+1);        /* allocate buffer for file name */
+  strncpy(buffer,file_name,nc_file_name);       /* copy file name into buffer */
+  buffer[nc_file_name]='\0';
+  nc_file_name--;                               /* and eliminate trailing blanks */
+  while ( buffer[nc_file_name]==' ' && nc_file_name>0 ) {
+    buffer[nc_file_name]='\0';
+    nc_file_name--;
+    }
+  fd=open(buffer,O_CREAT+O_RDWR,0777);          /* open file for writing */
+  len=write(fd,(char *)(array+2),array[1]);     /* write data into file */
+  ftruncate(fd,len);                            /* make sure to truncate after write */
+  close(fd);                                    /* close file */
 }

@@ -13,214 +13,306 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r psadj - Adjust surface pressure for conservation
-!
+!**s/r psadj - Adjust surface pressure for conservation in Yin-Yang/LAM
+
       subroutine psadj (F_kount)
+
+      use adz_mem
       use cstv
-      use dynkernel_options
       use dyn_fisl_options
-      use gem_options
+      use dynkernel_options
+      use gem_timing
       use geomh
-      use glb_ld
-      use glb_pil
       use gmm_geof
-      use gmm_itf_mod
       use gmm_vt0
+      use gmm_pw
       use HORgrid_options
       use init_options
+      use mem_tracers
       use metric
       use psadjust
+      use ptopo
       use rstr
-      use tdpack
-      use ver
+      use tdpack, only : rgasd_8
+      use tr3d
+
       use, intrinsic :: iso_fortran_env
       implicit none
+
 #include <arch_specific.hf>
 
+      !arguments
+      !---------
       integer, intent(in) :: F_kount
 
-      integer err,i,j,n,istat,MAX_iteration,k
-      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: pr_p0_0_8,pr_p0_w_0_8,pw_log_p0_8
-      real,             dimension(l_minx:l_maxx,l_miny:l_maxy) :: qts,delps,pw_pm
-      real(kind=REAL64) l_avg_8(1),g_avg_ps_0_8
-      real(kind=REAL64) ll_avg_8(l_ni,l_nj)
-      character(len= 9) communicate_S
+      !object
+      !=============================================================
+      !     Adjust surface pressure for conservation in Yin-Yang/LAM
+      !=============================================================
+
+      integer :: err,i,j,k,n,MAX_iteration,empty_i,n_reduce
+      real :: empty
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_1_8,p0_dry_0_8
+      real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_1_8,p0_0_8,fl_0_8
+      real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_1_8,p0_wet_0_8
+      real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: qts,delps,pw_pm
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: sumq
+      real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_1_8,g_avg_ps_0_8,g_avg_fl_0_8,substract_8
+      character(len= 9) :: communicate_S
+      logical :: LAM_L
+      real, pointer, dimension(:,:,:) :: tr
 !
-!     ---------------------------------------------------------------
+!---------------------------------------------------------------------
 !
-      if ( Grd_yinyang_L ) then
+      !Update Pressure PW_MOINS in accordance with TIME M
+      !--------------------------------------------------
+      call pressure ( pw_pm_moins,pw_pt_moins,pw_p0_moins,pw_log_pm,pw_log_pt, &
+                      pw_pm_moins_8,pw_p0_moins_8, &
+                      l_minx,l_maxx,l_miny,l_maxy,l_nk,0 )
 
-         if ( Schm_psadj == 0 ) then
-            if ( Schm_psadj_print_L ) then
-               call stat_psadj (0,"AFTER DYNSTEP")
-            end if
+      LAM_L = .not.Grd_yinyang_L
 
-            return
-         end if
+      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER DYNSTEP")
 
-         if ( Schm_psadj == 2 .and. &
-               trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-            call gem_error(-1,'psadj', &
-                    'PSADJ=2 is NOT AVAILABLE FOR YY with DYNAMICS_FISL_H')
-            if ( Schm_psadj_print_L ) then
-               call stat_psadj (0,"AFTER DYNSTEP")
-            end if
+      if ( Schm_psadj == 0 ) return
 
-            return
-         end if
-         if ( Schm_psadj <= 2 .and. Cstv_dt_8*F_kount <= Iau_period ) then
-            if (Schm_psadj_print_L) then
-               call stat_psadj (0,"AFTER DYNSTEP")
-            end if
+      if ( Cstv_dt_8*F_kount <= Iau_period ) return
 
-            return
-         end if
-
-      else if ( .not.Grd_yinyang_L .and. Schm_psadj == 0 ) then
-
-         if ( Schm_psadj_print_L ) then
-            call stat_psadj (0,"AFTER DYNSTEP")
-         end if
-
-         return
-
-      else
-
-         if ( Rstri_rstn_L ) call gem_error(-1,'psadj', &
-                        'PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
-
-         if ( Cstv_dt_8*F_kount <= Iau_period ) then
-            if (Schm_psadj_print_L) then
-               call stat_psadj (0,"AFTER DYNSTEP")
-            end if
-
-            return
-         end if
-
-         if (.not.Init_mode_L) call adz_psadj_LAM_0
-
-         if ( Schm_psadj_print_L ) then
-            call stat_psadj (0,"AFTER DYNSTEP")
-         end if
-
-         return
-
-      end if
+      if ( LAM_L .and. Init_mode_L ) return
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-      istat = gmm_get(gmmk_fis0_s,fis0)
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-         istat = gmm_get(gmmk_st0_s,st0)
-      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         istat = gmm_get(gmmk_qt0_s,qt0)
+      substract_8 = 1.0d0
+      if (LAM_L) substract_8 = 0.0d0
+
+      !LAM: Estimate FLUX_out/FLUX_in and Evaluate water tracers at TIME M
+      !-------------------------------------------------------------------
+      if (LAM_L) then
+
+         call gemtime_start (32, 'C_BCFLUX_PS', 10)
+
+         Adz_flux => Adz_flux_3CWP
+
+         !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
+         !-----------------------------------------------------------------------
+         call adz_BC_LAM_Aranami (empty,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
+
+         call gemtime_stop (32)
+
+         !Evaluate water tracers at TIME M (Schm_psadj==2)
+         !------------------------------------------------
+         if (Schm_psadj==2) then
+
+            call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr,trt0)
+            tr=>tracers_M(Tr3d_hu)%pntr
+
+            do k=Adz_k0,l_nk
+               sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tracers_M(Tr3d_hu)%pntr(1:l_ni,1:l_nj,k)
+            end do
+
+         else
+
+            sumq = 0.
+
+         end if
+
+      end if
+
+      !Estimate or Recuperate air mass on CORE at TIME P
+      !-------------------------------------------------
+      if (LAM_L.or.Schm_psadj==2) then
+
+         !Obtain Wet surface pressure/Pressure Momentum at TIME P
+         !-------------------------------------------------------
+         p0_wet_1_8 => pw_p0_plus_8
+         pm_8       => pw_pm_plus_8
+
+         !Compute Dry surface pressure at TIME P (Schm_psadj==2)
+         !------------------------------------------------------
+         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_1_8,pm_8,p0_wet_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
+
+         !Obtain Surface pressure minus Cstv_pref_8
+         !-----------------------------------------
+         if (Schm_psadj==1) p0_1_8(1:l_ni,1:l_nj) = p0_wet_1_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+         if (Schm_psadj==2) p0_1_8(1:l_ni,1:l_nj) = p0_dry_1_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+
+         !Estimate air mass on CORE at TIME P
+         !-----------------------------------
+         l_avg_8(1) = 0.0d0
+
+         do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               l_avg_8(1) = l_avg_8(1) + p0_1_8(i,j) * geomh_area_mask_8(i,j)
+            end do
+         end do
+
+         call RPN_COMM_allreduce (l_avg_8,g_avg_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+         g_avg_ps_1_8 = g_avg_8(1) * PSADJ_scale_8
+
+      else
+
+         g_avg_ps_1_8 = PSADJ_g_avg_ps_initial_8
+
       end if
 
       MAX_iteration = 3
       if (Schm_psadj==1) MAX_iteration = 1
 
-      do n= 1,MAX_iteration
+      do n = 1,MAX_iteration
 
-         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H'.and.n==1) qts(:,:) = qt0(:,:,l_nk+1)
 
-         !Obtain pressure levels
-         !----------------------
-            call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         !Obtain Wet surface pressure/Pressure Momentum at TIME M
+         !-------------------------------------------------------
+         p0_wet_0_8 => pw_p0_moins_8
+         pm_8       => pw_pm_moins_8
 
-         !Compute dry surface pressure (- Cstv_pref_8)
-         !--------------------------------------------
-            if (Schm_psadj>=2) then
-
-               call dry_sfc_pressure_8 (pr_p0_w_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
-
-            !Compute wet surface pressure (- Cstv_pref_8)
-            !--------------------------------------------
-            else if (Schm_psadj==1) then
-
-               pr_p0_w_0_8(1:l_ni,1:l_nj) = pr_p0_0_8(1:l_ni,1:l_nj) - Cstv_pref_8
-
-            end if
-
-         elseif (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-            if (n==1) qts(:,:) = qt0(:,:,l_nk+1)
-            if (Schm_psadj==1) then
-                  pw_log_p0_8(1:l_ni,1:l_nj)=(dble(qt0(1:l_ni,1:l_nj,l_nk+1))/&
-                                             (rgasd_8*Cstv_Tstr_8)  &
-                                        +dble(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))
-                  pr_p0_0_8(1:l_ni,1:l_nj) = exp(pw_log_p0_8(1:l_ni,1:l_nj))
-
-                  pr_p0_w_0_8(1:l_ni,1:l_nj) = pr_p0_0_8(1:l_ni,1:l_nj) - &
-                                               Cstv_pref_8
-            end if
-         end if
-         l_avg_8 = 0.0d0
-         ll_avg_8 = 0.0d0
-         do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               l_avg_8 = l_avg_8 + pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
-               ll_avg_8(i,j) = pr_p0_w_0_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
-            end do
-         end do
-
-         if ( Lctl_rxstat_S == 'GLB_8') then
-         call glbsum8 (l_avg_8,ll_avg_8,1,l_ni,1,l_nj,1,          &
-                   1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
-         if (Grd_yinyang_L) communicate_S = "GRIDPEERS"
-         end if
-
-         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_0_8,1, &
-                   "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-         g_avg_ps_0_8 = g_avg_ps_0_8 * PSADJ_scale_8
-
-         !Correct surface pressure in order to preserve air mass
+         !Compute Dry surface pressure at TIME M (Schm_psadj==2)
          !------------------------------------------------------
+         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_0_8,pm_8,p0_wet_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+
+         !Obtain Surface pressure minus Cstv_pref_8
+         !-----------------------------------------
+         if (Schm_psadj==1) p0_0_8(1:l_ni,1:l_nj) = p0_wet_0_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+         if (Schm_psadj==2) p0_0_8(1:l_ni,1:l_nj) = p0_dry_0_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+
+         !Obtain FLUX on NEST+CORE at TIME M
+         !----------------------------------
+         if (LAM_L) then
+
+            do j=Adz_j0b,Adz_jnb
+               fl_0_8(:,j) = 0.0d0
+               do k=Adz_k0,l_nk
+                  do i=Adz_i0b,Adz_inb
+                     fl_0_8(i,j) = fl_0_8(i,j) + (1.-sumq(i,j,k)) * (pm_8(i,j,k+1) - pm_8(i,j,k)) &
+                                   * (Adz_flux(1)%fi(i,j,k) - Adz_flux(1)%fo(i,j,k))
+                 end do
+               end do
+            end do
+
+         end if
+
+         l_avg_8(1:2) = 0.0d0
+         g_avg_8(1:2) = 0.0d0
+
+         n_reduce = 1
+         if (LAM_L) n_reduce = 2
+
+         !Estimate air mass on CORE at TIME M
+         !-----------------------------------
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-               if(fis0(i,j) > 1.) then
-                  pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                    (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*PSADJ_fact_8
-               else
-                  pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                    (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*Cstv_psadj_8
-               end if
-               if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
-                  st0(i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
-               else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-                  qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8*&
-                     (log(pr_p0_0_8(i,j))-lg_pstar_8(i,j,l_nk+1))
-               end if
+
+               l_avg_8(1) = l_avg_8(1) + p0_0_8(i,j) * geomh_area_mask_8(i,j)
+
             end do
          end do
 
-      end do
+         !Estimate FLUX mass on NEST+CORE at TIME M
+         !-----------------------------------------
+         if (LAM_L) then
 
-      !Adjust qt0 at the other vertical levels
-      !---------------------------------------
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+            do j=Adz_j0b,Adz_jnb
+               do i=Adz_i0b,Adz_inb
+                  l_avg_8(2) = l_avg_8(2) + fl_0_8(i,j) * geomh_area_mask_8(i,j)
+               end do
+            end do
 
-         delps(1:l_ni,1:l_nj) = exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1))*&
-                               (exp(qt0(1:l_ni,1:l_nj,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
-                                exp(qts(1:l_ni,1:l_nj)/(rgasd_8*Cstv_Tstr_8)))
+         end if
 
-         do k=l_nk,1,-1
+         call RPN_COMM_allreduce (l_avg_8,g_avg_8,n_reduce,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-            pw_pm(1:l_ni,1:l_nj) = exp(qt0(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(1:l_ni,1:l_nj,k))
+         g_avg_ps_0_8 = g_avg_8(1) * PSADJ_scale_8
+         g_avg_fl_0_8 = g_avg_8(2) * PSADJ_scale_8
 
-            qt0(1:l_ni,1:l_nj,k) = rgasd_8*Cstv_Tstr_8*&
-                                   (log(pw_pm(1:l_ni,1:l_nj)+delps(1:l_ni,1:l_nj)*exp(lg_pstar_8(1:l_ni,1:l_nj,k))/&
-                                   exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)))-lg_pstar_8(1:l_ni,1:l_nj,k))
+         !Correct surface pressure in order to preserve air mass on CORE (taking FLUX mass into account in LAM)
+         !-----------------------------------------------------------------------------------------------------
+         do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+
+               if (fis0(i,j) > 1.) then
+                  p0_wet_0_8(i,j) = p0_wet_0_8(i,j) + &
+                  ((g_avg_ps_1_8 - g_avg_ps_0_8) + g_avg_fl_0_8)*PSADJ_fact_8
+               else
+                  p0_wet_0_8(i,j) = p0_wet_0_8(i,j) + &
+                  ((g_avg_ps_1_8 - g_avg_ps_0_8) + g_avg_fl_0_8)*Cstv_psadj_8
+               end if
+
+               if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+                  st0(i,j) = log(p0_wet_0_8(i,j)/Cstv_pref_8)
+
+               else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+                  qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8 * &
+                                    (log(p0_wet_0_8(i,j))-lg_pstar_8(i,j,l_nk+1))
+
+               end if
+
+            end do
          end do
 
+         !GEM-H: Adjust q at the other vertical levels at TIME M
+         !------------------------------------------------------
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
+            do j=1+pil_s,l_nj-pil_n
+               do i=1+pil_w,l_ni-pil_e
+
+                  delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
+                              (exp(qt0(i,j,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
+                               exp(qts(i,j)/(rgasd_8*Cstv_Tstr_8)))
+               end do
+            end do
+
+            do k=l_nk,1,-1
+
+               do j=1+pil_s,l_nj-pil_n
+                  do i=1+pil_w,l_ni-pil_e
+
+                     pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k))
+
+                     qt0(i,j,k) = rgasd_8*Cstv_Tstr_8*&
+                                  (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
+                                  exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
+
+                  end do
+               end do
+
+            end do
+
+         end if
+
+         !Update Pressure PW_MOINS in accordance with TIME M
+         !--------------------------------------------------
+         call pressure ( pw_pm_moins,pw_pt_moins,pw_p0_moins,pw_log_pm,pw_log_pt, &
+                         pw_pm_moins_8,pw_p0_moins_8, &
+                         l_minx,l_maxx,l_miny,l_maxy,l_nk,0 )
+
+      end do !END MAX_iteration
+
+      if ( Schm_psadj_print_L.and.Lun_out>0.and.Ptopo_couleur==0 ) then
+
+         write(Lun_out,*)    ''
+         if (Schm_psadj==1) write(Lun_out,*) 'PSADJ: Conservation WET air'
+         if (Schm_psadj==2) write(Lun_out,*) 'PSADJ: Conservation DRY air'
+
+         write(Lun_out,*)    ''
+         write(Lun_out,*)    '------------------------------------------------------------------------------'
+         write(Lun_out,1004) 'PSADJ STATS: N=',g_avg_ps_0_8,' O=',g_avg_ps_1_8,' F=',g_avg_fl_0_8
+         write(Lun_out,*)    '------------------------------------------------------------------------------'
+
       end if
 
-      if (Schm_psadj_print_L) then
-         call stat_psadj (0,"AFTER DYNSTEP")
-      end if
+      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER PSADJ")
 !
-!     ---------------------------------------------------------------
+!---------------------------------------------------------------------
 !
       return
+
+ 1004 format(1X,A15,E19.12,A3,E19.12,A3,E19.12)
+
       end

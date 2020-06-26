@@ -647,7 +647,7 @@
 !
       idt = idate(14)
 !
-      tpr(1) = dtpr
+!      tpr(1) = dtpr
       result=naetwed(idt,tpr,tmpr,-3)
       dtpr = tpr(1)
       if (result.ne.0) then

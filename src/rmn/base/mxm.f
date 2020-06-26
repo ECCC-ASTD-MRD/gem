@@ -23,15 +23,15 @@ C    Routine on VAX to emulate CRAY SCILIB routine, MXM p. 4-22
 C         LIBRARY manual, implemented in VAX single precision.
 C
       integer nar,nac,nbc,i,j,k
-      real a(nar,nac),b(nac,nbc),c(nar,nbc)
+      real a(nar,1),b(nac,1),c(nar,1)
 
-      do j=1,nbc
-         do i = 1,nar
+      do 30 j=1,nbc
+         do 20 i = 1,nar
             c(i,j) = 0.0
-            do k = 1,nac
+            do 10 k = 1,nac
                c(i,j) = c(i,j) + a(i,k)*b(k,j)
-            end do
-         end do
-      end do
+   10       continue
+   20    continue
+   30 continue
       return
       end

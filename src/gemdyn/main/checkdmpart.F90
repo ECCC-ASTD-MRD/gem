@@ -23,7 +23,7 @@
       integer, external :: domain_decomp, sol_transpose, &
                            set_fft, gemdm_config
 
-      character(len=16) ndomains_S,npex_S,npey_S
+      character(len=16) npex_S,npey_S
       character(len=2048) cdm_eigen_S,fn
       logical cdm_grid_L
       integer cdm_npex(2), cdm_npey(2), unf, cnt
@@ -34,7 +34,7 @@
 !
 !-------------------------------------------------------------------
 !
-      call init_component
+      call init_component()
 
       if (Ptopo_couleur == 0) then
          call open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
@@ -46,10 +46,6 @@
       cdm_grid_L = .false.
       cdm_eigen_S= 'NONE@#$%'
 
-      Grd_yinyang_L = .false.
-      Grd_yinyang_S = ''
-      if (clib_getenv ('GEM_YINYANG',ndomains_S) >= 0) &
-      Grd_yinyang_L = .true.
       Lun_out=6
 
       unf = 0
@@ -141,21 +137,20 @@
       if ( (cdm_grid_L) .or. (cdm_eigen_S /= 'NONE@#$%') ) then
          err = domain_decomp ( 1, 1, .false. )
          err = sol_transpose ( 1, 1, .false. )
-         call glbpos
-         call set_geomh
+         call glbpos ()
+         call set_geomh ()
          call canonical_cases ("SET_GEOM")
          call write_status_file3 ('Fft_fast_L=OK')
          if (Ptopo_couleur == 0) then
             call write_status_file3 ('Fft_fast_L=OK')! TODO : no longer needed
          endif
-
          if (cdm_eigen_S /= 'NONE@#$%') then
-            call set_opr (cdm_eigen_S)
+            call set_opr ()
             call gemtime ( Lun_out, 'AFTER set_opr', .false. )
          endif
 
          if (cdm_grid_L) then
-            call set_params
+            call set_params ()
             call set_dync ( .false., err )
             call gemtime ( Lun_out, 'AFTER set_dync', .false. )
             if (Ptopo_couleur == 0) then

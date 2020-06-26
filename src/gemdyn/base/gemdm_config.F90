@@ -45,6 +45,7 @@
       use rstr
       use wb_itf_mod
       use ptopo
+      use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -339,6 +340,14 @@
       end if
       Vtopo_L = (Vtopo_ndt > 0)
 
+      Gem_trace_barr= (Gem_trace_ctrl > 1)
+      if (Gem_trace_freq<=0) then
+         Gem_trace_freq= 2*Step_total
+      else
+         Gem_trace_freq= min(Step_total,Gem_trace_freq)
+         Gem_trace_freq= Step_total/Gem_trace_freq
+      endif
+
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
                            2X,'00H FORECAST WILL BE VALID AT: ',a16,/ &
@@ -359,8 +368,6 @@
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
- 9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
- 9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
 !
 !-------------------------------------------------------------------

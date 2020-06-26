@@ -1,27 +1,30 @@
-!> Encode/Decode IP pour IP1, IP2, IP3
-!> This is required before reading or writting to a FST file
-!> @date 1996
-!> @author Nils Ek
-!> @author Bernard Dugas
-!> @author Mario Lepine
-!> @author Michel Valin
+!===============================================================================================
+!****f* rmnlib/convip_plus
+! SUMMARY
+!  successeur de convip,  Codage/Decodage P,kind <-> IP pour IP1, IP2, IP3
+!  necessaire avant de lire/ecrire un enregistrement sur un fichier standard.
+! SYNOPSIS
 SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
   use convert_ip123_int
   implicit none
   include 'convip_plus.inc'
 
+! ARGUMENTS
   integer, intent(INOUT) :: ip, kind
   integer, intent(IN) :: mode
   real, intent(INOUT) :: p
   character *(*), intent(OUT) :: string 
   logical, intent(IN) :: flagv
 
+! Notes
+!
 !  Etendue des valeurs reelles encodees: 10e-5 -> 10e10
 !  pseudo mantisses :
 !  1024x1024-1 = 1048575
 !  1048001 -> 1048575 non utilise
 !  1000001 -> 1048000 utilise pour valeurs negatives
-
+! AUTHOR
+!     Auteurs: N. Ek et B. Dugas - Mars 1996
 !     Revision 001  M. Lepine - juin 1997 convpr devient convip
 !     Revision 002  M. Valin  - mai  1998 fichiers std 98
 !     Revision 003  B. Dugas  - juillet 2000 code arbitraire 
@@ -40,7 +43,6 @@ SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
 !                               menage dans le code, changement de nom, refactoring
 !     Revision 012  M. Valin  - Oct/Nov 2013 bug de conversion corrige pour certains cas limites
 !                               enleve une amelioration qui entrainait une non compatibilite avec convip
-
 ! INPUTS
 !    MODE = -1, de IP -->  P
 !    MODE =  0, forcer conversion pour ip a 31 bits
@@ -68,6 +70,7 @@ SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
 !              (partage avec kind=5 a cause du range exclusif)                                                             
 ! OUTPUTS
 !    STRING = valeur de P formattee
+!******
 
   real *8 TEN
   parameter (TEN=10.0)
@@ -129,7 +132,7 @@ SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
   else
       maxkind = 3
   endif
-
+!
   if (mode.gt.0) then  ! .... Conversion P,KIND a IP  ....
 
       if ( is_invalid_kind(kind) ) then
@@ -143,7 +146,7 @@ SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
 !          if(NEWENCODING) ip =  ishft(2,24) +  ishft(1,20) ! si  newstyle (kind=2, mantissa=0, exponent=1)
          return
       endif
-
+!
       if(NEWENCODING)then    ! new style excoding
           if(iand(kind,15) == 15) then  ! kind 15 and subkinds done elsewhere (pure integers)
             status = conv_kind_15(p,kind,ip,mode)
@@ -252,14 +255,14 @@ SUBROUTINE CONVIP_plus( ip, p, kind, mode, string, flagv )
             return   ! decodage termine, return
           endif
           if ( .not. validkind(kind) ) goto 777
-
+!
           iexp = iand (15,ishft(ip,-20))
           itemp = iand (1048575, ip)
           if (itemp > 1000000) itemp = -(itemp - 1000000)
  555        continue
           p = itemp / exptab(iexp)             ! apply pseudo exponent
           p = p / fact_val(kind)               ! apply scaling factor
- 
+ !
           if (p < low_val(kind) .or. p>hi_val(kind)) then ! hors limite, essayer le type associe si valide
             if(kind+16 <= Max_Kind) then
               if(validkind(kind) .and. validkind(kind+16)) then
@@ -342,7 +345,7 @@ function conv_kind_15(p,mykind,ip,mode) result(status) ! convert kind = 15 and s
   integer, intent(INOUT) :: mykind,ip
   integer, intent(IN) :: mode ! -1, 1, 2, 3 (see convip code for meaning of mode)
   real, intent(INOUT) :: p
-
+!
   type e15
     integer :: lo      ! lowest value of ipv for this sub kind
     integer :: hi      ! lhighest value of ipv for this sub kind
@@ -355,9 +358,9 @@ function conv_kind_15(p,mykind,ip,mode) result(status) ! convert kind = 15 and s
          /)
   integer :: i, subt, ipv
   integer, parameter :: FFFFFF=Z'FFFFFF'
-
+!
   status = -1               ! precondition for failure
-
+!
   if(ip > 0 .and. ishft(ip,-24) == 15 .and. mode == -1) then  ! kind 15 and sub kinds ip to p conversion
     mykind = -1
     ipv = iand(ip,FFFFFF)  ! get rid of kind 15 indicator
@@ -373,7 +376,7 @@ function conv_kind_15(p,mykind,ip,mode) result(status) ! convert kind = 15 and s
     mykind = 15 + 16*(subt-1)    ! return proper kind type
     status = 0
   endif
-
+!
   if(15 == iand(mykind,15) .and. mode > 0 .and. mode <3) then  ! newstyle p to ip conversion
     ip = -1                      ! precondition for fail
     subt = 1 + ishft(mykind,-4)
@@ -621,7 +624,7 @@ subroutine c_kind_to_string(code,s1,s2) BIND(C,name='KindToString')  ! interface
   s2 = transfer(temp(2:2),s2)
   return
 end subroutine c_kind_to_string
-
+!
 FUNCTION kind_to_string(code) RESULT(string)  ! translate ip kind into a 2 character string code
   implicit none
   integer, intent(IN) :: code
@@ -653,9 +656,8 @@ FUNCTION kind_to_string(code) RESULT(string)  ! translate ip kind into a 2 chara
   return
 end FUNCTION kind_to_string
 !===============================================================================================
-
-!> C language interface with no string option
-subroutine C_CONV_IP( ip, p, kind, mode ) BIND(C,name='ConvertIp')
+subroutine C_CONV_IP( ip, p, kind, mode ) BIND(C,name='ConvertIp') ! C language inteerface with no string option
+!     void ConvIp(int *ip, float *p, int *kind, int mode)
   use ISO_C_BINDING
   implicit none
     integer(C_INT), intent(INOUT) :: ip, kind

@@ -201,7 +201,10 @@ contains
       istat = clib_toupper(gwdrag)
       !#TODO: indiag_list_s?
       istat = clib_toupper(input_type)
+      istat = clib_toupper(iuv_method)
       istat = clib_toupper(kntrad_S)
+      istat = clib_toupper(kntraduv_S)
+      istat = clib_toupper(linoz_chm)
       istat = clib_toupper(longmel)
       istat = clib_toupper(pbl_diss)
       istat = clib_toupper(pbl_dissheat)
@@ -245,11 +248,28 @@ contains
          call msg(MSG_ERROR,'(phy_nml_check) input_type = '//trim(input_type)//' : Should be one of: '//trim(msg_S))
          return
       endif
+      
+      if (.not.any(iuv_method == IUV_METHOD_OPT)) then
+         call str_concat(msg_S, IUV_METHOD_OPT, ', ')
+         call msg(MSG_ERROR,'(phy_nml_check) iuv_method = '//trim(iuv_method)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+      
+      if (.not.any(linoz_chm == LINOZ_CHM_OPT)) then
+         call str_concat(msg_S, LINOZ_CHM_OPT, ', ')
+         call msg(MSG_ERROR,'(phy_nml_check) linoz_chm = '//trim(linoz_chm)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (.not.any(lhn == LHN_OPT)) then
+         call str_concat(msg_S,LHN_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) lhn = '//trim(lhn)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
 
       if (.not.any(longmel == LONGMEL_OPT)) then
          call str_concat(msg_S,LONGMEL_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) longmel = '//trim(longmel)//' : Should be one of: '//trim(msg_S))
-         return
       endif
 
       if (.not.any(pbl_conserve == PBL_CONSERVE_OPT)) then
@@ -351,11 +371,6 @@ contains
          call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(msg_S))
          return
       endif
-
-      if (tofd /= 'NIL') then
-         call msg(MSG_ERROR,'(phy_nml_check) TOFD='//trim(tofd)//' -- is broken thus disabled until fixed in the dev version')
-         return
-      endif
  
       if (simisccp) then
          call msg(MSG_ERROR,'(phy_nml_check) simisccp=.true. -- no longuer supported')
@@ -427,7 +442,26 @@ contains
          call msg(MSG_ERROR,'(phy_nml) cannot configure mixing length module')
          return
       endif
+      
+      !# Set Linoz flags
+      if (linoz_chm /= 'NIL' .and. radia /= 'CCCMARAD2') then
+         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_chm without radia=CCCMARAD2')
+         return
+      endif
+      llinoz  = (radia == 'CCCMARAD2' .and. &
+           any(linoz_chm == (/&
+           'OZONE   ', &
+           'OZONEGHG' /)))
+      llingh  = (radia == 'CCCMARAD2' .and. &
+           any(linoz_chm == (/&
+           'GHG     ', &
+           'OZONEGHG' /)))
 
+      if (lhn_filter >= 0. .and. lhn == 'NIL')  then
+         call msg(MSG_WARNING,'(phy_nml) lhn_filter ignored since lhn="NIL"')
+         lhn_filter = -1.
+      endif
+     
       m_istat = RMN_OK
       !----------------------------------------------------------------
       return

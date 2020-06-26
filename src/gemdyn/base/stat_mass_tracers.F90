@@ -17,16 +17,16 @@
 
       subroutine stat_mass_tracers (F_time,F_comment_S)
 
+      use adz_mem
       use adz_options
       use dyn_fisl_options
       use glb_ld
-      use gmm_itf_mod
       use HORgrid_options
-      use lam_options
       use lun
       use ptopo
-      use tdpack
+      use tdpack, only: grav_8
       use tr3d
+      use mem_tracers
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -43,22 +43,18 @@
       !     Calculate and print the mass of each tracer scaled by area
       !===============================================================
 
-      !------------------------------------------------------------------------------
-
-      integer :: err,n,k0,count,i0,in,j0,jn,i0_sb,in_sb,j0_sb,jn_sb
-      real(kind=REAL64)  :: tracer_8
+      integer :: n,k0,count,i0,in,j0,jn,i0_sb,in_sb,j0_sb,jn_sb
+      real(kind=REAL64) :: tracer_8
       logical :: do_subset_GY_L
       real, pointer, dimension (:,:,:) :: fld_tr
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: air_mass,bidon,fld_ONE,w_tr
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: air_mass,fld_ONE,w_tr
       character(len=21) :: type_S
-      character(len= 7) :: time_S
-      character(len=GMM_MAXNAMELENGTH) :: in_S
-
-      !------------------------------------------------------------------------------
-
-      i0 = 1+pil_w ; j0 = 1+pil_s ; in = l_ni-pil_e ; jn = l_nj-pil_n
-
-      k0 = Lam_gbpil_T+1
+      character(len=7)  :: time_S
+      character(len=8)  :: in_S
+!
+!---------------------------------------------------------------------
+!
+      i0 = 1+pil_w ; j0 = 1+pil_s ; in = l_ni-pil_e ; jn = l_nj-pil_n ; k0 = Adz_k0
 
       do_subset_GY_L = .false.
 
@@ -72,10 +68,12 @@
       !--------------------------
       call canonical_terminator_0 (count)
 
-      call get_density (bidon,air_mass,F_time,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0)
-
       if (F_time==1) time_S = "TIME T1"
       if (F_time==0) time_S = "TIME T0"
+
+      !Reset Air Mass at appropriate time
+      !----------------------------------
+      call get_air_mass (air_mass,F_time,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0)
 
       type_S = "Mass of Mixing  (WET)"
       if (Schm_dry_mixing_ratio_L) type_S = "Mass of Mixing  (DRY)"
@@ -87,10 +85,14 @@
       !-------------
       do n=1,Tr3d_ntr
 
-         if (F_time==1) in_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
-         if (F_time==0) in_S = 'TR/'//trim(Tr3d_name_S(n))//':M'
-
-         err = gmm_get(in_S, fld_tr)
+         if (F_time==1) then
+            fld_tr=>tracers_P(n)%pntr
+            in_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
+         end if
+         if (F_time==0) then
+            fld_tr=>tracers_M(n)%pntr
+            in_S = 'TR/'//trim(Tr3d_name_S(n))//':M'
+         end if
 
          !Terminator: Prepare CLY
          !-----------------------
@@ -161,7 +163,9 @@
       end if
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,*) ''
-
+!
+!---------------------------------------------------------------------
+!
       return
 
 1002  format(1X,A9,A21,1X,A7,A5,E19.12,1X,A4,1X,A16)

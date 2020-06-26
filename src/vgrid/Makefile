@@ -1,57 +1,56 @@
-SHELL = /bin/bash
+.SUFFIXES:
 
-include vgrid_version.inc
-
-
-.SUFFIXES :
-
-.SUFFIXES : .F90 .c .o .a
+.SUFFIXES : .o .F90 .c .a
 
 SHELL = /bin/bash
-
-CPP = /lib/cpp
-
-FFLAGS =
 
 CFLAGS =
+FFLAGS =
+!!!FFLAGS="'-C -qopenmp -warn all'"
 
-DEFINE = -DFICHSTD98
+!!!MY_CFLAGS='-C'
 
-SUPP_OPT =
+SUPP_OPT = -openmp
 
-OPTIMIZ = 2 
+OPTIMIZ = 2
 
-#OPTIMIZ = -O 3 -fast
-#C_OPTIMIZ = -O 2
-#F_OPTIMIZ = -O 2
-
-MYLIB = libvgrid_$(VGRID_VERSION).a
-
-default: obj
+MYLIB = libvgrid.a
 
 include $(RPN_TEMPLATE_LIBS)/include/makefile_suffix_rules.inc
 
-OBJET = vgrid_utils.o vgrid.o vgrid_descriptors.o
+DEFINE = -DFICHSTD98
 
-FICHIERS_F90 = \
-vgrid_utils.F90 vgrid_descriptors.F90
+.PRECIOUS:
 
-FICHIERS_C = \
-vgrid.c
+# It is assumed that the environment makes available makefile_suffix_rules.inc; e.g.
+#     . ssmuse-sh -p /ssm/net/rpn/libs/4.1b/environment-includes_4.3_all
 
-FICHIERS_H = \
-armnlib.h   vgrid.h
 
-FICHIERS = $(FICHIERS_F90) $(FICHIERS_C)
+OBJECTS = vgrid_utils.o vgrid.o vgrid_descriptors.o
 
-obj: $(OBJET)
-#Produire les fichiers objets (.o) pour tous les fichiers
+default: genlib
 
-genlib: $(OBJET)
+obj:	$(OBJECTS)
+
+vgrid.o:	vgrid.c \
+	BODY_C_compute_heights_4001.hc  BODY_C_compute_pressure_2001.hc  armnlib.h  BODY_C_compute_pressure_5100.hc  \
+	BODY_Cvgd_diag_withref_2ref.hc BODY_C_compute_pressure_5002_5003_5004_5005.hc  vgrid.h  \
+	BODY_C_compute_heights_0001.hc  BODY_C_compute_pressure_1003_5001.hc  BODY_C_compute_pressure_1001_1002.hc   \
+	BODY_C_compute_heights_21001.hc  
+
+vgrid_descriptors.o:	vgrid_descriptors.F90 \
+	vgrid_utils.o  BODY_F_dpidpis_withref.hf  BODY_F_dpidpis_withref_prof.hf  BODY_F_diag_withref.hf  \
+	BODY_F_levels_withref_prof.hf   BODY_F_levels_withref.hf  BODY_F_diag_withref_prof.hf  vgrid_descriptors.hf  
+
+vgrid_utils.o:	vgrid_utils.F90 vgrid_descriptors.hf  
+
+
+genlib: $(OBJECTS)
 	rm -f $(MYLIB)
-	ar rv $(MYLIB) $(OBJET)
+	ar rcv $(MYLIB) $(OBJECTS)
 
 clean:
 	rm -f *.o *.mod
 
-
+distclean: clean
+	rm -f libvgrid.a

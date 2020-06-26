@@ -13,12 +13,18 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module ens_options
+   use ens_spp, only: MAX_NSPP
    implicit none
    public
    save
 
-   integer, parameter :: MAX2DC=6
+   ! Internal configurations
+   integer, parameter, public :: MAX2DC=6
 
+   ! Internal variables
+   integer, public :: nchains
+   logical, public :: spp_L
+   
    !# Switch to activate generation of Markov chains, use of SKEB
    !# and use of PTP
    logical :: Ens_conf = .false.
@@ -148,7 +154,7 @@ module ens_options
 
    !# number of 2d Markov chains
    !# (2D MARKOV CHAINES)
-   integer :: Ens_ptp_ncha = 1
+   integer :: Ens_ptp_ncha = 0
    namelist /ensembles/ Ens_ptp_ncha
 
    !# low wave number horizontal truncation limit for 2D Markov chains
@@ -247,6 +253,10 @@ module ens_options
    real :: Ens_ptp_fac_reduc = 0.0
    namelist /ensembles/ Ens_ptp_fac_reduc
 
+   !# Activate SPP for specified parameters
+   character(len=32), dimension(MAX_NSPP) :: Ens_spplist = ''
+   namelist /ensembles/ Ens_spplist
+   
 contains
 
 !**s/r ens_nml - read parametres for ensemble forecast
@@ -255,6 +265,7 @@ contains
       use ens_param
       use HORgrid_options
       use lun
+      use path, only: Path_nml_S
       implicit none
 #include <arch_specific.hf>
 
@@ -262,7 +273,7 @@ contains
 #include <WhiteBoard.hf>
 
       character(len=64) :: nml_S
-      logical nml_must, stochphy_L
+      logical nml_must, ptp_L
       integer ier,i
 !
 !--------------------------------------------------------------------
@@ -294,13 +305,22 @@ contains
  6005 format (' Namelist ',A,' NOT AVAILABLE')
  6007 format (/,' NAMELIST ',A,' IS INVALID'/)
 ! boiler plate - end
-
-      stochphy_L = .false.
+      
+      ptp_L = .false.
 
       if (ens_nml == 0) then
 
          if (Lun_out>=0) write (Lun_out, 6004) trim(nml_S)
 
+         if (Ens_ptp_conf) then
+            if (Ens_ptp_ncha < 1) then
+               if (Lun_out >= 0) write(Lun_out,"(a)") 'Ens_nml: Ens_ptp_ncha must be >= 1 when PTP is activated with Ens_ptp_conf'
+               ens_nml = -1
+            endif
+         else
+            Ens_ptp_ncha = 0
+         endif
+         
          if ((Grd_typ_S /= 'GU'.and.Grd_typ_S /= 'GY').and.Ens_skeb_conf) then
             if(Lun_out >= 0) write(Lun_out,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
             ens_nml = -1
@@ -339,7 +359,8 @@ contains
          Ens_ptp_lmax   =  maxval(Ens_ptp_l)
          Ens_ptp_m      =  Ens_ptp_trnh+1
          Ens_ptp_mmax   =  maxval(Ens_ptp_m)
-         stochphy_L     =  Ens_ptp_conf.and.Ens_conf
+         ptp_L          =  Ens_conf .and. Ens_ptp_conf
+         spp_L          =  Ens_conf .and. len_trim(Ens_spplist(1)) > 0
 
          if(Lun_out >= 0) then
             write(Lun_out,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
@@ -352,8 +373,9 @@ contains
             write(Lun_out,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
             write(Lun_out,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
             write(Lun_out,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
-            write(Lun_out,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
-            write(Lun_out,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha
+            write(Lun_out,'(a,l5)' )'Ens_ptp_L = ',ptp_L
+            write(Lun_out,'(a,l5)' )'Ens_spp_L      = ',spp_L
+            write(Lun_out,'(a,i5)' )'Ens_ptp_nc     = ',Ens_ptp_ncha
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_env_b = ',Ens_ptp_env_b
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_cape = ',Ens_ptp_cape
@@ -365,9 +387,10 @@ contains
       end if
 
       ier= WB_OK
-      if (stochphy_L) then
-         ier= min(wb_put('ens/IMRKV2'     , Ens_ptp_ncha     , WB_REWRITE_MANY),ier)
-         ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
+      if (ptp_L .or. spp_L) then
+         ier= min(wb_put('ens/PTP_NC'     , Ens_ptp_ncha     , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTP'        , ptp_L            , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/SPP'        , spp_L            , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPCAPE'    , Ens_ptp_cape     , WB_REWRITE_MANY),ier)
@@ -379,7 +402,7 @@ contains
       if (.not.WB_IS_OK(ier)) ens_nml= -1
 
       if (ens_nml == 1) then
-         ier= min(wb_put('ens/STOCHPHY'   , Ens_ptp_conf       , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTP'        , Ens_ptp_conf     , WB_REWRITE_MANY),ier)
       end if
 !
 !--------------------------------------------------------------------
@@ -395,7 +418,6 @@ contains
       F_istat = RMN_OK
       if (init_L) return
       init_L = .true.
-
       return
    end function ens_options_init
 

@@ -29,13 +29,6 @@
 !
 ! Establish meta_data template variables for gmm_create purpose
 !
-      call gmm_build_meta1D(metasc, &
-                            1,1,0,0,1, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta1d, &
-                            1,l_ni*l_nj*l_nk,0,0,l_ni*l_nj*l_nk, &
-                            0,0,0,0,0, &
-                            0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d, &
                             l_minx,l_maxx,G_halox,G_halox,l_ni, &
                             l_miny,l_maxy,G_haloy,G_haloy,l_nj, &

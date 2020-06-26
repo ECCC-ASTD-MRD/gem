@@ -14,10 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
-     hpbl,hflux,s,ps,gztherm,mg,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+subroutine clsgs8(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
+     hpbl,hflux,s,ps,gztherm,mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
    use tdpack_const
    use phy_options
+   use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -36,6 +37,7 @@ subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    real, dimension(n),    intent(in) :: ps              !surface pressure (Pa)
    real, dimension(n,nk), intent(in) :: gztherm         !height of thermodynamic levels (m)
    real, dimension(n),    intent(in) :: mg              !land-sea mask
+   real, dimension(n,ens_nc2d), intent(in) :: mrk2      !Markov chains for stochastic parameters
    real, dimension(n,nk), intent(in) :: acoef           !thermodynamic coefficient A
    real, dimension(n,nk), intent(in) :: bcoef           !thermodynamic coefficient B
    real, dimension(n,nk), intent(in) :: ccoef           !thermodynamic coefficient C
@@ -105,9 +107,12 @@ subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    integer :: j,k
    real :: fnn_weight,sigmas_cu,hfc
    real(kind=8) :: gravinv
-   real, dimension(n) :: wf
+   real, dimension(n) :: wf,fnnreduc
    real, dimension(n,nk) :: dz,dqwdz,dthldz,sigmas,q1,weight,lnsig,thlm,qwm,c1coef,wh
 
+   ! Retrieve stochastic information for parameter perturbations
+   fnnreduc(:) = ens_spp_get('fnnreduc', mrk2, fnn_reduc)
+   
    ! Pre-compute constants and vertical derivatives
    gravinv = 1.0/dble(GRAV)
    call vint_thermo2mom(thlm, thl, vcoef, n, nk)
@@ -243,9 +248,9 @@ subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
          ! Adjust FNN by user-controlled scaling factor potentially land-sea masked
          fnn_weight = 1.
          if (fnn_mask) then
-            fnn_weight = fnn_reduc + (1.-fnn_reduc)*max(0.,min(1.,mg(j)))
+            fnn_weight = fnnreduc(j) + (1.-fnnreduc(j))*max(0.,min(1.,mg(j)))
          else
-            fnn_weight = fnn_reduc
+            fnn_weight = fnnreduc(j)
          endif
          fnn(j,k) = fnn_weight*fnn(j,k)
 
@@ -280,4 +285,4 @@ subroutine clsgs7(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    fngauss = fngauss*weight
 
    return
-end subroutine clsgs7
+end subroutine clsgs8

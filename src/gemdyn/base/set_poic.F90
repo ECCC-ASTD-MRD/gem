@@ -16,7 +16,7 @@
 !                   C grid model
 
       subroutine set_poic ( F_eval_8, F_xp0_8, F_xp2_8, &
-                            F_npts, NSTOR, F_eigen_filename_S )
+                            F_npts, NSTOR )
       use HORgrid_options
       use tdpack
       use glb_ld
@@ -25,7 +25,6 @@
       implicit none
 #include <arch_specific.hf>
 
-      character(len=*), intent(in) :: F_eigen_filename_S
       integer, intent(in) :: F_npts, NSTOR
       real(kind=REAL64), dimension(NSTOR), intent(out) ::  F_eval_8
       real(kind=REAL64), dimension(NSTOR,3) :: F_xp0_8, F_xp2_8
@@ -65,8 +64,7 @@
       a_8(F_npts,F_npts)= F_xp2_8(NSTOR-Lam_pil_e,2)
       b_8(F_npts,F_npts)= F_xp0_8(NSTOR-Lam_pil_e,2)
 
-      call eigen ( r_8, a_8, b_8, F_npts, F_npts, 3*F_npts-1, &
-                   F_eigen_filename_S )
+      call eigen ( r_8, a_8, b_8, F_npts, F_npts, 3*F_npts-1 )
 
       if (.not.Grd_yinyang_L) then
          pdfaz= ONE/sqrt((G_xg_8(G_ni-glb_pil_e)-G_xg_8(glb_pil_w)))

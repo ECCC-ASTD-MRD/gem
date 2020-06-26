@@ -95,7 +95,6 @@ contains
       F_prod = 0.d0
 
       do j=1,l_nj
-!DIR$ SIMD
          do i=1,l_ni
             vector(i, j) = F_vector(i, j)
          end do
@@ -113,7 +112,6 @@ contains
                                 G_halox, G_haloy, G_periodx, G_periody, l_ni,0 )
 
       do j=1+sol_pil_s, l_nj-sol_pil_n
-!DIR$ SIMD
          do i=1+sol_pil_w, l_ni-sol_pil_e
 !DIR$ VECTOR NONTEMPORAL(F_prod)
             F_prod(i,j) = stencil(i, j, IDX_POINT, level) * vector(i  , j  ) &

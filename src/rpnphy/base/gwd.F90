@@ -32,6 +32,7 @@ contains
       use phybus
       use series_mod, only: series_xst
       use tendency, only: apply_tendencies
+      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
       !@author J.Mailhot RPN(May1990)
@@ -103,7 +104,7 @@ contains
       real, pointer, dimension(:)   :: p, zdhdxdy, zdhdx, zdhdy, zfcor, &
            zlhtg, zmg, zmtdir, zslope, zxcent, ztdmask
       real, pointer, dimension(:,:) :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
-           rtn, zhuplus, zugwdtd1, zvgwdtd1
+           rtn, zhuplus, zugwdtd1, zvgwdtd1, zmrk2
       real, pointer, dimension(:,:,:) :: zvcoef
       !--------------------------------------------------------------------
 
@@ -139,6 +140,8 @@ contains
       MKPTR2D(zhuplus, huplus, d)
       MKPTR2D(ztplus, tplus, d)
 
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+      
       MKPTR3D(zvcoef, vcoef, 2, vb)
 
       split_tend_L = (associated(zugwdtd1) .and. associated(zvgwdtd1))
@@ -246,13 +249,13 @@ contains
          rte(:,:) = real(te(:,:))
          rs1(:,:) = real(s1(:,:))
          rland = - abs(nint(zmg))  !# land-water index: -1=land, 0=water
-         call sgo16flx2(u, v, rug, rvg, rtgm, zugwdtd1, zvgwdtd1, &
+         call sgo16flx3(u, v, rug, rvg, rtgm, zugwdtd1, zvgwdtd1, &
               rte, ztplus, s, rs1, &
               nkm1, ni, 1, ni,                                   &
               tau, taufac,               &
               rland, zlhtg, zslope, zxcent, zmtdir,          &
               sgo_cdmin, sgo_bhfac, sgo_phic,                &
-              sgo_stabfac, sgo_nldirfac,                     &
+              sgo_stabfac, sgo_nldirfac, zmrk2,              &
               DO_GWDRAG, DO_BLOCKING, split_tend_L)
 
          call vint_mom2thermo(rtg, rtgm, zvcoef, ni, nkm1)

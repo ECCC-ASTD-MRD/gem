@@ -40,7 +40,6 @@
 
       call split_on_hostid (RPN_COMM_comm('GRID'),me,howmany,newcomm)
 
-      call gemtime_start ( 33, 'RESTART', 34 )
       do i=0,howmany-1
          if (i == me) then
 
@@ -49,11 +48,14 @@
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
             write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
-            write(Lun_rstrt) BC_mass_deficit(1:MAXTR3D)
+
+            write(Lun_rstrt) Tr3d_ntrTRICUB_WP, Tr3d_ntrBICHQV_WP
+            write(Lun_rstrt) Tr_3CWP(1:Tr3d_ntrTRICUB_WP)%BC_mass_deficit,&
+                             Tr_BQWP(1:Tr3d_ntrBICHQV_WP)%BC_mass_deficit
 
             ier = fclos(Lun_rstrt)
 
-            !        Write Gmm-files
+            ! Write Gmm-files
 
             gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
             ier = wb_checkpoint()
@@ -65,7 +67,6 @@
          call mpi_barrier (newcomm,ier)
 
       end do
-      call gemtime_stop (33)
 
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8, &
              /,'=========================================')

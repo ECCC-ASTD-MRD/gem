@@ -17,48 +17,44 @@
 !
       subroutine tt2virt (F_t, F_tt2tv, Minx, Maxx, Miny, Maxy, Nk)
       use glb_ld
-      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
+      use tr3d
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
-!
+
       logical, intent(in) :: F_tt2tv
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(inout) :: F_t
 
       integer :: istat
-      real, pointer, dimension(:,:,:)     :: tvirt,tt,hu
+      real, pointer, dimension(:,:,:)  :: tvirt,tt
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumpqj
-      character(1) :: timelevel_S
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
 !     Compute virtual temperature from temperature when tt2tv = .true.
 !     --------------------------------------------
 
-      timelevel_S = 'P'
-
-      nullify (tvirt, tt, hu)
+      nullify (tvirt, tt)
 
       if (.not.F_tt2tv) then
-         istat = gmm_get(gmmk_tt1_s, tvirt)
+         tvirt => tt1
       else
-         istat = gmm_get(gmmk_pw_tt_plus_s, tt)
+         tt => pw_tt_plus
       end if
 
       sumpqj = 0.
 
-      call sumhydro(sumpqj, Minx, Maxx, Miny, Maxy, Nk, timelevel_S)
-
-      istat= gmm_get('TR/HU:P', hu)
+      call sumhydro (sumpqj, Minx, Maxx, Miny, Maxy, Nk,Tr3d_ntr, trt1)
 
       if (.not.F_tt2tv) then
-         call mfottvh2 (F_t, tvirt, hu,sumpqj, minx, maxx, miny, maxy, &
-                        l_nk,1, l_ni,1, l_nj, F_tt2tv)
+         call mfottvh2 (F_t, tvirt, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+               minx, maxx, miny, maxy, l_nk,1, l_ni,1, l_nj, F_tt2tv)
       else
-         call mfottvh2 (tt, F_t, hu,sumpqj, minx, maxx, miny, maxy, &
-                        l_nk,1, l_ni, 1, l_nj, F_tt2tv)
+         call mfottvh2 (tt, F_t, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+           minx, maxx, miny, maxy, l_nk,1, l_ni, 1, l_nj, F_tt2tv)
       end if
 !
 !     ________________________________________________________________

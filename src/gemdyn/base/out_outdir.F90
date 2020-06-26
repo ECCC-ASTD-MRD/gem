@@ -46,7 +46,7 @@
 !
       upperlimit = Step_total + Step_initial
 
-      call out_steps
+      call out_steps ()
 
       if ( Init_mode_L .and. (Step_kount >= Init_halfspan) ) return
 

@@ -70,7 +70,7 @@ contains
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
 
-      logical :: lmoyhr, laccum, lreset, lavg, lkount0, ecdiag
+      logical :: lmoyhr, laccum, lreset, lavg, lkount0
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, vblend, z0m_ec, z0t_ec, esdiagec, &
@@ -78,7 +78,6 @@ contains
       real(REAL64), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
       real, dimension(ni,nk) :: presinv, t2inv, tiinv
       real, dimension(ni,nk-1) :: q_grpl,iiwc
-
 
 #define PHYPTRDCL
 #include "calcdiag_ptr.hf"
@@ -116,20 +115,22 @@ contains
            ztsurf,zqsurf,zpplus,zz0_ag,zz0t_ag,zdlat,zfcor,ni,nk-1)
 
       ! Compute winds at the lowest thermodynamic level
-      istat = sl_prelim(ztplus(:,nkm1),zhuplus(:,nkm1),zuplus(:,nkm1),zvplus(:,nkm1), &
-           zpplus,zgzmom(:,nkm1),spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
-      if (istat /= SL_OK) then
-         call physeterror('calcdiag', 'Problem preparing surface layer calculations')
-         return
-      endif
-      th_air = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
-      istat = sl_sfclayer(th_air,zhuplus(:,nkm1),vmod,vdir,zgzmom(:,nkm1), &
-           zgztherm(:,nkm1),ztsurf,zqsurf,zz0_ag,zz0t_ag,zdlat,zfcor, &
-           hghtm_diag_row=zgztherm(:,nkm1),u_diag=zuslt,v_diag=zvslt)
-      if (istat /= SL_OK) then
-         call physeterror('calcdiag', 'Problem with surface layer wind diagnostic')
-         return
-      endif
+      COMPUTE_SLT_WINDS: if (slt_winds) then         
+         istat = sl_prelim(ztplus(:,nkm1),zhuplus(:,nkm1),zuplus(:,nkm1),zvplus(:,nkm1), &
+              zpplus,zgzmom(:,nkm1),spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
+         if (istat /= SL_OK) then
+            call physeterror('calcdiag', 'Problem preparing surface layer calculations')
+            return
+         endif
+         th_air = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
+         istat = sl_sfclayer(th_air,zhuplus(:,nkm1),vmod,vdir,zgzmom(:,nkm1), &
+              zgztherm(:,nkm1),ztsurf,zqsurf,zz0_ag,zz0t_ag,zdlat,zfcor, &
+              hghtm_diag_row=zgztherm(:,nkm1),u_diag=zuslt,v_diag=zvslt)
+         if (istat /= SL_OK) then
+            call physeterror('calcdiag', 'Problem with surface layer wind diagnostic')
+            return
+         endif
+      endif COMPUTE_SLT_WINDS
 
       !****************************************************************
       !     Screen-level fields
@@ -156,12 +157,6 @@ contains
       endif
 
       ! ECMWF screen-level calculations performed on request
-      ecdiag = .false.
-      i = 1
-      do while (.not.ecdiag .and. i <= nphyoutlist)
-         if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
-         i = i+1
-      enddo
       ECMWF_SCREEN: if (ecdiag) then
 
          ! Prepare surface and height information for ECMWF diagnostic formulation
@@ -511,43 +506,46 @@ contains
 
       endif IF_KOUNT_NOT_0
 
-      if (refract) then
+      if (lrefract) then
          call refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
               zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
               zdct_trdmax, zdct_trdmin, zdct_moref, &
               zpplus, zgztherm, zsigm, ztplus, zhuplus, ni, nk)
       endif
 
-      if (lightning_diag) then
+      if (llight) then
          if (stcond(1:5)=='MP_P3') then
             q_grpl(:,:) = a_qi_4(:,:) + a_qi_5(:,:)
             iiwc(:,:)   = a_qi_1(:,:) + a_qi_2(:,:) + a_qi_3(:,:) +     &
-                          a_qi_4(:,:) + a_qi_5(:,:) + a_qi_6(:,:)
+                 a_qi_4(:,:) + a_qi_5(:,:) + a_qi_6(:,:)
+            call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          elseif (stcond(1:6)=='MP_MY2') then
             q_grpl(:,:) = zqgplus(:,1:nk-1)
             iiwc(:,:)   = zqiplus(:,1:nk-1) + zqnplus(:,1:nk-1) + zqgplus(:,1:nk-1)
+            call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          endif
-         call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
       endif
 
       !****************************************************************
       !     Energy budget diagnostics
       !     ---------------------------------
 
-      ! Compute Q1, Q2 apparent heat source / moisture sink
-      do k=1,nk
-         presinv(:,nk-(k-1)) = zpplus*zsigt(:,k)
-         t2inv(:,nk-(k-1)) = zt2(:,k)
-         tiinv(:,nk-(k-1)) = zti(:,k)
-      enddo
-      istat  = int_profile(zt2i,t2inv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
-      istat1 = int_profile(ztii,tiinv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
-      if (istat /= INT_OK .or. istat1 /= INT_OK) then
-         call physeterror('calcdiag', 'Problem in radiative tendency integrals')
-         return
-      endif
-      zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt + zfc_ag
-      zq2app = CHLC*zrt - zfv_ag
+      ! Compute Q1, Q2 apparent heat source / moisture sink on request
+      Q1_BUDGET: if (ebdiag) then
+         do k=1,nk
+            presinv(:,nk-(k-1)) = zpplus*zsigt(:,k)
+            t2inv(:,nk-(k-1)) = zt2(:,k)
+            tiinv(:,nk-(k-1)) = zti(:,k)
+         enddo
+         istat  = int_profile(zt2i,t2inv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
+         istat1 = int_profile(ztii,tiinv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
+         if (istat /= INT_OK .or. istat1 /= INT_OK) then
+            call physeterror('calcdiag', 'Problem in radiative tendency integrals')
+            return
+         endif
+         zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt + zfc_ag
+         zq2app = CHLC*zrt - zfv_ag
+      endif Q1_BUDGET
 
       ! Compute conservation properties
       COMPUTE_EB: if (associated(zconephy)) then
@@ -637,6 +635,44 @@ contains
             zttmax(:,:) = ztplus(:,:)
             ztadvmin(:,:) = ztadv(:,:)
             ztadvmax(:,:) = ztadv(:,:)
+
+            if (llinoz .and. out_linoz) then
+               ! 2D Ozone
+               zo3tcm  (:) = 0.0
+               zo3fktcm(:) = 0.0
+               zo3ctcm (:) = 0.0
+               ! 3D Ozone
+               zo3avg  (:,:) = 0.0
+               zo3fkcolm(:,:)= 0.0
+               zo3ccolm(:,:) = 0.0
+               zo3colm (:,:) = 0.0
+               zo1chmtdm(:,:) = 0.0
+               zo4chmtdm(:,:) = 0.0
+               zo6chmtdm(:,:) = 0.0
+               zo7chmtdm(:,:) = 0.0
+               zo3chmtdm(:,:) = 0.0
+            end if
+
+            if (llingh .and. out_linoz) then
+               ! 2D GHG
+               zch4tcm (:) = 0.0
+               zn2otcm (:) = 0.0
+               zf11tcm (:) = 0.0
+               zf12tcm (:) = 0.0
+               ! 3D GHG
+               zch4avg (:,:) = 0.0
+               zn2oavg (:,:) = 0.0
+               zf11avg (:,:) = 0.0
+               zf12avg (:,:) = 0.0
+               zch4colm(:,:) = 0.0
+               zn2ocolm(:,:) = 0.0
+               zf11colm(:,:) = 0.0
+               zf12colm(:,:) = 0.0
+               zch4chmtdm(:,:) = 0.0
+               zn2ochmtdm(:,:) = 0.0
+               zf11chmtdm(:,:) = 0.0
+               zf12chmtdm(:,:) = 0.0
+            end if
 
             zccnm(:,1:nk-1)  = 0.0
             ztim(:,1:nk-1)   = 0.0
@@ -831,6 +867,112 @@ contains
                ztadvmax(i,k) = max(ztadvmax(i,k), ztadv (i,k))
             end do
          enddo
+
+         IF_LINOZ: if (llinoz .and. out_linoz) then
+
+            do i = 1, ni
+
+               zo3tcm  (i) = zo3tcm  (i) + zo3tc  (i)
+               zo3fktcm(i) = zo3fktcm(i) + zo3fktc(i)
+               zo3ctcm (i) = zo3ctcm (i) + zo3ctc (i)
+
+               if (lavg) then
+                  zo3tcm  (i) = zo3tcm  (i) * moyhri
+                  zo3fktcm(i) = zo3fktcm(i) * moyhri
+                  zo3ctcm (i) = zo3ctcm (i) * moyhri
+               end if
+
+            end do
+
+            do k = 1, nk-1
+               do i = 1, ni
+
+                  zo3avg  (i,k) = zo3avg  (i,k) + zo3lplus (i,k)
+
+                  zo3fkcolm(i,k) = zo3fkcolm(i,k) + zo3fkcol(i,k)
+                  zo3ccolm (i,k) = zo3ccolm (i,k) + zo3ccol (i,k)
+                  zo3colm  (i,k) = zo3colm  (i,k) + zo3col  (i,k)
+
+                  zo1chmtdm  (i,k) =  zo1chmtdm (i,k) +  zo1chmtd (i,k)
+                  zo4chmtdm  (i,k) =  zo4chmtdm (i,k) +  zo4chmtd (i,k)
+                  zo6chmtdm  (i,k) =  zo6chmtdm (i,k) +  zo6chmtd (i,k)
+                  zo7chmtdm  (i,k) =  zo7chmtdm (i,k) +  zo7chmtd (i,k)
+                  zo3chmtdm  (i,k) =  zo3chmtdm (i,k) +  zo3chmtd (i,k)
+
+                  if (lavg) then
+                     zo3avg  (i,k) = zo3avg  (i,k) * moyhri
+
+                     zo3fkcolm(i,k) = zo3fkcolm(i,k) * moyhri
+                     zo3ccolm (i,k) = zo3ccolm (i,k) * moyhri
+                     zo3colm  (i,k) = zo3colm  (i,k) * moyhri
+
+                     zo1chmtdm  (i,k) =  zo1chmtdm (i,k) * moyhri
+                     zo4chmtdm  (i,k) =  zo4chmtdm (i,k) * moyhri
+                     zo6chmtdm  (i,k) =  zo6chmtdm (i,k) * moyhri
+                     zo7chmtdm  (i,k) =  zo7chmtdm (i,k) * moyhri
+                     zo3chmtdm  (i,k) =  zo3chmtdm (i,k) * moyhri
+                  endif
+
+               end do
+            end do
+         end if IF_LINOZ
+
+         IF_LINGH: if (llingh .and. out_linoz) then
+            ! 2D
+            do i = 1, ni
+
+               zch4tcm (i) = zch4tcm (i) + zch4tc (i)
+               zn2otcm (i) = zn2otcm (i) + zn2otc (i)
+               zf11tcm (i) = zf11tcm (i) + zf11tc (i)
+               zf12tcm (i) = zf12tcm (i) + zf12tc (i)
+
+               if (lavg) then
+                  zch4tcm (i) = zch4tcm (i) * moyhri
+                  zn2otcm (i) = zn2otcm (i) * moyhri
+                  zf11tcm (i) = zf11tcm (i) * moyhri
+                  zf12tcm (i) = zf12tcm (i) * moyhri
+               end if
+
+            end do
+
+            ! 3D
+            do k = 1, nk-1
+               do i = 1, ni
+                  zch4avg (i,k) = zch4avg (i,k) + zch4lplus (i,k)
+                  zn2oavg (i,k) = zn2oavg (i,k) + zn2olplus (i,k)
+                  zf11avg (i,k) = zf11avg (i,k) + zf11lplus (i,k)
+                  zf12avg (i,k) = zf12avg (i,k) + zf12lplus (i,k)
+
+                  zch4colm (i,k) = zch4colm (i,k) + zch4col (i,k)
+                  zn2ocolm (i,k) = zn2ocolm (i,k) + zn2ocol (i,k)
+                  zf11colm (i,k) = zf11colm (i,k) + zf11col (i,k)
+                  zf12colm (i,k) = zf12colm (i,k) + zf12col (i,k)
+
+                  zch4chmtdm (i,k) = zch4chmtdm (i,k) + zch4chmtd (i,k)
+                  zn2ochmtdm (i,k) = zn2ochmtdm (i,k) + zn2ochmtd (i,k)
+                  zf11chmtdm (i,k) = zf11chmtdm (i,k) + zf11chmtd (i,k)
+                  zf12chmtdm (i,k) = zf12chmtdm (i,k) + zf12chmtd (i,k)
+
+                  if (lavg) then
+                     zch4avg (i,k) = zch4avg (i,k) * moyhri
+                     zn2oavg (i,k) = zn2oavg (i,k) * moyhri
+                     zf11avg (i,k) = zf11avg (i,k) * moyhri
+                     zf12avg (i,k) = zf12avg (i,k) * moyhri
+
+                     zch4colm (i,k) = zch4colm (i,k) * moyhri
+                     zn2ocolm (i,k) = zn2ocolm (i,k) * moyhri
+                     zf11colm (i,k) = zf11colm (i,k) * moyhri
+                     zf12colm (i,k) = zf12colm (i,k) * moyhri
+
+                     zch4chmtdm (i,k) = zch4chmtdm (i,k) * moyhri
+                     zn2ochmtdm (i,k) = zn2ochmtdm (i,k) * moyhri
+                     zf11chmtdm (i,k) = zf11chmtdm (i,k) * moyhri
+                     zf12chmtdm (i,k) = zf12chmtdm (i,k) * moyhri
+                  endif
+                  
+               end do
+            end do
+         end if IF_LINGH
 
          do k = 1, nk-1
             do i = 1, ni
@@ -1030,7 +1172,7 @@ contains
             zfcaf(:) = 0.
             zfvaf(:) = 0.
          endif
-         if (lightning_diag) then
+         if (llight) then
             zafoudre(:) = 0.
          endif
       endif IF_RESET_ACCUMULATORS
@@ -1075,7 +1217,7 @@ contains
             endif
 
             !# Accumulation of lightning threat (in number of flashes/m2)
-            if (lightning_diag) then
+            if (llight) then
                zafoudre(i) = zafoudre(i) + zfoudre(i)*dt
             endif
 

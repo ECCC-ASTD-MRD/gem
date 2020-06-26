@@ -337,8 +337,7 @@ subroutine iau_apply (F_kount)
                call rpn_comm_propagate_pilot_circular(data1,lijk(1),uijk(1),lijk(2),uijk(2), &
                                      l_ni,l_nj,uijk(3),Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
             else
-               call yyg_xchng ( data0 ,lijk(1),uijk(1),lijk(2),uijk(2),l_ni,l_nj,uijk(3), &
-                                .false., 'CUBIC', .true.)
+               call yyg_int_xch_scal ( data0, uijk(3), .false., 'CUBIC', .true.)
             end if
 
          end if

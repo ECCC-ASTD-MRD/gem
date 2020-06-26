@@ -158,7 +158,6 @@
          local_dot = 0.0d0
          do k=1,l_nk
             do j=j0,jn
-!DIR$ SIMD
                do i=i0,in
                   local_dot = local_dot + (vv(i, j, k, 1) * vv(i, j, k, 1))
                end do
@@ -238,7 +237,6 @@
             do it=1,initer
                do k=1,l_nk
                   do j=j0,jn
-!DIR$ SIMD
                      do i=i0,in
                         v_local_prod(it,1) = v_local_prod(it,1) + ( vv(i, j, k, it) * vv(i, j, k, initer) )
                         v_local_prod(it,2) = v_local_prod(it,2) + ( vv(i, j, k, it) * vv(i, j, k, nextit) )
@@ -281,7 +279,6 @@
             local_dot = 0.d0
             do k=1,l_nk
                do j=j0,jn
-!DIR$ SIMD
                   do i=i0,in
                      local_dot = local_dot + (vv(i, j, k, nextit) * vv(i, j, k, nextit))
                   end do
@@ -389,7 +386,6 @@
 
             do k=1,l_nk
                do j=j0,jn
-!DIR$ SIMD
                   do i=i0,in
                      vv(i, j, k, 1) = vv(i, j, k, 1) + t * vv(i, j, k, it)
                   end do

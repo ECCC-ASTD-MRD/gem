@@ -21,14 +21,12 @@
       use gmm_pw
       use glb_ld
       use tr3d
-      use gmm_itf_mod
+      use mem_tracers
       implicit none
 #include <arch_specific.hf>
 
-      character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical :: using_qt1
-      integer :: istat,n
-      real, pointer, contiguous, dimension(:,:,:) :: tr1
+      integer :: n
 !
 !----------------------------------------------------------------------
 !
@@ -36,40 +34,23 @@
                   ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
 
       do n= 1, Tr3d_ntr
-         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-         istat = gmm_get(tr_name, tr1)
-         call yyg_xchng (tr1, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                         G_nk, .true., 'CUBIC', .false.)
+         call yyg_int_xch_scal (tracers_P(n)%pntr, G_nk, .true., 'CUBIC', .false.)
       end do
-
-      istat = gmm_get (gmmk_wt1_s , wt1)
-      istat = gmm_get (gmmk_zdt1_s,zdt1)
-      istat = gmm_get (gmmk_st1_s , st1)
-      istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
-      istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
 
       call yyg_xchng_vec_q2q ( pw_uu_plus,pw_vv_plus, &
                                l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
-      call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,&
-                           l_ni, l_nj, G_nk, .false., 'CUBIC', .false. )
+      call yyg_int_xch_scal ( pw_tt_plus, G_nk, .false., 'CUBIC', .false. )
 
-      call yyg_xchng ( wt1 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                           G_nk, .false., 'CUBIC', .false. )
+      call yyg_int_xch_scal ( wt1 , G_nk, .false., 'CUBIC', .false. )
 
-      call yyg_xchng ( zdt1, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                           G_nk, .false., 'CUBIC', .false. )
+      call yyg_int_xch_scal ( zdt1, G_nk, .false., 'CUBIC', .false. )
 
-      call yyg_xchng ( st1 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                           1,    .false., 'CUBIC', .false. )
+      call yyg_int_xch_scal ( st1 , 1   , .false., 'CUBIC', .false. )
 
       if (using_qt1) then
-         istat = gmm_get(gmmk_qt1_s,  qt1)
-         call yyg_xchng ( qt1, l_minx,l_maxx,l_miny,l_maxy,&
-                          l_ni,l_nj, G_nk+1, .false., 'CUBIC', .false. )
+         call yyg_int_xch_scal ( qt1, G_nk+1, .false., 'CUBIC', .false. )
       end if
-
 !
 !----------------------------------------------------------------------
 !

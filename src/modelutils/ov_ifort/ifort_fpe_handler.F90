@@ -3,7 +3,7 @@
 
 subroutine fpe_setup()
 
-#ifdef WITH_intel
+#ifdef __INTEL_COMPILER
 
    use ifport
    implicit none
@@ -30,7 +30,7 @@ end subroutine fpe_setup
 
 
 subroutine fpe_handler(sig, code)
-#ifdef WITH_intel
+#ifdef __INTEL_COMPILER
    use ifcore
    use ifport
 #endif
@@ -38,7 +38,7 @@ subroutine fpe_handler(sig, code)
    integer :: sig, code
    character(len=128) :: msg_s
 
-#ifdef WITH_intel
+#ifdef __INTEL_COMPILER
 
    if (code == FPE$INVALID .or. code == FPE$ZERODIVIDE .or. code == FPE$OVERFLOW) then
       call msg_buffer_flush()
@@ -54,7 +54,8 @@ subroutine fpe_handler(sig, code)
 #else
 
    call msg(MSG_WARNING,'(fpe_handler) Not yet available')
-   print *,'ERROR: fpe_handler called with: sig=', sig,', code=', code
+   write(msg_s,*) 'called with: sig=', sig,', code=', code
+   call msg(MSG_WARNING,'(fpe_handler) '//msg_s)
    call flush(6)
 
 #endif

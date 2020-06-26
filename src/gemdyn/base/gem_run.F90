@@ -21,7 +21,6 @@
       use dcmip_options
       use dynkernel_options
       use glb_ld
-      use gmm_itf_mod
       use gmm_vt1
       use HORgrid_options
       use init_options
@@ -43,9 +42,8 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character(len=16) :: datev
-      integer :: stepf,last_step, seconds_since, istat
+      integer :: stepf,last_step, seconds_since, err
       real(kind=REAL64) :: dayfrac
-
       real(kind=REAL64), parameter :: sec_in_day = 86400.0d0
 !
 !     ---------------------------------------------------------------
@@ -84,6 +82,8 @@
          seconds_since = model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
+         call rpn_comm_barrier ("GRID", err)
+         call time_trace_step(gem_time_trace, Step_kount)
 
          if (Lun_out > 0) then
 
@@ -102,8 +102,6 @@
 
          call out_outdir()
 
-         call pw_shuffle()
-
          call dynstep()
 
          call out_dyn (.false., .true.) ! casc output
@@ -121,11 +119,10 @@
          end if
 
          if ( Ctrl_phyms_L.or.Dcmip_physics_L ) then
-            istat = gmm_get (gmmk_tt1_s, tt1)
             call tt2virt (tt1, .true., &
             l_minx,l_maxx,l_miny,l_maxy, G_nk)
             call itf_phy_UVupdate()
-            call pw_update_GPW()
+            call pw_update_GW()
          end if
 
          if ( Init_mode_L ) call digflt ! digital filter

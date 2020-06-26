@@ -13,12 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine pe_all_topo()
+!**s/r pe_all_topo - Complete MPI initialization steps
+
+      subroutine pe_all_topo()
       use iso_c_binding
       use clib_itf_mod
       use ctrl
-      use gem_timing
+      use HORgrid_options
       use lun
+      use gem_timing
       use path
       use ptopo
       use rstr
@@ -29,118 +32,126 @@ subroutine pe_all_topo()
 
       include "rpn_comm.inc"
 
-      integer, parameter :: BUFSIZE = 10000
-      integer, external :: fnom, wkoffit, OMP_get_max_threads
+      integer, parameter :: BUFSIZE=10000
+      integer, external :: fnom, wkoffit
 
       character(len=3)   :: mycol_S, myrow_S
       character(len=1024):: fn, scratch_dir
-      integer :: err, unf
-      integer, dimension(2) :: bcast_ptopo
+      integer :: nc, err, unf
       integer, dimension(BUFSIZE) :: bufnml, bufoutcfg, bufinphycfg
-
-      integer, external :: mkstemp
-
+      integer, dimension(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey) :: colrow
+      interface
+         function mkstemp (template) result(fd) BIND(c,name='mkstemp')
+         import :: C_CHAR, C_INT
+         character(C_CHAR), dimension (*), intent(IN) :: template
+         integer(C_INT) :: fd
+         end function mkstemp
+      end interface
+!
 !-------------------------------------------------------------------
-
-      lun_out     = -1
-      Lun_debug_L = .false.
-      if (Ptopo_myproc == 0) lun_out = output_unit
-
+!
       call gemtime ( Lun_out, 'STARTING GEMDM', .false. )
       call gemtime_start ( 2, 'INIT_GEM', 1)
 
-      ! Broadcasts processor topology
-      bcast_ptopo(1) = Ptopo_nthreads_dyn
-      bcast_ptopo(2) = Ptopo_nthreads_phy
-
-      call RPN_COMM_bcast (bcast_ptopo, 2, "MPI_INTEGER",0,"grid",err)
-
-      Ptopo_nthreads_dyn = bcast_ptopo(1)
-      Ptopo_nthreads_phy = bcast_ptopo(2)
-
-      Ptopo_npeOpenMP = OMP_get_max_threads()
-
-      if (Ptopo_nthreads_dyn < 1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
-      if (Ptopo_nthreads_phy < 1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
-
-      if (Lun_out > 0) then
-         write (Lun_out, 8255) Ptopo_npex, Ptopo_npey, &
-             Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
-         write (Lun_out, 8256) trim(Path_work_S)
-      end if
-
-      err = rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
-
-      ! Initializes OpenMP
-      call set_num_threads ( Ptopo_nthreads_dyn, 0 )
-
-      ! Local copies of model_settings.nml, output_settings and
-      ! physics_input_table in scratch_dir/
-      Path_nml_S    = trim(Path_work_S) // '/model_settings.nml'
-      Path_outcfg_S = trim(Path_work_S) // '/output_settings'
-      Path_phyincfg_S = trim(Path_input_S) // '/physics_input_table'
+      colrow = 0
+      colrow(Ptopo_couleur,Ptopo_mycol,Ptopo_myrow) = Ptopo_world_myproc
+      allocate (Ptopo_colrow(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey))
+      nc= Ptopo_ncolors*(Ptopo_npex+2)*(Ptopo_npey+2)
+      call rpn_comm_ALLREDUCE (colrow,Ptopo_colrow,nc,&
+                               "MPI_INTEGER", "MPI_BOR",'MULTIGRID',err)
+      if (Grd_yinyang_L) then
+         Ptopo_colrow(:,-1        ,:) = -1
+         Ptopo_colrow(:,Ptopo_npex,:) = -1
+         Ptopo_colrow(:,:,        -1) = -1
+         Ptopo_colrow(:,:,Ptopo_npey) = -1
+      else
+         Ptopo_colrow(0,-1        ,:) = Ptopo_colrow(0,0           ,:)
+         Ptopo_colrow(0,Ptopo_npex,:) = Ptopo_colrow(0,Ptopo_npex-1,:)
+         Ptopo_colrow(0,:,        -1) = Ptopo_colrow(0,:,0           )
+         Ptopo_colrow(0,:,Ptopo_npey) = Ptopo_colrow(0,:,Ptopo_npey-1)
+      endif
+! 4x4 LAM
+!            8           8           9          10          11          11
+!            8           8           9          10          11          11
+!            4           4           5           6           7           7
+!            0           0           1           2           3           3
+!            0           0           1           2           3           3
+! 4x4 GY
+!           -1          -1          -1          -1          -1          -1
+!           -1           8           9          10          11          -1
+!           -1           4           5           6           7          -1
+!           -1           0           1           2           3          -1
+!           -1          -1          -1          -1          -1          -1
+!
+! Local copies of model_settings.nml, output_settings and
+! physics_input_table in scratch_dir/
+!
+      Path_nml_S    = trim(Path_work_S)//'/model_settings.nml'
+      Path_outcfg_S = trim(Path_work_S)//'/output_settings'
+      Path_phyincfg_S = trim(Path_input_S)//'/physics_input_table'
 
       if (Ptopo_myproc == 0) then
-         call array_from_file(bufnml, size(bufnml), Path_nml_S)
-         call array_from_file(bufoutcfg, size(bufoutcfg), Path_outcfg_S)
-         call array_from_file(bufinphycfg, size(bufinphycfg), Path_phyincfg_S)
+         call array_from_file(bufnml,size(bufnml),Path_nml_S)
+         call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
+         call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
       end if
 
-      call RPN_COMM_bcast(bufnml, size(bufnml), "MPI_INTEGER", 0, &
-                                                 "grid", err )
-      call RPN_COMM_bcast(bufoutcfg, size(bufoutcfg), "MPI_INTEGER", 0, &
-                                                 "grid", err )
-      call RPN_COMM_bcast(bufinphycfg, size(bufinphycfg) ,"MPI_INTEGER", 0, &
-                                                 "grid", err )
-      if (clib_getenv ('GEM_scratch_dir', scratch_dir) < 0) then
-         scratch_dir = '/tmp'
-      end if
+      call RPN_COMM_bcast(bufnml,size(bufnml),"MPI_INTEGER"          ,0,&
+                                                 "grid",err )
+      call RPN_COMM_bcast(bufoutcfg,size(bufoutcfg),"MPI_INTEGER"    ,0,&
+                                                 "grid",err )
+      call RPN_COMM_bcast(bufinphycfg,size(bufinphycfg),"MPI_INTEGER",0,&
+                                                 "grid",err )
+      if (clib_getenv ('GEM_scratch_dir',scratch_dir) < 0) &
+                                         scratch_dir='/tmp'
 
-      Path_nml_S      = trim(scratch_dir) // '/model_settings_' // &
-                        'XXXXXX' // C_NULL_CHAR
-      err = mkstemp(Path_nml_S)
-      call array_to_file(bufnml, size(bufnml), trim(Path_nml_S))
+      Path_nml_S      = trim(scratch_dir)//'/model_settings_'&
+                        //'XXXXXX'//C_NULL_CHAR
 
-      Path_outcfg_S   = trim(scratch_dir) // '/output_settings_' // &
-                        'XXXXXX' // C_NULL_CHAR
+      Path_outcfg_S   = trim(scratch_dir)//'/output_settings_'&
+                        //'XXXXXX'//C_NULL_CHAR
+
+      Path_phyincfg_S = trim(scratch_dir)//'/physics_input_table_'&
+                        //'XXXXXX'//C_NULL_CHAR
+
+      err = mkstemp(path_nml_s)
       err = mkstemp(Path_outcfg_S)
-      call array_to_file (bufoutcfg, size(bufoutcfg), trim(Path_outcfg_S))
-
-      Path_phyincfg_S = trim(scratch_dir) // '/physics_input_table_' // &
-                        'XXXXXX' // C_NULL_CHAR
       err = mkstemp(Path_phyincfg_S)
-      call array_to_file (bufinphycfg, size(bufinphycfg), trim(Path_phyincfg_S))
 
-      ! Changing directory to local Ptopo_mycol_Ptopo_myrow
-      write(mycol_S, 10) Ptopo_mycol
-      write(myrow_S, 10) Ptopo_myrow
+      call array_to_file (bufnml,size(bufnml),trim(Path_nml_S))
+      call array_to_file (bufoutcfg,size(bufoutcfg),trim(Path_outcfg_S))
+      call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
+
+! Changing directory to local Ptopo_mycol_Ptopo_myrow
+
+      write(mycol_S,10) Ptopo_mycol
+      write(myrow_S,10) Ptopo_myrow
 10    format(i3.3)
 
-      if (Ptopo_myproc == 0) then
-         call mkdir_gem ('./', Ptopo_npex, Ptopo_npey)
-      end if
-
+      if (Ptopo_myproc == 0) call mkdir_gem ('./',Ptopo_npex,Ptopo_npey)
       call rpn_comm_barrier("grid", err)
 
-      err = clib_chdir(mycol_S // '-' // myrow_S)
-
-      Lun_rstrt = 0
-      Rstri_rstn_L = .false.
-      Step_kount = 0
+      err= clib_chdir(mycol_S//'-'//myrow_S)
+!
+! Determine restart mode and read restart files
+!
+      Lun_rstrt = 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
       err = wkoffit('gem_restart')
       if (err >= -1) then
-         err= fnom( Lun_rstrt, 'gem_restart', 'SEQ+UNF+OLD', 0 )
+         err= fnom( Lun_rstrt,'gem_restart','SEQ+UNF+OLD',0 )
          if (err >= 0) then
            Rstri_rstn_L = .true.
-           if (lun_out > 0) write (lun_out, 1001)
+           if (lun_out > 0) write (lun_out,1001)
+ 1001 format (/' RESTART DETECTED'/)
            call rdrstrt
          end if
       end if
-
-      ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
-      unf = 0
+!
+! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
+!
+      unf=0
       Ctrl_theoc_L = .false.
-      fn = trim(Path_work_S) // '/theoc'
+      fn=trim(Path_work_S)//'/theoc'
       if (wkoffit(fn) > -3) then
          if (Ptopo_myproc == 0) write (Lun_out,*) &
                                 'Assume Theoretical case'
@@ -148,16 +159,13 @@ subroutine pe_all_topo()
       else
          call fclos (unf)
       end if
+!
+!-------------------------------------------------------------------
+!
+      return
+      end
 
- 1001 format (/' RESTART DETECTED'/)
- 8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
-          " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
-            i4,' x ',i3,' x ',i3)
- 8256 format (/," WORKING DIRECTORY:"/a/)
-end subroutine pe_all_topo
-
-
-subroutine mkdir_gem (F_path_S, F_npex, F_npey)
+      subroutine mkdir_gem (F_path_S,F_npex,F_npey)
       use lun
       use path
       use clib_itf_mod
@@ -165,28 +173,27 @@ subroutine mkdir_gem (F_path_S, F_npex, F_npey)
       implicit none
 
       character(len=*), intent(in) :: F_path_S
-      integer, intent(in) :: F_npex, F_npey
+      integer      , intent(in) :: F_npex,F_npey
 
-      character(len = 2048) ici
-      integer :: i, j, ret, err
+      character(len=2048) ici
+      integer :: i,j,ret,err
       integer :: mk_gem_dir
 
       err= clib_getcwd(ici)
       err= clib_chdir(trim(F_path_S))
 
-      do j = 0, F_npey - 1
-         do i = 0, F_npex - 1
-            ret = mk_gem_dir(i, j)
+      do j=0,F_npey-1
+         do i=0,F_npex-1
+            ret = mk_gem_dir(i,j)
          end do
       end do
 
-      err = clib_chdir(ici)
+      err= clib_chdir(ici)
 
       return
-end subroutine mkdir_gem
+      end
 
-
-integer function mk_gem_dir(x, y)
+      integer function mk_gem_dir(x,y)
       use ISO_C_BINDING
       use lun
       use path
@@ -198,7 +205,7 @@ integer function mk_gem_dir(x, y)
       character (len=1), dimension(8), target :: temp
 
       interface
-         integer(C_INT) function mkdir(path, mode) bind(C, name = 'mkdir')
+         integer(C_INT) function mkdir(path,mode) bind(C,name='mkdir')
             use ISO_C_BINDING
             type(C_PTR), value :: path
             integer(C_INT), value :: mode
@@ -208,8 +215,8 @@ integer function mk_gem_dir(x, y)
       write(filename,100)x,'-',y
 100   format(I3.3,A1,I3.3)
 
-      temp = transfer( trim(filename) // achar(0) , temp )
-      mk_gem_dir = mkdir(C_LOC(temp), 511)
+      temp = transfer( trim(filename)//achar(0) , temp )
+      mk_gem_dir = mkdir(C_LOC(temp),511)
 
       return
-end function mk_gem_dir
+      end function mk_gem_dir

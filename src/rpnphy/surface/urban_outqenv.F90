@@ -32,9 +32,7 @@ SUBROUTINE URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, PREF_SW_ROOF,  &
 !
 !*       0.     DECLARATIONS
 !               ------------
-!
 USE MODD_CSTS, ONLY : XPI
-!
 !
 implicit none
 !!!#include <arch_specific.hf>
@@ -86,15 +84,8 @@ REAL, DIMENSION(SIZE(PDIR_SW)) :: ZFROOF! roof view factor of human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZFSKY !sky view factor of human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZDIRSWBODY !solar radiation received by human body
 REAL, DIMENSION(SIZE(PDIR_SW)) :: ZELEV !solar elevation angle
-!!$REAL, DIMENSION(SIZE(PDIR_SW)) :: ZRADBODY !total radiation received by human body
-!!$INTEGER :: JJ
-!REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-!IF (LHOOK) CALL DR_HOOK('TRAD_BODY',0,ZHOOK_HANDLE)
-!
-! DO JJ = 1, SIZE(PBLD_HEIGHT) 
   !
-  !*  1 - calculation of view factors
+!*  1 - calculation of view factors
 ZFFAC(:) =  0.
 ZFGRND(:) = 0.
 ZFROOF(:) = 0.
@@ -103,8 +94,8 @@ ZFSKY(:) = 0.
 !=====================
  IF (OPT .eq. 1) THEN    ! flat surface
 !======================
-    ZFGRND(:) = 0.5 
-    ZFSKY(:) = 1.0 - ZFGRND(:)
+ZFGRND(:) = 0.5 
+ZFSKY(:) = 1.0 - ZFGRND(:)
 ! sky
 PQ2(:)=ZAB*PSCA_SW(:)*ZFSKY(:)
 PQ3(:)=ZEB*PLW_RAD(:)*ZFSKY(:)
@@ -115,18 +106,16 @@ PQ5(:)=ZEB*PEMIT_LW_GRND(:)*ZFGRND(:)
 !======================
   ELSEIF (OPT .eq. 2) THEN  ! street
 !=======================
-
   ZWROAD(:) = PBLD_HEIGHT(:) * 2. * (1. - PBLD(:)) / PWALL_O_HOR(:)
-  !
+!
   ZL1(:) = SQRT(ZHB**2                  + (ZWROAD(:)/2.)**2)
   ZL2(:) = SQRT( PBLD_HEIGHT(:)**2      + (ZWROAD(:)/2.)**2)
   ZL4(:) = SQRT((PBLD_HEIGHT(:)-ZHB)**2 + (ZWROAD(:)/2.)**2)
-  !
+!
 ! wall view factor
   ZFFAC (:) = (ZL1(:) + ZL2(:) - ZWROAD(:)/2. - ZL4(:)) / (2. * ZHB)
 ! ground view factor
   ZFGRND(:) = 0.5*ZWROAD(:)/ZHB
-!  ZFGRND(:) = 0.5 * (ZFGRND(:) + 1. - SQRT(ZFGRND(:))**2 + 1.) 
   ZFGRND(:) = 0.5 * (ZFGRND(:) + 1. - SQRT(ZFGRND(:)**2 + 1.) ) 
 ! sky view factor 
   ZFSKY (:) = 1. - ZFFAC(:) - ZFGRND(:)
@@ -144,7 +133,6 @@ PQ7(:)=ZEB*PEMIT_LW_FAC(:)*ZFFAC(:)
 !========================
   ELSEIF (OPT .eq. 3) THEN   ! rooftop
 !========================
- 
   ZWROAD(:) = PBLD_HEIGHT(:) * 2. * (1. - PBLD(:)) / PWALL_O_HOR(:)
   ZWROOF(:) = PBLD_HEIGHT(:) * 2. * PBLD(:) / PWALL_O_HOR(:)
 !
@@ -175,7 +163,7 @@ PQ7(:)=ZEB*PEMIT_LW_FAC(:)*ZFFAC(:)
  WHERE (zz(:) > 0.0999) ZFFAC(:)  = ( ZL1(:) + ZL2(:) - ZL3(:) - ZL4(:) ) / (2. * ZZ(:))
 !                                                                                      
 ! sky view factor  (can be a slighty different from 0.5)
-   ZFSKY(:)  = 1.0 - ZFROOF(:) - ZFFAC(:) - ZFGRND(:)
+ZFSKY(:)  = 1.0 - ZFROOF(:) - ZFFAC(:) - ZFGRND(:)
 
 ! roof
 PQ8(:)=ZAB*PREF_SW_ROOF(:)*ZFROOF(:) 
@@ -195,12 +183,8 @@ PQ13(:)=ZEB*PEMIT_LW_FAC(:)*ZFFAC(:)
 ! OPT_BODY = 1  human body, for UTCI
 ! OPT_BODY = 2  globse sensor, for WBGT
 !======================================
-!IF (PRESENT(PDIR_SW) .AND. PRESENT(PZENITH)) THEN
-!WHERE(PDIR_SW(:) .ge. 0.0 .AND. PZENITH(:))) THEN
-
  ZELEV(:) = ( XPI/2. - PZENITH(:)) *180./XPI
  WHERE (ZELEV(:) < 1E-6) ZELEV(:) = 0.
-!WHERE (PDIR_SW(:) < 0) PDIR_SW(:) = 0.
 
  IF (OPT_BODY .eq. 1) THEN 
 ! the direct solar radiation is weighted by a projected area factor which can be expressed by this equation
@@ -208,8 +192,6 @@ PQ13(:)=ZEB*PEMIT_LW_FAC(:)*ZFFAC(:)
  ZDIRSWBODY(:) = PDIR_SW(:) / MAX( COS(PZENITH(:)) ,0.1)              &
                  * 0.308 * COS( xPI/180. *ZELEV(:)* (1.-ZELEV(:)**2/48402.) )
  ELSEIF (OPT_BODY .eq. 2) THEN
-! sphere Oashi et al 2014
-!     ZDIRSWBODY(:) = PDIR_SW(:) * 0.25
 ! sphere Gaspar and Quintela 2009                      
       ZDIRSWBODY(:) = PDIR_SW(:) * 0.25 /  MAX( COS(PZENITH(:)) ,0.1) 
  ENDIF

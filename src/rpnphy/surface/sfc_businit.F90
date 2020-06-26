@@ -81,7 +81,7 @@ subroutine sfc_businit(moyhr,ni,nk)
         qdiagtypv, tdiagtypv, udiagtypv, vdiagtypv, tddiagtyp, tddiagtypv
    character(len=2) :: nm, nagg, nrow
    !--------   FOR SVS -----------------
-   character(len=2) :: ngl, nglp1, nstel, nstpl, iemib, iicel
+   character(len=2) :: ngl, nglp1, nstel, nstpl, iemib, iicel, izp
    integer :: accevap,acroot, algr, alvl , alvh, avg_gwsol, clayen, co2i1, cvh, cvl, d50, d95, &
         deciduous, draindens, eg, emis, emisgr, emistg, emistgen, emisvh, emisvl, &
         er, etr, evergreen, &
@@ -132,6 +132,10 @@ subroutine sfc_businit(moyhr,ni,nk)
    iicel = '0'
    if (icelac) iicel = '1'
 
+   !# ZP is only a required input if .not.z0veg_only
+   izp = '1'
+   if (z0veg_only) izp = '0'
+   
    !#TODO: check if schmsol conditional
    PHYVAR2D1(cgsat,        'VN=cgsat        ;ON=6I  ;VD=thermal coef. at saturation                                          ;VB=p0')
    PHYVAR2D1(dsst,         'VN=dsst         ;ON=DSST;VD=warm layer diurnal SST increment                                     ;VB=p0')
@@ -180,11 +184,7 @@ subroutine sfc_businit(moyhr,ni,nk)
 
    PHYVAR2D1(z0veg,        'VN=z0veg        ;ON=ZVG2;VD=vegetation roughness length                                          ;VB=p1;MIN=0')
    PHYVAR2D1(z0tveg,       'VN=z0tveg       ;ON=ZVGT;VD=thermodynamic vegetation roughness length                            ;VB=p0;MIN=0')
-   if (z0veg_only) then
-      PHYVAR2D1(z0en,         'VN=z0en         ;ON=2B  ;VD=roughness length (E; vegetation only)                             ;VB=e1; IN=ZVG2; MIN=0')
-   else
-      PHYVAR2D1(z0en,         'VN=z0en         ;ON=2B  ;VD=roughness length (E)                                              ;VB=e1; IN=ZP')
-   endif
+   PHYVAR2D1(z0en,         'VN=z0en         ;ON=2B  ;VD=roughness length (E)                                              ;VB=e'//izp//'; IN=ZP')
 
    if (moyhr > 0) &
         PHYVAR2D1(insmavg,   'VN=insmavg      ;ON=IMAV;VD=integrated soil moist avg over last moyhr hrs                      ;VB=p0        ;MIN=0')

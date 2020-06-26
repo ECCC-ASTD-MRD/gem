@@ -21,6 +21,7 @@
       use gem_options
       use glb_ld
       use tr3d
+      use mem_tracers
       use gmm_itf_mod
       implicit none
 
@@ -71,16 +72,12 @@
       end do
 
       do i=1,Tr3d_ntr
-         nullify(wk3d)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',wk3d)
-         call glbstat (wk3d,trim(Tr3d_name_S(i))//':M', name_S,&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
-                        1,G_ni,1,G_nj,1, G_nk)
-         nullify(wk3d)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',wk3d)
-         call glbstat (wk3d,trim(Tr3d_name_S(i))//':P', name_S,&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
-                        1,G_ni,1,G_nj,1, G_nk)
+         call glbstat (tracers_M(i)%pntr,trim(Tr3d_name_S(i))//':M',&
+                       name_S, l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
+                       1,G_ni,1,G_nj,1, G_nk)
+         call glbstat (tracers_P(i)%pntr,trim(Tr3d_name_S(i))//':P',&
+                       name_S, l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
+                       1,G_ni,1,G_nj,1, G_nk)
       end do
 !     ________________________________________________________________
 !

@@ -102,7 +102,7 @@ subroutine ccc2_lwtragh4 (fu, fd, slwf, tauci, omci, &
    !----------------------------------------------------------------------
 
    integer i, k, km1, km2, kp1
-   real ru, ubeta, epsd, epsu, taul2, cow
+   real ubeta, epsd, epsu, taul2, cow
    real ctaul2, crtaul2
    real taul1(ilg,lay), rtaul1(ilg,lay)
    real xu(ilg,2,lay), xd(ilg,2,lay), dtr(ilg,2,lay), fy(ilg,2,lev), &
@@ -110,7 +110,7 @@ subroutine ccc2_lwtragh4 (fu, fd, slwf, tauci, omci, &
    real(REAL64) :: dtr_vs(ilg,lay)
    real embs, abse0
 
-   data  ru / 1.6487213 /
+   real, parameter :: RU = 1.6487213
 
    !----------------------------------------------------------------------
    !     initialization for first layer. calculate the downward flux in
@@ -128,11 +128,9 @@ subroutine ccc2_lwtragh4 (fu, fd, slwf, tauci, omci, &
       do i = il1, il2
          taul1(i,km1)    =  taual(i,km1) + taug(i,km1)
          rtaul1(i,km1)   =  taul1(i,km1) * ru
-         dtr_vs(i,km1)   =  - rtaul1(i,km1)
+         dtr_vs(i,km1)   =  exp(dble(-rtaul1(i,km1)))
       enddo
    enddo
-
-   call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
 
    DO100: do i = il1, il2
       fd(i,1,1)         =  slwf(i)

@@ -20,9 +20,10 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    use apply_rad_tendencies, only: apply_rad_tendencies1
    use calcdiag, only: calcdiag1
    use diagnosurf, only: diagnosurf5
-   use ens_ptp, only: ens_ptp2
+   use ens_perturb, only: ens_ptp_apply
    use extdiag, only: extdiag3
    use gwd, only: gwd9
+   use linoz, only: linoz3
    use metox, only: metox3
    use phy_status, only: phy_error_L
    use phy_options
@@ -35,6 +36,7 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    use surface, only: surface1
    use tendency, only: tendency5
    use turbulence, only: turbulence2
+   use lhn_mod, only: lhn2
    implicit none
 !!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
@@ -100,6 +102,9 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
       call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
       if (phy_error_L) return
 
+      call linoz3(d, v, f, dsiz, vsiz, fsiz, delt, kount, trnch, ni, nkm1, nk)
+      if (phy_error_L) return
+
       call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
 
@@ -115,6 +120,9 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
       if (phy_error_L) return
 
       call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      if (phy_error_L) return
+
+      call linoz3(d, v, f, dsiz, vsiz, fsiz, delt, kount, trnch, ni, nkm1, nk)
       if (phy_error_L) return
 
       call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
@@ -138,7 +146,10 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
         1./delt, vsiz, dsiz, kount, ni, nk)
    if (phy_error_L) return
 
-   call ens_ptp2(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
+   call lhn2(d, f, v, dsiz, fsiz, vsiz, delt, ni, nk, kount)
+   if (phy_error_L) return
+
+   call ens_ptp_apply(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
    if (phy_error_L) return
 
    call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, kount, ni, nk)
