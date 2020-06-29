@@ -32,7 +32,7 @@ See below for extended instructions.  Further details are can be found in
 ## Requirements
 
 To compile and run GEM, you will need:
-- Fortran and C compilers,
+- Fortran and C compilers, (If using GNU compilers, only versions up to 9.2 will work)
 - An MPI implementation such as OpenMPI (with development package),
 - OpenMP support (optional)
 - BLAS library (with development package),
