@@ -143,8 +143,9 @@ message(STATUS "WORK_PREFIX=${WORK_PREFIX}")
 dir_writable(${WORK_PREFIX} TRUE)
 set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
 add_custom_target(work
-    cp -av ${ROOT}/scripts/* ${WORK_DIR}
-    COMMAND /bin/cp -av ${ROOT}/doc/README.run ${WORK_DIR}
+    /bin/mkdir -p ${WORK_DIR}
+    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
+    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
     DEPENDS
         cclargs_lite
