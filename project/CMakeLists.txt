@@ -115,32 +115,37 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(${ROOT}/src build/src)
 
+if (! CMAKE_INSTALL_PREFIX)
+    message(WARNING "CMAKE_INSTALL_PREFIX is not defined! Defaulting to ${ROOT}/work")
+    set(CMAKE_INSTALL_PREFIX ${ROOT}/work)
+endif()
+
 install(
    DIRECTORY ${ROOT}/scripts/scripts
-   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
    USE_SOURCE_PERMISSIONS
 )
 install(
    FILES ${ROOT}/scripts/runprep
-   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 install(
    FILES ${ROOT}/scripts/runmod
-   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 install(
    FILES ${ROOT}/scripts/mybatchjob.pbs
-      DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+      DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
       PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
 install(
    FILES ${ROOT}/doc/README.run
-   DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}
+   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
 install(
    CODE "execute_process(COMMAND
-      /bin/ln -sf ${ROOT}/configurations ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION} ) "
+      /bin/ln -sf ${ROOT}/configurations work-${OS}-${COMPILER}-${COMP_VERSION} ) "
 )
