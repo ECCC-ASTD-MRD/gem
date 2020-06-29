@@ -115,7 +115,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(${ROOT}/src build/src)
 
-if (! CMAKE_INSTALL_PREFIX)
+if (NOT CMAKE_INSTALL_PREFIX)
     message(WARNING "CMAKE_INSTALL_PREFIX is not defined! Defaulting to ${ROOT}/work")
     set(CMAKE_INSTALL_PREFIX ${ROOT}/work)
 endif()
