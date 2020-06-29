@@ -115,9 +115,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(${ROOT}/src build/src)
 
-if (NOT CMAKE_INSTALL_PREFIX)
-    message(WARNING "CMAKE_INSTALL_PREFIX is not defined! Defaulting to ${ROOT}/work")
-    set(CMAKE_INSTALL_PREFIX ${ROOT}/work)
+if (${CMAKE_INSTALL_PREFIX} STREQUAL "/usr/local")
+    message(WARNING "CMAKE_INSTALL_PREFIX is set to /usr/local.  This might not be what you want.  Consider adding -DCMAKE_INSTALL_PREFIX=<some_writable_path> to your cmake command line.")
 endif()
 
 install(
