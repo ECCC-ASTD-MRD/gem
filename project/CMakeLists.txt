@@ -115,36 +115,40 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(${ROOT}/src build/src)
 
-if (${CMAKE_INSTALL_PREFIX} STREQUAL "/usr/local")
-    message(WARNING "CMAKE_INSTALL_PREFIX is set to /usr/local.  This might not be what you want.  Consider adding -DCMAKE_INSTALL_PREFIX=<some_writable_path> to your cmake command line.")
-endif()
 
-install(
-   DIRECTORY ${ROOT}/scripts/scripts
-   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
-   USE_SOURCE_PERMISSIONS
+# TODO: Move this to cmake_shared
+function(dir_writable DIR_PATH REQUIRED)
+    # Check that the path given in DIR_PATH is writable.  If DIR_PATH does not
+    # exist, it checks if it can be created.
+    # The result is returned in the DIR_WRITABLE variable in the calling scope
+    # If REQUIRED is specified, dir_writable will throw a FATAL_ERROR
+
+    execute_process(COMMAND test -e ${DIR_PATH} RESULT_VARIABLE INSTALL_PREFIX_NOT_EXISTS)
+    if (INSTALL_PREFIX_NOT_EXISTS)
+        execute_process(COMMAND dirname ${DIR_PATH} OUTPUT_VARIABLE TEST_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    else()
+        set(TEST_DIR ${DIR_PATH})
+    endif()
+
+    execute_process(COMMAND test -w ${TEST_DIR} RESULT_VARIABLE DIR_NOT_WRITABLE)
+    if (REQUIRED AND DIR_NOT_WRITABLE EQUAL 1)
+        message(FATAL_ERROR "${DIR_PATH} is not writable!")
+    endif()
+    set(DIR_WRITABLE PARENT_SCOPE NOT DIR_NOT_WRITABLE)
+endfunction()
+# END TODO: Move this to cmake_shared
+
+set(WORK_PREFIX ${ROOT}/work CACHE FILEPATH "Execution environment directory")
+message(STATUS "WORK_PREFIX=${WORK_PREFIX}")
+dir_writable(${WORK_PREFIX} TRUE)
+set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
+add_custom_target(work
+    cp -av ${ROOT}/scripts/* ${WORK_DIR}
+    COMMAND /bin/cp -av ${ROOT}/doc/README.run ${WORK_DIR}
+    COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
+    DEPENDS maingemgrid maingemdm
 )
-install(
-   FILES ${ROOT}/scripts/runprep
-   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
-   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-)
-install(
-   FILES ${ROOT}/scripts/runmod
-   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
-   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-)
-install(
-   FILES ${ROOT}/scripts/mybatchjob.pbs
-      DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
-      PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-)
-install(
-   FILES ${ROOT}/doc/README.run
-   DESTINATION work-${OS}-${COMPILER}-${COMP_VERSION}
-   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-)
-install(
-   CODE "execute_process(COMMAND
-      /bin/ln -sf ${ROOT}/configurations work-${OS}-${COMPILER}-${COMP_VERSION} ) "
-)
+
+# TODO: Make the actual installation in CMAKE_INSTALL_PREFIX
+    # message(STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
+    # dir_writable(CMAKE_INSTALL_PREFIX TRUE)
