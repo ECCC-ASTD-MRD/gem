@@ -146,7 +146,18 @@ add_custom_target(work
     cp -av ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -av ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    DEPENDS maingemgrid maingemdm
+    DEPENDS
+        cclargs_lite
+        editfst
+        flipit
+        fstcomp
+        fststat
+        maingemdm
+        maingemgrid
+        mainyy2global
+        pgsm
+        r.fstinfo
+        voir
 )
 
 # TODO: Make the actual installation in CMAKE_INSTALL_PREFIX
