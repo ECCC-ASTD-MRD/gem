@@ -134,13 +134,16 @@ while [ $DOM -le $DOMAIN_end ] ; do
       exit 1
     fi
   fi
+  
+  # Is this required?  What uses it?
+  export CCARD_ARGS="-dom_start ${DOM} -dom_end ${last_domain} -dom_last ${DOMAIN_end} -npex ${npex} -npey ${npey} -ngrids ${ngrids} -smtdyn $smtdyn -smtphy $smtphy -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
+
   export GEM_NDOMAINS=$loop_cfg
 
   domain_number=$DOM
-  file2watch=${TASK_BASEDIR}/output/cfg_${domain_number}/output_ready
   mkdir -p ${TASK_WORK}/post_process_output_cfg_${domain_number}
 
-  # Run main program wrapper
+# Run main program wrapper
   set +ex
 
   printf "\n LAUNCHING Um_model.sh for domain: cfg_${domain_number} $(date)\n\n"

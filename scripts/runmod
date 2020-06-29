@@ -47,9 +47,9 @@ if [ $restart -gt 0 ] ; then
    then
        ulimit -s 65532
    else
-       ulimit -s unlimited
+       ulimit -s unlimited || true
    fi
-   Um_runmod.sh -ptopo ${ptopo} -debug ${debug} $*
+   runmod.sh -ptopo ${ptopo} -debug ${debug} $*
    exit 0
 fi
 
@@ -74,9 +74,11 @@ esac
 [ -e ${DIRCFG_PATH}/${dname}/outcfg.out ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
 [ -e ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC physics_input_table
 
+[ -e $GEM_phy_intable ] && ln -s $GEM_phy_intable physics_input_table
 [ -e $GEM_climato ] && ln -s $GEM_climato CLIMATO
 [ -e $GEM_geophy ] && ln -s $GEM_geophy GEOPHY
-[ -e ${default_DIR_ATM}/datafiles/modeldata ] && ln -s ${default_DIR_ATM}/datafiles/modeldata MODEL_INPUT
+[ -e $GEM_iaurep ] && ln -s $GEM_iaurep IAUREP
+[ -e $GEM_input ] && ln -s $GEM_input MODEL_INPUT
 
 [ -e $GEM_ozone ] && ln -s $GEM_ozone ozone_clim.fst
 [ -e $GEM_radtab ] && ln -s $GEM_radtab rad_table.fst
@@ -92,9 +94,9 @@ if [ `uname` = "Darwin" ]
 then
     ulimit -s 65532
 else
-    ulimit -s unlimited
+    ulimit -s unlimited || true
 fi
-Um_runmod.sh -ptopo ${ptopo} -debug ${debug} $*
+runmod.sh -ptopo ${ptopo} -debug ${debug}$*
 
 if [[ -n ${xfer} ]]; then
     mkdir -p ${xfer}
