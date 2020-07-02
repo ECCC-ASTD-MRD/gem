@@ -74,7 +74,6 @@ esac
 [ -e ${DIRCFG_PATH}/${dname}/outcfg.out ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
 [ -e ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC physics_input_table
 
-[ -e $GEM_phy_intable ] && ln -s $GEM_phy_intable physics_input_table
 [ -e $GEM_climato ] && ln -s $GEM_climato CLIMATO
 [ -e $GEM_geophy ] && ln -s $GEM_geophy GEOPHY
 [ -e $GEM_iaurep ] && ln -s $GEM_iaurep IAUREP
