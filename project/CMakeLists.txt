@@ -138,12 +138,26 @@ function(dir_writable DIR_PATH REQUIRED)
 endfunction()
 # END TODO: Move this to cmake_shared
 
+
 set(WORK_PREFIX ${ROOT}/work CACHE FILEPATH "Execution environment directory")
 message(STATUS "WORK_PREFIX=${WORK_PREFIX}")
 dir_writable(${WORK_PREFIX} TRUE)
 set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
 add_custom_target(work
-    /bin/mkdir -p ${WORK_DIR}
+    /bin/mkdir -p ${WORK_DIR}/bin
+    COMMAND /bin/cp -avf
+        $<TARGET_FILE:cclargs_lite>
+        $<TARGET_FILE:editfst>
+        $<TARGET_FILE:flipit>
+        $<TARGET_FILE:fstcomp>
+        $<TARGET_FILE:fststat>
+        $<TARGET_FILE:maingemdm>
+        $<TARGET_FILE:maingemgrid>
+        $<TARGET_FILE:mainyy2global>
+        $<TARGET_FILE:pgsm>
+        $<TARGET_FILE:r.fstinfo>
+        $<TARGET_FILE:voir>
+        ${WORK_DIR}/bin
     COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}

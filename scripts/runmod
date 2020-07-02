@@ -24,7 +24,7 @@ task_basedir="RUNMOD.dir"
 dname=cfg_0000
 
 export GEM_ON_A_STICK_WORK_DIR=$PWD
-export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
+export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../gem_dbase
 export GEM_ovbin=${GEM_ON_A_STICK_WORK_DIR}/bin
 
 # read configuration file
