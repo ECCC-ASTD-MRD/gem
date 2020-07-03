@@ -7,10 +7,9 @@ See below for extended instructions.  Further details are can be found in
     git clone https://gitlab.com/eccc/gem/gem.git
     cd gem
     # Optionnaly checkout a specific branch: git checkout <branch_name>
-    ./download-dbase.sh
 
     # Create a build directory
-    # The build directory has very little value in itself and can be place
+    # The build directory has very little value in itself and can be placed
     # outside the project directory
     mkdir -p build
     cd build
@@ -18,6 +17,9 @@ See below for extended instructions.  Further details are can be found in
     # will be created under the project directory
     cmake ../project
     make -j work
+    # Download the data files required to run GEM
+    cd ..
+    ./download-dbase.sh work
 
     cd ../work/work-${OS_NAME}-${COMPILER_NAME}
     ./runprep -dircfg configurations/GY_cfgs
