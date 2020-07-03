@@ -72,7 +72,7 @@ esac
 [ -e ${DIRCFG_PATH}/${dname}/configexp.cfg ] && ln -s ${DIRCFG_PATH}/${dname}/configexp.cfg .
 [ -e ${DIRCFG_PATH}/${dname}/gem_settings.nml ] && ln -s ${DIRCFG_PATH}/${dname}/gem_settings.nml model_settings.nml
 [ -e ${DIRCFG_PATH}/${dname}/outcfg.out ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
-[ -e ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table_GENERIC physics_input_table
+[ -e ${DIRCFG_PATH}/${dname}/physics_input_table ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table physics_input_table
 
 [ -e $GEM_climato ] && ln -s $GEM_climato CLIMATO
 [ -e $GEM_geophy ] && ln -s $GEM_geophy GEOPHY
