@@ -76,7 +76,7 @@ link:
             export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
         ```
 
-### Intel Compilerw
+### Intel Compilers
 
 - Changes to the C and Fortran flags can be done in **project/Linux-x86_64-intel.cmake**
     - You may need to modify ```-march``` to generate code that can run on
