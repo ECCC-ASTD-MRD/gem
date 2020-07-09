@@ -96,9 +96,12 @@ parallel.
 without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
-gcc and gfortran are the default compilers. If you want to compile with other
-compilers, add ```-DCOMPILER=<compiler suite name>``` to the CMake command
-line.
+The default compilers is GNU. If you want to compile with other compilers,
+add ```-DCOMPILER=<compiler suite name (gnu|intel)>``` to the CMake
+command line.  This release has been tested with GNU and Intel compilers on
+Linux x86_64.  Other compilers have also been used in the past but have not been
+tested with the current release.  You will likely have to modify the *.cmake
+files in the **project** folder.
 
 - If you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
