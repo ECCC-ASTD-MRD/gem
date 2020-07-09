@@ -14,10 +14,13 @@ See below for extended instructions.  Further details are can be found in
     # outside the project directory
     mkdir -p build
     cd build
+
     # If the -DWORK_PREFIX=<path> option isn't given to cmake, the work directory
     # will be created under the project directory
     cmake ../project
+    # Create an execution environement for GEM
     make -j work
+
     # Download the data files required to run GEM
     cd ..
     ./download-dbase.sh work
@@ -57,7 +60,7 @@ link:
 
 ## Compiler specifics
 
-### gfortran and gcc compilers
+### GNU compilers
 - By default GEM is configured to use gfortran and gcc compilers
 - make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
@@ -73,15 +76,9 @@ link:
             export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
         ```
 
-### Intel Compiler
-- By default, a configuration for version 19 is used.
-  You can switch to version 16 by changing the symbolic link:
-  ```
-    cd project
-    rm Linux-x86_64-intel.cmake
-    ln -s Linux-x86_64-intel.cmake.16 Linux-x86_64-intel.cmake
-  ```
-- Changes to the C and Fortran flags can be done in the Linux-x86_64-intel.cmake
+### Intel Compilerw
+
+- Changes to the C and Fortran flags can be done in **project/Linux-x86_64-intel.cmake**
     - You may need to modify ```-march``` to generate code that can run on
       your system
 - Make sure the compilers and libraries are in the appropriate
@@ -100,8 +97,8 @@ without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
 gcc and gfortran are the default compilers. If you want to compile with other
-compilers, edit **project/CmakeLists.txt** and uncomment one of the
-```set(COMPILER ...)``` lines.
+compilers, add ```-DCOMPILER=<compiler suite name>``` to the CMake command
+line.
 
 - If you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
