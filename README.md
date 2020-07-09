@@ -6,7 +6,8 @@ See below for extended instructions.  Further details are can be found in
 ```
     git clone https://gitlab.com/eccc/gem/gem.git
     cd gem
-    # Optionnaly checkout a specific branch: git checkout <branch_name>
+    # Optionnaly checkout a specific branch:
+    # git checkout <branch_name>
 
     # Create a build directory
     # The build directory has very little value in itself and can be placed
@@ -90,14 +91,6 @@ link:
 
 ## Compiling and installing GEM
 
-Here are the usual commands to compile and install:
-```
-    mkdir build
-    cd build
-    cmake ../project
-    make
-    make install
-```
 You can add extra CMake arguments such as```-DCMAKE_VERBOSE_MAKEFILE=ON```.
 You can also add ```-j``` to **make** to launch multiple compile tasks in
 parallel.
@@ -144,7 +137,7 @@ Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
 example *work-Linux_x86-64-gfortran-8.2.1*
 
 ```
-    cd work/work-${OS-NAME}_${COMPILER-NAME}
+    cd <WORK_PREFIX>/work-${OS-NAME}_${COMPILER-NAME}
     # Configure the model for a specific case
     ./runprep -dircfg configurations/${cfgDir}
     # Create a directory named RUNMOD.dir for output files
