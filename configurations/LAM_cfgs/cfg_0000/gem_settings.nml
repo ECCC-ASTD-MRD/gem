@@ -137,15 +137,12 @@
 
   satuco          = .true.     , inilwc          = .true.
   pcptype         = 'nil'      , moyhr           = 6
-  lightning_diag  = .true.
 
-  diag_twind      = .true.     , refract         = .true.
+  diag_twind      = .true.     , 
 
   qco2            = 380.0
-  input_type      = 'BLOC'
-/
-
   input_type      = 'DIST'
+/
   phystat_dble_l  = .true.
   phystat_2d_l    = .false.
   phystat_freq_S  = '3h'

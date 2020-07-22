@@ -7,8 +7,8 @@ cmake_policy(SET CMP0056 NEW)
 
 # set the compiler suite by uncommenting one of the following 3 lines:
 set(COMPILER gnu CACHE STRING compiler)
-#set(COMPILER intel CACHE compiler)
-#set(COMPILER pgi CACHE compiler)
+#set(COMPILER intel CACHE STRING compiler)
+#set(COMPILER pgi CACHE STRING compiler)
 # which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
@@ -161,6 +161,8 @@ add_custom_target(work
     COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
+    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_PREFIX}
+
     DEPENDS
         cclargs_lite
         editfst

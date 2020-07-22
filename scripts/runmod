@@ -60,33 +60,33 @@ mkdir -p ${TASK_BASEDIR}
 mkdir -p $TASK_INPUT/${dname} $TASK_WORK/${dname} $TASK_OUTPUT/${dname} $TASK_BIN
 
 cd $TASK_INPUT/${dname}
-[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS ]      && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS .
-[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d ]    && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d    MODEL_ANALYSIS
-[ -e ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d ] && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d MODEL_INREP
+[ -e "${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS" ]      && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/ANALYSIS .
+[ -e "${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d" ]    && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/analysis.d    MODEL_ANALYSIS
+[ -e "${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d" ] && ln -s ${GEM_ON_A_STICK_WORK_DIR}/PREP/output/${dname}/model_inrep.d MODEL_INREP
 
 case "${dircfg}" in
     /*) DIRCFG_PATH="${dircfg}"; ;;
      *) DIRCFG_PATH="${GEM_ON_A_STICK_WORK_DIR}/${dircfg}"; ;;
 esac
 
-[ -e ${DIRCFG_PATH}/${dname}/configexp.cfg ] && ln -s ${DIRCFG_PATH}/${dname}/configexp.cfg .
-[ -e ${DIRCFG_PATH}/${dname}/gem_settings.nml ] && ln -s ${DIRCFG_PATH}/${dname}/gem_settings.nml model_settings.nml
-[ -e ${DIRCFG_PATH}/${dname}/outcfg.out ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
-[ -e ${DIRCFG_PATH}/${dname}/physics_input_table ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table physics_input_table
+[ -e "${DIRCFG_PATH}/${dname}/configexp.cfg" ] && ln -s ${DIRCFG_PATH}/${dname}/configexp.cfg .
+[ -e "${DIRCFG_PATH}/${dname}/gem_settings.nml" ] && ln -s ${DIRCFG_PATH}/${dname}/gem_settings.nml model_settings.nml
+[ -e "${DIRCFG_PATH}/${dname}/outcfg.out" ] && ln -s ${DIRCFG_PATH}/${dname}/outcfg.out output_settings
+[ -e "${DIRCFG_PATH}/${dname}/physics_input_table" ] && ln -s ${DIRCFG_PATH}/${dname}/physics_input_table physics_input_table
 
-[ -e $GEM_climato ] && ln -s $GEM_climato CLIMATO
-[ -e $GEM_geophy ] && ln -s $GEM_geophy GEOPHY
-[ -e $GEM_iaurep ] && ln -s $GEM_iaurep IAUREP
-[ -e $GEM_input ] && ln -s $GEM_input MODEL_INPUT
+[ -e "$GEM_climato" ] && ln -s $GEM_climato CLIMATO
+[ -e "$GEM_geophy" ] && ln -s $GEM_geophy GEOPHY
+[ -e "$GEM_iaurep" ] && ln -s $GEM_iaurep IAUREP
+[ -e "${default_DIR_ATM}/datafiles/modeldata" ] && ln -s ${default_DIR_ATM}/datafiles/modeldata MODEL_INPUT
 
-[ -e $GEM_ozone ] && ln -s $GEM_ozone ozone_clim.fst
-[ -e $GEM_radtab ] && ln -s $GEM_radtab rad_table.fst
-[ -e $GEM_const ] && ln -s $GEM_const constantes
+[ -e "$GEM_ozone" ] && ln -s $GEM_ozone ozone_clim.fst
+[ -e "$GEM_radtab" ] && ln -s $GEM_radtab rad_table.fst
+[ -e "$GEM_const" ] && ln -s $GEM_const constantes
 
 echo "runmod linking UM_MODEL to Um_model.sh"
 um_model=$(which Um_model.sh)
-[ -e $um_model ] && ln -s $um_model ${TASK_BIN}/UM_MODEL
-[ -e $GEM_ovbin/maingemdm ] && ln -s $GEM_ovbin/maingemdm ${TASK_BIN}/ATM_MOD
+[ -e "$um_model" ] && ln -s $um_model ${TASK_BIN}/UM_MODEL
+[ -e "$GEM_ovbin/maingemdm" ] && ln -s $GEM_ovbin/maingemdm ${TASK_BIN}/ATM_MOD
 cd $GEM_ON_A_STICK_WORK_DIR
 
 if [ `uname` = "Darwin" ]
