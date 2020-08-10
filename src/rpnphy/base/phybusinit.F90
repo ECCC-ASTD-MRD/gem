@@ -52,7 +52,7 @@ subroutine phybusinit(ni,nk)
    logical :: lccc2
    logical :: lghg, ltrigtau
    logical :: liuv
-   logical :: lmoyhroz, lmoyhrgh
+   logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
    logical :: lcndsm
    logical :: lcons, lmoycons
    logical :: lhn_init
@@ -111,6 +111,9 @@ subroutine phybusinit(ni,nk)
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
+   llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
+   llinozout = (llinoz .and. out_linoz)
+   llinghout = (llingh .and. out_linoz)
    lmoyhroz =(lmoyhr .and. llinoz .and. out_linoz)
    lmoyhrgh =(lmoyhr .and. llingh .and. out_linoz)
    lcndsm  = (cond_infilter > 0.)

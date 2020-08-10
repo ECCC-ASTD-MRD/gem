@@ -84,8 +84,8 @@ You can therefore go to that folder and simply execute the commands bellow to
 compile the code:
 ```
 cmake ../../project
-make -j
-make install
+make -j 
+make work
 ```
 
 ## Repository in the $HOME directory
@@ -113,7 +113,7 @@ ln -s $HOME/ords/gem/work
 cd build/intel-19.0.3.199
 cmake $HOME/gem/project
 make -j
-make install
+make work
 ```
 
 Further information about compiling and executing can be found in the main

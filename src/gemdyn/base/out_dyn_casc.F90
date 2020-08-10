@@ -109,8 +109,10 @@
                             ind0,1,Grdc_nbits, .false. )
       end if
 
-      call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+      if (.not. Schm_autobar_L) then
+         call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                    'P0  ',.01, 0., 2,-1,1, ind0, 1, Grdc_nbits, .false. )
+      end if
 
       call out_fstecr ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&
                          'WT1 ',1., 0.,Level_kind_ip1,-1,G_nk  ,&
@@ -149,12 +151,14 @@
          call out_fstecr ( gzm(l_minx,l_miny,1), l_minx,l_maxx ,&
                  l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
+         if (.not.Schm_autobar_L) then
          call out_fstecr ( gzt(l_minx,l_miny,1), l_minx,l_maxx ,&
                  l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
          call out_fstecr ( gzt(l_minx,l_miny,1), l_minx,l_maxx ,&
                  l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo(G_nk+1),1,Grdc_nbits,.false. )
+         end if
       endif
 
       do k=1,Grdc_ntr

@@ -50,7 +50,7 @@
       !     Adjust surface pressure for conservation in Yin-Yang/LAM
       !=============================================================
 
-      integer :: err,i,j,k,n,MAX_iteration,empty_i,n_reduce
+      integer :: err,i,j,k,n,MAX_iteration,empty_i,n_reduce,i0_c,in_c,j0_c,jn_c
       real :: empty
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_1_8,p0_dry_0_8
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_1_8,p0_0_8,fl_0_8
@@ -133,10 +133,12 @@
          !------------------------------------------------------
          if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_1_8,pm_8,p0_wet_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
 
+         i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
+
          !Obtain Surface pressure minus Cstv_pref_8
          !-----------------------------------------
-         if (Schm_psadj==1) p0_1_8(1:l_ni,1:l_nj) = p0_wet_1_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
-         if (Schm_psadj==2) p0_1_8(1:l_ni,1:l_nj) = p0_dry_1_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+         if (Schm_psadj==1) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_wet_1_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
+         if (Schm_psadj==2) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_dry_1_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
 
          !Estimate air mass on CORE at TIME P
          !-----------------------------------
@@ -158,7 +160,7 @@
 
       end if
 
-      MAX_iteration = 3
+      MAX_iteration = 10 
       if (Schm_psadj==1) MAX_iteration = 1
 
       do n = 1,MAX_iteration

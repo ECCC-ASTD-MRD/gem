@@ -370,7 +370,7 @@ contains
  
     ! Internal parameters
     !#TODO: this modules needs to be updated, we are now at API 17
-    integer, parameter :: COMPATIBILITY_LVL=13 !#TODO: was 6... may need to review
+    integer, parameter :: COMPATIBILITY_LVL=18 !#TODO: was 6... may need to review
 
     ! Internal variables
     integer(INT64) :: jdateo

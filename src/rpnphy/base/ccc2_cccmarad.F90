@@ -36,10 +36,10 @@ contains
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
-      use linoz_mod, only: mwt_air, mwt_o3, mwt_ch4, mwt_n2o, mwt_f11, mwt_f12
+      use linoz_mod, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
       use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
-      use ens_perturb, only: ens_nc2d
+      use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -134,7 +134,7 @@ contains
 
       integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
       real(REAL64) :: hz_8
-      real :: hz, ptopoz, alwcap, fwcap, albrmu, o3fac
+      real :: hz, ptopoz, alwcap, fwcap, albrmu
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
       logical :: lcsw, lclw, aerosolback,thisstepisrad,nextstepisrad,thisstepisraduv
       integer :: il1, il2
@@ -253,13 +253,8 @@ contains
          if (.not.any(dyninread_list_s == 'o3l') .or.   &
              .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:m')) then
 
-!           zo3lmoins = zo3fk *1E+9    !micro g /kg air <-- kg / kg air
-
-            ! climato+ghg+linoz+era5+ (Irena I)
-            if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce  !micro g /kg air
-
-            ! climato_phase2 (Paul V)
-!           if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce * 1E+9  !micro g /kg air <-- kg /kg air
+            ! climato_phase2_v2 (Paul V)
+            if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce * 1E+9  !micro g /kg air <-- kg /kg air
 
          endif
 
@@ -271,22 +266,18 @@ contains
 
             if (.not.any(dyninread_list_s == 'ch4l') .or.   &
                  .not.any(phyinread_list_s(1:phyinread_n) == 'tr/ch4l:m')) &
-!              zch4lmoins = zch4 *1E-9 * mwt_air/ mwt_ch4    !mole /mole vmr <-- micro g /kg
-               zch4lmoins = zch4 * 1E+9                      !micro g /kg           ??????????? zch4 kg kg-1 ?????
+               zch4lmoins = zch4 * 1E+9                      !micro g /kg
 
             if (.not.any(dyninread_list_s == 'n2ol') .or.   &
                 .not.any(phyinread_list_s(1:phyinread_n) == 'tr/n2ol:m')) &
-!              zn2olmoins = zn2o *1E-9 * mwt_air/ mwt_n2o    !mole /mole vmr <-- micro g /kg
                zn2olmoins = zn2o * 1E+9                      !micro g /kg
 
             if (.not.any(dyninread_list_s == 'f11l') .or.   &
                 .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f11l:m')) &
-!              zf11lmoins = zcf11 *1E-9 * mwt_air/ mwt_f11   !mole /mole vmr <-- micro g /kg
                zf11lmoins = zcf11 * 1E+9                     !micro g /kg
 
             if (.not.any(dyninread_list_s == 'f12l') .or.   &
                 .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f12l:m')) &
-!              zf12lmoins = zcf12 *1E-9 * mwt_air/ mwt_f12   !mole /mole vmr <-- micro g /kg
                zf12lmoins = zcf12 * 1E+9                     !micro g /kg
 
          endif
@@ -468,11 +459,9 @@ contains
 
          ! calculate aerosol optical properties
 
-         do i = 1, ni
-            pbl(i) = 1500.0
-         enddo
-         call ccc_aerooppro(tauae, exta, exoma, exomga, fa, absa, &
-              temp, shtj, sig, ps, zdlat, zmg, zml, pbl, &
+         pbl(:) = ens_spp_get('aero_pbl', zmrk2, default=1500.)
+         call ccc_aerooppro2(tauae, exta, exoma, exomga, fa, absa, &
+              temp, shtj, sig, ps, zdlat, zmg, zml, pbl, zmrk2, &
               aerosolback, il1, il2, ni, nkm1, nk)
 
          ! from ozone zonal monthly climatology: interpolate to proper date
@@ -543,60 +532,45 @@ contains
 
          endif IF_SIMISCCP
 
-         ! use FK ozone (zo3fk) above stratopause 1hPa and era5 (zo3ce) below
+         ! Use FK ozone above stratopause 1hPa and era5 (zo3ce) below
          if (.not.associated(zo3fk, zo3s)) zo3s = zo3fk  !kg /kg air mmr
          if (minval(zo3ce) >= 0.) then
-            o3fac = 1.0
-            if (radlinoz_L) o3fac = 1.E-9
             do k = 1, nk
                do i = 1, ni
-                  if (sig(i, k) * ps(i) > 100.) zo3s(i, k) = zo3ce(i,k) * o3fac      !kg /kg air mmr 'climato_phase2' (Paul V) !kg /kg <--  micro g /kg air mmr 'climato+ghg+linoz+era5+'
+                  if (sig(i, k) * ps(i) > 100. ) &    !1hPa
+                     !    climato+ghg+linoz+era5+ (Irena I) micro g /kg air mmr
+                     !zo3s(i, k) = zo3ce(i,k) * 1.E-9      !kg /kg <--  micro g /kg air mmr
+
+                     !    climato_phase2_v2 (Paul V) kg /kg air
+                     zo3s(i,k) = zo3ce(i,k)               !kg /kg air
                enddo
             enddo
          endif
 
 
-         ! Use LINOZ ozone (o3_mmr) only below the stratopause 1hPa
+         ! Use LINOZ ozone (o3_mmr)
          if (radlinoz_L) then
-!           o3_mmr = zo3lmoins *1.E-9                      !kg /kg air     <-- micro g /kg air
-
-!           o3_vmr = zo3lmoins                             !mole /mole vmr
-
             o3_vmr = zo3lmoins *1.E-9 * mwt_air/ mwt_o3    !mole /mole vmr <-- micro g/kg air
-            o3_vmr = max(o3_vmr, 1.E-10)                 !mole /mole vmr
+            o3_vmr = max(o3_vmr, 1.E-10)                   !mole /mole vmr
             o3_mmr = o3_vmr * mwt_o3  /mwt_air             !kg /kg air     <-- mole /mole vmr
-            do k = 1, nk
-               do i = 1, ni
-                  if (sig(i, k) * ps(i) > 100.) zo3s(i, k) = o3_mmr(i,k)             !kg /kg air 
-               enddo
-            enddo
+            zo3s = o3_mmr                                  !kg /kg air
          endif
 
          !Use LINOZ ghg (zch4, zn2o, zcf11, zcf12)
          if (radlinghg_L) then
+            zch4  = zch4lmoins *1E-9             ! kg /kg air mmr  <- micro g /kg
+            zn2o  = zn2olmoins *1E-9             ! kg /kg air mmr  <- micro g /kg
+            zcf11 = zf11lmoins *1E-9             ! kg /kg air mmr  <- micro g /kg
+            zcf12 = zf12lmoins *1E-9             ! kg /kg air mmr  <- micro g /kg
 
-!            ch4_vmr  = zch4lmoins                 ! mole /mole vmr
-!            n2o_vmr  = zn2olmoins                 ! mole /mole vmr
-!            cf11_vmr = zf11lmoins                 ! mole /mole vmr
-!            cf12_vmr = zf12lmoins                 ! mole /mole vmr
-
-            ch4_vmr  = zch4lmoins *1E-9 * mwt_air/ mwt_ch4    !mole /mole vmr <-- micro g /kg
-            n2o_vmr  = zn2olmoins *1E-9 * mwt_air/ mwt_n2o    !mole /mole vmr <-- micro g /kg
-            cf11_vmr = zf11lmoins *1E-9 * mwt_air/ mwt_f11    !mole /mole vmr <-- micro g /kg
-            cf12_vmr = zf12lmoins *1E-9 * mwt_air/ mwt_f12    !mole /mole vmr <-- micro g /kg
-
-            ch4_vmr  = max(ch4_vmr, 1.E-20)        ! mole /mole vmr
-            n2o_vmr  = max(n2o_vmr, 1.E-20)        ! mole /mole vmr
-            cf11_vmr = max(cf11_vmr, 1.E-20)       ! mole /mole vmr
-            cf12_vmr = max(cf12_vmr, 1.E-20)       ! mole /mole vmr
-
-            zch4  = ch4_vmr  * mwt_ch4 /mwt_air  ! kg /kg air mmr  <- mole /mole vmr
-            zn2o  = n2o_vmr  * mwt_n2o /mwt_air  ! kg /kg air mmr  <- mole /mole vmr
-            zcf11 = cf11_vmr * mwt_f11 /mwt_air  ! kg /kg air mmr  <- mole /mole vmr
-            zcf12 = cf12_vmr * mwt_f12 /mwt_air  ! kg /kg air mmr  <- mole /mole vmr
+            zch4  = max(zch4 ,1.E-20)
+            zn2o  = max(zn2o ,1.E-20)
+            zcf11 = max(zcf11,1.E-20)
+            zcf12 = max(zcf12,1.E-20)
          endif
 
          if (thisstepisraduv) then
+            if (timings_L) call timing_start_omp(413, 'rad_uvindex', 410)
             ! appel diagnostique pour calculer fatb,fctb...
             ! utiliser rmu0 (temps courant)
             call ccc2_raddriv3(dummy1, dummy1, dummy1, dummy1, dummy1, &
@@ -605,8 +579,8 @@ contains
                  dummy1, dummy1, dummy1, dummy1, dummy1, &
                  dum2d, dum2d, dum2d, dum2d, &              ! apres ici les intrants
                  fslo, zfsamoon, ps, shtj, sig, &
-                 qq, co2, zch4, zn2o, zcf11, &
                  tfull, temp, ztsrad, zo3s, zoztoit, &
+                 qq, co2, zch4, zn2o, zcf11, &
                  zcf12, f113, f114, o2, rmu0, r0r, salb, zemisr, taucs, &
                  omcs, gcs, taucl, omcl, gcl, &
                  cldfrac, tauae, exta, exoma, exomga, &
@@ -614,7 +588,8 @@ contains
                  il1, il2, ni, nkm1, nk)
 
             ! Calcul des l'indices UV
-            call ccc2_uvindex(il1,il2,ni,zfctb,zfatb,ziuvc,ziuva,iuv_method)
+            call ccc2_uvindex2(il1,il2,ni,zfctb,zfatb,salb,ziuvc,ziuva,iuv_method)
+            if (timings_L) call timing_stop_omp(413)
          endif
 
 

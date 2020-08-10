@@ -17,6 +17,8 @@ module gmm_phy
    public
    save
 
+   real, pointer, contiguous, dimension (:,:) :: phy_cplm => null()
+   real, pointer, contiguous, dimension (:,:) :: phy_cplt => null()
    real, pointer, contiguous, dimension (:,:,:) :: phy_uu_tend  => null()
    real, pointer, contiguous, dimension (:,:,:) :: phy_vv_tend  => null()
    real, pointer, contiguous, dimension (:,:,:) :: phy_tv_tend  => null()
@@ -24,7 +26,8 @@ module gmm_phy
    integer, parameter :: MAXNAMELENGTH = 32
 
    character(len=MAXNAMELENGTH) :: &
-           gmmk_phy_uu_tend_s, gmmk_phy_vv_tend_s,&
+           gmmk_phy_cplm_s, gmmk_phy_cplt_s, &
+           gmmk_phy_uu_tend_s, gmmk_phy_vv_tend_s, &
            gmmk_phy_tv_tend_s
 
 end module gmm_phy

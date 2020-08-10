@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module ens_options
+   use wb_itf_mod
    use ens_spp, only: MAX_NSPP
    implicit none
    public
@@ -256,6 +257,10 @@ module ens_options
    !# Activate SPP for specified parameters
    character(len=32), dimension(MAX_NSPP) :: Ens_spplist = ''
    namelist /ensembles/ Ens_spplist
+
+   !# Set cutoff latitude (degrees from equator) for adv_rhsint SPP perturbations
+   real :: Ens_spp_rhsint_lat = 45.
+   namelist /ensembles/ Ens_spp_rhsint_lat
    
 contains
 
@@ -265,12 +270,10 @@ contains
       use ens_param
       use HORgrid_options
       use lun
-      use path, only: Path_nml_S
       implicit none
 #include <arch_specific.hf>
 
       integer F_unf
-#include <WhiteBoard.hf>
 
       character(len=64) :: nml_S
       logical nml_must, ptp_L

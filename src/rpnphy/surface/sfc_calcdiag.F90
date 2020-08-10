@@ -48,39 +48,72 @@ contains
 #include <msg.h>
       include "sfcinput.cdk"
 
-      real, pointer, dimension(:) :: zdrain, zdrainaf, zisoil, zleg, zlegaf, &
+      real, pointer, dimension(:) :: zaccevap, zdrain, zdrainaf, zfvapliqaf,&
+           zisoil, zlatflaf, zleg, zlegaf, &
            zler, zleraf, zles, zlesaf, zletr, zletraf, zlev, zlevaf, zoverfl, &
            zoverflaf, zrootdp, zwflux, zwfluxaf, zwsoil, zinsmavg
+
+      real, pointer, dimension(:,:) :: zrunofftotaf
 
       integer :: i, moyhr_steps
       real :: moyhri, tmp_r
       !-------------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [BEGIN]')
-      if (timings_L) call timing_start_omp(480, 'sfc_alcdiag', 46)
+      if (timings_L) call timing_start_omp(480, 'sfc_calcdiag', 46)
 
+#define MKPTR1D(PTR1,NAME2,BUS)    nullify(PTR1); if (NAME2 > 0) PTR1(1:ni) => BUS(NAME2:)
+#define MKPTR2D(PTR1,NAME2,N3,BUS) nullify(PTR1); if (NAME2 > 0) PTR1(1:ni,1:N3) => BUS(NAME2:)
+
+      MKPTR1D(zaccevap, accevap, f)
+      MKPTR1D(zdrain, drain, f)
+      MKPTR1D(zdrainaf, drainaf, f)
+      MKPTR1D(zfvapliqaf, fvapliqaf, f)
+      MKPTR1D(zisoil, isoil, f)
+      MKPTR1D(zlatflaf, latflaf, f)
+      MKPTR1D(zleg, leg, v)
+      MKPTR1D(zlegaf, legaf, f)
+      MKPTR1D(zler, ler, v)
+      MKPTR1D(zleraf, leraf, f)
+      MKPTR1D(zles, les, v)
+      MKPTR1D(zlesaf, lesaf, f)
+      MKPTR1D(zletr, letr, v)
+      MKPTR1D(zletraf, letraf, f)
+      MKPTR1D(zlev, lev, v)
+      MKPTR1D(zlevaf, levaf, f)
+      MKPTR1D(zoverfl, overfl, v)
+      MKPTR1D(zoverflaf, overflaf, f)
+      MKPTR1D(zrootdp, rootdp, f)
+      MKPTR1D(zwflux, wflux, v)
+      MKPTR1D(zwfluxaf, wfluxaf, f)
+      MKPTR1D(zinsmavg, insmavg, f)
+
+      MKPTR2D(zrunofftotaf,runofftotaf,nsurf+1,f)
+
+      
+      ! Common ISBA/SVS accumulators
+      IF_ISBA_SVS: if (schmsol == 'ISBA' .or. schmsol == 'SVS') then
+
+         IF_RESET: if (kount == 0 .or. &
+              (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
+              (acchr == 0 .and. step_driver-1 == 0)) then
+
+            ! Reset accumulators at t=T+00hr 
+            
+            ! Accum. of base drainage                      
+            zdrainaf(:) = 0.
+            
+            ! Accumulation of surf. evaporation (HFLQ) (kg/m2 or mm)
+            zfvapliqaf(:) = 0.
+            
+            !Accumulation of total surface runoff, per tile and total 
+            zrunofftotaf(:,:) = 0.
+
+         endif IF_RESET
+      endif IF_ISBA_SVS
+
+
+      ! ISBA only accumulators/calc.
       IF_ISBA: if (schmsol == 'ISBA') then
-
-#define MKPTR1D(PTR1,NAME2,BUS) nullify(PTR1); if (NAME2 > 0) PTR1(1:ni) => BUS(NAME2:)
-
-         MKPTR1D(zdrain, drain, f)
-         MKPTR1D(zdrainaf, drainaf, f)
-         MKPTR1D(zisoil, isoil, f)
-         MKPTR1D(zleg, leg, v)
-         MKPTR1D(zlegaf, legaf, f)
-         MKPTR1D(zler, ler, v)
-         MKPTR1D(zleraf, leraf, f)
-         MKPTR1D(zles, les, v)
-         MKPTR1D(zlesaf, lesaf, f)
-         MKPTR1D(zletr, letr, v)
-         MKPTR1D(zletraf, letraf, f)
-         MKPTR1D(zlev, lev, v)
-         MKPTR1D(zlevaf, levaf, f)
-         MKPTR1D(zoverfl, overfl, v)
-         MKPTR1D(zoverflaf, overflaf, f)
-         MKPTR1D(zrootdp, rootdp, f)
-         MKPTR1D(zwflux, wflux, v)
-         MKPTR1D(zwfluxaf, wfluxaf, f)
-         MKPTR1D(zinsmavg, insmavg, f)
 
          nullify(zwsoil)
          if (wsoil > 0) zwsoil(1:ni) => f(wsoil+ni:)
@@ -91,7 +124,7 @@ contains
             endif
          endif
 
-         IF_RESET: if (kount == 0 .or. &
+         IF_RESET_ISBA: if (kount == 0 .or. &
               (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
               (acchr == 0 .and. step_driver-1 == 0)) then
             zlegaf(:) = 0.
@@ -99,10 +132,9 @@ contains
             zletraf(:) = 0.
             zlevaf(:) = 0.
             zlesaf(:) = 0.
-            zdrainaf(:) = 0.
             zoverflaf(:) = 0.
             zwfluxaf(:) = 0.
-         endif IF_RESET
+         endif IF_RESET_ISBA
 
          IF_KOUNT0: if (kount /= 0) then
 
@@ -121,7 +153,7 @@ contains
                endif
             endif IF_MOYHR
 
-!VDIR NODEP
+            !VDIR NODEP
             do i = 1, ni
 
                !# Accumulation of evaporation (in kg/m2)
@@ -148,6 +180,30 @@ contains
          endif IF_KOUNT0
 
       endif IF_ISBA
+
+      ! SVS only accumulators
+      IF_SVS: if (schmsol == 'SVS') then
+         
+         ! Reset accumulators at t=T+00hr 
+         IF_RESET_SVS: if (kount == 0 .or. &
+              (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
+              (acchr == 0 .and. step_driver-1 == 0)) then
+            
+            ! Reset accumulators at t=T+00hr 
+            
+            !Accumulation of actual surf. evap. (kg/m2 or mm)    
+            zaccevap(:) = 0.
+            
+            !Accumulation  of lateral flow at all levels (kg/m2 = mm) 
+            zlatflaf(:) = 0.
+            
+         endif IF_RESET_SVS
+      
+
+      endif IF_SVS
+
+
+
 
       if (timings_L) call timing_stop_omp(480)
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [END]')

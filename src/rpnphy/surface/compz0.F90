@@ -14,20 +14,22 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
+subroutine compz0_1(optz0, z0, z0loc, z0t, fm, va, fcor, n)
    use tdpack_const, only: GRAV, KARMAN
    use sfc_options
    implicit none
 !!!#include <arch_specific.hf>
    integer n, optz0
    real va(n),fm(n)
-   real z0(n),z0t(n)
+   real z0(n),z0t(n), z0loc(n)
    real fcor(n)
 
    !@Author  S.Leroyer (Apr 2011)
    !@Revision
    !  001     M. Abrahamowicz (May 2013) - Shift options by 1., so that option 0. is a RETURN
+   !  002     M.A (June 2020) - Add new input: z0loc for option 9
    !@Object compute aerodynamic and scalar roughness lenghts
+   ! 
    !          options :
    ! 0. RETURN        : no calculations done
    ! 1. sea ice       : z0 fixed and z0t=z0   (SEAICE1 classic)
@@ -38,11 +40,13 @@ subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
    ! 6. water surface : Fairall et al. 2003
    ! 7. urban surface : z0 from geophy and z0t from Brutsaert (1982)
    ! 8. urban surface : z0 from geophy and z0t from Kanda (2007)
-   ! 9. land surface  : z0 from geophy and z0t from Zilitinkevich (1995)
-   ! 10.urban surface : z0 fixed (related to surface covers) and z0t/z0 fixed ratio=200 (Mascart et al. 1995)
+   ! 9. land surface  : LOCAL z0 from geophy and z0t from Zilitinkevich (1995) 
+   ! 10.urban surface : z0 fixed (related to surface covers) and z0t/z0 fixed ratio=200 (Mascart et al. 1995) 
+   !                 
    !@Arguments
    !          - Output -
-   ! z0       aerodynamic roughness lenght
+   ! z0       aerodynamic roughness length
+   ! z0loc    local aerodynamic roughness length (no orography)
    ! z0t      scalar roughness lenght for heat
    !          - Input -
    ! fm       momentum stability function
@@ -172,11 +176,12 @@ subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
       enddo
 
       ! 9. land surface : z0 from geophy and z0t from Zilitinkevich (1995)
+      !    here use local mom. roughness when available 
    elseif (optz0 .eq. 9 ) then
       do j=1,n
          ue(j)= karman/fm(j) *va(j)
-         trrn(j)=z0(j) * ue(j) /VISCOSITY
-         z0t(j) = z0(j) * exp( - KARMAN  * 0.1 * trrn(j)**0.5)
+         trrn(j)= z0loc(j) * ue(j) /VISCOSITY
+         z0t(j) = max( z0loc(j) * exp( - KARMAN  * 0.1 * trrn(j)**0.5) , z0min )
       enddo
 
 
@@ -191,4 +196,4 @@ subroutine compz0(optz0, z0, z0t, fm, va, fcor, n)
    endif
 
    return
-end subroutine compz0
+end subroutine compz0_1

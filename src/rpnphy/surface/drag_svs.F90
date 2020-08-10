@@ -16,13 +16,14 @@
 
       SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD1, &
                               WR, THETAA, VMOD, VDIR, HU,  &  
-                              PS, RS, Z0, WFC,  &
-                              LAI, WRMAX, ZUSL, ZTSL, LAT, & 
-                              FCOR, Z0HA, Z0MBG, Z0M_TO_Z0H, & 
+                              PS, RS, Z0, Z0LOC, Z0VG, WFC, WSAT, CLAY1,  &
+                              SAND1, LAI, WRMAX, ZUSL, ZTSL, LAT, & 
+                              FCOR, Z0HA, & 
                               RESAGR, RESAVG, &  
                               HUSURF, & 
                               HRSURF, &       
                               HV, DEL,  &
+                              Z0HBG, Z0HVG, &
                               N)
       use tdpack
       use sfc_options
@@ -33,11 +34,10 @@
 !!!#include <arch_specific.hf>
 
       INTEGER N
-      REAL Z0MBG,  Z0M_TO_Z0H
-      REAL TGRS(N), TVGS(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N)
-      REAL PS(N), RS(N), Z0(N), WFC(N,NL_SVS)
+      REAL TGRS(N), TVGS(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N), CLAY1(N)
+      REAL SAND1(N), PS(N), RS(N), Z0(N),Z0LOC(N), Z0VG(N), WFC(N,NL_SVS), WSAT(N,NL_SVS)
       REAL LAI(N), WRMAX(N), ZUSL(N), ZTSL(N), LAT(N)
-      REAL FCOR(N), Z0HA(N)
+      REAL FCOR(N), Z0HA(N), Z0HBG(N), Z0HVG(N)
       REAL RESAGR(N), RESAVG(N)
       REAL HUSURF(N), HV(N), DEL(N)
       REAL HRSURF(N), WD1(N)
@@ -84,7 +84,12 @@
 ! PS        surface pressure
 ! RS        surface or stomatal resistance
 ! Z0        momentum roughness length (no snow)
+! Z0LOC     local (no orography) land momentum roughness
+! Z0VG      vegetation-only momentum roughness      
 ! WFC       volumetric water content at the field capacity
+! WSAT      volumetric water content at saturation
+! CLAY1     percentage of clay in first soil layer
+! SAND1     percentage of sand in first soil layer
 ! LAI       AVERAGED leaf area index
 ! WRMAX     Max volumetric water content retained on vegetation
 ! ZTSL      reference height for temperature and humidity input
@@ -93,9 +98,6 @@
 ! FCOR      Coriolis factor
 ! Z0HA      AVERAGED Local roughness associated with exposed (no snow)
 !           vegetation only (also no orography), for heat transfer
-! Z0MBG     Constant momentum roughness for bare ground
-! Z0M_TO_Z0H   Conversion factor to convert from momemtum roughness
-!          to thermal roughness
 !
 !           - Output -
 ! HRSURF   relative humidity of the bare ground surface (1st layer)
@@ -103,14 +105,16 @@
 ! HV        Halstead coefficient (i.e., relative humidity of the
 !           vegetation canopy)
 ! DEL       fraction of canopy covered by intercepted water
+! Z0HBG     Bare ground thermal roughness
+! Z0HVG     Vegetation thermal roughness     
 !
 !
 !
 !
-      INTEGER I
+      INTEGER I, zopt
 
       real, dimension(n) :: temp, coef, qsatgr, qsatvg, &
-           zqsvg, ctugr, ctuvg, z0hg 
+           zqsvg, ctugr, ctuvg, z0hg, wcrit_hrsurf, z0bg_n
            
 !
 !***********************************************************************
@@ -127,6 +131,7 @@
 !         local momentum roughness of bare ground, times a scaling factor.
    
       DO I=1,N
+         Z0BG_N(I) = Z0MBG
          Z0HG(I) = Z0M_TO_Z0H * Z0MBG
       END DO         
 !
@@ -140,12 +145,34 @@
 !                        field capacity of the ground
 !                        ** If the 1st soil layer is very shallow (under 5cm)
 !                        might need to change the calc. to use a deeper layer
-      DO I=1,N
-    
-        TEMP(I)   = PI*WD1(I)/WFC(I,1)
-        HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
 
-      END DO 
+      if( svs_hrsurf_sltext ) then
+         !use hrsurf formulation based on soil texture
+
+         DO I=1,N
+             ! Set soil water max for hrsurf calc. based on clay percentage)
+            if ( clay1(i) .lt. 1.0 ) then
+               wcrit_hrsurf(i) = wfc(i,1)
+            else if ( clay1(i)  .lt. 40.0 ) then
+               wcrit_hrsurf(i) =  (sand1(i)/((sand1(i)+clay1(i)))) * wfc(i,1) & 
+                    +             (clay1(i)/((sand1(i)+clay1(i)))) * wsat(i,1) 
+            else
+               wcrit_hrsurf(i)= wsat(i,1)
+            endif
+
+            TEMP(I)   = PI*WD1(I)/WCRIT_HRSURF(I)
+            HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
+            
+         END DO
+      else
+         ! formulation based on field capacity
+         DO I=1,N
+    
+            TEMP(I)   = PI*WD1(I)/WFC(I,1)
+            HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
+            wcrit_hrsurf(i) = wfc(i,1)
+         END DO
+      endif
 !
 !                         there is a specific treatment for dew
 !                         (see Mahfouf and Noilhan, jam, 1991)
@@ -184,7 +211,7 @@
 !                          for very humid soil (i.e., wg > wfc ),
 !                          we take hu=1
 !
-        IF ( WD1(I).GT.WFC(I,1) ) HRSURF(I) = 1.0
+        IF ( WD1(I).GT.WCRIT_HRSURF(I) ) HRSURF(I) = 1.0
 
 !
       END DO
@@ -207,16 +234,33 @@
 !                      REMPLACER PAR UN Z0H_LOCAL JUSTE POUR LE SOL NU
 !                      *************************************
 !
-!
-   i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
-                    TGRS, HUSURF, Z0, Z0HG, LAT, FCOR, &
-                    L_min=sl_Lmin_soil, &
-                    coeft=CTUGR )
+      if ( svs_dynamic_z0h ) then
+         zopt=9
+         i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+              TGRS, HUSURF, Z0LOC, Z0HG, LAT, FCOR, optz0=zopt ,&
+              z0mloc=Z0BG_N, L_min=sl_Lmin_soil, &
+              coeft=CTUGR, z0t_optz0=Z0HBG )
 
-   if (i /= SL_OK) then
-      call physeterror('drag_svs', 'error returned by sl_sfclayer()')
-      return
-   endif
+         if (i /= SL_OK) then
+            call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+            return
+         endif
+
+      else
+         i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+              TGRS, HUSURF, Z0, Z0HG, LAT, FCOR, &
+              L_min=sl_Lmin_soil, &
+              coeft=CTUGR )
+
+         if (i /= SL_OK) then
+            call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+            return
+         endif
+         
+         do i=1,N
+            z0hbg(i)=z0hg(i)
+         enddo
+      endif
 
 
       DO I=1,N
@@ -287,20 +331,36 @@
 !
 !
 !
-   i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
-                    TVGS, ZQSVG, Z0, Z0HA, LAT, FCOR, &
-                    L_min=sl_Lmin_soil, &
-                    coeft=CTUVG )
+      if ( svs_dynamic_z0h ) then
+         zopt=9
+         i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+              TVGS, ZQSVG, Z0LOC, Z0HA, LAT, FCOR, z0mloc=Z0VG, &
+              optz0=zopt, L_min=sl_Lmin_soil, &
+              coeft=CTUVG, z0t_optz0=Z0HVG )
 
-   if (i /= SL_OK) then
-      call physeterror('drag_svs', 'error 2 returned by sl_sfclayer()')
-      return
-   endif
+         if (i /= SL_OK) then
+            call physeterror('drag_svs', 'error 2 returned by sl_sfclayer()')
+            return
+         endif
+      else
+         i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+              TVGS, ZQSVG, Z0, Z0HA, LAT, FCOR, &
+              L_min=sl_Lmin_soil, &
+              coeft=CTUVG )
 
+         if (i /= SL_OK) then
+            call physeterror('drag_svs', 'error 2 returned by sl_sfclayer()')
+            return
+         endif
+         
+         do i=1,n
+            z0hvg(i)=z0ha(i)
+         enddo
+      endif
    
-   DO I=1,N
-      RESAVG(I) = 1. / CTUVG(I)
-   END DO
+      DO I=1,N
+         RESAVG(I) = 1. / CTUVG(I)
+      END DO
 
 !*       3.     HALSTEAD COEFFICIENT (RELATIVE HUMIDITY OF THE VEGETATION) (HV)
 !               ---------------------------------------------------------------

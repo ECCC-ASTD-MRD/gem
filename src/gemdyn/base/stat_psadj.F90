@@ -17,6 +17,7 @@
 
       subroutine stat_psadj (F_time,F_comment_S)
 
+      use adz_options 
       use geomh
       use glb_ld
       use gmm_pw
@@ -40,7 +41,8 @@
       !     Print Wet/Dry air mass at appropriate time
       !===============================================
 
-      integer :: err,i,j
+      integer :: err,i,j,i0_sb,in_sb,j0_sb,jn_sb
+      logical :: do_subset_GY_L
       real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8
       real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
@@ -90,13 +92,46 @@
       g_avg_ps_dry_8 = g_avg_8(2) * PSADJ_scale_8
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,*) ""
-      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "WET air mass",time_S,g_avg_ps_wet_8,F_comment_S
-      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "DRY air mass",time_S,g_avg_ps_dry_8,F_comment_S
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "C:WET air mass",time_S,g_avg_ps_wet_8,F_comment_S
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1000) "C:DRY air mass",time_S,g_avg_ps_dry_8,F_comment_S
+
+      do_subset_GY_L = Grd_yinyang_L.and.adz_pil_sub_s_g /= -1
+
+      !Estimate Wet/Dry air mass on SUBSET of YIN
+      !------------------------------------------
+      if (do_subset_GY_L) then
+
+         i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
+
+         l_avg_8(1:2) = 0.0d0
+
+         do j=j0_sb,jn_sb
+            do i=i0_sb,in_sb
+
+               l_avg_8(1) = l_avg_8(1) + p0_wet_8(i,j) * geomh_area_mask_8(i,j)
+               l_avg_8(2) = l_avg_8(2) + p0_dry_8(i,j) * geomh_area_mask_8(i,j)
+
+            end do
+         end do
+
+         if (Ptopo_couleur/=0) l_avg_8(1:2) = 0.0d0 
+
+         call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+         g_avg_ps_wet_8 = g_avg_8(1) / Adz_gs_area_8 
+         g_avg_ps_dry_8 = g_avg_8(2) / Adz_gs_area_8 
+
+         if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,*) ""
+         if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1001) "SB:WET air mass",time_S,g_avg_ps_wet_8,F_comment_S
+         if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1001) "SB:DRY air mass",time_S,g_avg_ps_dry_8,F_comment_S
+
+      end if
 !
 !---------------------------------------------------------------------
 !
       return
 
- 1000 format(1X,A12,1X,A7,1X,E19.12,1X,A16)
+ 1000 format(1X,A14,1X,A7,1X,E19.12,1X,A16)
+ 1001 format(1X,A15,1X,A7,1X,E19.12,1X,A16)
 
       end subroutine stat_psadj

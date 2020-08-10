@@ -13,8 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r adz_BC_LAM_zlf_0 - Call setups to prepare Bermejo-Conde LAM with ZLF:
-!                         F_number=1: Before adz_post_tr / F_number=2: After adz_post_tr
+!**s/r adz_BC_LAM_zlf_0 - Call setups to prepare Bermejo-Conde LAM with ZLF
 
       subroutine adz_BC_LAM_zlf_0 (F_nptr,F_number)
 
@@ -35,7 +34,9 @@
       !object
       !===========================================================================
       !     Call setups to prepare Bermejo-Conde LAM with ZLF:
-      !     F_number=1: Before adz_post_tr / F_number=2: After adz_post_tr
+      !     F_number=0: Before High-order Interpolation 
+      !     F_number=1: Before adz_post_tr
+      !     F_number=2:  After adz_post_tr
       !     ----------------------------------------------------------------------
       !     NOTE: When Bermejo-Conde Flux ZLF is required for at least one tracer,
       !           advections over extended zone are done for all tracers
@@ -46,14 +47,12 @@
 !
 !---------------------------------------------------------------------
 !
-      if (.not.Adz_BC_LAM_zlf_L) return
-
       call gemtime_start (85, 'ZLF_0______', 36)
 
-      !-----------------------------------------------------
-      !Prepare Bermejo-Conde LAM with ZLF before adz_post_tr
-      !-----------------------------------------------------
-      if (F_number==1) then
+      !------------------------------------------------------------------
+      !Prepare Bermejo-Conde LAM with ZLF before High-order Interpolation 
+      !------------------------------------------------------------------
+      if (F_number==0) then
 
          do n=1,F_nptr
 
@@ -61,11 +60,18 @@
             !-------------------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%src,empty,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,1)
 
-            Adz_stack(n)%pil(:,:,:) = 0.
-
             !Keep piloting conditions of DST outside CORE
             !--------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%dst,Adz_stack(n)%pil,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,2)
+
+         end do
+
+      !-----------------------------------------------------
+      !Prepare Bermejo-Conde LAM with ZLF before adz_post_tr
+      !-----------------------------------------------------
+      else if (F_number==1) then
+
+         do n=1,F_nptr
 
             !ZERO piloting conditions of DST outside EXTENSION (BCS_BASE)
             !------------------------------------------------------------

@@ -62,14 +62,14 @@
          WDM(I) = WDM(I) / DL_SVS(NL_SVS)
          !
          !       ACCUMULATE LATERAL FLOW FOR EACH SOIL LAYER
-         do K=1,KDP
+         do K=1,KHYD
             LATFLAF(i)  = LATFLAF(i) + LATFLW(I,K)       
          enddo
 
          !       ACCUMULATION OF DRAINAGE (BASE FLOW)
          ! Drainage is the vertical flow across the bottom of the lowermost 
-         ! active layer: level = # kdp + 1
-         DRAINAF(I) = DRAINAF(I) + WATFLOW(I,KDP+1)
+         ! active layer: level = # khyd + 1
+         DRAINAF(I) = DRAINAF(I) + WATFLOW(I,KHYD+1)
         
          
       END DO

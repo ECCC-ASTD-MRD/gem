@@ -111,6 +111,7 @@ subroutine cldoppro4(taucs, omcs, gcs, taucl, omcl, gcl, &
       real, dimension(lmx) :: nmid
       real, dimension(lmx) :: nhigh
       real, dimension(lmx) :: reifac
+      real, dimension(lmx) :: rewfac
       real, dimension(lmx,nkp,nkp) :: ff
       integer, dimension(lmx     ) :: ih
       integer, dimension(lmx     ) :: ib
@@ -185,6 +186,13 @@ subroutine cldoppro4(taucs, omcs, gcs, taucl, omcl, gcl, &
          ! Radius is a user-specified constant (in microns)
          rew = rew_const
       end select
+
+      ! Adjust the effective radius using stochastic perturbations
+      rewfac(:) = ens_spp_get('rew_mult', mrk2, default=1.)
+      do k=1, nk
+         rew(:,k) = rewfac(:) * rew(:,k)
+      enddo
+
 
       ! Effective radius of crystals in ice clouds
       select case (rad_cond_rei)

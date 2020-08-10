@@ -21,6 +21,7 @@ module adz_interp_rhs_mod
   use HORgrid_options
   use tr3d
   use ptopo
+  use ens_gmm_var, only: mcrhsint
   implicit none
   public
 
@@ -38,8 +39,9 @@ contains
       include "tricublin_f90.inc"
 
       type(C_PTR),dimension(F_nptr) :: stkpntr
-      logical linmima_l
+      logical linmima_l, sto_L
       integer ij,i,j,j1,j2,k,k1,k2,kk,ni,nj,nij,n,n1,n2,np
+      real :: pert
       real, dimension(Adz_lminx:Adz_lmaxx, Adz_lminy:Adz_lmaxy,l_nk,F_nptr), target :: extended
       integer :: slice
       real, dimension(l_ni*l_nj*l_nk*F_nptr) :: wrkc,lin,mi,ma
@@ -59,9 +61,7 @@ contains
       call time_trace_barr(gem_time_trace, 10500+Adz_cnt_int,&
                            Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
 
-      linmima_l = .false.
       if (present(F_post)) then
-         linmima_l= .true.
          call gemtime_start (83, 'C_BCFLUX_TR', 37)
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
             call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,&
@@ -69,6 +69,9 @@ contains
          endif
          call gemtime_stop  (83)
       end if
+      
+      sto_L= associated(mcrhsint)
+      linmima_l = present(F_post) .or. sto_L
 
       if (linmima_l) call gemtime_start (84, 'TRICUBLIN', 37)
 
@@ -90,21 +93,46 @@ contains
             call tricublin_mono_zyx_m_n (wrkc,lin,mi,ma, stkpntr, &
                              F_xyz((n1-1)*3+1),F_geom ,np, F_nptr )
             do n=1,F_nptr
-            do k=k1,k2
-               kk= (k-F_k0)*nj
-               j1=max(1 ,n1/ni+1-kk) + F_j0 - 1
-               j2=min(nj,n2/ni  -kk) + F_j0 - 1
-               do j=j1,j2
-               do i=F_i0,F_in
-                  ij= ij+1
-                  F_stk(n)%dst(i,j,k)= wrkc(ij)
-                  Adz_post(n)%lin(i,j,k)= max(mi(ij),min(ma(ij),lin(ij)))
-                  Adz_post(n)%min(i,j,k)= mi  (ij)
-                  Adz_post(n)%max(i,j,k)= ma  (ij)
-               end do
+               do k=k1,k2
+                  kk= (k-F_k0)*nj
+                  j1=max(1 ,n1/ni+1-kk) + F_j0 - 1
+                  j2=min(nj,n2/ni  -kk) + F_j0 - 1
+                  if (sto_L) then
+                     do j=j1,j2
+                        do i=F_i0,F_in
+                           ij= ij+1
+                           pert = mcrhsint(i,j) * abs(wrkc(ij)-lin(ij))
+                           F_stk(n)%dst(i,j,k)= wrkc(ij) + pert
+                        end do
+                     end do
+                  else
+                     do j=j1,j2
+                        do i=F_i0,F_in
+                           ij= ij+1
+                           F_stk(n)%dst(i,j,k)= wrkc(ij)
+                        end do
+                     end do
+                  endif 
                end do
             end do
-            end do
+            ij= 0
+            if (present(F_post)) then
+               do n=1,F_nptr
+                  do k=k1,k2
+                     kk= (k-F_k0)*nj
+                     j1=max(1 ,n1/ni+1-kk) + F_j0 - 1
+                     j2=min(nj,n2/ni  -kk) + F_j0 - 1
+                     do j=j1,j2
+                        do i=F_i0,F_in
+                           ij= ij+1
+                           Adz_post(n)%lin(i,j,k) = max(mi(ij),min(ma(ij),lin(ij)))
+                           Adz_post(n)%min(i,j,k) = mi  (ij)
+                           Adz_post(n)%max(i,j,k) = ma  (ij)
+                        end do
+                     end do
+                  end do
+               enddo
+            endif
          else
             call tricublin_zyx1_m_n ( wrkc, stkpntr, F_xyz((n1-1)*3+1),&
                                       F_geom ,np, F_nptr )
@@ -206,8 +234,9 @@ contains
       type(meta_tracers), dimension(F_nptr), intent(in), optional :: F_post
       type(Adz_pntr_stack), dimension(F_nptr),  intent(inout) :: F_stk
 
-      logical linmima_l
+      logical linmima_l, sto_L
       integer ijk,i,j,k,n
+      real :: pert
       real, dimension(Adz_lminx:Adz_lmaxx, Adz_lminy:Adz_lmaxy,l_nk,F_nptr), target :: extended
       real, dimension(l_ni*l_nj*l_nk*F_nptr) :: wrkc,lin,mi,ma
       integer, pointer, contiguous, dimension(:) :: ii_w
@@ -220,15 +249,16 @@ contains
               .false., .false., extended(Adz_lminx,Adz_lminy,1,n),&
               Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
       end do
-
-      linmima_l = .false.
+      
       if (present(F_post)) then
-         linmima_l = .true.
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
             call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
          endif
       end if
-
+      
+      sto_L= associated(mcrhsint)
+      linmima_l = present(F_post) .or. sto_L
+      
       allocate (ii_w(4*F_num))
 
       call adv_get_indices (ii_w,F_pxt,F_pyt,F_pzt,l_ni*l_nj*l_nk,F_num, &
@@ -240,19 +270,38 @@ contains
 
             call bicubHQV_lin_min_max (wrkc,lin,mi,ma,extended(Adz_lminx,Adz_lminy,1,n), &
                                        F_pxt,F_pyt,F_pzt,l_ni*l_nj*l_nk,F_num,ii_w,l_nk,'t')
-
-            do k=F_k0,l_nk
-               do j=F_j0,F_jn
-                  do i=F_i0,F_in
-                     ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
-                     F_stk(n)%dst(i,j,k)= wrkc(ijk)
-                     Adz_post(n)%lin(i,j,k)= max(mi(ijk),min(ma(ijk),lin(ijk)))
-                     Adz_post(n)%min(i,j,k)= mi  (ijk)
-                     Adz_post(n)%max(i,j,k)= ma  (ijk)
+            if (sto_L) then
+               do k=F_k0,l_nk
+                  do j=F_j0,F_jn
+                     do i=F_i0,F_in
+                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
+                        pert = mcrhsint(i,j) * abs(wrkc(ijk)-lin(ijk))
+                        F_stk(n)%dst(i,j,k)= wrkc(ijk) + pert
+                     end do
                   end do
                end do
-            end do
-
+            else
+               do k=F_k0,l_nk
+                  do j=F_j0,F_jn
+                     do i=F_i0,F_in
+                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
+                        F_stk(n)%dst(i,j,k)= wrkc(ijk)
+                     end do
+                  end do
+               end do
+            endif               
+            if (present(F_post)) then
+               do k=F_k0,l_nk
+                  do j=F_j0,F_jn
+                     do i=F_i0,F_in
+                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
+                        Adz_post(n)%lin(i,j,k) = max(mi(ijk),min(ma(ijk),lin(ijk)))
+                        Adz_post(n)%min(i,j,k) = mi  (ijk)
+                        Adz_post(n)%max(i,j,k) = ma  (ijk)
+                     end do
+                  end do
+               end do
+            endif
          end do
 
       else

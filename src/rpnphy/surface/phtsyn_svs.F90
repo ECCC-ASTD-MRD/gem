@@ -42,7 +42,7 @@
 !     WILTING POINT AND FIELD CAPACITY.
 !!!!!!
       INTEGER KK_TO_ICC(ICC) 
-      REAL FC_TEST(N), SIGMA(N),  TGAMMA(N), KC(N), KO(N), IPAR(N), GB(N)
+      REAL FC_SUM(N), SIGMA(N),  TGAMMA(N), KC(N), KO(N), IPAR(N), GB(N)
       REAL RH(N), VPD(N), O2_CONC(N), CO2A(N), USEBB(ICC)
 !
       REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
@@ -105,7 +105,7 @@
 ! PRESSG      surface pressure
 ! RESAVG      aerodynamical surface resistance for vegetation 
 ! QA          low-level specific humidity of air
-! QSWV1       net radiation (aggregated over snow, vegetation, soil)
+! QSWV1      SOLAR RADIATION ?????? ------  net radiation (aggregated over snow, vegetation, soil)
 ! WD(NL)      soil volumetric water content in soil layer (NL soil layers)
 ! FCD(NL)     Root fraction within soil layer (NL soil layers)
 ! COSZS       cosinus of solar angle at LOCAL HOUR
@@ -356,7 +356,7 @@
       KO             = 0.0
       GB             = 0.0
       RC             = 0.0
-      FC_TEST        = 0.0     
+      FC_SUM        = 0.0     
       FPAR           = 0.0
       VMAXC          = 0.0
       VMUNS1         = 0.0
@@ -1027,12 +1027,12 @@
          RC(I)=RC(I)+FCANC(I,J)*RC_VEG(I,J)
       ENDDO
 !
-      FC_TEST(I)=FCANC(I,1)+FCANC(I,2)+FCANC(I,3)+FCANC(I,4)+  &
+      FC_SUM(I)=FCANC(I,1)+FCANC(I,2)+FCANC(I,3)+FCANC(I,4)+  &
                  FCANC(I,5)+FCANC(I,6)+FCANC(I,7)+FCANC(I,8)+  &
                  FCANC(I,9)
 !
-      IF(FC_TEST(I).GT.ZERO)THEN
-         RC(I)=RC(I)/FC_TEST(I)
+      IF(FC_SUM(I).GT.ZERO)THEN
+         RC(I)=RC(I)/FC_SUM(I)
       ELSE
          RC(I) = 5000.0     
       ENDIF

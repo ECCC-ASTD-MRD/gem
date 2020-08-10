@@ -252,7 +252,7 @@ contains
               a_ss01, a_ss02, a_ss03, a_ss04, a_ss05, a_ss06, a_ss07,&
               a_ss08, a_ss09, a_ss10, a_ss11, a_ss12, a_ss13, a_ss14,&
               a_ss15, a_ss16, a_ss17, a_ss18, a_ss19, a_ss20, my_tc3comp,  &
-              zrnflx,zsnoflx,zf12,zfevp,zclr,zcls,a_fxp,a_effradc,&
+              zrnflx,zsnoflx,zf12,zfevp,a_fxp,a_effradc,&
               a_effradi1, a_effradi2, a_effradi3, a_effradi4)
 
 #else

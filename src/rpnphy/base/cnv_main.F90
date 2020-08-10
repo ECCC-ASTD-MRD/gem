@@ -479,13 +479,13 @@ contains
          if (associated(zkkfc)) cnv_active = cnv_active + zkkfc
 !!$         if (associated(zkmid)) cnv_active = cnv_active + zkmid
 
-         call bkf_shallow5(ni, nkm1, dt, &
+         call bkf_shallow6(ni, nkm1, dt, &
               ppres, zgztherm,                                     &
               ttp, qqp, dummy1, dummy2, uu, vv, wz, dmsedt,        &
               zfsc, zqlsc, zqssc,                      &
               ztshal, zhushal, zprctns,zpritns,ztusc, ztvsc,zumfs, &
               pch1, pch1ten,                &
-              zkshal, psp, zwstar, zdxdy, cnv_active)
+              zkshal, psp, zwstar, zdxdy, zmrk2, cnv_active)
          if (phy_error_L) return
 
          ! Impose conservation by adjustment of moisture and temperature tendencies

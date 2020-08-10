@@ -434,26 +434,36 @@ contains
       endif
 
       !# Set flags for memory debugging
-      if (debug_mem_L) init2nan_L = .true.    
-      
+      if (debug_mem_L) init2nan_L = .true.
+
       !# Mixing length module init
       istat = ml_put('mlblac_max',pbl_mlblac_max)
       if (istat /= ML_OK) then
          call msg(MSG_ERROR,'(phy_nml) cannot configure mixing length module')
          return
       endif
-      
+
       !# Set Linoz flags
-      if (linoz_chm /= 'NIL' .and. radia /= 'CCCMARAD2') then
-         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_chm without radia=CCCMARAD2')
+      if (linoz_chm /= 'NIL' .and. .not.any(radia == (/'CCCMARAD ', 'CCCMARAD2'/)) ) then
+         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_chm without CCCMARAD or CCCMARAD2')
          return
       endif
-      llinoz  = (radia == 'CCCMARAD2' .and. &
-           any(linoz_chm == (/&
+      if (rad_linoz_l .and. radia /= 'CCCMARAD2') then
+         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_rad_L=T without CCCMARAD2')
+         return
+      endif
+      llinoz  = ( &
+           any(radia /= (/ &
+           'CCCMARAD ', &
+           'CCCMARAD2'/)) .and. &
+           any(linoz_chm == (/ &
            'OZONE   ', &
            'OZONEGHG' /)))
-      llingh  = (radia == 'CCCMARAD2' .and. &
-           any(linoz_chm == (/&
+      llingh  = ( &
+           any(radia /= (/ &
+           'CCCMARAD ', &
+           'CCCMARAD2'/)) .and. &
+           any(linoz_chm == (/ &
            'GHG     ', &
            'OZONEGHG' /)))
 
@@ -461,7 +471,7 @@ contains
          call msg(MSG_WARNING,'(phy_nml) lhn_filter ignored since lhn="NIL"')
          lhn_filter = -1.
       endif
-     
+
       m_istat = RMN_OK
       !----------------------------------------------------------------
       return

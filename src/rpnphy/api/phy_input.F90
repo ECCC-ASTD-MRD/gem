@@ -40,7 +40,7 @@ module phy_input_mod
    use phyinputdiag_mod, only: phyinputdiag
    use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L
    use physimple_transforms_mod, only: physimple_transforms3d
-   use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl
+   use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phy_typedef, only: phymeta
 
    private
@@ -89,12 +89,12 @@ contains
       !  2017-09 Stephane Chamberland: use inputio_mod
       !*@/
 
-      integer :: inputid = -1
-      integer :: nbvar = 0
-      type(INPUTIO_T) :: inputobj
+      integer, save :: inputid = -1
+      integer, save :: nbvar = 0
+      type(INPUTIO_T), save :: inputobj
 
       integer :: ivar, istat, istat2, tmidx, nread, iverb, icat, icat0, icat1
-      integer :: dateo, idt, ismandatory, readlist_nk(PHYINREAD_MAX)
+      integer :: idt, ismandatory, readlist_nk(PHYINREAD_MAX)
       real, pointer, dimension(:,:)   :: refp0, pw_p0, refp0ls, pw_p0ls
       real, pointer, dimension(:,:,:) :: data, data2
       character(len=4) :: inname_S, inname2_S
@@ -129,16 +129,20 @@ contains
       !# Read Ozone and chem related entries
       call priv_ozone(F_step)
 
-      idt = nint(delt)
-      dateo = jdate_to_cmc(jdateo)
-      call chm_load_emissions(F_basedir_S, dateo, idt, phy_lcl_ni, phydim_ni, F_step)
-
       !# Init the input module
       call priv_dyninreadlist(F_step, dyninread_list_s)
+      idt = nint(delt)
       F_istat = priv_init(inputid, inputobj, nbvar, jdateo, idt, F_incfg_S, &
            F_basedir_S, F_geoname_S, OZONEFILENAME_S)
-     if (.not.RMN_IS_OK(F_istat)) then
+      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_ERROR, '(phy_input) problem in init')
+         return
+      endif
+
+      call chm_load_emissions2(F_basedir_S, F_step, inputobj, nbvar)
+      if (phy_error_l) then
+         F_istat = RMN_ERR
+         call msg(MSG_ERROR, '(phy_input) problem in chm_load_emissions')
          return
       endif
 
@@ -177,13 +181,23 @@ contains
       F_istat = RMN_OK
       if (input_type /= 'DIST') istat = rpn_comm_bloc(ninblocx, ninblocy)
       VARLOOP: do ivar=1,nbvar
-         istat = inputio_isvarstep(inputobj, ivar, F_step)
+         if (input_type == 'GEM_4.8') then
+            istat = input_isvarstep(inputid, ivar, F_step)
+         else
+            istat = inputio_isvarstep(inputobj, ivar, F_step)
+         endif
          if (.not.RMN_IS_OK(istat)) then
             cycle VARLOOP !var not requested at this step
          endif
-         istat = inputio_meta(inputobj%cfg, ivar, inname_S, inname2_S,  &
-              dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
-              F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
+         if (input_type == 'GEM_4.8') then
+            istat = input_meta(inputid, ivar, inname_S, inname2_S, &
+                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
+                 F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
+         else
+            istat = inputio_meta(inputobj%cfg, ivar, inname_S, inname2_S,  &
+                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
+                 F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
+         endif
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR,'(phy_input) problem getting input varname')
             cycle VARLOOP
@@ -234,8 +248,12 @@ contains
 !!$            print *,'(phy_input)0 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
 
             nullify(data, data2)
-            istat = inputio_get(inputobj, ivar, F_step, data, data2, &
-                 F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
+            if (input_type == 'GEM_4.8') then
+               istat = input_get(inputid, ivar, F_step, phy_lcl_gid, vgrid_S, data, data2, F_ovname1_S=inname_S, F_ovname2_S=inname2_S) !#TODO: ovname
+            else
+               istat = inputio_get(inputobj, ivar, F_step, data, data2, &
+                    F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
+            endif
 !!$            print *,'(phy_input)1 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
             if (.not.(RMN_IS_OK(istat) .and. &
                  associated(data) .and. &
@@ -267,7 +285,7 @@ contains
                     &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
             endif
 
-#ifdef __INTEL_COMPILER            
+#ifndef __GFORTRAN__
             if (associated(data)) deallocate(data,stat=istat2)
             if (associated(data2)) deallocate(data2,stat=istat2)
 #endif
@@ -310,19 +328,16 @@ contains
    function priv_init(my_inputid, my_inputobj, my_nbvar, my_jdateo, my_idt, &
         my_incfg_S, my_basedir_S, my_geoname_S, my_ozonename_S) result(my_istat)
       implicit none
-      integer, intent(out) :: my_inputid
-      integer, intent(out) :: my_nbvar
-      type(INPUTIO_T), intent(out) :: my_inputobj
+      integer, intent(inout) :: my_inputid
+      type(INPUTIO_T), intent(inout) :: my_inputobj
+      integer, intent(inout) :: my_nbvar
       integer(INT64), intent(in) :: my_jdateo
       integer, intent(in) :: my_idt
       character(len=*), intent(in) :: my_incfg_S, my_basedir_S, my_geoname_S, my_ozonename_S
       integer :: my_istat
       !*@/
       logical, save :: is_init_L = .false.
-      integer, save :: inputid = -1
-      integer, save :: nbvar = 0
       integer, save :: istatus = RMN_ERR
-      type(INPUTIO_T), save :: inputobj
 
       integer :: istat, iotype
 
@@ -335,40 +350,56 @@ contains
       real, pointer, dimension(:,:)   :: refp0, refp0ls
       ! ---------------------------------------------------------------------
       my_istat = istatus
-      my_inputid = inputid
-      my_inputobj = inputobj
-      my_nbvar = nbvar
+      if (input_type == 'GEM_4.8') ptopo_iotype = PTOPO_BLOC
       if (is_init_L) return
       is_init_L = .true.
-
+ 
       if (any((/phydim_ni, phydim_nj/) == 0)) then
          call msg(MSG_ERROR, '(phy_input) problem getting bus size')
          my_istat = RMN_ERR
          return
       endif
       my_istat = RMN_OK
-      if (input_type == 'BLOC') then
-         iotype = PTOPO_BLOC
-         istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
-              my_basedir_S, phy_lcl_gid, phy_lclcore_gid, phy_comm_io_id, &
-              F_li0=1, F_lin=phy_lcl_ni, F_lj0=1, F_ljn=phy_lcl_nj, &
-              F_iotype=iotype)
+      IF_GEM48: if (input_type == 'GEM_4.8') then
+         my_inputid = input_new(my_jdateo, my_idt, my_incfg_S)
+         istat = my_inputid
+         if (RMN_IS_OK(istat)) then
+            call phyinputdiag(my_inputid)
+            my_nbvar = input_nbvar(my_inputid)
+            istat = input_set_basedir(my_inputid, my_basedir_S)
+            istat = min(input_setgridid(my_inputid, phy_lclcore_gid), istat)
+         endif
+         if (RMN_IS_OK(istat)) then
+            istat = input_set_filename(my_inputid, 'geop', my_geoname_S, &
+                 IS_DIR, INPUT_FILES_GEOP)
+            istat = min(istat, &
+                 input_set_filename(my_inputid, 'ozon', my_ozonename_S, &
+                 IS_DIR, INPUT_FILES_CLIM))
+         endif
       else
-         iotype = PTOPO_IODIST
-         istat = inputio_new(inputobj, my_jdateo, my_idt, my_incfg_S, &
-              my_basedir_S, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id, &
-              F_li0=phy_lcl_i0, F_lin=phy_lcl_in, F_lj0=phy_lcl_j0, F_ljn=phy_lcl_jn, &
-              F_iotype=iotype)
-      endif
-      if (RMN_IS_OK(istat)) then
-         call phyinputdiag(inputobj)
-         nbvar = inputio_nbvar(inputobj)
-         istat = inputio_set_filename(inputobj, 'geop', my_geoname_S, &
-              IS_DIR, INPUT_FILES_GEOP)
-         istat = min(istat, &
-              inputio_set_filename(inputobj, 'ozon', my_ozonename_S, &
-              IS_DIR, INPUT_FILES_CLIM))
-      endif
+         if (input_type == 'BLOC') then
+            iotype = PTOPO_BLOC
+            istat = inputio_new(my_inputobj, my_jdateo, my_idt, my_incfg_S, &
+                 my_basedir_S, phy_lcl_gid, phy_lclcore_gid, phy_comm_io_id, &
+                 F_li0=1, F_lin=phy_lcl_ni, F_lj0=1, F_ljn=phy_lcl_nj, &
+                 F_iotype=iotype)
+         else
+            iotype = PTOPO_IODIST
+            istat = inputio_new(my_inputobj, my_jdateo, my_idt, my_incfg_S, &
+                 my_basedir_S, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id, &
+                 F_li0=phy_lcl_i0, F_lin=phy_lcl_in, F_lj0=phy_lcl_j0, F_ljn=phy_lcl_jn, &
+                 F_iotype=iotype)
+         endif
+         if (RMN_IS_OK(istat)) then
+            call phyinputdiag(my_inputobj)
+            my_nbvar = inputio_nbvar(my_inputobj)
+            istat = inputio_set_filename(my_inputobj, 'geop', my_geoname_S, &
+                 IS_DIR, INPUT_FILES_GEOP)
+            istat = min(istat, &
+                 inputio_set_filename(my_inputobj, 'ozon', my_ozonename_S, &
+                 IS_DIR, INPUT_FILES_CLIM))
+         endif
+      endif IF_GEM48
       if (.not.RMN_IS_OK(istat)) &
            call msg(MSG_ERROR, '(phy_input) input module initialization problem')
       my_istat = min(istat, my_istat)
@@ -413,14 +444,11 @@ contains
 
       call collect_error(my_istat)
       istatus = my_istat
-      my_inputid = inputid
-      my_inputobj = inputobj
-      my_nbvar = nbvar
       ! ---------------------------------------------------------------------
       return
    end function priv_init
 
-
+   
    !/@*
    subroutine priv_dyninreadlist(my_step, my_list_s)
       implicit none

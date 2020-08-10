@@ -13,40 +13,38 @@
 ! Creation       : A. Kallaur (MSC/ARQI), Octobre 2006
 ! Description    : Read from file (if need be) with the surface
 !                  biogenic, anthropogenic and major point sources.
-!                  
+!
 ! Modification1   : December 2010 (A. Kallaur)
 !                   Adaptation to GEM4.4.0+ new interface.
 !                   Chemical buses no longer exist, so all emissions data
 !                   is written to the permanent Physics bus.
 !
-! Modification2   : -----> STUB VERSION  STUB VERSION  STUB VERSION  STUB VERSION  <-----
+! Modification2   : June 2020 (D. Akingunola)
+!                   Added GEM input API arguments for reading area emissions
+!                   (GEM >= 5.1.x)
+!         -----> STUB VERSION  STUB VERSION  STUB VERSION  STUB VERSION  <-----
 ! Extra info     :
 !
 ! Arguments: IN
-!              bper_siz       --> bus size
-!              bper_len       --> bus length (bus size*p_nj)
-!              gem_datimeo    --> GEM date of origin
-!              gem_dt_8       --> Model time step length
+!              F_basedir_S    --> base path for input data file
 !              gem_tstep_num  --> current Model time step
-!                                 (Higher up; called F_stepno and Lctl_step)
-!
-!            IN-OUT
-!              busper3D       --> Physics permanent bus 
-!                                 (all chemical vars are now there)
+!              inputobj       --> INPUTIO object
+!              nbvar_input    --> Number of fields in inputobj
 !
 !==============================================================================
-subroutine chm_load_emissions (F_basedir_S, gem_datimeo, i_gem_dt, F_phy_lcl_ni, F_phydim_ni, gem_tstep_num)
-
+subroutine chm_load_emissions2(F_basedir_S, gem_tstep_num, inputobj, nbvar_input)
+   use inputio_mod, only: INPUTIO_T
    implicit none
 
 ! Subroutine arguments
-   character(len=*)    :: F_basedir_S
-   integer, intent(in) :: gem_datimeo
-   integer, intent(in) :: gem_tstep_num
-   integer, intent(in) :: i_gem_dt, F_phy_lcl_ni, F_phydim_ni
+   character(len=*)               :: F_basedir_S
+   integer, intent(in)            :: gem_tstep_num
+   type(INPUTIO_T), intent(inout) :: inputobj
+   integer(kind=4), intent(inout) :: nbvar_input
 
-   if (F_phydim_ni < 0) print *,'Called chm_load_emissions stub with:', F_basedir_S, gem_datimeo, i_gem_dt, F_phy_lcl_ni, F_phydim_ni, gem_tstep_num
+   !#Note: the next line is only to prevent compiler complain for unused var
+   if (gem_tstep_num < 0) print *,'Called chm_load_emissions stub with:', F_basedir_S, gem_tstep_num, nbvar_input !, inputobj
 
    return
-end subroutine chm_load_emissions
+end subroutine chm_load_emissions2
 

@@ -385,13 +385,18 @@ subroutine inicover_svs(kount, ni, trnch)
 !
 !         aggregate logs ...
 !
-      call aggveghigh(PTR1D(vegf), logz0mloc, logz0mloc, PTR1D(z0mvh), &
-           PTR1D(dlat), ni, nclass)
+      if ( .not. read_z0vh ) then
 
-      ! reverse log operation to get final z0h
-      DO i=1,ni
-         zz0mvh(i)= max( exp(zz0mvh(i)) , numin_z0m )
-      ENDDO
+         call aggveghigh(PTR1D(vegf), logz0mloc, logz0mloc, PTR1D(z0mvh), &
+              PTR1D(dlat), ni, nclass)
+      
+         ! reverse log operation to get final z0h
+         DO i=1,ni
+            zz0mvh(i)= max( exp(zz0mvh(i)) , numin_z0m )
+         ENDDO
+         
+      endif
+
 
       call aggveghigh(PTR1D(vegf), rgldat, rgldat, PTR1D(rglvh), &
            PTR1D(dlat), ni, nclass)

@@ -83,7 +83,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 
    real,dimension(n) :: dqsat, qsat, rhoa, scr1, scr2, scr3, scr4
    real,dimension(n) :: scr5,  scr6,  scr7, scr8, scr9, scr10,scr11
-   real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m
+   real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m,  vmod0
    real,dimension(n) :: my_ta,my_qa
    real,dimension(n) :: zu10, zusr   ! wind at 10m and at sensor level
    real,dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
@@ -97,7 +97,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real,pointer,dimension(:) :: ps, qsice, th, ts, tt, uu, vv
    real,pointer,dimension(:) :: z0h, z0m, zalfaq, zalfat
    real,pointer,dimension(:) :: zdlat, zfcor, zfdsi, zftemp, zfvap
-   real,pointer,dimension(:) :: zqdiag, zrainrate, zrunofftot
+   real,pointer,dimension(:) :: zml, zqdiag, zrainrate, zrunofftot
    real,pointer,dimension(:) :: zsnodp, zsnowrate, ztdiag
    real,pointer,dimension(:) :: ztsrad, zudiag, zvdiag, zfrv, zzusl, zztsl
    real,pointer,dimension(:) :: zfsd, zfsf, zcoszeni
@@ -118,7 +118,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real, save :: ALBOW,ALBDI,ALBMI,ALBDS,ALBMS,EMISW
    real, save :: COEFCOND,COEFHCAP,COEFEXT
    real, save :: ROICE,ROSNOW(2),ROSWTR
-   real, save :: Z0ICE,Z0W
+   real, save :: Z0W
+   real, save :: Z0LAKEICE
    real, save :: BASEHF
    real, save :: HCAPI,HCAPW,VHFICE,VHFBAS,VHFSNO
    real, save :: HSMIN,DMIX
@@ -138,7 +139,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    data  EMISW / 0.97 /
    data  ROICE ,  ROSWTR  / 913.0 ,  1025.0  /
    data  ROSNOW / 330.0 , 450.0 /
-   data  Z0ICE ,  Z0W  / 1.6E-4 , 3.2E-5 /
+   data  Z0W  / 3.2E-5 /
+   data  Z0LAKEICE / 1.6E-4 /
    data  BASEHF / 2.0 /
    data  HCAPI    , HCAPW    , VHFICE   , VHFBAS   , VHFSNO   / &
         2.062E+3 , 4.088E+3 , 3.014E+8 , 2.679E+8 , 1.097E+8 /
@@ -170,6 +172,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
    zftemp   (1:n) => bus( x(ftemp,1,indx_sfc) : )
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
+   zml      (1:n) => bus( x(ml,1,1)           : )
    zrainrate(1:n) => bus( x(rainrate,1,1)     : )
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
@@ -240,7 +243,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 !*     1.     Preliminaries
 !      --------------------
 
-      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod,dir_air=vdir,rho_air=rhoa, &
+      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod0,dir_air=vdir,rho_air=rhoa, &
            min_wind_speed=sqrt(vamin))
       if (i /= SL_OK) then
          call physeterror('seaice', 'error returned by sl_prelim()')
@@ -264,11 +267,18 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 !            - under-ice seawater temperature
          TB(I) = TFRZW
 
+         ! Sea and lake ice roughness
+         if ( ZML(I) .gt. 0.01 ) then
+            ! non-zero lake fraction
+            Z0M(I) = Z0LAKEICE
+         else
+            Z0M(I) = Z0SEAICE
+         endif
+
+         ! Ice thickness and icemelt
          if( ICEMELT ) then
 !           Roughness lengths for the surface (ice/water)
-            if( HICE(I) .ge. HIMIN ) then
-               Z0M(I) = Z0ICE
-            else
+            if( HICE(I) .lt. HIMIN ) then
                Z0M(I) = Z0W
 !              remove snow if ice is too thin
                ZSNODP(I) = 0.0
@@ -276,7 +286,6 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          else
 !         minimum ice thickness
             HICE(I) = max ( HICE(I) , HIMIN )
-            Z0M(I) = Z0ICE
          endif
 
          Z0H(I) = Z0M(I)
@@ -316,9 +325,9 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
         QSICE(I) = QSAT(I)
       end do
 
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            coefm=cmu,coeft=ctu,flux_t=zftemp,flux_q=zfvap,ilmo=ilmo_ice,ue=zfrv, &
-           h=hst_ice)
+           h=hst_ice,L_min=sl_Lmin_seaice,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('seaice', 'error returned by sl_sfclayer()')
          return
@@ -910,8 +919,9 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       end do
 
       ! Compute diagnostic quantities at 1.5m
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
-           hghtt_diag=zt_rho,t_diag=my_ta,q_diag=my_qa,tdiaglim=SEAICE_TDIAGLIM)
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+           hghtt_diag=zt_rho,t_diag=my_ta,q_diag=my_qa,tdiaglim=SEAICE_TDIAGLIM, &
+           L_min=sl_Lmin_seaice,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('seaice', 'error 2 returned by sl_sfclayer()')
          return
@@ -940,14 +950,18 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       end do
 
       ! Estimate diagnostic quantities at user-specified level
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag,u_diag=zudiag, &
-           v_diag=zvdiag,tdiaglim=SEAICE_TDIAGLIM)
+           v_diag=zvdiag,tdiaglim=SEAICE_TDIAGLIM,L_min=sl_Lmin_seaice,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('seaice', 'error 3 returned by sl_sfclayer()')
          return
       endif
-
+      if (sl_Lmin_seaice > 0.) then
+         zudiag = zudiag * vmod0 / vmod
+         zvdiag = zvdiag * vmod0 / vmod
+      endif
+      
       ! Fill surface type-specific diagnostic values
       zqdiagtyp = zqdiag
       ztdiagtyp = ztdiag
@@ -975,6 +989,9 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
            call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
            call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
            call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
+           zudiag = zudiag * vmod0 / vmod
+           zvdiag = zvdiag * vmod0 / vmod
+           
            ! Derives other variables from cpl_update output
            ! assuming FC_ICE and FV_ICE were computed with
            ! RHOA at the same level
@@ -1020,16 +1037,18 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       !   8.     Heat Stress Indices
       !------------------------------------
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
-      IF_THERMAL_STRESS: if (thermal_stress) then
+      IF_TERMAL_STRESS: if (thermal_stress) then
 
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
-           v_diag=zvsurfzt,tdiaglim=SEAICE_TDIAGLIM)
+           v_diag=zvsurfzt,tdiaglim=SEAICE_TDIAGLIM,L_min=sl_Lmin_seaice,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('seaice', 'error 3 returned by sl_sfclayer()')
          return
       endif
-
+      zusurfzt = zusurfzt * vmod0 / vmod
+      zvsurfzt = zvsurfzt * vmod0 / vmod
+               
       do I=1,N
 
          if (abs(zzusl(i)-zu) <= 2.0) then
@@ -1069,7 +1088,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
               ztglbsun, ztglbshade, ztwetb,               &
               ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
               ZQ6,ZQ7, N)
-      endif IF_THERMAL_STRESS
+      endif IF_TERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &

@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
+subroutine phyexe(d, f, v, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    use debug_mod, only: init2nan
    use apply_rad_tendencies, only: apply_rad_tendencies1
    use calcdiag, only: calcdiag1
@@ -42,14 +42,12 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    !@object this is the main interface subroutine for the cmc/rpn unified physics
    !@arguments
    !          - input -
-   ! e        entry    input field
    ! d        dynamics input field
    !          - input/output -
    ! f        historic variables for the physics
    !          - output -
    ! v        physics tendencies and other output fields from the physics
    !          - input -
-   ! esiz     dimension of e
    ! dsiz     dimension of d
    ! fsiz     dimension of f
    ! vsiz     dimension of v
@@ -58,8 +56,8 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    ! n        horizontal running length
    ! nk       vertical dimension
 
-   integer :: esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk
-   real    :: e(esiz), d(dsiz), f(fsiz), v(vsiz)
+   integer :: dsiz,fsiz,vsiz,trnch,kount,ni,nk
+   real    :: d(dsiz), f(fsiz), v(vsiz)
 
    !@author L. Spacek (oct 2011)
    !@notes
@@ -158,7 +156,7 @@ subroutine phyexe(e, d, f, v, esiz, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
-   call chm_exe(e, d, f, v, esiz, dsiz, fsiz, vsiz, int(delt), trnch, kount, ni, nk)
+   call chm_exe2(d, f, v, dsiz, fsiz, vsiz, trnch, kount)
    if (phy_error_L) return
 
    call diagnosurf5(ni, trnch)

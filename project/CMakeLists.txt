@@ -6,8 +6,8 @@ cmake_policy(SET CMP0066 NEW)
 cmake_policy(SET CMP0056 NEW)
 
 # set the compiler suite by uncommenting one of the following 3 lines:
-set(COMPILER gnu CACHE STRING compiler)
-#set(COMPILER intel CACHE STRING compiler)
+set(COMPILER intel CACHE STRING compiler)
+#set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
 # which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")

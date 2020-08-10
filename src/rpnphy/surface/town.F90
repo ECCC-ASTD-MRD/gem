@@ -509,14 +509,14 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 !-----------------------------------------------------------------------------
 !   Compute town surface layer var. (for alfat alfaq ctu...)
 !-----------------------------------------------------------------------------
-   !# Compute town surface layer var. (for alfat alfaq ctu...)
+   !# Compute town surface layer var. (need for  udiag, zbm & the implicit condition)
    i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf,  &
         zz0,zz0t,zdlat,zfcor,optz0=0,hghtm_diag=zu,hghtt_diag=zt,      &
         ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,          &
         coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag)
 
    if (i /= SL_OK) then
-      call physeterror('town', 'error returned by sl_sfclayer()')
+      call physeterror('town', 'error returned by sl_sfclayer(number 1)')
       return
    endif
 
@@ -525,60 +525,63 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
          zalfaq(i) = -psftq(i)
         if (.not.impflx) zbt(i) = 0.
         if (impflx) then
-         zalfat(i) = - zbt(i) * ztsurf(i)
-         zalfaq(i) = - zbt(i) * zqsurf(i)
+!         zalfat(i) = zalfat(i) - zbt(i) * pthetaa(i)
+!         zalfaq(i) = zalfaq(i) - zbt(i) * pqa(i)
+         zalfat(i) = zalfat(i) - zbt(i) * pthetaa(i)
+         zalfaq(i) = zalfaq(i) - zbt(i) * pqa(i)
         endif
       end do
 
 !-----------------------------------------------------------------------------
 !   Sreen-level Diagnostics
 !-----------------------------------------------------------------------------
-! sl_sfclayer between  road and mid-canyon for zt => compute ztdiag
+      ! => temperature (default diag is t_diag from sl_sfclayer number 2 and T_can)
+      if( urb_diagtemp ) then 
+      !  ztdiag = xtrdzt
+        ztdiag = xt_canyon
+      else
+      ! sl_sfclayer between  road and mid-canyon for zt => compute ztdiag
      i = sl_sfclayer(xt_canyon,xq_canyon,xu_canyon,zvdir,xbld_height/2.0,xbld_height/2.0,xt_road(:,1),xq_canyon, &
         xz0_road,xz0_road/10.0,zdlat,zfcor,optz0=8,hghtm_diag=zu,hghtt_diag=zt,      &
         t_diag=ztdiag)
 
       if (i /= SL_OK) then
-         call physeterror('town', 'error 2 returned by sl_sfclayer()')
+         call physeterror('town', 'error 2 returned by sl_sfclayer(number 2)')
          return
       endif
+      endif
+      ! => humidity
+        zqdiag = xq_canyon
 
-! special conditions
+      ! special conditions
       do i=1,n
-! => humidity
-        zqdiag(i) = xq_canyon(i)
-! => temperature
-        if( urb_diagtemp ) then 
-!        ztdiag(i)=xtrdzt(i)
-           ztdiag(i)=xt_canyon(i)
-        endif
       if (xbld_height(i) .le. (zt*2.0) ) then 
         ztdiag(i) = xt_canyon(i)
       endif
-! => wind (default diag is u_diag from above sl_sfclayer)
-! if bldh>15m => u_canyon
+      ! => wind (default diag is u_diag from sl_sfclayer number 1) (option urb_diagwind for adaptation with street morphology)
+      ! if bldh>15m => u_canyon
       if (xbld_height(i) .ge. (zu*3.0/2.0) ) then
-        zudiag(i) = xu_canyon(i) *COS(zvdir(i))
-        zvdiag(i) = xu_canyon(i) *SIN(zvdir(i))
+        zudiag(i) = xu_canyon(i) *cos(zvdir(i))
+        zvdiag(i) = xu_canyon(i) *sin(zvdir(i))
       endif
 
       if( urb_diagwind ) then
-!  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
-!                               => Uz U10 = (30/H-2) Utop + 3/H(H-10) Ucan
-      if( xbld_height(i) .gt. zu .and. xbld_height(i) .lt. (zu*3.0/2.0) )  then
-        zuzu(i) =  (3.0 * zu /xbld_height(i) -2.) * zvmod(i)             &
-           * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town (i))   &
-           / LOG( (zvmod(i) + 1.* xbld_height(i)/3.) / xz0_town   (i))   &
-           + (3.* ( xbld_height(i) -zu )/ xbld_height(i) ) * xu_canyon(i)
+      !  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
+      !        => U(z=10)= U10 = (3 zu/H-2) Utop + (-3 zu/H+3) Ucan  
+      if( xbld_height(i) .gt. zu .and. xbld_height(i) .lt. (zu*3.0/2.0) )  then 
+        zuzu(i) =  (3.0 * zu /xbld_height(i) -2.) * zvmod(i)                  &
+           * log( (     xbld_height(i)/3.) / xz0_town (i))   &
+           / log( (puref(i) + xbld_height(i)/3.) / xz0_town   (i))   &
+           + (- 3.*zu /xbld_height(i) +3.) * xu_canyon(i)
         zudiag(i) = zuzu(i) *COS(zvdir(i))
         zvdiag(i) = zuzu(i) *SIN(zvdir(i))
-      elseif (xbld_height(i) .le. 10.0 ) then
-!  => log law. above roof level -  same as in urban_drag
-  zuzu(i) =  zvmod(i)                                                   &
-           * LOG( (     zu    - 2 * xbld_height(i)/3.) / xz0_town(i))   &
-           / LOG( ( puref(i)  + 1.* xbld_height(i)/3.) / xz0_town(i))
-        zudiag(i) = zuzu(i) *COS(zvdir(i))
-        zvdiag(i) = zuzu(i) *SIN(zvdir(i))
+      elseif (xbld_height(i) .le. zu ) then
+      !        => log law. above roof level 
+      zuzu(i) =  zvmod(i)                                               &
+           * log( (     zu    - 2 * xbld_height(i)/3.) / xz0_town(i))   &
+           / log( ( puref(i)  + xbld_height(i)/3.) / xz0_town(i))
+        zudiag(i) = zuzu(i) *cos(zvdir(i))
+        zvdiag(i) = zuzu(i) *sin(zvdir(i))
       endif
       endif
       end do

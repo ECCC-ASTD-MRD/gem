@@ -17,7 +17,7 @@
 module mixing_length
    ! Container for calculation and manipulation of mixing and dissipation length scales in the PBL.
    use, intrinsic :: iso_fortran_env, only: INT64
-   use tdpack, only: GRAV, KARMAN, PI
+   use tdpack, only: GRAV, KARMAN, PI, DELTA, CAPPA
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -34,7 +34,8 @@ module mixing_length
    real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
 
    ! Private parameters
-   integer, parameter :: ML_LONG=1024
+   integer, parameter :: ML_LONG=1024              !Long character string
+   real, parameter :: ML_MIN=1.                    !Minimum mixing length (m)
 
    ! Private variables
    character(len=ML_LONG) :: mlblac_max = 'BLAC62' !Asymptotic formulation for Blacadar (1962) mixing length with clipping
@@ -46,6 +47,7 @@ module mixing_length
    public :: ml_calc_blac
    public :: ml_calc_boujo
    public :: ml_calc_lh
+   public :: ml_compute
 
    ! Generic procedures
    interface ml_put
@@ -92,7 +94,256 @@ contains
       status = ML_OK
 
    end function ml_put_s
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   integer function ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
+        enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
+        hpbl, lh, hpar, mrk2, dxdy, tau, kount) result(stat)
+     use phy_options, only: longmel, pbl_diss, pbl_mlturb_diss
+     use ens_perturb, only: ens_spp_get
+     ! High-level function to compute and blend mixing lengths
 
+     ! Argument declaration
+     character(len=*), dimension(:), intent(in) :: mlen    !name of mixing length estimate
+     real, dimension(:,:), intent(in) :: t                 !dry air temperature (K)
+     real, dimension(:,:), intent(in) :: qe                !specific humidity on e-levels (kg/kg)
+     real, dimension(:,:), intent(in) :: qc                !PBL cloud water content (kg/kg)
+     real, dimension(:,:), intent(in) :: z                 !height AGL of thermodynamic levels (m)
+     real, dimension(:,:), intent(in) :: gzmom             !height AGL of momentum levels (m)
+     real, dimension(:,:), intent(in) :: s                 !sigma values for full momentum levels
+     real, dimension(:,:), intent(in) :: se                !sigma values for half (energy) levels
+     real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
+     real, dimension(:,:), intent(in) :: enold             !TKE from previous time step (m2/s2)
+     real, dimension(:,:), intent(in) :: znold             !mixing length from previous time step (m)
+     real, dimension(:,:), intent(in) :: buoy              !buoyancy flux (m2/s2)
+     real, dimension(:,:), intent(in) :: rig               !gradient Richardson number
+     real, dimension(:,:,:), intent(in) :: w_cld           !cloud-layer velocity scales (m/s)
+     real, dimension(:,:), intent(in) :: f_cs              !factor for l_s coeff c_s (nonlocal)
+     real, dimension(:,:), intent(in) :: fm                !PBL momentum stability function
+     real, dimension(:,:), intent(in) :: turbreg           !turbulence regime flag
+     real, dimension(:), intent(in) :: z0                  !momentum roughness length (m)
+     real, dimension(:), intent(in) :: hpbl                !depth of the PBL (m)
+     real, dimension(:), intent(in) :: lh                  !launching height for gravity waves (m)
+     real, dimension(:), intent(in) :: hpar                !height of parcel ascent (m)
+     real, dimension(:,:), intent(in) :: mrk2              !Markov chains for stochastic parameters
+     real, dimension(:), intent(in) :: dxdy                !horizontal grid area (m2)
+     real, intent(in) :: tau                               !time step (s)
+     integer, intent(in) :: kount                          !step number
+     real, dimension(:,:), intent(inout) :: pri            !inverse Prandtl number
+     real, dimension(:,:), intent(out) :: zn               !mixing length (m)
+     real, dimension(:,:), intent(out) :: zd               !dissipation length (m)
+
+     ! Local variables and common blocks
+#include "clefcon.cdk"
+     integer :: n, nk, j, k
+     real, dimension(size(t,dim=1)) :: mlemod, mlmult
+     real, dimension(size(t,dim=1),size(t,dim=2)) :: zn_blac, zd_blac, pri_blac, &
+          zn_boujo, zd_boujo, pri_boujo, zn_turboujo, zd_turboujo, pri_turboujo, &
+          zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, exner, weight, rif
+     logical :: one_ml_form, stochastic_mult
+     logical, dimension(size(t,dim=1),size(t,dim=2)) :: turb_mask
+
+     ! Set return status
+     stat = ML_ERR
+
+     ! Set array bounds
+     n = size(t, dim=1)
+     nk = size(t, dim=2)
+
+     ! Obtain stochastic parameter information
+     mlmult(:) = ens_spp_get('ml_mult', mrk2, 1.)
+     mlemod(:) = ens_spp_get('ml_emod', mrk2, 1.)
+     stochastic_mult = any(mlemod(:) /= 1.)
+     one_ml_form = all(mlen(:) == longmel)
+
+     ! Precompute state variables if required
+     if (any(mlen(:) == 'BOUJO') .or. any(mlen(:) == 'TURBOUJO') .or. &
+          stochastic_mult) then
+        call vspown1(exner,se,-CAPPA,n*nk)
+        te(1:n,1:nk)  = t(1:n,1:nk)
+        qce(1:n,1:nk) = qc(1:n,1:nk)
+        tv = te*(1.0+DELTA*qe-qce)*exner
+     endif
+
+     ! Mixing length estimate based on Bougeault and Lacarrere (1989)
+     if (any(mlen(:) == 'TURBOUJO')) then
+        where (nint(turbreg) == LAMINAR)
+           turb_mask = .false.
+        elsewhere
+           turb_mask = .true.
+        endwhere
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, mask=turb_mask) /= ML_OK) then
+           call physeterror('moistke', 'error returned by B-L mixing length estimate')
+           return
+        endif
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= ML_OK) then
+           call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+           return
+        endif
+        blend_hght(:,:nk-1) = gzmom(:,2:)
+        blend_hght(:,nk) = 0.
+        if (ml_blend(zn_turboujo, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
+           call physeterror('moistke','error returned by mixing length blending')
+           return
+        endif
+        where (zn_boujo < 0.)
+           zn_turboujo(:,:) = zn_blac(:,:)   ! Use local (Blackadar) mixing length for laminar flows
+        elsewhere
+           przn(:,:) = 1.      ! Use nonlocal (Bougeault) mixing length for turbulent flows
+        endwhere
+        do k=1,nk
+           zn_turboujo(:,k) = zn_turboujo(:,k) * mlmult(:)
+        enddo
+        if (ml_tfilt(zn_turboujo, znold, tau, kount) /= ML_OK) then
+           call physeterror('moistke', 'error returned by mixing length time filtering')
+           return
+        endif
+        pri_turboujo = pri/przn
+        rif = pri_turboujo*rig
+        zd_turboujo = zn_turboujo * (1.-min(rif,0.4)) / (1.-2.*min(rif,0.4))
+        zd_turboujo = max(zd_turboujo,1.e-6)
+        if (pbl_mlturb_diss) then
+           where (nint(turbreg) == LAMINAR) zd_turboujo = max(zn_turboujo,1.E-6)
+        endif
+        if (one_ml_form) then
+           zn = zn_turboujo
+           zd = zd_turboujo
+           pri = pri_turboujo
+        endif
+     endif
+
+     ! Mixing length estimate based on Bougeault and Lacarrere (1989)
+     if (any(mlen(:) == 'BOUJO') .or. stochastic_mult) then
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps) /= ML_OK) then
+           call physeterror('moistke', 'error returned by B-L mixing length estimate')
+           return
+        endif
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= ML_OK) then
+           call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+           return
+        endif
+        blend_hght(:,:nk-1) = gzmom(:,2:)
+        blend_hght(:,nk) = 0.
+        if (ml_blend(zn_boujo, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
+           call physeterror('moistke','error returned by mixing length blending')
+           return
+        endif
+        do k=1,nk
+           zn_boujo(:,k) = zn_boujo(:,k) * mlmult(:)
+        enddo
+        przn = 1.
+        if (ml_tfilt(zn_boujo, znold, tau, kount) /= ML_OK) then
+           call physeterror('moistke', 'error returned by mixing length time filtering')
+           return
+        endif
+        pri_boujo = pri/przn
+        rif = pri_boujo*rig
+        zd_boujo = max(zn_boujo * (1.-min(rif,0.4)) / (1.-2.*min(rif,0.4)), 1.e-6)
+        if (one_ml_form) then
+           zn = zn_boujo
+           zd = zd_boujo
+           pri = pri_boujo
+        endif
+     endif
+
+     ! Mixing length estimate based on Lenderink and Holtslag (2004) modified for no-local Cu
+     if (any(mlen(:) == 'LH')) then
+        przn = 1.
+        pri_lh = pri/przn
+        if (ml_calc_lh(zd_lh, zn_lh, pri_lh, buoy, enold, w_cld, rig, z, f_cs, hpar) /= ML_OK) then
+           call physeterror('moistke', 'error returned by L-H mixing length estimate')
+           return
+        endif
+        do k=1,nk
+           zd_lh(:,k) = zd_lh(:,k) * mlmult(:)
+        enddo
+        if (kount > 0) then ! Blend towards Blackadar length scale at upper levels
+           if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh) /= ML_OK) then
+              call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+              return
+           endif
+           do k=1,nk
+              zn_blac(:,k) = zn_blac(:,k) * mlmult(:)
+           enddo
+           call blweight2(weight, s, ps, n, nk)
+           zn_lh(:,:) = zn_blac(:,:) + (zn_lh(:,:)-zn_blac(:,:))*weight(:,:)
+           zd_lh(:,:) = zn_blac(:,:) + (zd_lh(:,:)-zn_blac(:,:))*weight(:,:)
+           if (ml_tfilt(zn_lh, znold, tau, kount) /= ML_OK) then
+              call physeterror('moistke', 'error returned by mixing length time filtering')
+              return
+           endif
+        endif
+        if (one_ml_form) then
+           zn = zn_lh
+           zd = zd_lh
+           pri = pri_lh
+        endif
+     endif
+
+     ! Mixing length estimate based on Blackadar (1962)
+     if (any(mlen(:) == 'BLAC62') .or. stochastic_mult) then
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, dxdy=dxdy, przn=przn) /= ML_OK) then
+           call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
+           return
+        endif
+        do k=1,nk
+           zn_blac(:,k) = zn_blac(:,k) * mlmult(:)
+        enddo
+        if (ml_tfilt(zn_blac, znold, tau, kount) /= ML_OK) then
+           call physeterror('moistke', 'error returned by mixing length time filtering')
+           return
+        endif
+        zd_blac = max(zn_blac,1.E-6)
+        pri_blac = pri/przn
+        if (one_ml_form) then
+           zn = zn_blac
+           zd = zd_blac
+           pri = pri_blac
+        endif
+     endif
+
+     ! Merge mixing length estimates if required
+     if (.not.one_ml_form) then
+        do j=1,n
+           if (mlen(j) == 'TURBOUJO') then
+              zn(j,:) = zn_turboujo(j,:)
+              zd(j,:) = zd_turboujo(j,:)
+              pri(j,:) = pri_turboujo(j,:)
+           elseif (mlen(j) == 'BOUJO') then
+              zn(j,:) = zn_boujo(j,:)
+              zd(j,:) = zd_boujo(j,:)
+              pri(j,:) = pri_boujo(j,:)
+           elseif (mlen(j) == 'LH') then
+              zn(j,:) = zn_lh(j,:)
+              zd(j,:) = zd_lh(j,:)
+              pri(j,:) = pri_lh(j,:)
+           elseif (mlen(j) == 'BLAC62') then
+              zn(j,:) = zn_blac(j,:)
+              zd(j,:) = zd_blac(j,:)
+              pri(j,:) = pri_blac(j,:)
+           else
+              call physeterror('moistke', 'invalid mixing length '//trim(mlen(j)))
+              return
+           endif
+        enddo
+     endif
+
+     ! Apply stochastic error model on request
+     if (stochastic_mult) then
+        do k=1,nk
+           zn(:,k) = min( max( zn(:,k) + mlemod(:) * (zn_boujo(:,k) - zn_blac(:,k)), &
+                ML_MIN), ML_LMDA_UNSTAB)
+        enddo
+     endif
+
+     ! Adjust dissipation length scale on user request
+     if (pbl_diss == 'LIM50') zd = min(zd,50.)
+
+     ! Successful end of subprogram
+     stat = ML_OK
+     return
+   end function ml_compute
+   
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_tfilt(zn,znold,tau,kount) result(stat)
       ! Time filtering of mixing length scale
@@ -295,9 +546,6 @@ contains
       !           length ZE based on the Bougeault and Lacarrere method.
       !
 
-      ! Local parameters
-      real, parameter :: ZN_MIN_BOUJO=1.
-
       ! Local variables and common blocks
       integer :: n,nk,j,ki,istat,nc
       integer, dimension(size(th,dim=1)) :: slk,indx
@@ -357,7 +605,7 @@ contains
             ! Compute "average" mixing length
             zn(j,ki) = min(lup(nc,ki),ldown(nc,ki))
             zn(j,ki) = min(zn(j,ki),zz(j,ki))
-            zn(j,ki) = max(zn(j,ki),ZN_MIN_BOUJO)
+            zn(j,ki) = max(zn(j,ki),ML_MIN)
             ! Adjust mixing length for non-local cloud effects (Lock and Mailhot 2006)
             zn(j,ki) = (zn(j,ki)**3 + w_cld(j,ki,2)**3)**(1./3.)
          enddo

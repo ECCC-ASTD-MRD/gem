@@ -147,8 +147,6 @@
       Adz_yyminposy = 2    + Glb_pil_s     + EPS_8
       Adz_yymaxposy = G_nj - Glb_pil_n - 1 - EPS_8
 
-      ext = Grd_maxcfl + 1
-
       Adz_i0b =    1 + BCS_BASE*west
       Adz_inb = l_ni - BCS_BASE*east
       Adz_j0b =    1 + BCS_BASE*south
@@ -260,21 +258,6 @@
       end if
 
       allocate (Adz_stack(max(10,Tr3d_ntr)))
-
-     !if (.not.Grd_yinyang_L) allocate(Adz_stack(max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP))%pil &
-     !                                 (l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
-
-      !This works but not the previous when Tr3d_ntrTRICUB_WP>2 (Dont know why...)
-      !---------------------------------------------------------------------------
-      if (.not.Grd_yinyang_L) then
-
-         do n = 1,max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)
-
-            allocate(Adz_stack(n)%pil(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
-
-         end do
-
-      end if
 
       !Allocation Conservation Postprocessing
       !--------------------------------------

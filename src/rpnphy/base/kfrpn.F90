@@ -283,7 +283,7 @@ contains
 
       real dxsq,rholcl,wabs,zmix,p300,thta,delp
 
-      real :: w_wsmin,w_wsmax,wsmax,wsmin
+      real :: wsmax,wsmin
 
       logical, dimension(ix) :: activ
 
@@ -293,7 +293,8 @@ contains
            rolcl,   ztop,  work1, work2, work3,          &
            theul,   thmixg, tlclg, plclg, wlclg, tenvg,  &
            qenvg,   wklcla, psb,   lv,    thvmixg,tkemixg, work4, &
-           trigs,   trige, radmult, dpddmult
+           trigs,   trige, radmult, dpddmult, w_wsmin, w_wsmax, &
+           acrate
       real, dimension(kx) :: ddr,     ddr2,   der,    der2,  detic, detic2, &
            detlq,   detlq2, dmf,    dmf2,  domgdp, &
            dtfm,    ems,    emsd,   eqfrc, exn,           &
@@ -338,7 +339,8 @@ contains
       ! Local variables
       real :: rad, cdepth, timec, timer
       real :: nuer,nudr,lambda
-      logical :: use_kfc2_config,mixing_ratio
+      logical, dimension(ix) :: use_kfc2_config, mixing_ratio
+      character(len=32), dimension(ix) :: scheme
 
       call init2nan(dpthmxg, pmixg,  tmixg, qmixg, zdpl)
       call init2nan(rolcl,   ztop,  work1, work2, work3)
@@ -369,9 +371,14 @@ contains
       call init2nan(kt0,  wklcl0)
 
       cdepth = kfcdepth
-      use_kfc2_config = (deep=='KFC2')
-      mixing_ratio = .true.
-      if (use_kfc2_config) mixing_ratio = .false.
+      scheme(:) = ens_spp_get('deep', mrk2, default=deep)
+      where (scheme(:) == 'KFC2')
+         use_kfc2_config(:) = .true.
+         mixing_ratio(:) = .false.
+      elsewhere
+         use_kfc2_config(:) = .false.
+         mixing_ratio(:) = .true.
+      endwhere
 
       !     "RAMP" FOR WKLCL :
       !     ================
@@ -438,8 +445,8 @@ contains
       if (any(abs(kfctrigw) > 0.)) then
          wsmin = kfctrigw(1)
          wsmax = kfctrigw(2)
-         w_wsmin = kfctrigw(3)
-         w_wsmax = kfctrigw(4)
+         w_wsmin(:) = ens_spp_get('kfctrigwl', mrk2, default=kfctrigw(3))
+         w_wsmax(:) = ens_spp_get('kfctrigwh', mrk2, default=kfctrigw(4))
          where (mg <= CRITMASK .and. mlac <= CRITMASK)
             WKLCLA = min(max(w_wsmin + (wstar - wsmin) / (wsmax - wsmin) * (w_wsmax - w_wsmin) , &
                  min(w_wsmin,w_wsmax)), max(w_wsmin,w_wsmax))
@@ -564,9 +571,10 @@ contains
       if (kfcprod) IFEXFB = 1
 
       ! Retrieve stochastic parameter information on request
-      radmult(:) = ens_spp_get('crad_mult', mrk2, 1.)
-      dpddmult(:) = ens_spp_get('dpdd_mult', mrk2, 1.)
-      deeptrig(:) = ens_spp_get('deeptrig', mrk2, 'ORIGINAL')
+      radmult(:) = ens_spp_get('crad_mult', mrk2, default=1.)
+      dpddmult(:) = ens_spp_get('dpdd_mult', mrk2, default=1.)
+      deeptrig(:) = ens_spp_get('deeptrig', mrk2, default='ORIGINAL')
+      acrate(:) = ens_spp_get('deeprate', mrk2, default=RATE)
 
       !     =============================================================
 
@@ -604,7 +612,7 @@ contains
             TT0(I,K) = TP1(I,NK)
             U00(I,K) = UB(I,NK)
             V00(I,K) = VB(I,NK)
-            if (mixing_ratio) then
+            if (mixing_ratio(i)) then
                Q00(I,K) = max(qp1(i,nk)/(1.-qp1(i,nk)),1.0E-10 ) !convert to mixing ratio
                QL0(I,K) = 0.
                QI0(I,K) = 0.
@@ -742,7 +750,7 @@ contains
             ACTIV(I) = .true.
             FLAGCONV(I) = FLAGCONV(I) - 1
             ZCRR(I) = 1000.*ZCRR(I)
-            if (mixing_ratio) then
+            if (mixing_ratio(i)) then
                do k=1,kx
                   nk = kx-k+1
                   dqdt(i,k) = dqdt(i,k) * (1.+Q00(i,nk))**2
@@ -1275,7 +1283,7 @@ contains
             !                             Condensation in the updraft.
 
             call CONDLOAD_SAFE(RLIQ(NK1),RICE(NK1),WTW,DZZ,BOTERM,ENTERM, &
-                 RATE,QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1), &
+                 ACRATE(I),QNEWLQ,QNEWIC,QLQOUT(NK1),QICOUT(NK1), &
                  GRAV)
 
             WABS=sqrt(max(abs(WTW),1.E-10))
@@ -2508,7 +2516,7 @@ contains
          DTT=TIMEC
          do NK = 1, LTOP
             DOMGDP(NK)=-(UER(NK)-DER(NK)-UDR(NK)-DDR(NK))*EMSD(NK)
-            if(NK == 1 .and. .not.use_kfc2_config) then
+            if(NK == 1 .and. .not.use_kfc2_config(i)) then
                OMG(NK)=(UMF(NK)+DMF(NK))*GRAV/DXSQ
             elseif (NK > 1) then
                OMG(NK)=OMG(NK-1)-DPP(I,NK-1)*DOMGDP(NK-1)
@@ -2530,7 +2538,7 @@ contains
          OMGA(1:LTOP) = OMG(1:LTOP)
 
          ! Recompute updraft and downdraft mass fluxes to ensure consistency with entr/detr rates
-         if (.not.use_kfc2_config) then
+         if (.not.use_kfc2_config(i)) then
             do nk=lc+1,ltop-1
                umf(nk) = umf(nk-1) + uer(nk) - udr(nk)
             enddo
@@ -2550,7 +2558,7 @@ contains
          !  to compute new values for the prognostic variables due to vertical advection
          !  of the environmental properties, as well as detrainment effects from the
          !  updraft and downdraft
-         SOLVER_TYPE_MF: if (use_kfc2_config) then
+         SOLVER_TYPE_MF: if (use_kfc2_config(i)) then
             ! Semi-implicit solution for mass flux equations
             do NTC=1,NSTEP
 
@@ -3123,7 +3131,7 @@ contains
             ! equations, used to compute new values for the prognostic wind variables
             ! due to vertical advection of the environmental properties, as well as
             ! detrainment effects from the updraft and downdraft.
-            SOLVER_TYPE_MOM: if (use_kfc2_config) then
+            SOLVER_TYPE_MOM: if (use_kfc2_config(i)) then
                ! Semi-implicit solution for the momentum mass flux equations
                SEMI_MOM_STEP: do NTC=1,NSTEP
 
@@ -3455,14 +3463,14 @@ contains
       end do
 
       !      Convert tendencies from mixing ratio back to specific humidity
-      if (mixing_ratio) then
-         do k=1,kx
-            nk = kx-k+1
+      do k=1,kx
+         nk = kx-k+1
+         where (mixing_ratio) 
             dqdt(:,k) = dqdt(:,k) / (1.+Q00(:,nk))**2
             dqcdt(:,k) = dqcdt(:,k) / (1.+Q00(:,nk))**2
             dqidt(:,k) = dqidt(:,k) / (1.+Q00(:,nk))**2
-         enddo
-      endif
+         endwhere
+      enddo
 
 !!$       do i=1,ix
 !!$          clouds(i,1:kx) = areaup(i,1:kx)/dxdy(i)

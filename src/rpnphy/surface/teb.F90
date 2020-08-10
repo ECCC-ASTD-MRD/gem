@@ -627,7 +627,7 @@ real, dimension(size(PTA)) :: ZLW_S_TO_N
 integer :: IWALL           ! number of wall layers
 integer :: IROOF           ! number of roof layers
 !-------------------------------------------------------------------------------
-integer :: JJ
+integer :: i
       real UNDEF
       parameter (UNDEF = -999)
 !-------------------------------------------------------------------------------
@@ -919,32 +919,50 @@ PRESA_TOWN(:) = 1. / ( PBLD(:) * ZAC_ROOF(:)  + ( 1. - PBLD(:)) * ZAC_TOP (:))
 !*     13.     Compute thermal indices
 !              --------------------------------
    IF_THERMAL_STRESS: if ( thermal_stress ) then
-! input: Indices built with 10-m wind speed (note: could replace 10 by zu)
-     do JJ=1,size(PTA)
- if( PBLD_HEIGHT(JJ) .le. 10.)  then
-! log law. above roof level -  same as in urban_drag
-ZU10(JJ) =  PVMOD(JJ)              &
-           * log( (     10.    - 2 * PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
-           / log( (PUREF(JJ)   + 1.* PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))
-!  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
-!  Uz U10 = (30/H-2) Utop + 3/H(H-10) Ucan
- elseif( PBLD_HEIGHT(JJ) .gt. 10. .and. PBLD_HEIGHT(JJ) .lt. 15.)  then
-ZU10(JJ) =  (30. /PBLD_HEIGHT(JJ) -2.) * PVMOD(JJ)              &
-           * log( (     10.    - 2 * PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
-           / log( (PUREF(JJ)   + 1.* PBLD_HEIGHT(JJ)/3.) / PZ0_TOWN(JJ))   &
-           + (3.*(PBLD_HEIGHT(JJ) -10.)/PBLD_HEIGHT(JJ)) * PU_CANYON(JJ)
-else
-! exp  law. in the street canyon  ~ constant
-ZU10(JJ) = PU_CANYON(JJ)
- endif
-    enddo
-!* re-write 10-m wind above road (not stable from urban_drag) 
- PURDZU(:) = max(ZU10(:),0.01)
+! input: Wind module effectively at 10 m AGL 
+! note ; we may take zu instead of 10 ? but indices built with 10-m wind speed...
+! Compute wind at z=zt
+! check wind at z=zt 
+!  i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+!        hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
+!        tdiaglim=WATER_TDIAGLIM)
 
-! wind at the sensor level height at 2.5 m above the roof level
- ZUSR (:) = MAX( PVMOD(:)               &
-           * LOG(      2.5 / max (0.1, PZ0_TOWN(:)) ) &
-           / LOG( PUREF(:)/ max (0.1, PZ0_TOWN(:)) )  ,0.2)
+!   if (i /= SL_OK) then
+!      print*, 'Aborting in wate teb() because of error returned by sl_sfclayer()'
+!      stop
+!   endif
+
+! => wind, udiag either from sl_sfclayer (above canopy) or adapted for street morphology (urb_diagwind)
+! => wind
+! if bldh>15m => u_canyon 
+ do i=1,size(pta)
+ if (pbld_height(i) .ge. 15.) then 
+        zu10(i) = pu_canyon(i) 
+ endif
+!      if(urb_diagwind) then
+!  linear interpolation between two cases du/dz=Utop-Ucan / H-2H/3
+!                           => U(z=10)= U10 = (30/H-2) Utop + (-30/H+3) Ucan
+      if( pbld_height(i) .ge. 10. .and. pbld_height(i) .lt. 15. )  then 
+        zu10(i) =  (30.0 /pbld_height(i) -2.) * pvmod(i)              &
+           * log( (     pbld_height(i)/3.) / pz0_town (i))            &
+           / log( (puref(i) + pbld_height(i)/3.) / pz0_town   (i))    &
+           + (- 30. /pbld_height(i) +3.) * pu_canyon(i)
+      elseif (pbld_height(i) .lt. 10.0 ) then
+!                            => log law. above roof level 
+  zu10(i) =  pvmod(i)                                                   &
+           * log( ( 10. -2. * pbld_height(i)/3.) / pz0_town(i))   &
+           / log( ( puref(i)  + pbld_height(i)/3.) / pz0_town(i))
+       endif
+ !endif
+ enddo
+
+!* IMPOSE MINIMUM OF 0.01 for PU10 
+ PURDZU(:) = MAX(ZU10(:) ,0.01)
+
+! wind at the sensor level above the roof level (2.5m)
+zusr(:) = max(   pvmod(:)  &
+            * log(      (2.5  + 1.* pbld_height(:)/3.) / pz0_town(:) )    &
+            / log( (puref(:) + 1.* pbld_height(:)/3.) / pz0_town(:) ) ,0.01) 
 
 ! input: longwave infrared rad
  ZEMI_LW_WALL(:) = XSTEFAN * PEMIS_WALL(:) * PT_WALL(:,1)**4

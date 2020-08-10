@@ -15,10 +15,11 @@
 !-------------------------------------- LICENCE END --------------------------
 
 
-subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
-     tt,shtj,sig,ps,lat,mg,ml,pbl, &
+subroutine ccc_aerooppro2(tauae,exta,exoma,exomga,fa,absa, &
+     tt,shtj,sig,ps,lat,mg,ml,pbl,mrk2, &
      aerosolback,il1,il2,ilg,lay,lev)
    use tdpack_const
+   use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -29,6 +30,7 @@ subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
    real ps(ilg),lat(ilg)
    real mg(ilg),ml(ilg),pbl(ilg)
    real tauae(ilg,lay,5)
+   real mrk2(ilg,ens_nc2d)
    logical aerosolback
 
    !     gathered and other work arrays used generally by solar.
@@ -73,7 +75,7 @@ subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
 
 
    real, dimension(ilg,lay) :: dz
-   real, dimension(ilg) :: sdz
+   real, dimension(ilg) :: sdz, aeromult
    real, dimension(ilg) :: ipbl
 
    real aird,dp
@@ -148,6 +150,8 @@ subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
          enddo
       enddo
 
+      ! Retrieve stochastic aerosol adjustment on request
+      aeromult(:) = ens_spp_get('aero_mult', mrk2, default=1.)
       ct = 2.0 / pi
       do k = 1, lay
          do i = il1, il2
@@ -156,13 +160,13 @@ subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
 
                   !                  over land
 
-                  aero = 0.25 - 0.2*ct * abs(lat(i))
+                  aero = aeromult(i) * (0.25 - 0.2*ct * abs(lat(i)))
                   tauae(i,k,1)= max(aero * dz(i,k)/sdz(i), 1.e-10)
                else
 
                   !                  over ocean
 
-                  aero = 0.13 - 0.1*ct * abs(lat(i))
+                  aero = aeromult(i) * (0.13 - 0.1*ct * abs(lat(i)))
                   tauae(i,k,2)= max(aero  *dz(i,k)/sdz(i), 1.e-10)
                endif
             endif
@@ -208,4 +212,4 @@ subroutine ccc_aerooppro(tauae,exta,exoma,exomga,fa,absa, &
    !---------------------------------------------------------------------
 
    return
-end subroutine ccc_aerooppro
+end subroutine ccc_aerooppro2

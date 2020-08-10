@@ -18,6 +18,7 @@
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
       use adz_mem
+      use dyn_fisl_options
       use geomh
       use gem_options
       use ctrl
@@ -115,17 +116,27 @@
          Tr3d_wload(dejala)= .false.
       end if
 
-      Tr3d_ntrTRICUB_NT= 0 ; Tr3d_ntrTRICUB_WP= 0
-      Tr3d_ntrBICHQV_NT= 0 ; Tr3d_ntrBICHQV_WP= 0
-      allocate ( Tr_3CNT(Tr3d_ntr), Tr_3CWP(Tr3d_ntr), &
-                 Tr_BQNT(Tr3d_ntr), Tr_BQWP(Tr3d_ntr) )
+      Tr3d_ntrTRICUB_NT= 0 ; Tr3d_ntrTRICUB_WP= 0 ; Tr3d_ntrTRICUB_HY= 0
+      Tr3d_ntrBICHQV_NT= 0 ; Tr3d_ntrBICHQV_WP= 0 ; Tr3d_ntrBICHQV_HY= 0
+      allocate ( Tr_3CNT(Tr3d_ntr), Tr_3CWP(Tr3d_ntr), Tr_3CHY(Tr3d_ntr), &
+                 Tr_BQNT(Tr3d_ntr), Tr_BQWP(Tr3d_ntr), Tr_BQHY(Tr3d_ntr) )
 
       if (Tr3d_ntr > MAXTR3D) &
       call gem_error (-1, 'TRACERS', 'Tr3d_ntr > MAXTR3D: WE STOP')
 
       do i=1, Tr3d_ntr
          if (Tr3d_intp(i) == 'TRICUB') then
-            if ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
+            if ( Schm_psadj==2.and.(trim(Tr3d_name_S(i))=='HU'.or.Tr3d_wload(i))) then
+               Tr3d_ntrTRICUB_HY= Tr3d_ntrTRICUB_HY+1
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%name = Tr3d_name_S(i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%intp = Tr3d_intp  (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%wload= Tr3d_wload (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%hzd  = Tr3d_hzd   (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%mono = Tr3d_mono  (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%mass = Tr3d_mass  (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%vmin = Tr3d_vmin  (i)
+               Tr_3CHY(Tr3d_ntrTRICUB_HY)%vmax = Tr3d_vmax  (i)
+            elseif ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
                Tr3d_ntrTRICUB_NT= Tr3d_ntrTRICUB_NT+1
                Tr_3CNT(Tr3d_ntrTRICUB_NT)%name = Tr3d_name_S(i)
                Tr_3CNT(Tr3d_ntrTRICUB_NT)%intp = Tr3d_intp  (i)
@@ -148,7 +159,17 @@
             endif
          endif
          if (Tr3d_intp(i) == 'BICUBH_QV') then
-            if ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
+            if ( Schm_psadj==2.and.(trim(Tr3d_name_S(i))=='HU'.or.Tr3d_wload(i))) then
+               Tr3d_ntrBICHQV_HY= Tr3d_ntrBICHQV_HY+1
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%name = Tr3d_name_S(i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%intp = Tr3d_intp  (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%wload= Tr3d_wload (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%hzd  = Tr3d_hzd   (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%mono = Tr3d_mono  (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%mass = Tr3d_mass  (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%vmin = Tr3d_vmin  (i)
+               Tr_BQHY(Tr3d_ntrBICHQV_HY)%vmax = Tr3d_vmax  (i)
+            elseif ( (Tr3d_mass(i) < 1) .and. (Tr3d_mono(i) < 1)) then
                Tr3d_ntrBICHQV_NT= Tr3d_ntrBICHQV_NT+1
                Tr_BQNT(Tr3d_ntrBICHQV_NT)%name = Tr3d_name_S(i)
                Tr_BQNT(Tr3d_ntrBICHQV_NT)%intp = Tr3d_intp  (i)
@@ -173,6 +194,32 @@
       end do
 
       n=0
+
+      Tr3d_debTRICUB_HY=n+1
+      do i=1, Tr3d_ntrTRICUB_HY
+         n=n+1
+         Tr3d_name_S(n) = Tr_3CHY(i)%name
+         Tr3d_intp  (n) = Tr_3CHY(i)%intp
+         Tr3d_wload (n) = Tr_3CHY(i)%wload
+         Tr3d_hzd   (n) = Tr_3CHY(i)%hzd
+         Tr3d_mono  (n) = Tr_3CHY(i)%mono
+         Tr3d_mass  (n) = Tr_3CHY(i)%mass
+         Tr3d_vmin  (n) = Tr_3CHY(i)%vmin
+         Tr3d_vmax  (n) = Tr_3CHY(i)%vmax
+      end do
+      Tr3d_debBICHQV_HY=n+1
+      do i=1, Tr3d_ntrBICHQV_HY
+         n=n+1
+         Tr3d_name_S(n) = Tr_BQHY(i)%name
+         Tr3d_intp  (n) = Tr_BQHY(i)%intp
+         Tr3d_wload (n) = Tr_BQHY(i)%wload
+         Tr3d_hzd   (n) = Tr_BQHY(i)%hzd
+         Tr3d_mono  (n) = Tr_BQHY(i)%mono
+         Tr3d_mass  (n) = Tr_BQHY(i)%mass
+         Tr3d_vmin  (n) = Tr_BQHY(i)%vmin
+         Tr3d_vmax  (n) = Tr_BQHY(i)%vmax
+      end do
+
       Tr3d_debTRICUB_NT=n+1
       do i=1, Tr3d_ntrTRICUB_NT
          n=n+1

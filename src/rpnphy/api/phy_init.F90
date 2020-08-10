@@ -53,6 +53,8 @@ module phy_init_mod
    logical, parameter :: FILL = .true.
    logical, parameter :: DO_ABORT = .true.
 
+   integer, external :: chm_init
+
 contains
 
    !/@*
@@ -183,10 +185,13 @@ contains
 
       do i=1,nphyoutlist
          out_linoz = any(phyoutlist_S(i) == (/ &
-              'ado1', 'ao3 ', 'ao3c', 'azoc', 'ayoc', 'ado3', 'azo3', 'azof', &
-              'ayof', 'ayo3', 'ado4', 'ado6', 'ado7', 'adch', 'azch', 'ach4', &
-              'aych', 'adf1', 'azf1', 'af11', 'ayf1', 'adf2', 'azf2', 'af12', &
-              'ayf2', 'adn2', 'azn2', 'an2o', 'ayn2' &
+              'ao3 ','ao3c','ach4','an2o','af11','af12',&
+                            'zch4','zn2o','zf11','zf12',&
+                            'ych4','yn2o','yf11','yf12',&
+              'azo3','azoc','azch','azn2','azf1','azf2',&
+              'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
+              'ado3','ado1','ado4','ado6','ado7', &
+                            'adch','adn2','adf1','adf2' &
               /))
          if (out_linoz) exit
       enddo
@@ -348,6 +353,14 @@ contains
       call collect_error(ier)
       if (.not.RMN_IS_OK(ier)) then
          call msg(MSG_ERROR,'(phy_init) Problem in sfc_debu')
+         return
+      endif
+
+      !# Chemistry init
+      ier = chm_init(F_path_S)
+      call collect_error(ier)
+      if (.not.RMN_IS_OK(ier)) then
+         call msg(MSG_ERROR,'(phy_init) Problem in chm_init')
          return
       endif
 

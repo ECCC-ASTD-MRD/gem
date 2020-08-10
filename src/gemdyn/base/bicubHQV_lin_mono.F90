@@ -20,6 +20,7 @@
 
       use adv_grid
       use adv_interp
+      use dynkernel_options
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -82,8 +83,8 @@
 
             n=ii(n0)
 
-            zqutic_L = (ii(nz) > 2) .and. (ii(nz) < kkmax-2)
-            zcubic_L = (ii(nz)==1) .or. (ii(nz)==2) .or. (ii(nz)==kkmax-2)
+            zqutic_L = (ii(nz) > 1) .and. (ii(nz) < kkmax-2)
+            zcubic_L =((ii(nz)== 1) .or.   ii(nz)== kkmax-2) .and. .not.Schm_autobar_L
 
             !- x interpolation
             ra = adv_bsx_8(ii(nx)-1)

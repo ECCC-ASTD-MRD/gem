@@ -28,6 +28,8 @@
       use wb_itf_mod
       use ptopo
       use gem_timing
+      use gmm_phy, only: phy_cplm, phy_cplt
+      use dyn_fisl_options, only: Schm_phycpl_S, Cstv_bA_8, Cstv_bA_m_8
       implicit none
 #include <arch_specific.hf>
 
@@ -61,6 +63,17 @@
             err = wb_put('itf_phy/READ_TRACERS', &
                                 NTR_Tr3d_name_S(1:NTR_Tr3d_ntr))
          end if
+         select case (Schm_phycpl_S)
+         case ('RHS')
+            phy_cplm(:,:) = 0.
+            phy_cplt(:,:) = 0.
+         case ('AVG')
+            phy_cplm(:,:) = Cstv_bA_m_8
+            phy_cplt(:,:) = Cstv_bA_8
+         case DEFAULT
+            phy_cplm(:,:) = 1.
+            phy_cplt(:,:) = 1.
+         end select
       end if
 
       !call pw_glbstat('PW_BEF')

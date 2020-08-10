@@ -28,7 +28,7 @@ contains
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb_mod, only: physlb1
     use cpl_itf   , only: cpl_step
-    use phybus, only: entbus, perbus, dynbus, volbus
+    use phybus, only: perbus, dynbus, volbus
     use ens_perturb, only: ens_spp_stepinit, ENS_OK
     implicit none
 
@@ -89,8 +89,8 @@ contains
     call cpl_step(F_stepcount, F_stepdriver)
 
 !$omp parallel
-    call physlb1(entbus, dynbus, perbus, volbus, &
-         size(entbus,1), size(dynbus,1), size(perbus,1), size(volbus,1), &
+    call physlb1(dynbus, perbus, volbus, &
+         size(dynbus,1), size(perbus,1), size(volbus,1), &
          F_stepcount, phydim_ni, phydim_nj, phydim_nk, pslic)
 !$omp end parallel
     if (phy_error_L) return

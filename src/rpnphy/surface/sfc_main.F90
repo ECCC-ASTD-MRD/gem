@@ -301,9 +301,9 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
 
       elseif (schmsol.eq.'SVS') then
 
-         call svs2(bus_soil, siz_soil, &
+         call svs(bus_soil, siz_soil, &
               ptr_soil, nvarsurf, &
-              dt, kount, &
+              dt, kount, trnch, &
               ni_soil, ni_soil, nk-1)
 
       endif

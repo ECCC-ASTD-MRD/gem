@@ -20,48 +20,35 @@
 !
 ! Arguments:
 !           IN
-!             busent    -->    dimension of busent_size
 !             busdyn    -->    busdyn_size
 !             busper    -->    busper_size (also refered as fsiz elsewhere)
 !             busvol    -->    busvol_size
 !
-!             busent_size        -->    dimension of busent   (physics)
 !             busdyn_size        -->    dimension of busdyn   (physics)
-!             fsiz        -->    dimension of busper   (physics)
-!             busvol        -->    dimension of F_bvol_siz (physics)
-!             dt              -->    timestep (sec.)
-!             slab_index               -->    slice number
-!             step            -->    timestep number
-!             F_cpu             -->    cpu number executing slice "slab_index"
-!             ni            -->    horizontal running length (physics)
-!             nk              -->    vertical dimension
-!
-!            IN/OUT
-!             F_chmbusent       -->   Entry input field(s)  (chemical)
-!             F_chmbusdyn       -->   Dynamics input field  (chemical)
-!             F_chmbusper       -->   Historic variables for the chemistry
-!             F_chmbusvol       -->   Chemical tendencies and other output
-!                                          fields from the physics
+!             fsiz      -->    dimension of busper   (physics)
+!             busvol    -->    dimension of F_bvol_siz (physics)
+!             slab_index-->    slice number
+!             step      -->    timestep number
 !
 !  Modification1: -----> STUB VERSION STUB VERSION STUB VERSION STUB VERSION <-----
 !
 !=============================================================================
 
-subroutine chm_exe(busent, busdyn, busper, busvol, &
-     busent_size, busdyn_size, busper_size, busvol_size, &
-     timestep, slab_index, step, ni, nk)
+subroutine chm_exe2(busdyn, busper, busvol,  &
+     busdyn_size, busper_size, busvol_size, &
+     slab_index, step)
 
    implicit none
 
    ! Subroutine arguments
-   integer, intent(in) :: busent_size, busdyn_size, busper_size, busvol_size 
-   real, intent(inout) :: busent(busent_size), busdyn(busdyn_size), busper(busper_size), busvol(busvol_size)
-   integer, intent(in) :: timestep, slab_index, step, ni, nk
+   integer, intent(in) :: busdyn_size, busper_size, busvol_size 
+   real, intent(inout) :: busdyn(busdyn_size), busper(busper_size), busvol(busvol_size)
+   integer, intent(in) :: slab_index, step
 
-   if (ni < 0) print *,'Called chm_exe stub with:', busent(1), busdyn(1), busper(1), busvol(1), &
-        busent_size, busdyn_size, busper_size, busvol_size, &
-        timestep, slab_index, step, ni, nk
+   if (slab_index < 0) print *,'Called chm_exe stub with:', busdyn(1), busper(1), busvol(1), &
+        busdyn_size, busper_size, busvol_size, &
+        slab_index, step
 
 
    return
-end subroutine chm_exe
+end subroutine chm_exe2

@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
+subroutine convect_shallow6(KLON, KLEV, ITEST, PDTCONV, &
      &                      PPABST, PZZ, &
      &                      PTT, PRVT, PRCT, PRIT, PDMSEDT, &
      &                      PTTEN, PRVTEN, PRCTEN, PRITEN, &
@@ -22,7 +22,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
      &                      PCLOUD,PURCOUT,PURIOUT, &
      &                      PCH1, PCH1TEN, &
      &                      PUDR, PWSTAR, PCRAD, PDTPERT, &
-     &                      PDXDY, PKSHAL, GTRIG, &
+     &                      PDXDY, PMRK2, PKSHAL, GTRIG, &
      &                      PUT, PVT, PUTEN, PVTEN)
 
 !KICE      => bkf_kice
@@ -113,6 +113,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
    use YOE_CONVPAREXT
    use YOE_CONVPAR_SHAL
    use cnv_options, only: bkf_kice, bkf_lshalm, bkf_lch1conv, bkf_kch
+   use ens_perturb, only: ens_nc2d
    use integrals
 
    implicit none
@@ -129,6 +130,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
    real, dimension(KLON),      intent(IN) :: PCRAD    ! cloud radius at the LCL (m)
    real, dimension(KLON),      intent(IN) :: PDTPERT  ! temp. perturbation (K)
    real, dimension(KLON),      intent(IN) :: PDXDY    ! grid cell area
+   real, dimension(KLON,ens_nc2d), intent(IN) :: PMRK2! Markov chain for SPP
    real, dimension(KLON,KLEV), intent(IN) :: PTT      ! grid scale temperature at (K)
    real, dimension(KLON,KLEV), intent(IN) :: PRVT     ! grid scale water vapor(kg/kg)
    real, dimension(KLON,KLEV), intent(IN) :: PRCT     ! grid scale r_c  (kg/kg)"
@@ -201,6 +203,9 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
         ZRV, &     ! grid scale water vapor (kg/kg)
         ZMSE       ! grid scale moist static energy (m^2/s^2)
 
+   real, dimension(ITEST,ens_nc2d) :: &
+        ZSMRK2     ! Markov chains for SPP
+   
    logical, dimension(ITEST) :: GTRIG1  ! logical mask for convection
    real,    dimension(KLON)  :: tmp1d   ! work variables
 
@@ -295,6 +300,9 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
       ZRV(1:ITEST,JK)    = max(0., pack(PRVT(:,JK), GTRIG(:)))
       ZZ(1:ITEST,JK)     = pack(PZZ(:,JK),    GTRIG(:))
    enddo
+   do JK = 1, ens_nc2d
+      ZSMRK2(1:ITEST,JK) = pack(PMRK2(:,JK), GTRIG(:))
+   enddo
    ZSDXDY(1:ITEST) = pack(PDXDY(:), GTRIG(:))
 !!$   PDTPERT(1:ITEST) = pack(PDTPERT(:), GTRIG(:)) !#No need to be packed, constant=BKF_TPERTS(1)
 
@@ -321,7 +329,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
    if (ICONV == 0) return ! no convective column has been found, exit CONVECT_SHALLOW
 
    ! Continue convect_shallow work on only ICONV (active) points
-   call convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
+   call convect_shallow_c(KLON, KLEV, ITEST, ICONV, PDTCONV, &
         &                 PPABST, PZZ, &
         &                 PTT, PRVT, PRCT, PRIT, PDMSEDT, &
         &                 PTTEN, PRVTEN, PRCTEN, PRITEN, &
@@ -329,7 +337,7 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
         &                 PCLOUD,PURCOUT,PURIOUT, &
         &                 PCH1, PCH1TEN, &
         &                 PUDR, PWSTAR, PCRAD, &
-        &                 ZSDXDY, PKSHAL, GTRIG, GTRIG1, &
+        &                 ZSDXDY, ZSMRK2, PKSHAL, GTRIG, GTRIG1, &
         &                 PUT, PVT, PUTEN, PVTEN, &
         &                 ZTHT, ZSTHV, ZSTHES, ZSMSE, &
         &                 ISDPL, ISPBL, ISLCL, &
@@ -337,11 +345,11 @@ subroutine convect_shallow5(KLON, KLEV, ITEST, PDTCONV, &
         &                 ZSZLCL, ZSTHVELCL, ZSMSEELCL)
 
    return
-end subroutine convect_shallow5
+end subroutine convect_shallow6
 
 
 !############################################################################
-subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
+subroutine convect_shallow_c(KLON, KLEV, ITEST, ICONV, PDTCONV, &
      &                      PPABST, PZZ, &
      &                      PTT, PRVT, PRCT, PRIT, PDMSEDT, &
      &                      PTTEN, PRVTEN, PRCTEN, PRITEN, &
@@ -349,7 +357,7 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
      &                      PCLOUD,PURCOUT,PURIOUT, &
      &                      PCH1, PCH1TEN, &
      &                      PUDR, PWSTAR, PCRAD, &
-     &                      ZSDXDY, PKSHAL, GTRIG, GTRIG1, &
+     &                      ZSDXDY, ZSMRK2, PKSHAL, GTRIG, GTRIG1, &
      &                      PUT, PVT, PUTEN, PVTEN, &
      &                      ZTHT, ZSTHV, ZSTHES, ZSMSE, &
      &                      ISDPL, ISPBL, ISLCL, &
@@ -365,6 +373,7 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
    use YOE_CONVPAREXT
    use YOE_CONVPAR_SHAL
    use cnv_options, only: bkf_kice, shal_timeconv_sec, bkf_lshalm, bkf_lch1conv, bkf_kch
+   use ens_perturb, only: ens_nc2d
    use integrals
 
    implicit none
@@ -380,6 +389,7 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
    real, dimension(KLON),      intent(IN) :: PWSTAR   ! convective velocity scale (m/s)
    real, dimension(KLON),      intent(IN) :: PCRAD    ! cloud radius at the LCL (m)
    real, dimension(ITEST),     intent(IN) :: ZSDXDY   ! grid cell area
+   real, dimension(ITEST,ens_nc2d), intent(IN) :: ZSMRK2 ! Markov chain for SPP
    real, dimension(KLON,KLEV), intent(IN) :: PTT      ! grid scale temperature at (K)
    real, dimension(KLON,KLEV), intent(IN) :: PRVT     ! grid scale water vapor(kg/kg)
    real, dimension(KLON,KLEV), intent(IN) :: PRCT     ! grid scale r_c  (kg/kg)"
@@ -472,6 +482,9 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
         ZDMSEDT, & ! tendency of grid scale moist static energy (m^2/s^3)
         ZMSE       ! grid scale moist static energy (m^2/s^2)
 
+   real, dimension(ICONV,ens_nc2d) :: &
+        ZMRK2      ! Markov chains for SPP
+   
    real, dimension(ICONV) :: &
         ZDXDY, &   ! grid area (m^2)
         ZWSTAR, &  ! convective velocity scale (m/s)
@@ -571,6 +584,10 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
       ZDMSEDT(1:ICONV,JK)= pack(PDMSEDT(1:KLON,JK),GTRIG(1:KLON))
    enddo
 
+   do JK = 1, ens_nc2d
+      ZMRK2(1:ICONV,JK)     = pack(ZSMRK2(1:ITEST,JK), GTRIG1(1:ITEST))
+   enddo
+   
    IDPL(1:ICONV)      = pack(ISDPL(1:ITEST),   GTRIG1(1:ITEST))
    IPBL(1:ICONV)      = pack(ISPBL(1:ITEST),   GTRIG1(1:ITEST))
    ILCL(1:ICONV)      = pack(ISLCL(1:ITEST),   GTRIG1(1:ITEST))
@@ -664,8 +681,8 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
       !     that all available buoyant energy must be removed
       !     within an advective time step ZTIMEC.
       !     ---------------------------------------------------
-      call CONVECT_CLOSURE_SHAL4(ICONV, KLEV, &
-           & ZPRES, ZDPRES, ZZ, ZDXDY, ZCRAD, ZLMASS, &
+      call CONVECT_CLOSURE_SHAL5(ICONV, KLEV, &
+           & ZPRES, ZDPRES, ZZ, ZDXDY, ZMRK2, ZCRAD, ZLMASS, &
            & ZTHL, ZTH, ZRW, ZRC, ZRI, ZDMSEDT, GTRIG1, &
            & ZTHC, ZRVC, ZRCC, ZRIC, ZWSUB, &
            & ILCL, IDPL, IPBL, ICTL, &
@@ -1003,4 +1020,4 @@ subroutine convect_shallow_b(KLON, KLEV, ITEST, ICONV, PDTCONV, &
    endif IF_ICONV1
  
    return
-end subroutine convect_shallow_b
+end subroutine convect_shallow_c

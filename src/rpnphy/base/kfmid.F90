@@ -101,7 +101,7 @@ contains
            upnew,vmflcl,norm,wlcl,wtw,dpup,     &
            dpdown,dqdtdk,dqcdtdk,denom,tvdiff,intdudt,      &
            intdvdt,intdp,dxsq,rholcl,wabs,zmix,thta,delp,    &
-           nuer,nudr,lambda,rhmixg,rad
+           nuer,nudr,lambda,rhmixg,rad,ww
       real, dimension(1) :: subcloud_pw, subcloud_pws
       real, dimension(ix) :: dpthmxg,pmixg,tmixg,qmixg,thmixg,tlclg,    &
            plclg,psb,thvmixg,minemf,radmult,dpddmult
@@ -315,6 +315,14 @@ contains
          ! Parameterize the minimum environmental mass flux on request
          if (mid_emfmod == 'LATITUDE') then
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * minemf(i)
+         elseif (mid_emfmod == 'LATMOD1') then
+            ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
+            minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
+                 ( ww*1.5e7 + (1.-ww)*1.0e7 )
+         elseif (mid_emfmod == 'LATMOD2') then
+            ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
+            minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
+                 ( ww*1.25e7 + (1.-ww)*0.8e7 )
          endif
 
          ! Find the first level that meets the vertical motion criterion

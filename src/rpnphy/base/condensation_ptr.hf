@@ -177,12 +177,10 @@
    MKPTR2Dm1(zttps, ttps, f)
 
    MKPTR2Dm1(zfice, fice, f)
-   MKPTR2Dm1(zclr, clr, v)
-   MKPTR2Dm1(zcls, cls, v)
    MKPTR2Dm1(zf12, f12, v)
    MKPTR2Dm1(zfevp, fevp, v)
-   MKPTR2Dm1(zrnflx, rnflx, f)
-   MKPTR2Dm1(zsnoflx, snoflx, f)
+   MKPTR2D(zrnflx, rnflx, f)
+   MKPTR2D(zsnoflx, snoflx, f)
 
    MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
 

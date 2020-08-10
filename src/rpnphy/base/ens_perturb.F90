@@ -15,10 +15,10 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module ens_perturb
+  use wb_itf_mod
   implicit none
   private
 #include <rmnlib_basics.hf>
-#include "WhiteBoard.hf"
 
   ! Procedure overloading
   interface ens_spp_get
