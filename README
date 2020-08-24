@@ -1,0 +1,27 @@
+. ./.eccc_setup_intel
+or
+. ./.eccc_setup_gnu
+
+make cmake
+make build
+make work
+
+The following environment variables are created (examples):
+GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0
+GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+GEM_ARCH=ubuntu-18.04-amd64-64-gnu-7.5.0
+GEM_COMPILER=gnu
+
+The structure is different whether the $storage_model env. variable exists:
+
+$storage_model:
+GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0
+in GEM_GIT_DIR:
+build-ubuntu-18.04-amd64-64-gnu-7.5.0 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0/build
+work-ubuntu-18.04-amd64-64-gnu-7.5.0 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0/work
+
+no $storage_model:
+GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+build-ubuntu-18.04-amd64-64-gnu-7.5.0
+work-ubuntu-18.04-amd64-64-gnu-7.5.0
+
