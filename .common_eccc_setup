@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Source this file to:
+# - Create the build directory for the specific architecture and compiler versions
+
+[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
+
+HOSTNAME=`hostname -d`
+
+case "${HOSTNAME}" in
+    "cmc.ec.gc.ca")
+        GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
+        [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
+        ;;
+    "science.gc.ca")
+        GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
+        [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
+        ;;
+    *)
+        echo "hostname not found";
+        ;;
+esac
+
+rootPath="$(dirname $BASH_SOURCE)"
+
+platform=$("${rootPath}/project/os.sh")
+compVersion=$("${rootPath}/project/compiler.sh" $1)
+
+export GEM_ARCH=${platform}-$1-${compVersion}
+export GEM_COMPILER=$1
+GEM_DIR=
+
+if [ -n "${storage_model}" ] ; then
+  GEM_DIR=${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
+  echo mkdir -p ${GEM_DIR}/work
+  mkdir -p ${GEM_DIR}/work
+  echo mkdir -p ${GEM_DIR}/build
+  mkdir -p ${GEM_DIR}/build
+  ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
+  ln -sf ${GEM_DIR}/work ${PWD}/work-${GEM_ARCH}
+  ln -sf ${PWD}/work-${GEM_ARCH} ${PWD}/work #for now
+  ln -sf ${PWD}/gem_dbase ${GEM_DIR}
+else
+  GEM_DIR=${PWD}
+  echo mkdir -p ${GEM_DIR}/build-${GEM_ARCH}
+  mkdir -p ${GEM_DIR}/build-${GEM_ARCH}
+  echo mkdir -p ${GEM_DIR}/work-${GEM_ARCH}
+  mkdir -p ${GEM_DIR}/work-${GEM_ARCH}
+  ln -sf ${GEM_DIR}/build-${GEM_ARCH} ${GEM_DIR}/build 
+  ln -sf ${GEM_DIR}/work-${GEM_ARCH}${GEM_DIR}/work 
+  ln -sf ${GEM_DIR}/work-${GEM_ARCH} ${GEM_DIR}/work #for now
+fi
+
+
+export GEM_DIR
+export GEM_GIT_DIR=$PWD
+export WORK_mach=work-${GEM_ARCH}
+#export PATH=${PWD}/scripts:${PWD}/${WORK_mach}/bin:${PATH}
+
+#export GEM_WORK=work-${GEM_ARCH}
+#export PATH=$(pwd)/scripts:$(pwd)/${WORK_GEM}/bin:${PATH}
+
+sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build-${GEM_ARCH}\",/" "${rootPath}/goas-devel.code-workspace"
+
+unset  rootPath platform compVersion buildDir
+

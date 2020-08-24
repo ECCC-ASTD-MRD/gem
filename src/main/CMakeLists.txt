@@ -20,4 +20,4 @@ target_link_libraries(voir rmn
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
 install(TARGETS mainyy2global flipit r.fstinfo voir RUNTIME
-        DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

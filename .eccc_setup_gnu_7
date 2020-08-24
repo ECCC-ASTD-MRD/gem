@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Source this file to:
+# - Load the Intel 19 compiler and libraries
+# - Load a script for common setup to all compilers
+
+[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
+
+
+# Load openmpi library
+. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2a1--hpcx-2.2.0--ofed-4.4-1.0.0.0
+
+. ./.common_eccc_setup gnu
+
