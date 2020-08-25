@@ -19,6 +19,7 @@ build:
 work: 
 	( cd build-${GEM_ARCH} && make work )
 
+#à compléter
 buildclean:
 	./clean.sh build
 

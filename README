@@ -11,6 +11,7 @@ GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gn
 GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
 GEM_ARCH=ubuntu-18.04-amd64-64-gnu-7.5.0
 GEM_COMPILER=gnu
+WORK_mach=work-ubuntu-18.04-amd64-64-gnu-7.5.0
 
 The structure is different whether the $storage_model env. variable exists:
 

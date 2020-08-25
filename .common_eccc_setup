@@ -28,20 +28,22 @@ compVersion=$("${rootPath}/project/compiler.sh" $1)
 
 export GEM_ARCH=${platform}-$1-${compVersion}
 export GEM_COMPILER=$1
-GEM_DIR=
+export WORK_mach=work-${GEM_ARCH}
 
+unset GEM_DIR
 if [ -n "${storage_model}" ] ; then
   GEM_DIR=${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
-  echo mkdir -p ${GEM_DIR}/work
+  /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${WORK_mach}
   mkdir -p ${GEM_DIR}/work
-  echo mkdir -p ${GEM_DIR}/build
   mkdir -p ${GEM_DIR}/build
   ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
-  ln -sf ${GEM_DIR}/work ${PWD}/work-${GEM_ARCH}
-  ln -sf ${PWD}/work-${GEM_ARCH} ${PWD}/work #for now
+  ln -sf ${GEM_DIR}/work ${PWD}/${WORK_mach}
+  ln -sf ${GEM_DIR}/work . #for now
   ln -sf ${PWD}/gem_dbase ${GEM_DIR}
 else
   GEM_DIR=${PWD}
+  /bin/rm -rf build-${GEM_ARCH} ${WORK_mach}
+  mkdir /build-${GEM_ARCH} ${WORK_mach}
   echo mkdir -p ${GEM_DIR}/build-${GEM_ARCH}
   mkdir -p ${GEM_DIR}/build-${GEM_ARCH}
   echo mkdir -p ${GEM_DIR}/work-${GEM_ARCH}
@@ -54,7 +56,7 @@ fi
 
 export GEM_DIR
 export GEM_GIT_DIR=$PWD
-export WORK_mach=work-${GEM_ARCH}
+
 #export PATH=${PWD}/scripts:${PWD}/${WORK_mach}/bin:${PATH}
 
 #export GEM_WORK=work-${GEM_ARCH}
