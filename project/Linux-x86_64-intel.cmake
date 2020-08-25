@@ -2,7 +2,7 @@
 find_program(CMAKE_C_COMPILER icc)
 find_program(CMAKE_Fortran_COMPILER ifort)
 
-# I don't know why, but enable_language exmpties CMAKE_BUILD_TYPE!
+# I don't know why, but enable_language empties CMAKE_BUILD_TYPE!
 # We therefore have to back it up and restore it after enable_language
 set(TMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 

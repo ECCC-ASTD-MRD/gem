@@ -9,7 +9,6 @@ cmake_policy(SET CMP0056 NEW)
 set(COMPILER intel CACHE STRING compiler)
 #set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
-# which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
@@ -139,7 +138,7 @@ endfunction()
 # END TODO: Move this to cmake_shared
 
 
-set(WORK_PREFIX ${ROOT}/work CACHE FILEPATH "Execution environment directory")
+set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Execution environment directory")
 message(STATUS "WORK_PREFIX=${WORK_PREFIX}")
 dir_writable(${WORK_PREFIX} TRUE)
 set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
@@ -161,7 +160,7 @@ add_custom_target(work
     COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_PREFIX}
+    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
 
     DEPENDS
         cclargs_lite

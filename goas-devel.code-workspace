@@ -14,7 +14,7 @@
         },
         ],
         "settings": {
-           "cmake.buildDirectory": "${workspaceRoot}/build/intel-19.0.3.199",
+           "cmake.buildDirectory": "${workspaceRoot}/build-Fedora-32-x86_64-Unknown_Compiler",
            "telemetry.enableTelemetry": false,
            "telemetry.enableCrashReporter": false,
 	   "cmake.configureOnOpen": true,

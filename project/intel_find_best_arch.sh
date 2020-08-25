@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Since the Intel compilers do not support "-march=native", we try to fin the most
+# Since the Intel compilers do not support "-march=native", we try to find the most
 # performant architecture
 
 for arch in avx512 avx2 avx; do

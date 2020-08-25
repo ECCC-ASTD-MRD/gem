@@ -16,9 +16,9 @@ See below for extended instructions.  Further details are can be found in
     cd build
 
     # If the -DWORK_PREFIX=<path> option isn't given to cmake, the work directory
-    # will be created under the project directory
+    # will be created under the work directory
     cmake ../project
-    # Create an execution environement for GEM
+    # Create an execution environment for GEM
     make -j work
 
     # Download the data files required to run GEM
@@ -198,5 +198,5 @@ Environment and Climate Change Canada.
 # Using Visual Studio Code
 
 If [Visual Studio Code](https://code.visualstudio.com/) is available on your
-system, the `vstudio` script will launch it with and automatically open
-relevant files.
+system, the `goas-devel.code-workspace` file can be opened by code to
+automatically open relevant files.
