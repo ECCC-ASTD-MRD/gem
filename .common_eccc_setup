@@ -38,8 +38,8 @@ if [ -n "${storage_model}" ] ; then
   mkdir -p ${GEM_DIR}/build
   ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
   ln -sf ${GEM_DIR}/work ${PWD}/${WORK_mach}
-  ln -sf ${GEM_DIR}/work . #for now
-  ln -sf ${PWD}/gem_dbase ${GEM_DIR}
+#  ln -sf ${GEM_DIR}/work . #for now
+#  ln -sf ${PWD}/gem_dbase ${GEM_DIR}
 else
   GEM_DIR=${PWD}
   /bin/rm -rf build-${GEM_ARCH} ${WORK_mach}
@@ -50,7 +50,7 @@ else
   mkdir -p ${GEM_DIR}/work-${GEM_ARCH}
   ln -sf ${GEM_DIR}/build-${GEM_ARCH} ${GEM_DIR}/build 
   ln -sf ${GEM_DIR}/work-${GEM_ARCH}${GEM_DIR}/work 
-  ln -sf ${GEM_DIR}/work-${GEM_ARCH} ${GEM_DIR}/work #for now
+#  ln -sf ${GEM_DIR}/work-${GEM_ARCH} ${GEM_DIR}/work #for now
 fi
 
 
