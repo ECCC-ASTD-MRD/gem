@@ -187,25 +187,14 @@ subroutine coherence3(ni, trnch)
                zvegfrac (i)      = 0.0
                zvegh    (i)      = 0.0
                zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
             endif
-         enddo
-
-         do i=1,ni
-            if (zmg(i).ge.critmask) then
-               ! OVER LAND, *NOT* ESTHETIC PURPOSE ONLY
-               do k=1,nl_svs
-                  !                 Make sure there is soil water
-                  zwsoil(i,k) = max(zwsoil(i,k),1.e-7)
-               enddo
-
-               ! impose minimum root depth 0.5m
-               ! impose maximum root depth = permeable depth
-               zrootdp  (i) = min( max( zrootdp  (i) , 0.5  ) , dl_svs(kdp))
-               zcveg    (i) = max( zcveg    (i) , 1.e-5)
-               zvegfrac (i) = max( zvegfrac (i) , 0.0  )
-               zwveg    (i) = max( zwveg    (i) , 0.0  )
-            endif
-         enddo
+         enddo      
       endif IF_SVS
 
    endif NEW_MG_MASK
@@ -319,7 +308,14 @@ subroutine coherence3(ni, trnch)
                zwveg    (i)      = 0.0
                zrootdp  (i)      = 0.0
                zvegfrac (i)      = 0.0
-
+               zvegh    (i)      = 0.0
+               zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
             end if
          end do
 

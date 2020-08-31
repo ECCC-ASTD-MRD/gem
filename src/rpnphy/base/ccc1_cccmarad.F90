@@ -38,7 +38,7 @@ contains
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
-      use ens_perturb, only: ens_nc2d
+      use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -175,6 +175,8 @@ contains
 
 #undef PHYPTRDCL
 #include "cccmarad_ptr.hf"
+
+      if (.not.associated(zo3fk)) zo3fk => zo3s
 
       call init2nan(p1, p3, p4, p5, p6, pbl, albpla, fdl, ful, fslo)
       call init2nan(rmu0, v1, ws, ws_vs, cosas_vs, p10, p11, p2, cldtot)
@@ -335,17 +337,16 @@ contains
          enddo
 
          ! calculate aerosol optical properties
-         do i = 1, ni
-            pbl(i) = 1500.0
-         enddo
-         call ccc_aerooppro (tauae,exta,exoma,exomga,fa,absa, &
-              temp,shtj,sig,ps,zdlat,zmg, zml,pbl, &
+
+         pbl(:) = ens_spp_get('aero_pbl', zmrk2, default=1500.)
+         call ccc_aerooppro2(tauae,exta,exoma,exomga,fa,absa, &
+              temp,shtj,sig,ps,zdlat,zmg, zml,pbl,zmrk2, &
               aerosolback,il1, il2, ni, nkm1, nk )
 
          ! from ozone zonal monthly climatology: interpolate to proper date
          ! and grid, calculate total amount above model top (ptop)
 
-         call radfac4(zo3s,zoztoit,sig,nk,nkm1,npcl,zdlat,ps,ni,ni, &
+         call radfac4(zo3fk,zoztoit,sig,nk,nkm1,npcl,zdlat,ps,ni,ni, &
               p2, p3, p4, p5, p6, p7, p8, nlacl, &
               goz(fozon), goz(clat), goz(pref))
          if (phy_error_L) return
@@ -471,6 +472,8 @@ contains
                  zcosas, ztsrad, temp, qq, zmg, zml)
 
          endif IF_SIMISCCP
+
+         if (.not.associated(zo3fk, zo3s)) zo3s = zo3fk  !kg /kg air mmr
 
          ! actual call to the Li & Barker (2005) radiation
 

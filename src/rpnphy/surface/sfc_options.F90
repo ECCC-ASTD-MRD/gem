@@ -148,9 +148,17 @@ module sfc_options
    logical           :: isba_zr_freeze = .false.
    namelist /surface_cfgs/ isba_zr_freeze
 
+   !# OBSOLETE, REPLACED by KHYD !!! WILL BE EVENTUALLY REMOVED
    !# Deepest active (permeable) soil layer in SVS land surface scheme (schmsol=SVS)
    integer           :: kdp    = -1
    namelist /surface_cfgs/ kdp
+
+   !# Last/Deepest soil layer considered during the accumulation of
+   !# lateral flow and drainage. Drainage is taken as the vertical flux
+   !# leaving layer KHYD, and lateral flow as the sum of lateral flows from
+   !# layers 1 to KHYD
+   integer           :: khyd    = -1
+   namelist /surface_cfgs/ khyd
 
    !# Vegetation field update frequency (units D,H,M,S,P)
    character(len=16) :: kntveg_S     = ''
@@ -172,6 +180,10 @@ module sfc_options
    !# read-in land surface emissivity if .true.
    logical           :: read_emis     = .false.
    namelist /surface_cfgs/ read_emis
+
+   !# read-in high vegetation roughness for SVS if .true.
+   logical           :: read_z0vh     = .false.
+   namelist /surface_cfgs/ read_z0vh
 
    !# Takes into account effect of ocean salinity on saturation specific
    !# humidity at ocean surface (boundary condition for LH flux calculation)
@@ -200,10 +212,22 @@ module sfc_options
         'TEB'  &
         /)
 
+   !# Minimum Obukhov length (L) for glaciers
+   real           :: sl_Lmin_glacier = -1.
+   namelist /surface_cfgs/ sl_Lmin_glacier
+   
+   !# Minimum Obukhov length (L) for sea ice
+   real           :: sl_Lmin_seaice = -1.
+   namelist /surface_cfgs/ sl_Lmin_seaice
+   
    !# Mimimum Obukhov length (L) for soil surfaces
    real           :: sl_Lmin_soil = -1.
    namelist /surface_cfgs/ sl_Lmin_soil
 
+   !# Minimum Obukhov length (L) for water
+   real           :: sl_Lmin_water = -1.
+   namelist /surface_cfgs/ sl_Lmin_water
+   
    !# Define bulk Ri values for near-neutral regime in the surface layer
    real           :: sl_rineutral = 0.
    namelist /surface_cfgs/ sl_rineutral
@@ -241,9 +265,9 @@ module sfc_options
    namelist /surface_cfgs/ snow_emiss
 
    !#  Soil texture database/calculations for SVS land surface scheme
-   !# * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE) 
+   !# * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
    !# * 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)
-   !# * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC — World Soil Information
+   !# * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
    character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
@@ -257,6 +281,23 @@ module sfc_options
    logical           :: snoalb_anl  = .true.
    namelist /surface_cfgs/ snoalb_anl
 
+   !# use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true.
+   logical           :: svs_dynamic_z0h     = .false.
+   namelist /surface_cfgs/ svs_dynamic_z0h 
+
+   
+   !# use hrsurf based on soil texture for SVS if .true.
+   logical           :: svs_hrsurf_sltext     = .false.
+   namelist /surface_cfgs/ svs_hrsurf_sltext
+
+   !# use local momentum (no snow) roughness for SVS if .true.
+   logical           :: svs_local_z0m     = .false.
+   namelist /surface_cfgs/ svs_local_z0m  
+   
+
+
+
+   
    !# Limit temperature inversions to 8K/40m in surface layer if .true.
    logical           :: tdiaglim    = .false.
    namelist /surface_cfgs/ tdiaglim
@@ -275,6 +316,17 @@ module sfc_options
    !# Factor multiplying stomatal resistance in ISBA
    real              :: veg_rs_mult = 1.
    namelist /surface_cfgs/ veg_rs_mult
+
+   !#  VF definitions and mapping in SVS 
+   !# * 'CLASSIC' : Same VF definitions as ISBA
+   !# * 'CCILCECO' : New VF definitions used in SVS only
+   !# with geo. fields generated using CCILC 2015 + Ecobiomes
+   character(len=16) :: vf_type    = 'CLASSIC'
+   namelist /surface_cfgs/ vf_type
+   character(len=*), parameter :: VFTYPE_OPT(2) = (/ &
+        'CLASSIC  ',  &
+        'CCILCECO '   &
+        /)
 
    !# Emissivity for water
    !# * '_constant_' : A fixed floating point value used as a constant
@@ -305,6 +357,10 @@ module sfc_options
         'BELJAARS'  &
         /)
 
+   !# Roughness length for sea ice
+   real              :: z0seaice    = 1.6e-4
+   namelist /surface_cfgs/ z0seaice
+   
    !# Thermal roughness length formulation over water
    !# * 'MOMENTUM' : Uses z0h = z0m (replaces key z0trdps300=.false.)
    !# * 'DEACU12'  : #TODO: define  (replaces key z0trdps300=.true.)

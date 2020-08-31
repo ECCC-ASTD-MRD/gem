@@ -30,7 +30,7 @@ contains
       use phy_status, only: phy_error_L
       use phybus
       use series_mod, only: series_xst
-      use ens_perturb, only: ens_nc2d
+      use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
       !@Object to perform the implicit vertical diffusion
@@ -38,7 +38,7 @@ contains
       ! 002      A. Zadra (Oct 2015) - add land-water mask (MG) to input
       !                 list of baktotq4
       ! 003      A. Zadra / R. McT-C (Sep 2016) - added nonlocal scaling option
-      !                 based on J. Mailhot/A. Lock (Aug 2012)
+      !                 based on J. Mailhot/A. Lock (Aug 2012) 
 
       !          - Input/Output -
       ! db       dynamic bus
@@ -90,12 +90,12 @@ contains
 #include "phymkptr.hf"
       include "surface.cdk"
 
-      real, dimension(ni) :: bmsg, btsg, a, aq, bq, sfc_density, fsloflx
+      real, dimension(ni) :: bmsg, btsg, a, aq, bq, sfc_density, fsloflx, fm_mult, fh_mult
       real, dimension(nkm1) :: se, sig
       real, dimension(ni,nkm1) ::  kmsg, ktsg, rgam0, wthl_ng, wqw_ng, uw_ng, vw_ng, &
            c, d, unused, zero, qclocal, ficelocal
       real, dimension(ni,nk) :: gam0
-      real, dimension(ni,nkm1), target :: thl, qw, tthl, tqw, dkem, dket
+      real, dimension(ni,nkm1), target :: thl, qw, tthl, tqw, dkem, dket, tu2m, tu2t
 
       !     Pointeurs pour champs deja definis dans les bus
       real, pointer, dimension(:)   :: ps
@@ -196,7 +196,7 @@ contains
       MKPTR2Dm1(zpblq1, pblq1, v)
 
       MKPTR3D(zvcoef, vcoef, 2, v)
- 
+      
       if(zsigt(1,1) > 0) then
          sigef(1:,1:) => zsigt(1:ni,1:nkm1)
          sigex(1:,1:) => zsigt(1:ni,1:nkm1)
@@ -207,6 +207,10 @@ contains
 
       if (.not.diffuw) nullify(tw)
 
+      ! Retrieve stochastic parameter information on request
+      fm_mult(:) = ens_spp_get('fm_mult', zmrk2, default=1.)
+      fh_mult(:) = ens_spp_get('fh_mult', zmrk2, default=1.)
+      
       ! Choose diffusion operators based on vertical grid structure
       typem = 1
       if(zsigt(1,1) > 0) then
@@ -267,7 +271,7 @@ contains
 !vdir nodep
       do j=1,ni
          aq(j)=-rsg/(t(j,nkm1)*(1. + DELTA * zqsurf_ag(j)))
-         bmsg(j)   = zbm(j) * aq(j)
+         bmsg(j)   = fm_mult(j) * zbm(j) * aq(j)
          btsg(j)   = zbt_ag(j) * aq(j) * fsloflx(j)
          zalfat(j) = zalfat(j)  * aq(j) * fsloflx(j)
          zalfaq(j) = zalfaq(j)  * aq(j) * fsloflx(j)
@@ -317,8 +321,8 @@ contains
 
       ! For simplified physics and clef, the boundary terms can be set to zero
       if(evap) then
-         aq = zalfaq
-         bq = btsg
+         aq(:) = fh_mult(:) * zalfaq(:)
+         bq(:) = fh_mult(:) * btsg(:)
       else
          aq = 0.
          bq = 0.
@@ -353,8 +357,8 @@ contains
 
       ! For simplified physics and clef, the boundary terms can be set to zero
       if (chauf) then
-         aq = zalfat
-         bq = btsg
+         aq(:) = fh_mult(:) * zalfat(:)
+         bq(:) = fh_mult(:) * btsg(:)
       else
          aq = 0.
          bq = 0.
@@ -413,12 +417,15 @@ contains
             dket(j,nkm1) = dsig * dket(j,nkm1-1)
          end do
       case ('LOCAL_K')
+         tu2m = tu(:,1:nkm1)**2 + tv(:,1:nkm1)**2
+         call vint_mom2thermo(tu2t, tu2m, zvcoef, ni, nkm1)
          do k=1,(nkm1-1)
             do j=1,ni
-               du = uu(j,k) - uu(j,k+1) + 0.5*tau*(tu(j,k) - tu(j,k+1))
-               dv = vv(j,k) - vv(j,k+1) + 0.5*tau*(tv(j,k) - tv(j,k+1))
+               du = uu(j,k) - uu(j,k+1) + tau*(tu(j,k) - tu(j,k+1))
+               dv = vv(j,k) - vv(j,k+1) + tau*(tv(j,k) - tv(j,k+1))
                dsig = zsigm(j,k) - zsigm(j,k+1)
-               dket(j,k) = - kmsg(j,k)*((du/dsig)**2 + (dv/dsig)**2)
+               dket(j,k) = - kmsg(j,k)*( (du/dsig)**2 + (dv/dsig)**2 ) &
+                           - 0.5*tau*tu2t(j,k) 
             end do
          end do
          do j=1,ni

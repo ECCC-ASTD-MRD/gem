@@ -87,10 +87,10 @@
 !DIR$ IVDEP
                do i= 1, l_ni
                   Adz_wpxyz(i,j,k,1) = xm(i)
-                  Adz_pxyzm(1,i,j,k) = min(max(real(xm(i)),Adz_iminposx),&
+                  Adz_pxyzm(1,i,j,k) = min(max(xm(i),Adz_iminposx),&
                                                      Adz_imaxposx)
                   Adz_wpxyz(i,j,k,2) = ym(i)
-                  Adz_pxyzm(2,i,j,k) = min(max(real(ym(i)),Adz_iminposy),&
+                  Adz_pxyzm(2,i,j,k) = min(max(ym(i),Adz_iminposy),&
                                                      Adz_imaxposy)
                   kk1 = min(l_nk+1,max(0,kk(i)))
                   nb  = max(min(kk1,G_nk-1),1)

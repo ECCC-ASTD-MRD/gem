@@ -86,20 +86,24 @@ module adz_options
    logical :: adz_BC_LAM_zlf_L = .false.
 
    !# South boundary in GY for an embedded LAM
-   integer :: adz_pil_sub_s = -1
-   namelist /adz_cfgs/ adz_pil_sub_s
+   integer :: adz_pil_sub_s_g = -1
+   integer :: adz_pil_sub_s   = -1
+   namelist /adz_cfgs/ adz_pil_sub_s_g
 
    !# North boundary in GY for an embedded LAM
-   integer :: adz_pil_sub_n = -1
-   namelist /adz_cfgs/ adz_pil_sub_n
+   integer :: adz_pil_sub_n_g = -1
+   integer :: adz_pil_sub_n   = -1
+   namelist /adz_cfgs/ adz_pil_sub_n_g
 
    !# West boundary in GY for an embedded LAM
-   integer :: adz_pil_sub_w = -1
-   namelist /adz_cfgs/ adz_pil_sub_w
+   integer :: adz_pil_sub_w_g = -1
+   integer :: adz_pil_sub_w   = -1
+   namelist /adz_cfgs/ adz_pil_sub_w_g
 
    !# East boundary in GY for an embedded LAM
-   integer :: adz_pil_sub_e = -1
-   namelist /adz_cfgs/ adz_pil_sub_e
+   integer :: adz_pil_sub_e_g = -1
+   integer :: adz_pil_sub_e   = -1
+   namelist /adz_cfgs/ adz_pil_sub_e_g
 
    !# Core/Subset areas
    real(kind=REAL64) :: adz_gc_area_8,adz_gs_area_8

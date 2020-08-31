@@ -19,7 +19,7 @@ module mem_tracers
 
       integer :: tracers_block_size = 4
       integer :: tracers_nblocks
-      real, pointer, dimension (:) :: trt1, trt0, trdf
+      real, pointer, dimension (:) :: trt1, trt0, trdf, trtb
 
       type :: memTR_pntrs
          sequence
@@ -28,6 +28,7 @@ module mem_tracers
 
       type(memTR_pntrs), allocatable :: tracers_P (:)
       type(memTR_pntrs), allocatable :: tracers_M (:)
+      type(memTR_pntrs), allocatable :: tracers_B (:)
 
 contains
       integer function tr_get(F_name_S, F_pntr)

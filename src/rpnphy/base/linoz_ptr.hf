@@ -15,11 +15,7 @@
    MKPTR1D(zpplus, pmoins, f)
    MKPTR1D(ztdmask, tdmask, f)
 
-!   MKPTR2D(ztts      , tts    ,  f)
    MKPTR2D(zttce     , ttce   ,  f)
-!   MKPTR2D(zlin1     , lin1   ,  f)
-!   MKPTR2D(zlin2     , lin2   ,  f)
-!   MKPTR2D(zlin3     , lin3   ,  f)
    MKPTR2D(zlin4     , lin4   ,  f)
    MKPTR2D(zlin5     , lin5   ,  f)
    MKPTR2D(zlin6     , lin6   ,  f)
@@ -28,18 +24,14 @@
    MKPTR2D(zlin9     , lin9   ,  f)
    MKPTR2D(zlin10    , lin10  ,  f)
    MKPTR2D(zlin11    , lin11  ,  f)
-   MKPTR2D(zlin12    , lin12  ,  f)
-   MKPTR2D(zlin13    , lin13  ,  f)
-   MKPTR2D(zlin14    , lin14  ,  f)
 
    MKPTR2D(zo3ce     , o3ce   ,  f)
-   MKPTR2D(zo3fk     , o3fk   ,  f)
+   MKPTR2D(zo3fk     , o3fk   , f)
    MKPTR2D(zch4c     , ch4c   ,  f)
    MKPTR2D(zn2oc     , n2oc   ,  f)
    MKPTR2D(zcf1c     , cf1c   ,  f)
    MKPTR2D(zcf2c     , cf2c   ,  f)
 
-   MKPTR2D(zrhoa     , rhoa   ,  v)
    MKPTR2D(zch4      , ch4    ,  v)
    MKPTR2D(zn2o      , n2o    ,  v)
    MKPTR2D(zcf11     , cf11   ,  v)
@@ -58,8 +50,6 @@
 
    MKPTR2D(zo3col  , o3col,  v)
    MKPTR2D(zo3ccol , o3ccol, v)
-   MKPTR2D(zo3fkcol , o3fkcol, v)
-!   MKPTR2D(zo3lcol , o3lcol, v)
    MKPTR2D(zch4col , ch4col, v)
    MKPTR2D(zn2ocol , n2ocol, v)
    MKPTR2D(zf11col , f11col, v)
@@ -67,7 +57,6 @@
 
    MKPTR1D(zo3tc   , o3tc,  v)
    MKPTR1D(zo3ctc  , o3ctc, v)
-   MKPTR1D(zo3fktc  , o3fktc, v)
    MKPTR1D(zch4tc  , ch4tc, v)
    MKPTR1D(zn2otc  , n2otc, v)
    MKPTR1D(zf11tc  , f11tc, v)

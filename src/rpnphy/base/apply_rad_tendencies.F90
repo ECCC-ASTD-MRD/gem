@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
+ !-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -29,6 +29,7 @@ contains
       use phy_options
       use phybus
       use tendency, only: apply_tendencies
+      use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies
@@ -51,11 +52,13 @@ contains
 #include "phymkptr.hf"
 
       ! Local variables
-      integer ::  istat, istat2
-      real, dimension(ni,nkm1) :: qrad
+      integer ::  istat, istat2, k
+      real, dimension(ni) :: tradmult
+      real, dimension(ni,nkm1) :: qrad, mtrad
       real, dimension(:), pointer :: zconerad,zconqrad, zps, zfusi, zfdsi, zfdss, ziv, &
            zev, zei, ztdmask, znetrad
-      real, dimension(:,:), pointer :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad
+      real, dimension(:,:), pointer :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, &
+           zmrk2
       real(REAL64), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
@@ -80,7 +83,9 @@ contains
       MKPTR2Dm1(zsigt, sigt, d)
       MKPTR2Dm1(ztplus, tplus, d)
       MKPTR2Dm1(ztrad, trad, v)
-
+      
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+      
       ! Early exit if radiation is not used
       if (radia == 'NIL') then
          if (associated(zconerad)) zconerad = 0.
@@ -122,8 +127,14 @@ contains
 
       endif TENDENCY_ADJUSTMENT
 
+      ! Apply tendency perturbation on request
+      tradmult = ens_spp_get('trad_mult', zmrk2, default=1.)
+      do k=1,nkm1
+         mtrad(:,k) = tradmult(:) * ztrad(:,k)
+      enddo
+      
       ! Apply radiative tendencies
-      call apply_tendencies(ztplus, ztrad, ztdmask, ni, nk, nkm1)
+      call apply_tendencies(ztplus, mtrad, ztdmask, ni, nk, nkm1)
 
       ! Post-scheme energy budget analysis
       if (associated(zconerad)) then

@@ -1,11 +1,11 @@
 !##########################################################################
-subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
+subroutine BKF_SHALLOW6(KLON, KLEV, PDTCONV, &
      &                  PPABS, PZZ, &
      &                  PT, PRV, PRC, PRI, PU, PV, PW, PDMSEDT, &
      &                  PCLOUD,PURC,PURI, &
      &                  PTTENS, PRVTENS, PRCTENS,PRITENS,PUTENS, PVTENS, &
      &                  UMFS, PCH1, PCH1TEN, &
-     &                  PKSHAL, PSP, PWSTAR, PDXDY, PKDEEP)
+     &                  PKSHAL, PSP, PWSTAR, PDXDY, PMRK2, PKDEEP)
    !##########################################################################
 
 !KICE      => bkf_kice
@@ -81,6 +81,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    use YOE_CONVPAR_SHAL
    use YOE_CONVPAREXT
    use cnv_options, only: bkf_tperts, bkf_rads, bkf_kice, bkf_lshalm, bkf_lch1conv, bkf_kch
+   use ens_perturb, only: ens_nc2d
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -114,6 +115,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    real, dimension(KLON,KLEV), intent(INOUT):: PVTENS   ! convecctive v tendency (m/s^2) shallow
    real, dimension(KLON,KLEV), intent(INOUT):: UMFS     ! shallow updraft mass flux
    real, dimension(KLON),      intent(IN)   :: PDXDY    ! grid cell area
+   real, dimension(KLON,ens_nc2d), intent(IN) :: PMRK2  ! Markov chain for SPP
    real, dimension(KLON),      intent(IN)   :: PWSTAR   ! convective velocity scale (m/s)
 
    ! transport for chemical tracer
@@ -295,7 +297,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    KLEV1 = KLEV+1
    GTRIG = (PKDEEP(:) <= 0.)
    ITEST = count(GTRIG)
-   call CONVECT_SHALLOW5(KLON, KLEV1, ITEST, PDTCONV, &
+   call CONVECT_SHALLOW6(KLON, KLEV1, ITEST, PDTCONV, &
         &                ZPABS, ZZZ,                                 &
         &                ZT, ZRV, ZRC, ZRI, ZDMSEDT,             &
         &                ZTTENS, ZRVTENS, ZRCTENS, ZRITENS,          &
@@ -303,7 +305,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
         &                ZCLOUD,ZURC,ZURI,                           &
         &                ZCH1, ZCH1TENS,             &
         &                ZUDRS, PWSTAR, ZCRAD, ZDTPERT,              &
-        &                PDXDY, PKSHAL, GTRIG,                       &
+        &                PDXDY, PMRK2, PKSHAL, GTRIG,                &
         &                ZU, ZV, ZUTENS, ZVTENS)
    if (phy_error_L) return
 
@@ -323,7 +325,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
             JKE = JKE + 1
             GTRIG = (PKDEEP(:) <= 0.)
             ITEST = count(GTRIG)
-            call CONVECT_SHALLOW5(KLON, KLEV1, ITEST, PDTCONV, &
+            call CONVECT_SHALLOW6(KLON, KLEV1, ITEST, PDTCONV, &
                  &                ZPABS, ZZZ, &
                  &                ZT, ZRV, ZRC, ZRI, ZDMSEDT, &
                  &                ZTTENSE(:,:,JKE), ZRVTENSE(:,:,JKE), ZRCTENSE(:,:,JKE), ZRITENSE(:,:,JKE), &
@@ -331,7 +333,7 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
                  &                ZCLOUDE(:,:,JKE),ZURCE(:,:,JKE),ZURIE(:,:,JKE),  &
                  &                ZCH1, ZCH1TENSE(:,:,:,JKE),  &
                  &                ZUDRSE(:,:,JKE), PWSTAR, ZCRAD, ZDTPERT, &
-                 &                PDXDY, ZKSHALE(:,JKE), GTRIG,  &
+                 &                PDXDY, PMRK2, ZKSHALE(:,JKE), GTRIG,  &
                  &                ZU, ZV, ZUTENSE(:,:,JKE), ZVTENSE(:,:,JKE))
             if (phy_error_L) return
             !#TODO: why not accumulate directly here instead of below... this way we would avoid (array size * KENS)
@@ -473,4 +475,4 @@ subroutine BKF_SHALLOW5(KLON, KLEV, PDTCONV, &
    end if
 
    return
-end subroutine BKF_SHALLOW5
+end subroutine BKF_SHALLOW6

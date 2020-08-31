@@ -23,17 +23,15 @@ module physlb_mod
 
 contains
 
-  subroutine physlb1 ( busent3D, busdyn3D ,busper3D, busvol3D  ,&
-       esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic )
+  subroutine physlb1 ( busdyn3D ,busper3D, busvol3D  ,&
+       dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic )
     implicit none
-    integer :: esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-    real, dimension(:,:), pointer :: busent3D, busdyn3D, busper3D, busvol3D
+    integer :: dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
+    real, dimension(:,:), pointer :: busdyn3D, busper3D, busvol3D
 
     !@Author L. Spacek (May 2010)
     !@Object The main physics subroutine
     !@Arguments
-    !          - Input -
-    ! busent3D  - input field
     !          - Input/Output -
     ! busdyn3D  - dynamics input field
     ! busper3D  - historic variables for the physics
@@ -41,7 +39,6 @@ contains
     !          - Output -
     ! busvol3D  - physics tendencies and other output fields from the physics
     !          - Input -
-    ! esiz     dimension of e
     ! dsiz     dimension of d
     ! fsiz     dimension of f
     ! vsiz     dimension of v
@@ -65,11 +62,11 @@ contains
 
     if (test_phy) then
        call physeterror('physlb1', 'testphy_phyexe needs to be updated')
-!!$       call testphy_phyexe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
-!!$         esiz, dsiz, fsiz, vsiz, jdo, kount, ni, nk )
+!!$       call testphy_phyexe ( busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
+!!$         dsiz, fsiz, vsiz, jdo, kount, ni, nk )
     else
-       call phyexe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
-            esiz, dsiz, fsiz, vsiz, jdo, kount, ni, nk )
+       call phyexe ( busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
+            dsiz, fsiz, vsiz, jdo, kount, ni, nk )
     endif
     if (phy_error_L) return
 

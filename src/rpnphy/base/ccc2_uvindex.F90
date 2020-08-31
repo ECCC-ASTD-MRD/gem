@@ -15,13 +15,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !/@*
-subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
+subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
    use phy_options, only: RAD_NUVBRANDS, IUV_METHOD_OPT
    implicit none
    ! integer, parameter :: rad_nuvbrands=6
    integer :: il1,il2,ilg
    real, dimension(ilg,RAD_NUVBRANDS) :: fatb,fctb
-   real, dimension(ilg)               :: iuvc,iuva
+   real, dimension(ilg)               :: iuvc,iuva,salb
    character(len=10), optional        :: iuv_method
 
    !@Authors  Y.J.Rochon, Feb 2016, Oct 2017, Oct-Dec 2018
@@ -36,6 +36,7 @@ subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
    ! ilg      max horizontal dimension
    ! fctb     Clear-sky downward irradiance at the surface (dir+dif) flux for 6 VIS-UV bands (input)
    ! fatb     all-sky downward irradiance at the surface (dir+dif) flux for 6 VIS-UV bands (input)
+   ! salb     Surface albedo (input)
    ! iuvc     clear-sky UV index field(s) (input for uvi_method='BandRatio'; output otherwise)
    ! iuva     all-sky UV index field(s) (output)
    ! iuv_method  
@@ -66,6 +67,8 @@ subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
    !                  for applying the attenuation.
    !         4) The differences with ccc2_uvindex.F90 would be the fit coefficients 
    !            and the band intervals, the former having depended on the latter.
+   !         5) Added additional dependence on albedo based on 7-band UV case and
+   !            comparison to high resolution simulations.
    !
    !
    ! Comments:
@@ -154,7 +157,7 @@ subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
    if (imethod /= 'BANDRATIO') then      
       do i=1,nftb
          fctbw(il1:il2,i) = fctb(il1:il2,iftb(i))
-         call uvindex_scale_tflux(fctbw(il1:il2,i),i)
+         call uvindex_scale_tflux(fctbw(il1:il2,i),salb(il1:il2),i)
          where (fctb(il1:il2,iftb(3)) >= 0.0001 .and. &
               fatb(il1:il2,iftb(3)) >= 1.E-8 .and. &
               fctb(il1:il2,iftb(i)) > 0.1*fatb(il1:il2,iftb(i))) 
@@ -167,12 +170,12 @@ subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
       if (all(iuvc < 0.1)) then
          do i=1,nftb
             fctbw(il1:il2,i) = fctb(il1:il2,iftb(i))
-            call uvindex_scale_tflux(fctbw(il1:il2,i),i) 
+            call uvindex_scale_tflux(fctbw(il1:il2,i),salb(il1:il2),i) 
          end do
       else
          i=3
          fctbw(il1:il2,i) = fctb(il1:il2,iftb(i))
-         call uvindex_scale_tflux(fctbw(il1:il2,i),i) 
+         call uvindex_scale_tflux(fctbw(il1:il2,i),salb(il1:il2),i) 
       end if
    end if
 
@@ -241,7 +244,7 @@ subroutine ccc2_uvindex(il1,il2,ilg,fctb,fatb,iuvc,iuva,iuv_method)
 contains
 
    !===========================================================================
-   subroutine uvindex_scale_tflux(f,index)
+   subroutine uvindex_scale_tflux(f,salb,index)
       ! Creation       : Y.J. Rochon, Dec 2015, Oct-Nov 2018 
       !
       ! Modified: 
@@ -253,28 +256,35 @@ contains
       !
       !            IN 
       !                index      - Broadband index 
+      !                salb       - Surface albedo
       !
       !            IN/OUT   
       !                f          - Total irradiances
       !========================================================================
       implicit none
       integer,intent(in) :: index
-      real, intent(inout) :: f(:)
+      real, intent(inout) :: f(:),salb(:)
 
       real, parameter :: fit_factors(4) = (/ 0.603, 1.618, 0.959, 1.008 /)
       real, parameter :: fit_expnt(4) = (/ 0.575, 0.605, 0.0, 0.0 /)
+
+      ! Gradients of fit_factors as a function of salb derived from values for
+      ! albedos of 0.1 and 1.0.
+      ! Note: changes of exponent as a function of salb was found to be weaker.
+
+      real, parameter :: fit_grad_salb(4)=(/ 0.31, 0.25, 0.060, 0.020 /)
 
       ! Apply scaling
 
       select case(index)
       case(1)
-         f = fit_factors(1)*f**fit_expnt(1)  
+         f = (fit_factors(1)+fit_grad_salb(1)*(salb-0.1d0))*f**fit_expnt(1)  
       case(2)
-         f = fit_factors(2)*f**fit_expnt(2)
+         f = (fit_factors(2)+fit_grad_salb(2)*(salb-0.1d0))*f**fit_expnt(2)
       case(3)
-         f = fit_factors(3)*f
+         f = (fit_factors(3)+fit_grad_salb(3)*(salb-0.1d0))*f
       case(4)
-         f = fit_factors(4)*f
+         f = (fit_factors(4)+fit_grad_salb(4)*(salb-0.1d0))*f
       end select
 
    end subroutine uvindex_scale_tflux
@@ -325,7 +335,7 @@ contains
       real, parameter :: scale= 40. ! =1/(25E-3 W/m^2) for conversion
       ! from irradiances to UV Index
 
-      integer :: i,j,k,ik
+      integer :: i,k,ik
       real :: y(5),sumv
 
       !  ----------------------------------------------------------------------   
@@ -553,7 +563,6 @@ contains
 
       !  Declare local variables
 
-      real    :: w
       integer :: i,j
 
       y(1:n) = 1.0
@@ -579,5 +588,5 @@ contains
 
    end subroutine uvindex_lagrange_wgt
 
-end subroutine ccc2_uvindex
+end subroutine ccc2_uvindex2
 

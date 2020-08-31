@@ -32,7 +32,7 @@
       real(kind=REAL64) :: aa,bb,cc, xt,yt,zt, wdt,ww,wp,wm
       real(kind=REAL64) :: hh, x1, x2, x3, x4
       real(kind=REAL64), dimension(2:l_nk-2) :: w1, w2, w3, w4
-      real :: zmin_bound, zmax_bound
+      real(kind=REAL64) :: zmin_bound, zmax_bound
       real(kind=REAL64), parameter :: half=0.5d0
 !
 !---------------------------------------------------------------------
@@ -56,9 +56,9 @@
                           + bb * (Adz_wpxyz(i  ,j,k,2) + Adz_wpxyz(i+1,j,k,2))
                zt        =  aa * (Adz_wpxyz(i-1,j,k,3) + Adz_wpxyz(i+2,j,k,3)) &
                           + bb * (Adz_wpxyz(i  ,j,k,3) + Adz_wpxyz(i+1,j,k,3))
-               Adz_pmu(1,i,j,k)= min(max(real(xm(i,j,k)),Adz_iminposx),Adz_imaxposx)
-               Adz_pmu(2,i,j,k)= min(max(real(ym(i,j,k)),Adz_iminposy),Adz_imaxposy)
-               Adz_pmu(3,i,j,k)= min(max(real(zt       ),zmin_bound ) ,zmax_bound  )
+               Adz_pmu(1,i,j,k)= min(max(xm(i,j,k),Adz_iminposx),Adz_imaxposx)
+               Adz_pmu(2,i,j,k)= min(max(ym(i,j,k),Adz_iminposy),Adz_imaxposy)
+               Adz_pmu(3,i,j,k)= min(max(zt       ,zmin_bound  ),zmax_bound  )
                zm(i,j,k) = Adz_pmu(3,i,j,k)
             end do
          end do
@@ -74,9 +74,9 @@
                           + bb * (Adz_wpxyz(i,j  ,k,2) + Adz_wpxyz(i,j+1,k,2)) - 0.5d0
                zt =         aa * (Adz_wpxyz(i,j-1,k,3) + Adz_wpxyz(i,j+2,k,3)) &
                           + bb * (Adz_wpxyz(i,j  ,k,3) + Adz_wpxyz(i,j+1,k,3))
-               Adz_pmv(1,i,j,k)= min(max(real(xm(i,j,k)),Adz_iminposx),Adz_imaxposx)
-               Adz_pmv(2,i,j,k)= min(max(real(ym(i,j,k)),Adz_iminposy),Adz_imaxposy)
-               Adz_pmv(3,i,j,k)= min(max(real(zt       ),zmin_bound ) ,zmax_bound  )
+               Adz_pmv(1,i,j,k)= min(max(xm(i,j,k),Adz_iminposx),Adz_imaxposx)
+               Adz_pmv(2,i,j,k)= min(max(ym(i,j,k),Adz_iminposy),Adz_imaxposy)
+               Adz_pmv(3,i,j,k)= min(max(zt       ,zmin_bound  ),zmax_bound  )
                zm(i,j,k) = Adz_pmv(3,i,j,k)
            end do
          end do
@@ -121,8 +121,8 @@
                zt = Ver_z_8%t(k) - Cstv_dtzD_8*  wdt &
                                  - Cstv_dtzA_8* zdt0(i,j,k)
                xm(i,j,k)=xt; ym(i,j,k)=yt
-               xt = min(max(real(xt),Adz_iminposx),Adz_imaxposx)
-               yt = min(max(real(yt),Adz_iminposy),Adz_imaxposy)
+               xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
+               yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
                Adz_pxyzt(1,i,j,k)= xt
                Adz_pxyzt(2,i,j,k)= yt
                Adz_pxyzt(3,i,j,k)= zindx(zt)
@@ -149,8 +149,8 @@
             zt =Ver_z_8%t(k) - Cstv_dtzD_8*  wdt &
                              - Cstv_dtzA_8*zdt0(i,j,k)
             xm(i,j,k)=xt; ym(i,j,k)=yt
-            xt = min(max(real(xt),Adz_iminposx),Adz_imaxposx)
-            yt = min(max(real(yt),Adz_iminposy),Adz_imaxposy)
+            xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
+            yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
             Adz_pxyzt(1,i,j,k)= xt
             Adz_pxyzt(2,i,j,k)= yt
             Adz_pxyzt(3,i,j,k)= zindx(zt)
@@ -173,8 +173,8 @@
             yt= (geomh_y_8(j) - Dcst_inv_rayt_8 * Cstv_dt_8 * &
                  Adz_vslt(i,j) - G_yg_8(1)) * geomh_inv_hy_8 + 1.d0
             xm(i,j,k)=xt; ym(i,j,k)=yt
-            xt = min(max(real(xt),Adz_iminposx),Adz_imaxposx)
-            yt = min(max(real(yt),Adz_iminposy),Adz_imaxposy)
+            xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
+            yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
             Adz_pxyzt(1,i,j,k)= xt
             Adz_pxyzt(2,i,j,k)= yt
             ii1 = xt ; jj1 = yt
@@ -189,8 +189,8 @@
             xt = wp*Adz_wpxyz(i,j,k,1)+wm*Adz_wpxyz(i,j,k-1,1)
             yt = wp*Adz_wpxyz(i,j,k,2)+wm*Adz_wpxyz(i,j,k-1,2)
             xm(i,j,k)=xt; ym(i,j,k)=yt
-            xt = min(max(real(xt),Adz_iminposx),Adz_imaxposx)
-            yt = min(max(real(yt),Adz_iminposy),Adz_imaxposy)
+            xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
+            yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
             Adz_pxyzt(1,i,j,k)= xt
             Adz_pxyzt(2,i,j,k)= yt
             ii1 = xt ; jj1 = yt
@@ -222,8 +222,8 @@
                zt = Ver_z_8%t(1) - Cstv_dtzD_8*wdt &
                                  - Cstv_dtzA_8*zdt0(i,j,1)
                xm(i,j,1)=xt; ym(i,j,1)=yt
-               xt = min(max(real(xt),Adz_iminposx),Adz_imaxposx)
-               yt = min(max(real(yt),Adz_iminposy),Adz_imaxposy)
+               xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
+               yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
                Adz_pxyzt(1,i,j,1)= xt
                Adz_pxyzt(2,i,j,1)= yt
                Adz_pxyzt(3,i,j,1)= zindx(zt)

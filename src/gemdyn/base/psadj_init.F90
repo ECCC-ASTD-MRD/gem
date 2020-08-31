@@ -44,7 +44,7 @@
       !     Estimate area for Yin-Yang/LAM and Store air mass at initial time for Yin-Yang
       !===================================================================================
 
-      integer :: err,i,j
+      integer :: err,i,j,i0_c,in_c,j0_c,jn_c
       logical, save :: done_area_L       = .false.
       logical, save :: done_yy_initial_L = .false.
       real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8,p0_1_8
@@ -61,9 +61,6 @@
 
       if ( Schm_psadj == 2 .and. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') &
          call gem_error(-1,'PSADJ_INIT','PSADJ=2 NOT AVAILABLE in GEM-H')
-
-      if ( Schm_psadj == 2 .and. Lam_gbpil_T>0 ) &
-         call gem_error(-1,'PSADJ_INIT','PSADJ=2 NOT AVAILABLE when TOP piloting')
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
@@ -121,10 +118,12 @@
       !------------------------------------------------------
       if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
 
+      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
+
       !Obtain Surface pressure minus Cstv_pref_8
       !-----------------------------------------
-      if (Schm_psadj==1) p0_1_8(1:l_ni,1:l_nj) = p0_wet_8(1:l_ni,1:l_nj) - Cstv_pref_8
-      if (Schm_psadj==2) p0_1_8(1:l_ni,1:l_nj) = p0_dry_8(1:l_ni,1:l_nj) - Cstv_pref_8
+      if (Schm_psadj==1) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_wet_8(i0_c:in_c,j0_c:jn_c) - Cstv_pref_8
+      if (Schm_psadj==2) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_dry_8(i0_c:in_c,j0_c:jn_c) - Cstv_pref_8
 
       !Store air mass at initial time
       !------------------------------

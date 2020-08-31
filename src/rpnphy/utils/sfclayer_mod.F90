@@ -46,7 +46,7 @@ module sfclayer_mod
   procedure(stability_function), pointer, save :: &
        sf_stable => sf_stable_delage97, &                   !Stability functions (stable surface layer)
        sf_unstable => sf_unstable_delage92                  !Stability functions (unstable surface layer)
-  
+
   ! Public subprograms
   public :: sl_put          !Set module variables
   public :: sl_get          !Retrieve module variables/parameters
@@ -66,7 +66,7 @@ module sfclayer_mod
      module procedure sl_get_r4
      module procedure sl_get_l
   end interface sl_get
-  
+
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -287,7 +287,7 @@ contains
   function sl_sfclayer(t_air,q_air,spd_air,dir_air,hghtm_air,hghtt_air,t_sfc,q_sfc,z0m,z0t,lat,fcor, &
        coefm,coeft,rib,flux_t,flux_q,ilmo,ue,h,lzz0m,lzz0t,stabm,stabt,spdlim, &
        t_diag,q_diag,u_diag,v_diag,hghtm_diag,hghtm_diag_row,hghtt_diag, &
-       hghtt_diag_row,tdiaglim,L_min,optz0) result(status)
+       hghtt_diag_row,tdiaglim,L_min,optz0,z0mloc,z0t_optz0) result(status)
     ! Surface layer parameterization
 
     ! Input arguments
@@ -310,6 +310,8 @@ contains
     real, dimension(:), intent(in), optional :: hghtm_diag_row  !Diagnostic heights for momentum (m; supercedes hghtm_diag)
     real, intent(in), optional :: hghtt_diag                    !Diagnostic level height for thermdynamics (m) [1.5]
     real, dimension(:), intent(in), optional :: hghtt_diag_row  !Diagnostic heights for thermdynamics (m; supercedes hghtt_diag)
+    real, dimension(:), intent(in), optional :: z0mloc          !Local Momentum roughness length (no orography) (m)
+
 
     ! Output arguments
     integer :: status                                           !Return status of function
@@ -330,13 +332,15 @@ contains
     real, dimension(:), intent(out), optional :: q_diag         !Diagnostic level moisture (kg/kg)
     real, dimension(:), intent(out), optional :: u_diag         !Diagnostic level u-wind (m/s)
     real, dimension(:), intent(out), optional :: v_diag         !Diagnostic level v-wind (m/s)
+    real, dimension(:), intent(out), optional :: z0t_optz0      !Thermodynamic roughness calculated using optz0
+
 
     ! Internal variables
     integer :: my_optz0
     real :: my_L_min
     real, dimension(size(t_air)) :: my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q, &
          my_ilmo,my_ue,my_h,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_t_diag,my_q_diag, &
-         my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim
+         my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim, my_z0mloc, my_z0t_optz0
     logical :: my_tdiaglim
 
     ! Initialize return value
@@ -355,11 +359,14 @@ contains
     if (present(tdiaglim)) my_tdiaglim = tdiaglim
     my_L_min = DEFAULT_L_MIN
     if (present(L_min)) my_L_min = L_min
+    my_z0mloc(:) = z0m(:)
+    if (present(z0mloc)) my_z0mloc(:) = z0mloc(:)
+
 
     ! Compute surface fluxes on request
     call flxsurf(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
          fcor,t_air,q_air,hghtm_air,hghtt_air,spd_air,t_sfc,q_sfc,my_h,z0m,z0t,my_L_min, &
-         my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0)
+         my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0,my_z0mloc,my_z0t_optz0)
 
     ! Diagnostic level calculations
     if (any((/present(hghtm_diag),present(hghtt_diag),present(hghtm_diag_row),present(hghtt_diag_row)/))) then
@@ -398,7 +405,14 @@ contains
     if (present(q_diag)) q_diag = my_q_diag
     if (present(u_diag)) u_diag = my_u_diag
     if (present(v_diag)) v_diag = my_v_diag
-
+    if (present(z0t_optz0)) then
+       if (my_optz0 > 0) then
+          z0t_optz0 = my_z0t_optz0
+       else
+          call msg_toall(MSG_ERROR,'(sl_sfclayer) optz0 > 0 must be provided for z0t_optz0 calculation')
+          return
+       endif
+    endif
     ! Successful completion of subprogram
     status = SL_OK
 
@@ -505,7 +519,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine flxsurf(cmu, ctu, rib, ftemp, fvap, ilmo, &
        ue, fcor, ta , qa , zu, zt, vmod, tg , qg , h , z0 , z0t,  &
-       lmin, lzz0, lzz0t, fm, fh, va, n, optz0)
+       lmin, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, optz0_z0t)
     use sfclayer_funcs, only: stability_function, D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Represent surface layer similarity state, turbulent tranfer coefficients and fluxes
@@ -524,6 +538,7 @@ contains
     real, dimension(:), intent(in) :: fcor                      !Coriolis factor (/s)
     real, intent(in) :: lmin                                    !Minimum stable Obukhov length [none]
     integer, intent(in) :: optz0                                !Alternative roughness length adjustment [0]
+    real, dimension(:), intent(in) :: z0loc                     !Local momentum roughness length (m) for compz0() calc.
 
     ! Output arguments
     real, dimension(:), intent(out) :: ilmo                     !Inverse of the Obukov length (/m)
@@ -539,6 +554,7 @@ contains
     real, dimension(:), intent(out) :: fm                       !Integrated momentum stability function
     real, dimension(:), intent(out) :: fh                       !Integrated thermodynamic stability function
     real, dimension(:), intent(out) :: va                       !Adjusted lowest-level wind speed (m/s)
+    real, dimension(:), intent(out) :: optz0_z0t                !Thermal roughness length (m) calculated with compz0()
 
     ! Internal parameters
     real, parameter :: VMIN=1.e-6                               !Minimum wind speed
@@ -546,18 +562,18 @@ contains
     real, parameter :: RIBMAX=1.e5                              !Maximum absolute bulk Richardson number
     real, parameter :: HMAX=1500.                               !Maximum PBL height estimate
     real, parameter :: EPSLN=1e-5                               !Small value
-    
+
     ! Internal variables
     integer :: j, it, itmax
     real :: cm, ct, zp
     real :: ilmoj, fmj, fhj, hj, z0j, z0tj, zuj, ztj, vaj, fcorj
-    real :: z0rmj, z0rtj, lzz0j, lzz0tj, ribj
+    real :: z0rmj, z0rtj, lzz0j, lzz0tj, ribj, z0locj
     real(REAL64) :: dthv, tva, tvs
     real :: ilmax, vlmin, hc, ribc, ilmm
     real :: am, ah, dfm, dfh, g, dg
     real, dimension(n) :: z0rt, z0rm
     procedure(stability_function), pointer :: sf
-    
+
     ! Setup for numerical solution
     itmax  = 3
     ilmax = -1.
@@ -587,9 +603,10 @@ contains
 
     ! Update estimate of the Obukhov length and stability functions
     ROW: do j=1,n
-      
+
        ! Copy inputs to scalars as an optimization
        z0j = z0(j)
+       z0locj = z0loc(j)
        z0tj = z0t(j)
        z0rmj = z0rm(j)
        z0rtj = z0rt(j)
@@ -598,7 +615,7 @@ contains
        lzz0tj = lzz0t(j)
        zuj = zu(j)
        ztj = zt(j)
-       
+
        ! Compute bulk Ri and consistent lowest-level wind
        vaj = max(vmod(j), VMIN)
        zp  = zuj**2 / ztj
@@ -617,11 +634,11 @@ contains
           ! Wind speed is adjusted to keep Obukhov length above the minimum
           vlmin = sqrt( max(0.d0, 1./ribc * GRAV * zp * dthv/(tvs + 0.5*dthv)) )
        endif
-       vaj = max(vaj, vlmin)       
+       vaj = max(vaj, vlmin)
        ribj = GRAV / (tvs + 0.5*dthv) * zp * dthv/vaj**2
        ribj = sign(max(abs(ribj), RIBMIN), ribj)
        ribj = sign(min(abs(ribj), RIBMAX), ribj)
-       
+
        ! Prescribe a smooth-surface neutral regime below a threshold bulk Ri
        if (rineutral > 0. .and. z0j < 0.01 .and. abs(ribj) < rineutral) ribj = 0.
 
@@ -637,23 +654,23 @@ contains
        fmj = lzz0j + am
        fhj = beta * (lzz0tj + ah)
        ilmoj = ribj * fmj * fmj / (zp*fhj)
-       
+
        ! Find the (inverse) Obukhov length (byproducts: PBL height, integrated stability functions)
        ITERATIONS: do it=1,itmax
 
           ! Update roughness and neutral stability functions on request
           if(optz0 > 0) then
-             call compz0(optz0, z0j, z0tj, fmj, vaj, fcorj, 1)
+             call compz0_1(optz0, z0j, z0locj, z0tj, fmj, vaj, fcorj, 1)
              lzz0j = log((z0rmj + zuj) / z0j)
              lzz0tj = log((z0rtj + ztj) / z0tj)
           endif
-          
+
           ! Ensure that the Obukhov length is finite
           ilmoj = sign(max(abs(ilmoj), EPSLN), ilmoj)
-          
+
           ! Estimate PBL height based on surface layer properties
           hj  = pblheight(zuj, z0j, vaj, ilmoj, fcorj, fmj)
-          
+
           ! Update stability functions using appropriate stability branch
           if (ilmoj > 0.) then
              sf => sf_stable
@@ -678,7 +695,7 @@ contains
              dg = sign(max(abs(dg),EPSLN),dg)
              ilmoj = ilmoj - g/dg
           endif
-          
+
        enddo ITERATIONS
 
        ! Diagnose surface layer properties
@@ -698,11 +715,14 @@ contains
        ftemp(j) = -ctu(j) * (ta(j) - tg(j))     !Turbulent temperature flux estimate
        fvap(j) = -ctu(j) * (qa(j) - qg(j))      !Turbulent moisture flux estimate
        h(j)     = min(hj, HMAX)                 !Boundary layer height estimate
-       
+
     enddo ROW
 
     ! Recompute consistent roughness length estimates on request
-    if(optz0.gt.0) call compz0(optz0, z0, z0t, fm, va, fcor, n)
+    if(optz0.gt.0) then
+       call compz0_1(optz0, z0, z0loc, z0t, fm, va, fcor, n)
+       optz0_z0t = z0t
+    endif
 
     ! End of subprogram
     return
@@ -740,7 +760,7 @@ contains
 
     ! Internal parameters
     real, parameter :: ANGMAX = 0.85                            !Maximum frictional deflection (rad)
-    
+
     ! Internal variables
     integer :: j
     real :: fh, fm, h1, h2, h3, hh, ct, ctu, cm, vits, dang, ang, hi
@@ -754,7 +774,7 @@ contains
     enddo
     call vslog(lzz0t, lzz0t, ni)
     call vslog(lzz0, lzz0, ni)
-    
+
     ! Compute state variables at the diagnostic levels
     ROW: do j=1,ni
 
@@ -767,7 +787,7 @@ contains
        else
           hh = h(j)
        endif
-       
+
        ! Compute integrated stability functions
        if (ilmo(j) > 0.) then
           sf => sf_stable
@@ -804,7 +824,7 @@ contains
        ang = angi(j) + dang
        uz(j) = vits*COS(ang)
        vz(j) = vits*SIN(ang)
-       
+
     enddo ROW
 
     ! End of subprogram
@@ -816,7 +836,7 @@ contains
     use sfclayer_funcs, only: D97_AS
 !!!#include <arch_specific.hf>
     ! Compute the planetary boundary layer height.
-    
+
     ! Input arguments
     real, intent(in) :: F_zu                !height of wind input (m)
     real, intent(in) :: F_z0                !roughness length for momentum (m)
@@ -848,7 +868,7 @@ contains
        h1 = 0.3 * (F_u * karman / F_fm) / f
        F_nhb = max(HMIN, h1)
     endif
-    
+
     ! End of subprogram
     return
   end function pblheight

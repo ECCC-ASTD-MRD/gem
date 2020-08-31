@@ -42,6 +42,8 @@
       integer :: istat, nch2d, lmax, mmax
 !-------------------------------------------------------------------
 !
+      if (.not.Ens_conf) return
+
       gmmk_mcutraj_s= 'MCUTRAJ'
       gmmk_mcvtraj_s= 'MCVTRAJ'
       gmmk_mcwtraj_s= 'MCWTRAJ'
@@ -52,7 +54,7 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'mcvtraj'
       istat = gmm_create(gmmk_mcwtraj_s,mcwtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcwtraj'
-
+      
       istat = gmm_get(gmmk_mcutraj_s,mcutraj)
       if (GMM_IS_ERROR(istat))write(*,6005)'mcutraj'
       istat = gmm_get(gmmk_mcvtraj_s,mcvtraj)
@@ -60,9 +62,13 @@
       istat = gmm_get(gmmk_mcwtraj_s,mcwtraj)
       if (GMM_IS_ERROR(istat))write(*,6005)'mcwtraj'
       mcwtraj = 1.
-      
-      if (.not.Ens_conf) return
 
+      gmmk_mcrhsint_s= 'MCRHSINT'
+      istat = gmm_create(gmmk_mcrhsint_s,mcrhsint,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcrhsint'
+      istat = gmm_get(gmmk_mcrhsint_s,mcrhsint)
+      if (GMM_IS_ERROR(istat))write(*,6005)'mcrhsint'
+      
       if (Lun_out > 0) write(Lun_out,6010)
 
       nch2d = Ens_ptp_ncha + spp_ncha
@@ -184,7 +190,6 @@
 
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
-
       
  6000 format('ens_set_mem at gmm_create(',A,')')
  6005 format('ens_set_mem at gmm_get(',A,')')     

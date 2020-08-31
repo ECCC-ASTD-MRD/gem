@@ -15,12 +15,8 @@
 
       subroutine adz_tracers ()
       use adv_pos
-      use adz_mem
-      use adz_options
       use adz_interp_rhs_mod
-      use gem_timing
       use mem_tracers
-      use tr3d
       implicit none
 #include <arch_specific.hf>
 
@@ -42,8 +38,8 @@
          call adz_tricub_rhs ( Adz_stack, Tr3d_ntrTRICUB_NT    ,&
            Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
-           call gemtime_stop (34)
-      endif
+         call gemtime_stop (34)
+      end if
 
       if (Tr3d_ntrBICHQV_NT>0) then
          call gemtime_start (35, 'ADZ_TRNT_2CQV', 33)
@@ -52,12 +48,13 @@
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
-         call adz_bicubHQV_rhs ( Adz_stack, Tr3d_ntrBICHQV_NT,&
-                                 pxt,pyt,pzt,Adz_num_q       ,&
-                           Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
+         call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_NT,pxt,pyt,pzt,&
+              Adz_num_q,Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
          call gemtime_stop (35)
       end if
 
+      !Resetting done at each timestep before calling adz_post_tr
+      !----------------------------------------------------------
       if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call set_post_tr ()
 
       if (Tr3d_ntrTRICUB_WP>0) then
@@ -69,15 +66,19 @@
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
-         call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,1)
          if (.not.Adz_BC_LAM_zlf_L) then
             call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP       ,&
                 Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
-                Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_3CWP)
+                Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_3CWP )
          else
+            do n=1, Tr3d_ntrTRICUB_WP
+               Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
+            end do
+            call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,0)
             call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP         ,&
                 Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_cpntr_t,Adz_num_b,&
-                Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_3CWP)
+                Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_3CWP )
+            call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,1)
          end if
          call gemtime_stop (37)
 
@@ -96,15 +97,17 @@
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
-         call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,1)
          if (.not.Adz_BC_LAM_zlf_L) then
-            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,&
-                  pxt,pyt,pzt,Adz_num_q                        ,&
-                  Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_BQWP)
+            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,pxt,pyt,pzt,&
+                 Adz_num_q,Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_BQWP )
          else
-            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,&
-                  pxt,pyt,pzt,Adz_num_b                        ,&
-                  Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_BQWP)
+            do n=1, Tr3d_ntrBICHQV_WP
+               Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
+            end do
+            call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,0)
+            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,pxt,pyt,pzt,&
+                 Adz_num_b,Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_BQWP )
+            call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,1)
          end if
          call gemtime_stop (39)
 
@@ -118,26 +121,26 @@
       !--------------------------------------------------------
       if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call adz_post_tr (0)
 
-      if (Tr3d_ntrTRICUB_WP>0) then
+      if (Tr3d_ntrTRICUB_WP>0 .and. Adz_BC_LAM_zlf_L) then
          deb= Tr3d_debTRICUB_WP
          do n=1, Tr3d_ntrTRICUB_WP
-            Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
+            Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
          end do
          call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,2)
       end if
 
-      if (Tr3d_ntrBICHQV_WP>0) then
+      if (Tr3d_ntrBICHQV_WP>0 .and. Adz_BC_LAM_zlf_L) then
          deb= Tr3d_debBICHQV_WP
          do n=1, Tr3d_ntrBICHQV_WP
-            Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
+            Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
          end do
          call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,2)
       end if
 
-      if ( (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) .and. &
-           (Adz_verbose>0) ) call stat_mass_tracers (0,"AFTER ADVECTION")
+      if (Adz_verbose>0) call stat_mass_tracers (0,"AFTER ADVECTION")
+
       call gemtime_stop (33)
 !
 !     ---------------------------------------------------------------

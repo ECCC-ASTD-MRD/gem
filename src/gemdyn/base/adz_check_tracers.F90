@@ -23,6 +23,7 @@
       use cstv
       use dyn_fisl_options
       use dynkernel_options
+      use gem_options
       use geomh
       use HORgrid_options
       use ptopo
@@ -40,7 +41,7 @@
       !     (not in NAMELIST)
       !===========================================================================
 
-      integer :: n,err,i,j
+      integer :: n,err,i,j,g_i0,g_in,g_j0,g_jn,i0_sb,in_sb,j0_sb,jn_sb
 
       real(kind=REAL64)  :: c_area_8,s_area_8,gc_area_8,gs_area_8
 
@@ -54,10 +55,11 @@
 
       do n=1,Tr3d_ntr
 
-         BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
+         if (Schm_psadj==2.and.(trim(Tr3d_name_S(n))=='HU'.or.Tr3d_wload(n)).and.&
+             .NOT.((Tr3d_mass(n) < 1).and.(Tr3d_mono(n) < 1))) call handle_error(-1,'ADZ_CHECK_TRACERS',&
+            'Dont know how to conserve Dryair and Humidity/Hydrometeors Tracers simultaneously')
 
-         if (Tr3d_intp(n)=='BICUBH_QV'.and.Schm_autobar_L) &
-            call handle_error(-1,'ADZ_CHECK_TRACERS','INTP (BICUBH_QV) not valid when AUTOBAR')
+         BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
 
          if (Tr3d_intp(n)/='NONE'.and.Tr3d_intp(n)/='TRICUB'.and.Tr3d_intp(n)/='BICUBH_QV') &
             call handle_error(-1,'ADZ_CHECK_TRACERS','INTP not valid')
@@ -88,20 +90,28 @@
       !---------------------------------------------------------------------
       if (BC_LAM_L.and.Adz_BC_LAM_flux==2) Adz_BC_LAM_zlf_L = .true.
 
-      !If PIL_SUB is defined in namelist adz_cfgs, adjust according to topology
-      !------------------------------------------------------------------------
-      if (Adz_pil_sub_s /= -1) then
-         if (.not.l_north) Adz_pil_sub_n = 0
-         if (.not.l_south) Adz_pil_sub_s = 0
-         if (.not.l_west ) Adz_pil_sub_w = 0
-         if (.not.l_east ) Adz_pil_sub_e = 0
+      !Prepare SUBSET of Yin when PIL_SUB is prescribed in namelist adz_cfgs
+      !---------------------------------------------------------------------
+      do_subset_GY_L = Grd_yinyang_L.and.adz_pil_sub_s_g /= -1
+
+      if (do_subset_GY_L) then
+
+         g_i0 =    1 + adz_pil_sub_w_g
+         g_in = G_ni - adz_pil_sub_e_g
+         g_j0 =    1 + adz_pil_sub_s_g
+         g_jn = G_nj - adz_pil_sub_n_g
+
+         i0_sb = max(g_i0 - Ptopo_gindx(1,Ptopo_myproc+1) + 1, 1   -west *G_halox)
+         in_sb = min(g_in - Ptopo_gindx(1,Ptopo_myproc+1) + 1, l_ni+east *G_halox)
+         j0_sb = max(g_j0 - Ptopo_gindx(3,Ptopo_myproc+1) + 1, 1   -south*G_haloy)
+         jn_sb = min(g_jn - Ptopo_gindx(3,Ptopo_myproc+1) + 1, l_nj+north*G_haloy)
+
+         Adz_pil_sub_w = i0_sb - 1
+         Adz_pil_sub_e = l_ni - in_sb
+         Adz_pil_sub_s = j0_sb - 1
+         Adz_pil_sub_n = l_nj - jn_sb
+
       end if
-
-      !Consider SUBSET of YIN only if ONE processor on Yin
-      !---------------------------------------------------
-      do_subset_GY_L = .false.
-
-      if (Grd_yinyang_L.and.Adz_pil_sub_s>0.and.Ptopo_numproc==1) do_subset_GY_L = .true.
 
       !Evaluate CORE/SUBSET areas
       !--------------------------
@@ -113,8 +123,8 @@
 
             s_area_8 = 0.0d0
 
-            do j=1+Adz_pil_sub_s,l_nj-Adz_pil_sub_n
-            do i=1+Adz_pil_sub_w,l_ni-Adz_pil_sub_e
+            do j=j0_sb,jn_sb
+            do i=i0_sb,in_sb
                s_area_8 = s_area_8 + geomh_area_8(i,j)
             end do
             end do

@@ -134,7 +134,7 @@ contains
 
    function sfc_nml_check() result(m_istat)
       use sfc_options, only : nl_svs_default, dp_svs_default
-      use svs_configs, only : nl_svs,dl_svs
+      use svs_configs, only : nl_svs,dl_svs,ntypel,ntypeh,vl_type,vh_type
       implicit none
       integer :: m_istat
 
@@ -152,6 +152,7 @@ contains
       istat = clib_toupper(snow_emiss)
       istat = clib_toupper(isba_soil_emiss)
       istat = clib_toupper(soiltext)
+      istat = clib_toupper(vf_type)
       istat = clib_toupper(water_emiss)
       istat = clib_toupper(z0mtype)
       istat = clib_toupper(z0ttype)
@@ -245,65 +246,128 @@ contains
       endif
 
       ! ------ CHECK SVS OPTIONS --------------
-      if( schmsol == 'SVS') then
+      IF_SVS: if (schmsol == 'SVS') then
+
          ! check number of SOIL LEVELS
-         nk=0
+         nk = 0
          do k=1,size(dp_svs)
-            if (dp_svs(k)< 0.) exit
-            nk=nk+1
+            if (dp_svs(k) < 0.) exit
+            nk = nk+1
          enddo
 
-         ! USE DEFAULT NUMBER & DEPTH of LAYES if NOT SPECIFIED
-         ! BY DEFAULT SET PERMEABLE LAYER EQUAL TO LAST SVS SOIL LAYER
+         ! KDP option for SVS now OBSOLETE, USERS SHOULD USE KHYD instead
+         !--- MAKE MODEL ABORT IF USER SPECIFIES A VALUE WHEN USING SVS
+         if (kdp /= -1) then
+            write(msg_S,*) '(sfc_nml_check) KDP=',kdp,' should not be used with SVS. '//&
+                 'This sfc config variable is OBSOLETE and should be removed from surface_cfgs. '//&
+                 'To change last/deepest soil layer considered during the accumulation '//&
+                 'of lateral flow and drainage, use surface_cfg variable KHYD instead'
+            call msg(MSG_ERROR, msg_S)
+            return
+         endif
+
+         ! USE DEFAULT NUMBER & DEPTH of LAYERS if NOT SPECIFIED
+         ! FOR KHYD: the "last soil layer considered during the accumulation of lateral flow and drainage"
+         ! (1) if using default layers, and khyd not specified then:
+         ! set khyd = last SVS layer
+         ! (2) if using default layer and khyd specified, use khyd
+         ! (3) if users specifies soil layers, then forced user to specify khyd also.
+         !#TODO: should keep only the nml check here, var setting should be move to sfc_nml_post_init
          if (nk == 0) then
-            call msg(MSG_INFO,'(sfc_nml_check) SVS soil layer depth dp_svs NOT SPECIFIED by user, will use DEFAULT VALUE')
+            call msg(MSG_INFO,'(sfc_nml_check) SVS soil layer depth dp_svs'//&
+                 ' NOT SPECIFIED by user, will use DEFAULT VALUE')
             ! default number of soil layers
-            nk=nl_svs_default
-            ! default permeable layer LEVEL
-            kdp=nl_svs_default
+            nk = nl_svs_default
+            ! By default "last soil layer for accumulation of lateral flow and drainage" LEVEL = nk,
+            if (khyd <= 1) then
+               call msg(MSG_INFO,'(sfc_nml_check) Using default SVS configuration with '//&
+                    '"last hydro drainage/lateral flow layer" level KHYD = last soil layer')
+               khyd = nl_svs_default
+            else
+               call msg(MSG_INFO, '(sfc_nml_check) Using default SVS configuration for soil '//&
+                    'layer but NOT for "last hydro drainage/lateral flow layer" KHYD')
+            endif
             ! default values for depth of SVS values [in meters]
             do k=1,nk
                dp_svs(k) = dp_svs_default(k)
             enddo
-         else if ( nk < 3 ) then
-            write(msg_S,*) ' (sfc_nml_check) SVS requires a minimum of 3 soil layers. Only ',nk, ' depths were specified in dp_svs=' , dp_svs(1:nk)
+         else if (nk < 3) then
+            write(msg_S,*) '(sfc_nml_check) SVS requires a minimum of 3 soil layers. '//&
+                 'Only ',nk, ' depths were specified in dp_svs=' , dp_svs(1:nk)
             call msg(MSG_ERROR, msg_S)
             return
-         else if ( nk >= 3 .and. kdp .le. 1 ) then
-              write(msg_S,*) ' (sfc_nml_check)  Permeable layer level: KDP needs to be specified by USER because not using DEFAULT SVS set-up'
+         else if (nk >= 3 .and. khyd <= 1) then
+            write(msg_S,*) '(sfc_nml_check)  Last hydro drainage/lateral flow layer level: '//&
+                 'KHYD needs to be specified by USER because not using DEFAULT SVS set-up'
             call msg(MSG_ERROR, msg_S)
             return
          endif
 
          ! CHECK THAT DEPTH IS INCREASING and SAVE NUMBER OF LAYERS
          do k=1,nk-1
-            if ( dp_svs(k) >= dp_svs(k+1) ) then
-               write(msg_S,*) ' (sfc_nml_check) SVS layer depths badly specified: dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
+            if (dp_svs(k) >= dp_svs(k+1)) then
+               write(msg_S,*) '(sfc_nml_check) SVS layer depths badly specified: '//&
+                    'dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than '//&
+                    'dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
                call msg(MSG_ERROR, msg_S)
                return
             endif
          enddo
          ! Save depth in dl_svs ... to be used by svs
-         nl_svs=nk
-         if ( .not. allocated(dl_svs) ) allocate( dl_svs(nl_svs) )
+         !#TODO: this is not a check per se, should be move to sfc_nml_post_init
+         nl_svs = nk
+         if (.not.allocated(dl_svs)) allocate(dl_svs(nl_svs))
          do k=1,nl_svs
-            dl_svs(k)=dp_svs(k)
+            dl_svs(k) = dp_svs(k)
          enddo
- 
-         if ( kdp > nl_svs ) then
-            write(msg_S, '(a,i3,a,i3)') '(sfc_nml_check) Permeable layer in SVS kdp=',kdp,' cannot exceed number of SVS soil layers =', nl_svs
+
+         if (khyd > nl_svs) then
+            write(msg_S, '(a,i3,a,i3)') '(sfc_nml_check) Last hydro drainage/lateral '//&
+                 'flow layer in SVS khyd=',khyd,' cannot exceed number of SVS soil layers =', nl_svs
             call msg(MSG_ERROR, msg_S)
             return
          endif
 
          if (.not.any(soiltext == SOILTEXT_OPT)) then
-            call str_concat(msg_S, SOILTEXT_OPT,', ')
-            call msg(MSG_ERROR,'(sfc_nml_check) soiltext = '//trim(soiltext)//' : Should be one of: '//trim(msg_S))
+            call str_concat(msg_S, SOILTEXT_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) soiltext = '//trim(soiltext)//&
+                 ' : Should be one of: '//trim(msg_S))
             return
          endif
 
-      endif
+         if (.not.any(vf_type == VFTYPE_OPT)) then
+            call str_concat(msg_S, VFTYPE_OPT,', ')
+            call msg(MSG_ERROR,'(sfc_nml_check) vf_type = '//trim(vf_type)//' : Should be one of: '//trim(msg_S))
+            return
+         endif
 
+         
+         if (vf_type == "CCILCECO" .and. .not.(use_photo)) then 
+            ! Abort, need to use photosynthesis with this option'
+            call msg(MSG_ERROR,'(sfc_nml_check) vf_type = '//trim(vf_type)//' can ONLY be used with USE_PHOTO=.true. ')
+            return
+         endif
+
+
+         ! save high and low vegetation split
+
+          if (vf_type == "CCILCECO") then    
+             ntypel = 11
+             ntypeh = 10
+          else
+             ntypel = 13
+             ntypeh = 8
+          endif
+          if ( .not. allocated(vl_type) ) allocate( vl_type(ntypel) )
+          if ( .not. allocated(vh_type) ) allocate( vh_type(ntypeh) )
+          if (vf_type == "CCILCECO") then    
+            vl_type = (/ 10, 11, 12, 13, 14, 15, 16, 17, 20, 22 , 23  /)
+            vh_type = (/ 4, 5, 6, 7, 8, 9, 18, 19, 25, 26 /)
+         else
+            vl_type = (/ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22 , 23  /)
+            vh_type = (/ 4, 5, 6, 7, 8, 9, 25, 26 /)
+          endif
+       endif IF_SVS
 
       m_istat = RMN_OK
       !----------------------------------------------------------------

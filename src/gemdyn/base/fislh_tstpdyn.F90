@@ -16,6 +16,7 @@
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
       subroutine fislh_tstpdyn (F_icn)
+      use adz_mem
       use glb_ld
       use glb_pil
       use gmm_vt1
@@ -93,6 +94,7 @@
 
       call gemtime_start (21, 'ADZ_MAIN', 10)
 
+      Adz_icn= F_icn
       call adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc, rhsc, orhst,&
                       rhst, orhsf, rhsf, orhsw, rhsw              ,&
                       l_minx,l_maxx,l_miny,l_maxy, l_nk )

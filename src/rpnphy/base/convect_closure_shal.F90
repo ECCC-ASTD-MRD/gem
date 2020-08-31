@@ -1,6 +1,6 @@
 !#######################################################################
- SUBROUTINE CONVECT_CLOSURE_SHAL4( KLON, KLEV,                         &
-                       &   PPRES, PDPRES, PZ, PDXDY, PCRAD, PLMASS,    &
+ SUBROUTINE CONVECT_CLOSURE_SHAL5( KLON, KLEV,                         &
+                       &   PPRES, PDPRES, PZ, PDXDY, PMRK2, PCRAD, PLMASS,&
                        &   PTHL, PTH, PRW, PRC, PRI, PDMSEDT, OTRIG1,  &
                        &   PTHC, PRWC, PRCC, PRIC, PWSUB,              &
                        &   KLCL, KDPL, KPBL, KCTL,                     &
@@ -80,7 +80,7 @@ USE YOE_CONVPAR_SHAL
 USE YOE_CONVPAREXT
 use integrals, only: int_profile,INT_OK
 use cnv_options
-
+use ens_perturb, only: ens_nc2d, ens_spp_get
 
 IMPLICIT NONE
 !!!#include <arch_specific.hf>
@@ -99,6 +99,7 @@ integer, DIMENSION(KLON),  INTENT(IN) :: KDPL   ! index for departure level
 integer, DIMENSION(KLON),  INTENT(IN) :: KPBL   ! index for top of source layer
 real, DIMENSION(KLON),  INTENT(INOUT) :: PTIMEC ! convection time step
 real, DIMENSION(KLON),     INTENT(IN) :: PDXDY  ! grid area (m^2)
+real, DIMENSION(KLON,ens_nc2d), INTENT(IN) :: PMRK2 ! Markov chains for SPP
 real, DIMENSION(KLON),     INTENT(IN) :: PCRAD  ! cloud radius (m)
 real, DIMENSION(KLON,KLEV),INTENT(IN) :: PTHL   ! grid scale enthalpy (J/kg)
 real, DIMENSION(KLON,KLEV),INTENT(IN) :: PTH    ! grid scale theta
@@ -153,7 +154,8 @@ integer :: JITER,NITER    ! iteration loop index and total number
 integer :: JSTEP          ! fractional time loop index
 
  real    :: ZCPORD, ZRDOCP ! C_pd / R_d, R_d / C_pd
-!real    :: ZCVOCD, ZEPSA  ! C_pv / C_pd, R_v / R_d
+ !real    :: ZCVOCD, ZEPSA  ! C_pv / C_pd, R_v / R_d
+ real    :: detr_cond     ! fraction of detrained condensate
 
 real, DIMENSION(KLON,KLEV) :: ZTHLC       ! convectively adjusted
                                             ! grid scale enthalpy
@@ -194,6 +196,7 @@ real,  DIMENSION(KLON)      :: ZWORK1, ZWORK2, ZWORK3 ! work arrays
 real,  DIMENSION(KLON)      :: ZWORK4, ZWORK5         ! work arrays
 LOGICAL, DIMENSION(KLON)      :: GWORK1                 ! work arrays
 LOGICAL, DIMENSION(KLON,KLEV) :: GWORK4                 ! work array
+real, DIMENSION(KLON)       :: evaps      ! fraction of detrained condensate
 
 !-------------------------------------------------------------------------------
 
@@ -403,13 +406,13 @@ CLOSURE_ITERATIONS: DO JITER = 1, NITER  ! Enter adjustment loop to assure that 
 ! which means all detrained total water appears following evaporation as vapour)
 ! Initialize these vectors in case they are needed before fractional substeps
 
-         if (bkf_evaps) then
-            ZURC(:,:) = _ZERO_
-            ZURI(:,:) = _ZERO_
-         else
-            ZURC(:,:) = PURC(:,:)
-            ZURI(:,:) = PURI(:,:)
-         endif
+    detr_cond = 1.
+    if (bkf_evaps) detr_cond = 0.
+    evaps(:) = ens_spp_get('bkf_evaps', pmrk2, default=detr_cond)    
+    do JK = IKB, IKE
+       ZURC(:,JK) = evaps(:) * PURC(:,JK)
+       ZURI(:,JK) = evaps(:) * PURI(:,JK)
+    enddo
 
     ILOOP: DO JI = 1, IIE
 
@@ -629,5 +632,5 @@ DO JK = IKB, IKE
    PRWC(:,JK) = MAX( _ZERO_, PRWC(:,JK) - PRCC(:,JK) - PRIC(:,JK) )
 ENDDO
 
-END SUBROUTINE CONVECT_CLOSURE_SHAL4
+END SUBROUTINE CONVECT_CLOSURE_SHAL5
 

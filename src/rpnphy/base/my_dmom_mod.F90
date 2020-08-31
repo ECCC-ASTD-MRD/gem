@@ -19,7 +19,7 @@ module my_dmom_mod
      initN,dblMom_c,dblMom_r,dblMom_i,dblMom_s,dblMom_g,dblMom_h,Dm_c,Dm_r,Dm_i,Dm_s,   &
      Dm_g,Dm_h,ZET,ZEC,SLW,VIS,VIS1,VIS2,VIS3,h_CB,h_ML1,h_ML2,h_SN,SS01,SS02,SS03,SS04,&
      SS05,SS06,SS07,SS08,SS09,SS10,SS11,SS12,SS13,SS14,SS15,SS16,SS17,SS18,SS19,SS20,   &
-     Tc_3comp,PRFLXKY,SWFLXKY,F12KY,FEVPKY,CLRKY,CLRKY1,cloud_bin,reff_c,reff_i1,       &
+     Tc_3comp,PRFLXKY,SWFLXKY,F12KY,FEVPKY,cloud_bin,reff_c,reff_i1,       &
      reff_i2,reff_i3, reff_i4)
 
   use my_fncs_mod
@@ -46,8 +46,8 @@ module my_dmom_mod
   logical,               intent(in)    :: dblMom_c,dblMom_r,dblMom_i,dblMom_s,         &
         dblMom_g,dblMom_h,precipDiag_ON,sedi_ON,icephase_ON,snow_ON,warmphase_ON,      &
         autoconv_ON,initN
-  real, dimension(size(QC,dim=1),size(QC,dim=2)+1), intent(out) :: prflxky,swflxky
-  real, dimension(size(QC,dim=1),size(QC,dim=2)),   intent(out) :: f12ky,fevpky,clrky,clrky1
+  real, dimension(size(QC,dim=1),size(QC,dim=2)),   intent(out) :: prflxky,swflxky
+  real, dimension(size(QC,dim=1),size(QC,dim=2)),   intent(out) :: f12ky,fevpky
 
 !_______________________________________________________________________________________
 !                                                                                       !
@@ -907,8 +907,6 @@ module my_dmom_mod
   SWFLXKY = 0.
   F12KY   = 0.
   FEVPKY  = 0.
-  CLRKY   = 0.
-  CLRKY1  = 0.
   !==
 
   !----------------------------------------------------------------------------------!
@@ -2551,17 +2549,10 @@ module my_dmom_mod
    endif
 
   !-- Diagnostics for chemistry module:
-   do i=1,ni
-     PRFLXKY(i,nk+1) = fluxM_r(i)
-     SWFLXKY(i,nk+1) = fluxM_i(i)+fluxM_s(i)+fluxM_g(i)+fluxM_h(i)
-   enddo
-
    do k=1,nk
       do i=1,ni
          PRFLXKY(i,k) = massFlux3D_r(i,k)
          SWFLXKY(i,k) = massFlux3D_i(i,k) + massFlux3D_s(i,k) + massFlux3D_g(i,k) + massFlux3D_h(i,k)
-         CLRKY(i,k)  = QR(i,k)
-         CLRKY1(i,k) = max(0.,((0.0866*((PRFLXKY(i,k) + PRFLXKY(i,k+1))/2.)**0.8385)) )
       enddo
    enddo
   !==

@@ -9,7 +9,6 @@ cmake_policy(SET CMP0056 NEW)
 set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER intel CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
-# which will set the compiler and you can just type:
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel

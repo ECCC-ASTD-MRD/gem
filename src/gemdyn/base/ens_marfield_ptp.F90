@@ -21,7 +21,6 @@
       use phy_itf, only : phy_put
 
       use ens_gmm_dim
-      use ens_gmm_var, only: mcutraj, mcvtraj, mcwtraj
       use step_options
       use ens_gmm_var
       use ens_options
@@ -35,8 +34,11 @@
       use gmm_itf_mod
       use path
       use ptopo
+      use geomh, only: geomh_latrx
+      use gmm_phy, only: phy_cplm, phy_cplt
       use ens_spp, only: spp_list, spp_ncha
       use clib_itf_mod, only: clib_toupper
+      use wb_itf_mod
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -49,7 +51,6 @@
 !
 
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
 !
        real,    external ::  gasdev
        real(kind=REAL64) :: polg
@@ -62,7 +63,7 @@
       integer :: l ,m, n, nc,np, i, j, indx, ier, gmmstat, istat, gdyy
       real    :: fstd, fstr, tau, sumsp , fact, fact2, offi, offj
       real    :: xfi(l_ni),yfi(l_nj)
-      real(kind=REAL64)  :: rad2deg_8,  pri_8
+      real(kind=REAL64)  :: rad2deg_8,  deg2rad_8, pri_8
       logical, save :: init_done=.false.
       logical :: Init_mc_L
 !
@@ -77,7 +78,8 @@
       real(kind=REAL64),  dimension(:,:,:), allocatable :: p,cc
       real, dimension(2) :: spp_range
       real, dimension(Ens_ptp_ncha+spp_ncha) :: vfmin, vfmax, vfstd, vfstr, vtau, veps
-      real  ,  dimension(:,:),allocatable :: f, f_str
+      real,    dimension(:,:),allocatable :: f, f_str
+      real,    dimension(:,:), pointer, save :: tropwt=>null()
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(2) :: spp_trn
       integer, dimension(Ens_ptp_ncha+spp_ncha) :: vlmin, vlmax, vnlon, vnlat
@@ -93,6 +95,7 @@
 
       dt=real(Cstv_dt_8)
       rad2deg_8=180.0d0/pi_8
+      deg2rad_8=1d0/rad2deg_8
       itstep_s=step_dt*step_kount
       iperiod_iau = iau_period
 !
@@ -110,6 +113,21 @@
 
       gmmstat = gmm_get(gmmk_dumdum_s,dumdum,meta2d_dum)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'dumdum'
+
+      ! Generate tropically focused weights
+      if (.not.associated(tropwt)) then
+         allocate(tropwt(l_ni,l_nj))
+         if (Ens_spp_rhsint_lat > 0.) then
+            where (abs(geomh_latrx(1:l_ni,1:l_nj)) > Ens_spp_rhsint_lat)
+               tropwt(:,:) = 0.
+            elsewhere
+               tropwt(:,:) = cos( (90./Ens_spp_rhsint_lat) * &
+                    deg2rad_8*geomh_latrx(1:l_ni,1:l_nj) )**2
+            end where
+         else
+            tropwt(:,:) = 1.
+         endif
+      endif      
 
 !  Valeurs initiales des composantes principales
 !
@@ -494,6 +512,12 @@
          if (vname(nc) == 'ADV_UTRAJ') mcutraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
          if (vname(nc) == 'ADV_VTRAJ') mcvtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
          if (vname(nc) == 'ADV_WTRAJ') mcwtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+         if (vname(nc) == 'ADV_RHSINT') &
+              mcrhsint(1:l_ni,1:l_nj) = tropwt(:,:) * fgem_str(:,:,nc)
+         if (vname(nc) == 'PHYCPL') then
+            phy_cplm(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+            phy_cplt(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
+         endif
          
       end do CONSTRUCT_CHAINS
 

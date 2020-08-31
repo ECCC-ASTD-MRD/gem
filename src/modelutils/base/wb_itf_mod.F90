@@ -30,6 +30,7 @@ module wb_itf_mod
    integer,parameter :: wb_REWRITE_MANY = WB_REWRITE_MANY
    integer,parameter :: wb_REWRITE_NONE = WB_REWRITE_NONE
    integer,parameter :: wb_IS_LOCAL = WB_IS_LOCAL
+   integer,parameter :: wb_INITIALIZED = WB_INITIALIZED
 
    integer,parameter :: wb_MSG_DEBUG = WB_MSG_DEBUG
    integer,parameter :: wb_MSG_INFO = WB_MSG_INFO

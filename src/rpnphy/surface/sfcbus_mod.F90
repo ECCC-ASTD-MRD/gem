@@ -380,7 +380,9 @@ module sfcbus_mod
       SFCVAR(vdiagstnv, 'vdiagstnv')
       SFCVAR(vdiagtyp, 'vdiagtyp')
       SFCVAR(vdiagtypv, 'vdiagtypv')
+      SFCVAR(vegdati, 'vegdati')
       SFCVAR(vegf, 'vegf')
+      SFCVAR(vegf_evol, 'vegf_evol')
       SFCVAR(vegfrac, 'vegfrac')
       SFCVAR(vegh, 'vegh')
       SFCVAR(vegl, 'vegl')
@@ -455,7 +457,13 @@ module sfcbus_mod
       SFCVAR(z0_townen, 'z0_townen')
       SFCVAR(z0en, 'z0en')
       SFCVAR(z0ha, 'z0ha')
+      SFCVAR(z0hbg, 'z0hbg')
+      SFCVAR(z0hvg, 'z0hvg')
+      SFCVAR(z0mland, 'z0mland')
+      SFCVAR(z0mlanden, 'z0mlanden')
+      SFCVAR(z0mvg, 'z0mvg')
       SFCVAR(z0mvh, 'z0mvh')
+      SFCVAR(z0mvhen, 'z0mvhen')
       SFCVAR(z0mvl, 'z0mvl')
       SFCVAR(z0veg, 'z0veg')
       SFCVAR(z0t, 'z0t')
@@ -486,10 +494,13 @@ module sfcbus_mod
    integer :: nsurf    = 0  !# Number of surface "types"
    integer :: tsrad_i=0, z0_i=0, z0t_i=0 !#TODO: remove, replace by vd%tsrad...
 
+   integer :: accevap=0
    integer :: drain=0
    integer :: drainaf=0
+   integer :: fvapliqaf=0
    integer :: insmavg=0
    integer :: isoil=0
+   integer :: latflaf=0
    integer :: leg=0
    integer :: legaf=0
    integer :: ler=0
@@ -503,6 +514,7 @@ module sfcbus_mod
    integer :: overfl=0
    integer :: overflaf=0
    integer :: rootdp=0
+   integer :: runofftotaf=0
    integer :: wflux=0
    integer :: wfluxaf=0
    integer :: wsoil=0
@@ -562,14 +574,20 @@ contains
             z0_i = i
          case('Z0T')
             z0t_i = i
+         case('ACCEVAP')
+            accevap = mymetaplus%index
          case('DRAIN')
             drain = mymetaplus%index
          case('DRAINAF')
             drainaf = mymetaplus%index
+         case('FVAPLIQAF')
+            fvapliqaf = mymetaplus%index
          case('INSMAVG')
             insmavg = mymetaplus%index
          case('ISOIL')
             isoil = mymetaplus%index
+         case('LATFLAF')
+            latflaf = mymetaplus%index
          case('LEG')
             leg = mymetaplus%index
          case('LEGAF')
@@ -596,6 +614,8 @@ contains
             overflaf = mymetaplus%index
          case('ROOTDP')
             rootdp = mymetaplus%index
+         case('RUNOFFTOTAF')
+            runofftotaf = mymetaplus%index
          case('WFLUX')
             wflux = mymetaplus%index
          case('WFLUXAF')

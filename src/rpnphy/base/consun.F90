@@ -136,7 +136,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !       HKMELT      COEFFICIENT FOR MELTING OF ICE
    !       HMRCU       CLOUD WATER MIXING RATIO AT WHICH CONVERSION BECOMES
    !                   EFFICIENT IN CONVECTIVE CLOUD
-   !       COND_HMRST  CLOUD WATER MIXING RATIO AT WHICH CONVERSION BECOMES
+   !       HMRST       CLOUD WATER MIXING RATIO AT WHICH CONVERSION BECOMES
    !                   EFFICIENT IN STRATIFORM CLOUD (NAMELIST-CONTROLLED)
    !       HPS         TIME AVERAGED SURFACE PRESSURE
    !       HUZ00       MODIFIED HU00
@@ -161,8 +161,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
         XEVACU , XP     , QINCR  , HP0    , HE273  , HEDR   , &
         HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
         COALES , SIGMIN
-   real    CBFEFF , CTFRZ1 , HCCU   , HMRCU  , HCST   , &
-        STPEVP , HKMELT , XDT    , DSNMAX , XSNOW  , &
+   real    CBFEFF , CTFRZ1 , HCCU   , HMRCU , &
+        HKMELT , XDT    , DSNMAX , XSNOW  , &
         rTAU   , SNOW   , PRCP   , CONET  , &
         COEF   , COVER  , HMR    , ZDCW   , XT     , &
         SIGMAX , T0I    , WEIGHT , x      , y      , z      , &
@@ -174,6 +174,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real xwrk,HACCES
 
    integer, dimension(NI,NLEV) :: CUMASK
+   real, dimension(NI     ) :: HCST
+   real, dimension(NI     ) :: STPEVP
    real, dimension(NI     ) :: HPS
    real, dimension(NI     ) :: COVBAR
    real, dimension(NI     ) :: PRCPST
@@ -207,6 +209,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real, dimension(NI     ) :: HU0MAX
    real, dimension(NI     ) :: HU0MIN
    real, dimension(NI     ) :: XBHU
+   real, dimension(NI     ) :: HMRST
 
    !***********************************************************************
    !-----------------------------------------------------------------------
@@ -215,7 +218,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    real    Z1, Z2, Z3, Z4, Z5
 
-   !           TEMPERATURE FUNCTION TO MULTIPLY HMRCU AND COND_HMRST FOR T<273
+   !           TEMPERATURE FUNCTION TO MULTIPLY HMRCU AND HMRST FOR T<273
 
    Z1(XT) = min(1.33*exp(-(min(0.,(XT-TRPL))*.066)**2) , 1.0)
 
@@ -318,8 +321,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !  B)       PARAMATER VALUES IN SI UNITS
 
-   HU0MIN(:) = ens_spp_get('hu0min', mrk2, cond_hu0min)
-   HU0MAX(:) = ens_spp_get('hu0max', mrk2, cond_hu0max)
+   HU0MIN(:) = ens_spp_get('hu0min', mrk2, default=cond_hu0min)
+   HU0MAX(:) = ens_spp_get('hu0max', mrk2, default=cond_hu0max)
    SIGMIN = 0.7
    SIGMAX = 0.9
    XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
@@ -346,12 +349,13 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    COALES = 300.
    CBFEFF = 4.0
    CTFRZ1 = 263.
-   HCST   = 1.E-4
    HCCU   = 1.E-4
    HMRCU  = 5.E-4
-   STPEVP = 2. * GRAV * cond_evap
    HKMELT = 3.E-5
    xo = 1.E-16
+   HCST(:)   = ens_spp_get('cond_hcst', mrk2, default=1.E-4)
+   STPEVP(:) = 2.*GRAV * ens_spp_get('cond_evap', mrk2, default=cond_evap)
+   HMRST(:) = ens_spp_get('cond_hmrst', mrk2, default=cond_hmrst)
 
    !-----------------------------------------------------------------------
 
@@ -474,8 +478,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          SNOW = STSNOW(il)+CUSNOW(il)
          COVER = SCF(il,jk) + CCF(il,jk) + 1.E-2
          WEIGHT = ( SCF(il,jk) + 1.E-2 ) / COVER
-         HMR = cond_hmrst * WEIGHT + HMRCU * (1-WEIGHT)
-         COEF = HCST * WEIGHT + HCCU * (1-WEIGHT)
+         HMR = HMRST(il) * WEIGHT + HMRCU * (1-WEIGHT)
+         COEF = HCST(il) * WEIGHT + HCCU * (1-WEIGHT)
 
          !           ------------------------------------------------------------
          !           Factors for coalescence HFCOX, freezing HFREZX.
@@ -636,7 +640,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
 
          PRCP = PRCPST(il)
-         XN = STPEVP * TAU / HCIMP(il)
+         XN = STPEVP(il) * TAU / HCIMP(il)
          x = amax1( PRCP , 1.E-16 )
          x = sqrt ( x )
          y = 0.5 * XN * HDPMX(il) / x

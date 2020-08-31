@@ -132,6 +132,10 @@ contains
          endif
       endif COMPUTE_SLT_WINDS
 
+      ! Sum dissipative wind tendencies from applicable sources (for SKEB)
+      zudis(:,:) = zugwd(:,:) + zugno(:,:) + zufcp(:,:)
+      zvdis(:,:) = zvgwd(:,:) + zvgno(:,:) + zvfcp(:,:)
+
       !****************************************************************
       !     Screen-level fields
       !     ---------------------------
@@ -198,7 +202,7 @@ contains
          ztddiagec(:) = ztdiagec(:) - esdiagec(:)
 
       endif ECMWF_SCREEN
-
+      
       !****************************************************************
       !     PRECIPITATION RATES AND ACCUMULATIONS
       !     -------------------------------------
@@ -639,11 +643,9 @@ contains
             if (llinoz .and. out_linoz) then
                ! 2D Ozone
                zo3tcm  (:) = 0.0
-               zo3fktcm(:) = 0.0
                zo3ctcm (:) = 0.0
                ! 3D Ozone
                zo3avg  (:,:) = 0.0
-               zo3fkcolm(:,:)= 0.0
                zo3ccolm(:,:) = 0.0
                zo3colm (:,:) = 0.0
                zo1chmtdm(:,:) = 0.0
@@ -873,12 +875,10 @@ contains
             do i = 1, ni
 
                zo3tcm  (i) = zo3tcm  (i) + zo3tc  (i)
-               zo3fktcm(i) = zo3fktcm(i) + zo3fktc(i)
                zo3ctcm (i) = zo3ctcm (i) + zo3ctc (i)
 
                if (lavg) then
                   zo3tcm  (i) = zo3tcm  (i) * moyhri
-                  zo3fktcm(i) = zo3fktcm(i) * moyhri
                   zo3ctcm (i) = zo3ctcm (i) * moyhri
                end if
 
@@ -889,7 +889,6 @@ contains
 
                   zo3avg  (i,k) = zo3avg  (i,k) + zo3lplus (i,k)
 
-                  zo3fkcolm(i,k) = zo3fkcolm(i,k) + zo3fkcol(i,k)
                   zo3ccolm (i,k) = zo3ccolm (i,k) + zo3ccol (i,k)
                   zo3colm  (i,k) = zo3colm  (i,k) + zo3col  (i,k)
 
@@ -902,7 +901,6 @@ contains
                   if (lavg) then
                      zo3avg  (i,k) = zo3avg  (i,k) * moyhri
 
-                     zo3fkcolm(i,k) = zo3fkcolm(i,k) * moyhri
                      zo3ccolm (i,k) = zo3ccolm (i,k) * moyhri
                      zo3colm  (i,k) = zo3colm  (i,k) * moyhri
 

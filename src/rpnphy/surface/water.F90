@@ -102,7 +102,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    real,pointer,dimension(:) ::  ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
 
 
-   real, dimension(n) :: z0m_adjust,rhoa,vmod,vdir,vmodd
+   real, dimension(n) :: z0m_adjust,rhoa,vmod,vdir,vmodd,vmod0
    real, dimension(n) :: alpha_w,rho_a,frv_w,frv_a,visc_w,skin_solar,q_bal,skin_q,sst
    real, dimension(n) :: warm_increment,lambda,ud,vdi,gamma
    real, dimension(n) :: this_inc,prev_inc,denom
@@ -279,20 +279,26 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    ! 3.     Calculate the surface transfer coefficient and fluxes
    ! ------------------------------------------------------------
 
-   i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
+   i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod0,dir_air=vdir,min_wind_speed=VAMIN)
    if (i /= SL_OK) then
       call physeterror('water', 'error returned by surface layer precalculations')
       return
    endif
-   i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+   
+   i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtm_diag=zu,hghtt_diag=zt,coefm=cmu,coeft=ctu,flux_t=zftemp, &
         flux_q=zfvap,ilmo=ilmo_wat,ue=zfrv,h=hst_wat,t_diag=ztdiag,    &
-        q_diag=zqdiag,u_diag=zudiag,v_diag=zvdiag,tdiaglim=WATER_TDIAGLIM)
+        q_diag=zqdiag,u_diag=zudiag,v_diag=zvdiag,tdiaglim=WATER_TDIAGLIM, &
+        L_min=sl_Lmin_water,spdlim=vmod)
    if (i /= SL_OK) then
       call physeterror('water', 'error returned by surface layer calculations')
       return
    endif
-
+   if (sl_Lmin_water > 0.) then
+      zudiag = zudiag * vmod0 / vmod
+      zvdiag = zvdiag * vmod0 / vmod
+   endif
+      
    ! Fill surface type-specific diagnostic values
    zqdiagtyp = zqdiag
    ztdiagtyp = ztdiag
@@ -306,8 +312,9 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    ! Also compute the air density at a chosen height (for now, the chosen height is
    ! at the screen level, i.e. at zt = 1.5m)
 
-   i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
-        hghtt_diag=1.5,t_diag=my_ta,q_diag=my_qa,tdiaglim=WATER_TDIAGLIM)
+   i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+        hghtt_diag=1.5,t_diag=my_ta,q_diag=my_qa,tdiaglim=WATER_TDIAGLIM, &
+        L_min=sl_Lmin_water,spdlim=vmod)
    if (i /= SL_OK) then
       call physeterror('water', 'error returned by surface layer density')
       return
@@ -369,6 +376,9 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          call cpl_update (ILMO_WAT(1:n), 'ILO' , lcl_indx, n)
          call cpl_update (Z0M   (1:n),   'ZMO' , lcl_indx, n)
          call cpl_update (Z0H   (1:n),   'ZHO' , lcl_indx, n)
+         zudiag = zudiag * vmod0 / vmod
+         zvdiag = zvdiag * vmod0 / vmod
+         
          ! Derives other variables from cpl_update output
          ! assuming FC_WAT and FV_WAT were computed with
          ! RHOA at the same level
@@ -422,10 +432,12 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       endif
 
       ! Preliminary calculations
-      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor,hghtm_diag=10., &
-           ue=frv_a,u_diag=ud,v_diag=vdi,tdiaglim=WATER_TDIAGLIM)
+      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod0,dir_air=vdir,min_wind_speed=VAMIN)
+      
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor,hghtm_diag=10., &
+           ue=frv_a,u_diag=ud,v_diag=vdi,tdiaglim=WATER_TDIAGLIM,L_min=sl_Lmin_water,spdlim=vmod)
       vmodd = sqrt(ud**2 + vdi**2)
+      if (sl_Lmin_water > 0.) vmodd = vmodd * vmod0 / vmod
       alpha_w = max(8.75e-6*(sst-tcdk+9.),0.) !expansion coefficient estimate from Hayes et al. (JGR, 1991)
       visc_w = 1.8e-6 - 4.e-8*(sst-tcdk) !kinematic viscosity (from IITC 2011 recommendations at 10oC)
       frv_w = frv_a * sqrt(rho_a/rho_w) !friction velocity of water
@@ -515,9 +527,12 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    IF_THERMAL_STRESS: if (thermal_stress) then
 
    ! Compute wind at z=zt
-   i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
+   i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
-        tdiaglim=WATER_TDIAGLIM)
+        tdiaglim=WATER_TDIAGLIM,L_min=sl_Lmin_water,spdlim=vmod)
+
+   zusurfzt = zusurfzt * vmod0 / vmod
+   zvsurfzt = zvsurfzt * vmod0 / vmod
 
    if (i /= SL_OK) then
       call physeterror('water', 'error 3 returned by surface layer calculations')

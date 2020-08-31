@@ -28,6 +28,7 @@ module ens_gmm_var
 ! mcutraj            | 2D Markov chain: u-wind trajectory perturbation |
 ! mcvtraj            | 2D Markov chain: v-wind trajectory perturbation |
 ! mcwtraj            | 2D Markov chain: w-wind trajectory perturbation |
+! mcrhsint           | 2D Markov chain: rhs interpolation perturbation |
 ! mcsph1             | 3D Markov chain                                 |
 ! difut1             | horizontal diffusion u-tendency                 |
 ! difvt1             | horizontal diffusion v-tendency                 |
@@ -40,6 +41,7 @@ module ens_gmm_var
       real, pointer, dimension (:,:)         :: mcutraj => null()
       real, pointer, dimension (:,:)         :: mcvtraj => null()
       real, pointer, dimension (:,:)         :: mcwtraj => null()
+      real, pointer, dimension (:,:)         :: mcrhsint=> null()
 ! dimension (l_ni, l_nj ,(l_nk+2))
       real, pointer, dimension (:,:,:)       :: mcsph1  => null()
 ! dimension LDIST_SHAPE,  l_nk+1)
@@ -70,6 +72,7 @@ module ens_gmm_var
       integer, parameter :: MAXNAMELENGTH    =  32
 
       character(len=MAXNAMELENGTH) :: gmmk_mcutraj_s,gmmk_mcvtraj_s,gmmk_mcwtraj_s
+      character(len=MAXNAMELENGTH) :: gmmk_mcrhsint_s
       character(len=MAXNAMELENGTH) :: gmmk_mcsph1_s
       character(len=MAXNAMELENGTH) :: gmmk_difut1_s,gmmk_difvt1_s
       character(len=MAXNAMELENGTH) :: gmmk_diout1_s,gmmk_diovt1_s

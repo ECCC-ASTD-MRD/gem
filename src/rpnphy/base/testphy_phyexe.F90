@@ -1,4 +1,4 @@
-subroutine testphy_phyexe(e,d,f,v,esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk)
+subroutine testphy_phyexe(d,f,v,dsiz,fsiz,vsiz,trnch,kount,ni,nk)
   ! Test double for RPN Physics parameterizations: increment time-plus 
   ! temperatures throughout the column by 1K and put 100 into the
   ! boundary layer height.
@@ -9,8 +9,8 @@ subroutine testphy_phyexe(e,d,f,v,esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk)
 !!!#include <arch_specific.hf>
 
   ! Input arguments
-  integer, intent(in) :: esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk
-  real, intent(inout) :: e(esiz),d(dsiz),f(fsiz),v(vsiz)
+  integer, intent(in) :: dsiz,fsiz,vsiz,trnch,kount,ni,nk
+  real, intent(inout) :: d(dsiz),f(fsiz),v(vsiz)
 
   ! External declarations
 
@@ -29,7 +29,7 @@ subroutine testphy_phyexe(e,d,f,v,esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk)
      f(h+(i-1)) = 100.
   enddo
 
-  if (ni<0) print *,'called testphy_phyexe with:',e(1),d(1),f(1),v(1),esiz,dsiz,fsiz,vsiz,trnch,kount,ni,nk
+  if (ni<0) print *,'called testphy_phyexe with:',d(1),f(1),v(1),dsiz,fsiz,vsiz,trnch,kount,ni,nk
   ! End of test double
   return
 end subroutine testphy_phyexe

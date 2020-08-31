@@ -69,7 +69,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
 
    real,dimension(n) :: a,    b,     c,     c2,   ct,   dqsat, rhoa
    real,dimension(n) :: scr1, scr2,  scr3,  scr4, scr5, scr6, scr7, scr8
-   real,dimension(n) :: scr10, scr11, t2, vmod, vdir, zsnodp_m
+   real,dimension(n) :: scr10, scr11, t2, vmod, vdir, zsnodp_m, vmod0
    real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level
    real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
    real, dimension(n) :: my_ta, my_qa
@@ -205,13 +205,14 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
 !*     1.     Preliminaries
 !      --------------------
 
-      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod,dir_air=vdir,rho_air=rhoa, &
+      i = sl_prelim(tt,hu,uu,vv,ps,zzusl,spd_air=vmod0,dir_air=vdir,rho_air=rhoa, &
            min_wind_speed=sqrt(vamin))
       if (i /= SL_OK) then
          call physeterror('glaciers', 'error returned by sl_prelim()')
          return
       endif
 
+      
       ! Set emissivity values
       select case (snow_emiss)
       case DEFAULT
@@ -256,9 +257,9 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
 !       2.     Calculate the drag and heat coefficients
 !       -----------------------------------------------
 
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            coefm=cmu,coeft=ctu,flux_t=zftemp,flux_q=zfvap,ilmo=ilmo_glac,ue=zfrv, &
-           h=hst_glac)
+           h=hst_glac,L_min=sl_Lmin_glacier,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('glaciers', 'error returned by sl_sfclayer()')
          return
@@ -411,14 +412,18 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
       end do
 
       ! Estimate diagnostic-level quantities
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zu,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag,u_diag=zudiag, &
-           v_diag=zvdiag,tdiaglim=GLACIER_TDIAGLIM)
+           v_diag=zvdiag,tdiaglim=GLACIER_TDIAGLIM,L_min=sl_Lmin_glacier,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('glaciers', 'error 2 returned by sl_sfclayer()')
          return
       endif
-
+      if (sl_Lmin_glacier > 0.) then
+         zudiag = zudiag * vmod0 / vmod 
+         zvdiag = zvdiag * vmod0 / vmod
+      endif
+      
       ! Fill surface type-specific diagnostic values
       zqdiagtyp = zqdiag
       ztdiagtyp = ztdiag
@@ -495,8 +500,9 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
 !       -----------------
 
       ! Compute diagnostic quantities at 1.5m
-      i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
-           hghtt_diag=ZT_RHO,t_diag=my_ta,q_diag=my_qa,tdiaglim=GLACIER_TDIAGLIM)
+      i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor,  &
+           hghtt_diag=ZT_RHO,t_diag=my_ta,q_diag=my_qa,tdiaglim=GLACIER_TDIAGLIM, &
+           L_min=sl_Lmin_glacier,spdlim=vmod)
       if (i /= SL_OK) then
          call physeterror('glaciers', 'error 3 returned by sl_sfclayer()')
          return
@@ -529,14 +535,16 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
       IF_THERMAL_STRESS: if (thermal_stress) then
 
-         i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+         i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
               hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
-              v_diag=zvsurfzt,tdiaglim=GLACIER_TDIAGLIM)
+              v_diag=zvsurfzt,tdiaglim=GLACIER_TDIAGLIM,L_min=sl_Lmin_glacier,spdlim=vmod)
          if (i /= SL_OK) then
             call physeterror('glaciers', 'error 3 returned by sl_sfclayer()')
             return
          endif
-
+         zusurfzt = zusurfzt * vmod0 / vmod
+         zvsurfzt = zvsurfzt * vmod0 / vmod
+         
          do i=1,N
 
             if (abs(zzusl(i)-zu) <= 2.0) then

@@ -19,6 +19,7 @@
       use ISO_C_BINDING
       use adz_mem
       use adz_interp_rhs_mod
+      use dyn_fisl_options
       use dynkernel_options
       use gem_timing
       use gmm_vt0
@@ -74,6 +75,14 @@
                             Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t )
 
       call gemtime_stop (31)
+
+      if (Adz_icn/=Schm_itcn) return
+
+      if (Adz_verbose>0) call stat_mass_tracers (1,"BEFORE ADVECTION")
+
+      !Dryair Conservation: Advect Humidity/Hydrometeors Tracers before PSADJ
+      !----------------------------------------------------------------------
+      if (Schm_psadj==2) call adz_tracers_HY () 
 !
 !     ---------------------------------------------------------------
 !

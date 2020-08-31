@@ -77,12 +77,14 @@ contains
      !                  = initialProfile + [(pr_ratio  - 1.) * initial_profile]
      !                  = initialProfile + increment
      ! 
-     ! Additionnally, weighting factors are added to 
-     !   1- Use the quality of observations to modulate the intensity of LHN being applied
-     !   2- Give the user the possibility to diminish the influence of LHN
+     ! Additionnally, modulation factors are added to 
+     !   1- Give the user the possibility to control intensity at which LHN is applied (through 'lhn_weight' defined in gem_settings)
+     !   2- Slowly start applying LHN at the beginning of model integrations       (time_modulation)
+     !   3- Deactivate LHN when temperatures at an altitude of 1km are below 0degC (temperature_modulation)
+     !   4- Use the quality of observations to modulate the intensity of LHN being applied (radar_qi)
      !
      ! In the code, LHN increments are computed as:
-     ! increment        = weights * [pr_ratio  - 1.] * initial_profile
+     ! increment        = modulation * [pr_ratio  - 1.] * initial_profile
      !
      ! These, increments are transformed into tendencies before their application
      !*@/
@@ -96,35 +98,23 @@ contains
      !ratio of dry/moist gas constant: RGAS/Rv [unitless]
      real, parameter :: EPSIL = 0.622
      !lhn control parameters
-     real, parameter :: MIN_PR    = 0.1    !mm/h instantaneous precip rate
-     real, parameter :: MAX_RATIO = 1.5            !max scaling factor
-     real, parameter :: MIN_RATIO = 1./MAX_RATIO   !min scaling factor
+     real, parameter :: MIN_PR      = 0.1    !mm/h instantaneous precip rate
+     real, parameter :: MAX_RATIO   = 1.5            !max scaling factor
+     real, parameter :: MIN_RATIO   = 1./MAX_RATIO   !min scaling factor
+     real, parameter :: OBSV_HEIGHT = 1000.  !altitude of radar observations [m] AGL
      
      !internal variables
      integer :: i, k
-     real    :: master_volume, this_radar_pr, this_radar_qi, this_model_pr
-     real    :: pr_ratio, scale_fact
-     real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh, trec
-     real, pointer, dimension(:,:) :: tinc, ttend, temp_k, sigma, qv, zlhm, zsm2d
+     real    :: time_modulation, temperature_modulation, modulation_factor
+     real    :: this_radar_pr, this_radar_qi, this_model_pr
+     real    :: pr_ratio, scale_fact, r, temp_at_obs_height
+     real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
+     real, pointer, dimension(:,:) :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm, zsm2d
      real, pointer, dimension(:)   :: zlhnr, ztree, psp, zlhs
      real, dimension(ni)           :: radar_pr, radar_qi, model_rt
 
      !do nothing if LHN not in use
      if (lhn /= 'IRPCP') return
-  
-     !LHN weight as a function of model timestep during a 6h period
-     !lhn_weight must be specified in gem_settings.nml
-     !  TODO: this should not be hard coded
-     select case (kount)       
-        case (360:)                 
-           master_volume = 0.      !no lhn after IAU period
-        case (20:359)                 
-           master_volume = lhn_weight !normal volume when in operation
-        case (10:19)                  !ramp up volume linearly for a few timesteps
-           master_volume = lhn_weight*(kount - 9.)/10. 
-        case (:9)                
-           master_volume = 0.      !no lhn during spinup period
-     end select
 
      !Output diagnostic:  
      ! 
@@ -132,173 +122,228 @@ contains
      MKPTR1D(ztree, tree, v)
      ztree = 0.
 
-     if (master_volume > 0.) then
-  
-        !Output diagnostics:  
-        ! 
-        !scaling factor used in LHN 
-        MKPTR1D(zlhnr, lhnr, v)
-        zlhnr = 0.
-        !moisture tendency due to LHN
-        MKPTR2D(zlhm, tlhm, v)
-        zlhm  = 0.
-        !total moisture added/removed in a column
-        MKPTR1D(zlhs, tlhs, v)
-        zlhs  = 0.
-        !temperature tendencies due to Latent Heat Nudging
-        MKPTR2D(tinc, tlhn, v)
-        tinc  = 0.
-
-        !Model variables
-        !
-        !temperature
-        MKPTR2D(temp_k, tplus, d)
-        !vapor mixing ratio
-        MKPTR2D(qv, huplus, d)
-        !model surface pressure
-        MKPTR1D(psp, pmoins, f)
-        !model level
-        MKPTR2D(sigma, sigt, d)
-
-        !Horizontally smoothed quantities
-        !
-        !temperature tendencies due to latent heat release
-        MKPTR2D(ttend, smta, f)
-        !
-        !TODO use 2D smoothing instead of putting them in
-        !a 3D array
-        !
-        !3D container for 2D fields
-        MKPTR2D(zsm2d, sm2d, f)
-        !model precip rate      
-        model_rt = zsm2d(:,1) 
-        !radar precip rate
-        radar_pr = zsm2d(:,2)
-        !radar quality index
-        radar_qi = zsm2d(:,3)
-
-  
-        !record relative humidity and temperature before LHN
-        do k = 1,nk
-           do i = 1,ni
-              pres_pa(i,k) = sigma(i,k)*psp(i)             !air pressure [Pa]     formulation from cnv_main.F90  
-              es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))   !saturation vapor pressure [Pa]   Eq. 2.12 of R&Y
-              qvs_old(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)   !satturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
-              rh(i,k)   = qv(i,k)/qvs_old(i,k)
-           enddo
-        enddo
-  
-
-        !apply LHN
-        do i=1,ni
-
-           this_radar_qi = radar_qi(i)
-
-           if (this_radar_qi > 0.) then
-              !radar observation is valid
-  
-              !convert model precip rate in m/s to mm/h
-              this_model_pr = model_rt(i)*3.6e6
-              this_radar_pr = radar_pr(i) !already in mm/h
-  
-              if (this_radar_pr > MIN_PR) then
-                  !radar has precip
-  
-                  if (this_model_pr > MIN_PR) then
-                     !model has precip
-  
-                     pr_ratio = this_radar_pr / this_model_pr
-                     ztree(i) = 1.
-                     !insure ratio is within bounds, adjust status accordingly
-                     if (pr_ratio < MIN_RATIO) then
-                         pr_ratio = MIN_RATIO
-                         ztree(i) = .9
-                     else
-                         if (pr_ratio > MAX_RATIO) then
-                             pr_ratio = MAX_RATIO
-                             ztree(i) = 1.1
-                         endif
-                     endif
-                     !temperature increment due to LHN
-                     scale_fact = this_radar_qi*master_volume*(pr_ratio - 1.)
-                     do k=1,nk
-                        !only modify LHR profiles where +ve
-                        if (ttend(i,k) > 0.) then
-                            !temperature increment due to LHN
-                            tinc(i,k) = scale_fact*ttend(i,k)
-                        endif
-                     enddo
-                     zlhnr(i) = scale_fact
-                     
-                  else
-                     !model has NO precip
-                     !in this case, use predefined typical profile
-                     call use_avg_profile(this_radar_pr, this_radar_qi, pres_pa, master_volume, i, ni, nk, dt, &
-                                          v(tlhn), ztree(i) )
-                  endif
-              else
-                  !radar has NO precip
-                  if (this_model_pr > MIN_PR) then
-                     !model has precip
-                     scale_fact = this_radar_qi*master_volume*(MIN_RATIO - 1.)
-                     do k=1,nk
-                        if (ttend(i,k) > 0.) then
-                            !cool existing profile for less precip
-                            tinc(i,k) = scale_fact*ttend(i,k)  
-                        endif
-                     enddo
-                     zlhnr(i) = scale_fact
-                     ztree(i) = 3.
-                  else
-                    !model has NO precip -> do nothing
-                     ztree(i) = 4.
-                  endif
-              endif
-           else
-              !radar quality is poor -> do nothing
-              ztree(i) = 5.
-           endif 
-        enddo
-  
-        !change temperature increment into a tendency
-        tinc = tinc/dt
-        call apply_tendencies(d,v,f,tplus,tlhn,ni,nk)
-  
-        !compute increments to humidity to conserve RH
-        do k = 1,nk
-           do i = 1,ni
-  
-              !adjust moisture only where temperature has changed
-              if (abs(tinc(i,k)*dt) >= 1e-3) then
-                  
-                  es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))     !saturation vapor pressure  [Pa] Eq. 2.12 of R&Y
-                  qvs_new(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)     !saturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
-  
-                  !increment to moisture      
-                  !     want = have + increment -> increment = want - have
-                  zlhm(i,k) = master_volume*(rh(i,k)*qvs_new(i,k) - qv(i,k))
-  
-                  !output diagnostic
-                  zlhs(i) =  zlhs(i) + zlhm(i,k)
-              endif
-
-           enddo
-        enddo
-  
-        !change increment into a tendency
-        zlhm = zlhm/dt
-        call apply_tendencies(d,v,f,huplus,tlhm,ni,nk)
-  
-     else
-        !master volume = 0 ->  LHN is not applied
-        ztree = 6.
+     !lhn_weight must be specified in gem_settings.nml
+     !no LHN applied if lhn_weight <= 0.
+     if (lhn_weight <= 0.) then
+        ztree = 6.1
+        return
      endif
+  
+     !LHN weight as a function of model timestep during a 6h period
+     !  TODO: this should not be hard coded
+     select case (kount)       
+        case (360:)                 
+           !time_modulation = 0. ->  LHN is not applied after IAU period
+           ztree = 6.2
+           return
+        case (20:359)                 
+           time_modulation = 1.       !no impact of time during IAU period
+        case (10:19)                  !ramp up LHN modulation from 0 to 1 for a few timesteps
+           time_modulation = (kount - 9.)/10. 
+        case (:9)                
+           !time_modulation = 0. ->  LHN is not applied during early spinup 
+           ztree = 6.2
+           return
+     end select
+
+     !Output diagnostics:  
+     ! 
+     !scaling factor used in LHN 
+     MKPTR1D(zlhnr, lhnr, v)
+     zlhnr = 0.
+     !moisture tendency due to LHN
+     MKPTR2D(zlhm, tlhm, v)
+     zlhm  = 0.
+     !total moisture added/removed in a column
+     MKPTR1D(zlhs, tlhs, v)
+     zlhs  = 0.
+     !temperature tendencies due to Latent Heat Nudging
+     MKPTR2D(tinc, tlhn, v)
+     tinc  = 0.
+
+     !Model variables
+     !
+     !temperature
+     MKPTR2D(temp_k, tplus, d)
+     !AGL heights (m) on thermo levels
+     MKPTR2D(heights_agl, gztherm, v)
+     !vapor mixing ratio
+     MKPTR2D(qv, huplus, d)
+     !model surface pressure
+     MKPTR1D(psp, pmoins, f)
+     !model level
+     MKPTR2D(sigma, sigt, d)
+
+     !Horizontally smoothed quantities
+     !
+     !temperature tendencies due to latent heat release
+     MKPTR2D(ttend, smta, f)
+     !
+     !TODO use 2D smoothing instead of putting them in
+     !a 3D array
+     !
+     !3D container for 2D fields
+     MKPTR2D(zsm2d, sm2d, f)
+     !model precip rate      
+     model_rt = zsm2d(:,1) 
+     !radar precip rate
+     radar_pr = zsm2d(:,2)
+     !radar quality index
+     radar_qi = zsm2d(:,3)
+
+  
+     !record relative humidity and temperature before LHN
+     do k = 1,nk
+        do i = 1,ni
+           pres_pa(i,k) = sigma(i,k)*psp(i)             !air pressure [Pa]     formulation from cnv_main.F90  
+           es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))   !saturation vapor pressure [Pa]   Eq. 2.12 of R&Y
+           qvs_old(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)   !satturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
+           rh(i,k)   = qv(i,k)/qvs_old(i,k)
+        enddo
+     enddo
+
+
+     !apply LHN
+     do i=1,ni
+
+        !
+        !check if observation quality is good enough to apply LHN
+        this_radar_qi = radar_qi(i)
+        if (this_radar_qi <= 0.) then
+           !radar quality is poor -> do nothing and move on to next point
+           ztree(i) = 5.
+           cycle
+        endif
+
+        !
+        !modulation of LHN as a function of temperature
+        !
+        !first interpolate temperature at an altitude of 1km AGL
+        do k=nk,1,-1
+            if (heights_agl(i,k) > OBSV_HEIGHT) exit
+        enddo
+        !   at this point,
+        !   k is index of first level (starting from the ground) above obsv_height 
+        !   k+1 is index of level just below obsv_height
+        !   (   height(k) - obsv_height    ) / (               delta h               )
+        r = (heights_agl(i,k) - OBSV_HEIGHT) / (heights_agl(i,k) - heights_agl(i,k+1))
+        temp_at_obs_height =  (1.-r)*temp_k(i,k) + r*temp_k(i,k+1)
+        !
+        !second, set modulation from 0. to 1 in the interval between 0 and 5 degC (273-278 degK)
+        if (temp_at_obs_height <= 273.) then
+           !no LHN below freezing 
+           ! temperature_modulation = 0. -> do nothing and move on to next point
+           ztree(i) = 6.3
+           cycle
+        else if (temp_at_obs_height >= 278.) then
+           !no influence of temperature above 5 degC
+           temperature_modulation = 1.
+        else
+           ! modulate LHN linearly with temperature between 0 and 5 degC
+           temperature_modulation = (temp_at_obs_height - 273.) / 5.
+        endif
+
+        !if code gets here, we knon that 
+        !     radar observation is valid and temperature at 1km AGL > 0 degC
+
+        !group all modulation factors into one 
+        modulation_factor = lhn_weight*temperature_modulation*time_modulation*this_radar_qi
+  
+        !convert model precip rate in m/s to mm/h
+        this_model_pr = model_rt(i)*3.6e6
+        this_radar_pr = radar_pr(i) !already in mm/h
+  
+        !
+        !walk down the LHN tree
+        if (this_radar_pr > MIN_PR) then
+            !radar has precip
+  
+            if (this_model_pr > MIN_PR) then
+               !model has precip
+  
+               pr_ratio = this_radar_pr / this_model_pr
+               ztree(i) = 1.
+               !insure ratio is within bounds, adjust status accordingly
+               if (pr_ratio < MIN_RATIO) then
+                   pr_ratio = MIN_RATIO
+                   ztree(i) = .9
+               else
+                   if (pr_ratio > MAX_RATIO) then
+                       pr_ratio = MAX_RATIO
+                       ztree(i) = 1.1
+                   endif
+               endif
+               !temperature increment due to LHN
+               scale_fact = modulation_factor*(pr_ratio - 1.)
+               do k=1,nk
+                  !only modify LHR profiles where +ve
+                  if (ttend(i,k) > 0.) then
+                      !temperature increment due to LHN
+                      tinc(i,k) = scale_fact*ttend(i,k)
+                  endif
+               enddo
+               zlhnr(i) = scale_fact
+               
+            else
+               !model has NO precip
+               !in this case, use predefined typical profile
+               call use_avg_profile(this_radar_pr, pres_pa, modulation_factor, i, ni, nk, dt, &
+                                    v(tlhn), ztree(i) )
+            endif
+        else
+            !radar has NO precip
+            if (this_model_pr > MIN_PR) then
+               !model has precip
+               scale_fact = modulation_factor*(MIN_RATIO - 1.)
+               do k=1,nk
+                  if (ttend(i,k) > 0.) then
+                      !cool existing profile for less precip
+                      tinc(i,k) = scale_fact*ttend(i,k)  
+                  endif
+               enddo
+               zlhnr(i) = scale_fact
+               ztree(i) = 3.
+            else
+              !model has NO precip -> do nothing
+               ztree(i) = 4.
+            endif
+        endif
+     enddo
+  
+     !change temperature increment into a tendency
+     tinc = tinc/dt
+     call apply_tendencies(d,v,f,tplus,tlhn,ni,nk)
+  
+     !compute increments to humidity to conserve RH
+     do k = 1,nk
+        do i = 1,ni
+  
+           !adjust moisture only where temperature has changed
+           if (abs(tinc(i,k)*dt) >= 1e-3) then
+               
+               es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))     !saturation vapor pressure  [Pa] Eq. 2.12 of R&Y
+               qvs_new(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)     !saturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
+  
+               !increment to moisture      
+               !     want = have + increment -> increment = want - have
+               zlhm(i,k) = rh(i,k)*qvs_new(i,k) - qv(i,k)
+  
+               !output diagnostic
+               zlhs(i) =  zlhs(i) + zlhm(i,k)
+           endif
+
+        enddo
+     enddo
+  
+     !change increment into a tendency
+     zlhm = zlhm/dt
+     call apply_tendencies(d,v,f,huplus,tlhm,ni,nk)
      
   end subroutine lhn2
 
 
   !/@*
-  subroutine use_avg_profile(radar_pr, radar_qi, model_pres_pa, master_volume, i, ni, nk, dt, &
+  subroutine use_avg_profile(radar_pr, model_pres_pa, modulation_factor, i, ni, nk, dt, &
                              lhn_profile, stat) 
      implicit none
 #include <arch_specific.hf>
@@ -307,7 +352,6 @@ contains
      !
      !          - Input -
      ! radar_pr         precip rate observed by radar
-     ! radar_qi         radar observation quality index
      ! model_pres_pa    atmospheric pressure
      ! i                x index
      ! ni               x dimension
@@ -316,8 +360,7 @@ contains
      integer, intent(in) :: i,ni,nk            !x index ; x dim ;  number of vertical levels
      real,    intent(in) :: dt                 !model timestep
      real,    intent(in) :: radar_pr           !precip rate observed by radar
-     real,    intent(in) :: radar_qi           !radar observation quality index
-     real,    intent(in) :: master_volume      !modulation factor for LHN
+     real,    intent(in) :: modulation_factor  !modulation factor for LHN
      real,    intent(in), dimension(ni,nk) :: model_pres_pa !model pressure
      
      !          - Output -
@@ -416,7 +459,7 @@ contains
            if (lp > NAVG) exit
         endif
         r = ( model_pres_pa(i,k) - avg_pres_pa(hp) )/delta_p
-        lhn_profile(i,k) = master_volume * ( (1.-r)*avg_profile(hp)+r*avg_profile(lp) )
+        lhn_profile(i,k) = modulation_factor * ( (1.-r)*avg_profile(hp)+r*avg_profile(lp) )
      enddo
      
   end subroutine use_avg_profile

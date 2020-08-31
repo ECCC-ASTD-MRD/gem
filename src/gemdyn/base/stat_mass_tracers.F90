@@ -43,7 +43,7 @@
       !     Calculate and print the mass of each tracer scaled by area
       !===============================================================
 
-      integer :: n,k0,count,i0,in,j0,jn,i0_sb,in_sb,j0_sb,jn_sb
+      integer :: n,k0,count,i0_c,in_c,j0_c,jn_c,i0_sb,in_sb,j0_sb,jn_sb
       real(kind=REAL64) :: tracer_8
       logical :: do_subset_GY_L
       real, pointer, dimension (:,:,:) :: fld_tr
@@ -54,15 +54,9 @@
 !
 !---------------------------------------------------------------------
 !
-      i0 = 1+pil_w ; j0 = 1+pil_s ; in = l_ni-pil_e ; jn = l_nj-pil_n ; k0 = Adz_k0
-
-      do_subset_GY_L = .false.
-
-      !Evaluation of Mass on SUBSET of YIN available only if ONE processor on Yin
-      !--------------------------------------------------------------------------
-      if (Grd_yinyang_L.and.Adz_pil_sub_s>0.and.Ptopo_numproc==1) do_subset_GY_L = .true.
-
-      i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
+      !Set CORE limits
+      !---------------
+      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n ; k0 = 1 !ALL VERTICAL
 
       !Terminator: Initialization
       !--------------------------
@@ -100,14 +94,18 @@
 
          !Print the mass of each tracer scaled by area (CORE)
          !---------------------------------------------------
-         call mass_tr (tracer_8,fld_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0,in,j0,jn,k0)
+         call mass_tr (tracer_8,fld_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_c,in_c,j0_c,jn_c,k0)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,'  C= ', &
                                                                   tracer_8/Adz_gc_area_8,Tr3d_name_S(n)(1:4),F_comment_S
 
+         do_subset_GY_L = Grd_yinyang_L.and.adz_pil_sub_s_g /= -1
+
          !Print the mass of each tracer scaled by area (SUBSET of YIN)
          !------------------------------------------------------------
          if (do_subset_GY_L) then
+
+            i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
 
             w_tr(:,:,:) = fld_tr(:,:,:)
 
@@ -137,7 +135,7 @@
 
       !Print Total Air mass scaled by area (CORE)
       !------------------------------------------
-      call mass_tr (tracer_8,fld_ONE,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0,in,j0,jn,k0)
+      call mass_tr (tracer_8,fld_ONE,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_c,in_c,j0_c,jn_c,k0)
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,'  C= ', &
                                                                tracer_8/Adz_gc_area_8,'RHO ',F_comment_S
@@ -159,6 +157,11 @@
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
                                                                   tracer_8/Adz_gs_area_8,'RHO ',F_comment_S
+
+         !Same scaling as in STAT_PSADJ
+         !-----------------------------
+         if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
+                                                                  tracer_8/Adz_gs_area_8*grav_8,'RHOg',F_comment_S
 
       end if
 

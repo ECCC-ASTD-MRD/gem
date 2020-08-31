@@ -32,7 +32,7 @@ module adz_mem
       integer :: Adz_icn, Adz_itnl, Adz_cnt_traj, Adz_cnt_int
       integer, dimension(:), pointer, contiguous :: Adz_search_m,&
                                                     Adz_search_t
-      real :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
+      real(kind=REAL64) :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
       real :: Adz_yyminposx,Adz_yymaxposx,Adz_yyminposy,Adz_yymaxposy
       real, dimension(:,:), allocatable :: Adz_Xlim, Adz_Ylim
       real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8

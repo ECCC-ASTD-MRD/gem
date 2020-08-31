@@ -27,7 +27,7 @@
       use hvdif_options
       use geomh
       use glb_ld
-      use gmm_phy
+      use gmm_phy, only: phy_uu_tend, phy_vv_tend, phy_tv_tend, phy_cplm, phy_cplt
       use HORgrid_options
       use lun
       use tdpack
@@ -51,33 +51,16 @@
       integer :: i, j, k, km, kq, nij, jext
       real(kind=REAL64) :: tdiv, BsPqbarz, barz, barzp,  &
                 u_interp, v_interp, t_interp, mu_interp, &
-                w1, w2, phy_bA_m_8, phy_bA_t_8
+                w1, w2
       real(kind=REAL64)  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk+1) :: BsPq, FI
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk) :: MU
-      real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       logical :: smago_in_rhs_L
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
-
-      zero_array = 0.
-
-      if (Schm_phycpl_S == 'RHS') then
-         phy_bA_m_8 = 0.d0
-         phy_bA_t_8 = 0.d0
-      else if (Schm_phycpl_S == 'AVG') then
-         phy_bA_m_8 = Cstv_bA_m_8
-         phy_bA_t_8 = Cstv_bA_8
-      else
-         phy_uu_tend => zero_array
-         phy_vv_tend => zero_array
-         phy_tv_tend => zero_array
-         phy_bA_m_8 = 0.d0
-         phy_bA_t_8 = 0.d0
-      end if
 
       smago_in_rhs_L=.false.
 
@@ -163,7 +146,7 @@
                               rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomh_invDXMu_8(j)  &
                             + ( one + mu_interp)* (   FI(i+1,j,k) -   FI(i,j,k) ) * geomh_invDXMu_8(j)  &
                             - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp ) + &
-                              ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
+                              ((1d0-phy_cplm(i,j))/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
             end do
          end do
 
@@ -190,7 +173,7 @@
                               rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomh_invDYMv_8(j) &
                                   + ( one + mu_interp)* (   FI(i,j+1,k) -   FI(i,j,k) ) * geomh_invDYMv_8(j) &
                                           + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp ) + &
-                                          ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
+                                          ((1d0-phy_cplm(i,j))/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
             end do
          end do
 
@@ -213,7 +196,7 @@
                BsPqbarz = Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*BsPq(i,j,k)
                F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * cappa_8 * BsPqbarz ) &
                             + Cstv_Beta_8 * cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)) + &
-                            ((1d0-phy_bA_t_8)/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
+                            ((1d0-phy_cplt(i,j))/Cstv_bA_8) * 1./F_t(i,j,k) * phy_tv_tend(i,j,k)
             end do
          end do
 

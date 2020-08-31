@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
       subroutine set_vt()
+      use adz_options
       use dynkernel_options
       use gmm_vt1
       use gmm_vt0
@@ -196,6 +197,31 @@
          istat= min(gmm_create('TR/'//trim(Tr3d_name_S(i))//':P',tracers_P(i)%pntr,mymeta3d_nk_t,0),istat)
       end do
 
+      !Allocation if Bermejo-Conde LAM ZFL
+      !-----------------------------------
+      if (adz_BC_LAM_flux==2) then
+
+         istat = GMM_OK
+         nullify(trtb)
+         istat = min(gmm_create('TRACERS:B',trtb,mymeta_tracers,flag_r_n),istat)
+
+         if (GMM_IS_ERROR(istat)) then
+            call msg(MSG_ERROR,'set_vt ERROR-B at gmm_create(TR/*)')
+         end if
+
+         istat = gmm_get('TRACERS:B',trtb)
+
+         allocate (tracers_B(Tr3d_ntr))
+
+         dim = (l_maxx-l_minx+1) * (l_maxy-l_miny+1) * l_nk
+         do i=1,Tr3d_ntr
+            nullify(tracers_B(i)%pntr)
+            tracers_B(i)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trtb((i-1)*dim+1:)
+            istat= min(gmm_create('TR/'//trim(Tr3d_name_S(i))//':B',tracers_B(i)%pntr,mymeta3d_nk_t,0),istat)
+         end do
+
+      end if
+
       gmmk_airm1_s= 'AIR1'
       gmmk_airm0_s= 'AIR0'
       gmmk_pkps_s = 'PKPS'
@@ -330,6 +356,10 @@
 
       call canonical_cases ("SET_VT")
 
+      gmmk_phy_cplm_s = 'PHYCPLM'
+      gmmk_phy_cplt_s = 'PHYCPLT'
+      istat = min(gmm_create(gmmk_phy_cplm_s, phy_cplm, meta2d, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_phy_cplt_s, phy_cplt, meta2d, flag_r_n),istat)
       gmmk_phy_uu_tend_s  = 'UPT'
       gmmk_phy_vv_tend_s  = 'VPT'
       gmmk_phy_tv_tend_s  = 'TVPT'
@@ -339,6 +369,8 @@
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
       end if
+      istat = gmm_get(gmmk_phy_cplm_s, phy_cplm)
+      istat = gmm_get(gmmk_phy_cplt_s, phy_cplt)
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
          call exp_set_vt()

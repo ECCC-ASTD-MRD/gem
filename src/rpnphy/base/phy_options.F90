@@ -49,6 +49,7 @@ module phy_options
    logical           :: lrefract     = .false.
    logical           :: offline      = .false.
    logical           :: out_linoz    = .false.
+   logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
    logical           :: reduc        = .false.
    character(len=16) :: schmsol      = 'ISBA'
@@ -231,14 +232,16 @@ module phy_options
    namelist /physics_cfgs_p/ inilwc
 
    !# Type of input system used
-   !# * 'DIST' : GEM 5.0 input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based
-   !# * 'BLOC' : GEM 5.0 input system, RPN_COMM_bloc based
+   !# * 'DIST   ' : GEM 5.0 input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based
+   !# * 'BLOC   ' : GEM 5.0 input system, RPN_COMM_bloc based
+   !# * 'GEM_4.8' : GEM 4.8 input system, RPN_COMM_bloc based
    character(len=16) :: input_type = 'DIST'
    namelist /physics_cfgs/ input_type
    namelist /physics_cfgs_p/ input_type
-   character(len=*), parameter :: INPUT_TYPE_OPT(2) = (/ &
-        'DIST', &
-        'BLOC'  &
+   character(len=*), parameter :: INPUT_TYPE_OPT(3) = (/ &
+        'DIST   ', &
+        'BLOC   ', &
+        'GEM_4.8'  &
         /)
 
    !# Update ozone climatology during the run

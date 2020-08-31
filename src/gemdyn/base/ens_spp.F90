@@ -56,13 +56,13 @@ contains
   end function spp_options_init
 
   function spp_nml(F_fdout, F_inpath, F_cfgfile) result(F_istat)
+    use wb_itf_mod
     use  clib_itf_mod, only: clib_toupper
     implicit none
     integer, intent(in) :: F_fdout
     character(len=*), intent(in) :: F_inpath, F_cfgfile
     integer :: F_istat
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
     integer :: i, j, k, stat, nlon, nlat, nkeys, dtype, tlen, dlen, opt
     integer, dimension(2) :: spp_trn
     integer, dimension(MAX_NSPP) :: ival

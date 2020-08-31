@@ -39,7 +39,7 @@
       integer, parameter :: SMOOTH_GWD=2
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
-      integer istat, i,j,k,n, cnt, iteration,iend(3)
+      integer istat, i,j,k,n, cnt, iteration,iend(3),MAX_iteration,i0_c,in_c,j0_c,jn_c
       real, dimension(:,:), pointer :: ptr2d
       real, dimension(:,:,:), pointer :: ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
@@ -128,13 +128,17 @@
       !---------------------------------------------------------
       if (source_ps_L) then
 
+         MAX_iteration = 5 
+
          iteration = 1
+
+         i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
 
          !Obtain Pressure Momentum at TIME P (AFTER DYN)
          !----------------------------------------------
-         pm_dyn_8(:,:,:) = pw_pm_plus_8(:,:,:)
+         pm_dyn_8(i0_c:in_c,j0_c:jn_c,1:l_nk+1) = pw_pm_plus_8(i0_c:in_c,j0_c:jn_c,1:l_nk+1)
 
-         do while (iteration<4)
+         do while (iteration<MAX_iteration)
 
             !Estimate Pressure Momentum at TIME P (AFTER PHY)
             !------------------------------------------------
@@ -147,7 +151,7 @@
             !d(ps) = Vertical_Integral [ d(qw)/(1-qw_phy)] d(pi) (Claude Girard)
             !-----------------------------------------------------------------------------------------------------
 
-            p0_8(:,:) = pm_phy_8(:,:,1)
+            p0_8(i0_c:in_c,j0_c:jn_c) = pm_phy_8(i0_c:in_c,j0_c:jn_c,1)
 
             do j=1+pil_s,l_nj-pil_n
                do k=1,l_nk
@@ -172,7 +176,7 @@
                             pw_pm_plus_8,pw_p0_plus_8, &
                             l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
 
-            if (iteration>=4) call pw_update_GW()
+            if (iteration>=MAX_iteration) call pw_update_GW()
 
          end do
 
@@ -185,8 +189,24 @@
       end if
 
       ! Compute tendencies and reset physical world if requested
-      if (Schm_phycpl_S == 'RHS' .or. Schm_phycpl_S == 'AVG') then
+      PHY_COUPLING: if (all(phy_cplm == 1.) .and. all(phy_cplt == 1.)) then
+         
+         ! Pure split coupling
+         phy_uu_tend = 0.
+         phy_vv_tend = 0.
+         phy_tv_tend = 0.
 
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then !For SPLIT in GEM-H
+            istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+            istat = gmm_get(gmmk_tt1_s, tt1)
+            call tt2virt (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
+            phy_tv_tend = phy_tv_tend/Cstv_dt_8
+         end if
+         
+      else
+
+         ! Incorporate a component of phy forcing in the rhs of dyn equations
          istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
          istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
          istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
@@ -203,26 +223,14 @@
          phy_vv_tend = phy_vv_tend/Cstv_dt_8
          phy_tv_tend = phy_tv_tend/Cstv_dt_8
 
-         RESET_PW: if (Schm_phycpl_S == 'RHS') then
-            pw_uu_plus = pw_uu_plus0
-            pw_vv_plus = pw_vv_plus0
-            pw_tt_plus = pw_tt_plus0
-         else
-            pw_uu_plus = pw_uu_plus0 + Cstv_bA_m_8*(pw_uu_plus-pw_uu_plus0)
-            pw_vv_plus = pw_vv_plus0 + Cstv_bA_m_8*(pw_vv_plus-pw_vv_plus0)
-            pw_tt_plus = pw_tt_plus0 + Cstv_bA_8*(pw_tt_plus-pw_tt_plus0)
-         end if RESET_PW
-
-      else
-         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then !For SPLIT in GEM-H
-            istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
-            istat = gmm_get(gmmk_tt1_s, tt1)
-            call tt2virt (tv,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-            phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
-            phy_tv_tend = phy_tv_tend/Cstv_dt_8
-         end if
-      end if
-
+         do k=1,l_nk
+            pw_uu_plus(:,:,k) = pw_uu_plus0(:,:,k) + phy_cplm(:,:)*(pw_uu_plus(:,:,k)-pw_uu_plus0(:,:,k))
+            pw_vv_plus(:,:,k) = pw_vv_plus0(:,:,k) + phy_cplm(:,:)*(pw_vv_plus(:,:,k)-pw_vv_plus0(:,:,k))
+            pw_tt_plus(:,:,k) = pw_tt_plus0(:,:,k) + phy_cplt(:,:)*(pw_tt_plus(:,:,k)-pw_tt_plus0(:,:,k))
+         enddo
+         
+      endif PHY_COUPLING
+     
    else
 
       cnt = 0

@@ -300,9 +300,11 @@ module cnv_options
    character(len=16) :: mid_emfmod = 'nil'
    namelist /convection_cfgs/ mid_emfmod
    namelist /convection_cfgs_p/ mid_emfmod
-   character(len=*), parameter :: MID_EMFMOD_OPT(2) = (/ &
+   character(len=*), parameter :: MID_EMFMOD_OPT(4) = (/ &
         'NIL     ', &
-        'LATITUDE' &
+        'LATITUDE', &
+        'LATMOD1 ', &
+        'LATMOD2 ' &
         /)
 
    !# Minimum environmental mass flux for mid-level convection (kg/s)

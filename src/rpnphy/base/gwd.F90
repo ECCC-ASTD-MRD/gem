@@ -32,7 +32,7 @@ contains
       use phybus
       use series_mod, only: series_xst
       use tendency, only: apply_tendencies
-      use ens_perturb, only: ens_nc2d
+      use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
       !@author J.Mailhot RPN(May1990)
@@ -90,7 +90,7 @@ contains
       logical, parameter :: DO_GWDRAG   = .true.
       logical, parameter :: DO_BLOCKING = .true.
 
-      real, dimension(ni) :: rland
+      real, dimension(ni) :: rland, rmscons
       real, dimension(ni,nkm1) :: work, rte, rs1, rtgm, ttendgw_r4
       real, dimension(ni,nk) :: tvirt
       real(REAL64), dimension(ni) :: fcorio, land, launch, mtdir8, pp, slope8, &
@@ -149,6 +149,9 @@ contains
          zugwdtd1 => rug
          zvgwdtd1 => rvg
       endif
+
+      ! Retrieve stochastic parameter information on request
+      rmscons(:) = ens_spp_get('rmscon', zmrk2, default=rmscon)
 
       call init2nan(rland)
       call init2nan(work, rte, rs1, rtgm, tvirt, ttendgw_r4)
@@ -271,14 +274,10 @@ contains
 
       IF_NON_ORO: if (non_oro) then
 
-         call gwspectrum5(ni, ni, nkm1, &
-              sigma  , s1     , s2, &
-              s3     , pp     , te, &
-              tt     , uu     , vv, &
-              ttendno, vtendno, utendno, &
-              hines_flux_filter, GRAV  , RGASD, &
-              rmscon , iheatcal,       &
-              std_p_prof, non_oro_pbot)
+         call gwspectrum6(sigma, s1, s2, s3, pp, te, &
+              tt, uu, vv, ttendno, vtendno, utendno, hines_flux_filter, &
+              GRAV, RGASD, rmscons, iheatcal, std_p_prof, non_oro_pbot, &
+              ni, nkm1)
          if (phy_error_L) return
 
          run = real(utendno)

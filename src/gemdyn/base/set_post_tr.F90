@@ -44,8 +44,6 @@
       !----------------------------------
       Adz_set_post_tr  = 1
 
-      if (Adz_verbose>0) call stat_mass_tracers (1,"BEFORE ADVECTION")
-
       call gemtime_start (52, 'AIR_MASS', 36)
 
       !Reset Air Mass at TIME P and TIME M
