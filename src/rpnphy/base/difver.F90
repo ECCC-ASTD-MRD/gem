@@ -278,7 +278,7 @@ contains
          sfc_density(j) = -aq(j) * ps(j)/GRAV
       end do
       if (pbl_cmu_timeavg .and. kount > 0) then
-         bmsg(:) = (zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:)
+         bmsg(:) = fm_mult(:) * ((zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:))
          zbm0(:) = zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM)
       endif
       gam0 = 0.

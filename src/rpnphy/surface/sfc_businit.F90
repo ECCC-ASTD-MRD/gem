@@ -134,12 +134,11 @@ subroutine sfc_businit(moyhr,ni,nk)
 
    !# ZP is only a required input if .not.z0veg_only
    izp = '1'
+   if (z0veg_only) izp = '0'
+
+   !# never read zvg2 for SVS, use Z0LD, with key svs_local_z0m instead
    izvg2 = '1'
    if (schmsol == 'SVS') izvg2 = '0'
-   if (z0veg_only) then
-      izp = '0'
-      izvg2 = '1'
-   endif
 
 
    !#TODO: check if schmsol conditional

@@ -33,9 +33,7 @@ contains
       use mp_my2_mod,    only: mp_my2_main
       use my_dmom_mod,   only: mydmom_main
       use phy_options
-#ifdef ECCC_MP_MY_SCHEME
       use phy_status, only: phy_error_L
-#endif
       use phybus
       use tendency, only: apply_tendencies
       use water_integrated, only: water_integrated1
@@ -230,8 +228,6 @@ contains
          !# "old" Milbrandt-Yau 2-moment microphysics (as in HRDPS v4.0.0 - v4.2.0)
          geop = zgztherm*GRAV
 
-#ifdef ECCC_MP_MY_SCHEME
-
          call mydmom_main(ww,&
               ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,psp, &
               ttm,qqm,qcm,qrm,qim,qnm,qgm,qhm,ncm,nrm,nim,nnm,ngm,nhm,psm,sigma,&
@@ -255,13 +251,7 @@ contains
               zrnflx,zsnoflx,zf12,zfevp,a_fxp,a_effradc,&
               a_effradi1, a_effradi2, a_effradi3, a_effradi4)
 
-#else
-         call physeterror('condensation', 'MP_MY2_OLD:mydmom_main NOT supported')
-#endif
-
       case('MP_MY2')
-
-#ifdef ECCC_MP_MY_SCHEME
 
          !#  modified (from HRDPS_4.2.0) Milbrandt-Yau 2-moment microphysics (MY2, v2.25.2)
          call mp_my2_main(ww,ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,a_nwfa,     &
@@ -285,10 +275,6 @@ contains
          a_ss05 = diag_3d(:,:,5);   a_ss12 = diag_3d(:,:,12);   a_ss19 = diag_3d(:,:,19)
          a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
          a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
-
-#else
-         call physeterror('condensation', 'MP_MY2:mp_my2_main NOT supported')
-#endif
 
       case('MP_P3')
 

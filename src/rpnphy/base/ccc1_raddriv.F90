@@ -178,6 +178,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    integer, dimension(ilg,lay) :: inptmg
    integer, dimension(ilg,lay) :: nblk
    integer, dimension(ilg) :: isun
+   integer, dimension(ilg) :: mcont
 
    !     work arrays used generally by longwave.
 
@@ -211,7 +212,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
    real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
    real ubeta0, epsd0, hrcoef, uu3, cut, seuil, qmr, qmin
-   integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig, mcont
+   integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig
    logical gh
    integer ilg1,ilg2
 
@@ -971,15 +972,16 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
       enddo
 520   continue
 
-      mcont = lev
+      mcont(:) = lev
 
       do i = il1, il2
-         mcont                   =  min (isun(i), mcont)
+         mcont(i) = min(isun(i), mcont(i))
+         mcont(i) = mcont(i) - 1
+         !PV to avoid crashing if model top has a pressure higer than 138.9440
+         mcont(i) = max(mcont(i),1)
       enddo
 530   continue
-      mcont = mcont - 1
-      !PV to avoid crashing if model top has a pressure higer than 138.9440
-      mcont=  max(mcont,1)
+
 
       !----------------------------------------------------------------------
       !     determination of the interpolation points in the ratio of co2
@@ -1041,7 +1043,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          DO700: do ig = 1, kgl(ib)
 
-            call ccc1_gasoptl (taug, gw, dp, ib, ig, &
+            call ccc1_gasoptl2 (taug, gw, dp, ib, ig, &
                  o3, qg, inpr, inptm, mcont, &
                  pg, dip, dt, lev1, gh, &
                  il1, il2, ilg, lay, tg)
@@ -1102,7 +1104,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
             DO800: do ig = 1, kglgh(ib)
 
-               call ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
+               call ccc1_gasoptlgh3(taug, gwgh, dp, ib, ig, &
                     o3, qg, inpt, mcont, &
                     dip, dt, lev1, gh, &
                     il1, il2, ilg, lay, tg)

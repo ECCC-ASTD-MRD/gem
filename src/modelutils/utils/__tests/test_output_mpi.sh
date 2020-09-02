@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 if [[ x"$1" == x-h ]] ; then
    echo "USAGE: $0 [-v [LEVEL]]"

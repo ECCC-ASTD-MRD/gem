@@ -14,15 +14,16 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
+subroutine ccc1_gasoptl2(taug, gw, dp, ib, ig, &
      o3, qq, inptr, inpt, mcont, &
      dir, dip, dt, lev1, gh, &
      il1, il2, ilg, lay, tg)
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, ib, ig, mcont, lev1, il1, il2, ng2
+   integer ilg, lay, ib, ig, lev1, il1, il2, ng2
    integer k, i, ng, lc, ng3
+   integer mcont(ilg)
    real taug(ilg,lay), gw, fact
 
    real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), dir(ilg,lay), &
@@ -99,7 +100,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
       call ccc1_tline2(taug, cl1h2o, cl1co2, qq, o3, &
            ng2, dp, dip, dt, inpt, &
            lev1, gh, mtl, il1, il2, ilg, lay, tg)
-
+      
       !----------------------------------------------------------------------
       !     simply add the n2o effect
       !----------------------------------------------------------------------
@@ -126,7 +127,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            il1, il2, ilg, lay, tg)
 
       lc =  3
-      call ccc1_tcontl(taug, cl2cs, cl2cf, qq, dp, dip, dt, &
+      call ccc1_tcontl2(taug, cl2cs, cl2cf, qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       !----------------------------------------------------------------------
@@ -155,7 +156,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            il1, il2, ilg, lay, tg)
 
       lc =  4
-      call ccc1_tcontl(taug, cl3cs(1,1,ig), cl3cf(1,1,ig), qq, dp, dip, dt, &
+      call ccc1_tcontl2(taug, cl3cs(1,1,ig), cl3cf(1,1,ig), qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       gw =  gwl3(ig)
@@ -175,7 +176,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            lev1, gh, mtl, il1, il2, ilg, lay)
 
       lc =  4
-      call ccc1_tcontl(taug, cl4cs(1,1,ig), cl4cf(1,1,ig), qq, dp, dip, dt, &
+      call ccc1_tcontl2(taug, cl4cs(1,1,ig), cl4cf(1,1,ig), qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       !----------------------------------------------------------------------
@@ -204,7 +205,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            lev1, gh, mtl, il1, il2, ilg, lay, tg)
 
       lc =  4
-      call ccc1_tcontl(taug, cl5cs(1,1,ig), cl5cf(1,1,ig), qq, dp, dip, dt, &
+      call ccc1_tcontl2(taug, cl5cs(1,1,ig), cl5cf(1,1,ig), qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       !----------------------------------------------------------------------
@@ -239,7 +240,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
               lev1, gh, mtl, il1, il2, ilg, lay)
 
          lc =  4
-         call ccc1_tcontl(taug, cl6cs, cl6cf, qq, dp, dip, dt, &
+         call ccc1_tcontl2(taug, cl6cs, cl6cf, qq, dp, dip, dt, &
               lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
          !----------------------------------------------------------------------
@@ -274,7 +275,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            cl7co2u(1,1,ig), cl7co2d(1,1,1,ig), qq, dp, dip,dir, &
            dt, inptr, inpt, lev1, il1, il2, ilg, lay)
 
-      call ccc1_tconthl2(taug, cl7cs(1,1,1,ig), cl7cf(1,1,1,ig), qq, dp, dip, &
+      call ccc1_tconthl3(taug, cl7cs(1,1,1,ig), cl7cf(1,1,1,ig), qq, dp, dip, &
            dir, dt, inptr, inpt, mcont, il1, il2, ilg, lay)
 
       ng =  5
@@ -307,7 +308,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
 
       if (ig .le. 4)                                                then
          lc =  6
-         call ccc1_tcontl(taug, cl8cs(1,1,ig), cl8cf(1,1,ig), qq, dp, dip,dt, &
+         call ccc1_tcontl2(taug, cl8cs(1,1,ig), cl8cf(1,1,ig), qq, dp, dip,dt, &
               lc, inpt, mcont, gh, il1, il2, ilg, lay)
       endif
 
@@ -325,7 +326,7 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
            il1, il2, ilg, lay, tg)
 
       lc =  6
-      call ccc1_tcontl(taug, cl9cs(1,1,ig), cl9cf(1,1,ig), qq, dp, dip, dt, &
+      call ccc1_tcontl2(taug, cl9cs(1,1,ig), cl9cf(1,1,ig), qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       gw =  gwl9(ig)
@@ -333,4 +334,4 @@ subroutine ccc1_gasoptl(taug, gw, dp, ib, ig, &
    endif
 
    return
-end subroutine ccc1_gasoptl
+end subroutine ccc1_gasoptl2

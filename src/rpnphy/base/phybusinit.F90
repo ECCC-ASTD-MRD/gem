@@ -147,6 +147,7 @@ subroutine phybusinit(ni,nk)
    
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
+   i = 1
    if (any(stcond(1:5) == (/'MP_P3 ', 'MP_MY2'/))) then
       do while (.not.llight .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
@@ -156,6 +157,7 @@ subroutine phybusinit(ni,nk)
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
    lrefract = .false.
+   i = 1
    do while (.not.lrefract .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
            'dcbh', 'dcnb', 'dcll', &

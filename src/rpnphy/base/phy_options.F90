@@ -95,6 +95,11 @@ module phy_options
    namelist /physics_cfgs/ cond_evap
    namelist /physics_cfgs_p/ cond_evap
 
+   !# Dry accretion of ice crystals by snow in Sundqvist (factor)
+   real           :: cond_iceacc    = 5.
+   namelist /physics_cfgs/ cond_iceacc
+   namelist /physics_cfgs_p/ cond_iceacc
+   
    !# Minimum cloud mixing ratio (kg/kg) for autoconversion in
    !# Sunqvist gridscale condensation
    real           :: cond_hmrst     = 3.e-4

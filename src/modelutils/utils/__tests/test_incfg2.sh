@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 if [[ x"$1" == x-h ]] ; then
    echo "USAGE: $0 [-v [LEVEL]]"
@@ -52,18 +52,4 @@ runtest() {
    r.run_in_parallel ${TEST_DEBUG} ${TEST_INORDER} -pgm ${mybin} -npex ${MPI_NPEX} -npey ${MPI_NPEY}
 }
 
-# runtest 1 1 1
-# runtest 2 1
-# runtest 1 3
-# runtest 3 2
-
-# runtest 2 2 2
-# runtest 4 1 2
-# runtest 1 4 2
-# runtest 4 4 2
-# runtest 4 4 4
-
-# runtest 1 1 1
-# runtest 2 1 1
-# runtest 2 2 1
-runtest 2 2 2
+runtest 1 1 1

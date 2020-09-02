@@ -50,10 +50,6 @@
 
       do  iter = 1, Adz_niter
 
-         call adz_ondemand (Adz_expq,Adz_i0,Adz_in,Adz_j0,Adz_jn    ,&
-               Adz_k0,l_nk,Adz_wpxyz(-1,-1,1,1),Adz_wpxyz(-1,-1,1,2),&
-               Adz_wpxyz(-1,-1,1,3),l_ni,l_nj,l_nk)
-
          call tricublin_zyx3_n ( Adz_uvw_dep,Adz_uvw_d(1,1,1,1), &
                                  Adz_pxyzm,Adz_cpntr_q,Adz_3dnh )
 
@@ -107,10 +103,6 @@
 
       Adz_pm   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0:l_nk)=&
       Adz_pxyzm(:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0:l_nk)
-
-      call adz_ondemand (Adz_expq,Adz_i0,Adz_in,Adz_j0,Adz_jn       ,&
-               Adz_k0,l_nk,Adz_wpxyz(-1,-1,1,1),Adz_wpxyz(-1,-1,1,2),&
-               Adz_wpxyz(-1,-1,1,3),l_ni,l_nj,l_nk)
 
 ! Interpolate Momentun positions on Thermo Level and U V  grid
 

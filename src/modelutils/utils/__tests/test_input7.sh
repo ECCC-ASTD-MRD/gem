@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 if [[ x"$1" == x-h ]] ; then
    echo "USAGE: $0 [-v [LEVEL]]"
@@ -38,19 +38,27 @@ if [[ ! -x $mybin ]] ; then
    exit 1
 fi
 
-
 runtest() {
+   set +x
    export MPI_NPEX=${1:-1}
    export MPI_NPEY=${2:-1}
-   export MPI_NPEIO=${3:-1}
+   export MPI_NBLOCX=${3-$MPI_NPEX}
+   export MPI_NBLOCY=${4-$MPI_NPEY}
    export MPI_NBLOCX=1
    export MPI_NBLOCY=1
    export MPI_NDOM=1
    export MPI_IDOM=0
 
-   echo "P=${MPI_NPEX}x${MPI_NPEY} NIO=${MPI_NPEIO}"
+   echo "P=${MPI_NPEX}x${MPI_NPEY} B=${MPI_NBLOCX}x${MPI_NBLOCY}"
    r.run_in_parallel ${TEST_DEBUG} ${TEST_INORDER} -pgm ${mybin} -npex ${MPI_NPEX} -npey ${MPI_NPEY}
 }
 
-runtest 1 1 1
-runtest 2 3 1
+
+set -x
+runtest 1 1
+# runtest 2 1
+# runtest 1 2
+# runtest 2 2
+# runtest 3 1 1 1
+# runtest 1 2 1 1
+# runtest 2 3 1 1

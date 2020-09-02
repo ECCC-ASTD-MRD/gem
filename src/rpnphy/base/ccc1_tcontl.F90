@@ -15,13 +15,14 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P TCONTL - INFRARED WATER VAPOR CONTINUUM
 !
-      subroutine ccc1_tcontl (taug, coef1, coef2, qq, dp, dip, dt, &
+      subroutine ccc1_tcontl2 (taug, coef1, coef2, qq, dp, dip, dt, &
                          lc, inpt, mcont, gh, il1, il2, ilg, lay)
 !
       implicit none
 !!!#include <arch_specific.hf>
 !
-      integer ilg, lay, lc, il1, il2, k, i, j, m, n, mcont, nc
+      integer ilg, lay, lc, il1, il2, k, i, j, m, n, nc
+      integer mcont(ilg)
       real x1, y1, x2, y2
       real taug(ilg,lay), coef1(5,lc), coef2(5,lc)
       real qq(ilg,lay), dp(ilg,lay), dip(ilg,lay), dt(ilg,lay)
@@ -66,9 +67,9 @@
         nc =  19 - lc
       endif
 !
-      do 200 k = mcont, lay
+      do 300 i = il1, il2
+      do 200 k = mcont(i), lay
         if (inpt(1,k) .lt. 950)                                     then
-          do 100 i = il1, il2
             j =  inpt(i,k)
             if (j .ge. nc)                                          then
               m  =  j - nc + 1
@@ -95,13 +96,11 @@
                              y1 + (y2 - y1) * dip(i,k) ) * &
                             qq(i,k) * dp(i,k)
             endif
-  100     continue
         else
           j =  inpt(1,k) - 1000
           m  =  j - nc + 1
           n  =  m + 1
           if (j .ge. nc)                                          then
-            do 150 i = il1, il2
               x1        =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
                            dt(i,k) * (coef1(3,m) + dt(i,k) * &
                           (coef1(4,m) + dt(i,k) * coef1(5,m))))
@@ -123,10 +122,10 @@
                            dip(i,k)) * 1.608 * qq(i,k) + &
                              y1 + (y2 - y1) * dip(i,k) ) * &
                             qq(i,k) * dp(i,k)
-  150     continue
           endif
         endif
   200 continue
+  300 continue
 !
       return
       end

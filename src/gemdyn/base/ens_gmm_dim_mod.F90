@@ -22,6 +22,6 @@ module ens_gmm_dim
    type(gmm_metadata) :: meta3d_sh2 ! sans hallo
    type(gmm_metadata) :: meta3d_ar_p,meta2d_ar_s,meta3d_ai_p,meta2d_ai_s
    type(gmm_metadata) :: meta3d_br_p,meta2d_br_s,meta3d_bi_p,meta2d_bi_s
-   type(gmm_metadata) :: meta2d_dum,meta3d_plg
+   type(gmm_metadata) :: meta2d_dum,meta3d_pls,meta4d_plp
 
 end module ens_gmm_dim

@@ -328,6 +328,12 @@ contains
             return
          endif
 
+         !# check that svs_local_z0m=True when using tofd i.e, z0veg_only=.true.
+         if (z0veg_only .and. .not.svs_local_z0m) then
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_local_z0m must be .TRUE. when using tofd=/NIL in &physics_cfgs')
+            return
+         endif
+
          if (.not.any(soiltext == SOILTEXT_OPT)) then
             call str_concat(msg_S, SOILTEXT_OPT, ', ')
             call msg(MSG_ERROR, '(sfc_nml_check) soiltext = '//trim(soiltext)//&

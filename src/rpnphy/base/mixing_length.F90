@@ -152,9 +152,9 @@ contains
 
      ! Obtain stochastic parameter information
      mlmult(:) = ens_spp_get('ml_mult', mrk2, 1.)
-     mlemod(:) = ens_spp_get('ml_emod', mrk2, 1.)
-     stochastic_mult = any(mlemod(:) /= 1.)
-     one_ml_form = all(mlen(:) == longmel)
+     mlemod(:) = ens_spp_get('ml_emod', mrk2, 0.)
+     stochastic_mult = any(mlemod(:) /= 0.)
+     one_ml_form = all(mlen(:) == longmel) .and. .not.stochastic_mult
 
      ! Precompute state variables if required
      if (any(mlen(:) == 'BOUJO') .or. any(mlen(:) == 'TURBOUJO') .or. &

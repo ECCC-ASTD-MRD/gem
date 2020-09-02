@@ -21,9 +21,9 @@ module ens_spp
   ! External API
   public :: spp_options_init, spp_nml
   integer, parameter, public :: MAX_NSPP=50     !Maximum number of SPP instances (chains)
-  integer, public :: spp_ncha, spp_lmax=-1, spp_mmax=-1
+  integer, public :: spp_ncha, spp_lmax=-1, spp_mmax=-1, spp_latmax=-1
   character(len=64), dimension(:), pointer, public :: spp_list=>null()
-  
+
   ! Internal parameters
   integer, parameter :: MAX_SPP_ELEMENTS=25     !Maximum dict/nml entries per SPP instance
   integer, parameter :: MAX_WB_ENTRIES=MAX_NSPP*MAX_SPP_ELEMENTS
@@ -114,8 +114,9 @@ contains
        endif
        spp_lmax = max( maxval(spp_trn) - minval(spp_trn) + 1, spp_lmax )
        spp_mmax = max( maxval(spp_trn) + 1, spp_mmax )
+       spp_latmax=max(nlat,spp_latmax)
     enddo
-    
+
     ! Post required SPP information to whiteboard
     if (WB_IS_ERROR(wb_put('spp/list', spp_list(:), WB_REWRITE_MANY))) then
        write(F_fdout, *) 'Error posting SPP list to whiteboard'
@@ -178,7 +179,7 @@ contains
           continue
        end select
     enddo
-    
+
     F_istat = RMN_OK
   end function spp_nml
 

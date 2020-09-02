@@ -25,21 +25,16 @@ module ens_options
    ! Internal variables
    integer, public :: nchains
    logical, public :: spp_L
-   
+
    !# Switch to activate generation of Markov chains, use of SKEB
    !# and use of PTP
    logical :: Ens_conf = .false.
    namelist /ensembles/ Ens_conf
 
-   !# Switch to activate the
+   !# Switch to activate recycling  of Markov chains parameters
    !# in PTP & SKEB
-   logical :: Ens_iau_mc = .false.
-   namelist /ensembles/ Ens_iau_mc
-
-   !# Switch to activate the first initialisation of Matkov chaines
-   !# in PTP & SKEB
-   logical :: Ens_first_init_mc = .false.
-   namelist /ensembles/ Ens_first_init_mc
+   logical :: Ens_recycle_mc = .false.
+   namelist /ensembles/ Ens_recycle_mc
 
    !# Switch to activate SKEB
    !# (3D MARKOV CHAINES)
@@ -198,6 +193,11 @@ module ens_options
    real :: Ens_ptp_max(MAX2DC) = 0.0
    namelist /ensembles/ Ens_ptp_max
 
+   !# (ignored) Ens_ptp_latmax = maxval(Ens_ptp_nlat)
+   !# (2D MARKOV CHAINES)
+   integer :: Ens_ptp_latmax = 0
+   namelist /ensembles/ Ens_ptp_latmax
+
    !# standard deviation value for 2D Markov chains
    !# (2D MARKOV CHAINES)
    real :: Ens_ptp_std(MAX2DC) = 0.0
@@ -261,7 +261,7 @@ module ens_options
    !# Set cutoff latitude (degrees from equator) for adv_rhsint SPP perturbations
    real :: Ens_spp_rhsint_lat = 45.
    namelist /ensembles/ Ens_spp_rhsint_lat
-   
+
 contains
 
 !**s/r ens_nml - read parametres for ensemble forecast
@@ -308,7 +308,7 @@ contains
  6005 format (' Namelist ',A,' NOT AVAILABLE')
  6007 format (/,' NAMELIST ',A,' IS INVALID'/)
 ! boiler plate - end
-      
+
       ptp_L = .false.
 
       if (ens_nml == 0) then
@@ -323,7 +323,7 @@ contains
          else
             Ens_ptp_ncha = 0
          endif
-         
+
          if ((Grd_typ_S /= 'GU'.and.Grd_typ_S /= 'GY').and.Ens_skeb_conf) then
             if(Lun_out >= 0) write(Lun_out,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
             ens_nml = -1
@@ -344,12 +344,14 @@ contains
             ens_nml = -1
          end if
 
+         ens_ptp_latmax=-1
          do i=1,Ens_ptp_ncha
             if (Ens_ptp_nlon(i) /= 2*Ens_ptp_nlat(i))then
                 if(Lun_out >= 0)write(Lun_out,*)'Nlon2 must equal 2*nlat2'
                 ens_nml = -1
             end if
-         end do
+            Ens_ptp_latmax=max(Ens_ptp_nlat(i),ens_ptp_latmax)
+         enddo
 
          if (ens_nml < 0) return
 

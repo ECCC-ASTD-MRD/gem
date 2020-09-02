@@ -43,6 +43,8 @@ subroutine nml_gem()
    use out_options
    use spn_options
    use step_options
+   use gem_options
+   use ens_options
    implicit none
    integer err
 
@@ -60,6 +62,7 @@ subroutine nml_gem()
    err = lam_nml      (-2)
    err = out_nml      (-2)
    err = spn_nml      (-2)
+   err = ens_nml      (-2)
    return
 end subroutine nml_gem
 

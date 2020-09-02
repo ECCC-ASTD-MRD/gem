@@ -72,15 +72,6 @@
     mnj=F_jn-F_j0+1
     mnk=F_nk-F_k0+1
 
-!$omp parallel private(i,j,k, ii1, jj1, kk1,&
-!$omp                  n,n0,n1,n2,n3,nn,m,&
-!$omp                  idxk,idxjk,midxk,midxjk,&
-!$omp                  rri,rrj,rrk) &
-!$omp          shared(ii,kkmax,sig,p_lcz,p_z00_8,p_bsz_8,&
-!$omp                 mni,mnj,mnk)
-
-!$omp do
-
    do k=F_k0,F_nk
          idxk  = (k-1)*l_ni*l_nj
          midxk = (k-F_k0)*mni*mnj
@@ -115,8 +106,5 @@
             end do
          end do
    end do
-
-!$omp enddo
-!$omp end parallel
 
 end subroutine adv_get_indices

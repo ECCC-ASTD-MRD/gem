@@ -64,7 +64,7 @@ contains
       if (present(F_post)) then
          call gemtime_start (83, 'C_BCFLUX_TR', 37)
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
-            call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,&
+            call adz_BC_LAM_Aranami (extended,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx, &
                                   Adz_lminy,Adz_lmaxy,F_post,F_nptr)
          endif
          call gemtime_stop  (83)
@@ -155,70 +155,6 @@ contains
       if (linmima_l) call gemtime_stop (84)
       call time_trace_barr(gem_time_trace, 10600+adz_cnt_int,&
                            Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
-
-!!$      if (F_export%COMM_handle(1)>0) &
-!!$      call RPN_COMM_waitall_nostat(F_export%COMM_handle(1),&
-!!$                                   F_export%COMM_handle(2),ierr)
-!!$      F_export%COMM_handle(1) = 0
-!!$
-!!$      nr = sum(F_export%recv)
-!!$
-!!$! clip the requests
-!!$      do i=1, 3*nr, 3
-!!$         F_export%req(i  )= min(max(F_export%req(i  ),&
-!!$                            Adz_iminposx),Adz_imaxposx)
-!!$         F_export%req(i+1)= min(max(F_export%req(i+1),&
-!!$                            Adz_iminposy),Adz_imaxposy)
-!!$      end do
-!!$
-!!$      ireq=0
-!!$
-!!$! Receive interpolated requests from each neighbor (pre-post receive)
-!!$      cnt=0
-!!$      do kk= 1, 8
-!!$         if ((Adz_exppe(kk)>=0).and.(F_export%send(kk)>0)) then
-!!$            ireq = ireq+1
-!!$            call RPN_COMM_IRecv (F_export%resu(cnt+1)            ,&
-!!$                                 F_export%send(kk), 'MPI_REAL'   ,&
-!!$                                 Adz_exppe(kk),tag2+Adz_exppe(kk),&
-!!$                                 'GRID', request(ireq), ierr)
-!!$            cnt= cnt+F_export%send(kk)
-!!$         endif
-!!$      end do
-!!$
-!!$! perform requested interpolation
-!!$      if (F_mono_L) then
-!!$         call adz_tricub_lag3d_mono (F_export%intp, F_src, &
-!!$                                     F_export%req, nr, F_lev_S)
-!!$      else
-!!$         call adz_tricub_lag3d      (F_export%intp, F_src(1,1,1), &
-!!$                                     F_export%req, nr, F_lev_S)
-!!$      endif
-!!$
-!!$! Send interpolated requests to each neighbor
-!!$      cnt=0
-!!$      do kk= 1, 8
-!!$         if ((Adz_exppe(kk)>=0).and.(F_export%recv(kk)>0)) then
-!!$             ireq = ireq+1
-!!$             call RPN_COMM_ISend ( F_export%intp(cnt+1)            ,&
-!!$                                   F_export%recv(kk), 'MPI_REAL'   ,&
-!!$                                   Adz_exppe(kk), tag2+Ptopo_myproc,&
-!!$                                   'GRID', request(ireq), ierr )
-!!$              cnt= cnt+F_export%recv(kk)
-!!$         endif
-!!$      end do
-!!$      call RPN_COMM_waitall_nostat(ireq,request,ierr)
-!!$
-!!$! Use interpolated values sent by neighbors
-!!$      nr = sum(F_export%send)
-!!$      dim = l_ni * l_nj
-!!$      do kk=1, nr
-!!$         k = F_export%ijk(kk)/dim - 1 + min(mod(F_export%ijk(kk),dim),1)
-!!$         jj= F_export%ijk(kk)-k*dim
-!!$         j = jj/l_ni - 1 + min(mod(jj,l_ni),1)
-!!$         i = jj - j*l_ni
-!!$         F_dest(i,j+1,k+1) = F_export%resu(kk)
-!!$      end do
 !
 !---------------------------------------------------------------------
 !
@@ -252,7 +188,8 @@ contains
       
       if (present(F_post)) then
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
-            call adz_BC_LAM_Aranami (extended,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+            call adz_BC_LAM_Aranami (extended,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx, &
+                                  Adz_lminy,Adz_lmaxy,F_post,F_nptr)
          endif
       end if
       

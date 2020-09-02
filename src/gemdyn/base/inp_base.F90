@@ -206,7 +206,7 @@ contains
       end select
 
       datev= Inp_cmcdate
-      if ( F_var_S(1:3) == 'TR/' ) then
+      if ( F_var_S(1:min(3,len_trim(F_var_S))) == 'TR/' ) then
          nomvar= F_var_S(4:)
          if (Tr3d_anydate_L) datev= -1
       end if

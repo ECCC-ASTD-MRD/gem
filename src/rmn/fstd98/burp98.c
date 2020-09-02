@@ -52,7 +52,7 @@ int c_getbuf8(word *buffer)
 
   return(buf->buf78.buf8);
 }
-
+
 /*splitpoint build_burp_info_keys */
 /***************************************************************************** 
  *                  B U I L D _ B U R P _ I N F O _ K E Y S                  * 
@@ -91,7 +91,7 @@ void build_burp_info_keys(word *buf, word *keys, int index, int mode)
       keys[4] = info->runn;
       }
 }
-
+
 /*splitpoint build_burp_prim_keys */
 /***************************************************************************** 
  *                  B U I L D _ B U R P _ P R I M _ K E Y S                  *
@@ -212,7 +212,7 @@ void build_burp_prim_keys(burp_record *brpk, word *keys,
       keys[17] = brpk->keys.min;
       }
 }
-
+
 /*splitpoint burp_nbit_datyp */
 /***************************************************************************** 
  *                  B U R P _ N B I T _ D A T Y P                            *
@@ -302,7 +302,7 @@ static int burp_nbit_datyp(int *nbits, int *datyp, word *tval,int tbldim,
 
   return(0);
 }
-
+
 /*splitpoint burp_valid789 */
 /***************************************************************************** 
  *                          B U R P _ V A L I D 7 8 9                        *
@@ -399,7 +399,7 @@ static int burp_valid789(word *lstele, int nele, int datyp)
   return(0);
 }
     
-
+
 /*splitpoint c_mrbadd */
 /***************************************************************************** 
  *                             C _ M R B A D D                               *
@@ -566,7 +566,7 @@ int c_mrbadd(void *buffer, int *bkno, int nele, int nval, int nt, int bfam,
       }
    return(0);
 }
-
+
 /*splitpoint c_mrbdel */
 /***************************************************************************** 
  *                             C _ M R B D E L                               *
@@ -645,7 +645,7 @@ int c_mrbdel(void *buffer, int number)
 
    return(0);
 }
-
+
 /*splitpoint c_mrbhdr */
 /***************************************************************************** 
  *                             C _ M R B H D R                               *
@@ -725,7 +725,7 @@ int c_mrbhdr(word *buf, int *temps, int *flgs, char *stnid, int *idtyp,
   /* CLES SUPPLEMENTAIRES */
   return(0);
 }
-
+
 /*splitpoint c_mrblen */
 /***************************************************************************** 
  *                             C _ M R B L E N                               *
@@ -750,7 +750,7 @@ int c_mrblen(void *buffer, int *lbits, int *left)
    *left = ((buf->nwords - 9) * 8*sizeof(word)) - *lbits;
    return(0);
 }
-
+
 /*splitpoint c_mrbloc */
 /***************************************************************************** 
  *                             C _ M R B L O C                               *
@@ -840,7 +840,7 @@ int c_mrbloc(void *buffer, int bfam, int bdesc, int btyp, int blkno)
       }
    return(-1);
 }
-
+
 /*splitpoint c_mrbprm */
 /***************************************************************************** 
  *                             C _ M R B P R M                               *
@@ -893,7 +893,7 @@ int c_mrbprm(word *buf,int  bkno, int *nele, int *nval, int *nt, int *bfam,
   *bdesc = 0;
   return(ier);
 }
-
+
 /*splitpoint c_mrbrep */
 /***************************************************************************** 
  *                             C _ M R B R E P                               *
@@ -994,7 +994,7 @@ int c_mrbrep(void *buffer, int blkno, word *tblval)
 */
    return(err);
 }
-
+
 /*splitpoint c_mrbxtr */
 /***************************************************************************** 
  *                             C _ M R B X T R                               *
@@ -1085,7 +1085,7 @@ int c_mrbxtr(void *buffer, int bkno, word *lstele, word *tblval)
    }
    return(err);
 }
-
+
 /*splitpoint c_mrfapp */
 /***************************************************************************** 
  *                            C _ M R F A P P                                *
@@ -1145,7 +1145,7 @@ int c_mrfapp(int iun)
   f->nxtadr = f->cur_addr;
   return(0);
 }
-
+
 /*splitpoint c_mrfapp */
 /***************************************************************************** 
  *                            C _ M R F B F L                                *
@@ -1200,7 +1200,7 @@ int c_mrfget(int handle, void *buffer)
    
    return(0);
 }
-
+
 /*splitpoint c_mrfput */
 /***************************************************************************** 
  *                             C _ M R F P U T                               *
@@ -1244,7 +1244,7 @@ int c_mrfput(int iun, int handle, void *buffer)
       }
    return(0);
 }
-
+
 /*splitpoint c_mrfrwd */
 /***************************************************************************** 
  *                           C _ M R F R W D                                 *
@@ -1290,4 +1290,4 @@ int c_mrfrwd(int iun)
   return(0);
 }
 
-#include "if_burp98.hc"
+#include "if_burp98.c"

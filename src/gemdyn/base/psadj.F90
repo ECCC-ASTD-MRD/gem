@@ -93,11 +93,11 @@
 
          call gemtime_start (32, 'C_BCFLUX_PS', 10)
 
-         Adz_flux => Adz_flux_3CWP
+         Adz_flux => Adz_flux_3CWP_PS
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
          !-----------------------------------------------------------------------
-         call adz_BC_LAM_Aranami (empty,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
+         call adz_BC_LAM_Aranami (empty,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
 
          call gemtime_stop (32)
 
@@ -176,10 +176,16 @@
          !------------------------------------------------------
          if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_0_8,pm_8,p0_wet_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
+         !!! The scope of validity of p0_dry_0_8 is 1+pil_s to
+         !l_nj-pil_n in dry_sfc_pressure_8(), so we can't compute over
+         !the full 1:l_nj here.  And anyways, only the interior
+         !(non-pilot) points are used later.
+         i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
+
          !Obtain Surface pressure minus Cstv_pref_8
          !-----------------------------------------
-         if (Schm_psadj==1) p0_0_8(1:l_ni,1:l_nj) = p0_wet_0_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
-         if (Schm_psadj==2) p0_0_8(1:l_ni,1:l_nj) = p0_dry_0_8(1:l_ni,1:l_nj) - substract_8*Cstv_pref_8
+         if (Schm_psadj==1) p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_wet_0_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
+         if (Schm_psadj==2) p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_dry_0_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
 
          !Obtain FLUX on NEST+CORE at TIME M
          !----------------------------------

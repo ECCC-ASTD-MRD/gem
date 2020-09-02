@@ -118,7 +118,7 @@ OBJECTS= \
          ftn_prog_args.o  crc16_.o           crc24_.o         crc32_.o\
          crc_16_24_32.o    dlfcn.o   register_dl_routines.o    DlInterface.o\
          msg.o             new_second.o cpu_type.o get_endian.o \
-	 plugin_code.o
+	 plugin_code.o     box_message.o
          
 COMDECKS = xxpakc.cdk mgi.h  wafile.h
          

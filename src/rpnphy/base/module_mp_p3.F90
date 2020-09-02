@@ -2,6 +2,7 @@
 !COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-warn all ; -suppress=-std08
 !COMP_ARCH=intel-19.0.3.199 ; -suppress=-warn all ; -suppress=-std08
 !COMP_ARCH=PrgEnv-intel-6.0.5 ; -suppress=-warn all ; -suppress=-std08
+!COMP_ARCH=PrgEnv-intel-6.0.5-19.0.5.281 ; -suppress=-warn all ; -suppress=-std08
 
 !__________________________________________________________________________________________
 ! This module contains the Predicted Particle Property (P3) bulk microphysics scheme.      !

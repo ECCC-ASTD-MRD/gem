@@ -14,14 +14,15 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine ccc1_tconthl2(taug, coef1, coef2, qq, dp, dip, dir, dt, &
+subroutine ccc1_tconthl3(taug, coef1, coef2, qq, dp, dip, dir, dt, &
      inptr, inpt, mcont, il1, il2, ilg, lay)
 
    use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, il1, il2, k, i, j, l, lp1, m, mcont, n
+   integer ilg, lay, il1, il2, k, i, j, l, lp1, m, n
+   integer mcont(ilg)
    real x1, y1, x2, y2, x11, x21, y21, y11, x12, x22, y12, y22
    real taug(ilg,lay), coef1(5,5,4), coef2(5,5,4)
 
@@ -61,9 +62,9 @@ subroutine ccc1_tconthl2(taug, coef1, coef2, qq, dp, dip, dir, dt, &
 
 #include "ccc_tracegases.cdk"
 
-      do 200 k = mcont, lay
+      do 300 i = il1, il2
+      do 200 k = mcont(i), lay
        if (inpt(1,k) .lt. 950)                                      then
-        do 100 i = il1, il2
          m =  inpt(i,k) - 14
          n =  m + 1
          if (m .ge. 1)                                              then
@@ -140,12 +141,10 @@ subroutine ccc1_tconthl2(taug, coef1, coef2, qq, dp, dip, dir, dt, &
                        dip(i,k)) * 1.608 * qq(i,k) + y1 + (y2 - y1) * &
                        dip(i,k)) * qq(i,k) * dp(i,k)
          endif
-  100   continue
        else
         j =  inpt(1,k) - 1000
         m =  j - 14
         n =  m + 1
-        do 150 i = il1, il2
          if (m .ge. 1)                                              then
           l   =  inptr(i,k)
           if (l .lt. 1)                                             then
@@ -220,9 +219,9 @@ subroutine ccc1_tconthl2(taug, coef1, coef2, qq, dp, dip, dir, dt, &
                        dip(i,k)) * 1.608 * qq(i,k) + y1 + (y2 - y1) * &
                        dip(i,k)) * qq(i,k) * dp(i,k)
          endif
-  150   continue
        endif
   200 continue
-
+  300 continue
+       
       return
       end

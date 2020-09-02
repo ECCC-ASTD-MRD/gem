@@ -15,7 +15,7 @@
 
 !**s/r adz_BC_LAM_Aranami - Estimate FLUX_out/FLUX_in based on Aranami et al. (2015)
 
-      subroutine adz_BC_LAM_Aranami (F_extended,F_aminx,F_amaxx,F_aminy,F_amaxy,F_post,F_nptr)
+      subroutine adz_BC_LAM_Aranami (F_extended,F_xyz,F_aminx,F_amaxx,F_aminy,F_amaxy,F_post,F_nptr)
 
       use adz_mem
       use adz_options
@@ -28,6 +28,7 @@
       !arguments
       !---------
       integer, intent(in) :: F_aminx,F_amaxx,F_aminy,F_amaxy,F_nptr
+      real, dimension(*), intent(in ) :: F_xyz
       type(meta_tracers), dimension(F_nptr), intent(in) :: F_post
       real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,l_nk,F_nptr), intent(in) :: F_extended
 
@@ -118,7 +119,7 @@
          k1= n1/nij + Adz_k0
          k2= n2/nij + min(1,mod(n2,nij)) + Adz_k0 - 1
          ij= 0
-         call tricublin_zyx1_m_n ( wrkc, stkpntr, Adz_pb((n1-1)*3+1,Adz_i0b,Adz_j0b,Adz_k0),&
+         call tricublin_zyx1_m_n ( wrkc, stkpntr, F_xyz((n1-1)*3+1),&
                                    Adz_cpntr_t, np, nptr_F*2 )
          do nf=1,nptr_F
          do k=k1,k2

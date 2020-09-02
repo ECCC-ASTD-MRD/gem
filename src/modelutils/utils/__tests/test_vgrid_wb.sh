@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 if [[ x"$1" == x-h ]] ; then
    echo "USAGE: $0 [-v [LEVEL]]"
@@ -40,7 +40,6 @@ fi
 
 
 runtest() {
-   set +x
    export MPI_NPEX=${1:-1}
    export MPI_NPEY=${2:-1}
    export MPI_NPEIO=${3:-1}
@@ -50,11 +49,7 @@ runtest() {
    export MPI_IDOM=0
 
    echo "P=${MPI_NPEX}x${MPI_NPEY} NIO=${MPI_NPEIO}"
-   if [[ x"${4}" != x"" ]] ; then
-      r.run_in_parallel ${TEST_DEBUG} ${TEST_INORDER} -pgm ${mybin} -npex ${MPI_NPEX} -npey ${MPI_NPEY} > ${4} 2>&1
-   else
-      r.run_in_parallel ${TEST_DEBUG} ${TEST_INORDER} -pgm ${mybin} -npex ${MPI_NPEX} -npey ${MPI_NPEY}
-   fi
+   r.run_in_parallel ${TEST_DEBUG} ${TEST_INORDER} -pgm ${mybin} -npex ${MPI_NPEX} -npey ${MPI_NPEY}
 }
 
 # runtest 1 1 1
@@ -68,24 +63,7 @@ runtest() {
 # runtest 4 4 2
 # runtest 4 4 4
 
-devnull="/dev/null"
-set -x
-time runtest 1 1 1 ${devnull}
-time runtest 2 1 1 ${devnull}
-time runtest 1 2 1 ${devnull}
-time runtest 2 2 1 ${devnull}
-time runtest 2 2 2 ${devnull}
-# runtest 3 1 1
-# runtest 1 3 1
-# runtest 3 3 1
-# runtest 3 3 2
-# runtest 3 3 3
-time runtest 4 1 1 ${devnull}
-time runtest 1 4 1 ${devnull}
-time runtest 4 2 1 ${devnull}
-time runtest 2 4 1 ${devnull}
-time runtest 4 2 2 ${devnull}
-time runtest 2 4 2 ${devnull}
-time runtest 4 4 1 ${devnull}
-time runtest 4 4 2 ${devnull}
-time runtest 4 4 4 ${devnull}
+# runtest 1 1 1
+# runtest 2 1 1
+# runtest 2 2 1
+runtest 2 2 2

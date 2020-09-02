@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 export MPI_NPEX=2
 export MPI_NPEY=1

@@ -85,7 +85,7 @@
       if (Hyb_flat < 0.) then
          flat = F_hybuser(1)
       else
-         flat = min(max(0.,Hyb_flat),1.)
+         flat = max(min(F_hybuser(1),Hyb_flat),0.)
       endif
       
       istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&

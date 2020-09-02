@@ -19,7 +19,7 @@
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
 !!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
 
-!!===================== gmm_get (interface) =====================
+!!===================== gmm_get (interface) =====================
 !
 #ifdef INTERFACEONLY
       interface gmm_get
@@ -39,7 +39,7 @@
 #undef EXTENSION
 !!@END
       end interface
-      
+
       interface gmm_delete
       integer function gmm_delete(iname)
       character(len=*), intent(in) :: iname 
@@ -104,7 +104,7 @@
   use gmm_internals
   use Cat(pointer_table_data_,EXTENSION,)
   implicit none
-  
+
   deallocate (Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
   nullify    (Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
 
@@ -133,7 +133,7 @@
     datatype = directory(cur_page)%entry(cur_entry)%data_type
 !   write(6,'(a,a,a,i2,a,i3,a,i4)') 'DEBUG gmm_delete iname=',iname,' cur_page=',cur_page,' cur_entry=',cur_entry,' datatype=',datatype
     directory(cur_page)%entry(cur_entry)%name = 'Variable deleted upon request' 
-    
+
     dtype: select case (datatype)
 !!@LOOP
 #define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
@@ -143,7 +143,7 @@
 #undef EXTENSION
 !!@END
     end select dtype
-  
+
     directory(cur_page)%entry(cur_entry)%l = GMM_NULL_LAYOUT ! invalid layout
     directory(cur_page)%entry(cur_entry)%a = GMM_NULL_ATTRIB ! null attributes
 

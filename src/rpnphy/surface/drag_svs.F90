@@ -238,7 +238,7 @@
          zopt=9
          i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
               TGRS, HUSURF, Z0LOC, Z0HG, LAT, FCOR, optz0=zopt ,&
-              z0mloc=Z0BG_N, L_min=sl_Lmin_soil, &
+              z0mloc=z0loc, L_min=sl_Lmin_soil, &
               coeft=CTUGR, z0t_optz0=Z0HBG )
 
          if (i /= SL_OK) then
@@ -334,7 +334,7 @@
       if ( svs_dynamic_z0h ) then
          zopt=9
          i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
-              TVGS, ZQSVG, Z0LOC, Z0HA, LAT, FCOR, z0mloc=Z0VG, &
+              TVGS, ZQSVG, Z0LOC, Z0HA, LAT, FCOR, z0mloc=z0loc, &
               optz0=zopt, L_min=sl_Lmin_soil, &
               coeft=CTUVG, z0t_optz0=Z0HVG )
 

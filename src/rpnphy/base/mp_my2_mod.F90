@@ -23,8 +23,6 @@ module mp_my2_mod
  private
  public  :: mp_my2_main
 
-#ifdef ECCC_MP_MY_SCHEME
-
  private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
  private :: activate,maxsat,erf  ! Added by C.Jouan april2015
@@ -3972,16 +3970,6 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    end function Nos_Thompson
 
 !===================================================================================================!
-
-#else
-
-contains
-
-   subroutine mp_my2_main()
-      call physeterror('mp_my2_main', 'Called a stub')
-   end subroutine mp_my2_main
-
-#endif
 
 end module mp_my2_mod
 
