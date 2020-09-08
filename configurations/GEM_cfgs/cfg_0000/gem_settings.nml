@@ -12,8 +12,8 @@
   Grd_maxcfl = 2
 /
 
-  step_runstrt_s = "20090427.000000"
 &step
+  step_runstrt_s = "20090427.000000"
   fcst_nesdt_s   = '12'
   fcst_end_s     = "6h"
   fcst_gstat_s   = '1h'

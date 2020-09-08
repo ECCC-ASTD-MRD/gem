@@ -145,7 +145,7 @@ set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
 add_custom_target(work
     /bin/mkdir -p ${WORK_DIR}/bin
     COMMAND /bin/cp -avf
-#        $<TARGET_FILE:cclargs_lite>
+        $<TARGET_FILE:cclargs_lite>
 #        $<TARGET_FILE:editfst>
         $<TARGET_FILE:flipit>
 #        $<TARGET_FILE:fstcomp>
@@ -154,7 +154,7 @@ add_custom_target(work
         $<TARGET_FILE:maingemgrid>
         $<TARGET_FILE:mainyy2global>
 #        $<TARGET_FILE:pgsm>
-#        $<TARGET_FILE:r.fstinfo>
+        $<TARGET_FILE:r.fstinfo>
 #        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
 #    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
@@ -163,7 +163,7 @@ add_custom_target(work
     COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
 
     DEPENDS
-#        cclargs_lite
+        cclargs_lite
 #        editfst
         flipit
 #        fstcomp
@@ -172,7 +172,7 @@ add_custom_target(work
         maingemgrid
         mainyy2global
 #        pgsm
-#        r.fstinfo
+        r.fstinfo
 #        voir
 )
 
