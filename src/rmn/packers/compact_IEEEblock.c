@@ -26,10 +26,10 @@ static int powerOf2sInitialized = 0;
 #define isDouble 1
 #define FLOAT_4_8 double
 #define compact_IEEEblock_FLOAT_4_8 compact_IEEEblock_double
-#include "compact_IEEEblock_h.c"
+#include "compact_IEEEblock_h.hc"
 
 
 #define isDouble 0
 #define FLOAT_4_8 float
 #define compact_IEEEblock_FLOAT_4_8 compact_IEEEblock_float
-#include "compact_IEEEblock_h.c"
+#include "compact_IEEEblock_h.hc"

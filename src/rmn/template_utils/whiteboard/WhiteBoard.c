@@ -1155,7 +1155,7 @@ static int wb_get_token(unsigned char *token,FILE *infile,int maxtoken, int nosk
    else if( c=='\'' || c=='"' ) {         /* collect ' or " delimited string */
       int quote=c;
       c=wb_getc(infile);
-      while( c!=quote && c!='\n' && c!=EOF) {   /* look for matching quote , error end if newline/EOF  encountered */
+      while( c!=quote && c!='\n' && c!=EOF) {   /* look for matching quote , error end if newline/EOF encountered */
          if(c==EOF || c=='\n') break;
          maxtoken--; if(maxtoken<0) goto error_big;
          token[ntoken++]=c;

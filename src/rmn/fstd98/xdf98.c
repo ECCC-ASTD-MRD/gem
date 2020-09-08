@@ -195,7 +195,7 @@ static INT_32 add_dir_page(int file_index,int wflag)
    f->npages++;
    return(0);
 }
-
+
 /*splitpoint address_from_handle */
 /***************************************************************************** 
  *                 A D D R E S S _ F R O M _ H A N D L E                     * 
@@ -219,7 +219,7 @@ static INT_32 address_from_handle(int handle, file_table_entry *f)
   addr = W64TOwd(addr) + 1;
   return(addr);
 }
-
+
 /*splitpoint build_fstd_info_keys */
 /***************************************************************************** 
  *                  B U I L D _ F S T D _ I N F O _ K E Y S                  *
@@ -240,7 +240,7 @@ static INT_32 address_from_handle(int handle, file_table_entry *f)
 void build_fstd_info_keys(word *buf, word *keys, int index, int mode)
 {
 }
-
+
 /*splitpoint build_fstd_prim_keys */
 /***************************************************************************** 
  *                  B U I L D _ F S T D _ P R I M _ K E Y S                  *
@@ -286,7 +286,7 @@ void build_fstd_prim_keys(word *buf, word *keys, word *mask, word *mskkeys,
      for (i=0; i < W64TOWD(fh->lprm -1); i++)
        keys[i] = buf[i];
 }
-
+
 /*splitpoint build_gen_info_keys */
 /***************************************************************************** 
  *                  B U I L D _ G E N _ I N F O _ K E Y S                    *
@@ -339,7 +339,7 @@ static void build_gen_info_keys(word *buf, word *keys, int index,
          keys[i] = (buf[wi] >> sc) & rmask;
          }
 }
-
+
 /*splitpoint build_gen_prim_keys */
 /***************************************************************************** 
  *                  B U I L D _ G E N _ P R I M _ K E Y S                    *
@@ -409,7 +409,7 @@ static void build_gen_prim_keys(word *buf, word *keys,
          keys[i] = (buf[wi] >> sc) & rmask;
          }
 }
-
+
 /*splitpoint c_qdfdiag */
 /***************************************************************************** 
  *                             C _ Q D F D I A G                             *
@@ -547,7 +547,7 @@ int c_qdfdiag(int iun)
    else 
      return(0);
 }
-
+
 /*splitpoint c_qdfmsig */
 /***************************************************************************** 
  *                           C _ Q D F M S I G                               *
@@ -584,7 +584,7 @@ int c_qdfmsig(int iun, char* newappl)
    fh->sign = newappl[0] << 24 | newappl[1] << 16 | newappl[2] << 8 | newappl[3];
    return(0);
 }
-
+
 /*splitpoint c_qdfput */
 /***************************************************************************** 
  *                             C _ Q D F P U T                               * 
@@ -612,7 +612,7 @@ int c_qdfput(word *buf,int elem,int derbit,int nbits)
    buf[wi] = buf[wi] | ((elem & msk) << sc);
    return(0);
 }
-
+
 /*splitpoint c_qdfrstr */
 /***************************************************************************** 
  *                             C _ Q D F R S T R                             *
@@ -691,7 +691,7 @@ int c_qdfrstr(int inp, int outp)
 
    return(0);
 }
-
+
 /*splitpoint c_xdfadd */
 /***************************************************************************** 
  *                             C _ X D F A D D                               * 
@@ -786,7 +786,7 @@ int c_xdfadd(word *buffer, word *donnees, int nelm, int nbits, int datyp)
    buf->nbits += nbwords * sizeof(word) * 8;
    return(0);
 }
-
+
 /*splitpoint c_xdfcle */
 /***************************************************************************** 
  *                             C _ X D F C L E                               *
@@ -839,7 +839,7 @@ int c_xdfcle(char *keyname,int bit1,int lkey,int tkey,int *desc1,int *desc2)
 
    return(0);
 }
-
+
 /*splitpoint c_xdfcls */
 /***************************************************************************** 
  *                            C _ X D F C L S                                *
@@ -942,7 +942,7 @@ int c_xdfcls(int iun)
      xdf_checkpoint = 0;
    return(0);
 }
-
+
 /*splitpoint c_xdfcut */
 /***************************************************************************** 
  *                             C _ X D F C U T                               *
@@ -990,7 +990,7 @@ int c_xdfcut(void *buffer, int bitpos, int nelm, int nbits, int datyp)
    buf->nbits -= nbwords * sizeof(word) * 8;
    return(0);
 }
-
+
 /*splitpoint c_xdfdel */
 /***************************************************************************** 
  *                            C _ X D F D E L                                * 
@@ -1101,7 +1101,7 @@ int c_xdfdel(int handle)
    f->modified = 1;
    return(0);
 }
-
+
 /*splitpoint c_xdfget */
 /***************************************************************************** 
  *                            C _ X D F G E T                                * 
@@ -1122,7 +1122,7 @@ int c_xdfget(int handle, buffer_interface_ptr buf)
 
    return(c_xdfget2(handle,buf,aux_keys));
 }
-
+
 /*splitpoint c_xdfget2 */
 /***************************************************************************** 
  *                            C _ X D F G E T 2                              * 
@@ -1263,7 +1263,7 @@ int c_xdfget2(int handle, buffer_interface_ptr buf, int *aux_ptr)
      return(0);
 
 }
-
+
 /*splitpoint c_xdfgop */
 /***************************************************************************** 
  *                            C _ X D F G O P                                * 
@@ -1317,7 +1317,7 @@ int c_xdfgop(char *optname, char *optc, int *optv)
       }
    return(0);
 }
-
+
 /*splitpoint c_xdfhdr */
 /***************************************************************************** 
  *                            C _ X D F H D R                                *
@@ -1368,7 +1368,7 @@ int c_xdfhdr(buffer_interface_ptr buf ,int *addr,int *lng,int *idtyp,
    return(0);
 
 }
-
+
 /*splitpoint c_xdfimp */
 /***************************************************************************** 
  *                            C _ X D F I M P                                *
@@ -1452,7 +1452,7 @@ int c_xdfimp(int iun,word *stat,int nstat,word_2 *pri,word_2 *aux,
 
    return(0);
 }
-
+
 /*splitpoint c_xdfini */
 /***************************************************************************** 
  *                          C _ X D F I N I                                  *
@@ -1518,7 +1518,7 @@ int c_xdfini(int iun,buffer_interface_ptr buf,int idtyp,
 
    return(0); 
 }
-
+
 /*splitpoint c_xdfins */
 /***************************************************************************** 
  *                             C _ X D F I N S                               *
@@ -1627,7 +1627,7 @@ int c_xdfins(word *buffer, word *donnees, int bitpos,
    buf->nbits += nbwords * sizeof(word) * 8;
    return(0);
 }
-
+
 /*splitpoint c_xdflnk */
 /***************************************************************************** 
  *                             C _ X D F L N K                               * 
@@ -1679,7 +1679,7 @@ int c_xdflnk(word *liste, int n)
    
   return(0);
 }
-
+
 /*splitpoint c_xdfloc */
 /***************************************************************************** 
  *                             C _ X D F L O C                               * 
@@ -1710,7 +1710,7 @@ int c_xdfloc(int iun, int handle, word *primk,int nprim)
   ier = c_xdfloc2(iun,handle,primk,nprim,mskkeys);
   return(ier);
 }
-
+
 /*splitpoint c_xdfloc2 */
 /***************************************************************************** 
  *                             C _ X D F L O C 2                             * 
@@ -2202,7 +2202,7 @@ int c_xdfopn(int iun,char *mode,word_2 *pri,int npri,
   return(f->header->nrec);
 }
 
-
+
 /*splitpoint c_xdfopt */
 /***************************************************************************** 
  *                            C _ X D F O P T                                * 
@@ -2364,7 +2364,7 @@ int c_xdfprm(int handle,int *addr,int *lng,int *idtyp,word *primk,int nprim)
    return(0);
 
 }
-
+
 /*splitpoint c_xdfput */
 /***************************************************************************** 
  *                            C _ X D F P U T                                * 
@@ -2614,7 +2614,7 @@ int c_xdfput(int iun, int handle, buffer_interface_ptr buf)
    return(0);
 
 }
-
+
 /*splitpoint c_xdfrep */
 /***************************************************************************** 
  *                             C _ X D F R E P                               *
@@ -2721,7 +2721,7 @@ int c_xdfrep(word *buffer, word *donnees, int bitpos,
 
    return(0);
 }
-
+
 /*splitpoint c_xdfsta */
 /***************************************************************************** 
  *                             C _ X D F S T A                               *
@@ -2835,7 +2835,7 @@ int c_xdfsta(int iun,word *stat,int nstat,
       c_waclos(iun);
    return(0);
 }
-
+
 /*splitpoint c_xdfunl */
 /***************************************************************************** 
  *                             C _ X D F U N L                               * 
@@ -2872,7 +2872,7 @@ int c_xdfunl(word *liste, int n)
   return(0);
 }
 
-
+
 /*splitpoint c_xdfupd */
 /***************************************************************************** 
  *                          C _ X D F U P D                                  *
@@ -3133,7 +3133,7 @@ int c_xdfuse(int src_unit, int dest_unit)
 
    return(0);
 }
-
+
 /*splitpoint c_xdfxtr */
 /***************************************************************************** 
  *                             C _ X D F X T R                               *
@@ -3223,7 +3223,7 @@ int c_xdfxtr(word *buffer, word *donnees, int bitpos,
 
    return(0);
 }
-
+
 /*splitpoint create_new_xdf */
 /***************************************************************************** 
  *                      C R E A T E _ N E W _ X D F                          *
@@ -3316,7 +3316,7 @@ static int create_new_xdf(int index, int iun, word_2 *pri, int npri,
    }
    return(0);
 }
-
+
 /*splitpoint error_msg */
 /***************************************************************************** 
  *                           E R R O R _ M S G                               * 
@@ -3346,7 +3346,7 @@ int error_msg(char *function_name, int errcode, int errlevel)
            exit(-errcode);
         return(errcode);
 }
-
+
 /*splitpoint file_index */
 /***************************************************************************** 
  *                            F I L E _ I N D E X                            * 
@@ -3369,7 +3369,7 @@ int i;
             return(i);
    return(ERR_NO_FILE);
 }
-
+
 /*splitpoint fnom_index */
 /***************************************************************************** 
  *                            F N O M _ I N D E X                            *
@@ -3390,7 +3390,7 @@ int fnom_index(int iun)
       if (FGFDT[i].iun == iun) return(i);
    return(-1);
 }
-
+
 /*splitpoint get_free_index */
 /***************************************************************************** 
  *                          G E T _ F R E E _ I N D E X                      *
@@ -3427,7 +3427,7 @@ static int get_free_index()
    sprintf(errmsg,"xdf file table is full\n");
    return(error_msg("get_free_index",ERR_FTAB_FULL,ERRFATAL));
 }
-
+
 /*splitpoint init_file */
 /***************************************************************************** 
  *                            I N I T _ F I L E                              *
@@ -3489,7 +3489,7 @@ static void init_file(int i)
    }
 }
 
-
+
 /*splitpoint init_package */
 /*****************************************************************************
  *                         I N I T _ P A C K A G E                           *
@@ -3507,7 +3507,7 @@ static void init_package()
    file_table[ind]->iun = 1234567;
    init_package_done = 1;
 }
-
+
 /*splitpoint make_seq_handle */
 /***************************************************************************** 
  *                       M A K E _ S E Q _ H A N D L E                       * 
@@ -3780,4 +3780,4 @@ static word next_match(int file_index)
    }
    return(handle);
 }
-#include "if_xdf98.c"
+#include "if_xdf98.hc"

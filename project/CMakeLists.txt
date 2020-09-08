@@ -145,35 +145,35 @@ set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
 add_custom_target(work
     /bin/mkdir -p ${WORK_DIR}/bin
     COMMAND /bin/cp -avf
-        $<TARGET_FILE:cclargs_lite>
-        $<TARGET_FILE:editfst>
+#        $<TARGET_FILE:cclargs_lite>
+#        $<TARGET_FILE:editfst>
         $<TARGET_FILE:flipit>
-        $<TARGET_FILE:fstcomp>
-        $<TARGET_FILE:fststat>
+#        $<TARGET_FILE:fstcomp>
+#        $<TARGET_FILE:fststat>
         $<TARGET_FILE:maingemdm>
         $<TARGET_FILE:maingemgrid>
         $<TARGET_FILE:mainyy2global>
-        $<TARGET_FILE:pgsm>
-        $<TARGET_FILE:r.fstinfo>
-        $<TARGET_FILE:voir>
+#        $<TARGET_FILE:pgsm>
+#        $<TARGET_FILE:r.fstinfo>
+#        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
-    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
-    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
+#    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
+#    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
 
     DEPENDS
-        cclargs_lite
-        editfst
+#        cclargs_lite
+#        editfst
         flipit
-        fstcomp
-        fststat
+#        fstcomp
+#        fststat
         maingemdm
         maingemgrid
         mainyy2global
-        pgsm
-        r.fstinfo
-        voir
+#        pgsm
+#        r.fstinfo
+#        voir
 )
 
 # TODO: Make the actual installation in CMAKE_INSTALL_PREFIX

@@ -1,1 +1,7 @@
-../template_utils/whiteboard/WhiteBoard.hf
+#include <WhiteBoard.h>
+
+#ifdef _OPENMP
+#include <whiteboard_interface_omp.cdk>
+#else
+#include <whiteboard_interface_st.cdk>
+#endif

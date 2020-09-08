@@ -27,10 +27,10 @@ static int powerOf2sInitialized = 0;
 #define isDouble 1
 #define FLOAT_4_8 double
 #define compact_FLOAT_4_8 compact_double
-#include "compact_h.c"
+#include "compact_h.hc"
 
 
 #define isDouble 0
 #define FLOAT_4_8 float
 #define compact_FLOAT_4_8 compact_float
-#include "compact_h.c"
+#include "compact_h.hc"

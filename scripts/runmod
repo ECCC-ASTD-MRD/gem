@@ -6,7 +6,7 @@ export PATH=${PWD}/scripts:$PATH
 arguments=$*
 echo $0 $arguments
 eval `scripts/cclargs_lite0 -D " " $0 \
-  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -dircfg        "configurations/GEM_cfgs"     "configurations/GEM_cfgs"  "[location of config files  ]"\
   -ptopo         ""             "" "[MPI&OMP PEs topology (npex x npey x nomp) ]"\
   -debug         "0"          "1"         "[Debug session]"\
   -xfer          ""             "" "[location of output files]"\
@@ -24,7 +24,7 @@ task_basedir="RUNMOD.dir"
 dname=cfg_0000
 
 export GEM_ON_A_STICK_WORK_DIR=$PWD
-export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../gem_dbase
+export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/gem_dbase
 export GEM_ovbin=${GEM_ON_A_STICK_WORK_DIR}/bin
 
 # read configuration file

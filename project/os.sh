@@ -2,16 +2,13 @@
 
 OSNAME=
 OSVERSION=unknown
-OS=
+unset OS
 
 # remove white spaces
 delSpaces() { echo $* | sed 's/ //g'; }
 
-EC_ORDENV_PLAT=`echo $ORDENV_PLAT`
-
-# use local variable at EC
-if [ -n "${EC_ORDENV_PLAT}" ]; then
-    OS="${EC_ORDENV_PLAT}";
+if [ -n "${ORDENV_PLAT}" ]; then
+    OS="${ORDENV_PLAT}";
 
 elif [ -f /etc/os-release ]; then
     . /etc/os-release

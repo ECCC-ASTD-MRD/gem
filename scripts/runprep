@@ -13,7 +13,7 @@
 arguments=$*
 echo $0 $arguments
 eval `scripts/cclargs_lite0 -D " " $0 \
-  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -dircfg        "configurations/GEM_cfgs"     "configurations/GEM_cfgs"  "[location of config files  ]"\
   -verbose       "0"            "1"         "[verbose mode              ]"\
   ++ $arguments`
 
@@ -24,7 +24,7 @@ dname=cfg_0000
 set -ex ; export SETMEX=-ex
 
 export GEM_ON_A_STICK_WORK_DIR=$PWD
-export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/../gem_dbase
+export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/gem_dbase
 export PATH=${PWD}/scripts:$PATH
 export TMPDIR=${TMPDIR-/tmp/$USER}
 mkdir -p ${TMPDIR}
