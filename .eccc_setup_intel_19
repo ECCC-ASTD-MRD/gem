@@ -7,8 +7,8 @@
 [[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
 
 if [ "$TRUE_HOST" = "banting" -o "$TRUE_HOST" = "daley" ]; then
-   module swap PrgEnv-cray PrgEnv-intel
    module load craype-x86-skylake
+   module load cray-fftw
 else
    . ssmuse-sh -x comm/eccc/all/opt/intelcomp/intelpsxe-cluster-19.0.3.199
    . ssmuse-sh -x hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-19.0.3.199
