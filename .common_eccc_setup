@@ -13,26 +13,24 @@ compVersion=$("${rootPath}/project/compiler.sh" $1)
 unset GEM_ARCH GEM_COMPILER GEM_WORK GEM_DIR GEM_GIT_DIR
 
 if [ -n "${platform}" -a "${compVersion}" != "Unknown_Compiler" ]; then
+    export GEM_ARCH=${platform}-$1-${compVersion}
+    export GEM_COMPILER=$1
+    export GEM_WORK=work-${GEM_ARCH}
 
-export GEM_ARCH=${platform}-$1-${compVersion}
-export GEM_COMPILER=$1
-export GEM_WORK=work-${GEM_ARCH}
+    if [ -n "${storage_model}" ] ; then
+        GEM_DIR=${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
+    else
+        GEM_DIR=${PWD}
+    fi
 
-if [ -n "${storage_model}" ] ; then
-  GEM_DIR=${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
-else
-  GEM_DIR=${PWD}
+    export GEM_DIR
+    export GEM_GIT_DIR=$PWD
+    export ATM_MODEL_DFILES=${GEM_GIT_DIR}/gem_dbase
+    export AFSISIO=${ATM_MODEL_DFILES}
+    export GT_database=${GEM_GIT_DIR}/geophy/database
+    
+    export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
+    
 fi
 
-export GEM_DIR
-export GEM_GIT_DIR=$PWD
-export ATM_MODEL_DFILES=${GEM_GIT_DIR}/gem_dbase
-export AFSISIO=${ATM_MODEL_DFILES}
-export GT_database=${GEM_GIT_DIR}/geophy/database
-
-export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
-
-fi
-
-unset  rootPath platform compVersion buildDir
-
+unset rootPath platform compVersion buildDir

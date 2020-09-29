@@ -5,37 +5,31 @@
 
 [[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
 
-HOSTNAME=`hostname -d`
-
-case "${HOSTNAME}" in
-    "cmc.ec.gc.ca")
-        GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
-        [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
-        ;;
-    "science.gc.ca")
-        GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
-        [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
-        ;;
-    *)
-        echo "hostname not found";
-        ;;
-esac
+if [[ "$(hostname -A)" =~ cmc.ec.gc.ca ]]; then
+    GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
+    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase
+elif [[ "$(hostname -A)" =~ science.gc.ca ]]; then
+    GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
+    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase
+else
+    echo "hostname not found"
+fi
 
 if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
-if [ -n "${storage_model}" ] ; then
-  /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
-  mkdir -p ${GEM_DIR}/work
-  mkdir -p ${GEM_DIR}/build
-  ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
-  ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
-else
-  /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
-  mkdir build-${GEM_ARCH} ${GEM_WORK}
-  mkdir -p ${GEM_DIR}/build-${GEM_ARCH}
-  mkdir -p ${GEM_DIR}/work-${GEM_ARCH}
-  ln -sf ${GEM_DIR}/build-${GEM_ARCH} ${GEM_DIR}/build 
-  ln -sf ${GEM_DIR}/work-${GEM_ARCH} ${GEM_DIR}/work 
-fi
+    if [ -n "${storage_model}" ] ; then
+        /bin/rm -rf ${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
+        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+        mkdir -p ${GEM_DIR}/work
+        mkdir -p ${GEM_DIR}/build
+        ln -sf ${GEM_DIR}/build build-${GEM_ARCH}
+        ln -sf ${GEM_DIR}/work ${GEM_WORK}
+    else
+        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+        mkdir -p build-${GEM_ARCH}
+        mkdir -p ${GEM_WORK}
+        ln -sf build-${GEM_ARCH} build 
+        ln -sf ${GEM_WORK} work 
+    fi
 fi
 
 rootPath="$(dirname $BASH_SOURCE)"

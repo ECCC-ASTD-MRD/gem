@@ -20,9 +20,13 @@ message(STATUS "Configuring for ${CMAKE_BUILD_TYPE}")
 # compiler defined above or the argument given to cmake command.
 set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
-message(STATUS "include ${ARCH}-${COMPILER}.cmake")
-include("${ARCH}-${COMPILER}.cmake")
-
+if(DEFINED ENV{ORDENV_PLAT})
+   message(STATUS "include $ENV{ORDENV_PLAT}-${COMPILER}.cmake")
+   include("$ENV{ORDENV_PLAT}-${COMPILER}.cmake")
+else()
+  message(STATUS "include ${ARCH}-${COMPILER}.cmake")
+  include("${ARCH}-${COMPILER}.cmake")
+endif()
 
 # TODO: This isn't used presently.  Check to see if we need it
 # set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
