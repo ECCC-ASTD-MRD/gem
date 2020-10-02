@@ -2,27 +2,29 @@
 or
 . ./.eccc_setup_gnu
 
+Before the first build:
+. ./.initial_eccc_setup
+
 make cmake
 make build
 make work
 
 The following environment variables are created (examples):
-GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0
+GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
 GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
-GEM_ARCH=ubuntu-18.04-amd64-64-gnu-7.5.0
-GEM_COMPILER=gnu
-WORK_mach=work-ubuntu-18.04-amd64-64-gnu-7.5.0
+GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
+GEM_COMPILER=intel
 
 The structure is different whether the $storage_model env. variable exists:
 
 $storage_model:
-GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0
+GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
 in GEM_GIT_DIR:
-build-ubuntu-18.04-amd64-64-gnu-7.5.0 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0/build
-work-ubuntu-18.04-amd64-64-gnu-7.5.0 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-gnu-7.5.0/work
+build-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/build
+work-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/work
 
 no $storage_model:
 GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
-build-ubuntu-18.04-amd64-64-gnu-7.5.0
-work-ubuntu-18.04-amd64-64-gnu-7.5.0
-
+build-ubuntu-18.04-amd64-64-intel-19.0.3.199
+work-ubuntu-18.04-amd64-64-intel-19.0.3.199
