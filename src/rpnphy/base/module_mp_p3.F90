@@ -1,9 +1,3 @@
-!COMP_ARCH=intel-2016.1.156 ; -suppress=-warn all ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-warn all ; -suppress=-std08
-!COMP_ARCH=intel-19.0.3.199 ; -suppress=-warn all ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5 ; -suppress=-warn all ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5-19.0.5.281 ; -suppress=-warn all ; -suppress=-std08
-
 !__________________________________________________________________________________________
 ! This module contains the Predicted Particle Property (P3) bulk microphysics scheme.      !
 !                                                                                          !
@@ -28,7 +22,7 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       3.1.6                                                                     !
+! Version:       3.1.6.1                                                                   !
 ! Last updated:  2018-12-10                                                                !
 !__________________________________________________________________________________________!
 
@@ -82,12 +76,15 @@
 
  ! physical and mathematical constants
  real           :: rhosur,rhosui,ar,br,f1r,f2r,ecr,rhow,kr,kc,bimm,aimm,rin,mi0,nccnst,  &
-                   eci,eri,bcn,cpw,e0,cons1,cons2,cons3,cons4,cons5,cons6,cons7,         &
-                   inv_rhow,qsmall,nsmall,bsmall,zsmall,cp,g,rd,rv,ep_2,inv_cp,mw,osm,   &
+                   eci,eri,bcn,cpw,e0,cons1,cons2,cons3,cons4,cons5,cons6,cons7,maxVIS,  &
+                   inv_rhow,qsmall,nsmall,bsmall,cp,g,rd,rv,ep_2,inv_cp,mw,osm,minVIS,   &
                    vi,epsm,rhoa,map,ma,rr,bact,inv_rm1,inv_rm2,sig1,nanew1,f11,f21,sig2, &
-                   nanew2,f12,f22,pi,thrd,sxth,piov3,piov6,diff_nucthrs,rho_rimeMin,     &
-                   rho_rimeMax,inv_rho_rimeMax,max_total_Ni,dbrk,nmltratio,minVIS,maxVIS,&
-                   mu_r_constant
+                   nanew2,f12,f22,pi,thrd,sxth,piov3,piov6,rho_rimeMin,mu_r_constant,    &
+                   rho_rimeMax,inv_rho_rimeMax,max_total_Ni,dbrk,nmltratio
+                   
+!--- unused variables (legacy):
+! real :: zsmall,diff_nucthrs
+!===
 
  contains
 
@@ -108,14 +105,16 @@
  implicit none
 
 ! Passed arguments:
- character(len=*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
+ character*(*), intent(in)            :: lookup_file_dir            !directory of the lookup tables
  integer,       intent(in)            :: nCat                       !number of free ice categories
  integer,       intent(out), optional :: stat                       !return status of subprogram
- logical,       intent(in), optional  :: abort_on_err               !abort when an error is encountered [.false.]
-
+ logical,       intent(in),  optional :: abort_on_err               !abort when an error is encountered [.false.]mp_p3_wrapper_gem
+! ! !  logical,       intent(in)            :: abort_on_err               !abort when an error is encountered [.false.]
+! ! !  character(len=*), intent(in)         :: model                      !driving model
+! 
 ! Local variables and parameters:
  logical, save                :: is_init = .false.
- character(len=16), parameter :: version_p3               = '3.1.6 '!version number of P3
+ character(len=16), parameter :: version_p3               = '3.1.9 '!version number of P3
  character(len=16), parameter :: version_intended_table_1 = '4'     !lookupTable_1 version intended for this P3 version
  character(len=16), parameter :: version_intended_table_2 = '4'     !lookupTable_2 version intended for this P3 version
  character(len=1024)          :: version_header_table_1             !version number read from header, table 1
@@ -123,11 +122,14 @@
  character(len=1024)          :: lookup_file_1                      !lookup table, main
  character(len=1024)          :: lookup_file_2                      !lookup table for ice-ice interactions
  character(len=1024)          :: dumstr
- integer                      :: i,j,k,ii,jj,kk,jjj,jjj2,jjjj,jjjj2,end_status,procnum,istat
- real                         :: lamr,mu_r,lamold,dum,initlamr,dm,dum1,dum2,dum3,dum4,dum5,  &
-                                 dum6,dd,amg,vt,dia,vn,vm
+ integer                      :: i,j,ii,jj,kk,jjj,jjj2,jjjj,jjjj2,end_status,procnum,istat
+ real                         :: lamr,mu_r,dum,dm,dum1,dum2,dum3,dum4,dum5,dd,amg,vt,dia
  logical                      :: err_abort
 
+!--- Unused variables (legacy):
+! integer :: k
+! real    :: vn,vm,lamold,initlamr,dum6
+!===
 
  !------------------------------------------------------------------------------------------!
 
@@ -664,8 +666,8 @@ END subroutine p3_init
    real, dimension(ims:ime, kms:kme) ::nc,ssat
 
    real, dimension(its:ite) :: pcprt_liq,pcprt_sol
-   real                     :: dum1,dum2
-   integer                  :: i,k,j
+   real                     :: dum1
+   integer                  :: j
    integer, parameter       :: n_diag_3d = 1         ! number of user-defined diagnostic fields
    integer, parameter       :: n_diag_2d = 1         ! number of user-defined diagnostic fields
 
@@ -683,6 +685,11 @@ END subroutine p3_init
    real                       :: scpf_resfact          ! model resolution factor (SCPF)
    real, dimension(ims:ime, kms:kme) :: cldfrac        ! cloud fraction computed by SCPF
 
+!--- Unused variables (legacy):
+! integer :: i,k
+! real    :: dum2
+!===
+   
    !------------------------------------------------------------------------------------------!
 
    scpf_on=.false. ! cloud fraction version not used with WRF
@@ -1019,6 +1026,8 @@ END subroutine p3_init
 
 !----- input/ouput arguments:  ------------------------------------------------------------!
 
+!----- input/ouput arguments:  ------------------------------------------------------------!
+
  integer, intent(in)                    :: ni                    ! number of columns in slab           -
  integer, intent(in)                    :: nk                    ! number of vertical levels           -
  integer, intent(in)                    :: n_iceCat              ! number of ice categories            -
@@ -1115,8 +1124,8 @@ END subroutine p3_init
  real, dimension(ni,nk)  :: theta_m             ! potential temperature (previous step)   K
  real, dimension(ni,nk)  :: theta               ! potential temperature                   K
  real, dimension(ni,nk)  :: pres                ! pressure                                Pa
- real, dimension(ni,nk)  :: rho_air             ! air density                             kg m-3
- real, dimension(ni,nk)  :: DP                  ! difference in pressure between levels   Pa
+!real, dimension(ni,nk)  :: rho_air             ! air density                             kg m-3
+!real, dimension(ni,nk)  :: DP                  ! difference in pressure between levels   Pa
  real, dimension(ni,nk)  :: DZ                  ! difference in height between levels     m
  real, dimension(ni,nk)  :: ssat                ! supersaturation
  real, dimension(ni,nk)  :: tmparr_ik           ! temporary array (for optimization)
@@ -1126,14 +1135,19 @@ END subroutine p3_init
  real                    :: dt_mp                       ! timestep used by microphsyics (for substepping)
  real                    :: tmp1
 
- integer                 :: i,k,ktop,kbot,kdir,i_strt,k_strt
- integer                 :: i_substep,n_substep
+ integer                 :: i,k,ktop,kbot,kdir,i_strt,k_strt,i_substep,n_substep
 
  logical                 :: log_tmp1,log_tmp2
  logical, parameter      :: log_predictNc = .true.      ! temporary; to be put as GEM namelist
  logical, parameter      :: typeDiags_ON  = .true.      ! switch for hydrometeor/precip type diagnostics
 
  character(len=16), parameter :: model = 'GEM'
+
+!--- Unused variables (legacy):
+! integer :: 
+! real    ::
+! real, dimension(ni,nk) :: rho_air,DP
+!===
 
 !----------------------------------------------------------------------------------------!
 
@@ -1431,7 +1445,7 @@ END subroutine p3_init
  real            :: SPF_cld_k_1              ! area of cloudy precips at level k+kdir (just above)
  real            :: Sigma                    ! Sigma level = P / Psurf with Psurf=P(:,kbot)
  real            :: tmp7                     ! temporary SPF
- integer         :: i,k                      ! horizontal and vertical loop indices
+ integer         :: k                        ! horizontal and vertical loop indices
 
  compute_cloud_fraction: if (cldFrac_on) then
 
@@ -1450,7 +1464,7 @@ END subroutine p3_init
     Loop_SCPF_k: do k = ktop-kdir,kbot,-kdir
 
        Sigma = Pres(k)/Pres(kbot)                     ! Corresponding Sigma level
-       RHoo  = RHoo_min - slope*( Sigma-SIG_min )     ! Compute critical relative humidity
+       RHoo  = RHoo_min + slope*( Sigma-SIG_min )     ! Compute critical relative humidity
        RHoo  = max( RHoo_min, min( RHoo_max, RHoo ) ) ! bounded
 
        !------------------------------------------------------------
@@ -1575,6 +1589,12 @@ END subroutine p3_init
 
 !----- Input/ouput arguments:  ----------------------------------------------------------!
 
+ integer, intent(in)                                  :: its,ite    ! array bounds (horizontal)
+ integer, intent(in)                                  :: kts,kte    ! array bounds (vertical)
+ integer, intent(in)                                  :: nCat       ! number of ice-phase categories
+ integer, intent(in)                                  :: n_diag_2d  ! number of 2D diagnostic fields
+ integer, intent(in)                                  :: n_diag_3d  ! number of 3D diagnostic fields
+
  real, intent(inout), dimension(its:ite,kts:kte)      :: qc         ! cloud, mass mixing ratio         kg kg-1
 ! note: Nc may be specified or predicted (set by log_predictNc)
  real, intent(inout), dimension(its:ite,kts:kte)      :: nc         ! cloud, number mixing ratio       #  kg-1
@@ -1613,12 +1633,7 @@ END subroutine p3_init
  real, intent(out),   dimension(its:ite,n_diag_2d)         :: diag_2d    ! user-defined 2D diagnostic fields
  real, intent(out),   dimension(its:ite,kts:kte,n_diag_3d) :: diag_3d    ! user-defined 3D diagnostic fields
 
- integer, intent(in)                                  :: its,ite    ! array bounds (horizontal)
- integer, intent(in)                                  :: kts,kte    ! array bounds (vertical)
  integer, intent(in)                                  :: it         ! time step counter NOTE: starts at 1 for first time step
- integer, intent(in)                                  :: nCat       ! number of ice-phase categories
- integer, intent(in)                                  :: n_diag_2d  ! number of 2D diagnostic fields
- integer, intent(in)                                  :: n_diag_3d  ! number of 3D diagnostic fields
 
  logical, intent(in)                                  :: log_predictNc ! .T. (.F.) for prediction (specification) of Nc
  logical, intent(in)                                  :: typeDiags_ON  !for diagnostic hydrometeor/precip rate types
@@ -1650,7 +1665,7 @@ END subroutine p3_init
 
  real, dimension(its:ite,kts:kte) :: lamc
  real, dimension(its:ite,kts:kte) :: lamr
- real, dimension(its:ite,kts:kte) :: n0c
+!real, dimension(its:ite,kts:kte) :: n0c
  real, dimension(its:ite,kts:kte) :: logn0r
  real, dimension(its:ite,kts:kte) :: mu_c
 !real, dimension(its:ite,kts:kte) :: diag_effr   (currently not used)
@@ -1658,12 +1673,12 @@ END subroutine p3_init
  real, dimension(its:ite,kts:kte) :: cdist
  real, dimension(its:ite,kts:kte) :: cdist1
  real, dimension(its:ite,kts:kte) :: cdistr
- real, dimension(its:ite,kts:kte) :: Vt_nc
+!real, dimension(its:ite,kts:kte) :: Vt_nc
  real, dimension(its:ite,kts:kte) :: Vt_qc
- real, dimension(its:ite,kts:kte) :: Vt_nr
- real, dimension(its:ite,kts:kte) :: Vt_qr
- real, dimension(its:ite,kts:kte) :: Vt_qit
- real, dimension(its:ite,kts:kte) :: Vt_nit
+!real, dimension(its:ite,kts:kte) :: Vt_nr
+!real, dimension(its:ite,kts:kte) :: Vt_qr
+!real, dimension(its:ite,kts:kte) :: Vt_qit
+!real, dimension(its:ite,kts:kte) :: Vt_nit
 !real, dimension(its:ite,kts:kte) :: Vt_zit
 
 ! liquid-phase microphysical process rates:
@@ -1712,12 +1727,11 @@ END subroutine p3_init
  real, dimension(nCat) :: nrheti    ! immersion freezing rain
  real, dimension(nCat) :: nrshdr    ! source for rain number from collision of rain/ice above freezing and shedding
  real, dimension(nCat) :: qcshd     ! source for rain mass due to cloud water/ice collision above freezing and shedding or wet growth and shedding
- real, dimension(nCat) :: qcmul     ! change in q, ice multiplication from rime-splitnering of cloud water (not included in the paper)
  real, dimension(nCat) :: qrmul     ! change in q, ice multiplication from rime-splitnering of rain (not included in the paper)
  real, dimension(nCat) :: nimul     ! change in Ni, ice multiplication from rime-splintering (not included in the paper)
  real, dimension(nCat) :: ncshdc    ! source for rain number due to cloud water/ice collision above freezing  and shedding (combined with NRSHD in the paper)
  real, dimension(nCat) :: rhorime_c ! density of rime (from cloud)
- real, dimension(nCat) :: rhorime_r ! density of rime (from rain)
+!real, dimension(nCat) :: rhorime_r ! density of rime (from rain)
 
  real, dimension(nCat,nCat) :: nicol ! change of N due to ice-ice collision between categories
  real, dimension(nCat,nCat) :: qicol ! change of q due to ice-ice collision between categories
@@ -1730,38 +1744,30 @@ END subroutine p3_init
  real, dimension(its:ite,kts:kte,nCat) :: diam_ice
 
  real, dimension(its:ite,kts:kte)      :: inv_dzq,inv_rho,ze_ice,ze_rain,prec,rho,       &
-            rhofacr,rhofaci,acn,xxls,xxlv,xlf,qvs,qvi,sup,supi,ss,vtrmi1,vtrnitot,       &
-            tmparr1,mflux_r,mflux_i
+            rhofacr,rhofaci,acn,xxls,xxlv,xlf,qvs,qvi,sup,supi,vtrmi1,tmparr1,mflux_r,   &
+            mflux_i
 
- real, dimension(kts:kte) :: dum_qit,dum_qr,dum_nit,dum_qir,dum_bir,dum_zit,dum_nr,      &
-            dum_qc,dum_nc,V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,V_zit,flux_qr,flux_qit,        &
-            flux_qx,flux_nx,flux_qm,flux_qb,V_qx,V_qn,V_qm,V_qb,                         &
-            flux_nit,flux_nr,flux_qir,flux_bir,flux_zit,flux_qc,flux_nc,tend_qc,tend_qr, &
-            tend_nr,tend_qit,tend_qir,tend_bir,tend_nit,tend_nc !,tend_zit
+ real, dimension(kts:kte) :: V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,flux_qx,flux_nx,   &
+                             flux_nit,flux_qir,flux_bir
 
  real, dimension(kts:kte) :: SCF,iSCF,SPF,iSPF,SPF_clr,Qv_cld,Qv_clr
  real                     :: ssat_cld,ssat_clr,ssat_r,supi_cld,sup_cld,sup_r
 
  real    :: lammax,lammin,mu,dv,sc,dqsdt,ab,kap,epsr,epsc,xx,aaa,epsilon,sigvl,epsi_tot, &
-            aact,alpha,gamm,gg,psi,eta1,eta2,sm1,sm2,smax,uu1,uu2,dum,dum0,dum1,dum2,    &
-            dumqv,dumqvs,dums,dumqc,ratio,qsat0,udiff,dum3,dum4,dum5,dum6,lamold,rdumii, &
-            rdumjj,dqsidt,abi,dumqvi,dap,nacnt,rhop,v_impact,ri,iTc,D_c,D_r,dumlr,tmp1,  &
-            tmp2,tmp3,inv_nstep,inv_dum,inv_dum3,odt,oxx,oabi,zero,test,test2,test3,     &
-            onstep,fluxdiv_qr,fluxdiv_qit,fluxdiv_nit,fluxdiv_qir,fluxdiv_bir,prt_accum, &
-            fluxdiv_qx,fluxdiv_nx,fluxdiv_qm,fluxdiv_qb,flux_qx_kbot,Co_max,dt_sub,      &
-            fluxdiv_zit,fluxdiv_qc,fluxdiv_nc,fluxdiv_nr,rgvm,D_new,Q_nuc,N_nuc,         &
-            deltaD_init,dum1c,dum4c,dum5c,dumt,qcon_satadj,qdep_satadj,sources,sinks,    &
-            drhop,timeScaleFactor,dt_left,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9
+            aact,sm1,sm2,uu1,uu2,dum,dum1,dum2,dumqv,dumqvs,dums,ratio,qsat0,dum3,dum4,  &
+            dum5,dum6,rdumii,rdumjj,dqsidt,abi,dumqvi,rhop,v_impact,ri,iTc,D_c,tmp1,     &
+            tmp2,inv_dum3,odt,oxx,oabi,fluxdiv_qit,fluxdiv_nit,fluxdiv_qir,fluxdiv_bir,  &
+            prt_accum,fluxdiv_qx,fluxdiv_nx,Co_max,dt_sub,D_new,Q_nuc,N_nuc,deltaD_init, &
+            dum1c,dum4c,dum5c,dumt,qcon_satadj,qdep_satadj,sources,sinks,dt_left,        &
+            timeScaleFactor
 
  double precision :: tmpdbl1,tmpdbl2,tmpdbl3
 
- integer :: dumi,i,k,kk,ii,jj,iice,iice_dest,j,dumk,dumj,dumii,dumjj,dumzz,n,nstep,      &
-            tmpint1,tmpint2,ktop,kbot,kdir,qcindex,qrindex,qiindex,dumic,dumiic,dumjjc,  &
-            catcoll,k_qxbot,k_qxtop,k_temp
+ integer :: dumi,i,k,ii,iice,iice_dest,dumj,dumii,dumjj,dumzz,tmpint1,ktop,kbot,kdir,    &
+            dumic,dumiic,dumjjc,catcoll,k_qxbot,k_qxtop,k_temp
 
- logical :: log_nucleationPossible,log_hydrometeorsPresent,log_predictSsat,log_tmp1,     &
-            log_exitlevel,log_hmossopOn,log_qcpresent,log_qrpresent,log_qipresent,       &
-            log_qxpresent
+ logical :: log_nucleationPossible,log_hydrometeorsPresent,log_predictSsat,              &
+            log_exitlevel,log_hmossopOn,log_qxpresent
 
 
 ! quantities related to process rates/parameters, interpolated from lookup tables:
@@ -1776,8 +1782,8 @@ END subroutine p3_init
  real    :: f1pr08   ! collection of rain mass by ice
  real    :: f1pr09   ! minimum ice number (lambda limiter)
  real    :: f1pr10   ! maximum ice number (lambda limiter)
- real    :: f1pr11   ! not used
- real    :: f1pr12   ! not used
+!real    :: f1pr11   ! not used
+!real    :: f1pr12   ! not used
  real    :: f1pr13   ! reflectivity
  real    :: f1pr14   ! melting (ventilation term)
  real    :: f1pr15   ! mass-weighted mean diameter
@@ -1794,6 +1800,19 @@ END subroutine p3_init
 
 ! to be added as namelist parameters (future)
  logical, parameter :: debug_ABORT  = .true.  !.true. will result in forced abort in s/r 'check_values'
+
+!--- Unused variables (legacy):
+! logical :: log_tmp1,log_qcpresent,log_qrpresent,log_qipresent
+! integer :: tmpint2,qcindex,qrindex,qiindex,nstep,nacnt,n,kk,j,jj,dumk
+! real    :: zero,udiff,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9,test,test2,test3,smax,rgvm,psi,onstep,lamold,inv_nstep,inv_dum,gg,gamm, &
+!            fluxdiv_zit,fluxdiv_qr,fluxdiv_qc,fluxdiv_nc,fluxdiv_qm,fluxdiv_qb,fluxdiv_nr,flux_qx_kbot,eta1,eta2,dumqc,dumlr,dum0 &
+!            drhop,dap,D_r,alpha
+! real, dimension(nCat) :: rhorime_r 
+! real, dimension(kts:kte) :: V_zit,V_qx,V_qn,V_qb,V_qm,tend_qit,tend_qir,tend_nc,flux_zit,tend_qc,tend_qr,tend_nr,tend_bir,tend_nit, &
+!                             flux_qr,flux_qc,flux_nc,flux_qm,flux_qb,flux_nr,dum_zit,dum_qit,dum_qr,dum_nit,dum_qir,dum_bir,dum_nr,  &
+!                             dum_qc,dum_nc
+! real, dimension(its:ite,kts:kte) :: vtrnitot,Vt_qr,Vt_qit,Vt_nr,Vt_nc,Vt_nit,Vt_nc,ss,n0c
+!===
 
 !-----------------------------------------------------------------------------------!
 !  End of variables/parameters declarations
@@ -2083,7 +2102,7 @@ END subroutine p3_init
        ncheti  = 0.;     nrcol   = 0.;     nislf   = 0.
        nrhetc  = 0.;     ninuc   = 0.;     qidep   = 0.
        nrheti  = 0.;     nisub   = 0.;     qwgrth  = 0.
-       qcmul   = 0.;     qrmul   = 0.;     nimul   = 0.
+       qrmul   = 0.;     nimul   = 0.
        qicol   = 0.;     nicol   = 0.
 
        log_wetgrowth = .false.
@@ -4269,8 +4288,12 @@ END subroutine p3_init
 
  implicit none
 
- real    :: dum1,dum4,dum5,proc,dproc1,dproc2,iproc1,gproc1,tmp1,tmp2
+ real    :: dum1,dum4,dum5,proc,iproc1,gproc1,tmp1,tmp2
  integer :: dumjj,dumii,dumi,index
+
+!--- Unused variables (legacy):
+! real :: dproc1,dproc2
+!===
 
 ! get value at current density index
 
@@ -4311,9 +4334,12 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
  implicit none
 
- real    :: dum1,dum3,dum4,dum5,proc,dproc1,dproc2,iproc1,gproc1,tmp1,tmp2,dproc11, &
-            dproc12,dproc21,dproc22
+ real    :: dum1,dum3,dum4,dum5,proc,dproc1,dproc2,iproc1,gproc1,tmp1,tmp2
  integer :: dumjj,dumii,dumj,dumi,index
+
+!--- Unused variables (legacy):
+! real :: dproc11,dproc12,dproc21,dproc22
+!===
 
 
 ! This subroutine interpolates lookup table values for rain/ice collection processes
@@ -4383,9 +4409,13 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
  implicit none
 
- real    :: dum1,dum4,dum5,dum1c,dum4c,dum5c,proc,dproc1,dproc2,iproc1,iproc2,       &
+ real    :: dum1,dum4,dum5,dum1c,dum4c,dum5c,proc,iproc1,iproc2,       &
             gproc1,gproc2,rproc1,rproc2,tmp1,tmp2,dproc11,dproc12
  integer :: dumjj,dumii,dumj,dumi,index,dumjjc,dumiic,dumic
+
+!--- Unused variables (legacy):
+! real :: dproc1,dproc2
+!===
 
 
 ! This subroutine interpolates lookup table values for rain/ice collection processes
@@ -4872,8 +4902,12 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
       implicit none
 
-      real    :: DUM,T
+      real    :: T
       integer :: i_type
+
+!--- Unused variables (legacy):
+! real :: DUM
+!===
 
 ! REPLACE GOFF-GRATCH WITH FASTER FORMULATION FROM FLATAU ET AL. 1992, TABLE 4 (RIGHT-HAND COLUMN)
 
@@ -5409,8 +5443,9 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
  integer, intent(in)  :: isize,rimsize,densize,zsize
  real,    intent(in)  :: qitot,nitot,qirim,zitot_in,rhop
 
-! local variables:
- real                 :: zitot
+!--- unused variables:
+! real :: zitot
+!===
 
 !------------------------------------------------------------------------------------------!
 
@@ -5579,8 +5614,8 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
                     ! find index in lookup table for collectee category, here 'q' is a scaled q/N
                     ! find index for qi (total ice mass mixing ratio)
-!      		      dum1c = (alog10(qitot_2/nitot_2)+18.)/(0.2*alog10(261.7))-5. !orig
-      		      dum1c = (alog10(qitot_2/nitot_2)+18.)/(0.483561)-5. !for computational efficiency
+!                     dum1c = (alog10(qitot_2/nitot_2)+18.)/(0.2*alog10(261.7))-5. !orig
+                      dum1c = (alog10(qitot_2/nitot_2)+18.)/(0.483561)-5. !for computational efficiency
                       dumic = int(dum1c)
                       dum1c = min(dum1c,real(iisize))
                       dum1c = max(dum1c,1.)
@@ -5746,8 +5781,12 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
  real,     intent(in)            :: iPF
 
 !local variables:
- real                            :: inv_dum,lammax,lammin,nr,rdumii
- integer                         :: dumii
+ real                            :: inv_dum,lammax,lammin,nr
+
+!--- unused variables
+! real :: rdumii
+! integer :: dumii
+!---
 
 !--------------------------------------------------------------------------
 
@@ -5952,7 +5991,7 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
   real, parameter :: Q_high = 40.e-3
   real, parameter :: N_high = 1.e+20
   real, parameter :: B_high = Q_high*1.e-3
-  integer         :: k,iice,ni,nk,ncat
+  integer         :: k,iice,nk,ncat
   logical         :: badvalue_found
 
   nk   = size(Qitot,dim=1)

@@ -354,8 +354,6 @@
       istat = gmm_get(gmmk_pw_vv_copy_s   ,pw_vv_copy)
       istat = gmm_get(gmmk_smag_s   ,smag)
 
-      call canonical_cases ("SET_VT")
-
       gmmk_phy_cplm_s = 'PHYCPLM'
       gmmk_phy_cplt_s = 'PHYCPLT'
       istat = min(gmm_create(gmmk_phy_cplm_s, phy_cplm, meta2d, flag_r_n),istat)
@@ -371,6 +369,8 @@
       end if
       istat = gmm_get(gmmk_phy_cplm_s, phy_cplm)
       istat = gmm_get(gmmk_phy_cplt_s, phy_cplt)
+
+      call canonical_cases ("SET_VT")
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
          call exp_set_vt()

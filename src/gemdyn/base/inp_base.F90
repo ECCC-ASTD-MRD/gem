@@ -527,6 +527,7 @@ contains
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
       real   , dimension (:    ), allocatable :: rna
+      character(len=1) :: grid_S(3)
 !
 !---------------------------------------------------------------------
 !
@@ -555,7 +556,9 @@ contains
          return
       endif
 
-      err = inp_read_mt ( 'SFCPRES', ['Q','U','V'], wrk, 3,&
+      grid_S=['Q','U','V']
+
+      err = inp_read_mt ( 'SFCPRES', grid_S, wrk, 3,&
                            ip1_list, nk)
       if (associated(wrk)) then
          allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
@@ -1310,6 +1313,7 @@ contains
       implicit none
 
       character(len=*), intent(IN) :: F_var_S
+      character(len=1) :: grid_S(3)
       type(Inp_vrt3d), intent(inout) :: F_3dv
 
       character(len=4  ) :: dumc
@@ -1339,8 +1343,9 @@ contains
       if (associated(F_3dv%valv)) deallocate (F_3dv%valv)
       nullify (F_3dv%valq,F_3dv%valu,F_3dv%valv,val)
       inp_src_vert3d = .false.
+      grid_S=['Q','U','V']
 
-      err_mt = inp_read_mt (trim(F_var_S),['Q','U','V'], val,3,&
+      err_mt = inp_read_mt (trim(F_var_S),grid_S, val,3,&
                          F_3dv%ip1, lislon,F_quiet_L=.true.)
       inp_src_vert3d= (err_mt == 0)
 

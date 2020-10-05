@@ -40,6 +40,7 @@ contains
       use series_mod, only: series_xst, series_isstep
       use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
       use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ccc2_uv_raddriv_mod, only: ccc2_uv_raddriv
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -141,7 +142,7 @@ contains
       character(len=1) :: niuv
 
       real, dimension(ni) :: dummy1, dummy2, dummy3, dummy4
-      real, dimension(ni,nk) :: dum2d, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
+      real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       integer :: mpcat
 
@@ -190,7 +191,7 @@ contains
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
       call init2nan(omcl, gcl, liqwcin_s, icewcin_s)
       call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
-      call init2nan(dum2d, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
+      call init2nan(dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
       
       ! use integer variables instead of actual integers
 
@@ -248,17 +249,17 @@ contains
       endif
 
       ! Initialize O3 tracer for uvindex calculation from climatology, if not found in analysis
-      IF_RADLINOZ0: if (kount == 0 .and. radlinoz_L) then
+      IF_LINOZ0: if (kount == 0 .and. llinoz) then
 
          if (.not.any(dyninread_list_s == 'o3l') .or.   &
-             .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:m')) then
+             .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:p')) then
 
             ! climato_phase2_v2 (Paul V)
             if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce * 1E+9  !micro g /kg air <-- kg /kg air
 
          endif
 
-      endif IF_RADLINOZ0
+      endif IF_LINOZ0
 
       IF_RDGHG0: if (kount == 0 .and. radghg_L) then
 
@@ -328,7 +329,7 @@ contains
 
       ! is this or next step a radiation timestep?
       thisstepisraduv = ((kntraduv_S /= '') .and. &
-           (kount == 0 .or. mod(kount-1, kntraduv) == 0))
+           (kount == 0 .or. mod(kount, kntraduv) == 0))
       thisstepisrad=(kount == 0 .or. mod(kount-1, kntrad) == 0)
       nextstepisrad=(mod(kount, kntrad) == 0)
 
@@ -547,13 +548,20 @@ contains
             enddo
          endif
 
-
-         ! Use LINOZ ozone (o3_mmr)
-         if (radlinoz_L) then
+         if (llinoz) then
             o3_vmr = zo3lmoins *1.E-9 * mwt_air/ mwt_o3    !mole /mole vmr <-- micro g/kg air
             o3_vmr = max(o3_vmr, 1.E-10)                   !mole /mole vmr
             o3_mmr = o3_vmr * mwt_o3  /mwt_air             !kg /kg air     <-- mole /mole vmr
-            zo3s = o3_mmr                                  !kg /kg air
+
+            ! Use LINOZ ozone (o3_mmr) in radiation
+            if (radlinoz_L) zo3s = o3_mmr                                  !kg /kg air
+
+            ! Use LINOZ ozone (o3_mmr) in uvindex calculation
+            if (thisstepisraduv) o3uv = o3_mmr                                  !kg /kg air
+
+         else if(thisstepisraduv) then
+            ! Ozone climato for index calculation
+            o3uv = zo3s 
          endif
 
          !Use LINOZ ghg (zch4, zn2o, zcf11, zcf12)
@@ -573,18 +581,14 @@ contains
             if (timings_L) call timing_start_omp(413, 'rad_uvindex', 410)
             ! appel diagnostique pour calculer fatb,fctb...
             ! utiliser rmu0 (temps courant)
-            call ccc2_raddriv3(dummy1, dummy1, dummy1, dummy1, dummy1, &
-                 zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
-                 dummy1, dummy1, dummy1, dum2d, dum2d, &
-                 dummy1, dummy1, dummy1, dummy1, dummy1, &
-                 dum2d, dum2d, dum2d, dum2d, &              ! apres ici les intrants
+            call ccc2_uv_raddriv(zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
                  fslo, zfsamoon, ps, shtj, sig, &
-                 tfull, temp, ztsrad, zo3s, zoztoit, &
-                 qq, co2, zch4, zn2o, zcf11, &
-                 zcf12, f113, f114, o2, rmu0, r0r, salb, zemisr, taucs, &
-                 omcs, gcs, taucl, omcl, gcl, &
+                 temp, o3uv, zoztoit, &
+                 qq, co2, zch4,  &
+                 o2, rmu0, r0r, salb, taucs, &
+                 omcs, gcs, &
                  cldfrac, tauae, exta, exoma, exomga, &
-                 fa, absa, lcsw, lclw, zmrk2, DO_UV_ONLY, &
+                 fa, zmrk2, &
                  il1, il2, ni, nkm1, nk)
 
             ! Calcul des l'indices UV

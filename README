@@ -9,6 +9,12 @@ make cmake
 make build
 make work
 
+***For EC users other than Michel:***
+cp -p -r scripts/* $GEM_WORK/
+cd $GEM_WORK
+./runprep -dircfg ./configurations/GEM_cfgs
+./runmod -dircfg ./configurations/GEM_cfgs
+
 The following environment variables are created (examples):
 GEM_DIR=/users/dor/armn/cpi/raid/davinci/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
 GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
@@ -28,3 +34,4 @@ no $storage_model:
 GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
 build-ubuntu-18.04-amd64-64-intel-19.0.3.199
 work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+

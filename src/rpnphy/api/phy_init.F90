@@ -132,7 +132,7 @@ contains
       integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
 
       logical :: print_L
-      integer :: unout, options, itype, isizeof, ntr, i
+      integer :: unout, options, itype, isizeof, ntr, i, nsurf
       integer :: ier, p_ni, p_nj, master_pe
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
@@ -164,7 +164,6 @@ contains
       if (kntraduv_S /= '') then
          ier    = timestr2step(kntraduv, kntraduv_S, dble(delt))
          kntraduv = max(1,kntraduv)
-         kntraduv = 1  !# Note: temporary fix until values > 1 are working
       endif
 
       !# Update convective timescales to include timestep support
@@ -277,6 +276,8 @@ contains
       ier = min(wb_put('phy/cond_infilter', cond_infilter, options), ier)
       ier = min(wb_put('phy/sgo_tdfilter', sgo_tdfilter, options), ier)
       ier = min(wb_put('phy/lhn_filter', lhn_filter, options), ier)
+      ier = min(wb_put('phy/sfcflx_filter_order', sfcflx_filter_order, options), ier)
+      ier = min(wb_put('phy/sfcflx_filter_iter', sfcflx_filter_iter, options), ier)
       ier = min(wb_put('phy/convec'  ,convec   , options),ier)
       ier = min(wb_put('phy/delt'    ,delt     , options),ier)
       ier = min(wb_put('phy/flux_consist', pbl_flux_consistency, options), ier)
@@ -386,6 +387,7 @@ contains
       ier = min(wb_get('sfc/l07_am'      ,l07_am      ),ier)
       ier = min(wb_get('sfc/leadfrac'    ,leadfrac    ),ier)
       ier = min(wb_get('sfc/n0rib'       ,n0rib       ),ier)
+      ier = min(wb_get('sfc/nsurf'       ,nsurf       ),ier)
       ier = min(wb_get('sfc/sl_func_stab',sl_func_stab),ier)
       ier = min(wb_get('sfc/sl_func_unstab',sl_func_unstab),ier)
       ier = min(wb_get('sfc/tdiaglim'    ,tdiaglim    ),ier)
@@ -405,6 +407,7 @@ contains
       ier = WB_OK
       ier = min(wb_put('phy/zu',zu,options),ier)
       ier = min(wb_put('phy/zt',zt,options),ier)
+      ier = min(wb_put('phy/nsurfag',nsurf+1,options),ier)
 
       call collect_error(ier)
       if (.not.WB_IS_OK(ier)) then

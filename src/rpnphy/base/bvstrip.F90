@@ -25,7 +25,7 @@ function bvstrip(F_name) result(F_norm)
   !@author Ron McTaggart-Cowan, 2014-03
   !@description
   integer :: i
-  character(len=1), dimension(2) :: ext=(/'w','W'/)
+  character(len=1), dimension(2), parameter :: ext = (/'w','W'/)
   !*@/
   F_norm = F_name
   if (len_trim(F_norm) < 2) return  !minimum length for separator

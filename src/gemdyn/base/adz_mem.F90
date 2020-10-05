@@ -41,7 +41,6 @@ module adz_mem
       type(C_PTR) :: Adz_cpntr_q,Adz_cpntr_t
 
       type Adz_pntr_stack
-         sequence
          real, dimension(:,:,:), pointer :: src,dst,pil
       end type Adz_pntr_stack
 
@@ -69,7 +68,6 @@ module adz_mem
 
 
       type post
-           sequence
            real, dimension(:,:,:), pointer :: lin
            real, dimension(:,:,:), pointer :: min
            real, dimension(:,:,:), pointer :: max
@@ -78,7 +76,6 @@ module adz_mem
       type(post), pointer, dimension(:) :: Adz_post,Adz_post_3CWP,Adz_post_BQWP
 
       type flux
-           sequence
            real, dimension(:,:,:), pointer :: fo
            real, dimension(:,:,:), pointer :: fi
       end type flux
@@ -86,7 +83,6 @@ module adz_mem
       type(flux), pointer, dimension(:) :: Adz_flux,Adz_flux_3CWP,Adz_flux_BQWP,Adz_flux_3CWP_PS
 
       type bc
-           sequence
            integer :: n
            integer :: wp
            integer :: pexp_n

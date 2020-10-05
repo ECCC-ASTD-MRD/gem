@@ -91,6 +91,25 @@
 
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc == 0)
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! Check for experimental options. They are disabled in 5.1, but still developped in 5.2
+      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         stop 'Dynamics_Kernel_S=DYNAMICS_FISL_H is not supported in 5.1. For assistance, please contact the RPN dynamics research teams'
+      end if
+
+      if (Sol_type_S == 'ITERATIVE_2D') then
+         if (Sol2D_precond_S /= 'JACOBI') then
+            stop 'Sol2D_precond_S=JACOBI is the only supported preconditioner in 5.1. For assistance, please contact the RPN dynamics research teams'
+         end if
+      end if
+
+      if (Sol_type_S == 'ITERATIVE_3D') then
+         if (Sol3D_precond_S /= 'JACOBI') then
+            stop 'Sol3D_precond_S=JACOBI is the only supported preconditioner in 5.1. For assistance, please contact the RPN dynamics research teams'
+         end if
+      end if
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
@@ -349,9 +368,9 @@
       endif
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
- 6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
+ 6007 format (/1X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
                            2X,'00H FORECAST WILL BE VALID AT: ',a16,/ &
-               X,48('#')/)
+               1X,48('#')/)
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)

@@ -6,15 +6,13 @@
 
 [[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
 
-if [[ "$(hostname -A)" =~ cmc.ec.gc.ca ]]; then
+if [[ "$(hostname -A)" =~ banting || "$(hostname -A)" =~ daley ]]; then
+   module load craype-x86-skylake
+   module load cray-fftw
+else 
    . ssmuse-sh -x comm/eccc/all/opt/intelcomp/intelpsxe-cluster-19.0.3.199
    . ssmuse-sh -x hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-19.0.3.199
    . ssmuse-sh -x hpco/exp/openmpi-setup/openmpi-setup-0.2
-elif [[ "$(hostname -A)" =~ science.gc.ca ]]; then
-   module load craype-x86-skylake
-   module load cray-fftw
-else
-   echo "Not sure where we are! hostname not found"
 fi
 
 . ./.common_eccc_setup intel

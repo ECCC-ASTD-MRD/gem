@@ -22,9 +22,9 @@ module MODI_WETBULBT
    interface
       function WETBULBT(PPA, PTA, PQA) result(PTWBT)
          real, dimension(:), intent(IN)    :: PPA     ! pressure (Pa)
-         real, dimension(:), intent(IN)    :: PTA     ! Air  temperature (K)
+         real, dimension(:), intent(IN)    :: PTA     ! Air  temperature (C)
          real, dimension(:), intent(IN)    :: PQA     ! Air spedcific humidity (kg/kg)
-         real, dimension(size(PPA)) :: PTWBT          ! WBGT in deg C
+         real, dimension(size(PPA)) :: PTWBT          ! Wet-Bulb  temperature in deg C
       end function WETBULBT
    end interface
 end module MODI_WETBULBT
@@ -40,6 +40,7 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    !                    ATMOSPHERIC SCIENCES LABORATORY,U.S. ARMY ELECTRONICS COMMAND
    !                    WHITE SANDS MISSILE RANGE, NEW MEXICO 88002, 33 PAGES
    !    MODIFICATIONS : L. Spacek (06/2014)
+   !    MODIFICATIONS : S. Leroyer et V. Vionnet (09/2020) : Temperature in Celcius
    !---------------------------------------------------------------------------
    !
    !*       0.     DECLARATIONS
@@ -53,14 +54,13 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
    ! !
    ! !*      0.1    declarations of arguments
    real, dimension(:), intent(IN)  :: PPA         ! Air pressure (Pa)
-   real, dimension(:), intent(IN)  :: PTA          ! Air temperature (K)
-   real, dimension(:), intent(IN)  :: PQA          ! Air specific humidity (kg/kg)
-   real, dimension(size(PPA))      :: PTWBT         ! WBGT in deg K
+   real, dimension(:), intent(IN)  :: PTA         ! Air temperature (C)
+   real, dimension(:), intent(IN)  :: PQA         ! Air specific humidity (kg/kg)
+   real, dimension(size(PPA))      :: PTWBT       ! Wet-bulb temperature in deg C
    ! !*      0.2    declarations of local variables
    real, dimension(size(PPA)) :: ZQA      ! modified Air specific humidity (kg/kg)
    real, dimension(size(PPA)) :: ZRH      ! Relative humidity (%)
    real, dimension(size(PPA)) :: ZTD      ! Dew-point temperature (C) at T,P
-   real, dimension(size(PPA)) :: ZT       ! temperature (C)
    real, dimension(size(PPA)) :: ZTI      ! temperature (C) on dry adiabat at P
    real, dimension(size(PPA)) :: ZP       ! pressure (hPa)
    real, dimension(size(PPA)) :: ZPI      ! pressure (hPa) intersec. dry adiabat/mixing ratio curves
@@ -74,7 +74,7 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
 
    ! EXTERNAL FUNCTIONS
    real, external :: TPDD
-   real, external :: N_QSAT1
+   real, external :: N_QSAT
    real, external :: DWPT
    real, external :: W
    real, external :: O
@@ -85,23 +85,22 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
 
    nn=size(ppa)
 
-   !    1. Compute the dew-point temperature ZTD in C (INPUT: ZT,ZRH)
+   !    1. Compute the dew-point temperature ZTD in C (INPUT: PTA,ZRH)
 
-   ZT=PTA-XTT          ! convert in Celcius
    ZP=0.01*PPA         ! convert in hPa
    ZQA=PQA             ! local variable
    do i=1,nn
-      qsat=N_QSAT1(PTA(i),PPA(i))
+      qsat=n_qsat(PTA(i),PPA(i))
       if(ZQA(i)<0)ZQA(i)=0.0
       if(qsat<ZQA(i))ZQA(i)=qsat
       ZRH(i)=100.*ZQA(i)/qsat
       !?! ZRH(i)=100.*max(min(ZQA(i),qsat),0.)/qsat
 
-      ZTD(i)=DWPT(ZT(i),ZRH(i))
+      ZTD(i)=DWPT(PTA(i),ZRH(i))
       !    2. Compute the saturation mixing ratio in g/kg
       ZAW(i) = W(ZTD(i),ZP(i))
-      !    3. Compute the Dry Adiabat ZAO in C (INPUT:ZT,ZP)
-      ZAO(i) = O(ZT(i),ZP(i))
+      !    3. Compute the Dry Adiabat ZAO in C (INPUT:PTA,ZP)
+      ZAO(i) = O(PTA(i),ZP(i))
       ZPI(i) = ZP(i)
    enddo
    !    4. Iterate to determine local pressure ZPI (hPa)
@@ -125,39 +124,41 @@ function WETBULBT(PPA, PTA, PQA) result(PTWBT)
       ZAOS(i)= OS(ZTI(i),ZPI(i))
       ! print*,'SATURATION DRY ADIABAT thetaEq OS(TI,PI) => ZAOS= ',ZAOS
 
-      !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its
+      !    7. Compute the Wet-bulb temperature (C) of a parcel at ZP given its
       !       equivalent potential temperature
-      PTWBT(i)= XTT + TSA(ZAOS(i),ZP(i))
+      PTWBT(i)= TSA(ZAOS(i),ZP(i))
    enddo
    return
 end function WETBULBT
 
 
 !!==============================================
-function N_qsat1(T,P)
+function n_qsat(T,P)
    ! THIS FUNCTION RETURNS HUMIDITY AT SATURATION (KG/KG) GIVEN
-   ! THE TEMPERATURE (K) AND SPECIFIC HUMIDITY (KG/KG)
+   ! THE TEMPERATURE (C) AND SPECIFIC HUMIDITY (KG/KG)
    ! AND PRESSURE (Pa)
    implicit none
 !!!#include <arch_specific.hf>
    real T,P
-   real zeps,ZFOES,N_QSAT1
+   real zeps,zfoes,n_qsat
+   real TA
 
-   !#WARNING: by initializing these var, they are authomatically "saved", make it explicit save (or parameter)
    real, save :: XRD    = 287.05967   ! gaz constant for dry air
    real, save :: XRV    = 461.524993  ! gaz constant for water vapor
    real, save :: XALPW=60.22416    ! constants in saturation pressure over liquid water
    real, save :: XBETAW=6822.459384
    real, save :: XGAMW=5.13948
 
+   TA = T + 273.15 ! Convert T in K
+   
    ZEPS      = XRD / XRV
    !*       1.    COMPUTE SATURATION VAPOR PRESSURE
-   ZFOES = exp( XALPW - XBETAW/T - XGAMW*log(T)  )
+   ZFOES = exp( XALPW - XBETAW/TA - XGAMW*log(TA)  )
    !*       2.    COMPUTE SATURATION HUMIDITY
-   N_QSAT1 = ZEPS*ZFOES/P   &
+   N_QSAT = ZEPS*ZFOES/P   &
         / (1.+(ZEPS-1.)*ZFOES/P)
    return
-end function N_qsat1
+end function N_qsat
 
 
 !==============================================

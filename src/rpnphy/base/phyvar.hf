@@ -61,7 +61,9 @@
    PHYVAR2D1(alcm,       "VN=alcm      ; ON=ALCM; VB=p0; VD=accum. of liquid mid-level convect. precip.          ; MIN=0")
    PHYVAR2D1(alcs,       "VN=alcs      ; ON=A8  ; VB=p0; VD=accum. of liquid shall. convect. precip.             ; MIN=0")
    PHYVAR2D1(alfaq,      "VN=alfaq     ; ON=AQ  ; VB=v0; VD=inhomog. term for Q diff.")
+   PHYVAR2DC(falfaq,     "VN=falfaq    ; ON=FAQ ; VB=p0; VD=inhomog. filtered term for Q diff.", lsfcflx)
    PHYVAR2D1(alfat,      "VN=alfat     ; ON=AT  ; VB=v0; VD=inhomog. term for T diff.")
+   PHYVAR2DC(falfat,     "VN=falfat    ; ON=FAT ; VB=p0; VD=inhomog.  filt term for T diff.", lsfcflx)
    PHYVAR2D1(als,        "VN=als       ; ON=A2  ; VB=p0; VD=accum. of liquid precip, grid-scale cond             ; MIN=0")
    PHYVAR2DC(als_fr1,    "VN=als_fr1   ; ON=FR1 ; VB=p0; VD=accum. freezing drizzle      (M-Y)                   ; MIN=0", lcn_mpx)
    PHYVAR2DC(als_fr2,    "VN=als_fr2   ; ON=FR2 ; VB=p0; VD=accum. freezing rain         (M-Y)                   ; MIN=0", lcn_mpx)
@@ -87,8 +89,9 @@
    PHYVAR3DC(azr3d,      "VN=azr3d     ; ON=FR3D; VB=p0; VD=accum. of freezg precip. 3D                   ; VS=T ; MIN=0", lbourg3d)
    PHYVAR2D1(basc,       "VN=basc      ; ON=BS  ; VB=v0; VD=base sigma of condensation level")
    PHYVAR2D1(bm,         "VN=bm        ; ON=BM  ; VB=v0; VD=homog. term for U,V diffu.")
-   PHYVAR2D1(bm0,        "VN=bm0       ; ON=BM0 ; VB=p0; VD=homog. term for U,V diffu. - previous")   
+   PHYVAR2D1(bm0,        "VN=bm0       ; ON=BM0 ; VB=p0; VD=homog. term for U,V diffu. - previous")
    PHYVAR3D1(bt,         "VN=bt        ; ON=BT  ; VB=v0; VD=homog. term for T,Q diffu.                    ; VS="//nag)
+   PHYVAR3DC(fbt,        "VN=fbt       ; ON=FBT ; VB=p0; VD=homog. term for filtered T,Q diffu.        ; VS="//nag, lsfcflx)
    PHYVAR3D1(buoy,       "VN=buoy      ; ON=BUOY; VB=v0; VD=buoyancy computed by the PBL scheme           ; VS=E")
    PHYVAR2D1(tdmask,     "VN=tdmask    ; ON=MPTD; VB=p0; VD=Horizontal weight for tendency application")
    PHYVAR3D1(c1pbl,      "VN=C1BL      ; ON=C1BL; VB=v0; VD=C1 coef for in second-order moment closure    ; VS=E")
@@ -497,7 +500,7 @@
    PHYVAR3D1(pritnm,     "VN=pritnm    ; ON=TQIM; VB=v0; VD=QI tendency from mid-level convection (1/s)   ; VS=T")
    PHYVAR3DC(prctns,     "VN=prctns    ; ON=TQCS; VB=v0; VD=Shallow Conv qc tendency (1/s)                ; VS=T", lshbkf)
    PHYVAR3DC(pritns,     "VN=pritns    ; ON=TQIS; VB=v0; VD=Shallow Conv qi tendency (1/s)                ; VS=T", lshbkf)
-   PHYVAR2DC(pren,       "VN=pren      ; ON=PREN; VB=e1; VD=1h accum. of total precip. (offline)                ;  IN=PR0", offline)
+   PHYVAR2DC(pren,       "VN=pren      ; ON=PREN; VB=e1; VD=1h accum. of total precip. (SPS)              ; IN=PR0", lsurfonly)
    PHYVAR2D1(py,         "VN=py        ; ON=PY  ; VB=v0; VD=accum. of deep conv. precip.                        ; MIN=0")
    PHYVAR2D1(pz,         "VN=pz        ; ON=PZ  ; VB=v0; VD=accum. of shal. conv. precip.                       ; MIN=0")
    PHYVAR2D1(q1app,      "VN=q1app     ; ON=Q1I ; VB=v0; VD=Integrated apparent heat source (Q1)")
@@ -583,7 +586,7 @@
    PHYVAR2D1(tddiagec,   "VN=tddiagec  ; ON=TDEC; VB=v0; VD=screen level dewpoint temp using ECMWF formulation")
    PHYVAR2D1(tddiagstn,  "VN=tddiagstn ; ON=TDS ; VB=v0; VD=screen level dewpoint temp over land              ")
    PHYVAR2D1(tddiagstnv, "VN=tddiagstnv; ON=TDSV; VB=v0; VD=screen level tdew over land (veg only)            ")
-   
+
    PHYVAR2DC(d2d01,      "VN=d2d01     ; ON=2D01; VB=v0; VD=diagnostic 2D field (01) from physics", lcn_mpx)
    PHYVAR2DC(d2d02,      "VN=d2d02     ; ON=2D02; VB=v0; VD=diagnostic 2D field (02) from physics", lcn_mpx)
    PHYVAR2DC(d2d03,      "VN=d2d03     ; ON=2D03; VB=v0; VD=diagnostic 2D field (03) from physics", lcn_mpx)
@@ -638,7 +641,7 @@
    PHYVAR3DC(effradi2,   "VN=effradi2  ; ON=REI2; VB=p0; VD=effective radiusm ice cat. 2 (microphysics)   ; VS=T; MIN=0", lcn_mpx)
    PHYVAR3DC(effradi3,   "VN=effradi3  ; ON=REI3; VB=p0; VD=effective radiusm ice cat. 3 (microphysics)   ; VS=T; MIN=0", lcn_mpx)
    PHYVAR3DC(effradi4,   "VN=effradi4  ; ON=REI4; VB=p0; VD=effective radiusm ice cat. 4 (microphysics)   ; VS=T; MIN=0", lcn_mpx)
-   
+
    PHYVAR3D1(ste,        "VN=ste       ; ON=STE ; VB=v0; VD=cond. T tendency                              ; VS=T")
    PHYVAR2DC(sumf,       "VN=sumf      ; ON=S7M ; VB=p0; VD=average of ustress over last moyhr hours", lmoyhr)
    PHYVAR2DC(svmf,       "VN=svmf      ; ON=S8M ; VB=p0; VD=average of vstress over last moyhr hours", lmoyhr)

@@ -73,7 +73,7 @@
  99   format ('Memory==> Total:',f14.3,' Gb on ',i5,'  MPI processes')
  98   format ('Memory==> Mean:',f10.3,' Std:',f10.3,' Min:[(',i5,')', &
                f10.3,']',' Max:[(',i5,')',f10.3,']')
- 97   format ('Memory==> largest MPI process: #',i3,f14.3,' Gb')
+ 97   format ('Memory==> largest MPI process: #',i5,f12.3,' Gb')
 !
 !----------------------------------------------------------------
 !

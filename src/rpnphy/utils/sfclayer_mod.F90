@@ -572,6 +572,7 @@ contains
     real :: ilmax, vlmin, hc, ribc, ilmm
     real :: am, ah, dfm, dfh, g, dg
     real, dimension(n) :: z0rt, z0rm
+    real, dimension(2) :: ff_zm, ff_zh
     procedure(stability_function), pointer :: sf
 
     ! Setup for numerical solution
@@ -628,8 +629,10 @@ contains
           ilmm = sign(ilmax, real(dthv))
           hc = pblheight(zuj, z0j, vaj, ilmm, fcorj, lzz0j)
           sf => sf_stable
+          ff_zm = (/zuj+z0rmj, z0j/)
+          ff_zh = (/ztj+z0rtj, z0tj/)
           call sf(fmj, fhj, lzz0j, lzz0tj, ilmm, hc, beta, &
-               F_zm=(/zuj+z0rmj, z0j/), F_zh=(/ztj+z0rtj, z0tj/))
+               F_zm=ff_zm, F_zh=ff_zh)
           ribc = zp * ilmm * fhj / fmj**2
           ! Wind speed is adjusted to keep Obukhov length above the minimum
           vlmin = sqrt( max(0.d0, 1./ribc * GRAV * zp * dthv/(tvs + 0.5*dthv)) )
@@ -677,8 +680,10 @@ contains
           else
              sf => sf_unstable
           endif
+          ff_zm = (/zuj+z0rmj, z0j/)
+          ff_zh = (/ztj+z0rtj, z0tj/)
           call sf(fmj, fhj, lzz0j, lzz0tj, ilmoj, hj, beta, &
-               F_zm=(/zuj+z0rmj, z0j/), F_zh=(/ztj+z0rtj, z0tj/), &
+               F_zm=ff_zm, F_zh=ff_zh, &
                F_dfm=dfm, F_dfh=dfh)
           ! Use Newton-Raphson iterations to solve the equation
           !   rib - (fh/fm^2)*zp*ilmo = 0
@@ -765,6 +770,7 @@ contains
     integer :: j
     real :: fh, fm, h1, h2, h3, hh, ct, ctu, cm, vits, dang, ang, hi
     real, dimension(ni) :: lzz0t, lzz0
+    real, dimension(2) :: ff_zm, ff_zh
     procedure(stability_function), pointer :: sf
 
     ! Initialize neutral stability functions
@@ -794,8 +800,10 @@ contains
        else
           sf => sf_unstable
        endif
+       ff_zm = (/zu(j)+z0(j), z0(j)/)
+       ff_zh = (/zt(j)+z0t(j), z0t(j)/)
        call sf(fm, fh, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
-            F_zm=(/zu(j)+z0(j), z0(j)/), F_zh=(/zt(j)+z0t(j), z0t(j)/))
+            F_zm=ff_zm, F_zh=ff_zh)
 
        ! Compute exchange coefficients
        ct = karman / fh

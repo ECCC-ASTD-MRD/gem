@@ -19,12 +19,14 @@ module ens_perturb
   implicit none
   private
 #include <rmnlib_basics.hf>
+#include <msg.h>
 
   ! Procedure overloading
   interface ens_spp_get
      module procedure spp_get_r
      module procedure spp_get_rv
      module procedure spp_get_c
+     module procedure spp_get_i
   end interface ens_spp_get
 
   ! External parameters
@@ -33,6 +35,7 @@ module ens_perturb
 
   ! Internal parameters
   integer, parameter :: LONG_CHAR = WB_MAXNAMELENGTH
+  integer, parameter :: IMISSING = -huge(1)
   
   ! External variables
   integer, public :: ptp_nc, spp_nc, ens_nc2d
@@ -44,9 +47,11 @@ module ens_perturb
   public :: ens_spp_init        !Initialize SPP component of package
   public :: ens_spp_stepinit    !Stepwise update of package
   public :: ens_spp_get         !Retrieve values for perturbed parameters
+  public :: ens_spp_map         !Map discrete strings to integers
 
   ! Internal variables
   integer, dimension(:), pointer :: sppvaln=>null()
+  integer, dimension(:,:), pointer :: sppval_map=>null()
   character(len=LONG_CHAR), dimension(:), pointer :: spplist=>null()
   character(len=LONG_CHAR), dimension(:,:), pointer :: sppval=>null()
   logical :: initialized=.false., apply_perturb=.true.
@@ -70,6 +75,7 @@ contains
        prefix = 'spp/'//trim(spplist(1))//'/'
        istat = min(wb_get_meta(trim(prefix)//'SPP_VALUES', itype, isizeof, nvals, options), istat)
        if (.not.associated(sppval)) allocate(sppval(spp_nc, nvals))
+       if (.not.associated(sppval_map)) allocate(sppval_map(spp_nc, nvals))
        if (.not.associated(sppvaln)) allocate(sppvaln(spp_nc))
        do i=1,spp_nc
           prefix = 'spp/'//trim(spplist(i))//'/'
@@ -86,6 +92,7 @@ contains
              sppvaln(i) = 0
           endif
        enddo
+       sppval_map = IMISSING
     else
        ! Create null space when SPP is inactive
        allocate(spplist(1))
@@ -115,7 +122,47 @@ contains
     endif
     stat = ENS_OK
   end function ens_spp_stepinit
- 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  integer function ens_spp_map(key, cvals, ivals) result(stat)
+    use  clib_itf_mod, only: clib_toupper
+    ! Map a set of discrete character value to integers
+    character(len=*), intent(in) :: key                 !Name of chain element to map
+    character(len=*), dimension(:), intent(in) :: cvals !Possible string values of the chain
+    integer, dimension(:), intent(in) :: ivals          !Integer mapping of strings
+    integer :: indx, i, j
+    character(len=LONG_CHAR), dimension(size(cvals)) :: ucvals
+
+    ! Determine validity of request and apply mapping
+    stat = ENS_ERR
+    indx = spp_index(key)
+    if (indx < 0) then
+       stat = ENS_OK
+       return
+    endif
+    if (size(cvals) /= size(ivals)) then
+       call msg_toall(MSG_ERROR,'(ens_spp_map) Incompatible vectors for '//trim(key))
+       return
+    endif
+    do i=1,size(cvals)
+       ucvals(i) = cvals(i)
+       j = clib_toupper(ucvals(i))
+    enddo
+    sppval_map(indx, :) = IMISSING
+    do i=1,sppvaln(indx)
+       j = 1
+       do while (sppval_map(indx, i) == IMISSING .and. j <= size(cvals))
+          if (sppval(indx, i) == ucvals(j)) then
+             sppval_map(indx, i) = ivals(j)
+          else
+             j = j+1
+          endif
+       enddo
+    enddo
+    
+    stat = ENS_OK
+  end function ens_spp_map     
+  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function spp_get_r(key, chains, default) result(values)
     use phybus
@@ -182,6 +229,38 @@ contains
     enddo
   end function spp_get_c
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function spp_get_i(key, chains, default) result(mappings)
+    use phybus
+    ! Retrieve the row of parameter strings for the specified key
+    character(len=*), intent(in) :: key         !Name of requested chain element
+    real, dimension(:,:), intent(in) :: chains  !Set of Markov chains
+    integer, intent(in) :: default              !Value if no chain is found
+    integer, dimension(size(chains,dim=1)) :: mappings !Mapped parameter values
+    integer :: indx, i
+    real :: binwidth
+    real, dimension(size(chains,dim=1)) :: val
+    logical :: found
+    indx = spp_index(key)
+    found = .false.
+    if (apply_perturb .and. indx > 0) then
+       if (sppvaln(indx) > 0) then
+          val(:) = chains(:,indx+ptp_nc)
+          found = .true.
+       endif
+    endif
+    if (.not.found) then
+       mappings(:) = default
+       return
+    endif
+    binwidth = 1./sppvaln(indx)
+    do i=1,sppvaln(indx)
+       where (val(:) >= (i-1)*binwidth)
+          mappings(:) = sppval_map(indx,i)
+       endwhere
+    enddo
+  end function spp_get_i
+  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   integer function spp_index(key)
     use  clib_itf_mod, only: clib_toupper
@@ -254,8 +333,6 @@ contains
     !             _
     !            1.0
     !
-#include <msg.h>
-
     real, pointer, dimension(:)   :: zabekfc, zmrk2, ztlc
     real, pointer, dimension(:,:) :: zsigm, zsigt, &
          ztplus, zuplus, zvplus, zwplus, &

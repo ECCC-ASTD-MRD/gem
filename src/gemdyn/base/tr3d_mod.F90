@@ -61,7 +61,6 @@ module tr3d
    real(kind=REAL64), dimension(:), allocatable :: BCMD_3C, BCMD_BQ
 
    type :: meta_tracers
-      sequence
       character(len=4 ) :: name
       character(len=12) :: intp
       logical :: wload,hzd

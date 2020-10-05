@@ -524,8 +524,8 @@ contains
                  a_qi_4(:,:) + a_qi_5(:,:) + a_qi_6(:,:)
             call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          elseif (stcond(1:6)=='MP_MY2') then
-            q_grpl(:,:) = zqgplus(:,1:nk-1)
-            iiwc(:,:)   = zqiplus(:,1:nk-1) + zqnplus(:,1:nk-1) + zqgplus(:,1:nk-1)
+            q_grpl(:,:) = zqgplus(:,:)
+            iiwc(:,:)   = zqiplus(:,:) + zqnplus(:,:) + zqgplus(:,:)
             call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          endif
       endif

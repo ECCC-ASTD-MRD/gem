@@ -72,7 +72,7 @@
 
       !Horizontal grid: MIN/MAX and [F_i0,F_in] x [F_j0,F_jn]
       !------------------------------------------------------
-      il = l_minx ; ir = l_maxx ; jl = l_miny ; jr = l_maxy
+      il = 1-G_halox ; ir = l_ni+G_halox ; jl = 1-G_haloy ; jr = l_nj+G_haloy 
 
       if (l_west)  il = F_i0
       if (l_east)  ir = F_in

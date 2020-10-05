@@ -65,7 +65,6 @@ module ver
 !
 !
       type :: V8_tmx
-         sequence
          real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
       end type V8_tmx
 
