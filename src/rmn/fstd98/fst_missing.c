@@ -184,8 +184,6 @@
 void *DlOpen(const char *filename, int flag);
 void *DlSym(void *handle, const char *symbol);
 
-int msg_level;
-
 #include "qstdir.h"
 
 static int plugmode=-1;                             /* -1 not initialized, 1 active, 0 not active */
