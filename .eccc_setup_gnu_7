@@ -8,7 +8,7 @@
 
 
 # Load openmpi library
-. r.load.dot /fs/ssm/hpco/exp/openmpi/openmpi-3.1.2a1--hpcx-2.2.0--ofed-4.4-1.0.0.0
+. r.load.dot /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
 
 . ./.common_eccc_setup gnu
 
