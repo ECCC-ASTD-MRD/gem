@@ -9,8 +9,8 @@
 !                                                                               !
 !_______________________________________________________________________________!
 !                                                                               !
-!  Package version:   2.25.2           (internal bookkeeping)                   !
-!  Last modified:     2016-01-04                                                !
+!  Package version:   2.25.2.1         (internal bookkeeping)                   !
+!  Last modified:     2020-10-06                                                !
 !_______________________________________________________________________________!
 
 
@@ -25,7 +25,8 @@ module mp_my2_mod
 
  private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
- private :: activate,maxsat,erf  ! Added by C.Jouan april2015
+ private :: maxsat,erf  ! Added by C.Jouan april2015
+!  private :: activate    ! Added by C.Jouan april2015
 
  contains
 
@@ -372,13 +373,12 @@ end subroutine cfg
 
       implicit none
 
-      real DUM
       real T
       integer type
 ! ice
       real a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i
       data a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i /&
-	6.11147274, 0.503160820, 0.188439774e-1, &
+        6.11147274, 0.503160820, 0.188439774e-1, &
         0.420895665e-3, 0.615021634e-5,0.602588177e-7, &
         0.385852041e-9, 0.146898966e-11, 0.252751365e-14/
 
@@ -387,7 +387,7 @@ end subroutine cfg
 
 ! V1.7
       data a0,a1,a2,a3,a4,a5,a6,a7,a8 /&
-	6.11239921, 0.443987641, 0.142986287e-1, &
+        6.11239921, 0.443987641, 0.142986287e-1, &
         0.264847430e-3, 0.302950461e-5, 0.206739458e-7, &
         0.640689451e-10,-0.952447341e-13,-0.976195544e-15/
       real dt
@@ -599,8 +599,8 @@ end subroutine cfg
 
 !=====================================================================================!
   subroutine sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
-                massFlux_bot,kdir,kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,         &
-                DZ,iDZ,gamfact,kount,afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in)
+                massFlux_bot,kdir,kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afx_in,       &
+                bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in)
 
 !-------------------------------------------------------------------------------------!
 !  Wrapper for s/r SEDI, for computation on all vertical levels.  Called from MY2_MAIN.
@@ -611,16 +611,15 @@ end subroutine cfg
 ! PASSING PARAMETERS:
   real, dimension(:,:), intent(inout) :: QX,NX
   real, dimension(:),   intent(out)   :: massFlux_bot
-  real, dimension(:,:), intent(in)    :: zheight, DE,iDE,iDP,DZ,iDZ,gamfact
-  real, intent(in)                    :: epsQ,epsQ_sedi,epsN,VxMax,dmx,DxMax,dt,GRAV
+  real, dimension(:,:), intent(in)    :: DE,iDE,DZ,iDZ,gamfact
+  real, intent(in)                    :: epsQ,epsQ_sedi,epsN,VxMax,dmx,DxMax,dt
   real, intent(in), optional          :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in
   integer, dimension(:), intent(in)   :: ktop_sedi
-  integer, intent(in)                 :: ni,cat,kbot,kdir,nk,kount
+  integer, intent(in)                 :: ni,cat,kbot,kdir
 
 ! LOCAL VARIABLES:
   integer, dimension(size(QX,dim=1))  :: activeColumn,ktop
-  integer                             :: counter
-  integer                             :: a,i,k
+  integer                             :: counter,a,i
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 ! ARGUMENTS:      DESCRIPTIONS:
@@ -641,14 +640,12 @@ end subroutine cfg
 ! epsQ            minimum allowable value of QX  [kg m-3]
 ! epsQ_sedi       minimum value of QX to compute sedimentation [kg m-3]
 ! epsN            minimum allowable value of NX [m-3]
-! zheight         height above surface at level k [m]
 ! VxMax           maximum allowable fall speed for hydrometeor category x [m s-1]
 ! afx, bfx        fall speed parameters for hydrometeor category x
 ! cmx, dmx        mass-diameter parameters for hydrometeor category x
 ! ckQx[1,2,4]     precomputed expressions related to gamma functions for category x
 ! DxMax           maximum allowable mean-mass diameter for category x [m]
 ! dt              dynamical time step of model [s]
-! GRAV            gravitational constant [m s-2]
 !
 ! -- OUTPUT: --
 !
@@ -681,9 +678,9 @@ end subroutine cfg
       i= activeColumn(a)
      !From here, all sedi calcs are done for each column i
 
-      call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),iDP(i,:),gamfact(i,:),epsQ,epsN,  &
+      call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),gamfact(i,:),epsQ,epsN,           &
                    dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
-                   GRAV,afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,      &
+                   afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,           &
                    ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
 
    enddo  !a-loop
@@ -691,9 +688,9 @@ end subroutine cfg
  end subroutine sedi_wrapper_2
 
 !=====================================================================================!
-subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,    &
-                    dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,GRAV,afx_in,bfx_in,cmx_in,  &
-                    ckQx1_in,ckQx2_in,ckQx4_in,BX1d,epsB)
+subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,          &
+                    dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,afx_in,bfx_in,cmx_in,       &
+                    ckQx1_in,ckQx2_in,ckQx4_in,BX1d)
 
 !-------------------------------------------------------------------------------------!
 !  Performs 2-moment sedimentation on a single column for hydrometeor categories whose
@@ -731,7 +728,6 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 ! iDZ          1./DZ
 ! kdir         vertical leveling increment, (GEM: kdir=-1;  WRF: kdir=1)
 ! kbot         k index of bottom level      (GEM: kbot=nk;  WRF: kbot=1)
-! GRAV         gravitational constant
 !
 ! -- OUTPUT: --
 !
@@ -751,10 +747,9 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   real, dimension(:),  intent(inout) :: QX1d,NX1d
   real, dimension(:),  intent(in)    :: gamfact1d
   real,                intent(out)   :: massFlux_bot
-  real, dimension(:),  intent(in)    :: DE1d,iDE1d,iDP1d,DZ1d,iDZ1d
-  real,                intent(in)    :: epsQ,epsN,VxMax,dmx,DxMax,dt,GRAV
-  real, optional,      intent(in)    :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,          &
-                                        ckQx4_in,epsB
+  real, dimension(:),  intent(in)    :: DE1d,iDE1d,DZ1d,iDZ1d
+  real,                intent(in)    :: epsQ,epsN,VxMax,dmx,DxMax,dt
+  real, optional,      intent(in)    :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in
   integer,             intent(in)    :: cat,kbot,kdir
   integer,             intent(in)    :: ktop
 
@@ -763,11 +758,10 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   real, dimension(size(QX1d,dim=1))  :: VVQ,VVN
   real                               :: dzMIN,dtx,VxMaxx
   logical                            :: firstPass,QxPresent,BX_present
-  integer                            :: nnn,i,k,l,km1,kp1,idzmin,kk
-  real                               :: VqMax,VnMax,iLAMx,iLAMxB0,tmp1,tmp2,tmp3,Dx,     &
-                                        iDxMax,icmx,VincFact,ratio_Vn2Vq,zmax_Q,zmax_N,  &
-                                        idmx
-  real                               :: alpha_x,afx,bfx,cmx,ckQx1,ckQx2,ckQx4
+  integer                            :: nnn,k,kk
+  real                               :: VqMax,VnMax,iLAMx,iLAMxB0,tmp1,tmp2,Dx,         &
+                                        iDxMax,icmx,ratio_Vn2Vq,idmx
+  real                               :: afx,bfx,cmx,ckQx1,ckQx2,ckQx4
 
   real, parameter :: thrd    = 1./3.
   real, parameter :: sxth    = 1./6.
@@ -1036,119 +1030,119 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
  end subroutine count_columns
 !=======================================================================================!
 
- subroutine activate( wbar, tair, rhoair, na, am, disp, hygro, n_act, s_max) ! Added by C.Jouan april2015
-!--------------------------------------------------------------------------------------
-! Calculates the number and mass of aerosols activated as CCN.
-! MKS units!
-!
-! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
-! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
-!--------------------------------------------------------------------------------------
+!  subroutine activate( wbar, tair, rhoair, na, am, disp, hygro, n_act, s_max) ! Added by C.Jouan april2015
+! !--------------------------------------------------------------------------------------
+! ! Calculates the number and mass of aerosols activated as CCN.
+! ! MKS units!
+! !
+! ! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+! ! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+! !--------------------------------------------------------------------------------------
 
-   implicit none
+!    implicit none
 
-!---------------------------- Arguments --------------------------------
-   real, intent(in) :: &
-             wbar,         & !grid cell mean vertical velocity [m/s]
-             tair,         & !air temperature [K]
-             rhoair          !air density [kg/m3])
+! !---------------------------- Arguments --------------------------------
+!    real, intent(in) :: &
+!              wbar,         & !grid cell mean vertical velocity [m/s]
+!              tair,         & !air temperature [K]
+!              rhoair          !air density [kg/m3])
 
-   real, intent (in) ::    &
-             na,           & !aerosol number concentration [#/m3]
-             am,           & !aerosol mean radius [m]
-             disp,         & !aerosol size distribution
-             hygro           !aerosol hygroscopicity 
+!    real, intent (in) ::    &
+!              na,           & !aerosol number concentration [#/m3]
+!              am,           & !aerosol mean radius [m]
+!              disp,         & !aerosol size distribution
+!              hygro           !aerosol hygroscopicity 
 
-   real, intent(out) ::     &
-             n_act,         & !num conc of activated aerosols [kg/m3]
-             s_max            !max supersaturation
-!------------------------ Local work space  ----------------------------
-   real     :: &              
-             pres,         & !pressure (Pa)           
-             diff,         & !diffusivity (m2/s)
-             conduct,      & !thermal conductivity (J/m/s/deg)
-             qs,           & !water vapor saturation mixing ratio
-             dqsdt,        & !change in qs with temperature
-             dqsdp,        & !change in qs with pressure
-             gloc            !thermodynamic function (m2/s)
+!    real, intent(out) ::     &
+!              n_act,         & !num conc of activated aerosols [kg/m3]
+!              s_max            !max supersaturation
+! !------------------------ Local work space  ----------------------------
+!    real     :: &              
+!              pres,         & !pressure (Pa)           
+!              diff,         & !diffusivity (m2/s)
+!              conduct,      & !thermal conductivity (J/m/s/deg)
+!              qs,           & !water vapor saturation mixing ratio
+!              dqsdt,        & !change in qs with temperature
+!              dqsdp,        & !change in qs with pressure
+!              gloc            !thermodynamic function (m2/s)
 
-   real, parameter ::  &
-                       tt0       = 273.15,    & ![K] ref. temp.
-                       p0        = 101325.,   & ![Pa] ref. pres.
-                       hygro_thr = 1.0e-10,   & ! hygroscopicity threshold
-                       latvap    =.2501e+7,   & !J kg-1; latent heat of condensation
-                       cpair     =.100546e+4, & !J K-1 kg-1; specific heat of dry air
-                       rair      =.28705e+3,  & !J K-1 kg-1; gas constant for dry air
-                       rh2o      =.46151e+3,  & !J K-1 kg-1; gas constant for water vapour
-                       gravit    =.980616e+1, & !M s-2; gravitational acceleration
-                       rhoh2o    =.1e+4,      & !density of liquid H2O
-                       surften   =.076,       & !surface tension water/air interface N/m
-                       mwh2o     = 18.015e-3, & !kg.mole-1 water mass molecular
-                       r_universal = 8.3143,  & !J.K-1.mole-1 constant for ideal gas 
-                       pi        = 3.14159265,& 
-                       sq2       = sqrt(2.0)     
+!    real, parameter ::  &
+!                        tt0       = 273.15,    & ![K] ref. temp.
+!                        p0        = 101325.,   & ![Pa] ref. pres.
+!                        hygro_thr = 1.0e-10,   & ! hygroscopicity threshold
+!                        latvap    =.2501e+7,   & !J kg-1; latent heat of condensation
+!                        cpair     =.100546e+4, & !J K-1 kg-1; specific heat of dry air
+!                        rair      =.28705e+3,  & !J K-1 kg-1; gas constant for dry air
+!                        rh2o      =.46151e+3,  & !J K-1 kg-1; gas constant for water vapour
+!                        gravit    =.980616e+1, & !M s-2; gravitational acceleration
+!                        rhoh2o    =.1e+4,      & !density of liquid H2O
+!                        surften   =.076,       & !surface tension water/air interface N/m
+!                        mwh2o     = 18.015e-3, & !kg.mole-1 water mass molecular
+!                        r_universal = 8.3143,  & !J.K-1.mole-1 constant for ideal gas 
+!                        pi        = 3.14159265,& 
+!                        sq2       = sqrt(2.0)     
 
-   real     :: eta, etafactor2, amcube, smc, lnsmloc, alogsig, f1, f2 
-   real     :: alpha, beta, zeta, gammaloc, etafactor1, etafactor2max, &
-               alw, sqrtalw, sqrtg, lnsmax, x, aten
+!    real     :: eta, etafactor2, amcube, smc, lnsmloc, alogsig, f1, f2 
+!    real     :: alpha, beta, zeta, gammaloc, etafactor1, etafactor2max, &
+!                alw, sqrtalw, sqrtg, lnsmax, x, aten
 
-!-----------------------------------------------------------------------
+! !-----------------------------------------------------------------------
   
-   !initialize output
+!    !initialize output
    
-   if( na < 1.e-20) return
+!    if( na < 1.e-20) return
    
-   n_act = 0.
-   pres     = rair*rhoair*tair
-   diff     = 0.211e-4 * ( p0/pres ) * ( tair/tt0 )**1.94
-   conduct  = ( 5.69 + 0.017*(tair-tt0) ) * 4.186e2*1.e-5        ! convert to J/m/s/deg
-   qs       = qsat(tair, pres, 0)  
-   alpha    = gravit*( latvap/(cpair*rh2o*tair*tair) - 1./(rair*tair) )
-   dqsdt    = latvap/( rh2o*tair*tair) * qs
-   gammaloc = ( 1. + latvap/cpair*dqsdt ) / (rhoair*qs)
+!    n_act = 0.
+!    pres     = rair*rhoair*tair
+!    diff     = 0.211e-4 * ( p0/pres ) * ( tair/tt0 )**1.94
+!    conduct  = ( 5.69 + 0.017*(tair-tt0) ) * 4.186e2*1.e-5        ! convert to J/m/s/deg
+!    qs       = qsat(tair, pres, 0)  
+!    alpha    = gravit*( latvap/(cpair*rh2o*tair*tair) - 1./(rair*tair) )
+!    dqsdt    = latvap/( rh2o*tair*tair) * qs
+!    gammaloc = ( 1. + latvap/cpair*dqsdt ) / (rhoair*qs)
 
-   !  growth coefficent below (Abdul-Razzak & Ghan 1998 eqn 16)
-   !  should take into account kinetic effects and use modified diffusivity
-   !  and thermal conductivity
-   gloc = 1./(  rhoh2o/(diff*rhoair*qs)                             &
-          + latvap*rhoh2o/(conduct*tair)*(latvap/(rh2o*tair) - 1.)  )
-   sqrtg = sqrt(gloc)
-   beta  = 4.*pi*rhoh2o*gloc*gammaloc
-   etafactor2max = 1.e10/(alpha*wbar)**1.5 
-   aten     = 2.*mwh2o*surften/(r_universal*tt0*rhoh2o)
+!    !  growth coefficent below (Abdul-Razzak & Ghan 1998 eqn 16)
+!    !  should take into account kinetic effects and use modified diffusivity
+!    !  and thermal conductivity
+!    gloc = 1./(  rhoh2o/(diff*rhoair*qs)                             &
+!           + latvap*rhoh2o/(conduct*tair)*(latvap/(rh2o*tair) - 1.)  )
+!    sqrtg = sqrt(gloc)
+!    beta  = 4.*pi*rhoh2o*gloc*gammaloc
+!    etafactor2max = 1.e10/(alpha*wbar)**1.5 
+!    aten     = 2.*mwh2o*surften/(r_universal*tt0*rhoh2o)
 
-   !single  updraft
-   alw        = alpha*wbar
-   sqrtalw    = sqrt(alw)
-   zeta       = 2.*sqrtalw*aten/(3.*sqrtg)
-   etafactor1 = 2.*alw*sqrtalw
+!    !single  updraft
+!    alw        = alpha*wbar
+!    sqrtalw    = sqrt(alw)
+!    zeta       = 2.*sqrtalw*aten/(3.*sqrtg)
+!    etafactor1 = 2.*alw*sqrtalw
 
-   alogsig      = log(disp)
-   f1           = 0.5*exp( 2.5*alogsig*alogsig )
-   f2           = 1. + 0.25*alogsig
+!    alogsig      = log(disp)
+!    f1           = 0.5*exp( 2.5*alogsig*alogsig )
+!    f2           = 1. + 0.25*alogsig
 
-   if( na > 1.e-30 )then       
-      etafactor2=1./( na*beta*sqrtg )  
-      amcube = am**3
-      if( hygro > hygro_thr )then
-         smc=2.*aten*sqrt(aten/(27.*hygro*amcube))           ! critical supersaturation
-      else
-         smc=100.
-      end if
-   else
-      smc = 1.
-      etafactor2=etafactor2max 
-   endif
+!    if( na > 1.e-30 )then       
+!       etafactor2=1./( na*beta*sqrtg )  
+!       amcube = am**3
+!       if( hygro > hygro_thr )then
+!          smc=2.*aten*sqrt(aten/(27.*hygro*amcube))           ! critical supersaturation
+!       else
+!          smc=100.
+!       end if
+!    else
+!       smc = 1.
+!       etafactor2=etafactor2max 
+!    endif
 
-   lnsmloc = log( smc ) 
-   eta     = etafactor1*etafactor2
-   call maxsat( zeta, eta, f1, f2, smc, s_max )
-   lnsmax = log(s_max)
-   !activated aerosol number conc
-   x = 2.*( lnsmloc-lnsmax )/( 3.*sq2*alogsig )
-   n_act = 0.5 * ( 1.-erf(x) ) * na
-   n_act = max( n_act, 0. ) 
- end subroutine activate
+!    lnsmloc = log( smc ) 
+!    eta     = etafactor1*etafactor2
+!    call maxsat( zeta, eta, f1, f2, smc, s_max )
+!    lnsmax = log(s_max)
+!    !activated aerosol number conc
+!    x = 2.*( lnsmloc-lnsmax )/( 3.*sq2*alogsig )
+!    n_act = 0.5 * ( 1.-erf(x) ) * na
+!    n_act = max( n_act, 0. ) 
+!  end subroutine activate
 !=======================================================================
 
  subroutine maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
@@ -1193,11 +1187,11 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !==============================================================================!
 !_______________________________________________________________________________________!
 
- subroutine mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              & ! Added by C.Jouan april 2015
+ subroutine mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              &
      sigma,RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,  &
-     dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON, &
-     snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i1,reff_i2,reff_i3,     &
-     reff_i4,cloud_bin,nk_bottom)
+     dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,     &
+     icephase_ON,snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i1,reff_i2, &
+     reff_i3,reff_i4,cloud_bin,nk_bottom)
 
   implicit none
 
@@ -1210,7 +1204,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   real, dimension(:,:),  intent(in)    :: WZ,sigma,Naero ! Added by C.Jouan april2015
   real, dimension(:,:),  intent(inout) :: T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH
   real, dimension(:,:),  intent(out)   :: ZET,reff_c,reff_i1,reff_i2,reff_i3,reff_i4,    &
-  			 	          Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h
+                                          Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h
   real, dimension(NI,NK),intent(out)   :: cloud_bin             ! cloud fraction (0 or 1)     
   real, dimension(:,:,:),intent(out)   :: SS
   logical,               intent(in)    :: precipDiag_ON,sedi_ON,icephase_ON,snow_ON,     &
@@ -1342,19 +1336,18 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
 !LOCAL VARIABLES:
 
  !Variables to count active grid points:
-  logical :: log1,log2,log3,log4,doneK,rainPresent,calcDiag
+  logical :: log1,log2,log3,log4,rainPresent,calcDiag
   logical, dimension(size(QC,dim=1),size(QC,dim=2)) :: activePoint
   integer, dimension(size(QC,dim=1)) :: ktop_sedi
-  integer :: i,k,niter,ll,start,kskip_1,ktop,kbot,kdir
+  integer :: i,k,niter,ktop,kbot,kdir,tmpint1
 
-  real    :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9,tmp10,                    &
-       VDmax,NNUmax,X,DEL,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,Ecg,Erg,  &
+  real    :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp8,tmp9,tmp10,VENTg,VENTi,VENTh,       &
+       VDmax,NNUmax,X,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,Ecg,Erg,        &
        NuCONT,GG,Na,Tcc,F1,F2,Kdiff,PSIa,Kn,source,sink,sour,ratio,qvs0,Kstoke,     &
-       DELqvs,ft,esi,Si,Simax,Vq,Vn,Vz,LAMr,No_r_DM,No_i,No_s,No_g,No_h,D_sll,      &
-       iABi,ABw,VENTr,VENTs,VENTg,VENTi,VENTh,Cdiff,Ka,MUdyn,MUkin,Ng_tail,         &
-       gam,ScTHRD,Tc,mi,ff,Ec,Ntr,Dho,DMrain,Ech,DMice,DMsnow,DMgrpl,DMhail,        &
+       DELqvs,ft,Si,Simax,LAMr,No_i,No_s,No_g,No_h,D_sll,iABi,ABw,VENTr,VENTs,      &
+       Cdiff,Ka,MUdyn,MUkin,Ng_tail,gam,ScTHRD,Tc,ff,Ec,Ech,iNY,iNN,iNG,iLAMs_D3,   &
        ssat,Swmax,dey,Esh,Eii,Eis,Ess,Eig,Eih,FRAC,JJ,Dirg,Dirh,Dsrs,Dsrg,Dsrh,     &
-       Dgrg,Dgrh,SIGc,L,TAU,DrAUT,DrINIT,Di,Ds,Dg,Dh,qFact,nFact,Ki,Rz,NgCNgh,      &
+       Dgrg,Dgrh,SIGc,L,TAU,DrAUT,DrINIT,Di,Ds,Dg,Dh,Rz,NgCNgh,                     &
        vr0,vi0,vs0,vg0,vh0,Dc,Dr,QCLcs,QCLrs,QCLis,QCLcg,QCLrg,QCLig,NhCNgh,        &
        QCLch,QCLrh,QCLsh,QMLir,QMLsr,QMLgr,QMLhr,QCLih,QVDvg,QVDvh,QSHhr,           &
        QFZci,QNUvi,QVDvi,QCNis,QCNis1,QCNis2,QCLir,QCLri,QCNsg,QCLsr,QCNgh,         &
@@ -1362,28 +1355,27 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
        NCLch,NCLsr,NCLirg,NCLirh,NrFZrh,NhFZrh,NCLsrs,NCLsrg,NCLsrh,NCLgrg,         &
        NCLgrh,NVDvg,NMLgr,NiCNis,NsCNis,NVDvs,NMLsr,NCLsh,NCLss,NNUvi,NFZci,NVDvi,  &
        NCLis,NCLig,NCLih,NMLir,NCLrs,NCNsg,NCLcs,NCLcg,NIMsi,NIMgi,NCLgr,NCLrg,     &
-       NSHhr,RCAUTR,RCACCR,CCACCR,CCSCOC,CCAUTR,CRSCOR,ALFx,des_pmlt,Ecs,des,ides,  &
-       LAMx,iLAMx,iLAMxB0,Dx,ffx,iLAMc,iNC,iNR,iNY,iNN,iNG,iLAMs_D3,                &
+       NSHhr,RCAUTR,RCACCR,CCACCR,CCSCOC,CCAUTR,CRSCOR,Ecs,des,ides,iLAMc,iNC,iNR,  &
        iLAMg,iLAMg2,iLAMgB0,iLAMgB1,iLAMgB2,iLAMh,iLAMhB0,iLAMhB1,iLAMhB2,iNH,      &
        iLAMi,iLAMi2,iLAMi3,iLAMi4,iLAMi5,iLAMiB0,iLAMiB1,iLAMiB2,iLAMr6,iLAMh2,     &
        iLAMs,iLAMs2,iLAMsB0,iLAMsB1,iLAMsB2,iLAMr,iLAMr2,iLAMr3,iLAMr4,iLAMr5,      &
        iLAMc2,iLAMc3,iLAMc4,iLAMc5,iLAMc6,iQC,iQR,iQI,iQN,iQG,iQH,iEih,iEsh,        &
-       N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,rhos_mlt,fracLiq,            &
-       cloudliq,cloudice,cloudsnow
+       N_c,N_r,N_i,N_s,N_g,N_h,fluxV_i,fluxV_g,fluxV_s,fracLiq,cloudliq,cloudice,   &
+       cloudsnow
 
  !Variables that only need to be calulated on the first step (and saved):
   real, save :: idt,iMUc,cmr,cmi,cms,cmg,cmh,icmr,icmi,icmg,icms,icmh,idew,idei,    &
-       ideh,ideg,GC1,imso,icexc9,cexr1,cexr2,cexr3,No_s_SM,No_r,idms,imgo,icexs2,   &
-       cexr4,cexr5,cexr6,cexr9,icexr9,ckQr1,ckQr2,ckQr3,ckQi1,ckQi2,ckQi3,ckQi4,    &
+       ideh,ideg,GC1,imso,icexc9,cexr1,cexr2,cexr3,No_r,idms,imgo,icexs2,           &
+       cexr4,cexr5,cexr6,cexr9,icexr9,ckQr1,ckQr2,ckQr3,ckQi1,ckQi2,ckQi4,          &
        icexi9,ckQs1,ckQs2,cexs1,cexs2,ckQg1,ckQg2,ckQg4,ckQh1,ckQh2,ckQh4,GR37,dms, &
        LCP,LFP,LSP,ck5,ck6,PI2,PIov4,PIov6,CHLS,iCHLF,cxr,cxi,Gzr,Gzi,Gzs,Gzg,Gzh,  &
        N_c_SM,iGC1,GC2,GC3,GC4,GC5,iGC5,GC6,GC7,GC8,GC11,GC12,GC13,GC14,iGR34,mso,  &
-       GC15,GR1,GR3,GR13,GR14,GR15,GR17,GR31,iGR31,GR32,GR33,GR34,GR35,GR36,GI4,    &
-       GI6,GI20,GI21,GI22,GI31,GI32,GI33,GI34,GI35,iGI31,GI11,GI36,GI37,GI40,iGG34, &
+       GC15,GR17,GR31,iGR31,GR32,GR33,GR34,GR35,GR36,GI4,iGS20_D3,GS40_D3,cms_D3,   &
+       GI6,GI20,GI21,GI22,GI31,GI32,GI33,GI34,GI35,iGI31,GI11,GI36,GI40,iGG34,      &
        GS09,GS11,GS12,GS13,iGS20,GS31,iGS31,GS32,GS33,GS34,GS35,GS36,GS40,iGS40,    &
        GS50,GG09,GG11,GG12,GG13,GG31,iGG31,GG32,GG33,GG34,GG35,GG36,GG40,iGG99,GH09,&
        GH11,GH12,GH13,GH31,GH32,GH33,GH40,GR50,GG50,iGH34,GH50,iGH99,iGH31,iGS34,   &
-       iGS20_D3,GS40_D3,cms_D3,eds,fds,rfact_FvFm
+       eds,fds,rfact_FvFm
 
 !Size distribution parameters:
   real, parameter :: MUc      =  3.    !shape parameter for cloud
@@ -1527,7 +1519,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   real, parameter :: KAPa   = 5.39e5     !aerosol thermal conductivity
 
  !Test switches:
-  logical, parameter :: DEBUG_ON      = .true.  !.true. to switch on debugging checks/traps throughout code
+  logical, parameter :: DEBUG_ON      = .false. !.true. to switch on debugging checks/traps throughout code
   logical, parameter :: DEBUG_abort   = .true.  !.true. will result in forced abort in s/r 'check_values'
   logical, parameter :: iceDep_ON     = .true.  !.false. to suppress depositional growth of ice
   logical, parameter :: grpl_ON       = .true.  !.false. to suppress graupel initiation
@@ -1537,11 +1529,10 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   integer, parameter :: primIceNucl   = 1       !1= Meyers+contact ;  2= Cooper
   real,    parameter :: outfreq       =  60.    !frequency to compute output diagnostics [s]
 
-  real, dimension(size(QC,dim=1),size(QC,dim=2)) :: DE,iDE,iDP,QSW,QSI,DZ,iDZ,zz,VQQ,    &
+  real, dimension(size(QC,dim=1),size(QC,dim=2)) :: DE,iDE,iDP,QSW,QSI,DZ,iDZ,zz,        &
         gamfact,pres,zheight,QC_in,QR_in,NC_in,NR_in
   real, dimension(size(QC,dim=1))                :: fluxM_r,fluxM_i,fluxM_s,fluxM_g,     &
-        fluxM_h,dum
-  integer, dimension(size(QC,dim=1))             :: activeColumn
+        fluxM_h
 
  !-- for use with sedimentation on subset of levels:
  !integer                                        :: k_sub,nk_sub,nk_skip
@@ -1562,6 +1553,8 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
   !----------------------------------------------------------------------------------!
   !                      PART 1:   Prelimiary Calculations                           !
   !----------------------------------------------------------------------------------!
+
+  tmpint1 = j  !just to allow j to be passed in without trapping "variable not used" upon compile
 
   !Switch on here later, once it is certain that calling routine is not supposed to
   !pass negative values of tracers.
@@ -3385,16 +3378,18 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
         if (X>0.) then
           !nucleation of cloud droplets:          
            if (aeroact==2) then ! Added by C.Jouan april2015
-              if( WZ(i,k) > 0.) then ! ADD CJ april2015
-                 !print*, "WZ, T, DE, Ncn, radius_aer, dispersion_aer, hygro_aer:",WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, hygro_aer 
-                 call activate(WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, &
-                            hygro_aer, Nact(i,k), Smax(i,k))
-                 !print*, "NC, Nact, Smax:", NC(i,k), Nact(i,k), Smax(i,k)           
-                 NC(i,k) = max(NC(i,k), Nact(i,k))
-              else
-                 !condensation and negible or downward vertical motion:
-                 NC(i,k) = max(NC(i,k), N_c_SM)
-              endif                 
+              print*, 'Abort in MY2:  Option for aeroact=2 is currently diabled'
+              stop
+            !   if( WZ(i,k) > 0.) then ! ADD CJ april2015
+            !      !print*, "WZ, T, DE, Ncn, radius_aer, dispersion_aer, hygro_aer:",WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, hygro_aer 
+            !      call activate(WZ(i,k), T(i,k), DE(i,k), Ncn(i,k), radius_aer, dispersion_aer, &
+            !                 hygro_aer, Nact(i,k), Smax(i,k))
+            !      !print*, "NC, Nact, Smax:", NC(i,k), Nact(i,k), Smax(i,k)           
+            !      NC(i,k) = max(NC(i,k), Nact(i,k))
+            !   else
+            !      !condensation and negible or downward vertical motion:
+            !      NC(i,k) = max(NC(i,k), N_c_SM)
+            !   endif                 
            else if (aeroact==1) then
               if (WZ(i,k)>0.001) then
                  !condensation and non-negligible upward motion:
@@ -3534,39 +3529,34 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
    fluxM_r= 0.;  fluxM_i= 0.;  fluxM_s= 0.;  fluxM_g= 0.;  fluxM_h= 0.
    RT_rn1 = 0.;  RT_rn2 = 0.;  RT_fr1 = 0.;  RT_fr2 = 0.;  RT_sn1 = 0.
    RT_sn2 = 0.;  RT_sn3 = 0.;  RT_pe1 = 0.;  RT_pe2 = 0.;  RT_peL = 0.
- 
+
 !---- For sedimentation on all levels:
     call sedi_wrapper_2(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,VrMax,DrMax,dt,fluxM_r,kdir, &
-                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
-                        afr,bfr,cmr,ckQr1,ckQr2,icexr9)
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afr,bfr,cmr,ckQr1,ckQr2,icexr9)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,610)
   if (phy_error_L) return
 
     call sedi_wrapper_2(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,ViMax,DiMax,dt,fluxM_i,kdir, &
-                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
-                        afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,620)
   if (phy_error_L) return
 
     call sedi_wrapper_2(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,VsMax,DsMax,dt,fluxM_s,kdir, &
-                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
-                        afs,bfs,cms,ckQs1,ckQs2,iGS20)
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afs,bfs,cms,ckQs1,ckQs2,iGS20)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,630)
   if (phy_error_L) return
 
     call sedi_wrapper_2(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,VgMax,DgMax,dt,fluxM_g,kdir, &
-                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
-                        afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,640)
   if (phy_error_L) return
 
     call sedi_wrapper_2(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,VhMax,DhMax,dt,fluxM_h,kdir, &
-                        kbot,ktop_sedi,GRAV,zheight,nk,DE,iDE,iDP,DZ,iDZ,gamfact,kount,  &
-                        afh,bfh,cmh,ckQh1,ckQh2,ckQh4)
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afh,bfh,cmh,ckQh1,ckQh2,ckQh4)
 !====
 
 

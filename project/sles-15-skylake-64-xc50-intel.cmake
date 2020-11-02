@@ -17,7 +17,7 @@ set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 
 add_definitions(-DLittle_Endian -DECCCGEM)
 
-set(EXTRA_LIBRARIES "-liomp5 -L/opt/gcc/6.1.0/snos/lib64 -lcilkrts")
+set(EXTRA_LIBRARIES "-liomp5 -L/opt/gcc/default/snos/lib64 -lcilkrts")
 
 set(AVG_FLAG -O2)
 set(FAST_FLAG -O2)

@@ -373,6 +373,7 @@ contains
             write(Lun_out,'(a,l5)' )'Ens_stat  = ',Ens_stat
             write(Lun_out,'(a,l5)' )'Ens_skeb_div   = ',Ens_skeb_div
             write(Lun_out,'(a,10i5)')'Ens_ptp_l     = ',Ens_ptp_l
+            write(Lun_out,'(a,l5)' )'Ens_recycle_mc  = ',Ens_recycle_mc
             write(Lun_out,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
             write(Lun_out,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(Lun_out,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
