@@ -24,7 +24,7 @@ if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
         ln -sf ${GEM_DIR}/build build-${GEM_ARCH}
         ln -sf ${GEM_DIR}/work ${GEM_WORK}
     else
-        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK} build work
         mkdir -p build-${GEM_ARCH}
         mkdir -p ${GEM_WORK}
         ln -sf build-${GEM_ARCH} build 

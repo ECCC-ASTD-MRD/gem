@@ -1,1 +1,1 @@
-Linux-x86_64-gnu.cmake
+ubuntu-18.04-amd64-64-gnu.cmake
