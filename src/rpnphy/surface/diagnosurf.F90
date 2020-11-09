@@ -85,9 +85,6 @@ contains
       call series_xst(PTR1D(TSURF,(indx_agrege-1)*NI), 'TS', trnch)
       call series_xst(PTR1D(TSOIL, 0), 'TS1', trnch)
 
-      ! deep soil temperature
-      call series_xst(PTR1D(TSOIL, NI), 'TP', trnch)
-
       ! radiative surface temperature
       call series_xst(PTR1D(TSRAD, 0), 'G3', trnch) !TG
 
@@ -99,13 +96,17 @@ contains
       call series_xst(PTR1D(VDIAG, 0), 'VDSN', trnch) !VD
       call series_xst(PTR1D(VDIAG, 0), 'WD', trnch) !VD
 
-      ! soil moisture content
-      call series_xst(PTR1D(WSOIL, 0), 'WG', trnch) !I1
-
-      ! deep soil moisture content
-      call series_xst(PTR1D(WSOIL, NI), 'WR', trnch)
 
       IF_ISBA: if (schmsol == 'ISBA') then              ! isba
+
+         ! deep soil temperature
+         call series_xst(PTR1D(TSOIL, NI), 'TP', trnch)
+
+         ! soil moisture content
+         call series_xst(PTR1D(WSOIL, 0), 'WG', trnch) !I1
+
+         ! deep soil moisture content
+         call series_xst(PTR1D(WSOIL, NI), 'WR', trnch)
 
          ! liquid water stored on canopy
          call series_xst(PTR1D(WVEG, 0), 'C5', trnch) !I3

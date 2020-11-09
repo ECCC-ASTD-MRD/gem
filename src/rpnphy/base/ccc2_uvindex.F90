@@ -265,6 +265,7 @@ contains
       integer,intent(in) :: index
       real, intent(inout) :: f(:),salb(:)
 
+      real, parameter :: EPSILON = max(tiny(1.0), 1.0e-15)
       real, parameter :: fit_factors(4) = (/ 0.603, 1.618, 0.959, 1.008 /)
       real, parameter :: fit_expnt(4) = (/ 0.575, 0.605, 0.0, 0.0 /)
 
@@ -275,16 +276,32 @@ contains
       real, parameter :: fit_grad_salb(4)=(/ 0.31, 0.25, 0.060, 0.020 /)
 
       ! Apply scaling
-
+      
       select case(index)
       case(1)
-         f = (fit_factors(1)+fit_grad_salb(1)*(salb-0.1d0))*f**fit_expnt(1)  
+         where (f <= EPSILON)
+            f = 0.
+         elsewhere
+            f = (fit_factors(1)+fit_grad_salb(1)*(salb-0.1d0))*f**fit_expnt(1)  
+         endwhere
       case(2)
-         f = (fit_factors(2)+fit_grad_salb(2)*(salb-0.1d0))*f**fit_expnt(2)
+         where (f <= EPSILON)
+            f = 0.
+         elsewhere
+            f = (fit_factors(2)+fit_grad_salb(2)*(salb-0.1d0))*f**fit_expnt(2)
+         endwhere
       case(3)
-         f = (fit_factors(3)+fit_grad_salb(3)*(salb-0.1d0))*f
+         where (f <= EPSILON)
+            f = 0.
+         elsewhere
+            f = (fit_factors(3)+fit_grad_salb(3)*(salb-0.1d0))*f
+         endwhere
       case(4)
-         f = (fit_factors(4)+fit_grad_salb(4)*(salb-0.1d0))*f
+         where (f <= EPSILON)
+            f = 0.
+         elsewhere
+            f = (fit_factors(4)+fit_grad_salb(4)*(salb-0.1d0))*f
+         endwhere
       end select
 
    end subroutine uvindex_scale_tflux

@@ -84,7 +84,7 @@
                                 ta(1,1,i),n1g,n2*n3p,128,direction)
             enddo
           endif
-          deallocate(ndim,sdispls,rdispls,scnts,rcnts)
+          deallocate(ndim,sdispls,rdispls,scnts,rcnts,ta)
         endif
         return
 

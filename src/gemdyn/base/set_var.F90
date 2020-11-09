@@ -275,6 +275,8 @@
                 Outp_convmult(jj,j)=180./pi_8
             end if
             if (Outp_varnm_S(jj,j)(1:4) == 'SD') Outp_convmult(jj,j)=100.
+            if (Outp_varnm_S(jj,j)(1:4) == 'SNDP') Outp_convmult(jj,j)=100.
+            if (Outp_varnm_S(jj,j)(1:4) == 'SVDP') Outp_convmult(jj,j)=100.
          end do
          if (jj > 0) then
              Outp_sets         = j

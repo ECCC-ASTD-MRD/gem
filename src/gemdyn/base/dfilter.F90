@@ -31,11 +31,8 @@
 
       ! Local variables
       real, dimension(:,:,:), pointer :: fld3d
-      real, dimension(:,:), pointer :: fld2d
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: fld2ds
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk), target :: fld3ds
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk), target :: ifld3d
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk) :: ifld
       integer :: istat, it, np
 
@@ -50,13 +47,12 @@
      endif
 
       np=sfcflxfilt_o/2
-      if (F_iname=='bt')then
          ifld3d = 0.
          fld3d => ifld3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:F_nk)
          istat = phy_get(fld3d,F_iname,F_npath='V',F_bpath='V',F_quiet=.false.)
          call gem_error(istat,'dfilter','problem in phy_get: '//trim(F_iname))
 
-        ! Apply smoothing operator
+        ! Apply sfcflxfilt_i passess of smoothing operator
          ifld=0.
          ifld=ifld3d
          do it=1,sfcflxfilt_i
@@ -65,38 +61,17 @@
                ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)=  &
                                 fld3ds(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
             endif
-            !Apply Shapiro Filter
-            call  shapiro_filter(fld3ds,ifld,5,np)
-         enddo
-            fld3d =>fld3ds(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-            istat = phy_put(fld3d,F_oname,F_npath='V',F_bpath='P',F_quiet=.false.)
-            call gem_error(istat,'dfilter','problem in phy_put: '//trim(F_oname))
-      else
-         ifld3d = 0.
-         fld2d => ifld3d(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,F_nk)
-         istat = phy_get(fld2d,F_iname,F_npath='V',F_bpath='V',F_quiet=.false.)
-         call gem_error(istat,'dfilter','problem in phy_get 2d: '//trim(F_iname))
-      ! Apply smoothing operator
-         ifld=0.
-         ifld=ifld3d
-         do it=1,sfcflxfilt_i
-            if (it >1)then
-               ifld=0.
-               ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)= &
-                              fld3ds(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-            endif
-            !Apply Shapiro Filter
+            ! Shapiro Filter
             call  shapiro_filter(fld3ds,ifld,F_nk,np)
          enddo
-      ! Post result to output field
-         fld2d =>fld3ds(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,F_nk)
-         istat = phy_put(fld2d ,F_oname,F_npath='V',F_bpath='P',F_quiet=.false.)
-         call gem_error(istat,'dfilter','problem in phy_put 2d: '//trim(F_oname))
+            fld3d =>fld3ds(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:F_nk)
+            istat = phy_put(fld3d,F_oname,F_npath='V',F_bpath='P',F_quiet=.false.)
+            call gem_error(istat,'dfilter','problem in phy_put: '//trim(F_oname))
 
-      endif
-
-1000 format(/'S/R  dfilter: Apply digital filter to surface flux ',a)
+1000 format(/' Apply digital filter to surface flux ',a)
 2000 format(/' S/R  dfilter : The order of the digital filter should be 2 or 4')
+
+	   return
 
       contains
 

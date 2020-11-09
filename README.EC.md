@@ -5,39 +5,10 @@ The following instructions explain how to use GEM on a stick at the CMC.
 If you do not know the version of a system on which you are connected,
 please run the following command: `lsb_release -a`
 
-## Ubuntu 14.04
-
-The Intel 16 compiler and gfortran 5.1 are available on Ubuntu 14.04 systems.
-Here is an incomplete list of such systems:
-
-- ppp1.science.gc.ca
-- ppp2.science.gc.ca
-- hare.science.gc.ca
-- brooks.science.gc.ca
-- Older worstations on the cmc.ec.gc.ca domain
-
-To configure your environment for the Intel 16 compiler, source
-**.eccc_setup_intel_16**.  It will define environment variables and load the
-appropriate SSM packages and will create a build directory with the compiler
-and version in it's name.
-```
-   . .eccc_setup_intel_16
-```
-
-
-To configure your environment for the gfortran 5.1 compiler, source
-**.eccc_setup_gfortran_5.1**.  It will define environment variables and load the
-appropriate SSM packages and will create a build directory with the compiler
-and version in it's name.
-```
-   . .eccc_setup_gfortran_5.1
-```
-
-
 ## Ubuntu 18.04
 
-The Intel 19 compiler and gfortran 7.4 are available on Ubuntu 18.04 systems.
-Here is an incomplete list of such systems:
+The Intel 19 compiler and gnu compilers 7.5 are available on Ubuntu 18.04
+systems.  Here is an incomplete list of such systems:
 
 - ppp3.science.gc.ca
 - ppp4.science.gc.ca
@@ -47,22 +18,52 @@ Here is an incomplete list of such systems:
 - Newer workstations on the cmc.ec.gc.ca domain
 
 To configure your environment for the Intel 19 compiler, from the root of your
-GOAS clone, source **.eccc_setup_intel_19**.  It will define environment
-variables and load the appropriate SSM packages and will create a build
-directory with the compiler and version in it's name.
+GOAS clone, source **.eccc_setup_intel_19**. 
+
 ```
    . .eccc_setup_intel_19
 ```
 
-Since gfortran 7.4 is available through the system packages, there should be
-no need to load any SSM package to use this compiler.
+To configure your environment for the gnu compilers, from the root of your
+GOAS clone, source **.eccc_setup_gnu_7**.
 
+```
+   . .eccc_setup_gnu_7
+```
 
+It will define environment variables, load the appropriate SSM packages, and
+create a build directory with the architecture, compiler and version in its
+name.
+
+## Ubuntu 14.04
+
+The Intel 16 compiler and gfortran 5.1 are available on Ubuntu 14.04 systems.
+Older worstations on the cmc.ec.gc.ca domain are on such systems.
+
+To configure your environment for the Intel 16 compiler, , from the root of
+your GOAS clone, source **.eccc_setup_intel_16**.
+
+```
+   . .eccc_setup_intel_16
+```
+
+To configure your environment for the gnu compilers, , from the root of your
+GOAS clone, source **.eccc_setup_gnu_5**.  It will define environment
+variables, load the appropriate SSM packages, and create a build directory
+with the architecture, compiler and version in it's name.
+
+```
+   . .eccc_setup_gnu_5
+```
+
+It will define environment variables, load the appropriate SSM packages, and
+create a build directory with the architecture, compiler and version in its
+name.
 
 # Compiling and executing the model
 
 Once the environment has been configured, there are a few extra steps to do
-depending on how you where you want to host you clone of the repository.
+depending on how you want to host you clone of the repository.
 
 ## Repository in a data file system
 
@@ -78,24 +79,27 @@ push them to a remote Git repository or to implement you own backup scheme.
 
 When sourced, the `.eccc_setup_*` will create a build directory following the
 pattern below:
-`<goas_root>/build/<compiler>-<version>`
+`<goas_root>/build/build-<os-platform>-<compiler>-<compiler-version>`
 
-You can therefore go to that folder and simply execute the commands bellow to
+for example: 
+`<goas_root>/build/build-ubuntu-18.04-amd64-64-intel-19.0.3.199`
+
+You can therefore go to that folder and simply execute the commands below to
 compile the code:
 ```
 cmake ../../project
-make -j
-make install
+make -j 
+make work
 ```
 
 ## Repository in the $HOME directory
 
-Hosting your GOAS working copy in your home has a few advantages, but it is also
-slightly more complex.  Being in the home directory, your repository is
-automatically backed-up and you also have multiple snapshots.  The downside is
-that users have very little space in the home directory.  If you choose to host
-your repository there, you will have to move your build and work folders to
-other file systems.
+Hosting your GOAS working copy in your home directory has a few advantages,
+but it is also slightly more complex.  Being in the home directory, your
+repository is automatically backed-up and you also have multiple snapshots.
+The downside is that users have very little space in the home directory.  If
+you choose to host your repository there, you will have to move your build
+and work folders to other file systems.
 
 For example:
 ```
@@ -108,12 +112,12 @@ git checkout dev
 mkdir -p $HOME/ords/gem/{build,work}
 mv build/* $HOME/ords/gem/build
 rmdir build
-ln -s $HOME/ords/gem/build
-ln -s $HOME/ords/gem/work
-cd build/intel-19.0.3.199
+ln -s $HOME/ords/gem/build .
+ln -s $HOME/ords/gem/work .
+cd build/build-ubuntu-18.04-amd64-64-intel-19.0.3.199
 cmake $HOME/gem/project
 make -j
-make install
+make work
 ```
 
 Further information about compiling and executing can be found in the main
