@@ -48,6 +48,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
    real, parameter :: z0ice = 0.001
    real, parameter :: z0sea = 0.001
+   real, parameter :: Z0MLAND_MIN_SVS = 0.1
 
    real, save :: almin  = 0.50
    real, save :: tauf   = 0.24
@@ -183,7 +184,15 @@ subroutine inisurf4(kount, ni, nk, trnch)
       if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
          ztsrad(i) = ztsoil(i,1)
       endif
-      if (z0veg_only) zz0en(i) = zz0veg(i)
+
+      if (z0veg_only) then
+         if (schmsol == 'ISBA')then
+            zz0en(i) = zz0veg(i)
+         else if (schmsol == 'SVS') then
+            zz0en(i) = max(zz0mlanden(i), Z0MLAND_MIN_SVS)
+         endif
+      endif
+
       if (z0veg_only .or. any('z0en' == phyinread_list_s(1:phyinread_n))) then
          zz0 (i,indx_soil   ) = max(zz0en(i),z0min)
          if (z0veg_only) then

@@ -17,12 +17,12 @@
 
       subroutine psadj_init (F_kount)
 
+      use adz_mem
       use cstv
       use dynkernel_options
       use dyn_fisl_options
       use init_options
       use geomh
-      use glb_ld
       use gmm_geof
       use gmm_pw
       use HORgrid_options
@@ -56,11 +56,17 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Schm_psadj < 0 .and. Schm_psadj > 2) &
+      if ( Schm_psadj < 0 .and. Schm_psadj > 2) then
          call gem_error(-1,'PSADJ_INIT','PSADJ OPTION NOT VALIDE')
+      end if
 
-      if ( Schm_psadj == 2 .and. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') &
+      if ( Schm_psadj == 2 .and. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          call gem_error(-1,'PSADJ_INIT','PSADJ=2 NOT AVAILABLE in GEM-H')
+      end if
+
+      if ( Schm_psadj /= 0 .and. Adz_k0>1) then
+         call gem_error(-1,'PSADJ_INIT','PSADJ/=0 NOT VALID when LID NESTING')
+      end if
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"

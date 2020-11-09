@@ -33,7 +33,6 @@ module inp_mod
       real(kind=REAL64) Inp_pref_a_8
 
       type Inp_vrt3d
-      sequence
          integer nk,kind
          integer, dimension(:), pointer :: ip1
          real, dimension(:,:,:), pointer :: valq,valu,valv

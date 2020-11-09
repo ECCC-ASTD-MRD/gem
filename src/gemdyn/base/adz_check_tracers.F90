@@ -55,14 +55,10 @@
 
       do n=1,Tr3d_ntr
 
-         if (Schm_psadj==2.and.(trim(Tr3d_name_S(n))=='HU'.or.Tr3d_wload(n)).and.&
-             .NOT.((Tr3d_mass(n) < 1).and.(Tr3d_mono(n) < 1))) call handle_error(-1,'ADZ_CHECK_TRACERS',&
-            'Dont know how to conserve Dryair and Humidity/Hydrometeors Tracers simultaneously')
-
-         BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
-
          if (Tr3d_intp(n)/='NONE'.and.Tr3d_intp(n)/='TRICUB'.and.Tr3d_intp(n)/='BICUBH_QV') &
             call handle_error(-1,'ADZ_CHECK_TRACERS','INTP not valid')
+
+         BC_activated_L = Tr3d_mass(n)==1.or.(Tr3d_mass(n)>=111.and.Tr3d_mass(n)<=139)
 
          if (BC_activated_L.and..not.Grd_yinyang_L) BC_LAM_L = .true.
 

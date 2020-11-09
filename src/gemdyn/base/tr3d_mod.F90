@@ -52,16 +52,15 @@ module tr3d
    logical :: Tr3d_wload(MAXTR3D), Tr3d_hzd (MAXTR3D)
    integer :: Tr3d_mono (MAXTR3D), Tr3d_mass(MAXTR3D)
    integer :: Tr3d_ntr, NTR_Tr3d_ntr, Tr3d_hu
-   integer :: Tr3d_ntrTRICUB_NT, Tr3d_ntrTRICUB_WP, Tr3d_ntrTRICUB_HY
-   integer :: Tr3d_ntrBICHQV_NT, Tr3d_ntrBICHQV_WP, Tr3d_ntrBICHQV_HY
-   integer :: Tr3d_debTRICUB_NT, Tr3d_debTRICUB_WP, Tr3d_debTRICUB_HY
-   integer :: Tr3d_debBICHQV_NT, Tr3d_debBICHQV_WP, Tr3d_debBICHQV_HY
+   integer :: Tr3d_ntrTRICUB_NT, Tr3d_ntrTRICUB_WP
+   integer :: Tr3d_ntrBICHQV_NT, Tr3d_ntrBICHQV_WP
+   integer :: Tr3d_debTRICUB_NT, Tr3d_debTRICUB_WP
+   integer :: Tr3d_debBICHQV_NT, Tr3d_debBICHQV_WP
    real    :: Tr3d_vmin(MAXTR3D),Tr3d_vmax(MAXTR3D)
 
    real(kind=REAL64), dimension(:), allocatable :: BCMD_3C, BCMD_BQ
 
    type :: meta_tracers
-      sequence
       character(len=4 ) :: name
       character(len=12) :: intp
       logical :: wload,hzd
@@ -70,7 +69,7 @@ module tr3d
       real(kind=REAL64) :: BC_mass_deficit
    end type meta_tracers
 
-   type(meta_tracers), dimension(:), pointer :: Tr_3CNT, Tr_3CWP, TR_3CHY,&
-                                                Tr_BQNT, Tr_BQWP, Tr_BQHY
+   type(meta_tracers), dimension(:), pointer :: Tr_3CNT, Tr_3CWP,&
+                                                Tr_BQNT, Tr_BQWP
 
 end module tr3d

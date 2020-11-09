@@ -22,7 +22,6 @@ module mem_tracers
       real, pointer, dimension (:) :: trt1, trt0, trdf, trtb
 
       type :: memTR_pntrs
-         sequence
          real, dimension(:,:,:), pointer :: pntr
       end type memTR_pntrs
 

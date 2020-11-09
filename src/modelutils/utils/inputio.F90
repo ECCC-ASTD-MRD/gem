@@ -25,6 +25,7 @@ module inputio_mod
    use hinterp4yy_mod, only: HINTERP4YY_NONE
    use mu_jdate_mod, only: jdate_to_cmc, jdate_from_cmc, jdate_month, jdate_year, jdate_midmonth, MU_JDATE_ANY
    use ptopo_utils, only: PTOPO_BLOC
+   use str_mod, only: str_concat_i
    use time_interp_mod
    use vinterp_mod, only: vinterp
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
@@ -847,7 +848,7 @@ contains
       integer :: F_istat
       !*@/
       real,parameter :: MB2PA = 100.
-      character(len=64) :: msg_S, vn_S
+      character(len=1024) :: msg_S, tmp_S, vn_S
       character(len=8), target :: hints_S(1)
       character(len=8), pointer :: phints_S(:)
       integer :: istat, ivar
@@ -893,6 +894,10 @@ contains
 
       !#TODO: level by level (hstats) warning...
       if (RMN_IS_OK(F_istat)) then
+         call str_concat_i(tmp_S, pk1, ', ')
+         write(msg_S, '(i4, a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
+         call msg(MSG_INFO, '(inputio) Read ' &
+              //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)//': '//msg_S)
          if (.not.isassoc_L) F_fld%dalloc_L = .true.
       else
          call msg(MSG_WARNING, '(inputio) Problem reading: ' &

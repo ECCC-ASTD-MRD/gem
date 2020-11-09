@@ -37,7 +37,7 @@ subroutine URBAN_THERMAL_STRESS(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD,        &
 !    PURPOSE       : Computes thermal stress indicators in the street and over rooftop
 !    AUTHOR        :  S. Leroyer   (Original  10/2016),  based on CNRM/G. Pigeon  UTCI code
 !    REFERENCE     :  Leroyer et al. (2018), urban climate
-!    MODIFICATIONS :
+!    MODIFICATIONS :  S. Leroyer (2020): wetbulb in C instead of K
 !    METHOD        :
 !-------------------------------------------------------------------------------
 
@@ -119,8 +119,8 @@ real, dimension(:), intent(OUT) :: PTRAD_GRFSHADE
  real, dimension(:), intent(OUT) :: PTGLOBE_RFSUN    ! Globe Temperature  on the exposed roof (K)
  real, dimension(:), intent(OUT) :: PTGLOBE_RFSHADE  ! Globe Temperature  on the shaded roof  (K)
 
- real, dimension(:), intent(OUT) :: PTWETB          ! wet-bulb temperature in the street
- real, dimension(:), intent(OUT) :: PTWETB_ROOF     ! wet-bulb temperature on the roof
+ real, dimension(:), intent(OUT) :: PTWETB          ! wet-bulb temperature in the street (C)
+ real, dimension(:), intent(OUT) :: PTWETB_ROOF     ! wet-bulb temperature on the roof   (C)
 
  real, dimension(:), intent(OUT)   :: PQ1_H  ! energy components for the standing standard clothed human
  real, dimension(:), intent(OUT)   :: PQ2_H
@@ -250,8 +250,8 @@ PTGLOBE_RFSHADE = TGLOBE_BODY(PTRAD_GRFSHADE, PTA, PURF, ZGD, ZEB_G)
 ! compute the (psychometric) wet-bulb temperatures
 !========================================================
 
-PTWETB       = WETBULBT(PPS, PT_CAN, PQ_CAN)
-PTWETB_ROOF  = WETBULBT(PPA, PTA, PQA)
+PTWETB       = WETBULBT(PPS, PT_CAN -XTT, PQ_CAN)
+PTWETB_ROOF  = WETBULBT(PPA, PTA -XTT, PQA)
 
 !========================================================
 ! compute the Universal Thermal and Climate Index UTCI
@@ -279,18 +279,18 @@ PUTCI_RFSHADE =UTCI_APPROX(PTA-XTT,ZEHPA,PTRAD_HRFSHADE- XTT, PU10RF)
 !========================================================
 ! street
 WBGT_SUN   = 0.2 * (PTGLOBE_SUN -XTT)     +   &
-             0.7 * (PTWETB-XTT)           +   &
+             0.7 *  PTWETB            +   &
              0.1 * (PT_CAN-XTT)
 
 WBGT_SHADE = 0.3 * (PTGLOBE_SHADE -XTT)   +   &
-             0.7 * (PTWETB-XTT)
+             0.7 *  PTWETB
 ! rooftop
 WBGT_RFSUN = 0.2 * (PTGLOBE_RFSUN -XTT)   +   &
-             0.7 * (PTWETB_ROOF-XTT)      +   &
+             0.7 *  PTWETB_ROOF       +   &
              0.1 * (PTA-XTT)
 
 WBGT_RFSHADE = 0.3 * (PTGLOBE_RFSHADE -XTT) +   &
-               0.7 * (PTWETB_ROOF-XTT)
+               0.7 *  PTWETB_ROOF
 
 end subroutine URBAN_THERMAL_STRESS
 

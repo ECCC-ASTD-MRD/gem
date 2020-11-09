@@ -14,15 +14,16 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
+subroutine ccc1_gasoptlgh3(taug, gwgh, dp, ib, ig, &
      o3, qq, inpt, mcont, &
      dip, dt, lev1, gh, &
      il1, il2, ilg, lay, tg)
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, ib, ig, mcont, lev1, il1, il2, ng, lc
+   integer ilg, lay, ib, ig, lev1, il1, il2, ng, lc
    integer ng2, ng3, k, i
+   integer mcont(ilg)
    real taug(ilg,lay), gwgh
 
    real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), &
@@ -98,7 +99,7 @@ subroutine ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
            il1, il2, ilg, lay, tg)
 
       lc =  3
-      call ccc1_tcontl (taug, cl2csgh, cl2cfgh, qq, dp, dip, dt, &
+      call ccc1_tcontl2 (taug, cl2csgh, cl2cfgh, qq, dp, dip, dt, &
            lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       gwgh =  gwl2gh(ig)
@@ -116,7 +117,7 @@ subroutine ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
 
       if (ig .eq. 1)                                                then
          lc =  4
-         call ccc1_tcontl (taug, cl3csgh, cl3cfgh, qq, dp, dip, dt, &
+         call ccc1_tcontl2 (taug, cl3csgh, cl3cfgh, qq, dp, dip, dt, &
               lc, inpt, mcont, gh, il1, il2, ilg, lay)
 
       endif
@@ -152,7 +153,7 @@ subroutine ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
 
       if (ig .le. 2)                                                then
          lc =  4
-         call ccc1_tcontl (taug, cl5csgh(1,1,ig), cl5cfgh(1,1,ig), qq, dp, dip, &
+         call ccc1_tcontl2 (taug, cl5csgh(1,1,ig), cl5cfgh(1,1,ig), qq, dp, dip, &
               dt, lc, inpt, mcont, gh, il1, il2, ilg, lay)
       endif
 
@@ -226,4 +227,4 @@ subroutine ccc1_gasoptlgh2(taug, gwgh, dp, ib, ig, &
    endif
 
    return
-end subroutine ccc1_gasoptlgh2
+end subroutine ccc1_gasoptlgh3

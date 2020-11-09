@@ -134,13 +134,12 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
 
    ! Local variable declarations
    integer :: stat,j,k
-   integer, dimension(n) :: slk
+   integer, dimension(n) :: slk, mlen
    real :: dtfac
    real, dimension(n) :: e_sfc,beta_sfc,tkesrc,ricmin,ricmax,diffcoef
    real, dimension(n,nk) :: znold,dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
         shr_term,shr_ng,zero,buoy_term,frac,fm,fh
    real, dimension(n,nk,3) :: w_cld
-   character(len=64), dimension(n) :: mlen
 
    ! External symbols
    integer, external :: neark
@@ -196,7 +195,7 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    pri = fm/fh
 
    ! Compute mixing and dissipation length scales
-   mlen(:) = ens_spp_get('longmel', mrk2, default=longmel)
+   mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
         enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount)

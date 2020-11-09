@@ -14,8 +14,6 @@ module my_fncs_mod
 
    private
 
-#ifdef ECCC_MY_SCHEME
-
    public  :: NccnFNC,SxFNC,gamma,NccnFNC_v33,SxFNC_v33,gammaDP,diagAlpha_v33, &
               solveAlpha_v33,gser,gammln,gammp,cfg,gamminc
 
@@ -726,7 +724,5 @@ end subroutine cfg
 !
 !  end function x_tothe_y
 !======================================================================!
-
-#endif
 
 end module my_fncs_mod

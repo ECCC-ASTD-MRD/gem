@@ -19,7 +19,7 @@
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
       use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
-      use itf_phy_filter, only: ipf_smooth_fld
+      use itf_phy_filter, only: ipf_smooth_fld, sfcflxfilt_o, nsurfag
       use init_options
       use lun
       use tr3d
@@ -48,6 +48,7 @@
 
       integer :: err_geom, err_input, err_step, err_smooth, err
       logical :: cloudobj
+
 !
 !     ---------------------------------------------------------------
 !
@@ -99,6 +100,13 @@
            ipf_smooth_fld('tcond','smta',3) &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+
+      ! Call digital filter to smooth Alfa, Beta surface fields
+      if (sfcflxfilt_o > 1 .and. F_step_kount > 0) then
+         call dfilter('alfat','falfat',1)
+         call dfilter('alfaq','falfaq',1)
+         call dfilter('bt','fbt',nsurfag)
+      endif
 
       ! Advect cloud objects
       if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.

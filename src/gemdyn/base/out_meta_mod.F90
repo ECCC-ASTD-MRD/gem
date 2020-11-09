@@ -19,7 +19,6 @@ module out_meta
    save
 
    type :: meta_fstecr
-      sequence
       character(len=4) nv
       integer :: ip1,ip2,ip3,ig1,ig2,ig3,nbits,dtyp,ni,nj
    end type meta_fstecr

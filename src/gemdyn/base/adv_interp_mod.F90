@@ -65,22 +65,18 @@ module adv_interp
 !----------------------------------------------------------------------|
 
    type :: ADV_TYPE_V_R8
-      sequence
       real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_V_R8
 
    type :: ADV_TYPE_V_I
-      sequence
       integer, dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_V_I
 
    type :: ADV_TYPE_SV_R8
-      sequence
       real(kind=REAL64), dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_SV_R8
 
    type :: ADV_TYPE_SV_I
-      sequence
       integer, dimension(:), pointer, contiguous :: t,m,x
    end type ADV_TYPE_SV_I
 

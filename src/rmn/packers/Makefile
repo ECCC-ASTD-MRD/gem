@@ -20,7 +20,7 @@ CFLAGS =
 
 SUPP_OPT =
 
-OPTIMIZ = 3
+OPTIMIZ = 2
 #OPTIMIZ = -debug
 
 CPPFLAGS = -I$(RPN_TEMPLATE_LIBS)/include

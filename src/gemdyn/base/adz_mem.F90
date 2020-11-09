@@ -34,7 +34,6 @@ module adz_mem
                                                     Adz_search_t
       real(kind=REAL64) :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
       real :: Adz_yyminposx,Adz_yymaxposx,Adz_yyminposy,Adz_yymaxposy
-      real, dimension(:,:), allocatable :: Adz_Xlim, Adz_Ylim
       real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8
       real(kind=REAL64), dimension(:), pointer :: Adz_cy_8, &
             Adz_delz_m, Adz_delz_t, Adz_odelz_m, Adz_odelz_t
@@ -42,7 +41,6 @@ module adz_mem
       type(C_PTR) :: Adz_cpntr_q,Adz_cpntr_t
 
       type Adz_pntr_stack
-         sequence
          real, dimension(:,:,:), pointer :: src,dst,pil
       end type Adz_pntr_stack
 
@@ -70,7 +68,6 @@ module adz_mem
 
 
       type post
-           sequence
            real, dimension(:,:,:), pointer :: lin
            real, dimension(:,:,:), pointer :: min
            real, dimension(:,:,:), pointer :: max
@@ -79,15 +76,13 @@ module adz_mem
       type(post), pointer, dimension(:) :: Adz_post,Adz_post_3CWP,Adz_post_BQWP
 
       type flux
-           sequence
            real, dimension(:,:,:), pointer :: fo
            real, dimension(:,:,:), pointer :: fi
       end type flux
 
-      type(flux), pointer, dimension(:) :: Adz_flux,Adz_flux_3CWP,Adz_flux_BQWP
+      type(flux), pointer, dimension(:) :: Adz_flux,Adz_flux_3CWP,Adz_flux_BQWP,Adz_flux_3CWP_PS
 
       type bc
-           sequence
            integer :: n
            integer :: wp
            integer :: pexp_n
@@ -106,15 +101,6 @@ module adz_mem
       end type bc
 
       type(bc), pointer, dimension(:) :: Adz_bc
-
-      type :: ADZ_SLOD
-         sequence
-         integer, dimension (8) :: send, recv
-         integer, dimension (:  ), allocatable :: ijk,COMM_handle
-         real   , dimension (:  ), allocatable :: req, intp, resu
-         real   , dimension (:,:), allocatable :: gpos
-      end type ADZ_SLOD
-      type(ADZ_SLOD) :: Adz_expq, Adz_expu, Adz_expv, Adz_expt
 
       integer, dimension (8) :: Adz_exppe
 

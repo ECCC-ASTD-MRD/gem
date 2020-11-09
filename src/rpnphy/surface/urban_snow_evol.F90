@@ -200,8 +200,11 @@ PLW_S_TO_N(:) = 0.
 !
 !-------------------------------------------------------------------------------
 !
-GSNOW_ROOF = ANY( PSR(:)>0. .OR. PWSNOW_ROOF(:)>SWE_CRIT )
-GSNOW_ROAD = ANY( PSR(:)>0. .OR. PWSNOW_ROAD(:)>SWE_CRIT )
+!!$GSNOW_ROOF = ANY( PSR(:)>0. .OR. PWSNOW_ROOF(:)>SWE_CRIT )
+!!$GSNOW_ROAD = ANY( PSR(:)>0. .OR. PWSNOW_ROAD(:)>SWE_CRIT )
+GSNOW_ROOF = .true.
+GSNOW_ROAD = .true.
+
 !
 !-------------------------------------------------------------------------------
 !

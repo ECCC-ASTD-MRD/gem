@@ -36,7 +36,7 @@
 
       include "tricublin_f90.inc"
 
-      integer  i, j, k, n, k0, BCS_BASE, pnz, ext, halom
+      integer  j, k, n, k0, BCS_BASE, pnz, ext, halom
       real(kind=REAL64), parameter :: EPS_8= 1.D-5
       real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
@@ -44,7 +44,7 @@
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
-      integer :: dim, kp1, flag_r_n, istat,istatu,istatv
+      integer ::  kp1, flag_r_n, istat,istatu,istatv
 !
 !---------------------------------------------------------------------
 !
@@ -106,32 +106,14 @@
       Adz_cpntr_t= vsearch_setup_plus(Ver_z_8%t(1:G_nk), G_nk,&
                                  Adz_nit,Adz_njt,1-l_i0,1-l_j0)
 
-      BCS_BASE= 4
-      if (Grd_yinyang_L) BCS_BASE = 3
-
-      allocate (Adz_Xlim(2,0:Ptopo_npex), Adz_Ylim(2,0:Ptopo_npey))
-      do i=0, Ptopo_npex-1
-         Adz_Xlim(1,i) = Ptopo_gindx(1,Ptopo_colrow(Ptopo_couleur,i,0)+1)
-         Adz_Xlim(2,i) = Ptopo_gindx(2,Ptopo_colrow(Ptopo_couleur,i,0)+1)
-      end do
-      do i=0, Ptopo_npey-1
-         Adz_Ylim(1,i) = Ptopo_gindx(3,Ptopo_colrow(Ptopo_couleur,0,i)+1)
-         Adz_Ylim(2,i) = Ptopo_gindx(4,Ptopo_colrow(Ptopo_couleur,0,i)+1)
-      end do
-      Adz_Xlim(1,0) = 1 +BCS_BASE
-      Adz_Xlim(2,Ptopo_npex-1) = Ptopo_gindx&
-                            (2,Ptopo_colrow(Ptopo_couleur,Ptopo_npex-1,0)+1) -BCS_BASE
-      Adz_Ylim(1,0) = 1 +BCS_BASE
-      Adz_Ylim(2,Ptopo_npey-1) = Ptopo_gindx&
-                            (4,Ptopo_colrow(Ptopo_couleur,0,Ptopo_npey-1)+1) -BCS_BASE
-      Adz_Xlim(1,Ptopo_npex) = Adz_Xlim(2,Ptopo_npex-1)
-      Adz_Ylim(1,Ptopo_npey) = Adz_Ylim(2,Ptopo_npey-1)
-
 ! FOR SLOD
 !!$      Adz_iminposx = l_i0+   1-Adz_halox   + EPS_8
 !!$      Adz_imaxposx = l_i0+l_ni+Adz_halox-2 - EPS_8
 !!$      Adz_iminposy = l_j0+   1-Adz_haloy   + EPS_8
 !!$      Adz_imaxposy = l_j0+l_nj+Adz_haloy-2 - EPS_8
+
+      BCS_BASE= 4
+      if (Grd_yinyang_L) BCS_BASE = 3
 
       Adz_iminposx = l_i0+adz_lminx   + EPS_8
       Adz_imaxposx = l_i0+adz_lmaxx-2 - EPS_8
@@ -201,13 +183,12 @@
       halom= max(Adz_haloy,G_haloy)
       allocate ( lat(1-halom:G_nj+halom+1))
       lat(1-G_haloy:G_nj+G_haloy+1)= G_yg_8(1-G_haloy:G_nj+G_haloy+1)
-      do j= Adz_lminy, -G_haloy
+      do j= lbound(lat,dim=1), -G_haloy
          lat(j)= G_yg_8(1-G_haloy) + (j-1+G_haloy) * geomh_hy_8
       end do
-      do j = G_nj+G_haloy+2, Adz_lmaxy
+      do j = G_nj+G_haloy+2, ubound(lat,dim=1)
          lat(j)= G_yg_8(G_nj+G_haloy) + (j-G_nj-G_haloy) * geomh_hy_8
       end do
-
       do j = Adz_lminy, Adz_lmaxy
          Adz_cy_8(j) = 1.d0 / cos(lat(l_j0+j-1))
       end do
@@ -264,6 +245,7 @@
       allocate (adz_flux     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
       allocate (adz_flux_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
       allocate (adz_flux_BQWP(max(1,Tr3d_ntrBICHQV_WP)))
+      allocate (adz_flux_3CWP_PS(1))
 
       do n = 1,max(1,Tr3d_ntrTRICUB_WP)
 
@@ -278,6 +260,9 @@
          allocate(adz_flux_BQWP(n)%fi(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
 
       end do
+
+      allocate(adz_flux_3CWP_PS(1)%fo(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+      allocate(adz_flux_3CWP_PS(1)%fi(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
 
       allocate (adz_post     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
       allocate (adz_post_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
@@ -309,39 +294,6 @@
 
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
-
-      dim = l_ni*l_nj*l_nk
-      allocate ( Adz_expq%ijk (  dim  ), Adz_expq%gpos(3*dim,8),&
-                 Adz_expq%resu(  dim  ), Adz_expq%req ( dim   ),&
-                 Adz_expq%intp(  dim  )                        ,&
-                 Adz_expu%ijk (  dim  ), Adz_expu%gpos(3*dim,8),&
-                 Adz_expu%resu(  dim  ), Adz_expu%req ( dim   ),&
-                 Adz_expu%intp(  dim  )                        ,&
-                 Adz_expv%ijk (  dim  ), Adz_expv%gpos(3*dim,8),&
-                 Adz_expv%resu(  dim  ), Adz_expv%req ( dim   ),&
-                 Adz_expv%intp(  dim  )                        ,&
-                 Adz_expt%ijk (  dim  ), Adz_expt%gpos(3*dim,8),&
-                 Adz_expt%resu(  dim  ), Adz_expt%req ( dim   ),&
-                 Adz_expt%intp(  dim  )                        ,&
-                 Adz_expq%COMM_handle(Ptopo_numproc)           ,&
-                 Adz_expu%COMM_handle(Ptopo_numproc)           ,&
-                 Adz_expv%COMM_handle(Ptopo_numproc)           ,&
-                 Adz_expt%COMM_handle(Ptopo_numproc)            )
-
-      Adz_exppe = -1
-! later in the one-sided MPI in GY
-!!$      if (Ptopo_myrow>0) then
-!!$         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(1)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow-1)
-!!$         if (Ptopo_mycol>0           ) Adz_exppe(3)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow-1)
-!!$                                       Adz_exppe(2)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol  ,Ptopo_myrow-1)
-!!$      endif
-!!$      if (Ptopo_myrow<Ptopo_npey-1) then
-!!$         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(7)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow+1)
-!!$         if (Ptopo_mycol>0           ) Adz_exppe(5)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow+1)
-!!$                                       Adz_exppe(6)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol  ,Ptopo_myrow+1)
-!!$      endif
-!!$      if (Ptopo_mycol>0              ) Adz_exppe(4)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol-1,Ptopo_myrow  )
-!!$      if (Ptopo_mycol<Ptopo_npex-1   ) Adz_exppe(8)=Ptopo_colrow(Ptopo_couleur,Ptopo_mycol+1,Ptopo_myrow  )
 
       if (Ptopo_myrow>0) then
          if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(1)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow-1)

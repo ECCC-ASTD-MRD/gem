@@ -210,6 +210,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real, dimension(NI     ) :: HU0MIN
    real, dimension(NI     ) :: XBHU
    real, dimension(NI     ) :: HMRST
+   real, dimension(NI     ) :: ICEACC
 
    !***********************************************************************
    !-----------------------------------------------------------------------
@@ -356,6 +357,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    HCST(:)   = ens_spp_get('cond_hcst', mrk2, default=1.E-4)
    STPEVP(:) = 2.*GRAV * ens_spp_get('cond_evap', mrk2, default=cond_evap)
    HMRST(:) = ens_spp_get('cond_hmrst', mrk2, default=cond_hmrst)
+   ICEACC(:) = ens_spp_get('cond_iceacc', mrk2, default=cond_iceacc)
 
    !-----------------------------------------------------------------------
 
@@ -515,7 +517,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          !           ------------------------------------------------------------
 
          temp1 = amax1(0.,amin1(1.,0.25*(TM(il,jk)-232.)))
-         HFRCOA = temp1 * HFRCOA + ( 1.- temp1 ) * 5.
+         HFRCOA = temp1 * HFRCOA + ( 1.- temp1 ) * ICEACC(il)
          !           ------------------------------------------------------------
          !           Fixed part of the equation normalized by 2.*b*Mr
          !           ------------------------------------------------------------

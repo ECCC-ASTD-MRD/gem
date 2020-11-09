@@ -38,7 +38,7 @@ contains
       ! 002      A. Zadra (Oct 2015) - add land-water mask (MG) to input
       !                 list of baktotq4
       ! 003      A. Zadra / R. McT-C (Sep 2016) - added nonlocal scaling option
-      !                 based on J. Mailhot/A. Lock (Aug 2012) 
+      !                 based on J. Mailhot/A. Lock (Aug 2012)
 
       !          - Input/Output -
       ! db       dynamic bus
@@ -86,7 +86,6 @@ contains
       real rhortvsg,mrhocmu,localstefan
       real tplusnk,qplusnk,uplusnk,vplusnk
       real rsg,du,dv,dsig
-
 #include "phymkptr.hf"
       include "surface.cdk"
 
@@ -99,8 +98,8 @@ contains
 
       !     Pointeurs pour champs deja definis dans les bus
       real, pointer, dimension(:)   :: ps
-      real, pointer, dimension(:)   :: zalfat, zalfaq, zbm, zbm0, zbt_ag, &
-           zfc_ag, zfdsi, zfdss, &
+      real, pointer, dimension(:)   :: zalfat, zalfat0, zalfaq, zalfaq0, zbm,&
+           zbm0, zbt_ag, zbt_ag0, zfc_ag, zfdsi, zfdss, &
            zfl, zfnsi, zfq, zfv_ag, &
            zmg, zqsurf_ag, ztsrad, &
            zustress, zvstress, zue, zh
@@ -123,9 +122,24 @@ contains
 
       ! Pointer assignments
       MKPTR1D(ps, pmoins, f)
-      MKPTR1D(zalfaq, alfaq, v)
-      MKPTR1D(zalfat, alfat, v)
+
+      if (sfcflx_filter_order <= 0) then
+         MKPTR1D(zalfaq, alfaq, v)
+         MKPTR1D(zalfat, alfat, v)
+         MKPTR1DK(zbt_ag, bt, indx_agrege, v)
+      else
+         if (kount == 0) then
+            MKPTR1D(zalfaq0, alfaq, v)
+            MKPTR1D(zalfat0, alfat, v)
+            MKPTR1DK(zbt_ag0, bt, indx_agrege, v)
+         endif
+         MKPTR1D(zalfaq, falfaq, f)
+         MKPTR1D(zalfat, falfat, f)
+         MKPTR1DK(zbt_ag, fbt, indx_agrege, f)
+      endif
+      
       MKPTR1D(zbm, bm, v)
+
       MKPTR1D(zbm0, bm0, f)
       MKPTR1D(zfdsi, fdsi, f)
       MKPTR1D(zfdss, fdss, f)
@@ -139,7 +153,6 @@ contains
       MKPTR1D(zustress, ustress, v)
       MKPTR1D(zvstress, vstress, v)
 
-      MKPTR1DK(zbt_ag, bt, indx_agrege, v)
       MKPTR1DK(zfc_ag, fc, indx_agrege, v)
       MKPTR1DK(zfv_ag, fv, indx_agrege, v)
       MKPTR1DK(zqsurf_ag, qsurf, indx_agrege, f)
@@ -196,7 +209,16 @@ contains
       MKPTR2Dm1(zpblq1, pblq1, v)
 
       MKPTR3D(zvcoef, vcoef, 2, v)
+
       
+      if (kount == 0 .and. sfcflx_filter_order > 0) then
+         do j=1,ni
+            zalfaq(j)=zalfaq0(j)
+            zalfat(j)=zalfat0(j)
+            zbt_ag(j)=zbt_ag0(j)
+         enddo
+      endif
+
       if(zsigt(1,1) > 0) then
          sigef(1:,1:) => zsigt(1:ni,1:nkm1)
          sigex(1:,1:) => zsigt(1:ni,1:nkm1)
@@ -210,7 +232,7 @@ contains
       ! Retrieve stochastic parameter information on request
       fm_mult(:) = ens_spp_get('fm_mult', zmrk2, default=1.)
       fh_mult(:) = ens_spp_get('fh_mult', zmrk2, default=1.)
-      
+
       ! Choose diffusion operators based on vertical grid structure
       typem = 1
       if(zsigt(1,1) > 0) then
@@ -278,7 +300,7 @@ contains
          sfc_density(j) = -aq(j) * ps(j)/GRAV
       end do
       if (pbl_cmu_timeavg .and. kount > 0) then
-         bmsg(:) = (zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:)
+         bmsg(:) = fm_mult(:) * ((zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:))
          zbm0(:) = zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM)
       endif
       gam0 = 0.
@@ -425,7 +447,7 @@ contains
                dv = vv(j,k) - vv(j,k+1) + tau*(tv(j,k) - tv(j,k+1))
                dsig = zsigm(j,k) - zsigm(j,k+1)
                dket(j,k) = - kmsg(j,k)*( (du/dsig)**2 + (dv/dsig)**2 ) &
-                           - 0.5*tau*tu2t(j,k) 
+                           - 0.5*tau*tu2t(j,k)
             end do
          end do
          do j=1,ni
@@ -444,7 +466,7 @@ contains
 
       ! Diagnose final surface balance
       localstefan = STEFAN
-      if (radia == 'NIL') localstefan = 0. !# needed in offline mode?
+      if (radia == 'NIL') localstefan = 0.
 !vdir nodep
       do j = 1, ni
          rhortvsg = ps(j)/GRAV

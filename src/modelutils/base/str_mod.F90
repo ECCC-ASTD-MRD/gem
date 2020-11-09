@@ -25,7 +25,7 @@ module str_mod
    !@author Stephane Chamberland, 2011-09
    !@description
    ! Public functions
-   public :: str_normalize,str_rm_quotes,str_tab2space,str_toint,str_toreal,str_tobool, str_concat, str_encode_num
+   public :: str_normalize,str_rm_quotes,str_tab2space,str_toint,str_toreal,str_tobool, str_concat, str_concat_i, str_encode_num
    ! Public constants
    !
 !@/
@@ -183,6 +183,29 @@ contains
       return
    end subroutine str_concat
 
+   
+   !/@*
+   subroutine str_concat_i(F_str_out_S,F_i_array,F_sep_S)
+      implicit none
+      character(len=*),intent(out) :: F_str_out_S
+      integer,         intent(in)  :: F_i_array(:)
+      character(len=*),intent(in)  :: F_sep_S
+      !*@/
+      integer :: i
+      character(len=512) :: str
+      !--------------------------------------------------------------------
+      write(str, *) F_i_array(1)
+      call str_tab2space(str)
+      F_str_out_S = adjustl(str)
+      do i = 2, size(F_i_array)
+         write(str, *) F_i_array(1)
+         call str_tab2space(str)
+         F_str_out_S = trim(F_str_out_S)//F_sep_S//trim(adjustl(str))
+      enddo
+      !---------------------------------------------------------------------
+      return
+   end subroutine str_concat_i
+   
 
    !/@*
    function str_encode_num(F_val,F_codes_S) result(F_str_S)

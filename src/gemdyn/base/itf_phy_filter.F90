@@ -18,6 +18,11 @@ module itf_phy_filter
    ! Provide spatial filtering options for physics variables
    private
 
+   ! Public variables
+   integer, public, save :: sfcflxfilt_o = -1
+   integer, public, save :: sfcflxfilt_i = 1
+   integer, public, save :: nsurfag = 1
+
    ! External decalarations
 #include <msg.h>
 
@@ -210,7 +215,8 @@ contains
          F_data(:,:,k) = F_data(:,:,k) + tends(:,:,k)*Cstv_dt_8*tdmask1(:,:)
       end do
       tend => tends
-      F_status = phy_put(tend,F_name,F_npath='V',F_bpath='VP',F_end=(/-1,-1,l_nk/))
+      iend = (/-1,-1,l_nk/)
+      F_status = phy_put(tend,F_name,F_npath='V',F_bpath='VP',F_end=iend)
 
       ! End of subprogram
       F_status = RMN_OK

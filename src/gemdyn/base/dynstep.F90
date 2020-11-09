@@ -63,9 +63,11 @@
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
+      call adz_tracers (.true.)
+
       call psadj ( Step_kount )
-                      
-      call adz_tracers ()
+
+      call adz_tracers (.false.)
 
       call t02t1()
 

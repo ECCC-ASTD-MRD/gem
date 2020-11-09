@@ -400,7 +400,7 @@ WHERE (PBLD_HEIGHT(:)<=(zt*2.0)) ztrdzt(:) = PT_CANYON(:)
   ZQ0(:)     = (PTS_ROAD(:) - PT_CANYON(:)) * PAC_ROAD(:) &
               +(PTS_WALL(:) - PT_CANYON(:)) * PAC_WALL(:) * PWALL_O_ROAD(:)
 
-  if (all(ZQ0(:)<0.)) exit
+!!$  if (all(ZQ0(:)<0.)) exit
   where (ZQ0(:) >= 0.)
     ZW_STAR(:) = ( (XG * PEXNA(:) / PTA(:)) * ZQ0(:) * PBLD_HEIGHT(:)) ** (1/3.)
   elsewhere

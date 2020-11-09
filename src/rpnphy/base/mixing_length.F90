@@ -26,22 +26,41 @@ module mixing_length
 
    ! External symbols
    integer, external :: neark
-
+  
+   ! Private parameters
+   integer, parameter :: ML_LONG=1024              !Long character string
+   integer, parameter :: ML_BLAC62=1               !Key for 'blac62' mixing length
+   integer, parameter :: ML_BOUJO=2                !Key for 'boujo' mixing length
+   integer, parameter :: ML_TURBOUJO=3             !Key for 'turboujo' mixing length
+   integer, parameter :: ML_LH=4                   !Key for 'lh' mixing length
+   real, parameter :: ML_MIN=1.                    !Minimum mixing length (m)
+   
+   ! API types
+   type closureMap
+      sequence
+      character(len=ML_LONG) :: name
+      integer :: key
+   end type closureMap
+   
    ! API parameters
    integer, parameter, public :: ML_OK=0,ML_ERR=1  !Package return statuses
    real, parameter, public :: ML_LMDA=200.         !Maximum stable asymptotic mixing length for Blackadar (1962) estimate
    real, parameter, public :: ML_LMDAS=40.         !Minimum stable asymptotic mixing length for Lock (2007) estimate
    real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
-
-   ! Private parameters
-   integer, parameter :: ML_LONG=1024              !Long character string
-   real, parameter :: ML_MIN=1.                    !Minimum mixing length (m)
-
+   type(closureMap), dimension(4), parameter, public :: ML_CLOSURES = (/ & !Available closures and mappings
+        closureMap('BLAC62', ML_BLAC62), &
+        closureMap('BOUJO', ML_BOUJO), &
+        closureMap('TURBOUJO', ML_TURBOUJO), &
+        closureMap('LH', ML_LH)/)  !Remember to update the documentation strings in phy_options() if changes are made here
+   
    ! Private variables
+   logical :: initialized=.false.                  !Package initialization status
    character(len=ML_LONG) :: mlblac_max = 'BLAC62' !Asymptotic formulation for Blacadar (1962) mixing length with clipping
 
    ! API subprograms
+   public :: ml_init
    public :: ml_put
+   public :: ml_key
    public :: ml_tfilt
    public :: ml_blend
    public :: ml_calc_blac
@@ -56,6 +75,88 @@ module mixing_length
 
 contains
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function ml_init(mlen, imlen) result(status)
+    ! Initialize the mixing length module and return the integer key
+
+    ! Input arguments
+    character(len=*), intent(in) :: mlen                   !Mixing length closure
+
+    ! Output arguments
+    integer, intent(out) :: imlen                          !Integer key for mixing length closure
+    integer :: status                                      !Return status of function
+
+    ! Initialize return value
+    status = ML_ERR
+
+    ! Set initialization status
+    if (initialized) then
+       call msg_toall(MSG_ERROR,'(ml_init) Attempt to reinitialized mixing length package')
+       return
+    endif
+    initialized = .true.
+    
+    ! Map closure name to key
+    imlen = -1
+    if (ml_key(mlen, imlen) /= ML_OK) return
+
+    ! Successful completion of subprogram
+    status = ML_OK
+    
+  end function ml_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function ml_key(mlen, imlen) result(status)
+    use clib_itf_mod, only: clib_toupper, CLIB_OK
+    ! Map the mixing length closure to an integer key
+
+    ! Input arguments
+    character(len=*), intent(in) :: mlen                   !Mixing length closure
+
+    ! Output arguments
+    integer, intent(out) :: imlen                          !Integer key for mixing length closure
+    integer :: status                                      !Return status of function
+
+    ! Internal variables
+    integer :: i
+    character(len=ML_LONG) :: ucmlen
+    
+    ! Initialize return value
+    status = ML_ERR
+
+    ! Check initialization status
+    if (.not.initialized) then
+       call msg_toall(MSG_ERROR,'(ml_key) mixing length package not initialized')
+       return
+    endif
+    
+    ! Convert value to upper case
+    ucmlen = mlen
+    if (clib_toupper(ucmlen) /= CLIB_OK) then
+       call msg_toall(MSG_ERROR,'(ml_key) cannot convert mixing length to upper case: '//trim(mlen))
+       return
+    endif
+
+    ! Map closure name to key
+    imlen = -1
+    i = 1
+    do while (imlen < 0 .and. i <= size(ML_CLOSURES))
+       if (ucmlen == ML_CLOSURES(i)%name) then
+          imlen = ML_CLOSURES(i)%key
+       else
+          i = i+1
+       endif
+    enddo
+    if (imlen < 0) then
+       call msg_toall(MSG_ERROR,'(ml_key) invalid mixing length request: '//trim(mlen))
+       return
+    endif
+       
+    ! Successful completion of subprogram
+    status = ML_OK
+
+  end function ml_key
+    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function ml_put_s(key,val) result(status)
       use clib_itf_mod, only: clib_toupper, CLIB_OK
@@ -74,6 +175,12 @@ contains
       ! Initialize return value
       status = ML_ERR
 
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_put_s) mixing length package not initialized')
+         return
+      endif
+      
       ! Convert value to upper case
       ucval = val
       if (clib_toupper(ucval) /= CLIB_OK) then
@@ -99,12 +206,12 @@ contains
    integer function ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
         enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount) result(stat)
-     use phy_options, only: longmel, pbl_diss, pbl_mlturb_diss
+     use phy_options, only: ilongmel, pbl_diss, pbl_mlturb_diss, timings_L
      use ens_perturb, only: ens_spp_get
      ! High-level function to compute and blend mixing lengths
 
      ! Argument declaration
-     character(len=*), dimension(:), intent(in) :: mlen    !name of mixing length estimate
+     integer, dimension(:), intent(in) :: mlen             !mixing length closure key
      real, dimension(:,:), intent(in) :: t                 !dry air temperature (K)
      real, dimension(:,:), intent(in) :: qe                !specific humidity on e-levels (kg/kg)
      real, dimension(:,:), intent(in) :: qc                !PBL cloud water content (kg/kg)
@@ -136,43 +243,55 @@ contains
      ! Local variables and common blocks
 #include "clefcon.cdk"
      integer :: n, nk, j, k
-     real, dimension(size(t,dim=1)) :: mlemod, mlmult
+     real, dimension(size(t,dim=1)) :: mlemod, mlemodt, mlmult
      real, dimension(size(t,dim=1),size(t,dim=2)) :: zn_blac, zd_blac, pri_blac, &
           zn_boujo, zd_boujo, pri_boujo, zn_turboujo, zd_turboujo, pri_turboujo, &
           zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, exner, weight, rif
-     logical :: one_ml_form, stochastic_mult
-     logical, dimension(size(t,dim=1),size(t,dim=2)) :: turb_mask
-
+     logical :: one_ml_form, mlemod_calc, mlemodt_calc
+     logical, dimension(size(t,dim=1),size(t,dim=2)) :: boujo_valid
+     
      ! Set return status
      stat = ML_ERR
 
+     ! Check initialization status
+     if (.not.initialized) then
+        call msg_toall(MSG_ERROR,'(ml_compute) mixing length package not initialized')
+        return
+     endif
+
+     ! Timings for mixing length calculation
+     if (timings_L) call timing_start_omp(500, 'mixing_length', 430)
+     
      ! Set array bounds
      n = size(t, dim=1)
      nk = size(t, dim=2)
 
      ! Obtain stochastic parameter information
      mlmult(:) = ens_spp_get('ml_mult', mrk2, 1.)
-     mlemod(:) = ens_spp_get('ml_emod', mrk2, 1.)
-     stochastic_mult = any(mlemod(:) /= 1.)
-     one_ml_form = all(mlen(:) == longmel)
+     mlemod(:) = ens_spp_get('ml_emod', mrk2, 0.)
+     mlemodt(:) = ens_spp_get('ml_emodt', mrk2, 0.)
+     mlemod_calc = any(mlemod(:) /= 0.)     !model based on 'blac62' and 'boujo'
+     mlemodt_calc = any(mlemodt(:) /= 0.)   !model based on 'blac62' and 'boujo' below eta=0.7
+     one_ml_form = all(mlen(:) == ilongmel) .and. .not.(mlemod_calc .or. mlemodt_calc)
 
      ! Precompute state variables if required
-     if (any(mlen(:) == 'BOUJO') .or. any(mlen(:) == 'TURBOUJO') .or. &
-          stochastic_mult) then
+     if (any(mlen(:) == ML_BOUJO) .or. any(mlen(:) == ML_TURBOUJO) .or. &
+          mlemod_calc .or. mlemodt_calc) then
         call vspown1(exner,se,-CAPPA,n*nk)
         te(1:n,1:nk)  = t(1:n,1:nk)
         qce(1:n,1:nk) = qc(1:n,1:nk)
         tv = te*(1.0+DELTA*qe-qce)*exner
      endif
+     boujo_valid(:,:) = .false.
+     zn_boujo(:,:) = -1.
 
-     ! Mixing length estimate based on Bougeault and Lacarrere (1989)
-     if (any(mlen(:) == 'TURBOUJO')) then
-        where (nint(turbreg) == LAMINAR)
-           turb_mask = .false.
-        elsewhere
-           turb_mask = .true.
+     ! Mixing length estimate based on regime-dependent Bougeault and Lacarrere (1989)
+     if (any(mlen(:) == ML_TURBOUJO)) then
+        where (nint(turbreg(:,:)) /= LAMINAR)
+           boujo_valid(:,:) = .true.
         endwhere
-        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, mask=turb_mask) /= ML_OK) then
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, &
+             mask=boujo_valid, init=.false.) /= ML_OK) then
            call physeterror('moistke', 'error returned by B-L mixing length estimate')
            return
         endif
@@ -186,14 +305,14 @@ contains
            call physeterror('moistke','error returned by mixing length blending')
            return
         endif
-        where (zn_boujo < 0.)
-           zn_turboujo(:,:) = zn_blac(:,:)   ! Use local (Blackadar) mixing length for laminar flows
+        where (boujo_valid(:,:))
+           przn(:,:) = 1.                  ! Nonlocal (Bougeault) mixing length for turbulent flows
         elsewhere
-           przn(:,:) = 1.      ! Use nonlocal (Bougeault) mixing length for turbulent flows
+           zn_turboujo(:,:) = zn_blac(:,:) ! Local (Blackadar) mixing length for laminar flows
         endwhere
         do k=1,nk
            zn_turboujo(:,k) = zn_turboujo(:,k) * mlmult(:)
-        enddo
+        enddo        
         if (ml_tfilt(zn_turboujo, znold, tau, kount) /= ML_OK) then
            call physeterror('moistke', 'error returned by mixing length time filtering')
            return
@@ -203,7 +322,7 @@ contains
         zd_turboujo = zn_turboujo * (1.-min(rif,0.4)) / (1.-2.*min(rif,0.4))
         zd_turboujo = max(zd_turboujo,1.e-6)
         if (pbl_mlturb_diss) then
-           where (nint(turbreg) == LAMINAR) zd_turboujo = max(zn_turboujo,1.E-6)
+           where (.not.boujo_valid(:,:)) zd_turboujo = max(zn_turboujo,1.E-6)
         endif
         if (one_ml_form) then
            zn = zn_turboujo
@@ -213,8 +332,20 @@ contains
      endif
 
      ! Mixing length estimate based on Bougeault and Lacarrere (1989)
-     if (any(mlen(:) == 'BOUJO') .or. stochastic_mult) then
-        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps) /= ML_OK) then
+     if (any(mlen(:) == ML_BOUJO) .or. mlemod_calc .or. mlemodt_calc) then
+        ! Do not recompute at points already done by 'turboujo'
+        do k=1,nk
+           do j=1,n
+              if (boujo_valid(j,k)) then
+                 boujo_valid(j,k) = .false.
+              else
+                 if (mlemodt_calc .and. se(j,k) > 0.7) boujo_valid(j,k) = .true.
+                 if (mlen(j) == ML_BOUJO .or. mlemod_calc) boujo_valid(j,k) = .true.
+              endif
+           enddo
+        enddo
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, &
+             mask=boujo_valid, init=.false.) /= ML_OK) then
            call physeterror('moistke', 'error returned by B-L mixing length estimate')
            return
         endif
@@ -222,6 +353,11 @@ contains
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
         endif
+        where (zn_boujo(:,:) < 0.)
+           zn_boujo(:,:) = zn_blac(:,:)
+        elsewhere
+           boujo_valid(:,:) = .true.
+        endwhere
         blend_hght(:,:nk-1) = gzmom(:,2:)
         blend_hght(:,nk) = 0.
         if (ml_blend(zn_boujo, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
@@ -247,7 +383,7 @@ contains
      endif
 
      ! Mixing length estimate based on Lenderink and Holtslag (2004) modified for no-local Cu
-     if (any(mlen(:) == 'LH')) then
+     if (any(mlen(:) == ML_LH)) then
         przn = 1.
         pri_lh = pri/przn
         if (ml_calc_lh(zd_lh, zn_lh, pri_lh, buoy, enold, w_cld, rig, z, f_cs, hpar) /= ML_OK) then
@@ -281,7 +417,7 @@ contains
      endif
 
      ! Mixing length estimate based on Blackadar (1962)
-     if (any(mlen(:) == 'BLAC62') .or. stochastic_mult) then
+     if (any(mlen(:) == ML_BLAC62) .or. mlemod_calc .or. mlemodt_calc) then
         if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, dxdy=dxdy, przn=przn) /= ML_OK) then
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
@@ -301,44 +437,55 @@ contains
            pri = pri_blac
         endif
      endif
-
+     
      ! Merge mixing length estimates if required
      if (.not.one_ml_form) then
         do j=1,n
-           if (mlen(j) == 'TURBOUJO') then
+           if (mlen(j) == ML_TURBOUJO) then
               zn(j,:) = zn_turboujo(j,:)
               zd(j,:) = zd_turboujo(j,:)
               pri(j,:) = pri_turboujo(j,:)
-           elseif (mlen(j) == 'BOUJO') then
+           elseif (mlen(j) == ML_BOUJO) then
               zn(j,:) = zn_boujo(j,:)
               zd(j,:) = zd_boujo(j,:)
               pri(j,:) = pri_boujo(j,:)
-           elseif (mlen(j) == 'LH') then
+           elseif (mlen(j) == ML_LH) then
               zn(j,:) = zn_lh(j,:)
               zd(j,:) = zd_lh(j,:)
               pri(j,:) = pri_lh(j,:)
-           elseif (mlen(j) == 'BLAC62') then
+           elseif (mlen(j) == ML_BLAC62) then
               zn(j,:) = zn_blac(j,:)
               zd(j,:) = zd_blac(j,:)
               pri(j,:) = pri_blac(j,:)
            else
-              call physeterror('moistke', 'invalid mixing length '//trim(mlen(j)))
+              call physeterror('moistke', 'invalid mixing length ')
               return
            endif
         enddo
      endif
 
-     ! Apply stochastic error model on request
-     if (stochastic_mult) then
+     ! Apply stochastic error models on request
+     if (mlemod_calc) then
         do k=1,nk
            zn(:,k) = min( max( zn(:,k) + mlemod(:) * (zn_boujo(:,k) - zn_blac(:,k)), &
                 ML_MIN), ML_LMDA_UNSTAB)
+        enddo
+     endif
+     if (mlemodt_calc) then
+        do k=1,nk
+           where (boujo_valid(:,k))
+              zn(:,k) = min( max( zn(:,k) + mlemodt(:) * (zn_boujo(:,k) - zn_blac(:,k)), &
+                   ML_MIN), ML_LMDA_UNSTAB)
+           endwhere
         enddo
      endif
 
      ! Adjust dissipation length scale on user request
      if (pbl_diss == 'LIM50') zd = min(zd,50.)
 
+     ! Completed timings
+     if (timings_L) call timing_stop_omp(500)
+     
      ! Successful end of subprogram
      stat = ML_OK
      return
@@ -361,6 +508,12 @@ contains
       ! Set return status
       stat = ML_ERR
 
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_tfilt) mixing length package not initialized')
+         return
+      endif
+      
       ! Do not filter if field has been read on this step
       READ_INPUT: if (any('zn'==phyinread_list_s(1:phyinread_n))) then
          zn = znold
@@ -395,6 +548,15 @@ contains
       integer :: j,k,nj,nk
       real :: pres
 
+      ! Set return status
+      stat = ML_ERR
+      
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_blend) mixing length package not initialized')
+         return
+      endif
+    
       ! Initialization
       nj = size(zn1,dim=1)
       nk = size(zn1,dim=2)
@@ -442,6 +604,12 @@ contains
       ! Set return status
       stat = ML_ERR
 
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_calc_blac) mixing length package not initialized')
+         return
+      endif
+      
       ! Initialization
       nk = size(zz,dim=2)
 
@@ -497,7 +665,7 @@ contains
    end function ml_calc_blac
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ml_calc_boujo(zn,th,en,w_cld,zz,sigma,ps,mask) result(stat)
+   integer function ml_calc_boujo(zn,th,en,w_cld,zz,sigma,ps,mask,init) result(stat)
       ! Compute the Bougeault and Lacarrere (1989) length scales
       use integrals, only: int_profile, int_solve, INT_ERR
 
@@ -509,7 +677,8 @@ contains
       real, dimension(:,:), intent(in) :: sigma             !coordinate values for e-levs
       real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
       logical, dimension(:,:), intent(in), optional :: mask !calculation mask [.true.]
-      real, dimension(:,:), intent(out) :: zn               !mixing length (m)
+      logical, intent(in), optional :: init                 !initialize the mixing length [.true.]
+      real, dimension(:,:), intent(inout) :: zn             !mixing length (m)
 
       !Author
       !          S. Belair (November 1996)
@@ -552,12 +721,19 @@ contains
       real :: gravinv
       real, dimension(size(th,dim=1)) :: a,zdep
       real, dimension(size(th,dim=1),size(th,dim=2)) :: y,lup,ldown,zcoord
+      logical :: myInit
       logical, dimension(size(th,dim=1)) :: intok
       logical, dimension(size(th,dim=1),size(th,dim=2)) :: myMask
 
       ! Set return status
       stat = ML_ERR
 
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_calc_boujo) mixing length package not initialized')
+         return
+      endif
+      
       ! Initialization
       n = size(th,dim=1)
       nk = size(th,dim=2)
@@ -565,9 +741,11 @@ contains
       istat = neark(sigma,ps,1000.,n,nk,slk) !determine "surface layer" vertical index for buoyancy coefficient
       myMask = .true.
       if (present(mask)) myMask = mask
+      myInit = .true.
+      if (present(init)) myInit = init
 
       ! Expend TKE through vertical displacements
-      zn = -1.
+      if (myInit) zn = -1.
       do ki=2,nk-1
 
          ! Prepare integral equation components
@@ -672,8 +850,16 @@ contains
            f_ri         ,&! function of Ri
            l_h            ! mixing length for heat
 
+      ! Set return status
+      stat = ML_ERR
+
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_key) mixing length package not initialized')
+         return
+      endif
+   
       ! Initializations and constants
-      stat = ML_OK
       n = size(en,dim=1)
       nk = size(en,dim=2)
       alpha_n = C_N * KARMAN
@@ -814,7 +1000,9 @@ contains
       l_m(:,nk) = 0.
       l_e(:,nk) = 0.
 
-      return
+      ! Successful completion of subprogram
+      stat = ML_OK
+      
    end function ml_calc_lh
 
 end module mixing_length

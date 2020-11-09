@@ -22,7 +22,7 @@
       use ens_options
       use gmm_itf_mod
       use var_gmm
-      use ens_spp, only: spp_ncha, spp_lmax, spp_mmax, MAX_NSPP
+      use ens_spp
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,7 +39,7 @@
 !#include "ens_gmm_dim.cdk"
 !#include "ens_param.cdk"
 
-      integer :: istat, nch2d, lmax, mmax
+      integer :: istat, nch2d, lmax, mmax, latmax
 !-------------------------------------------------------------------
 !
       if (.not.Ens_conf) return
@@ -47,14 +47,14 @@
       gmmk_mcutraj_s= 'MCUTRAJ'
       gmmk_mcvtraj_s= 'MCVTRAJ'
       gmmk_mcwtraj_s= 'MCWTRAJ'
-      
+
       istat = gmm_create(gmmk_mcutraj_s,mcutraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcutraj'
       istat = gmm_create(gmmk_mcvtraj_s,mcvtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcvtraj'
       istat = gmm_create(gmmk_mcwtraj_s,mcwtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcwtraj'
-      
+
       istat = gmm_get(gmmk_mcutraj_s,mcutraj)
       if (GMM_IS_ERROR(istat))write(*,6005)'mcutraj'
       istat = gmm_get(gmmk_mcvtraj_s,mcvtraj)
@@ -68,13 +68,14 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'mcrhsint'
       istat = gmm_get(gmmk_mcrhsint_s,mcrhsint)
       if (GMM_IS_ERROR(istat))write(*,6005)'mcrhsint'
-      
+
       if (Lun_out > 0) write(Lun_out,6010)
 
       nch2d = Ens_ptp_ncha + spp_ncha
       lmax = max(Ens_ptp_lmax, spp_lmax)
       mmax = max(Ens_ptp_mmax, spp_mmax)
-      
+      latmax=max(Ens_ptp_latmax,spp_latmax)
+
       call gmm_build_meta3D(meta3d_sh2,          &
                             1,l_ni,0,0,l_ni,     &
                             1,l_nj,0,0,l_nj,     &
@@ -118,17 +119,23 @@
                             1,Ens_skeb_m,0,0,Ens_skeb_m,  &
                             0,GMM_NULL_FLAGS)
 
-      call gmm_build_meta3D(meta3d_plg,                       &
+      call gmm_build_meta3D(meta3d_pls,                       &
                             1,Ens_skeb_nlat,0,0,Ens_skeb_nlat,  &
                             1,Ens_skeb_l,0,0,Ens_skeb_l,  &
                             1,Ens_skeb_m,0,0,Ens_skeb_m,&
                             0,GMM_NULL_FLAGS)
+      call gmm_build_meta4D(meta4d_plp,                       &
+                             1,latmax,0,0,latmax,  &
+                             1,lmax,0,0,lmax,  &
+                             1,mmax,0,0,mmax, &
+                             1,nch2d,0,0,nch2d, &
+                             0,GMM_NULL_FLAGS)
 
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &
                             1,2*(MAX2DC+MAX_NSPP),0,0,2*(MAX2DC+MAX_NSPP),&
                             0,GMM_NULL_FLAGS)
-      
+
       gmmk_mcsph1_s= 'MCSPH1'
       gmmk_difut1_s= 'DIFUT1'
       gmmk_difvt1_s= 'DIFVT1'
@@ -147,7 +154,8 @@
       gmmk_br_p   = 'BRENS_P'
       gmmk_bi_p   = 'BIENS_P'
       gmmk_dumdum_s= 'DUMDUM'
-      gmmk_plg_s  = 'P_LEGEN'
+      gmmk_pls_s  = 'P_LEGENS'
+      gmmk_plp_s  = 'P_LEGENP'
 
       istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcsph1'
@@ -185,14 +193,20 @@
       istat = gmm_create(gmmk_bi_p   ,bi_p   ,meta3d_bi_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'bi_p'
 
-      istat = gmm_create(gmmk_plg_s,plg,meta3d_plg,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'plg'
+      istat = gmm_create(gmmk_pls_s,pls,meta3d_pls,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'pls'
+
+
+      istat = gmm_create(gmmk_plp_s,plp,meta4d_plp,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'plp'
+
 
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
-      
+
+
  6000 format('ens_set_mem at gmm_create(',A,')')
- 6005 format('ens_set_mem at gmm_get(',A,')')     
+ 6005 format('ens_set_mem at gmm_get(',A,')')
  6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SETMEM)' &
              /(55('=')))
 !

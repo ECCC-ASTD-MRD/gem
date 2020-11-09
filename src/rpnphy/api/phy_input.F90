@@ -38,7 +38,7 @@ module phy_input_mod
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
         phy_lclcore_gid, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id
    use phyinputdiag_mod, only: phyinputdiag
-   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L
+   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia
    use physimple_transforms_mod, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phy_typedef, only: phymeta
@@ -372,9 +372,11 @@ contains
          if (RMN_IS_OK(istat)) then
             istat = input_set_filename(my_inputid, 'geop', my_geoname_S, &
                  IS_DIR, INPUT_FILES_GEOP)
-            istat = min(istat, &
-                 input_set_filename(my_inputid, 'ozon', my_ozonename_S, &
-                 IS_DIR, INPUT_FILES_CLIM))
+            if (radia /= 'NIL') then
+               istat = min(istat, &
+                    input_set_filename(my_inputid, 'ozon', my_ozonename_S, &
+                    IS_DIR, INPUT_FILES_CLIM))
+            endif
          endif
       else
          if (input_type == 'BLOC') then
@@ -395,9 +397,11 @@ contains
             my_nbvar = inputio_nbvar(my_inputobj)
             istat = inputio_set_filename(my_inputobj, 'geop', my_geoname_S, &
                  IS_DIR, INPUT_FILES_GEOP)
-            istat = min(istat, &
-                 inputio_set_filename(my_inputobj, 'ozon', my_ozonename_S, &
-                 IS_DIR, INPUT_FILES_CLIM))
+            if (radia /= 'NIL') then
+               istat = min(istat, &
+                    inputio_set_filename(my_inputobj, 'ozon', my_ozonename_S, &
+                    IS_DIR, INPUT_FILES_CLIM))
+            endif
          endif
       endif IF_GEM48
       if (.not.RMN_IS_OK(istat)) &
@@ -499,6 +503,8 @@ contains
       integer :: curdd, curmo
       integer(INT64) :: dt_8, istep_8, jdatev
       ! ---------------------------------------------------------------------
+      if (radia == 'NIL') return
+      
       if (intozot) then
          dt_8    = delt
          istep_8 = my_step

@@ -42,7 +42,6 @@ function sfc_nml2(F_namelist) result(F_istat)
    integer, parameter :: SFC_NML_OK  = RMN_OK + 1
    integer, parameter :: CPL_NML_OK  = 1
 
-   logical :: offline
    integer :: err, unout
    !-------------------------------------------------------------------
    F_istat = SFC_NML_ERR
@@ -328,6 +327,12 @@ contains
             return
          endif
 
+         !# check that svs_local_z0m=True when using tofd i.e, z0veg_only=.true.
+         if (z0veg_only .and. .not.svs_local_z0m) then
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_local_z0m must be .TRUE. when using tofd=/NIL in &physics_cfgs')
+            return
+         endif
+
          if (.not.any(soiltext == SOILTEXT_OPT)) then
             call str_concat(msg_S, SOILTEXT_OPT, ', ')
             call msg(MSG_ERROR, '(sfc_nml_check) soiltext = '//trim(soiltext)//&
@@ -409,12 +414,6 @@ contains
          call msg(MSG_ERROR, '(sfc_nml) Problem in wb_put')
          return
       endif
-
-      !# Offline special case
-      iverb = wb_verbosity(WB_MSG_FATAL)
-      istat = wb_get('itf_phy/OFFLINE', offline)
-      if (istat /= WB_OK) offline = .false.
-      istat = wb_verbosity(iverb)
 
       !# Surface Layer module init
       istat = SL_OK

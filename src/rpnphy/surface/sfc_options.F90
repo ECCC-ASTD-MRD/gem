@@ -164,6 +164,10 @@ module sfc_options
    character(len=16) :: kntveg_S     = ''
    namelist /surface_cfgs/ kntveg_S
 
+   !# Lead fraction for ice-covered lakes
+   real              :: lake_leadfrac = 0.
+   namelist /surface_cfgs/ lake_leadfrac
+
    !# Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac)
    real              :: leadfrac    = 0.03
    namelist /surface_cfgs/ leadfrac

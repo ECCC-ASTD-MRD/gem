@@ -31,7 +31,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
    !    PURPOSE       : COMPUTES THERMAL STRESS INDICATORS over a slab surface
    !    AUTHOR        : S. Leroyer   (Original  10/2016)
    !    REFERENCE     : Leroyer et al. (2018) , urban climate
-   !    MODIFICATIONS :
+   !    MODIFICATIONS : S Leroyer (2020), wetbulb in C
    !    METHOD        :
    !--------------------------------------------------------------------------
 
@@ -70,7 +70,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
    real, dimension(N), intent(OUT), optional :: PTGLOBE_SUN      ! Globe Temperature in the exposed street (K)
    real, dimension(N), intent(OUT), optional :: PTGLOBE_SHADE    ! Globe Temperature in the shaded street (K)
 
-   real, dimension(N), intent(OUT) :: PTWETB          ! wet-bulb temperature in the street
+   real, dimension(N), intent(OUT) :: PTWETB          ! wet-bulb temperature in the street (C)
 
    real, dimension(N), intent(OUT)   :: PQ1_H  ! energy components for the standing standard clothed human
    real, dimension(N), intent(OUT)   :: PQ2_H
@@ -148,7 +148,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
 
    do JJ = 1, N
       !========================================================
-      ! COMPUTE THE MEAN RADIANT TEMPERATURES
+      ! COMPUTE THE MEAN RADIANT TEMPERATURES (K)
       !========================================================
 
       ! 1-calculation of mean radiant temperature values for a standard clothed standig human (eg, for UTCI)
@@ -166,7 +166,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
            PQ5_G(JJ),PQ6_G(JJ),PQ7_G(JJ),ZUNDEF(JJ) )
 
       !========================================================
-      ! COMPUTE THE GLOBE TEMPERATURE
+      ! COMPUTE THE GLOBE TEMPERATURE (K)
       !========================================================
 
       PTGLOBE_SUN(JJ)  = TGLOBE_BODY_SURF(PTRAD_GSUN(JJ), PTA(JJ), PUSR(JJ),    &
@@ -175,13 +175,13 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
            ZGD, ZEB_G)
 
       !========================================================
-      ! compute the (psychometric) wet-bulb temperatures
+      ! compute the (psychometric) wet-bulb temperatures (C)
       !========================================================
 
-      PTWETB(JJ)       = WETBULBT_SURF(PPS(JJ), PTA(JJ), PQA(JJ))
+      PTWETB(JJ)       = WETBULBT_SURF(PPS(JJ), PTA(JJ)-TCDK, PQA(JJ))
 
       !========================================================
-      ! compute the Universal Thermal and Climate Index UTCI
+      ! compute the Universal Thermal and Climate Index UTCI (C)
       !========================================================
 
       ZEHPA(JJ) = PQA(JJ)* PPS(JJ)/ (0.622 + 0.378 * PQA(JJ)) /100.
@@ -192,15 +192,15 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
            PTRAD_HSHADE(JJ)-TCDK, PU10(JJ) )
 
       !========================================================
-      ! compute the wet bulb globe temperature indices  (WBGT)
+      ! compute the wet bulb globe temperature indices  (WBGT) (C)
       !========================================================
 
       WBGT_SUN(JJ)   = 0.2 * (PTGLOBE_SUN(JJ) -TCDK)     +   &
-           0.7 * (PTWETB(JJ)-TCDK)               +   &
+           0.7 *  PTWETB(JJ)                +   &
            0.1 * (PTA(JJ)-TCDK)
 
       WBGT_SHADE(JJ) = 0.3 * (PTGLOBE_SHADE(JJ) -TCDK)   +   &
-           0.7 * (PTWETB(JJ)-TCDK)
+           0.7 * PTWETB(JJ)
 
       !========================================================
    enddo
@@ -210,11 +210,13 @@ end subroutine SURF_THERMAL_STRESS
 
 !===================================================================
 real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
-   implicit none
+use, intrinsic :: iso_fortran_env, only : REAL64
+implicit none
 !!!#include <arch_specific.hf>
 
    !  @Author : S. Leroyer (sept. 2014)
-
+   !            MODIFICATIONS : S. Leroyer and V. Lee (sept 2020): optimization 
+   
    !  Computes the black globe temperature that would be measured by a black globe sensor
    !  from the radiant temperature equivalent to the total radiation received by the human body
    !  Analytical solution of the equation:
@@ -226,14 +228,10 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
 
    real :: ZTRAD,ZTA,ZUA,ZGD,ZGE
    real :: ZUMOD    ! bounded wind speed
-   real :: ZWORKA ! Term for the resolution of the equation
-   real :: ZWORKB ! Term for the resolution of the equation
-   real :: ZWORKM ! Term for the resolution of the equation
-   real :: ZWORKN ! Term for the resolution of the equation
-   real :: ZWORKP ! Term for the resolution of the equation
-   real :: ZWORKQ ! Term for the resolution of the equation
-   real :: ZWORKK ! Term for the resolution of the equation
-   real :: ZWORKE ! Term for the resolution of the equation
+   real(REAL64) :: ZWORKA ! Term for the resolution of the equation
+   real(REAL64) :: ZWORKB ! Term for the resolution of the equation
+   real(REAL64) :: ZWORKK ! Term for the resolution of the equation
+   real(REAL64) :: ZWORKE ! Term for the resolution of the equation
    real :: ZWORKJ ! Term for the resolution of the equation
    real :: ZWORKI ! Term for the resolution of the equation
 ! optional for verification 4.
@@ -257,19 +255,13 @@ real function TGLOBE_BODY_SURF(ZTRAD,ZTA,ZUMOD,ZGD,ZGE)
    !               -------------------
    ZWORKB = ZTRAD **4. + ZWORKA * ZTA
 
-   ZWORKm=9.*ZWORKA**2.
-   ZWORKN=27.*ZWORKA**4.
-   ZWORKp=256.*ZWORKB**3.
-   ZWORKq= 3.4943 * ZWORKB
+ ZWORKE= ( (9.d0*ZWORKA**2.) +  1.73205d0* &
+             ( (27.d0*ZWORKA**4.)+(256.d0*ZWORKB**3.) )**0.5 )**(1./3.)
+ ZWORKK=ZWORKE*0.381571d0 - ((3.4943d0 * ZWORKB)/ZWORKE)
+ ZWORKI= SNGL(0.5d0 *  ( 2.0d0 * ZWORKA /  ZWORKK**0.5 - ZWORKK)**0.5)
+ ZWORKJ= SNGL(0.5d0 * ZWORKK**0.5)
 
-   ZWORKE= (ZWORKM+1.73205*(ZWORKN+ZWORKP)**0.5)**(1./3.)
-
-   ZWORKK=ZWORKE*0.381571 -ZWORKQ/ZWORKE
-
-   ZWORKI= 0.5 *  ( 2.0 * ZWORKA /  ZWORKK**0.5  - ZWORKK)**0.5
-   ZWORKJ= 0.5 * ZWORKK**0.5
-
-   TGLOBE_BODY_SURF = -1.0 * ZWORKJ + ZWORKI
+ TGLOBE_BODY_SURF = -1.0 * ZWORKJ + ZWORKI
 
    !*       4.    optional : verification (reciprocity)
    !               ---------------------------
@@ -300,12 +292,11 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    ! !*      0.1    declarations of arguments
    real  :: PPA          ! Air pressure (Pa)
-   real  :: PTA          ! Air temperature (K)
+   real  :: PTA          ! Air temperature (C)
    real  :: PQA          ! Air specific humidity (kg/kg)
    ! !*      0.2    declarations of local variables
    real :: ZRH      ! Relative humidity (%)
    real :: ZTD      ! Dew-point temperature (C) at T,P
-   real :: ZT       ! temperature (C)
    real :: ZTI      ! temperature (C) on dry adiabat at P
    real :: ZP       ! pressure (hPa)
    real :: ZPI      ! pressure (hPa) intersec. dry adiabat/mixing ratio curves
@@ -318,7 +309,7 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    ! EXTERNAL FUNCTIONS (see wet_bulb.cdk90)
    real, external :: TPDD
-   real, external :: N_QSAT1
+   real, external :: N_QSAT
    real, external :: DWPT
    real, external :: W
    real, external :: O
@@ -329,16 +320,15 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    !    1. Compute the dew-point temperature ZTD in C (INPUT: ZT,ZRH)
 
-   ZT=PTA-TCDK          ! convert in Celcius
    ZP=0.01*PPA         ! convert in hPa
-   qsat=N_QSAT1(PTA,PPA)
+   qsat=N_QSAT(PTA,PPA)
    ZRH=100.*max(min(PQA,qsat),0.)/qsat
 
-   ZTD=DWPT(ZT,ZRH)
+   ZTD=DWPT(PTA,ZRH)
    !    2. Compute the saturation mixing ratio in g/kg
    ZAW = W(ZTD,ZP)
    !    3. Compute the Dry Adiabat ZAO in C (INPUT:ZT,ZP)
-   ZAO = O(ZT,ZP)
+   ZAO = O(PTA,ZP)
    ZPI = ZP
    !    4. Iterate to determine local pressure ZPI (hPa)
    !       at the intersection of the two curves of saturation mixing ratio
@@ -359,7 +349,7 @@ real function WETBULBT_SURF(PPA,PTA,PQA)
 
    !    7. Compute the Wet-bulb temperature (K) of a parcel at ZP given its
    !       equivalent potential temperature
-   WETBULBT_SURF= TCDK + TSA(ZAOS,ZP)
+   WETBULBT_SURF= TSA(ZAOS,ZP)
 
    return
 end function WETBULBT_SURF

@@ -8,8 +8,6 @@ module my_dmom_mod
 
   contains
 
-#ifdef ECCC_MP_MY_SCHEME
-
 !_______________________________________________________________________________________!
  SUBROUTINE MYDMOM_MAIN(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,PS,TM,QM,QCM,        &
      QRM,QIM,QNM,QGM,QHM,NCM,NRM,NYM,NNM,NGM,NHM,PSM,S,RT_rn1,RT_rn2,RT_fr1,RT_fr2,     &
@@ -3091,14 +3089,6 @@ module my_dmom_mod
    end function Nos_Thompson
 
 !===================================================================================================!
-
-#else
-
-SUBROUTINE MYDMOM_MAIN()
-   call physeterror('MYDMOM_MAIN', 'Called a stub')
-end SUBROUTINE MYDMOM_MAIN
-
-#endif
 
 END MODULE my_dmom_mod
 

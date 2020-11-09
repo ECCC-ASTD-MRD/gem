@@ -543,7 +543,7 @@
                         NPRM0 = NPRM
                      ENDIF 
                      READ(TOKEN,LINEFMT) (PARM(J+NPRM),J=1,JLEN)
-101                  FORMAT(25 A04)
+101                  FORMAT(25 A4)
                      NDOPES = MIN(NDOPES+1,101)
                      DOPES(NDOPES) = TYPE + LEN * 256 + (NPRM-NPRM0+
      %               1)*256 *256
@@ -1362,7 +1362,7 @@
       DATA NSC /1/
       DATA DUMMY /0/
       WRITE(IKEY,LINEFMT) (KEY(J),J=1,ARGDIMS(1))
-101   FORMAT(2 A04)
+101   FORMAT(2 A4)
       CALL QLXLOOK(IVAR,IKEY,ICOUNT,LIMITS,ITYP)
       IF((ITYP.NE.-1))THEN
          RETURN
@@ -1692,7 +1692,7 @@
          RETURN
       ENDIF 
       WRITE(FMT,LINEFMT)(COMMENT(I),I=1,L2)
-100   FORMAT(20 A04)
+100   FORMAT(20 A4)
       WRITE(6,FMT)(QUOI(I),I=1,L1)
       RETURN
       END
@@ -2012,7 +2012,7 @@
 *      WRITE(CKEY,LINFMT)(IKEY(I),I=1,ARGDIMS(1))
 
       WRITE(CKEY,101)(IKEY(I),I=1,ARGDIMS(1))
-101   FORMAT(2 A04)
+101   FORMAT(2 A4)
       CALL QLXUDF(SCRAP,CKEY)
       RETURN
       END

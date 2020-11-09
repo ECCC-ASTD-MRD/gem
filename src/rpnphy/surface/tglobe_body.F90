@@ -70,6 +70,7 @@ function tglobe_body(ptrad, pta, pua, zgd, zge) result(ptglobe_body)
 !
 !!$USE MODD_CSTS, ONLY : XTT
 !
+use, intrinsic :: iso_fortran_env, only : REAL64
 implicit none
 !!!#include <arch_specific.hf>
 !
@@ -88,14 +89,14 @@ real, dimension(size(ptrad))    :: PTGLOBE_BODY
 ! real, save :: zcq = 3.4943      ! cq = 4.0 * (2./3.)**(1./3.)
 
 real, dimension(size(ptrad)) :: ZUA    ! bounded wind speed
-real, dimension(size(ptrad)) :: ZWORKA ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKB ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKM ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKN ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKP ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKQ ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKK ! Term for the resolution of the equation
-real, dimension(size(ptrad)) :: ZWORKE ! Term for the resolution of the equation
+real(REAL64), dimension(size(ptrad)) :: ZWORKA ! Term for the resolution of the equation
+real(REAL64), dimension(size(ptrad)) :: ZWORKB ! Term for the resolution of the equation
+!real, dimension(size(ptrad)) :: ZWORKM ! Term for the resolution of the equation
+!real, dimension(size(ptrad)) :: ZWORKN ! Term for the resolution of the equation
+!real, dimension(size(ptrad)) :: ZWORKP ! Term for the resolution of the equation
+!real, dimension(size(ptrad)) :: ZWORKQ ! Term for the resolution of the equation
+real(REAL64), dimension(size(ptrad)) :: ZWORKK ! Term for the resolution of the equation
+real(REAL64), dimension(size(ptrad)) :: ZWORKE ! Term for the resolution of the equation
 real, dimension(size(ptrad)) :: ZWORKJ ! Term for the resolution of the equation
 real, dimension(size(ptrad)) :: ZWORKI ! Term for the resolution of the equation
 ! optional for verification 4. 
@@ -115,19 +116,22 @@ ZUA(:) =  min(MAX(0.2,PUA(:)) ,15.0)
 
 !*       3.    analytic resolution
 !               ---------------------------
-ZWORKB(:) = PTRAD(:) **4. + ZWORKA(:) * PTA(:) 
+ ZWORKB(:) = PTRAD(:) **4. + ZWORKA(:) * PTA(:) 
 
-ZWORKm(:)=9.*ZWORKA(:)**2.
-ZWORKN(:)=27.*ZWORKA(:)**4.
-ZWORKp(:)=256.*ZWORKB(:)**3.
-ZWORKq(:)= 3.4943 * ZWORKB(:)         
+!!ZWORKm(:)=9.*ZWORKA(:)**2.
+!!ZWORKN(:)=27.*ZWORKA(:)**4.
+!!ZWORKp(:)=256.d0*ZWORKB(:)**3.
+!!ZWORKq(:)= 3.4943 * ZWORKB(:)         
 
-ZWORKE(:)= (ZWORKM(:)+1.73205*(ZWORKN(:)+ZWORKP(:))**0.5)**(1./3.)
+ ZWORKE(:)= ( (9.d0*ZWORKA(:)**2.) +  1.73205d0* &
+             ( (27.d0*ZWORKA(:)**4.)+(256.d0*ZWORKB(:)**3.) )**0.5 )**(1./3.)
+!! ZWORKE(:)= (ZWORKM(:)+1.73205*(ZWORKN(:)+ZWORKP(:))**0.5)**(1./3.)
 
-ZWORKK(:)=ZWORKE(:)*0.381571 -ZWORKQ(:)/ZWORKE(:)
+ ZWORKK(:)=ZWORKE(:)*0.381571d0 - ((3.4943d0 * ZWORKB(:))/ZWORKE(:))
+!!ZWORKK(:)=ZWORKE(:)*0.381571 -ZWORKQ(:)/ZWORKE(:)
 
-ZWORKI(:)= 0.5 *  ( 2.0 * ZWORKA(:) /  ZWORKK(:)**0.5  - ZWORKK(:))**0.5
-ZWORKJ(:)= 0.5 * ZWORKK(:)**0.5 
+ZWORKI(:)= SNGL(0.5d0 *  ( 2.0d0 * ZWORKA(:) /  ZWORKK(:)**0.5 - ZWORKK(:))**0.5)
+ZWORKJ(:)= SNGL(0.5d0 * ZWORKK(:)**0.5)
 
 PTGLOBE_BODY(:) = -1.0 * ZWORKJ(:) + ZWORKI(:)
 

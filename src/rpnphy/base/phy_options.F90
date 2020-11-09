@@ -47,7 +47,6 @@ module phy_options
    logical           :: llinoz       = .false.
    logical           :: llingh       = .false.
    logical           :: lrefract     = .false.
-   logical           :: offline      = .false.
    logical           :: out_linoz    = .false.
    logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
@@ -57,6 +56,7 @@ module phy_options
    logical           :: tdiaglim     = .false.
    integer           :: tlift        = 0
    integer           :: nphyoutlist  = 0
+   integer           :: ilongmel     = -1
    character(len=32), pointer :: phyoutlist_S(:) => NULL()
    
    !# Time length (hours) for special time accumulated physics variables
@@ -95,6 +95,11 @@ module phy_options
    namelist /physics_cfgs/ cond_evap
    namelist /physics_cfgs_p/ cond_evap
 
+   !# Dry accretion of ice crystals by snow in Sundqvist (factor)
+   real           :: cond_iceacc    = 5.
+   namelist /physics_cfgs/ cond_iceacc
+   namelist /physics_cfgs_p/ cond_iceacc
+   
    !# Minimum cloud mixing ratio (kg/kg) for autoconversion in
    !# Sunqvist gridscale condensation
    real           :: cond_hmrst     = 3.e-4
@@ -277,12 +282,6 @@ module phy_options
    character(len=16) :: longmel      = 'BLAC62'
    namelist /physics_cfgs/ longmel
    namelist /physics_cfgs_p/ longmel
-   character(len=*), parameter :: LONGMEL_OPT(4) = (/ &
-        'BLAC62  ', &
-        'BOUJO   ', &
-        'TURBOUJO', &
-        'LH      '  &
-        /)
 
    !# Time length (hours) for special time averaged physics variables
    integer           :: moyhr = 0
@@ -839,6 +838,18 @@ module phy_options
    namelist /physics_cfgs/ satuco
    namelist /physics_cfgs_p/ satuco
 
+   !# Surface fluxes digital filter order
+   !# * -1 : No filter
+   !# * 2 or 4: Apply filter 2nd or 4th order respectively
+   integer :: sfcflx_filter_order = -1
+   namelist /physics_cfgs/ sfcflx_filter_order
+   namelist /physics_cfgs_p/ sfcflx_filter_order
+
+   !# Surface fluxes figital filter, number of iterations
+   integer :: sfcflx_filter_iter = 1
+   namelist /physics_cfgs/ sfcflx_filter_iter
+   namelist /physics_cfgs_p/ sfcflx_filter_iter
+   
    !# Tuning factor for blocking height
    real              :: sgo_bhfac    = 1.5
    namelist /physics_cfgs/ sgo_bhfac

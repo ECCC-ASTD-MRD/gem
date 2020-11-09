@@ -79,8 +79,7 @@
          F_nj = F_nj + 2 * F_extension
 
       else
-
-         if ((F_iref == -1) .and. (F_jref == -1)) then
+         if (F_iref == -1) then
             iref = F_ni / 2 + F_extension
             if (mod(F_ni,2) == 0) then
                lonr = dble(F_lonr) - dble(F_dx) / 2.d0
@@ -88,6 +87,11 @@
                iref = iref + 1
                lonr = dble(F_lonr)
             end if
+         else
+            iref = F_iref + F_extension
+            lonr = dble(F_lonr)
+         endif
+         if (F_jref == -1) then
             jref = F_nj / 2 + F_extension
             if (mod(F_nj,2) == 0) then
                latr = dble(F_latr) - dble(F_dy) / 2.d0
@@ -96,11 +100,9 @@
                latr = dble(F_latr)
             end if
          else
-            iref = F_iref + F_extension
             jref = F_jref + F_extension
-            lonr = dble(F_lonr)
             latr = dble(F_latr)
-         end if
+         endif
 
          F_ni   = F_ni + 2 * F_extension
          F_nj   = F_nj + 2 * F_extension

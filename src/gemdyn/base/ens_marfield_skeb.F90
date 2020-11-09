@@ -22,6 +22,7 @@
       use ens_gmm_dim
       use ens_gmm_var
       use ens_options
+      use ens_param
       use glb_ld
       use gmm_itf_mod
       use HORgrid_options
@@ -30,6 +31,7 @@
       use lun
       use path
       use ptopo
+      use out_mod
       use tdpack
       use step_options
       use, intrinsic :: iso_fortran_env
@@ -50,9 +52,9 @@
 ! nlat, nlon                 dimension of the Gaussian grid
 ! idum                       Semence du générateur de nombres aléatoires
 !
-      logical :: Init_mc_L
+      logical :: write_markov_l
       integer :: nlat, nlon, lmin,lmax
-      integer :: sig, l ,m, n, i, j, indx, ier, gmmstat, gdyy
+      integer :: sig, l ,m, n, i, j, dim,  indx, ier, gmmstat, gdyy
       real    :: fstd, tau , sumsp , fact, fact2, offi,offj
       real    :: xfi(l_ni),yfi(l_nj)
       real(kind=REAL64)  :: rad2deg_8, pri_8
@@ -69,7 +71,9 @@
       real(kind=REAL64),    dimension(:), allocatable  :: wrk1
       real(kind=REAL64),    dimension(:,:,:),allocatable :: cc
       real  ,    dimension(:,:),allocatable :: f
-      integer :: ier0,unf0, itstep_s, iperiod_iau
+      integer :: unf0, unf1, err, errop, itstep_s, iperiod_iau
+      character(len=1024) fn0, fn1
+      logical :: ilela
 
 !
 !---------------------------------------------------------------------
@@ -78,6 +82,7 @@
       rad2deg_8=180.0d0/pi_8
       itstep_s=step_dt*step_kount
       iperiod_iau = iau_period
+      write_markov_l=(itstep_s==iperiod_iau)
 
 ! Look for the spectral coefficients, legendre polymome & random numbers
 !
@@ -94,8 +99,8 @@
       gmmstat = gmm_get(gmmk_dumdum_s,dumdum,meta2d_dum)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'dumdum'
 
-      gmmstat = gmm_get(gmmk_plg_s,plg,meta3d_plg)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'plg'
+      gmmstat = gmm_get(gmmk_pls_s,pls,meta3d_pls)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'pls'
 
 !
       if (.not.init_done) then
@@ -115,15 +120,10 @@
       tau  = Ens_skeb_tau/2.146
       eps  = exp(-dt/tau)
 
-      Init_mc_L = .true.
-      if ( (Ens_iau_mc)) then
-         if ( .not. Ens_first_init_mc) Init_mc_L = .false.
-      end if
-
       if ( Step_kount == 1 ) then
 
 ! Compute Associated Legendre polynomials to use in each timestep
-         plg=0.D0
+         pls=0.D0
          do l=lmin,lmax
             fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
             do m=0,l
@@ -131,13 +131,45 @@
 
                do j=1,nlat/2
                   call pleg (l, m, j, nlat, pl)
-                  plg(j,lmax-l+1,m+1)=pl*fact
-                  plg(nlat-j+1,lmax-l+1,m+1)=pl*fact*sig
+                  pls(j,lmax-l+1,m+1)=pl*fact
+                  pls(nlat-j+1,lmax-l+1,m+1)=pl*fact*sig
                end do
             end do
          end do
-
-         if ( Init_mc_L ) then
+         !Initialise spectral coeffs and stochastic params
+         if(Ens_recycle_mc) then
+            !Read saved stochastic numbers and spectral coeffs ar,br.ai,bi
+            if (ptopo_myproc==0 .and. ptopo_couleur==0) then
+                  unf0=1
+                  fn0= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SKEB.bin'
+                  open ( unf0,file=trim(fn0),status='OLD', &
+                             form='unformatted',iostat=errop )
+                  if (errop == 0) then
+                     write(output_unit,2000) 'READING', trim(fn0)
+                     do i=1,36
+                        read (unf0)dumdum(i,1)
+                     end do
+                     do l=lmin,lmax
+                        do m=1,l+1
+                           read(unf0)ar_s(lmax-l+1,m)
+                           read(unf0)ai_s(lmax-l+1,m)
+                           read(unf0)br_s(lmax-l+1,m)
+                           read(unf0)bi_s(lmax-l+1,m)
+                        end do
+                     end do
+                     close(unf0)
+                  else
+                     write (output_unit, 3000) trim(fn0)
+                     call gem_error ( err,'read_markov_skeb', 'problem reading file' )
+                  endif
+            endif
+            dim=ens_skeb_l*ens_skeb_m
+            call RPN_COMM_bcast (dumdum,36,"MPI_INTEGER",0,"MULTIGRID", err)
+            call RPN_COMM_bcast (ar_s,dim,"MPI_REAL",0, "MULTIGRID", err)
+            call RPN_COMM_bcast (ai_s,dim,"MPI_REAL",0, "MULTIGRID", err)
+            call RPN_COMM_bcast (br_s,dim,"MPI_REAL",0, "MULTIGRID", err)
+            call RPN_COMM_bcast (bi_s,dim,"MPI_REAL",0, "MULTIGRID", err)
+         else
             fstd=Ens_skeb_std
             tau = Ens_skeb_tau/2.146
             eps=exp(-dt/tau)
@@ -182,46 +214,6 @@
             end do
 
             deallocate (pspectrum, fact1)
-         else
-            lmin = Ens_skeb_trnl
-            lmax = Ens_skeb_trnh
-            unf0=0
-            ier0 = fnom(unf0, trim(Path_input_S)//'/'// 'MRKV_PARAM_SKEB' ,'SEQ+UNF+OLD',0)
-
-            if (ier0 /= 0) then
-               write( Lun_out,3000)
-               stop
-            end if
-
-            do i=1,36
-               read(unf0) dumdum(i,1)
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  read(unf0) ar_s(lmax-l+1,m)
-               end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  read(unf0) ai_s(lmax-l+1,m)
-               end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  read(unf0) br_s(lmax-l+1,m)
-               end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  read(unf0) bi_s(lmax-l+1,m)
-               end do
-            end do
-
-            close(unf0)
          end if
       end if
 
@@ -248,46 +240,33 @@
       paiset=> dumdum(35,1)
       paidum=> dumdum(36,1)
 
-      if (Ens_iau_mc .and. itstep_s == iperiod_iau) then
-         if (ptopo_couleur == 0 .and. ptopo_myproc == 0) then
-            unf0=0
-            ier0 = fnom(unf0,trim(Path_output_S)//'/'//'MRKV_PARAM_SKEB','SEQ+UNF',0)
 
-            if (ier0 /= 0) then
-               write( Lun_out,2000)
-               stop
-            end if
-
-            do i=1,36
-               write (unf0)  dumdum(i,1)
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  write(unf0)ar_s(lmax-l+1,m)
+! Save random numbers and coefficient ar,ai,br,bi
+      if (write_markov_l) then
+         if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
+            fn1=trim(Out_dirname_S)//'/'// 'MRKV_SKEB.bin'
+            unf1=1
+            open ( unf1,file=trim(fn1),status='NEW', &
+                 form='unformatted',iostat=errop )
+            if ( errop == 0 ) then
+               write(output_unit,2000) 'WRITING', trim(fn1)
+               do i=1,36
+                  write (unf1)dumdum(i,1)
                end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  write(unf0)ai_s(lmax-l+1,m)
+               do l=lmin,lmax
+                  do m=1,l+1
+                     write(unf1)ar_s(lmax-l+1,m)
+                     write(unf1)ai_s(lmax-l+1,m)
+                     write(unf1)br_s(lmax-l+1,m)
+                     write(unf1)bi_s(lmax-l+1,m)
+                  end do
                end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                  write(unf0)br_s(lmax-l+1,m)
-               end do
-            end do
-
-            do l=lmin,lmax
-               do m=1,l+1
-                   write(unf0)bi_s(lmax-l+1,m)
-               end do
-            end do
-            close(unf0)
-         end if
-      end if
+               close(unf1)
+            else
+               write(output_unit,4000) 'WRITING', trim(fn1)
+            endif
+         endif
+      endif
 
       do l=lmin,lmax
          fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
@@ -317,8 +296,8 @@
          do j=1,nlat
             cc(1,j,m)=0.d0
             cc(2,j,m)=0.d0
-            cc(1,j,m)=cc(1,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ar_s(1:lmax-lmin+1,m))
-            cc(2,j,m)=cc(2,j,m) + Dot_product(plg(j,1:lmax-lmin+1,m),ai_s(1:lmax-lmin+1,m))
+            cc(1,j,m)=cc(1,j,m) + Dot_product(pls(j,1:lmax-lmin+1,m),ar_s(1:lmax-lmin+1,m))
+            cc(2,j,m)=cc(2,j,m) + Dot_product(pls(j,1:lmax-lmin+1,m),ai_s(1:lmax-lmin+1,m))
          end do
       end do
 
@@ -381,9 +360,13 @@
  1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_SKEB)', &
            /,'======================================================')
- 2000 format(' S/R  ENS_MARFIELD_SKEB : problem with registering MRKV_PARAM_SKEB file)', &
-              /,'======================================================')
+
+ 2000 format (/' MARKOV: ',a,' FILE ',a)
+
  3000 format(' S/R  ENS_MARFIELD_SKEB : problem in opening MRKV_PARAM_SKEB file)', &
+              /,'======================================================')
+
+ 4000 format(' S/R  ENS_MARFIELD_SKEB : problem with registering MRKV_PARAM_SKEB file)', &
               /,'======================================================')
 
  6000 format('ens_marfield_skeb at gmm_get(',A,')')
@@ -392,12 +375,12 @@
 
 contains
 
- subroutine pleg(l, m, jlat, nlat, plg )
+ subroutine pleg(l, m, jlat, nlat, pls )
       use, intrinsic :: iso_fortran_env
       implicit none
 
       integer l,m ,i,j ,jlat ,nlat
-      real(kind=REAL64)   plg
+      real(kind=REAL64)   pls
       real(kind=REAL64)  factor , x  ,lat, theta
       real(kind=REAL64) , dimension(0:l+1) :: pl
       real(kind=REAL64), parameter :: ZERO=0.0D0  , ONE_8=1.0d0 , TWO_8=2.0d0
@@ -422,12 +405,12 @@ contains
                    dsqrt(dble((l+i)*(l-m+i)))
             factor = factor + 2.d0
          end do
-         plg=pl(m)
+         pls=pl(m)
       end if
 
       if ( m + 1 <= l ) then
-         plg = x * dble ( 2 * m + 1 ) * pl(m)
-         pl(m+1)=plg
+         pls = x * dble ( 2 * m + 1 ) * pl(m)
+         pl(m+1)=pls
       end if
 
       do j = m + 2, l
@@ -436,7 +419,7 @@ contains
                      / dble (j-m)
       end do
 
-      plg=pl(l)
+      pls=pl(l)
 
   end subroutine pleg
 

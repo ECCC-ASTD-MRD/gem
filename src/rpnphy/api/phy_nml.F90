@@ -16,13 +16,13 @@
 
 module phy_nml_mod
    use clib_itf_mod, only: clib_isreadok, clib_toupper
-   use wb_itf_mod, only: WB_MSG_FATAL, WB_OK, wb_verbosity, wb_get
    use debug_mod, only: init2nan_L
    use str_mod, only: str_concat, str_toreal
    use series_mod, only: series_nml
    use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK, PHY_CTRL_NML_OK, phy_init_ctrl
    use phy_options
    use cnv_options
+   use mixing_length, only: ML_CLOSURES
    private
    public :: phy_nml
 
@@ -267,8 +267,8 @@ contains
          return
       endif
 
-      if (.not.any(longmel == LONGMEL_OPT)) then
-         call str_concat(msg_S,LONGMEL_OPT,', ')
+      if (.not.any(longmel == ML_CLOSURES(:)%name)) then
+         call str_concat(msg_S,ML_CLOSURES(:)%name,', ')
          call msg(MSG_ERROR,'(phy_nml_check) longmel = '//trim(longmel)//' : Should be one of: '//trim(msg_S))
       endif
 
@@ -377,6 +377,11 @@ contains
          return
       endif
 
+      if (.not.any(sfcflx_filter_order == (/ -1, 2, 4 /))) then
+         call msg(MSG_ERROR,'(phy_nml_check) sfcflx_filter_order must be -1, 2 or 4')
+         return
+      endif
+
       m_istat = RMN_OK
       !----------------------------------------------------------------
       return
@@ -384,7 +389,7 @@ contains
 
 
    function phy_nml_post_init() result(m_istat)
-      use mixing_length, only: ml_put,ML_OK
+      use mixing_length, only: ml_init,ml_put,ML_OK
       implicit none
       integer :: m_istat
 
@@ -396,17 +401,6 @@ contains
       convec = deep
       conv_shal = shal
       conv_mid = mid
-
-      !# Offline special case
-      !#TODO: already done in sfc_nml? Move to 
-      iverb = wb_verbosity(WB_MSG_FATAL)
-      istat = wb_get('itf_phy/OFFLINE',offline)
-      if (istat /= WB_OK) offline = .false.
-      istat = wb_verbosity(iverb)
-      if (offline) then
-         FLUVERT = 'SURFACE'
-         call msg(MSG_INFO,'(phy_nml_post_init) Offline - forcing FLUVERT = "SURFACE"')
-      endif
 
       !# Operating mode for cldoptx regarding cloud water
       if ( stcond=='NIL')  then
@@ -437,6 +431,10 @@ contains
       if (debug_mem_L) init2nan_L = .true.
 
       !# Mixing length module init
+      if (ml_init(longmel, ilongmel) /= ML_OK) then
+         call msg_toall(MSG_ERROR,'(phy_nml) Problem with ml_init')
+         return
+      endif
       istat = ml_put('mlblac_max',pbl_mlblac_max)
       if (istat /= ML_OK) then
          call msg(MSG_ERROR,'(phy_nml) cannot configure mixing length module')

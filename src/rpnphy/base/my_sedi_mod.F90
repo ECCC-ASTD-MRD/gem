@@ -14,8 +14,6 @@ module my_sedi_mod
 
   private
 
-#ifdef ECCC_MP_MY_SCHEME
-
   public :: SEDI_main_1,SEDI_main_1b,SEDI_main_2,SEDI_ISGH_V33,countColumns_v33, &
             blg4sedi,blg5sedi,countColumns_a,countColumns
 
@@ -1173,7 +1171,5 @@ contains
  return
  end subroutine blg5sedi
 !=====================================================================================!
-
-#endif
 
 end module my_sedi_mod

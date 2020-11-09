@@ -67,7 +67,8 @@ module ens_gmm_var
       integer, pointer, dimension (:,:)       :: dumdum  => null()
 
 ! Legendre polynomial for SKEB Markov chain
-      real(kind=REAL64), pointer, dimension (:,:,:)       ::   plg     => null()
+      real(kind=REAL64), pointer, dimension (:,:,:)         ::   pls      => null()
+      real(kind=REAL64), pointer, dimension (:,:,:,:)       ::   plp     => null()
 
       integer, parameter :: MAXNAMELENGTH    =  32
 
@@ -80,6 +81,5 @@ module ens_gmm_var
       character(len=MAXNAMELENGTH) :: gmmk_ensdiv_s,gmmk_ensvor_s
       character(len=MAXNAMELENGTH) :: gmmk_ar_s,gmmk_ai_s,gmmk_br_s,gmmk_bi_s
       character(len=MAXNAMELENGTH) :: gmmk_ar_p,gmmk_ai_p,gmmk_br_p,gmmk_bi_p
-      character(len=MAXNAMELENGTH) :: gmmk_dumdum_s,gmmk_plg_s
-
+      character(len=MAXNAMELENGTH) :: gmmk_dumdum_s,gmmk_pls_s,gmmk_plp_s
 end module ens_gmm_var

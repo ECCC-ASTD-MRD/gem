@@ -17,40 +17,31 @@
 ! * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ! * Boston, MA 02111-1307, USA.
 ! */
-!**s/r ez_lac transformation from a set of points (lat,lon) in the spherical 
-!             coordinate system to cartesian space
-!
-      subroutine ez_lac( xyz,lon,lat,n)
-      implicit none
-      integer n
-      real xyz(3,n),lon(n),lat(n) 
-!
-!author michel roch - april 90
-!
-!revision
-!       001 - michel roch - feb 94 - repackaging for integration in rmnlib
-!
-!arguments
-!    out    xyz     - coordinates in cartesian space
-!    in     lon     - longitudes in spherical coordinates
-!           lat     - latitudes  in spherical coordinates
-!           n       - dimension of the fields
-!
-!*
-      
-      integer i 
-      real dar, cosdar
-      dar = acos(-1.)/180.
-!     
-      do 30 i=1,n
-!!!!JP
-         cosdar=cos(dar*lat(i))
-         xyz(1,i)=cosdar*cos(dar*lon(i))
-         xyz(2,i)=cosdar*sin(dar*lon(i))
-         xyz(3,i)=sin(dar*lat(i))
- 30   continue
-!     
-      return
-      end 
-      
-      
+
+!> Transformation from a set of points (lat,lon) in the spherical
+!> coordinate system to cartesian space
+!>
+!> @param[out] xyz Coordinates in cartesian space
+!> @param[in] lon Longitudes in spherical coordinates
+!> @param[in] lat Latitudes in spherical coordinates
+!> @param[in] nbpts Number of points
+!>
+!> @author Michel Roch
+!> @date 1990
+subroutine ez_lac(xyz, lon, lat, nbpts)
+   implicit none
+   real, dimension(3, nbpts), intent(out) :: xyz
+   real, dimension(nbpts), intent(in) :: lon, lat
+   integer, intent(in) :: nbpts
+
+   integer :: i
+   real :: dar, cosdar
+   dar = acos(-1.0) / 180.0
+
+   do i = 1, nbpts
+      cosdar = cos(dar * lat(i))
+      xyz(1,i) = cosdar * cos(dar * lon(i))
+      xyz(2,i) = cosdar * sin(dar * lon(i))
+      xyz(3,i) = sin(dar * lat(i))
+   end do
+end subroutine

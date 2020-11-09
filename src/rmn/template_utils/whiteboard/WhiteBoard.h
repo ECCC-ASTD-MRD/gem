@@ -155,7 +155,7 @@ typedef struct {    /* used by wb_read to check declaration/assignation consiste
 #define WB_MAXLINESPERPAGESHIFT 8
 typedef struct WB_page{
    struct WB_page *next;      /* really an address only but an 8 byte item should be forced for alignment reasons */
-   struct WB_page *not_used;  /* this garantees a multiple of 8 bytes before line (that needs 8 byte alignment */
+   struct WB_page *not_used;  /* this guarantees a multiple of 8 bytes before line (that needs 8 byte alignment */
    int   NextFreeEntry;
    int   LinesInPage;
    LINE  line[WB_MAXLINESPERPAGE];

@@ -27,7 +27,6 @@ module yyg_param
    save
 
    type :: YYG_comm_param
-      sequence
       integer :: send_all, recv_all, sendmaxproc, recvmaxproc, &
                  maxsend, maxrecv
       integer, dimension (:), pointer, contiguous :: &

@@ -160,7 +160,7 @@ add_custom_target(work
     COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_PREFIX}
+    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
 
     DEPENDS
         cclargs_lite

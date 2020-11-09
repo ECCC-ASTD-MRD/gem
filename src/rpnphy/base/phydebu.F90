@@ -24,6 +24,8 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use phybusalloc, only: phybusalloc1
    use module_mp_p3, only: p3_init
    use ghg_mod, only: ghg_init
+   use mixing_length, only: ML_CLOSURES
+   use ens_perturb, only: ens_spp_map, ENS_OK
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Init physics at the beginning of each execution of the model
@@ -225,6 +227,12 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       endif
    endif
 
+   ! Set mixing length index mapping for SPP
+   if (ens_spp_map('longmel', ML_CLOSURES(:)%name, ML_CLOSURES(:)%key) /= ENS_OK) then
+      call msg_toall(MSG_ERROR,'(phydebu) Problem mapping mixing length names')
+      return
+   endif
+   
    ! CONSTRUCTION OF THE 4 MAIN BUSES DICTIONARIES:
    ! BUSENT, BUSDYN, BUSPER and BUSVOL
    ! - - - - - - - - - - - - - - - - -

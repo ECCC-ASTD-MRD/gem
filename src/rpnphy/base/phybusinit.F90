@@ -55,7 +55,8 @@ subroutine phybusinit(ni,nk)
    logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
    logical :: lcndsm
    logical :: lcons, lmoycons
-   logical :: lhn_init
+   logical :: lhn_init, lsfcflx
+   logical :: lsurfonly
 
    !---------------------------------------------------------------------
 
@@ -125,7 +126,8 @@ subroutine phybusinit(ni,nk)
 
    
    wwz = '1'
-   if (offline) wwz = '0'
+   lsurfonly = (fluvert == 'SURFACE')
+   if (lsurfonly) wwz = '0'
    isss = '0'
    if (tofd /= 'NIL') isss = '1'
 
@@ -147,6 +149,7 @@ subroutine phybusinit(ni,nk)
    
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
+   i = 1
    if (any(stcond(1:5) == (/'MP_P3 ', 'MP_MY2'/))) then
       do while (.not.llight .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
@@ -156,6 +159,7 @@ subroutine phybusinit(ni,nk)
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
    lrefract = .false.
+   i = 1
    do while (.not.lrefract .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
            'dcbh', 'dcnb', 'dcll', &
@@ -189,6 +193,7 @@ subroutine phybusinit(ni,nk)
    lmoycons = (lcons .and. lmoyhr)
 
    lhn_init = (lhn /= 'NIL')
+   lsfcflx = (sfcflx_filter_order > 0)
    
 #include "phyvar.hf"
    if (phy_error_L) return
