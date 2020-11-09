@@ -25,7 +25,7 @@ message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 set(BLAS_LIBRARIES "blas")
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 
-set(CMAKE_C_FLAGS "-march=native -w -Wall -Wextra -fpic")
+set(CMAKE_C_FLAGS "-march=native -Wall -Wextra -fpic")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
