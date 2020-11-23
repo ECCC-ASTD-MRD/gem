@@ -5,6 +5,13 @@ if [[ x"$1" == x-h ]] ; then
    exit
 fi
 
+# export TEST_SUBNAME="test_inputio7_odd"
+# export TEST_SUBNAME="test_inputio7_halo"
+# export TEST_SUBNAME="test_inputio7_bloc"
+export TEST_SUBNAME="test_inputio7_even"
+
+export TEST_NSTEP=4320 !# 1, 2, 4, 216, 2160, 4320, 5400, 10800, 21600
+
 export TEST_INORDER=
 export TEST_VERBOSITY=critical
 export TEST_DEBUG=

@@ -26,6 +26,7 @@ module env_utils
 #include <rmnlib_basics.hf>
 
    interface env_get
+      module procedure env_get_str
       module procedure env_get_int
       module procedure env_get_real
       module procedure env_get_bool
@@ -35,6 +36,40 @@ module env_utils
 
 contains
 
+   !/@*
+   function env_get_str(F_name_S,F_sval,F_default,F_normalize_L,F_okvalues) result(F_istat)
+      implicit none
+      !@objective
+      !@arguments
+      character(len=*),intent(in) :: F_name_S
+      character(len=*),intent(out) :: F_sval
+      character(len=*),intent(in),optional :: F_default
+      logical,intent(in),optional :: F_normalize_L
+      character(len=*),intent(in),optional :: F_okvalues(:)
+      !@returns
+      integer :: F_istat
+      !@author  Stephane Chamberland, 2020-10
+      !*@/
+      !---------------------------------------------------------------------
+      F_istat = clib_getenv(trim(F_name_S), F_sval)
+      if (.not.RMN_IS_OK(F_istat) .and. present(F_default)) then
+         F_sval = F_default
+         F_istat = RMN_OK
+      endif
+      if (.not.RMN_IS_OK(F_istat)) return
+      if (present(F_normalize_L)) then
+         if (F_normalize_L) call str_normalize(F_sval)
+      endif
+      if (present(F_okvalues)) then
+         if (.not.any(F_sval == F_okvalues)) then
+            F_sval = ''
+            F_istat = RMN_ERR
+         endif
+      endif
+      !---------------------------------------------------------------------
+      return
+   end function env_get_str
+   
    !/@*
    function env_get_int(F_name_S,F_ival,F_default,F_min,F_max) result(F_istat)
       implicit none

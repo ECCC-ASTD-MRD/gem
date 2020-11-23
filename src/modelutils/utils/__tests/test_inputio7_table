@@ -41,10 +41,10 @@ in=SLA;  freq=0; search=GEOP;    hinterp=linear; levels= 1,4;
 
 in=AL; freq=0; search=CLIM;     hinterp=near;  tinterp=any; #etk=NO SNOW
 
+in=P0; freq=0,1; search=INREP; hinterp=cubic; levels=0; tinterp=linear
+
 in=TT; freq=0,1; search=INREP;     hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear
 
 in=UU; IN2=VV ; freq=0,1; search=INREP; hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear
 
-in=P0; freq=0,1; search=INREP; hinterp=cubic; levels=0; tinterp=linear
-
-# in=TT; freq=0; search=INREP;     hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear
+in=EN; freq=0; search=INREP;     hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear

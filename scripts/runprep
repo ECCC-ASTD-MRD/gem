@@ -24,7 +24,13 @@ dname=cfg_0000
 set -ex ; export SETMEX=-ex
 
 export GEM_ON_A_STICK_WORK_DIR=$PWD
-export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/gem_dbase
+if [ -h ${GEM_ON_A_STICK_WORK_DIR}/gem_dbase ] ; then
+    export default_DIR_ATM=${GEM_ON_A_STICK_WORK_DIR}/gem_dbase
+else
+    echo "Database not found! Please add a link to GEM database in the current directory!"
+    echo "Exiting"
+    exit
+fi
 export PATH=${PWD}/scripts:$PATH
 export TMPDIR=${TMPDIR-/tmp/$USER}
 mkdir -p ${TMPDIR}

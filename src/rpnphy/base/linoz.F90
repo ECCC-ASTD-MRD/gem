@@ -85,9 +85,6 @@ contains
       real, dimension(ni, nk)   :: shtj,s_qrt      ! nk "flux" levels
 
       real, dimension(ni, nkm1) :: o3_vmr,o3c_vmr,ch4_vmr,n2o_vmr,f11_vmr,f12_vmr ! nk-1 layers
-      real, dimension(ni, nkm1) :: o1_tend, o4_tend, o6_tend, o7_tend
-      real, dimension(ni, nkm1) :: o3_tend, ch4_tend, n2o_tend, f11_tend, f12_tend
-      real, dimension(ni, nkm1) :: o3new, ch4new, f11new, f12new, n2onew
 
       integer :: i, k, ni2
       real :: delage, delrlx
@@ -103,9 +100,6 @@ contains
 
 #undef PHYPTRDCL
 #include "linoz_ptr.hf"
-
-      call init2nan(o3new,o3_tend,o1_tend,o4_tend,o6_tend,o7_tend)
-      call init2nan(ch4new,n2onew,f11new,f12new,ch4_tend,n2o_tend,f11_tend,f12_tend)
 
       ! Calculate age of air
       !
@@ -132,6 +126,8 @@ contains
          ! Initialize ozone with climatology, if not found in analysis
          if (.not.any(dyninread_list_s == 'o3l') .or.   &
              .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:p')) then
+
+            ! print*,'linoz: (0) Initialize O3L with climatology KOUNT0=', kount
 
             !    FK-HALOE kg /kg
             ! zo3lplus = zo3fk * 1E+9      !micro g /kg air <--      kg /kg air
@@ -254,10 +250,10 @@ contains
       ! GHG Linoz table of coefficients
       IF_LINGHG2: if (llingh) then
 
-        ch4_vmr = zch4lplus *1E-9 * mwt_air/ mwt_ch4             !mole /mole vmr <-- micro g /kg
-        n2o_vmr = zn2olplus *1E-9 * mwt_air/ mwt_n2o             !mole /mole vmr <-- micro g /kg
-        f11_vmr = zf11lplus *1E-9 * mwt_air/ mwt_f11             !mole /mole vmr <-- micro g /kg
-        f12_vmr = zf12lplus *1E-9 * mwt_air/ mwt_f12             !mole /mole vmr <-- micro g /kg
+        ch4_vmr(:,1:nkm1) = zch4lplus(:,1:nkm1) *1E-9 * mwt_air/ mwt_ch4             !mole /mole vmr <-- micro g /kg
+        n2o_vmr(:,1:nkm1) = zn2olplus(:,1:nkm1) *1E-9 * mwt_air/ mwt_n2o             !mole /mole vmr <-- micro g /kg
+        f11_vmr(:,1:nkm1) = zf11lplus(:,1:nkm1) *1E-9 * mwt_air/ mwt_f11             !mole /mole vmr <-- micro g /kg
+        f12_vmr(:,1:nkm1) = zf12lplus(:,1:nkm1) *1E-9 * mwt_air/ mwt_f12             !mole /mole vmr <-- micro g /kg
 
         ! Set lower limit on species as in BIRA (units mole /mole)
         ch4_vmr = max(ch4_vmr ,Qeps)
@@ -269,21 +265,29 @@ contains
              
       !    Linoz tendencies 
 
+      ! print*,'linoz: (1) o3chmtd (:,nkm1)',nkm1,zo3chmtd(:,nkm1)
+      ! print*,'linoz: (1) o3chmtd (:,nk)',nk,zo3chmtd(:,nk)
+
       call linoz_tend( &
            o3_vmr,ch4_vmr,n2o_vmr,f11_vmr,f12_vmr         , & !input, mole/mole vmr
            zo3col                                         , & !input, D.U.
            ztplus, zpplus, shtj, zhuplus                  , & !input
            o3c_vmr,zttce,zo3ccol,zlin4,zlin5,zlin6,zlin7  , & !input mole/mole vmr ERA-3 ozone climato in troposphere
            zlin8,zlin9,zlin10,zlin11                      , & !input
-           o3new                                 , & !output, mole /mole 
-           ch4new ,n2onew, f11new ,f12new        , & !output, mole /mole 
-           zo1chmtd, zo4chmtd, zo6chmtd, zo7chmtd, & !output, mole /mole /sec
-           o3_tend                               , & !output, mole /mole /sec
-           ch4_tend, n2o_tend, f11_tend, f12_tend, & !output, mole /mole /sec
+           zo1chmtd, zo4chmtd, zo6chmtd, zo7chmtd , & !output, mole /mole /sec
+           zo3chmtd                               , & !output, mole /mole /sec
+           zch4chmtd,zn2ochmtd,zf11chmtd,zf12chmtd, & !output, mole /mole /sec
            dt, ni, nkm1, nk)                         !input
 
-       ! Ozone tendency micro g /kg air sec-1
-       zo3chmtd=o3_tend*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+      ! Ozone tendency micro g /kg air sec-1
+      zo1chmtd=zo1chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+      zo4chmtd=zo4chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+      zo6chmtd=zo6chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+      zo7chmtd=zo7chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+      zo3chmtd=zo3chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+
+      ! print*,'linoz: (2) o3chmtd (:,nkm1)',nkm1,zo3chmtd(:,nkm1)
+      ! print*,'linoz: (2) o3chmtd (:,nk)',nk,zo3chmtd(:,nk)
 
       ! Apply linoz tendencies micro g /kg air
       call apply_tendencies(zo3lplus,zo3chmtd, ztdmask, ni, nk, nkm1)
@@ -293,9 +297,8 @@ contains
 
       !        if(local_dbg  .and. mod(i, ni2)==0 .and. mod(trnch, 32)==0) &
       !           write(lun_out,*) 'linoz: ', i,trnch,k, &
-      !              ' o3vmr,  o3new,  o3chmtd=',  &
-      !                o3_vmr(i,k), o3new(i,k), v(o3chmtd + (k-1)*n + i-1)
-      !                o3_vmr(i,k),  o3new,  o3_tend  !, &
+      !              ' o3vmr,  o3chmtd=',  &
+      !                o3_vmr(i,k), zo3chmtd(i,k)
 
       !   end do ! k-loop
       !end do !i-loop
@@ -330,10 +333,10 @@ contains
          end if 
 
          ! Linoz GHG tendencies micro g /kg air sec-1
-         zch4chmtd = ch4_tend *1E+9 * mwt_ch4 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
-         zn2ochmtd = n2o_tend *1E+9 * mwt_n2o /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
-         zf11chmtd = f11_tend *1E+9 * mwt_f11 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
-         zf12chmtd = f12_tend *1E+9 * mwt_f12 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+         zch4chmtd = zch4chmtd *1E+9 * mwt_ch4 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+         zn2ochmtd = zn2ochmtd *1E+9 * mwt_n2o /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+         zf11chmtd = zf11chmtd *1E+9 * mwt_f11 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
+         zf12chmtd = zf11chmtd *1E+9 * mwt_f12 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
 
          ! Apply linoz tendencies micro g /kg air
          call apply_tendencies(zch4lplus,zch4chmtd, ztdmask, ni, nk, nkm1)

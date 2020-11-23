@@ -29,7 +29,7 @@
          !
         use tdpack_const, only: PI
         use svs_configs
-        use sfc_options, only: read_emis
+        use sfc_options, only: read_emis, urban_params_new
      implicit none
 !!!#include <arch_specific.hf>
 
@@ -142,6 +142,11 @@ include "isbapar.cdk"
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
            zcs, zcsv, z0_snow_low
 
+      REAL :: CVAMIN = 1.0E-5
+
+      IF (URBAN_PARAMS_NEW) THEN
+         CVAMIN = 0.3E-5   ! matches value of CVDAT(21) reset in inicover_svs.F90
+      ENDIF
 !
 !***********************************************************************
 !
@@ -297,7 +302,7 @@ include "isbapar.cdk"
 !                        -- Impose min. of 1.0E-5 consistent with look-up table in inicove_svs
 !
             CVA(I) = MAX(  ( VEGH(I) * CVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * CVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) ,  1.0E-5 )
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , CVAMIN )
 !
 !                        ALBEDO
 !                        -- Impose min. of 0.12 consistent with look-up table in inicove_svs
@@ -346,7 +351,7 @@ include "isbapar.cdk"
 !               
             LAIVA(I) = EPSILON_SVS
             LAIVP(I) = EPSILON_SVS
-            CVA(I)   = 1.0E-5
+            CVA(I)   = CVAMIN
             ALVA(I)  = 0.12
             RGLA(I)  = 30.
             Z0HA(I) = Z0M_TO_Z0H * Z0(I)  
@@ -389,8 +394,8 @@ include "isbapar.cdk"
 !                       Set the coefficients to lowest physical values found in look-up table 
 !                       to avoid division by zero
 !
-             CVPA(I)=1.0E-5
-             CNOLEAF(I)=1.0E-5
+             CVPA(I) = CVAMIN
+             CNOLEAF(I) = CVAMIN
 !     
           ENDIF
 !      

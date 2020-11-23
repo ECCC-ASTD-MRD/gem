@@ -17,9 +17,11 @@
 
 !/@
 subroutine test_inputio7()
+   use, intrinsic :: iso_fortran_env, only: REAL64
    use iso_c_binding
    use vGrid_Descriptors
    use clib_itf_mod
+   use env_utils, only: env_get
    use ezgrid_mod
    use inputio_mod
    use mu_jdate_mod
@@ -35,7 +37,17 @@ subroutine test_inputio7()
 #include <mu_gmm.hf>
    include "rpn_comm.inc"
    integer,parameter :: NDIGITS = 4
-   logical,parameter :: FSTOPC_SET = .false.
+   integer,parameter :: NSTEP0 = 1
+   integer,parameter :: NTEST = 1
+   integer,parameter :: NVAR = 34
+   integer,parameter :: NSKIP = 2
+   integer,parameter :: GNI = 400 !# 80
+   integer,parameter :: GNJ = 200 !# 40
+   integer,parameter :: NK = 2
+   integer,parameter :: MAXNK = 26
+   integer,parameter :: NVALS = 10
+
+   integer :: nstep
    character(len=512) :: dir_S,filename_S,dfiles_S, name_S, &
         anal_S,anal2_S,clim_S,clim2_S,geop_S,geop2_S,inrep_S,inrep2_S
    integer :: istat, myproc, ndomains, idomain, ngrids, igrid
@@ -45,8 +57,11 @@ subroutine test_inputio7()
    call ptopo_init_var(ndomains, idomain, ngrids, igrid)
    istat = ptopo_io_set(testutils_npeio)
 
+   nstep = NSTEP0
+   istat = env_get('TEST_NSTEP', nstep, NSTEP0, 1, 21600)
+
    call testutils_set_name('test_inputio7')
-   istat = fstopc('MSGLVL', 'SYSTEM', FSTOPC_SET)
+   istat = fstopc('MSGLVL', 'SYSTEM', RMN_OPT_SET)
    call msg_set_p0only(0)
 
    istat = clib_getenv('ATM_MODEL_DFILES',dfiles_S)
@@ -123,16 +138,9 @@ contains
       character(len=*),intent(in) :: F_filename_S
       integer, intent(in) :: iotype
       !@/
-      integer,parameter :: NSTEP = 1
-      integer,parameter :: NVAR = 34
-      integer,parameter :: NSKIP = 2
-      integer,parameter :: GNI = 8
-      integer,parameter :: GNJ = 4
       integer, parameter :: HALO = 0
-      integer,parameter :: MAXNK = 26
-      integer,parameter :: NVALS = 10
  
-      integer :: allvals2(NVALS, NSTEP+1, NVAR, MAXNK)
+      integer :: allvals2(NVALS, NTEST+1, NVAR, MAXNK)
       ! ---------------------------------------------------------------------
       allvals2 = 0
       allvals2(:,1, 1, 1) = (/      31025,      43668,          0,     100000, 1, 1, 1, 4, 2, 1/) !mg
@@ -225,23 +233,23 @@ contains
       allvals2(:,1,34, 4) = (/       2758,      10351,         44,      59221, 2, 1, 1, 6, 4, 1/) !en
       allvals2(:,1,34, 5) = (/       5009,      13225,         42,      59221, 8, 3, 1, 6, 4, 1/) !en
       allvals2(:,1,34, 6) = (/       5012,      13224,         39,      59221, 8, 3, 1, 6, 4, 1/) !en
-      allvals2(:,2, 1, 1) = (/      99224,       2826,      91707,     102710, 6, 4, 1, 7, 4, 1/) !p0
-      allvals2(:,2, 2, 1) = (/     -50817,       5782,     -64966,     -44149, 4, 1, 1, 5, 2, 1/) !tt
-      allvals2(:,2, 2, 2) = (/     -60720,     120622,    -291595,      87328, 3, 1, 1, 5, 2, 1/) !tt
-      allvals2(:,2, 2, 3) = (/      37397,     121710,    -155781,     242078, 3, 1, 1, 2, 3, 1/) !tt
-      allvals2(:,2, 2, 4) = (/       9406,      12815,     -17603,      33464, 7, 4, 1, 1, 3, 1/) !tt
-      allvals2(:,2, 2, 5) = (/     120774,     122447,    -153555,     306834, 7, 4, 1, 1, 3, 1/) !tt
-      allvals2(:,2, 2, 6) = (/     121892,     122598,    -151969,     306834, 7, 4, 1, 1, 3, 1/) !tt
-      allvals2(:,2, 3, 1) = (/      18367,      15539,      -2519,      52925, 7, 2, 1, 5, 1, 1/) !uu
-      allvals2(:,2, 3, 2) = (/      10739,      15328,     -13496,      44210, 7, 2, 1, 7, 1, 1/) !uu
-      allvals2(:,2, 3, 3) = (/       4368,      16583,     -20466,      38528, 7, 3, 1, 7, 1, 1/) !uu
-      allvals2(:,2, 3, 4) = (/      15351,     129156,    -195148,     301235, 7, 2, 1, 3, 1, 1/) !uu
-      allvals2(:,2, 3, 5) = (/      16126,     127504,    -193826,     301235, 7, 2, 1, 3, 1, 1/) !uu
-      allvals2(:,2, 4, 1) = (/      16142,     139461,    -311726,     222863, 2, 4, 1, 1, 4, 1/) !vv
-      allvals2(:,2, 4, 2) = (/       5950,     110616,    -213336,     195059, 5, 1, 1, 7, 1, 1/) !vv
-      allvals2(:,2, 4, 3) = (/       4472,      93830,    -181676,     213857, 8, 1, 1, 1, 4, 1/) !vv
-      allvals2(:,2, 4, 4) = (/      -1130,      73921,    -146847,     158265, 6, 1, 1, 1, 4, 1/) !vv
-      allvals2(:,2, 4, 5) = (/      -1812,      71917,    -145554,     144288, 6, 1, 1, 1, 4, 1/) !vv
+      allvals2(:,NTEST+1, 1, 1) = (/      99224,       2826,      91707,     102710, 6, 4, 1, 7, 4, 1/) !p0
+      allvals2(:,NTEST+1, 2, 1) = (/     -50817,       5782,     -64966,     -44149, 4, 1, 1, 5, 2, 1/) !tt
+      allvals2(:,NTEST+1, 2, 2) = (/     -60720,     120622,    -291595,      87328, 3, 1, 1, 5, 2, 1/) !tt
+      allvals2(:,NTEST+1, 2, 3) = (/      37397,     121710,    -155781,     242078, 3, 1, 1, 2, 3, 1/) !tt
+      allvals2(:,NTEST+1, 2, 4) = (/       9406,      12815,     -17603,      33464, 7, 4, 1, 1, 3, 1/) !tt
+      allvals2(:,NTEST+1, 2, 5) = (/     120774,     122447,    -153555,     306834, 7, 4, 1, 1, 3, 1/) !tt
+      allvals2(:,NTEST+1, 2, 6) = (/     121892,     122598,    -151969,     306834, 7, 4, 1, 1, 3, 1/) !tt
+      allvals2(:,NTEST+1, 3, 1) = (/      18367,      15539,      -2519,      52925, 7, 2, 1, 5, 1, 1/) !uu
+      allvals2(:,NTEST+1, 3, 2) = (/      10739,      15328,     -13496,      44210, 7, 2, 1, 7, 1, 1/) !uu
+      allvals2(:,NTEST+1, 3, 3) = (/       4368,      16583,     -20466,      38528, 7, 3, 1, 7, 1, 1/) !uu
+      allvals2(:,NTEST+1, 3, 4) = (/      15351,     129156,    -195148,     301235, 7, 2, 1, 3, 1, 1/) !uu
+      allvals2(:,NTEST+1, 3, 5) = (/      16126,     127504,    -193826,     301235, 7, 2, 1, 3, 1, 1/) !uu
+      allvals2(:,NTEST+1, 4, 1) = (/      16142,     139461,    -311726,     222863, 2, 4, 1, 1, 4, 1/) !vv
+      allvals2(:,NTEST+1, 4, 2) = (/       5950,     110616,    -213336,     195059, 5, 1, 1, 7, 1, 1/) !vv
+      allvals2(:,NTEST+1, 4, 3) = (/       4472,      93830,    -181676,     213857, 8, 1, 1, 1, 4, 1/) !vv
+      allvals2(:,NTEST+1, 4, 4) = (/      -1130,      73921,    -146847,     158265, 6, 1, 1, 1, 4, 1/) !vv
+      allvals2(:,NTEST+1, 4, 5) = (/      -1812,      71917,    -145554,     144288, 6, 1, 1, 1, 4, 1/) !vv
 
       call test_input7io_run(F_filename_S, GNI, GNJ, HALO, allvals2, iotype)
       ! ---------------------------------------------------------------------
@@ -255,15 +263,8 @@ contains
       character(len=*),intent(in) :: F_filename_S
       integer, intent(in) :: halo, iotype
       !@/
-      integer,parameter :: NSTEP = 1
-      integer,parameter :: NVAR = 34
-      integer,parameter :: NSKIP = 2
-      integer,parameter :: GNI = 81
-      integer,parameter :: GNJ = 41
-      integer,parameter :: MAXNK = 26
-      integer,parameter :: NVALS = 10
 
-      integer :: allvals2(NVALS, NSTEP+1, NVAR, MAXNK)
+      integer :: allvals2(NVALS, NTEST+1, NVAR, MAXNK)
        ! ---------------------------------------------------------------------
       allvals2 = 0
       allvals2(:,1, 1, 1) = (/      34196,      44721,          0,     100000,40, 4, 1, 1, 1, 1/) !mg
@@ -356,23 +357,23 @@ contains
       allvals2(:,1,34, 4) = (/       3470,      16008,       -962,     240668,50,35, 1,65,18, 1/) !en
       allvals2(:,1,34, 5) = (/       4383,      16759,      -1774,     240668,64,23, 1,65,18, 1/) !en
       allvals2(:,1,34, 6) = (/       4390,      16760,      -1774,     240668,64,23, 1,65,18, 1/) !en
-      allvals2(:,2, 1, 1) = (/      96705,       9292,      52388,     103856,19,29, 1,50,33, 1/) !p0
-      allvals2(:,2, 2, 1) = (/     -51969,       5671,     -68547,     -41848,26, 5, 1,70,34, 1/) !tt
-      allvals2(:,2, 2, 2) = (/     -10253,      14466,     -70985,       9067,10, 3, 1,61,17, 1/) !tt
-      allvals2(:,2, 2, 3) = (/      -2023,      18446,     -70985,      24512,10, 3, 1,11,26, 1/) !tt
-      allvals2(:,2, 2, 4) = (/       2401,      20711,     -70985,      36818,10, 3, 1, 1,25, 1/) !tt
-      allvals2(:,2, 2, 5) = (/       4527,      21737,     -70985,      35911,10, 3, 1,17,26, 1/) !tt
-      allvals2(:,2, 2, 6) = (/       4611,      21779,     -70985,      35288,10, 3, 1, 8,25, 1/) !tt
-      allvals2(:,2, 3, 1) = (/      12574,      19609,     -32330,      98854,22, 5, 1,64, 9, 1/) !uu
-      allvals2(:,2, 3, 2) = (/       6443,      15951,     -47924,      71374,20, 5, 1,66,10, 1/) !uu
-      allvals2(:,2, 3, 3) = (/       2328,      14597,     -48934,      51626,24, 6, 1,67, 9, 1/) !uu
-      allvals2(:,2, 3, 4) = (/        169,      11652,     -40292,      34540,24, 6, 1,45, 9, 1/) !uu
-      allvals2(:,2, 3, 5) = (/         98,      11384,     -40292,      33388,24, 6, 1,70,34, 1/) !uu
-      allvals2(:,2, 4, 1) = (/         24,      16242,     -63014,      70746,35,36, 1,46,36, 1/) !vv
-      allvals2(:,2, 4, 2) = (/         66,      13120,     -51908,      50466,77, 3, 1,46,34, 1/) !vv
-      allvals2(:,2, 4, 3) = (/        310,      12442,     -55015,      44291,77, 8, 1,47,35, 1/) !vv
-      allvals2(:,2, 4, 4) = (/        187,      10831,     -40467,      38876,76, 3, 1,33, 5, 1/) !vv
-      allvals2(:,2, 4, 5) = (/        192,      10545,     -40467,      38876,76, 3, 1,33, 5, 1/) !vv
+      allvals2(:,NTEST+1, 1, 1) = (/      96705,       9292,      52388,     103856,19,29, 1,50,33, 1/) !p0
+      allvals2(:,NTEST+1, 2, 1) = (/     -51969,       5671,     -68547,     -41848,26, 5, 1,70,34, 1/) !tt
+      allvals2(:,NTEST+1, 2, 2) = (/     -10253,      14466,     -70985,       9067,10, 3, 1,61,17, 1/) !tt
+      allvals2(:,NTEST+1, 2, 3) = (/      -2023,      18446,     -70985,      24512,10, 3, 1,11,26, 1/) !tt
+      allvals2(:,NTEST+1, 2, 4) = (/       2401,      20711,     -70985,      36818,10, 3, 1, 1,25, 1/) !tt
+      allvals2(:,NTEST+1, 2, 5) = (/       4527,      21737,     -70985,      35911,10, 3, 1,17,26, 1/) !tt
+      allvals2(:,NTEST+1, 2, 6) = (/       4611,      21779,     -70985,      35288,10, 3, 1, 8,25, 1/) !tt
+      allvals2(:,NTEST+1, 3, 1) = (/      12574,      19609,     -32330,      98854,22, 5, 1,64, 9, 1/) !uu
+      allvals2(:,NTEST+1, 3, 2) = (/       6443,      15951,     -47924,      71374,20, 5, 1,66,10, 1/) !uu
+      allvals2(:,NTEST+1, 3, 3) = (/       2328,      14597,     -48934,      51626,24, 6, 1,67, 9, 1/) !uu
+      allvals2(:,NTEST+1, 3, 4) = (/        169,      11652,     -40292,      34540,24, 6, 1,45, 9, 1/) !uu
+      allvals2(:,NTEST+1, 3, 5) = (/         98,      11384,     -40292,      33388,24, 6, 1,70,34, 1/) !uu
+      allvals2(:,NTEST+1, 4, 1) = (/         24,      16242,     -63014,      70746,35,36, 1,46,36, 1/) !vv
+      allvals2(:,NTEST+1, 4, 2) = (/         66,      13120,     -51908,      50466,77, 3, 1,46,34, 1/) !vv
+      allvals2(:,NTEST+1, 4, 3) = (/        310,      12442,     -55015,      44291,77, 8, 1,47,35, 1/) !vv
+      allvals2(:,NTEST+1, 4, 4) = (/        187,      10831,     -40467,      38876,76, 3, 1,33, 5, 1/) !vv
+      allvals2(:,NTEST+1, 4, 5) = (/        192,      10545,     -40467,      38876,76, 3, 1,33, 5, 1/) !vv
 
       call test_input7io_run(F_filename_S, GNI, GNJ, HALO, allvals2, iotype)
       ! ---------------------------------------------------------------------
@@ -387,18 +388,14 @@ contains
       integer,intent(in) :: GNI, GNJ, HALO
       integer :: allvals2(:,:,:,:), iotype
       !@/
-      integer,parameter :: NSTEP = 1
-      integer,parameter :: NVAR = 34
-      integer,parameter :: NSKIP = 2
-      integer,parameter :: NK = 2
       logical, parameter :: ALONGX = .true.
       logical, parameter :: FILL = .false. !.true.
       real,parameter :: hyb(4) = (/0.5492443,0.7299818,0.8791828,0.9950425/)
       character(len=512) :: dateo_S,varname_S,varname2_S,skip_list_S(4),dummy_S,step_S
-      character(len=8) :: result_S(0:NSTEP,NVAR)
-      integer :: istat,dateo,istep,dt,ii,gridid,nbvar,ivar,nhyb,k,ikind,ip1list(NK)
+      character(len=8) :: result_S(0:NTEST,NVAR)
+      integer :: istat,dateo,istep,itest,dt,ii,gridid,nbvar,ivar,nhyb,k,ikind,ip1list(NK)
       integer :: mini, maxi, lni, lnimax, li0, minj, maxj, lnj, lnjmax, lj0, rpncomm_gridid,lijk0(3),lijk1(3),uijk0(3),uijk1(3)
-      logical :: ok_L(0:NSTEP,NVAR), ok1_L
+      logical :: ok_L(0:NTEST,NVAR), ok1_L
       real :: hyblist(NK)
       real(8) :: ptop_8
       real, pointer :: data(:,:,:),data2(:,:,:),p0data(:,:)
@@ -423,7 +420,7 @@ contains
            'j2  ','dn  ','icel','al  ','p0  ', &
            'tt  ','uu  ','vv  ','en  '/)
 !!$      result_S(1,1:5) = (/ 'p0  ','tt  ','uu  ','vv  ','en  '/)
-      result_S(1,1:4) = (/ 'p0  ','tt  ','uu  ','vv  '/)
+      result_S(NTEST,1:4) = (/ 'p0  ','tt  ','uu  ','vv  '/)
 
 !!$      skip_list_S(1:3) = (/'xa  ','icel','fsa '/)
 
@@ -485,7 +482,7 @@ contains
          ikind = RMN_CONV_HY
          call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
-      dt = 21600
+      dt = 21600 / NSTEP
       istat = inputio_new(inputobj, jdateo, dt, F_filename_S, '.', &
            gridid, gridid, rpncomm_gridid, &
            F_li0=1, F_lin=lni, F_lj0=1, F_ljn=lnj, F_iotype=iotype)
@@ -496,9 +493,11 @@ contains
       nbvar = inputio_nbvar(inputobj)
       call testutils_assert_eq(nbvar, NVAR+NSKIP, 'inputio_nbvar')
 
-      STEPLOOP: do istep = 0, NSTEP
-         write(step_S, '(i2.2)') istep
+      itest = 0 
+      STEPLOOP: do istep = 0,NSTEP
+         write(step_S, '(i5.5)') istep
          call msg(MSG_INFO, '============================================ '//trim(step_S))
+         if (istep == NSTEP) itest = NTEST
          ii = 0
          VARLOOP: do ivar=1,nbvar
             istat = inputio_isvarstep(inputobj, ivar, istep)
@@ -521,89 +520,93 @@ contains
             endif
 !!$            print *,'====',inputobj%fid%files(1:inputobj%fid%nfiles)%unit
 
-            ii = ii + 1
-            call testutils_assert_eq(varname_S, result_S(istep, ii), 'var '//trim(varname_S)//':'//trim(step_S))
-
-            lijk1 = lbound(data)
-            uijk1 = ubound(data)
-            call testutils_assert_ok( &
-                 all(lijk1(1:2) == lijk0(1:2)) .and. &
-                 all(uijk1(1:2) == uijk0(1:2)), 'bounds '//trim(varname_S)//':'//trim(step_S))
-            if (.not.(all(lijk1(1:2) == lijk0(1:2)) .and. &
-                 all(uijk1(1:2) == uijk0(1:2)))) then
-               print *,'bounds  '//trim(varname_S)//':'//trim(step_S)//':',maxi,maxj
-               print *,'bounds0 '//trim(varname_S)//':'//trim(step_S)//':',uijk0(1:2)
-               print *,'bounds1 '//trim(varname_S)//':'//trim(step_S)//':',uijk1(1:2)
-               call flush(6)
-            endif
-            if (varname_S == 'tt') then
-               call testutils_assert_ok( &
-                    lijk1(3) == 1 .and. uijk1(3)==size(ip1listt), 'bounds k '//trim(varname_S)//':'//trim(step_S))
-            elseif (varname_S == 'uu') then
-               call testutils_assert_ok( &
-                    lijk1(3) == 1 .and. uijk1(3)==size(ip1listm), 'bounds k '//trim(varname_S)//':'//trim(step_S))
-            endif
-
-            call testutils_assert_not_naninf(data, 'validity '//trim(varname_S)//':'//trim(step_S))
-            if (varname2_S/=' ') &
-                 call testutils_assert_not_naninf(data2, 'validity '//trim(varname2_S)//':'//trim(step_S))
-
-            do ilvl=1,uijk1(3)
-               call statfld_dm(data(:,:,ilvl), mean, var, rmin, rmax, ijkmin, ijkmax)
-               ok1_L = .true.
-               if (ptopo_grid_ipe == RPN_COMM_MASTER) then
-                  fact = 10.**nint(5.-max(-20.,log10(maxval((/abs(mean), abs(var), abs(rmin), abs(rmax)/)) + tiny(rmax))))
-                  vals2 = (/nint(fact*mean), nint(fact*var), nint(fact*rmin), nint(fact*rmax), ijkmin(1), ijkmin(2), ijkmin(3), ijkmax(1), ijkmax(2), ijkmax(3)/)
-                  if (all(vals2(:) == allvals2(:,istep+1,ii,ilvl))) then
-                     ok1_L = .true.
-                  else
-                     ok1_L = .false.
-                     print &
-                          '(a,i1,a,i2,a,i2,a,i11,",",i11,",",i11,",",i11,",",i2,",",i2,",",i2,",",i2,",",i2,",",i2,a)', &
-                          "allvals2(:,", istep+1, ",", ii, ",", ilvl, ") = (/", vals2, "/) !"//varname_S(1:2)
-                     print &
-                          '(a,i1,a,i2,a,i2,a,i11,",",i11,",",i11,",",i11,",",i2,",",i2,",",i2,",",i2,",",i2,",",i2,a)', &
-                          "allvals0(:,", istep+1, ",", ii, ",", ilvl, ") = (/", allvals2(:,istep+1,ii,ilvl), "/) !"//varname_S(1:2)
-                  endif
-               endif
-               write(dummy_S,*) ilvl
-               call testutils_assert_ok(ok1_L, 'stats '//varname_S(1:2)//':'//trim(step_S)//' '//trim(dummy_S))
-            enddo
-            if (varname2_S/=' ') then
+            IF_ASSERT: if (istep == 0 .or. istep == NSTEP) then
                ii = ii + 1
+               call testutils_assert_eq(varname_S, result_S(itest, ii), 'var '//trim(varname_S)//':'//trim(step_S))
+
+               lijk1 = lbound(data)
+               uijk1 = ubound(data)
+               call testutils_assert_ok( &
+                    all(lijk1(1:2) == lijk0(1:2)) .and. &
+                    all(uijk1(1:2) == uijk0(1:2)), 'bounds '//trim(varname_S)//':'//trim(step_S))
+               if (.not.(all(lijk1(1:2) == lijk0(1:2)) .and. &
+                    all(uijk1(1:2) == uijk0(1:2)))) then
+                  print *,'bounds  '//trim(varname_S)//':'//trim(step_S)//':',maxi,maxj
+                  print *,'bounds0 '//trim(varname_S)//':'//trim(step_S)//':',uijk0(1:2)
+                  print *,'bounds1 '//trim(varname_S)//':'//trim(step_S)//':',uijk1(1:2)
+                  call flush(6)
+               endif
+               if (varname_S == 'tt') then
+                  call testutils_assert_ok( &
+                       lijk1(3) == 1 .and. uijk1(3)==size(ip1listt), 'bounds k '//trim(varname_S)//':'//trim(step_S))
+               elseif (varname_S == 'uu') then
+                  call testutils_assert_ok( &
+                       lijk1(3) == 1 .and. uijk1(3)==size(ip1listm), 'bounds k '//trim(varname_S)//':'//trim(step_S))
+               endif
+
+               call testutils_assert_not_naninf(data, 'validity '//trim(varname_S)//':'//trim(step_S))
+               if (varname2_S/=' ') &
+                    call testutils_assert_not_naninf(data2, 'validity '//trim(varname2_S)//':'//trim(step_S))
+
                do ilvl=1,uijk1(3)
-                  call statfld_dm(data2(:,:,ilvl), mean, var, rmin, rmax, ijkmin, ijkmax)
+                  call statfld_dm(data(:,:,ilvl), mean, var, rmin, rmax, ijkmin, ijkmax)
                   ok1_L = .true.
                   if (ptopo_grid_ipe == RPN_COMM_MASTER) then
-                     fact = 10.**nint(5.-max(-20.,log10(maxval((/abs(mean), abs(var), abs(rmin), abs(rmax)/)) + tiny(rmax))))
+                     fact = 10.**nint(5.-max(-20.D0,log10(maxval((/abs(mean), abs(var), abs(rmin), abs(rmax)/)) + tiny(rmax))))
                      vals2 = (/nint(fact*mean), nint(fact*var), nint(fact*rmin), nint(fact*rmax), ijkmin(1), ijkmin(2), ijkmin(3), ijkmax(1), ijkmax(2), ijkmax(3)/)
-                     if (all(vals2(:) == allvals2(:,istep+1,ii,ilvl))) then
+                     if (all(vals2(:) == allvals2(:,itest+1,ii,ilvl))) then
                         ok1_L = .true.
                      else
                         ok1_L = .false.
                         print &
                              '(a,i1,a,i2,a,i2,a,i11,",",i11,",",i11,",",i11,",",i2,",",i2,",",i2,",",i2,",",i2,",",i2,a)', &
-                             "allvals2(:,", istep+1, ",", ii, ",", ilvl, ") = (/", vals2, "/) !"//varname2_S(1:2)
+                             "allvals2(:,", itest+1, ",", ii, ",", ilvl, ") = (/", vals2, "/) !"//varname_S(1:2)
+                        print &
+                             '(a,i1,a,i2,a,i2,a,i11,",",i11,",",i11,",",i11,",",i2,",",i2,",",i2,",",i2,",",i2,",",i2,a)', &
+                             "allvals0(:,", itest+1, ",", ii, ",", ilvl, ") = (/", allvals2(:,itest+1,ii,ilvl), "/) !"//varname_S(1:2)
                      endif
                   endif
                   write(dummy_S,*) ilvl
-                  call testutils_assert_ok(ok1_L, 'stats '//varname2_S(1:2)//':'//trim(step_S)//' '//trim(dummy_S))
+                  call testutils_assert_ok(ok1_L, 'stats '//varname_S(1:2)//':'//trim(step_S)//' '//trim(dummy_S))
                enddo
-            endif
- 
+               if (varname2_S/=' ') then
+                  ii = ii + 1
+                  do ilvl=1,uijk1(3)
+                     call statfld_dm(data2(:,:,ilvl), mean, var, rmin, rmax, ijkmin, ijkmax)
+                     ok1_L = .true.
+                     if (ptopo_grid_ipe == RPN_COMM_MASTER) then
+                        fact = 10.**nint(5.-max(-20.D0,log10(maxval((/abs(mean), abs(var), abs(rmin), abs(rmax)/)) + tiny(rmax))))
+                        vals2 = (/nint(fact*mean), nint(fact*var), nint(fact*rmin), nint(fact*rmax), ijkmin(1), ijkmin(2), ijkmin(3), ijkmax(1), ijkmax(2), ijkmax(3)/)
+                        if (all(vals2(:) == allvals2(:,itest+1,ii,ilvl))) then
+                           ok1_L = .true.
+                        else
+                           ok1_L = .false.
+                           print &
+                                '(a,i1,a,i2,a,i2,a,i11,",",i11,",",i11,",",i11,",",i2,",",i2,",",i2,",",i2,",",i2,",",i2,a)', &
+                                "allvals2(:,", itest+1, ",", ii, ",", ilvl, ") = (/", vals2, "/) !"//varname2_S(1:2)
+                        endif
+                     endif
+                     write(dummy_S,*) ilvl
+                     call testutils_assert_ok(ok1_L, 'stats '//varname2_S(1:2)//':'//trim(step_S)//' '//trim(dummy_S))
+                  enddo
+               endif
+            endif IF_ASSERT
             if (associated(data)) deallocate(data,stat=istat)
             if (associated(data2)) deallocate(data2,stat=istat)
          enddo VARLOOP
-         if (ii < NVAR) then
-            ii = ii + 1
-            if (result_S(istep, ii) == '') then
-               call testutils_assert_ok(.true., 'nvar'//trim(step_S))
+         IF_ASSERT2: if (istep == 0 .or. istep == NSTEP) then
+            if (ii < NVAR) then
+!!$               print *,'ii,nvar,itest,result_S(itest, ii):',ii,nvar,itest,trim(result_S(itest, ii))
+               ii = ii + 1
+               if (result_S(itest, ii) == '') then
+                  call testutils_assert_ok(.true., 'nvar'//trim(step_S))
+               else
+                  call testutils_assert_eq(' ', result_S(itest, ii), 'missing "'//trim(result_S(itest, ii))//'":'//trim(step_S))
+               endif
             else
-               call testutils_assert_eq(' ', result_S(istep, ii), 'missing "'//trim(result_S(istep, ii))//'":'//trim(step_S))
+               call testutils_assert_ok(.true., 'nvar'//trim(step_S))
             endif
-         else
-            call testutils_assert_ok(.true., 'nvar'//trim(step_S))
-         endif
+         endif IF_ASSERT2
       enddo STEPLOOP
       istat = inputio_close_files(inputobj)
       ! ---------------------------------------------------------------------

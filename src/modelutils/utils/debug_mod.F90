@@ -62,10 +62,19 @@ module debug_mod
 !!$    data inan  /Z'7F800001'/
 !!$    data inan8 /Z'7FF0000000000001'/
 
+#ifndef __GFORTRAN__
    real, parameter :: A4 = 1.
    real, parameter, public ::  DEBUG_NAN4 = transfer(-1, A4)
-
+#else
+#define DEBUG_NAN4 ieee_value(1.0, ieee_quiet_nan)
+#endif
+   
+#ifndef __GFORTRAN__
+   real(REAL64), parameter :: A8 = 1.D0
+   real(REAL64), parameter, public ::  DEBUG_NAN8 = transfer(Z'7FF0000000000001', A8)
+#else
 #define DEBUG_NAN8 ieee_value(1.0_REAL64, ieee_quiet_nan)
+#endif
 
 contains
 
