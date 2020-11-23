@@ -12,8 +12,13 @@ set(COMPILER intel CACHE STRING compiler)
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
-set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
-message(STATUS "Configuring for ${CMAKE_BUILD_TYPE}")
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
+  message(STATUS "No build type selected, default to RelWithDebInfo")
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+
+message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 
 # Include an architecture dependent file that contains settings for a
 # particular architecture and compiler, using the default value of the
@@ -27,6 +32,10 @@ else()
   message(STATUS "include ${ARCH}-${COMPILER}.cmake")
   include("${ARCH}-${COMPILER}.cmake")
 endif()
+
+# Enable the two languages that are used
+enable_language(C)
+enable_language(Fortran)
 
 # TODO: This isn't used presently.  Check to see if we need it
 # set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
@@ -113,7 +122,7 @@ include_directories(
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# Too see the make commands
+# To see the make commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory(${ROOT}/src build/src)

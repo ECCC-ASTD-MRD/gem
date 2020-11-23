@@ -14,7 +14,7 @@
         },
         ],
         "settings": {
-           "cmake.buildDirectory": "${workspaceRoot}/build-ubuntu-18.04-amd64-64-gnu-7.5.0",
+           "cmake.buildDirectory": "${workspaceRoot}/build-ubuntu-18.04-amd64-64-intel-19.0.3.199",
            "telemetry.enableTelemetry": false,
            "telemetry.enableCrashReporter": false,
 	   "cmake.configureOnOpen": true,
