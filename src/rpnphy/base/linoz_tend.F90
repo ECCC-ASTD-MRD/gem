@@ -20,6 +20,8 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
      temp, ps, shtj, qq,                &
      o3c, c2, c3,  c4,  c5,  c6,  c7,   & 
      c8, c9, c10, c11,                  &
+     o3_new,                            & !GMv3
+     ch4_new, n2o_new, f11_new, f12_new,& !GMv3
      do1dt,  do4dt,  do6dt, do7dt,      &
      do3dt,                             &
      dch4dt, dn2odt, df11dt, df12dt,    &
@@ -83,6 +85,7 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    real, dimension(ni, lev ), intent(in)    :: shtj,temp
    real, dimension(ni, lay ), intent(in)    :: c4,c2,c3,c5,c6,c7
    real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
+   real, dimension(ni, lay ), intent(out)   :: o3_new, n2o_new, ch4_new, f11_new, f12_new
    real, dimension(ni, lay ), intent(out)   :: do1dt,do4dt,do6dt,do7dt,do3dt
    real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
 
@@ -96,8 +99,6 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    integer :: i,k, ni2
    real :: ptop, hu_ppm
    real :: tau,fss, c50
-
-   real, dimension(ni, lay )                :: o3_new, n2o_new, ch4_new, f11_new, f12_new
 
    ni2 = int(float(ni)/2.)
 

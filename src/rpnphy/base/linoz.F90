@@ -85,6 +85,7 @@ contains
       real, dimension(ni, nk)   :: shtj,s_qrt      ! nk "flux" levels
 
       real, dimension(ni, nkm1) :: o3_vmr,o3c_vmr,ch4_vmr,n2o_vmr,f11_vmr,f12_vmr ! nk-1 layers
+      real, dimension(ni, nkm1) :: o3new, ch4new, f11new, f12new, n2onew          !GMV3
 
       integer :: i, k, ni2
       real :: delage, delrlx
@@ -101,6 +102,8 @@ contains
 #undef PHYPTRDCL
 #include "linoz_ptr.hf"
 
+      call init2nan(o3new,ch4new,n2onew,f11new,f12new)   !GMV3
+      
       ! Calculate age of air
       !
       ! ---  change in age of air (age in units of years)
@@ -274,6 +277,8 @@ contains
            ztplus, zpplus, shtj, zhuplus                  , & !input
            o3c_vmr,zttce,zo3ccol,zlin4,zlin5,zlin6,zlin7  , & !input mole/mole vmr ERA-3 ozone climato in troposphere
            zlin8,zlin9,zlin10,zlin11                      , & !input
+           o3new                                 , & !output, mole /mole  !GMV3
+           ch4new ,n2onew, f11new ,f12new        , & !output, mole /mole  !GMV3
            zo1chmtd, zo4chmtd, zo6chmtd, zo7chmtd , & !output, mole /mole /sec
            zo3chmtd                               , & !output, mole /mole /sec
            zch4chmtd,zn2ochmtd,zf11chmtd,zf12chmtd, & !output, mole /mole /sec
