@@ -275,6 +275,12 @@ subroutine inicover_svs(kount, ni, trnch)
       MKPTR2D(zlaivf26,laivf26)
       MKPTR2D(zvegf,vegf)
 
+      if (urban_params_new) then ! modify urban surface parameters set above
+         cvdat(21)   = 0.3E-5
+         z0mdat(21)  = 1.0
+         emisdat(21) = 0.950
+      endif
+      
      ! Determine the current julian day
       julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
 

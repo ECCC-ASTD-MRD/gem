@@ -26,12 +26,12 @@ See below for extended instructions.  Further details are can be found in
     ./download-dbase.sh work
 
     cd ../work/work-${OS_NAME}-${COMPILER_NAME}
-	# Configure the model with the default configuration (configurations/GEM_cfgs)
-	# and execute the model
-	./runprep
+    # Configure the model with the default configuration (configurations/GEM_cfgs)
+    # and execute the model
+    ./runprep
     ./runmod
-	# or configure the model for a specific case, for example:
-	./runprep -dircfg configurations/GY_cfgs
+    # or configure the model for a specific case, for example:
+    ./runprep -dircfg configurations/GY_cfgs
     ./runmod -dircfg configurations/GY_cfgs
 
     ./voir -iment RUNMOD.dir/output/cfg0000/ ...
@@ -73,16 +73,16 @@ link:
   which will need to be adapted for your setup:
     - On Ubuntu:
         ```
-            export PATH=/usr/lib/openmpi/bin:${PATH}
-            export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
-			or
-			export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
+          export PATH=/usr/lib/openmpi/bin:${PATH}
+          export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
+        or
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
 
         ```
     - On Fedora:
         ```
-            export PATH=/usr/lib64/openmpi/bin:$PATH
-            export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
+          export PATH=/usr/lib64/openmpi/bin:$PATH
+          export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
         ```
 
 ### Intel Compilers
@@ -146,13 +146,13 @@ example *work-Fedora-32-x86_64-gnu-10.2.1*
 
 ```
     cd <WORK_PREFIX>/work-${OS-NAME}_${COMPILER-NAME}
-	# Configure the model with the default configuration (configurations/GEM_cfgs)
-	./runprep
+    # Configure the model with the default configuration (configurations/GEM_cfgs)
+    ./runprep
     # Create a directory named RUNMOD.dir for output files
     # and execute the model
     ./runmod
-	# or configure and executre the model for a specific case, for example:
-	./runprep -dircfg configurations/GY_cfgs
+    # or configure and execute the model for a specific case, for example:
+    ./runprep -dircfg configurations/GY_cfgs
     ./runmod -dircfg configurations/GY_cfgs
 ```
 
@@ -171,7 +171,7 @@ and then rerun the ```make work``` in the build directory.
 
 ## Working with model outputs
 
-The model stores its outputs in FST files.  These tools can be used to perform
+The model stores its outputs in FST files.  The following tools can be used to perform
 various tasks on the output files:
 
 - ```voir``` lists the records in FST files:

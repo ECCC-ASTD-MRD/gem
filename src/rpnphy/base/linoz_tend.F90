@@ -18,14 +18,12 @@
 subroutine linoz_tend(o3, ch4, n2o, f11, f12, & 
      colo3,                             &
      temp, ps, shtj, qq,                &
-     o3c, c2, c3,  c4,  c5,  c6,  c7,    & 
+     o3c, c2, c3,  c4,  c5,  c6,  c7,   & 
      c8, c9, c10, c11,                  &
-     o3_new, &
-     ch4_new, n2o_new, f11_new, f12_new,&
      do1dt,  do4dt,  do6dt, do7dt,      &
-     do3dt, &
+     do3dt,                             &
      dch4dt, dn2odt, df11dt, df12dt,    &
-     timestep, ni, nkm1, nk)
+     timestep, ni, lay, lev)
    use phy_options
    use linoz_mod
    implicit none
@@ -35,8 +33,8 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    ! photochemistry (based on LINOZ scheme)
    !@arguments
    ! ni       horizonal index
-   ! nkm1     vertical  index nk-1
-   ! nk       vertical  index
+   ! lay      vertical  layers lev-1
+   ! lev      vertical  levels 
    ! timestep timestep
    ! v        volatile bus
    ! f        permanent bus
@@ -76,18 +74,17 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    !      colo3  : total column DU
    !------------------------------------------------------
 
-   integer, intent(in)             :: ni,nkm1,nk
+   integer, intent(in)             :: ni,lay,lev
    real,    intent(in)             :: timestep
-   real, dimension(ni, nkm1), intent(in)    :: o3, n2o,ch4,f11,f12
-   real, dimension(ni, nkm1), intent(in)    :: o3c,qq
-   real, dimension(ni, nkm1), intent(in)    :: colo3
+   real, dimension(ni, lay ), intent(in)    :: o3, n2o,ch4,f11,f12
+   real, dimension(ni, lay ), intent(in)    :: o3c,qq
+   real, dimension(ni, lay ), intent(in)    :: colo3
    real, dimension(ni),       intent(in)    :: ps
-   real, dimension(ni, nk),   intent(in)    :: shtj,temp
-   real, dimension(ni, nkm1), intent(in)    :: c4,c2,c3,c5,c6,c7
-   real, dimension(ni, nkm1), intent(in)    :: c8,c9,c10,c11
-   real, dimension(ni, nkm1), intent(out)   :: o3_new, n2o_new, ch4_new, f11_new, f12_new
-   real, dimension(ni, nkm1), intent(out)   :: do1dt,do4dt,do6dt,do7dt
-   real, dimension(ni, nkm1), intent(out)   :: do3dt,dn2odt,dch4dt,df11dt,df12dt
+   real, dimension(ni, lev ), intent(in)    :: shtj,temp
+   real, dimension(ni, lay ), intent(in)    :: c4,c2,c3,c5,c6,c7
+   real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
+   real, dimension(ni, lay ), intent(out)   :: do1dt,do4dt,do6dt,do7dt,do3dt
+   real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
 
    !@author J. de Grandpre (ARQI): February 2013
    !@revisions
@@ -100,6 +97,8 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    real :: ptop, hu_ppm
    real :: tau,fss, c50
 
+   real, dimension(ni, lay )                :: o3_new, n2o_new, ch4_new, f11_new, f12_new
+
    ni2 = int(float(ni)/2.)
 
    ! --------------------
@@ -111,7 +110,7 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
       ! Loop on all vertical levels
       ! ----------------------------
 
-      DO_K1: do k=1,nkm1
+      DO_K1: do k=1,lay
 
          hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
          ptop = shtj(i,k)  *ps(i)       ! pressure (Pa) at the upper interface
@@ -215,6 +214,8 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
 
       end do DO_K1
    end do DO_I1
+
+
    
 
    IF_LINGHG: if (llingh) then
@@ -228,7 +229,7 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
          ! Loop on all vertical levels
          ! ----------------------------
 
-         DO_K2: do k=1,nkm1
+         DO_K2: do k=1,lay
 
             ! Apply LINOZ tendencies above tropopause, defined as specific humidity 'hu_linoz=10ppmv' or pressure 'p_linoz_tropo=100mb'
             hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
@@ -259,7 +260,7 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
 
 
             ! Set lower boundary values as in BIRA-Tropo (units mole /mole)
-            if (k >= nkm1-2) then  !nk-1 =SFC
+            if (k >= lay-2) then  !lay =SFC
                ch4_new(i,k) = 1.76E-06  
                n2o_new(i,k) = 3.22E-07
                f11_new(i,k) = 2.60E-10

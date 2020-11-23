@@ -402,6 +402,10 @@ module sfc_options
    real              :: zu = 10.
    namelist /surface_cfgs/ zu
 
+   !# New urban surface parameters
+   logical           :: urban_params_new = .false.
+   namelist /surface_cfgs/ urban_params_new
+ 
    !# Adjust wind diagnostic in TEB with building height  if .true.
    logical           :: urb_diagwind = .false.
 !!$   namelist /surface_cfgs/ urb_diagwind

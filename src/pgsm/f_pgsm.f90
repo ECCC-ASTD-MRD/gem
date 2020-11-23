@@ -362,7 +362,8 @@
    do i=1,nparm
       if (argdims(i+1) > 1) then
          p = transfer(champpr(i), p)
-         call convip(champpr(i), p, -1*kinds(i)-1000, ip1style, string, .false.)
+         call convip_plus(champpr(i), p, -1*kinds(i)-1000, ip1style, string, &
+                          .false.)
          endif
    enddo
    if (.not.associated(tmplat).and.cgrtyp  /=  '*') then
@@ -696,7 +697,9 @@
       if (listniv(ntitems, 1) > 1000000 .and. listniv(ntitems,2)  < 0) then
          do i=1,argdims(2),2
             p = transfer(listniv(ntitems,i), p)
-            call convip(listniv(ntitems, i/2+1), p, -1*listniv(ntitems, (i+1))-1000, ip1style, string, .false.)
+            call convip_plus(listniv(ntitems, i/2+1), p, &
+                             -1*listniv(ntitems, (i+1))-1000, &
+                             ip1style, string, .false.)
          enddo
          nitems2(ntitems) = argdims(2)/2
       endif
@@ -1231,7 +1234,9 @@
          if (ip1tab(1) > 1000000 .and. ip1tab(2) < 0) then
             do i=1,num1,2
                p = transfer(ip1tab(i), p)
-               call convip(lcl_ip1tab(i/2+1), p, -1*ip1tab(i+1)-1000, ip1style, string, .false.)
+               call convip_plus(lcl_ip1tab(i/2+1), p, &
+                                -1*ip1tab(i+1)-1000, &
+                                ip1style, string, .false.)
             enddo
             num1 = num1 / 2
             nloop = nloop / 2
@@ -2821,7 +2826,7 @@
       lip1 = ip1(1)
       if (argdims(4) > 1) then
          p = transfer(ip1(1), p)
-         call convip(lip1, p, -1*ip1(2)-1000, 2, string, .false.)
+         call convip_plus(lip1, p, -1*ip1(2)-1000, 2, string, .false.)
       endif
       ier = fstcvt(      nom,    type,  letiket,  igtyp,       cnomvar, ctypvar, cetiqet, cigtyp, .true.)
       print *, cnomvar, '--', ctypvar, '--' , cetiqet, '--', cigtyp
@@ -6033,7 +6038,7 @@
       lniv = niv(1)
       if (argdims(4) > 1) then
          p = transfer(niv(1), p)
-         call convip(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
+         call convip_plus(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
       endif
       ier = fstcvt(    nom,   type, letiket,    -1,      cnomvar,ctypvar,cetiqet,cigtyp,     .true.)
       irec1=fstinf(iunit,nni,nnj,nnk,idat,cetiqet,lniv,ihr,iip3,      ctypvar,cnomvar)
@@ -6404,7 +6409,7 @@
       if (argdims(4) > 1) then
          lniv = niv(1)
          p = transfer(niv(1), p)
-         call convip(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
+         call convip_plus(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
       endif
  100  ier = fstcvt(    nom,   type, letiket ,    -1, cnomvar,ctypvar, cetiket, cigtyp,     .true.)
       irec1=fstinf(iunit,nni,nnj,nnk,idat,cetiket,lniv,ihr,iip3, ctypvar,cnomvar)
@@ -8771,7 +8776,7 @@ implicit none
       lniv = niv(1)
       if (argdims(4) > 1) then
          p = transfer(niv(1), p)
-         call convip(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
+         call convip_plus(lniv, p, -1*niv(2)-1000, ip1style, string, .false.)
       endif
       ier = fstcvt(    nom,    type,  letiket,     -1,      cnomvar, ctypvar, cetiket, cigtyp,     .true.)
 !

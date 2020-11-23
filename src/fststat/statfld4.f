@@ -38,7 +38,8 @@
 *
 **
       integer i,j,k
-      real sum,moy,var,rmin,rmax
+      real*8 sum,moy,var
+      real rmin,rmax
       integer imin,jmin,kmin,imax,jmax,kmax,kind,dat2,dat3
       CHARACTER*15 Level
       REAL      rlevel
@@ -92,7 +93,7 @@ c
                endif
  3    continue
 *
-      CALL convip(ip1,rlevel,kind,-1,level,.true.)
+      CALL convip_plus(ip1,rlevel,kind,-1,level,.true.)
 *      call newdate(date,dat2,dat3,-3);
 *      print *,'Debug date=',date,dat2,dat3/100
 c       
