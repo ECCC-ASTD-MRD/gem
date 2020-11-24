@@ -15,7 +15,7 @@ enable_language(Fortran)
 set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 
 # find_package() commands can only be called after the languages have been 
-# eneabled or they will fail
+# enabled or they will fail
 
 add_definitions(-DLittle_Endian)
 
@@ -26,12 +26,16 @@ set(BLAS_LIBRARIES "blas")
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 
 set(CMAKE_C_FLAGS "-march=native -Wall -Wextra -fpic")
-set(CMAKE_C_FLAGS_DEBUG "-g")
-set(CMAKE_C_FLAGS_RELEASE "-O2")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
 
 set(CMAKE_Fortran_FLAGS "-march=native -Wall -Wextra -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fcray-pointer -fconvert=big-endian -frecord-marker=4 -fno-second-underscore -ffree-line-length-none -fbacktrace -fdump-core -ffpe-trap=invalid,zero,overflow -finit-real=nan")
-set(CMAKE_Fortran_FLAGS_DEBUG "-g")
-set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -g")
+set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O2")
+
+if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 9.3)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch -fallow-invalid-boz")
+endif()
 
 # There might be extra OpenMP and OpenACC flags which are specific to each compiler,
 # that are not added the find_package(OpenACC)
