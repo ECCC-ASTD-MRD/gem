@@ -1,7 +1,7 @@
-add_executable(mainyy2global mainyy2global.F90)
-target_link_libraries(mainyy2global gem phy modelutils vgrid rmn massv
+add_executable(yy2global mainyy2global.F90)
+target_link_libraries(yy2global gem phy modelutils vgrid rmn massv
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
-add_dependencies(mainyy2global gem phy modelutils vgrid rmn massv)
+add_dependencies(yy2global gem phy modelutils vgrid rmn massv)
 
 add_executable(flipit mainflipit.F90)
 target_link_libraries(flipit modelutils vgrid rmn massv
@@ -22,6 +22,6 @@ target_link_libraries(r.fstinfo rmn
 #install(TARGETS mainyy2global flipit r.fstinfo voir RUNTIME
 #  DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
 
-install(TARGETS mainyy2global flipit r.fstinfo  RUNTIME
+install(TARGETS yy2global flipit r.fstinfo  RUNTIME
         DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
 

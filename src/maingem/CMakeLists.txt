@@ -23,8 +23,8 @@ target_link_libraries(maingemdm
 add_dependencies(maingemdm gem phy modelutils vgrid rpncomm rmn massv)
 
 
-add_executable(maingemgrid maingemgrid.F90)
-target_link_libraries(maingemgrid
+add_executable(gemgrid maingemgrid.F90)
+target_link_libraries(gemgrid
    gem
    phy
    modelutils
@@ -36,7 +36,7 @@ target_link_libraries(maingemgrid
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(maingemgrid gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(gemgrid gem phy modelutils vgrid rpncomm rmn massv)
 
-install(TARGETS maingemdm maingemgrid RUNTIME 
+install(TARGETS maingemdm gemgrid RUNTIME 
         DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

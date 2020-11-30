@@ -160,8 +160,8 @@ add_custom_target(work
 #        $<TARGET_FILE:fstcomp>
 #        $<TARGET_FILE:fststat>
         $<TARGET_FILE:maingemdm>
-        $<TARGET_FILE:maingemgrid>
-        $<TARGET_FILE:mainyy2global>
+        $<TARGET_FILE:gemgrid>
+        $<TARGET_FILE:yy2global>
 #        $<TARGET_FILE:pgsm>
         $<TARGET_FILE:r.fstinfo>
 #        $<TARGET_FILE:voir>
@@ -178,8 +178,8 @@ add_custom_target(work
 #        fstcomp
 #        fststat
         maingemdm
-        maingemgrid
-        mainyy2global
+        gemgrid
+        yy2global
 #        pgsm
         r.fstinfo
 #        voir
