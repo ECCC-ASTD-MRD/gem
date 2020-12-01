@@ -155,15 +155,21 @@ add_custom_target(work
     /bin/mkdir -p ${WORK_DIR}/bin
     COMMAND /bin/cp -avf
         $<TARGET_FILE:cclargs_lite>
-#        $<TARGET_FILE:editfst>
         $<TARGET_FILE:flipit>
-#        $<TARGET_FILE:fstcomp>
-#        $<TARGET_FILE:fststat>
         $<TARGET_FILE:maingemdm>
         $<TARGET_FILE:gemgrid>
         $<TARGET_FILE:yy2global>
-#        $<TARGET_FILE:pgsm>
+        $<TARGET_FILE:feseri>
+        $<TARGET_FILE:prphynml>
+        $<TARGET_FILE:checkdmpart>
+        $<TARGET_FILE:prgemnml>
+        $<TARGET_FILE:gem_monitor_output>
+        $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:r.fstinfo>
+#        $<TARGET_FILE:editfst>
+#        $<TARGET_FILE:fstcomp>
+#        $<TARGET_FILE:fststat>
+#        $<TARGET_FILE:pgsm>
 #        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
 #    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
@@ -173,15 +179,21 @@ add_custom_target(work
 
     DEPENDS
         cclargs_lite
-#        editfst
         flipit
-#        fstcomp
-#        fststat
         maingemdm
         gemgrid
         yy2global
-#        pgsm
+        feseri
+        prphynml
+        checkdmpart
+        prgemnml
+        gem_monitor_output
+        gem_monitor_end
         r.fstinfo
+#        editfst
+#        fstcomp
+#        fststat
+#        pgsm
 #        voir
 )
 

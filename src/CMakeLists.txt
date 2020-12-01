@@ -8,11 +8,12 @@ add_subdirectory(rpnphy rpnphy)
 add_subdirectory(gemdyn gemdyn)
 add_subdirectory(main main)
 add_subdirectory(maingem maingem)
+add_subdirectory(maingemnompi maingemnompi)
+add_subdirectory(cclargs cclargs)
 #add_subdirectory(pgsm pgsm)
 #add_subdirectory(fststat fststat)
 #add_subdirectory(fstcomp fstcomp)
 #add_subdirectory(editfst editfst)
-add_subdirectory(cclargs cclargs)
 
 # Declare the dependencies of all the components
 add_dependencies(modelutils vgrid)

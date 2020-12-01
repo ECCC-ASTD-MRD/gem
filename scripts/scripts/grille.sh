@@ -19,7 +19,7 @@ printf " GRILLE utility for GEM \n"
 printf "######################### \n\n"
 
 GEM_ON_A_STICK_WORK_DIR=`(cd ..; pwd)`
-GEMGRID=${GEM_ON_A_STICK_WORK_DIR}/bin/maingemgrid
+GEMGRID=${GEM_ON_A_STICK_WORK_DIR}/bin/gemgrid
 ATM_MODEL_DFILES=${GEM_ON_A_STICK_WORK_DIR}/../../gem_dbase
 
 if [ ! -s gem_settings.nml ] ; then

@@ -121,8 +121,8 @@ on which the compilation was executed, and the compiler you used
 *work-Fedora-29-x86_64-gfortran-8.2.1* could be created in the *work*
 directory, and the following executables are installed in the *bin* sub-folder:
 - maingemdm
-- maingemgrid
-- mainyy2global
+- gemgrid
+- yy2global
 - flipit
 - r.fstinfo
 - voir
