@@ -1,0 +1,17 @@
+#
+# remember directory at entry, currently only used as a flag for
+# r.return.dot for safety purposes
+# If -With-Env option specified, ingest environment from caller
+# contained in file .resetenv. Delete this file after whether it
+# was used or not.
+#
+EntryDir=`pwd`
+if [[ $1 = -WithEnv ]]
+then
+  if [ -f .SavedEnv ]
+  then
+    echo Loading environment from caller
+    . ./.SavedEnv
+  fi
+fi
+rm -f ./.SavedEnv

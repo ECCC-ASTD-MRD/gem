@@ -1,0 +1,62 @@
+#
+# if -With-Env flag is specified dump environment to file .SavedEnv
+#
+/bin/rm -f .SavedEnv
+if [[ $1 = -WithEnv ]]
+then
+  set >.SavedEnv
+  shift
+fi
+#
+# put list of variables to get back from callee's environment 
+# into exported variable CallRetvar
+#
+SavedCallRetvar="${CallRetvar}"
+if [[ $1 = -Returns ]]
+then
+  CallRetvar="$2"
+  shift ; shift
+else
+  CallRetvar="CallRetvar"
+fi
+#
+# upon return from callee, if callee makes use of r.entry.dot
+# and r.return.dot, file $CallReturns will contain lines of
+# the form name='value' for all variables to be returned,
+# names contained in variable CallRetvar as well as variables
+# flagged as output in callee's cclargs_lite call
+#
+SavedCallReturns=${CallReturns}
+CallReturns="/tmp/${LOGNAME}_Call_${$}"
+echo "setting CallReturns=${CallReturns}"
+CallCmd=$1
+shift
+export CallCmd CallRetvar CallReturns
+#
+# call the requested script
+#
+$CallCmd "$@"
+#
+# process returns. If return values file exists, dot (.) it
+# and delete it
+#
+if [ -f $CallReturns ]
+then
+  . $CallReturns
+  /bin/rm -f $CallReturns
+fi
+#
+# erase all traces (files and variables)
+#
+/bin/rm -f .SavedEnv
+unset CallRetvar || true
+unset CallReturns || true
+unset CallCmd || true
+if [[ "${SavedCallReturns}" != "" ]]
+then
+  export CallReturns=${SavedCallReturns}
+  export CallRetvar="${SavedCallRetvar}"
+  echo "restoring CallReturns=${SavedCallReturns}"
+fi
+unset SavedCallReturns || true
+unset SavedCallRetvar || true

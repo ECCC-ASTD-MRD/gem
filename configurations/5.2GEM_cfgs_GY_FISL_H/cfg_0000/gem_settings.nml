@@ -1,0 +1,182 @@
+ &grid
+  Grd_typ_S = 'GY', Grd_ni = 107
+  Grd_maxcfl = 2
+ /
+
+  Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
+  dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+ &dyn_kernel
+   Dynamics_hydro_L  = .false.
+   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+/
+
+ &grid2
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 2
+/
+  Grd_maxcfl = 2
+ &grid_LU
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 0.
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 4
+/
+&lam2
+Lam_gbpil_t=20
+/
+
+ &step
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = "2h"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 900.
+  Fcst_rstrt_S = '40h'
+/
+
+ &gem_cfgs
+  Tr3d_list_S =  'HU,  wload=0,mono=0,mass=0,hzd=1,min=0.',
+                 'MPNC,wload=0,mono=1,mass=1,hzd=0,min=0.',
+                 'MPNR,wload=0,mono=0,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
+                 'MPQC,wload=1,mono=2,mass=1,hzd=0,min=0.',
+                 'MPQR,wload=1,mono=1,mass=2,hzd=0,min=0.',
+                 'QTI1,wload=1,mono=0,mass=0,hzd=1,min=0.',
+                 'QMI1,wload=0,mono=1,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
+                 'NTI1,wload=0,mono=2,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
+                 'BMI1,wload=0,mono=0,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
+					  
+  LCTL_RXSTAT_S   = 'GLB_8',
+  stat_liste= 'ALL_DYN_T1','ALL_TR_T1','ALL_DYN_T0','ALL_TR_T0'
+/
+ &adz_cfgs2
+ Adz_slt_winds = .true.
+/
+  Sol_type_S = 'ITERATIVE_2D' 
+  Sol_type_S = 'DIRECT'
+ &dyn_fisl
+  Cstv_tstr_8     = 240.0
+  Sol_type_S = 'DIRECT' 
+  Sol_yyg_eps = 1.e-04
+  Schm_nblendyy   = 1
+  Schm_itcn       = 2          , Schm_wload_L      = .true.
+  Schm_itnlh      = 2
+  Schm_hzdadw_L     = .true.
+  Schm_psadj= 1
+/
+
+ &hvdif
+  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
+  hzd_smago_param = 3.
+  hzd_smago_lnr = .6
+  Hzd_smago_prandtl_hu=2.
+  Vspng_coeftop   =  380000.   , Vspng_nk        = 6
+  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
+  P_lmvd_weigh_high_lat = 0.0
+/
+ &vert_layers
+ hyb=
+ 0.10137310E-03,  0.16277540E-03,  0.26051429E-03,  0.41318379E-03,  0.63927402E-03,  0.95851679E-03,  0.13960090E-02,
+ 0.19820351E-02,  0.27421350E-02,  0.36991441E-02,  0.48724348E-02,  0.62777051E-02,  0.79272576E-02,  0.98306444E-02,
+ 0.11995490E-01,  0.14428370E-01,  0.17135730E-01,  0.20124670E-01,  0.23403721E-01,  0.26983330E-01,  0.30858779E-01,
+ 0.35013821E-01,  0.39432071E-01,  0.44098388E-01,  0.48999891E-01,  0.54126751E-01,  0.59472729E-01,  0.65035522E-01,
+ 0.70817038E-01,  0.76823637E-01,  0.83066359E-01,  0.89561179E-01,  0.96329451E-01,  0.10339840E+00,  0.11080180E+00,
+ 0.11858120E+00,  0.12678690E+00,  0.13546860E+00,  0.14466220E+00,  0.15440451E+00,  0.16473471E+00,  0.17569339E+00,
+ 0.18732320E+00,  0.19966771E+00,  0.21277221E+00,  0.22668231E+00,  0.24144430E+00,  0.25710419E+00,  0.27370700E+00,
+ 0.29129630E+00,  0.30991301E+00,  0.32959461E+00,  0.35037380E+00,  0.37227771E+00,  0.39532620E+00,  0.41953090E+00,
+ 0.44483799E+00,  0.47106841E+00,  0.49802959E+00,  0.52552748E+00,  0.55337352E+00,  0.58139068E+00,  0.60941821E+00,
+ 0.63731390E+00,  0.66495568E+00,  0.69224173E+00,  0.71908939E+00,  0.74538583E+00,  0.77090418E+00,  0.79543787E+00,
+ 0.81881511E+00,  0.84090137E+00,  0.86160111E+00,  0.88085592E+00,  0.89864218E+00,  0.91496640E+00,  0.93000430E+00,
+ 0.94392550E+00,  0.95666498E+00,  0.96804309E+00,  0.97786850E+00,  0.98602551E+00,  0.99252409E+00,  0.99750179E+00
+
+  hyb_H=
+ 0.64765078E+05,  0.61484387E+05,  0.58097922E+05,  0.54647410E+05,  0.51260059E+05,  0.48051715E+05,  0.45091891E+05,
+ 0.42408621E+05,  0.39991402E+05,  0.37818480E+05,  0.35865402E+05,  0.34107391E+05,  0.32520846E+05,  0.31080762E+05,
+ 0.29757918E+05,  0.28537400E+05,  0.27406707E+05,  0.26354709E+05,  0.25371539E+05,  0.24448520E+05,  0.23581697E+05,
+ 0.22768879E+05,  0.22006967E+05,  0.21292291E+05,  0.20620951E+05,  0.19988980E+05,  0.19391668E+05,  0.18824627E+05,
+ 0.18284535E+05,  0.17768248E+05,  0.17272793E+05,  0.16795383E+05,  0.16333382E+05,  0.15884299E+05,  0.15445753E+05,
+ 0.15015443E+05,  0.14591126E+05,  0.14171107E+05,  0.13754707E+05,  0.13341396E+05,  0.12930710E+05,  0.12522283E+05,
+ 0.12115817E+05,  0.11711102E+05,  0.11307979E+05,  0.10906264E+05,  0.10502634E+05,  0.10095734E+05,  0.96856943E+04,
+ 0.92727051E+04,  0.88570342E+04,  0.84390186E+04,  0.80190830E+04,  0.75977124E+04,  0.71754697E+04,  0.67529868E+04,
+ 0.63318667E+04,  0.59153848E+04,  0.55064302E+04,  0.51074028E+04,  0.47201973E+04,  0.43462192E+04,  0.39864304E+04,
+ 0.36414043E+04,  0.33113760E+04,  0.29963164E+04,  0.26959851E+04,  0.24104956E+04,  0.21411509E+04,  0.18889203E+04,
+ 0.16543748E+04,  0.14377098E+04,  0.12387908E+04,  0.10572026E+04,  0.89229810E+03,  0.74325543E+03,  0.60785242E+03,
+ 0.48407559E+03,  0.37209671E+03,  0.27309692E+03,  0.18836304E+03,  0.11854238E+03,  0.63249203E+02,  0.21093637E+02
+  hyb_flat= 45000.
+  hyb_rcoef = 3., 15.
+/ 
+ 0., 100.
+ 3., 15.,
+
+ &inp
+Inp_npes=4
+/
+ &init
+  Init_balgm_L    = .true.     , Init_dftr_L     = .true.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "base"   ,
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  Out3_nbitg      = 32         , Out3_cliph_L     = .true.    ,
+  Out3_linbot     =  3         ,
+  Out3_close_interval_S= '1h'  , Out3_postproc_fact= 30
+/
+
+ &surface_cfgs
+ SCHMSOL   = 'ISBA'
+ ICELAC    = .true., ICEMELT    = .true.
+ LIMSNODP  = .true., SALTY_QSAT = .false.
+ IMPFLX    = .true.,
+ Z0TLAT    = 25., 30.
+ DIUSST    = 'fairall'
+/
+
+ &physics_cfgs
+ moyhr    = 1
+ RADIA    = 'cccmarad', KNTRAD_S = '1h'
+ STRATOS  = .true.
+
+ GWDRAG           = 'gwd86'    , NON_ORO  = .true.
+ hines_flux_filter= 5          , LMETOX   = .true.
+ sgo_tdfilter = -1.
+
+ LONGMEL    = 'boujo'
+ FLUVERT    = 'clef'
+
+ PBL_RICRIT = 0.25,2. ,  PBL_SHAL   = 'conres'
+ PBL_ZNTAU  = 600.    ,  PBL_DISS   = 'lim50',
+
+ STCOND     = 'MP_P3'
+ INILWC     = .true.
+ KTICEFRAC  = .false.
+
+/
+ phystat_dble_l = .true.
+ phystat_2d_l = .false.
+ phystat_freq_S = '0h'
+ phystat_list_s = 'ALLVARS=EDPV'
+ phystat_input_l = .false.
+ debug_mem_L = .true
+ debug_trace_L = .true
+
+ &convection_cfgs
+ DEEP       = 'kfc'      , SHAL     = 'ktrsnt_mg'
+ KFCRAD     = 1500.      , KFCDEPTH = 4000.
+ KFCTRIG4   = 0.,0.,0.05,0.05
+ KFCTRIGLAT = .true.
+ KFCTRIGL   = 0.01
+ TRIGLAT    = 25., 30.
+/

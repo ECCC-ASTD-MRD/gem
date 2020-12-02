@@ -1,0 +1,67 @@
+
+ &theo_cfgs
+  Theo_case_S= 'bubble'
+/
+
+ &dyn_kernel
+   Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+  Schm_itcn       = 1
+  Schm_itnlh      = 1
+
+  Sol_type_S = 'ITERATIVE_3D' 
+ &dyn_fisl
+/
+
+ &gem_cfgs
+/
+
+ &bubble_cfgs2
+  bubble_ni = 41 ,  bubble_nj = 1 , bubble_nk = 150
+  bubble_dx = 10. ,  bubble_dz = 100.
+  bubble_theta      = 303.15
+  bubble_rad        = 1
+  bubble_kctr = -1
+  bubble_gaus_L = .true.
+/
+ &bubble_cfgs
+  bubble_ni = 101 ,  bubble_nj = 1 , bubble_nk = 150
+  bubble_dx = 10. ,  bubble_dz = 10.
+  bubble_theta      = 303.15
+  bubble_rad        = 5
+  bubble_kctr = 124
+  bubble_gaus_L = .true.
+/
+ &bubble_cfgs2
+  bubble_ni = 41 ,  bubble_nj = 1 , bubble_nk = 30
+  bubble_dx = 10. ,  bubble_dz = 10.
+  bubble_theta      = 303.15
+  bubble_rad        = 5
+  bubble_kctr = -1
+  bubble_gaus_L = .true.
+/
+
+  Fcst_end_S     = '18m'
+  Fcst_end_S     = '72p'
+ &step
+  Step_runstrt_S = "20110122.000000"
+  Fcst_end_S     = '18m'
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 5
+/
+
+ &lam
+  Lam_ctebcs_L  = .true.
+  Lam_blend_H   = 0
+/
+ &hvdif
+  Hzd_pwr         = 2          , Hzd_lnr       = 0.02
+/
+
+ &out
+   Out3_nbitg    = 32
+   Out3_ip3      = -1
+   Out3_close_interval_S= '1h'
+   Out3_etik_s   = "BUBBLEG_H"
+/
+

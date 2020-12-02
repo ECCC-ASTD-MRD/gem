@@ -1,0 +1,159 @@
+#----------------------------------------------------#
+#            LAM-2.5km national grid                 #
+#----------------------------------------------------#
+  
+ &grid
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 4
+/
+
+ &step
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = "4h"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 900.
+/
+
+ &dyn_kernel
+  dynamics_hydro_l  = .false.
+  dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+
+ &gem_cfgs
+  Vtopo_length_S ='1h'
+/
+
+  lctl_rxstat_s   = 'GLB_8',
+
+ &lam
+  Lam_gbpil_T=3
+  Lam_blend_T=3
+/
+
+ &vert_layers
+  hyb=
+  0.023403721, 0.026983330,
+  0.030858779, 0.035013821, 0.039432071, 0.044098388, 0.048999891,
+  0.054126751, 0.059472729, 0.065035522, 0.070817038, 0.076823637,
+  0.083066359, 0.089561179, 0.096329451, 0.103398398, 0.110801801,
+  0.118581198, 0.126786903, 0.135468602, 0.144662201, 0.154404506,
+  0.164734706, 0.175693393, 0.187323198, 0.199667707, 0.212772205,
+  0.226682305, 0.241444305, 0.257104188, 0.273707002, 0.291296303,
+  0.309913009, 0.329594612, 0.350373805, 0.372277707, 0.395326197,
+  0.419530898, 0.444837987, 0.471068412, 0.498029590, 0.525527477,
+  0.553373516, 0.581390679, 0.609418213, 0.637313902, 0.664955676,
+  0.692241728, 0.719089389, 0.745385826, 0.770904183, 0.795437872,
+  0.818815112, 0.840901375, 0.861601114, 0.880855918, 0.898642182,
+  0.914966404, 0.930004299, 0.943925500, 0.956664979, 0.968043089,
+  0.977868497, 0.986025512, 0.992524087, 0.997501791,
+
+  hyb_rcoef = 1., 2.5       
+/
+
+ &dyn_fisl
+  Sol_type_S      = 'DIRECT'
+  Cstv_tstr_8     = 240.0      ,
+  Schm_itcn       = 2          , 
+  Schm_itnlh      = 2          , 
+  Schm_wload_L    = .true.     ,
+  Schm_hzdadw_L   = .true.     , 
+  Schm_advec      = 2
+/
+
+ &hvdif
+  Hzd_pwr         = 2          , 
+  Hzd_lnr         = 0.9        ,
+  Hzd_pwr_theta   = 6          , 
+  Hzd_lnr_theta   = 0.2       ,
+
+  Vspng_coeftop   = 200000.     , 
+  Vspng_nk        = 0           ,
+/
+
+ &out
+
+  Out3_nbitg      = 12         , 
+  Out3_cliph_L     = .true.    ,
+  Out3_linbot     =  3         ,
+
+  Out3_etik_s     = 'ETIKET'
+  Out3_close_interval_S='1h'   , 
+  Out3_postproc_fact=6
+
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+/
+  
+ &inp
+  INP_NPES=81
+/
+
+ &surface_cfgs
+
+  SCHMSOL         = 'ISBA'     , 
+  TDIAGLIM        = .true.     ,
+  ICEMELT         = .true.     ,
+  BETA            = 1.0        ,
+  Z0TLAT          = 25., 30.   ,
+  LIMSNODP        = .true.     ,
+  SALTY_QSAT      = .true.     ,
+  ADJ_I0_SNOW     = .false.    ,
+  Z0TTYPE         ='deacu12'   ,
+  VEG_RS_MULT     = 2
+/
+
+ &convection_cfgs
+ DEEP       = 'kfc'     , 
+ SHAL     = 'ktrsnt'
+ KFCRAD     = 500.       , 
+ KFCDEPTH = 2000.
+ KFCTRIG4   = 0.,0.,0.5,0.5,
+ KFCMOM     = .false.
+ deep_timeconv = '30m'
+ shal_timeconv = '3h'
+/
+
+ &physics_cfgs
+
+  RADIA           = 'cccmarad' , 
+  KNTRAD_S        = '15m'
+  RADFILES        = 'std'      , 
+  FOMIC           = .false.    ,
+  RADFLTR         = .true.     , 
+  STRATOS         = .false.    ,
+  TS_FLXIR        = .false.    , 
+  LMETOX          = .false.    ,
+
+  PBL_RICRIT  	  =  0.15, 2.
+
+  GWDRAG          = 'nil'      , 
+  NON_ORO         = .false.    ,
+
+  LONGMEL         = 'blac62'   , 
+  FLUVERT         = 'moistke'  , 
+  EVAP            = .true.     ,
+
+  pbl_shal        = 'nil'      ,
+  pbl_moistke_legacy_cloud=.true.,
+
+  STCOND          = 'mp_p3'    , 
+  SATUCO          = .true.     , 
+  INILWC         = .false.      ,
+  PCPTYPE         = 'NIL'      , 
+  MOYHR          = 6           ,
+
+  DIAG_TWIND      = .true.     , 
+
+  DRAG            = .true.     , 
+  CHAUF          = .true.      ,
+
+  QCO2            = 380.0      ,
+/
