@@ -10,3 +10,4 @@ src/gemdyn/expo
 !src/gemdyn/expo/exp_stubs.F90
 doc/html
 goas-devel.code-workspace
+geophy

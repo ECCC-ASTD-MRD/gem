@@ -2,14 +2,14 @@ SHELL = /bin/bash
 
 #Makefile for Environment Canada systems
 
-GEM_COMPILER ?= "intel"
+COMPILER_name ?= "intel"
 
 default: build
 
-cmake-intel: ; $(MAKE) GEM_COMPILER=intel cmake
-cmake-gnu: ; $(MAKE) GEM_COMPILER=gnu cmake
+cmake-intel: ; $(MAKE) COMPILER_name=intel cmake
+cmake-gnu: ; $(MAKE) COMPILER_name=gnu cmake
 cmake:
-	( cd build-${GEM_ARCH} && cmake -DCOMPILER=${GEM_COMPILER} ${GEM_GIT_DIR}/project )
+	( cd build-${GEM_ARCH} && cmake -DCOMPILER=${COMPILER_name} ${GEM_GIT_DIR}/project )
 
 .PHONY: build
 build:

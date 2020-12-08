@@ -4,17 +4,20 @@
 # - Load the Intel 19 compiler and libraries
 # - Load a script for common setup to all compilers
 
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
+export COMPILER_name=intel
 
-if [[ "$(hostname -A)" =~ banting || "$(hostname -A)" =~ daley ]]; then
-   module load craype-x86-skylake
-   module load cray-fftw
-else 
-   . ssmuse-sh -x comm/eccc/all/opt/intelcomp/intelpsxe-cluster-19.0.3.199
-   . ssmuse-sh -x hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-19.0.3.199
+if [ "$TRUE_HOST" = "banting" -o "$TRUE_HOST" = "daley" ]; then
+   export COMPILER_version=19.0.5.281
+   module unload intel/19.0.3.199
+   module load ${COMPILER_name}/${COMPILER_version}
+   module add cray-fftw/3.3.8.2
+else
+   export COMPILER_version=19.0.3.199
+   . ssmuse-sh -x comm/eccc/all/opt/intelcomp/intelpsxe-cluster-${COMPILER_version}
+   . ssmuse-sh -x hpco/exp/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-${COMPILER_version}
    . ssmuse-sh -x hpco/exp/openmpi-setup/openmpi-setup-0.2
 fi
 
-. ./.common_eccc_setup intel
+. ./.common_eccc_setup ${COMPILER_name}
 
 

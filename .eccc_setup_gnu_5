@@ -2,13 +2,13 @@
 
 # Source this file to:
 # - Load gnu compiler and libraries
-# - Add a symbolic link for gem_dbase 
-# - Create build directory according to the compiler called
+# - Set compiler version
+# - Load a script for common setup to all compilers
 
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
-
-# Load compiler and libraries
 . r.load.dot /ssm/net/hpcs/compilers/gcc-5.1.0/gcc_5.1.0_ubuntu-14.04-amd64-64
 . ssmuse-sh -p /ssm/net/hpcs/201402/master/openmpi_1.6.5_ubuntu-12.04-amd64-64
+
+COMPILER_version=$(project/compiler.sh gnu)
+export COMPILER_version
 
 . ./.common_eccc_setup gnu

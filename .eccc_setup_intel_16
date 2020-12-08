@@ -3,37 +3,20 @@
 # Source this file to:
 # - Load the Intel 16 compiler and libraries
 # - Add a symbolic link for gem_dbase
-# - Create the build directory for the specific compiler version
-
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
-
+# - Load a script for common setup to all compilers
 
 if [ `hostname -d` = "cmc.ec.gc.ca" ]; then
    . ssmuse-sh -d main/opt/intelcomp/intelcomp-2016.1.156
    . ssmuse-sh -d main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156
    GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
-else
-   if [ `hostname -d` = "science.gc.ca" ]; then
-      . ssmuse-sh -x main/opt/intelcomp/intelcomp-2016.1.156;
-      . ssmuse-sh -x main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156;
-      GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles;
-      [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase;
-   fi
 fi
 
-rootPath="$(dirname $BASH_SOURCE)"
+export COMPILER_name=intel
 
-compVersion=$("${rootPath}/project/compiler.sh" intel)
-sed -i 's/COMPILER gnu/COMPILER intel/g' "${rootPath}/project/CMakeLists.txt"
-majorVersion=${compVersion%%.*}
-#/bin/rm "${rootPath}/project/Linux-x86_64-intel.cmake"
-#ln -s Linux-x86_64-intel.cmake.${majorVersion} "${rootPath}/project/Linux-x86_64-intel.cmake"
+COMPILER_version=$(project/compiler.sh intel)
+export COMPILER_version
 
-buildDir="${rootPath}/build/intel-${compVersion}"
-echo mkdir -p "${buildDir}"
-mkdir -p "${buildDir}"
+. ./.common_eccc_setup ${COMPILER_name}
 
-sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build\/intel-$compVersion\",/" "${rootPath}/goas-devel.code-workspace"
 
-unset buildDir majorVersion compVersion rootPath

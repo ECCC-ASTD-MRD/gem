@@ -1,14 +1,17 @@
 #!/bin/bash
 
 # Source this file to:
-# - Load the Intel 19 compiler and libraries
+# - Load openmpi library
+# - Set compiler version
 # - Load a script for common setup to all compilers
-
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
-
 
 # Load openmpi library
 . r.load.dot /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
+
+export COMPILER_name=gnu
+
+COMPILER_version=$(project/compiler.sh gnu)
+export COMPILER_version
 
 . ./.common_eccc_setup gnu
 

@@ -1,38 +1,24 @@
 #!/bin/bash
 
 # Source this file to:
-# - Create the build directory for the specific architecture and compiler versions
-
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
-
-if [[ "$(hostname -A)" =~ cmc.ec.gc.ca ]]; then
-    GEM_DBASE=/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
-    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase
-elif [[ "$(hostname -A)" =~ science.gc.ca ]]; then
-    GEM_DBASE=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
-    [ -e ${GEM_DBASE} ] && [ ! -e gem_dbase ] && ln -sf ${GEM_DBASE} gem_dbase
-else
-    echo "hostname not found"
-fi
+# - Create the build and work directories for the specific architecture and compiler versions
+#   according to the existence or not of the storage_model environment variable
 
 if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
     if [ -n "${storage_model}" ] ; then
-        /bin/rm -rf ${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
-        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+        /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
         mkdir -p ${GEM_DIR}/work
         mkdir -p ${GEM_DIR}/build
-        ln -sf ${GEM_DIR}/build build-${GEM_ARCH}
-        ln -sf ${GEM_DIR}/work ${GEM_WORK}
+        ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
+        ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
     else
         /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK} build work
-        mkdir -p build-${GEM_ARCH}
-        mkdir -p ${GEM_WORK}
+        mkdir -p build-${GEM_ARCH} ${GEM_WORK}
         ln -sf build-${GEM_ARCH} build 
         ln -sf ${GEM_WORK} work 
     fi
 fi
 
-rootPath="$(dirname $BASH_SOURCE)"
-sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build-${GEM_ARCH}\",/" "${rootPath}/goas-devel.code-workspace"
-unset  rootPath
+sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build-${GEM_ARCH}\",/" "goas-devel.code-workspace"
+
 

@@ -1,20 +1,14 @@
 #!/bin/bash
 
 # Source this file to:
-# - Create the build directory for the specific architecture and compiler versions
+# - set some environment variables
 
-[[ $0 != $BASH_SOURCE ]] || (echo "This file must be sourced!" && exit 1)
+platform=$(project/os.sh)
 
-rootPath="$(dirname $BASH_SOURCE)"
+unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
 
-platform=$("${rootPath}/project/os.sh")
-compVersion=$("${rootPath}/project/compiler.sh" $1)
-
-unset GEM_ARCH GEM_COMPILER GEM_WORK GEM_DIR GEM_GIT_DIR
-
-if [ -n "${platform}" -a "${compVersion}" != "Unknown_Compiler" ]; then
-    export GEM_ARCH=${platform}-$1-${compVersion}
-    export GEM_COMPILER=$1
+if [ -n "${platform}" -a "${COMPILER_version}" != "Unknown_Compiler" ]; then
+    export GEM_ARCH=${platform}-$1-${COMPILER_version}
     export GEM_WORK=work-${GEM_ARCH}
 
     if [ -n "${storage_model}" ] ; then
@@ -33,4 +27,4 @@ if [ -n "${platform}" -a "${compVersion}" != "Unknown_Compiler" ]; then
     
 fi
 
-unset rootPath platform compVersion buildDir
+unset platform
