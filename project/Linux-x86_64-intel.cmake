@@ -2,6 +2,19 @@
 find_program(CMAKE_C_COMPILER icc)
 find_program(CMAKE_Fortran_COMPILER ifort)
 
+# I don't know why, but enable_language empties CMAKE_BUILD_TYPE!
+# We therefore have to back it up and restore it after enable_language
+set(TMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+
+# Enable the two languages that are used
+enable_language(C)
+enable_language(Fortran)
+
+# Reset CMAKE_BUILD_TYPE
+set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
+
+# find_package() commands can only be called after the languages have been 
+# eneabled or they will fail
 add_definitions(-DLittle_Endian)
 
 set(CMAKE_C_FLAGS "-mkl -Wl,--allow-shlib-undefined -Wtrigraphs -fpic -traceback -fp-model precise" CACHE STRING "C compiler flags" FORCE)

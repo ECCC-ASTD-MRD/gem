@@ -11,10 +11,6 @@ set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
 message(STATUS "Compiler to be used is: ${COMPILER}")
 
-# Enable the two languages that are used
-enable_language(C)
-enable_language(Fortran)
-
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")

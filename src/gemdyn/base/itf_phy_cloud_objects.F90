@@ -205,11 +205,11 @@ contains
 
       ! Adjust convective trigger field
       nullify(wklcl)
-      if (.not.RMN_IS_OK(phy_get(wklcl,'tr/wt:P',F_npath='V',F_bpath='D',F_quiet=.false.))) return
+      if (.not.RMN_IS_OK(phy_get(wklcl,'tr/wka:P',F_npath='V',F_bpath='D',F_quiet=.false.))) return
       do k=1,l_nk
          wklcl(:,:,k) = wklcl(:,:,k) + wklcl_adj(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
       end do
-      if (.not.RMN_IS_OK(phy_put(wklcl,'tr/wt:P',F_npath='V',F_bpath='D',F_quiet=.false.))) return
+      if (.not.RMN_IS_OK(phy_put(wklcl,'tr/wka:P',F_npath='V',F_bpath='D',F_quiet=.false.))) return
 
       ! Successful completion
       F_status = CLDOBJ_OK

@@ -1268,10 +1268,11 @@ contains
               nlinbot = size(F_fldout%d1,3)
          if (any(F_cfgvar%vint_S(1:4) == (/'l-co','c-co'/)) .and. &
               F_fldin%hstat == HINTERP4YY_NONE) same_sfc_L = .true.
-         sfcin => F_fldin%sfc(:,:,1)
-
-         nullify(sfcout, slsin, slsout)
-         if (F_fldin%sfc_S(2) /= '') slsin => F_fldin%sfc(:,:,2)
+         nullify(sfcin, sfcout, slsin, slsout)
+         if (associated(F_fldin%sfc)) then
+            sfcin => F_fldin%sfc(:,:,1)
+            if (F_fldin%sfc_S(2) /= '') slsin => F_fldin%sfc(:,:,2)
+         endif
 
 !!$         if (present(F_same_sfc_L)) then
 !!$            if (F_same_sfc_L) then

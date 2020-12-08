@@ -3,6 +3,19 @@
 find_program(CMAKE_C_COMPILER gcc)
 find_program(CMAKE_Fortran_COMPILER gfortran)
 
+# I don't know why, but enable_language exmpties CMAKE_BUILD_TYPE!
+# We therefore have to back it up and restore it after enable_language
+set(TMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+
+# Enable the two languages that are used
+enable_language(C)
+enable_language(Fortran)
+
+# Reset CMAKE_BUILD_TYPE
+set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
+
+# find_package() commands can only be called after the languages have been 
+# enabled or they will fail
 add_definitions(-DLittle_Endian)
 
 set(LAPACK_LIBRARIES "lapack")
