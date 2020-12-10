@@ -5,11 +5,13 @@
 # - Load a script for common setup to all compilers
 
 export COMPILER_name=intel
+export OMP_STACKSIZE=4G
 
 if [ "$TRUE_HOST" = "banting" -o "$TRUE_HOST" = "daley" ]; then
    export COMPILER_version=19.0.5.281
    module unload intel/19.0.3.199
    module load ${COMPILER_name}/${COMPILER_version}
+   module add craype-hugepages16M
    module add cray-fftw/3.3.8.2
 else
    export COMPILER_version=19.0.3.199
@@ -19,5 +21,3 @@ else
 fi
 
 . ./.common_eccc_setup ${COMPILER_name}
-
-
