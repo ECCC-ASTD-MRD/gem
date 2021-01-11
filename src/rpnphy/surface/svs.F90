@@ -97,13 +97,17 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zdlat
    real,pointer,dimension(:) :: zfcor
    real,pointer,dimension(:) :: zqdiag
+   real,pointer,dimension(:) :: zqdiagtyp
    real,pointer,dimension(:) :: zqsurf
    real,pointer,dimension(:) :: zsnodp
    real,pointer,dimension(:) :: ztdiag
+   real,pointer,dimension(:) :: ztdiagtyp
    real,pointer,dimension(:) :: zthetaa
    real,pointer,dimension(:) :: ztsa
    real,pointer,dimension(:) :: zudiag
+   real,pointer,dimension(:) :: zudiagtyp
    real,pointer,dimension(:) :: zvdiag
+   real,pointer,dimension(:) :: zvdiagtyp
    real,pointer,dimension(:) :: zzusl
    real,pointer,dimension(:) :: zztsl
 
@@ -151,12 +155,16 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zdlat    (1:n) => bus( x(dlat,1,1)         : )
       zfcor    (1:n) => bus( x(fcor,1,1)         : )
       zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
+      zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
       zqsurf   (1:n) => bus( x(qsurf,1,indx_sfc) : )
       zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
       ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
+      ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
       ztsa     (1:n) => bus( x(tsa,1,1)          : )     
       zudiag   (1:n) => bus( x(udiag,1,1)        : )
+      zudiagtyp(1:n) => bus( x(udiagtyp,1,indx_sfc) : )
       zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
+      zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
       zzusl    (1:n) => bus( x(zusl,1,1)         : )
       zztsl    (1:n) => bus( x(ztsl,1,1)         : )
 
@@ -527,7 +535,12 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
          zudiag = zudiag * vmod / vmod_lmin
          zvdiag = zvdiag * vmod / vmod_lmin
       endif
-!VDIR NODEP
+
+   !# Fill surface type-specific diagnostic values
+   zqdiagtyp = zqdiag
+   ztdiagtyp = ztdiag
+   zudiagtyp = zudiag
+   zvdiagtyp = zvdiag
 
       do i=1,n
 !
