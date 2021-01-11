@@ -1,6 +1,6 @@
        character(len=50),parameter :: RPNPHY_NAME_S = "RPNPHY"
-       character(len=50),parameter :: RPNPHY_VERSION_S = "6.1.0-rc3"
-       character(len=50),parameter :: RPNPHY_DSTP_S = "2020-12-08 14:13 GMT"
+       character(len=50),parameter :: RPNPHY_VERSION_S = "6.1.0-rc4"
+       character(len=50),parameter :: RPNPHY_DSTP_S = "2020-12-17 16:40 GMT"
        character(len=50),parameter :: RPNPHY_EC_ARCH_S = "Linux_x86-64/intel-19.0.3.199"
        character(len=50),parameter :: RPNPHY_ORDENV_ARCH_S = "amd64"
        character(len=50),parameter :: RPNPHY_ORDENV_PLAT_S = "ubuntu-18.04-amd64-64"

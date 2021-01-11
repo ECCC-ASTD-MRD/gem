@@ -7,6 +7,10 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
+file(READ "${ROOT}/VERSION" GEM_VERSION)
+string(REGEX REPLACE "\n$" "" GEM_VERSION "${GEM_VERSION}")
+message(STATUS "GEM_VERSION=${GEM_VERSION}")
+
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm
    gem
