@@ -320,6 +320,11 @@ module phy_options
    namelist /physics_cfgs/ p3_scpf_on
    namelist /physics_cfgs_p/ p3_scpf_on
 
+   !# switch for clipping of negative water vapor mixing ratios in microphysics (P3)
+   logical         :: p3_clip_qv = .true.
+   namelist /physics_cfgs/ p3_clip_qv
+   namelist /physics_cfgs_p/ p3_clip_qv
+
    !# precipitation fraction factor used by SCPF in microphysics (P3)
    real           :: p3_pfrac = 1.0
    namelist /physics_cfgs/ p3_pfrac
@@ -983,6 +988,12 @@ module phy_options
    real           :: lhn_weight    = 0.
    namelist /physics_cfgs/ lhn_weight
    namelist /physics_cfgs_p/ lhn_weight
+
+   !# Key to activate bugfix preventing inadvertent division of LHN tendencies by dt for precip-precip cases
+   !# bugfix will be active with:   lhn_rainfix_L = .true.
+   logical           :: lhn_rainfix_L = .false.
+   namelist /physics_cfgs/ lhn_rainfix_L
+   namelist /physics_cfgs_p/ lhn_rainfix_L
 
 
 contains

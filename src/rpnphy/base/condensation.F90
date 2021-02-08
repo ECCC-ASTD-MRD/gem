@@ -297,7 +297,7 @@ contains
                     a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
                     a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
                     qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_clip_qv,    &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1)
             if (istat1 >= 0) then
                iwc_total = qti1p
@@ -313,7 +313,7 @@ contains
                     a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
                     a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
                     qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_clip_qv,    &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2)
             if (istat1 >= 0) then
@@ -331,7 +331,7 @@ contains
                     a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
                     a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
                     qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_clip_qv,    &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
                     qti3p,qmi3p,nti3p,bmi3p,a_effradi3)
@@ -351,7 +351,7 @@ contains
                     a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
                     a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
                     qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
+                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_clip_qv,    &
                     qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
                     qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
                     qti3p,qmi3p,nti3p,bmi3p,a_effradi3,                                     &
