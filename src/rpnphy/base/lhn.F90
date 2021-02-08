@@ -109,10 +109,11 @@ contains
      real    :: this_radar_pr, this_radar_qi, this_model_pr
      real    :: pr_ratio, scale_fact, r, temp_at_obs_height
      real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
-     real, pointer, dimension(:,:) :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm, zsm2d
+     real, pointer, dimension(:,:) :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm !#, zsm2d
      real, pointer, dimension(:)   :: zlhnr, ztree, psp, zlhs
-     real, dimension(ni)           :: radar_pr, radar_qi, model_rt
-
+!!$     real, dimension(ni)           :: radar_pr, radar_qi, model_rt
+     real, pointer, dimension(:)   :: radar_pr, radar_qi, model_rt
+     
      !do nothing if LHN not in use
      if (lhn /= 'IRPCP') return
 
@@ -177,19 +178,23 @@ contains
      !Horizontally smoothed quantities
      !
      !temperature tendencies due to latent heat release
-     MKPTR2D(ttend, smta, f)
-     !
-     !TODO use 2D smoothing instead of putting them in
-     !a 3D array
-     !
-     !3D container for 2D fields
-     MKPTR2D(zsm2d, sm2d, f)
-     !model precip rate      
-     model_rt = zsm2d(:,1) 
-     !radar precip rate
-     radar_pr = zsm2d(:,2)
-     !radar quality index
-     radar_qi = zsm2d(:,3)
+!!$     MKPTR2D(ttend, smta, f)
+     MKPTR2D(ttend, tcond_smt, f)
+!!$     !
+!!$     !TODO use 2D smoothing instead of putting them in
+!!$     !a 3D array
+!!$     !
+!!$     !3D container for 2D fields
+!!$     MKPTR2D(zsm2d, sm2d, f)
+!!$     !model precip rate      
+!!$     model_rt = zsm2d(:,1) 
+!!$     !radar precip rate
+!!$     radar_pr = zsm2d(:,2)
+!!$     !radar quality index
+!!$     radar_qi = zsm2d(:,3)
+     MKPTR1D(model_rt, rt_smt, f)
+     MKPTR1D(radar_pr, rdpr_smt, f)
+     MKPTR1D(radar_qi, rdqi_smt, f)
 
   
      !record relative humidity and temperature before LHN

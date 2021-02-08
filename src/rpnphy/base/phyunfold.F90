@@ -127,7 +127,9 @@ contains
            F_ijk1(3) > mymeta%n(3)) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
               trim(mymeta%vname)//' on '//trim(mymeta%bus))
-        return
+         print *,'Requested:',F_ijk1
+         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,mymeta%n(3),':',mymeta%nk,mymeta%fmul
+         return
       endif
 
       if ( F_ijk0(1) /= 1 .or. F_ijk0(2) /= 1 .or. &
@@ -181,6 +183,8 @@ contains
            F_ijk1(2) > phy_lcl_nj) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
               trim(mymeta%vname)//' on '//trim(mymeta%bus))
+         print *,'Requested:',F_ijk1
+         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,mymeta%n(3),':',mymeta%nk,mymeta%fmul
         return
       endif
 

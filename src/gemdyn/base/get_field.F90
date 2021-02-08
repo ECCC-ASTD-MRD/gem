@@ -46,8 +46,8 @@
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer unf,key,ni1,nj1,nk1,err,ierr,subid,oldsubid
       integer sgid,dgid,nis,njs,nic,njc
-      real, dimension(:  ), allocatable :: ax,ay
-      real, dimension(:,:), allocatable :: source
+      real, dimension(:  ), pointer :: ax,ay
+      real, dimension(:,:), pointer :: source
 
 !-----------------------------------------------------------------------
 !
@@ -124,7 +124,6 @@
                            F_xfi, F_yfi, ni, nj) > -1) then
             F_inttyp_S = 'NEAREST'
          end if
-
       else
 
          sgid= ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf)
@@ -176,6 +175,9 @@
 
       F_status = 0
 
+ 999  if (associated(ax)) deallocate (ax,ay)
+      if (associated(source)) deallocate (source)
+
  1000 format (/' GET_FIELD:  file ',a,' open on unit: ',i7)
  1001 format ( ' GET_FIELD: Interpolating ',a,' with scheme: ',a/)
  1002 format ( ' GET_FIELD: Extrapolating ',a,' with scheme: ',a/)
@@ -187,7 +189,7 @@
 !
 !-----------------------------------------------------------------------
 !
- 999  return
+      return
       end
 !
 

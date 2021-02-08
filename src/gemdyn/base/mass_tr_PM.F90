@@ -27,6 +27,7 @@
       use gem_timing
       use geomh
       use HORgrid_options
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -51,9 +52,12 @@
       !     for all tracers using Bermejo-Conde (assuming in Mixing Ratio)
       !===================================================================
 
-      integer :: i,j,k,err,n
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: i,j,k,err,n,comm
       real(kind=REAL64), dimension(F_ntr_bc,4) :: c_mass_8,gc_mass_8
-      character(len= 9) :: communicate_S
+      real(kind=REAL64) :: gathV1(2*F_ntr_bc,Ptopo_numproc*Ptopo_ncolors), &
+                           gathV2(4*F_ntr_bc,Ptopo_numproc*Ptopo_ncolors)
       logical :: LAM_L,BC_LAM_Aranami_L
 !
 !---------------------------------------------------------------------
@@ -128,14 +132,22 @@
 
       call gemtime_start (19, 'REDUCE', 15)
 
-      communicate_S = "GRID"
-      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+      comm = RPN_COMM_comm ('MULTIGRID')
 
-      !Evaluate Global Mass using MPI_ALLREDUCE
+      !Evaluate Global Mass
       !----------------------------------------
       if (LAM_L.and.BC_LAM_Aranami_L.and..not.Ctrl_theoc_L) then
 
-         call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,4*F_ntr_bc,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call MPI_Allgather(c_mass_8,4*F_ntr_bc,MPI_DOUBLE_PRECISION,gathV2,4*F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
+
+         do j=1,4
+         do i=1,F_ntr_bc
+
+            n = (j-1)*F_ntr_bc + i
+            gc_mass_8(i,j) = sum(gathV2(n,:))
+
+         end do
+         end do
 
          F_mass_p_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,1)
          F_mass_m_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,2)
@@ -144,7 +156,16 @@
 
       else
 
-         call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,2*F_ntr_bc,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call MPI_Allgather(c_mass_8,2*F_ntr_bc,MPI_DOUBLE_PRECISION,gathV1,2*F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
+
+         do j=1,2
+         do i=1,F_ntr_bc
+
+            n = (j-1)*F_ntr_bc + i
+            gc_mass_8(i,j) = sum(gathV1(n,:))
+
+         end do
+         end do
 
          F_mass_p_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,1)
          F_mass_m_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,2)

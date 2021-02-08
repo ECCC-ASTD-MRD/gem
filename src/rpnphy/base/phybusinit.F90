@@ -175,11 +175,13 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.lcons .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-           'clse', 'cec ', 'cecm', &
+!!$           'clse', 'cec ', 'cecm', &
+           'cec ', 'cecm', &
            'ced ', 'cedm', 'cep ', &
            'cepm', 'cem ', 'cemm', &
            'cer ', 'cerm', 'ces ', &
-           'cesm', 'cqt ', 'cqc ', &
+!!$           'cesm', 'cqt ', 'cqc ', &
+           'cesm', 'cqc ', &
            'cqcm', 'cqd ', 'cqdm', &
            'cqp ', 'cqpm', 'cqm ', &
            'cqmm', 'cqr ', 'cqrm', &

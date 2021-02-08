@@ -44,6 +44,9 @@ contains
                          F_sfc_src, F_sfc_dst, F_sfcLS_dst           ,&
                          F_gz, F_GZ_ip1, F_dest , Minx,Maxx,Miny,Maxy,&
                          F_nk, F_inttype_S, F_quiet_L )
+
+      implicit none
+
       character(len=*)          , intent(in) :: F_var_S,F_hgrid_S
       character(len=*), optional, intent(in) :: F_inttype_S
       logical         , optional, intent(in) :: F_quiet_L
@@ -130,7 +133,7 @@ contains
       logical :: quiet_L
       integer, parameter :: nlis = 1024
       integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
-              liste_sorted(nlis),lislon,cnt, maxdim_wk2
+              liste_sorted(nlis),lislon,maxdim_wk2
       integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
@@ -138,8 +141,8 @@ contains
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
       real :: surface_level
-      real   , dimension(:  ), allocatable :: wk3
-      real   , dimension(:,:), allocatable :: wk1,wk2
+      real   , dimension(:  ), allocatable :: wk3,wk1
+      real   , dimension(:,:), allocatable :: wk2
       real   , dimension(:  ), pointer     :: posx,posy
       real(kind=REAL64) add, mult
       common /bcast_i / lislon,nz
@@ -247,7 +250,9 @@ contains
          end if
 
          nz= (lislon + Inp_npes - 1) / Inp_npes
+!        lislon should be >0 here so, nz  >=1
 
+         maxdim_wk2=nz*F_nd
          mpx      = mod( Inp_iome, Inp_npes )
          local_nk = lislon / Inp_npes
          irest  = lislon  - local_nk * Inp_npes
@@ -262,21 +267,15 @@ contains
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
          allocate (wk3(ni_dest*nj_dest))
-         maxdim_wk2 = (nz+1)*F_nd
          allocate (wk2(G_ni*G_nj,maxdim_wk2))
-         allocate (wk1(n1*n2,max(local_nk,1)))
+         allocate (wk1(n1*n2))
 
          wk2 = 0.
-         cnt= 0
-         do i= kstart, kstart+local_nk-1
-            cnt= cnt+1
-            err= fstluk (wk1(1,cnt), liste(i), n1,n2,n3)
-         end do
 
          interp_S= 'CUBIC'
          if (present(F_hint_S)) interp_S= F_hint_S
 
-         do idst= 1, F_nd
+         do idst= 1, F_nd !IDST loop
          if (local_nk > 0) then
 
             if (F_hgrid_S(idst) == 'Q') then
@@ -326,8 +325,9 @@ contains
          end if
 
          do i=1,local_nk
-            err = ezsint(wk3, wk1(1,i))
-            call reshape_wk ( wk3,wk2(1,(idst-1)*(nz+1)+i),&
+            err= fstluk (wk1, liste(kstart+i-1), n1,n2,n3)
+            err = ezsint(wk3, wk1)
+            call reshape_wk ( wk3,wk2(1,(idst-1)*nz+i),&
                  ni_dest,nj_dest,G_ni,G_nj,G_halox,G_haloy )
          end do
          if (err == 2) then
@@ -335,16 +335,18 @@ contains
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
-         end do
+
+         END DO !IDST loop
+
          deallocate (wk1,wk3)
-      else
+      else !Inp_iome >= 0
          allocate (wk2(1,1))
          wk2 = 0.
          maxdim_wk2 = 1
-      end if
+      end if !Inp_iome >= 0
 
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
-                            "grid", err ) !NOTE: bcas listlon AND nz
+                            "grid", err ) !NOTE: bcast lislon AND nz
       F_nka= lislon
 
       if (F_nka > 0) then
@@ -367,7 +369,7 @@ contains
          zlist_o= .FALSE.
 
          do idst=1, F_nd
-            k= min((idst-1)*(nz+1)+1,maxdim_wk2)
+            k=min((idst-1)*nz+1,maxdim_wk2)
             zlist_o= .FALSE.
             err = RPN_COMM_shuf_ezdist ( &
                            Inp_comm_setno, Inp_comm_id, wk2(1,k), nz,&
@@ -759,12 +761,14 @@ contains
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer liste_u(nlis),liste_v(nlis),liste_sorted(nlis),lislon
-      integer i,err, nz, n1,n2,n3, nrec, cnt, same_rot, ni_dest, nj_dest
+      integer i,err, nz, n1,n2,n3, nrec, same_rot, ni_dest, nj_dest
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode
+      integer dstu_gid,dstv_gid,erru,errv
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
-      real   , dimension(:,:), allocatable :: u,v,uhr,vhr,uv,wku,wkv
+      real   , dimension(:,:), allocatable :: uhr,vhr
+      real   , dimension(:  ), allocatable :: uv,u,v,wku,wkv
       real   , dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
       common /bcast_i_uv / lislon,nz,same_rot
 !
@@ -789,8 +793,6 @@ contains
                   G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
 
          src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
-!         same_rot= samegrid_rot ( src_gid, &
-!                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
 
          call sort_ip1 (liste_u,liste_sorted,lislon)
          call sort_ip1 (liste_v,liste_sorted,lislon)
@@ -817,20 +819,15 @@ contains
 
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
-         allocate (uhr(G_ni*G_nj,nz),vhr(G_ni*G_nj,nz),&
-                   wku(ni_dest*nj_dest,nz),wkv(ni_dest*nj_dest,nz))
-         allocate (u(n1*n2,max(local_nk,1)), v(n1*n2,max(local_nk,1)))
-
-         cnt= 0
-         do i= kstart, kstart+local_nk-1
-            cnt= cnt+1
-            err= fstluk ( u(1,cnt), liste_u(i), n1,n2,n3)
-            err= fstluk ( v(1,cnt), liste_v(i), n1,n2,n3)
-         end do
+         allocate (uhr(G_ni*G_nj,nz),vhr(G_ni*G_nj,nz))
+         allocate( wku(ni_dest*nj_dest),wkv(ni_dest*nj_dest))
+         allocate (u(n1*n2), v(n1*n2))
+         allocate (uv(ni_dest*nj_dest))
 
          if (local_nk > 0) then
 
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+
 
             if (trim(F_target_S) == 'UV') then
 
@@ -841,49 +838,34 @@ contains
 
                write(output_unit,1001) 'Interpolating: UU, nka= ',&
                              lislon,', valid: ',Inp_datev,' on U grid'
-               dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
+               dstu_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxu, posyu )
-               err = ezdefset ( dst_gid , src_gid )
-               allocate (uv(ni_dest*nj_dest,nz))
-               if (same_rot > 0) then
-                  do i=1,local_nk
-                     err = ezsint (wku(1,i), u(1,i))
-                  end do
-               else
-                  do i=1,local_nk
-                     err = ezuvint  ( wku(1,i),uv(1,i), u(1,i),v(1,i))
-                  end do
-               end if
-               if (err == 2) then
-                 write(output_unit,1002) 'EXTRApolating: UU, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on U grid'
-               end if
-
                write(output_unit,1001) 'Interpolating: VV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on V grid'
-
-               dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
+               dstv_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxv, posyv )
-               err = ezdefset ( dst_gid , src_gid )
-
-               if (same_rot > 0) then
-                  do i=1,local_nk
-                     err = ezsint (wkv(1,i), v(1,i))
-                  end do
-               else
-                  do i=1,local_nk
-                     err = ezuvint  ( uv(1,i),wkv(1,i), u(1,i),v(1,i))
-                  end do
-               end if
-               if (err == 2) then
-                 write(output_unit,1002) 'EXTRApolating: VV, nka= ',&
+               do i=1,local_nk
+                  err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
+                  err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
+                  err = ezdefset ( dstu_gid , src_gid )
+                  erru = ezuvint  ( wku,uv, u,v)
+                  err = ezdefset ( dstv_gid , src_gid )
+                  errv = ezuvint  ( uv,wkv, u,v)
+                  call reshape_wk ( wku,uhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+                  call reshape_wk ( wkv,vhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+               end do
+               if (erru == 2) &
+                      write(output_unit,1002) 'EXTRApolating: UU, nka= ',&
+                             lislon,', valid: ',Inp_datev,' on U grid'
+               if (errv == 2) &
+                      write(output_unit,1002) 'EXTRApolating: VV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on V grid'
-               end if
-               deallocate (uv)
 
-            else
+            else !Q
 
                posxu => geomh_lonQ
                posyu => geomh_latQ
@@ -894,33 +876,26 @@ contains
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxu, posyu )
                err = ezdefset ( dst_gid , src_gid )
-               if (same_rot > 0) then
-                  do i=1,local_nk
-                     err = ezsint (wku(1,i), u(1,i))
-                     err = ezsint (wkv(1,i), v(1,i))
-                  end do
-               else
-                  do i=1,local_nk
-                     err = ezuvint  ( wku(1,i),wkv(1,i), u(1,i),v(1,i))
-                  end do
-               end if
-               if (err == 2) then
+               do i=1,local_nk
+                  err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
+                  err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
+                  err = ezuvint  ( wku,wkv, u,v)
+                  call reshape_wk ( wku,uhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+                  call reshape_wk ( wkv,vhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+               end do
+               if (err == 2) &
                  write(output_unit,1002) 'EXTRApolating: UV, nka= ',&
                              lislon,', valid: ',Inp_datev,' on Q grid'
-               end if
 
             end if
 
-            do i=1,local_nk
-               call reshape_wk ( wku(1,i),uhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
-               call reshape_wk ( wkv(1,i),vhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
-            end do
 
          end if
-
-         deallocate (u,v,wku,wkv)
+         deallocate (uv)
+         deallocate (u,v)
+         deallocate (wku,wkv)
 
       else
          allocate (uhr(1,1), vhr(1,1))
@@ -1053,7 +1028,7 @@ contains
       implicit none
 
       type(vgrid_descriptor) , intent(in ) :: F_vgd
-      integer                , intent(out) :: F_nk
+      integer                , intent(inout) :: F_nk
       integer                , intent(in)  :: Minx,Maxx,Miny,Maxy
       integer, dimension(:)    , pointer, intent(in ) :: F_ip1,F_gz_ip1
       real   , dimension(:,:  ), pointer, intent(in ) :: F_sfc,F_sfcL
@@ -1244,10 +1219,10 @@ contains
 
 !     local variables
       integer nka
-      integer, dimension (:    ), pointer :: ip1_list, ip1_target
+      integer, contiguous, dimension (:    ), pointer :: ip1_list, ip1_target
       real   , dimension (:,:  ), pointer :: dummy
-      real   , dimension (:,:,:), pointer :: srclev,dstlev
-      real   , dimension (:,:,:), pointer :: ur,vr
+      real   , contiguous, dimension (:,:,:), pointer :: srclev,dstlev
+      real   , contiguous, dimension (:,:,:), pointer :: ur,vr
 !
 !---------------------------------------------------------------------
 !

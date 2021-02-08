@@ -27,7 +27,7 @@ module inp_mod
       integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
       Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
       Inp_version, Inp_handle , Inp_cmcdate
-      integer, dimension(:), pointer :: Inp_list_unf => null()
+      integer, dimension(:), contiguous,pointer :: Inp_list_unf => null()
       integer :: Inp_PX_kind, Inp_GZ_kind, Inp_PX_nka, Inp_GZ_nka
       type(vgrid_descriptor) :: Inp_vgd_src
       real(kind=REAL64) Inp_pref_a_8

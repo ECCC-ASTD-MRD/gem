@@ -340,36 +340,6 @@ module phy_options
    namelist /physics_cfgs/ my_ccntype
    namelist /physics_cfgs_p/ my_ccntype
 
-   !# Double-moment for cloud (for 'mp_my' only)
-   logical           :: my_dblmom_c  = .true.
-   namelist /physics_cfgs/ my_dblmom_c
-   namelist /physics_cfgs_p/ my_dblmom_c
-
-   !# Double-moment for graupel (for 'mp_my' only)
-   logical           :: my_dblmom_g  = .true.
-   namelist /physics_cfgs/ my_dblmom_g
-   namelist /physics_cfgs_p/ my_dblmom_g
-
-   !# Double-moment for hail (for 'mp_my' only)
-   logical           :: my_dblmom_h  = .true.
-   namelist /physics_cfgs/ my_dblmom_h
-   namelist /physics_cfgs_p/ my_dblmom_h
-
-   !# Double-moment for ice (for 'mp_my' only)
-   logical           :: my_dblmom_i  = .true.
-   namelist /physics_cfgs/ my_dblmom_i
-   namelist /physics_cfgs_p/ my_dblmom_i
-
-   !# Double-moment for rain (for 'mp_my' only)
-   logical           :: my_dblmom_r  = .true.
-   namelist /physics_cfgs/ my_dblmom_r
-   namelist /physics_cfgs_p/ my_dblmom_r
-
-   !# Double-moment for snow (for 'mp_my' only)
-   logical           :: my_dblmom_s  = .true.
-   namelist /physics_cfgs/ my_dblmom_s
-   namelist /physics_cfgs_p/ my_dblmom_s
-
    !# Compute MY Diagnostic fields if .true.
    logical           :: my_diagon    = .true.
    namelist /physics_cfgs/ my_diagon
@@ -379,11 +349,6 @@ module phy_options
    logical           :: my_iceon     = .true.
    namelist /physics_cfgs/ my_iceon
    namelist /physics_cfgs_p/ my_iceon
-
-   !# Initialize the number concentration for each category
-   logical           :: my_initn     = .true.
-   namelist /physics_cfgs/ my_initn
-   namelist /physics_cfgs_p/ my_initn
 
    !# Autoconversion (cloud to rain) switched on
    logical           :: my_rainon    = .true.
@@ -399,11 +364,6 @@ module phy_options
    logical           :: my_snowon    = .true.
    namelist /physics_cfgs/ my_snowon
    namelist /physics_cfgs_p/ my_snowon
-
-   !# Parameters for three-component freezing term
-   real              :: my_tc3comp(3)= (/-5.,-5.,-5./)
-   namelist /physics_cfgs/ my_tc3comp
-   namelist /physics_cfgs_p/ my_tc3comp
 
    !# Warm-phase switched on
    logical           :: my_warmon    = .true.
@@ -899,17 +859,15 @@ module phy_options
    !# * 'NIL       ' : No explicit condensation scheme used
    !# * 'CONSUN    ' : Sunqvist type condensation scheme
    !# * 'NEWSUND   ' : Sunqvist type condensation scheme
-   !# * 'MP_MY2_OLD' : Milbrandtl and Yau microphysics scheme (old formulation)
    !# * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
    !# * 'MP_P3     ' : P3 microphysics scheme
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(6) = (/ &
+   character(len=*), parameter :: STCOND_OPT(5) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'NEWSUND   ', &
-        'MP_MY2_OLD', &
         'MP_MY2    ', &
         'MP_P3     '  &
         /)

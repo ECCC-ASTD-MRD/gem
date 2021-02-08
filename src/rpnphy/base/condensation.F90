@@ -31,7 +31,6 @@ contains
       use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
       use module_mp_p3,  only: mp_p3_wrapper_gem,n_qiType
       use mp_my2_mod,    only: mp_my2_main
-      use my_dmom_mod,   only: mydmom_main
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -90,9 +89,9 @@ contains
       real :: idt
       logical :: p3_comptend
 
-      real, dimension(ni) :: tlcr,tscr,lv,ls
+      real, dimension(ni) :: tlcr,tscr
 
-      real, dimension(ni,nk-1) :: zfm,zfm1,zcqer,zcqcer,zcter,iwc_total,lqip,lqrp,lqgp,lqnp,geop, lttp,lhup,ccf
+      real, dimension(ni,nk-1) :: zfm,zfm1,zcqer,zcqcer,zcter,iwc_total,lqip,lqrp,lqgp,lqnp,lttp,lhup,ccf
 
       real, dimension(ni,N_DIAG_2D)      :: diag_2d    !diagnostic 2D fields
       real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d    !diagnostic 3D fields
@@ -114,9 +113,9 @@ contains
 #undef PHYPTRDCL
 #include "condensation_ptr.hf"
 
-      call init2nan(tlcr, tscr, lv, ls)
+      call init2nan(tlcr, tscr)
       call init2nan(zfm, zfm1, zcqer, zcqcer, zcter, iwc_total, lqip, lqrp, lqgp)
-      call init2nan(lqnp, geop, lttp, lhup)
+      call init2nan(lqnp, lttp, lhup)
       call init2nan(diag_2d)
       call init2nan(diag_3d)
       call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
@@ -222,34 +221,6 @@ contains
             zcte  = zcter
             zcqe  = zcqer
          endif
-
-      case('MP_MY2_OLD')
-
-         !# "old" Milbrandt-Yau 2-moment microphysics (as in HRDPS v4.0.0 - v4.2.0)
-         geop = zgztherm*GRAV
-
-         call mydmom_main(ww,&
-              ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,psp, &
-              ttm,qqm,qcm,qrm,qim,qnm,qgm,qhm,ncm,nrm,nim,nnm,ngm,nhm,psm,sigma,&
-              a_tls_rn1, a_tls_rn2, a_tls_fr1, a_tls_fr2,&
-              a_tss_sn1, a_tss_sn2, a_tss_sn3,&
-              a_tss_pe1, a_tss_pe2, a_tss_pe2l, a_tss_snd,geop,&
-              zste, zsqe, zsqce,zsqre,&
-              qitend, qntend, qgtend, qhtend, nctend,&
-              nrtend, nitend, nntend, ngtend, nhtend,&
-              dt, ni, ni, nkm1, trnch, kount, my_ccntype, &
-              my_diagon, my_sedion, my_warmon, &
-              my_rainon, my_iceon,  my_snowon, my_initn,&
-              my_dblmom_c, my_dblmom_r, my_dblmom_i, &
-              my_dblmom_s, my_dblmom_g, my_dblmom_h,&
-              a_dm_c, a_dm_r, a_dm_i, a_dm_s, a_dm_g, a_dm_h,&
-              a_zet,  a_zec,  a_slw,  a_vis,  a_vis1, a_vis2, a_vis3,&
-              a_h_cb, a_h_ml, a_h_m2, a_h_sn, &
-              a_ss01, a_ss02, a_ss03, a_ss04, a_ss05, a_ss06, a_ss07,&
-              a_ss08, a_ss09, a_ss10, a_ss11, a_ss12, a_ss13, a_ss14,&
-              a_ss15, a_ss16, a_ss17, a_ss18, a_ss19, a_ss20, my_tc3comp,  &
-              zrnflx,zsnoflx,zf12,zfevp,a_fxp,a_effradc,&
-              a_effradi1, a_effradi2, a_effradi3, a_effradi4)
 
       case('MP_MY2')
 
@@ -443,21 +414,6 @@ contains
          call apply_tendencies(qcp, zsqce, ztdmask, ni, nk, nkm1)
       endif
 
-      ! Apply tendencies from microphysics scheme (my2_old only)
-      if (stcond == 'MP_MY2_OLD') then
-         call apply_tendencies(qrp, zsqre,  ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(qip, qitend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(qgp, qgtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(qnp, qntend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(qhp, qhtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(ncp, nctend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(nrp, nrtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(nip, nitend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(ngp, ngtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(nnp, ngtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-         call apply_tendencies(nhp, nhtend, ztdmask, ni, nk, nkm1, F_minval=0.)
-      endif
-
       if (stcond(1:6) == 'MP_MY2') then
          lqrp = qrp
          lqip = qip
@@ -508,9 +464,6 @@ contains
          qqp(:,1:nkm1) = q0(:,1:nkm1)
          qcp(:,1:nkm1) = qc0(:,1:nkm1)
       endif
-
-      ! Clip negative cloud water
-      if (stcond == 'MP_MY2_OLD') qcp = max(qcp, 0.)
 
       call msg_toall(MSG_DEBUG, 'condensation [END]')
       !----------------------------------------------------------------
