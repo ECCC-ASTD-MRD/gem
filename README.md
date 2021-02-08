@@ -22,10 +22,11 @@ See below for extended instructions.  Further details are can be found in
     make -j work
 
     # Download the data files required to run GEM
+    # replace "work" by the WORK_PREFIX path you may have used above
     cd ..
     ./download-dbase.sh work
 
-    cd ../work/work-${OS_NAME}-${COMPILER_NAME}
+    cd work/work-${OS_NAME}-${COMPILER_NAME}
     # Configure the model with the default configuration (configurations/GEM_cfgs)
     # and execute the model
     ./runprep
@@ -154,6 +155,10 @@ example *work-Fedora-32-x86_64-gnu-10.2.1*
     # or configure and execute the model for a specific case, for example:
     ./runprep -dircfg configurations/GY_cfgs
     ./runmod -dircfg configurations/GY_cfgs
+	make sure you give the complete path to the directory in which the
+	cfg_000 directory is located, such as:
+    ./runprep -dircfg configurations/GEM_theo_cfgs/WILLIAMSON/CASE1_AROUND
+    ./runmod -dircfg configurations/GEM_theo_cfgs/WILLIAMSON/CASE1_AROUND
 ```
 
 *runmod*'s ```-ptopo``` argument can be used to specify the number of CPU to

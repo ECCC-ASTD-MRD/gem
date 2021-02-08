@@ -13,6 +13,9 @@ add_library (gem STATIC ${FTNSRC} ${CSRC})
 target_include_directories(gem PRIVATE
    ${ROOT}/src/rpnphy/include
    ${ROOT}/src/modelutils/include
+   ${CMAKE_BINARY_DIR}/src/rpnphy
+   ${CMAKE_BINARY_DIR}/src/modelutils
+   ${CMAKE_BINARY_DIR}/src/vgrid
    include
    base
 )

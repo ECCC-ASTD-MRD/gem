@@ -89,13 +89,13 @@ include("distclean.cmake")
 
 set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/modules CACHE STRING "Where Fortran modules go")
-
-message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
+# This was changed so that there cannot be an upstream call
+#set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules CACHE STRING "Where Fortran modules go")
 
 get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY CACHE)
 message(STATUS "ROOT=${ROOT}")
+#message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
 
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
@@ -104,7 +104,6 @@ message(STATUS "arch-dependent include directory: ${ROOT}/src/archdep/include/${
 
 include_directories(
    ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}
-   ${CMAKE_CURRENT_BINARY_DIR}/build/modules
    ${ROOT}/src/rpncomm
    ${ROOT}/src/rmn/PUBLIC_INCLUDES
    ${ROOT}/src/RPN/compiler_includes
@@ -116,7 +115,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # To see the make commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_subdirectory(${ROOT}/src build/src)
+add_subdirectory(${ROOT}/src src)
 
 # TODO: Move this to cmake_shared
 function(dir_writable DIR_PATH REQUIRED)
@@ -163,7 +162,7 @@ add_custom_target(work
     COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
     COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
+    COMMAND /bin/ln -sf ${WORK_PREFIX}/gem_dbase ${WORK_DIR}
 
     DEPENDS
         cclargs_lite
