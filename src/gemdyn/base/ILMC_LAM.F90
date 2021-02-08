@@ -165,6 +165,19 @@
 
       end if
 
+      !Zero MIN/MAX not initialized by Semi-Lagrangian advection
+      !BEFORE exchange in case halo of a processor exceeds core zone
+      !-------------------------------------------------------------
+      do k=Adz_k0,l_nk
+      do j=l_miny,l_maxy
+      do i=l_minx,l_maxx
+         if (F_i0<=i.and.i<=F_in.and.F_j0<=j.and.j<=F_jn) cycle
+         Adz_post(F_ns)%min(i,j,k) = 0.
+         Adz_post(F_ns)%max(i,j,k) = 0.
+      end do
+      end do
+      end do
+
       call gemtime_start (94, 'X_HALO', 73)
 
       !Fill Halos of F_ILMC/MIN/MAX (NOTE: Fill Halo of air_mass_m was DONE in set_post_tr)

@@ -122,6 +122,11 @@ module gem_options
    namelist /gem_cfgs  / Gem_trace_ctrl
    namelist /gem_cfgs_p/ Gem_trace_ctrl
 
+   !# False-> will implement in house reduce on SUM of floats
+   logical :: Legacy_reduce_L = .true.
+   namelist /gem_cfgs  / Legacy_reduce_L 
+   namelist /gem_cfgs_p/ Legacy_reduce_L 
+
 contains
 
 !**s/r gem_nml - Read namelist gem

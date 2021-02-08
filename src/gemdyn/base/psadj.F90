@@ -21,6 +21,7 @@
       use cstv
       use dyn_fisl_options
       use dynkernel_options
+      use gem_options
       use gem_timing
       use geomh
       use gmm_geof
@@ -49,8 +50,9 @@
       !=============================================================
       !     Adjust surface pressure for conservation in Yin-Yang/LAM
       !=============================================================
-
-      integer :: err,i,j,k,n,MAX_iteration,empty_i,n_reduce,i0_c,in_c,j0_c,jn_c
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: err,i,j,k,n,MAX_iteration,empty_i,n_reduce,i0_c,in_c,j0_c,jn_c,comm
       real :: empty
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_1_8,p0_dry_0_8
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_1_8,p0_0_8,fl_0_8
@@ -59,10 +61,11 @@
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: qts,delps,pw_pm
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: sumq
       real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_1_8,g_avg_ps_0_8,g_avg_fl_0_8,substract_8
+      real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors),gathS(Ptopo_numproc*Ptopo_ncolors)
       character(len= 9) :: communicate_S
       logical :: LAM_L
       real, pointer, dimension(:,:,:) :: tr
-!
+!     
 !---------------------------------------------------------------------
 !
       !Update Pressure PW_MOINS in accordance with TIME M
@@ -83,6 +86,8 @@
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+
+      comm = RPN_COMM_comm ('MULTIGRID')
 
       substract_8 = 1.0d0
       if (LAM_L) substract_8 = 0.0d0
@@ -150,7 +155,16 @@
             end do
          end do
 
-         call RPN_COMM_allreduce (l_avg_8,g_avg_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         if (Legacy_reduce_L) then
+
+            call RPN_COMM_allreduce (l_avg_8,g_avg_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+         else
+
+            call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+            g_avg_8(1) = sum(gathS)
+
+         end if
 
          g_avg_ps_1_8 = g_avg_8(1) * PSADJ_scale_8
 
@@ -229,9 +243,34 @@
                end do
             end do
 
-         end if
+            if (Legacy_reduce_L) then
 
-         call RPN_COMM_allreduce (l_avg_8,g_avg_8,n_reduce,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+               call RPN_COMM_allreduce (l_avg_8,g_avg_8,n_reduce,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+            else
+
+               call MPI_Allgather(l_avg_8,n_reduce,MPI_DOUBLE_PRECISION,gathV,n_reduce,MPI_DOUBLE_PRECISION,comm,err)
+               do i=1,n_reduce
+                  g_avg_8(i) = sum(gathV(i,:))
+               end do
+
+            end if
+
+         else
+
+            if (Legacy_reduce_L) then
+
+               call RPN_COMM_allreduce (l_avg_8,g_avg_8,n_reduce,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+            else
+
+               call MPI_Allgather(l_avg_8,n_reduce,MPI_DOUBLE_PRECISION,gathS,n_reduce,MPI_DOUBLE_PRECISION,comm,err)
+
+               g_avg_8(1) = sum(gathS)
+
+            end if
+
+         end if
 
          g_avg_ps_0_8 = g_avg_8(1) * PSADJ_scale_8
          g_avg_fl_0_8 = g_avg_8(2) * PSADJ_scale_8

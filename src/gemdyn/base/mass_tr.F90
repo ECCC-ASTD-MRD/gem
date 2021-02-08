@@ -18,9 +18,12 @@
       subroutine mass_tr (F_mass_tracer_8,F_tracer,F_air_mass,F_minx,F_maxx,F_miny,F_maxy,F_nk, &
                           F_i0,F_in,F_j0,F_jn,F_k0)
 
+      use adz_mem
       use dynkernel_options
+      use gem_options
       use geomh
       use HORgrid_options
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -41,9 +44,12 @@
       !     Evaluate Mass of Tracer (assuming in Mixing Ratio)
       !=======================================================
 
-      integer :: i,j,k,err
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: i,j,k,err,comm
       real(kind=REAL64) :: c_mass_8,gc_mass_8
       character(len= 9) :: communicate_S
+      real(kind=REAL64) :: gathS(Ptopo_numproc*Ptopo_ncolors)
 !
 !---------------------------------------------------------------------
 !
@@ -74,11 +80,23 @@
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
+      comm = RPN_COMM_comm ('MULTIGRID')
+
       !Evaluate Global Mass using MPI_ALLREDUCE
       !----------------------------------------
-      call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      if (Legacy_reduce_L) then
 
-      F_mass_tracer_8 = gc_mass_8
+         call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+         F_mass_tracer_8 = gc_mass_8
+
+      else
+
+         call MPI_Allgather(c_mass_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+
+         F_mass_tracer_8 = sum(gathS) 
+
+      end if
 !
 !---------------------------------------------------------------------
 !

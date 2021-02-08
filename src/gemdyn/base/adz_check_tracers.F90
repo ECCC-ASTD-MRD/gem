@@ -41,13 +41,19 @@
       !     (not in NAMELIST)
       !===========================================================================
 
-      integer :: n,err,i,j,g_i0,g_in,g_j0,g_jn,i0_sb,in_sb,j0_sb,jn_sb
+      include 'mpif.h'
+
+      include 'rpn_comm.inc'
+
+      integer :: n,err,i,j,g_i0,g_in,g_j0,g_jn,i0_sb,in_sb,j0_sb,jn_sb,comm
 
       real(kind=REAL64)  :: c_area_8,s_area_8,gc_area_8,gs_area_8
 
       logical :: BC_LAM_L,psadj_LAM_flux_L,do_subset_GY_L,BC_activated_L
 
       real(kind=REAL64), parameter :: QUATRO_8 = 4.0
+
+      real(kind=REAL64) :: gathS(Ptopo_numproc)
 !
 !---------------------------------------------------------------------
 !
@@ -109,6 +115,8 @@
 
       end if
 
+      comm = RPN_COMM_comm ('GRID')
+
       !Evaluate CORE/SUBSET areas
       !--------------------------
       if (Grd_yinyang_L) then
@@ -125,9 +133,19 @@
             end do
             end do
 
-            call rpn_comm_ALLREDUCE (s_area_8,gs_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+            if (Legacy_reduce_L) then
 
-            Adz_gs_area_8 = gs_area_8
+               call rpn_comm_ALLREDUCE (s_area_8,gs_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+
+               Adz_gs_area_8 = gs_area_8
+
+            else
+
+               call MPI_Allgather(s_area_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+
+               Adz_gs_area_8 = sum(gathS) 
+
+            end if
 
          end if
 
@@ -141,7 +159,17 @@
          end do
          end do
 
-         call rpn_comm_ALLREDUCE(c_area_8,gc_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
+         if (Legacy_reduce_L) then
+
+            call rpn_comm_ALLREDUCE(c_area_8,gc_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
+
+         else
+
+            call MPI_Allgather(c_area_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+
+            gc_area_8 = sum(gathS)
+
+         end if
 
       end if
 

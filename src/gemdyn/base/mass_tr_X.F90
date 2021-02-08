@@ -21,9 +21,11 @@
 
       use adz_mem
       use dynkernel_options
+      use gem_options
       use gem_timing
       use geomh
       use HORgrid_options
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -47,10 +49,13 @@
       !     (assuming in Mixing Ratio)
       !===============================================================================
 
-      integer :: n,i,j,k,err
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: n,i,j,k,err,comm
       real(kind=REAL64), dimension(F_ntr_bc) :: c_mass_8,gc_mass_8
       character(len= 9) :: communicate_S
       real, pointer, dimension(:,:,:) :: F_tr_X
+      real(kind=REAL64) :: gathV(F_ntr_bc,Ptopo_numproc*Ptopo_ncolors)
 !
 !---------------------------------------------------------------------
 !
@@ -96,9 +101,25 @@
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
+      comm = RPN_COMM_comm ('MULTIGRID')
+
       !Evaluate Global Mass using MPI_ALLREDUCE
       !----------------------------------------
-      call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,F_ntr_bc,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      if (Legacy_reduce_L) then
+
+         call rpn_comm_ALLREDUCE (c_mass_8,gc_mass_8,F_ntr_bc,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+      else
+
+         call MPI_Allgather(c_mass_8,F_ntr_bc,MPI_DOUBLE_PRECISION,gathV,F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
+
+         do i=1,F_ntr_bc
+
+            gc_mass_8(i) = sum(gathV(i,:))
+
+         end do
+
+      end if
 
       F_mass_X_8 = gc_mass_8
 
