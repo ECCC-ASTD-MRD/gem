@@ -9,8 +9,15 @@ make cmake
 make build
 make work
 
-***For EC users other than Michel:***
+./link-dbase.sh
+#temporary: copy extra database files
+# on EC side:
+cp -r /home/dormrb01/armn/armncpi/geophy .
+# on science:
+cp -r /space/hall3/sitestore/eccc/mrd/rpnsi/cpi001/geophy .
+
 cd $GEM_WORK
+# running GEM: examples
 runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
 runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
 
