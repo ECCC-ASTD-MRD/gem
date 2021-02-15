@@ -129,6 +129,7 @@ contains
              (Bloc_glbij(4,i)-Bloc_glbij(3,i)+1)
          Bloc_maxdim= max(Bloc_maxdim,n1)
       end do
+      deallocate (block)
 !
 !----------------------------------------------------------------------
 !

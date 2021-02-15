@@ -22,8 +22,11 @@
       use dynkernel_options
       use gem_options
       use gem_timing
+      use glb_pil
       use gmm_tracers
+      use HORgrid_options
       use ilmc_lam_array
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -45,7 +48,8 @@
       logical, save :: done_allocate_L=.false.
 
       integer :: i,j,k,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,j1,j2, &
-                 reset(Adz_k0:l_nk,5),w1,w2,size,n,il,ir,jl,jr
+                 reset(Adz_k0:l_nk,5),w1,w2,size,n,il,ir,jl,jr,offi,offj,ext, &
+                 g_i0,g_in,g_j0,g_jn,il_,ir_,jl_,jr_,il_cor,ir_cor,jl_cor,jr_cor,err
 
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
               o_shoot,u_shoot,ratio_max,ratio_min
@@ -53,6 +57,8 @@
       real, pointer, dimension(:,:,:) :: F_ilmc,air_mass_m
 
       logical :: limit_i_L
+
+      logical, save :: done_print_L=.false.
 !
 !---------------------------------------------------------------------
 !
@@ -78,6 +84,54 @@
       if (l_east)  ir = F_in
       if (l_south) jl = F_j0
       if (l_north) jr = F_jn
+
+      !Global equivalent to Adz_i0 Adz_in Adz_j0 Adz_jn at LAM boundary
+      !----------------------------------------------------------------
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+
+      ext = 1
+      if (Grd_yinyang_L) ext = 2
+
+      g_i0 = 1    + Glb_pil_w - (ext+1) 
+      g_in = G_ni - Glb_pil_e +  ext
+      g_j0 = 1    + Glb_pil_s - (ext+1)
+      g_jn = G_nj - Glb_pil_n +  ext
+
+      !Check if Halo needs to be reduced for PE close to W/E/S/N LAM boundary
+      !----------------------------------------------------------------------
+      il_ = il ; ir_ = ir ; jl_ = jl ; jr_ = jr
+
+      if (.not.l_west ) il = max(il_,g_i0-offi)
+      if (.not.l_east ) ir = min(ir_,g_in-offi)
+      if (.not.l_south) jl = max(jl_,g_j0-offj)
+      if (.not.l_north) jr = min(jr_,g_jn-offj)
+
+      !Print if Halo needs to be reduced for PE close to W/E/S/N LAM boundary 
+      !----------------------------------------------------------------------
+      if (.not.done_print_L) then
+
+         call RPN_COMM_allreduce (il -il_,il_cor,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+         call RPN_COMM_allreduce (ir_-ir ,ir_cor,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+         call RPN_COMM_allreduce (jl -jl_,jl_cor,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+         call RPN_COMM_allreduce (jr_-jr ,jr_cor,1,"MPI_INTEGER","MPI_MAX","GRID",err)
+
+         if (Lun_out>0 .and. (il_cor/=0.or.ir_cor/=0.or.jl_cor/=0.or.jr_cor/=0)) then
+
+            if (il_cor/=0) write (Lun_out,*) 'CAUTION: ILMC_RC5 /= ILMC_RC4: Halo reduced for PE close to W by',il_cor
+            if (ir_cor/=0) write (Lun_out,*) 'CAUTION: ILMC_RC5 /= ILMC_RC4: Halo reduced for PE close to E by',ir_cor
+            if (jl_cor/=0) write (Lun_out,*) 'CAUTION: ILMC_RC5 /= ILMC_RC4: Halo reduced for PE close to S by',jl_cor
+            if (jr_cor/=0) write (Lun_out,*) 'CAUTION: ILMC_RC5 /= ILMC_RC4: Halo reduced for PE close to N by',jr_cor
+
+         else if (Lun_out>0) then 
+
+            write (Lun_out,*) 'CAUTION: ILMC_RC5 == ILMC_RC4'
+
+         end if
+
+      end if
+
+      done_print_L = .true.
 
       !Allocation and Define surrounding cells for each sweep
       !------------------------------------------------------

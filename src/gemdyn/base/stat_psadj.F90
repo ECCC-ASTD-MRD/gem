@@ -17,6 +17,7 @@
 
       subroutine stat_psadj (F_time,F_comment_S)
 
+      use adz_mem
       use adz_options 
       use geomh
       use glb_ld
@@ -41,20 +42,21 @@
       !     Print Wet/Dry air mass at appropriate time
       !===============================================
 
-      integer :: err,i,j,i0_sb,in_sb,j0_sb,jn_sb
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: err,i,j,i0_sb,in_sb,j0_sb,jn_sb,comm
       logical :: do_subset_GY_L
       real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8
       real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
       real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_wet_8,g_avg_ps_dry_8
-      character(len= 9) :: communicate_S
+      real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors)
       character(len= 1) :: in_S
       character(len= 7) :: time_S
 !
 !---------------------------------------------------------------------
 !
-      communicate_S = "GRID"
-      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+      comm = RPN_COMM_comm ('MULTIGRID')
 
       if (F_time==1) in_S = 'P'
       if (F_time==0) in_S = 'M'
@@ -86,7 +88,10 @@
          end do
       end do
 
-      call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      call MPI_Allgather(l_avg_8,2,MPI_DOUBLE_PRECISION,gathV,2,MPI_DOUBLE_PRECISION,comm,err)
+      do i=1,2
+         g_avg_8(i) = sum(gathV(i,:))
+      end do
 
       g_avg_ps_wet_8 = g_avg_8(1) * PSADJ_scale_8
       g_avg_ps_dry_8 = g_avg_8(2) * PSADJ_scale_8
@@ -116,7 +121,10 @@
 
          if (Ptopo_couleur/=0) l_avg_8(1:2) = 0.0d0 
 
-         call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call MPI_Allgather(l_avg_8,2,MPI_DOUBLE_PRECISION,gathV,2,MPI_DOUBLE_PRECISION,comm,err)
+         do i=1,2
+            g_avg_8(i) = sum(gathV(i,:))
+         end do
 
          g_avg_ps_wet_8 = g_avg_8(1) / Adz_gs_area_8 
          g_avg_ps_dry_8 = g_avg_8(2) / Adz_gs_area_8 

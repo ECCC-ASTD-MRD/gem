@@ -95,7 +95,6 @@ function check_options2() result(F_istat)
         .not.any(stcond == (/ &
         'NIL       ', &
         'CONSUN    ', &
-        'MP_MY2_OLD', &
         'MP_MY2    ', &
         'MP_P3     '  &
         /))) then

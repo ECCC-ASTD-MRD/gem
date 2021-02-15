@@ -96,8 +96,12 @@
            ipf_smooth_fld('TR/HU:M','HUMS'), &
            ipf_smooth_fld('PW_TT:P','TTPS'), &
            ipf_smooth_fld('TR/HU:P','HUPS'), &
-           ipf_smooth_fld('rt'   ,'sm2d',3), &
-           ipf_smooth_fld('tcond','smta',3) &
+!!$           ipf_smooth_fld('rt'   ,'sm2d',3), &
+!!$           ipf_smooth_fld('tcond','smta',3) &
+           ipf_smooth_fld('rt',   'rt_smt',   3, 1), &
+           ipf_smooth_fld('rdpr', 'rdpr_smt', 3, 1), &
+           ipf_smooth_fld('rdqi', 'rdqi_smt', 3, 1), &
+           ipf_smooth_fld('tcond','tcond_smt',3) &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
 

@@ -59,7 +59,7 @@ contains
       !Update ice and liquid independently if possible (deep == kfc .or. bkf and stcond == MY)
       IF_KFBE_MP: if (associated(liq_tend) .and. associated(ice_tend) .and. stcond(1:3) == 'MP_') then
 
-         IF_MP_MY2: if (stcond(1:6) == 'MP_MY2') then !note: this includes 'MP_MY2' and 'MP_MY2_OLD'
+         IF_MP_MY2: if (stcond(1:6) == 'MP_MY2') then !note: this includes 'MP_MY2'
 
             !cloud droplets (number):
             !#TODO: use apply tendencies for clarity? Conditional outside loop (where?)

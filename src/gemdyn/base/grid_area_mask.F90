@@ -16,12 +16,14 @@
 !**s/r grid_area_mask - Evaluate area and mask
 
       subroutine grid_area_mask (F_area_8,F_mask_8,F_area_mask_8,F_ni,F_nj)
+      use adz_mem
       use adz_options
       use geomh
       use glb_ld
       use glb_pil
       use HORgrid_options
       use lun
+      use ptopo
       use tdpack
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -40,8 +42,11 @@
       !     Evaluate area and mask
       !===========================
 
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+
       integer :: i,j,n,r_j1,r_j2,r_i1,r_i2,r_ish,r_jsh,i_north,j_north, &
-                 i_middle,j_middle,err,i1,j1,i2,j2,i_sh,j_sh
+                 i_middle,j_middle,err,i1,j1,i2,j2,i_sh,j_sh,comm
 
       integer, parameter :: MAXB=100000
 
@@ -51,6 +56,8 @@
                 ic1_8,jc1_8,ic2_8,jc2_8,slope_8,sf_8(2),sp_8(2), &
                 rlat_8,rlon_8,s_8(2,2),x_8,y_8
       real(kind=REAL64) spa_8(l_ni,l_nj,2)
+
+      real(kind=REAL64) :: gathV(2,Ptopo_numproc)
 
       logical :: almost_zero,nj_even_L,ni_even_L,between_L,line_L
       logical :: glbsum_L
@@ -64,6 +71,8 @@
             F_area_8(i,j) = geomh_hx_8 * cos(geomh_y_8(j)) * geomh_hy_8
          end do
       end do
+
+      comm = RPN_COMM_comm ('GRID')
 
       !-------
       !GEM LAM
@@ -425,7 +434,11 @@
            call glbsum8 (sf_8,spa_8,1,l_ni,1,l_nj,2,          &
                    1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
       else
-           call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+           call MPI_Allgather(sp_8,2,MPI_DOUBLE_PRECISION,gathV,2,MPI_DOUBLE_PRECISION,comm,err)
+           do i=1,2
+              sf_8(i) = sum(gathV(i,:))
+           end do
+
       end if
 
       if (Lun_out>0) then
@@ -471,7 +484,10 @@
            call glbsum8 (sf_8,spa_8,1,l_ni,1,l_nj,2,          &
                    1+Lam_pil_w, G_ni-Lam_pil_e, 1+Lam_pil_s, G_nj-Lam_pil_n)
       else
-           call RPN_COMM_allreduce(sp_8,sf_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err)
+           call MPI_Allgather(sp_8,2,MPI_DOUBLE_PRECISION,gathV,2,MPI_DOUBLE_PRECISION,comm,err)
+           do i=1,2
+              sf_8(i) = sum(gathV(i,:))
+           end do
       end if
 
       if (Lun_out>0) then

@@ -54,7 +54,7 @@
    PHYVAR2D1(aip,        "VN=aip       ; ON=PE  ; VB=p0; VD=accum. of refrozen precip.                           ; MIN=0")
    PHYVAR3DC(aip3d,      "VN=aip3d     ; ON=PE3D; VB=p0; VD=accum. of refrozen precip.3D                  ; VS=T ; MIN=0", lbourg3d)
 
-   PHYVAR3DC(airmoins,   "VN=tr/tair:M ; ON=MAIR; VB=d1; VD=Age of Air (years)       at time -            ; VS=T ; MIN=0; MONO=2; MASS=0 ", llinozage)
+   PHYVAR3DC(airmoins,   "VN=tr/tair:M ; ON=MAIR; VB=d1; VD=Age of Air (years)       at time -            ; VS=T ; MIN=0; MONO=2; MASS=0 ", llinozage) !# Unused - dyn/adv?
    PHYVAR3DC(airplus,    "VN=tr/tair:P ; ON=TAIR; VB=d1; VD=Age of Air (years)       at time +            ; VS=T ; MIN=0; MONO=2; MASS=0 ", llinozage)
 
    PHYVAR2D1(alc,        "VN=alc       ; ON=A1  ; VB=p0; VD=accum. of liquid convect. precip.                    ; MIN=0")
@@ -87,7 +87,7 @@
    PHYVAR2DC(ass_snd,    "VN=ass_snd   ; ON=SND ; VB=p0; VD=accum. total unmelted snow (micro)                   ; MIN=0", lcn_mpx)
    PHYVAR2D1(azr,        "VN=azr       ; ON=FR  ; VB=p0; VD=accum. of freezg precip.                             ; MIN=0")
    PHYVAR3DC(azr3d,      "VN=azr3d     ; ON=FR3D; VB=p0; VD=accum. of freezg precip. 3D                   ; VS=T ; MIN=0", lbourg3d)
-   PHYVAR2D1(basc,       "VN=basc      ; ON=BS  ; VB=v0; VD=base sigma of condensation level")
+!!$   PHYVAR2D1(basc,       "VN=basc      ; ON=BS  ; VB=v0; VD=base sigma of condensation level")
    PHYVAR2D1(bm,         "VN=bm        ; ON=BM  ; VB=v0; VD=homog. term for U,V diffu.")
    PHYVAR2D1(bm0,        "VN=bm0       ; ON=BM0 ; VB=p0; VD=homog. term for U,V diffu. - previous")
    PHYVAR3D1(bt,         "VN=bt        ; ON=BT  ; VB=v0; VD=homog. term for T,Q diffu.                    ; VS="//nag)
@@ -133,9 +133,9 @@
    PHYVAR2D1(coadvu,     "VN=coadvu    ; ON=COAU; VB=p0; VD=convective cloud object advecting u-wind (m/s)")
    PHYVAR2D1(coadvv,     "VN=coadvv    ; ON=COAV; VB=p0; VD=convective cloud object advecting v-wind (m/s)")
    PHYVAR2D1(coage,      "VN=coage     ; ON=COAG; VB=p0; VD=convective cloud object age (s)")
-   PHYVAR2D1(colat,      "VN=colat     ; ON=COLA; VB=p0; VD=convective cloud object latitude (grid coord)")
-   PHYVAR2D1(colon,      "VN=colon     ; ON=COLO; VB=p0; VD=convective cloud object longitude (grid coord)")
-   PHYVAR2DC(cone,       "VN=cone      ; ON=CLSE; VB=v0; VD=vert. integrated thermal energy", lcons)
+   PHYVAR2DC(colat,      "VN=colat     ; ON=COLA; VB=p0; VD=convective cloud object latitude (grid coord)",  deep_cloudobj) !# Unused - dyn/cloud_obj
+   PHYVAR2DC(colon,      "VN=colon     ; ON=COLO; VB=p0; VD=convective cloud object longitude (grid coord)", deep_cloudobj) !# Unused - dyn/cloud_obj
+!!$   PHYVAR2DC(cone,       "VN=cone      ; ON=CLSE; VB=v0; VD=vert. integrated thermal energy", lcons)
    PHYVAR2DC(conecnd,    "VN=conecnd   ; ON=CEC ; VB=v0; VD=thermal energy residual (condens.)", lcons)
    PHYVAR2DC(conecndm,   "VN=conecndm  ; ON=CECM; VB=p0; VD=accumulation of conecnd", lmoycons)
    PHYVAR2DC(conedc,     "VN=conedc    ; ON=CED ; VB=v0; VD=thermal energy residual (deep conv.)", lcons)
@@ -156,7 +156,7 @@
    PHYVAR2DC(conescm,    "VN=conescm   ; ON=CESM; VB=p0; VD=accumulation of conesc", lmoycons)
    PHYVAR2DC(conetot,    "VN=conetot   ; ON=CEA ; VB=v0; VD=thermal energy residual (full model)", lcons)
    PHYVAR2DC(conetotm,   "VN=conetotm  ; ON=CEAM; VB=p0; VD=accumulation of conetot", lcons)
-   PHYVAR2DC(conq,       "VN=conq      ; ON=CQT ; VB=v0; VD=vert. integrated total water", lcons)
+!!$   PHYVAR2DC(conq,       "VN=conq      ; ON=CQT ; VB=v0; VD=vert. integrated total water", lcons)
    PHYVAR2DC(conqcnd,    "VN=conqcnd   ; ON=CQC ; VB=v0; VD=total water residual (condens.)", lcons)
    PHYVAR2DC(conqcndm,   "VN=conqcndm  ; ON=CQCM; VB=p0; VD=accumulation of conqcnd", lmoycons)
    PHYVAR2DC(conqdc,     "VN=conqdc    ; ON=CQD ; VB=v0; VD=total water residual (deep conv.)", lcons)
@@ -286,7 +286,7 @@
    PHYVAR3DC(fip3d,      "VN=fip       ; ON=FIP ; VB=p0; VD=% of liq. precip. rate IP                     ; VS=T; MIN=0", lbourg3d)
    PHYVAR2D1(fl,         "VN=fl        ; ON=FL  ; VB=v0; VD=heat flux in the ground")
    PHYVAR2D1(flaf,       "VN=flaf      ; ON=AG  ; VB=p0; VD=accumulation of heat flux in the ground")
-   PHYVAR3D1(flagmxp,    "VN=flagmxp   ; ON=FG  ; VB=v0; VD=flag for mixphase)                            ; VS=T")
+!!$   PHYVAR3D1(flagmxp,    "VN=flagmxp   ; ON=FG  ; VB=v0; VD=flag for mixphase)                            ; VS=T")
    PHYVAR2D1(fluslop,    "VN=fluslop   ; ON=FBSL; VB=p0; VD=SW flux twrds slp ground                           ; MIN=0")
    PHYVAR2D1(flusolaf,   "VN=flusolaf  ; ON=N4  ; VB=p0; VD=accum. of solar radation                            ; MIN=0")
    PHYVAR2D1(flusolis,   "VN=flusolis  ; ON=FB  ; VB=p0; VD=SW flux towards ground                             ; MIN=0")
@@ -342,8 +342,8 @@
    PHYVAR3D1(ze,         "VN=ze        ; ON=2J  ; VB=v0; VD=geop. heights on 'energy' levels              ; VS=E")
    PHYVAR2D1(h,          "VN=h         ; ON=H   ; VB=p0; VD=height of boundary layer                            ; MIN=0")
    PHYVAR2DC(h_cb,       "VN=h_cb      ; ON=H_CB; VB=v0; VD=height of cloud base                                ; MIN=0", lcn_mpx)
-   PHYVAR2DC(h_m2,       "VN=h_m2      ; ON=H_M2; VB=v0; VD=height of highest melting level                     ; MIN=0", lcn_mpx)
-   PHYVAR2DC(h_ml,       "VN=h_ml      ; ON=H_ML; VB=v0; VD=height of lowest melting level                      ; MIN=0", lcn_mpx)
+!!$   PHYVAR2DC(h_m2,       "VN=h_m2      ; ON=H_M2; VB=v0; VD=height of highest melting level                     ; MIN=0", lcn_mpx)
+!!$   PHYVAR2DC(h_ml,       "VN=h_ml      ; ON=H_ML; VB=v0; VD=height of lowest melting level                      ; MIN=0", lcn_mpx)
    PHYVAR2DC(h_sn,       "VN=h_sn      ; ON=H_SN; VB=v0; VD=height of snow level                                ; MIN=0", lcn_mpx)
    PHYVAR2D1(hpar,       "VN=hpar      ; ON=ZQ  ; VB=p0; VD=height of parcel ascent                             ; MIN=0")
    PHYVAR2DC(hrsmax,     "VN=hrsmax    ; ON=HRMX; VB=p0; VD=screen max rel hum over last moyhr hours            ; MIN=0", lmoyhr)
@@ -500,7 +500,7 @@
    PHYVAR3D1(pritnm,     "VN=pritnm    ; ON=TQIM; VB=v0; VD=QI tendency from mid-level convection (1/s)   ; VS=T")
    PHYVAR3DC(prctns,     "VN=prctns    ; ON=TQCS; VB=v0; VD=Shallow Conv qc tendency (1/s)                ; VS=T", lshbkf)
    PHYVAR3DC(pritns,     "VN=pritns    ; ON=TQIS; VB=v0; VD=Shallow Conv qi tendency (1/s)                ; VS=T", lshbkf)
-   PHYVAR2DC(pren,       "VN=pren      ; ON=PREN; VB=e1; VD=1h accum. of total precip. (SPS)              ; IN=PR0", lsurfonly)
+   PHYVAR2DC(pren,       "VN=pren      ; ON=PREN; VB=e1; VD=1h accum. of total precip. (SPS)              ; IN=PR0", lsurfonly) !# Ununsed - Needed in SPS?
    PHYVAR2D1(py,         "VN=py        ; ON=PY  ; VB=v0; VD=accum. of deep conv. precip.                        ; MIN=0")
    PHYVAR2D1(pz,         "VN=pz        ; ON=PZ  ; VB=v0; VD=accum. of shal. conv. precip.                       ; MIN=0")
    PHYVAR2D1(q1app,      "VN=q1app     ; ON=Q1I ; VB=v0; VD=Integrated apparent heat source (Q1)")
@@ -540,8 +540,10 @@
    PHYVAR2D1(rainrate,   "VN=rainrate  ; ON=U1  ; VB=v0; VD=liquid precip. rate                                 ; MIN=0")
    PHYVAR2D1(rc,         "VN=rc        ; ON=RC  ; VB=v0; VD=implicit precip. rate                               ; MIN=0")
    PHYVAR2D1(rckfc,      "VN=rckfc     ; ON=KF  ; VB=p0; VD=KFC/FCP convective precip. rate                     ; MIN=0")
-   PHYVAR2DC(rdpr,       "VN=rdpr      ; ON=RDPR; VB=p0; VD=LHN radar inferred precipitation rate               ; MIN=0", lhn_init)
-   PHYVAR2DC(rdqi,       "VN=rdqi      ; ON=RDQI; VB=p0; VD=LHN radar quality index                             ; MIN=0", lhn_init)
+   PHYVAR2DC(rdpr,       "VN=rdpr      ; ON=RDPR; VB=p0; VD=LHN radar inferred precipitation rate               ; MIN=0", lhn_init) !# unused - dyn/lhn input
+   PHYVAR2DC(rdpr_smt,   "VN=rdpr_smt  ; ON=RDPS; VB=p0; VD=LHN radar inferred precipitation rate (smoothed)    ; MIN=0", lhn_init)
+   PHYVAR2DC(rdqi,       "VN=rdqi      ; ON=RDQI; VB=p0; VD=LHN radar quality index                             ; MIN=0", lhn_init) !# unused - dyn/lhn input
+   PHYVAR2DC(rdqi_smt,   "VN=rdqi_smt  ; ON=RDQS; VB=p0; VD=LHN radar quality index (smoothed)                  ; MIN=0", lhn_init)
    PHYVAR2D1(rlc,        "VN=rlc       ; ON=RLC ; VB=p0; VD=implicit liquid precip. rate                        ; MIN=0")
    PHYVAR2D1(rhdiag,     "VN=rhdiag    ; ON=RH  ; VB=v0; VD=screen level relative humidity                      ; MIN=0")
 
@@ -554,7 +556,8 @@
    PHYVAR2D1(rr,         "VN=rr        ; ON=RR  ; VB=v0; VD=stratiform precip. rate                             ; MIN=0")
    PHYVAR2D1(rsc,        "VN=rsc       ; ON=RSC ; VB=p0; VD=implicit solid precip. rate                         ; MIN=0")
    PHYVAR2D1(rt,         "VN=rt        ; ON=RT  ; VB=p0; VD=total precipitation rate                            ; MIN=0")
-   PHYVAR3DC(rt3d,       "VN=rt3d      ; ON=RT3D; VB=v0; VD=3D copy of RT                                 ; VS=T", lhn_init)
+   PHYVAR2DC(rt_smt,     "VN=rt_smt    ; ON=RTSM; VB=p0; VD=total precipitation rate (smoothed for LHN)         ; MIN=0", lhn_init)
+!!$   PHYVAR3DC(rt3d,       "VN=rt3d      ; ON=RT3D; VB=v0; VD=3D copy of RT                                 ; VS=T", lhn_init) !# unused - dyn/lhn
    PHYVAR2D1(ry,         "VN=ry        ; ON=RY  ; VB=v0; VD=deep convective precip. rate                        ; MIN=0")
    PHYVAR2D1(rz,         "VN=rz        ; ON=RZ  ; VB=v0; VD=shall. convective precip. rate                      ; MIN=0")
    PHYVAR2D1(salb6z,     "VN=salb6z    ; ON=SALB; VB=p0; VD=surface albedo used by cccmarad                     ; MIN=0")
@@ -573,8 +576,8 @@
    PHYVAR2D1(slwp2,      "VN=slwp2     ; ON=B2  ; VB=v0; VD=integrated SLW (bottom to s2)                       ; MIN=0")
    PHYVAR2D1(slwp3,      "VN=slwp3     ; ON=B3  ; VB=v0; VD=integrated SLW (s2 to s3)                           ; MIN=0")
    PHYVAR2D1(slwp4,      "VN=slwp4     ; ON=B4  ; VB=v0; VD=integrated SLW (s3 to s4)                           ; MIN=0")
-   PHYVAR3DC(sm2d,       "VN=sm2d      ; ON=SM2D; VB=p0; VD=3D array containing 2D fields to smooth       ; VS=T ", lhn_init)
-   PHYVAR3DC(smta,       "VN=smta      ; ON=SMTA; VB=p0; VD=smoothed LHR tendencies                       ; VS=T ", lhn_init)
+!!$   PHYVAR3DC(sm2d,       "VN=sm2d      ; ON=SM2D; VB=p0; VD=3D array containing 2D fields to smooth       ; VS=T ", lhn_init)
+!!$   PHYVAR3DC(smta,       "VN=smta      ; ON=SMTA; VB=p0; VD=smoothed LHR tendencies                       ; VS=T ", lhn_init)
    PHYVAR2D1(sn,         "VN=sn        ; ON=SN  ; VB=p0; VD=accum. of snow precip.                              ; MIN=0")
    PHYVAR2D1(sni,        "VN=sni       ; ON=SNI ; VB=v0; VD=instantaneous snow precip.                          ; MIN=0")
    PHYVAR3D1(snoflx,     "VN=snoflx    ; ON=SF  ; VB=p0; VD=solid precipitation flux (condensation)       ; VS=T; MIN=0")
@@ -656,6 +659,7 @@
    PHYVAR3DC(tadvmax,    "VN=tadvmax   ; ON=TAMX; VB=p0; VD=maximum T adv tend. over last moyhr hrs       ; VS=T", lmoyhr)
    PHYVAR2D1(tcc,        "VN=tcc       ; ON=TCC ; VB=p0; VD=2-D total true cloud cover(cccmarad)                ; MIN=0")
    PHYVAR3D1(tcond,      "VN=tcond     ; ON=TA  ; VB=v0; VD=T tendency due to conv./cond.                 ; VS=T")
+   PHYVAR3DC(tcond_smt,  "VN=tcond_smt ; ON=SMTA; VB=p0; VD=smoothed LHR tendencies                       ; VS=T ", lhn_init)
    PHYVAR2D1(tdew,       "VN=tdew      ; ON=TDK ; VB=v0; VD=dew point temperature at diagnostic level       ")
    PHYVAR2D1(tdiag,      "VN=tdiag     ; ON=TJ  ; VB=p0; VD=screen level temperature                        ")
    PHYVAR2D1(tdiagavg,   "VN=tdiagavg  ; ON=TSAV; VB=p0; VD=screen level temperature (tdiag) average        ")
@@ -810,7 +814,7 @@
    PHYVAR2D1(wgmax,      "VN=wgmax     ; ON=WGX ; VB=v0; VD=wind gust maximum                                    ; MIN=0")
    PHYVAR2D1(wgmin,      "VN=wgmin     ; ON=WGN ; VB=v0; VD=wind gust minimum                                    ; MIN=0")
    PHYVAR2D1(wklcl,      "VN=wklcl     ; ON=WKCL; VB=p0; VD=vertical motion at the LCL from convection    ; VS=T ")
-   PHYVAR3DC(wklclmoins, "VN=tr/wka:M   ; ON=WKAM; VB=d1; VD=time-minus wklcl for deep convective trigger  ; VS=T ; MIN=0; HZD=1", ltrigtau)
+   PHYVAR3DC(wklclmoins, "VN=tr/wka:M   ; ON=WKAM; VB=d1; VD=time-minus wklcl for deep convective trigger  ; VS=T ; MIN=0; HZD=1", ltrigtau) !# Unused - dyn/adv?
    PHYVAR3DC(wklclplus,  "VN=tr/wka:P   ; ON=WKAP; VB=d1; VD=time-plus wklcl for  deep convective trigger  ; VS=T ; MIN=0; HZD=1", ltrigtau)
    PHYVAR3D1(wqng,       "VN=wqng      ; ON=G8  ; VB=v0; VD=non-gradient flux of q_w (m/s)                ; VS=E")
    PHYVAR3DC(wphytd,     "VN=phytd_ww  ; ON=WPHY; VB=v0; VD=total W tendency due to physics               ; VS=T", diffuw)
@@ -850,42 +854,33 @@
    PHYVAR2DC(foudre,     "VN=foudre    ; ON=FDRE; VB=v0; VD=lightning threat from microphysics                   ; MIN=0", llight)
 
 !#TODO: should these var be d1 (mandatory)?
-   PHYVAR3DC(ncmoins,    "VN=TR/mpnc:M ; ON=MMNC; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   cloud  ; VS=T; MIN=0", lcn_mpx)
-   PHYVAR3DC(ncphytd,    "VN=phytd_mpnc; ON=MTNC; VB=v0; VD=microphysics, num. mix. ratio tendency, cloud  ; VS=T", lcn_mpx)
+   PHYVAR3DC(ncmoins,    "VN=TR/mpnc:M ; ON=MMNC; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   cloud  ; VS=T; MIN=0", lcn_mpx) !# Unused - dyn/adv?
    PHYVAR3DC(ncplus,     "VN=TR/mpnc:P ; ON=MPNC; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   cloud  ; VS=T; MIN=0; IN=MPNC", lcn_mpx)
 
-   PHYVAR3DC(ngmoins,    "VN=TR/mpng:M ; ON=MMNG; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   graupel; VS=T; MIN=0", lcn_my2)
-   PHYVAR3DC(ngphytd,    "VN=phytd_mpng; ON=MTNG; VB=v0; VD=microphysics, num. mix. ratio tendency, graupel; VS=T", lcn_my2)
+   PHYVAR3DC(ngmoins,    "VN=TR/mpng:M ; ON=MMNG; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   graupel; VS=T; MIN=0", lcn_my2) !# Unused - dyn/adv?
    PHYVAR3DC(ngplus,     "VN=TR/mpng:P ; ON=MPNG; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   graupel; VS=T; MIN=0; IN=MPNG", lcn_my2)
-   PHYVAR3DC(nhmoins,    "VN=TR/mpnh:M ; ON=MMNH; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   hail   ; VS=T; MIN=0", lcn_my2)
-   PHYVAR3DC(nhphytd,    "VN=phytd_mpnh; ON=MTNH; VB=v0; VD=microphysics, num. mix. ratio tendency, hail   ; VS=T", lcn_my2)
+   PHYVAR3DC(nhmoins,    "VN=TR/mpnh:M ; ON=MMNH; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   hail   ; VS=T; MIN=0", lcn_my2) !# Unused - dyn/adv?
    PHYVAR3DC(nhplus,     "VN=TR/mpnh:P ; ON=MPNH; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   hail   ; VS=T; MIN=0; IN=MPNH", lcn_my2)
-   PHYVAR3DC(nimoins,    "VN=TR/mpni:M ; ON=MMNI; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   ice    ; VS=T; MIN=0", lcn_my2)
-   PHYVAR3DC(niphytd,    "VN=phytd_mpni; ON=MTNI; VB=v0; VD=microphysics, num. mix. ratio tendency, ice    ; VS=T", lcn_my2)
+   PHYVAR3DC(nimoins,    "VN=TR/mpni:M ; ON=MMNI; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   ice    ; VS=T; MIN=0", lcn_my2) !# Unused - dyn/adv?
    PHYVAR3DC(niplus,     "VN=TR/mpni:P ; ON=MPNI; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   ice    ; VS=T; MIN=0; IN=MPNI", lcn_my2)
-   PHYVAR3DC(nnmoins,    "VN=TR/mpns:M ; ON=MMNS; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   snow   ; VS=T; MIN=0", lcn_my2)
-   PHYVAR3DC(nnphytd,    "VN=phytd_mpns; ON=MTNS; VB=v0; VD=microphysics, num. mix. ratio tendency, snow   ; VS=T", lcn_my2)
+   PHYVAR3DC(nnmoins,    "VN=TR/mpns:M ; ON=MMNS; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   snow   ; VS=T; MIN=0", lcn_my2) !# Unused - dyn/adv?
    PHYVAR3DC(nnplus,     "VN=TR/mpns:P ; ON=MPNS; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   snow   ; VS=T; MIN=0; IN=MPNS", lcn_my2)
-   PHYVAR3DC(nrmoins,    "VN=TR/mpnr:M ; ON=MMNR; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   rain   ; VS=T; MIN=0", lcn_mpx)
-   PHYVAR3DC(nrphytd,    "VN=phytd_mpnr; ON=MTNR; VB=v0; VD=microphysics, num. mix. ratio tendency, rain   ; VS=T", lcn_mpx)
+   PHYVAR3DC(nrmoins,    "VN=TR/mpnr:M ; ON=MMNR; VB=d1; VD=microphysics, num. mix. ratio (t-dT),   rain   ; VS=T; MIN=0", lcn_mpx) !# Unused - dyn/adv?
    PHYVAR3DC(nrplus,     "VN=TR/mpnr:P ; ON=MPNR; VB=d1; VD=microphysics, num. mix. ratio (t+dT),   rain   ; VS=T; MIN=0; IN=MPNR", lcn_mpx)
 
    PHYVAR3DC(qcmoinsmp,  "VN=TR/mpqc:M ; ON=MMQC; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   cloud  ; VS=T; MIN=0; WLOAD=1", lcn_mpx)
    PHYVAR3DC(qcphytdmp,  "VN=phytd_mpqc; ON=MTQC; VB=v0; VD=microphysics, mass mix. ratio tendency, cloud  ; VS=T", lcn_mpx)
    PHYVAR3DC(qcplusmp,   "VN=TR/mpqc:P ; ON=MPQC; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   cloud  ; VS=T; MIN=0; WLOAD=1; IN=MPQC", lcn_mpx)
    PHYVAR3DC(qgmoins,    "VN=TR/mpqg:M ; ON=MMQG; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   graupel; VS=T; MIN=0; WLOAD=1", lcn_my2)
-   PHYVAR3DC(qgphytd,    "VN=phytd_mpqg; ON=MTQG; VB=v0; VD=microphysics, mass mix. ratio tendency, graupel; VS=T", lcn_my2)
    PHYVAR3DC(qgplus,     "VN=TR/mpqg:P ; ON=MPQG; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   graupel; VS=T; MIN=0; WLOAD=1; IN=MPQG", lcn_my2)
-   PHYVAR3DC(qhmoins,    "VN=TR/mpqh:M ; ON=MMQH; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   hail   ; VS=T; MIN=0; WLOAD=1", lcn_my2)
-   PHYVAR3DC(qhphytd,    "VN=phytd_mpqh; ON=MTQH; VB=v0; VD=microphysics, mass mix. ratio tendency, hail   ; VS=T", lcn_my2)
+   PHYVAR3DC(qhmoins,    "VN=TR/mpqh:M ; ON=MMQH; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   hail   ; VS=T; MIN=0; WLOAD=1", lcn_my2) !# Unused - dyn/adv?
    PHYVAR3DC(qhplus,     "VN=TR/mpqh:P ; ON=MPQH; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   hail   ; VS=T; MIN=0; WLOAD=1; IN=MPQH", lcn_my2)
    PHYVAR3DC(qimoins,    "VN=TR/mpqi:M ; ON=MMQI; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   ice    ; VS=T; MIN=0; WLOAD=1", lcn_my2)
    PHYVAR3DC(qiphytd,    "VN=phytd_mpqi; ON=MTQI; VB=v0; VD=microphysics, mass mix. ratio tendency, ice    ; VS=T", lcn_mpx)
    PHYVAR3DC(qiplus,     "VN=TR/mpqi:P ; ON=MPQI; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   ice    ; VS=T; MIN=0; WLOAD=1; IN=MPQI", lcn_my2)
    PHYVAR3DC(qnmoins,    "VN=TR/mpqs:M ; ON=MMQS; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   snow   ; VS=T; MIN=0; WLOAD=1", lcn_my2)
-   PHYVAR3DC(qnphytd,    "VN=phytd_mqns; ON=MTQS; VB=v0; VD=microphysics, mass mix. ratio tendency, snow   ; VS=T", lcn_my2)
    PHYVAR3DC(qnplus,     "VN=TR/mpqs:P ; ON=MPQS; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   snow   ; VS=T; MIN=0; WLOAD=1; IN=MPQS", lcn_my2)
-   PHYVAR3DC(qrmoins,    "VN=TR/mpqr:M ; ON=MMQR; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   rain   ; VS=T; MIN=0; WLOAD=1", lcn_mpx)
+   PHYVAR3DC(qrmoins,    "VN=TR/mpqr:M ; ON=MMQR; VB=d1; VD=microphysics, mass mix. ratio (t-dT),   rain   ; VS=T; MIN=0; WLOAD=1", lcn_mpx) !# Unused - dyn/adv?
    PHYVAR3DC(qrphytdmp,  "VN=phytd_mpqr; ON=MTQR; VB=v0; VD=microphysics, mass mix. ratio tendency, rain   ; VS=T", lcn_mpx)
    PHYVAR3DC(qrplus,     "VN=TR/mpqr:P ; ON=MPQR; VB=d1; VD=microphysics, mass mix. ratio (t+dT),   rain   ; VS=T; MIN=0; WLOAD=1; IN=MPQR", lcn_mpx)
 

@@ -29,7 +29,7 @@
       use lam_options
       use psadjust
       use rstr
-
+      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -44,14 +44,15 @@
       !     Estimate area for Yin-Yang/LAM and Store air mass at initial time for Yin-Yang
       !===================================================================================
 
-      integer :: err,i,j,i0_c,in_c,j0_c,jn_c
+      include 'mpif.h'
+      include 'rpn_comm.inc'
+      integer :: err,i,j,i0_c,in_c,j0_c,jn_c,comm
       logical, save :: done_area_L       = .false.
       logical, save :: done_yy_initial_L = .false.
       real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8,p0_1_8
       real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
-      real(kind=REAL64) :: l_avg_8,x_avg_8
-      character(len= 9) :: communicate_S
+      real(kind=REAL64) :: l_avg_8,x_avg_8,gathS(Ptopo_numproc*Ptopo_ncolors)
       logical :: almost_zero
 !
 !     ---------------------------------------------------------------
@@ -68,8 +69,7 @@
          call gem_error(-1,'PSADJ_INIT','PSADJ/=0 NOT VALID when LID NESTING')
       end if
 
-      communicate_S = "GRID"
-      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+      comm = RPN_COMM_comm ('MULTIGRID')
 
       !Estimate area
       !-------------
@@ -88,13 +88,12 @@
             end do
          end do
 
-         call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
-                  "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+         PSADJ_scale_8 = sum(gathS)
 
-         call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8,  1, &
-                  "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call MPI_Allgather(x_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+         PSADJ_fact_8  = sum(gathS)/PSADJ_scale_8
 
-         PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
          PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
 
          if (.not.almost_zero(PSADJ_fact_8)) PSADJ_fact_8 = (1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
@@ -143,10 +142,9 @@
          end do
       end do
 
-      call RPN_COMM_allreduce (l_avg_8,PSADJ_g_avg_ps_initial_8, 1, &
-               "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
 
-      PSADJ_g_avg_ps_initial_8 = PSADJ_g_avg_ps_initial_8 * PSADJ_scale_8
+      PSADJ_g_avg_ps_initial_8 = sum(gathS) * PSADJ_scale_8
 
   999 if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
 !

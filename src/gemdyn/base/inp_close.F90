@@ -38,6 +38,7 @@
          end do
          deallocate (Inp_list_unf) ; nullify (Inp_list_unf)
       end if
+      err_code = vgd_free(Inp_vgd_src)
 
       call gem_error ( err_code, 'inp_close', &
                        'Problems opening input files' )
