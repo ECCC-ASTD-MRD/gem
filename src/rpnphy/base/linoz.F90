@@ -265,25 +265,32 @@ contains
         f12_vmr = max(f12_vmr ,Qeps)
 
       end if IF_LINGHG2
-             
+
       !    Linoz tendencies 
 
       ! print*,'linoz: (1) o3chmtd (:,nkm1)',nkm1,zo3chmtd(:,nkm1)
       ! print*,'linoz: (1) o3chmtd (:,nk)',nk,zo3chmtd(:,nk)
 
       call linoz_tend( &
-           o3_vmr,ch4_vmr,n2o_vmr,f11_vmr,f12_vmr         , & !input, mole/mole vmr
-           zo3col                                         , & !input, D.U.
-           ztplus, zpplus, shtj, zhuplus                  , & !input
-           o3c_vmr,zttce,zo3ccol,zlin4,zlin5,zlin6,zlin7  , & !input mole/mole vmr ERA-3 ozone climato in troposphere
-           zlin8,zlin9,zlin10,zlin11                      , & !input
-           o3new                                 , & !output, mole /mole  !GMV3
-           ch4new ,n2onew, f11new ,f12new        , & !output, mole /mole  !GMV3
+           o3_vmr                                       , & !input, mole/mole vmr
+           zo3col                                       , & !input, D.U.
+           ztplus, zpplus, shtj, zhuplus                , & !input
+           o3c_vmr,zttce,zo3ccol,zlin4,zlin5,zlin6,zlin7, & !input mole/mole vmr ERA-3 ozone climato in troposphere
+           o3new                                  , & !output, mole /mole  !GMV3
            zo1chmtd, zo4chmtd, zo6chmtd, zo7chmtd , & !output, mole /mole /sec
            zo3chmtd                               , & !output, mole /mole /sec
-           zch4chmtd,zn2ochmtd,zf11chmtd,zf12chmtd, & !output, mole /mole /sec
-           dt, ni, nkm1, nk)                         !input
-
+           dt, ni, nkm1, nk)                          !input
+      
+      IF_LINGHG: if (llingh) then
+         call linoz_tend_ghg( &
+              ch4_vmr,n2o_vmr,f11_vmr,f12_vmr        , & !input, mole/mole vmr
+              zpplus, shtj, zhuplus                  , & !input
+              zlin8,zlin9,zlin10,zlin11                      , & !input
+              ch4new ,n2onew, f11new ,f12new         , & !output, mole /mole  !GMV3
+              zch4chmtd,zn2ochmtd,zf11chmtd,zf12chmtd, & !output, mole /mole /sec
+              dt, ni, nkm1, nk)                          !input
+      endif IF_LINGHG
+      
       ! Ozone tendency micro g /kg air sec-1
       zo1chmtd=zo1chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
       zo4chmtd=zo4chmtd*1E+9 * mwt_o3 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
