@@ -46,7 +46,7 @@
    mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
 
    nullify(wrk1)
-   istat = gmm_create('DLAT',wrk1,mymeta)
+   istat = gmm_create('DLAT',wrk1,mymeta,GMM_FLAG_RSTR)
    if (RMN_IS_OK(istat)) then
       wrk1 = deg2rad_8*geomh_latrx
    else
@@ -55,7 +55,7 @@
    end if
 
    nullify(wrk1)
-   istat = gmm_create('DLON',wrk1,mymeta)
+   istat = gmm_create('DLON',wrk1,mymeta,GMM_FLAG_RSTR)
    if (RMN_IS_OK(istat)) then
       where(geomh_lonrx >= 0)
          wrk1 = deg2rad_8*geomh_lonrx
@@ -68,7 +68,7 @@
    end if
 
    nullify(wrk1)
-   istat = gmm_create('DXDY',wrk1,mymeta)
+   istat = gmm_create('DXDY',wrk1,mymeta,GMM_FLAG_RSTR)
    if (RMN_IS_OK(istat)) then
       do j = 1,l_nj
          do i = 1,l_ni
@@ -81,7 +81,7 @@
    end if
 
    nullify(wrk1)
-   istat = gmm_create('TDMASK',wrk1,mymeta)
+   istat = gmm_create('TDMASK',wrk1,mymeta,GMM_FLAG_RSTR)
    if (RMN_IS_OK(istat)) then
       wrk1(1:l_ni,1:l_nj) = 1.
       nest_it = ( Lam_0ptend_L .and. &

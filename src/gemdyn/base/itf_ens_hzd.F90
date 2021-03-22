@@ -76,10 +76,10 @@
 
                ptr3d => ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
                iend = (/-1,-1,l_nk/)
-               istat = phy_get(ptr3d,'phytd_udis',F_npath='V',F_bpath='V',F_end=iend)
+               istat = phy_get(ptr3d,'phytd_udis',F_npath='V',F_bpath='P',F_end=iend)
                if (.not.RMN_IS_OK(istat))write(*,6000)'phytd_udis'
                ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-               istat = phy_get(ptr3d,'phytd_vdis',F_npath='V',F_bpath='V',F_end=iend)
+               istat = phy_get(ptr3d,'phytd_vdis',F_npath='V',F_bpath='P',F_end=iend)
                allocate(ug(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
                allocate(ug_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg_s(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
                do k= 1, G_nk
