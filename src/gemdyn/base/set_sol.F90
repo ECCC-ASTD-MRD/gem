@@ -33,19 +33,14 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer k,k1,k0
-      real(kind=REAL64)  wk(G_nk)
-      real(kind=REAL64) yg_8(G_nj)
+      integer k
+      real(kind=REAL64) yg_8(G_nj), wk(G_nk)
 !     __________________________________________________________________
 !
-      do k =1, G_nk-Lam_gbpil_T
-         do k1=1, G_nk-Lam_gbpil_T
-            wk(k) = Opr_zevec_8 ((k-1)*G_nk+k1)
-         end do
-         wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
-      end do
-
-      sol_nk = trp_12sn-east*Lam_gbpil_T
+      ! sol_nk formerly removed Lam_gbpil_T points if piloting from the top was
+      ! enabled.  However, all other aspects of the solver are defined on the
+      ! full vertical grid, so we should define sol_nk as a split of G_nk points.
+      sol_nk = trp_12sn
 
       if ( Sol_type_S(1:9) == 'ITERATIVE' ) then
 
@@ -65,39 +60,82 @@
                    Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
                    Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
 
-         do k =1,G_nk
-            do k0=1,G_nk
-               wk(k) = Opr_zevec_8 ((k-1)*G_nk+k0)
-            end do
-            if ( k <= Schm_nith ) then
-               wk(k) = (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
-            end if
+         do k= 1, G_nk
+            wk(k) = (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
          end do
 
          call eigenabc_local (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
                               Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
                         sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
       else
-
-         yg_8(1:G_nj)=G_yg_8(1:G_nj)
-         call sol_abc ( wk,yg_8,Opr_opsyp0_8, &
-                        Opr_opsyp2_8,Opr_xeval_8 , &
-             trp_12smin, trp_12smax,  sol_nk, trp_12sn0, &
-             trp_22min , trp_22max , trp_22n, trp_22n0 , &
-             G_ni,G_nj,G_nk, Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+      do k= 1, G_nk
+         wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
+      end do
+      if ((sol_one_transpose_L).and.(Sol_sock_nk>0))  then
+            call sol_prepabc (Sol_a,Sol_b,Sol_c,wk,G_nk)
+         else
+            yg_8(1:G_nj)=G_yg_8(1:G_nj)
+            call sol_abc ( wk,yg_8,Opr_opsyp0_8, &
+                           Opr_opsyp2_8,Opr_xeval_8 , &
+                trp_12smin, trp_12smax,  sol_nk, trp_12sn0, &
+                trp_22min , trp_22max , trp_22n, trp_22n0 , &
+                G_ni,G_nj,G_nk, Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+             allocate ( Sol_dg2(1:trp_12smax,1:trp_22max,G_nj+Ptopo_npey))
+          endif
+          
          Sol_type_fft = 'QCOS'
          if (Grd_yinyang_L) Sol_type_fft = 'SIN'
 
-         allocate( Sol_dwfft(1:ldnh_maxy , 1:trp_12smax, G_ni+2+Ptopo_npex),&
-                   Sol_dg2  (1:trp_12smax, 1:trp_22max , G_nj  +Ptopo_npey) )
-         call make_r2r_dft_plan(forward_plan, & ! Plan variable
-             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
-             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
-                                3, Sol_type_fft, DFT_FORWARD)
-         call make_r2r_dft_plan(reverse_plan, & ! Plan variable
-             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
-             Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
-                                3, Sol_type_fft, DFT_BACKWARD)
+         allocate( Sol_rhs_8(ldnh_maxx,ldnh_maxy,l_nk) ,&
+                   Sol_sol_8(ldnh_maxx,ldnh_maxy,l_nk) )
+
+         allocate(Sol_xpose(1:ldnh_maxx, 1:ldnh_maxy, 1:sol_nk, 1:ptopo_npex))
+        
+         if (sol_one_transpose_L) then
+            ! If we use the one-transpose solver, then the FFT step also incorporates an in-memory
+            ! transpose, such that the output of the forward transform is directly written to the
+            ! shared-memory array.  This in-memory transpose is specified with an additional,
+            ! optional parameter to make_r2r_dft_plan.
+
+            ! With the "stacked" transposer, the transposed data is in the (i,j,k) memory order,
+            ! but after the transform we want this data to be in the shared-memory array which
+            ! has (k,i,j) memory order.
+            allocate (Sol_dwfft(G_ni+2+Ptopo_npex,1:ldnh_maxy,1:trp_12smax))
+            call make_r2r_dft_plan(forward_plan,                  & ! Plan variable
+               Sol_dwfft((1+Lam_pil_w):(G_ni-Lam_pil_e),          & ! Source array, 1st dim = i
+                         (1+pil_s):(ldnh_nj-pil_n),               & ! 2nd dim = j
+                         1:sol_nk),                               & ! 3rd dim = k
+               Sol_fft(trp_12sn0:(trp_12sn0 + sol_nk - 1),        & ! Dest array, 1st dim = k
+                       (1+Lam_pil_w):(G_ni-Lam_pil_e),            & ! 2nd dim = i
+                       (ldnh_j0+pil_s):(ldnh_nj+ldnh_j0-pil_n-1)),& ! 3rd dim = j
+               1,                                                 & ! Transform dimension in input array
+               Sol_type_fft, DFT_FORWARD,                         & ! Transform type
+               [2,3,1])                                             ! Permutation array
+
+            call make_r2r_dft_plan(reverse_plan,                  & ! Plan variable
+               Sol_fft(trp_12sn0:(trp_12sn0 + sol_nk - 1),        & ! Source array, 1st dim = k
+                       (1+Lam_pil_w):(G_ni-Lam_pil_e),            & ! 2nd dim = i
+                       (ldnh_j0+pil_s):(ldnh_nj+ldnh_j0-pil_n-1)),& ! 3rd dim = j
+               Sol_dwfft((1+Lam_pil_w):(G_ni-Lam_pil_e),          & ! Dest array, 1st dim = i
+                         (1+pil_s):(ldnh_nj-pil_n),               & ! 2nd dim = j
+                         1:sol_nk),                               & ! 3rd dim = k
+               2, Sol_type_fft, DFT_BACKWARD, [3,1,2]) ! Note different permutation and transform dimension
+
+            Sol_xpose = 0.0d0 ! Sol_xpose is only allocated with the one-transpose solver
+
+         else
+            ! Otherwise, the transform is in-place and does not involve a permutation.
+            allocate( Sol_dwfft(1:ldnh_maxy , 1:trp_12smax, G_ni+2+Ptopo_npex))
+            call make_r2r_dft_plan(forward_plan, & ! Plan variable
+                Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                   3, Sol_type_fft, DFT_FORWARD)
+            call make_r2r_dft_plan(reverse_plan, & ! Plan variable
+                Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                Sol_dwfft((1+pil_s):(ldnh_maxy-pil_n),1:sol_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
+                                   3, Sol_type_fft, DFT_BACKWARD)
+         endif
+         Sol_dwfft= 0.d0 ; Sol_rhs_8= 0.d0 ; Sol_sol_8= 0.d0
          Sol_pri= get_dft_norm_factor(G_ni-Lam_pil_w-Lam_pil_e,Sol_type_fft)
          Sol_pri= Sol_pri/(G_xg_8(G_ni-Lam_pil_e+1)-G_xg_8(G_ni-Lam_pil_e))
          Sol_pil_w=0 ; Sol_pil_e=0

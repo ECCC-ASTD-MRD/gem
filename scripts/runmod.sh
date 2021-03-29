@@ -14,6 +14,7 @@ eval `cclargs_lite -D " " $0 \
    -timing        "0"          "0"         "[Report performance timers]"\
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\
    -smt           ""           ""          "[SMT controler (AIX) (smtdyn x smtphy)]"\
+   -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
    -inorder       "0"          "5"         "[Order listing]"\
    -debug         "0"          "1"         "[Debug session]"\
    -task_basedir  "RUNMOD"     "RUNMOD"    "[Task dir name]"\
@@ -134,6 +135,8 @@ if [ ${DOMAIN_wide} -lt 1 ] ; then
 fi
 export DOMAIN_wide=${DOMAIN_wide}
 
+alongYfirst=.false.
+if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
 # Use performance timers on request
 if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
 
@@ -155,7 +158,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    if [ ${last_domain} -gt ${DOMAIN_end} ] ;then
       last_domain=${DOMAIN_end}
    fi
-   export CCARD_ARGS="-dom_start ${DOM} -dom_end ${last_domain} -dom_last ${DOMAIN_end} -npex ${npex} -npey ${npey} -ngrids ${ngrids} -smtdyn $smtdyn -smtphy $smtphy -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
+   export CCARD_ARGS="-dom_start ${DOM} -dom_end ${last_domain} -dom_last ${DOMAIN_end} -npex ${npex} -npey ${npey} -ngrids ${ngrids} -smtdyn $smtdyn -smtphy $smtphy -along_Y ${alongYfirst} -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
    export GEM_NDOMAINS=${DOM}:${last_domain} # for launch_sortie.sh
 
    domain_number=$(printf "%04d" $DOM)

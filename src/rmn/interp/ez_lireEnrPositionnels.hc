@@ -320,10 +320,10 @@ wordint LireEnrPositionnels(_Grille *gr, wordint iunit, wordint ip1, wordint ip2
          &gr->fst.igref[IG1], &gr->fst.igref[IG2], &gr->fst.igref[IG3], &gr->fst.igref[IG4],1);
      }
  
-  gr->fst.deet    = deet;
-  gr->fst.npas    = npas;
-  gr->fst.nbits   = nbits;
-  gr->fst.date    = dateo;
+  gr->fst.deet    = 0;
+  gr->fst.npas    = 0;
+  gr->fst.nbits   = 0;
+  gr->fst.date    = 0;
  
   strcpy(gr->fst.nomvarx, nomvarx);
   strcpy(gr->fst.typvarx, typvarx);

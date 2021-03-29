@@ -28,8 +28,11 @@
       use adz_mem
       use dyn_fisl_options
       use gem_timing
+      use lun
+      use ldnh
       use, intrinsic :: iso_fortran_env
       implicit none
+#include <RPN_MPI.hf>
 #include <arch_specific.hf>
 
       integer F_t0nis, F_t0njs, F_t0nj, F_t2nis, F_t2ni
@@ -40,6 +43,12 @@
               F_ai(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_bi(1:F_t1nks, 1:F_t2nis, F_gnj), &
               F_ci(1:F_t1nks, 1:F_t2nis, F_gnj)
+
+      ! Variables to manage the "stacked" x/z transpose
+      logical, save :: xtranspose_setup = .false.
+      integer, save :: row_communicator, column_communicator
+      integer       :: proc, err
+
 
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -71,38 +80,62 @@
 !     __________________________________________________________________
 !
       n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
-      call rpn_comm_transpose ( Rhs, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
-                                1, F_t1nks, F_gnk, Sol_dwfft, 1, 2 )
+      call gemtime_start ( 53, 'TRP1', 24 )
 
-      call time_trace_barr(gem_time_trace, 11100+n, Gem_trace_barr, &
-                                      Ptopo_intracomm, MPI_BARRIER)
-      ! Use OpenMP, if configured, to zero out unused portions of the
-      ! transpose array
-!$omp parallel private(i,j,k,jr,p0,pn,piece) &
-!$omp          shared(plon,ptotal)
-!$omp do
+      ! Update: 2020 Dec, csubich
+      ! RPN_Comm_transpose inside the RPNComm library assumes that the x-transpose reduces
+      ! to an even transpose of a potentially larget set of vertical levels.  E.g, 5 levels
+      ! distributed over 4 processors would split as [2, 2, 1, 0] levels after the transpose,
+      ! which is a truncated form of splitting 8 levels over 4 processors.  This has obvious
+      ! implications for load balancing, which ultimately affect solver performance.
+
+      ! The newer ``stacked'' transpose formulation is more flexible, but it requires some
+      ! postprocessing.  This invocation is very similar to that in sol_fft_numa.
+
+      if (.not. xtranspose_setup) then
+         ! The stacked transpose function requires an intiailzation step, which we perform before
+         ! the first transpose call.
+         row_communicator = RPN_COMM_comm('EW')
+         column_communicator = RPN_COMM_comm('NS')
+         call RPN_MPI_transpose_setup(G_nk, sol_nk, row_communicator, column_communicator, err)
+         if (err /= 0) then
+            call gem_error(-1,'SOL_FFT_LAM','Invalid MPI transpose setup')
+         end if
+         xtranspose_setup = .true.
+      end if
+
+      ! Perform the stacked x/z transpose
+      call RPN_MPI_ez_transpose_xz(LoC(Rhs), LoC(Sol_xpose), .true., & ! Arrays, marking the forward transpose
+               ldnh_maxx*2, ldnh_maxy, sol_nk, & ! Logical bounds on the transpose, multiplying x by 2 to account for double precision
+               err)
+
+      ! Now, the MPI-tranposed array Sol_xpose must be reshaped into a contiguous internal representation.
+      ! The destination of the transpose is in [j, k, i] order, and we wish to write this linearly.
+      ! The i-indices of the MPI-transposed array are split amongst the (:,:,:,npex) Sol_xpose in processor order,
+      ! and that forms an implied outer loop layer.
+      do proc=1,Ptopo_npex
+         ! Read Ptopo_gindx_alongX to determine the logical bounds given to us by processor (proc)
+         do i=Ptopo_gindx_alongX(1,proc),Ptopo_gindx_alongX(2,proc)
+            do k=1,sol_nk
+               do j=1,ldnh_maxy
+                  Sol_dwfft(j,k,i) = Sol_xpose(i-Ptopo_gindx_alongX(1,proc)+1,j,k,proc)
+               end do
+            end do
+         end do
+      end do
+
+      call gemtime_stop (53)
+      call gemtime_start ( 54, 'FFTW', 24 )
+
       do i= 1,F_gni
          Sol_dwfft(F_t0nj+1-pil_n:F_t0njs,        1:F_t1nk ,i)= zero
          Sol_dwfft(             1:pil_s  ,        1:F_t1nk ,i)= zero
          Sol_dwfft(             1:F_t0njs, F_t1nk+1:F_t1nks,i)= zero
       end do
-!$omp enddo
-!$omp end parallel
-
-      ! The FFT routine uses internal parallelism (fftw), so it should be
-      ! called outside of a parallel region
-
-      ! Perform the real->spectral transform; the Sol_dwfft slice refers to the
-      ! meaningful portion of this array.
       call execute_r2r_dft_plan(forward_plan, &
               Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
               Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
 
-
-      ! Normalize, again with the help of OpenMP.
-!$omp parallel private(i,j,k,jr,p0,pn,piece) &
-!$omp          shared(plon,ptotal)
-!$omp do
       do i = 0+Lam_pil_w, F_gni-1-Lam_pil_e
          do k = 1, F_nk
             do j = 1+pil_s, (F_t0njs-1+1)-pil_n
@@ -110,24 +143,15 @@
             end do
          end do
       end do
-!$omp enddo
-
-      ! Transpose in preparation for the tridiagonal solve.  Since the
-      ! communication here involves MPI, it should only be called from
-      ! one processor.
-!$omp single
-      call time_trace_barr(gem_time_trace, 11200+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
+      call gemtime_stop (54)
+      call gemtime_start ( 55, 'TRP2', 24 )
       call rpn_comm_transpose( Sol_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, Sol_dg2, 2, 2 )
-      call time_trace_barr(gem_time_trace, 11300+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
-!$omp end single
+      call gemtime_stop (55)
+      call gemtime_start ( 56, 'TRID', 24 )
+
       ptotal = F_t2ni-Sol_pil_e-Sol_pil_w-1
       plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
-
-      ! Perform the tridiagonal solve
-!$omp do
       do piece=1,Ptopo_npeOpenMP
          p0 = 1+Sol_pil_w + plon*(piece-1)
          pn = min(F_t2ni-Sol_pil_e,plon*piece+Sol_pil_w)
@@ -155,32 +179,42 @@
             end do
          end do
       end do
-!$omp enddo
-!$omp end parallel
-      call time_trace_barr(gem_time_trace, 11400+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
-      call time_trace_barr(gem_time_trace, 11900+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
+      call gemtime_stop (56)
 
-      ! Again transpose the data, for inversion of the FFT
+      call gemtime_start ( 55, 'TRP2', 24 )
+      ! Invert the x/y transpose
       call rpn_comm_transpose( Sol_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, Sol_dg2,- 2, 2 )
-      call time_trace_barr(gem_time_trace, 11500+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
+      call gemtime_stop (55)
 
-!     inverse projection ( r = x * w )
+      call gemtime_start ( 54, 'FFTW', 24 )
       call execute_r2r_dft_plan(reverse_plan, &
              Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
              Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
-      call time_trace_barr(gem_time_trace, 11600+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
+      call gemtime_stop (54)
 
-      ! And finally transpose the data into the block structure used
-      ! by the rest of the model
-      call rpn_comm_transpose ( F_Sol, 1, F_t0nis, F_gni, (F_t0njs-1+1), &
-                                     1, F_t1nks, F_gnk,  Sol_dwfft, -1, 2)
-      call time_trace_barr(gem_time_trace, 11700+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
+      call gemtime_start ( 53, 'TRP1', 24 )
+      ! Invert the x/z transpose, again using the "stacked" transpose routine.  First, repackage
+      ! Sol_dwfft into the stacked representation:
+
+      ! We wish to write Sol_xpose in a contiguous order, so the loops should follow
+      ! its natural [i,j,k,proc] ordering.
+      do proc=1,Ptopo_npex
+         do k=1,sol_nk
+            do j=1,ldnh_maxy
+               do i=Ptopo_gindx_alongX(1,proc),Ptopo_gindx_alongX(2,proc)
+                  Sol_xpose(i-Ptopo_gindx_alongX(1,proc)+1,j,k,proc) = Sol_dwfft(j,k,i)
+               end do
+            end do
+         end do
+      end do
+
+      ! Next, call the stacked transposer with the inverse flag:
+      call RPN_MPI_ez_transpose_xz(LoC(F_Sol), LoC(Sol_xpose), .false., & ! Arrays, marking the inverse transpose
+               ldnh_maxx*2, ldnh_maxy, sol_nk, & ! Logical bounds on the transpose, multiplying x by 2 to account for double precision
+               err) ! Error flag
+
+      call gemtime_stop (53)
 
 !     __________________________________________________________________
 !

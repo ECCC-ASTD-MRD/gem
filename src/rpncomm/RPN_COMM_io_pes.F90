@@ -92,7 +92,7 @@
 !                ivalue = callback(argv,setno,comm,pe_me,x,y,npes)
 !                pe_me is the ordinal of the PE in the IO PE set communicator (NOT "GRID")
 ! Notes
-!     include 'rpn_comm.inc'
+!     include 'RPN_COMM.inc'
 !     is necessary to get the correct interface description
 !
 !     the normal sequence of operations is 
@@ -372,7 +372,7 @@ end module RPN_COMM_io_pe_tables
   subroutine RPN_COMM_io_pe_test(pe_nx,pe_ny,pe_me,pe_mex,pe_mey)
   use ISO_C_BINDING
   implicit none
-  include 'rpn_comm.inc'
+  include 'RPN_COMM.inc'
 !  integer, external :: RPN_COMM_create_io_set, RPN_COMM_free_io_set, RPN_COMM_io_pe_callback
 !  integer, external :: RPN_COMM_is_io_pe, RPN_COMM_io_pe_size
 !  interface

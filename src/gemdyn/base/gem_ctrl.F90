@@ -47,7 +47,6 @@
 
       end if
 
-      call spn_init()
       call set_smago()
 
       call gemtime ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )

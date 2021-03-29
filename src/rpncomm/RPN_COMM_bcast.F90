@@ -18,40 +18,48 @@
 ! ! Boston, MA 02111-1307, USA.
 ! !/
 
-subroutine RPN_COMM_bcast(buffer, count, datatype, root, com, ierr)
+        SUBROUTINE RPN_COMM_bcast(buffer,count,datatype,root,com,ierr)
 !	Luc Corbeil, 2000-11-20
 !	mpi broadcast
-    implicit none
-    integer count, root, comm, ierr, group
-    integer buffer
-    integer datyp
-    character(len=*) datatype, com
-    integer RPN_COMM_datyp, RPN_COMM_comm
-    logical RPN_COMM_grank
+        implicit none
+        integer count,root,comm,ierr,group
+        integer buffer
+        integer datyp
+        character(len=*) datatype,com
+        integer RPN_COMM_datyp,RPN_COMM_comm
+        logical RPN_COMM_grank
+!*
+!        include 'rpn_comm.h'
+!        include 'mpif.h'
+        comm=rpn_comm_comm(com)
+        datyp=rpn_comm_datyp(datatype)
 
-    comm = rpn_comm_comm(com)
-    datyp = rpn_comm_datyp(datatype)
+        if(.not.RPN_COMM_grank(com)) return
+        call mpi_bcast(buffer,count,datyp,root,comm,ierr)
 
-    if (.not. RPN_COMM_grank(com)) return
-    call mpi_bcast(buffer, count, datyp, root, comm, ierr)
-end subroutine RPN_COMM_bcast
+	return
+	end
 
-
-subroutine RPN_COMM_bcastc(buffer, count, datatype, root, com, ierr)
+!InTf!
+      SUBROUTINE RPN_COMM_bcastc(buffer,count,datatype,root,com,ierr) !InTf!
 !	Luc Corbeil, 2000-11-20
 !	mpi broadcast
-      implicit none
-      integer, intent(IN) :: count, root
-      integer, intent(OUT) :: ierr
-      character(len=*), intent(INOUT) :: buffer
-      character(len=*), intent(IN) :: datatype, com
-      integer comm, group, datyp
-      integer, external :: RPN_COMM_datyp, RPN_COMM_comm
+      implicit none                                                   !InTf!
+      integer, intent(IN) :: count,root                               !InTf!
+      integer, intent(OUT) :: ierr                                    !InTf!
+      character(len=*), intent(INOUT) :: buffer                       !InTf!
+      character(len=*), intent(IN) :: datatype,com                    !InTf!
+      integer comm,group,datyp
+      integer, external :: RPN_COMM_datyp,RPN_COMM_comm
       logical, external :: RPN_COMM_grank
+!*
+!        include 'rpn_comm.h'
+!        include 'mpif.h'
+      comm=rpn_comm_comm(com)
+      datyp=rpn_comm_datyp(datatype)
 
-      comm = rpn_comm_comm(com)
-      datyp = rpn_comm_datyp(datatype)
+      if(.not.RPN_COMM_grank(com)) return
+      call mpi_bcast(buffer,count,datyp,root,comm,ierr)
 
-      if (.not. RPN_COMM_grank(com)) return
-      call mpi_bcast(buffer, count, datyp, root, comm, ierr)
-end subroutine RPN_COMM_bcastc
+      return
+      end SUBROUTINE RPN_COMM_bcastc                                  !InTf!

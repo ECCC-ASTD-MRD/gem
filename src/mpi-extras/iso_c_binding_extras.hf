@@ -1,0 +1,439 @@
+! * hopefully useful software for FORTRAN programming
+! * Copyright (C) 2020  Division de Recherche en Prevision Numerique
+! *                     Environnement Canada
+! *
+! * This software is free software; you can redistribute it and/or
+! * modify it under the terms of the GNU Lesser General Public
+! * License as published by the Free Software Foundation,
+! * version 2.1 of the License.
+! *
+! * This software is distributed in the hope that it will be useful,
+! * but WITHOUT ANY WARRANTY; without even the implied warranty of
+! * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+! * Lesser General Public License for more details.
+! *
+!
+! extra definitions of types and macros to interface with C code
+! and libc. this extends what is offerred by Fortran module ISO_C_BINDING
+!
+! the following block is normally produced by running c_binding_extras.c
+! in case file c_binding_extras.hf is not present, use these values
+#if defined(NO_C_BINDING_EXTRAS)
+integer, parameter :: C_SSIZE_T = C_INT64_T
+integer, parameter :: C_TIME_T = C_INT64_T
+integer, parameter :: C_SUSECONDS_T = C_INT64_T
+integer, parameter :: C_USECONDS_T = C_INT32_T
+integer, parameter :: C_CLOCK_T = C_INT64_T
+integer, parameter :: C_KEY_T = C_INT32_T
+real,    parameter :: C_CLOCKS_PER_SEC = 1000000.0
+integer, parameter :: C_MODE_T = C_INT32_T
+integer, parameter :: C_OFF_T  = C_INT64_T
+integer, parameter :: O_APPEND = 1024
+integer, parameter :: O_CREAT  = 64
+integer, parameter :: O_EXCL   = 128
+integer, parameter :: O_TRUNC  = 512
+integer, parameter :: O_RDWR   = 2
+integer, parameter :: O_RDONLY = 0
+integer, parameter :: O_WRONLY = 1
+integer, parameter :: SEEK_SET = 0
+integer, parameter :: SEEK_CUR = 1
+integer, parameter :: SEEK_END = 2
+integer, parameter :: PATH_MAX = 4096
+integer, parameter :: IPC_PRIVATE = 0
+integer, parameter :: IPC_CREAT = 512
+integer, parameter :: IPC_EXCL = 1024
+integer, parameter :: IPC_RMID = 0
+integer, parameter :: SIZEOF_SHMID_DS = 112
+integer, parameter :: RTLD_LAZY = 1
+integer, parameter :: RTLD_NOW = 2
+integer, parameter :: RTLD_GLOBAL = 256
+integer, parameter :: RTLD_LOCAL = 0
+#else
+#include <c_binding_extras.hf>
+#endif
+
+! C_LoC makes a type(C_PTR) object (address of what)
+#if ! defined(C_LoC)
+#define C_LoC(what) transfer(loc(what),C_NULL_PTR)
+#endif
+
+! Cstr transforms a Fortran string into a C NULL terminated string
+#if ! defined(Cstr)
+#define Cstr(fstr) (trim(fstr)//ACHAR(0))
+#endif
+
+! permission bits for files and directories
+  integer, parameter :: S_IRWXU = int(O'700')
+  integer, parameter :: S_IRUSR = int(O'400')
+  integer, parameter :: S_IWUSR = int(O'200')
+  integer, parameter :: S_IXUSR = int(O'100')
+  integer, parameter :: S_IRWXG = int(O'070')
+  integer, parameter :: S_IRGRP = int(O'040')
+  integer, parameter :: S_IWGRP = int(O'020')
+  integer, parameter :: S_IXGRP = int(O'010')
+  integer, parameter :: S_IRWXO = int(O'007')
+  integer, parameter :: S_IROTH = int(O'004')
+  integer, parameter :: S_IWOTH = int(O'002')
+  integer, parameter :: S_IXOTH = int(O'001') 
+! standard file descriptors
+  integer, parameter :: STDIN_FILENO  = 0
+  integer, parameter :: STDOUT_FILENO = 1
+  integer, parameter :: STDERR_FILENO = 2
+
+! some compilers have problems returning this user type as a value. in those case type(C_FILEPTR) could be type(C_PTR)
+#if ! defined(_CRAYFTN) && ( defined(__GFORTRAN__) || defined(__INTEL_COMPILER) || defined(__PGI) || defined(__FLANG) )
+#endif
+type, BIND(C) :: C_FILEPTR   ! for FILE STREAM IO calls
+  type(C_PTR) :: p
+end type
+
+! the following 3 types match libc types for time/sleep calls
+type, bind(C) :: timeval
+  integer(C_TIME_T)      :: tv_sec
+  integer(C_SUSECONDS_T) :: tv_usec
+end type
+
+type, bind(C) :: timespec
+  integer(C_TIME_T)      :: tv_sec
+  integer(C_LONG)        :: tv_nsec
+end type
+
+type, bind(C) :: timezone
+  integer(C_INT) :: tz_minuteswest
+  integer(C_INT) :: tz_dsttime
+end type
+
+type, bind(C) :: shmid_ds
+  integer(C_INT), dimension(SIZEOF_SHMID_DS/4) :: x
+end type
+
+! interfaces tp popular libc functions
+interface c_gettimeofday    !  get WALL CLOCK time
+#if ! defined(_CRAYFTN) && ( defined(__GFORTRAN__) || defined(__INTEL_COMPILER) || defined(__PGI) || defined(__FLANG) )
+#if defined(WITH_POLYMORPHISM)
+  function c_gettimeofday1(tv, tz) result(ok) BIND(C,name='gettimeofday')
+    import :: C_PTR, timeval,timezone,  C_INT
+    type(timeval), intent(OUT)  :: tv
+    type(timezone), intent(OUT) :: tz
+    integer(C_INT) :: ok
+  end function c_gettimeofday1
+#endif
+#endif
+  ! tz will usually be C_NULL_PTR
+  function c_gettimeofday2(tv, tz) result(ok) BIND(C,name='gettimeofday')  ! recommended call
+    import :: C_PTR, timeval, C_INT
+    type(timeval), intent(OUT)     :: tv
+    type(C_PTR), intent(IN), value :: tz
+    integer(C_INT) :: ok
+  end function c_gettimeofday2
+end interface
+
+interface c_nanosleep   !  sleep in nanoseconds
+#if ! defined(_CRAYFTN) && ( defined(__GFORTRAN__) || defined(__INTEL_COMPILER) || defined(__PGI) || defined(__FLANG) )
+#if defined(WITH_POLYMORPHISM)
+  function c_nanosleep1(req, rem) result(ok) bind(C,name='nanosleep')
+    import :: C_PTR, timespec, C_INT
+    type(timespec), intent(IN)  :: req
+    type(timespec), intent(OUT) :: rem
+    integer(C_INT) :: ok
+  end function c_nanosleep1
+#endif
+#endif
+  ! rem will often be C_NULL_PTR
+  function c_nanosleep2(req, rem) result(ok) bind(C,name='nanosleep')  ! frequent call
+    import :: C_PTR, timespec, C_INT
+    type(timespec), intent(IN)     :: req
+    type(C_PTR), intent(IN), value :: rem
+    integer(C_INT) :: ok
+  end function c_nanosleep2
+end interface
+
+interface
+  function c_clock() result(time) bind(C,name='clock')   !  get CPU TIME
+    import :: C_CLOCK_T 
+    integer(C_CLOCK_T) :: time
+  end function c_clock
+
+  function c_gethostid() result(h) bind(C,name='gethostid')  ! SMP host identifier
+    import :: C_LONG
+    integer(C_LONG) :: h
+  end function c_gethostid
+
+  function c_numa_node_of_cpu(cpu) result(n) bind(C,name='numa_node_of_cpu')  ! find NUMA node associated with core
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: cpu
+    integer(C_INT) :: n
+  end function c_numa_node_of_cpu
+  function c_sched_getcpu() result(c) bind(C,name='sched_getcpu')   !  find CPU core for this process/thread
+    import :: C_INT
+    integer(C_INT) :: c
+  end function c_sched_getcpu
+
+  function c_alarm(seconds) result(seconds_since) BIND(C,name='alarm')   ! generate SIGALARM after delay in seconds
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: seconds
+    integer(C_INT) :: seconds_since
+  end function c_alarm
+  function c_sleep(seconds) result(left) BIND(C,name='sleep')  ! sleep in seconds
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: seconds
+    integer(C_INT) :: left
+  end function c_sleep
+  function c_usleep(useconds) result(ok) BIND(C,name='usleep')  ! sleep in microseconds
+    import :: C_INT, C_USECONDS_T
+    integer(C_USECONDS_T), intent(IN), value :: useconds
+    integer(C_INT) :: ok
+  end function c_usleep
+
+  function c_putenv(envstr) result(ok) BIND(C,name='putenv')   ! change directory
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: envstr
+    integer(C_INT) :: ok
+  end function c_putenv
+
+  function c_chdir(path) result(ok) BIND(C,name='chdir')   ! change directory
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_INT) :: ok
+  end function c_chdir
+
+  function c_system(cmd) result(ok) BIND(C,name='system')   ! external shell call
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: cmd
+    integer(C_INT) :: ok
+  end function c_system
+
+  function c_unlink(path) result(ok) BIND(C,name='unlink')   ! remove file
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_INT) :: ok
+  end function c_unlink
+  function c_remove(path) result(ok) BIND(C,name='remove')   ! remove file
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_INT) :: ok
+  end function c_remove
+
+  function c_mkdir(path, mode) result(ok) BIND(C,name='mkdir')  ! create directory
+    import :: C_CHAR, C_INT, C_MODE_T
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_MODE_T), intent(IN), value :: mode
+    integer(C_INT) :: ok
+  end function c_mkdir
+  function c_rmdir(path) result(ok) BIND(C,name='rmdir')   ! dlete directory
+    import :: C_CHAR, C_INT
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_INT) :: ok
+  end function c_rmdir
+
+  function c_open(path, flags, mode) result(fd) bind(C,name='open')  ! open file (file descriptor)
+    import :: C_CHAR, C_INT, C_MODE_T
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    integer(C_INT), intent(IN), value :: flags
+    integer(C_MODE_T), intent(IN), value :: mode
+    integer(C_INT) :: fd
+  end function c_open
+  function c_fopen(path, mode) result(file) bind(C,name='fopen')  ! open file  (STREAM)
+    import :: C_PTR, C_CHAR, C_FILEPTR
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    character(C_CHAR), dimension(*), intent(IN) :: mode
+!     type(C_FILEPTR) :: file
+    type(C_PTR) :: file    ! some compilers have problems returning type(C_FILEPTR)
+  end function c_fopen
+  function c_freopen(path, mode, filein) result(file) bind(C,name='freopen')  ! open file  (STREAM)
+    import :: C_PTR, C_CHAR, C_FILEPTR
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    character(C_CHAR), dimension(*), intent(IN) :: mode
+    type(C_FILEPTR), intent(IN), value :: filein
+!     type(C_FILEPTR) :: file
+    type(C_PTR) :: file    ! some compilers have problems returning type(C_FILEPTR)
+  end function c_freopen
+  function c_stdin() result(file) bind(C,name='C_STDIN')   ! get stdin file pointer
+    import :: C_PTR
+    type(C_PTR) :: file    ! some compilers have problems returning type(C_FILEPTR)
+  end function c_stdin
+  function c_stdout() result(file) bind(C,name='C_STDOUT')   ! get stdout file pointer
+    import :: C_PTR
+    type(C_PTR) :: file    ! some compilers have problems returning type(C_FILEPTR)
+  end function c_stdout
+  function c_stderr() result(file) bind(C,name='C_STDERR')   ! get stderr file pointer
+    import :: C_PTR
+    type(C_PTR) :: file    ! some compilers have problems returning type(C_FILEPTR)
+  end function c_stderr
+
+  function c_read(fd, buf, cnt) result(nb) bind(C,name='read') ! read (file descriptor)
+    import :: C_INT, C_PTR, C_SIZE_T, C_SSIZE_T
+    integer(C_INT), intent(IN), value :: fd
+    type(C_PTR), intent(IN), value :: buf
+    integer(C_SIZE_T), intent(IN), value :: cnt
+    integer(C_SSIZE_T) :: nb
+  end function c_read
+  function c_fread(buf, msize, mnbr, file) result(nitm) bind(C,name='fread')  ! read  (STREAM)
+    import :: C_PTR, C_CHAR, C_FILEPTR, C_SIZE_T
+    type(C_PTR), intent(IN), value :: buf
+    integer(C_SIZE_T), intent(IN), value :: msize, mnbr
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_SIZE_T) :: nitm
+  end function c_fread
+
+  function c_write(fd, buf, cnt) result(nb) bind(C,name='write')  ! write (file descriptor)
+    import :: C_INT, C_PTR, C_SIZE_T, C_SSIZE_T
+    integer(C_INT), intent(IN), value :: fd
+    type(C_PTR), intent(IN), value :: buf
+    integer(C_SIZE_T), intent(IN), value :: cnt
+    integer(C_SSIZE_T) :: nb
+  end function c_write
+  function c_fwrite(buf, msize, mnbr, file) result(nitm) bind(C,name='fwrite')  ! write  (STREAM)
+    import :: C_PTR, C_CHAR, C_FILEPTR, C_SIZE_T
+    type(C_PTR), intent(IN), value :: buf
+    integer(C_SIZE_T), intent(IN), value :: msize, mnbr
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_SIZE_T) :: nitm
+  end function c_fwrite
+
+  function c_close(fd) result(ok) BIND(C,name='close')  ! close file (file descriptor)
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: fd
+    integer(C_INT) :: ok
+  end function c_close
+  function c_fclose(file) result(ok) BIND(C,name='fclose')  ! close file (STREAM)
+    import :: C_INT, C_FILEPTR
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_INT) :: ok
+  end function c_fclose
+
+  function c_lseek(fd, offset, whence) result(pos) BIND(C,name='lseek')  ! position file r/w pointer (file descriptor)
+    import :: C_INT, C_OFF_T
+    integer(C_INT), intent(IN), value   :: fd
+    integer(C_OFF_T), intent(IN), value :: offset
+    integer(C_INT), intent(IN), value   :: whence
+    integer(C_OFF_T) :: pos
+  end function c_lseek
+  function c_fseek(file, offset, whence) result(ok) BIND(C,name='fseek')  ! position file r/w pointer (STREAM)
+    import :: C_INT, C_FILEPTR, C_LONG
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_LONG), intent(IN), value :: offset
+    integer(C_INT), intent(IN), value  :: whence
+    integer(C_INT) :: ok
+  end function c_fseek
+  function c_ftell(file) result(pos) BIND(C,name='ftell')   ! find file position (STREAM)
+    import :: C_FILEPTR, C_LONG
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_LONG) :: pos
+  end function c_ftell
+
+  function c_fileno(file) result(fd) BIND(C,name='fileno')  ! get file descriptor from STREAM
+    import :: C_INT, C_FILEPTR
+    type(C_FILEPTR), intent(IN), value :: file
+    integer(C_INT) :: fd
+  end function c_fileno
+
+  function c_symlink(oldpath, newpath) result(ok) bind(C,name='symlink')
+    import :: C_INT, C_CHAR
+    character(C_CHAR), dimension(*), intent(IN) :: oldpath, newpath
+    integer(C_INT) :: ok
+  end function c_symlink
+
+  function c_rename(oldpath, newpath) result(ok) bind(C,name='rename')
+    import :: C_INT, C_CHAR
+    character(C_CHAR), dimension(*), intent(IN) :: oldpath, newpath
+    integer(C_INT) :: ok
+  end function c_rename
+
+  function c_realpath(path, realpath) result(str) bind(C,name='realpath')
+    import :: C_PTR, C_CHAR
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    type(C_PTR), intent(IN), value :: realpath
+    type(C_PTR) :: str
+  end function c_realpath
+
+  function c_readlink(path, buf, bufsz) result(nbytes) bind(C,name='readlink')
+    import :: C_PTR, C_SSIZE_T, C_SIZE_T
+    type(C_PTR), intent(IN), value :: path, buf
+    integer(C_SIZE_T), intent(IN), value :: bufsz
+    integer(C_SSIZE_T) :: nbytes
+  end function c_readlink
+
+  function c_getwd(buf, bufsz) result(str) bind(C,name='getcwd')
+    import :: C_PTR, C_SIZE_T
+    type(C_PTR), intent(IN), value :: buf
+    integer(C_SIZE_T), intent(IN), value :: bufsz
+    type(C_PTR) :: str
+  end function c_getwd
+
+  function c_strlen(str) result(length) bind(C,name='strlen')
+    import C_CHAR, C_SIZE_T
+    character(C_CHAR), dimension(*), intent(IN) :: str
+    integer(C_SIZE_T) :: length
+  end function c_strlen
+
+  function c_malloc(sz) result(p) bind(C,name='malloc')
+    import :: C_PTR, C_SIZE_T
+    integer(C_SIZE_T), intent(IN), value :: sz
+    type(C_PTR) :: p
+  end function c_malloc
+  subroutine c_free(what) bind(C,name='free')
+    import :: C_PTR
+    type(C_PTR), intent(IN), value :: what
+  end subroutine c_free
+
+  subroutine c_exit(code) bind(C,name='exit')
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: code
+  end subroutine c_exit
+  function c_atexit(proc) result(ok) bind(C,name='atexit')
+    import :: C_INT, C_FUNPTR
+    type(C_FUNPTR), intent(IN), value :: proc
+    integer(C_INT) :: ok
+  end function c_atexit
+
+  function c_shmget(key, siz, flags) result(memid) bind(C,name='shmget')
+    import :: C_INT, C_KEY_T, C_SIZE_T
+    integer(C_KEY_T), intent(IN),  value :: key
+    integer(C_SIZE_T), intent(IN), value :: siz
+    integer(C_INT), intent(IN),    value :: flags
+    integer(C_INT) :: memid
+  end function c_shmget
+  function c_shmat(memid, shmaddr, flags) result(addr) bind(C,name='shmat')
+    import :: C_INT, C_PTR
+    integer(C_INT), intent(IN),    value :: memid
+    type(C_PTR), intent(IN),       value :: shmaddr
+    integer(C_INT), intent(IN),    value :: flags
+    type(C_PTR) :: addr
+  end function c_shmat
+  function c_shmdt(shmaddr) result(ok) bind(C,name='shmdt')
+    import :: C_INT, C_PTR
+    type(C_PTR), intent(IN),       value :: shmaddr
+    integer(C_INT) :: ok
+  end function c_shmdt
+  function c_shmctl(memid, cmd, buf) result(ok) bind(C,name='shmctl')
+    import :: C_INT, shmid_ds
+    integer(C_INT), intent(IN),    value :: memid
+    integer(C_INT), intent(IN),    value :: cmd
+    type(shmid_ds), intent(OUT)          :: buf
+    integer(C_INT) :: ok
+  end function c_shmctl
+
+  function c_dlopen(path, flags) result(handle) bind(C,name='dlopen')
+    import :: C_INT, C_PTR, C_CHAR
+    integer(C_INT), intent(IN),    value :: flags
+    character(C_CHAR), dimension(*), intent(IN) :: path
+    type(C_PTR) :: handle
+  end function c_dlopen
+  function c_dlsym(handle, name) result(address) bind(C,name='dlsym')
+    import :: C_PTR, C_CHAR, C_FUNPTR
+    type(C_PTR), intent(IN),    value :: handle
+    character(C_CHAR), dimension(*), intent(IN) :: name
+    type(C_FUNPTR) :: address
+  end function c_dlsym
+  function c_dlclose(handle) result(ok) bind(C,name='dlclose')
+    import :: C_INT, C_PTR
+    type(C_PTR), intent(IN),    value :: handle
+    integer(C_INT) :: ok
+  end function c_dlclose
+  function c_dlerror() result(cstring) bind(C,name='dlerror')
+    import :: C_PTR
+    type(C_PTR) :: cstring
+  end function c_dlerror
+
+end interface

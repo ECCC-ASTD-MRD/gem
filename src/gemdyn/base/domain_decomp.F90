@@ -24,29 +24,31 @@
       implicit none
 #include <arch_specific.hf>
 
-      logical, intent(in) :: F_checkparti_L
+      logical, intent(inout) :: F_checkparti_L
       integer, intent(in):: F_npex, F_npey
 
 
       logical, external :: decomp
       integer :: errno, g_err, stat
+      integer, dimension(F_npex) :: lnis
+      integer, dimension(F_npey) :: lnjs
 
 !-------------------------------------------------------------------
 !
       errno = -1
+      
       if (Lun_out > 0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
 
       if (decomp (&
-          G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true.,&
+          G_ni,l_minx,l_maxx,lnis,G_lnimax,G_halox,l_i0,.true. ,.true.,&
           F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.         &
           decomp (&
-          G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true.,&
+          G_nj,l_miny,l_maxy,lnjs,G_lnjmax,G_haloy,l_j0,.false.,.true.,&
           F_npey, (Grd_extension+1), F_checkparti_L, 0 ))              &
           errno = 0
 
       call rpn_comm_Allreduce ( errno,g_err,1,"MPI_INTEGER","MPI_MIN",&
                                 "GRID",stat )
-
       domain_decomp = g_err
 
       if (domain_decomp < 0)  then
@@ -56,6 +58,8 @@
          return
       end if
 
+      l_ni  = lnis(1)
+      l_nj  = lnjs(1)
       l_nk  = G_nk
       l_njv = l_nj
       l_niu = l_ni

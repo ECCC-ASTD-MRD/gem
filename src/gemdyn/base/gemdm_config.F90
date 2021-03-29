@@ -24,14 +24,12 @@
       use mu_jdate_mod
       use step_options
       use HORgrid_options
-      use fislh_sol
       use hvdif_options
       use init_options
       use gem_options
       use lam_options
       use out_options
       use VERgrid_options
-      use dyn_fisl_options
       use ctrl
       use grdc_options
       use tdpack
@@ -52,6 +50,7 @@
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
+      integer, external :: sol_init
       character(len=16) :: dumc_S, datev
       integer :: i, ipcode, ipkind, err
       real :: pcode,deg_2_rad,sec
@@ -93,16 +92,6 @@
 
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
-
-      if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         if ( trim(sol_type_S) == 'DIRECT') then
-            isol_d=1.0d0
-            isol_i=0.0d0
-         else
-            isol_i=1.0d0
-            isol_d=0.0d0
-         end if
-      end if
 
       if (Grd_yinyang_L) then
          Lam_blend_H  = 0
@@ -187,47 +176,6 @@
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S = dumc_S
 
-      call low2up  (sol_type_S ,dumc_S)
-      sol_type_S = trim(dumc_S)
-      call low2up  (sol2D_precond_S ,dumc_S)
-      sol2D_precond_S = trim(dumc_S)
-      call low2up  (sol3D_precond_S ,dumc_S)
-      sol3D_precond_S = trim(dumc_S)
-
-      if ( (Sol_type_S /= 'ITERATIVE_2D') .and. &
-           (Sol_type_S /= 'ITERATIVE_3D') .and. &
-           (Sol_type_S /= 'DIRECT'   ) ) then
-         if (lun_out>0) write (Lun_out, 9200) Sol_type_S
-         return
-      end if
-
-      if (Sol_type_S(1:9) == 'ITERATIVE') then
-         if (Sol2D_precond_S /= 'JACOBI' .and. Sol2D_precond_S /= 'REDBLACK') then
-            if (lun_out>0) write (Lun_out, 9201) Sol2D_precond_S
-            return
-         end if
-      end if
-
-      if (Sol_type_S == 'ITERATIVE_3D') then
-         if (Sol3D_krylov_S /= 'FGMRES' .and. Sol3D_krylov_S /= 'FBICGSTAB') then
-            if (Lun_out > 0) then
-               write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol3D_krylov_S =', Sol3D_krylov_S
-            end if
-            return
-         end if
-
-         if (Sol3D_precond_S /= 'JACOBI'          &
-             .and. Sol3D_precond_S /= 'REDBLACK'  &
-             .and. Sol3D_precond_S /= 'MULTIGRID' &
-             .and. Sol3D_precond_S /= 'GAUSS'     &
-            ) then
-            if (lun_out>0) then
-               write (Lun_out, *) 'ABORT: WRONG CHOICE OF PRE-CONDITIONER FOR 3D ITERATIVE SOLVER: Sol3D_precond_S =', Sol3D_precond_S
-            end if
-            return
-         end if
-      end if
-
       if (Hzd_smago_param > 0. .or. Hzd_smago_lnr(2) > 0.) then
          if (Hzd_smago_lnr(1) > Hzd_smago_lnr(2) .or. Hzd_smago_lnr(1)<0.) Hzd_smago_lnr(1)=Hzd_smago_lnr(2)
          if (Hzd_smago_lnr(3) < Hzd_smago_lnr(2) .or. Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
@@ -276,7 +224,7 @@
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
          if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' ) Dynamics_hydro_L = .true.
-         if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Schm_phycpl_S = 'split'
+         if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) Schm_phycpl_S = 'SPLIT'
          call wil_set (Schm_topo_L,Ctrl_testcases_adv_L,Lun_out,err)
          if (err < 0) return
          if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L
@@ -325,6 +273,8 @@
          if ((lun_out>0).and.(Hzd_lnr_theta > 0.)) write (Lun_out, 6201)
          Hzd_pwr_theta = Hzd_pwr
       end if
+
+      if (sol_init() < 0) return
 
       gemdm_config = 1
 

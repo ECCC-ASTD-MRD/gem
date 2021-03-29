@@ -36,7 +36,7 @@ module ldnh
 ! Ldnh_maxy          | same as l_maxy but without halo                 |
 !----------------------------------------------------------------------
 !
-   integer :: Ldnh_ni, Ldnh_nj
+   integer :: Ldnh_ni, Ldnh_nj,  Ldnh_i0, Ldnh_j0
    integer :: Ldnh_minx, Ldnh_maxx, Ldnh_miny, Ldnh_maxy
 
 end module ldnh

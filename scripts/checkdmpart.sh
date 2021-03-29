@@ -15,7 +15,7 @@ eval `cclargs_lite -D " " $0 \
   -npey           "1"  "1"  "[# of Pes along-y        ]"\
   -cache          ""   ""   "[GEM_cache               ]"\
   -verbose        "0"  "1"  "[verbose mode            ]"\
-  -_status        ""   ""   "[GEM_cache               ]"\
+  -_status        ""   ""   "[output status           ]"\
   ++ $arguments`
 
 set -ex
@@ -39,7 +39,6 @@ cat > checkdm.nml <<EOF
 &cdm_cfgs
 cdm_npex = ${npex}
 cdm_npey = ${npey}
-cdm_grid_L=.true.
 cdm_eigen_S='${cache}'
 /
 EOF
@@ -66,7 +65,7 @@ export DOMAIN_total=1
 export TASK_INPUT=${PWD}
 export TASK_WORK=${PWD}
 export CCARD_OPT='ABORT'
-export CCARD_ARGS="-dom_start ${domain} -dom_end ${domain} -ngrids ${ngrids} -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
+export CCARD_ARGS="-dom_start ${domain} -dom_end ${domain} -npex 1 -npey 1 -ngrids ${ngrids} -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
 if [[ -n "${cache}" ]] ; then
    domain_number=$(printf "%04d" $domain)
    ln -s $cache ${TASK_INPUT}/cfg_${domain_number}/CACHE
@@ -79,7 +78,6 @@ echo checkdmpart_status='ABORT' > checkdmpart_status.dot
 r.run_in_parallel -pgm ${BIN} -npex ${ngrids} -inorder 1> $lis 2>&1
 
 . checkdmpart_status.dot
-#cat checkdmpart_status.dot
 grep topo_allowed checkdmpart_status.dot > $TMPDIR/listopoallowed$$
 cnt=$(cat $TMPDIR/listopoallowed$$ | wc -l)
 
@@ -93,17 +91,12 @@ if [ "${checkdmpart_status}" != 'OK' ] ; then
    printf "\n  Error: Problem with ${bin}\n\n"
    _status="ABORT_${bin}"
 else
-   if [ $cnt -lt 1 ] ; then
-      printf "\n  Error: MPI topology ${npex} x ${npey} NOT allowed\n\n"
-      _status='ABORT_mpi_topology'
-  else
      printf "\n  MPI topology allowed\n"
      cat $TMPDIR/listopoallowed$$
      if [ -n "${MAX_PES_IO}" ] ; then
         printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
      fi
      _status='OK'
-  fi
   if [ "${SOLVER}" != 'OK' ] ; then
    printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
    printf "\n         THE SOLVER WILL NOT WORK\n\n"

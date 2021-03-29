@@ -1,0 +1,6 @@
+!
+! includes mpi symbols and layout
+! (usually not included directly)
+!
+#include <RPN_MPI_mpi_symbols.hf>
+#include <RPN_MPI_mpi_layout.hf>

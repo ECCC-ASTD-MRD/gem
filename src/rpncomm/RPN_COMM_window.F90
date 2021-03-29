@@ -261,7 +261,7 @@ end module RPN_COMM_windows
 subroutine RPN_COMM_i_win_test(nparams,params)
   use ISO_C_BINDING
   implicit none
-  include 'rpn_comm.inc'
+  include 'RPN_COMM.inc'
   include 'mpif.h'
   integer, intent(IN) :: nparams
   integer, intent(IN), dimension(nparams) :: params

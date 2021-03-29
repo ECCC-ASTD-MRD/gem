@@ -40,7 +40,7 @@
 !
       integer i,j,k,ni,nij,iter,n
       real linfini
-      real(kind=REAL64), dimension (ldnh_maxx,ldnh_maxy,l_nk) :: rhs_8, sol_8, wk3
+      real(kind=REAL64), dimension (ldnh_maxx,ldnh_maxy,l_nk) :: wk3
       real(kind=REAL64), dimension (l_minx:l_maxx,l_miny:l_maxy,l_nk) :: yyrhs
 !
 !     ---------------------------------------------------------------
@@ -48,21 +48,19 @@
       ni  = ldnh_ni-pil_w-pil_e
       nij = (ldnh_maxy-ldnh_miny+1)*(ldnh_maxx-ldnh_minx+1)
 
-      rhs_8 = 0.d0
-      sol_8 = 0.d0
       n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
       call time_trace_barr(gem_time_trace, 1, Gem_trace_barr,&
                            Ptopo_intracomm, MPI_BARRIER)
 
-!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,rhs_8)
+!$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,Sol_rhs_8)
 !$omp do
       do j=1+pil_s, ldnh_nj-pil_n
          call dgemm ('N','N', ni, G_nk, G_nk, 1.d0, F_rhs_8(1+pil_w,j,1), &
-                     nij, Opr_lzevec_8, G_nk, 0.d0, rhs_8(1+pil_w,j,1), nij)
+                     nij, Opr_lzevec_8, G_nk, 0.d0, Sol_rhs_8(1+pil_w,j,1), nij)
          do k=1,Schm_nith
             do i = 1+pil_w, ldnh_ni-pil_e
-               rhs_8(i,j,k) = Opr_opsxp0_8(G_ni+F_offi+i) * &
-                            Opr_opsyp0_8(G_nj+F_offj+j) * rhs_8(i,j,k)
+               Sol_rhs_8(i,j,k) = Opr_opsxp0_8(G_ni+F_offi+i) * &
+                                  Opr_opsyp0_8(G_nj+F_offj+j) * Sol_rhs_8(i,j,k)
             end do
          end do
       end do
@@ -73,22 +71,27 @@
 
       if (Grd_yinyang_L) then
 
-         wk3 = rhs_8
+         wk3 = Sol_rhs_8
 
          do iter=1, Sol_yyg_maxits
 
-            call sol_fft_lam ( sol_8, rhs_8,                            &
+            if (sol_one_transpose_L) then
+               call sol_fft_numa ( Sol_sol_8, Sol_rhs_8, &
+                                   Sol_fft,Sol_a,Sol_b,Sol_c )
+            else
+               call sol_fft_lam ( Sol_sol_8, Sol_rhs_8, &
                                ldnh_maxx, ldnh_maxy, ldnh_nj,           &
                                trp_12smax, trp_12sn, trp_22max, trp_22n,&
                                G_ni, G_nj, G_nk, sol_nk,                &
                                Sol_ai_8, Sol_bi_8, Sol_ci_8 )
-
-            rhs_8 = wk3
-            yyrhs(1:l_ni,1:l_nj,:) = -sol_8(1:l_ni,1:l_nj,:)
+            endif
+                            
+            Sol_rhs_8 = wk3
+            yyrhs(1:l_ni,1:l_nj,:) = -Sol_sol_8(1:l_ni,1:l_nj,:)
             call rpn_comm_xch_halo_8 (yyrhs,l_minx,l_maxx,l_miny,l_maxy,&
               l_ni,l_nj,l_nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-            call yyg_rhs_xchng (rhs_8, yyrhs, ldnh_minx, ldnh_maxx   ,&
+            call yyg_rhs_xchng (Sol_rhs_8, yyrhs, ldnh_minx, ldnh_maxx   ,&
                                 ldnh_miny, ldnh_maxy, l_minx,l_maxx,&
                                 l_miny,l_maxy, l_nk, iter, linfini)
 
@@ -110,23 +113,31 @@
          end if
 
       else
-
-          call sol_fft_lam ( sol_8, rhs_8,                            &
-                             ldnh_maxx, ldnh_maxy, ldnh_nj,           &
-                             trp_12smax, trp_12sn, trp_22max, trp_22n,&
-                             G_ni, G_nj, G_nk, sol_nk,                &
-                             Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+         
+         if (sol_one_transpose_L) then
+            !if (Lun_out>0) print*, "SOL_FFT_NUMA"
+            call sol_fft_numa ( Sol_sol_8, Sol_rhs_8, &
+                    Sol_fft,Sol_a,Sol_b,Sol_c )
+         else
+            !if (Lun_out>0) print*, "SOL_FFT_LAM"
+            call sol_fft_lam ( Sol_sol_8, Sol_rhs_8, &
+                 ldnh_maxx, ldnh_maxy, ldnh_nj,           &
+                 trp_12smax, trp_12sn, trp_22max, trp_22n,&
+                 G_ni, G_nj, G_nk, sol_nk,                &
+                 Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+         endif
 
       end if
 
-!$omp parallel private (j) shared (g_nk, sol_8)
+!$omp parallel private (j) shared (g_nk, Sol_sol_8)
 !$omp do
       do j=1+pil_s, ldnh_nj-pil_n
-         call dgemm ('N','T', ni, G_nk, G_nk, 1.d0, sol_8(1+pil_w,j,1), &
-               nij, Opr_zevec_8, G_nk, 0.d0, F_sol_8(1+pil_w,j,1), nij)
+         call dgemm ('N','T', ni, G_nk, G_nk, 1.d0, Sol_sol_8(1+pil_w,j,1), &
+                     nij, Opr_zevec_8, G_nk, 0.d0, F_sol_8(1+pil_w,j,1), nij)
       end do
 !$omp enddo
 !$omp end parallel
+
       call time_trace_barr(gem_time_trace, 11800+n, Gem_trace_barr,&
                            Ptopo_intracomm, MPI_BARRIER)
 
@@ -138,5 +149,3 @@
 !
       return
       end
-
-

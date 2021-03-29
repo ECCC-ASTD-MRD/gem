@@ -81,10 +81,19 @@ contains
       if (Grd_yinyang_L) then
          if (present(F_vv)) then
             call yyg_xchng_vec_uv2uv (F_c1, F_vv,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            call rpn_comm_propagate_pilot_circular(F_c1,l_minx,l_maxx,l_miny,l_maxy, &
-                                l_niu,l_nj,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
-            call rpn_comm_propagate_pilot_circular(F_vv,l_minx,l_maxx,l_miny,l_maxy, &
-                                l_ni,l_njv,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+            if (Glb_pilotcirc_L) then
+                call rpn_comm_propagate_pilot_circular(F_c1, &
+                l_minx,l_maxx,l_miny,l_maxy, &
+                l_niu,l_nj,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+                call rpn_comm_propagate_pilot_circular(F_vv, &
+                l_minx,l_maxx,l_miny,l_maxy, &
+                l_ni,l_njv,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+            else
+                call rpn_comm_xch_halo(F_c1,l_minx,l_maxx,l_miny,l_maxy,&
+               l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                call rpn_comm_xch_halo(F_vv,l_minx,l_maxx,l_miny,l_maxy,&
+               l_ni,l_njv,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            endif
            c2 = F_vv
          else
             call yyg_xchng (F_c1, l_minx,l_maxx,l_miny,l_maxy, l_niu, l_nj,&
@@ -92,10 +101,10 @@ contains
          end if
       else
             call rpn_comm_xch_halo(F_c1,l_minx,l_maxx,l_miny,l_maxy,&
-               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+               l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
             if (present(F_vv)) then
                call rpn_comm_xch_halo(F_vv,l_minx,l_maxx,l_miny,l_maxy,&
-                         l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                         l_ni,l_njv,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
                c2 = F_vv
             end if
       end if
@@ -119,20 +128,30 @@ contains
                if (Grd_yinyang_L) then
                    if (present(F_vv)) then
                       call yyg_xchng_vec_uv2uv (c1,c2,l_minx,l_maxx,l_miny,l_maxy,NK)
-                      call rpn_comm_propagate_pilot_circular(c1,l_minx,l_maxx,l_miny,l_maxy, &
-                           l_niu,l_nj,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
-                      call rpn_comm_propagate_pilot_circular(c2,l_minx,l_maxx,l_miny,l_maxy, &
-                           l_ni,l_njv,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+                      if (Glb_pilotcirc_L) then
+                          call rpn_comm_propagate_pilot_circular(c1, &
+                          l_minx,l_maxx,l_miny,l_maxy, &
+                          l_niu,l_nj,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+                          call rpn_comm_propagate_pilot_circular(c2, &
+                          l_minx,l_maxx,l_miny,l_maxy, &
+                          l_ni,l_njv,NK,Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+                      else
+                          call rpn_comm_xch_halo(c1,l_minx,l_maxx,l_miny,l_maxy,&
+                          l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         
+                          call rpn_comm_xch_halo(c2,l_minx,l_maxx,l_miny,l_maxy,&
+                          l_ni,l_njv,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                      endif
                    else
                        call yyg_xchng ( c1, l_minx,l_maxx,l_miny,l_maxy, l_niu, l_nj,&
                                         Nk, .false., 'CUBIC', .true. )
                    end if
                else
                    call rpn_comm_xch_halo(c1,l_minx,l_maxx,l_miny,l_maxy,&
-                               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                               l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
                    if (present(F_vv)) then
                        call rpn_comm_xch_halo(c2,l_minx,l_maxx,l_miny,l_maxy,&
-                               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+                               l_ni,l_njv,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
                    end if
                end if
                itercnt=0

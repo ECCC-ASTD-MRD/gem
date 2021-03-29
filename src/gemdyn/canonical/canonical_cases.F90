@@ -224,12 +224,6 @@
          istat = gmm_get(gmmk_clyref_s, clyref)
          istat = gmm_get(gmmk_clyerr_s, clyerr)
 
-         if (Schm_phycpl_S /= 'SPLIT') &
-            call handle_error(-1,'CANONICAL_CASES','PHYCPL no SPLIT not valid')
-
-         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H'.and.Ctrl_canonical_dcmip_L) &
-            call handle_error(-1,'CANONICAL_CASES','GEM-H DCMIP not valid')
-
          !Initialize Pure split coupling (as in itf_phy_update/itf_phy_step)
          !------------------------------------------------------------------
          if (Schm_phycpl_S == 'SPLIT') then

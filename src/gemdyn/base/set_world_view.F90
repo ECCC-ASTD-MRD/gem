@@ -198,6 +198,7 @@
 
 ! Establish a grid id for RPN_COMM package and obtain Out3_iome,Inp_iome
 
+      if ( (Out3_npex > 0) .and. (Out3_npey > 0) ) Out3_npes= Out3_npex*Out3_npey
       Out3_npes= max(1,min(Out3_npes,min(Ptopo_npex,Ptopo_npey)**2))
       Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
 
@@ -210,17 +211,7 @@
                           Inp_comm_io ,Inp_iobcast ,Inp_npes )
       call gem_error ( min(err(1),err(2)),'set_world_view', &
                        'IO pes config is invalid' )
-
       Out3_ezcoll_L= .true.
-      if ( (Out3_npex > 0) .and. (Out3_npey > 0) ) then
-         Out3_npex= min(Out3_npex,Ptopo_npex)
-         Out3_npey= min(Out3_npey,Ptopo_npey)
-         call block_collect_set ( Out3_npex, Out3_npey )
-         Out3_npes= Out3_npex * Out3_npey
-         Out3_iome= -1
-         if (Bloc_me == 0) Out3_iome= 0
-         Out3_ezcoll_L= .false.
-      end if
       out_stk_size= Out3_npes*2
 
       istat = tracers_attributes( 'DEFAULT,'//trim(Tr3d_default_s), &
@@ -248,12 +239,15 @@
          call gem_error (err(1), 'SET_WORLD_VIEW', 'sol_transpose -- ABORTING')
       end if
 
-      call set_coriolis_shallow ( geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, &
-                                  Grd_rot_8, l_minx, l_maxx, l_miny, l_maxy )
+      call set_coriolis_shallow ( &
+                 geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, &
+                 Grd_rot_8, l_minx, l_maxx, l_miny, l_maxy )
 
       call set_opr()
 
       call set_params()
+
+      call spn_init()
 
       call set_sor()
 

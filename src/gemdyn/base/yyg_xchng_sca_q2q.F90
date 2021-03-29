@@ -58,9 +58,16 @@
 
       end if
 
-      if (do_xch) call rpn_comm_propagate_pilot_circular ( F_src,&
+      if (do_xch) then
+          if (Glb_pilotcirc_L) then
+              call rpn_comm_propagate_pilot_circular ( F_src,&
                        l_minx,l_maxx,l_miny,l_maxy, F_ni,F_nj,nk,&
                        Glb_pil_e,Glb_pil_s,G_halox,G_haloy )
+          else
+              call rpn_comm_xch_halo(F_src,l_minx,l_maxx,l_miny,l_maxy,&
+               l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+          endif
+      endif
 
       call gemtime_stop (6)
 !

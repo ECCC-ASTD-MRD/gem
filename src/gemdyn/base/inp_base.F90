@@ -1320,9 +1320,9 @@ contains
       inp_src_vert3d = .false.
       grid_S=['Q','U','V']
 
-      err_mt = inp_read_mt (trim(F_var_S),grid_S, val,3,&
+      err_mt = inp_read_mt (F_var_S,grid_S, val,3,&
                          F_3dv%ip1, lislon,F_quiet_L=.true.)
-      inp_src_vert3d= (err_mt == 0)
+      inp_src_vert3d= ((err_mt == 0) .and. (lislon>1))
 
       if (inp_src_vert3d) then
 !!$do k=1,lislon

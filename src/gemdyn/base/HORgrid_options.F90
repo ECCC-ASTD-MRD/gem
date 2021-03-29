@@ -185,6 +185,8 @@ contains
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc(1:2)
 
+      Glb_pilotcirc_L = .false.
+
       if (Grd_typ_S(1:2) == 'GY') then
 
          if ((Grd_ni > 0).and.(Grd_nj > 0)) then

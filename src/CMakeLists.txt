@@ -1,5 +1,6 @@
 # Build the following components
 add_subdirectory(rmn rmn)
+add_subdirectory(mpi-extras mpi-extras)
 add_subdirectory(rpncomm rpncomm)
 add_subdirectory(massv massv)
 add_subdirectory(vgrid vgrid)
@@ -18,4 +19,4 @@ add_subdirectory(cclargs cclargs)
 # Declare the dependencies of all the components
 add_dependencies(modelutils vgrid)
 add_dependencies(phy modelutils vgrid)
-add_dependencies(gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(gem phy modelutils vgrid mpi-extras rpncomm rmn massv)

@@ -137,7 +137,7 @@ ftnword f77name(fstcvt)(ftnword *name, ftnword *type, ftnword *etik, ftnword *gr
  *                      F S T _ D A T A _ L E N G T H                        *
  *                                                                           * 
  *Object                                                                     * 
- *   Gives information on data lenght of the elements passed to fstecr       *
+ *   Gives information on data length of the elements passed to fstecr       *
  *   and fstlir (double, short integer, byte ...)                            *
  *                                                                           * 
  *Arguments                                                                  * 
@@ -730,7 +730,7 @@ ftnword f77name(fstinl)(ftnword *f_iun, ftnword *f_ni, ftnword *f_nj,
  *                                                                           * 
  *Object                                                                     * 
  *   Search for a record that matches the research keys and check that the   *
- *   remaining parmeters match the record descriptors                        *
+ *   remaining parameters match the record descriptors                       *
  *                                                                           *
  *Arguments                                                                  * 
  *                                                                           * 
@@ -1331,6 +1331,26 @@ ftnword f77name(fstopr)(char *f_option, ftnfloat *f_value, ftnword * f_getmode,
 
   ier = c_fstopr(option,value,getmode);
   return((ftnword) ier);
+}
+
+/*splitpoint fstcheck */
+/*****************************************************************************
+ *                              F S T C H E C K                              *
+ *                                                                           *
+ *Object                                                                     *
+ *   Checks if an RPN standard file is valid.                                *
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  filename Path of the file to be checked                              *
+ *                                                                           *
+ *****************************************************************************/
+
+ftnword f77name(fstcheck)(char *filename, F2Cl lng)
+{
+  int ier;
+  ier = c_fstcheck(filename);
+  return ((ftnword) ier);
 }
 
 /*splitpoint fstouv */

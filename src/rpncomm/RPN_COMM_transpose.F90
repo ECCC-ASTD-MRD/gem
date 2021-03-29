@@ -24,13 +24,13 @@
         integer, intent(IN) :: direction
         integer, intent(INOUT) :: za(min1:max1,n2,n3g)
         integer, intent(INOUT) :: zb(n2,min3:max3,n1g)
-
+!
         integer n3p,n1p,npe,pecomm,ierr,mype,i,n23
         integer, dimension(:,:,:), allocatable :: ta
         integer, dimension(:,:), allocatable :: ndim
         integer, dimension(:), allocatable :: sdispls,rdispls
         integer, dimension(:), allocatable :: scnts,rcnts
-
+!
         if (direction == RPN_COMM_FORWARD_X .or. direction == RPN_COMM_BACKWARD_X ) then
           npe=pe_nx
           pecomm=pe_myrow
@@ -97,9 +97,9 @@
         integer, intent(INOUT), dimension(nj,ni) :: b
         integer, intent(IN) :: ni,nj,mini,maxi
         integer, intent(IN) :: block, direction
-
+        !
         integer i,j,i0,in,j0,jn
-
+        !
         if (direction == RPN_COMM_FORWARD_X .or. direction == RPN_COMM_FORWARD_Y ) then
           do i0=1,ni,block
             in=min(ni,i0+block-1)
@@ -150,18 +150,20 @@
         return
         end subroutine transpose_44
 
-      end SUBROUTINE RPN_COMM_transpose_44
-
-
+        end SUBROUTINE RPN_COMM_transpose_44
+!
       SUBROUTINE RPN_COMM_transpose(za,min1,max1,n1g,n2,min3,max3,n3g,zb,type,size)
       use rpn_comm
       implicit none
       integer min1,max1,n1g,n2,min3,max3,n3g,type,size
       integer za(size,min1:max1,n2,n3g)
       integer zb(size,n2,min3:max3,n1g)
-
+!
+!	include 'rpn_comm.h'
+!	include 'mpif.h'
+!
       integer n3partiel,n1partiel,npe,pecomm
-
+!
       if(abs(type).eq.1) then   ! transpose along X
         npe=pe_nx
         pecomm=pe_myrow
@@ -171,16 +173,24 @@
       endif
       n3partiel=(n3g+npe-1)/npe
       n1partiel=(n1g+npe-1)/npe
-
+!
+!	check that min1>0, max1>=n1partiel
+!	check that min3>0, max3>=n3partiel
+!	check that size = 1 or 2 (integer/real, real*8)
+!
       if(type.gt.0) then  ! forward transpose
-
+!
+!	  call tmg_start(96,'RPN_COMM_Xpose1')
         call RPN_COMM_Xpose1(n3partiel,npe,pecomm,n1partiel, za,min1,max1,n1g,n2,min3,max3,n3g,zb,size)
-
+!	  call tmg_stop(96)
+!
       else ! backward transpose
-
+!
+!	  call tmg_start(98,'RPN_COMM_Xpose2')
         call RPN_COMM_Xpose2(n3partiel,npe,pecomm,n1partiel,za,min1,max1,n1g,n2,min3,max3,n3g,zb,size)
-
+!	  call tmg_stop(98)
+!
       endif
-
+!
       return
       end SUBROUTINE RPN_COMM_transpose

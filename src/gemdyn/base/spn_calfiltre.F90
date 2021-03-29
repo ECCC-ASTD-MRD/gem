@@ -15,24 +15,19 @@
 
 !*s/r spn_calfiltre - compute a filter for spectral nudging
 
-      subroutine spn_calfiltre ( F_nis, F_njs )
+      subroutine spn_calfiltre
       use dcst
-      use spn_work_mod
+      use glb_ld
+      use glb_pil
       use HORgrid_options
       use spn_options
       use tdpack
       use lun
-      use glb_pil
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      integer F_nis,F_njs
-!
-!author
-!     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
-!
-      integer i,j
+      integer i,j,il,jl
       integer ni_trunc, ni_truncx, nj_trunc
       real(kind=REAL64) nix, njx, nkx, nk_cut
       real(kind=REAL64) WXL, WXS, DX, DY
@@ -44,50 +39,34 @@
       WXL= Spn_cutoff_scale_large
       WXS= Spn_cutoff_scale_small
 
-      if (Lun_out > 0) write(Lun_out,1000) WXL
-      if (Lun_out > 0) write(Lun_out,1001) WXS
+      if (Lun_out > 0) write(Lun_out,1000) WXL,WXS
 
-      ni_trunc = int(DX*F_nis/WXL)
-      nj_trunc = int(DY*F_njs/WXL)
-      ni_truncx= int(DX*F_nis/WXS)
+      ni_trunc = int(DX*(G_ni-2*Grd_extension)/WXL)
+      nj_trunc = int(DY*(G_nj-2*Grd_extension)/WXL)
+      ni_truncx= int(DX*(G_ni-2*Grd_extension)/WXS)
 
       nk_cut = float(ni_truncx)/float(ni_trunc)
 
-      ! BAEK debug
-      if (Lun_out > 0) write(Lun_out,*) "ni_trunc: ",ni_trunc
-      if (Lun_out > 0) write(Lun_out,*) "ni_truncx: ",ni_truncx
-      if (Lun_out > 0) write(Lun_out,*) "nj_trunc: ",nj_trunc
-      if (Lun_out > 0) write(Lun_out,*) "nk_cut: ",nk_cut
-
-      fxy = 0.
-
-      do j=0,F_njs-1
-         do i=0,F_nis-1
-            nix = dble(i)/dble(ni_trunc)
-            njx = dble(j)/dble(nj_trunc)
-
+      allocate (Spn_flt(Spn_22n,G_nj))
+      Spn_flt= 0.
+      do j=1+Grd_extension,G_nj-Grd_extension
+         jl= j-Grd_extension-1
+         do i=1+Spn_22pil_w,Spn_22n-Spn_22pil_e
+            il= i+Spn_22n0-Grd_extension-2
+            nix = dble(il)/dble(ni_trunc)
+            njx = dble(jl)/dble(nj_trunc)
             nkx = sqrt(nix*nix + njx*njx)
-
             if ( nkx > nk_cut ) then
-
-               fxy(i+Lam_pil_w+1,j+Lam_pil_s+1) = 0.0
-
+               Spn_flt(i,j)= 0.0
             else if ( nkx > 1.0 ) then
-
-               fxy(i+Lam_pil_w+1,j+Lam_pil_s+1) = &
-               (cos( (pi_8/2.0) * ((nkx-1.)/(nk_cut-1.)) ))**2
-
+               Spn_flt(i,j)=(cos( (pi_8/2.0)* ((nkx-1.)/(nk_cut-1.))))**2
             else
-
-               fxy(i+Lam_pil_w+1,j+Lam_pil_s+1) = 1.0
-
+               Spn_flt(i,j)= 1.0
             end if
-
          end do
       end do
-
- 1000 format(/' In SPN_CALFILTRE, Spn_cutoff_scale_L = ',f7.2/)
- 1001 format(/' In SPN_CALFILTRE, Spn_cutoff_scale_S = ',f7.2/)
+      
+ 1000 format(/' Spn_calfiltre, Large,Small cutoff_scales= ',2f7.2)
 !
 !----------------------------------------------------------------------
 !

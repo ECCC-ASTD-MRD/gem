@@ -50,10 +50,7 @@
 !
       if (F_reg_out) then
 
-         if (outd_sorties(0,Lctl_step) < 1) then
-            if (Lun_out > 0) write(Lun_out,7002) Lctl_step
-            goto 887
-         end if
+         if (outd_sorties(0,Lctl_step) < 1) goto 887
 
          if (Lun_out > 0) then
             write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
@@ -142,7 +139,6 @@
       call gemtime_stop ( 80 )
 
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
- 7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')
 !
 !--------------------------------------------------------------------
 !

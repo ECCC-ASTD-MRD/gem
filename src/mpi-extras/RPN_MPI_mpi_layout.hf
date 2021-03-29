@@ -1,0 +1,403 @@
+!/! RPN_MPI - Library of useful routines for C and FORTRAN programming
+! ! Copyright (C) 1975-2020  Division de Recherche en Prevision Numerique
+! !                          Environnement Canada
+! !
+! ! This library is free software; you can redistribute it and/or
+! ! modify it under the terms of the GNU Lesser General Public
+! ! License as published by the Free Software Foundation,
+! ! version 2.1 of the License.
+! !
+! ! This library is distributed in the hope that it will be useful,
+! ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+! ! Lesser General Public License for more details.
+! !
+! ! You should have received a copy of the GNU Lesser General Public
+! ! License along with this library; if not, write to the
+! ! Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+! ! Boston, MA 02111-1307, USA.
+! !/
+!================================================================================================
+! IMPORTANT :
+! RPN_MPI_mpi_symbols.hf must to be included BEFORE this file 
+!        (provides derived types RPN_MPI_Fcom, RPN_MPI_Comm, RPN_MPI_csr )
+!================================================================================================
+  integer(C_INT), parameter :: layout_version = 100011 ! version 1.00.01
+!================================================================================================
+! layouts with comm/size/rank as BOTTOM LEVEL items (leaves) (new layout)
+!================================================================================================
+!  mpi_layout structure
+!  description of elements
+!
+! EXAMPLE
+!       #include <RPN_MPI_mpi_definitions.hf>
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!       type(mpi_layout) :: l
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!       type(mpi_layout_f) :: l
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!       integer :: ierr
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!       call RPN_MPI_get_mpi_layout(l, ierr)
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!       call RPN_MPI_get_layout(l, ierr)   [[ fix new name or create generic interface ]]
+!       <<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>
+!
+!       internal RPN_MPI MPI information is now available, like:
+!
+!       provides internal RPN_MPI MPI information is now available, like:
+!
+!       l%grid%service%comm    ! communicator for service(IO) PEs in a grid
+!       l%sgrd%compute%rank    ! rank in a supergrid compute PEs communicator
+!       l%grid%compute%comm    ! communicator for compute PEs in a grid
+!       l%grid%column%comm     ! grid column communicator
+!       l%grid%row%size        ! size of grid row communicator
+!
+! DESCRIPTION
+!  all leaf elements are of type RPN_MPI_Fcom (%comm, %size, %rank)
+!
+!  version                     ! version marker (consistency check between compilation and runtime)
+!  host                        ! host id for this host
+!  numa                        ! numa space on host for this PE
+!  colors(3)                   ! colors(1) : application id, colors(2) : supergrid ordinal, colors(3) : grid ordinal
+!       WORLD, all PEs from all applications, compute and service
+!  wrld % all         ! all PEs in all domains
+!       % same_node   ! PEs in the same SMP node
+!       % same_numa   ! PEs in the same NUMA space
+! 
+!       APPLICATION, containing M identical supergrids
+!  appl % all         ! all PEs belonging to an application (model, domain)
+!       % same_node   ! PEs in the same SMP node
+!       % same_numa   ! PEs in the same NUMA space
+! 
+!       SUPERGRID, M identical supergrids in a domain, containing N identical grids
+!  sgrd % all         ! all PEs belonging to a supergrid (compute and service)
+!       % compute     ! compute PEs belonging to a supergrid
+!       % service     ! service (IO) PEs belonging to a supergrid
+!       % same_node   ! PEs belonging to a supergrid in same SMP node
+!       % same_numa   ! PEs belonging to a supergrid in same NUMA space
+!       % node_peer   ! PEs belonging to a supergrid with same rank in the SMP nodes
+!       % numa_peer   ! PEs belonging to a supergrid with same rank in NUMA spaces
+!       % grid_peer   ! PEs from all supergrids in application with same rank in supergrid
+!       % row         ! not used for supergrids
+!       % column      ! not used for supergrids
+! 
+!       GRID, N identical grids in a supergrid
+!  grid % all         ! all PEs belonging to a grid (compute and service)
+!       % compute     ! compute PEs belonging to a grid
+!       % service     ! service (IO) PEs belonging to a grid
+!       % same_node   ! PEs belonging to a grid in same SMP node
+!       % same_numa   ! PEs belonging to a grid in same NUMA space
+!       % node_peer   ! PEs belonging to a grid with same rank in the SMP nodes
+!       % numa_peer   ! PEs belonging to a grid with same rank in NUMA spaces
+!       % grid_peer   ! PEs from all grids in application with same rank in grid
+!       % row         ! compute PEs from a grid in the same row (same j/y ordinal)
+!       % column      ! compute PEs from a grid in the same column (same i/x ordinal)
+! 
+!  blck % all         ! all PEs belonging to a block (subgrid) (all are compute PEs)
+!       % row         ! block PEs in the same row (same j/y ordinal)
+!       % column      ! block PEs in the same column (same i/x ordinal)
+!
+!================================================================================================
+! _f derived types use wrapped comm/size/rank trios, comm, rank, size are leaves (no % after)
+! subgrids (blocks of PEs within a grid) (less information than grids and supergrids)
+  type, BIND(C) :: subgrid_f           ! wrapped type for communicator trios (comm/rank/size)
+    type(RPN_MPI_Fcom) :: all
+    type(RPN_MPI_Fcom) :: row
+    type(RPN_MPI_Fcom) :: column
+  end type
+! applications (domains) and world (less information than grids and supergrids)
+  type, BIND(C) :: application_f       ! wrapped type using communicator trios (comm/rank/size)
+    type(RPN_MPI_Fcom) :: all          ! all PEs, compute and service
+    type(RPN_MPI_Fcom) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_Fcom) :: same_numa    ! PEs in same numa space (compute and service)
+  end type
+! grids and supergrids
+  type, BIND(C) :: mpigrid_f           ! wrapped type using communicator trios (comm/rank/size)
+    type(RPN_MPI_Fcom) :: all          ! all PEs, compute and service
+    type(RPN_MPI_Fcom) :: compute      ! compute PEs
+    type(RPN_MPI_Fcom) :: service      ! service (Input/Output) PEs
+    type(RPN_MPI_Fcom) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_Fcom) :: same_numa    ! PEs in same numa space (compute and service)
+    type(RPN_MPI_Fcom) :: node_peer    ! node to node peer (PEs with same rank in node)
+    type(RPN_MPI_Fcom) :: numa_peer    ! numa space to numa space peer (PEs with same rank in numa space)
+    type(RPN_MPI_Fcom) :: grid_peer    ! grid to grid / supergrid to supergrid peer (PEs with same rank in grid/supergrid)
+    type(RPN_MPI_Fcom) :: row          ! undefined in a supergrid, information for a grid row
+    type(RPN_MPI_Fcom) :: column       ! undefined in a supergrid, information for a grid column
+  end type
+! the full layout
+  type, BIND(C) :: mpi_layout_f        ! wrapped type using communicator trios (comm/rank/size)
+    integer(C_INT) :: version = layout_version
+    integer(C_INT) :: host             ! SMP host id
+    integer(C_INT) :: numa             ! numa space for this PE
+    integer(C_INT) :: colors(3)        ! application / supergrid / grid "color"
+    type(application_f) :: wrld        ! the entire world, conrains all applications
+    type(application_f) :: appl        ! application (domain), contains (M identical supergrids)
+    type(mpigrid_f)     :: sgrd        ! supergrid (contains N identical grids)
+    type(mpigrid_f)     :: grid        ! basic computation grid
+    type(subgrid_f)     :: blck        ! block of PEs inside a grid (subgrid)
+  end type mpi_layout_f
+!================================================================================================
+! _r derived types use raw(integer) comm/size/rank trios, comm, rank, size are leaves (no % after)
+!
+!  the _r type definitions MUST HAVE THE SAME MEMORY LAYOUT as their _f sibling definition
+!  in order to get their contents moved from one form to the other either by lying about type
+!  or using 'transfer' for the copy.
+!================================================================================================
+! subgrids (blocks of PEs within a grid) (less information than grids and supergrids)
+  type, BIND(C) :: subgrid_r           ! raw type for communicator trios (comm/rank/size)
+    type(RPN_MPI_csr) :: all
+    type(RPN_MPI_csr) :: row
+    type(RPN_MPI_csr) :: column
+  end type
+! applications (domains) and world (less information than grids and supergrids)
+  type, BIND(C) :: application_r       ! raw type using communicator trios (comm/rank/size)
+    type(RPN_MPI_csr) :: all          ! all PEs, compute and service
+    type(RPN_MPI_csr) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_csr) :: same_numa    ! PEs in same numa space (compute and service)
+  end type
+! grids and supergrids
+  type, BIND(C) :: mpigrid_r           ! raw type using communicator trios (comm/rank/size)
+    type(RPN_MPI_csr) :: all          ! all PEs, compute and service
+    type(RPN_MPI_csr) :: compute      ! compute PEs
+    type(RPN_MPI_csr) :: service      ! service (Input/Output) PEs
+    type(RPN_MPI_csr) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_csr) :: same_numa    ! PEs in same numa space (compute and service)
+    type(RPN_MPI_csr) :: node_peer    ! node to node peer (PEs with same rank in node)
+    type(RPN_MPI_csr) :: numa_peer    ! numa space to numa space peer (PEs with same rank in numa space)
+    type(RPN_MPI_csr) :: grid_peer    ! grid to grid / supergrid to supergrid peer (PEs with same rank in grid/supergrid)
+    type(RPN_MPI_csr) :: row          ! undefined in a supergrid, information for a grid row
+    type(RPN_MPI_csr) :: column       ! undefined in a supergrid, information for a grid column
+  end type
+! the full layout
+  type, BIND(C) :: mpi_layout_r        ! raw type using communicator trios (comm/rank/size)
+    integer(C_INT) :: version = layout_version
+    integer(C_INT) :: host             ! SMP host id
+    integer(C_INT) :: numa             ! numa space for this PE
+    integer(C_INT) :: colors(3)        ! application / supergrid / grid "color"
+    type(application_r) :: wrld        ! the entire world, conrains all applications
+    type(application_r) :: appl        ! application (domain), contains (M identical supergrids)
+    type(mpigrid_r)     :: sgrd        ! supergrid (contains N identical grids)
+    type(mpigrid_r)     :: grid        ! basic computation grid
+    type(subgrid_r)     :: blck        ! block of PEs inside a grid (subgrid)
+  end type mpi_layout_r
+!================================================================================================
+! layouts with comm/size/rank as TOP LEVEL items (old layout)
+!================================================================================================
+!
+!  mpi_layout structure
+!  table of elements
+!  USAGE :
+!       #include <RPN_MPI_mpi_definitions.hf>
+!       type(mpi_layout) :: l
+!       integer :: ierr
+!       call RPN_MPI_get_mpi_layout(l, ierr)
+!
+!       internal RPN_MPI MPI information is now available, like:
+!
+!       l%comm%grid%service    ! communicator for service(IO) PEs in a grid
+!       l%rank%sgrd%compute    ! rank in a supergrid compute PEs communicator
+!       l%comm%grid%compute    ! communicator for compute PEs in a grid
+!       l%comm%grid%column     ! grid column communicator
+!       l%size%grid%row        ! size of grid row communicator
+!
+!  version                     ! version marker (consistency check between compilation and runtime)
+!  host                        ! host id for this host
+!  numa                        ! numa space on host for this PE
+!  colors(3)                   ! colors(1) : application id, colors(2) : supergrid ordinal, colors(3) : grid ordinal
+!       |
+!       | WORLD, all PEs from all applications, compute and service
+!       | % wrld % all         ! all PEs in all domains
+!       |        % same_node   ! PEs in the same SMP node
+!       |        % same_numa   ! PEs in the same NUMA space
+!       |
+!       | APPLICATION, containing M identical supergrids
+!  comm | % appl % all         ! all PEs belonging to an application (model, domain)
+!  rank |        % same_node   ! PEs in the same SMP node
+!  size |        % same_numa   ! PEs in the same NUMA space
+!       |
+!       | SUPERGRID, M identical supergrids in a domain, containing N identical grids
+!       | % sgrd % all         ! all PEs belonging to a supergrid (compute and service)
+!       |        % compute     ! compute PEs belonging to a supergrid
+!       |        % service     ! service (IO) PEs belonging to a supergrid
+!       |        % same_node   ! PEs belonging to a supergrid in same SMP node
+!       |        % same_numa   ! PEs belonging to a supergrid in same NUMA space
+!       |        % node_peer   ! PEs belonging to a supergrid with same rank in the SMP nodes
+!       |        % numa_peer   ! PEs belonging to a supergrid with same rank in NUMA spaces
+!       |        % grid_peer   ! PEs from all supergrids in application with same rank in supergrid
+!       |        % row         ! not used for supergrids
+!       |        % column      ! not used for supergrids
+!       |
+!       | GRID, N identical grids in a supergrid
+!       | % grid % all         ! all PEs belonging to a grid (compute and service)
+!       |        % compute     ! compute PEs belonging to a grid
+!       |        % service     ! service (IO) PEs belonging to a grid
+!       |        % same_node   ! PEs belonging to a grid in same SMP node
+!       |        % same_numa   ! PEs belonging to a grid in same NUMA space
+!       |        % node_peer   ! PEs belonging to a grid with same rank in the SMP nodes
+!       |        % numa_peer   ! PEs belonging to a grid with same rank in NUMA spaces
+!       |        % grid_peer   ! PEs from all grids in application with same rank in grid
+!       |        % row         ! compute PEs from a grid in the same row (same j/y ordinal)
+!       |        % column      ! compute PEs from a grid in the same column (same i/x ordinal)
+!       |
+!       | % blck % all         ! all PEs belonging to a block (subgrid) (all are compute PEs)
+!       |        % row         ! block PEs in the same row (same j/y ordinal)
+!       |        % column      ! block PEs in the same column (same i/x ordinal)
+!
+!================================================================================================
+! subgrids (blocks of PEs within a grid) (less information than grids and supergrids)
+  type, BIND(C) :: subgrid             ! integer communicators
+    integer(C_INT) :: all
+    integer(C_INT) :: row
+    integer(C_INT) :: column
+  end type
+! applications (domains) and world (less information than grids and supergrids)
+  type, BIND(C) :: application         ! integer communicators
+    integer(C_INT) :: all              ! all PEs, compute and service
+    integer(C_INT) :: same_node        ! PEs in same SMP node (compute and service)
+    integer(C_INT) :: same_numa        ! PEs in same numa space (compute and service)
+  end type
+! grids and supergrids
+  type, BIND(C) :: mpigrid             ! integer communicators
+    integer(C_INT) :: all              ! all PEs, compute and service
+    integer(C_INT) :: compute          ! compute PEs
+    integer(C_INT) :: service          ! service (Input/Output) PEs
+    integer(C_INT) :: same_node        ! PEs in same SMP node (compute and service)
+    integer(C_INT) :: same_numa        ! PEs in same numa space (compute and service)
+    integer(C_INT) :: node_peer        ! node to node peer (PEs with same rank in node)
+    integer(C_INT) :: numa_peer        ! numa space to numa space peer (PEs with same rank in numa space)
+    integer(C_INT) :: grid_peer        ! grid to grid / supergrid to supergrid peer (PEs with same rank in grid/supergrid)
+    integer(C_INT) :: row              ! undefined in a supergrid, information for a grid row
+    integer(C_INT) :: column           ! undefined in a supergrid, information for a grid column
+  end type
+! the sets of information
+  type, BIND(C) :: grid_hierarchy
+    type(application) :: wrld          ! the entire world, conrains all applications
+    type(application) :: appl          ! application (domain), contains (M identical supergrids)
+    type(mpigrid)     :: sgrd          ! supergrid (contains N identical grids)
+    type(mpigrid)     :: grid          ! basic computation grid
+    type(subgrid)     :: blck          ! block of PEs inside a grid (subgrid)
+  end type
+! the three usual associates, communicators, rank, and size + general info
+  type, BIND(C) :: mpi_layout_internal ! integer values, independent comm/rank/size sub components
+    integer(C_INT) :: version = layout_version
+    integer(C_INT) :: host             ! SMP host id
+    integer(C_INT) :: numa             ! numa space for this PE
+    integer(C_INT) :: colors(3)        ! application / supergrid / grid "color"
+    type(grid_hierarchy) :: comm       ! communicators
+    type(grid_hierarchy) :: rank       ! rank in communicator
+    type(grid_hierarchy) :: size       ! size of communicator
+  end type
+!================================================================================================
+!  the _c wrapped type definitions MUST BE EQUIVALENT to their non wrapped sibling definition
+!  in order to get their contents moved from one form to the other either by lying about type
+!  or using 'transfer' for the copy.
+!  mpi_layout and mpi_layout_internal MUST have the SAME LENGTH and the SAME PHYSICAL LAYOUT
+!  internally, RPN_MPI uses the non wrapped form, but the user interfaces will be using
+!  the wrapped form
+!  communicators are wrapped, but rank and size remain plain integers
+!================================================================================================
+! subgrids (blocks of PEs within a grid) (less information than grids and supergrids)
+  type, BIND(C) :: subgrid_c           ! wrapped type for communicators
+    type(RPN_MPI_Comm) :: all
+    type(RPN_MPI_Comm) :: row
+    type(RPN_MPI_Comm) :: column
+  end type
+! applications (domains) and world (less information than grids and supergrids)
+  type, BIND(C) :: application_c       ! wrapped type for communicators
+    type(RPN_MPI_Comm) :: all          ! all PEs, compute and service
+    type(RPN_MPI_Comm) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_Comm) :: same_numa    ! PEs in same numa space (compute and service)
+  end type
+! grids and supergrids
+  type, BIND(C) :: mpigrid_c           ! wrapped type for communicators
+    type(RPN_MPI_Comm) :: all          ! all PEs, compute and service
+    type(RPN_MPI_Comm) :: compute      ! compute PEs
+    type(RPN_MPI_Comm) :: service      ! service (Input/Output) PEs
+    type(RPN_MPI_Comm) :: same_node    ! PEs in same SMP node (compute and service)
+    type(RPN_MPI_Comm) :: same_numa    ! PEs in same numa space (compute and service)
+    type(RPN_MPI_Comm) :: node_peer    ! node to node peer (PEs with same rank in node)
+    type(RPN_MPI_Comm) :: numa_peer    ! numa space to numa space peer (PEs with same rank in numa space)
+    type(RPN_MPI_Comm) :: grid_peer    ! grid to grid / supergrid to supergrid peer (PEs with same rank in grid/supergrid)
+    type(RPN_MPI_Comm) :: row          ! undefined in a supergrid, information for a grid row
+    type(RPN_MPI_Comm) :: column       ! undefined in a supergrid, information for a grid column
+  end type
+! the sets of information
+  type, BIND(C) :: grid_hierarchy_c    ! wrapped type for communicators
+    type(application_c) :: wrld        ! the entire world, conrains all applications
+    type(application_c) :: appl        ! application (domain), contains (M identical supergrids)
+    type(mpigrid_c)     :: sgrd        ! supergrid (contains N identical grids)
+    type(mpigrid_c)     :: grid        ! basic computation grid
+    type(subgrid_c)     :: blck        ! block of PEs inside a grid (subgrid)
+  end type
+! the three usual associates, communicators, rank, and size + general info
+  type, BIND(C) :: mpi_layout          ! wrapped type for communicators
+    integer(C_INT) :: version = layout_version
+    integer(C_INT) :: host             ! SMP host id
+    integer(C_INT) :: numa             ! numa space for this PE
+    integer(C_INT) :: colors(3)        ! application / supergrid / grid "color"
+    type(grid_hierarchy_c) :: comm     ! communicators
+    type(grid_hierarchy)   :: rank     ! rank in communicator
+    type(grid_hierarchy)   :: size     ! size of communicator
+  end type
+!================================================================================================
+! PE 2D grid/subgrid topologies
+!================================================================================================
+  type, BIND(C) :: RPN_MPI_Ftopo   ! 2D grid topology with RPNMPI (wrapped) communicators
+    integer(C_INT)     :: version = mpi_symbols_version
+    type(RPN_MPI_Fcom) :: grd      ! the 2D grid
+    type(RPN_MPI_Fcom) :: row      ! the grid row
+    type(RPN_MPI_Fcom) :: col      ! the grid column
+    integer(C_INT)     :: li       ! local length along i
+    integer(C_INT)     :: lj       ! local length along j
+    integer(C_INT)     :: gi       ! global length along i
+    integer(C_INT)     :: gj       ! global length along j
+    ! watch 64 bit alignment here (14 integers above, should be OK for now)
+    type(C_PTR)        :: lis = C_NULL_PTR       ! local lengths along i
+    type(C_PTR)        :: ljs = C_NULL_PTR       ! local lengths along j
+  end type RPN_MPI_Ftopo
+
+  type, BIND(C) :: RPN_MPI_topo    ! 2D grid topology with integer MPI communicators
+    integer(C_INT)    :: version = mpi_symbols_version
+    type(RPN_MPI_csr) :: grd       ! the 2D grid
+    type(RPN_MPI_csr) :: row       ! the grid row
+    type(RPN_MPI_csr) :: col       ! the grid column
+    integer(C_INT)    :: li        ! local length along i
+    integer(C_INT)    :: lj        ! local length along j
+    integer(C_INT)    :: gi        ! global length along i
+    integer(C_INT)    :: gj        ! global length along j
+    ! watch 64 bit alignment here (14 integers above, should be OK for now)
+    type(C_PTR)       :: lis = C_NULL_PTR       ! local lengths along i
+    type(C_PTR)       :: ljs = C_NULL_PTR       ! local lengths along j
+  end type RPN_MPI_topo
+!================================================================================================
+! PE 3D cube/face/edge topologies (npex x npey x 6)
+!================================================================================================
+! edge flags, RPN_MPI_Fedge%parm
+  integer, parameter  :: EDGE_NONE = int(B'0000')  ! not a face edge
+  integer, parameter  :: EDGE_YY   = int(B'0111')  ! E or W edge, partner is E or W edge
+! integer, parameter  :: EDGE_YX   = int(B'0110')  ! E or W edge, partner is N or S edge (EDGE_XY is used)
+  integer, parameter  :: EDGE_XY   = int(B'0101')  ! N or S edge, partner is E or W edge
+  integer, parameter  :: EDGE_XX   = int(B'0100')  ! N or S edge, partner is N or S edge
+  integer, parameter  :: EDGE_REV  = int(B'1000')  ! reverse edge exchange flag
+
+  type, BIND(C) :: RPN_MPI_Fedge   ! 3D cube edge with RPNMPI (wrapped) communicators
+    type(RPN_MPI_Fcom) :: comm     ! comm%size = len0 + len1  (or else !!)
+    integer(C_INT)     :: parm     ! edge flags : XX,YY,YX,XY, NONE, REVERSE
+    integer(C_INT)     :: edge     ! edge number (0->11) (-1 if not a face edge)
+    integer(C_INT)     :: len0     ! size of partner 0 row or column (lowest face number)
+    integer(C_INT)     :: len1     ! size of partner 1 row or column (highest face number)
+  end type RPN_MPI_Fedge
+
+! PE topology for a 3D "cube" of PEs
+  type, BIND(C) :: RPN_MPI_Fcube   ! 3D cube topology with RPNMPI (wrapped) communicators
+    integer(C_INT)     :: version = mpi_symbols_version
+    type(RPN_MPI_Fcom) :: cube
+    ! watch 64 bit alignment here (needed for RPN_MPI_Ftopo) (4 integers above, should be OK for now)
+    type(RPN_MPI_Ftopo):: face    ! my cube face (a normal grid, with gi==gj constraint)
+    integer(C_INT)     :: faceno  ! cube face number (0->5)
+    type(RPN_MPI_Fedge):: north   ! north edge description
+    type(RPN_MPI_Fedge):: south   ! south edge description
+    type(RPN_MPI_Fedge):: east    ! east  edge description
+    type(RPN_MPI_Fedge):: west    ! west  edge description
+  end type RPN_MPI_Fcube

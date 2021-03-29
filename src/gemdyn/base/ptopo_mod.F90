@@ -65,6 +65,7 @@ module ptopo
 ! Ptopo_intercomm    | inter-communicator number between Yin and Yan   |
 !----------------------------------------------------------------------
 !
+   logical Ptopo_alongY_L
    integer Ptopo_myproc    , Ptopo_myrow       , Ptopo_mycol
    integer Ptopo_numproc   , Ptopo_npex        , Ptopo_npey
    integer Ptopo_npeOpenMP , Ptopo_nthreads_dyn, Ptopo_nthreads_phy
@@ -73,7 +74,8 @@ module ptopo
    integer Ptopo_world_myproc, Ptopo_world_numproc
    logical Ptopo_last_domain_L
 
-   integer, dimension(  :,:), allocatable :: Ptopo_gindx
+   integer, dimension(  :,:), allocatable :: Ptopo_gindx, &
+                  Ptopo_gindx_alongX, Ptopo_gindx_alongY
    integer, dimension(:,:,:), allocatable :: Ptopo_colrow
 
 end module ptopo

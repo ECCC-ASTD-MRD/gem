@@ -118,7 +118,11 @@ End Interface
          meta(istk)%ni   = Out_gridin - Out_gridi0 + 1
          meta(istk)%nj   = Out_gridjn - Out_gridj0 + 1
          meta(istk)%nbits= nbit
-         meta(istk)%dtyp = 134
+         if (nbit <= 16) then
+            meta(istk)%dtyp = 134
+         else
+            meta(istk)%dtyp = 133
+         endif
          if (istk == out_stk_size) then
             call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                meta,istk, Out_gridi0,Out_gridin,&

@@ -284,6 +284,7 @@ CONTAINS
       H(k) = equator_relative_humidity(zcoord(k))
     end do
     thetavyz(1,:) = thetaeq
+    thetavyz(2:nphi,:) = 0.0d0 
 
     ! Exner pressure at the equatorial surface
     exnereqs = (pseq / p0)**(Rd/cp)

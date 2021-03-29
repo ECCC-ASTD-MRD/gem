@@ -17,6 +17,7 @@ target_link_libraries(maingemdm
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -26,7 +27,7 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(maingemdm gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(maingemdm gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
@@ -34,6 +35,7 @@ target_link_libraries(checkdmpart
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -43,7 +45,7 @@ target_link_libraries(checkdmpart
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(checkdmpart gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(checkdmpart gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -51,6 +53,7 @@ target_link_libraries(prgemnml
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -60,7 +63,7 @@ target_link_libraries(prgemnml
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prgemnml gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(prgemnml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 install(TARGETS prgemnml RUNTIME 
         DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
@@ -71,6 +74,7 @@ target_link_libraries(gemgrid
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -78,13 +82,14 @@ target_link_libraries(gemgrid
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(gemgrid gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(gemgrid gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(feseri mainfeseri.F90)
 target_link_libraries(feseri
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -92,13 +97,14 @@ target_link_libraries(feseri
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(feseri phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(feseri phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(prphynml mainprphynml.F90)
 target_link_libraries(prphynml
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -106,7 +112,7 @@ target_link_libraries(prphynml
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prphynml phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(prphynml phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 install(TARGETS maingemdm gemgrid checkdmpart feseri prphynml RUNTIME 
         DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

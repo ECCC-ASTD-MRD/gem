@@ -79,7 +79,7 @@
       if (Inp_dst_hauteur_L) then
          Inp_src_GZ_L= inp_src_vert3d ('GEOPOTENTIAL',GZ3d)
       else
-         Inp_src_PX_L= inp_src_vert3d ('PX',PX3d)
+         Inp_src_PX_L= inp_src_vert3d ('PX  ',PX3d)
       endif
 
       if (Inp_iome >= 0) then

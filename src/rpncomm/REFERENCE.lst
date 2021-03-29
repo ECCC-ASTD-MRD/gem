@@ -23,16 +23,19 @@ RPN_COMM_colors.o
 RPN_COMM_comm.o
 RPN_COMM_compress.o
 RPN_COMM_const.o
+RPN_COMM_cpu_configuration.o
 RPN_COMM_datyp.o
 RPN_COMM_debug.o
 RPN_COMM_defo.o
 RPN_COMM_diag.o
 RPN_COMM_dist.o
+RPN_COMM_ezwin.o
 RPN_COMM_f2c.o
 RPN_COMM_finalize.o
 RPN_COMM_gather.o
 RPN_COMM_gather_e1y3.o
 RPN_COMM_gatherv.o
+RPN_COMM_get_my_domain.o
 RPN_COMM_getenv.o
 RPN_COMM_globalsum.o
 RPN_COMM_grank.o
@@ -41,7 +44,9 @@ RPN_COMM_grid_redist.o
 RPN_COMM_group.o
 RPN_COMM_halo.o
 RPN_COMM_haloflip.o
+RPN_COMM_infotyp.o
 RPN_COMM_init.o
+RPN_COMM_init_generic.o
 RPN_COMM_io.o
 RPN_COMM_io_dist_coll.o
 RPN_COMM_io_pe_list.o
@@ -61,7 +66,7 @@ RPN_COMM_oper.o
 RPN_COMM_options.o
 RPN_COMM_optn.o
 RPN_COMM_petopo.o
-RPN_COMM_progatate_boundary.o
+RPN_COMM_propagate_boundary.o
 RPN_COMM_ptr.o
 RPN_COMM_qadl.o
 RPN_COMM_rank.o
@@ -74,6 +79,7 @@ RPN_COMM_shmget.o
 RPN_COMM_size.o
 RPN_COMM_sock.o
 RPN_COMM_split.o
+RPN_COMM_split_by_node.o
 RPN_COMM_spread.o
 RPN_COMM_status_size.o
 RPN_COMM_swapns.o
@@ -87,6 +93,7 @@ RPN_COMM_unbind_process.o
 RPN_COMM_unit.o
 RPN_COMM_version.o
 RPN_COMM_waitall_nostat.o
+RPN_COMM_win_allocate_shared.o
 RPN_COMM_window.o
 RPN_COMM_wtime.o
 RPN_COMM_xch_halo.o
@@ -96,5 +103,3 @@ RPN_COMM_xch_halon.o
 RPN_COMM_xch_halons.o
 RPN_COMM_xch_halosl.o
 RPN_COMM_xch_halox.o
-RPN_COMM_ezwin.o
-RPN_COMM_split_by_node.o
