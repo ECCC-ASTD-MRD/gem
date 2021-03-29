@@ -82,6 +82,13 @@ contains
 !
 !-------------------------------------------------------------------
 !
+      if (nks<2) then
+         do k=1,nkd
+            F_dch(:,:,k) = F_sch(:,:,nks)
+         end do
+         return
+      endif
+      
       levtype_S='P'
       if(present(levtype))then
          select case(trim(levtype))

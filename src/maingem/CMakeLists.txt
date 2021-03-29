@@ -11,6 +11,7 @@ target_link_libraries(maingemdm
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -20,7 +21,7 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(maingemdm gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(maingemdm gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 
 add_executable(maingemgrid maingemgrid.F90)
@@ -29,6 +30,7 @@ target_link_libraries(maingemgrid
    phy
    modelutils
    vgrid
+   mpi-extras
    rpncomm
    rmn
    massv
@@ -36,7 +38,7 @@ target_link_libraries(maingemgrid
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(maingemgrid gem phy modelutils vgrid rpncomm rmn massv)
+add_dependencies(maingemgrid gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 install(TARGETS maingemdm maingemgrid RUNTIME 
         DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

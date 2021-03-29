@@ -13,23 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module spn_options
-   implicit none
+      use, intrinsic :: iso_fortran_env
+      implicit none
    public
    save
 
-   !# Spectral nudging list of variables (eg. 'UVT' or 'UV')
-   character(len=16) :: Spn_nudging_S = ' '
-   namelist /spn  / Spn_nudging_S
-   namelist /spn_p/ Spn_nudging_S
-
    !# Nudging profile lower end in hyb level (eg. 1.0 or 0.8)
-   !# If use 0.8, the profile will be set zero when hyb > 0.8
+   !# profile will be set to 0. when hyb > 0.8
    real :: Spn_start_lev = 1.0
    namelist /spn  / Spn_start_lev
    namelist /spn_p/ Spn_start_lev
 
    !# Nudging profile upper end in hyb level (eg. 0.0 or 0.2)
-   !# If use 0.2, the profile wll be set 1.0 when hyb < 0.2
+   !# profile wll be set to 1.0 when hyb < 0.2
    real :: Spn_up_const_lev = 0.0
    namelist /spn  / Spn_up_const_lev
    namelist /spn_p/ Spn_up_const_lev
@@ -40,31 +36,31 @@ module spn_options
    namelist /spn  / Spn_trans_shape_S
    namelist /spn_p/ Spn_trans_shape_S
 
-   !# Nudging relaxation timescale (eg. 10 hours )
+   !# Nudging relaxation timescale - in hours
    real :: Spn_relax_hours = 10.
    namelist /spn  / Spn_relax_hours
    namelist /spn_p/ Spn_relax_hours
 
-   !# The filter will be set zero for smaller scales (in km)
+   !# The filter will be set to 0. for smaller scales (in km)
    real :: Spn_cutoff_scale_large = 300.
    namelist /spn  / Spn_cutoff_scale_large
    namelist /spn_p/ Spn_cutoff_scale_large
 
-   !# The filter will be set 1.0 for larger scales (in km) between
-   !# Spn_cutoff_scale_small and Spn_cutoff_scale_large,
-   !# the filter will have a COS2 transition.
+   !# The filter will be set to 1.0 for larger scales (in km)
+   !# Transition between Spn_cutoff_scale_small and Spn_cutoff_scale_large
+   !# will have a COS2 shape.
    real :: Spn_cutoff_scale_small = 100.
    namelist /spn  / Spn_cutoff_scale_small
    namelist /spn_p/ Spn_cutoff_scale_small
 
-   !# Nudging interval in seconds (eg. 1800, means nudging is performed
-   !# every every 30 minutes)
-   integer :: Spn_step = 21600
-   namelist /spn  / Spn_step
-   namelist /spn_p/ Spn_step
+   !# Nudging interval - in sec
+   !# Nudging is performed every every Spn_freq sec
+   integer :: Spn_freq = -1
+   namelist /spn  / Spn_freq
+   namelist /spn_p/ Spn_freq
 
    !# Nudging weight in temporal space (.true. or .false.).
-   !# If the driving fields are available every 6 hours and Spn_step is
+   !# If the driving fields are available every 6 hours and Spn_freq is
    !# set to 30 minutes then nudging will have more weight every six hours
    !# when the driving fields are available
    logical :: Spn_weight_L = .false.
@@ -77,6 +73,18 @@ module spn_options
    integer :: Spn_wt_pwr = 2
    namelist /spn  / Spn_wt_pwr
    namelist /spn_p/ Spn_wt_pwr
+      
+   character(len=16) :: Spn_nudging_S = ' ' ! depricated
+   logical :: Spn_ON_L = .false.
+   integer :: Spn_12smin, Spn_12smax, Spn_12sn, Spn_12sn0
+   integer :: Spn_22min , Spn_22max , Spn_22n , Spn_22n0
+   integer :: Spn_22pil_w, Spn_22pil_e, Spn_interval, Spn_ws
+   integer :: Spn_njnh,Spn_nk12,Spn_ni22
+   real :: Spn_weight
+   real, dimension(:), allocatable :: prof
+   real(kind=REAL64) , dimension(:,:  ), allocatable :: Spn_flt
+   real(kind=REAL64) , dimension(:,:,:), allocatable :: Spn_fft,&
+                                               Spn_fdg, Spn_wrk
 
 contains
 
@@ -132,17 +140,5 @@ contains
 !
       return
       end function spn_nml
-
-   function spn_options_init() result(F_istat)
-      implicit none
-      integer :: F_istat
-#include <rmnlib_basics.hf>
-      logical, save :: init_L = .false.
-      F_istat = RMN_OK
-      if (init_L) return
-      init_L = .true.
-
-      return
-   end function spn_options_init
 
 end module spn_options

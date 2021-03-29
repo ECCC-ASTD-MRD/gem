@@ -43,6 +43,21 @@
 ! normalization constant to make a forward->backward transform pair an identity,
 ! but that's all.
 
+! Update: August 2020 -- Christopher Subich
+
+! MPI-3 now allows processes sharing a memory domain to make use of shared
+! memory.  This is not directly useful for FFTW (and the Fourier transforms),
+! but it is useful inside the tridiagonal solver.  We need each process to
+! hold a contiguous-in-i slice of the array to perform the Fourier transform,
+! but we need contiguous-in-j slices to perform the tridiagonal solve.
+
+! Traditionally, this is handled by a second transpose step.  With MPI-3
+! shared memory and a special process order (to minimize post-FFT data
+! distribution along j between nodes), we can instead use a node-local shared
+! memory array.  This still requires an in-core transpose to shuffle the
+! memory order, but this in-core transpose can be included inside the FFT
+! via the FFTW guru interface.
+
 module gem_fft
    use iso_c_binding
    use, intrinsic :: iso_fortran_env
@@ -68,7 +83,7 @@ module gem_fft
    type dft_descriptor
       ! The size of the input/output arrays used when planning
       ! the transform; this provides sanity and bounds checking
-      integer, dimension(3) :: tsize
+      integer, dimension(3) :: tsize_in, tsize_out
       ! Opaque array containing the FFTW plans (type void * in C)
       type(C_PTR) :: plan
    end type dft_descriptor
@@ -101,7 +116,7 @@ contains
       return
    end function
 
-   subroutine make_r2r_dft_plan(tdesc, F_in, F_out, tdim, f_type, direction)
+   subroutine make_r2r_dft_plan(tdesc, F_in, F_out, tdim, f_type, direction, permute)
       ! Create an FFTW plan corresponding to a DCT or DST, storing the plan
       ! and associated data in a descriptor type.
 
@@ -117,6 +132,12 @@ contains
       ! block, the caller should supply an array slice.  This subroutine
       ! uses Fortran intrinsics to infer the array (and transform) size
       ! and pointer math to infer the relevant strides.
+
+      ! If permute is not specified, then the intput and output arrays
+      ! must have the same logical shape, although their physical layouts
+      ! (strides in linear memory) might differ.  If permute is specified,
+      ! then that permutation is applied: dimension 1 of F_in becomes
+      ! dimension permute(1) of F_out, 2->permute(2), and 3->permute(3).
 
       ! The input and output arrays must have compatible logical shapes,
       ! although their physical layouts (strides) might differ.
@@ -144,12 +165,22 @@ contains
 
       character(len=*), intent(in) :: f_type ! Transform type
 
-      type(dft_descriptor), intent(inout) :: tdesc
+      ! Opaque pointer for the transform.  Internally, the descriptor holds
+      ! the FFTW plan and some sanity-checking information
+      type(dft_descriptor), intent(inout) :: tdesc 
+
+      ! Optional parameter describing any in-memory permutation performed
+      ! alongside the FFT
+      integer, dimension(3), intent(in), optional :: permute
 
       ! Local variables:
       integer :: ierr ! Error from FFTW initialization
-      integer :: istrides(3) ! Input array strides
-      integer :: ostrides(3) ! Output array strides
+
+      ! Input and output array parameters, as specified
+      integer :: istrides(3), isizes(3) ! Strides and sizes
+      integer :: ostrides(3), osizes(3)
+
+      integer :: perm(3) ! Dimension permutation
 
       ! Variables for FFTW planning
 
@@ -191,6 +222,13 @@ contains
       ! of results between runs.
       integer, parameter :: FFTW_PLAN_TYPE = FFTW_ESTIMATE
 
+      ! Supply a default, trivial permutation if one is not otherwise specified
+      if (.not. present(permute)) then
+         perm = [1,2,3]
+      else
+         perm = permute
+      endif
+
 
    ! Check for FFTW thread initialization, and initialize if necessary
       if (.not. fftw_thread_initialized) then
@@ -209,65 +247,89 @@ contains
 !$omp end critical(fftw_lock)
       end if
 
-      ! Check for compatible input and output arrays
-      if (.not. all(shape(F_in) == shape(F_out))) then
+      !! Compute input and output array information
+
+      isizes = shape(F_in)
+      osizes = shape(F_out)
+
+      istrides = 1 ! Sensible defaults
+      ostrides = 1
+
+      ! Pointer math: accessing memory strides is difficult in Fortran,
+      ! but we need to compute it (in REAL64 units) for the fftw call.
+      ! We cannot directly calculate it from the array shape because we
+      ! might have been given a noncontiguous slice of a larger array.
+      ! Instead, we have to measure it by subtracting the addresses of
+      ! logically-adjacent elements.
+
+      ! Alas, this is not nicely-supported.  The obvious c_loc intrinsic
+      ! returns opaque pointers that don't allow math, so instead we must
+      ! resort to the archaic Cray pointer approach and use the 'loc'
+      ! intrinsic.
+
+      ! Strides for the input array
+      if (isizes(1) > 1) then
+         istrides(1) = (loc(F_in(2,1,1)) - loc(F_in(1,1,1))) / 8
+      end if
+      if (isizes(2) > 1) then
+         istrides(2) = (loc(F_in(1,2,1)) - loc(F_in(1,1,1))) / 8
+      end if
+      if (isizes(3) > 1) then
+         istrides(3) = (loc(F_in(1,1,2)) - loc(F_in(1,1,1))) / 8
+      end if
+
+      ! Strides for the output array
+      if (osizes(1) > 1) then
+         ostrides(1) = (loc(F_out(2,1,1)) - loc(F_out(1,1,1))) / 8
+      end if
+      if (osizes(2) > 1) then
+         ostrides(2) = (loc(F_out(1,2,1)) - loc(F_out(1,1,1))) / 8
+      end if
+      if (osizes(3) > 1) then
+         ostrides(3) = (loc(F_out(1,1,2)) - loc(F_out(1,1,1))) / 8
+      end if
+
+      ! Check for compatibility
+      if (isizes(1) /= osizes(perm(1)) .or. &
+          isizes(2) /= osizes(perm(2)) .or. &
+          isizes(3) /= osizes(perm(3))) then
          call gem_error(-1,'make_r2r_dft_plan','Incompatible array shapes')
       end if
 
-      ! Compute array strides
-      istrides = 1 ! Sensible default
-      ostrides = 1
-
-      ! Pointer math: the stride, in terms of REAL64 units, corresponds
-      ! to the difference in memory location along the relevant dimension
-      ! (in bytes) divided by the size of a double (8 bytes).  We only
-      ! compute the stride along dimensions where the array is a non-
-      ! singleton, to ensure that all implied memory addresses are in-
-      ! bounds.
-      if (size(F_in,1) > 1) then
-         istrides(1) = (loc(F_in(2,1,1)) - loc(F_in(1,1,1)))/8
-         ostrides(1) = (loc(F_out(2,1,1)) - loc(F_out(1,1,1)))/8
-      end if
-      if (size(F_in,2) > 1) then
-         istrides(2) = (loc(F_in(1,2,1)) - loc(F_in(1,1,1)))/8
-         ostrides(2) = (loc(F_out(1,2,1)) - loc(F_out(1,1,1)))/8
-      end if
-      if (size(F_in,3) > 1) then
-         istrides(3) = (loc(F_in(1,1,2)) - loc(F_in(1,1,1)))/8
-         ostrides(3) = (loc(F_out(1,1,2)) - loc(F_out(1,1,1)))/8
-      end if
 
       ! With this stride information, we can condense the information
       ! for FFTW:
 
-      ! The transform length is the size of the array over the right dimension
-      dims%n = size(F_in,tdim)
-      ! And the strides also correspond
+      ! The transform length is the size of the array over the given dimension
+      dims%n = isizes(tdim)
+      ! Also record the corresponding stride.  Note that this is now in a logical
+      ! order for the output array; logical and lexical orders correspond for
+      ! the input array
       dims%is = istrides(tdim)
-      dims%os = ostrides(tdim)
+      dims%os = ostrides(perm(tdim))
 
       ! An equivalent data structure is used to batch transforms together
       if (tdim == 1) then
-         batch_dims(1)%n = size(F_in,2)
+         batch_dims(1)%n = isizes(2)
          batch_dims(1)%is = istrides(2)
-         batch_dims(1)%os = ostrides(2)
-         batch_dims(2)%n = size(F_in,3)
+         batch_dims(1)%os = ostrides(perm(2))
+         batch_dims(2)%n = isizes(3)
          batch_dims(2)%is = istrides(3)
-         batch_dims(2)%os = ostrides(3)
+         batch_dims(2)%os = ostrides(perm(3))
       elseif (tdim == 2) then
-         batch_dims(1)%n = size(F_in,1)
+         batch_dims(1)%n = isizes(1)
          batch_dims(1)%is = istrides(1)
-         batch_dims(1)%os = ostrides(1)
-         batch_dims(2)%n = size(F_in,3)
+         batch_dims(1)%os = ostrides(perm(1))
+         batch_dims(2)%n = isizes(3)
          batch_dims(2)%is = istrides(3)
-         batch_dims(2)%os = ostrides(3)
+         batch_dims(2)%os = ostrides(perm(3))
       elseif (tdim == 3) then
-         batch_dims(1)%n = size(F_in,1)
+         batch_dims(1)%n = isizes(1)
          batch_dims(1)%is = istrides(1)
-         batch_dims(1)%os = ostrides(1)
-         batch_dims(2)%n = size(F_in,2)
+         batch_dims(1)%os = ostrides(perm(1))
+         batch_dims(2)%n = isizes(2)
          batch_dims(2)%is = istrides(2)
-         batch_dims(2)%os = ostrides(2)
+         batch_dims(2)%os = ostrides(perm(2))
       else
          call gem_error(-1,'make_r2r_dft_plan','Invalid transform dimension')
       end if
@@ -284,9 +346,10 @@ contains
       end if
 
       ! Begin setting the transform descriptor
-      tdesc%tsize = shape(F_in)
+      tdesc%tsize_in = isizes
+      tdesc%tsize_out = osizes
 
-      if (size(F_in,tdim) == 0) then
+      if (isizes(tdim) == 0) then
          ! The array slice is empty along the transform dimension,
          ! so there is in fact no transform.
          tdesc%plan = C_NULL_PTR
@@ -306,6 +369,9 @@ contains
 
       ! However, with the magic of iso_c_binding we can perform some pointer math
       ! to effectively implement the C address-of operator
+
+      ! However, with iso_c_binding we can perform the equivalent of 
+      ! double *my_ptr = &array[0][0][0]
 
       call c_f_pointer(c_loc(F_in(1,1,1)),in_ptr,[1])
       call c_f_pointer(c_loc(F_out(1,1,1)),out_ptr,[1])
@@ -343,9 +409,9 @@ contains
 
       real(kind=REAL64), dimension(:), pointer, contiguous :: in_ptr, out_ptr
 
-      if (any(shape(F_in) /= tdesc%tsize)) then
+      if (any(shape(F_in) /= tdesc%tsize_in)) then
          call gem_error(-1,'execute_r2r_dft_plan','Input array does not match plan size')
-      elseif (any(shape(F_out) /= tdesc%tsize)) then
+      elseif (any(shape(F_out) /= tdesc%tsize_out)) then
          call gem_error(-1,'execute_r2r_dft_plan','Output array does not match plan size')
       end if
 

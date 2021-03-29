@@ -39,8 +39,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      call gemtime_start ( 99, 'BLOCSTAT', 1 )
-
       if (.not.done) call set_statliste()
 
       flag = .false.
@@ -48,6 +46,7 @@
       flag = flag .or. F_forceit_L
 
       if (flag) then
+         call gemtime_start ( 99, 'BLOCSTAT', 1 )
 
          if (Ptopo_myproc == 0) write(output_unit,1000) Lctl_step
 
@@ -102,11 +101,12 @@
          if (Dynamics_FISL_L .and. Lctl_step > 0) call adz_cfl()
 
          if (Ptopo_myproc == 0) write(output_unit,1001)
+         
+         call gemtime_stop ( 99 )
 
       end if
 
       done = .true.
-      call gemtime_stop ( 99 )
       call flush(6)
 
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))

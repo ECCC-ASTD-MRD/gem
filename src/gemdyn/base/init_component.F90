@@ -26,6 +26,7 @@
       use ptopo
       use step_options
       use tdpack
+      use numa
       use gem_timing
       use version
       implicit none
@@ -38,9 +39,9 @@
       integer, external :: model_timeout_alarm, OMP_get_max_threads
 
       character(len=256) :: my_dir
-      logical :: is_official_L
+      logical :: is_official_L, alongY_L
       integer :: ierr, mydomain
-      integer, parameter :: nargs=10, npos=0
+      integer, parameter :: nargs=11, npos=0
       character(len=16) listec(nargs)
       character(len=2048) def(nargs), val(nargs)
       character(len=50) :: DSTP,name_S,arch_S,compil_S,user_S
@@ -54,11 +55,13 @@
       ! with coresponding first and second default values (val & def)
       ! In MPI the arguments are provided using export CCARD_ARGS=
       listec = [ CHARACTER(LEN=16) :: &
-                    'npex.', 'npey.', 'smtdyn.', 'smtphy.','ngrids.',&
-                    'dom_start.', 'dom_end.', 'dom_last.',&
+                    'npex.', 'npey.', 'smtdyn.', 'smtphy.', 'ngrids.',&
+                    'dom_start.', 'dom_end.', 'dom_last.', 'along_Y.',&
                     'input.', 'output.' ]
-      val    = [ '1', '1', '0', '0', '1', '0', '0', '0', ' ', ' ' ]
-      def    = [ '1', '1', '0', '0', '1', '0', '0', '0', ' ', ' ' ]
+                    
+      val= [ '1  ', '1  ', '0  ', '0  ', '1  ', '0  ', '0  ', '0  ', '.t.', '   ', '   ' ]
+      def= [ '1  ', '1  ', '0  ', '0  ', '1  ', '0  ', '0  ', '0  ', '.f.', '   ', '   ' ]
+
       ! Obtain values of calling arguments (listec)
       call ccard (listec,def,val,nargs,npos)
       read (val(1),*) Ptopo_npex
@@ -69,8 +72,9 @@
       read (val(6),*) Domains_deb
       read (val(7),*) Domains_fin
       read (val(8),*) Domains_last
-      Path_input_S = trim(val( 9))
-      Path_output_S= trim(val(10))
+      read (val(9),*) alongY_L
+      Path_input_S = trim(val(10))
+      Path_output_S= trim(val(11))
 
       ierr = clib_getenv ('PWD', Path_work_S)
 
@@ -96,6 +100,9 @@
       Dcst_inv_rayt_8  = 1.d0 / rayt_8
       Dcst_omega_8     = omega_8
 
+      Ptopo_alongY_L = alongY_L .or. (Ptopo_npey == 1)
+      if (Ptopo_alongY_L) call RPN_COMM_set_petopo(1,999999)
+      
       ! Start MPI on a (Ptopo_npex x Ptopo_npey) processors topology and
       ! obtain Ptopo_myproc, Ptopo_numproc, Ptopo_mycol and Ptopo_myrow
       Ptopo_couleur= RPN_COMM_gridinit ( Ptopo_myproc,Ptopo_numproc, &
@@ -144,7 +151,9 @@
          Ptopo_world_numproc = Ptopo_numproc
          Ptopo_world_myproc  = Ptopo_myproc
       end if
-
+      
+      call numa_init ()
+      
       ! Initialize OpenMP
       Ptopo_npeOpenMP = OMP_get_max_threads()
       if (Ptopo_nthreads_dyn < 1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
@@ -152,8 +161,9 @@
       call set_num_threads ( Ptopo_nthreads_dyn, 0 )
 
       if (Lun_out > 0) then
-         write (Lun_out, 8255) Ptopo_npex, Ptopo_npey, &
-             Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
+         write (Lun_out, 8255) Ptopo_npex, Ptopo_npey, Ptopo_alongY_L,&
+                   Ptopo_npeOpenMP,Ptopo_nthreads_dyn, &
+                   Ptopo_nthreads_phy
          write (Lun_out, 8256) trim(Path_work_S)
       end if
 
@@ -176,10 +186,11 @@
       if (l_east ) east  = 1
       if (l_west ) west  = 1
 
- 8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
-          " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
-            i4,' x ',i3,' x ',i3)
- 8256       format (/," WORKING DIRECTORY:"/a/)
+ 8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i4,&
+              8x,'Ptopo_alongY_L= ',l/, &
+              " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
+              i4,' x ',i3,' x ',i3)
+ 8256 format (/," WORKING DIRECTORY:"/a/)
 !
 !--------------------------------------------------------------------
 !

@@ -1,0 +1,60 @@
+!======================================================================================
+!             NULL version of some types to facilitate initialization
+!======================================================================================
+!
+  type(RPN_MPI_Comm), parameter :: RPN_MPI_Comm_NULL = RPN_MPI_Comm(MPI_COMM_NULL)
+!
+  type(RPN_MPI_Fcom), parameter :: RPN_MPI_Fcom_NULL = RPN_MPI_Fcom(RPN_MPI_Comm(MPI_COMM_NULL), 0, 0)
+!
+  type(RPN_MPI_csr), parameter  :: RPN_MPI_csr_NULL = RPN_MPI_csr(0, 0, 0)
+!
+  type(RPN_MPI_Ftopo), parameter :: RPN_MPI_Ftopo_NULL = RPN_MPI_Ftopo(         &
+                       mpi_symbols_version,                                     &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL, &
+                       0, 0, 0, 0, C_NULL_PTR, C_NULL_PTR )
+!
+  type(RPN_MPI_Fedge), parameter :: RPN_MPI_Fedge_NULL = RPN_MPI_Fedge(RPN_MPI_Fcom_NULL, EDGE_NONE, -1, 0, 0)
+!
+  type(RPN_MPI_Fcube), parameter :: RPN_MPI_Fcube_NULL = RPN_MPI_Fcube( &
+                       mpi_symbols_version,                             &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Ftopo_NULL, -1,       &
+                       RPN_MPI_Fedge_NULL, RPN_MPI_Fedge_NULL, RPN_MPI_Fedge_NULL, RPN_MPI_Fedge_NULL )
+!
+  type(subgrid_f),     parameter :: subgrid_f_NULL = subgrid_f(  &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL )
+!
+  type(subgrid_r),     parameter :: subgrid_r_NULL = subgrid_r(  &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL, RPN_MPI_csr_NULL )
+!
+  type(mpigrid_f),     parameter :: mpigrid_f_NULL = mpigrid_f(  &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL,     &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL,     &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL,     &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL,     &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL )
+!
+  type(mpigrid_r),     parameter :: mpigrid_r_NULL = mpigrid_r(  &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL,       &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL,       &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL,       &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL,       &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL )
+!
+  type(application_f), parameter :: application_f_NULL = application_f(         &
+                       RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL, RPN_MPI_Fcom_NULL )
+!
+  type(application_r), parameter :: application_r_NULL = application_r(         &
+                       RPN_MPI_csr_NULL, RPN_MPI_csr_NULL, RPN_MPI_csr_NULL )
+!
+  type(mpi_layout_f),  parameter :: mpi_layout_f_NULL = mpi_layout_f(      &
+                       layout_version, -1, -1, [-1, -1, -1],               &
+                       application_f_NULL, application_f_NULL,             &
+                       mpigrid_f_NULL, mpigrid_f_NULL,                     &
+                       subgrid_f_NULL )
+!
+  type(mpi_layout_r),  parameter :: mpi_layout_r_NULL = mpi_layout_r(      &
+                       layout_version, -1, -1, [-1, -1, -1],               &
+                       application_r_NULL, application_r_NULL,             &
+                       mpigrid_r_NULL, mpigrid_r_NULL,                     &
+                       subgrid_r_NULL )
+!

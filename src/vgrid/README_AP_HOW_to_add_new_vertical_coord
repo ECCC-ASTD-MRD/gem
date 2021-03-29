@@ -1,0 +1,63 @@
+To add a new vertical coordinate type:
+
+1- Design the new table (on paper)
+
+2- Modify the validity tables to include your new Vcode
+      C: in vgrid.c, e.g. :
+         static int is_in_logp       [VALID_TABLE_SIZE] = {    0,    0,    0,    0,    0, 5002, 5003, 5004, 5005, 5100,    0};
+	 NOTE : modify all lines. Put 0 if not relevent for this Vcode, increase VALID_TABLE_SIZE by one.
+
+3- Add elements to the structure (typedef struct vgrid_descriptor) if necessary and initialized them
+      C: vgrid.h, c_vgd_construct
+
+4- Add a branch to your new Vcode new_gen
+     Fortran: new_gen, add new required inputs if any
+     C: C_new_gen, add new required inputs if any, add case clause and function
+     C: fstd_init, add new required inputs if any, add case clause and function
+        Add new interface Cvgd_new_gen_(Vcode)
+     Test: add test e.g. constructor_gen_5100.F90
+
+5- Add a branch to your new Vcode in the build constructor, add new required inputs if any
+      Fortran : new_build_vert
+      C: C_new_build_vert
+      Test: add this Vcode in tests constructor_build_all.F90 see point 9.
+              
+6- Write the encoder for your new Vcode
+      C: e.g. c_encode_vert_5002
+      Test: constructor_build_all.F90 constructor_gen_*
+
+7- Add support to your vcode in 
+      C: Cvgd_new_from_table
+      Tests: constructor_table, constructor_gen_...
+
+8- Add get/put entries if the structure has been modified (step 3 above)      
+      Tests: put_*
+
+9- Generate a file that contains your new coordinate record
+      To run the tests you will need a model output with P0, UU, TT, WT1, PX, GZ and the new !!
+      Run the GEM model with your new library in order to produce this file.
+
+10- Write a decoder for your new Vcode (e.g. c_decode_vert_5002)
+       Tests: constructor_table    
+
+12- Add a level calculator (e.g. C_compute_pressure_5002 C_compute_heights_21001)
+       Test: levels_withref_profile_all, levels_toplevel_value
+
+13- Add a branch for your new Vcode in the printer
+       C: Cvgd_print_desc, Cvgd_print_vcode_description
+      Tests: add file for this Vcode in print_vcode
+
+14- Add new elements to test_equality if any
+       C: Cvgd_vgdcmp
+
+15- Add code in case statement of function table_update for new Vcode
+       C: Cvgd_new_from_table
+       Tests: add Vcode in constructor_table
+
+16- Add new elements to the structure if any in the garbage_collection function
+
+17- Add new Vcode in Cvgd_print_vcode_description
+
+Write/amend tests cases to tests the added feature before you add the feature, make sure the tests fail before the
+code is implemented to make sure the tests are affective.
+Leave tests in tests/src directory (git add your_new_test; git commit -m 'Add test for Vcode xyz'.

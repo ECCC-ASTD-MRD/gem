@@ -37,19 +37,35 @@ module sol
 !----------------------------------------------------------------------
 
    character(len=4) :: Sol_type_fft
-
    integer :: sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
-   integer :: sol_niloc,sol_njloc,sol_nloc,sol_nk
-   integer :: sol_i0,sol_in,sol_j0,sol_jn
+   integer :: sol_niloc,sol_njloc,sol_nloc,sol_nk,Sol_sock_nk
+   integer :: sol_i0,sol_in,sol_j0,sol_jn,sol_numank
+   integer :: Sol_miny,Sol_maxy,Sol_mink,Sol_maxk
+   integer :: Sol_ldni, Sol_istart, Sol_iend
 
    real, dimension(:,:,:), allocatable :: Sol_rhs
 
    real(kind=REAL64), dimension(:), allocatable :: Sol_ai_8,Sol_bi_8,Sol_ci_8
    real(kind=REAL64), dimension(:), allocatable :: Sol_stencil2_8,Sol_stencil3_8
    real(kind=REAL64), dimension(:), allocatable :: Sol_stencil4_8,Sol_stencil5_8
-   real(kind=REAL64), dimension(:,:,:), allocatable :: Sol_dwfft, Sol_dg2
-   real(kind=REAL64) :: Sol_pri
+   real(kind=REAL64), dimension(:,:,:), allocatable :: Sol_dwfft, Sol_dg2, &
+                                                       Sol_rhs_8, Sol_sol_8
 
+   !! For the one-transpose solve, the following are pointers into the allocated,
+   !  shared-memory space that eliminates the y-transpose.  Defining these pointers
+   !  as contiguous (and ensuring it on assignment) enables compile-time optimizations.
+   !  - Sol_fft contains the transposed output of the FFT
+   !  - Sol_a, Sol_b, and Sol_c contain the precomputed tridiagonal solve entries
+   !  Each array is in (k,i,j) order.
+   !  - Sol_xpose contains the 4D working array (lni, lnj, lnk, npex) for the improved
+   !              MPI transposer
+   real(kind=REAL64), dimension(:,:,:), contiguous, pointer :: Sol_a,Sol_b,Sol_c,Sol_fft
+   real(kind=REAL64), dimension(:,:,:,:), contiguous, pointer :: Sol_xpose
+
+   ! Normalization factor for the FFT
+   real(kind=REAL64) :: Sol_pri
+      
+   ! Opaque pointers to hold the forward and reverse FFT plans
    type(dft_descriptor) :: forward_plan, reverse_plan
 
 end module sol

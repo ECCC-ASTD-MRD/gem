@@ -678,9 +678,9 @@ contains
 !
 !     ---------------------------------------------------------------
 !
-      call rpn_comm_xch_halo (F_u, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
+      call rpn_comm_xch_halo (F_u, Minx,Maxx,Miny,Maxy,l_niu,l_nj,Nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_v, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
+      call rpn_comm_xch_halo (F_v, Minx,Maxx,Miny,Maxy,l_ni,l_njv,Nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       tag1= 12 ; tag2= 14 ; ireq= 0

@@ -1,5 +1,6 @@
 //! @file qstdir.h XDF constants and data structures
 
+#include <stdint.h>
 #include <rpnmacros.h>
 #include "../INTRALIB_INCLUDES/fnom.h"
 #define WRITE_PAGE(a,b,c)
@@ -669,9 +670,9 @@ typedef struct {
 //! Key descriptor structure, 64 bits per key description
 typedef struct {
 #if !defined(Little_Endian)
-        word ncle:32, bit1:13, lcle:5, tcle:6, reserved:8;
+        uint32_t ncle:32, bit1:13, lcle:5, tcle:6, reserved:8;
 #else
-        word ncle:32, reserved:8, tcle:6, lcle:5, bit1:13;
+        uint32_t ncle:32, reserved:8, tcle:6, lcle:5, bit1:13;
 #endif
 } key_descriptor;
 
@@ -692,22 +693,22 @@ typedef struct {
 typedef struct {
         /* each line (except last one) describes 64 bits */
 #if !defined(Little_Endian)
-        word idtyp:8,  lng:24,   addr:32;  /* standard XDF record header */
-        word vrsn,     sign;               /* char[4] */
-        word fsiz:32,  nrwr:32;
-        word nxtn:32,  nbd:32;
-        word plst:32,  nbig:32;
-        word nprm:16,  lprm:16,  naux:16, laux:16;
+        uint32_t idtyp:8,  lng:24,   addr:32;  /* standard XDF record header */
+        uint32_t vrsn,     sign;               /* char[4] */
+        uint32_t fsiz:32,  nrwr:32;
+        uint32_t nxtn:32,  nbd:32;
+        uint32_t plst:32,  nbig:32;
+        uint32_t nprm:16,  lprm:16,  naux:16, laux:16;
 #else
-        word lng:24,   idtyp:8,   addr:32; /* standard XDF record header */
-        word vrsn,     sign;               /* char[4] */
-        word fsiz:32,  nrwr:32;
-        word nxtn:32,  nbd:32;
-        word plst:32,  nbig:32;
-        word lprm:16,  nprm:16,  laux:16, naux:16;
+        uint32_t lng:24,   idtyp:8,   addr:32; /* standard XDF record header */
+        uint32_t vrsn,     sign;               /* char[4] */
+        uint32_t fsiz:32,  nrwr:32;
+        uint32_t nxtn:32,  nbd:32;
+        uint32_t plst:32,  nbig:32;
+        uint32_t lprm:16,  nprm:16,  laux:16, naux:16;
 #endif
-        word neff:32,  nrec:32;
-        word rwflg:32, reserved:32;
+        uint32_t neff:32,  nrec:32;
+        uint32_t rwflg:32, reserved:32;
         key_descriptor keys[1024];
 /*
  * idtyp:     id type (usualy 0)

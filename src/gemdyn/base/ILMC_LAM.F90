@@ -102,10 +102,10 @@
       !----------------------------------------------------------------------
       il_ = il ; ir_ = ir ; jl_ = jl ; jr_ = jr
 
-      if (.not.l_west ) il = max(il_,g_i0-offi)
-      if (.not.l_east ) ir = min(ir_,g_in-offi)
-      if (.not.l_south) jl = max(jl_,g_j0-offj)
-      if (.not.l_north) jr = min(jr_,g_jn-offj)
+      if (.not.l_west ) il = max(il_,g_i0-offi) 
+      if (.not.l_east ) ir = min(ir_,g_in-offi) 
+      if (.not.l_south) jl = max(jl_,g_j0-offj) 
+      if (.not.l_north) jr = min(jr_,g_jn-offj) 
 
       !Print if Halo needs to be reduced for PE close to W/E/S/N LAM boundary 
       !----------------------------------------------------------------------

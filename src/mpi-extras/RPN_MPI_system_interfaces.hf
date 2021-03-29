@@ -1,0 +1,43 @@
+#include <iso_c_binding_extras.hf>
+!
+! system and C function interfaces for RPN_MPI functionsand subroutines
+!
+interface
+  !==================================  system functions ==================================
+  function get_host_id() result(h) bind(C,name='gethostid')
+    import :: C_LONG
+    integer(C_LONG) :: h
+  end function get_host_id
+  function numa_node(cpu) result(n) bind(C,name='numa_node_of_cpu')
+    import :: C_INT
+    integer(C_INT), intent(IN), value :: cpu
+    integer(C_INT) :: n
+  end function 
+  function sched_get_my_cpu() result(c) bind(C,name='sched_getcpu')
+    import :: C_INT
+    integer(C_INT) :: c
+  end function sched_get_my_cpu
+!   function c_alarm(seconds) result(seconds_since) BIND(C,name='alarm')
+!     import :: C_INT
+!     integer(C_INT), intent(IN), value :: seconds
+!     integer(C_INT) :: seconds_since
+!   end function c_alarm
+  subroutine RPN_COMM_chdir(path) BIND(C,name='chdir')
+    import :: C_CHAR
+    character(C_CHAR), dimension(*), intent(IN) :: path
+  end subroutine RPN_COMM_chdir
+!   function c_malloc(sz) result(p) BIND(C,name='malloc')
+!     import :: C_PTR, C_SIZE_T
+!     integer(C_SIZE_T), intent(IN), value :: sz
+!     type(C_PTR) :: p
+!   end function c_malloc
+!   subroutine c_free(what) bind(C,name='free')
+!     import :: C_PTR
+!     type(C_PTR), intent(IN), value :: what
+!   end subroutine c_free
+  !==================================  local C functions ==================================
+  function cpu_real_time_ticks() result(ticks) bind(C,name='cpu_real_time_ticks')
+    import :: C_LONG_LONG
+    integer(C_LONG_LONG) :: ticks
+  end function cpu_real_time_ticks
+end interface

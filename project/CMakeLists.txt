@@ -104,6 +104,7 @@ message(STATUS "arch-dependent include directory: ${ROOT}/src/archdep/include/${
 
 include_directories(
    ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}
+   ${ROOT}/src/mpi-extras
    ${ROOT}/src/rpncomm
    ${ROOT}/src/rmn/PUBLIC_INCLUDES
    ${ROOT}/src/RPN/compiler_includes

@@ -2438,6 +2438,17 @@ int c_fstopr(char *option, float value, int getmode)
   return(0);
 }
 
+/**----------------------------------------------------------------------------
+ * @brief  Check FSTD file for corruption
+ * @date   October 2020
+ *    @param[in]  Filename Path to the file
+ *
+ *    @return     Valid(0) or not(-1)
+*/
+int c_fstcheck(const char* filename)
+{
+   return(c_xdfcheck(filename));
+}
 /*splitpoint c_fstouv */
 /*****************************************************************************
  *                         C _ F S T O U V                                   *

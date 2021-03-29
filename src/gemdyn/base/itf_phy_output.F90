@@ -66,7 +66,6 @@
 !----------------------------------------------------------------------
 !
       if (outp_sorties(0,stepno) <= 0) then
-         if (Lun_out > 0) write(Lun_out,7002) stepno
          return
       else
          if (Lun_out > 0) then
@@ -264,7 +263,6 @@
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
- 7002 format(/,' OUT_PHY- NO PHYSICS OUTPUT FOR STEP (',I8,')')
 !
 !----------------------------------------------------------------------
 !

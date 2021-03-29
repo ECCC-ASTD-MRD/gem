@@ -1,5 +1,6 @@
 #if ! defined(IN_RPN_COMM_io_dist_coll)
       integer, external :: RPN_COMM_shuf_ezdist  !InTfX!   ! best interface we can provide for the time being
+      integer, external :: RPN_COMM_shuf_ezdist_h  !InTfX!   ! best interface we can provide for the time being
       integer, external :: RPN_COMM_shuf_ezcoll  !InTfX!   ! best interface we can provide for the time being
 #endif
 #if ! defined(IN_RPN_COMM_C_interface)
@@ -337,6 +338,13 @@
      &ggni
         integer, intent(INOUT) :: g(minx:maxx,miny:maxy,nk)
       end subroutine RPN_COMM_haloflip
+      end interface
+#endif
+#if ! defined(IN_RPN_COMM_infotyp)
+      interface
+      integer function RPN_COMM_infotyp(info)
+        character(len=*), intent(IN) :: info
+      end function RPN_COMM_infotyp
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_init)
@@ -912,15 +920,32 @@
 #endif
 #if ! defined(IN_RPN_COMM_win_allocate_shared)
       interface
-      subroutine RPN_COMM_win_allocate_shared(comm, msize, win, baseptr,&
-     & err)
+!InTf!
+       end interface
+!InTf!
+       interface RPN_COMM_win_allocate_shared
+      subroutine RPN_COMM_win_allocate_shared2(comm, msize, win, baseptr&
+     &, err)
+        import :: C_PTR, C_INTPTR_T
+        integer, intent(IN)  :: comm
+        integer(C_INTPTR_T), intent(IN)  :: msize
+        integer, intent(OUT) :: win
+        type(C_PTR), intent(OUT) :: baseptr
+        integer, intent(OUT)  :: err
+      end subroutine RPN_COMM_win_allocate_shared2
+!InTf!
+      subroutine RPN_COMM_win_allocate_shared1(comm, msize, win, baseptr&
+     &, err)
         import :: C_PTR
         integer, intent(IN)  :: comm
         integer, intent(IN)  :: msize
         integer, intent(OUT) :: win
         type(C_PTR), intent(OUT) :: baseptr
         integer, intent(OUT)  :: err
-      end subroutine RPN_COMM_win_allocate_shared
+      end subroutine RPN_COMM_win_allocate_shared1
+       end interface
+!InTf!
+       interface
       end interface
 #endif
 #if ! defined(IN_RPN_COMM_window)

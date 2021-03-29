@@ -17,6 +17,7 @@
 
       subroutine yyg_init
       use ISO_C_BINDING
+      use lun
       use glb_ld
       use gem_options
       use yyg_param
@@ -25,12 +26,62 @@
 
       include "intrp_bicub_yx.inc"
 
+      integer lni,lnj
       integer sendlen, recvlen, maxproc, k
       integer wb,eb,sb,nb,wbu,ebu,sbu,nbu,wbv,ebv,sbv,nbv
 !
 !-------------------------------------------------------------------
 !
 !     Initialization for Yin-Yang communications
+
+      Glb_pilotcirc_L = .true.
+      if (Lun_out > 0) write(Lun_out,2000)
+      !do k= 1, Ptopo_numproc
+      !if (Lun_out > 0) write (Lun_out,1002) k-1,&
+      !  Ptopo_gindx(1,k),Ptopo_gindx(2,k),Ptopo_gindx(3,k),Ptopo_gindx(4,k)
+      !enddo
+      do k= 1, Ptopo_numproc
+         if (Ptopo_gindx(1,k).eq.1) then
+             !west
+             lni=Ptopo_gindx(2,k)-Ptopo_gindx(1,k)+1 !lni
+             if (lni-Glb_pil_e < G_halox) then
+                 Glb_pilotcirc_L = .false.
+                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
+             endif
+         endif
+         if (Ptopo_gindx(2,k).eq.G_ni) then
+             !east
+             lni=Ptopo_gindx(2,k)-Ptopo_gindx(1,k)+1-1 !lniu
+             if (lni-Glb_pil_e < G_halox) then
+                 Glb_pilotcirc_L = .false.
+                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
+             endif
+         endif
+         if (Ptopo_gindx(3,k).eq.1) then
+             !south
+             lnj=Ptopo_gindx(4,k)-Ptopo_gindx(3,k)+1 !lnj
+             if (lnj-Glb_pil_n < G_haloy) then
+                 Glb_pilotcirc_L = .false.
+                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
+             endif
+         endif
+         if (Ptopo_gindx(4,k).eq.G_nj) then
+             !north
+             lnj=Ptopo_gindx(4,k)-Ptopo_gindx(3,k)+1-1 !lnjv
+             if (lnj-Glb_pil_n < G_haloy) then
+                 Glb_pilotcirc_L = .false.
+                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
+             endif
+         endif
+      end do
+
+      if (Lun_out > 0) write(Lun_out,*)'Glb_pilotcirc_L=',Glb_pilotcirc_L
+
+ 1000 format('Proc',i4,' lni=',i3,' Pil=',i3,' lni-pil=',i3,'< G_halox',i3)
+ 1001 format('Proc',i4,' lnj=',i3,' Pil=',i3,' lnj-pil=',i3,'< G_haloy',i3)
+ 1002 format('PE=',i4, ' l_i0=',i3,' l_in=', i3,' l_j0=',i3,' l_jn=',i3)
+ 2000 format( /,'INITIALIZATION OF YYG VARIABLES S/R YYG_INIT', &
+              /,'====================================================')
 
       call yyg_extend_grid ()
       allocate (YYG_pe_indx(4,Ptopo_numproc))

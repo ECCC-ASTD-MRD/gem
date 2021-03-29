@@ -15,78 +15,35 @@
 !
 !*s/r spn_main - spectral nudging driver
 
-      subroutine spn_main
+      subroutine spn_main ()
       use step_options
-      use gem_options
       use spn_options
       use glb_ld
-      use cstv
       use lun
-      use ldnh
-      use sol
-      use trp
-      use ptopo
+      use gmm_vt1
+      use mem_nest
+      use tdpack
       implicit none
-#include <arch_specific.hf>
-
-!author
-!     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
-!
-!revision
-! v4_80 - Qian, Dugas, Hussain            - initial version
-! v4_80 - Baek - correction in calls to spn_fld for FFT transpose
-
-
-      integer offseti, no_steps, tmdt, Nkl
 !
 !----------------------------------------------------------------------
 !
-      if (Spn_nudging_S == ' ') return
+      if (.not. Spn_ON_L) return
 
-      tmdt= int(Cstv_dt_8)
-
-      no_steps= Spn_step/tmdt
-      no_steps= max(1,no_steps)
-
-      if ( Lctl_step > 2 ) then
-
-         if ( mod(Lctl_step,no_steps) == 0 ) then
-
-            if (Lun_out > 0) write(Lun_out,1001) Lctl_step
-
-            offseti = trp_22n0-1
-            Nkl = sol_nk
-
-            if (Lun_debug_L) write(Lun_out,1000)
-
-            if ( index( Spn_nudging_S,'t' ) > 0 )        &
-                call spn_fld( ldnh_minx,ldnh_maxx,           &
-                ldnh_miny,  ldnh_maxy, ldnh_nj,              &
-                trp_12smin, trp_12smax, G_nk,    Nkl, &
-                 G_ni, G_nj, trp_22min , trp_22max, trp_22n, &
-                 offseti,    Ptopo_npex, Ptopo_npey, 't' )
-
-            if ( index( Spn_nudging_S,'u' ) > 0 )          &
-                call spn_fld( ldnh_minx,ldnh_maxx,             &
-                  ldnh_miny,  ldnh_maxy, ldnh_nj,              &
-                  trp_12smin, trp_12smax, G_nk,    Nkl, &
-                  G_ni, G_nj, trp_22min , trp_22max, trp_22n,  &
-                  offseti,    Ptopo_npex, Ptopo_npey, 'u' )
-
-            if ( index( Spn_nudging_S,'v' ) > 0 )           &
-                 call spn_fld( ldnh_minx,ldnh_maxx,             &
-                   ldnh_miny,  ldnh_maxy, ldnh_nj,              &
-                   trp_12smin, trp_12smax, G_nk,    Nkl, &
-                   G_ni, G_nj, trp_22min , trp_22max, trp_22n,  &
-                   offseti,    Ptopo_npex, Ptopo_npey, 'v' )
+      if (( Lctl_step > 2 ) .and. ( mod(Lctl_step,Spn_interval) == 0 ))  then
+      
+      
+         if (Lun_out > 0) write(Lun_out,1001) Lctl_step
+      
+         if (Spn_weight_L) then
+            Spn_weight = sqrt((cos(pi_8*(float(Lctl_step)/float(Spn_ws))))**2)**Spn_wt_pwr
          end if
-
+         call spn_apply (tt1, nest_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         call spn_apply (ut1, nest_u, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         call spn_apply (vt1, nest_v, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+      
       end if
 
- 1000 format( &
-           /,'CONTROL OF SPECTRAL NUDGING: (S/R SPN_MAIN)', &
-           /,'==========================================='/)
- 1001 format(/' In SPN_MAIN, Applying spectral nudging at STEP NO ',I10/)
+ 1001 format(/' SPN_MAIN, Applying spectral nudging at STEP NO ',I10/)
 !
 !----------------------------------------------------------------------
 !

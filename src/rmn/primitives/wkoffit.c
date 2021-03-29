@@ -40,6 +40,7 @@
  *                                                                           *
  *     VALEURS DE RETOUR POSSIBLES                                           *
  *                                                                           *
+ *        -4     FICHIER CORROMPU                                            *
  *        -3     FICHIER INEXISTANT                                          *
  *        -2     FICHIER VIDE                                                *
  *        -1     FICHIER INCONNU                                             *
@@ -86,6 +87,7 @@
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
 
+#define WKF_CORROMPU              -4
 #define WKF_INEXISTANT            -3
 #define WKF_VIDE                  -2
 #define WKF_INCONNU               -1
@@ -405,13 +407,13 @@ c_wkoffit(char *nom,int l1)
    }
    pf = fopen(nom2,"rb");
    if (pf == (FILE *) NULL){
-      return(-3);
+      return(WKF_INEXISTANT);
    } else {
 
      /* positionnement a la fin du fichier */
       fseek(pf,pos,2);       
       lngf=ftell(pf);
-      if (lngf == 0) return(retour(pf,-2));
+      if (lngf == 0) return(retour(pf,WKF_VIDE));
 
      /* positionnement et lecture au debut du fichier */
       fseek(pf,pos,0); 
@@ -457,7 +459,11 @@ c_wkoffit(char *nom,int l1)
  
     /* STANDARD 98 RANDOM */
       if (*(ptbuf+3) == 'STDR') {
+         if (c_fstcheck(nom2)<0) {
+            return(retour(pf,WKF_CORROMPU));
+         } else {
          return(retour(pf,WKF_RANDOM98));
+      }
       }
 
     /* STANDARD 98 SEQUENTIEL */
@@ -467,7 +473,11 @@ c_wkoffit(char *nom,int l1)
 
     /* BURP */
       if ((*(ptbuf+3) == 'BRP0') || (*(ptbuf+3) == 'bRp0')){
+         if (c_burpcheck(nom2)<0) {
+            return(retour(pf,WKF_CORROMPU));
+         } else {
          return(retour(pf,WKF_BURP));
+         }
       }
 
     /* GRIB */

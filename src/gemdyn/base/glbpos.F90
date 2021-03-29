@@ -21,7 +21,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer :: dimens, err
+      integer :: i, dimens, err
       integer, dimension(6,Ptopo_numproc) :: gindx
 !
 !----------------------------------------------------------------------
@@ -38,10 +38,26 @@
       if ( .not. allocated(Ptopo_gindx) ) then
          allocate (Ptopo_gindx(6,Ptopo_numproc))
       end if
+      if ( .not. allocated(Ptopo_gindx_alongX) ) then
+         allocate (Ptopo_gindx_alongX(2,Ptopo_npex))
+      end if
+      if ( .not. allocated(Ptopo_gindx_alongY) ) then
+         allocate (Ptopo_gindx_alongY(2,Ptopo_npey))
+      end if
+
       Ptopo_gindx = 0
       dimens = 6*Ptopo_numproc
       call rpn_comm_ALLREDUCE (gindx,Ptopo_gindx,dimens,"MPI_INTEGER", &
-                                             "MPI_BOR","grid",err)
+                               "MPI_BOR","grid",err)
+
+      do i=0, Ptopo_npex-1
+         Ptopo_gindx_alongX(1,i+1) = Ptopo_gindx(1,Ptopo_colrow(0,i,0)+1)
+         Ptopo_gindx_alongX(2,i+1) = Ptopo_gindx(2,Ptopo_colrow(0,i,0)+1)
+      end do
+      do i=0, Ptopo_npey-1
+         Ptopo_gindx_alongY(1,i+1) = Ptopo_gindx(3,Ptopo_colrow(0,0,i)+1)
+         Ptopo_gindx_alongY(2,i+1) = Ptopo_gindx(4,Ptopo_colrow(0,0,i)+1)
+      end do
 !
 !----------------------------------------------------------------------
       return

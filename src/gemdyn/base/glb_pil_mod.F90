@@ -16,4 +16,5 @@
 module glb_pil
    integer :: Glb_pil_n, Glb_pil_s, Glb_pil_w, Glb_pil_e
    integer :: Lam_pil_n, Lam_pil_s, Lam_pil_w, Lam_pil_e
+   logical :: Glb_pilotcirc_L
 end module glb_pil

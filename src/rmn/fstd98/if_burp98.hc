@@ -18,6 +18,24 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/*splitpoint burpcheck */
+/*****************************************************************************
+ *                              B U R P C H E C K                            *
+ *                                                                           *
+ *Object                                                                     *
+ *   Checks if a BURP file is valid.                                         *
+ *                                                                           *
+ *Arguments                                                                  *
+ *                                                                           *
+ *  IN  filename Path of the file to be checked                              *
+ *                                                                           *
+ *****************************************************************************/
+ftnword f77name(burpcheck)(char *filename, F2Cl lng)
+{
+  int ier;
+  ier = c_burpcheck(filename);
+  return ((ftnword) ier);
+}
 /*splitpoint buf89a0 */
 /***************************************************************************** 
  *                            B U F 8 9 A 0                                  * 

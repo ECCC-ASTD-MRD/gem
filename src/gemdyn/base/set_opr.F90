@@ -23,10 +23,8 @@
       use glb_ld
       use lun
       use glb_pil
-      use gem_fft
       use sol
       use opr
-      use trp
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -128,9 +126,6 @@
       deallocate ( wk_8, wk2_8 )
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-
-         dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
-         allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))
 
    !     Compute eigenvalues and eigenvector for the generalized
    !     eigenvalue problem in East-West direction

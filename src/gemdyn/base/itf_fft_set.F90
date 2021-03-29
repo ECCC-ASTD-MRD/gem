@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r itf_fft_set
-!
+
       subroutine itf_fft_set ( F_dim, F_type_S, F_pri_8 )
       use tdpack
       use glb_ld
@@ -23,7 +23,7 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-!
+
       character(len=*), intent(in) :: F_type_S
       integer, intent(in) ::  F_dim
       real(kind=REAL64), intent(out) ::  F_pri_8
@@ -36,29 +36,33 @@
 
       ! In particular, no calculation of trigonometric factors
       ! is necessary.
-
+!
+!----------------------------------------------------------------------
+!
       istat = 0
       select case (trim(F_type_S))
          case ('PERIODIC')
             npts    = F_dim
             F_pri_8 = dble(npts) / ( 2.0d0 * pi_8 )
+            
          case ('SIN')
             npts    = F_dim + 1
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w-1))
-         !case ('COS')
-         !   npts    = F_dim - 1
          case ('QSIN' , 'QCOS')
             npts    = F_dim
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w))
          case DEFAULT
             npts = -1
             istat = -1
+            
       end select
       call handle_error(istat,'itf_fft_set', &
            'received invalid F_type_S'//trim(F_type_S))
 
       Fft_type_S = F_type_S
       Fft_n      = npts
-
+!
+!----------------------------------------------------------------------
+!
       return
-      end
+      end subroutine itf_fft_set

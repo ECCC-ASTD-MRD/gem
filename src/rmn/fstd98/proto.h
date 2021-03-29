@@ -105,3 +105,4 @@ ftnword f77name(fstouv)(ftnword *f_iun, char *options, F2Cl l1);
 int c_fstouv(int iun, char *options);
 ftnword f77name(secateur)(char *filename, ftnword *f_where, F2Cl l1);
 void c_fst_env_var(char *cles, int index, char *content);
+int c_xdfcheck(const char* filename);

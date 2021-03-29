@@ -48,6 +48,8 @@ contains
 !
 !----------------------------------------------------------------------
 !
+      call gem_error (-1, 'block_collect_set', 'Code is incomplete -- ABORTING')
+
       my_row= Ptopo_myproc         / Ptopo_npex
       my_col= Ptopo_myproc - my_row* Ptopo_npex
 
@@ -84,10 +86,10 @@ contains
 
             this_block= j*Bloc_npx+i
             block(this_block,1) = l_npex*l_npey
-            block(this_block,2) = Ptopo_gindx(1,j0*Ptopo_npex+i0+1)
-            block(this_block,3) = Ptopo_gindx(2,jn*Ptopo_npex+in+1)
-            block(this_block,4) = Ptopo_gindx(3,j0*Ptopo_npex+i0+1)
-            block(this_block,5) = Ptopo_gindx(4,jn*Ptopo_npex+in+1)
+            block(this_block,2) = Ptopo_gindx_alongX(1,i0+1)
+            block(this_block,3) = Ptopo_gindx_alongX(2,in+1)
+            block(this_block,4) = Ptopo_gindx_alongY(1,j0+1)
+            block(this_block,5) = Ptopo_gindx_alongY(2,jn+1)
             if ((my_col>=i0).and.(my_col<=(i0+l_npex-1)) .and. &
                 (my_row>=j0).and.(my_row<=(j0+l_npey-1))) then
                 Bloc_mybloc= this_block

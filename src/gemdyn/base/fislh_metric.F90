@@ -88,8 +88,8 @@
       end do
 
       do k=1,G_nk
-         do j=l_miny+1,l_maxy-1
-            do i=l_minx+1,l_maxx-1
+         do j=1-G_haloy+1,l_nj+G_haloy-1
+            do i=1-G_halox+1,l_ni+G_halox-1
                mc_Jx_8 (i,j,k)=(zmom_8(i+1,j,k)-zmom_8(i,j,k))*geomh_invDX_8(j)
                mc_Jy_8 (i,j,k)=(zmom_8(i,j+1,k)-zmom_8(i,j,k))*geomh_invDY_8
                mc_iJz_8(i,j,k)=one/(zmom_8(i,j,k+1)-zmom_8(i,j,k))
@@ -98,8 +98,8 @@
       end do
       ztht_8(:,:,G_nk)=Cstv_bar1_8*fis0(:,:)/grav_8
       do k=1,G_nk
-         do j=l_miny+1,l_maxy-1
-            do i=l_minx+1,l_maxx-1
+         do j=1-G_haloy+1,l_nj+G_haloy-1
+            do i=1-G_halox+1,l_ni+G_halox-1
                mc_Ix_8(i,j,k)=log( (ztht_8(i+1,j,k)-ztht_8(i+1,j,k-1))/(ztht_8(i-1,j,k)-ztht_8(i-1,j,k-1)) )*0.5d0*geomh_invDX_8(j)
                mc_Iy_8(i,j,k)=log( (ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(ztht_8(i,j-1,k)-ztht_8(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
                mc_Iz_8(i,j,k)=log( (zmom_8(i,j,k+1)-zmom_8(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
@@ -114,8 +114,8 @@
       end do
       ztht_8(:,:,G_nk)=ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*fis0(:,:)+Ver_c_8%t(G_nk)*sls(:,:))/grav_8
 
-      do j=l_miny+1,l_maxy-1
-         do i=l_minx+1,l_maxx-1
+      do j=1-G_haloy+1,l_nj+G_haloy-1
+         do i=1-G_halox+1,l_ni+G_halox-1
 
             mc_css_H_8(i,j)   = one/(gama_8*(isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
 

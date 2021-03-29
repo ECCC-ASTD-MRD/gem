@@ -59,6 +59,8 @@
       character(len=VGD_LEN_NAME) :: rfls_S
 !     __________________________________________________________________
 !
+      if (G_nk<3) call gem_error(-1,'fislh_hybrid','NOT ENOUGH LEVELS')
+
       allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &
            Ver_std_p_prof%m(G_nk+1),Ver_std_p_prof%t(G_nk+1), &
                   Ver_ip1%m(G_nk+1),       Ver_ip1%t(G_nk+1), &
@@ -142,7 +144,8 @@
       !-------------------------------
       ! Define z(m/t/x) from A(m/t):
       !-------------------------------
-      ! Level top is at level 1 plus half of delta between level 1 and 2.
+! Level top is at level 1 plus half of delta between level 1 and 2.
+
       Ver_z_8%m(0) = 0.5d0 * ( 3.d0*Ver_a_8%m(1) - Ver_a_8%m(2) )
       do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)

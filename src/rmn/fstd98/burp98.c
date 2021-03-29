@@ -213,6 +213,17 @@ void build_burp_prim_keys(burp_record *brpk, word *keys,
       }
 }
 
+/**----------------------------------------------------------------------------
+ * @brief  Check burp file for corruption
+ * @date   October 2020
+ *    @param[in]  Filename Path to the file
+ *
+ *    @return     Valid(0) or not(-1)
+*/
+int c_burpcheck(const char* filename)
+{
+   return(c_xdfcheck(filename));
+}
 /*splitpoint burp_nbit_datyp */
 /***************************************************************************** 
  *                  B U R P _ N B I T _ D A T Y P                            *

@@ -61,7 +61,6 @@
 
 #define TAG 0
 
-
 module rpn_comm_test
 #include <mpif.h>
   integer, dimension(:,:), pointer :: pe_id
@@ -71,10 +70,8 @@ end module rpn_comm_test
 
 #if defined(SELF_TEST)
 
-#define rpn_comm_test rpn_comm
-
 program test
-  use rpn_comm
+  use rpn_comm_test
   implicit none
   integer :: NX=25
   integer :: NY=13
@@ -534,6 +531,10 @@ subroutine RPN_COMM_propagate_pilot_circular(f,minx,maxx,miny,maxy,lni,lnj,nk,pi
     endif
     return
   endif
+!   if((pilx + hx > lni) .or. (pily + hy > lnj)) then
+!     call RPN_COMM_xch_halo(f,minx,maxx,miny,maxy,lni,lnj,nk,hx,hy,.false.,.false.,lni,0)
+!     return
+!   endif
   ! usual case, pe_nx > 1 and pe_ny > 1
   nhor = pilx * hy * nk  ! size of horizontal boxes (tb, tc, tf, tg, t2, t3, t6, t7)
   nvrt = pily * hx * nk  ! size of vertical boxes (ta, td, te, th, t1, t4, t5, t8)

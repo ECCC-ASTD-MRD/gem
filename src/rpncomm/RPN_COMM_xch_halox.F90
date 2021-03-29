@@ -21,9 +21,9 @@
       SUBROUTINE RPN_COMM_xch_halox(g,minx,maxx,miny,maxy,ni,nj,nk,halox,haloy,periodx,periody,g2,minx2,maxx2,miny2,maxy2,gni,npol_row)
       use rpn_comm
       implicit none
-
-!   exchange a halo with neighbours
-
+!
+!	exchange a halo with neighbours
+!
       integer minx,maxx,miny,maxy,ni,nj,nk,halox,haloy
       integer minx2,maxx2,miny2,maxy2
       integer gni,npol_row
@@ -35,10 +35,13 @@
       pointer (g_adj_,g_adj)
       pointer (g2_adj_,g2_adj)
       logical adjoint
-
+!
+!	include 'rpn_comm.h'
+!	include 'mpif.h'
+!
       integer i,j,k,borneminx,bornemaxx,borneminy,bornemaxy
       integer nimax,ierr
-
+!
       adjoint=.false.
 
  1      continue
@@ -57,7 +60,7 @@
             g_adj(i,j,k)=g2_adj(i+pe_mex*nimax,j,k)+g_adj(i,j,k)
           enddo
           enddo
-          enddo
+          enddo      	
         else
           do k=1,nk
           do j=1,nj
@@ -65,7 +68,7 @@
             g(i,j,k)=g2(i,j,k)
           enddo
           enddo
-          enddo
+          enddo      	
         endif
         else
         do k=1,nk
@@ -74,19 +77,19 @@
           g2(i,j,k)=g(i,j,k)
         enddo
         enddo
-        enddo
+        enddo      
 
         call RPN_COMM_xch_halo(g2,minx2,maxx2,miny2,maxy2,  &
                    ni,nj,nk,halox,haloy,periodx,periody,    &
                    gni,npol_row)
         endif
 
-
+!
       return
 
       entry RPN_COMM_adj_halox(g,minx,maxx,miny,maxy,      &
                    ni,nj,nk,halox,haloy,periodx,periody,   &
-                    g2,minx2,maxx2,miny2,maxy2,gni,npol_row)
+      	           g2,minx2,maxx2,miny2,maxy2,gni,npol_row)
       adjoint=.true.
       goto 1
       end
