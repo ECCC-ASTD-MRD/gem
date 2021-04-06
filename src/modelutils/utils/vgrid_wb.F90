@@ -29,6 +29,7 @@ module vgrid_wb
    !@author Stephane Chamberland, 2012-01
    !@description
    ! Public functions
+   public :: vgrid_wb_is_press_kind
    public :: vgrid_wb_exists, vgrid_wb_put, vgrid_wb_get, vgrid_wb_bcast
    public :: vgrid_wb_bcast_s, vgrid_wb_bcast_v, vgrid_wb_bcast_v2
    ! Public constants
@@ -72,6 +73,12 @@ module vgrid_wb
    integer,parameter,public :: VGRID_HYBO_KIND = 5      !Hybrid unstaggered coordinate of unknown/other origin (like ECMWF)
    integer,parameter,public :: VGRID_HYBO_VER  = 999
 
+   integer,parameter,public :: VGRID_GC_KIND = 21     !Hybrid heights levels on Charney-Philips grid, may be non SLEVE (reference field: ME) or SLEVE (reference fields: ME, MELS) 
+   integer,parameter,public :: VGRID_GC_VER  = 1
+
+   integer,parameter,public :: VGRID_LORZ_KIND = 21    !Hybrid heights levels on Lorenz grid, may be non SLEVE (reference field: ME) or SLEVE (reference fields: ME, MELS) 
+   integer,parameter,public :: VGRID_LORZ_VER  = 2
+
    !#TODO: add missing VGRID *_KIND and *_VER
 
    integer, parameter, public :: VGRID_GROUND_TYPE = -1
@@ -110,10 +117,47 @@ module vgrid_wb
       module procedure vgrid_wb_bcast_v
       module procedure vgrid_wb_bcast_v2
       module procedure vgrid_wb_bcast_s
-   end interface
+   end interface vgrid_wb_bcast
 
+   interface vgrid_wb_is_press_kind
+      module procedure vgrid_wb_is_press_kind_i
+      module procedure vgrid_wb_is_press_kind_s
+      module procedure vgrid_wb_is_press_kind_v
+   end interface vgrid_wb_is_press_kind
 
 contains
+
+   !/@*
+   function vgrid_wb_is_press_kind_i(F_kind) result(F_pkind_L)
+      implicit none
+      integer, intent(in) :: F_kind  !# vgrid coor kind
+      logical :: F_pkind_L           !# True if pressure kind
+      F_pkind_L = all(F_kind /= (/VGRID_GC_KIND,  VGRID_LORZ_KIND/))
+      return
+   end function vgrid_wb_is_press_kind_i
+
+   !/@*
+   function vgrid_wb_is_press_kind_v(F_vgrid) result(F_pkind_L)
+      implicit none
+      type(vgrid_descriptor), intent(in) :: F_vgrid
+      logical :: F_pkind_L           !# True if pressure kind
+      integer :: istat, ikind
+      istat = vgd_get(F_vgrid, key='KIND', value=ikind, quiet=.true.)
+      F_pkind_L = vgrid_wb_is_press_kind_i(ikind)
+      return
+   end function vgrid_wb_is_press_kind_v
+
+   !/@*
+   function vgrid_wb_is_press_kind_S(F_vgrid_S) result(F_pkind_L)
+      implicit none
+      character(len=*), intent(in) :: F_vgrid_S
+      logical :: F_pkind_L           !# True if pressure kind
+      integer :: istat
+      type(vgrid_descriptor) :: vgrid
+      istat = vgrid_wb_get(F_vgrid_S, vgrid)
+      F_pkind_L = vgrid_wb_is_press_kind_v(vgrid)
+      return
+   end function vgrid_wb_is_press_kind_S
 
    !/@*
    function vgrid_wb_exists(F_name_S, F_id, F_id_S, F_ip1list, F_itype) &

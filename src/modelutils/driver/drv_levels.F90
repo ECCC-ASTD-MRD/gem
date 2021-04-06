@@ -102,7 +102,7 @@ contains
 !!$         zp1 = 0.
 !!$         ipkind = RMN_CONV_SIGMA
 !!$         zp1 = 0.
-!!$         call convip(ip1(1),zp1,ipkind,RMN_CONV_P2IPNEW,' ',.not.RMN_CONV_USEFORMAT_L)
+!!$         call convip_plus(ip1(1),zp1,ipkind,RMN_CONV_P2IPNEW,' ',.not.RMN_CONV_USEFORMAT_L)
 !!$         ip1(1) = ip1_m(l_nk)
          ip1(1) = 0
          p_ip1 => ip1

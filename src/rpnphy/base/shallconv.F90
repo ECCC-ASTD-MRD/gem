@@ -75,15 +75,6 @@ contains
             ztlcs(i) = ztlcs(i) / RAUW
          end do
 
-      else if (conv_shal == 'KTRSNT_MG') then
-
-         !# Kuo transient shallow convection used by the meso-global model (mg)
-         call ktrsnt_mg2(ztshal, zhushal, zilab, zfsc, zqlsc, &
-              zqssc, zdbdt, &
-              ztplus, zhumoins, &
-              geop, zqdifv, zpmoins, &
-              zsigw, zkshal, ni, nkm1)
-
       endif
       call msg_toall(MSG_DEBUG, 'shallconv [END]')
       !----------------------------------------------------------------

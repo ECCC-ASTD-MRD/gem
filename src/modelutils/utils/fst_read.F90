@@ -165,7 +165,7 @@ contains
       ip1 = F_ip1
       if (ip1 == 0) ip1 = 1200
       if (F_ip1 >= 0) then
-!!$         call convip(ip1, zp1, kind, RMN_CONV_IP2P, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+!!$         call convip_plus(ip1, zp1, kind, RMN_CONV_IP2P, dummy_S, .not.RMN_CONV_USEFORMAT_L)
 !!$         ip1 = ip1_all(zp1,kind)
          ip1 = priv_ip1_all(ip1)
          F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
@@ -413,7 +413,7 @@ contains
                zp1 = 1.
                ikind = RMN_CONV_HY
                dummy_S = ' '
-               call convip(F_ip1s(1), zp1, ikind, RMN_CONV_P2IPNEW, &
+               call convip_plus(F_ip1s(1), zp1, ikind, RMN_CONV_P2IPNEW, &
                     dummy_S, .not.RMN_CONV_USEFORMAT_L)
                istat = RMN_ERR
                if (F_ip1s(1) >= 0) istat = RMN_OK
@@ -547,7 +547,7 @@ contains
                zp1 = 1.
                ikind = RMN_CONV_HY
                dummy_S = ' '
-               call convip(F_ip1s(1), zp1, ikind, RMN_CONV_P2IPNEW, &
+               call convip_plus(F_ip1s(1), zp1, ikind, RMN_CONV_P2IPNEW, &
                     dummy_S, .not.RMN_CONV_USEFORMAT_L)
                istat = RMN_ERR
                if (F_ip1s(1) >= 0) istat = RMN_OK
@@ -1069,16 +1069,16 @@ contains
            ubc, extra1, extra2, extra3)
       if (.not.RMN_IS_OK(istat)) return
 
-      istat = vgd_new(F_vgrid,unit=F_fileid,ip1=ig4,ip2=-1)
-      if (.not.RMN_IS_OK(istat)) &
-           istat = vgd_new(F_vgrid,unit=F_fileid,ip1=ig1,ip2=ig2)
-      if (.not.RMN_IS_OK(istat)) &
+      istat = vgd_new(F_vgrid,unit=F_fileid,ip1=ig1,ip2=ig2)
+      ! if (istat /= VGD_OK) &
+      !      istat = vgd_new(F_vgrid,unit=F_fileid,ip1=ig4,ip2=-1)
+      if (istat /= VGD_OK) &
            istat = vgd_new(F_vgrid,unit=F_fileid,ip1=-1,ip2=-1)
-      if (.not.RMN_IS_OK(istat)) return
+      if (istat /= VGD_OK) return
 
       F_lvltyp_S = 'M'
       istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
-      if (.not.(RMN_IS_OK(istat) .and. associated(F_ip1s))) return
+      if (.not.(istat == VGD_OK .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
          return
@@ -1086,7 +1086,7 @@ contains
 
       F_lvltyp_S = 'T'
       istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
-      if (.not.(RMN_IS_OK(istat) .and. associated(F_ip1s))) return
+      if (.not.(istat == VGD_OK .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
          return
@@ -1218,7 +1218,7 @@ contains
 !!$         endif
 !!$      enddo
       ip1 = F_ip1
-      call convip(ip1, zp1, ikind, RMN_CONV_IP2P, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+      call convip_plus(ip1, zp1, ikind, RMN_CONV_IP2P, dummy_S, .not.RMN_CONV_USEFORMAT_L)
       F_ip1out = ip1_all(zp1,ikind)
 !!$      if (m_nip1all < NMAXIP1ALL)  then
 !!$         m_nip1all = m_nip1all + 1

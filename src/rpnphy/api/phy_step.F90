@@ -24,7 +24,7 @@ contains
     use wb_itf_mod, only: WB_OK, WB_IS_OK, wb_get
     use series_mod, only: series_stepinit, series_stepend
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-    use phy_options, only: delt, cond_infilter, sgo_tdfilter, lhn_filter, sfcflx_filter_order
+    use phy_options, only: delt, cond_infilter, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb_mod, only: physlb1
     use cpl_itf   , only: cpl_step
@@ -62,6 +62,13 @@ contains
        call msg(MSG_ERROR,'(phy_step) Physics not properly initialized.')
        return
     endif
+    
+    if (debug_initonly_L) then
+       call msg(MSG_WARNING,'(phy_step) debug_initonly_L - skipping')
+       F_istat = RMN_OK
+       return
+    endif
+    
     if (F_stepcount == 0) then
       if (.not.WB_IS_OK(wb_get('dyn/cond_infilter',cond_sig))) cond_sig = -1.
       if (.not.WB_IS_OK(wb_get('dyn/sgo_tdfilter',gwd_sig))) gwd_sig = -1.

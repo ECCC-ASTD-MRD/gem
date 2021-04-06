@@ -72,7 +72,6 @@ contains
       include "phyinput.inc"
 
       logical,parameter:: SHORTMATCH_L = .true.
-      integer,parameter:: MYMAX = 2048
 
       character(len=1)  :: bus_S
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
@@ -174,7 +173,7 @@ contains
          bus_S = 'D'
          nullify(metalist)
          nvars = phy_getmeta(metalist, '', F_npath='V', F_bpath=bus_S, &
-              F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
          do ivar = 1, nvars
             istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
                  F_bpath=bus_S, F_quiet=.true., F_shortmatch=.false.)
@@ -201,7 +200,7 @@ contains
          bus_S = 'V'
          nullify(metalist)
          nvars = phy_getmeta(metalist, '', F_npath='V', F_bpath=bus_S, &
-              F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
          do ivar = 1, nvars
             istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
                  F_bpath=bus_S, F_quiet=.true., F_shortmatch=.false.)
@@ -341,7 +340,7 @@ contains
 
       nullify(metalist)
       nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-           F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+           F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
       do ivar = 1, nvars
          call gmmx_name_parts(metalist(ivar)%vname, prefix_S, basename_S, &
               time_S, ext_S)

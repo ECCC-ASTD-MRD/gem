@@ -42,7 +42,6 @@ contains
       include "buses.cdk"
 
       logical,parameter:: SHORTMATCH_L = .true.
-      integer,parameter:: MYMAX = 2048
 
       character(len=1)  :: bus_S
       integer :: gmmstat, initval, ivar, nvars, istat
@@ -90,7 +89,7 @@ contains
          bus_S = 'P'
          nullify(metalist)
          nvars = phy_getmeta(metalist, '', F_npath='V', F_bpath=bus_S, &
-              F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
          do ivar = 1, nvars
             istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
                  F_bpath=bus_S, F_quiet=.true., F_shortmatch=.false.)

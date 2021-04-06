@@ -269,7 +269,7 @@ contains
       call init2nan(pch1, pch1ten)
 
       ! Shallow convective schemes called before deep (post-deep schemes called later in this routine)
-      IF_KTRSNT: if (any(conv_shal == (/'KTRSNT_MG', 'KTRSNT   '/))) then
+      IF_KTRSNT: if (conv_shal == 'KTRSNT') then
 
          ! Pre-scheme state for energy budget
          if (associated(zconesc)) then

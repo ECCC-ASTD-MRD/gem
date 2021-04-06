@@ -15,16 +15,13 @@
 !-------------------------------------- LICENCE END ---------------------------
    
 !/@*
-subroutine linoz_tend(o3, ch4, n2o, f11, f12, & 
+subroutine linoz_tend(o3, &
      colo3,                             &
      temp, ps, shtj, qq,                &
      o3c, c2, c3,  c4,  c5,  c6,  c7,   & 
-     c8, c9, c10, c11,                  &
      o3_new,                            & !GMv3
-     ch4_new, n2o_new, f11_new, f12_new,& !GMv3
      do1dt,  do4dt,  do6dt, do7dt,      &
      do3dt,                             &
-     dch4dt, dn2odt, df11dt, df12dt,    &
      timestep, ni, lay, lev)
    use phy_options
    use linoz_mod
@@ -45,10 +42,6 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    !   Input:
    !   -----
    !      o3 : o3 mole /mole vmr
-   !      ch4 : ch4 mole /mole vmr
-   !      n2o : n2o mole /mole vmr
-   !      f11 : f11 mole /mole vmr
-   !      f12 : f12 mole /mole vmr
    !      o3c: o3 mole /mole vmr FK-ERA5 climatology
    !      c2 : temp climatology ERA5
    !      c3 : colo3 climatology
@@ -56,38 +49,26 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
    !      c5 : d(P-L)/dO3
    !      c6 : d(P-L)/dT
    !      c7 : d(P-L)/dcolo3
-   !      c8  : n2o loss frequency (s-1)
-   !      c9  : ch4 loss frequency (s-1)
-   !      c10 : F11 loss frequency (s-1)
-   !      c11 : F12 loss frequency (s-1)
    !
    !   Output:
    !   ------
    !      o3_new : o3 (t+dt) mole /mole vmr
-   !      ch4_new:
-   !      n2o_new:
-   !      f11_new:
-   !      f12_new:
    !      do3dt  : o3 linoz tendency
-   !      dch4dt :
-   !      dn2odt :
-   !      df11dt :
-   !      df12dt :
    !      colo3  : total column DU
    !------------------------------------------------------
 
    integer, intent(in)             :: ni,lay,lev
    real,    intent(in)             :: timestep
-   real, dimension(ni, lay ), intent(in)    :: o3, n2o,ch4,f11,f12
+   real, dimension(ni, lay ), intent(in)    :: o3!, n2o,ch4,f11,f12
    real, dimension(ni, lay ), intent(in)    :: o3c,qq
    real, dimension(ni, lay ), intent(in)    :: colo3
    real, dimension(ni),       intent(in)    :: ps
    real, dimension(ni, lev ), intent(in)    :: shtj,temp
    real, dimension(ni, lay ), intent(in)    :: c4,c2,c3,c5,c6,c7
-   real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
-   real, dimension(ni, lay ), intent(out)   :: o3_new, n2o_new, ch4_new, f11_new, f12_new
+   ! real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
+   real, dimension(ni, lay ), intent(out)   :: o3_new !, n2o_new, ch4_new, f11_new, f12_new
    real, dimension(ni, lay ), intent(out)   :: do1dt,do4dt,do6dt,do7dt,do3dt
-   real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
+   ! real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
 
    !@author J. de Grandpre (ARQI): February 2013
    !@revisions
@@ -216,78 +197,142 @@ subroutine linoz_tend(o3, ch4, n2o, f11, f12, &
       end do DO_K1
    end do DO_I1
 
-
-   
-
-   IF_LINGHG: if (llingh) then
-
-      ! --------------------
-      !  Loop on longitudes
-      ! -------------------
-      DO_I2: do i = 1, ni
-
-         ! ----------------------------
-         ! Loop on all vertical levels
-         ! ----------------------------
-
-         DO_K2: do k=1,lay
-
-            ! Apply LINOZ tendencies above tropopause, defined as specific humidity 'hu_linoz=10ppmv' or pressure 'p_linoz_tropo=100mb'
-            hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
-            ptop = shtj(i,k)  *ps(i)       ! pressure (Pa) at the upper interface
-
-            ! 100 Pa 10 ppmv
-            IF_PTOPLIN2: if (ptop < p_linoz_tropo .or. hu_ppm < hu_linoz_tropo) then
-
-               ch4_new(i,k) = ch4(i,k) * exp( -c9(i,k)*timestep)                  !mole /mole vmr
-               f11_new(i,k) = f11(i,k) * exp(-c10(i,k)*timestep)                  !mole /mole vmr
-               f12_new(i,k) = f12(i,k) * exp(-c11(i,k)*timestep)                  !mole /mole vmr
-               n2o_new(i,k) = n2o(i,k) * exp( -c8(i,k)*timestep)                  !mole /mole vmr
-
-            else ! IF_PTOPLIN2 -- below tropopause (p_linoz_tropo & hu_linoz_tropo) GHG
-
-               ch4_new(i,k) = ch4(i,k)
-               n2o_new(i,k) = n2o(i,k)
-               f11_new(i,k) = f11(i,k)
-               f12_new(i,k) = f12(i,k)
-
-            end if IF_PTOPLIN2
-
-            ! Set lower limit on species as in BIRA (units mole /mole)
-            ch4_new(i,k)= max(ch4_new(i,k),Qeps)
-            n2o_new(i,k)= max(n2o_new(i,k),Qeps)
-            f11_new(i,k)= max(f11_new(i,k),Qeps)
-            f12_new(i,k)= max(f12_new(i,k),Qeps)
-
-
-            ! Set lower boundary values as in BIRA-Tropo (units mole /mole)
-            if (k >= lay-2) then  !lay =SFC
-               ch4_new(i,k) = 1.76E-06  
-               n2o_new(i,k) = 3.22E-07
-               f11_new(i,k) = 2.60E-10
-               f12_new(i,k) = 5.44E-10
-            end if
-
-            ! GHG tendency LINOZ (mole/mole/sec)
-
-            dch4dt(i,k) = (ch4_new(i,k) - ch4(i,k)) / timestep               !mole/mole/sec
-            df11dt(i,k) = (f11_new(i,k) - f11(i,k)) / timestep               !mole/mole/sec
-            df12dt(i,k) = (f12_new(i,k) - f12(i,k)) / timestep               !mole/mole/sec 
-            dn2odt(i,k) = (n2o_new(i,k) - n2o(i,k)) / timestep               !mole/mole/sec 
-
-            !     if(local_dbg  .and. mod(i, ni2)==0) &
-            !       write(lun_out,*) 'linoz_tend: ', i,k, &
-            !        ' o3vmr,  o3new,  o3tend= ',   o3(i,k),  o3_new(i,k),  do3dt(i,k), &
-            !        ' ch4vmr, ch4new, ch4tend=',  ch4(i,k), ch4_new(i,k), dch4dt(i,k) !, &
-            !        ' n2ovmr, n2onew, n2otend=',  n2o(i,k), n2o_new(i,k), dn2odt(i,k), &
-            !        ' f11vmr, f11new, f11tend=',  f11(i,k), f11_new(i,k), df11dt(i,k), &
-            !        ' f12vmr, f12new, f12tend=',  f12(i,k), f12_new(i,k), df12dt(i,k)
-
-         end do DO_K2
-      end do DO_I2
-
-   end if IF_LINGHG
-
    !----------------------------------------------------------------
    return
 end subroutine linoz_tend
+
+!/@*
+subroutine linoz_tend_ghg( &
+     ch4, n2o, f11, f12, & 
+     ps, shtj, qq,                &
+     c8, c9, c10, c11,                  &
+     ch4_new, n2o_new, f11_new, f12_new,& !GMv3
+     dch4dt, dn2odt, df11dt, df12dt,    &
+     timestep, ni, lay, lev)
+   use phy_options
+   use linoz_mod
+   implicit none
+#include <arch_specific.hf>
+   !@object Stratospheric Ozone chemistry
+   ! Produces the ozone tendency due to stratospheric
+   ! photochemistry (based on LINOZ scheme)
+   !@arguments
+   ! ni       horizonal index
+   ! lay      vertical  layers lev-1
+   ! lev      vertical  levels 
+   ! timestep timestep
+   ! v        volatile bus
+   ! f        permanent bus
+   ! d        dynamics bus
+   !----------------------------------------------------
+   !   Input:
+   !   -----
+   !      ch4 : ch4 mole /mole vmr
+   !      n2o : n2o mole /mole vmr
+   !      f11 : f11 mole /mole vmr
+   !      f12 : f12 mole /mole vmr
+   !      c8  : n2o loss frequency (s-1)
+   !      c9  : ch4 loss frequency (s-1)
+   !      c10 : F11 loss frequency (s-1)
+   !      c11 : F12 loss frequency (s-1)
+   !
+   !   Output:
+   !   ------
+   !      ch4_new:
+   !      n2o_new:
+   !      f11_new:
+   !      f12_new:
+   !      dch4dt :
+   !      dn2odt :
+   !      df11dt :
+   !      df12dt :
+   !------------------------------------------------------
+
+   integer, intent(in)             :: ni,lay,lev
+   real,    intent(in)             :: timestep
+   real, dimension(ni, lay ), intent(in)    :: n2o,ch4,f11,f12
+   real, dimension(ni, lay ), intent(in)    :: qq
+   real, dimension(ni),       intent(in)    :: ps
+   real, dimension(ni, lev ), intent(in)    :: shtj
+   real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
+   real, dimension(ni, lay ), intent(out)   :: n2o_new, ch4_new, f11_new, f12_new
+   real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
+
+   !@author J. de Grandpre (ARQI): February 2013
+   !@revisions
+   ! * I. Ivanova (2015) - Complete remake
+   !*@/
+
+   !  Declaration of local variables.
+
+   integer :: i,k
+   real :: ptop, hu_ppm
+   
+   ! --------------------
+   !  Loop on longitudes
+   ! -------------------
+   DO_I2: do i = 1, ni
+
+      ! ----------------------------
+      ! Loop on all vertical levels
+      ! ----------------------------
+
+      DO_K2: do k=1,lay
+
+         ! Apply LINOZ tendencies above tropopause, defined as specific humidity 'hu_linoz=10ppmv' or pressure 'p_linoz_tropo=100mb'
+         hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
+         ptop = shtj(i,k)  *ps(i)       ! pressure (Pa) at the upper interface
+
+         ! 100 Pa 10 ppmv
+         IF_PTOPLIN2: if (ptop < p_linoz_tropo .or. hu_ppm < hu_linoz_tropo) then
+
+            ch4_new(i,k) = ch4(i,k) * exp( -c9(i,k)*timestep)                  !mole /mole vmr
+            f11_new(i,k) = f11(i,k) * exp(-c10(i,k)*timestep)                  !mole /mole vmr
+            f12_new(i,k) = f12(i,k) * exp(-c11(i,k)*timestep)                  !mole /mole vmr
+            n2o_new(i,k) = n2o(i,k) * exp( -c8(i,k)*timestep)                  !mole /mole vmr
+
+         else ! IF_PTOPLIN2 -- below tropopause (p_linoz_tropo & hu_linoz_tropo) GHG
+
+            ch4_new(i,k) = ch4(i,k)
+            n2o_new(i,k) = n2o(i,k)
+            f11_new(i,k) = f11(i,k)
+            f12_new(i,k) = f12(i,k)
+
+         end if IF_PTOPLIN2
+
+         ! Set lower limit on species as in BIRA (units mole /mole)
+         ch4_new(i,k)= max(ch4_new(i,k),Qeps)
+         n2o_new(i,k)= max(n2o_new(i,k),Qeps)
+         f11_new(i,k)= max(f11_new(i,k),Qeps)
+         f12_new(i,k)= max(f12_new(i,k),Qeps)
+
+
+         ! Set lower boundary values as in BIRA-Tropo (units mole /mole)
+         if (k >= lay-2) then  !lay =SFC
+            ch4_new(i,k) = 1.76E-06  
+            n2o_new(i,k) = 3.22E-07
+            f11_new(i,k) = 2.60E-10
+            f12_new(i,k) = 5.44E-10
+         end if
+
+         ! GHG tendency LINOZ (mole/mole/sec)
+
+         dch4dt(i,k) = (ch4_new(i,k) - ch4(i,k)) / timestep               !mole/mole/sec
+         df11dt(i,k) = (f11_new(i,k) - f11(i,k)) / timestep               !mole/mole/sec
+         df12dt(i,k) = (f12_new(i,k) - f12(i,k)) / timestep               !mole/mole/sec 
+         dn2odt(i,k) = (n2o_new(i,k) - n2o(i,k)) / timestep               !mole/mole/sec 
+
+         !     if(local_dbg  .and. mod(i, ni2)==0) &
+         !       write(lun_out,*) 'linoz_tend: ', i,k, &
+         !        ' o3vmr,  o3new,  o3tend= ',   o3(i,k),  o3_new(i,k),  do3dt(i,k), &
+         !        ' ch4vmr, ch4new, ch4tend=',  ch4(i,k), ch4_new(i,k), dch4dt(i,k) !, &
+         !        ' n2ovmr, n2onew, n2otend=',  n2o(i,k), n2o_new(i,k), dn2odt(i,k), &
+         !        ' f11vmr, f11new, f11tend=',  f11(i,k), f11_new(i,k), df11dt(i,k), &
+         !        ' f12vmr, f12new, f12tend=',  f12(i,k), f12_new(i,k), df12dt(i,k)
+
+      end do DO_K2
+   end do DO_I2
+
+   !----------------------------------------------------------------
+   return
+end subroutine linoz_tend_ghg

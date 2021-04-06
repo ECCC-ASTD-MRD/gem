@@ -41,7 +41,6 @@ contains
 #include <rmnlib_basics.hf>
 #include <msg.h>
       logical,parameter:: SHORTMATCH_L = .true.
-      integer,parameter:: MYMAX = 1024
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
       integer :: istat,ivar,nvars
@@ -65,7 +64,7 @@ contains
 
          nullify(metalist)
          nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-              F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
          do ivar = 1,nvars
             call gmmx_name_parts(metalist(ivar)%vname,prefix_S,basename_S,time_S,ext_S)
             if  (metalist(ivar)%vname /= 'tr/hu:m' .and. &
@@ -119,7 +118,6 @@ contains
 #include <rmnlib_basics.hf>
 #include <msg.h>
       logical, parameter:: SHORTMATCH_L = .true.
-      integer, parameter:: MYMAX = 1024
       character(len=256) :: incfg_S
       character(len=32) :: inname_S, prefix_S, basename_S, time_S, ext_S
       integer :: istat, ivar, nvars
@@ -144,7 +142,7 @@ contains
 
          nullify(metalist)
          nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-              F_maxmeta=MYMAX, F_shortmatch=SHORTMATCH_L)
+              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
          do ivar = 1, nvars
             call gmmx_name_parts(metalist(ivar)%vname, prefix_S, basename_S, &
                  time_S, ext_S)

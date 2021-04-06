@@ -760,7 +760,7 @@ contains
             zp1 = 1.
             ikind = RMN_CONV_HY
             dummy_S = ' '
-            call convip(ip1, zp1, ikind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+            call convip_plus(ip1, zp1, ikind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
             ip1list0(1) = ip1
             if (associated(ip1list) .and. ip1list_alloc_L) &
                  deallocate(ip1list,stat=istat)

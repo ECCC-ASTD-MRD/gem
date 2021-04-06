@@ -722,7 +722,7 @@ contains
       tmp_S = ''
       levels(1:nlevels) = F_levels(1:nlevels)
       do kk=1,nlevels
-         call convip(F_ip1list_out(kk),levels(kk),ikind,RMN_CONV_P2IPNEW,tmp_S,.not.RMN_CONV_USEFORMAT_L)
+         call convip_plus(F_ip1list_out(kk),levels(kk),ikind,RMN_CONV_P2IPNEW,tmp_S,.not.RMN_CONV_USEFORMAT_L)
       enddo
 
       nlinbot = F_nlinbot

@@ -341,12 +341,10 @@ module cnv_options
    !# Switch for shallow convection
    !# * 'NIL'
    !# * 'KTRSNT'
-   !# * 'KTRSNT_MG'
    !# * 'BECHTOLD'
    character(len=16) :: shal            = 'nil'
    namelist /convection_cfgs/ shal
-   character(len=*), parameter :: SHAL_OPT(4) = (/ &
-        'KTRSNT_MG', &
+   character(len=*), parameter :: SHAL_OPT(3) = (/ &
         'KTRSNT   ', &
         'BECHTOLD ', &
         'NIL      '  &

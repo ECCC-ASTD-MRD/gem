@@ -89,14 +89,14 @@ subroutine flipit()
          liste_ip3(cnt)= ip3
       end do
 
-      call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
+      call convip_plus ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
       do j=1,cnt
          key1 = FSTINL (IUN1, NI, NJ, NK, -1, ' ', -1,-1,liste_ip3(j),&
                         ' ',liste_var(i),liste2,lislon2,nlis)
          allocate(wk1(ni*lislon2))
          call sort_ip1 ( liste2, liste_ip1, lislon2 )
-         call convip (liste_ip1(lislon2), pcode, ipkind, -1, ' ', .false. )
+         call convip_plus (liste_ip1(lislon2), pcode, ipkind, -1, ' ', .false. )
          kd=lislon2; kf=1; kp=-1
          cnt2=0
          do k=kd,kf,kp

@@ -122,7 +122,7 @@ contains
 !!$      real,dimension(size(F_datain,dim=1),size(F_datain,dim=2),1),target :: ssfcsin
 !!$      real,pointer :: datatmp(:,:,:)
 
-      logical :: use_same_sfcfld_L, samevert_L, ok_L
+      logical :: use_same_sfcfld_L, samevert_L, ok_L, ispressin_L, ispressout_L
       !------------------------------------------------------------------
       call msg(MSG_DEBUG,'(vinterp) vinterp0ls [BEGIN]')
       F_istat = RMN_ERR
@@ -188,7 +188,18 @@ contains
          if (any(abs(F_sfcfldout-sfcfldin) > EPSILON_R4)) samevert_L = .false.
          !#TODO: if (any(abs(F_sfcfldout2-sfcfldin2) > EPSILON_R4)) samevert_L = .false.
       endif
-
+      ispressin_L = vgrid_wb_is_press_kind(F_vgridin)
+      ispressout_L = vgrid_wb_is_press_kind(F_vgridout)
+      if (.not.(ispressin_L .eqv. ispressout_L)) then
+         if (ispressout_L) then
+            call msg(MSG_WARNING,'(vinterp) Cannot Interpolate from Height based to Pressure based vert. coor.')
+         else
+            call msg(MSG_WARNING,'(vinterp) Cannot Interpolate from Pressure based to Height based vert. coor.')
+         endif
+         F_istat = RMN_ERR
+         return
+      endif
+      
       tmp_S = 'Interpolating'
       nullify(levelsout,levelsin)
       if (samevert_L) then

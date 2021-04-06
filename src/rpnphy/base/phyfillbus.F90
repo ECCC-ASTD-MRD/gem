@@ -87,7 +87,7 @@ function phyfillbus(F_kount) result(F_istat)
 
    if (.not.associated(metalist)) then
       nvars = phy_getmeta(metalist, ' ', F_npath='V', F_bpath='D', &
-           F_maxmeta=NVARMAX, F_shortmatch=NOSHORTMATCH_L)
+           F_maxmeta=-1, F_shortmatch=NOSHORTMATCH_L)
    endif
 
    DO_VAR: do i= 1, nvars

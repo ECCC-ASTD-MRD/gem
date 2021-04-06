@@ -382,6 +382,7 @@ contains
 
    function sfc_nml_post_init() result(m_istat)
       use tdpack_const, only: PI
+      use sfclayer_compz0, only: compz0_set
       implicit none
       integer :: m_istat
 
@@ -425,6 +426,16 @@ contains
       if (istat == SL_OK) istat = sl_put('z0ref',sl_z0ref)
       if (istat /= SL_OK) then
          call msg(MSG_ERROR,'(sfc_nml) Problem initializing the surface layer module')
+         return
+      endif
+
+      istat = RMN_OK
+      if (istat == RMN_OK) istat = compz0_set('Z0MIN', z0min)
+      if (istat == RMN_OK) istat = compz0_set('Z0GLA', Z0GLA)
+      if (istat == RMN_OK) istat = compz0_set('Z0HCON', z0hcon)
+      if (istat == RMN_OK) istat = compz0_set('Z0LAT', z0tlat(1), z0tlat(2))
+      if (.not.RMN_IS_OK(istat)) then
+         call msg(MSG_ERROR,'(sfc_nml) Problem initializing the compz0 module')
          return
       endif
 

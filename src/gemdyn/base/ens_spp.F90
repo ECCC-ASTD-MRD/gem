@@ -84,34 +84,46 @@ contains
     dict_fname = trim(F_inpath)//'/spp.dict'
     do i=1,spp_ncha
        prefix = 'spp/'//trim(spp_list(i))//'/'
-       if (wb_check(prefix, WB_INITIALIZED) > 0) cycle
-       stat = wb_read(prefix, dict_fname, 'spp', WB_STRICT_DICTIONARY)
-       if (WB_IS_ERROR(stat)) then
-          write(F_fdout, *) 'Error reading spp entry from dictionary '// &
-               trim(dict_fname)//' into '//trim(spp_list(i))//': ',stat
-          return
-       endif
-       section = 'spp_'//trim(spp_list(i))
-       stat = wb_read(prefix, F_cfgfile, section, WB_FORBID_DEFINE)
-       if (WB_IS_ERROR(stat)) then
-          write(F_fdout, *) 'Error reading '//trim(section)// &
-               ' configuration from '//trim(F_cfgfile)
-          return
-       endif
-       stat = WB_OK
-       stat = min(wb_get(trim(prefix)//'spp_nlat', nlat), stat)
-       nlon = 2*nlat
-       stat = min(wb_put(trim(prefix)//'spp_nlon', nlon), stat)
-       if (.not.WB_IS_OK(stat)) then
-          write(F_fdout, *) 'Error processing SPP lat/lon definitions for '// &
-               trim(section)//' in '//trim(F_cfgfile)
-          return
-       endif
-       if (WB_IS_ERROR(wb_get(trim(prefix)//'spp_trn', spp_trn, dlen))) then
-          write(F_fdout, *) 'Error retrieving SPP wavenumber definitions for '// &
-               trim(section)//' in '//trim(F_cfgfile)
-          return
-       endif
+       HAVE_SPP_IN_WB: if (wb_check(prefix, WB_INITIALIZED) > 0) then
+          if (WB_IS_ERROR(wb_get(trim(prefix)//'spp_nlat', nlat))) then
+             write(F_fdout, *) 'Error retrieving stored lat definitions for '// &
+                  trim(section)
+             return
+          endif
+          if (WB_IS_ERROR(wb_get(trim(prefix)//'spp_trn', spp_trn, dlen))) then
+             write(F_fdout, *) 'Error retrieving stored wavenumber definitions for '// &
+                  trim(section)
+             return
+          endif
+       else
+          stat = wb_read(prefix, dict_fname, 'spp', WB_STRICT_DICTIONARY)
+          if (WB_IS_ERROR(stat)) then
+             write(F_fdout, *) 'Error reading spp entry from dictionary '// &
+                  trim(dict_fname)//' into '//trim(spp_list(i))//': ',stat
+             return
+          endif
+          section = 'spp_'//trim(spp_list(i))
+          stat = wb_read(prefix, F_cfgfile, section, WB_FORBID_DEFINE)
+          if (WB_IS_ERROR(stat)) then
+             write(F_fdout, *) 'Error reading '//trim(section)// &
+                  ' configuration from '//trim(F_cfgfile)
+             return
+          endif
+          stat = WB_OK
+          stat = min(wb_get(trim(prefix)//'spp_nlat', nlat), stat)
+          nlon = 2*nlat
+          stat = min(wb_put(trim(prefix)//'spp_nlon', nlon), stat)
+          if (.not.WB_IS_OK(stat)) then
+             write(F_fdout, *) 'Error processing SPP lat/lon definitions for '// &
+                  trim(section)//' in '//trim(F_cfgfile)
+             return
+          endif
+          if (WB_IS_ERROR(wb_get(trim(prefix)//'spp_trn', spp_trn, dlen))) then
+             write(F_fdout, *) 'Error retrieving SPP wavenumber definitions for '// &
+                  trim(section)//' in '//trim(F_cfgfile)
+             return
+          endif
+       endif HAVE_SPP_IN_WB
        spp_lmax = max( maxval(spp_trn) - minval(spp_trn) + 1, spp_lmax )
        spp_mmax = max( maxval(spp_trn) + 1, spp_mmax )
        spp_latmax=max(nlat,spp_latmax)

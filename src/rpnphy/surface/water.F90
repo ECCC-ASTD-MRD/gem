@@ -376,8 +376,6 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          call cpl_update (ILMO_WAT(1:n), 'ILO' , lcl_indx, n)
          call cpl_update (Z0M   (1:n),   'ZMO' , lcl_indx, n)
          call cpl_update (Z0H   (1:n),   'ZHO' , lcl_indx, n)
-         zudiag = zudiag * vmod0 / vmod
-         zvdiag = zvdiag * vmod0 / vmod
          
          ! Derives other variables from cpl_update output
          ! assuming FC_WAT and FV_WAT were computed with
@@ -531,8 +529,10 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
         hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
         tdiaglim=WATER_TDIAGLIM,L_min=sl_Lmin_water,spdlim=vmod)
 
-   zusurfzt = zusurfzt * vmod0 / vmod
-   zvsurfzt = zvsurfzt * vmod0 / vmod
+   if (sl_Lmin_water > 0.) then
+      zusurfzt = zusurfzt * vmod0 / vmod
+      zvsurfzt = zvsurfzt * vmod0 / vmod
+   endif
 
    if (i /= SL_OK) then
       call physeterror('water', 'error 3 returned by surface layer calculations')

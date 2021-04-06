@@ -989,8 +989,6 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
            call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
            call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
            call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
-           zudiag = zudiag * vmod0 / vmod
-           zvdiag = zvdiag * vmod0 / vmod
            
            ! Derives other variables from cpl_update output
            ! assuming FC_ICE and FV_ICE were computed with
@@ -1046,8 +1044,10 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          call physeterror('seaice', 'error 3 returned by sl_sfclayer()')
          return
       endif
-      zusurfzt = zusurfzt * vmod0 / vmod
-      zvsurfzt = zvsurfzt * vmod0 / vmod
+      if (sl_Lmin_seaice > 0.) then
+         zusurfzt = zusurfzt * vmod0 / vmod
+         zvsurfzt = zvsurfzt * vmod0 / vmod
+      endif
                
       do I=1,N
 

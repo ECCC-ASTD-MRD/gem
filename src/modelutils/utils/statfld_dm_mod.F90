@@ -13,6 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
+!#TODO: option to save dims and avoid some operations...
+
 !/@*
 module statfld_dm_mod
    use, intrinsic :: iso_fortran_env, only: REAL64

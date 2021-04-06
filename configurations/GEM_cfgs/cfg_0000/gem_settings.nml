@@ -144,7 +144,6 @@
   cond_evap     = 4.e-4
 
   inilwc        = .true.
-  kticefrac     = .false.
 
   pcptype       = 'bourge3d'
 
@@ -230,9 +229,15 @@
 &__deleted__
 schm_itraj=3,
 iau_input_type_s='DIST',
+kticefrac=.false.,
 /
 &__gemupcfg__
 orig_version=5.1.a5,
 from_version=5.1.a6,
 version=5.1.a7,
+/
+&__rpnphyupcfgnml__
+orig_version=6.2.0-a2,
+from_version=6.2.0-a2,
+version=6.2.0-a3,
 /

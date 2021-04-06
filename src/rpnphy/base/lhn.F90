@@ -315,8 +315,6 @@ contains
         endif
      enddo
   
-     !change temperature increment into a tendency
-     tinc = tinc/dt
      call apply_tendencies(d,v,f,tplus,tlhn,ni,nk)
   
      !compute increments to humidity to conserve RH
@@ -350,6 +348,7 @@ contains
   !/@*
   subroutine use_avg_profile(radar_pr, model_pres_pa, modulation_factor, i, ni, nk, dt, &
                              lhn_profile, stat) 
+     use phy_options
      implicit none
 #include <arch_specific.hf>
      !@Object Use typical heating profiles where model has no precip 
@@ -441,9 +440,6 @@ contains
                          0.000e+00, 0.000e+00, 0.000e+00 /)
         stat = 2.6
      endif
-
-     !transform heating rates (K/s) into increments (K) for consistency with the rest of LHN code
-     avg_profile = avg_profile * dt
 
      !initialize profile to zero
      lhn_profile(i,:) = 0.

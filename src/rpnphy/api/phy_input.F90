@@ -38,7 +38,7 @@ module phy_input_mod
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
         phy_lclcore_gid, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id
    use phyinputdiag_mod, only: phyinputdiag
-   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia
+   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia, debug_initonly_L
    use physimple_transforms_mod, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phy_typedef, only: phymeta
@@ -114,6 +114,12 @@ contains
          return
       else if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
          call msg(MSG_ERROR,'(phy_input) Physics not properly initialized.')
+         return
+      endif
+
+      if (debug_initonly_L) then
+         call msg(MSG_WARNING,'(phy_input) debug_initonly_L - skipping')
+         F_istat = RMN_OK
          return
       endif
 
@@ -625,7 +631,6 @@ contains
       integer :: F_istat
       !*@/
       logical, parameter :: NOSHORTMATCH_L = .false.
-      integer, parameter :: NVARMAX = 512
       integer, parameter :: MUST_INIT = 1
       integer :: nvars,nvars2,ivar,istat
       type(phymetaplus), pointer :: metalist(:)
@@ -637,7 +642,7 @@ contains
 
       nullify(metalist)
       nvars = phygetmetaplus(metalist, F_name=' ', F_npath='V', F_bpath='EPV', &
-           F_maxmeta=NVARMAX, F_quiet=.true., F_shortmatch=NOSHORTMATCH_L)
+           F_maxmeta=-1, F_quiet=.true., F_shortmatch=NOSHORTMATCH_L)
       !#NOTE: For dynamic bus, the init bit has a different meaning and is checked in phyfillbus
 
       str512 = ''
