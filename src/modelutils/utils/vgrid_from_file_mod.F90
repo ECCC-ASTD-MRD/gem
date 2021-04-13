@@ -179,8 +179,12 @@ contains
       nip1 = sort(fst_iplist(1:nkeys),keylist(1:nkeys),unique_L=.true.)
 
       call msg_verbosity_get(msglevel0)
-      call msg_verbosity(max(MYMSG_QUIET,msglevel0))
-      ier = vgd_new(F_vgrid,unit=F_unit,ip1=RMN_ANY_I,ip2=RMN_ANY_I)
+      call msg_verbosity(MYMSG_QUIET)
+      ier = vgd_new(F_vgrid,unit=F_unit,ip1=ig1,ip2=ig2)
+      ! if (ier /= VGD_OK) &
+      !     ier = vgd_new(F_vgrid,unit=F_unit,ip1=ig4,ip2=RMN_ANY_I)
+      if (ier /= VGD_OK) &
+           ier = vgd_new(F_vgrid,unit=F_unit,ip1=RMN_ANY_I,ip2=RMN_ANY_I)
       call msg_verbosity(msglevel0)
       if (ier /= VGD_OK) then
          call msg(MSG_WARNING,'(vgrid_from_file) Problem in vgd_new')
@@ -223,7 +227,7 @@ contains
       SFC_SEARCH: if (F_levtype_S == ' ') then
          sfc_L = .false.
          do i=1,nip1
-            call convip(fst_iplist(i),ip1r,ikind,-1,'',.false.)
+            call convip_plus(fst_iplist(i),ip1r,ikind,-1,'',.false.)
             subip1list(i) = i
             if (ikind == IKIND_SURF) sfc_L = .true.
          enddo

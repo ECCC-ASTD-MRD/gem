@@ -404,7 +404,7 @@ contains
             ip1 = F_ip1list(k)
          else
             zp1 = abs(float(k))
-            call convip(ip1, zp1, arbitrarykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
+            call convip_plus(ip1, zp1, arbitrarykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
          endif
          F_istat = min(fstecr(F_data(:,:,k),F_data(:,:,k),npak,F_fileid,&
               dateo,deet,npas, &
@@ -494,7 +494,7 @@ contains
             ip1 = F_ip1list(k)
          else
             zp1 = abs(float(k))
-            call convip(ip1, zp1, arbitrarykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
+            call convip_plus(ip1, zp1, arbitrarykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
          endif
          F_istat = min(fstecr(F_data(:,:,k),F_data(:,:,k),npak,F_fileid,&
               dateo,deet,npas, &

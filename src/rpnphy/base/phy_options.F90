@@ -32,7 +32,7 @@ module phy_options
    character(len=16) :: conv_shal    = 'NIL'
    character(len=16) :: convec       = 'NIL'
    integer           :: cw_rad       = 0
-   integer(INT64)  :: jdateo       = 0
+   integer(INT64)    :: jdateo       = 0
    real              :: delt         = 0.
    character(len=4),  pointer :: dyninread_list_s(:) => NULL()
    logical           :: dynout       = .false.
@@ -50,6 +50,7 @@ module phy_options
    logical           :: out_linoz    = .false.
    logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
+   logical           :: p3_comptend  = .false.
    logical           :: reduc        = .false.
    character(len=16) :: schmsol      = 'ISBA'
    logical           :: slt_winds    = .false.
@@ -129,6 +130,16 @@ module phy_options
    logical           :: diag_twind   = .false.
    namelist /physics_cfgs/ diag_twind
    namelist /physics_cfgs_p/ diag_twind
+   
+   !# Activate computing of all diags, requested for output or not.
+   logical           :: debug_alldiag_L     = .false.
+   namelist /physics_cfgs/ debug_alldiag_L
+   namelist /physics_cfgs_p/ debug_alldiag_L
+   
+   !# Run only the physics nml+init (skip input and step)
+   logical           :: debug_initonly_L     = .false.
+   namelist /physics_cfgs/ debug_initonly_L
+   namelist /physics_cfgs_p/ debug_initonly_L
 
    !# Activate Debug memory mode
    logical           :: debug_mem_L      = .false.
@@ -204,14 +215,12 @@ module phy_options
 
    !# Gravity wave drag formulation
    !# * 'NIL  ': no Gravity wave drag
-   !# * 'GWD86': gravity wave drag + low-level blocking
-   !# * 'SGO16': new formulation (2016) of GWD86
+   !# * 'SGO16': gravity wave drag + low-level blocking (new formulation 2016)
    character(len=16) :: gwdrag       = 'NIL'
    namelist /physics_cfgs/ gwdrag
    namelist /physics_cfgs_p/ gwdrag
-   character(len=*), parameter :: GWDRAG_OPT(3) = (/ &
+   character(len=*), parameter :: GWDRAG_OPT(2) = (/ &
         'NIL  ', &
-        'GWD86', &
         'SGO16'  &
         /)
 
@@ -264,11 +273,6 @@ module phy_options
    namelist /physics_cfgs/ kntraduv_S
    namelist /physics_cfgs_p/ kntraduv_S
    
-   !# Compute ice fraction in KTRSNT_MG if .true.
-   logical           :: kticefrac    = .true.
-   namelist /physics_cfgs/ kticefrac
-   namelist /physics_cfgs_p/ kticefrac
-
    !# Add methane oxydation as source of humidity in the stratosphere if .true.
    logical           :: lmetox       = .false.
    namelist /physics_cfgs/ lmetox
@@ -396,7 +400,7 @@ module phy_options
    integer           :: nsloflux     = 0
    namelist /physics_cfgs/ nsloflux
    namelist /physics_cfgs_p/ nsloflux
-
+   
    !# Vectoc lenght physics memory space folding for openMP
    integer           :: p_runlgt     = -1
    namelist /physics_cfgs/ p_runlgt
@@ -613,7 +617,7 @@ module phy_options
    !# * Long varnames
    !# * Short varnames
    !# * 'ALLVARS=EDPV': all variables from E, D, P, V buses (any combination of the 4 letters);
-   character(len=32) :: phystat_list_s(1024) = ' '
+   character(len=32) :: phystat_list_s(2048) = ' '
    namelist /physics_cfgs/ phystat_list_s
 !!$   namelist /physics_cfgs_p/ phystat_list_s
 
@@ -941,7 +945,6 @@ module phy_options
    real           :: lhn_weight    = 0.
    namelist /physics_cfgs/ lhn_weight
    namelist /physics_cfgs_p/ lhn_weight
-
 
 contains
 

@@ -39,7 +39,7 @@ subroutine sort_ip1 ( F_keys, F_ip1, F_nka )
       err = fstprm ( F_keys(k), dateo, deet, ipas, ni, nj, nk,&
            bit, datyp, ip1a,ip2a,ip3a, tva, var, etik_S, grda,&
            ig1a,ig2a,ig3a,ig4a, swa,lng, dlf, ubc, ex1, ex2, ex3 )
-      call convip (ip1a, lev, i,-1, blk_S, .false.)
+      call convip_plus(ip1a, lev, i,-1, blk_S, .false.)
       if ( i /= 4 ) then
          cnt= cnt + 1
          ip1r4(cnt)= lev

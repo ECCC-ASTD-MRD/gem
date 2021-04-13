@@ -112,6 +112,22 @@ subroutine phybusinit(ni,nk)
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
+
+   ! Compute linoz diags only on demand
+   do i=1,nphyoutlist
+      out_linoz = any(phyoutlist_S(i) == (/ &
+           'ao3 ','ao3c','ach4','an2o','af11','af12',&
+           'zch4','zn2o','zf11','zf12',&
+           'ych4','yn2o','yf11','yf12',&
+           'azo3','azoc','azch','azn2','azf1','azf2',&
+           'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
+           'ado3','ado1','ado4','ado6','ado7', &
+           'adch','adn2','adf1','adf2' &
+           /))
+      if (out_linoz) exit
+   enddo
+   out_linoz = (out_linoz .or. debug_alldiag_L)
+   
    llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
    llinozout = (llinoz .and. out_linoz)
    llinghout = (llingh .and. out_linoz)
@@ -139,6 +155,7 @@ subroutine phybusinit(ni,nk)
            )) ebdiag = .true.
       i = i+1
    enddo
+   ebdiag = (ebdiag .or. debug_alldiag_L)
 
    ! Activate ECMWF diagnostics only if outputs are requested by the user
    i = 1
@@ -146,15 +163,17 @@ subroutine phybusinit(ni,nk)
       if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
       i = i+1
    enddo
-   
+   ecdiag = (ecdiag .or. debug_alldiag_L)
+
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
-   i = 1
    if (any(stcond(1:5) == (/'MP_P3 ', 'MP_MY2'/))) then
+      i = 1
       do while (.not.llight .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
          i = i+1
       enddo
+      llight = (llight .or. debug_alldiag_L)
    endif
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
@@ -169,6 +188,7 @@ subroutine phybusinit(ni,nk)
            /))) lrefract = .true.
       i = i+1
    enddo
+   lrefract = (lrefract .or. debug_alldiag_L)
 
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
@@ -192,8 +212,20 @@ subroutine phybusinit(ni,nk)
            /))) lcons = .true.
       i = i+1
    enddo
+   lcons = (lcons .or. debug_alldiag_L)
    lmoycons = (lcons .and. lmoyhr)
-
+   
+   ! Compute tendencies from P3 microphysics only on demand
+   do i=1,nphyoutlist
+      p3_comptend = any(phyoutlist_S(i) == (/ &
+           'ste ','sqe ','sqce','sqre','mtqi', &
+           'w7  ','w9  ','w5  ','ta  ' &
+           /))
+      if (p3_comptend) exit
+   enddo
+   p3_comptend = (p3_comptend .or. debug_alldiag_L)
+   !#TODO: Check if some alloc can be avoided when p3_comptend == .false.
+   
    lhn_init = (lhn /= 'NIL')
    lsfcflx = (sfcflx_filter_order > 0)
    

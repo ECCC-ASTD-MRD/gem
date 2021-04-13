@@ -182,19 +182,6 @@ contains
          if (.not.WB_IS_OK(ier)) nphyoutlist = 0
       endif
 
-      do i=1,nphyoutlist
-         out_linoz = any(phyoutlist_S(i) == (/ &
-              'ao3 ','ao3c','ach4','an2o','af11','af12',&
-                            'zch4','zn2o','zf11','zf12',&
-                            'ych4','yn2o','yf11','yf12',&
-              'azo3','azoc','azch','azn2','azf1','azf2',&
-              'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
-              'ado3','ado1','ado4','ado6','ado7', &
-                            'adch','adn2','adf1','adf2' &
-              /))
-         if (out_linoz) exit
-      enddo
-
       ier = wb_get('itf_phy/DYNOUT', dynout)
       if (.not.WB_IS_OK(ier)) dynout = .false.
 
@@ -290,6 +277,7 @@ contains
       ier = min(wb_put('phy/timings', timings_L, options), ier)
       ier = min(wb_put('phy/nphyoutlist', nphyoutlist, options), ier)
       if (nphyoutlist > 0) ier = min(wb_put('phy/phyoutlist', phyoutlist_S, options), ier)
+      ier = min(wb_put('phy/debug_alldiag', debug_alldiag_L, options), ier)
       ier = min(wb_put('phy/input_type', input_type, options), ier)
       if (.not.WB_IS_OK(ier)) then
          call msg_toall(MSG_ERROR,'(phy_init) Problem with WB_put')

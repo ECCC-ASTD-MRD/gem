@@ -15,7 +15,6 @@
 
 !/@
 subroutine test_fstmpi()
-   use, intrinsic :: iso_fortran_env, only: INT64
    use testutils
    implicit none
    !@objective 
@@ -72,6 +71,7 @@ end subroutine test_fstmpi_open_notfound
 
 !/@
 subroutine test_fstmpi_find_read(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpi_mod
    implicit none
@@ -218,12 +218,12 @@ subroutine test_fstmpi_find_read(F_bcmk_S)
    datev = RMN_ANY_DATE
    zp1 = 1.
    kind = RMN_CONV_ARBITRARY
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    key = fstmpi_find(funit,'J1',datev,ip1,RMN_ANY_I,RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key),'test_fstmpi_find_read','fstmpi_find ip1>0 old')
 
    datev = RMN_ANY_DATE
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    key = fstmpi_find(funit,'J1',datev,ip1,RMN_ANY_I,RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key),'test_fstmpi_find_read','fstmpi_find ip1>0 new')
 
@@ -257,6 +257,7 @@ end subroutine test_fstmpi_find_read
 
 !/@
 subroutine test_fstmpi_write()
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use testutils
    use fstmpi_mod

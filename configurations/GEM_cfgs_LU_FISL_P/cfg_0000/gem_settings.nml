@@ -148,7 +148,7 @@ Inp_npes=4
  RADIA    = 'cccmarad', KNTRAD_S = '1h'
  STRATOS  = .true.
 
- GWDRAG           = 'gwd86'    , NON_ORO  = .true.
+ GWDRAG           = 'SGO16'    , NON_ORO  = .true.
  hines_flux_filter= 5          , LMETOX   = .true.
  sgo_tdfilter = -1.
 
@@ -160,7 +160,6 @@ Inp_npes=4
 
  STCOND     = 'MP_P3'
  INILWC     = .true.
- KTICEFRAC  = .false.
 
 /
  phystat_dble_l = .true.
@@ -172,7 +171,7 @@ Inp_npes=4
  debug_trace_L = .true
 
  &convection_cfgs
- DEEP       = 'kfc'      , SHAL     = 'ktrsnt_mg'
+ DEEP       = 'kfc'      , SHAL     = 'ktrsnt'
  KFCRAD     = 1500.      , KFCDEPTH = 4000.
  KFCTRIG4   = 0.,0.,0.05,0.05
  KFCTRIGLAT = .true.

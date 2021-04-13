@@ -197,6 +197,14 @@ interface
       logical,intent(in) :: useformat_L
    end subroutine convip
 
+   subroutine convip_plus(ip,p,kind,mode,format_S,useformat_L)
+      integer,intent(in) :: mode
+      integer,intent(inout) :: ip, kind
+      real ,intent(inout) ::  p
+      character(len=*),intent(in) :: format_S
+      logical,intent(in) :: useformat_L
+   end subroutine convip_plus
+
    integer function ip1_all(level,kind)
       real,intent(in) :: level
       integer,intent(in) :: kind

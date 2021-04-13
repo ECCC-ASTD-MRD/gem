@@ -393,7 +393,7 @@ contains
       implicit none
       integer :: m_istat
 
-      integer :: istat, iverb
+      integer :: istat
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 

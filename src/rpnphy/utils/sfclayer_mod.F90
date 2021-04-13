@@ -571,7 +571,7 @@ contains
     real(REAL64) :: dthv, tva, tvs
     real :: ilmax, vlmin, hc, ribc, ilmm
     real :: am, ah, dfm, dfh, g, dg
-    real, dimension(n) :: z0rt, z0rm
+    real, dimension(n) :: z0rt, z0rm  !#, lz0,lz0t
     real, dimension(2) :: ff_zm, ff_zh
     procedure(stability_function), pointer :: sf
 
@@ -663,7 +663,7 @@ contains
 
           ! Update roughness and neutral stability functions on request
           if(optz0 > 0) then
-             call compz0_1(optz0, z0j, z0locj, z0tj, fmj, vaj, fcorj, 1)
+             call compz0_a(optz0, z0j, z0locj, z0tj, fmj, vaj, fcorj, 1)
              lzz0j = log((z0rmj + zuj) / z0j)
              lzz0tj = log((z0rtj + ztj) / z0tj)
           endif
@@ -725,8 +725,12 @@ contains
 
     ! Recompute consistent roughness length estimates on request
     if(optz0.gt.0) then
-       call compz0_1(optz0, z0, z0loc, z0t, fm, va, fcor, n)
+       call compz0_a(optz0, z0, z0loc, z0t, fm, va, fcor, n)
        optz0_z0t = z0t
+!!$       lz0(1:n) = z0(1:n)
+!!$       lz0t(1:n) = z0t(1:n)
+!!$       call compz0(optz0, lz0, z0loc, lz0t, fm, va, fcor, n)
+!!$       optz0_z0t = lz0t
     endif
 
     ! End of subprogram

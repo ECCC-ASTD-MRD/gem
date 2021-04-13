@@ -209,7 +209,7 @@ contains
       ipkind = RMN_CONV_ARBITRARY
       do ii=1,26
          zp1 = real(ii)
-         call convip(ip1list01(ii),zp1,ipkind,RMN_CONV_P2IPNEW,' ',.not.RMN_CONV_USEFORMAT_L)
+         call convip_plus(ip1list01(ii),zp1,ipkind,RMN_CONV_P2IPNEW,' ',.not.RMN_CONV_USEFORMAT_L)
       enddo
       ip1list02(1:3) = (/123,234,345/)
       istat = incfg_new(incfgobj,jdateo,dt,F_filename_S,ip1list02(1:3))

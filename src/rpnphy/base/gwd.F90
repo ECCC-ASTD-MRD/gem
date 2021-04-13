@@ -91,17 +91,16 @@ contains
       logical, parameter :: DO_BLOCKING = .true.
 
       real, dimension(ni) :: rland, rmscons
-      real, dimension(ni,nkm1) :: work, rte, rs1, rtgm, ttendgw_r4
+      real, dimension(ni,nkm1) :: work, rtgm
       real, dimension(ni,nk) :: tvirt
-      real(REAL64), dimension(ni) :: fcorio, land, launch, mtdir8, pp, slope8, &
-           sxx8, syy8, sxy8, xcent8
+      real(REAL64), dimension(ni) :: pp
       real(REAL64), dimension(ni,nkm1) :: tt, te, uu, vv, sigma, s1, s2, s3, &
-           utendgw, vtendgw, ttendgw, utendno , vtendno, ttendno
+           utendno , vtendno, ttendno
 
       integer :: j, k
       logical :: split_tend_L
 
-      real, pointer, dimension(:)   :: p, zdhdxdy, zdhdx, zdhdy, zfcor, &
+      real, pointer, dimension(:)   :: p, zdhdxdy, zdhdx, zdhdy, &
            zlhtg, zmg, zmtdir, zslope, zxcent, ztdmask
       real, pointer, dimension(:,:) :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
            rtn, zhuplus, zugwdtd1, zvgwdtd1, zmrk2
@@ -109,14 +108,21 @@ contains
       !--------------------------------------------------------------------
 
       if (gwdrag == 'NIL' .and. .not.non_oro) return
+      
       call msg_toall(MSG_DEBUG, 'gwd [BEGIN]')
       if (timings_L) call timing_start_omp(417, 'gwd', 46)
 
+      call init2nan(rland, rmscons)
+      call init2nan(work, rtgm)
+      call init2nan(tvirt)
+      call init2nan(pp)
+      call init2nan(tt, te, uu, vv, sigma, s1, s2, s3)
+      call init2nan(utendno , vtendno, ttendno)
+      
       MKPTR1D(p, pmoins, f)
       MKPTR1D(zdhdx, dhdx, f)
       MKPTR1D(zdhdxdy, dhdxdy, f)
       MKPTR1D(zdhdy, dhdy, f)
-      MKPTR1D(zfcor, fcor, vb)
       MKPTR1D(zlhtg, lhtg, f)
       MKPTR1D(zmg, mg, f)
       MKPTR1D(zmtdir, mtdir, f)
@@ -149,36 +155,15 @@ contains
          zugwdtd1 => rug
          zvgwdtd1 => rvg
       endif
-
-      ! Retrieve stochastic parameter information on request
-      rmscons(:) = ens_spp_get('rmscon', zmrk2, default=rmscon)
-
-      call init2nan(rland)
-      call init2nan(work, rte, rs1, rtgm, tvirt, ttendgw_r4)
-      call init2nan(fcorio, land, launch, mtdir8, pp, slope8, sxx8, syy8, sxy8, xcent8)
-      call init2nan(tt, te, uu, vv, sigma, s1, s2, s3, utendgw, vtendgw)
-      call init2nan(ttendgw, utendno , vtendno, ttendno)
-
+ 
       IF_INIT: if (kount == 0) then
          rland = -abs(nint(zmg))
          call equivmount1(rland, zdhdx, zdhdy, zdhdxdy, &
               ni, 1, ni, zslope, zxcent, zmtdir)
       endif IF_INIT
 
-      ! tt   - virtual temperature on momentum levels
-
+      ! tvirt - virtual temperature on thermo/energy levels
       call mfotvt(tvirt, ztplus, zhuplus, ni, nk, ni)
-      call vint_thermo2mom(work, tvirt, zvcoef, ni, nkm1)
-      tt    = work
-      uu    = u
-      vv    = v
-      pp    = p
-      sigma = s
-
-      ! te   - virtual temperature on thermo/energy levels
-
-      work(1:ni,1:nkm1) = tvirt(1:ni,1:nkm1)
-      te = work
 
       ! Auxiliary sigma and sigma-related fields:
       ! s1    - sigma on half (thermo) levels
@@ -213,67 +198,47 @@ contains
       call vexp(s3(1,nkm1), s3(1,nkm1), ni)
       call vexp(s2(1,nkm1), s2(1,nkm1), ni)
 
-      IF_GWD86: if (gwdrag == 'GWD86') then
-
-         launch  = zlhtg
-         sxx8    = zdhdx
-         syy8    = zdhdy
-         sxy8    = zdhdxdy
-         mtdir8  = zmtdir
-         slope8  = zslope
-         xcent8  = zxcent
-         fcorio  = zfcor
-         land = - abs(nint(zmg))  !# land-water index: -1=land, 0=water
-
-         call sgoflx8(uu, vv, utendgw, vtendgw, ttendgw   , &
-              zugwdtd1, zvgwdtd1, te, tt, sigma, s1       , &
-              nkm1, ni, 1, ni                             , &
-              tau, taufac                                 , &
-              land, launch, slope8, xcent8, mtdir8        , &
-              DO_GWDRAG, DO_BLOCKING,           &
-              sgo_stabfac, sgo_nldirfac, sgo_cdmin, split_tend_L)
-
-         rug = real(utendgw)
-         rvg = real(vtendgw)
-         ttendgw_r4 = real(ttendgw)
-         call vint_mom2thermo(rtg, ttendgw_r4, zvcoef, ni, nkm1)
-
-         call apply_tendencies(u, rug, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(v, rvg, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(ztplus, rtg, ztdmask, ni, nk, nkm1)
-
-         call series_xst(rug, 'GU', trnch)
-         call series_xst(rvg, 'GV', trnch)
-
-      endif IF_GWD86
-
       IF_SGO16: if (gwdrag == 'SGO16') then
+         if (timings_L) call timing_start_omp(418, 'gwdsgo', 417)
 
-         rte(:,:) = real(te(:,:))
-         rs1(:,:) = real(s1(:,:))
+         work(:,:) = real(s1(:,:))
          rland = - abs(nint(zmg))  !# land-water index: -1=land, 0=water
          call sgo16flx3(u, v, rug, rvg, rtgm, zugwdtd1, zvgwdtd1, &
-              rte, ztplus, s, rs1, &
+              tvirt, ztplus, s, work, &
               nkm1, ni, 1, ni,                                   &
               tau, taufac,               &
               rland, zlhtg, zslope, zxcent, zmtdir,          &
               sgo_cdmin, sgo_bhfac, sgo_phic,                &
               sgo_stabfac, sgo_nldirfac, zmrk2,              &
               DO_GWDRAG, DO_BLOCKING, split_tend_L)
+         if (phy_error_L) return
 
          call vint_mom2thermo(rtg, rtgm, zvcoef, ni, nkm1)
-
-         call apply_tendencies(u, rug, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(v, rvg, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(ztplus, rtg, ztdmask, ni, nk, nkm1)
 
          call series_xst(rug, 'GU', trnch)
          call series_xst(rvg, 'GV', trnch)
 
+         if (timings_L) call timing_stop_omp(418)
       endif IF_SGO16
 
       IF_NON_ORO: if (non_oro) then
+         if (timings_L) call timing_start_omp(419, 'gwdnon', 417)
 
+         ! tt   - virtual temperature on momentum levels
+         call vint_thermo2mom(work, tvirt, zvcoef, ni, nkm1)
+         tt    = work
+
+         !# Copy to Double
+         !# TO CHECK: is 64bit really needed for non_oro
+         te(1:ni,1:nkm1) = tvirt(1:ni,1:nkm1)
+         uu    = u
+         vv    = v
+         pp    = p
+         sigma = s
+
+         ! Retrieve stochastic parameter information on request
+         rmscons(:) = ens_spp_get('rmscon', zmrk2, default=rmscon)
+         
          call gwspectrum6(sigma, s1, s2, s3, pp, te, &
               tt, uu, vv, ttendno, vtendno, utendno, hines_flux_filter, &
               GRAV, RGASD, rmscons, iheatcal, std_p_prof, non_oro_pbot, &
@@ -284,11 +249,21 @@ contains
          rvn = real(vtendno)
          rtn = real(ttendno)
 
-         call apply_tendencies(u, run, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(v, rvn, ztdmask, ni, nk, nkm1)
-
+         if (timings_L) call timing_stop_omp(419)
       endif IF_NON_ORO
 
+      !# Apply tendencies
+      if (gwdrag /= 'NIL') then
+         call apply_tendencies(u, rug, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(v, rvg, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(ztplus, rtg, ztdmask, ni, nk, nkm1)
+      endif
+      
+      if (non_oro) then
+         call apply_tendencies(u, run, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(v, rvn, ztdmask, ni, nk, nkm1)
+      endif
+      
       if (timings_L) call timing_stop_omp(417)
       call msg_toall(MSG_DEBUG, 'gwd [END]')
       !--------------------------------------------------------------------

@@ -480,7 +480,7 @@ contains
       hyblist(1:2) = (/0.985,0.995/)
       do k=1,nhyb
          ikind = RMN_CONV_HY
-         call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
+         call convip_plus(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
       dt = 21600 / NSTEP
       istat = inputio_new(inputobj, jdateo, dt, F_filename_S, '.', &

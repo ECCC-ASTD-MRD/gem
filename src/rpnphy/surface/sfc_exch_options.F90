@@ -41,17 +41,22 @@ contains
       include "tebcst.cdk"
 
       integer :: ier, options, iverb, i
+      logical :: debug_alldiag_L
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
-      iverb = wb_verbosity(WB_MSG_INFO)
+
+      iverb = wb_verbosity(WB_MSG_FATAL)
+      ier = wb_get('phy/flux_consist',atm_tplus)
+      if (.not.RMN_IS_OK(ier)) atm_tplus = .true.
+      ier = wb_verbosity(WB_MSG_INFO)
+      
       ier = WB_OK
 
       ier = min(wb_get('phy/jdateo',jdateo),ier)
       ier = min(wb_get('phy/climat',climat),ier)
       ier = min(wb_get('phy/delt',delt),ier)
-      ier = min(wb_get('phy/flux_consist',atm_tplus),ier)
       ier = min(wb_get('phy/rad_off',rad_off),ier)
       ier = min(wb_get('phy/radslope',radslope),ier)
       ier = min(wb_get('phy/atm_external',atm_external),ier)
@@ -63,7 +68,8 @@ contains
          allocate(phyoutlist_S(nphyoutlist))
          ier = min(wb_get('phy/phyoutlist',phyoutlist_S,nphyoutlist),ier)
       endif
-
+      ier = min(wb_get('phy/debug_alldiag',debug_alldiag_L),ier)
+      
       ier = min(wb_put('sfc/beta',beta,options),ier)
       ier = min(wb_put('sfc/bh91_a',bh91_a,options),ier)
       ier = min(wb_put('sfc/bh91_b',bh91_b,options),ier)
@@ -119,6 +125,7 @@ contains
             i = i+1
          enddo
       endif
+      thermal_stress = (thermal_stress .or. debug_alldiag_L)
 
       F_istat = RMN_OK
       !----------------------------------------------------------------------

@@ -17,6 +17,7 @@
 
 !/@
 subroutine test_input4d()
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use vGrid_Descriptors
    use clib_itf_mod
@@ -35,7 +36,6 @@ subroutine test_input4d()
 #include <rmnlib_basics.hf>
 #include <mu_gmm.hf>
    include "rpn_comm.inc"
-   logical,parameter :: FSTOPC_SET = .false.
 
    integer,parameter :: NVAR = 34
    integer,parameter :: NSKIP = 2
@@ -55,7 +55,7 @@ subroutine test_input4d()
    istat = ptopo_io_set(testutils_npeio)
 
    call testutils_set_name('test_input4d')
-   istat = fstopc('MSGLVL', 'SYSTEM', FSTOPC_SET)
+   istat = fstopc('MSGLVL', 'SYSTEM', RMN_OPT_SET)
    call msg_set_p0only(0)
 
    istat = clib_getenv('ATM_MODEL_DFILES',dfiles_S)
@@ -200,7 +200,8 @@ contains
       logical, parameter :: ALONGX = .true.
       logical, parameter :: FILL = .false. !.true.
       real,parameter :: hyb(4) = (/0.5492443,0.7299818,0.8791828,0.9950425/)
-      character(len=512) :: dateo_S,varname_S,varname2_S,skip_list_S(4),dummy_S,step_S
+      character(len=512) :: dateo_S,varname_S,varname2_S,skip_list_S(4),step_S
+      ! character(len=512) :: dummy_S
       character(len=8) :: result_S(0:NSTEP,NVAR)
       integer :: istat,dateo,istep,dt,ii,gridid,nbvar,ivar,nhyb,k,ikind,ip1list(NK)
       integer :: mini, maxi, lni, lnimax, li0, minj, maxj, lnj, lnjmax, lj0, rpncomm_gridid,lijk0(3),lijk1(3),uijk0(3),uijk1(3), inputid
@@ -280,7 +281,7 @@ contains
       hyblist(1:2) = (/0.985,0.995/)
       do k=1,nhyb
          ikind = RMN_CONV_HY
-         call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
+         call convip_plus(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
       dt = DELTAT
       if (input_use_old_l) then

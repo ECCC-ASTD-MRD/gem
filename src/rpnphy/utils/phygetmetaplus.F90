@@ -20,6 +20,7 @@ module phygetmetaplus_mod
    use phybus, only: entbus, perbus, dynbus, volbus
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj
    use phy_typedef
+   use gesdictmod, only: nbusvartot
    implicit none
    private
 !!!#include <arch_specific.hf>
@@ -85,7 +86,7 @@ contains
       character(len=*),  intent(in) :: F_name     !Name of field to retrieve (input, variable or output name)
       character(len=*),  intent(in) :: F_npath    !Name path to search ['VOI']
       character(len=*),  intent(in) :: F_bpath    !Bus path to search ['PVD']
-      integer,           intent(in) :: F_maxmeta  !Maximum number of vars to retrieve
+      integer,           intent(in) :: F_maxmeta  !Maximum number of vars to retrieve (no limit if <= 0)
       logical,           intent(in) :: F_quiet    !Do not emit warning for unmatched entry [.false.]
       logical,           intent(in) :: F_shortmatch  !if true, Match F_name against only the first len_trim(F_name) of input, variable or output name
       !@return
@@ -99,9 +100,9 @@ contains
       real    :: vmin, vmax
       character(len=PHY_MAXNAMELENGTH) :: name, npath, bpath, bus
       character(len=PHY_MAXNAMELENGTH) :: iname, vname, oname, iname_v, oname_v
-      character(len=PHY_MAXNAMELENGTH) :: vlist(MAXBUS)
+      character(len=PHY_MAXNAMELENGTH) :: vlist(nbusvartot)
       logical :: full, to_alloc
-      type(phymetaplus) :: meta_tmp(MAXBUS)
+      type(phymetaplus) :: meta_tmp(nbusvartot)
       real, pointer :: busptr(:,:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -109,7 +110,8 @@ contains
       name  = F_name  ; istat = clib_toupper(name)
       npath = F_npath ; istat = clib_toupper(npath)
       bpath = F_bpath ; istat = clib_toupper(bpath)
-      maxmeta = min(size(meta_tmp),F_maxmeta)
+      maxmeta = size(meta_tmp)
+      if (F_maxmeta > 0) maxmeta = min(maxmeta, F_maxmeta)
       if (associated(F_meta)) &
            maxmeta = min(size(F_meta),maxmeta)
 

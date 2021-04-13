@@ -17,7 +17,6 @@
 
 !/@
 subroutine test_fstmpio()
-   use, intrinsic :: iso_fortran_env, only: INT64
    use iso_c_binding
    use testutils
    use ptopo_utils
@@ -28,7 +27,6 @@ subroutine test_fstmpio()
 !@/
 #include <clib_interface_mu.hf>
 #include <rmnlib_basics.hf>
-   logical,parameter :: FSTOPC_SET = .false.
    integer :: istat, myproc, ndomains, idomain, ngrids, igrid
    character(len=512) :: dfiles_S, bcmk_S
    ! ---------------------------------------------------------------------
@@ -43,7 +41,7 @@ subroutine test_fstmpio()
    istat = ptopo_io_set(testutils_npeio)
 !!$   print *,testutils_myproc,ptopo_grid_ipe,'---------------- '
 
-   istat = fstopc('MSGLVL','SYSTEM',FSTOPC_SET)
+   istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
    call msg_set_p0only(0)
 
    call fstmpio_set_iotype(PTOPO_IO)
@@ -122,6 +120,7 @@ end subroutine test_fstmpio_open_notfound
 
 !/@
 subroutine test_fstmpio_find_0(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    implicit none
@@ -241,12 +240,12 @@ subroutine test_fstmpio_find_0(F_bcmk_S)
    datev = RMN_ANY_DATE
    zp1 = 1.
    kind = RMN_CONV_ARBITRARY
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    istat = fstmpio_find_0(key, funit, 'J1', datev, ip1, RMN_ANY_I, RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key), 'find ip1>0 old')
 
    datev = RMN_ANY_DATE
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    istat = fstmpio_find_0(key, funit, 'J1', datev, ip1, RMN_ANY_I, RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key), 'find ip1>0 new')
 
@@ -279,6 +278,7 @@ end subroutine test_fstmpio_find_0
 
 !/@
 subroutine test_fstmpio_find_3d_0(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
     use vGrid_Descriptors
@@ -365,10 +365,11 @@ end subroutine test_fstmpio_find_3d_0
 
 !/@
 subroutine test_fstmpio_find_3d_0b(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
-    use vGrid_Descriptors
-  implicit none
+   use vGrid_Descriptors
+   implicit none
    !@objective 
    !@author Stephane Chamberland, 2017-04
    !@argument
@@ -471,6 +472,7 @@ end subroutine test_fstmpio_find_3d_0b
 
 
 subroutine test_fstmpio_find_3d_vect(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    use vGrid_Descriptors
@@ -558,6 +560,7 @@ end subroutine test_fstmpio_find_3d_vect
 
 
 subroutine test_fstmpio_find_3d_vectb(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    use vGrid_Descriptors
@@ -647,6 +650,7 @@ end subroutine test_fstmpio_find_3d_vectb
 
 !/@
 subroutine test_fstmpio_meta(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    implicit none
@@ -694,6 +698,7 @@ end subroutine test_fstmpio_meta
 
 !/@
 subroutine test_fstmpio_vgrid(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    use vGrid_Descriptors
@@ -741,6 +746,7 @@ end subroutine test_fstmpio_vgrid
 
 !/@
 subroutine test_fstmpio_read(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fstmpio_mod
    use vGrid_Descriptors
@@ -834,6 +840,7 @@ end subroutine test_fstmpio_read
 
 !!$!/@
 !!$subroutine test_fstmpio_find_read(F_bcmk_S)
+!!$   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
 !!$   use testutils
 !!$   use fstmpio_mod
 !!$   implicit none
@@ -980,12 +987,12 @@ end subroutine test_fstmpio_read
 !!$   datev = RMN_ANY_DATE
 !!$   zp1 = 1.
 !!$   kind = RMN_CONV_ARBITRARY
-!!$   call convip(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+!!$   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
 !!$   istat = fstmpio_find(key, funit, 'J1', datev, ip1, RMN_ANY_I, RMN_ANY_I)
 !!$   call testutils_assert_ok(RMN_IS_OK(key), 'test_fstmpio_find_read', 'fstmpio_find ip1>0 old')
 !!$
 !!$   datev = RMN_ANY_DATE
-!!$   call convip(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+!!$   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
 !!$   istat = fstmpio_find(key, funit, 'J1', datev, ip1, RMN_ANY_I, RMN_ANY_I)
 !!$   call testutils_assert_ok(RMN_IS_OK(key), 'test_fstmpio_find_read', 'fstmpio_find ip1>0 new')
 !!$
@@ -1019,6 +1026,7 @@ end subroutine test_fstmpio_read
 !!$
 !!$!/@
 !!$subroutine test_fstmpio_write()
+!!$   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
 !!$   use testutils
 !!$   use fstmpio_mod
 !!$   use ezgrid_mod
@@ -1200,6 +1208,7 @@ end subroutine test_fstmpio_read
 
 !/@
 subroutine test_fstmpio_rdhint(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use testutils
    use ptopo_utils
@@ -1470,6 +1479,7 @@ end subroutine test_fstmpio_rdhint
 
 !/@
 subroutine test_fstmpio_rdhint_vect(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use ptopo_utils
    use testutils

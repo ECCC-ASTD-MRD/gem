@@ -1100,7 +1100,7 @@ contains
             if (F_nip1 > nmax) cycle
             if (present(F_ip1list)) then
                zp1 = real(k)
-               call convip(F_ip1list(F_nip1),zp1,ipkind,RMN_CONV_P2IPNEW,' ', &
+               call convip_plus(F_ip1list(F_nip1),zp1,ipkind,RMN_CONV_P2IPNEW,' ', &
                     .not.RMN_CONV_USEFORMAT_L)
             endif
          enddo

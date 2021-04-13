@@ -464,7 +464,7 @@ contains
       F_istat = RMN_ERR
       select case(F_comm_S)
       case(RPN_COMM_GRID)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey, &
+         F_istat = priv_collect_dims_grid(ptopo_grid_npex,ptopo_grid_npey, &
               ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,1,1, &
               F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
       case(RPN_COMM_BLOC_COMM)
@@ -472,6 +472,7 @@ contains
               ptopo_bloc_ipex,ptopo_bloc_ipey,F_nil,F_njl,1,1, &
               F_nic,F_njc,F_i0c,F_j0c,gi0c,gj0c)
       end select
+!!$      print *,'(ptopo1) '//trim(F_comm_S),ptopo_grid_ipex,ptopo_grid_ipey,F_nic,F_njc ; call flush(6)
       call msg(MSG_DEBUG,'(ptopo) collect_dims [END]')
       !---------------------------------------------------------------------
       return
@@ -500,7 +501,7 @@ contains
       F_istat = RMN_ERR
       select case(F_comm_S)
       case(RPN_COMM_GRID)
-         F_istat = priv_collect_dims(F_comm_S,ptopo_grid_npex,ptopo_grid_npey, &
+         F_istat = priv_collect_dims_grid(ptopo_grid_npex,ptopo_grid_npey, &
               ptopo_grid_ipex,ptopo_grid_ipey,F_nil,F_njl,F_gi0,F_gj0, &
               F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c)
       case(RPN_COMM_BLOC_COMM)
@@ -991,7 +992,7 @@ contains
       return
    end function priv_copy_r4_2d
 
-
+   
    !/@*
    function priv_collect_dims(F_comm_S,F_npex,F_npey,F_ipex,F_ipey, &
         F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) &
@@ -1025,6 +1026,12 @@ contains
       F_gj0c = F_gj0
       if (F_npex == 1 .and. F_npey == 1) return
 
+      if (.not.priv_alongX()) then
+         F_istat = RMN_ERR
+         call msg(MSG_ERROR,'(ptopo) priv_collect_dims for comm='//trim(F_comm_S)//' Not yet supported when topology is not alongX')
+         return
+      endif
+
       params(IDX_I0)  = F_ipex
       params(IDX_J0)  = F_ipey
       params(IDX_NIL) = F_nil
@@ -1037,7 +1044,7 @@ contains
            params, N_PARAM+2, RPN_COMM_INTEGER, &
            params2d, N_PARAM+2, RPN_COMM_INTEGER, &
            F_comm_S, F_istat)
-      if (RMN_IS_OK(F_istat)) then
+     if (RMN_IS_OK(F_istat)) then
          i = F_ipex+1
          j = F_ipey+1
          ni = F_npex
@@ -1055,6 +1062,60 @@ contains
    end function priv_collect_dims
 
 
+   !/@*
+   function priv_collect_dims_grid(F_npex,F_npey,F_ipex,F_ipey, &
+        F_nil,F_njl,F_gi0,F_gj0,F_nic,F_njc,F_i0c,F_j0c,F_gi0c,F_gj0c) &
+        result(F_istat)
+      implicit none
+      !@objective Get dims of bloc
+      !@arguments
+      integer,intent(in) :: F_npex,F_npey,F_ipex,F_ipey !nb of pe and rank in comm_S
+      integer,intent(in)  :: F_nil,F_njl   !dims of the local data (w/o halo)
+      integer,intent(in)  :: F_gi0,F_gj0   !pos of local data(1,1) in full grid
+      integer,intent(out) :: F_nic,F_njc   !dims of the comm data
+      integer,intent(out) :: F_i0c,F_j0c   !pos of F_fld_l(1,1) in comm
+      integer,intent(out) :: F_gi0c,F_gj0c !pos of bloc data(1,1) in full grid
+      !@return
+      integer :: F_istat
+      !@author S. Chamberland, 2012-01
+      !*@/
+      integer :: params_row(F_npex)
+      integer :: params_col(F_npey)
+      !---------------------------------------------------------------------
+      call msg(MSG_DEBUG,'(ptopo) priv_collect_dims_grid [BEGIN]')
+      F_istat = RMN_OK
+      F_nic = F_nil
+      F_njc = F_njl
+      F_i0c = 1
+      F_j0c = 1
+      F_gi0c = F_gi0
+      F_gj0c = F_gj0
+      if (F_npex == 1 .and. F_npey == 1) return
+
+      call rpn_comm_allreduce(F_gi0, F_gi0c, 1, RPN_COMM_INTEGER, &
+           &    RPN_COMM_MIN, RPN_COMM_EW, F_istat)
+      if (RMN_IS_OK(F_istat)) &
+           call rpn_comm_allreduce(F_gj0, F_gj0c, 1, RPN_COMM_INTEGER, &
+           &    RPN_COMM_MIN, RPN_COMM_NS, F_istat)
+
+      if (RMN_IS_OK(F_istat)) &
+           call rpn_comm_allgather(F_nil, 1, RPN_COMM_INTEGER, &
+           &    params_row, 1, RPN_COMM_INTEGER, RPN_COMM_EW, F_istat)
+      if (RMN_IS_OK(F_istat)) &
+           call rpn_comm_allgather(F_njl, 1, RPN_COMM_INTEGER, &
+           &    params_col, 1, RPN_COMM_INTEGER, RPN_COMM_NS, F_istat)
+            
+      F_i0c = sum(params_row(1:F_ipex)) + 1
+      F_j0c = sum(params_col(1:F_ipey)) + 1
+      F_nic = sum(params_row)
+      F_njc = sum(params_col)
+ 
+      call msg(MSG_DEBUG,'(ptopo) priv_collect_dims_grid [END]')
+      !---------------------------------------------------------------------
+      return
+   end function priv_collect_dims_grid
+
+   
    !/@*
    function priv_collect_r4_3d(F_fld_c,F_fld_l,F_i0l,F_j0l,F_lni,F_lnj, &
         F_comm_S,F_ismaster_L,F_npe) result(F_istat)
@@ -1185,5 +1246,40 @@ contains
       return
    end function priv_collect_r4_2d
 
+   
+   !/@*
+   function priv_alongX() result(F_alongx_L)
+      implicit none
+      !@objective Check that the topology is compatible with alongX
+      !           assumption done in this module
+      !@arguments
+      !@return
+      logical :: F_alongx_L
+      !@revision
+      !@description
+      !*@/
+      logical, save :: isinit_L = .false.
+      logical, save :: alongx_L = .false.
+      integer :: params_row(ptopo_grid_npex,ptopo_grid_npey), istat
+      !---------------------------------------------------------------------
+      F_alongx_L = alongx_L
+      if (isinit_L) return
+      isinit_L =  .true.
+      
+      if (ptopo_grid_npex == 1 .or. ptopo_grid_npey == 1) then
+         alongx_L = .true.
+      else
+         call rpn_comm_allgather(ptopo_grid_ipex, 1, RPN_COMM_INTEGER, &
+              &    params_row, 1, RPN_COMM_INTEGER, RPN_COMM_GRID, istat)
+         if (RMN_IS_OK(istat)) then
+            alongx_L = (params_row(1,1) < params_row(2,1) .and. &
+                 params_row(2,1) <= params_row(ptopo_grid_npex,1) .and. &
+                 all(params_row(1,1) == params_row(1,:)))
+         endif
+      endif
+      
+      F_alongx_L = alongx_L
+      return
+   end function priv_alongX
 
 end module ptopo_utils

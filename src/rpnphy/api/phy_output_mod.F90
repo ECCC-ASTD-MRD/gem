@@ -280,7 +280,7 @@ contains
       mykind = RMN_CONV_ARBITRARY
       do k=1,my_nk
          zp1 = real(k)
-         call convip(my_ip1list(k), zp1, mykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
+         call convip_plus(my_ip1list(k), zp1, mykind, RMN_CONV_P2IPNEW, ' ', .not.RMN_CONV_USEFORMAT_L)
       enddo
       !---------------------------------------------------------------------
       return

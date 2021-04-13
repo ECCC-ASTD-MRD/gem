@@ -20,7 +20,7 @@ module phy_getmeta_mod
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus, PATHLENGTH
-!!$   use phygridmap, only:
+   use gesdictmod, only: nbusvartot
    private
 #include <rmnlib_basics.hf>
 #include <msg.h>
@@ -98,7 +98,7 @@ contains
       character(len=PHY_MAXNAMELENGTH) :: npath, bpath
       integer :: istat, maxmeta, i, nmatch
       logical :: quiet, shortmatch, to_alloc
-      type(phymetaplus), target  :: metaplus(MAXBUS)
+      type(phymetaplus), target  :: metaplus(nbusvartot)
       type(phymetaplus), pointer :: metaplus_p(:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -126,7 +126,9 @@ contains
          endif
       endif
       if (present(F_quiet)) quiet = F_quiet
-      if (present(F_maxmeta)) maxmeta = min(maxmeta,F_maxmeta)
+      if (present(F_maxmeta)) then
+         if (F_maxmeta > 0) maxmeta = min(maxmeta,F_maxmeta)
+      endif
       if (present(F_shortmatch)) shortmatch = F_shortmatch
 
       !# Retrieve metadata into temporary space

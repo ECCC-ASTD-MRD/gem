@@ -17,13 +17,14 @@
 module gesdictmod
    implicit none
    private
-   public :: gesdictlock, gesdictislock, gesdictadd, gesdictcheck
+   public :: gesdictlock, gesdictislock, gesdictadd, gesdictcheck, nbusvartot
 
 #include <rmnlib_basics.hf>
 #include <msg.h>
    include "buses.cdk"
 
    logical, save :: buslck = .false.
+   integer, save :: nbusvartot = 0
    
 contains
 
@@ -32,6 +33,7 @@ contains
       implicit none
       !*@/
       buslck = .true.
+      nbusvartot = enttop + dyntop + pertop + voltop
       return
    end subroutine gesdictlock
 

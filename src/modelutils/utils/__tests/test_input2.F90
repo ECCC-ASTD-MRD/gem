@@ -27,7 +27,6 @@ subroutine test_input2()
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
    integer,parameter :: NDIGITS = 4
-   logical,parameter :: FSTOPC_SET = .false.
    character(len=512) :: dir_S,filename_S,dfiles_S,bcmk_S, &
         anal_S,anal2_S,clim_S,clim2_S,geop_S,geop2_S,inrep_S,inrep2_S
    integer :: istat,myproc
@@ -35,7 +34,7 @@ subroutine test_input2()
    myproc = 0
    call testutils_verbosity()
    call testutils_set_name('test_input2')
-   istat = fstopc('MSGLVL','SYSTEM',FSTOPC_SET)
+   istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
 
    istat = clib_getenv('ATM_MODEL_DFILES',dfiles_S)
    if (.not.RMN_IS_OK(istat)) then
@@ -202,7 +201,7 @@ contains
       hyblist(1:2) = (/0.985,0.995/)
       do k=1,nhyb
          ikind = RMN_CONV_HY
-         call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
+         call convip_plus(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
       dt = 1800
       inputid = input_new(dateo,dt,F_filename_S,ip1list(1:nhyb))

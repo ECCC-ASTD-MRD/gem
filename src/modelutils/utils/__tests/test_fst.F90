@@ -15,7 +15,7 @@
 
 !/@
 subroutine test_fst()
-   use, intrinsic :: iso_fortran_env, only: INT64
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use ptopo_utils
    implicit none
@@ -24,7 +24,6 @@ subroutine test_fst()
 !@/
 #include <clib_interface_mu.hf>
 #include <rmnlib_basics.hf>
-   logical,parameter :: FSTOPC_SET = .false.
    integer :: istat, myproc, ndomains, idomain, ngrids, igrid
    character(len=512) :: dfiles_S, bcmk_S
    ! ---------------------------------------------------------------------
@@ -34,7 +33,7 @@ subroutine test_fst()
 
    call testutils_set_name('test_fst')
 
-   istat = fstopc('MSGLVL','SYSTEM',FSTOPC_SET)
+   istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
    istat = clib_getenv('ATM_MODEL_DFILES',dfiles_S)
    if (.not.RMN_IS_OK(istat)) then
       print *,'ERROR: ATM_MODEL_DFILES not defined'
@@ -102,6 +101,7 @@ end subroutine test_fst_open_notfound
 
 !/@
 subroutine test_fst_find_read(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    implicit none
@@ -250,12 +250,12 @@ subroutine test_fst_find_read(F_bcmk_S)
    datev = RMN_ANY_DATE
    zp1 = 1.
    kind = RMN_CONV_ARBITRARY
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    key = fst_find(funit,'J1',datev,ip1,RMN_ANY_I,RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key),'test_fst_find_read','fst_find ip1>0 old')
 
    datev = RMN_ANY_DATE
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPNEW, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    key = fst_find(funit,'J1',datev,ip1,RMN_ANY_I,RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key),'test_fst_find_read','fst_find ip1>0 new')
 
@@ -317,7 +317,7 @@ subroutine test_fst_find_read(F_bcmk_S)
    datev = RMN_ANY_DATE
    zp1 = 1.
    kind = RMN_CONV_ARBITRARY
-   call convip(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
+   call convip_plus(ip1, zp1, kind, RMN_CONV_P2IPOLD, dummy_S, .not.RMN_CONV_USEFORMAT_L)
    key = fst_find(funit,'J1',datev,ip1,RMN_ANY_I,RMN_ANY_I)
    call testutils_assert_ok(RMN_IS_OK(key),'test_fst_find_read','fst_find dir J1 ip1>0 old')
 
@@ -329,6 +329,7 @@ end subroutine test_fst_find_read
 
 !/@
 subroutine test_fst_get_vgrid(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use vGrid_Descriptors
    use fst_mod
@@ -376,6 +377,7 @@ end subroutine test_fst_get_vgrid
 
 !/@
 subroutine test_fst_rdhint(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    use hinterp4yy_mod
@@ -620,6 +622,7 @@ end subroutine test_fst_rdhint
 
 !/@
 subroutine test_fst_rdhint_vect(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    use hinterp4yy_mod
@@ -693,6 +696,7 @@ end subroutine test_fst_rdhint_vect
 
 !/@
 subroutine test_fst_find_3d_0(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    implicit none
@@ -766,6 +770,7 @@ end subroutine test_fst_find_3d_0
 
 !/@
 subroutine test_fst_find_3d_0b(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    implicit none
@@ -857,6 +862,7 @@ end subroutine test_fst_find_3d_0b
 
 
 subroutine test_fst_find_3d_vect(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    implicit none
@@ -924,6 +930,7 @@ subroutine test_fst_find_3d_vect(F_bcmk_S)
 end subroutine test_fst_find_3d_vect
 
 subroutine test_fst_find_3d_vectb(F_bcmk_S)
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    implicit none
@@ -1017,6 +1024,7 @@ end subroutine test_fst_find_3d_vectb
 
 !/@
 subroutine test_fst_write()
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use testutils
    use fst_mod
    use ezgrid_mod

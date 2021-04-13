@@ -17,6 +17,7 @@
 
 !/@
 subroutine test_input7()
+   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use testutils
    use ptopo_utils
@@ -35,7 +36,6 @@ subroutine test_input7()
 #include <mu_gmm.hf>
    include "rpn_comm.inc"
    integer,parameter :: NDIGITS = 4
-   logical,parameter :: FSTOPC_SET = .false.
    character(len=512) :: dir_S,filename_S,dfiles_S, name_S, &
         anal_S,anal2_S,clim_S,clim2_S,geop_S,geop2_S,inrep_S,inrep2_S
    integer :: istat, myproc, ndomains, idomain, ngrids, igrid
@@ -46,7 +46,7 @@ subroutine test_input7()
    istat = ptopo_io_set(testutils_npeio)
 
    call testutils_set_name('test_input7')
-   istat = fstopc('MSGLVL', 'SYSTEM', FSTOPC_SET)
+   istat = fstopc('MSGLVL', 'SYSTEM', RMN_OPT_SET)
    call msg_set_p0only(0)
 
    istat = clib_getenv('ATM_MODEL_DFILES',dfiles_S)
@@ -318,7 +318,7 @@ contains
       hyblist(1:2) = (/0.985,0.995/)
       do k=1,nhyb
          ikind = RMN_CONV_HY
-         call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
+         call convip_plus(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
       dt = 21600
 !!$      inputid = input_new(jdate_to_cmc(jdateo), dt, F_filename_S, ip1list(1:nhyb))
@@ -647,7 +647,7 @@ contains
       hyblist(1:2) = (/0.985,0.995/)
       do k=1,nhyb
          ikind = RMN_CONV_HY
-         call convip(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
+         call convip_plus(ip1list(k),hyblist(k),ikind,RMN_CONV_P2IPNEW,'',.false.)
       enddo
       dt = 21600
 !!$      inputid = input_new(jdate_to_cmc(jdateo), dt, F_filename_S, ip1list(1:nhyb))

@@ -87,7 +87,6 @@ contains
 
       integer :: nkm1, istat1, istat2, i
       real :: idt
-      logical :: p3_comptend
 
       real, dimension(ni) :: tlcr,tscr
 
@@ -137,17 +136,6 @@ contains
       zsqce = 0.
       zsqre = 0.
       ccf = zfdc + zfmc  !sum convective cloud fractions (reasonable b/c of vertical correlation)
-
-      ! Compute tendencies from P3 microphysics only on demand
-      p3_comptend = .false.
-      i = 1
-      do while (.not.p3_comptend .and. i <= nphyoutlist)
-         if (any(phyoutlist_S(i) == (/ &
-              'ste ','sqe ','sqce','sqre','mtqi', &
-              'w7  ','w9  ','w5  ','ta  ' &
-              /))) p3_comptend = .true.
-         i = i+1
-      enddo
 
       ! Run selected gridscale condensation scheme
       GRIDSCALE_SCHEME: select case(stcond)
