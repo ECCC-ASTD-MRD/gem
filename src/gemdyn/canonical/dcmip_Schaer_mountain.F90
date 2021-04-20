@@ -15,7 +15,7 @@
 
 !**s/r dcmip_Schaer_mountain - Setup for Mountain waves over a Schaer-type mountain on a small planet (DCMIP 2012)
 
-      subroutine dcmip_Schaer_mountain (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_s,F_ps, &
+      subroutine dcmip_Schaer_mountain (F_u,F_v,F_w,F_zd,F_tv,F_qv,F_topo,F_orls,F_s,F_ps, &
                                         Mminx,Mmaxx,Mminy,Mmaxy,Nk,Shear,Set_topo_L,F_stag_L)
 
       use dcmip_2012_init_1_2_3
@@ -27,6 +27,7 @@
       use ver
       use ptopo
       use dynkernel_options
+      use gem_options
 
       implicit none
 
@@ -44,7 +45,8 @@
            F_qv   (Mminx:Mmaxx,Mminy:Mmaxy,Nk), & !Specific humidity
            F_s    (Mminx:Mmaxx,Mminy:Mmaxy)   , &
            F_ps   (Mminx:Mmaxx,Mminy:Mmaxy)   , &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)   , & !S grid
+           F_orls (Mminx:Mmaxx,Mminy:Mmaxy)       !S grid
 
       integer Shear      ! If 0 then we use constant u
                          ! If 0 then we use shear flow
@@ -61,7 +63,7 @@
 
       !--------------------------------------------------------
 
-      integer i,j,k
+      integer i,j,k,i0,in,j0,jn,inu,jnv
 
       real(kind=REAL64) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
@@ -80,6 +82,7 @@
                   t,       & ! Temperature (K)
                   tv,      & ! Virtual Temperature (K)
                   phis,    & ! Surface Geopotential (m^2 s^-2)
+                  orls,    & ! Surface Geopotential (m^2 s^-2) Large-Scale
                   ps,      & ! Surface Pressure (Pa)
                   rho,     & ! Density (kg m^-3)
                   q          ! Specific Humidity (kg/kg)
@@ -92,6 +95,9 @@
 
       if (Lun_out > 0) write (Lun_out,1000) Shear,Set_topo_L
 
+      i0= 1-G_halox ; in= l_ni+G_halox ; inu= l_niu+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy ; jnv= l_njv+G_haloy
+
       GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       zcoords = 1
@@ -101,21 +107,22 @@
       !----------------------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Ver_c_8%t(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_tv(i,j,k) = tv
                   F_qv(i,j,k) = q
@@ -127,6 +134,7 @@
                   end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
+                  if (Set_topo_L) F_orls(i,j) = orls 
 
                   F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
@@ -137,7 +145,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -146,9 +154,10 @@
                   lon = rlon_8 + acos(-1.d0)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%t(k),Ver_a_8%t(k),Ver_b_8%t(k),Ver_c_8%t(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_tv(i,j,k) = tv
                   F_qv(i,j,k) = q
@@ -160,6 +169,7 @@
                   end if
 
                   if (Set_topo_L) F_topo(i,j) = phis
+                  if (Set_topo_L) F_orls(i,j) = orls 
 
                   F_w (i,j,k) = w
                   F_zd(i,j,k) = w ! It is zero
@@ -182,21 +192,22 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
 
@@ -204,7 +215,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -213,9 +224,10 @@
                   lon = rlon_8 + acos(-1.d0)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -233,21 +245,22 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
 
@@ -255,7 +268,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -264,9 +277,10 @@
                   lon = rlon_8 + acos(-1.d0)
 
                   if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j)
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 
@@ -288,21 +302,22 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_niu
+               do i = i0,inu
 
                   lon = geomh_xu_8(i)
 
-                  if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) phis = F_topo(i,j) !ZERO
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j) !ZERO
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_u(i,j,k) = u
 
@@ -310,7 +325,7 @@
 
             else
 
-               do i = 1,l_niu
+               do i = i0,inu
 
                   x_a_8 = geomh_xu_8(i) - acos(-1.d0)
 
@@ -318,10 +333,11 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) phis = F_topo(i,j) !ZERO
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j) !ZERO
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   u = s_8(1,1)*utt_8 + s_8(1,2)*vtt_8
 
@@ -339,21 +355,22 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_njv
+         do j = j0,jnv
 
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
-                  if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) phis = F_topo(i,j) !ZERO
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j) !ZERO
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   F_v(i,j,k) = v
 
@@ -361,7 +378,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -369,10 +386,11 @@
 
                   lon = rlon_8 + acos(-1.d0)
 
-                  if (.NOT.Set_topo_L) phis = F_topo(i,j)
+                  if (.NOT.Set_topo_L) phis = F_topo(i,j) !ZERO
+                  if (.NOT.Set_topo_L) orls = F_orls(i,j) !ZERO
 
-                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Cstv_pref_8, &
-                                              Shear,utt_8,vtt_8,w,t,tv,phis,ps,rho,q,Set_topo_L)
+                  call test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z_8%m(k),Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k),Cstv_pref_8, &
+                                              Shear,utt_8,vtt_8,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
                   v = s_8(2,1)*utt_8 + s_8(2,2)*vtt_8
 

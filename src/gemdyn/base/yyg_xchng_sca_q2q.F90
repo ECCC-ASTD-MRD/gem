@@ -65,7 +65,7 @@
                        Glb_pil_e,Glb_pil_s,G_halox,G_haloy )
           else
               call rpn_comm_xch_halo(F_src,l_minx,l_maxx,l_miny,l_maxy,&
-               l_niu,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
           endif
       endif
 

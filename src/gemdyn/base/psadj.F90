@@ -97,7 +97,15 @@
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
          !-----------------------------------------------------------------------
-         call adz_BC_LAM_Aranami (empty,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
+         if (ADZ_OD_L) then
+
+         call adz_od_BC_LAM_Aranami (empty,Adz_pb,Adz_expt,Adz_num_b,1,l_minx,l_maxx,l_miny,l_maxy,empty_i,MAXTR3D+1)
+
+         else
+
+         call adz_BC_LAM_Aranami (empty,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
+
+         end if
 
          call gemtime_stop (32)
 
@@ -108,7 +116,7 @@
             call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr,trt0)
             tr=>tracers_M(Tr3d_hu)%pntr
 
-            do k=Adz_k0,l_nk
+            do k=Adz_k0t,l_nk
                sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tracers_M(Tr3d_hu)%pntr(1:l_ni,1:l_nj,k)
             end do
 
@@ -131,14 +139,15 @@
 
          !Compute Dry surface pressure at TIME P (Schm_psadj==2)
          !------------------------------------------------------
-         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_1_8,pm_8,p0_wet_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
+         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_1_8,pm_8,p0_wet_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
 
          i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
 
          !Obtain Surface pressure minus Cstv_pref_8
          !-----------------------------------------
-         if (Schm_psadj==1) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_wet_1_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
-         if (Schm_psadj==2) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_dry_1_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
+         if (Schm_psadj==1.and.Adz_k0t==1) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_wet_1_8(i0_c:in_c,j0_c:jn_c)  - substract_8*Cstv_pref_8 
+         if (Schm_psadj==1.and.Adz_k0t/=1) p0_1_8(i0_c:in_c,j0_c:jn_c) = pm_8(i0_c:in_c,j0_c:jn_c,l_nk+1) - pm_8(i0_c:in_c,j0_c:jn_c,Adz_k0t) - substract_8*Cstv_pref_8 
+         if (Schm_psadj==2)                p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_dry_1_8(i0_c:in_c,j0_c:jn_c)  - substract_8*Cstv_pref_8
 
          !Estimate air mass on CORE at TIME P
          !-----------------------------------
@@ -175,7 +184,7 @@
 
          !Compute Dry surface pressure at TIME M (Schm_psadj==2)
          !------------------------------------------------------
-         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_0_8,pm_8,p0_wet_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+         if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_0_8,pm_8,p0_wet_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'M')
 
          !!! The scope of validity of p0_dry_0_8 is 1+pil_s to
          !l_nj-pil_n in dry_sfc_pressure_8(), so we can't compute over
@@ -185,8 +194,9 @@
 
          !Obtain Surface pressure minus Cstv_pref_8
          !-----------------------------------------
-         if (Schm_psadj==1) p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_wet_0_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
-         if (Schm_psadj==2) p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_dry_0_8(i0_c:in_c,j0_c:jn_c) - substract_8*Cstv_pref_8
+         if (Schm_psadj==1.and.Adz_k0t==1) p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_wet_0_8(i0_c:in_c,j0_c:jn_c)  - substract_8*Cstv_pref_8 
+         if (Schm_psadj==1.and.Adz_k0t/=1) p0_0_8(i0_c:in_c,j0_c:jn_c) = pm_8(i0_c:in_c,j0_c:jn_c,l_nk+1) - pm_8(i0_c:in_c,j0_c:jn_c,Adz_k0t) - substract_8*Cstv_pref_8 
+         if (Schm_psadj==2)                p0_0_8(i0_c:in_c,j0_c:jn_c) = p0_dry_0_8(i0_c:in_c,j0_c:jn_c)  - substract_8*Cstv_pref_8
 
          !Obtain FLUX on NEST+CORE at TIME M
          !----------------------------------
@@ -194,7 +204,7 @@
 
             do j=Adz_j0b,Adz_jnb
                fl_0_8(:,j) = 0.0d0
-               do k=Adz_k0,l_nk
+               do k=1,l_nk
                   do i=Adz_i0b,Adz_inb
                      fl_0_8(i,j) = fl_0_8(i,j) + (1.-sumq(i,j,k)) * (pm_8(i,j,k+1) - pm_8(i,j,k)) &
                                    * (Adz_flux(1)%fi(i,j,k) - Adz_flux(1)%fo(i,j,k))

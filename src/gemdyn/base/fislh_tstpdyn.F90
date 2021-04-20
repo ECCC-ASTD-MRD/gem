@@ -103,33 +103,12 @@
 
       call gemtime_start (22, 'PRE', 10)
 
-      if ( F_icn == 1 ) then
-         if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
-            fis0(1:l_ni,1:l_nj)= nest_fullme(1:l_ni,1:l_nj)
-            call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
-                                    l_ni,l_nj,1,G_halox,G_haloy,&
-                                    G_periodx,G_periody,l_ni,0)
-         else
-            if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) then
-               call var_topo (fis0, real(Lctl_step),&
-                              l_minx,l_maxx,l_miny,l_maxy)
-               if (Grd_yinyang_L) then
-                  call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
-                                  l_ni,l_nj, 1, .false., 'CUBIC', .true.)
-               else
-                  call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
-                                          l_ni,l_nj,1,G_halox,G_haloy,&
-                                          G_periodx,G_periody,l_ni,0)
-               end if
-            end if
-         end if
-         if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) call fislh_metric()
-      end if
+      if ( F_icn == 1 ) call oro_adj ()
 
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
-      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, rhsb, nest_t,fis0, &
-                      l_minx,l_maxx,l_miny,l_maxy,              &
+      call fislh_pre (rhsu, rhsv, rhst, rhsw, rhsc, rhsf, rhsb, &
+                      nest_t,fis0, l_minx,l_maxx,l_miny,l_maxy, &
                       i0, j0, k0, in, jn, l_nk)
 
 

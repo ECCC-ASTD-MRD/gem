@@ -54,14 +54,11 @@
       call gemtime_start ( 2, 'INIT_GEM', 1)
 
       colrow = 0
-      colrow(Ptopo_couleur,Ptopo_mycol,Ptopo_myrow) = Ptopo_world_myproc
+      colrow(Ptopo_couleur,Ptopo_mycol,Ptopo_myrow) = Ptopo_myproc
       allocate (Ptopo_colrow(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey))
       nc= Ptopo_ncolors*(Ptopo_npex+2)*(Ptopo_npey+2)
       call rpn_comm_ALLREDUCE (colrow,Ptopo_colrow,nc,&
-              "MPI_INTEGER", "MPI_BOR",'MULTIGRID',err)
-!      do j=Ptopo_npey-1,0,-1
-!         print*, Ptopo_colrow(Ptopo_couleur,0:Ptopo_npex-1,j)
-!      end do
+                               "MPI_INTEGER", "MPI_BOR",'MULTIGRID',err)
       if (Grd_yinyang_L) then
          Ptopo_colrow(:,-1        ,:) = -1
          Ptopo_colrow(:,Ptopo_npex,:) = -1

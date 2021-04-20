@@ -105,16 +105,15 @@
       if (l_east ) inu=inu+onept
       if (l_north) jnv=jnv+onept
 
-      call diag_fip( FI, F_s, F_sl, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
-                                               l_nk, i0u, inu+1, j0v, jnv+1 )
+      call diag_fip ( FI, F_s, F_sl, F_t, F_q, F_fis, &
+                      l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
       if (Dynamics_hydro_L) then
          MU = 0.
       else
-         call diag_mu ( MU, F_q, F_s, F_sl, l_minx,l_maxx,l_miny,l_maxy, l_nk,&
-                                                 i0u, inu+1, j0v, jnv+1 )
+         call diag_mu ( MU, F_q, F_s, F_sl, &
+                        l_minx,l_maxx,l_miny,l_maxy, l_nk )
       end if
-
 
       do k=1,l_nk+1
           do j=j0v,jnv+1

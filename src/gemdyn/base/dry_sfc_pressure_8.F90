@@ -16,7 +16,7 @@
 !**s/r dry_sfc_pressure_8 - Compute dry air surface pressure REAL64
 !
       subroutine dry_sfc_pressure_8 (F_drysfcp0_8, presT_8, p0T_8, &
-                               Minx,Maxx,Miny,Maxy,Nk,F_timelevel_S)
+                               Minx,Maxx,Miny,Maxy,Nk,F_k0,F_timelevel_S)
       use glb_ld
       use tr3d
       use mem_tracers
@@ -25,7 +25,7 @@
 #include <arch_specific.hf>
 
       character(len=1) :: F_timelevel_S
-      integer Minx,Maxx,Miny,Maxy,Nk
+      integer Minx,Maxx,Miny,Maxy,Nk,F_k0
       real(kind=REAL64) F_drysfcp0_8(Minx:Maxx,Miny:Maxy),&
                              presT_8(Minx:Maxx,Miny:Maxy,Nk),&
                                p0T_8(Minx:Maxx,Miny:Maxy)
@@ -43,7 +43,7 @@
          tr=>tracers_M(Tr3d_hu)%pntr
       endif
 
-      do k=1,Nk
+      do k=F_k0,Nk
          sumq(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)= &
          sumq(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)+ &
          tr  (1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)
@@ -51,7 +51,7 @@
 
       do j=1+pil_s,l_nj-pil_n
          F_drysfcp0_8(:,j) = 0.0d0
-         do k=1,Nk-1
+         do k=F_k0,Nk-1
             do i=1+pil_w,l_ni-pil_e
                F_drysfcp0_8(i,j)= F_drysfcp0_8(i,j) + &
                     (1.-sumq(i,j,k))*(presT_8(i,j,k+1) - presT_8(i,j,k))

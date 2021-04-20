@@ -184,15 +184,18 @@ subroutine nest_init_weight (F_weight,F_si,F_sj,F_sk,Minx,Maxx,Miny,Maxy,Nk)
   endif
   call glbdist (wk1,G_ni,G_nj,F_weight,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
 !!!!
-  Lam_wgt0 = .false.
-  do k=G_nk+1,1,-1
-  do j= 1, l_nj
-  do i= 1, l_ni
-     F_weight(i,j,k) = max (F_weight(i,j,1) ,real(weight_z(k)))
-     if (F_weight(i,j,k) > 0.) Lam_wgt0 = .true.
-  end do
-  end do
-  end do
+      if (l_west ) F_weight(  1-G_halox:0,:,1) = 1.
+      if (l_south) F_weight(:,1-G_haloy:0  ,1) = 1.
+      if (l_east ) F_weight(  l_ni+1:l_ni+G_halox,:,1) = 1.
+      if (l_north) F_weight(:,l_nj+1:l_nj+G_haloy  ,1) = 1.
+
+      do k= G_nk+1, 1, -1
+         do j= 1-G_haloy, l_nj+G_haloy
+            do i= 1-G_halox, l_ni+G_halox
+               F_weight(i,j,k) = max (F_weight(i,j,1) ,real(weight_z(k)))
+            end do
+         end do
+      end do
   !
   !----------------------------------------------------------------------
   !

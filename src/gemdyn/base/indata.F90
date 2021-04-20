@@ -18,7 +18,6 @@
 
       subroutine indata()
       use dynkernel_options
-      use exp_geom
       use gem_options
       use glb_ld
       use gmm_geof
@@ -37,7 +36,6 @@
 
       logical :: synthetic_data_L
       integer :: dimens, err
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: topo_large_scale
 !
 !     ---------------------------------------------------------------
 !
@@ -50,19 +48,13 @@
       else
          call gemtime_start ( 71, 'INITIAL_input', 2)
 
-         call get_topo ( topo_high, topo_large_scale, &
-                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         call get_topo ()
 
-         call get_s_large_scale ( topo_large_scale, &
-                                  l_minx,l_maxx,l_miny,l_maxy )
+         call inp_data (pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,qt1       ,&
+                        zdt1,st1,trt1,fis0,orols,.false.,Step_runstrt_S,&
+                        l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
 
-         topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
-
-         call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
-                         zdt1,st1,trt1,fis0,.false.,Step_runstrt_S,&
-                         l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
-
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
                         perturb_nbits, perturb_npts, dimens )
          call gemtime_stop  ( 71 )
@@ -72,35 +64,44 @@
 
       call set_dync ( .true., err )
 
+      if (Schm_sleve_L) then
+         call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy)
+      endif
+     
       if (Grd_yinyang_L) then
-         call yyg_int_xch_scal (fis0, 1, .false., 'CUBIC', .true.)
-         call yyg_int_xch_scal (sls , 1, .false., 'CUBIC', .true. )
+         call yyg_int_xch_scal (fis0 , 1, .false., 'CUBIC', .true.)
+         call yyg_int_xch_scal (orols, 1, .false., 'CUBIC', .true.)
+         call yyg_int_xch_scal (sls  , 1, .false., 'CUBIC', .true. )
          call yyg_xchng_all() !????? plus tard????
       else
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&
+            l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         call rpn_comm_xch_halo(orols, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo(sls, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       end if
 
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' ) call exp_geometry()
 
       trt0 = trt1
 
       if (.not. synthetic_data_L) then
-         call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
-         call derivate_data ( zdt1,wt1, ut1,vt1,tt1,st1,qt1    ,&
+         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy)
+         call hwnd_stag2 ( ut1,vt1, pw_uu_plus,pw_vv_plus   ,&
+                         l_minx,l_maxx,l_miny,l_maxy,G_nk   ,&
+                         1-G_halox*west ,l_niu+G_halox*east ,&
+                         1-G_haloy*south,l_njv+G_haloy*north, .true. )
+         call derivate_data ( zdt1,wt1, ut1,vt1,tt1,st1,qt1,fis0,sls,&
                               l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                              .not.Inp_zd_L, .not.Inp_w_L )
+                         .not.Inp_zd_L, .not.Inp_w_L, .not.Inp_qt_L  )
       endif
 
       if (.not. Grd_yinyang_L) call nest_init()
 
-      call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
-                      pw_pm_plus_8,pw_p0_plus_8, &
+      call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,&
+                      pw_log_pt, pw_pm_plus_8,pw_p0_plus_8      ,&
                       l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
 
       call pw_update_GW()
@@ -115,7 +116,11 @@
       if ( Dynamics_FISL_L ) call firstguess()
 
       call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
-                      1,1, 1,G_ni,1,G_nj,1,1 )
+                     1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
+      if(Schm_sleve_L)then
+      call glbstat ( orols,'MELS',"indata",l_minx,l_maxx,l_miny,l_maxy, &
+                     1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
+      endif
 !
 !     ---------------------------------------------------------------
 !

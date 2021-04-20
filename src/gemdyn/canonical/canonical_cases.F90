@@ -224,17 +224,19 @@
          istat = gmm_get(gmmk_clyref_s, clyref)
          istat = gmm_get(gmmk_clyerr_s, clyerr)
 
-         !Initialize Pure split coupling (as in itf_phy_update/itf_phy_step)
-         !------------------------------------------------------------------
-         if (Schm_phycpl_S == 'SPLIT') then
-
-            phy_uu_tend = 0.
-            phy_vv_tend = 0.
-            phy_tv_tend = 0.
-            phy_cplm = 1.
-            phy_cplt = 1.
-
-         end if
+         !Initialization as in itf_phy_step(kount=0)/indata
+         !-------------------------------------------------
+         select case (Schm_phycpl_S)
+         case ('RHS')
+            phy_cplm(:,:) = 0.
+            phy_cplt(:,:) = 0.
+         case ('AVG')
+            phy_cplm(:,:) = Cstv_bA_m_8
+            phy_cplt(:,:) = Cstv_bA_8
+         case DEFAULT
+            phy_cplm(:,:) = 1.
+            phy_cplt(:,:) = 1.
+         end select
 
       !------------------------
       !Back subtitution (WINDS)

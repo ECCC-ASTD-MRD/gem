@@ -15,7 +15,7 @@
 
       subroutine ilmc_lam_loop ()
 
-      do k=Adz_k0,l_nk
+      do k=Adz_k0t,l_nk
 
          do j=jl,jr
          do i=il,ir

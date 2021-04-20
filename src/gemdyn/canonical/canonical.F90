@@ -155,11 +155,6 @@ contains
       ! optimization (-O2) is enabled.  This print makes everything work.
       print *, 'canonical.Step_runstrt_S = ', Step_runstrt_S
 
-      ! Williamson case 7 require an analysis ...
-      if (Ctrl_canonical_dcmip_L .or. (Ctrl_canonical_williamson_L .and. Williamson_case /= 7)) then
-         Step_runstrt_S='20170215.000000'
-      end if
-
       if (Ctrl_canonical_williamson_L .and. Williamson_case == 7) then
          Step_runstrt_S='19781221.000000'
       end if

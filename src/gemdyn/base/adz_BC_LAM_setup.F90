@@ -47,11 +47,11 @@
 
       fld_ONE(1:F_ni,1:F_nj,1:F_nk) = 1.
 
-      !For Flux_out: Set mixing ratio = 0 on NEST
-      !------------------------------------------
+      !For Flux_out: Set mixing ratio = 0 on NEST-HV
+      !---------------------------------------------
       work = 0.
 
-      do k=1,F_nk
+      do k=Adz_k0t,F_nk
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
                work(i,j,k) = fld_ONE(i,j,k)
@@ -61,11 +61,11 @@
 
       in_o = work
 
-      !For Flux_in: Set mixing ratio = 0 on CORE
-      !-----------------------------------------
+      !For Flux_in: Set mixing ratio = 0 on CORE-HV
+      !--------------------------------------------
       work = fld_ONE
 
-      do k=1,F_nk
+      do k=Adz_k0t,F_nk
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
                work(i,j,k) = 0.

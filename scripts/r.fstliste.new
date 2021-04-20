@@ -1,6 +1,6 @@
 #!/bin/ksh
 # set -x
-eval `cclargs $0 "[ Utilitaire pour extraires des parametres des fichiers standard]"\
+eval `cclargs_lite $0 "[ Utilitaire pour extraires des parametres des fichiers standard]"\
  -izfst bidon "[rep et nom du fichier standard]"\
  -datev =-1 "[date de validite (stamp)]"\
  -vdatev =-1 "[date de validite (true-date)]"\

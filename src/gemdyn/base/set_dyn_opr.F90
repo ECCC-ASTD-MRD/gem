@@ -40,11 +40,7 @@
 
       call eqspng_set()
 
-      if ( Dynamics_FISL_L ) then
-         call adv_setgrid()
-         call adv_param()
-         call adz_set ()
-      end if
+      if ( Dynamics_FISL_L ) call adz_set () 
 
       call grid_area_mask (geomh_area_8,geomh_mask_8,geomh_area_mask_8,l_ni,l_nj)
 

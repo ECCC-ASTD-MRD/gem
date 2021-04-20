@@ -85,18 +85,19 @@ contains
       end if
 
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
-                 dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+                 dstlev(l_minx:l_maxx,l_miny:l_maxy,F_nk) )
 
       call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, &
          F_sfc_src, dummy, F_gz, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
       call inp_dst_levels ( dstlev, Ver_vgdobj, F_ver_ip1,&
-                            F_sfc_dst, F_sfcLS_dst )
+                            F_sfc_dst, F_sfcLS_dst, F_nk )
 
       inttype= 'cubic'
       if (present(F_inttype_S)) inttype= F_inttype_S
-      call vertint2 ( F_dest,dstlev,G_nk, wrkr,srclev,nka       ,&
-                      l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+      call vertint2 ( F_dest,dstlev,F_nk, wrkr,srclev,nka           ,&
+                      l_minx,l_maxx,l_miny,l_maxy                   ,&
+                      1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                       varname=F_var_S, inttype= inttype,&
                       levtype=Inp_levtype_S )
 
@@ -123,13 +124,10 @@ contains
       integer, dimension(:    ), pointer,intent(inout) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
 
-!     local variables
-      integer, external :: RPN_COMM_shuf_ezdist, &
-                           samegrid_gid, samegrid_rot, inp_is_real_wind
+      integer, external :: samegrid_gid, samegrid_rot, inp_is_real_wind
       character(len=1) typ,grd
       character(len=4) nomvar,var,dumc
       character(len=12) lab,interp_S
-      logical, dimension (:), allocatable :: zlist_o
       logical :: quiet_L
       integer, parameter :: nlis = 1024
       integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
@@ -141,8 +139,8 @@ contains
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
       real :: surface_level
-      real   , dimension(:  ), allocatable :: wk3,wk1
-      real   , dimension(:,:), allocatable :: wk2
+      real   , dimension(:  ), allocatable :: wk1
+      real   , dimension(:,:), allocatable :: wk4
       real   , dimension(:  ), pointer     :: posx,posy
       real(kind=REAL64) add, mult
       common /bcast_i / lislon,nz
@@ -266,11 +264,8 @@ contains
 
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
-         allocate (wk3(ni_dest*nj_dest))
-         allocate (wk2(G_ni*G_nj,maxdim_wk2))
+         allocate (wk4(ni_dest*nj_dest,maxdim_wk2))
          allocate (wk1(n1*n2))
-
-         wk2 = 0.
 
          interp_S= 'CUBIC'
          if (present(F_hint_S)) interp_S= F_hint_S
@@ -326,9 +321,7 @@ contains
 
          do i=1,local_nk
             err= fstluk (wk1, liste(kstart+i-1), n1,n2,n3)
-            err = ezsint(wk3, wk1)
-            call reshape_wk ( wk3,wk2(1,(idst-1)*nz+i),&
-                 ni_dest,nj_dest,G_ni,G_nj,G_halox,G_haloy )
+            err = ezsint(wk4(1,(idst-1)*nz+i), wk1)
          end do
          if (err == 2) then
             write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
@@ -338,10 +331,9 @@ contains
 
          END DO !IDST loop
 
-         deallocate (wk1,wk3)
+         deallocate (wk1)
       else !Inp_iome >= 0
-         allocate (wk2(1,1))
-         wk2 = 0.
+         allocate (wk4(1,1))
          maxdim_wk2 = 1
       end if !Inp_iome >= 0
 
@@ -363,25 +355,15 @@ contains
             zlist(i)= i + kstart - 1
          end do
 
-         allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd), &
-                    zlist_o(lislon) )
-
-         zlist_o= .FALSE.
+         allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd) )
 
          do idst=1, F_nd
             k=min((idst-1)*nz+1,maxdim_wk2)
-            zlist_o= .FALSE.
-            err = RPN_COMM_shuf_ezdist ( &
-                           Inp_comm_setno, Inp_comm_id, wk2(1,k), nz,&
-                           F_dest(l_minx,l_miny,(idst-1)*lislon+1)  ,&
-                           lislon, zlist, zlist_o )
+            call glbdist_os (wk4(1,k),F_dest(l_minx,l_miny,(idst-1)*lislon+1),&
+                             l_minx,l_maxx,l_miny,l_maxy,F_nka,&
+                             G_ni+G_halox,G_nj+G_haloy,zlist,nz,mult,add)
          end do
-         deallocate (wk2,zlist,zlist_o)
-
-         F_dest(1:l_ni,1:l_nj,:) = F_dest(1:l_ni,1:l_nj,:) * mult + add
-         if (nomvar == 'ST1') &
-         F_dest(1:l_ni,1:l_nj,:)= Inp_pref_a_8 * &
-                                  exp(F_dest(1:l_ni,1:l_nj,:))
+         deallocate (wk4,zlist)
 
       else
 
@@ -391,6 +373,7 @@ contains
             Inp_datev, 'NOT FOUND'
 
       end if
+
  1001 format (2a,':',2a,i3,5a)
 !
 !---------------------------------------------------------------------
@@ -400,11 +383,12 @@ contains
 
 !**s/r inp_oro - Read orography from input dataset valid at F_datev
 
-      subroutine inp_oro ( F_topo,F_meqr,F_datev,Minx, Maxx, Miny, Maxy)
+      subroutine inp_oro ( F_topo, F_topo_LS, F_meqr, F_datev,&
+                           Minx, Maxx, Miny, Maxy )
       use gmm_geof
-      use gem_options
       use glb_ld
       use gmm_itf_mod
+      use dyn_fisl_options
       use HORgrid_options
       use lam_options
       use mem_nest
@@ -413,12 +397,13 @@ contains
 
       character(len=*), intent(in) :: F_datev
       integer         , intent(in) :: Minx, Maxx, Miny, Maxy
-      real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_topo
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_topo,F_topo_LS
       real, dimension (:,:), pointer    , intent(inout) :: F_meqr
 
       integer i,j,err,nka
       integer, dimension (:), pointer :: ip1_list
       real, dimension (:,:,:), pointer :: wrk
+      real, dimension (:,:), pointer :: ls
       real step_current
       real(kind=REAL64) diffd
 !
@@ -440,26 +425,33 @@ contains
 
       if ( trim(F_datev) == trim(Step_runstrt_S) ) then
          if ( associated(F_meqr) ) then
-            err= gmm_get(gmmk_topo_low_s , topo_low )
-            topo_low(1:l_ni,1:l_nj)= F_meqr(1:l_ni,1:l_nj)
-         else
+            topo_low(:,:,1) = F_meqr(:,:)
+            call mc2_topols (topo_low(:,:,2),F_meqr,&
+                             l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+        else
             Vtopo_L= .false.
          end if
       end if
 
       call difdatsd (diffd,Step_runstrt_S,F_datev)
       step_current = diffd*86400.d0 / Step_dt + Step_initial
-      call var_topo ( F_topo, step_current, &
-                       l_minx,l_maxx,l_miny,l_maxy )
+      call var_topo ( F_topo, F_topo_LS, step_current, &
+                      l_minx,l_maxx,l_miny,l_maxy )
 
       if ( associated(F_meqr) .and. .not. Grd_yinyang_L) then
       if ( Lam_blendoro_L ) then
-      do j=1,l_nj
-      do i=1,l_ni
-        F_topo(i,j)= F_topo(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
-                     F_meqr(i,j)*nest_weightm(i,j,G_nk+1)
-      enddo
-      enddo
+         allocate (ls(l_minx:l_maxx,l_miny:l_maxy))
+         call mc2_topols (ls,F_meqr,&
+                          l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+         do j= 1-G_haloy, l_nj+G_haloy
+            do i= 1-G_halox, l_ni+G_halox
+               F_topo(i,j)= F_topo(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
+                            F_meqr(i,j)*nest_weightm(i,j,G_nk+1)
+               F_topo_LS(i,j)= F_topo_LS(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
+                               ls(i,j)*nest_weightm(i,j,G_nk+1)
+            enddo
+         enddo
+         deallocate (ls) ; nullify (ls)
       end if
       end if
 !
@@ -500,10 +492,9 @@ contains
       do kt=1, F_nka_tt
          inner:      do kh=1, F_nka_hu
          if (F_TT_ip1(kt) == F_HU_ip1(kh)) then
-            call mfottv2 ( &
-               F_tv(l_minx,l_miny,kt),F_tv(l_minx,l_miny,kt),&
-               F_hu(l_minx,l_miny,kh),l_minx,l_maxx         ,&
-               l_miny,l_maxy,1, 1,l_ni,1,l_nj, .true. )
+            call mfottv2 (F_tv(l_minx,l_miny,kt),F_tv(l_minx,l_miny,kt),&
+                  F_hu(l_minx,l_miny,kh),l_minx,l_maxx,l_miny,l_maxy,1 ,&
+                  1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy, .true. )
             exit inner
          end if
       end do inner
@@ -595,20 +586,22 @@ contains
                           F_sv(l_minx:l_maxx,l_miny:l_maxy) )
                call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
                             l_minx,l_maxx,l_miny,l_maxy,&
-                            nk,1,l_ni,1,l_nj )
-               do j=1,l_nj
-                  do i=1,l_ni-1
-                     F_su(i,j)= F_sq(i,j) + F_sq(i+1,j) * 0.5d0
-                  end do
-                  F_su(l_ni,j)= F_sq(l_ni,j)
-               end do
-               do j=1,l_nj-1
-                  do i=1,l_ni
-                     F_sv(i,j)= F_sq(i,j) + F_sq(i,j+1) * 0.5d0
+                      nk,1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy )
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox-1
+                     F_su(i,j)= (F_sq(i,j) + F_sq(i+1,j)) * 0.5d0
                   end do
                end do
-               F_sv (:,l_nj)= F_sq(:,l_nj)
+               if (l_east) F_su(l_ni+G_halox,:)=F_sq(l_ni+G_halox,:)
+               do j=1-G_haloy,l_nj+G_haloy-1
+                  do i=1-G_halox,l_ni+G_halox
+                     F_sv(i,j)= (F_sq(i,j) + F_sq(i,j+1)) * 0.5d0
+                  end do
+               end do
+               if (l_north) F_sv (:,l_nj+G_haloy)= F_sq(:,l_nj+G_haloy)
                deallocate (rna,wrk,ip1_list) ; nullify (wrk,ip1_list)
+               call gem_xch_halo (F_su, l_minx, l_maxx, l_miny, l_maxy, 1)
+               call gem_xch_halo (F_sv, l_minx, l_maxx, l_miny, l_maxy, 1)
             else
                err = -1
             end if
@@ -625,10 +618,11 @@ contains
 
 !**s/r inp_dst_surface - compute destination surface information
 
-      subroutine inp_dst_surface (F_p0,F_q,F_u,F_v,F_lsq,F_lsu,F_lsv  ,&
-                                  F_ip1list, F_sq0, F_me, F_tv        ,&
-                                  F_topo,F_sleve_L,Minx,Maxx,Miny,Maxy,&
+      subroutine inp_dst_surface (F_p0,F_q,F_u,F_v,F_lsq,F_lsu,F_lsv   ,&
+                                  F_ip1list, F_sq0, F_me, F_tv,F_topo  ,&
+                                  F_orols,F_sleve_L,Minx,Maxx,Miny,Maxy,&
                                   F_nka, F_i0, F_in, F_j0, F_jn)
+      use cstv
       use gmm_pw
       use gmm_geof
       use gmm_itf_mod
@@ -641,16 +635,17 @@ contains
       real, dimension(*), intent(in) :: F_tv
       real, dimension(:,:), pointer, intent(in) :: F_sq0
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_p0
-      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_topo
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_topo,F_orols
       real   , dimension (:,:), pointer, intent(inout) :: F_q,F_u,F_v,&
                                                     F_lsq,F_lsu,F_lsv
       real   , dimension (:,:), pointer , intent(inout) :: F_me
 
       character(len=4) vname
-      integer i,j,istat,typ
+      integer i,j,typ
       real lev
       real, dimension (:,:  ), pointer :: dummy
       real, dimension (:,:,:), pointer :: srclev
+      real(kind=REAL64) :: oneoRT
       logical sfcTT_L
 !
 !---------------------------------------------------------------------
@@ -672,11 +667,11 @@ contains
             write(lun_out,'(" PERFORMING surface pressure adjustment")')
          end if
          allocate (srclev(l_minx:l_maxx,l_miny:l_maxy,F_nka))
-         F_q(1:l_ni,1:l_nj)= F_sq0(1:l_ni,1:l_nj)
+         F_q= F_sq0
          nullify(dummy)
          call inp_3dpres ( Inp_vgd_src,F_ip1list,F_sq0,dummy,&
                            srclev,1,F_nka )
-         srclev(1:l_ni,1:l_nj,F_nka)= F_sq0(1:l_ni,1:l_nj)
+         srclev(:,:,F_nka)= F_sq0(:,:)
          call adj_ss2topo ( F_p0, F_topo, srclev, F_me, F_tv,&
                            Minx,Maxx,Miny,Maxy,F_nka,F_i0,F_in,F_j0,F_jn)
          deallocate (F_me,srclev) ; nullify (F_me)
@@ -684,56 +679,61 @@ contains
          if (lun_out > 0) then
             write(lun_out,'(" NO surface pressure adjustment")')
          end if
-         F_p0(1:l_ni,1:l_nj)= F_sq0(1:l_ni,1:l_nj)
+         F_p0 = F_sq0
       end if
 
       if (Inp_dst_hauteur_L) then
-         F_q(1:l_ni,1:l_nj)= F_topo(1:l_ni,1:l_nj) / grav_8
+            F_q(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)= &
+         F_topo(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) / grav_8
       else
-         F_q(1:l_ni,1:l_nj)= F_p0(1:l_ni,1:l_nj)
+         F_q = F_p0
       endif
 
-      call rpn_comm_xch_halo ( F_q, l_minx,l_maxx,l_miny,l_maxy,&
-           l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      do j=1-G_haloy,l_nj+G_haloy
+         do i=1-G_halox,l_ni+G_halox-1
+            F_u(i,j)= (F_q(i,j)+F_q(i+1,j))*.5d0
+         end do
+      end do
+      if (l_east)  then
+         F_u(l_ni+G_halox,:)= F_q(l_ni+G_halox,:)
+      endif
+      do j=1-G_haloy,l_nj+G_haloy-1
+         do i=1-G_halox,l_ni+G_halox
+            F_v(i,j)= (F_q(i,j)+F_q(i,j+1))*.5d0
+         end do
+      end do
+      if (l_north) F_v(:,l_nj+G_haloy)= F_q(:,l_nj+G_haloy)
 
-      do j=1,l_nj
-      do i=1,l_ni-east
-         F_u(i,j)= (F_q(i,j)+F_q(i+1,j))*.5d0
-      end do
-      end do
-      if (l_east) F_u(l_ni,1:l_nj)= F_q(l_ni,1:l_nj)
-
-      do j=1,l_nj-north
-      do i=1,l_ni
-         F_v(i,j)= (F_q(i,j)+F_q(i,j+1))*.5d0
-      end do
-      end do
-      if (l_north) F_v(1:l_ni,l_nj)= F_q(1:l_ni,l_nj)
+      call gem_xch_halo (F_u, l_minx, l_maxx, l_miny, l_maxy, 1)
+      call gem_xch_halo (F_v, l_minx, l_maxx, l_miny, l_maxy, 1)
 
       if ( F_sleve_L ) then
-         allocate (F_lsu(l_minx:l_maxx,l_miny:l_maxy), &
+         allocate (F_lsq(l_minx:l_maxx,l_miny:l_maxy), &
+                   F_lsu(l_minx:l_maxx,l_miny:l_maxy), &
                    F_lsv(l_minx:l_maxx,l_miny:l_maxy) )
          if (Inp_dst_hauteur_L) then
-            istat = gmm_get (gmmk_sls_s     , F_lsq )
+            F_lsq(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) = F_orols(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) / grav_8
          else
-            istat = gmm_get (gmmk_pw_p0_ls_s, F_lsq )
+            oneoRT= 1.d0 / (rgasd_8 * Tcdk_8)
+            F_lsq(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) = Cstv_pref_8 * exp(-F_orols(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) * oneoRT)
          endif
+         do j=1-G_haloy,l_nj+G_haloy
+            do i=1-G_halox,l_ni+G_halox-1
+               F_lsu(i,j)= (F_lsq(i,j)+F_lsq(i+1,j))*.5d0
+            end do
+         end do
+         if (l_east)  then
+            F_lsu(l_ni+G_halox,:)= F_lsq(l_ni+G_halox,:)
+         endif
+         do j=1-G_haloy,l_nj+G_haloy-1
+            do i=1-G_halox,l_ni+G_halox
+               F_lsv(i,j)= (F_lsq(i,j)+F_lsq(i,j+1))*.5d0
+            end do
+         end do
+         if (l_north) F_lsv(:,l_nj+G_haloy)= F_lsq(:,l_nj+G_haloy)
 
-         call rpn_comm_xch_halo ( F_lsq, l_minx,l_maxx,l_miny,l_maxy,&
-              l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         do j=1,l_nj
-         do i=1,l_ni-east
-            F_lsu(i,j)= (F_lsq(i,j)+F_lsq(i+1,j))*.5d0
-         end do
-         end do
-         if (l_east) F_lsu(l_ni,1:l_nj)= F_lsq(l_ni,1:l_nj)
-
-         do j=1,l_nj-north
-         do i=1,l_ni
-            F_lsv(i,j)= (F_lsq(i,j)+F_lsq(i,j+1))*.5d0
-         end do
-         end do
-         if (l_north) F_lsv(1:l_ni,l_nj)= F_lsq(1:l_ni,l_nj)
+         call gem_xch_halo (F_lsu, l_minx, l_maxx, l_miny, l_maxy, 1)
+         call gem_xch_halo (F_lsv, l_minx, l_maxx, l_miny, l_maxy, 1)
       end if
 !
 !---------------------------------------------------------------------
@@ -754,11 +754,9 @@ contains
       real   , dimension(:,:,:), pointer, intent(inout) :: F_u, F_v
 
 !     local variables
-      integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
       character(len=1) typ,grd
       character(len=4) var
       character(len=12) lab
-      logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer liste_u(nlis),liste_v(nlis),liste_sorted(nlis),lislon
       integer i,err, nz, n1,n2,n3, nrec, same_rot, ni_dest, nj_dest
@@ -768,7 +766,7 @@ contains
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
       real   , dimension(:,:), allocatable :: uhr,vhr
-      real   , dimension(:  ), allocatable :: uv,u,v,wku,wkv
+      real   , dimension(:  ), allocatable :: uv,u,v
       real   , dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
       common /bcast_i_uv / lislon,nz,same_rot
 !
@@ -819,8 +817,7 @@ contains
 
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
-         allocate (uhr(G_ni*G_nj,nz),vhr(G_ni*G_nj,nz))
-         allocate( wku(ni_dest*nj_dest),wkv(ni_dest*nj_dest))
+         allocate (uhr(ni_dest*nj_dest,nz),vhr(ni_dest*nj_dest,nz))
          allocate (u(n1*n2), v(n1*n2))
          allocate (uv(ni_dest*nj_dest))
 
@@ -850,13 +847,9 @@ contains
                   err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
                   err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
                   err = ezdefset ( dstu_gid , src_gid )
-                  erru = ezuvint  ( wku,uv, u,v)
+                  erru = ezuvint  ( uhr(1,i),uv, u,v )
                   err = ezdefset ( dstv_gid , src_gid )
-                  errv = ezuvint  ( uv,wkv, u,v)
-                  call reshape_wk ( wku,uhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
-                  call reshape_wk ( wkv,vhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
+                  errv = ezuvint  ( uv,vhr(1,i), u,v )
                end do
                if (erru == 2) &
                       write(output_unit,1002) 'EXTRApolating: UU, nka= ',&
@@ -879,11 +872,7 @@ contains
                do i=1,local_nk
                   err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
                   err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
-                  err = ezuvint  ( wku,wkv, u,v)
-                  call reshape_wk ( wku,uhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
-                  call reshape_wk ( wkv,vhr(1,i),ni_dest,nj_dest, &
-                                 G_ni,G_nj,G_halox,G_haloy )
+                  err = ezuvint  ( uhr(1,i),vhr(1,i), u,v )
                end do
                if (err == 2) &
                  write(output_unit,1002) 'EXTRApolating: UV, nka= ',&
@@ -893,9 +882,7 @@ contains
 
 
          end if
-         deallocate (uv)
-         deallocate (u,v)
-         deallocate (wku,wkv)
+         deallocate (uv,u,v)
 
       else
          allocate (uhr(1,1), vhr(1,1))
@@ -918,23 +905,15 @@ contains
             zlist(i)= i + kstart - 1
          end do
 
-         allocate ( F_u(l_minx:l_maxx,l_miny:l_maxy,lislon), &
-                    F_v(l_minx:l_maxx,l_miny:l_maxy,lislon), &
-                    zlist_o(lislon) )
+         allocate ( F_u(l_minx:l_maxx,l_miny:l_maxy,lislon),&
+                    F_v(l_minx:l_maxx,l_miny:l_maxy,lislon) )
 
-         zlist_o= .FALSE.
+         call glbdist_os (uhr,F_u, l_minx,l_maxx,l_miny,l_maxy,F_nka,&
+                      G_ni+G_halox,G_nj+G_haloy,zlist,nz,knams_8,0.d0)
 
-         err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id, &
-                              uhr, nz, F_u, lislon, zlist, zlist_o )
-         zlist_o= .FALSE.
-
-         err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id, &
-                              vhr, nz, F_v, lislon, zlist, zlist_o )
-
-         deallocate (uhr,vhr,zlist,zlist_o)
-
-         F_u(1:l_ni,1:l_nj,:) = F_u(1:l_ni,1:l_nj,:) * knams_8
-         F_v(1:l_ni,1:l_nj,:) = F_v(1:l_ni,1:l_nj,:) * knams_8
+         call glbdist_os (vhr,F_v, l_minx,l_maxx,l_miny,l_maxy,F_nka,&
+                      G_ni+G_halox,G_nj+G_haloy,zlist,nz,knams_8,0.d0)
+         deallocate (uhr,vhr,zlist)
 
       else
 
@@ -976,18 +955,18 @@ contains
          if (F_inlog_S == 'in_log') inlog= .true.
       end if
 
-      pres  => F_sfc (1:l_ni,1:l_nj      )
-      ptr3d => F_dest(1:l_ni,1:l_nj,k0:kn)
+      pres  => F_sfc (1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
+      ptr3d => F_dest(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,k0:kn)
       vgd = vgd_get ( F_vgd, key='KIND',value=kind,quiet=.true. )==VGD_OK
 
       if (vgd) then
-      
+
          if ( associated (F_sfcL) ) then
-            presl=> F_sfcL (1:l_ni,1:l_nj)
+            presl=> F_sfcL (1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
             istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d,sfc_field=pres,&
                                sfc_field_ls=presl, in_log=inlog)
          else
-            istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, pres, &
+            istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d, pres, &
                                in_log=inlog)
          end if
 
@@ -995,14 +974,14 @@ contains
 
          nka= kn-k0+1
          istat= inp_match (F_dest, PX3d%valq, F_ip1, PX3d%ip1, &
-                l_minx,l_maxx,l_miny,l_maxy,nka, PX3d%nk)
+                       l_minx,l_maxx,l_miny,l_maxy,nka, PX3d%nk)
          if (nka /= kn-k0+1) then
             istat=-1
          else
             if (inlog) then
             do k=1,nka
-               do j=1,l_nj
-                  do i=1,l_ni
+               do j= 1-G_haloy, l_nj+G_haloy
+                  do i= 1-G_halox, l_ni+G_halox
                      F_dest(i,j,k) = log(F_dest(i,j,k))
                   end do
                end do
@@ -1046,7 +1025,7 @@ contains
                        Minx,Maxx,Miny,Maxy,F_nk, ubound(F_gz_ip1,1))
       else
          call inp_3dpres ( F_vgd,  F_ip1,  F_sfc,  F_sfcL, F_dest, &
-                           1, F_nk, F_inlog_S='in_log')
+                           1, F_nk, F_inlog_S='in_log' )
       endif
 !
 !---------------------------------------------------------------------
@@ -1054,10 +1033,12 @@ contains
       return
       end subroutine inp_src_levels
 
-      subroutine inp_dst_levels ( F_dest, F_vgd, F_ip1, F_sfc, F_sfcL )
+      subroutine inp_dst_levels ( F_dest, F_vgd, F_ip1, &
+                                  F_sfc, F_sfcL, F_nk )
       implicit none
 
       type(vgrid_descriptor) , intent(in) :: F_vgd
+      integer, intent(in ) :: F_nk
       integer, dimension(:)    , pointer, intent(in ) :: F_ip1
       real   , dimension(:,:  ), pointer, intent(in ) :: F_sfc,F_sfcL
       real   , dimension(:,:,:), pointer, intent(inout) :: F_dest
@@ -1065,10 +1046,11 @@ contains
 !---------------------------------------------------------------------
 !
       if (Inp_dst_hauteur_L) then
-         call inp_3dhgts ( F_vgd, F_ip1, F_sfc, F_sfcL, F_dest, 1, G_nk)
+         call inp_3dhgts ( F_vgd, F_ip1, F_sfc, F_sfcL, F_dest, &
+                           1, F_nk)
       else
          call inp_3dpres ( F_vgd, F_ip1, F_sfc, F_sfcL, F_dest, &
-                           1, G_nk, F_inlog_S='in_log')
+                           1, F_nk, F_inlog_S='in_log' )
       endif
 !
 !---------------------------------------------------------------------
@@ -1184,10 +1166,9 @@ contains
 !
 !---------------------------------------------------------------------
 !
-      hgt  => F_sfc (1:l_ni,1:l_nj      )
-      ptr3d => F_dest(1:l_ni,1:l_nj,k0:kn)
-
-      hgtls=> F_sfcL (1:l_ni,1:l_nj)
+      hgt   => F_sfc (1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
+      ptr3d => F_dest(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,k0:kn)
+      hgtls => F_sfcL(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
       istat= vgd_levels ( F_vgd, F_ip1(k0:kn), ptr3d, &
                           sfc_field=hgt, sfc_field_ls=hgtls )
 !
@@ -1242,21 +1223,24 @@ contains
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssur,&
                             dummy, F_gz_u, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
+
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
-                              F_ssu0, F_ssu0Ls)
+                              F_ssu0, F_ssu0Ls, G_nk)
 
          call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
-                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         l_minx,l_maxx,l_miny,l_maxy   ,&
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                          levtype=Inp_levtype_S )
 
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssvr,&
                             dummy, F_gz_v, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
-                              F_ssv0, F_ssv0Ls)
+                              F_ssv0, F_ssv0Ls, G_nk)
 
          call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
-                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         l_minx,l_maxx,l_miny,l_maxy   ,&
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                          levtype=Inp_levtype_S )
 
       else
@@ -1265,13 +1249,15 @@ contains
                             dummy, F_gz_q, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
-                              F_ssq0, F_ssq0Ls)
+                              F_ssq0, F_ssq0Ls, G_nk)
 
          call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
-                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         l_minx,l_maxx,l_miny,l_maxy   ,&
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                          levtype=Inp_levtype_S )
          call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
-                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         l_minx,l_maxx,l_miny,l_maxy   ,&
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                          levtype=Inp_levtype_S)
 
       end if

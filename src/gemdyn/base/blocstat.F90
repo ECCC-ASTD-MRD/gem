@@ -52,6 +52,8 @@
 
          i0 = 1 ; in = G_ni
          j0 = 1 ; jn = G_nj
+!         i0 = 1-G_halox ; in = G_ni+G_halox
+!         j0 = 1-G_haloy ; jn = G_nj+G_haloy
 
          do n=1,stat_nombre
             indx = index(stat_liste(n),"TR/")

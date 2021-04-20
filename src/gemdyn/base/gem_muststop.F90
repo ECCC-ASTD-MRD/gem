@@ -110,9 +110,10 @@
       call gemtime ( Lun_out, 'CURRENT TIMESTEP', .false. )
       call gemtime_stop (70)
 
-      if ( (Step_kount>0) .and. (Gem_trace_ctrl>0) .and.&
-           (mod(Step_kount,Gem_trace_freq)==0) ) &
-           call gemtime_trace_dump ()
+      ! for now MD
+!!$      if ( (Step_kount>0) .and. (Gem_trace_ctrl>0) .and.&
+!!$           (mod(Step_kount,Gem_trace_freq)==0) ) &
+!!$           call gemtime_trace_dump ()
 
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
               ' was released for postprocessing at timestep: ',i9)

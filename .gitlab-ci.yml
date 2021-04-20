@@ -1,0 +1,20 @@
+variables:
+  JOB_CPUS: "20"
+  JOB_TMPFS: "8G"
+  JOB_MEMORY: "80G"
+  JOB_CHUNKS: "1"
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - . ./.eccc_setup_intel
+    - . ./.eccc_initial_setup
+    - make cmake
+    - make
+    - make work
+    - cd work
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P

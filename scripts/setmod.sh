@@ -28,6 +28,7 @@ eval `cclargs_lite -D " " $0 \
   -data_cfg      ""  ""    "[input data for domain ]"\
   ++ $arguments`
 set -x
+AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
 default_DIR_ATM=${ATM_MODEL_DFILES}
 default_PATH_ATMDATA=${ATM_MODEL_DFILES}/datafiles/modeldata
 default_DIR_SIO=${AFSISIO}/datafiles/constants
@@ -154,7 +155,7 @@ cat >> $TASK_CFGFILE <<EOF
 # <executables>
 # ATM_MOD.Abs     ${ATMMOD}
 # rungem.sh       rungem.sh 
-# r.mpirun        r.run_in_parallel
+# r.mpirun        gem_mpirun.sh
 # launch_sortie.sh Um_process_output.sh
 # </executables>
 # <output>

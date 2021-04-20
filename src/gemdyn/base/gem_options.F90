@@ -108,7 +108,7 @@ module gem_options
    namelist /gem_cfgs  / Vtopo_length_S
    namelist /gem_cfgs_p/ Vtopo_length_S
 
-   logical Vtopo_L
+   logical Vtopo_L, Vtopo_mustadj_L
    integer stat_nombre
    integer Vtopo_start, Vtopo_ndt
 

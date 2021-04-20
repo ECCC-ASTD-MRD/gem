@@ -9,7 +9,7 @@ cmake_policy(SET CMP0056 NEW)
 set(COMPILER intel CACHE STRING compiler)
 #set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
-message(STATUS "Compiler to be used is: ${COMPILER}")
+message(STATUS "Compiler suite to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
@@ -17,14 +17,12 @@ if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to RelWithDebInfo")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
-
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 
-# Include an architecture dependent file that contains settings for a
-# particular architecture and compiler, using the default value of the
-# compiler defined above or the argument given to cmake command.
+# Include a file that contains settings for a particular architecture and
+# compiler, using the default value of the compiler defined above or the
+# argument given to cmake command.
 set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-
 if(DEFINED ENV{ORDENV_PLAT})
    message(STATUS "include $ENV{ORDENV_PLAT}-${COMPILER}.cmake")
    include("$ENV{ORDENV_PLAT}-${COMPILER}.cmake")
@@ -32,9 +30,6 @@ else()
   message(STATUS "include ${ARCH}-${COMPILER}.cmake")
   include("${ARCH}-${COMPILER}.cmake")
 endif()
-
-# TODO: This isn't used presently.  Check to see if we need it
-# set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 
@@ -81,14 +76,6 @@ else()
    message(STATUS "Building WITHOUT OpenACC")
 endif()
 
-# get name and version of operating system
-execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/os.sh" OUTPUT_VARIABLE OS)
-message(STATUS "Operating system is: ${OS}")
-
-# get name and version of compiler
-execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/compiler.sh ${COMPILER}" OUTPUT_VARIABLE COMP_VERSION)
-message(STATUS "Compiler version is: ${COMPILER} ${COMP_VERSION}")
-
 # Enable distclean target
 include("distclean.cmake")
 
@@ -101,6 +88,10 @@ get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY CACHE)
 message(STATUS "ROOT=${ROOT}")
 #message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
+
+file(READ "${ROOT}/VERSION" GEM_VERSION)
+string(REGEX REPLACE "\n$" "" GEM_VERSION "${GEM_VERSION}")
+message(STATUS "GEM_VERSION=${GEM_VERSION}")
 
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
@@ -122,7 +113,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory(${ROOT}/src src)
-
 
 # TODO: Move this to cmake_shared
 function(dir_writable DIR_PATH REQUIRED)
@@ -146,11 +136,26 @@ function(dir_writable DIR_PATH REQUIRED)
 endfunction()
 # END TODO: Move this to cmake_shared
 
+# get name and version of operating system
+execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/os.sh" OUTPUT_VARIABLE OS)
+message(STATUS "Operating system is: ${OS}")
+
+# get name and version of compiler
+if(DEFINED ENV{COMPILER_version})
+   set(COMPILER_version $ENV{COMPILER_version})
+else()
+  execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/compiler.sh ${COMPILER}" OUTPUT_VARIABLE COMPILER_version)
+endif()
 
 set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Execution environment directory")
-message(STATUS "WORK_PREFIX=${WORK_PREFIX}")
 dir_writable(${WORK_PREFIX} TRUE)
-set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMP_VERSION})
+if(DEFINED ENV{GEM_WORK})
+   set(WORK_DIR ${WORK_PREFIX}/$ENV{GEM_WORK})
+else()
+  set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMPILER_version})
+endif()
+message(STATUS "Working directory is ${WORK_DIR}")
+
 add_custom_target(work
     /bin/mkdir -p ${WORK_DIR}/bin
     COMMAND /bin/cp -avf
@@ -172,10 +177,9 @@ add_custom_target(work
 #        $<TARGET_FILE:pgsm>
 #        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
-#    COMMAND /bin/cp -avf ${ROOT}/scripts/* ${WORK_DIR}
-#    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
+    COMMAND /bin/cp -avf ${ROOT}/scripts ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    COMMAND /bin/ln -sf ${ROOT}/gem_dbase ${WORK_DIR}
+#    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
 
     DEPENDS
         cclargs_lite

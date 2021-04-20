@@ -18,34 +18,57 @@
 
       subroutine nest_indata (F_datev_S)
       use dynkernel_options
+      use dyn_fisl_options
+      use gem_options
       use mem_nest
       use gmm_geof
       use inp_mod
       use glb_ld
       use lun
+      use ptopo
       use tr3d
       use vGrid_Descriptors, only : vgrid_descriptor
       use gem_timing
       implicit none
-#include <arch_specific.hf>
+
+      include 'mpif.h'
+      include 'rpn_comm.inc'
 
       character(len=*), intent(IN) :: F_datev_S
-!
+      integer topo_diff,comm,err,gathV(Ptopo_numproc*Ptopo_ncolors)
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: nest_sls
+!     
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
       call gemtime_start ( 26, 'NEST_input', 10 )
 
-      call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
-                      nest_zd_fin, nest_s_fin, nest_tr_fin,&
-                      nest_fullme_fin,.true.,F_datev_S    ,&
+      call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin ,&
+                      nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
+                      nest_fullme_fin(l_minx,l_miny,1),&
+                      nest_fullme_fin(l_minx,l_miny,2),&
+                      .true.,F_datev_S                ,&
                       l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
+
+      if (Schm_sleve_L) then
+         call update_sls (nest_fullme_fin(l_minx,l_miny,2),nest_sls,&
+                          l_minx,l_maxx,l_miny,l_maxy)
+      else
+         nest_sls= 0.
+      endif
 
       call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
                       nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&
-                              l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                              .not.Inp_zd_L, .not.Inp_w_L )
+                      nest_fullme_fin(l_minx,l_miny,1),nest_sls      ,&
+                      l_minx,l_maxx,l_miny,l_maxy, G_nk              ,&
+                      .not.Inp_zd_L, .not.Inp_w_L, .not. Inp_qt_L )
+      topo_diff= 0
+      if (maxval(abs(nest_fullme_fin-nest_fullme_deb))>0.) topo_diff= 1
+      comm = RPN_COMM_comm ('MULTIGRID')
+      call MPI_Allgather ( topo_diff,1,MPI_INTEGER,gathV,1,&
+                           MPI_INTEGER,comm,err)
+      Vtopo_mustadj_L= sum(gathV) > 0
 
       call gemtime_stop (26)
 !

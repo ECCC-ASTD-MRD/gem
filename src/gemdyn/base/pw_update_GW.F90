@@ -17,6 +17,7 @@
 
       subroutine pw_update_GW()
       use dynkernel_options
+      use gem_options
       use gem_timing
       use glb_ld
       use gmm_geof
@@ -27,7 +28,6 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer :: i,j,k
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________
 
@@ -40,43 +40,18 @@
          pw_me_plus = 0.
          return ! Not yet implemented
       end if
-
-      do k=1,l_nk
-         do j=1,l_nj
-            do i=1,l_ni
-               pw_wz_plus(i,j,k) = wt1(i,j,k)
-            end do
-         end do
-      end do
-      do j=1,l_nj
-         do i=1,l_ni
-            pw_me_plus(i,j)= fis0(i,j)
-         end do
-      end do
+      
+      pw_wz_plus= wt1
+      pw_me_plus= fis0
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-
-         do k=1,l_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               pw_gz_plus(i,j,k)= grav_8*zmom_8(i,j,k)
-            end do
-            end do
-         end do
-
+         pw_gz_plus(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,:)=&
+         zmom_8(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,:)*grav_8
       else
-
          call diag_fi (fi, st1, tt1, qt1, l_minx,l_maxx,l_miny,l_maxy,&
-                       G_nk, 1, l_ni, 1, l_nj)
-
-         do k=1,l_nk
-            do j=1,l_nj
-               do i=1,l_ni
-                  pw_gz_plus(i,j,k)= fi(i,j,k)
-               end do
-            end do
-         end do
-
+                              G_nk, 1-G_halox*west ,l_ni+G_halox*east,&
+                              1-G_haloy*south,l_nj+G_haloy*north)
+         pw_gz_plus(:,:,1:l_nk)= fi(:,:,1:l_nk)
       end if
 
       call gemtime_stop (5)

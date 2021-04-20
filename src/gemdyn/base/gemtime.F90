@@ -84,7 +84,7 @@ contains
       endif
 
       call rpn_comm_barrier ("GRID", err)
-      call time_trace_init (gem_time_trace)
+!MD      call time_trace_init (gem_time_trace)
 !
 !-------------------------------------------------------------------
 !
@@ -162,8 +162,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if ((Gem_trace_ctrl>0).and.(mod(Step_kount,Gem_trace_freq)>0)) &
-                                           call gemtime_trace_dump ()
+!MD      if ((Gem_trace_ctrl>0).and.(mod(Step_kount,Gem_trace_freq)>0)) &
+!MD                                           call gemtime_trace_dump ()
 
       if (.not.New_timing_dyn_L .and. .not.Gem_timing_dyn_L) return
 
@@ -249,42 +249,42 @@ contains
       return
       end subroutine gemtime_terminate
 
-      subroutine gemtime_trace_dump
-      use ptopo
-      use step_options
-
-      character(len=1024) :: filename
-      type(C_PTR), dimension(10) :: array
-      integer :: nbeads, nbent, err
-      integer, dimension(:  ), pointer, contiguous :: timeT_ptr
-      integer, dimension(:,:), pointer, contiguous :: timeT_all
-!
-!-------------------------------------------------------------------
-!
-      nullify (timeT_ptr,timeT_all)
-      array(1) = C_NULL_PTR
-      array(1) = time_trace_get_buffer_data(gem_time_trace, nbeads, nbent, 1)
-      if(C_ASSOCIATED(array(1))) then
-         call c_f_pointer(array(1),timeT_ptr,[nbent])
-         allocate (timeT_all(nbent,Ptopo_numproc))
-         call RPN_COMM_gather(timeT_ptr,nbent,"MPI_INTEGER",timeT_all,nbent, &
-                              "MPI_INTEGER",0,"GRID", err)
-         if (Ptopo_myproc==0) then
-            write (filename,'("TIME_trace_",i5.5,".bin")') Step_kount
-            open (666,file=filename,form='UNFORMATTED')
-            write(666) nbent,Ptopo_npex,Ptopo_npey
-            write(666) timeT_all(1:nbent,1:Ptopo_numproc)
-            close (666)
-         endif
-         deallocate(timeT_all)
-         nullify (timeT_ptr,timeT_all)
-      endif
-      call time_trace_init (gem_time_trace)
-!
-!-------------------------------------------------------------------
-!
-      return
-      end subroutine gemtime_trace_dump
+!!$      subroutine gemtime_trace_dump
+!!$      use ptopo
+!!$      use step_options
+!!$
+!!$      character(len=1024) :: filename
+!!$      type(C_PTR), dimension(10) :: array
+!!$      integer :: nbeads, nbent, err
+!!$      integer, dimension(:  ), pointer, contiguous :: timeT_ptr
+!!$      integer, dimension(:,:), pointer, contiguous :: timeT_all
+!!$!
+!!$!-------------------------------------------------------------------
+!!$!
+!!$      nullify (timeT_ptr,timeT_all)
+!!$      array(1) = C_NULL_PTR
+!!$      array(1) = time_trace_get_buffer_data(gem_time_trace, nbeads, nbent, 1)
+!!$      if(C_ASSOCIATED(array(1))) then
+!!$         call c_f_pointer(array(1),timeT_ptr,[nbent])
+!!$         allocate (timeT_all(nbent,Ptopo_numproc))
+!!$         call RPN_COMM_gather(timeT_ptr,nbent,"MPI_INTEGER",timeT_all,nbent, &
+!!$                              "MPI_INTEGER",0,"GRID", err)
+!!$         if (Ptopo_myproc==0) then
+!!$            write (filename,'("TIME_trace_",i5.5,".bin")') Step_kount
+!!$            open (666,file=filename,form='UNFORMATTED')
+!!$            write(666) nbent,Ptopo_npex,Ptopo_npey
+!!$            write(666) timeT_all(1:nbent,1:Ptopo_numproc)
+!!$            close (666)
+!!$         endif
+!!$         deallocate(timeT_all)
+!!$         nullify (timeT_ptr,timeT_all)
+!!$      endif
+!!$      call time_trace_init (gem_time_trace)
+!!$!
+!!$!-------------------------------------------------------------------
+!!$!
+!!$      return
+!!$      end subroutine gemtime_trace_dump
 
       subroutine gemlcltime_start ( mynum, myname_S, F_rset)
 

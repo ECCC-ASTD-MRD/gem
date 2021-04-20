@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 
 #/* Part of the Maestro sequencer software package.
 # * Copyright (C) 2011-2015  Canadian Meteorological Centre
@@ -122,13 +122,12 @@ rm -f ${TS_abort_file}
 
 # Set up task environment
 if [ -n "${TASK_BASEDIR}" ] ; then
-  setup_truepath=${TASK_BASEDIR}/.setup/task_setup_truepath
-  if [[ ! -x ${setup_truepath} ]] ; then
-    setup_truepath=$(which true_path)
-    printf '\tUnable to find true_path in %s ... will use %s\n' ${TASK_BASEDIR} ${setup_truepath}
+  if [[ ! -x `which realpath` ]] ; then
+    printf '\nUnable to find realpath in your environment\n' ${TASK_BASEDIR}
+    exit 1
   fi
-  if [ -d ${TASK_BASEDIR}/bin ] ; then TASK_BIN=$(${setup_truepath} ${TASK_BASEDIR}/bin); export TASK_BIN ; fi
-  if [ -d ${TASK_BASEDIR}/work ] ; then TASK_WORK=$(${setup_truepath} ${TASK_BASEDIR}/work) ; export TASK_WORK; fi
-  if [ -d ${TASK_BASEDIR}/input ] ; then TASK_INPUT=$(${setup_truepath} ${TASK_BASEDIR}/input) ; export TASK_INPUT; fi
-  if [ -d ${TASK_BASEDIR}/output ] ; then TASK_OUTPUT=$(${setup_truepath} ${TASK_BASEDIR}/output) ; export TASK_OUTPUT; fi
+  if [ -d ${TASK_BASEDIR}/bin ] ; then TASK_BIN=$(realpath ${TASK_BASEDIR}/bin); export TASK_BIN ; fi
+  if [ -d ${TASK_BASEDIR}/work ] ; then TASK_WORK=$(realpath ${TASK_BASEDIR}/work) ; export TASK_WORK; fi
+  if [ -d ${TASK_BASEDIR}/input ] ; then TASK_INPUT=$(realpath ${TASK_BASEDIR}/input) ; export TASK_INPUT; fi
+  if [ -d ${TASK_BASEDIR}/output ] ; then TASK_OUTPUT=$(realpath ${TASK_BASEDIR}/output) ; export TASK_OUTPUT; fi
 fi

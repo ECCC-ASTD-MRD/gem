@@ -17,7 +17,7 @@
 
       subroutine adz_BC_LAM_zlf (F1,F2,F_minx,F_maxx,F_miny,F_maxy,F_ni,F_nj,F_nk,F_setup)
 
-      use glb_ld
+      use adz_mem
       use HORgrid_options
 
       use, intrinsic :: iso_fortran_env
@@ -37,39 +37,47 @@
       !     Various setups to prepare Bermejo-Conde LAM with ZLF
       !=========================================================
 
-      integer :: i0_0,j0_0,in_0,jn_0,i0_1,j0_1,in_1,jn_1,i0_2,j0_2,in_2,jn_2,ext,BCS_BASE
+      integer :: i0_e,j0_e,in_e,jn_e,i0_c,j0_c,in_c,jn_c,i0_b,j0_b,in_b,jn_b,k0,k0d2,ext,BCS_BASE
 !
 !---------------------------------------------------------------------
 !
-      !In F1: Set ZERO piloting conditions outside EXTENSION (CFL)
-      !-----------------------------------------------------------
+      k0 = Adz_k0t
+
+      k0d2 = nint(k0/2.)
+
+      !In F1: Set ZERO piloting conditions outside [i0_e:in_e]x[j0_e:jn_e]x[k0/2:nk]
+      !-----------------------------------------------------------------------------
       if (F_setup==1) then
 
          ext = Grd_maxcfl + 1
 
-         i0_1 =    1 + pil_w - ext*west
-         in_1 = l_ni - pil_e + ext*east
-         j0_1 =    1 + pil_s - ext*south
-         jn_1 = l_nj - pil_n + ext*north
+         i0_e =    1 + pil_w - ext*west
+         in_e = l_ni - pil_e + ext*east
+         j0_e =    1 + pil_s - ext*south
+         jn_e = l_nj - pil_n + ext*north
 
-         if (l_west)  F1(1     :i0_1-1,1     :F_nj,  1:F_nk) = 0.
-         if (l_east)  F1(in_1+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
-         if (l_south) F1(1     :F_ni,  1     :j0_1-1,1:F_nk) = 0.
-         if (l_north) F1(1     :F_ni,  jn_1+1:F_nj,  1:F_nk) = 0.
+         if (l_west)  F1(1     :i0_e-1,1     :F_nj,  1:F_nk) = 0.
+         if (l_east)  F1(in_e+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
+         if (l_south) F1(1     :F_ni,  1     :j0_e-1,1:F_nk) = 0.
+         if (l_north) F1(1     :F_ni,  jn_e+1:F_nj,  1:F_nk) = 0.
 
-      !In F2: Keep piloting conditions outside CORE of F1
-      !--------------------------------------------------
+         F1(i0_e:in_e,j0_e:jn_e,1:k0d2-1) = 0.
+
+      !In F2: Keep piloting conditions outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk] of F1
+      !-----------------------------------------------------------------------------
       else if (F_setup==2) then
 
-         i0_0 = 1    + pil_w
-         in_0 = l_ni - pil_e
-         j0_0 = 1    + pil_s
-         jn_0 = l_nj - pil_n
+         i0_c = 1    + pil_w
+         in_c = l_ni - pil_e
+         j0_c = 1    + pil_s
+         jn_c = l_nj - pil_n
 
-         if (l_west)  F2(1     :i0_0-1,1     :F_nj,  1:F_nk) = F1(1     :i0_0-1,1     :F_nj,  1:F_nk)
-         if (l_east)  F2(in_0+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_0+1:F_ni,  1     :F_nj,  1:F_nk)
-         if (l_south) F2(1     :F_ni,  1     :j0_0-1,1:F_nk) = F1(1     :F_ni,  1     :j0_0-1,1:F_nk)
-         if (l_north) F2(1     :F_ni,  jn_0+1:F_nj,  1:F_nk) = F1(1     :F_ni,  jn_0+1:F_nj,  1:F_nk)
+         if (l_west)  F2(1     :i0_c-1,1     :F_nj,  1:F_nk) = F1(1     :i0_c-1,1     :F_nj,  1:F_nk)
+         if (l_east)  F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
+         if (l_south) F2(1     :F_ni,  1     :j0_c-1,1:F_nk) = F1(1     :F_ni,  1     :j0_c-1,1:F_nk)
+         if (l_north) F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
+
+         F2(i0_c:in_c,j0_c:jn_c,1:k0-1) = F1(i0_c:in_c,j0_c:jn_c,1:k0-1)
 
       !In F1: Set ZERO piloting conditions outside EXTENSION (BCS_BASE)
       !----------------------------------------------------------------
@@ -77,29 +85,31 @@
 
          BCS_BASE = 4
 
-         i0_2 =    1 + BCS_BASE*west
-         in_2 = l_ni - BCS_BASE*east
-         j0_2 =    1 + BCS_BASE*south
-         jn_2 = l_nj - BCS_BASE*north
+         i0_b =    1 + BCS_BASE*west
+         in_b = l_ni - BCS_BASE*east
+         j0_b =    1 + BCS_BASE*south
+         jn_b = l_nj - BCS_BASE*north
 
-         if (l_west)  F1(1     :i0_2-1,1     :F_nj,  1:F_nk) = 0.
-         if (l_east)  F1(in_2+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
-         if (l_south) F1(1     :F_ni,  1     :j0_2-1,1:F_nk) = 0.
-         if (l_north) F1(1     :F_ni,  jn_2+1:F_nj,  1:F_nk) = 0.
+         if (l_west)  F1(1     :i0_b-1,1     :F_nj,  1:F_nk) = 0.
+         if (l_east)  F1(in_b+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
+         if (l_south) F1(1     :F_ni,  1     :j0_b-1,1:F_nk) = 0.
+         if (l_north) F1(1     :F_ni,  jn_b+1:F_nj,  1:F_nk) = 0.
 
-      !In F1: Reset piloting conditions outside CORE stored in F2
-      !----------------------------------------------------------
+      !In F1: Reset piloting conditions outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk] stored in F2
+      !-------------------------------------------------------------------------------------
       else if (F_setup==4) then
 
-         i0_0 = 1    + pil_w
-         in_0 = l_ni - pil_e
-         j0_0 = 1    + pil_s
-         jn_0 = l_nj - pil_n
+         i0_c = 1    + pil_w
+         in_c = l_ni - pil_e
+         j0_c = 1    + pil_s
+         jn_c = l_nj - pil_n
 
-         if (l_west)  F1(1     :i0_0-1,1     :F_nj,  1:F_nk) = F2(1     :i0_0-1,1     :F_nj,  1:F_nk)
-         if (l_east)  F1(in_0+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_0+1:F_ni,  1     :F_nj,  1:F_nk)
-         if (l_south) F1(1     :F_ni,  1     :j0_0-1,1:F_nk) = F2(1     :F_ni,  1     :j0_0-1,1:F_nk)
-         if (l_north) F1(1     :F_ni,  jn_0+1:F_nj,  1:F_nk) = F2(1     :F_ni,  jn_0+1:F_nj,  1:F_nk)
+         if (l_west)  F1(1     :i0_c-1,1     :F_nj,  1:F_nk) = F2(1     :i0_c-1,1     :F_nj,  1:F_nk)
+         if (l_east)  F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
+         if (l_south) F1(1     :F_ni,  1     :j0_c-1,1:F_nk) = F2(1     :F_ni,  1     :j0_c-1,1:F_nk)
+         if (l_north) F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
+
+         F1(i0_c:in_c,j0_c:jn_c,1:k0-1) = F2(i0_c:in_c,j0_c:jn_c,1:k0-1)
 
       else
 

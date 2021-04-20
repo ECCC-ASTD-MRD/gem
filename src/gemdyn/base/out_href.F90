@@ -88,7 +88,7 @@
 
       Out_ig4 = 0
 
-      call set_igs2 ( Out_ig1, Out_ig2, posx, posy, G_ni,G_nj,&
+      call set_igs2 ( Out_ig1, Out_ig2, posx(1), posy(1), G_ni,G_nj,&
                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
                       i0,in,F_stridex, j0,jn,F_stridey )
 

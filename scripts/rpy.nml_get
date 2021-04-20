@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+"""
+import re
+import sys
+import argparse
+import logging
+from rpnpy.ftnnml import *
+
+if __name__ == "__main__":
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
+    cleanName = lambda x: x.lower().replace('\n', ' ').strip()
+
+    # Command line arguments
+    desc="Get list of values, variable names and namelists names from a Fortran namelist file"
+    usage = """
+    %(prog)s [options] key1 [key2] ...
+    %(prog)s [options] nml1/key1 [nml2/key2] ...
+    %(prog)s [options] -- nml1/key1 [nml2/key2] ..."""
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog, 
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-f", "--file", dest="nml_file", 
+                        type=str, default="./gem_settings.nml", 
+                        metavar="NML_FILE", 
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']")
+    
+    parser.add_argument("-o", "--output", dest="prefix", 
+                        type=str, default='', 
+                        help="PREFIX for output file name [default STDOUT]", 
+                        metavar="PREFIX")
+    parser.add_argument("-n", "--namelist", dest="nml_name", 
+                        type=str, default='', 
+                        help="NAMELIST to search for keys [default all]", 
+                        metavar="NAMELIST")
+    parser.add_argument("-k", "--keys", dest="keys", 
+                        action="store_true", 
+                        help="Include KEY in output expressions (useful for 'eval')")
+    parser.add_argument("-l", "--listkeys", dest="listkeys", 
+
+                        action="store_true", 
+                        help="Print the list of vars (keys) of the specified namelist, of all namelists otherwise")
+    parser.add_argument("-v", "--listkeyval", dest="listkeyval", 
+                        action="store_true", 
+                        help="Print the list nml/key=val of the specified namelist, of all namelists otherwise")
+    parser.add_argument("-L", "--listnml", dest="listnml", 
+                        action="store_true", 
+                        help="Print the list of all namelists names")
+    parser.add_argument("-p", "--prettyprint", dest="pprint", 
+                        action="store_true", 
+                        help="Pretty print the namelist file or specified namelist")
+    parser.add_argument("-u","--unquote", dest="unquote",
+                        action="store_true",
+                        help="Remove quotes from namelist values")
+
+    parser.add_argument(dest="nml_keys", 
+                        nargs='*', type=str, default=[], 
+                        metavar='[key1] [nml2/key2]', 
+                        help="")
+    args = parser.parse_args()
+
+    
+    if not (len(args.nml_keys) or args.listkeys or args.listnml
+            or args.pprint or args.listkeyval):
+        parser.print_help()
+        sys.exit(1)
+
+    cfg = FtnNmlFile(args.nml_file)
+
+    if args.listnml:
+        print(" ".join(cfg.keys()))
+        sys.exit(0)
+ 
+    if args.listkeys:
+        mylist = ([args.nml_name] if args.nml_name else cfg.keys())
+        print(" ".join([" ".join(cfg.get(nml).keys()) for nml in mylist]))
+        sys.exit(0)
+ 
+    if args.listkeyval:
+        mylist = ([args.nml_name] if args.nml_name else cfg.keys())
+        for nml in ([args.nml_name] if args.nml_name else sorted(cfg.keys())):
+            for myvar in sorted(cfg.get(nml).keys()):
+                print("{}/{}".format(nml, cfg.get(nml).get(myvar).toStr(clean=True).strip()))
+        sys.exit(0)
+ 
+    if args.pprint:
+        for nml in ([args.nml_name] if args.nml_name else sorted(cfg.keys())):
+            print(cfg.get(nml).toStr(clean=True, uplowcase=True))
+        sys.exit(0)
+ 
+    # Generate output
+    outputSuffix = '.txt'
+    for entry in args.nml_keys:
+        (value, outFile) = ('', None)
+        try:
+            (nml2, key2) = re.split('/', entry)
+        except ValueError:
+            (nml2, key2) = (args.nml_name, entry)
+        expr = (key2+'=' if args.keys else '')
+        try:
+            if not nml2:
+                for nmlname in cfg.keys():
+                    if cleanName(key2) in cfg.get(nmlname).keys():
+                        nml2 = nmlname
+            if nml2:
+                value = cfg.get(nml2).get(key2).get('v')
+            else:
+                raise KeyError(" Oops! Key not found: %s" % (key2))
+        except KeyError:
+            logging.warning('{}\n'.format(str(sys.exc_info()[1])[1:-1]))
+            continue
+        if args.prefix:
+            outFile = args.prefix+key2+outputSuffix
+            try:
+                fd = open(outFile, "w")
+            except OSError:
+                logging.error('Cannot open output file for writing: {}\n'.format(outFile))
+                sys.exit(1)
+        else:
+            fd = sys.stdout
+        if args.unquote:
+            value = str(value).rstrip().lstrip()
+            if value[0] == value[-1]:
+                value = value.strip('\"').strip("\'")
+        fd.write(expr+str(value)+'\n')
+        if outFile: fd.close()
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

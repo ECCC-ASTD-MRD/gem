@@ -33,7 +33,7 @@
                             uut1, vvt1, zzt1, uut0, vvt0, zzt0
 
       include "tricublin_f90.inc"
-      integer :: iter,i,j,k,kk1,nnk,nb
+      integer :: iter,i,j,k,kk1,nb,k00
       integer,dimension(l_ni) :: kk
       real(kind=REAL64), dimension(l_ni) :: xm,ym,zm
       real(kind=REAL64) pos
@@ -46,7 +46,8 @@
                              uut0, vvt0, zzt0, &
                          Minx,Maxx,Miny,Maxy,NK)
 
-      nnk = Adz_2dnh *(l_nk-Adz_k0m+1)
+      k00=Adz_k0m
+      if (Adz_k0>1) k00=1
 
       do  iter = 1, Adz_niter
 
@@ -58,7 +59,7 @@
                      Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
 !- Compute departure positions
 
-          do k= Adz_k0m, l_nk
+          do k= k00, l_nk
              do j= 1, l_nj
                 do i= 1, l_ni
                   xm(i) = dble(i+l_i0-1) - &

@@ -83,7 +83,7 @@
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
          call rpn_comm_barrier ("GRID", err)
-         call time_trace_step(gem_time_trace, Step_kount)
+! for now         call time_trace_step(gem_time_trace, Step_kount)
 
          if (Lun_out > 0) then
 

@@ -1240,7 +1240,7 @@ END SUBROUTINE test2_steady_state_mountain
 ! Tests 2-1 and 2-2:  Non-hydrostatic Mountain Waves over a Schaer-type Mountain
 !=====================================================================================
 
-SUBROUTINE test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,pref,shear,u,v,w,t,tv,phis,ps,rho,q,Set_topo_L)
+SUBROUTINE test2_schaer_mountain (lon,lat,p,z,zcoords,Ver_z,Ver_a,Ver_b,Ver_c,pref,shear,u,v,w,t,tv,phis,orls,ps,rho,q,Set_topo_L)
 
 IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -1253,6 +1253,7 @@ IMPLICIT NONE
                                 Ver_z , &       ! Ver_z_8     GEM
                                 Ver_a , &       ! Ver_a_8     GEM
                                 Ver_b , &       ! Ver_b_8     GEM
+                                Ver_c , &       ! Ver_c_8     GEM
                                 pref            ! Cstv_pref_8 GEM
 
         real(kind=REAL64), intent(inout) :: z             ! Height (m)
@@ -1276,6 +1277,7 @@ IMPLICIT NONE
                                 q               ! Specific Humidity (kg/kg)
 
         real(kind=REAL64), intent(inout)::phis            ! Surface Geopotential (m^2 s^-2)
+        real(kind=REAL64), intent(inout)::orls            ! Surface Geopotential (m^2 s^-2) Large scale
 
         logical, intent(in)  :: Set_topo_L
 
@@ -1301,7 +1303,9 @@ IMPLICIT NONE
       real(kind=REAL64) :: sin_tmp, cos_tmp                                       ! Calculation of great circle distance
       real(kind=REAL64) :: r                                                      ! Great circle distance
       real(kind=REAL64) :: zs                                                     ! Surface height
+      real(kind=REAL64) :: zsl                                                    ! Surface height Large-Scale
       real(kind=REAL64) :: c                                                      ! Shear
+      real(kind=REAL64) :: sls                                                    ! SLS for GEM-P
 
 !-----------------------------------------------------------------------
 !    Already comdeck g in GEM
@@ -1324,6 +1328,7 @@ IMPLICIT NONE
 
         r  = as * ACOS (sin_tmp + cos_tmp*cos(lon-lambdac))
         zs   = h0 * exp(-(r**2)/(d**2))*(cos(pi*r/xi)**2)
+        zsl  = h0 * exp(-(r**2)/(d**2))
 
 !       Set topography (Otherwise use prescribed topography)
 !       ----------------------------------------------------
@@ -1331,9 +1336,13 @@ IMPLICIT NONE
 
             phis = g*zs
 
+            orls = g*zsl
+
         else
 
-            zs = phis/g
+            zs  = phis/g
+
+            zsl = orls/g
 
         endif
 
@@ -1363,7 +1372,7 @@ IMPLICIT NONE
 
         if (zcoords == 1) then
 
-                z = Ver_z + Ver_b*zs
+                z = Ver_z + Ver_b*zs + Ver_c*zsl
 
                 height = z
 
@@ -1371,9 +1380,11 @@ IMPLICIT NONE
 
         else
 
+                sls = -orls/(rgasd_8*Teq)
+
                 ps = peq*exp( -(ueq*ueq/(2.d0*Rd*Teq))*(sin(lat)**2) - phis/(Rd*t)    )
 
-                p = exp(Ver_a + Ver_b*log(ps/pref))
+                p = exp(Ver_a + Ver_b*log(ps/pref) + Ver_c*sls)
 
                 height = (Rd*t/(g))*log(peq/p) - (t*ueq*ueq/(2.d0*Teq*g))*(sin(lat)**2)
 

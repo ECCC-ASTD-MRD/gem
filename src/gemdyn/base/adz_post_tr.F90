@@ -43,7 +43,7 @@
 
       character(len=8) :: name_tr_S
       logical :: Bermejo_Conde_L,Clip_L,ILMC_L,LAM_L
-      integer :: n,i,j,k,i0,in,j0,jn,F_nptr,wp,deb,num,i0_c,in_c,j0_c,jn_c
+      integer :: n,i,j,k,i0,in,j0,jn,k0,F_nptr,wp,deb,num,i0_c,in_c,j0_c,jn_c
       integer, save :: n_bc = 0
       integer, save :: n_bc_TOTAL
       logical, save :: done_store_BC_L = .false.
@@ -80,7 +80,7 @@
             !-------------------------------
             if (Clip_L) then
 
-               do k= Adz_k0, l_nk
+               do k= Adz_k0t, l_nk
                   do j= Adz_j0,Adz_jn
                      do i= Adz_i0,Adz_in
                         Adz_stack(n)%dst(i,j,k) = &
@@ -140,13 +140,13 @@
       !---------------
       i0_c = 1 + pil_w ; in_c = l_ni - pil_e ; j0_c = 1 + pil_s ; jn_c = l_nj - pil_n
 
-      i0 = i0_c ; in = in_c ; j0 = j0_c ; jn = jn_c
+      i0 = i0_c ; in = in_c ; j0 = j0_c ; jn = jn_c ; k0 = Adz_k0t
 
       !Bermejo-Conde LAM Flux ZLF
       !--------------------------
       if (Adz_BC_LAM_flux==2) then
 
-         i0 = Adz_i0b ; in = Adz_inb ; j0 = Adz_j0b ; jn = Adz_jnb
+         i0 = Adz_i0b ; in = Adz_inb ; j0 = Adz_j0b ; jn = Adz_jnb ; k0 = 1
 
       end if
 
@@ -211,7 +211,7 @@
 
       !Apply Bermejo-Conde mass-fixer for all tracers in Adz_bc
       !--------------------------------------------------------
-      call Bermejo_Conde ( Adz_bc, n_bc_TOTAL, i0, in, j0, jn )
+      call Bermejo_Conde ( Adz_bc, n_bc_TOTAL, i0, in, j0, jn, k0 )
 
       !Store Mass deficit (EPSILON) induced when applying Bermejo-Conde
       !----------------------------------------------------------------

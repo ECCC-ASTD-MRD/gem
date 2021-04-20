@@ -75,7 +75,7 @@ set +ex
 printf "\n RUNNING ${BIN} \n"
 lis=checkdmpartlis$$
 echo checkdmpart_status='ABORT' > checkdmpart_status.dot
-r.run_in_parallel -pgm ${BIN} -npex ${ngrids} -inorder 1> $lis 2>&1
+gem_mpirun.sh -pgm ${BIN} -npex ${ngrids} -inorder 1> $lis 2>&1
 
 . checkdmpart_status.dot
 grep topo_allowed checkdmpart_status.dot > $TMPDIR/listopoallowed$$

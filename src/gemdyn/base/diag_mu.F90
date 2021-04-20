@@ -16,32 +16,25 @@
 !**s/r diag_mu calculate mu: ratio of vertical to gravitational accelerations
 !
       subroutine diag_mu( F_mu, F_q, F_s, F_sl, &
-                          Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
+                          Minx,Maxx,Miny,Maxy, Nk )
+      use gem_options
+      use glb_ld
       use cstv
       use ver
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,i0,in,j0,jn,Nk
+      integer Minx,Maxx,Miny,Maxy,Nk
       real F_mu(Minx:Maxx,Miny:Maxy,Nk), F_q(Minx:Maxx,Miny:Maxy,Nk+1)
       real  F_s(Minx:Maxx,Miny:Maxy), F_sl(Minx:Maxx,Miny:Maxy)
 
-!author
-!
-! claude girard 2013
-!
-!object
-!       see id section
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_mu         O    -
 ! F_s          I    - log(pi_s/pref)
 ! F_q          I    - log(p/pi)
-! i0,in,j0,jn  I    - index over which computation will be made.
-
 
       integer i,j,k,km
       real(kind=REAL64)  w1, qbar
@@ -51,8 +44,8 @@
 !
       do k=1,Nk
          km=max(1,k-1)
-         do j= j0, jn
-            do i= i0, in
+         do j=1-G_haloy,l_nj+G_haloy
+            do i=1-G_halox,l_ni+G_halox
                w1 = one + Ver_dbdz_8%t(k)*F_s(i,j)   &
                         + Ver_dcdz_8%t(k)*F_sl(i,j)
                F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,k))/w1

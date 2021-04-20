@@ -16,7 +16,8 @@
 !**s/r diag_fip - Computes geopotential perturbation
 
       subroutine diag_fip( F_fip, F_s, F_sl, F_t, F_q, F_fis, &
-                           Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
+                           Minx,Maxx,Miny,Maxy, Nk )
+      use gem_options
       use dynkernel_options
       use tdpack
       use glb_ld
@@ -25,19 +26,14 @@
       use ver
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
-      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk, i0, in, j0, jn
+      integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(out) :: F_fip
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1), intent(in) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_s, F_fis, F_sl
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_t
 
-!author
-!
-! Claude Girard
-!
-!arguments
+!  arguments
 !  Name                         Description
 !-------------------------------------------------------------
 ! F_fip          - geopotential perturbation
@@ -45,25 +41,24 @@
 ! F_t            - temperature
 ! F_fis          - surface geopotential
 
-
       integer i,j,k,km
       real(kind=REAL64), parameter :: one = 1.d0, half = .5d0
       real(kind=REAL64)  qbar,w1
 !
 !     ---------------------------------------------------------------
 !
-      do j=j0,jn
-         do i=i0,in
+      do j=1-G_haloy,l_nj+G_haloy
+         do i=1-G_halox,l_ni+G_halox
             F_fip(i,j,G_nk+1)= F_fis(i,j)
          end do
       end do
-
+      
       if (Dynamics_hydro_L) then
 
-         do j=j0,jn
+         do j=1-G_haloy,l_nj+G_haloy
             do k= G_nk,1,-1
                w1= rgasd_8*Ver_dz_8%t(k)
-               do i= i0,in
+               do i=1-G_halox,l_ni+G_halox
                   F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
                                +Ver_dbdz_8%t(k)*F_s(i,j)  &
                                +Ver_dcdz_8%t(k)*F_sl(i,j))-Cstv_Tstr_8)
@@ -73,11 +68,11 @@
 
       else
 
-         do j=j0,jn
+         do j=1-G_haloy,l_nj+G_haloy
             do k= G_nk,1,-1
                km= max(1,k-1)
                w1= rgasd_8*Ver_dz_8%t(k)
-               do i= i0,in
+               do i=1-G_halox,l_ni+G_halox
                   qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
                   qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)
                   F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one &

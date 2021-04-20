@@ -113,7 +113,7 @@
 
             else
 
-               do k=F_k0,F_nk
+               do k=1,F_nk
                   do j=Adz_j0b,Adz_jnb
                      do i=Adz_i0b,Adz_inb
                         c_mass_8(n,3) = c_mass_8(n,3) + F_bc(n)%fo(i,j,k) * F_air_mass_m(i,j,k) * geomh_mask_8(i,j)

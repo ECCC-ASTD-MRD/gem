@@ -13,24 +13,23 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine glbcolc2(f2rc,g_id,g_if,g_jd,g_jf, &
-                          f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
+      subroutine glbcolc2 ( f2rc, g_id,g_if, g_jd,g_jf, g_kd,g_kf, &
+                            f2cc,lminx,lmaxx,lminy,lmaxy,lmink,lmaxk)
       use glb_ld
       use ptopo
       implicit none
 #include <arch_specific.hf>
 
-      integer g_id,g_if,g_jd,g_jf,lminx,lmaxx,lminy,lmaxy,lnk,nk_out
-      integer z_out(nk_out)
-      real f2rc(g_id:g_if,g_jd:g_jf,nk_out),  &
-           f2cc(lminx:lmaxx,lminy:lmaxy,lnk)
-
+      integer, intent(IN) :: g_id,g_if,g_jd,g_jf,g_kd,g_kf,&
+                         lminx,lmaxx,lminy,lmaxy,lmink,lmaxk
+      real, intent(OUT) :: f2rc(g_id:g_if,g_jd:g_jf,g_kd:g_kf)
+      real, intent(IN ) :: f2cc(lminx:lmaxx,lminy:lmaxy,lmink:lmaxk)
 
       integer i, j, k, iproc, tag, err, status
       integer si,sj,loindx,hiindx,loindy,hiindy
       integer len,l_id,l_if,l_jd,l_jf
       common /gatherit/ len,l_id,l_if,l_jd,l_jf
-      real buf ((lmaxx-lminx+1)*(lmaxy-lminy+1)*nk_out*2)
+      real buf ((lmaxx-lminx+1)*(lmaxy-lminy+1)*(l_nk+1))
       data tag /210/
 !
 !----------------------------------------------------------------------
@@ -49,7 +48,7 @@
       l_if = min(hiindx,(g_if-si))
       l_jd = max(loindy,(g_jd-sj))
       l_jf = min(hiindy,(g_jf-sj))
-      len = max(0,(l_if-l_id+1))*max(0,(l_jf-l_jd+1))*lnk
+      len = max(0,(l_if-l_id+1))*max(0,(l_jf-l_jd+1))*(g_kf-g_kd+1)
 
       if (Ptopo_myproc == 0) then
 
@@ -57,16 +56,16 @@
 
          if (len > 0) then
             len = 0
-            do k = 1, nk_out
+            do k = g_kd, g_kf
                do j = l_jd, l_jf
-               do i = l_id, l_if
-                  len = len + 1
-                  buf(len) = f2cc(i,j,z_out(k))
-               end do
+                  do i = l_id, l_if
+                     len = len + 1
+                     buf(len) = f2cc(i,j,k)
+                  end do
                end do
             end do
             len = 0
-            do k = 1, nk_out
+            do k = g_kd, g_kf
                do j = Ptopo_gindx(3,Ptopo_myproc+1)+l_jd-1,  &
                       Ptopo_gindx(3,Ptopo_myproc+1)+l_jf-1
                do i = Ptopo_gindx(1,Ptopo_myproc+1)+l_id-1,  &
@@ -87,7 +86,7 @@
                call RPN_COMM_recv ( buf, len, 'MPI_REAL', iproc, &
                                  tag,'GRID', status, err )
                len = 0
-               do k = 1, nk_out
+               do k = g_kd, g_kf
                do j = Ptopo_gindx(3,iproc+1)+l_jd-1, Ptopo_gindx(3,iproc+1)+l_jf-1
                do i = Ptopo_gindx(1,iproc+1)+l_id-1, Ptopo_gindx(1,iproc+1)+l_if-1
                   len = len + 1
@@ -103,11 +102,11 @@
 !       Send local data (LD) segment to processor 1
 
          len = 0
-         do k = 1, nk_out
+         do k = g_kd, g_kf
             do j = l_jd, l_jf
             do i = l_id, l_if
                len = len + 1
-               buf(len) = f2cc(i,j,z_out(k))
+               buf(len) = f2cc(i,j,k)
             end do
             end do
          end do

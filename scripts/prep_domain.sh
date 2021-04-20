@@ -84,7 +84,7 @@ cd ${tmp_analysis_path}
 local_anal_file=${tmp_analysis_path}/ANALYSIS
 if [ -e "${anal}" ] ; then
    if [[ -L ${anal} ]] ; then
-      analysis=$(r.read_link ${anal})
+      analysis=$(readlink ${anal})
    else
       analysis=${anal}
    fi

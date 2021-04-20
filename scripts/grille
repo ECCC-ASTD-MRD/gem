@@ -53,7 +53,7 @@ export CCARD_ARGS="-dom_start 0 -dom_end 0 -ngrids ${ngrids} -input ${TASK_INPUT
 #================== Produce Grid Pos Rec ================
 /bin/rm -f tape1 tape1_core tape1_free tape2 tape2_core tape2_free 2> /dev/null
 cd ${ROOT_WORK}
-r.run_in_parallel -pgm $GENGRID -npex 1 -npex ${ngrids} -inorder
+gem_mpirun.sh -pgm $GENGRID -npex 1 -npex ${ngrids} -inorder
 
 find ${WORKDIR} -type f -name "*tape*"      -exec mv {} . \;
 find ${WORKDIR} -type f -name "eigenv_v1_*" -exec mv {} . \;

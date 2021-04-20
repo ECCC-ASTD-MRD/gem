@@ -43,8 +43,8 @@
 !----------------------------------------------------------------
 
 
-      integer nk,rx
-      real, dimension(:,:), allocatable :: wk1
+      integer k,nk,rx,z_out(F_k0:F_kn)
+      real, dimension(:,:,:), allocatable :: wk1
 !
 !----------------------------------------------------------------------
 !
@@ -54,24 +54,26 @@
 
          nk = Maxk-Mink+1
          if (Ptopo_myproc == 0) then
-            allocate (wk1(G_ni*G_nj,Mink:Maxk))
+            allocate (wk1(F_i0:F_in,F_j0:F_jn,F_k0:F_kn))
          else
-            allocate (wk1(1,1))
+            allocate (wk1(1,1,1))
          end if
-         call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
-
-         if (Ptopo_myproc == 0)  then
-            call statfld (wk1 ,F_var_S, Lctl_step, F_from_S, &
-                           1,G_ni, 1,G_nj, Mink,Maxk, &
-                           F_i0,F_j0,F_k0, F_in,F_jn,F_kn,rx)
+         do k=F_k0,F_kn
+            z_out(k)=k
+         end do
+         call glbcolc2(wk1,F_i0,F_in,F_j0,F_jn,F_k0,F_kn,&
+                       F_field,Minx,Maxx,Miny,Maxy,Mink,Maxk)
+                       if (Ptopo_myproc == 0)  then
+            call statfld (wk1, F_var_S, Lctl_step, F_from_S,&
+                          F_i0,F_in, F_j0,F_jn, F_k0,F_kn  ,&
+                          F_i0,F_j0,F_k0, F_in,F_jn,F_kn, rx)
          end if
          deallocate (wk1)
 
       else
-
-         call statf_dm ( F_field,F_var_S,Lctl_step,F_from_S,&
-                         Minx,Maxx,Miny,Maxy,Mink,Maxk     ,&
-                         F_i0,F_j0,F_k0,F_in,F_jn,F_kn,rx)
+         call statf_dm (F_field,F_var_S,Lctl_step,F_from_S,&
+                        Minx,Maxx,Miny,Maxy,Mink,Maxk     ,&
+                        F_i0,F_j0,F_k0, F_in,F_jn,F_kn, rx)
       end if
 !
 !----------------------------------------------------------------------

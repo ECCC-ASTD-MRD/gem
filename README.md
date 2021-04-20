@@ -16,18 +16,8 @@ cd gem-devel
 
 Before the first build:
 ```
-. ./.initial_eccc_setup
+. ./.eccc_initial_setup
 ./link-dbase.sh
-```
-
-#temporary: copy extra database files
-# on EC side:
-```
-cp -r /home/dormrb01/armn/armncpi/geophy .
-```
-# on science:
-```
-cp -r /space/hall3/sitestore/eccc/mrd/rpnsi/cpi001/geophy .
 ```
 
 # build and install GEM
@@ -49,7 +39,7 @@ GEM_DIR=/local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-
 GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
 GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
 GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
-COMPILER_name=intel
+COMPILER_suite=intel
 COMPILER_version=19.0.3.199
 
 The structure of the build and work directories is different whether the $storage_model environment variable exists:
@@ -90,14 +80,14 @@ To configure your environment for the Intel 19 compiler, from the root of your
 GOAS clone, source **.eccc_setup_intel_19**. 
 
 ```
-   . .eccc_setup_intel_19
+   . eccc_setup_intel_19
 ```
 
 To configure your environment for the gnu compilers, from the root of your
 GOAS clone, source **.eccc_setup_gnu_7**.
 
 ```
-   . .eccc_setup_gnu_7
+   . eccc_setup_gnu_7
 ```
 
 It will define environment variables and load the appropriate SSM packages.
@@ -111,14 +101,14 @@ To configure your environment for the Intel 16 compiler, from the root of
 your GOAS clone, source **.eccc_setup_intel_16**.
 
 ```
-   . .eccc_setup_intel_16
+   . eccc_setup_intel_16
 ```
 
 To configure your environment for the gnu compilers, from the root of your
 GOAS clone, source **.eccc_setup_gnu_5**.  
 
 ```
-   . .eccc_setup_gnu_5
+   . eccc_setup_gnu_5
 ```
 
 It will define environment variables, and load the appropriate SSM packages.
@@ -127,24 +117,13 @@ Before the first build, from the root of your GOAS clone, source
 **.initial_eccc_setup**, it will create a build directory with the
 architecture, compiler and version in its name.
 ```
-. ./.initial_eccc_setup
+. ./eccc_initial_setup
 ```
 
 Then, link to gem database, and copy some extra files (they will be added
 later in the common database).
 ```
 ./link-dbase.sh
-```
-
-Temporary: copy extra database files:
-- on EC side:
-```
-cp -r /home/dormrb01/armn/armncpi/geophy .
-```
-
-- on science:
-```
-cp -r /space/hall3/sitestore/eccc/mrd/rpnsi/cpi001/geophy .
 ```
 
 # Compiling and executing the model
@@ -192,7 +171,7 @@ If you don't want to use that variable, here is an example of another way:
 cd $HOME
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
-. ./.eccc_setup_intel_19
+. ./eccc_setup_intel_19
 # We assume that you have a link to your ords folder in your home
 mkdir -p $HOME/ords/gem/{build,work}
 mv build-ubuntu-18.04-amd64-64-intel-19.0.3.199 $HOME/ords/gem/build

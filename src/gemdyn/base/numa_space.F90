@@ -25,9 +25,8 @@ module numa
 
       logical :: Numa_uniform_L
       integer :: Numa_sockcomm, nodecomm, Numa_peercomm, noderank, &
-                 Numa_sockrank, Numa_peerrank, win
+                 Numa_sockrank, Numa_peerrank
       integer :: Numa_cores_per_socket, Numa_active_cores_per_socket
-      type(C_PTR) :: baseptr
 
 contains
 
@@ -48,10 +47,15 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-      if (Ptopo_npey > Numa_cores_per_socket) then
-         Numa_uniform_L = mod(Ptopo_npey,Numa_cores_per_socket)==0
+!!! ns = Numa_cores_per_socket is not working at the moment
+!!! so we will use the hard coded value 20 that we eventually
+!!! will replaced by an env variable for external control
+      
+      ns = 20 ! on most of our current systems
+      if (Ptopo_npey > ns) then
+         Numa_uniform_L = mod(Ptopo_npey,ns)==0
       else
-         Numa_uniform_L = mod(Numa_cores_per_socket,Ptopo_npey)==0
+         Numa_uniform_L = mod(ns,Ptopo_npey)==0
       endif
 
       NuRNuP= 0.
@@ -85,19 +89,33 @@ contains
       subroutine numa_space (F_pntr, F_msize, F_err)
       implicit none
 
-      include 'mpif.h'
-      include 'rpn_comm.inc'
-      
-      integer F_err
-      integer(KIND=MPI_ADDRESS_KIND) :: F_msize
-      integer, dimension(:), pointer :: F_pntr
+      integer            , intent(OUT) :: F_err
+      integer(kind=INT64), intent(IN ) :: F_msize
+      integer, dimension(:), pointer, intent(INOUT) :: F_pntr
 
-      integer ierr
+      type(C_PTR) :: baseptr
+      integer(KIND=MPI_ADDRESS_KIND) :: wsiz
+      integer :: rank,ierr,dispunit,win
 !
 !     ---------------------------------------------------------------
-
-      call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, win, &
-                                          baseptr, F_err )
+!
+      F_err = -1
+      call MPI_comm_rank ( Numa_sockcomm, rank, ierr )
+      if (ierr .ne. MPI_SUCCESS) return
+      if(rank == 0) then        ! everythng allocated by rank 0
+         wsiz = F_msize
+      else
+         wsiz = 0
+      endif
+      dispunit = 4              ! words (integers/floats)
+      wsiz = wsiz * dispunit    ! size in Bytes
+      call MPI_win_allocate_shared (wsiz, dispunit, MPI_INFO_NULL,&
+                                 Numa_sockcomm, baseptr, win, ierr)
+      if (ierr .ne. MPI_SUCCESS) return
+      call MPI_win_shared_query (win, MPI_PROC_NULL, wsiz, dispunit,&
+                                 baseptr, F_err)
+!call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, win, &
+!                                          baseptr, F_err )
       nullify(F_pntr)
       call c_f_pointer( baseptr, F_pntr, [1] )
 !

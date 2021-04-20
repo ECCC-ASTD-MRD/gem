@@ -21,6 +21,7 @@
       use cstv
       use dynkernel_options
       use dyn_fisl_options
+      use gem_options
       use glb_ld
       use mem_tracers
       use step_options
@@ -77,7 +78,7 @@
       !                    |Lauritzen et al.,2015,GMD,8,1299-1313            |
       !----------------------------------------------------------------------|
 
-      integer :: istat,istat1,istat2,istat3,istat4,i,j,k
+      integer :: istat,istat1,istat2,istat3,istat4,i,j,k,i0,in,j0,jn
       real, dimension (:,:,:), pointer :: cl,cl2,q1,q2,q3,q4
       real, dimension (Mminx:Mmaxx,Mminy:Mmaxy) :: topo_case5
       real, parameter :: CLY_REF = 4.*10.**(-6)
@@ -85,6 +86,9 @@
 !---------------------------------------------------------------------
 !
       if (Williamson_case==7) return
+
+      i0= 1-G_halox ; in= l_ni+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy
 
       !Setup 2D Advection runs
       !-----------------------
@@ -104,7 +108,7 @@
 
             !Initialize Q1 REFERENCE
             !-----------------------
-            q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk)
+            q1ref(i0:in,j0:jn,1:Nk) = q1(i0:in,j0:jn,1:Nk)
 
             else if (Williamson_Nair==1.or.Williamson_Nair==2) then
 
@@ -124,10 +128,10 @@
 
             !Initialize Q1,Q2,Q3,Q4 REFERENCE
             !--------------------------------
-            q1ref(1:l_ni,1:l_nj,1:Nk) = q1(1:l_ni,1:l_nj,1:Nk)
-            q2ref(1:l_ni,1:l_nj,1:Nk) = q2(1:l_ni,1:l_nj,1:Nk)
-            q3ref(1:l_ni,1:l_nj,1:Nk) = q3(1:l_ni,1:l_nj,1:Nk)
-            q4ref(1:l_ni,1:l_nj,1:Nk) = q4(1:l_ni,1:l_nj,1:Nk)
+            q1ref(i0:in,j0:jn,1:Nk) = q1(i0:in,j0:jn,1:Nk)
+            q2ref(i0:in,j0:jn,1:Nk) = q2(i0:in,j0:jn,1:Nk)
+            q3ref(i0:in,j0:jn,1:Nk) = q3(i0:in,j0:jn,1:Nk)
+            q4ref(i0:in,j0:jn,1:Nk) = q4(i0:in,j0:jn,1:Nk)
 
          else
 
@@ -148,11 +152,11 @@
 
             !Initialize CLY
             !--------------
-            cly(1:l_ni,1:l_nj,1:Nk) = cl(1:l_ni,1:l_nj,1:Nk) + 2.0d0 * cl2(1:l_ni,1:l_nj,1:Nk)
+            cly(i0:in,j0:jn,1:Nk) = cl(i0:in,j0:jn,1:Nk) + 2.0d0 * cl2(i0:in,j0:jn,1:Nk)
 
             !Initialize CLY REFERENCE
             !------------------------
-            clyref(1:l_ni,1:l_nj,1:Nk) =  CLY_REF
+            clyref(i0:in,j0:jn,1:Nk) =  CLY_REF
 
          end if
 
@@ -202,14 +206,14 @@
 
       if (Williamson_case==1) return
 
-      if (Williamson_case==5) F_topo(1:l_ni,1:l_nj) = topo_case5(1:l_ni,1:l_nj)*grav_8
+      if (Williamson_case==5) F_topo(i0:in,j0:jn) = topo_case5(i0:in,j0:jn)*grav_8
 
       !Initialize log(surface pressure)
       !--------------------------------
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
 
-         do j=1,l_nj
-           do i=1,l_ni
+         do j=j0,jn
+           do i=i0,in
               F_s(i,j) = (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
                          /(Rgasd_8*Cstv_Tstr_8) &
                          +Ver_z_8%m(1)-Cstv_Zsrf_8
@@ -221,8 +225,8 @@
       else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
         do k=1,G_nk+1
-           do j=1,l_nj
-              do i=1,l_ni
+           do j=j0,jn
+              do i=i0,in
                  F_q(i,j,k) = grav_8*F_gz(i,j,1) - 1.0d0/Cstv_invFI_8
               end do
             end do

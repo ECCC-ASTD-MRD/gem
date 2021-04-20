@@ -38,6 +38,7 @@ module adz_options
    namelist /adz_cfgs/ adz_BC_min_max_L
 
    !# Type of Flux when Bermejo-Conde LAM
+   !# * 0 -> NONE
    !# * 1 -> Aranami et al. (2015)
    !# * 2 -> Zerroukat and Shipway (2017) (ZLF)
    integer :: Adz_BC_LAM_flux = 1
@@ -105,6 +106,10 @@ module adz_options
    integer :: adz_pil_sub_e   = -1
    namelist /adz_cfgs/ adz_pil_sub_e_g
 
+   !# Top boundary in GY for an embedded LAM
+   integer :: adz_k0t_sub = 1
+   namelist /adz_cfgs/ adz_k0t_sub
+
    !# Core/Subset areas
    real(kind=REAL64) :: adz_gc_area_8,adz_gs_area_8
 
@@ -113,7 +118,6 @@ contains
 !**s/r adz_nml - Read namelist adz
 
       integer function adz_nml (F_unf)
-      use adv_grid
       use HORgrid_options
       use lun
       implicit none
@@ -158,9 +162,6 @@ contains
  6007 format (/,' NAMELIST ',A,' IS INVALID'/)
 ! boiler plate - end
 
-      adv_maxcfl= max(1,Grd_maxcfl)
-      adv_halox = adv_maxcfl + 1
-      adv_haloy = adv_halox
       if (Adz_BC_LAM_flux==2) adz_maxcfl_fact = 2
 !
 !-------------------------------------------------------------------

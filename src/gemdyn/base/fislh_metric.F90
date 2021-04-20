@@ -42,8 +42,8 @@
 !     ---------------------------------------------------------------
 
       if(.not.done) then
-         allocate ( zmom(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                    ztht(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+         allocate (   zmom(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                      ztht(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
                     zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
                     ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
                 lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
@@ -59,12 +59,12 @@
          allocate ( mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
                     mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy))
+                    mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy) )
 
          if (Schm_opentop_L) then
             allocate ( mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_cstp_8 (l_minx:l_maxx,l_miny:l_maxy))
+                       mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                       mc_cstp_8  (l_minx:l_maxx,l_miny:l_maxy) )
          end if
          done=.true.
       end if
@@ -88,14 +88,15 @@
       end do
 
       do k=1,G_nk
-         do j=1-G_haloy+1,l_nj+G_haloy-1
-            do i=1-G_halox+1,l_ni+G_halox-1
+         do j=1-G_haloy,l_nj+G_haloy-1
+            do i=1-G_halox,l_ni+G_halox-1
                mc_Jx_8 (i,j,k)=(zmom_8(i+1,j,k)-zmom_8(i,j,k))*geomh_invDX_8(j)
                mc_Jy_8 (i,j,k)=(zmom_8(i,j+1,k)-zmom_8(i,j,k))*geomh_invDY_8
                mc_iJz_8(i,j,k)=one/(zmom_8(i,j,k+1)-zmom_8(i,j,k))
             end do
          end do
       end do
+
       ztht_8(:,:,G_nk)=Cstv_bar1_8*fis0(:,:)/grav_8
       do k=1,G_nk
          do j=1-G_haloy+1,l_nj+G_haloy-1
@@ -104,11 +105,7 @@
                mc_Iy_8(i,j,k)=log( (ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(ztht_8(i,j-1,k)-ztht_8(i,j-1,k-1)) )*0.5d0*geomh_invDY_8
                mc_Iz_8(i,j,k)=log( (zmom_8(i,j,k+1)-zmom_8(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k)) &
                             /(zmom_8(i,j,k)-zmom_8(i,j,k-1))*(Ver_z_8%m(k)-Ver_z_8%m(k-1)) )*Ver_idz_8%m(k)
-      !        mc_Ix_8(i,j,k)=0.0
-      !        mc_Iy_8(i,j,k)=0.0
-      !        mc_Iz_8(i,j,k)=0.0
-      !        mc_logJz_8(i,j,k)=log( (ztht_8(i,j,k)-ztht_8(i,j,k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1)) )
-               mc_logJz_8(i,j,k)=0.0
+               mc_logJz_8(i,j,k)= 0.0
             end do
          end do
       end do

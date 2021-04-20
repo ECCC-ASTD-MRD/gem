@@ -249,6 +249,8 @@
 
       call spn_init()
 
+      call inp_init()
+
       call set_sor()
 
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')

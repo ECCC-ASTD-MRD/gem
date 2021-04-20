@@ -135,11 +135,11 @@
       !-----------------
       if (Dcmip_wd_L) then
 
-         call dcmip_vrd_fld (F_u,  uref,Dcmip_ref_wd,Dcmip_cp_wd_m,Dcmip_cm_wd_m,Minx,Maxx,Miny,Maxy,Nk)
-         call dcmip_vrd_fld (F_v,  vref,Dcmip_ref_wd,Dcmip_cp_wd_m,Dcmip_cm_wd_m,Minx,Maxx,Miny,Maxy,Nk)
+         call dcmip_vrd_fld (F_u,  uref,Dcmip_ref_wd,Dcmip_cp_wd_m,Dcmip_cm_wd_m,Minx,Maxx,Miny,Maxy,Nk,1,l_niu,1,l_nj )
+         call dcmip_vrd_fld (F_v,  vref,Dcmip_ref_wd,Dcmip_cp_wd_m,Dcmip_cm_wd_m,Minx,Maxx,Miny,Maxy,Nk,1,l_ni ,1,l_njv)
 
-         call dcmip_vrd_fld (F_w,  wref,Dcmip_ref_wd,Dcmip_cp_wd_t,Dcmip_cm_wd_t,Minx,Maxx,Miny,Maxy,Nk)
-         call dcmip_vrd_fld (F_zd,zdref,Dcmip_ref_wd,Dcmip_cp_wd_t,Dcmip_cm_wd_t,Minx,Maxx,Miny,Maxy,Nk)
+         call dcmip_vrd_fld (F_w,  wref,Dcmip_ref_wd,Dcmip_cp_wd_t,Dcmip_cm_wd_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
+         call dcmip_vrd_fld (F_zd,zdref,Dcmip_ref_wd,Dcmip_cp_wd_t,Dcmip_cm_wd_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
 
       end if
 
@@ -164,7 +164,7 @@
          end do
          end do
 
-         call dcmip_vrd_fld (th_p,thref,Dcmip_ref_th,Dcmip_cp_th_t,Dcmip_cm_th_t,Minx,Maxx,Miny,Maxy,Nk)
+         call dcmip_vrd_fld (th_p,thref,Dcmip_ref_th,Dcmip_cp_th_t,Dcmip_cm_th_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
 
          do k = 1,Nk
          do j = 1,l_nj
@@ -187,9 +187,9 @@
          if (Tr3d_name_S(n)=="QC") istat = tr_get('QC:P',tr)
          if (Tr3d_name_S(n)=="RW") istat = tr_get('RW:P',tr)
 
-         if (Tr3d_name_S(n)=="HU") call dcmip_vrd_fld (tr,qvref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk)
-         if (Tr3d_name_S(n)=="QC") call dcmip_vrd_fld (tr,qcref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk)
-         if (Tr3d_name_S(n)=="RW") call dcmip_vrd_fld (tr,qrref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk)
+         if (Tr3d_name_S(n)=="HU") call dcmip_vrd_fld (tr,qvref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
+         if (Tr3d_name_S(n)=="QC") call dcmip_vrd_fld (tr,qcref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
+         if (Tr3d_name_S(n)=="RW") call dcmip_vrd_fld (tr,qrref,Dcmip_ref_tr,Dcmip_cp_tr_t,Dcmip_cm_tr_t,Minx,Maxx,Miny,Maxy,Nk,1,l_ni,1,l_nj)
 
          do k=1,Nk
             do j=1,l_nj
@@ -211,9 +211,7 @@
 
 !**s/r dcmip_vrd_fld - Apply vertical diffusion over column on a given fld (Based on eqspng_drv)
 
-      subroutine dcmip_vrd_fld (F_fld,F_ref_fld,F_ref_on,F_cp,F_cm,Minx,Maxx,Miny,Maxy,Nk)
-
-      use glb_ld
+      subroutine dcmip_vrd_fld (F_fld,F_ref_fld,F_ref_on,F_cp,F_cm,Minx,Maxx,Miny,Maxy,Nk,F_i0,F_in,F_j0,F_jn)
 
       implicit none
 
@@ -221,7 +219,7 @@
 
       !arguments
       !---------
-      integer, intent(in)    :: Minx,Maxx,Miny,Maxy,Nk
+      integer, intent(in)    :: Minx,Maxx,Miny,Maxy,Nk,F_i0,F_in,F_j0,F_jn
       real,    intent(inout) :: F_fld(Minx:Maxx,Miny:Maxy,Nk)
       real,    intent(in)    :: F_ref_fld(Minx:Maxx,Miny:Maxy,Nk),F_cm(Nk),F_cp(Nk),F_ref_on
 
@@ -235,22 +233,22 @@
 !
 !---------------------------------------------------------------------
 !
-      allocate (w_fld(l_ni,l_nj,Nk),p_fld(l_ni,l_nj,Nk))
+      allocate (w_fld(F_i0:F_in,F_j0:F_jn,Nk),p_fld(F_i0:F_in,F_j0:F_jn,Nk))
 
-      p_fld (1:l_ni,1:l_nj,1:Nk) = F_fld (1:l_ni,1:l_nj,1:Nk) - F_ref_on * F_ref_fld(1:l_ni,1:l_nj,1:Nk)
+      p_fld (F_i0:F_in,F_j0:F_jn,1:Nk) = F_fld (F_i0:F_in,F_j0:F_jn,1:Nk) - F_ref_on * F_ref_fld(F_i0:F_in,F_j0:F_jn,1:Nk)
 
       do k=1,Nk
          kp=min(Nk,k+1)
          km=max(1,k-1)
-         do j=1,l_nj
-            do i=1,l_ni
+         do j=F_j0,F_jn
+            do i=F_i0,F_in
                w_fld(i,j,k)=p_fld(i,j,k)+(F_cp(k)*(p_fld(i,j,kp)-p_fld(i,j,k )) &
                                          -F_cm(k)*(p_fld(i,j,k )-p_fld(i,j,km)))
             end do
          end do
       end do
 
-      F_fld(1:l_ni,1:l_nj,1:Nk) = w_fld(1:l_ni,1:l_nj,1:Nk) + F_ref_on * F_ref_fld(1:l_ni,1:l_nj,1:Nk)
+      F_fld(F_i0:F_in,F_j0:F_jn,1:Nk) = w_fld(F_i0:F_in,F_j0:F_jn,1:Nk) + F_ref_on * F_ref_fld(F_i0:F_in,F_j0:F_jn,1:Nk)
 
       deallocate(w_fld,p_fld)
 !

@@ -49,14 +49,14 @@
       character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S  = 'ref-t'
 
-      character(len=32) :: REFP0_S, REFP0_LS_S, dumc
-      integer k,istat,pnip1,options_readwrite,options_readonly,ier
+      character(len=32) :: REFP0_S, REFP0_LS_S
+      character(len=32) :: dumc
+      integer k,istat,pnip1,options_readwrite,options_readonly,err
       integer, dimension(:), pointer :: wkpti
       real flat
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
       real(kind=REAL64), dimension(:), pointer :: wkpt8
-      character(len=VGD_LEN_NAME) :: rfls_S
 !     __________________________________________________________________
 !
       if (G_nk<3) call gem_error(-1,'fislh_hybrid','NOT ENOUGH LEVELS')
@@ -90,18 +90,21 @@
          flat = max(min(F_hybuser(1),Hyb_flat),0.)
       endif
       
+      Schm_sleve_L= .false. ; err= 0
+      if (   Hyb_rcoef(3) >= 0. .or. Hyb_rcoef(4) >= 0. ) then
+         if( Hyb_rcoef(3) <  0. .or. Hyb_rcoef(4) <  0. ) err= -1
+         Schm_sleve_L= .true.
+      endif
+
       istat = vgd_new ( Ver_vgdobj, kind=Level_kind_ip1,&
                    version=Level_version, hyb=F_hybuser,&
                rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2),&
                rcoef3=Hyb_rcoef(3), rcoef4=Hyb_rcoef(4),&
                           dhm=0., dht=0., hyb_flat=flat )
-
+                         
       if (Lun_debug_L) istat = vgd_print(Ver_vgdobj)
 
-      call handle_error_l(istat==VGD_OK,'fislh_hybrid','coordinate construction failed')
-
-      ier = vgd_get(Ver_vgdobj,'RFLS large scale reference field',rfls_S,quiet=.true.)
-      Schm_sleve_L = trim(rfls_S) /= VGD_NO_REF_NOMVAR
+      call gem_error(min(err,istat),'fislh_hybrid','coordinate construction failed')
 
       ! Retrieve information required to fill model arrays
       nullify(wkpt,wkpti,wkpt8)
@@ -126,9 +129,6 @@
       if (vgd_get(Ver_vgdobj,'VIPT - level ip1 list (t)'        ,wkpti) /= VGD_OK) istat = VGD_ERROR
       Ver_ip1%t = wkpti(1:size(Ver_ip1%t)); deallocate(wkpti); nullify(wkpti)
 
-!      print*,'istat, VGD_ERROR',istat,VGD_ERROR
-
-      print*,'WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING'
       if( vgd_stda76(Ver_vgdobj, Ver_ip1%m, std_p_prof, 'PRESSURE') /= VGD_OK) istat = VGD_ERROR
       Ver_std_p_prof%m=std_p_prof
       deallocate(std_p_prof)
@@ -138,14 +138,12 @@
       call handle_error_l(istat==VGD_OK, &
                 'fislh_hybrid','retrieving coordinate info')
 
-      print*,"TODO in fislh_hybrid compute Cstv_ptop_8?"
       Cstv_ptop_8=-1.
 
       !-------------------------------
       ! Define z(m/t/x) from A(m/t):
       !-------------------------------
-! Level top is at level 1 plus half of delta between level 1 and 2.
-
+      ! Level top is at level 1 plus half of delta between level 1 and 2.
       Ver_z_8%m(0) = 0.5d0 * ( 3.d0*Ver_a_8%m(1) - Ver_a_8%m(2) )
       do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)
@@ -183,7 +181,6 @@
 !     ----------------------
 
       do k=1,G_nk
-!         Ver_dz_8%m(k)  = Ver_z_8%x(k) - Ver_z_8%t(k-1)
           Ver_dz_8%m(k)  = Ver_z_8%t(k) - Ver_z_8%t(k-1)
           Ver_idz_8%m(k) = one/Ver_dz_8%m(k)
           Ver_dz_8%t(k)  = Ver_z_8%m(k+1) - Ver_z_8%m(k)

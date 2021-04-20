@@ -16,6 +16,7 @@
 !**s/r ta2t1tx -  Transfer variables ta into t1
 
       subroutine ta2t1tx
+      use glb_ld
       use gmm_vt1
       use gmm_vta
       use gem_options
@@ -26,9 +27,14 @@
 !
 !     ---------------------------------------------------------------
 !
-      ut1  = uta ; vt1  = vta ; wt1  = wta
-      tt1  = tta ; zdt1 = zdta; qt1  = qta
-      st1  = sta ; trt1 = trdf
+       ut1(1:l_ni,1:l_nj,:)=  uta(1:l_ni,1:l_nj,:)
+       vt1(1:l_ni,1:l_nj,:)=  vta(1:l_ni,1:l_nj,:)
+       wt1(1:l_ni,1:l_nj,:)=  wta(1:l_ni,1:l_nj,:)
+       tt1(1:l_ni,1:l_nj,:)=  tta(1:l_ni,1:l_nj,:)
+      zdt1(1:l_ni,1:l_nj,:)= zdta(1:l_ni,1:l_nj,:)
+       qt1(1:l_ni,1:l_nj,:)=  qta(1:l_ni,1:l_nj,:)
+       st1(1:l_ni,1:l_nj  )=  sta(1:l_ni,1:l_nj  )
+      trt1 = trdf
 !
 !     ---------------------------------------------------------------
 !

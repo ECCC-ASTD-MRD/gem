@@ -32,14 +32,15 @@ module gmm_geof
 !
 !
       real, pointer, contiguous, dimension (:,:) :: fis0      => null()
+      real, pointer, contiguous, dimension (:,:) :: orols     => null()
       real, pointer, contiguous, dimension (:,:) :: sls       => null()
-      real, pointer, contiguous, dimension (:,:) :: topo_low  => null()
-      real, pointer, contiguous, dimension (:,:) :: topo_high => null()
+      real, pointer, contiguous, dimension (:,:,:) :: topo_low  => null()
+      real, pointer, contiguous, dimension (:,:,:) :: topo_high => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
       character(len=MAXNAMELENGTH) :: &
-      gmmk_fis0_s, gmmk_sls_s, gmmk_topo_low_s, gmmk_topo_high_s
+      gmmk_fis0_s, gmmk_orols_s, gmmk_sls_s, gmmk_topo_low_s, gmmk_topo_high_s
 
 
 end module gmm_geof

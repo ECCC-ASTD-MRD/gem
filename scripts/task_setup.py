@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 #/* Part of the Maestro sequencer software package.
 # * Copyright (C) 2011-2015  Canadian Meteorological Centre
@@ -55,8 +55,8 @@ CONFIG CLASS
   CLASS VARIABLES
     configData - Cached copy of the data read from the configuration file.
     configFile - Name of the configuration file.
-    taskdir    - User-specified (not true-path'd) path to task directory.
-    basepath   - True path to working directory below task level.
+    taskdir    - User-specified (not real-path'd) path to task directory.
+    basepath   - Real path to working directory below task level.
     taskname   - Task name.
     subdir_sectionMap - Name mapping from configuration file sections to
          task subdirectories.
@@ -205,8 +205,8 @@ def resolveKeywords(entry,delim_exec='',set=None,verbose=False,internals={}):
     updated = ''.join(elements)
     return({'string':updated,'contains_internal':found_internal})
 
-def getTruePath(node,verbosity):
-    """Get the true path of a file/directory"""
+def getRealPath(node,verbosity):
+    """Get the real path of a file/directory"""
     if node == "": return ""  
     have_subprocess=True
     if (int(verbosity) >= 2): startTime=time()
@@ -215,26 +215,26 @@ def getTruePath(node,verbosity):
     except ImportError:
         have_subprocess=False            
     try:
-        get_true_path = "true_path "+node
+        get_real_path = "realpath "+node
         if have_subprocess:
-            p = subprocess.Popen(get_true_path,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p = subprocess.Popen(get_real_path,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             true_src = p.stdout.read()                
             error_out = p.stderr.read()
         else:
-            (stdin,stdout,stderr) = os.popen3(get_true_path,'r')
+            (stdin,stdout,stderr) = os.popen3(get_real_path,'r')
             true_src = stdout.read()
             error_out = stderr.read() 
             stdin.close()
             stdout.close()
             stderr.close()
         if true_src == '(null)' or not true_src or re.search('No such file or directory$',true_src,re.M):
-            print "Warning: true_path on " + node + " returned " + error_out 
+            print "Warning: real_path on " + node + " returned " + error_out 
             true_src = node
     except OSError:
         if (os.path.exists(node)):
-            print "Warning: true_path does not exist or returned an error for "+src_file
+            print "Warning: real_path does not exist or returned an error for "+src_file
         true_src = node
-    if (int(verbosity) >= 2): print("Info 2: getTruePath exec time: " + str( time() - startTime))
+    if (int(verbosity) >= 2): print("Info 2: getRealPath exec time: " + str( time() - startTime))
     return(true_src)
 
 class LinkFile():
@@ -289,7 +289,7 @@ class LinkFile():
 
     def _trueSources(self):
         """Get true source paths for entries"""
-        self.true_src_file = [getTruePath(src_file,self.verbosity) for src_file in self.src]
+        self.true_src_file = [getRealPath(src_file,self.verbosity) for src_file in self.src]
 
     def _setPrefixes(self):
         """Set hosts and prefixes for entries"""
@@ -684,8 +684,8 @@ class Config(dict):
         elif not os.access(self.taskdir,os.W_OK):
             print "Error: task directory "+self.taskdir+" is not writeable ... exiting"
             return(self.error)
-        # Set task name and working path (needs to exist for `true_path` so it can't be done during construction)
-        basedir = getTruePath(self.taskdir,self.verbosity)
+        # Set task name and working path (needs to exist for `real_path` so it can't be done during construction)
+        basedir = getRealPath(self.taskdir,self.verbosity)
         self.basepath = os.path.dirname(basedir)
         self.taskname = os.path.basename(basedir)
         return(status)
@@ -769,10 +769,10 @@ class Config(dict):
                                        "create_target":False,
                                        "link_host":None,
                                        "link_only":False})
-        true_path=which('true_path',verbose=self.verbosity)
-        if true_path:
-            self._append_meta("setup",{"link":"task_setup_truepath",
-                                       "target":[true_path],
+        real_path=which('realpath',verbose=self.verbosity)
+        if real_path:
+            self._append_meta("setup",{"link":"task_setup_realpath",
+                                       "target":[real_path],
                                        "target_type":'file',
                                        "target_host":[None],
                                        "copy":False,
@@ -944,7 +944,7 @@ class Config(dict):
                 for i in range(len(line.src)-1,-1,-1):
 
                     # Retrieve information about the source file
-                    true_src_file = line.true_src_file[i]
+                    true_src_file = line.true_src_file[i].rstrip('\n')
                     src_file_prefix = line.src_file_prefix[i]
 
                     # Retrieve information about the destination
@@ -1006,7 +1006,7 @@ class Config(dict):
                                     if entry["create_target"]:
                                         status_create = self._createTarget(entry,line.host[i],true_src_file)
                                         if status == self.ok: status = status_create
-                                        true_src_file = getTruePath(true_src_file,self.verbosity)
+                                        true_src_file = getRealPath(true_src_file,self.verbosity)
                                         if true_src_file == "":
                                            print "Error: attempting to create link to empty target string."
                                            status = self.error

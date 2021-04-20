@@ -23,7 +23,7 @@
 !---------------------------------------------------------------------
 !
       Adz_niter = max( 6, Adz_itraj )
-      do k = 1, l_nk
+      do k = Adz_k0m, l_nk
          do j = 1, l_nj
             do i = 1, l_ni
                Adz_pxyzm(1,i,j,k) = i + l_i0 - 1

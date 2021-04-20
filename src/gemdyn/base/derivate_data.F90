@@ -15,17 +15,19 @@
 
 !** s/r derivate_data
 
-      subroutine derivate_data ( F_zd, F_w, F_u, F_v, F_t, F_s, F_q, &
-                                 Minx, Maxx, Miny, Maxy, Nk        , &
-                                 F_zd_L, F_w_L )
+      subroutine derivate_data ( F_zd, F_w, F_u, F_v, F_t, F_s, F_q   ,&
+                                 F_topo, F_sls, Minx, Maxx, Miny, Maxy,&
+                                 Nk,F_zd_L, F_w_L, F_q_L )
       use cstv
       use dynkernel_options
       use dyn_fisl_options
+      use gem_options
       use glb_ld
       implicit none
 
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
-      logical, intent(in) :: F_zd_L, F_w_L
+      logical, intent(in) :: F_zd_L, F_w_L, F_q_L
+      real, dimension(Minx:Maxx,Miny:Maxy   ), intent(in):: F_topo, F_sls
       real, dimension(Minx:Maxx,Miny:Maxy   ), intent(inout ):: F_s
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out)   :: F_zd, F_w,F_q
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_u, F_v, F_t
@@ -39,21 +41,24 @@
          case ('DYNAMICS_FISL_H')
             if (Schm_autobar_L) then
                do k=1,G_nk+1
-                  F_q(1:l_ni,1:l_nj,k) = F_s(1:l_ni,1:l_nj) - 1.0d0/Cstv_invFI_8
+                  F_q(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,k) = &
+                  F_s(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) - 1.0d0/Cstv_invFI_8
                end do
                F_zd = 0. ; F_w = 0.
                return
             end if
-            call fislh_pres ( F_q, F_s, F_t, &
-                              Minx, Maxx, Miny, Maxy, Nk)
+            call fislh_pres ( F_q, F_s, F_t, F_topo, F_sls, &
+                              Minx, Maxx, Miny, Maxy, Nk, F_q_L)
             call fislh_diag_zd_w( F_zd, F_w, F_u, F_v, F_t, F_q,&
                                   Minx, Maxx, Miny, Maxy, Nk,&
                                   F_zd_L, F_w_L)
 
          case ('DYNAMICS_FISL_P')
-            F_q = 0.
-            F_s(1:l_ni,1:l_nj) = log(F_s(1:l_ni,1:l_nj)/Cstv_pref_8)
-            call diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s,&
+            F_q= 0.
+            F_s(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) = &
+            log(F_s(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)/Cstv_pref_8)
+            F_s(:,l_nj+G_haloy+1:)= 0. ; F_s(l_ni+G_halox+1:,:)= 0.
+            call diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s, F_sls,&
                              Minx, Maxx, Miny, Maxy, Nk   ,&
                              F_zd_L, F_w_L )
 

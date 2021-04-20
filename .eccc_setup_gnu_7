@@ -13,5 +13,5 @@ export COMPILER_name=gnu
 COMPILER_version=$(project/compiler.sh gnu)
 export COMPILER_version
 
-. ./.common_eccc_setup gnu
+. ./.common_setup gnu
 

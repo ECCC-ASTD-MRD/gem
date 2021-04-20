@@ -45,7 +45,7 @@
 
       include 'rpn_comm.inc'
 
-      integer :: n,err,i,j,g_i0,g_in,g_j0,g_jn,i0_sb,in_sb,j0_sb,jn_sb,comm
+      integer :: n,err,i,j,g_i0,g_in,g_j0,g_jn,i0_sb,in_sb,j0_sb,jn_sb,comm,flux_keep
 
       real(kind=REAL64)  :: c_area_8,s_area_8,gc_area_8
 
@@ -57,6 +57,11 @@
 !
 !---------------------------------------------------------------------
 !
+      if (Adz_BC_LAM_flux<0.or.Adz_BC_LAM_flux>2) &
+         call handle_error(-1,'ADZ_CHECK_TRACERS','BC_LAM_FLUX not valid-1')
+
+      flux_keep = Adz_BC_LAM_flux
+
       BC_LAM_L = .false.
 
       do n=1,Tr3d_ntr
@@ -70,14 +75,24 @@
 
       end do
 
+      if (BC_LAM_L.and.Adz_BC_LAM_flux==0) & 
+         call handle_error(-1,'ADZ_CHECK_TRACERS','BC_LAM_FLUX not valid-2')
+
       if (Grd_yinyang_L) Adz_BC_LAM_flux = 0
 
       psadj_LAM_flux_L = .false.
       if (Schm_psadj>0.and..not.Grd_yinyang_L) psadj_LAM_flux_L = .true.
 
+      if (.not.BC_LAM_L.and.psadj_LAM_flux_L.and.Adz_BC_LAM_flux==0) Adz_BC_LAM_flux = 1
+
+      if (.not.BC_LAM_L.and..not.psadj_LAM_flux_L) Adz_BC_LAM_flux = 0
+
+      if (Adz_verbose/=0.and.flux_keep/=Adz_BC_LAM_flux) &
+         write(Lun_out,*) 'Revised Adz_BC_LAM_flux = ',Adz_BC_LAM_flux,'(INTERNAL PURPOSE)'
+
       !Bermejo-Conde LAM Flux=1/PSADJ LAM: Set mask_o/mask_i for Flux calculations based on Aranami et al. (2015)
       !----------------------------------------------------------------------------------------------------------
-      if ((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L) then
+      if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and..not.ADZ_OD_L) then
 
          allocate (Adz_BC_LAM_mask_o(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
                    Adz_BC_LAM_mask_i(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk))
@@ -85,6 +100,14 @@
          call adz_BC_LAM_setup (Adz_BC_LAM_mask_o,Adz_BC_LAM_mask_i,     &
                                 Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, &
                                 l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
+
+      else if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and.ADZ_OD_L) then
+
+         allocate (Adz_BC_LAM_mask_o(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
+                   Adz_BC_LAM_mask_i(l_minx:l_maxx,l_miny:l_maxy,l_nk))
+
+         call adz_od_BC_LAM_setup (Adz_BC_LAM_mask_o,Adz_BC_LAM_mask_i, &
+                                   l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
 
       end if
 
