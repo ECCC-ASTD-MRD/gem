@@ -10,11 +10,12 @@ stages:
 build:
   stage: build
   script:
+    - . ./link-dbase.sh
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
     - make
     - make work
-    - cd work
+    - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
     - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
