@@ -92,7 +92,7 @@
 
       !Bermejo-Conde LAM Flux=1/PSADJ LAM: Set mask_o/mask_i for Flux calculations based on Aranami et al. (2015)
       !----------------------------------------------------------------------------------------------------------
-      if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and..not.ADZ_OD_L) then
+!!$      if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and..not.ADZ_OD_L) then
 
          allocate (Adz_BC_LAM_mask_o(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
                    Adz_BC_LAM_mask_i(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk))
@@ -101,15 +101,15 @@
                                 Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, &
                                 l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
 
-      else if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and.ADZ_OD_L) then
-
-         allocate (Adz_BC_LAM_mask_o(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
-                   Adz_BC_LAM_mask_i(l_minx:l_maxx,l_miny:l_maxy,l_nk))
-
-         call adz_od_BC_LAM_setup (Adz_BC_LAM_mask_o,Adz_BC_LAM_mask_i, &
-                                   l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
-
-      end if
+!!$      else if (((BC_LAM_L.and.Adz_BC_LAM_flux==1).or.psadj_LAM_flux_L).and.ADZ_OD_L) then
+!!$
+!!$         allocate (Adz_BC_LAM_mask_o(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
+!!$                   Adz_BC_LAM_mask_i(l_minx:l_maxx,l_miny:l_maxy,l_nk))
+!!$
+!!$         call adz_od_BC_LAM_setup (Adz_BC_LAM_mask_o,Adz_BC_LAM_mask_i, &
+!!$                                   l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
+!!$
+!!$      end if
 
       !Check if Bermejo-Conde LAM Flux=2 is required for at least one tracer
       !---------------------------------------------------------------------

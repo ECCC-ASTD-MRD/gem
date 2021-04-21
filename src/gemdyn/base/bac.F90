@@ -53,6 +53,7 @@
 
 
       integer :: i, j, k, km, nij, k0t
+      real :: w5,w6
       real(kind=REAL64)  :: w1, w2, w3, w4, Pbar, qbar
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real  , dimension(Minx:Maxx,Miny:Maxy,Nk+1) :: GP
@@ -88,8 +89,9 @@
 
          do j= j0, jn
             do i= i0, in
-               GP(i,j,k0-1) = Ver_alfat_8 * F_lhs_sol(i,j,k0) &
-                            + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+               w5 = Ver_alfat_8 * F_lhs_sol(i,j,k0)
+               w6 = Ver_cst_8   * (F_rb(i,j)-F_nb(i,j))
+               GP(i,j,k0-1) = w5 + w6
             end do
          end do
 
@@ -97,9 +99,10 @@
 
       do j= j0, jn
          do i= i0, in
-            GP(i,j,l_nk+1)  = Ver_alfas_8 * F_lhs_sol(i,j,l_nk)   &
-                            + Ver_betas_8 * F_lhs_sol(i,j,l_nk-1) &
-                            - Ver_css_8*(F_rt(i,j,l_nk)-F_nt(i,j,l_nk))
+            w5 =  Ver_alfas_8 * F_lhs_sol(i,j,l_nk  )   &
+                + Ver_betas_8 * F_lhs_sol(i,j,l_nk-1)
+            w6 =  Ver_css_8 * (F_rt(i,j,l_nk)-F_nt(i,j,l_nk))
+            GP(i,j,l_nk+1)= w5 -w6
          end do
       end do
 

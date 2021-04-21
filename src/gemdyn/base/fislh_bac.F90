@@ -59,6 +59,7 @@
 
 !
       integer :: i, j, k, km, k0t
+      real :: w5,w6
       real(kind=REAL64)  :: Buoy
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !     __________________________________________________________________
@@ -96,8 +97,9 @@
 
          do j= j0, jn
             do i= i0, in
-               F_q(i,j,k0-1) = mc_alfat_8(i,j) * F_lhs_sol(i,j,k0) &
-                         - mc_cst_8(i,j)*(F_rb(i,j)-F_nb(i,j))
+               w5= mc_alfat_8(i,j) * F_lhs_sol(i,j,k0)
+               w6= mc_cst_8  (i,j) * (F_rb(i,j)-F_nb(i,j))
+               F_q(i,j,k0-1) = w5 - w6
             end do
          end do
 

@@ -71,9 +71,11 @@
       call gemtime_terminate( Ptopo_myproc, 'GEMDM' )
 
       if (Lun_out > 0) then
-         do i=1, size(nexports)
-            print*, 'EXPORTS: ',i,nexports(i)/Ptopo_numproc
-         enddo
+         if (ADZ_OD_L) then
+            do i=1, size(nexports)
+               print*, 'EXPORTS: ',i,nexports(i)/Ptopo_numproc
+            enddo
+         endif
          err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
       end if
 

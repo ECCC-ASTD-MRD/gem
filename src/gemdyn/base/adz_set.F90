@@ -46,6 +46,8 @@
       real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
       real(kind=REAL128) :: smallest_dz,posz
+      real   , dimension(:,:), contiguous, pointer :: temp_rptr
+      integer, dimension(:,:), contiguous, pointer :: temp_iptr
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
@@ -54,11 +56,11 @@
       integer(KIND=MPI_ADDRESS_KIND) :: WINSIZE
       type(C_PTR), save :: BASEPTR_q,BASEPTR_u,BASEPTR_v,BASEPTR_t,&
                            BASEtrajq,BASEtraju,BASEtrajv,BASEtrajt,&
-                           BASEcor, BASECOFFS
+                           BASEcor, BASECOFFS, BASEPTR_list, BASEPTR_pos
 !
 !---------------------------------------------------------------------
 !
-      ADZ_OD_L= .true.
+      ADZ_OD_L= .false.
 
       if (ADZ_OD_L) then
          Adz_halox = G_halox
@@ -411,11 +413,36 @@
       INTEGER_DATATYPE = RPN_COMM_datyp('MPI_INTEGER')
       REAL_DATATYPE    = RPN_COMM_datyp('MPI_REAL'   )
       
+      dim= 2*Ptopo_world_numproc * 4
+      WINSIZE  = dim * 4 ! will allocate dim integers of 4 bytes each
+      DISP_UNIT= 4       ! window displacement unit = size of an integer
+
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_list, Adz_Win_list, ierr)
+      call c_f_pointer (BASEPTR_list, temp_iptr, [2*Ptopo_world_numproc,4])
+      Adz_expq%list(1:dim) => temp_iptr(1:dim,1)
+      Adz_expu%list(1:dim) => temp_iptr(1:dim,2)
+      Adz_expv%list(1:dim) => temp_iptr(1:dim,3)
+      Adz_expt%list(1:dim) => temp_iptr(1:dim,4)
+      
+      dim = Adz_MAX_MPI_OS_SIZE * 3 * 4
+      WINSIZE= dim * 4 ! will allocate dim reals of 4 bytes each
+      
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_pos, Adz_Win_pos, ierr)
+      call c_f_pointer (BASEPTR_pos, temp_rptr, [2*Ptopo_world_numproc,4])
+      Adz_expq%pos(1:dim) => temp_rptr(1:dim,1)
+      Adz_expu%pos(1:dim) => temp_rptr(1:dim,2)
+      Adz_expv%pos(1:dim) => temp_rptr(1:dim,3)
+      Adz_expt%pos(1:dim) => temp_rptr(1:dim,4)
+
+
+
+      
+      
       dim=2*Ptopo_world_numproc
       WINSIZE   = dim * 4 ! will allocate dim integers of 4 bytes each
       DISP_UNIT = 4       ! window displacement unit = size of an integer
       INFO = 0                  ! MPI_INFO_NULL
-      
+
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_q, Adz_expq%winreqs, ierr)
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_u, Adz_expu%winreqs, ierr)
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_v, Adz_expv%winreqs, ierr)

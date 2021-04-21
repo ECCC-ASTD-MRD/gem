@@ -63,8 +63,6 @@
             end do
          end do
       end do
-      call adz_od_request (Adz_expu,Adz_i0u,Adz_inu,Adz_j0,Adz_jn,&
-                           Adz_k0,l_nk,xm,ym,zm,l_ni,l_nj,l_nk)
 
       do k= Adz_k0, l_nk
          do j= Adz_j0v, Adz_jnv
@@ -82,8 +80,6 @@
            end do
          end do
       end do
-      call adz_od_request (Adz_expv,Adz_i0,Adz_in,Adz_j0v,Adz_jnv,&
-                           Adz_k0,l_nk,xm,ym,zm,l_ni,l_nj,l_nk)
       
 ! Prepare parameters for cubic vertical intepolation
       do k=2,l_nk-2
@@ -220,9 +216,6 @@
       if (adz_BC_LAM_flux==0) then 
       i0= Adz_i0  ; in= Adz_in  ; j0= Adz_j0  ; jn= Adz_jn
       end if
-
-      call adz_od_request (Adz_expt, i0,in,j0,jn, k00,l_nk, &
-                           xm,ym,zm, l_ni,l_nj,l_nk)
 
       Adz_pt  (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)=&
       pxyzt   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)

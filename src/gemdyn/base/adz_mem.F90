@@ -124,11 +124,15 @@ module adz_mem
       type :: ADZ_SLOD
          integer npe,winreqs,wintraj
          integer, dimension (:,:), allocatable :: stk,dest
-         integer, dimension (:  ), pointer     :: from
-         real   , dimension (:  ), pointer     :: requests
+         integer, dimension (:  ), pointer     :: from,list
+         real   , dimension (:  ), pointer     :: requests,pos
          real   , dimension (:,:), allocatable :: gpos
       end type ADZ_SLOD
       type(ADZ_SLOD) :: Adz_expq, Adz_expu, Adz_expv, Adz_expt
+
+      integer :: Adz_Win_list, Adz_Win_pos
+      integer, dimension (:,:), pointer :: Adz_od_list
+      real   , dimension (:,:), pointer :: Adz_od_pos
 
       integer :: Adz_offs_win, Adz_wincor
       integer, dimension (:), pointer :: Adz_offs

@@ -97,15 +97,7 @@
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
          !-----------------------------------------------------------------------
-         if (ADZ_OD_L) then
-
-         call adz_od_BC_LAM_Aranami (empty,Adz_pb,Adz_expt,Adz_num_b,1,l_minx,l_maxx,l_miny,l_maxy,empty_i,MAXTR3D+1)
-
-         else
-
          call adz_BC_LAM_Aranami (empty,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
-
-         end if
 
          call gemtime_stop (32)
 

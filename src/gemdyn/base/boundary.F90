@@ -36,7 +36,7 @@
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy,Nk,ni,nj
       integer, intent(in) :: i0,j0,in,jn
-      real(kind=REAL64), dimension(ni,nj,Nk),             intent(out) :: F_rhs
+      real(kind=REAL64), dimension(ni,nj,Nk),             intent(inout) :: F_rhs
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in)  :: F_rt, F_nt, F_rf
 !author
 !       Abdessamad Qaddouri -  2019

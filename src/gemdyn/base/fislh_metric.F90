@@ -131,7 +131,7 @@
                                  +isol_i*mc_iJz_8(i,j,k0-1)) & 
                                  + half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))
                mc_alfat_8(i,j)  = (-(mu_8* Cstv_tau_nh_8)*(isol_d*Ver_idz_8%t(k0-1)+isol_i*mc_iJz_8(i,j,k0-1))  &
-                                 - half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))*Ver_cst_8
+                                 - half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))*mc_cst_8(i,j)
                mc_cstp_8(i,j)   = mc_cst_8(i,j) * gama_8 * &
                                  ((isol_d*Ver_idz_8%t(k0-1)+isol_i*mc_iJz_8(i,j,k0-1))*&
                                  (Ver_idz_8%m(k0)+Ver_wm_8%m(k0)*epsi_8) + &
