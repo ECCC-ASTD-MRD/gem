@@ -1,0 +1,55 @@
+# How to get, compile and run GEM on a stick at the CMC.
+
+# getting gem-devel git repository
+git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
+cd gem-devel
+git branch -a
+git checkout <branch_of_your_choice>
+
+# preparing gem-devel compilation
+./scripts/link-dbase.sh
+
+. ./.eccc_setup_intel
+# or, if you want to compile with GNU compiler suite:
+. ./.eccc_setup_gnu
+
+Before the first build:
+. ./.eccc_initial_setup
+
+# building and installing GEM
+make cmake
+make build
+make work
+
+# running GEM: example
+cd $GEM_WORK
+runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
+runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
+
+# structure of the working environment
+The following environment variables are created (examples):
+- GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
+- GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+- GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+- GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
+- COMPILER_suite=intel
+- COMPILER_version=19.0.3.199
+
+The structure of the build and work directories is different whether the $storage_model environment variable exists:
+
+- Example if $storage_model exists:
+  - GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
+  - in GEM_GIT_DIR:
+    . build-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/build
+    . work-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+
+- Example if $storage_model doesn't exist:
+  - GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+  - build-ubuntu-18.04-amd64-64-intel-19.0.3.199
+  - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+
+# Using Visual Studio Code
+
+See instructions on the Visual Studio Code Wiki page: https://wiki.cmc.ec.gc.ca/wiki/Visual_Studio_Code
+to load the appropriate SSM domains.  It can then be launched by executing the vstudio script.
+You can open a terminal within VSCode and go to the working directory to run GEM.

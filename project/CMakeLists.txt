@@ -177,8 +177,8 @@ add_custom_target(work
 #        $<TARGET_FILE:pgsm>
 #        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
-    COMMAND /bin/cp -avf ${ROOT}/scripts ${WORK_DIR}
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
+#    COMMAND /bin/cp -avf ${ROOT}/scripts ${WORK_DIR}
 #    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
 
     DEPENDS
