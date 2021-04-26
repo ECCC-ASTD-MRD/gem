@@ -19,6 +19,18 @@ if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
     fi
 fi
 
+if [ "$COMPILER_suite" == "intel" ] ; then
+   SETUP_FILE=.eccc_setup_intel
+else
+   SETUP_FILE=.eccc_setup_gnu
+fi
+cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
+  ici=\$PWD
+  cd ${GEM_GIT_DIR}
+  . $SETUP_FILE
+  cd \$ici
+EOF
+
 sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build-${GEM_ARCH}\",/" "goas-devel.code-workspace"
 
 

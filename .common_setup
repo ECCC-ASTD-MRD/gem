@@ -34,10 +34,9 @@ else
             echo "Database not found! Please install GEM database in the current directory, or add a link to where it is installed."
         fi
         export AFSISIO=${ATM_MODEL_DFILES}
-        export PATH=${PWD}/${GEM_WORK}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
+        export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
     fi
 fi
 
 unset platform
-
