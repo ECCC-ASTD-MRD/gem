@@ -17,5 +17,5 @@ build:
     - make
     - make work
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
