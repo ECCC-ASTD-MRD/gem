@@ -83,8 +83,7 @@
   Out3_close_interval_S = '240h'
   Out3_postproc_fact    = 1
 
-  Out3_npex = 1,
-  Out3_npey = 2,
+  Out3_npes = 2
 /
 
  &dcmip

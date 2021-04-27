@@ -3,57 +3,28 @@
   Grd_maxcfl = 2
  /
 
-  Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
-  dynamics_Kernel_S = 'DYNAMICS_FISL_H'
  &dyn_kernel
    Dynamics_hydro_L  = .false.
-   dynamics_Kernel_S = 'DYNAMICS_FISL_P'
-/
-
- &grid2
-  Grd_typ_S  = 'LU'    ,
-  Grd_ni     = 80      ,     Grd_nj    = 60
-  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
-  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
-  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
-  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
-  Grd_maxcfl = 2
-/
-  Grd_maxcfl = 2
- &grid_LU
-  Grd_typ_S  = 'LU'    ,
-  Grd_ni     = 80      ,     Grd_nj    = 60
-  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
-  Grd_lonr   = 180.0   ,     Grd_latr  = 0.
-  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
-  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
-  Grd_maxcfl = 4
-/
-&lam2
-Lam_gbpil_t=20
+   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
 
  &step
+  Step_runstrt_S = "20090427.000000"
   Fcst_nesdt_S   = '12'
-  Fcst_end_S     = "2h"
+  Fcst_end_S     = "4h"
   Fcst_gstat_s   = '1p'
   Step_dt        = 900.
-  Fcst_rstrt_S = '40h'
 /
 
+  Tr3d_list_S =  'MPQC,mono=0,mass=0',
+                 'NTI1,mono=0,mass=0',
+                 'HU  ,mono=0,mass=0'
  &gem_cfgs
-  Tr3d_list_S =  'HU,  wload=0,mono=0,mass=0,hzd=1,min=0.',
-                 'MPNC,wload=0,mono=1,mass=1,hzd=0,min=0.',
-                 'MPNR,wload=0,mono=0,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
-                 'MPQC,wload=1,mono=2,mass=1,hzd=0,min=0.',
-                 'MPQR,wload=1,mono=1,mass=2,hzd=0,min=0.',
-                 'QTI1,wload=1,mono=0,mass=0,hzd=1,min=0.',
-                 'QMI1,wload=0,mono=1,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
-                 'NTI1,wload=0,mono=2,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
-                 'BMI1,wload=0,mono=0,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
-					  
   LCTL_RXSTAT_S   = 'GLB_8',
   stat_liste= 'ALL_DYN_T1','ALL_TR_T1','ALL_DYN_T0','ALL_TR_T0'
+/
+ &adz_cfgs2
+ Adz_slt_winds = .true.
 /
   Sol_type_S = 'ITERATIVE_2D' 
   Sol_type_S = 'DIRECT'
@@ -65,14 +36,14 @@ Lam_gbpil_t=20
   Schm_itcn       = 2          , Schm_wload_L      = .true.
   Schm_itnlh      = 2
   Schm_hzdadw_L     = .true.
-  Schm_psadj= 1
+  Schm_psadj= 0
 /
 
- &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
   hzd_smago_param = 3.
   hzd_smago_lnr = .6
   Hzd_smago_prandtl_hu=2.
+ &hvdif
+  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
   Vspng_coeftop   =  380000.   , Vspng_nk        = 6
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
   P_lmvd_weigh_high_lat = 0.0
@@ -105,10 +76,9 @@ Lam_gbpil_t=20
  0.36414043E+04,  0.33113760E+04,  0.29963164E+04,  0.26959851E+04,  0.24104956E+04,  0.21411509E+04,  0.18889203E+04,
  0.16543748E+04,  0.14377098E+04,  0.12387908E+04,  0.10572026E+04,  0.89229810E+03,  0.74325543E+03,  0.60785242E+03,
  0.48407559E+03,  0.37209671E+03,  0.27309692E+03,  0.18836304E+03,  0.11854238E+03,  0.63249203E+02,  0.21093637E+02
-  hyb_flat= .01
+
   hyb_rcoef = 3., 15.
 / 
-  hyb_flat= 45000.
  0., 100.
  3., 15.,
 
@@ -122,7 +92,7 @@ Inp_npes=4
 /
 
  &out
-  Out3_etik_s     = "base"   , Out3_ip3=-1
+  Out3_etik_s     = "base"   ,
   Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
                     4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
                     3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
@@ -142,7 +112,10 @@ Inp_npes=4
  DIUSST    = 'fairall'
 /
 
- &physics_cfgs
+ RADIA    = 'cccmarad', KNTRAD_S = '1h'
+ RADIA    = 'nil', KNTRAD_S = '1h'
+ 
+ &physics_cfgs2
  moyhr    = 1
  RADIA    = 'cccmarad', KNTRAD_S = '1h'
  STRATOS  = .true.

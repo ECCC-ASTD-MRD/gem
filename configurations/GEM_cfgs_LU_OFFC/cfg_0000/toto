@@ -7,7 +7,7 @@
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
  &dyn_kernel
    Dynamics_hydro_L  = .false.
-   dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
 
  &grid
@@ -110,7 +110,7 @@ Lam_gbpil_t=20
  0.16543748E+04,  0.14377098E+04,  0.12387908E+04,  0.10572026E+04,  0.89229810E+03,  0.74325543E+03,  0.60785242E+03,
  0.48407559E+03,  0.37209671E+03,  0.27309692E+03,  0.18836304E+03,  0.11854238E+03,  0.63249203E+02,  0.21093637E+02
   hyb_flat= .01
-  hyb_rcoef = 3., 15.
+  hyb_rcoef = 3., 15., 0., 100.
 / 0., 100.
  3., 15.,
  &inp
@@ -148,7 +148,7 @@ Inp_npes=4
  RADIA    = 'cccmarad', KNTRAD_S = '1h'
  STRATOS  = .true.
 
- GWDRAG           = 'SGO16'    , NON_ORO  = .true.
+ GWDRAG           = 'gwd86'    , NON_ORO  = .true.
  hines_flux_filter= 5          , LMETOX   = .true.
  sgo_tdfilter = -1.
 
@@ -160,6 +160,7 @@ Inp_npes=4
 
  STCOND     = 'MP_P3'
  INILWC     = .true.
+ KTICEFRAC  = .false.
 
 /
  phystat_dble_l = .true.
@@ -171,7 +172,7 @@ Inp_npes=4
  debug_trace_L = .true
 
  &convection_cfgs
- DEEP       = 'kfc'      , SHAL     = 'ktrsnt'
+ DEEP       = 'kfc'      , SHAL     = 'ktrsnt_mg'
  KFCRAD     = 1500.      , KFCDEPTH = 4000.
  KFCTRIG4   = 0.,0.,0.05,0.05
  KFCTRIGLAT = .true.

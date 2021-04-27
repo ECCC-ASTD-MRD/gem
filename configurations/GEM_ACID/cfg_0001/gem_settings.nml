@@ -18,7 +18,7 @@
 
  &dyn_kernel
   Dynamics_hydro_L = .false.
-  dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+  dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
  &dyn_fisl
   Sol_type_S = 'DIRECT'        , SOL_YYG_EPS = 1.e-4
@@ -112,7 +112,7 @@
  TS_FLXIR         = .true.     ,
  STRATOS          = .true.     ,
 
- GWDRAG           = 'gwd86'    ,
+ GWDRAG           = 'SGO16'    ,
  NON_ORO          = .true.     ,
  hines_flux_filter= 5
  LMETOX           = .true.     , 
@@ -123,12 +123,11 @@
  pbl_shal         = 'conres'
  STCOND           = 'MP_P3'    ,
  INILWC           = .true.     ,
- KTICEFRAC        = .false.    ,
 
 /
 
  &convection_cfgs
- DEEP             = 'kfc'      , SHAL            = 'ktrsnt_mg'
+ DEEP             = 'kfc'      , SHAL            = 'ktrsnt'
  KFCRAD     = 1500.      , KFCDEPTH = 4000.
  KFCTRIG4   = 0.,0.,0.05,0.05
  KFCTRIGLAT = .true.

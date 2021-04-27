@@ -121,7 +121,7 @@
  shal_timeconv = '3h'
 /
 
- &physics_cfgs
+ &physics_cfgs2
 
   RADIA           = 'cccmarad' , 
   KNTRAD_S        = '15m'

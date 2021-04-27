@@ -10,7 +10,7 @@ stages:
 build:
   stage: build
   script:
-    - . ./link-dbase.sh
+    - . ./scripts/link-dbase.sh
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
