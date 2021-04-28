@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # Source this file to:
-# - Load openmpi library
+# - Load libraries
 # - Set compiler version
 # - Load a script for common setup to all compilers
 
-# Load openmpi library
 . r.load.dot /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
+. r.load.dot /fs/ssm/main/opt/numa/numa-2.0.14
 
-export COMPILER_name=gnu
+export COMPILER_suite=gnu
+export OMP_STACKSIZE=4G
 
 COMPILER_version=$(project/compiler.sh gnu)
 export COMPILER_version
 
-. ./.common_setup gnu
+. ./.common_setup ${COMPILER_suite}
 
