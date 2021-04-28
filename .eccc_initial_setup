@@ -5,18 +5,16 @@
 #   according to the existence or not of the storage_model environment variable
 
 if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
-    if [ -n "${storage_model}" ] ; then
-        /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
-        mkdir -p ${GEM_DIR}/work
-        mkdir -p ${GEM_DIR}/build
-        ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
-        ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
-    else
-        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK} build work
-        mkdir -p build-${GEM_ARCH} ${GEM_WORK}
-        ln -sf build-${GEM_ARCH} build 
-        ln -sf ${GEM_WORK} work 
-    fi
+   if [ -n "${storage_model}" ] ; then
+      /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
+      mkdir -p ${GEM_DIR}/work
+      mkdir -p ${GEM_DIR}/build
+      ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
+      ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
+   else
+      /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+      mkdir -p build-${GEM_ARCH} ${GEM_WORK}
+   fi
 fi
 
 if [ "$COMPILER_suite" == "intel" ] ; then

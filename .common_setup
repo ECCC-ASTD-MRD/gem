@@ -4,9 +4,9 @@
 # - set some environment variables
 
 if [[ $# -eq 0 ]] ; then
-    echo "Usage:   . ./common_eccc_setup compiler_suite"
-    echo "Example: . ./common_eccc_setup gnu"
-    echo "Example: . ./common_eccc_setup intel"
+    echo "Usage:   . ./.common_setup compiler_suite"
+    echo "Example: . ./.common_setup gnu"
+    echo "Example: . ./.common_setup intel"
 else
     unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
 
@@ -22,9 +22,10 @@ else
         export GEM_WORK=work-${GEM_ARCH}
         
         if [ -n "${storage_model}" ] ; then
-            GEM_DIR=${storage_model}/goas/$(basename $PWD)_${GEM_ARCH}
+           DIR=$(echo $(basename $(dirname $PWD))/$(basename $PWD))
+           GEM_DIR=${storage_model}/goas/${DIR}/${GEM_ARCH}
         else
-            GEM_DIR=${PWD}
+           GEM_DIR=${PWD}
         fi
         export GEM_DIR
         export GEM_GIT_DIR=$PWD
@@ -36,11 +37,3 @@ else
 fi
 
 unset platform
-
-user_ref=${HOME}/gem_tests_5m
-gem_ref=/users/dor/armn/dyn/gem_tests_5m
-if [ -d ${user_ref} ] ; then
-  export PATH=${PATH}:${user_ref}
-else
-  export PATH=${PATH}:${gem_ref}
-fi
