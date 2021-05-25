@@ -20,17 +20,15 @@
       include "rpn_comm.inc"
 
       external dummy_checkdm
-      integer, external :: domain_decomp, sol_transpose, &
-                           set_fft, gemdm_config
+      integer, external :: domain_decomp, sol_transpose, gemdm_config
 
       character(len=16) npex_S,npey_S
       character(len=2048) cdm_eigen_S,fn
-      logical cdm_grid_L
       integer cdm_npex(2), cdm_npey(2), unf, cnt
       integer pe_xcoord(1000), pe_ycoord(1000)
       integer err,ierr(4),npex,npey,i,max_io_pes
 
-      namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_grid_L,cdm_eigen_S
+      namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_eigen_S
 !
 !-------------------------------------------------------------------
 !
@@ -43,7 +41,6 @@
 
       cdm_npex   = 0
       cdm_npey   = 0
-      cdm_grid_L = .false.
       cdm_eigen_S= 'NONE@#$%'
 
       Lun_out=6
@@ -134,34 +131,28 @@
          call gemtime ( Lun_out, 'AFTER io_pe_valid', .false. )
       endif
 
-      if ( (cdm_grid_L) .or. (cdm_eigen_S /= 'NONE@#$%') ) then
+      call write_status_file3 ('SOLVER=OK')
+      if (cdm_eigen_S /= 'NONE@#$%') then
          err = domain_decomp ( 1, 1, .false. )
-         err = sol_transpose ( 1, 1, .false. )
+         err = sol_transpose ( 1, 1, .true. )
          call glbpos ()
          call set_geomh ()
          call canonical_cases ("SET_GEOM")
-         call write_status_file3 ('Fft_fast_L=OK')
-         if (Ptopo_couleur == 0) then
-            call write_status_file3 ('Fft_fast_L=OK')! TODO : no longer needed
-         endif
          if (cdm_eigen_S /= 'NONE@#$%') then
-            call set_opr ()
+            call set_opr () !compute and store eigen values
             call gemtime ( Lun_out, 'AFTER set_opr', .false. )
          endif
 
-         if (cdm_grid_L) then
-            call set_params ()
-            call set_dync ( .false., err )
-            call gemtime ( Lun_out, 'AFTER set_dync', .false. )
-            if (Ptopo_couleur == 0) then
-               if (err == 0) then
-                  call write_status_file3 ('SOLVER=OK')
-               else
-                  call write_status_file3 ('SOLVER=ABORT')
-               endif
+         call set_params ()
+         call set_dync ( .false., err ) !check vertical resolution vs timestep
+         call gemtime ( Lun_out, 'AFTER set_dync', .false. )
+         if (Ptopo_couleur == 0) then
+            if (err == 0) then
+               call write_status_file3 ('SOLVER=OK')
+            else
+               call write_status_file3 ('SOLVER=ABORT')
             endif
          endif
-
       endif
 
       if (Ptopo_couleur == 0) then

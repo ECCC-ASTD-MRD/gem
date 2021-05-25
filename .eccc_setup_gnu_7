@@ -6,6 +6,7 @@
 # - Load a script for common setup to all compilers
 
 . r.load.dot /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
+. ssmuse-sh -x main/opt/openmpi-setup/openmpi-setup-0.2
 . r.load.dot /fs/ssm/main/opt/numa/numa-2.0.14
 
 export COMPILER_suite=gnu

@@ -37,13 +37,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (ADZ_OD_L) then
-         call adz_od_main ( orhsu, rhsu, orhsv, rhsv, orhsc ,&
-                            rhsc, orhst,  rhst, orhsf, rhsf ,&
-                            orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
-         return
-      endif
-      
       call gemtime_start (30, 'ADZ_TRAJEC', 21)
       call adz_traject (pw_uu_plus, pw_vv_plus, zdt1, &
                         ut0       ,    vt0    , zdt0, &

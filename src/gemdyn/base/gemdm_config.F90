@@ -50,7 +50,6 @@
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-      integer, external :: sol_init
       character(len=16) :: dumc_S, datev
       integer :: i, ipcode, ipkind, err
       real :: pcode,deg_2_rad,sec
@@ -274,7 +273,6 @@
          Hzd_pwr_theta = Hzd_pwr
       end if
 
-      if (sol_init() < 0) return
 
       gemdm_config = 1
 

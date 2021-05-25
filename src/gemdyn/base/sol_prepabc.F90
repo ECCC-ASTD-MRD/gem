@@ -35,7 +35,7 @@
 
       integer i, j, k, j0, jn, dim, err, tag
       integer status(MPI_STATUS_SIZE)
-      real(kind=REAL64) di_8
+      real(kind=REAL128) di_8
       real(kind=REAL64) abc(3,Sol_mink:Sol_maxk,G_ni,Sol_miny:Sol_maxy)
 !     
 !     ---------------------------------------------------------------

@@ -7,18 +7,14 @@ variables:
 stages:
   - build_intel
   - run_configs_intel
+  - build_gnu
+  - run_configs_gnu
 
 before_script:
     - export CLICOLOR_FORCE=1
-    - export ORDENV_SITE_PROFILE=20210129
-    - export ORDENV_COMM_PROFILE=eccc/20210309
-    - export ORDENV_GROUP_PROFILE=eccc/cmc/1.9.5-b
-    - . /fs/ssm/main/env/ordenv-boot-20201118.sh
-    - export EC_ATOMIC_PROFILE_VERSION=1.13.0-b3
-    - . /fs/ssm/eccc/mrd/ordenv/profile/check_profile_1.1.0-b3
 
-build-intel:
-  stage: build
+build_intel:
+  stage: build_intel
   script:
     - . ./scripts/link-dbase.sh
     - . ./.eccc_setup_intel
@@ -26,8 +22,212 @@ build-intel:
     - make cmake
     - make
     - make work
+  artifacts:
+    paths:
+    - work*
+    - gem_dbase
 
-run_configs_intel
+5.2GEM_GY_FISL_H_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_P
+    - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+
+CANO_W7cascP_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+
+CANO_dcmip163r100_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+
+CANO_wil7_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+
+GEM_GY_FISL_P_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+
+GEM_LU_FISL_H_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+
+GEM_LU_OFFC_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+
+PTOPO_GYH_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+
+PTOPO_LUP_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+
+RSTRT_GYP_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+
+THEO_bubbleG_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+
+THEO_schar_intel:
+  stage: run_configs_intel
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
+
+build_gnu:
+  stage: build_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - . ./.eccc_initial_setup
+    - make cmake
+    - make
+    - make work
+  artifacts:
+    paths:
+    - work*
+    - gem_dbase
+
+5.2GEM_GY_FISL_H_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+
+CANO_W7cascP_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+
+CANO_dcmip163r100_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+
+CANO_wil7_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+
+GEM_GY_FISL_P_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+
+GEM_LU_FISL_H_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+
+GEM_LU_OFFC_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+
+PTOPO_GYH_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+
+PTOPO_LUP_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+
+RSTRT_GYP_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+
+THEO_bubbleG_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+
+THEO_schar_gnu:
+  stage: run_configs_gnu
+  script:
+    - . ./.eccc_setup_gnu
+    - cd $GEM_WORK
+    - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
