@@ -20,6 +20,8 @@
       use gmm_geof
       use gmm_pw
       use gem_options
+      use lam_options
+      use HORgrid_options
       use init_options
       use tdpack
       use glb_ld
@@ -104,12 +106,16 @@
          call pw_update_T  ()
          Lctl_step = Lctl_step  - Init_halfspan
          Step_kount= Step_kount - Init_halfspan
+         if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
+            call nest_intt
+         endif
          if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
-         if (Vtopo_L) then
-            call var_topo (fis0, real(Lctl_step), l_minx,l_maxx,l_miny,l_maxy)
-            call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
-                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-         end if
+         call oro_adj ()
+!!$         if (Vtopo_L) then
+!!$            call var_topo (fis0, F_topo_LS, real(Lctl_step), l_minx,l_maxx,l_miny,l_maxy)
+!!$            call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1,&
+!!$                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!!$         end if
          call adz_inittraj ()
          if (Lun_out > 0) write(Lun_out,1050) Lctl_step
       end if

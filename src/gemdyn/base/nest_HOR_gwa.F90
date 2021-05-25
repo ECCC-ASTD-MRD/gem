@@ -34,7 +34,7 @@
 !
       if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) goto 999
 
-      using_qt1 = ( .not.Dynamics_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt1 = ( .not. Dynamics_hydro_L ) .or. Dynamics_hauteur_L
 
       do k=1,G_nk
       do j=1,l_nj

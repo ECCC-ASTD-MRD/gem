@@ -26,6 +26,7 @@
       use ver
       use ptopo
       use dynkernel_options
+      use gem_options
 
       implicit none
 
@@ -60,7 +61,7 @@
 
       !-----------------------------------------------------------------------
 
-      integer i,j,k
+      integer i,j,k,i0,in,j0,jn,inu,jnv
 
       real(kind=REAL64) x_a_8,y_a_8,utt_8,vtt_8,s_8(2,2),rlon_8
 
@@ -91,6 +92,9 @@
 
       if (Lun_out > 0) write (Lun_out,1000) Moist,X
 
+      i0= 1-G_halox ; in= l_ni+G_halox ; inu= l_niu+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy ; jnv= l_njv+G_haloy
+
       GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       zcoords = 1
@@ -100,14 +104,14 @@
       !----------------------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
@@ -138,7 +142,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -185,14 +189,14 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
@@ -204,7 +208,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -230,14 +234,14 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
@@ -249,7 +253,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 
@@ -279,14 +283,14 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_nj
+         do j = j0,jn
 
             lat   = geomh_y_8(j)
             y_a_8 = geomh_y_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_niu
+               do i = i0,inu
 
                   lon = geomh_xu_8(i)
 
@@ -298,7 +302,7 @@
 
             else
 
-               do i = 1,l_niu
+               do i = i0,inu
 
                   x_a_8 = geomh_xu_8(i) - acos(-1.d0)
 
@@ -324,14 +328,14 @@
       !--------------------------
       do k = 1,Nk
 
-         do j = 1,l_njv
+         do j = j0,jnv
 
             lat   = geomh_yv_8(j)
             y_a_8 = geomh_yv_8(j)
 
             if (Ptopo_couleur == 0) then
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   lon = geomh_x_8(i)
 
@@ -343,7 +347,7 @@
 
             else
 
-               do i = 1,l_ni
+               do i = i0,in
 
                   x_a_8 = geomh_x_8(i) - acos(-1.d0)
 

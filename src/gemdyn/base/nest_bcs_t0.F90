@@ -32,7 +32,7 @@
 !
 !----------------------------------------------------------------------
 !
-      using_qt0 = ( .not.Dynamics_hydro_L ) .or. (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt0 = ( .not. Dynamics_hydro_L ) .or. Dynamics_hauteur_L
 
       if (l_north) then
          ut0 (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_u (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk)

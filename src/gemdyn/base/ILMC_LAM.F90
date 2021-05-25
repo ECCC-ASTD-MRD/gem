@@ -48,7 +48,7 @@
       logical, save :: done_allocate_L=.false.
 
       integer :: i,j,k,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,j1,j2, &
-                 reset(Adz_k0:l_nk,5),w1,w2,size,n,il,ir,jl,jr,offi,offj,ext, &
+                 reset(Adz_k0t:l_nk,5),w1,w2,size,n,il,ir,jl,jr,offi,offj,ext, &
                  g_i0,g_in,g_j0,g_jn,il_,ir_,jl_,jr_,il_cor,ir_cor,jl_cor,jr_cor,err
 
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
@@ -163,7 +163,7 @@
 
          !Define surrounding cells for each sweep
          !---------------------------------------
-         do k=Adz_k0,l_nk
+         do k=Adz_k0t,l_nk
 
             kx_m = k ; kx_p = k
 
@@ -176,7 +176,7 @@
 
                   if (.NOT.Schm_autobar_L) then
 
-                     kx_m = max(k-sweep,Adz_k0) ; kx_p = min(k+sweep,l_nk)
+                     kx_m = max(k-sweep,Adz_k0t) ; kx_p = min(k+sweep,l_nk)
 
                   end if
 
@@ -221,8 +221,8 @@
 
       call gemtime_start (94, 'X_HALO', 73)
 
-      !Fill Halos of F_ILMC/MIN/MAX (NOTE: Fill Halo of air_mass_m was DONE in set_post_tr)
-      !------------------------------------------------------------------------------------
+      !Fill Halos of F_ILMC/MIN/MAX/AIR_MASS_M
+      !---------------------------------------
       if (Adz_set_post_tr==1) &
       call rpn_comm_xch_halo (air_mass_m,        l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
       call rpn_comm_xch_halo (F_ilmc,            l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
@@ -248,7 +248,7 @@
       !---------------------------------------
       if (Adz_ILMC_min_max_L) then
 
-         do k=Adz_k0,l_nk
+         do k=Adz_k0t,l_nk
             do j=F_j0,F_jn
             do i=F_i0,F_in
 
@@ -321,7 +321,7 @@ contains
 
       elseif (F_numero==2) then
 
-         call mass_tr (mass_adv_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+         call mass_tr (mass_adv_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
 
          if (Lun_out>0) then
 
@@ -344,7 +344,7 @@ contains
          l_reset = 0
          g_reset = 0
 
-         do k=Adz_k0,l_nk
+         do k=Adz_k0t,l_nk
             l_reset(1) = reset(k,1) + l_reset(1)
             l_reset(2) = reset(k,2) + l_reset(2)
             l_reset(3) = reset(k,3) + l_reset(3)
@@ -356,7 +356,7 @@ contains
 
          !Print Masses
          !------------
-         call mass_tr (mass_ilmc_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+         call mass_tr (mass_ilmc_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
 
          mass_deficit_8 = mass_ilmc_8 - mass_adv_8
 

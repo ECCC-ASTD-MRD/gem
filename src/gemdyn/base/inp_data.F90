@@ -15,11 +15,12 @@
 
 !**s/r inp_data  - Reads FST input files
 
-      subroutine inp_data ( F_u, F_v, F_w, F_t, F_zd, F_s       ,&
-                            F_tracers, F_topo, F_stag_L, F_datev,&
-                            Mminx, Mmaxx, Mminy, Mmaxy, Nk, Ntr)
+      subroutine inp_data ( F_u, F_v, F_w, F_t, F_q, F_zd, F_s  ,&
+                            F_tracers, F_topo, F_orols, F_stag_L,&
+                     F_datev,Mminx, Mmaxx, Mminy, Mmaxy, Nk, Ntr )
       use cstv
       use dyn_fisl_options
+      use gem_options
       use inp_options
       use inp_base, only: inp_get, inp_hwnd, inp_oro, inp_tv, &
                           inp_src_surface,inp_dst_surface   , &
@@ -39,14 +40,14 @@
       logical, intent(in) :: F_stag_L
       integer, intent(in) :: Mminx, Mmaxx, Mminy, Mmaxy, Nk, Ntr
       real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk),   intent(out) :: F_u, F_v, F_w, F_t, F_zd
-      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy),      intent(out) :: F_s, F_topo
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk+1), intent(out) :: F_q
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy),      intent(out) :: F_s, F_topo, F_orols
       real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk*Ntr),intent(out) :: F_tracers
 
       character(len=4) vname
       logical urt1_l, ut1_l
       integer n, nka, nka_tt, nka_hu, deb, err
-      integer, dimension (:), pointer :: TT_ip1_list, HU_ip1_list,&
-                                         ip1_w
+      integer, dimension (:), pointer :: TT_ip1_list, HU_ip1_list
       real, dimension (:,:  ), pointer :: Sp0_q,Sp0_u,Sp0_v, &
                                           Dp0_q,Dp0_u,Dp0_v, &
                                           Dlsp0_q,Dlsp0_u,Dlsp0_v,meqr
@@ -64,7 +65,8 @@
 
       nullify ( meqr, tv, ttr, hur, TT_ip1_list, HU_ip1_list)
 
-      call inp_oro ( F_topo, meqr, F_datev, l_minx,l_maxx,l_miny,l_maxy )
+      call inp_oro ( F_topo, F_orols, meqr, F_datev, &
+                     l_minx,l_maxx,l_miny,l_maxy )
 
       call inp_tv (tv, ttr, hur, TT_ip1_list, HU_ip1_list, nka_tt,nka_hu)
 
@@ -75,34 +77,37 @@
 
       call inp_dst_surface ( F_s, Dp0_q, Dp0_u, Dp0_v,&
                              Dlsp0_q,Dlsp0_u,Dlsp0_v ,&
-                             TT_ip1_list,Sp0_q,meqr,tv,F_topo        ,&
+                             TT_ip1_list,Sp0_q,meqr,tv,F_topo,F_orols,&
                              Schm_sleve_L,l_minx,l_maxx,l_miny,l_maxy,&
-                             nka_tt,1,l_ni,1,l_nj )
+                             nka_tt,1-G_halox,l_ni+G_halox           ,&
+                                    1-G_haloy,l_nj+G_haloy )
       nullify (srclev,dstlev)
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,max(nka_tt,nka_hu)),&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk))
 
       nullify(dummy)
       call inp_src_levels ( srclev, nka, TT_ip1_list, Inp_vgd_src,Sp0_q,&
-                    dummy,GZ3d%valq,GZ3d%ip1, l_minx,l_maxx,l_miny,l_maxy)
-      call inp_dst_levels (dstlev, Ver_vgdobj, Ver_ip1%t, Dp0_q, Dlsp0_q)
+                   dummy,GZ3d%valq,GZ3d%ip1, l_minx,l_maxx,l_miny,l_maxy)
+      call inp_dst_levels ( dstlev, Ver_vgdobj, Ver_ip1%t,&
+                             Dp0_q, Dlsp0_q,G_nk )
 
       if (F_stag_L) then
          call vertint2 ( F_t,dstlev,G_nk, tv,srclev,nka, &
                          l_minx,l_maxx,l_miny,l_maxy   , &
-                         1,l_ni, 1,l_nj, varname='TT'  , &
-                         levtype=Inp_levtype_S )
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                         varname='TT', levtype=Inp_levtype_S )
       else
          call vertint2 ( F_t,dstlev,G_nk,ttr,srclev,nka, &
                          l_minx,l_maxx,l_miny,l_maxy   , &
-                         1,l_ni, 1,l_nj, varname='TT'  , &
-                         levtype=Inp_levtype_S )
+                         1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                         varname='TT', levtype=Inp_levtype_S )
       end if
 
       deb= (Tr3d_hu-1)*l_nk+1
       call vertint2 ( F_tracers(l_minx,l_miny,deb),dstlev,G_nk, &
-                      hur,srclev,nka,l_minx,l_maxx,l_miny,l_maxy  , &
-                      1,l_ni, 1,l_nj, inttype=Inp_vertintype_tracers_S,&
+                      hur,srclev,nka,l_minx,l_maxx,l_miny,l_maxy    ,&
+                      1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                      inttype=Inp_vertintype_tracers_S,&
                       levtype=Inp_levtype_S )
 
       deallocate (tv,ttr,hur,srclev,dstlev)
@@ -125,16 +130,18 @@
                NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)
             end if
          end if
-         F_tracers(:,:,deb:deb+l_nk-1) = &
-         max(F_tracers(:,:,deb:deb+l_nk-1),Tr3d_vmin(n))
+         F_tracers(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,deb:deb+l_nk-1) = &
+         max(F_tracers(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,deb:deb+l_nk-1),Tr3d_vmin(n))
       end do
 
-      allocate (ip1_w(1:G_nk))
-      ip1_w(1:G_nk)= Ver_ip1%t(1:G_nk)
-      err = inp_get ( 'WT1',  'Q', ip1_w,&
+      err = inp_get ( 'QT1',  'Q', Ver_ip1%m,&
+                      Sp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_q,&
+                      l_minx,l_maxx,l_miny,l_maxy,G_nk+1,F_quiet_L=.true.)
+      Inp_qt_L= ( err == 0 )
+
+      err = inp_get ( 'WT1',  'Q', Ver_ip1%t,&
                    Sp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_w,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true.)
-      deallocate (ip1_w) ; nullify(ip1_w)
       Inp_w_L= ( err == 0 )
 
       err = inp_get ('ZDT1', 'Q', Ver_ip1%t,&
@@ -181,7 +188,7 @@
       nullify(Sp0_q,Sp0_u,Sp0_v)
       deallocate (Dp0_q,Dp0_u,Dp0_v) ; nullify(Dp0_q,Dp0_u,Dp0_v)
       if (Schm_sleve_L) then
-         deallocate (Dlsp0_u,Dlsp0_v)
+         deallocate (Dlsp0_q,Dlsp0_u,Dlsp0_v)
          nullify    (Dlsp0_q,Dlsp0_u,Dlsp0_v)
       endif
 

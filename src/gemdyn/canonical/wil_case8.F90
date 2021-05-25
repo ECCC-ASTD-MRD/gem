@@ -40,19 +40,26 @@
       !     Galewsky et al.,2004,Tellus,56A,429-440
       !============================================================================
 
-      integer :: i,j,k
+      integer :: i,j,k,g_i0,g_in,g_j0,g_jn,i0,in,j0,jn,zlist
       real(kind=REAL64) :: lat2_8,alph_8,beta_8,hhat_8,ratio1_8,ratio2_8,&
              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,sint_8,cost_8,           &
              xxx_8,expos1_8,expos2_8,rad2deg_8,rlon_8,rlat_8,            &
              hmean_ref_8,hmean_8,latmean_8,                              &
              wil_galewski_geo_8,wil_galewski_mean_8
       external :: wil_galewski_geo_8,wil_galewski_mean_8
-      real ::     picll(G_ni,G_nj),gzloc(F_minx:F_maxx,F_miny:F_maxy)
+      real ::     picll(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy), &
+                  gzloc(F_minx:F_maxx,F_miny:F_maxy)
       real(kind=REAL64) :: ONE_8, CLXXX_8
       parameter( ONE_8  = 1.0,CLXXX_8 = 180.0 )
 !
 !---------------------------------------------------------------------
 !
+      g_i0= 1-G_halox ; g_in= G_ni+G_halox
+      g_j0= 1-G_haloy ; g_jn= G_nj+G_haloy
+
+      i0= 1-G_halox ; in= l_ni+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy
+
       if (Lun_out>0) write(Lun_out,*) ''
       if (Lun_out>0) write(Lun_out,*) '--------------------------------------------'
       if (Lun_out>0) write(Lun_out,*) 'WILLIAMSON CASE8, Galewsky et al. (2004)    '
@@ -75,14 +82,14 @@
       !----------------------
       if (Ptopo_couleur==0) then
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             rlat_8 = G_yg_8(j)
 
             cost_8 = cos(rlat_8)
             sint_8 = sin(rlat_8)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                rlon_8 = G_xg_8(i)
 
@@ -119,9 +126,9 @@
       !----------------------
       else
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                x_a_8 = G_xg_8(i)-acos(-1.D0)
                y_a_8 = G_yg_8(j)
@@ -166,10 +173,14 @@
 
       end if
 
-      call glbdist (picll,G_ni,G_nj,gzloc,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
+      zlist = 1
+
+      call glbdist_os (picll,gzloc,&
+                       F_minx,F_maxx,F_miny,F_maxy,1,&
+                       G_ni+G_halox,G_nj+G_haloy,zlist,1,1.0d0,0.d0)
 
       do k=1,F_nk
-         F_gz(1:l_ni,1:l_nj,k) = gzloc(1:l_ni,1:l_nj)
+         F_gz(i0:in,j0:jn,k) = gzloc(i0:in,j0:jn)
       end do
 !
 !---------------------------------------------------------------------

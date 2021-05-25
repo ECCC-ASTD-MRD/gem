@@ -15,67 +15,88 @@
 
 !**s/r get_topo - Obtain topography from geophysical file
 
-      subroutine get_topo (F_topo, F_topo_ls, Minx, Maxx, Miny, Maxy, &
-                           i0, in, j0, jn)
+      subroutine get_topo ()
+      use dynkernel_options
       use dyn_fisl_options
+      use cstv
+      use gem_options
       use geomh
       use glb_ld
       use lun
       use path
+      use gmm_geof
+      use gmm_pw
       use ptopo
       use tdpack
+      use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-      integer Minx, Maxx, Miny, Maxy, i0, in, j0, jn
-      real, dimension(Minx:Maxx,Miny:Maxy) :: F_topo, F_topo_ls
       character(len=8) :: inttyp
       character(len=1024) :: fn
-      integer :: stats, istat
-      real, dimension(G_ni) :: xfi
-      real, dimension(G_nj) :: yfi
-      real, dimension(G_ni,G_nj) :: topo_destination
+      integer :: stats, istat, zlist
+      real, dimension(1-G_halox:G_ni+G_halox) :: xfi
+      real, dimension(1-G_haloy:G_nj+G_haloy) :: yfi
+      real, dimension(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy) ::&
+                                                  topo_destination, h1
+      real(kind=REAL64) :: oneoRT
 !
 !-----------------------------------------------------------------------
 !
-      stats = 0
-
-      if (.not.Schm_topo_L) then
-         F_topo   = 0.0
-         F_topo_ls = 0.0
-         return
-      end if
+      stats= 0 ; topo_high= 0. ; topo_low= 0. ; sls= 0.
+      if (.not.Schm_topo_L) return
 
       if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',RMN_OPT_SET)
-
+      zlist= -1
+      inttyp      = 'LINEAR'
+      
       If (Ptopo_myproc==0) Then
-         inttyp      = 'LINEAR'
-         xfi(1:G_ni)  = real(geomh_longs(1:G_ni))
-         yfi(1:G_nj)  = real(geomh_latgs(1:G_nj))
+         xfi(1-G_halox:G_ni+G_halox)= &
+                    real(geomh_longs(1-G_halox:G_ni+G_halox))
+         yfi(1-G_haloy:G_nj+G_haloy)= &
+                    real(geomh_latgs(1-G_haloy:G_nj+G_haloy))
          fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
-         call get_field ( topo_destination, G_ni, G_nj, 'ME', trim(fn), &
-                          inttyp, xfi, yfi, stats)
+         call get_field (topo_destination,G_ni+2*G_halox,G_nj+2*G_haloy,&
+                         'ME', trim(fn), inttyp, xfi, yfi, stats)
+         zlist=1
       end if
-      call handle_error (stats,'GET_TOPO','Topography "ME" NOT specified')
-      call glbdist (topo_destination,G_ni,G_nj,F_topo,Minx,Maxx,Miny,Maxy,1,0,0)
-      F_topo(i0:in,j0:jn) = F_topo(i0:in,j0:jn) * grav_8
+      call gem_error (stats,'GET_TOPO','Topography "ME" NOT specified')
+      
+      call glbdist_os (topo_destination, topo_high(l_minx,l_miny,1),&
+                       l_minx,l_maxx,l_miny,l_maxy,1,&
+                       G_ni+G_halox,G_nj+G_haloy,zlist,1,grav_8,0.d0)
 
-      if(Schm_sleve_L)then
-         If (Ptopo_myproc==0) Then
-            call get_field ( topo_destination, G_ni, G_nj, 'MELS', trim(fn), &
-                 inttyp, xfi, yfi, stats)
-         end if
-         call handle_error (stats,'GET_TOPO','Topography large scale "MESL" NOT specified')
-         call glbdist (topo_destination,G_ni,G_nj,F_topo_ls,Minx,Maxx,Miny,Maxy,1,0,0)
-         F_topo_ls(i0:in,j0:jn) = F_topo_ls(i0:in,j0:jn) * grav_8
-      else
-         F_topo_ls = 0.0
+      if (Schm_sleve_L) then
+         if ( Schm_orols_fromgeophy_L ) then
+            if (Ptopo_myproc==0) Then
+               call get_field (h1, G_ni+2*G_halox, G_nj+2*G_haloy,&
+                               'MELS', trim(fn), inttyp, xfi, yfi, stats)
+            end if
+            call gem_error (stats,'GET_TOPO',&
+                           'Topography large scale "MESL" NOT specified')
+            
+            call glbdist_os (h1, topo_high(l_minx,l_miny,2),&
+                             l_minx,l_maxx,l_miny,l_maxy,1 ,&
+                G_ni+G_halox,G_nj+G_haloy,zlist,1,grav_8,0.d0)
+         else
+            call mc2_topols (topo_high(l_minx,l_miny,2),&
+                             topo_high(l_minx,l_miny,1),&
+                             l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+         endif
+         
+         pw_p0_ls= 0.
+         oneoRT=1.d0 / (rgasd_8 * Tcdk_8)
+         if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' ) then
+            pw_p0_ls(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy) = Cstv_pref_8 * exp(-topo_high(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,2) * oneoRT)
+         endif
       end if
+      
+      topo_low = topo_high
 
       istat = fstopc ('MSGLVL','INFORM',RMN_OPT_SET)
 !
 !-----------------------------------------------------------------------
 !
       return
-      end
+      end subroutine get_topo

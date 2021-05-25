@@ -56,10 +56,10 @@
       in = l_ni
       j0 = 1
       jn = l_nj
-      if(l_west)  i0 = 2
-      if(l_east)  in = in-1
-      if(l_south) j0 = 2
-      if(l_north) jn = jn-1
+      if (l_west)  i0 = 2    - G_halox
+      if (l_east)  in = in-1 + G_halox
+      if (l_south) j0 = 2    - G_haloy
+      if (l_north) jn = jn-1 + G_haloy
 
       if (F_zd_L) then
          if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)

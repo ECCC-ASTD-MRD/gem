@@ -49,17 +49,27 @@
 
       !---------------------------------------------------------------
 
-      integer i,j,k
+      integer i,j,k,g_i0,g_in,g_j0,g_jn,g_inu,g_jnv,i0,in,j0,jn,inu,jnv,zlist
       real(kind=REAL64)  ubar_8,sina_8,cosa_8,rlon_8,rlat_8,sint_8,cost_8, &
-              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,               &
-              ui_u_8(G_ni,G_nj),ui_v_8(G_ni,G_nj),              &
-              vi_u_8(G_ni,G_nj),vi_v_8(G_ni,G_nj),              &
-              xgu_8(G_niu),ygv_8(G_njv)
-      real    uloc(F_minx:F_maxx,F_miny:F_maxy), &
-              vloc(F_minx:F_maxx,F_miny:F_maxy), &
-              uicll(G_ni,G_nj),vicll(G_ni,G_nj)
+              s_8(2,2),x_a_8,y_a_8,sinl_8,cosl_8,                    &
+              ui_u_8(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy), &
+              ui_v_8(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy), &
+              vi_u_8(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy), &
+              vi_v_8(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy), &
+              xgu_8(1-G_halox:G_niu+G_halox),                        &
+              ygv_8(1-G_haloy:G_njv+G_haloy)
+      real    uloc(F_minx:F_maxx,F_miny:F_maxy),                     &
+              vloc(F_minx:F_maxx,F_miny:F_maxy),                     &
+              uicll(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy),  &
+              vicll(1-G_halox:G_ni+G_halox,1-G_haloy:G_nj+G_haloy)
 
       !---------------------------------------------------------------
+
+      g_i0= 1-G_halox ; g_in= G_ni+G_halox ; g_inu= G_niu+G_halox
+      g_j0= 1-G_haloy ; g_jn= G_nj+G_haloy ; g_jnv= G_njv+G_haloy
+
+      i0= 1-G_halox ; in= l_ni+G_halox ; inu= l_niu+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy ; jnv= l_njv+G_haloy
 
       ubar_8 = (2.0*pi_8*rayt_8)/(12.0*24.0*3600.0)
 
@@ -68,13 +78,13 @@
 
       !U grid
       !------
-      do i=1,G_niu
+      do i=g_i0,g_inu
          xgu_8(i) = (G_xg_8(i+1)+G_xg_8(i))*.5
       end do
 
       !V grid
       !------
-      do j=1,G_njv
+      do j=g_j0,g_jnv
          ygv_8(j) = (G_yg_8(j+1)+G_yg_8(j))*.5
       end do
 
@@ -88,14 +98,14 @@
       !------------------------
       if (Ptopo_couleur==0) then
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             rlat_8 = G_yg_8(j)
 
             sint_8 = sin(rlat_8)
             cost_8 = cos(rlat_8)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                rlon_8 = G_xg_8(i)
 
@@ -112,11 +122,11 @@
       !------------------------
       else
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             y_a_8 = G_yg_8(j)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                x_a_8 = G_xg_8(i) - acos(-1.d0)
 
@@ -145,14 +155,14 @@
       !------------------------
       if (Ptopo_couleur==0) then
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             rlat_8 = G_yg_8(j)
 
             sint_8 = sin(rlat_8)
             cost_8 = cos(rlat_8)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                rlon_8 = G_xg_8(i)
 
@@ -169,11 +179,11 @@
       !------------------------
       else
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             y_a_8 = G_yg_8(j)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                x_a_8 = G_xg_8(i) - acos(-1.d0)
 
@@ -206,14 +216,14 @@
       !------------------------
       if (Ptopo_couleur==0) then
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             rlat_8 = G_yg_8(j)
 
             sint_8 = sin(rlat_8)
             cost_8 = cos(rlat_8)
 
-            do i=1,G_niu
+            do i=g_i0,g_inu
 
                rlon_8 = xgu_8(i)
 
@@ -230,11 +240,11 @@
       !------------------------
       else
 
-         do j=1,G_nj
+         do j=g_j0,g_jn
 
             y_a_8 = G_yg_8(j)
 
-            do i=1,G_niu
+            do i=g_i0,g_inu
 
                x_a_8 = xgu_8(i) - acos(-1.d0)
 
@@ -263,14 +273,14 @@
       !------------------------
       if (Ptopo_couleur==0) then
 
-         do j=1,G_njv
+         do j=g_j0,g_jnv
 
             rlat_8 = ygv_8(j)
 
             sint_8 = sin(rlat_8)
             cost_8 = cos(rlat_8)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                rlon_8 = G_xg_8(i)
 
@@ -287,11 +297,11 @@
       !------------------------
       else
 
-         do j=1,G_njv
+         do j=g_j0,g_jnv
 
             y_a_8 = ygv_8(j)
 
-            do i=1,G_ni
+            do i=g_i0,g_in
 
                x_a_8 = G_xg_8(i) - acos(-1.d0)
 
@@ -320,20 +330,26 @@
       end if !F_stag_L
       !######################
 
-      call glbdist (uicll,G_ni,G_nj,uloc,F_minx,F_maxx,F_miny,F_maxy,1,G_halox,G_haloy)
+      zlist = 1
 
-      call glbdist (vicll,G_ni,G_nj,vloc,F_minx,F_maxx,F_miny,F_maxy,1,G_halox,G_haloy)
+      call glbdist_os (uicll,uloc,&
+                       F_minx,F_maxx,F_miny,F_maxy,1,&
+                       G_ni+G_halox,G_nj+G_haloy,zlist,1,1.0d0,0.0d0)
+
+      call glbdist_os (vicll,vloc,&
+                       F_minx,F_maxx,F_miny,F_maxy,1,&
+                       G_ni+G_halox,G_nj+G_haloy,zlist,1,1.0d0,0.0d0)
 
       !######################
       if (.not.F_stag_L) then
       !######################
 
       do k=1,F_nk
-         F_u(1:l_ni,1:l_nj,k) = uloc(1:l_ni,1:l_nj)
+         F_u(i0:in,j0:jn,k) = uloc(i0:in,j0:jn)
       end do
 
       do k=1,F_nk
-         F_v(1:l_ni,1:l_nj,k) = vloc(1:l_ni,1:l_nj)
+         F_v(i0:in,j0:jn,k) = vloc(i0:in,j0:jn)
       end do
 
       !######################
@@ -341,11 +357,11 @@
       !######################
 
       do k=1,F_nk
-         F_u(1:l_niu,1:l_nj,k) = uloc(1:l_niu,1:l_nj)
+         F_u(i0:inu,j0:jn,k) = uloc(i0:inu,j0:jn)
       end do
 
       do k=1,F_nk
-         F_v(1:l_ni,1:l_njv,k) = vloc(1:l_ni,1:l_njv)
+         F_v(i0:in,j0:jnv,k) = vloc(i0:in,j0:jnv)
       end do
 
       !######################

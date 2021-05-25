@@ -48,8 +48,8 @@
 
       !Reset Air Mass at TIME P and TIME M
       !-----------------------------------
-      call get_air_mass (airm1,1,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0)
-      call get_air_mass (airm0,0,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0)
+      call get_air_mass (airm1,1,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0t)
+      call get_air_mass (airm0,0,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0t)
 
       call gemtime_stop  (52)
 

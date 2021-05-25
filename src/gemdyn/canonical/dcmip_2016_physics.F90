@@ -25,6 +25,7 @@
       use dynkernel_options
       use geomh
       use glb_ld
+      use gmm_itf_mod
       use gmm_pw
       use gmm_vt1
       use gmm_phy
@@ -74,8 +75,6 @@
       real, pointer, dimension (:,:,:) :: qsv_p,qsc_p,qsr_p,ptr3d
 
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: tdu,tdv,tv_plus,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
-
-      logical :: GEM_P_L
 !
 !---------------------------------------------------------------------
 !
@@ -100,8 +99,6 @@
       !pbl_type  (IN) Type of planetary boundary layer     !
       !prec_type (IN) Type of precipitation/microphysics   !
       !----------------------------------------------------!
-
-      GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
       !Copy Scalar winds (Required in itf_phy_UVupdate)
       !------------------------------------------------
@@ -279,6 +276,10 @@
       call glbstat (art,'ART','LCPR', &
                      l_minx,l_maxx,l_miny,l_maxy,1,1,1,G_ni,1,G_nj,1,1)
 
+      istat = gmm_get(gmmk_phy_uu_tend_s,phy_uu_tend)
+      istat = gmm_get(gmmk_phy_vv_tend_s,phy_vv_tend)
+      istat = gmm_get(gmmk_phy_tv_tend_s,phy_tv_tend)
+
       !-------------------------------------------------------------------------------
       !Compute tendencies and reset physical world if requested (As in itf_phy_update)
       !-------------------------------------------------------------------------------
@@ -295,15 +296,23 @@
          phy_vv_tend = phy_vv_tend/Cstv_dt_8
          phy_tv_tend = phy_tv_tend/Cstv_dt_8
 
-         RESET_PW: if (Schm_phycpl_S == 'RHS') then
-            pw_uu_plus = pw_uu_plus0
-            pw_vv_plus = pw_vv_plus0
-            pw_tt_plus = pw_tt_plus0
-         else
-            pw_uu_plus = pw_uu_plus0 + Cstv_bA_m_8*(pw_uu_plus-pw_uu_plus0)
-            pw_vv_plus = pw_vv_plus0 + Cstv_bA_m_8*(pw_vv_plus-pw_vv_plus0)
-            pw_tt_plus = pw_tt_plus0 + Cstv_bA_8*(pw_tt_plus-pw_tt_plus0)
-         end if RESET_PW
+         do k=1,l_nk
+            pw_uu_plus(:,:,k) = pw_uu_plus0(:,:,k) + phy_cplm(:,:)*(pw_uu_plus(:,:,k)-pw_uu_plus0(:,:,k))
+            pw_vv_plus(:,:,k) = pw_vv_plus0(:,:,k) + phy_cplm(:,:)*(pw_vv_plus(:,:,k)-pw_vv_plus0(:,:,k))
+            pw_tt_plus(:,:,k) = pw_tt_plus0(:,:,k) + phy_cplt(:,:)*(pw_tt_plus(:,:,k)-pw_tt_plus0(:,:,k))
+         end do
+
+      else ! Pure split coupling
+
+         phy_uu_tend = 0.
+         phy_vv_tend = 0.
+         phy_tv_tend = 0.
+
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then !For SPLIT in GEM-H
+            call tt2virt (tv_plus,.true.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv_plus(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
+            phy_tv_tend = phy_tv_tend/Cstv_dt_8
+         end if
 
       end if
 !

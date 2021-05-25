@@ -22,6 +22,7 @@
       use prec
       use sol
       use redblack_2d
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -92,6 +93,8 @@
       real(kind=REAL64), dimension(:,:), allocatable :: v_local_prod, v_prod
 
       real(kind=REAL64), dimension(maxinner+1) :: rot_cos, rot_sin, gg
+
+      real(kind=REAL64) :: ro2,rr2
 
       logical almost_zero
 
@@ -202,7 +205,7 @@
 
             ! Modified Gram-Schmidt from Świrydowicz et al. (2018)
 
-            allocate( v_local_prod(initer,2), v_prod(initer,2) )
+            allocate( v_local_prod(initer+1,3), v_prod(initer+1,3) )
             v_local_prod = 0.d0 ; v_prod = 0.d0
 
             do it=1,initer
@@ -215,11 +218,20 @@
                end do
             end do
 
-            call RPN_COMM_allreduce(v_local_prod, v_prod, initer*2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+
+               do j=j0,jn
+!DIR$ SIMD
+                  do i=i0,in
+                        v_local_prod(nextit,3) = v_local_prod(nextit,3) + ( vv(i, j, nextit) * vv(i, j, nextit) )
+                  end do
+               end do
+
+            call RPN_COMM_allreduce(v_local_prod, v_prod, nextit*3, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
 
             tt(1:initer-1,initer) = v_prod(1:initer-1,1)
             rr(initer,initer)     = v_prod(initer,1)
             rr(1:initer,nextit)   = v_prod(1:initer,2)
+            ro2=v_prod(nextit,3)
 
             deallocate ( v_local_prod, v_prod)
 
@@ -236,6 +248,11 @@
             tt(1:initer-1, initer) = - matmul( tt(1:initer-1, 1:initer-1), tt(1:initer-1, initer) )
             rr(1:initer,nextit) = matmul( transpose(tt(1:initer, 1:initer)), rr(1:initer,nextit) )
 
+            rr2=0.d0
+            do i=1,initer
+                rr2=rr2 + rr(i,nextit)*rr(i,nextit)
+            enddo
+
             do it=1,initer
                do j=j0,jn
                   do i=i0,in
@@ -244,16 +261,22 @@
                end do
             end do
 
-            local_dot = 0.d0
-            do j=j0,jn
+            ! Compute estimated norm nu=sqrt(ro2-rr2)
+            if( (ro2-rr2) > 0.) then
+               nu=sqrt(ro2-rr2)
+               rr(nextit,nextit) =  nu
+            ! Compute exact norm
+            else
+               local_dot = 0.d0
+                  do j=j0,jn
 !DIR$ SIMD
-               do i=i0,in
-                  local_dot = local_dot + (vv(i, j, nextit) * vv(i, j, nextit))
-               end do
-            end do
-
+                     do i=i0,in
+                        local_dot = local_dot + (vv(i, j, nextit) * vv(i, j, nextit))
+                     end do
+                  end do
             call RPN_COMM_allreduce(local_dot,nu,1,"MPI_double_precision","MPI_sum","MULTIGRID",ierr)
             rr(nextit,nextit) = sqrt(nu)
+            endif
 
             ! Watch out for happy breakdown
             if (.not. almost_zero( rr(nextit,nextit) ) ) then

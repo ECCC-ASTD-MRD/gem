@@ -64,8 +64,8 @@ contains
       if (present(F_post)) then
          call gemtime_start (83, 'C_BCFLUX_TR', 37)
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
-            call adz_BC_LAM_Aranami (extended,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx, &
-                                  Adz_lminy,Adz_lmaxy,F_post,F_nptr)
+            call adz_BC_LAM_Aranami (extended,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx, &
+                                     Adz_lminy,Adz_lmaxy,F_post,F_nptr)
          endif
          call gemtime_stop  (83)
       end if
@@ -161,21 +161,21 @@ contains
       return
       end subroutine adz_tricub_rhs
 
-      subroutine adz_bicubHQV_rhs ( F_stk,F_nptr,F_pxt,F_pyt,F_pzt,F_num,&
+      subroutine adz_bicubHQV_rhs ( F_stk,F_nptr,F_xyz,F_num, &
                                     F_i0,F_in,F_j0,F_jn,F_k0,F_post )
+
       implicit none
 
       integer, intent(in) :: F_nptr,F_num,F_i0,F_in,F_j0,F_jn,F_k0
-      real, dimension(*), intent(in) :: F_pxt,F_pyt,F_pzt
+      real, dimension(*), intent(in) :: F_xyz
       type(meta_tracers), dimension(F_nptr), intent(in), optional :: F_post
       type(Adz_pntr_stack), dimension(F_nptr),  intent(inout) :: F_stk
 
-      logical linmima_l, sto_L
-      integer ijk,i,j,k,n
-      real :: pert
-      real, dimension(Adz_lminx:Adz_lmaxx, Adz_lminy:Adz_lmaxy,l_nk,F_nptr), target :: extended
+      logical :: sto_L
+      integer :: ijk,i,j,k,n
+      real, dimension(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk,F_nptr), target :: extended
       real, dimension(l_ni*l_nj*l_nk*F_nptr) :: wrkc,lin,mi,ma
-      integer, pointer, contiguous, dimension(:) :: ii_w
+      real :: pert
 !
 !---------------------------------------------------------------------
 !
@@ -186,82 +186,58 @@ contains
               Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
       end do
       
-      if (present(F_post)) then
-         if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
-            call adz_BC_LAM_Aranami (extended,Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_lminx,Adz_lmaxx, &
+      if (present(F_post).and..not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
+
+         call adz_BC_LAM_Aranami (extended,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx, &
                                   Adz_lminy,Adz_lmaxy,F_post,F_nptr)
-         endif
+
       end if
       
       sto_L= associated(mcrhsint)
-      linmima_l = present(F_post) .or. sto_L
       
-      allocate (ii_w(4*F_num))
+      do n=1,F_nptr
 
-      call adv_get_indices (ii_w,F_pxt,F_pyt,F_pzt,l_ni*l_nj*l_nk,F_num, &
-                            F_i0,F_in,F_j0,F_jn,F_k0,l_nk,'t')
+         call bicubHQV_lin_min_max (wrkc,lin,mi,ma,extended(Adz_lminx,Adz_lminy,1,n),F_xyz,F_num, &
+                                    Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy)
 
-      if (linmima_l) then
-
-         do n=1,F_nptr
-
-            call bicubHQV_lin_min_max (wrkc,lin,mi,ma,extended(Adz_lminx,Adz_lminy,1,n), &
-                                       F_pxt,F_pyt,F_pzt,l_ni*l_nj*l_nk,F_num,ii_w,l_nk,'t')
-            if (sto_L) then
-               do k=F_k0,l_nk
-                  do j=F_j0,F_jn
-                     do i=F_i0,F_in
-                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
-                        pert = mcrhsint(i,j) * abs(wrkc(ijk)-lin(ijk))
-                        F_stk(n)%dst(i,j,k)= wrkc(ijk) + pert
-                     end do
-                  end do
-               end do
-            else
-               do k=F_k0,l_nk
-                  do j=F_j0,F_jn
-                     do i=F_i0,F_in
-                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
-                        F_stk(n)%dst(i,j,k)= wrkc(ijk)
-                     end do
-                  end do
-               end do
-            endif               
-            if (present(F_post)) then
-               do k=F_k0,l_nk
-                  do j=F_j0,F_jn
-                     do i=F_i0,F_in
-                        ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
-                        Adz_post(n)%lin(i,j,k) = max(mi(ijk),min(ma(ijk),lin(ijk)))
-                        Adz_post(n)%min(i,j,k) = mi  (ijk)
-                        Adz_post(n)%max(i,j,k) = ma  (ijk)
-                     end do
-                  end do
-               end do
-            endif
-         end do
-
-      else
-
-         do n=1,F_nptr
-
-            call bicubHQV_lin_min_max (wrkc,lin,mi,ma,extended(Adz_lminx,Adz_lminy,1,n), &
-                                       F_pxt,F_pyt,F_pzt,l_ni*l_nj*l_nk,F_num,ii_w,l_nk,'t')
-
+         if (sto_L) then
+            ijk = 0
             do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
-                     ijk= (k-1)*l_ni*l_nj + (j-1)*l_ni + i
+                     ijk = ijk + 1 
+                     pert = mcrhsint(i,j) * abs(wrkc(ijk)-lin(ijk))
+                     F_stk(n)%dst(i,j,k)= wrkc(ijk) + pert
+                  end do
+               end do
+            end do
+         else
+            ijk = 0
+            do k=F_k0,l_nk
+               do j=F_j0,F_jn
+                  do i=F_i0,F_in
+                     ijk = ijk + 1 
                      F_stk(n)%dst(i,j,k)= wrkc(ijk)
                   end do
                end do
             end do
+         end if
 
-         end do
+         if (present(F_post)) then
+            ijk = 0
+            do k=F_k0,l_nk
+               do j=F_j0,F_jn
+                  do i=F_i0,F_in
+                     ijk = ijk + 1 
+                     Adz_post(n)%lin(i,j,k) = max(mi(ijk),min(ma(ijk),lin(ijk)))
+                     Adz_post(n)%min(i,j,k) = mi  (ijk)
+                     Adz_post(n)%max(i,j,k) = ma  (ijk)
+                  end do
+               end do
+            end do
+         end if
 
-      end if
-
-      deallocate (ii_w)
+      end do
 !
 !---------------------------------------------------------------------
 !

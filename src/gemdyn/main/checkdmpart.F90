@@ -20,8 +20,7 @@
       include "rpn_comm.inc"
 
       external dummy_checkdm
-      integer, external :: domain_decomp, sol_transpose, &
-                           gemdm_config
+      integer, external :: domain_decomp, sol_transpose, gemdm_config
 
       character(len=16) npex_S,npey_S
       character(len=2048) cdm_eigen_S,fn
@@ -34,10 +33,12 @@
 !-------------------------------------------------------------------
 !
       call init_component()
+
       if (Ptopo_couleur == 0) then
          call open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
          call write_status_file3 ('checkdmpart_status=ABORT')
       endif
+
       cdm_npex   = 0
       cdm_npey   = 0
       cdm_eigen_S= 'NONE@#$%'
@@ -70,14 +71,6 @@
          if (HORgrid_config (1) < 0) goto 9999
          err = HORgrid_nml (-1)
 
-         if (VERgrid_nml (unf) < 0) goto 9999
-         if (VERgrid_config () < 0) goto 9999
-         err = VERgrid_nml (-1)
-
-         if (step_nml  (unf) < 0) goto 9999
-         err = step_nml  (-1)
-         Step_runstrt_S='2011020300'
-
          if (dynKernel_nml (unf) < 0) goto 9999
          err = dynKernel_nml (-1)
 
@@ -85,6 +78,14 @@
             if (dyn_fisl_nml (unf) < 0) goto 9999
             err = dyn_fisl_nml (-1)
          endif
+
+         if (VERgrid_nml (unf) < 0) goto 9999
+         if (VERgrid_config () < 0) goto 9999
+         err = VERgrid_nml (-1)
+
+         if (step_nml  (unf) < 0) goto 9999
+         err = step_nml  (-1)
+         Step_runstrt_S='2011020300'
 
          if (gemdm_config () < 0) goto 9999
          err= fclos(unf)
@@ -119,7 +120,7 @@
          max_io_pes=npex*npey
          do i= 1, npex*npey
             err= RPN_COMM_io_pe_valid_set (pe_xcoord,pe_ycoord,i,&
-                                             npex,npey,.false.,0)
+            npex,npey,.false.,0)
             if (err /= 0) then
                max_io_pes= i-1
                exit
@@ -130,6 +131,7 @@
          call gemtime ( Lun_out, 'AFTER io_pe_valid', .false. )
       endif
 
+      call write_status_file3 ('SOLVER=OK')
       if (cdm_eigen_S /= 'NONE@#$%') then
          err = domain_decomp ( 1, 1, .false. )
          err = sol_transpose ( 1, 1, .true. )
@@ -151,7 +153,6 @@
                call write_status_file3 ('SOLVER=ABORT')
             endif
          endif
-
       endif
 
       if (Ptopo_couleur == 0) then

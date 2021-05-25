@@ -29,7 +29,7 @@
 
       logical alongY_L
       integer :: i, mpx,irest, err
-      integer(KIND=MPI_ADDRESS_KIND) :: msize
+      integer(kind=INT64) :: msize
 
       integer, dimension(4,0:Numa_cores_per_socket-1) :: gindx,socki
 
@@ -119,7 +119,6 @@
          ! reassociated) and the required number of integer-sized words.
          ! REAL64 values are twice the size (8 bytes) of integer words (4
          ! bytes), so we must use a scale factor:
-
 
          call numa_space ( tapon, msize*2, err)
          

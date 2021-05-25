@@ -22,6 +22,8 @@
       use HORgrid_options
       use geomh
       use lam_options
+      use init_options
+      use step_options
       use gmm_itf_mod
       use gmm_pw
       use ptopo
@@ -34,40 +36,50 @@
 #include "gmm_gem_flags.hf"
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
+      include 'mpif.h'
+      include "rpn_comm.inc"
       include "tricublin_f90.inc"
-
-      integer  j, k, n, k0, BCS_BASE, pnz, ext, halom
-      real(kind=REAL64), parameter :: EPS_8= 1.D-5
+      
+      integer i,j,k, n, k0, BCS_BASE, pnz, ext, halom, dim, ierr
+      real(kind=REAL64) :: ra,rb,rc,rd,rx,re
+      real(kind=REAL64), parameter :: EPS_8= 2.D-5
       real(kind=REAL64), dimension(:), allocatable :: lat
       real :: verysmall
       real(kind=REAL128) :: smallest_dz,posz
+      real   , dimension(:,:), contiguous, pointer :: temp_rptr
+      integer, dimension(:,:), contiguous, pointer :: temp_iptr
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
-      integer ::  kp1, flag_r_n, istat,istatu,istatv
+      integer :: kp1, flag_r_n, istat,istatu,istatv
+      integer :: DISP_UNIT, INFO
+      integer(KIND=MPI_ADDRESS_KIND) :: WINSIZE
+      type(C_PTR), save :: BASEPTR_q,BASEPTR_u,BASEPTR_v,BASEPTR_t,&
+                           BASEtrajq,BASEtraju,BASEtrajv,BASEtrajt,&
+                           BASEcor, BASECOFFS, BASEPTR_list, BASEPTR_pos
 !
 !---------------------------------------------------------------------
 !
-      Adz_maxcfl= max(1,Grd_maxcfl)
-      Adz_halox = Adz_maxcfl + 1
-      Adz_haloy = Adz_halox
+      ADZ_OD_L= .false.
 
-      Adz_lminx = 1    - Adz_halox
-      Adz_lmaxx = l_ni + Adz_halox
-      Adz_lminy = 1    - Adz_haloy
-      Adz_lmaxy = l_nj + Adz_haloy
-! Above lines should be replaced by the following when SLOD
-! is completed. Adz_maxcfl should also no longer be needed.
-!!$      Adz_halox = G_halox
-!!$      Adz_haloy = G_haloy
-!!$      Adz_lminx = l_minx
-!!$      Adz_lmaxx = l_maxx
-!!$      Adz_lminy = l_miny
-!!$      Adz_lmaxy = l_maxy
+      if (ADZ_OD_L) then
+         Adz_halox = G_halox
+         Adz_haloy = G_haloy
+      else
+         Adz_maxcfl= max(1,Grd_maxcfl)
+         Adz_halox = Adz_maxcfl + 1
+         Adz_haloy = Adz_halox
 
-      Adz_nit = Adz_lmaxx - Adz_lminx + 1
-      Adz_njt = Adz_lmaxy - Adz_lminy + 1
-      Adz_nij = Adz_nit * Adz_njt
+         Adz_lminx = 1    - Adz_halox
+         Adz_lmaxx = l_ni + Adz_halox
+         Adz_lminy = 1    - Adz_haloy
+         Adz_lmaxy = l_nj + Adz_haloy
+
+         Adz_nit = Adz_lmaxx - Adz_lminx + 1
+         Adz_njt = Adz_lmaxy - Adz_lminy + 1
+         Adz_nij = Adz_nit * Adz_njt
+      endif
+
       Adz_2dnh = l_ni * l_nj
       Adz_3dnh = Adz_2dnh * l_nk
 
@@ -93,6 +105,7 @@
       Adz_k0t= Adz_k0
       if(Lam_gbpil_t > 0) Adz_k0t= Adz_k0 - 1
       Adz_k0m= max(Adz_k0t-2,1)
+      if (adz_BC_LAM_flux/=0) Adz_k0m=1
 
       Adz_num_u= (Adz_inu-Adz_i0u+1)*(Adz_jn -Adz_j0 +1)*(l_nk-Adz_k0 +1)
       Adz_num_v= (Adz_in -Adz_i0 +1)*(Adz_jnv-Adz_j0v+1)*(l_nk-Adz_k0 +1)
@@ -101,40 +114,61 @@
 
       Adz_kkmax= l_nk-2
 
-      Adz_cpntr_q= vsearch_setup_plus(Ver_z_8%m(1:G_nk), G_nk,&
+      if (ADZ_OD_L) then
+         Adz_cpntr_q= vsearch_setup_plus(Ver_z_8%m(1:G_nk), G_nk,&
+                    l_maxx-l_minx+1,l_maxy-l_miny+1,1-l_i0,1-l_j0)
+         Adz_cpntr_t= vsearch_setup_plus(Ver_z_8%t(1:G_nk), G_nk,&
+                    l_maxx-l_minx+1,l_maxy-l_miny+1,1-l_i0,1-l_j0)
+         Adz_iminposx = l_i0+1    - Adz_halox   + EPS_8
+         Adz_imaxposx = l_i0+l_ni + Adz_halox-2 - EPS_8
+         Adz_iminposy = l_j0+1    - Adz_haloy   + EPS_8
+         Adz_imaxposy = l_j0+l_nj + Adz_haloy-2 - EPS_8
+      else
+         Adz_cpntr_q= vsearch_setup_plus(Ver_z_8%m(1:G_nk), G_nk,&
                                  Adz_nit,Adz_njt,1-l_i0,1-l_j0)
-      Adz_cpntr_t= vsearch_setup_plus(Ver_z_8%t(1:G_nk), G_nk,&
+         Adz_cpntr_t= vsearch_setup_plus(Ver_z_8%t(1:G_nk), G_nk,&
                                  Adz_nit,Adz_njt,1-l_i0,1-l_j0)
-
-! FOR SLOD
-!!$      Adz_iminposx = l_i0+   1-Adz_halox   + EPS_8
-!!$      Adz_imaxposx = l_i0+l_ni+Adz_halox-2 - EPS_8
-!!$      Adz_iminposy = l_j0+   1-Adz_haloy   + EPS_8
-!!$      Adz_imaxposy = l_j0+l_nj+Adz_haloy-2 - EPS_8
-
+         Adz_iminposx = l_i0+adz_lminx   + EPS_8
+         Adz_imaxposx = l_i0+adz_lmaxx-2 - EPS_8
+         Adz_iminposy = l_j0+adz_lminy   + EPS_8
+         Adz_imaxposy = l_j0+adz_lmaxy-2 - EPS_8
+      endif
       BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
 
-      Adz_iminposx = l_i0+adz_lminx   + EPS_8
-      Adz_imaxposx = l_i0+adz_lmaxx-2 - EPS_8
-      Adz_iminposy = l_j0+adz_lminy   + EPS_8
-      Adz_imaxposy = l_j0+adz_lmaxy-2 - EPS_8
+      allocate (Adz_gindx_alongX(0:Ptopo_npex), Adz_gindx_alongY(0:Ptopo_npey))
+      do i=0, Ptopo_npex-2
+         Adz_gindx_alongX(i) = Ptopo_gindx(2,Ptopo_colrow(Ptopo_couleur,i,0)+1)
+      end do
+      Adz_gindx_alongX(Ptopo_npex-1) = G_ni - BCS_BASE - 1
+      Adz_gindx_alongX(Ptopo_npex  ) = 2*G_ni
+      do i=0, Ptopo_npey-2
+         Adz_gindx_alongY(i) = Ptopo_gindx(4,Ptopo_colrow(Ptopo_couleur,0,i)+1)
+      end do
+      Adz_gindx_alongY(Ptopo_npey-1) = G_nj - BCS_BASE - 1
+      Adz_gindx_alongY(Ptopo_npey  ) = 2*G_nj
+
+! ceci est a revoir dans le contexte ou on peut placer des donnees dans le halo externe
+! et calculer les RHS sur potentiellement plus large et ainsi repousser la frontiere
+! de troncature
+
       if (l_west ) Adz_iminposx = l_i0+     BCS_BASE   + EPS_8
       if (l_east ) Adz_imaxposx = l_i0+l_ni-BCS_BASE-1 - EPS_8
       if (l_south) Adz_iminposy = l_j0+     BCS_BASE   + EPS_8
       if (l_north) Adz_imaxposy = l_j0+l_nj-BCS_BASE-1 - EPS_8
+      Adz_glbminpos= dble(BCS_BASE+1) + EPS_8
 
-      Adz_yyminposx = 2    + Glb_pil_w     + EPS_8
-      Adz_yymaxposx = G_ni - Glb_pil_e - 1 - EPS_8
-      Adz_yyminposy = 2    + Glb_pil_s     + EPS_8
-      Adz_yymaxposy = G_nj - Glb_pil_n - 1 - EPS_8
+      Adz_yyminposx = 1+ BCS_BASE + EPS_8
+      Adz_yymaxposx = 1+ G_ni - BCS_BASE -1 - EPS_8
+      Adz_yyminposy = 1+ BCS_BASE + EPS_8
+      Adz_yymaxposy = 1+ G_nj - BCS_BASE -1 - EPS_8
 
       Adz_i0b =    1 + BCS_BASE*west
       Adz_inb = l_ni - BCS_BASE*east
       Adz_j0b =    1 + BCS_BASE*south
       Adz_jnb = l_nj - BCS_BASE*north
 
-      Adz_num_b= (Adz_inb -Adz_i0b +1)*(Adz_jnb -Adz_j0b +1)*(l_nk-Adz_k0+1)
+      Adz_num_b = (Adz_inb -Adz_i0b +1)*(Adz_jnb -Adz_j0b +1)*l_nk
 
       allocate (  Adz_delz_m(0:l_nk),  Adz_delz_t(0:l_nk), &
                  Adz_odelz_m(0:l_nk), Adz_odelz_t(0:l_nk) )
@@ -179,6 +213,8 @@
          Adz_search_t(k) = k0
       end do
 
+      if (.not.ADZ_OD_L) then
+
       allocate ( Adz_cy_8(Adz_lminy:Adz_lmaxy) )
       halom= max(Adz_haloy,G_haloy)
       allocate ( lat(1-halom:G_nj+halom+1))
@@ -194,26 +230,76 @@
       end do
       deallocate(lat)
 
-      allocate (&
-         Adz_uu_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
-         Adz_vv_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
-         Adz_ww_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
-         Adz_uvw_d(3,Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk), &
-         Adz_uu_arr(l_ni,l_nj,l_nk), Adz_vv_arr(l_ni,l_nj,l_nk), &
-         Adz_ww_arr(l_ni,l_nj,l_nk), Adz_uvw_dep(3,l_ni,l_nj,l_nk) )
+      else
 
-      Adz_uu_ext=0. ; Adz_vv_ext=0. ; Adz_ww_ext=0.
+      allocate ( Adz_cy_8(l_miny:l_maxy) )
+      halom= G_haloy
+      allocate ( lat(min(l_j0+l_miny-1,1-halom):max(G_nj+halom+1,l_j0+l_maxy-1)))
+      lat(1-G_haloy:G_nj+G_haloy+1)= G_yg_8(1-G_haloy:G_nj+G_haloy+1)
+      do j= lbound(lat,dim=1), -G_haloy
+         lat(j)= G_yg_8(1-G_haloy) + (j-1+G_haloy) * geomh_hy_8
+      end do
+      do j = G_nj+G_haloy+2, ubound(lat,dim=1)
+         lat(j)= G_yg_8(G_nj+G_haloy) + (j-G_nj-G_haloy) * geomh_hy_8
+      end do
+      do j = l_miny, l_maxy
+         Adz_cy_8(j) = 1.d0 / cos(lat(l_j0+j-1))
+      end do
+      deallocate(lat)
+
+      end if
+
+      allocate( Adz_zabcd_8%t(l_nk),Adz_zbacd_8%t(l_nk),Adz_zcabd_8%t(l_nk),Adz_zdabc_8%t(l_nk))
+
+      allocate( Adz_zxabcde_8%t(l_nk),Adz_zaxbcde_8%t(l_nk),Adz_zbxacde_8%t(l_nk),&
+                Adz_zcxabde_8%t(l_nk),Adz_zdxabce_8%t(l_nk),Adz_zexabcd_8%t(l_nk))
+
+      do k= 2,l_nk-2
+         ra = Ver_z_8%t(k-1)
+         rb = Ver_z_8%t(k)
+         rc = Ver_z_8%t(k+1)
+         rd = Ver_z_8%t(k+2)
+         Adz_zabcd_8%t(k) = 1.0/triprod(ra,rb,rc,rd)
+         Adz_zbacd_8%t(k) = 1.0/triprod(rb,ra,rc,rd)
+         Adz_zcabd_8%t(k) = 1.0/triprod(rc,ra,rb,rd)
+         Adz_zdabc_8%t(k) = 1.0/triprod(rd,ra,rb,rc)
+      end do
+
+      do k = 3,l_nk-3
+         rx = Ver_z_8%t(k-2)
+         ra = Ver_z_8%t(k-1)
+         rb = Ver_z_8%t(k)
+         rc = Ver_z_8%t(k+1)
+         rd = Ver_z_8%t(k+2)
+         re = Ver_z_8%t(k+3)
+         Adz_zxabcde_8%t(k) = 1.0/quiprod(rx,ra,rb,rc,rd,re)
+         Adz_zaxbcde_8%t(k) = 1.0/quiprod(ra,rx,rb,rc,rd,re)
+         Adz_zbxacde_8%t(k) = 1.0/quiprod(rb,rx,ra,rc,rd,re)
+         Adz_zcxabde_8%t(k) = 1.0/quiprod(rc,rx,ra,rb,rd,re)
+         Adz_zdxabce_8%t(k) = 1.0/quiprod(rd,rx,ra,rb,rc,re)
+         Adz_zexabcd_8%t(k) = 1.0/quiprod(re,rx,ra,rb,rc,rd)
+      end do
+
+      allocate (Adz_uu_arr(l_ni,l_nj,l_nk), Adz_vv_arr   (l_ni,l_nj,l_nk),&
+                Adz_ww_arr(l_ni,l_nj,l_nk), Adz_uvw_dep(3,l_ni,l_nj,Adz_k0m:l_nk))
+      
+      if (ADZ_OD_L) then
+         allocate (  Adz_uvw_d(3,l_minx:l_maxx,l_miny:l_maxy,l_nk))
+      else
+         allocate (&
+         Adz_uu_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
+         Adz_vv_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
+         Adz_ww_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
+         Adz_uvw_d(3,Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk) )
+         Adz_uu_ext=0. ; Adz_vv_ext=0. ; Adz_ww_ext=0.
+      endif
 
       allocate(Adz_pm (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
                Adz_pmu(3,Adz_i0u:Adz_inu, Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
                Adz_pmv(3,Adz_i0 :Adz_in , Adz_j0v:Adz_jnv,Adz_k0 :l_nk),&
                Adz_pt (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0t:l_nk),&
-               Adz_pb (3,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb,Adz_k0t:l_nk) )
+               Adz_pb (3,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb,      1:l_nk) )
 
-      allocate ( Adz_pxyzt (3,l_ni,l_nj,l_nk),&
-                 Adz_wpxyz(-1:l_ni+2,-1:l_nj+2,l_nk,3) )
-      Adz_wpxyz(-1:0,:,:,:)=0. ; Adz_wpxyz(l_ni+1:l_ni+2,:,:,:)=0.
-      Adz_wpxyz(:,-1:0,:,:)=0. ; Adz_wpxyz(:,l_nj+1:l_nj+2,:,:)=0.
 
       flag_m_f = FLAG_LVL_M
       flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER
@@ -221,12 +307,21 @@
       call gmm_build_meta4D (meta,  1,3   ,0,0,   3, &
                                     1,l_ni,0,0,l_ni, &
                                     1,l_nj,0,0,l_nj, &
-                                    1,l_nk,0,0,l_nk, &
+                                    Adz_k0m,l_nk,0,0,l_nk, &
                                     0,GMM_NULL_FLAGS)
       mymeta= SET_GMMUSR_FLAG(meta, flag_m_f)
-
       istat= gmm_create('ADZ_PXYZM',Adz_pxyzm, mymeta, flag_r_n)
+      
+      call gmm_build_meta4D (meta,  -1,l_ni+2,0,0,l_ni+4, &
+                                    -1,l_nj+2,0,0,l_nj+4, &
+                                    1,l_nk,0,0,l_nk, &
+                                    1,3   ,0,0,   3, &
+                                    0,GMM_NULL_FLAGS)
+      mymeta= SET_GMMUSR_FLAG(meta, flag_m_f)
+      istat= gmm_create('ADZ_WPXYZ',Adz_wpxyz, mymeta, flag_r_n)
+      
       istat= gmm_get('ADZ_PXYZM',Adz_pxyzm)
+      istat= gmm_get('ADZ_WPXYZ',Adz_pxyzm)
 
 !     Wind information at the lowest thermodynamic level
 !     from the physics surface layer scheme
@@ -242,7 +337,6 @@
 
       !Allocation Conservation Postprocessing
       !--------------------------------------
-      allocate (adz_flux     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
       allocate (adz_flux_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
       allocate (adz_flux_BQWP(max(1,Tr3d_ntrBICHQV_WP)))
       allocate (adz_flux_3CWP_PS(1))
@@ -264,7 +358,6 @@
       allocate(adz_flux_3CWP_PS(1)%fo(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
       allocate(adz_flux_3CWP_PS(1)%fi(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
 
-      allocate (adz_post     (max(1,Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)))
       allocate (adz_post_3CWP(max(1,Tr3d_ntrTRICUB_WP)))
       allocate (adz_post_BQWP(max(1,Tr3d_ntrBICHQV_WP)))
 
@@ -295,24 +388,109 @@
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
 
-      if (Ptopo_myrow>0) then
-         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(1)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow-1)
-         if (Ptopo_mycol>0           ) Adz_exppe(3)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow-1)
-                                       Adz_exppe(2)=Ptopo_colrow(0,Ptopo_mycol  ,Ptopo_myrow-1)
-      endif
-      if (Ptopo_myrow<Ptopo_npey-1) then
-         if (Ptopo_mycol<Ptopo_npex-1) Adz_exppe(7)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow+1)
-         if (Ptopo_mycol>0           ) Adz_exppe(5)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow+1)
-                                       Adz_exppe(6)=Ptopo_colrow(0,Ptopo_mycol  ,Ptopo_myrow+1)
-      endif
-      if (Ptopo_mycol>0              ) Adz_exppe(4)=Ptopo_colrow(0,Ptopo_mycol-1,Ptopo_myrow  )
-      if (Ptopo_mycol<Ptopo_npex-1   ) Adz_exppe(8)=Ptopo_colrow(0,Ptopo_mycol+1,Ptopo_myrow  )
-!
+      dim = l_ni*l_nj*l_nk
+      Adz_MAX_MPI_OS_SIZE= dim/4 ! estimated that no more than 25% of total local upstream positions will be exported
+
+      allocate ( Adz_expq%gpos(3*dim,8), Adz_expu%gpos(3*dim,8),&
+                 Adz_expv%gpos(3*dim,8), Adz_expt%gpos(3*dim,8),&
+                 Adz_expq%dest(Adz_MAX_MPI_OS_SIZE, 0:ptopo_world_numproc-1),&
+                 Adz_expu%dest(Adz_MAX_MPI_OS_SIZE, 0:ptopo_world_numproc-1),&
+                 Adz_expv%dest(Adz_MAX_MPI_OS_SIZE, 0:ptopo_world_numproc-1),&
+                 Adz_expt%dest(Adz_MAX_MPI_OS_SIZE, 0:ptopo_world_numproc-1) )
+      dim= Step_total
+      if (Init_balgm_L.and.Init_mode_L) dim= max(Step_total,Init_dfnp-1)
+      allocate ( nexports(dim) )
+
+      allocate (Adz_expq%stk(4,ptopo_world_numproc), &
+                Adz_expu%stk(4,ptopo_world_numproc), &
+                Adz_expv%stk(4,ptopo_world_numproc), &
+                Adz_expt%stk(4,ptopo_world_numproc))
+      Adz_expq%stk= 0 ; Adz_expu%stk= 0 ; Adz_expv%stk= 0 ; Adz_expt%stk= 0
+                
+      nexports= 0
+      
+      Adz_COMM         = RPN_COMM_comm ('MULTIGRID'  )
+      INTEGER_DATATYPE = RPN_COMM_datyp('MPI_INTEGER')
+      REAL_DATATYPE    = RPN_COMM_datyp('MPI_REAL'   )
+      
+      dim= 2*Ptopo_world_numproc * 4
+      WINSIZE  = dim * 4 ! will allocate dim integers of 4 bytes each
+      DISP_UNIT= 4       ! window displacement unit = size of an integer
+
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_list, Adz_Win_list, ierr)
+      call c_f_pointer (BASEPTR_list, temp_iptr, [2*Ptopo_world_numproc,4])
+      Adz_expq%list(1:dim) => temp_iptr(1:dim,1)
+      Adz_expu%list(1:dim) => temp_iptr(1:dim,2)
+      Adz_expv%list(1:dim) => temp_iptr(1:dim,3)
+      Adz_expt%list(1:dim) => temp_iptr(1:dim,4)
+      
+      dim = Adz_MAX_MPI_OS_SIZE * 3 * 4
+      WINSIZE= dim * 4 ! will allocate dim reals of 4 bytes each
+      
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_pos, Adz_Win_pos, ierr)
+      call c_f_pointer (BASEPTR_pos, temp_rptr, [2*Ptopo_world_numproc,4])
+      Adz_expq%pos(1:dim) => temp_rptr(1:dim,1)
+      Adz_expu%pos(1:dim) => temp_rptr(1:dim,2)
+      Adz_expv%pos(1:dim) => temp_rptr(1:dim,3)
+      Adz_expt%pos(1:dim) => temp_rptr(1:dim,4)
+
+
+
+      
+      
+      dim=2*Ptopo_world_numproc
+      WINSIZE   = dim * 4 ! will allocate dim integers of 4 bytes each
+      DISP_UNIT = 4       ! window displacement unit = size of an integer
+      INFO = 0                  ! MPI_INFO_NULL
+
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_q, Adz_expq%winreqs, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_u, Adz_expu%winreqs, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_v, Adz_expv%winreqs, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_t, Adz_expt%winreqs, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASECOFFS, Adz_offs_win, ierr)
+      call C_F_POINTER ( BASEPTR_q, Adz_expq%from, [dim] )
+      call C_F_POINTER ( BASEPTR_u, Adz_expu%from, [dim] )
+      call C_F_POINTER ( BASEPTR_v, Adz_expv%from, [dim] )
+      call C_F_POINTER ( BASEPTR_t, Adz_expt%from, [dim] )
+      call C_F_POINTER ( BASECOFFS, Adz_offs     , [dim] )
+
+      dim = Adz_MAX_MPI_OS_SIZE * 3
+      WINSIZE   = dim * 4 ! will allocate dim reals of 4 bytes each
+      DISP_UNIT = 4       ! window displacement unit = size of an integer
+      INFO = 0            ! MPI_INFO_NULL
+      
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEtrajq, Adz_expq%wintraj, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEtraju, Adz_expu%wintraj, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEtrajv, Adz_expv%wintraj, ierr)
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEtrajt, Adz_expt%wintraj, ierr)
+      call C_F_POINTER ( BASEtrajq, Adz_expq%requests, [dim] )
+      call C_F_POINTER ( BASEtraju, Adz_expu%requests, [dim] )
+      call C_F_POINTER ( BASEtrajv, Adz_expv%requests, [dim] )
+      call C_F_POINTER ( BASEtrajt, Adz_expt%requests, [dim] )
+
+      dim = Adz_MAX_MPI_OS_SIZE * max(Tr3d_debTRICUB_NT, Tr3d_ntrBICHQV_NT,&
+                                      Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP) * 3
+      WINSIZE   = dim * 4       ! will allocate dim reals of 4 bytes each
+      call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEcor, Adz_wincor, ierr)
+      call C_F_POINTER ( BASEcor, Adz_cor, [dim] )
+!      
 !---------------------------------------------------------------------
 !
       return
 
  1000 format(/,'=================================================',/,A31,I2,/,&
                '=================================================' )
+
+contains
+
+      real(kind=REAL64) function triprod(za,zb,zc,zd)
+         real(kind=REAL64), intent(in) :: za,zb,zc,zd
+         triprod = ((za-zb)*(za-zc)*(za-zd))
+      end function triprod
+
+      real(kind=REAL64) function quiprod(zx,za,zb,zc,zd,ze)
+         real(kind=REAL64), intent(in) :: zx,za,zb,zc,zd,ze
+         quiprod = ((zx-za)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze))
+      end function quiprod
 
       end subroutine adz_set

@@ -35,7 +35,7 @@ subroutine time_trace_barr(t, tag, barrier, comm, barrier_code)  ! insert a new 
 
   integer :: ierr
   integer(kind=8) :: tt1, tt2
-
+return ! for now MD
   tt1 = what_time_is_it() 
   if(barrier) then
     call barrier_code(comm, ierr)                  ! barrier call if needed

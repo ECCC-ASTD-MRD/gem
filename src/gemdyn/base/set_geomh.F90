@@ -60,8 +60,8 @@
       allocate (geomh_latrx(l_ni,l_nj), geomh_lonrx(l_ni,l_nj))
       allocate (geomh_lonQ(1-G_halox:G_ni+G_halox), geomh_latQ(1-G_haloy:G_nj+G_haloy),&
                 geomh_lonF(1-G_halox:G_ni+G_halox), geomh_latF(1-G_haloy:G_nj+G_haloy) )
-      allocate (geomh_latgs(G_nj),geomh_longs(G_ni+1), &
-                geomh_latgv(G_nj),geomh_longu(G_ni+1), &
+      allocate (geomh_latgs(1-G_haloy:G_nj+G_haloy),geomh_longs(1-G_halox:G_ni+G_halox),&
+                geomh_latgv(1-G_haloy:G_nj+G_haloy),geomh_longu(1-G_halox:G_ni+G_halox),&
                 geomh_latij(geomh_minx:geomh_maxx,geomh_miny:geomh_maxy), &
                 geomh_lonij(geomh_minx:geomh_maxx,geomh_miny:geomh_maxy))
 
@@ -92,16 +92,28 @@
          geomh_latF(j) = (posy_8(j+1) + posy_8(j)) * 0.5d0
       end do
 
-      do i = 1, G_ni+1
+      do i= 1-G_halox, G_ni+G_halox
          geomh_longs(i) =  posx_8(i)
          geomh_longu(i) = geomh_lonF(i)
       end do
 
-      do i = 1, G_nj
+      do i= 1-G_haloy, G_nj+G_haloy
          geomh_latgs(i) =  posy_8(i)
          geomh_latgv(i) = geomh_latF(i)
       end do
-
+!!$      print*, geomh_longs
+!!$      print*, 'allo'
+!!$      print*, geomh_longu
+!!$      print*, 'allo'
+!!$      print*, geomh_latgs
+!!$      print*, 'allo'
+!!$      print*, geomh_latgv
+!!$      print*, 'allo'
+!!$      print*, 1-G_halox, G_ni+G_halox
+!!$      print*, 1-G_haloy, G_nj+G_haloy,G_ni,G_nj
+!!$      call gem_error(-1,'','')      
+!!$          -3         102
+!!$          -3          82          98          78
       allocate (geomh_x_8 (l_minx:l_maxx),geomh_xu_8 (l_minx:l_maxx),&
                 geomh_sx_8(l_minx:l_maxx),geomh_sy_8 (l_miny:l_maxy),&
                 geomh_cx_8(l_minx:l_maxx),geomh_cy_8 (l_miny:l_maxy),&

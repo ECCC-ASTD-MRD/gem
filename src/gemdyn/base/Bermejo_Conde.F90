@@ -15,7 +15,7 @@
 
 !**s/r Bermejo_Conde - Ensures conservation of interpolated field (Bermejo and Conde,2002)
 
-      subroutine Bermejo_Conde ( F_bc, F_ntr_bc, F_i0, F_in, F_j0, F_jn )
+      subroutine Bermejo_Conde ( F_bc, F_ntr_bc, F_i0, F_in, F_j0, F_jn, F_k0 )
 
       use adz_mem
       use adz_options
@@ -32,7 +32,7 @@
 
       !arguments
       !---------
-      integer,  intent(in)                         :: F_i0,F_in,F_j0,F_jn,F_ntr_bc
+      integer,  intent(in)                         :: F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc
       type(bc), intent(inout), dimension(F_ntr_bc) :: F_bc !Pointers for tracers using B-C
 
       !object
@@ -42,11 +42,11 @@
       !     Based on Bermejo/Conde Template from GEM3 (Gravel and DeGrandpre 2012)
       !==============================================================================================================
 
-      integer :: i,j,k,n
+      integer :: i,j,k,n,l_count(3,F_ntr_bc)
 
       real(kind=REAL64), dimension(F_ntr_bc) :: mass_p_8,mass_m_8,mass_fo_8,mass_fi_8, &
                                                 mass_tot_p_8,mass_tot_m_8,mass_wei_8,  &
-                                                mass_bc_8,mass_bc_r_8,mass_deficit_8
+                                                mass_bc_8,mass_bc_r_8,mass_deficit_8,mass_bc_w_8
 
       integer,           dimension(F_ntr_bc) :: cycle_tr
 
@@ -79,7 +79,7 @@
       !Evaluate Mass of Tracer TIME P/M and Mass of Flux_out/Flux_in for all tracers using Bermejo-Conde
       !-------------------------------------------------------------------------------------------------
       call mass_tr_PM ( mass_p_8, mass_m_8, mass_fo_8, mass_fi_8, F_bc, airm1, airm0, &
-                        l_minx, l_maxx, l_miny, l_maxy, l_nk, F_i0, F_in, F_j0, F_jn, Adz_k0, F_ntr_bc )
+                        l_minx, l_maxx, l_miny, l_maxy, l_nk, F_i0, F_in, F_j0, F_jn, F_k0, F_ntr_bc )
 
       reset_epsilon_L = .TRUE.
 
@@ -111,7 +111,7 @@
          !---------------------------------------------------
          if (F_bc(n)%weight==1) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -132,7 +132,7 @@
          !---------------------------------------------------------
          else if (F_bc(n)%weight==2) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -153,7 +153,7 @@
          !-------------------------------------------------------------------------
          elseif (F_bc(n)%weight==3) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -177,7 +177,7 @@
 
       !Evaluate Mass of Tracer for all tracers using Bermejo-Conde (Component %w)
       !--------------------------------------------------------------------------
-      call mass_tr_X (mass_wei_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0,F_ntr_bc,1)
+      call mass_tr_X (mass_wei_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc,1)
 
       do n=1,F_ntr_bc
 
@@ -208,7 +208,7 @@
          !---------------------------------------------
          if (.NOT.Adz_BC_min_max_L) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -225,7 +225,7 @@
          !---------------------------------------------------
          else if (Adz_BC_min_max_L) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -263,7 +263,7 @@
 
          !Evaluate Mass of Tracer for all tracers using Bermejo-Conde (Component %m)
          !--------------------------------------------------------------------------
-         call mass_tr_X (mass_bc_r_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0,F_ntr_bc,2)
+         call mass_tr_X (mass_bc_r_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc,2)
 
          !Apply Proportional mass-fixer due to change in mass
          !---------------------------------------------------
@@ -273,7 +273,7 @@
 
             proportion_8 = mass_tot_p_8(n)/mass_bc_r_8(n)
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
 
@@ -293,7 +293,7 @@
 
          !Evaluate Mass of Tracer for all tracers using Bermejo-Conde (Component %m)
          !--------------------------------------------------------------------------
-         call mass_tr_X (mass_bc_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0,F_ntr_bc,2)
+         call mass_tr_X (mass_bc_8,F_bc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc,2)
 
          do n=1,F_ntr_bc
 
@@ -338,11 +338,9 @@ contains
       !---------
       integer, intent(in) :: F_numero
 
-      integer :: err,count(Adz_k0:l_nk,3),iprod
+      integer :: err,count(F_k0:l_nk,3),iprod
 
-      integer :: l_count(3,F_ntr_bc),g_count(3,F_ntr_bc)
-
-      real(kind=REAL64), dimension(F_ntr_bc) :: mass_bc_w_8
+      integer :: g_count(3,F_ntr_bc)
 
       real(kind=REAL64) :: ratio_8
 
@@ -401,7 +399,7 @@ contains
 
          if (.NOT.Adz_BC_min_max_L) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
 
                count(k,3) = 0.
 
@@ -421,7 +419,7 @@ contains
 
          else if (Adz_BC_min_max_L) then
 
-            do k=Adz_k0,l_nk
+            do k=F_k0,l_nk
 
                count(k,1) = 0.
                count(k,2) = 0.
@@ -454,13 +452,13 @@ contains
 
             end do
 
-            call mass_tr (mass_bc_w_8(n),bc_w,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+            call mass_tr (mass_bc_w_8(n),bc_w,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,F_k0)
 
          end if
 
       elseif (F_numero==5) then
 
-         call mass_tr (mass_bc_8(n),F_bc(n)%m,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0)
+         call mass_tr (mass_bc_8(n),F_bc(n)%m,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,F_k0)
 
          mass_tot_bc_8  = mass_bc_8(n)
 

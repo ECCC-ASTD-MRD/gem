@@ -43,7 +43,7 @@
       !NOTE: U,V output on Staggered grids
       !============================================================
 
-      integer :: k
+      integer :: k,i0,in,j0,jn
       real, dimension (:,:,:), pointer :: hu
       real, dimension (l_minx:l_maxx,l_miny:l_maxy,G_nk) :: gz_t
 !
@@ -53,26 +53,35 @@
 
       if (Schm_sleve_L) call gem_error (-1,'INIT_BAR','  SLEVE not available YET')
 
+      orols = 0. ; sls = 0. ; topo_low = 0. ; topo_high = 0.
+
+      i0= 1-G_halox ; in= l_ni+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy
+
       !Setup Williamson Case 7: The 21 December 1978 Initial conditions are read
       !-------------------------------------------------------------------------
       if (Williamson_case==7) then
 
-         call inp_data ( ut1, vt1, wt1, tt1  ,&
-                         zdt1,st1,trt1,fis0,.true.,Step_runstrt_S,&
+         call inp_data ( ut1, vt1, wt1, tt1, qt1, zdt1,st1,trt1,&
+                         fis0, orols, .true., Step_runstrt_S   ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
+
+         if (Schm_sleve_L) then
+            call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy)
+         endif
 
          !Initialize log(surface pressure)
          !--------------------------------
          if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
 
-            st1(1:l_ni,1:l_nj) = log(st1(1:l_ni,1:l_nj)/Cstv_pref_8)
+            st1(i0:in,j0:jn) = log(st1(i0:in,j0:jn)/Cstv_pref_8)
 
          !Initialize PHI perturbation in q
          !--------------------------------
          else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
             do k=1,G_nk+1
-               qt1(1:l_ni,1:l_nj,k) = st1(1:l_ni,1:l_nj) - 1.0d0/Cstv_invFI_8
+               qt1(i0:in,j0:jn,k) = st1(i0:in,j0:jn) - 1.0d0/Cstv_invFI_8
             end do
 
          end if
@@ -100,21 +109,29 @@
       !-------------------------------------------------------------------------
       call wil_init (ut1,vt1,gz_t,st1,fis0,qt1,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
 
-      !Required for CASE5 LAM version
-      !------------------------------
-      topo_high(1:l_ni,1:l_nj) =      fis0(1:l_ni,1:l_nj)
-      topo_low (1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
+      !Required for CASE5 LAM version (NESTING)
+      !----------------------------------------
+      topo_high(i0:in,j0:jn,1) =      fis0(i0:in,j0:jn)
+      topo_low (i0:in,j0:jn,1) = topo_high(i0:in,j0:jn,1)
+      topo_high(i0:in,j0:jn,2) =     orols(i0:in,j0:jn)
+      topo_low (i0:in,j0:jn,2) = topo_high(i0:in,j0:jn,2)
+
+      if (Schm_sleve_L) then
+         call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy)
+      endif
 
       !Estimate U-V and T on scalar grids
       !----------------------------------
-      call hwnd_stag ( pw_uu_plus,pw_vv_plus,ut1,vt1, &
-                       l_minx,l_maxx,l_miny,l_maxy,G_nk,.false. )
+      call hwnd_stag2( pw_uu_plus,pw_vv_plus,ut1,vt1      ,&
+                       l_minx,l_maxx,l_miny,l_maxy,G_nk   ,&
+                       1-G_halox*west ,l_niu+G_halox*east ,&
+                       1-G_haloy*south,l_njv+G_haloy*north, .false. )
 
       pw_tt_plus = tt1
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' .and. .not.Ctrl_testcases_adv_L) then
          do k=1,G_nk
-            qt1(1:l_ni ,1:l_nj, k) = max(gz_t(1:l_ni,1:l_nj,1), 0.)
+            qt1(i0:in,j0:jn, k) = max(gz_t(i0:in,j0:jn,1), 0.)
          end do
       end if
 !

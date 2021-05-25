@@ -191,7 +191,7 @@ contains
            .or. Theo_case_S == 'MTN_PINTYNL' &
            .or. Theo_case_S == 'NOFLOW' ) then
 
-         call mtn_data ( pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0, sls, &
+         call mtn_data ( pw_uu_plus, pw_vv_plus, pw_tt_plus, st1, qt1, fis0, orols, sls, &
                          l_minx, l_maxx, l_miny, l_maxy, G_nk, Theo_case_S )
          call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )

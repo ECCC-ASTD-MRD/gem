@@ -17,6 +17,7 @@
 
       subroutine main_gmm_storage()
       use dynkernel_options
+      use gem_options
       use glb_ld
       use gmm_geof
       use gmm_itf_mod
@@ -29,6 +30,11 @@
       implicit none
 #include <arch_specific.hf>
 
+#include "gmm_gem_flags.hf"
+#define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
+
+      type(gmm_metadata) :: meta, mymeta
+      integer(kind=INT64) :: flag_m_f
       integer :: istat
 !
 !-------------------------------------------------------------------
@@ -54,18 +60,28 @@
       if ( Init_mode_L ) call set_vta()
 
       gmmk_fis0_s      = 'FIS0'
+      gmmk_orols_s     = 'OROLS'
       gmmk_sls_s       = 'SLS'
       gmmk_topo_low_s  = 'TOPOLOW'
       gmmk_topo_high_s = 'TOPOHIGH'
 
-      nullify (fis0, sls, topo_low, topo_high)
-      istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_create(gmmk_sls_s,sls,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_get (gmmk_fis0_s, fis0)
-      istat = gmm_get (gmmk_sls_s , sls )
+      nullify (fis0, orols, sls, topo_low, topo_high)
+      istat = gmm_create(gmmk_fis0_s ,fis0 ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_orols_s,orols,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_sls_s  ,sls  ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_get (gmmk_fis0_s , fis0 )
+      istat = gmm_get (gmmk_orols_s, orols)
+      istat = gmm_get (gmmk_sls_s  , sls  )
 
-      istat = gmm_create(gmmk_topo_low_s ,topo_low ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      call gmm_build_meta3D(meta, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
+                            1,2,0,0,2, 0,GMM_NULL_FLAGS)
+      flag_m_f = FLAG_LVL_M
+      mymeta= SET_GMMUSR_FLAG(meta, flag_m_f)
+
+      istat = gmm_create(gmmk_topo_low_s ,topo_low ,mymeta,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_topo_high_s,topo_high,mymeta,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_get (gmmk_topo_low_s , topo_low )
       istat = gmm_get (gmmk_topo_high_s, topo_high)
 

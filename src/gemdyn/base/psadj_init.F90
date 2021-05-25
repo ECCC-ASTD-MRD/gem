@@ -65,10 +65,6 @@
          call gem_error(-1,'PSADJ_INIT','PSADJ=2 NOT AVAILABLE in GEM-H')
       end if
 
-      if ( Schm_psadj /= 0 .and. Adz_k0>1) then
-         call gem_error(-1,'PSADJ_INIT','PSADJ/=0 NOT VALID when LID NESTING')
-      end if
-
       comm = RPN_COMM_comm ('MULTIGRID')
 
       !Estimate area
@@ -121,7 +117,7 @@
 
       !Compute Dry surface pressure at TIME P (Schm_psadj==2)
       !------------------------------------------------------
-      if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
+      if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
 
       i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
 

@@ -189,10 +189,15 @@
       knd=2
 
       if (pnme /= 0)then
-            call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+         call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
-         end if
+            if(Schm_sleve_L)then
+               call out_fstecr(sls,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+                  'MELS',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
+                  knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
+            endif
+         end if         
       if (pnmx /= 0)then
             call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
@@ -454,6 +459,21 @@
                                 l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
                      'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
                      knd,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
+!code a revoir
+!!$                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then                   
+!!$                   call out_px_diag_level(w1,hybm(G_nk+2)*grav_8, &
+!!$                        l_minx,l_maxx,l_miny,l_maxy,G_nk,px_m,gzm)                
+!!$                   work=gz_diag_m/grav_8
+!!$                   call out_fstecr(w1,l_minx,l_maxx,l_miny,l_maxy,work, &
+!!$                        'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+!!$                        4,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )                
+!!$                   call out_px_diag_level(w1,hybt(G_nk+2)*grav_8, &
+!!$                        l_minx,l_maxx,l_miny,l_maxy,G_nk,px_m,gzm)
+!!$                   work=gz_diag_t/grav_8
+!!$                   call out_fstecr(w1,l_minx,l_maxx,l_miny,l_maxy,work, &
+!!$                        'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+!!$                        4,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
+!!$                endif
              end if
          end if
 
@@ -567,6 +587,9 @@
          !       Do not write we for thermo level nk+3/4 since zdt is at surface
          !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
 
+            if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) &
+               call gem_error(-1,'out_thm','REVIEW WE CODE for DYNAMICS_FISL_H')
+            
             istat = gmm_get(gmmk_zdt1_s,zdt1)
             allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
             ffwe(:,:,G_nk)= 0.

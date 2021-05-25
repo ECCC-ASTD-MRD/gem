@@ -42,7 +42,8 @@
          nest_w  = wt1
          nest_q  = qt1
          nest_zd = zdt1
-         nest_fullme = fis0
+         nest_fullme(:,:,1) = fis0 (:,:)
+         nest_fullme(:,:,2) = orols(:,:)
 
          do n=1,Tr3d_ntr
             deb = (n-1) * l_nk
@@ -58,7 +59,8 @@
          nest_w_fin  = wt1
          nest_q_fin  = qt1
          nest_zd_fin = zdt1
-         nest_fullme_fin = fis0
+         nest_fullme_fin(:,:,1) = fis0 (:,:)
+         nest_fullme_fin(:,:,2) = orols(:,:)
          do n=1,Tr3d_ntr
             deb = (n-1) * l_nk + 1
             nest_tr_fin(l_minx:l_maxx,l_miny:l_maxy,deb:deb+l_nk-1) = tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)

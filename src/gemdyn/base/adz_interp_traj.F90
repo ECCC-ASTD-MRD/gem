@@ -16,7 +16,6 @@
       subroutine adz_interp_traj
       use adz_mem
       use adz_options
-      use adv_pos
       use glb_ld
       use cstv
       use dcst
@@ -27,7 +26,8 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer :: i,j,k,k00,ii1,jj1
+      integer :: i,j,k,k00,i0,in,j0,jn
+      real pxyzt (3,l_ni,l_nj,l_nk)
       real(kind=REAL64), dimension(-1:l_ni+2,-1:l_nj+2,l_nk) :: xm,ym,zm
       real(kind=REAL64) :: aa,bb,cc, xt,yt,zt, wdt,ww,wp,wm
       real(kind=REAL64) :: hh, x1, x2, x3, x4
@@ -80,7 +80,7 @@
            end do
          end do
       end do
-
+      
 ! Prepare parameters for cubic vertical intepolation
       do k=2,l_nk-2
          hh = Ver_z_8%t(k)
@@ -95,9 +95,7 @@
       end do
 
       k00=max(Adz_k0t-1,1)
-      if (.not.associated(pxt)) then
-         allocate (pxt(l_ni,l_nj,l_nk),pyt(l_ni,l_nj,l_nk),pzt(l_ni,l_nj,l_nk))
-      endif
+      if ((adz_BC_LAM_flux/=0).and.(Adz_k0>1)) k00=1
 
       do k= max(k00,2), l_nk-2
          do j= 1, l_nj
@@ -120,14 +118,10 @@
                xm(i,j,k)=xt; ym(i,j,k)=yt
                xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
                yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
-               Adz_pxyzt(1,i,j,k)= xt
-               Adz_pxyzt(2,i,j,k)= yt
-               Adz_pxyzt(3,i,j,k)= zindx(zt)
-               zm (i,j,k)= Adz_pxyzt(3,i,j,k)
-               pzt(i,j,k)= zt
-               ii1 = xt ; jj1 = yt
-               pxt(i,j,k) = G_xg_8(ii1) + (xt-dble(ii1))*geomh_hx_8
-               pyt(i,j,k) = G_yg_8(jj1) + (yt-dble(jj1))*geomh_hy_8
+               pxyzt(1,i,j,k)= xt
+               pxyzt(2,i,j,k)= yt
+               pxyzt(3,i,j,k)= zindx(zt)
+               zm (i,j,k)= pxyzt(3,i,j,k)
             end do
          end do
       end do
@@ -148,14 +142,10 @@
             xm(i,j,k)=xt; ym(i,j,k)=yt
             xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
             yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
-            Adz_pxyzt(1,i,j,k)= xt
-            Adz_pxyzt(2,i,j,k)= yt
-            Adz_pxyzt(3,i,j,k)= zindx(zt)
-            zm (i,j,k)= Adz_pxyzt(3,i,j,k)
-            pzt(i,j,k)= zt
-            ii1 = xt ; jj1 = yt
-            pxt(i,j,k) = G_xg_8(ii1) + (xt-dble(ii1))*geomh_hx_8
-            pyt(i,j,k) = G_yg_8(jj1) + (yt-dble(jj1))*geomh_hy_8
+            pxyzt(1,i,j,k)= xt
+            pxyzt(2,i,j,k)= yt
+            pxyzt(3,i,j,k)= zindx(zt)
+            zm (i,j,k)= pxyzt(3,i,j,k)
          end do
       end do
 
@@ -172,11 +162,8 @@
             xm(i,j,k)=xt; ym(i,j,k)=yt
             xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
             yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
-            Adz_pxyzt(1,i,j,k)= xt
-            Adz_pxyzt(2,i,j,k)= yt
-            ii1 = xt ; jj1 = yt
-            pxt(i,j,k) = G_xg_8(ii1) + (xt-dble(ii1))*geomh_hx_8
-            pyt(i,j,k) = G_yg_8(jj1) + (yt-dble(jj1))*geomh_hy_8
+            pxyzt(1,i,j,k)= xt
+            pxyzt(2,i,j,k)= yt
          end do
          end do
       else
@@ -188,11 +175,8 @@
             xm(i,j,k)=xt; ym(i,j,k)=yt
             xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
             yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
-            Adz_pxyzt(1,i,j,k)= xt
-            Adz_pxyzt(2,i,j,k)= yt
-            ii1 = xt ; jj1 = yt
-            pxt(i,j,k) = G_xg_8(ii1) + (xt-dble(ii1))*geomh_hx_8
-            pyt(i,j,k) = G_yg_8(jj1) + (yt-dble(jj1))*geomh_hy_8
+            pxyzt(1,i,j,k)= xt
+            pxyzt(2,i,j,k)= yt
          end do
          end do
       end if
@@ -203,9 +187,8 @@
          wdt= (Adz_uvw_dep(3,i,j,k-1)+Adz_uvw_dep(3,i,j,k))*half
          zt = Ver_z_8%t(k)-ww*(Cstv_dtD_8*  wdt &
              +Cstv_dtA_8*zdt0(i,j,k-1))
-         Adz_pxyzt(3,i,j,k)= zindx(zt)
-         pzt(i,j,k)= zt
-         zm (i,j,k)= Adz_pxyzt(3,i,j,k)
+         pxyzt(3,i,j,k)= zindx(zt)
+         zm (i,j,k)= pxyzt(3,i,j,k)
       end do
       end do
 
@@ -221,23 +204,24 @@
                xm(i,j,1)=xt; ym(i,j,1)=yt
                xt = min(max(xt,Adz_iminposx),Adz_imaxposx)
                yt = min(max(yt,Adz_iminposy),Adz_imaxposy)
-               Adz_pxyzt(1,i,j,1)= xt
-               Adz_pxyzt(2,i,j,1)= yt
-               Adz_pxyzt(3,i,j,1)= zindx(zt)
-               zm (i,j,1)= Adz_pxyzt(3,i,j,1)
-               pzt(i,j,1)= zt
-               ii1 = xt ; jj1 = yt
-               pxt(i,j,1) = G_xg_8(ii1) + (xt-dble(ii1))*geomh_hx_8
-               pyt(i,j,1) = G_yg_8(jj1) + (yt-dble(jj1))*geomh_hy_8
+               pxyzt(1,i,j,1)= xt
+               pxyzt(2,i,j,1)= yt
+               pxyzt(3,i,j,1)= zindx(zt)
+               zm (i,j,1)= pxyzt(3,i,j,1)
             end do
          end do
       end if
 
-      Adz_pt   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)=&
-      Adz_pxyzt(:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)
+      i0= Adz_i0b ; in= Adz_inb ; j0= Adz_j0b ; jn= Adz_jnb
+      if (adz_BC_LAM_flux==0) then 
+      i0= Adz_i0  ; in= Adz_in  ; j0= Adz_j0  ; jn= Adz_jn
+      end if
 
-      Adz_pb   (:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, Adz_k0t:l_nk)=&
-      Adz_pxyzt(:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, Adz_k0t:l_nk)
+      Adz_pt  (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)=&
+      pxyzt   (:,Adz_i0:Adz_in, Adz_j0:Adz_jn, Adz_k0t:l_nk)
+
+      Adz_pb  (:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, 1:l_nk)=&
+      pxyzt   (:,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb, 1:l_nk)
 !
 !---------------------------------------------------------------------
 !

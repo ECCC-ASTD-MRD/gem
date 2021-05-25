@@ -36,10 +36,6 @@
 
       Glb_pilotcirc_L = .true.
       if (Lun_out > 0) write(Lun_out,2000)
-      !do k= 1, Ptopo_numproc
-      !if (Lun_out > 0) write (Lun_out,1002) k-1,&
-      !  Ptopo_gindx(1,k),Ptopo_gindx(2,k),Ptopo_gindx(3,k),Ptopo_gindx(4,k)
-      !enddo
       do k= 1, Ptopo_numproc
          if (Ptopo_gindx(1,k).eq.1) then
              !west
@@ -116,48 +112,27 @@
                           G_niu, G_nj , &
                           G_ni , G_njv  )
 
-      call yyg_initcomm ( YYG_PILT_q2q,  &
-                          YYG_xg_8, YYG_yg_8 , &
-                          YYG_xg_8, YYG_yg_8 , &
-                          YYG_xg_8, YYG_yg_8 , &
-                          G_ni, G_nj , 0,0   , &
-                          G_ni, G_nj , &
-                          G_ni ,G_nj  )
-
-      call yyg_initcomm ( YYG_PILT_uv2u       , &
-                          YYG_xgu_8, YYG_yg_8 , &
-                          YYG_xgu_8, YYG_yg_8 , &
-                          YYG_xg_8 , YYG_ygv_8, &
-                          G_niu, G_nj , 0,0   , &
-                          G_niu, G_nj , &
-                          G_ni , G_njv  )
-
-      call yyg_initcomm ( YYG_PILT_uv2v       , &
-                          YYG_xg_8 , YYG_ygv_8, &
-                          YYG_xgu_8, YYG_yg_8 , &
-                          YYG_xg_8 , YYG_ygv_8, &
-                          G_ni , G_njv, 0,0   , &
-                          G_niu, G_nj , &
-                          G_ni , G_njv  )
-
-      call yyg_initcomm ( YYG_NEAR_q2q       , &
-                          YYG_xg_8, YYG_yg_8 , &
-                          YYG_xg_8, YYG_yg_8 , &
-                          YYG_xg_8, YYG_yg_8 , &
-                          G_ni, G_nj , 0,0   , &
-                          G_ni, G_nj , &
-                          G_ni ,G_nj , F_inttype_S='NEAR' )
-
+! set range of indices for me for Q with halo
       YYG_i0 = l_i0 - west *G_halox
       YYG_j0 = l_j0 - south*G_haloy
       YYG_lni= l_ni + east *G_halox
       YYG_lnj= l_nj + north*G_haloy
+
+! set range of indices of NOT me with outside halos-only PEs on edge ;-)
       do k= 1, Ptopo_numproc
-         YYG_pe_indx(1,k)= Ptopo_gindx(1,k)-G_halox*west
-         YYG_pe_indx(2,k)= Ptopo_gindx(2,k)+G_halox*east
-         YYG_pe_indx(3,k)= Ptopo_gindx(3,k)-G_haloy*south
-         YYG_pe_indx(4,k)= Ptopo_gindx(4,k)+G_halox*north
+         if (Ptopo_gindx(1,k).eq.   1) YYG_pe_indx(1,k)= Ptopo_gindx(1,k)-G_halox
+         if (Ptopo_gindx(2,k).eq.G_ni) YYG_pe_indx(2,k)= Ptopo_gindx(2,k)+G_halox
+         if (Ptopo_gindx(3,k).eq.   1) YYG_pe_indx(3,k)= Ptopo_gindx(3,k)-G_haloy
+         if (Ptopo_gindx(4,k).eq.G_nj) YYG_pe_indx(4,k)= Ptopo_gindx(4,k)+G_haloy
       end do
+
+      call yyg_initcomm ( YYG_PILT_q2q,  &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          G_ni, G_nj , G_halox,G_haloy   , &
+                          G_ni, G_nj , &
+                          G_ni ,G_nj  )
 
       call yyg_initcomm ( YYG_HALO_q2q           ,&
                           YYG_xg_8, YYG_yg_8     ,&
@@ -166,6 +141,42 @@
                           G_ni, G_nj , G_halox, G_haloy,&
                           G_ni, G_nj , &
                           G_ni ,G_nj  )
+
+      call yyg_initcomm ( YYG_NEAR_q2q       , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          YYG_xg_8, YYG_yg_8 , &
+                          G_ni, G_nj , G_halox,G_haloy   , &
+                          G_ni, G_nj , &
+                          G_ni ,G_nj , F_inttype_S='NEAR' )
+
+! set range of indices for me for U
+      YYG_i0 = l_i0  - west *G_halox
+      YYG_j0 = l_j0  - south*G_haloy
+      YYG_lni= l_niu + east *G_halox
+      YYG_lnj= l_nj  + north*G_haloy
+
+      call yyg_initcomm ( YYG_PILT_uv2u       , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          G_niu, G_nj , G_halox,G_haloy   , &
+                          G_niu, G_nj , &
+                          G_ni , G_njv  )
+
+! set range of indices for me for V
+      YYG_i0 = l_i0  - west *G_halox
+      YYG_j0 = l_j0  - south*G_haloy
+      YYG_lni= l_ni  + east *G_halox
+      YYG_lnj= l_njv + north*G_haloy
+
+      call yyg_initcomm ( YYG_PILT_uv2v       , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          YYG_xgu_8, YYG_yg_8 , &
+                          YYG_xg_8 , YYG_ygv_8, &
+                          G_ni, G_njv , G_halox,G_haloy   , &
+                          G_niu, G_nj , &
+                          G_ni , G_njv  )
 
 !for yyg_xchng_vec_uv2uv
       sendlen= max( YYG_PILT_uv2u%maxsend,YYG_PILT_uv2v%maxsend,&

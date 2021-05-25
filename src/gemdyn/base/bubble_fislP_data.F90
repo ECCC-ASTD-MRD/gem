@@ -17,6 +17,7 @@
 !
       subroutine bubble_fislP_data (F_t, Mminx, Mmaxx, Mminy, Mmaxy, nk)
       use bubble_options
+      use gem_options
       use ver
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -33,8 +34,8 @@
       if(.not.bubble_gaus_L) then
 
          do k=1,g_nk
-            do j=1,l_nj
-               do i=1,l_ni
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox
                   ii=i+l_i0-1
                   theta = bubble_theta
                   if ( (((ii)-bubble_ictr)**2 +((k)-bubble_kctr)**2) < bubble_rad**2 ) then
@@ -52,8 +53,8 @@
          ! Gaussian
 
          do k=1,g_nk
-            do j=1,l_nj
-               do i=1,l_ni
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox
                   ii=i+l_i0-1
                   r = sqrt( (dble((ii)-bubble_ictr)**2   &
                            + dble((k )-bubble_kctr)**2) )&

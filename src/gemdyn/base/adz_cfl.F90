@@ -26,8 +26,8 @@
 !
       cfl_8= 0.d0 ; cfl_i= 0
 
-      call adz_courant (Adz_pxyzm, Adz_i0,Adz_in,Adz_j0,Adz_jn, &
-                        l_ni,l_nj,Adz_k0,l_nk,cfl_i,cfl_8)
+      call adz_courant (Adz_wpxyz, Adz_i0,Adz_in,Adz_j0,Adz_jn, &
+                        -1,l_ni+2,-1,l_nj+2,Adz_k0,l_nk,cfl_i,cfl_8)
 
       if (lun_out > 0) write (output_unit,99) 'x,y',cfl_i(1,1),cfl_i(2,1), &
                                           cfl_i(3,1),sngl(cfl_8(1))
@@ -44,8 +44,8 @@
       return
       end subroutine adz_cfl
 
-      subroutine adz_courant ( F_xyz, i0, in, j0, jn, &
-                        F_ni, F_nj, k0, F_nk, F_cfl_i,F_cfl_8 )
+      subroutine adz_courant ( F_xyz, i0,in,j0,jn, Minx,Maxx,Miny,Maxy,&
+                               k0, F_nk, F_cfl_i,F_cfl_8 )
       use glb_ld
       use ver
       use ptopo
@@ -53,9 +53,9 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(in) :: F_ni,F_nj,F_nk
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy,F_nk
       integer, intent(in) :: i0, in, j0, jn, k0 !Scope
-      real, dimension(3,F_ni,F_nj,F_nk), intent(in) :: F_xyz
+      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,F_nk,3), intent(in) :: F_xyz
       integer, intent(out) :: F_cfl_i(3,3)
       real(kind=REAL64),  intent(out) :: F_cfl_8(3)
 
@@ -64,8 +64,8 @@
 
       integer :: i, j, k, cfl_i(3,3), err, iproc, imax,jmax,kmax
       integer :: imaxH,jmaxH,kmaxH,imaxV,jmaxV,kmaxV
-      real(kind=REAL64)  :: x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, Hmax_cfl_8, &
-                 Vmax_cfl_8, max_cfl_8, cfl_8(3)
+      real(kind=REAL64)  :: x_cfl, y_cfl, z_cfl, xy_cfl, xyz_cfl, &
+                            Hmax_cfl_8, Vmax_cfl_8, max_cfl_8, cfl_8(3)
 !
 !     ---------------------------------------------------------------
 !
@@ -81,13 +81,12 @@
       jmax = 0
       kmax = 0
       max_cfl_8 = 0.D0
-
       do k=k0,F_nk
          do j=j0,jn
             do i=i0,in
-                 x_cfl= abs(F_xyz(1,i,j,k)-l_i0+1-dble(i))
-                 y_cfl= abs(F_xyz(2,i,j,k)-l_j0+1-dble(j))
-                 z_cfl= abs(F_xyz(3,i,j,k)       -dble(k))
+                 x_cfl= abs(F_xyz(i,j,k,1)-l_i0+1-dble(i))
+                 y_cfl= abs(F_xyz(i,j,k,2)-l_j0+1-dble(j))
+                 z_cfl= abs(F_xyz(i,j,k,3)       -dble(k))
                 xy_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl)
                xyz_cfl= sqrt(x_cfl*x_cfl + y_cfl*y_cfl + z_cfl*z_cfl)
 

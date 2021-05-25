@@ -30,8 +30,7 @@
 !
 !----------------------------------------------------------------------
 !
-      using_qt1 = ( .not. Dynamics_hydro_L ) .or. &
-                  ( trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H')
+      using_qt1 = ( .not. Dynamics_hydro_L ) .or. Dynamics_hauteur_L
 
       do n= 1, Tr3d_ntr
          call yyg_int_xch_scal (tracers_P(n)%pntr, G_nk, .true., 'CUBIC', .false.)

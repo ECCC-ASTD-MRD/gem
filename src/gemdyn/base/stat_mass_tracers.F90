@@ -20,7 +20,6 @@
       use adz_mem
       use adz_options
       use dyn_fisl_options
-      use glb_ld
       use HORgrid_options
       use lun
       use ptopo
@@ -43,7 +42,7 @@
       !     Calculate and print the mass of each tracer scaled by area
       !===============================================================
 
-      integer :: n,k0,count,i0_c,in_c,j0_c,jn_c,i0_sb,in_sb,j0_sb,jn_sb
+      integer :: n,k0,count,i0_c,in_c,j0_c,jn_c,i0_sb,in_sb,j0_sb,jn_sb,k0_sb
       real(kind=REAL64) :: tracer_8
       logical :: do_subset_GY_L
       real, pointer, dimension (:,:,:) :: fld_tr
@@ -56,7 +55,7 @@
 !
       !Set CORE limits
       !---------------
-      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n ; k0 = 1 !ALL VERTICAL
+      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n ; k0 = Adz_k0t 
 
       !Terminator: Initialization
       !--------------------------
@@ -105,13 +104,13 @@
          !------------------------------------------------------------
          if (do_subset_GY_L) then
 
-            i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
+            i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n ; k0_sb = Adz_k0t_sub
 
             w_tr(:,:,:) = fld_tr(:,:,:)
 
             if (Ptopo_couleur/=0) w_tr = 0.
 
-            call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0)
+            call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0_sb)
 
             if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
                                                                      tracer_8/Adz_gs_area_8,Tr3d_name_S(n)(1:4),F_comment_S
@@ -153,7 +152,7 @@
 
          if (Ptopo_couleur/=0) w_tr = 0.
 
-         call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0)
+         call mass_tr (tracer_8,w_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk,i0_sb,in_sb,j0_sb,jn_sb,k0_sb)
 
          if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' SB= ', &
                                                                   tracer_8/Adz_gs_area_8,'RHO ',F_comment_S

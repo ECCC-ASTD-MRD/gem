@@ -311,7 +311,6 @@
          call  boundary ( F_rhs,F_rt,F_rf,F_nt,Minx,Maxx,Miny,Maxy, &
                           Nk,ni,nj,i0,j0,in,jn )
          if (Schm_opentop_L) then
-          F_rhs(:,:,1:k0t) = 0.0
           call  boundary_Top(F_rhs,F_rb,F_nb,Minx,Maxx,Miny,Maxy, &
                           Nk,ni,nj,i0,j0,in,jn )
          endif

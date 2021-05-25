@@ -89,6 +89,22 @@ module dyn_fisl_options
 
    !# True-> use SLEVE vertical coordinate
    logical :: Schm_sleve_L = .false.
+   !# True-> force the reading of MELS from geophysical file
+   logical :: Schm_orols_fromgeophy_L = .false.
+   namelist /dyn_fisl  / Schm_orols_fromgeophy_L
+   namelist /dyn_fisl_P/ Schm_orols_fromgeophy_L
+   !# True-> will retain 50% of Schm_orols_rc deltax waves
+   real :: Schm_orols_rc = 10.
+   namelist /dyn_fisl  / Schm_orols_rc
+   namelist /dyn_fisl_P/ Schm_orols_rc
+   !# True-> Number of pass in the filter
+   integer :: Schm_orols_np = 20
+   namelist /dyn_fisl  / Schm_orols_np
+   namelist /dyn_fisl_P/ Schm_orols_np
+   !# Filter type for oro filtering to obtain large scale oro
+   character(len=16) :: Schm_orols_ftype_S = 'MC2'
+!   namelist /dyn_fisl  / Schm_orols_ftype_S
+!   namelist /dyn_fisl_p/ Schm_orols_ftype_S
 
    !# True-> to use topography
    logical :: Schm_Topo_L = .true.
@@ -229,6 +245,7 @@ contains
       dyn_fisl_nml= 1
 
       err = clib_toupper(Schm_phycpl_S)
+      err = clib_toupper(Schm_orols_ftype_S)
 
  6002 format (' Skipping reading of namelist ',A)
  6004 format (' Reading of namelist ',A,' is successful')

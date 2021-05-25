@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine adz_tracers (F_before_psadj_L)
-      use adv_pos
+      use ens_options
       use adz_interp_rhs_mod
       use mem_tracers
       implicit none
@@ -22,13 +22,13 @@
 
       logical, intent(in) :: F_before_psadj_L
 
-
       integer ::  n, deb
-      logical ::  F_after_psadj_L
+      logical ::  F_after_psadj_L, sto_phy_L
 !
 !     ---------------------------------------------------------------
 !
       F_after_psadj_L = .not.F_before_psadj_L
+      sto_phy_L= associated(mcrhsint)
 
       call gemtime_start (33, 'ADZ_TRACERS', 10)
       call time_trace_barr (gem_time_trace, 1, Gem_trace_barr,&
@@ -44,8 +44,8 @@
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
          call adz_tricub_rhs ( Adz_stack, Tr3d_ntrTRICUB_NT    ,&
-           Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
-           Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
+           Adz_pt,Adz_cpntr_t,Adz_num_t                        ,&
+           Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t )
          call gemtime_stop (34)
       end if
 
@@ -56,8 +56,10 @@
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
-         call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_NT,pxt,pyt,pzt,&
-              Adz_num_q,Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
+         call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_NT,&
+              Adz_pt,Adz_num_t,Adz_i0,Adz_in                ,&
+              Adz_j0,Adz_jn,Adz_k0t )
+
          call gemtime_stop (35)
       end if
 
@@ -75,17 +77,17 @@
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
          if (.not.Adz_BC_LAM_zlf_L .and. F_before_psadj_L) then
-            call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP       ,&
-                Adz_pt(1,Adz_i0,Adz_j0,Adz_k0),Adz_cpntr_t,Adz_num_q,&
-                Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_3CWP )
+               call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP    ,&
+                Adz_pt,Adz_cpntr_t,Adz_num_t                        ,&
+                Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t,F_post=Tr_3CWP )
          else if (F_before_psadj_L) then
             do n=1, Tr3d_ntrTRICUB_WP
                Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
             end do
             call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,0)
-            call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP         ,&
-                Adz_pb(1,Adz_i0b,Adz_j0b,Adz_k0),Adz_cpntr_t,Adz_num_b,&
-                Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_3CWP )
+               call adz_tricub_rhs ( Adz_stack,Tr3d_ntrTRICUB_WP,&
+                Adz_pb,Adz_cpntr_t,Adz_num_b                    ,&
+                Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,1,F_post=Tr_3CWP )
             call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,1)
          end if
          call gemtime_stop (37)
@@ -106,15 +108,17 @@
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
          if (.not.Adz_BC_LAM_zlf_L .and. F_before_psadj_L) then
-            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,pxt,pyt,pzt,&
-                 Adz_num_q,Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0,F_post=Tr_BQWP )
+               call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,&
+                Adz_pt,Adz_num_t                                  ,&
+                Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t,F_post=Tr_BQWP )
          else if (F_before_psadj_L) then
             do n=1, Tr3d_ntrBICHQV_WP
                Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
             end do
             call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,0)
-            call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,pxt,pyt,pzt,&
-                 Adz_num_b,Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,Adz_k0,F_post=Tr_BQWP )
+               call adz_bicubHQV_rhs ( Adz_stack,Tr3d_ntrBICHQV_WP,&
+                Adz_pb,Adz_num_b                                  ,&
+                Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,1,F_post=Tr_BQWP )
             call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,1)
          end if
          call gemtime_stop (39)

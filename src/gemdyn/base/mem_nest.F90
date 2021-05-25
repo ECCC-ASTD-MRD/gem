@@ -26,7 +26,7 @@ module mem_nest
       real, pointer, dimension (:,:,:) :: nest_q_deb  => null()
       real, pointer, dimension (:,:,:) :: nest_zd_deb => null()
       real, pointer, dimension (:,:,:) :: nest_tr_deb => null()
-      real, pointer, dimension (:,:  ) :: nest_fullme_deb => null()
+      real, pointer, dimension (:,:,:) :: nest_fullme_deb => null()
 
       real, pointer, dimension (:,:,:) :: nest_u      => null()
       real, pointer, dimension (:,:,:) :: nest_v      => null()
@@ -36,7 +36,7 @@ module mem_nest
       real, pointer, dimension (:,:,:) :: nest_q      => null()
       real, pointer, dimension (:,:,:) :: nest_zd     => null()
       real, pointer, dimension (:,:,:) :: nest_tr     => null()
-      real, pointer, dimension (:,:  ) :: nest_fullme => null()
+      real, pointer, dimension (:,:,:) :: nest_fullme => null()
 
       real, pointer, dimension (:,:,:) :: nest_u_fin  => null()
       real, pointer, dimension (:,:,:) :: nest_v_fin  => null()
@@ -46,7 +46,7 @@ module mem_nest
       real, pointer, dimension (:,:,:) :: nest_q_fin  => null()
       real, pointer, dimension (:,:,:) :: nest_zd_fin => null()
       real, pointer, dimension (:,:,:) :: nest_tr_fin => null()
-      real, pointer, dimension (:,:  ) :: nest_fullme_fin => null()
+      real, pointer, dimension (:,:,:) :: nest_fullme_fin => null()
 
       real, pointer, dimension (:,:,:) :: nest_weightm=> null()
       real, pointer, dimension (:,:,:) :: nest_weightq=> null()

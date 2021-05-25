@@ -17,6 +17,7 @@
 !
       subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,ntr,F_tracers)
       use dyn_fisl_options
+      use gem_options
       use glb_ld
       use tr3d
       use mem_tracers
@@ -38,8 +39,8 @@
       do n = 1, Tr3d_ntr
          if (Tr3d_wload (n)) then
             do k = 1, l_nk
-               do j = 1, l_nj
-                  do i = 1, l_ni
+               do j= 1-G_haloy, l_nj+G_haloy
+                  do i= 1-G_halox, l_ni+G_halox
                      F_qh(i,j,k)=F_qh(i,j,k)+F_tracers(i,j,k,n)
                   end do
                end do

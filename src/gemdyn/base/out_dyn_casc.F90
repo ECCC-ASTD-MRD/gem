@@ -122,6 +122,10 @@
                          indo,G_nk,Grdc_nbits,.false. )
 
       if ( Dynamics_hauteur_L ) then
+         istat = gmm_get(gmmk_qt1_s ,qt1 )
+         call out_fstecr ( qt1,l_minx,l_maxx,l_miny,l_maxy, hybm,&
+                         'QT1',1., 0.,Level_kind_ip1,-1,G_nk+1 ,&
+                         indo,G_nk+1,Grdc_nbits,.false. )
          if (.not. Schm_autobar_L) then
             conv = 0.1d0
             call out_fstecr ( zmom(l_minx,l_miny,1), l_minx,l_maxx,&

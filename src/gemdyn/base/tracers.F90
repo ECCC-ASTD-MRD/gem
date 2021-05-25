@@ -243,7 +243,7 @@
          end do
       end if
 
-      call ac_posi (geomh_longs,geomh_latgs,G_ni,G_nj,Lun_out > 0)
+      call ac_posi (geomh_longs(1),geomh_latgs(1),G_ni,G_nj,Lun_out > 0)
 
  1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min        Max     Intp')
  1002 format (4x,a4,2l6,2i6,3x,2(e10.3,1x),a12)

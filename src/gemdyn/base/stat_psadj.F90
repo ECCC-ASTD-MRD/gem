@@ -44,9 +44,9 @@
 
       include 'mpif.h'
       include 'rpn_comm.inc'
-      integer :: err,i,j,i0_sb,in_sb,j0_sb,jn_sb,comm
+      integer :: err,i,j,i0_sb,in_sb,j0_sb,jn_sb,k0_sb,comm,i0_c,in_c,j0_c,jn_c
       logical :: do_subset_GY_L
-      real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8
+      real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8,p0_www_8
       real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
       real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_wet_8,g_avg_ps_dry_8
@@ -73,7 +73,12 @@
 
       !Compute Dry Surface pressure at appropriate time
       !------------------------------------------------
-      call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,in_S)
+      call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,in_S)
+
+      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
+
+      if (Adz_k0t==1) p0_www_8(i0_c:in_c,j0_c:jn_c) = p0_wet_8(i0_c:in_c,j0_c:jn_c)
+      if (Adz_k0t/=1) p0_www_8(i0_c:in_c,j0_c:jn_c) = pm_8(i0_c:in_c,j0_c:jn_c,l_nk+1) - pm_8(i0_c:in_c,j0_c:jn_c,Adz_k0t)
 
       !Estimate Wet/Dry air mass on CORE
       !---------------------------------
@@ -82,7 +87,7 @@
       do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
 
-            l_avg_8(1) = l_avg_8(1) + p0_wet_8(i,j) * geomh_area_mask_8(i,j)
+            l_avg_8(1) = l_avg_8(1) + p0_www_8(i,j) * geomh_area_mask_8(i,j)
             l_avg_8(2) = l_avg_8(2) + p0_dry_8(i,j) * geomh_area_mask_8(i,j)
 
          end do
@@ -106,14 +111,21 @@
       !------------------------------------------
       if (do_subset_GY_L) then
 
-         i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e; jn_sb = l_nj-Adz_pil_sub_n
+         i0_sb = 1+Adz_pil_sub_w ; j0_sb = 1+Adz_pil_sub_s ; in_sb = l_ni-Adz_pil_sub_e ; jn_sb = l_nj-Adz_pil_sub_n ; k0_sb = Adz_k0t_sub
+
+         !Compute Dry Surface pressure at appropriate time
+         !------------------------------------------------
+         call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0_sb,in_S)
+
+         if (k0_sb==1) p0_www_8(i0_sb:in_sb,j0_sb:jn_sb) = p0_wet_8(i0_sb:in_sb,j0_sb:jn_sb)
+         if (k0_sb/=1) p0_www_8(i0_sb:in_sb,j0_sb:jn_sb) = pm_8(i0_sb:in_sb,j0_sb:jn_sb,l_nk+1) - pm_8(i0_sb:in_sb,j0_sb:jn_sb,k0_sb)
 
          l_avg_8(1:2) = 0.0d0
 
          do j=j0_sb,jn_sb
             do i=i0_sb,in_sb
 
-               l_avg_8(1) = l_avg_8(1) + p0_wet_8(i,j) * geomh_area_mask_8(i,j)
+               l_avg_8(1) = l_avg_8(1) + p0_www_8(i,j) * geomh_area_mask_8(i,j)
                l_avg_8(2) = l_avg_8(2) + p0_dry_8(i,j) * geomh_area_mask_8(i,j)
 
             end do

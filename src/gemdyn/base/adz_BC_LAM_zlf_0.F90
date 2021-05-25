@@ -34,7 +34,7 @@
       !object
       !===========================================================================
       !     Call setups to prepare Bermejo-Conde LAM with ZLF:
-      !     F_number=0: Before High-order Interpolation 
+      !     F_number=0: Before High-order Interpolation
       !     F_number=1: Before adz_post_tr
       !     F_number=2:  After adz_post_tr
       !     ----------------------------------------------------------------------
@@ -50,18 +50,18 @@
       call gemtime_start (85, 'ZLF_0______', 36)
 
       !------------------------------------------------------------------
-      !Prepare Bermejo-Conde LAM with ZLF before High-order Interpolation 
+      !Prepare Bermejo-Conde LAM with ZLF before High-order Interpolation
       !------------------------------------------------------------------
       if (F_number==0) then
 
          do n=1,F_nptr
 
-            !ZERO piloting conditions of SRC outside EXTENSION (CFL)
-            !-------------------------------------------------------
+            !ZERO piloting conditions of SRC outside [i0_e:in_e]x[j0_e:jn_e]x[k0/2:nk]
+            !-------------------------------------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%src,empty,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,1)
 
-            !Keep piloting conditions of DST outside CORE
-            !--------------------------------------------
+            !Keep piloting conditions of DST outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk]
+            !-----------------------------------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%dst,Adz_stack(n)%pil,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,2)
 
          end do
@@ -86,8 +86,8 @@
 
          do n=1,F_nptr
 
-            !Bermejo-Conde LAM Flux ZLF: Reset piloting conditions of DST outside CORE
-            !-------------------------------------------------------------------------
+            !Bermejo-Conde LAM Flux ZLF: Reset piloting conditions of DST outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk]
+            !----------------------------------------------------------------------------------------------------
             call adz_BC_LAM_zlf (Adz_stack(n)%dst,Adz_stack(n)%pil,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,4)
 
          end do

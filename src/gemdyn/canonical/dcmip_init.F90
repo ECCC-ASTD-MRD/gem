@@ -73,7 +73,7 @@
       !======================================================================|
 
       integer :: istat1,istat2,istat3,istat4,err(2), &
-                 Deep,Pertt,Pert,Moist,Shear,Tracers,i,j,k,iter,niter
+                 Deep,Pertt,Pert,Moist,Shear,Tracers,i,j,k,iter,niter,i0,in,j0,jn,inu,jnv
 
       real, pointer, dimension(:,:,:) :: cl,cl2,qv,qc,qr,q1,q2,q3,q4
       real, dimension(1,1,1) :: empty
@@ -91,7 +91,13 @@
 !
 !---------------------------------------------------------------------
 !
-      if (Schm_sleve_L ) call gem_error(-1,'DCMIP_INIT','  SLEVE not available YET  ')
+      if (Schm_sleve_L.and..NOT.(Dcmip_case==21.or.Dcmip_case==22)) &
+         call gem_error(-1,'DCMIP_INIT','  SLEVE not available YET  ')
+
+      orols = 0. ; sls = 0. ; topo_low = 0. ; topo_high = 0.
+
+      i0= 1-G_halox ; in= l_ni+G_halox ; inu= l_niu+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy ; jnv= l_njv+G_haloy
 
       GEM_P_L = trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P'
 
@@ -161,15 +167,15 @@
 
          !Prepare UREF/VREF (on staggered grids) for DCMIP_VRD
          !----------------------------------------------------
-         uref(1:l_ni-1,1:l_nj,  1:G_nk) =    ut1(1:l_ni-1,1:l_nj,  1:G_nk)
-         vref(1:l_ni,  1:l_nj-1,1:G_nk) =    vt1(1:l_ni,  1:l_nj-1,1:G_nk)
+          uref(i0:inu,j0:jn, 1:G_nk) =    ut1(i0:inu,j0:jn ,1:G_nk)
+          vref(i0:in, j0:jnv,1:G_nk) =    vt1(i0:in ,j0:jnv,1:G_nk)
 
-          wref(1:l_ni, 1:l_nj,  1:G_nk) =    wt1(1:l_ni,  1:l_nj,  1:G_nk)
-         zdref(1:l_ni, 1:l_nj,  1:G_nk) =   zdt1(1:l_ni,  1:l_nj,  1:G_nk)
-         qvref(1:l_ni, 1:l_nj,  1:G_nk) =     qv(1:l_ni,  1:l_nj,  1:G_nk)
-         qcref(1:l_ni, 1:l_nj,  1:G_nk) =     qc(1:l_ni,  1:l_nj,  1:G_nk)
-         qrref(1:l_ni, 1:l_nj,  1:G_nk) =     qr(1:l_ni,  1:l_nj,  1:G_nk)
-         thref(1:l_ni, 1:l_nj,  1:G_nk) = thbase(1:l_ni,  1:l_nj,  1:G_nk)
+          wref(i0:in, j0:jn, 1:G_nk) =    wt1(i0:in, j0:jn, 1:G_nk)
+         zdref(i0:in, j0:jn, 1:G_nk) =   zdt1(i0:in, j0:jn, 1:G_nk)
+         qvref(i0:in, j0:jn, 1:G_nk) =     qv(i0:in, j0:jn, 1:G_nk)
+         qcref(i0:in, j0:jn, 1:G_nk) =     qc(i0:in, j0:jn, 1:G_nk)
+         qrref(i0:in, j0:jn, 1:G_nk) =     qr(i0:in, j0:jn, 1:G_nk)
+         thref(i0:in, j0:jn, 1:G_nk) = thbase(i0:in, j0:jn, 1:G_nk)
 
       !DCMIP 2012: Steady-State Atmosphere at Rest in the Presence of Orography
       !------------------------------------------------------------------------
@@ -181,13 +187,26 @@
 
          if (Vtopo_L) then
 
-            topo_low (1:l_ni,1:l_nj) = 0.
-            topo_high(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj)
-            fis0     (1:l_ni,1:l_nj) = 0.
+            topo_low (i0:in,j0:jn,1) = 0.
+            topo_high(i0:in,j0:jn,1) = fis0(i0:in,j0:jn)
+            fis0     (i0:in,j0:jn)   = 0.
+
+            topo_low (i0:in,j0:jn,2) = 0.
+            topo_high(i0:in,j0:jn,2) = orols(i0:in,j0:jn)
+            orols    (i0:in,j0:jn)   = 0.
+
+            if (Schm_sleve_L) call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy) 
 
             !Reset initial conditions according to topo_low
             !----------------------------------------------
             call dcmip_steady_state_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,.false.,.true.)
+
+         else
+
+            topo_high(i0:in,j0:jn,1) =  fis0(i0:in,j0:jn)
+            topo_high(i0:in,j0:jn,2) = orols(i0:in,j0:jn)
+
+            topo_low = topo_high
 
          end if
 
@@ -227,10 +246,10 @@
 
          !Store REFERENCE at initial time
          !-------------------------------
-         if (Dcmip_case>  0) q1ref(1:l_ni,1:l_nj,1:G_nk) = q1(1:l_ni,1:l_nj,1:G_nk)
-         if (Dcmip_case/=12) q2ref(1:l_ni,1:l_nj,1:G_nk) = q2(1:l_ni,1:l_nj,1:G_nk)
-         if (Dcmip_case/=12) q3ref(1:l_ni,1:l_nj,1:G_nk) = q3(1:l_ni,1:l_nj,1:G_nk)
-         if (Dcmip_case/=12) q4ref(1:l_ni,1:l_nj,1:G_nk) = q4(1:l_ni,1:l_nj,1:G_nk)
+         if (Dcmip_case>  0) q1ref(i0:in,j0:jn,1:G_nk) = q1(i0:in,j0:jn,1:G_nk)
+         if (Dcmip_case/=12) q2ref(i0:in,j0:jn,1:G_nk) = q2(i0:in,j0:jn,1:G_nk)
+         if (Dcmip_case/=12) q3ref(i0:in,j0:jn,1:G_nk) = q3(i0:in,j0:jn,1:G_nk)
+         if (Dcmip_case/=12) q4ref(i0:in,j0:jn,1:G_nk) = q4(i0:in,j0:jn,1:G_nk)
 
       !DCMIP 2012: Mountain waves over a Schaer-type mountain on a small planet
       !------------------------------------------------------------------------
@@ -239,17 +258,36 @@
          if (Dcmip_case==21) Shear = 0 !Without wind shear
          if (Dcmip_case==22) Shear = 1 !With    wind shear
 
-         call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.true.,.true.)
+         call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,orols,st1,ps, &
+                                     l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.true.,.true.)
+
+         !Replace Large-scale topography orols  
+         !------------------------------------
+         call mc2_topols (orols,fis0,l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
 
          if (Vtopo_L) then
 
-            topo_low (1:l_ni,1:l_nj) = 0.
-            topo_high(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj)
-            fis0     (1:l_ni,1:l_nj) = 0.
+            topo_low (i0:in,j0:jn,1) = 0.
+            topo_high(i0:in,j0:jn,1) = fis0(i0:in,j0:jn)
+            fis0     (i0:in,j0:jn)   = 0.
+
+            topo_low (i0:in,j0:jn,2) = 0.
+            topo_high(i0:in,j0:jn,2) = orols(i0:in,j0:jn)
+            orols    (i0:in,j0:jn)   = 0.
+
+            if (Schm_sleve_L) call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy) 
 
             !Reset initial conditions according to topo_low
             !----------------------------------------------
-            call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,st1,ps,l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.false.,.true.)
+            call dcmip_Schaer_mountain (ut1,vt1,wt1,zdt1,tt1,qv,fis0,orols,st1,ps, &
+                                        l_minx,l_maxx,l_miny,l_maxy,G_nk,Shear,.false.,.true.)
+
+         else
+
+            topo_high(i0:in,j0:jn,1) =  fis0(i0:in,j0:jn)
+            topo_high(i0:in,j0:jn,2) = orols(i0:in,j0:jn)
+
+            topo_low = topo_high
 
          end if
 
@@ -302,8 +340,7 @@
 
       end if
 
-      call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call gem_xch_halo (fis0, l_minx, l_maxx, l_miny, l_maxy, 1)
 
       !GEM-H: Estimate Q (Pressure deviation) as in INP_BASE_H and Virtual temperature (T31 only)
       !------------------------------------------------------------------------------------------
@@ -312,7 +349,7 @@
          zmom_8(:,:,0) = Ver_z_8%m(0)
 
          do k=1,G_nk
-            zmom_8(:,:,k) = Ver_z_8%m(k) + Ver_b_8%m(k)*fis0(:,:)/grav_8
+            zmom_8(:,:,k) = Ver_z_8%m(k) + (Ver_b_8%m(k)*fis0(:,:) + Ver_c_8%m(k)*sls(:,:))/grav_8
          end do
 
          zmom_8(:,:,G_nk+1) = fis0(:,:)/grav_8
@@ -332,8 +369,8 @@
             !-------------------------------------------------------------------------
             aaa_8 = rgasd_8 * Cstv_Tstr_8
 
-            do j=1,l_nj
-               do i=1,l_ni
+            do j=j0,jn
+               do i=i0,in
                   qt1(i,j,G_nk+1) = aaa_8 * log(ps(i,j)/1.e5)
                end do
             end do
@@ -341,16 +378,16 @@
             aaa_8 = grav_8 * Cstv_Tstr_8
 
             do k=G_nk,1,-1
-               do j=1,l_nj
-                  do i=1,l_ni
+               do j=j0,jn
+                  do i=i0,in
                      qt1(i,j,k) = qt1(i,j,k+1) + aaa_8 * (zmom_8(i,j,k+1) - zmom_8(i,j,k))/tt1(i,j,k)
                   end do
                end do
             end do
 
             do k=1,G_nk+1
-               do j=1,l_nj
-                  do i=1,l_ni
+               do j=j0,jn
+                  do i=i0,in
                      qt1(i,j,k) = qt1(i,j,k) + grav_8*zmom_8(i,j,k)
                   end do
                end do
@@ -363,33 +400,33 @@
                do k=1,G_nk
 
                   if(k == 1) then
-                     log_pm(1:l_ni,1:l_nj,k) = (qt1(1:l_ni,1:l_nj,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(1:l_ni,1:l_nj,k))
+                     log_pm(i0:in,j0:jn,k) = (qt1(i0:in,j0:jn,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(i0:in,j0:jn,k))
                   end if
 
-                  pm_plus(1:l_ni,1:l_nj,k) = exp(log_pm(1:l_ni,1:l_nj,k))
+                  pm_plus(i0:in,j0:jn,k) = exp(log_pm(i0:in,j0:jn,k))
 
-                  log_pm(1:l_ni,1:l_nj,k+1) = (qt1(1:l_ni,1:l_nj,k+1)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(1:l_ni,1:l_nj,k+1))
+                  log_pm(i0:in,j0:jn,k+1) = (qt1(i0:in,j0:jn,k+1)/(rgasd_8*Cstv_Tstr_8)+lg_pstar(i0:in,j0:jn,k+1))
 
                   if(k==G_nk) &
-                  ps(1:l_ni,1:l_nj) = exp(log_pm(1:l_ni,1:l_nj,G_nk+1))
+                  ps(i0:in,j0:jn) = exp(log_pm(i0:in,j0:jn,G_nk+1))
 
                end do
 
                do k=1,G_nk
-                  log_pt(1:l_ni,1:l_nj,k) = 0.5*(log_pm(1:l_ni,1:l_nj,k+1)+log_pm(1:l_ni,1:l_nj,k))
+                  log_pt(i0:in,j0:jn,k) = 0.5*(log_pm(i0:in,j0:jn,k+1)+log_pm(i0:in,j0:jn,k))
                end do
 
-               log_pt(1:l_ni,1:l_nj,G_nk+1) = log_pm(1:l_ni,1:l_nj,G_nk+1)
+               log_pt(i0:in,j0:jn,G_nk+1) = log_pm(i0:in,j0:jn,G_nk+1)
 
                do k=1,G_nk
-                  pt_plus(1:l_ni,1:l_nj,k) = exp(log_pt(1:l_ni,1:l_nj,k))
+                  pt_plus(i0:in,j0:jn,k) = exp(log_pt(i0:in,j0:jn,k))
                end do
 
                !Obtain revised Virtual Temperature !qv==0
                !-----------------------------------------
                do k=1,G_nk
-                  do j=1,l_nj
-                     do i=1,l_ni
+                  do j=j0,jn
+                     do i=i0,in
                         tt1(i,j,k) = thfull(i,j,k) * (pt_plus(i,j,k)/Cstv_pref_8) ** (rgasd_8/cpd_8)
                      end do
                   end do
@@ -412,8 +449,8 @@
       zvir = (Rv/Rd) - 1 ! Constant for virtual temp. calc. is approx. 0.608
 
       do k=1,G_nk
-      do j=1,l_nj
-      do i=1,l_ni
+      do j=j0,jn
+      do i=i0,in
          tt(i,j,k) = tt1(i,j,k)/(1.d0 + zvir * qv(i,j,k))
       end do
       end do
@@ -421,10 +458,12 @@
 
       !Estimate U-V on scalar grids and Real Temperature in PW comdeck
       !---------------------------------------------------------------
-      call hwnd_stag ( pw_uu_plus,pw_vv_plus,ut1,vt1, &
-                       l_minx,l_maxx,l_miny,l_maxy,G_nk,.false. )
+      call hwnd_stag2( pw_uu_plus,pw_vv_plus,ut1,vt1      ,&
+                       l_minx,l_maxx,l_miny,l_maxy,G_nk   ,&
+                       1-G_halox*west ,l_niu+G_halox*east ,&
+                       1-G_haloy*south,l_njv+G_haloy*north, .false. )
 
-      pw_tt_plus(1:l_ni,1:l_nj,1:G_nk) = tt(1:l_ni,1:l_nj,1:G_nk)
+      pw_tt_plus(i0:in,j0:jn,1:G_nk) = tt(i0:in,j0:jn,1:G_nk)
 !
 !---------------------------------------------------------------------
 !

@@ -39,7 +39,7 @@
 !
       integer, intent(in) :: Minx,Maxx,Miny,Maxy,Nk,ni,nj
       integer, intent(in) :: i0,j0,in,jn
-      real(kind=REAL64), dimension(ni,nj,Nk),             intent(out) :: F_rhs
+      real(kind=REAL64), dimension(ni,nj,Nk),             intent(inout) :: F_rhs
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in)  :: F_rb, F_nb
 !author
 !       Abdessamad Qaddouri -  2020
@@ -90,7 +90,7 @@
 
       do j=j0,jn
          do i=i0,in
-            Cfdg1(i,j) =  gama_8*(-fdg2(i,j)*mc_iJz_8(i  ,j,k0 ) &
+            Cfdg1(i,j) =  gama_8*(-fdg2(i,j)*mc_iJz_8(i  ,j,k0-1 ) &
                   -mu_8*half*fdg2(i,j))
          end do
       end do
