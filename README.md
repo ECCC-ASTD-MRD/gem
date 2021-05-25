@@ -4,7 +4,7 @@ See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
 ```
-    git clone https://gitlab.com/eccc/gem/gem.git
+    git clone https://github.com/ECCC-ASTD-MRD/gem.git
     cd gem
     # Optionnaly checkout a specific branch:
     # git checkout <branch_name>
@@ -59,7 +59,7 @@ To compile and run GEM, you will need:
 
 ## Data for examples
 After having cloned or downloaded the git tar file of GEM from
-[GitLab.com](https://gitlab.com/eccc/gem/gem), execute the script named
+[github.com](https://github.com/ECCC-ASTD-MRD/gem), execute the script named
 **download-dbase.sh** or download and untar the data archive with the following
 link:
 [http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz](http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz)
