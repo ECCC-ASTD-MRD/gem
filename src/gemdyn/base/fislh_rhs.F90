@@ -23,6 +23,7 @@
       use HORgrid_options
       use gem_options
       use dyn_fisl_options
+      use dynkernel_options
       use coriolis
       use geomh
       use tdpack
@@ -53,7 +54,7 @@
       integer :: j0u, jnu, j0v, jnv
 
       integer :: i, j, k, km, kp, nij, jext
-      real(kind=REAL64)  :: div, barz, barzp, u_interp, v_interp, t_interp, w1
+      real(kind=REAL64)  :: div, barz, barzp, u_interp, v_interp, t_interp, w1, i_hydro
       real(kind=REAL64)  :: phy_bA_m_8, phy_bA_t_8, iphytv
       real(kind=REAL64), dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
@@ -79,6 +80,11 @@
          phy_bA_t_8 = 0.d0
          iphytv = zero
       end if
+      
+      i_hydro=0.d0
+      if (Dynamics_hydro_L) then
+         i_hydro=1.d0
+      end if      
 
 !     Common coefficients
 
@@ -181,9 +187,9 @@
          do j= j0, jn
             do i= i0, in
 
-               F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) - Cstv_Beta_nh_8 *xtmp_8(i,j)* &
+               F_orw(i,j,k) = (Cstv_invT_nh_8 * F_w(i,j,k) - Cstv_Beta_nh_8 *xtmp_8(i,j)* &
                               ( (F_q(i,j,k+1)-F_q(i,j,k))*mc_iJz_8(i,j,k)                 &
-                              -grav_8*( one-one/xtmp_8(i,j) ) )
+                              -grav_8*( one-one/xtmp_8(i,j) ) )) * (one - i_hydro)
 
                F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - w1*(F_q(i,j,k+1)+F_q(i,j,k)) ) &
                              - Cstv_Beta_8 * mu_8 * F_w(i,j,k)

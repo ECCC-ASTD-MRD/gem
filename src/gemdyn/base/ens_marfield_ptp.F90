@@ -245,8 +245,7 @@
                      close(unf0)
                   else
                      err = -1
-                     write(output_unit, *) 'Error: problem opening &
-                        Markov file '//trim(fn0)
+                     write(output_unit, *) 'Error: problem opening Markov file '//trim(fn0)
                   endif
                enddo
             endif

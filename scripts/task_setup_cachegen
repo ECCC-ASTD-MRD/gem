@@ -1,4 +1,4 @@
-#!/usr/bin/env ksh93
+#!/bin/bash
 
 #/* Part of the Maestro sequencer software package.
 # * Copyright (C) 2011-2015  Canadian Meteorological Centre
@@ -25,7 +25,7 @@
 # Retrieve command line arguments
 usage="USAGE: $(basename $0) config_file_in cache_file_out"
 if [[ -z "$2" ]] ; then
-   echo usage 1>&2
+   echo $usage 1>&2
    exit 1
 fi
 cfg_file=$1

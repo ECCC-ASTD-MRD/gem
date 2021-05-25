@@ -73,8 +73,6 @@
       real  ,    dimension(:,:),allocatable :: f
       integer :: unf0, unf1, err, errop, itstep_s, iperiod_iau
       character(len=1024) fn0, fn1
-      logical :: ilela
-
 !
 !---------------------------------------------------------------------
 !

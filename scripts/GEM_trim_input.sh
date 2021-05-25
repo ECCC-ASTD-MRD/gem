@@ -19,9 +19,9 @@ rep_ou=$2
 lnk_dest=$3
 bname=$(basename ${file})
 if [ "${lnk_dest}" != "${bname}" ] ; then lnk_dest=${lnk_dest}/${bname} ; fi
-list_A=$(r.fstliste.new -izfst $file -typvar "A" |cut -d ":" -f 11 | sort -u )
-list_P=$(r.fstliste.new -izfst $file -typvar "P" |cut -d ":" -f 11 | sort -u )
-list_I=$(r.fstliste.new -izfst $file -typvar "I" |cut -d ":" -f 11 | sort -u )
+list_A=$(r.fstliste -izfst $file -typvar "A" |cut -d ":" -f 11 | sort -u )
+list_P=$(r.fstliste -izfst $file -typvar "P" |cut -d ":" -f 11 | sort -u )
+list_I=$(r.fstliste -izfst $file -typvar "I" |cut -d ":" -f 11 | sort -u )
 for i in $(echo "${list_A} ${list_P} ${list_I}" | tr ' ' '\n' | sort -u | tr '\n' ' ') ; do
   valid=$(echo $i | cut -c1-8).$(echo $i | cut -c9-14)
   dir=${rep_ou}/VALID_${valid}

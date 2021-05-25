@@ -50,6 +50,7 @@
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
+      integer, external :: sol_init
       character(len=16) :: dumc_S, datev
       integer :: i, ipcode, ipkind, err
       real :: pcode,deg_2_rad,sec
@@ -151,7 +152,6 @@
          case ('DYNAMICS_FISL_P')
             call set_zeta ( hyb, G_nk )
          case ('DYNAMICS_FISL_H')
-            Dynamics_hydro_L = .false.
             call fislh_hybrid ( hyb_H, G_nk)
          case ('DYNAMICS_EXPO_H')
             Dynamics_hydro_L = .false.
@@ -273,6 +273,7 @@
          Hzd_pwr_theta = Hzd_pwr
       end if
 
+      if (sol_init() < 0) return
 
       gemdm_config = 1
 
@@ -312,8 +313,6 @@
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
- 9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
- 9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)

@@ -18,8 +18,9 @@ module gmm_smag
    public
    save
 
-   real, pointer, contiguous, dimension (:,:,:) ::  smag => null()
-   integer, parameter :: MAXNAMELENGTH = 32
+      real, pointer, contiguous, dimension (:,:,:) ::  smag => null()
+      integer, parameter :: MAXNAMELENGTH = 32
 
-   character(len=MAXNAMELENGTH) :: gmmk_smag_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_smag_s = 'SMAG'
+
 end module gmm_smag

@@ -17,12 +17,14 @@ module gmm_tracers
    public
    save
 !
-   real, pointer, contiguous, dimension (:,:,:) :: airm1    => null()
-   real, pointer, contiguous, dimension (:,:,:) :: airm0    => null()
-   real, pointer, contiguous, dimension (:,:,:) :: pkps     => null()
+      real, pointer, contiguous, dimension (:,:,:) :: airm1    => null()
+      real, pointer, contiguous, dimension (:,:,:) :: airm0    => null()
+      real, pointer, contiguous, dimension (:,:,:) :: pkps     => null()
+      
+      integer, parameter :: MAXNAMELENGTH = 32
 
-   integer, parameter :: MAXNAMELENGTH = 32
-
-   character(len=MAXNAMELENGTH) :: gmmk_airm1_s, gmmk_airm0_s, gmmk_pkps_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_airm1_s = 'AIR1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_airm0_s = 'AIR0'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pkps_s  = 'PKPS'
 
 end module gmm_tracers

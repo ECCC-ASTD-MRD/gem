@@ -25,9 +25,10 @@ module gmm_phy
 
    integer, parameter :: MAXNAMELENGTH = 32
 
-   character(len=MAXNAMELENGTH) :: &
-           gmmk_phy_cplm_s, gmmk_phy_cplt_s, &
-           gmmk_phy_uu_tend_s, gmmk_phy_vv_tend_s, &
-           gmmk_phy_tv_tend_s
+   character(len=MAXNAMELENGTH), parameter:: gmmk_phy_cplm_s = 'PHYCPLM'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_phy_cplt_s = 'PHYCPLT'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_phy_uu_tend_s= 'UPT'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_phy_vv_tend_s= 'VPT'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_phy_tv_tend_s= 'TVPT'
 
 end module gmm_phy

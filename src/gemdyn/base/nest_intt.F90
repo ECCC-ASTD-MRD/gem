@@ -99,6 +99,17 @@
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
 
+! Optionaly for debugging
+!!$      nest_u = a*nest_u_deb + b*nest_u_fin
+!!$      nest_v = a*nest_v_deb + b*nest_v_fin
+!!$      nest_t = a*nest_t_deb + b*nest_t_fin
+!!$      nest_s = a*nest_s_deb + b*nest_s_fin
+!!$      nest_q = a*nest_q_deb + b*nest_q_fin
+!!$      nest_w = a*nest_w_deb + b*nest_w_fin
+!!$      nest_zd = a*nest_zd_deb + b*nest_zd_fin
+!!$      nest_fullme = a*nest_fullme_deb + b*nest_fullme_fin
+!!$      nest_tr = a*nest_tr_deb + b*nest_tr_fin
+      
       nest_now = a*nest_deb + b*nest_fin
 
       call gemtime_stop ( 28 )

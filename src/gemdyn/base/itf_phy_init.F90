@@ -195,8 +195,6 @@
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 
 ! Determine whether winds on the lowest thermodynamic level are available for advection
-      gmmk_pw_uslt_s     = 'PW_USLT'
-      gmmk_pw_vslt_s     = 'PW_VSLT'
       have_slt_winds = (phy_getmeta(pmeta,gmmk_pw_uslt_s,F_npath='V',F_bpath='V') > 0 .and. &
            phy_getmeta(pmeta,gmmk_pw_vslt_s,F_npath='V',F_bpath='V') > 0)
       if (Adz_slt_winds .and. .not.have_slt_winds) then

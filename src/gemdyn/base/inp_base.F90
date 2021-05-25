@@ -355,7 +355,7 @@ contains
             zlist(i)= i + kstart - 1
          end do
 
-         allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd) )
+         allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd) );F_dest=0.
 
          do idst=1, F_nd
             k=min((idst-1)*nz+1,maxdim_wk2)
@@ -1096,7 +1096,8 @@ contains
                  call gem_error (-1,'inp_match',&
                         'more than one diagnostic level, review code')
             index_diag_AGL = ko
-            F_ho(:,:,ko) = F_hi(:,:,nki) + lev
+            F_ho(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,ko ) = &
+            F_hi(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,nki) + lev
          else
             do ki=1, nki
                if (F_ip1_list_o(ko) == F_ip1_list_i(ki)) then

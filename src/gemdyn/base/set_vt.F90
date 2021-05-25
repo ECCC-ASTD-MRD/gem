@@ -17,7 +17,6 @@
       use dynkernel_options
       use gmm_vt1
       use gmm_vt0
-      use gmm_vt2
       use gmm_vth
       use mem_tracers
       use gmm_tracers
@@ -52,7 +51,6 @@
 !	memory or disk.
 !       vt0 (VMM variables at time t0)
 !       vt1 (VMM variables at time t1)
-!       vt2 (VMM variables at time t2)
 !       vth (VMM variables at time th [t0-dt/2])
 !*@/
 
@@ -86,22 +84,6 @@
       mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_t)
       mymeta3d_nk_q  = SET_GMMUSR_FLAG(meta3d_nk1 ,flag_m_f)
       mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
-
-      gmmk_ut0_s   =  'URT0'
-      gmmk_vt0_s   =  'VRT0'
-      gmmk_tt0_s   =  'TT0'
-      gmmk_st0_s   =  'ST0'
-      gmmk_wt0_s   =  'WT0'
-      gmmk_qt0_s   =  'QT0'
-      gmmk_zdt0_s  = 'ZDT0'
-
-      gmmk_ut1_s   =  'URT1'
-      gmmk_vt1_s   =  'VRT1'
-      gmmk_tt1_s   =  'TT1'
-      gmmk_st1_s   =  'ST1'
-      gmmk_wt1_s   =  'WT1'
-      gmmk_qt1_s   =  'QT1'
-      gmmk_zdt1_s  = 'ZDT1'
 
       istat = GMM_OK
 
@@ -142,10 +124,6 @@
       istat = gmm_get (gmmk_wt1_s , wt1)
       istat = gmm_get (gmmk_qt1_s , qt1)
       istat = gmm_get (gmmk_zdt1_s, zdt1)
-
-      gmmk_xth_s = 'XTH'
-      gmmk_yth_s = 'YTH'
-      gmmk_zth_s = 'ZTH'
 
       istat = GMM_OK
 
@@ -222,10 +200,6 @@
 
       end if
 
-      gmmk_airm1_s= 'AIR1'
-      gmmk_airm0_s= 'AIR0'
-      gmmk_pkps_s = 'PKPS'
-
       istat = GMM_OK
 
       istat = min(gmm_create(gmmk_airm1_s,airm1,mymeta3d_nk_t,flag_r_n),istat)
@@ -242,38 +216,6 @@
 
       istat = gmm_get('TR/HU:M' ,hut1)
       istat = gmm_get('TR/HU:P' ,hut0)
-
-      gmmk_pw_uu_plus_s  = 'PW_UU:P'
-      gmmk_pw_vv_plus_s  = 'PW_VV:P'
-      gmmk_pw_wz_plus_s  = 'PW_WZ:P'
-      gmmk_pw_tt_plus_s  = 'PW_TT:P'
-      gmmk_pw_pm_plus_s  = 'PW_PM:P'
-      gmmk_pw_pm_plus_8_s= 'PW_PM8:P'
-      gmmk_pw_pt_plus_s  = 'PW_PT:P'
-      gmmk_pw_gz_plus_s  = 'PW_GZ:P'
-      gmmk_pw_me_plus_s  = 'PW_ME:P'
-      gmmk_pw_p0_plus_s  = 'PW_P0:P'
-      gmmk_pw_p0_plus_8_s= 'PW_P08:P'
-      gmmk_pw_log_pm_s   = 'PW_LNPM'
-      gmmk_pw_log_pt_s   = 'PW_LNPT'
-
-      gmmk_pw_uu_moins_s = 'PW_UU:M'
-      gmmk_pw_vv_moins_s = 'PW_VV:M'
-      gmmk_pw_tt_moins_s = 'PW_TT:M'
-      gmmk_pw_pm_moins_s = 'PW_PM:M'
-      gmmk_pw_pm_moins_8_s='PW_PM8:M'
-      gmmk_pw_pt_moins_s = 'PW_PT:M'
-      gmmk_pw_gz_moins_s = 'PW_GZ:M'
-      gmmk_pw_me_moins_s = 'PW_ME:M'
-      gmmk_pw_p0_moins_s = 'PW_P0:M'
-      gmmk_pw_p0_moins_8_s='PW_P08:M'
-
-      gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
-      gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
-      gmmk_pw_uslt_s     = 'PW_USLT'
-      gmmk_pw_vslt_s     = 'PW_VSLT'
-
-      gmmk_pw_p0_ls_s    = 'PW_P0_LS'
 
       nullify(pw_uu_plus ,pw_vv_plus ,pw_wz_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
       nullify(pw_uu_moins,pw_vv_moins,            pw_tt_moins,pw_pm_moins,pw_gz_moins)
@@ -316,7 +258,6 @@
       istat = min(gmm_create(gmmk_pw_uu_copy_s   ,pw_uu_copy  ,meta3d_nk  ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_copy_s   ,pw_vv_copy  ,meta3d_nk  ,flag_r_n),istat)
 
-      gmmk_smag_s = 'SMAG'
       nullify(smag)
       istat = min(gmm_create(gmmk_smag_s   ,smag  ,meta3d_nk ,flag_n),istat)
 
@@ -354,13 +295,8 @@
       istat = gmm_get(gmmk_pw_vv_copy_s   ,pw_vv_copy)
       istat = gmm_get(gmmk_smag_s   ,smag)
 
-      gmmk_phy_cplm_s = 'PHYCPLM'
-      gmmk_phy_cplt_s = 'PHYCPLT'
       istat = min(gmm_create(gmmk_phy_cplm_s, phy_cplm, meta2d, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_cplt_s, phy_cplt, meta2d, flag_r_n),istat)
-      gmmk_phy_uu_tend_s  = 'UPT'
-      gmmk_phy_vv_tend_s  = 'VPT'
-      gmmk_phy_tv_tend_s  = 'TVPT'
       istat = min(gmm_create(gmmk_phy_uu_tend_s, phy_uu_tend, mymeta3d_nk_u, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_vv_tend_s, phy_vv_tend, mymeta3d_nk_v, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_tv_tend_s, phy_tv_tend, mymeta3d_nk_t, flag_r_n),istat)

@@ -413,30 +413,26 @@
       INTEGER_DATATYPE = RPN_COMM_datyp('MPI_INTEGER')
       REAL_DATATYPE    = RPN_COMM_datyp('MPI_REAL'   )
       
-      dim= 2*Ptopo_world_numproc * 4
-      WINSIZE  = dim * 4 ! will allocate dim integers of 4 bytes each
-      DISP_UNIT= 4       ! window displacement unit = size of an integer
+      dim= 2*Ptopo_world_numproc
+      WINSIZE  = dim * 16 ! will allocate dim integers of 4 bytes each
+      DISP_UNIT= 4        ! window displacement unit = size of an integer
 
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_list, Adz_Win_list, ierr)
-      call c_f_pointer (BASEPTR_list, temp_iptr, [2*Ptopo_world_numproc,4])
+      call c_f_pointer (BASEPTR_list, temp_iptr, [dim,4])
       Adz_expq%list(1:dim) => temp_iptr(1:dim,1)
       Adz_expu%list(1:dim) => temp_iptr(1:dim,2)
       Adz_expv%list(1:dim) => temp_iptr(1:dim,3)
       Adz_expt%list(1:dim) => temp_iptr(1:dim,4)
       
-      dim = Adz_MAX_MPI_OS_SIZE * 3 * 4
-      WINSIZE= dim * 4 ! will allocate dim reals of 4 bytes each
+      dim = Adz_MAX_MPI_OS_SIZE * 3
+      WINSIZE= dim * 16 ! will allocate dim reals of 4 bytes each
       
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEPTR_pos, Adz_Win_pos, ierr)
-      call c_f_pointer (BASEPTR_pos, temp_rptr, [2*Ptopo_world_numproc,4])
+      call c_f_pointer (BASEPTR_pos, temp_rptr, [dim,4])
       Adz_expq%pos(1:dim) => temp_rptr(1:dim,1)
       Adz_expu%pos(1:dim) => temp_rptr(1:dim,2)
       Adz_expv%pos(1:dim) => temp_rptr(1:dim,3)
       Adz_expt%pos(1:dim) => temp_rptr(1:dim,4)
-
-
-
-      
       
       dim=2*Ptopo_world_numproc
       WINSIZE   = dim * 4 ! will allocate dim integers of 4 bytes each

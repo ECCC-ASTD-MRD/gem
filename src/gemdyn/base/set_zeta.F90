@@ -22,6 +22,7 @@
       use dynkernel_options
       use levels
       use ver
+      use gmm_pw
       use VERgrid_options
       use vGrid_Descriptors
       use vgrid_wb
@@ -363,9 +364,9 @@
       Ver_onezero=1.
       Ver_onezero(1)=0.
 
-      REFP0_S = 'PW_P0:P'  !# gmmk_pw_p0_plus_s !NOTE: could gmmk_* be defined as parameters in a .cdk, this way it could be used here and would be more consistent
+      REFP0_S = gmmk_pw_p0_plus_s
       REFP0_LS_S = ' '
-      if (Schm_sleve_L) REFP0_LS_S = 'PW_P0_LS'  !# gmmk_pw_p0_ls_s
+      if (Schm_sleve_L) REFP0_LS_S = gmmk_pw_p0_ls_s
       istat = vgrid_wb_put('ref-m', Ver_vgdobj, Ver_ip1%m,  &
                            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
       istat = vgrid_wb_put('ref-t', Ver_vgdobj, Ver_ip1%t,  &

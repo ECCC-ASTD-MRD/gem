@@ -168,13 +168,13 @@ if [[ -e ${final_file} ]] ; then
    dir=${splitdir}/$(ls -1 ${splitdir} | head -1)
    for i in $(ls -1 ${dir}/GEM_input_file*) ; do
       varname='TT'
-      if [ $(r.fstliste.new -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
+      if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
          varname='TT1'
       fi
-      if [ $(r.fstliste.new -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
+      if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
          varname='VT'
       fi
-      valid=$(r.fstliste.new -izfst $i -nomvar ${varname} | head -1 | cut -d ":" -f 11)
+      valid=$(r.fstliste -izfst $i -nomvar ${varname} | head -1 | cut -d ":" -f 11)
       if [ -n "${valid}" ] ; then
          echo $(echo $valid | cut -c1-8).$(echo $valid | cut -c9-14) > ${splitdir}/analysis_validity_date
          break

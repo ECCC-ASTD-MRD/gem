@@ -72,14 +72,29 @@ module ens_gmm_var
 
       integer, parameter :: MAXNAMELENGTH    =  32
 
-      character(len=MAXNAMELENGTH) :: gmmk_mcutraj_s,gmmk_mcvtraj_s,gmmk_mcwtraj_s
-      character(len=MAXNAMELENGTH) :: gmmk_mcrhsint_s
-      character(len=MAXNAMELENGTH) :: gmmk_mcsph1_s
-      character(len=MAXNAMELENGTH) :: gmmk_difut1_s,gmmk_difvt1_s
-      character(len=MAXNAMELENGTH) :: gmmk_diout1_s,gmmk_diovt1_s
-      character(len=MAXNAMELENGTH) :: gmmk_ugwdt1_s,gmmk_vgwdt1_s
-      character(len=MAXNAMELENGTH) :: gmmk_ensdiv_s,gmmk_ensvor_s
-      character(len=MAXNAMELENGTH) :: gmmk_ar_s,gmmk_ai_s,gmmk_br_s,gmmk_bi_s
-      character(len=MAXNAMELENGTH) :: gmmk_ar_p,gmmk_ai_p,gmmk_br_p,gmmk_bi_p
-      character(len=MAXNAMELENGTH) :: gmmk_dumdum_s,gmmk_pls_s,gmmk_plp_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_mcutraj_s = 'MCUTRAJ'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_mcvtraj_s = 'MCVTRAJ'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_mcwtraj_s = 'MCWTRAJ'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_mcrhsint_s= 'MCRHSINT'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_mcsph1_s= 'MCSPH1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_difut1_s= 'DIFUT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_difvt1_s= 'DIFVT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_diout1_s= 'DIOUT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_diovt1_s= 'DIOVT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ugwdt1_s= 'UGWDT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_vgwdt1_s= 'VGWDT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ensdiv_s= 'ENSDIV'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ensvor_s= 'ENSVOR'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ar_s   = 'ARENS_S'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ai_s   = 'AIENS_S'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ar_p   = 'ARENS_P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ai_p   = 'AIENS_P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_br_s   = 'BRENS_S'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_bi_s   = 'BIENS_S'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_br_p   = 'BRENS_P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_bi_p   = 'BIENS_P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_dumdum_s= 'DUMDUM'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pls_s  = 'P_LEGENS'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_plp_s  = 'P_LEGENP'
+      
 end module ens_gmm_var

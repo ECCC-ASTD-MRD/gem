@@ -19,12 +19,13 @@
 !**********************************************************************
 !
       subroutine fislh_nli ( F_nu , F_nv , F_nt , F_nw , F_nc , &
-                             F_u  , F_v  , F_t  , F_zd , F_q  , &
+                             F_u  , F_v  , F_w, F_t  , F_zd , F_q  , &
                              F_rc , F_rt , F_rf , F_fis, F_rhs, F_rb,F_nb ,&
                              Minx, Maxx, Miny, Maxy, Nk, ni, nj, i0, j0, k0, in, jn, icln)
       use HORgrid_options
       use gem_options
       use dyn_fisl_options
+      use dynkernel_options
       use coriolis
       use geomh
       use tdpack
@@ -45,7 +46,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nu,F_nv,F_nw
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_nt,F_nc
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_zd
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rc,F_rt,F_rf
       real, dimension(Minx:Maxx,Miny:Maxy),     intent(in)    :: F_fis
@@ -58,7 +59,7 @@
 #include <arch_specific.hf>
 
       integer :: i, j, k, k0t, km, i0u, inu, j0v, jnv, nij, onept
-      real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp
+      real(kind=REAL64)  :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp,i_hydro
       real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
 !     __________________________________________________________________
@@ -74,6 +75,11 @@
                                  G_halox, G_haloy, G_periodx, G_periody, l_ni, 0 )
          call rpn_comm_xch_halo( F_q, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_nk+1, &
                                  G_halox, G_haloy, G_periodx, G_periody, l_ni, 0 )
+      end if
+      
+      i_hydro=0.d0
+      if (Dynamics_hydro_L) then
+         i_hydro=1.d0
       end if
 
       c0 = Dcst_rayt_8**2
@@ -234,9 +240,11 @@
 
    !           Compute Nw
    !           ~~~~~~~~~~
-               F_nw(i,j,k) = ((xtmp_8(i,j)-one*isol_i)*mc_iJz_8(i,j,k) - &
+               F_nw(i,j,k) = (one - i_hydro)*(((xtmp_8(i,j)-one*isol_i)*mc_iJz_8(i,j,k) - &
                            isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k)) &
-                           -  (xtmp_8(i,j)-one)*grav_8*(one-one/xtmp_8(i,j))
+                           -  (xtmp_8(i,j)-one)*grav_8*(one-one/xtmp_8(i,j))) + &
+                           i_hydro*(-Cstv_invT_nh_8*F_w(i,j,k)+((one-isol_i)*mc_iJz_8(i,j,k) - &
+                           isol_d*Ver_idz_8%t(k))*(F_q(i,j,k+1)-F_q(i,j,k)))
    !           ~~~~~~~~~~
    !           Compute Nt
    !           ~~~~~~~~~~

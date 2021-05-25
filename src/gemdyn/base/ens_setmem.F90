@@ -44,10 +44,6 @@
 !
       if (.not.Ens_conf) return
 
-      gmmk_mcutraj_s= 'MCUTRAJ'
-      gmmk_mcvtraj_s= 'MCVTRAJ'
-      gmmk_mcwtraj_s= 'MCWTRAJ'
-
       istat = gmm_create(gmmk_mcutraj_s,mcutraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcutraj'
       istat = gmm_create(gmmk_mcvtraj_s,mcvtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
@@ -63,7 +59,6 @@
       if (GMM_IS_ERROR(istat))write(*,6005)'mcwtraj'
       mcwtraj = 1.
 
-      gmmk_mcrhsint_s= 'MCRHSINT'
       istat = gmm_create(gmmk_mcrhsint_s,mcrhsint,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcrhsint'
       istat = gmm_get(gmmk_mcrhsint_s,mcrhsint)
@@ -135,27 +130,6 @@
                             1,36,0,0,36,                      &
                             1,2*(MAX2DC+MAX_NSPP),0,0,2*(MAX2DC+MAX_NSPP),&
                             0,GMM_NULL_FLAGS)
-
-      gmmk_mcsph1_s= 'MCSPH1'
-      gmmk_difut1_s= 'DIFUT1'
-      gmmk_difvt1_s= 'DIFVT1'
-      gmmk_diout1_s= 'DIOUT1'
-      gmmk_diovt1_s= 'DIOVT1'
-      gmmk_ugwdt1_s= 'UGWDT1'
-      gmmk_vgwdt1_s= 'VGWDT1'
-      gmmk_ensdiv_s= 'ENSDIV'
-      gmmk_ensvor_s= 'ENSVOR'
-      gmmk_ar_s   = 'ARENS_S'
-      gmmk_ai_s   = 'AIENS_S'
-      gmmk_ar_p   = 'ARENS_P'
-      gmmk_ai_p   = 'AIENS_P'
-      gmmk_br_s   = 'BRENS_S'
-      gmmk_bi_s   = 'BIENS_S'
-      gmmk_br_p   = 'BRENS_P'
-      gmmk_bi_p   = 'BIENS_P'
-      gmmk_dumdum_s= 'DUMDUM'
-      gmmk_pls_s  = 'P_LEGENS'
-      gmmk_plp_s  = 'P_LEGENP'
 
       istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcsph1'
