@@ -33,14 +33,14 @@ module gmm_vth
 !----------------------------------------------------------------------
 !
 
-   real, pointer, contiguous, dimension (:,:,:) :: zdth  => null()
-   real, pointer, contiguous, dimension (:    ) :: xth   => null()
-   real, pointer, contiguous, dimension (:    ) :: yth   => null()
-   real, pointer, contiguous, dimension (:    ) :: zth   => null()
+      real, pointer, contiguous, dimension (:    ) :: xth   => null()
+      real, pointer, contiguous, dimension (:    ) :: yth   => null()
+      real, pointer, contiguous, dimension (:    ) :: zth   => null()
 
-   integer, parameter :: MAXNAMELENGTH = 32
+      integer, parameter :: MAXNAMELENGTH = 32
 
-   character(len=MAXNAMELENGTH) ::  gmmk_zdth_s, &
-                          gmmk_xth_s , gmmk_yth_s , gmmk_zth_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_xth_s   =  'XTH'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_yth_s   =  'YTH'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_zth_s   =  'ZTH'
 
 end module gmm_vth

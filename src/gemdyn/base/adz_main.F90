@@ -65,7 +65,7 @@
       Adz_stack(2)%src => orhsf
       Adz_stack(2)%dst =>  rhsf
       n= 2
-      if(.not.Dynamics_hydro_L) then
+      if((.not.Dynamics_hydro_L) .or. Dynamics_hauteur_L) then
          n= 3
          Adz_stack(n)%src => orhsw
          Adz_stack(n)%dst =>  rhsw

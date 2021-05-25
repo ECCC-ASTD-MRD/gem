@@ -45,8 +45,12 @@ module gmm_vt1
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: gmmk_wt1_s, gmmk_tt1_s, &
-           gmmk_zdt1_s, gmmk_st1_s , gmmk_qt1_s , gmmk_ut1_s, &
-           gmmk_vt1_s , gmmk_pmt1_s, gmmk_ptt1_s, gmmk_pst1_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_ut1_s   =  'URT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_vt1_s   =  'VRT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_tt1_s   =  'TT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_st1_s   =  'ST1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_wt1_s   =  'WT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_qt1_s   =  'QT1'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_zdt1_s  =  'ZDT1'
 
 end module gmm_vt1

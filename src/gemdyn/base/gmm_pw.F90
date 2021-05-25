@@ -55,21 +55,33 @@ module gmm_pw
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: &
-         gmmk_pw_uu_plus_s, gmmk_pw_uu_moins_s,&
-         gmmk_pw_vv_plus_s, gmmk_pw_vv_moins_s,&
-         gmmk_pw_wz_plus_s, gmmk_pw_wz_moins_s,&
-         gmmk_pw_tt_plus_s, gmmk_pw_tt_moins_s,&
-         gmmk_pw_pm_plus_s, gmmk_pw_pm_moins_s,&
-         gmmk_pw_pm_plus_8_s, gmmk_pw_pm_moins_8_s,&
-         gmmk_pw_pt_plus_s, gmmk_pw_pt_moins_s,&
-         gmmk_pw_gz_plus_s, gmmk_pw_gz_moins_s,&
-         gmmk_pw_log_pm_s , gmmk_pw_log_pt_s  ,&
-         gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s ,&
-         gmmk_pw_me_plus_s, gmmk_pw_me_moins_s,&
-         gmmk_pw_p0_plus_s, gmmk_pw_p0_moins_s,&
-         gmmk_pw_p0_plus_8_s, gmmk_pw_p0_moins_8_s,&
-         gmmk_pw_p0_ls_s  , gmmk_pw_uslt_s    ,&
-         gmmk_pw_vslt_s
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_uu_plus_s = 'PW_UU:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_vv_plus_s = 'PW_VV:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_wz_plus_s = 'PW_WZ:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_tt_plus_s = 'PW_TT:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pm_plus_s = 'PW_PM:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pt_plus_s = 'PW_PT:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_gz_plus_s = 'PW_GZ:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_me_plus_s = 'PW_ME:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_plus_s = 'PW_P0:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_log_pm_s = 'PW_LNPM:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_log_pt_s = 'PW_LNPT:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pm_plus_8_s= 'PW_PM8:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_plus_8_s= 'PW_P08:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_uu_moins_s = 'PW_UU:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_vv_moins_s = 'PW_VV:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_tt_moins_s = 'PW_TT:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pm_moins_s = 'PW_PM:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pt_moins_s = 'PW_PT:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_gz_moins_s = 'PW_GZ:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_me_moins_s = 'PW_ME:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_moins_s = 'PW_P0:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pm_moins_8_s= 'PW_PM8:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_moins_8_s= 'PW_P08:M'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_uu_copy_s = 'PW_UU_COPY'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_vv_copy_s = 'PW_VV_COPY'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_uslt_s    = 'PW_USLT'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_vslt_s    = 'PW_VSLT'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_ls_s   = 'PW_P0_LS'
 
 end module gmm_pw

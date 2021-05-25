@@ -168,8 +168,6 @@ contains
 
       integer, intent(in) :: F_adv_maxcfl_fact
 
-      integer, external ::  yyg_checkrot
-
       character(len=120) :: dumc
       logical :: almost_zero
       integer err
@@ -203,8 +201,6 @@ contains
          if (Grd_nj <= 0) then
             if (Grd_ni > 0) Grd_nj= nint ( real(Grd_ni-1)/3. + 1. )
          end if
-
-         if (yyg_checkrot() < 0) return
 
          if (trim(Grd_yinyang_S) == 'YAN') then
             call yyg_yangrot ( dble(Grd_xlat1), dble(Grd_xlon1), &

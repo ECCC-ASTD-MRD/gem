@@ -153,7 +153,7 @@
             tmp_liste(cnt+4) = 'TT1'
             tmp_liste(cnt+5) = 'ST1'
             cnt = cnt + 5
-            if(.not.Dynamics_hydro_L)then
+            if((.not.Dynamics_hydro_L) .or. Dynamics_hauteur_L)then
                tmp_liste(cnt+1) = 'QT1'
                cnt = cnt + 1
             end if
@@ -168,7 +168,7 @@
             tmp_liste(cnt+4) = 'TT0'
             tmp_liste(cnt+5) = 'ST0'
             cnt = cnt + 5
-            if(.not.Dynamics_hydro_L)then
+            if((.not.Dynamics_hydro_L) .or. Dynamics_hauteur_L)then
                tmp_liste(cnt+1) = 'QT0'
                cnt = cnt + 1
             end if

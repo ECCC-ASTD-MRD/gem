@@ -34,6 +34,7 @@
       use out_mod
       use levels
       use ver
+      use gmm_pw
       use wb_itf_mod
       use tdpack, only: grav_8
       use, intrinsic :: iso_fortran_env
@@ -224,9 +225,9 @@
 !     ----------------------------------------------------------
 !     Save Ver_vgdobj and ip1m/t for output
 !     ----------------------------------------------------------
-      REFP0_S = 'PW_P0:P'  !# gmmk_pw_p0_plus_s !NOTE: could gmmk_* be defined as parameters in a .cdk, this way it could be used here and would be more consistent
+      REFP0_S = gmmk_pw_p0_plus_s
       REFP0_LS_S = ' '
-      if (Schm_sleve_L) REFP0_LS_S = 'PW_P0_LS'  !# gmmk_pw_p0_ls_s
+      if (Schm_sleve_L) REFP0_LS_S = gmmk_pw_p0_ls_s
       istat = vgrid_wb_put(VGRID_M_S, Ver_vgdobj, Ver_ip1%m,  &
            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
       istat = vgrid_wb_put(VGRID_T_S, Ver_vgdobj, Ver_ip1%t,  &

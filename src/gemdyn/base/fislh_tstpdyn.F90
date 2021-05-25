@@ -129,7 +129,7 @@
          if ( .not. Grd_yinyang_L ) icln=icln+1
 
          call fislh_nli (nl_u, nl_v, nl_t, nl_w, nl_c   ,&
-                         ut0, vt0, tt0, zdt0, qt0       ,&
+                         ut0, vt0, wt0, tt0, zdt0, qt0       ,&
                          rhsc, rhst, rhsf, fis0, rhs_sol,rhsb,nl_b,&
                          l_minx,l_maxx,l_miny,l_maxy    ,&
                          l_nk, ni, nj, i0, j0, k0, in, jn, icln)
@@ -169,10 +169,8 @@
                             G_nk, .false., 'CUBIC', .false.)
             call yyg_xchng (st0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                             1,    .false., 'CUBIC', .false.)
-            if (.not.Dynamics_hydro_L) then
-               call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                               G_nk+1, .false., 'CUBIC', .false.)
-            end if
+            call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
+                            G_nk+1, .false., 'CUBIC', .false.)
         end if
 
       end do

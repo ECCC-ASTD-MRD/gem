@@ -72,7 +72,7 @@
       istat = gmm_shuffle(pw_p0list)
       istat = gmm_shuffle(pw_p08list)
 
-      if (.not. Dynamics_hydro_L .or. trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+      if ((.not. Dynamics_hydro_L) .or. Dynamics_hauteur_L) then
          istat = gmm_shuffle(qt_list)
       end if
 
