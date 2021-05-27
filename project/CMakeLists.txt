@@ -100,10 +100,10 @@ message(STATUS "arch-dependent include directory: ${ROOT}/src/archdep/include/${
 
 include_directories(
    ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}
-   ${ROOT}/src/mpi-extras
-   ${ROOT}/src/rpncomm
-   ${ROOT}/src/rmn/PUBLIC_INCLUDES
-   ${ROOT}/src/RPN/compiler_includes
+   ${ROOT}/src/rpn-si/mpi-extras
+   ${ROOT}/src/rpn-si/rpncomm
+   ${ROOT}/src/rpn-si/rmn/PUBLIC_INCLUDES
+   ${ROOT}/src/rpn-si/RPN/compiler_includes
 )
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
@@ -171,14 +171,8 @@ add_custom_target(work
         $<TARGET_FILE:gem_monitor_output>
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:r.fstinfo>
-#        $<TARGET_FILE:editfst>
-#        $<TARGET_FILE:fstcomp>
-#        $<TARGET_FILE:fststat>
-#        $<TARGET_FILE:pgsm>
-#        $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-#    COMMAND /bin/cp -avf ${ROOT}/scripts ${WORK_DIR}
 #    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
 
     DEPENDS
@@ -194,11 +188,6 @@ add_custom_target(work
         gem_monitor_output
         gem_monitor_end
         r.fstinfo
-#        editfst
-#        fstcomp
-#        fststat
-#        pgsm
-#        voir
 )
 
 # TODO: Make the actual installation in CMAKE_INSTALL_PREFIX
