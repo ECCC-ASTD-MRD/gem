@@ -44,6 +44,7 @@ subroutine iau_apply (F_kount)
    use path
    use step_options
    use var_gmm
+   use VERgrid_options, only: VGRID_M_S, VGRID_T_S
 
    use gem_timing
    implicit none
@@ -65,12 +66,12 @@ subroutine iau_apply (F_kount)
    integer, parameter :: STATS_PRECISION = 8
    character(len=2), parameter :: IAU_PREFIX='I_'
    character(len=6), parameter :: IAU_FILE = 'IAUREP'
-   character(len=32), parameter  :: VGRID_M_S = 'ref-m'
-   character(len=32), parameter  :: VGRID_T_S = 'ref-t'
    character(len=32), parameter  :: IAU_VGRID_M_S = 'iau-m'
    character(len=32), parameter  :: IAU_VGRID_T_S = 'iau-t'
-   character(len=32), parameter  :: IAU_REFP0_S = 'IAUREFP0:P'
-   character(len=32), parameter  :: IAU_REFP0_LS_S = 'IAUREFP0LS:P'
+   character(len=32), parameter  :: IAU_RFLD_S = 'IAURFLD:P'
+   character(len=32), parameter  :: IAU_RFLD_LS_S = 'IAURFLDLS:P'
+   character(len=32), parameter  :: IAU_ALTFLD_M_S = 'IAUALTFLDM:P'
+   character(len=32), parameter  :: IAU_ALTFLD_T_S = 'IAUALTFLDT:P'
    logical, parameter :: UVSCAL2WGRID = .false.
    logical, parameter :: ALLOWDIR = .true.
    logical, parameter :: DO_TT2TV = .true.
@@ -80,9 +81,10 @@ subroutine iau_apply (F_kount)
    integer, save :: kount = 0
    type(INPUTIO_T), save :: inputobj
    real, pointer, save :: weight(:)
-   real, pointer, dimension(:,:) :: refp0, pw_p0
+   real, pointer, dimension(:,:) :: iau_rfld, pw_rfld
+   real, pointer, dimension(:,:,:) :: iau_altfld, pw_altfld
    character(len=256) :: incfg_S, vgrid_S, msg_S
-   character(len=32)  :: refp0_S, refp0ls_S
+   character(len=32)  :: rfld_S, rfldls_S, altfld_M_S, altfld_T_S
    character(len=16)  :: iname0_S, iname1_S, datev_S
    integer :: istat, dateo, datev, iau_vtime, step_freq, ivar, ni1, nj1, &
         i, j, n, nw, add, lijk(3), uijk(3), step_0
@@ -217,53 +219,91 @@ subroutine iau_apply (F_kount)
 
       !# define a vert coor with ref on l_ni/j
       nullify(ip1list)
-      istat = vgrid_wb_get(VGRID_M_S, vgridm, ip1list, F_sfcfld2_S=refp0ls_S)
-      if (refp0ls_S /= '') refp0ls_S = IAU_REFP0_LS_S
-      ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put(IAU_VGRID_M_S, vgridm, ip1listref, IAU_REFP0_S, &
-              refp0ls_S, F_overwrite_L=.true.)
-      istat = vgd_free(vgridm)
-      if (associated(ip1list)) deallocate(ip1list,stat=istat)
-      nullify(ip1list)
-      istat = vgrid_wb_get(VGRID_T_S, vgridt, ip1list, F_sfcfld2_S=refp0ls_S)
-      if (refp0ls_S /= '') refp0ls_S = IAU_REFP0_LS_S
-      ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put(IAU_VGRID_T_S, vgridt, ip1listref, IAU_REFP0_S, &
-                           refp0ls_S, F_overwrite_L=.true.)
-      istat = vgd_free(vgridt)
-      if (associated(ip1list)) deallocate(ip1list,stat=istat)
+      istat = vgrid_wb_get(VGRID_M_S, vgridm, ip1list, F_sfcfld_S=rfld_S, &
+           F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
+      istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
+
       mymeta = GMM_NULL_METADATA
       mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
       mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
-      nullify(refp0)
-      istat = gmm_create(IAU_REFP0_S, refp0, mymeta)
-      if (refp0ls_S /= '') then
-         nullify(refp0)
-         istat = gmm_create(IAU_REFP0_LS_S, refp0, mymeta)
-      end if
+      
+      if (rfld_S /= '') rfld_S = IAU_RFLD_S
+      if (rfldls_S /= '') rfldls_S = IAU_RFLD_LS_S
+      if (altfld_M_S /= '') altfld_M_S = IAU_ALTFLD_M_S
+      if (altfld_T_S /= '') altfld_T_S = IAU_ALTFLD_T_S
+      ip1listref => ip1list(1:G_nk)
+      istat = vgrid_wb_put(IAU_VGRID_M_S, vgridm, ip1listref, rfld_S, &
+           rfldls_S, F_overwrite_L=.true., F_altfld_S=altfld_M_S)
+      istat = vgrid_wb_put(IAU_VGRID_T_S, vgridt, ip1listref, rfld_S, &
+           rfldls_S, F_overwrite_L=.true., F_altfld_S=altfld_T_S)
+     
+      if (rfld_S /= '') then
+         nullify(iau_rfld)
+         istat = gmm_create(IAU_RFLD_S, iau_rfld, mymeta)
+         if (rfldls_S /= '') then
+            nullify(iau_rfld)
+            istat = gmm_create(IAU_RFLD_LS_S, iau_rfld, mymeta)
+         end if
+      endif
+      if (altfld_M_S /= '') then
+         mymeta%l(3) = gmm_layout(1,G_nk,0,0,G_nk)
+         nullify(iau_altfld)
+         istat = gmm_create(IAU_ALTFLD_M_S, iau_altfld, mymeta)
+      endif
+      if (altfld_T_S /= '') then
+         mymeta%l(3) = gmm_layout(1,G_nk,0,0,G_nk)
+         nullify(iau_altfld)
+         istat = gmm_create(IAU_ALTFLD_T_S, iau_altfld, mymeta)
+      endif
+      
+      istat = vgd_free(vgridm)
+      istat = vgd_free(vgridt)
+      if (associated(ip1list)) deallocate(ip1list,stat=istat)
 
    end if IF_INIT
-
+   
    !# Update reference surface field for vgrid
-   istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=refp0_S, &
-                        F_sfcfld2_S=refp0ls_S)
+   istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=rfld_S, &
+        F_sfcfld2_S=rfldls_S)
    istat = vgd_free(vgridm)
+   istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
+   istat = vgd_free(vgridt)
 
-   nullify(pw_p0, refp0)
-   istat = gmm_get(refp0_S, pw_p0)
-   istat = gmm_get(IAU_REFP0_S, refp0)
-   if (associated(refp0) .and. associated(pw_p0)) then
-      refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
-   end if
+   if (rfld_S /= '') then 
+      nullify(pw_rfld, iau_rfld)
+      istat = gmm_get(rfld_S, pw_rfld)
+      istat = gmm_get(IAU_RFLD_S, iau_rfld)
+      if (associated(iau_rfld) .and. associated(pw_rfld)) then
+         iau_rfld(:,:) = pw_rfld(1:l_ni,1:l_nj)
+      end if
 
-   if (refp0ls_S /= '') then
-      nullify(pw_p0, refp0)
-      istat = gmm_get(refp0ls_S, pw_p0)
-      istat = gmm_get(IAU_REFP0_LS_S, refp0)
-      if (associated(refp0) .and. associated(pw_p0)) then
-         refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
+      if (rfldls_S /= '') then
+         nullify(pw_rfld, iau_rfld)
+         istat = gmm_get(rfldls_S, pw_rfld)
+         istat = gmm_get(IAU_RFLD_LS_S, iau_rfld)
+         if (associated(iau_rfld) .and. associated(pw_rfld)) then
+            iau_rfld(:,:) = pw_rfld(1:l_ni,1:l_nj)
+         end if
       end if
    end if
+   
+   if (altfld_M_S /= '') then
+      nullify(pw_altfld, iau_altfld)
+      istat = gmm_get(altfld_M_S, pw_altfld)
+      istat = gmm_get(IAU_ALTFLD_M_S, iau_altfld)
+      if (associated(pw_altfld) .and. associated(iau_altfld)) then
+         iau_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
+      endif
+   end if
+   if (altfld_T_S /= '') then
+      nullify(pw_altfld, iau_altfld)
+      istat = gmm_get(altfld_T_S, pw_altfld)
+      istat = gmm_get(IAU_ALTFLD_T_S, iau_altfld)
+      if (associated(pw_altfld) .and. associated(iau_altfld)) then
+         iau_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
+      endif
+   end if
+
 
    if (F_kount > 0) kount = F_kount+step_freq2-1
    DO_IVAR: do ivar = 1, nbvar

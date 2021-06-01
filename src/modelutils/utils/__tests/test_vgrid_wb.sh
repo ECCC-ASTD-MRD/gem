@@ -31,6 +31,8 @@ mybin=$(pwd)/malib${EC_ARCH}/${testname}.mpiAbs
    mybin=$(pwd)/${EC_ARCH}/build/${testname}.mpiAbs
 [[ ! -x $mybin ]] && \
    mybin=$(pwd)/$(rdevar build/bin)/${testname}.Abs
+[[ ! -x $mybin ]] && \
+   mybin=$(pwd)/$(rdevar build/bin)/${testname}
 
 if [[ ! -x $mybin ]] ; then
    echo "ERROR: ${testname}.mpiAbs Not Found"

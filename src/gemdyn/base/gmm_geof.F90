@@ -36,11 +36,17 @@ module gmm_geof
       real, pointer, contiguous, dimension (:,:) :: sls       => null()
       real, pointer, contiguous, dimension (:,:,:) :: topo_low  => null()
       real, pointer, contiguous, dimension (:,:,:) :: topo_high => null()
+      real, pointer, contiguous, dimension (:,:) :: me_full => null()
+      real, pointer, contiguous, dimension (:,:) :: me_large => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=MAXNAMELENGTH) :: &
-      gmmk_fis0_s, gmmk_orols_s, gmmk_sls_s, gmmk_topo_low_s, gmmk_topo_high_s
-
+      character(len=MAXNAMELENGTH), parameter :: gmmk_fis0_s      = 'FIS0'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_orols_s     = 'OROLS'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_sls_s       = 'SLS'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_topo_low_s  = 'TOPOLOW'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_topo_high_s = 'TOPOHIGH'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_me_full_s   = 'MEFULL'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_me_large_s  = 'MELARGE'
 
 end module gmm_geof

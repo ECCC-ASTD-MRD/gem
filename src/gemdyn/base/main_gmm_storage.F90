@@ -59,13 +59,7 @@
 !     --------------------------------------------
       if ( Init_mode_L ) call set_vta()
 
-      gmmk_fis0_s      = 'FIS0'
-      gmmk_orols_s     = 'OROLS'
-      gmmk_sls_s       = 'SLS'
-      gmmk_topo_low_s  = 'TOPOLOW'
-      gmmk_topo_high_s = 'TOPOHIGH'
-
-      nullify (fis0, orols, sls, topo_low, topo_high)
+      nullify (fis0, orols, sls, topo_low, topo_high, me_full, me_large)
       istat = gmm_create(gmmk_fis0_s ,fis0 ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_orols_s,orols,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_sls_s  ,sls  ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
@@ -85,6 +79,11 @@
       istat = gmm_get (gmmk_topo_low_s , topo_low )
       istat = gmm_get (gmmk_topo_high_s, topo_high)
 
+      istat = gmm_create(gmmk_me_full_s, me_full, meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_me_large_s, me_large, meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_get (gmmk_me_full_s, me_full)
+      istat = gmm_get (gmmk_me_large_s, me_large)
+      
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
            trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
 

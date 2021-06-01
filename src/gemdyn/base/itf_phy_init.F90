@@ -18,6 +18,7 @@
       subroutine itf_phy_init
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
+      use VERgrid_options, only: VGRID_M_S, VGRID_T_S
       use phy_itf, only: phy_init, phymeta,phy_getmeta
       use itf_phy_filter, only: ipf_init, sfcflxfilt_o, sfcflxfilt_i, nsurfag
       use step_options
@@ -49,9 +50,6 @@
 #include <msg.h>
 #include <rmnlib_basics.hf>
 
-      character(len=32), parameter  :: VGRID_M_S = 'ref-m'
-      character(len=32), parameter  :: VGRID_T_S = 'ref-t'
-
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
@@ -67,7 +65,7 @@
 
 !For sorting the output
       integer istat, iverb
-      character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
+      character(len=32) :: varname_S,outname_S,bus0_S,rfld_S,rfldls_S,altfld_M_S,altfld_T_S
       character(len=32) :: varlist_S(MAXELEM*MAXSET), input_type_S
       integer k,j,n,ibus,multxmosaic
       type(phymeta) :: pmeta
@@ -132,7 +130,8 @@
                       'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
                       'model/Hgrid/global', 'model/Hgrid/local'  , &
                       'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
-                      G_nk+1, Ver_std_p_prof%m)
+                      G_nk+1, Ver_std_p_prof%m, &
+                      VGRID_M_S, VGRID_T_S)
       call timing_stop(41)
 
 ! Option consistency check
@@ -172,8 +171,8 @@
       if ((zu > 0.) .and. (zt > 0.) ) then
          nullify(ip1m, ip1t)
          Level_kind_diag=4
-         err = min ( vgrid_wb_get(VGRID_M_S,vcoord, ip1m,vtype,refp0_S,refp0ls_S), err)
-         err = min ( vgrid_wb_get(VGRID_T_S,vcoordt,ip1t), err)
+         err = min ( vgrid_wb_get(VGRID_M_S,vcoord, ip1m,vtype,rfld_S,rfldls_S,F_altfld_S=altfld_M_S), err)
+         err = min ( vgrid_wb_get(VGRID_T_S,vcoordt,ip1t,F_altfld_S=altfld_T_S), err)
          deallocate(ip1m, ip1t,stat=err) ; nullify(ip1m, ip1t)
          call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
          call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
@@ -184,8 +183,8 @@
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m,quiet=.true.) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t,quiet=.true.) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
-         err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
-         err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,rfld_S,rfldls_S,F_overwrite_L=.true., F_altfld_S=altfld_M_S), err)
+         err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,rfld_S,rfldls_S,F_overwrite_L=.true., F_altfld_S=altfld_T_S), err)
          err = vgd_free(vcoord)
          err = vgd_free(vcoordt)
          if (associated(ip1m)) deallocate(ip1m,stat=err)

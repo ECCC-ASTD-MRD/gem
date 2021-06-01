@@ -52,9 +52,9 @@ subroutine test_inputio8()
    integer,parameter :: NVALS = 10
    
 !!$   integer,parameter :: NLVLS = 4
-!!$   real,parameter :: HYBLVL(NLVLS) = (/0.5492443,0.7299818,0.8791828,0.9950425/)
+!!$   real,parameter :: HYBLVL_P(NLVLS) = (/0.5492443,0.7299818,0.8791828,0.9950425/)
    integer,parameter :: NLVLS = 35
-   real,parameter :: HYBLVL(NLVLS) = (/ &
+   real,parameter :: HYBLVL_P(NLVLS) = (/ &
         0.196513996, &
         0.213311002, 0.2307     , 0.249127999, 0.2685     , 0.289252996, &
         0.3110     , 0.333811015, 0.3570     , 0.380953997, 0.4060     , &
@@ -64,7 +64,7 @@ subroutine test_inputio8()
         0.865904987, 0.886768997, 0.906602025, 0.924284995, 0.940909982, &
         0.956465006, 0.970943987, 0.983220994, 0.994401991 &
         /)
-!!$   real,parameter :: HYBLVL(80) = (/ &
+!!$   real,parameter :: HYBLVL_P(80) = (/ &
 !!$        0.000100000,  1.600285e-04, 2.561664e-04, 4.070487e-04, 6.320755e-04, &
 !!$        9.528077e-04, 1.385376e-03, 1.964803e-03, 2.714585e-03, 3.643780e-03, &
 !!$        4.794698e-03, 6.179091e-03, 7.825953e-03, 9.725254e-03, 1.192403e-02, &
@@ -82,8 +82,21 @@ subroutine test_inputio8()
 !!$        0.735844016, 0.765922010, 0.792918026, 0.818956017, 0.844021022, &
 !!$        0.865904987, 0.886768997, 0.906602025, 0.924284995, 0.940909982, &
 !!$        0.956465006, 0.970943987, 0.983220994, 0.994401991/)
-   character(len=32),parameter :: VGDTAGT = 'gemthlvl'
-   character(len=32),parameter :: VGDTAGM = 'gemmolvl'
+
+   real,parameter :: HYBLVL_H(NLVLS) = (/ &
+        6800., 6600., 6400., 6200., 6000., &
+        5800., 5600., 5400., 5200., 5000., &
+        4800., 4600., 4400., 4200., 4000., &
+        3800., 3600., 3400., 3200., 3000., &
+        2800., 2600., 2400., 2200., 2000., &
+        1800., 1600., 1400., 1200., 1000., &
+        800., 600., 400., 200., 100. &
+       /)
+   
+   character(len=32),parameter :: VGDTAGPT = 'gemthlvlp'
+   character(len=32),parameter :: VGDTAGPM = 'gemmolvlp'
+   character(len=32),parameter :: VGDTAGHT = 'gemthlvlh'
+   character(len=32),parameter :: VGDTAGHM = 'gemmolvlh'
    character(len=32),parameter :: DATEO_S = '20090427.000000'
 
    character(len=512) :: dir0_S, dir1_S, dfiles_S, input_type_S, step_S, &
@@ -170,7 +183,8 @@ subroutine test_inputio8()
          write(step_S, '(i5.5)') istep
          call msg(MSG_INFO, '============================================ '//trim(step_S))
          time0 = omp_get_wtime()
-         istat = priv_input(istep, input_type_S, inputid, inputobj, lclgridid, step_S)
+!!$         istat = priv_input(istep, input_type_S, inputid, inputobj, lclgridid, step_S, VGDTAGPT, VGDTAGPM)
+         istat = priv_input(istep, input_type_S, inputid, inputobj, lclgridid, step_S, VGDTAGHT, VGDTAGHM)
          time1 = omp_get_wtime()
          memuse = get_max_rss()
          write(time_S,'(1pe13.6)') time1 - time0
@@ -229,16 +243,17 @@ contains
       logical, parameter :: FILL = .false. !.true.
       real, parameter :: XSPAN = 300.
       real, parameter :: YSPAN = 120.
+      real, parameter :: Hyb_rcoef(4) = [ 1., 1., -1., -1. ]
 
       character(len=2) :: grtyp, grref
       integer :: lnimax, lnjmax
       integer :: istat, ig1, ig2, ig3, ig4, i,j
       integer,pointer :: ip1listt(:), ip1listm(:)
       real :: xlat12, xlon1, xlon2, dx, dy, ax(GNI), ay(GNJ), ax0, ay0
-      real, pointer :: p0data(:,:)
+      real, pointer :: data2d(:,:)
       real(REAL64) :: ptop_8
-      type(gmm_metadata) :: p0meta
-      type(vgrid_descriptor) :: vgrid1
+      type(gmm_metadata) :: meta2d
+      type(vgrid_descriptor) :: vgrid1, vgrid2
       ! ---------------------------------------------------------------------
       !# horizontal
       F_istat = rpn_comm_topo(GNI, mini, maxi, lni, lnimax, HALO, li0, &
@@ -277,14 +292,15 @@ contains
          F_istat = min(F_istat, lclgridid)
       endif
 
-      !# vertical
-      call gmm_build_meta2D(p0meta, &
+      call gmm_build_meta2D(meta2d, &
            1, lni, HALO, HALO, lni, &
            1, lnj, HALO, HALO, lnj, &
            0, GMM_NULL_FLAGS)
-      nullify(p0data)
-      istat = gmm_create('P0', p0data, p0meta)
-      p0data = 99900.
+
+      !# vertical Press
+      nullify(data2d)
+      istat = gmm_create('P0', data2d, meta2d)
+      data2d = 99900.
       call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) gmm_create p0')
       F_istat = min(F_istat, istat)
       
@@ -292,23 +308,55 @@ contains
       istat = vgd_new(vgrid1, &
            kind     = VGRID_HYBS_KIND, &
            version  = VGRID_HYBS_VER, &
-           hyb      = HYBLVL, &
+           hyb      = HYBLVL_P, &
            ptop_8   = ptop_8, &
            pref_8   = 100000.d0, &
            rcoef1   = 1., &
            rcoef2   = 1.)
-      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) gmm_create p0')
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgd_new HYBS ')
       F_istat = min(F_istat, istat)
       
       nullify(ip1listt, ip1listm)
       istat = vgd_get(vgrid1, key='VIPT', value=ip1listt)
-      istat = vgrid_wb_put(VGDTAGT, vgrid1, ip1listt, 'P0')
-      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put T')
+      istat = vgrid_wb_put(VGDTAGPT, vgrid1, ip1listt, 'P0')
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put P T')
       F_istat = min(F_istat, istat)
       
       istat = vgd_get(vgrid1, key='VIPM', value=ip1listm)
-      istat = vgrid_wb_put(VGDTAGM, vgrid1, ip1listm, 'P0')
-      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put M')
+      istat = vgrid_wb_put(VGDTAGPM, vgrid1, ip1listm, 'P0')
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put P M')
+      F_istat = min(F_istat, istat)
+      
+      !# vertical Height
+      nullify(data2d)
+      istat = gmm_create('ME', data2d, meta2d)
+      data2d = 10.
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) gmm_create ME')
+      F_istat = min(F_istat, istat)
+      
+      istat = vgd_new(vgrid2, &
+           kind    = VGRID_GC_KIND, &
+           version = VGRID_GC_VER, &
+           hyb     = HYBLVL_H, &
+           rcoef1  = Hyb_rcoef(1), &
+           rcoef2  = Hyb_rcoef(2), &
+           rcoef3  = Hyb_rcoef(3), &
+           rcoef4  = Hyb_rcoef(4), &
+           dhm     = 0., &
+           dht     = 0., &
+           hyb_flat = HYBLVL_H(1))
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgd_new GC')
+      F_istat = min(F_istat, istat)
+      
+      nullify(ip1listt, ip1listm)
+      istat = vgd_get(vgrid2, key='VIPT', value=ip1listt)
+      istat = vgrid_wb_put(VGDTAGHT, vgrid2, ip1listt, 'ME')
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put H T')
+      F_istat = min(F_istat, istat)
+      
+      istat = vgd_get(vgrid2, key='VIPM', value=ip1listm)
+      istat = vgrid_wb_put(VGDTAGHM, vgrid2, ip1listm, 'ME')
+      call testutils_assert_ok(RMN_IS_OK(istat), '(init_grid) vgrid_wb_put H M')
       F_istat = min(F_istat, istat)
       ! ---------------------------------------------------------------------
       return
@@ -393,10 +441,10 @@ contains
    end function priv_init_io
 
    !/@
-   function priv_input(F_step, input_type_S, inputid, inputobj, lclgridid, step_S) result(F_istat)
+   function priv_input(F_step, input_type_S, inputid, inputobj, lclgridid, step_S, vgdtag_t_S, vgdtag_m_S) result(F_istat)
       implicit none
       integer, intent(IN) :: F_step, inputid, lclgridid
-      character(len=*), intent(IN) :: input_type_S, step_S
+      character(len=*), intent(IN) :: input_type_S, step_S, vgdtag_t_S, vgdtag_m_S
       type(INPUTIO_T), intent(INOUT) :: inputobj
       integer :: F_istat
       !@/
@@ -424,8 +472,8 @@ contains
             cycle VARLOOP
          endif
          call msg(MSG_INFO, '-------------------------------------------- '//trim(inname_S))
-         vgrid_S = VGDTAGT
-         if (inname_S == 'uu') vgrid_S = VGDTAGM
+         vgrid_S = vgdtag_t_S
+         if (inname_S == 'uu') vgrid_S = vgdtag_m_S
          nullify(data, data2)
          if (input_type_S == 'gem48') then
             istat = input_get(inputid, ivar, F_step, lclgridid, vgrid_S, data, data2, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)

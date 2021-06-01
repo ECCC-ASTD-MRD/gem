@@ -38,6 +38,8 @@ mybin=$(pwd)/malib${EC_ARCH}/${testname}.mpiAbs
    mybin=$(pwd)/${EC_ARCH}/build/${testname}.mpiAbs
 [[ ! -x $mybin ]] && \
    mybin=$(pwd)/$(rdevar build/bin)/${testname}.Abs
+[[ ! -x $mybin ]] && \
+   mybin=$(pwd)/$(rdevar build/bin)/${testname}
 
 if [[ ! -x $mybin ]] ; then
    echo "ERROR: ${testname}.mpiAbs Not Found"
@@ -77,7 +79,7 @@ runtest() {
 
 #devnull="/dev/null"
 set -x
-# time runtest 1 1 1 ${devnull}
+time runtest 1 1 1 ${devnull}
 # time runtest 2 1 1 ${devnull}
 # time runtest 1 2 1 ${devnull}
 # time runtest 2 2 1 ${devnull}
@@ -89,7 +91,7 @@ set -x
 # time runtest 4 2 2 ${devnull}
 # time runtest 2 4 2 ${devnull}
 # time runtest 4 4 1 ${devnull}
-time runtest 4 4 2 ${devnull}
+# time runtest 4 4 2 ${devnull}
 # time runtest 4 4 4 ${devnull}
 
 ## runtest 3 1 1

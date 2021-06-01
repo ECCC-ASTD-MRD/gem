@@ -146,7 +146,7 @@ contains
       F_pkind_L = vgrid_wb_is_press_kind_i(ikind)
       return
    end function vgrid_wb_is_press_kind_v
-
+   
    !/@*
    function vgrid_wb_is_press_kind_S(F_vgrid_S) result(F_pkind_L)
       implicit none
@@ -158,7 +158,7 @@ contains
       F_pkind_L = vgrid_wb_is_press_kind_v(vgrid)
       return
    end function vgrid_wb_is_press_kind_S
-
+  
    !/@*
    function vgrid_wb_exists(F_name_S, F_id, F_id_S, F_ip1list, F_itype) &
         result(F_istat)
@@ -283,7 +283,7 @@ contains
 
    !/@*
    function vgrid_wb_put_v(F_name_S, F_vgrid, F_ip1list, F_sfcfld_S, &
-        F_overwrite_L) result(F_id)
+        F_overwrite_L, F_altfld_S) result(F_id)
       implicit none
       !@objective Store a new vgrid
       !@arguments
@@ -292,20 +292,23 @@ contains
       integer, pointer :: F_ip1list(:)               !- list of ip1
       character(len=*), intent(in), optional :: F_sfcfld_S !- Name of ref sfc fields for levels computations
       logical, intent(in), optional :: F_overwrite_L
+      character(len=*), intent(in), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_id
       !@author  S. Chamberland, 2012-01
       !*@/
-      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S
+      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S, altfld_S
       logical :: overwrite_L
       !---------------------------------------------------------------------
       overwrite_L = .false.
       if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
       sfcfld_S = ' '
       if (present(F_sfcfld_S)) sfcfld_S = F_sfcfld_S
+      altfld_S = ' '
+      if (present(F_altfld_S)) altfld_S = F_altfld_S
       sfcfld2_S = ' '
       F_id = vgrid_wb_put_v2(F_name_S, F_vgrid, F_ip1list, sfcfld_S, &
-           sfcfld2_S, overwrite_L)
+           sfcfld2_S, overwrite_L, F_altfld_S=altfld_S)
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_put_v
@@ -313,7 +316,7 @@ contains
 
    !/@*
    function vgrid_wb_put_v2(F_name_S, F_vgrid, F_ip1list, F_sfcfld_S, &
-        F_sfcfld2_S, F_overwrite_L) result(F_id)
+        F_sfcfld2_S, F_overwrite_L, F_altfld_S) result(F_id)
       implicit none
       !@objective Store a new vgrid
       !@arguments
@@ -323,30 +326,34 @@ contains
       character(len=*),intent(in) :: F_sfcfld_S !- Name of ref sfc fields for levels computations
       character(len=*),intent(in) :: F_sfcfld2_S !- Name of ref sfc fields for levels computations
       logical,intent(in),optional :: F_overwrite_L
+      character(len=*), intent(in), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_id
       !@author  S. Chamberland, 2012-01
       !*@/
       character(len=256) :: msg_S
-      character(len=WB_MAXSTRINGLENGTH) :: sfcfld_S, sfcfld2_S, id_S, id2_S
+      character(len=WB_MAXSTRINGLENGTH) :: sfcfld_S, sfcfld2_S, id_S, id2_S, altfld_S
       integer :: istat, lijk(3), uijk(3), n, lip1, uip1
       logical :: overwrite_L, exists_L, same_L, same2_L
       real(REAL64), pointer :: vtbl(:, :, :), vtbl2(:, :, :)
       type(gmm_metadata) :: r8meta3d, r8meta3d2
       !---------------------------------------------------------------------
+      overwrite_L = .false.
+      if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
+      altfld_S = ' ' 
+      if (present(F_altfld_S)) altfld_S = F_altfld_S
+
       if (associated(F_ip1list)) then
          lip1 = lbound(F_ip1list,1)
          uip1 = ubound(F_ip1list,1)
          write(msg_S, &
               '(a, " ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') &
-              trim(F_name_S), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
+              trim(F_name_S), lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)//'; alt='//trim(altfld_S)
       else
           write(msg_S, '(a)') trim(F_name_S)//" sfcref="//trim(F_sfcfld_S)//' '//trim(F_sfcfld2_S)
       endif
       call msg(MSG_INFO, '(vgrid_wb) Put: '//trim(msg_S))
 
-      overwrite_L = .false.
-      if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
       F_id = vgrid_wb_put_i(F_name_S, VGRID_UPAIR_TYPE, F_ip1list, overwrite_L)
       if (.not.RMN_IS_OK(F_id)) return
 
@@ -359,14 +366,20 @@ contains
       endif
 
       sfcfld_S = ' '
-      istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
-      if (istat /= VGD_OK) sfcfld_S = ' '
-      if (F_sfcfld_S /= ' ') sfcfld_S = F_sfcfld_S
+      if (F_sfcfld_S /= ' ') then
+         sfcfld_S = F_sfcfld_S
+      else
+         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
+         if (istat /= VGD_OK) sfcfld_S = ' '
+      endif
 
       sfcfld2_S = ' '
-      istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld2_S, quiet=.true.)
-      if (istat /= VGD_OK) sfcfld2_S = ' '
-      if (F_sfcfld2_S /= ' ') sfcfld2_S = F_sfcfld2_S
+      if (F_sfcfld2_S /= ' ') then
+         sfcfld2_S = F_sfcfld2_S
+      else
+         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld2_S, quiet=.true.)
+         if (istat /= VGD_OK) sfcfld2_S = ' '
+      endif
 
       id_S  = priv_name(F_name_S)
       id2_S = trim(PREFIXV_S)//trim(id_S)
@@ -421,8 +434,8 @@ contains
          endif
       endif IF_EXISTS4
 
-      sfcfld2_S = F_sfcfld2_S
       istat = wb_put(trim(id2_S)//'/RFLS', sfcfld2_S, WB_REWRITE_MANY)
+      istat = wb_put(trim(id2_S)//'/ALTF', altfld_S, WB_REWRITE_MANY)
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_put_v2
@@ -430,7 +443,7 @@ contains
 
    !/@*
    function vgrid_wb_get_s(F_name_S, F_vgrid, F_ip1list, F_type, &
-        F_sfcfld_S, F_sfcfld2_S) result(F_istat)
+        F_sfcfld_S, F_sfcfld2_S, F_altfld_S) result(F_istat)
       implicit none
       !@objective Retreive stored vgrid
       !@arguments
@@ -440,12 +453,13 @@ contains
       integer, intent(out), optional :: F_type
       character(len=*), intent(out), optional :: F_sfcfld_S  !- Name of ref sfc fields for levels computations
       character(len=*), intent(out), optional :: F_sfcfld2_S !- Name of ref sfc fields for levels computations
+      character(len=*), intent(out), optional :: F_altfld_S  !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_istat !- exit status
       !@author  S. Chamberland, 2012-01
       !*@/
       integer :: vgrid_idx, itype, lip1, uip1
-      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S
+      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S, altfld_S
       character(len=256) :: msg_S
       !---------------------------------------------------------------------
       call msg(MSG_DEBUG, '(vgrid_wb) get [BEGIN] '//trim(F_name_S))
@@ -454,19 +468,23 @@ contains
 
       if (present(F_ip1list)) then
          F_istat = vgrid_wb_get_i(vgrid_idx, F_vgrid, F_ip1list, F_type=itype, &
-              F_sfcfld_S=sfcfld_S, F_name_S=F_name_S, F_sfcfld2_S=sfcfld2_S)
+              F_sfcfld_S=sfcfld_S, F_name_S=F_name_S, F_sfcfld2_S=sfcfld2_S, &
+              F_altfld_S=altfld_S)
       else
          F_istat = vgrid_wb_get_i(vgrid_idx, F_vgrid, F_type=itype, &
-              F_sfcfld_S=sfcfld_S, F_name_S=F_name_S, F_sfcfld2_S=sfcfld2_S)
+              F_sfcfld_S=sfcfld_S, F_name_S=F_name_S, F_sfcfld2_S=sfcfld2_S, &
+              F_altfld_S=altfld_S)
       endif
       if (.not.RMN_IS_OK(F_istat)) then
          itype = -1
          sfcfld_S = ' '
          sfcfld2_S = ' '
+         altfld_S = ' '
       endif
       if (present(F_type)) F_type = itype
       if (present(F_sfcfld_S))  F_sfcfld_S  = sfcfld_S
       if (present(F_sfcfld2_S)) F_sfcfld2_S = sfcfld2_S
+      if (present(F_altfld_S))  F_altfld_S  = altfld_S
 
       if (RMN_IS_OK(F_istat)) then
          if (present(F_ip1list)) then
@@ -476,8 +494,9 @@ contains
                  '(a, " [type=", i4, "] ip1[", i4, ":", i4, "] = (", i12, ", ..., ", i12, ") sfcref=", a)') &
                  trim(F_name_S), itype, lip1, uip1, F_ip1list(lip1), F_ip1list(uip1),trim(sfcfld_S)//' '//trim(sfcfld2_S)
          else
-            write(msg_S, '(a, " [type=", i4, "]  sfcref=", a)') trim(F_name_S), itype, trim(sfcfld_S)//' '//trim(sfcfld2_S)
+            write(msg_S, '(a, " [type=", i4, "] sfcref=", a)') trim(F_name_S), itype, trim(sfcfld_S)//' '//trim(sfcfld2_S)
          endif
+         msg_S = trim(msg_S)//' ; alt='//trim(altfld_S)
       else
          msg_S = trim(F_name_S) // 'Not Found'
       endif
@@ -489,7 +508,7 @@ contains
 
    !/@*
    function vgrid_wb_get_i(F_id, F_vgrid, F_ip1list, F_type, F_sfcfld_S, &
-        F_name_S, F_sfcfld2_S) result(F_istat)
+        F_name_S, F_sfcfld2_S, F_altfld_S) result(F_istat)
       implicit none
       !@objective Retreive stored vgrid
       !@arguments
@@ -499,13 +518,14 @@ contains
       integer, intent(out), optional :: F_type
       character(len=*), intent(out), optional :: F_sfcfld_S !- Name of ref sfc fields for levels computations
       character(len=*), intent(in), optional :: F_name_S !- Key (internal var name)
-      character(len=*),intent(out),optional :: F_sfcfld2_S !- Name of ref sfc fields for levels computations
+      character(len=*),intent(out), optional :: F_sfcfld2_S !- Name of ref sfc fields for levels computations
+      character(len=*), intent(out), optional :: F_altfld_S  !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_istat !- exit status
       !@author  S. Chamberland, 2012-01
       !*@/
       character(len=GMM_MAXNAMELENGTH) :: name_S, id_S, id2_S, tmp_S, tmp2_S
-      character(len=WB_MAXSTRINGLENGTH) :: sfcfld2_S
+      character(len=WB_MAXSTRINGLENGTH) :: sfcfld2_S, altfld_S
       integer :: istat, nip1, lip1, uip1
       integer, pointer :: i4ptr1d(:)
       real(REAL64), pointer :: vtbl(:, :, :)
@@ -567,6 +587,11 @@ contains
             istat = wb_get(trim(id2_S)//'/RFLS', sfcfld2_S)
             if (RMN_IS_OK(istat)) F_sfcfld2_S = sfcfld2_S
          endif
+         if (present(F_altfld_S)) then
+            F_altfld_S = ' '
+            istat = wb_get(trim(id2_S)//'/ALTF', altfld_S)
+            if (RMN_IS_OK(istat)) F_altfld_S = altfld_S
+         endif
       endif
       F_istat = nip1
       !---------------------------------------------------------------------
@@ -587,7 +612,7 @@ contains
       integer :: F_istat !- exit status
       !@author  S. Chamberland, 2012-08
       !*@/
-      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S
+      character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S, altfld_S
       integer :: itype, me, istat, ipe_master
       logical :: ismaster_L
       type(vgrid_descriptor) :: vgrid
@@ -603,17 +628,20 @@ contains
       if (present(F_ipe_master)) ipe_master = F_ipe_master
       ismaster_L = (me == ipe_master)
       nullify(ip1list)
+      sfcfld_S = ' '
+      sfcfld2_S = ' '
+      altfld_S = ' '
       if (ismaster_L) then
-         F_istat = vgrid_wb_get(F_name_S,vgrid,ip1list,itype,sfcfld_S,sfcfld2_S)
+         F_istat = vgrid_wb_get(F_name_S,vgrid,ip1list,itype,sfcfld_S,sfcfld2_S, F_altfld_S=altfld_S)
       endif
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(vgrid, ip1list, itype ,sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me)
+      F_istat = vgrid_wb_bcast(vgrid, ip1list, itype ,sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me, F_altfld_S=altfld_S)
       if (RMN_IS_OK(F_istat) .and. .not.ismaster_L) then
          if (itype < VGRID_UPAIR_TYPE) then
             F_istat = vgrid_wb_put(F_name_S, itype, ip1list)
          else
-            F_istat = vgrid_wb_put(F_name_S, vgrid, ip1list, sfcfld_S, sfcfld2_S)
+            F_istat = vgrid_wb_put(F_name_S, vgrid, ip1list, sfcfld_S, sfcfld2_S, F_altfld_S=altfld_S)
          endif
       endif
       !---------------------------------------------------------------------
@@ -623,7 +651,7 @@ contains
 
    !/@*
    function vgrid_wb_bcast_v(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, &
-        F_comm_S, F_ipe_master, F_ipe) result(F_istat)
+        F_comm_S, F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
       implicit none
       !@objective  MPI bcast stored vgrid
       !@arguments
@@ -634,11 +662,12 @@ contains
       character(len=*),intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
+      character(len=*), intent(inout), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_istat !- exit status
       !@author  S. Chamberland, 2012-08
       !*@/
-      character(len=GMM_MAXNAMELENGTH) :: sfcfld2_S
+      character(len=GMM_MAXNAMELENGTH) :: sfcfld2_S, altfld_S
       integer :: me, ipe_master, istat
       !---------------------------------------------------------------------
       if (present(F_ipe)) then
@@ -648,8 +677,11 @@ contains
       endif
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
+      altfld_S = ' '
+      if (present(F_altfld_S)) altfld_S = F_altfld_S
       sfcfld2_S = ' '
-      F_istat = vgrid_wb_bcast_v2(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me)
+      F_istat = vgrid_wb_bcast_v2(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me, F_altfld_S=altfld_S)
+      if (present(F_altfld_S)) F_altfld_S = altfld_S
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_bcast_v
@@ -657,7 +689,7 @@ contains
 
    !/@*
    function vgrid_wb_bcast_v2(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, &
-        F_sfcfld2_S, F_comm_S, F_ipe_master, F_ipe) result(F_istat)
+        F_sfcfld2_S, F_comm_S, F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
       implicit none
       !@objective  MPI bcast stored vgrid
       !@arguments
@@ -665,10 +697,11 @@ contains
       integer, pointer :: F_ip1list(:)            !- list of ip1
       integer, intent(inout) :: F_itype
       character(len=*), intent(inout) :: F_sfcfld_S
-      character(len=*),intent(inout) :: F_sfcfld2_S
+      character(len=*), intent(inout) :: F_sfcfld2_S
       character(len=*), intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
+      character(len=*), intent(inout), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
       !@return
       integer :: F_istat !- exit status
       !@author  S. Chamberland, 2012-08
@@ -678,12 +711,12 @@ contains
       integer, parameter :: STRLEN = 32
       integer, parameter :: STRSIZE = STRLEN/CHARPERBYTE
       integer, parameter :: ADDINT = 3
-      integer,parameter :: IBUFSIZE = ADDINT + NMAXIP1 + 2*STRSIZE
+      integer, parameter :: IBUFSIZE = ADDINT + NMAXIP1 + 3*STRSIZE
       integer :: me, istat, istat2, nip1, i0, in, ipe_master, ibuf4(STRSIZE)
       logical :: ismaster_L, ok_L
       integer :: ibuf(IBUFSIZE), n123(3)
-      character(len=STRLEN) :: sfcfld_S, sfcfld2_S
-      real(REAL64), pointer :: vtbl_8(:, :, :)
+      character(len=STRLEN) :: sfcfld_S, sfcfld2_S, altfld_S
+      real(REAL64), pointer :: vtbl_8(:,:,:)
       !---------------------------------------------------------------------
       F_istat = RMN_OK
       if (present(F_ipe)) then
@@ -693,6 +726,9 @@ contains
       endif
       ipe_master = RPN_COMM_MASTER
       if (present(F_ipe_master)) ipe_master = F_ipe_master
+      altfld_S = ' '
+      if (present(F_altfld_S)) altfld_S = F_altfld_S
+
       ismaster_L = (me == ipe_master)
       nullify(vtbl_8)
       if (ismaster_L) then
@@ -703,11 +739,12 @@ contains
          ibuf = 0
          ibuf(1:STRSIZE) = transfer(sfcfld_S,ibuf4)
          ibuf(1+STRSIZE:2*STRSIZE) = transfer(sfcfld2_S,istat)
-         ibuf(2*STRSIZE+1) = lbound(F_ip1list,1)
-         ibuf(2*STRSIZE+2) = ubound(F_ip1list,1)
-         ibuf(2*STRSIZE+3) = F_itype
+         ibuf(1+2*STRSIZE:3*STRSIZE) = transfer(altfld_S,istat)
+         ibuf(3*STRSIZE+1) = lbound(F_ip1list,1)
+         ibuf(3*STRSIZE+2) = ubound(F_ip1list,1)
+         ibuf(3*STRSIZE+3) = F_itype
          nip1 = size(F_ip1list)
-         ibuf(2*STRSIZE+(ADDINT+1):2*STRSIZE+(ADDINT+1)+(nip1-1)) = F_ip1list(:)
+         ibuf(3*STRSIZE+(ADDINT+1):3*STRSIZE+(ADDINT+1)+(nip1-1)) = F_ip1list(:)
       endif
       call rpn_comm_bcast(n123, size(n123), RPN_COMM_INTEGER, ipe_master, F_comm_S, istat)
       if (.not.ismaster_L) then
@@ -724,9 +761,14 @@ contains
          sfcfld2_S = ' '
          sfcfld2_S = transfer(ibuf(1+STRSIZE:2*STRSIZE),sfcfld2_S)
          F_sfcfld2_S = sfcfld2_S
-         i0 = ibuf(2*STRSIZE+1)
-         in = ibuf(2*STRSIZE+2)
-         F_itype = ibuf(2*STRSIZE+3)
+         if (present(F_altfld_S)) then
+            altfld_S = ' '
+            altfld_S = transfer(ibuf(1+2*STRSIZE:3*STRSIZE),altfld_S)
+            F_altfld_S = altfld_S
+         endif
+         i0 = ibuf(3*STRSIZE+1)
+         in = ibuf(3*STRSIZE+2)
+         F_itype = ibuf(3*STRSIZE+3)
          ok_L = associated(F_ip1list)
          if (ok_L) ok_L = (lbound(F_ip1list,1) == i0 .and. ubound(F_ip1list,1) >= in)
          !#TODO: Memory leak if F_ip1list already allocated but size too small
@@ -734,7 +776,7 @@ contains
             nullify(F_ip1list)
             allocate(F_ip1list(i0:in))
          endif
-         F_ip1list(i0:in) = ibuf(2*STRSIZE+(ADDINT+1):2*STRSIZE+(ADDINT+1)+in-i0)
+         F_ip1list(i0:in) = ibuf(3*STRSIZE+(ADDINT+1):3*STRSIZE+(ADDINT+1)+in-i0)
       endif
       if (associated(vtbl_8)) deallocate(vtbl_8, stat=istat)
 !!$      call collect_error(F_istat)

@@ -20,6 +20,8 @@ module VERgrid_options
       save
 
       integer, parameter :: MAXHLEV = 1024
+      character(len=32), parameter :: VGRID_M_S  = 'ref-m'
+      character(len=32), parameter :: VGRID_T_S  = 'ref-t'
 
    !# array of model levels (pressure),  0.0 < HYB < 1.0
       real, dimension(MAXHLEV) :: hyb = -1

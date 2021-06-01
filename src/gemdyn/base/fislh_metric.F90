@@ -169,6 +169,10 @@
          ztht(:,:,k) = real(ztht_8(:,:,k))
       end do
 
+      me_full(:,:) = fis0(:,:) / grav_8
+      me_large(:,:) = sls(:,:) / grav_8
+      !# Do we need to make a halo and yy xch? of is fis0/sls already valid in the halo/pilot regions (note that this needs to be valid on the full physics domain)
+      
 !     ---------------------------------------------------------------
 !
       return

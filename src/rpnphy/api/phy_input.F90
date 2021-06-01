@@ -27,7 +27,7 @@ module phy_input_mod
         INPUT_FILES_GEOP, INPUT_FILES_CLIM, INPUTIO_T
    use mu_jdate_mod
    use ptopo_utils, only: PTOPO_BLOC, PTOPO_IODIST, ptopo_iotype
-   use statfld_dm_mod, only: statfld_dm
+   use statfld_dm_mod, only: statfld_dm, STATFLD_NCACHE, STATFLD_CACHE_DEFAULT
    use str_mod, only: str_concat, str_encode_num
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
@@ -38,7 +38,7 @@ module phy_input_mod
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
         phy_lclcore_gid, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id
    use phyinputdiag_mod, only: phyinputdiag
-   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia, debug_initonly_L
+   use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia, debug_initonly_L, vgrid_M_S, vgrid_T_S
    use physimple_transforms_mod, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phy_typedef, only: phymeta
@@ -58,12 +58,12 @@ module phy_input_mod
 
    logical, parameter :: IS_DIR = .true.
  
-   character(len=32), parameter  :: VGRID_M_S = 'ref-m'
-   character(len=32), parameter  :: VGRID_T_S = 'ref-t'
    character(len=32), parameter  :: PHY_VGRID_M_S = 'phy-m'
    character(len=32), parameter  :: PHY_VGRID_T_S = 'phy-t'
-   character(len=32), parameter  :: PHY_REFP0_S = 'PHYREFP0:M'
-   character(len=32), parameter  :: PHY_REFP0_LS_S = 'PHYREFP0LS:M'
+   character(len=32), parameter  :: PHY_RFLD_S    = 'PHYRFLD:M'
+   character(len=32), parameter  :: PHY_RFLD_LS_S = 'PHYRFLDLS:M'
+   character(len=32), parameter  :: PHY_ALTFLD_M_S = 'PHYALTFLDM:M'
+   character(len=32), parameter  :: PHY_ALTFLD_T_S = 'PHYALTFLDT:M'
 
    character(len=32), parameter  :: OZONEFILENAME_S = 'ozone_clim.fst'
 
@@ -95,15 +95,14 @@ contains
 
       integer :: ivar, istat, istat2, tmidx, nread, iverb, icat, icat0, icat1
       integer :: idt, ismandatory, readlist_nk(PHYINREAD_MAX)
-      real, pointer, dimension(:,:)   :: refp0, pw_p0, refp0ls, pw_p0ls
       real, pointer, dimension(:,:,:) :: data, data2
       character(len=4) :: inname_S, inname2_S
-      character(len=32) :: varname_S, varname2_S, readlist_S(PHYINREAD_MAX), horiz_interp_S, vgrid_S, str32, refp0_S, refp0ls_S
+      character(len=32) :: varname_S, varname2_S, readlist_S(PHYINREAD_MAX), horiz_interp_S, vert_instep_S, vgrid_S, str32
       character(len=512) :: str512, dummylist_S(10)
-      type(vgrid_descriptor) :: vgridm
       type(phymeta) :: meta1, meta2
       type(phymetaplus) :: meta1plus, meta2plus
       real :: vmin, vmax
+      logical :: prep_vinterp_done_L
       ! ---------------------------------------------------------------------
       call msg_verbosity_get(iverb)
       if (debug_trace_L) call msg_verbosity(MSG_DEBUG)
@@ -163,26 +162,9 @@ contains
       nread = 0
       readlist_nk(:) = 0
       readlist_S(:) = ' '
-
-      !# Copy surface ref fields for vertical interpolation on phy grid
-      istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=refp0_S, &
-           F_sfcfld2_S=refp0ls_S)
-      istat = vgd_free(vgridm)
-      nullify(pw_p0, pw_p0ls, refp0, refp0ls)
-      istat = gmm_get(refp0_S, pw_p0)
-      istat = gmm_get(PHY_REFP0_S, refp0)
-      if (refp0ls_S /= '') then
-         istat = gmm_get(refp0ls_S, pw_p0ls)
-         istat = gmm_get(PHY_REFP0_LS_S, refp0ls)
-      endif
-      if (associated(refp0) .and. associated(pw_p0)) then
-         refp0(:,:) = pw_p0(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
-      endif
-      if (associated(refp0ls) .and. associated(pw_p0ls)) then
-         refp0ls(:,:) = pw_p0ls(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
-      endif
-
+      
       !# Read-interpolate-fold vars
+      prep_vinterp_done_L = .false.
       tmidx = -1
       F_istat = RMN_OK
       if (input_type /= 'DIST') istat = rpn_comm_bloc(ninblocx, ninblocy)
@@ -197,11 +179,11 @@ contains
          endif
          if (input_type == 'GEM_4.8') then
             istat = input_meta(inputid, ivar, inname_S, inname2_S, &
-                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
+                 dummylist_S, horiz_interp_S, vert_instep_S, F_mandatory=ismandatory, &
                  F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
          else
             istat = inputio_meta(inputobj%cfg, ivar, inname_S, inname2_S,  &
-                 dummylist_S, horiz_interp_S, F_mandatory=ismandatory, &
+                 dummylist_S, horiz_interp_S, vert_instep_S, F_mandatory=ismandatory, &
                  F_vmin=vmin, F_vmax=vmax, F_cat0=icat0, F_cat1=icat1)
          endif
          if (.not.RMN_IS_OK(istat)) then
@@ -224,13 +206,17 @@ contains
             call msg(MSG_INFO,'(phy_input) ignoring var, not declared in bus: '//trim(inname_S)//' : '//trim(inname2_S))
             cycle VARLOOP !# var not needed
          endif
-
+             
          varname_S  = meta1%vname
          if (ismandatory == -1) ismandatory = meta1%init
 
          vgrid_S = PHY_VGRID_M_S !#MOM/SLB
          if (meta1%stag == BUSPAR_STAG_THERMO .or. meta1%stag == BUSPAR_STAG_ENERGY) vgrid_S = PHY_VGRID_T_S !#THERMO/SLC, ENERGY/SLS
-
+         if (vert_instep_S /= 'none' .and. .not.prep_vinterp_done_L) then
+            prep_vinterp_done_L = .true.
+            istat = priv_prep_vinterp()
+         endif
+          
          if (meta1%nk > 1) then
             if (icat0 < 0) then
                icat0 = 1
@@ -347,13 +333,13 @@ contains
 
       integer :: istat, iotype
 
-      character(len=32) :: refp0ls_S, refp0ls2_S
+      character(len=32) :: rfldls_S, rfldls2_S, altfld_S, altfld_M_S, altfld_T_S
 
       type(vgrid_descriptor) :: vgridm, vgridt
-      type(gmm_metadata) :: mymeta
+!!$      type(gmm_metadata) :: mymeta
 
       integer, pointer :: ip1list(:), ip1list2(:)
-      real, pointer, dimension(:,:)   :: refp0, refp0ls
+!!$      real, pointer, dimension(:,:)   :: phy_rfld, phy_rfldls
       ! ---------------------------------------------------------------------
       my_istat = istatus
       if (input_type == 'GEM_4.8') ptopo_iotype = PTOPO_BLOC
@@ -415,48 +401,158 @@ contains
       my_istat = min(istat, my_istat)
 
       nullify(ip1list)
-      istat = vgrid_wb_get(VGRID_M_S, vgridm, ip1list, F_sfcfld2_S=refp0ls_S)
-      refp0ls2_S = ''
-      if (refp0ls_S /= '') refp0ls2_S = PHY_REFP0_LS_S
+      istat = vgrid_wb_get(vgrid_M_S, vgridm, ip1list, F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_S)
+      rfldls2_S = ''
+      if (rfldls_S /= '') rfldls2_S = PHY_RFLD_LS_S
+      altfld_M_S = ''
+      if (altfld_S /= '') altfld_M_S = PHY_ALTFLD_M_S
       ip1list2 => ip1list
       if (size(ip1list) > phydim_nk) then
          !#TODO: check: should we keep phydim_nk instead of phydim_nk+1 (diag level)
          ip1list2(phydim_nk) = ip1list2(phydim_nk+1)
          ip1list2 => ip1list(1:phydim_nk)
       endif
-      istat = vgrid_wb_put(PHY_VGRID_M_S, vgridm, ip1list2, PHY_REFP0_S, &
-           refp0ls2_S, F_overwrite_L=.true.)
+      istat = vgrid_wb_put(PHY_VGRID_M_S, vgridm, ip1list2, PHY_RFLD_S, &
+           rfldls2_S, F_overwrite_L=.true., F_altfld_S=altfld_M_S)
       istat = vgd_free(vgridm)
       if (associated(ip1list)) deallocate(ip1list,stat=istat)
 
       nullify(ip1list, ip1list2)
-      istat = vgrid_wb_get(VGRID_T_S, vgridt, ip1list, F_sfcfld2_S=refp0ls_S)
-      refp0ls2_S = ''
-      if (refp0ls_S /= '') refp0ls2_S = PHY_REFP0_LS_S
+      istat = vgrid_wb_get(vgrid_T_S, vgridt, ip1list, F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_S)
+      rfldls2_S = ''
+      if (rfldls_S /= '') rfldls2_S = PHY_RFLD_LS_S
+      altfld_T_S = ''
+      if (altfld_S /= '') altfld_T_S = PHY_ALTFLD_T_S
       ip1list2 => ip1list
       if (size(ip1list) > phydim_nk) then
          !#TODO: check: should we keep phydim_nk instead of phydim_nk+1 (diag level)
          ip1list2(phydim_nk) = ip1list2(phydim_nk+1)
          ip1list2 => ip1list(1:phydim_nk)
       endif
-      istat = vgrid_wb_put(PHY_VGRID_T_S, vgridt, ip1list2, PHY_REFP0_S, &
-           refp0ls2_S, F_overwrite_L=.true.)
+      istat = vgrid_wb_put(PHY_VGRID_T_S, vgridt, ip1list2, PHY_RFLD_S, &
+           rfldls2_S, F_overwrite_L=.true., F_altfld_S=altfld_T_S)
       istat = vgd_free(vgridt)
       if (associated(ip1list)) deallocate(ip1list,stat=istat)
 
-      mymeta = GMM_NULL_METADATA
-      mymeta%l(1) = gmm_layout(1,phy_lcl_ni,0,0,phy_lcl_ni)
-      mymeta%l(2) = gmm_layout(1,phy_lcl_nj,0,0,phy_lcl_nj)
-      nullify(refp0, refp0ls)
-      istat = gmm_create(PHY_REFP0_S, refp0, mymeta)
-      if (refp0ls2_S /= '') &
-           istat = gmm_create(PHY_REFP0_LS_S, refp0ls, mymeta)
+!!$      mymeta = GMM_NULL_METADATA
+!!$      mymeta%l(1) = gmm_layout(1,phy_lcl_ni,0,0,phy_lcl_ni)
+!!$      mymeta%l(2) = gmm_layout(1,phy_lcl_nj,0,0,phy_lcl_nj)
+!!$      nullify(phy_rfld, phy_rfldls)
+!!$      istat = gmm_create(PHY_RFLD_S, phy_rfld, mymeta)
+!!$      if (rfldls2_S /= '') &
+!!$           istat = gmm_create(PHY_RFLD_LS_S, phy_rfldls, mymeta)
 
       call collect_error(my_istat)
       istatus = my_istat
       ! ---------------------------------------------------------------------
       return
    end function priv_init
+
+
+   !/@*
+   function priv_prep_vinterp() result(my_istat)
+      implicit none
+      integer :: my_istat
+      !*@/
+      logical, save :: is_init_L = .false.
+      integer :: istat, nk
+      integer, pointer :: ip1list_m(:), ip1list_t(:)
+      real, pointer, dimension(:,:)   :: phy_rfld, pw_rfld, phy_rfldls, pw_rfldls
+      real, pointer, dimension(:,:,:) :: phy_altfld, pw_altfld
+      character(len=32) :: rfld_S, rfldls_S, altfld_M_S, altfld_T_S
+      type(vgrid_descriptor) :: myvgrid
+      type(gmm_metadata) :: mymeta, mymeta2
+      ! ---------------------------------------------------------------------
+      my_istat = RMN_ERR
+      
+      IF_INIT: if (.not.is_init_L) then
+         is_init_L = .true.
+
+         nullify(ip1list_m, ip1list_t)
+         istat = vgrid_wb_get(vgrid_M_S, myvgrid, ip1list_m, F_sfcfld_S=rfld_S, &
+              F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
+         istat = vgd_free(myvgrid)
+         istat = vgrid_wb_get(vgrid_T_S, myvgrid, ip1list_t, F_altfld_S=altfld_T_S)
+         istat = vgd_free(myvgrid)
+
+         mymeta = GMM_NULL_METADATA
+         mymeta%l(1) = gmm_layout(1,phy_lcl_ni,0,0,phy_lcl_ni)
+         mymeta%l(2) = gmm_layout(1,phy_lcl_nj,0,0,phy_lcl_nj)
+
+         if (rfld_S /= '') then 
+            nullify(phy_rfld, phy_rfldls)
+            istat = gmm_create(PHY_RFLD_S, phy_rfld, mymeta)
+            if (rfldls_S /= '') &
+                 istat = gmm_create(PHY_RFLD_LS_S, phy_rfldls, mymeta)
+         endif
+
+         if (altfld_M_S /= '') then
+!!$            nk = size(ip1list_m)
+            istat = gmm_getmeta(altfld_M_S, mymeta2)
+            nk = mymeta2%l(3)%n
+            mymeta%l(3) = gmm_layout(1,nk,0,0,nk)
+            nullify(phy_altfld)
+            istat = gmm_create(PHY_ALTFLD_M_S, phy_altfld, mymeta)
+         endif
+         if (altfld_T_S /= '') then
+!!$            nk = size(ip1list_t)
+            istat = gmm_getmeta(altfld_T_S, mymeta2)
+            nk = mymeta2%l(3)%n
+            mymeta%l(3) = gmm_layout(1,nk,0,0,nk)
+            nullify(phy_altfld)
+            istat = gmm_create(PHY_ALTFLD_T_S, phy_altfld, mymeta)
+         endif
+
+         if (associated(ip1list_m)) deallocate(ip1list_m,stat=istat)
+         if (associated(ip1list_t)) deallocate(ip1list_t,stat=istat)
+
+      else
+
+         istat = vgrid_wb_get(vgrid_M_S, myvgrid, F_sfcfld_S=rfld_S, &
+              F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
+         istat = vgd_free(myvgrid)
+         istat = vgrid_wb_get(vgrid_T_S, myvgrid, F_altfld_S=altfld_T_S)
+         istat = vgd_free(myvgrid)
+
+      endif IF_INIT
+
+      if (rfld_S /= '') then 
+         nullify(pw_rfld, pw_rfldls, phy_rfld, phy_rfldls)
+         istat = gmm_get(rfld_S, pw_rfld)
+         istat = gmm_get(PHY_RFLD_S, phy_rfld)
+         if (associated(phy_rfld) .and. associated(pw_rfld)) then
+            phy_rfld(:,:) = pw_rfld(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+         endif
+         if (rfldls_S /= '') then
+            istat = gmm_get(rfldls_S, pw_rfldls)
+            istat = gmm_get(PHY_RFLD_LS_S, phy_rfldls)
+            if (associated(phy_rfldls) .and. associated(pw_rfldls)) then
+               phy_rfldls(:,:) = pw_rfldls(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+            endif
+         endif
+      endif
+      
+      if (altfld_M_S /= '') then
+         nullify(pw_altfld, phy_altfld)
+         istat = gmm_get(altfld_M_S, pw_altfld)
+         istat = gmm_get(PHY_ALTFLD_M_S, phy_altfld)
+         if (associated(pw_altfld) .and. associated(phy_altfld)) then
+            phy_altfld(:,:,:) = pw_altfld(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,:)
+         endif
+      endif
+      if (altfld_T_S /= '') then
+         nullify(pw_altfld, phy_altfld)
+         istat = gmm_get(altfld_T_S, pw_altfld)
+         istat = gmm_get(PHY_ALTFLD_T_S, phy_altfld)
+         if (associated(pw_altfld) .and. associated(phy_altfld)) then
+            phy_altfld(:,:,:) = pw_altfld(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,:)
+         endif
+      endif
+
+       my_istat = RMN_OK
+      ! ---------------------------------------------------------------------
+      return
+   end function priv_prep_vinterp
 
    
    !/@*
@@ -549,6 +645,8 @@ contains
       real    :: my_vmin, my_vmax
       integer,external :: pre_fold_opr_clbk
       !*@/
+      integer, save :: dimcache(STATFLD_NCACHE) = STATFLD_CACHE_DEFAULT
+      
       character(len=64) :: msg_S, name_S
       integer :: minxyz(3), maxxyz(3), istat, k, stat_precision
       real, pointer :: data2(:,:,:)
@@ -573,11 +671,11 @@ contains
             do k = minxyz(3), maxxyz(3)
                write(msg_S,'(a,i4.4)') trim(my_inname_S)//' => '//trim(name_S)//' ',k
                data2 => dataarr(:,:,k:k)
-               call statfld_dm(data2, msg_S, my_step, 'phy_input', stat_precision)
+               call statfld_dm(data2, msg_S, my_step, 'phy_input', stat_precision, dimcache)
             enddo
          else
             write(msg_S,'(a)') trim(my_inname_S)//' => '//trim(name_S)
-            call statfld_dm(dataarr, msg_S, my_step, 'phy_input', stat_precision)
+            call statfld_dm(dataarr, msg_S, my_step, 'phy_input', stat_precision,dimcache)
          endif
       endif IF_STATS
 
