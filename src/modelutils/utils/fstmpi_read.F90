@@ -527,7 +527,7 @@ contains
       endif
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(F_vgrid,F_ip1list,itype,F_lvltyp_S,RPN_COMM_BLOC_COMM)
+      F_istat = vgrid_wb_bcast(F_vgrid,RPN_COMM_BLOC_COMM,F_ip1list,itype,F_lvltyp_S)
       ! ---------------------------------------------------------------------
       return
    end function fstmpi_get_vgrid

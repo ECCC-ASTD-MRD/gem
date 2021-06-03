@@ -29,6 +29,4 @@ cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
   cd \$ici
 EOF
 
-sed -i s"/.*cmake.buildDirectory.*/           \"cmake.buildDirectory\": \"\${workspaceRoot}\/build-${GEM_ARCH}\",/" "goas-devel.code-workspace"
-
 

@@ -636,7 +636,7 @@ contains
       endif
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(vgrid, ip1list, itype ,sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me, F_altfld_S=altfld_S)
+      F_istat = vgrid_wb_bcast(vgrid, F_comm_S, ip1list, itype ,sfcfld_S, sfcfld2_S, ipe_master, me, F_altfld_S=altfld_S)
       if (RMN_IS_OK(F_istat) .and. .not.ismaster_L) then
          if (itype < VGRID_UPAIR_TYPE) then
             F_istat = vgrid_wb_put(F_name_S, itype, ip1list)
@@ -650,16 +650,16 @@ contains
 
 
    !/@*
-   function vgrid_wb_bcast_v(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, &
-        F_comm_S, F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
+   function vgrid_wb_bcast_v(F_vgrid, F_comm_S, F_ip1list, F_itype, F_sfcfld_S, &
+        F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
       implicit none
       !@objective  MPI bcast stored vgrid
       !@arguments
       type(vgrid_descriptor),intent(inout) :: F_vgrid 
+      character(len=*),intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer,pointer :: F_ip1list(:)            !- list of ip1
       integer,intent(inout) :: F_itype
       character(len=*),intent(inout) :: F_sfcfld_S
-      character(len=*),intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       character(len=*), intent(inout), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
@@ -680,7 +680,7 @@ contains
       altfld_S = ' '
       if (present(F_altfld_S)) altfld_S = F_altfld_S
       sfcfld2_S = ' '
-      F_istat = vgrid_wb_bcast_v2(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, sfcfld2_S, F_comm_S, ipe_master, me, F_altfld_S=altfld_S)
+      F_istat = vgrid_wb_bcast_v2(F_vgrid, F_comm_S, F_ip1list, F_itype, F_sfcfld_S, sfcfld2_S, ipe_master, me, F_altfld_S=altfld_S)
       if (present(F_altfld_S)) F_altfld_S = altfld_S
       !---------------------------------------------------------------------
       return
@@ -688,17 +688,17 @@ contains
 
 
    !/@*
-   function vgrid_wb_bcast_v2(F_vgrid, F_ip1list, F_itype, F_sfcfld_S, &
-        F_sfcfld2_S, F_comm_S, F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
+   function vgrid_wb_bcast_v2(F_vgrid, F_comm_S, F_ip1list, F_itype, F_sfcfld_S, &
+        F_sfcfld2_S, F_ipe_master, F_ipe, F_altfld_S) result(F_istat)
       implicit none
       !@objective  MPI bcast stored vgrid
       !@arguments
       type(vgrid_descriptor), intent(inout) :: F_vgrid
+      character(len=*), intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer, pointer :: F_ip1list(:)            !- list of ip1
       integer, intent(inout) :: F_itype
       character(len=*), intent(inout) :: F_sfcfld_S
       character(len=*), intent(inout) :: F_sfcfld2_S
-      character(len=*), intent(in) :: F_comm_S    !- RPN_COMM communicator name
       integer, intent(in), optional :: F_ipe_master !- Sending PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       integer, intent(in), optional :: F_ipe      !- PE number in RPN_COMM communicator, default RPN_COMM_MASTER=0
       character(len=*), intent(inout), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
