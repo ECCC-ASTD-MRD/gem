@@ -1,0 +1,24 @@
+#
+# check that r.entry and r.call have been called beforehand.
+# then dump variables from list in variable CallRetvar and
+# output variables (if any) from call to cclargs_lite into
+# file $CallReturns using r.dump_keys.dot with @ option
+#
+# N.B. The check for r.call is NOT entirely foolproof because
+# the variable used as a flag had to be exported. the check for
+# r.entry is safer because that variable is local
+#
+if [ "" = "$EntryDir" ]
+then
+  echo ERROR: r.return.dot executed without previous r.entry.dot
+  exit 1
+fi
+if [ "" = "$CallReturns" ]
+then
+  echo WARNING: r.return.dot executed without previous r.call.dot
+  echo          NO variable values can be returned
+  echo the following values would have been returned
+  . r.dump_keys.dot --@ $CallRetvar 
+else
+  . r.dump_keys.dot --@ $CallRetvar >$CallReturns
+fi

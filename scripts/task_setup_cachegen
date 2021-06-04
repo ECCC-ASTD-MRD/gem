@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#/* Part of the Maestro sequencer software package.
+# * Copyright (C) 2011-2015  Canadian Meteorological Centre
+# *                          Environment Canada
+# *
+# * Maestro is free software; you can redistribute it and/or
+# * modify it under the terms of the GNU Lesser General Public
+# * License as published by the Free Software Foundation,
+# * version 2.1 of the License.
+# *
+# * Maestro is distributed in the hope that it will be useful,
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# * Lesser General Public License for more details.
+# *
+# * You should have received a copy of the GNU Lesser General Public
+# * License along with this library; if not, write to the
+# * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# * Boston, MA 02111-1307, USA.
+# */
+
+# Generate a variable cache file for a user configuration file
+
+# Retrieve command line arguments
+usage="USAGE: $(basename $0) config_file_in cache_file_out"
+if [[ -z "$2" ]] ; then
+   echo $usage 1>&2
+   exit 1
+fi
+cfg_file=$1
+cache_file=$2
+
+# Handle configuration and cache file statuses
+cache_dir=$(dirname ${cache_file})
+mkdir -p ${cache_dir}
+if [[ $? -ne 0 ]] ; then                #Cannot create output directory
+   echo "Cannot create ${cache_dir}"
+   exit 1
+fi
+if [[ ! -e ${cfg_file} ]] ; then        #No configuration file results in a blank cache file
+   touch ${cache_file}
+   exit 0
+elif [[ ! -r ${cfg_file} ]] ; then      #Unreadable configuration file is an error
+   echo "Configuration file ${cfg_file} does not exist or is not readable"
+   exit 1
+fi
+
+# Create the variable cache
+env_before=${TMPDIR:-/tmp}/env_before.$$
+env_after=${TMPDIR:-/tmp}/env_after.$$
+(export -p >${env_before})
+(set -a ; . ${cfg_file} >/dev/null 2>&1 ; set +a ; export -p >${env_after})
+diff ${env_before} ${env_after} | grep '^> ' | sed 's/^> //' >${cache_file}

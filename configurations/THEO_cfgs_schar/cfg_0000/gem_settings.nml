@@ -1,0 +1,74 @@
+ &theo_cfgs
+  Theo_case_S= 'MTN_SCHAR'
+/
+
+
+ &mtn_cfgs
+  mtn_ni = 401 ,  mtn_nj = 1 ,  mtn_nk = 65
+  mtn_dx = 500.
+  mtn_dz = 300.
+  mtn_tzero= 288.
+  mtn_nstar= 0.01
+  mtn_flo  = 10.
+  mtn_hwx  = 10.
+  mtn_hwx1 = 8.
+  mtn_hght = 250.
+  mtn_zblen_thk=9000.
+/
+
+ &dyn_kernel
+  Dynamics_hydro_L=.false.
+  dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+/
+
+ &step
+  Step_runstrt_S = "20110122.000000"
+  Fcst_end_S     = "4"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 32.
+/
+
+ &vert_layers
+  hyb_rcoef      = 1.,1.
+ /
+
+
+ &dyn_fisl
+  Cstv_tstr_8    = 240.
+  Cstv_bA_8 = 0.5
+  Sol_type_S='DIRECT'
+ /
+
+ &gem_cfgs
+  Vtopo_length_S = '2400s'
+/
+
+ &lam
+  Lam_ctebcs_L   = .true.
+  Lam_blend_H    = 25
+/
+
+
+ &out
+  Out3_nbitg    = 32
+  Out3_etik_s    = "GH_schar"
+  Out3_ip3       = -1
+  Out3_close_interval_S= '999h'
+/
+
+
+
+
+
+
+
+
+  sol_fgm_eps=1.e-5
+  Sol_type_S='ITERATIVE_3D'
+  Lctl_debug_L =.true.
+  Schm_lin_rhs_L=.true.
+  SchM_trapeze_L=.false.
+  Schm_cub_traj_L=.false.
+  Schm_advec     = 2
+  Cstv_tstr_8    = -1.
+

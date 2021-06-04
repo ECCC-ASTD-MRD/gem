@@ -1,0 +1,148 @@
+#!/bin/bash
+arguments=$*
+DESC="Visualize and produce a GEM grid"
+eval $(rpy.cclargs \
+          -D ":" \
+          --desc "${DESC}" \
+          ${0##*/} \
+          -xrec     "0"   "1"   "[Visualize grid with xrec                ]"\
+          -spi      "0"   "1"   "[Visualize grid with spi                 ]"\
+          -max2     "0"   "1"   "[Visualize grid with max2                ]"\
+          -genphysx "0"   "1"   "[Produce geophysical fields with genphysx]"\
+          ++ $arguments)
+
+printf "\n#########################\n"
+printf " GRILLE utility for gem \n"
+printf "########################### \n\n"
+
+GENGRID=$(which gemgrid_${BASE_ARCH}.Abs || true)
+if [[ -z "${GENGRID}" ]] ; then
+   GENGRID=$(which maingemgrid)
+fi
+
+if [[ ! -s gem_settings.nml ]] ; then
+   printf "\n Must provide file gem_settings.nml\n containing a valid &grid namelist\n\n"
+   exit 1
+fi
+
+ici=$PWD
+ROOT_WORK=${PWD}/grille$$
+WORKDIR=${ROOT_WORK}/cfg_0000
+/bin/rm -rf ${ROOT_WORK} ; mkdir -p ${WORKDIR}/CACHE
+cp gem_settings.nml ${WORKDIR}/model_settings.nml
+
+ngrids=1
+GRDTYP=$(rpy.nml_get -u -f gem_settings.nml grid/Grd_typ_s)
+if [[ "${GRDTYP}" == "GY" ]] ; then 
+   ngrids=2
+   mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+else
+   mkdir -p ${WORKDIR}/000-000
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
+fi
+
+export TASK_INPUT=${ROOT_WORK}
+export DOMAIN_start=1
+export DOMAIN_end=1
+export DOMAIN_total=1
+export CCARD_OPT='ABORT'
+export CCARD_ARGS="-dom_start 0 -dom_end 0 -ngrids ${ngrids} -input ${TASK_INPUT} -output ${TASK_OUTPUT}"
+
+#================== Produce Grid Pos Rec ================
+/bin/rm -f tape1 tape1_core tape1_free tape2 tape2_core tape2_free 2> /dev/null
+cd ${ROOT_WORK}
+gem_mpirun.sh -pgm $GENGRID -npex 1 -npex ${ngrids} -inorder
+
+find ${WORKDIR} -type f -name "*tape*"      -exec mv {} . \;
+find ${WORKDIR} -type f -name "eigenv_v1_*" -exec mv {} . \;
+
+/bin/rm -rf ${WORKDIR}
+export CCARD_ARGS=""
+
+#================== View the grid(s) ================
+function launch_spi {
+   if ! which SPI;then
+      echo "==================================================="
+      echo "   Error!"
+      echo "   Please load a version of SPI."
+      echo "   Search the wiki for SPI to learn how to load it."
+      echo "   Aborting"
+      echo "==================================================="
+      exit 1
+   fi
+   SPI -field $*
+}
+
+viewer=""
+if [[ ${xrec} -eq 1 ]]; then
+   viewer="xrec -imflds"
+elif [[ ${spi} -eq 1 ]]; then
+   viewer="launch_spi"
+elif [[ ${max2} -eq 1 ]]; then
+   viewer="max2 -imflds"
+fi
+
+if [[ -n "${viewer}" ]] ; then
+   cat > p.dir <<pgsm100
+ sortie (std,1000,a)
+ compac=-12
+ etiksrt='GRID'
+ LAGRILLE
+*
+ heure(0)
+ outlalo(-1,-1,-1)
+*
+ setintx(cubique)
+ champ('ME')
+end
+pgsm100
+   tmp1=''
+   if [[ -s tape1 ]] ; then
+      r.fstliste -izfst tape1 -nomvar ">>" | sed 's/\:/ /g' > liste
+      ip1=`cat liste | awk '{print $3}'`
+      ip2=`cat liste | awk '{print $4}'`
+      ip3=`cat liste | awk '{print $5}'`
+      ETK=`cat liste | awk '{print $9}'`
+      cat p.dir | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > p1.dir
+      tmp1=tmp1$$
+      cp tape1 ${tmp1}
+      pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp1} -i p1.dir
+   fi
+   tmp2=''
+   if [[ -s tape2 ]] ; then
+      r.fstliste -izfst tape2 -nomvar ">>" | sed 's/\:/ /g' > liste
+      ip1=`cat liste | awk '{print $3}'`
+      ip2=`cat liste | awk '{print $4}'`
+      ip3=`cat liste | awk '{print $5}'`
+      ETK=`cat liste | awk '{print $9}'`
+      cat p.dir | sed "s/LAGRILLE/grille (tape2,$ip1,$ip2,$ip3)/" | sed "s/GRID/$ETK/" > p2.dir
+      tmp2=tmp2$$
+      cp tape2 ${tmp2}
+      pgsm -iment $ATM_MODEL_DFILES/bcmk/geophy/Gem_geophy.fst -ozsrt ${tmp2} -i p2.dir
+      tmp2=tmp2$$
+   fi
+   ${viewer} ${tmp1} ${tmp2}
+   /bin/rm -f p.dir p1.dir p2.dir liste ${tmp1} ${tmp2}
+fi
+
+if [[ ${genphysx} -gt 0 ]] ; then
+   export PATH=${PATH}:/data/dormrb04/genphysx/src/tcl
+   ext=''
+   if [[ ${yinyang} -gt 0 ]] ; then
+      ext=_YIN
+   fi
+   #TODO: @ec.gc.ca will be discontinued soon
+   GenPhysX.tcl -gridfile $(pwd)/tape1 -batch -target GEMMESO -t 21600 -mail ${USER}@ec.gc.ca -result Gem_geophy${ext}
+   if [[ ${yinyang} -gt 0 ]] ; then
+      GenPhysX.tcl -gridfile $(pwd)/tape2 -batch -target GEMMESO -t 21600 -mail ${USER}@ec.gc.ca -result Gem_geophy_YAN
+   fi
+fi
+
+cd $ici
+find ${ROOT_WORK} -type f -name "*tape*"      -exec mv {} . \;
+find ${ROOT_WORK} -type f -name "eigenv_v1_*" -exec mv {} . \;
+
+/bin/rm -rf ${ROOT_WORK}
+

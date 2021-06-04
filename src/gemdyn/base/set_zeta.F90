@@ -367,9 +367,9 @@
       REFP0_S = gmmk_pw_p0_plus_s
       REFP0_LS_S = ' '
       if (Schm_sleve_L) REFP0_LS_S = gmmk_pw_p0_ls_s
-      istat = vgrid_wb_put('ref-m', Ver_vgdobj, Ver_ip1%m,  &
+      istat = vgrid_wb_put(VGRID_M_S, Ver_vgdobj, Ver_ip1%m,  &
                            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
-      istat = vgrid_wb_put('ref-t', Ver_vgdobj, Ver_ip1%t,  &
+      istat = vgrid_wb_put(VGRID_T_S, Ver_vgdobj, Ver_ip1%t,  &
                            REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
 
       options_readwrite = WB_IS_LOCAL

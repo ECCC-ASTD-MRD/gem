@@ -35,6 +35,16 @@ module statfld_dm_mod
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
+      integer, parameter :: IDX_LNI = 1
+      integer, parameter :: IDX_LNJ = 2
+      integer, parameter :: IDX_GNI = 3
+      integer, parameter :: IDX_GNJ = 4
+      integer, parameter :: IDX_GI0 = 5
+      integer, parameter :: IDX_GJ0 = 6
+      integer, parameter, public :: STATFLD_NCACHE = 6
+      integer, parameter, public :: STATFLD_CACHE_DEFAULT = -1
+
+   
    interface statfld_dm_print
       module procedure statfld_print
    end interface
@@ -49,7 +59,7 @@ module statfld_dm_mod
 contains
 
    !/@*
-   subroutine statfld_dm_r4_2d_e(F_fld,F_nv_S,F_no,F_from_S,F_rx) 
+   subroutine statfld_dm_r4_2d_e(F_fld,F_nv_S,F_no,F_from_S,F_rx,F_dimcache) 
       implicit none
       !@arguments
       ! F_fld         I  Field to be operated on (w/o halos)
@@ -60,11 +70,16 @@ contains
       real,intent(in) :: F_fld(:,:)
       character(len=*),intent(in) :: F_nv_S, F_from_S
       integer,intent(in) :: F_no,F_rx
+      integer,intent(inout),optional :: F_dimcache(:)
       !*@/
       integer :: ijkmin(3),ijkmax(3)
       real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
-      call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax) 
+      if (present(F_dimcache)) then
+         call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax,F_dimcache)
+      else
+         call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax)
+      endif
       call statfld_print(mean,var,rmin,rmax,ijkmin,ijkmax,F_nv_S,F_no,F_from_S,F_rx)
       !---------------------------------------------------------------
       return
@@ -72,15 +87,17 @@ contains
 
 
    !/@*
-   subroutine statfld_dm_r4_2d(F_fld,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax) 
+   subroutine statfld_dm_r4_2d(F_fld, F_mean, F_var, F_rmin, F_rmax, &
+        F_ijkmin, F_ijkmax, F_dimcache) 
       implicit none
       !@arguments
       real,intent(in),target :: F_fld(:,:)
       real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
+      integer,intent(inout),optional :: F_dimcache(:)
       !*@/
       real,pointer :: wk(:,:),pfld(:,:)
-      integer :: istat,lni,lnj,gni,gnj,gi0,gj0
+      integer :: istat,lni,lnj,gni,gnj,gi0,gj0,dimcache(STATFLD_NCACHE)
       !---------------------------------------------------------------
       call ptopo_init_var()
       F_mean = 0.
@@ -89,10 +106,35 @@ contains
       F_rmax = 0.
       F_ijkmin = 0
       F_ijkmax = 0
- 
+      
+      dimcache(:) = STATFLD_CACHE_DEFAULT
+      if (present(F_dimcache)) then
+         if (size(F_dimcache) >= STATFLD_NCACHE) &
+              dimcache(1:STATFLD_NCACHE) = F_dimcache(1:STATFLD_NCACHE)
+      endif
+
       lni = size(F_fld,1)
       lnj = size(F_fld,2)
-      istat = ptopo_collect_dims(RPN_COMM_GRID,lni,lnj,gni,gnj,gi0,gj0)
+      if (dimcache(IDX_LNI) == lni .and. dimcache(IDX_LNJ) == lnj) then
+         !#TODO: potential problem if the condition is not the same for all PE
+         gni = F_dimcache(IDX_GNI)
+         gnj = F_dimcache(IDX_GNJ)
+         gi0 = F_dimcache(IDX_GI0)
+         gj0 = F_dimcache(IDX_GJ0)
+      else
+         istat = ptopo_collect_dims(RPN_COMM_GRID,lni,lnj,gni,gnj,gi0,gj0)
+         if (present(F_dimcache)) then
+            if (size(F_dimcache) >= STATFLD_NCACHE) then
+               F_dimcache(IDX_LNI) = gni
+               F_dimcache(IDX_LNJ) = gnj
+               F_dimcache(IDX_GNI) = gni
+               F_dimcache(IDX_GNJ) = gnj
+               F_dimcache(IDX_GI0) = gi0
+               F_dimcache(IDX_GJ0) = gj0
+            endif
+         endif
+      endif
+      
       nullify(wk)
       if (ptopo_grid_ipe == RPN_COMM_MASTER) then
          allocate(wk(gni,gnj),stat=istat)
@@ -111,7 +153,7 @@ contains
 
 
    !/@*
-   subroutine statfld_dm_r4_3d_e(F_fld,F_nv_S,F_no,F_from_S,F_rx) 
+   subroutine statfld_dm_r4_3d_e(F_fld,F_nv_S,F_no,F_from_S,F_rx,F_dimcache) 
       implicit none
       !@arguments
       ! F_fld         I  Field to be operated on (w/o halos)
@@ -122,11 +164,16 @@ contains
       real,intent(in) :: F_fld(:,:,:)
       character(len=*),intent(in) :: F_nv_S, F_from_S
       integer,intent(in) :: F_no,F_rx
+      integer,intent(inout),optional :: F_dimcache(:)
       !*@/
       integer :: ijkmin(3),ijkmax(3)
       real(REAL64) :: mean,var,rmin,rmax
       !---------------------------------------------------------------
-      call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax) 
+      if (present(F_dimcache)) then
+         call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax,F_dimcache)
+      else
+         call statfld_dm(F_fld,mean,var,rmin,rmax,ijkmin,ijkmax)
+      endif
       call statfld_print(mean,var,rmin,rmax,ijkmin,ijkmax,F_nv_S,F_no,F_from_S,F_rx)
       !---------------------------------------------------------------
       return
@@ -134,15 +181,17 @@ contains
 
 
    !/@*
-   subroutine statfld_dm_r4_3d(F_fld,F_mean,F_var,F_rmin,F_rmax,F_ijkmin,F_ijkmax) 
+   subroutine statfld_dm_r4_3d(F_fld, F_mean, F_var, F_rmin, F_rmax,&
+        F_ijkmin, F_ijkmax, F_dimcache) 
       implicit none
       !@arguments
       real,intent(in),target :: F_fld(:,:,:)
       real(REAL64),intent(out) :: F_mean,F_var,F_rmin,F_rmax
       integer,intent(out) :: F_ijkmin(3),F_ijkmax(3)
+      integer,intent(inout),optional :: F_dimcache(:)
       !*@/
       real,pointer :: wk(:,:,:),pfld(:,:,:)
-      integer :: istat,lni,lnj,lnk,gni,gnj,gi0,gj0
+      integer :: istat,lni,lnj,lnk,gni,gnj,gi0,gj0,dimcache(STATFLD_NCACHE)
       !---------------------------------------------------------------
       call ptopo_init_var()
       F_mean = 0.
@@ -151,11 +200,36 @@ contains
       F_rmax = 0.
       F_ijkmin = 0
       F_ijkmax = 0
- 
+
+      dimcache(:) = STATFLD_CACHE_DEFAULT
+      if (present(F_dimcache)) then
+         if (size(F_dimcache) >= STATFLD_NCACHE) &
+              dimcache(1:STATFLD_NCACHE) = F_dimcache(1:STATFLD_NCACHE)
+      endif
+
       lni = size(F_fld,1)
       lnj = size(F_fld,2)
       lnk = size(F_fld,3)
-      istat = ptopo_collect_dims(RPN_COMM_GRID,lni,lnj,gni,gnj,gi0,gj0)
+      if (dimcache(IDX_LNI) == lni .and. dimcache(IDX_LNJ) == lnj) then
+         !#TODO: potential problem if the condition is not the same for all PE
+         gni = F_dimcache(IDX_GNI)
+         gnj = F_dimcache(IDX_GNJ)
+         gi0 = F_dimcache(IDX_GI0)
+         gj0 = F_dimcache(IDX_GJ0)
+      else
+         istat = ptopo_collect_dims(RPN_COMM_GRID,lni,lnj,gni,gnj,gi0,gj0)
+         if (present(F_dimcache)) then
+            if (size(F_dimcache) >= STATFLD_NCACHE) then
+               F_dimcache(IDX_LNI) = gni
+               F_dimcache(IDX_LNJ) = gnj
+               F_dimcache(IDX_GNI) = gni
+               F_dimcache(IDX_GNJ) = gnj
+               F_dimcache(IDX_GI0) = gi0
+               F_dimcache(IDX_GJ0) = gj0
+            endif
+         endif
+      endif
+
       nullify(wk)
       if (ptopo_grid_ipe == RPN_COMM_MASTER) then
          allocate(wk(gni,gnj,lnk),stat=istat)

@@ -22,6 +22,7 @@
            vgd_stda76
       use vgrid_wb, only: vgrid_wb_put
       use gmm_pw
+      use gmm_geof, only: gmmk_me_full_s, gmmk_me_large_s
       use HORgrid_options
       use VERgrid_options
       use dynkernel_options
@@ -47,10 +48,6 @@
 !Authors: Claude Girard & Andre Plante, July 2017
 !
 
-      character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
-      character(len=32), parameter  :: VGRID_T_S  = 'ref-t'
-
-      character(len=32) :: REFP0_S, REFP0_LS_S
       character(len=32) :: dumc
       integer k,istat,pnip1,options_readwrite,options_readonly,err
       integer, dimension(:), pointer :: wkpti
@@ -58,6 +55,7 @@
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
       real(kind=REAL64), dimension(:), pointer :: wkpt8
+      character(len=VGD_LEN_NAME) :: rfls_S
 !     __________________________________________________________________
 !
       if (G_nk<3) call gem_error(-1,'fislh_hybrid','NOT ENOUGH LEVELS')
@@ -224,14 +222,14 @@
 
 !     ----------------------------------------------------------
 !     Save Ver_vgdobj and ip1m/t for output
-!     ----------------------------------------------------------
-      REFP0_S = gmmk_pw_p0_plus_s
-      REFP0_LS_S = ' '
-      if (Schm_sleve_L) REFP0_LS_S = gmmk_pw_p0_ls_s
+      !     ----------------------------------------------------------
+
+      rfls_S = ' '
+      if (Schm_sleve_L) rfls_S = gmmk_me_large_S
       istat = vgrid_wb_put(VGRID_M_S, Ver_vgdobj, Ver_ip1%m,  &
-           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
+           gmmk_me_full_S, rfls_S, F_overwrite_L=.true., F_altfld_S=gmmk_pw_pm_plus_s)
       istat = vgrid_wb_put(VGRID_T_S, Ver_vgdobj, Ver_ip1%t,  &
-           REFP0_S, REFP0_LS_S, F_overwrite_L=.true.)
+           gmmk_me_full_S, rfls_S, F_overwrite_L=.true., F_altfld_S=gmmk_pw_pt_plus_s)
 
       options_readwrite = WB_IS_LOCAL
       options_readonly = options_readwrite + WB_REWRITE_NONE

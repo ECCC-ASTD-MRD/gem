@@ -1,0 +1,137 @@
+#!/bin/bash
+#
+DESC="Find valid topology for GEM"
+
+eval $(rpy.cclargs \
+   -D ":" \
+   --desc   "${DESC}" \
+   ${0##*/} \
+   -npex_low   "1"    "1"    "[lower bound for npex           ]"\
+   -npex_high  "0"    "0"    "[upper bound for npex           ]"\
+   -npey_low    "1"    "1"    "[lower bound for npey           ]"\
+   -npey_high   "0"    "0"    "[upper bound for npey           ]"\
+   -omp         "1"    "1"    "[number of omp threads          ]"\
+   -smt         "1"    "2"    "[smt levels                     ]"\
+   -low         "0"    "0"    "[lower bound for number of nodes]"\
+   -high        "245"  "5000" "[upper bound for number of nodes]"\
+   -nml         "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
+   ++ $*)
+
+if [ ! -e ${nml} ] ; then
+   printf "\n   File ${nml} NOT available -- ABORT\n\n"
+   exit 1
+fi
+
+GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+if [ -z "${GRDTYP}" ] ; then
+   printf "\nERROR: Cannot determine Grid type\n"
+   printf "Abort: Check grid/Grd_typ_S in ${nml}\n\n"
+   exit 1
+fi
+
+re_isnumber='^[0-9]+([.][0-9]+)?$'
+
+GNI=$(rpy.nml_get -f ${nml} grid/Grd_ni 2>/dev/null | sed "s/'//g")
+if [[ ! -z "${GNI}" ]] ; then
+   if ! [[ ${GNI} =~ ${re_isnumber} ]] ; then
+      printf "\nError: grid/Grd_ni (${GNI}) is NOT a number in $nml\n"
+      printf "Abort: Check grid/Grd_ni in ${nml}\n\n"
+      exit 1
+   fi
+fi
+
+GNJ=$(rpy.nml_get -f ${nml} grid/Grd_nj 2>/dev/null | sed "s/'//g")
+if [[ ! -z "${GNJ}" ]] ; then
+   if ! [[ ${GNJ} =~ ${re_isnumber} ]] ; then
+      printf "\nError: grid/Grd_nj (${GNJ}) is NOT a number in $nml\n"
+      printf "Abort: Check grid/Grd_nj in ${nml}\n\n"
+      exit 1
+   fi
+fi
+
+mult=1
+if [ "${GRDTYP}" == "GY" ] ; then
+   export GEM_YINYANG=YES
+   mult=2
+   if [ -z "${GNI}" ] ; then
+      GNI=$((GNJ-1))
+      GNI=$((1+GNI*3))
+   else
+      GNJ=$((GNI-1))
+      GNJ=$((1+GNJ/3))
+   fi
+fi
+
+if [ -z "${GNJ}" -o -z "${GNI}" ] ; then
+   printf "\nError: Cannot determine grid size\n"
+   printf "Abort: Check grid/Grd_ni and grid/Grd_nj in ${nml}\n\n"
+   exit 1
+fi
+
+#  -threads   "3"    "3"    "[number of threads to tun this scripts]"\
+#MAX_threads=${threads}
+
+# when npex_high is not specified, we are considering
+# sub-domain sizes larger than 20 on the x-axis
+
+if [ $npex_high -lt 1 ] ; then
+   npex_high=$((GNI/20))
+fi
+
+# when npey_high is not specified, we are considering
+# sub-domain sizes larger than 10 on the y-axis
+
+if [ $npey_high -lt 1 ] ; then
+   npey_high=$((GNJ/10))
+fi
+
+# Machine specific (XC50)
+CORESperNODE=40
+THREADSperCORE=${smt}
+THREADSperNODE=$((CORESperNODE*THREADSperCORE))
+
+echo INVESTIGATING NODES: $((npex_low*npey_low*omp*mult/THREADSperNODE)) $((npex_high*npey_high*omp*mult/THREADSperNODE))
+echo with NPEX_LOW= $npex_low NPEX_HIGH= $npex_high NPEY_LOW= $npey_low NPEY_HIGH= $npey_high
+
+lis=${TMPDIR}/checkdmpartlis$$
+. r.call.dot checkdmpart.sh -gemnml ${nml} -npex ${npex_low},${npex_high} -npey ${npey_low},${npey_high} -verbose 1> $lis 2>&1
+
+if [ "${_status}" != 'OK' ] ; then
+   printf "Abort: Potential problem with namelists in ${nml}\n"
+   printf "       Checking namelist with: checknml --ref --types --nml='grid step' -- ${nml}\n"
+   checknml --ref --types --nml='grid step' -- ${nml}
+   if [[ $? -eq 1 ]] ; then
+      /bin/rm -f ${TMPDIR}/findtopolis$$ checkdmpart_status.dot
+      printf "Abort -- See above namelist errors\n"
+   else
+      printf "Abort -- For error details see: ${TMPDIR}/findtopolis$$ checkdmpart_status.dot\n"
+   fi
+   /bin/rm -f $lis
+   exit 1
+fi
+
+GNI=$(grep "GRD_NI *=" $lis --text | tail -1 | cut -d "=" -f 2 | sed 's/,//')
+GNJ=$(grep "GRD_NJ *=" $lis --text | tail -1 | cut -d "=" -f 2 | sed 's/,//')
+grep "topo_allowed=" $lis --text | sort -n -k 2 > ${TMPDIR}/findtopolis$$
+
+while read line ; do
+   ptopo=$(echo ${line##*=} | sed 's/ //g' | sed 's/"//g' | sed 's/;//g')
+   npex=$(echo $ptopo | cut -d"x" -f1)
+   npey=$(echo $ptopo | cut -d"x" -f2)
+   nthreads=$((npex*npey*omp*mult))
+   nodes=$(echo "scale=3; ${nthreads} / ${THREADSperNODE}" | bc -l)
+   nodes_int=$(echo ${nodes} | cut -d "." -f1)
+   FULLNODE=""
+   if [ $((nodes_int*THREADSperNODE)) -eq ${nthreads} ] ; then
+      FULLNODE=FULL_NODE_XC50smt${smt}
+   fi
+   cores=$(echo "scale=0; ${nodes} * ${CORESperNODE}" | bc -l)
+   n=$((nthreads/THREADSperNODE))
+
+   if [ $n -ge $low -a $n -le $high ] ; then
+      printf ""TOPO:"%5i "x"%5i  "NODES="%8.2f  "CORES="%6.0f  "MPI="%6i "SUBDOMAINS="%5i "x"%5i %s\n"\
+         $npex $npey $nodes $cores $((npex*npey*mult)) $((GNI/npex)) $((GNJ/npey)) ${FULLNODE}
+   fi
+done < ${TMPDIR}/findtopolis$$
+/bin/rm -f ${TMPDIR}/findtopolis$$ $lis
+

@@ -59,7 +59,9 @@ module phy_options
    integer           :: nphyoutlist  = 0
    integer           :: ilongmel     = -1
    character(len=32), pointer :: phyoutlist_S(:) => NULL()
-   
+   character(len=32) :: vgrid_M_S = 'ref-m'
+   character(len=32) :: vgrid_T_S = 'ref-t'
+
    !# Time length (hours) for special time accumulated physics variables
    integer           :: acchr        = 0
    namelist /physics_cfgs/ acchr

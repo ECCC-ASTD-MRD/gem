@@ -16,7 +16,7 @@
 !/@*
 subroutine phystats(F_stepcount, F_delt)
    use timestr_mod, only: timestr2step
-   use statfld_dm_mod, only: statfld_dm
+   use statfld_dm_mod, only: statfld_dm, STATFLD_NCACHE, STATFLD_CACHE_DEFAULT
    use phy_itf, only: phy_get
    use phy_options, only: phystat_freq_S, phystat_dble_l, phystat_2d_l, phystat_list_s, debug_mem_L
    use phy_typedef
@@ -34,6 +34,7 @@ subroutine phystats(F_stepcount, F_delt)
    logical, parameter :: NOSHORTMATCH_L = .false.
 
    integer, save :: phystat_freq = -1
+   integer, save :: dimcache(STATFLD_NCACHE) = STATFLD_CACHE_DEFAULT
 
    integer :: stat_precision, ivar, n, k, istat, nvars, k0, kn, k1
    real, pointer :: tmpptr(:,:,:)
@@ -98,7 +99,7 @@ subroutine phystats(F_stepcount, F_delt)
                istat = RMN_OK
                if (debug_mem_L) istat = assert_not_naninf(tmpptr(:,:,k1:k1))
                if (RMN_IS_OK(istat)) then
-                  call statfld_dm(tmpptr(:,:,k1:k1), msg_S, F_stepcount, 'phystats', stat_precision)
+                  call statfld_dm(tmpptr(:,:,k1:k1), msg_S, F_stepcount, 'phystats', stat_precision, dimcache)
                else
                   write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
                   call msg(MSG_INFO, msg_S)
@@ -113,7 +114,7 @@ subroutine phystats(F_stepcount, F_delt)
                   istat = RMN_OK
                   if (debug_mem_L) istat = assert_not_naninf(tmpptr(:,:,k0:kn))
                   if (RMN_IS_OK(istat)) then
-                     call statfld_dm(tmpptr(:,:,k0:kn), msg_S, F_stepcount, 'phystats', stat_precision)
+                     call statfld_dm(tmpptr(:,:,k0:kn), msg_S, F_stepcount, 'phystats', stat_precision, dimcache)
                   else
                      write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(msg_S),' NaN'
                      call msg(MSG_INFO, msg_S)
@@ -123,7 +124,7 @@ subroutine phystats(F_stepcount, F_delt)
                istat = RMN_OK
                if (debug_mem_L) istat = assert_not_naninf(tmpptr)
                if (RMN_IS_OK(istat)) then
-                  call statfld_dm(tmpptr, phystat_list_s(ivar), F_stepcount, 'phystats', stat_precision)
+                  call statfld_dm(tmpptr, phystat_list_s(ivar), F_stepcount, 'phystats', stat_precision, dimcache)
                else
                   write(msg_S,"(i4,1x,a16,' Mean:',a)") F_stepcount,trim(phystat_list_s(ivar)),' NaN'
                   call msg(MSG_INFO, msg_S)

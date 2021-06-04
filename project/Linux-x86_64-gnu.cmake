@@ -16,6 +16,7 @@ set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 
 # find_package() commands can only be called after the languages have been 
 # enabled or they will fail
+
 add_definitions(-DLittle_Endian)
 
 set(LAPACK_LIBRARIES "lapack")
@@ -47,4 +48,3 @@ if (EXTRA_CHECKS)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fcheck=all -fsanitize=bounds -fsanitize=alignment")
    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -fsanitize=bounds -fsanitize=alignment")
 endif()
-

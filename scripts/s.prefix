@@ -1,0 +1,35 @@
+#!/bin/bash
+
+LocalArgs=1
+split=" "
+while [[ -n $LocalArgs ]]
+do
+  case "$1" in
+  --help|-h)
+         echo "USAGE: s.prefix [-h|--help] [--split[=cC]] prefix list of items" && exit 0
+         echo "         --split=cC : split list_of_directories using c or C as an element separator (--split means :)" 1>&2
+         exit 0
+         ;;
+  --split )
+         split=":"
+         shift
+         ;;
+  --split=* )
+         split="${1#--split=}"
+         shift
+         ;;
+  --)
+         shift
+         unset LocalArgs
+         ;;
+  *)
+         unset LocalArgs
+         ;;
+  esac
+done
+PreFix=$1
+shift;
+for i in $( echo "$@" | tr "$split" "     " )
+do
+printf -- "${PreFix}${i} "
+done

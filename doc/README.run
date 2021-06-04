@@ -1,56 +1,51 @@
-#Window for running binaries must have the compiler environment that
-#goes with the binaries created.
+# Window for running binaries must have the compiler environment that
+# goes with the binaries created.
 
-cd gem/work/work[...]
+# make sure you source the .common_setup file to set the environment
+#  variables needed to run GEM
+. ./.common_setup
+
+# Warning: this is a development branch:
+# some configurations may not work, such as those whose name ends with ""H"
+
+cd gem/work[...]
 #If running OpenMP (OMP_NUM_THREADS > 1) set OMP_STACKSIZE=4G
 #-ptopo [npx] x [npy] x [OMP_NUM_THREADS] where npx, npy is for MPI topology
 
-#default
-./runprep [-dircfg configurations/GEM_cfgs]
-./runmod  [-dircfg configurations/GEM_cfgs -ptopo 1x1x1]
-
-#debug: to add -gdb option
-./runprep [-dircfg configurations/GEM_cfgs]
-./runmod  -debug 1 [-dircfg configurations/GEM_cfgs -ptopo 1x1x1]
-
-#LAM
-./runprep -dircfg configurations/LAM_cfgs
-./runmod  -dircfg configurations/LAM_cfgs -ptopo 2x2x1
-
 #GY (actually uses double cpus)- in this example: uses 16 cpus
-./runprep -dircfg configurations/GY_cfgs
-./runmod  -dircfg configurations/GY_cfgs -ptopo 2x2x2
+runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+runmod.sh  -dircfg configurations/GEM_cfgs_GY_FISL_P -ptopo 2x2x2
 
 #Schaer case - must run with -ptopo 10x1
-./runprep -dircfg configurations/Schaer_cfgs
-./runmod  -dircfg configurations/Schaer_cfgs -ptopo 10x1
+runprep.sh -dircfg configurations/THEO_cfgs_schar
+runmod.sh  -dircfg configurations/THEO_cfgs_schar -ptopo 10x1
 \rm schaer
-./bin/flipit -i RUNMOD.dir/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-000_004 -o schaer
+flipit -i RUNMOD/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-000_004 -o schaer
 #you will need to install and compile xrec -- see https://gitlab.com/gem-ec/xoas
 xrec -imflds schaer
 
 #Bubble case - must run with -ptopo 5x1
-./runprep -dircfg configurations/Bubble_cfgs
-./runmod  -dircfg configurations/Bubble_cfgs -ptopo 5x1
+runprep.sh -dircfg configurations/THEO_cfgs_bubbleG
+runmod.sh  -dircfg configurations/THEO_cfgs_bubbleG -ptopo 5x1
 \rm bubble
-./bin/flipit -i RUNMOD.dir/output/cfg_0000/laststep_0000000120/000-000/dm2011012200-000-000_001 -o bubble
+flipit -i RUNMOD/output/cfg_0000/laststep_0000000216/000-000/dm2011012200-000-000_001 -o bubble
 #you will need to install and compile xrec -- see https://gitlab.com/gem-ec/xoas
 xrec -imflds bubble
 Choose variable TH, step 120
 Display contour 0
 
 #Use voir to see what records are produced in the FST files
-./voir -iment RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+voir -iment RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
 
 #Use xrec to see the records visually
 #you will need to install and compile xrec -- see https://gitlab.com/gem-ec/xoas
 xrec -imflds RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
 
 #Use fststat to look at statistical means on the records
-./fststat -fst RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
+fststat -fst RUNMOD/output/cfg_0000/laststep_0000000024/000-000/dm2009042700-000-000_010
 
 #pgsm is a program to interpolate records to a different grid
-./pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
 
 #editfst is a program to manipulate records into another file
-./editfst -s <input FST> -d <output FST> -i <editfst.directives>
+editfst -s <input FST> -d <output FST> -i <editfst.directives>

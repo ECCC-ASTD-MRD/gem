@@ -1,0 +1,46 @@
+#
+# . r.dump_keys.dot
+#    dump to standard output one line of the form
+#      name='value'
+#    for all the keys to the last call to cclargs_lite
+#
+# . r.dump_keys.dot --[=][@] name1 name2 ... namen
+#    dump to standard output one line of the form
+#      name='value'
+#    for all the OUTPUT keys to the last call to cclargs_lite
+#      if optional @ option is present
+#    for variables name1 name2 ... namen
+#    for all the keys to the last call to cclargs_lite
+#      if optional = option is present
+#
+VarsToDump=""
+if [[ $1 = --* ]]
+then
+  OpTiOn=$1;
+  shift;
+  if [ -n "$1" ]
+  then
+    VarsToDump="$VarsToDump $*"
+  fi
+  if [[ $OpTiOn = *=* ]]
+  then
+    VarsToDump="$VarsToDump $CCLARGS_KEYS"
+  fi
+  if [[ $OpTiOn = *@* ]]
+  then
+    VarsToDump="$VarsToDump $CCLARGS_OUT_KEYS"
+  fi
+else
+  VarsToDump="$CCLARGS_KEYS"
+fi
+if [ "" != "$VarsToDump" ]
+then
+for key in $VarsToDump
+do
+quote='"'
+squote="'"
+dollar='$'
+eval "value=${quote}${dollar}${key}${quote}"
+echo  $key=${squote}${value}${squote}";"
+done
+fi

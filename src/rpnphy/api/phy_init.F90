@@ -59,7 +59,7 @@ contains
 
    !/@*
    function phy_init_2grids(F_path_S, F_dateo, F_dt, F_phygrid_S, &
-        F_lclcore_S, F_nk, F_std_pres) result(F_istat)
+        F_lclcore_S, F_nk, F_std_pres, F_vgrid_M_S, F_vgrid_T_S) result(F_istat)
       implicit none
 
       character(len=*), intent(in) :: F_path_S
@@ -67,11 +67,18 @@ contains
       integer, intent(in) :: F_dateo
       integer, intent(in) :: F_nk
       real,    intent(in) :: F_dt, F_std_pres(F_nk)
+      character(len=*), intent(in), optional :: F_vgrid_M_S, F_vgrid_T_S
       integer :: F_istat !Return status
       !*@/
       ! --------------------------------------------------------------------
-      F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S, &
-           F_lclcore_S, 'NULL' ,'NULL', F_nk, F_std_pres)
+      if (present(F_vgrid_M_S) .and. present(F_vgrid_T_S)) then
+         F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S, &
+              F_lclcore_S, 'NULL' ,'NULL', F_nk, F_std_pres, &
+              F_vgrid_M_S, F_vgrid_T_S)
+      else
+         F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S, &
+              F_lclcore_S, 'NULL' ,'NULL', F_nk, F_std_pres)
+      endif
       ! --------------------------------------------------------------------
       return
    end function phy_init_2grids
@@ -81,7 +88,7 @@ contains
    function phy_init_6grids(F_path_S, F_dateo, F_dt, F_phygrid_S , &
         F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, &
         F_phy_glb_S, F_phy_glbcore_S, &
-        F_nk, F_std_pres) result(F_istat)
+        F_nk, F_std_pres, F_vgrid_M_S, F_vgrid_T_S) result(F_istat)
       use hgrid_wb, only: hgrid_wb_get
       implicit none
       character(len=*), intent(in) :: F_path_S
@@ -90,6 +97,7 @@ contains
       integer, intent(in) :: F_dateo
       integer, intent(in) :: F_nk
       real,    intent(in) :: F_dt, F_std_pres(F_nk)
+      character(len=*), intent(in), optional :: F_vgrid_M_S, F_vgrid_T_S
       integer :: F_istat  !Return status
       !*@/
       ! --------------------------------------------------------------------
@@ -109,16 +117,23 @@ contains
          return
       endif
 
-      F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S , &
-           F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, F_nk, F_std_pres)
-      ! --------------------------------------------------------------------
+      if (present(F_vgrid_M_S) .and. present(F_vgrid_T_S)) then
+         F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S , &
+              F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, F_nk, F_std_pres, &
+              F_vgrid_M_S, F_vgrid_T_S)
+      else
+         F_istat = phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S , &
+              F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, F_nk, F_std_pres)
+      endif
+     ! --------------------------------------------------------------------
       return
    end function phy_init_6grids
 
 
    !/@*
    function phy_init_4grids(F_path_S, F_dateo, F_dt, F_phygrid_S , &
-        F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, F_nk, F_std_pres) result(F_istat)
+        F_lclcore_S, F_drv_glb_S, F_drv_lcl_S, &
+        F_nk, F_std_pres, F_vgrid_M_S, F_vgrid_T_S) result(F_istat)
       use hgrid_wb, only: hgrid_wb_get
       implicit none
       character(len=*), intent(in) :: F_path_S
@@ -126,6 +141,7 @@ contains
       integer, intent(in) :: F_dateo
       integer, intent(in) :: F_nk
       real,    intent(in) :: F_dt, F_std_pres(F_nk)
+      character(len=*), intent(in), optional :: F_vgrid_M_S, F_vgrid_T_S
       integer :: F_istat !Return status
       !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Spring 2014
       !*@/
@@ -199,6 +215,10 @@ contains
          return
       endif
 
+      !# Establish physics v-grid information
+      if (present(F_vgrid_M_S)) vgrid_M_S = F_vgrid_M_S
+      if (present(F_vgrid_T_S)) vgrid_T_S = F_vgrid_T_S
+      
       !# Establish physics h-grid information
       ier = hgrid_wb_get(F_phygrid_S, phy_lcl_gid, F_i0=phy_lcl_i0, &
            F_j0=phy_lcl_j0, F_lni=phy_lcl_ni, F_lnj=phy_lcl_nj)

@@ -1169,7 +1169,11 @@ contains
 !
       hgt   => F_sfc (1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
       ptr3d => F_dest(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,k0:kn)
-      hgtls => F_sfcL(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
+      if (associated(F_sfcL)) then
+         hgtls => F_sfcL(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
+      else
+         nullify (hgtls)
+      endif
       istat= vgd_levels ( F_vgd, F_ip1(k0:kn), ptr3d, &
                           sfc_field=hgt, sfc_field_ls=hgtls )
 !

@@ -1,5 +1,9 @@
 # Instructions in a nutshell
 
+**Warning: dev-5.2 is a development branch: some configurations may not
+work, especially with gnu compiler suite, such as those whose name ends with
+"H"**
+
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
@@ -9,6 +13,12 @@ See below for extended instructions.  Further details are can be found in
     # Optionnaly checkout a specific branch:
     # git checkout <branch_name>
 
+	# Important: in order to set environment variables needed to run GEM, use the
+	# following setup file:
+	. ./.common_setup gnu
+	or
+	. ./.common_setup intel
+	
     # Create a build directory
     # The build directory has very little value in itself and can be placed
     # outside the project directory
@@ -16,27 +26,24 @@ See below for extended instructions.  Further details are can be found in
     cd build
 
     # If the -DWORK_PREFIX=<path> option isn't given to cmake, the work directory
-    # will be created under the work directory
+    # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
     cmake ../project
     # Create an execution environment for GEM
     make -j work
 
     # Download the data files required to run GEM
-    # replace "work" by the WORK_PREFIX path you may have used above
     cd ..
-    ./download-dbase.sh work
+    ./download-dbase.sh .
 
-    cd work/work-${OS_NAME}-${COMPILER_NAME}
-    # Configure the model with the default configuration (configurations/GEM_cfgs)
-    # and execute the model
-    ./runprep
-    ./runmod
-    # or configure the model for a specific case, for example:
-    ./runprep -dircfg configurations/GY_cfgs
-    ./runmod -dircfg configurations/GY_cfgs
+    cd work-${OS_NAME}-${COMPILER_NAME}
+    # Configure the model with one of the configurations
+    # and execute the model, for example:
+    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 
-    ./voir -iment RUNMOD.dir/output/cfg0000/ ...
-    ./fststat -fst RUNMOD.dir/output/cfg0000/ ...
+	# use tools to see list the records in the output files
+    voir -iment RUNMOD/output/cfg0000/ ...
+    fststat -fst RUNMOD/output/cfg0000/ ...
 ```
 
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
@@ -66,7 +73,7 @@ link:
 
 ## Compiler specifics
 
-### GNU compilers
+### GNU compiler suite
 - By default GEM is configured to use gfortran and gcc compilers
 - Changes to the C and Fortran flags can be done in **project/Linux-x86_64-gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
@@ -105,7 +112,7 @@ parallel.
 without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
-The default compilers are GNU. If you want to compile with other compilers,
+The default compiler suite is GNU. If you want to compile with other compilers,
 add ```-DCOMPILER=<compiler suite name (gnu|intel)>``` to the CMake
 command line.  This release has been tested with GNU and Intel compilers on
 Linux x86_64.  Other compilers have also been used in the past but have not been
@@ -127,18 +134,26 @@ files in the **project** folder.
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
 (work-${OS_NAME}-${COMPILER_NAME}). For example
-*work-Fedora-32-x86_64-gnu-10.2.1* could be created in the *work*
-directory, and the following executables are installed in the *bin* sub-folder:
-- maingemdm
-- maingemgrid
-- mainyy2global
+*work-Fedora-32-x86_64-gnu-10.2.1* could be created in the main directory,
+and the following executables are installed in the *bin* sub-folder: 
+- cclargs_lite
+- checkdmpart
+- editfst
+- feseri
 - flipit
+- fstcomp
+- fststat
+- gem_monitor_end
+- gem_monitor_output
+- gemgrid
+- maingemdm
+- pgsm
+- prgemnml
+- prphynml
 - r.fstinfo
 - voir
-- editfst
-- fststat
-- cclargs_lite
-- pgsm
+- yy2global
+
 
 ## Running GEM
 
@@ -146,33 +161,26 @@ Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
 example *work-Fedora-32-x86_64-gnu-10.2.1*
 
 ```
-    cd <WORK_PREFIX>/work-${OS-NAME}_${COMPILER-NAME}
-    # Configure the model with the default configuration (configurations/GEM_cfgs)
-    ./runprep
-    # Create a directory named RUNMOD.dir for output files
-    # and execute the model
-    ./runmod
-    # or configure and execute the model for a specific case, for example:
-    ./runprep -dircfg configurations/GY_cfgs
-    ./runmod -dircfg configurations/GY_cfgs
-	make sure you give the complete path to the directory in which the
-	cfg_000 directory is located, such as:
-    ./runprep -dircfg configurations/GEM_theo_cfgs/WILLIAMSON/CASE1_AROUND
-    ./runmod -dircfg configurations/GEM_theo_cfgs/WILLIAMSON/CASE1_AROUND
+    cd work-${OS-NAME}_${COMPILER-NAME}
+    # Configure and execute the model for a specific case, for example:
+    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 ```
 
-*runmod*'s ```-ptopo``` argument can be used to specify the number of CPU to
+*runmod.sh*'s ```-ptopo``` argument can be used to specify the number of CPU to
 use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
 8 cpus for global Yin-Yang - see the [manual](doc/GEM-manual.pdf) for details)
 
-**mpirun** is used to run the model.  You can specify another command
-by editing *scripts/Um_model.sh either in the original scripts in the
-*scripts* folder or in the working directory
-*work/work-${OS_NAME}_${COMPILER_NAME}/scripts*. In the latter case, be advised
-that any changes done to the scripts will be over-written the next time
-```make work``` is executed. Therefore, if you want your changes to the
-scripts to be persistent, make your modifications in the *scripts* directory,
-and then rerun the ```make work``` in the build directory.
+If you get an error message saying runprep.sh or gem_dbase is not found,
+make sure to set the environment variables using the setup file situated in
+the main directory: 
+*./.common_setup gnu* or *./.common_setup intel*
+
+An in-house script (**r.run_in_parallel**) is used to run the model. If you
+want to use another command, or if it doesn't work in your environment, edit
+the file *scripts/gem_mpirun.sh* to change the script, or move the file
+*scripts/r.run_in_parallel* so that the model is run with mpirun directly.
+
 
 ## Working with model outputs
 
@@ -181,23 +189,23 @@ various tasks on the output files:
 
 - ```voir``` lists the records in FST files:
     ```
-        ./voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+        voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
     ```
 
 - ```fststat``` produces statistical means of the records in a FST file:
     ```
-        ./fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+        fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
     ```
 
 - ```pgsm``` can be used to interpolate records to a different grid
     ```
-        ./pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+        pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
     ```
 
 - ```editfst``` enables basic record manipulations, such as copying to another
     file.
     ```
-        ./editfst -s <input FST> -d <output FST> -i <editfst.directives>
+        editfst -s <input FST> -d <output FST> -i <editfst.directives>
     ```
 
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) is a scientific and meteorological
@@ -209,10 +217,3 @@ Environment Canada.
 can be used to display 2D meteorological fields stored in the FST files,
 developed by Research Informatics Services, Meteorological Research Division,
 Environment and Climate Change Canada.
-
-
-# Using Visual Studio Code
-
-If [Visual Studio Code](https://code.visualstudio.com/) is available on your
-system, the `goas-devel.code-workspace` file can be opened by code to
-automatically open relevant files.

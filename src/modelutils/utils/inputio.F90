@@ -17,6 +17,7 @@
 module inputio_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_tolower
+   use gmm_itf_mod, only: gmm_metadata, gmm_get, gmm_create, GMM_NULL_FLAGS, GMM_FLAG_RSTR
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_get, vgd_free, VGD_OK, operator(==)
    use incfg2_mod
    use inputio_files_mod
@@ -24,11 +25,12 @@ module inputio_mod
    use fstmpio_mod
    use hinterp4yy_mod, only: HINTERP4YY_NONE
    use mu_jdate_mod, only: jdate_to_cmc, jdate_from_cmc, jdate_month, jdate_year, jdate_midmonth, MU_JDATE_ANY
+   use cmcdate_mod, only: cmcdate_toprint
    use ptopo_utils, only: PTOPO_BLOC
    use str_mod, only: str_concat_i
    use time_interp_mod
    use vinterp_mod, only: vinterp
-   use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
+   use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put, vgrid_wb_is_press_kind
    implicit none
    private
    !@objective 
@@ -57,13 +59,17 @@ module inputio_mod
 #define MK_ID2CHAR(ID) trim(achar(65+ID))
 #define ADD_PREFIX(ID,VN) 'io/'//MK_ID2CHAR(ID)//'/'//VN
 #define ADD_PREFIX2(ID,ID2,VN) 'io/'//MK_ID2CHAR(ID)//MK_ID2CHAR(ID2)//'/'//VN
+#define ADD_PREFIX3(ID,ID2,DAT,VN) 'io/'//MK_ID2CHAR(ID)//MK_ID2CHAR(ID2)//'/'//DAT//'/'//VN
 #define RM_PREFIX2(VN) VN(7:)
+!!$#define RM_PREFIX3(VN) VN(7:)
 
    integer, parameter :: INPUT_ERR = -1  !# RMN_ERR
    integer, parameter :: INPUT_SKIP = 0
    integer, parameter :: INPUT_OK = 1
 
    integer, parameter :: NMAX_LEVELS = 1024
+   
+   character(len=*), parameter :: ALT_VGRID_H_FLDNAME = 'GZ'
 
    interface inputio_add
       module procedure incfg_add_string
@@ -92,19 +98,20 @@ module inputio_mod
       integer :: id
       integer :: nkeys
       logical :: needonce_L
-      character(len=64) :: vn1_S
-      character(len=64) :: vn2_S
+      character(len=64) :: vn1_S, vn2_S
       character(len=64) :: vgrid_S
       character(len=64) :: sfc_S(2) !# SFC + SLS
+      character(len=64) :: alt_S    !# alt varname for vgrid def
       integer(INT64) :: jdatev
-      logical :: salloc_L, dalloc_L
-      real, dimension(:,:,:), pointer :: sfc !# SFC + SLS
-      real, dimension(:,:,:), pointer :: psfc !# SFC + SLS
+      logical :: salloc_L, dalloc_L, altalloc_L
+      real, dimension(:,:,:), pointer :: sfc, psfc !# SFC + SLS
+      real, dimension(:,:,:), pointer :: dalt, palt !# alt vgrid def data
       real, dimension(:,:,:), pointer :: d1, d2
       real, dimension(:,:,:), pointer :: p1, p2
       integer :: k1(NMAX_LEVELS)
       integer :: k2(NMAX_LEVELS)
       integer :: ks(2)
+      integer :: kalt(NMAX_LEVELS)
       integer :: hstats(NMAX_LEVELS)
       integer :: hstat
       integer :: hgridid, hgridcoreid
@@ -379,7 +386,7 @@ contains
          niter = niter + 1
          istat = priv_tint_status(cfgvar, jdatev, fld)
          if (RMN_IS_OK(istat) .or. istat == RMN_ERR) exit
-         istat = priv_frh(cfg, F_ivar, cfgvar, cfgfile, fld, istat, niter)
+         istat = priv_frh(cfg, F_ivar, cfgvar, cfgfile, fld, istat, niter, vgrid_S)
          if (RMN_IS_OK(istat)) istat = priv_tint_set(cfgvar, fld)
          istat = -1
       enddo
@@ -480,18 +487,23 @@ contains
       F_fldout%vn2_S = ''
       F_fldout%vgrid_S = ''
       F_fldout%sfc_S(:) = ''
+      F_fldout%alt_S = ''
       F_fldout%jdatev = MU_JDATE_ANY
       F_fldout%salloc_L = .false.
       F_fldout%dalloc_L = .false.
+      F_fldout%altalloc_L = .false.
       nullify(F_fldout%sfc)
       nullify(F_fldout%d1)
       nullify(F_fldout%d2)
+      nullify(F_fldout%dalt)
       nullify(F_fldout%psfc)
       nullify(F_fldout%p1)
       nullify(F_fldout%p2)
+      nullify(F_fldout%palt)
       F_fldout%k1(:) = -1
       F_fldout%k2(:) = -1
       F_fldout%ks(:) = -1
+      F_fldout%kalt(:) = -1
       F_fldout%hstats = -1
       F_fldout%hstat = -1
       F_fldout%hgridid = -1
@@ -507,10 +519,12 @@ contains
          F_fldout%vn2_S = F_fldin%vn2_S
          F_fldout%vgrid_S = F_fldin%vgrid_S
          F_fldout%sfc_S(:) = F_fldin%sfc_S(:)
+         F_fldout%alt_S = F_fldin%alt_S
          F_fldout%jdatev = F_fldin%jdatev
          F_fldout%k1(:) = F_fldin%k1(:)
          F_fldout%k2(:) = F_fldin%k2(:)
          F_fldout%ks(:) = F_fldin%ks(:)
+         F_fldout%kalt(:) = F_fldin%kalt(:)
          F_fldout%hgridid = F_fldin%hgridid
          F_fldout%hgridcoreid = F_fldin%hgridcoreid
          reset_L = .false.
@@ -519,9 +533,11 @@ contains
             if (associated(F_fldin%sfc)) F_fldout%sfc => F_fldin%sfc
             if (associated(F_fldin%d1)) F_fldout%d1 => F_fldin%d1
             if (associated(F_fldin%d2)) F_fldout%d2 => F_fldin%d2
+            if (associated(F_fldin%dalt)) F_fldout%dalt => F_fldin%dalt
             if (associated(F_fldin%psfc)) F_fldout%psfc => F_fldin%psfc
             if (associated(F_fldin%p1)) F_fldout%p1 => F_fldin%p1
             if (associated(F_fldin%p2)) F_fldout%p2 => F_fldin%p2
+            if (associated(F_fldin%palt)) F_fldout%palt => F_fldin%palt
             F_fldout%hstats = F_fldin%hstats
             F_fldout%hstat = F_fldin%hstat
          endif
@@ -547,6 +563,12 @@ contains
          if (associated(F_fld%psfc)) deallocate(F_fld%psfc, stat=istat)
       endif
       nullify(F_fld%psfc, F_fld%sfc)
+      
+      if (F_fld%altalloc_L) then
+         F_fld%altalloc_L = .false.
+         if (associated(F_fld%palt)) deallocate(F_fld%palt, stat=istat)
+      endif
+      nullify(F_fld%palt, F_fld%dalt)
 
       if (F_fld%dalloc_L) then
          if (present(F_fld2)) then
@@ -573,8 +595,8 @@ contains
 
 
    !/@*
-   function priv_frh(F_cfg, F_ivar, F_cfgvar, F_cfgfile, F_fld, F_status, F_iter) &
-        result(F_istat)
+   function priv_frh(F_cfg, F_ivar, F_cfgvar, F_cfgfile, F_fld, F_status, &
+        F_iter, F_vgridout_S) result(F_istat)
       implicit none
       type(INCFG_T), intent(in) :: F_cfg
       type(INCFG_VAR_T), intent(in) :: F_cfgvar
@@ -582,6 +604,7 @@ contains
       type(INPUTIO_FLD_T), target, intent(inout) :: F_fld
       integer, intent(in)  :: F_status  !# time_interp_status
       integer, intent(in)  :: F_ivar, F_iter
+      character(len=*), intent(in) :: F_vgridout_S
       integer :: F_istat
       !*@/
       integer :: ifile, fileidx
@@ -598,7 +621,7 @@ contains
             cycle
          endif
          F_istat = priv_find(F_cfg, F_ivar, F_cfgvar, F_cfgfile, F_fld, &
-              fileidx, F_status, F_iter)
+              fileidx, F_status, F_iter, F_vgridout_S)
          if (RMN_IS_OK(F_istat)) then
             exit
          else
@@ -623,7 +646,7 @@ contains
 
    !/@*
    function priv_find(F_cfg, F_ivar, F_cfgvar, F_cfgfile, F_fld, F_fileidx, &
-        F_status, F_iter) result(F_istat)
+        F_status, F_iter, F_vgridout_S) result(F_istat)
       implicit none
       type(INCFG_T), intent(in) :: F_cfg
       type(INCFG_VAR_T), intent(in) :: F_cfgvar
@@ -632,15 +655,17 @@ contains
       integer, intent(in)  :: F_fileidx
       integer, intent(in)  :: F_status  !# time_interp_status
       integer, intent(in)  :: F_ivar, F_iter
+      character(len=*), intent(in) :: F_vgridout_S
       integer :: F_istat
       !*@/
       integer :: ftype, tint, ip2, ip2m1, ip2p1, datevfuzz, fuzztype, cmcdatev
-      integer :: istat, nip1, funit, nn, ntypvar, itypvar
+      integer :: istat, nip1, funit, nn, ntypvar, itypvar, nkeys
       integer(INT64) :: jdatev, jdatev0, jdatevm1, jdatevp1
       integer,target :: ip1list(NMAX_LEVELS)
       type(vgrid_descriptor) :: vgrid, vgrid0
       integer, pointer :: pip1list(:), pk1(:), pk2(:)
-      character(len=32) :: dummy_S, typvar_S, vn_S, msg_S, lvl_type_S, typvarlist_S(5)
+      character(len=32) :: dummy_S, typvar_S, vn_S, msg_S, lvl_type_S, typvarlist_S(5), alt_S
+      logical :: ispressin_L, ispressout_L, usealtin_L
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) find [BEGIN]')
       F_istat = RMN_ERR
@@ -712,7 +737,7 @@ contains
          pip1list => ip1list(1:nip1)
       endif
 
-      IF_VINT: if (F_cfgvar%vint_S /= 'none') then
+      IF_VINT: if (F_cfgvar%vint_S /= 'none' .and. F_vgridout_S /= '') then
          if (F_fld%vn2_S == '') then
             F_fld%nkeys = fstmpio_find_3d_0(pk1, funit, F_fld%vn1_S, &
                  cmcdatev, pip1list, ip2, RMN_ANY_I, &
@@ -723,7 +748,7 @@ contains
                  cmcdatev, pip1list, ip2, RMN_ANY_I, &
                  datevfuzz, fuzztype, F_typvar_S=F_cfgvar%typvar_S, F_vgrid=vgrid)
          endif
-      else
+      else  !IF_VINT
          if (F_fld%vn2_S == '') then
             F_fld%nkeys = fstmpio_find_3d_0(pk1, funit, F_fld%vn1_S, &
                  cmcdatev, pip1list, ip2, RMN_ANY_I, &
@@ -757,21 +782,38 @@ contains
 !       endif
 
       F_fld%ks(:) = RMN_ERR
+      F_fld%kalt(:) = RMN_ERR
       F_fld%vgrid_S = ''
       F_fld%sfc_S = ''
-      IF_VINT2: if (RMN_IS_OK(F_istat) .and. F_cfgvar%vint_S /= 'none') then
-
-         istat = vgd_get(vgrid, 'RFLD', F_fld%sfc_S(1), quiet=.true.)
-         F_fld%sfc_S(1) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(1))
-         if (istat /= VGD_OK) F_fld%sfc_S(1) = ' '
-         istat = vgd_get(vgrid, 'RFLS', F_fld%sfc_S(2), quiet=.true.)
-         F_fld%sfc_S(2) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(2))
-         if (istat /= VGD_OK) F_fld%sfc_S(2) = ' '
+      F_fld%alt_S = ''
+      IF_VINT2: if (RMN_IS_OK(F_istat) .and. F_cfgvar%vint_S /= 'none' &
+           .and. F_vgridout_S /= '') then
+         ispressin_L = vgrid_wb_is_press_kind(vgrid)
+         ispressout_L = vgrid_wb_is_press_kind(F_vgridout_S)
+         usealtin_L = (ispressin_L .and. .not.ispressout_L)
+         if (usealtin_L) then
+            istat = vgrid_wb_get(F_vgridout_S, vgrid0, F_altfld_S=alt_S)
+            usealtin_L = (alt_S == '')
+         endif
+         if (usealtin_L) then
+            write(dummy_S, *) jdate_to_cmc(jdatev)
+            F_fld%alt_S = ADD_PREFIX3(F_fld%id, F_fileidx, trim(adjustl(dummy_S)), ALT_VGRID_H_FLDNAME)
+!!$         else if (ispressout_L .and. .not.ispressin_L) then  !#TODO
+!!$            write(dummy_S, *) jdate_to_cmc(jdatev)
+!!$            F_fld%alt_S = ADD_PREFIX3(F_fld%id, F_fileidx, trim(adjustl(dummy_S)), ALT_VGRID_P_FLDNAME)
+         else
+            istat = vgd_get(vgrid, 'RFLD', F_fld%sfc_S(1), quiet=.true.)
+            F_fld%sfc_S(1) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(1))
+            if (istat /= VGD_OK) F_fld%sfc_S(1) = ' '
+            istat = vgd_get(vgrid, 'RFLS', F_fld%sfc_S(2), quiet=.true.)
+            F_fld%sfc_S(2) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(2))
+            if (istat /= VGD_OK) F_fld%sfc_S(2) = ' '
+         endif
          F_fld%vgrid_S = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%vn1_S)
          istat = vgrid_wb_get(F_fld%vgrid_S, vgrid0)
          if (.not.RMN_IS_OK(istat)) then
             istat = vgrid_wb_put(F_fld%vgrid_S, vgrid, pip1list, &
-                 F_fld%sfc_S(1), F_fld%sfc_S(2))
+                 F_fld%sfc_S(1), F_fld%sfc_S(2), F_altfld_S=F_fld%alt_S)
          elseif (.not.(vgrid0 == vgrid)) then
             call msg(MSG_WARNING,'(inputio) vgrid, ignoring an inconsistant vgrid for '//trim(F_fld%vn1_S))
             return
@@ -781,13 +823,53 @@ contains
 
          if (ftype == INPUT_FILES_CLIM) then
             jdatev = MU_JDATE_ANY
+            cmcdatev = RMN_ANY_DATE
          elseif (ftype == INPUT_FILES_GEOP) then
             ip2 = RMN_ANY_I
             jdatev = MU_JDATE_ANY
+            cmcdatev = RMN_ANY_DATE
          else
             jdatev = F_fld%jdatev
          endif
+         fuzztype = FST_FIND_NEAR
          datevfuzz = 0
+         typvarlist_S(1) = F_cfgvar%typvar_S
+         ntypvar = 1
+         if (any(typvar_S == (/'r', 'R'/))) ntypvar = 0
+         if (any(ftype == (/INPUT_FILES_CLIM, INPUT_FILES_GEOP/))) then
+            typvarlist_S(ntypvar+1:ntypvar+4) = (/'C', 'A', 'P', 'X'/)
+         else
+            typvarlist_S(ntypvar+1:ntypvar+4) = (/'A', 'P', 'C', 'X'/)
+         endif
+         ntypvar = ntypvar + 4
+
+         !#TODO: try to reduce code dup with next (sfc) code bloc
+         istat = priv_altvcoor_status(F_fld%alt_S)
+         IF_ALT: if (.not.RMN_IS_OK(istat)) then
+!!$            vn_S = F_fld%alt_S
+!!$            vn_S = RM_PREFIX3(vn_S)
+            vn_S = ALT_VGRID_H_FLDNAME
+            pk1 => F_fld%kalt(:)
+            DO_TYPVAR1: do itypvar = 1, ntypvar
+               nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
+                    cmcdatev, pip1list, ip2, RMN_ANY_I, &
+                    datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
+               if (.not.RMN_IS_OK(nkeys)) then
+                  !#TODO: should we do this?, what if the alt field is date independent
+                  cmcdatev = RMN_ANY_DATE
+                  nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
+                       cmcdatev, pip1list, ip2, RMN_ANY_I, &
+                       datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
+               endif               
+               if (RMN_IS_OK(nkeys)) exit DO_TYPVAR1
+            enddo DO_TYPVAR1
+            if (nkeys /= F_fld%nkeys .or. .not.RMN_IS_OK(nkeys)) then
+               F_istat = RMN_ERR
+               F_fld%nkeys = 0
+               call msg(MSG_WARNING, '(inputio) Problem finding alt vgd coor field (' &
+                    //trim(vn_S)//') for: '//trim(F_fld%vn1_S)//' datev='//trim(cmcdate_toprint(cmcdatev))//' typv='//typvarlist_S(itypvar))
+            endif
+         endif IF_ALT
 
          DO_SFC: do nn = 1, size(F_fld%sfc_S)
             IF_SFC: if (F_fld%sfc_S(nn) /= ' ') then
@@ -796,16 +878,6 @@ contains
                ip1list = -1
                pip1list => ip1list(1:1)
                pk1 => F_fld%ks(nn:nn)
-               cmcdatev = jdate_to_cmc(jdatev)
-               typvarlist_S(1) = F_cfgvar%typvar_S
-               ntypvar = 1
-               if (any(typvar_S == (/'r', 'R'/))) ntypvar = 0
-               if (any(ftype == (/INPUT_FILES_CLIM, INPUT_FILES_GEOP/))) then
-                  typvarlist_S(ntypvar+1:ntypvar+4) = (/'C', 'A', 'P', 'X'/)
-               else
-                  typvarlist_S(ntypvar+1:ntypvar+4) = (/'A', 'P', 'C', 'X'/)
-               endif
-               ntypvar = ntypvar + 4
                DO_TYPVAR: do itypvar = 1, ntypvar
                   istat = fstmpio_find_3d_0(pk1, funit, vn_S, &
                        cmcdatev, pip1list, ip2, RMN_ANY_I, &
@@ -823,7 +895,8 @@ contains
                   F_istat = RMN_ERR
                   F_fld%nkeys = 0
                   call msg(MSG_WARNING, '(inputio) Problem finding sfc ref field (' &
-                       //trim(F_fld%sfc_S(nn))//') for: '//trim(F_fld%vn1_S))
+                       //trim(RM_PREFIX2(F_fld%sfc_S(nn)))//') for: '// &
+                       trim(RM_PREFIX2(F_fld%vn1_S)))
                endif
             endif IF_SFC
          enddo DO_SFC
@@ -852,7 +925,7 @@ contains
       character(len=8), target :: hints_S(1)
       character(len=8), pointer :: phints_S(:)
       integer :: istat, ivar
-      integer, target :: funit(1), hstats(2)
+      integer, target :: funit(1), hstats(2), hstats2(NMAX_LEVELS)
       integer, pointer :: pfunit(:), phstats(:), pk1(:), pk2(:)
       logical :: isassoc_L, isassoc2_L
       !------------------------------------------------------------------
@@ -904,6 +977,43 @@ contains
               //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S))
          return
       endif
+
+!!$         nullify(F_fld%palt)
+      isassoc2_L = associated(F_fld%palt)
+      READ_ALT: if (F_fld%alt_S /= '' .and. F_fld%kalt(1) >= 0) then
+         pk1 => F_fld%kalt(1:F_fld%nkeys)
+         phstats => hstats2(:)
+         phints_S(1) = 'cubic'
+         IF_BLOCIO1: if (F_cfgfile%iotype == PTOPO_BLOC) then
+            istat = fstmpi_rdhint_3d_r4( &
+                 F_fld%palt, phstats, pk1, phints_S, pfunit, &
+                 F_fld%hgridid, F_fld%hgridcoreid)
+         else
+            istat = fstmpio_rdhint_3d_r4( &
+                 F_fld%palt, phstats, pk1, phints_S, pfunit, &
+                 F_cfg%commgid, F_fld%hgridid, F_fld%hgridcoreid)
+         endif IF_BLOCIO1
+         !#TODO: review hstat and error checking
+!!$         hstat = maxval(hstats2(1:F_fld%nkeys))
+         if (RMN_IS_OK(istat)) then
+!!$            F_fld%hstat = max(F_fld%hstat, maxval(phstats))
+            if (.not.isassoc2_L) F_fld%altalloc_L = .true.
+            if (associated(F_fld%palt)) then
+!!$               vn_S = RM_PREFIX3(F_fld%alt_S)
+               vn_S = ALT_VGRID_H_FLDNAME
+               if (any(vn_S == (/'P0','p0'/))) then
+                  F_fld%palt(:,:,:) = F_fld%palt(:,:,:) * MB2PA
+                  !#TODO: does GZ need unit conversion?
+               endif
+            endif
+         else
+            F_istat = RMN_ERR
+            call msg(MSG_WARNING, '(inputio) Problem reading alt vgd coor fld: ' &
+                 //trim(F_fld%alt_S))
+            return
+         endif
+         
+      endif READ_ALT
 
       isassoc2_L = associated(F_fld%psfc)
       READ_SFC: if (F_fld%sfc_S(1) /= '' .and. F_fld%ks(1) >= 0) then
@@ -1076,6 +1186,10 @@ contains
          endif
 
       endif IF_NONE
+
+      if (RMN_IS_OK(F_istat) .and. F_fld%alt_S /= ' ') &
+           F_istat = priv_altvcoor_set(F_fld%alt_S, F_fld%palt)
+!!$      F_istat = priv_altvcoor_set(F_fld%alt_S, F_fld%dalt)
 
       write(msg_S, *) F_istat
       call msg(MSG_DEBUG, '(inputio) tint_set [END] '//trim(msg_S))
@@ -1402,7 +1516,7 @@ contains
       !*@/
       integer :: lijk(3), uijk(3)
       !------------------------------------------------------------------
-      !#TODO? nullify(F_fld%d1, F_fld%d2, F_fld%sfc)
+      !#TODO? nullify(F_fld%d1, F_fld%d2, F_fld%sfc, F_fld%dalt)
       if (associated(F_fld%p1)) then
          lijk = lbound(F_fld%p1)
          uijk = ubound(F_fld%p1)
@@ -1430,9 +1544,75 @@ contains
          uijk(2) = min(F_fld%l_jn, uijk(2))
          F_fld%sfc => F_fld%psfc(lijk(1):uijk(1),lijk(2):uijk(2),:)
       endif
+      if (associated(F_fld%palt)) then
+         lijk = lbound(F_fld%palt)
+         uijk = ubound(F_fld%palt)
+         lijk(1) = max(F_fld%l_i0, lijk(1))
+         lijk(2) = max(F_fld%l_j0, lijk(2))
+         uijk(1) = min(F_fld%l_in, uijk(1))
+         uijk(2) = min(F_fld%l_jn, uijk(2))
+         F_fld%dalt => F_fld%palt(lijk(1):uijk(1),lijk(2):uijk(2),:)
+      endif
       !------------------------------------------------------------------
       return
    end subroutine priv_set_scope
 
+   
+   !/@*
+   function priv_altvcoor_status(F_name_S) result(F_istat)
+      implicit none
+      character(len=*), intent(in) :: F_name_S
+      integer :: F_istat
+      !*@/
+      real, pointer :: data3d(:,:,:)
+      type(gmm_metadata) :: meta3d
+      !------------------------------------------------------------------
+!!$         if (F_fld%alt_S /= ' ') istat = gmm_getmeta(F_name_S, meta3d)  !getmeta is too verbose
+      F_istat = RMN_OK
+      if (F_name_S /= ' ') F_istat = gmm_get(F_name_S, data3d, meta3d)
+      !------------------------------------------------------------------
+      return
+   end function priv_altvcoor_status
+
+   
+   !/@*
+   function priv_altvcoor_set(F_name_S, F_data3d) result(F_istat)
+      implicit none
+      character(len=*), intent(in) :: F_name_S
+      real, pointer :: F_data3d(:,:,:)
+      integer :: F_istat
+      !*@/
+      integer :: lijk(3), uijk(3), lni, lnj, lnk
+      type(gmm_metadata) :: meta3d
+      real, pointer :: data3d(:,:,:)
+      !------------------------------------------------------------------
+      F_istat = RMN_OK
+      if (F_name_S == ' ' .or. .not.associated(F_data3d)) return
+      F_istat = priv_altvcoor_status(F_name_S)
+      if (RMN_IS_OK(F_istat)) return
+      
+      !#TODO: only keep the 2 time frames used for time interpolation
+      lijk = lbound(F_data3d)
+      uijk = ubound(F_data3d)
+      lni = uijk(1) - lijk(1) + 1
+      lnj = uijk(2) - lijk(2) + 1
+      lnk = uijk(3) - lijk(3) + 1
+      call gmm_build_meta3D(meta3d, &
+           lijk(1), uijk(1), 0, 0, lni, &
+           lijk(2), uijk(2), 0, 0, lnj, &
+           lijk(3), uijk(3), 0, 0, lnk, &
+           0, GMM_NULL_FLAGS)
+      nullify(data3d)
+      F_istat = gmm_create(F_name_S, data3d, meta3d, GMM_FLAG_RSTR)
+      if (.not.RMN_IS_OK(F_istat)) then
+         call msg(MSG_WARNING, '(inputio) Problem saving in gmm the alt vgd coor field: ' &
+              //trim(F_name_S))
+         return
+      endif
+      data3d = F_data3d
+      !------------------------------------------------------------------
+      return
+   end function priv_altvcoor_set
+   
 end module inputio_mod
 
