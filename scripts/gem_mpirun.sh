@@ -10,6 +10,7 @@ eval `cclargs_lite -D " " $0 \
    -npex    "1"     "1"  "[]"\
    -npey    "1"     "1"  "[]"\
    -tag       ""     ""  "[]"\
+   -gdb       ""     ""  "[]"\
    -inorder   ""     ""  "[]"\
    -minstdout ""     ""  "[]"\
    -nocleanup ""     ""  "[]"\

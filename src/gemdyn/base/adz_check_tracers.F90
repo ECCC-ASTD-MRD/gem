@@ -87,7 +87,7 @@
 
       if (.not.BC_LAM_L.and..not.psadj_LAM_flux_L) Adz_BC_LAM_flux = 0
 
-      if (Adz_verbose/=0.and.flux_keep/=Adz_BC_LAM_flux) &
+      if (Adz_verbose/=0.and.flux_keep/=Adz_BC_LAM_flux.and.Lun_out>0) &
          write(Lun_out,*) 'Revised Adz_BC_LAM_flux = ',Adz_BC_LAM_flux,'(INTERNAL PURPOSE)'
 
       !Bermejo-Conde LAM Flux=1/PSADJ LAM: Set mask_o/mask_i for Flux calculations based on Aranami et al. (2015)

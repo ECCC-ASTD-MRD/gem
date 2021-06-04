@@ -59,12 +59,15 @@
       real(kind=REAL64), dimension(l_ni,l_nj) :: xtmp_8, ytmp_8
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
       real, dimension(Minx:Maxx,Miny:Maxy,l_nk), target :: zero_array
-      zero_array=0.
+      real, dimension(:,:,:), pointer :: uu_tend,vv_tend
 !
 !     ---------------------------------------------------------------
 !
+      zero_array=0.
       if (Lun_debug_L) write (Lun_out,1000)
 
+      uu_tend => phy_uu_tend
+      vv_tend => phy_vv_tend
       if (Schm_phycpl_S == 'RHS') then
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
@@ -74,8 +77,8 @@
          phy_bA_t_8 = Cstv_bA_8
          iphytv = one
       else
-         phy_uu_tend => zero_array
-         phy_vv_tend => zero_array
+         uu_tend => zero_array
+         vv_tend => zero_array
          phy_bA_m_8 = 0.d0
          phy_bA_t_8 = 0.d0
          iphytv = zero
@@ -145,7 +148,7 @@
                                                  + (F_q(i  ,j,k+1)-F_q(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
                             + Ver_wm_8%m(k)*half*( (F_q(i+1,j,k  )-F_q(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
                                                  + (F_q(i  ,j,k  )-F_q(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )
-               F_oru(i,j,k) = F_oru(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_uu_tend(i,j,k)
+               F_oru(i,j,k) = F_oru(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * uu_tend(i,j,k)
             end do
          end do
 
@@ -169,7 +172,7 @@
                                                  + (F_q(i,j  ,k+1)-F_q(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
                             + Ver_wm_8%m(k)*half*( (F_q(i,j+1,k  )-F_q(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
                                                  + (F_q(i,j  ,k  )-F_q(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )
-               F_orv(i,j,k) = F_orv(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * phy_vv_tend(i,j,k)
+               F_orv(i,j,k) = F_orv(i,j,k) + ((1d0-phy_bA_m_8)/Cstv_bA_m_8) * vv_tend(i,j,k)
             end do
          end do
 

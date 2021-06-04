@@ -16,7 +16,7 @@ before_script:
 build_intel:
   stage: build_intel
   script:
-    - . ./scripts/link-dbase.sh
+    - ln -s /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
