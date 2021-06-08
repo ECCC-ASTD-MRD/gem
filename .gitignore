@@ -7,6 +7,8 @@ gem_dbase.tar.gz
 build*
 work*
 src/gemdyn/expo
-!src/gemdyn/expo/exp_stubs.F90
-doc/html
-
+benchmark_dbase
+benchmark-GY-15.tar.gz
+Benchmark_GY15
+README-benchmark-GY15
+configurations/GEM_cfgs_GY15

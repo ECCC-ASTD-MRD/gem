@@ -1,8 +1,8 @@
 # Instructions in a nutshell
 
-**Warning: dev-5.2 is a development branch: some configurations may not
-work, especially with gnu compiler suite, such as those whose name ends with
-"H"**
+**Even if we recommend using 5.2 branch, please note that it is a
+development version, as 5.1 is the stable version.  Benchmarks should be
+used with 5.2.**
 
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
@@ -12,12 +12,15 @@ See below for extended instructions.  Further details are can be found in
     cd gem
     # Optionnaly checkout a specific branch:
     # git checkout <branch_name>
+ 
+    # Download the data files required to run GEM
+    ./download-dbase.sh .
 
-	# Important: in order to set environment variables needed to run GEM, use the
-	# following setup file:
-	. ./.common_setup gnu
-	or
-	. ./.common_setup intel
+    # Important: in order to set environment variables needed to run GEM, use the
+    # following setup file, after setting up your compiler environment:
+    . ./.common_setup gnu
+    or
+    . ./.common_setup intel
 	
     # Create a build directory
     # The build directory has very little value in itself and can be placed
@@ -31,11 +34,8 @@ See below for extended instructions.  Further details are can be found in
     # Create an execution environment for GEM
     make -j work
 
-    # Download the data files required to run GEM
     cd ..
-    ./download-dbase.sh .
-
-    cd work-${OS_NAME}-${COMPILER_NAME}
+	cd work-${OS_NAME}-${COMPILER_NAME}
     # Configure the model with one of the configurations
     # and execute the model, for example:
     runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
@@ -49,6 +49,14 @@ See below for extended instructions.  Further details are can be found in
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
 
+For benchmarks, please install and compile GEM as indicated above, then
+download the following file (3 GB), and install it in the main
+directory. It includes data and configurations files, and  a file named
+README-benchmark-GY15 with details on how to run it:
+
+```
+    ./download-benchmark-GY15.sh .
+```
 
 -----------------------------------------------------------------
 # Extended instructions:
