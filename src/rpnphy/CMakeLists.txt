@@ -10,6 +10,7 @@ file(GLOB FTNSRC */*.F90)
 
 add_compile_options(${AVG_FLAG})
 include_directories(series)
+include_directories(surface)
 include_directories(${ROOT}/src/modelutils/include)
 include_directories(${CMAKE_BINARY_DIR}/src/modelutils)
 include_directories(${CMAKE_BINARY_DIR}/src/vgrid)
