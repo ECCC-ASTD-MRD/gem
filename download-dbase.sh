@@ -4,7 +4,7 @@ set -e
 
 GEM_DBASE="gem_dbase.tar.gz"
 GEM_DBASE_URL="http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/${GEM_DBASE}"
-GEM_DBASE_MD5SUM="5af85d7041a43e01b3d27301077ccc1c"
+GEM_DBASE_MD5SUM="5710fae7f3896e9f1dbee3991fe90284"
 
 printUsage() {
     echo -e "Download a sample database of data files needed to run GEM to the work dir\n"

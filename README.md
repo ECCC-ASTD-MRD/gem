@@ -1,5 +1,10 @@
 # Instructions in a nutshell
 
+**The 5.1 branch is the stable version, used in production at the Canadian
+Meteorological Centre.
+The 5.2 branch is a development version.
+Benchmarks must be used with 5.2 version.**
+
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
