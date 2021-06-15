@@ -1,8 +1,9 @@
 # Instructions in a nutshell
 
-**Even if we recommend using 5.2 branch, please note that it is a
-development version, as 5.1 is the stable version.  Benchmarks should be
-used with 5.2.**
+**The 5.2 branch is a development version.
+The 5.1 branch is the stable version, used in production at the Canadian
+Meteorological Centre.
+Benchmarks must be used with 5.2 version.**
 
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).

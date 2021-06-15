@@ -17,12 +17,12 @@ set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 add_definitions(-DLittle_Endian)
 
 set(CMAKE_C_FLAGS "-g -fpic -I." CACHE STRING "C compiler flags" FORCE)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
+set(CMAKE_C_FLAGS_DEBUG "-g")
+set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 set(CMAKE_Fortran_FLAGS "-g -byteswapio -fast -Mvect=fuse,simd -Kieee -fpic -traceback" CACHE STRING "Fortran compiler flags" FORCE)
-set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -g")
-set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O2")
+set(CMAKE_Fortran_FLAGS_DEBUG "-g")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
 #set(MPI_Fortran_COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS} ${CMAKE_Fortran_FLAGS}" CACHE STRING "MPI Fortran compiler flags")
 

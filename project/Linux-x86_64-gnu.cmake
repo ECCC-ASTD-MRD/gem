@@ -3,7 +3,7 @@
 find_program(CMAKE_C_COMPILER gcc)
 find_program(CMAKE_Fortran_COMPILER gfortran)
 
-# I don't know why, but enable_language exmpties CMAKE_BUILD_TYPE!
+# I don't know why, but enable_language empties CMAKE_BUILD_TYPE!
 # We therefore have to back it up and restore it after enable_language
 set(TMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 
@@ -25,13 +25,13 @@ message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 set(BLAS_LIBRARIES "blas")
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 
-set(CMAKE_C_FLAGS "-march=native -w -fpic")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -g")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
+set(CMAKE_C_FLAGS "-march=native -Wall -Wextra -fpic")
+set(CMAKE_C_FLAGS_DEBUG "-g")
+set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS "-march=native -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fbacktrace -fconvert=big-endian -fcray-pointer -fdump-core -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -finit-real=nan -fno-second-underscore -frecord-marker=4 -I.")
-set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -g")
-set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O2")
+set(CMAKE_Fortran_FLAGS "-march=native -Wall -Wextra -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fconvert=big-endian -fcray-pointer -fdump-core -ffree-line-length-none -finit-real=nan -fno-second-underscore -frecord-marker=4 -I.")
+set(CMAKE_Fortran_FLAGS_DEBUG "-g -fbacktrace -ffpe-trap=invalid,zero,overflow,underflow")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
 if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 9.3)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch -fallow-invalid-boz")
