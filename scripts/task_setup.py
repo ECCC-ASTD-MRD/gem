@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #/* Part of the Maestro sequencer software package.
 # * Copyright (C) 2011-2015  Canadian Meteorological Centre
@@ -217,8 +217,8 @@ def getRealPath(node,verbosity):
     try:
         get_real_path = "realpath "+node
         if have_subprocess:
-            p = subprocess.Popen(get_real_path,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            true_src = p.stdout.read()                
+            p = subprocess.Popen(get_real_path,shell=True,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            true_src = p.stdout.read()
             error_out = p.stderr.read()
         else:
             (stdin,stdout,stderr) = os.popen3(get_real_path,'r')
@@ -274,7 +274,7 @@ class LinkFile():
                 file_list = "ssh "+hostname+" \"python -c 'import glob; f=glob.glob(\\\""+self.target[i]+"\\\"); print(\\\""+file_sep+"\\\".join(f))'\""
                 if self.have_subprocess:
                     import subprocess
-                    p = subprocess.Popen(file_list,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                    p = subprocess.Popen(file_list,shell=True,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                     output = p.stdout.read()
                     error = p.stderr.read()
                 else:
@@ -313,7 +313,7 @@ class LinkFile():
             check_file += "'"
             if self.have_subprocess:
                 import subprocess
-                p = subprocess.Popen(check_file,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                p = subprocess.Popen(check_file,shell=True,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 output = p.stdout.read().rstrip('\n')
                 error = p.stderr.read()
             else:
@@ -421,7 +421,7 @@ class Section(list):
             for var in list(internals.keys()):
                 command_prefix = command_prefix+str(var)+'='+str(internals[var])+'; '
             if have_subprocess:
-                p = subprocess.Popen(command_prefix+command.group(1),shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                p = subprocess.Popen(command_prefix+command.group(1),shell=True,universal_newlines=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 error_message = p.stderr.read().rstrip('\n')
                 outbuf = p.stdout.read().rstrip('\n ')
             else:
@@ -555,13 +555,12 @@ class Config(dict):
         except OSError:
             print("Warning: Unable to create temporary file for call statement")
             return(None)
-
-        if type(contents) == types.InstanceType:
+        if isinstance(contents, dict):
             keys = list(contents.keys())
             keys.sort()
             for key in keys:
                 fd.write(str(key)+'='+str(contents[key])+'\n')
-        if type(contents) == list:
+        elif isinstance(contents, list):
             fd.write(' '.join(contents)+'\n')
         else:
             fd.write(str(contents)+'\n')
@@ -571,7 +570,7 @@ class Config(dict):
     def _readSetFile(self,file):
         """Read set file"""
         try:
-            fd = open(file,"rb")
+            fd = open(file,"r")
             setData = fd.readlines()
         except IOError:
             print("Warning: unable to read set from "+file)
@@ -603,7 +602,7 @@ class Config(dict):
             self.configData = ''
             return
         try:
-            fd = open(file,"rb")
+            fd = open(file,"r")
             try:
                 self.configData = fd.readlines()
             finally:
@@ -802,7 +801,7 @@ class Config(dict):
                        " ]] ; then echo TASK_SETUP_SUCCESS ; else echo TASK_SETUP_FAILURE ; fi\" | ssh "+ \
                        host+" bash --login"
             if have_subprocess:
-                p = subprocess.Popen(make_dir,shell=True,stderr=subprocess.PIPE,stdout=subprocess.PIPE)
+                p = subprocess.Popen(make_dir,shell=True,universal_newlines=True,stderr=subprocess.PIPE,stdout=subprocess.PIPE)
                 error = p.stderr.read()
                 output = p.stdout.read()
             else:
