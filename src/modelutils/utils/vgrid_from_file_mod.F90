@@ -407,8 +407,8 @@ contains
       endif
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(F_vgrid, comm_S, F_iplist, levtype, sfcfld_S, &
-           ipe_master, me)
+      F_istat = vgrid_wb_bcast(F_vgrid, F_iplist, levtype, sfcfld_S, &
+           comm_S, ipe_master, me)
       !TODO: ?need to distribute F_sfcRefKey?
       F_levtype_S = 'SFC'
       if (levtype == VGRID_UPAIR_M_TYPE) F_levtype_S = 'M'
