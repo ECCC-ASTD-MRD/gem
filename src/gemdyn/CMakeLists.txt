@@ -6,6 +6,7 @@ set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 
 file(GLOB FTNSRC */*.F90)
 file(GLOB CSRC  */*.c)
+list(FILTER FTNSRC EXCLUDE REGEX "${ROOT}/src/gemdyn/main/main*" )
 
 add_library (gem STATIC ${FTNSRC} ${CSRC})
 target_include_directories(gem PRIVATE
@@ -22,3 +23,6 @@ if (EXTRA_DEBUG)
   target_compile_options( gem PRIVATE "$<$<CONFIG:Debug>:-fcheck=bounds>" )
   message(STATUS "Extra flags for gemdyn: -fcheck=bounds")
 endif()
+
+add_subdirectory(main gemdyn-main)
+add_subdirectory(no_mpi gemdyn_no_mpi)

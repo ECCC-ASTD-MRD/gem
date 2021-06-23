@@ -100,10 +100,10 @@ message(STATUS "GEM_VERSION=${GEM_VERSION}")
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
 # compiler defined above or the argument given to cmake command.
-message(STATUS "arch-dependent include directory: ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}")
+message(STATUS "arch-dependent include directory: ${ROOT}/src/rpn-si/archdep/include/${ARCH}-${COMPILER}")
 
 include_directories(
-   ${ROOT}/src/archdep/include/${ARCH}-${COMPILER}
+   ${ROOT}/src/rpn-si/archdep/include/${ARCH}-${COMPILER}
    ${ROOT}/src/rpn-si/mpi-extras
    ${ROOT}/src/rpn-si/rpncomm
    ${ROOT}/src/rpn-si/rmn/PUBLIC_INCLUDES
@@ -168,13 +168,17 @@ add_custom_target(work
         $<TARGET_FILE:maingemdm>
         $<TARGET_FILE:gemgrid>
         $<TARGET_FILE:yy2global>
+        $<TARGET_FILE:yydecode>
+        $<TARGET_FILE:yyencode>
         $<TARGET_FILE:feseri>
         $<TARGET_FILE:prphynml>
         $<TARGET_FILE:checkdmpart>
         $<TARGET_FILE:prgemnml>
+        $<TARGET_FILE:toc2nml>
         $<TARGET_FILE:gem_monitor_output>
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:r.fstinfo>
+        $<TARGET_FILE:r.filetype>
         ${WORK_DIR}/bin
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
 #    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
@@ -185,13 +189,17 @@ add_custom_target(work
         maingemdm
         gemgrid
         yy2global
+	yyencode
+	yydecode
         feseri
         prphynml
         checkdmpart
         prgemnml
+        toc2nml
         gem_monitor_output
         gem_monitor_end
         r.fstinfo
+        r.filetype
 )
 
 # TODO: Make the actual installation in CMAKE_INSTALL_PREFIX
