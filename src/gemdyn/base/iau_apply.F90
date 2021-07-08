@@ -29,9 +29,10 @@ subroutine iau_apply (F_kount)
    use tdpack
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
-
    use cstv
    use gem_options
+   use dyn_fisl_options, only: Cstv_Tstr_8  
+   use dynkernel_options, only: Dynamics_Kernel_S
    use init_options
    use inp_options
    use gmm_vt1
@@ -41,6 +42,7 @@ subroutine iau_apply (F_kount)
    use HORgrid_options, only: Grd_global_gid, &
         Grd_glbcore_gid, Grd_yinyang_L
    use inp_mod, only: Inp_comm_id
+   use metric
    use path
    use step_options
    use var_gmm
@@ -74,27 +76,33 @@ subroutine iau_apply (F_kount)
    character(len=32), parameter  :: IAU_ALTFLD_T_S = 'IAUALTFLDT:P'
    logical, parameter :: UVSCAL2WGRID = .false.
    logical, parameter :: ALLOWDIR = .true.
-   logical, parameter :: DO_TT2TV = .true.
+   logical, parameter :: DO_TT2VT = .true.
+   
    logical, save :: is_init_L = .false.
    integer, save :: nbvar = 0
    integer, save :: step_freq2 = 0
    integer, save :: kount = 0
    type(INPUTIO_T), save :: inputobj
    real, pointer, save :: weight(:)
+   real, pointer, save :: vt(:,:,:) => null()
+
    real, pointer, dimension(:,:) :: iau_rfld, pw_rfld
    real, pointer, dimension(:,:,:) :: iau_altfld, pw_altfld
    character(len=256) :: incfg_S, vgrid_S, msg_S
    character(len=32)  :: rfld_S, rfldls_S, altfld_M_S, altfld_T_S
    character(len=16)  :: iname0_S, iname1_S, datev_S
    integer :: istat, dateo, datev, iau_vtime, step_freq, ivar, ni1, nj1, &
-        i, j, n, nw, add, lijk(3), uijk(3), step_0
+        i, j, k, n, nw, add, lijk(3), uijk(3), step_0, ipass
    integer(IDOUBLE) :: jdateo
    real, pointer, dimension(:,:,:) :: data0, data1
    real, pointer, dimension(:,:,:) :: myptr0, myptr1
    real, pointer, dimension(:,:) :: myptr2d
    type(gmm_metadata) :: mymeta
    type(vgrid_descriptor) :: vgridm, vgridt
-   integer, pointer :: ip1list(:), ip1listref(:)
+   integer, pointer :: ip1list_m(:), ip1list_t(:), ip1listref(:)
+
+   real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: delq
+   
    !--------------------------------------------------------------------------
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
@@ -218,10 +226,10 @@ subroutine iau_apply (F_kount)
       end select
 
       !# define a vert coor with ref on l_ni/j
-      nullify(ip1list)
-      istat = vgrid_wb_get(VGRID_M_S, vgridm, ip1list, F_sfcfld_S=rfld_S, &
+      nullify(ip1list_m, ip1list_t)
+      istat = vgrid_wb_get(VGRID_M_S, vgridm, ip1list_m, F_sfcfld_S=rfld_S, &
            F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
-      istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
+      istat = vgrid_wb_get(VGRID_T_S, vgridt, ip1list_t, F_altfld_S=altfld_T_S)
 
       mymeta = GMM_NULL_METADATA
       mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
@@ -231,9 +239,10 @@ subroutine iau_apply (F_kount)
       if (rfldls_S /= '') rfldls_S = IAU_RFLD_LS_S
       if (altfld_M_S /= '') altfld_M_S = IAU_ALTFLD_M_S
       if (altfld_T_S /= '') altfld_T_S = IAU_ALTFLD_T_S
-      ip1listref => ip1list(1:G_nk)
+      ip1listref => ip1list_m(1:G_nk)
       istat = vgrid_wb_put(IAU_VGRID_M_S, vgridm, ip1listref, rfld_S, &
            rfldls_S, F_overwrite_L=.true., F_altfld_S=altfld_M_S)
+      ip1listref => ip1list_t(1:G_nk)
       istat = vgrid_wb_put(IAU_VGRID_T_S, vgridt, ip1listref, rfld_S, &
            rfldls_S, F_overwrite_L=.true., F_altfld_S=altfld_T_S)
      
@@ -258,13 +267,14 @@ subroutine iau_apply (F_kount)
       
       istat = vgd_free(vgridm)
       istat = vgd_free(vgridt)
-      if (associated(ip1list)) deallocate(ip1list,stat=istat)
+      if (associated(ip1list_m)) deallocate(ip1list_m, stat=istat)
+      if (associated(ip1list_t)) deallocate(ip1list_t, stat=istat)
 
    end if IF_INIT
    
    !# Update reference surface field for vgrid
    istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=rfld_S, &
-        F_sfcfld2_S=rfldls_S)
+        F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
    istat = vgd_free(vgridm)
    istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
    istat = vgd_free(vgridt)
@@ -306,8 +316,12 @@ subroutine iau_apply (F_kount)
 
 
    if (F_kount > 0) kount = F_kount+step_freq2-1
-   DO_IVAR: do ivar = 1, nbvar
+   DO_IPASS: do ipass = 1, 2
+   DO_IVAR:  do ivar = 1, nbvar
       istat = inputio_meta(inputobj%cfg, ivar, iname0_S, iname1_S)
+      if (ipass == 1 .and. iname0_S == 'p0') cycle
+      if (ipass == 2 .and. iname0_S /= 'p0') cycle
+      
       nullify(data0, data1)
       istat = gmm_get(IAU_PREFIX//trim(iname0_S), data0)
       if (iname1_S /= '') istat = gmm_get(IAU_PREFIX//trim(iname1_S), data1)
@@ -407,7 +421,14 @@ subroutine iau_apply (F_kount)
             istat = gmm_get(gmmk_pw_uu_plus_s, myptr0)
             istat = gmm_get(gmmk_pw_vv_plus_s, myptr1)
          case('p0')
-            istat = gmm_get(gmmk_st1_s, myptr2d)
+            if (Dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
+               istat = gmm_get(gmmk_st1_s, myptr2d)
+            elseif (Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
+               istat = gmm_get(gmmk_qt1_s, myptr0)
+               istat = gmm_get(gmmk_tt1_s, tt1)  !# Not incremented VT
+            else
+               call gem_error(-1, 'iau_apply', 'dynamic kernel not yet supported: '//trim(Dynamics_Kernel_S))
+            endif
          case default
             istat = clib_toupper(iname0_S)
             istat = gmm_get('TR/'//trim(iname0_S)//':P', myptr0)
@@ -426,8 +447,42 @@ subroutine iau_apply (F_kount)
                  trim(iname1_S)//trim(msg_S))
          end if
 
-         if (associated(myptr0)) myptr0(1:ni1,1:l_nj,:) = &
-              myptr0(1:ni1,1:l_nj,:) + weight(F_kount) * data0(1:ni1,1:l_nj,:)
+         if (associated(myptr0)) then
+            if (iname0_S == 'p0') then
+              
+               if (.not.associated(vt)) allocate(vt(l_minx:l_maxx, l_miny:l_maxy, G_nk))
+               call tt2virt(vt, DO_TT2VT, l_minx, l_maxx, l_miny, l_maxy, G_nk)  !# compute VT from incremented TT,HU,...
+               ! Adjusting the surface value of qt1
+               myptr0(1:l_ni,1:l_nj,l_nk+1) = &
+                       myptr0(1:l_ni,1:l_nj,l_nk+1) + rgasd_8*Cstv_Tstr_8* &
+                       log(1 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
+                           exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
+                           (rgasd_8*Cstv_Tstr_8) ) )
+               
+               ! Initializing delq with the surface value         
+               delq(1:l_ni,1:l_nj)= rgasd_8*Cstv_Tstr_8* &
+                       log(1. + data0(1:l_ni,1:l_nj,1) / &
+                           exp(lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
+                           (rgasd_8*Cstv_Tstr_8) ) )
+
+               ! Integrating the hydrostatic relation with delq at the surface as boundary condition
+               do k = l_nk, 1
+                  ! Computing delq at level k from k+1 for IAU increments
+                  delq(1:l_ni,1:l_nj)=delq(1:l_ni,1:l_nj)+ grav_8*Cstv_Tstr_8* &
+                           (1./vt(1:l_ni,1:l_nj,k) - 1./tt1(1:l_ni,1:l_nj,k))/ & 
+                           mc_iJz_8(1:l_ni,1:l_nj,k)
+                  
+                  ! Updating qt1 at level k with the IAU increments
+                  myptr0(1:l_ni,1:l_nj,k) = &
+                            myptr0(1:l_ni,1:l_nj,k) + rgasd_8*Cstv_Tstr_8* &
+                            log(1. + weight(F_kount)*(exp(delq(1:l_ni,1:l_nj)/ &
+                            (rgasd_8*Cstv_Tstr_8)) - 1.) )                 
+               end do
+            else
+               myptr0(1:ni1,1:l_nj,:) = &
+                    myptr0(1:ni1,1:l_nj,:) + weight(F_kount) * data0(1:ni1,1:l_nj,:)
+            endif
+         endif
          if (associated(myptr1) .and. associated(data1)) &
               myptr1(1:l_ni,1:nj1,:) = &
               myptr1(1:l_ni,1:nj1,:) + weight(F_kount) * data1(1:l_ni,1:nj1,:)
@@ -444,6 +499,7 @@ subroutine iau_apply (F_kount)
       end if IF_KOUNT0
 
    end do DO_IVAR
+   end do DO_IPASS
 
    if (F_kount > 0) then
       call msg(MSG_INFO, ' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//&
