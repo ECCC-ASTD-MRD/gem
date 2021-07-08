@@ -29,8 +29,8 @@ set(CMAKE_C_FLAGS "-march=native -Wall -Wextra -fpic")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS "-march=native -Wall -Wextra -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fbacktrace -fconvert=big-endian -fcray-pointer -fdump-core -ffpe-trap=invalid,zero,overflow -ffree-line-length-none -finit-real=nan -fno-second-underscore -frecord-marker=4 -I.")
-set(CMAKE_Fortran_FLAGS_DEBUG "-g -ffpe-trap=underflow")
+set(CMAKE_Fortran_FLAGS "-march=native -Wall -Wextra -Wno-compare-reals -Wno-conversion -Wno-unused-dummy-argument -Wno-unused-parameter -fbacktrace -fconvert=big-endian -fcray-pointer -fdump-core -ffree-line-length-none -finit-real=nan -fno-second-underscore -frecord-marker=4 -I.")
+set(CMAKE_Fortran_FLAGS_DEBUG "-g -ffpe-trap=invalid,zero,overflow")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 
 if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 9.3)
