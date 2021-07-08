@@ -68,7 +68,7 @@
 
       if (.not.F_checkparti_L) call glbpos ()
 
-      if (Lctl_debug_L) write(Lun_out,2000) Ptopo_myrow,Ptopo_mycol,&
+      if (Lun_debug_L) write(Lun_out,2000) Ptopo_myrow,Ptopo_mycol,&
                           l_ni,l_nj,l_i0,l_i0+l_ni-1,l_j0,l_j0+l_nj-1
 
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'&

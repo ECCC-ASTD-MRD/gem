@@ -29,6 +29,8 @@
       use tr3d
       use vGrid_Descriptors, only : vgrid_descriptor
       use gem_timing
+      use step_options
+      use wil_options
       implicit none
 
       include 'mpif.h'
@@ -37,6 +39,7 @@
       character(len=*), intent(IN) :: F_datev_S
       integer topo_diff,comm,err,gathV(Ptopo_numproc*Ptopo_ncolors)
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: nest_sls
+      integer :: deb,n
 !     
 !     ---------------------------------------------------------------
 !
@@ -57,6 +60,24 @@
       else
          nest_sls= 0.
       endif
+
+      !Impose REFERENCE solution in nesting zone 
+      !-----------------------------------------------------
+      if (Schm_autobar_L.and.Williamson_case==1.and.(Williamson_Nair==0.or.Williamson_Nair==3)) then
+
+         call wil_uvcase1 (nest_u_fin,nest_v_fin,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.,Lctl_step)
+
+         !Initialize Q1
+         !-------------
+         do n=1,Tr3d_ntr
+            if (trim(Tr3d_name_S(n))/='Q1') cycle
+            deb = (n-1) * l_nk + 1
+            if (Williamson_Nair==0) call wil_case1(nest_tr_fin(l_minx,l_miny,deb),l_minx,l_maxx,l_miny,l_maxy,l_nk,0,Lctl_step)
+            if (Williamson_Nair==3) call wil_case1(nest_tr_fin(l_minx,l_miny,deb),l_minx,l_maxx,l_miny,l_maxy,l_nk,5,Lctl_step)
+         end do
+
+      end if
+
 
       call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
                       nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&
