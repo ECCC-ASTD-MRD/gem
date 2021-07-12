@@ -1,5 +1,5 @@
-find_program(CMAKE_C_COMPILER "icc")
-find_program(CMAKE_Fortran_COMPILER "ifort")
+find_program(CMAKE_C_COMPILER "cc")
+find_program(CMAKE_Fortran_COMPILER "ftn")
 
 find_program(MPI_C_COMPILER "cc")
 find_program(MPI_Fortran_COMPILER "ftn")
