@@ -8,10 +8,14 @@ Benchmarks must be used with 5.2 version.**
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
+**Warning: dev-5.2 branch uses a submodule. Make sure you follow the
+instructions below for that branch**
+
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
-	git submodule update --init --recursive
     cd gem
+    git checkout dev-5.2
+    git submodule update --init --recursive
     # Optionnaly checkout a specific branch:
     # git checkout <branch_name>
  
