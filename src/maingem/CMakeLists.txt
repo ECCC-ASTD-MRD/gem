@@ -7,6 +7,12 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
+message(STATUS "CMAKE_C_FLAGS for GEM: ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS for GEM: ${CMAKE_Fortran_FLAGS}")
+
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm
    gem
@@ -61,9 +67,6 @@ target_link_libraries(prgemnml
 )
 add_dependencies(prgemnml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
-install(TARGETS prgemnml RUNTIME 
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
-
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
    gem
@@ -110,6 +113,5 @@ target_link_libraries(prphynml
 )
 add_dependencies(prphynml phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
-install(TARGETS maingemdm gemgrid checkdmpart feseri prphynml RUNTIME 
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
-
+install(TARGETS maingemdm gemgrid checkdmpart feseri prphynml prgemnml RUNTIME 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

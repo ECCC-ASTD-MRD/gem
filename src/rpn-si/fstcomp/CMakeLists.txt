@@ -9,4 +9,4 @@ target_link_libraries(fstcomp
 
 add_dependencies(fstcomp rmn)
 
-install(TARGETS fstcomp RUNTIME DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+install(TARGETS fstcomp RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

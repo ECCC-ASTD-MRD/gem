@@ -9,4 +9,5 @@ target_link_libraries(fststat rmn
 
 add_dependencies(fststat rmn)
 
-install(TARGETS fststat RUNTIME DESTINATION ${ROOT}/work/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+install(TARGETS fststat RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+

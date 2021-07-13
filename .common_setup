@@ -10,15 +10,15 @@ if [[ $# -eq 0 ]] ; then
 else
     unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
 
-    COMPILER_suite=${1}
+    COMPILER_SUITE=${1}
     platform=$(project/os.sh)
-    if [ -z ${COMPILER_version} ] || [ "${COMPILER_version}" == "Unknown_Compiler" ] ; then
-        COMPILER_version=$(project/compiler.sh ${COMPILER_suite})
+    if [ -z ${COMPILER_VERSION} ] || [ "${COMPILER_VERSION}" == "Unknown_Compiler" ] ; then
+        COMPILER_VERSION=$(project/compiler.sh ${COMPILER_SUITE})
     fi
-    export COMPILER_version
+    export COMPILER_VERSION
 
-    if [ -n "${platform}" -a "${COMPILER_version}" != "Unknown_Compiler" ]; then
-        export GEM_ARCH=${platform}-${COMPILER_suite}-${COMPILER_version}
+    if [ -n "${platform}" -a "${COMPILER_VERSION}" != "Unknown_Compiler" ]; then
+        export GEM_ARCH=${platform}-${COMPILER_SUITE}-${COMPILER_VERSION}
         export GEM_WORK=work-${GEM_ARCH}
         
         if [ -n "${storage_model}" ] ; then

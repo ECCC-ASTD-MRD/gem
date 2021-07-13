@@ -10,6 +10,7 @@ See below for extended instructions.  Further details are can be found in
 
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
+	git submodule update --init --recursive
     cd gem
     # Optionnaly checkout a specific branch:
     # git checkout <branch_name>
@@ -25,13 +26,13 @@ See below for extended instructions.  Further details are can be found in
 	
     # Create a build directory
     # The build directory has very little value in itself and can be placed
-    # outside the project directory
+    # outside the source directory
     mkdir -p build
     cd build
 
-    # If the -DWORK_PREFIX=<path> option isn't given to cmake, the work directory
+    # If the -DCMAKE_INSTALL_PREFIX=<path> option isn't given to cmake, the work directory
     # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
-    cmake ../project
+    cmake ..
     # Create an execution environment for GEM
     make -j work
 
@@ -84,7 +85,7 @@ link:
 
 ### GNU compiler suite
 - By default GEM is configured to use gfortran and gcc compilers
-- Changes to the C and Fortran flags can be done in **project/Linux-x86_64-gnu.cmake**
+- Changes to the C and Fortran flags can be done in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
   which will need to be adapted for your setup:
@@ -104,7 +105,7 @@ link:
 
 ### Intel Compilers
 
-- Changes to the C and Fortran flags can be done in **project/Linux-x86_64-intel.cmake**
+- Changes to the C and Fortran flags can be done in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
     - You may need to modify ```-march``` to generate code that can run on
       your system
 - Make sure the compilers and libraries are in the appropriate
@@ -122,11 +123,11 @@ without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
 The default compiler suite is GNU. If you want to compile with other compilers,
-add ```-DCOMPILER=<compiler suite name (gnu|intel)>``` to the CMake
+add ```-DCOMPILER_SUITE=<compiler suite name (gnu|intel)>``` to the CMake
 command line.  This release has been tested with GNU and Intel compilers on
 Linux x86_64.  Other compilers have also been used in the past but have not been
 tested with the current release.  You will likely have to modify the *.cmake
-files in the **project** folder.
+files in the **cmake_rpn/ec_compiler_presets/default/** folder.
 
 - If you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
@@ -143,7 +144,7 @@ files in the **project** folder.
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
 (work-${OS_NAME}-${COMPILER_NAME}). For example
-*work-Fedora-32-x86_64-gnu-10.2.1* could be created in the main directory,
+*work-Fedora-33-x86_64-gnu-10.3.1* could be created in the main directory,
 and the following executables are installed in the *bin* sub-folder: 
 - cclargs_lite
 - checkdmpart
@@ -167,7 +168,7 @@ and the following executables are installed in the *bin* sub-folder:
 ## Running GEM
 
 Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
-example *work-Fedora-32-x86_64-gnu-10.2.1*
+example *work-Fedora-33-x86_64-gnu-10.3.1*
 
 ```
     cd work-${OS-NAME}_${COMPILER-NAME}

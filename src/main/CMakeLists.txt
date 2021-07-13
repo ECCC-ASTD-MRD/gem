@@ -19,7 +19,7 @@ target_link_libraries(r.fstinfo rmn
 target_link_libraries(voir rmn
                       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${EXTRA_LIBRARIES} )
 
-
 install(TARGETS yy2global flipit r.fstinfo voir RUNTIME
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 
