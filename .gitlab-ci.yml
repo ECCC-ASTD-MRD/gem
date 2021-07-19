@@ -26,6 +26,8 @@ build_intel:
     paths:
     - work*
     - gem_dbase
+  only:
+  - dev-5.2
 
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_intel
@@ -34,6 +36,8 @@ build_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
     - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+  only:
+  - dev-5.2
 
 CANO_W7cascP_intel:
   stage: run_configs_intel
@@ -42,6 +46,8 @@ CANO_W7cascP_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
     - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+  only:
+  - dev-5.2
 
 CANO_dcmip163r100_intel:
   stage: run_configs_intel
@@ -50,6 +56,8 @@ CANO_dcmip163r100_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
     - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+  only:
+  - dev-5.2
 
 CANO_wil7_intel:
   stage: run_configs_intel
@@ -58,6 +66,8 @@ CANO_wil7_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
     - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+  only:
+  - dev-5.2
 
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
@@ -66,6 +76,8 @@ GEM_GY_FISL_P_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
     - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+  only:
+  - dev-5.2
 
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
@@ -74,6 +86,8 @@ GEM_LU_FISL_H_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
     - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+  only:
+  - dev-5.2
 
 GEM_LU_OFFC_intel:
   stage: run_configs_intel
@@ -82,6 +96,8 @@ GEM_LU_OFFC_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
     - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+  only:
+  - dev-5.2
 
 PTOPO_GYH_intel:
   stage: run_configs_intel
@@ -90,6 +106,8 @@ PTOPO_GYH_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
     - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+  only:
+  - dev-5.2
 
 PTOPO_LUP_intel:
   stage: run_configs_intel
@@ -98,6 +116,8 @@ PTOPO_LUP_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
     - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+  only:
+  - dev-5.2
 
 RSTRT_GYP_intel:
   stage: run_configs_intel
@@ -106,6 +126,8 @@ RSTRT_GYP_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
     - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+  only:
+  - dev-5.2
 
 THEO_bubbleG_intel:
   stage: run_configs_intel
@@ -114,6 +136,8 @@ THEO_bubbleG_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
     - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+  only:
+  - dev-5.2
 
 THEO_schar_intel:
   stage: run_configs_intel
@@ -122,6 +146,8 @@ THEO_schar_intel:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
     - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
+  only:
+  - dev-5.2
 
 build_gnu:
   stage: build_gnu
@@ -135,6 +161,8 @@ build_gnu:
     paths:
     - work*
     - gem_dbase
+  only:
+  - dev-5.2
 
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
@@ -143,6 +171,8 @@ build_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
     - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+  only:
+  - dev-5.2
 
 CANO_W7cascP_gnu:
   stage: run_configs_gnu
@@ -151,6 +181,8 @@ CANO_W7cascP_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
     - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+  only:
+  - dev-5.2
 
 CANO_dcmip163r100_gnu:
   stage: run_configs_gnu
@@ -159,6 +191,8 @@ CANO_dcmip163r100_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
     - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+  only:
+  - dev-5.2
 
 CANO_wil7_gnu:
   stage: run_configs_gnu
@@ -167,6 +201,8 @@ CANO_wil7_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
     - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+  only:
+  - dev-5.2
 
 GEM_GY_FISL_P_gnu:
   stage: run_configs_gnu
@@ -175,6 +211,8 @@ GEM_GY_FISL_P_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
     - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+  only:
+  - dev-5.2
 
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
@@ -183,6 +221,8 @@ GEM_LU_FISL_H_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
     - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+  only:
+  - dev-5.2
 
 GEM_LU_OFFC_gnu:
   stage: run_configs_gnu
@@ -191,6 +231,8 @@ GEM_LU_OFFC_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
     - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+  only:
+  - dev-5.2
 
 PTOPO_GYH_gnu:
   stage: run_configs_gnu
@@ -199,6 +241,8 @@ PTOPO_GYH_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
     - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+  only:
+  - dev-5.2
 
 PTOPO_LUP_gnu:
   stage: run_configs_gnu
@@ -207,6 +251,8 @@ PTOPO_LUP_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
     - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+  only:
+  - dev-5.2
 
 RSTRT_GYP_gnu:
   stage: run_configs_gnu
@@ -215,6 +261,8 @@ RSTRT_GYP_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
     - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+  only:
+  - dev-5.2
 
 THEO_bubbleG_gnu:
   stage: run_configs_gnu
@@ -223,6 +271,8 @@ THEO_bubbleG_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
     - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+  only:
+  - dev-5.2
 
 THEO_schar_gnu:
   stage: run_configs_gnu
@@ -231,3 +281,5 @@ THEO_schar_gnu:
     - cd $GEM_WORK
     - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
     - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
+  only:
+  - dev-5.2
