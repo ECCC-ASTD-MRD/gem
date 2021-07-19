@@ -16,6 +16,12 @@
       MKPTR1D(zecch, ecch, f)
       MKPTR1D(zeccl, eccl, f)
       MKPTR1D(zeccm, eccm, f)
+      MKPTR1D(ztcsh, tcsh, f)
+      MKPTR1D(ztcsl, tcsl, f)
+      MKPTR1D(ztcsm, tcsm, f)
+      MKPTR1D(ztczh, tczh, f)
+      MKPTR1D(ztczl, tczl, f)
+      MKPTR1D(ztczm, tczm, f)
       MKPTR1D(zei, ei, f)
       MKPTR1D(zemisr, emisr, f)
       MKPTR1D(zev, ev, f)
@@ -107,6 +113,7 @@
       MKPTR2D(zn2o , n2o, v)
       MKPTR2D(zcf11, cf11, v)
       MKPTR2D(zcf12, cf12, v)
+      MKPTR2D(zgztherm, gztherm, v)
 
 ! Pointers to busdyn
       MKPTR1D(zp0_plus, p0_plus, d)

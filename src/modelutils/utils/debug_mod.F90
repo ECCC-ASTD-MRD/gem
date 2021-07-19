@@ -312,7 +312,7 @@ contains
    function assert_not_naninf_r4_1d(data, F_i) result(F_istat)
       implicit none
       real, intent(in) :: data(:)
-      real, intent(out), optional :: F_i
+      integer, intent(out), optional :: F_i
       integer :: F_istat
       !@/
       integer :: i
@@ -335,7 +335,7 @@ contains
    function assert_not_naninf_r4_2d(data, F_i, F_j) result(F_istat)
       implicit none
       real, intent(in) :: data(:,:)
-      real, intent(out), optional :: F_i, F_j
+      integer, intent(out), optional :: F_i, F_j
       integer :: F_istat
       !@/
       integer :: i, j
@@ -361,7 +361,7 @@ contains
    function assert_not_naninf_r4_3d(data, F_i, F_j, F_k) result(F_istat)
       implicit none
       real, intent(in) :: data(:,:,:)
-      real, intent(out), optional :: F_i, F_j, F_k
+      integer, intent(out), optional :: F_i, F_j, F_k
       integer :: F_istat
       !@/
       integer :: i, j, k

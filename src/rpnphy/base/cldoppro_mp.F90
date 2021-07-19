@@ -26,7 +26,7 @@ contains
         taucs, omcs, gcs, taucl, omcl, gcl, &
         liqwcin, icewcin, &
         liqwpin, icewpin, cldfrac, &
-        tt, sig, ps, ni, nkm1, nk, mpcat, kount)
+        tt, sig, gz, ps, ni, nkm1, nk, mpcat, kount)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, RGASD
@@ -43,11 +43,12 @@ contains
       integer, intent(in) :: ni, nkm1, nk, mpcat, kount
 
       real, intent(inout), target :: d(dsiz), f(fsiz), v(vsiz)
-      real, intent(inout) :: taucs(ni,nkm1,nbs), omcs(ni,nkm1,nbs), gcs(ni,nkm1,nbs)
-      real, intent(inout) :: taucl(ni,nkm1,nbl), omcl(ni,nkm1,nbl), gcl(ni,nkm1,nbl)
-      real, intent(inout) :: liqwcin(ni,nkm1), icewcin(ni,nkm1)
-      real, intent(inout) :: liqwpin(ni,nkm1), icewpin(ni,nkm1)
-      real, intent(inout) :: cldfrac(ni,nkm1), tt(ni,nkm1),sig(ni,nkm1),ps(ni)
+      real, intent(out), dimension(ni,nkm1,nbs) :: taucs, omcs, gcs
+      real, intent(out), dimension(ni,nkm1,nbl) :: taucl, omcl, gcl
+      real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
+      real, intent(inout), dimension(ni,nkm1) :: liqwpin, icewpin
+      real, intent(inout) :: cldfrac(ni,nkm1)
+      real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), gz(ni,nkm1), ps(ni)  
 
       !          - output -
       ! taucs    cloud solar optical thickness
@@ -61,7 +62,7 @@ contains
       ! ctp      cloud top pressure
       ! ctt      cloud top temperature
       ! ecc      effective cloud cover (nt)
-      !          - input -
+      !          - input / output -
       ! liqwpin  liquid water path in g/m2
       ! icewpin  solid water path in g/m2
       ! liqwcin  in-cloud liquid water content
@@ -69,6 +70,7 @@ contains
       ! icewcin  in-cloud ice water content
       !          in kg water/kg air
       ! cldfrac  layer cloud amount (0. to 1.) (ni,nkm1)
+      !          - input -      
       ! tt       layer temperature (k) (ni,nkm1)
       ! sig      sigma levels (0. to 1.) (ni,nkm1; local sigma)
       ! ps       surface pressure (n/m2) (ni)
@@ -105,16 +107,17 @@ contains
       logical, dimension(ni) :: top
       logical, dimension(ni,nkm1) :: nocloud
 
-      integer, dimension(ni) :: ih, ib
+      integer, dimension(ni) :: ih, ib, ih2, ib2, ih3, ib3 
 
       real, dimension(ni) :: trmin, tmem, tot, att, z_exp
+      real, dimension(ni) :: trmin2, tmem2
       real, dimension(mpcat) :: tausimp, omsimp, gsimp, taulimp, omlimp, glimp
 
       real, dimension(ni,nkm1) :: transmissint, trans_exp, trav2d
       real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
       real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
 
-      real, dimension(ni,nk,nk) :: ff
+      real, dimension(ni,nk,nk) :: ff,ff2
       real, dimension(ni,nkm1,mpcat) :: iwcinmp, iwpinmp, effradi
 
       logical :: nostrlwc, readfield_L
@@ -124,12 +127,14 @@ contains
       real :: taulw, omlw, glw, tauli, omli, gli
       real :: tauswmp, omswmp, gswmp
       real :: taulwmp, omlwmp, glwmp
-      real :: xnu
+      real :: xnu, xnu2
 
       real, pointer, dimension(:,:) :: zqcmoins, zqimoins, zqnmoins, zqgmoins
       real, pointer, dimension(:,:) :: zqti1m, zqti2m, zqti3m, zqti4m
       real, pointer, dimension(:,:) :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
       real, pointer, dimension(:) :: ztopthw,ztopthi,ztcc,zecc,zeccl,zeccm,zecch,znt
+      real, pointer, dimension(:) :: ztcsl,ztcsm,ztcsh
+      real, pointer, dimension(:) :: ztczl,ztczm,ztczh  
       real, pointer, dimension(:) :: zmg,zml,zctp,zctt
       real, pointer, dimension(:,:) :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zftot
       real, pointer, dimension(:)   :: ztlwp, ztiwp,ztlwpin,ztiwpin
@@ -149,6 +154,12 @@ contains
       MKPTR1D(zml, ml, f)
       MKPTR1D(znt, nt, f)
       MKPTR1D(ztcc, tcc, f)
+      MKPTR1D(ztcsl, tcsl, f)
+      MKPTR1D(ztcsm, tcsm, f)
+      MKPTR1D(ztcsh, tcsh, f)
+      MKPTR1D(ztczl, tczl, f) 
+      MKPTR1D(ztczm, tczm, f)  
+      MKPTR1D(ztczh, tczh, f)  
       MKPTR1D(ztiwp, tiwp, f)
       MKPTR1D(ztiwpin, tiwpin, f)
       MKPTR1D(ztlwp, tlwp, f)
@@ -848,15 +859,28 @@ contains
       !     calcul des indices IH et IB pour nuages 2-D
       !     IH = niveau le plus pres de sigma=0.4
       !     IB = niveau le plus pres de sigma=0.7
+      !     IH2 = niveau le plus pres de sigma=0.45 pour compatibilite avec meme variable pour era5
+      !     IB2 = niveau le plus pres de sigma=0.8  pour compatibilite avec meme variable pour era5
+      !     IH3 = niveau le plus pres de height=6.5km  for compatibility with the same variable for Calipso-GOCCP
+      !     IB3 = niveau le plus pres de height=3.2km  for compatibility with the same variable for Calipso-GOCCP 
       !
       do k = 1, nkm1
          do i = 1, ni
             vs1(i,k) = - 1.64872 * taucl(i,k,6)
-            if (sig(i,k) <= 0.4) ih(i) = k
-            if (sig(i,k) <= 0.7) ib(i) = k
-
+            if (sig(i,k) <= rad_siglim(4)) ih(i) = k
+            if (sig(i,k) <= rad_siglim(3)) ib(i) = k
          enddo
       enddo
+      if (etccdiag) then
+         do k = 1, nkm1
+            do i = 1, ni
+               if (sig(i,k) <= rad_siglim(2)) ih2(i) = k
+               if (sig(i,k) <= rad_siglim(1)) ib2(i) = k
+               if (gz(i,k)  >= rad_zlim(2))   ih3(i) = k
+               if (gz(i,k)  >= rad_zlim(1))   ib3(i) = k
+            enddo
+         enddo
+      endif
 
       call vsexp(trans_exp, vs1, ni*nkm1)
 
@@ -892,67 +916,62 @@ contains
          do i=1,ni
             ff(i,l,l) = 1.
             tmem(i) = 1.
-            trmin(i) = 1.
+            trmin(i) = 1. 
+            ff2(i,l,l) = 1.
+            tmem2(i) = 1.
+            trmin2(i) = 1.
          enddo
          ip=l+1
          do k=ip,nk
             kind = k-2
             kind = max0(kind,1)
             do i=1,ni
-               xnu = 1. - cldfrac(i,k-1)*(1. - trans_exp(i,k-1))
+               xnu = 1. - cldfrac(i,k-1)*(1. - trans_exp(i,k-1)) ! for effective cloud covers
+               xnu2= 1. - cldfrac(i,k-1)                         ! for true cloud covers
                if (cldfrac(i,kind) < 0.01) then
                   tmem(i)  = ff(i,l,k-1)
                   trmin(i) = xnu
+                  tmem2(i)  = ff2(i,l,k-1)
+                  trmin2(i) = xnu2
                else
                   trmin(i) = min(trmin(i), xnu)
+                  trmin2(i) = min(trmin2(i), xnu2)
                endif
-               ff(i,l,k) = tmem(i) * trmin(i)
+               ff(i,l,k)  = tmem(i) * trmin(i)
+               ff2(i,l,k) = tmem2(i) * trmin2(i)
             enddo
          enddo
       enddo
 
       do i=1,ni
-         zecc(i)  = 1.-ff(i,1,nk)
+         zecc(i)  = 1. - ff(i,1,nk)
          zecch(i) = 1. - ff(i, 1   ,IH(i))
          zeccm(i) = 1. - ff(i,IH(i),IB(i))
          zeccl(i) = 1. - ff(i,IB(i),nk   )
-      enddo
-
-      !...  compute total true cloud cover using maximum-random cloud overlap assumption
-
-      do i=1,ni
-         ff(i,1,1) = 1.
-         tmem(i) = 1.
-         trmin(i) = 1.
-      enddo
-      do k=2,nk
-         kind = k-2
-         kind = max0(kind, 1)
-         do i=1,ni
-            xnu = 1. - cldfrac(i,k-1)
-            if (cldfrac(i,kind) < 0.01) then
-               tmem(i)  = ff(i,1,k-1)
-               trmin(i) = xnu
-            else
-               trmin(i) = min(trmin(i), xnu)
-            endif
-            ff(i,1,k) = tmem(i) * trmin(i)
-         enddo
-      enddo
-
-      do i=1,ni
-         ztcc(i) = 1. - ff(i,1,nk)
+         ztcc(i)  = 1. - ff2(i,1,nk)
          ! new NT formulation: TCC*(1-exp(-0.1* total cloud optical depth for visible))
          tot(i) = ztopthw(i) + ztopthi(i)
          ! att is a tuneable factor
          att(i) = -0.1*tot(i)
       enddo
-
+      
       call vsexp(z_exp, att, ni)
-
+      
       do i=1,ni
          znt(i) = ztcc(i)*(1.-z_exp(i))
       enddo
+      
+      if (etccdiag) then
+         do  i=1,ni
+            ztcsh(i) = 1. - ff2(i,1,IH2(i))
+            ztcsm(i) = 1. - ff2(i,IH2(i),IB2(i))
+            ztcsl(i) = 1. - ff2(i,IB2(i),nk)
+            ! to calculate 2-d cloud fraction with calipso-GOCCP height criteria
+            ztczh(i) = 1. - ff2(i,1,IH3(i))
+            ztczm(i) = 1. - ff2(i,IH3(i),IB3(i))
+            ztczl(i) = 1. - ff2(i,IB3(i),nk)
+         enddo
+      endif
 
       call msg_toall(MSG_DEBUG, 'cldoppro_MP [END]')
       !----------------------------------------------------------------

@@ -74,21 +74,19 @@ contains
       include "surface.cdk"
       include "nocld.cdk"
 
-      real, dimension(ni,nkm1) :: c3d, frac, lwcth, tcel, vtcel, vliqwcin
+      real, dimension(ni,nkm1) :: frac, lwcth, tcel, vtcel, vliqwcin
 
       integer :: i, k
       real    :: dp, lwcm1, iwcm1, zz, rec_grav, press
       logical :: nostrlwc, readfield_L
 
       real, pointer :: znt(:)
-      real, pointer, dimension(:,:) :: zfdc, zftot, ziwc, zlwc, zqcplus, &
-           zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4, zfmc
+      real, pointer, dimension(:,:) :: zftot, ziwc, zlwc, zqcplus, &
+           zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
       !----------------------------------------------------------------
 
       MKPTR1D(znt, nt, f)
 
-      MKPTR2D(zfdc,  fdc, f)
-      MKPTR2D(zfmc,  fmc, f)
       MKPTR2D(zftot, ftot, f)
       MKPTR2D(ziwc, iwc, f)
       MKPTR2D(zlwc, lwc, f)
@@ -100,7 +98,7 @@ contains
       MKPTR2D(zqiplus, qiplus, d)
       MKPTR2D(zsnow, qnplus, d)
 
-      call init2nan(c3d, frac, lwcth, tcel, vtcel, vliqwcin)
+      call init2nan(frac, lwcth, tcel, vtcel, vliqwcin)
 
       rec_grav = 1./GRAV
       nostrlwc = (climat.or.stratos)
@@ -191,40 +189,12 @@ contains
       call liqwc(lwcth, sigma, tm, ps, ni, nkm1, ni, satuco)
 
       !     extracted from newrad3
-
-      IF_NEWSUND: if (stcond == 'NEWSUND') then
-
-         do k = 1, nkm1-1
-            do i = 1, ni
-               if (zlwc(i,k) >= 0.1e-8) then
-                  cloud(i,k) = zftot(i,k)
-               elseif (zfdc(i,k) > 0.09) then
-                  cloud(i,k) = zfdc(i,k)
-                  zlwc(i,k) = 10.0e-5 * zfdc(i,k)
-               elseif (zfmc(i,k) > 0.09) then
-                  cloud(i,k) = zfmc(i,k)
-                  zlwc(i,k) = 10.0e-5 * zfmc(i,k)
-               else
-                  cloud(i,k) = 0.0
-                  zlwc(i,k)  = 0.0
-               endif
-            enddo
-         enddo
-
+      
+      do k = 1,nkm1
          do i = 1,ni
-            cloud(i,nkm1) = 0.0
-            zlwc (i,nkm1) = 0.0
-         end do
-
-      else !IF_NEWSUND
-
-         do k = 1,nkm1
-            do i = 1,ni
-               cloud(i,k) = zftot(i,k)
-            enddo
+            cloud(i,k) = zftot(i,k)
          enddo
-
-      endif IF_NEWSUND
+      enddo
 
       !...  "no stratospheric lwc" mode when CLIMAT or STRATOS = true
       !...  no clouds above TOPC or where HU < MINQ (see nocld.cdk for topc and minq)
@@ -260,7 +230,7 @@ contains
                icewcin(i,k) = max(ziwc(i,k),0.)
             endif
 
-            if ( any(trim(stcond) == (/'NEWSUND','CONSUN '/)) ) then
+            if (stcond == 'CONSUN') then
 
                if ((liqwcin(i,k)+icewcin(i,k)) > 1.e-6) then
                   cloud(i,k) = max(cloud(i,k) ,0.01)

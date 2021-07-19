@@ -249,14 +249,14 @@
          write (Lun_out,1005) G_nk,Hyb_rcoef
             do k=1,G_nk
                call convip(pnip1,Ver_hyb%m(k),3,1,dumc,.false.)
-               write (Lun_out,1006) k,Ver_hyb%m(k),Ver_hyb%m(k), &
-                                  Ver_hyb%m(k)-Ver_hyb%m(k+1),pnip1
+               write (Lun_out,1006) k,Ver_hyb%m(k),&
+                              Ver_hyb%m(k)-Ver_hyb%m(k+1),pnip1
             end do
       end if
 
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HEIGHT LEVELS WITH ', &
                'Grd_rcoef= ',4f7.2,':'/ &
-               2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
- 1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
+               2x,'level',7x,'HYB_M',8x,'DELTA_Z',8x,'IP1')
+ 1006 format (1x,i4,3x,es15.5,6x,f6.0,4x,i10)
       return
       end

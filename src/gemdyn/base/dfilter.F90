@@ -71,7 +71,7 @@
 1000 format(/' Apply digital filter to surface flux ',a)
 2000 format(/' S/R  dfilter : The order of the digital filter should be 2 or 4')
 
-	   return
+         return
 
       contains
 

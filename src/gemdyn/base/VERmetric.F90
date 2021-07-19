@@ -13,8 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**   s/r fislh_metric - calculate metric coefficients for GEM in height-base coordinates
-      subroutine fislh_metric()
+!**s/r VERmetric - Compute vertical metric coefficients
+      
+      subroutine VERmetric ()
       use mtn_options
       use HORgrid_options
       use gmm_geof
@@ -69,15 +70,14 @@
          done=.true.
       end if
       
-      if (Schm_opentop_L) k0=1+Lam_gbpil_T
-
       ztht_8(:,:,0)=ver_z_8%m(0)
       zmom_8(:,:,0)=ver_z_8%m(0)
 
       do k=1,G_nk
-         zmom_8(:,:,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*fis0(:,:)+Ver_c_8%m(k)*sls(:,:))/grav_8
-         ztht_8(:,:,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0(:,:)+Ver_c_8%t(k)*sls(:,:))/grav_8
+         zmom_8(:,:,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*fis0 (:,:  )+Ver_c_8%m(k)*sls(:,:))/grav_8
+         ztht_8(:,:,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0 (:,:  )+Ver_c_8%t(k)*sls(:,:))/grav_8
       end do
+      
       zmom_8(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
       ztht_8(:,:,G_nk+1)=Cstv_bar1_8*fis0(:,:)/grav_8
 
@@ -127,6 +127,7 @@
                                (isol_i*mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8)*mc_css_H_8(i,j)
             
             if (Schm_opentop_L) then
+               k0= 1+Lam_gbpil_T
                mc_cst_8(i,j)    = one / (-(mu_8* Cstv_tau_nh_8)*(isol_d*Ver_idz_8%t(k0-1) &
                                  +isol_i*mc_iJz_8(i,j,k0-1)) & 
                                  + half* one/(Cstv_tau_8*cpd_8*Cstv_Tstr_8))
@@ -160,7 +161,6 @@
             mc_cst_8    (:,:) = 0.0d0
             mc_cstp_8   (:,:) = 0.0d0
          end if
-
       end if
 
       ! We keep a copy in single precision only for cascade outputs
@@ -169,11 +169,12 @@
          ztht(:,:,k) = real(ztht_8(:,:,k))
       end do
 
-      me_full(:,:) = fis0(:,:) / grav_8
-      me_large(:,:) = sls(:,:) / grav_8
-      !# Do we need to make a halo and yy xch? of is fis0/sls already valid in the halo/pilot regions (note that this needs to be valid on the full physics domain)
-      
+      me_full (:,:) = fis0(:,:) / grav_8
+      me_large(:,:) = sls (:,:) / grav_8
+!# Do we need to make a halo and yy xch? of is fis0/sls already valid in the halo/pilot regions (note that this needs to be valid on the full physics domain)
+!      call heights_uv ()
+!     
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine VERmetric

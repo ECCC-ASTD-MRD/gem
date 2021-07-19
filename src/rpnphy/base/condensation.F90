@@ -17,13 +17,13 @@
 module condensation
    implicit none
    private
-   public :: condensation3
+   public :: condensation4
 
 contains
 
    !/@*
-   subroutine condensation3(d, dsiz, f, fsiz, v, vsiz, &
-        tplus0, t0, huplus0, q0, qc0, ilab, dbdt, &
+   subroutine condensation4(d, dsiz, f, fsiz, v, vsiz, &
+        tplus0, t0, huplus0, q0, qc0, &
         dt, ni, nk, kount, trnch)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -63,13 +63,9 @@ contains
       ! t0       initial temperature at t+dT
       ! q0       initial humidity humidity  at t+dT
       ! qc0      initial total condensate mixing ratio at t+dT
-      ! ilab     flag array: an indication of convective activity from Kuo schemes
-      ! dbdt     estimated averaged cloud fraction growth rate for kuostd
 
       integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount,trnch
       real,    intent(in) :: dt
-      integer,dimension(ni,nk-1), intent(inout) :: ilab
-      real,   dimension(ni), intent(inout)      :: dbdt
       real,   dimension(ni,nk-1), intent(inout) :: tplus0,t0,huplus0,q0,qc0
       real,   target, intent(inout)             :: f(fsiz), v(vsiz), d(dsiz)
 
@@ -85,12 +81,10 @@ contains
       integer, parameter :: N_DIAG_2D = 20      !number of diagnostic 2D fields
       integer, parameter :: N_DIAG_3D = 20      !number of diagnostic 3D fields
 
-      integer :: nkm1, istat1, istat2, i
+      integer :: nkm1, istat1, istat2
       real :: idt
 
-      real, dimension(ni) :: tlcr,tscr
-
-      real, dimension(ni,nk-1) :: zfm,zfm1,zcqer,zcqcer,zcter,iwc_total,lqip,lqrp,lqgp,lqnp,lttp,lhup,ccf
+      real, dimension(ni,nk-1) :: zfm,zfm1,iwc_total,lqip,lqrp,lqgp,lqnp,lttp,lhup,ccf
 
       real, dimension(ni,N_DIAG_2D)      :: diag_2d    !diagnostic 2D fields
       real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d    !diagnostic 3D fields
@@ -112,8 +106,7 @@ contains
 #undef PHYPTRDCL
 #include "condensation_ptr.hf"
 
-      call init2nan(tlcr, tscr)
-      call init2nan(zfm, zfm1, zcqer, zcqcer, zcter, iwc_total, lqip, lqrp, lqgp)
+      call init2nan(zfm, zfm1, iwc_total, lqip, lqrp, lqgp) !#zcter, zcqer, zcqcer,  
       call init2nan(lqnp, lttp, lhup)
       call init2nan(diag_2d)
       call init2nan(diag_3d)
@@ -135,34 +128,13 @@ contains
       zsqe = 0.
       zsqce = 0.
       zsqre = 0.
-      ccf = zfdc + zfmc  !sum convective cloud fractions (reasonable b/c of vertical correlation)
 
       ! Run selected gridscale condensation scheme
       GRIDSCALE_SCHEME: select case(stcond)
 
-      case('NEWSUND')
-
-         !# sundqvist (deuxieme version) :
-         call skocon5(zste, zsqe, zsqce, a_tls, &
-              a_tss, a_fxp, ttp, ttm, qqp, &
-              qqm, qcp, qcm, psp, &
-              psm, ilab, sigma, ni, nkm1, &
-              dt, satuco, convec, zrnflx, zsnoflx)
-
       case('CONSUN')
 
-         tlcr = 0.
-         tscr = 0.
-         zcter = 0.
-         zcqer = 0.
-         zcqcer = 0.
-         if (convec=='KUOSTD') then
-            !# transvider les tendances convectives pour kuostd
-            !# par contre, on ne veut pas d'interaction
-            !# entre les schemas kfc et consun.
-            zcter = zcte
-            zcqer = zcqe
-         endif
+         ccf = zfdc + zfmc  !sum convective cloud fractions (reasonable b/c of vertical correlation)
 
          ! Apply physics tendencies to smoothed thermodynamic fields if available
          if (associated(zttps) .and. associated(zhups) .and. associated(zttms) .and. associated(zhums)) then
@@ -178,10 +150,10 @@ contains
          endif
          zfm1 = zqcpostcnd
          zfm  = qcp
-         call consun3(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
-              zcter, zcqer, zcqcer, tlcr  , tscr  , ccf, &
+         call consun5(zste , zsqe , zsqce , a_tls, a_tss, a_fxp, &
+              ccf, &
               lttp    , zttm   , lhup     , zhum    , zfm   , zfm1  , &
-              psp , psm  , ilab  , dbdt  , sigma, dt  , &
+              psp , psm  , sigma, dt  , &
               zrnflx, zsnoflx, zf12 , zfevp  , &
               zfice, zmrk2, ni , nkm1)
 
@@ -197,18 +169,6 @@ contains
                return
             endif
          endif CONSUN_CONSERVATION
-
-         !# transvider les tendances convectives et les taux
-         !# des precipitations pour kuostd
-         !# transvider les tendances de t et hu ainsi que la fraction nuageuse.
-         !# amalgamer les champs de sortie de kuosym et de fcp.
-         if (convec == 'KUOSTD') then
-            ztsc(:) =  tscr(:)
-            ztlc(:) =  tlcr(:)
-            zcqce = zcqcer
-            zcte  = zcter
-            zcqe  = zcqer
-         endif
 
       case('MP_MY2')
 
@@ -381,7 +341,7 @@ contains
       end select GRIDSCALE_SCHEME
 
       !# application des tendances convectives de qc (pour consun)
-      if (any(stcond == (/'CONSUN','KUOSTD'/))) then
+      if (stcond == 'CONSUN') then
          call apply_tendencies(qcp, zcqce, ztdmask, ni, nk, nkm1)
       endif
 
@@ -456,6 +416,6 @@ contains
       call msg_toall(MSG_DEBUG, 'condensation [END]')
       !----------------------------------------------------------------
       return
-   end subroutine condensation3
+   end subroutine condensation4
 
 end module condensation

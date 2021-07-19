@@ -20,14 +20,13 @@ module phy_options
    public
    save
 
-   integer, parameter :: LEVMAX            = 200 !# NOMBRE MAXIMUM DE NIVEAUX POUR LA PHYSIQUE
-
    integer, parameter :: OPT_OPTIX_OLD     = 1
    integer, parameter :: OPT_OPTIX_NEW     = 2
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
    logical           :: chemistry    = .false.
    logical           :: climat       = .false.
+   logical           :: cmt_comp_diag = .false.
    character(len=16) :: conv_mid     = 'NIL'
    character(len=16) :: conv_shal    = 'NIL'
    character(len=16) :: convec       = 'NIL'
@@ -38,6 +37,7 @@ module phy_options
    logical           :: dynout       = .false.
    logical           :: ebdiag       = .false.
    logical           :: ecdiag       = .false.
+   logical           :: etccdiag     = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
    integer           :: ioptix       = OPT_OPTIX_OLD
@@ -46,12 +46,14 @@ module phy_options
    logical           :: llight       = .false.
    logical           :: llinoz       = .false.
    logical           :: llingh       = .false.
+   integer           :: lhn_ramp     = 10
+   integer           :: lhn_start    = 10
+   integer           :: lhn_stop     = 360
    logical           :: lrefract     = .false.
    logical           :: out_linoz    = .false.
    logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
    logical           :: p3_comptend  = .false.
-   logical           :: reduc        = .false.
    character(len=16) :: schmsol      = 'ISBA'
    logical           :: slt_winds    = .false.
    logical           :: tdiaglim     = .false.
@@ -209,11 +211,6 @@ module phy_options
    real              :: fnnmod       = 2.
    namelist /physics_cfgs/ fnnmod
    namelist /physics_cfgs_p/ fnnmod
-
-   !# Use Fomichev radiation code if .true.
-   logical           :: fomic        = .false.
-   namelist /physics_cfgs/ fomic
-   namelist /physics_cfgs_p/ fomic
 
    !# Gravity wave drag formulation
    !# * 'NIL  ': no Gravity wave drag
@@ -707,6 +704,19 @@ module phy_options
    namelist /physics_cfgs/ rad_esfc
    namelist /physics_cfgs_p/ rad_esfc
 
+   !# For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp
+   !# TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma; 
+   !# EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; 
+   real, dimension(4) :: rad_siglim = (/0.7,0.4,0.7,0.4/)
+   namelist /physics_cfgs/ rad_siglim
+   namelist /physics_cfgs_p/ rad_siglim
+
+   !# For calculation of DIAGNOSTIC low, mid and high TRUE cloud covers in cldoppro and cldoppro_mp with height criteria for Calipso-GOCCP
+   !# TRUE:      rad_zlim(1)=limit between low and mid clouds in height; rad_zlim(2)=limit between mid and high clouds in height; 
+   real, dimension(2) :: rad_zlim = (/3200.,6500./)
+   namelist /physics_cfgs/ rad_zlim
+   namelist /physics_cfgs_p/ rad_zlim
+
    !# format of radiation files to be read
    !# * 'STD': RPN standard file
    !# * 'UNF': unformatted
@@ -717,16 +727,6 @@ module phy_options
         'STD', &
         'UNF'  &
         /)
-
-   !# Radiation fixes near the model top(for newrad only) if .true.
-   logical           :: radfix       = .true.
-   namelist /physics_cfgs/ radfix
-   namelist /physics_cfgs_p/ radfix
-
-   !# Vertical smoothing on radiative fluxes(for newrad only) if .true.
-   logical           :: radfltr      = .true.
-   namelist /physics_cfgs/ radfltr
-   namelist /physics_cfgs_p/ radfltr
 
    !# Use climatological values of GHG in radiation (CCCMARAD2 only)
    logical           :: radghg_L     = .false.
@@ -770,23 +770,16 @@ module phy_options
 
    !# Radiation scheme
    !# * 'NIL      ': no radiation scheme
-   !# * 'NEWRAD   ': complete radiation scheme
    !# * 'CCCMARAD ': most advanced radiation scheme
    !# * 'CCCMARAD2': most advanced radiation scheme v2
    character(len=16) :: radia        = 'NIL'
    namelist /physics_cfgs/ radia
    namelist /physics_cfgs_p/ radia
-   character(len=*), parameter :: RADIA_OPT(4) = (/ &
+   character(len=*), parameter :: RADIA_OPT(3) = (/ &
         'NIL      ', &
-        'NEWRAD   ', &
         'CCCMARAD ', &
         'CCCMARAD2'  &
         /)
-
-   !# List of levels on which IR and VIS radiation calculations are
-   !# performed (to save on CPU time) (for newrad only)
-   integer           :: radnivl(LEVMAX+1) = 0
-   namelist /physics_cfgs/ radnivl
 
    !# Key for activation of the radiation along slopes
    logical           :: radslope     = .false.
@@ -864,16 +857,14 @@ module phy_options
    !# Condensation scheme name
    !# * 'NIL       ' : No explicit condensation scheme used
    !# * 'CONSUN    ' : Sunqvist type condensation scheme
-   !# * 'NEWSUND   ' : Sunqvist type condensation scheme
    !# * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
    !# * 'MP_P3     ' : P3 microphysics scheme
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(5) = (/ &
+   character(len=*), parameter :: STCOND_OPT(4) = (/ &
         'NIL       ', &
         'CONSUN    ', &
-        'NEWSUND   ', &
         'MP_MY2    ', &
         'MP_P3     '  &
         /)
@@ -917,13 +908,6 @@ module phy_options
    namelist /physics_cfgs/ tofd_alpha
    namelist /physics_cfgs_p/ tofd_alpha
 
-
-   !# (newrad only) Use TT(12000) instead of skin temp in downward IR
-   !# flux calculation if .true.
-   logical           :: ts_flxir     = .false.
-   namelist /physics_cfgs/ ts_flxir
-   namelist /physics_cfgs_p/ ts_flxir
-
    !# use Latent Heat Nudging for the assmilation of radar-inferred precipitation rates
    !# * 'NIL'   : No Latent Heat Nudging
    !# * 'IRPCP' : Latent heat nudging from radar-inferred precipitation rates
@@ -947,6 +931,23 @@ module phy_options
    real           :: lhn_weight    = 0.
    namelist /physics_cfgs/ lhn_weight
    namelist /physics_cfgs_p/ lhn_weight
+
+   !# first time step at which LHN is applied
+   character(len=16) :: lhn_start_S = '10p'
+   namelist /physics_cfgs/ lhn_start_S
+   namelist /physics_cfgs_p/ lhn_start_S
+
+   !# last time step at which LHN is applied
+   character(len=16) :: lhn_stop_S = '360p'
+   namelist /physics_cfgs/ lhn_stop_S
+   namelist /physics_cfgs_p/ lhn_stop_S
+
+   !# To avoid shocking the model, LHN is turned on gradually 
+   !# this parameter controls how many time steps it takes (after lhn_timestep_start)
+   !# for LHN to be fully active
+   character(len=16) :: lhn_ramp_S = '10p'
+   namelist /physics_cfgs/ lhn_ramp_S
+   namelist /physics_cfgs_p/ lhn_ramp_S
 
 contains
 

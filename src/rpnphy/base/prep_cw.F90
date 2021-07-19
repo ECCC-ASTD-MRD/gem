@@ -95,9 +95,9 @@ contains
       integer :: i, k
       real :: cfblxp(ni,nk)
       real, target :: zero(ni,nk)
-      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, ziwc, zlwc, &
-           zqcplus, zqiplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
-           zqsdi, zqssc, zqtbl, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
+      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, zlwc, &
+           zqcplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
+           zqsdi, zqssc, zqtbl
       !----------------------------------------------------------------
       MKPTR2D(zfbl, fbl, f)
       MKPTR2D(zfdc, fdc, f)
@@ -105,14 +105,8 @@ contains
       MKPTR2D(zfsc, fsc, f)
       MKPTR2D(zftot, ftot, f)
       MKPTR2D(zfxp, fxp, f)
-      MKPTR2D(ziwc, iwc, f)
       MKPTR2D(zlwc, lwc, f)
       MKPTR2D(zqcplus, qcplus, d)
-      MKPTR2D(zqi_cat1, qti1plus, d)
-      MKPTR2D(zqi_cat2, qti2plus, d)
-      MKPTR2D(zqi_cat3, qti3plus, d)
-      MKPTR2D(zqi_cat4, qti4plus, d)
-      MKPTR2D(zqiplus, qiplus, d)
       MKPTR2D(zqldi, qldi, f)
       MKPTR2D(zqlmi, qlmi, v)
       MKPTR2D(zqlsc, qlsc, v)
@@ -120,15 +114,10 @@ contains
       MKPTR2D(zqsmi, qsmi, v)
       MKPTR2D(zqssc, qssc, v)
       MKPTR2D(zqtbl, qtbl, f)
-      MKPTR2D(zsnow, qnplus, d)
 
       zero(:,:) =  0.0
 
-      if (any(convec == (/ &
-           'NIL   ', &
-           'KUOSTD', &
-           'OLDKUO'  &
-           /))) then
+      if (convec == 'NIL') then
          zqldi => zero(1:ni,1:nk)
          zqsdi => zero(1:ni,1:nk)
       endif
@@ -153,7 +142,7 @@ contains
 
       if (stcond /= 'NIL') then
 
-         ! qcplus may contain total water content from consun/newsund and detrained explicit clouds from kfc/bech
+         ! qcplus may contain total water content from consun and detrained explicit clouds from kfc/bech
          ! if (stcond = 'MP') qcplus is liquid clouds from expicit scheme + detrained explicit liquid clouds from kfc/bech
 
          do k=1,nk
@@ -181,7 +170,7 @@ contains
       endif
 
       ! Add the cloud water (liquid and solid) coming from shallow and deep
-      ! cumulus clouds (only for the Kuo Transient and Kain-Fritsch schemes).
+      ! cumulus clouds (only for the Kain-Fritsch schemes).
       ! Note that no conditions are used for these calculations ...
       ! qldi, qsdi, and qlsc, qssc are zero if these schemes are not used.
       ! Also note that qldi, qsdi, qlsc and qssc are NOT IN-CLOUD values
@@ -271,14 +260,10 @@ contains
 
       zero(1:ni,1:nkm1) =  0.0
 
-      if (any(convec == (/ &
-           'NIL   ', &
-           'KUOSTD', &
-           'OLDKUO'  &
-           /))) then
+      if (convec == 'NIL') then
          zqldi => zero(1:ni,1:nkm1)
          zqsdi => zero(1:ni,1:nkm1)
-         if (convec == 'NIL') zfdc => zero(1:ni,1:nkm1)
+         zfdc => zero(1:ni,1:nkm1)
       endif
 
       if (conv_shal == 'NIL') then

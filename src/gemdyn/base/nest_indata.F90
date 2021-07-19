@@ -58,6 +58,8 @@
          nest_sls= 0.
       endif
 
+      call canonical_indata()
+
       call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
                       nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&
                       nest_fullme_fin(l_minx,l_miny,1),nest_sls      ,&

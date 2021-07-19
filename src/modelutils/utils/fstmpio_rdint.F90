@@ -345,7 +345,7 @@ contains
       if (present(F_vgrid) .and. any(lvltyp_S == (/'M', 'T'/)) .and. &
            associated(F_ip1s)) then
          itype = 0
-         istat = vgrid_wb_bcast(vgrid, communicator_S, F_ip1s, itype, lvltyp_S, &
+         istat = vgrid_wb_bcast(vgrid, F_ip1s, itype, lvltyp_S, communicator_S, &
               comm_ipe_io_master)
          F_vgrid = vgrid
       endif
@@ -512,7 +512,7 @@ contains
       if (present(F_vgrid) .and. any(lvltyp_S == (/'M', 'T'/)) .and. &
            associated(F_ip1s)) then
          itype = 0
-         istat = vgrid_wb_bcast(vgrid, communicator_S, F_ip1s, itype, lvltyp_S, &
+         istat = vgrid_wb_bcast(vgrid, F_ip1s, itype, lvltyp_S, communicator_S, &
               comm_ipe_io_master)
          F_vgrid = vgrid
       endif
@@ -1066,7 +1066,7 @@ contains
       call rpn_comm_bcast(F_istat, 1, RPN_COMM_INTEGER, comm_ipe_io_master, &
            trim(communicator_S), istat)
       if (.not.RMN_IS_OK(F_istat)) return
-      F_istat = vgrid_wb_bcast(F_vgrid, communicator_S, F_ip1s, itype, lvltyp_S, &
+      F_istat = vgrid_wb_bcast(F_vgrid, F_ip1s, itype, lvltyp_S, communicator_S, &
            comm_ipe_io_master)
       F_lvltyp_S = lvltyp_S
       ! ---------------------------------------------------------------------

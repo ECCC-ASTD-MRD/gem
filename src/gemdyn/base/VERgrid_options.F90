@@ -26,7 +26,22 @@ module VERgrid_options
    !# array of model levels (pressure),  0.0 < HYB < 1.0
       real, dimension(MAXHLEV) :: hyb = -1
       namelist /vert_layers/ Hyb
-
+      
+      integer :: Hyb_nkequal = -1
+      namelist /vert_layers  / Hyb_nkequal 
+      namelist /vert_layers_p/ Hyb_nkequal 
+            
+      real :: Hyb_first_height = 40.
+      namelist /vert_layers  / Hyb_first_height
+      namelist /vert_layers_p/ Hyb_first_height
+      
+      real :: Hyb_lid_height = 60000.
+      namelist /vert_layers  / Hyb_lid_height
+      namelist /vert_layers_p/ Hyb_lid_height
+      
+      namelist /vert_layers  / G_nk
+      namelist /vert_layers_p/ G_nk
+      
    !# array of model levels (height  ),  hyb_H > 0.0
       real, dimension(MAXHLEV) :: hyb_H = -1
       namelist /vert_layers/ Hyb_H
@@ -59,7 +74,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
-! boiler plate - start
+!     boiler plate - start
+
       if ( F_unf < 0 ) then
          VERgrid_nml= 0
          if ( Lun_out >= 0) then
@@ -82,6 +98,7 @@ contains
          return
       end if
 
+      G_nk = 0
       VERgrid_nml= -1 ; nml_must= .true. ; nml_S= 'vert_layers'
 
       rewind(F_unf)
@@ -128,39 +145,24 @@ contains
 !-------------------------------------------------------------------
 !
       VERgrid_config = -1
-
-!     Counting # of vertical levels specified by user
-      G_nk = 0
-
+      
       select case ( trim(Dynamics_Kernel_S) )
          case('DYNAMICS_FISL_P')
+            G_nk = 0
             do k = 1, maxhlev
                if (hyb(k) < 0.) exit
                G_nk = k
             end do
 
          case ('DYNAMICS_FISL_H')
-            do k = 1, maxhlev
-               if (hyb_H(k) < 0.) exit
-               G_nk = k
-            end do
+            call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
+                         Hyb_first_height)
 
          case('DYNAMICS_EXPO_H')
-            if (Schm_autobar_L) then
-               ! Temporary
-               do k = 1, maxhlev
-                  if (hyb(k) < 0.) exit
-                  G_nk = k
-               end do
-            else
-               do k = 1, maxhlev
-                  if (hyb_H(k) < 0.) exit
-                  G_nk = k
-               end do
-            end if
+            call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
+                         Hyb_first_height)
 
       end select
-
 
       VERgrid_config = 1
 !
