@@ -42,7 +42,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    !                                 with values passed from dynamicsa
    ! 004      B. Dugas (Sep 96) - Coherence check between CLIMAT, RADFIX
    ! 005      G. Pellerin (Nov 95) - Added switches for deep convection
-   !                                 KUOSTD,KUOSYM,KUOSUN with CONSUN
+   !                                 with CONSUN
    ! 006      G. Pellerin (Nov 96) - Insert common tables for RAS option
    ! 007      B. Bilodeau (Apr 97) - Insert comdeck for CLASS
    ! 008      M. Desgagne (Spring 97) - Microphysics
@@ -109,7 +109,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    logical, save :: okinit = .false.
 
    character(len=1024) :: fichier, path
-   integer :: i, nv, myproc, ier
+   integer :: myproc, ier
    !---------------------------------------------------------------------
    F_istat = PHY_ERROR
 
@@ -141,48 +141,9 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
 
    ! RADIATION
    ! - - - - -
-   ! reduction des niveaux pour les calculs radiatifs
-   ! pour option "NEWRAD"
-   NV = 0
-   do i=1,LEVMAX
-      if (radnivl(i) == 0) exit
-      if (radnivl(i) < 0 .or. radnivl(i) > p_nk) then
-         call msg(MSG_ERROR,'(phydebu) radnivl - WRONG LEVELS IN THE LIST')
-         return
-      endif
-      NV = NV+1
-   enddo
 
-   if (NV > 0 .and. NV < p_nk) then
-      do i=NV,1,-1
-         radnivl(i+1) = radnivl(i)
-      enddo
-      radnivl(1) = NV
-   else if (NV == p_nk) then
-      radnivl(1) = 0
-   else if (NV > p_nk) then
-      call msg(MSG_ERROR,'(phydebu) radnivl - TOO MANY LEVELS IN THE LIST')
-      return
-   endif
-
-   if (RADNIVL(1) == 0 .or. RADNIVL(1) == P_NK) then
-      REDUC = .false.
-   else
-      REDUC = .true.
-      if( radnivl(2) /= 1 ) then
-         call msg(MSG_ERROR,'(phydebu) radnivl - THE LIST MUST BEGIN WITH LEVEL 1')
-         return
-      endif
-      do i=2,radnivl(1)
-         if( radnivl(i) >= radnivl(i+1) ) then
-            call msg(MSG_ERROR,'(phydebu) radnivl - THE LIST MUST BE SORTED IN ASCENDING ORDER')
-            return
-         endif
-      enddo
-   endif
- 
    !# lecture des tableaux de radiation
-   IF_RADIA: if (any(radia(1:8) == (/'NEWRAD  ','CCCMARAD'/))) then
+   IF_RADIA: if (radia(1:8) == 'CCCMARAD') then
       if (.not.okinit) then
 
          call rpn_comm_rank(RPN_COMM_GRID, myproc, ier)

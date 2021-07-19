@@ -26,8 +26,8 @@ contains
         dt, ni, nk, kount, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: RAUW
-      use cnv_main, only: cnv_main3
-      use condensation, only: condensation3
+      use cnv_main, only: cnv_main4
+      use condensation, only: condensation4
       use phy_status, only: phy_error_L
       use phy_options
       use phybus
@@ -65,9 +65,7 @@ contains
 
       ! Local variable declarations
       integer :: nkm1
-      integer, dimension(ni,nk-1) :: ilab
       real :: irhow
-      real, dimension(ni) :: beta
       real, dimension(ni,nk) :: press
       real, dimension(ni,nk-1) :: t0,q0,qc0
 
@@ -113,7 +111,6 @@ contains
       MKPTR2D(ztshal, tshal, vbus)
       MKPTR1D(ztss, tss, fbus)
 
-      call init2nan(beta)
       call init2nan(t0, q0, qc0, press)
 
       ! Local initialization
@@ -127,16 +124,16 @@ contains
 
       ! Run deep and shallow convective schemes
       if (timings_L) call timing_start_omp(435, 'cnv_main', 46)
-      call cnv_main3(dbus, dsiz, fbus, fsiz, vbus, vsiz,   &
-           t0, q0, qc0, ilab, beta, dt, ni, nk, &
+      call cnv_main4(dbus, dsiz, fbus, fsiz, vbus, vsiz,   &
+           t0, q0, qc0, dt, ni, nk, &
            kount)
       if (timings_L) call timing_stop_omp(435)
       if (phy_error_L) return
 
       ! Run the gridscale condensation / microphysics scheme
       if (timings_L) call timing_start_omp(440, 'condensation', 46)
-      call condensation3(dbus, dsiz, fbus, fsiz, vbus, vsiz, &
-           tplus0, t0, huplus0, q0, qc0, ilab, beta, &
+      call condensation4(dbus, dsiz, fbus, fsiz, vbus, vsiz, &
+           tplus0, t0, huplus0, q0, qc0, &
            dt, ni, nk, kount, trnch)
       if (timings_L) call timing_stop_omp(440)
       if (phy_error_L) return

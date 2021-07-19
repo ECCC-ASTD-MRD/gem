@@ -25,6 +25,7 @@ target_link_libraries(maingemdm
    massv
    ${ompfftw}
    fftw3
+   hwloc
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
@@ -43,6 +44,7 @@ target_link_libraries(checkdmpart
    massv
    ${ompfftw}
    fftw3
+   hwloc
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
@@ -77,6 +79,7 @@ target_link_libraries(gemgrid
    rpncomm
    rmn
    massv
+   hwloc
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}

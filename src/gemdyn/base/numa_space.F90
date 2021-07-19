@@ -31,10 +31,12 @@ module numa
 contains
 
       subroutine numa_init
+      use hwdetect
       implicit none
 
       character(len=64) fmt,ni
-      integer ierr, isiz, ns, col, row
+      integer ierr, isiz, col, row
+      integer(c_int) ns
       integer, dimension(2,0:Ptopo_npey-1,0:Ptopo_npex-1) :: NuRNuP,GNU
 !
 !     ---------------------------------------------------------------
@@ -47,11 +49,8 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-!!! ns = Numa_cores_per_socket is not working at the moment
-!!! so we will use the hard coded value 20 that we eventually
-!!! will replaced by an env variable for external control
-      
-      ns = 20 ! on most of our current systems
+      ns = cpu_per_numa()
+
       if (Ptopo_npey > ns) then
          Numa_uniform_L = mod(Ptopo_npey,ns)==0
       else

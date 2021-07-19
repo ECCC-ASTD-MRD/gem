@@ -12,6 +12,7 @@ file(GLOB FTNSRC */*.F90)
 include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
 include_directories(series)
+include_directories(surface)
 include_directories(${CMAKE_SOURCE_DIR}/src/modelutils/include)
 include_directories(${CMAKE_BINARY_DIR}/src/modelutils)
 include_directories(${CMAKE_BINARY_DIR}/src/vgrid)

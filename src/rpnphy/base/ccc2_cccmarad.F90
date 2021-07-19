@@ -145,7 +145,7 @@ contains
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       integer :: mpcat
-
+      
       ! isccp
 
       real :: &
@@ -166,6 +166,8 @@ contains
       real :: &
            rseed                     ! real pseudo-random number seed
 
+      real, target :: dummy1d(ni)
+      
 #define PHYPTRDCL
 #include "cccmarad_ptr.hf"
 
@@ -192,6 +194,15 @@ contains
       call init2nan(omcl, gcl, liqwcin_s, icewcin_s)
       call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
       call init2nan(dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
+
+      if (stcond(1:3) /= 'MP_') then
+         if (.not.associated(ztcsl)) ztcsl => dummy1d
+         if (.not.associated(ztcsm)) ztcsm => dummy1d
+         if (.not.associated(ztcsh)) ztcsh => dummy1d
+         if (.not.associated(ztczl)) ztczl => dummy1d
+         if (.not.associated(ztczm)) ztczm => dummy1d
+         if (.not.associated(ztczh)) ztczh => dummy1d
+      endif
       
       ! use integer variables instead of actual integers
 
@@ -314,13 +325,15 @@ contains
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, &
+              temp, sig, zgztherm, ps, &   
               ni, nkm1, nk, mpcat, kount)
          if (phy_error_L) return
       else
-         call cldoppro4(taucs, omcs, gcs, taucl, omcl, gcl, &
+         call cldoppro5(taucs, omcs, gcs, taucl, omcl, gcl, &
               ztopthw, ztopthi, zecc,ztcc, &
               zeccl, zeccm, zecch, &
+              ztcsl, ztcsm, ztcsh, &
+              ztczl, ztczm, ztczh, zgztherm, &     
               zctp, zctt, liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
               temp, sig, ps, zmg, zml, zmrk2, ni, &

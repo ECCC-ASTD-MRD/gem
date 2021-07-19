@@ -44,7 +44,7 @@
             call rpn_comm_xch_halo (sls,  l_minx,l_maxx,l_miny,l_maxy,&
                 l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          endif
-         if (Dynamics_hauteur_L) call fislh_metric()
+         if (Dynamics_hauteur_L) call VERmetric ()
          endif
       else
          if (Vtopo_L .and. (Lctl_step >= Vtopo_start)) then
@@ -75,7 +75,7 @@
                endif                  
             endif
         
-            if (Dynamics_hauteur_L) call fislh_metric()
+            if (Dynamics_hauteur_L) call VERmetric ()
          end if
       end if
 !

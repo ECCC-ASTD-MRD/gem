@@ -236,12 +236,6 @@ module ens_options
    real :: Ens_ptp_cape = 0.0
    namelist /ensembles/ Ens_ptp_cape
 
-   !# TLC value (convective precipitation) in Kuo (OLDKUO) scheme to stop
-   !# perturbing the physical tendencies
-   !# (2D MARKOV CHAINES)
-   real :: Ens_ptp_tlc = 0.0
-   namelist /ensembles/ Ens_ptp_tlc
-
    !# vertical velocity value (m/s) above which we stop perturbing the
    !# physical tendencies
    !# (2D MARKOV CHAINES)
@@ -385,7 +379,7 @@ contains
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_env_b = ',Ens_ptp_env_b
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_cape = ',Ens_ptp_cape
-            write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_tlc = ',Ens_ptp_tlc
+!!$            write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_tlc = ',Ens_ptp_tlc
             write(Lun_out,'(a,f12.5)' )'Ens_ens_ptp_crit_w = ',Ens_ptp_crit_w
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_fac_reduc = ',Ens_ptp_fac_reduc
          end if
@@ -400,7 +394,7 @@ contains
          ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPCAPE'    , Ens_ptp_cape     , WB_REWRITE_MANY),ier)
-         ier= min(wb_put('ens/PTPTLC'     , Ens_ptp_tlc      , WB_REWRITE_MANY),ier)
+!!$         ier= min(wb_put('ens/PTPTLC'     , Ens_ptp_tlc      , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPCRITW'   , Ens_ptp_crit_w   , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPFACREDUC', Ens_ptp_fac_reduc, WB_REWRITE_MANY),ier)
       end if

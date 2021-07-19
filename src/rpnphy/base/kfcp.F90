@@ -3070,7 +3070,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !     for the vertical advection calculations
 !    note: same as loop 495 but for winds
 
-    if (KFCMOM) then
+    if (cmt_type_i == CMT_ECMWF_PH2) then
 
       do 288 NK=1,LTOP
          UPA(NK)=U00(I,NK)

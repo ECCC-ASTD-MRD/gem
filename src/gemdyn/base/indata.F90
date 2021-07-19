@@ -82,7 +82,7 @@
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       end if
 
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call fislh_metric()
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call VERmetric ()
 
       trt0 = trt1
 

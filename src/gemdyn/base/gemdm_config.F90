@@ -256,12 +256,12 @@
          if (Init_balgm_L) Init_mode_L= .true.
       end if
 
-      if (Lctl_debug_L) then
+      if (Lun_debug_L) then
          call msg_set_minMessageLevel(MSG_INFOPLUS)
 !        istat = gmm_verbosity(GMM_MSG_DEBUG)
 !        istat = wb_verbosity(WB_MSG_DEBUG)
 !        call msg_set_minMessageLevel(MSG_DEBUG)
-         call handle_error_setdebug(Lctl_debug_L)
+         call handle_error_setdebug(Lun_debug_L)
       end if
 
       if (Hzd_lnr_theta < 0.) then

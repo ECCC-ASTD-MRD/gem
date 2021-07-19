@@ -17,12 +17,12 @@
 module cnv_main
    implicit none
    private
-   public :: cnv_main3
+   public :: cnv_main4
 
 contains
 
    !/@*
-   subroutine cnv_main3(d, dsiz, f, fsiz, v, vsiz, t0, q0, qc0, ilab, bett, &
+   subroutine cnv_main4(d, dsiz, f, fsiz, v, vsiz, t0, q0, qc0, &
         dt, ni, nk, kount)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -31,7 +31,7 @@ contains
       use phybus
       use phy_options
       use cnv_options
-      use kfrpn, only: kfrpn3
+      use kfrpn, only: kfrpn4
       use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
       use shallconv, only: shallconv5
       use kfmid, only: kfmid1
@@ -56,14 +56,8 @@ contains
       ! d        dynamics input field
       ! f        historic variables for the physics
       ! v        physics tendencies and other output fields from the physics
-      !
-      !          - Output -
-      ! ilab     flag array: an indication of convective activity from Kuo schemes
-      ! bett     estimated averaged cloud fraction growth rate for kuostd
 
       integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount
-      integer,dimension(ni,nk-1), intent(out) :: ilab
-      real,   dimension(ni), intent(out)      :: bett
       real,   dimension(ni,nk-1), intent(inout) :: t0,q0,qc0
       real,   target, intent(inout) :: f(fsiz), v(vsiz), d(dsiz)
       real dt
@@ -84,8 +78,6 @@ contains
       integer :: i,k,niter, ier, nkm1, ier2
 
       real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
-      real, dimension(ni,nk-1) :: zfm, dotp
-      !
       !*Set Dimensions for convection call
       !
       !INTEGER KENS = 0  ! number of additional ensemble members for convection
@@ -108,7 +100,7 @@ contains
       integer, dimension(ni)           :: kcount
       real,    dimension(ni)           :: cnv_active, cape
       real,    dimension(ni,nk-1)      :: dummy1, dummy2, geop, cond_prflux
-      real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, purv, dmsedt
+      real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, dmsedt
       real,    dimension(ni,nk-1,kchm) :: pch1, pch1ten
 
 
@@ -132,19 +124,23 @@ contains
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
            zmcd,zmpeff,zmainc
-      real, pointer, dimension(:,:) :: ncp, nip, qcm, qcp, qip, qrp, qqm, qqp, &
+      real, pointer, dimension(:,:) :: ncp, nip, qcm, qcp, qip, qqm, qqp, &
            sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
-           zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc, zufcp, zvfcp, &
-           zprctns,zpritns,qti1p, nti1p, zfsc, zqlsc, zqssc, zfbl, &
+           zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
+           zufcp, zvfcp, zufcp1, zvfcp1, zufcp2, zvfcp2, zufcp3, zvfcp3,  zsufcp, zsvfcp, &
+           zprctns,zpritns,qti1p, nti1p, zfsc, zqlsc, zqssc, &
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
            zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
            zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
 
+      logical :: kfcmom
+      
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'cnv_main [BEGIN]')
 
       nkm1 = nk - 1
+      kfcmom = (cmt_type_i /= CMT_NONE)
 
       MKPTR1D(psm, pmoins, f)
       MKPTR1D(psp, pmoins, f)
@@ -202,7 +198,6 @@ contains
       MKPTR2Dm1(qip, qiplus, d)
       MKPTR2Dm1(qqm, humoins, d)
       MKPTR2Dm1(qqp, huplus, d)
-      MKPTR2Dm1(qrp, qrplus, d)
       MKPTR2Dm1(ttm, tmoins, d)
       MKPTR2Dm1(ttp, tplus, d)
       MKPTR2Dm1(uu, uplus, d)
@@ -212,7 +207,6 @@ contains
       MKPTR2Dm1(zcqe, cqe, v)
       MKPTR2Dm1(zcte, cte, v)
       MKPTR2Dm1(zen, en, f)
-      MKPTR2Dm1(zfbl, fbl, f)
       MKPTR2Dm1(zfdc, fdc, f)
       MKPTR2Dm1(zfmc, fmc, f)
       MKPTR2Dm1(zfsc, fsc, f)
@@ -234,6 +228,10 @@ contains
       MKPTR2Dm1(zqdifv, qdifv, v)
       MKPTR2Dm1(zqlsc, qlsc, v)
       MKPTR2Dm1(zqssc, qssc, v)
+      
+      MKPTR2Dm1(zsufcp, sufcp, f)
+      MKPTR2Dm1(zsvfcp, svfcp, f)
+      
       MKPTR2Dm1(ztfcp, tfcp, f)
       MKPTR2Dm1(zmte, mte, v)
       MKPTR2Dm1(zrnflx, rnflx, f)
@@ -242,10 +240,20 @@ contains
       MKPTR2Dm1(ztshal, tshal, v)
       MKPTR2Dm1(ztusc, tusc, v)
       MKPTR2Dm1(ztvsc, tvsc, v)
+      
       MKPTR2Dm1(zufcp, ufcp, f)
+      MKPTR2Dm1(zufcp1, ufcp1, f)
+      MKPTR2Dm1(zufcp2, ufcp2, f)
+      MKPTR2Dm1(zufcp3, ufcp3, f)
+      
       MKPTR2Dm1(zumfs, umfs, v)
       MKPTR2Dm1(zumid, umid, v)
+      
       MKPTR2Dm1(zvfcp, vfcp, f)
+      MKPTR2Dm1(zvfcp1, vfcp1, f)
+      MKPTR2Dm1(zvfcp2, vfcp2, f)
+      MKPTR2Dm1(zvfcp3, vfcp3, f)
+      
       MKPTR2Dm1(zwklclplus, wklclplus, d)
       MKPTR2Dm1(zvmid, vmid, v)
       MKPTR2Dm1(zareaup, areaup, f)
@@ -264,8 +272,8 @@ contains
       MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
 
       call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
-      call init2nan(zfm, dotp, dummy1, dummy2, geop)
-      call init2nan(ppres, pudr, pddr, phsflx, purv, dmsedt)
+      call init2nan(dummy1, dummy2, geop) 
+      call init2nan(ppres, pudr, pddr, phsflx, dmsedt)
       call init2nan(pch1, pch1ten)
 
       ! Shallow convective schemes called before deep (post-deep schemes called later in this routine)
@@ -331,12 +339,10 @@ contains
       geop  = zgztherm*GRAV
 
       ier  = 0
-      ilab = 0
       zcte = 0.
       zcqe = 0.
       zcqce= 0.
       qc0  = 0.
-      bett = 0.
       pch1 = 0.
       pch1ten = 0.
 
@@ -355,20 +361,6 @@ contains
          call secajus(zcte, ttp, sigma, psp, niter, 0.1, cdt1, ni, nkm1)
          if (phy_error_L) return
          call apply_tendencies(ttp, zcte, ztdmask, ni, nk, nkm1)
-
-      else if (convec == 'OLDKUO') then
-
-         zfm(:,:) = qcp(:,:)
-         call omega_from_w(dotp,wz,ttp,qqp,psp,sigma,ni,nkm1)
-         call kuo6(zcte,zcqe,ztlc,ztsc, &
-              ilab,zfdc,zfbl,dotp,zfm, &
-              ttp,qqp,qqm, &
-              geop,psp,psm, &
-              sigma, cdt1, ni, ni, nkm1, &
-              satuco, ccctim, cmelt)
-         if (phy_error_L) return
-         if (stcond /= 'NIL' ) &
-              zcqce = (zfm -qcp)*rcdt1
 
       else if (convec == 'KFC') then
 
@@ -390,9 +382,10 @@ contains
 
       else if (any(convec == (/'KFC2', 'KFC3'/))) then
 
-         call kfrpn3(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
+         call kfrpn4(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
               uu,vv,wz, &
               ztfcp,zhufcp,zufcp,zvfcp, &
+              zufcp1,zvfcp1,zufcp2,zvfcp2, zufcp3,zvfcp3, zsufcp,zsvfcp, &
               zprcten,zpriten, zqrkfc, &
               sigma,zdxdy,zrckfc,geop, &
               zabekfc,zcapekfc,ztauckfc, zcinkfc, &
@@ -436,15 +429,6 @@ contains
          zqckfc = zprcten + zpriten
          if (kount == 0) kcount(:) = 0
          zfcpflg(:) = real(kcount(:))
-
-      else if (convec == 'KUOSTD') then
-
-         call omega_from_w(dotp,wz,ttp,qqp,psp,sigma,ni,nkm1)
-         call lsctrol(ilab, dotp, sigma, ni, nkm1)
-         call kuostd2(zcte,zcqe,ilab,zfdc,bett, &
-              ttp,ttm,qqp,qqm,geop,psp, &
-              sigma, cdt1, ni, nkm1)
-         if (phy_error_L) return
 
       endif DEEP_CONVECTION
       if (phy_error_L) return
@@ -667,6 +651,6 @@ contains
       call msg_toall(MSG_DEBUG, 'cnv_main [END]')
       !----------------------------------------------------------------
       return
-   end subroutine cnv_main3
+   end subroutine cnv_main4
 
 end module cnv_main

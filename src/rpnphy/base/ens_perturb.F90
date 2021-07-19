@@ -39,7 +39,7 @@ module ens_perturb
   
   ! External variables
   integer, public :: ptp_nc, spp_nc, ens_nc2d
-  real, public :: ptpenvu, ptpenvb, ptpcape, ptptlc, ptpcritw, ptpfacreduc
+  real, public :: ptpenvu, ptpenvb, ptpcape, ptpcritw, ptpfacreduc
   logical, public :: ptp_L, spp_L
 
   ! External methods
@@ -333,7 +333,7 @@ contains
     !             _
     !            1.0
     !
-    real, pointer, dimension(:)   :: zabekfc, zmrk2, ztlc
+    real, pointer, dimension(:)   :: zabekfc, zmrk2
     real, pointer, dimension(:,:) :: zsigm, zsigt, &
          ztplus, zuplus, zvplus, zwplus, &
          ztphytd, zuphytd, zvphytd
@@ -345,7 +345,6 @@ contains
 
     nullify(zabekfc); if (abekfc > 0) zabekfc(1:ni) => f( abekfc:)
     zmrk2  (1:ni)      => f( mrk2:)
-    ztlc   (1:ni)      => f( tlc:)
     zsigm  (1:ni,1:nk) => d( sigm:)
     zsigt  (1:ni,1:nk) => d( sigt:)
     ztplus (1:ni,1:nk) => d( tplus:)
@@ -370,8 +369,6 @@ contains
        if (associated(zabekfc) .and. &
             (convec=='KFC' .or. convec=='KFC2' .or. convec=='KFC3')) then
           if (zabekfc(i).le.ptpcape) fac_convec = 1.0
-       elseif (ztlc(i).le.ptptlc.and.convec.eq.'OLDKUO') then
-          fac_convec = 1.0
        endif
        counter_w(i) = 0
        fac_mrk2(i)  =(zmrk2(i)-1.)*fac_convec+1.

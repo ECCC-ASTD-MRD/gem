@@ -205,6 +205,9 @@ contains
       istat = clib_toupper(kntrad_S)
       istat = clib_toupper(kntraduv_S)
       istat = clib_toupper(linoz_chm)
+      istat = clib_toupper(lhn_ramp_S)
+      istat = clib_toupper(lhn_start_S)
+      istat = clib_toupper(lhn_stop_S)
       istat = clib_toupper(longmel)
       istat = clib_toupper(pbl_diss)
       istat = clib_toupper(pbl_dissheat)
@@ -403,10 +406,10 @@ contains
       conv_mid = mid
 
       !# Operating mode for cldoptx regarding cloud water
-      if ( stcond=='NIL')  then
+      if (stcond == 'NIL')  then
          !# no cloud water is provided to cldoptx
          cw_rad = 0
-      else if ( any(trim(stcond) == (/'NEWSUND','CONSUN '/)) ) then
+      else if (stcond == 'CONSUN') then
          !# total cloud water only is provided to cldoptx
          cw_rad = 1
       else if (stcond(1:2) == 'MP') then
@@ -418,13 +421,6 @@ contains
          IOPTIX = OPT_OPTIX_OLD
       else
          IOPTIX = OPT_OPTIX_NEW
-      endif
-
-      !# Climat special case
-      if ((CLIMAT .or. STRATOS) .and. RADFIX) then
-         !# LES MODES CLIMAT ET STRATOS DOIVENT UTILISER RADFIX=FAUX
-         RADFIX = .false.
-         call msg(MSG_INFO,'(phy_nml) RADFIX SET TO .FALSE. FOR CLIMATE OR STRATOS MODE')
       endif
 
       !# Set flags for memory debugging

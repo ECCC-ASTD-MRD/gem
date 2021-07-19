@@ -72,6 +72,7 @@ README-benchmark-GY15 with details on how to run it:
 To compile and run GEM, you will need:
 - Fortran and C compilers
 - An MPI implementation such as OpenMPI (with development package),
+- Portable Hardware Locality library (hwloc) (with development package),
 - OpenMP support (optional)
 - BLAS library (with development package),
 - LAPACK library (with development package),

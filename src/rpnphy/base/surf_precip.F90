@@ -84,7 +84,7 @@ contains
 
       if (stcond == 'NIL')  then
          option = 0
-      else if (stcond == 'NEWSUND' .or. stcond == 'CONSUN') then
+      else if (stcond == 'CONSUN') then
          option = 1
       else
          option = 2
@@ -114,7 +114,7 @@ contains
          ! SECOND OPTION:
          ! The phase of precipitation at the surface
          ! is determined by results from the "explicit"
-         ! condensation scheme (NEWSUND and CONSUN).
+         ! condensation scheme (CONSUN).
          ! It was noted in GEM15 that OPTION 2 was not a viable option
          ! for consun since the scheme produces a non zero tls
          ! in cold temperature in winter causing an erronous
@@ -258,7 +258,7 @@ contains
 
       if (stcond == 'NIL')  then
          option=0
-      else if (stcond == 'NEWSUND' .or. stcond == 'CONSUN') then
+      else if (stcond == 'CONSUN') then
          option=1
       else
          option=2

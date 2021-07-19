@@ -1268,7 +1268,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: ivar, nlinbot, istat, lijk(3), uijk(3), lijk2(3), uijk2(3), nk
-      logical :: same_sfc_L, reallocated_L
+      logical :: same_sfc_L, reallocated_L, ispressin_L, ispressout_L
       character(len=256) :: vn_S, msg_S
       real, pointer, dimension(:,:,:) :: din, dout
       real, pointer, dimension(:,:) :: sfcin, sfcout, slsin, slsout
@@ -1381,7 +1381,11 @@ contains
          if (any(F_cfgvar%vint_S(1:4) == (/'l-co','line'/))) &
               nlinbot = size(F_fldout%d1,3)
          if (any(F_cfgvar%vint_S(1:4) == (/'l-co','c-co'/)) .and. &
-              F_fldin%hstat == HINTERP4YY_NONE) same_sfc_L = .true.
+              F_fldin%hstat == HINTERP4YY_NONE) then
+            ispressin_L = vgrid_wb_is_press_kind(F_fldin%vgrid_S)
+            ispressout_L = vgrid_wb_is_press_kind(F_fldout%vgrid_S)
+            same_sfc_L = (ispressin_L .eqv. ispressout_L)
+         endif
          nullify(sfcin, sfcout, slsin, slsout)
          if (associated(F_fldin%sfc)) then
             sfcin => F_fldin%sfc(:,:,1)
