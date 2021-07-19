@@ -37,6 +37,8 @@ if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 9.3)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch -fallow-invalid-boz")
 endif()
 
+set(EXTRA_LIBRARIES "-lopen-pal")
+
 # There might be extra OpenMP and OpenACC flags which are specific to each compiler,
 # that are not added the find_package(OpenACC)
 # It doesn't matter if we defined them even if OpenACC isn't used because the

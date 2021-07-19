@@ -28,3 +28,5 @@ set(CMAKE_Fortran_FLAGS "-mkl -assume byterecl -convert big_endian -xCORE-AVX512
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,--allow-shlib-undefined,--allow-multiple-definition -fpic -static-intel -mkl")
 #set(CMAKE_EXE_LINKER_FLAGS_INIT "-fpic -static-intel -mkl")
+
+set(EXTRA_LIBRARIES "-lopen-pal")

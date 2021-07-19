@@ -28,3 +28,4 @@ set(CMAKE_Fortran_FLAGS "-mkl -assume byterecl -convert big_endian -fpe0 -fpic -
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-fpic -static-intel -mkl")
 
+set(EXTRA_LIBRARIES "-lopen-pal")
