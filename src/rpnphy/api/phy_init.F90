@@ -29,7 +29,7 @@ module phy_init_mod
    use phygridmap
    use series_mod, only: series_init
    use sfcexch_options, only: sfcexch_options3
-   use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptptlc, ptpcritw, &
+   use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptpcritw, &
         ptpfacreduc, ens_nc2d, ens_spp_init, ENS_OK
    private
    public :: phy_init
@@ -148,7 +148,7 @@ contains
       integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
 
       logical :: print_L
-      integer :: unout, options, itype, isizeof, ntr, i, nsurf
+      integer :: unout, options, itype, isizeof, ntr, nsurf
       integer :: ier, p_ni, p_nj, master_pe
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
@@ -176,11 +176,17 @@ contains
 
       delt   = F_dt
       ier    = timestr2step(kntrad, kntrad_S, dble(delt))
-      kntrad = max(1,kntrad)
+      kntrad = max(1, kntrad)
       if (kntraduv_S /= '') then
          ier    = timestr2step(kntraduv, kntraduv_S, dble(delt))
-         kntraduv = max(1,kntraduv)
+         kntraduv = max(1, kntraduv)
       endif
+      ier       = timestr2step(lhn_ramp, lhn_ramp_S, dble(delt))
+      lhn_ramp  = max(0, lhn_ramp)
+      ier       = timestr2step(lhn_start, lhn_start_S, dble(delt))
+      lhn_start = max(0, lhn_start)
+      ier       = timestr2step(lhn_stop, lhn_stop_S, dble(delt))
+      lhn_stop  = max(0, lhn_stop)
 
       !# Update convective timescales to include timestep support
       if (deep_timeent_sec > 0.) ier = timestr2sec(deep_timeent_sec,deep_timeent,dble(F_dt))
@@ -328,7 +334,6 @@ contains
          ier = min(wb_get('ens/PTPENVU'    , ptpenvu)    ,ier)
          ier = min(wb_get('ens/PTPENVB'    , ptpenvb)    ,ier)
          ier = min(wb_get('ens/PTPCAPE'    , ptpcape)    ,ier)
-         ier = min(wb_get('ens/PTPTLC'     , ptptlc)     ,ier)
          ier = min(wb_get('ens/PTPCRITW'   , ptpcritw)   ,ier)
          ier = min(wb_get('ens/PTPFACREDUC', ptpfacreduc),ier)
          if (.not.WB_IS_OK(ier)) then

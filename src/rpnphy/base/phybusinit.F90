@@ -195,12 +195,10 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.lcons .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-!!$           'clse', 'cec ', 'cecm', &
            'cec ', 'cecm', &
            'ced ', 'cedm', 'cep ', &
            'cepm', 'cem ', 'cemm', &
            'cer ', 'cerm', 'ces ', &
-!!$           'cesm', 'cqt ', 'cqc ', &
            'cesm', 'cqc ', &
            'cqcm', 'cqd ', 'cqdm', &
            'cqp ', 'cqpm', 'cqm ', &
@@ -225,10 +223,36 @@ subroutine phybusinit(ni,nk)
    enddo
    p3_comptend = (p3_comptend .or. debug_alldiag_L)
    !#TODO: Check if some alloc can be avoided when p3_comptend == .false.
+
+   etccdiag = .false.
+   i = 1
+   do while (.not.etccdiag .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'tccm', 'tcsh', 'tshm', 'tcsl', 'tslm', 'tcsm', 'tsmm', &
+           'tczh', 'tzhm', 'tczl', 'tzlm', 'tczm', 'tzmm' &
+           /))) etccdiag = .true.
+      i = i+1
+   enddo
+   etccdiag = (etccdiag .or. debug_alldiag_L)
+
    
    lhn_init = (lhn /= 'NIL')
    lsfcflx = (sfcflx_filter_order > 0)
-   
+
+   cmt_comp_diag = .false.
+   if (any(convec == (/'KFC2', 'KFC3'/)) .and. cmt_type_i /= CMT_NONE) then
+      i = 1
+      do while (.not.cmt_comp_diag .and. i <= nphyoutlist)
+         if (any(phyoutlist_S(i) == (/ &
+              'u6a ', 'u6b ', 'u6c ', 'u6am', 'u6bm', 'u6cm', &
+              'v7a ', 'v7b ', 'v7c ', 'v7am', 'v7bm', 'v7cm', &
+              'u6d ', 'u6dm', 'v7d ', 'v7dm' &
+              /))) cmt_comp_diag = .true.
+         i = i+1
+      enddo
+   endif
+   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L)
+
 #include "phyvar.hf"
    if (phy_error_L) return
 

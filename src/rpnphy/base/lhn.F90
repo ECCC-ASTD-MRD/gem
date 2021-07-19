@@ -30,7 +30,8 @@ contains
      use phy_options
      use phybus
      use tendency, only: apply_tendencies
-
+     use debug_mod, only: init2nan
+     
      implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf> 
@@ -117,6 +118,8 @@ contains
      !do nothing if LHN not in use
      if (lhn /= 'IRPCP') return
 
+     call init2nan(pres_pa, es, qvs_old, qvs_new, rh)
+
      !Output diagnostic:  
      ! 
      !code for decision tree
@@ -130,22 +133,22 @@ contains
         return
      endif
   
-     !LHN weight as a function of model timestep during a 6h period
-     !  TODO: this should not be hard coded
-     select case (kount)       
-        case (360:)                 
-           !time_modulation = 0. ->  LHN is not applied after IAU period
+     !LHN time modulation as a function of model timestep  (kount)
+     if (kount < lhn_start) then
+           !LHN is not applied during first few timesteps
            ztree = 6.2
            return
-        case (20:359)                 
-           time_modulation = 1.       !no impact of time during IAU period
-        case (10:19)                  !ramp up LHN modulation from 0 to 1 for a few timesteps
-           time_modulation = (kount - 9.)/10. 
-        case (:9)                
-           !time_modulation = 0. ->  LHN is not applied during early spinup 
+     else if (kount  <  lhn_start+lhn_ramp) then
+           !ramp up LHN modulation from 0 to 1 for a few timesteps
+           time_modulation = real(kount - lhn_start + 1.)/lhn_ramp
+     else if (kount <= lhn_stop) then
+           !no time modulation during 'normal' application of LHN 
+           time_modulation = 1.       
+     else 
+           !timestep is > lhn_stop ; LHN is not applied
            ztree = 6.2
            return
-     end select
+     end if 
 
      !Output diagnostics:  
      ! 
@@ -178,22 +181,12 @@ contains
      !Horizontally smoothed quantities
      !
      !temperature tendencies due to latent heat release
-!!$     MKPTR2D(ttend, smta, f)
      MKPTR2D(ttend, tcond_smt, f)
-!!$     !
-!!$     !TODO use 2D smoothing instead of putting them in
-!!$     !a 3D array
-!!$     !
-!!$     !3D container for 2D fields
-!!$     MKPTR2D(zsm2d, sm2d, f)
-!!$     !model precip rate      
-!!$     model_rt = zsm2d(:,1) 
-!!$     !radar precip rate
-!!$     radar_pr = zsm2d(:,2)
-!!$     !radar quality index
-!!$     radar_qi = zsm2d(:,3)
+     !modeled precip rate
      MKPTR1D(model_rt, rt_smt, f)
+     !observed precip rate
      MKPTR1D(radar_pr, rdpr_smt, f)
+     !observation quality index
      MKPTR1D(radar_qi, rdqi_smt, f)
 
   
@@ -292,7 +285,7 @@ contains
             else
                !model has NO precip
                !in this case, use predefined typical profile
-               call use_avg_profile(this_radar_pr, pres_pa, modulation_factor, i, ni, nk, dt, &
+               call use_avg_profile(this_radar_pr, pres_pa, modulation_factor, i, ni, nk, &
                                     v(tlhn), ztree(i) )
             endif
         else
@@ -346,7 +339,7 @@ contains
 
 
   !/@*
-  subroutine use_avg_profile(radar_pr, model_pres_pa, modulation_factor, i, ni, nk, dt, &
+  subroutine use_avg_profile(radar_pr, model_pres_pa, modulation_factor, i, ni, nk, &
                              lhn_profile, stat) 
      use phy_options
      implicit none
@@ -360,9 +353,7 @@ contains
      ! i                x index
      ! ni               x dimension
      ! nk               z dimension
-     ! dt               model timestep (s) 
      integer, intent(in) :: i,ni,nk            !x index ; x dim ;  number of vertical levels
-     real,    intent(in) :: dt                 !model timestep
      real,    intent(in) :: radar_pr           !precip rate observed by radar
      real,    intent(in) :: modulation_factor  !modulation factor for LHN
      real,    intent(in), dimension(ni,nk) :: model_pres_pa !model pressure

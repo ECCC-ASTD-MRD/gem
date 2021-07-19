@@ -82,7 +82,7 @@ contains
       ! for diagnostic calculations only.
       ! Computaion of lwc and iwc used by radiation code is done in prep_cw.
 
-      if (stcond.eq.'NEWSUND'.or. stcond.eq.'CONSUN') then
+      if (stcond == 'CONSUN') then
          integrate=.true.
          do k=1,nk
             do i=1,ni

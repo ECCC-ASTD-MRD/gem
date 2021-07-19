@@ -1,4 +1,4 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
+!-------------------------------------- LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -12,7 +12,7 @@
 !You should have received a copy of the License/Disclaimer along with this software;
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 function check_options2() result(F_istat)
@@ -34,8 +34,7 @@ function check_options2() result(F_istat)
    ! 002      B. Dugas (Dec 2008)     - Add Bechtold-Kain-Fritsch schemes
    !                                    (Bechtold)
    ! 003      J. Milbrandt (Apr 2009) - Replaced 'my_exp1' with 'my_dm'
-   ! 004      J. Toviessi (July 2009) - radslope will not run with newrad
-   !                                    and oldrad
+   ! 004      J. Toviessi (July 2009) - radslope will not run with oldrad
    ! 005      J. Milbrandt (Aug 2009) - Replaced 'my_full' with 'my_tm'
    ! 006      A-M. Leduc   (Mar 2010) - Fix the bechtold shallow condition
    !                                    ISHLCVT(2) = 3.
@@ -60,18 +59,12 @@ function check_options2() result(F_istat)
 
    else if (stcond == 'CONSUN' .and. &
         .not.any(convec == (/ &
-        'KUOSTD  ', &
         'KFC     ', &
         'KFC2    ', &
         'KFC3    ', &
         'BECHTOLD', &
         'NIL     '  &
         /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: stcond='// &
-           trim(stcond)//' and convec='//trim(convec))
-      return
-
-   else if (stcond /= 'CONSUN' .and. convec == 'KUOSTD') then
       call msg(MSG_ERROR,'(check_options) option mismatch: stcond='// &
            trim(stcond)//' and convec='//trim(convec))
       return
@@ -126,21 +119,6 @@ function check_options2() result(F_istat)
            '(check_options) NSLOFLUX CANNOT EXCEED A VALUE OF ', MAXSLOFLUX
       call msg(MSG_ERROR, str512)
       return
-   endif
-
-
-   if (FOMIC) then
-
-      if (RADIA /= 'NEWRAD') then
-         call msg(MSG_ERROR,'(check_options) FOMIC MUST BE USED WITH NEWRAD')
-         return
-      endif
-
-      if (RADFIX) then
-         call msg(MSG_ERROR,'(check_options) FOMIC AND RADFIX ARE INCOMPATIBLE')
-         return
-      endif
-
    endif
 
    if ( PCPTYPE == 'BOURGE3D')then

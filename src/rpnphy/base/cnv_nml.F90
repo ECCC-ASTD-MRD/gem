@@ -127,6 +127,7 @@ contains
       !----------------------------------------------------------------
       m_istat = RMN_ERR
 
+      istat = clib_toupper(cmt_type)
       istat = clib_toupper(deep)
       istat = clib_toupper(deep_conserve)
       istat = clib_toupper(deep_timeent)
@@ -143,6 +144,12 @@ contains
       istat = clib_toupper(bkf_entrains)
       istat = clib_toupper(bkf_detrains)
       istat = clib_toupper(bkf_closures)
+
+      if (.not.any(cmt_type == CMT_TYPE_OPT)) then
+         call str_concat(msg_S,CMT_TYPE_OPT,', ')
+         call msg(MSG_ERROR,'(cnv_nml_check) cmt_type = '//trim(cmt_type)//' : Should be one of: '//trim(msg_S))
+         return
+      end if
 
       if (.not.any(deep == DEEP_OPT)) then
          call str_concat(msg_S,DEEP_OPT,', ')
@@ -302,6 +309,26 @@ contains
       !# set convective radius over water if not specified by user
       if (kfcradw < 0.) kfcradw = kfcrad
 
+      !# cmt options
+      select case(cmt_type)
+      case ('ECMWF_PH2')
+         cmt_type_i = CMT_ECMWF_PH2
+         cmt_gki_cup = 0.
+         cmt_gki_cdown = 0.
+      case ('ECMWF')
+         cmt_type_i = CMT_ECMWF
+         cmt_gki_cup = 0.
+         cmt_gki_cdown = 0.
+      case ('GKI')
+         cmt_type_i = CMT_GKI
+         cmt_ecmwf_lambda = 0.
+      case default
+         cmt_type_i = CMT_NONE
+         cmt_ecmwf_lambda = 0.
+         cmt_gki_cup = 0.
+         cmt_gki_cdown = 0.
+      end select
+     
       m_istat = RMN_OK
       !----------------------------------------------------------------
       return

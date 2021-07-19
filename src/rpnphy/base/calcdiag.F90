@@ -73,11 +73,11 @@ contains
       logical :: lmoyhr, laccum, lreset, lavg, lkount0
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
-      real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, vblend, z0m_ec, z0t_ec, esdiagec, &
-           tsurfec, qsurfec
+      real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
+           vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec
       real(REAL64), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
       real, dimension(ni,nk) :: presinv, t2inv, tiinv
-      real, dimension(ni,nk-1) :: q_grpl,iiwc
+      real, dimension(ni,nk-1) :: q_grpl, iiwc
 
 #define PHYPTRDCL
 #include "calcdiag_ptr.hf"
@@ -91,8 +91,10 @@ contains
 #undef PHYPTRDCL
 #include "calcdiag_ptr.hf"
 
-      call init2nan(uvs, vmod, vdir, th_air)
-      call init2nan(presinv, t2inv, tiinv)
+      call init2nan(uvs, vmod, vdir, th_air, hblendm, ublend)
+      call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec)
+      call init2nan(enm, pwm, en0, pw0, enp, pwp, enr, pwr)
+      call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc)
 
       lkount0 = (kount == 0)
       lmoyhr = (moyhr > 0)
@@ -626,6 +628,15 @@ contains
             zt2im(:)   = 0.0
             ztiim(:)   = 0.0
             ztiwpm(:)  = 0.0
+            if (etccdiag) then
+               ztccm(:)  = 0.0
+               ztslm(:)  = 0.0
+               ztsmm(:)  = 0.0
+               ztshm(:)  = 0.0
+               ztzlm(:)  = 0.0
+               ztzmm(:)  = 0.0
+               ztzhm(:)  = 0.0
+            endif
             zhrsmax(:) = zrhdiag(:)
             zhrsmin(:) = zrhdiag(:)
             zhusavg(:) = 0.0
@@ -723,9 +734,9 @@ contains
                  'KFC3    ', &
                  'BECHTOLD'  &
                  /))) then
-               zabekfcm(:) = 0.0
+               zabekfcm(:)  = 0.0
                zcapekfcm(:) = 0.0
-               zcinkfcm(:) = 0.0
+               zcinkfcm(:)  = 0.0
                zwumkfcm(:)  = 0.0
                zzbaskfcm(:) = 0.0
                zztopkfcm(:) = 0.0
@@ -735,8 +746,20 @@ contains
                zqckfcm(:,:)  = 0.0
                zumfkfcm(:,:) = 0.0
                zdmfkfcm(:,:) = 0.0
-               zudcm(:,:) = 0.0
-               zvdcm(:,:) = 0.0
+               zudcm(:,:)   = 0.0
+               zvdcm(:,:)   = 0.0
+
+               if (cmt_comp_diag) then
+                  zufcp1m(:,:) = 0.0
+                  zufcp2m(:,:) = 0.0
+                  zufcp3m(:,:) = 0.0
+                  zsufcpm(:,:) = 0.0
+                  zvfcp1m(:,:) = 0.0
+                  zvfcp2m(:,:) = 0.0
+                  zvfcp3m(:,:) = 0.0
+                  zsvfcpm(:,:) = 0.0
+               endif
+            
                if (associated(zuscm)) zuscm(:,:) = 0.0
                if (associated(zvscm)) zvscm(:,:) = 0.0
             endif
@@ -789,6 +812,15 @@ contains
             zt2im    (i) = zt2im   (i) + zt2i  (i)
             ztiim    (i) = ztiim   (i) + ztii  (i)
             ztiwpm   (i) = ztiwpm  (i) + ztiwp (i)
+            if (etccdiag) then
+               ztccm(i) = ztccm(i)  + ztcc(i)
+               ztslm(i) = ztslm(i) + ztcsl(i)
+               ztsmm(i) = ztsmm(i) + ztcsm(i)
+               ztshm(i) = ztshm(i) + ztcsh(i)
+               ztzlm(i) = ztzlm(i) + ztczl(i)
+               ztzmm(i) = ztzmm(i) + ztczm(i)
+               ztzhm(i) = ztzhm(i) + ztczh(i)
+            endif
             zhrsmax  (i) = max(zhrsmax  (i) , zrhdiag (i))
             zhrsmin  (i) = min(zhrsmin  (i) , zrhdiag (i))
             zhusavg  (i) =     zhusavg  (i) + zqdiag  (i)
@@ -807,6 +839,15 @@ contains
                zt2im    (i) = zt2im    (i) * moyhri
                ztiim    (i) = ztiim    (i) * moyhri
                ztiwpm   (i) = ztiwpm   (i) * moyhri
+               if (etccdiag) then
+                  ztccm(i) = ztccm(i) * moyhri
+                  ztslm(i) = ztslm(i) * moyhri
+                  ztsmm(i) = ztsmm(i) * moyhri
+                  ztshm(i) = ztshm(i) * moyhri
+                  ztzlm(i) = ztzlm(i) * moyhri
+                  ztzmm(i) = ztzmm(i) * moyhri
+                  ztzhm(i) = ztzhm(i) * moyhri
+               endif
                zhusavg  (i) = zhusavg  (i) * moyhri
                ztdiagavg(i) = ztdiagavg(i) * moyhri
                zp0avg   (i) = zp0avg   (i) * moyhri
@@ -1074,10 +1115,20 @@ contains
                   zqckfcm (i,k) = zqckfcm (i,k) + zqckfc(i,k)
                   zumfkfcm(i,k) = zumfkfcm(i,k) + zumfkfc(i,k)
                   zdmfkfcm(i,k) = zdmfkfcm(i,k) + zdmfkfc(i,k)
-                  zudcm   (i,k) = zudcm   (i,k) + zufcp  (i,k)
-                  zvdcm   (i,k) = zvdcm   (i,k) + zvfcp  (i,k)
                enddo
             enddo
+            zudcm(:,1:nk-1)   = zudcm(:,1:nk-1)   + zufcp(:,1:nk-1)
+            zvdcm(:,1:nk-1)   = zvdcm(:,1:nk-1)   + zvfcp(:,1:nk-1)
+            if (cmt_comp_diag) then
+               zufcp1m(:,1:nk-1) = zufcp1m(:,1:nk-1) + zufcp1(:,1:nk-1)
+               zufcp2m(:,1:nk-1) = zufcp2m(:,1:nk-1) + zufcp2(:,1:nk-1)
+               zufcp3m(:,1:nk-1) = zufcp3m(:,1:nk-1) + zufcp3(:,1:nk-1)
+               zsufcpm(:,1:nk-1) = zsufcpm(:,1:nk-1) + zsufcp(:,1:nk-1)
+               zvfcp1m(:,1:nk-1) = zvfcp1m(:,1:nk-1) + zvfcp1(:,1:nk-1)
+               zvfcp2m(:,1:nk-1) = zvfcp2m(:,1:nk-1) + zvfcp2(:,1:nk-1)
+               zvfcp3m(:,1:nk-1) = zvfcp3m(:,1:nk-1) + zvfcp3(:,1:nk-1)
+               zsvfcpm(:,1:nk-1) = zsvfcpm(:,1:nk-1) + zsvfcp(:,1:nk-1)
+            endif
             if (associated(ztusc) .and. associated(zuscm)) &
                  zuscm(:,1:nk-1) = zuscm(:,1:nk-1) + ztusc(:,1:nk-1)
             if (associated(ztvsc) .and. associated(zvscm)) &
@@ -1090,6 +1141,16 @@ contains
                zdmfkfcm(:,1:nk-1) = zdmfkfcm(:,1:nk-1) * moyhri
                zudcm(:,1:nk-1)    = zudcm(:,1:nk-1) * moyhri
                zvdcm(:,1:nk-1)    = zvdcm(:,1:nk-1) * moyhri
+               if (cmt_comp_diag) then
+                  zufcp1m(:,1:nk-1) = zufcp1m(:,1:nk-1) * moyhri
+                  zufcp2m(:,1:nk-1) = zufcp2m(:,1:nk-1) * moyhri
+                  zufcp3m(:,1:nk-1) = zufcp3m(:,1:nk-1) * moyhri
+                  zsufcpm(:,1:nk-1) = zsufcpm(:,1:nk-1) * moyhri
+                  zvfcp1m(:,1:nk-1) = zvfcp1m(:,1:nk-1) * moyhri
+                  zvfcp2m(:,1:nk-1) = zvfcp2m(:,1:nk-1) * moyhri
+                  zvfcp3m(:,1:nk-1) = zvfcp3m(:,1:nk-1) * moyhri
+                  zsvfcpm(:,1:nk-1) = zsvfcpm(:,1:nk-1) * moyhri
+               endif
                if (associated(zuscm)) zuscm(:,1:nk-1) = zuscm(:,1:nk-1) * moyhri
                if (associated(zvscm)) zvscm(:,1:nk-1) = zvscm(:,1:nk-1) * moyhri
             endif IF_AVG_2

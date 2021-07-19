@@ -43,10 +43,10 @@ module vinterp_mod
    end interface
 
    real, parameter :: EPSILON_R4 = 1.e-6
-   real, parameter :: P0MIN = 1.
-   real, parameter :: P0MAX = 1.e6
-   real, parameter :: H0MIN = -5.e2  !# AdHoc/reasonable negative value
-   real, parameter :: H0MAX = 1.e6
+   real, parameter :: P0MIN = 10000.
+   real, parameter :: P0MAX = 200000.
+   real, parameter :: H0MIN = -1000.  !# AdHoc negative value
+   real, parameter :: H0MAX = 10000.
 
 contains
 
@@ -239,13 +239,15 @@ contains
 
       if (.not.associated(levelsin)) then
          F_istat = priv_calc_vcoor_cube(levelsin, F_vgridin, F_ip1listin, &
-              sfcfldin, sfcfldin2, shape(F_datain), ispressin_L, msg_S)
+              sfcfldin, sfcfldin2, shape(F_datain), ispressin_L, &
+              msg_S//' [inputFld]')
          if (.not.RMN_IS_OK(F_istat)) return
       endif
 
       if (.not.associated(levelsout)) then
          F_istat = priv_calc_vcoor_cube(levelsout, F_vgridout, F_ip1listout, &
-              F_sfcfldout, F_sfcfldout2, nijkout, ispressout_L, msg_S)
+              F_sfcfldout, F_sfcfldout2, nijkout, ispressout_L, &
+              msg_S//' [outputFld]')
          if (.not.RMN_IS_OK(F_istat)) return
       endif 
 

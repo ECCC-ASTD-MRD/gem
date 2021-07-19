@@ -14,10 +14,10 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
-     CTT  ,  CQT  ,  CWT  ,  CRR  ,  CSR  ,  CCF , &
+subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
+     CCF , &
      TP   ,  TM   ,  QP   ,  QM   ,  CWP  ,  CWM , &
-     PSP  ,  PSM  , ilab  ,  DBDT ,  S    , TAU  , &
+     PSP  ,  PSM  , S    , TAU  , &
      PRFLX, SWFLX ,  F12 ,  FEVP , ICEFRAC, &
      MRK2, ni   ,  nlev)
    use tdpack
@@ -28,19 +28,16 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    integer ni , nlev
    real    STT(ni,nlev)    , SQT(ni,nlev)    , SWT(ni,nlev) , &
-        CTT(ni,nlev)    , CQT(ni,nlev)    , CWT(ni,nlev) , &
         SRR(ni)         , SSR(ni)         , SCF(ni,nlev) , &
-        CRR(ni)         , CSR(ni)         , CCF(ni,nlev) , &
+        CCF(ni,nlev) , &
         PRFLX(ni,nlev+1), SWFLX(ni,nlev+1), &
         TP(ni,nlev)     , TM(ni,nlev)     , &
         QP(ni,nlev)     , QM(ni,nlev)     , &
         CWP(ni,nlev)    , CWM(ni,nlev)    , &
         PSP(ni)         , PSM(ni)         , &
-        DBDT(ni)        , S(ni,*)         , &
+        S(ni,*)         , &
         TAU             , F12(ni,nlev)    , FEVP(ni,nlev), &
         ICEFRAC(ni,nlev), MRK2(ni,ens_nc2d)
-
-   integer ilab(ni,nlev)
 
    !@Authors Claude Girard and Gerard Pellerin (1995)
    !@Revision
@@ -72,15 +69,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    ! SRR      large scale (stable) rain rate
    ! SSR      large scale (stable) snow rate
    ! SCF      large scale (stable) cloud fraction
-   !          - Inputs/Outputs
-   ! CTT      convective temperature tendency
-   ! CQT      convective specific humidity tendency
-   !          - Outputs -
-   ! CWT      convective cloud water tendency
-   ! CRR      convective rain rate
-   ! CSR      convective snow rate
-   ! CCF      convective cloud fraction
    !          - Inputs
+   ! CCF     convective cloud fraction 
    ! TP      temperature at (t+dt) before condensation
    ! TM      temperature at (t-dt)
    ! QP      specific humidity at (t+dt) before condensation
@@ -96,7 +86,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    ! F12     cloud to rainwater collection tendency
    ! ICEFRAC  ice fraction
    ! MRK2    Markov chains for stochastic perturbations
-   ! ilab     label array from convective scheme
    ! ni      number of grid points in the horizontal
    ! nlev    number of levels
    ! TAU     timestep
@@ -111,7 +100,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !                   COMING IN FROM ABOVE
    !       CONAE       FACTOR TO TUNE TABLE LOOK-UP FOR TETA-AE
    !       CTFRZ1      TEMP BELOW WHICH CONVERSION RATE IS INCREASED
-   !       cumask      SET = 0 IF CONVECTION,   OTHERWISE = 1
    !       DPRG        DELTA-P DIVIDED BY GRAVITY
    !       HDCWAD      TENDENCY OF CLOUD WATER DUE TO EFFECTS OTHER
    !                   THAN CONDENSATION
@@ -173,7 +161,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real xxp_t,xhj_t,xf_t,xfprim_t,hsq,huz00t,hu,hcondt
    real xwrk,HACCES
 
-   integer, dimension(NI,NLEV) :: CUMASK
    real, dimension(NI     ) :: HCST
    real, dimension(NI     ) :: STPEVP
    real, dimension(NI     ) :: HPS
@@ -288,15 +275,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !  A)       LINKAGE CONDITIONS
 
-   !           FROM KUO ilab DEFINE cumask
-   !           FROM cumask CALCULATE subcld
-
-   where (ilab == 2)
-      cumask = 0
-   elsewhere
-      cumask = 1
-   end where
-
    do il =1, ni
       subcld(il,1) = 0.
    end do
@@ -305,14 +283,10 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    do jk = 2, nlev
       do il = 1, ni
          subcld(il,jk) = subcld(il,jk-1)
-         if( cumask(il,jk).eq.0 .and. HPK(il,jk).le.40000. ) &
-              subcld(il,1) = 1.
          !               cloud top above 400 mb
          !               to indicate a likely downdraft below 500 mb
          if( subcld(il,1).gt.0. .and. HPK(il,jk).gt.50000. ) &
               subcld(il,jk)=min(1.,max(0.,2.5*(s(il,jk)-0.5)))
-         if( cumask(il,jk).eq.1 .and. cumask(il,jk-1).eq.0) &
-              subcld(il,jk) = 1.
       end do
    end do
    do il =1, ni
@@ -378,11 +352,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    do jk = 1, nlev
       do il = 1, ni
-         HSCT(il) = HSCT(il) + amin1( 0. , CTT(il,jk) ) * DPRG(il,jk)
-      end do
-   end do
-   do jk = 1, nlev
-      do il = 1, ni
          PRESP(il,jk)=S(il,jk)*PSP(il)
          PRESM(il,jk)=S(il,jk)*PSM(il)
          HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
@@ -411,9 +380,9 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-HUZ00t) )
          SCF(il,jk) = amax1( SCF(il,jk)-CCF(il,jk) , 0. )
 !!$         mask = sign(1., -1.*abs(SCF(il,jk)))+1./2.
-!!$         HCONDt = mask * (- CWP(il,jk) * rTAU * cumask(il,jk))
+!!$         HCONDt = mask * (- CWP(il,jk) * rTAU
          if( SCF(il,jk) .eq. 0. ) then
-            HCONDt = - CWP(il,jk) * rTAU * cumask(il,jk)
+            HCONDt = - CWP(il,jk) * rTAU
          else
             HCONDt = 0.
          endif
@@ -456,7 +425,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          QINCR = HDQMX(il) - HCONDt
 
-         XCOND = amax1( QINCR, 0.0 ) * cumask(il,jk)
+         XCOND = amax1( QINCR, 0.0 )
 
          HCOND(il) = HCONDt + XCOND
 
@@ -473,8 +442,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
          xdet1(il) = exp(HEDLDR*(T0I - 1. / TM(il,jk)))
 
-         CONET = amax1( 0. , CTT(il,jk) + HSCT(il) / DPRG(il,jk) )
-         HSCT(il) = HSCT(il)+(amax1(0.,CTT(il,jk))-CONET)*DPRG(il,jk)
+         CONET = amax1( 0. , HSCT(il) / DPRG(il,jk) )
+         HSCT(il) = HSCT(il)+(0.-CONET)*DPRG(il,jk)
          CONETt(il) = HCOND(il) + CONET/HLDCP(il)
          PRCP = PRCPST(il)+PRCPCU(il)
          SNOW = STSNOW(il)+CUSNOW(il)
@@ -575,7 +544,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          !           we make sure that no infinitesimal precipitation is generated
          if (abs(conett(il)-zdcw).le.abs(spacing(zdcw))) xpradd = 0.
 
-         SWT(il,jk) = ZDCW * cumask(il,jk)
+         SWT(il,jk) = ZDCW
 
          !           Diagnostics for AURAMS
 
@@ -584,13 +553,8 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          ICEFRAC(il,jk) = max(((apri*(xdet(il)-1.0))+1.0),0.0)
 
 
-         PRCPST(il) = PRCPST(il) +       XPRADD * cumask(il,jk)
-         STSNOW(il) = STSNOW(il) + PRMODt(il)*XPRADD * cumask(il,jk)
-
-         CWT(il,jk) = ZDCW * (1-cumask(il,jk))
-         PRCPCU(il) = PRCPCU(il) +       XPRADD * (1-cumask(il,jk))
-         CUSNOW(il) = CUSNOW(il) + PRMODt(il)*XPRADD * (1-cumask(il,jk))
-
+         PRCPST(il) = PRCPST(il) +       XPRADD
+         STSNOW(il) = STSNOW(il) + PRMODt(il)*XPRADD
 
          !           ------------------------------------------------------------
          !           Melting of stratiform snow
@@ -664,9 +628,7 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          !           Evaporation of precipitation under the convective cloud
          !           ------------------------------------------------------------
 
-         EVAPRI =  - DBDT(il) * TAU * HDQMX(il) * DPRG(il,jk)
-         EVAPRI = EVAPRI * subcld(il,jk)
-         EVAPRI = amin1( PRCPCU(il) , amax1( 0. , EVAPRI ) )
+         EVAPRI = amin1( PRCPCU(il) , 0. ) !# DBDT == 0 always
          XEVACU = EVAPRI / DPRG(il,jk)
 
          PRCPCU(il) = PRCPCU(il) - EVAPRI
@@ -678,9 +640,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          STT(il,jk) = - DTMELT + HCOND(il) * HLDCP(il)
          SQT(il,jk) = - HCOND(il)
-
-         CTT(il,jk) = CTT(il,jk) - XEVACU * HLDCP(il)
-         CQT(il,jk) = CQT(il,jk) + XEVACU
 
          PRFLX(il,jk+1) =  PRCPST(il) + PRCPCU(il)
          SWFLX(il,jk+1) =  STSNOW(il) + CUSNOW(il)
@@ -697,8 +656,6 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    do il = 1, ni
       SRR(il) = PRCPST(il) - STSNOW(il)
       SSR(il) = STSNOW(il)
-      CRR(il) = PRCPCU(il) - CUSNOW(il)
-      CSR(il) = CUSNOW(il)
    end do
 
    do jk = 1, nlev+1
@@ -717,4 +674,4 @@ subroutine CONSUN3(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !***********************************************************************
 
-end subroutine CONSUN3
+end subroutine CONSUN5

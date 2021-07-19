@@ -7,8 +7,8 @@ end program gem
           character(len=*),intent(out) :: name_S,version_S,date_S,arch_S,user_S,compil_S
           logical,intent(out) :: is_official_L
           name_S = "GEMDM"
-          version_S = "5.2.0-a5"
-          date_S = "2021-05-31 16:10 GMT"
+          version_S = "5.2.0-a6"
+          date_S = "2021-07-15 18:15 GMT"
           arch_S = ""
           user_S = ""
           compil_S = ""

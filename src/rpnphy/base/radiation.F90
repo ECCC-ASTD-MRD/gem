@@ -31,7 +31,6 @@ contains
       use ccc2_cccmarad, only: ccc2_cccmarad2
       use prep_cw_rad, only: prep_cw_rad3
       use diagno_cw_rad, only: diagno_cw_rad1
-      use newrad, only: newrad6
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -115,16 +114,6 @@ contains
                  zpmoins, zsigw, delt, kount, &
                  trnch, ni, nkm1, nk, &
                  liqwcin, icewcin, liqwp, icewp, cldfrac)
-            if (phy_error_L) return
-
-         case('NEWRAD')
-
-            !#TODO: should we remove newrad? sill used (ensembles)?
-            call newrad6(d, dsiz, f, fsiz, v, vsiz, &
-                 liqwcin, liqwp, icewp, cldfrac, &
-                 delt, kount, &
-                 trnch, ni, ni, nkm1, &
-                 nk, radnivl(1)-1, radnivl(1), radnivl(2))
             if (phy_error_L) return
 
          end select

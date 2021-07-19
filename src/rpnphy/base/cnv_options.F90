@@ -18,7 +18,7 @@ module cnv_options
    implicit none 
    public
    save
-
+   
    !# Select closures for shallow convection
    !# * 'CAPE'
    !# * 'EQUILIBRIUM'
@@ -103,19 +103,15 @@ module cnv_options
    !# Deep convection scheme name
    !# * 'NIL     ' :
    !# * 'SEC     ' :
-   !# * 'OLDKUO  ' :
-   !# * 'KUOSTD  ' :
    !# * 'KFC     ' :
    !# * 'KFC2    ' :
    !# * 'KFC3    ' :
    !# * 'BECHTOLD' :
    character(len=16) :: deep            = 'nil'
    namelist /convection_cfgs/ deep
-   character(len=*), parameter :: DEEP_OPT(8) = (/ &
+   character(len=*), parameter :: DEEP_OPT(6) = (/ &
         'NIL     ', &
         'SEC     ', &
-        'OLDKUO  ', &
-        'KUOSTD  ', &
         'KFC     ', &
         'KFC2    ', &
         'KFC3    ', &
@@ -195,9 +191,37 @@ module cnv_options
    real              :: kfcdpdd         = 10000.
    namelist /convection_cfgs/ kfcdpdd
 
-   !# generate wind tendencies in KFC or deep BKF if .true.
-   logical           :: kfcmom          = .false.
-   namelist /convection_cfgs/ kfcmom
+   !# 
+   !# Generate wind tendencies (CMT) in deep=KFC,KFC2,KFC3
+   !# * 'NIL      ': No wind tendencies applied
+   !# * 'ECMWF_PH2': ECMWF approach over anvil only, as implemented in phase 2 with bug 
+   !# * 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2,KFC3 only)
+   !# * 'GKI      ': GKI approach (KFC2,KFC3 only)
+   character(len=16) :: cmt_type        = 'NIL'
+   namelist /convection_cfgs/ cmt_type
+   character(len=*), parameter :: CMT_TYPE_OPT(4) = (/ &
+        'NIL      ', &
+        'ECMWF_PH2', &
+        'ECMWF    ', &
+        'GKI      ' &
+        /)
+   integer, parameter :: CMT_NONE = 0
+   integer, parameter :: CMT_ECMWF_PH2 = 1
+   integer, parameter :: CMT_ECMWF = 2
+   integer, parameter :: CMT_GKI = 3
+   integer :: cmt_type_i = CMT_NONE
+
+   !# CMT lambda factor for cmt_type=ECMWF* formulations
+   real              :: cmt_ecmwf_lambda = 2.
+   namelist /convection_cfgs/ cmt_ecmwf_lambda
+   
+   !# CMT GKI for updraft coef for cmt_type=GKI
+   real              :: cmt_gki_cup      = 0.7
+   namelist /convection_cfgs/ cmt_gki_cup
+   
+   !#  CMT GKI for downdraft coef for cmt_type=GKI
+   real              :: cmt_gki_cdown    = 0.
+   namelist /convection_cfgs/ cmt_gki_cdown
 
    !# Compute production terms for Kain-Fritsch scheme
    logical           :: kfcprod         = .false.
