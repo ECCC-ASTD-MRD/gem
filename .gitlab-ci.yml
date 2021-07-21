@@ -16,7 +16,7 @@ before_script:
 build_intel:
   stage: build_intel
   script:
-    - ln -s /home/cpi001/gem_dbase .
+    - ln -s $HOME/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
@@ -34,8 +34,13 @@ build_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
-    - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -44,8 +49,13 @@ CANO_W7cascP_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -54,8 +64,13 @@ CANO_dcmip163r100_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -64,8 +79,13 @@ CANO_wil7_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -74,8 +94,13 @@ GEM_GY_FISL_P_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -84,8 +109,13 @@ GEM_LU_FISL_H_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -94,8 +124,13 @@ GEM_LU_OFFC_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -104,8 +139,13 @@ PTOPO_GYH_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
-    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -114,8 +154,13 @@ PTOPO_LUP_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
-    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -124,8 +169,13 @@ RSTRT_GYP_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
-    - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -134,8 +184,13 @@ THEO_bubbleG_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
-    - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -144,8 +199,13 @@ THEO_schar_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
-    - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
 
@@ -163,123 +223,196 @@ build_gnu:
     - gem_dbase
   only:
   - dev-5.2
+  when: always
 
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
-    - runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 CANO_W7cascP_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 CANO_dcmip163r100_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 CANO_wil7_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
-    - runmod.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 GEM_GY_FISL_P_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 GEM_LU_OFFC_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
-    - runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 PTOPO_GYH_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
-    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 PTOPO_LUP_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
-    - runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 RSTRT_GYP_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
-    - runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 THEO_bubbleG_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
-    - runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
 
 THEO_schar_gnu:
   stage: run_configs_gnu
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
-    - runprep.sh -dircfg ./configurations/THEO_cfgs_schar
-    - runmod.sh -dircfg ./configurations/THEO_cfgs_schar
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar;
+      fi
+    - test "${_status}" == "ED"
   only:
   - dev-5.2
+  when: always
