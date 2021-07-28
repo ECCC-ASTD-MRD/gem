@@ -49,7 +49,7 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-      ns = cpu_per_numa()
+      ns = 20  ! cpu_per_numa() nor working correctly
 
       if (Ptopo_npey > ns) then
          Numa_uniform_L = mod(Ptopo_npey,ns)==0
