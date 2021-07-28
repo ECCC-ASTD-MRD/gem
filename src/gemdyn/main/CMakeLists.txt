@@ -25,7 +25,6 @@ target_link_libraries(maingemdm
    massv
    ${ompfftw}
    fftw3
-   hwloc
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
@@ -44,12 +43,27 @@ target_link_libraries(checkdmpart
    massv
    ${ompfftw}
    fftw3
-   hwloc
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
 add_dependencies(checkdmpart gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
+
+add_executable(gemgrid maingemgrid.F90)
+target_link_libraries(gemgrid
+   gem
+   phy
+   modelutils
+   vgrid
+   mpi-extras
+   rpncomm
+   rmn
+   massv
+   ${LAPACK_LIBRARIES}
+   ${BLAS_LIBRARIES}
+   ${EXTRA_LIBRARIES}
+)
+add_dependencies(gemgrid gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -69,52 +83,5 @@ target_link_libraries(prgemnml
 )
 add_dependencies(prgemnml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
-add_executable(gemgrid maingemgrid.F90)
-target_link_libraries(gemgrid
-   gem
-   phy
-   modelutils
-   vgrid
-   mpi-extras
-   rpncomm
-   rmn
-   massv
-   hwloc
-   ${LAPACK_LIBRARIES}
-   ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
-)
-add_dependencies(gemgrid gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
-
-add_executable(feseri mainfeseri.F90)
-target_link_libraries(feseri
-   phy
-   modelutils
-   vgrid
-   mpi-extras
-   rpncomm
-   rmn
-   massv
-   ${LAPACK_LIBRARIES}
-   ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
-)
-add_dependencies(feseri phy modelutils vgrid mpi-extras rpncomm rmn massv)
-
-add_executable(prphynml mainprphynml.F90)
-target_link_libraries(prphynml
-   phy
-   modelutils
-   vgrid
-   mpi-extras
-   rpncomm
-   rmn
-   massv
-   ${LAPACK_LIBRARIES}
-   ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
-)
-add_dependencies(prphynml phy modelutils vgrid mpi-extras rpncomm rmn massv)
-
-install(TARGETS maingemdm gemgrid checkdmpart feseri prphynml prgemnml RUNTIME 
+install(TARGETS maingemdm checkdmpart gemgrid prgemnml RUNTIME 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

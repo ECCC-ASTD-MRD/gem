@@ -117,34 +117,42 @@ add_custom_target(work
         $<TARGET_FILE:maingemdm>
         $<TARGET_FILE:gemgrid>
         $<TARGET_FILE:yy2global>
+        $<TARGET_FILE:yydecode>
+        $<TARGET_FILE:yyencode>
         $<TARGET_FILE:feseri>
         $<TARGET_FILE:prphynml>
         $<TARGET_FILE:checkdmpart>
         $<TARGET_FILE:prgemnml>
+        $<TARGET_FILE:toc2nml>
         $<TARGET_FILE:gem_monitor_output>
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:pgsm>
         $<TARGET_FILE:r.fstinfo>
+        $<TARGET_FILE:r.filetype>
         $<TARGET_FILE:voir>
         ${CMAKE_INSTALL_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${CMAKE_INSTALL_PREFIX}
     COMMAND /bin/cp -avf ${CMAKE_SOURCE_DIR}/doc/README.run ${CMAKE_INSTALL_PREFIX}
 
     DEPENDS
+        cclargs_lite
+        flipit
         maingemdm
         gemgrid
         yy2global
-        flipit
-        checkdmpart
+	yyencode
+	yydecode
         feseri
         prphynml
+        checkdmpart
         prgemnml
+        toc2nml
         gem_monitor_output
         gem_monitor_end
-        cclargs_lite
+        r.fstinfo
+        r.filetype
         fstcomp
         fststat
         editfst
-        r.fstinfo
         voir
 )

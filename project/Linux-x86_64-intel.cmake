@@ -14,10 +14,10 @@ enable_language(Fortran)
 set(CMAKE_BUILD_TYPE ${TMP_BUILD_TYPE})
 
 # find_package() commands can only be called after the languages have been 
-# eneabled or they will fail
+# enabled or they will fail
 add_definitions(-DLittle_Endian)
 
-set(CMAKE_C_FLAGS "-mkl -Wl,--allow-shlib-undefined -Wtrigraphs -fpic -traceback -fp-model precise" CACHE STRING "C compiler flags" FORCE)
+set(CMAKE_C_FLAGS "-mkl -Wtrigraphs -fpic -traceback -fp-model precise" CACHE STRING "C compiler flags" FORCE)
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 

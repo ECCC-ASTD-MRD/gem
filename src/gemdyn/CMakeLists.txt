@@ -6,6 +6,7 @@ set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 
 file(GLOB FTNSRC */*.F90)
 file(GLOB CSRC  */*.c)
+list(FILTER FTNSRC EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/main/main*" )
 
 add_library (gem STATIC ${FTNSRC} ${CSRC})
 target_include_directories(gem PRIVATE
@@ -21,7 +22,16 @@ target_include_directories(gem PRIVATE
 # Adding specific flags for GEM
 include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
-if (EXTRA_DEBUG)
-  target_compile_options( gem PRIVATE "$<$<CONFIG:Debug>:-fcheck=bounds>" )
-  message(STATUS "Extra flags for gemdyn: -fcheck=bounds")
+if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment")
+  set(EXTRA_LIBRARIES "-lopen-pal -lhwloc")
 endif()
+
+if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+  if (EXTRA_DEBUG AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    target_compile_options( gem PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )
+    message(STATUS "Extra debug flags for gemdyn: -fcheck=bounds")
+  endif()
+endif()
+
+add_subdirectory(main gemdyn-main)
+add_subdirectory(no_mpi gemdyn_no_mpi)
