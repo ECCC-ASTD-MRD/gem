@@ -9,6 +9,9 @@ file(GLOB FTNSRC  */*.F90)
 
 list(FILTER FTNSRC EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/modelutils/main/main*" )
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
 add_library (modelutils STATIC ${FTNSRC} ${CSRC})
 target_include_directories(modelutils PRIVATE base include)
 include_directories( ${CMAKE_BINARY_DIR}/src/vgrid )

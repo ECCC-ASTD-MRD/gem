@@ -9,6 +9,9 @@ set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 file(GLOB FTNSRC */*.F90)
 list(FILTER FTNSRC EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*" )
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
 include_directories(series)
 include_directories(surface)
 include_directories(${CMAKE_SOURCE_DIR}/src/modelutils/include)

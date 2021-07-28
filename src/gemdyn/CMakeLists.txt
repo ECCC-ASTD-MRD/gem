@@ -19,6 +19,9 @@ target_include_directories(gem PRIVATE
    base
 )
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
 if (NOT DEFINED ENV{CRAYPE_VERSION})
   set(EXTRA_LIBRARIES "-lopen-pal -lhwloc")
 endif()

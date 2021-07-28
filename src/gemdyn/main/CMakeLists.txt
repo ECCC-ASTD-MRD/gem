@@ -7,6 +7,12 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
+message(STATUS "CMAKE_C_FLAGS for GEM: ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS for GEM: ${CMAKE_Fortran_FLAGS}")
+
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm
    gem

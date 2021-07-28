@@ -24,6 +24,9 @@ target_include_directories(toc2nml PRIVATE
 )
 add_dependencies(toc2nml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
+# Adding specific flags for GEM
+include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+
 add_executable(gem_monitor_output maingem_monitor_output.c)
 add_executable(gem_monitor_end maingem_monitor_end.c)
 set_target_properties(gem_monitor_output PROPERTIES LINKER_LANGUAGE C)
