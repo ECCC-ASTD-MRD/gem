@@ -32,8 +32,8 @@ The following environment variables are created (examples):
 - GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
 - GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
 - GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
-- COMPILER_suite=intel
-- COMPILER_version=19.0.3.199
+- COMPILER_SUITE=intel
+- COMPILER_VERSION=19.0.3.199
 
 The structure of the build and work directories is different whether the $storage_model environment variable exists:
 

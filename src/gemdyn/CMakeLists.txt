@@ -6,12 +6,12 @@ set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 
 file(GLOB FTNSRC */*.F90)
 file(GLOB CSRC  */*.c)
-list(FILTER FTNSRC EXCLUDE REGEX "${ROOT}/src/gemdyn/main/main*" )
+list(FILTER FTNSRC EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/main/main*" )
 
 add_library (gem STATIC ${FTNSRC} ${CSRC})
 target_include_directories(gem PRIVATE
-   ${ROOT}/src/rpnphy/include
-   ${ROOT}/src/modelutils/include
+   ${CMAKE_SOURCE_DIR}/src/rpnphy/include
+   ${CMAKE_SOURCE_DIR}/src/modelutils/include
    ${CMAKE_BINARY_DIR}/src/rpnphy
    ${CMAKE_BINARY_DIR}/src/modelutils
    ${CMAKE_BINARY_DIR}/src/vgrid
@@ -19,9 +19,15 @@ target_include_directories(gem PRIVATE
    base
 )
 
-if (EXTRA_DEBUG)
-  target_compile_options( gem PRIVATE "$<$<CONFIG:Debug>:-fcheck=bounds>" )
-  message(STATUS "Extra flags for gemdyn: -fcheck=bounds")
+if (NOT DEFINED ENV{CRAYPE_VERSION})
+  set(EXTRA_LIBRARIES "-lopen-pal -lhwloc")
+endif()
+
+if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+  if (EXTRA_DEBUG AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    target_compile_options( gem PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )
+    message(STATUS "Extra debug flags for gemdyn: -fcheck=bounds")
+  endif()
 endif()
 
 add_subdirectory(main gemdyn-main)

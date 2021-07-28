@@ -20,8 +20,8 @@ build_intel:
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
-    - make
-    - make work
+    - make -j`nproc`
+    - make -j`nproc` work
   artifacts:
     paths:
     - work*
@@ -215,8 +215,8 @@ build_gnu:
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
     - make cmake
-    - make
-    - make work
+    - make -j`nproc`
+    - make -j`nproc` work
   artifacts:
     paths:
     - work*

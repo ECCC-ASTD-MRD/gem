@@ -1,15 +1,15 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
-project(GEM NONE)
+project(GEM DESCRIPTION "GEM - Forecasting and data assimilation system" LANGUAGES NONE)
 
 cmake_policy(SET CMP0066 NEW)
 cmake_policy(SET CMP0056 NEW)
 
 # set the compiler suite by uncommenting one of the following 3 lines:
-set(COMPILER intel CACHE STRING compiler)
-#set(COMPILER gnu CACHE STRING compiler)
-#set(COMPILER pgi CACHE STRING compiler)
-message(STATUS "Compiler suite to be used is: ${COMPILER}")
+set(COMPILER_SUITE intel CACHE STRING compiler)
+#set(COMPILER_SUITE gnu CACHE STRING compiler)
+#set(COMPILER_SUITE pgi CACHE STRING compiler)
+message(STATUS "Compiler suite to be used is: ${COMPILER_SUITE}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
@@ -22,13 +22,14 @@ message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 # Include a file that contains settings for a particular architecture and
 # compiler, using the default value of the compiler defined above or the
 # argument given to cmake command.
-set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
 if(DEFINED ENV{ORDENV_PLAT})
-   message(STATUS "include $ENV{ORDENV_PLAT}-${COMPILER}.cmake")
-   include("$ENV{ORDENV_PLAT}-${COMPILER}.cmake")
+   message(STATUS "include ${CMAKE_SOURCE_DIR}/project/$ENV{ORDENV_PLAT}-${COMPILER_SUITE}.cmake")
+   include("${CMAKE_SOURCE_DIR}/project/$ENV{ORDENV_PLAT}-${COMPILER_SUITE}.cmake")
 else()
-  message(STATUS "include ${ARCH}-${COMPILER}.cmake")
-  include("${ARCH}-${COMPILER}.cmake")
+  message(STATUS "include ${CMAKE_SOURCE_DIR}/project/${BUILD_ARCH}-${COMPILER_SUITE}.cmake")
+  include("${CMAKE_SOURCE_DIR}/project/${BUILD_ARCH}-${COMPILER_SUITE}.cmake")
 endif()
 
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
@@ -54,13 +55,6 @@ else()
    message(STATUS "Building WITHOUT OpenMP")
 endif()
 
-message(STATUS "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
-message(STATUS "CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
-if (${CMAKE_BUILD_TYPE} MATCHES Debug )
-  message(STATUS "CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
-  message(STATUS "CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
-endif()
-
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)
    find_package(OpenACC)
@@ -80,34 +74,34 @@ else()
    message(STATUS "Building WITHOUT OpenACC")
 endif()
 
-# Enable distclean target
-include("distclean.cmake")
+option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 
-set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
+message(STATUS "CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
+if (${CMAKE_BUILD_TYPE} MATCHES Debug )
+  message(STATUS "CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
+  message(STATUS "CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
+endif()
 
-# This was changed so that there cannot be an upstream call
-# set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/modules CACHE STRING "Where Fortran modules go")
 
-get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY CACHE)
-message(STATUS "ROOT=${ROOT}")
-#message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "Build directory is: ${CMAKE_CURRENT_BINARY_DIR}")
+message(STATUS "Sources directory is: ${CMAKE_SOURCE_DIR}")
+message(STATUS "Build directory is: ${CMAKE_BINARY_DIR}")
 
-file(READ "${ROOT}/VERSION" GEM_VERSION)
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" GEM_VERSION)
 string(REGEX REPLACE "\n$" "" GEM_VERSION "${GEM_VERSION}")
-message(STATUS "GEM_VERSION=${GEM_VERSION}")
+message(STATUS "GEM_VERSION: ${GEM_VERSION}")
 
 # Include an architecture dependent file that contains include files for a
 # particular architecture and compiler, using the default value of the
-# compiler defined above or the argument given to cmake command.
-message(STATUS "arch-dependent include directory: ${ROOT}/src/rpn-si/archdep/include/${ARCH}-${COMPILER}")
+# compiler or the argument given to cmake command.
+message(STATUS "arch-dependent include directory: ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}")
 
 include_directories(
-   ${ROOT}/src/rpn-si/archdep/include/${ARCH}-${COMPILER}
-   ${ROOT}/src/rpn-si/mpi-extras
-   ${ROOT}/src/rpn-si/rpncomm
-   ${ROOT}/src/rpn-si/rmn/PUBLIC_INCLUDES
-   ${ROOT}/src/rpn-si/RPN/compiler_includes
+   ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}
+   ${CMAKE_SOURCE_DIR}/src/rpn-si/mpi-extras
+   ${CMAKE_SOURCE_DIR}/src/rpn-si/rpncomm
+   ${CMAKE_SOURCE_DIR}/src/rpn-si/rmn/PUBLIC_INCLUDES
+   ${CMAKE_SOURCE_DIR}/src/rpn-si/RPN/compiler_includes
 )
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
@@ -116,52 +110,29 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # To see the make commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_subdirectory(${ROOT}/src src)
-
-# TODO: Move this to cmake_shared
-function(dir_writable DIR_PATH REQUIRED)
-    # Check that the path given in DIR_PATH is writable.  If DIR_PATH does not
-    # exist, it checks if it can be created.
-    # The result is returned in the DIR_WRITABLE variable in the calling scope
-    # If REQUIRED is specified, dir_writable will throw a FATAL_ERROR
-
-    execute_process(COMMAND test -e ${DIR_PATH} RESULT_VARIABLE INSTALL_PREFIX_NOT_EXISTS)
-    if (INSTALL_PREFIX_NOT_EXISTS)
-        execute_process(COMMAND dirname ${DIR_PATH} OUTPUT_VARIABLE TEST_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-    else()
-        set(TEST_DIR ${DIR_PATH})
-    endif()
-
-    execute_process(COMMAND test -w ${TEST_DIR} RESULT_VARIABLE DIR_NOT_WRITABLE)
-    if (REQUIRED AND DIR_NOT_WRITABLE EQUAL 1)
-        message(FATAL_ERROR "${DIR_PATH} is not writable!")
-    endif()
-    set(DIR_WRITABLE PARENT_SCOPE NOT DIR_NOT_WRITABLE)
-endfunction()
-# END TODO: Move this to cmake_shared
-
 # get name and version of operating system
-execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/os.sh" OUTPUT_VARIABLE OS)
+execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/os.sh" OUTPUT_VARIABLE OS)
 message(STATUS "Operating system is: ${OS}")
 
 # get name and version of compiler
-if(DEFINED ENV{COMPILER_version})
-   set(COMPILER_version $ENV{COMPILER_version})
+if(DEFINED ENV{COMPILER_VERSION})
+   set(COMPILER_VERSION $ENV{COMPILER_VERSION})
 else()
-  execute_process(COMMAND sh "-c" "${CMAKE_CURRENT_SOURCE_DIR}/compiler.sh ${COMPILER}" OUTPUT_VARIABLE COMPILER_version)
+  execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/compiler.sh ${COMPILER_SUITE}" OUTPUT_VARIABLE COMPILER_VERSION)
 endif()
+message(STATUS "COMPILER_VERSION: ${COMPILER_VERSION}")
 
-set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Execution environment directory")
-dir_writable(${WORK_PREFIX} TRUE)
 if(DEFINED ENV{GEM_WORK})
-   set(WORK_DIR ${WORK_PREFIX}/$ENV{GEM_WORK})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "CMake Installation prefix" FORCE)
 else()
-  set(WORK_DIR ${WORK_PREFIX}/work-${OS}-${COMPILER}-${COMPILER_version})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "CMake Installation prefix" FORCE)
 endif()
-message(STATUS "Working directory is ${WORK_DIR}")
+message(STATUS "Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 add_custom_target(work
-    /bin/mkdir -p ${WORK_DIR}/bin
+    /bin/mkdir -p ${CMAKE_INSTALL_PREFIX}/bin
     COMMAND /bin/cp -avf
         $<TARGET_FILE:cclargs_lite>
         $<TARGET_FILE:flipit>
@@ -179,9 +150,8 @@ add_custom_target(work
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:r.fstinfo>
         $<TARGET_FILE:r.filetype>
-        ${WORK_DIR}/bin
-    COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-#    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
+        ${CMAKE_INSTALL_PREFIX}/bin
+    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${CMAKE_INSTALL_PREFIX}
 
     DEPENDS
         cclargs_lite
@@ -201,7 +171,3 @@ add_custom_target(work
         r.fstinfo
         r.filetype
 )
-
-# TODO: Make the actual installation in CMAKE_INSTALL_PREFIX
-    # message(STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
-    # dir_writable(CMAKE_INSTALL_PREFIX TRUE)

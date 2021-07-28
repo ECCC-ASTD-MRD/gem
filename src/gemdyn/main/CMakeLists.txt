@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of gemdyn main Makefile")
+message(STATUS "Starting generation of maingem Makefile")
 
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
@@ -78,5 +78,4 @@ target_link_libraries(prgemnml
 add_dependencies(prgemnml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 install(TARGETS maingemdm checkdmpart gemgrid prgemnml RUNTIME 
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
-
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

@@ -17,7 +17,7 @@ if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a  -n "${GEM_WORK}" ] ; then
    fi
 fi
 
-if [ "$COMPILER_suite" == "intel" ] ; then
+if [ "$COMPILER_SUITE" == "intel" ] ; then
    SETUP_FILE=.eccc_setup_intel
 else
    SETUP_FILE=.eccc_setup_gnu

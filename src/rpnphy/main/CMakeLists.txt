@@ -1,7 +1,6 @@
 message(STATUS "Starting generation of rpnphy main Makefile")
 
-set(CMAKE_Fortran_COMPILER ${Fortran_COMPILER})
-set(CMAKE_C_COMPILER ${C_COMPILER})
+set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
 
 add_executable(feseri mainfeseri.F90)
 target_link_libraries(feseri
@@ -34,4 +33,4 @@ target_link_libraries(prphynml
 add_dependencies(prphynml phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 install(TARGETS feseri prphynml RUNTIME 
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
