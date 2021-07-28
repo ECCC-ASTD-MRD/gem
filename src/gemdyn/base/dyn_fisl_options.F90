@@ -187,12 +187,12 @@ module dyn_fisl_options
    character(len=26) :: Sol3D_krylov_S = 'FGMRES'
    namelist /dyn_fisl  / Sol3D_krylov_S
    namelist /dyn_fisl_p/ Sol3D_krylov_S
-      
+
    !# True => use the one-transpose solver
-   logical :: Sol_one_transpose_L = .true.
+   logical :: Sol_one_transpose_L = .false.
    namelist /dyn_fisl  / Sol_one_transpose_L
    namelist /dyn_fisl_p/ Sol_one_transpose_L
-      
+
    logical Schm_opentop_L
    integer Schm_nith
 
