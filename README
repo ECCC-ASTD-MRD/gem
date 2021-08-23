@@ -15,8 +15,6 @@ git submodule update --init --recursive
 
 # You cannot compile with Intel and then with GNU in the same shell
 # unless you compile first with GNU
-# To compile with GNU, you must load the code-tools first:
-. r.load.dot rpn/code-tools/1.5.1
 . ./.eccc_setup_gnu
 
 Before the first build:

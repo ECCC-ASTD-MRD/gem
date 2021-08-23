@@ -3,6 +3,7 @@ variables:
   JOB_TMPFS: "8G"
   JOB_MEMORY: "80G"
   JOB_CHUNKS: "1"
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
   - build_intel
@@ -27,7 +28,7 @@ build_intel:
     - work*
     - gem_dbase
   only:
-  - dev-5.2
+  - dev*
 
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_intel
@@ -38,11 +39,11 @@ build_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H;
+      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 CANO_W7cascP_intel:
   stage: run_configs_intel
@@ -53,11 +54,11 @@ CANO_W7cascP_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 CANO_dcmip163r100_intel:
   stage: run_configs_intel
@@ -68,11 +69,11 @@ CANO_dcmip163r100_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100 -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 CANO_wil7_intel:
   stage: run_configs_intel
@@ -83,11 +84,11 @@ CANO_wil7_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7 -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
@@ -98,11 +99,11 @@ GEM_GY_FISL_P_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
@@ -113,11 +114,11 @@ GEM_LU_FISL_H_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 GEM_LU_OFFC_intel:
   stage: run_configs_intel
@@ -128,11 +129,11 @@ GEM_LU_OFFC_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 PTOPO_GYH_intel:
   stage: run_configs_intel
@@ -143,11 +144,11 @@ PTOPO_GYH_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 PTOPO_LUP_intel:
   stage: run_configs_intel
@@ -158,11 +159,11 @@ PTOPO_LUP_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 RSTRT_GYP_intel:
   stage: run_configs_intel
@@ -173,11 +174,11 @@ RSTRT_GYP_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP;
+      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 THEO_bubbleG_intel:
   stage: run_configs_intel
@@ -188,11 +189,11 @@ THEO_bubbleG_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 THEO_schar_intel:
   stage: run_configs_intel
@@ -203,11 +204,11 @@ THEO_schar_intel:
     - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
 
 build_gnu:
   stage: build_gnu
@@ -222,7 +223,7 @@ build_gnu:
     - work*
     - gem_dbase
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 5.2GEM_GY_FISL_H_gnu:
@@ -234,11 +235,11 @@ build_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H;
+      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 CANO_W7cascP_gnu:
@@ -250,11 +251,11 @@ CANO_W7cascP_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 CANO_dcmip163r100_gnu:
@@ -266,11 +267,11 @@ CANO_dcmip163r100_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100 -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 CANO_wil7_gnu:
@@ -282,11 +283,11 @@ CANO_wil7_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7;
+      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7 -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 GEM_GY_FISL_P_gnu:
@@ -298,11 +299,11 @@ GEM_GY_FISL_P_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 GEM_LU_FISL_H_gnu:
@@ -314,11 +315,11 @@ GEM_LU_FISL_H_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 GEM_LU_OFFC_gnu:
@@ -330,11 +331,11 @@ GEM_LU_OFFC_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC;
+      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 PTOPO_GYH_gnu:
@@ -346,11 +347,11 @@ PTOPO_GYH_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 PTOPO_LUP_gnu:
@@ -362,11 +363,11 @@ PTOPO_LUP_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP;
+      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 RSTRT_GYP_gnu:
@@ -378,11 +379,11 @@ RSTRT_GYP_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP;
+      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 THEO_bubbleG_gnu:
@@ -394,11 +395,11 @@ THEO_bubbleG_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always
 
 THEO_schar_gnu:
@@ -410,9 +411,9 @@ THEO_schar_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar;
+      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
-  - dev-5.2
+  - dev*
   when: always

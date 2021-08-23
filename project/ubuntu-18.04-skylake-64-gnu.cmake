@@ -1,1 +1,0 @@
-ubuntu-18.04-amd64-64-gnu.cmake
