@@ -5,8 +5,9 @@
 # - Set compiler version
 # - Load a script for common setup to all compilers
 
+. r.load.dot rpn/code-tools/1.5.1
 . ssmuse-sh -x /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
-. ssmuse-sh -x main/opt/openmpi-setup/openmpi-setup-0.2
+. ssmuse-sh -x /fs/ssm/main/opt/openmpi-setup/openmpi-setup-0.2
 . ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
 
 export COMPILER_SUITE=gnu

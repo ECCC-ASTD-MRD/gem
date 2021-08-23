@@ -20,5 +20,10 @@ which r.run_in_parallel 2> /dev/null
 if [ $? == 0 ] ; then
    r.run_in_parallel ${arguments}
 else
-   mpirun -np $((npex*npey)) ${pgm}
+   echo "exporting OMP_STACKSIZE"
+   export OMP_STACKSIZE=4G
+   echo "setting ulimit stack to unlimited in lance.sh for all PEs"
+   echo "which mpirun"
+   which mpirun
+   mpirun -np $((npex*npey)) lance.sh ${pgm}
 fi
