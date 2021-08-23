@@ -8,6 +8,8 @@ if [[ $# -eq 0 ]] ; then
     echo "Example: . ./.common_setup gnu"
     echo "Example: . ./.common_setup intel"
 else
+    export OMP_STACKSIZE=4G
+
     unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
 
     COMPILER_SUITE=${1}

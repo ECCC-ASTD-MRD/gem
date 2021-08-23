@@ -36,8 +36,13 @@ instructions below for that branch**
 
     # If the -DCMAKE_INSTALL_PREFIX=<path> option isn't given to cmake, the work directory
     # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
-    cmake ..
-    # Create an execution environment for GEM
+ 	# To compile: default compiler suite is GNU
+	cmake ..
+	# or specify it with the option -DCOMPILER_SUITE=<compiler suite name (gnu|intel)>
+	cmake -DCOMPILER_SUITE=gnu ..
+	# or compile with Intel 
+	cmake -DCOMPILER_SUITE=intel ..
+	# Create an execution environment for GEM
     make -j work
 
     cd ..
