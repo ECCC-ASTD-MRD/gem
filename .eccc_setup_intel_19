@@ -5,7 +5,6 @@
 # - Load a script for common setup to all compilers
 
 export COMPILER_SUITE=intel
-export OMP_STACKSIZE=4G
 
 if [ "$TRUE_HOST" = "banting" -o "$TRUE_HOST" = "daley" ]; then
    export COMPILER_VERSION=19.0.5.281

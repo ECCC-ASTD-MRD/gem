@@ -16,6 +16,8 @@ before_script:
 
 build_intel:
   stage: build_intel
+  only:
+  - dev-cmake_rpn
   script:
     - ln -s $HOME/gem_dbase .
     - . ./.eccc_setup_intel
@@ -24,14 +26,18 @@ build_intel:
     - make -j`nproc`
     - make -j`nproc` work
   artifacts:
+    expire_in: 6 hrs
     paths:
     - work*
     - gem_dbase
-  only:
-  - dev-cmake_rpn
 
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -44,11 +50,14 @@ build_intel:
       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 CANO_W7cascP_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -61,161 +70,210 @@ CANO_W7cascP_intel:
       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 CANO_dcmip163r100_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_dcmip163r100
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100 -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 CANO_wil7_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_wil7
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7 -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_P
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 GEM_LU_OFFC_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_OFFC
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 PTOPO_GYH_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_GYH
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 PTOPO_LUP_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_LUP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 RSTRT_GYP_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=RSTRT_cfgs_GYP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 THEO_bubbleG_intel:
   stage: run_configs_intel
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=THEO_cfgs_bubbleG
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 THEO_schar_intel:
   stage: run_configs_intel
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_intel
+  when: always
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=THEO_cfgs_schar
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
 
 build_gnu:
   stage: build_gnu
+  only:
+  - dev-cmake_rpn
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
@@ -223,201 +281,247 @@ build_gnu:
     - make -j`nproc`
     - make -j`nproc` work
   artifacts:
+    expire_in: 6 hrs
     paths:
     - work*
     - gem_dbase
-  only:
-  - dev-cmake_rpn
-  when: always
 
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 CANO_W7cascP_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_W7cascP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 CANO_dcmip163r100_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_dcmip163r100
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_dcmip163r100 -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 CANO_wil7_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_wil7
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_wil7
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_wil7 -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 GEM_GY_FISL_P_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_P
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_GY_FISL_P -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 GEM_LU_OFFC_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_OFFC
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/GEM_cfgs_LU_OFFC -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 PTOPO_GYH_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_GYH
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_GYH
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_GYH -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 PTOPO_LUP_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_LUP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/PTOPO_cfgs_LUP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/PTOPO_cfgs_LUP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 RSTRT_GYP_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=RSTRT_cfgs_GYP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/RSTRT_cfgs_GYP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/RSTRT_cfgs_GYP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 THEO_bubbleG_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=THEO_cfgs_bubbleG
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_bubbleG
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_bubbleG -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always
 
 THEO_schar_gnu:
   stage: run_configs_gnu
+  only:
+  - dev-cmake_rpn
+  dependencies:
+  - build_gnu
+  when: always
   script:
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
+    - CFG=THEO_cfgs_schar
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/THEO_cfgs_schar
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/THEO_cfgs_schar -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
-  only:
-  - dev-cmake_rpn
-  when: always

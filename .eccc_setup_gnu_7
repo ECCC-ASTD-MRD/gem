@@ -13,7 +13,6 @@
 . ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
 
 export COMPILER_SUITE=gnu
-export OMP_STACKSIZE=4G
 
 COMPILER_VERSION=$(project/compiler.sh gnu)
 export COMPILER_VERSION

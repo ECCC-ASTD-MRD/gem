@@ -1,0 +1,21 @@
+#!/bin/sh
+#set -x
+cd ${BARRIER_DIR:-.}
+MYDIR=$$
+mkdir $MYDIR
+for id in ID.* 
+do
+  mv $id $MYDIR/$id 2>/dev/null
+  if [[ -f $MYDIR/$id ]] ; then break ; fi
+done
+if [[ ! -f $MYDIR/$id ]] ; then echo ERROR: no BARRIER ID available ; exit 1 ; fi
+BARRIER_NO=$MYDIR/$id
+BARRIER_NO=${BARRIER_NO##*.}
+echo "${@}" BARRIER $BARRIER_NO entering wait `date`
+B1=${BARRIER_NO}
+let B2=B1-1
+cat <in.$B1 >in.$B2
+cat <out.$B2 >out.$B1
+echo exiting barrier $B1 `date`
+mv $MYDIR/$id ./$id
+rmdir $MYDIR
