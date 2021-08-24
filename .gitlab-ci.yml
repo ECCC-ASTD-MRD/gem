@@ -28,7 +28,7 @@ build_intel:
     - work*
     - gem_dbase
   only:
-  - dev*
+  - dev-cmake_rpn
 
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_intel
@@ -43,7 +43,7 @@ build_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 CANO_W7cascP_intel:
   stage: run_configs_intel
@@ -58,7 +58,7 @@ CANO_W7cascP_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 CANO_dcmip163r100_intel:
   stage: run_configs_intel
@@ -73,7 +73,7 @@ CANO_dcmip163r100_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 CANO_wil7_intel:
   stage: run_configs_intel
@@ -88,7 +88,7 @@ CANO_wil7_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
@@ -103,7 +103,7 @@ GEM_GY_FISL_P_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
@@ -118,7 +118,7 @@ GEM_LU_FISL_H_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 GEM_LU_OFFC_intel:
   stage: run_configs_intel
@@ -133,7 +133,7 @@ GEM_LU_OFFC_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 PTOPO_GYH_intel:
   stage: run_configs_intel
@@ -148,7 +148,7 @@ PTOPO_GYH_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 PTOPO_LUP_intel:
   stage: run_configs_intel
@@ -163,7 +163,7 @@ PTOPO_LUP_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 RSTRT_GYP_intel:
   stage: run_configs_intel
@@ -178,7 +178,7 @@ RSTRT_GYP_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 THEO_bubbleG_intel:
   stage: run_configs_intel
@@ -193,7 +193,7 @@ THEO_bubbleG_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 THEO_schar_intel:
   stage: run_configs_intel
@@ -208,7 +208,7 @@ THEO_schar_intel:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
 
 build_gnu:
   stage: build_gnu
@@ -223,7 +223,7 @@ build_gnu:
     - work*
     - gem_dbase
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 5.2GEM_GY_FISL_H_gnu:
@@ -239,7 +239,7 @@ build_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 CANO_W7cascP_gnu:
@@ -255,7 +255,7 @@ CANO_W7cascP_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 CANO_dcmip163r100_gnu:
@@ -271,7 +271,7 @@ CANO_dcmip163r100_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 CANO_wil7_gnu:
@@ -287,7 +287,7 @@ CANO_wil7_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 GEM_GY_FISL_P_gnu:
@@ -303,7 +303,7 @@ GEM_GY_FISL_P_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 GEM_LU_FISL_H_gnu:
@@ -319,7 +319,7 @@ GEM_LU_FISL_H_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 GEM_LU_OFFC_gnu:
@@ -335,7 +335,7 @@ GEM_LU_OFFC_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 PTOPO_GYH_gnu:
@@ -351,7 +351,7 @@ PTOPO_GYH_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 PTOPO_LUP_gnu:
@@ -367,7 +367,7 @@ PTOPO_LUP_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 RSTRT_GYP_gnu:
@@ -383,7 +383,7 @@ RSTRT_GYP_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 THEO_bubbleG_gnu:
@@ -399,7 +399,7 @@ THEO_bubbleG_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
 
 THEO_schar_gnu:
@@ -415,5 +415,5 @@ THEO_schar_gnu:
       fi
     - test "${_status}" == "ED"
   only:
-  - dev*
+  - dev-cmake_rpn
   when: always
