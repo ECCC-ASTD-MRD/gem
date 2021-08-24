@@ -35,11 +35,13 @@ build_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/5.2GEM_cfgs_GY_FISL_H -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
@@ -50,11 +52,13 @@ CANO_W7cascP_intel:
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
+    - CFG=CANO_cfgs_W7cascP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/CANO_cfgs_W7cascP
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/CANO_cfgs_W7cascP -ptopo $GEMTEST_ptopo;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
       fi
     - test "${_status}" == "ED"
   only:
