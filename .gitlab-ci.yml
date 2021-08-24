@@ -6,10 +6,10 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build_intel
-  - run_configs_intel
   - build_gnu
   - run_configs_gnu
+  - build_intel
+  - run_configs_intel
 
 before_script:
     - export CLICOLOR_FORCE=1
