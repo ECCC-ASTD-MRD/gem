@@ -19,7 +19,7 @@ build_intel:
   only:
   - dev-cmake_rpn
   script:
-    - ln -s $HOME/gem_dbase .
+    - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
@@ -275,6 +275,7 @@ build_gnu:
   - dev-cmake_rpn
   when: always
   script:
+    - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
     - make cmake
