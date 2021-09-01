@@ -4,7 +4,7 @@ set -e
 
 BENCHMARK_GY_15="benchmark-GY-15.tar.gz"
 BENCHMARK_GY_15_URL="http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/${BENCHMARK_GY_15}"
-BENCHMARK_GY_15_MD5SUM="df2933378a39b9039b81d299b85ce0f2"
+BENCHMARK_GY_15_MD5SUM="2580bbd95b5642c73e8e173e9e3a4804"
 
 printUsage() {
     echo -e "Download a sample database of data files needed to run benchmarks for GEM"

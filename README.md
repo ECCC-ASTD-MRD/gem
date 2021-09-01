@@ -42,8 +42,10 @@ instructions below for that branch**
 	cmake -DCOMPILER_SUITE=gnu ..
 	# or compile with Intel 
 	cmake -DCOMPILER_SUITE=intel ..
+	# NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE
+	cmake ..
 	# Create an execution environment for GEM
-    make -j work
+        make -j work
 
     cd ..
 	cd work-${OS_NAME}-${COMPILER_NAME}
@@ -60,11 +62,9 @@ instructions below for that branch**
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
 
-For benchmarks, please install and compile GEM as indicated above, then
-download the following file (3 GB), and install it in the main
-directory. It includes data and configurations files, and  a file named
-README-benchmark-GY15 with details on how to run it:
-
+For benchmarks, please install and compile GEM as indicated above, and read
+the file [README-ITQ.md](https://github.com/ECCC-ASTD-MRD/gem/README-ITQ.md)
+for detailed instructions. You will also need to download a specific database:
 ```
     ./download-benchmark-GY15.sh .
 ```

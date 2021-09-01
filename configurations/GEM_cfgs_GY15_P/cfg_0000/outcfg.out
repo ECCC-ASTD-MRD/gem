@@ -1,0 +1,45 @@
+
+ grid=1,core;
+ levels=1,eta, -1;
+ levels=2, pres,[1000., 925., 850., 700., 500., 400., 300., 275., 250., 225., 200., 175., 150.,
+125., 100., 70., 50., 30., 20., 10., 7., 5., 3.0, 2., 1., .7, .5, .3, .2, .1];
+
+ levels=3,eta, 0;
+ levels=4,bot, 3;
+ levels=5,pres,[1000., 925., 850., 700., 500., 250.];
+ levels=6,pres,[850.,700.];
+ levels=7,pres,[1000., 925., 850., 700., 600., 500., 400., 300., 250.];
+ levels=8,pres,[10.];
+
+ steps=1,hour,0.;
+ steps=2,hour,<0.,240.,24.>;
+ steps=3,hour,<0.,240.,3.>;
+ steps=4,hour,[24.,72.,120.];
+ steps=5,hour,<0.,144.,3.>,<150.,240.,6.>;
+ steps=6,hour,<0.,240.,1.>;
+
+ sortie_p([Z0,LH,VG,MT,MG,HS,AL,GL,LG,SD,TM,TS,TP,2F], grid, 1, levels, 1, steps, 1)
+ sortie_p([FV,FC,FI,FS,FB,FL,SI,FQ,EI,IIR,ICR], grid, 1, levels, 1, steps, 3)
+ sortie_p([TM,TG,NT,RT,PC,RC,ME,ECC,TCC,IH,PW], grid, 1, levels, 1, steps, 3)
+ sortie_p([ECCL,ECCM,ECCH], grid, 1, levels, 1, steps, 3)
+ sortie_p([PR,SN,RN,FR,PE], grid, 1, levels, 1, steps, 3)
+
+ sortie([LA,LO], grid, 1, levels, 1, steps, 1)
+
+ sortie([PN,PT], grid, 1, levels, 1, steps, 3)
+ sortie([P0], grid, 1, levels, 1, steps, 6)
+ sortie([TT,GZ,ES,UU,VV,HU,WW], grid, 1, levels, 2, steps, 2)
+ sortie([TT,GZ,ES,UU,VV,HU,WW], grid, 1, levels, 8, steps, 3)
+ sortie([TT,ES,UU,VV,WW], grid, 1, levels, 5, steps, 3)
+ sortie([GZ], grid, 1, levels, 7, steps, 3)
+ sortie([GZ], grid, 1, levels, 4, steps, 5)
+ sortie([TT,ES,HR,UU,VV,WW,TD], grid, 1, levels, 3, steps, 3)
+ sortie([HR], grid, 1, levels, 6, steps, 2)
+ sortie([TT,UU,VV], grid, 1, levels, 4, steps, 6)
+ sortie([QQ,QR], grid, 1, levels, 3, steps, 5)
+ sortie([QQ,QR], grid, 1, levels, 7, steps, 3)
+ sortie([MX,ME], grid, 1, levels, 1, steps, 3)
+
+ xnbit([GZ,P0],bits,16)
+ xnbit([PR,PC,RN,SN,PE,FR],bits,31)
+ xnbit([Z0,ZT,ME],bits,32)

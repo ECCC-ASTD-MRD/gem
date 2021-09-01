@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N job_GY15
+#PBS -l select=26:ncpus=40:mpiprocs=40:ompthreads=1 -r n
+#PBS -l place=scatter
+##PBS -l nodes=26:ppn=40 -l mem=80000M
+#PBS -l walltime=1800
+#PBS -q development
+#PBS
+
+# This job is to run the model (after myprep.pbs is completed)
+# cd to your cloned gem directory
+cd [complete path to cloned github repository]/gem
+# load compiler, fftw, numa libraries and export variables
+# Example for XC50
+export OMP_STACKSIZE=4G
+export FOR_DISABLE_KMP_MALLOC=0
+module unload intel/19.0.3.199
+module load intel/19.0.5.281
+module add craype-hugepages16M
+module add cray-fftw/3.3.8.2
+# on CMC XC50
+. ssmuse-sh -x main/opt/numa/numa-2.0.14
+
+#source common setup to find GEM binaries, scripts
+. .common_setup intel
+#cd to installed work directory to run
+cd work-[...]
+runmod.sh -dircfg configurations/GEM_cfgs_GY15_P -ptopo 26x20x1 -inorder > list_gy 
+#-ptopo 26x20x1 multiply by 2 for number of cpus total in Yin-Yang
+#runmod.sh -dircfg configurations/GEM_cfgs_GY15_P  -ptopo 10x8x1 > list_gy 2>&1 -not enough memory.
