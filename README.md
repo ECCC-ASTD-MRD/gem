@@ -3,7 +3,7 @@
 **The 5.2 branch is a development version.
 The 5.1 branch is the stable version, used in production at the Canadian
 Meteorological Centre.
-Benchmarks must be used with 5.2 version.**
+Benchmarks must be used with 5.2 version and benchmarks branch.**
 
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
@@ -50,14 +50,7 @@ See below for extended instructions.  Further details are can be found in
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
 
-For benchmarks, please install and compile GEM as indicated above, then
-download the following file (3 GB), and install it in the main
-directory. It includes data and configurations files, and  a file named
-README-benchmark-GY15 with details on how to run it:
-
-```
-    ./download-benchmark-GY15.sh .
-```
+For benchmarks, please see the [benchmarks branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks)
 
 -----------------------------------------------------------------
 # Extended instructions:
