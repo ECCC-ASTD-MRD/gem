@@ -31,11 +31,11 @@ git submodule update --init --remote
 # Getting the data
 * GEM input database
 ```
-./download_dbase.sh .
+./download-dbase.sh .
 ```
 * GEM GY15 input database
 ```
-./download_benchmark_gy15.sh
+./download-benchmark-GY15.sh .
 ```
 
 # Building GEM (with intel compiler)

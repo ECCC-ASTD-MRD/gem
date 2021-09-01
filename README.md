@@ -8,19 +8,22 @@ Benchmarks must be used with 5.2 version.**
 See below for extended instructions.  Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
-**Warning: dev-5.2 branch uses a submodule. Make sure you follow the
-instructions below for that branch**
+**Warning: benchmark-5.2.0-a7 branch uses a git submodule. Make sure you
+follow the instructions below for that branch**
+
+For benchmarks, please install and compile GEM as indicated below, and read
+the file [README-ITQ.md](https://github.com/ECCC-ASTD-MRD/gem/blob/benchmarks/README-ITQ.md)
+for detailed instructions. 
 
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
     cd gem
-    git checkout dev-5.2
+    git checkout benchmark-5.2.0-a7
     git submodule update --init --recursive
-    # Optionnaly checkout a specific branch:
-    # git checkout <branch_name>
  
-    # Download the data files required to run GEM
+    # Download the data files required to run GEM and to run the benchmark
     ./download-dbase.sh .
+    ./download-benchmark-GY15.sh .
 
     # Important: in order to set environment variables needed to run GEM, use the
     # following setup file, after setting up your compiler environment:
@@ -42,10 +45,10 @@ instructions below for that branch**
 	cmake -DCOMPILER_SUITE=gnu ..
 	# or compile with Intel 
 	cmake -DCOMPILER_SUITE=intel ..
-	# NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE
+	# NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE, use:
 	cmake ..
 	# Create an execution environment for GEM
-        make -j work
+	make -j work
 
     cd ..
 	cd work-${OS_NAME}-${COMPILER_NAME}
@@ -61,13 +64,6 @@ instructions below for that branch**
 
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
-
-For benchmarks, please install and compile GEM as indicated above, and read
-the file [README-ITQ.md](https://github.com/ECCC-ASTD-MRD/gem/README-ITQ.md)
-for detailed instructions. You will also need to download a specific database:
-```
-    ./download-benchmark-GY15.sh .
-```
 
 -----------------------------------------------------------------
 # Extended instructions:
