@@ -10,7 +10,7 @@ This document describes the process of building and running GEM with a global Yi
 * LAPACK library (with development package),
 * fftw3 library (with development package),
 * basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
-* on Cray XC, libnuma
+* if on Cray XC, libnuma is also required
 
    ## Example on Cray XC50
    ```
@@ -59,20 +59,23 @@ cd ..
 
 # Running GEM
 
-You can find information in gem/configurations/GEM_cfgs_GY15_P:
+You can find this information in gem/configurations/GEM_cfgs_GY15_P:
 1) file TOPOs_possible_for_GY15 (possible PE topologies)
 2) sample pbs file: myprep.pbs (job to prepare for model run)
 3) sample pbs file: mybatch.pbs (job to run model)
  
+* If not already done, load the compiler and activate the GEM environment
+```
+. ./.common_setup intel
+```
+
+* Then go to the working directory:
 ```
 cd work-*
 cp ../configurations/GEM_cfgs_GY15_P/*pbs .
 ```
 
-* If not already done, load the needed environment got GEM scripts
-```
-. ./.common_setup intel
-```
+
 
 * Execute preparation job interactively
 ```
@@ -90,5 +93,5 @@ qsub mybatch.pbs
 
 # Results
 
-* Results will be written into the directory **work-*/RUNMOD/output/cfg_0000/**
+* Model outputs will be written into the directory **work-*/RUNMOD/output/cfg_0000/**
 * The execution listing, **list_gy**, will be located in the directory **work-*/**
