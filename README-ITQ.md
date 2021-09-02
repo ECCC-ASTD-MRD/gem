@@ -2,11 +2,15 @@
 This document describes the process of building and running GEM with a global Yin-Yang 15km grid pressure coordinate (GY15)
 
 # Requirements
-* Fortran and C compiler
-* MPI
-* fftw3 
-* libnuma
-* May need to export other variables for MPI to function properly
+* Fortran and C compilers
+* An MPI implementation such as OpenMPI (with development package),
+* Portable Hardware Locality library (hwloc) (with development package),
+* OpenMP support (optional)
+* BLAS library (with development package),
+* LAPACK library (with development package),
+* fftw3 library (with development package),
+* basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
+* on Cray XC, libnuma
 
    ## Example on Cray XC50
    ```
@@ -59,22 +63,32 @@ You can find information in gem/configurations/GEM_cfgs_GY15_P:
 1) file TOPOs_possible_for_GY15 (possible PE topologies)
 2) sample pbs file: myprep.pbs (job to prepare for model run)
 3) sample pbs file: mybatch.pbs (job to run model)
-
+ 
 ```
 cd work-*
 cp ../configurations/GEM_cfgs_GY15_P/*pbs .
 ```
 
+* If not already done, load the needed environment got GEM scripts
+```
+. ./.common_setup intel
+```
+
 * Execute preparation job interactively
 ```
-runprep.sh -dircfg configurations/GEM_cfgs_GY15
+runprep.sh -dircfg configurations/GEM_cfgs_GY15_P
 ```
 * or modify myprep.pbs and submit in batch
 ```
 qsub myprep.pbs
-```
+``` 
 
 * Once runprep is done, modify mybatch.pbs (use the guide in gem/configurations/GEM_cfgs_GY15_P/TOPOs_possible_for_GY15 to choose PE topology) and run the model
 ```
 qsub mybatch.pbs
 ```
+
+# Results
+
+* Results will be written into the directory **work-*/RUNMOD/output/cfg_0000/**
+* The execution listing, **list_gy**, will be located in the directory **work-*/**
