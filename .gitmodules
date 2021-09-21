@@ -1,3 +1,6 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
 	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn
+[submodule "src/rpn-si/vgrid"]
+	path = src/rpn-si/vgrid
+	url = https://gitlab.science.gc.ca/RPN-SI/vgrid
