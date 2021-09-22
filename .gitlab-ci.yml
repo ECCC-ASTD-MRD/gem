@@ -6,7 +6,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build_gnu
+  - build_gnu_dorpnsi
   - run_configs_gnu
   - build_intel_dorpnsi
   - build_intel
@@ -44,7 +44,7 @@ build_intel:
   artifacts:
     expire_in: 6 hrs
     paths:
-    - work*
+    - work*intel*
     - gem_dbase
 
 5.2GEM_GY_FISL_H_intel:
@@ -285,8 +285,8 @@ THEO_schar_intel:
       fi
     - test "${_status}" == "ED"
 
-build_gnu:
-  stage: build_gnu
+build_gnu_dorpnsi:
+  stage: build_gnu_dorpnsi
   only:
   - dev-submodules
   when: always
@@ -300,7 +300,7 @@ build_gnu:
   artifacts:
     expire_in: 6 hrs
     paths:
-    - work*
+    - work*gnu*
     - gem_dbase
 
 5.2GEM_GY_FISL_H_gnu:
@@ -308,7 +308,7 @@ build_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -328,7 +328,7 @@ CANO_W7cascP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -348,7 +348,7 @@ CANO_dcmip163r100_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -368,7 +368,7 @@ CANO_wil7_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -388,7 +388,7 @@ GEM_GY_FISL_P_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -408,7 +408,7 @@ GEM_LU_FISL_H_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -428,7 +428,7 @@ GEM_LU_OFFC_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -448,7 +448,7 @@ PTOPO_GYH_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -468,7 +468,7 @@ PTOPO_LUP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -488,7 +488,7 @@ RSTRT_GYP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -508,7 +508,7 @@ THEO_bubbleG_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -528,7 +528,7 @@ THEO_schar_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu
+  - build_gnu_dorpnsi
   when: always
   script:
     - . ./.eccc_setup_gnu

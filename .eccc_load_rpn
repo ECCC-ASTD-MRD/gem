@@ -1,3 +1,4 @@
 . r.load.dot rpn/libs/19.7.0
 . r.load.dot rpn/vgrid/6.6.0
+. r.load.dot rpn/libs/master_11.7/mpi-extras-intel-19.0.3.199_1.1.0_ubuntu-18.04-amd64-64
 
