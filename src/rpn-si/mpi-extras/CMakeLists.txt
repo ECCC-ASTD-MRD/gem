@@ -5,4 +5,4 @@ set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 
 file(GLOB FTNSRC RPN_MPI*.F90)
 
-add_library (mpi-extras STATIC ${FTNSRC})
+add_library (mpi_extras STATIC ${FTNSRC})

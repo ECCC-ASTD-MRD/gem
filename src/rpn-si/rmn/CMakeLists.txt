@@ -12,8 +12,6 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_Fortran_COMPILER_
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-invalid-boz")
 endif()
 
-#message(STATUS "CMAKE_Fortran_FLAGS for librmn = ${CMAKE_Fortran_FLAGS}")
-
 add_library (rmn STATIC ${FTNSRC} ${CSRC})
 target_include_directories(rmn PRIVATE
    base

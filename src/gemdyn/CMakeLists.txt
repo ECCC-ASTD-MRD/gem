@@ -14,7 +14,7 @@ target_include_directories(gem PRIVATE
    ${CMAKE_SOURCE_DIR}/src/modelutils/include
    ${CMAKE_BINARY_DIR}/src/rpnphy
    ${CMAKE_BINARY_DIR}/src/modelutils
-   ${CMAKE_BINARY_DIR}/src/vgrid
+   ${CMAKE_BINARY_DIR}/src/vgrid/lib
    include
    base
 )

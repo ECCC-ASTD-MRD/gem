@@ -14,6 +14,6 @@ include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
 add_library (modelutils STATIC ${FTNSRC} ${CSRC})
 target_include_directories(modelutils PRIVATE base include)
-include_directories( ${CMAKE_BINARY_DIR}/src/vgrid )
+include_directories( ${CMAKE_BINARY_DIR}/src/vgrid/lib )
 
 add_subdirectory(main modelutils-main)

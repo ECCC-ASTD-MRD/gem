@@ -9,8 +9,8 @@ target_link_libraries(toc2nml
    phy
    modelutils
    vgrid
-   mpi-extras
-   rpncomm
+   mpi_extras
+   rpn_comm
    rmn
    massv
    ${ompfftw}
@@ -20,9 +20,10 @@ target_link_libraries(toc2nml
    ${EXTRA_LIBRARIES}
    )
 target_include_directories(toc2nml PRIVATE
-   ${CMAKE_BINARY_DIR}/src/vgrid
+   ${CMAKE_BINARY_DIR}/src/vgrid/lib
 )
-add_dependencies(toc2nml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
+
+add_dependencies(toc2nml gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 
 # Adding specific flags for GEM
 include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)

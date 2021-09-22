@@ -19,8 +19,8 @@ target_link_libraries(maingemdm
    phy
    modelutils
    vgrid
-   mpi-extras
-   rpncomm
+   mpi_extras
+   rpn_comm
    rmn
    massv
    ${ompfftw}
@@ -29,7 +29,6 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(maingemdm gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
@@ -37,8 +36,8 @@ target_link_libraries(checkdmpart
    phy
    modelutils
    vgrid
-   mpi-extras
-   rpncomm
+   mpi_extras
+   rpn_comm
    rmn
    massv
    ${ompfftw}
@@ -47,7 +46,6 @@ target_link_libraries(checkdmpart
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(checkdmpart gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
@@ -55,15 +53,14 @@ target_link_libraries(gemgrid
    phy
    modelutils
    vgrid
-   mpi-extras
-   rpncomm
+   mpi_extras
+   rpn_comm
    rmn
    massv
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(gemgrid gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -71,8 +68,8 @@ target_link_libraries(prgemnml
    phy
    modelutils
    vgrid
-   mpi-extras
-   rpncomm
+   mpi_extras
+   rpn_comm
    rmn
    massv
    ${ompfftw}
@@ -81,7 +78,11 @@ target_link_libraries(prgemnml
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prgemnml gem phy modelutils vgrid mpi-extras rpncomm rmn massv)
+
+add_dependencies(prgemnml gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
+add_dependencies(gemgrid gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
+add_dependencies(maingemdm gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
+add_dependencies(checkdmpart gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 
 install(TARGETS maingemdm checkdmpart gemgrid prgemnml RUNTIME 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

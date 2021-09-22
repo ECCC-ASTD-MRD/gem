@@ -17,7 +17,7 @@ before_script:
 build_intel:
   stage: build_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   script:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
@@ -34,7 +34,7 @@ build_intel:
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -54,7 +54,7 @@ build_intel:
 CANO_W7cascP_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -74,7 +74,7 @@ CANO_W7cascP_intel:
 CANO_dcmip163r100_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -94,7 +94,7 @@ CANO_dcmip163r100_intel:
 CANO_wil7_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -114,7 +114,7 @@ CANO_wil7_intel:
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -134,7 +134,7 @@ GEM_GY_FISL_P_intel:
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -154,7 +154,7 @@ GEM_LU_FISL_H_intel:
 GEM_LU_OFFC_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -174,7 +174,7 @@ GEM_LU_OFFC_intel:
 PTOPO_GYH_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -194,7 +194,7 @@ PTOPO_GYH_intel:
 PTOPO_LUP_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -214,7 +214,7 @@ PTOPO_LUP_intel:
 RSTRT_GYP_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -252,7 +252,7 @@ THEO_bubbleG_intel:
 THEO_schar_intel:
   stage: run_configs_intel
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -272,7 +272,7 @@ THEO_schar_intel:
 build_gnu:
   stage: build_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   when: always
   script:
     - ln -sf $HOME/gem_dbase .
@@ -290,7 +290,7 @@ build_gnu:
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -310,7 +310,7 @@ build_gnu:
 CANO_W7cascP_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -330,7 +330,7 @@ CANO_W7cascP_gnu:
 CANO_dcmip163r100_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -350,7 +350,7 @@ CANO_dcmip163r100_gnu:
 CANO_wil7_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -370,7 +370,7 @@ CANO_wil7_gnu:
 GEM_GY_FISL_P_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -390,7 +390,7 @@ GEM_GY_FISL_P_gnu:
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -410,7 +410,7 @@ GEM_LU_FISL_H_gnu:
 GEM_LU_OFFC_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -430,7 +430,7 @@ GEM_LU_OFFC_gnu:
 PTOPO_GYH_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -450,7 +450,7 @@ PTOPO_GYH_gnu:
 PTOPO_LUP_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -470,7 +470,7 @@ PTOPO_LUP_gnu:
 RSTRT_GYP_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -490,7 +490,7 @@ RSTRT_GYP_gnu:
 THEO_bubbleG_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -510,7 +510,7 @@ THEO_bubbleG_gnu:
 THEO_schar_gnu:
   stage: run_configs_gnu
   only:
-  - dev-cmake_rpn
+  - dev-submodules
   dependencies:
   - build_gnu
   when: always

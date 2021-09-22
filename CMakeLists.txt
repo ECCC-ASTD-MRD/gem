@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn)
-message(STATUS "CMAKE_MODULE_PATH=" ${CMAKE_SOURCE_DIR}/cmake_rpn)
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
 
 project(GEM DESCRIPTION "GEM - Forecasting and data assimilation system" LANGUAGES NONE)
-#ec_build_info()            # Generate build include file (optional)
+ec_build_info()            # Generate build include file (optional)
 
 enable_language(Fortran)
 enable_language(C)
@@ -24,7 +23,14 @@ message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
-include(OpenMP)
+include(ec_openmp)
+if (OPENMP_FOUND)
+  add_compile_definitions(WITH_OpenMP)
+  message(STATUS "Adding extra -DWITH_OpenMP")
+else()
+  add_compile_definitions(WITHOUT_OpenMP)
+  message(STATUS "Adding extra -DWITHOUT_OpenMP")
+endif()
 
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)
@@ -55,8 +61,6 @@ endif()
 # Figure out the correct arch-dependent include path
 set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "Build architecture: ${BUILD_ARCH}")
-#message(STATUS "Basic CMAKE_C_FLAGS (cmake_rpn): ${CMAKE_C_FLAGS}")
-#message(STATUS "Basic CMAKE_Fortran_FLAGS (cmake_rpn): ${CMAKE_Fortran_FLAGS}")
 
 message(STATUS "Sources directory is: ${CMAKE_SOURCE_DIR}")
 message(STATUS "Build directory is: ${CMAKE_BINARY_DIR}")
@@ -64,19 +68,6 @@ message(STATUS "Build directory is: ${CMAKE_BINARY_DIR}")
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" GEM_VERSION)
 string(REGEX REPLACE "\n$" "" GEM_VERSION "${GEM_VERSION}")
 message(STATUS "GEM_VERSION: ${GEM_VERSION}")
-
-# Include an architecture dependent file that contains include files for a
-# particular architecture and compiler, using the default value of the
-# compiler or the argument given to cmake command.
-message(STATUS "arch-dependent include directory: ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}")
-
-include_directories(
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/mpi-extras
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/rpncomm
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/rmn/PUBLIC_INCLUDES
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/RPN/compiler_includes
-)
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

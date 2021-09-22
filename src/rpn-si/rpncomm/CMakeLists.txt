@@ -9,4 +9,4 @@ set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 file(GLOB CSRC *.c)
 file(GLOB FTNSRC *.F90)
 
-add_library (rpncomm STATIC ${FTNSRC} ${CSRC})
+add_library (rpn_comm STATIC ${FTNSRC} ${CSRC})

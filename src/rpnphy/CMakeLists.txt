@@ -16,7 +16,7 @@ include_directories(series)
 include_directories(surface)
 include_directories(${CMAKE_SOURCE_DIR}/src/modelutils/include)
 include_directories(${CMAKE_BINARY_DIR}/src/modelutils)
-include_directories(${CMAKE_BINARY_DIR}/src/vgrid)
+include_directories(${CMAKE_BINARY_DIR}/src/vgrid/lib)
 include_directories(AFTER include base utils ${CMAKE_SOURCE_DIR}/src/modelutils/include)
 
 add_library (phy STATIC ${FTNSRC})
