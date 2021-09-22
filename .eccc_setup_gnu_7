@@ -12,6 +12,8 @@
 . ssmuse-sh -x /fs/ssm/main/opt/openmpi-setup/openmpi-setup-0.2
 . ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
 
+. ssmuse-sh -x main/opt/cmake/cmake-3.21.1
+
 export COMPILER_SUITE=gnu
 
 COMPILER_VERSION=$(project/compiler.sh gnu)

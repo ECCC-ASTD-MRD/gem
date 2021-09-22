@@ -21,5 +21,7 @@ else
    . ssmuse-sh -x main/opt/numa/numa-2.0.14
 fi
 
+. ssmuse-sh -x main/opt/cmake/cmake-3.21.1
+
 . ./.common_setup ${COMPILER_SUITE}
 
