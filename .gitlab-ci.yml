@@ -19,6 +19,7 @@ build_intel_dorpnsi:
   stage: build_intel_dorpnsi
   only:
   - dev-submodules
+  when: always
   script:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
@@ -31,6 +32,7 @@ build_intel:
   stage: build_intel
   only:
   - dev-submodules
+  when: always
   script:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
