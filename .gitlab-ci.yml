@@ -6,7 +6,6 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build_gnu_dorpnsi
   - build_gnu
   - run_configs_gnu
   - build_intel_dorpnsi
@@ -35,6 +34,7 @@ build_intel:
   script:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
+    - . ./.eccc_load_rpn
     - . ./.eccc_initial_setup
     - make cmake
     - make -j `nproc`
@@ -283,19 +283,6 @@ THEO_schar_intel:
       fi
     - test "${_status}" == "ED"
 
-build_gnu_dorpnsi:
-  stage: build_gnu_dorpnsi
-  only:
-  - dev-submodules
-  when: always
-  script:
-    - ln -sf $HOME/gem_dbase .
-    - . ./.eccc_setup_gnu
-    - . ./.eccc_initial_setup
-    - make cmake-dorpnsi
-    - make -j `nproc`
-    - make -j `nproc` work
-
 build_gnu:
   stage: build_gnu
   only:
@@ -305,7 +292,7 @@ build_gnu:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
-    - make cmake
+    - make cmake-dorpnsi
     - make -j `nproc`
     - make -j `nproc` work
   artifacts:
