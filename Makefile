@@ -7,11 +7,11 @@ default: build
 cmake-gnu-debug: ; $(MAKE) COMPILER_SUITE=gnu gnu-debug
 cmake-gnu-debug-plus: ; $(MAKE) COMPILER_SUITE=gnu gnu-debug-plus
 
-cmake-dorpnsi:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DDO_RPN_SI=TRUE ${GEM_GIT_DIR} )
+cmake-dorpn:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
 
 cmake:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DDO_RPN_SI=FALSE ${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${GEM_GIT_DIR} )
 
 gnu-debug:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug ${GEM_GIT_DIR} )

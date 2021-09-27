@@ -4,3 +4,6 @@
 [submodule "src/rpn-si/vgrid"]
 	path = src/rpn-si/vgrid
 	url = https://gitlab.science.gc.ca/RPN-SI/vgrid
+[submodule "src/rpn-si/librmn"]
+	path = src/rpn-si/rmn
+	url = git@gitlab.science.gc.ca:RPN-SI/librmn.git

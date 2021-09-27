@@ -1,11 +1,11 @@
 # How to get, compile and run GEM on a stick at the CMC.
-Warning: dev-cmake_rpn branch uses a submodule. Make sure you follow the
-instructions below for that branch
+Warning: dev-submodules branch uses submodules. Make sure you follow the
+instructions below for that branch.
 
 # getting gem-devel git repository
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
-git checkout dev-cmake_rpn
+git checkout dev-submodules
 git submodule update --init --recursive
 
 # preparing gem-devel compilation
@@ -13,11 +13,11 @@ git submodule update --init --recursive
 
 . ./.eccc_setup_intel
 
-# You cannot compile with Intel and then with GNU in the same shell
-# unless you compile first with GNU
+# Or with gnu
+# Please note you cannot compile with Intel and then with GNU in the same shell
 . ./.eccc_setup_gnu
 
-Before the first build:
+# Before the first build:
 . ./.eccc_initial_setup
 
 # building and installing GEM
