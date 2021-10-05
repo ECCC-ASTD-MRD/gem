@@ -3,9 +3,9 @@
 **The 5.2 branch is a development version.
 The 5.1 branch is the stable version, used in production at the Canadian
 Meteorological Centre.
-Benchmarks must be used with 5.2 version.**
+Benchmarks must be used with 5.2 version and benchmarks branch.**
 
-See below for extended instructions.  Further details are can be found in
+See below for extended instructions and requirements. Further details are can be found in
 [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
 **Warning: benchmark-5.2.0-a7 branch uses a git submodule. Make sure you
@@ -19,7 +19,7 @@ for detailed instructions.
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
     cd gem
     git checkout benchmark-5.2.0-a7
-    git submodule update --init --recursive
+    git submodule update --init --remote
  
     # Download the data files required to run GEM and to run the benchmark
     ./download-dbase.sh .
@@ -39,19 +39,19 @@ for detailed instructions.
 
     # If the -DCMAKE_INSTALL_PREFIX=<path> option isn't given to cmake, the work directory
     # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
- 	# To compile: default compiler suite is GNU
-	cmake ..
-	# or specify it with the option -DCOMPILER_SUITE=<compiler suite name (gnu|intel)>
-	cmake -DCOMPILER_SUITE=gnu ..
-	# or compile with Intel 
-	cmake -DCOMPILER_SUITE=intel ..
-	# NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE, use:
-	cmake ..
-	# Create an execution environment for GEM
-	make -j work
+    # To compile: default compiler suite is GNU
+    cmake ..
+    # or specify it with the option -DCOMPILER_SUITE=<compiler suite name (gnu|intel)>
+    cmake -DCOMPILER_SUITE=gnu ..
+    # or compile with Intel 
+    cmake -DCOMPILER_SUITE=intel ..
+    # NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE, use:
+    cmake ..
+    # Create an execution environment for GEM
+    make -j work
 
     cd ..
-	cd work-${OS_NAME}-${COMPILER_NAME}
+    cd work-${OS_NAME}-${COMPILER_NAME}
     # Configure the model with one of the configurations
     # and execute the model, for example:
     runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
@@ -90,7 +90,7 @@ link:
 ## Compiler specifics
 
 ### GNU compiler suite
-- By default GEM is configured to use gfortran and gcc compilers
+- By default GEM is configured to use gfortran and gcc compilers, and OpenMPI
 - Changes to the C and Fortran flags can be done in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
@@ -115,7 +115,9 @@ link:
     - You may need to modify ```-march``` to generate code that can run on
       your system
 - Make sure the compilers and libraries are in the appropriate
-  environment variables (PATH and LD_LIBRARY_PATH)
+  environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
+- If you are using Intel OneAPI instead of OpenMPI, make sure OpenMPI is not in 
+  your ```PATH``` environment variable
 
 
 ## Compiling and installing GEM

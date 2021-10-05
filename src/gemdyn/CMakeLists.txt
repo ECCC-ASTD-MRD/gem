@@ -23,7 +23,7 @@ target_include_directories(gem PRIVATE
 include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
 if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment")
-  set(EXTRA_LIBRARIES "-lopen-pal -lhwloc")
+  set(EXTRA_LIBRARIES "-lhwloc")
 endif()
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
