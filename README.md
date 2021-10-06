@@ -3,10 +3,10 @@
 **The 5.1 branch is the stable version, used in production at the Canadian
 Meteorological Centre.
 The 5.2 branch is a development version.
-Benchmarks must be used with 5.2 version.**
+Benchmarks must be used with 5.2 version and benchmarks branch.**
 
-See below for extended instructions.  Further details are can be found in
-[GEM's manual](doc/GEM-manual.pdf) (PDF).
+See below for extended instructions and requirements. Further details are
+can be found in [GEM's manual](doc/GEM-manual.pdf) (PDF).
 
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
@@ -40,6 +40,7 @@ See below for extended instructions.  Further details are can be found in
     ./runprep -dircfg configurations/GY_cfgs
     ./runmod -dircfg configurations/GY_cfgs
 
+    # use tools to see list the records in the output files
     ./voir -iment RUNMOD.dir/output/cfg0000/ ...
     ./fststat -fst RUNMOD.dir/output/cfg0000/ ...
 ```
@@ -47,6 +48,7 @@ See below for extended instructions.  Further details are can be found in
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
 
+For benchmarks, please see the [benchmarks branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks)
 
 -----------------------------------------------------------------
 # Extended instructions:
@@ -71,8 +73,8 @@ link:
 
 ## Compiler specifics
 
-### GNU compilers
-- By default GEM is configured to use gfortran and gcc compilers
+### GNU compiler suite
+- By default GEM is configured to use gfortran and gcc compilers, and OpenMPI
 - Changes to the C and Fortran flags can be done in **project/Linux-x86_64-gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
@@ -97,8 +99,7 @@ link:
     - You may need to modify ```-march``` to generate code that can run on
       your system
 - Make sure the compilers and libraries are in the appropriate
-  environment variables (PATH and LD_LIBRARY_PATH)
-
+  environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
 
 ## Compiling and installing GEM
 
@@ -110,7 +111,7 @@ parallel.
 without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
-The default compilers are GNU. If you want to compile with other compilers,
+The default compiler suite is GNU. If you want to compile with other compilers,
 add ```-DCOMPILER=<compiler suite name (gnu|intel)>``` to the CMake
 command line.  This release has been tested with GNU and Intel compilers on
 Linux x86_64.  Other compilers have also been used in the past but have not been

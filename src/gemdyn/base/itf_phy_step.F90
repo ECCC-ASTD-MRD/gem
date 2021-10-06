@@ -30,6 +30,9 @@
       use gem_timing
       use gmm_phy, only: phy_cplm, phy_cplt
       use dyn_fisl_options, only: Schm_phycpl_S, Cstv_bA_8, Cstv_bA_m_8
+      use phy_itf, only: phy_get,phy_put
+      use ens_options, only: ens_skeb_tndfix
+
       implicit none
 #include <arch_specific.hf>
 
@@ -48,6 +51,8 @@
 
       integer :: err_geom, err_input, err_step, err_smooth, err
       logical :: cloudobj
+
+      real, dimension(:,:,:), pointer :: zud, zvd
 
 !
 !     ---------------------------------------------------------------
@@ -146,7 +151,19 @@
          if (F_step_kount ==   Init_halfspan) then
             err = phy_snapshot('W')
          else if (F_step_kount == 2*Init_halfspan) then
+            if (.not. ens_skeb_tndfix) then
+               nullify(zud, zvd)
+               err = phy_get(zud, 'phytd_udis', F_npath='V', F_bpath='P')
+               err = min(err, phy_get(zvd, 'phytd_vdis', F_npath='V', F_bpath='P'))
+               call gem_error (err, 'itf_phy_step', 'Cannot retrieve dissipations')
+            endif
             err = phy_snapshot('R')
+            if (.not. ens_skeb_tndfix) then
+               err = phy_put(zud, 'phytd_udis', F_npath='V', F_bpath='P')
+               err = min(err, phy_put(zvd, 'phytd_vdis', F_npath='V', F_bpath='P'))
+               call gem_error (err, 'itf_phy_step', 'Cannot reset dissipations')
+               deallocate(zud, zvd)
+            endif
          end if
       end if
 

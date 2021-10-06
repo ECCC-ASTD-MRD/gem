@@ -170,7 +170,8 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
 
    RHOW   = 1000.
    KCOEF  = 1.E-6
-   if (isba_melting_fix) KCOEF = 1E-6 * DT / 720.
+
+   if (isba_melting_fix) KCOEF = 1.55E-7
 
    RAIN1  = 2.8e-8
    RAIN2  = 2.8e-7
@@ -189,7 +190,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    case DEFAULT
       emisss(:) = isba_soil_emiss_const
    end select
-   if (rad_off .and. atm_external) then
+   if (rad_off .and. .not. atm_external) then
       !Do not include radiative forcings
       ALBT = 1.
       EMIST = 0.
