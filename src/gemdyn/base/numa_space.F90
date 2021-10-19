@@ -25,7 +25,7 @@ module numa
 
       logical :: Numa_uniform_L
       integer :: Numa_sockcomm, nodecomm, Numa_peercomm, noderank, &
-                 Numa_sockrank, Numa_peerrank
+                 Numa_sockrank, Numa_peerrank, Numa_win
       integer :: Numa_cores_per_socket, Numa_active_cores_per_socket
 
 contains
@@ -94,7 +94,7 @@ contains
 
       type(C_PTR) :: baseptr
       integer(KIND=MPI_ADDRESS_KIND) :: wsiz
-      integer :: rank,ierr,dispunit,win
+      integer :: rank,ierr,dispunit
 !
 !     ---------------------------------------------------------------
 !
@@ -109,11 +109,11 @@ contains
       dispunit = 4              ! words (integers/floats)
       wsiz = wsiz * dispunit    ! size in Bytes
       call MPI_win_allocate_shared (wsiz, dispunit, MPI_INFO_NULL,&
-                                 Numa_sockcomm, baseptr, win, ierr)
+                                 Numa_sockcomm, baseptr, Numa_win, ierr)
       if (ierr .ne. MPI_SUCCESS) return
-      call MPI_win_shared_query (win, MPI_PROC_NULL, wsiz, dispunit,&
+      call MPI_win_shared_query (Numa_win, MPI_PROC_NULL, wsiz, dispunit,&
                                  baseptr, F_err)
-!call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, win, &
+!call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, Numa_win, &
 !                                          baseptr, F_err )
       nullify(F_pntr)
       call c_f_pointer( baseptr, F_pntr, [1] )
