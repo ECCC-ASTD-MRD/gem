@@ -1,0 +1,12 @@
+!     
+!     * 1.866025=(1+sin60),   6.371e+6=earth radius in meters.      
+!     
+!     rdtodg = 180/pie, dgtord = pie/180        
+      
+      real pie,rdtodg,dgtord
+      
+      data pie    /3.1415926535898/     
+      data rdtodg /57.295779513082/
+      data dgtord /1.7453292519943e-2/
+
+!         

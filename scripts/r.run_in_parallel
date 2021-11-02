@@ -4,10 +4,9 @@
 # expanded functionality (stdout/stderr post processing and "launch in
 # background" capability).
 
-# Commands used in the highly parallel area, we want to use the actual
-# path to avoid undue searches through the command path (involving
-# shared filesystems). This is highly desirable when hundreds of MPI
-# processes are fired.
+# Commands used in parallel area. Resolve absolute path to avoid
+# searches through $PATH (involving shared filesystems). This is
+# beneficial with hundreds of MPI processes.
 CMD_rm=$(which rm)
 CMD_date=$(which date)
 CMD_cat=$(which cat)
@@ -22,7 +21,7 @@ CMD_mkdir=$(which mkdir)
 CMD_hostname=$(which hostname)
 [[ "$1" == --version ]] && set -- -version
 typeset -A nodecore
-#################################################################################################################################
+########################################################################
 list_message()
 {
   [[ -n ${processorder} ]] || return
@@ -30,8 +29,8 @@ list_message()
   echo "INFO: temporary listings for all members in ${tmpdir}"
   echo "INFO: =============================================="
 }
-#################################################################################################################################
-#    node_to_rank ${MY_NODEFILE} ${ThreadsInWorld[${MpiCommWorld}]}
+########################################################################
+# node_to_rank ${MY_NODEFILE} ${ThreadsInWorld[${MpiCommWorld}]}
 node_to_rank() {
   ((r=0))
   ((rr=-1))
@@ -57,22 +56,27 @@ node_to_rank() {
   done
   mv ${1}.thinned ${1}
 }
-#################################################################################################################################
-# MPI prelauncher for Linux systems using mpich2, openmpi or aprun.
-mpiexec_Linux() {
-  RANK_VAR=PMI_RANK                                        # mpich2
-  which orted 2>/dev/null >/dev/null && RANK_VAR=OMPI_COMM_WORLD_RANK  # OpenMPI detected
-  [[ -n ${APRUN} ]] && RANK_VAR=ALPS_APP_PE                            # Cray XC alps
+########################################################################
+# MPI prelauncher for Linux systems using MPICH, OpenMPI or aprun.
+mpiexec_linux() {
+
+  # Detect OpenMPI
+  which orted 2>/dev/null >/dev/null && RANK_VAR=OMPI_COMM_WORLD_RANK
+  # Detect Cray XC ALPS
+  [[ -n ${APRUN} ]] && RANK_VAR=ALPS_APP_PE
+
   case "$RANK_VAR" in
-    OMPI_COMM_WORLD_RANK*)                                     # OpenMPI
+    OMPI_COMM_WORLD_RANK*)
       ompi_version=$(ompi_info --parsable |grep ^ompi:version:full:)
       ompi_version=${ompi_version#ompi:version:full:}
       [[ -n ${verbose} ]] && \
           echo "INFO: OpenMPI version: $ompi_version"
       [[ "$bind" == bind ]] && bind=socket                     # For backward compatibility. Deprecated.
       if [ "${ompi_version%%.*}" == "3" ]; then
-          # Nothing special to do here.  The environment should have been configured by sourcing
-          # a SSM domain in under hpco/exp/openmpi-setup/
+          # Nothing to do here. The environment should have been
+          # configured by sourcing a SSM domain in under
+          # main/opt/openmpi, reference:
+          # https://portal.science.gc.ca/confluence/x/PoBXAg
           :
       else # OpenMPI version less than 3.0
         [[ -n "$ib" ]] && \
@@ -111,32 +115,24 @@ mpiexec_Linux() {
         fi
       fi
       echo "=== OPEN_MPI_PARMS=${OPEN_MPI_PARMS} ==="
-      mpiexec_Linux_launch OpenMPI ${OPEN_MPI_PARMS} "$@"
+      mpiexec_linux_launch openmpi ${OPEN_MPI_PARMS} "$@"
       ;;
-    PMI_RANK*)                                                 # mpich2 family
-      echo "ERROR: (${0}) mpich2 Linux MPI launcher not implemented yet"
-      MPICH_PARMS="-envall"
-      return 1
-      mpiexec_Linux_launch Mpich2 "${MPICH_PARMS}" "$@"
-      ;;
-    ALPS_APP_PE*)                                              # Cray ALPS
-      aprun_Linux_launch "$@"
+    ALPS_APP_PE*)
+      aprun_linux_launch "$@"
       ;;
     *)
-      echo "ERROR: (${0}) RANK_VAR=$RANK_VAR "
-      echo "ERROR: (${0}) Linux MPI launcher other than OpenMPI/mpirun or ALPS/aprun not implemented yet "
-      return 1
+      mpiexec_linux_launch mpich "$@"
       ;;
   esac
   return
 }
-#################################################################################################################################
+########################################################################
 # MPI launcher for Cray systems (aprun)
-# basic launcher for now (one MPI world only) (MPMD with non constant threading supported)
-aprun_Linux_launch() {
+# basic launcher (one MPI world only) (MPMD with non-constant threading supported)
+aprun_linux_launch() {
   export MpiCommWorld=0
   export PMI_NO_FORK=1
-  [[ ${nompi} == pseudo_mpi ]] && export PMI_NO_PREINITIALIZE=1  # workaround when MPI library is not used
+  [[ ${nompi} == pseudo_mpi ]] && export PMI_NO_PREINITIALIZE=1 # workaround when MPI library is not used
 
   [[ "$map" == map ]] && echo "INFO: rank map requested" && export MPICH_RANK_REORDER_DISPLAY=1     # PE map requested
   [[ -n ${verbose} ]] && echo "INFO: pernode=$pernode, pernuma=$pernuma"
@@ -193,26 +189,17 @@ aprun_Linux_launch() {
   [[ -n ${alpspd} ]] && [[ "${alpspd}" != NoName ]] && \
     apmgr pdomain -r ${alpspd} && echo "pdomain ${alpspd} removed" && apstat -P 
 }
-#################################################################################################################################
+########################################################################
 # MPI launcher for Linux systems (OpenMPI only for now)
 # tested with openmpi interactively and under GridEngine
-#
-mpiexec_Linux_launch() {
+mpiexec_linux_launch() {
   Launcher="$1"
   LaunchStatus=""
   shift
 
   ((npe_total=TotalInstances))
-#  ((npe_total=TotalThreads)) # not ready yet
-#  make_node_file
-#
-# we are assuming that mpirun/mpiexec can be backgrounded.
-# should this assumption be false the following line must be uncommented
-#  ((MpiCommWorlds>1)) && echo "ERROR: MpiCommWorlds>1 not supported yet" && return
 
-  unset PE_HOSTFILE                                                             # Dorval EC clusters
-#  [[ -f "${GECOSHEP_HOSTS_FILE}" ]] && export OMPI_MCA_orte_rsh_agent=rurun     # Dorval EC clusters
-#  export OMPI_MCA_plm_rsh_disable_qrsh=1
+  unset PE_HOSTFILE # Dorval EC clusters
 
   export MpiCommWorld=0
   export ChildOffset=0
@@ -231,7 +218,7 @@ mpiexec_Linux_launch() {
     export MY_NODEFILE=${MY_NODEFILE_ORI}.${MpiCommWorld}
     export MY_RANKFILE=${MY_NODEFILE_ORI}.rank.${MpiCommWorld}
     sed -n ${FirstHost},${HostOffset}p ${MY_NODEFILE_ORI} >${MY_NODEFILE}
-#   transformer ${MY_NODEFILE} en map file pour OpenMPI et en host file pour Mpich2
+    # transformer ${MY_NODEFILE} en map file pour OpenMPI et en host file pour MPICH
     node_to_rank ${MY_NODEFILE} ${ThreadsInWorld[${MpiCommWorld}]} ${ThinBy} > ${MY_RANKFILE} || { LaunchStatus="$LaunchStatus ${MpiCommWorld}" ; break; }
     EXTRA_MPI_PARMS=""
     [[ -n $RANKFILE_PBS ]] && cp $RANKFILE_PBS ${MY_RANKFILE} && EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} --rankfile ${MY_RANKFILE}"
@@ -240,13 +227,34 @@ mpiexec_Linux_launch() {
     echo "INFO: ===== $(cat ${MY_NODEFILE} | wc -l) host(s) in ${Launcher} World $MpiCommWorld ====="
     cat ${MY_NODEFILE}
     list_message
-    if [[ $Launcher == OpenMPI ]] ; then #   pass environment variables (only names starting with letter or digit) (only for OpenMPI)
-      EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} $(s.prefix '-x ' $(env | grep -v "[']" | grep -v '"'  | grep -v '^BASH_'  | grep  '^[a-zA-Z0-9]' | sed 's/=.*//' | sort ))"
-#     ignore rank file in interactive case
+    if [[ $Launcher == openmpi ]] ; then
+      # Pass environment variables (only names starting with letter or digit)
+      EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} $(s.prefix '-x ' $(env | grep -v "[']" | grep -v '"' | grep -v '^BASH_' | grep  '^[a-zA-Z0-9]' | sed 's/=.*//' | sort ))"
+      # ignore rank file in interactive case
       tty -s && bind="none"  # no rank file if interactive
       [[ "$bind" == "none" ]] || EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} --rankfile ${MY_RANKFILE}"
     fi
 
+    case "$Launcher" in
+      mpich)
+	# https://portal.science.gc.ca/confluence/x/Tw9XB
+	UCX_NET_DEVICES=mlx5_1:1
+
+	# Parameters used by Jean-Philippe Gauthier on PPP5t for
+	# proper process placement
+	export I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=no
+	export I_MPI_PIN_DOMAIN=omp:compact
+	export KMP_AFFINITY=verbose,compact
+	;;
+      openmpi)
+        # Pass environment variables (only names starting with letter or digit)
+        EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} $(s.prefix '-x ' $(env | grep -v "[']" | grep -v '"' | grep -v '^BASH_' | grep  '^[a-zA-Z0-9]' | sed 's/=.*//' | sort ))"
+	# ignore rank file in interactive case
+	tty -s && bind="none"  # no rank file if interactive
+	[[ "$bind" == "none" ]] || EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} --rankfile ${MY_RANKFILE}"
+	;;
+    esac
+	  
     if ((MpiCommWorlds>1)) ; then   # more than one MPI world, launch mpirun in background
       echo "INFO: ==== Backgrounding ${Launcher} world ${MpiCommWorld} with ${PeInWorld[${MpiCommWorld}]} MPI tasks ===="
       [[ -z ${dryrun} ]] && \
@@ -270,19 +278,18 @@ mpiexec_Linux_launch() {
     wait
   fi
   if [[ -n $LaunchStatus ]] ; then
-    echo "###########################################################################################"
-    echo "#   ERRORS detected during launch in world $LaunchStatus, some process(es) will be missing           #"
-    echo "###########################################################################################"
+    echo "########################################################################"
+    echo "# Errors detected during launch in world $LaunchStatus, some"
+    echo "# process(es) will be missing"
+    echo "########################################################################"
     return 1
   fi
   return 0
 
 }
-#################################################################################################################################
-#
+########################################################################
 # print list of failed tasks
 # clean up tmpdir directory used for launch help files and listings
-#
 ListFailed() {
   ls ${tmpdir}/*/fail.* &>/dev/null || return 0 # if no process failure flag file found
   if [[ "${e}" == YES ]] ; then
@@ -290,10 +297,8 @@ ListFailed() {
     (cd ${tmpdir} ; ls -1 */fail.* | grep 'fail[.]' | sed 's/fail.//' | xargs -L5 /bin/echo  )   # list, 5 per line
   fi
 }
-# ===========================================================================
-#
+########################################################################
 # final cleanup and set exit status
-#
 local_cleanup() {
  ExitStatus=0
  ls ${tmpdir}/*/fail.* &>/dev/null && echo "INFO: RUN FAILED" && echo "INFO: first 10 failing processes :" && ExitStatus=1
@@ -304,21 +309,18 @@ local_cleanup() {
  rm -rf ${tmpdir} || ( sleep 1 ; rm -rf ${tmpdir} ) &   # cannot clean tmpdir while script runs, use delayed remove
  return $ExitStatus
 }
-# ===========================================================================
-#
+########################################################################
 # print inter task listing separator
-#
 print_separator() {
   [[ -n ${nosep} ]] && return   # -nosep option used, return
   echo "==============      $@      =============="
 }
-# ===========================================================================
-#
+########################################################################
 # default script for post-processing of process listing files
 # stdout/stderr from each task listed in order
 # line tagging already done
-#
-cat_output() {  #  cat captured stdout/stderr files into stdout with appropriate tagging
+cat_output() {
+  # cat captured stdout/stderr files into stdout with appropriate tagging
   OutputFound=""
   for OUTDIR in $* ; do
     [[ -r ${OUTDIR}/stdout ]] && cat ${OUTDIR}/stdout && OutputFound="yes"
@@ -335,17 +337,17 @@ cat_output() {  #  cat captured stdout/stderr files into stdout with appropriate
     cat ${the_file%/*}/stderr | sed "s/^/${Prefix3}${MP_Tag}: /"
   done
 }
-#################################################################################################################################
-#
-# create the MPI C and Fortran executables used in the self test
-# these programs will be built to fail for process N (N may be higher than actual number of PEs for the call)
-#
+########################################################################
+# Create MPI C and Fortran executables used in self-test. These
+# programs will be built to fail for process N (N may be higher than
+# actual number of PEs for the call)
+
 make_cf_test() {
 [[ ${selftest} == *.fail.* ]] && selftest_fail=${selftest##*fail.}
 selftest_fail=${selftest_fail:--1}
 [[ ${selftest} == *fail* ]] && echo "INFO: test program(s) will be configured to fail in process ${selftest_fail}"
 echo "INFO: creating C test program source mpi_c_test.c"
-#
+
 cat >${tmpdir}/mpi_c_test.c <<EOT
 #include <unistd.h>
 #include <stdlib.h>
@@ -389,13 +391,13 @@ subroutine wrong(div)
 call div(0)
 end
 EOT
-#
+
 echo INFO: compiling C test program mpi_c_test.c into mpi_c_test
 which mpicc 2>/dev/null 1>/dev/null && \
   mpicc -o ${tmpdir}/mpi_c_test ${tmpdir}/mpi_c_test.c
 echo INFO: removing C test program source mpi_c_test.c
 rm ${tmpdir}/mpi_c_test.c
-#
+
 echo INFO: compiling Fortran test program mpi_f_test.f90 into mpi_f_test
 which mpif90 2>/dev/null 1>/dev/null && \
   mpif90 ${tmpdir}/mpi_f_test.f90 -mp -o ${tmpdir}/mpi_f_test 2>/dev/null || \
@@ -403,7 +405,7 @@ which mpif90 2>/dev/null 1>/dev/null && \
 echo INFO: removing Fortran test source program mpi_f_test.f90
 rm ${tmpdir}/mpi_f_test.f90
 }
-#################################################################################################################################
+########################################################################
 # process  -geometry option
 expand_geometry_map() {
   echo -geometry option not implemented yet
@@ -413,7 +415,7 @@ expand_geometry_map() {
     cp ${PARALLEL_NODEFILE} ${MY_NODEFILE}
   fi
 }
-#################################################################################################################################
+########################################################################
 # process  -pemap option
 #          -pemap @file
 #          -pemap range_or_pe,range_or_pe,.....,range_or_pe
@@ -429,7 +431,7 @@ expand_pe_map() {
    fi
   done
 }
-#################################################################################################################################
+########################################################################
 # process  -nodemap option
 #          -nodemap s1,e1:np1 s2,e2:np2 ... sN,eN:npN
 #          si : first host, ei : last host, npi : number of PEs on node
@@ -455,7 +457,7 @@ expand_node_map() {
     done
   done
 }
-#################################################################################################################################
+########################################################################
 # process  -coremap option
 #          -coremap series of 'start,increment,end' triplets or 'start,end' doublets
 #          -coremap @readable_file        (contents as above)
@@ -482,10 +484,9 @@ expand_core_map() {
   [[ -n $verbose ]] && echo "INFO: Cores map entries = $NumberOfCores"
   [[ -n $verbose ]] && echo "INFO: Base core map = ${CoreMapArray[@]}"
 }
-#################################################################################################################################
-# remap_nodes , uses node file and geometry file
+########################################################################
+# remap_nodes, uses node file and geometry file
 # usage: remap_nodes node_list > new_reordered_node_list
-#
 remap_pass2() {
   ((Host=-1))
   while read Line
@@ -507,7 +508,7 @@ remap_nodes() {
   done
   cat ${geometry} | remap_pass2 | sort -n | cut '-d ' -f2
 }
-#################################################################################################################################
+########################################################################
 # prepare full node list (parts of it to be used by each MPI wolrd)
 # -geometry processing will only work with openmpi/linux
 # in that case a node file will be expected with as many nodes as there
@@ -517,7 +518,6 @@ remap_nodes() {
 # OMP_NUM_THREADS consistency with computed "loops" is not checked
 # the script tries to keep the master node at the beginning of the node list
 # this is why 'sort -u' has been replaced with 'uniq'
-#
 make_node_file() {   # this will be rewritten
   # if there is a geometry file, remap the node list file
   # remapping will fail if there is no node file pointed to by MY_NODEFILE
@@ -553,10 +553,9 @@ make_node_file() {   # this will be rewritten
 
   export MY_NODEFILE=$TMPDIR/MY_NODEFILE
 }
-#################################################################################################################################
+########################################################################
 # wait_for creation|rm timeout directory file_names
-# wait for file creation / removal with timeout (in seconds)
-#
+# wait for file creation/removal with timeout (in seconds)
 wait_for() {
   action=${1}
   time_out=${2}
@@ -564,22 +563,25 @@ wait_for() {
   shift ; shift; shift
   for file in $* ; do
     while ((time_out>=0)); do
-      [[ -f ${dir}/${file} ]]   && [[ ${action} == creation ]] && echo "INFO: ${dir}/${file} created" &&  break   # creation mode and file found
-      [[ ! -f ${dir}/${file} ]] && [[ ${action} != creation ]] && echo "INFO: ${dir}/${file} deleted"  && break   # absence mode and file not found
-      ((time_out=time_out-1))      # timeout decremented only if action failed
+      # creation mode and file found
+      [[ -f ${dir}/${file} ]] && [[ ${action} == creation ]] && echo "INFO: ${dir}/${file} created" && break
+      # absence mode and file not found
+      [[ ! -f ${dir}/${file} ]] && [[ ${action} != creation ]] && echo "INFO: ${dir}/${file} deleted" && break
+      # timeout decremented only if action failed
+      ((time_out=time_out-1))
       sleep 1
     done
-    ((time_out<=0)) && echo "ERROR: timeout waiting for ${action} of ${dir}/${file}" && return 1        # timeout expired, failure
+    # timeout expired, failure
+    ((time_out<=0)) && echo "ERROR: timeout waiting for ${action} of ${dir}/${file}" && return 1
   done
-  return 0                          # timeout not expired, success
+  # timeout not expired, success
+  return 0
 }
-#################################################################################################################################
-#                                       collect arguments
-#################################################################################################################################
+########################################################################
+# collect arguments
 #
 # MY_NODEFILE now contains the node list if one was specified before
 # and will be the default value for -nodefile
-#
 [[ "$1" == -hi* ]] && cat <<true && exit 0
 #Version="1.0.8   2014/04/30"  # last version with mpich2, safe stack limit, modified return status leftovers
 #Version="1.1.0   2014/05/05"  # multi world with node map fixes + core mapping changes + rank files
@@ -654,11 +656,12 @@ wait_for() {
                                # Implement workaround for lustre filesystem coherence problem, https://gitlab.science.gc.ca/hpc_migrations/hpcr_upgrade_1/issues/474#note_124516
 #Version="1.1.33  2019/12/04"  # Double check for mkdir before passing to mpirun
 #Version="1.1.34  2020/01/22"  # Add calls to sync as a workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
+#Version="1.2.0  2020/07/17"  # Add flag to enable sync workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
+                              # New r.makedirs checks the directories, no need to do it in bash, unless not found
+                              # Use verbose flag to enable verbose in aprun (-D2)
 true
-Version="1.2.0  2020/07/17"  # Add flag to enable sync workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
-                             # New r.makedirs checks the directories, no need to do it in bash, unless not found
-                             # Use verbose flag to enable verbose in aprun (-D2)
-echo "INFO: ${0##*/} version $Version ( /bin/bash )"
+Version="1.2.1-a  2021/08/18" # Adapt to PPP5t
+echo "INFO: ${0##*/} version $Version"
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_HOSTS_FILE:-${GECOSHEP_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.PBS_NODEFILE}}}}}
 [[ ! -f "${MY_NODEFILE}" ]] && \
   [[ -n ${JOB_IMMEDIATE_MODE} ]] && \
@@ -692,7 +695,7 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY+OpenMPI]" \
     -members "" "" "[NxM, N members of size M, override npey and npex]" \
     -minstdout "2" "2" "[]" \
     -mpiargs "" "" "[]" \
-    -mpich2 "" "mpich2" "[use mpich2]" \
+    -mpich "" "mpich" "[use mpich]" \
     -mpirun "$(which rumpirun.openmpi 2>/dev/null)" "mpirun" "[]" \
     -nocleanup "" "nocleanup" "[]" \
     -nodefile "${MY_NODEFILE}"  "${MY_NODEFILE}" "[list of nodes to use]" \
@@ -725,14 +728,12 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY+OpenMPI]" \
     -verbose "" "verbose" "[]" \
     -version "" "$Version" "[version number]" \
     ++ "$@" ${RUN_IN_PARALLEL_EXTRAS}`
-#
+
 [[ -n ${version} ]] && exit 0
-#
-#((smt>1)) && ((pernuma==0)) && ((pernuma=9999))   # force pernuma automatic mode if smt and pernuma has default value
-#
+
 export APRUN="$(which aprun 2>/dev/null)"
 [[ -n ${APRUN} ]] && hostos=CLE && export KMP_AFFINITY=disabled # Cray linux environment
-#
+
 [[ -n $jio ]] && export JIO_ENV=${JIO_ENV:-JIO_${jio}}
 [[ -n ${JIO_ENV} ]] && which s.jio-prof-linux-64.so 2>/dev/null 1>/dev/null && jio="$(which s.jio-prof-linux-64.so 2>/dev/null)"  # automatic activation if JIO_ENV is set
 which s.jio-prof-linux-64.so 2>/dev/null 1>/dev/null || unset jio
@@ -744,13 +745,13 @@ if [[ -n $gdb ]] ; then
   [[ $gdb == Default ]] && preexec="$(which gdb) -batch -ex run -ex where"
   [[ -r $gdb ]] && preexec="$(which gdb) -batch -x $(true_path $gdb)" # a directive file was specified
 fi
-#
+
 preexec="${JIO_PRELOAD} ${preexec}"
-#
+
 OMP_NUM_THREADS=${OMP_NUM_THREADS:-1}
 ((OMP_NUM_THREADS=OMP_NUM_THREADS*smt))
 DefaultNumberOfThreads=${OMP_NUM_THREADS}
-#
+
 export CoresOnNode=128
 export NumaNodes=1
 if [[ "$hostos" == Linux ]] ; then
@@ -771,19 +772,17 @@ fi
 ((CoresOnNode<=0)) && CoresOnNode=1
 ((MaxCores=CoresOnNode))
 [[ -n $maxcores ]] && ((MaxCores=maxcores))
-#
-if [[ "${mpich2}" == "mpich2" ]] ; then
-  mpich2="$(which rumpirun.mpich2 2>/dev/null)"
-  mpich2=${mpich2:-mpirun}
-  echo "ERROR: (${0}) mpich2 Linux MPI launcher not implemented yet"
-  exit 1
+
+if [[ "${mpich}" == "mpich" ]] ; then
+  mpich="$(which rumpirun.mpich2 2>/dev/null)"
+  mpich=${mpich:-mpirun}
 fi
 if [[ "${openmpi}" == "openmpi" ]] ; then
   openmpi="$(which rumpirun.openmpi 2>/dev/null)"
   openmpi=${openmpi:-mpirun}
 fi
-mpirun=${openmpi:-${mpich2:-${mpirun:-mpirun}}}   # -openmpi/-mpich2/-mpirun cascade
-#
+mpirun=${openmpi:-${mpich:-${mpirun:-mpirun}}}   # -openmpi/-mpich/-mpirun cascade
+
 echo "INFO: START of ${0##*/} : $(date)"
 [[ -n ${inorder} ]] && processorder="yes"
 if [[ -n ${members} ]] ; then
@@ -793,22 +792,23 @@ if [[ -n ${members} ]] ; then
     npex=1 ; npey=${members}
   fi
 fi
-#
+
 # number of MPI tasks
-#
 ((npe_total=npex*npey))
 ((pernode>npe_total)) && ((pernode=npe_total))
 ((pernuma>npe_total)) && ((pernuma=npe_total))
 ((TotalInstances=npe_total))
 ((TotalTasks=npe_total))
-#################################################################################################################################
-#                                   do we have co-running master/slave instances ?
-#################################################################################################################################
-if [[ -d "${instancedir}" && -n "${instances}" ]] ; then     # we have co-running instances only if both are defined
-  slaves=$(echo ${instances} | wc -w)   # if 1 it is a slave, if >1 it is the master
-  if ((slaves>1)) ; then  # the master instance, there is MORE THAN ONE item  in instances
+########################################################################
+# do we have co-running master/slave instances?
+if [[ -d "${instancedir}" && -n "${instances}" ]] ; then
+  # we have co-running instances only if both are defined
+  slaves=$(echo ${instances} | wc -w) # if 1 it is a slave, if >1 it is the master
+  if ((slaves>1)) ; then
+    # the master instance, there is MORE THAN ONE item in instances
     echo "INFO: (master) START of ${slaves} slaves '${instances}' "
-    wait_for creation ${timeout} ${instancedir} ${instances}   # wait for all slaves to submit their resource needs
+    # wait for all slaves to submit their resource needs
+    wait_for creation ${timeout} ${instancedir} ${instances}
 
     # Build compound launch parameters using ${instancedir}/${instances} files
     for i in ${instances} ; do
@@ -825,7 +825,7 @@ if [[ -d "${instancedir}" && -n "${instances}" ]] ; then     # we have co-runnin
 #   -args : ignored, cannot be used in this context
 #   -npex -npey -processorder -tmpdir -tag -spliteo -debug -nocleanup -geometry : passthrough
 #   -outp -errp -preexec -packoutput -offset -mpiargs -dryrun -minstdout -splittmp : passthrough
-#   -ib -noib -mpirun -coremap -nodemap -openmpi -mpich2 -verbose : passthrough
+#   -ib -noib -mpirun -coremap -nodemap -openmpi -mpich -verbose : passthrough
 #   all other arguments : ignored
 #
     unset PARALLEL_INSTANCES_DIR
@@ -837,7 +837,7 @@ if [[ -d "${instancedir}" && -n "${instances}" ]] ; then     # we have co-runnin
          -tag "${tag}" -spliteo "${spliteo}" -splittmp "${splittmp}" -debug "${debug}" -nocleanup "${nocleanup}" -geometry "${geometry}" \
          -outp "${outp}" -errp "${errp}" -preexec "${preexec}" -packoutput "${packoutput}" -dryrun "${dryrun}" \
          -offset "${offset}" -mpiargs "${mpiargs}" -selftest "${selftest}" \
-         -mpirun "${mpirun}" -openmpi "${openmpi}" -mpich2 "${mpich2}" \
+         -mpirun "${mpirun}" -openmpi "${openmpi}" -mpich "${mpich}" \
          -pgm $(cd ${instancedir} ; cat ${instances} | xargs) ${MasterPgm}
     StAtUs=$?
     set +x
@@ -875,9 +875,9 @@ if [[ -d "${instancedir}" && -n "${instances}" ]] ; then     # we have co-runnin
     fi
   fi # master or slave instance
 fi  # co-running
-#################################################################################################################################
+########################################################################
 #            end of co-running instances processing
-#################################################################################################################################
+########################################################################
 ((MpiCommWorlds=0))  # number of MPI comm worlds
 PeInWorld[0]=${npe_total}
 ThreadsInWorld[0]=${OMP_NUM_THREADS}
@@ -906,14 +906,14 @@ ThreadsInWorld[0]=${OMP_NUM_THREADS}
 # pgm variable now contains all that is needed
 #
 [[ -n "${debug}" ]] && echo "INFO: debug flag = '${debug}'" && set -x
-#################################################################################################################################
+########################################################################
 # reset TMPDIR to make sure it is visible to all MPI tasks (ideally on a COHERENT filesystem, NFS BEWARE)
 $CMD_mkdir -p ${tmpdir}
 [[ -n ${sync} ]] && sync ${tmpdir}
 export TMPDIR=${tmpdir}
-#################################################################################################################################
+########################################################################
 # prepare node file (list of node names) and slot_number array (core ordinal on node) (ignored on Cray XC using aprun)
-#################################################################################################################################
+########################################################################
 echo "INFO: Cores per Node = $CoresOnNode"
 MY_NODEFILE=$tmpdir/PBS_NODEFILE$$
 rm -f ${MY_NODEFILE}
@@ -965,9 +965,9 @@ if [[ -z ${APRUN} ]] ; then
     exit 1
   fi
 fi
-#################################################################################################################################
+########################################################################
 # create script anc C executable used in self test if needed
-#################################################################################################################################
+########################################################################
 if [[ -n ${selftest} ]] ; then
   selftest="${tmpdir}/${selftest}"
   pgm="$( echo ${pgm} | sed -e s:PGM:${selftest}:g )"
@@ -985,17 +985,17 @@ EOT
  [[ ${selftest} == *c.* || ${selftest} == *f.* ]] && \
  make_cf_test  # create programs and compile them only if requested and using MPI
 fi
-#################################################################################################################################
+########################################################################
 # primary and secondary launching scripts
-#################################################################################################################################
+########################################################################
 export MpiRunScript=${tmpdir}/MpiRunScript_$$       # secondary script(s), one per "MPI" world
 export MpiRunParms=${tmpdir}/MpiRunParms_$$         # child parameters, one per "MPI" world, sourced by secondary script(s)
 export ParallelScript=${tmpdir}/ParallelScript_$$   # primary script(s), one per "MPI" world, will source secondary script(s)
 touch ${ParallelScript}.0
 [[ ! -r ${ParallelScript}.0 ]] && echo "ERROR: ${tmpdir} not a writable directory" 1>&2 && exit 1
-#################################################################################################################################
+########################################################################
 # stdout and stderr redirection
-#################################################################################################################################
+########################################################################
 export RedirectStdout="1>\${MP_SeqNum}/stdout.\${MP_Tag}"   # will be expanded at run time in ParallelScript
 export RedirectStderr="2>\${MP_SeqNum}/stderr"   # will be expanded at run time in ParallelScript
 [[ "${spliteo}" == no ]] && RedirectStderr="2>&1"
@@ -1005,14 +1005,14 @@ export  Prefix2="${outp}${errp}-"   # prepare for stderr not split from stdout
 [[ "${spliteo}" == yes ]] && Prefix2="${outp}-"
 [[ "${tag}" == none    ]] && Prefix2="" && Prefix3=""
 [[ "${tag}" == stderr  ]] && Prefix2="" && Prefix3="stderr: "
-#################################################################################################################################
+########################################################################
 # communication variables for RPN_COMM toolkit
-#################################################################################################################################
+########################################################################
 RPN_COMM_DOM=""
 RPN_COMM_DIRS="' '"     # RPN_COMM_DIRS no longer used, cd now done in secondary script(s)
 SetCurrentDir=$(pwd -P)
 set -- $pgm @@
-#################################################################################################################################
+########################################################################
 ((ErRoR=0))
 ((NDomains=0))
 ((Next=0))
@@ -1023,11 +1023,11 @@ set -- $pgm @@
 ((Instances=0))
 ((TotalInstances=0))
 ((TotalThreads=0))
-#################################################################################################################################
+########################################################################
 # simple or complex sequence, SPMD or MPMD, (automatic multiple MPI worlds with @@)
 # note: multiple worlds not supported yet on Cray (ALPS)
   unset ProGrams Directories  ProgramIndex ProgramNames DirNames
-#################################################################################################################################
+########################################################################
   while [[ -n "${1}" ]]
   do
     [[ "${1}" == "@@" && "${2}" == "@@" ]]          && shift && continue   # two @@ flags back to back, eliminate first one
@@ -1048,8 +1048,7 @@ set -- $pgm @@
       shift
       continue
     fi
-#==================================================================================================
-#==================================================================================================
+########################################################################
     if [[ "${1}" == "@@" ]] ; then  #  wrap up a world
       NLThreads=${NLThreads:-${OMP_NUM_THREADS:-1}}
       PeInWorld[${MpiCommWorld}]=${Instances}
@@ -1061,11 +1060,10 @@ set -- $pgm @@
       ((Instances != MaxPe+1)) && echo "ERROR: holes found, Instances=${Instances}, MaxPe=${MaxPe}" && ((ErRoR=ErRoR+1))
       ((MaxPe > npe_total)) && echo "ERROR: task number overflow, MaxPe(${MaxPe}) > npe_total(${npe_total})" && ((ErRoR=ErRoR+1))
       rm -f ${MpirunScript}.${MpiCommWorld}
-#==================================================================================================
-#=========================== instance script, sourced by ParallelScript ===========================
-#==================================================================================================
+########################################################################
+# instance script, sourced by ParallelScript
       echo "INFO: complex SPMD / MPMD , MPI world ${MpiCommWorld}"
-#
+
       cat <<EOT > ${MpiRunScript}.${MpiCommWorld}
 #!/bin/bash
 export RPN_COMM_DOM='${NDomains}${RPN_COMM_DOM}'
@@ -1094,9 +1092,9 @@ Status=\$?
 echo "END of child \${WORLD_CHILD}, status = \${Status} \$($CMD_date)"
 EOT
 [[ -n ${sync} ]] && sync ${MpiRunScript}.${MpiCommWorld}
-#==================================================================================================
-#======== Prepare parameters file, sourced by MpiRunScript, itself sourced by ParallelScript ======
-#==================================================================================================
+########################################################################
+# Prepare parameters file, sourced by MpiRunScript, itself sourced by
+# ParallelScript
       [[ "$pemap" == @* ]] && [[ -r ${pemap#@} ]] && pemap="$(cat ${pemap#@})"
       Nindex=${#ProgramIndex[@]}
       if [[ "$pemap" != NoNe ]] ; then  # remap ProgramIndex according to PE map
@@ -1115,10 +1113,9 @@ PIndex=(${ProgramIndex[@]})
 NThreads=(${NThreads[@]})
 EOT
 [[ -n ${sync} ]] && sync ${MpiRunParms}.${MpiCommWorld}
-#==================================================================================================
-#==================================================================================================
+########################################################################
       ((InstanceOffset=TotalInstances))
-      [[ -n "${2}" ]] && ((MpiCommWorld=MpiCommWorld+1))   # do not bump world counter if nothing after @@
+      [[ -n "${2}" ]] && ((MpiCommWorld=MpiCommWorld+1)) # do not bump world counter if nothing after @@
       ((MpiCommWorlds=MpiCommWorlds+1))
       unset RPN_COMM_DOM RPN_COMM_DIRS ProGrams Directories                    # reset world related variables nd counters
       ((NDomains=0))
@@ -1130,8 +1127,7 @@ EOT
       shift
       continue
     fi  #  if "${1}" == "@@"  wrap up a world
-#==================================================================================================
-#==================================================================================================
+########################################################################    
     Temp="${1}"
     [[  "${1}" == /* ]] || Temp="${SetCurrentDir}/${1}"  # relative path, add "current" directory
     Directory="${SetCurrentDir}"
@@ -1160,7 +1156,6 @@ EOT
       shift ; shift ; shift
     fi
     RPN_COMM_DOM="$RPN_COMM_DOM,${First},${Increment},${Last}"
-#    RPN_COMM_DIRS="$RPN_COMM_DIRS,'${Directory}'"
     RPN_COMM_DIRS="$RPN_COMM_DIRS,'.'"  # no longer needed, we do the cd ..... in the script, so every directory becomes . :-)
     ((LocalInstances=0))
     ProgramNames[${NDomains}]=$Program
@@ -1185,11 +1180,10 @@ EOT
     echo "INFO: ${LocalInstances} instances of '$Program' ( $((InstanceOffset+First)) to $((InstanceOffset+Last)) by ${Increment} ) in MPI world ${MpiCommWorld}"
     ((NDomains=NDomains+1))
   done # while [[ "$1" != "" ]]
-#==================================================================================================
+########################################################################  
   if ((ErRoR > 0)) ; then echo "$ErRoR ERROR(S) detected" ; local_cleanup ; exit 1 ; fi
-#==================================================================================================
-#=================== prepare primary launch scripts (one per world) ===============================
-#==================================================================================================
+########################################################################
+# prepare primary launch scripts (one per world)
 MpiCommWorld=0
 export WorldOffset=0
 #
@@ -1203,13 +1197,11 @@ export WorldOffset=0
 [[ "${tag}" == seq ]]    && F_seq='%5.5d' && V_seq='${MP_SeqNum}'
 export F_world V_world F_member V_member F_child V_child F_seq V_seq
 
-#==================================================================================================
-#========================== Primary launch scripts (one per world) ================================
-#========================== sources MpiRunScript redirecting its output appropriately =============
-#==================================================================================================
+########################################################################
+# Primary launch scripts (one per world)
+# sources MpiRunScript redirecting its output appropriately
 while ((MpiCommWorld < MpiCommWorlds))
 do
-# ${PeInWorld[${MpiCommWorld}]} ${MembersInWorld[${MpiCommWorld}]} $WorldOffset
   ((npex=${PeInWorld[${MpiCommWorld}]}/${MembersInWorld[${MpiCommWorld}]}))
 
   # There is only one instance of the ${ParallelScript}.${MpiCommWorld} script.
@@ -1219,7 +1211,7 @@ do
 ulimit -s ${stack}
 [[ -n "${debug}" ]] && set -x
 #
-export MP_CHILD=\${MP_CHILD:-\${PMI_RANK:-\${OMPI_COMM_WORLD_RANK:-\${ALPS_APP_PE}}}}  # poe/mpich2/openmpi/CrayALPS
+export MP_CHILD=\${MP_CHILD:-\${PMI_RANK:-\${OMPI_COMM_WORLD_RANK:-\${ALPS_APP_PE}}}}  # poe/mpich/openmpi/CrayALPS
 ((MP_CHILD=MP_CHILD+ChildOffset))   # need to add ChildOffset for this MPI world to MP_CHILD (always 0 for poe)
 export RP_WorldChild
 ((RP_WorldChild=MP_CHILD-${WorldOffset}))   # child ordinal in this world
@@ -1254,7 +1246,6 @@ if [[ ! -s \$script ]]; then
     exit 1
 fi
 
-
 source \$script ${RedirectStdout} ${RedirectStderr}
 [[ -n "${processorder}" ]] || exit 0     # no listings to process, exit
 cd ${tmpdir}
@@ -1262,8 +1253,6 @@ cd ${tmpdir}
 touch \${MP_SeqNum}/done
 [[ -n "${sync}" ]] && sync \${MP_SeqNum}/done
 [[ \${MP_SeqNum} != *00 ]] && $CMD_true && exit   # output pre processing by nn00 processes
-#$CMD_sleep 3  # give time to flush buffers from other processes
-#for the_file in \${MP_SeqNum%??}[0-9][0-9]/stdout.* ; do
 for dir in \${MP_SeqNum%??}?? ; do
   while [ ! -f \${dir}/done ] ; do $CMD_sleep 1 ; done ; $CMD_rm \${dir}/done
   the_file=\$(echo \${dir}/stdout*)
@@ -1290,13 +1279,12 @@ true
 EOT
   chmod 755 ${ParallelScript}.${MpiCommWorld}
   [[ -n ${sync} ]] && sync ${ParallelScript}.${MpiCommWorld}
-#==================================================================================================
+########################################################################
   ((WorldOffset=WorldOffset+${PeInWorld[${MpiCommWorld}]}))
   ((MpiCommWorld=MpiCommWorld+1))
 done    # while ((MpiCommWorld<MpiCommWorlds))
-#==================================================================================================
+########################################################################
 # we are now almost ready to launch
-#==================================================================================================
 ((npe_total=TotalInstances))
 # create stdout/stderr directories
 # FIXME à arranger pour le cas MPMD
@@ -1335,19 +1323,20 @@ else
 fi
 echo "INFO: END of temporary directory creation : $(date) ==="
 echo "INFO: START of parallel execution : $(date)"
-#
+
 if [[ ${nompi} == run_with_mpi || ${nompi} == pseudo_mpi ]] ; then  # MPI launch (linux)
-#
+
+  declare -l SystemPlatform
   SystemPlatform=$(uname -s)
   MpiImplementation=""
-  [[ -n ${openmpi} ]] && MpiImplementation="_openmpi"   # openmpi MPI implementation
-  [[ -n ${mpich2} ]]  && MpiImplementation="_mpich2"    # mpich2 MPI implementation
-  [[ -n ${alpspd} ]]  && MpiImplementation=""           # Cray implementation
+  [[ -n ${openmpi} ]] && MpiImplementation="_openmpi" # OpenMPI MPI implementation
+  [[ -n ${mpich} ]]  && MpiImplementation="_mpich" # MPICH MPI implementation
+  [[ -n ${alpspd} ]]  && MpiImplementation="" # Cray implementation
   echo "INFO: ${MPI_EXEC:-mpiexec_${SystemPlatform}${MpiImplementation}} ${mpiargs}"
   ${MPI_EXEC:-mpiexec_${SystemPlatform}${MpiImplementation}} ${mpiargs}
-#
+
 else   # background launch (it is assumed that there is only one world)
-#
+
   ((MP_CHILD=0)) # MP_CHILD used to indicate logical child number (like MPI case)
   export MP_CHILD
   while ((MP_CHILD<TotalInstances))
@@ -1360,16 +1349,16 @@ else   # background launch (it is assumed that there is only one world)
 #
 fi
 echo "INFO: START of listing processing : $(date)"
-#################################################################################################################################
+########################################################################
 # post process/order listings if required
-#
 [[ "${e}" == YES ]] && ListFailed
-#
-if [[ -n ${packoutput} && -n ${processorder} ]] ; then   # post process stderr/stdout from all processes
+
+if [[ -n ${packoutput} && -n ${processorder} ]] ; then
+  # post process stderr/stdout from all processes
   print_separator " start of parallel run "
   ( cd ${tmpdir} ; ${packoutput} [0-9]*[0-9] )
   print_separator " end of parallel run "
   echo "INFO: END of listing processing : $(date)"
 fi
-#
+
 local_cleanup  # exit status set here 0:OK 1:processes failed 2:tmpdir removal failed

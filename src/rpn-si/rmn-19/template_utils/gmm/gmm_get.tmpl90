@@ -1,0 +1,167 @@
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
+
+!!===================== gmm_get (interface) =====================
+!
+#ifdef INTERFACEONLY
+      interface gmm_get
+      integer function gmm_getmeta2(iname,m)
+#include "gmm_definitions.inc"
+      character(len=*), intent(in) :: iname               ! name (partially redundant with attributes)
+      type(gmm_metadata), intent(out) :: m               ! attributes (name in attributes is not used)
+      end function gmm_getmeta2
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+      integer function Cat(gmm_get,EXTENSION,)(iname,p,m)
+#include "gmm_definitions.inc"
+      character(len=*), intent(in) :: iname               ! name (partially redundant with attributes)
+      DATATYPE*DATALENGTH, pointer :: p(DIMS(:,:,:,:))
+      type(gmm_metadata), optional, intent(out) :: m               ! attributes (name in attributes is not used)
+      end function Cat(gmm_get,EXTENSION,)
+#undef EXTENSION
+!!@END
+      end interface
+
+      interface gmm_delete
+      integer function gmm_delete(iname)
+      character(len=*), intent(in) :: iname 
+      end function gmm_delete
+      end interface
+#endif
+
+#ifndef INTERFACEONLY
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+  integer function Cat(gmm_get,EXTENSION,)(iname,p,m)
+  use gmm_internals
+  use Cat(pointer_table_data_,EXTENSION,)
+  implicit none
+   integer :: i, array_rank
+  character(len=*), intent(in) :: iname               ! name (partially redundant with attributes)
+  DATATYPE*DATALENGTH, pointer  :: p(DIMS(:,:,:,:))
+  type(gmm_metadata), optional, intent(out) :: m               ! attributes (name in attributes is not used)
+!  integer,intent(inout) :: reqid
+  include 'gmm_directory_interface.inc'
+  type(gmm_metadata) :: m2
+  integer*8 :: key
+      integer *8 get_address_from
+      external get_address_from 
+
+  key = 0
+  call check_directory_entry(iname,key)
+  if(cur_page .eq. 0 .or. cur_entry .eq. 0) then  ! quick check using key was not successful
+    call find_directory_entry(iname,key)
+  endif
+  if(cur_page .eq. 0 .or. cur_entry .eq. 0) then   ! return null entry
+    if (present(m)) then
+      m%a = GMM_NULL_ATTRIB ! null attributes
+      m%l = GMM_NULL_LAYOUT ! null layout
+    endif
+    nullify(p)
+    key= GMM_KEY_NOT_FOUND
+    Cat(gmm_get,EXTENSION,) = GMM_VAR_NOT_FOUND
+  else
+    m2%l=directory(cur_page)%entry(cur_entry)%l
+    m2%a=directory(cur_page)%entry(cur_entry)%a
+    if (present(m)) m=m2                           ! return a copy of the proper entry
+    p=>Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p
+    do i=1,4
+!      print *,'DEBUG gmm_get m%l(',i,')%n=',m2%l(i)%n
+      if (m2%l(i)%n /= 0) array_rank=i
+    enddo
+!    write(6,'(a,a,a,i2,a,i2)') 'DEBUG gmm_get iname=',iname,' DIM=',DIM,' array_rank=',array_rank
+    if (array_rank /= DIM) then
+       nullify(p)
+       if (present(m)) m = GMM_NULL_METADATA
+       Cat(gmm_get,EXTENSION,) = GMM_INCONSISTENT_DIMS
+!       print *,'DEBUG gmm_get *** GMM_INCONSISTENT_DIMS ***'
+    else
+       Cat(gmm_get,EXTENSION,) = GMM_OK
+    endif
+!    write(6,'(a,a8,a,i4,a,i4,a,i4,a,i10)') 'Debug+++ gmm_get name=',iname,' cur_page=',cur_page,' cur_entry=',cur_entry,' index=',directory(cur_page)%entry(cur_entry)%pointer_table_index,' addr=',get_address_from(p) 
+   endif
+  end function Cat(gmm_get,EXTENSION,)
+!
+  subroutine Cat(gmm_dealloc_ptr,EXTENSION,)()
+  use gmm_internals
+  use Cat(pointer_table_data_,EXTENSION,)
+  implicit none
+
+  deallocate (Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
+  nullify    (Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
+
+  end subroutine Cat(gmm_dealloc_ptr,EXTENSION,)
+
+!!@END
+
+  integer function gmm_delete(iname)
+  use gmm_internals
+  implicit none
+  character(len=*), intent(in) :: iname 
+  include 'gmm_directory_interface.inc'
+  integer*8 :: key
+  integer :: datatype
+
+  key = 0
+  call check_directory_entry(iname,key)
+  if(cur_page .eq. 0 .or. cur_entry .eq. 0) then  ! quick check using key was not successful
+    call find_directory_entry(iname,key)
+  endif
+  if(cur_page .eq. 0 .or. cur_entry .eq. 0) then   ! variable not found
+    key= GMM_KEY_NOT_FOUND
+    gmm_delete = GMM_VAR_NOT_FOUND
+    return
+  else
+    datatype = directory(cur_page)%entry(cur_entry)%data_type
+!   write(6,'(a,a,a,i2,a,i3,a,i4)') 'DEBUG gmm_delete iname=',iname,' cur_page=',cur_page,' cur_entry=',cur_entry,' datatype=',datatype
+    directory(cur_page)%entry(cur_entry)%name = 'Variable deleted upon request' 
+
+    dtype: select case (datatype)
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+    case (EXTENSION)
+!      print *,'DEBUG gmm_delete appel a gmm_dealloc_ptr',datatype
+       call Cat(gmm_dealloc_ptr, EXTENSION,)()
+#undef EXTENSION
+!!@END
+    end select dtype
+
+    directory(cur_page)%entry(cur_entry)%l = GMM_NULL_LAYOUT ! invalid layout
+    directory(cur_page)%entry(cur_entry)%a = GMM_NULL_ATTRIB ! null attributes
+
+    gmm_delete = GMM_OK
+    return
+  endif
+  end function gmm_delete
+!
+
+#undef EXTENSION
+#endif
+#ifndef INTERFACEONLY
+  integer function gmm_getmeta2(iname,m)
+#include "gmm_definitions.inc"
+    character(len=*), intent(in) :: iname               ! name (partially redundant with attributes)
+    type(gmm_metadata), intent(out) :: m               ! attributes (name in attributes is not used)
+   integer gmm_getmeta
+   external gmm_getmeta
+   gmm_getmeta2 = gmm_getmeta(iname, m)
+  end function gmm_getmeta2
+#endif

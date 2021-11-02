@@ -1,0 +1,375 @@
+!/* RMNLIB - Library of useful routines for C and FORTRAN programming
+! *
+! * This library is free software; you can redistribute it and/or
+! * modify it under the terms of the GNU Lesser General Public
+! * License as published by the Free Software Foundation,
+! * version 2.1 of the License.
+! *
+! * This library is distributed in the hope that it will be useful,
+! * but WITHOUT ANY WARRANTY; without even the implied warranty of
+! * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+! * Lesser General Public License for more details.
+! *
+! * You should have received a copy of the GNU Lesser General Public
+! * License along with this library; if not, write to the
+! * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+! * Boston, MA 02111-1307, USA.
+! */
+!===================================================================
+!     Copyright: Environment Canada 2007
+!-------------------------------------------------------------------
+!     Modifications: [Date,Who,What]
+!     2004-04, Stephane Chamberland
+!       Original Code
+!     2004-09, Stephane Chamberland
+!       Add clib_glob
+!     2007-08, Stephane Chamberland
+!       Sync with new clib_insterface.c ; no longer a module
+!       Add a bunch of functions from ctype.h
+!     2008/03, Michel Valin
+!       added clib_readlink
+!       added clib_stat, clib_size, clib_mtime functions to return more stat() information
+!     2011/04, Stephane Chamberland
+!       added clib_mkdir_r
+!-------------------------------------------------------------------
+!     Dependencies:
+!     clib-interface.c
+!-------------------------------------------------------------------
+!     Description
+!     Interface to some C libraries functions
+!     This file contains only the F90 interfaces for
+!     clib_interface.c functions
+!-------------------------------------------------------------------
+!     INTEGER FUNCTION: return CLIB_OK on success
+!     clib_getenv   : get unix env var value
+!     clib_putenv   : set unix env var value
+!     clib_realpath : return real, abspath, normalize
+!     clib_readlink : read the contents of a soft link/_readlink
+!     clib_remove   : remove file/link or empty-directory
+!     clib_rename   : rename file/dir/link
+!     clib_fileexist: true if file exist
+!     clib_isreadok : true if read permission is set for user
+!     clib_iswriteok: true if write permission
+!     clib_isexecok : true is exec permission 
+!     clib_chdir    : change working directory
+!     clib_getcwd   : get current working directory
+!     clib_getuid   : get uid 
+!     clib_rmdir    : remove empty-directory
+!     clib_symlink  : create a symbolic link to an existing file/dir
+!     clib_unlink   : remove file/link
+!     clib_mkdir    : create a new dir
+!     clib_isdir    : true if path is dir
+!     clib_islink   : true if path is link
+!     clib_isfifo   : true if path is fifo [pipe?]
+!     clib_isfile   : true if path is a regular file
+!     clib_size     : file size in bytes
+!     clib_mtime    : time of last modification
+!     clib_stat     : get extra information from stat
+!     clib_glob     : get list of files that match pattern in PWD
+!     clib_basename : return the last part of path [stripped from dirname]
+!     clib_dirname  : return parent dir of path
+!     clib_tolower  : return "in place" a lowercase version of the string
+!     clib_toupper  : return "in place" a uppercase version of the string
+!     clib_isalnum  : return CLIB_OK if char is alpha or digit
+!     clib_isalpha  : return CLIB_OK if char is alpha
+!     clib_isblank  : return CLIB_OK if char is space or tab
+!     clib_isdigit  : return CLIB_OK if char is digit
+!     clib_islower  : return CLIB_OK if char is lowercase
+!     clib_ispunct  : return CLIB_OK if char is a punctuation
+!     clib_isspace  : return CLIB_OK if char is space, form-feed ('\f'), newline ('\n'), carriage return ('\r'), horizontal tab ('\t'), and vertical tab ('\v')
+!     clib_isupper  : return CLIB_OK if char is uppercase
+!     clib_isxdigit : return CLIB_OK if char is hexadecimal digit
+!===================================================================
+#if !defined(__CLIB_INTERFACE_CDK__)
+#define __CLIB_INTERFACE_CDK__
+
+#define CLIB_OK    1
+#define CLIB_ERROR -1
+#define CLIB_SUFFIX _schhide
+#define CLIB_CAT #1#2
+#define CLIB_F77NAME(a) CLIB_CAT(a,_schhide)
+
+#endif
+
+      interface clib_getenv
+      integer function CLIB_F77NAME(clib_getenv)(name,value)
+      implicit none
+      character(len=*),intent(IN) :: name
+      character(len=*),intent(OUT):: value
+      end function
+      end interface
+
+      interface clib_putenv
+      integer function CLIB_F77NAME(clib_putenv)(name_value)
+      implicit none
+      character(len=*),intent(IN) :: name_value
+      end function
+      end interface
+
+      interface clib_realpath
+      integer function CLIB_F77NAME(clib_realpath)(fnamein,fnameout)
+      implicit none
+      character(len=*),intent(IN) :: fnamein
+      character(len=*),intent(OUT):: fnameout
+      end function
+      end interface
+
+      interface clib_readlink
+      integer function CLIB_F77NAME(clib_readlink)(fnamein,fnameout)
+      implicit none
+      character(len=*),intent(IN) :: fnamein
+      character(len=*),intent(OUT):: fnameout
+      end function
+      end interface
+
+      interface clib_remove
+      integer function CLIB_F77NAME(clib_remove)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_rename
+      integer function CLIB_F77NAME(clib_rename)(pathold,pathnew)
+      implicit none
+      character(len=*),intent(IN) :: pathold,pathnew
+      end function
+      end interface
+
+      interface clib_fileexist
+      integer function CLIB_F77NAME(clib_fileexist)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_isreadok
+      integer function CLIB_F77NAME(clib_isreadok)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_iswriteok
+      integer function CLIB_F77NAME(clib_iswriteok)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_isexecok
+      integer function CLIB_F77NAME(clib_isexecok)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_chdir
+      integer function CLIB_F77NAME(clib_chdir)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_getcwd
+      integer function CLIB_F77NAME(clib_getcwd)(path)
+      implicit none
+      character(len=*),intent(OUT) :: path
+      end function
+      end interface
+
+      interface clib_getuid
+      integer function CLIB_F77NAME(clib_getuid)(uid)
+      implicit none
+      integer,intent(OUT) :: uid
+      end function
+      end interface
+
+      interface clib_rmdir
+      integer function CLIB_F77NAME(clib_rmdir)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+
+      interface clib_symlink
+      integer function CLIB_F77NAME(clib_symlink)(pathold,pathnew)
+      implicit none
+      character(len=*),intent(IN) :: pathold,pathnew
+      end function
+      end interface
+
+      interface clib_unlink
+      integer function CLIB_F77NAME(clib_unlink)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_mkdir
+      integer function CLIB_F77NAME(clib_mkdir)(path)
+      implicit none
+      character(len=*),intent(IN) :: path 
+      end function 
+      end interface
+
+      interface clib_isdir
+      integer function CLIB_F77NAME(clib_isdir)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_islink
+      integer function CLIB_F77NAME(clib_islink)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_isfifo
+      integer function CLIB_F77NAME(clib_isfifo)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_isfile
+      integer function CLIB_F77NAME(clib_isfile)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_size
+      integer*8 function CLIB_F77NAME(clib_size)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_mtime
+      integer function CLIB_F77NAME(clib_mtime)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function 
+      end interface
+
+      interface clib_stat
+      integer function CLIB_F77NAME(clib_stat)(path,extra_info)
+      implicit none
+      character(len=*),intent(IN) :: path
+      integer *8, dimension(13), intent(OUT) :: extra_info
+      end function 
+      end interface
+
+      interface clib_glob
+      integer function CLIB_F77NAME(clib_glob)(filelist,nfiles,pattern,maxnfiles)
+      implicit none
+      integer,intent(IN)  :: maxnfiles
+      character(len=*),intent(IN) :: pattern
+      integer,intent(OUT) :: nfiles
+      character(len=*),dimension(maxnfiles),intent(OUT):: filelist
+      end function 
+      end interface
+
+      interface clib_basename
+      integer function CLIB_F77NAME(clib_basename)(path,basename)
+      implicit none
+      character(len=*),intent(IN) :: path
+      character(len=*),intent(OUT):: basename
+      end function
+      end interface
+
+      interface clib_dirname
+      integer function CLIB_F77NAME(clib_dirname)(path,dirname)
+      implicit none
+      character(len=*),intent(IN) :: path
+      character(len=*),intent(OUT):: dirname
+      end function
+      end interface
+
+      interface clib_tolower
+      integer function CLIB_F77NAME(clib_tolower)(mystr)
+      implicit none
+      character(len=*),intent(INOUT) :: mystr
+      end function
+      end interface
+
+      interface clib_toupper
+      integer function CLIB_F77NAME(clib_toupper)(mystr)
+      implicit none
+      character(len=*),intent(INOUT) :: mystr
+      end function
+      end interface
+
+      interface clib_isalnum
+      integer function CLIB_F77NAME(clib_isalnum)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isalpha
+      integer function CLIB_F77NAME(clib_isalpha)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isblank
+      integer function CLIB_F77NAME(clib_isblank)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isdigit
+      integer function CLIB_F77NAME(clib_isdigit)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_islower
+      integer function CLIB_F77NAME(clib_islower)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_ispunct
+      integer function CLIB_F77NAME(clib_ispunct)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isspace
+      integer function CLIB_F77NAME(clib_isspace)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isupper
+      integer function CLIB_F77NAME(clib_isupper)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_isxdigit
+      integer function CLIB_F77NAME(clib_isxdigit)(mychar)
+      implicit none
+      character,intent(IN) :: mychar
+      end function
+      end interface
+
+      interface clib_mkdir_r
+      integer function CLIB_F77NAME(clib_mkdir_r)(path)
+      implicit none
+      character(len=*),intent(IN) :: path
+      end function
+      end interface
+

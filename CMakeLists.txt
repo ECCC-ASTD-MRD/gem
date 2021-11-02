@@ -4,39 +4,52 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn)
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
+ec_parse_manifest()        # Parse MANIFEST file
 
-project(GEM DESCRIPTION "GEM - Forecasting and data assimilation system" LANGUAGES NONE)
-ec_build_info()            # Generate build include file (optional)
+project(${NAME} DESCRIPTION "${DESCRIPTION}")
+set(PROJECT_VERSION ${VERSION}${STATE})
 
 enable_language(Fortran)
 enable_language(C)
 
+ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
+
+# Adding specific flags for GEM
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl")
+elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+  set(LAPACK_LIBRARIES "lapack")
+  set(BLAS_LIBRARIES "blas")
+endif()
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  message(STATUS "No build type selected, default to RelWithDebInfo")
+  message(STATUS "(EC) CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
+  message(STATUS "(EC) No build type selected, default to RelWithDebInfo")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
-message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
+message(STATUS "(EC) Configuring for ${CMAKE_BUILD_TYPE} build type")
 
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
+# necessary for rmn 19.7.0
 if (OPENMP_FOUND)
   add_compile_definitions(WITH_OpenMP)
-  message(STATUS "Adding extra -DWITH_OpenMP")
+  message(STATUS "(EC) Adding extra -DWITH_OpenMP")
 else()
   add_compile_definitions(WITHOUT_OpenMP)
-  message(STATUS "Adding extra -DWITHOUT_OpenMP")
+  message(STATUS "(EC) Adding extra -DWITHOUT_OpenMP")
 endif()
 
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)
    find_package(OpenACC)
    if (OPENACC_NOTFOUND)
-      message(FATAL_ERROR "OpenACC was requested, but was not found!")
+      message(FATAL_ERROR "(EC) OpenACC was requested, but was not found!")
    endif()
    if(OpenACC_C_FLAGS)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenACC_C_FLAGS} ${OpenACC_extra_FLAGS}")
@@ -48,26 +61,25 @@ if (WITH_OPENACC)
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenACC_C_FLAGS} ${OpenACC_extra_FLAGS}")
    endif()
 else()
-   message(STATUS "Building WITHOUT OpenACC")
+   message(STATUS "(EC) Building WITHOUT OpenACC")
 endif()
 
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug )
-  message(STATUS "CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
-  message(STATUS "CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
+  message(STATUS "(EC) CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
+  message(STATUS "(EC) CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
 endif()
 
 # Figure out the correct arch-dependent include path
 set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-message(STATUS "Build architecture: ${BUILD_ARCH}")
+message(STATUS "(EC) Build architecture: ${BUILD_ARCH}")
 
-message(STATUS "Sources directory is: ${CMAKE_SOURCE_DIR}")
-message(STATUS "Build directory is: ${CMAKE_BINARY_DIR}")
+message(STATUS "(EC) Sources directory is: ${CMAKE_SOURCE_DIR}")
+message(STATUS "(EC) Build directory is: ${CMAKE_BINARY_DIR}")
 
-file(READ "${CMAKE_SOURCE_DIR}/VERSION" GEM_VERSION)
-string(REGEX REPLACE "\n$" "" GEM_VERSION "${GEM_VERSION}")
-message(STATUS "GEM_VERSION: ${GEM_VERSION}")
+set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
+message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -77,7 +89,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # get name and version of operating system
 execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/os.sh" OUTPUT_VARIABLE OS)
-message(STATUS "Operating system is: ${OS}")
+message(STATUS "(EC) Operating system is: ${OS}")
 
 # get name and version of compiler
 if(DEFINED ENV{COMPILER_VERSION})
@@ -85,18 +97,20 @@ if(DEFINED ENV{COMPILER_VERSION})
 else()
   execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/compiler.sh ${COMPILER_SUITE}" OUTPUT_VARIABLE COMPILER_VERSION)
 endif()
-message(STATUS "COMPILER_VERSION: ${COMPILER_VERSION}")
+message(STATUS "(EC) Compiler version: ${COMPILER_VERSION}")
+set(PACKAGE_PREFIX ${OS}-${COMPILER_SUITE}-${COMPILER_VERSION})
 
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
 if(DEFINED ENV{GEM_WORK})
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "CMake Installation prefix" FORCE)
 else()
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "CMake Installation prefix" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/work-${PACKAGE_PREFIX}" CACHE FILEPATH "CMake Installation prefix" FORCE)
 endif()
-message(STATUS "Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "(EC) Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
 endif()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
+ec_build_config()      # Create build configuration script
 
 add_custom_target(work
     /bin/mkdir -p ${CMAKE_INSTALL_PREFIX}/bin
@@ -119,6 +133,7 @@ add_custom_target(work
         $<TARGET_FILE:r.filetype>
         ${CMAKE_INSTALL_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${CMAKE_INSTALL_PREFIX}
+    COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${CMAKE_INSTALL_PREFIX}
 
     DEPENDS
         cclargs_lite
@@ -138,3 +153,16 @@ add_custom_target(work
         r.fstinfo
         r.filetype
 )
+ec_build_config()      # Create build configuration script
+ec_prepare_ssm()       # Prepare ssm packaging files
+
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_VENDOR "ECCC")
+set(CPACK_PACKAGE_CONTACT "${MAINTAINER}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
+set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
+set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_PREFIX}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${PROJECT_VERSION}")
+include(CPack)

@@ -4,19 +4,19 @@ SHELL = /bin/bash
 
 default: build
 
-cmake-gnu-debug: ; $(MAKE) COMPILER_SUITE=gnu gnu-debug
-cmake-gnu-debug-plus: ; $(MAKE) COMPILER_SUITE=gnu gnu-debug-plus
+debug: ; $(MAKE) cmake-debug
+debug-plus: ; $(MAKE) cmake-debug-plus
 
-cmake-dorpn:
+cmake-with-system-rpn:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
 
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${GEM_GIT_DIR} )
 
-gnu-debug:
+cmake-debug:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug ${GEM_GIT_DIR} )
 
-gnu-debug-plus:
+cmake-debug-plus:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DEXTRA_DEBUG=1 ${GEM_GIT_DIR} )
 
 .PHONY: build

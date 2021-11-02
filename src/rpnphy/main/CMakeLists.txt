@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of rpnphy main Makefile")
+message(STATUS "(EC) Generating rpnphy main Makefile")
 
 set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
 

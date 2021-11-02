@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of gem_monitor Makefile")
+message(STATUS "(EC) Starting generation of gem_monitor Makefile")
 
 set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${CMAKE_C_COMPILER})
@@ -20,13 +20,13 @@ target_link_libraries(toc2nml
    ${EXTRA_LIBRARIES}
    )
 target_include_directories(toc2nml PRIVATE
-   ${CMAKE_BINARY_DIR}/src/vgrid/lib
+  ${VGRID_INCLUDE_DIR}
 )
 
 add_dependencies(toc2nml gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 
 # Adding specific flags for GEM
-include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+#include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
 add_executable(gem_monitor_output maingem_monitor_output.c)
 add_executable(gem_monitor_end maingem_monitor_end.c)

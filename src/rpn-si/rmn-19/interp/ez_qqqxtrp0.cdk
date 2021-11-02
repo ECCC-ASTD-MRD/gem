@@ -1,0 +1,20 @@
+      integer voisin, lineair, cubique
+      integer oui, abort, valeur, maximum, minimum
+      parameter (voisin  =   0)
+      parameter (lineair =   1)
+      parameter (cubique =   3)
+      
+      parameter (oui     =   1)
+      parameter (minimum =   4)
+      parameter (maximum =   5)
+      parameter (valeur  =   6)
+      parameter (abort   =  13)
+      
+      logical flgxtrap,outlmit
+      integer codxtrap, ordint
+      real valxtrap
+      
+      common /ez_qqqxtrp0/ ordint, flgxtrap, codxtrap, valxtrap, outlmit
+      
+
+

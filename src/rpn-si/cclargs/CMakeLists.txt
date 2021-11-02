@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of cclargs_lite Makefile")
+message(STATUS "(EC) Generating cclargs_lite Makefile")
 
 add_definitions(-DNOUI)
 

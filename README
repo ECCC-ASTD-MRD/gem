@@ -6,7 +6,12 @@ instructions below for that branch.
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 git checkout dev-submodules
+
+# Updating submodule from gitlab.science.gc.ca
 git submodule update --init --recursive
+
+# Updating submodule from github.com
+git -c submodule."ci-env".update=none submodule update --init --recursive
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh

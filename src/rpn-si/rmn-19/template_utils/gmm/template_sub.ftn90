@@ -1,0 +1,29 @@
+!--------------------------------------------------------------------------
+! This is free software, you can use/redistribute/modify it under the terms of
+! the EC-RPN License v2 or any later version found (if not provided) at:
+! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
+! - ec.service.rpn.ec@canada.ca
+! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
+!-------------------------------------------------------------------------- 
+!/**
+subroutine toto(F_SOMEARG)
+   use something
+   implicit none
+   #include "SOMETHING" !needed for arguments declaration (derived type)
+   !@objective SHORT DESCRIPTION
+   !@arguments
+   TYPE(), ATTRIBUTES, intent(MODE) :: F_SOMEARG ! F_SOMEARG DESCRIPTION
+   !@author  Yves Chartier, 2008-04
+   !@revisions
+   !  2008-04,  Yves Chartier: original code
+   !@description
+   !  LONG DESCRIPTIONS
+!**/
+   
+   TYPE(), ATTRIBUTES :: LOCAL_VARS
+   !---------------------------------------------------------------------
+   PUT YOUR CODE HERE
+   !---------------------------------------------------------------------
+   return
+end subroutine toto

@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of massv Makefile")
+message(STATUS "(EC) Generating massv Makefile")
 
 file(GLOB FTN_SOURCES *.f)
 

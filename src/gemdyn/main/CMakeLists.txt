@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of maingem Makefile")
+message(STATUS "(EC) Generating maingem Makefile")
 
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
@@ -8,10 +8,10 @@ if (WITH_OPENMP)
 endif()
 
 # Adding specific flags for GEM
-include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
+#include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
-message(STATUS "CMAKE_C_FLAGS for GEM: ${CMAKE_C_FLAGS}")
-message(STATUS "CMAKE_Fortran_FLAGS for GEM: ${CMAKE_Fortran_FLAGS}")
+message(STATUS "(EC) CMAKE_C_FLAGS for GEM: ${CMAKE_C_FLAGS}")
+message(STATUS "(EC) CMAKE_Fortran_FLAGS for GEM: ${CMAKE_Fortran_FLAGS}")
 
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm
@@ -84,5 +84,4 @@ add_dependencies(gemgrid gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIB
 add_dependencies(maingemdm gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 add_dependencies(checkdmpart gem phy modelutils ${VGRID_LIBRARY_SRC} ${MPIEXTRAS_LIBRARY_SRC} ${RPNCOMM_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 
-install(TARGETS maingemdm checkdmpart gemgrid prgemnml RUNTIME 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS maingemdm checkdmpart gemgrid prgemnml RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

@@ -1,0 +1,103 @@
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
+
+!!===================== gmm_create (interface) =====================
+!
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+#ifdef INTERFACEONLY
+      interface gmm_update_tpi_key
+      integer function gmm_update_tpi_key2(indx,datatype, key)
+      integer, intent(in) :: indx, datatype
+      integer*8, intent(in) :: key
+      end function gmm_update_tpi_key2
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+      integer function Cat(gmm_update_tpi_key,EXTENSION,)(indx, key)
+      integer, intent(in) :: indx
+      integer*8, intent(in) :: key
+      end function Cat(gmm_update_tpi_key,EXTENSION,)
+#undef EXTENSION
+!!@END
+      end interface
+#endif
+
+
+#ifndef INTERFACEONLY
+!!===================== gmm_create (interface) =====================
+!
+  integer function gmm_update_tpi_key2(indx,datatype, key)
+    implicit none
+    integer, intent(in) :: indx, datatype
+    integer*8, intent(in) :: key
+    integer ier
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+      integer Cat(gmm_update_tpi_key, EXTENSION,)
+#undef EXTENSION
+!!@END
+
+    dtype: select case (datatype)
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+    case (EXTENSION)
+      gmm_update_tpi_key2 = Cat(gmm_update_tpi_key, EXTENSION,)(indx, key)
+#undef EXTENSION
+!!@END
+  end select dtype
+  end function gmm_update_tpi_key2
+#endif
+
+!!===================== gmm_create (code) =====================
+
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+#ifndef INTERFACEONLY
+  integer function Cat(gmm_update_tpi_key,EXTENSION,)(indx, key)
+  use gmm_internals
+  use Cat(pointer_table_data_,EXTENSION,)
+  implicit none
+    integer, intent(in) :: indx
+    integer*8, intent(in) :: key
+
+  type(gmm_attributes) :: localattr, attrs
+  type (gmm_attributes) lcl_attr
+  type(gmm_layout), dimension(4) :: lcl_layout, dims
+  integer lcl_datatype
+  logical consistent
+  integer i, ier
+  integer lcl_pti
+
+
+    if (indx > gmm_p_table_size) then
+      print *, 'update_table_entry : wrong index', indx,'in table type ', EXTENSION, 'of size', gmm_p_table_size
+      Cat(gmm_update_tpi_key,EXTENSION,) = GMM_POINTER_TABLE_OVERFLOW
+    endif
+
+    Cat(gmm_ptrs, EXTENSION,)(indx)%key = key
+    print *, 'update_table_entry', 'of', indx, 'in table type ', EXTENSION, 'of size', gmm_p_table_size
+  Cat(gmm_update_tpi_key,EXTENSION,) = 0
+  end function Cat(gmm_update_tpi_key,EXTENSION,)
+
+#endif
+#undef EXTENSION
+
+!
+!!@END

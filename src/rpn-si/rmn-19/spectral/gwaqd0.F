@@ -1,0 +1,132 @@
+*/* RMNLIB - Library of useful routines for C and FORTRAN programming
+* * Copyright (C) 1975-2001  Division de Recherche en Prevision Numerique
+* *                          Environnement Canada
+* *
+* * This library is free software; you can redistribute it and/or
+* * modify it under the terms of the GNU Lesser General Public
+* * License as published by the Free Software Foundation,
+* * version 2.1 of the License.
+* *
+* * This library is distributed in the hope that it will be useful,
+* * but WITHOUT ANY WARRANTY; without even the implied warranty of
+* * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* * Lesser General Public License for more details.
+* *
+* * You should have received a copy of the GNU Lesser General Public
+* * License along with this library; if not, write to the
+* * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* * Boston, MA 02111-1307, USA.
+* */
+      SUBROUTINE GWAQD0(Q,D,LRQ,LRD,LM,UGG,VGG,ILG,ILATH,COA,SIA, 
+     1                  WOCS,KHEM,ALP,DALP,EPSI,LALP,LA,WRKS,WRKL,A)
+C 
+C     *****   OCT 1975  -  JOHN D. HENDERSON  ****
+C     * CONVERTS GAUSSIAN GRIDS OF U,V IN UGG,VGG(ILG,NLAT).
+C     * TO SPECTRAL COEFFICIENTS OF VORTICITY Q(LRQ,LM) 
+C     *  AND DIVERGENCE D(LRD,LM).
+C     * IF GLOBAL, NLAT=ILAT.  IF HEMISPHERIC, NLAT=ILATH.
+C 
+C     * U ET V A L ENTREE SONT EN NOEUDS. 
+C 
+C     * KHEM  0 = GLOBAL,  1 = N HEM ONLY,  2 = S HEM ONLY. 
+C     * COA(ILATH) CONTAINS THE COSINES OF THE COLATITUDE (N TO S). 
+C     * WOCS(ILATH) CONTAINS (GAUSSIAN WEIGHTS)/COS(COLAT) (N TO S).
+C     * ALP IS A WORK FIELD FOR LEGENDRE POLYNOMIALS. 
+C     * DALP IS FOR THE N-S DERIVATIVES OF ALP. 
+C     * EPSI IS A FIELD OF CONSTANTS THE SAME SIZE AS ALP.
+C     * WRKS DOIT AVOIR UNE DIMENSION D'AU MOINS (ILG+1)
+C     * WRKL IS A WORK ARRAY OF LENGTH  LA  COMPLEX WORDS 
+C     * ON DOIT S'ASSURER QUE WRKL A UNE DIMENSION D'AU MOINS (ILG+2) 
+C     * FAST FOURIER TRANSFORM REQUIRES THAT ILG BE FACTORIZABLE
+C     *                                   P    Q     R
+C     * IN THE FORM :          ILG   =  2  * 3   * 5
+C     * ILG MUST BE > 8 
+C 
+C     * REVISION 1 : C.BEAUDOIN NOV. 85 
+C     *            : UTILISATION DE FFT91A AU LIEU DE FFGFW2
+C 
+C 
+      COMPLEX Q(LA),D(LA),WRKL(1) 
+      DIMENSION UGG(ILG,1),VGG(ILG,1) 
+      DIMENSION ALP(1),DALP(1),EPSI(1)
+C 
+      DIMENSION COA(1),WOCS(1),WRKS(1)
+      DIMENSION SIA(1)
+      DIMENSION LALP(1),LRQ(1),LRD(1) 
+C-----------------------------------------------------------------------
+C     * INITIAL CONSTANTS. SET Q,D TO ZERO. 
+C 
+      CON1=.514791/A
+      ILGH=ILG/2
+      ILP=1 
+      IF(KHEM.NE.0) ILP=LA+1
+      CALL SCOF2(Q,LRQ,LM,0)
+      CALL SCOF2(D,LRD,LM,0)
+C 
+C     * THE NORTHERN HEMISPHERE IS DONE FIRST, FOLLOWED BY THE
+C     * SOUTHERN HEMISPHERE. EITHER CAN BE OMITTED IF NOT NEEDED. 
+C     * NH=1 FOR NORTHERN HEMISPHERE, NH=2 FOR SOUTHERN HEMISPHERE. 
+C 
+      DO 100 NH=1,2 
+      IF(NH.EQ.1.AND.KHEM.EQ.2)  GO TO 100
+      IF(NH.EQ.2.AND.KHEM.EQ.1)  GO TO 100
+C 
+C     * LATITUDE LOOP IN ONE HEMISPHERE.
+C     *  IH  COUNTS FROM THE POLE TO THE EQUATOR. 
+C 
+      DO 50 IH=1,ILATH
+C 
+C     *  IHGG  COUNTS FROM BOTTOM TO TOP OF GAUSSIAN GRID.
+C 
+                                 IHGG=IH
+      IF(NH.EQ.1.AND.KHEM.EQ.1)  IHGG=ILATH+1-IH
+      IF(NH.EQ.1.AND.KHEM.EQ.0)  IHGG=ILATH+1-IH+ILATH
+C 
+      IF(NH.EQ.1)  SINLAT= COA(IH)
+      IF(NH.EQ.2)  SINLAT=-COA(IH)
+C 
+      WEIGHT=WOCS(IH) 
+      CON=SIA(IH)*CON1
+C 
+C     * COMPUTE ALP,DALP AND REORDER ROWS IF GRIDS ARE HEMISPHERIC. 
+C 
+      CALL ALPNM2(ALP,LALP,LM,SINLAT,EPSI,KHEM) 
+      CALL ALPDR2(DALP,ALP,LALP,LM,SINLAT,EPSI,KHEM)
+      IF(KHEM.NE.0)  CALL ALPAS2( ALP,LA,LRD,LRQ,LM,WRKL) 
+      IF(KHEM.NE.0)  CALL ALPAS2(DALP,LA,LRD,LRQ,LM,WRKL) 
+C 
+C     * TERMS DEPENDING ON U. 
+C 
+      DO 10 I=1,ILG 
+   10 UGG(I,IHGG)=UGG(I,IHGG)*CON 
+* 
+C     CALL FFWFG2(WRKL,ILGH,UGG(1,IHGG),ILG,LM-1,ILG,WRKS,1)
+      CALL MOVLEV (UGG(1,IHGG),WRKL,ILG)
+      CALL FFT91A (WRKL,WRKS,1,ILG,-1)
+      CALL FASP2(Q,LRQ,LM,WRKL,DALP(ILP),LALP, WEIGHT)
+      CALL EWFDR2(WRKL,WRKL     ,WRKL,ILGH,1,LM,1., 0)
+      CALL FASP2(D,LRD,LM,WRKL,ALP,LALP, WEIGHT)
+C 
+C     * TERMS DEPENDING ON V. 
+C 
+      DO 20 I=1,ILG 
+   20 VGG(I,IHGG)=VGG(I,IHGG)*CON 
+* 
+C     CALL FFWFG2(WRKL,ILGH,VGG(1,IHGG),ILG,LM-1,ILG,WRKS,1)
+      CALL MOVLEV (VGG(1,IHGG),WRKL,ILG)
+      CALL FFT91A (WRKL,WRKS,1,ILG,-1)
+      CALL FASP2(D,LRD,LM,WRKL,DALP,LALP,-WEIGHT) 
+      CALL EWFDR2(WRKL,WRKL     ,WRKL,ILGH,1,LM,1., 0)
+      CALL FASP2(Q,LRQ,LM,WRKL,ALP(ILP),LALP, WEIGHT) 
+C 
+   50 CONTINUE
+C 
+  100 CONTINUE
+C 
+C     * IF GRIDS ARE HEMISPHERIC, DOUBLE ALL COEFF IN Q AND D.
+C 
+      IF(KHEM.NE.0) CALL SCOF2(Q,LRQ,LM,2)
+      IF(KHEM.NE.0) CALL SCOF2(D,LRD,LM,2)
+C 
+      RETURN
+      END 

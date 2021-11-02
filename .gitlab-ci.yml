@@ -6,7 +6,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - build_gnu_dorpnsi
+  - build_gnu
   - run_configs_gnu
   - build_intel_dorpnsi
   - build_intel
@@ -24,7 +24,8 @@ build_intel_dorpnsi:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
-    - make cmake-dorpnsi
+    - . ./.eccc_load_rpn
+    - make cmake-with-system-rpn
     - make -j `nproc`
     - make -j `nproc` work
 
@@ -36,13 +37,13 @@ build_intel:
   script:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_intel
-    - . ./.eccc_load_rpn
     - . ./.eccc_initial_setup
+    - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   artifacts:
-    expire_in: 6 hrs
+    expire_in: 2 hrs
     paths:
     - work*intel*
     - gem_dbase
@@ -285,8 +286,8 @@ THEO_schar_intel:
       fi
     - test "${_status}" == "ED"
 
-build_gnu_dorpnsi:
-  stage: build_gnu_dorpnsi
+build_gnu:
+  stage: build_gnu
   only:
   - dev-submodules
   when: always
@@ -294,11 +295,12 @@ build_gnu_dorpnsi:
     - ln -sf $HOME/gem_dbase .
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
-    - make cmake-dorpnsi
+    - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
+    - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   artifacts:
-    expire_in: 6 hrs
+    expire_in: 2 hrs
     paths:
     - work*gnu*
     - gem_dbase
@@ -308,7 +310,7 @@ build_gnu_dorpnsi:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -328,7 +330,7 @@ CANO_W7cascP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -348,7 +350,7 @@ CANO_dcmip163r100_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -368,7 +370,7 @@ CANO_wil7_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -388,7 +390,7 @@ GEM_GY_FISL_P_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -408,7 +410,7 @@ GEM_LU_FISL_H_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -428,7 +430,7 @@ GEM_LU_OFFC_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -448,7 +450,7 @@ PTOPO_GYH_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -468,7 +470,7 @@ PTOPO_LUP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -488,7 +490,7 @@ RSTRT_GYP_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -508,7 +510,7 @@ THEO_bubbleG_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu
@@ -528,7 +530,7 @@ THEO_schar_gnu:
   only:
   - dev-submodules
   dependencies:
-  - build_gnu_dorpnsi
+  - build_gnu
   when: always
   script:
     - . ./.eccc_setup_gnu

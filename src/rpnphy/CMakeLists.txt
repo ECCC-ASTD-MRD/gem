@@ -1,24 +1,22 @@
-message(STATUS "Starting generation of rpnphy Makefile")
+message(STATUS "(EC) Generating rpnphy Makefile")
 
 project(RPNPHY Fortran)
 
+add_subdirectory(main rpnphy-main)
+
 include(FindMPI OPTIONAL)
-include_directories(${MPI_INCLUDE_PATH})
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 
 file(GLOB FTNSRC */*.F90)
 list(FILTER FTNSRC EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*" )
 
-# Adding specific flags for GEM
-include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
-
-include_directories(series)
-include_directories(surface)
-include_directories(${CMAKE_SOURCE_DIR}/src/modelutils/include)
-include_directories(${CMAKE_BINARY_DIR}/src/modelutils)
-include_directories(${CMAKE_BINARY_DIR}/src/vgrid/lib)
-include_directories(AFTER include base utils ${CMAKE_SOURCE_DIR}/src/modelutils/include)
-
 add_library (phy STATIC ${FTNSRC})
+target_include_directories(phy BEFORE PRIVATE 
+  series
+  surface
+  ${CMAKE_SOURCE_DIR}/src/modelutils/include
+  ${CMAKE_BINARY_DIR}/src/modelutils
+  ${VGRID_INCLUDE_DIR}
+  )
+target_include_directories(phy PRIVATE include base utils)
 
-add_subdirectory(main rpnphy-main)

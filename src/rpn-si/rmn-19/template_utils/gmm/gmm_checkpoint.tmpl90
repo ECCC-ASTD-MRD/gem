@@ -1,0 +1,195 @@
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3,#4 CODE #1;#2;#3;#4 DIM 4 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2,#3    CODE #1;#2;#3    DIM 3 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1,#2       CODE #1;#2       DIM 2 DATATYPE complex DATACODE 3 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE integer DATACODE 1 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 8
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE real    DATACODE 2 DATALENGTH 4
+!!!Cat #1#2#3#4#5#6 DIMS #1          CODE #1          DIM 1 DATATYPE complex DATACODE 3 DATALENGTH 8
+
+!!===================== gmm_checkpoint_all =====================
+#ifdef INTERFACEONLY
+      interface
+!
+!        if  read_or_write is READ_CKPT (.true.) , read full checkpoint (all types)
+!        if  read_or_write is WRIT_CKPT (.false.) , write full checkpoint (all types)
+!
+      integer function gmm_checkpoint_all(read_or_write)
+      logical read_or_write
+      end function gmm_checkpoint_all
+      end interface ! gmm_checkpoint
+#else
+  integer function gmm_checkpoint_all(read_or_write)
+!
+!        checkpoint read or write for all known types
+!
+  use gmm_internals
+  implicit none
+  logical read_or_write
+  integer code,istat,fnom
+  external fnom
+!
+
+  if (read_or_write) then  ! read checkpoint file one record at a time
+    if (restart_mode) then
+      if (gmm_verbose_level <= GMM_MSG_WARN) then
+        print *,'(GMM_CHECKPOINT_ALL) Warning: restart file already read'
+      endif
+      gmm_checkpoint_all = GMM_OK
+      return
+    endif
+    if (file_unit .eq. 0) then
+      istat=fnom(file_unit,'gmm_restart','SEQ+UNF+FTN+OLD',0)  ! open checkpoint file
+      if (gmm_verbose_level == GMM_MSG_DEBUG) then
+        print *,'open restart file, status=',istat
+      endif
+      if (istat .lt. 0) then
+        file_unit = 0
+        gmm_checkpoint_all = GMM_ERROR
+        return
+      endif
+    endif
+    do while(.true.)
+      read(file_unit,end=999)code
+      restart_mode=.true.   ! we are in restart mode if a single record is read from restart file
+      if (-1 .eq. code) then                              ! call appropriate routine
+        print *,'ERROR: gmm_checkpoint_all this cannot happen'
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+      else if (code .eq. EXTENSION) then
+        call Cat(gmm_checkpoint_,EXTENSION,)(.true.)
+#undef EXTENSION
+!!@END
+      else
+        print *,'ERROR: gmm_checkpoint_all unrecognized type=',code,' in restart file'
+        call qqexit(1)
+      endif
+    end do
+  else       ! write all tables to checkpoint file
+    if (file_unit .eq. 0) then
+      istat=fnom(file_unit,'gmm_restart','SEQ+UNF+FTN',0)  ! open checkpoint file
+      if (gmm_verbose_level == GMM_MSG_DEBUG) then
+        print *,'open restart file, status=',istat
+      endif
+      if (istat .lt. 0) then
+        file_unit = 0
+        gmm_checkpoint_all = GMM_ERROR
+        return
+      endif
+    endif
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+    call Cat(gmm_checkpoint_,EXTENSION,)(.false.)
+#undef EXTENSION
+!!@END
+  endif
+999 call fclos(file_unit)
+    file_unit=0
+  gmm_checkpoint_all = GMM_OK
+  end function gmm_checkpoint_all
+#endif
+!!===================== gmm_checkpoint =====================
+#ifdef INTERFACEONLY
+      interface ! no generic interface, here, as calling sequences are identical
+!
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+      integer function Cat(gmm_checkpoint,EXTENSION,)(read_or_write)
+      logical read_or_write
+      end function Cat(gmm_checkpoint,EXTENSION,)
+#undef EXTENSION
+!!@END
+      end interface
+#endif
+!        if  read_or_write is READ_CKPT (.true.) , read one checkpoint group of records
+!        if  read_or_write is WRIT_CKPT (.false.) , write all groups of records to checkpoint file
+!
+
+#ifndef INTERFACEONLY
+!!@LOOP
+#define EXTENSION Cat(DATACODE,DATALENGTH,DIM)
+  subroutine Cat(gmm_checkpoint_,EXTENSION,)(read_or_write)
+  use gmm_internals
+  use Cat(pointer_table_data_,EXTENSION,)
+  implicit none
+  logical read_or_write
+  integer istat, fnom, i, j, ier, lcl_pti
+  type(gmm_layout), dimension(1:DIM) :: siz
+  type(gmm_attributes) :: attrib
+  integer *8 :: key
+  external fnom
+      integer *8 get_address_from
+      external get_address_from 
+
+  if (read_or_write) then      ! read one  record from checkpoint file
+!
+    call add_directory_entry  ! into next directory entry
+!    read(file_unit)directory(cur_page)%entry(cur_entry)%m%a%name  ! read name of variable
+    read(file_unit)directory(cur_page)%entry(cur_entry)%name
+    read(file_unit)siz(1:DIM)                                    ! read layout
+    directory(cur_page)%entry(cur_entry)%l(1:DIM) = siz(1:DIM) ! set layout in table
+    read(file_unit)attrib                                        ! read attributes
+!    print *,'name=',directory(cur_page)%entry(cur_entry)%name,' dims=',siz(1:DIM)
+    attrib%flags = ior(attrib%flags,GMM_FLAG_READ)
+    directory(cur_page)%entry(cur_entry)%a = attrib            ! set attributes in table
+    read(file_unit)directory(cur_page)%entry(cur_entry)%data_type
+    lcl_pti = lgmm_get_nxt_avail_ptr()
+    directory(cur_page)%entry(cur_entry)%pointer_table_index = lcl_pti
+    ordinal = ordinal + 1
+    key = ishft((cur_page-1),PAGE_NB_SHFT) + ishft((cur_entry-1),NTRY_NB_SHFT)
+    key = key + ishft(EXTENSION,EXTN_NB_SHFT) + ishft(ordinal,MAGC_NB_SHFT)
+    directory(cur_page)%entry(cur_entry)%a%key = key            ! set creation ordinal
+! CODE POSSIBLY MISSING HERE FOR FLAGS SETTINGS
+    allocate(Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p(DIMS(siz(1)%low:siz(1)%high,&
+                                                        &siz(2)%low:siz(2)%high,&
+                                                        &siz(3)%low:siz(3)%high,&
+                                                        &siz(4)%low:siz(4)%high)  ))
+    read(file_unit)Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p         ! read array
+    directory(cur_page)%entry(cur_entry)%array_addr = get_address_from(&
+          &Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
+
+    if (gmm_verbose_level == GMM_MSG_DEBUG) then
+      write(6,'(a,a8,a,i4,a,i4,a,i4,a,i10)') 'name=',directory(cur_page)%entry(cur_entry)%name,' cur_page=',cur_page,' cur_entry=',cur_entry,' index=',directory(cur_page)%entry(cur_entry)%pointer_table_index,' addr=',get_address_from(Cat(gmm_ptrs, EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p)
+    endif
+    ier=add_table_entry(Cat(gmm_ptrs,EXTENSION,)(directory(cur_page)%entry(cur_entry)%pointer_table_index)%p,key)
+!
+  else                    ! write to checkpoint file (records with FLAG_RSTR property)
+!
+    if (gmm_verbose_level == GMM_MSG_DEBUG) then
+      print *,'checkpointing type ',EXTENSION
+    endif
+    do i=1,table_size
+      do j=1,PAGE_SIZE
+        if (iand(GMM_FLAG_RSTR,directory(i)%entry(j)%a%flags) .ne. 0.and.directory(i)%entry(j)%data_type == EXTENSION) then
+          if (gmm_verbose_level == GMM_MSG_DEBUG) then
+            print *,'writing field ',directory(i)%entry(j)%name
+          endif
+          write(file_unit)EXTENSION
+          write(file_unit)directory(i)%entry(j)%name
+          write(file_unit)directory(i)%entry(j)%l(1:DIM)
+          attrib = directory(i)%entry(j)%a
+          attrib%flags = iand(attrib%flags,FLAGS_KEPT_IN_RESTART)
+          write(file_unit)attrib
+          write(file_unit)directory(i)%entry(j)%data_type
+          write(file_unit)Cat(gmm_ptrs, EXTENSION,)(directory(i)%entry(j)%pointer_table_index)%p
+        endif
+      enddo
+    enddo
+!
+  endif
+  end subroutine Cat(gmm_checkpoint_,EXTENSION,)
+#undef EXTENSION
+!!@END
+#endif

@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of mpi-extras Makefile")
+message(STATUS "(EC) Generating mpi-extras Makefile")
 
 find_package(MPI)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})

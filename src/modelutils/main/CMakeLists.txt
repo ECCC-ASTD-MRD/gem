@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of modelutils main Makefile")
+message(STATUS "(EC) Starting generation of modelutils main Makefile")
 
 set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
 
@@ -25,5 +25,4 @@ add_dependencies(flipit modelutils ${VGRID_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MAS
 add_dependencies(yydecode modelutils ${VGRID_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 add_dependencies(yyencode modelutils ${VGRID_LIBRARY_SRC} ${RMN_LIBRARY_SRC} ${MASSV_LIBRARY_SRC})
 
-install(TARGETS yy2global flipit yydecode yyencode RUNTIME
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS yy2global flipit yydecode yyencode RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

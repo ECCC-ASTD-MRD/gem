@@ -1,0 +1,52 @@
+Modifications to correct inversed gaussian grids.
+(in work) Jun 5 2015 (ok for Mark)
+Modifications from Valin to replace wordint with F2CL
+(in work_valin) Sept 10 2015
+Correct bug in ezwdint to allocate latlon vectors Jan 2016
+Replace fstinl with fstinf and fstsui in ez_lireEnrPositionnels Sept 2016
+Correct bug in gdxywdval-memory overlap, gdllfxy-memory leak (Vanh S. ) Jan 2017
+Modify ezgdef_ffile to return error code for ezqkdef(Lee V.) Apr 2017
+Correct bug in ez_eliminer_grille (Samuel Gilbert) Dec 2017
+Modify ez_corrval to return "2" for extrapolation and arranged 
+ezsint,ezuvint,ezwdint and ezyy*int to forward this value (Lee V.) Jan 2018
+Eliminate ezyy_use1subgrid.hc (Lee V.) Feb 2018
+Add JP Gauthier thread safe (Gauthier J.) Dec 2018
+Renamed f_ezscint.ftn90 to f_ezscint.F90 (Lee V)Dec 2018
+Option for CRAY O3 is applied to f_ezscint.F90 as well in make_locallib_packages (Bouhemhem D) Dec 2018
+Modify to eliminate warnings and add return 0 for int functions not returning anything (Lee V) Dec 2018
+
+Science:
+  . r.load.dot /fs/ssm/hpco/tmp/eccc/201402/06/base
+  . r.load.dot /fs/ssm/main/opt/intelcomp/intelcomp-2016.1.156 /fs/ssm/main/opt/openmpi/openmpi-1.6.5/intelcomp-2016.1.156
+
+EC:
+intel13sp1u2:
+  . ssmuse-sh -d /ssm/net/hpcs/201402/04/base -d /ssm/net/hpcs/exp/intel2016/01
+
+For GPSC
+make obj (OPTIMIZ=2)
+
+For HARE (broadwell)
+make obj OPTIMIZ=3 CFLAGS="-fast-transcendentals -no-prec-div -ip -no-prec-sqrt"
+
+For EC
+make obj
+
+git librmn (master copy - most up to date status):
+
+EC
+git clone /home/dormrb02/GIT-depots/librmn.git/
+
+Science
+git clone ~sidr000/GIT-depots/librmn.git 
+
+---- for both places:
+
+cd librmn
+-- now you have the master copy
+
+(to obtain the copy as is in library 016.2)
+git tag
+
+git checkout Release-016.2
+-- now you have the copy that is in the lib 16.2

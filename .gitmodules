@@ -1,9 +1,18 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
 	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn
+	branch = dev
+[submodule "ci-env"]
+	path = ci-env
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env
 [submodule "src/rpn-si/vgrid"]
 	path = src/rpn-si/vgrid
 	url = https://gitlab.science.gc.ca/RPN-SI/vgrid
-[submodule "src/rpn-si/librmn"]
-	path = src/rpn-si/rmn
-	url = git@gitlab.science.gc.ca:RPN-SI/librmn.git
+	branch = dev
+[submodule "src/rpn-si/rpncomm"]
+	path = src/rpn-si/rpncomm
+	url = https://gitlab.science.gc.ca/RPN-SI/rpncomm
+[submodule "src/rpn-si/rmn-20"]
+	path = src/rpn-si/rmn-20
+	url = https://gitlab.science.gc.ca/RPN-SI/librmn
+	branch=dev

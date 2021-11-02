@@ -1,4 +1,6 @@
-message(STATUS "Starting generation of gemdyn Makefile")
+message(STATUS "(EC) Generating gemdyn Makefile")
+
+add_subdirectory(no_mpi gemdyn_no_mpi)
 
 include(FindMPI)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
@@ -14,24 +16,21 @@ target_include_directories(gem PRIVATE
    ${CMAKE_SOURCE_DIR}/src/modelutils/include
    ${CMAKE_BINARY_DIR}/src/rpnphy
    ${CMAKE_BINARY_DIR}/src/modelutils
-   ${CMAKE_BINARY_DIR}/src/vgrid/lib
+   ${VGRID_INCLUDE_DIR}
    include
    base
 )
-
-# Adding specific flags for GEM
-include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
 if (NOT DEFINED ENV{CRAYPE_VERSION})
   set(EXTRA_LIBRARIES "-lopen-pal -lhwloc")
 endif()
 
+# Extra options for debug
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_DEBUG AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_compile_options( gem PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )
-    message(STATUS "Extra debug flags for gemdyn: -fcheck=bounds")
+    message(STATUS "(EC) Extra debug flags for gemdyn: -fcheck=bounds")
   endif()
 endif()
 
 add_subdirectory(main gemdyn-main)
-add_subdirectory(no_mpi gemdyn_no_mpi)

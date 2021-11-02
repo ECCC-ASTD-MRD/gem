@@ -1,0 +1,20 @@
+message(STATUS "(EC) Generating librmn Makefile")
+
+# # gmm requires MPI
+# include(FindMPI OPTIONAL)
+# set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+# set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+
+file(GLOB CSRC  */*.c template_utils/whiteboard/*.c)
+file(GLOB FTNSRC  */*.F90 */*.F */*.f */*.f90 template_utils/gmm/gmm.f90 template_utils/whiteboard/whiteboard_omp.f90 template_utils/whiteboard/whiteboard_st.f90)
+
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU") AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10))
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-invalid-boz")
+endif()
+
+add_library (rmn STATIC ${FTNSRC} ${CSRC})
+target_include_directories(rmn PRIVATE
+   base
+   template_utils
+   INTRALIB_INCLUDES
+)

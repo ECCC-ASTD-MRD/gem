@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+# Copyright 2021, Her Majesty the Queen in right of Canada
+#
+# This forms the basis for the xx-config utility, which tells you
+# various things about the library installation.
+# Usage:
+#    Copy to your project directory and remove/add packages
+#    Call this within cmake:
+#       configure_file(config.in ${CMAKE_BINARY_DIR}/${NAME}-config @ONLY)
+#       install(PROGRAMS ${CMAKE_BINARY_DIR}/${NAME}-config DESTINATION bin)
+
+cc="@CMAKE_C_COMPILER_ID@ @CMAKE_C_COMPILER_VERSION@"
+fc="@CMAKE_Fortran_COMPILER_ID@ @CMAKE_Fortran_COMPILER_VERSION@"
+cflags="@CMAKE_C_FLAGS@"
+fflags="@CMAKE_Fortran_FLAGS@"
+defs="@EC_CMAKE_DEFINITIONS@"
+libs=CMAKE_LIBS
+
+version=@VERSION@@STATE@
+env=@ECCI_ENV@
+has_rmn=@RMN_VERSION@@RMN_STATE@
+has_vgrid=@VGRID_VERSION@@VGRID_STATE@
+has_rpncomm=@RPNCOMM_VERSION@@RPNCOMM_STATE@
+
+usage()
+{
+    cat <<EOF
+Usage: @NAME@-config [OPTION]
+
+Available values for OPTION include:
+
+  --help         display this help message and exit
+  --cc           C compiler [${cc}]
+  --fc           FORTRAN compiler [${fc}]
+  --cflags       C compiler flags [${cflags}]
+  --fflags       Fortran compiler flags [${fflags}]
+  --defs         Preprocessor definitions [${defs}]
+  --version      GEM version [${version}]
+  --env          environment version used [${env}]
+  --has-rmn      which version of librmn is it compiled with [${has_rmn}]
+  --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
+  --has-rpncomm  which version of rpncomm is it compiled with [${has_rpncomm}]
+
+EOF
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    # this deals with options in the style
+    # --option=value and extracts the value part
+    # [not currently used]
+    -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) value= ;;
+    esac
+
+    case "$1" in
+
+    --help)
+	usage 0
+	;;
+
+    --cc)
+       	echo ${cc:-no}
+       	;;
+
+    --fc)
+       	echo ${fc:-no}
+       	;;
+
+    --cflags)
+       	echo ${cflags}
+       	;;
+           
+    --fflags)
+       	echo ${fflags}
+       	;;
+
+    --defs)
+       	echo ${defs}
+       	;;
+
+    --libs)
+       	echo ${libs}
+       	;;
+
+    --has-rmn)
+       	echo ${has_rmn:-no}
+       	;;
+
+  --version)
+	    echo ${version}
+	    ;;
+
+    *)
+        echo "unknown option: $1"
+	    usage 1
+	    ;;
+    esac
+    shift
+done
+
+exit 0
