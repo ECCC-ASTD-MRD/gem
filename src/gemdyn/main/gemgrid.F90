@@ -19,6 +19,7 @@
       use step_options
       use mem_nest
       use glb_ld
+      use dynkernel_options
       use HORgrid_options
       use VERgrid_options
       use lam_options
@@ -70,6 +71,11 @@
 
       unf = 0
       if (fnom (unf,fn, 'SEQ+OLD', 0) == 0) then
+         if (dynKernel_nml(unf) < 0) then
+            print *,'STOP: problem with NAMELIST &dyn_kernel'
+            print *,"Use checknml to verify: \'checknml dyn_kernel\'"
+            stop
+         endif
          if (HORgrid_nml(unf) < 0) then
             print *,'STOP: problem with NAMELIST &grid'
             print *,"Use checknml to verify: \'checknml grid\'"

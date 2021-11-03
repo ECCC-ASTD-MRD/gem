@@ -77,6 +77,7 @@
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
 
+      Cstv_pref_8 = 100000.d0
       Ver_code = 6
 
       ! Construct vertical coordinate

@@ -33,6 +33,12 @@ module dynkernel_options
    logical :: Schm_autobar_L = .false.
    namelist /dyn_kernel/ Schm_autobar_L
 
+   !# True-> Implicit metric terms in the LHS (needs 3D iterative solver)
+   !# False-> Simplified approach (allows both direct and iterative solvers)
+   logical :: LHS_metric_L = .false.
+   namelist /dyn_kernel/ LHS_metric_L 
+
+
    logical :: Dynamics_hauteur_L, Dynamics_FISL_L, Dynamics_autobar_L
 
 contains

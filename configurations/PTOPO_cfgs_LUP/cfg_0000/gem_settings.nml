@@ -116,7 +116,6 @@
  KFCRAD     = 500.       , 
  KFCDEPTH = 2000.
  KFCTRIG4   = 0.,0.,0.5,0.5,
- KFCMOM     = .false.
  deep_timeconv = '30m'
  shal_timeconv = '3h'
 /
@@ -127,9 +126,7 @@
   KNTRAD_S        = '15m'
   RADFILES        = 'std'      , 
   FOMIC           = .false.    ,
-  RADFLTR         = .true.     , 
   STRATOS         = .false.    ,
-  TS_FLXIR        = .false.    , 
   LMETOX          = .false.    ,
 
   PBL_RICRIT  	  =  0.15, 2.

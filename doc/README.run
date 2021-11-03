@@ -6,7 +6,7 @@
 . ./.common_setup
 
 # Warning: this is a development branch:
-# some configurations may not work, such as those whose name ends with ""H"
+# some configurations may not work
 
 cd gem/work[...]
 #If running OpenMP (OMP_NUM_THREADS > 1) set OMP_STACKSIZE=4G

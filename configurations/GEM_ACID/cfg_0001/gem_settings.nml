@@ -108,8 +108,6 @@
  &physics_cfgs
  MOYHR=1
  RADIA            = 'cccmarad'   ,  KNTRAD_S = '80m'
- RADFLTR          = .false.    ,
- TS_FLXIR         = .true.     ,
  STRATOS          = .true.     ,
 
  GWDRAG           = 'SGO16'    ,

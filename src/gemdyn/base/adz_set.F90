@@ -388,6 +388,7 @@
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
 
+      if (ADZ_OD_L) then
       dim = l_ni*l_nj*l_nk
       Adz_MAX_MPI_OS_SIZE= dim/4 ! estimated that no more than 25% of total local upstream positions will be exported
 
@@ -469,6 +470,7 @@
       WINSIZE   = dim * 4       ! will allocate dim reals of 4 bytes each
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEcor, Adz_wincor, ierr)
       call C_F_POINTER ( BASEcor, Adz_cor, [dim] )
+      endif
 !      
 !---------------------------------------------------------------------
 !
