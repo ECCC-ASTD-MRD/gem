@@ -31,6 +31,8 @@
       use metric
       use fislh_sol
       use dyn_fisl_options
+      use dynkernel_options
+
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -128,7 +130,9 @@
 !              Compute Rc"
 !              ~~~~~~~~~~~
                F_rc(i,j,k) = F_rc(i,j,k) + Cstv_invT_m_8* &
-                            (F_rf(i,j,k)-Ver_onezero(k)*F_rf(i,j,km))*Ver_idz_8%m(k)
+                            ((F_rf(i,j,k)-Ver_onezero(k)*F_rf(i,j,km))*Ver_idz_8%m(k) + &
+                             isol_i*mc_Iz_8(i,j,k)* &
+                             (Ver_wp_8%m(k)*F_rf(i,j,k)+Ver_wm_8%m(k)*F_rf(i,j,km)*Ver_onezero(k)))
 
 !              Compute Rc"', combining Rc" and Rt"
 !              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,7 +149,7 @@
             do i= i0, in
                F_rb(i,j) = F_rb(i,j) - (one/Cstv_tau_8+mu_8*Cstv_tau_nh_8*grav_8)*(F_nest_t(i,j,k0t)&
                                                   -Cstv_Tstr_8)/F_nest_t(i,j,k0t)
-               if (trim(Sol_type_S) == 'DIRECT') then
+               if ( .not.LHS_metric_L ) then
                   F_rc(i,j,k0) = F_rc(i,j,k0  ) + mc_cstp_8(i,j) * F_rb(i,j)
                end if
             end do

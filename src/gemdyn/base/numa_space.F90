@@ -25,7 +25,7 @@ module numa
 
       logical :: Numa_uniform_L
       integer :: Numa_sockcomm, nodecomm, Numa_peercomm, noderank, &
-                 Numa_sockrank, Numa_peerrank
+                 Numa_sockrank, Numa_peerrank, Numa_win
       integer :: Numa_cores_per_socket, Numa_active_cores_per_socket
 
 contains
@@ -49,12 +49,18 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-      ns = 20  ! cpu_per_numa() nor working correctly
+      ns = cpu_per_numa() ! Returns -1 on error such as nonuniform allocation
 
-      if (Ptopo_npey > ns) then
-         Numa_uniform_L = mod(Ptopo_npey,ns)==0
-      else
-         Numa_uniform_L = mod(ns,Ptopo_npey)==0
+      if (ns <= 0) then
+         Numa_uniform_L = .false.
+         if (lun_out > 0) write(lun_out,'(" Nonuniform allocation in numa space: Numa_uniform_L force to .F.")')
+      else ! Verify that npey divides into or is divided by numa size
+         if (Ptopo_npey > ns) then
+            Numa_uniform_L = mod(Ptopo_npey,ns)==0
+         else
+            Numa_uniform_L = mod(ns,Ptopo_npey)==0
+         endif
+         if (lun_out > 0) write(lun_out,'(" Number of cpus/numa space = ",i4,/" Numa_uniform_L = ",l)') ns,Numa_uniform_L
       endif
 
       NuRNuP= 0.
@@ -94,7 +100,7 @@ contains
 
       type(C_PTR) :: baseptr
       integer(KIND=MPI_ADDRESS_KIND) :: wsiz
-      integer :: rank,ierr,dispunit,win
+      integer :: rank,ierr,dispunit
 !
 !     ---------------------------------------------------------------
 !
@@ -109,11 +115,11 @@ contains
       dispunit = 4              ! words (integers/floats)
       wsiz = wsiz * dispunit    ! size in Bytes
       call MPI_win_allocate_shared (wsiz, dispunit, MPI_INFO_NULL,&
-                                 Numa_sockcomm, baseptr, win, ierr)
+                                 Numa_sockcomm, baseptr, Numa_win, ierr)
       if (ierr .ne. MPI_SUCCESS) return
-      call MPI_win_shared_query (win, MPI_PROC_NULL, wsiz, dispunit,&
+      call MPI_win_shared_query (Numa_win, MPI_PROC_NULL, wsiz, dispunit,&
                                  baseptr, F_err)
-!call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, win, &
+!call RPN_COMM_win_allocate_shared ( Numa_sockcomm, F_msize, Numa_win, &
 !                                          baseptr, F_err )
       nullify(F_pntr)
       call c_f_pointer( baseptr, F_pntr, [1] )

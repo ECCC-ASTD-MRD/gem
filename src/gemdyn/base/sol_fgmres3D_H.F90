@@ -20,10 +20,10 @@
       use glb_ld
       use ldnh
       use sol
-      use ptopo
-      use prec             ! Qaddouri-- Blockwise Red/Black Gauss-Seidel and jacobi preconditioners
-      use redblack_3d      ! csubich -- Red/Black (z-column) preconditioner
-      use multigrid_3d_jac ! csubich -- Multigrid (column relaxation) preconditioner
+      use prec             !A. Qaddouri-- Blockwise Red/Black Gauss-Seidel and jacobi preconditioners
+                           !A. Qdddouri & R. Aider- Restricted Additive Schwarz(RAS)
+      use redblack_3d      !C. Subich -- Red/Black (z-column) preconditioner
+      use multigrid_3d_jac !C. Subich -- Multigrid (column relaxation) preconditioner
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -88,8 +88,7 @@
       logical almost_zero
 
       real(kind=REAL64) :: ro2,rr2
-
-      integer i0, in, j0, jn
+      integer i0, in, j0, jn, ii0, iin, jj0, jjn
       integer niloc,njloc
 
       niloc = (l_ni-pil_e)-(1+pil_w)+1
@@ -103,6 +102,11 @@
       j0 = 1  + sol_pil_s
       jn = l_nj - sol_pil_n
 
+      ii0  = 1    - ovlpx
+      iin  = l_ni + ovlpx
+      jj0  = 1    - ovlpy
+      jjn  = l_nj + ovlpy
+
       outiter = 0
       nbiter = 0
 
@@ -113,7 +117,6 @@
       ! Residual of the initial iterate
       call mat_vecs3D_H3 ( solution, work_space, ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy,l_ni,l_nj,l_nk)
 
-!      call matvec(solution, work_space)
 
       ! Index 1 : Compute ||b*b|| to determine the required error for convergence
       ! Index 2 : Compute b^T*Ax for Hegedus trick
@@ -209,6 +212,11 @@
                                       Prec_xevec_8, niloc, njloc, l_nk,&
                                       Prec_ai_8, Prec_bi_8, Prec_ci_8 )
                   work_space(i0:in,j0:jn,:)=wint_82(i0:in,j0:jn,:)
+               case ('RAS') ! Restricted Additive Schwarz preconditioner
+                  wint_8(i0:in,j0:jn,:)=vv(i0:in,j0:jn,:,initer)
+                 call RASchwarz(wint_82,wint_8,ii0,iin,jj0,jjn, &
+                                    l_minx,l_maxx,l_miny,l_maxy,l_nk)
+                  work_space(i0:in,j0:jn,:)=wint_82(i0:in,j0:jn,:)
                case ('GAUSS') ! Blockwise Red/Black Gauss-Seidel preconditioner
                   wint_8(i0:in,j0:jn,:)=vv(i0:in,j0:jn,:,initer)
                   call RB_BGAUSS(wint_82,wint_8,l_minx,l_maxx,l_miny,l_maxy,l_nk)
@@ -225,7 +233,6 @@
 
             ww(i0:in,j0:jn,:,initer) = work_space(i0:in,j0:jn,:)
 
-!            call matvec ( work_space, vv(:,:,:,nextit) )
              call mat_vecs3D_H3 (  work_space,vv(:,:,:,nextit), ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy,l_ni,l_nj,l_nk)
 
 
@@ -359,6 +366,7 @@
             end if
 
          end do
+
 
          ! At this point either the maximum number of inner iterations
          ! was reached or the absolute residual is below the scaled tolerance.

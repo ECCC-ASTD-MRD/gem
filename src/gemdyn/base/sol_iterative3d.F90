@@ -71,7 +71,11 @@
                if ( Dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
                   call sol_fgmres3d (F_lhs_sol, matvec_yy, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
                elseif  ( Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
-                  call sol_fgmres3d_H (F_lhs_sol,          F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  if (LHS_metric_L) then
+                     call sol_fgmres3d_H (F_lhs_sol,  F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  else
+                     call sol_fgmres3d (F_lhs_sol, matvec_yy, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  endif
                endif
 
                if ( F_print_L ) then
@@ -97,7 +101,11 @@
 
                if (Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
                   F_lhs_sol = saved_sol
-              call sol_fgmres3d_H ( F_lhs_sol,            F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  if (LHS_metric_L) then
+                     call sol_fgmres3d_H ( F_lhs_sol,            F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  else
+                     call sol_fgmres3d ( F_lhs_sol, matvec_3d, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
+                  endif
 
                else
                   F_lhs_sol = saved_sol

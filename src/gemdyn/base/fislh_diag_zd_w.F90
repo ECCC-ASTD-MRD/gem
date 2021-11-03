@@ -115,6 +115,7 @@
 
 ! Compute W (which depends on previous computation of Zdot)
 
+         F_w=0.
          do k=1,Nk
             km=max(k-1,1)
             kp=min(k+1,Nk)
