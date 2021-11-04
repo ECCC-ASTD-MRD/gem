@@ -1,5 +1,5 @@
 variables:
-  JOB_CPUS: "20"
+  JOB_CPUS: "40"
   JOB_TMPFS: "8G"
   JOB_MEMORY: "80G"
   JOB_CHUNKS: "1"
