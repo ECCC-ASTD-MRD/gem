@@ -22,7 +22,7 @@ build_intel_dorpnsi:
   when: always
   script:
     - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
-    - ln -sf $HOME/gem_dbase .
+    - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - . ./.eccc_load_rpn
@@ -37,7 +37,7 @@ build_intel:
   when: always
   script:
     - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
-    - ln -sf $HOME/gem_dbase .
+    - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
@@ -307,7 +307,7 @@ build_gnu:
   when: always
   script:
     - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
-    - ln -sf $HOME/gem_dbase .
+    - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
     - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
