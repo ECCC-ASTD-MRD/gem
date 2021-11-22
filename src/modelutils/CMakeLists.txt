@@ -21,18 +21,10 @@ include(ec_openmp)           # Enable OpenMP (-DWITH_OPENMP=TRUE)
 
 if (NOT RMN_FOUND)
   find_package(RMN ${RMN_REQ_VERSION})
-  if (RMN_FOUND) 
-    add_compile_definitions(HAVE_RMN)
-    include_directories(${RMN_INCLUDE_DIR})
-  endif()
 endif()
 
 if (NOT VGRID_FOUND)
   find_package(VGRID ${VGRID_REQ_VERSION})
-  if (VGRID_FOUND)
-    add_compile_definitions(HAVE_VGRID)
-    include_directories(${VGRID_INCLUDE_DIR})
-  endif()
 endif()
 
 # Adding specific flags for modelutils

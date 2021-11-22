@@ -19,7 +19,6 @@ target_link_libraries(maingemdm
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv
@@ -36,7 +35,6 @@ target_link_libraries(checkdmpart
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv
@@ -53,7 +51,6 @@ target_link_libraries(gemgrid
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv
@@ -68,7 +65,6 @@ target_link_libraries(prgemnml
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv

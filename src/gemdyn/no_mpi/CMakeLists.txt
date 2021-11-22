@@ -9,7 +9,6 @@ target_link_libraries(toc2nml
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv

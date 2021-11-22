@@ -7,7 +7,6 @@ target_link_libraries(feseri
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv
@@ -21,7 +20,6 @@ target_link_libraries(prphynml
    phy
    modelutils
    vgrid
-   mpi_extras
    rpn_comm
    rmn
    massv
