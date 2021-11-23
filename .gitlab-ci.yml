@@ -11,6 +11,7 @@ stages:
   - build_intel_dorpnsi
   - build_intel
   - run_configs_intel
+  - build_xc50
 
 before_script:
     - export CLICOLOR_FORCE=1
@@ -29,6 +30,25 @@ build_intel_dorpnsi:
     - make cmake-with-system-rpn
     - make -j `nproc`
     - make -j `nproc` work
+
+build_xc50:
+  stage: build_xc50
+  tags:
+  - XC50-login
+  only:
+  - dev-submodules
+  when: always
+  script:
+    - source ci-env/latest/sles-15-skylake-64/intel-19.0.5.281.sh
+    - . ./.eccc_setup_intel
+    - . ./.eccc_initial_setup
+    - make cmake
+    - make -j `nproc`
+    - make -j `nproc` work
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - work-sles-15-skylake-64-xc50-intel-19.0.5.281
 
 build_intel:
   stage: build_intel
