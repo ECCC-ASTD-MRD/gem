@@ -98,22 +98,23 @@ else()
   execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/compiler.sh ${COMPILER_SUITE}" OUTPUT_VARIABLE COMPILER_VERSION)
 endif()
 message(STATUS "(EC) Compiler version: ${COMPILER_VERSION}")
-set(PACKAGE_PREFIX ${OS}-${COMPILER_SUITE}-${COMPILER_VERSION})
 
-if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
+#set(PACKAGE_PREFIX ${OS}-${COMPILER_SUITE}-${COMPILER_VERSION})
+set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Working environment directory")
 if(DEFINED ENV{GEM_WORK})
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "CMake Installation prefix" FORCE)
+    set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Working directory prefix" FORCE)
 else()
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/work-${PACKAGE_PREFIX}" CACHE FILEPATH "CMake Installation prefix" FORCE)
+    set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "Working directory prefix" FORCE)
 endif()
-message(STATUS "(EC) Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
-endif()
+message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
+message(STATUS "(EC) PACKAGE_PREFIX =  ${PACKAGE_PREFIX}")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 ec_build_config()      # Create build configuration script
 
 add_custom_target(work
-    /bin/mkdir -p ${CMAKE_INSTALL_PREFIX}/bin
+    COMMAND /bin/mkdir -p ${WORK_PREFIX}
+    COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/cp -avf
         $<TARGET_FILE:cclargs_lite>
         $<TARGET_FILE:flipit>
@@ -131,9 +132,9 @@ add_custom_target(work
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:r.fstinfo>
         $<TARGET_FILE:r.filetype>
-        ${CMAKE_INSTALL_PREFIX}/bin
-    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${CMAKE_INSTALL_PREFIX}
-    COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${CMAKE_INSTALL_PREFIX}
+        ${WORK_PREFIX}/bin
+    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
+    COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${WORK_PREFIX}
 
     DEPENDS
         cclargs_lite

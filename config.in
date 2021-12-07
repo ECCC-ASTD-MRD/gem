@@ -12,13 +12,14 @@
 
 cc="@CMAKE_C_COMPILER_ID@ @CMAKE_C_COMPILER_VERSION@"
 fc="@CMAKE_Fortran_COMPILER_ID@ @CMAKE_Fortran_COMPILER_VERSION@"
-cflags="@CMAKE_C_FLAGS@"
-fflags="@CMAKE_Fortran_FLAGS@"
+cflags="@EC_C_FLAGS@"
+fflags="@EC_Fortran_FLAGS@"
 defs="@EC_CMAKE_DEFINITIONS@"
 libs=CMAKE_LIBS
 
-version=@VERSION@@STATE@
-env=@ECCI_ENV@
+version=@PROJECT_VERSION@
+env=@EC_CI_ENV@
+arch=@EC_ARCH@
 has_rmn=@RMN_VERSION@@RMN_STATE@
 has_vgrid=@VGRID_VERSION@@VGRID_STATE@
 has_rpncomm=@RPNCOMM_VERSION@@RPNCOMM_STATE@
@@ -38,9 +39,9 @@ Available values for OPTION include:
   --defs         Preprocessor definitions [${defs}]
   --version      GEM version [${version}]
   --env          environment version used [${env}]
+  --arch         architecture of build [${arch}]
   --has-rmn      which version of librmn is it compiled with [${has_rmn}]
   --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
-  --has-rpncomm  which version of rpncomm is it compiled with [${has_rpncomm}]
 
 EOF
 }
@@ -92,10 +93,22 @@ while test $# -gt 0; do
        	echo ${has_rmn:-no}
        	;;
 
-  --version)
+    --has-vgrid)
+       	echo ${has_vgrid:-no}
+       	;;
+
+    --version)
 	    echo ${version}
 	    ;;
-
+        
+    --env)
+       echo ${env}
+       ;;
+       
+    --arch)
+       echo ${arch}
+       ;;
+       
     *)
         echo "unknown option: $1"
 	    usage 1

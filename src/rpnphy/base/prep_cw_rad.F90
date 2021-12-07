@@ -22,14 +22,14 @@ module prep_cw_rad
 contains
 
    !/@*
-   subroutine prep_cw_rad3(f, fsiz, d, dsiz, v, vsiz, &
+   subroutine prep_cw_rad3(fbus, dbus, &
         tm, qm, ps, sigma, cloud, &
         liqwcin, icewcin, liqwpin, icewpin, &
         trav2d,  &
         kount, trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
-      use tdpack_const, only: GRAV, TCDK
+      use tdpack_const, only: GRAV, TCDK, RGASD
       use phy_options
       use phybus
       use series_mod, only: series_xst
@@ -38,9 +38,6 @@ contains
       !@Object  Prepare liquid/ice water contents and cloudiness for the radiation
       !@Arguments
       !     - input -
-      !     dsiz     dimension of d
-      !     fsiz     dimension of f
-      !     vsiz     dimension of v
       !     tm       temperature
       !     qm       specific humidity
       !     ps       surface pressure
@@ -58,9 +55,8 @@ contains
       !     icewpin  in-cloud ice    water path (g/m^2)
       !     cloud    cloudiness passed to radiation
 
-      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk, nkm1
-      integer, intent(in) ::  kount, trnch
-      real, intent(inout), target ::  f(fsiz), d(dsiz), v(vsiz)
+      integer, intent(in) :: kount, trnch, ni, nk, nkm1
+      real, pointer, contiguous :: dbus(:), fbus(:)
       real, intent(inout) :: tm(ni,nk), qm(ni,nk), ps(ni), sigma(ni,nk)
       real, intent(inout) :: liqwcin(ni,nk), icewcin(ni,nk)
       real, intent(inout) :: liqwpin(ni,nk), icewpin(ni,nk)
@@ -74,113 +70,63 @@ contains
       include "surface.cdk"
       include "nocld.cdk"
 
-      real, dimension(ni,nkm1) :: frac, lwcth, tcel, vtcel, vliqwcin
+      real, dimension(ni,nkm1) ::  frac, lwcth, tcel, vtcel, vliqwcin, twcdens
+      real rhoa
 
       integer :: i, k
       real    :: dp, lwcm1, iwcm1, zz, rec_grav, press
-      logical :: nostrlwc, readfield_L
+      logical :: nostrlwc, hascond_L
 
-      real, pointer :: znt(:)
-      real, pointer, dimension(:,:) :: zftot, ziwc, zlwc, zqcplus, &
+      real, pointer, contiguous :: znt(:)
+      real, pointer, dimension(:,:), contiguous :: zftot, ziwc, zlwc, zqcplus, &
            zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
       !----------------------------------------------------------------
 
-      MKPTR1D(znt, nt, f)
+      MKPTR1D(znt, nt, fbus)
 
-      MKPTR2D(zftot, ftot, f)
-      MKPTR2D(ziwc, iwc, f)
-      MKPTR2D(zlwc, lwc, f)
-      MKPTR2D(zqcplus, qcplus, d)
-      MKPTR2D(zqi_cat1, qti1plus, d)
-      MKPTR2D(zqi_cat2, qti2plus, d)
-      MKPTR2D(zqi_cat3, qti3plus, d)
-      MKPTR2D(zqi_cat4, qti4plus, d)
-      MKPTR2D(zqiplus, qiplus, d)
-      MKPTR2D(zsnow, qnplus, d)
+      MKPTR2D(zftot, ftot, fbus)
+      MKPTR2D(ziwc, iwc, fbus)
+      MKPTR2D(zlwc, lwc, fbus)
+      MKPTR2D(zqcplus, qcplus, dbus)
+      MKPTR2D(zqi_cat1, qti1plus, dbus)
+      MKPTR2D(zqi_cat2, qti2plus, dbus)
+      MKPTR2D(zqi_cat3, qti3plus, dbus)
+      MKPTR2D(zqi_cat4, qti4plus, dbus)
+      MKPTR2D(zqiplus, qiplus, dbus)
+      MKPTR2D(zsnow, qnplus, dbus)
 
       call init2nan(frac, lwcth, tcel, vtcel, vliqwcin)
 
       rec_grav = 1./GRAV
       nostrlwc = (climat.or.stratos)
+      hascond_L = (stcond /= 'NIL')
 
-      if (kount == 0) then
-         if (inilwc) then
-            if (stcond /= 'NIL' ) then
+      if (kount == 0 .and. inilwc .and. hascond_L) then
+         !     initialiser le champ d'eau nuageuse ainsi que la
+         !     fraction nuageuse pour l'appel a la radiation a kount=0
+         !     seulement.
+         !     ces valeurs seront remplacees par celles calculees dans
+         !     les modules de condensation.
 
-               !     initialiser le champ d'eau nuageuse ainsi que la
-               !     fraction nuageuse pour l'appel a la radiation a kount=0
-               !     seulement.
-               !     ces valeurs seront remplacees par celles calculees dans
-               !     les modules de condensation.
-
-               call cldwin(zftot, zlwc, tm, qm, ps, &
-                    trav2d, sigma, ni, nkm1, satuco)
-            endif
-         endif
+         call cldwin(zftot, zlwc, tm, qm, ps, &
+              trav2d, sigma, ni, nkm1, satuco)
       endif
 
       !     Diagnostic initialization of QC has been suppressed (because
       !     QC has been read as an input).  ftot still comes from cldwin
       !     if inilwc==.true., but lwc is replaced by the input value here.
-      IF_MP: if (stcond(1:2) == 'MP')then
-         readfield_L = .false.
-         if ( any(dyninread_list_s == 'qc') .or. &
-              any(phyinread_list_s(1:phyinread_n) == 'tr/mpqc:p') ) then
-            readfield_L = .true.
-            do k = 1,nkm1
-               do i = 1,ni
-                  zlwc(i,k) = zqcplus(i,k)
-               enddo
-            enddo
-         endif
 
-         if (stcond(1:6) == 'MP_MY2' .and. &
-              (any(dyninread_list_s == 'mpqi') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqi:p')) .and. &
-              (any(dyninread_list_s == 'mpqs') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqs:p')) ) then
-            readfield_L = .true.
-            ziwc = zqiplus + zsnow
-
-         elseif (stcond == 'MP_P3' .and. &
-              (any(dyninread_list_s == 'qti1') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti1:p')) ) then
-            readfield_L = .true.
-            ziwc = zqi_cat1
-            if (p3_ncat >= 2 .and. &
-                 (any(dyninread_list_s == 'qti2') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti2:p')) ) then
-               ziwc = ziwc + zqi_cat2
-               if (p3_ncat >= 3 .and. &
-                    (any(dyninread_list_s == 'qti3') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti3:p')) ) then
-                  ziwc = ziwc + zqi_cat3
-                  if (p3_ncat >= 4 .and. &
-                       (any(dyninread_list_s == 'qti4') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti4:p')) ) then
-                     ziwc = ziwc + zqi_cat4
-                  endif
-               endif
-            endif
-         endif
-         if (readfield_L) then
-            do k = 1,nkm1
-               do i = 1,ni
-                  if (zlwc(i,k)+ziwc(i,k) > 1.e-6) then
-                     zftot(i,k) = 1
-                  else
-                     zftot(i,k) = 0
-                  endif
-               enddo
+      if ((any(dyninread_list_s == 'qc') .or. &
+           any(phyinread_list_s(1:phyinread_n) == 'tr/qc:p')) .and. &
+           .not. any(phyinread_list_s(1:phyinread_n) == 'lwc') ) then
+         call cldwin(zftot, zlwc, tm, qm, ps, &
+              trav2d, sigma, ni, nkm1, satuco)
+         do k = 1,nkm1
+            do i = 1,ni
+               zlwc(i,k) = zqcplus(i,k)
             enddo
-         endif
-      else  !# IF_MP
-         if ((any(dyninread_list_s == 'qc') .or. &
-              any(phyinread_list_s(1:phyinread_n) == 'tr/qc:p')) .and. &
-              .not. any(phyinread_list_s(1:phyinread_n) == 'lwc') ) then
-            call cldwin(zftot, zlwc, tm, qm, ps, &
-                 trav2d, sigma, ni, nkm1, satuco)
-            do k = 1,nkm1
-               do i = 1,ni
-                  zlwc(i,k) = zqcplus(i,k)
-               enddo
-            enddo
-         endif
-      endif IF_MP
+         enddo
+      endif
 
       !     For maximum of lwc (when using newrad) or Liquid water content when
       !     istcond=1 Always execute this part of the code to allow calculation
@@ -189,7 +135,7 @@ contains
       call liqwc(lwcth, sigma, tm, ps, ni, nkm1, ni, satuco)
 
       !     extracted from newrad3
-      
+
       do k = 1,nkm1
          do i = 1,ni
             cloud(i,k) = zftot(i,k)
@@ -224,14 +170,9 @@ contains
       DO_K: do k = 1,nkm1
          do i = 1,ni
             liqwcin(i,k) = max(zlwc(i,k),0.)
-            if     (cw_rad <= 1) then
-               icewcin(i,k) = 0.0
-            else
-               icewcin(i,k) = max(ziwc(i,k),0.)
-            endif
+            icewcin(i,k) = 0.0
 
-            if (stcond == 'CONSUN') then
-
+            if (hascond_L) then
                if ((liqwcin(i,k)+icewcin(i,k)) > 1.e-6) then
                   cloud(i,k) = max(cloud(i,k) ,0.01)
                else
@@ -249,7 +190,7 @@ contains
             cloud(i,k) = min(cloud(i,k),1.)
             cloud(i,k) = max(cloud(i,k),0.)
 
-            if (cw_rad > 0) then
+            if (hascond_L) then
 
                !     Normalize water contents to get in-cloud values
 
@@ -259,45 +200,37 @@ contains
 
                !     Consider diabatic lifting limit when Sundquist scheme only
 
-               if ( .not. stcond(1:2) == 'MP')  then
-                  liqwcin(i,k) = min(lwcm1,lwcth(i,k))
-                  icewcin(i,k) = min(iwcm1,lwcth(i,k))
-               else
-                  liqwcin(i,k) = lwcm1
-                  icewcin(i,k) = iwcm1
-               endif
+               liqwcin(i,k) = min(lwcm1,lwcth(i,k))
+               icewcin(i,k) = min(iwcm1,lwcth(i,k))
+
             endif
 
-            if     (cw_rad < 2) then
-               !       calculation of argument for call vsexp
-               tcel(i,k) = tm(i,k)-TCDK
-               vtcel(i,k) = -.003102*tcel(i,k)*tcel(i,k)
-            endif
+            !       calculation of argument for call vsexp
+            tcel(i,k) = tm(i,k)-TCDK
+            vtcel(i,k) = -.003102*tcel(i,k)*tcel(i,k)
 
          end do
       end do DO_K
 
       !     liquid/solid water partition when not provided by
-      !     microphysics scheme ( i.e. cw_rad<2 )
+      !     microphysics scheme
       !     as in cldoptx4 of phy4.2 - after Rockel et al, Beitr. Atmos. Phys, 1991,
       !     p.10 (depends on T only [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
 
-      if (cw_rad < 2) then
-         call VSEXP(frac, vtcel, nkm1*ni)
-         do k = 1,nkm1
-            do i = 1,ni
-               if (tcel(i,k) >= 0.) then
-                  frac(i,k) = 1.0
-               else
-                  frac(i,k) = .0059+.9941*frac(i,k)
-               endif
-               if (frac(i,k) < 0.01) frac(i,k) = 0.
+      call VSEXP(frac, vtcel, nkm1*ni)
+      do k = 1,nkm1
+         do i = 1,ni
+            if (tcel(i,k) >= 0.) then
+               frac(i,k) = 1.0
+            else
+               frac(i,k) = .0059+.9941*frac(i,k)
+            endif
+            if (frac(i,k) < 0.01) frac(i,k) = 0.
 
-               icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
-               liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
-            enddo
+            icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
+            liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
          enddo
-      endif
+      enddo
 
       !     calculate in-cloud liquid and ice water paths in each layer
       !     note: the calculation of the thickness of the layers done here is not
@@ -367,7 +300,7 @@ contains
 
                !     Normalize water contents to get in-cloud values
 
-               if (cw_rad > 0) then
+               if (hascond_L) then
                   !               zz = Max(cloud(i,k),0.01)
                   zz = max(cloud(i,k),0.05)
                   liqwcin(i,k) = liqwcin(i,k)/zz
@@ -378,41 +311,53 @@ contains
 
 
          !    calculate liquid/solid water partition when not provided by
-         !    microphysics scheme ( i.e. cw_rad<2 )
+         !    microphysics scheme
          !    ioptpart=1 : as for newrad - after Rockel et al, Beitr. Atmos. Phys, 1991,
          !    p.10 (depends on T only) [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
          !    ioptpart=2 : after Boudala et al. (2004), QJRMS, 130, pp. 2919-2931.
          !    (depends on T and twc) [frac=twc^(0.141)*exp(0.037*(tcel))]
          !    PV; feb 2016: simplification of code, eliminate ioptpart=1; if you want it DIY
 
-         IF_CWRAD_2: if (cw_rad < 2) then
+         if (.not.prep_cw_rad_fix_l) then
             do k = 1,nkm1
                do i = 1,ni
                   tcel(i,k) = tm(i,k)-TCDK
                   vtcel(i,k) = .037*tcel(i,k)
                enddo
             enddo
-            call VSPOWN1(vliqwcin, liqwcin, 0.141, nkm1*ni)
-            call VSEXP(frac, vtcel, nkm1*ni)
+            call VSPOWN1(vliqwcin, liqwcin, 0.141, nkm1*ni) !ancien-bug-defaut
+         else
             do k = 1,nkm1
                do i = 1,ni
-                  frac(i,k) = vliqwcin(i,k)*frac(i,k)
+                  tcel(i,k) = tm(i,k)-TCDK
+                  vtcel(i,k) = .037*tcel(i,k)
+                  press = sigma(i,k)*ps(i)
+                  rhoa = press/(tm(i,k)*RGASD)
+                  twcdens(i,k) = rhoa*liqwcin(i,k)*1000.
                enddo
             enddo
-            do k = 1,nkm1
-               do I = 1,ni
-                  if (tcel(i,k) >= 0.) then
-                     frac(i,k) = 1.0
-                  elseif (tcel(i,k) < -38.) then
-                     frac(i,k) = 0.0
-                  endif
-                  if (frac(i,k) < 0.01) frac(i,k) = 0.
+            call VSPOWN1(vliqwcin, twcdens, 0.141, nkm1*ni) !nouveau-debug
+         endif
 
-                  icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
-                  liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
-               enddo
+         call VSEXP(frac, vtcel, nkm1*ni)
+         do k = 1,nkm1
+            do i = 1,ni
+               frac(i,k) = vliqwcin(i,k)*frac(i,k)
             enddo
-         endif IF_CWRAD_2
+         enddo
+         do k = 1,nkm1
+            do I = 1,ni
+               if (tcel(i,k) >= 0.) then
+                  frac(i,k) = 1.0
+               elseif (tcel(i,k) < -38.) then
+                  frac(i,k) = 0.0
+               endif
+               if (frac(i,k) < 0.01) frac(i,k) = 0.
+
+               icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
+               liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
+            enddo
+         enddo
 
          !    calculate in-cloud liquid and ice water paths in each layer
          !    note: the calculation of the thickness of the layers done here is

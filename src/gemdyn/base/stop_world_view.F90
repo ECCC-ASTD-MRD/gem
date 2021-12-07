@@ -19,11 +19,14 @@
       use phy_itf, only: phy_terminate
       use step_options
       use gem_options
+      use dyn_fisl_options
       use ctrl
       use lun
       use path
       use clib_itf_mod
       use adz_mem
+      use inp_mod
+      use numa
       use ptopo
       use version
       use gem_timing
@@ -69,6 +72,26 @@
 
       call gemtime_stop ( 1 )
       call gemtime_terminate( Ptopo_myproc, 'GEMDM' )
+
+!     Free all one-sided MPI windows
+      call MPI_Win_free  (Inp_window,err)
+      if (ADZ_OD_L) then
+          call MPI_Win_free  (Adz_Win_list,err)
+          call MPI_Win_free  (Adz_Win_pos,err)
+          call MPI_Win_free  (Adz_expq%winreqs,err)
+          call MPI_Win_free  (Adz_expu%winreqs,err)
+          call MPI_Win_free  (Adz_expv%winreqs,err)
+          call MPI_Win_free  (Adz_expt%winreqs,err)
+          call MPI_Win_free  (Adz_offs_win,err)
+          call MPI_Win_free  (Adz_expq%wintraj,err)
+          call MPI_Win_free  (Adz_expu%wintraj,err)
+          call MPI_Win_free  (Adz_expv%wintraj,err)
+          call MPI_Win_free  (Adz_expt%wintraj,err)
+          call MPI_Win_free  (Adz_wincor,err)
+      endif
+      if (sol_one_transpose_L) then
+          call MPI_Win_free  (Numa_win,err)
+      endif
 
       if (Lun_out > 0) then
          if (ADZ_OD_L) then

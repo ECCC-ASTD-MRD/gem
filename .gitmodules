@@ -16,3 +16,7 @@
 	path = src/rpn-si/rmn-20
 	url = https://gitlab.science.gc.ca/RPN-SI/librmn
 	branch=dev
+[submodule "src/modelutils"]
+	path = src/modelutils
+	url = https://gitlab.science.gc.ca/cpi001/modelutils
+	branch=modelutils_1.7-branch_cmake

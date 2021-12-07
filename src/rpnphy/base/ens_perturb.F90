@@ -20,6 +20,7 @@ module ens_perturb
   private
 #include <rmnlib_basics.hf>
 #include <msg.h>
+#include "phymkptr.hf"
 
   ! Procedure overloading
   interface ens_spp_get
@@ -281,15 +282,15 @@ contains
   end function spp_index
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine ens_ptp_apply(d,v,f,dsiz,fsiz,vsiz,ni,nk,kount)
+  subroutine ens_ptp_apply(dbus,vbus,fbus,ni,nk,kount)
     use tdpack_const
     use phy_options
     use phybus
     implicit none
 !!!#include <arch_specific.hf>
 
-    integer dsiz,fsiz,vsiz,ni,nk,kount
-    real, target :: d(dsiz), f(fsiz), v(vsiz)
+    integer, intent(in) :: ni,nk,kount
+    real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
     real fac_ptp_m,fac_ptp_t,fac_convec
 
@@ -304,12 +305,9 @@ contains
     !@arguments
     !  Name        I/O                 Description
     !----------------------------------------------------------------
-    ! d             I                  dynamics input field
-    ! v            I/O                 physics tendencies
-    ! f             I                  historic variables for the physics
-    ! dsiz          I                  dimension of d
-    ! fsiz          I                  dimension of f
-    ! vsiz          I                  dimension of v
+    ! dbus          I                  dynamics input field
+    ! vbus         I/O                 physics tendencies
+    ! fbus          I                  historic variables for the physics
     ! ni            I                  horizontal running length
     ! nk            I                  vertical dimension
     !----------------------------------------------------------------
@@ -333,8 +331,8 @@ contains
     !             _
     !            1.0
     !
-    real, pointer, dimension(:)   :: zabekfc, zmrk2
-    real, pointer, dimension(:,:) :: zsigm, zsigt, &
+    real, pointer, dimension(:), contiguous   :: zabekfc, zmrk2
+    real, pointer, dimension(:,:), contiguous :: zsigm, zsigt, &
          ztplus, zuplus, zvplus, zwplus, &
          ztphytd, zuphytd, zvphytd
     !----------------------------------------------------------------
@@ -343,17 +341,17 @@ contains
     call msg_toall(MSG_DEBUG, 'ens_ptp [BEGIN]')
     if (timings_L) call timing_start_omp(455, 'ens_ptp', 46)
 
-    nullify(zabekfc); if (abekfc > 0) zabekfc(1:ni) => f( abekfc:)
-    zmrk2  (1:ni)      => f( mrk2:)
-    zsigm  (1:ni,1:nk) => d( sigm:)
-    zsigt  (1:ni,1:nk) => d( sigt:)
-    ztplus (1:ni,1:nk) => d( tplus:)
-    zuplus (1:ni,1:nk) => d( uplus:)
-    zvplus (1:ni,1:nk) => d( vplus:)
-    zwplus (1:ni,1:nk) => d( wplus:)
-    ztphytd(1:ni,1:nk) => v( tphytd:)
-    zuphytd(1:ni,1:nk) => v( uphytd:)
-    zvphytd(1:ni,1:nk) => v( vphytd:)
+    MKPTR1D(zabekfc, abekfc, fbus)
+    MKPTR1D(zmrk2, mrk2, fbus)
+    MKPTR2D(zsigm, sigm, dbus)
+    MKPTR2D(zsigt, sigt, dbus)
+    MKPTR2D(ztplus, tplus, dbus)
+    MKPTR2D(zuplus, uplus, dbus)
+    MKPTR2D(zvplus, vplus, dbus)
+    MKPTR2D(zwplus, wplus, dbus)
+    MKPTR2D(ztphytd, tphytd, vbus)
+    MKPTR2D(zuphytd, uphytd, vbus)
+    MKPTR2D(zvphytd, vphytd, vbus)
 
     if (kount.lt.1) then
        do i=1,ni

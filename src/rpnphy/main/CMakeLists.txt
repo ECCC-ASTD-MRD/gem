@@ -1,7 +1,5 @@
 message(STATUS "(EC) Generating rpnphy main Makefile")
 
-set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
-
 add_executable(feseri mainfeseri.F90)
 target_link_libraries(feseri
    phy

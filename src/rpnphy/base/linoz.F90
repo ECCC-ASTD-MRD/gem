@@ -22,7 +22,7 @@ module linoz
 contains
 
    !/@*
-   subroutine linoz3(d,v,f,dsiz,vsiz,fsiz,dt,kount,trnch,ni,nkm1,nk)
+   subroutine linoz3(dbus, vbus, fbus, dt, kount, ni, nkm1, nk)
       use iso_c_binding
       use debug_mod, only: init2nan
       use tdpack_const, only: CAPPA, CONSOL2, GRAV, PI, STEFAN, RGASD
@@ -44,13 +44,13 @@ contains
       ! dt       timestep
       ! trnch    index of vertical slice n*nk
       ! kount    number of timesteps
-      ! v        volatile bus
-      ! f        permanent bus
-      ! d        dynamics bus
+      ! vbus     volatile bus
+      ! fbus     permanent bus
+      ! dbus     dynamics bus
 
-      integer,    intent(in)    :: ni,nkm1,nk,dsiz,vsiz,fsiz,kount,trnch
-      real,       intent(in)    :: dt
-      real,target,intent(inout) :: d(dsiz), v(vsiz), f(fsiz)
+      integer, intent(in) :: ni, nkm1, nk, kount
+      real,    intent(in) :: dt
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@author J. de Grandpre (ARQI): February 2013
       !@revisions
@@ -81,10 +81,10 @@ contains
       ! zo3lplus  linoz tracer (t*)        3D  o3    mmr (micro g /kg air)
       ! ziarplus age of air                3D  air   seconds
 
-      real, dimension(ni, nkm1) :: ptop,pbot       ! nk-1 layers
-      real, dimension(ni, nk)   :: shtj,s_qrt      ! nk "flux" levels
+      real, dimension(ni, nkm1) :: ptop, pbot       ! nk-1 layers
+      real, dimension(ni, nk)   :: shtj, s_qrt      ! nk "flux" levels
 
-      real, dimension(ni, nkm1) :: o3_vmr,o3c_vmr,ch4_vmr,n2o_vmr,f11_vmr,f12_vmr ! nk-1 layers
+      real, dimension(ni, nkm1) :: o3_vmr, o3c_vmr, ch4_vmr, n2o_vmr, f11_vmr, f12_vmr ! nk-1 layers
       real, dimension(ni, nkm1) :: o3new, ch4new, f11new, f12new, n2onew          !GMV3
 
       integer :: i, k, ni2
@@ -102,7 +102,7 @@ contains
 #undef PHYPTRDCL
 #include "linoz_ptr.hf"
 
-      call init2nan(o3new,ch4new,n2onew,f11new,f12new)   !GMV3
+      call init2nan(o3new, ch4new, n2onew, f11new, f12new)   !GMV3
       
       ! Calculate age of air
       !

@@ -22,7 +22,7 @@ module gwd
 contains
 
    !/@*
-   subroutine gwd9(d, f, vb, sized, sizef, sizev, &
+   subroutine gwd9(dbus, fbus, vbus, &
         std_p_prof, tau, kount, trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -39,8 +39,8 @@ contains
       !@Object model the gravity wave drag
       !@Arguments
 
-      integer, intent(in) :: sized, sizef, sizev, trnch, ni, nk, nkm1, kount
-      real, target, intent(inout) :: d(sized), f(sizef), vb(sizev)
+      integer, intent(in) :: trnch, ni, nk, nkm1, kount
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: std_p_prof(nk)
       real, intent(in) :: tau
 
@@ -100,11 +100,11 @@ contains
       integer :: j, k
       logical :: split_tend_L
 
-      real, pointer, dimension(:)   :: p, zdhdxdy, zdhdx, zdhdy, &
+      real, pointer, dimension(:), contiguous   :: p, zdhdxdy, zdhdx, zdhdy, &
            zlhtg, zmg, zmtdir, zslope, zxcent, ztdmask
-      real, pointer, dimension(:,:) :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
+      real, pointer, dimension(:,:), contiguous :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
            rtn, zhuplus, zugwdtd1, zvgwdtd1, zmrk2
-      real, pointer, dimension(:,:,:) :: zvcoef
+      real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !--------------------------------------------------------------------
 
       if (gwdrag == 'NIL' .and. .not.non_oro) return
@@ -119,36 +119,36 @@ contains
       call init2nan(tt, te, uu, vv, sigma, s1, s2, s3)
       call init2nan(utendno , vtendno, ttendno)
       
-      MKPTR1D(p, pmoins, f)
-      MKPTR1D(zdhdx, dhdx, f)
-      MKPTR1D(zdhdxdy, dhdxdy, f)
-      MKPTR1D(zdhdy, dhdy, f)
-      MKPTR1D(zlhtg, lhtg, f)
-      MKPTR1D(zmg, mg, f)
-      MKPTR1D(zmtdir, mtdir, f)
-      MKPTR1D(zslope, slope, f)
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR1D(zxcent, xcent, f)
+      MKPTR1D(p, pmoins, fbus)
+      MKPTR1D(zdhdx, dhdx, fbus)
+      MKPTR1D(zdhdxdy, dhdxdy, fbus)
+      MKPTR1D(zdhdy, dhdy, fbus)
+      MKPTR1D(zlhtg, lhtg, fbus)
+      MKPTR1D(zmg, mg, fbus)
+      MKPTR1D(zmtdir, mtdir, fbus)
+      MKPTR1D(zslope, slope, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR1D(zxcent, xcent, fbus)
 
-      MKPTR2Dm1(rtg, tgwd, vb)
-      MKPTR2Dm1(rtn, tgno, vb)
-      MKPTR2Dm1(rug, ugwd, vb)
-      MKPTR2Dm1(run, ugno, vb)
-      MKPTR2Dm1(rvg, vgwd, vb)
-      MKPTR2Dm1(rvn, vgno, vb)
-      MKPTR2Dm1(s, sigm, d)
-      MKPTR2Dm1(u, uplus, d)
-      MKPTR2Dm1(v, vplus, d)
+      MKPTR2Dm1(rtg, tgwd, vbus)
+      MKPTR2Dm1(rtn, tgno, vbus)
+      MKPTR2Dm1(rug, ugwd, vbus)
+      MKPTR2Dm1(run, ugno, vbus)
+      MKPTR2Dm1(rvg, vgwd, vbus)
+      MKPTR2Dm1(rvn, vgno, vbus)
+      MKPTR2Dm1(s, sigm, dbus)
+      MKPTR2Dm1(u, uplus, dbus)
+      MKPTR2Dm1(v, vplus, dbus)
 
-      MKPTR2Dm1(zugwdtd1, ugwd_td1, vb)
-      MKPTR2Dm1(zvgwdtd1, vgwd_td1, vb)
+      MKPTR2Dm1(zugwdtd1, ugwd_td1, vbus)
+      MKPTR2Dm1(zvgwdtd1, vgwd_td1, vbus)
 
-      MKPTR2D(zhuplus, huplus, d)
-      MKPTR2D(ztplus, tplus, d)
+      MKPTR2D(zhuplus, huplus, dbus)
+      MKPTR2D(ztplus, tplus, dbus)
 
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
       
-      MKPTR3D(zvcoef, vcoef, 2, vb)
+      MKPTR3D(zvcoef, vcoef, 2, vbus)
 
       split_tend_L = (associated(zugwdtd1) .and. associated(zvgwdtd1))
       if (.not.split_tend_L) then

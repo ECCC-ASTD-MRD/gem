@@ -29,7 +29,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fa, absa, lcsw, lclw, mrk2, luvonly, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
-   use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   use phy_options, only: RAD_NUVBRANDS, rad_atmpath, rad_sun_angle_fix_l
    use ens_perturb, only: ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
@@ -179,7 +179,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    real, dimension(ilg,lay) :: cldmg
    real, dimension(ilg) :: o3topg
    real, dimension(ilg) :: albsur
-   real, dimension(ilg) :: rmug
+   real, dimension(ilg) :: rmug, rmu0
    real, dimension(ilg) :: dmix
    integer, dimension(ilg,lay) :: inptg
    integer, dimension(ilg,lay) :: inptmg
@@ -500,6 +500,11 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
+      if (.not.rad_sun_angle_fix_l) then
+         rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
+      else
+         rmu0(ilg1:ilg2) = rmu(ilg1:ilg2)
+      endif      
 
       DO230: do i = ilg1, ilg2
          j = isun(i)
@@ -643,7 +648,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
       !     fcfb:  CLEAR SKY ,DOWNWARD AT THE SURFACE DIFFUSE FLUX, for 6 VIS-UV bands
       !----------------------------------------------------------------------
 
-      DO480: do ib = 1, nbs
+      DONBS: do ib = 1, nbs
 
          do i = ilg1, ilg2
             j = isun(i)
@@ -733,7 +738,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          gh = .false.
 
-         DO400: do ig = 1, kgs(ib)
+         DOMAJSW: do ig = 1, kgs(ib)
 
             if (ib .eq. 1) then
 
@@ -836,7 +841,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                     a1g(i,1) * cumdtr(i,2,lev) + &
                     a1g(i,2) * cumdtr(i,3,lev) + &
                     a1g(i,3) * cumdtr(i,4,lev)
-               a1(i,2)             =  rgw * rmug(i)
+               a1(i,2)             =  rgw * rmu0(i)
                fsd(j)              =  fsd(j) + x * bs(i) * a1(i,2)
                cst(j)              =  cst(j) + (1.0 - refl(i,1,1) * &
                     a1(i,1)) * a1(i,2)
@@ -927,7 +932,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                enddo
             endif
 
-         enddo DO400
+         enddo DOMAJSW
 
         if (ib == 1 .and. luvonly) return
 
@@ -939,7 +944,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          gh = .true.
 
-         DO450: do ig = 1, kgsgh(ib)
+         DOMINSW: do ig = 1, kgsgh(ib)
 
             call ccc2_sattenu4(a1, ib, ig, rmug, o3topg, co2g, ch4g, o2g, &
                  pfullg, a1g(1,12), dts, a1(1,5), inptg, gh, &
@@ -972,7 +977,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
             do i = ilg1, ilg2
                j = isun(i)
-               a1(i,2)             =  rgw * rmug(i)
+               a1(i,2)             =  rgw * rmu0(i)
                cst(j)              =  cst(j) + a1(i,2)
                csb(j)              =  csb(j) + tran(i,1,lev) * a1(i,2)
 
@@ -991,7 +996,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
                enddo
             enddo
-         enddo DO450
+         enddo DOMINSW
 
          if (ib .eq. 1) then
             do i = ilg1, ilg2
@@ -999,7 +1004,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
             enddo
          endif
 
-      enddo DO480
+      enddo DONBS
 
       !----------------------------------------------------------------------
       !     gather back required field. for planetary albedo the incoming
@@ -1015,7 +1020,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          !        cst(j)                  =  cst(j) + fslo(j)
          albpla(j)               = (flxu(i,1) + a1(i,4)) / &
-              (rsolarc * rmug(i))
+              (rsolarc * rmu0(i))
       enddo
       !     on veut les flux en sortie
       !     make sure that sw heating rate is never negative
@@ -1081,7 +1086,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
       call ccc2_preintr3 (inpr, pg, qg, co2, tauomc, il1, il2, ilg, lay)
 
-      DO900: do ib = 1, nbl
+      DONBL: do ib = 1, nbl
 
          !----------------------------------------------------------------------
          !     using c1 space for slwf which is the input solar energy in the
@@ -1129,7 +1134,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          gh = .false.
 
-         DO700: do ig = 1, kgl(ib)
+         DOMAJLW: do ig = 1, kgl(ib)
 
             call ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qg, co2, ch4, an2o, &
                  f11, f12, f113, f114, inpr, inptm, mcont, pg, &
@@ -1197,13 +1202,13 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                enddo
             endif
 
-         enddo DO700
+         enddo DOMAJLW
 
          if (ib .ne. 6) then
 
             gh = .true.
 
-            DO800: do ig = 1, kglgh(ib)
+            DOMINLW: do ig = 1, kglgh(ib)
 
                call ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qg, co2, ch4, &
                     an2o, inpt, mcont, dip, dt, lev1, gh, &
@@ -1290,10 +1295,10 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                        (refl(i,1,lev) - tran(i,1,lev)) * pgw
                enddo
 
-            enddo DO800
+            enddo DOMINLW
 
          endif
-      enddo DO900
+      enddo DONBL
 
       do i = il1, il2
          fdl(i)                  =  flxd(i,lev)

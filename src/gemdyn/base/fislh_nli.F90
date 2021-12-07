@@ -76,7 +76,7 @@
          call rpn_comm_xch_halo( F_q, l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_nk+1, &
                                  G_halox, G_haloy, G_periodx, G_periody, l_ni, 0 )
       end if
-      
+
       i_hydro=0.d0
       if (Dynamics_hydro_L) then
          i_hydro=1.d0
@@ -294,7 +294,7 @@
          end do
       end do
 
-      if((Schm_opentop_L) .and. trim(Sol_type_S) == 'DIRECT') then
+      if((Schm_opentop_L) .and. (.not.LHS_metric_L )) then
          F_rhs(:,:,1:k0t) = 0.0
          do j= j0, jn
             do i= i0, in
@@ -314,12 +314,12 @@
          end do
       end do
 
-      if ( trim(Sol_type_S) == 'ITERATIVE_3D') then
+      if (LHS_metric_L) then
 
          call  boundary ( F_rhs,F_rt,F_rf,F_nt,Minx,Maxx,Miny,Maxy, &
                           Nk,ni,nj,i0,j0,in,jn )
          if (Schm_opentop_L) then
-          call  boundary_Top(F_rhs,F_rb,F_nb,Minx,Maxx,Miny,Maxy, &
+            call  boundary_Top(F_rhs,F_rb,F_nb,Minx,Maxx,Miny,Maxy, &
                           Nk,ni,nj,i0,j0,in,jn )
          endif
       end if

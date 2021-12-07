@@ -15,7 +15,7 @@ target_include_directories(gem PRIVATE
    ${CMAKE_SOURCE_DIR}/src/rpnphy/include
    ${CMAKE_SOURCE_DIR}/src/modelutils/include
    ${CMAKE_BINARY_DIR}/src/rpnphy
-   ${CMAKE_BINARY_DIR}/src/modelutils
+   ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules
    ${VGRID_INCLUDE_DIR}
    include
    base
@@ -30,6 +30,11 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_DEBUG AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_compile_options( gem PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )
     message(STATUS "(EC) Extra debug flags for gemdyn: -fcheck=bounds")
+  endif()
+  if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+#    target_compile_options( gem PRIVATE -ftree-vectorize -ffast-math )
+    target_compile_options( gem PRIVATE -ftree-vectorize )
+    message(STATUS "(EC) Extra release flags for gemdyn: -ftree-vectorize")
   endif()
 endif()
 

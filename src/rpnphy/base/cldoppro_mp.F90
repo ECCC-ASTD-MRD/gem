@@ -22,7 +22,7 @@ module cldoppro_MP
 contains
 
    !/@*
-   subroutine cldoppro_MP1(d, dsiz, f, fsiz, v, vsiz, &
+   subroutine cldoppro_MP1(dbus, fbus, vbus, &
         taucs, omcs, gcs, taucl, omcl, gcl, &
         liqwcin, icewcin, &
         liqwpin, icewpin, cldfrac, &
@@ -39,10 +39,9 @@ contains
       include "nbsnbl.cdk"
 
       !@Arguments
-      integer, intent(in) :: dsiz, fsiz, vsiz
       integer, intent(in) :: ni, nkm1, nk, mpcat, kount
 
-      real, intent(inout), target :: d(dsiz), f(fsiz), v(vsiz)
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real, intent(out), dimension(ni,nkm1,nbs) :: taucs, omcs, gcs
       real, intent(out), dimension(ni,nkm1,nbl) :: taucl, omcl, gcl
       real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
@@ -129,76 +128,76 @@ contains
       real :: taulwmp, omlwmp, glwmp
       real :: xnu, xnu2
 
-      real, pointer, dimension(:,:) :: zqcmoins, zqimoins, zqnmoins, zqgmoins
-      real, pointer, dimension(:,:) :: zqti1m, zqti2m, zqti3m, zqti4m
-      real, pointer, dimension(:,:) :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
-      real, pointer, dimension(:) :: ztopthw,ztopthi,ztcc,zecc,zeccl,zeccm,zecch,znt
-      real, pointer, dimension(:) :: ztcsl,ztcsm,ztcsh
-      real, pointer, dimension(:) :: ztczl,ztczm,ztczh  
-      real, pointer, dimension(:) :: zmg,zml,zctp,zctt
-      real, pointer, dimension(:,:) :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zftot
-      real, pointer, dimension(:)   :: ztlwp, ztiwp,ztlwpin,ztiwpin
-      real, pointer, dimension(:,:) :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
+      real, pointer, dimension(:,:), contiguous :: zqcmoins, zqimoins, zqnmoins, zqgmoins
+      real, pointer, dimension(:,:), contiguous :: zqti1m, zqti2m, zqti3m, zqti4m
+      real, pointer, dimension(:,:), contiguous :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
+      real, pointer, dimension(:), contiguous :: ztopthw,ztopthi,ztcc,zecc,zeccl,zeccm,zecch,znt
+      real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
+      real, pointer, dimension(:), contiguous :: ztczl,ztczm,ztczh  
+      real, pointer, dimension(:), contiguous :: zmg,zml,zctp,zctt
+      real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zftot
+      real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
+      real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
            zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'cldoppro_MP [BEGIN]')
 
-      MKPTR1D(zctp, ctp, v)
-      MKPTR1D(zctt, ctt, v)
-      MKPTR1D(zecc, ecc, f)
-      MKPTR1D(zecch, ecch, f)
-      MKPTR1D(zeccl, eccl, f)
-      MKPTR1D(zeccm, eccm, f)
-      MKPTR1D(zmg, mg, f)
-      MKPTR1D(zml, ml, f)
-      MKPTR1D(znt, nt, f)
-      MKPTR1D(ztcc, tcc, f)
-      MKPTR1D(ztcsl, tcsl, f)
-      MKPTR1D(ztcsm, tcsm, f)
-      MKPTR1D(ztcsh, tcsh, f)
-      MKPTR1D(ztczl, tczl, f) 
-      MKPTR1D(ztczm, tczm, f)  
-      MKPTR1D(ztczh, tczh, f)  
-      MKPTR1D(ztiwp, tiwp, f)
-      MKPTR1D(ztiwpin, tiwpin, f)
-      MKPTR1D(ztlwp, tlwp, f)
-      MKPTR1D(ztlwpin, tlwpin, f)
-      MKPTR1D(ztopthi, topthi, f)
-      MKPTR1D(ztopthw, topthw, f)
-      MKPTR2Dm1(zcldrad, cldrad, v)
-      MKPTR2Dm1(zeffradc, effradc, f)
-      MKPTR2Dm1(zeffradi1, effradi1, f)
-      MKPTR2Dm1(zeffradi2, effradi2, f)
-      MKPTR2Dm1(zeffradi3, effradi3, f)
-      MKPTR2Dm1(zeffradi4, effradi4, f)
-      MKPTR2Dm1(zfmp, fmp, f)
-      MKPTR2Dm1(zftot, ftot, f)
-      MKPTR2Dm1(zfxp, fxp, f)
-      MKPTR2Dm1(zgraupel, qgplus, d)
-      MKPTR2Dm1(zhumoins, humoins, d)
-      MKPTR2Dm1(zqti1m, qti1moins, d)
-      MKPTR2Dm1(zqti2m, qti2moins, d)
-      MKPTR2Dm1(zqti3m, qti3moins, d)
-      MKPTR2Dm1(zqti4m, qti4moins, d)
-      MKPTR2Dm1(ziwcimp, iwcimp, f)
-      MKPTR2Dm1(ziwcrad, iwcrad, v)
-      MKPTR2Dm1(zlwcimp, lwcimp, f)
-      MKPTR2Dm1(zlwcrad, lwcrad, v)
-      MKPTR2Dm1(zpmoins, pmoins, f)
-      MKPTR2Dm1(zqcmoins, qcmoins, d)
-      MKPTR2Dm1(zqcplus, qcplus, d)
-      MKPTR2Dm1(zqgmoins, qgmoins, d)
-      MKPTR2Dm1(zqi_cat1, qti1plus, d)
-      MKPTR2Dm1(zqi_cat2, qti2plus, d)
-      MKPTR2Dm1(zqi_cat3, qti3plus, d)
-      MKPTR2Dm1(zqi_cat4, qti4plus, d)
-      MKPTR2Dm1(zqimoins, qimoins, d)
-      MKPTR2Dm1(zqiplus, qiplus, d)
-      MKPTR2Dm1(zqnmoins, qnmoins, d)
-      MKPTR2Dm1(zsigw, sigw, d)
-      MKPTR2Dm1(zsnow, qnplus, d)
-      MKPTR2Dm1(ztmoins, tmoins, d)
+      MKPTR1D(zctp, ctp, vbus)
+      MKPTR1D(zctt, ctt, vbus)
+      MKPTR1D(zecc, ecc, fbus)
+      MKPTR1D(zecch, ecch, fbus)
+      MKPTR1D(zeccl, eccl, fbus)
+      MKPTR1D(zeccm, eccm, fbus)
+      MKPTR1D(zmg, mg, fbus)
+      MKPTR1D(zml, ml, fbus)
+      MKPTR1D(znt, nt, fbus)
+      MKPTR1D(ztcc, tcc, fbus)
+      MKPTR1D(ztcsl, tcsl, fbus)
+      MKPTR1D(ztcsm, tcsm, fbus)
+      MKPTR1D(ztcsh, tcsh, fbus)
+      MKPTR1D(ztczl, tczl, fbus) 
+      MKPTR1D(ztczm, tczm, fbus)  
+      MKPTR1D(ztczh, tczh, fbus)  
+      MKPTR1D(ztiwp, tiwp, fbus)
+      MKPTR1D(ztiwpin, tiwpin, fbus)
+      MKPTR1D(ztlwp, tlwp, fbus)
+      MKPTR1D(ztlwpin, tlwpin, fbus)
+      MKPTR1D(ztopthi, topthi, fbus)
+      MKPTR1D(ztopthw, topthw, fbus)
+      MKPTR2Dm1(zcldrad, cldrad, vbus)
+      MKPTR2Dm1(zeffradc, effradc, fbus)
+      MKPTR2Dm1(zeffradi1, effradi1, fbus)
+      MKPTR2Dm1(zeffradi2, effradi2, fbus)
+      MKPTR2Dm1(zeffradi3, effradi3, fbus)
+      MKPTR2Dm1(zeffradi4, effradi4, fbus)
+      MKPTR2Dm1(zfmp, fmp, fbus)
+      MKPTR2Dm1(zftot, ftot, fbus)
+      MKPTR2Dm1(zfxp, fxp, fbus)
+      MKPTR2Dm1(zgraupel, qgplus, dbus)
+      MKPTR2Dm1(zhumoins, humoins, dbus)
+      MKPTR2Dm1(zqti1m, qti1moins, dbus)
+      MKPTR2Dm1(zqti2m, qti2moins, dbus)
+      MKPTR2Dm1(zqti3m, qti3moins, dbus)
+      MKPTR2Dm1(zqti4m, qti4moins, dbus)
+      MKPTR2Dm1(ziwcimp, iwcimp, fbus)
+      MKPTR2Dm1(ziwcrad, iwcrad, vbus)
+      MKPTR2Dm1(zlwcimp, lwcimp, fbus)
+      MKPTR2Dm1(zlwcrad, lwcrad, vbus)
+      MKPTR2Dm1(zpmoins, pmoins, fbus)
+      MKPTR2Dm1(zqcmoins, qcmoins, dbus)
+      MKPTR2Dm1(zqcplus, qcplus, dbus)
+      MKPTR2Dm1(zqgmoins, qgmoins, dbus)
+      MKPTR2Dm1(zqi_cat1, qti1plus, dbus)
+      MKPTR2Dm1(zqi_cat2, qti2plus, dbus)
+      MKPTR2Dm1(zqi_cat3, qti3plus, dbus)
+      MKPTR2Dm1(zqi_cat4, qti4plus, dbus)
+      MKPTR2Dm1(zqimoins, qimoins, dbus)
+      MKPTR2Dm1(zqiplus, qiplus, dbus)
+      MKPTR2Dm1(zqnmoins, qnmoins, dbus)
+      MKPTR2Dm1(zsigw, sigw, dbus)
+      MKPTR2Dm1(zsnow, qnplus, dbus)
+      MKPTR2Dm1(ztmoins, tmoins, dbus)
 
       call init2nan(trmin, tmem, tot, att, z_exp)
       call init2nan(tausimp, omsimp, gsimp, taulimp, omlimp, glimp)

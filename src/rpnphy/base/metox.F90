@@ -22,7 +22,7 @@ module metox
 contains
 
    !/@*
-   subroutine metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+   subroutine metox3(dbus, vbus, fbus, ni, nk)
       use debug_mod, only: init2nan
       use phy_options
       use phybus
@@ -35,12 +35,12 @@ contains
       !@arguments
       ! ni       horizonal index
       ! nk       vertical  index
-      ! v        volatile bus
-      ! f        permanent bus
-      ! d        dynamics bus
+      ! vbus     volatile bus
+      ! fbus     permanent bus
+      ! dbus     dynamics bus
 
-      integer, intent(in) :: ni, nk, dsiz, vsiz, fsiz
-      real, target, intent(inout) :: v(vsiz), f(fsiz), d(dsiz)
+      integer, intent(in) :: ni, nk
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@author M. Charron (RPN): November 2005
       !@revisions
@@ -52,8 +52,8 @@ contains
       real, parameter :: QQ = 4.25e-6 
       real, parameter :: ALPHA1 = 0.5431969
 
-      real, pointer, dimension(:) :: psp, ztdmask
-      real, pointer, dimension(:,:) :: sigma, oxme, qqp, zhuplus
+      real, pointer, dimension(:), contiguous :: psp, ztdmask
+      real, pointer, dimension(:,:), contiguous :: sigma, oxme, qqp, zhuplus
       real, dimension(ni,nk) :: press, kmetox
       !----------------------------------------------------------------
 
@@ -61,12 +61,12 @@ contains
       call msg_toall(MSG_DEBUG, 'metox [BEGIN]')
       if (timings_L) call timing_start_omp(415, 'metox', 46)
 
-      MKPTR1D(psp, pmoins, f)
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR2D(zhuplus, huplus, d)
-      MKPTR2D(sigma, sigw, d)
-      MKPTR2D(qqp, huplus, d)
-      MKPTR2D(oxme, qmetox, v)
+      MKPTR1D(psp, pmoins, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR2D(zhuplus, huplus, dbus)
+      MKPTR2D(sigma, sigw, dbus)
+      MKPTR2D(qqp, huplus, dbus)
+      MKPTR2D(oxme, qmetox, vbus)
 
       call init2nan(press, kmetox)
 

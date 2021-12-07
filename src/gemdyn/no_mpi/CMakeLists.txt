@@ -1,4 +1,4 @@
-message(STATUS "(EC) Starting generation of gem_monitor Makefile")
+message(STATUS "(EC) Generating gem_monitor and toc2nml Makefiles")
 
 set(CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${CMAKE_C_COMPILER})

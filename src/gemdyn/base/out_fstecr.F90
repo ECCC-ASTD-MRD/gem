@@ -33,7 +33,7 @@
       integer ind_o(nk_o)
       real fa (lminx:lmaxx,lminy:lmaxy,nkfa), rf(nkfa), mul,add
 
-#include <convert_ip123.inc>
+      include 'convert_ip123.inc'
 
 Interface
 subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &

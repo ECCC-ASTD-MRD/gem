@@ -1,5 +1,0 @@
-
-!# fpp tdpack_const.hf provides the pre-processing result
-
-#define __FORTRAN__
-#include "tdpack_const.h"

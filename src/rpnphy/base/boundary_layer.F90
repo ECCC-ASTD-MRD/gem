@@ -22,7 +22,7 @@ module boundary_layer
 contains
 
    !/@*
-   subroutine boundary_layer4(d, f, v, dsiz, fsiz, vsiz, &
+   subroutine boundary_layer4(dbus, fbus, vbus, &
         ficebl, seloc, cdt1, kount, trnch, ni, nk)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -38,25 +38,22 @@ contains
 #include <rmnlib_basics.hf>
       !@Arguments
       !          - Input -
-      ! D        dynamics input field
+      ! Dbus     dynamics input field
       !
       !          - Input/Output -
-      ! F        historic variables for the physics
+      ! Fbus     historic variables for the physics
       !
       !          - Output -
-      ! V        physics tendencies and other output fields from the physics
+      ! Vbus     physics tendencies and other output fields from the physics
       !
       !          - Input -
-      ! DSIZ     dimension of d
-      ! FSIZ     dimension of f
-      ! VSIZ     dimension of v
       ! CDT1     timestep (sec.)
       ! TRNCH    slice number
       ! KOUNT    timestep number
       ! NI       horizontal running length
       ! NK       vertical dimension
-      integer, intent(in) :: dsiz, fsiz, vsiz, trnch, kount, ni, nk
-      real,    target, intent(inout)     :: d(dsiz), f(fsiz), v(vsiz)
+      integer, intent(in) :: trnch, kount, ni, nk
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real,    intent(in) :: seloc(ni,nk), cdt1
       real,    intent(inout) :: ficebl(ni,nk)
       !@Author M. Desgagne summer 2011
@@ -72,13 +69,14 @@ contains
       real, dimension(ni,nk), target :: zero
       real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
       ! Pointers to busdyn
-      real, pointer, dimension(:,:) :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
+      real, pointer, dimension(:,:), contiguous :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
       ! Pointers to busper
-      real, pointer, dimension(:)   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmask
-      real, pointer, dimension(:,:) :: zqtbl
+      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmask
+      real, pointer, dimension(:,:), contiguous :: zqtbl
       ! Pointers to busvol
-      real, pointer, dimension(:)   :: zconepbl, zconqpbl, zfc, zfv
-      real, pointer, dimension(:,:) :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
+      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw
+      real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
+      real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
            zwdifv, zqcdifv
 
       ! External symbols
@@ -88,40 +86,40 @@ contains
       call init2nan(l_en0,l_en,l_pw0,l_pw,l_enr,l_pwr)
 
       ! Pointers to busdyn
-      MKPTR2D(zqplus, huplus, d)
-      MKPTR2D(zsigt, sigt, d)
-      MKPTR2D(ztplus, tplus, d)
-      MKPTR2D(zumoins, umoins, d)
-      MKPTR2D(zuplus, uplus, d)
-      MKPTR2D(zvmoins, vmoins, d)
-      MKPTR2D(zvplus, vplus, d)
-      MKPTR2D(zqcplus, qcplus, d)
-      MKPTR2D(zwplus, wplus, d)
+      MKPTR2D(zqplus, huplus, dbus)
+      MKPTR2D(zsigt, sigt, dbus)
+      MKPTR2D(ztplus, tplus, dbus)
+      MKPTR2D(zumoins, umoins, dbus)
+      MKPTR2D(zuplus, uplus, dbus)
+      MKPTR2D(zvmoins, vmoins, dbus)
+      MKPTR2D(zvplus, vplus, dbus)
+      MKPTR2D(zqcplus, qcplus, dbus)
+      MKPTR2D(zwplus, wplus, dbus)
       ! Pointers to busper
-      MKPTR1D(zps, pmoins, f)
-      MKPTR1D(zqdiag, qdiag, f)
-      MKPTR2D(zqtbl, qtbl, f)
-      MKPTR1D(ztdiag, tdiag, f)
-      MKPTR1D(zudiag, udiag, f)
-      MKPTR1D(zvdiag, vdiag, f)
-      MKPTR1D(zz0, z0, f)
-      MKPTR1D(ztdmask, tdmask, f)
+      MKPTR1D(zps, pmoins, fbus)
+      MKPTR1D(zqdiag, qdiag, fbus)
+      MKPTR2D(zqtbl, qtbl, fbus)
+      MKPTR1D(ztdiag, tdiag, fbus)
+      MKPTR1D(zudiag, udiag, fbus)
+      MKPTR1D(zvdiag, vdiag, fbus)
+      MKPTR1D(zz0, z0, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
      ! Pointers to busvol
-      MKPTR1D(zconepbl, conepbl, v)
-      MKPTR1D(zconqpbl, conqpbl, v)
-      MKPTR1DK(zfc, fc, indx_agrege, v)
-      MKPTR1DK(zfv, fv, indx_agrege, v)
-      MKPTR2D(zkm, km, v)
-      MKPTR2D(zkt, kt, v)
-      MKPTR2D(zgzmom, gzmom, v)
-      MKPTR2D(zgztherm, gztherm, v)
-      MKPTR2D(zqcdifv, qcdifv, v)
-      MKPTR2D(zqdifv, qdifv, v)
-      MKPTR2D(ztdifv, tdifv, v)
-      MKPTR2D(zudifv, udifv, v)
-      MKPTR2D(zvdifv, vdifv, v)
-      MKPTR2D(zldifv, ldifv, v)
-      MKPTR2D(zwdifv, wdifv, v)
+      MKPTR1D(zconepbl, conepbl, vbus)
+      MKPTR1D(zconqpbl, conqpbl, vbus)
+      MKPTR1DK(zfc, fc, indx_agrege, vbus)
+      MKPTR1D(zflw, flw, vbus)
+      MKPTR2D(zkm, km, vbus)
+      MKPTR2D(zkt, kt, vbus)
+      MKPTR2D(zgzmom, gzmom, vbus)
+      MKPTR2D(zgztherm, gztherm, vbus)
+      MKPTR2D(zqcdifv, qcdifv, vbus)
+      MKPTR2D(zqdifv, qdifv, vbus)
+      MKPTR2D(ztdifv, tdifv, vbus)
+      MKPTR2D(zudifv, udifv, vbus)
+      MKPTR2D(zvdifv, vdifv, vbus)
+      MKPTR2D(zldifv, ldifv, vbus)
+      MKPTR2D(zwdifv, wdifv, vbus)
 
       if (ldifv <= 0) zldifv => zero
 
@@ -134,7 +132,7 @@ contains
       if (any(fluvert == (/ &
            'MOISTKE', &
            'CLEF   '/))) then
-         call turbul2(d, dsiz, f, fsiz, v, vsiz, seloc, kount, trnch, ni, nk, nkm1)
+         call turbul2(dbus, fbus, vbus, seloc, kount, trnch, ni, nk, nkm1)
          if (phy_error_L) return
       elseif (fluvert == 'SIMPLE') then
          istat = pbl_simple(zkm,zkt,zumoins,zvmoins,zgzmom,zgztherm,zz0,ni,nk)
@@ -170,7 +168,7 @@ contains
       end do
 
       ! Apply diffusion operator to compute PBL tendencies
-      call difver8(d, dsiz, f, fsiz, v, vsiz, seloc, &
+      call difver8(dbus, fbus, vbus, seloc, &
            cdt1, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
 
@@ -179,10 +177,10 @@ contains
 
          ! Apply humidity tendency correction for total water conservation
          istat = eb_conserve_pw(zqdifv,zqdifv,ztplus,zqplus,zsigt,zps,nkm1, &
-              F_dqc=zldifv,F_inttype='linear',F_lhf=zfv)
+              F_dqc=zldifv,F_inttype='linear',F_lhf=zflw)
          ! Apply temperature tendency correction for liquid water static energy conservation
          istat2 = eb_conserve_en(ztdifv,ztdifv,zqdifv,ztplus,zqplus,zqtbl,zsigt,zps,nkm1, &
-              F_dqc=zldifv,F_inttype='linear',F_shf=zfc,F_lhf=zfv)
+              F_dqc=zldifv,F_inttype='linear',F_shf=zfc,F_lhf=zflw)
          if (istat /= EB_OK .or.istat2  /= EB_OK) then
             call physeterror('boundary_layer', 'Problem correcting for liquid water static energy conservation in boundary_layer')
             return
@@ -205,8 +203,8 @@ contains
          istat2 = eb_pw(l_pw,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
          if (istat == EB_OK .and. istat2 == EB_OK) then
             ! Compute residuals
-            istat  = eb_residual_en(l_enr,l_en0,l_en,ztplus,zqplus,zqcplus,delt,nkm1,F_shf=zfc,F_lhf=zfv)
-            istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ztplus,delt,nkm1,F_lhf=zfv)
+            istat  = eb_residual_en(l_enr,l_en0,l_en,ztplus,zqplus,zqcplus,delt,nkm1,F_shf=zfc,F_lhf=zflw)
+            istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ztplus,delt,nkm1,F_lhf=zflw)
          endif
          if (istat /= EB_OK .or.istat2  /= EB_OK) then
             call physeterror('boundary_layer', 'Problem computing final energy budget for '//trim(fluvert))

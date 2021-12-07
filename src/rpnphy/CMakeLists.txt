@@ -15,7 +15,7 @@ target_include_directories(phy BEFORE PRIVATE
   series
   surface
   ${CMAKE_SOURCE_DIR}/src/modelutils/include
-  ${CMAKE_BINARY_DIR}/src/modelutils
+  ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules
   ${VGRID_INCLUDE_DIR}
   )
 target_include_directories(phy PRIVATE include base utils)

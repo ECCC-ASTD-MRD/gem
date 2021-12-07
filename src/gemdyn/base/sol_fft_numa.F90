@@ -128,91 +128,103 @@
       ! data.
       call MPI_Barrier ( Numa_sockcomm, err )
       call gemtime_start ( 56, 'TRID', 24 )
-!      if (sol_nk<=0) goto 9988 
-! Tri-diagonal solver
-      !FORWARD
-      dim= Sol_sock_nk*G_ni ; tag1=95 ; tag2=96
-      i0= max(1+Lam_pil_w,Sol_istart)
-      in= min(G_ni-Lam_pil_e,Sol_iend)
-      
-      if (Sol_miny /= 1) then
-         if (Numa_sockrank == 0) &
-         call MPI_RECV(F_fft(Sol_mink,1,Sol_miny-1), dim    ,&
-                       MPI_DOUBLE_PRECISION, Numa_peerrank-1,&
-            tag1+Numa_peerrank-1 , Numa_peercomm, status, err)
-         call MPI_Barrier ( Numa_sockcomm, err )
-      endif
-      
-      j0= max(Sol_miny,2   +Lam_pil_s)
-      jn= min(Sol_maxy,G_nj-Lam_pil_n)
 
-      ! The FFT normalization factor has not yet been applied, but we can do this alongside the
-      ! application of F_b, when F_fft is read for the first time inside the tridiagonal solve.
-      if (Sol_miny <= 1 + Lam_pil_s) then 
-         ! The first j-column does not involve a lower-index value of j, so it must be
-         ! normalized separately.
-         j = 1+Lam_pil_s
-         do i = i0, in
-            do k=Sol_mink, Sol_maxk
-               F_fft(k,i,j) = Sol_pri*F_fft(k,i,j)*F_b(k,i,j)
-            end do
-         end do
-      end if
-      do j= j0, jn
-         jr =  j - 1
-         do i= i0, in
-            do k= Sol_mink, Sol_maxk
-               ! Complete the first (forward substitution) step of the Thomas / ripple algorithm.
-               ! Additionally, apply normalization to the RHS F_fft(k,i,j).
-               F_fft(k,i,j) = Sol_pri*F_fft(k,i,j)*F_b(k,i,j) - F_a(k,i,j)*F_fft(k,i,jr)
-            end do
-         end do
-      end do
-      if (Sol_maxy /= G_nj) then
-         call MPI_Barrier ( Numa_sockcomm, err )
-         if (Numa_sockrank == 0) &
-         call MPI_SEND(F_fft(Sol_mink,1,jn), dim            ,&
-                       MPI_DOUBLE_PRECISION, Numa_peerrank+1,&
-                       tag1+Numa_peerrank, Numa_peercomm, err)
-      endif
+      ! Tri-diagonal solver
+      ! We only need to execute the tridiagonal solve if there are points to solve for
+      ! on this socket
+      if (Sol_sock_nk > 0) then
 
-      !BACKWARD
-      j0= max(Sol_miny,1   +Lam_pil_s)
-      if (Sol_maxy == G_nj) then
-         do j = G_nj-1-Lam_pil_n, j0, -1
-            jr =  j + 1
-            do i= i0, in
-               do k= Sol_mink, Sol_maxk
-                  F_fft(k,i,j)= F_fft(k,i,j)-F_c(k,i,j)*F_fft(k,i,jr)
-               end do
-            end do
-         end do
-      else
-         if (Numa_sockrank == 0) &
-         call MPI_RECV( F_fft(Sol_mink,1,Sol_maxy+1), dim, &
-                     MPI_DOUBLE_PRECISION, Numa_peerrank+1,&
-           tag2+Numa_peerrank+1, Numa_peercomm, status, err)
-         call MPI_Barrier ( Numa_sockcomm, err )
+         ! Forward pass
+
+         ! Bookkeeping to set up appropriate bounds
+         dim= Sol_sock_nk*G_ni ; tag1=95 ; tag2=96
+         i0= max(1+Lam_pil_w,Sol_istart)
+         in= min(G_ni-Lam_pil_e,Sol_iend)
          
-         do j = Sol_maxy, j0, -1
-            jr =  j + 1
+         ! This socket isn't the start of the process -- wait to receive partial work from
+         ! the miny part
+         if (Sol_miny /= 1) then
+            if (Numa_sockrank == 0) &
+            call MPI_RECV(F_fft(Sol_mink,1,Sol_miny-1), dim    ,&
+                          MPI_DOUBLE_PRECISION, Numa_peerrank-1,&
+               tag1+Numa_peerrank-1 , Numa_peercomm, status, err)
+            call MPI_Barrier ( Numa_sockcomm, err )
+         endif
+         
+         j0= max(Sol_miny,2   +Lam_pil_s)
+         jn= min(Sol_maxy,G_nj-Lam_pil_n)
+
+         ! The FFT normalization factor has not yet been applied, but we can do this alongside the
+         ! application of F_b, when F_fft is read for the first time inside the tridiagonal solve.
+         if (Sol_miny <= 1 + Lam_pil_s) then 
+            ! The first j-column does not involve a lower-index value of j, so it must be
+            ! normalized separately.
+            j = 1+Lam_pil_s
+            do i = i0, in
+               do k=Sol_mink, Sol_maxk
+                  F_fft(k,i,j) = Sol_pri*F_fft(k,i,j)*F_b(k,i,j)
+               end do
+            end do
+         end if
+         do j= j0, jn
+            jr =  j - 1
             do i= i0, in
                do k= Sol_mink, Sol_maxk
-                  F_fft(k,i,j)= F_fft(k,i,j)-F_c(k,i,j)*F_fft(k,i,jr)
+                  ! Complete the first (forward substitution) step of the Thomas / ripple algorithm.
+                  ! Additionally, apply normalization to the RHS F_fft(k,i,j).
+                  F_fft(k,i,j) = Sol_pri*F_fft(k,i,j)*F_b(k,i,j) - F_a(k,i,j)*F_fft(k,i,jr)
                end do
             end do
          end do
-      endif
-      if (Sol_miny /= 1) then
+
+         ! This socket isn't the end of the process -- send the partial work to the next socket
+         if (Sol_maxy /= G_nj) then
+            call MPI_Barrier ( Numa_sockcomm, err )
+            if (Numa_sockrank == 0) &
+            call MPI_SEND(F_fft(Sol_mink,1,jn), dim            ,&
+                          MPI_DOUBLE_PRECISION, Numa_peerrank+1,&
+                          tag1+Numa_peerrank, Numa_peercomm, err)
+         endif
+
+         !BACKWARD
+         j0= max(Sol_miny,1   +Lam_pil_s)
+         if (Sol_maxy == G_nj) then ! End of the line, so begin the backward step
+            do j = G_nj-1-Lam_pil_n, j0, -1
+               jr =  j + 1
+               do i= i0, in
+                  do k= Sol_mink, Sol_maxk
+                     F_fft(k,i,j)= F_fft(k,i,j)-F_c(k,i,j)*F_fft(k,i,jr)
+                  end do
+               end do
+            end do
+         else ! Not the end of the line, so receive partial work from the next socket
+            if (Numa_sockrank == 0) &
+            call MPI_RECV( F_fft(Sol_mink,1,Sol_maxy+1), dim, &
+                        MPI_DOUBLE_PRECISION, Numa_peerrank+1,&
+              tag2+Numa_peerrank+1, Numa_peercomm, status, err)
+            call MPI_Barrier ( Numa_sockcomm, err )
+            
+            do j = Sol_maxy, j0, -1
+               jr =  j + 1
+               do i= i0, in
+                  do k= Sol_mink, Sol_maxk
+                     F_fft(k,i,j)= F_fft(k,i,j)-F_c(k,i,j)*F_fft(k,i,jr)
+                  end do
+               end do
+            end do
+         endif
+         if (Sol_miny /= 1) then ! Not the start of the line, so send partial work to the prior socket
+            call MPI_Barrier ( Numa_sockcomm, err )
+            if (Numa_sockrank == 0) &
+            call MPI_SEND( F_fft(Sol_mink,1,j0), dim, &
+                MPI_DOUBLE_PRECISION, Numa_peerrank-1,&
+               tag2+Numa_peerrank, Numa_peercomm, err )
+         endif
+
+         ! End backward pass
          call MPI_Barrier ( Numa_sockcomm, err )
-         if (Numa_sockrank == 0) &
-         call MPI_SEND( F_fft(Sol_mink,1,j0), dim, &
-             MPI_DOUBLE_PRECISION, Numa_peerrank-1,&
-            tag2+Numa_peerrank, Numa_peercomm, err )
-      endif
+      endif ! End if sol_sock_nk > 0
       
-      call MPI_Barrier ( Numa_sockcomm, err )
- 9988 continue
       call gemtime_stop (56)
 
 

@@ -50,7 +50,7 @@ contains
       real, intent(inout) :: flagconv(ix) ,kkfc(ix)
       real, intent(in)    :: ps(ix), tp1(ix,kx), qp1(ix,kx)
       real, intent(in)    :: ub(ix,kx), vb(ix,kx), scr3(ix,kx)
-      real, intent(out)   :: dtdt(ix,kx), dqdt(ix,kx), dudt(ix,kx), dvdt(ix,kx)
+      real, intent(inout) :: dtdt(ix,kx), dqdt(ix,kx), dudt(ix,kx), dvdt(ix,kx)
       real, pointer, dimension(:,:) :: dudt1, dvdt1, dudt2, dvdt2, dudt3, dvdt3, sumdudt, sumdvdt
       real, intent(inout) :: dqcdt(ix,kx), dqidt(ix,kx), dqrdt(ix,kx)
       real, intent(in)    :: sigt(ix,kx), dxdy(ix), gzm(ix,kx)
@@ -3502,7 +3502,7 @@ contains
 !!$       if (kount.eq.0) then
 !!$          flagconv(1:ix) = 0.
 !!$       else
-!!$          where(flagconv(1:ix) > 0.) kkfc = 1.
+!!$          where(flagconv(1:ix) > 0.) kkfc(1:ix) = 1.
 !!$       endif
 
       return

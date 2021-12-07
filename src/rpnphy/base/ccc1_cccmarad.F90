@@ -22,7 +22,7 @@ module ccc1_cccmarad
 contains
 
    !/@*
-   subroutine cccmarad1(d, dsiz, f, fsiz, v, vsiz , &
+   subroutine cccmarad1(dbus, fbus, vbus, &
         temp, qq, ps, sig, &
         tau, kount , &
         trnch, ni, nkm1, nk, &
@@ -45,16 +45,17 @@ contains
 
       !@Arguments
 
-      integer, intent(in) :: dsiz, fsiz, kount, trnch, vsiz, ni, nkm1, nk
-      real, intent(inout), target :: d(dsiz), f(fsiz), v(vsiz)
+      integer, intent(in) :: kount, trnch, ni, nkm1, nk
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real, intent(inout) :: temp(ni,nk), qq(ni,nkm1), ps(ni), sig(ni,nkm1+1)
       real, intent(inout) :: liqwcin(ni,nkm1), icewcin(ni,nkm1), cldfrac(ni*nkm1)
       real, intent(inout) :: liqwpin(ni,nkm1), icewpin(ni,nkm1)
       real, intent(in) :: tau
 
       !          - input/output -
-      ! f        field of permanent physics variables
-      ! fsiz     dimension of f
+      ! dbus     field of dyn variables
+      ! fbus     field of permanent physics variables
+      ! vbus     field of volatile physics variables
       !          - input -
       ! temp     temperature
       ! qq       specific humidity
@@ -265,7 +266,7 @@ contains
          if (stcond(1:5)=='MP_P3')  mpcat = p3_ncat
          if (stcond(1:6)=='MP_MY2') mpcat = 3
          !#TODO: move bus up
-         call cldoppro_MP1(d, dsiz, f, fsiz, v, vsiz , &
+         call cldoppro_MP1(dbus, fbus, vbus, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
@@ -513,7 +514,7 @@ contains
 
          do  i = 1, ni
             zfdsi(i)  = fdl(i)
-            zfusi(i)  = zemisr(i)*STEFAN*ztsrad(i)**4
+            zfusi(i)  = zfluxul(i, nk)
             zei(i)    = ful(i)
             zfdss0(i) = zfsg(i)
             zev0(i)   = CONSOL * r0r * zcosas(i) * albpla(i)
@@ -614,6 +615,13 @@ contains
 
       do i=1,ni
          zcang(i) = rmu0(i)
+         ! Need net radiative fluxes of the atmosphere to calculate liquid water static energy residual for radiation scheme,
+         ! physics time step and full timestep
+         ! NOTE: top of model and NOT top of atmosphere fluxes must be used
+         ! znetrad(i) = (SW net TOM - SW net suface) + (LW net TOM - LW net sfc)
+         znetrad(i) = ( (zfluxds(i,1)-zfluxus(i,1)) - zfdss(i)) + ( (zfluxdl(i,1)-zfluxul(i,1)) - (zfluxdl(i,nk)-zfluxul(i,nk)))
+         ! print*,'ZNETRAD:',znetrad(i)
+
 
          ! iv represente le flux entrant au sommet de l'atmosphere
          ! if below ensures iv is zero when sun is set

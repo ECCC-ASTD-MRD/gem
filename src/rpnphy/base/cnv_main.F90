@@ -22,7 +22,7 @@ module cnv_main
 contains
 
    !/@*
-   subroutine cnv_main4(d, dsiz, f, fsiz, v, vsiz, t0, q0, qc0, &
+   subroutine cnv_main4(dbus, fbus, vbus, t0, q0, qc0, &
         dt, ni, nk, kount)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -44,23 +44,20 @@ contains
       !@objective Interface to convection/condensation
       !@Arguments
       !          - Input -
-      ! dsiz     dimension of dbus
-      ! fsiz     dimension of fbus
-      ! vsiz     dimension of vbus
       ! dt       timestep (parameter) (sec.)
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! kount    timestep number
       !
       !          - Input/Output -
-      ! d        dynamics input field
-      ! f        historic variables for the physics
-      ! v        physics tendencies and other output fields from the physics
-
-      integer, intent(in) :: fsiz,vsiz,dsiz,ni,nk,kount
-      real,   dimension(ni,nk-1), intent(inout) :: t0,q0,qc0
-      real,   target, intent(inout) :: f(fsiz), v(vsiz), d(dsiz)
-      real dt
+      ! dbus     dynamics input field
+      ! fbus     historic variables for the physics
+      ! vbus     physics tendencies and other output fields from the physics
+ 
+      integer, intent(in) :: ni, nk, kount
+      real, dimension(ni,nk-1), intent(inout) :: t0, q0, qc0
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
+      real, intent(in) :: dt
       !@Author L.Spacek, November 2011
       !@Revisions
       ! 001   -PV/JM-nov2014- fix communication between deep convection and MY_DM
@@ -99,7 +96,7 @@ contains
       !
       integer, dimension(ni)           :: kcount
       real,    dimension(ni)           :: cnv_active, cape
-      real,    dimension(ni,nk-1)      :: dummy1, dummy2, geop, cond_prflux
+      real,    dimension(ni,nk-1)      :: dummy1, dummy2, geop, cond_prflux, qtl
       real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, dmsedt
       real,    dimension(ni,nk-1,kchm) :: pch1, pch1ten
 
@@ -118,13 +115,13 @@ contains
 
       ! Pointer to buses
 
-      real, pointer, dimension(:) :: psm, psp, ztdmask, zfcpflg, zkkfc, zrckfc, &
+      real, pointer, dimension(:), contiguous :: psm, psp, ztdmask, zfcpflg, zkkfc, zrckfc, &
            ztlc, ztsc, zkshal, zwstar, zconedc, zconesc, zconqdc, zconqsc, ztlcs, ztscs, &
            ztstar, zcapekfc, ztauckfc, zcinkfc, zmg, zml, zdlat, zdxdy, zkmid, &
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
            zmcd,zmpeff,zmainc
-      real, pointer, dimension(:,:) :: ncp, nip, qcm, qcp, qip, qqm, qqp, &
+      real, pointer, dimension(:,:), contiguous :: ncp, nip, qcm, qcp, qip, qqm, qqp, qrp, &
            sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
            zufcp, zvfcp, zufcp1, zvfcp1, zufcp2, zvfcp2, zufcp3, zvfcp3,  zsufcp, zsvfcp, &
@@ -142,134 +139,135 @@ contains
       nkm1 = nk - 1
       kfcmom = (cmt_type_i /= CMT_NONE)
 
-      MKPTR1D(psm, pmoins, f)
-      MKPTR1D(psp, pmoins, f)
-      MKPTR1D(zabekfc, abekfc, f)
-      MKPTR1D(zcapekfc, capekfc, f)
-      MKPTR1D(ztauckfc, tauckfc, f)
-      MKPTR1D(zcinkfc, cinkfc, f)
-      MKPTR1D(zcoadvu, coadvu, f)
-      MKPTR1D(zcoadvv, coadvv, f)
-      MKPTR1D(zcoage, coage, f)
-      MKPTR1D(zconedc, conedc, v)
-      MKPTR1D(zconemc, conemc, v)
-      MKPTR1D(zconesc, conesc, v)
-      MKPTR1D(zconqdc, conqdc, v)
-      MKPTR1D(zconqmc, conqmc, v)
-      MKPTR1D(zconqsc, conqsc, v)
-      MKPTR1D(zcowlcl, cowlcl, f)
-      MKPTR1D(zcozlcl, cozlcl, f)
-      MKPTR1D(zdlat, dlat, f)
-      MKPTR1D(zdxdy, dxdy, f)
-      MKPTR1D(zfcpflg, fcpflg, f)
-      MKPTR1D(zkkfc, kkfc, v)
-      MKPTR1D(zkmid, kmid, v)
-      MKPTR1D(zkshal, kshal, v)
-      MKPTR1D(zmainc, mainc, v)
-      MKPTR1D(zmcd, mcd, v)
-      MKPTR1D(zmg, mg, f)
-      MKPTR1D(zml, ml, f)
-      MKPTR1D(zmpeff, mpeff, v)
-      MKPTR1D(zpeffkfc, peffkfc, f)
-      MKPTR1D(zrckfc, rckfc, f)
-      MKPTR1D(ztlcm, tlcm, v)
-      MKPTR1D(zrice_int, rice_int, f)
-      MKPTR1D(zrliq_int, rliq_int, f)
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR1D(ztlc, tlc, f)
-      MKPTR1D(ztlcs, tlcs, v)
-      MKPTR1D(ztsc, tsc, f)
-      MKPTR1D(ztscs, tscs, v)
-      MKPTR1D(ztstar, tstar, v)
-      MKPTR1D(zwklcl, wklcl, f)
-      MKPTR1D(zwstar, wstar, v)
-      MKPTR1D(zwumaxkfc, wumaxkfc, f)
-      MKPTR1D(zzbasekfc, zbasekfc, f)
-      MKPTR1D(zztopkfc, ztopkfc, f)
+      MKPTR1D(psm, pmoins, fbus)
+      MKPTR1D(psp, pmoins, fbus)
+      MKPTR1D(zabekfc, abekfc, fbus)
+      MKPTR1D(zcapekfc, capekfc, fbus)
+      MKPTR1D(ztauckfc, tauckfc, fbus)
+      MKPTR1D(zcinkfc, cinkfc, fbus)
+      MKPTR1D(zcoadvu, coadvu, fbus)
+      MKPTR1D(zcoadvv, coadvv, fbus)
+      MKPTR1D(zcoage, coage, fbus)
+      MKPTR1D(zconedc, conedc, vbus)
+      MKPTR1D(zconemc, conemc, vbus)
+      MKPTR1D(zconesc, conesc, vbus)
+      MKPTR1D(zconqdc, conqdc, vbus)
+      MKPTR1D(zconqmc, conqmc, vbus)
+      MKPTR1D(zconqsc, conqsc, vbus)
+      MKPTR1D(zcowlcl, cowlcl, fbus)
+      MKPTR1D(zcozlcl, cozlcl, fbus)
+      MKPTR1D(zdlat, dlat, fbus)
+      MKPTR1D(zdxdy, dxdy, fbus)
+      MKPTR1D(zfcpflg, fcpflg, fbus)
+      MKPTR1D(zkkfc, kkfc, vbus)
+      MKPTR1D(zkmid, kmid, vbus)
+      MKPTR1D(zkshal, kshal, vbus)
+      MKPTR1D(zmainc, mainc, vbus)
+      MKPTR1D(zmcd, mcd, vbus)
+      MKPTR1D(zmg, mg, fbus)
+      MKPTR1D(zml, ml, fbus)
+      MKPTR1D(zmpeff, mpeff, vbus)
+      MKPTR1D(zpeffkfc, peffkfc, fbus)
+      MKPTR1D(zrckfc, rckfc, fbus)
+      MKPTR1D(ztlcm, tlcm, vbus)
+      MKPTR1D(zrice_int, rice_int, fbus)
+      MKPTR1D(zrliq_int, rliq_int, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR1D(ztlc, tlc, fbus)
+      MKPTR1D(ztlcs, tlcs, vbus)
+      MKPTR1D(ztsc, tsc, fbus)
+      MKPTR1D(ztscs, tscs, vbus)
+      MKPTR1D(ztstar, tstar, vbus)
+      MKPTR1D(zwklcl, wklcl, fbus)
+      MKPTR1D(zwstar, wstar, vbus)
+      MKPTR1D(zwumaxkfc, wumaxkfc, fbus)
+      MKPTR1D(zzbasekfc, zbasekfc, fbus)
+      MKPTR1D(zztopkfc, ztopkfc, fbus)
 
-      MKPTR2D(sigma, sigw, d)
+      MKPTR2D(sigma, sigw, dbus)
 
-      MKPTR2Dm1(nti1p, nti1plus, d)
-      MKPTR2Dm1(qti1p, qti1plus, d)
-      MKPTR2Dm1(ncp, ncplus, d)
-      MKPTR2Dm1(nip, niplus, d)
-      MKPTR2Dm1(qcm, qcmoins, d)
-      MKPTR2Dm1(qcp, qcplus, d)
-      MKPTR2Dm1(qip, qiplus, d)
-      MKPTR2Dm1(qqm, humoins, d)
-      MKPTR2Dm1(qqp, huplus, d)
-      MKPTR2Dm1(ttm, tmoins, d)
-      MKPTR2Dm1(ttp, tplus, d)
-      MKPTR2Dm1(uu, uplus, d)
-      MKPTR2Dm1(vv, vplus, d)
-      MKPTR2Dm1(wz, wplus, d)
-      MKPTR2Dm1(zcqce, cqce, v)
-      MKPTR2Dm1(zcqe, cqe, v)
-      MKPTR2Dm1(zcte, cte, v)
-      MKPTR2Dm1(zen, en, f)
-      MKPTR2Dm1(zfdc, fdc, f)
-      MKPTR2Dm1(zfmc, fmc, f)
-      MKPTR2Dm1(zfsc, fsc, f)
-      MKPTR2Dm1(zgztherm, gztherm, v)
-      MKPTR2Dm1(zhufcp, hufcp, f)
-      MKPTR2Dm1(zmqe, mqe, v)
-      MKPTR2Dm1(zhupostshal, hupostshal, f)
-      MKPTR2Dm1(zhushal, hushal, v)
-      MKPTR2Dm1(zkt, kt, v)
-      MKPTR2Dm1(zprcten, prcten, f)
-      MKPTR2Dm1(zprctnm, prctnm, v)
-      MKPTR2Dm1(zprctns, prctns, v)
-      MKPTR2Dm1(zpriten, priten, f)
-      MKPTR2Dm1(zpritnm, pritnm, v)
-      MKPTR2Dm1(zpritns, pritns, v)
-      MKPTR2Dm1(zqckfc, qckfc, f)
-      MKPTR2Dm1(zmqce, mqce, v)
-      MKPTR2Dm1(zqcz, qcz, v)
-      MKPTR2Dm1(zqdifv, qdifv, v)
-      MKPTR2Dm1(zqlsc, qlsc, v)
-      MKPTR2Dm1(zqssc, qssc, v)
+      MKPTR2Dm1(nti1p, nti1plus, dbus)
+      MKPTR2Dm1(qti1p, qti1plus, dbus)
+      MKPTR2Dm1(ncp, ncplus, dbus)
+      MKPTR2Dm1(nip, niplus, dbus)
+      MKPTR2Dm1(qcm, qcmoins, dbus)
+      MKPTR2Dm1(qcp, qcplus, dbus)
+      MKPTR2Dm1(qip, qiplus, dbus)
+      MKPTR2Dm1(qqm, humoins, dbus)
+      MKPTR2Dm1(qqp, huplus, dbus)
+      MKPTR2Dm1(ttm, tmoins, dbus)
+      MKPTR2Dm1(qrp, qrplus, dbus)
+      MKPTR2Dm1(ttp, tplus, dbus)
+      MKPTR2Dm1(uu, uplus, dbus)
+      MKPTR2Dm1(vv, vplus, dbus)
+      MKPTR2Dm1(wz, wplus, dbus)
+      MKPTR2Dm1(zcqce, cqce, vbus)
+      MKPTR2Dm1(zcqe, cqe, vbus)
+      MKPTR2Dm1(zcte, cte, vbus)
+      MKPTR2Dm1(zen, en, fbus)
+      MKPTR2Dm1(zfdc, fdc, fbus)
+      MKPTR2Dm1(zfmc, fmc, fbus)
+      MKPTR2Dm1(zfsc, fsc, fbus)
+      MKPTR2Dm1(zgztherm, gztherm, vbus)
+      MKPTR2Dm1(zhufcp, hufcp, fbus)
+      MKPTR2Dm1(zmqe, mqe, vbus)
+      MKPTR2Dm1(zhupostshal, hupostshal, fbus)
+      MKPTR2Dm1(zhushal, hushal, vbus)
+      MKPTR2Dm1(zkt, kt, vbus)
+      MKPTR2Dm1(zprcten, prcten, fbus)
+      MKPTR2Dm1(zprctnm, prctnm, vbus)
+      MKPTR2Dm1(zprctns, prctns, vbus)
+      MKPTR2Dm1(zpriten, priten, fbus)
+      MKPTR2Dm1(zpritnm, pritnm, vbus)
+      MKPTR2Dm1(zpritns, pritns, vbus)
+      MKPTR2Dm1(zqckfc, qckfc, fbus)
+      MKPTR2Dm1(zmqce, mqce, vbus)
+      MKPTR2Dm1(zqcz, qcz, vbus)
+      MKPTR2Dm1(zqdifv, qdifv, vbus)
+      MKPTR2Dm1(zqlsc, qlsc, vbus)
+      MKPTR2Dm1(zqssc, qssc, vbus)
       
-      MKPTR2Dm1(zsufcp, sufcp, f)
-      MKPTR2Dm1(zsvfcp, svfcp, f)
+      MKPTR2Dm1(zsufcp, sufcp, fbus)
+      MKPTR2Dm1(zsvfcp, svfcp, fbus)
       
-      MKPTR2Dm1(ztfcp, tfcp, f)
-      MKPTR2Dm1(zmte, mte, v)
-      MKPTR2Dm1(zrnflx, rnflx, f)
-      MKPTR2Dm1(zsnoflx, snoflx, f)
-      MKPTR2Dm1(ztpostshal, tpostshal, f)
-      MKPTR2Dm1(ztshal, tshal, v)
-      MKPTR2Dm1(ztusc, tusc, v)
-      MKPTR2Dm1(ztvsc, tvsc, v)
+      MKPTR2Dm1(ztfcp, tfcp, fbus)
+      MKPTR2Dm1(zmte, mte, vbus)
+      MKPTR2Dm1(zrnflx, rnflx, fbus)
+      MKPTR2Dm1(zsnoflx, snoflx, fbus)
+      MKPTR2Dm1(ztpostshal, tpostshal, fbus)
+      MKPTR2Dm1(ztshal, tshal, vbus)
+      MKPTR2Dm1(ztusc, tusc, vbus)
+      MKPTR2Dm1(ztvsc, tvsc, vbus)
       
-      MKPTR2Dm1(zufcp, ufcp, f)
-      MKPTR2Dm1(zufcp1, ufcp1, f)
-      MKPTR2Dm1(zufcp2, ufcp2, f)
-      MKPTR2Dm1(zufcp3, ufcp3, f)
+      MKPTR2Dm1(zufcp, ufcp, fbus)
+      MKPTR2Dm1(zufcp1, ufcp1, fbus)
+      MKPTR2Dm1(zufcp2, ufcp2, fbus)
+      MKPTR2Dm1(zufcp3, ufcp3, fbus)
       
-      MKPTR2Dm1(zumfs, umfs, v)
-      MKPTR2Dm1(zumid, umid, v)
+      MKPTR2Dm1(zumfs, umfs, vbus)
+      MKPTR2Dm1(zumid, umid, vbus)
       
-      MKPTR2Dm1(zvfcp, vfcp, f)
-      MKPTR2Dm1(zvfcp1, vfcp1, f)
-      MKPTR2Dm1(zvfcp2, vfcp2, f)
-      MKPTR2Dm1(zvfcp3, vfcp3, f)
+      MKPTR2Dm1(zvfcp, vfcp, fbus)
+      MKPTR2Dm1(zvfcp1, vfcp1, fbus)
+      MKPTR2Dm1(zvfcp2, vfcp2, fbus)
+      MKPTR2Dm1(zvfcp3, vfcp3, fbus)
       
-      MKPTR2Dm1(zwklclplus, wklclplus, d)
-      MKPTR2Dm1(zvmid, vmid, v)
-      MKPTR2Dm1(zareaup, areaup, f)
-      MKPTR2Dm1(zdmfkfc, dmfkfc, f)
-      MKPTR2Dm1(zkfcrf, kfcrf, f)
-      MKPTR2Dm1(zkfcsf, kfcsf, f)
-      MKPTR2Dm1(zkfmrf, kfmrf, v)
-      MKPTR2Dm1(zkfmsf, kfmsf, v)
-      MKPTR2Dm1(zqldi, qldi, f)
-      MKPTR2Dm1(zqlmi, qlmi, v)
-      MKPTR2Dm1(zqrkfc, qrkfc, f)
-      MKPTR2Dm1(zqsdi, qsdi, f)
-      MKPTR2Dm1(zqsmi, qsmi, v)
-      MKPTR2Dm1(zumfkfc, umfkfc, f)
+      MKPTR2Dm1(zwklclplus, wklclplus, dbus)
+      MKPTR2Dm1(zvmid, vmid, vbus)
+      MKPTR2Dm1(zareaup, areaup, fbus)
+      MKPTR2Dm1(zdmfkfc, dmfkfc, fbus)
+      MKPTR2Dm1(zkfcrf, kfcrf, fbus)
+      MKPTR2Dm1(zkfcsf, kfcsf, fbus)
+      MKPTR2Dm1(zkfmrf, kfmrf, vbus)
+      MKPTR2Dm1(zkfmsf, kfmsf, vbus)
+      MKPTR2Dm1(zqldi, qldi, fbus)
+      MKPTR2Dm1(zqlmi, qlmi, vbus)
+      MKPTR2Dm1(zqrkfc, qrkfc, fbus)
+      MKPTR2Dm1(zqsdi, qsdi, fbus)
+      MKPTR2Dm1(zqsmi, qsmi, vbus)
+      MKPTR2Dm1(zumfkfc, umfkfc, fbus)
 
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
 
       call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
       call init2nan(dummy1, dummy2, geop) 
@@ -450,8 +448,14 @@ contains
 
          ! Pre-scheme state for energy budget
          if (associated(zconesc)) then
-            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+            if (stcond == 'MP_P3') then
+               qtl  = qcp + qrp
+               ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+               ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+            else
+               ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
+               ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+            endif
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_shal))
                return
@@ -478,7 +482,12 @@ contains
             ! Apply humidity tendency correction for total water conservation
             ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
             ! Apply temperature tendency correction for liquid water static energy conservation
-            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
+            if (stcond == 'MP_P3') then
+               qtl  = qcp + qrp
+               ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprctns,F_dqi=zpritns)
+            else
+               ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
+            endif
             if (ier /= EB_OK .or. ier2 /= EB_OK) then
                call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_shal))
                return
@@ -489,18 +498,25 @@ contains
          ! Apply shallow convective tendencies
          call apply_tendencies(ttp, ztshal, ztdmask, ni, nk, nkm1)
          call apply_tendencies(qqp, zhushal, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qcp, zprctns, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qcp, zpritns, ztdmask, ni, nk, nkm1)
          if (bkf_lshalm) then
             call apply_tendencies(uu, ztusc, ztdmask, ni, nk, nkm1)
             call apply_tendencies(vv, ztvsc, ztdmask, ni, nk, nkm1)
          endif
 
+         ! Apply shallow convective tendencies for consdensed variables
+         call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, qti1p, nti1p, ztdmask, ni, nk, nkm1)
+
          ! Post-scheme energy budget analysis
          if (associated(zconesc)) then
             ! Compute post-scheme state
-            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+            if (stcond == 'MP_P3') then
+               qtl  = qcp + qrp
+               ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+               ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+            else
+               ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
+               ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+            endif
             if (ier == EB_OK .and. ier2 == EB_OK) then
                ! Compute residuals
                ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1)
@@ -523,8 +539,14 @@ contains
 
       ! Pre-deep CPS state for energy budget
       if (associated(zconedc)) then
-         ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-         ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+         else
+            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
+            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+         endif
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(convec))
             return
@@ -542,7 +564,12 @@ contains
          ! Apply humidity tendency correction for total water conservation
          ier  = eb_conserve_pw(zcqe,zcqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
          ! Apply temperature tendency correction for liquid water static energy conservation
-         ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprcten,F_dqi=zpriten,F_rain=ztlc,F_snow=ztsc)
+         else
+            ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprcten,F_dqi=zpriten,F_rain=ztlc,F_snow=ztsc)
+         endif
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(convec))
             return
@@ -564,8 +591,14 @@ contains
       ! Post-deep CPS energy budget analysis
       if (associated(zconedc)) then
          ! Compute post-scheme state
-         ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-         ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+         else
+            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
+            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+         endif
          if (ier == EB_OK .and. ier2 == EB_OK) then
             ! Compute residuals
             ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=ztlc,F_snow=ztsc)
@@ -599,8 +632,14 @@ contains
 
       ! Pre-mid-level convection state for energy budget
       if (associated(zconemc)) then
-         ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-         ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+         else
+            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
+            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
+         endif
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_mid))
             return
@@ -613,7 +652,12 @@ contains
          ! Apply humidity tendency correction for total water conservation
          ier  = eb_conserve_pw(zmqe,zmqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
          ! Apply temperature tendency correction for liquid water static energy conservation
-         ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprctnm,F_dqi=zpritnm,F_rain=ztlcm)
+         else
+            ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctnm,F_dqi=zpritnm,F_rain=ztlcm)
+         endif
          if (ier /= EB_OK .or. ier2 /= EB_OK) then
             call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_mid))
             return
@@ -633,8 +677,14 @@ contains
       ! Post-mid-level convection energy budget analysis
       if (associated(zconemc)) then
          ! Compute post-scheme state
-         ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-         ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+         if (stcond == 'MP_P3') then
+            qtl  = qcp + qrp
+            ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
+            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
+         else
+            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
+            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
+         endif
          if (ier == EB_OK .and. ier2 == EB_OK) then
             ! Compute residuals
             ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=ztlcm)
