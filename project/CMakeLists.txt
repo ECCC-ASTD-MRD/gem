@@ -20,6 +20,10 @@ endif()
 
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
+  exec_program(${CMAKE_UNAME} ARGS -m OUTPUT_VARIABLE CMAKE_SYSTEM_PROCESSOR)
+endif()
+
 # Include a file that contains settings for a particular architecture and
 # compiler, using the default value of the compiler defined above or the
 # argument given to cmake command.

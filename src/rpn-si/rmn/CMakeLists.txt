@@ -14,3 +14,7 @@ target_include_directories(rmn PRIVATE
    template_utils
    INTRALIB_INCLUDES
 )
+
+if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+  target_compile_options( rmn PRIVATE -w )
+endif()
