@@ -30,7 +30,6 @@ module phy_options
    character(len=16) :: conv_mid     = 'NIL'
    character(len=16) :: conv_shal    = 'NIL'
    character(len=16) :: convec       = 'NIL'
-   integer           :: cw_rad       = 0
    integer(INT64)    :: jdateo       = 0
    real              :: delt         = 0.
    character(len=4),  pointer :: dyninread_list_s(:) => NULL()
@@ -54,6 +53,7 @@ module phy_options
    logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
    logical           :: p3_comptend  = .false.
+   logical           :: p3_comptend_ta = .false.
    character(len=16) :: schmsol      = 'ISBA'
    logical           :: slt_winds    = .false.
    logical           :: tdiaglim     = .false.
@@ -94,6 +94,11 @@ module phy_options
         'NIL ', &
         'TEND'  &
         /)
+
+   !# Fix to remove double convective tendency application (temporary)
+   logical :: cond_dbletd_fix = .false.
+   namelist /physics_cfgs/ cond_dbletd_fix
+   namelist /physics_cfgs_p/ cond_dbletd_fix
 
    !# Evaporation parameter for Sunqvist gridscale condensation
    real           :: cond_evap       = 2.e-4
@@ -580,13 +585,17 @@ module phy_options
    !# * 'NIL     ': no call to bourge
    !# * 'BOURGE  ': use Bourgouin algorithm (bourge1) to determine precip. types.
    !# * 'BOURGE3D':
+   !# * 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS
+   !# * 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only)
    character(len=16) :: pcptype      = 'NIL'
    namelist /physics_cfgs/ pcptype
    namelist /physics_cfgs_p/ pcptype
-   character(len=*), parameter :: PCPTYPE_OPT(3) = (/ &
+   character(len=*), parameter :: PCPTYPE_OPT(5) = (/ &
         'NIL     ', &
         'BOURGE  ', &
-        'BOURGE3D'  &
+        'BOURGE3D', &
+        'SPS_W19 ', &
+        'SPS_FRC ' &
         /)
 
    !# Print stats for phy_input read var
@@ -619,6 +628,11 @@ module phy_options
    character(len=32) :: phystat_list_s(2048) = ' '
    namelist /physics_cfgs/ phystat_list_s
 !!$   namelist /physics_cfgs_p/ phystat_list_s
+
+   !# Fix Liquid solid separation in prep_cw_rad
+   logical           :: prep_cw_rad_fix_l = .false.
+   namelist /physics_cfgs/ prep_cw_rad_fix_l
+   namelist /physics_cfgs_p/ prep_cw_rad_fix_l
 
    !# CFC11 bckgrnd atmospheric concentration (PPMV)
    real              :: qcfc11       = -1.
@@ -710,6 +724,11 @@ module phy_options
    real, dimension(4) :: rad_siglim = (/0.7,0.4,0.7,0.4/)
    namelist /physics_cfgs/ rad_siglim
    namelist /physics_cfgs_p/ rad_siglim
+
+   !# Fix use of effective solar zenith angle
+   logical           :: rad_sun_angle_fix_l = .false.
+   namelist /physics_cfgs/ rad_sun_angle_fix_l
+   namelist /physics_cfgs_p/ rad_sun_angle_fix_l
 
    !# For calculation of DIAGNOSTIC low, mid and high TRUE cloud covers in cldoppro and cldoppro_mp with height criteria for Calipso-GOCCP
    !# TRUE:      rad_zlim(1)=limit between low and mid clouds in height; rad_zlim(2)=limit between mid and high clouds in height; 
@@ -919,6 +938,11 @@ module phy_options
         'IRPCP'  &
         /)
 
+   !# LHN fix to always use P3 tendencies in TDCOND
+   logical        :: lhn_tdcond_fix = .false.
+   namelist /physics_cfgs/ lhn_tdcond_fix
+   namelist /physics_cfgs_p/ lhn_tdcond_fix
+ 
    !# Standard deviation length scale (gridpoints) of Gaussian smoother
    !# applied to RDPR, PR and TA before the application of Latent Heat Nudging
    !# No smoothing applied when -ve

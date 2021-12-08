@@ -35,7 +35,8 @@ subroutine phybusinit(ni,nk)
    ! 002      B. Dugas   (Oct 2010) - A few small corrections
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
-
+   
+#include <msg.h>
    include "surface.cdk"
    include "mcica.cdk"
    include "clefcon.cdk"
@@ -57,7 +58,7 @@ subroutine phybusinit(ni,nk)
    logical :: lcons, lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly
-
+   logical :: lpcp_frac
    !---------------------------------------------------------------------
 
    iverb = wb_verbosity(WB_MSG_INFO)
@@ -106,8 +107,10 @@ subroutine phybusinit(ni,nk)
    lmoymid= (lmoyhr .and. lmid)
    lmoykfsh= (lmoyhr .and. lshbkf .and. bkf_lshalm)
    lbourg  = any(pcptype == (/&
-        'BOURGE', &
-        'NIL   '  &
+        'BOURGE ', &
+        'NIL    ', &
+        'SPS_W19', &
+        'SPS_FRC'  &
         /))
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')
@@ -146,6 +149,8 @@ subroutine phybusinit(ni,nk)
    if (lsurfonly) wwz = '0'
    isss = '0'
    if (tofd /= 'NIL') isss = '1'
+   lpcp_frac = lsurfonly .and. (pcptype == 'SPS_FRC')
+
 
    ! Activate energy budget diagnostics only if outputs are requested by the user
    i = 1
@@ -222,6 +227,16 @@ subroutine phybusinit(ni,nk)
       if (p3_comptend) exit
    enddo
    p3_comptend = (p3_comptend .or. debug_alldiag_L)
+   p3_comptend = (p3_comptend .or. (cond_conserve == 'TEND'))
+   p3_comptend_ta = (p3_comptend .or. (lhn_tdcond_fix .and. lhn /= 'NIL' .and. stcond == 'MP_P3'))
+   if (lhn /= 'NIL' .and. stcond == 'MP_P3' .and. .not.p3_comptend_ta) then
+      if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ta')) then
+         call msg(MSG_WARNING, '(condensation) Requested TA in output will not include P3 tendencies')
+      endif
+      if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ste')) then
+         call msg(MSG_WARNING, '(condensation) Requested STE in output will not include P3 tendencies')
+      endif
+   endif
    !#TODO: Check if some alloc can be avoided when p3_comptend == .false.
 
    etccdiag = .false.

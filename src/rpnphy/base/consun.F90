@@ -14,30 +14,28 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
-     CCF , &
-     TP   ,  TM   ,  QP   ,  QM   ,  CWP  ,  CWM , &
-     PSP  ,  PSM  , S    , TAU  , &
-     PRFLX, SWFLX ,  F12 ,  FEVP , ICEFRAC, &
-     MRK2, ni   ,  nlev)
-   use tdpack
-   use phy_options
+subroutine consun6(stt, sqt, swt, srr, ssr, scf, &
+     tp, tm, qp, qm, cwp, cwm, &
+     psp, psm, s, tau, &
+     prflx, swflx, f12, fevp, icefrac, &
+     mrk2, ni, nlev)
+   use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, foqst, fodqs
+   use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc
    use ens_perturb, only: ens_nc2d, ens_spp_get
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ni , nlev
-   real    STT(ni,nlev)    , SQT(ni,nlev)    , SWT(ni,nlev) , &
-        SRR(ni)         , SSR(ni)         , SCF(ni,nlev) , &
-        CCF(ni,nlev) , &
-        PRFLX(ni,nlev+1), SWFLX(ni,nlev+1), &
-        TP(ni,nlev)     , TM(ni,nlev)     , &
-        QP(ni,nlev)     , QM(ni,nlev)     , &
-        CWP(ni,nlev)    , CWM(ni,nlev)    , &
-        PSP(ni)         , PSM(ni)         , &
-        S(ni,*)         , &
-        TAU             , F12(ni,nlev)    , FEVP(ni,nlev), &
-        ICEFRAC(ni,nlev), MRK2(ni,ens_nc2d)
+   integer,intent(in) :: ni , nlev
+   real :: stt(ni,nlev) , sqt(ni,nlev)    , swt(ni,nlev) , &
+        srr(ni)         , ssr(ni)         , scf(ni,nlev) , &
+        prflx(ni,nlev+1), swflx(ni,nlev+1), &
+        tp(ni,nlev)     , tm(ni,nlev)     , &
+        qp(ni,nlev)     , qm(ni,nlev)     , &
+        cwp(ni,nlev)    , cwm(ni,nlev)    , &
+        psp(ni)         , psm(ni)         , &
+        s(ni,*)         , &
+        tau             , f12(ni,nlev)    , fevp(ni,nlev), &
+        icefrac(ni,nlev), mrk2(ni,ens_nc2d)
 
    !@Authors Claude Girard and Gerard Pellerin (1995)
    !@Revision
@@ -70,7 +68,6 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    ! SSR      large scale (stable) snow rate
    ! SCF      large scale (stable) cloud fraction
    !          - Inputs
-   ! CCF     convective cloud fraction 
    ! TP      temperature at (t+dt) before condensation
    ! TM      temperature at (t-dt)
    ! QP      specific humidity at (t+dt) before condensation
@@ -91,8 +88,8 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    ! TAU     timestep
    !@Note
    !-----------------------------------------------------------------------
-   !  I)       NAMES OF PARAMETERS AND OTHER QUANTITIES
-   !           ------------------------------------------------------------
+   ! I) NAMES OF PARAMETERS AND OTHER QUANTITIES
+   !
    !       CBFEFF      INCREASES CONVERSION RATE DUE TO DUE TO PRESENCE
    !                   OF ICE IN PRECIPITATION COMING IN FROM ABOVE
    !       CFREEZ      INCREASES CONVERSION RATE BELOW TEMP CTFRZ1
@@ -113,17 +110,12 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !       HSQ         dQs/dT
    !       HSQ2        dQs/dlnP
    !       HU          RELATIVE HUMIDITY OF THE ENVIRONMENT
-   !       PRCPCU      RATE OF CONVECTIVE PRECIPITATION AT LEVEL K
    !       PRCPST      RATE OF STRATIFORM PRECIPITATION AT LEVEL K
 
-   !       HCCU        CONVERSION RATE FROM CLOUD TO PRECIP DROPS IN
-   !                   CONVECTIVE CLOUD
    !       HCST        CONVERSION RATE FROM CLOUD TO PRECIP DROPS IN
    !                   STRATIFORM CLOUD
    !       HE273       SATURATION VAPOUR PRESSURE AT T=273K
    !       HKMELT      COEFFICIENT FOR MELTING OF ICE
-   !       HMRCU       CLOUD WATER MIXING RATIO AT WHICH CONVERSION BECOMES
-   !                   EFFICIENT IN CONVECTIVE CLOUD
    !       HMRST       CLOUD WATER MIXING RATIO AT WHICH CONVERSION BECOMES
    !                   EFFICIENT IN STRATIFORM CLOUD (NAMELIST-CONTROLLED)
    !       HPS         TIME AVERAGED SURFACE PRESSURE
@@ -139,21 +131,20 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    !       TABICE      PROBABILITY FOR ICE CRYSTALS AS A FUNCTION OF
    !                   TEMPERATURE
    !-----------------------------------------------------------------------
-   !  II)      DECLARATIONS
-   !           ------------------------------------------------------------
+   !  II) DECLARATIONS
 
    real    XCOND  , XN     , HDPAD  , HSQ2   , HDQAD  , &
         HDQSAD , XDE    , XPRB   , BFMOD  , &
         XK     , HFCOX  , XFT    , HFREZX , HFRCOA , HFMRX  , &
         ZCWP   , XPRADD , DTMELT , DMELT  , EVAPRI , &
-        XEVACU , XP     , QINCR  , HP0    , HE273  , HEDR   , &
+        XP     , QINCR  , HP0    , HE273  , HEDR   , &
         HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
         COALES , SIGMIN
-   real    CBFEFF , CTFRZ1 , HCCU   , HMRCU , &
+   real    CBFEFF , CTFRZ1 ,  & 
         HKMELT , XDT    , DSNMAX , XSNOW  , &
         rTAU   , SNOW   , PRCP   , CONET  , &
         COEF   , COVER  , HMR    , ZDCW   , XT     , &
-        SIGMAX , T0I    , WEIGHT , x      , y      , z      , &
+        SIGMAX , T0I    , x      , y      , z      , &
         TCI    , TSCALE , APRI   , TOPEQ0 , TODPMX , temp1  , &
         temp2  , XB     , XBB    , xo
 
@@ -167,10 +158,7 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real, dimension(NI     ) :: COVBAR
    real, dimension(NI     ) :: PRCPST
    real, dimension(NI     ) :: STSNOW
-   real, dimension(NI     ) :: PRCPCU
-   real, dimension(NI     ) :: CUSNOW
    real, dimension(NI     ) :: HSCT
-   real, dimension(NI,NLEV) :: SUBCLD
    real, dimension(NI     ) :: HDQMX
    real, dimension(NI     ) :: HDPMX
    real, dimension(NI     ) :: HCOND
@@ -199,28 +187,25 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    real, dimension(NI     ) :: HMRST
    real, dimension(NI     ) :: ICEACC
 
-   !***********************************************************************
    !-----------------------------------------------------------------------
-   !  III)     STATEMENT FUNCTIONS
-   !           -----------------------------------------------------------
+   ! III) STATEMENT FUNCTIONS
 
    real    Z1, Z2, Z3, Z4, Z5
 
-   !           TEMPERATURE FUNCTION TO MULTIPLY HMRCU AND HMRST FOR T<273
+   ! TEMPERATURE FUNCTION TO MULTIPLY HMRST FOR T<273
 
-   Z1(XT) = min(1.33*exp(-(min(0.,(XT-TRPL))*.066)**2) , 1.0)
+   Z1(XT) = min(1.33*exp(-(min(0.,(XT-TRPL))*.066)**2), 1.0)
 
-   Z2(XT) = abs (XT - 232.) / 18.
+   Z2(XT) = abs(XT - 232.) / 18.
 
    Z3(XT) = Z2(XT) * (1. + Z2(XT) * (1. + 1.333 * Z2(XT)))
 
-   Z4(XT) = Z3(XT) / (1. + Z3(XT)) * sign(1.0,XT-232.)
+   Z4(XT) = Z3(XT) / (1. + Z3(XT)) * sign(1.0, XT-232.)
 
-   Z5(XT) = max(0.5*0.15*(1.07+Z4(XT)),0.03)
+   Z5(XT) = max(0.5*0.15*(1.07+Z4(XT)), 0.03)
 
    !-----------------------------------------------------------------------
-   !  IV)      VALUES OF CONSTANTS - IN SI UNITS - INCLUDING DERIVED ONES
-   !           -----------------------------------------------------------
+   ! IV) VALUES OF CONSTANTS - IN SI UNITS - INCLUDING DERIVED ONES
 
    HE273  = 610.78
    T0I    = 1./TRPL
@@ -230,71 +215,47 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    TSCALE = (TODPMX - TCI)*sqrt(2.)
    APRI = 1./(1.-exp(-((TOPEQ0-TCI)/TSCALE)**2))
 
-   HP0    = 1.E5
+   HP0  = 1.E5
    HEDR = EPS1/RGASD
    HEDLDR = EPS1*CHLF/RGASD
    HDLDCP = CHLF/CPD
 
    !-----------------------------------------------------------------------
-   !  V)       PARAMATER VALUES IN SI UNITS
-   !           ------------------------------------------------------------
+   ! V) PARAMATER VALUES IN SI UNITS
 
-   CONAE  = 0.15
-   AECON  = exp(CONAE)
+   CONAE = 0.15
+   AECON = exp(CONAE)
    rTAU = 1. / TAU
 
    !-----------------------------------------------------------------------
-   !  VI)      PREPARATIONS
-   !           ------------------------------------------------------------
+   ! VI) PREPARATIONS
 
    do il = 1, ni
       HPS(il) = ( PSP(il) + PSM(il) ) * 0.5
-   end do
+   enddo
 
    do jk = 1, nlev
       do il = 1, ni
          HPK(il,jk) = S(il,jk) * HPS(il)
-      end do
-   end do
+      enddo
+   enddo
 
    do il = 1, ni
       DPRG(il,1) = 0.5 * ( HPK(il,2) - HPK(il,1) ) / GRAV
       DPRG(il,nlev) = ( 0.5 * ( HPK(il,nlev) - HPK(il,nlev-1) ) &
            + S(il,nlev+1) * HPS(il) - HPK(il,nlev) ) / GRAV
-   end do
+   enddo
 
    do jk  = 2, nlev-1
       do il  = 1, ni
          DPRG(il,jk) = 0.5 * ( HPK(il,jk+1) - HPK(il,jk-1) ) / GRAV
-      end do
-   end do
+      enddo
+   enddo
 
-   !           SUNQVIST stratiform condensation scheme
-   !           ------------------------------------------------------------
+   ! SUNQVIST stratiform condensation scheme
+   ! ------------------------------------------------------------
 
-
-   !  A)       LINKAGE CONDITIONS
-
-   do il =1, ni
-      subcld(il,1) = 0.
-   end do
-
-!VDIR NOLSTVAL
-   do jk = 2, nlev
-      do il = 1, ni
-         subcld(il,jk) = subcld(il,jk-1)
-         !               cloud top above 400 mb
-         !               to indicate a likely downdraft below 500 mb
-         if( subcld(il,1).gt.0. .and. HPK(il,jk).gt.50000. ) &
-              subcld(il,jk)=min(1.,max(0.,2.5*(s(il,jk)-0.5)))
-      end do
-   end do
-   do il =1, ni
-      subcld(il,1) = 0.
-   end do
-
-
-   !  B)       PARAMATER VALUES IN SI UNITS
+   ! A) PARAMATER VALUES IN SI UNITS
 
    HU0MIN(:) = ens_spp_get('hu0min', mrk2, default=cond_hu0min)
    HU0MAX(:) = ens_spp_get('hu0max', mrk2, default=cond_hu0max)
@@ -303,29 +264,15 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
    XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
    xo = 1.e-12
 
-   !***********************************************************************
+   ! SUNQVIST cloud water and precipitation scheme
+   ! ------------------------------------------------------------
 
-   !           HERE BEGINS THE CALCULATION OF STRATIFORM CONDENSATION
-
-   !***********************************************************************
-
-   !           SUNQVIST cloud water and precipitation scheme
-   !           ------------------------------------------------------------
-
-
-   !  A)       LINKAGE CONDITIONS
-
-
-   !-----------------------------------------------------------------------
-
-   !  B)       PARAMATER VALUES IN SI UNITS
+   ! B) PARAMATER VALUES IN SI UNITS
 
    CFREEZ = 0.12
    COALES = 300.
    CBFEFF = 4.0
    CTFRZ1 = 263.
-   HCCU   = 1.E-4
-   HMRCU  = 5.E-4
    HKMELT = 3.E-5
    xo = 1.E-16
    HCST(:)   = ens_spp_get('cond_hcst', mrk2, default=1.E-4)
@@ -335,23 +282,23 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
    !-----------------------------------------------------------------------
 
-   !  C)       INITIALIZATIONS
+   ! C) INITIALIZATIONS
 
    do il = 1, ni
       PRCPST(il) = 0.
       STSNOW(il) = 0.
-      PRCPCU(il) = 0.
-      CUSNOW(il) = 0.
       COVBAR(il) = 0.
       HSCT(il) = 0.
-   end do
+   enddo
    PRFLX = 0.
    SWFLX = 0.
    fevp = 0.
    f12 = 0.
 
-   do jk = 1, nlev
-      do il = 1, ni
+   DO_JK: do jk = 1, nlev
+      
+      DO_IL1: do il = 1, ni
+         
          PRESP(il,jk)=S(il,jk)*PSP(il)
          PRESM(il,jk)=S(il,jk)*PSM(il)
          HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
@@ -378,7 +325,7 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          HUZ00t= AMIN1( HUZ00t + x , HU0MAX(il) )
 
          SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-HUZ00t) )
-         SCF(il,jk) = amax1( SCF(il,jk)-CCF(il,jk) , 0. )
+         SCF(il,jk) = amax1( SCF(il,jk) , 0. )
 !!$         mask = sign(1., -1.*abs(SCF(il,jk)))+1./2.
 !!$         HCONDt = mask * (- CWP(il,jk) * rTAU
          if( SCF(il,jk) .eq. 0. ) then
@@ -414,14 +361,14 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          HCONDt = HCONDt + XCOND
 
 
-         !           ------------------------------------------------------------
-         !           CORRECT THE above CALCULATIONS OF NET CONDENSATION
-         !           a) IN CASES OF RESIDUAL SUPER-SATURATION (because, in cloudy
-         !           cases, moistening/cond. may have been over/under-estimated
-         !           or super-saturation was present initially)
-         !           b) FOR diagnosed (b=0) CLEAR SITUATION LEADING eventually
-         !           TO SUPER-SATURATION
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! CORRECT THE above CALCULATIONS OF NET CONDENSATION
+         ! a) IN CASES OF RESIDUAL SUPER-SATURATION (because, in cloudy
+         !    cases, moistening/cond. may have been over/under-estimated
+         !    or super-saturation was present initially)
+         ! b) FOR diagnosed (b=0) CLEAR SITUATION LEADING eventually
+         !    TO SUPER-SATURATION
+         ! ------------------------------------------------------------
 
          QINCR = HDQMX(il) - HCONDt
 
@@ -431,13 +378,13 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          HDPMX(il) = amax1 ( 0. , - QINCR ) * DPRG(il,jk)
 
-      end do
+      enddo DO_IL1
 
       !-----------------------------------------------------------------------
-
-      !  D)       CALCULATIONS
-
-      do il = 1, ni
+      ! D) CALCULATIONS
+            
+      DO_IL2: do il = 1, ni
+         
          HELDR = HEDR * CPD * HLDCP(il)
          xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
          xdet1(il) = exp(HEDLDR*(T0I - 1. / TM(il,jk)))
@@ -445,19 +392,18 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          CONET = amax1( 0. , HSCT(il) / DPRG(il,jk) )
          HSCT(il) = HSCT(il)+(0.-CONET)*DPRG(il,jk)
          CONETt(il) = HCOND(il) + CONET/HLDCP(il)
-         PRCP = PRCPST(il)+PRCPCU(il)
-         SNOW = STSNOW(il)+CUSNOW(il)
-         COVER = SCF(il,jk) + CCF(il,jk) + 1.E-2
-         WEIGHT = ( SCF(il,jk) + 1.E-2 ) / COVER
-         HMR = HMRST(il) * WEIGHT + HMRCU * (1-WEIGHT)
-         COEF = HCST(il) * WEIGHT + HCCU * (1-WEIGHT)
+         PRCP = PRCPST(il)
+         SNOW = STSNOW(il) 
+         COVER = SCF(il,jk) + 1.E-2 
+         HMR = HMRST(il)
+         COEF = HCST(il)
 
-         !           ------------------------------------------------------------
-         !           Factors for coalescence HFCOX, freezing HFREZX.
-         !           Reduction of HMR at low temperatures, HFMRX
-         !           Modified probability of ICE
-         !           resulting from ICE in PRECIP from above
-         !           ------------------------------------------------------------
+         !------------------------------------------------------------
+         ! Factors for coalescence HFCOX, freezing HFREZX.
+         ! Reduction of HMR at low temperatures, HFMRX
+         ! Modified probability of ICE
+         ! resulting from ICE in PRECIP from above
+         !------------------------------------------------------------
 
          temp1 = TM(il,jk)
          xde = max(0.0,min(((HE273/temp1*xdet(il)* &
@@ -481,42 +427,38 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          HFMRX = HMR * XFT / HFCOX
          HBMRXt(il) = COVER * HFMRX
 
-         !           ------------------------------------------------------------
-         !           Special treatment for T.LT.236K
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! Special treatment for T.LT.236K
 
          temp1 = amax1(0.,amin1(1.,0.25*(TM(il,jk)-232.)))
          HFRCOA = temp1 * HFRCOA + ( 1.- temp1 ) * ICEACC(il)
-         !           ------------------------------------------------------------
-         !           Fixed part of the equation normalized by 2.*b*Mr
-         !           ------------------------------------------------------------
+         
+         ! ------------------------------------------------------------
+         ! Fixed part of the equation normalized by 2.*b*Mr
 
          XFIXt(il) = ( 2. * CWM(il,jk) + TAU * &
               (HDCWAD(il) + CONETt(il)))/( 2. * HBMRXt(il) )
 
-
-         !           ------------------------------------------------------------
-         !           Conversion rate times 2*dt
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! Conversion rate times 2*dt
 
          COEFt(il) = 0.5 * COEF * HFRCOA * TAU
 
-         !           ------------------------------------------------------------
-         !           First guess YM is M(t-dt) normalized by b*Mr
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! First guess YM is M(t-dt) normalized by b*Mr
 
          YMt(il) = CWM(il,jk) / HBMRXt(il)
 
-         !           ------------------------------------------------------------
-         !           To make M(t+dt).ge.0, YM has to be .ge. M(t-dt)/(2*b*Mr)
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! To make M(t+dt).ge.0, YM has to be .ge. M(t-dt)/(2*b*Mr)
 
          xdet1(il)=0.5 * YMt(il)
-      enddo
+         
+      enddo DO_IL2
 
-      !           ------------------------------------------------------------
-      !           5 NEWTON - RAPHSON ITERATIONS
-      !           ------------------------------------------------------------
+      ! ------------------------------------------------------------
+      ! 5 NEWTON - RAPHSON ITERATIONS
+      ! ------------------------------------------------------------
       do inr=1,5
          do il=1,ni
             xdet(il) = exp(-min(ymt(il)*ymt(il), 25.0))
@@ -528,12 +470,13 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          enddo
       enddo
 
-      !           ------------------------------------------------------------
-      !           Rate of change of cloud water content
-      !           Generation of precipitation
-      !           ------------------------------------------------------------
+      ! ------------------------------------------------------------
+      ! Rate of change of cloud water content
+      ! Generation of precipitation
+      ! ------------------------------------------------------------
 
-      do il = 1, ni
+      DO_IL3: do il = 1, ni
+         
          xdet(il) = exp(-(((max(TP(il,jk), tci) - tci)/tscale)**2))
          ZCWP = amax1( 2. * HBMRXt(il) * YMt(il) - CWM(il,jk) , 0. )
 
@@ -541,12 +484,12 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          XPRADD = DPRG(il,jk) * amax1( CONETt(il) - ZDCW , 0. )
 
-         !           we make sure that no infinitesimal precipitation is generated
+         ! we make sure that no infinitesimal precipitation is generated
          if (abs(conett(il)-zdcw).le.abs(spacing(zdcw))) xpradd = 0.
 
          SWT(il,jk) = ZDCW
 
-         !           Diagnostics for AURAMS
+         ! Diagnostics for AURAMS
 
          F12(il,jk) = amax1( CONETt(il) - ZDCW , 0. )
          if (ZCWP.lt.1.0e-09) F12(il,jk)=0.0
@@ -556,10 +499,8 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
          PRCPST(il) = PRCPST(il) +       XPRADD
          STSNOW(il) = STSNOW(il) + PRMODt(il)*XPRADD
 
-         !           ------------------------------------------------------------
-         !           Melting of stratiform snow
-         !           ------------------------------------------------------------
-
+         ! ------------------------------------------------------------
+         ! Melting of stratiform snow
 
          XB = SCF(il,jk)
          XBB = COVBAR(il)
@@ -583,27 +524,8 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          STSNOW(il) = amax1( 0. , STSNOW(il) - DMELT )
 
-         !           ------------------------------------------------------------
-         !           Melting of convective snow
-         !           ------------------------------------------------------------
-
-         SNOW = CUSNOW(il)
-         x = amax1( SNOW , 1.E-16 )
-         x = sqrt( x )
-         y = 0.5 * XN * DSNMAX / x
-         y = y / ( 1. + 0.5 * XN * x )
-         y = amin1( y , 1. )
-         XSNOW = SNOW * ( 1. - y ) ** 2
-
-         DMELT = amin1( SNOW - XSNOW , DSNMAX )
-
-         CUSNOW(il) = amax1( 0. , CUSNOW(il) - DMELT )
-
-
-         !           ------------------------------------------------------------
-         !           Evaporation of stratiform precipitation
-         !           ------------------------------------------------------------
-
+         ! ------------------------------------------------------------
+         ! Evaporation of stratiform precipitation
 
          PRCP = PRCPST(il)
          XN = STPEVP(il) * TAU / HCIMP(il)
@@ -624,54 +546,36 @@ subroutine CONSUN5(STT  ,  SQT  ,  SWT  ,  SRR  ,  SSR  ,  SCF , &
 
          COVBAR(il) = XBB * ( 1. - XB ) + XB
 
-         !           ------------------------------------------------------------
-         !           Evaporation of precipitation under the convective cloud
-         !           ------------------------------------------------------------
-
-         EVAPRI = amin1( PRCPCU(il) , 0. ) !# DBDT == 0 always
-         XEVACU = EVAPRI / DPRG(il,jk)
-
-         PRCPCU(il) = PRCPCU(il) - EVAPRI
-         CUSNOW(il) = amax1( 0., (CUSNOW(il) - EVAPRI) )
-
-         !           ------------------------------------------------------------
-         !           TEMPERATURE AND MOISTURE TENDENCIES, PRECIPITATION FLUXES
-         !           ------------------------------------------------------------
+         ! ------------------------------------------------------------
+         ! TEMPERATURE AND MOISTURE TENDENCIES, PRECIPITATION FLUXES
+         ! ------------------------------------------------------------
 
          STT(il,jk) = - DTMELT + HCOND(il) * HLDCP(il)
          SQT(il,jk) = - HCOND(il)
 
-         PRFLX(il,jk+1) =  PRCPST(il) + PRCPCU(il)
-         SWFLX(il,jk+1) =  STSNOW(il) + CUSNOW(il)
+         PRFLX(il,jk+1) =  PRCPST(il)
+         SWFLX(il,jk+1) =  STSNOW(il)
 
-      end do
-   end do
+      enddo DO_IL3
+      
+   enddo DO_JK
 
-   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-   !  9)       SAVE THE STRATIFORM AND CONVECTIVE PRECIPITATION RATES
-   !           AND THE LIQUID AND SOLID PRECIPITATION FLUXES
-   !           ------------------------------------------------------------
+   ! ------------------------------------------------------------
+   ! 9) SAVE THE STRATIFORM AND CONVECTIVE PRECIPITATION RATES
+   !    AND THE LIQUID AND SOLID PRECIPITATION FLUXES
+   ! ------------------------------------------------------------
 
    do il = 1, ni
       SRR(il) = PRCPST(il) - STSNOW(il)
       SSR(il) = STSNOW(il)
-   end do
+   enddo
 
    do jk = 1, nlev+1
       do il = 1, ni
          PRFLX(il,jk) =  PRFLX(il,jk) - SWFLX(il,jk)
-      end do
-   end do
-   return
-
+      enddo
+   enddo
+   
    !-----------------------------------------------------------------------
-
-   !***********************************************************************
-
-   !           HERE ENDS THE CALCULATION OF CLOUD WATER CONTENT
-   !                         AND PRECIPITATION
-
-   !***********************************************************************
-
-end subroutine CONSUN5
+   return
+end subroutine CONSUN6

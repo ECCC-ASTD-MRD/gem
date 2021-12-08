@@ -22,7 +22,7 @@ module diagno_cw_rad
 contains
 
    !/@*
-   subroutine diagno_cw_rad1(f, fsiz, d,dsiz, v, vsiz, &
+   subroutine diagno_cw_rad1(fbus, vbus, &
         liqwcin, icewcin, liqwp, icewp, cloud, &
         trnch, ni, nk)
       use series_mod, only: series_xst
@@ -30,8 +30,8 @@ contains
       implicit none
 !!!#include <arch_specific.hf>
 
-      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk, trnch
-      real, intent(inout), target ::  f(fsiz), d(dsiz), v(vsiz)
+      integer, intent(in) :: trnch, ni, nk
+      real, pointer, contiguous :: fbus(:), vbus(:)
       real, intent(inout) :: liqwcin(ni,nk), icewcin(ni,nk)
       real, intent(inout) :: liqwp(ni,nk-1), icewp(ni,nk-1) !#TODO: check this
       real, intent(inout) :: cloud(ni,nk)
@@ -65,17 +65,17 @@ contains
 
       integer :: i, k
 
-      real, pointer, dimension(:)   :: ztlwp, ztiwp, ztlwpin, ztiwpin
-      real, pointer, dimension(:,:) :: zlwcrad, ziwcrad, zcldrad
+      real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp, ztlwpin, ztiwpin
+      real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad
       !----------------------------------------------------------------
 
-      MKPTR1D(ztlwp, tlwp, f)
-      MKPTR1D(ztiwp, tiwp, f)
-      MKPTR1D(ztlwpin, tlwpin, f)
-      MKPTR1D(ztiwpin, tiwpin, f)
-      MKPTR2D(zlwcrad, lwcrad, v)
-      MKPTR2D(ziwcrad, iwcrad, v)
-      MKPTR2D(zcldrad, cldrad, v)
+      MKPTR1D(ztlwp, tlwp, fbus)
+      MKPTR1D(ztiwp, tiwp, fbus)
+      MKPTR1D(ztlwpin, tlwpin, fbus)
+      MKPTR1D(ztiwpin, tiwpin, fbus)
+      MKPTR2D(zlwcrad, lwcrad, vbus)
+      MKPTR2D(ziwcrad, iwcrad, vbus)
+      MKPTR2D(zcldrad, cldrad, vbus)
 
       do i=1,ni
          ztlwp(i)      = 0.0

@@ -28,7 +28,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fa, absa, lcsw, lclw, mrk2, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
-   use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   use phy_options, only: RAD_NUVBRANDS, rad_atmpath, rad_sun_angle_fix_l
    use ens_perturb, only: ens_nc2d
    implicit none
 
@@ -172,7 +172,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    real, dimension(ilg,lay) :: tg
    real, dimension(ilg) :: o3topg
    real, dimension(ilg) :: albsur
-   real, dimension(ilg) :: rmug
+   real, dimension(ilg) :: rmug, rmu0
    real, dimension(ilg) :: dmix
    integer, dimension(ilg,lay) :: inptg
    integer, dimension(ilg,lay) :: inptmg
@@ -451,6 +451,11 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
+      if (.not.rad_sun_angle_fix_l) then
+         rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
+      else
+         rmu0(ilg1:ilg2) = rmu(ilg1:ilg2)
+      endif
 
       DO230: do i = ilg1, ilg2
          j = isun(i)
@@ -754,7 +759,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                     a1g(i,1) * cumdtr(i,2,lev) + &
                     a1g(i,2) * cumdtr(i,3,lev) + &
                     a1g(i,3) * cumdtr(i,4,lev)
-               a1(i,2)             =  rgw * rmug(i)
+               a1(i,2)             =  rgw * rmu0(i)
                fsd(j)              =  fsd(j) + x * bs(i) * a1(i,2)
                cst(j)              =  cst(j) + (1.0 - refl(i,1,1) * &
                     a1(i,1)) * a1(i,2)
@@ -847,7 +852,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
             do i = ilg1, ilg2
                j = isun(i)
-               a1(i,2)             =  rgw * rmug(i)
+               a1(i,2)             =  rgw * rmu0(i)
                cst(j)              =  cst(j) + a1(i,2)
                csb(j)              =  csb(j) + tran(i,1,lev) * a1(i,2)
 
@@ -897,7 +902,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
          cst(j)                  =  cst(j) + fslo(j)
          albpla(j)               = (flxu(i,1) + a1(i,4)) / &
-              (rsolarc * rmug(i))
+              (rsolarc * rmu0(i))
       enddo
 490   continue
 

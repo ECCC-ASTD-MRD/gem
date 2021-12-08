@@ -14,8 +14,14 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+module phyexe_mod
+   private
+   public :: phyexe
+   
+contains
+
 !/@*
-subroutine phyexe(d, f, v, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
+subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    use debug_mod, only: init2nan
    use apply_rad_tendencies, only: apply_rad_tendencies1
    use calcdiag, only: calcdiag1
@@ -37,27 +43,25 @@ subroutine phyexe(d, f, v, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    use tendency, only: tendency5
    use turbulence, only: turbulence2
    use lhn_mod, only: lhn2
+   use chm_mod, only: chm_exe
    implicit none
 !!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
    !@arguments
    !          - input -
-   ! d        dynamics input field
+   ! dbus     dynamics input field
    !          - input/output -
-   ! f        historic variables for the physics
+   ! fbus     historic variables for the physics
    !          - output -
-   ! v        physics tendencies and other output fields from the physics
+   ! vbus     physics tendencies and other output fields from the physics
    !          - input -
-   ! dsiz     dimension of d
-   ! fsiz     dimension of f
-   ! vsiz     dimension of v
    ! trnch    slice number
    ! kount    timestep number
    ! n        horizontal running length
    ! nk       vertical dimension
 
-   integer :: dsiz,fsiz,vsiz,trnch,kount,ni,nk
-   real    :: d(dsiz), f(fsiz), v(vsiz)
+   integer, intent(in) :: trnch, kount, ni, nk
+   real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
    !@author L. Spacek (oct 2011)
    !@notes
@@ -74,39 +78,41 @@ subroutine phyexe(d, f, v, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
    character(len=64) :: tmp_S
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-   real, dimension(ni,nk) :: seloc, ficebl
+   real, dimension(ni,nk) :: seloc, ficebl, lwc0, iwc0, lwc0m, iwc0m
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
    if (debug_trace_L) call msg_verbosity(MSG_DEBUG)
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
 
-   call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, seloc, ficebl)
+   call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0)
+   call init2nan(seloc, ficebl, lwc0, iwc0, lwc0m, iwc0m)
 
    nkm1 = nk-1
 
    call inichamp4(kount, trnch, ni, nk)
    if (phy_error_L) return
 
-   call phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, f,&
-        seloc, delt, vsiz, dsiz, fsiz, kount, trnch, ni, nk)
+   call phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
+        lwc0, iwc0,  lwc0m, iwc0m, vbus, dbus, fbus, &
+        seloc, delt, kount, trnch, ni, nk)
    if (phy_error_L) return
 
-   call radiation3(d, dsiz, f, fsiz, v, vsiz, ni, nk, kount, trnch)
+   call radiation3(dbus, fbus, vbus, ni, nk, kount, trnch)
    if (phy_error_L) return
 
    TURBULENT_FLUX_CONSISTENCY: if (pbl_flux_consistency) then
 
-      call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      call metox3(dbus, vbus, fbus, ni, nk)
       if (phy_error_L) return
 
-      call linoz3(d, v, f, dsiz, vsiz, fsiz, delt, kount, trnch, ni, nkm1, nk)
+      call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
       if (phy_error_L) return
 
-      call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+      call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
 
-      call apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+      call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
       if (phy_error_L) return
 
       call surface1(trnch, kount, delt, ni, nk)
@@ -117,55 +123,57 @@ subroutine phyexe(d, f, v, dsiz, fsiz, vsiz, trnch, kount, ni, nk)
       call surface1(trnch, kount, delt, ni, nk)
       if (phy_error_L) return
 
-      call metox3(d, v, f, dsiz, vsiz, fsiz, ni, nk)
+      call metox3(dbus, vbus, fbus, ni, nk)
       if (phy_error_L) return
 
-      call linoz3(d, v, f, dsiz, vsiz, fsiz, delt, kount, trnch, ni, nkm1, nk)
+      call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
       if (phy_error_L) return
 
-      call gwd9(d, f, v, dsiz, fsiz, vsiz, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+      call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
 
-      call apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+      call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
       if (phy_error_L) return
 
    endif TURBULENT_FLUX_CONSISTENCY
 
-   call turbulence2(d, f, v, dsiz, fsiz, vsiz, ficebl, seloc, delt, kount, trnch, ni, nk)
+   call turbulence2(dbus, fbus, vbus, ficebl, seloc, delt, kount, trnch, ni, nk)
    if (phy_error_L) return
 
-   call precipitation4(tplus0, huplus0, d, dsiz, f, fsiz, v, vsiz, delt, ni, nk, kount, trnch)
+   call precipitation4(tplus0, huplus0, dbus, fbus, vbus, delt, ni, nk, kount, trnch)
    if (phy_error_L) return
 
-   call prep_cw3(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+   call prep_cw3(fbus, dbus, vbus, ficebl, ni, nk)
    if (phy_error_L) return
 
-   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, v, d, &
-        1./delt, vsiz, dsiz, kount, ni, nk)
+   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, vbus, dbus, &
+        1./delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call lhn2(d, f, v, dsiz, fsiz, vsiz, delt, ni, nk, kount)
+   call lhn2(dbus, fbus, vbus, delt, ni, nk, kount)
    if (phy_error_L) return
 
-   call ens_ptp_apply(d, v, f, dsiz, fsiz, vsiz, ni, nk, kount)
+   call ens_ptp_apply(dbus, vbus, fbus, ni, nk, kount)
    if (phy_error_L) return
 
-   call calcdiag1(tplus0, huplus0, qcplus0, d, f, v, delt, kount, ni, nk)
+   call calcdiag1(tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m, dbus, fbus, vbus, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(f, v, fsiz, vsiz, moyhr, acchr, delt, kount, step_driver, ni)
+   call sfc_calcdiag3(fbus, vbus, moyhr, acchr, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
-   call chm_exe2(d, f, v, dsiz, fsiz, vsiz, trnch, kount)
+   call chm_exe(dbus, fbus, vbus, trnch, kount)
    if (phy_error_L) return
 
    call diagnosurf5(ni, trnch)
    if (phy_error_L) return
 
-   call extdiag3(d, f, v, dsiz,fsiz, vsiz, trnch, ni, nk)
+   call extdiag3(dbus, fbus, vbus, trnch, ni, nk)
 
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [END]')
    call msg_verbosity(iverb)
    !----------------------------------------------------------------
    return
 end subroutine phyexe
+
+end module phyexe_mod

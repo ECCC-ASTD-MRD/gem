@@ -22,7 +22,7 @@ module radslop
 contains
 
    !/@*
-   subroutine radslop3(f, fsiz, v, vsiz, ni, hz, julien, trnch)
+   subroutine radslop3(fbus, vbus, ni, hz, julien, trnch)
       use debug_mod, only: init2nan
       use phy_options
       use phybus
@@ -34,17 +34,15 @@ contains
       !@Arguments
       !          - Input/Output -
       ! f        field of permanent physics variables
-      ! fsiz     dimension of f
       !          - Input
       ! v        field of volatile physics variables
-      ! vsiz     dimension of v
       ! ni       horizontal dimension
       ! hz       Greenwich hour (0 to 24)
       ! julien   Julien days
       ! trnch    number of the slice
 
-      integer, intent(in) :: fsiz, vsiz, ni, trnch
-      real, intent(inout), target :: f(fsiz), v(vsiz)
+      integer, intent(in) :: ni, trnch
+      real, pointer, contiguous :: fbus(:), vbus(:)
       real, intent(in) :: julien
       real, intent(in) :: hz
 
@@ -52,24 +50,24 @@ contains
       !*@/
 #include "phymkptr.hf"
 
-      real, pointer, dimension(:) :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop, zdlat, zdlon, zfluslop, zfsd0, zfsf0, zvv1, zap
+      real, pointer, dimension(:), contiguous :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop, zdlat, zdlon, zfluslop, zfsd0, zfsf0, zvv1, zap
       real, dimension(ni) :: bcos, bsin, stan, ssin, scos
       real :: dire, difu, albe
       integer :: i
       !----------------------------------------------------------------
 
-      MKPTR1D(zc1slop, c1slop, f)
-      MKPTR1D(zc2slop, c2slop, f)
-      MKPTR1D(zc3slop, c3slop, f)
-      MKPTR1D(zc4slop, c4slop, f)
-      MKPTR1D(zc5slop, c5slop, f)
-      MKPTR1D(zdlat, dlat, f)
-      MKPTR1D(zdlon, dlon, f)
-      MKPTR1D(zfluslop, fluslop, f)
-      MKPTR1D(zfsd0, fsd0, f)
-      MKPTR1D(zfsf0, fsf0, f)
-      MKPTR1D(zvv1, vv1, f)
-      MKPTR1D(zap, ap, v)
+      MKPTR1D(zc1slop, c1slop, fbus)
+      MKPTR1D(zc2slop, c2slop, fbus)
+      MKPTR1D(zc3slop, c3slop, fbus)
+      MKPTR1D(zc4slop, c4slop, fbus)
+      MKPTR1D(zc5slop, c5slop, fbus)
+      MKPTR1D(zdlat, dlat, fbus)
+      MKPTR1D(zdlon, dlon, fbus)
+      MKPTR1D(zfluslop, fluslop, fbus)
+      MKPTR1D(zfsd0, fsd0, fbus)
+      MKPTR1D(zfsf0, fsf0, fbus)
+      MKPTR1D(zvv1, vv1, fbus)
+      MKPTR1D(zap, ap, vbus)
 
       if (.not.radslope) then
          zfluslop(1:ni) = 0.0

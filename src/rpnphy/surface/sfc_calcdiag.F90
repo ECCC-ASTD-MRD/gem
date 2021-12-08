@@ -22,7 +22,7 @@ module sfc_calcdiag
 contains
 
    !/@*
-   subroutine sfc_calcdiag3(f,v,fsiz,vsiz,moyhr,acchr,dt,kount,step_driver,ni)
+   subroutine sfc_calcdiag3(fbus,vbus,moyhr,acchr,dt,kount,step_driver,ni)
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
       use sfcbus_mod
@@ -32,29 +32,28 @@ contains
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       !@Arguments
       !          - Input/Output -
-      ! f        permanent bus
+      ! fbus     permanent bus
       !          - input -
-      ! v        volatile (output) bus
+      ! vbus     volatile (output) bus
       !          - input -
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! kount    timestep number
       ! dt       length of timestep
       ! n        horizontal running length
-      integer :: fsiz, vsiz, moyhr, acchr, kount, step_driver, ni
-      real, target :: f(fsiz), v(vsiz)
+      integer :: moyhr, acchr, kount, step_driver, ni
+      real, dimension(:), pointer, contiguous :: fbus, vbus
       real :: dt
       !*@/
 #include <msg.h>
       include "sfcinput.cdk"
 
-      real, pointer, dimension(:) :: zaccevap, zdrain, zdrainaf, zfvapliqaf,&
+      real, pointer, dimension(:), contiguous :: zaccevap, zdrain, zdrainaf, zfvapliqaf,&
            zisoil, zlatflaf, zleg, zlegaf, &
            zler, zleraf, zles, zlesaf, zletr, zletraf, zlev, zlevaf, zoverfl, &
            zoverflaf, zrootdp, zwflux, zwfluxaf, zwsoil, zinsmavg
 
-      real, pointer, dimension(:,:) :: zrunofftotaf
+      real, pointer, dimension(:,:), contiguous :: zrunofftotaf
 
+      logical :: lacchr
       integer :: i, moyhr_steps
       real :: moyhri, tmp_r
       !-------------------------------------------------------------------
@@ -64,38 +63,42 @@ contains
 #define MKPTR1D(PTR1,NAME2,BUS)    nullify(PTR1); if (NAME2 > 0) PTR1(1:ni) => BUS(NAME2:)
 #define MKPTR2D(PTR1,NAME2,N3,BUS) nullify(PTR1); if (NAME2 > 0) PTR1(1:ni,1:N3) => BUS(NAME2:)
 
-      MKPTR1D(zaccevap, accevap, f)
-      MKPTR1D(zdrain, drain, f)
-      MKPTR1D(zdrainaf, drainaf, f)
-      MKPTR1D(zfvapliqaf, fvapliqaf, f)
-      MKPTR1D(zisoil, isoil, f)
-      MKPTR1D(zlatflaf, latflaf, f)
-      MKPTR1D(zleg, leg, v)
-      MKPTR1D(zlegaf, legaf, f)
-      MKPTR1D(zler, ler, v)
-      MKPTR1D(zleraf, leraf, f)
-      MKPTR1D(zles, les, v)
-      MKPTR1D(zlesaf, lesaf, f)
-      MKPTR1D(zletr, letr, v)
-      MKPTR1D(zletraf, letraf, f)
-      MKPTR1D(zlev, lev, v)
-      MKPTR1D(zlevaf, levaf, f)
-      MKPTR1D(zoverfl, overfl, v)
-      MKPTR1D(zoverflaf, overflaf, f)
-      MKPTR1D(zrootdp, rootdp, f)
-      MKPTR1D(zwflux, wflux, v)
-      MKPTR1D(zwfluxaf, wfluxaf, f)
-      MKPTR1D(zinsmavg, insmavg, f)
+      MKPTR1D(zaccevap, accevap, fbus)
+      MKPTR1D(zdrain, drain, fbus)
+      MKPTR1D(zdrainaf, drainaf, fbus)
+      MKPTR1D(zfvapliqaf, fvapliqaf, fbus)
+      MKPTR1D(zisoil, isoil, fbus)
+      MKPTR1D(zlatflaf, latflaf, fbus)
+      MKPTR1D(zleg, leg, vbus)
+      MKPTR1D(zlegaf, legaf, fbus)
+      MKPTR1D(zler, ler, vbus)
+      MKPTR1D(zleraf, leraf, fbus)
+      MKPTR1D(zles, les, vbus)
+      MKPTR1D(zlesaf, lesaf, fbus)
+      MKPTR1D(zletr, letr, vbus)
+      MKPTR1D(zletraf, letraf, fbus)
+      MKPTR1D(zlev, lev, vbus)
+      MKPTR1D(zlevaf, levaf, fbus)
+      MKPTR1D(zoverfl, overfl, vbus)
+      MKPTR1D(zoverflaf, overflaf, fbus)
+      MKPTR1D(zrootdp, rootdp, fbus)
+      MKPTR1D(zwflux, wflux, vbus)
+      MKPTR1D(zwfluxaf, wfluxaf, fbus)
+      MKPTR1D(zinsmavg, insmavg, fbus)
 
-      MKPTR2D(zrunofftotaf,runofftotaf,nsurf+1,f)
+      MKPTR2D(zrunofftotaf,runofftotaf,nsurf+1,fbus)
 
+      lacchr = .false.
+      if (acchr > 0) then
+         lacchr = (mod(step_driver-1, acchr) == 0)
+      elseif (acchr == 0) then
+         lacchr = (step_driver-1 == 0)
+      endif
       
       ! Common ISBA/SVS accumulators
       IF_ISBA_SVS: if (schmsol == 'ISBA' .or. schmsol == 'SVS') then
 
-         IF_RESET: if (kount == 0 .or. &
-              (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
-              (acchr == 0 .and. step_driver-1 == 0)) then
+         IF_RESET: if (kount == 0 .or. lacchr) then
 
             ! Reset accumulators at t=T+00hr 
             
@@ -116,7 +119,7 @@ contains
       IF_ISBA: if (schmsol == 'ISBA') then
 
          nullify(zwsoil)
-         if (wsoil > 0) zwsoil(1:ni) => f(wsoil+ni:)
+         if (wsoil > 0) zwsoil(1:ni) => fbus(wsoil+ni:)
 
          if (moyhr > 0) then
             if (kount == 0 .or. mod(step_driver-1, moyhr) == 0) then
@@ -124,9 +127,7 @@ contains
             endif
          endif
 
-         IF_RESET_ISBA: if (kount == 0 .or. &
-              (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
-              (acchr == 0 .and. step_driver-1 == 0)) then
+         IF_RESET_ISBA: if (kount == 0 .or. lacchr) then
             zlegaf(:) = 0.
             zleraf(:) = 0.
             zletraf(:) = 0.
@@ -185,9 +186,7 @@ contains
       IF_SVS: if (schmsol == 'SVS') then
          
          ! Reset accumulators at t=T+00hr 
-         IF_RESET_SVS: if (kount == 0 .or. &
-              (acchr > 0 .and. mod(step_driver-1, acchr) == 0) .or. &
-              (acchr == 0 .and. step_driver-1 == 0)) then
+         IF_RESET_SVS: if (kount == 0 .or. lacchr) then
             
             ! Reset accumulators at t=T+00hr 
             

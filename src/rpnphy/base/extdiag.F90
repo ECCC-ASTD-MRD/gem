@@ -21,7 +21,7 @@ module extdiag
 
 contains
    !/@*
-   subroutine extdiag3(d, f, v, dsiz, fsiz, vsiz, trnch, ni, nk)
+   subroutine extdiag3(dbus, fbus, vbus, trnch, ni, nk)
       use tdpack_const, only: CAPPA
       use series_mod, only: series_xst, series_isstep, series_isvar
       use phy_options
@@ -31,20 +31,17 @@ contains
       !@Object calculate averages and accumulators of tendencies and diagnostics
       !@Arguments
       !          - Input/Output -
-      ! f        permanent bus
+      ! fbus     permanent bus
       !          - input -
-      ! d        dynamic bus
-      ! v        volatile (output) bus
+      ! dbus     dynamic bus
+      ! vbus     volatile (output) bus
       !          - input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! trnch    slice number
       ! ni       horizontal running length
       ! nk       vertical dimension
 
-      integer, intent(in) :: dsiz, fsiz, vsiz, trnch, ni, nk
-      real, target, intent(inout) :: d(dsiz), f(fsiz), v(vsiz)
+      integer, intent(in) :: trnch, ni, nk
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
       !*@/
@@ -60,9 +57,9 @@ contains
       real, dimension(ni)     :: work1d
       real, dimension(ni, nk) :: p, work2d1, work2d2
 
-      real, pointer, dimension(:)    :: zpmoins, busptr2d, ztdew, zflusolaf, &
+      real, pointer, dimension(:) , contiguous :: zpmoins, busptr2d, ztdew, zflusolaf, &
            zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1
-      real, pointer, dimension(:, :) :: zhuplus, zsigw, ztplus, &
+      real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
            zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
            zqcplus, zftot, zfbl, zqtbl, zfdc
       !----------------------------------------------------------------
@@ -75,29 +72,29 @@ contains
       s1 = ni*(nk-1)-1
       nkm1 = nk-1
 
-      MKPTR2D(zfbl, fbl, f)
-      MKPTR2D(zfdc, fdc, f)
-      MKPTR1D(zflusolaf, flusolaf, f)
-      MKPTR2D(zftot, ftot, f)
-      MKPTR1D(zhrsmax, hrsmax, f)
-      MKPTR1D(zhrsmin, hrsmin, f)
-      MKPTR2D(zhuplus, huplus, d)
-      MKPTR1D(zhusavg, husavg, f)
-      MKPTR1D(zpmoins, pmoins, f)
-      MKPTR2D(zqcplus, qcplus, d)
-      MKPTR2D(zqtbl, qtbl, f)
-      MKPTR2D(zsigw, sigw, d)
-      MKPTR2D(ztcond, tcond, v)
-      MKPTR1D(ztdew, tdew, v)
-      MKPTR2D(ztplus, tplus, d)
-      MKPTR1D(zttmaxs1, ttmax+S1, f)
-      MKPTR1D(zttmins1, ttmin+S1, f)
-      MKPTR2D(zuplus, uplus, d)
-      MKPTR1D(zuvsavg, uvsavg, f)
-      MKPTR1D(zuvsmax, uvsmax, f)
-      MKPTR2D(zvplus, vplus, d)
-      MKPTR2D(zwplus, wplus, d)
-      MKPTR2D(zze, ze, v)
+      MKPTR2D(zfbl, fbl, fbus)
+      MKPTR2D(zfdc, fdc, fbus)
+      MKPTR1D(zflusolaf, flusolaf, fbus)
+      MKPTR2D(zftot, ftot, fbus)
+      MKPTR1D(zhrsmax, hrsmax, fbus)
+      MKPTR1D(zhrsmin, hrsmin, fbus)
+      MKPTR2D(zhuplus, huplus, dbus)
+      MKPTR1D(zhusavg, husavg, fbus)
+      MKPTR1D(zpmoins, pmoins, fbus)
+      MKPTR2D(zqcplus, qcplus, dbus)
+      MKPTR2D(zqtbl, qtbl, fbus)
+      MKPTR2D(zsigw, sigw, dbus)
+      MKPTR2D(ztcond, tcond, vbus)
+      MKPTR1D(ztdew, tdew, vbus)
+      MKPTR2D(ztplus, tplus, dbus)
+      MKPTR1D(zttmaxs1, ttmax+S1, fbus)
+      MKPTR1D(zttmins1, ttmin+S1, fbus)
+      MKPTR2D(zuplus, uplus, dbus)
+      MKPTR1D(zuvsavg, uvsavg, fbus)
+      MKPTR1D(zuvsmax, uvsmax, fbus)
+      MKPTR2D(zvplus, vplus, dbus)
+      MKPTR2D(zwplus, wplus, dbus)
+      MKPTR2D(zze, ze, vbus)
 
       ! Extract time series and zonal diagnostics on nk levels
 
@@ -228,19 +225,19 @@ contains
       ! Prepare only lowest-level component visibilities for series
       if (stcond(1:6) == 'MP_MY2') then
          do i=1,ni
-            work1d(i) = v(vis+(nkm1-1)*ni+i-1)
+            work1d(i) = vbus(vis+(nkm1-1)*ni+i-1)
          enddo
          call series_xst(work1d,    'VIS' , trnch)
          do i=1,ni
-            work1d(i) = v(vis1+(nkm1-1)*ni+i-1)
+            work1d(i) = vbus(vis1+(nkm1-1)*ni+i-1)
          enddo
          call series_xst(work1d,    'VIS1', trnch)
          do i=1,ni
-            work1d(i) = v(vis2+(nkm1-1)*ni+i-1)
+            work1d(i) = vbus(vis2+(nkm1-1)*ni+i-1)
          enddo
          call series_xst(work1d,    'VIS2', trnch)
          do i=1,ni
-            work1d(i) = v(vis3+(nkm1-1)*ni+i-1)
+            work1d(i) = vbus(vis3+(nkm1-1)*ni+i-1)
          enddo
          call series_xst(work1d,    'VIS3', trnch)
       endif
@@ -254,11 +251,11 @@ contains
             busidx = dynpar(ivar, BUSPAR_I0)
             if (busidx < 1) cycle
             if (kam == 1) then
-               busptr2d(1:ni) => d(busidx:)
+               busptr2d(1:ni) => dbus(busidx:)
                call series_xst(busptr2d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             else
-               busptr3d(1:ni,1:kam) => d(busidx:)
+               busptr3d(1:ni,1:kam) => dbus(busidx:)
                call series_xst(busptr3d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             endif
@@ -271,11 +268,11 @@ contains
             busidx = perpar(ivar, BUSPAR_I0)
             if (busidx < 1) cycle
             if (kam == 1) then
-               busptr2d(1:ni) => f(busidx:)
+               busptr2d(1:ni) => fbus(busidx:)
                call series_xst(busptr2d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             else
-               busptr3d(1:ni,1:kam) => f(busidx:)
+               busptr3d(1:ni,1:kam) => fbus(busidx:)
                call series_xst(busptr3d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             endif
@@ -288,11 +285,11 @@ contains
             busidx = volpar(ivar, BUSPAR_I0)
             if (busidx < 1) cycle
             if (kam == 1) then
-               busptr2d(1:ni) => v(busidx:)
+               busptr2d(1:ni) => vbus(busidx:)
                call series_xst(busptr2d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             else
-               busptr3d(1:ni,1:kam) => v(busidx:)
+               busptr3d(1:ni,1:kam) => vbus(busidx:)
                call series_xst(busptr3d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             endif

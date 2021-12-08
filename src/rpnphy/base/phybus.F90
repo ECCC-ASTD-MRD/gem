@@ -8,10 +8,10 @@ module phybus
 
    integer :: sigw=0  !#set to sigm/t in sigmalev
 
-   real, pointer :: entbus(:,:) => null()
-   real, pointer :: dynbus(:,:) => null()
-   real, pointer :: perbus(:,:) => null()
-   real, pointer :: volbus(:,:) => null()
+   real, pointer, contiguous :: entbus(:,:) => null()
+   real, pointer, contiguous :: dynbus(:,:) => null()
+   real, pointer, contiguous :: perbus(:,:) => null()
+   real, pointer, contiguous :: volbus(:,:) => null()
 
 end module phybus
 
