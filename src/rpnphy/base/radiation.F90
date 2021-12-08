@@ -22,7 +22,7 @@ module radiation
 contains
 
    !/@*
-   subroutine radiation3(d, dsiz, f, fsiz, v, vsiz, &
+   subroutine radiation3(dbus, fbus, vbus, &
         ni, nk, kount, trnch)
       use iso_c_binding
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
@@ -41,9 +41,6 @@ contains
       !@Object Interface to radiation
       !@Arguments
       !          - Input -
-      ! dsiz     dimension of dbus
-      ! fsiz     dimension of fbus
-      ! vsiz     dimension of vbus
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! kount    timestep number
@@ -53,8 +50,8 @@ contains
       ! fbus     historic variables for the physics
       ! vbus     physics tendencies and other output fields from the physics
 
-      integer, intent(in) :: fsiz, vsiz, dsiz, ni, nk, kount, trnch
-      real, intent(inout), target :: d(dsiz), f(fsiz), v(vsiz)
+      integer, intent(in) :: ni, nk, kount, trnch
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
 
       !@Author L.Spacek, November 2011
       !*@/
@@ -65,17 +62,17 @@ contains
       real :: hz0, hz, julien
 
       real, dimension(ni,nk) :: cldfrac, liqwcin, icewcin, liqwp, icewp, trav2d
-      real, pointer, dimension(:) :: zpmoins
-      real, pointer, dimension(:,:) :: ztmoins, zhumoins, zsigw
+      real, pointer, dimension(:), contiguous :: zpmoins
+      real, pointer, dimension(:,:), contiguous :: ztmoins, zhumoins, zsigw
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'radiation [BEGIN]')
       if (timings_L) call timing_start_omp(410, 'radiation', 46)
 
-      MKPTR1D(zpmoins, pmoins, f)
+      MKPTR1D(zpmoins, pmoins, fbus)
 
-      MKPTR2D(ztmoins, tmoins, d)
-      MKPTR2D(zhumoins, humoins, d)
-      MKPTR2D(zsigw, sigw, d)
+      MKPTR2D(ztmoins, tmoins, dbus)
+      MKPTR2D(zhumoins, humoins, dbus)
+      MKPTR2D(zsigw, sigw, dbus)
 
       call init2nan(cldfrac, liqwcin, icewcin, liqwp, icewp, trav2d)
 
@@ -85,22 +82,22 @@ contains
 
          if (stcond(1:3) /= 'MP_') then
 
-            call prep_cw_rad3(f, fsiz, d, dsiz, v, vsiz, &
+            call prep_cw_rad3(fbus, dbus, &
                  ztmoins, zhumoins, zpmoins, zsigw, &
                  cldfrac, liqwcin, icewcin, liqwp, icewp, &
                  trav2d, &
                  kount, trnch, ni, nk, nkm1)
 
-            call diagno_cw_rad1(f, fsiz, d, dsiz, v, vsiz, &
+            call diagno_cw_rad1(fbus, vbus, &
                  liqwcin, icewcin, liqwp, icewp, &
                  cldfrac, &
                  trnch, ni, nk)
          endif
 
-        select case (radia)
-        case('CCCMARAD')
+         select case (radia)
+         case('CCCMARAD')
 
-            call cccmarad1(d, dsiz, f, fsiz, v, vsiz, &
+            call cccmarad1(dbus, fbus, vbus, &
                  ztmoins, zhumoins, &
                  zpmoins, zsigw, delt, kount, &
                  trnch, ni, nkm1, nk, &
@@ -109,7 +106,7 @@ contains
 
          case('CCCMARAD2')
 
-            call ccc2_cccmarad2(d, dsiz, f, fsiz, v, vsiz, &
+            call ccc2_cccmarad2(dbus, fbus, vbus, &
                  ztmoins, zhumoins, &
                  zpmoins, zsigw, delt, kount, &
                  trnch, ni, nkm1, nk, &
@@ -125,7 +122,7 @@ contains
       hz = amod(hz0 + (float(kount)*delt)/3600., 24.)
       julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
 
-      call radslop3(f, fsiz, v, vsiz, ni, hz, julien, trnch)
+      call radslop3(fbus, vbus, ni, hz, julien, trnch)
 
       if (timings_L) call timing_stop_omp(410)
       call msg_toall(MSG_DEBUG, 'radiation [END]')

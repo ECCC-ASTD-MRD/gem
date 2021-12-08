@@ -31,7 +31,7 @@ contains
 
    !/@*
    subroutine tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        vbus, dbus, rcdt1, vsiz, dsiz, kount, ni, nk)
+        vbus, dbus, rcdt1, kount, ni, nk)
       use phy_options
       use phybus
       use ens_perturb, only: ptp_L
@@ -42,13 +42,11 @@ contains
 
       !@Arguments
 
-      integer, intent(in) :: vsiz, dsiz, kount, ni, nk
+      integer, intent(in) :: kount, ni, nk
       real, dimension(ni,nk), intent(in) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-      real, target, intent(inout) :: vbus(vsiz),  dbus(dsiz)
+      real, dimension(:), pointer, contiguous :: dbus, vbus
       real, intent(in)  :: rcdt1
 
-      ! dsiz     dimension of dbus
-      ! vsiz     dimension of vbus
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! rcdt1    1/cdt1
@@ -63,7 +61,7 @@ contains
 #include <msg.h>
 
       integer :: i, k
-      real, pointer, dimension(:,:) :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
+      real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
       !-------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
       if (timings_L) call timing_start_omp(450, 'tendency', 46)
@@ -130,7 +128,7 @@ contains
 
 
    !/@*
-   subroutine apply_tendencies_bus(d,dsiz,v,vsiz,f,fsiz,ivar,iten,ni,nk,nkscope)
+   subroutine apply_tendencies_bus(dbus,dsiz,vbus,vsiz,fbus,fsiz,ivar,iten,ni,nk,nkscope)
       use phy_options
       use phybus
       implicit none
@@ -143,28 +141,28 @@ contains
       ! ni       horizonal index
       ! nk       vertical  index
       ! nkscope  vertical  operator scope
-      ! v        volatile bus
-      ! f        permanent bus
+      ! vbus     volatile bus
+      ! fbus     permanent bus
       !
       !          - input/output -
-      ! d        dynamics bus
+      ! dbus     dynamics bus
 
       integer, intent(in)    :: dsiz,vsiz,fsiz,ivar,iten,ni,nk,nkscope
-      real, target, intent(in)    :: v(vsiz),f(fsiz)
-      real, target, intent(inout) :: d(dsiz)
+      real, target, intent(in)    :: vbus(vsiz), fbus(fsiz)
+      real, target, intent(inout) :: dbus(dsiz)
 
       !@Author L. Spacek (Oct 2011)
       !*@/
 
       integer :: k
 
-      real, pointer, dimension(:)   :: ztdmask
-      real, pointer, dimension(:,:) :: ziten, zivar
+      real, pointer, dimension(:), contiguous   :: ztdmask
+      real, pointer, dimension(:,:), contiguous :: ziten, zivar
       !----------------------------------------------------------------
 
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR2D(ziten, iten, v)
-      MKPTR2D(zivar, ivar, d)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR2D(ziten, iten, vbus)
+      MKPTR2D(zivar, ivar, dbus)
 
       if (.not.(associated(ztdmask) .and. associated(ziten) .and. associated(zivar))) then
          call physeterror('apply_tendencies_bus', 'Problem getting pointers')
@@ -181,7 +179,7 @@ contains
 
 
    !/@*
-   subroutine apply_tendencies_bus2(d,v,f,ivar,iten,ni,nk,nkscope)
+   subroutine apply_tendencies_bus2(dbus, vbus, fbus, ivar, iten, ni, nk, nkscope)
       use phy_options
       use phybus
       implicit none
@@ -194,14 +192,14 @@ contains
       ! ni       horizonal index
       ! nk       vertical  index
       ! nkscope  vertical  operator scope
-      ! v        volatile bus
-      ! f        permanent bus
+      ! vbus     volatile bus
+      ! fbus     permanent bus
       !
       !          - input/output -
-      ! d        dynamics bus
+      ! dbus     dynamics bus
 
-      real, target, intent(inout) :: d(:)
-      real, target, intent(in)    :: v(:),f(:)
+      real, target, intent(inout) :: dbus(:)
+      real, target, intent(in)    :: vbus(:),fbus(:)
       integer, intent(in) :: ivar,iten,ni,nk
       integer, intent(in), optional :: nkscope
 
@@ -210,13 +208,13 @@ contains
 
       integer :: k, nkscope1
 
-      real, pointer, dimension(:)   :: ztdmask
-      real, pointer, dimension(:,:) :: ziten, zivar
+      real, pointer, dimension(:), contiguous   :: ztdmask
+      real, pointer, dimension(:,:), contiguous :: ziten, zivar
       !----------------------------------------------------------------
 
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR2D(ziten, iten, v)
-      MKPTR2D(zivar, ivar, d)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR2D(ziten, iten, vbus)
+      MKPTR2D(zivar, ivar, dbus)
 
       nkscope1 = nk
       if (present(nkscope)) nkscope1 = nkscope
@@ -234,6 +232,7 @@ contains
       return
    end subroutine apply_tendencies_bus2
 
+   
    !/@*
    subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, nkscope, F_minval, F_maxval)
       use phy_options

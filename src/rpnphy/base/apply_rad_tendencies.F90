@@ -22,7 +22,7 @@ module apply_rad_tendencies
 contains
 
    !/@*
-   subroutine apply_rad_tendencies1(d, dsiz, v, vsiz, f, fsiz, ni, nk, nkm1)
+   subroutine apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use energy_budget, only: eb_en, eb_pw, eb_residual_en, eb_residual_pw, eb_conserve_en, EB_OK
@@ -35,15 +35,12 @@ contains
       !@Object Apply radiative tendencies
       !@Arguments
       !          - Input -
-      ! dsiz     dimension of dbus
-      ! vsiz     dimension of vbus
-      ! fsiz     dimension of fbus
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! nkm1     vertical scope of the operator
 
-      integer, intent(in) :: fsiz, vsiz, dsiz, ni, nk, nkm1
-      real, intent(inout), target :: d(dsiz), v(vsiz), f(fsiz)
+      integer, intent(in) :: ni, nk, nkm1
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author Ron McTaggart-Cowan, Summer 2017
       !*@/
@@ -55,36 +52,28 @@ contains
       integer ::  istat, istat2, k
       real, dimension(ni) :: tradmult
       real, dimension(ni,nkm1) :: qrad, mtrad
-      real, dimension(:), pointer :: zconerad,zconqrad, zps, zfusi, zfdsi, zfdss, ziv, &
-           zev, zei, ztdmask, znetrad
-      real, dimension(:,:), pointer :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, &
-           zmrk2
+      real, dimension(:), pointer, contiguous :: zconerad, zconqrad, zps, ztdmask, znetrad
+      real, dimension(:,:), pointer, contiguous :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, zmrk2
       real(REAL64), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
       if (timings_L) call timing_start_omp(422, 'apply_rad_td', 46)
-
-      ! Bus pointer association
-      MKPTR1D(zconerad, conerad, v)
-      MKPTR1D(zconqrad, conqrad, v)
-      MKPTR1D(zei, ei, f)
-      MKPTR1D(zev, ev, f)
-      MKPTR1D(zfdsi, fdsi, f)
-      MKPTR1D(zfdss, fdss, f)
-      MKPTR1D(zfusi, fusi, f)
-      MKPTR1D(ziv, iv, v)
-      MKPTR1D(znetrad, netrad, v)
-      MKPTR1D(zps, pmoins, f)
-      MKPTR1D(ztdmask, tdmask, f)
-
-      MKPTR2Dm1(zgztherm, gztherm, v)
-      MKPTR2Dm1(zqcplus, qcplus, d)
-      MKPTR2Dm1(zqplus, huplus, d)
-      MKPTR2Dm1(zsigt, sigt, d)
-      MKPTR2Dm1(ztplus, tplus, d)
-      MKPTR2Dm1(ztrad, trad, v)
       
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, f)
+      ! Bus pointer association
+      MKPTR1D(zconerad, conerad, vbus)
+      MKPTR1D(zconqrad, conqrad, vbus)
+      MKPTR1D(znetrad, netrad, vbus)
+      MKPTR1D(zps, pmoins, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
+
+      MKPTR2Dm1(zgztherm, gztherm, vbus)
+      MKPTR2Dm1(zqcplus, qcplus, dbus)
+      MKPTR2Dm1(zqplus, huplus, dbus)
+      MKPTR2Dm1(zsigt, sigt, dbus)
+      MKPTR2Dm1(ztplus, tplus, dbus)
+      MKPTR2Dm1(ztrad, trad, vbus)
+      
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
       
       ! Early exit if radiation is not used
       if (radia == 'NIL') then
@@ -94,7 +83,8 @@ contains
          return
       endif
 
-      call init2nan(qrad)
+      call init2nan(tradmult)
+      call init2nan(qrad, mtrad)
       call init2nan(l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr)
 
       ! Pre-scheme state for energy budget
@@ -106,13 +96,6 @@ contains
             return
          endif
       endif
-
-      ! Compute source of column integral of liquid water static energy:
-      !  (iv-ev): TOA SW net
-      !  fdss: SFC SW absorption (equals net by balance)
-      !  (0.-ei): TOA LW net
-      !  (fdsi-fusi): SW LW net
-      znetrad = ((ziv-zev) - zfdss) + ((0.-zei) - (zfdsi-zfusi))
 
       ! Impose conservation by adjustment of moisture and temperature tendencies
       TENDENCY_ADJUSTMENT: if (rad_conserve == 'TEND') then

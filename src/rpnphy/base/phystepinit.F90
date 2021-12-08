@@ -23,8 +23,9 @@ contains
 
    !/@*
    subroutine phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
+        lwc0, iwc0, lwc0m, iwc0m, &
         vbus, dbus, fbus, seloc, dt, &
-        vsiz, dsiz, fsiz, kount, trnch, ni, nk)
+        kount, trnch, ni, nk)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
@@ -42,14 +43,12 @@ contains
       !@Author L. Spacek (Oct 2011)
       !@Object Setup for physics timestep
       !@Arguments
-      integer                :: vsiz, dsiz, fsiz, kount, trnch, ni, nk
-      real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-      real, dimension(ni,nk) :: seloc
-      real, target           :: vbus(vsiz), dbus(dsiz), fbus(fsiz)
-      real                   :: dt
+      integer, intent(in) :: kount, trnch, ni, nk
+      real, dimension(ni,nk), intent(out) :: uplus0, vplus0, wplus0, tplus0, &
+           huplus0, qcplus0, lwc0, iwc0, lwc0m, iwc0m, seloc
+      real, pointer, contiguous :: vbus(:), dbus(:), fbus(:)
+      real, intent(in) :: dt
       !          - Input -
-      ! dsiz     dimension of dbus
-      ! vsiz     dimension of vbus
       ! dt       timestep (parameter) (sec.)
       ! trnch    slice number
       ! ni       horizontal running length
@@ -60,7 +59,10 @@ contains
       ! tplus0   initial value of dbus(tplus)
       ! huplus0  initial value of dbus(huplus)
       ! qcplus0  initial value of dbus(qcplus)
-      ! dt       timestep (sec.)
+      ! lwc0     initial value of total liquid water content
+      ! iwc0     initial value of total ice water content
+      ! lwc0m    time minus value of total liquid water content
+      ! iwc0m    time minus value of total ice water content
       !          - input/output -
       ! dbus     dynamics input field
       ! vbus     physics tendencies and other output fields from the physics
@@ -80,20 +82,27 @@ contains
       real, dimension(ni,nk) :: work
       real, dimension(ni,nk) :: qe
 
+      real, target :: tmp1d(ni)
+      real, pointer :: tmpptr(:)
+
       type(phymetaplus) :: meta_m, meta_p
       type(phymeta), pointer :: metalist(:)
 
-      real, pointer, dimension(:)   :: zdlat, zfcor, zpmoins, ztdiag, zthetaa, &
+      real, pointer, dimension(:), contiguous :: &
+           zdlat, zfcor, zpmoins, ztdiag, zthetaa, &
            zqdiag, zza, zztsl, zzusl, zme, zp0, &
            zudiag, zvdiag, zmg, zz0, zz1, zz2, zz3, &
            zz4, ztls, ztss, zrainrate, zsnowrate, zthetaap, zpplus, &
-           zrsc, zrlc
-      real, pointer, dimension(:,:) :: zgzmom, zgz_moins, zhumoins, zhuplus, &
+           zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac
+      real, pointer, dimension(:,:), contiguous :: &
+           zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
-           zgztherm, ztve, zfneige, zfip
-      real, pointer, dimension(:,:) :: tmp1,tmp2
-      real, pointer, dimension(:,:,:) :: zvcoef
+           zgztherm, ztve, zfneige, zfip, &
+           zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
+           zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim
+      real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
+      real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
       if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
@@ -127,6 +136,11 @@ contains
       MKPTR1D(ztss, tss, fbus)
       MKPTR1D(zrainrate, rainrate, vbus)
       MKPTR1D(zsnowrate, snowrate, vbus)
+
+      MKPTR1D(zrainfrac, rainfrac, fbus)
+      MKPTR1D(zsnowfrac, snowfrac, fbus)
+      MKPTR1D(zfrfrac, frfrac, fbus)
+      MKPTR1D(zpefrac, pefrac, fbus)
 
       if (any(pcptype == (/ &
            'NIL   ', &
@@ -162,6 +176,25 @@ contains
       MKPTR2D(zze, ze, vbus)
 
       MKPTR3D(zvcoef, vcoef, 2, vbus)
+
+      MKPTR2D(zqrp, qrplus, dbus)
+      MKPTR2D(zqrm, qrmoins, dbus)
+      MKPTR2D(zqti1p, qti1plus, dbus)
+      MKPTR2D(zqti2p, qti2plus, dbus)
+      MKPTR2D(zqti3p, qti3plus, dbus)
+      MKPTR2D(zqti4p, qti4plus, dbus)
+      MKPTR2D(zqti1m, qti1moins, dbus)
+      MKPTR2D(zqti2m, qti2moins, dbus)
+      MKPTR2D(zqti3m, qti3moins, dbus)
+      MKPTR2D(zqti4m, qti4moins, dbus)
+      MKPTR2D(zqnp, qnplus, dbus)
+      MKPTR2D(zqgp, qgplus, dbus)
+      MKPTR2D(zqhp, qhplus, dbus)
+      MKPTR2D(zqip, qiplus, dbus)
+      MKPTR2D(zqnm, qnmoins, dbus)
+      MKPTR2D(zqgm, qgmoins, dbus)
+      MKPTR2D(zqhm, qhmoins, dbus)
+      MKPTR2D(zqim, qimoins, dbus)
 
       call init2nan(work, qe)
 
@@ -236,8 +269,8 @@ contains
          return
       endif
 
-      where(zhuplus(:,1:nk-1)  < 0.) zhuplus  = 0.
-      where(zhumoins(:,1:nk-1) < 0.) zhumoins = 0.
+      where(zhuplus(:,1:nk-1)  < 0.) zhuplus(:,1:nk-1)  = 0.
+      where(zhumoins(:,1:nk-1) < 0.) zhumoins(:,1:nk-1) = 0.
 
       !# Precompute heights for the paramterizations
       do k = 1, nk-1
@@ -297,6 +330,10 @@ contains
          zvplus(:,nk) = zvdiag
       endif
       zqcplus(:,nk) = 0.
+      lwc0(:,nk) = 0.
+      iwc0(:,nk) = 0.
+      lwc0m(:,nk) = 0.
+      iwc0m(:,nk) = 0.
 
       ztmoins(:,nk) = ztdiag
       zhumoins(:,nk) = zqdiag
@@ -309,12 +346,70 @@ contains
          do i = 1, ni
             huplus0(i,k) = zhuplus(i,k)
             qcplus0(i,k) = zqcplus(i,k)
-            uplus0 (i,k) = zuplus (i,k)
-            vplus0 (i,k) = zvplus (i,k)
-            tplus0 (i,k) = ztplus (i,k)
+            lwc0(i,k)    = zqcplus(i,k)
+            iwc0(i,k)    = 0.0
+            lwc0m(i,k)   = zqcmoins(i,k)
+            iwc0m(i,k)   = 0.0
+            uplus0(i,k)  = zuplus (i,k)
+            vplus0(i,k)  = zvplus (i,k)
+            tplus0(i,k)  = ztplus (i,k)
          enddo
       enddo
       if (diffuw) wplus0(:,1:nk) = zwplus(:,1:nk)
+
+      ! IF_CONEPHY: if (associated(zconephy)) then  ! marche pas, use lcons?
+      ! need the following for Conserved variable state calculations
+      !# Save initial time plus values for MP schemes 
+      select case(stcond)
+      case('MP_P3')
+         zqrp(:,nk) = 0.
+         zqrm(:,nk) = 0.
+         lwc0  = zqcplus + zqrp
+         lwc0m = zqcmoins + zqrm
+         zqti1m(:,nk) = 0.
+         zqti1p(:,nk) = 0.
+         if (p3_ncat == 1) then
+            iwc0  = zqti1p
+            iwc0m = zqti1m
+         elseif (p3_ncat == 2) then
+            zqti2m(:,nk) = 0.
+            zqti2p(:,nk) = 0.
+            iwc0  = zqti1p + zqti2p
+            iwc0m = zqti1m + zqti2m
+         elseif (p3_ncat == 3) then
+            zqti2m(:,nk) = 0.
+            zqti2p(:,nk) = 0.
+            zqti3m(:,nk) = 0.
+            zqti3p(:,nk) = 0.
+            iwc0 = zqti1p + zqti2p + zqti3p
+            iwc0m = zqti1m + zqti2m + zqti3m
+         elseif (p3_ncat == 4) then
+            zqti2m(:,nk) = 0.
+            zqti2p(:,nk) = 0.
+            zqti3m(:,nk) = 0.
+            zqti3p(:,nk) = 0.
+            zqti4m(:,nk) = 0.
+            zqti4p(:,nk) = 0.
+            iwc0  = zqti1p + zqti2p + zqti3p + zqti4p
+            iwc0m = zqti1m + zqti2m + zqti3m + zqti4m
+         endif !p3_ncat
+      case('MP_MY2')
+         zqnp(:,nk) = 0.
+         zqhp(:,nk) = 0.
+         zqip(:,nk) = 0.
+         zqgp(:,nk) = 0.
+         zqnm(:,nk) = 0.
+         zqhm(:,nk) = 0.
+         zqim(:,nk) = 0.
+         zqgm(:,nk) = 0.
+         zqrp(:,nk) = 0.
+         zqrm(:,nk) = 0.
+         lwc0  = zqcplus + zqrp
+         lwc0m = zqcmoins + zqrm
+         iwc0  = zqip + zqnp + zqgp + zqhp
+         iwc0m = zqim + zqnm + zqgm + zqhm
+      end select
+      ! endif IF_CONEPHY
 
       !# calcul des tendances de la dynamique
       do k = 1,nk
@@ -379,7 +474,7 @@ contains
          sc = zsigt(i,nk-1)**(-CAPPA)
          zthetaa(i) = sc*ztmoins(i,nk-1)
          zthetaap(i) = sc*ztplus(i,nk-1)
-         zfcor  (i)= 2.*OMEGA*sin(zdlat(i))
+         zfcor(i) = 2.*OMEGA*sin(zdlat(i))
       end do
       if (zua > 0. .and. zta > 0.) then
          do i=1,ni
@@ -391,8 +486,21 @@ contains
       if (any(pcptype == (/ &
            'NIL   ', &
            'BOURGE'/))) then
+         tmp1d = 0.
          call surf_precip1(ztmoins(:,nk-1), &
-              zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, ni)
+              tmp1d, tmp1d, &
+              zrlc, ztls, zrsc, ztss, &
+              tmpptr, tmpptr, tmpptr, tmpptr, &
+              zrainrate, zsnowrate, ni)
+      elseif (any(pcptype == (/ &
+           'SPS_W19', &
+           'SPS_FRC'/))) then
+         tmp1d = zp0*zsigt(:,nk-1)
+         call surf_precip1(ztmoins(:,nk-1), &
+              zhumoins(:,nk-1), tmp1d, &
+              zrlc, ztls, zrsc, ztss, &
+              zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
+              zrainrate, zsnowrate, ni)
       elseif (pcptype == 'BOURGE3D') then
          call surf_precip3(ztmoins(:,nk-1), &
               zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, &

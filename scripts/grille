@@ -15,6 +15,9 @@ printf "\n#########################\n"
 printf " GRILLE utility for gem \n"
 printf "########################### \n\n"
 
+if [[ -d build-${ORDENV_PLAT}/bin/${COMP_ARCH} ]] ; then
+   export PATH=${PWD}/build-${ORDENV_PLAT}/bin/${COMP_ARCH}:$PATH
+fi
 GENGRID=$(which gemgrid_${BASE_ARCH}.Abs || true)
 if [[ -z "${GENGRID}" ]] ; then
    GENGRID=$(which maingemgrid)

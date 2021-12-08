@@ -168,7 +168,7 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR3D1(vdiagtypv,    "VN=vdiagtypv    ;ON=VDSZ;VD=vdiagtyp for z0 vegetation-only ; VS=A*"//nagg//" ; VB=v0")
    PHYVAR3D1(vegf,         'VN=vegf         ;ON=2V  ;VD=vegetation fractions                           ;VS=A*26            ;VB=p1        ;MIN=0; IN=VF')
    PHYVAR3D1(vegfrac,      'VN=vegfrac      ;ON=K1  ;VD=vegetation fraction                            ;VS=A*5             ;VB=p0        ;MIN=0')
-   PHYVAR2D1(urban,        'VN=urban        ;ON=UR  ;VD=urban mask                                                           ;VB=p0')
+   PHYVAR2D1(urban,        'VN=urban        ;ON=URBF;VD=urban fraction                                                     ;VB=p0')
  
    PHYVAR3DC(yradsun,      "VN=yradsun      ;ON=RTSU;VD=MRT in the exposed sunny street (K)                       ; VS=A*"//nagg//" ; VB=v0", thermal_stress)
    PHYVAR3DC(yradshade,    "VN=yradshade    ;ON=RTHD;VD=MRT in the shaded street (K)                              ; VS=A*"//nagg//" ; VB=v0", thermal_stress)

@@ -81,22 +81,24 @@
 
 #ifdef PHYPTRDCL
 
-#define MKPTR1DN(PNAME,PIDX,NI,PBUS) real, dimension(:), pointer :: PNAME
+#define MKPTR1DN(PNAME,PIDX,NI,PBUS) real, dimension(:), pointer, contiguous :: PNAME
 #define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
-#define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,PIDX+(KK-1)*ni,ni,PBUS)
 
-#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) real, dimension(:,:), pointer :: PNAME
+!!$TODO: #define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,PIDX+(KK-1)*ni,ni,PBUS)
+#define MKPTR1DK(PNAME,PIDX,KK,PBUS) real, dimension(:), pointer :: PNAME
+   
+#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) real, dimension(:,:), pointer, contiguous :: PNAME
 #define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)
 #define MKPTR2Dm1(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nkm1,PBUS)
 
-#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) real, dimension(:,:,:), pointer :: PNAME
+#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) real, dimension(:,:,:), pointer, contiguous :: PNAME
 #define MKPTR3D(PNAME,PIDX,NN,PBUS) MKPTR3DN(PNAME,PIDX,ni,nk,NN,PBUS)
 
 #else
 
 #define MKPTR1DN(PNAME,PIDX,NI,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI) => PBUS(PIDX:)
 #define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
-#define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,PIDX+(KK-1)*ni,ni,PBUS)
+#define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,(PIDX+(KK-1)*ni),ni,PBUS)
 
 #define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI,1:NK) => PBUS(PIDX:)
 #define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)

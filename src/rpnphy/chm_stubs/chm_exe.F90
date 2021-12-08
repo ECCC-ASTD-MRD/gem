@@ -24,9 +24,6 @@
 !             busper    -->    busper_size (also refered as fsiz elsewhere)
 !             busvol    -->    busvol_size
 !
-!             busdyn_size        -->    dimension of busdyn   (physics)
-!             fsiz      -->    dimension of busper   (physics)
-!             busvol    -->    dimension of F_bvol_siz (physics)
 !             slab_index-->    slice number
 !             step      -->    timestep number
 !
@@ -34,21 +31,24 @@
 !
 !=============================================================================
 
-subroutine chm_exe2(busdyn, busper, busvol,  &
-     busdyn_size, busper_size, busvol_size, &
-     slab_index, step)
+module chm_mod
 
-   implicit none
+contains
 
-   ! Subroutine arguments
-   integer, intent(in) :: busdyn_size, busper_size, busvol_size 
-   real, intent(inout) :: busdyn(busdyn_size), busper(busper_size), busvol(busvol_size)
-   integer, intent(in) :: slab_index, step
+   subroutine chm_exe(busdyn, busper, busvol,  &
+        slab_index, step)
 
-   if (slab_index < 0) print *,'Called chm_exe stub with:', busdyn(1), busper(1), busvol(1), &
-        busdyn_size, busper_size, busvol_size, &
-        slab_index, step
+      implicit none
+
+      ! Subroutine arguments
+      real, dimension(:), pointer, contiguous :: busdyn(:), busper(:), busvol(:)
+      integer, intent(in) :: slab_index, step
+
+      if (slab_index < 0) print *,'Called chm_exe stub with:', busdyn(1), busper(1), busvol(1), &
+           slab_index, step
 
 
-   return
-end subroutine chm_exe2
+      return
+   end subroutine chm_exe
+
+end module chm_mod

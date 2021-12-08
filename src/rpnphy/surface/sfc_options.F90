@@ -406,13 +406,13 @@ module sfc_options
    logical           :: urban_params_new = .false.
    namelist /surface_cfgs/ urban_params_new
  
-   !# Adjust wind diagnostic in TEB with building height  if .true.
+   !# Adjust wind diagnostic in TEB in the street  if .true.
    logical           :: urb_diagwind = .false.
-!!$   namelist /surface_cfgs/ urb_diagwind
+   namelist /surface_cfgs/ urb_diagwind
 
    !# Adjust temperature diagnostic in TEB in the street  if .true.
    logical           :: urb_diagtemp = .false.
-!!$   namelist /surface_cfgs/ urb_diagtemp
+   namelist /surface_cfgs/ urb_diagtemp
 
 contains
 

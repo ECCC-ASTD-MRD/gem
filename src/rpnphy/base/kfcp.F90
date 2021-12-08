@@ -3345,7 +3345,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !!$       if (kount.eq.0) then
 !!$          flagconv(1:ix) = 0.
 !!$       else
-!!$          where(flagconv(1:ix) > 0.) kkfc = 1.
+!!$          where(flagconv(1:ix) > 0.) kkfc(1:ix) = 1.
 !!$       endif
 
     return

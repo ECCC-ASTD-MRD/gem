@@ -22,7 +22,7 @@ module turbulence
 contains
 
    !/@*
-   subroutine turbulence2(d, f, v, dsiz, fsiz, vsiz, ficebl, seloc, cdt1, &
+   subroutine turbulence2(dbus, fbus, vbus, ficebl, seloc, cdt1, &
         kount, trnch, ni, nk)
       use debug_mod, only: init2nan
       use tdpack_const, only: RGASD, CPD
@@ -39,17 +39,12 @@ contains
       !@Object
       !@Arguments
       !          - Input -
-      ! e        entry    input field
-      ! d        dynamics input field
+      ! dbus     dynamics input field
       !          - Input/Output -
-      ! f        historic variables for the physics
+      ! fbus     historic variables for the physics
       !          - Output -
-      ! v        physics tendencies and other output fields from the physics
+      ! vbus     physics tendencies and other output fields from the physics
       !          - Input -
-      ! esiz     dimension of e
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! dt       timestep (sec.)
       ! trnch    slice number
       ! kount    timestep number
@@ -57,11 +52,11 @@ contains
       ! n        horizontal running length
       ! nk       vertical dimension
 
-      integer, intent(in) :: dsiz, fsiz, vsiz, trnch, kount, ni, nk
+      integer, intent(in) :: trnch, kount, ni, nk
       real, dimension(ni,nk), intent(inout) :: ficebl
       real, dimension(ni,nk), intent(in) :: seloc
       real, intent(in) :: cdt1
-      real, target, intent(inout) :: d(dsiz), f(fsiz), v(vsiz)
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
 
       !@Author L. Spacek (Nov 2011)
       !*@/
@@ -74,34 +69,34 @@ contains
       real dsig
       real, dimension(ni) :: rhos
       real, dimension(ni,nk) :: dkem, dket
-      real, dimension(:), pointer :: ztsrad, zpmoins, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
-      real, dimension(:,:), pointer :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd
-      real, pointer, dimension(:,:,:) :: zvcoef
+      real, dimension(:), pointer, contiguous :: ztsrad, zpmoins, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
+      real, dimension(:,:), pointer, contiguous :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd
+      real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'turbulence [BEGIN]')
       if (timings_L) call timing_start_omp(430, 'turbulence', 46)
 
       ! Reshape bus entries
-      MKPTR1D(zpmoins, pmoins, f)
-      MKPTR1D(zsigs, sigs, f)
-      MKPTR1D(ztdmask, tdmask, f)
-      MKPTR1D(ztsrad, tsrad, f)
-      MKPTR1D(zutautofd, utautofd, v)
-      MKPTR1D(zvtautofd, vtautofd, v)
-      MKPTR2D(zsigt, sigt, d)
+      MKPTR1D(zpmoins, pmoins, fbus)
+      MKPTR1D(zsigs, sigs, fbus)
+      MKPTR1D(ztdmask, tdmask, fbus)
+      MKPTR1D(ztsrad, tsrad, fbus)
+      MKPTR1D(zutautofd, utautofd, vbus)
+      MKPTR1D(zvtautofd, vtautofd, vbus)
+      MKPTR2D(zsigt, sigt, dbus)
 
-      MKPTR2D(zgzmom, gzmom, v)
-      MKPTR2D(zumoins, umoins, d)
-      MKPTR2D(zuplus, uplus, d)
-      MKPTR2D(zutofd, utofd, v)
-      MKPTR2D(zvmoins, vmoins, d)
-      MKPTR2D(zvplus, vplus, d)
-      MKPTR2D(zvtofd, vtofd, v)
-      MKPTR2D(ztplus, tplus, d)
-      MKPTR2D(zttofd, ttofd, v)
-      MKPTR2DN(zz0, z0, ni, nagrege, f)
+      MKPTR2D(zgzmom, gzmom, vbus)
+      MKPTR2D(zumoins, umoins, dbus)
+      MKPTR2D(zuplus, uplus, dbus)
+      MKPTR2D(zutofd, utofd, vbus)
+      MKPTR2D(zvmoins, vmoins, dbus)
+      MKPTR2D(zvplus, vplus, dbus)
+      MKPTR2D(zvtofd, vtofd, vbus)
+      MKPTR2D(ztplus, tplus, dbus)
+      MKPTR2D(zttofd, ttofd, vbus)
+      MKPTR2DN(zz0, z0, ni, nagrege, fbus)
 
-      MKPTR3D(zvcoef, vcoef, 2, v)
+      MKPTR3D(zvcoef, vcoef, 2, vbus)
       
       call init2nan(rhos)
       call init2nan(dkem,dket)
@@ -151,7 +146,7 @@ contains
            'MOISTKE', &
            'CLEF   ', &
            'SIMPLE '/))) then
-         call boundary_layer4(d, f, v, dsiz, fsiz, vsiz, ficebl, seloc, cdt1, kount, trnch, ni, nk)
+         call boundary_layer4(dbus, fbus, vbus, ficebl, seloc, cdt1, kount, trnch, ni, nk)
          if (phy_error_L) return
       endif
 
