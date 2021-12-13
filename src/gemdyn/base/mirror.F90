@@ -26,6 +26,7 @@
 !----------------------------------------------------------------------
 !
       if (l_north) then
+!$omp do
          do k=1,G_nk
             do i=1,l_ni
                vt0  (i,l_nj-pil_n,k) = 0.
@@ -51,6 +52,8 @@
                end do
             end do
          end do
+!$omp end do
+!$omp do
          do j=1,pil_n
             jin = l_nj-pil_n-j+1
             jj  = l_nj-pil_n+j
@@ -59,9 +62,11 @@
                qt0(i,jj,G_nk+1) = qt0(i,jin,G_nk+1)
             end do
          end do
+!$omp end do
       end if
 
       if (l_east) then
+!$omp do
          do k=1,G_nk
             do j=1,l_nj
                ut0  (l_ni-pil_e,j,k) = 0.
@@ -91,6 +96,8 @@
                end do
             end do
          end do
+!$omp end do
+!$omp do
          do j=1,l_nj
             do i=1,pil_e
                iin = l_ni-pil_e-i+1
@@ -99,9 +106,11 @@
                qt0(ii,j,G_nk+1) = qt0(iin,j,G_nk+1)
             end do
          end do
+!$omp end do
       end if
 
       if (l_south) then
+!$omp do
          do k=1,G_nk
             do i=1,l_ni
                vt0  (i,pil_s,k) = 0.
@@ -127,6 +136,8 @@
                end do
             end do
          end do
+!$omp end do
+!$omp do
          do j=1,pil_s
             jin = pil_s+j
             jj  = pil_s-j+1
@@ -135,9 +146,11 @@
                qt0(i,jj,G_nk+1) = qt0(i,jin,G_nk+1)
             end do
          end do
+!$omp end do
       end if
 
       if (l_west) then
+!$omp do
          do k=1,G_nk
             do j=1,l_nj
                ut0  (pil_w,j,k) = 0.
@@ -167,6 +180,8 @@
                end do
             end do
          end do
+!$omp end do
+!$omp do
          do j=1,l_nj
             do i=1,pil_w
                iin = pil_w+i
@@ -175,6 +190,7 @@
                qt0(ii,j,G_nk+1) = qt0(iin,j,G_nk+1)
             end do
          end do
+!$omp end do
       end if
 !
 !----------------------------------------------------------------------

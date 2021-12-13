@@ -15,51 +15,46 @@
 
 !**s/r fislh_dynstep - Control of the dynamical timestep of the model
 
-      subroutine fislh_dynstep()
+      subroutine fislh_dynstep ()
       use dyn_fisl_options
       use gem_options
       use HORgrid_options
-      use lun
       use step_options
-      use gem_timing
       use theo_options
+      use omp_timing
       implicit none
-#include <arch_specific.hf>
 
       integer icn, keep_itcn
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_debug_L) write(Lun_out,1000)
-      call gemtime_start ( 10, 'FISLH_DYNSTEP', 1 )
-
       keep_itcn = Schm_itcn
-
-      if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
       call psadj_init ( Step_kount )
 
+!$omp parallel
+      call gtmg_start (10, 'DYNSTEP', 10)
       do icn = 1,Schm_itcn-1
 
-         call fislh_tstpdyn (icn)
+         call fislh_tstpdyn (icn) ! Solver NOT done yet
 
-         call hzd_momentum()
+         call hzd_momentum() ! NOT done yet
 
       end do
-
-      if (Lun_debug_L) write(Lun_out,1006)
 
       call fislh_tstpdyn (Schm_itcn)
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
-      call adz_tracers (.true.)
+      call adz_tracers_hlt (.true.) ! Mass fixing NOT done yet
 
-      call psadj ( Step_kount )
+      call psadj_hlt ( Step_kount )
 
-      call adz_tracers (.false.)
+      call adz_tracers_hlt (.false.)
+      call gtmg_stop (10)
 
       call t02t1()
+!$omp end parallel
 
       call HOR_bndry ()
 
@@ -76,19 +71,8 @@
       if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
 
       Schm_itcn = keep_itcn
-
-      call gemtime_stop ( 10 )
-
- 1000 format( &
-      /,'CONTROL OF DYNAMICAL STEP: (S/R FISLH_DYNSTEP)', &
-      /,'========================================'/)
- 1005 format( &
-      /3X,'##### Crank-Nicholson iterations: ===> PERFORMING',I3, &
-          ' timestep(s) #####'/)
- 1006 format( &
-      /3X,'##### Crank-Nicholson iterations: ===> DONE... #####'/)
 !
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine fislh_dynstep

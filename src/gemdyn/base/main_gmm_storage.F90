@@ -16,7 +16,9 @@
 !**s/r main_gmm_storage - Allocate model gmm storage
 
       subroutine main_gmm_storage()
+      use adz_mem
       use dynkernel_options
+      use dyn_fisl_options  
       use gem_options
       use glb_ld
       use gmm_geof
@@ -24,9 +26,12 @@
       use HORgrid_options
       use init_options
       use lun
+      use metric
       use var_gmm
+      use gmm_phy
       use mem_tstp
       use ldnh
+      use tr3d
       implicit none
 #include <arch_specific.hf>
 
@@ -35,7 +40,7 @@
 
       type(gmm_metadata) :: meta, mymeta
       integer(kind=INT64) :: flag_m_f
-      integer :: istat
+      integer :: istat,dim
 !
 !-------------------------------------------------------------------
 !
@@ -84,18 +89,30 @@
       istat = gmm_get (gmmk_me_full_s, me_full)
       istat = gmm_get (gmmk_me_large_s, me_large)
       
+      allocate (rhs_zero(l_minx:l_maxx,l_miny:l_maxy,l_nk))
+      allocate (rhsb(l_minx:l_maxx,l_miny:l_maxy))
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
            trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
 
-      allocate (rhsu(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsv(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhst(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsc(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsw(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsf(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsp(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
-                rhsb(l_minx:l_maxx,l_miny:l_maxy))
-      rhsu=0.;rhsv=0.;rhst=0.;rhsc=0.;rhsw=0.;rhsf=0.;rhsp=0.;rhsb=0.
+      if (Schm_phycpl_S == 'RHS' .or. Schm_phycpl_S == 'AVG') then
+         rhs_phytv= 1.d0
+         rhs_uu_tend => phy_uu_tend
+         rhs_vv_tend => phy_vv_tend
+      else
+         rhs_phytv= 0.d0
+         rhs_uu_tend => rhs_zero
+         rhs_vv_tend => rhs_zero
+      endif
+      dim= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+      allocate (rhs(6*dim))
+      rhsu (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(      1:)
+      rhsv (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(  dim+1:)
+      rhst (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(2*dim+1:)
+      rhsc (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(3*dim+1:)
+      rhsw (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(4*dim+1:)
+      rhsf (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(5*dim+1:)
+
+      rhsu=0.;rhsv=0.;rhst=0.;rhsc=0.;rhsw=0.;rhsf=0.;rhs_zero=0.
 
       allocate (orhsu(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsv(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
@@ -105,17 +122,42 @@
                 orhsf(l_minx:l_maxx,l_miny:l_maxy,l_nk))
       orhsu=0.;orhsv=0.;orhst=0.;orhsc=0.;orhsw=0.;orhsf=0.
 
-      allocate (nl_u(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_v(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_t(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_c(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_w(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_f(l_maxx-l_minx+1,l_maxy-l_miny+1,l_nk),&
-                nl_b(l_maxx-l_minx+1,l_maxy-l_miny+1))
+      allocate (nl_u(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_v(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_t(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_c(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_w(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_f(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
+                nl_b(l_minx:l_maxx,l_miny:l_maxy))
 
       allocate (rhs_sol(ldnh_maxx-ldnh_minx+1,ldnh_maxy-ldnh_miny+1,l_nk),&
                 lhs_sol(ldnh_maxx-ldnh_minx+1,ldnh_maxy-ldnh_miny+1,l_nk))
+      rhs_sol= 0.
 
+      endif
+             
+      if (Dynamics_hauteur_L) then
+         allocate ( zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
+
+         allocate ( mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                  mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+
+         allocate ( mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy) )
+
+         allocate ( mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    mc_cstp_8  (l_minx:l_maxx,l_miny:l_maxy) )
+         mc_cst_8= 0. ; mc_alfat_8= 0. ; mc_cstp_8= 0.
       endif
 
  2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R MAIN_GMM_STORAGE', &

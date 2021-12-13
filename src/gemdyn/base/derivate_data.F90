@@ -62,9 +62,6 @@
                              Minx, Maxx, Miny, Maxy, Nk   ,&
                              F_zd_L, F_w_L )
 
-         case ('DYNAMICS_EXPO_H')
-            stop 'DYNAMICS_EXPO_H: not yet implemented'
-
       end select
 !
 !     ________________________________________________________________

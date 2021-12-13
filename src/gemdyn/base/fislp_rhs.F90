@@ -13,12 +13,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-!*s/r rhs - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
-!            save the results for next iteration in the o's
+!*s/r fislp_rhs - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
+!                 save the results for next iteration in the o's
 !
-      subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
-                       F_u, F_v, F_w, F_t, F_s, F_zd, F_q, &
-                       F_sl, F_fis, Minx, Maxx, Miny, Maxy, Nk )
+      subroutine fislp_rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
+                             F_u, F_v, F_w, F_t, F_s, F_zd, F_q, &
+                             F_sl, F_fis, Minx, Maxx, Miny, Maxy, Nk )
       use coriolis
       use cstv
       use dynkernel_options
@@ -278,4 +278,4 @@
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine fislp_rhs

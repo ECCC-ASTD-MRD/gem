@@ -128,12 +128,6 @@
                        1-G_haloy*south,l_njv+G_haloy*north, .false. )
 
       pw_tt_plus = tt1
-
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H' .and. .not.Ctrl_testcases_adv_L) then
-         do k=1,G_nk
-            qt1(i0:in,j0:jn, k) = max(gz_t(i0:in,j0:jn,1), 0.)
-         end do
-      end if
 !
 !-------------------------------------------------------------------
 !

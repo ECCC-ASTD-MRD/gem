@@ -35,12 +35,6 @@
 
       call gemtime_start ( 5, 'PW_UPDATE', 0)
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         pw_wz_plus = 0. ; pw_gz_plus = 0.
-         pw_me_plus = 0.
-         return ! Not yet implemented
-      end if
-      
       pw_wz_plus= wt1
       pw_me_plus= fis0
 

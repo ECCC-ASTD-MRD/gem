@@ -1,3 +1,3 @@
-       program mainprphynml
-          call prphynml
-       end program mainprphynml
+program mainprphynml
+  call prphynml
+end program mainprphynml

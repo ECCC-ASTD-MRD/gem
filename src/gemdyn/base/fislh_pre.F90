@@ -17,12 +17,13 @@
 !               contributions to the rhs of Helmholtz equation
 !            -  Height-type vertical coordinate
 
-!
-      subroutine fislh_pre ( F_ru ,F_rv ,F_rt ,F_rw ,F_rc, F_rf, F_rb, F_nest_t, F_fis, &
-                            Minx, Maxx, Miny, Maxy, i0, j0, k0, in, jn, Nk )
+      subroutine fislh_pre ( F_dt_8, i0, j0, k0, in, jn, k0t )
       use HORgrid_options
       use gem_options
       use geomh
+      use gmm_geof
+      use mem_tstp
+      use mem_nest
       use tdpack
       use glb_ld
       use lun
@@ -32,140 +33,149 @@
       use fislh_sol
       use dyn_fisl_options
       use dynkernel_options
-
-
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
-      integer, intent(in) :: Minx,Maxx,Miny,Maxy, i0, j0, k0, in, jn, Nk
-      real, dimension(Minx:Maxx,Miny:Maxy),     intent(out)   :: F_rb
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(in)    :: F_nest_t
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_ru,F_rv,F_rt
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_rw,F_rc,F_rf
-      real, dimension(Minx:Maxx,Miny:Maxy),     intent(in)    :: F_fis
+      integer, intent(in) :: i0, j0, k0, in, jn, k0t
+      real(kind=REAL64), intent(IN) :: F_dt_8
 !
 !Author: Claude Girard, July 2017 (initial version)
 !        Syed Husain, June 2019 (major revision)
 !        Abdessamad Qaddouri, July 2019 (open-top)
 !
-      integer :: i, j, k, km,k0t
+      integer :: i, j, k
       real    :: w0
-      real(kind=REAL64)  :: div, c1, w1, w2
+      real(kind=REAL64) :: div, c1, w1, w2, tau_8, tau_m_8, tau_nh_8
+      real(kind=REAL64) :: invT_8, invT_m_8, invT_nh_8
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
 !
 !     ---------------------------------------------------------------
 !
-      if (Lun_debug_L) write (Lun_out,1000)
-      k0t = k0
-      if(Schm_opentop_L) k0t= k0-1
+      tau_8    = F_dt_8 * Cstv_bA_8
+      tau_m_8  = F_dt_8 * Cstv_bA_m_8
+      tau_nh_8 = F_dt_8 * Cstv_bA_nh_8
+      invT_8   = one/tau_8
+      invT_m_8 = one/tau_m_8
+      invT_nh_8= one/tau_nh_8
 
-
-      c1 = grav_8 * Cstv_tau_8
-
-      call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_niu, l_nj,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_njv,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      c1 = grav_8 * tau_8
 
       if (Schm_opentop_L) then
-
+!$omp do
          do j= j0, jn
             do i= i0, in
-               F_rb(i,j) = F_rt(i,j,k0t)-mu_8*Cstv_tau_nh_8* F_rw(i,j,k0t)
+               rhsb(i,j) = rhst(i,j,k0t)-mu_8*tau_nh_8* rhsw(i,j,k0t)
             end do
          end do
-
+!$omp enddo
       end if
 
 !*************************************
 ! Combination of governing equations *
 !*************************************
 
+!     Compute Rc' combining Ru, Rv and Rc
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do collapse(2)
       do k=k0, l_nk
-
          do j= j0, jn
+!DIR$ SIMD
             do i= i0, in
-
-               F_rc(i,j,k) = F_rc(i,j,k) - Cstv_invT_8 * mc_logJz_8(i,j,k)
-
-!              Compute Rc' combining Ru, Rv and Rc
-!              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               div  = (F_ru(i,j,k)-F_ru(i-1,j,k))*geomh_invDXM_8(j) &
-                    + (F_rv(i,j,k)*geomh_cyM_8(j)-F_rv(i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                    + isol_i*half*(mc_Ix_8(i,j,k)*(F_ru(i,j,k)+F_ru(i-1,j,k)) &
-                               +mc_Iy_8(i,j,k)*(F_rv(i,j,k)+F_rv(i,j-1,k)) )
-
-               F_rc(i,j,k) = div - Cstv_invT_m_8 * F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j)
-
+               div  = (rhsu(i,j,k)-rhsu(i-1,j,k))*geomh_invDXM_8(j) &
+                    + (rhsv(i,j,k)*geomh_cyM_8(j)-rhsv(i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
+                    + isol_i*half*(mc_Ix_8(i,j,k)*(rhsu(i,j,k)+rhsu(i-1,j,k)) &
+                                  +mc_Iy_8(i,j,k)*(rhsv(i,j,k)+rhsv(i,j-1,k)) )
+               rhsc(i,j,k) = div - invT_m_8*(rhsc(i,j,k) - invT_8 * mc_logJz_8(i,j,k)) &
+                                 - Cstv_bar0_8 * fis0(i,j)
             end do
          end do
-
       end do
+!$omp enddo
 
+!$omp do collapse(2)
       do k=k0t, l_nk
          do j= j0, jn
+!DIR$ SIMD
             do i= i0, in
 !              Compute Rf'
 !              ~~~~~~~~~~~
-               w0 = Cstv_invT_nh_8*(ztht_8(i,j,k)-Ver_z_8%t(k))*Cstv_bar1_8
-               F_rf(i,j,k) = F_rf(i,j,k) - w0
+               w0 = invT_nh_8*(ztht_8(i,j,k)-Ver_z_8%t(k))*Cstv_bar1_8
+               rhsf(i,j,k) = rhsf(i,j,k) - w0
 
 !              Compute Rt'
 !              ~~~~~~~~~~~
-               F_rt(i,j,k) = gama_8 * ( c1 * F_rt(i,j,k) + F_rw(i,j,k) )
-
+               rhst(i,j,k) = gama_8 * ( c1 * rhst(i,j,k) + rhsw(i,j,k) )
             end do
          end do
-
       end do
+!$omp enddo
 
-      do k=k0,l_nk
-         km=max(k-1,1)
+!     Compute Rc"', combining Rc" and Rt"
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do collapse(2)
+      do k= max(k0,2), l_nk
          do j= j0, jn
+!DIR$ SIMD
             do i= i0, in
                w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
                w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
-!              Compute Rc"
-!              ~~~~~~~~~~~
-               F_rc(i,j,k) = F_rc(i,j,k) + Cstv_invT_m_8* &
-                            ((F_rf(i,j,k)-Ver_onezero(k)*F_rf(i,j,km))*Ver_idz_8%m(k) + &
-                             isol_i*mc_Iz_8(i,j,k)* &
-                             (Ver_wp_8%m(k)*F_rf(i,j,k)+Ver_wm_8%m(k)*F_rf(i,j,km)*Ver_onezero(k)))
-
-!              Compute Rc"', combining Rc" and Rt"
-!              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               F_rc(i,j,k) = F_rc(i,j,k) + (w1 * F_rt(i,j,k) - w2 * F_rt(i,j,km)) * Cstv_bar1_8
-
+               rhsc(i,j,k) = rhsc(i,j,k) + invT_m_8* &
+                            (rhsf(i,j,k)-Ver_onezero(k)*rhsf(i,j,k-1))*Ver_idz_8%m(k) &
+                           +(w1 * rhst(i,j,k) - w2 * rhst(i,j,k-1)) * Cstv_bar1_8
             end do
          end do
       end do
-
-      if (Schm_opentop_L) then
-!        Apply opentop boundary conditions
-
+!$omp enddo
+      if (k0 == 1) then
+!$omp do
          do j= j0, jn
+!DIR$ SIMD
             do i= i0, in
-               F_rb(i,j) = F_rb(i,j) - (one/Cstv_tau_8+mu_8*Cstv_tau_nh_8*grav_8)*(F_nest_t(i,j,k0t)&
-                                                  -Cstv_Tstr_8)/F_nest_t(i,j,k0t)
-               if ( .not.LHS_metric_L ) then
-                  F_rc(i,j,k0) = F_rc(i,j,k0  ) + mc_cstp_8(i,j) * F_rb(i,j)
-               end if
+               w1= (Ver_idz_8%m(1) + (isol_i*mc_Iz_8(i,j,1) - epsi_8)*Ver_wp_8%m(1))
+               w2= (Ver_idz_8%m(1) - (isol_i*mc_Iz_8(i,j,1) - epsi_8)*Ver_wm_8%m(1))*Ver_onezero(1)
+               rhsc(i,j,1) = rhsc(i,j,1) + invT_m_8* &
+                            (rhsf(i,j,1)-Ver_onezero(1)*rhsf(i,j,1))*Ver_idz_8%m(1) &
+                           +(w1 * rhst(i,j,1) - w2 * rhst(i,j,1)) * Cstv_bar1_8
             end do
          end do
+!$omp enddo
+       endif
 
-      end if
+       if (Schm_opentop_L) then
+!     Apply opentop boundary conditions
+!$omp do
+         do j= j0, jn
+!DIR$ SIMD
+         do i= i0, in
+            rhsb(i,j) = rhsb(i,j) - (one/tau_8+mu_8*tau_nh_8*grav_8)*(nest_t(i,j,k0t)&
+                                  -  Cstv_Tstr_8)/nest_t(i,j,k0t)
+         end do
+         end do
+!$omp enddo
+         if ( .not.FISLH_LHS_metric_L ) then
+!$omp do
+            do j= j0, jn
+!DIR$ SIMD
+            do i= i0, in
+               rhsc(i,j,k0) = rhsc(i,j,k0  ) + mc_cstp_8(i,j) * rhsb(i,j)
+            end do
+            end do
+!$omp enddo
+         end if
+      endif
 
 !     Apply lower boundary conditions
-!
+!$omp do
       do j= j0, jn
+!DIR$ SIMD
          do i= i0, in
-            F_rc(i,j,l_nk) = F_rc(i,j,l_nk) - isol_d*mc_cssp_H_8(i,j) * &
-                     (F_rt(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rt(i,j,l_nk-1) &
-                    + Cstv_invT_m_8*(F_rf(i,j,l_nk)-Ver_wmstar_8(G_nk)*F_rf(i,j,l_nk-1)))
+            rhsc(i,j,l_nk) = rhsc(i,j,l_nk) - isol_d*mc_cssp_H_8(i,j) * &
+                    (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1) &
+                  + invT_m_8*(rhsf(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhsf(i,j,l_nk-1)))
          end do
       end do
+!$omp enddo
 
 1000  format(3X,'UPDATE  THE RIGHT-HAND-SIDES: (S/R PRE_H)')
 !

@@ -142,10 +142,8 @@
             call set_opr () !compute and store eigen values
             call gemtime ( Lun_out, 'AFTER set_opr', .false. )
          endif
-
-         call set_params ()
-         call set_dync ( .false., err ) !check vertical resolution vs timestep
-         call gemtime ( Lun_out, 'AFTER set_dync', .false. )
+         call set_params (.false., err)
+         call gemtime ( Lun_out, 'AFTER set_params', .false. )
          if (Ptopo_couleur == 0) then
             if (err == 0) then
                call write_status_file3 ('SOLVER=OK')

@@ -15,7 +15,7 @@
 
 !**   s/r set_params - initialize some constant parameters
 
-      subroutine set_params
+      subroutine set_params (F_check_and_stop_L, F_errcode)
       use dynkernel_options
       use dyn_fisl_options
       use tdpack
@@ -23,8 +23,9 @@
       use ver
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
-
+      
+      logical, intent(in) :: F_check_and_stop_L
+      integer, intent(inout) :: F_errcode
 
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0
 !
@@ -71,8 +72,10 @@
       if(Dynamics_hydro_L) Ver_igt_8=zero
 
       Ver_igt2_8   = Ver_igt_8*(Cstv_invT_nh_8/grav_8)
+
+      call set_dync ( F_check_and_stop_L, F_errcode )
 !
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine set_params

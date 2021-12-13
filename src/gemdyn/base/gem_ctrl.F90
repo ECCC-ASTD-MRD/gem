@@ -14,8 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r gem_ctrl - initiate the forward integration of the model
-!
-      subroutine gem_ctrl
+
+      subroutine gem_ctrl ()
       use step_options
       use init_options
       use glb_ld
@@ -23,7 +23,6 @@
       use rstr
       use gem_timing
       implicit none
-#include <arch_specific.hf>
 
 !object
 !     Beginning of the integration. This subroutine
@@ -31,23 +30,12 @@
 !     It then initiates the forward intergration of the model.
 
       logical :: rstrt_L= .false.
-      integer err
 !
 !     ---------------------------------------------------------------
 !
       call gemtime ( Lun_out, 'GEM_CTRL: START', .false. )
 
-      if ( .not. Rstri_rstn_L ) then
-
-         call indata()
-
-      else
-
-         call set_dync ( .true., err )
-
-      end if
-
-      call set_smago()
+      if ( .not. Rstri_rstn_L ) call indata()
 
       call gemtime ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call gemtime_stop ( 2 )
@@ -64,4 +52,4 @@
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine gem_ctrl

@@ -13,31 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module gmm_vt0
-   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-!
-!______________________________________________________________________
-!                                                                      |
-!  GMM variables at TIME t0                                            |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-!  ut0               | U: x component of velocity                      |
-!  vt0               | V: y component of velocity                      |
-!  tt0               | T: temperature                                  |
-!  st0               | s: log of surface pressure minus a constant     |
-!  wt0               | w:      dz/dt                                   |
-!  qt0               | q: log of non-hydrostatic perturbation pressure |
-!--------------------|-------------------------------------------------|
-! zdt0               | Zetadot:dZeta/dt: generalized vertical velocity |
-!--------------------|-------------------------------------------------|
-! trt0               | passive tracer(s)                               |
-!----------------------------------------------------------------------
-!
       real, pointer, contiguous, dimension (:,:,:) ::  ut0 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  vt0 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  tt0 => null()
@@ -45,7 +24,6 @@ module gmm_vt0
       real, pointer, contiguous, dimension (:,:,:) ::  wt0 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  qt0 => null()
       real, pointer, contiguous, dimension (:,:,:) :: zdt0 => null()
-      real, pointer, contiguous, dimension (:,:,:) :: hut0 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 

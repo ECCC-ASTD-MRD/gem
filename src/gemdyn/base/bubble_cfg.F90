@@ -27,8 +27,7 @@
 !     ---------------------------------------------------------------
 !
       bubble_cfg = -1
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .or. &
-          trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
           bubble_cfg = bubble_H_cfg()
       else
           bubble_cfg = bubble_P_cfg()

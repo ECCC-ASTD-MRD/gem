@@ -472,9 +472,6 @@
          deallocate(f,f_str)
 
          ! Dynamics perturbations are intercepted here
-         if (vname(nc) == 'ADV_UTRAJ') mcutraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
-         if (vname(nc) == 'ADV_VTRAJ') mcvtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
-         if (vname(nc) == 'ADV_WTRAJ') mcwtraj(1:l_ni,1:l_nj) = fgem_str(:,:,nc)
          if (vname(nc) == 'ADV_RHSINT') &
               mcrhsint(1:l_ni,1:l_nj) = tropwt(:,:) * fgem_str(:,:,nc)
          if (vname(nc) == 'PHYCPL') then

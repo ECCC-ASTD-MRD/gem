@@ -17,23 +17,6 @@ module gmm_vt1
    public
    save
 
-!______________________________________________________________________
-!                                                                      |
-!  GMM variables at TIME t1 (t0-dt)                                    |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-!  ut1               | U: x component of velocity                      |
-!  vt1               | V: y component of velocity                      |
-!  tt1               | T: temperature                                  |
-!  st1               | s: log of surface pressure minus a constant     |
-!  wt1               | w:      dz/dt                                   |
-!  qt1               | q: log of non-hydrostatic perturbation pressure |
-!--------------------|-------------------------------------------------|
-! zdt1               | Zetadot:dZeta/dt: generalized vertical velocity |
-!--------------------|-------------------------------------------------|
-
       real, pointer, contiguous, dimension (:,:,:) ::  ut1 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  vt1 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  tt1 => null()
@@ -41,7 +24,6 @@ module gmm_vt1
       real, pointer, contiguous, dimension (:,:,:) ::  wt1 => null()
       real, pointer, contiguous, dimension (:,:,:) ::  qt1 => null()
       real, pointer, contiguous, dimension (:,:,:) :: zdt1 => null()
-      real, pointer, contiguous, dimension (:,:,:) :: hut1 => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
