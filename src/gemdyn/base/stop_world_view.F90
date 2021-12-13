@@ -30,6 +30,7 @@
       use ptopo
       use version
       use gem_timing
+      use omp_timing
       implicit none
 #include <arch_specific.hf>
       integer, external :: exfin
@@ -72,6 +73,7 @@
 
       call gemtime_stop ( 1 )
       call gemtime_terminate( Ptopo_myproc, 'GEMDM' )
+      call gtmg_terminate( Ptopo_myproc )
 
 !     Free all one-sided MPI windows
       call MPI_Win_free  (Inp_window,err)

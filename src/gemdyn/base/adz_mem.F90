@@ -29,8 +29,8 @@ module adz_mem
       integer :: Adz_maxcfl
       integer :: Adz_lminx, Adz_lmaxx, Adz_lminy, Adz_lmaxy
       integer :: Adz_nit, Adz_njt, Adz_nij
-      real, allocatable, dimension (:,:,:  ) ::       &
-                     Adz_uu_ext,Adz_vv_ext,Adz_ww_ext
+      real, allocatable, target, dimension (:) :: Adz_extended
+      real, pointer, dimension (:,:,:) :: Adz_uu_ext,Adz_vv_ext,Adz_ww_ext
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       integer adz_COMM, INTEGER_DATATYPE, REAL_DATATYPE
@@ -46,7 +46,10 @@ module adz_mem
       real, dimension(:  ), allocatable :: nexports
       real(kind=REAL64) :: Adz_iminposx,Adz_imaxposx,Adz_iminposy,Adz_imaxposy
       real(kind=REAL64) :: Adz_yyminposx,Adz_yymaxposx,Adz_yyminposy,Adz_yymaxposy
-      real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8
+      real(kind=REAL64) :: adz_ovdzm_8, adz_ovdzt_8, adz_vw5, adz_vw6
+      real(kind=REAL64), dimension(:), allocatable :: adz_vw1m, adz_vw2m, adz_vw3m, adz_vw4m
+      real(kind=REAL64), dimension(:), allocatable :: adz_vw1t, adz_vw2t, adz_vw3t, adz_vw4t
+
       real(kind=REAL64), dimension(:), pointer :: Adz_cy_8, &
               Adz_delz_m, Adz_delz_t, Adz_odelz_m, Adz_odelz_t
       real(kind=REAL64) :: Adz_glbminpos

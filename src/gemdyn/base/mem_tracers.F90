@@ -19,7 +19,7 @@ module mem_tracers
 
       integer :: tracers_block_size = 4
       integer :: tracers_nblocks
-      real, pointer, dimension (:) :: trt1, trt0, trdf, trtb
+      real, pointer, dimension (:) :: trt2, trt1, trt0, trdf, trtb
 
       type :: memTR_pntrs
          real, dimension(:,:,:), pointer :: pntr
@@ -27,6 +27,7 @@ module mem_tracers
 
       type(memTR_pntrs), allocatable :: tracers_P (:)
       type(memTR_pntrs), allocatable :: tracers_M (:)
+      type(memTR_pntrs), allocatable :: tracers_t2 (:)
       type(memTR_pntrs), allocatable :: tracers_B (:)
 
 contains

@@ -115,6 +115,14 @@
 
 ! Compute W (which depends on previous computation of Zdot)
 
+         i0 = 1
+         in = l_ni
+         j0 = 1
+         jn = l_nj
+         if (l_west)  i0 = 3    - G_halox
+         if (l_east)  in = in-1 + G_halox
+         if (l_south) j0 = 3    - G_haloy
+         if (l_north) jn = jn-1 + G_haloy
          F_w=0.
          do k=1,Nk
             km=max(k-1,1)

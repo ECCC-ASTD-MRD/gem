@@ -15,38 +15,37 @@
 
 !**s/r mat_vecs3D - 3D_elliptic matrix_vector's computation for GEM_H
 !
-      subroutine mat_vecs3D_H3 (F_Sol, F_Rhs, Minx, Maxx, Miny, Maxy, nil, njl, Nk)
-      use geomh
-      use gem_options
-      use HORgrid_options
-      use tdpack
-      use glb_ld
-      use cstv
-      use ver
-      use sol
-      use opr
-      use ptopo
-      use metric
-      use lam_options
+      subroutine mat_vecs3D_H3 (F_Sol, F_Rhs)
       use dyn_fisl_options
+      use gem_options
+      use geomh
+      use glb_ld
+      use HORgrid_options
+      use lam_options
+      use tdpack
+      use ldnh
+      use sol
+      use ver
+      use cstv
+      use opr
+      use metric
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 !
-      integer, intent(in) :: Minx, Maxx, Miny, Maxy,nil, njl, NK
-      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_Rhs
-      real(kind=REAL64), dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_Sol
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx,ldnh_miny:ldnh_maxy,l_nk), intent(out) :: F_Rhs
+      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx,ldnh_miny:ldnh_maxy,l_nk), intent(in) :: F_Sol
 !author
 !       Abdessamad Qaddouri -  initilal version 2019
 !       Abdessamad Qaddouri,   May 2020 (opentop)
-!       Rabah Aider,           July 2021 (optimization)
+!
 !
       logical, save :: first_time = .true.
       integer j, i, id, k, halox, haloy
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
-      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,Nk,15) :: A1, B1 ,A2, B2,C1
+      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,l_nk,15) :: A1, B1 ,A2, B2,C1
       real(kind=REAL64), dimension(:,:,:,:), allocatable, save :: stencil
-      real, dimension(l_minx:l_maxx, l_miny:l_maxy,Nk+1) :: fdg2
+      real, dimension(l_minx:l_maxx, l_miny:l_maxy,l_nk+1) :: fdg2
       integer  km, kp,k0,k0t
       integer sol_pil_w_ext, sol_pil_e_ext, sol_pil_s_ext, sol_pil_n_ext
 !
@@ -85,24 +84,24 @@
          if (l_north) sol_pil_n_ext= sol_pil_n+1
       endif
 
-      do k = k0, nk
+      do k = k0, l_nk
          fdg2(:,:,k) = 0.
-         do j=1+sol_pil_s, njl-sol_pil_n
-            do i=1+sol_pil_w, nil-sol_pil_e
+         do j=1+sol_pil_s, l_nj-sol_pil_n
+            do i=1+sol_pil_w, l_ni-sol_pil_e
                fdg2(i,j,k)=F_Sol(i,j,k)
             end do
          end do
       end do
 
-      do j=1+sol_pil_s, njl-sol_pil_n
-         do i=1+sol_pil_w, nil-sol_pil_e
-               fdg2(i,j,Nk+1) = mc_alfas_H_8(i,j) * F_sol(i,j,NK)   &
-                              - mc_betas_H_8(i,j) * F_sol(i,j,NK-1)
+      do j=1+sol_pil_s, l_nj-sol_pil_n
+         do i=1+sol_pil_w, l_ni-sol_pil_e
+               fdg2(i,j,l_nk+1) = mc_alfas_H_8(i,j) * F_sol(i,j,l_nk)   &
+                              - mc_betas_H_8(i,j) * F_sol(i,j,l_nk-1)
          end do
       end do
       if (Schm_opentop_L) then
-      do j=1+sol_pil_s, njl-sol_pil_n
-         do i=1+sol_pil_w, nil-sol_pil_e
+      do j=1+sol_pil_s, l_nj-sol_pil_n
+         do i=1+sol_pil_w, l_ni-sol_pil_e
            fdg2(i,j,k0t) =  mc_alfat_8(i,j)* F_sol(i,j,k0)
          end do
       end do
@@ -110,16 +109,16 @@
 
       if ( Grd_yinyang_L) then
           call yyg_xchng (fdg2, l_minx,l_maxx,l_miny,l_maxy, &
-                               l_ni,l_nj, nk+1, .false., 'CUBIC', .true.)
+                               l_ni,l_nj, l_nk+1, .false., 'CUBIC', .true.)
       else
-          call rpn_comm_xch_halo(fdg2,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,nk+1, &
+          call rpn_comm_xch_halo(fdg2,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
 ! Compute stencils
       if(first_time) then
-         allocate (stencil(1+sol_pil_w:nil-sol_pil_e,1+sol_pil_s:njl-sol_pil_n,Nk,15))
-         do k = 1,Nk
+         allocate (stencil(1+sol_pil_w:l_ni-sol_pil_e,1+sol_pil_s:l_nj-sol_pil_n,l_nk,15))
+         do k = 1,l_nk
             do i=1,15
                A1(:,:,k,i)=0.d0
                A2(:,:,k,i)=0.d0
@@ -131,8 +130,8 @@
          enddo
 !
          k=k0
-         do j=1+sol_pil_s, njl-sol_pil_n
-            do i=1+sol_pil_w, nil-sol_pil_e
+         do j=1+sol_pil_s, l_nj-sol_pil_n
+            do i=1+sol_pil_w, l_ni-sol_pil_e
                C1(i,j,k,1)=-gama_8*(mc_iJz_8(i,j,k ) &
                             + mu_8*half)*(Ver_idz_8%m(k)+(mc_Iz_8(i,j,k)-epsi_8)*Ver_wp_8%m(k)) - gg_8
                C1(i,j,k,5)= gama_8*(mc_iJz_8(i,j,k ) &
@@ -149,9 +148,9 @@
             end do
          end do
 
-         do k = k0+1,Nk
-            do j=1+sol_pil_s, njl-sol_pil_n
-               do i=1+sol_pil_w, nil-sol_pil_e
+         do k = k0+1,l_nk
+            do j=1+sol_pil_s, l_nj-sol_pil_n
+               do i=1+sol_pil_w, l_ni-sol_pil_e
                    C1(i,j,k,1)=-gama_8*(mc_iJz_8(i,j,k ) + mc_iJz_8(i,j,k-1) )*Ver_idz_8%m(k) &
                               +(mc_Iz_8(i,j,k)-epsi_8)*gama_8*( Ver_wm_8%m(k)*(mc_iJz_8(i,j,k-1) -mu_8*half) &
                                                                -Ver_wp_8%m(k)*(mc_iJz_8(i,j,k )  +mu_8*half) ) - gg_8
@@ -163,7 +162,7 @@
             end do
          end do
 
-         do k = k0,Nk
+         do k = k0,l_nk
             km=max(k-1,1)
             kp=k+1
             do j=1+sol_pil_s_ext, l_nj-sol_pil_n
@@ -250,9 +249,9 @@
             endif
          end do
 
-         do k =k0, nk
-            do j=1+sol_pil_s, njl-sol_pil_n
-               do i=1+sol_pil_w, nil-sol_pil_e
+         do k =k0, l_nk
+            do j=1+sol_pil_s, l_nj-sol_pil_n
+               do i=1+sol_pil_w, l_ni-sol_pil_e
                   do id=1,15
                   stencil (i,j,k,id) =Cstv_hco0_8* ( (A1 (i,j,k,id)-A2 (i,j,k,id))*geomh_invDXM_8(j) &
                             + half * ( mc_Ix_8(i,j,k)*(A1(i,j,k,id)+A2(i,j,k,id)))    &
@@ -269,11 +268,11 @@
 
       endif
 
-         do k=k0,NK
+         do k=k0,l_nk
             km=max(k-1,1)
             kp=k+1
-            do j=1+sol_pil_s, njl-sol_pil_n
-               do i=1+sol_pil_w, nil-sol_pil_e
+            do j=1+sol_pil_s, l_nj-sol_pil_n
+               do i=1+sol_pil_w, l_ni-sol_pil_e
                   F_Rhs(i,j,k)=  stencil (i,j,k,1)*fdg2(i,j,k) &
                               +  stencil (i,j,k,2)*fdg2(i-1,j,k) &
                               +  stencil (i,j,k,3)*fdg2(i+1,j,k)&

@@ -59,7 +59,12 @@
          sol_pil_s= pil_s ; sol_pil_n= pil_n
 
 !! Bloc extension == restrictive Jacobi preconditionner
-
+         if (allocated(Prec_xevec_8)) deallocate (Prec_xevec_8)
+         if (allocated(Prec_xeval_8)) deallocate (Prec_xeval_8)
+         if (allocated(Prec_ai_8)) deallocate (Prec_ai_8)
+         if (allocated(Prec_bi_8)) deallocate (Prec_bi_8)
+         if (allocated(Prec_ci_8)) deallocate (Prec_ci_8)
+         
          select case(sol3D_precond_S)
            case ('RAS') ! Restrictive Additive Schwarz preconditioner
               ii0  = 1    - ovlpx
@@ -121,6 +126,7 @@
                    trp_12smin, trp_12smax,  sol_nk, trp_12sn0, &
                    trp_22min , trp_22max , trp_22n, trp_22n0 , &
                    G_ni,G_nj,G_nk, Sol_ai_8, Sol_bi_8, Sol_ci_8 )
+                if (allocated(Sol_dg2)) deallocate(Sol_dg2)
                 allocate ( Sol_dg2(1:trp_12smax,1:trp_22max,G_nj+Ptopo_npey))
           endif
 
@@ -131,9 +137,16 @@
          Sol_type_fft = 'QCOS'
          if (Grd_yinyang_L) Sol_type_fft = 'SIN'
 
+         if (allocated(Sol_rhs_8)) deallocate(Sol_rhs_8)
+         if (allocated(Sol_sol_8)) deallocate(Sol_sol_8)
          allocate( Sol_rhs_8(ldnh_maxx,ldnh_maxy,l_nk) ,&
                    Sol_sol_8(ldnh_maxx,ldnh_maxy,l_nk) )
 
+         if (allocated(Sol_dwfft)) deallocate(Sol_dwfft)
+         if (associated(Sol_xpose)) then
+            deallocate(Sol_xpose)
+            nullify(Sol_xpose)
+         endif
          allocate(Sol_xpose(1:ldnh_maxx, 1:ldnh_maxy, 1:sol_nk, 1:ptopo_npex))
 
          if (sol_one_transpose_L) then

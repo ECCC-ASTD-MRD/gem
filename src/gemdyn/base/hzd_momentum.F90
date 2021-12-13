@@ -32,6 +32,7 @@
 !
 !-------------------------------------------------------------------
 !
+!$omp single
       if (Schm_hzdadw_L .and. switch_on_hzd) then
          if (Lun_debug_L) write (Lun_out,1000)
 
@@ -47,6 +48,7 @@
       end if
 
       call hzd_smago_momentum()
+!$omp end single
 
 1000  format(5X,'DIFFUSION ON U,V,ZD: (S/R HZD_MOMENTUM)')
 !

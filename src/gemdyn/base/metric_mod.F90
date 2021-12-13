@@ -19,7 +19,6 @@ module metric
    public
    save
 
-   real, dimension(:,:,:), allocatable :: zmom, ztht ! We keep a copy in single precision only for cascade outputs
    real(kind=REAL64), dimension(:,:,:), allocatable :: zmom_8, ztht_8, lg_pstar_8
    real(kind=REAL64), dimension(:,:,:), allocatable :: zmom_u, ztht_u, zmom_v, ztht_v
 

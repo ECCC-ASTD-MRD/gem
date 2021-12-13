@@ -153,9 +153,6 @@
             call set_zeta ( hyb, G_nk )
          case ('DYNAMICS_FISL_H')
             call fislh_hybrid ( hyb_H, G_nk)
-         case ('DYNAMICS_EXPO_H')
-            Dynamics_hydro_L = .false.
-            call exp_hybrid ( hyb_H, G_nk )
       end select
 
       Schm_nith = G_nk

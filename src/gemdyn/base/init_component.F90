@@ -28,6 +28,7 @@
       use tdpack
       use numa
       use gem_timing
+      use omp_timing
       use version
       implicit none
 #include <arch_specific.hf>
@@ -132,6 +133,7 @@
       endif
 
       call gemtime_init ( Ptopo_myproc, 'MOD' )
+      call gtmg_init ()
       call gemtime_start ( 1, 'GEMDM', 0)
 
       ! Some MPI cummunicators + init colors

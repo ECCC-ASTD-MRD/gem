@@ -88,8 +88,6 @@
          if (Lun_out > 0) then
 
             select case (trim(Dynamics_Kernel_S))
-               case ('DYNAMICS_EXPO_H')
-                  write (Lun_out,1001) Lctl_step, last_step
                case ('DYNAMICS_FISL_H')
                   write (Lun_out,1002) Lctl_step, last_step
                case ('DYNAMICS_FISL_P')
@@ -146,8 +144,6 @@
       if (Lun_out > 0) write(Lun_out,4000) Lctl_step
 
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
- 1001 format(/,'EXPO: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
-             /,'=========================================================')
  1002 format(/,'FISL-H: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
              /,'=========================================================')
  1003 format(/,'FISL-P: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &

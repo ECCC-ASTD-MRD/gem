@@ -43,10 +43,6 @@
          Cstv_bar1_8 = zero
       end if
 
-      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         return
-      end if
-
       Cstv_hco0_8 = Dcst_rayt_8**2
       Cstv_hco1_8 = zero
       Cstv_hco2_8 = one

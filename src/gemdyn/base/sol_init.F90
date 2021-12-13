@@ -34,19 +34,16 @@
       Sol2D_precond_S = trim(dumc_S)
       call low2up  (Sol3D_precond_S ,dumc_S)
       Sol3D_precond_S = trim(dumc_S)
-      if (LHS_metric_L) then 
-         if (trim(Sol_type_S) .ne. 'ITERATIVE_3D') then
-            if (Lun_out > 0) &
-            write(Lun_out, *) 'Error in configuration: LHS_metric_L is .true., Sol_type_S should be ITERATIVE_3D'
-            return
-         endif
-      endif
 
-      isol_d=1.0d0
-      isol_i=0.0d0
-      if (LHS_metric_L) then
-         isol_i=1.0d0
-         isol_d=0.0d0
+      FISLH_LHS_metric_L = .true.
+      if (trim(Sol_type_S) == 'DIRECT') FISLH_LHS_metric_L = .false.
+
+      isol_i = 1.0d0
+      isol_d = 0.0d0
+
+      if (.not. FISLH_LHS_metric_L) then
+         isol_d = 1.0d0
+         isol_i = 0.0d0
       endif
 
       select case(Sol_type_S)
@@ -56,6 +53,7 @@
             write(Lun_out, *) 'ONE-TRANSPOSE NOT ALLOWED UNLESS runmod.sh -along_Y'
             Sol_one_transpose_L = .false.
          endif
+
       case default
          select case(Sol_type_S)
             case('ITERATIVE_3D')

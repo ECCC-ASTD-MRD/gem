@@ -161,10 +161,6 @@ contains
             call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
                          Hyb_first_height)
 
-         case('DYNAMICS_EXPO_H')
-            call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
-                         Hyb_first_height)
-
       end select
 
       VERgrid_config = 1

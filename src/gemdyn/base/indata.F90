@@ -35,7 +35,7 @@
 #include <arch_specific.hf>
 
       logical :: synthetic_data_L
-      integer :: dimens, err
+      integer :: dimens
 !
 !     ---------------------------------------------------------------
 !
@@ -61,8 +61,6 @@
       end if
 
       call gemtime ( Lun_out, 'AFTER INITIAL INPUT', .false. )
-
-      call set_dync ( .true., err )
 
       if (Schm_sleve_L) then
          call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy)
@@ -127,7 +125,7 @@
  1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))
 
       return
-      end
+      end subroutine indata
 
       subroutine bitflip (u,v,t,nbits,npts,n)
       implicit none
@@ -161,4 +159,4 @@
 ! ---------------------------------------------------------------------
 !
       return
-      end
+      end subroutine bitflip

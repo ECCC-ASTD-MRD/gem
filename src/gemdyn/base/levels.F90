@@ -53,7 +53,6 @@
                      prdz(nk1) = dz
                      do kk= nk0,nk1
                         F_levels(kk)= F_levels(kk-1) + dz
-                        print*, kk,F_levels(kk),dz
                      end do
                      if (((nk0-3)>k0).and.((nk0 +3)<nk1)) then
                         j0 = nk0 -3
