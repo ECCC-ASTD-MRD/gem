@@ -18,6 +18,8 @@ target_link_libraries(maingemdm
    gem
    phy
    modelutils
+   modelutils_tmg_stubs
+   modelutils_ov_ifort
    vgrid
    rpn_comm
    rmn
@@ -34,6 +36,7 @@ target_link_libraries(checkdmpart
    gem
    phy
    modelutils
+   modelutils_tmg_stubs
    vgrid
    rpn_comm
    rmn
@@ -50,6 +53,7 @@ target_link_libraries(gemgrid
    gem
    phy
    modelutils
+   modelutils_tmg_stubs
    vgrid
    rpn_comm
    rmn

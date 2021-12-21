@@ -107,7 +107,6 @@ else()
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "Working directory prefix" FORCE)
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
-message(STATUS "(EC) PACKAGE_PREFIX =  ${PACKAGE_PREFIX}")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 ec_build_config()      # Create build configuration script

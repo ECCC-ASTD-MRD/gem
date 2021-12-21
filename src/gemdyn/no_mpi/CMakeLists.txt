@@ -8,6 +8,7 @@ target_link_libraries(toc2nml
    gem
    phy
    modelutils
+   modelutils_tmg_stubs
    vgrid
    rpn_comm
    rmn
