@@ -20,3 +20,9 @@
 	path = src/modelutils
 	url = https://gitlab.science.gc.ca/cpi001/modelutils
 	branch=modelutils_1.7-branch_cmake
+[submodule "src/rpnphy"]
+	path = src/rpnphy
+	url = https://gitlab.science.gc.ca/cpi001/rpnphy
+[submodule "src/gemdyn"]
+	path = src/gemdyn
+	url = https://gitlab.science.gc.ca/cpi001/gemdyn

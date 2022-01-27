@@ -10,6 +10,18 @@ debug-plus: ; $(MAKE) cmake-debug-plus
 cmake-with-system-rpn:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
 
+cmake-gem-only:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
+
+cmake-gemdyn-only:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
+
+cmake-rpnphy-only:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
+
+cmake-rpnphy-gemdyn-only:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
+
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${GEM_GIT_DIR} )
 

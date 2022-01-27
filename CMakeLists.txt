@@ -103,6 +103,7 @@ message(STATUS "(EC) Compiler version: ${COMPILER_VERSION}")
 set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Working environment directory")
 if(DEFINED ENV{GEM_WORK})
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Working directory prefix" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Install directory prefix" FORCE)
 else()
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "Working directory prefix" FORCE)
 endif()
@@ -111,47 +112,25 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 ec_build_config()      # Create build configuration script
 
+list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
+if (NOT "${MODELUTILS_SRC}" STREQUAL "" )
+  list(APPEND BINARIES yy2global flipit yydecode yyencode)
+endif()
+if (NOT "${RPNPHY_SRC}" STREQUAL "" )
+  list(APPEND BINARIES feseri prphynml )
+endif()
+if (NOT "${GEMDYN_SRC}" STREQUAL "" )
+  list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
+endif()
+
+install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
+
 add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
-    COMMAND /bin/cp -avf
-        $<TARGET_FILE:cclargs_lite>
-        $<TARGET_FILE:flipit>
-        $<TARGET_FILE:maingemdm>
-        $<TARGET_FILE:gemgrid>
-        $<TARGET_FILE:yy2global>
-        $<TARGET_FILE:yydecode>
-        $<TARGET_FILE:yyencode>
-        $<TARGET_FILE:feseri>
-        $<TARGET_FILE:prphynml>
-        $<TARGET_FILE:checkdmpart>
-        $<TARGET_FILE:prgemnml>
-        $<TARGET_FILE:toc2nml>
-        $<TARGET_FILE:gem_monitor_output>
-        $<TARGET_FILE:gem_monitor_end>
-        $<TARGET_FILE:r.fstinfo>
-        $<TARGET_FILE:r.filetype>
-        ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
     COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${WORK_PREFIX}
-
-    DEPENDS
-        cclargs_lite
-        flipit
-        maingemdm
-        gemgrid
-        yy2global
-	yyencode
-	yydecode
-        feseri
-        prphynml
-        checkdmpart
-        prgemnml
-        toc2nml
-        gem_monitor_output
-        gem_monitor_end
-        r.fstinfo
-        r.filetype
+    COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
 )
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files

@@ -1,23 +1,31 @@
 #!/bin/bash
 
-# Source this file to:
-# - Load libraries
-# - Set compiler version
-# - Load a script for common setup to all compilers
+# Source this file to load libraries
 
-# To compile with GNU, you must load the code-tools first:
-. r.load.dot rpn/code-tools/1.5.1
+DOMAIN=`hostname -d`
 
-. ssmuse-sh -x /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--gcc
-. ssmuse-sh -x /fs/ssm/main/opt/openmpi-setup/openmpi-setup-0.2
-. ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
-
-. ssmuse-sh -x main/opt/cmake/cmake-3.21.1
+if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+    . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.4.0_ubuntu-18.04-amd64-64
+    . r.load.dot rpn/libs/19.7.0
+    . r.load.dot rpn/vgrid/6.6.0
+#. ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
+    . r.load.dot /home/cpi001/data/ords/packages-ssm/rpncomm_4.6.2-gnu-7.4.0_ubuntu-18.04-amd64-64
+    . r.load.dot /home/cpi001/data/ords/packages-ssm/modelutils_1.7.0-a7-gnu-7.4.0_ubuntu-18.04-amd64-64
+    . r.load.dot /home/cpi001/data/ords/packages-ssm/rpnphy_6.2.0-a10-gnu-7.4.0_ubuntu-18.04-amd64-64
+else 
+    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
+    . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.5.0_ubuntu-18.04-amd64-64
+    . r.load.dot rpn/libs/19.7.0
+    . r.load.dot rpn/vgrid/6.6.0
+#. ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
+    . r.load.dot /data/ords/armn/armncpi/packages-ssm/rpncomm_4.6.2-gnu-7.5.0_ubuntu-18.04-amd64-64
+    . r.load.dot /data/ords/armn/armncpi/packages-ssm/modelutils_1.7.0-a7-gnu-7.5.0_ubuntu-18.04-amd64-64
+    . r.load.dot /data/ords/armn/armncpi/packages-ssm/rpnphy_6.2.0-a10-gnu-7.5.0_ubuntu-18.04-amd64-64
+fi
 
 export COMPILER_SUITE=gnu
-
 COMPILER_VERSION=$(project/compiler.sh gnu)
 export COMPILER_VERSION
 
 . ./.common_setup ${COMPILER_SUITE}
-

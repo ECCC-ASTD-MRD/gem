@@ -5,23 +5,34 @@
 # - Load a script for common setup to all compilers
 
 export COMPILER_SUITE=intel
+DOMAIN=`hostname -d`
 
-if [ "$TRUE_HOST" = "banting" -o "$TRUE_HOST" = "daley" ]; then
-   export COMPILER_VERSION=19.0.5.281
-   module unload intel/19.0.3.199
-   module load ${COMPILER_SUITE}/${COMPILER_VERSION}
-   module add craype-hugepages16M
-   module add cray-fftw/3.3.8.2
-   . ssmuse-sh -x main/opt/numa/numa-2.0.14
+if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    if [[ -n "$CRAYPE_VERSION" ]]; then
+    . ./ci-env/latest/sles-15-skylake-64/intel-19.0.5.281.sh
+    module add craype-hugepages16M
+    module add cray-fftw/3.3.8.2
+#   . ssmuse-sh -x main/opt/numa/numa-2.0.14
+    export COMPILER_VERSION=19.0.5.281
+    . r.load.dot rpn/libs/19.7.0
+    . r.load.dot rpn/vgrid/6.6.0
+    . r.load.dot /home/cpi001/data/ords/packages-ssm
+    else
+    . ./ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
+#   . ssmuse-sh -x main/opt/numa/numa-2.0.14
+    export COMPILER_VERSION=19.0.3.199
+    . r.load.dot rpn/libs/19.7.0
+    . r.load.dot rpn/vgrid/6.6.0
+    . r.load.dot /home/cpi001/data/ords/packages-ssm
+    fi
 else
-   export COMPILER_VERSION=19.0.3.199
-   . ssmuse-sh -x comm/eccc/all/opt/intelcomp/intelpsxe-cluster-${COMPILER_VERSION}
-   . ssmuse-sh -x main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-${COMPILER_VERSION}
-   . ssmuse-sh -x main/opt/openmpi-setup/openmpi-setup-0.2
-   . ssmuse-sh -x main/opt/numa/numa-2.0.14
+    . ./ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+    export COMPILER_VERSION=19.0.3.199
+    . r.load.dot rpn/libs/19.7.0
+    . r.load.dot rpn/vgrid/6.6.0
+    . r.load.dot /data/ords/armn/armncpi/packages-ssm
 fi
 
 . ssmuse-sh -x main/opt/cmake/cmake-3.21.1
 
 . ./.common_setup ${COMPILER_SUITE}
-

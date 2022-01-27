@@ -23,10 +23,8 @@ build_intel_dorpnsi:
   - dev-submodules
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
-    - . ./.eccc_load_rpn
     - make cmake-with-system-rpn
     - make -j `nproc`
     - make -j `nproc` work
@@ -40,7 +38,6 @@ build_xc50:
   when: always
   script:
     - set +e
-    - source ci-env/latest/sles-15-skylake-64/intel-19.0.5.281.sh
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
     - make cmake
@@ -53,7 +50,6 @@ build_intel:
   - dev-submodules
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
@@ -75,7 +71,6 @@ build_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -96,7 +91,6 @@ CANO_W7cascP_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -117,7 +111,6 @@ CANO_dcmip163r100_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -138,7 +131,6 @@ CANO_wil7_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -159,7 +151,6 @@ GEM_GY_FISL_P_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -180,7 +171,6 @@ GEM_LU_FISL_H_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -201,7 +191,6 @@ GEM_LU_OFFC_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -222,7 +211,6 @@ PTOPO_GYH_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -243,7 +231,6 @@ PTOPO_LUP_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -264,7 +251,6 @@ RSTRT_GYP_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -283,7 +269,6 @@ THEO_bubbleG_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -304,7 +289,6 @@ THEO_schar_intel:
   - build_intel
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
@@ -323,11 +307,10 @@ build_gnu:
   - dev-submodules
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+    - set +e
     - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_gnu
     - . ./.eccc_initial_setup
-    - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -345,7 +328,6 @@ build_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -366,7 +348,6 @@ CANO_W7cascP_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -387,7 +368,6 @@ CANO_dcmip163r100_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -408,7 +388,6 @@ CANO_wil7_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -429,7 +408,6 @@ GEM_GY_FISL_P_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -450,7 +428,6 @@ GEM_LU_FISL_H_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -471,7 +448,6 @@ GEM_LU_OFFC_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -492,7 +468,6 @@ PTOPO_GYH_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -513,7 +488,6 @@ PTOPO_LUP_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -534,7 +508,6 @@ RSTRT_GYP_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -555,7 +528,6 @@ THEO_bubbleG_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -576,7 +548,6 @@ THEO_schar_gnu:
   - build_gnu
   when: always
   script:
-    - source ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar

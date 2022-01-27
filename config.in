@@ -18,11 +18,10 @@ arch=@EC_ARCH@
 
 has_rmn=@RMN_VERSION@@RMN_STATE@
 has_vgrid=@VGRID_VERSION@@VGRID_STATE@
-has_eer=@eerUtils_VERSION@@eerUtils_STATE@
-has_gdal=@GDAL_VERSION@
-has_netcdf=@NETCDF_VERSION@
-has_hdf4=@HDF4_VERSION@
-has_hdf5=@HDF5_VERSION@
+has_modelutils=@modelutils_VERSION@@modelutils_STATE@
+has_rpncomm=@rpncomm_VERSION@@rpncomm_STATE@
+has_rpnphy=@rpnphy_VERSION@@rpnphy_STATE@
+has_gemdyn=@gemdyn_VERSION@@gemdyn_STATE@
 
 usage()
 {
@@ -42,11 +41,10 @@ Available values for OPTION include:
   --arch         architecture of build [${arch}]
   --has-rmn      which version of librmn is it compiled with [${has_rmn}]
   --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
-  --has-eer      which version of eerUtils is it compiled with [${has_eer}]
-  --has-gdal     which version of gdal is it compiled with [${has_gdal}]
-  --has-netcdf   which version of netCDF is it compiled with [${has_netcdf}]
-  --has-hdf4     which version of gdal is it compiled with [${has_hdf4}]
-  --has-hdf5     which version of gdal is it compiled with [${has_hdf5}]
+  --has-modelutils which version of modelutils is it compiled with [${has_modelutils}]
+  --has-rpncomm  which version of rpncomm is it compiled with [${has_rpncomm}]
+  --has-rpnphy   which version of rpnphy is it compiled with [${has_rpnphy}]
+  --has-gemdyn   which version of gemdyn is it compiled with [${has_gemdyn}]
 
 EOF
 }
@@ -102,42 +100,38 @@ while test $# -gt 0; do
        	echo ${has_vgrid:-no}
        	;;
 
-    --has-eer)
-       	echo ${has_eer:-no}
+    --has-rpncomm)
+       	echo ${has_rpncomm:-no}
        	;;
 
-    --has-gdal)
-       	echo ${has_gdal:-no}
+    --has-modelutils)
+       	echo ${has_modelutils:-no}
        	;;
-
-    --has-netcdf)
-       	echo ${has_netcdf:-no}
+    
+    --has-rpnphy)
+       	echo ${has_rpnphy:-no}
        	;;
-
-    --has-hdf4)
-       	echo ${has_hdf4:-no}
+    
+    --has-gemdyn)
+       	echo ${has_gemdyn:-no}
        	;;
-
-    --has-hdf5)
-       	echo ${has_hdf5:-no}
-       	;;
-
+    
     --version)
-	    echo ${version}
-	    ;;
-        
+	echo ${version}
+	;;
+    
     --env)
-       echo ${env}
-       ;;
-       
+        echo ${env}
+        ;;
+    
     --arch)
-       echo ${arch}
-       ;;
-       
+        echo ${arch}
+        ;;
+    
     *)
         echo "unknown option: $1"
-	    usage 1
-	    ;;
+	usage 1
+	;;
     esac
     shift
 done

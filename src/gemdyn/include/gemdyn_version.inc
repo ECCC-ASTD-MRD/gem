@@ -1,7 +1,0 @@
-       character(len=50),parameter :: GEMDYN_NAME_S = "GEMDYN"
-       character(len=50),parameter :: GEMDYN_VERSION_S = "5.2.0-a10"
-       character(len=50),parameter :: GEMDYN_DSTP_S = "2021-11-25 21:37 GMT"
-       character(len=50),parameter :: GEMDYN_EC_ARCH_S = "Linux_x86-64/intel-19.0.3.199"
-       character(len=50),parameter :: GEMDYN_ORDENV_ARCH_S = "amd64"
-       character(len=50),parameter :: GEMDYN_ORDENV_PLAT_S = "ubuntu-18.04-amd64-64"
-       character(len=50),parameter :: GEMDYN_COMP_ARCH_S = "intel-19.0.3.199"
