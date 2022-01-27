@@ -328,6 +328,7 @@ build_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -348,6 +349,7 @@ CANO_W7cascP_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -368,6 +370,7 @@ CANO_dcmip163r100_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -388,6 +391,7 @@ CANO_wil7_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -408,6 +412,7 @@ GEM_GY_FISL_P_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -428,6 +433,7 @@ GEM_LU_FISL_H_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -448,6 +454,7 @@ GEM_LU_OFFC_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -468,6 +475,7 @@ PTOPO_GYH_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -488,6 +496,7 @@ PTOPO_LUP_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -508,6 +517,7 @@ RSTRT_GYP_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -528,6 +538,7 @@ THEO_bubbleG_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -548,6 +559,7 @@ THEO_schar_gnu:
   - build_gnu
   when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
