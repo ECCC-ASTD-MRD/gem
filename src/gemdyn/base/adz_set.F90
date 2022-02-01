@@ -355,9 +355,6 @@
       mymeta= SET_GMMUSR_FLAG(meta, flag_m_f)
       istat= gmm_create('ADZ_WPXYZ',Adz_wpxyz, mymeta, flag_r_n)
       
-      istat= gmm_get('ADZ_PXYZM',Adz_pxyzm)
-      istat= gmm_get('ADZ_WPXYZ',Adz_pxyzm)
-
 !     Wind information at the lowest thermodynamic level
 !     from the physics surface layer scheme
       nullify(Adz_uslt,Adz_vslt)

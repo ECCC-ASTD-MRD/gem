@@ -21,7 +21,7 @@ set(CMAKE_C_FLAGS "-mkl -Wl,--allow-shlib-undefined -Wtrigraphs -fpic -traceback
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
-set(CMAKE_Fortran_FLAGS "-mkl -assume byterecl -convert big_endian -fpe0 -fpic -reentrancy threaded -traceback -threads -static-intel -diag-disable 7713 -diag-disable 10212 -diag-disable 5140 -fp-model source" CACHE STRING "Fortran compiler flags" FORCE)
+set(CMAKE_Fortran_FLAGS "-mkl -assume byterecl -convert big_endian -fpe0 -fpic -reentrancy threaded -traceback -threads -static-intel -diag-disable 7713 -diag-disable 10212 -diag-disable 5268 -diag-disable 5140 -fp-model source" CACHE STRING "Fortran compiler flags" FORCE)
 set(CMAKE_Fortran_FLAGS_DEBUG "-g")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
 

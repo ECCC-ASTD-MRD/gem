@@ -160,7 +160,7 @@ contains
    end function vgrid_wb_is_press_kind_S
   
    !/@*
-   function vgrid_wb_exists(F_name_S, F_id, F_id_S, F_ip1list, F_itype) &
+   function vgrid_wb_exists(F_name_S, F_id, F_id_S, F_ip1list, F_itype, F_restart_L) &
         result(F_istat)
       implicit none
       !@objective Check if F_name_S is already in use
@@ -170,6 +170,7 @@ contains
       character(len=*), intent(out), optional :: F_id_S
       integer, pointer, optional :: F_ip1list(:)
       integer, intent(out), optional :: F_itype
+      logical, intent(out), optional :: F_restart_L
       !@return
       integer :: F_istat
       !@author  S. Chamberland, 2012-05
@@ -188,13 +189,14 @@ contains
       if (present(F_id_S))    F_id_S = id_S
       if (present(F_ip1list)) F_ip1list => i4ptr1d
       if (present(F_itype))   F_itype = i4meta1d%a%uuid1
+      if (present(F_restart_L)) F_restart_L = (iand(i4meta1d%a%flags, GMM_FLAG_READ) > 0)
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_exists
 
 
    !/@*
-   function vgrid_wb_put_i(F_name_S, F_type, F_ip1list, F_overwrite_L) &
+   function vgrid_wb_put_i(F_name_S, F_type, F_ip1list, F_overwrite_L, F_restart_L) &
         result(F_id)
       implicit none
       !@objective Store a new vgrid
@@ -203,14 +205,15 @@ contains
       integer, intent(in) :: F_type
       integer, pointer :: F_ip1list(:)         !- list of ip1
       logical, intent(in), optional :: F_overwrite_L
+      logical, intent(in), optional :: F_restart_L
       !@return
       integer :: F_id
       !@author  S. Chamberland, 2012-01
       !*@/
       character(len=256) :: msg_S, name_S, id_S, id2_S
-      integer :: istat, lip1, uip1, itype, id
+      integer :: istat, lip1, uip1, itype, id, flags
       integer, pointer :: i4ptr1d(:)
-      logical :: overwrite_L, same_L, same2_L, exists_L
+      logical :: overwrite_L, same_L, same2_L, exists_L, restart_L
       type(gmm_metadata) :: i4meta1d
       !---------------------------------------------------------------------
       F_id = RMN_ERR
@@ -221,6 +224,10 @@ contains
       endif
       overwrite_L = .false.
       if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
+      restart_L = .true.
+      if (present(F_restart_L)) restart_L = F_restart_L
+      flags = 0
+      if (restart_L) flags = GMM_FLAG_RSTR
 
       if (.not.any(F_type == (/VGRID_GROUND_TYPE, VGRID_SURF_TYPE, VGRID_UPAIR_TYPE, VGRID_UPAIR_M_TYPE, VGRID_UPAIR_T_TYPE/))) then
          call msg(MSG_ERROR, '(vgrid_wb_put) invalid vgrid_wb type: '//trim(F_name_S))
@@ -241,11 +248,11 @@ contains
                istat    = gmm_delete(trim(id2_S))
                exists_L = .false.
             else
-               call msg(MSG_INFOPLUS, '(vgrid_wb_put) updating: '//trim(F_name_S))
+               call msg(MSG_INFO, '(vgrid_wb) Put, updating: '//trim(F_name_S))
             endif
          else
             if (.not.(same_L.and.same2_L)) then
-               call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params: '//trim(F_name_S))
+               call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params1: '//trim(F_name_S))
                return
             else
                F_id = id
@@ -263,7 +270,7 @@ contains
          i4meta1d%l(1) = gmm_layout(lip1, uip1, 0, 0, uip1-lip1+1)
          i4meta1d%a%uuid1 = itype
          nullify(i4ptr1d)
-         istat = gmm_create(trim(id2_S), i4ptr1d, i4meta1d, GMM_FLAG_RSTR)
+         istat = gmm_create(trim(id2_S), i4ptr1d, i4meta1d, flags)
          if (.not.associated(i4ptr1d)) then
             call msg(MSG_ERROR, '(vgrid_wb_put) cannot allocate mem for ip1list: '//trim(F_name_S))
             return
@@ -283,7 +290,7 @@ contains
 
    !/@*
    function vgrid_wb_put_v(F_name_S, F_vgrid, F_ip1list, F_sfcfld_S, &
-        F_overwrite_L, F_altfld_S) result(F_id)
+        F_overwrite_L, F_altfld_S, F_restart_L) result(F_id)
       implicit none
       !@objective Store a new vgrid
       !@arguments
@@ -293,22 +300,25 @@ contains
       character(len=*), intent(in), optional :: F_sfcfld_S !- Name of ref sfc fields for levels computations
       logical, intent(in), optional :: F_overwrite_L
       character(len=*), intent(in), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
+      logical, intent(in), optional :: F_restart_L
       !@return
       integer :: F_id
       !@author  S. Chamberland, 2012-01
       !*@/
       character(len=GMM_MAXNAMELENGTH) :: sfcfld_S, sfcfld2_S, altfld_S
-      logical :: overwrite_L
+      logical :: overwrite_L, restart_L
       !---------------------------------------------------------------------
       overwrite_L = .false.
       if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
+      restart_L = .true.
+      if (present(F_restart_L)) restart_L = F_restart_L
       sfcfld_S = ' '
       if (present(F_sfcfld_S)) sfcfld_S = F_sfcfld_S
       altfld_S = ' '
       if (present(F_altfld_S)) altfld_S = F_altfld_S
       sfcfld2_S = ' '
       F_id = vgrid_wb_put_v2(F_name_S, F_vgrid, F_ip1list, sfcfld_S, &
-           sfcfld2_S, overwrite_L, F_altfld_S=altfld_S)
+           sfcfld2_S, overwrite_L, F_altfld_S=altfld_S, F_restart_L=restart_L)
       !---------------------------------------------------------------------
       return
    end function vgrid_wb_put_v
@@ -316,7 +326,7 @@ contains
 
    !/@*
    function vgrid_wb_put_v2(F_name_S, F_vgrid, F_ip1list, F_sfcfld_S, &
-        F_sfcfld2_S, F_overwrite_L, F_altfld_S) result(F_id)
+        F_sfcfld2_S, F_overwrite_L, F_altfld_S, F_restart_L) result(F_id)
       implicit none
       !@objective Store a new vgrid
       !@arguments
@@ -327,21 +337,26 @@ contains
       character(len=*),intent(in) :: F_sfcfld2_S !- Name of ref sfc fields for levels computations
       logical,intent(in),optional :: F_overwrite_L
       character(len=*), intent(in), optional :: F_altfld_S !- Name of alternate 3d field descibing the vertical - in M for Press vertcoor and vice-versa
+      logical, intent(in), optional :: F_restart_L
       !@return
       integer :: F_id
       !@author  S. Chamberland, 2012-01
       !*@/
       character(len=256) :: msg_S
       character(len=WB_MAXSTRINGLENGTH) :: sfcfld_S, sfcfld2_S, id_S, id2_S, altfld_S
-      integer :: istat, lijk(3), uijk(3), n, lip1, uip1
-      logical :: overwrite_L, exists_L, same_L, same2_L
+      integer :: istat, lijk(3), uijk(3), n, lip1, uip1, flags
+      logical :: overwrite_L, exists_L, same_L, same2_L, restart_L
       real(REAL64), pointer :: vtbl(:, :, :), vtbl2(:, :, :)
       type(gmm_metadata) :: r8meta3d, r8meta3d2
       !---------------------------------------------------------------------
       overwrite_L = .false.
       if (present(F_overwrite_L)) overwrite_L = F_overwrite_L
+      restart_L = .true.
+      if (present(F_restart_L)) restart_L = F_restart_L
       altfld_S = ' ' 
       if (present(F_altfld_S)) altfld_S = F_altfld_S
+      flags = 0
+      if (restart_L) flags = GMM_FLAG_RSTR
 
       if (associated(F_ip1list)) then
          lip1 = lbound(F_ip1list,1)
@@ -354,7 +369,8 @@ contains
       endif
       call msg(MSG_INFO, '(vgrid_wb) Put: '//trim(msg_S))
 
-      F_id = vgrid_wb_put_i(F_name_S, VGRID_UPAIR_TYPE, F_ip1list, overwrite_L)
+      F_id = vgrid_wb_put_i(F_name_S, VGRID_UPAIR_TYPE, F_ip1list, &
+           overwrite_L, F_restart_L=restart_L)
       if (.not.RMN_IS_OK(F_id)) return
 
       nullify(vtbl)
@@ -408,11 +424,11 @@ contains
                istat    = gmm_delete(trim(id2_S))
                exists_L = .false.
             else
-               call msg(MSG_INFOPLUS, '(vgrid_wb_put) updating: '//trim(F_name_S))
+               call msg(MSG_INFO, '(vgrid_wb) Put, updating: '//trim(F_name_S))
             endif
          else
             if (.not.(same_L.and.same2_L)) then
-               call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params: '//trim(F_name_S))
+               call msg(MSG_ERROR, '(vgrid_wb_put) vgrid already exists with different params2: '//trim(F_name_S))
                F_id = RMN_ERR
                deallocate(vtbl, stat=istat)
                return
@@ -426,7 +442,7 @@ contains
       IF_EXISTS4: if (exists_L) then
          vtbl2(:, :, :) = vtbl(:, :, :)
       else
-         istat = gmm_create(trim(id2_S), vtbl, r8meta3d, GMM_FLAG_RSTR)
+         istat = gmm_create(trim(id2_S), vtbl, r8meta3d, flags)
          if (.not.RMN_IS_OK(istat)) then
             call msg(MSG_ERROR, '(vgrid_wb_put) problem storing vtbl: '//trim(F_name_S))
             F_id = RMN_ERR

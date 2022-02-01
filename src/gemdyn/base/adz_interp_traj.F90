@@ -125,9 +125,9 @@
          do j= Adz_j0b, Adz_jnb
             do i= Adz_i0b, Adz_inb
                xt= dble(i+l_i0-1) - Dcst_inv_rayt_8 * F_dt_8 * &
-                                    Adz_uslt(i,j)*Adz_cy_8(j)
+                      Adz_uslt(i,j)*Adz_cy_8(j) * geomh_inv_hx_8
                yt= dble(j+l_j0-1) - Dcst_inv_rayt_8 * F_dt_8 * &
-                                    Adz_vslt(i,j)
+                      Adz_vslt(i,j)             * geomh_inv_hy_8
                Adz_pb(1,i,j,k)= min(max(xt,Adz_iminposx),Adz_imaxposx)
                Adz_pb(2,i,j,k)= min(max(yt,Adz_iminposy),Adz_imaxposy)
             end do
