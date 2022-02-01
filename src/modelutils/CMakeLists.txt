@@ -7,8 +7,6 @@ set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 file(GLOB CSRC  */*.c)
 file(GLOB FTNSRC  */*.F90)
 
-add_compile_options( "${EXTRA_FLAGS}" )
-
 add_library (modelutils STATIC ${FTNSRC} ${CSRC})
 target_include_directories(modelutils PRIVATE base include)
 include_directories( ${CMAKE_BINARY_DIR}/src/vgrid )

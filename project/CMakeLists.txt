@@ -14,8 +14,8 @@ message(STATUS "Compiler suite to be used is: ${COMPILER}")
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  message(STATUS "No build type selected, default to RelWithDebInfo")
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  message(STATUS "No build type selected, default to Release")
+  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")

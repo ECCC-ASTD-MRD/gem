@@ -183,8 +183,12 @@
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m,quiet=.true.) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t,quiet=.true.) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
-         err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,rfld_S,rfldls_S,F_overwrite_L=.true., F_altfld_S=altfld_M_S), err)
-         err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,rfld_S,rfldls_S,F_overwrite_L=.true., F_altfld_S=altfld_T_S), err)
+         err = min(err, &
+              vgrid_wb_put(VGRID_M_S, vcoord, ip1m, rfld_S, rfldls_S, &
+              F_overwrite_L=.true., F_altfld_S=altfld_M_S, F_restart_L=.false.))
+         err = min(err, &
+              vgrid_wb_put(VGRID_T_S, vcoordt, ip1t, rfld_S, rfldls_S, &
+              F_overwrite_L=.true., F_altfld_S=altfld_T_S, F_restart_L=.false.))
          err = vgd_free(vcoord)
          err = vgd_free(vcoordt)
          if (associated(ip1m)) deallocate(ip1m,stat=err)
