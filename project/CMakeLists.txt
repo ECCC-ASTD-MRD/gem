@@ -9,7 +9,7 @@ cmake_policy(SET CMP0056 NEW)
 set(COMPILER gnu CACHE STRING compiler)
 #set(COMPILER intel CACHE STRING compiler)
 #set(COMPILER pgi CACHE STRING compiler)
-message(STATUS "Compiler to be used is: ${COMPILER}")
+message(STATUS "Compiler suite to be used is: ${COMPILER}")
 
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
@@ -19,6 +19,10 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
+  exec_program(${CMAKE_UNAME} ARGS -m OUTPUT_VARIABLE CMAKE_SYSTEM_PROCESSOR)
+endif()
 
 # Include an architecture dependent file that contains settings for a
 # particular architecture and compiler, using the default value of the
