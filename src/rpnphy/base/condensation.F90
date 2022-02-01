@@ -88,7 +88,7 @@ contains
 
       integer :: nkm1, istat1, istat2, i
       real :: idt
-      logical :: p3_comptend
+      logical :: p3_comptend, p3_comptend_ta
 
       real, dimension(ni) :: tlcr,tscr,lv,ls
 
@@ -149,6 +149,22 @@ contains
               /))) p3_comptend = .true.
          i = i+1
       enddo
+      p3_comptend_ta = p3_comptend
+      if (lhn /= 'NIL' .and. stcond == 'MP_P3') then
+         if (lhn_tdcond_fix) then
+            p3_comptend_ta = .true.
+         else
+            p3_comptend_ta = .false.
+            if (kount == 0) then
+               if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ta')) then
+                  call msg(MSG_WARNING, '(condensation) Requested TA in output will not include P3 tendencies')
+               endif
+               if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ste')) then
+                  call msg(MSG_WARNING, '(condensation) Requested STE in output will not include P3 tendencies')
+               endif
+            endif
+         endif
+      endif
 
       ! Run selected gridscale condensation scheme
       GRIDSCALE_SCHEME: select case(stcond)
@@ -278,10 +294,10 @@ contains
 
       case('MP_P3')
 
-        !save values before call, for computation of tendencies immediately after
-        ! note: qitend, this is done below since it is p3_ncat-dependent
+         !save values before call, for computation of tendencies immediately after
+         ! note: qitend, this is done below since it is p3_ncat-dependent
+         if (p3_comptend_ta) zste(:,:) = ttp(:,:)
          if (p3_comptend) then
-            zste(:,:)   = ttp(:,:)
             zsqe(:,:)   = qqp(:,:)
             zsqce(:,:)  = qcp(:,:)
             zsqre(:,:)  = qrp(:,:)
@@ -371,9 +387,9 @@ contains
             return
          endif
 
-        !compute tendencies from microphysics:
+         !compute tendencies from microphysics:
+         if (p3_comptend_ta) zste(:,:) = (ttp(:,:) - zste(:,:)) * idt
          if (p3_comptend) then
-            zste(:,:)  = (ttp(:,:)-zste(:,:) )*idt
             zsqe(:,:)  = (qqp(:,:)-zsqe(:,:) )*idt
             zsqce(:,:) = (qcp(:,:)-zsqce(:,:))*idt
             zsqre(:,:) = (qrp(:,:)-zsqre(:,:))*idt

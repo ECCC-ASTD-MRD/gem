@@ -976,6 +976,12 @@ module phy_options
         'IRPCP'  &
         /)
 
+   !# Fix LHN to always use P3 tendencies in TDCOND
+   logical           :: lhn_tdcond_fix = .false.
+   namelist /physics_cfgs/ lhn_tdcond_fix
+   namelist /physics_cfgs_p/ lhn_tdcond_fix
+ 
+
    !# Standard deviation length scale (gridpoints) of Gaussian smoother
    !# applied to RDPR, PR and TA before the application of Latent Heat Nudging
    !# No smoothing applied when -ve
