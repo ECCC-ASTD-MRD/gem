@@ -1,5 +1,3 @@
-# The full path of the compiler for <LANG> must be set in CMAKE_<LANG>_COMPILER
-# before calling enable_language(<LANG>)
 find_program(CMAKE_C_COMPILER gcc)
 find_program(CMAKE_Fortran_COMPILER gfortran)
 
@@ -47,5 +45,5 @@ if (EXTRA_CHECKS)
   message(STATUS "EXTRA_CHECKS = ON")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fanalyzer -fsanitize=bounds -fsanitize=alignment -fstack-protector-all -fstack-check -fstack-clash-protection")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -fcheck=all -fsanitize=bounds -fsanitize=alignment -ffpe-trap=underflow")
-   set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -fsanitize=bounds -fsanitize=alignment")
+  set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -fsanitize=bounds -fsanitize=alignment")
 endif()
