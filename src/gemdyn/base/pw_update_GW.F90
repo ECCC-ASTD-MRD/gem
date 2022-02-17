@@ -40,7 +40,7 @@
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
          pw_gz_plus(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,1:l_nk)=&
-         zmom_8(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,1:l_nk)*grav_8
+         GVM%zmom_8(1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy,1:l_nk)*grav_8
       else
          call diag_fi (fi, st1, tt1, qt1, l_minx,l_maxx,l_miny,l_maxy,&
                               G_nk, 1-G_halox*west ,l_ni+G_halox*east,&

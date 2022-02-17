@@ -76,11 +76,11 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-            qt0(i,j,l_nk+1) = mc_alfas_H_8(i,j) * qt0(i,j,l_nk)   &
-                         - mc_betas_H_8(i,j) * qt0(i,j,l_nk-1) &
-                         + mc_css_H_8(i,j)   * (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1) &
+            qt0(i,j,l_nk+1) = GVM%mc_alfas_H_8(i,j) * qt0(i,j,l_nk)   &
+                         - GVM%mc_betas_H_8(i,j) * qt0(i,j,l_nk-1) &
+                         + GVM%mc_css_H_8(i,j)   * (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1) &
                             + invT_m_8*(rhsf(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhsf(i,j,l_nk-1))) &
-                         - mc_css_H_8(i,j)   * (nl_t(i,j,l_nk ) - Ver_wmstar_8(G_nk)*nl_t(i,j,l_nk-1))
+                         - GVM%mc_css_H_8(i,j)   * (nl_t(i,j,l_nk ) - Ver_wmstar_8(G_nk)*nl_t(i,j,l_nk-1))
          end do
       end do
 !$omp enddo
@@ -94,8 +94,8 @@
 !$omp do
          do j= j0, jn
             do i= i0, in
-               w5= mc_alfat_8(i,j) * lhs_sol(i,j,k0)
-               w6= mc_cst_8  (i,j) * (rhsb(i,j)-nl_b(i,j))
+               w5= GVM%mc_alfat_8(i,j) * lhs_sol(i,j,k0)
+               w6= GVM%mc_cst_8  (i,j) * (rhsb(i,j)-nl_b(i,j))
                qt0(i,j,k0-1) = w5 - w6
             end do
          end do
@@ -118,11 +118,11 @@
    !           ~~~~~~~~~
                ut0(i,j,k) = tau_m_8*(rhsu(i,j,k)-nl_u(i,j,k)  &
                           - (qt0(i+1,j,k)-qt0(i,j,k))*geomh_invDX_8(j) &
-                          + isol_i*mc_Jx_8(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (qt0(i+1,j,k+1)-qt0(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
-                                                + (qt0(i  ,j,k+1)-qt0(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
-                          + Ver_wm_8%m(k)*half*( (qt0(i+1,j,k  )-qt0(i+1,j,km))*mc_iJz_8(i+1,j,km)  &
-                                               + (qt0(i  ,j,k  )-qt0(i  ,j,km))*mc_iJz_8(i  ,j,km) ) ))
+                          + isol_i*GVM%mc_Jx_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (qt0(i+1,j,k+1)-qt0(i+1,j,k ))*GVM%mc_iJz_8(i+1,j,k )   &
+                                                + (qt0(i  ,j,k+1)-qt0(i  ,j,k ))*GVM%mc_iJz_8(i  ,j,k ) ) &
+                          + Ver_wm_8%m(k)*half*( (qt0(i+1,j,k  )-qt0(i+1,j,km))*GVM%mc_iJz_8(i+1,j,km)  &
+                                               + (qt0(i  ,j,k  )-qt0(i  ,j,km))*GVM%mc_iJz_8(i  ,j,km) ) ))
             end do
          end do
       end do
@@ -139,11 +139,11 @@
    !           ~~~~~~~~~
                vt0(i,j,k) = tau_m_8*(rhsv(i,j,k)-nl_v(i,j,k) &
                           - (qt0(i,j+1,k)-qt0(i,j,k))*geomh_invDYMv_8(j) &
-                          + isol_i*mc_Jy_8(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (qt0(i,j+1,k+1)-qt0(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
-                                                + (qt0(i,j  ,k+1)-qt0(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (qt0(i,j+1,k  )-qt0(i,j+1,km))*mc_iJz_8(i,j+1,km)  &
-                                                + (qt0(i,j  ,k  )-qt0(i,j  ,km))*mc_iJz_8(i,j  ,km) ) ))
+                          + isol_i*GVM%mc_Jy_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (qt0(i,j+1,k+1)-qt0(i,j+1,k ))*GVM%mc_iJz_8(i,j+1,k )   &
+                                                + (qt0(i,j  ,k+1)-qt0(i,j  ,k ))*GVM%mc_iJz_8(i,j  ,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (qt0(i,j+1,k  )-qt0(i,j+1,km))*GVM%mc_iJz_8(i,j+1,km)  &
+                                                + (qt0(i,j  ,k  )-qt0(i,j  ,km))*GVM%mc_iJz_8(i,j  ,km) ) ))
             end do
          end do
       end do
@@ -158,7 +158,7 @@
    !           Compute w
    !           ~~~~~~~~~
                wt0(i,j,k) = tau_m_8 * ( (rhst(i,j,k) - nl_t(i,j,k)) * Cstv_bar1_8 &
-                          - gama_8*((isol_i*mc_iJz_8(i,j,k) + isol_d*Ver_idz_8%t(k))&
+                          - gama_8*((isol_i*GVM%mc_iJz_8(i,j,k) + isol_d*Ver_idz_8%t(k))&
                             *(qt0(i,j,k+1)-qt0(i,j,k)) &
                           - Cstv_bar1_8*half*mu_8*(qt0(i,j,k+1)+qt0(i,j,k))))
 
@@ -170,7 +170,7 @@
    !           Compute T
    !           ~~~~~~~~~
                Buoy = (qt0(i,j,k+1)-qt0(i,j,k))*      &
-                      (isol_i*mc_iJz_8(i,j,k)+isol_d*Ver_idz_8%t(k))  &
+                      (isol_i*GVM%mc_iJz_8(i,j,k)+isol_d*Ver_idz_8%t(k))  &
                     + wt0(i,j,k)*invT_nh_8 - (rhsw(i,j,k) - nl_w(i,j,k)) * Cstv_bar1_8
                tt0(i,j,k) = Cstv_Tstr_8 / (one - Buoy / grav_8 )
 

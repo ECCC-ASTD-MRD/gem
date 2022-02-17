@@ -51,10 +51,10 @@
       do j=j0,jn
          wkf(:,j,:)= 0.0
          do i=i0,in
-            wkf(i,j,1) = mc_css_H_8(i,j)   * (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1) &
-                     + Cstv_invT_m_8*(rhsf(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhsf(i,j,l_nk-1))) &
-                     - mc_css_H_8(i,j)   * (nl_t(i,j,l_nk ) - Ver_wmstar_8(G_nk)*nl_t(i,j,l_nk-1))
-            wkf(i,j,2) = -mc_cst_8(i,j) * (rhsb(i,j)-nl_b(i,j)) 
+            wkf(i,j,1)= GVM%mc_css_H_8(i,j) * (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1)&
+                     + Cstv_invT_m_8*(rhsf(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhsf(i,j,l_nk-1)))   &
+                     - GVM%mc_css_H_8(i,j) * (nl_t(i,j,l_nk )-Ver_wmstar_8(G_nk)*nl_t(i,j,l_nk-1))
+            wkf(i,j,2)= -GVM%mc_cst_8(i,j) * (rhsb(i,j)-nl_b(i,j)) 
          end do
       end do
 !$omp enddo
@@ -68,31 +68,39 @@
 !$omp single
       if ((Grd_yinyang_L)) then
          call yyg_xchng (wkf, l_minx,l_maxx,l_miny,l_maxy, &
-                               l_ni,l_nj, 2, .false., 'CUBIC', .true.)
+                         l_ni,l_nj, 2, .false., 'CUBIC', .true.)
       else
          call rpn_comm_xch_halo(wkf,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,2, &
-                             G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                                G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 !$omp end single
                           
 !$omp do
       do j= pil_s, l_nj-pil_n
          do i= pil_w, l_ni-pil_e
-            wka(i,j,1) = - mc_Jx_8(i,j,l_nk) * &
-                        Ver_wp_8%m(l_nk)*half*( wkf(i+1,j,1)*mc_iJz_8(i+1,j,l_nk) &
-                                            + wkf(i  ,j,1)*mc_iJz_8(i  ,j,l_nk) )
-            wka(i,j,2) = - mc_Jx_8(i,j,k0) * &
-                        Ver_wm_8%m(k0)*half*( (-wkf(i+1,j,2))*mc_iJz_8(i+1,j,k0-1)   &
-                                            + (-wkf(i  ,j,2))*mc_iJz_8(i  ,j,k0-1) )
-            wkb(i,j,1) = - mc_Jy_8(i,j,l_nk) * &
-                        Ver_wp_8%m(l_nk)*half*( wkf(i,j+1,1)*mc_iJz_8(i,j+1,l_nk) &
-                                            + wkf(i,j  ,1)*mc_iJz_8(i,j  ,l_nk) )
-            wkb(i,j,2) = - mc_Jy_8(i,j,k0) * &
-                        Ver_wm_8%m(k0)*half*( (-wkf(i,j+1,2))*mc_iJz_8(i,j+1,k0-1)   &
-                                            + (-wkf(i,j  ,2))*mc_iJz_8(i,j  ,k0-1) )
+            wka(i,j,1) = - GVM%mc_Jx_8(i,j,l_nk) * &
+                        Ver_wp_8%m(l_nk)*half*( wkf(i+1,j,1)*GVM%mc_iJz_8(i+1,j,l_nk) &
+                                            + wkf(i  ,j,1)*GVM%mc_iJz_8(i  ,j,l_nk) )
+            wkb(i,j,1) = - GVM%mc_Jy_8(i,j,l_nk) * &
+                        Ver_wp_8%m(l_nk)*half*( wkf(i,j+1,1)*GVM%mc_iJz_8(i,j+1,l_nk) &
+                                            + wkf(i,j  ,1)*GVM%mc_iJz_8(i,j  ,l_nk) )
          end do
       end do
 !$omp enddo
+      if (Schm_opentop_L) then
+!$omp do
+      do j= pil_s, l_nj-pil_n
+         do i= pil_w, l_ni-pil_e
+            wka(i,j,2) = - GVM%mc_Jx_8(i,j,k0) * &
+                        Ver_wm_8%m(k0)*half*( (-wkf(i+1,j,2))*GVM%mc_iJz_8(i+1,j,k0-1) &
+                                            + (-wkf(i  ,j,2))*GVM%mc_iJz_8(i  ,j,k0-1) )
+            wkb(i,j,2) = - GVM%mc_Jy_8(i,j,k0) * &
+                        Ver_wm_8%m(k0)*half*( (-wkf(i,j+1,2))*GVM%mc_iJz_8(i,j+1,k0-1) &
+                                            + (-wkf(i,j  ,2))*GVM%mc_iJz_8(i,j  ,k0-1) )
+         end do
+      end do
+!$omp enddo
+      endif
 !$omp single
       if (.not.Grd_yinyang_L) then
          if (l_west ) then
@@ -114,13 +122,13 @@
 !$omp do
       do j=j0,jn
          do i=i0,in
-            w1 = gama_8*(wkf(i,j,1)*mc_iJz_8(i,j,l_nk) - mu_8*half*wkf(i,j,1))
+            w1 = gama_8*(wkf(i,j,1)*GVM%mc_iJz_8(i,j,l_nk) - mu_8*half*wkf(i,j,1))
             add_v8 = (wka (i,j,1)-wka (i-1,j,1))*geomh_invDXM_8(j) &
-                     + half * (mc_Ix_8(i,j,l_nk)*(wka(i,j,1)+wka(i-1,j,1)))
+                     + half * (GVM%mc_Ix_8(i,j,l_nk)*(wka(i,j,1)+wka(i-1,j,1)))
             bdd_v8 = (wkb (i,j,1)*geomh_cyM_8(j)-wkb (i,j-1,1)*&
                      geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                     + half * (mc_Iy_8(i,j,l_nk)*(wkb(i,j,1)+wkb(i,j-1,1)))
-            cdd_v8 = w1*Ver_idz_8%m(l_nk) +(mc_Iz_8(i,j,l_nk)-epsi_8)*(Ver_wp_8%m(l_nk)*w1)
+                     + half * (GVM%mc_Iy_8(i,j,l_nk)*(wkb(i,j,1)+wkb(i,j-1,1)))
+            cdd_v8 = w1*Ver_idz_8%m(l_nk) +(GVM%mc_Iz_8(i,j,l_nk)-epsi_8)*(Ver_wp_8%m(l_nk)*w1)
 
             rhs_sol(i,j,l_nk)=rhs_sol(i,j,l_nk)-Cstv_hco0_8*(add_v8+bdd_v8+cdd_v8)
 
@@ -131,13 +139,13 @@
 !$omp do
       do j=j0,jn
          do i=i0,in
-            w1 = gama_8*(-wkf(i,j,2)*mc_iJz_8(i,j,k0-1) - mu_8*half*wkf(i,j,2))
+            w1 = gama_8*(-wkf(i,j,2)*GVM%mc_iJz_8(i,j,k0-1) - mu_8*half*wkf(i,j,2))
             add_v8 = (wka (i,j,2)-wka (i-1,j,2))*geomh_invDXM_8(j) &
-                     + half * (mc_Ix_8(i,j,k0)*(wka(i,j,2)+wka(i-1,j,2)))
+                     + half * (GVM%mc_Ix_8(i,j,k0)*(wka(i,j,2)+wka(i-1,j,2)))
             bdd_v8 = (wkb (i,j,2)*geomh_cyM_8(j)-wkb (i,j-1,2)*&
                      geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                     + half * (mc_Iy_8(i,j,k0)*(wkb(i,j,2)+wkb(i,j-1,2)))
-            cdd_v8=(-w1)*Ver_idz_8%m(k0) +(mc_Iz_8(i,j,k0)-epsi_8)*(Ver_wm_8%m(k0)*w1) 
+                     + half * (GVM%mc_Iy_8(i,j,k0)*(wkb(i,j,2)+wkb(i,j-1,2)))
+            cdd_v8=(-w1)*Ver_idz_8%m(k0) +(GVM%mc_Iz_8(i,j,k0)-epsi_8)*(Ver_wm_8%m(k0)*w1) 
             rhs_sol(i,j,k0)=rhs_sol(i,j,k0)-Cstv_hco0_8*(add_v8+bdd_v8+cdd_v8)
          end do
       end do

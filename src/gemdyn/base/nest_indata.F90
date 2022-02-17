@@ -16,56 +16,65 @@
 !**s/r nest_indata - Read and process nesting data during LAM
 !                    integration for LBC.
 
-      subroutine nest_indata (F_datev_S)
+      subroutine nest_indata ( F_u , F_v, F_w, F_t , F_q, F_zd, F_s, &
+                               F_tr, F_topo, F_stag_L, F_datev_S    ,&
+                               Mminx, Mmaxx, Mminy, Mmaxy, Nk, Ntr )
+      use gmm_geof
       use dynkernel_options
       use dyn_fisl_options
       use gem_options
-      use mem_nest
-      use gmm_geof
       use inp_mod
+      use mem_nest
       use glb_ld
-      use lun
-      use ptopo
       use tr3d
-      use vGrid_Descriptors, only : vgrid_descriptor
       implicit none
-
-      include 'mpif.h'
-      include 'rpn_comm.inc'
-
-      character(len=*), intent(IN) :: F_datev_S
-      integer topo_diff,comm,err,gathV(Ptopo_numproc*Ptopo_ncolors)
+      
+      character(len=*), intent(in):: F_datev_S
+      logical, intent(in) :: F_stag_L
+      integer, intent(in) :: Mminx, Mmaxx, Mminy, Mmaxy, Nk, Ntr
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk),   intent(out) :: F_u, F_v, F_w, F_t, F_zd
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk+1), intent(out) :: F_q
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy),      intent(out) :: F_s
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,2),    intent(out) :: F_topo
+      real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,Nk*Ntr),intent(out) :: F_tr
+      
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: uu, vv, tt, sumpqj
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: nest_sls
 !     
 !     ---------------------------------------------------------------
 !
-      call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin ,&
-                      nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
-                      nest_fullme_fin(l_minx,l_miny,1),&
-                      nest_fullme_fin(l_minx,l_miny,2),&
-                      .true.,F_datev_S                ,&
-                      l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
+      call inp_data (F_u , F_v, F_w, F_t , F_q, F_zd, F_s, F_tr      ,&
+                     F_topo(l_minx,l_miny,1),F_topo(l_minx,l_miny,2),&
+              F_stag_L,F_datev_S,l_minx,l_maxx,l_miny,l_maxy,G_nk,Ntr)
 
       if (Schm_sleve_L) then
-         call update_sls (nest_fullme_fin(l_minx,l_miny,2),nest_sls,&
+         call update_sls (F_topo(l_minx,l_miny,2),nest_sls,&
                           l_minx,l_maxx,l_miny,l_maxy)
       else
          nest_sls= 0.
       endif
 
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' )  &
+      call vertical_metric (nest_metric, F_topo, nest_sls, &
+                                l_minx,l_maxx,l_miny,l_maxy)
+                   
       call canonical_indata()
-
-      call derivate_data ( nest_zd_fin, nest_w_fin, nest_u_fin       ,&
-                      nest_v_fin, nest_t_fin , nest_s_fin, nest_q_fin,&
-                      nest_fullme_fin(l_minx,l_miny,1),nest_sls      ,&
-                      l_minx,l_maxx,l_miny,l_maxy, G_nk              ,&
-                      .not.Inp_zd_L, .not.Inp_w_L, .not. Inp_qt_L )
-      topo_diff= 0
-      if (maxval(abs(nest_fullme_fin-nest_fullme_deb))>0.) topo_diff= 1
-      comm = RPN_COMM_comm ('MULTIGRID')
-      call MPI_Allgather ( topo_diff,1,MPI_INTEGER,gathV,1,&
-                           MPI_INTEGER,comm,err)
-      Vtopo_mustadj_L= sum(gathV) > 0
+      
+      if (.not.F_stag_L) then
+         uu= F_u ; vv= F_v ; tt= F_t ; sumpqj= 0.
+         call mfottvh2 (tt, F_t, F_tr(l_minx,l_minx,(Tr3d_hu-1)*l_nk+1),&
+                        sumpqj,l_minx, l_maxx, l_miny, l_maxy, l_nk    ,&
+                   1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,.true.)
+         call hwnd_stag2 ( F_u, F_v,uu,vv,&
+                         l_minx,l_maxx,l_miny,l_maxy,G_nk   ,&
+                         1-G_halox*west ,l_niu+G_halox*east ,&
+                         1-G_haloy*south,l_njv+G_haloy*north, .true. )
+      endif
+                       
+      call derivate_data ( F_zd, F_w, F_u, F_v, F_t , F_s, F_q         ,&
+                           F_topo(l_minx,l_miny,1),nest_sls,nest_metric,&
+                           l_minx,l_maxx,l_miny,l_maxy, G_nk           ,&
+                           .not.Inp_zd_L, .not.Inp_w_L, .not. Inp_qt_L )
 !
 !     ---------------------------------------------------------------
 !

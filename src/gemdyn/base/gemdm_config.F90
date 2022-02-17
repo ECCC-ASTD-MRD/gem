@@ -102,7 +102,7 @@
       end if
       Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
       if (Ctrl_theoc_L) Lam_blend_Hy = 0
-      Lam_tdeb = 999999.0
+      Lam_tdeb = huge(Lam_tdeb) ;  Lam_tfin = -1.d0
 
       if (.not.Grd_yinyang_L) then
          Lam_gbpil_T = max(0,Lam_gbpil_T)

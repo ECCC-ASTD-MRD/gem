@@ -22,9 +22,9 @@
       use dyn_fisl_options
       use glb_ld
       use lam_options
-      use matvec
       use tdpack
       use ver
+      use metric
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -142,7 +142,6 @@
          call gem_error (F_errcode,'set_dync',&
               'VERTICAL LAYERING and TIMESTEP INCOMPATIBILITY')
          call set_sol ()
-         if (Sol_type_S == 'ITERATIVE_3D') call matvec_init
       end if
 !
 !     ---------------------------------------------------------------

@@ -101,6 +101,11 @@
       if (index(F_argv_S(1),'[') > 0) then
          stuff_S=F_argv_S(1)
          read(stuff_S(2:4),*) varmax
+         if (varmax > MAXELEM) then
+             if (Lun_out > 0) write(Lun_out,*) 'SET_VAR WARNING: too many variables (over 200) in this request set'
+             set_var=1
+             return
+         endif
       else
          if (Lun_out > 0) then
            write(Lun_out,*) 'SET_VAR WARNING: syntax incorrect'

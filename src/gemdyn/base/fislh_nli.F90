@@ -112,11 +112,11 @@
 
    !           Adding vertical coordinate metric terms
    !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                           - (t_interp - isol_i) * mc_Jx_8(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (qt0(i+1,j,k+1)-qt0(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
-                                                 +(qt0(i  ,j,k+1)-qt0(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (qt0(i+1,j,k  )-qt0(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
-                                                 +(qt0(i  ,j,k  )-qt0(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )
+                           - (t_interp - isol_i) * GVM%mc_Jx_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (qt0(i+1,j,k+1)-qt0(i+1,j,k ))*GVM%mc_iJz_8(i+1,j,k )   &
+                                                 +(qt0(i  ,j,k+1)-qt0(i  ,j,k ))*GVM%mc_iJz_8(i  ,j,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (qt0(i+1,j,k  )-qt0(i+1,j,km))*GVM%mc_iJz_8(i+1,j,km)   &
+                                                 +(qt0(i  ,j,k  )-qt0(i  ,j,km))*GVM%mc_iJz_8(i  ,j,km) ) )
 
                barz  = Ver_wp_8%m(k)*tt0(i,j  ,k)+Ver_wm_8%m(k)*tt0(i,j  ,km)
                barzp = Ver_wp_8%m(k)*tt0(i,j+1,k)+Ver_wm_8%m(k)*tt0(i,j+1,km)
@@ -129,14 +129,14 @@
 
    !           Adding vertical coordinate metric terms
    !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                           - (t_interp - isol_i) * mc_Jy_8(i,j,k) * ( &
-                             Ver_wp_8%m(k)*half*( (qt0(i,j+1,k+1)-qt0(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
-                                                 +(qt0(i,j  ,k+1)-qt0(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
-                            +Ver_wm_8%m(k)*half*( (qt0(i,j+1,k  )-qt0(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
-                                                 +(qt0(i,j  ,k  )-qt0(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )
-               nl_c(i,j,k) = isol_d * ( half * ( mc_Ix_8(i,j,k)*(ut0(i,j,k)+ut0(i-1,j,k))   &
-                                             + mc_Iy_8(i,j,k)*(vt0(i,j,k)+vt0(i,j-1,k)) ) &
-                                             + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*zdt0(i,j,k) + &
+                           - (t_interp - isol_i) * GVM%mc_Jy_8(i,j,k) * ( &
+                             Ver_wp_8%m(k)*half*( (qt0(i,j+1,k+1)-qt0(i,j+1,k ))*GVM%mc_iJz_8(i,j+1,k )   &
+                                                 +(qt0(i,j  ,k+1)-qt0(i,j  ,k ))*GVM%mc_iJz_8(i,j  ,k ) ) &
+                            +Ver_wm_8%m(k)*half*( (qt0(i,j+1,k  )-qt0(i,j+1,km))*GVM%mc_iJz_8(i,j+1,km)   &
+                                                 +(qt0(i,j  ,k  )-qt0(i,j  ,km))*GVM%mc_iJz_8(i,j  ,km) ) )
+               nl_c(i,j,k) = isol_d * ( half * ( GVM%mc_Ix_8(i,j,k)*(ut0(i,j,k)+ut0(i-1,j,k))   &
+                                             + GVM%mc_Iy_8(i,j,k)*(vt0(i,j,k)+vt0(i,j-1,k)) ) &
+                                             + GVM%mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*zdt0(i,j,k) + &
                                                Ver_wm_8%m(k)*Ver_onezero(k)*zdt0(i,j,km)) ) + &
                                                (1.0d0-Cstv_bar1_8) * invT_8 * &
                                                ( logQ(i,j,k) - (qt0(i,j,k) - fis0(i,j))*Cstv_invFI_8  )
@@ -163,10 +163,10 @@
             do i= i0, in
    !           Compute Nw
    !           ~~~~~~~~~~
-               nl_w(i,j,k) = (one - i_hydro)*(((tots(i,j,k)-isol_i)*mc_iJz_8(i,j,k) - &
+               nl_w(i,j,k) = (one - i_hydro)*(((tots(i,j,k)-isol_i)*GVM%mc_iJz_8(i,j,k) - &
                            isol_d*Ver_idz_8%t(k))*(qt0(i,j,k+1)-qt0(i,j,k)) &
                            -  (tots(i,j,k)-one)*grav_8*(one-one/tots(i,j,k))) + &
-                           i_hydro*(-invT_nh_8*wt0(i,j,k)+((one-isol_i)*mc_iJz_8(i,j,k) - &
+                           i_hydro*(-invT_nh_8*wt0(i,j,k)+((one-isol_i)*GVM%mc_iJz_8(i,j,k) - &
                            isol_d*Ver_idz_8%t(k))*(qt0(i,j,k+1)-qt0(i,j,k)))
    !           Compute Nt
    !           ~~~~~~~~~~
@@ -184,14 +184,14 @@
          do j = j0, jn
             km=max(k-1,1)
             do i = i0, in
-               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
-               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
+               w1= (Ver_idz_8%m(k) + (isol_i*GVM%mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
+               w2= (Ver_idz_8%m(k) - (isol_i*GVM%mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
                div = (nl_u(i,j,k)-nl_u(i-1,j,k)) * geomh_invDXM_8(j) &
                    + (nl_v(i,j,k)*geomh_cyM_8(j)-nl_v(i,j-1,k)* &
                       geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                    + isol_i*(half * ( mc_Ix_8(i,j,k)*(nl_u(i,j,k)+nl_u(i-1,j,k)) &
-                                     + mc_Iy_8(i,j,k)*(nl_v(i,j,k)+nl_v(i,j-1,k)) ))
+                    + isol_i*(half * ( GVM%mc_Ix_8(i,j,k)*(nl_u(i,j,k)+nl_u(i-1,j,k)) &
+                                     + GVM%mc_Iy_8(i,j,k)*(nl_v(i,j,k)+nl_v(i,j-1,k)) ))
 
                nl_c(i,j,k) = div - nl_c(i,j,k)*invT_m_8 !+ (w1 * nl_t(i,j,k) - w2 * nl_t(i,j,km)) * Cstv_bar1_8
 
@@ -209,18 +209,13 @@
 !$omp do
       do j= j0, jn
          do i= i0, in
-            rhs_sol(i,j,l_nk) = rhs_sol(i,j,l_nk) + isol_d * c0 * mc_cssp_H_8(i,j) * &
+            rhs_sol(i,j,l_nk) = rhs_sol(i,j,l_nk) + isol_d * c0 * GVM%mc_cssp_H_8(i,j) * &
                          (nl_t(i,j,l_nk ) - Ver_wmstar_8(G_nk)*nl_t(i,j,l_nk-1))
          end do
       end do
 !$omp enddo
 
       if (Schm_opentop_L) then
-!!$!$omp do
-!!$            do k= 1, k0t
-!!$               rhs_sol(:,:,k) = 0.0
-!!$            enddo
-!!$!$omp enddo
 !$omp do
          do j= j0, jn
             do i= i0, in
@@ -233,7 +228,7 @@
 !$omp do
            do j= j0, jn
              do i= i0, in
-               rhs_sol(i,j,k0)= rhs_sol(i,j,k0) -  c0* mc_cstp_8(i,j) * nl_b(i,j)
+               rhs_sol(i,j,k0)= rhs_sol(i,j,k0) -  c0* GVM%mc_cstp_8(i,j) * nl_b(i,j)
              end do
            end do
 !$omp enddo

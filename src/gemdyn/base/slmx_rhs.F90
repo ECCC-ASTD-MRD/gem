@@ -125,11 +125,11 @@
             orhsu_ext(i,j,k) = invT_m_8  * ut2(i,j,k) - Cstv_Beta_m_8 * ( &
                            t_interp * ( qt2(i+1,j,k) - qt2(i,j,k) ) * geomh_invDX_8(j)        &
                          - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * ut2(i,j,k) ) * v_interp )  &
-                         + Cstv_Beta_m_8 * t_interp * mc_Jx_8(i,j,k) * ( &
-                           Ver_wp_8%m(k)*half*( (qt2(i+1,j,k+1)-qt2(i+1,j,k ))*mc_iJz_8(i+1,j,k )   &
-                                              + (qt2(i  ,j,k+1)-qt2(i  ,j,k ))*mc_iJz_8(i  ,j,k ) ) &
-                         + Ver_wm_8%m(k)*half*( (qt2(i+1,j,k  )-qt2(i+1,j,km))*mc_iJz_8(i+1,j,km)   &
-                                              + (qt2(i  ,j,k  )-qt2(i  ,j,km))*mc_iJz_8(i  ,j,km) ) )&
+                         + Cstv_Beta_m_8 * t_interp * GVM%mc_Jx_8(i,j,k) * ( &
+                           Ver_wp_8%m(k)*half*( (qt2(i+1,j,k+1)-qt2(i+1,j,k ))*GVM%mc_iJz_8(i+1,j,k )   &
+                                              + (qt2(i  ,j,k+1)-qt2(i  ,j,k ))*GVM%mc_iJz_8(i  ,j,k ) ) &
+                         + Ver_wm_8%m(k)*half*( (qt2(i+1,j,k  )-qt2(i+1,j,km))*GVM%mc_iJz_8(i+1,j,km)   &
+                                              + (qt2(i  ,j,k  )-qt2(i  ,j,km))*GVM%mc_iJz_8(i  ,j,km) ) )&
                          + ((1d0-phy_cplm(i,j))/Cstv_bA_m_8) * rhs_uu_tend(i,j,k)
 
             barz  = Ver_wp_8%m(k)*tt2(i,j  ,k)+Ver_wm_8%m(k)*tt2(i,j  ,km)
@@ -139,27 +139,27 @@
             orhsv_ext(i,j,k) = invT_m_8  * vt2(i,j,k) - Cstv_Beta_m_8 * ( &
                            t_interp * ( qt2(i,j+1,k) - qt2(i,j,k) ) * geomh_invDY_8           &
                          + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp )   &
-                         + Cstv_Beta_m_8 * t_interp * mc_Jy_8(i,j,k) * ( &
-                           Ver_wp_8%m(k)*half*( (qt2(i,j+1,k+1)-qt2(i,j+1,k ))*mc_iJz_8(i,j+1,k )   &
-                                              + (qt2(i,j  ,k+1)-qt2(i,j  ,k ))*mc_iJz_8(i,j  ,k ) ) &
-                         + Ver_wm_8%m(k)*half*( (qt2(i,j+1,k  )-qt2(i,j+1,km))*mc_iJz_8(i,j+1,km)   &
-                                              + (qt2(i,j  ,k  )-qt2(i,j  ,km))*mc_iJz_8(i,j  ,km) ) )&
+                         + Cstv_Beta_m_8 * t_interp * GVM%mc_Jy_8(i,j,k) * ( &
+                           Ver_wp_8%m(k)*half*( (qt2(i,j+1,k+1)-qt2(i,j+1,k ))*GVM%mc_iJz_8(i,j+1,k )   &
+                                              + (qt2(i,j  ,k+1)-qt2(i,j  ,k ))*GVM%mc_iJz_8(i,j  ,k ) ) &
+                         + Ver_wm_8%m(k)*half*( (qt2(i,j+1,k  )-qt2(i,j+1,km))*GVM%mc_iJz_8(i,j+1,km)   &
+                                              + (qt2(i,j  ,k  )-qt2(i,j  ,km))*GVM%mc_iJz_8(i,j  ,km) ) )&
                          + ((1d0-phy_cplm(i,j))/Cstv_bA_m_8) * rhs_vv_tend(i,j,k)
 
             orhst_ext(i,j,k) = invT_8 * ( logT(i,j,k) - w3*(qt2(i,j,k+1)+qt2(i,j,k)) ) &
                              - Cstv_Beta_8 * mu_8 * wt2(i,j,k) &
                + rhs_phytv*((1d0-phy_cplt(i,j))/Cstv_bA_8) * 1./tt2(i,j,k) * phy_tv_tend(i,j,k)
 
-            orhsf_ext(i,j,k) = invT_nh_8 * (ztht_8(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
+            orhsf_ext(i,j,k) = invT_nh_8 * (GVM%ztht_8(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
                          - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*zdt2(i,j,k)+Ver_wmstar_8(k)*zdt2(i,j,km) - wt2(i,j,k) )
             div = (ut2 (i,j,k)-ut2 (i-1,j,k))*geomh_invDXM_8(j)     &
                    + (vt2 (i,j,k)*geomh_cyM_8(j)-vt2 (i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
                    + (zdt2(i,j,k)*Ver_wpstar_8(k)+(Ver_wmstar_8(k)-Ver_onezero(k))*zdt2(i,j,km))*Ver_idz_8%m(k) &
-                   + half * ( mc_Ix_8(i,j,k)*(ut2(i,j,k)+ut2(i-1,j,k))        &
-                   + mc_Iy_8(i,j,k)*(vt2(i,j,k)+vt2(i,j-1,k)) )      &
-                   + mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*zdt2(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*zdt2(i,j,km))
+                   + half * ( GVM%mc_Ix_8(i,j,k)*(ut2(i,j,k)+ut2(i-1,j,k))        &
+                   + GVM%mc_Iy_8(i,j,k)*(vt2(i,j,k)+vt2(i,j-1,k)) )      &
+                   + GVM%mc_Iz_8(i,j,k)*(Ver_wp_8%m(k)*zdt2(i,j,k)+Ver_wm_8%m(k)*Ver_onezero(k)*zdt2(i,j,km))
 
-            orhsc_ext (i,j,k) = invT_8 *  w4 * qt2(i,j,k) +   invT_8 * mc_logJz_8(i,j,k)  &
+            orhsc_ext (i,j,k) = invT_8 *  w4 * qt2(i,j,k) +   invT_8 * GVM%mc_logJz_8(i,j,k)  &
                           - Cstv_Beta_8 * ( div-epsi_8*(Ver_wp_8%m(k)*wt2(i,j,k)+Ver_onezero(k)*Ver_wm_8%m(k)*wt2(i,j,km)) ) &
                           + (1d0/Cstv_bA_8) * &
                           (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/tt2(i,j,k ) + &
@@ -177,7 +177,7 @@
             do i= 1, l_ni
                w2 = tt2(i,j,k)/Cstv_Tstr_8
                orhsw_ext(i,j,k) = invT_nh_8 * wt2(i,j,k) - Cstv_Beta_nh_8 *w2* &
-                              ( (qt2(i,j,k+1)-qt2(i,j,k))*mc_iJz_8(i,j,k)  -grav_8*(one-one/w2) )
+                              ( (qt2(i,j,k+1)-qt2(i,j,k))*GVM%mc_iJz_8(i,j,k)  -grav_8*(one-one/w2) )
             end do
          end do
       endif

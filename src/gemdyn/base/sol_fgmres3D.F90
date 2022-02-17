@@ -15,33 +15,22 @@
 
 !** fgmres - Flexible generalized minimum residual method (with restarts).
 !
-      subroutine sol_fgmres3d (solution, matvec, rhs_b, tolerance, maxinner, maxouter, nbiter, conv)
+      subroutine sol_fgmres3d (solution, rhs_b, tolerance, maxinner, maxouter, nbiter, conv)
       use dyn_fisl_options
       use dynkernel_options
       use glb_ld
+      use lam_options
       use ldnh
       use sol
-      use prec             ! Qaddouri-- Blockwise Red/Black Gauss-Seidel and jacobi preconditioners
-      use redblack_3d      ! csubich -- Red/Black (z-column) preconditioner
-      use multigrid_3d_jac ! csubich -- Multigrid (column relaxation) preconditioner
+      use opr
+      use ptopo
+      use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       ! Initial guess on input, approximate solution on output
       real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(inout) :: solution
-
-      ! A matrix-vector product routine (A.*v).
-      interface
-         subroutine matvec(v, prod)
-            use glb_ld, only: l_nk
-            use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
-      use, intrinsic :: iso_fortran_env
-            implicit none
-            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
-            real(kind=REAL64), dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
-         end subroutine
-      end interface
 
       ! Right hand side of the linear system.
       real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: rhs_b
@@ -63,6 +52,8 @@
 
       real(kind=REAL64), intent(out) :: conv
 
+!Authors: A. Qdddouri & R. Aider  (2021)
+
       ! References
       !
       ! C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations, SIAM, 1995
@@ -76,40 +67,36 @@
       ! To appear in Numerical Linear Algebra with Applications (TODO: update reference when paper is published)
       !
 
-      integer :: i, j, k, k1, ii, jj, ierr
+      integer :: i, j, k, k0, k1, nk, ii, jj, ierr
+      logical, save :: first_time = .true.
 
       integer :: initer, outiter, nextit, it
       real(kind=REAL64) :: relative_tolerance, r0
       real(kind=REAL64) :: norm_residual, nu, t
       real(kind=REAL64), dimension(maxinner+1, maxinner) :: hessenberg
 
-      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: work_space
-      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner) :: ww
-      real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk, maxinner+1) :: vv
+      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk) :: work_space
+      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk, maxinner+1) :: vv
+      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk,maxinner) :: wint_82
       real(kind=REAL64), dimension(maxinner+1, maxinner+1) :: rr, tt
 
-      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_8
-      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy, l_nk) :: wint_82
-
-      real(kind=REAL64) :: local_dot
-      real(kind=REAL64) :: initial_dot, initial_local_dot
+      real(kind=REAL64) :: local_dot(2), glb_dot(2)
       real(kind=REAL64), dimension(:,:), allocatable :: v_local_prod, v_prod
 
       real(kind=REAL64), dimension(maxinner+1) :: rot_cos, rot_sin, gg
 
-      real(kind=REAL64) :: ro2,rr2
-
       logical almost_zero
 
+      real(kind=REAL64) :: ro2,rr2, temp
       integer i0, in, j0, jn, ii0, iin, jj0, jjn
-      integer niloc,njloc
+      integer imin, imax, jmin, jmax
+      integer niloc,njloc, ni_val, nj_val
 
+      k0=1+Lam_gbpil_T
+      nk=l_nk-k0+1
 
       niloc = (l_ni-pil_e)-(1+pil_w)+1
       njloc = (l_nj-pil_n)-(1+pil_s)+1
-      wint_82 = 0.d0
-
-      ! Here we go !
 
       i0 = 1  + sol_pil_w
       in = l_ni - sol_pil_e
@@ -121,6 +108,22 @@
       jj0  = 1    - ovlpy
       jjn  = l_nj + ovlpy
 
+      imin = ii0
+      imax = iin
+      jmin = jj0
+      jmax = jjn
+
+      if (Ptopo_mycol==1)  ii0  = 0
+      if (Ptopo_mycol.eq.Ptopo_npex-2)  iin = l_ni+1
+      if (Ptopo_myrow==1)  jj0  = 0
+      if (Ptopo_myrow.eq.Ptopo_npey-2)  jjn = l_nj+1
+
+      if (l_east)  iin = l_ni-sol_pil_e
+      if (l_west)  ii0 = 1+sol_pil_w
+      if (l_north) jjn = l_nj-sol_pil_n
+      if (l_south) jj0 = 1+sol_pil_s
+      ni_val = iin-ii0+1
+      nj_val = jjn-jj0+1
 
       outiter = 0
       nbiter = 0
@@ -128,36 +131,27 @@
       conv = 0.d0
 
       vv = 0.d0
+      wint_82 = 0.d0
 
       ! Residual of the initial iterate
-      if ( Dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
-         call matvec(solution, work_space)
-      elseif  ( Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
-         if (FISLH_LHS_metric_L) then
-            call mat_vecs3D_H3 (solution, work_space)
-         else
-            call matvec(solution, work_space)
-         endif
-       endif
+      ! if(first_time) then
+      !   call matvec3d_init()
+      !   first_time=.false.
+      !endif
 
-      !  Compute ||b*b|| to determine the required error for convergence
-      initial_local_dot = 0.0d0
-      do k=1,l_nk
+      call matvec3D ( solution, work_space,ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy)
+
+      ! Index 1 : Compute ||b*b|| to determine the required error for convergence
+
+      local_dot(1) = 0.0d0
+      do k=k0,l_nk
          do j=j0,jn
             do i=i0,in
-               initial_local_dot = initial_local_dot + (rhs_b(i,j,k)*rhs_b(i,j,k))
+               local_dot(1) = local_dot(1) + (rhs_b(i,j,k)*rhs_b(i,j,k))
             end do
          end do
       end do
-
-      call RPN_COMM_allreduce(initial_local_dot, initial_dot, 1, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
-
-      r0 = sqrt( initial_dot )
-
-      ! Scale tolerance according to the norm of b
-      relative_tolerance = tolerance * r0
-
-      do k=1,l_nk
+      do k=k0,l_nk
          do j=j0,jn
             do i=i0,in
                vv(i,j,k,1) = rhs_b(i,j,k) - work_space(i,j,k)
@@ -167,18 +161,23 @@
 
       do
 
-         local_dot = 0.0d0
-         do k=1,l_nk
+         local_dot(2) = 0.0d0
+         do k=k0,l_nk
             do j=j0,jn
-!DIR$ SIMD
                do i=i0,in
-                  local_dot = local_dot + (vv(i, j, k, 1) * vv(i, j, k, 1))
+                  local_dot(2) = local_dot(2) + (vv(i, j, k, 1) * vv(i, j, k, 1))
                end do
             end do
          end do
 
-         call RPN_COMM_allreduce(local_dot, norm_residual, 1, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
-         norm_residual = sqrt(norm_residual)
+         call RPN_COMM_allreduce(local_dot, glb_dot, 2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+
+
+         r0 = sqrt(glb_dot(1))
+         norm_residual = sqrt(glb_dot(2))
+
+         ! Scale tolerance according to the norm of b
+         relative_tolerance = tolerance * r0
 
          ! Current guess is a good enough solution
          if (norm_residual < relative_tolerance) then
@@ -186,7 +185,7 @@
          end if
 
          nu = 1.0d0 / norm_residual
-         do k=1,l_nk
+         do k=k0,l_nk
             do j=j0,jn
                do i=i0,in
                   vv(i,j,k,1) = vv(i,j,k,1) * nu
@@ -210,56 +209,28 @@
             nbiter = nbiter + 1
             initer = initer + 1
             nextit = initer + 1
+! Preconditionning RAS
+             call rpn_comm_xch_halo_8 (vv(:,:,k0:l_nk,initer) ,   &
+                                      imin, imax, jmin, jmax, l_ni, l_nj,nk, &
+                                      ovlpx, ovlpy, G_periodx, G_periody, l_ni,0 )
 
-            select case(sol3D_precond_S)
-               case ('JACOBI') ! Blockwise Jacobi preconditioner
-                  wint_8(i0:in,j0:jn,:)=vv(i0:in,j0:jn,:,initer)
+            call pre_jacobi3D2 (wint_82(ii0:iin,jj0:jjn,:,initer),vv(ii0:iin,jj0:jjn,:,initer), &
+                                        ii0,iin,jj0,jjn,ni_val,nj_val,l_nk)
+!!
 
-                  call pre_jacobi3D ( wint_82(i0:in,j0:jn,:), &
-                                      vv(i0:in,j0:jn,:,initer), &
-                                      Prec_xevec_8, niloc, njloc, l_nk,&
-                                      Prec_ai_8, Prec_bi_8, Prec_ci_8 )
-                  work_space(i0:in,j0:jn,:)=wint_82(i0:in,j0:jn,:)
-               case ('RAS') ! Restricted Additive Schwarz preconditioner
-                  wint_8(i0:in,j0:jn,:)=vv(i0:in,j0:jn,:,initer)
-                 call RASchwarz(wint_82,wint_8,ii0,iin,jj0,jjn, &
-                                    l_minx,l_maxx,l_miny,l_maxy,l_nk)
-                  work_space(i0:in,j0:jn,:)=wint_82(i0:in,j0:jn,:)
-               case ('GAUSS') ! Blockwise Red/Black Gauss-Seidel preconditioner
-                  wint_8(i0:in,j0:jn,:)=vv(i0:in,j0:jn,:,initer)
-                  call RB_BGAUSS(wint_82,wint_8,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-                  work_space(i0:in,j0:jn,:)=wint_82(i0:in,j0:jn,:)
-               case ('REDBLACK') ! Column-wise Red/Black Gauss-Seidel preconditioner
-                  ! As an interface note, pre_redblack3D and pre_multigrid_jac3d both take
-                  ! full arrays as references; they handle the borders internally.
-                  call pre_redblack3D (work_space, vv(:,:,:,initer))
-               case ('MULTIGRID') ! Column relaxation multigrid preconditioner
-                  call pre_multigrid_jac3d (work_space, vv(:,:,:,initer))
-               case default
-                  work_space(i0:in,j0:jn,:) = vv(i0:in,j0:jn,:,initer)
-            end select
+            call matvec3D (wint_82(:,:,:,initer),vv(:,:,:,nextit),imin,imax,jmin,jmax)
 
-            ww(i0:in,j0:jn,:,initer) = work_space(i0:in,j0:jn,:)
+!            call mat_vecs3D_H3 ( wint_82(:,:,:,initer),vv(:,:,:,nextit),imin,imax, jmin, jmax ,l_ni,l_nj,l_nk)
 
-            if ( Dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
-                  call matvec ( work_space, vv(:,:,:,nextit) )
-            elseif ( Dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
-               if (FISLH_LHS_metric_L) then
-                  call mat_vecs3D_H3 (work_space,vv(:,:,:,nextit))
-               else
-                  call matvec ( work_space, vv(:,:,:,nextit) )
-               endif
-            endif
             ! Modified Gram-Schmidt from Świrydowicz et al. (2018)
 
             ! TODO : avoid memory allocation
             allocate( v_local_prod(initer+1,3), v_prod(initer+1,3) )
             v_local_prod = 0.d0 ; v_prod = 0.d0
 
-            do it=1,initer
-               do k=1,l_nk
+            do it=1,initer+1
+               do k=k0,l_nk
                   do j=j0,jn
-!DIR$ SIMD
                      do i=i0,in
                         v_local_prod(it,1) = v_local_prod(it,1) + ( vv(i, j, k, it) * vv(i, j, k, initer) )
                         v_local_prod(it,2) = v_local_prod(it,2) + ( vv(i, j, k, it) * vv(i, j, k, nextit) )
@@ -268,21 +239,12 @@
                end do
             end do
 
-            do k=1,l_nk
-               do j=j0,jn
-!DIR$ SIMD
-                  do i=i0,in
-                        v_local_prod(nextit,3) = v_local_prod(nextit,3) + ( vv(i, j, k, nextit) * vv(i, j, k, nextit) )
-                  end do
-               end do
-            end do
-
-            call RPN_COMM_allreduce(v_local_prod, v_prod, nextit*3, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+            call RPN_COMM_allreduce(v_local_prod, v_prod, nextit*2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
 
             tt(1:initer-1,initer) = v_prod(1:initer-1,1)
             rr(initer,initer)     = v_prod(initer,1)
             rr(1:initer,nextit)   = v_prod(1:initer,2)
-            ro2=v_prod(nextit,3)
+            ro2=v_prod(nextit,2)
 
             deallocate ( v_local_prod, v_prod)
 
@@ -305,15 +267,15 @@
             enddo
 
             do it=1,initer
-               do k=1,l_nk
+               temp=rr(it,nextit)
+               do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
-                        vv(i, j, k, nextit) = vv(i, j, k, nextit) - vv(i, j, k, it) * rr(it,nextit)
+                        vv(i, j, k, nextit) = vv(i, j, k, nextit) - vv(i, j, k, it) * temp
                      end do
                   end do
                end do
             end do
-
 
             ! Compute estimated norm nu=sqrt(ro2-rr2)
             if( (ro2-rr2) > 0.) then
@@ -322,9 +284,8 @@
             ! Compute exact norm
             else
                local_dot = 0.d0
-               do k=1,l_nk
+               do k=k0,l_nk
                   do j=j0,jn
-!DIR$ SIMD
                      do i=i0,in
                         local_dot = local_dot + (vv(i, j, k, nextit) * vv(i, j, k, nextit))
                      end do
@@ -337,7 +298,7 @@
             if ( .not. almost_zero( rr(nextit,nextit) ) ) then
                nu = 1.d0 / rr(nextit,nextit)
 
-               do k=1,l_nk
+               do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
                         vv(i, j, k, nextit) = vv(i, j, k, nextit) * nu
@@ -382,6 +343,7 @@
 
          end do
 
+
          ! At this point either the maximum number of inner iterations
          ! was reached or the absolute residual is below the scaled tolerance.
 
@@ -401,10 +363,11 @@
          do it=1,initer
             t = gg(it)
 
-            do k=1,l_nk
+            do k=k0,l_nk
                do j=j0,jn
+!DIR$ SIMD
                   do i=i0,in
-                     solution(i, j, k) = solution(i, j, k) + t * ww(i, j, k, it)
+                     solution(i, j, k) = solution(i, j, k) + t * wint_82(i, j, k, it)
                   end do
                end do
             end do
@@ -430,7 +393,7 @@
                t = t - 1.d0
             end if
 
-            do k=1,l_nk
+            do k=k0,l_nk
                do j=j0,jn
 !DIR$ SIMD
                   do i=i0,in

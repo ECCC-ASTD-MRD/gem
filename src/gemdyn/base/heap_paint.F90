@@ -20,15 +20,14 @@
       use gem_options
       use glb_ld
       implicit none
-#include <arch_specific.hf>
 
       integer :: i,j,k
       real, dimension (:,:,:), pointer :: wrk01
+      common /bidon/ wrk01
 !
 !     ---------------------------------------------------------------
 !
       if (Heap_nk > 0) then
-         Heap_nk=200
          nullify (wrk01)
          allocate (wrk01(G_ni,G_nj,Heap_nk))
          do k=1,Heap_nk

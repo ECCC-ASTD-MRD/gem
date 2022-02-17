@@ -67,8 +67,11 @@
       use step_options
       use mem_nest
       use gmm_geof
+      use tdpack
       use, intrinsic :: iso_fortran_env
       implicit none
+
+      integer j
 !
 !     ---------------------------------------------------------------
 !
@@ -97,11 +100,23 @@
             call rpn_comm_xch_halo (sls,l_minx,l_maxx,l_miny,l_maxy,&
                                     l_ni,l_nj,1,G_halox,G_haloy,&
                                      G_periodx,G_periody,l_ni,0)
-         endif                  
+         endif
 !$omp end single
       endif
-      
-      if (Dynamics_hauteur_L) call VERmetric ()
+
+      if (Dynamics_hauteur_L) then
+         call vertical_metric_omp (GVM, fis0, sls, l_minx,l_maxx,l_miny,l_maxy)
+
+!$omp single
+         if (trim(Sol_type_S) == 'ITERATIVE_3D') call matvec3d_init()
+!$omp end single
+!$omp do
+         do j= 1-G_haloy+1, l_nj+G_haloy-1
+            me_full (1-G_halox+1:l_ni+G_halox-1,j) = fis0(1-G_halox+1:l_ni+G_halox-1,j) / grav_8
+            me_large(1-G_halox+1:l_ni+G_halox-1,j) =  sls(1-G_halox+1:l_ni+G_halox-1,j) / grav_8
+         end do
+!$omp enddo
+      endif
 !
 !     ---------------------------------------------------------------
 !

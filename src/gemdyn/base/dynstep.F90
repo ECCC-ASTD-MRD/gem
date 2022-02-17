@@ -31,6 +31,7 @@
       implicit none
 #include <arch_specific.hf>
 
+      logical, save :: done=.false.
       integer icn, keep_itcn, nrow, np
 !
 !     ---------------------------------------------------------------
@@ -52,6 +53,14 @@
       call rpn_comm_xch_halo (Adz_uu_ext, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
                     l_ni,l_nj, 3*l_nk, Adz_halox,Adz_haloy, .false.,.false., l_ni,0)
 
+
+      if (trim(Sol_type_S) == 'ITERATIVE_3D') then
+         if (.not. done) then
+            call matvec3d_init()
+         endif
+         done =.true.
+      endif
+
       select case ( trim(Dynamics_Kernel_S) )
          case ('DYNAMICS_FISL_H')
             call fislh_dynstep()
@@ -66,7 +75,7 @@
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
       call psadj_init ( Step_kount )
-                               
+
       do icn = 1,Schm_itcn-1
 
          call tstpdyn (icn)
