@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module mem_nest
+   use metric
    implicit none
    public
    save
@@ -56,4 +57,5 @@ module mem_nest
       real, pointer, dimension (:) :: nest_deb, nest_now,&
                                       nest_fin
 
+      type(Vmetric) :: nest_metric
 end module mem_nest

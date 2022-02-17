@@ -18,6 +18,7 @@
 
       subroutine nest_set_mem
       use mem_nest
+      use dynkernel_options
       use lam_options
       use glb_ld
       use lun
@@ -82,6 +83,30 @@
       call nest_init_weight(nest_weightu,-1,0,0,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
       call nest_init_weight(nest_weightv,0,-1,0,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
       call nest_init_weight(nest_weightq,0,0,-1,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
+
+      if (Dynamics_hauteur_L) then
+         allocate ( nest_metric%zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    nest_metric%ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                nest_metric%lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
+
+         allocate ( nest_metric%mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                  nest_metric%mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+
+         allocate ( nest_metric%mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    nest_metric%mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    nest_metric%mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    nest_metric%mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy) )
+
+         allocate ( nest_metric%mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    nest_metric%mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    nest_metric%mc_cstp_8  (l_minx:l_maxx,l_miny:l_maxy) )
+         nest_metric%mc_cst_8= 0. ; nest_metric%mc_alfat_8= 0. ; nest_metric%mc_cstp_8= 0.
+      endif
 
  1000 format( &
       /,'INITIALIZATION OF NESTING VARIABLE MEMORY', &

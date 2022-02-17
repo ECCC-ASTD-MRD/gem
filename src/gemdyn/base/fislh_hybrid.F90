@@ -254,6 +254,12 @@
                               Ver_hyb%m(k)-Ver_hyb%m(k+1),pnip1
             end do
       end if
+!!$      open (64,file='/users/dor/armn/mid/home/gem/5.2.0-a12/trunk/lvls',&
+!!$               access='SEQUENTIAL',form='FORMATTED')
+!!$      do k=1,G_nk
+!!$         write(64,*) Ver_hyb%m(k)
+!!$      end do
+!!$      stop
 
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HEIGHT LEVELS WITH ', &
                'Grd_rcoef= ',4f7.2,':'/ &

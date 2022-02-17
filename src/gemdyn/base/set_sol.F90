@@ -33,9 +33,8 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer k
+      integer i,j,k,ii0,jj0,iin,jjn
       real(kind=REAL64) yg_8(G_nj), wk(G_nk)
-      integer ii0,jj0,iin,jjn
 !     __________________________________________________________________
 !
       ! sol_nk formerly removed Lam_gbpil_T points if piloting from the top was
@@ -63,8 +62,9 @@
          if (allocated(Prec_xeval_8)) deallocate (Prec_xeval_8)
          if (allocated(Prec_ai_8)) deallocate (Prec_ai_8)
          if (allocated(Prec_bi_8)) deallocate (Prec_bi_8)
+         if (allocated(Prec_invbi_8)) deallocate (Prec_invbi_8)
          if (allocated(Prec_ci_8)) deallocate (Prec_ci_8)
-         
+
          select case(sol3D_precond_S)
            case ('RAS') ! Restrictive Additive Schwarz preconditioner
               ii0  = 1    - ovlpx
@@ -86,20 +86,26 @@
               sol_njloc=jjn-jj0+1
               sol_nloc = sol_niloc*sol_njloc*Schm_nith
 
-              allocate (Prec_xevec_8(sol_niloc*sol_niloc)    ,&
-                  Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
-                  Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
+              allocate (Prec_xevec_8(sol_niloc,sol_niloc)    ,&
+                        Prec_xeval_8(sol_niloc), &
+                         Prec_ai_8(sol_niloc,sol_njloc,G_nk),&
+                         Prec_bi_8(sol_niloc,sol_njloc,G_nk),&
+                         Prec_invbi_8(sol_niloc,sol_njloc,G_nk),&
+                         Prec_ci_8(sol_niloc,sol_njloc,G_nk))
 
               call eigenabc_local2 (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
-                             Prec_bi_8,Prec_ci_8,ii0,iin,jj0,jjn,&
+                             Prec_bi_8,Prec_invbi_8,Prec_ci_8,&
+                             ii0,iin,jj0,jjn,&
                              sol_niloc,sol_njloc,Schm_nith,wk)
               case default
                  sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
                  sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
                  sol_nloc = sol_niloc*sol_njloc*Schm_nith
-                 allocate (Prec_xevec_8(sol_niloc*sol_niloc)    ,&
-                     Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
-                    Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
+              allocate (Prec_xevec_8(sol_niloc,sol_niloc)    ,&
+                        Prec_xeval_8(sol_niloc),&
+                         Prec_ai_8(sol_niloc,sol_njloc,G_nk),&
+                         Prec_bi_8(sol_niloc,sol_njloc,G_nk),&
+                         Prec_ci_8(sol_niloc,sol_njloc,G_nk))
 
                  call eigenabc_local (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
                              Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
@@ -107,7 +113,7 @@
             end select
 !!
       else ! Using the direct solver
-         do k= 1, G_nk 
+         do k= 1, G_nk
             wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
          end do
          ! The one-transpose solver calculates the tridiagonal coefficients in

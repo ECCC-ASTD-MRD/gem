@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!** s/r diag_zd_w_H - Computes model vertical velocities zd and w diagnostically.
-!                     Height-type vertical coordinate
+!** s/r - Computes model vertical velocities zd and w diagnostically.
+!         Height-type vertical coordinate
 
-      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_q,  &
-                                  Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
+      subroutine fislh_diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_q, &
+              F_metric,Minx, Maxx, Miny, Maxy, Nk, F_zd_L, F_w_L )
       use dyn_fisl_options
       use gem_options
       use geomh
@@ -27,13 +27,13 @@
       use tdpack
       use ver
       implicit none
-#include <arch_specific.hf>
 
       integer, intent(in) ::  Minx, Maxx, Miny, Maxy, Nk
       logical, intent(in) ::  F_zd_L, F_w_L
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(out)   :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk),  intent(inout) :: F_u, F_v, F_t
       real, dimension(Minx:Maxx,Miny:Maxy,Nk+1),intent(inout) :: F_q
+      type(Vmetric) , intent(in ) :: F_metric
 
       integer :: i, j, k, kp, km, i0, in, j0, jn
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: rau
@@ -71,7 +71,7 @@
             km=max(k-1,1)
             do j=j0-1,jn+1
                do i=i0-1,in+1
-                  rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k)) &
+                  rau(i,j,k) = exp(F_q(i,j,k)/(rgasd_8*Cstv_Tstr_8)+F_metric%lg_pstar_8(i,j,k)) &
                              / (rgasd_8*(Ver_wp_8%m(k)*F_t(i,j,k)+Ver_wm_8%m(k)*F_t(i,j,km)))
                end do
             end do
@@ -85,14 +85,14 @@
             km=max(k-1,1)
             do j=j0,jn
                do i=i0-1,in
-                  rJzX(i,j) = 0.5d0*(rau(i+1,j,k)*(ztht_8(i+1,j,k)-ztht_8(i+1,j,k-1)) &
-                            + rau(i  ,j,k)*(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1)))*Ver_idz_8%m(k)
+                  rJzX(i,j) = 0.5d0*(rau(i+1,j,k)*(F_metric%ztht_8(i+1,j,k)-F_metric%ztht_8(i+1,j,k-1)) &
+                            + rau(i  ,j,k)*(F_metric%ztht_8(i  ,j,k)-F_metric%ztht_8(i  ,j,k-1)))*Ver_idz_8%m(k)
                end do
             end do
             do j=j0-1,jn
                do i=i0,in
-                  rJzY(i,j) = 0.5d0*(rau(i,j+1,k)*(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1)) &
-                            +rau(i,j  ,k)*(ztht_8(i,j  ,k)-ztht_8(i,j  ,k-1)))*Ver_idz_8%m(k)
+                  rJzY(i,j) = 0.5d0*(rau(i,j+1,k)*(F_metric%ztht_8(i,j+1,k)-F_metric%ztht_8(i,j+1,k-1)) &
+                            +rau(i,j  ,k)*(F_metric%ztht_8(i,j  ,k)-F_metric%ztht_8(i,j  ,k-1)))*Ver_idz_8%m(k)
                end do
             end do
             do j=j0,jn
@@ -103,7 +103,7 @@
                               +(rJzY(i,j  )*F_v(i,j  ,k)*geomh_cyv_8(j  )  &
                                -rJzY(i,j-1)*F_v(i,j-1,k)*geomh_cyv_8(j-1))*geomh_invDYM_8(j) )
                   rJzZ(i,j) = 0.5d0*(rau(i,j,k+1)+rau(i,j,k))* &
-                              (zmom_8(i,j,k+1)-zmom_8(i,j,k))*Ver_idz_8%t(k)
+                              (F_metric%zmom_8(i,j,k+1)-F_metric%zmom_8(i,j,k))*Ver_idz_8%t(k)
                   F_zd(i,j,k) = F_zd(i,j,k)/rJzZ(i,j)
                end do
             end do
@@ -130,12 +130,12 @@
             do j=j0,jn
                do i=i0,in
                   F_w(i,j,k) = 0.25d0* ( &
-                              (F_u(i,j,kp)*mc_Jx_8(i,j,kp)+F_u(i-1,j,kp)*mc_Jx_8(i-1,j,kp))   &
-                             +(F_u(i,j,k )*mc_Jx_8(i,j,k )+F_u(i-1,j,k )*mc_Jx_8(i-1,j,k ))   &
-                             +(F_v(i,j,kp)*mc_Jy_8(i,j,kp)+F_v(i,j-1,kp)*mc_Jy_8(i,j-1,kp))   &
-                             +(F_v(i,j,k )*mc_Jy_8(i,j,k )+F_v(i,j-1,k )*mc_Jy_8(i,j-1,k )) ) &
+                              (F_u(i,j,kp)*F_metric%mc_Jx_8(i,j,kp)+F_u(i-1,j,kp)*F_metric%mc_Jx_8(i-1,j,kp))   &
+                             +(F_u(i,j,k )*F_metric%mc_Jx_8(i,j,k )+F_u(i-1,j,k )*F_metric%mc_Jx_8(i-1,j,k ))   &
+                             +(F_v(i,j,kp)*F_metric%mc_Jy_8(i,j,kp)+F_v(i,j-1,kp)*F_metric%mc_Jy_8(i,j-1,kp))   &
+                             +(F_v(i,j,k )*F_metric%mc_Jy_8(i,j,k )+F_v(i,j-1,k )*F_metric%mc_Jy_8(i,j-1,k )) ) &
                              +(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))  &
-                             *(zmom_8(i,j,k+1)-zmom_8(i,j,k))*Ver_idz_8%t(k)
+                             *(F_metric%zmom_8(i,j,k+1)-F_metric%zmom_8(i,j,k))*Ver_idz_8%t(k)
                end do
             end do
          end do
@@ -147,4 +147,4 @@
 !     ________________________________________________________________
 !
       return
-      end
+      end subroutine fislh_diag_zd_w

@@ -20,6 +20,7 @@ module sol
    public
    save
 
+
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH THE SOLVER                                |
@@ -27,14 +28,17 @@ module sol
 !   we solve:   (I + Ai) * Bi   * (I + Ci) * X = RHS                   |
 !       with:   Ai = Sol_ai_8, Bi = Sol_bi_8 and Ci = Sol_ci_8         |
 !______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Sol_ai_8           |  sub-   diagonal of LU factorization            |
-! Sol_bi_8           |         diagonal of LU factorization            |
-! Sol_ci_8           |  super- diagonal of LU factorization            |
-! Sol_stencil2_8,3,4,5 | stencils for Yin-Yang  (Qaddouri)             |
-!----------------------------------------------------------------------
+!                      |                                                 |
+! NAME                 | DESCRIPTION                                     |
+!----------------------|-------------------------------------------------|
+! Sol_ai_8             |  sub-   diagonal of LU factorization            |
+! Sol_bi_8             |         diagonal of LU factorization            |
+! Sol_ci_8             |  super- diagonal of LU factorization            |
+! Sol_stencil2_8,3,4,5 | stencils for Yin-Yang  (Qaddouri)               |
+! Sol_stencilh         | stencils for H coordinates MATVEC               |
+! sol_stencilp         | stencils for P coordinates MATVEC               |
+!-------------------------------------------------------------------------
+
 
    character(len=4) :: Sol_type_fft
    integer :: sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
@@ -51,6 +55,9 @@ module sol
    real(kind=REAL64), dimension(:,:,:), allocatable :: Sol_dwfft, Sol_dg2, &
                                                        Sol_rhs_8, Sol_sol_8
 
+   real(kind=REAL64), dimension(:,:,:,:), allocatable :: Sol_stencilp_8, Sol_stencilh_8
+   real, dimension(:,:,:,:), allocatable :: Sol_stencilh
+
    !! For the one-transpose solve, the following are pointers into the allocated,
    !  shared-memory space that eliminates the y-transpose.  Defining these pointers
    !  as contiguous (and ensuring it on assignment) enables compile-time optimizations.
@@ -59,12 +66,13 @@ module sol
    !  Each array is in (k,i,j) order.
    !  - Sol_xpose contains the 4D working array (lni, lnj, lnk, npex) for the improved
    !              MPI transposer
-   real(kind=REAL64), dimension(:,:,:), contiguous, pointer :: Sol_a,Sol_b,Sol_c,Sol_fft
+   real(kind=REAL64), dimension(:,:,:  ), contiguous, pointer :: Sol_a,Sol_b,Sol_c,Sol_fft
    real(kind=REAL64), dimension(:,:,:,:), contiguous, pointer :: Sol_xpose
+   real(kind=REAL64), dimension(:,:,:  ), pointer :: Sol_saved=>null()
 
    ! Normalization factor for the FFT
    real(kind=REAL64) :: Sol_pri
-      
+
    ! Opaque pointers to hold the forward and reverse FFT plans
    type(dft_descriptor) :: forward_plan, reverse_plan
 

@@ -42,7 +42,7 @@
       do k=1,l_nk
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-               work1=zmom_8(i,j,k)-zblen_bot
+               work1=GVM%zmom_8(i,j,k)-zblen_bot
                work1=min(1.d0,max(0.d0,work1/deltaZ))
                beta= work1*work1*min(1.d0,fact)
                ut0(i,j,k)=(1.-beta)*ut0(i,j,k)+beta*mtn_flo
@@ -55,7 +55,7 @@
       do k=1,l_nk
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-               work1=ztht_8(i,j,k)-Zblen_bot
+               work1=GVM%ztht_8(i,j,k)-Zblen_bot
                work1=min(1.d0,max(0.d0,work1/deltaZ))
                beta=work1*work1*min(1.d0,fact)
                wt0(i,j,k)=(1.-beta)*wt0(i,j,k)

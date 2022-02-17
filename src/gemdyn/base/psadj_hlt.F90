@@ -240,7 +240,7 @@
                ((g_avg_ps_1_8 - g_avg_ps_0_8) + g_avg_fl_0_8)*Cstv_psadj_8
             end if
             qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8 * &
-                    (log(pw_p0_moins_8(i,j))-lg_pstar_8(i,j,l_nk+1))
+                    (log(pw_p0_moins_8(i,j))-GVM%lg_pstar_8(i,j,l_nk+1))
          end do
       end do
 !$omp end do
@@ -250,7 +250,7 @@
 !$omp do
       do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
+            delps(i,j) = exp(GVM%lg_pstar_8(i,j,l_nk+1))*&
                         (exp(qt0(i,j,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
                          exp(qts(i,j)/(rgasd_8*Cstv_Tstr_8)))
          end do
@@ -261,10 +261,10 @@
       do k=1,l_nk
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-               w1 = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k))
+               w1 = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k))
                qt0(i,j,k) = rgasd_8*Cstv_Tstr_8*&
-                         (log(w1+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
-                          exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
+                         (log(w1+delps(i,j)*exp(GVM%lg_pstar_8(i,j,k))/&
+                          exp(GVM%lg_pstar_8(i,j,l_nk+1)))-GVM%lg_pstar_8(i,j,k))
             end do
          end do
       end do

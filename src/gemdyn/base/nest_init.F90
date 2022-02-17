@@ -68,7 +68,6 @@
 
       endif
 
-      Lam_previous_S= ''
       Lam_current_S = Step_runstrt_S
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
       call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)

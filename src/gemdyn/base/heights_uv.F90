@@ -26,20 +26,11 @@
       implicit none
 
       integer :: i,j,k
-      logical,save :: done = .false.
       real(kind=REAL64) :: aa,bb
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,2) :: me_uv,sls_uv
 !
 !     ---------------------------------------------------------------
 !
-      if(.not.done) then
-         allocate ( zmom_u(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                    ztht_u(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                    zmom_v(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                    ztht_v(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
-         done=.true.
-      end if
-      
 !!$      ! cubic interpolation of fis0
 !!$      aa = -0.0625d0
 !!$      bb = +0.5625d0
@@ -93,25 +84,25 @@
          sls_uv(l_ni+G_halox,:,2) = sls (l_ni+G_halox,:)
       endif
       
-      ztht_u(:,:,0)=ver_z_8%m(0) ; ztht_v(:,:,0)=ver_z_8%m(0)
-      zmom_u(:,:,0)=ver_z_8%m(0) ; zmom_v(:,:,0)=ver_z_8%m(0)
+      GVM%ztht_u(:,:,0)=ver_z_8%m(0) ; GVM%ztht_v(:,:,0)=ver_z_8%m(0)
+      GVM%zmom_u(:,:,0)=ver_z_8%m(0) ; GVM%zmom_v(:,:,0)=ver_z_8%m(0)
 
       do k=1,G_nk
          do j=1-G_haloy,l_nj+G_haloy
          do i=1-G_halox,l_ni+G_halox
-            zmom_u(i,j,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*me_uv(i,j,1)+Ver_c_8%m(k)*sls_uv(i,j,1))/grav_8
-            ztht_u(i,j,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*me_uv(i,j,1)+Ver_c_8%t(k)*sls_uv(i,j,1))/grav_8
-            zmom_v(i,j,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*me_uv(i,j,2)+Ver_c_8%m(k)*sls_uv(i,j,2))/grav_8
-            ztht_v(i,j,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*me_uv(i,j,2)+Ver_c_8%t(k)*sls_uv(i,j,2))/grav_8
+            GVM%zmom_u(i,j,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*me_uv(i,j,1)+Ver_c_8%m(k)*sls_uv(i,j,1))/grav_8
+            GVM%ztht_u(i,j,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*me_uv(i,j,1)+Ver_c_8%t(k)*sls_uv(i,j,1))/grav_8
+            GVM%zmom_v(i,j,k)=ver_z_8%m(k)+Cstv_bar1_8*(Ver_b_8%m(k)*me_uv(i,j,2)+Ver_c_8%m(k)*sls_uv(i,j,2))/grav_8
+            GVM%ztht_v(i,j,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*me_uv(i,j,2)+Ver_c_8%t(k)*sls_uv(i,j,2))/grav_8
          end do
          end do
       end do
       do j=1-G_haloy,l_nj+G_haloy
          do i=1-G_halox,l_ni+G_halox      
-            zmom_u(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,1)/grav_8
-            ztht_u(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,1)/grav_8
-            zmom_v(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,2)/grav_8
-            ztht_v(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,2)/grav_8
+            GVM%zmom_u(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,1)/grav_8
+            GVM%ztht_u(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,1)/grav_8
+            GVM%zmom_v(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,2)/grav_8
+            GVM%ztht_v(i,j,G_nk+1)=Cstv_bar1_8*me_uv(i,j,2)/grav_8
          end do
       end do
 !

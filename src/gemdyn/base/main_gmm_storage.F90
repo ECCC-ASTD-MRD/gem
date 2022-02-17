@@ -68,9 +68,6 @@
       istat = gmm_create(gmmk_fis0_s ,fis0 ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_orols_s,orols,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_sls_s  ,sls  ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_get (gmmk_fis0_s , fis0 )
-      istat = gmm_get (gmmk_orols_s, orols)
-      istat = gmm_get (gmmk_sls_s  , sls  )
 
       call gmm_build_meta3D(meta, &
                             l_minx,l_maxx,G_halox,G_halox,l_ni, &
@@ -81,16 +78,13 @@
 
       istat = gmm_create(gmmk_topo_low_s ,topo_low ,mymeta,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_topo_high_s,topo_high,mymeta,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_get (gmmk_topo_low_s , topo_low )
-      istat = gmm_get (gmmk_topo_high_s, topo_high)
 
-      istat = gmm_create(gmmk_me_full_s, me_full, meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_me_full_s, me_full  , meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_me_large_s, me_large, meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      istat = gmm_get (gmmk_me_full_s, me_full)
-      istat = gmm_get (gmmk_me_large_s, me_large)
       
       allocate (rhs_zero(l_minx:l_maxx,l_miny:l_maxy,l_nk))
       allocate (rhsb(l_minx:l_maxx,l_miny:l_maxy))
+      rhsb = 0.
       if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' .or. &
            trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
 
@@ -129,7 +123,7 @@
                 nl_w(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 nl_f(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 nl_b(l_minx:l_maxx,l_miny:l_maxy))
-
+      nl_b = 0.
       allocate (rhs_sol(ldnh_maxx-ldnh_minx+1,ldnh_maxy-ldnh_miny+1,l_nk),&
                 lhs_sol(ldnh_maxx-ldnh_minx+1,ldnh_maxy-ldnh_miny+1,l_nk))
       rhs_sol= 0.
@@ -137,28 +131,32 @@
       endif
              
       if (Dynamics_hauteur_L) then
-         allocate ( zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                    ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
-                lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
+         allocate ( GVM%zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%zmom_u(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%ztht_u(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%zmom_v(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%ztht_v(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
+                    GVM%lg_pstar_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1) )
 
-         allocate ( mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                  mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                    mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+         allocate ( GVM%mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                  GVM%mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )
 
-         allocate ( mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy) )
+         allocate ( GVM%mc_css_H_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    GVM%mc_alfas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    GVM%mc_betas_H_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    GVM%mc_cssp_H_8  (l_minx:l_maxx,l_miny:l_maxy) )
 
-         allocate ( mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
-                    mc_cstp_8  (l_minx:l_maxx,l_miny:l_maxy) )
-         mc_cst_8= 0. ; mc_alfat_8= 0. ; mc_cstp_8= 0.
-      endif
+         allocate ( GVM%mc_cst_8   (l_minx:l_maxx,l_miny:l_maxy), &
+                    GVM%mc_alfat_8 (l_minx:l_maxx,l_miny:l_maxy), &
+                    GVM%mc_cstp_8  (l_minx:l_maxx,l_miny:l_maxy) )
+         GVM%mc_cst_8= 0. ; GVM%mc_alfat_8= 0. ; GVM%mc_cstp_8= 0.
+     endif
 
  2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R MAIN_GMM_STORAGE', &
               /,'====================================================')

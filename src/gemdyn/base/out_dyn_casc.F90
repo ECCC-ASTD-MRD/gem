@@ -129,11 +129,11 @@
                          indo,G_nk+1,Grdc_nbits,.false. )
          if (.not. Schm_autobar_L) then
             conv = 0.1d0
-            gzm(:,:,1:G_nk+1)= real(zmom_8(:,:,1:G_nk+1))
+            gzm(1:l_ni,1:l_nj,1:G_nk+1)= real(GVM%zmom_8(1:l_ni,1:l_nj,1:G_nk+1))
             call out_fstecr ( gzm, l_minx,l_maxx,&
                     l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
                     -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-            gzt(:,:,1:G_nk+1)= real(ztht_8(:,:,1:G_nk+1))
+            gzt(1:l_ni,1:l_nj,1:G_nk+1)= real(GVM%ztht_8(1:l_ni,1:l_nj,1:G_nk+1))
             call out_fstecr ( gzt, l_minx,l_maxx,&
                     l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
                     -1,G_nk+1,indo,G_nk+1,Grdc_nbits,.false. )

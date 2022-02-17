@@ -50,7 +50,7 @@
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_p0list = ['PW_P0:P','PW_P0:M']
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_pm8list = ['PW_PM8:P','PW_PM8:M']
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_p08list = ['PW_P08:P','PW_P08:M']
-
+      character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: tracers = ['TRACERS:t0','TRACERS:t1']
       character(len=GMM_MAXNAMELENGTH) , dimension(2) :: tr_list
       integer :: i, istat, dim
       real, pointer, dimension (:) :: tr_tmp
@@ -75,6 +75,7 @@
       istat = gmm_shuffle(pw_melist)
       istat = gmm_shuffle(pw_p0list)
       istat = gmm_shuffle(pw_p08list)
+      istat = gmm_shuffle(tracers)
 
       if ((.not. Dynamics_hydro_L) .or. Dynamics_hauteur_L) then
          istat = gmm_shuffle(qt_list)

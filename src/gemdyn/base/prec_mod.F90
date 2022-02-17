@@ -31,6 +31,7 @@ module prec
 !--------------------|-------------------------------------------------|
 ! Prec_ai_8          |  sub-   diagonal of LU factorization            |
 ! Prec_bi_8          |         diagonal of LU factorization            |
+! Prec_invbi_8       |         1/Prec_bi_8                                 |
 ! Prec_ci_8          |  super- diagonal of LU factorization            |
 !----------------------------------------------------------------------
 ! Prec_ncol          |                                                 |
@@ -40,7 +41,8 @@ module prec
 !
    integer :: Prec_ncol,Prec_mycol
 
-   real(kind=REAL64), dimension(:), allocatable :: Prec_xevec_8,Prec_xeval_8
-   real(kind=REAL64), dimension(:), allocatable :: Prec_ai_8,Prec_bi_8,Prec_ci_8
+   real(kind=REAL64), dimension(:), allocatable :: Prec_xeval_8
+   real(kind=REAL64), dimension(:,:), allocatable :: Prec_xevec_8
+   real(kind=REAL64), dimension(:,:,:), allocatable :: Prec_ai_8,Prec_bi_8,Prec_invbi_8,Prec_ci_8
 
 end module prec

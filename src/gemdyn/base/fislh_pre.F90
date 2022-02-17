@@ -29,7 +29,6 @@
       use lun
       use cstv
       use ver
-      use metric
       use fislh_sol
       use dyn_fisl_options
       use dynkernel_options
@@ -83,9 +82,9 @@
             do i= i0, in
                div  = (rhsu(i,j,k)-rhsu(i-1,j,k))*geomh_invDXM_8(j) &
                     + (rhsv(i,j,k)*geomh_cyM_8(j)-rhsv(i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j) &
-                    + isol_i*half*(mc_Ix_8(i,j,k)*(rhsu(i,j,k)+rhsu(i-1,j,k)) &
-                                  +mc_Iy_8(i,j,k)*(rhsv(i,j,k)+rhsv(i,j-1,k)) )
-               rhsc(i,j,k) = div - invT_m_8*(rhsc(i,j,k) - invT_8 * mc_logJz_8(i,j,k)) &
+                    + isol_i*half*(GVM%mc_Ix_8(i,j,k)*(rhsu(i,j,k)+rhsu(i-1,j,k)) &
+                                  +GVM%mc_Iy_8(i,j,k)*(rhsv(i,j,k)+rhsv(i,j-1,k)) )
+               rhsc(i,j,k) = div - invT_m_8*(rhsc(i,j,k) - invT_8 * GVM%mc_logJz_8(i,j,k)) &
                                  - Cstv_bar0_8 * fis0(i,j)
             end do
          end do
@@ -99,7 +98,7 @@
             do i= i0, in
 !              Compute Rf'
 !              ~~~~~~~~~~~
-               w0 = invT_nh_8*(ztht_8(i,j,k)-Ver_z_8%t(k))*Cstv_bar1_8
+               w0 = invT_nh_8*(GVM%ztht_8(i,j,k)-Ver_z_8%t(k))*Cstv_bar1_8
                rhsf(i,j,k) = rhsf(i,j,k) - w0
 
 !              Compute Rt'
@@ -117,11 +116,13 @@
          do j= j0, jn
 !DIR$ SIMD
             do i= i0, in
-               w1= (Ver_idz_8%m(k) + (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
-               w2= (Ver_idz_8%m(k) - (isol_i*mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
+               w1= (Ver_idz_8%m(k) + (isol_i*GVM%mc_Iz_8(i,j,k) - epsi_8)*Ver_wp_8%m(k))
+               w2= (Ver_idz_8%m(k) - (isol_i*GVM%mc_Iz_8(i,j,k) - epsi_8)*Ver_wm_8%m(k))*Ver_onezero(k)
 
                rhsc(i,j,k) = rhsc(i,j,k) + invT_m_8* &
-                            (rhsf(i,j,k)-Ver_onezero(k)*rhsf(i,j,k-1))*Ver_idz_8%m(k) &
+                            ((rhsf(i,j,k)-Ver_onezero(k)*rhsf(i,j,k-1))*Ver_idz_8%m(k) +&
+                             isol_i*GVM%mc_Iz_8(i,j,k)* &
+                             (Ver_wp_8%m(k)*rhsf(i,j,k)+Ver_wm_8%m(k)*rhsf(i,j,k-1)*Ver_onezero(k))) &
                            +(w1 * rhst(i,j,k) - w2 * rhst(i,j,k-1)) * Cstv_bar1_8
             end do
          end do
@@ -132,10 +133,12 @@
          do j= j0, jn
 !DIR$ SIMD
             do i= i0, in
-               w1= (Ver_idz_8%m(1) + (isol_i*mc_Iz_8(i,j,1) - epsi_8)*Ver_wp_8%m(1))
-               w2= (Ver_idz_8%m(1) - (isol_i*mc_Iz_8(i,j,1) - epsi_8)*Ver_wm_8%m(1))*Ver_onezero(1)
+               w1= (Ver_idz_8%m(1) + (isol_i*GVM%mc_Iz_8(i,j,1) - epsi_8)*Ver_wp_8%m(1))
+               w2= (Ver_idz_8%m(1) - (isol_i*GVM%mc_Iz_8(i,j,1) - epsi_8)*Ver_wm_8%m(1))*Ver_onezero(1)
                rhsc(i,j,1) = rhsc(i,j,1) + invT_m_8* &
-                            (rhsf(i,j,1)-Ver_onezero(1)*rhsf(i,j,1))*Ver_idz_8%m(1) &
+                            (rhsf(i,j,1)-Ver_onezero(1)*rhsf(i,j,1))*Ver_idz_8%m(1) + &
+                             isol_i*GVM%mc_Iz_8(i,j,1)* &
+                             (Ver_wp_8%m(1)*rhsf(i,j,1)+Ver_wm_8%m(1)*rhsf(i,j,1)*Ver_onezero(1)) &
                            +(w1 * rhst(i,j,1) - w2 * rhst(i,j,1)) * Cstv_bar1_8
             end do
          end do
@@ -158,7 +161,7 @@
             do j= j0, jn
 !DIR$ SIMD
             do i= i0, in
-               rhsc(i,j,k0) = rhsc(i,j,k0  ) + mc_cstp_8(i,j) * rhsb(i,j)
+               rhsc(i,j,k0) = rhsc(i,j,k0  ) + GVM%mc_cstp_8(i,j) * rhsb(i,j)
             end do
             end do
 !$omp enddo
@@ -170,7 +173,7 @@
       do j= j0, jn
 !DIR$ SIMD
          do i= i0, in
-            rhsc(i,j,l_nk) = rhsc(i,j,l_nk) - isol_d*mc_cssp_H_8(i,j) * &
+            rhsc(i,j,l_nk) = rhsc(i,j,l_nk) - isol_d*GVM%mc_cssp_H_8(i,j) * &
                     (rhst(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhst(i,j,l_nk-1) &
                   + invT_m_8*(rhsf(i,j,l_nk)-Ver_wmstar_8(G_nk)*rhsf(i,j,l_nk-1)))
          end do

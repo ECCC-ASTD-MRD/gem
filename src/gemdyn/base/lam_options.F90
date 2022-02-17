@@ -62,7 +62,7 @@ module lam_options
    namelist /lam  / Lam_blendoro_L
    namelist /lam_p/ Lam_blendoro_L
 
-   character(len=16) Lam_current_S, Lam_previous_S
+   character(len=16) Lam_current_S
    integer Lam_blend_Hx, Lam_blend_Hy
    real(kind=REAL64)  Lam_tdeb, Lam_tfin
 

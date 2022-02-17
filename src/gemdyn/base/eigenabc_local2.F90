@@ -18,7 +18,7 @@
 !
 !
       subroutine eigenabc_local2 ( eval_local, evec_local, ai_local, &
-                       bi_local,ci_local,ii0,iin,jj0,jjn,Ni,Nj,Nk,wk)
+                       bi_local,bi_local_inv,ci_local,ii0,iin,jj0,jjn,Ni,Nj,Nk,wk)
       use HORgrid_options
       use dyn_fisl_options
       use gem_options
@@ -35,7 +35,7 @@
 !
       integer ii0,iin,jj0,jjn,Ni,Nj,Nk
       real(kind=REAL64)  eval_local(Ni),evec_local(Ni,Ni),ai_local(Ni,Nj,Nk), &
-              bi_local(Ni,Nj,Nk),ci_local(Ni,Nj,Nk),wk(*)
+              bi_local(Ni,Nj,Nk),bi_local_inv(Ni,Nj,Nk),ci_local(Ni,Nj,Nk),wk(*)
 !author
 !     Abdessamad Qaddouri  - initial version - December 2006
 !
@@ -133,8 +133,13 @@
 !
       end do
 
-
-
+      do k =1,NK
+         do j=1,Nj
+            do i=1,Ni
+               bi_local_inv(i,j,k)=one/bi_local(i,j,k)
+            end do
+         end do
+      end do
 !
 !     ---------------------------------------------------------------
 !

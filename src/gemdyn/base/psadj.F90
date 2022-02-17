@@ -268,7 +268,7 @@
                else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
                   qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8 * &
-                                    (log(p0_wet_0_8(i,j))-lg_pstar_8(i,j,l_nk+1))
+                                    (log(p0_wet_0_8(i,j))-GVM%lg_pstar_8(i,j,l_nk+1))
 
                end if
 
@@ -282,7 +282,7 @@
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
 
-                  delps(i,j) = exp(lg_pstar_8(i,j,l_nk+1))*&
+                  delps(i,j) = exp(GVM%lg_pstar_8(i,j,l_nk+1))*&
                               (exp(qt0(i,j,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
                                exp(qts(i,j)/(rgasd_8*Cstv_Tstr_8)))
                end do
@@ -293,11 +293,11 @@
                do j=1+pil_s,l_nj-pil_n
                   do i=1+pil_w,l_ni-pil_e
 
-                     pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k))
+                     pw_pm(i,j) = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k))
 
                      qt0(i,j,k) = rgasd_8*Cstv_Tstr_8*&
-                                  (log(pw_pm(i,j)+delps(i,j)*exp(lg_pstar_8(i,j,k))/&
-                                  exp(lg_pstar_8(i,j,l_nk+1)))-lg_pstar_8(i,j,k))
+                                  (log(pw_pm(i,j)+delps(i,j)*exp(GVM%lg_pstar_8(i,j,k))/&
+                                  exp(GVM%lg_pstar_8(i,j,l_nk+1)))-GVM%lg_pstar_8(i,j,k))
 
                   end do
                end do

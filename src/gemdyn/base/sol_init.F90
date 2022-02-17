@@ -18,12 +18,17 @@
       integer function sol_init ()
       use dynkernel_options
       use dyn_fisl_options
+      use glb_ld
       use fislh_sol
       use lun
+      use sol
+      use gmm_itf_mod
       use ptopo
       implicit none
 
       character(len=16) :: dumc_S
+      integer istat
+      type(gmm_metadata) :: savemeta
 !
 !-------------------------------------------------------------------
 !
@@ -36,7 +41,10 @@
       Sol3D_precond_S = trim(dumc_S)
 
       FISLH_LHS_metric_L = .true.
-      if (trim(Sol_type_S) == 'DIRECT') FISLH_LHS_metric_L = .false.
+
+      if (trim(Sol_type_S) == 'DIRECT' .or. dynamics_Kernel_S == 'DYNAMICS_FISL_P') then
+         FISLH_LHS_metric_L = .false.
+      endif
 
       isol_i = 1.0d0
       isol_d = 0.0d0
@@ -62,6 +70,11 @@
                write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol3D_krylov_S =', Sol3D_krylov_S
                return
                endif
+               call gmm_build_meta4D (savemeta,  1,l_ni,0,0,l_ni,&
+                                                 1,l_nj,0,0,l_nj,&
+                                                 1,l_nk,0,0,l_nk,&
+                                       0,0,0,0,0,0,GMM_NULL_FLAGS)
+               istat= gmm_create('SOL_SAVED',Sol_saved,savemeta, GMM_FLAG_RSTR+GMM_FLAG_IZER)
             case('ITERATIVE_2D')
                if (sol2D_precond_S /= 'JACOBI'  .and.  sol2D_precond_S /= 'REDBLACK'  ) then
                if (Lun_out > 0) &

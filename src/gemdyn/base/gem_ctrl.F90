@@ -16,12 +16,20 @@
 !**s/r gem_ctrl - initiate the forward integration of the model
 
       subroutine gem_ctrl ()
+      use dynkernel_options
+      use dyn_fisl_options
+      use gem_options
+      use HORgrid_options
+      use lam_options
       use step_options
       use init_options
       use glb_ld
+      use gmm_geof
+      use mem_nest
       use lun
       use rstr
       use gem_timing
+      use tr3d
       implicit none
 
 !object
@@ -30,13 +38,29 @@
 !     It then initiates the forward intergration of the model.
 
       logical :: rstrt_L= .false.
-!
+!     
 !     ---------------------------------------------------------------
 !
       call gemtime ( Lun_out, 'GEM_CTRL: START', .false. )
 
-      if ( .not. Rstri_rstn_L ) call indata()
-
+      if ( .not. Rstri_rstn_L ) then
+         call indata()
+      else
+         if (Dynamics_hauteur_L) &
+         call vertical_metric (GVM, fis0, sls, l_minx,l_maxx,l_miny,l_maxy)
+         if ( .not. Grd_yinyang_L .and. Lam_ctebcs_L ) then
+            call nest_indata  (nest_u, nest_v , nest_w, nest_t   ,&
+                               nest_q, nest_zd, nest_s, nest_tr  ,&
+                               nest_fullme,.false.,Step_runstrt_S,&
+                               l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
+         endif
+      endif
+      call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy,1,1,&
+                     1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
+      if (Schm_sleve_L) &
+      call glbstat ( orols,'MELS',"indata",l_minx,l_maxx,l_miny,l_maxy, &
+                 1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
+                   
       call gemtime ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call gemtime_stop ( 2 )
 

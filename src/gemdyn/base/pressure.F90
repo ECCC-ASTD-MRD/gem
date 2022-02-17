@@ -61,7 +61,7 @@
          do k=1,l_nk+1
             do j= j0, jn
                do i= i0, in
-                  F_pm_8    (i,j,k) = qt(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k)
+                  F_pm_8    (i,j,k) = qt(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k)
                   F_log_pm_4(i,j,k) = F_pm_8(i,j,k)
                end do
             end do

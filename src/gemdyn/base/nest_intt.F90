@@ -17,19 +17,26 @@
 
       subroutine nest_intt()
       use cstv
+      use gem_options
       use lam_options
       use mem_nest
       use glb_ld
       use step_options
       use omp_timing
+      use ptopo
+      use tr3d
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
+
+      include 'mpif.h'
+      include 'rpn_comm.inc'
 
       integer,external ::  newdate
-
-      character(len=16) :: datev
+      
+      character(len=16) :: datev, previous_S
+      logical :: stag_L
       integer :: i,yy,mo,dd,hh,mm,ss,dum
+      integer topo_diff,comm,err,gathV(Ptopo_numproc*Ptopo_ncolors)
       real(kind=REAL64) :: dayfrac,tx,dtf,a,b
       real(kind=REAL64), parameter :: one=1.0d0, &
                        sid=86400.0d0, rsid=one/sid
@@ -44,12 +51,12 @@
       dayfrac = Step_nesdt*rsid
       
       call gtmg_start (23, 'NEST_input', 20)
-      
+
 !$omp master
       if (tx < Lam_tdeb) then
 
          Lam_current_S  = Step_runstrt_S
-         Lam_previous_S = Lam_current_S
+         previous_S = Lam_current_S
          call prsdate   (yy,mo,dd,hh,mm,ss,dum,Step_runstrt_S)
          call pdfjdate2 (Lam_tdeb,yy,mo,dd,hh,mm,ss)
          do
@@ -58,20 +65,22 @@
             call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
             call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
             if (Lam_tfin >= tx) exit
-            Lam_previous_S = Lam_current_S
+            previous_S = Lam_current_S
             Lam_tdeb       = Lam_tfin
          end do
-         Lam_current_S = Lam_previous_S
+         Lam_current_S = previous_S
          Lam_tfin      = Lam_tdeb
-
-         call nest_indata ( Lam_previous_S )
-
+         stag_L= .true.
+         if ( previous_S == Step_runstrt_S) stag_L= .false.
+         call nest_indata  (nest_u_fin, nest_v_fin , nest_w_fin, nest_t_fin ,&
+                            nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
+                            nest_fullme_fin,stag_L,previous_S               ,&
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
       end if
 
       dtf = 1.0d0
       if (tx > Lam_tfin) then
          dtf = (tx-Lam_tfin) * sid / Cstv_dt_8
-         Lam_previous_S = Lam_current_S
          Lam_tdeb       = Lam_tfin
 
          call incdatsd (datev, Lam_current_S, dayfrac)
@@ -89,7 +98,17 @@
          nest_fullme_deb = nest_fullme_fin
          nest_tr_deb = nest_tr_fin
 
-         call nest_indata ( Lam_current_S )
+         call nest_indata  (nest_u_fin, nest_v_fin , nest_w_fin, nest_t_fin ,&
+                            nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
+                            nest_fullme_fin,.true.,Lam_current_S            ,&
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
+
+         topo_diff= 0
+         if (maxval(abs(nest_fullme_fin-nest_fullme_deb))>0.) topo_diff= 1
+         comm = RPN_COMM_comm ('MULTIGRID')
+         call MPI_Allgather ( topo_diff,1,MPI_INTEGER,gathV,1,&
+                              MPI_INTEGER,comm,err)
+         Vtopo_mustadj_L= sum(gathV) > 0
 
       end if
 !$omp end master
@@ -106,6 +125,9 @@
       end do
 !$omp enddo
       call gtmg_stop (24)
+      
+!      call nest_glbstat ((/'now','deb','fin'/),3)
+
 !     
 !     ---------------------------------------------------------------
 !

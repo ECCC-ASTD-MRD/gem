@@ -26,13 +26,13 @@
       use inp_mod
       use inp_options
       use lun
+      use metric
       use step_options
       use theo_options
       use tr3d
       use gem_timing
       use mem_tracers
       implicit none
-#include <arch_specific.hf>
 
       logical :: synthetic_data_L
       integer :: dimens
@@ -80,8 +80,14 @@
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       end if
 
-      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) call VERmetric ()
-
+      if (Dynamics_hauteur_L) then
+         call vertical_metric (GVM, fis0, sls, l_minx,l_maxx,l_miny,l_maxy)
+         me_full (1-G_halox+1:l_ni+G_halox-1,1-G_haloy+1:l_nj+G_haloy-1) = &
+             fis0(1-G_halox+1:l_ni+G_halox-1,1-G_haloy+1:l_nj+G_haloy-1) / grav_8
+         me_large(1-G_halox+1:l_ni+G_halox-1,1-G_haloy+1:l_nj+G_haloy-1) = &
+              sls(1-G_halox+1:l_ni+G_halox-1,1-G_haloy+1:l_nj+G_haloy-1) / grav_8
+      endif
+      
       trt0 = trt1
 
       if (.not. synthetic_data_L) then
@@ -91,9 +97,9 @@
                          l_minx,l_maxx,l_miny,l_maxy,G_nk   ,&
                          1-G_halox*west ,l_niu+G_halox*east ,&
                          1-G_haloy*south,l_njv+G_haloy*north, .true. )
-         call derivate_data ( zdt1,wt1, ut1,vt1,tt1,st1,qt1,fis0,sls,&
-                              l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .not.Inp_zd_L, .not.Inp_w_L, .not.Inp_qt_L  )
+         call derivate_data (zdt1,wt1, ut1,vt1,tt1,st1,qt1,fis0,sls,GVM,&
+                             l_minx,l_maxx,l_miny,l_maxy, G_nk         ,&
+                             .not.Inp_zd_L, .not.Inp_w_L, .not.Inp_qt_L )
       endif
 
       if (.not. Grd_yinyang_L) call nest_init()
@@ -113,12 +119,7 @@
 
       if ( Dynamics_FISL_L ) call firstguess()
 
-      call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
-                     1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
-      if(Schm_sleve_L)then
-      call glbstat ( orols,'MELS',"indata",l_minx,l_maxx,l_miny,l_maxy, &
-                     1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
-      endif
+!      call nest_glbstat ((/'now','deb','fin'/),3)
 !
 !     ---------------------------------------------------------------
 !
