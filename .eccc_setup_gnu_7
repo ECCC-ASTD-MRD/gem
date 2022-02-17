@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Source this file to load libraries
+# Source this file to:
+# - Load profile and code-tools for gnu
+# - Load libraries
+# - Load a script for common setup to all compilers
 
 DOMAIN=`hostname -d`
 
@@ -9,21 +12,19 @@ if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
     . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.4.0_ubuntu-18.04-amd64-64
     . r.load.dot rpn/libs/19.7.0
     . r.load.dot rpn/vgrid/6.6.0
-#. ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
     . r.load.dot /home/cpi001/data/ords/packages-ssm/rpncomm_4.6.2-gnu-7.4.0_ubuntu-18.04-amd64-64
     . r.load.dot /home/cpi001/data/ords/packages-ssm/modelutils_1.7.0-a13-gnu-7.4.0_ubuntu-18.04-amd64-64
     . r.load.dot /home/cpi001/data/ords/packages-ssm/rpnphy_6.2.0-a13-gnu-7.4.0_ubuntu-18.04-amd64-64
-    . r.load.dot /home/cpi001/data/ords/packages-ssm/gemdyn_5.2.0-a13+newcode02-gnu-7.4.0_ubuntu-18.04-amd64-64
+    . r.load.dot /home/cpi001/data/ords/packages-ssm/gemdyn_5.2.0-a14-gnu-7.4.0_ubuntu-18.04-amd64-64
 else 
     . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
     . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.5.0_ubuntu-18.04-amd64-64
     . r.load.dot rpn/libs/19.7.0
     . r.load.dot rpn/vgrid/6.6.0
-#. ssmuse-sh -x /fs/ssm/main/opt/numa/numa-2.0.14
     . r.load.dot /data/ords/armn/armncpi/packages-ssm/rpncomm_4.6.2-gnu-7.5.0_ubuntu-18.04-amd64-64
     . r.load.dot /data/ords/armn/armncpi/packages-ssm/modelutils_1.7.0-a13-gnu-7.5.0_ubuntu-18.04-amd64-64
     . r.load.dot /data/ords/armn/armncpi/packages-ssm/rpnphy_6.2.0-a13-gnu-7.5.0_ubuntu-18.04-amd64-64
-    . r.load.dot /data/ords/armn/armncpi/packages-ssm/gemdyn_5.2.0-a13+newcode02-gnu-7.5.0_ubuntu-18.04-amd64-64
+    . r.load.dot /data/ords/armn/armncpi/packages-ssm/gemdyn_5.2.0-a14-gnu-7.5.0_ubuntu-18.04-amd64-64
 fi
 
 export COMPILER_SUITE=gnu

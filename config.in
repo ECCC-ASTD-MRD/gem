@@ -18,10 +18,10 @@ arch=@EC_ARCH@
 
 has_rmn=@RMN_VERSION@@RMN_STATE@
 has_vgrid=@VGRID_VERSION@@VGRID_STATE@
-has_modelutils=@MODELUTILS_VERSION@@MODELUTILS_STATE@
-has_rpncomm=@RPN_COMM_VERSION@@RPN_COMM_STATE@
-has_rpnphy=@RPNPHY_VERSION@@RPNPHY_STATE@
-has_gemdyn=@GEMDYN_VERSION@@GEMDYN_STATE@
+has_modelutils=@modelutils_VERSION@@modelutils_STATE@
+has_rpncomm=@rpncomm_VERSION@@rpncomm_STATE@
+has_rpnphy=@rpnphy_VERSION@@rpnphy_STATE@
+has_gemdyn=@gemdyn_VERSION@@gemdyn_STATE@
 
 usage()
 {
@@ -35,8 +35,8 @@ Available values for OPTION include:
   --fc           FORTRAN compiler [${fc}]
   --cflags       C compiler flags [${cflags}]
   --fflags       Fortran compiler flags [${fflags}]
-  --defs         Preprocessor definitions [${defs}]
-  --version      library version [${version}]
+  --defs         preprocessor definitions [${defs}]
+  --version      GEM version [${version}]
   --env          environment version used [${env}]
   --arch         architecture of build [${arch}]
   --has-rmn      which version of librmn is it compiled with [${has_rmn}]

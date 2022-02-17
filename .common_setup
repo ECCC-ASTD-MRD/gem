@@ -2,6 +2,7 @@
 
 # Source this file to:
 # - set some environment variables
+# - set PATH to find GEM binaries and scripts
 
 if [[ $# -eq 0 ]] ; then
     echo "Usage:   . ./.common_setup compiler_suite"
