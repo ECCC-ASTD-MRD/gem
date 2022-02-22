@@ -1,18 +1,14 @@
 # Instructions in a nutshell
 
-**The 5.2 branch is a development version.
-The 5.1 branch is the stable version, used in production at the Canadian
-Meteorological Centre.
-Benchmarks must be used with 5.2 version and benchmarks branch.**
+**The 5.2 branch is a development version.**
 
-See below for extended instructions and requirements. Further details are
-can be found in [GEM's manual](doc/GEM-manual.pdf) (PDF).
+See below for extended instructions and requirements.
 
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
     cd gem
-    # Optionnaly checkout a specific branch:
-    # git checkout <branch_name>
+    # Checkout 5.2 branch:
+    git checkout 5.2-branch
  
     # Download the data files required to run GEM
     ./download-dbase.sh .
@@ -50,7 +46,6 @@ can be found in [GEM's manual](doc/GEM-manual.pdf) (PDF).
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
 2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
 
-For benchmarks, please see the [benchmarks branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks)
 
 -----------------------------------------------------------------
 # Extended instructions:
@@ -60,10 +55,8 @@ For benchmarks, please see the [benchmarks branch](https://github.com/ECCC-ASTD-
 To compile and run GEM, you will need:
 - Fortran and C compilers
 - An MPI implementation such as OpenMPI (with development package),
-- Portable Hardware Locality library (hwloc) (with development package),
 - OpenMP support (optional)
-- BLAS library (with development package),
-- LAPACK library (with development package),
+- (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
 - basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
@@ -103,9 +96,6 @@ link:
   your system
 - Make sure the compilers and libraries are in the appropriate
   environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
-- If you are using Intel OneAPI instead of OpenMPI, make sure OpenMPI is not in 
-  your ```PATH``` environment variable
-
 
 ## Compiling and installing GEM
 
@@ -139,7 +129,7 @@ files in the **project** folder.
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
 (work-${OS_NAME}-${COMPILER_NAME}). For example
-*work-Fedora-32-x86_64-gnu-10.2.1* could be created in the main directory,
+*work-Fedora-34-x86_64-gnu-11.2.1* could be created in the main directory,
 and the following executables are installed in the *bin* sub-folder: 
 - cclargs_lite
 - checkdmpart
@@ -163,7 +153,7 @@ and the following executables are installed in the *bin* sub-folder:
 ## Running GEM
 
 Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
-example *work-Fedora-32-x86_64-gnu-10.2.1*
+example *work-Fedora-34-x86_64-gnu-11.2.1*
 
 ```
     cd work-${OS-NAME}_${COMPILER-NAME}
@@ -174,7 +164,7 @@ example *work-Fedora-32-x86_64-gnu-10.2.1*
 
 *runmod.sh*'s ```-ptopo``` argument can be used to specify the number of CPU to
 use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
-8 cpus for global Yin-Yang - see the [manual](doc/GEM-manual.pdf) for details)
+8 cpus for global Yin-Yang.
 
 If you get an error message saying runprep.sh or gem_dbase is not found,
 make sure to set the environment variables using the setup file situated in
@@ -186,6 +176,7 @@ want to use another command, or if it doesn't work in your environment, edit
 the file *scripts/gem_mpirun.sh* to change the script, or move the file
 *scripts/r.run_in_parallel* so that the model is run with mpirun directly.
 
+See **README.run** in the work directory for other information on the different configurations.
 
 ## Working with model outputs
 
@@ -222,3 +213,92 @@ Environment Canada.
 can be used to display 2D meteorological fields stored in the FST files,
 developed by Research Informatics Services, Meteorological Research Division,
 Environment and Climate Change Canada.
+
+## Configurations files
+
+The execution of all three components of GEM is configurable through the use
+of three configuration files called:
+- gem_settings.nml: file containing some namelists to configure the model execution
+- outcfg.out: file use to configure the model output
+- configexp.cfg: file use to configure the execution shell environment
+
+Examples of these files can be found in the test cases in the configurations
+directory.
+
+A fourth configuration file, named physics_input_table, is used for GEM_cfgs
+test cases.
+
+## Running your own configuration
+
+Put the three configurations files (gem_settings.nml, outcfg.out and
+configexp.cfg) in a directory structure such as: **experience/cfg_0000** in
+the configurations directory.
+
+The master directory name (**experience** in the example above) can be
+any valid directory name. However, the second directory must have the name
+\textit{cfg\_0000}.
+
+Then run the two scripts with the following commands, to prepare the input,
+and then run the model:
+
+```
+    cd work-${OS-NAME}_${COMPILER-NAME}
+    runprep.sh -dircfg configurations/experience
+    runmod.sh -dircfg configurations/experience
+```
+
+## Modifying the grid and getting meteorological data}
+
+You can use the script named *grille* in the *scripts* directory to define
+your own grid and visualise it with SPI (see above how to get it).
+
+For this, copy one of the *gem_settings.nml* files located in the different
+configurations directories, edit it, and then run the command 
+```
+grille -spi
+```
+
+If you want geophysical fields and historical meteorological data for the
+region you defined in that new grid, contact us.
+
+## Other Utilities
+
+### pgsm
+
+pgsm is a utility designed to perform horizontal interpolations and basic
+arithmetic operations on RPN standard files.
+
+Input files must be RPN standard files. Output files may be RPN standard
+files (random or sequential), binary FORTRAN sequential files, or formatted
+ASCII files.
+
+PGSM can:
+- Interpolate data on various geographical projections, compressed or not.
+- Interpolate wind components UU and VV with respect to the scale and orientation of the output grid.
+- Perform symmetric or antisymmetric extrapolations from an hemispheric grid.
+- Compute thicknesses between 2 levels.
+- Compute precipitation amounts between 2 forecast hours.
+- Extract low, mid and high clouds.
+- Perform mathematical operations on one field or more.
+- Compute latitudes and longitudes from the X-Y coordinates of a grid.
+- Read navigational records of latitudes-longitudes (grid type Y) or
+  grid coordinates (grid type Z) in an input or output file and interpolate
+  values from these coordinates.
+
+Example:
+````
+pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+````
+
+### editfst
+
+editfst is a utility used for editing and copying records from RPN standard
+files into a new or an existing RPN standard file. It can do a straight
+(complete) copy of the input file or it can copy records selectively as
+indicated from the standard input or from a file of directives named in the
+-i option.
+
+Example:
+````
+editfst -s <input FST> -d <output FST> -i <editfst.directives>
+````
