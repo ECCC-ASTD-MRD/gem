@@ -1,1 +1,0 @@
-../template_utils/gmm/gmm_definitions.inc
