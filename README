@@ -10,7 +10,7 @@ git checkout dev-submodules
 # Updating submodule from gitlab.science.gc.ca
 git submodule update --init --recursive
 
-# Updating submodule from github.com
+# Updating submodule from github.com (not available yet)
 git -c submodule."ci-env".update=none submodule update --init --recursive
 
 # preparing gem-devel compilation
@@ -27,7 +27,7 @@ git -c submodule."ci-env".update=none submodule update --init --recursive
 
 # building and installing GEM
 make cmake
-make build
+make -j
 make work
 
 # running GEM: example

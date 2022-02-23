@@ -1,28 +1,28 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
-	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn
+	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn.git
 	branch = dev
 [submodule "ci-env"]
 	path = ci-env
-	url = https://gitlab.science.gc.ca/RPN-SI/ci-env
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env.git
 [submodule "src/rpn-si/vgrid"]
 	path = src/rpn-si/vgrid
-	url = https://gitlab.science.gc.ca/RPN-SI/vgrid
+	url = https://gitlab.science.gc.ca/RPN-SI/vgrid.git
 	branch = dev
 [submodule "src/rpn-si/rpncomm"]
 	path = src/rpn-si/rpncomm
-	url = https://gitlab.science.gc.ca/RPN-SI/rpncomm
+	url = https://gitlab.science.gc.ca/RPN-SI/rpncomm.git
 [submodule "src/rpn-si/rmn-20"]
 	path = src/rpn-si/rmn-20
-	url = https://gitlab.science.gc.ca/RPN-SI/librmn
+	url = https://gitlab.science.gc.ca/RPN-SI/librmn.git
 	branch=dev
 [submodule "src/modelutils"]
 	path = src/modelutils
-	url = https://gitlab.science.gc.ca/cpi001/modelutils
+	url = https://gitlab.science.gc.ca/cpi001/modelutils.git
 	branch=modelutils_1.7-branch_cmake
 [submodule "src/rpnphy"]
 	path = src/rpnphy
-	url = https://gitlab.science.gc.ca/cpi001/rpnphy
+	url = https://gitlab.science.gc.ca/cpi001/rpnphy.git
 [submodule "src/gemdyn"]
 	path = src/gemdyn
-	url = https://gitlab.science.gc.ca/cpi001/gemdyn
+	url = https://gitlab.science.gc.ca/cpi001/gemdyn.git
