@@ -16,6 +16,7 @@
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
       subroutine tstpdyn (F_icn)
+      use cstv
       use glb_ld
       use glb_pil
       use gmm_vt1
@@ -48,20 +49,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call rpn_comm_xch_halo( ut1 , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( vt1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( tt1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( st1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      if (.not.Dynamics_hydro_L) then
-         call rpn_comm_xch_halo(  qt1, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1,&
-                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      end if
-
-      ! Avoid non-associated pointers
+! Avoid non-associated pointers
       if (Grd_yinyang_L) then
          nest_t => ut1
          nest_q => ut1
@@ -80,29 +68,55 @@
          call gemtime_start ( 20, 'RHS', 10 )
 
 !        Compute the right-hand sides of the governing equations
-         call rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
-                    ut1, vt1, wt1               ,&
-                    tt1, st1, zdt1, qt1, sls, fis0     ,&
-                    l_minx,l_maxx,l_miny,l_maxy, l_nk )
+         call fislp_rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
+                          ut1, vt1, wt1               ,&
+                          tt1, st1, zdt1, qt1, sls, fis0     ,&
+                          l_minx,l_maxx,l_miny,l_maxy, l_nk )
          Adz_cnt_traj= 0 ; Adz_cnt_int= 0
+         call rpn_comm_xch_halox( orhsu, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhsu_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         call rpn_comm_xch_halox( orhsv, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhsv_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         call rpn_comm_xch_halox( orhst, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhst_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         call rpn_comm_xch_halox( orhsc, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhsc_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         call rpn_comm_xch_halox( orhsf, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhsf_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         if (.not.Dynamics_hydro_L) then
+         call rpn_comm_xch_halox( orhsw, l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
+              orhsw_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
+         endif
          call gemtime_stop (20)
 
          call firstguess ()
 
 ! Perform time interpolation of Lateral BCs for LAM configurations
 
-         if ( .not. Grd_yinyang_L ) call nest_bcs (rhsu, rhsv, &
-                              l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         if ( .not. Grd_yinyang_L ) call nest_bcs (Cstv_dt_8,rhsu, rhsv, &
+                                      l_minx,l_maxx,l_miny,l_maxy, l_nk)
 
       end if
 
-!     Perform Semi-Lagrangian advection
+      call rpn_comm_xch_halo( ut0,l_minx,l_maxx,l_miny,l_maxy,&
+                              l_niu,l_nj,l_nk,G_halox,G_haloy,&
+                              G_periodx,G_periody,G_niu,0)
+      call rpn_comm_xch_halo( vt0,l_minx,l_maxx,l_miny,l_maxy,&
+                              l_ni,l_njv,l_nk,G_halox,G_haloy,&
+                              G_periodx,G_periody,G_ni,0)
+
+! Perform Semi-Lagrangian advection
 
       call gemtime_start (21, 'ADZ_MAIN', 10)
       Adz_icn= F_icn
-      call adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc, rhsc, orhst,&
-                      rhst, orhsf, rhsf, orhsw, rhsw              ,&
-                      l_minx,l_maxx,l_miny,l_maxy, l_nk )
+      call adz_main_h (Cstv_dt_8)
+
       call gemtime_stop(21)
 
       call gemtime_start (22, 'PRE', 10)

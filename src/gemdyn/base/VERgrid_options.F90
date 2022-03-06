@@ -39,6 +39,9 @@ module VERgrid_options
       namelist /vert_layers  / Hyb_lid_height
       namelist /vert_layers_p/ Hyb_lid_height
       
+      real :: Hyb_lin_depth(2,MAXHLEV) = -1.
+      namelist /vert_layers  / Hyb_lin_depth
+
       namelist /vert_layers  / G_nk
       namelist /vert_layers_p/ G_nk
       
@@ -155,10 +158,6 @@ contains
             end do
 
          case ('DYNAMICS_FISL_H')
-            call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
-                         Hyb_first_height)
-
-         case('DYNAMICS_EXPO_H')
             call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
                          Hyb_first_height)
 

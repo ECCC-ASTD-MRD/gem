@@ -19,6 +19,7 @@
       use dynkernel_options
       use glb_ld
       use gmm_itf_mod
+      use gmm_contiguous
       use gmm_vt1
       use gmm_vt0
       use gmm_pw
@@ -38,6 +39,7 @@
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: wt_list  = [ 'WT0' , 'WT1'  ]
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: qt_list  = [ 'QT0' , 'QT1'  ]
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: zdt_list = [ 'ZDT0', 'ZDT1' ]
+      character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: dyn_list = [ 'DYNT0', 'DYNT1' ]
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_uulist = ['PW_UU:P','PW_UU:M']
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_vvlist = ['PW_VV:P','PW_VV:M']
       character(len=GMM_MAXNAMELENGTH), dimension(2), parameter :: pw_ttlist = ['PW_TT:P','PW_TT:M']
@@ -55,12 +57,14 @@
 !
 !     ---------------------------------------------------------------
 !
+!$omp single
       istat = gmm_shuffle(  ut_list)
       istat = gmm_shuffle(  vt_list)
       istat = gmm_shuffle(  tt_list)
       istat = gmm_shuffle(  st_list)
       istat = gmm_shuffle( zdt_list)
       istat = gmm_shuffle(  wt_list)
+      istat = gmm_shuffle( dyn_list)
       istat = gmm_shuffle(pw_uulist)
       istat = gmm_shuffle(pw_vvlist)
       istat = gmm_shuffle(pw_ttlist)
@@ -96,6 +100,7 @@
       istat = gmm_get (gmmk_wt0_s , wt0)
       istat = gmm_get (gmmk_qt0_s , qt0)
       istat = gmm_get (gmmk_zdt0_s, zdt0)
+      istat = gmm_get ('DYNT0', dynt0)
 
       istat = gmm_get (gmmk_ut1_s , ut1)
       istat = gmm_get (gmmk_vt1_s , vt1)
@@ -104,6 +109,7 @@
       istat = gmm_get (gmmk_wt1_s , wt1)
       istat = gmm_get (gmmk_qt1_s , qt1)
       istat = gmm_get (gmmk_zdt1_s, zdt1)
+      istat = gmm_get ('DYNT1', dynt1)
 
       istat = gmm_get(gmmk_pw_uu_plus_s  ,pw_uu_plus)
       istat = gmm_get(gmmk_pw_vv_plus_s  ,pw_vv_plus)
@@ -126,6 +132,7 @@
       istat = gmm_get(gmmk_pw_p0_moins_s  ,pw_p0_moins)
       istat = gmm_get(gmmk_pw_pm_moins_8_s ,pw_pm_moins_8)
       istat = gmm_get(gmmk_pw_p0_moins_8_s ,pw_p0_moins_8)
+!$omp end single
 !
 !     ---------------------------------------------------------------
 !

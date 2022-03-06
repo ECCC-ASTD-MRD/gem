@@ -20,10 +20,8 @@
       use lam_options
       use mem_nest
       use glb_ld
-      use lun
-      use tr3d
       use step_options
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -31,7 +29,7 @@
       integer,external ::  newdate
 
       character(len=16) :: datev
-      integer :: yy,mo,dd,hh,mm,ss,dum
+      integer :: i,yy,mo,dd,hh,mm,ss,dum
       real(kind=REAL64) :: dayfrac,tx,dtf,a,b
       real(kind=REAL64), parameter :: one=1.0d0, &
                        sid=86400.0d0, rsid=one/sid
@@ -44,7 +42,10 @@
       call pdfjdate2 (tx, yy,mo,dd,hh,mm,ss)
 
       dayfrac = Step_nesdt*rsid
-
+      
+      call gtmg_start (23, 'NEST_input', 20)
+      
+!$omp master
       if (tx < Lam_tdeb) then
 
          Lam_current_S  = Step_runstrt_S
@@ -91,29 +92,21 @@
          call nest_indata ( Lam_current_S )
 
       end if
-!
-!     Temporal linear interpolation
-!
-      call gemtime_start ( 28, 'NESTINTT', 10)
+!$omp end master
+!$OMP BARRIER
+      call gtmg_stop (23)
+      call gtmg_start (24, 'NEST_tint', 20)
 
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
-
-! Optionaly for debugging
-!!$      nest_u = a*nest_u_deb + b*nest_u_fin
-!!$      nest_v = a*nest_v_deb + b*nest_v_fin
-!!$      nest_t = a*nest_t_deb + b*nest_t_fin
-!!$      nest_s = a*nest_s_deb + b*nest_s_fin
-!!$      nest_q = a*nest_q_deb + b*nest_q_fin
-!!$      nest_w = a*nest_w_deb + b*nest_w_fin
-!!$      nest_zd = a*nest_zd_deb + b*nest_zd_fin
-!!$      nest_fullme = a*nest_fullme_deb + b*nest_fullme_fin
-!!$      nest_tr = a*nest_tr_deb + b*nest_tr_fin
       
-      nest_now = a*nest_deb + b*nest_fin
-
-      call gemtime_stop ( 28 )
-!
+!$omp do
+      do i= lbound(nest_now,1), ubound(nest_now,1)
+         nest_now(i) = a*nest_deb(i) + b*nest_fin(i)
+      end do
+!$omp enddo
+      call gtmg_stop (24)
+!     
 !     ---------------------------------------------------------------
 !
       return

@@ -329,6 +329,11 @@ contains
          return
       endif
 
+      if (fluvert /= "SURFACE" .and. any(pcptype == (/'SPS_W19', 'SPS_FRC'/))) then
+         call msg(MSG_ERROR,'(phy_nml_check) pcptype = '//trim(pcptype)//' can only be used with fluvert = "SURFACE" ')
+         return
+      end if
+
       if (.not.any(rad_atmpath == RAD_ATMPATH_OPT)) then
          call str_concat(msg_S,RAD_ATMPATH_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) rad_atmpath = '//trim(rad_atmpath)//' : Should be one of: '//trim(msg_S))
@@ -404,18 +409,6 @@ contains
       convec = deep
       conv_shal = shal
       conv_mid = mid
-
-      !# Operating mode for cldoptx regarding cloud water
-      if (stcond == 'NIL')  then
-         !# no cloud water is provided to cldoptx
-         cw_rad = 0
-      else if (stcond == 'CONSUN') then
-         !# total cloud water only is provided to cldoptx
-         cw_rad = 1
-      else if (stcond(1:2) == 'MP') then
-         !# both liquid and ice water are provided to cldoptx
-         cw_rad = 2
-      endif
 
       if (STCOND(1:2) /= 'MP') then
          IOPTIX = OPT_OPTIX_OLD

@@ -50,6 +50,7 @@
 
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,1:G_nk+1),target :: tr1
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: gzm, gzt
+
       type(vgrid_descriptor) :: vcoord
       real, dimension(1) :: hybm_gnk2, hybt_gnk2, hyb0
       integer, dimension(1) :: ind0
@@ -128,10 +129,12 @@
                          indo,G_nk+1,Grdc_nbits,.false. )
          if (.not. Schm_autobar_L) then
             conv = 0.1d0
-            call out_fstecr ( zmom(l_minx,l_miny,1), l_minx,l_maxx,&
+            gzm(:,:,1:G_nk+1)= real(zmom_8(:,:,1:G_nk+1))
+            call out_fstecr ( gzm, l_minx,l_maxx,&
                     l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
                     -1,G_nk+1,indo,G_nk,Grdc_nbits,.false. )
-            call out_fstecr ( ztht(l_minx,l_miny,1), l_minx,l_maxx,&
+            gzt(:,:,1:G_nk+1)= real(ztht_8(:,:,1:G_nk+1))
+            call out_fstecr ( gzt, l_minx,l_maxx,&
                     l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
                     -1,G_nk+1,indo,G_nk+1,Grdc_nbits,.false. )
          else

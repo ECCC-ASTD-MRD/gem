@@ -25,7 +25,7 @@ module lhn_mod
 contains
 
   !/@*
-  subroutine lhn2(d, f, v, dsiz, fsiz, vsiz,&
+  subroutine lhn2(dbus, fbus, vbus, &
                   dt, ni, nk, kount)
      use phy_options
      use phybus
@@ -41,21 +41,18 @@ contains
      !@Arguments
      !
      !          - Input -
-     ! dsiz     dimension of dbus
-     ! fsiz     dimension of fbus
-     ! vsiz     dimension of vbus
      ! dt       timestep (sec.)
      ! ni       horizontal running length
      ! nk       vertical dimension
      ! kount    timestep number
-     integer, intent(in) :: dsiz, fsiz, vsiz, kount, ni, nk
+     integer, intent(in) :: kount, ni, nk
      real, intent(in) :: dt
 
      !          - Input/Output -
-     ! d        dynamics input field
-     ! f        historic variables for the physics
-     ! v        physics tendencies and other output fields from the physics
-     real, intent(inout), target :: d(dsiz), f(fsiz), v(vsiz)
+     ! dbus     dynamics input field
+     ! fbus     historic variables for the physics
+     ! vbus     physics tendencies and other output fields from the physics
+     real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
      !@Author D.Jacques 
 
@@ -110,10 +107,9 @@ contains
      real    :: this_radar_pr, this_radar_qi, this_model_pr
      real    :: pr_ratio, scale_fact, r, temp_at_obs_height
      real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
-     real, pointer, dimension(:,:) :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm !#, zsm2d
-     real, pointer, dimension(:)   :: zlhnr, ztree, psp, zlhs
-!!$     real, dimension(ni)           :: radar_pr, radar_qi, model_rt
-     real, pointer, dimension(:)   :: radar_pr, radar_qi, model_rt
+     real, pointer, dimension(:,:), contiguous :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm
+     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs
+     real, pointer, dimension(:), contiguous   :: radar_pr, radar_qi, model_rt
      
      !do nothing if LHN not in use
      if (lhn /= 'IRPCP') return
@@ -123,7 +119,7 @@ contains
      !Output diagnostic:  
      ! 
      !code for decision tree
-     MKPTR1D(ztree, tree, v)
+     MKPTR1D(ztree, tree, vbus)
      ztree = 0.
 
      !lhn_weight must be specified in gem_settings.nml
@@ -153,41 +149,41 @@ contains
      !Output diagnostics:  
      ! 
      !scaling factor used in LHN 
-     MKPTR1D(zlhnr, lhnr, v)
+     MKPTR1D(zlhnr, lhnr, vbus)
      zlhnr = 0.
      !moisture tendency due to LHN
-     MKPTR2D(zlhm, tlhm, v)
+     MKPTR2D(zlhm, tlhm, vbus)
      zlhm  = 0.
      !total moisture added/removed in a column
-     MKPTR1D(zlhs, tlhs, v)
+     MKPTR1D(zlhs, tlhs, vbus)
      zlhs  = 0.
      !temperature tendencies due to Latent Heat Nudging
-     MKPTR2D(tinc, tlhn, v)
+     MKPTR2D(tinc, tlhn, vbus)
      tinc  = 0.
 
      !Model variables
      !
      !temperature
-     MKPTR2D(temp_k, tplus, d)
+     MKPTR2D(temp_k, tplus, dbus)
      !AGL heights (m) on thermo levels
-     MKPTR2D(heights_agl, gztherm, v)
+     MKPTR2D(heights_agl, gztherm, vbus)
      !vapor mixing ratio
-     MKPTR2D(qv, huplus, d)
+     MKPTR2D(qv, huplus, dbus)
      !model surface pressure
-     MKPTR1D(psp, pmoins, f)
+     MKPTR1D(psp, pmoins, fbus)
      !model level
-     MKPTR2D(sigma, sigt, d)
+     MKPTR2D(sigma, sigt, dbus)
 
      !Horizontally smoothed quantities
      !
      !temperature tendencies due to latent heat release
-     MKPTR2D(ttend, tcond_smt, f)
+     MKPTR2D(ttend, tcond_smt, fbus)
      !modeled precip rate
-     MKPTR1D(model_rt, rt_smt, f)
+     MKPTR1D(model_rt, rt_smt, fbus)
      !observed precip rate
-     MKPTR1D(radar_pr, rdpr_smt, f)
+     MKPTR1D(radar_pr, rdpr_smt, fbus)
      !observation quality index
-     MKPTR1D(radar_qi, rdqi_smt, f)
+     MKPTR1D(radar_qi, rdqi_smt, fbus)
 
   
      !record relative humidity and temperature before LHN
@@ -286,7 +282,7 @@ contains
                !model has NO precip
                !in this case, use predefined typical profile
                call use_avg_profile(this_radar_pr, pres_pa, modulation_factor, i, ni, nk, &
-                                    v(tlhn), ztree(i) )
+                                    tinc, ztree(i) )
             endif
         else
             !radar has NO precip
@@ -308,7 +304,7 @@ contains
         endif
      enddo
   
-     call apply_tendencies(d,v,f,tplus,tlhn,ni,nk)
+     call apply_tendencies(dbus, vbus, fbus, tplus, tlhn, ni, nk)
   
      !compute increments to humidity to conserve RH
      do k = 1,nk
@@ -333,7 +329,7 @@ contains
   
      !change increment into a tendency
      zlhm = zlhm/dt
-     call apply_tendencies(d,v,f,huplus,tlhm,ni,nk)
+     call apply_tendencies(dbus, vbus, fbus, huplus, tlhm, ni, nk)
      
   end subroutine lhn2
 

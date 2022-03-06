@@ -132,7 +132,6 @@ add_custom_target(work
         $<TARGET_FILE:voir>
         ${CMAKE_INSTALL_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${CMAKE_INSTALL_PREFIX}
-    COMMAND /bin/cp -avf ${CMAKE_SOURCE_DIR}/doc/README.run ${CMAKE_INSTALL_PREFIX}
 
     DEPENDS
         cclargs_lite

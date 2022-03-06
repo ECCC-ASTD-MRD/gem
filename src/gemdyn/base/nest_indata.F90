@@ -28,7 +28,6 @@
       use ptopo
       use tr3d
       use vGrid_Descriptors, only : vgrid_descriptor
-      use gem_timing
       implicit none
 
       include 'mpif.h'
@@ -40,10 +39,6 @@
 !     
 !     ---------------------------------------------------------------
 !
-      if (Lun_debug_L) write (Lun_out,1000)
-
-      call gemtime_start ( 26, 'NEST_input', 10 )
-
       call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin ,&
                       nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
                       nest_fullme_fin(l_minx,l_miny,1),&
@@ -71,13 +66,9 @@
       call MPI_Allgather ( topo_diff,1,MPI_INTEGER,gathV,1,&
                            MPI_INTEGER,comm,err)
       Vtopo_mustadj_L= sum(gathV) > 0
-
-      call gemtime_stop (26)
 !
 !     ---------------------------------------------------------------
 !
- 1000 format(3X,'GETTING DATA FROM NEST TO BCS: (S/R NEST_INDATA)')
-
       return
-      end
+      end subroutine nest_indata
 

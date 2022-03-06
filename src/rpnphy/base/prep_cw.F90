@@ -28,26 +28,23 @@ module prep_cw
 contains
 
   !/@*
-   subroutine prep_cw3(f, fsiz, d, dsiz, v, vsiz, ficebl, ni, nk)
+   subroutine prep_cw3(fbus, dbus, vbus, ficebl, ni, nk)
       implicit none
 !!!#include <arch_specific.hf>
 
       !@Object Save water contents and cloudiness in the permanent bus
       !@Arguments
       !          - Input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! ficebl   fraction of ice
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
-      ! d        dynamic             bus
-      ! f        permanent variables bus
-      ! v        volatile (output)   bus
+      ! dbus     dynamic             bus
+      ! fbus     permanent variables bus
+      ! vbus     volatile (output)   bus
       !*@/
-      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk
-      real, intent(inout), target :: f(fsiz), d(dsiz), v(vsiz)
+      integer, intent(in) :: ni, nk
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: ficebl(ni,nk)
       !*@/
       integer :: nkm1
@@ -56,9 +53,9 @@ contains
       if (timings_L) call timing_start_omp(445, 'prep_cw', 46)
       if (stcond(1:3) == 'MP_') then
          nkm1 = nk-1
-         call prep_cw_MP(f, fsiz, v, vsiz, ficebl, ni, nk, nkm1)
+         call prep_cw_MP(fbus, vbus, ficebl, ni, nk, nkm1)
       else
-         call prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ni, nk)
+         call prep_cw_noMP(fbus, dbus, vbus, ni, nk)
       endif
       if (timings_L) call timing_stop_omp(445)
       call msg_toall(MSG_DEBUG, 'prep_cw [END]')
@@ -68,26 +65,23 @@ contains
 
 
    !/@*
-   subroutine prep_cw_noMP(f, fsiz, d, dsiz, v, vsiz, ni, nk)
+   subroutine prep_cw_noMP(fbus, dbus, vbus, ni, nk)
       implicit none
 !!!#include <arch_specific.hf>
 
       !@Object Save water contents and cloudiness in the permanent bus
       !@Arguments
       !          - Input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
-      ! d        dynamic             bus
-      ! f        permanent variables bus
-      ! v        volatile (output)   bus
+      ! dbus     dynamic             bus
+      ! fbus     permanent variables bus
+      ! vbus     volatile (output)   bus
       !*@/
 
-      integer, intent(in) :: fsiz, dsiz, vsiz, ni, nk
-      real, intent(inout), target :: f(fsiz), d(dsiz), v(vsiz)
+      integer, intent(in) :: ni, nk
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author L. Spacek (Oct 2004)
       !*@/
@@ -95,25 +89,25 @@ contains
       integer :: i, k
       real :: cfblxp(ni,nk)
       real, target :: zero(ni,nk)
-      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, zlwc, &
+      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zlwc, &
            zqcplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
            zqsdi, zqssc, zqtbl
       !----------------------------------------------------------------
-      MKPTR2D(zfbl, fbl, f)
-      MKPTR2D(zfdc, fdc, f)
-      MKPTR2D(zfmc, fmc, f)
-      MKPTR2D(zfsc, fsc, f)
-      MKPTR2D(zftot, ftot, f)
-      MKPTR2D(zfxp, fxp, f)
-      MKPTR2D(zlwc, lwc, f)
-      MKPTR2D(zqcplus, qcplus, d)
-      MKPTR2D(zqldi, qldi, f)
-      MKPTR2D(zqlmi, qlmi, v)
-      MKPTR2D(zqlsc, qlsc, v)
-      MKPTR2D(zqsdi, qsdi, f)
-      MKPTR2D(zqsmi, qsmi, v)
-      MKPTR2D(zqssc, qssc, v)
-      MKPTR2D(zqtbl, qtbl, f)
+      MKPTR2D(zfbl, fbl, fbus)
+      MKPTR2D(zfdc, fdc, fbus)
+      MKPTR2D(zfmc, fmc, fbus)
+      MKPTR2D(zfsc, fsc, fbus)
+      MKPTR2D(zftot, ftot, fbus)
+      MKPTR2D(zfxp, fxp, fbus)
+      MKPTR2D(zlwc, lwc, fbus)
+      MKPTR2D(zqcplus, qcplus, dbus)
+      MKPTR2D(zqldi, qldi, fbus)
+      MKPTR2D(zqlmi, qlmi, vbus)
+      MKPTR2D(zqlsc, qlsc, vbus)
+      MKPTR2D(zqsdi, qsdi, fbus)
+      MKPTR2D(zqsmi, qsmi, vbus)
+      MKPTR2D(zqssc, qssc, vbus)
+      MKPTR2D(zqtbl, qtbl, fbus)
 
       zero(:,:) =  0.0
 
@@ -202,7 +196,7 @@ contains
 
 
    !/@*
-   subroutine prep_cw_MP(f, fsiz,  v, vsiz, ficebl, ni, nk, nkm1)
+   subroutine prep_cw_MP(fbus, vbus, ficebl, ni, nk, nkm1)
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -213,21 +207,17 @@ contains
       !@Arguments
       !
       !      - Input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! ficebl   fraction of ice
       ! ni       horizontal dimension
       ! nk       vertical dimension
       ! nkm1     vertical scope of the operator
       !
       !      - Input/Output -
-      ! d        dynamic             bus
-      ! f        permanent variables bus
-      ! v        volatile (output)   bus
+      ! fbus     permanent variables bus
+      ! vbus     volatile (output)   bus
 
-      integer, intent(in) :: fsiz, vsiz, ni, nk, nkm1
-      real, intent(inout), target :: f(fsiz), v(vsiz)
+      integer, intent(in) :: ni, nk, nkm1
+      real, dimension(:), pointer, contiguous :: fbus, vbus
       real, intent(in) :: ficebl(ni,nk)
 
       !@Author
@@ -237,26 +227,26 @@ contains
 
       integer :: i, k
       real, target :: zero(ni,nk)
-      real, pointer, dimension(:,:) :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
+      real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
            ziwcimp, zlwcimp, zqldi, zqlsc, zqsdi, zqssc, zqtbl, zfmc, &
            zqlmi, zqsmi
       !----------------------------------------------------------------
-      MKPTR2D(zfbl, fbl, f)
-      MKPTR2D(zfdc, fdc, f)
-      MKPTR2D(zfmc, fmc, f)
-      MKPTR2D(zfmp, fmp, f)
-      MKPTR2D(zfsc, fsc, f)
-      MKPTR2D(zftot, ftot, f)
-      MKPTR2D(zfxp, fxp, f)
-      MKPTR2D(zlwcimp, lwcimp, f)
-      MKPTR2D(ziwcimp, iwcimp, f)
-      MKPTR2D(zqldi, qldi, f)
-      MKPTR2D(zqlmi, qlmi, v)
-      MKPTR2D(zqlsc, qlsc, v)
-      MKPTR2D(zqsdi, qsdi, f)
-      MKPTR2D(zqsmi, qsmi, v)
-      MKPTR2D(zqssc, qssc, v)
-      MKPTR2D(zqtbl, qtbl, f)
+      MKPTR2D(zfbl, fbl, fbus)
+      MKPTR2D(zfdc, fdc, fbus)
+      MKPTR2D(zfmc, fmc, fbus)
+      MKPTR2D(zfmp, fmp, fbus)
+      MKPTR2D(zfsc, fsc, fbus)
+      MKPTR2D(zftot, ftot, fbus)
+      MKPTR2D(zfxp, fxp, fbus)
+      MKPTR2D(zlwcimp, lwcimp, fbus)
+      MKPTR2D(ziwcimp, iwcimp, fbus)
+      MKPTR2D(zqldi, qldi, fbus)
+      MKPTR2D(zqlmi, qlmi, vbus)
+      MKPTR2D(zqlsc, qlsc, vbus)
+      MKPTR2D(zqsdi, qsdi, fbus)
+      MKPTR2D(zqsmi, qsmi, vbus)
+      MKPTR2D(zqssc, qssc, vbus)
+      MKPTR2D(zqtbl, qtbl, fbus)
 
       zero(1:ni,1:nkm1) =  0.0
 

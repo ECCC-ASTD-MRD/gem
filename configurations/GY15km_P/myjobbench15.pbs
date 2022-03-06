@@ -1,0 +1,31 @@
+###PBS -l select=3:ncpus=80:mpiprocs=40:ompthreads=2:mem=160gb
+#PBS -l select=79:ncpus=80:mpiprocs=80:ompthreads=1:mem=160gb
+#PBS -N GY15km_87x36x1_79N
+#PBS -l place=scatter
+#PBS -l walltime=1:00:0
+
+#if needed, export variables for your MPI environment
+#examples:
+export UCX_NET_DEVICES=mlx5_0:1 
+export I_MPI_HYDRA_BOOTSTRAP=ssh 
+export KMP_AFFINITY=compact # Allows pinning the threads
+
+#Load the compiler, libraries and architecture environment
+
+# cd to your cloned gem directory
+#cd [complete path to cloned github repository]/gem
+cd gem
+
+#source common setup to find GEM binaries, scripts
+. ./.common_setup intel
+
+#cd to installed work directory to run
+#cd work-[...]
+cd work-${OS_NAME}-${COMPILER_NAME}
+
+#look at file configurations/GY15km_P/TOPOs_possible_for_GY15 for -ptopo selections
+runprep.sh -dircfg configurations/GY15km_P > list_prep_sc5A 2>&1
+runmod.sh -dircfg configurations/GY15km_P -ptopo 87x36x1 -inorder > bench_gy15km_P_sc5A 2>&1
+
+#-ptopo 87x36x1 multiply by 2 for number of cpus total in Yin-Yang
+#runmod.sh -dircfg configurations/GY15km_P  -ptopo 10x8x1 > list_gy 2>&1 -not enough memory.

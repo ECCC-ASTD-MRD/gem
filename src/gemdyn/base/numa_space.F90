@@ -49,12 +49,18 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-      ns = 20  ! cpu_per_numa() nor working correctly
+      ns = cpu_per_numa() ! Returns -1 on error such as nonuniform allocation
 
-      if (Ptopo_npey > ns) then
-         Numa_uniform_L = mod(Ptopo_npey,ns)==0
-      else
-         Numa_uniform_L = mod(ns,Ptopo_npey)==0
+      if (ns <= 0) then
+         Numa_uniform_L = .false.
+         if (lun_out > 0) write(lun_out,'(" Nonuniform allocation in numa space: Numa_uniform_L force to .F.")')
+      else ! Verify that npey divides into or is divided by numa size
+         if (Ptopo_npey > ns) then
+            Numa_uniform_L = mod(Ptopo_npey,ns)==0
+         else
+            Numa_uniform_L = mod(ns,Ptopo_npey)==0
+         endif
+         if (lun_out > 0) write(lun_out,'(" Number of cpus/numa space = ",i4,/" Numa_uniform_L = ",l)') ns,Numa_uniform_L
       endif
 
       NuRNuP= 0.

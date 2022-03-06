@@ -16,7 +16,7 @@
 
 module energy_budget
    use, intrinsic :: iso_fortran_env, only: REAL64
-   use tdpack
+   use tdpack, only: CHLC, CHLF, CPD, CPI, CPV, CPW, GRAV, TCDK, TRPL
    implicit none
    private
 #include <rmnlib_basics.hf>
@@ -51,8 +51,8 @@ module energy_budget
 
    ! Local variables
    integer :: ksfc=1                                            !Near-surface level index
-   real :: norm_en=1e1                                          !Normalizing factor for energy so typical "noise" has a value of one
-   real :: norm_pw=1e-5                                         !Normalizing factor for total water so typical "noise" has a value of one
+   real :: norm_en=1.                                          !Normalizing factor for energy so typical "noise" has a value of one
+   real :: norm_pw=1./CHLC                                         !Normalizing factor for total water so typical "noise" has a value of one
    logical :: initialized=.false.                               !Initialization status of package
    logical :: lv_temp_dependent=.true.                          !Use temperature-dependent latent heat of vapourization and sublimation
 
@@ -445,7 +445,8 @@ contains
       F_src = F_src + (lv+(CPD-CPV)*F_tt(:,ksfc))*F_rain + (ls+(CPD-CPV)*F_tt(:,ksfc))*F_snow
 
       ! Turbulent flux energy source
-      F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)/lv*F_tt(:,ksfc))*F_lhf
+      F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)*F_tt(:,ksfc))*F_lhf
+      ! F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)/lv*F_tt(:,ksfc))*F_lhf
 
       ! Radiative energy source
       F_src = F_src + F_rad
@@ -720,7 +721,8 @@ contains
       F_src = F_src - F_rain - F_snow
 
       ! Turbulent flux water source
-      F_src = F_src + F_lhf/lv
+      F_src = F_src + F_lhf
+      ! F_src = F_src + F_lhf/lv
 
       ! End of subprogram
       F_stat = EB_OK

@@ -156,6 +156,11 @@ contains
          call msg(MSG_ERROR,'(cnv_nml_check) deep = '//trim(deep)//' : Should be one of: '//trim(msg_S))
          return
       end if
+      
+      if (deep == 'KFC3') then
+         call msg(MSG_ERROR,'(cnv_nml_check) deep = '//trim(deep)//' : KFC3 not avail until a fix is done')
+         return
+      end if
 
       if (.not.any(deep_conserve == DEEP_CONSERVE_OPT)) then
          call str_concat(msg_S,DEEP_CONSERVE_OPT,', ')

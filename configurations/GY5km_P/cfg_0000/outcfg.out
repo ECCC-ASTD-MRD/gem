@@ -1,0 +1,21 @@
+ grid=1,core;
+
+ levels=1,eta,-1;
+ levels=2,bot,30;
+
+ steps=1,hour,0.;
+ steps=2,hour,<0., 48., 1.>;
+ steps=3,hour,<0., 48., 2.>;
+
+ sortie([ME],                                             grid, 1, levels, 1, steps, 1)
+ 
+ sortie([P0],                                             grid, 1, levels, 1, steps, 2)
+ sortie([TT,HU,UU,VV,WT1,HR,PX,GZ],                       grid, 1, levels, 2, steps, 3)
+ sortie([MPQC,MPQR],                                      grid, 1, levels, 2, steps, 3)
+ 
+ sortie_p([TG,UD,VD,TJ,DQ],                               grid, 1, levels, 1, steps, 2)
+ sortie_p([FB,EV,FI,EI,ECC,ECCL,ECCM,ECCH,NT],            grid, 1, levels, 1, steps, 2)
+ sortie_p([ICR,IIR,IH,FC,FV,RT,RC,PR,PC],                 grid, 1, levels, 1, steps, 2)
+ sortie_p([FN,T3],                                        grid, 1, levels, 2, steps, 3)
+ sortie_p([EN,TF,Q8,QC8,TFTT,TFHU],                       grid, 1, levels, 2, steps, 3)
+ sortie_p([ST,SQ,TQCS],                                   grid, 1, levels, 2, steps, 3)

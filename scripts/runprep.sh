@@ -48,7 +48,7 @@ while [ ${domain_number} -le ${DOMAIN_end} ] ; do
       -npex ${npex} -npey ${npey} -cache $GEM_cache \
       -nmlfile ${dircfg}/${dname}/gem_settings.nml -nthreads $npe\
       -verbose ${verbose} -abort ${abort_prefix}${domain_number}
-   ln -s ${GEM_inrep} ${DEST}/MODEL_inrep
+   ln -s ${GEM_inrep} ${DEST}/MODEL_inrep 2> /dev/null || true
    domain_number=$(printf "%04d" $(( domain_number+1 )))
 done
 

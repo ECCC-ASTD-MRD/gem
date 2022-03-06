@@ -1,0 +1,42 @@
+This guide is to help you to try out different Processor Topologies on your machine.
+Your choice has to be based on the memory available and the number of cores per node.
+
+The topologies given is actually used for each grid (Yin, Yang) and so the
+total number of cores used is given in MPICORES.
+
+NOTE that this is a mini-test so, it is designed to run with a minimum of 2 MPIcores.
+The maximum MPICORES that can be used is 64. More cores can be used if using OpenMP.
+
+TOPO: NPEX x NPEY  MPICORES TOTAL   Gridpoints on each Tile
+TOPO:    1 x    1  MPICORES=     2  SUBDOMAINS=  127 x   56 
+TOPO:    1 x    2  MPICORES=     4  SUBDOMAINS=  127 x   28 
+TOPO:    1 x    3  MPICORES=     6  SUBDOMAINS=  127 x   18 
+TOPO:    1 x    4  MPICORES=     8  SUBDOMAINS=  127 x   14 
+TOPO:    2 x    1  MPICORES=     4  SUBDOMAINS=   63 x   56 
+TOPO:    2 x    2  MPICORES=     8  SUBDOMAINS=   63 x   28 
+TOPO:    2 x    3  MPICORES=    12  SUBDOMAINS=   63 x   18 
+TOPO:    2 x    4  MPICORES=    16  SUBDOMAINS=   63 x   14 
+TOPO:    3 x    1  MPICORES=     6  SUBDOMAINS=   42 x   56 
+TOPO:    3 x    2  MPICORES=    12  SUBDOMAINS=   42 x   28 
+TOPO:    3 x    3  MPICORES=    18  SUBDOMAINS=   42 x   18 
+TOPO:    3 x    4  MPICORES=    24  SUBDOMAINS=   42 x   14 
+TOPO:    4 x    1  MPICORES=     8  SUBDOMAINS=   31 x   56 
+TOPO:    4 x    2  MPICORES=    16  SUBDOMAINS=   31 x   28 
+TOPO:    4 x    3  MPICORES=    24  SUBDOMAINS=   31 x   18 
+TOPO:    4 x    4  MPICORES=    32  SUBDOMAINS=   31 x   14 
+TOPO:    5 x    1  MPICORES=    10  SUBDOMAINS=   25 x   56 
+TOPO:    5 x    2  MPICORES=    20  SUBDOMAINS=   25 x   28 
+TOPO:    5 x    3  MPICORES=    30  SUBDOMAINS=   25 x   18 
+TOPO:    5 x    4  MPICORES=    40  SUBDOMAINS=   25 x   14 
+TOPO:    6 x    1  MPICORES=    12  SUBDOMAINS=   21 x   56 
+TOPO:    6 x    2  MPICORES=    24  SUBDOMAINS=   21 x   28 
+TOPO:    6 x    3  MPICORES=    36  SUBDOMAINS=   21 x   18 
+TOPO:    6 x    4  MPICORES=    48  SUBDOMAINS=   21 x   14 
+TOPO:    7 x    1  MPICORES=    14  SUBDOMAINS=   18 x   56 
+TOPO:    7 x    2  MPICORES=    28  SUBDOMAINS=   18 x   28 
+TOPO:    7 x    3  MPICORES=    42  SUBDOMAINS=   18 x   18 
+TOPO:    7 x    4  MPICORES=    56  SUBDOMAINS=   18 x   14 
+TOPO:    8 x    1  MPICORES=    16  SUBDOMAINS=   15 x   56 
+TOPO:    8 x    2  MPICORES=    32  SUBDOMAINS=   15 x   28 
+TOPO:    8 x    3  MPICORES=    48  SUBDOMAINS=   15 x   18 
+TOPO:    8 x    4  MPICORES=    64  SUBDOMAINS=   15 x   14 MAXIMUM

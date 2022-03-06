@@ -77,6 +77,7 @@
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
 
+      Cstv_pref_8 = 100000.d0
       Ver_code = 6
 
       ! Construct vertical coordinate
@@ -227,9 +228,9 @@
       rfls_S = ' '
       if (Schm_sleve_L) rfls_S = gmmk_me_large_S
       istat = vgrid_wb_put(VGRID_M_S, Ver_vgdobj, Ver_ip1%m,  &
-           gmmk_me_full_S, rfls_S, F_overwrite_L=.true., F_altfld_S=gmmk_pw_pm_plus_s)
+           gmmk_me_full_S, rfls_S, F_altfld_S=gmmk_pw_pm_plus_s, F_restart_L=.false.)
       istat = vgrid_wb_put(VGRID_T_S, Ver_vgdobj, Ver_ip1%t,  &
-           gmmk_me_full_S, rfls_S, F_overwrite_L=.true., F_altfld_S=gmmk_pw_pt_plus_s)
+           gmmk_me_full_S, rfls_S, F_altfld_S=gmmk_pw_pt_plus_s, F_restart_L=.false.)
 
       options_readwrite = WB_IS_LOCAL
       options_readonly = options_readwrite + WB_REWRITE_NONE

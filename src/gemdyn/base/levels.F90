@@ -15,7 +15,7 @@
 !
       subroutine levels (F_levels,F_nk,F_gnk,F_lid,F_nkequal,F_first)
       use, intrinsic :: iso_fortran_env
-      use lun
+      use VERgrid_options
       implicit none
 
       integer, intent(INOUT) :: F_gnk
@@ -23,9 +23,9 @@
       real, intent(IN   ) :: F_lid,F_first
       real, intent(INOUT) :: F_levels(F_nk)
 
-      integer i,k,nk_s,err,nkequal
+      integer k,kk,nkequal,nk_s,nk0,nk1,nk2,j0,jn,k0,kn
       real tmp
-      real(kind=REAL64) r,r_saved,inc,prdz(F_gnk),ratio
+      real(kind=REAL64) prdz(F_gnk), dz, dz0, ddz, top
 !
 !---------------------------------------------------------------------
 !
@@ -37,29 +37,52 @@
          if (F_levels(1).lt.0.) then ! STRETCHED DEPTHS
     
 ! Iterative process to determine the stretching factor (r).
-            inc  = 1.e-3
-            r    = 1.d0 ; err= 0
-            r_saved = r
-            do k=1,50
-               call cal_depth(prdz,F_lid,F_first,r,inc,nk_s,F_gnk)
-               if (r<0.) then
-                  do i=1,10
-                     inc=2.d0*inc
-                     call cal_depth(prdz,F_lid,F_first,r,inc,nk_s,F_gnk)
-                     if (r>0) exit
-                  end do
-                  inc=inc/2.d0
-               else
-                  ratio= (r-r_saved)/r_saved
-                  if (lun_out>0) write (Lun_out, '(a,1pe18.12,2x,a,1pe18.12)')&
-               'Vertical stretching factor convergence: r=',r,'ratio= ',ratio
-                  if (ratio<1.d-12) exit
-                  inc=inc/10.
-                  r_saved = r
+            prdz(1) = F_first
+            prdz(2) = F_first*2.
+            F_levels(1)= prdz(1)
+            F_levels(2)= F_levels(1) + prdz(2)
+
+            nk0= 3 ; k0= 1 ; kn= 2 ; top= F_levels(2)
+            do k= 1, F_gnk
+               nk1= min(Hyb_lin_depth(1,k),real(nk_s))
+               if (nk1<1) exit
+               if (nk1 > kn) then
+                  if (Hyb_lin_depth(2,k) > top) then
+                     top= min(Hyb_lin_depth(2,k),F_lid)
+                     dz = dble(top-F_levels(nk0-1))/dble(nk1-nk0+1)
+                     prdz(nk1) = dz
+                     do kk= nk0,nk1
+                        F_levels(kk)= F_levels(kk-1) + dz
+                     end do
+                     if (((nk0-3)>k0).and.((nk0 +3)<nk1)) then
+                        j0 = nk0 -3
+                        jn = nk0 +3
+                        nk2 = jn-j0+1
+                        dz0= F_levels(j0)-F_levels(j0-1)
+                        ddz = dz-F_levels(j0)+F_levels(j0-1)
+                        do kk=j0,jn
+                           dz = dz0+ddz/nk2*(kk-j0+1)
+                           F_levels(kk)= F_levels(kk-1) + dz
+                        end do
+                     endif
+                     k0= nk0 ; kn= nk1 ; top= F_levels(nk1)
+                     nk0= nk1+1
+                  endif
                endif
             end do
-            if (r<0) err= -1
-            call gem_error(err,'levels','COULD NOT CONVERGE TO VERTICAL LAYERING SPECS')
+            
+            nk0 = nk0 -1
+            nk1 = nk_s -nk0+1
+            nk2 = F_gnk-nk0+1
+            call cal_depth (prdz(nk0),F_lid,F_levels(nk0),nk1,nk2)
+            
+            do k=nk0,nk_s
+               F_levels(k)= F_levels(k-1) + prdz(k)
+            end do
+
+            do k=nk_s+1,F_gnk
+               F_levels(k) = F_levels(k-1) + prdz(nk_s)
+            end do
 
          else                   ! EQUAL
 
@@ -68,19 +91,7 @@
             end do
 
          endif
-
-         F_levels(1)= prdz(1)
-!         print*, 1,F_levels(1),prdz(1)
-         do k=2,nk_s
-            F_levels(k)= F_levels(k-1) + prdz(k)
-!            print*, k,F_levels(k),prdz(k)
-         end do
-
-         do k=nk_s+1,F_gnk
-            F_levels(k) = F_levels(k-1) + prdz(nk_s)
-!            print*, k,F_levels(k),prdz(nk_s),'ff'
-         end do
-
+         
          do k=1,F_gnk/2
             tmp= F_levels(k)
             F_levels(k)= F_levels(F_gnk-k+1)
@@ -102,13 +113,57 @@
       return
       end subroutine levels
 
-      subroutine cal_depth (dz,lid,fh,r,inc,nk_s,gnk)
+      subroutine cal_depth (dz,lid,fh,F_nks,F_gnk)
+      use, intrinsic :: iso_fortran_env
+      use lun
+      implicit none
+      
+      integer, intent(IN) :: F_nks,F_gnk
+      real   , intent(IN) :: lid,fh
+      real(kind=REAL64), intent(OUT) :: dz(0:F_gnk)
+
+      integer i,k,err
+      real(kind=REAL64) :: r,r_saved ,inc, ratio
+!
+!---------------------------------------------------------------------
+!
+      inc  = 1.e-3
+      r    = 1.d0 ; err= 0
+      r_saved = r
+      do k=1,50
+         call find_r (dz,lid,fh,r,inc,F_nks,F_gnk)
+         if (r<0.) then
+            do i=1,10
+               inc=2.d0*inc
+               call find_r (dz,lid,fh,r,inc,F_nks,F_gnk)
+               if (r>0) exit
+            end do
+            inc=inc/2.d0
+         else
+            ratio= (r-r_saved)/r_saved
+            if (lun_out>0) write (Lun_out, '(a,1pe18.12,2x,a,1pe18.12)')&
+            'Vertical stretching factor convergence: r=',r,'ratio= ',ratio
+            if (ratio<1.d-12) exit
+            inc=inc/10.
+            r_saved = r
+         endif
+      end do
+      
+      if (r<0) err= -1
+      call gem_error(err,'levels','COULD NOT CONVERGE TO VERTICAL LAYERING SPECS')
+!     
+!---------------------------------------------------------------------
+!
+      return
+      end subroutine cal_depth
+
+      subroutine find_r (dz,lid,fh,r,inc,nk_s,gnk)
       use, intrinsic :: iso_fortran_env
       implicit none
       
       integer, intent(IN)  :: nk_s,gnk
       real, intent(IN   )  :: lid,fh
-      real(kind=REAL64), intent(IN   ) :: inc
+      real(kind=REAL64), intent(INOUT) :: inc
       real(kind=REAL64), intent(INOUT) :: r
       real(kind=REAL64), intent(OUT  ) :: dz(gnk)
 
@@ -120,7 +175,7 @@
 !
       cnt= 0
  987  r   = r + inc ; cnt= cnt+1
-      dz(1) = fh ; zm= fh
+      zm= fh
       do k=2,nk_s
          dz(k) = dz(k-1) * r
          zm = zm + dz(k)
@@ -128,7 +183,6 @@
       do k=nk_s+1, gnk
          zm = zm + dz(nk_s)
       end do
-
       if (zm<lid) then
          if (cnt==maxiter_gl) then
             r= -1.
@@ -137,9 +191,14 @@
             goto 987
          endif
       endif
+      if (cnt==1) then
+         r   = r - inc
+         inc = inc/10.
+         goto 987
+      endif
       r= r - inc
 !     
 !---------------------------------------------------------------------
 !
       return
-      end subroutine cal_depth
+      end subroutine find_r

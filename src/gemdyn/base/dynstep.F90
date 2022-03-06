@@ -19,6 +19,10 @@
       use dynkernel_options
       use dyn_fisl_options
       use gem_options
+      use gmm_vt1
+      use gmm_vt2
+      use gmm_pw
+      use adz_mem
       use HORgrid_options
       use lun
       use step_options
@@ -27,16 +31,30 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer icn, keep_itcn
+      integer icn, keep_itcn, nrow, np
 !
 !     ---------------------------------------------------------------
 !
+      np= 3*G_nk
+      if ( (.not.Dynamics_hydro_L) .or. (Dynamics_hauteur_L)) np= 4*G_nk+1
+      call rpn_comm_xch_halo( ut1 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj ,np, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( st1 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!      call rpn_comm_xch_halo( ut2 , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj ,np, &
+!                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!      call rpn_comm_xch_halo( st2 , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
+!                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
+      Adz_uu_ext(1:l_ni,1:l_nj,1:l_nk) = pw_uu_plus(1:l_ni,1:l_nj,1:l_nk)
+      Adz_vv_ext(1:l_ni,1:l_nj,1:l_nk) = pw_vv_plus(1:l_ni,1:l_nj,1:l_nk)
+      Adz_ww_ext(1:l_ni,1:l_nj,1:l_nk) =       zdt1(1:l_ni,1:l_nj,1:l_nk)
+      call rpn_comm_xch_halo (Adz_uu_ext, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
+                    l_ni,l_nj, 3*l_nk, Adz_halox,Adz_haloy, .false.,.false., l_ni,0)
+
       select case ( trim(Dynamics_Kernel_S) )
          case ('DYNAMICS_FISL_H')
             call fislh_dynstep()
-            return
-         case ('DYNAMICS_EXPO_H')
-            call exp_dynstep()
             return
       end select
 
@@ -48,7 +66,7 @@
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
       call psadj_init ( Step_kount )
-
+                               
       do icn = 1,Schm_itcn-1
 
          call tstpdyn (icn)

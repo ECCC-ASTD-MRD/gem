@@ -17,6 +17,7 @@
       use adz_mem
       use adz_options
       use ctrl
+      use dyn_fisl_options
       use gem_options
       use glb_pil
       use HORgrid_options
@@ -26,6 +27,7 @@
       use step_options
       use gmm_itf_mod
       use gmm_pw
+      use mem_tstp
       use ptopo
       use rstr
       use tr3d
@@ -102,8 +104,7 @@
       end if
 
       Adz_k0 = Lam_gbpil_t+1
-      Adz_k0t= Adz_k0
-      if(Lam_gbpil_t > 0) Adz_k0t= Adz_k0 - 1
+      Adz_k0t= max(1,Lam_gbpil_t)
       Adz_k0m= max(Adz_k0t-2,1)
       if (adz_BC_LAM_flux/=0) Adz_k0m=1
 
@@ -249,10 +250,39 @@
 
       end if
 
+      allocate (adz_vw1m(l_nk),adz_vw2m(l_nk),adz_vw3m(l_nk),adz_vw4m(l_nk))
+      allocate (adz_vw1t(l_nk),adz_vw2t(l_nk),adz_vw3t(l_nk),adz_vw4t(l_nk))
+      
       allocate( Adz_zabcd_8%t(l_nk),Adz_zbacd_8%t(l_nk),Adz_zcabd_8%t(l_nk),Adz_zdabc_8%t(l_nk))
 
       allocate( Adz_zxabcde_8%t(l_nk),Adz_zaxbcde_8%t(l_nk),Adz_zbxacde_8%t(l_nk),&
                 Adz_zcxabde_8%t(l_nk),Adz_zdxabce_8%t(l_nk),Adz_zexabcd_8%t(l_nk))
+
+      do k= 2, l_nk-1
+         rx = Ver_z_8%m(k)
+         ra = Ver_z_8%x(k-2)
+         rb = Ver_z_8%x(k-1)
+         rc = Ver_z_8%x(k)
+         rd = Ver_z_8%x(k+1)
+         adz_vw1m(k) = lag3(rx, ra, rb, rc, rd)
+         adz_vw2m(k) = lag3(rx, rb, ra, rc, rd)
+         adz_vw3m(k) = lag3(rx, rc, ra, rb, rd)
+         adz_vw4m(k) = lag3(rx, rd, ra, rb, rc)
+      end do
+      do k=2, l_nk-2
+         rx = Ver_z_8%t(k)
+         ra = Ver_z_8%m(k-1)
+         rb = Ver_z_8%m(k  )
+         rc = Ver_z_8%m(k+1)
+         rd = Ver_z_8%m(k+2)
+         adz_vw1t(k) = lag3(rx, ra, rb, rc, rd)
+         adz_vw2t(k) = lag3(rx, rb, ra, rc, rd)
+         adz_vw3t(k) = lag3(rx, rc, ra, rb, rd)
+         adz_vw4t(k) = lag3(rx, rd, ra, rb, rc)
+      end do
+      adz_vw5 = (Ver_z_8%x(0)-Ver_z_8%m(1)) / (Ver_z_8%x(0)-Ver_z_8%x(1))
+      adz_vw6 = (Ver_z_8%m(l_nk  )-Ver_z_8%x(l_nk)) / &
+                (Ver_z_8%x(l_nk-1)-Ver_z_8%x(l_nk))
 
       do k= 2,l_nk-2
          ra = Ver_z_8%t(k-1)
@@ -284,14 +314,20 @@
                 Adz_ww_arr(l_ni,l_nj,l_nk), Adz_uvw_dep(3,l_ni,l_nj,Adz_k0m:l_nk))
       
       if (ADZ_OD_L) then
-         allocate (  Adz_uvw_d(3,l_minx:l_maxx,l_miny:l_maxy,l_nk))
+         allocate ( Adz_uvw_d(3,l_minx:l_maxx,l_miny:l_maxy,l_nk))
       else
-         allocate (&
-         Adz_uu_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
-         Adz_vv_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
-         Adz_ww_ext( Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk),&
-         Adz_uvw_d(3,Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk) )
-         Adz_uu_ext=0. ; Adz_vv_ext=0. ; Adz_ww_ext=0.
+         allocate (Adz_extended(Adz_nij*3*l_nk)) ; Adz_extended= 0.
+         Adz_uu_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk) => Adz_extended(1:)
+         Adz_vv_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk) => Adz_extended(Adz_nij*l_nk+1:)
+         Adz_ww_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk) => Adz_extended(Adz_nij*l_nk*2+1:)
+         allocate (orhs_extended(Adz_nij*6*l_nk))
+         orhsu_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(1:)
+         orhsv_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(Adz_nij*l_nk  +1:)
+         orhst_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(Adz_nij*l_nk*2+1:)
+         orhsc_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(Adz_nij*l_nk*3+1:)
+         orhsw_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(Adz_nij*l_nk*4+1:)
+         orhsf_ext(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk)=>orhs_extended(Adz_nij*l_nk*5+1:)
+         allocate (Adz_uvw_d(3,Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,l_nk))
       endif
 
       allocate(Adz_pm (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0 :l_nk),&
@@ -299,7 +335,6 @@
                Adz_pmv(3,Adz_i0 :Adz_in , Adz_j0v:Adz_jnv,Adz_k0 :l_nk),&
                Adz_pt (3,Adz_i0 :Adz_in , Adz_j0 :Adz_jn ,Adz_k0t:l_nk),&
                Adz_pb (3,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb,      1:l_nk) )
-
 
       flag_m_f = FLAG_LVL_M
       flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER
@@ -320,9 +355,6 @@
       mymeta= SET_GMMUSR_FLAG(meta, flag_m_f)
       istat= gmm_create('ADZ_WPXYZ',Adz_wpxyz, mymeta, flag_r_n)
       
-      istat= gmm_get('ADZ_PXYZM',Adz_pxyzm)
-      istat= gmm_get('ADZ_WPXYZ',Adz_pxyzm)
-
 !     Wind information at the lowest thermodynamic level
 !     from the physics surface layer scheme
       nullify(Adz_uslt,Adz_vslt)
@@ -388,6 +420,7 @@
       Adz_niter = Adz_itraj
       if ( .not. Rstri_rstn_L ) call adz_inittraj
 
+      if (ADZ_OD_L) then
       dim = l_ni*l_nj*l_nk
       Adz_MAX_MPI_OS_SIZE= dim/4 ! estimated that no more than 25% of total local upstream positions will be exported
 
@@ -469,6 +502,7 @@
       WINSIZE   = dim * 4       ! will allocate dim reals of 4 bytes each
       call MPI_WIN_ALLOCATE ( WINSIZE, DISP_UNIT, MPI_INFO_NULL, Adz_COMM, BASEcor, Adz_wincor, ierr)
       call C_F_POINTER ( BASEcor, Adz_cor, [dim] )
+      endif
 !      
 !---------------------------------------------------------------------
 !
@@ -488,5 +522,13 @@ contains
          real(kind=REAL64), intent(in) :: zx,za,zb,zc,zd,ze
          quiprod = ((zx-za)*(zx-zb)*(zx-zc)*(zx-zd)*(zx-ze))
       end function quiprod
+
+      real(kind=REAL64) function lag3(zz, z1, z2, z3, z4)
+      implicit none
+      real(kind=REAL64), intent(in)  :: zz, z1, z2, z3, z4
+      
+      lag3 = ( ((zz - z2) * (zz - z3) * (zz - z4) ) / &
+               ((z1 - z2) * (z1 - z3) * (z1 - z4) ) )
+      end function lag3
 
       end subroutine adz_set

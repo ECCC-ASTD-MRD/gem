@@ -1,0 +1,32 @@
+###PBS -l select=3:ncpus=80:mpiprocs=40:ompthreads=2:mem=160gb
+###PBS -l select=245:ncpus=80:mpiprocs=80:ompthreads=1:mem=160gb
+###PBS -N GY5km_175x56x1_245N
+#PBS -l select=350:ncpus=80:mpiprocs=40:ompthreads=2:mem=160gb
+#PBS -N GY5km_92x76x2_350N
+#PBS -l place=scatter
+#PBS -l walltime=1:00:0
+
+#if needed, export variables for your MPI environment
+#examples:
+export UCX_NET_DEVICES=mlx5_0:1 
+export I_MPI_HYDRA_BOOTSTRAP=ssh 
+export KMP_AFFINITY=compact # Allows pinning the threads
+
+#Load the compiler, libraries and architecture environment
+
+# cd to your cloned gem directory
+#cd [complete path to cloned github repository]/gem
+cd gem
+
+#source common setup to find GEM binaries, scripts
+. ./.common_setup intel
+
+# cd to installed work directory to run
+#cd work-[...]
+cd work-${OS_NAME}-${COMPILER_NAME}
+
+#look at file configurations/GY5km_P/TOPOLOGIES_iterative_solver for -ptopo selections
+runprep.sh -dircfg configurations/GY5km_P > list_prep_5km 2>&1
+runmod.sh -dircfg configurations/GY5km_P -ptopo 92x76x2 -inorder > bench_gy5km_P_sc5 2>&1
+
+#NOTE:if one wants to try the direct solver, look at TOPOLOGIES_direct_solver, and change the soft link for gem_settings.nml configurations/GY5km_P/cfg_0000 to point to gem_settings.nml_direct_solver

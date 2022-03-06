@@ -16,11 +16,15 @@
 !**   s/r set_dyn_opr - initialize operators and some constant parameters
 
       subroutine set_dyn_opr()
+      use adz_mem
+      use mem_tstp
+      use tr3d
       use dynkernel_options
       use geomh
       use glb_ld
       implicit none
-#include <arch_specific.hf>
+
+      integer :: dim,ntr
 !
 !     ---------------------------------------------------------------
 !
@@ -45,7 +49,14 @@
       call grid_area_mask (geomh_area_8,geomh_mask_8,geomh_area_mask_8,l_ni,l_nj)
 
       call adz_check_tracers()
-!
+
+      ! Common memory arena for temporary computations within OMP parallel regions
+      if (Dynamics_hauteur_L) then
+         dim= max(Adz_nij,(l_maxx-l_minx+1)*(l_maxy-l_miny+1)) * G_nk
+         ntr= max(3, Tr3d_ntrTRICUB_NT, Tr3d_ntrTRICUB_WP, Tr3d_ntrBICHQV_NT, Tr3d_ntrBICHQV_WP)
+         allocate ( WS1_8 (dim), WS1 (ntr*dim))
+      endif
+!     
 !     ---------------------------------------------------------------
 !
       return

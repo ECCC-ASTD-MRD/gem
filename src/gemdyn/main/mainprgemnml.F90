@@ -1,4 +1,3 @@
-      program mainprgemnml
-          call prgemnml
-      end program mainprgemnml
- 
+program mainprgemnml
+  call prgemnml
+end program mainprgemnml

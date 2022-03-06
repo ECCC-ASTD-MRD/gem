@@ -1,0 +1,106 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r pressure - Compute pressure and log of pressure on momentum
+!                 and thermodynamic levels and also surface pressure.
+!
+      subroutine pressure_hlt ( F_pm_4,F_pt_4,F_p0_4,F_log_pm_4,F_log_pt_4,F_pm_8,F_p0_8, &
+                            F_minx,F_maxx,F_miny,F_maxy,F_nk,F_time )
+      use dyn_fisl_options
+      use gem_options
+      use glb_ld
+      use gmm_vt0
+      use gmm_vt1
+      use metric
+      use tdpack
+      implicit none
+
+      !arguments
+      !---------
+      integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy,F_nk,F_time
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1), intent(out) :: F_pm_4,F_pt_4,&
+                                                                          F_log_pm_4,F_log_pt_4
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_4
+      real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1), intent(out) :: F_pm_8
+      real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_8
+
+      integer :: i, j, k, i0,in,j0,jn
+      real(kind=REAL64) :: log_pt
+      real, pointer, dimension(:,:,:) :: qt
+!     
+!---------------------------------------------------------------------
+!
+      if (F_time==1) qt => qt1
+      if (F_time==0) qt => qt0
+      i0= 1-G_halox ; in= l_ni+G_halox
+      j0= 1-G_haloy ; jn= l_nj+G_haloy
+
+!$omp do collapse(2)
+         do k=1,l_nk+1
+            do j= j0, jn
+               do i= i0, in
+                  F_pm_8    (i,j,k) = qt(i,j,k)/(rgasd_8*Cstv_Tstr_8)+lg_pstar_8(i,j,k)
+                  F_log_pm_4(i,j,k) = F_pm_8(i,j,k)
+               end do
+            end do
+         end do
+!$omp end do
+!$omp do collapse(2)
+         do k=1,l_nk
+            do j= j0, jn
+               do i= i0, in
+                  log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
+                  F_log_pt_4(i,j,k) = log_pt
+                  F_pt_4    (i,j,k) = exp(log_pt)
+               end do
+            end do
+         end do
+!$omp end do
+!$omp do collapse(2)
+         do k=1,l_nk
+            do j= j0, jn
+               do i= i0, in
+                  F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
+                  F_pm_4    (i,j,k) = F_pm_8(i,j,k)
+               end do
+            end do
+         end do
+!$omp end do
+
+         k= l_nk+1
+!$omp do
+         do j= j0, jn
+            do i= i0, in
+               F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
+               F_pm_4    (i,j,k) = F_pm_8    (i,j,k)
+               F_pt_4    (i,j,k) = F_pm_4    (i,j,k)
+               F_log_pt_4(i,j,k) = F_log_pm_4(i,j,k)
+            end do
+         end do
+!$omp end do
+
+!$omp do
+         do j= j0, jn
+            do i= i0, in
+               F_p0_8(i,j) = F_pm_8(i,j,l_nk+1)
+               F_p0_4(i,j) = F_pm_4(i,j,l_nk+1)
+            end do
+         end do
+!$omp end do
+!     
+!---------------------------------------------------------------------
+!
+      return
+      end subroutine pressure_hlt

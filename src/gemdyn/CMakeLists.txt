@@ -22,10 +22,6 @@ target_include_directories(gem PRIVATE
 # Adding specific flags for GEM
 include(${CMAKE_SOURCE_DIR}/src/flags-GEM.cmake)
 
-if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment")
-  set(EXTRA_LIBRARIES "-lhwloc")
-endif()
-
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_DEBUG AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_compile_options( gem PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )

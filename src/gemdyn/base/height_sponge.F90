@@ -30,6 +30,12 @@
 
 !----------------------------------------------------------------------
 
+      if (Dynamics_hauteur_L) then
+         call height_spongeH ()
+         return
+      endif
+      
+!$omp single
       call set_betav (betav_m, betav_t, st0, sls, l_minx, l_maxx,&
                       l_miny, l_maxy, l_nk)
 
@@ -40,6 +46,7 @@
       end if
 
       call apply (wt0, 0., betav_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+!$omp end single
 
 !----------------------------------------------------------------------
       return

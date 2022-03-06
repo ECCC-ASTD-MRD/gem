@@ -245,7 +245,9 @@
 
       call set_opr()
 
-      call set_params()
+      call set_params (.true., err(1))
+
+      call set_smago()
 
       call spn_init()
 
@@ -264,4 +266,4 @@
 !-------------------------------------------------------------------
 !
       return
-      end
+      end subroutine set_world_view

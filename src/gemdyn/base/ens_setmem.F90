@@ -44,21 +44,6 @@
 !
       if (.not.Ens_conf) return
 
-      istat = gmm_create(gmmk_mcutraj_s,mcutraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'mcutraj'
-      istat = gmm_create(gmmk_mcvtraj_s,mcvtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'mcvtraj'
-      istat = gmm_create(gmmk_mcwtraj_s,mcwtraj,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'mcwtraj'
-
-      istat = gmm_get(gmmk_mcutraj_s,mcutraj)
-      if (GMM_IS_ERROR(istat))write(*,6005)'mcutraj'
-      istat = gmm_get(gmmk_mcvtraj_s,mcvtraj)
-      if (GMM_IS_ERROR(istat))write(*,6005)'mcvtraj'
-      istat = gmm_get(gmmk_mcwtraj_s,mcwtraj)
-      if (GMM_IS_ERROR(istat))write(*,6005)'mcwtraj'
-      mcwtraj = 1.
-
       istat = gmm_create(gmmk_mcrhsint_s,mcrhsint,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcrhsint'
       istat = gmm_get(gmmk_mcrhsint_s,mcrhsint)

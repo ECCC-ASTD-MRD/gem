@@ -37,24 +37,24 @@
 !
       if (ctrl_testcases_adv_L) return
 
-      if (Lun_debug_L) write(Lun_out,1000)
-
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 
       if (trim(Sol_type_S) == 'DIRECT') then
+!$omp single
          call sol_direct ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
                            F_conv_L, offi, offj )
+!$omp end single
 
       else if (trim(Sol_type_S) == 'ITERATIVE_2D') then
+!$omp single
             call sol_iterative2d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
                                    F_conv_L, offi, offj )
+!$omp end single
       else ! 'ITERATIVE_3D'
             call sol_iterative3d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
                                    F_conv_L )
       end if
-
- 1000 format( 5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')
 !
 !     ---------------------------------------------------------------
 !

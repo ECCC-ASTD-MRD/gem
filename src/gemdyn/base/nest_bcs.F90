@@ -15,59 +15,21 @@
 
 !**s/r nest_bcs
 
-      subroutine nest_bcs ( F_rhsu, F_rhsv, Minx, Maxx, Miny, Maxy, Nk )
-      use mem_nest
+      subroutine nest_bcs ( F_dt_8, F_rhsu, F_rhsv, &
+                            Minx, Maxx, Miny, Maxy, Nk )
       use lam_options
-      use glb_ld
-      use cstv
       implicit none
-#include <arch_specific.hf>
+
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: &
                                                F_rhsu, F_rhsv
-      integer i,j,k
+      real(kind=REAL64), intent(IN) :: F_dt_8
 !
 !----------------------------------------------------------------------
 !
       if (.not. Lam_ctebcs_L) call nest_intt
 
-      call nest_bcs_t0 ()
-
-!**************************************
-! Apply HORIZONTAL BOUNDARY CONDITIONS
-!**************************************
-
-      if (l_west) then
-         do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-               F_rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
-         end do
-         end do
-      end if
-
-      if (l_east) then
-         do k=1,l_nk
-         do j= 1+pil_s, l_nj-pil_n
-            F_rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
-         end do
-         end do
-      end if
-
-      if (l_south) then
-         do k=1,l_nk
-         do i= 1+pil_w, l_ni-pil_e
-            F_rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
-         end do
-         end do
-      end if
-
-      if (l_north) then
-         do k=1,l_nk
-         do i= 1+pil_w, l_ni-pil_e
-            F_rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
-         end do
-         end do
-      end if
+      call nest_bcs_t0 ( F_dt_8, F_rhsu, F_rhsv, Minx,Maxx,Miny,Maxy,Nk )
 !
 !----------------------------------------------------------------------
 !

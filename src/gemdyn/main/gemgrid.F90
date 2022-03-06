@@ -19,6 +19,7 @@
       use step_options
       use mem_nest
       use glb_ld
+      use dynkernel_options
       use HORgrid_options
       use VERgrid_options
       use lam_options
@@ -44,7 +45,6 @@
       real, dimension(:,:), allocatable :: mask
       real(kind=REAL64), dimension(:), allocatable :: x_8, y_8
       real(kind=REAL64), parameter :: HALF_8  = 0.5d0
-
 !
 !----------------------------------------------------------------------
 !
@@ -54,7 +54,6 @@
       fn  = trim(Path_input_S)//'/model_settings.nml'
       Step_dt = 1.
       radians = .false.
-
 
       ofile = 'tape1'
       if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofile= 'tape2'
@@ -70,6 +69,11 @@
 
       unf = 0
       if (fnom (unf,fn, 'SEQ+OLD', 0) == 0) then
+         if (dynKernel_nml(unf) < 0) then
+            print *,'STOP: problem with NAMELIST &dyn_kernel'
+            print *,"Use checknml to verify: \'checknml dyn_kernel\'"
+            stop
+         endif
          if (HORgrid_nml(unf) < 0) then
             print *,'STOP: problem with NAMELIST &grid'
             print *,"Use checknml to verify: \'checknml grid\'"
@@ -124,10 +128,9 @@
       write(*,778)(i,ypos(i),i=1,G_nj)
 
 !Mass grid
-      call set_igs2 ( ip1,ip2, xpos,ypos,G_ni,G_nj             ,&
+      call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,G_ni,G_nj             ,&
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
                       1,G_ni,1,1,G_nj,1)
-
       Grd_ip3 = 0
 
       err = clib_remove(ofile)
@@ -149,10 +152,10 @@
       npack = -32
 
       err = fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, G_ni, 1, 1 , &
-                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
       err = fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, G_nj, 1 , &
-                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
       err = fstfrm(unf1)
@@ -259,14 +262,14 @@
       xpos(1:ni) = x_8(i0:in)
       ypos(1:nj) = y_8(j0:jn)
 
-      call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,ni,nj, &
+      call set_igs2 ( ip1,ip2, xpos,ypos,ni,nj, &
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,ni,1,1,nj,1)
       err= fstecr ( xpos,xpos, npack, unf4, 0, 0, 0, ni, 1, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
       err= fstecr ( ypos,ypos, npack, unf4, 0, 0, 0, 1, nj, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
       unf5 = 0
@@ -283,7 +286,7 @@
 
       err = fstecr ( mask,mask, npack, unf5, 0, 0, 0, G_ni, G_nj, 1, &
                      0,0,0,'X','MSKC',etk_ext,'Z'    , &
-                     ip1,ip2,Grd_ip3,0, 5, .true. )
+                     Grd_ip1,Grd_ip2,Grd_ip3,0, 5, .true. )
       deallocate (mask)
 
       err= fstfrm(unf4)

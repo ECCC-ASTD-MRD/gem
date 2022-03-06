@@ -16,6 +16,7 @@
 module physlb_mod
    use phy_status, only: phy_error_L
    use phy_options
+   use phyexe_mod, only: phyexe
    private
    public :: physlb1
 
@@ -23,57 +24,63 @@ module physlb_mod
 
 contains
 
-  subroutine physlb1 ( busdyn3D ,busper3D, busvol3D  ,&
-       dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic )
-    implicit none
-    integer :: dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-    real, dimension(:,:), pointer :: busdyn3D, busper3D, busvol3D
+   !/@*
+   subroutine physlb1(busdyn3D ,busper3D, busvol3D, &
+        dsiz, fsiz, vsiz, kount, ni, nj, nk, pslic)
+      implicit none
+      !@Author L. Spacek (May 2010)
+      !@Object The main physics subroutine
+      !@Arguments
+      
+      integer, intent(in) :: dsiz, fsiz, vsiz, kount, ni, nj, nk
+      integer, intent(inout) :: pslic
+      real, dimension(:,:), pointer, contiguous :: busdyn3D, busper3D, busvol3D
+      
+      !          - Input/Output -
+      ! busdyn3D  - dynamics input field
+      ! busper3D  - historic variables for the physics
+      !
+      !          - Output -
+      ! busvol3D  - physics tendencies and other output fields from the physics
+      !          - Input -
+      ! dsiz     dimension of d
+      ! fsiz     dimension of f
+      ! vsiz     dimension of v
+      ! kount    timestep number
+      ! ni       horizontal running length
+      ! nj       number of slices
+      ! nk       vertical dimension
+      !*@/
 
-    !@Author L. Spacek (May 2010)
-    !@Object The main physics subroutine
-    !@Arguments
-    !          - Input/Output -
-    ! busdyn3D  - dynamics input field
-    ! busper3D  - historic variables for the physics
-    !
-    !          - Output -
-    ! busvol3D  - physics tendencies and other output fields from the physics
-    !          - Input -
-    ! dsiz     dimension of d
-    ! fsiz     dimension of f
-    ! vsiz     dimension of v
-    ! kount    timestep number
-    ! ni       horizontal running length
-    ! nj       number of slices
-    ! nk       vertical dimension
+      integer :: jdo
+      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
+      !     ---------------------------------------------------------------
 
-    integer jdo
-    !
-    !     ---------------------------------------------------------------
-    !
-100 continue
+100   continue
 
 !$omp critical
-    pslic= pslic+1
-    jdo  = pslic
+      pslic = pslic+1
+      jdo   = pslic
 !$omp end critical
 
-    if ( jdo > nj ) return
+      if (jdo > nj) return
 
-    if (test_phy) then
-       call physeterror('physlb1', 'testphy_phyexe needs to be updated')
-!!$       call testphy_phyexe ( busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
-!!$         dsiz, fsiz, vsiz, jdo, kount, ni, nk )
-    else
-       call phyexe ( busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
-            dsiz, fsiz, vsiz, jdo, kount, ni, nk )
-    endif
-    if (phy_error_L) return
+      dbus(1:dsiz) => busdyn3D(:,jdo)
+      fbus(1:fsiz) => busper3D(:,jdo)
+      vbus(1:vsiz) => busvol3D(:,jdo)
+      
+      if (test_phy) then
+         call physeterror('physlb1', 'testphy_phyexe needs to be updated')
+!!$       call testphy_phyexe(dbus, fbus, vbus, &
+!!$         jdo, kount, ni, nk)
+      else
+         call phyexe(dbus, fbus, vbus, &
+              jdo, kount, ni, nk)
+      endif
+      if (phy_error_L) return
 
-    goto 100
-    !
-    !     ---------------------------------------------------------------
-    !
-  end subroutine physlb1
+      goto 100
+      !     ---------------------------------------------------------------
+   end subroutine physlb1
 
 end module physlb_mod

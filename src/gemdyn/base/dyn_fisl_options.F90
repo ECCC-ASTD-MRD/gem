@@ -188,6 +188,16 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Sol3D_krylov_S
    namelist /dyn_fisl_p/ Sol3D_krylov_S
 
+   !# 3D preconditioner for iterative solver
+    integer :: ovlpx = 4
+    namelist /dyn_fisl  / ovlpx
+    namelist /dyn_fisl_p/ ovlpx
+
+   !# 3D preconditioner for iterative solver
+    integer :: ovlpy = 4
+    namelist /dyn_fisl  / ovlpy
+    namelist /dyn_fisl_p/ ovlpy
+
    !# True => use the one-transpose solver
    logical :: Sol_one_transpose_L = .false.
    namelist /dyn_fisl  / Sol_one_transpose_L

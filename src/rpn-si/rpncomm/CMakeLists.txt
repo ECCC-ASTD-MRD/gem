@@ -10,3 +10,5 @@ file(GLOB CSRC *.c)
 file(GLOB FTNSRC *.F90)
 
 add_library (rpncomm STATIC ${FTNSRC} ${CSRC})
+
+target_compile_options( rpncomm PRIVATE $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-w> )

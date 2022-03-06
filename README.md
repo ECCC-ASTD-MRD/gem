@@ -1,142 +1,173 @@
-# Instructions in a nutshell
+# Introduction for benchmark-5.2.0-a13
 
-**The 5.2 branch is a development version.
-The 5.1 branch is the stable version, used in production at the Canadian
-Meteorological Centre.
-Benchmarks must be used with 5.2 version and benchmarks branch.**
+This document describes the process of building and running 3 GEM cases:
 
-See below for extended instructions and requirements. Further details are can be found in
-[GEM's manual](doc/GEM-manual.pdf) (PDF).
+* global benchmark Yin-Yang 15km grid pressure coordinate (GY15_P)
+* global benchmark Yin-Yang 5km grid pressure coordinate (GY5_P)
+* global test case Yin_Yang (GEM_cfgs)
 
-**Warning: benchmark-5.2.0-a7 branch uses a git submodule. Make sure you
-follow the instructions below for that branch**
+# Requirements
+* Fortran and C compilers
+* An MPI implementation such as OpenMPI (with development package),
+* OpenMP support (optional)
+* (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL)
+* fftw3 library (with development package),
+* basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
-For benchmarks, please install and compile GEM as indicated below, and read
-the file [README-ITQ.md](https://github.com/ECCC-ASTD-MRD/gem/blob/benchmarks/README-ITQ.md)
-for detailed instructions. 
+   ## Example on Cray XC50
+   
+   ```
+   export OMP_STACKSIZE=4G
+   export FOR_DISABLE_KMP_MALLOC=0
+   module unload intel/19.0.3.199
+   module load intel/19.0.5.281
+   module add craype-hugepages16M
+   module add cray-fftw/3.3.8.2
+   ```
+
+# Getting the Code
+```
+git clone https://github.com/ECCC-ASTD-MRD/gem gem
+cd gem
+git checkout benchmark-5.2.0-a13
+git submodule update --init --remote
+```
+
+# Getting the input data
+
+* gem_dbase (basic GEM data, required for all cases)
 
 ```
-    git clone https://github.com/ECCC-ASTD-MRD/gem.git
-    cd gem
-    git checkout benchmark-5.2.0-a7
-    git submodule update --init --remote
- 
-    # Download the data files required to run GEM and to run the benchmark
-    ./download-dbase.sh .
-    ./download-benchmark-GY15.sh .
+./download-dbase.sh .
+```
+* GY15kmP_dbase (data required for running GY15_P)
 
-    # Important: in order to set environment variables needed to run GEM, use the
-    # following setup file, after setting up your compiler environment:
-    . ./.common_setup gnu
-    or
-    . ./.common_setup intel
-	
-    # Create a build directory
-    # The build directory has very little value in itself and can be placed
-    # outside the source directory
-    mkdir -p build
-    cd build
+```
+./download-benchmark-GY15p.sh .
+```
+* GY5kmP_dbase (data required for running GY5_P)
 
-    # If the -DCMAKE_INSTALL_PREFIX=<path> option isn't given to cmake, the work directory
-    # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
-    # To compile: default compiler suite is GNU
+```
+./download-benchmark-GY5p.sh .
+```
+
+# Loading the requirements necessary as mentioned above (compiler,libraries,software)
+
+**Important**: in order to export the GEM environment variables, you must
+  source the setup script called .common_setup at this level:
+
+```
+. ./.common_setup gnu
+
+or
+
+. ./.common_setup intel
+```
+
+# Creating a build directory
+
+The build directory has very little value in itself and can be placed
+outside the source directory:
+
+```
+mkdir build
+cd build
+```
+
+# Building GEM with cmake
+```
     cmake ..
-    # or specify it with the option -DCOMPILER_SUITE=<compiler suite name (gnu|intel)>
-    cmake -DCOMPILER_SUITE=gnu ..
-    # or compile with Intel 
+   # or
     cmake -DCOMPILER_SUITE=intel ..
-    # NOTE, on some platforms(like XCs), do not use -DCOMPILER_SUITE, use:
+   # or
+    cmake -DCOMPILER_SUITE=gnu ..
+   # NOTE:on some platforms(like XCs), do not use -DCOMPILER_SUITE, just use:
     cmake ..
-    # Create an execution environment for GEM
+   #Compile and create the binaries and the work directory for executing GEM
     make -j work
-
     cd ..
-    cd work-${OS_NAME}-${COMPILER_NAME}
-    # Configure the model with one of the configurations
-    # and execute the model, for example:
-    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-
-	# use tools to see list the records in the output files
-    voir -iment RUNMOD/output/cfg0000/ ...
-    fststat -fst RUNMOD/output/cfg0000/ ...
 ```
 
-[SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
-2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
+# Running GEM
 
------------------------------------------------------------------
-# Extended instructions:
+* You should now have a work directory created in the form of :
+work-${OS_NAME}-${COMPILER_NAME}
+* runprep.sh prepares the input files in work-${OS_NAME}-${COMPILER_NAME}/PREP
+* runmod.sh runs the model in work-${OS_NAME}-${COMPILER_NAME}/RUNMOD
 
-## Requirements
+Now test your environment and your executables by running this test case:
 
-To compile and run GEM, you will need:
-- Fortran and C compilers
-- An MPI implementation such as OpenMPI (with development package),
-- Portable Hardware Locality library (hwloc) (with development package),
-- OpenMP support (optional)
-- BLAS library (with development package),
-- LAPACK library (with development package),
-- fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
+```
+    cd work-${OS_NAME}-${COMPILER_NAME}
+    runprep.sh -dircfg configurations/GEM_cfgs
+    runmod.sh -dircfg configurations/GEM_cfgs -ptopo 1x1x1
+    runmod.sh -dircfg configurations/GEM_cfgs -ptopo 2x2x2
 
-## Data for examples
-After having cloned or downloaded the git tar file of GEM from
-[github.com](https://github.com/ECCC-ASTD-MRD/gem), execute the script named
-**download-dbase.sh** or download and untar the data archive with the following
-link:
-[http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz](http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz)
+```
 
-## Compiler specifics
+* Note: -ptopo [Npex]x[Npey]x[OMP_threads] for each grid in Yin-Yang.
+* And other possible PE topologies are listed in gem/configurations/GEM_cfgs/TOPOLOGIES_possible
 
-### GNU compiler suite
-- By default GEM is configured to use gfortran and gcc compilers, and OpenMPI
-- Changes to the C and Fortran flags can be done in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
-- Make sure the compilers and libraries paths are set in the appropriate
-  environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
-  which will need to be adapted for your setup:
-    - On Ubuntu:
-        ```
-          export PATH=/usr/lib/openmpi/bin:${PATH}
-          export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
-        or
-          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
+* IF the small GEM_cfgs works, then tryout the larger configurations
+* Possible PE topologies are listed for each configuration
+* A sample PBS job is given to submit to the backend
 
-        ```
-    - On Fedora:
-        ```
-          export PATH=/usr/lib64/openmpi/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
-        ```
+* For the mini GEM test: look in gem/configurations/GEM_cfgs:
+1) file TOPOLOGIES_possible
+2) sample pbs file: myjobtest.pbs
 
-### Intel Compilers
+* For Global Yin-Yang 15km: look in gem/configurations/GY15km_P:
+1) file TOPOs_possible_for_GY15 (possible PE topologies)
+2) sample pbs file: myjobbench15.pbs
 
-- Changes to the C and Fortran flags can be done in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
-    - You may need to modify ```-march``` to generate code that can run on
-      your system
-- Make sure the compilers and libraries are in the appropriate
-  environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
-- If you are using Intel OneAPI instead of OpenMPI, make sure OpenMPI is not in 
-  your ```PATH``` environment variable
+* For Global Yin-Yang 5km: look in gem/configurations/GY5km_P:
+1) file TOPOLOGIES_iterative_solver (possible PE topologies for iterative solver)
+2) files TOPOLOGIES_direct_solver (possible PE topologies for direct solver)
+3) sample pbs file: myjobbench5.pbs
+ 
+* For each model run on the back end, one must load the compiler,libraries
+and activate the GEM environment at the level where GEM was cloned 
+```
+. ./.common_setup intel
+```
 
+* Then go to the working directory:
+```
+cd work-${OS_NAME}-${COMPILER_NAME}
 
-## Compiling and installing GEM
+cp ../configurations/GEM_cfgs/*pbs .
+cp ../configurations/GY15km_P/*pbs .
+cp ../configurations/GY5km_P/*pbs .
+```
 
-You can add extra CMake arguments such as```-DCMAKE_VERBOSE_MAKEFILE=ON```.
-You can also add ```-j``` to **make** to launch multiple compile tasks in
-parallel.
+* For GEM_cfgs, use the guide in gem/configurations/GEM_cfgs/TOPOLOGIES_possible
+to choose a PE topology, modify myjobtest.pbs accordingly and submit job:
+```
+qsub myjobtest.pbs
+```
 
-[OpenMP](https://www.openmp.org/) is enabled by default.  If you wish to build
-without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
-running **cmake**.
+* For GY15km_P, use the guide in gem/configurations/GY15km_P/TOPOs_possible_for_GY15 to choose a PE topology, modify myjobbench15.pbs accordingly and submit job:
+```
+qsub myjobbench15.pbs
+```
 
-The default compiler suite is GNU. If you want to compile with other compilers,
-add ```-DCOMPILER_SUITE=<compiler suite name (gnu|intel)>``` to the CMake
-command line.  This release has been tested with GNU and Intel compilers on
-Linux x86_64.  Other compilers have also been used in the past but have not been
-tested with the current release.  You will likely have to modify the *.cmake
-files in the **cmake_rpn/ec_compiler_presets/default/** folder.
+* For GY5km_P, use the guide in gem/configurations/GY5km_P/TOPOLOGIES_iterative_solver to choose a PE topology, modify myjobbench15.pbs accordingly and submit job:
+```
+qsub myjobbench5.pbs
+```
 
+* NOTE: iterative solver is faster for greater number of nodes and allows more choices for the PE topologies.
+
+# Results
+
+* Model outputs will be written into the directory **work-*/RUNMOD/output/cfg_0000/**
+* The execution listings will be located in the directory **work-*/**
+
+# Troubleshooting
+
+- If needed, changes to the C and Fortran flags can be done either in intel.cmake or
+  gnu.cmake file (according to the compilers you are using) in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64** folder.
+  
 - If you get error messages (for example, compiler or MPI/OpenMPI not
   found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
   variables contain the appropriate paths.  You can also add
@@ -148,90 +179,3 @@ files in the **cmake_rpn/ec_compiler_presets/default/** folder.
     - Make appropriate changes to the cmake files corresponding to the
       compilers you are using
     - Re-launch the commands starting at cmake
-
-The installation process will create a directory named after the operating system
-on which the compilation was executed, and the compiler you used
-(work-${OS_NAME}-${COMPILER_NAME}). For example
-*work-Fedora-33-x86_64-gnu-10.3.1* could be created in the main directory,
-and the following executables are installed in the *bin* sub-folder: 
-- cclargs_lite
-- checkdmpart
-- editfst
-- feseri
-- flipit
-- fstcomp
-- fststat
-- gem_monitor_end
-- gem_monitor_output
-- gemgrid
-- maingemdm
-- pgsm
-- prgemnml
-- prphynml
-- r.fstinfo
-- voir
-- yy2global
-
-
-## Running GEM
-
-Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
-example *work-Fedora-33-x86_64-gnu-10.3.1*
-
-```
-    cd work-${OS-NAME}_${COMPILER-NAME}
-    # Configure and execute the model for a specific case, for example:
-    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-```
-
-*runmod.sh*'s ```-ptopo``` argument can be used to specify the number of CPU to
-use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
-8 cpus for global Yin-Yang - see the [manual](doc/GEM-manual.pdf) for details)
-
-If you get an error message saying runprep.sh or gem_dbase is not found,
-make sure to set the environment variables using the setup file situated in
-the main directory: 
-*./.common_setup gnu* or *./.common_setup intel*
-
-An in-house script (**r.run_in_parallel**) is used to run the model. If you
-want to use another command, or if it doesn't work in your environment, edit
-the file *scripts/gem_mpirun.sh* to change the script, or move the file
-*scripts/r.run_in_parallel* so that the model is run with mpirun directly.
-
-
-## Working with model outputs
-
-The model stores its outputs in FST files.  The following tools can be used to perform
-various tasks on the output files:
-
-- ```voir``` lists the records in FST files:
-    ```
-        voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
-    ```
-
-- ```fststat``` produces statistical means of the records in a FST file:
-    ```
-        fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
-    ```
-
-- ```pgsm``` can be used to interpolate records to a different grid
-    ```
-        pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
-    ```
-
-- ```editfst``` enables basic record manipulations, such as copying to another
-    file.
-    ```
-        editfst -s <input FST> -d <output FST> -i <editfst.directives>
-    ```
-
-[SPI](http://eer.cmc.ec.gc.ca/software/SPI) is a scientific and meteorological
-virtual globe offering processing, analysis and visualization capabilities,
-with a user interface similar to Google Earth and NASA World Wind, developed by
-Environment Canada.
-
-[xrec](https://gitlab.com/gem-ec/xoas) is another visualization program which
-can be used to display 2D meteorological fields stored in the FST files,
-developed by Research Informatics Services, Meteorological Research Division,
-Environment and Climate Change Canada.

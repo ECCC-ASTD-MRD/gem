@@ -29,6 +29,7 @@ contains
       real(kind=REAL64)  :: xxx, yyy
       integer :: i, j, k, jj, ii
 
+      if (allocated(stencil)) deallocate (stencil)
       allocate (stencil(1+sol_pil_w:l_ni-sol_pil_e, 1+sol_pil_s:l_nj-sol_pil_n, 7, l_nk))
 
       xxx = - Cstv_hco2_8

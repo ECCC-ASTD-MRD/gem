@@ -22,7 +22,8 @@ module calcdiag
 contains
 
    !/@*
-   subroutine calcdiag1(tplus0, huplus0, qcplus0, d, f, v, dt, kount, ni, nk)
+   subroutine calcdiag1(tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m, &
+        dbus, fbus, vbus, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -37,10 +38,10 @@ contains
 !!!#include <arch_specific.hf>
       !@Arguments
       !          - Input/Output -
-      ! d        dynamic bus
-      ! f        permanent bus
+      ! dbus     dynamic bus
+      ! fbus     permanent bus
       !          - input -
-      ! v        volatile (output) bus
+      ! vbus     volatile (output) bus
       !          - input -
       ! dsiz     dimension of d
       ! fsiz     dimension of f
@@ -52,8 +53,8 @@ contains
 
       integer, intent(in) :: kount, ni, nk
       real, intent(in) :: dt
-      real, target :: d(:), f(:), v(:)
-      real, dimension(:,:), intent(in) :: tplus0,huplus0,qcplus0
+      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
+      real, dimension(:,:), intent(in) :: tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m
 
       !@Author B. Bilodeau Feb 2003
       !*@/
@@ -70,13 +71,13 @@ contains
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
 
-      logical :: lmoyhr, laccum, lreset, lavg, lkount0
+      logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec
       real(REAL64), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
-      real, dimension(ni,nk) :: presinv, t2inv, tiinv
+      real, dimension(ni,nk) :: presinv, t2inv, tiinv, lwcp, iwcp
       real, dimension(ni,nk-1) :: q_grpl, iiwc
 
 #define PHYPTRDCL
@@ -94,10 +95,16 @@ contains
       call init2nan(uvs, vmod, vdir, th_air, hblendm, ublend)
       call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec)
       call init2nan(enm, pwm, en0, pw0, enp, pwp, enr, pwr)
-      call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc)
+      call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc, lwcp, iwcp)
 
       lkount0 = (kount == 0)
       lmoyhr = (moyhr > 0)
+      lacchr = .false.
+      if (acchr > 0) then
+         lacchr = (mod(step_driver-1, acchr) == 0)
+      elseif (acchr == 0) then
+         lacchr = (step_driver-1 == 0)
+      endif
       laccum = (lmoyhr .or. dynout)
       lreset = .false.
       lavg   = .false.
@@ -211,9 +218,7 @@ contains
 
       !# Set precipitation accumulators to zero at the beginning and after every
       !  acchr hours, and by default (acchr=0) as the model step goes through 0.
-      IF_RESET_PRECIP: if (lkount0 .or. &
-           (acchr > 0 .and. mod((step_driver-1),acchr) == 0) .or. &
-           (acchr == 0 .and. step_driver-1 == 0)) then
+      IF_RESET_PRECIP: if (lkount0 .or. lacchr) then
 
          zasc(:)  = 0.
          zascs(:) = 0.
@@ -436,7 +441,10 @@ contains
                tempo    = ztlc(i) + ztlcm(i) + ztlcs(i) + ztsc(i) + ztscs(i)
                sol_conv = max(0., zfneige1d(i)*tempo)
                liq_conv = max(0., tempo-sol_conv)
-            elseif (pcptype == 'NIL') then
+            elseif (any(pcptype == (/ &
+                 'NIL    ', &
+                 'SPS_W19', &
+                 'SPS_FRC'/))) then
                sol_stra = ztss(i)
                liq_stra = ztls(i)
                sol_conv = ztsc(i) + ztscs(i)
@@ -550,32 +558,54 @@ contains
             return
          endif
          zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt + zfc_ag
-         zq2app = CHLC*zrt - zfv_ag
+         zq2app = CHLC*zrt - zflw
       endif Q1_BUDGET
 
       ! Compute conservation properties
       COMPUTE_EB: if (associated(zconephy)) then
          ! Conserved variable state calculations
-         istat = eb_en(enm,ztmoins,zhumoins,zqcmoins,zsigt,zpplus,nkm1)
-         istat1 = eb_pw(pwm,zhumoins,zqcmoins,zsigt,zpplus,nkm1)
+         istat = eb_en(enm,ztmoins,zhumoins,lwc0m,zsigt,zpplus,nkm1,F_qi=iwc0m)
+         istat1 = eb_pw(pwm,zhumoins,lwc0m,zsigt,zpplus,nkm1,F_qi=iwc0m)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing time-minus energy budget')
-           return
+            return
          endif
-         istat = eb_en(en0,tplus0,huplus0,qcplus0,zsigt,zpplus,nkm1)
-         istat1 = eb_pw(pw0,huplus0,qcplus0,zsigt,zpplus,nkm1)
+         istat = eb_en(en0,tplus0,huplus0,lwc0,zsigt,zpplus,nkm1,F_qi=iwc0)
+         istat1 = eb_pw(pw0,huplus0,lwc0,zsigt,zpplus,nkm1,F_qi=iwc0)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing post-dynamics energy budget')
             return
          endif
-         istat = eb_en(enp,ztplus,zhuplus,zqcplus,zsigt,zpplus,nkm1)
-         istat1 = eb_pw(pwp,zhuplus,zqcplus,zsigt,zpplus,nkm1)
+         select case(stcond)
+         case('MP_P3')
+            lwcp=zqcplus+zqrp
+            if (p3_ncat==1) then
+               iwcp=zqti1p
+            elseif (p3_ncat==2) then
+               iwcp=zqti1p+zqti2p
+            elseif (p3_ncat==3) then
+               iwcp=zqti1p+zqti2p+zqti3p
+            elseif (p3_ncat==4) then
+               iwcp=zqti1p+zqti2p+zqti3p+zqti4p
+            endif !p3_ncat
+         case('MP_MY2')
+            lwcp=zqcplus+zqrp
+            iwcp=zqiplus+zqnplus+zqgplus+zqhp
+         case('CONSUN')
+            lwcp=zqcplus
+            iwcp=0.0
+         case default
+            call physeterror('calcdiag', 'Condensation scheme no supported: '//stcond)
+            return
+         end select
+         istat = eb_en(enp,ztplus,zhuplus,lwcp,zsigt,zpplus,nkm1,F_qi=iwcp)
+         istat1 = eb_pw(pwp,zhuplus,lwcp,zsigt,zpplus,nkm1,F_qi=iwcp)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing post-physics energy budget')
             return
          endif
-         ! Conserved variable residual calculations
-         istat = eb_residual_en(enr,enm,en0,ztmoins,zhumoins,zqcmoins,dt,nkm1)
+         ! Conserved variable residual calculations(note: need lwc and iwc for calculation of Cpm near sfc)
+         istat = eb_residual_en(enr,enm,en0,ztmoins,zhumoins,lwc0m,dt,nkm1,F_qi=iwc0m)
          istat1 = eb_residual_pw(pwr,pwm,pw0,ztmoins,dt,nkm1)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing dynamics residuals')
@@ -583,20 +613,20 @@ contains
          endif
          zconedyn(:) = real(enr(:))
          zconqdyn(:) = real(pwr(:))
-         istat = eb_residual_en(enr,en0,enp,ztplus,zhuplus,zqcplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zfv_ag,F_rad=znetrad)
+         istat = eb_residual_en(enr,en0,enp,ztplus,zhuplus,lwcp,dt,nkm1, &
+              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zflw,F_rad=znetrad)
          istat1 = eb_residual_pw(pwr,pw0,pwp,ztplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_lhf=zfv_ag)
+              F_rain=zrt*RAUW,F_lhf=zflw)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing physics residuals')
             return
          endif
          zconephy(:) = real(enr(:))
          zconqphy(:) = real(pwr(:))
-         istat = eb_residual_en(enr,enm,enp,ztplus,zhuplus,zqcplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zfv_ag,F_rad=znetrad)
+         istat = eb_residual_en(enr,enm,enp,ztplus,zhuplus,lwcp,dt,nkm1, &
+              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zflw,F_rad=znetrad)
          istat1 = eb_residual_pw(pwr,pwm,pwp,ztplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_lhf=zfv_ag)
+              F_rain=zrt*RAUW,F_lhf=zflw)
          if (istat /= EB_OK .or. istat1 /= EB_OK) then
             call physeterror('calcdiag', 'Problem computing total model residuals')
             return
@@ -618,7 +648,10 @@ contains
 
          IF_RESET_0: if (lkount0 .or. lreset) then
 
+            zflwm(:)   = 0.
+            zfshm(:)   = 0.
             zfcmy(:)   = 0.0
+            zfvmm(:)   = 0.0
             zfvmy(:)   = 0.0
             zkshalm(:) = 0.0
             ziwvm(:)   = 0.0
@@ -690,6 +723,10 @@ contains
             zccnm(:,1:nk-1)  = 0.0
             ztim(:,1:nk-1)   = 0.0
             zt2m(:,1:nk-1)   = 0.0
+            ztgwdm(:,1:nk-1) = 0.0
+            zutofdm(:,1:nk-1) = 0.0
+            zvtofdm(:,1:nk-1) = 0.0
+            zttofdm(:,1:nk-1) = 0.0
             zugwdm(:,1:nk-1) = 0.0
             zvgwdm(:,1:nk-1) = 0.0
             zugnom(:,1:nk-1) = 0.0
@@ -802,7 +839,10 @@ contains
       IF_ACCUM_1: if (laccum .and. .not.lkount0) then
 
          do i = 1, ni
+            zflwm    (i) = zflwm   (i) + zflw(i) 
+            zfshm    (i) = zfshm   (i) + zfsh(i) 
             zfcmy    (i) = zfcmy   (i) + zfc_ag(i)
+            zfvmm    (i) = zfvmm   (i) + zfvap_ag(i)
             zfvmy    (i) = zfvmy   (i) + zfv_ag(i)
             zkshalm  (i) = zkshalm (i) + zkshal(i)
             ziwvm    (i) = ziwvm   (i) + ziwv  (i)
@@ -813,7 +853,7 @@ contains
             ztiim    (i) = ztiim   (i) + ztii  (i)
             ztiwpm   (i) = ztiwpm  (i) + ztiwp (i)
             if (etccdiag) then
-               ztccm(i) = ztccm(i)  + ztcc(i)
+               ztccm(i) = ztccm(i) + ztcc(i)
                ztslm(i) = ztslm(i) + ztcsl(i)
                ztsmm(i) = ztsmm(i) + ztcsm(i)
                ztshm(i) = ztshm(i) + ztcsh(i)
@@ -829,7 +869,10 @@ contains
             zuvsavg  (i) =     zuvsavg  (i) + uvs     (i)
             zuvsmax  (i) = max(zuvsmax  (i) , uvs     (i))
             if (lavg) then
+               zflwm    (i) = zflwm    (i) * moyhri
+               zfshm    (i) = zfshm    (i) * moyhri
                zfcmy    (i) = zfcmy    (i) * moyhri
+               zfvmm    (i) = zfvmm    (i) * moyhri
                zfvmy    (i) = zfvmy    (i) * moyhri
                zkshalm  (i) = zkshalm  (i) * moyhri
                ziwvm    (i) = ziwvm    (i) * moyhri
@@ -1019,6 +1062,10 @@ contains
                zccnm   (i,k) = zccnm   (i,k) + zftot(i,k)
                ztim    (i,k) = ztim    (i,k) + zti  (i,k)
                zt2m    (i,k) = zt2m    (i,k) + zt2  (i,k)
+               ztgwdm (i,k)  = ztgwdm (i,k)  + ztgwd(i,k)
+               zutofdm (i,k) = zutofdm (i,k) + zutofd(i,k)
+               zvtofdm (i,k) = zvtofdm (i,k) + zvtofd(i,k)
+               zttofdm (i,k) = zttofdm (i,k) + zttofd(i,k)
                zugwdm  (i,k) = zugwdm  (i,k) + zugwd(i,k)
                zvgwdm  (i,k) = zvgwdm  (i,k) + zvgwd(i,k)
                zugnom  (i,k) = zugnom  (i,k) + zugno(i,k)
@@ -1061,6 +1108,10 @@ contains
                   zccnm   (i,k) = zccnm   (i,k) * moyhri
                   ztim    (i,k) = ztim    (i,k) * moyhri
                   zt2m    (i,k) = zt2m    (i,k) * moyhri
+                  ztgwdm (i,k) = ztgwdm (i,k) * moyhri
+                  zutofdm (i,k) = zutofdm (i,k) * moyhri
+                  zvtofdm (i,k) = zvtofdm (i,k) * moyhri
+                  zttofdm (i,k) = zttofdm (i,k) * moyhri
                   zugwdm  (i,k) = zugwdm  (i,k) * moyhri
                   zvgwdm  (i,k) = zvgwdm  (i,k) * moyhri
                   zugnom  (i,k) = zugnom  (i,k) * moyhri
@@ -1200,9 +1251,7 @@ contains
 
       !Set accumulators to zero at the beginning and after every acchr hours,
       !and by default (acchr=0) as the model step goes through 0.
-      IF_RESET_ACCUMULATORS: if (lkount0 .or. &
-           (acchr > 0 .and. mod((step_driver-1),acchr) == 0) .or. &
-           (acchr == 0 .and. step_driver-1 == 0)) then
+      IF_RESET_ACCUMULATORS: if (lkount0 .or. lacchr) then
          zrainaf(:) = 0.
          zsnowaf(:) = 0.
          if (radia /= 'NIL' .or. fluvert == 'SURFACE') then

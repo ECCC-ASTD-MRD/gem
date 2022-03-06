@@ -35,8 +35,16 @@
       call low2up  (Sol3D_precond_S ,dumc_S)
       Sol3D_precond_S = trim(dumc_S)
 
-      isol_d=1.0d0
-      isol_i=0.0d0
+      FISLH_LHS_metric_L = .true.
+      if (trim(Sol_type_S) == 'DIRECT') FISLH_LHS_metric_L = .false.
+
+      isol_i = 1.0d0
+      isol_d = 0.0d0
+
+      if (.not. FISLH_LHS_metric_L) then
+         isol_d = 1.0d0
+         isol_i = 0.0d0
+      endif
 
       select case(Sol_type_S)
       case('DIRECT')
@@ -45,9 +53,8 @@
             write(Lun_out, *) 'ONE-TRANSPOSE NOT ALLOWED UNLESS runmod.sh -along_Y'
             Sol_one_transpose_L = .false.
          endif
+
       case default
-         isol_i=1.0d0
-         isol_d=0.0d0
          select case(Sol_type_S)
             case('ITERATIVE_3D')
                if (Sol3D_krylov_S /= 'FGMRES' .and. Sol3D_krylov_S /= 'FBICGSTAB') then

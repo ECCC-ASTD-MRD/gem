@@ -1,0 +1,30 @@
+###PBS -l select=3:ncpus=80:mpiprocs=40:ompthreads=2:mem=160gb
+###PBS -l select=245:ncpus=80:mpiprocs=80:ompthreads=1:mem=160gb
+#PBS -l select=1:ncpus=80:mpiprocs=16:ompthreads=5:mem=160gb
+#PBS -N GEM_cfgs_4x2x5_1N
+#PBS -l place=scatter
+#PBS -l walltime=0:30:0
+
+#if needed, export variables for your MPI environment
+#examples:
+export UCX_NET_DEVICES=mlx5_0:1 
+export I_MPI_HYDRA_BOOTSTRAP=ssh 
+export KMP_AFFINITY=compact # Allows pinning the threads
+
+#Load the compiler, libraries and architecture environment
+
+# cd to your cloned gem directory
+#cd [complete path to cloned github repository]/gem
+cd gem
+
+#source common setup to find GEM binaries, scripts
+. ./.common_setup intel
+
+# cd to installed work directory to run
+#cd work-[...]
+cd work-${OS_NAME}-${COMPILER_NAME}
+
+#Run mini test on backend
+runprep.sh -dircfg configurations/GEM_cfgs > list_prep_sc5 2>&1
+runmod.sh -dircfg configurations/GEM_cfgs -ptopo 4x2x5 -inorder > list_mod_sc5 2>&1
+

@@ -20,7 +20,6 @@ module dynkernel_options
    !# Main selector for dynamical kernel
    !# * "DYNAMICS_FISL_P" : Fully implicit SL in pressure
    !# * "DYNAMICS_FISL_H" : Fully implicit SL in height
-   !# * "DYNAMICS_EXPO_H" : Exponential integrators in height
    character(len=32) :: Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
    namelist /dyn_kernel/ Dynamics_Kernel_S
 
@@ -32,6 +31,10 @@ module dynkernel_options
    !# True-> auto barotropic option
    logical :: Schm_autobar_L = .false.
    namelist /dyn_kernel/ Schm_autobar_L
+
+   !# True-> Implicit metric terms in the LHS (needs 3D iterative solver)
+   !# False-> Simplified approach (allows both direct and iterative solvers)
+   logical :: FISLH_LHS_metric_L = .false.
 
    logical :: Dynamics_hauteur_L, Dynamics_FISL_L, Dynamics_autobar_L
 
