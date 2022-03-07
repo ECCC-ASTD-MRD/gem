@@ -223,7 +223,6 @@ contains
       istat = clib_toupper(rad_cond_rei)
       istat = clib_toupper(rad_cond_rew)
       istat = clib_toupper(rad_conserve)
-      istat = clib_toupper(radfiles)
       istat = clib_toupper(radia)
       istat = clib_toupper(stcond)
       istat = clib_toupper(tofd)
@@ -397,7 +396,7 @@ contains
 
 
    function phy_nml_post_init() result(m_istat)
-      use mixing_length, only: ml_init,ml_put,ML_OK
+      use mixing_length, only: ml_init,ml_put
       implicit none
       integer :: m_istat
 
@@ -420,12 +419,12 @@ contains
       if (debug_mem_L) init2nan_L = .true.
 
       !# Mixing length module init
-      if (ml_init(longmel, ilongmel) /= ML_OK) then
+      if (ml_init(longmel, ilongmel) /= PHY_OK) then
          call msg_toall(MSG_ERROR,'(phy_nml) Problem with ml_init')
          return
       endif
       istat = ml_put('mlblac_max',pbl_mlblac_max)
-      if (istat /= ML_OK) then
+      if (istat /= PHY_OK) then
          call msg(MSG_ERROR,'(phy_nml) cannot configure mixing length module')
          return
       endif

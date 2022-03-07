@@ -104,7 +104,7 @@ contains
             hght = 0.5*(hghtm(i,k)+hghtt(i,k))
             zp = (hghtm(i,k)-HGHT_NEARSFC)**2/(hghtt(i,k)-HGHT_NEARSFC)
             rib = zp*2*GRAV*(svhbl-svn(i)) / &
-                 ((svhbl+svn(i)-GRAV*hghtt(i,k)-GRAV*HGHT_NEARSFC)*shrsq + BETA*(ustar(i)**2))
+                 ((svhbl+svn(i)-GRAV*hghtt(i,k)-GRAV*HGHT_NEARSFC)*(shrsq + BETA*ustar(i)**2))
             k = k-1
          enddo
          if (k == 0) then

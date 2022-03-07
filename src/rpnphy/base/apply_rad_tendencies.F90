@@ -25,7 +25,8 @@ contains
    subroutine apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
-      use energy_budget, only: eb_en, eb_pw, eb_residual_en, eb_residual_pw, eb_conserve_en, EB_OK
+      use phybudget, only: pb_compute, pb_conserve, pb_residual
+      use phy_status, only: PHY_OK
       use phy_options
       use phybus
       use tendency, only: apply_tendencies
@@ -49,12 +50,12 @@ contains
 #include "phymkptr.hf"
 
       ! Local variables
-      integer ::  istat, istat2, k
+      integer :: k
       real, dimension(ni) :: tradmult
       real, dimension(ni,nkm1) :: qrad, mtrad
       real, dimension(:), pointer, contiguous :: zconerad, zconqrad, zps, ztdmask, znetrad
       real, dimension(:,:), pointer, contiguous :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, zmrk2
-      real(REAL64), dimension(ni) :: l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_pw0
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
       if (timings_L) call timing_start_omp(422, 'apply_rad_td', 46)
@@ -85,30 +86,24 @@ contains
 
       call init2nan(tradmult)
       call init2nan(qrad, mtrad)
-      call init2nan(l_en0, l_pw0, l_en, l_pw, l_enr, l_pwr)
+      call init2nan(l_en0, l_pw0)
 
-      ! Pre-scheme state for energy budget
-      if (associated(zconerad)) then
-         istat  = eb_en(l_en0, ztplus, zqplus, zqcplus, zsigt, zps, nkm1)
-         istat2 = eb_pw(l_pw0, zqplus, zqcplus, zsigt, zps, nkm1)
-         if (istat /= EB_OK .or. istat2 /= EB_OK) then
-            call physeterror('apply_rad_td', 'Problem computing preliminary energy budget for '//trim(radia))
-            return
-         endif
+      ! Pre-radiation state for budget
+      if (pb_compute(zconerad, zconqrad, l_en0, l_pw0, &
+           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         call physeterror('apply_rad_tendencies', &
+              'Problem computing preliminary budget for '//trim(radia))
+         return
       endif
 
-      ! Impose conservation by adjustment of moisture and temperature tendencies
-      TENDENCY_ADJUSTMENT: if (rad_conserve == 'TEND') then
-
-         ! Apply temperature tendency correction for liquid water static energy conservation
-         qrad = 0.
-         istat = eb_conserve_en(ztrad, ztrad, qrad, ztplus, zqplus, zqcplus, zsigt, zps, nkm1, F_rad=znetrad)
-         if (istat /= EB_OK) then
-            call physeterror('apply_rad_td', 'Problem correcting for liquid water static energy conservation')
-            return
-         endif
-
-      endif TENDENCY_ADJUSTMENT
+      ! Adjust radiation tendencies to impose conservation
+      qrad = 0.
+      if (pb_conserve(rad_conserve, ztrad, qrad, dbus, fbus, vbus, &
+           F_rad=znetrad) /= PHY_OK) then
+         call physeterror('apply_rad_tendencies', &
+              'Cannot correct conservation for '//trim(radia))
+         return
+      endif
 
       ! Apply tendency perturbation on request
       tradmult = ens_spp_get('trad_mult', zmrk2, default=1.)
@@ -119,22 +114,12 @@ contains
       ! Apply radiative tendencies
       call apply_tendencies(ztplus, mtrad, ztdmask, ni, nk, nkm1)
 
-      ! Post-scheme energy budget analysis
-      if (associated(zconerad)) then
-         ! Compute post-scheme state
-         istat  = eb_en(l_en, ztplus, zqplus, zqcplus, zsigt, zps, nkm1)
-         istat2 = eb_pw(l_pw, zqplus, zqcplus, zsigt, zps, nkm1)
-         if (istat == EB_OK .and. istat2 == EB_OK) then
-            ! Compute residuals
-            istat  = eb_residual_en(l_enr, l_en0, l_en, ztplus, zqplus, zqcplus, delt, nkm1, F_rad=znetrad)
-            istat2 = eb_residual_pw(l_pwr, l_pw0, l_pw, ztplus, delt, nkm1)
-         endif
-         if (istat /= EB_OK .or. istat2 /= EB_OK) then
-            call physeterror('apply_rad_td', 'Problem computing final energy budget for '//trim(radia))
-            return
-         endif
-         zconerad(:) = real(l_enr)
-         zconqrad(:) = real(l_pwr)
+      ! Post-radiation budget analysis
+      if (pb_residual(zconerad, zconqrad, l_en0, l_pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_rad=znetrad) /= PHY_OK) then
+         call physeterror('apply_rad_tendencies', &
+              'Problem computing final budget for '//trim(radia))
+         return
       endif
 
       if (timings_L) call timing_stop_omp(422)

@@ -68,8 +68,6 @@
       !
 
       integer :: i, j, k, k0, k1, nk, ii, jj, ierr
-      logical, save :: first_time = .true.
-
       integer :: initer, outiter, nextit, it
       real(kind=REAL64) :: relative_tolerance, r0
       real(kind=REAL64) :: norm_residual, nu, t
@@ -132,12 +130,6 @@
 
       vv = 0.d0
       wint_82 = 0.d0
-
-      ! Residual of the initial iterate
-      ! if(first_time) then
-      !   call matvec3d_init()
-      !   first_time=.false.
-      !endif
 
       call matvec3D ( solution, work_space,ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy)
 
@@ -216,11 +208,10 @@
 
             call pre_jacobi3D2 (wint_82(ii0:iin,jj0:jjn,:,initer),vv(ii0:iin,jj0:jjn,:,initer), &
                                         ii0,iin,jj0,jjn,ni_val,nj_val,l_nk)
-!!
+!
 
             call matvec3D (wint_82(:,:,:,initer),vv(:,:,:,nextit),imin,imax,jmin,jmax)
 
-!            call mat_vecs3D_H3 ( wint_82(:,:,:,initer),vv(:,:,:,nextit),imin,imax, jmin, jmax ,l_ni,l_nj,l_nk)
 
             ! Modified Gram-Schmidt from Świrydowicz et al. (2018)
 

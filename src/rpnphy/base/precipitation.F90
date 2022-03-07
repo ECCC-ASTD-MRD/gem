@@ -22,10 +22,10 @@ module precipitation
 contains
 
    !/@*
-   subroutine precipitation4(tplus0, huplus0, dbus, fbus, vbus, &
-        dt, ni, nk, kount, trnch)
+   subroutine precipitation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: RAUW
+      use shal_ktrsnt, only: sc_ktrsnt
       use cnv_main, only: cnv_main4
       use condensation, only: condensation4
       use phy_status, only: phy_error_L
@@ -51,7 +51,6 @@ contains
 
       integer, intent(in) :: ni,nk,kount,trnch
       real,    intent(in) :: dt
-      real, dimension(ni,nk), intent(inout) :: tplus0,huplus0
       real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author L.Spacek, November 2011
@@ -69,8 +68,7 @@ contains
       real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
-           zmqce,zprctnm
-      logical :: lkfbe
+           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins
       !----------------------------------------------------------------
 
       ! Early return moist processes are inactive
@@ -84,12 +82,15 @@ contains
       MKPTR2D(zhucond, hucond, vbus)
       MKPTR2D(zmqe, mqe, vbus)
       MKPTR2D(zhumoins, humoins, dbus)
+      MKPTR2D(zhuplus, huplus, dbus)
       MKPTR2D(zhushal, hushal, vbus)
       MKPTR1D(zpmoins, pmoins, fbus)
       MKPTR2D(zprcten, prcten, fbus)
       MKPTR2D(zprctnm, prctnm, vbus)
       MKPTR2D(zmqce, mqce, vbus)
+      MKPTR2D(zqcmoins, qcmoins, dbus)
       MKPTR2D(zqcphytd, qcphytd, vbus)
+      MKPTR2D(zqcplus, qcplus, dbus)
       MKPTR2D(zqrphytd, qrphytd, vbus)
       MKPTR1D(zrckfc, rckfc, fbus)
       MKPTR2D(zsigt, sigt, dbus)
@@ -103,35 +104,41 @@ contains
       MKPTR1D(ztlcs, tlcs, vbus)
       MKPTR1D(ztls, tls, fbus)
       MKPTR2D(zmte, mte, vbus)
+      MKPTR2D(ztplus, tplus, dbus)
       MKPTR1D(ztsc, tsc, fbus)
       MKPTR1D(ztscs, tscs, vbus)
       MKPTR2D(ztshal, tshal, vbus)
       MKPTR1D(ztss, tss, fbus)
 
-      call init2nan(t0, q0, qc0, press)
-
       ! Local initialization
       nkm1 = nk-1
-      lkfbe  = any(convec == (/ &
-           'BECHTOLD', &
-           'KFC     ', &
-           'KFC2    ', &
-           'KFC3    ' &
-           /))
+      call init2nan(t0, q0, qc0, press)
+      
+      ! Run "special" pre-convection shallow scheme
+      call sc_ktrsnt(dbus, fbus, vbus, dt, ni, nkm1)
+      if (phy_error_L) return
 
+      ! Store current state
+      t0(:,:) = ztplus(:,:)
+      q0(:,:) = zhuplus(:,:)
+      where (zhuplus(:,:) < 0.) zhuplus(:,:) = 0.
+      if (stcond /= 'NIL' ) then
+         qc0(:,:) = zqcplus(:,:)
+         where(zqcplus(:,:) < 0.) zqcplus(:,:) = 0.
+         where(zqcmoins(:,:) < 0.) zqcmoins(:,:) = 0.
+      else
+         qc0(:,:) = 0.
+      endif
+      
       ! Run deep and shallow convective schemes
       if (timings_L) call timing_start_omp(435, 'cnv_main', 46)
-      call cnv_main4(dbus, fbus, vbus, &
-           t0, q0, qc0, dt, ni, nk, &
-           kount)
+      call cnv_main4(dbus, fbus, vbus, dt, ni, nk, kount)
       if (timings_L) call timing_stop_omp(435)
       if (phy_error_L) return
 
       ! Run the gridscale condensation / microphysics scheme
       if (timings_L) call timing_start_omp(440, 'condensation', 46)
-      call condensation4(dbus, fbus, vbus, &
-           tplus0, t0, huplus0, q0, qc0, &
-           dt, ni, nk, kount, trnch)
+      call condensation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
       if (timings_L) call timing_stop_omp(440)
       if (phy_error_L) return
 
@@ -160,29 +167,42 @@ contains
       ! Sum of convective and stratiform 
       ztcond(:,1:nkm1) = zcte(:,1:nkm1) + zste(:,1:nkm1) + zmte(:,1:nkm1)
       zhucond(:,1:nkm1) = zcqe(:,1:nkm1) + zsqe(:,1:nkm1) + zmqe(:,1:nkm1)
-      if (lkfbe.and.stcond(1:3)=='MP_') then !Use only convective liquid fraction for MP schemes
-         zqcphytd(:,1:nkm1) = zprcten(:,1:nkm1) + zsqce(:,1:nkm1) + zprctnm(:,1:nkm1)
-      else
-         zqcphytd(:,1:nkm1) = zcqce(:,1:nkm1) + zsqce(:,1:nkm1) + zmqce(:,1:nkm1)
+      if (associated(zqcphytd)) zqcphytd(:,1:nkm1) = 0.
+      if (stcond(1:3)=='MP_') then
+         ! Use only convective liquid fraction for MP schemes
+         if (associated(zprcten)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zprcten(:,1:nkm1)
+         if (associated(zsqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zsqce(:,1:nkm1)
+         if (associated(zprctnm)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zprctnm(:,1:nkm1)
+      elseif (associated(zqcphytd)) then
+         ! Use full convective condensate tendency for condensation schemes
+         if (associated(zcqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zcqce(:,1:nkm1)
+         if (associated(zsqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zsqce(:,1:nkm1)
+         if (associated(zmqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zmqce(:,1:nkm1)
       endif
-      zqrphytd(:,1:nkm1) = zsqre(:,1:nkm1)
+      if (associated(zqrphytd)) zqrphytd(:,1:nkm1) = zsqre(:,1:nkm1)
       ! note: zqcphytd does not contain shal contributions; ok because will be re-calculated in tendency
-
 
       ! Note: at end of condensation we do: if (.not.any(stcond == (/'MP_MY2','MP_P3 '/))) then 
       ! tplus=t0,huplus=hu0,qcp=q0 i.e. go back to thermo state AFTER KTRSNT
       ! must now re-apply masked(if climat .or.stratos) conv and cond tendencies
-      ! must NOT re-apply if shal == ktrsnt
-      if (.not.any(stcond == (/'MP_MY2','MP_P3 '/))) then
+      ! must NOT re-apply shallow conv tendencies if shal == ktrsnt
+      if (.not.any(stcond == (/'MP_MY2', 'MP_P3 '/))) then
+         ztplus(:,1:nkm1) = t0(:,1:nkm1)
+         zhuplus(:,1:nkm1) = q0(:,1:nkm1)
          call apply_tendencies(dbus,vbus,fbus,tplus,tcond,ni,nk,nkm1)
          call apply_tendencies(dbus,vbus,fbus,huplus,hucond,ni,nk,nkm1)
-         call apply_tendencies(dbus,vbus,fbus,qcplus,qcphytd,ni,nk,nkm1)
+         if (associated(zqcplus)) then
+            zqcplus(:,1:nkm1) = qc0(:,1:nkm1)
+            call apply_tendencies(dbus,vbus,fbus,qcplus,qcphytd,ni,nk,nkm1)
+         endif
         ! Apply BECHTOLD shallow convective tendencies 
         if (conv_shal == 'BECHTOLD') then
            call apply_tendencies(dbus,vbus,fbus,tplus,tshal,ni,nk,nkm1)
            call apply_tendencies(dbus,vbus,fbus,huplus,hushal,ni,nk,nkm1)
-           call apply_tendencies(dbus,vbus,fbus,qcplus,prctns,ni,nk,nkm1)
-           call apply_tendencies(dbus,vbus,fbus,qcplus,pritns,ni,nk,nkm1)
+           if (associated(zqcplus)) then
+              call apply_tendencies(dbus,vbus,fbus,qcplus,prctns,ni,nk,nkm1)
+              call apply_tendencies(dbus,vbus,fbus,qcplus,pritns,ni,nk,nkm1)
+           endif
         endif
       endif
 

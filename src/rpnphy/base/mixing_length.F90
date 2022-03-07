@@ -17,6 +17,7 @@
 module mixing_length
    ! Container for calculation and manipulation of mixing and dissipation length scales in the PBL.
    use, intrinsic :: iso_fortran_env, only: INT64
+   use phy_status, only: PHY_OK, PHY_ERROR
    use tdpack, only: GRAV, KARMAN, PI, DELTA, CAPPA
    implicit none
 !!!#include <arch_specific.hf>
@@ -43,7 +44,6 @@ module mixing_length
    end type closureMap
    
    ! API parameters
-   integer, parameter, public :: ML_OK=0,ML_ERR=1  !Package return statuses
    real, parameter, public :: ML_LMDA=200.         !Maximum stable asymptotic mixing length for Blackadar (1962) estimate
    real, parameter, public :: ML_LMDAS=40.         !Minimum stable asymptotic mixing length for Lock (2007) estimate
    real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
@@ -87,7 +87,7 @@ contains
     integer :: status                                      !Return status of function
 
     ! Initialize return value
-    status = ML_ERR
+    status = PHY_ERROR
 
     ! Set initialization status
     if (initialized) then
@@ -98,10 +98,10 @@ contains
     
     ! Map closure name to key
     imlen = -1
-    if (ml_key(mlen, imlen) /= ML_OK) return
+    if (ml_key(mlen, imlen) /= PHY_OK) return
 
     ! Successful completion of subprogram
-    status = ML_OK
+    status = PHY_OK
     
   end function ml_init
 
@@ -122,7 +122,7 @@ contains
     character(len=ML_LONG) :: ucmlen
     
     ! Initialize return value
-    status = ML_ERR
+    status = PHY_ERROR
 
     ! Check initialization status
     if (.not.initialized) then
@@ -153,7 +153,7 @@ contains
     endif
        
     ! Successful completion of subprogram
-    status = ML_OK
+    status = PHY_OK
 
   end function ml_key
     
@@ -173,7 +173,7 @@ contains
       character(len=len_trim(val)) :: ucval
 
       ! Initialize return value
-      status = ML_ERR
+      status = PHY_ERROR
 
       ! Check initialization status
       if (.not.initialized) then
@@ -198,7 +198,7 @@ contains
       end select
 
       ! Successful completion of subprogram
-      status = ML_OK
+      status = PHY_OK
 
    end function ml_put_s
    
@@ -251,7 +251,7 @@ contains
      logical, dimension(size(t,dim=1),size(t,dim=2)) :: boujo_valid
      
      ! Set return status
-     stat = ML_ERR
+     stat = PHY_ERROR
 
      ! Check initialization status
      if (.not.initialized) then
@@ -291,17 +291,17 @@ contains
            boujo_valid(:,:) = .true.
         endwhere
         if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, &
-             mask=boujo_valid, init=.false.) /= ML_OK) then
+             mask=boujo_valid, init=.false.) /= PHY_OK) then
            call physeterror('moistke', 'error returned by B-L mixing length estimate')
            return
         endif
-        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= ML_OK) then
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= PHY_OK) then
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
         endif
         blend_hght(:,:nk-1) = gzmom(:,2:)
         blend_hght(:,nk) = 0.
-        if (ml_blend(zn_turboujo, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
+        if (ml_blend(zn_turboujo, zn_blac, zn_boujo, blend_hght, s, ps) /= PHY_OK) then
            call physeterror('moistke','error returned by mixing length blending')
            return
         endif
@@ -313,7 +313,7 @@ contains
         do k=1,nk
            zn_turboujo(:,k) = zn_turboujo(:,k) * mlmult(:)
         enddo        
-        if (ml_tfilt(zn_turboujo, znold, tau, kount) /= ML_OK) then
+        if (ml_tfilt(zn_turboujo, znold, tau, kount) /= PHY_OK) then
            call physeterror('moistke', 'error returned by mixing length time filtering')
            return
         endif
@@ -345,11 +345,11 @@ contains
            enddo
         enddo
         if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, &
-             mask=boujo_valid, init=.false.) /= ML_OK) then
+             mask=boujo_valid, init=.false.) /= PHY_OK) then
            call physeterror('moistke', 'error returned by B-L mixing length estimate')
            return
         endif
-        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= ML_OK) then
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= PHY_OK) then
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
         endif
@@ -360,7 +360,7 @@ contains
         endwhere
         blend_hght(:,:nk-1) = gzmom(:,2:)
         blend_hght(:,nk) = 0.
-        if (ml_blend(zn_boujo, zn_blac, zn_boujo, blend_hght, s, ps) /= ML_OK) then
+        if (ml_blend(zn_boujo, zn_blac, zn_boujo, blend_hght, s, ps) /= PHY_OK) then
            call physeterror('moistke','error returned by mixing length blending')
            return
         endif
@@ -368,7 +368,7 @@ contains
            zn_boujo(:,k) = zn_boujo(:,k) * mlmult(:)
         enddo
         przn = 1.
-        if (ml_tfilt(zn_boujo, znold, tau, kount) /= ML_OK) then
+        if (ml_tfilt(zn_boujo, znold, tau, kount) /= PHY_OK) then
            call physeterror('moistke', 'error returned by mixing length time filtering')
            return
         endif
@@ -386,7 +386,7 @@ contains
      if (any(mlen(:) == ML_LH)) then
         przn = 1.
         pri_lh = pri/przn
-        if (ml_calc_lh(zd_lh, zn_lh, pri_lh, buoy, enold, w_cld, rig, z, f_cs, hpar) /= ML_OK) then
+        if (ml_calc_lh(zd_lh, zn_lh, pri_lh, buoy, enold, w_cld, rig, z, f_cs, hpar) /= PHY_OK) then
            call physeterror('moistke', 'error returned by L-H mixing length estimate')
            return
         endif
@@ -394,7 +394,7 @@ contains
            zd_lh(:,k) = zd_lh(:,k) * mlmult(:)
         enddo
         if (kount > 0) then ! Blend towards Blackadar length scale at upper levels
-           if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh) /= ML_OK) then
+           if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh) /= PHY_OK) then
               call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
               return
            endif
@@ -404,7 +404,7 @@ contains
            call blweight2(weight, s, ps, n, nk)
            zn_lh(:,:) = zn_blac(:,:) + (zn_lh(:,:)-zn_blac(:,:))*weight(:,:)
            zd_lh(:,:) = zn_blac(:,:) + (zd_lh(:,:)-zn_blac(:,:))*weight(:,:)
-           if (ml_tfilt(zn_lh, znold, tau, kount) /= ML_OK) then
+           if (ml_tfilt(zn_lh, znold, tau, kount) /= PHY_OK) then
               call physeterror('moistke', 'error returned by mixing length time filtering')
               return
            endif
@@ -418,14 +418,14 @@ contains
 
      ! Mixing length estimate based on Blackadar (1962)
      if (any(mlen(:) == ML_BLAC62) .or. mlemod_calc .or. mlemodt_calc) then
-        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, dxdy=dxdy, przn=przn) /= ML_OK) then
+        if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, dxdy=dxdy, przn=przn) /= PHY_OK) then
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
         endif
         do k=1,nk
            zn_blac(:,k) = zn_blac(:,k) * mlmult(:)
         enddo
-        if (ml_tfilt(zn_blac, znold, tau, kount) /= ML_OK) then
+        if (ml_tfilt(zn_blac, znold, tau, kount) /= PHY_OK) then
            call physeterror('moistke', 'error returned by mixing length time filtering')
            return
         endif
@@ -487,7 +487,7 @@ contains
      if (timings_L) call timing_stop_omp(500)
      
      ! Successful end of subprogram
-     stat = ML_OK
+     stat = PHY_OK
      return
    end function ml_compute
    
@@ -506,7 +506,7 @@ contains
 #include "phyinput.inc"
 
       ! Set return status
-      stat = ML_ERR
+      stat = PHY_ERROR
 
       ! Check initialization status
       if (.not.initialized) then
@@ -517,7 +517,7 @@ contains
       ! Do not filter if field has been read on this step
       READ_INPUT: if (any('zn'==phyinread_list_s(1:phyinread_n))) then
          zn = znold
-         stat = ML_OK
+         stat = PHY_OK
          return
       endif READ_INPUT
 
@@ -525,7 +525,7 @@ contains
       if (kount > 0 .and. pbl_zntau > 0.) zn = zn + (znold-zn)*exp(-tau/pbl_zntau)
 
       ! Successful end of subprogram
-      stat = ML_OK
+      stat = PHY_OK
       return
    end function ml_tfilt
 
@@ -549,7 +549,7 @@ contains
       real :: pres
 
       ! Set return status
-      stat = ML_ERR
+      stat = PHY_ERROR
       
       ! Check initialization status
       if (.not.initialized) then
@@ -576,7 +576,7 @@ contains
       enddo
 
       ! Successful end of subprogram
-      stat = ML_OK
+      stat = PHY_OK
       return
    end function ml_blend
 
@@ -602,7 +602,7 @@ contains
       real, dimension(size(rig,dim=1),size(rig,dim=2)) :: lmda,my_przn
 
       ! Set return status
-      stat = ML_ERR
+      stat = PHY_ERROR
 
       ! Check initialization status
       if (.not.initialized) then
@@ -660,7 +660,7 @@ contains
       if (present(przn)) przn(:,:) = my_przn(:,:)
 
       ! Successful end of subprogram
-      stat = ML_OK
+      stat = PHY_OK
       return
    end function ml_calc_blac
 
@@ -726,7 +726,7 @@ contains
       logical, dimension(size(th,dim=1),size(th,dim=2)) :: myMask
 
       ! Set return status
-      stat = ML_ERR
+      stat = PHY_ERROR
 
       ! Check initialization status
       if (.not.initialized) then
@@ -766,7 +766,7 @@ contains
             call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for upwards displacement')
             return
          endif
-         if (int_solve(ldown(1:nc,ki),y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),-a(1:nc),'down',found=intok(1:nc)) == INT_ERR) then
+         if (int_solve(ldown(1:nc,ki),-y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),'down',found=intok(1:nc)) == INT_ERR) then
             call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for downwards displacement')
             return
          endif
@@ -795,7 +795,7 @@ contains
       zn(:,nk) = zn(:,nk-1)
 
       ! Successful end of subprogram
-      stat = ML_OK
+      stat = PHY_OK
       return
    end function ml_calc_boujo
 
@@ -851,7 +851,7 @@ contains
            l_h            ! mixing length for heat
 
       ! Set return status
-      stat = ML_ERR
+      stat = PHY_ERROR
 
       ! Check initialization status
       if (.not.initialized) then
@@ -1001,7 +1001,7 @@ contains
       l_e(:,nk) = 0.
 
       ! Successful completion of subprogram
-      stat = ML_OK
+      stat = PHY_OK
       
    end function ml_calc_lh
 

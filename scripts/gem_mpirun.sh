@@ -20,7 +20,7 @@ which r.run_in_parallel 2> /dev/null
 if [ $? == 0 ] ; then
    r.run_in_parallel ${arguments}
 else
-   echo "exporting OMP_STACKSIZE"
+   echo "exporting OMP_STACKSIZE=4G"
    export OMP_STACKSIZE=4G
    echo "setting ulimit stack to unlimited in lance.sh for all PEs"
    echo "which mpirun"

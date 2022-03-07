@@ -25,9 +25,9 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    use tdpack, only: CAPPA, DELTA, GRAV, KARMAN, RGASD
    use series_mod, only: series_xst
    use phy_options
-   use phy_status, only: phy_error_L
-   use mixing_length, only: ml_compute,ML_LMDA,ML_OK
-   use pbl_stabfunc, only: psf_stabfunc, PSF_OK
+   use phy_status, only: phy_error_L, PHY_OK
+   use mixing_length, only: ml_compute,ML_LMDA
+   use pbl_stabfunc, only: psf_stabfunc
    use ens_perturb, only: ens_spp_get, ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
@@ -188,7 +188,7 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
 
    ! Compute PBL stability functions and inverse Prandtl number (Pr=(fit/fim); pri=(fim/fit))
    if (psf_stabfunc(rig, z, fm, fh, blend_bottom=pbl_slblend_layer(1), &
-        blend_top=pbl_slblend_layer(2)) /= PSF_OK) then
+        blend_top=pbl_slblend_layer(2)) /= PHY_OK) then
       call physeterror('moistke', 'error returned by PBL stability functions')
       return
    endif
@@ -199,7 +199,7 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
         enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount)
-   if (stat /= ML_OK) then
+   if (stat /= PHY_OK) then
       call physeterror('moistke', 'error returned by mixing length calculation')
       return
    endif

@@ -1,7 +1,9 @@
 subroutine testphy_main()
   ! Test stub top-level for the RPN physics package
-  use testphy_mod, only: PT_TEST_TYPES,PT_STDERR,PT_OK,pt_run
+  use testphy_mod, only: PT_TEST_TYPES, pt_run
   implicit none
+
+#include <rmnlib_basics.hf>
 
   ! Internal variables
   integer :: istat
@@ -13,14 +15,14 @@ subroutine testphy_main()
   call get_command_argument(1,value=test_type,status=istat)
   if (istat > 0) test_type = 'full'
   if (.not.any(PT_TEST_TYPES == test_type)) then
-     write(PT_STDERR,*) trim(usage)
+     write(RMN_STDERR,*) trim(usage)
      stop
   endif
 
   ! Call test stub driver
   istat = pt_run(test_type)
-  if (istat /= PT_OK) then
-     write(PT_STDERR,*) '(testphy): Error returned by pt_run'
+  if (istat /= RMN_OK) then
+     write(RMN_STDERR,*) '(testphy): Error returned by pt_run'
      stop
   endif
 

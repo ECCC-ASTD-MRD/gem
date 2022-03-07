@@ -30,16 +30,16 @@ contains
       integer, intent(in) :: ni                                            !Row length
       integer, intent(in) :: nk                                            !Total number of vertical levels
       integer, intent(in) :: nkm1                                          !Number of prognostic vertical levels
-      real, dimension(:,:), pointer :: liq_tend                !Tendency for liquid condensate mixing ratio (kg/kg/s)
-      real, dimension(:,:), pointer :: ice_tend                !Tendency for solid condensate mixing ratio (kg/kg/s)
-      real, dimension(:,:), pointer :: ttp                              !Time-plus dry air temperature (K)
-      real, dimension(:,:), pointer :: qcp                           !Liquid condensate mixing ratio (kg/kg)
-      real, dimension(:,:), pointer :: ncp                                 !Liquid droplet number concentration (#/m3)
-      real, dimension(:,:), pointer :: qip                           !Ice condensate mixing ratio (kg/kg)
-      real, dimension(:,:), pointer :: nip                           !Ice number concentration (#/m3)
-      real, dimension(:,:), pointer :: qti1p                         !Ice condensate mixing ratio (kg/kg)
-      real, dimension(:,:), pointer :: nti1p                         !Ice number concentration (#/m3)
-      real, dimension(:), pointer :: tdmask                             !Tendency mask
+      real, dimension(:,:), pointer, contiguous :: liq_tend                !Tendency for liquid condensate mixing ratio (kg/kg/s)
+      real, dimension(:,:), pointer, contiguous :: ice_tend                !Tendency for solid condensate mixing ratio (kg/kg/s)
+      real, dimension(:,:), pointer, contiguous :: ttp                     !Time-plus dry air temperature (K)
+      real, dimension(:,:), pointer, contiguous :: qcp                     !Liquid condensate mixing ratio (kg/kg)
+      real, dimension(:,:), pointer, contiguous :: ncp                     !Liquid droplet number concentration (#/m3)
+      real, dimension(:,:), pointer, contiguous :: qip                     !Ice condensate mixing ratio (kg/kg)
+      real, dimension(:,:), pointer, contiguous :: nip                     !Ice number concentration (#/m3)
+      real, dimension(:,:), pointer, contiguous :: qti1p                   !Ice condensate mixing ratio (kg/kg)
+      real, dimension(:,:), pointer, contiguous :: nti1p                   !Ice number concentration (#/m3)
+      real, dimension(:), pointer, contiguous :: tdmask                    !Tendency mask
 
 #include <msg.h>
 #include "phymkptr.hf"
@@ -136,8 +136,8 @@ contains
 
          endif IF_MP_MY2
 
-      else ! not using combination kfc-bkf and MY
-         
+      elseif (associated(qcp)) then! not using combination kfc-bkf and MY
+
          total_tend = 0.
          if (associated(liq_tend)) total_tend(:,1:nkm1) = total_tend(:,1:nkm1) + liq_tend(:,1:nkm1)
          if (associated(ice_tend)) total_tend(:,1:nkm1) = total_tend(:,1:nkm1) + ice_tend(:,1:nkm1)

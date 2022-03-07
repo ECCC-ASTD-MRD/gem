@@ -22,7 +22,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use phy_options
    use phybus, only: entbus, perbus, dynbus, volbus
    use phybusalloc, only: phybusalloc1
-   use module_mp_p3, only: p3_init
+   use microphy_utils, only: mp_init
    use ghg_mod, only: ghg_init
    use mixing_length, only: ML_CLOSURES
    use ens_perturb, only: ens_spp_map, ENS_OK
@@ -177,15 +177,11 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       endif
    endif IF_RADIA
 
-   ! MICROPHYSICS (preliminary calculations for P3 scheme)
-   ! - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   if (stcond == 'MP_P3') then
-      path = trim(F_path_S)//'MODEL_INPUT/'
-      call p3_init(path, p3_ncat, stat=ier)
-      if (ier < 0) then
-         call msg_toall(MSG_ERROR,'(phydebu) Problem in p3_init')
-         return
-      endif
+   ! Initialize microphysics interface
+   path = trim(F_path_S)//'MODEL_INPUT/'
+   if (mp_init(path) /= PHY_OK) then
+      call physeterror('phydebu', 'Problem initializing microphysics')
+      return
    endif
 
    ! Set mixing length index mapping for SPP

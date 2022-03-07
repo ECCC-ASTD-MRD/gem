@@ -17,113 +17,211 @@
 module water_integrated
    implicit none
    private
-   public :: water_integrated1
+   public :: wi_integrate
 
 contains
 
    !/@*
-   subroutine water_integrated1(tt,qq,qc,qi,qnp,sigma,ps, &
-        zicw,ziwv,ziwv700,ziwp,zlwp2,zslwp,zslwp2,zslwp3,zslwp4, &
-        ni,nk)
-!#TODO: never used qr,qgp
-      use debug_mod, only: init2nan
-      use tdpack_const, only: TCDK
-      use phy_options
-      implicit none
-!!!#include <arch_specific.hf>
-      !@Author L.Spacek, November 2011
-      !@Object Calculate integrated quantities of some variables
-      !@Arguments
+  subroutine wi_integrate(t, hu, lwc, iwc, s, ps, &
+       icw, iwv, iwv700, iwp, lwp, slwp, slwp2, slwp3, slwp4, &
+       n, nk)
+    use debug_mod, only: init2nan
+    use tdpack_const, only: TCDK, GRAV
+    use phy_options
+    implicit none
 
-      integer               :: ni,nk
-      real,dimension(ni,nk) :: tt,qq,qc,qi,qnp,sigma
-      real,dimension(ni) :: ps,zicw,ziwv,ziwv700,ziwp,zlwp2, &
-           zslwp,zslwp2,zslwp3,zslwp4
+    !@Author
+    !          R.Sarrazin, G. Pellerin, B. Bilodeau - (Sept 1996)
+    !
+    !@Revision
+    ! 001      A. Glazer (Nov 1999) - Intwat1: add the vertical integrals of
+    !          ice, supercooled liquid water, supercooled liquid water
+    !          by layers, cloud-top pressure and cloud-top temperature.
+    ! 002      A. Glazer (Feb 2000) - Intwat2: generalize to any scheme that
+    !          calculates liquid water content and ice water content (inputs).
+    ! 003      A. Glazer (Nov 2001) - Add the vertical integral of vater vapor
+    !          from the model top to 700 mb.
+    ! 004      B. Bilodeau and P. Vaillancourt (Dec 2002) - Remove ctp and ctt
+    !
+    !@Object
+    !          to compute the vertical integrals of water vapor,
+    !          liquid water and cloud water.
 
-      !          - Input -
-      ! fbus     historic variables for the physics
-      ! fsiz     dimension of fbus
-      ! vsiz     dimension of vbus
-      ! tt       temperature
-      ! qq       humidity
-      ! qc       total condensate mixing ratio at t+dT
-      ! qi       ice mixing ratio (M-Y, K-Y) at t+dT
-      ! qnp      snow    mixing ratio (M-Y) at t+dT
-      ! sigma    vertical coordinate
-      ! ni       horizontal running length
-      ! nk       vertical dimension
-      !          - Input/Output -
-      ! vbus     physics tendencies and other output fields from the physics
-      !          icw    - integrated cloud water/ice
-      !          iwv    - integrated water vapor
-      !          iwv700 - integrated water vapor (0-700 mb)
-      !          iwp    - integrated ice water
-      !          lwp2   - liquid water path (Sundqvist)
-      !          slwp   - integrated SLW (supercooled liquid water)
-      !          slwp2  - integrated SLW (bottom to s2)
-      !          slwp3  - integrated SLW (s2 to s3)
-      !          slwp4  - integrated SLW (s3 to s4)
-      !
-      !*@/
+    integer, intent(in) :: n, nk
+    real, dimension(:,:), intent(in) :: t, hu, lwc, iwc, s
+    real, dimension(:), intent(in) :: ps
+    real, dimension(:), intent(out) :: icw, iwv, iwv700, iwp, lwp, &
+         slwp, slwp2, slwp3, slwp4
+
+    !@Arguments
+    !          - Input -
+    ! t        temperature
+    ! hu       humidity
+    ! lwc      total specific liquid content t+dT
+    ! iwc      total specific solid content at t+dT
+    ! ps       surface pressure
+    ! s        vertical coordinate
+    ! n        horizontal running length
+    ! nk       vertical dimension
+    !          - Output -
+    ! icw    - integrated cloud water/ice [kg/m2]
+    ! iwv    - integrated water vapor [kg/m2]
+    ! iwv700 - integrated water vapor (0-700 mb) [kg/m2]
+    ! iwp    - integrated ice water [kg/m2]
+    ! lwp    - integrated cloud liquid water [kg/m2]
+    ! slwp   - integrated SLW (supercooled liquid water) [kg/m2]
+    ! slwp2  - integrated SLW (bottom to s2) [kg/m2]
+    ! slwp3  - integrated SLW (s2 to s3) [kg/m2]
+    ! slwp4  - integrated SLW (s3 to s4) [kg/m2]
+    !*@/
+    
+    integer i,k,im,k1,k2,k3,k4
+    real dsg,dpsg,qctemp
+    real :: s1=1., s2=0.8, s3=0.6, s4=0.4
+    logical :: scool=.false.
 #include <msg.h>
 
-      logical               :: integrate=.false.
-      integer               :: i,k
-      real                  :: tcel,frac
-      real,dimension(ni)    :: temp1,temp2
-      real,dimension(ni,nk) :: liquid, solid
-      !----------------------------------------------------------------
-      call msg_toall(MSG_DEBUG, 'water_integrated [BEGIN]')
+    !----------------------------------------------------------------
+    call msg_toall(MSG_DEBUG, 'water_integrated [BEGIN]')
+    
+    !* 1. INITIALIZE OUTPUT FIELDS
+    do i = 1,N
+       ICW (i)   = 0.
+       IWV (i)   = 0.
+       IWV700(i) = 0.
+       IWP (i)   = 0.
+       LWP (i)   = 0.
+       SLWP(i)   = 0.
+       SLWP2(i)  = 0.
+       SLWP3(i)  = 0.
+       SLWP4(i)  = 0.
+    end do
 
-      call init2nan(temp1, temp2)
-      call init2nan(liquid, solid)
+    !* 3. REINITIALIZE FIELDS
 
-      ! Arrays 'liquid' and 'solid' are passed to intwat3  and used
-      ! for diagnostic calculations only.
-      ! Computaion of lwc and iwc used by radiation code is done in prep_cw.
+    do i = 1,N
+       LWP (i) = 0.
+       IWP (i) = 0.
+    end do
 
-      if (stcond == 'CONSUN') then
-         integrate=.true.
-         do k=1,nk
-            do i=1,ni
-               tcel = min(0.,tt(i,k) - TCDK)
-               temp1(i) = -.003102 * tcel*tcel
-            end do
-            call vsexp(temp2,temp1,ni )
-            do i=1,ni
-               if (tt(i,k) .ge. TCDK) then
-                  liquid(i,k) =  qc(i,k)
-                  solid(i,k)  =  0.
+    !* 4. SUPERCOOLED LIQUID WATER by layers
 
-               else
-                  frac = .0059 + .9941 * temp2(i)
-                  liquid(i,k) = frac*qc(i,k)
-                  solid(i,k)  = (1.-frac)*qc(i,k)
-               end if
-            end do
-         end do
-      end if
+    if (scool) then
 
-      if (stcond(1:2)=='MP') then
-         integrate=.true.
-         do k=1,nk
-            do i=1,ni
-               liquid(i,k) = qc(i,k)
-               !note: for stcond=mp_p3, qnp is passed in zero and qi is the sum of all qitot for all ice categories
-               solid(i,k)  = qi(i,k)+qnp(i,k)
-            end do
-         end do
-      endif
+       !     Find k1, k2, k3 and k4 from s1, s2, s3 and s4
 
-      !     calcul de quantites integrees
-      if (integrate) &
-           call intwat3(zicw,ziwv,ziwv700,ziwp,zlwp2, &
-           zslwp,zslwp2,zslwp3,zslwp4, &
-           tt,qq,liquid,solid,sigma,ps,ni,nk)
+       im = int(N/2 + 1)
 
-      call msg_toall(MSG_DEBUG, 'water_integrated [END]')
-      !----------------------------------------------------------------
-      return
-   end subroutine water_integrated1
+       do k = 1,NK
+          if (s(im,k) .gt. s4) go to 200
+       end do
+200    continue
+       k4 = k-1
+
+       do k = k4+1,NK
+          if (s(im,k) .gt. s3) go to 300
+       end do
+300    continue
+       k3 = k-1
+
+       do k = k3+1,NK
+          if (s(im,k) .gt. s2) go to 400
+       end do
+400    continue
+       k2 = k-1
+
+       if (s1 .eq. 1.) then
+          k1 = NK
+       else
+          do k = k1+1,NK
+             if (s(im,k) .gt. s1) go to 500
+          end do
+500       continue
+          k1 = min(NK,k-1)
+       end if
+
+       do i = 1,N
+          do k = k2+1,k1
+             if ( T(i,k) .lt. tcdk) then
+                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+                dpsg = max(ps(i)*dsg/grav,0.)
+                qctemp  = (max( LWC(i,k), 0. ))*dpsg
+                SLWP2 (i)= SLWP2(i) + qctemp
+             end if
+          end do
+       end do
+
+       do i = 1,N
+          do k = k3+1,k2
+             if ( T(i,k) .lt. tcdk) then
+                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+                dpsg = max(ps(i)*dsg/grav,0.)
+                qctemp  = (max( LWC(i,k), 0. ))*dpsg
+                SLWP3 (i)= SLWP3(i) + qctemp
+             end if
+          end do
+       end do
+
+       do i = 1,N
+          do k = k4+1,k3
+             if ( T(i,k) .lt. tcdk) then
+                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+                dpsg = max(ps(i)*dsg/grav,0.)
+                qctemp  = (max( LWC(i,k), 0. ))*dpsg
+                SLWP4 (i)= SLWP4(i) + qctemp
+             end if
+          end do
+       end do
+    end if
+
+    !* 5. VERTICAL INTEGRALS of TOTAL CONDENSATE (ICW), VAPOR (IWV),
+    !     VAPOR from top to 700 mb (IWV700),SOLID (IWP),
+    !     LIQUID (LWP) and SUPERCOOLED (SLWP)
+
+    do i = 1, N
+       dsg= 0.5 * ( s(i,2) - s(i,1) )
+       dpsg= ps(i)*dsg/grav
+       IWV(i) = IWV(i) + max( HU(i,1) , 0. ) * dpsg
+       IWV700(i) = IWV700(i) + max( HU(i,1) , 0. ) * dpsg
+       qctemp = max(LWC(i,1) , 0. ) * dpsg
+       LWP (i)= LWP(i) + qctemp
+       if (T(i,1).lt.tcdk) SLWP (i) =  SLWP(i) + qctemp
+       IWP(i) = IWP(i) + max(IWC(i,1) , 0. ) * dpsg
+    end do
+
+    do k = 2,NK-1
+       do i = 1 , N
+          dsg= 0.5 * ( s(i,k+1) - s(i,k-1) )
+          dpsg= ps(i)*dsg/grav
+          IWV(i) = IWV(i) + max( HU(i,k) , 0. ) * dpsg
+          if ((s(i,k)*ps(i)) .lt. 70000.)IWV700(i)=IWV700(i)+max(HU(i,k),0.)*dpsg
+          qctemp = max(LWC(i,k) , 0. ) * dpsg
+          LWP (i)= LWP(i) + qctemp
+          if (T(i,k).lt.tcdk) SLWP (i)= SLWP(i) + qctemp
+          IWP(i) = IWP(i) + max(IWC(i,k) , 0. ) * dpsg
+       end do
+    end do
+
+    do i = 1, N
+       dsg= 1. - 0.5 * ( s(i,NK) + s(i,NK-1) )
+       dpsg= ps(i)*dsg/grav
+       IWV(i) = IWV(i) + max( HU(i,NK) , 0. ) * dpsg
+       qctemp = max(LWC(i,NK) , 0. ) * dpsg
+       LWP (i)= LWP(i) + qctemp
+       if (T(i,NK).lt.tcdk) SLWP (i)= SLWP(i) + qctemp
+       IWP(i) = IWP(i) + max(IWC(i,NK) , 0. ) * dpsg
+    end do
+
+    do i = 1, N
+       ICW(i)  = LWP(i) + IWP(i)
+    end do
+
+    call msg_toall(MSG_DEBUG, 'water_integrated [END]')
+    !----------------------------------------------------------------
+    return
+  end subroutine wi_integrate
 
 end module water_integrated

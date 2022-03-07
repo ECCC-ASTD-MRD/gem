@@ -13,7 +13,6 @@ module testphy_mod
 #include <rmnlib_basics.hf>
 
   ! External parameters
-  integer, parameter, public :: PT_STDOUT=6,PT_STDERR=0,PT_OK=0,PT_ERR=-1
   character(len=*), dimension(2), parameter, public :: PT_TEST_TYPES = (/ &
        'full', &
        'itf '  &
@@ -61,42 +60,42 @@ contains
     integer :: istat
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Set up basic environment
     istat = set_env()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_env:'//trim(F_type))
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_env:'//trim(F_type))
 
     ! Set up grid and coordinate
     istat = set_grid()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_grid')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_grid')
 
     ! Initialize the physics
     istat = itf_phy_init()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by itf_phy_init')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_init')
 
     ! Set up GMM space
     istat = set_vt()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_vt')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_vt')
 
     ! Fill GMM state variables
     istat = set_state()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by set_state')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_state')
 
     ! Take a kount-0 (initialization) physics step
     istat = itf_phy_step(0)
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by kount=0 itf_phy_step')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by kount=0 itf_phy_step')
 
     ! Take a full physics step
     istat = itf_phy_step(1)
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by itf_phy_step')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_step')
 
     ! Generate output
     istat = itf_phy_output()
-    call handle_error_l(istat==PT_OK,'pt_run','Error returned by itf_phy_output')
+    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_output')
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function pt_run
 
@@ -113,7 +112,7 @@ contains
     integer :: istat
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Retrieve required environment
     call get_environment_variable('TASK_INPUT',value=input_path,status=istat)
@@ -125,7 +124,7 @@ contains
     call handle_error_l(WB_IS_OK(istat),'set_env','Cannot specify model master for stdout')
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function set_env
 
@@ -152,7 +151,7 @@ contains
     type(phymeta), dimension(:), pointer :: pmeta
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Extablish metadata structures
     call gmm_build_meta3D(meta3d_nk,1,NI,0,0,NI,1,NJ,0,0,NJ,1,NK,0,0,NK,0,GMM_NULL_FLAGS)
@@ -197,7 +196,7 @@ contains
     call handle_error_l(GMM_IS_OK(istat),'set_vt','Cannot create tracer GMM space')
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function set_vt
 
@@ -224,7 +223,7 @@ contains
     integer, external :: ezgdef_fmem
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Fill positional vectors
     do i=1,size(ax)
@@ -265,7 +264,7 @@ contains
     deallocate(ip1m,ip1t); nullify(ip1m,ip1t)
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function set_grid
 
@@ -290,7 +289,7 @@ contains
     real, dimension(:,:,:), pointer :: ptr3d
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Set up pressure profile for momentum and thermodynamic levels (hPa)
     p0 = 1e5
@@ -353,7 +352,7 @@ contains
     enddo
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function set_state
 
@@ -380,13 +379,13 @@ contains
     character(len=MU_JDATE_PDF_LEN) :: dateo_S
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Check for physics interface compatibility
     if (PHY_COMPATIBILITY_LVL /= COMPATIBILITY_LVL) then
-       write(PT_STDERR,*) '(itf_phy_init) Incompatible physics API'
-       write(PT_STDERR,*) '  Current: ',COMPATIBILITY_LVL
-       write(PT_STDERR,*) '  Required: ',PHY_COMPATIBILITY_LVL
+       write(RMN_STDERR,*) '(itf_phy_init) Incompatible physics API'
+       write(RMN_STDERR,*) '  Current: ',COMPATIBILITY_LVL
+       write(RMN_STDERR,*) '  Required: ',PHY_COMPATIBILITY_LVL
        return
     endif
 
@@ -415,7 +414,7 @@ contains
     call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics initialization')
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function itf_phy_init
 
@@ -434,7 +433,7 @@ contains
     integer :: istat
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Create grid-specific fields
     if (F_kount == 0) then
@@ -448,7 +447,7 @@ contains
     call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics input')
     
     ! Take a physics step
-    write(PT_STDOUT,1002) F_kount
+    write(RMN_STDOUT,1002) F_kount
     istat = phy_step(F_kount,F_kount)
     call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics step')
 
@@ -456,7 +455,7 @@ contains
 1002 format(/'PERFORM A PHYSICS STEP: stepno= ',i6,' (S/R itf_phy_step)'/58('='))
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function itf_phy_step
 
@@ -482,7 +481,7 @@ contains
     integer, external :: gdll
 
     ! Set error return status
-    F_istat = PT_ERR
+    F_istat = RMN_ERR
 
     ! Basic setup
     deg2rad=acos(-1d0)/180d0
@@ -520,7 +519,7 @@ contains
     ptr2d = STEP_DT
 
     ! Successful completion
-    F_istat = PT_OK
+    F_istat = RMN_OK
     return
   end function itf_phy_geom
 
@@ -565,7 +564,7 @@ contains
     type(phymeta) :: pmeta
 
     ! Set error return status
-    F_istat = PT_OK
+    F_istat = RMN_OK
 
     ! Retrieve information about simplified physics tests
     call handle_error_l(RMN_IS_OK(wb_get('phy/test_phy',test_phy)),'itf_phy_output','Cannot retrieve test information')
@@ -578,9 +577,9 @@ contains
        istat = phy_get(ptr3d,gmmk_pw_tt_plus_s)
        call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (any(abs(ptr3d(:,:,1:NK)-STATE_TT-1.) > epsilon(ptr3d))) then
-          write(PT_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected temperature difference of', &
+          write(RMN_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected temperature difference of', &
                maxval(abs(ptr3d(:,:,1:NK)-STATE_TT-1.))
-          F_istat = PT_ERR
+          F_istat = RMN_ERR
        endif
        deallocate(ptr3d); nullify(ptr3d)
 
@@ -589,17 +588,17 @@ contains
        istat = phy_get(ptr3d,'H',F_npath='O',F_bpath='P',F_meta=pmeta)
        call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (pmeta%nk /= 1) then
-          write(PT_STDOUT,'(a,1x,i3)') '*FAIL: Test double returned an unexpected PBL height dimension of',pmeta%nk
-          F_istat = PT_ERR
+          write(RMN_STDOUT,'(a,1x,i3)') '*FAIL: Test double returned an unexpected PBL height dimension of',pmeta%nk
+          F_istat = RMN_ERR
        endif
        if (any(abs(ptr3d-100.) > epsilon(ptr3d))) then
-          write(PT_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected PBL height error of',maxval(abs(ptr3d-100.))
-          F_istat = PT_ERR
+          write(RMN_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected PBL height error of',maxval(abs(ptr3d-100.))
+          F_istat = RMN_ERR
        endif
        deallocate(ptr3d); nullify(ptr3d)
 
        ! Emit message confirming that the test passed
-       if (F_istat == PT_OK) write(PT_STDOUT,*) '*PASS'
+       if (F_istat == RMN_OK) write(RMN_STDOUT,*) '*PASS'
 
     endif PHY_TEST_MODE
 

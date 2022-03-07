@@ -51,6 +51,8 @@
 
    MKPTR1D(zcinkfc, cinkfc, fbus)
    MKPTR1D(zcinkfcm, cinkfcm, fbus)
+   MKPTR1D(zcone0, cone0, vbus)
+   MKPTR1D(zcone1, cone1, fbus)
    MKPTR1D(zconedyn, conedyn, vbus)
    MKPTR1D(zconedynm, conedynm, fbus)
    MKPTR1D(zconecnd, conecnd, vbus)
@@ -71,6 +73,8 @@
    MKPTR1D(zconescm, conescm, fbus)
    MKPTR1D(zconetot, conetot, vbus)
    MKPTR1D(zconetotm, conetotm, fbus)
+   MKPTR1D(zconq0, conq0, vbus)
+   MKPTR1D(zconq1, conq1, fbus)
    MKPTR1D(zconqdyn, conqdyn, vbus)
    MKPTR1D(zconqdynm, conqdynm, fbus)
    MKPTR1D(zconqcnd, conqcnd, vbus)

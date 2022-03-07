@@ -78,7 +78,7 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    character(len=64) :: tmp_S
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-   real, dimension(ni,nk) :: seloc, ficebl, lwc0, iwc0, lwc0m, iwc0m
+   real, dimension(ni,nk) :: seloc, ficebl
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
@@ -86,7 +86,7 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
 
    call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0)
-   call init2nan(seloc, ficebl, lwc0, iwc0, lwc0m, iwc0m)
+   call init2nan(seloc, ficebl)
 
    nkm1 = nk-1
 
@@ -94,8 +94,7 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    if (phy_error_L) return
 
    call phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        lwc0, iwc0,  lwc0m, iwc0m, vbus, dbus, fbus, &
-        seloc, delt, kount, trnch, ni, nk)
+        vbus, dbus, fbus, seloc, delt, kount, trnch, ni, nk)
    if (phy_error_L) return
 
    call radiation3(dbus, fbus, vbus, ni, nk, kount, trnch)
@@ -140,7 +139,7 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    call turbulence2(dbus, fbus, vbus, ficebl, seloc, delt, kount, trnch, ni, nk)
    if (phy_error_L) return
 
-   call precipitation4(tplus0, huplus0, dbus, fbus, vbus, delt, ni, nk, kount, trnch)
+   call precipitation4(dbus, fbus, vbus, delt, ni, nk, kount, trnch)
    if (phy_error_L) return
 
    call prep_cw3(fbus, dbus, vbus, ficebl, ni, nk)
@@ -156,7 +155,7 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    call ens_ptp_apply(dbus, vbus, fbus, ni, nk, kount)
    if (phy_error_L) return
 
-   call calcdiag1(tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m, dbus, fbus, vbus, delt, kount, ni, nk)
+   call calcdiag1(dbus, fbus, vbus, delt, kount, ni, nk)
    if (phy_error_L) return
 
    call sfc_calcdiag3(fbus, vbus, moyhr, acchr, delt, kount, step_driver, ni)

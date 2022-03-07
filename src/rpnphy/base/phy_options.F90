@@ -52,8 +52,6 @@ module phy_options
    logical           :: out_linoz    = .false.
    logical           :: age_linoz    = .false.
    character(len=1024) :: ozone_file_s = 'NIL'
-   logical           :: p3_comptend  = .false.
-   logical           :: p3_comptend_ta = .false.
    character(len=16) :: schmsol      = 'ISBA'
    logical           :: slt_winds    = .false.
    logical           :: tdiaglim     = .false.
@@ -73,11 +71,6 @@ module phy_options
    logical           :: advectke     = .false.
    namelist /physics_cfgs/ advectke
    namelist /physics_cfgs_p/ advectke
-
-   !# Surface heat flux from oceans is active if .true.
-   logical           :: chauf        = .true.
-   namelist /physics_cfgs/ chauf
-   namelist /physics_cfgs_p/ chauf
 
    !# Clip tracers negative values
    logical           :: clip_tr_L      = .true.
@@ -127,18 +120,6 @@ module phy_options
    real           :: cond_hu0max       = 0.975
    namelist /physics_cfgs/ cond_hu0max
    namelist /physics_cfgs_p/ cond_hu0max
-
-   !# Standard deviation length scale (gridpoints) of Gaussian smoother
-   !# applied to temperature and humidity inputs for Sunqvist gridscale
-   !# condensation)
-   real           :: cond_infilter    = -1.
-   namelist /physics_cfgs/ cond_infilter
-   namelist /physics_cfgs_p/ cond_infilter
-
-   !# Obtain estimate of surface wind gusts if .true.
-   logical           :: diag_twind   = .false.
-   namelist /physics_cfgs/ diag_twind
-   namelist /physics_cfgs_p/ diag_twind
    
    !# Activate computing of all diags, requested for output or not.
    logical           :: debug_alldiag_L     = .false.
@@ -165,21 +146,10 @@ module phy_options
    namelist /physics_cfgs/ diffuw
    namelist /physics_cfgs_p/ diffuw
 
-   !# Surface friction is active if .true.
-   !# Uses Schuman-Newell lapse rate if .false.
-   logical           :: drag         = .true.
-   namelist /physics_cfgs/ drag
-   namelist /physics_cfgs_p/ drag
-
    !# Minimal value for TKE in stable case (for 'CLEF')
    real              :: etrmin2      = 1.E-4
    namelist /physics_cfgs/ etrmin2
    namelist /physics_cfgs_p/ etrmin2
-
-   !# Surface evaporation is active if .true.
-   logical           :: evap         = .true.
-   namelist /physics_cfgs/ evap
-   namelist /physics_cfgs_p/ evap
 
    !# Boundary layer processes
    !# * 'NIL    ': no vertical diffusion
@@ -736,17 +706,6 @@ module phy_options
    namelist /physics_cfgs/ rad_zlim
    namelist /physics_cfgs_p/ rad_zlim
 
-   !# format of radiation files to be read
-   !# * 'STD': RPN standard file
-   !# * 'UNF': unformatted
-   character(len=16) :: radfiles     = 'STD'
-   namelist /physics_cfgs/ radfiles
-   namelist /physics_cfgs_p/ radfiles
-   character(len=*), parameter :: RADFILES_OPT(2) = (/ &
-        'STD', &
-        'UNF'  &
-        /)
-
    !# Use climatological values of GHG in radiation (CCCMARAD2 only)
    logical           :: radghg_L     = .false.
    namelist /physics_cfgs/ radghg_L
@@ -878,14 +837,16 @@ module phy_options
    !# * 'CONSUN    ' : Sunqvist type condensation scheme
    !# * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
    !# * 'MP_P3     ' : P3 microphysics scheme
+   !# * 'KESSLER   ' : Kessler warm rain scheme
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(4) = (/ &
+   character(len=*), parameter :: STCOND_OPT(5) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'MP_MY2    ', &
-        'MP_P3     '  &
+        'MP_P3     ', &
+        'KESSLER   ' &
         /)
 
    !# Special treatment of stratosphere;
@@ -937,11 +898,6 @@ module phy_options
         'NIL  ', &
         'IRPCP'  &
         /)
-
-   !# LHN fix to always use P3 tendencies in TDCOND
-   logical        :: lhn_tdcond_fix = .false.
-   namelist /physics_cfgs/ lhn_tdcond_fix
-   namelist /physics_cfgs_p/ lhn_tdcond_fix
  
    !# Standard deviation length scale (gridpoints) of Gaussian smoother
    !# applied to RDPR, PR and TA before the application of Latent Heat Nudging

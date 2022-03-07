@@ -14,14 +14,15 @@
 !_______________________________________________________________________________!
 
 
-module mp_my2_mod
+module microphy_my2
  use, intrinsic :: iso_fortran_env, only: REAL64
  use phy_status, only: phy_error_L
 
 #include <rmnlib_basics.hf>
 
  private
- public  :: mp_my2_main
+ public :: mp_my2_main
+ public :: my2_phybusinit, my2_lwc, my2_iwc
 
  private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
@@ -1187,20 +1188,24 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 !==============================================================================!
 !_______________________________________________________________________________________!
 
- subroutine mp_my2_main(WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              &
-     sigma,RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,  &
-     dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,     &
-     icephase_ON,snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,reff_i1,reff_i2, &
-     reff_i3,reff_i4,cloud_bin,nk_bottom)
+ subroutine mp_my2_main(ttend,qtend,qctend,qrtend, &
+      WZ,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,Naero,PS,              &
+      sigma,FL_liq,RT_rn1,RT_rn2,RT_fr1,RT_fr2,FL_sol,RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2, &
+      RT_peL,RT_snd,dt,NI,NK,J,KOUNT,aeroact,CCNtype,precipDiag_ON,sedi_ON,warmphase_ON,  &
+      autoconv_ON,icephase_ON,snow_ON,Dm_c,Dm_r,Dm_i,Dm_s,Dm_g,Dm_h,ZET,ZEC,SS,reff_c,    &
+      reff_i1,reff_i2,reff_i3,reff_i4,cloud_bin,nk_bottom)
+  use tdpack, only: RAUW
 
   implicit none
 
 !CALLING PARAMETERS:
   integer,               intent(in)    :: NI,NK,J,KOUNT,aeroact,CCNtype
   real,                  intent(in)    :: dt
+  real, dimension(:,:),  intent(out)   :: ttend,qtend,qctend,qrtend
   real, dimension(:),    intent(in)    :: PS
   real, dimension(:),    intent(out)   :: RT_rn1,RT_rn2,RT_fr1,RT_fr2,RT_sn1,RT_sn2,     &
-                                          RT_sn3,RT_pe1,RT_pe2,RT_peL,ZEC,RT_snd
+                                          RT_sn3,RT_pe1,RT_pe2,RT_peL,ZEC,RT_snd,FL_liq, &
+                                          FL_sol
   real, dimension(:,:),  intent(in)    :: WZ,sigma,Naero ! Added by C.Jouan april2015
   real, dimension(:,:),  intent(inout) :: T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH
   real, dimension(:,:),  intent(out)   :: ZET,reff_c,reff_i1,reff_i2,reff_i3,reff_i4,    &
@@ -1316,6 +1321,8 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 !            - Output -
 !
 ! Dm_(x)             mean-mass diameter for hydrometeor x                 [m]
+! FL_liq             liquid precipitation flux (at sfc)                   [kg m-2 s-1]
+! FL_sol             solid precipitation flux (at sfc)                    [kg m-2 s-1]  
 ! RT_rn1             precipitation rate (at sfc) of liquid rain           [m+3 m-2 s-1]
 ! RT_rn2             precipitation rate (at sfc) of liquid drizzle        [m+3 m-2 s-1]
 ! RT_fr1             precipitation rate (at sfc) of freezing rain         [m+3 m-2 s-1]
@@ -1484,7 +1491,6 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   real, parameter :: CPI      =.21153e+4          !J kg-1 K-1; specific heat capacity of ice
   real, parameter :: TRPL     =.27316e+3          !K; triple point of water
   real, parameter :: TCDK     =.27315e+3          !conversion from kelvin to celsius
-  real, parameter :: RAUW     =.1e+4              !density of liquid H2O
   real, parameter :: EPS2     =.3780199778986     !1 - EPS1
   real, parameter :: TGL      =.27316e+3          !K; ice temperature in the atmosphere
   real, parameter :: CONSOL   =.1367e+4           !W m-2; solar constant
@@ -1530,7 +1536,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   real,    parameter :: outfreq       =  60.    !frequency to compute output diagnostics [s]
 
   real, dimension(size(QC,dim=1),size(QC,dim=2)) :: DE,iDE,iDP,QSW,QSI,DZ,iDZ,zz,        &
-        gamfact,pres,zheight,QC_in,QR_in,NC_in,NR_in
+        gamfact,pres,zheight,QC_in,QR_in,NC_in,NR_in,tt0,qq0,qc0,qr0
   real, dimension(size(QC,dim=1))                :: fluxM_r,fluxM_i,fluxM_s,fluxM_g,     &
         fluxM_h
 
@@ -1554,8 +1560,14 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   !                      PART 1:   Prelimiary Calculations                           !
   !----------------------------------------------------------------------------------!
 
+  ! Save snapshot of current state for tendency calculation and reset
+  tt0(:,:) = t(:,:)
+  qq0(:,:) = q(:,:)
+  qc0(:,:) = qc(:,:)
+  qr0(:,:) = qr(:,:)
+  
   tmpint1 = j  !just to allow j to be passed in without trapping "variable not used" upon compile
-
+  
   !Switch on here later, once it is certain that calling routine is not supposed to
   !pass negative values of tracers.
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,100)
@@ -3906,6 +3918,16 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   NG  = NG*iDE
   NH  = NH*iDE
 
+!-- Compute total precipitation fluxes
+  FL_liq(:) = (RT_rn1(:) + RT_rn2(:)) * RAUW
+  FL_sol(:) = (RT_sn1(:) + RT_sn2(:) + RT_sn3(:) + RT_pe1(:) + RT_pe2(:)) * RAUW
+
+!-- Temporary:  (until RN/FR separation gets removed)
+  RT_rn1(:) = RT_rn1(:) + RT_fr1(:)
+  RT_rn2(:) = RT_rn2(:) + RT_fr2(:)
+  RT_fr1(:) = 0.
+  RT_fr2(:) = 0.
+  
 !-- Ensure than no negative final values:
 !   QC = max(QC, 0.);   NC = max(NC, 0.)
 !   QR = max(QR, 0.);   NR = max(NR, 0.)
@@ -3913,10 +3935,20 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 !   QN = max(QN, 0.);   NN = max(NN, 0.)
 !   QG = max(QG, 0.);   NG = max(NG, 0.)
 !   QH = max(QH, 0.);   NH = max(NH, 0.)
-
+  
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,900)
   if (phy_error_L) return
 
+  ! Compute tendencies and reset state variables
+  ttend(:,:) = (t(:,:) - tt0(:,:)) * idt
+  qtend(:,:) = (q(:,:) - qq0(:,:)) * idt
+  qctend(:,:) = (qc(:,:) - qc0(:,:)) * idt
+  qrtend(:,:) = (qr(:,:) - qr0(:,:)) * idt
+  t(:,:) = tt0(:,:)
+  q(:,:) = qq0(:,:)
+  qc(:,:) = qc0(:,:)
+  qr(:,:) = qr0(:,:)
+  
  end subroutine mp_my2_main
 
 !___________________________________________________________________________________!
@@ -3958,10 +3990,92 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
       real :: TRPL_local,T_local
       Nos_Thompson= min(2.e+8, 2.e+6*exp(-0.12*min(-0.001,T_local-TRPL_local)))
    end function Nos_Thompson
-
+    
 !===================================================================================================!
 
-end module mp_my2_mod
+  ! Define bus requirements
+  function my2_phybusinit() result(F_istat)
+    use phy_status, only: PHY_OK, PHY_ERROR
+    use bus_builder, only: bb_request
+    implicit none
+    integer :: F_istat                          !Function return status
+    F_istat = PHY_ERROR
+    if (bb_request((/ &
+         'CLOUD_WATER_MASS ', &
+         'CLOUD_WATER_NUM  ', &
+         'RAIN_MASS        ', &
+         'RAIN_NUM         ', &
+         'CLOUD_ICE_MASS   ', &
+         'CLOUD_ICE_NUM    ', &
+         'SNOW_MASS        ', &
+         'SNOW_NUM         ', &
+         'GRAUPEL_MASS     ', &
+         'GRAUPEL_NUM      ', &
+         'HAIL_MASS        ', &
+         'HAIL_NUM         ', &
+         'ICE_EFF_RAD      ', &
+         'RATE_PRECIP_TYPES', &
+         'PARTICLE_DIAMETER', &
+         'CCN_NUM          ', &
+         'MPDIAG_3D        ', &
+         'MPVIS            ', &
+         'REFLECTIVITY     ', &
+         'LIGHTNING        ' &
+         /)) /= PHY_OK) then
+       call physeterror('microphy_my2::my2_phybusinit', &
+            'Cannot construct bus request list')
+       return
+    endif
+    F_istat = PHY_OK
+  end function my2_phybusinit
+
+  ! Compute total water mass
+  function my2_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
+    use phybus
+    use phy_status, only: PHY_OK, PHY_ERROR
+    implicit none
+    real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
+    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
+    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
+    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    integer :: F_istat                                  !Return status
+#include "phymkptr.hf"
+    integer :: ni, nkm1
+    real, dimension(:,:), pointer :: zqcp, zqrp
+    F_istat = PHY_ERROR
+    ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
+    MKPTR2Dm1(zqcp, qcplus, F_dbus)
+    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
+    F_istat = PHY_OK
+    return
+  end function my2_lwc
+
+  ! Compute total water mass
+  function my2_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
+    use phybus
+    use phy_status, only: PHY_OK, PHY_ERROR
+    implicit none
+    real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
+    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
+    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
+    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    integer :: F_istat                                  !Return status
+#include "phymkptr.hf"
+    integer :: ni, nkm1
+    real, dimension(:,:), pointer :: zqip, zqnp, zqgp, zqhp
+    F_istat = PHY_ERROR
+    ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
+    MKPTR2Dm1(zqip, qiplus, F_dbus)
+    MKPTR2Dm1(zqnp, qnplus, F_dbus)
+    MKPTR2Dm1(zqgp, qgplus, F_dbus)
+    MKPTR2Dm1(zqhp, qhplus, F_dbus)
+    F_qitot(:,:) = zqip(:,:) + zqnp(:,:) + zqgp(:,:) + zqhp(:,:)
+    F_istat = PHY_OK
+    return
+  end function my2_iwc
+   
+end module microphy_my2
 
 !________________________________________________________________________________________!
 
