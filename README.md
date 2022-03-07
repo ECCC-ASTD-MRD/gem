@@ -14,16 +14,16 @@ This document describes the process of building and running 3 GEM cases:
 * fftw3 library (with development package),
 * basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
-   ## Example on Cray XC50
+## Example on Cray XC50
    
-   ```
-   export OMP_STACKSIZE=4G
-   export FOR_DISABLE_KMP_MALLOC=0
-   module unload intel/19.0.3.199
-   module load intel/19.0.5.281
-   module add craype-hugepages16M
-   module add cray-fftw/3.3.8.2
-   ```
+ ```
+export OMP_STACKSIZE=4G
+export FOR_DISABLE_KMP_MALLOC=0
+module unload intel/19.0.3.199
+module load intel/19.0.5.281
+module add craype-hugepages16M
+module add cray-fftw/3.3.8.2
+```
 
 # Getting the Code
 ```

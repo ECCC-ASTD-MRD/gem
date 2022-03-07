@@ -17,14 +17,18 @@ include(ec_compiler_presets)
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  message(STATUS "No build type selected, default to RelWithDebInfo")
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  set(CMAKE_BUILD_TYPE "Release")
+  message(STATUS "No build type selected, default to ${CMAKE_BUILD_TYPE}")
 endif()
 message(STATUS "Configuring for ${CMAKE_BUILD_TYPE} build type")
 
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(OpenMP)
+
+if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -diag-disable 5268 -diag-disable 7416 -diag-disable 6182")
+endif()
 
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)

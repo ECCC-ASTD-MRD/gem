@@ -15,8 +15,8 @@ target_include_directories(rmn PRIVATE
    INTRALIB_INCLUDES
 )
 
+target_compile_options( rmn PRIVATE "-w" )
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-  target_compile_options( rmn PRIVATE "-w" )
   if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
     target_compile_options( rmn PRIVATE $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-fallow-invalid-boz> )
   endif()

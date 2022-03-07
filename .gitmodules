@@ -1,3 +1,4 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
 	url = ../cmake_rpn
+	branch = feat_benchmarks
