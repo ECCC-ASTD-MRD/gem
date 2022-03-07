@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------
 
 module pbl_stabfunc
+   use phy_status, only: PHY_OK, PHY_ERROR
    ! Calculation and manipulation of stability functions in the PBL
    implicit none
 !!!#include <arch_specific.hf>
@@ -27,10 +28,6 @@ module pbl_stabfunc
    integer, parameter :: CONVERGE_ERR=2               !Return value for a convergence error
    real, parameter :: ASX = 5.                        !PBL stability function coefficient (Delage 1997)
    real, parameter :: F_MIN = 1e-6                    !Minimum absolute value for stability functions
-
-   ! API parameters
-   integer, parameter, public :: PSF_OK=0             !Return value for success
-   integer, parameter, public :: PSF_ERR=1            !Return vaule for error
 
    ! API subprograms
    public :: psf_stabfunc
@@ -62,7 +59,7 @@ contains
       logical, dimension(size(rig,dim=1),size(rig,dim=2)) :: upper_layer,near_sfc,stable
 
       ! Set return status
-      stat = PSF_ERR
+      stat = PHY_ERROR
 
       ! Set default values
       myBlend_bottom = 40.
@@ -79,7 +76,7 @@ contains
       fm_sfc = 1.; fh_sfc = 1.
 
       ! Stable case for the upper layers
-      istat = PSF_OK
+      istat = PHY_OK
       UPPER_LAYER_STABLE: select case (pbl_func_stab)
       case ('LOUIS79')
          where (upper_layer .and. stable)
@@ -110,9 +107,9 @@ contains
             fh_upper = beta*fm_upper
          endwhere
       case DEFAULT
-         istat = PSF_ERR
+         istat = PHY_ERROR
       end select UPPER_LAYER_STABLE
-      if (istat /= PSF_OK) then
+      if (istat /= PHY_OK) then
          if (istat == CONVERGE_ERR) then
             call msg_toall(MSG_WARNING, '(psf_stabfunc) PBL convergence failure for '// &
                  trim(pbl_func_stab))
@@ -125,7 +122,7 @@ contains
       endif
 
       ! Unstable case for the upper layers
-      istat = PSF_OK
+      istat = PHY_OK
       UPPER_LAYER_UNSTABLE: select case (pbl_func_unstab)
       case ('DYER74')
          where (upper_layer .and. .not.stable)
@@ -138,9 +135,9 @@ contains
             fh_upper = beta*fm_upper**2
          endwhere
       case DEFAULT
-         istat = PSF_ERR
+         istat = PHY_ERROR
       end select UPPER_LAYER_UNSTABLE
-      if (istat /= PSF_OK) then
+      if (istat /= PHY_OK) then
          call msg_toall(MSG_ERROR, '(psf_stabfunc) Error computing unstable PBL functions for '// &
               trim(pbl_func_unstab))
          stat = istat
@@ -148,7 +145,7 @@ contains
       endif
 
       ! Stable case for the near-surface
-      istat = PSF_OK
+      istat = PHY_OK
       NEAR_SFC_STABLE: select case (sl_func_stab)
       case ('BELJAARS91')
          istat = sf_calc(rig,near_sfc.and.stable,bh91_fg, &
@@ -162,9 +159,9 @@ contains
             fh_sfc = beta*fm_sfc
          endwhere
       case DEFAULT
-         istat = PSF_ERR
+         istat = PHY_ERROR
       end select NEAR_SFC_STABLE
-      if (istat /= PSF_OK) then
+      if (istat /= PHY_OK) then
          if (istat == CONVERGE_ERR) then
             call msg_toall(MSG_WARNING, '(psf_stabfunc) SL convergence failure for '// &
                  trim(sl_func_stab))
@@ -177,7 +174,7 @@ contains
       endif
 
       ! Unstable case for the near-surface
-      istat = PSF_OK
+      istat = PHY_OK
       NEAR_SFC_UNSTABLE: select case (sl_func_unstab)
       case ('DYER74')
          where (near_sfc .and. .not.stable)
@@ -190,9 +187,9 @@ contains
             fh_sfc = beta*fm_sfc**2
          endwhere
       case DEFAULT
-         istat = PSF_ERR
+         istat = PHY_ERROR
       end select NEAR_SFC_UNSTABLE
-      if (istat /= PSF_OK) then
+      if (istat /= PHY_OK) then
          call msg_toall(MSG_ERROR, '(psf_stabfunc) Error computing unstable SL functions for '// &
               trim(sl_func_unstab))
          stat = istat
@@ -209,7 +206,7 @@ contains
       fh = sign(max(abs(fh),F_MIN),fh)
 
       ! Successful end of subprogram
-      stat = PSF_OK
+      stat = PHY_OK
       return
    end function psf_stabfunc
 
@@ -240,7 +237,7 @@ contains
       real :: x,g,dg
 
       ! Set return status
-      stat = PSF_ERR
+      stat = PHY_ERROR
 
       ! Initialization
       n  = size(rig,dim=1)
@@ -276,7 +273,7 @@ contains
       enddo
 
       ! End of subprogram
-      if (.not.stat==CONVERGE_ERR) stat = PSF_OK
+      if (.not.stat==CONVERGE_ERR) stat = PHY_OK
       return
 
    end function sf_calc

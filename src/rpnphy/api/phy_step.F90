@@ -24,7 +24,7 @@ contains
     use wb_itf_mod, only: WB_OK, WB_IS_OK, wb_get
     use series_mod, only: series_stepinit, series_stepend
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-    use phy_options, only: delt, cond_infilter, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
+    use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb_mod, only: physlb1
     use cpl_itf   , only: cpl_step
@@ -52,7 +52,7 @@ contains
     integer, save :: pslic
 
     integer :: istat, sfcflxfilt
-    real :: cond_sig, gwd_sig, lhn_sig
+    real :: gwd_sig, lhn_sig
     !---------------------------------------------------------------
     F_istat = RMN_ERR
     if (phy_init_ctrl == PHY_NONE) then
@@ -70,10 +70,9 @@ contains
     endif
     
     if (F_stepcount == 0) then
-      if (.not.WB_IS_OK(wb_get('dyn/cond_infilter',cond_sig))) cond_sig = -1.
       if (.not.WB_IS_OK(wb_get('dyn/sgo_tdfilter',gwd_sig))) gwd_sig = -1.
-      if (cond_infilter /= cond_sig .or. sgo_tdfilter /= gwd_sig) then
-         call msg(MSG_ERROR, '(phy_step) cond_infilter or sgo_tdfilter requested in but not supported by dyn')
+      if (sgo_tdfilter /= gwd_sig) then
+         call msg(MSG_ERROR, '(phy_step) sgo_tdfilter requested in but not supported by dyn')
          return
       endif
       if (.not.WB_IS_OK(wb_get('dyn/lhn_filter', lhn_sig))) lhn_sig = -1.

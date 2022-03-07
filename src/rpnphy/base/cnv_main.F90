@@ -22,17 +22,16 @@ module cnv_main
 contains
 
    !/@*
-   subroutine cnv_main4(dbus, fbus, vbus, t0, q0, qc0, &
-        dt, ni, nk, kount)
+   subroutine cnv_main4(dbus, fbus, vbus, dt, ni, nk, kount)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, RAUW
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, PHY_OK
       use phybus
       use phy_options
       use cnv_options
       use kfrpn, only: kfrpn4
-      use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
+      use phybudget, only: pb_compute, pb_conserve, pb_residual
       use shallconv, only: shallconv5
       use kfmid, only: kfmid1
       use tendency, only: apply_tendencies
@@ -55,7 +54,6 @@ contains
       ! vbus     physics tendencies and other output fields from the physics
  
       integer, intent(in) :: ni, nk, kount
-      real, dimension(ni,nk-1), intent(inout) :: t0, q0, qc0
       real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: dt
       !@Author L.Spacek, November 2011
@@ -72,9 +70,9 @@ contains
       include "comphy.cdk"
 
       real    :: cdt1, rcdt1
-      integer :: i,k,niter, ier, nkm1, ier2
+      integer :: i,k,niter, ier, nkm1
 
-      real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_pw0
       !*Set Dimensions for convection call
       !
       !INTEGER KENS = 0  ! number of additional ensemble members for convection
@@ -96,7 +94,7 @@ contains
       !
       integer, dimension(ni)           :: kcount
       real,    dimension(ni)           :: cnv_active, cape
-      real,    dimension(ni,nk-1)      :: dummy1, dummy2, geop, cond_prflux, qtl
+      real,    dimension(ni,nk-1)      :: dummy1, dummy2, geop, cond_prflux, qtl, qts
       real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, dmsedt
       real,    dimension(ni,nk-1,kchm) :: pch1, pch1ten
 
@@ -269,90 +267,22 @@ contains
 
       MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
 
-      call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
+      call init2nan(l_en0, l_pw0)
       call init2nan(dummy1, dummy2, geop) 
       call init2nan(ppres, pudr, pddr, phsflx, dmsedt)
       call init2nan(pch1, pch1ten)
-
-      ! Shallow convective schemes called before deep (post-deep schemes called later in this routine)
-      IF_KTRSNT: if (conv_shal == 'KTRSNT') then
-
-         ! Pre-scheme state for energy budget
-         if (associated(zconesc)) then
-            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_shal))
-               return
-            endif
-         endif
-
-         ! Shallow convective scheme (Kuo transient types)
-         call shallconv5(ttp, qqm, sigma, zgztherm, psm, &
-              ztshal, zhushal, ztlcs, ztscs, zqlsc, zqssc, zkshal, &
-              zfsc, zqcz, zqdifv, dt, ni, nk, nkm1)
-         if (phy_error_L) return
-
-         ! Impose conservation by adjustment of moisture and temperature tendencies
-         SHAL_EARLY_TENDENCY_ADJUSTMENT: if (shal_conserve == 'TEND') then
-
-            ! Apply humidity tendency correction for total water conservation
-            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
-            ! Apply temperature tendency correction for liquid water static energy conservation
-            ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_shal))
-               return
-            endif
-
-         endif SHAL_EARLY_TENDENCY_ADJUSTMENT
-
-         ! Apply shallow convective tendencies to state variables
-         call apply_tendencies(ttp, ztshal, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qqp, zhushal, ztdmask, ni, nk, nkm1)
-
-         ! Post-scheme energy budget analysis
-         if (associated(zconesc)) then
-            ! Compute post-scheme state
-            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
-            if (ier == EB_OK .and. ier2 == EB_OK) then
-               ! Compute residuals
-               ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
-               ier2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1,F_rain=ztlcs*RAUW,F_snow=ztscs*RAUW)
-            endif
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem computing final energy budget for '//trim(conv_shal))
-               return
-            endif
-            zconesc(:) = real(l_enr)
-            zconqsc(:) = real(l_pwr)
-         endif
-
-      endif IF_KTRSNT
+      call init2nan(qtl, qts)
 
       ! Prepare for deep CPS calls
       cdt1  = dt
       rcdt1 = 1./cdt1
       geop  = zgztherm*GRAV
-
       ier  = 0
       zcte = 0.
       zcqe = 0.
       zcqce= 0.
-      qc0  = 0.
       pch1 = 0.
       pch1ten = 0.
-
-      t0 = ttp
-      q0 = qqp
-      where(qqp < 0.) qqp = 0.
-
-      if (stcond /= 'NIL' ) then
-         qc0 = qcp
-         where(qcp < 0.) qcp = 0.
-         where(qcm < 0.) qcm = 0.
-      endif
 
       ! Run selected deep convective scheme
       DEEP_CONVECTION: if (convec == 'SEC') then            ! ajustement convectif sec
@@ -446,27 +376,19 @@ contains
          dummy1 = 0.
          dummy2 = 0.
 
-         ! Pre-scheme state for energy budget
-         if (associated(zconesc)) then
-            if (stcond == 'MP_P3') then
-               qtl  = qcp + qrp
-               ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-               ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-            else
-               ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-               ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
-            endif
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_shal))
-               return
-            endif
+         ! Pre-shallow scheme state for budget
+         if (pb_compute(zconesc, zconqsc, l_en0, l_pw0, &
+              dbus, fbus, vbus, nkm1) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Problem computing preliminary budget for '//trim(conv_shal))
+            return
          endif
 
-         ! Shallow convective scheme (Bechtold type)
-         cnv_active = 0.  !shallow does not activate where deep or mid-level are active
+         ! Set mask to avoid activating with deep
+         cnv_active = 0.
          if (associated(zkkfc)) cnv_active = cnv_active + zkkfc
-!!$         if (associated(zkmid)) cnv_active = cnv_active + zkmid
 
+         ! Shallow convective scheme (mass-flux)
          call bkf_shallow6(ni, nkm1, dt, &
               ppres, zgztherm,                                     &
               ttp, qqp, dummy1, dummy2, uu, vv, wz, dmsedt,        &
@@ -476,25 +398,14 @@ contains
               zkshal, psp, zwstar, zdxdy, zmrk2, cnv_active)
          if (phy_error_L) return
 
-         ! Impose conservation by adjustment of moisture and temperature tendencies
-         SHAL_LATE_TENDENCY_ADJUSTMENT: if (shal_conserve == 'TEND') then
-
-            ! Apply humidity tendency correction for total water conservation
-            ier = eb_conserve_pw(zhushal,zhushal,ttp,qqp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
-            ! Apply temperature tendency correction for liquid water static energy conservation
-            if (stcond == 'MP_P3') then
-               qtl  = qcp + qrp
-               ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprctns,F_dqi=zpritns)
-            else
-               ier2 = eb_conserve_en(ztshal,ztshal,zhushal,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctns,F_dqi=zpritns)
-            endif
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_shal))
-               return
-            endif
-
-         endif SHAL_LATE_TENDENCY_ADJUSTMENT
-
+         ! Adjust tendencies to impose conservation
+         if (pb_conserve(shal_conserve, ztshal, zhushal, dbus, fbus, vbus, &
+              F_dqc=zprctns, F_dqi=zpritns) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Cannot correct conservation for '//trim(conv_shal))
+            return
+         endif
+         
          ! Apply shallow convective tendencies
          call apply_tendencies(ttp, ztshal, ztdmask, ni, nk, nkm1)
          call apply_tendencies(qqp, zhushal, ztdmask, ni, nk, nkm1)
@@ -504,30 +415,15 @@ contains
          endif
 
          ! Apply shallow convective tendencies for consdensed variables
-         call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, qti1p, nti1p, ztdmask, ni, nk, nkm1)
+         call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, qti1p, nti1p, &
+              ztdmask, ni, nk, nkm1)
 
-         ! Post-scheme energy budget analysis
-         if (associated(zconesc)) then
-            ! Compute post-scheme state
-            if (stcond == 'MP_P3') then
-               qtl  = qcp + qrp
-               ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-               ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-            else
-               ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-               ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
-            endif
-            if (ier == EB_OK .and. ier2 == EB_OK) then
-               ! Compute residuals
-               ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1)
-               ier2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1)
-            endif
-            if (ier /= EB_OK .or. ier2 /= EB_OK) then
-               call physeterror('cnv_main', 'Problem computing final energy budget for '//trim(conv_shal))
-               return
-            endif
-            zconesc(:) = real(l_enr)
-            zconqsc(:) = real(l_pwr)
+         ! Post-scheme budget analysis
+         if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, dbus, fbus, vbus, &
+              delt, nkm1) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Problem computing final budget for '//trim(conv_shal))
+            return
          endif
 
          ! Store temperature and moisture profiles for MSE tendency calculation at next step
@@ -537,20 +433,12 @@ contains
       endif IF_CONV_SHAL
       if (phy_error_L) return
 
-      ! Pre-deep CPS state for energy budget
-      if (associated(zconedc)) then
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-         else
-            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-            call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(convec))
-            return
-         endif
+      ! Pre-deep CPS state for budget
+      if (pb_compute(zconedc, zconqdc, l_en0, l_pw0, &
+           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Problem computing preliminary budget for '//trim(convec))
+         return
       endif
 
       ! Translate deep convective tendency names if required
@@ -558,24 +446,13 @@ contains
       if (associated(zhufcp)) zcqe = zcqe + zhufcp
       if (associated(zqckfc)) zcqce = zcqce + zqckfc
 
-      ! Impose conservation by adjustment of moisture and temperature tendencies
-      DEEP_TENDENCY_ADJUSTMENT: if (deep_conserve == 'TEND') then
-
-         ! Apply humidity tendency correction for total water conservation
-         ier  = eb_conserve_pw(zcqe,zcqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zcqce,F_rain=ztlc,F_snow=ztsc)
-         ! Apply temperature tendency correction for liquid water static energy conservation
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprcten,F_dqi=zpriten,F_rain=ztlc,F_snow=ztsc)
-         else
-            ier2 = eb_conserve_en(zcte,zcte,zcqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprcten,F_dqi=zpriten,F_rain=ztlc,F_snow=ztsc)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-            call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(convec))
-            return
-         endif
-
-      endif DEEP_TENDENCY_ADJUSTMENT
+      ! Adjust deep tendencies to impose conservation
+      if (pb_conserve(deep_conserve, zcte, zcqe, dbus, fbus, vbus, &
+           F_dqc=zcqce, F_dqi=zpriten, F_rain=ztlc, F_snow=ztsc) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Cannot correct conservation for '//trim(convec))
+         return
+      endif
 
       ! Apply deep convective tendencies for non-condensed state variables
       call apply_tendencies(ttp, zcte, ztdmask, ni, nk, nkm1)
@@ -586,33 +463,27 @@ contains
       endif
 
       ! Apply deep convective tendencies for consdensed variables
-      call conv_mp_tendencies1(zprcten, zpriten, ttp, qcp, ncp, qip, nip, qti1p, nti1p, ztdmask, ni, nk, nkm1)
+      call conv_mp_tendencies1(zprcten, zpriten, ttp, qcp, ncp, qip, nip, &
+           qti1p, nti1p, ztdmask, ni, nk, nkm1)
 
-      ! Post-deep CPS energy budget analysis
-      if (associated(zconedc)) then
-         ! Compute post-scheme state
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-         else
-            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
-         endif
-         if (ier == EB_OK .and. ier2 == EB_OK) then
-            ! Compute residuals
-            ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=ztlc,F_snow=ztsc)
-            ier2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1,F_rain=ztlc,F_snow=ztsc)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-             call physeterror('cnv_main', 'Problem computing final energy budget for '//trim(convec))
-            return
-         endif
-         zconedc(:) = real(l_enr)
-         zconqdc(:) = real(l_pwr)
+      ! Post-deep budget analysis
+      if (pb_residual(zconedc, zconqdc, l_en0, l_pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_rain=ztlc, F_snow=ztsc) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Problem computing final budget for '//trim(convec))
+         return
       endif
 
-     MIDLEVEL_CONVECTION: if (conv_mid == 'KF') then
+      ! Pre-midlevel CPS state for budget
+      if (pb_compute(zconemc, zconqmc, l_en0, l_pw0, &
+           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Problem computing preliminary budget for '//trim(conv_mid))
+         return
+      endif
+      
+      ! Represent midlevel elevated / low-CAPE convection
+      MIDLEVEL_CONVECTION: if (conv_mid == 'KF') then
 
          cape = 0.
          if (associated(zcapekfc)) cape = zcapekfc
@@ -630,74 +501,32 @@ contains
       endif MIDLEVEL_CONVECTION
       if (phy_error_L) return
 
-      ! Pre-mid-level convection state for energy budget
-      if (associated(zconemc)) then
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier  = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-         else
-            ier  = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-            call physeterror('cnv_main', 'Problem computing preliminary energy budget for '//trim(conv_mid))
-            return
-         endif
+      ! Adjust midlevel tendencies to impose conservation
+      if (pb_conserve(mid_conserve, zmte, zmqe, dbus, fbus, vbus, &
+           F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Cannot correct conservation for '//trim(conv_mid))
+         return
       endif
 
-      ! Impose conservation by adjustment of moisture and temperature tendencies
-      MID_TENDENCY_ADJUSTMENT: if (mid_conserve == 'TEND') then
-
-         ! Apply humidity tendency correction for total water conservation
-         ier  = eb_conserve_pw(zmqe,zmqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zmqce,F_rain=ztlcm)
-         ! Apply temperature tendency correction for liquid water static energy conservation
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p,F_dqc=zprctnm,F_dqi=zpritnm,F_rain=ztlcm)
-         else
-            ier2 = eb_conserve_en(zmte,zmte,zmqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zprctnm,F_dqi=zpritnm,F_rain=ztlcm)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-            call physeterror('cnv_main', 'Problem correcting for liquid water static energy conservation for '//trim(conv_mid))
-            return
-         endif
-
-      endif MID_TENDENCY_ADJUSTMENT
-
-      ! Apply mid-level convective tendencies for non-condensed state variables
+      ! Apply midlevel convective tendencies for non-condensed state variables
       call apply_tendencies(ttp, zmte, ztdmask, ni, nk, nkm1)
       call apply_tendencies(qqp, zmqe, ztdmask, ni, nk, nkm1)
       if (associated(zumid)) call apply_tendencies(uu, zumid, ztdmask, ni, nk, nkm1)
       if (associated(zvmid)) call apply_tendencies(vv, zvmid, ztdmask, ni, nk, nkm1)
 
       ! Apply mid-level convective tendencies for condensed variables
-      call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, qti1p, nti1p, ztdmask, ni, nk, nkm1)
+      call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
+           qti1p, nti1p, ztdmask, ni, nk, nkm1)
 
-      ! Post-mid-level convection energy budget analysis
-      if (associated(zconemc)) then
-         ! Compute post-scheme state
-         if (stcond == 'MP_P3') then
-            qtl  = qcp + qrp
-            ier  = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qti1p)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1,F_qi=qti1p)
-         else
-            ier  = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-            ier2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
-         endif
-         if (ier == EB_OK .and. ier2 == EB_OK) then
-            ! Compute residuals
-            ier  = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt,nkm1,F_rain=ztlcm)
-            ier2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1,F_rain=ztlcm)
-         endif
-         if (ier /= EB_OK .or. ier2 /= EB_OK) then
-             call physeterror('cnv_main', 'Problem computing final energy budget for '//trim(conv_mid))
-            return
-         endif
-         zconemc(:) = real(l_enr)
-         zconqmc(:) = real(l_pwr)
+      ! Post-midlevel budget analysis
+      if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
+         call physeterror('cnv_main', &
+              'Problem computing final budget for '//trim(conv_mid))
+         return
       endif
-
+      
       call msg_toall(MSG_DEBUG, 'cnv_main [END]')
       !----------------------------------------------------------------
       return

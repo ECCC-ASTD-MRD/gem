@@ -339,14 +339,9 @@ contains
 
       ! ** Moisture Diffusion **
 
-      ! For simplified physics and clef, the boundary terms can be set to zero
-      if(evap) then
-         aq(:) = fh_mult(:) * zalfaq(:)
-         bq(:) = fh_mult(:) * btsg(:)
-      else
-         aq = 0.
-         bq = 0.
-      endif
+      ! Set surface flux boundary terms
+      aq(:) = fh_mult(:) * zalfaq(:)
+      bq(:) = fh_mult(:) * btsg(:)
 
       ! Compute conserved moisture variable for vertical diffusion
       if (fluvert == 'MOISTKE') then
@@ -375,14 +370,9 @@ contains
 
       ! ** Temperature Diffusion **
 
-      ! For simplified physics and clef, the boundary terms can be set to zero
-      if (chauf) then
-         aq(:) = fh_mult(:) * zalfat(:)
-         bq(:) = fh_mult(:) * btsg(:)
-      else
-         aq = 0.
-         bq = 0.
-      endif
+      ! Set surface flux boundary terms
+      aq(:) = fh_mult(:) * zalfat(:)
+      bq(:) = fh_mult(:) * btsg(:)
 
       ! Compute conserved temperature variable for vertical diffusion
       if (fluvert == 'MOISTKE') then
@@ -502,11 +492,6 @@ contains
          zfsh(j)    = zalfaq(j) + btsg(j)*qplusnk  ! units of s-1
          zflw(j)    = rhortvsg*zfsh(j)             ! water density flux - units of kg m-2 s-1
          zfsh(j)    = zflw(j)/sfc_density(j)       ! spec hum flux - units of ms-1
-
-
-         if (.not.chauf)  zfc_ag(j) = 0.0
-         if (.not.evap )  zfv_ag(j) = 0.0
-
          a(j)     = zfdsi(j)*localstefan/STEFAN
          zfnsi(j) = a(j)-localstefan*ztsrad(j)**4
          zfl(j)   = zfnsi(j) + zfdss(j) - zfv_ag(j) - zfc_ag(j)

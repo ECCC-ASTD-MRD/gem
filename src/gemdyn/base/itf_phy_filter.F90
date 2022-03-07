@@ -151,7 +151,6 @@ contains
 #include <rmnlib_basics.hf>
 
       ! Argument declaration
-!!$      real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), intent(inout) :: F_data    !Full physics tendency on physics grid
       real, pointer :: F_data(:,:,:)
       character(len=*), intent(in) :: F_name                                                            !Name of V-bus tendency variable to smooth
       integer, intent(in), optional :: F_fid                                                            !Filter ID (currently 1 or 2)
@@ -242,13 +241,9 @@ contains
 
       ! Local variables
       real, dimension(:,:,:), pointer :: fld
-!!$      real, dimension(:,:), pointer :: fld2d_rt,fld2d_rdpr,fld2d_rdqi
       real, dimension(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk), target :: flds3d
       real, pointer :: flds(:,:,:)
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: ifld
-!!$      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rt
-!!$      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rdpr
-!!$      real, dimension(l_minx:l_maxx,l_miny:l_maxy), target :: ifld2d_rdqi
       integer :: iend(3), fid, nk
       logical :: apply_filter
 
@@ -274,72 +269,16 @@ contains
       end if
 
       ! Retrieve selected input field
-!!$      if (trim(F_iname) == 'rt') then
-!!$
-!!$        !this is code is just there to test if smoothing is a good idea for LHN
-!!$        !
-!!$        !Three 2D variables are read and put in a 3D array for smoothing.
-!!$        !this is just a workaround the fact that there is not yet a 2D verison of the gaussian filter
-!!$        !function.
-!!$        !
-!!$
-!!$        !get rt  =  model precip rate
-!!$        ifld2d_rt = 0.
-!!$        fld2d_rt => ifld2d_rt(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
-!!$        iend = (/-1,-1,1/)
-!!$        F_status = phy_get(fld2d_rt,'rt',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-!!$        if (F_status < 0) then
-!!$           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rt')
-!!$           return
-!!$        endif
-!!$
-!!$        !get rdpr  =  radar precip rate
-!!$        ifld2d_rdpr = 0.
-!!$        fld2d_rdpr => ifld2d_rdpr(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
-!!$        iend = (/-1,-1,1/)
-!!$        F_status = phy_get(fld2d_rdpr,'rdpr',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-!!$        if (F_status < 0) then
-!!$           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rdpr')
-!!$           return
-!!$        endif
-!!$
-!!$        !get rdqi = radar quality index
-!!$        ifld2d_rdqi = 0.
-!!$        fld2d_rdqi => ifld2d_rdqi(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
-!!$        iend = (/-1,-1,1/)
-!!$        F_status = phy_get(fld2d_rdqi,'rdqi',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-!!$        if (F_status < 0) then
-!!$           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rdqi')
-!!$           return
-!!$        endif
-!!$
-!!$        !get rt3d
-!!$        ifld = 0.
-!!$        fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
-!!$        iend = (/-1,-1,l_nk/)
-!!$        F_status = phy_get(fld,'rt3d',F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-!!$        if (F_status < 0) then
-!!$           call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem getting rt3d')
-!!$           return
-!!$        endif
-!!$
-!!$        !replace top layers of rt3d with 2d fields
-!!$        fld(:,:,1) = fld2d_rt
-!!$        fld(:,:,2) = fld2d_rdpr
-!!$        fld(:,:,3) = fld2d_rdqi
-!!$
-!!$      else
 
-         ifld = 0.
-         fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:nk)
-         iend = (/-1,-1,nk/)
-         F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
-         if (F_status < 0) then
-            call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem in phy_get')
-            return
-         endif
+      ifld = 0.
+      fld => ifld(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:nk)
+      iend = (/-1,-1,nk/)
+      F_status = phy_get(fld,F_iname,F_npath='V',F_bpath='PVD',F_end=iend,F_quiet=.false.)
+      if (F_status < 0) then
+         call msg(MSG_WARNING,'(itf_phy_filter::ipf_smooth_fld) problem in phy_get')
+         return
+      endif
 
-!!$      endif
 
       ! Apply smoothing operator
       if (gaussian_filter(flds,ifld,fid,nk) /= RMN_OK) then

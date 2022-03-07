@@ -280,14 +280,12 @@ contains
 
       endif
 
-      !    diagnose variables for turbulent wind (gusts and standard deviations)
-
-      if (diag_twind) then
+      ! Diagnose variables for turbulent wind (gusts and standard deviations)
+      if (associated(zwge)) then
          call twind(zwge, zwgmax, zwgmin, zsdtsws, zsdtswd, &
               ztve, enold, zumoins, zvmoins, zudiag, zvdiag, &
               se, zze, zh, zfrv_ag, &
               zwstar, ni, nkm1)
- 
          call series_xst(zwge   , 'WGE' , trnch)
          call series_xst(zwgmax , 'WGX' , trnch)
          call series_xst(zwgmin , 'WGN' , trnch)

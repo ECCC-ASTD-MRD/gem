@@ -27,9 +27,9 @@ contains
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use difver, only: difver8
-      use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
+      use phybudget, only: pb_compute, pb_conserve, pb_residual
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, PHY_OK
       use phybus
       use tendency, only: apply_tendencies
       use turbul, only: turbul2
@@ -64,10 +64,10 @@ contains
       include "surface.cdk"
 
       ! Local variables
-      integer :: i, istat, istat2, nkm1
+      integer :: i, istat, nkm1
       real    :: wk1(ni,nk), wk2(ni,nk), rcdt1
       real, dimension(ni,nk), target :: zero
-      real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
+      real(REAL64), dimension(ni) :: l_en0, l_pw0
       ! Pointers to busdyn
       real, pointer, dimension(:,:), contiguous :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zsigt, zqcplus, zwplus
       ! Pointers to busper
@@ -83,7 +83,7 @@ contains
       integer, external :: pbl_simple
 
       call init2nan(wk1,wk2)
-      call init2nan(l_en0,l_en,l_pw0,l_pw,l_enr,l_pwr)
+      call init2nan(l_en0,l_pw0)
 
       ! Pointers to busdyn
       MKPTR2D(zqplus, huplus, dbus)
@@ -142,14 +142,12 @@ contains
          endif
       endif
 
-      ! Pre-scheme state for energy budget
-      if (associated(zconepbl)) then
-         istat  = eb_en(l_en0,ztplus,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
-         istat2 = eb_pw(l_pw0,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
-         if (istat /= EB_OK .or.istat2  /= EB_OK) then
-            call physeterror('boundary_layer', 'Problem computing preliminary energy budget for '//trim(fluvert))
-            return
-         endif
+      ! Pre-PBL state for budget
+      if (pb_compute(zconepbl, zconqpbl, l_en0, l_pw0, &
+           dbus, fbus, vbus, nkm1, F_inttype='linear') /= PHY_OK) then
+         call physeterror('boundary_layer', &
+              'Problem computing preliminary budget for '//trim(fluvert))
+         return
       endif
 
       ! Compute diagnostic-level tendencies as the change in diagnostic values (there
@@ -172,48 +170,31 @@ contains
            cdt1, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
 
-      ! Impose conservation by adjustment of moisture and temperature tendencies
-      TENDENCY_ADJUSTMENT: if (pbl_conserve == 'TEND') then
-
-         ! Apply humidity tendency correction for total water conservation
-         istat = eb_conserve_pw(zqdifv,zqdifv,ztplus,zqplus,zsigt,zps,nkm1, &
-              F_dqc=zldifv,F_inttype='linear',F_lhf=zflw)
-         ! Apply temperature tendency correction for liquid water static energy conservation
-         istat2 = eb_conserve_en(ztdifv,ztdifv,zqdifv,ztplus,zqplus,zqtbl,zsigt,zps,nkm1, &
-              F_dqc=zldifv,F_inttype='linear',F_shf=zfc,F_lhf=zflw)
-         if (istat /= EB_OK .or.istat2  /= EB_OK) then
-            call physeterror('boundary_layer', 'Problem correcting for liquid water static energy conservation in boundary_layer')
-            return
-         endif
-
-      endif TENDENCY_ADJUSTMENT
+      ! Adjust PBL tendencies to impose conservation
+      if (pb_conserve(pbl_conserve, ztdifv, zqdifv, dbus, fbus, vbus, &
+           F_dqc=zldifv, F_shf=zfc, F_wvf=zflw, F_inttype='linear') /= PHY_OK) then
+         call physeterror('boundary_layer', &
+              'Cannot correct conservation for '//trim(fluvert))
+         return
+      endif
 
       ! Apply computed tendencies to state variables
-      call apply_tendencies(zqcplus, zqcdifv, ztdmask, ni, nk, nkm1)
       call apply_tendencies(zqplus, zqdifv, ztdmask, ni, nk, nkm1)
       call apply_tendencies(ztplus, ztdifv, ztdmask, ni, nk, nkm1)
       call apply_tendencies(zuplus, zudifv, ztdmask, ni, nk, nkm1)
       call apply_tendencies(zvplus, zvdifv, ztdmask, ni, nk, nkm1)
+      if (associated(zqcplus)) &
+           call apply_tendencies(zqcplus, zqcdifv, ztdmask, ni, nk, nkm1)
       if (diffuw) call apply_tendencies(zwplus, zwdifv, ztdmask, ni, nk, nkm1)
-
-      ! Post-scheme energy budget analysis
-      if (associated(zconepbl)) then
-         ! Compute post-scheme state
-         istat  = eb_en(l_en,ztplus,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
-         istat2 = eb_pw(l_pw,zqplus,zqtbl,zsigt,zps,nkm1,F_inttype='linear')
-         if (istat == EB_OK .and. istat2 == EB_OK) then
-            ! Compute residuals
-            istat  = eb_residual_en(l_enr,l_en0,l_en,ztplus,zqplus,zqcplus,delt,nkm1,F_shf=zfc,F_lhf=zflw)
-            istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ztplus,delt,nkm1,F_lhf=zflw)
-         endif
-         if (istat /= EB_OK .or.istat2  /= EB_OK) then
-            call physeterror('boundary_layer', 'Problem computing final energy budget for '//trim(fluvert))
-            return
-         endif
-         zconepbl(:) = real(l_enr)
-         zconqpbl(:) = real(l_pwr)
+      
+      ! Post-PBL budget analysis
+      if (pb_residual(zconepbl, zconqpbl, l_en0, l_pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_shf=zfc, F_wvf=zflw, F_inttype='linear') /= PHY_OK) then
+         call physeterror('boundary_layer', &
+              'Problem computing final budget for '//trim(fluvert))
+         return
       endif
-
+      
       ! Compute ice fraction for later use (in cloud water section)
       if (fluvert == 'MOISTKE') then
          call ficemxp2(ficebl, wk1, wk2, ztplus, ni, nkm1)

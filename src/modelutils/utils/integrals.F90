@@ -568,7 +568,6 @@ contains
       case ('DOWN')
          z1i = zi(:,nk)
          z2i = zidep
-         yyi = -yyi
       case ('UP')
          z1i = zidep
          z2i = zi(:,1)

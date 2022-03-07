@@ -26,16 +26,17 @@
 ! Last updated:  2021-09-10                                                                !
 !__________________________________________________________________________________________!
 
- MODULE MODULE_MP_P3
+ MODULE MICROPHY_P3
 
  implicit none
 
  private
 !public  :: mp_p3_wrapper_wrf,mp_p3_wrapper_wrf_2cat,mp_p3_wrapper_gem,p3_main,polysvp1,p3_init
- public  :: mp_p3_wrapper_gem,p3_main,polysvp1,p3_init
+ public :: mp_p3_wrapper_gem,p3_main,polysvp1,p3_init
+ public :: p3_phybusinit, p3_lwc, p3_iwc
 
- integer, parameter :: STATUS_ERROR  = -1
- integer, parameter :: STATUS_OK     = 0
+ integer, parameter, public :: STATUS_ERROR  = -1
+ integer, parameter, public :: STATUS_OK     = 0
  integer, save      :: global_status = STATUS_OK
 
 ! ice microphysics lookup table array dimensions
@@ -63,7 +64,7 @@
  integer :: iparam
 
 ! number of diagnostic ice-phase hydrometeor types
- integer, public, parameter :: n_qiType = 6
+ integer, parameter :: n_qiType = 6
 
 ! droplet spectral shape parameter for mass spectra, used for Seifert and Beheng (2001)
 ! warm rain autoconversion/accretion option only (iparam = 1)
@@ -82,6 +83,9 @@
                    vi,epsm,rhoa,map,ma,rr,bact,inv_rm1,inv_rm2,sig1,nanew1,f11,f21,sig2, &
                    nanew2,f12,f22,pi,thrd,sxth,piov3,piov6,rho_rimeMin,mu_r_constant,    &
                    rho_rimeMax,inv_rho_rimeMax,max_total_Ni,dbrk,nmltratio
+
+ ! number of ice categories
+ integer :: n_iceCat=-1
                    
  contains
 
@@ -142,6 +146,7 @@
     if (present(stat)) stat = STATUS_OK
     return
  endif
+ n_iceCat = nCat
 
 ! mathematical/optimization constants
  pi    = 3.14159265
@@ -990,13 +995,15 @@ END subroutine p3_init
 
 !==================================================================================================!
 
- function mp_p3_wrapper_gem(qvap_m,qvap,temp_m,temp,dt,dt_max,ww,psfc,gztherm,sigma,kount,        &
+function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                                      &
+                              qvap_m,qvap,temp_m,temp,dt,dt_max,ww,psfc,gztherm,sigma,kount,      &
                               trnch,ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,    &
                               prt_grpl,prt_pell,prt_hail,prt_sndp,diag_Zet,diag_Zec,diag_effc,    &
-                              qc,nc,qr,nr,n_iceCat,n_diag_2d,diag_2d,n_diag_3d,diag_3d,qi_type,   &
+                              qc,nc,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,   &
                               clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,        &
                               diag_vis1,diag_vis2,diag_vis3,diag_slw,                             &
                               scpf_on,scpf_pfrac,scpf_resfact,cldfrac,                            &
+                              qi_type_1,qi_type_2,qi_type_3,qi_type_4,qi_type_5,qi_type_6,        &
                               qitot_1,qirim_1,nitot_1,birim_1,diag_effi_1,                        &
                               qitot_2,qirim_2,nitot_2,birim_2,diag_effi_2,                        &
                               qitot_3,qirim_3,nitot_3,birim_3,diag_effi_3,                        &
@@ -1018,7 +1025,6 @@ END subroutine p3_init
 
  integer, intent(in)                    :: ni                    ! number of columns in slab           -
  integer, intent(in)                    :: nk                    ! number of vertical levels           -
- integer, intent(in)                    :: n_iceCat              ! number of ice categories            -
  integer, intent(in)                    :: kount                 ! time step counter                   -
  integer, intent(in)                    :: trnch                 ! number of slice                     -
  integer, intent(in)                    :: n_diag_2d             ! number of 2D diagnostic fields
@@ -1032,29 +1038,36 @@ END subroutine p3_init
  real, intent(inout), dimension(ni,nk)  :: nc                    ! cloud mixing ratio, number          #  kg-1
  real, intent(inout), dimension(ni,nk)  :: qr                    ! rain  mixing ratio, mass            kg kg-1
  real, intent(inout), dimension(ni,nk)  :: nr                    ! rain  mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk)  :: qitot_1               ! ice   mixing ratio, mass (total)    kg kg-1
- real, intent(inout), dimension(ni,nk)  :: qirim_1               ! ice   mixing ratio, mass (rime)     kg kg-1
- real, intent(inout), dimension(ni,nk)  :: nitot_1               ! ice   mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk)  :: birim_1               ! ice   mixing ratio, volume          m3 kg-1
- real, intent(out),   dimension(ni,nk)  :: diag_effi_1           ! ice   effective radius, (cat 1)     m
+ 
+ real, dimension(:,:), pointer, contiguous  :: qitot_1           ! ice   mixing ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_1           ! ice   mixing ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_1           ! ice   mixing ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_1           ! ice   mixing ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_1       ! ice   effective radius, (cat 1)     m
 
- real, intent(inout), dimension(ni,nk), optional  :: qitot_2     ! ice   mixing ratio, mass (total)    kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: qirim_2     ! ice   mixing ratio, mass (rime)     kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: nitot_2     ! ice   mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk), optional  :: birim_2     ! ice   mixing ratio, volume          m3 kg-1
- real, intent(out),   dimension(ni,nk), optional  :: diag_effi_2 ! ice   effective radius, (cat 2)     m
+ real, dimension(:,:), pointer, contiguous  :: qitot_2           ! ice   mixing ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_2           ! ice   mixing ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_2           ! ice   mixing ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_2           ! ice   mixing ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_2       ! ice   effective radius, (cat 2)     m
 
- real, intent(inout), dimension(ni,nk), optional  :: qitot_3     ! ice   mixing ratio, mass (total)    kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: qirim_3     ! ice   mixing ratio, mass (rime)     kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: nitot_3     ! ice   mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk), optional  :: birim_3     ! ice   mixing ratio, volume          m3 kg-1
- real, intent(out),   dimension(ni,nk), optional  :: diag_effi_3 ! ice   effective radius,  (cat 3)     m
+ real, dimension(:,:), pointer, contiguous  :: qitot_3           ! ice   mixing ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_3           ! ice   mixing ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_3           ! ice   mixing ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_3           ! ice   mixing ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_3       ! ice   effective radius,  (cat 3)     m
 
- real, intent(inout), dimension(ni,nk), optional  :: qitot_4     ! ice   mixing ratio, mass (total)    kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: qirim_4     ! ice   mixing ratio, mass (rime)     kg kg-1
- real, intent(inout), dimension(ni,nk), optional  :: nitot_4     ! ice   mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk), optional  :: birim_4     ! ice   mixing ratio, volume          m3 kg-1
- real, intent(out),   dimension(ni,nk), optional  :: diag_effi_4 ! ice   effective radius, (cat 4)     m
+ real, dimension(:,:), pointer, contiguous  :: qitot_4           ! ice   mixing ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_4           ! ice   mixing ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_4           ! ice   mixing ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_4           ! ice   mixing ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_4       ! ice   effective radius, (cat 4)     m
+
+ real, intent(out), dimension(ni,nk) :: ttend                    ! temperature tendency                K s-1
+ real, intent(out), dimension(ni,nk) :: qtend                    ! moisture tendency                   kg kg-1 s-1
+ real, intent(out), dimension(ni,nk) :: qctend                   ! cloud water tendency                kg kg-1 s-1
+ real, intent(out), dimension(ni,nk) :: qrtend                   ! cloud water tendency                kg kg-1 s-1
+ real, intent(out), dimension(ni,nk) :: qitend                   ! total ice tendency                  kg kg-1 s-1
 
  real, intent(in), dimension(ni,nk)  :: qvap_m                ! vapor mixing ratio (previous time) kg kg-1
  real, intent(inout), dimension(ni,nk)  :: qvap                  ! vapor mixing ratio, mass           kg kg-1
@@ -1079,8 +1092,14 @@ END subroutine p3_init
  real, intent(out),   dimension(ni,nk)  :: diag_effc             ! effective radius, cloud             m
  real, intent(out),   dimension(ni,n_diag_2d)    :: diag_2d      ! user-defined 2D diagnostic fields
  real, intent(out),   dimension(ni,nk,n_diag_3d) :: diag_3d      ! user-defined 3D diagnostic fields
- real, intent(out),   dimension(ni,nk,n_qiType  ):: qi_type      ! mass mixing ratio, diag ice type    kg kg-1
 
+ real, intent(out),   dimension(ni,nk)  :: qi_type_1             ! small ice crystal mass              kg kg-1
+ real, intent(out),   dimension(ni,nk)  :: qi_type_2             ! unrimed snow crystal mass           kg kg-1
+ real, intent(out),   dimension(ni,nk)  :: qi_type_3             ! lightly rimed snow mass             kg kg-1
+ real, intent(out),   dimension(ni,nk)  :: qi_type_4             ! graupel mass                        kg kg-1
+ real, intent(out),   dimension(ni,nk)  :: qi_type_5             ! hail mass                           kg kg-1
+ real, intent(out),   dimension(ni,nk)  :: qi_type_6             ! ice pellet mass                     kg kg-1
+ 
  real, intent(out),   dimension(ni)     :: diag_hcb              ! height of cloud base                m
  real, intent(out),   dimension(ni)     :: diag_hsn              ! height of snow level                m
  real, intent(out),   dimension(ni,nk)  :: diag_vis              ! visibility (total)                  m
@@ -1119,18 +1138,22 @@ END subroutine p3_init
  real, dimension(ni,nk)  :: DZ                  ! difference in height between levels     m
  real, dimension(ni,nk)  :: ssat                ! supersaturation
  real, dimension(ni,nk)  :: tmparr_ik           ! temporary array (for optimization)
+ real, dimension(ni,nk)  :: iwc                 ! total ice water content
+ real, dimension(ni,nk)  :: temp0, qvap0, qc0, qr0, iwc0 ! incoming state variables
+ real, dimension(ni,nk,n_qiType) :: qi_type     ! diagnostic precipitation types
 
  real, dimension(ni)     :: prt_liq_ave,prt_sol_ave,rn1_ave,rn2_ave,sn1_ave, &  ! ave pcp rates over full timestep
                             sn2_ave,sn3_ave,pe1_ave,pe2_ave,snd_ave
  real                    :: dt_mp                       ! timestep used by microphsyics (for substepping)
- real                    :: tmp1
+ real                    :: tmp1, idt
 
  integer                 :: i,k,ktop,kbot,kdir,i_strt,k_strt,i_substep,n_substep
 
  logical                 :: log_tmp1,log_tmp2
  logical, parameter      :: log_predictNc = .true.      ! temporary; to be put as GEM namelist
  logical, parameter      :: typeDiags_ON  = .true.      ! switch for hydrometeor/precip type diagnostics
-
+ real, parameter         :: SMALL_ICE_MASS = 1e-14      ! threshold for very small specific ice content 
+ 
  character(len=16), parameter :: model = 'GEM'
 
 !--- Unused variables (legacy):
@@ -1151,9 +1174,20 @@ END subroutine p3_init
    kdir  = -1  ! direction of vertical leveling for 1=bottom, nk=top
 
    !compute time step and number of steps for substepping
+   idt = 1./dt
    n_substep = int((dt-0.1)/max(0.1,dt_max)) + 1
    dt_mp = dt/float(n_substep)
 
+   ! Save initial state for tendency calculation and reset
+   temp0(:,:) = temp(:,:)
+   qvap0(:,:) = qvap(:,:)
+   qc0(:,:) = qc(:,:)
+   qr0(:,:) = qr(:,:)
+   iwc0(:,:) = qitot_1(:,:)
+   if (n_iceCat > 1) iwc0(:,:) = iwc0(:,:) + qitot_2(:,:)
+   if (n_iceCat > 2) iwc0(:,:) = iwc0(:,:) + qitot_3(:,:)
+   if (n_iceCat > 3) iwc0(:,:) = iwc0(:,:) + qitot_4(:,:)
+   
    ! External forcings are distributed evenly over steps
    qqdelta = (qvap-qvap_m) / float(n_substep)
    ttdelta = (temp-temp_m) / float(n_substep)
@@ -1298,36 +1332,55 @@ END subroutine p3_init
 
 
   !decompose full ice arrays back into individual category arrays:
-   if (n_iceCat >= 2) then
+  if (n_iceCat == 1) then
+      where (qitot_1(:,:) < SMALL_ICE_MASS) diag_effi_1(:,:) = 0.
+  endif
+  if (n_iceCat >= 2) then
       qitot_1(:,:) = qitot(:,:,1)
       qirim_1(:,:) = qirim(:,:,1)
       nitot_1(:,:) = nitot(:,:,1)
       birim_1(:,:) = birim(:,:,1)
-      diag_effi_1(:,:) = diag_effi(:,:,1)
+      where (qitot_1(:,:) >= SMALL_ICE_MASS)
+         diag_effi_1(:,:) = diag_effi(:,:,1)
+      elsewhere
+         diag_effi_1(:,:) = 0.
+      endwhere
 
       qitot_2(:,:) = qitot(:,:,2)
       qirim_2(:,:) = qirim(:,:,2)
       nitot_2(:,:) = nitot(:,:,2)
       birim_2(:,:) = birim(:,:,2)
-      diag_effi_2(:,:) = diag_effi(:,:,2)
+      where (qitot_2(:,:) >= SMALL_ICE_MASS)
+         diag_effi_2(:,:) = diag_effi(:,:,2)
+      elsewhere
+         diag_effi_2(:,:) = 0.
+      endwhere
 
       if (n_iceCat >= 3) then
          qitot_3(:,:) = qitot(:,:,3)
          qirim_3(:,:) = qirim(:,:,3)
          nitot_3(:,:) = nitot(:,:,3)
          birim_3(:,:) = birim(:,:,3)
-         diag_effi_3(:,:) = diag_effi(:,:,3)
+         where (qitot_3(:,:) >= SMALL_ICE_MASS)
+            diag_effi_3(:,:) = diag_effi(:,:,3)
+         elsewhere
+            diag_effi_3(:,:) = 0.
+         endwhere
 
          if (n_iceCat == 4) then
             qitot_4(:,:) = qitot(:,:,4)
             qirim_4(:,:) = qirim(:,:,4)
             nitot_4(:,:) = nitot(:,:,4)
             birim_4(:,:) = birim(:,:,4)
-            diag_effi_4(:,:) = diag_effi(:,:,4)
+            where (qitot_4(:,:) >= SMALL_ICE_MASS)
+               diag_effi_4(:,:) = diag_effi(:,:,4)
+            elsewhere
+               diag_effi_4(:,:) = 0.
+            endwhere
          endif
       endif
    endif
-
+   
   !convert precip rates from volume flux (m s-1) to mass flux (kg m-3 s-1):
   ! (since they are computed back to liq-eqv volume flux in s/r 'ccdiagnostics.F90')
    prt_liq = prt_liq*1000.
@@ -1370,6 +1423,35 @@ END subroutine p3_init
 
    enddo  !i-loop
 
+   ! Diagnostic ice particle types:
+   if (n_qiType >= 6) then
+      qi_type_1 = qi_type(:,:,1)  !small ice crystals
+      qi_type_2 = qi_type(:,:,2)  !unrimed snow crystals
+      qi_type_3 = qi_type(:,:,3)  !lightly rimed snow
+      qi_type_4 = qi_type(:,:,4)  !graupel
+      qi_type_5 = qi_type(:,:,5)  !hail
+      qi_type_6 = qi_type(:,:,6)  !ice pellets
+   else
+      call physeterror('microphy_p3::mp_p3_wrapper_gem', &
+           'Insufficient size for qi_type')
+      return
+   endif
+   
+   ! Compute tendencies and reset state
+   iwc(:,:) =  qitot_1(:,:)
+   if (n_iceCat > 1) iwc(:,:) = iwc(:,:) + qitot_2(:,:)
+   if (n_iceCat > 2) iwc(:,:) = iwc(:,:) + qitot_3(:,:)
+   if (n_iceCat > 3) iwc(:,:) = iwc(:,:) + qitot_4(:,:)
+   ttend(:,:) = (temp(:,:) - temp0(:,:)) * idt
+   qtend(:,:) = (qvap(:,:) - qvap0(:,:)) * idt
+   qctend(:,:) = (qc(:,:) - qc0(:,:)) * idt
+   qrtend(:,:) = (qr(:,:) - qr0(:,:)) * idt
+   qitend(:,:) = (iwc(:,:) - iwc0(:,:)) * idt
+   temp(:,:) = temp0(:,:)
+   qvap(:,:) = qvap0(:,:)
+   qc(:,:) = qc0(:,:)
+   qr(:,:) = qr0(:,:)
+   
    end_status = STATUS_OK
    return
 
@@ -6103,5 +6185,106 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
  end subroutine check_values
 !===========================================================================================
 
- END MODULE MODULE_MP_P3
+  ! Define bus requirements
+  function p3_phybusinit() result(F_istat)
+    use phy_status, only: PHY_OK, PHY_ERROR
+    use bus_builder, only: bb_request
+    implicit none
+    integer :: F_istat                          !Function return status
+    logical :: buserr
+    F_istat = PHY_ERROR
+    if (n_iceCat < 0) then
+       call physeterror('microphy_p3::p3_phybusinit', &
+            'Called mp_phybusinit() before mp_init()')
+       return
+    endif
+    buserr = .false.
+    if (bb_request((/ &
+         'CLOUD_WATER_MASS ', &
+         'CLOUD_WATER_NUM  ', &
+         'RAIN_MASS        ', &
+         'RAIN_NUM         ', &
+         'ICE_MASS_TEND    ', &
+         'ICE_EFF_RAD      ', &
+         'RATE_PRECIP_TYPES', &
+         'PARTICLE_DIAMETER', &
+         'CCN_NUM          ', &
+         'MPDIAG_2D        ', &
+         'MPDIAG_3D        ', &
+         'MPVIS            ', &
+         'REFLECTIVITY     ', &
+         'LIGHTNING        ' &
+         /)) /= PHY_OK) buserr = .true.
+    if (.not. buserr) then
+       if (bb_request('ICE_CAT_1') /= PHY_OK) buserr = .true.
+    endif
+    if (n_iceCat > 1 .and. .not. buserr) then
+       if (bb_request('ICE_CAT_2') /= PHY_OK) buserr = .true.
+    endif
+    if (n_iceCat > 2 .and. .not. buserr) then
+       if (bb_request('ICE_CAT_3') /= PHY_OK) buserr = .true.
+    endif
+    if (n_iceCat > 3 .and. .not. buserr) then
+       if (bb_request('ICE_CAT_4') /= PHY_OK) buserr = .true.
+    endif
+    if (buserr) then
+       call physeterror('microphy_p3::p3_phybusinit', &
+            'Cannot construct bus request list')
+       return
+    endif
+    F_istat = PHY_OK
+    return
+  end function p3_phybusinit
+
+  ! Compute total water mass
+  function p3_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
+    use phybus
+    use phy_status, only: PHY_OK, PHY_ERROR
+    implicit none
+    real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
+    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
+    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
+    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    integer :: F_istat                                  !Return status
+#include "phymkptr.hf"
+    integer :: ni, nkm1
+    real, dimension(:,:), pointer :: zqcp, zqrp
+    F_istat = PHY_ERROR
+    ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
+    MKPTR2Dm1(zqcp, qcplus, F_dbus)
+    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
+    F_istat = PHY_OK
+    return
+  end function p3_lwc
+
+  ! Compute total ice mass
+  function p3_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
+    use phybus
+    use phy_status, only: PHY_OK, PHY_ERROR
+    implicit none
+    real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
+    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
+    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
+    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    integer :: F_istat                                  !Return status
+#include "phymkptr.hf"
+    integer :: ni, nkm1
+    real, dimension(:,:), pointer :: zqti1p, zqti2p, zqti3p, zqti4p
+    F_istat = PHY_ERROR
+    ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
+    MKPTR2Dm1(zqti1p, qti1plus, F_dbus)
+    MKPTR2Dm1(zqti2p, qti2plus, F_dbus)
+    MKPTR2Dm1(zqti3p, qti3plus, F_dbus)
+    MKPTR2Dm1(zqti4p, qti4plus, F_dbus)
+    F_qitot = 0.
+    if (associated(zqti1p)) F_qitot = F_qitot + zqti1p
+    if (associated(zqti2p)) F_qitot = F_qitot + zqti2p
+    if (associated(zqti3p)) F_qitot = F_qitot + zqti3p
+    if (associated(zqti4p)) F_qitot = F_qitot + zqti4p
+    F_istat = PHY_OK
+    return
+  end function p3_iwc
+  
+END MODULE MICROPHY_P3
 

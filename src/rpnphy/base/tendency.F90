@@ -89,9 +89,16 @@ contains
             zvphytd (i,k) = (zvplus (i,k) - vplus0 (i,k)) * rcdt1
             ztphytd (i,k) = (ztplus (i,k) - tplus0 (i,k)) * rcdt1
             zhuphytd(i,k) = (zhuplus(i,k) - huplus0(i,k)) * rcdt1
-            zqcphytd(i,k) = (zqcplus(i,k) - qcplus0(i,k)) * rcdt1
          enddo
       enddo
+
+      if (associated(zqcphytd)) then
+         do k=1,nk
+            do i=1,ni
+               zqcphytd(i,k) = (zqcplus(i,k) - qcplus0(i,k)) * rcdt1
+            enddo
+         enddo
+      endif
 
       if (diffuw) then
          do k=1,nk

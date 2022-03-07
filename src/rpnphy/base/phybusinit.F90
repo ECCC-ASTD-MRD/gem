@@ -16,12 +16,14 @@
 
 !/@*
 subroutine phybusinit(ni,nk)
+   use bus_builder, only: bb_keylist, bb_n
    use wb_itf_mod
    use cnv_options
    use phy_options
-   use phy_status, only: phy_error_L
+   use phy_status, only: phy_error_L, PHY_OK
    use phybus
-   use ens_perturb, only: ens_nc2d 
+   use ens_perturb, only: ens_nc2d
+   use microphy_utils, only: mp_phybusinit
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -43,7 +45,6 @@ subroutine phybusinit(ni,nk)
 
    character(len=6)  :: nag, ntp, nmar, wwz, nuv, isss
    integer :: ier, iverb, nsurf, i
-   logical :: lcn_mpx, lcn_my2, lcn_p3i1, lcn_p3i2, lcn_p3i3, lcn_p3i4, lcn_none
    logical :: lbourg3d, lbourg
    logical :: lrslp
    logical :: lkfbe, lshal, lshbkf, lmid
@@ -54,10 +55,9 @@ subroutine phybusinit(ni,nk)
    logical :: lghg, ltrigtau
    logical :: liuv
    logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
-   logical :: lcndsm
    logical :: lcons, lmoycons
    logical :: lhn_init, lsfcflx
-   logical :: lsurfonly
+   logical :: lsurfonly, lwindgust
    logical :: lpcp_frac
    !---------------------------------------------------------------------
 
@@ -80,14 +80,13 @@ subroutine phybusinit(ni,nk)
    !# nmar is the number of 2d Markov fields
    write(nmar,'(a,i2)') 'A*', ens_nc2d
 
-   lcn_mpx  = (stcond(1:2) == 'MP')
-   lcn_none = .not.lcn_mpx
-   lcn_my2  = (stcond(1:6) == 'MP_MY2')
-   lcn_p3i1 = (stcond == 'MP_P3' .and. p3_ncat >= 1)
-   lcn_p3i2 = (stcond == 'MP_P3' .and. p3_ncat >= 2)
-   lcn_p3i3 = (stcond == 'MP_P3' .and. p3_ncat >= 3)
-   lcn_p3i4 = (stcond == 'MP_P3' .and. p3_ncat == 4)
-
+   ! Retrieve bus requirements for microphysics scheme
+   if (mp_phybusinit() /= PHY_OK) then
+      call physeterror('phybusinit', &
+           'Cannot retrieve microphysics bus information')
+      return
+   endif
+   
    lbourg3d= (pcptype == 'BOURGE3D')
    lgwdsm  = (sgo_tdfilter > 0.)
    lrslp   = radslope
@@ -136,7 +135,6 @@ subroutine phybusinit(ni,nk)
    llinghout = (llingh .and. out_linoz)
    lmoyhroz =(lmoyhr .and. llinoz .and. out_linoz)
    lmoyhrgh =(lmoyhr .and. llingh .and. out_linoz)
-   lcndsm  = (cond_infilter > 0.)
    ltrigtau = (kfctrigtau > 0.)
    liuv    = (any(radia == (/&
         'CCCMARAD ', &
@@ -172,7 +170,7 @@ subroutine phybusinit(ni,nk)
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
-   if (any(stcond(1:5) == (/'MP_P3 ', 'MP_MY2'/))) then
+   if (any(bb_keylist(:bb_n) == "LIGHTNING")) then
       i = 1
       do while (.not.llight .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
@@ -195,6 +193,17 @@ subroutine phybusinit(ni,nk)
    enddo
    lrefract = (lrefract .or. debug_alldiag_L)
 
+   ! Activate wind gust estimate only if outputs are requested by the user
+   lwindgust = .false.
+   i = 1
+   do while (.not.lwindgust .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'wge ', 'wgx ', 'wgn ', &
+           'sdwd', 'sdws'/))) lwindgust = .true.
+      i = i+1
+   enddo
+   lwindgust = (lwindgust .or. debug_alldiag_L)
+   
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
    i = 1
@@ -217,27 +226,6 @@ subroutine phybusinit(ni,nk)
    enddo
    lcons = (lcons .or. debug_alldiag_L)
    lmoycons = (lcons .and. lmoyhr)
-   
-   ! Compute tendencies from P3 microphysics only on demand
-   do i=1,nphyoutlist
-      p3_comptend = any(phyoutlist_S(i) == (/ &
-           'ste ','sqe ','sqce','sqre','mtqi', &
-           'w7  ','w9  ','w5  ','ta  ' &
-           /))
-      if (p3_comptend) exit
-   enddo
-   p3_comptend = (p3_comptend .or. debug_alldiag_L)
-   p3_comptend = (p3_comptend .or. (cond_conserve == 'TEND'))
-   p3_comptend_ta = (p3_comptend .or. (lhn_tdcond_fix .and. lhn /= 'NIL' .and. stcond == 'MP_P3'))
-   if (lhn /= 'NIL' .and. stcond == 'MP_P3' .and. .not.p3_comptend_ta) then
-      if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ta')) then
-         call msg(MSG_WARNING, '(condensation) Requested TA in output will not include P3 tendencies')
-      endif
-      if (any(phyoutlist_S(1:max(1,nphyoutlist)) == 'ste')) then
-         call msg(MSG_WARNING, '(condensation) Requested STE in output will not include P3 tendencies')
-      endif
-   endif
-   !#TODO: Check if some alloc can be avoided when p3_comptend == .false.
 
    etccdiag = .false.
    i = 1
@@ -275,12 +263,11 @@ subroutine phybusinit(ni,nk)
       fip = fip3d
       fneige = fneige3d
    endif
-   if (lcn_mpx) then
-      qcmoins = qcmoinsmp
-      qcphytd = qcphytdmp
-      qcplus = qcplusmp
-      qrphytd = qrphytdmp
-   endif
+
+   if (qcmoinsmp > 0) qcmoins = qcmoinsmp
+   if (qcphytdmp > 0) qcphytd = qcphytdmp
+   if (qcplusmp > 0) qcplus = qcplusmp
+   if (qrphytdmp > 0) qrphytd = qrphytdmp
 
    call sfc_businit(moyhr,ni,nk)
    if (phy_error_L) return

@@ -23,10 +23,9 @@ contains
 
    !/@*
    subroutine phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        lwc0, iwc0, lwc0m, iwc0m, &
         vbus, dbus, fbus, seloc, dt, &
         kount, trnch, ni, nk)
-      use, intrinsic :: iso_fortran_env, only: INT64
+      use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
       use calcz0_mod, only: calcz0
@@ -38,6 +37,8 @@ contains
       use series_mod, only: series_xst
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
+      use phybudget, only: pb_compute, pb_residual
+      use phy_status, only: PHY_OK
       implicit none
 !!!#include <arch_specific.hf>
       !@Author L. Spacek (Oct 2011)
@@ -45,7 +46,7 @@ contains
       !@Arguments
       integer, intent(in) :: kount, trnch, ni, nk
       real, dimension(ni,nk), intent(out) :: uplus0, vplus0, wplus0, tplus0, &
-           huplus0, qcplus0, lwc0, iwc0, lwc0m, iwc0m, seloc
+           huplus0, qcplus0, seloc
       real, pointer, contiguous :: vbus(:), dbus(:), fbus(:)
       real, intent(in) :: dt
       !          - Input -
@@ -59,10 +60,6 @@ contains
       ! tplus0   initial value of dbus(tplus)
       ! huplus0  initial value of dbus(huplus)
       ! qcplus0  initial value of dbus(qcplus)
-      ! lwc0     initial value of total liquid water content
-      ! iwc0     initial value of total ice water content
-      ! lwc0m    time minus value of total liquid water content
-      ! iwc0m    time minus value of total ice water content
       !          - input/output -
       ! dbus     dynamics input field
       ! vbus     physics tendencies and other output fields from the physics
@@ -81,9 +78,9 @@ contains
       real                   :: sc,rcdt1
       real, dimension(ni,nk) :: work
       real, dimension(ni,nk) :: qe
-
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
+      real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
 
       type(phymetaplus) :: meta_m, meta_p
       type(phymeta), pointer :: metalist(:)
@@ -93,7 +90,8 @@ contains
            zqdiag, zza, zztsl, zzusl, zme, zp0, &
            zudiag, zvdiag, zmg, zz0, zz1, zz2, zz3, &
            zz4, ztls, ztss, zrainrate, zsnowrate, zthetaap, zpplus, &
-           zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac
+           zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
+           zcone0, zconq0, zcone1, zconq1, zconedyn, zconqdyn
       real, pointer, dimension(:,:), contiguous :: &
            zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
@@ -106,7 +104,13 @@ contains
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
       if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
-
+          
+      MKPTR1D(zcone0, cone0, vbus)
+      MKPTR1D(zcone1, cone1, fbus)
+      MKPTR1D(zconedyn, conedyn, vbus)
+      MKPTR1D(zconq0, conq0, vbus)
+      MKPTR1D(zconq1, conq1, fbus)
+      MKPTR1D(zconqdyn, conqdyn, vbus)
       MKPTR1D(zdlat, dlat, fbus)
       MKPTR1D(zfcor, fcor, vbus)
       MKPTR1D(zpmoins, pmoins, fbus)
@@ -197,6 +201,8 @@ contains
       MKPTR2D(zqim, qimoins, dbus)
 
       call init2nan(work, qe)
+      call init2nan(tmp1d)
+      call init2nan(en0, pw0, en1, pw1)
 
       IF_DEBUG: if (debug_mem_L) then
 
@@ -329,87 +335,49 @@ contains
       else
          zvplus(:,nk) = zvdiag
       endif
-      zqcplus(:,nk) = 0.
-      lwc0(:,nk) = 0.
-      iwc0(:,nk) = 0.
-      lwc0m(:,nk) = 0.
-      iwc0m(:,nk) = 0.
+      if (associated(zqcplus)) zqcplus(:,nk) = 0.
 
       ztmoins(:,nk) = ztdiag
       zhumoins(:,nk) = zqdiag
       zumoins(:,nk) = zudiag
       zvmoins(:,nk) = zvdiag
-      zqcmoins(:,nk) = 0.
+      if (associated(zqcmoins)) zqcmoins(:,nk) = 0.
 
       !# Save initial time plus values
       do k = 1, nk
          do i = 1, ni
             huplus0(i,k) = zhuplus(i,k)
-            qcplus0(i,k) = zqcplus(i,k)
-            lwc0(i,k)    = zqcplus(i,k)
-            iwc0(i,k)    = 0.0
-            lwc0m(i,k)   = zqcmoins(i,k)
-            iwc0m(i,k)   = 0.0
             uplus0(i,k)  = zuplus (i,k)
             vplus0(i,k)  = zvplus (i,k)
             tplus0(i,k)  = ztplus (i,k)
          enddo
       enddo
       if (diffuw) wplus0(:,1:nk) = zwplus(:,1:nk)
+      if (associated(zqcplus)) then
+         qcplus0(:,1:nk) = zqcplus(:,1:nk)
+      else
+         qcplus0(:,1:nk) = 0.
+      endif
 
-      ! IF_CONEPHY: if (associated(zconephy)) then  ! marche pas, use lcons?
-      ! need the following for Conserved variable state calculations
-      !# Save initial time plus values for MP schemes 
-      select case(stcond)
-      case('MP_P3')
-         zqrp(:,nk) = 0.
-         zqrm(:,nk) = 0.
-         lwc0  = zqcplus + zqrp
-         lwc0m = zqcmoins + zqrm
-         zqti1m(:,nk) = 0.
-         zqti1p(:,nk) = 0.
-         if (p3_ncat == 1) then
-            iwc0  = zqti1p
-            iwc0m = zqti1m
-         elseif (p3_ncat == 2) then
-            zqti2m(:,nk) = 0.
-            zqti2p(:,nk) = 0.
-            iwc0  = zqti1p + zqti2p
-            iwc0m = zqti1m + zqti2m
-         elseif (p3_ncat == 3) then
-            zqti2m(:,nk) = 0.
-            zqti2p(:,nk) = 0.
-            zqti3m(:,nk) = 0.
-            zqti3p(:,nk) = 0.
-            iwc0 = zqti1p + zqti2p + zqti3p
-            iwc0m = zqti1m + zqti2m + zqti3m
-         elseif (p3_ncat == 4) then
-            zqti2m(:,nk) = 0.
-            zqti2p(:,nk) = 0.
-            zqti3m(:,nk) = 0.
-            zqti3p(:,nk) = 0.
-            zqti4m(:,nk) = 0.
-            zqti4p(:,nk) = 0.
-            iwc0  = zqti1p + zqti2p + zqti3p + zqti4p
-            iwc0m = zqti1m + zqti2m + zqti3m + zqti4m
-         endif !p3_ncat
-      case('MP_MY2')
-         zqnp(:,nk) = 0.
-         zqhp(:,nk) = 0.
-         zqip(:,nk) = 0.
-         zqgp(:,nk) = 0.
-         zqnm(:,nk) = 0.
-         zqhm(:,nk) = 0.
-         zqim(:,nk) = 0.
-         zqgm(:,nk) = 0.
-         zqrp(:,nk) = 0.
-         zqrm(:,nk) = 0.
-         lwc0  = zqcplus + zqrp
-         lwc0m = zqcmoins + zqrm
-         iwc0  = zqip + zqnp + zqgp + zqhp
-         iwc0m = zqim + zqnm + zqgm + zqhm
-      end select
-      ! endif IF_CONEPHY
+      ! Microphysics initializations
+      if (associated(zqti1m)) zqti1m(:,nk) = 0.
+      if (associated(zqti1p)) zqti1p(:,nk) = 0.
+      if (associated(zqti2m)) zqti2m(:,nk) = 0.
+      if (associated(zqti2p)) zqti2p(:,nk) = 0.
+      if (associated(zqti3m)) zqti3m(:,nk) = 0.
+      if (associated(zqti3p)) zqti3p(:,nk) = 0.
+      if (associated(zqti4m)) zqti4m(:,nk) = 0.
+      if (associated(zqti4p)) zqti4p(:,nk) = 0.
+      if (associated(zqnp)) zqnp(:,nk) = 0.
+      if (associated(zqhp)) zqhp(:,nk) = 0.
+      if (associated(zqip)) zqip(:,nk) = 0.
+      if (associated(zqgp)) zqgp(:,nk) = 0.
+      if (associated(zqnm)) zqnm(:,nk) = 0.
+      if (associated(zqhm)) zqhm(:,nk) = 0.
+      if (associated(zqim)) zqim(:,nk) = 0.
+      if (associated(zqgm)) zqgm(:,nk) = 0.
+      if (associated(zqrp)) zqrp(:,nk) = 0.
+      if (associated(zqrm)) zqrm(:,nk) = 0.
 
       !# calcul des tendances de la dynamique
       do k = 1,nk
@@ -421,10 +389,36 @@ contains
          end do
       end do
 
+      ! Compute pre-physics budget state
+      if (pb_compute(zcone0, zconq0, en0, pw0, &
+           dbus, fbus, vbus, nk-1) /= PHY_OK) then
+         call physeterror('phystepinit', &
+              'Problem computing pre-physics budget state')
+         return
+      endif
+      if (associated(zcone0)) zcone0(:) = real(en0(:))
+      if (associated(zconq0)) zconq0(:) = real(pw0(:))
+      if (kount == 0) then
+         if (associated(zcone1)) zcone1(:) = zcone0(:)
+         if (associated(zconq1)) zconq1(:) = zconq0(:)
+      endif
+
+      ! Compute non-physics (dynamics) budget residual
+      en1(:) = 0.
+      if (associated(zcone1)) en1(:) = dble(zcone1(:))
+      pw1(:) = 0.
+      if (associated(zconq1)) pw1(:) = dble(zconq1(:))
+      if (pb_residual(zconedyn, zconqdyn, en1, pw1, dbus, fbus, vbus, &
+           delt, nk-1) /= PHY_OK) then
+         call physeterror('phybusinit', &
+              'Problem computing dynamics budget')
+         return
+      endif
+      
       if (associated(ztadv)) call series_xst(ztadv, 'XT', trnch)
       if (associated(zqadv)) call series_xst(zqadv, 'XQ', trnch)
 
-      if (stcond /= 'NIL') then
+      if (associated(zqcplus)) then
          do k = 1, nk
             do i = 1, ni
                work(i,k) = (zqcplus(i,k) - zqcmoins(i,k)) * rcdt1

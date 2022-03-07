@@ -32,7 +32,7 @@ contains
       use debug_mod, only: init2nan
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL, GRAV, PI, STEFAN
-      use cldoppro_MP, only: cldoppro_MP1
+      use cldoppro_MP, only: cldoppro_MP2
       use sfclayer_mod, only: sl_prelim, sl_sfclayer, SL_OK
       use series_mod, only: series_xst, series_isstep
       use phy_options
@@ -144,7 +144,6 @@ contains
 
       real, dimension(ni) :: dummy1,dummy2,dummy3,dummy4
       real, dimension(ni) :: vmod2,vdir,th_air,my_tdiag,my_udiag,my_vdiag
-      integer :: mpcat
 
       real :: &
            liqwcin_s(ni,nkm1,nx_loc),  &! subcolumns of cloud liquid water
@@ -187,15 +186,6 @@ contains
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
       call init2nan(omcl, gcl, liqwcin_s, icewcin_s)
       call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
-
-      if (stcond(1:3) /= 'MP_') then
-         if (.not.associated(ztcsl)) ztcsl => dummy1d
-         if (.not.associated(ztcsm)) ztcsm => dummy1d
-         if (.not.associated(ztcsh)) ztcsh => dummy1d
-         if (.not.associated(ztczl)) ztczl => dummy1d
-         if (.not.associated(ztczm)) ztczm => dummy1d
-         if (.not.associated(ztczh)) ztczh => dummy1d
-      endif
       
       !  use integer variables instead of actual integers
 
@@ -263,19 +253,22 @@ contains
       ! called every timestep
       if (stcond(1:3)=='MP_') then
 
-         if (stcond(1:5)=='MP_P3')  mpcat = p3_ncat
-         if (stcond(1:6)=='MP_MY2') mpcat = 3
-         !#TODO: move bus up
-         call cldoppro_MP1(dbus, fbus, vbus, &
+         call cldoppro_MP2(dbus, fbus, vbus, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
               temp, sig, zgztherm, ps, &      
-              ni, nkm1, nk, mpcat, kount)
+              ni, nkm1, nk, kount)
          if (phy_error_L) return
 
       else
 
+         if (.not.associated(ztcsl)) ztcsl => dummy1d
+         if (.not.associated(ztcsm)) ztcsm => dummy1d
+         if (.not.associated(ztcsh)) ztcsh => dummy1d
+         if (.not.associated(ztczl)) ztczl => dummy1d
+         if (.not.associated(ztczm)) ztczm => dummy1d
+         if (.not.associated(ztczh)) ztczh => dummy1d
          call cldoppro5(taucs, omcs, gcs, taucl, omcl, gcl, &
               ztopthw, ztopthi, zecc, ztcc, &
               zeccl, zeccm, zecch, &

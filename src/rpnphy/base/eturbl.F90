@@ -24,9 +24,9 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    use tdpack, only: CAPPA, DELTA, KARMAN
    use series_mod, only: series_xst
    use phy_options
-   use phy_status, only: phy_error_L
-   use mixing_length, only: ml_blend,ml_calc_blac,ml_calc_boujo,ML_OK
-   use pbl_stabfunc, only: psf_stabfunc, PSF_OK
+   use phy_status, only: phy_error_L, PHY_OK
+   use mixing_length, only: ml_blend,ml_calc_blac,ml_calc_boujo
+   use pbl_stabfunc, only: psf_stabfunc
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -264,7 +264,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    stat = psf_stabfunc(rig,z,fm,fh, &
         blend_bottom=pbl_slblend_layer(1),blend_top=pbl_slblend_layer(2))
    kt = fm/fh  !temporary storage for the inverse Prandtl number
-   if (stat /= PSF_OK) then
+   if (stat /= PHY_OK) then
       call physeterror('eturbl', 'error returned by PBL stability functions')
       return
    endif
@@ -330,14 +330,14 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
             X1(J,K)=TE(J,K)*(1.0+DELTA*QE(J,K)-QCE(J,K))*X1(J,K)
          end do
       end do
-      if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= ML_OK) then
+      if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= PHY_OK) then
          call physeterror('eturbl', 'error returned by B-L mixing length estimate')
          return
       endif
       blend_hght(:,:nk-1) = gzmom(:,2:)
       blend_hght(:,nk) = 0.
       zn_boujo = max(zn_boujo,1.)
-      if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, se, ps) /= ML_OK) then
+      if (ml_blend(zn, zn_blac, zn_boujo, blend_hght, se, ps) /= PHY_OK) then
          call physeterror('eturbl', 'error returned by mixing length blending')
          return
       endif

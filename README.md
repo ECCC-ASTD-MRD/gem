@@ -16,7 +16,7 @@ See below for extended instructions and requirements.
     # Important: in order to set environment variables needed to run GEM, use the
     # following setup file, after setting up your compiler environment:
     . ./.common_setup gnu
-    or
+    # or
     . ./.common_setup intel
 	
     # Create a build directory
@@ -25,12 +25,15 @@ See below for extended instructions and requirements.
     mkdir -p build
     cd build
 
-    # If the -DWORK_PREFIX=<path> option isn't given to cmake, the work directory
-    # will be created with the name work-${OS_NAME}-${COMPILER_NAME}
+	# default compiler is gnu
     cmake ../project
+	# or, for Intel:
+    cmake ../project -DCOMPILER=intel
     # Create an execution environment for GEM
     make -j work
 
+    # You should now have a work directory created in the form of:
+    # work-${OS_NAME}-${COMPILER_NAME} 
     cd ..
     cd work-${OS_NAME}-${COMPILER_NAME}
     # Configure the model with one of the configurations
@@ -61,6 +64,7 @@ To compile and run GEM, you will need:
 - basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
 ## Data for examples
+
 After having cloned or downloaded the git tar file of GEM from
 [github.com](https://github.com/ECCC-ASTD-MRD/gem), execute the script named
 **download-dbase.sh** or download and untar the data archive with the following
@@ -89,13 +93,15 @@ link:
           export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
         ```
 
-### Intel Compilers
+### Intel compiler suite
 
 - Changes to the C and Fortran flags can be done in **project/Linux-x86_64-intel.cmake**
 - You may need to modify ```-march``` to generate code that can run on
   your system
 - Make sure the compilers and libraries are in the appropriate
   environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
+- As gnu is the default compiler suite, use the following command to compile
+  with Intel: ```cmake ../project -DCOMPILER=intel```
 
 ## Compiling and installing GEM
 
@@ -108,7 +114,7 @@ without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
 The default compiler suite is GNU. If you want to compile with other compilers,
-add ```-DCOMPILER=<compiler suite name (gnu|intel)>``` to the CMake
+add ```-DCOMPILER=<compiler suite name (gnu|intel|...)>``` to the CMake
 command line.  This release has been tested with GNU and Intel compilers on
 Linux x86_64.  Other compilers have also been used in the past but have not been
 tested with the current release.  You will likely have to modify the *.cmake
@@ -247,7 +253,7 @@ and then run the model:
     runmod.sh -dircfg configurations/experience
 ```
 
-## Modifying the grid and getting meteorological data}
+## Modifying the grid and getting meteorological data
 
 You can use the script named *grille* in the *scripts* directory to define
 your own grid and visualise it with SPI (see above how to get it).

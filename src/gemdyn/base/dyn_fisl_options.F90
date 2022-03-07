@@ -174,7 +174,7 @@ module dyn_fisl_options
    namelist /dyn_fisl_p/ Sol2D_precond_S
 
    !# 3D preconditioner for iterative solver
-   character(len=26) :: sol3D_precond_S = 'JACOBI'
+   character(len=26) :: sol3D_precond_S = 'RAS'
    namelist /dyn_fisl  / Sol3D_precond_S
    namelist /dyn_fisl_p/ Sol3D_precond_S
 

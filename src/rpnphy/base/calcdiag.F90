@@ -22,8 +22,7 @@ module calcdiag
 contains
 
    !/@*
-   subroutine calcdiag1(tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m, &
-        dbus, fbus, vbus, dt, kount, ni, nk)
+   subroutine calcdiag1(dbus, fbus, vbus, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -33,7 +32,8 @@ contains
       use sfclayer_mod, only: sl_prelim, sl_sfclayer, SL_OK
       use phy_options
       use phybus
-      use energy_budget, only: eb_en, eb_pw, eb_residual_en, eb_residual_pw, EB_OK
+      use phybudget, only: pb_compute, pb_residual
+      use phy_status, only: PHY_OK
       implicit none
 !!!#include <arch_specific.hf>
       !@Arguments
@@ -54,7 +54,6 @@ contains
       integer, intent(in) :: kount, ni, nk
       real, intent(in) :: dt
       real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
-      real, dimension(:,:), intent(in) :: tplus0, huplus0, lwc0, iwc0, lwc0m, iwc0m
 
       !@Author B. Bilodeau Feb 2003
       !*@/
@@ -76,7 +75,7 @@ contains
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec
-      real(REAL64), dimension(ni) :: enm, pwm, en0, pw0, enp, pwp, enr, pwr
+      real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, dimension(ni,nk) :: presinv, t2inv, tiinv, lwcp, iwcp
       real, dimension(ni,nk-1) :: q_grpl, iiwc
 
@@ -94,7 +93,7 @@ contains
 
       call init2nan(uvs, vmod, vdir, th_air, hblendm, ublend)
       call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec)
-      call init2nan(enm, pwm, en0, pw0, enp, pwp, enr, pwr)
+      call init2nan(en0, pw0, en1, pw1)
       call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc, lwcp, iwcp)
 
       lkount0 = (kount == 0)
@@ -237,21 +236,19 @@ contains
          zaip(:)  = 0.
          zsn(:)   = 0.
 
-         if (stcond(1:3) == 'MP_')  then
-            zals_rn1(:)  = 0.
-            zals_rn2(:)  = 0.
-            zals_fr1(:)  = 0.
-            zals_fr2(:)  = 0.
-            zass_sn1(:)  = 0.
-            zass_sn2(:)  = 0.
-            zass_sn3(:)  = 0.
-            zass_pe1(:)  = 0.
-            zass_pe2(:)  = 0.
-            zass_pe2l(:) = 0.
-            zass_snd(:)  = 0.
-            zass_mx(:)   = 0.
-            zass_s2l(:)  = 0.
-         endif
+         if (associated(zals_rn1)) zals_rn1(:)  = 0.
+         if (associated(zals_rn2)) zals_rn2(:)  = 0.
+         if (associated(zals_fr1)) zals_fr1(:)  = 0.
+         if (associated(zals_fr2)) zals_fr2(:)  = 0.
+         if (associated(zass_sn1)) zass_sn1(:)  = 0.
+         if (associated(zass_sn2)) zass_sn2(:)  = 0.
+         if (associated(zass_sn3)) zass_sn3(:)  = 0.
+         if (associated(zass_pe1)) zass_pe1(:)  = 0.
+         if (associated(zass_pe2)) zass_pe2(:)  = 0.
+         if (associated(zass_pe2l)) zass_pe2l(:) = 0.
+         if (associated(zass_snd)) zass_snd(:)  = 0.
+         if (associated(zass_mx)) zass_mx(:)   = 0.
+         if (associated(zass_s2l)) zass_s2l(:)  = 0.
 
       endif IF_RESET_PRECIP
 
@@ -557,83 +554,44 @@ contains
             call physeterror('calcdiag', 'Problem in radiative tendency integrals')
             return
          endif
-         zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt + zfc_ag
-         zq2app = CHLC*zrt - zflw
+         zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt*RAUW + zfc_ag
+         zq2app = CHLC*(zrt*RAUW - zflw)
       endif Q1_BUDGET
+      
+      ! Compute physics budget residual
+      en0(:) = 0.
+      if (associated(zcone0)) en0(:) = dble(zcone0(:))
+      pw0(:) = 0.
+      if (associated(zconq0)) pw0(:) = dble(zconq0(:))
+      if (pb_residual(zconephy, zconqphy, en0, pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
+           F_rad=znetrad) /= PHY_OK) then
+         call physeterror('calcdiag', &
+              'Problem computing physics budget residual')
+         return
+      endif
 
-      ! Compute conservation properties
-      COMPUTE_EB: if (associated(zconephy)) then
-         ! Conserved variable state calculations
-         istat = eb_en(enm,ztmoins,zhumoins,lwc0m,zsigt,zpplus,nkm1,F_qi=iwc0m)
-         istat1 = eb_pw(pwm,zhumoins,lwc0m,zsigt,zpplus,nkm1,F_qi=iwc0m)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing time-minus energy budget')
-            return
-         endif
-         istat = eb_en(en0,tplus0,huplus0,lwc0,zsigt,zpplus,nkm1,F_qi=iwc0)
-         istat1 = eb_pw(pw0,huplus0,lwc0,zsigt,zpplus,nkm1,F_qi=iwc0)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing post-dynamics energy budget')
-            return
-         endif
-         select case(stcond)
-         case('MP_P3')
-            lwcp=zqcplus+zqrp
-            if (p3_ncat==1) then
-               iwcp=zqti1p
-            elseif (p3_ncat==2) then
-               iwcp=zqti1p+zqti2p
-            elseif (p3_ncat==3) then
-               iwcp=zqti1p+zqti2p+zqti3p
-            elseif (p3_ncat==4) then
-               iwcp=zqti1p+zqti2p+zqti3p+zqti4p
-            endif !p3_ncat
-         case('MP_MY2')
-            lwcp=zqcplus+zqrp
-            iwcp=zqiplus+zqnplus+zqgplus+zqhp
-         case('CONSUN')
-            lwcp=zqcplus
-            iwcp=0.0
-         case default
-            call physeterror('calcdiag', 'Condensation scheme no supported: '//stcond)
-            return
-         end select
-         istat = eb_en(enp,ztplus,zhuplus,lwcp,zsigt,zpplus,nkm1,F_qi=iwcp)
-         istat1 = eb_pw(pwp,zhuplus,lwcp,zsigt,zpplus,nkm1,F_qi=iwcp)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing post-physics energy budget')
-            return
-         endif
-         ! Conserved variable residual calculations(note: need lwc and iwc for calculation of Cpm near sfc)
-         istat = eb_residual_en(enr,enm,en0,ztmoins,zhumoins,lwc0m,dt,nkm1,F_qi=iwc0m)
-         istat1 = eb_residual_pw(pwr,pwm,pw0,ztmoins,dt,nkm1)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing dynamics residuals')
-            return
-         endif
-         zconedyn(:) = real(enr(:))
-         zconqdyn(:) = real(pwr(:))
-         istat = eb_residual_en(enr,en0,enp,ztplus,zhuplus,lwcp,dt,nkm1, &
-              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zflw,F_rad=znetrad)
-         istat1 = eb_residual_pw(pwr,pw0,pwp,ztplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_lhf=zflw)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing physics residuals')
-            return
-         endif
-         zconephy(:) = real(enr(:))
-         zconqphy(:) = real(pwr(:))
-         istat = eb_residual_en(enr,enm,enp,ztplus,zhuplus,lwcp,dt,nkm1, &
-              F_rain=zrt*RAUW,F_shf=zfc_ag,F_lhf=zflw,F_rad=znetrad)
-         istat1 = eb_residual_pw(pwr,pwm,pwp,ztplus,dt,nkm1, &
-              F_rain=zrt*RAUW,F_lhf=zflw)
-         if (istat /= EB_OK .or. istat1 /= EB_OK) then
-            call physeterror('calcdiag', 'Problem computing total model residuals')
-            return
-         endif
-         zconetot(:) = real(enr(:))
-         zconqtot(:) = real(pwr(:))
-      endif COMPUTE_EB
+      ! Compute full-model budget residual
+      en1(:) = 0.
+      if (associated(zcone1)) en1(:) = dble(zcone1(:))
+      pw1(:) = 0.
+      if (associated(zconq1)) pw1(:) = dble(zconq1(:))
+      if (pb_residual(zconetot, zconqtot, en1, pw1, dbus, fbus, vbus, &
+           delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
+           F_rad=znetrad) /= PHY_OK) then
+         call physeterror('calcdiag', &
+              'Problem computing full-model budget residual')
+         return
+      endif
+      
+      ! Compute post-physics budget state
+      if (pb_compute(zcone1, zconq1, en1, pw1, dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         call physeterror('phystepinit', &
+              'Problem computing post-physics budget state')
+         return
+      endif
+      if (associated(zcone1)) zcone1(:) = real(en1(:))
+      if (associated(zconq1)) zconq1(:) = real(pw1(:))
 
       !****************************************************************
       !     AVERAGES

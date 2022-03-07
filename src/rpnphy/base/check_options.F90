@@ -84,18 +84,6 @@ function check_options2() result(F_istat)
       return
    endif
 
-   if (fluvert == 'MOISTKE' .and. &
-        .not.any(stcond == (/ &
-        'NIL       ', &
-        'CONSUN    ', &
-        'MP_MY2    ', &
-        'MP_P3     '  &
-        /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='// &
-           trim(fluvert)//' and stcond='//trim(stcond))
-      return
-   endif
-
    if (fluvert == 'CLEF' .and. &
         .not.any(longmel == (/ &
         'TURBOUJO', &

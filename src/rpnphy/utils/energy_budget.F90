@@ -17,6 +17,7 @@
 module energy_budget
    use, intrinsic :: iso_fortran_env, only: REAL64
    use tdpack, only: CHLC, CHLF, CPD, CPI, CPV, CPW, GRAV, TCDK, TRPL
+   use phy_status, only: PHY_OK, PHY_ERROR
    implicit none
    private
 #include <rmnlib_basics.hf>
@@ -32,8 +33,6 @@ module energy_budget
    public :: eb_residual_pw                                     !Normalized total water residual due to a physical process
    public :: eb_conserve_en                                     !Impose energy conservation by adjusting temperature tendencies
    public :: eb_conserve_pw                                     !Impose total water conservation by adjusting humidity tendencies
-   integer, public :: EB_OK=RMN_OK                              !Return code for successful completion
-   integer, public :: EB_ERR=RMN_ERR                            !Return code for error completion
 
    ! Local generic interfaces
    interface compute_lv
@@ -51,8 +50,8 @@ module energy_budget
 
    ! Local variables
    integer :: ksfc=1                                            !Near-surface level index
-   real :: norm_en=1.                                          !Normalizing factor for energy so typical "noise" has a value of one
-   real :: norm_pw=1./CHLC                                         !Normalizing factor for total water so typical "noise" has a value of one
+   real :: norm_en=1.                                           !Normalizing factor for energy unit conversion (to W/m2)
+   real :: norm_pw=1./CHLC                                      !Normalizing factor for total water unit conversion (to W/m2)
    logical :: initialized=.false.                               !Initialization status of package
    logical :: lv_temp_dependent=.true.                          !Use temperature-dependent latent heat of vapourization and sublimation
 
@@ -64,14 +63,14 @@ contains
       implicit none
 
       ! Arguments
-      logical, intent(in), optional :: F_lv_temp_dependent      !Use temperature-dependent latent heat of vapourization and sublimation
-      real, intent(in), optional :: F_norm_en                   !Normalizing factor for energy so typical "noise" has a value of one [1e-9]
-      real, intent(in), optional :: F_norm_pw                   !Normalizing factor for total water so typical "noise" has a value of one [1e-7]
+      logical, intent(in), optional :: F_lv_temp_dependent      !Use temperature-dependent latent heats [.true.]
+      real, intent(in), optional :: F_norm_en                   !Normalizing factor for energy unit conversion [1.]
+      real, intent(in), optional :: F_norm_pw                   !Normalizing factor for total water unit conversion [1/CHLC]
       integer, intent(in), optional :: F_nearsfc_k              !Index of the lowest model level [1]
-      integer :: F_stat                                         !Return status (RMN_OK or RMN_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
 
       ! Check initialization status
       if (initialized) then
@@ -87,7 +86,7 @@ contains
       if (present(F_nearsfc_k)) ksfc = F_nearsfc_k
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_init
 
@@ -105,9 +104,9 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg) [diagnosed]
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
-      real(REAL64), dimension(:), intent(out) :: F_eni    !Integrated energy (m3/s2)
+      real(REAL64), dimension(:), intent(out) :: F_eni          !Integrated energy (m3/s2)
       real, dimension(:,:), intent(out), optional :: F_en       !Profile of energy (m3/s2)
-      integer :: F_stat                                         !Return status (RMN_OK or RMN_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
@@ -115,7 +114,7 @@ contains
       character(len=LONG_CHAR) :: myInttype
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_eni = 0.
 
       ! Handle optional arguments
@@ -138,7 +137,7 @@ contains
       en = cpm*F_tt(:,1:F_nk) - lv*myqc - ls*myqi
 
       ! Integrate energy values in height (dp/g)
-      if (integrate_profile(F_eni,en,F_sig(:,1:F_nk),F_p0,myInttype) /= EB_OK) then
+      if (integrate_profile(F_eni,en,F_sig(:,1:F_nk),F_p0,myInttype) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_en) error in integral calculation')
          return
       endif
@@ -147,7 +146,7 @@ contains
       if (present(F_en)) F_en = en
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_en
 
@@ -172,7 +171,7 @@ contains
       logical, intent(in), optional :: F_abs                    !Computed integrated absolute value of energy [.false.]
       real(REAL64), dimension(:), intent(out) :: F_deni   !Integrated energy tendency (m3/s3)
       real, dimension(:,:), intent(out), optional :: F_den      !Profile of energy tendency (m3/s3)
-      integer :: F_stat                                         !Return status (RMN_OK or RMN_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
@@ -181,7 +180,7 @@ contains
       logical :: myAbs
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_deni = 0.
 
       ! Handle optional arguments
@@ -220,7 +219,7 @@ contains
       if (myAbs) den = abs(den)
 
       ! Integrate energy tendency values in height (dp/g)
-      if (integrate_profile(F_deni,den,F_sig(:,1:F_nk),F_p0,myInttype) /= EB_OK) then
+      if (integrate_profile(F_deni,den,F_sig(:,1:F_nk),F_p0,myInttype) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_den) error in integral calculation')
          return
       endif
@@ -229,13 +228,13 @@ contains
       if (present(F_den)) F_den = den
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_den
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function eb_conserve_en(F_dttc,F_dtt,F_dhu,F_tt,F_hu,F_qc,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_qi, &
-        F_rain,F_snow,F_shf,F_lhf,F_rad,F_mask,F_inttype) result(F_stat)
+        F_rain,F_snow,F_shf,F_wvf,F_rad,F_mask,F_inttype) result(F_stat)
       ! Apply corrective offset to tendencies for energy conservation
       implicit none
 
@@ -254,23 +253,23 @@ contains
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_shf         !Surface turbulent sensible heat flux (W/m2) [0.]
-      real, dimension(:), intent(in), optional :: F_lhf         !Surface turbulent latent heat flux (W/m2) [0.]
+      real, dimension(:), intent(in), optional :: F_wvf         !Surface water vapour flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_rad         !Net radiation flux TOA-surface (W/m2) [0.]
       logical, intent(in), optional :: F_mask                   !Apply offset only where tendencies are non-zero [true]
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
       real, dimension(:,:), intent(out) :: F_dttc               !Conservative temperature humidity tendency (K/s)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: k,istat
-      real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,myshf,mylhf,myrad,src,mult
+      real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,myshf,mywvf,myrad,src,mult
       real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi,mydqc,mydqi,qw,cpm,ls,lv,dcpm,dls,dlv,dqw,den,denc
       real(REAL64), dimension(size(F_tt,dim=1)) :: deni,dabseni
       character(len=LONG_CHAR) :: myInttype
       logical :: mymask
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_dttc(:,1:F_nk) = F_dtt(:,1:F_nk)
 
       ! Handle optional arguments
@@ -282,8 +281,8 @@ contains
       if (present(F_snow)) mysnow = F_snow
       myshf = 0.
       if (present(F_shf)) myshf = F_shf
-      mylhf = 0.
-      if (present(F_lhf)) mylhf = F_lhf
+      mywvf = 0.
+      if (present(F_wvf)) mywvf = F_wvf
       myrad = 0.
       if (present(F_rad)) myrad = F_rad
       mymask = .true.
@@ -313,18 +312,18 @@ contains
       istat = dthermo_param(dcpm,dlv,dls)
 
       ! Compute source term from provided boundary values
-      istat = compute_source_en(src,F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,myqi,myrain,mysnow,myshf,mylhf,myrad)
+      istat = compute_source_en(src,F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,myqi,myrain,mysnow,myshf,mywvf,myrad)
 
       ! Compute tendency-based energy tendency
       if (eb_den(deni,F_dtt(:,1:F_nk),F_dhu(:,1:F_nk),F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,F_sig(:,1:F_nk), &
-           F_p0,F_nk,F_dqc=mydqc(:,1:F_nk),F_dqi=mydqi(:,1:F_nk),F_qi=myqi,F_inttype=myInttype,F_den=den) /= EB_OK) then
+           F_p0,F_nk,F_dqc=mydqc(:,1:F_nk),F_dqi=mydqi(:,1:F_nk),F_qi=myqi,F_inttype=myInttype,F_den=den) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_conserve_en) error in tendency integral')
          return
       endif
 
       ! Compute absolute value of energy tendency
       if (eb_den(dabseni,F_dtt(:,1:F_nk),F_dhu(:,1:F_nk),F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,F_sig(:,1:F_nk), &
-           F_p0,F_nk,F_dqc=mydqc(:,1:F_nk),F_dqi=mydqi(:,1:F_nk),F_qi=myqi,F_inttype=myInttype,F_abs=.true.) /= EB_OK) then
+           F_p0,F_nk,F_dqc=mydqc(:,1:F_nk),F_dqi=mydqi(:,1:F_nk),F_qi=myqi,F_inttype=myInttype,F_abs=.true.) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_conserve_en) error in tendency integral')
          return
       endif
@@ -344,18 +343,18 @@ contains
       enddo
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_conserve_en
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function eb_residual_en(F_resid,F_fld0,F_fld1,F_tt,F_hu,F_qc,F_dt,F_nk,F_qi,F_rain,F_snow,F_shf,F_lhf,F_rad) result(F_stat)
+   function eb_residual_en(F_resid,F_fld0,F_fld1,F_tt,F_hu,F_qc,F_dt,F_nk,F_qi,F_rain,F_snow,F_shf,F_wvf,F_rad) result(F_stat)
       ! Compute the budget residual for thermal energy
       implicit none
 
       ! Arguments
-      real(REAL64), dimension(:), intent(in) :: F_fld0    !Energy before process
-      real(REAL64), dimension(:), intent(in) :: F_fld1    !Energy after process
+      real(REAL64), dimension(:), intent(in) :: F_fld0          !Energy before process
+      real(REAL64), dimension(:), intent(in) :: F_fld1          !Energy after process
       real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
       real, dimension(:,:), intent(in) :: F_hu                  !Specific humidity (kg/kg)
       real, dimension(:,:), intent(in) :: F_qc                  !Liquid condensate (kg/kg)
@@ -365,18 +364,18 @@ contains
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_shf         !Surface turbulent sensible heat flux (W/m2) [0.]
-      real, dimension(:), intent(in), optional :: F_lhf         !Surface turbulent latent heat flux (W/m2) [0.]
+      real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_rad         !Net radiation flux TOA-surface (W/m2) [0.]
-      real(REAL64), dimension(:), intent(out) :: F_resid  !Energy residual (non-conservation)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      real(REAL64), dimension(:), intent(out) :: F_resid        !Energy residual (non-conservation)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
-      real, dimension(size(F_fld0,dim=1)) :: myrain,mysnow,myshf,mylhf,myrad,src
+      real, dimension(size(F_fld0,dim=1)) :: myrain,mysnow,myshf,mywvf,myrad,src
       real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_resid = 0.
 
       ! Handle optional arguments
@@ -386,8 +385,8 @@ contains
       if (present(F_snow)) mysnow = F_snow
       myshf = 0.
       if (present(F_shf)) myshf = F_shf
-      mylhf = 0.
-      if (present(F_lhf)) mylhf = F_lhf
+      mywvf = 0.
+      if (present(F_wvf)) mywvf = F_wvf
       myrad = 0.
       if (present(F_rad)) myrad = F_rad
 
@@ -400,7 +399,7 @@ contains
       endif
 
       ! Compute source term from provided boundary values
-      istat = compute_source_en(src,F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,myqi,myrain,mysnow,myshf,mylhf,myrad)
+      istat = compute_source_en(src,F_tt(:,1:F_nk),F_hu(:,1:F_nk),myqc,myqi,myrain,mysnow,myshf,mywvf,myrad)
 
       ! Use generic residual function with specified normalization factor
       F_stat = compute_residual(F_resid,F_fld0,F_fld1,F_dt,norm_en,src)
@@ -410,7 +409,7 @@ contains
    end function eb_residual_en
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function compute_source_en(F_src,F_tt,F_qv,F_qc,F_qi,F_rain,F_snow,F_shf,F_lhf,F_rad) result(F_stat)
+   function compute_source_en(F_src,F_tt,F_qv,F_qc,F_qi,F_rain,F_snow,F_shf,F_wvf,F_rad) result(F_stat)
       ! Compute the boundary source of energy
       implicit none
 
@@ -422,17 +421,17 @@ contains
       real, dimension(:), intent(in) :: F_rain                  !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_snow                  !Surface solid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_shf                   !Surface turbulent sensible heat flux (W/m2)
-      real, dimension(:), intent(in) :: F_lhf                   !Surface turbulent latent heat flux (W/m2)
+      real, dimension(:), intent(in) :: F_wvf                   !Surface turbulent water vapour flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_rad                   !Net radiation flux TOA-surface (W/m2)
       real, dimension(:), intent(out) :: F_src                  !Energy boundary source
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
       real, dimension(size(F_tt,dim=1)) :: lv,ls,qw
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_src = 0.
 
       ! Compute latent heats
@@ -445,14 +444,13 @@ contains
       F_src = F_src + (lv+(CPD-CPV)*F_tt(:,ksfc))*F_rain + (ls+(CPD-CPV)*F_tt(:,ksfc))*F_snow
 
       ! Turbulent flux energy source
-      F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)*F_tt(:,ksfc))*F_lhf
-      ! F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)/lv*F_tt(:,ksfc))*F_lhf
+      F_src = F_src + (1.+(CPV/CPD-1.)*qw)*F_shf + ((CPV-CPD)*F_tt(:,ksfc))*F_wvf
 
       ! Radiative energy source
       F_src = F_src + F_rad
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function compute_source_en
 
@@ -470,16 +468,16 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg)
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
-      real(REAL64), dimension(:), intent(out) :: F_pwi    !Integrated total water (m)
+      real(REAL64), dimension(:), intent(out) :: F_pwi          !Integrated total water (m)
       real, dimension(:,:), intent(out), optional :: F_pw       !Profile of total water (m)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       real, dimension(size(F_hu,dim=1),F_nk) :: qw
       character(len=LONG_CHAR) :: myInttype
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_pwi = 0.
 
       ! Handle optional arguments
@@ -491,7 +489,7 @@ contains
       if (present(F_qi)) qw = qw + F_qi(:,1:F_nk)
 
       ! Integrate total water values in height (dp/g)
-      if (integrate_profile(F_pwi,qw,F_sig(:,1:F_nk),F_p0,myInttype) /= EB_OK) then
+      if (integrate_profile(F_pwi,qw,F_sig(:,1:F_nk),F_p0,myInttype) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_pw) error in integral calculation')
          return
       endif
@@ -500,12 +498,12 @@ contains
       if (present(F_pw)) F_pw = qw
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_pw
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function eb_dpw(F_dpwi,F_dhu,F_hu,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_qi,F_inttype,F_abs,F_dpw) result(F_stat)
+   function eb_dpw(F_dpwi,F_dhu,F_hu,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_inttype,F_abs,F_dpw) result(F_stat)
       ! Compute the vertically integrated total water tendency
       use integrals, only: int_profile,INT_OK
       implicit none
@@ -518,20 +516,19 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_dqc       !Liquid condensate tendency (kg/kg/s) [0.]
       real, dimension(:,:), intent(in), optional :: F_dqi       !Solid condensate tendency (kg/kg/s) [0.]
-      real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg) [0.]
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
       logical, intent(in), optional :: F_abs                    !Computed integrated absolute value of total water [.false.]
       real(REAL64), dimension(:), intent(out) :: F_dpwi   !Integrated total water (m)
       real, dimension(:,:), intent(out), optional :: F_dpw      !Profile of total water (m)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
-      real, dimension(size(F_hu,dim=1),F_nk) :: dqw,myqi,mydqc,mydqi
+      real, dimension(size(F_hu,dim=1),F_nk) :: dqw,mydqc,mydqi
       character(len=LONG_CHAR) :: myInttype
       logical :: myAbs
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_dpwi = 0.
 
       ! Handle optional arguments
@@ -539,8 +536,6 @@ contains
       if (present(F_dqc)) mydqc = F_dqc(:,1:F_nk)
       mydqi = 0.
       if (present(F_dqi)) mydqi = F_dqi(:,1:F_nk)
-      myqi = 0.
-      if (present(F_qi)) myqi = F_qi(:,1:F_nk)
       myInttype = DEFAULT_INTTYPE
       if (present(F_inttype)) myInttype = F_inttype
       myAbs = .false.
@@ -553,7 +548,7 @@ contains
       if (myAbs) dqw = abs(dqw)
 
       ! Integrate total water values in height (dp/g)
-      if (integrate_profile(F_dpwi,dqw,F_sig(:,1:F_nk),F_p0,myInttype) /= EB_OK) then
+      if (integrate_profile(F_dpwi,dqw,F_sig(:,1:F_nk),F_p0,myInttype) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_dpw) error in integral calculation')
          return
       endif
@@ -562,12 +557,12 @@ contains
       if (present(F_dpw)) F_dpw = dqw
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_dpw
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function eb_conserve_pw(F_dhuc,F_dhu,F_tt,F_hu,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_qi,F_rain,F_snow,F_lhf,F_inttype) result(F_stat)
+   function eb_conserve_pw(F_dhuc,F_dhu,F_tt,F_hu,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_rain,F_snow,F_wvf,F_inttype) result(F_stat)
       ! Apply corrective offset to tendencies for total water conservation
       implicit none
 
@@ -580,28 +575,25 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_dqc       !Liquid condensate tendency (kg/kg/s) [0.]
       real, dimension(:,:), intent(in), optional :: F_dqi       !Solid condensate tendency (kg/kg/s) [0.]
-      real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg) [0.]
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s)
-      real, dimension(:), intent(in), optional :: F_lhf         !Surface turbulent latent heat flux (W/m2)
+      real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s)
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
       real, dimension(:,:), intent(out) :: F_dhuc               !Conservative tendency (kg/kg/s)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: k,istat
-      real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,mylhf,src,mult
-      real, dimension(size(F_tt,dim=1),F_nk) :: myqi,mydqc,mydqi,dqw,dqwc
+      real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,mywvf,src,mult
+      real, dimension(size(F_tt,dim=1),F_nk) :: mydqc,mydqi,dqw,dqwc
       real(REAL64), dimension(size(F_tt,dim=1)) :: dpw,dabspw
       character(len=LONG_CHAR) :: myInttype
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_dhuc(:,1:F_nk) = F_dhu(:,1:F_nk)
 
       ! Handle optional arguments
-      myqi = 0.
-      if (present(F_qi)) myqi = F_qi(:,1:F_nk)
       mydqc = 0.
       if (present(F_dqc)) mydqc = F_dqc(:,1:F_nk)
       mydqi = 0.
@@ -610,24 +602,24 @@ contains
       if (present(F_rain)) myrain = F_rain
       mysnow = 0.
       if (present(F_snow)) mysnow = F_snow
-      mylhf = 0.
-      if (present(F_lhf)) mylhf = F_lhf
+      mywvf = 0.
+      if (present(F_wvf)) mywvf = F_wvf
       myInttype = DEFAULT_INTTYPE
       if (present(F_inttype)) myInttype = F_inttype
 
       ! Compute source term from provided boundary values
-      istat = compute_source_pw(src,F_tt(:,1:F_nk),myrain,mysnow,mylhf)
+      istat = compute_source_pw(src,F_tt(:,1:F_nk),myrain,mysnow,mywvf)
 
       ! Compute tendency-based total water tendency
       if (eb_dpw(dpw,F_dhu(:,1:F_nk),F_hu(:,1:F_nk),F_sig(:,1:F_nk),F_p0,F_nk, &
-           F_dqc=mydqc,F_dqi=mydqi,F_qi=myqi,F_inttype=myInttype,F_dpw=dqw) /= EB_OK) then
+           F_dqc=mydqc,F_dqi=mydqi,F_inttype=myInttype,F_dpw=dqw) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_conserve_pw) error in tendency integral')
          return
       endif
 
       ! Compute absolute value of total water tendency
       if (eb_dpw(dabspw,F_dhu(:,1:F_nk),F_hu(:,1:F_nk),F_sig(:,1:F_nk),F_p0,F_nk, &
-           F_dqc=mydqc,F_dqi=mydqi,F_qi=myqi,F_inttype=myInttype,F_abs=.true.) /= EB_OK) then
+           F_dqc=mydqc,F_dqi=mydqi,F_inttype=myInttype,F_abs=.true.) /= PHY_OK) then
          call msg(MSG_ERROR,'(energy_budget::eb_conserve_pw) error in absolute tendency integral')
          return
       endif
@@ -646,33 +638,33 @@ contains
       enddo
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function eb_conserve_pw
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function eb_residual_pw(F_resid,F_fld0,F_fld1,F_tt,F_dt,F_nk,F_rain,F_snow,F_lhf) result(F_stat)
+   function eb_residual_pw(F_resid,F_fld0,F_fld1,F_tt,F_dt,F_nk,F_rain,F_snow,F_wvf) result(F_stat)
       ! Compute the budget residual for total water
       implicit none
 
       ! Arguments
-      real(REAL64), dimension(:), intent(in) :: F_fld0    !Total water before process
-      real(REAL64), dimension(:), intent(in) :: F_fld1    !Total water after process
+      real(REAL64), dimension(:), intent(in) :: F_fld0          !Total water before process
+      real(REAL64), dimension(:), intent(in) :: F_fld1          !Total water after process
       real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
       real, intent(in) :: F_dt                                  !Time step (s)
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s)
-      real, dimension(:), intent(in), optional :: F_lhf         !Surface turbulent latent heat flux (W/m2)
-      real(REAL64), dimension(:), intent(out) :: F_resid  !Residual of field
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s)
+      real(REAL64), dimension(:), intent(out) :: F_resid        !Residual of field
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
-      real, dimension(size(F_fld0,dim=1)) :: myrain,mysnow,mylhf,src
+      real, dimension(size(F_fld0,dim=1)) :: myrain,mysnow,mywvf,src
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_resid = 0.
 
       ! Handle optional arguments
@@ -680,11 +672,11 @@ contains
       if (present(F_rain)) myrain = F_rain
       mysnow = 0.
       if (present(F_snow)) mysnow = F_snow
-      mylhf = 0.
-      if (present(F_lhf)) mylhf = F_lhf
+      mywvf = 0.
+      if (present(F_wvf)) mywvf = F_wvf
 
       ! Compute source term from provided boundary values
-      istat = compute_source_pw(src,F_tt(:,1:F_nk),myrain,mysnow,mylhf)
+      istat = compute_source_pw(src,F_tt(:,1:F_nk),myrain,mysnow,mywvf)
 
       ! Use generic residual function with specified normalization factor
       F_stat = compute_residual(F_resid,F_fld0,F_fld1,F_dt,norm_pw,src)
@@ -694,7 +686,7 @@ contains
    end function eb_residual_pw
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function compute_source_pw(F_src,F_tt,F_rain,F_snow,F_lhf) result(F_stat)
+   function compute_source_pw(F_src,F_tt,F_rain,F_snow,F_wvf) result(F_stat)
       ! Compute the boundary source of total water
       implicit none
 
@@ -702,16 +694,16 @@ contains
       real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
       real, dimension(:), intent(in) :: F_rain                  !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_snow                  !Surface solid precipitation flux (kg/m2/s)
-      real, dimension(:), intent(in) :: F_lhf                   !Surface turbulent latent heat flux (W/m2)
+      real, dimension(:), intent(in) :: F_wvf                   !Surface turbulent water vapour flux (kg/m2/s)
       real, dimension(:), intent(out) :: F_src                  !Energy boundary source
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
       real, dimension(size(F_tt,dim=1)) :: lv
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_src = 0.
 
       ! Compute latent heats
@@ -721,11 +713,10 @@ contains
       F_src = F_src - F_rain - F_snow
 
       ! Turbulent flux water source
-      F_src = F_src + F_lhf
-      ! F_src = F_src + F_lhf/lv
+      F_src = F_src + F_wvf
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function compute_source_pw
 
@@ -738,17 +729,17 @@ contains
       real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
       real, dimension(:,:), intent(out), optional :: F_lv       !Latent heat of vapourization (J/kg)
       real, dimension(:,:), intent(out), optional :: F_ls       !Latent heat of sublimation (J/kg)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local varibles
       real, dimension(size(F_tt,dim=1),size(F_tt,dim=2)) :: mylv,myls
       integer :: k
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
 
       ! Call 2D form of function for calculation
-      F_stat = EB_OK
+      F_stat = PHY_OK
       do k=1,size(F_tt,dim=2)
          F_stat = min(F_stat,compute_lv(F_tt(:,k),F_lv=mylv(:,k),F_ls=myls(:,k)))
       enddo
@@ -771,13 +762,13 @@ contains
       real, dimension(:), intent(out), optional :: F_lv         !Latent heat of vapourization (J/kg)
       logical, intent(in), optional :: F_lv_temp_dependent      !Use temperature-dependent latent heats [as set in eb_init()]
       real, dimension(:), intent(out), optional :: F_ls         !Latent heat of sublimation (J/kg)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       logical :: myLv_temp_dependent
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
 
       ! Handle command line arguments
       myLv_temp_dependent = lv_temp_dependent
@@ -793,7 +784,7 @@ contains
       endif
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function compute_lv2d
 
@@ -803,8 +794,8 @@ contains
       implicit none
       real, dimension(:,:), intent(in) :: F_spec                !Specfic value
       real, dimension(:,:), intent(out) :: F_mix                !Mixing ratio value
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
-      F_stat = EB_OK
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
+      F_stat = PHY_OK
       F_mix = F_spec / (1.-F_spec)
       return
    end function mixing_from_specific
@@ -816,7 +807,7 @@ contains
       real, dimension(:,:), intent(in) :: F_dspec               !Tendency of specfic value
       real, dimension(:,:), intent(in) :: F_spec                !Specfic value
       real, dimension(:,:), intent(out) :: F_dmix               !Tendency of mixing ratio value
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
       real, dimension(size(F_spec,dim=1),size(F_spec,dim=2)) :: mix
       F_stat = mixing_from_specific(mix,F_spec)
       F_dmix = (1.+mix)**2 * F_dspec
@@ -831,9 +822,9 @@ contains
       real, dimension(:,:), intent(out) :: F_cpm                !Specific heat of moist air
       real, dimension(:,:), intent(out) :: F_lv                 !Latent heat of vaporization
       real, dimension(:,:), intent(out) :: F_ls                 !Latent heat of sublimation
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
       integer :: istat
-      F_stat = EB_OK
+      F_stat = PHY_OK
       F_cpm = CPD + (CPV-CPD) * F_qw
       istat = compute_lv(F_tt,F_lv=F_lv,F_ls=F_ls)
       return
@@ -845,8 +836,8 @@ contains
       real, dimension(:,:), intent(out) :: F_dcpm               !Specific heat of moist air tendency
       real, dimension(:,:), intent(out) :: F_dlv                !Latent heat of vaporization tendency
       real, dimension(:,:), intent(out) :: F_dls                !Latent heat of sublimation tendency
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
-      F_stat = EB_OK
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
+      F_stat = PHY_OK
       F_dcpm = CPV-CPD
       F_dlv = CPV - CPW
       F_dls = CPV - CPI
@@ -861,13 +852,13 @@ contains
       real, dimension(:), intent(in) :: F_qcs                   !Total condensate (kg/kg)
       real, dimension(:), intent(out) :: F_qliqs                !Liquid condensate (kg/kg)
       real, dimension(:), intent(out) :: F_qices                !Solid condensate (kg/kg)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       real, dimension(size(F_tts)) :: wfrac
 
       ! Set return value
-      F_stat = EB_OK
+      F_stat = PHY_OK
 
       ! Partition condensate field based on environmental temperature
       where (F_tts >= TCDK)
@@ -891,13 +882,13 @@ contains
       real, dimension(:,:), intent(in) :: F_qc                  !Total condensate (kg/kg)
       real, dimension(:,:), intent(out) :: F_qliq               !Liquid condensate (kg/kg)
       real, dimension(:,:), intent(out) :: F_qice               !Solid condensate (kg/kg)
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: k,istat
 
       ! Set return value
-      F_stat = EB_OK
+      F_stat = PHY_OK
 
       ! Loop to compute condensate fields for all levels
       do k=1,size(F_tt,dim=2)
@@ -917,7 +908,7 @@ contains
       real, dimension(:), intent(in) :: F_p0                    !Surface pressure (Pa)
       character(len=*), intent(in), optional :: F_inttype       !Integral type
       real(REAL64), dimension(:), intent(out) :: F_fldi   !Integrated value
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: k,nk
@@ -925,7 +916,7 @@ contains
       real, dimension(size(F_fld,dim=1),size(F_fld,dim=2)) :: pinv,fldinv
 
       ! Set return status
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
 
       ! Invert pressure slab and integrate
       nk = size(F_fld,dim=2)
@@ -941,7 +932,7 @@ contains
       endif
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function integrate_profile
 
@@ -957,10 +948,10 @@ contains
       real, intent(in) :: F_norm                                !Normalizing factor for conserved field
       real, dimension(:), intent(in) :: F_src                   !Sources for field (boundary conditions /s)
       real(REAL64), dimension(:), intent(out) :: F_resid  !Residual of field
-      integer :: F_stat                                         !Return status (EB_OK or EB_ERR)
+      integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Set return values
-      F_stat = EB_ERR
+      F_stat = PHY_ERROR
       F_resid = 0.
 
       ! Compute residual of conserved quantity
@@ -970,7 +961,7 @@ contains
       F_resid = F_resid / F_dt / F_norm
 
       ! End of subprogram
-      F_stat = EB_OK
+      F_stat = PHY_OK
       return
    end function compute_residual
 

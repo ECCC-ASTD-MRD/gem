@@ -22,49 +22,35 @@ module condensation
 contains
 
    !/@*
-   subroutine condensation4(dbus, fbus, vbus, &
-        tplus0, t0, huplus0, q0, qc0, &
-        dt, ni, nk, kount, trnch)
+   subroutine condensation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
-      use tdpack_const, only: GRAV, RAUW
-      use energy_budget, only: eb_en,eb_pw,eb_residual_en,eb_residual_pw,eb_conserve_en,eb_conserve_pw,EB_OK
-      use module_mp_p3,  only: mp_p3_wrapper_gem,n_qiType
-      use mp_my2_mod,    only: mp_my2_main
+      use tdpack_const, only: GRAV, DELTA, RGASD, CAPPA
+      use phybudget, only: pb_compute, pb_conserve, pb_residual
+      use microphy_utils, only: mp_lwc, mp_iwc
+      use microphy_p3,  only: mp_p3_wrapper_gem, P3_OK=>STATUS_OK
+      use microphy_kessler, only: kessler
+      use microphy_consun, only: consun
+      use microphy_my2, only: mp_my2_main
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, PHY_OK
       use phybus
       use tendency, only: apply_tendencies
-      use water_integrated, only: water_integrated1
+      use water_integrated, only: wi_integrate
       use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object Interface to convection/condensation
       !@Arguments
-      !          - Input -
-      ! dt       timestep (sec.)
-      ! ni       horizontal running length
-      ! nk       vertical dimension
-      ! kount    timestep number
-      ! trnch    slice number
-      ! tplus0   temperature at t+dT at the beginning of the physics
-      ! huplus0  humidity at t+dT at the beginning of the physics
-      !
-      !          - Input/Output -
-      ! dbus     dynamics input field
-      ! fbus     historic variables for the physics
-      ! vbus     physics tendencies and other output fields from the physics
-      !
-      !          - Output -
-      ! t0       initial temperature at t+dT
-      ! q0       initial humidity humidity  at t+dT
-      ! qc0      initial total condensate mixing ratio at t+dT
-
-      integer, intent(in) :: ni, nk, kount, trnch
-      real,    intent(in) :: dt
-      real, dimension(ni,nk-1), intent(inout) :: tplus0, t0, huplus0, q0, qc0
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
+      real, dimension(:), pointer, contiguous :: dbus   !Dynamics bus
+      real, dimension(:), pointer, contiguous :: fbus   !Permanent bus
+      real, dimension(:), pointer, contiguous :: vbus   !Volatile bus
+      integer, intent(in) :: ni                         !Row length
+      integer, intent(in) :: nk                         !Number of levels (including diagnostic)
+      real, intent(in) :: dt                            !Time step (s)
+      integer, intent(in) :: kount                      !Step number
+      integer, intent(in) :: trnch                      !Physics slice number
 
       !@Author L.Spacek, November 2011
       !@Revisions
@@ -74,26 +60,18 @@ contains
 #include <msg.h>
       include "surface.cdk"
 
+      ! Local parameters
       logical, parameter :: NK_BOTTOM = .true.  !(.T. for nk at bottom)
       integer, parameter :: N_DIAG_2D = 20      !number of diagnostic 2D fields
       integer, parameter :: N_DIAG_3D = 20      !number of diagnostic 3D fields
 
+      ! Local variables
       integer :: nkm1, istat1, istat2
-      real :: idt
-
-
-      real, dimension(ni) :: tlp, tsp
-      real, dimension(ni,nk-1) :: zfm, zfm1, iwc_total, lqip, lqrp, lqgp, lqnp, lttp, lhup
-
-      real, dimension(ni,nk-1) :: qtl, qts, fdqc, zsqe0, zste0, zsqce0, zsqre0, qitend0
-
-      real, dimension(ni,N_DIAG_2D)      :: diag_2d    !diagnostic 2D fields
-      real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d    !diagnostic 3D fields
-      real, dimension(ni,nk-1,n_qiType)  :: qi_type    !diagnostic ice particle type  (mp_p3)
-
-      real(REAL64), dimension(ni) :: l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr
-
-      real, dimension(:,:), pointer :: zttm, zhum
+      real, dimension(ni,nk-1) :: zfm, zfm1, iwc_total, lttp, lhup, &
+           qtl, qts, fdqc, slw
+      real, dimension(ni,N_DIAG_2D) :: diag_2d
+      real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d
+      real(REAL64), dimension(ni) :: l_en0, l_pw0
 
 #define PHYPTRDCL
 #include "condensation_ptr.hf"
@@ -101,130 +79,116 @@ contains
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'condensation [BEGIN]')
 
+      ! Basic configuration
       nkm1 = nk -1
-      idt  = 1./dt
 
 #undef PHYPTRDCL
 #include "condensation_ptr.hf"
 
-      call init2nan(tlp, tsp)
-      call init2nan(zfm, zfm1, iwc_total, lqip, lqrp, lqgp)  
-      call init2nan(lqnp, lttp, lhup)
-      call init2nan(qtl, qts, fdqc, zsqe0, zste0, zsqce0, zsqre0, qitend0)
-      call init2nan(diag_2d)
-      call init2nan(diag_3d)
-      call init2nan(qi_type)
-      call init2nan(l_en0, l_en, l_pw0, l_pw, l_enr, l_pwr)
+      ! Initialize local variables
+      call init2nan(zfm, zfm1, iwc_total, lttp, lhup, slw)  
+      call init2nan(qtl, qts, fdqc)
+      call init2nan(l_en0, l_pw0)
 
       ! Startup operations
       if (kount == 0) then
          zhupostcnd = qqm
-         zqcpostcnd = qcm
+         if (associated(qcm)) zqcpostcnd = qcm
          ztpostcnd = ttm
-         if (associated(zhums) .and. associated(zttms)) then
-            zhums = zhupostcnd
-            zttms = ztpostcnd
-         endif
       endif
-
+      
       ! Local initializations
-      zste = 0.
-      zsqe = 0.
-      zsqce = 0.
-      zsqre = 0.
-      qtl=0.
-      qts=0.
-      tlp=0.
-      tsp=0.
-      fdqc=0.
-      qitend0 = 0.
-
-      ! Pre-scheme state for energy budget
-      if (associated(zconecnd)) then
-         select case(stcond)
-         case('MP_P3')
-            qtl = qcp + qrp
-            if (p3_ncat == 1) then
-               qts = qti1p
-            elseif (p3_ncat == 2) then
-               qts = qti1p + qti2p
-            elseif (p3_ncat == 3) then
-               qts = qti1p + qti2p + qti3p
-            elseif (p3_ncat == 4) then
-               qts = qti1p + qti2p + qti3p + qti4p
-            endif !p3_ncat
-            istat1 = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            istat2 = eb_pw(l_pw0,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-         case('MP_MY2')
-            qtl = qcp + qrp
-            qts = qip + qnp + qgp + qhp
-            istat1 = eb_en(l_en0,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            istat2 = eb_pw(l_pw0,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-         case('CONSUN')
-            istat1 = eb_en(l_en0,ttp,qqp,qcp,sigma,psp,nkm1)
-            istat2 = eb_pw(l_pw0,qqp,qcp,sigma,psp,nkm1)
-         end select
-         if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
-            call physeterror('condensation', 'Problem computing preliminary energy budget for '//trim(stcond))
-            return
-         endif
+      if (associated(a_tls_fr1)) a_tls_fr1 = 0.
+      if (associated(a_tls_fr2)) a_tls_fr2 = 0.
+      
+      ! Pre-scheme state for budget
+      if (pb_compute(zconecnd, zconqcnd, l_en0, l_pw0, &
+           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         call physeterror('condensation', 'Problem computing preliminary budget')
+         return
       endif
 
       ! Run selected gridscale condensation scheme
       GRIDSCALE_SCHEME: select case(stcond)
 
+      case('KESSLER')
+
+         ! Simple Kessler-based condensation scheme
+         call kessler(zste, zsqe, zsqce, zsqre, a_tls, &
+              ttp, qqp, qcp, qrp, zgztherm, sigma, psp, dt)
+  
       case('CONSUN')
 
-         ! Apply physics tendencies to smoothed thermodynamic fields if available
-         if (associated(zttps) .and. associated(zhups) .and. associated(zttms) .and. associated(zhums)) then
-            zttm => zttms
-            zhum => zhums
-            lttp = zttps + (ttp-tplus0)
-            lhup = zhups + (qqp-huplus0)
-         else
-            zttm => ztpostcnd
-            zhum => zhupostcnd
-            lttp = ttp
-            lhup = qqp
-         endif
          zfm1 = zqcpostcnd
          zfm  = qcp
-         call consun6(zste, zsqe, zsqce, a_tls, a_tss, a_fxp, &
-              lttp, zttm, lhup, zhum, zfm, zfm1, &
+
+         ! Sundqvist-based condensation scheme
+         call consun(zste, zsqe, zsqce, a_tls, a_tss, a_fxp, &
+              ttp, ztpostcnd, qqp, zhupostcnd, zfm, zfm1, &
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, &
               zfice, zmrk2, ni, nkm1)
 
-         ! Adjust tendencies to impose conservation of total water and liquid
-         ! water static energy on request.
-         ! Apply humidity tendency correction for total water conservation
-         ! and of liquid water static energy
-         CONSUN_CONSERVATION: if (cond_conserve == 'TEND') then
-            istat1 = eb_conserve_pw(zsqe,zsqe,ttp,qqp,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
-            istat2 = eb_conserve_en(zste,zste,zsqe,ttp,qqp,qcp,sigma,psp,nkm1,F_dqc=zsqce,F_rain=a_tls,F_snow=a_tss)
-            if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
-               call physeterror('condensation', 'Problem correcting for liquid water static energy conservation in condensation')
-               return
-            endif
-         endif CONSUN_CONSERVATION
+         ! Adjust tendencies to impose conservation
+         if (pb_conserve(cond_conserve, zste, zsqe, dbus, fbus, vbus, &
+              F_dqc=zsqce, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+            call physeterror('condensation', &
+                 'Cannot correct conservation for '//trim(stcond))
+            return
+         endif
 
       case('MP_MY2')
-
-         !#  modified (from HRDPS_4.2.0) Milbrandt-Yau 2-moment microphysics (MY2, v2.25.2)
-         call mp_my2_main(ww,ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,a_nwfa,     &
-              psp, sigma, a_tls_rn1, a_tls_rn2, a_tls_fr1, a_tls_fr2, a_tss_sn1, a_tss_sn2,      &
-              a_tss_sn3, a_tss_pe1, a_tss_pe2, a_tss_pe2l, a_tss_snd,dt, ni, nkm1, 1, kount,     &
-              mp_aeroact, my_ccntype, my_diagon, my_sedion, my_warmon, my_rainon, my_iceon,      &
-              my_snowon, a_dm_c,a_dm_r,a_dm_i,a_dm_s,a_dm_g,a_dm_h, a_zet, a_zec,diag_3d,        &
-              a_effradc, a_effradi1, a_effradi2, a_effradi3, a_effradi4, a_fxp, NK_BOTTOM)
+         
+         ! Milbrandt-Yau 2-moment microphysics
+         call mp_my2_main(zste, zsqe, zsqce, zsqre, &
+              ww,ttp,qqp,qcp,qrp,qip,qnp,qgp,qhp,ncp,nrp,nip,nnp,ngp,nhp,a_nwfa,     &
+              psp, sigma, a_tls, a_tls_rn1, a_tls_rn2, a_tls_fr1, a_tls_fr2, a_tss, a_tss_sn1,   &
+              a_tss_sn2, a_tss_sn3, a_tss_pe1, a_tss_pe2, a_tss_pe2l, a_tss_snd,dt, ni, nkm1, 1, &
+              kount, mp_aeroact, my_ccntype, my_diagon, my_sedion, my_warmon, my_rainon,         &
+              my_iceon, my_snowon, a_dm_c,a_dm_r,a_dm_i,a_dm_s,a_dm_g,a_dm_h, a_zet, a_zec,      &
+              diag_3d, a_effradc, a_effradi1, a_effradi2, a_effradi3, a_effradi4, a_fxp,         &
+              NK_BOTTOM)
          if (phy_error_L) return
+          
+      case('MP_P3')
+         
+         ! Predicted Particle Properties (P3) microphysics
+         istat1 = mp_p3_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend, &
+              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
+              kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
+              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
+              a_effradc,qcp,ncp,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
+              p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
+              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
+              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6, &
+              qti1p,qmi1p,nti1p,bmi1p,a_effradi1,qti2p,qmi2p,nti2p,bmi2p,a_effradi2,  &
+              qti3p,qmi3p,nti3p,bmi3p,a_effradi3,qti4p,qmi4p,nti4p,bmi4p,a_effradi4)
+         if (istat1 /= P3_OK) then
+            call physeterror('condensation', 'Error returned by P3 gem wrapper')
+            return
+         endif
 
-         !-- temporary:  (until RN/FR separation gets removed in MY2)
-         a_tls_rn1 = a_tls_rn1 + a_tls_fr1
-         a_tls_rn2 = a_tls_rn2 + a_tls_fr2
-         a_tls_fr1 = 0.
-         a_tls_fr2 = 0.
+         ! Adjust tendencies to impose conservation
+         if (pb_conserve(cond_conserve, zste, zsqe, dbus, fbus, vbus, &
+              F_dqc=zsqce, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+            call physeterror('condensation', &
+                 'Cannot correct conservation for '//trim(stcond))
+            return
+         endif
 
+      end select GRIDSCALE_SCHEME
+
+      ! Split diagnostic tables into the bus
+      if (associated(a_d2d01)) then
+         a_d2d01 = diag_2d(:,1);    a_d2d08 = diag_2d(:, 8);    a_d2d15 = diag_2d(:,15)
+         a_d2d02 = diag_2d(:,2);    a_d2d09 = diag_2d(:, 9);    a_d2d16 = diag_2d(:,16)
+         a_d2d03 = diag_2d(:,3);    a_d2d10 = diag_2d(:,10);    a_d2d17 = diag_2d(:,17)
+         a_d2d04 = diag_2d(:,4);    a_d2d11 = diag_2d(:,11);    a_d2d18 = diag_2d(:,18)
+         a_d2d05 = diag_2d(:,5);    a_d2d12 = diag_2d(:,12);    a_d2d19 = diag_2d(:,19)
+         a_d2d06 = diag_2d(:,6);    a_d2d13 = diag_2d(:,13);    a_d2d20 = diag_2d(:,20)
+         a_d2d07 = diag_2d(:,7);    a_d2d14 = diag_2d(:,14)
+      endif
+      if (associated(a_ss01)) then
          a_ss01 = diag_3d(:,:,1);   a_ss08 = diag_3d(:,:, 8);   a_ss15 = diag_3d(:,:,15)
          a_ss02 = diag_3d(:,:,2);   a_ss09 = diag_3d(:,:, 9);   a_ss16 = diag_3d(:,:,16)
          a_ss03 = diag_3d(:,:,3);   a_ss10 = diag_3d(:,:,10);   a_ss17 = diag_3d(:,:,17)
@@ -232,265 +196,41 @@ contains
          a_ss05 = diag_3d(:,:,5);   a_ss12 = diag_3d(:,:,12);   a_ss19 = diag_3d(:,:,19)
          a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
          a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
-
-      case('MP_P3')
-
-        !save values before call, for computation of tendencies immediately after
-        ! note: qitend, this is done below since it is p3_ncat-dependent
-         if (p3_comptend_ta) zste0(:,:) = ttp(:,:)
-         if (p3_comptend) then
-            zsqe0(:,:)   = qqp(:,:)
-            zsqce0(:,:)  = qcp(:,:)
-            zsqre0(:,:)  = qrp(:,:)
-         endif
-
-         !#  Predicted Particle Properties (P3) microphysics (v3.1.4)
-         if (p3_ncat == 1) then
-
-            if (p3_comptend) qitend0(:,:) = qti1p(:,:)
-
-            istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
-                    kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
-                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
-                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
-                    qti1p,qmi1p,nti1p,bmi1p,a_effradi1)
-            if (istat1 >= 0) then
-               iwc_total = qti1p
-               where (qti1p(:,1:nkm1)<1.e-14) a_effradi1(:,1:nkm1) = 0.
-            endif
-
-         elseif (p3_ncat == 2) then
-
-            if (p3_comptend) qitend0(:,:) = qti1p(:,:) + qti2p(:,:)
-
-            istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
-                    kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
-                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
-                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
-                    qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
-                    qti2p,qmi2p,nti2p,bmi2p,a_effradi2)
-            if (istat1 >= 0) then
-               iwc_total = qti1p + qti2p
-               where (qti1p(:,1:nkm1)<1.e-14) a_effradi1(:,1:nkm1) = 0.
-               where (qti2p(:,1:nkm1)<1.e-14) a_effradi2(:,1:nkm1) = 0.
-            endif
-
-         elseif (p3_ncat == 3) then
-
-            if (p3_comptend) qitend0(:,:) = qti1p(:,:) + qti2p(:,:) + qti3p(:,:)
-
-            istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
-                    kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
-                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
-                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
-                    qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
-                    qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
-                    qti3p,qmi3p,nti3p,bmi3p,a_effradi3)
-            if (istat1 >= 0) then
-               iwc_total = qti1p + qti2p + qti3p
-               where (qti1p(:,1:nkm1)<1.e-14) a_effradi1(:,1:nkm1) = 0.
-               where (qti2p(:,1:nkm1)<1.e-14) a_effradi2(:,1:nkm1) = 0.
-               where (qti3p(:,1:nkm1)<1.e-14) a_effradi3(:,1:nkm1) = 0.
-            endif
-
-         elseif (p3_ncat == 4) then
-
-            if (p3_comptend) qitend0(:,:) = qti1p(:,:) + qti2p(:,:) + qti3p(:,:) + qti4p(:,:)
-
-            istat1 = mp_p3_wrapper_gem(qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
-                    kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
-                    a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
-                    a_effradc,qcp,ncp,qrp,nrp,p3_ncat,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
-                    qi_type,p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
-                    a_vis2,a_vis3,a_slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,               &
-                    qti1p,qmi1p,nti1p,bmi1p,a_effradi1,                                     &
-                    qti2p,qmi2p,nti2p,bmi2p,a_effradi2,                                     &
-                    qti3p,qmi3p,nti3p,bmi3p,a_effradi3,                                     &
-                    qti4p,qmi4p,nti4p,bmi4p,a_effradi4)
-            if (istat1 >= 0) then
-               iwc_total = qti1p + qti2p + qti3p + qti4p
-               where (qti1p(:,1:nkm1)<1.e-14) a_effradi1(:,1:nkm1) = 0.
-               where (qti2p(:,1:nkm1)<1.e-14) a_effradi2(:,1:nkm1) = 0.
-               where (qti3p(:,1:nkm1)<1.e-14) a_effradi3(:,1:nkm1) = 0.
-               where (qti4p(:,1:nkm1)<1.e-14) a_effradi4(:,1:nkm1) = 0.
-            endif
-
-         endif  !p3_ncat
-
-         if (istat1 < 0) then
-            call physeterror('condensation', 'Problem in p3')
-            return
-         endif
-
-         !compute tendencies from microphysics:
-         if (p3_comptend_ta) zste(:,:) = (ttp(:,:)-zste0(:,:))*idt
-         if (p3_comptend) then
-            zsqe(:,:)  = (qqp(:,:)-zsqe0(:,:) )*idt
-            zsqce(:,:) = (qcp(:,:)-zsqce0(:,:))*idt
-            zsqre(:,:) = (qrp(:,:)-zsqre0(:,:))*idt
-            if (p3_ncat==1) then
-               qitend(:,:) = (qti1p(:,:)-qitend0(:,:))*idt
-            elseif (p3_ncat==2) then
-               qitend(:,:) = ((qti1p(:,:)+qti2p(:,:))-qitend0(:,:))*idt
-            elseif (p3_ncat==3) then
-               qitend(:,:) = ((qti1p(:,:)+qti2p(:,:)+qti3p(:,:))-qitend0(:,:))*idt
-            elseif (p3_ncat==4) then
-               qitend(:,:) = ((qti1p(:,:)+qti2p(:,:)+qti3p(:,:)+qti4p(:,:))-qitend0(:,:))*idt
-            endif
-         endif
-
-         ! Adjust tendencies to impose conservation of total water and liquid
-         ! water static energy on request.
-         ! Apply humidity tendency correction for total water conservation
-         ! and of liquid water static energy
-         MP_P3_CONSERVATION: if (cond_conserve == 'TEND') then
-            ! qtl = qcp + qrp
-            ! qts = iwc_total
-            qtl = zsqce0 + zsqre0
-            qts = qitend0
-            fdqc = zsqce + zsqre
-            istat1 = eb_conserve_pw(zsqe,zsqe,zste0,zsqe0,sigma,psp,nkm1,&
-                 F_dqc=fdqc,F_dqi=qitend,F_qi=qts,F_rain=a_tls,F_snow=a_tss)
-            istat2 = eb_conserve_en(zste,zste,zsqe,zste0,zsqe0,qtl,sigma,psp, &
-                 nkm1,F_dqc=fdqc,F_dqi=qitend,F_qi=qts,F_rain=a_tls,F_snow=a_tss)
-            if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
-               call physeterror('condensation', 'Problem correcting for liquid water static energy conservation in P3')
-               return
-            endif
-            ttp(:,:) = zste(:,:)*dt + zste0(:,:)
-            qqp(:,:) = zsqe(:,:)*dt + zsqe0(:,:)
-         endif MP_P3_CONSERVATION
-
-        !temporary; rn/fr (rate) partition should be done in s/r 'calcdiag'
-        !(but currently it is still done inside microphyics scheme for MY2)
-         a_tls_fr1 = 0.
-         a_tls_fr2 = 0.
-
-        !diagnostic ice particle types:
-         a_qi_1 = qi_type(:,:,1)  !small ice crystals
-         a_qi_2 = qi_type(:,:,2)  !unrimed snow crystals
-         a_qi_3 = qi_type(:,:,3)  !lightly rimed snow
-         a_qi_4 = qi_type(:,:,4)  !graupel
-         a_qi_5 = qi_type(:,:,5)  !hail
-         a_qi_6 = qi_type(:,:,6)  !ice pellets
-
-         if (.true.) then  ! namelist switch to be added
-            a_d2d01 = diag_2d(:,1);    a_d2d08 = diag_2d(:, 8);    a_d2d15 = diag_2d(:,15)
-            a_d2d02 = diag_2d(:,2);    a_d2d09 = diag_2d(:, 9);    a_d2d16 = diag_2d(:,16)
-            a_d2d03 = diag_2d(:,3);    a_d2d10 = diag_2d(:,10);    a_d2d17 = diag_2d(:,17)
-            a_d2d04 = diag_2d(:,4);    a_d2d11 = diag_2d(:,11);    a_d2d18 = diag_2d(:,18)
-            a_d2d05 = diag_2d(:,5);    a_d2d12 = diag_2d(:,12);    a_d2d19 = diag_2d(:,19)
-            a_d2d06 = diag_2d(:,6);    a_d2d13 = diag_2d(:,13);    a_d2d20 = diag_2d(:,20)
-            a_d2d07 = diag_2d(:,7);    a_d2d14 = diag_2d(:,14)
-
-            a_ss01 = diag_3d(:,:,1);   a_ss08 = diag_3d(:,:, 8);   a_ss15 = diag_3d(:,:,15)
-            a_ss02 = diag_3d(:,:,2);   a_ss09 = diag_3d(:,:, 9);   a_ss16 = diag_3d(:,:,16)
-            a_ss03 = diag_3d(:,:,3);   a_ss10 = diag_3d(:,:,10);   a_ss17 = diag_3d(:,:,17)
-            a_ss04 = diag_3d(:,:,4);   a_ss11 = diag_3d(:,:,11);   a_ss18 = diag_3d(:,:,18)
-            a_ss05 = diag_3d(:,:,5);   a_ss12 = diag_3d(:,:,12);   a_ss19 = diag_3d(:,:,19)
-            a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
-            a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
-         endif
-
-      end select GRIDSCALE_SCHEME
-
+      endif
+      
       !# application des tendances convectives de qc (pour consun)
       if (stcond == 'CONSUN' .and. .not.cond_dbletd_fix) then
          call apply_tendencies(qcp, zcqce, ztdmask, ni, nk, nkm1)
       endif
 
-      !Application of general tendencies provided by most explicit schemes
-      if (.not.any(stcond == (/'MP_MY2','MP_P3 '/))) then
-         call apply_tendencies(ttp, zste,  ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qqp, zsqe,  ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qcp, zsqce, ztdmask, ni, nk, nkm1)
+      !Application of standard microphysical tendencies
+      call apply_tendencies(ttp, zste,  ztdmask, ni, nk, nkm1)
+      call apply_tendencies(qqp, zsqe,  ztdmask, ni, nk, nkm1)
+      if (associated(qcp)) call apply_tendencies(qcp, zsqce, ztdmask, ni, nk, nkm1)
+      if (associated(qrp)) call apply_tendencies(qrp, zsqre, ztdmask, ni, nk, nkm1)
+
+      ! Post-scheme budget analysis: post-scheme state and residuals
+      if (pb_residual(zconecnd, zconqcnd, l_en0, l_pw0, dbus, fbus, vbus, &
+           delt, nkm1, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+         call physeterror('condensation', 'Problem computing final budget')
+         return
       endif
 
-      if (stcond(1:6) == 'MP_MY2') then
-         lqrp = qrp
-         lqip = qip
-         lqgp = qgp
-         lqnp = qnp
-      elseif (stcond == 'MP_P3') then
-         lqrp = qrp
-         lqip = iwc_total
-         lqgp = 0.
-         lqnp = 0.
-      else
-         lqrp = 0.
-         lqip = 0.
-         lqgp = 0.
-         lqnp = 0.
+      ! Compute profile diagnostics <<< should be done outside the model >>>
+      istat1 = mp_lwc(qtl, dbus, fbus, vbus)
+      istat2 = mp_iwc(qts, dbus, fbus, vbus)
+      if (istat1 /= PHY_OK .or. istat2 /= PHY_OK) then
+         call physeterror('condensation', &
+              'Cannot compute water/ice for hydrometeor integrals')
+         return
       endif
-
-      ! Post-scheme energy budget analysis: post-scheme state and residuals
-      if (associated(zconecnd)) then
-         select case(stcond)
-         case('MP_P3')
-            qtl = qcp + qrp
-            qts = iwc_total
-            istat1 = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            istat2 = eb_pw(l_pw,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            if (istat1 == EB_OK .and. istat2 == EB_OK) then
-               istat1 = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qtl,delt, &
-                    nkm1,F_qi=qts,F_rain=a_tls,F_snow=a_tss)
-               istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1, &
-                    F_rain=a_tls,F_snow=a_tss)
-            endif
-         case('MP_MY2')
-            qtl = qcp + qrp
-            qts = qip + qnp + qgp + qhp
-            tlp = rauw*(a_tls_rn1+a_tls_rn2)
-            tsp = rauw*(a_tss_sn1+a_tss_sn2+a_tss_sn3+a_tss_pe1+a_tss_pe2)
-            istat1 = eb_en(l_en,ttp,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            istat2 = eb_pw(l_pw,qqp,qtl,sigma,psp,nkm1,F_qi=qts)
-            if (istat1 == EB_OK .and. istat2 == EB_OK) then
-               istat1 = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qtl,delt, &
-                    nkm1,F_qi=qts,F_rain=tlp,F_snow=tsp)
-               istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1, &
-                    F_rain=tlp,F_snow=tsp)
-            endif
-         case('CONSUN')
-            istat1 = eb_en(l_en,ttp,qqp,qcp,sigma,psp,nkm1)
-            istat2 = eb_pw(l_pw,qqp,qcp,sigma,psp,nkm1)
-            if (istat1 == EB_OK .and. istat2 == EB_OK) then
-               istat1 = eb_residual_en(l_enr,l_en0,l_en,ttp,qqp,qcp,delt, &
-                    nkm1,F_rain=a_tls,F_snow=a_tss)
-               istat2 = eb_residual_pw(l_pwr,l_pw0,l_pw,ttp,delt,nkm1, &
-                    F_rain=a_tls,F_snow=a_tss)
-            endif
-         end select
-         if (istat1 /= EB_OK .or. istat2 /= EB_OK) then
-            call physeterror('condensation', 'Problem computing final energy budget for '//trim(stcond))
-            return
-         endif
-         zconecnd(:) = real(l_enr)
-         zconqcnd(:) = real(l_pwr)
-      endif
-
-      ! Local copies of the MY2 masses are used to avoid passing a nullified
-      ! pointer through the interface.
-      call water_integrated1(ttp,qqp,qcp,lqip,lqnp,sigma,psp, &
-           zicw,ziwv,ziwv700,ziwp,zlwp2,zslwp,zslwp2,zslwp3,zslwp4,ni,nkm1)
+      call wi_integrate(ttp, qqp, qtl, qts, sigma, psp, zicw, ziwv, ziwv700, &
+           ziwp, zlwp2, zslwp, zslwp2, zslwp3, zslwp4, ni, nkm1)
 
       ! Store post-scheme state information for "accession" calculations on next step
       zhupostcnd = qqp
-      zqcpostcnd = qcp
+      if (associated(qcp)) zqcpostcnd = qcp
       ztpostcnd = ttp
-
-      ! Reset state variables for tendency application unless the microphysics
-      ! scheme does not update state variables
-      if (.not.any(stcond == (/'MP_MY2','MP_P3 '/))) then
-         ttp(:,1:nkm1) = t0(:,1:nkm1)
-         qqp(:,1:nkm1) = q0(:,1:nkm1)
-         qcp(:,1:nkm1) = qc0(:,1:nkm1)
-      endif
 
       call msg_toall(MSG_DEBUG, 'condensation [END]')
       !----------------------------------------------------------------

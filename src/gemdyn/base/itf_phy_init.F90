@@ -53,7 +53,7 @@
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
-      real :: zu,zt,cond_sig,gwd_sig,lhn_sig
+      real :: zu,zt,gwd_sig,lhn_sig
       real, dimension(:,:), pointer :: ptr2d
 
       integer,parameter :: tlift= 0
@@ -144,15 +144,13 @@
       end if
 
 ! Initialize filter weights for smoothing
-      if (.not.WB_IS_OK(wb_get('phy/cond_infilter',cond_sig))) cond_sig=-1.
       if (.not.WB_IS_OK(wb_get('phy/sgo_tdfilter',gwd_sig))) gwd_sig=-1.
       if (.not.WB_IS_OK(wb_get('phy/lhn_filter',lhn_sig))) lhn_sig=-1.
       if (.not.WB_IS_OK(wb_get('phy/sfcflx_filter_order',sfcflxfilt_o))) sfcflxfilt_o=-1
       if (.not.WB_IS_OK(wb_get('phy/sfcflx_filter_iter',sfcflxfilt_i))) sfcflxfilt_i=1
       if (.not.WB_IS_OK(wb_get('phy/nsurfag',nsurfag))) nsurfag=1
 
-      err = min(ipf_init(F_sig=cond_sig, F_sig2=gwd_sig, F_sig3=lhn_sig), err)
-      err = min(wb_put('dyn/cond_infilter',cond_sig,WB_REWRITE_AT_RESTART), err)
+      err = min(ipf_init(F_sig2=gwd_sig, F_sig3=lhn_sig), err)
       err = min(wb_put('dyn/sgo_tdfilter',gwd_sig,WB_REWRITE_AT_RESTART), err)
       err = min(wb_put('dyn/lhn_filter',lhn_sig,WB_REWRITE_AT_RESTART), err)
       err = min(wb_put('dyn/sfcflx_filter_order',sfcflxfilt_o,WB_REWRITE_AT_RESTART), err)

@@ -23,8 +23,8 @@ module phy_init_mod
    use timestr_mod, only: timestr2step, timestr2sec
 
    use cnv_options
-   use energy_budget, only: eb_init, EB_OK
-   use phy_status, only: PHY_ERROR, PHY_NONE, PHY_CTRL_NML_OK, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_L
+   use phybudget, only: pb_init
+   use phy_status, only: PHY_OK, PHY_ERROR, PHY_NONE, PHY_CTRL_NML_OK, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_L
    use phy_options
    use phygridmap
    use series_mod, only: series_init
@@ -286,7 +286,6 @@ contains
       ier = min(wb_put('phy/atm_external', (fluvert == 'SURFACE'), options), ier)
       ier = min(wb_put('phy/jdateo'  ,jdateo   , options),ier)
       ier = min(wb_put('phy/climat'  ,climat   , options),ier)
-      ier = min(wb_put('phy/cond_infilter', cond_infilter, options), ier)
       ier = min(wb_put('phy/sgo_tdfilter', sgo_tdfilter, options), ier)
       ier = min(wb_put('phy/lhn_filter', lhn_filter, options), ier)
       ier = min(wb_put('phy/sfcflx_filter_order', sfcflx_filter_order, options), ier)
@@ -441,10 +440,13 @@ contains
       F_istat = series_init(phy_lcl_gid, drv_glb_gid, &
            phydim_nk, phy_lcl_ni, phy_lcl_nj, &
            moyhr, delt, jdateo, satuco, master_pe)
-      if (RMN_IS_OK(F_istat)) then
-         if (eb_init(F_lv_temp_dependent=.true.,F_nearsfc_k=(phydim_nk-1)) /= EB_OK) F_istat = RMN_ERR
-         if (.not.RMN_IS_OK(F_istat)) &
-              call msg_toall(MSG_ERROR, '(phy_init) Problem initializing the energy budget module')
+      if (.not.RMN_IS_OK(F_istat)) then
+         call physeterror('phy_init', 'Cannot initialize time series module')
+         return
+      endif
+      if (pb_init() /= PHY_OK) then
+         call physeterror('phy_init', 'Cannot initialize physics budget module')
+         return
       endif
 
       !# Init input I/O ezshufl distribution
