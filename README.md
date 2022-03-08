@@ -182,7 +182,7 @@ want to use another command, or if it doesn't work in your environment, edit
 the file *scripts/gem_mpirun.sh* to change the script, or move the file
 *scripts/r.run_in_parallel* so that the model is run with mpirun directly.
 
-See **README.run** in the work directory for other information on the different configurations.
+See **README.run** in the doc directory for other information on the different configurations.
 
 ## Working with model outputs
 

@@ -192,7 +192,6 @@ add_custom_target(work
         $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}
-    COMMAND /bin/cp -avf ${ROOT}/doc/README.run ${WORK_DIR}
 
     DEPENDS
         cclargs_lite
