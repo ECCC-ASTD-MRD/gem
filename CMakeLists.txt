@@ -110,7 +110,6 @@ endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
-ec_build_config()      # Create build configuration script
 
 list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
 if (NOT "${MODELUTILS_SRC}" STREQUAL "" )

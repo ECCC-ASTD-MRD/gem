@@ -2,11 +2,15 @@ set(WITH_SYSTEM_RPN FALSE CACHE BOOL "Control whether to use installed RPN-SI li
 message(STATUS "(EC) WITH_SYSTEM_RPN = ${WITH_SYSTEM_RPN}")
 if ((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))
   find_package(RMN)
-  if (rmn_FOUND) 
+  if (RMN_FOUND) 
     #include_directories(${RMN_INCLUDE_DIRS})
     add_compile_definitions(HAVE_RMN)
-    message(STATUS "(EC) rmn VERSION = ${RMN_VERSION}")
+    find_path(RMN_INCLUDE_DIR_ALL
+      NAMES convert_ip123.inc
+      PATHS ${EC_INCLUDE_PATH})
+    include_directories(${RMN_INCLUDE_DIR_ALL})
   endif()
+  find_package(tdpack ${tdpack_REQ_VERSION} CONFIG)
   find_package(rpncomm ${rpncomm_REQ_VERSION} CONFIG)
   if (rpncomm_FOUND) 
     include_directories(${rpncomm_INCLUDE_DIRS})
