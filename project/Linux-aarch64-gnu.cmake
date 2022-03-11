@@ -32,7 +32,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG "-g -Wall -Wextra -Warray-temporaries -fbacktrace 
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -ftree-vectorize")
 
 if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 9.3)
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-argument-mismatch -Wno-invalid-boz")
+	set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-argument-mismatch")
 endif()
 
 # There might be extra OpenMP and OpenACC flags which are specific to each compiler,
