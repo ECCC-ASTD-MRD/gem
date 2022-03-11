@@ -151,6 +151,7 @@ and the following executables are installed in the *bin* sub-folder:
 - prgemnml
 - prphynml
 - r.fstinfo
+- r.filetype
 - voir
 - yy2global
 
