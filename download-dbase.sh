@@ -51,7 +51,7 @@ fi
 if checkMd5 "$tarballPath" "$GEM_DBASE_MD5SUM"; then
     echo "MD5 check OK"
 else
-    echo "The MD5 of $2 does not match what was expected.  The file might be corrupted."
+    echo "The MD5 of $GEM_DBASE does not match what was expected.  The file might be corrupted."
     exit 1
 fi
 
