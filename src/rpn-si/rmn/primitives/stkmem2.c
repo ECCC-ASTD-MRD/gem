@@ -20,7 +20,7 @@
 
 #include <rpnmacros.h>
 #if !defined (NEC)
-#include <malloc.h>
+#include <stdlib.h>
 
 #ifdef WIN32    /*CHC/NRC*/
 void f77name(stkmem2)(_int64 *f_nbytes,void **ptr)

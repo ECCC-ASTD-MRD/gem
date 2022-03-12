@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include <malloc.h>
 #if defined (NEC)
 #include <sys/time.h>
 #include <sys/resource.h>
