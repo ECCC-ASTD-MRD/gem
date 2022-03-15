@@ -8,6 +8,8 @@ ec_parse_manifest()        # Parse MANIFEST file
 
 project(${NAME} DESCRIPTION "${DESCRIPTION}")
 set(PROJECT_VERSION ${VERSION}${STATE})
+set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
+message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
 
 enable_language(Fortran)
 enable_language(C)
@@ -28,8 +30,8 @@ endif()
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "(EC) CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  message(STATUS "(EC) No build type selected, default to RelWithDebInfo")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  message(STATUS "(EC) No build type selected, default to ${CMAKE_BUILD_TYPE}")
 endif()
 message(STATUS "(EC) Configuring for ${CMAKE_BUILD_TYPE} build type")
 
@@ -77,9 +79,6 @@ message(STATUS "(EC) Build architecture: ${BUILD_ARCH}")
 
 message(STATUS "(EC) Sources directory is: ${CMAKE_SOURCE_DIR}")
 message(STATUS "(EC) Build directory is: ${CMAKE_BINARY_DIR}")
-
-set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
-message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
 
 # Instead of adding -I. to the FLAGS, we can let cmake add the current folder automatically
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -131,6 +130,7 @@ add_custom_target(work
     COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
 )
+
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
