@@ -18,7 +18,6 @@
  */
 #include <stdlib.h>
 #include <unistd.h>
-#include <malloc.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>

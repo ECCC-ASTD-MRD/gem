@@ -189,6 +189,7 @@ add_custom_target(work
         $<TARGET_FILE:gem_monitor_end>
         $<TARGET_FILE:pgsm>
         $<TARGET_FILE:r.fstinfo>
+        $<TARGET_FILE:r.filetype>
         $<TARGET_FILE:voir>
         ${WORK_DIR}/bin
     COMMAND /bin/ln -sf ${ROOT}/configurations ${WORK_DIR}

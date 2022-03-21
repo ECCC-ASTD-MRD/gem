@@ -29,7 +29,6 @@ return 1;
 **************************************************************/
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 
 #define NKLEMAX 1024
 

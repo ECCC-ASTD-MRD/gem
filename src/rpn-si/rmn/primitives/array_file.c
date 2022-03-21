@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <malloc.h>
 /*
  contents of test file test_array_file.f90 follow
 

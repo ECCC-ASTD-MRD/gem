@@ -1,6 +1,6 @@
 #include <rpnmacros.h>
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 char **allocate_string_array(int ns)
 {

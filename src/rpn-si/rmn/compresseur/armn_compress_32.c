@@ -4,7 +4,6 @@
 #include <rpnmacros.h>
 #include <unistd.h>
 #include "zfstlib.h"
-#include <malloc.h>
 #include <string.h>
 
 int  c_armn_compress32(unsigned char *, float *, int, int, int, int);
