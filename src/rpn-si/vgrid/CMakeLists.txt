@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of vgrid Makefile")
+message(STATUS "(EC) Generating vgrid Makefile")
 
 file(GLOB FTN_SOURCES *.F90)
 file(GLOB CSRC  *.c)

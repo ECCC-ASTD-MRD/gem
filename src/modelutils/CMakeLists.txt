@@ -1,12 +1,8 @@
-message(STATUS "Starting generation of modelutils Makefile")
+message(STATUS "(EC) Generating modelutils Makefile")
 
-include(FindMPI)
-set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
-set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+enable_language(C Fortran)
 
-file(GLOB CSRC  */*.c)
-file(GLOB FTNSRC  */*.F90)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.in ${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.inc @ONLY)
 
-add_library (modelutils STATIC ${FTNSRC} ${CSRC})
-target_include_directories(modelutils PRIVATE base include)
-include_directories( ${CMAKE_BINARY_DIR}/src/vgrid )
+add_subdirectory(src/main modelutils-main)
+add_subdirectory(src modelutils)

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# For internal use at ECCC
+# Source this file to:
+# - Load the Intel 19 compiler and libraries
+# - Load a script for common setup to all compilers
+
+export COMPILER_SUITE=intel
+DOMAIN=`hostname -d`
+
+if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    if [[ -n "$CRAYPE_VERSION" ]]; then
+    . ./ci-env/latest/sles-15-skylake-64/intel-19.0.5.281.sh
+    module add craype-hugepages16M
+    module add cray-fftw/3.3.8.2
+    export COMPILER_VERSION=19.0.5.281
+    else
+    . ./ci-env/latest/ubuntu-18.04-skylake-64/intel-19.0.3.199.sh
+    export COMPILER_VERSION=19.0.3.199
+    fi
+else
+    . ./ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+    export COMPILER_VERSION=19.0.3.199
+fi
+
+. ./.common_setup ${COMPILER_SUITE}

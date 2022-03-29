@@ -1,4 +1,4 @@
-message(STATUS "Starting generation of rpncomm Makefile")
+message(STATUS "(EC) Generating rpncomm Makefile")
 
 add_definitions (-DMARKER=RPN_COMM_marker_4542)
 

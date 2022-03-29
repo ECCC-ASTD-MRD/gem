@@ -3,7 +3,10 @@
 
 # make sure you source the .common_setup file to set the environment
 #  variables needed to run GEM
-. ./.common_setup
+. ./.common_setup [gnu|intel]
+
+# Warning: this is a development branch:
+# some configurations may not work
 
 cd gem/work[...]
 #-ptopo [npx] x [npy] x [OMP_NUM_THREADS] where npx, npy is for MPI topology

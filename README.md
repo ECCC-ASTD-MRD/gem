@@ -2,13 +2,28 @@
 
 **The 5.2 branch is a development version.**
 
-See below for extended instructions and requirements.
+**Developers at CMC: please see [README-EC](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README-EC) file.** 
+
+See below for extended instructions.
+
+## Requirements
+
+To compile and run GEM, you will need:
+- Fortran and C compilers
+- An MPI implementation such as OpenMPI (with development package),
+- OpenMP support (optional)
+- (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
+- fftw3 library (with development package),
+- basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
 ```
     git clone https://github.com/ECCC-ASTD-MRD/gem.git
     cd gem
     # Checkout 5.2 branch:
     git checkout 5.2-branch
+    # Update submodules:
+	# cmake_rpn and ci-env are included as submodules, but ci-env is not available externally. 
+	git -c submodule."ci-env".update=none submodule update --init --recursive
  
     # Download the data files required to run GEM
     ./download-dbase.sh .
@@ -24,11 +39,15 @@ See below for extended instructions and requirements.
     # outside the project directory
     mkdir -p build
     cd build
-
+	# Alternatively, you can use a script that will create a build and work
+    # directory named after the operating system and compiler suite used
+	. ./.initial_setup
+	cd build[...]
+	
 	# default compiler is gnu
-    cmake ../project
+    cmake ..
 	# or, for Intel:
-    cmake ../project -DCOMPILER=intel
+    cmake .. -DCOMPILER_SUITE=intel
     # Create an execution environment for GEM
     make -j work
 
@@ -75,7 +94,9 @@ link:
 
 ### GNU compiler suite
 - By default GEM is configured to use gfortran and gcc compilers, and OpenMPI
-- Changes to the C and Fortran flags can be done in **project/Linux-x86_64-gnu.cmake**
+- Changes to the C and Fortran flags can be done in the  **CMakeLists.txt**
+  file, under the section **# Adding specific flags for GEM**.
+- You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
   which will need to be adapted for your setup:
@@ -95,17 +116,20 @@ link:
 
 ### Intel compiler suite
 
-- Changes to the C and Fortran flags can be done in **project/Linux-x86_64-intel.cmake**
+- Changes to the C and Fortran flags can be done in the  **CMakeLists.txt**
+  file, under the section **# Adding specific flags for GEM**.
+- You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
 - You may need to modify ```-march``` to generate code that can run on
   your system
 - Make sure the compilers and libraries are in the appropriate
   environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
 - As gnu is the default compiler suite, use the following command to compile
-  with Intel: ```cmake ../project -DCOMPILER=intel```
+  with Intel: ```cmake .. -DCOMPILER_SUITE=intel```
 
 ## Compiling and installing GEM
 
 You can add extra CMake arguments such as```-DCMAKE_VERBOSE_MAKEFILE=ON```.
+
 You can also add ```-j``` to **make** to launch multiple compile tasks in
 parallel.
 
@@ -114,29 +138,31 @@ without OpenMP support, you can add the ```-DWITH_OPENMP=OFF``` argument when
 running **cmake**.
 
 The default compiler suite is GNU. If you want to compile with other compilers,
-add ```-DCOMPILER=<compiler suite name (gnu|intel|...)>``` to the CMake
-command line.  This release has been tested with GNU and Intel compilers on
-Linux x86_64.  Other compilers have also been used in the past but have not been
-tested with the current release.  You will likely have to modify the *.cmake
-files in the **project** folder.
+add ```-DCOMPILER_SUITE=<compiler suite name (gnu|intel|...)>``` to the CMake
+command line.  
 
-- If you get error messages (for example, compiler or MPI/OpenMPI not
-  found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
-  variables contain the appropriate paths.  You can also add
-  ```-DCMAKE_VERBOSE_MAKEFILE=ON``` to you **cmake** command line to generate
-  verbose makefiles which will print the exact compiler command lines issued.
+This release has been tested with GNU and Intel compilers on Linux x86_64.
+Other compilers have also been used in the past, but have not been tested
+with the current release.  You will likely have to modify the *.cmake files
+in the **cmake_rpn/ec_compiler_presets/default/** folder.
 
-- If the compiler or compile options are not right:
-    - Remove the content of the build directory
-    - Make appropriate changes to the cmake files corresponding to the
-      compilers you are using
-    - Re-launch the commands starting at cmake
+If you get error messages (for example, compiler, OpenMP or MPI/OpenMPI not
+found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
+variables contain the appropriate paths.  You can also add
+```-DCMAKE_VERBOSE_MAKEFILE=ON``` to you **cmake** command line to generate
+verbose makefiles which will print the exact compiler command lines issued.
+
+If the compiler or compile options are not right:
+- Remove the content of the build directory
+- Make appropriate changes to the cmake files corresponding to the
+  compilers you are using
+- Re-launch the commands starting at cmake
 
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
 (work-${OS_NAME}-${COMPILER_NAME}). For example
-*work-Fedora-34-x86_64-gnu-11.2.1* could be created in the main directory,
-and the following executables are installed in the *bin* sub-folder: 
+*work-Fedora-34-x86_64-gnu-11.2.1* would be created in the main directory,
+and the following executables installed in the *bin* sub-folder: 
 - cclargs_lite
 - checkdmpart
 - editfst
@@ -152,9 +178,12 @@ and the following executables are installed in the *bin* sub-folder:
 - prgemnml
 - prphynml
 - r.fstinfo
+- r.filetype
 - voir
 - yy2global
 
+A script named GEM-config is also installed. It displays a summary of the
+architecture, compiler, and flags used.
 
 ## Running GEM
 

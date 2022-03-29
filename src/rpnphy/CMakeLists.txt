@@ -1,18 +1,9 @@
-message(STATUS "Starting generation of rpnphy Makefile")
+message(STATUS "(EC) Generating rpnphy Makefile")
 
-project(RPNPHY Fortran)
+enable_language(C Fortran)
 
-include(FindMPI OPTIONAL)
-include_directories(${MPI_INCLUDE_PATH})
-set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/rpnphy_version.in ${CMAKE_CURRENT_SOURCE_DIR}/include/rpnphy_version.inc @ONLY)
 
-file(GLOB FTNSRC */*.F90)
+add_subdirectory(src/main rpnphy-main)
+add_subdirectory(src rpnphy)
 
-include_directories(series)
-include_directories(surface)
-include_directories(${ROOT}/src/modelutils/include)
-include_directories(${CMAKE_BINARY_DIR}/src/modelutils)
-include_directories(${CMAKE_BINARY_DIR}/src/vgrid)
-include_directories(AFTER include base utils ${ROOT}/src/modelutils/include)
-
-add_library (phy STATIC ${FTNSRC})

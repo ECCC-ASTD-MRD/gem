@@ -1,7 +1,0 @@
-       character(len=50),parameter :: MODELUTILS_NAME_S = "MODELUTILS"
-       character(len=50),parameter :: MODELUTILS_VERSION_S = "1.7.0-a15"
-       character(len=50),parameter :: MODELUTILS_DSTP_S = "2022-02-24 17:04 GMT"
-       character(len=50),parameter :: MODELUTILS_EC_ARCH_S = "Linux_x86-64/intel-19.0.3.199"
-       character(len=50),parameter :: MODELUTILS_ORDENV_ARCH_S = "amd64"
-       character(len=50),parameter :: MODELUTILS_ORDENV_PLAT_S = "ubuntu-18.04-amd64-64"
-       character(len=50),parameter :: MODELUTILS_COMP_ARCH_S = "intel-19.0.3.199"

@@ -1,24 +1,31 @@
-message(STATUS "Starting generation of gemdyn Makefile")
+message(STATUS "(EC) Generating gemdyn Makefile")
 
-include(FindMPI)
-set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
-set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+enable_language(C Fortran)
 
-file(GLOB FTNSRC */*.F90)
-file(GLOB CSRC  */*.c)
-
-add_library (gem STATIC ${FTNSRC} ${CSRC})
-target_include_directories(gem PRIVATE
-   ${ROOT}/src/rpnphy/include
-   ${ROOT}/src/modelutils/include
-   ${CMAKE_BINARY_DIR}/src/rpnphy
-   ${CMAKE_BINARY_DIR}/src/modelutils
-   ${CMAKE_BINARY_DIR}/src/vgrid
-   include
-   base
-)
-
-if (EXTRA_DEBUG)
-  target_compile_options( gem PRIVATE "$<$<CONFIG:Debug>:-fcheck=bounds>" )
-  message(STATUS "Extra flags for gemdyn: -fcheck=bounds")
+string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M")
+if(DEFINED ENV{COMP_ARCH})
+  set(EC_COMPILER "$ENV{COMP_ARCH}")
+else()
+  set(EC_COMPILER "${COMPILER_SUITE}-${COMPILER_VERSION}")
 endif()
+if(DEFINED ENV{EC_PLAT})
+  set(EC_PLAT "$ENV{EC_PLAT}")
+else()
+  set(EC_PLAT "${OS}")
+endif()
+if(DEFINED ENV{ORDENV_ARCH})
+  set(EC_ORDENV_ARCH "$ENV{ORDENV_ARCH}")
+endif()
+if(DEFINED ENV{EC_ARCH})
+  set(EC_ARCH "$ENV{EC_ARCH}")
+else()
+  set(EC_ARCH "${BUILD_ARCH}/${EC_COMPILER}")
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/gemdyn_version.in ${CMAKE_CURRENT_SOURCE_DIR}/include/gemdyn_version.inc @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/main/maincheckdmpart.in ${CMAKE_CURRENT_SOURCE_DIR}/src/main/maincheckdmpart.F90)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/main/maingemgrid.in ${CMAKE_CURRENT_SOURCE_DIR}/src/main/maingemgrid.F90)
+
+add_subdirectory(src/no_mpi gemdyn-no_mpi)
+add_subdirectory(src gemdyn)
+add_subdirectory(src/main gemdyn-main)

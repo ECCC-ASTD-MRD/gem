@@ -142,8 +142,8 @@ if [ -e "${anal}" ] ; then
       exit 1
    fi
 else
-      printf "\n   FILE ${anal} - NOT FOUND - ABORT  \n\n"
-      exit 1
+    printf "\n   FILE ${anal} - NOT FOUND - ABORT  \n\n"
+    exit 1
 fi
 date
 set -ex

@@ -1188,7 +1188,7 @@ set -- $pgm @@
 #
       cat <<EOT > ${MpiRunScript}.${MpiCommWorld}
 #!/bin/bash
-export RPN_COMM_DOM='${NDomains}${RPN_COMM_DOM}'
+unset RPN_COMM_DOM
 export RPN_COMM_DIRS="${RPN_COMM_DIRS}"        # RPN_COMM_DIRS no longer needed by RPN_COMM_init as cd is now performed by script
 #export OMP_NUM_THREADS=${NLThreads}
 ((WORLD_CHILD=MP_CHILD-${InstanceOffset}))

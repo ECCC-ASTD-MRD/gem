@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# For internal use at ECCC
+# Source this file to:
+# - Load libraries
+# - Set compiler version
+# - Load a script for common setup to all compilers
+
+DOMAIN=`hostname -d`
+
+if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+else 
+    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
+fi
+
+export COMPILER_SUITE=gnu
+COMPILER_VERSION=$(utils/compiler.sh gnu)
+export COMPILER_VERSION
+
+. ./.common_setup ${COMPILER_SUITE}

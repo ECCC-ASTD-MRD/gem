@@ -2,6 +2,7 @@
 
 # Source this file to:
 # - set some environment variables
+# - set PATH to find GEM binaries and scripts
 
 if [[ $# -eq 0 ]] ; then
     echo "Usage:   . ./.common_setup compiler_suite"
@@ -9,16 +10,17 @@ if [[ $# -eq 0 ]] ; then
     echo "Example: . ./.common_setup intel"
 else
     unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
+    export OMP_STACKSIZE=4G
 
-    COMPILER_suite=${1}
-    platform=$(project/os.sh)
-    if [ -z ${COMPILER_version} ] || [ "${COMPILER_version}" == "Unknown_Compiler" ] ; then
-        COMPILER_version=$(project/compiler.sh ${COMPILER_suite})
+    export COMPILER_SUITE=${1}
+    platform=$(utils/os.sh)
+    if [ -z "${EC_ARCH}" ]; then
+        COMPILER_VERSION=$(utils/compiler.sh ${COMPILER_SUITE})
+        export COMPILER_VERSION
     fi
-    export COMPILER_version
 
-    if [ -n "${platform}" -a "${COMPILER_version}" != "Unknown_Compiler" ]; then
-        export GEM_ARCH=${platform}-${COMPILER_suite}-${COMPILER_version}
+    if [ -n "${platform}" -a "${COMPILER_VERSION}" != "Unknown_Compiler" ]; then
+        export GEM_ARCH=${platform}-${COMPILER_SUITE}-${COMPILER_VERSION}
         export GEM_WORK=work-${GEM_ARCH}
         
         if [ -n "${storage_model}" ] ; then
@@ -37,4 +39,3 @@ else
 fi
 
 unset platform
-
