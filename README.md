@@ -2,9 +2,36 @@
 
 **The 5.2 branch is a development version.**
 
-**Developers at CMC: please see [README-EC.md](https://gitlab.science.gc.ca/RPN-SI/GEM/blob/5.2-branch/README-EC.md) file.** 
+# At CMC
 
-See below for extended instructions.
+```
+Clone gem repository
+cd gem
+git checkout 5.2-branch
+git submodule update --init --recursive
+
+./scripts/link-dbase.sh
+. ./.eccc_setup_intel
+# or, if you want to compile with GNU compiler suite:
+. ./.eccc_setup_gnu
+Before the first build:
+. ./.initial_setup
+
+# building and installing GEM
+# please see other options in Makefile
+make cmake
+make build
+make work
+
+# running GEM: example
+cd $GEM_WORK
+runprep.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
+runmod.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
+```
+
+# Outside CMC (external users)
+
+**See below for extended instructions.**
 
 ## Requirements
 
@@ -99,7 +126,7 @@ link:
 - You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
-  which will need to be adapted for your setup:
+  of commands, which you will need to adapt for your setup:
     - On Ubuntu:
         ```
           export PATH=/usr/lib/openmpi/bin:${PATH}
