@@ -16,18 +16,6 @@ stages:
 before_script:
     - export CLICOLOR_FORCE=1
 
-build_intel_dorpnsi:
-  stage: build_intel_dorpnsi
-  only:
-  - 5.2-branch
-  when: always
-  script:
-    - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
-    - make cmake
-    - make -j `nproc`
-    - make -j `nproc` work
-
 build_xc50:
   stage: build_xc50
   tags:
