@@ -1,6 +1,7 @@
 # How to get, compile and run GEM at the CMC.
 
-# getting gem git repository
+```
+# Getting gem git repository
 git clone https://gitlab.science.gc.ca/RPN-SI/gem.git
 cd gem
 git checkout 5.2-branch
@@ -25,3 +26,4 @@ make work
 cd $GEM_WORK
 runprep.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
 runmod.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
+```

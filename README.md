@@ -2,7 +2,7 @@
 
 **The 5.2 branch is a development version.**
 
-**Developers at CMC: please see [README-EC](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README-EC) file.** 
+**Developers at CMC: please see [README-EC.md](https://gitlab.science.gc.ca/RPN-SI/GEM/blob/5.2-branch/README-EC.md) file.** 
 
 See below for extended instructions.
 
