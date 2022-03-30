@@ -26,7 +26,7 @@ build_xc50:
   script:
     - set +e
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -39,7 +39,7 @@ build_intel:
   script:
     - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
     - . ssmuse-sh -x main/opt/cmake/cmake-3.16.4
     - make cmake
     - make -j `nproc`
@@ -297,7 +297,7 @@ build_gnu:
     - set +e
     - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_gnu
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
