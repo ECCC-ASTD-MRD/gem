@@ -15,7 +15,7 @@ cmake-gnu-debug: ; $(MAKE) COMPILER_SUITE=gnu cmake-debug
 cmake-gnu-debug-extra: ; $(MAKE) COMPILER_SUITE=gnu cmake-debug-extra
 
 cmake:
-        ( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCOMPILER_SUITE=${COMPILER_SUITE} ${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCOMPILER_SUITE=${COMPILER_SUITE} ${GEM_GIT_DIR} )
 
 cmake-cray:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake ${GEM_GIT_DIR} )
