@@ -3,6 +3,7 @@
   Grd_maxcfl = 2
  /
 
+  Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
  &dyn_kernel
    Dynamics_hydro_L  = .false.
