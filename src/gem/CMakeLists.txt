@@ -10,7 +10,7 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
-if (DEFINED ENV{EC_ARCH})
+if ( (DEFINED ENV{EC_ARCH}) AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 2021))
   if (NOT DEFINED ENV{CRAYPE_VERSION})
     set(EXTRA_LIBRARIES "-lopen-pal")
   endif()

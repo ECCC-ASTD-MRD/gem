@@ -27,7 +27,7 @@ build_xc50:
     - set +e
     - . ./.eccc_setup_intel
     - . ./.initial_setup
-    - make cmake
+    - make cmake-cray
     - make -j `nproc`
     - make -j `nproc` work
 
