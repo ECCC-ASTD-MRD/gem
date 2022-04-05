@@ -19,6 +19,7 @@ if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
         . r.load.dot /home/cpi001/data/ords/packages-ssm
     elif [[ ${ORDENV_DIST} = "rhel" ]]; then
         . ./ci-env/latest/rhel-8-icelake-64/inteloneapi-2022.1.2.sh
+        export COMPILER_VERSION=2021.5.0
         . r.load.dot rpn/libs/19.7.0
         . r.load.dot rpn/vgrid/20220216
         . r.load.dot /home/cpi001/data/ords/packages-ssm
