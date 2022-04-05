@@ -141,6 +141,9 @@ if [ -e "${anal}" ] ; then
       printf "\n   INCORRECT FORMAT FOR FILE ${analysis} - ABORT  \n\n"
       exit 1
    fi
+else
+      printf "\n   FILE ${anal} - NOT FOUND - ABORT  \n\n"
+      exit 1
 fi
 date
 set -ex

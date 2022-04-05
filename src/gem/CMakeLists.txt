@@ -16,6 +16,8 @@ if ( (DEFINED ENV{EC_ARCH}) AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 202
   endif()
 endif()
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.in ${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.F90)
+
 add_executable(maingemdm maingemdm.F90)
 target_link_libraries(maingemdm
    gemdyn

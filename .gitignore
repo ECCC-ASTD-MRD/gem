@@ -6,4 +6,5 @@ gem_dbase
 gem_dbase.tar.gz
 /build*
 /work*
-.eccc_setup
+src/gem/maingemdm.F90
+
