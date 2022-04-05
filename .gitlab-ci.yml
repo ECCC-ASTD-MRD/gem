@@ -13,6 +13,7 @@ stages:
   - build_intel
   - run_configs_intel
   - build_xc50
+  - build_U2
 
 before_script:
     - export CLICOLOR_FORCE=1
@@ -33,6 +34,21 @@ build_xc50:
   stage: build_xc50
   tags:
   - XC50-login
+  only:
+  - dev-submodules
+  when: always
+  script:
+    - set +e
+    - . ./.eccc_setup_intel
+    - . ./.eccc_initial_setup
+    - make cmake
+    - make -j `nproc`
+    - make -j `nproc` work
+
+build_U2:
+  stage: build_U2
+  tags:
+  - U2
   only:
   - dev-submodules
   when: always
