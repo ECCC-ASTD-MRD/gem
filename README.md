@@ -1,4 +1,7 @@
-# Introduction for benchmark-5.2.0-a13
+# Introduction for benchmark with 5.2.0-a13 version
+
+For the previous version of benchmarks with 5.2.0-a7 version, please see:
+https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks/README-ITQ.md
 
 This document describes the process of building and running 3 GEM cases:
 
