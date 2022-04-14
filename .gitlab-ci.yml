@@ -51,15 +51,10 @@ build_U2:
   when: always
   script:
     - set +e
-    - ln -sf /home/cpi001/gem_dbase .
-    - export COMPILER_SUITE=intel
-    - . ./ci-env/latest/rhel-8-icelake-64/inteloneapi-2022.1.2.sh
-    - export COMPILER_VERSION=2021.5.0
-    - . r.load.dot rpn/libs/19.7.0
-    - . r.load.dot rpn/vgrid/20220216
-    - . r.load.dot /home/cpi001/data/ords/packages-ssm
-    - . ./.common_setup intel
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
     - . ./.eccc_initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -71,19 +66,16 @@ build_U2:
 
 5.2GEM_GY_FISL_H_U2:
   stage: run_configs_U2
+  tags:
+  - U2
   only:
   - dev-submodules
   dependencies:
   - build_U2
   when: always
   script:
-    - export COMPILER_SUITE=intel
-    - . ./ci-env/latest/rhel-8-icelake-64/inteloneapi-2022.1.2.sh
-    - export COMPILER_VERSION=2021.5.0
-    - . r.load.dot rpn/libs/19.7.0
-    - . r.load.dot rpn/vgrid/20220216
-    - . r.load.dot /home/cpi001/data/ords/packages-ssm
-    - . ./.common_setup intel
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
