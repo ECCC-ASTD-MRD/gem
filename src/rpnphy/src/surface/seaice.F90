@@ -214,31 +214,22 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 
    t(1:n,1:nl)    => bus( x(tmice,1,1)        : )
 
-   if (atm_tplus) then
-      hu       (1:n) => bus( x(huplus,1,nk)      : )
-      ps       (1:n) => bus( x(pplus,1,1)        : )
-      th       (1:n) => bus( x(thetaap,1,1)      : )
-      tt       (1:n) => bus( x(tplus,1,nk)       : )
-      uu       (1:n) => bus( x(uplus,1,nk)       : )
-      vv       (1:n) => bus( x(vplus,1,nk)       : )
-   else
-      hu       (1:n) => bus( x(humoins,1,nk)     : )
-      ps       (1:n) => bus( x(pmoins,1,1)       : )
-      th       (1:n) => bus( x(thetaa,1,1)       : )
-      tt       (1:n) => bus( x(tmoins,1,nk)      : )
-      uu       (1:n) => bus( x(umoins,1,nk)      : )
-      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   hu       (1:n) => bus( x(huplus,1,nk)      : )
+   ps       (1:n) => bus( x(pplus,1,1)        : )
+   th       (1:n) => bus( x(thetaap,1,1)      : )
+   tt       (1:n) => bus( x(tplus,1,nk)       : )
+   uu       (1:n) => bus( x(uplus,1,nk)       : )
+   vv       (1:n) => bus( x(vplus,1,nk)       : )
+   
+   ! Test on minimum value for number of layers
+   if( NL .lt. 2 ) then
+      call physeterror('seaice', 'NL < 2')
+      return
    endif
 
-!                               test on minimum value for number of layers
-      if( NL .lt. 2 ) then
-         call physeterror('seaice', 'NL < 2')
-         return
-      endif
-
-!                               fully-implicit time scheme
-      BETA1 = 1.0
-      SC = (1.0 - BETA1)*DELT
+   ! Fully-implicit time scheme
+   BETA1 = 1.0
+   SC = (1.0 - BETA1)*DELT
 
 !*     1.     Preliminaries
 !      --------------------

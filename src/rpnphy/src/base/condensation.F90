@@ -170,7 +170,7 @@ contains
 
          ! Adjust tendencies to impose conservation
          if (pb_conserve(cond_conserve, zste, zsqe, dbus, fbus, vbus, &
-              F_dqc=zsqce, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
             call physeterror('condensation', &
                  'Cannot correct conservation for '//trim(stcond))
             return

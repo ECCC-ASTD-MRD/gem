@@ -199,7 +199,6 @@ contains
     MKPTR2Dm1(ztmoins, tmoins, dbus)
 
     call init2nan(trmin, tmem, tot, att, z_exp)
-    call init2nan(tausimp, omsimp, gsimp, taulimp, omlimp, glimp)
     call init2nan(transmissint, trans_exp, trav2d, aird, rew, rei, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
     call init2nan(ff, iwcinmp, iwpinmp, effradi)

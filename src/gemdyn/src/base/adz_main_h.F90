@@ -48,6 +48,13 @@
       dtD_8  = F_dt_8 - dtA_8
       dtzD_8 = F_dt_8 - dtzA_8
 
+      if (Schm_advec == 0) then ! no advection
+         dtA_8  = 0.d0
+         dtD_8  = 0.d0
+         dtzA_8 = 0.d0
+         dtzD_8 = 0.d0
+      end if
+
       call adz_traject (dtA_8, dtzA_8, dtD_8, dtzD_8)
 
 !$omp single

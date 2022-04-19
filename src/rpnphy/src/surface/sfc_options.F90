@@ -48,7 +48,7 @@ module sfc_options
 
    !#
    logical           :: atm_external = .false.
-   logical           :: atm_tplus  = .false.
+   logical           :: atm_tplus  = .true.
    logical           :: climat     = .false.
    logical           :: cplocn     = .false.
    real              :: delt       = 0.

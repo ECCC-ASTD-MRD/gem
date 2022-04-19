@@ -62,8 +62,7 @@ contains
       ! Local variable declarations
       integer :: nkm1
       real :: irhow
-      real, dimension(ni,nk) :: press
-      real, dimension(ni,nk-1) :: t0,q0,qc0
+      real, dimension(ni,nk) :: press, t0, q0, qc0
 
       real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &

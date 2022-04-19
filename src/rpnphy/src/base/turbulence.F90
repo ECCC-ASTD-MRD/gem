@@ -65,25 +65,25 @@ contains
       include "surface.cdk"
 
       ! Internal variables
-      integer :: istat, istat1, j
+      integer :: istat, istat1, j, k
       real dsig
-      real, dimension(ni) :: rhos
-      real, dimension(ni,nk) :: dkem, dket
-      real, dimension(:), pointer, contiguous :: ztsrad, zpmoins, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
-      real, dimension(:,:), pointer, contiguous :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd
+      real, dimension(ni,nk) :: dkem, dket, rho
+      real, dimension(:), pointer, contiguous :: ztsrad, zpplus, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
+      real, dimension(:,:), pointer, contiguous :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd, zsigm
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'turbulence [BEGIN]')
       if (timings_L) call timing_start_omp(430, 'turbulence', 46)
 
       ! Reshape bus entries
-      MKPTR1D(zpmoins, pmoins, fbus)
+      MKPTR1D(zpplus, pplus, vbus)
       MKPTR1D(zsigs, sigs, fbus)
       MKPTR1D(ztdmask, tdmask, fbus)
       MKPTR1D(ztsrad, tsrad, fbus)
       MKPTR1D(zutautofd, utautofd, vbus)
       MKPTR1D(zvtautofd, vtautofd, vbus)
       MKPTR2D(zsigt, sigt, dbus)
+      MKPTR2D(zsigm, sigm, dbus)
 
       MKPTR2D(zgzmom, gzmom, vbus)
       MKPTR2D(zumoins, umoins, dbus)
@@ -98,8 +98,7 @@ contains
 
       MKPTR3D(zvcoef, vcoef, 2, vbus)
       
-      call init2nan(rhos)
-      call init2nan(dkem,dket)
+      call init2nan(dkem,dket,rho)
 
       ! Turbulent orographic form drag using the "distributed drag" scheme
       if (tofd == 'BELJAARS04') then
@@ -129,15 +128,15 @@ contains
          ! Diagnose surface stress
          zgzmom1 => zgzmom(:,1)
          zgzmom2 => zgzmom(:,nk-1)
-         istat  = int_profile(zutautofd, zutofd, zgzmom, zgzmom2, zgzmom1)
-         istat1 = int_profile(zvtautofd, zvtofd, zgzmom, zgzmom2, zgzmom1)
+         do k=1,nk
+            rho(:,k) = zpplus(:) * zsigm(:,k) / (RGASD * ztplus(:,k))
+         enddo
+         istat  = int_profile(zutautofd, -rho*zutofd, zgzmom, zgzmom2, zgzmom1)
+         istat1 = int_profile(zvtautofd, -rho*zvtofd, zgzmom, zgzmom2, zgzmom1)
          if (istat /= INT_OK .or. istat1 /= INT_OK) then
             call physeterror('turbulence', 'Problem in int_profile')
             return
          endif
-         rhos = zpmoins / (RGASD*ztsrad)
-         zutautofd = zutautofd * rhos
-         zvtautofd = zvtautofd * rhos
 
       endif
 

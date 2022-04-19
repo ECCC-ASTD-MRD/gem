@@ -431,11 +431,6 @@ module phy_options
    logical           :: pbl_cucloud  = .true.
    namelist /physics_cfgs/ pbl_cucloud
    namelist /physics_cfgs_p/ pbl_cucloud
-
-   !# Call surface scheme immediately before the PBL
-   logical           :: pbl_flux_consistency = .false.
-   namelist /physics_cfgs/ pbl_flux_consistency
-   namelist /physics_cfgs_p/ pbl_flux_consistency
  
    !# Class of stability functions (stable case) to use in the PBL
    !# * 'DELAGE97  ' : Use functions described by Delage (1997; BLM)

@@ -42,7 +42,7 @@
              lni=Ptopo_gindx(2,k)-Ptopo_gindx(1,k)+1 !lni
              if (lni-Glb_pil_e < G_halox) then
                  Glb_pilotcirc_L = .false.
-                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
+!                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
              endif
          endif
          if (Ptopo_gindx(2,k).eq.G_ni) then
@@ -50,7 +50,7 @@
              lni=Ptopo_gindx(2,k)-Ptopo_gindx(1,k)+1-1 !lniu
              if (lni-Glb_pil_e < G_halox) then
                  Glb_pilotcirc_L = .false.
-                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
+!                 if (Lun_out > 0) write (Lun_out,1000) k-1,lni,Glb_pil_e,lni-Glb_pil_n,G_halox
              endif
          endif
          if (Ptopo_gindx(3,k).eq.1) then
@@ -58,7 +58,7 @@
              lnj=Ptopo_gindx(4,k)-Ptopo_gindx(3,k)+1 !lnj
              if (lnj-Glb_pil_n < G_haloy) then
                  Glb_pilotcirc_L = .false.
-                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
+!                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
              endif
          endif
          if (Ptopo_gindx(4,k).eq.G_nj) then
@@ -66,7 +66,7 @@
              lnj=Ptopo_gindx(4,k)-Ptopo_gindx(3,k)+1-1 !lnjv
              if (lnj-Glb_pil_n < G_haloy) then
                  Glb_pilotcirc_L = .false.
-                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
+!                 if (Lun_out > 0) write (Lun_out,1001) k-1,lnj,Glb_pil_n,lnj-Glb_pil_n,G_haloy
              endif
          endif
       end do

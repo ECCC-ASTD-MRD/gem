@@ -49,25 +49,28 @@ function pbl_simple(km,kt,uwind,vwind,gzmom,gztherm,z0,n,nk) result(status)
    ! Local variable declarations
    integer :: i,k
    real :: mlenm,mlent
-   real, dimension(n,nk) :: wspd,shear
+   real, dimension(n,nk) :: shearmag
 
    ! Initialize status
    status = RMN_ERR
 
-   ! Compute shear profile
-   wspd = sqrt(uwind*uwind + vwind*vwind)
+   ! Compute the profile of vector shear magnitude
+   shearmag(:,1) = sqrt( &
+        (uwind(:,2)-uwind(:,1) / (gzmom(:,2)-gzmom(:,1)))**2 + &
+        (vwind(:,2)-vwind(:,1) / (gzmom(:,2)-gzmom(:,1)))**2)
    do k=2,nk-1
-      shear(:,k) = (wspd(:,k+1)-wspd(:,k-1)) / (gzmom(:,k+1)-gzmom(:,k-1))
+      shearmag(:,k) = sqrt( &
+           (uwind(:,k+1)-uwind(:,k-1) / (gzmom(:,k+1)-gzmom(:,k-1)))**2 + &
+           (vwind(:,k+1)-vwind(:,k-1) / (gzmom(:,k+1)-gzmom(:,k-1)))**2)
    enddo
-   shear(:,1) =  (wspd(:,2)-wspd(:,1)) / (gzmom(:,2)-gzmom(:,1))
 
    ! Compute coefficients using length scales from Blackadar formulation
    do k=1,nk-1
       do i=1,n
          mlenm = 1./((1./(KARMAN*(gzmom(i,k)+z0(i))))+(1./LAMBDA))
-         km(i,k) = mlenm**2 * abs(shear(i,k))
+         km(i,k) = mlenm**2 * shearmag(i,k)
          mlent = 1./((1./(KARMAN*(gztherm(i,k)+z0(i))))+(1./LAMBDA))
-         kt(i,k) = mlent**2 * abs(shear(i,k))
+         kt(i,k) = mlent**2 * shearmag(i,k)
       enddo
    enddo
    km(:,nk) = km(:,nk-1)

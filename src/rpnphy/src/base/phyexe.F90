@@ -100,41 +100,20 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    call radiation3(dbus, fbus, vbus, ni, nk, kount, trnch)
    if (phy_error_L) return
 
-   TURBULENT_FLUX_CONSISTENCY: if (pbl_flux_consistency) then
-
-      call metox3(dbus, vbus, fbus, ni, nk)
-      if (phy_error_L) return
-
-      call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
-      if (phy_error_L) return
-
-      call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
-      if (phy_error_L) return
-
-      call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
-      if (phy_error_L) return
-
-      call surface1(trnch, kount, delt, ni, nk)
-      if (phy_error_L) return
-
-   else
-
-      call surface1(trnch, kount, delt, ni, nk)
-      if (phy_error_L) return
-
-      call metox3(dbus, vbus, fbus, ni, nk)
-      if (phy_error_L) return
-
-      call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
-      if (phy_error_L) return
-
-      call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
-      if (phy_error_L) return
-
-      call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
-      if (phy_error_L) return
-
-   endif TURBULENT_FLUX_CONSISTENCY
+   call metox3(dbus, vbus, fbus, ni, nk)
+   if (phy_error_L) return
+   
+   call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
+   if (phy_error_L) return
+   
+   call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+   if (phy_error_L) return
+   
+   call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
+   if (phy_error_L) return
+   
+   call surface1(trnch, kount, delt, ni, nk)
+   if (phy_error_L) return
 
    call turbulence2(dbus, fbus, vbus, ficebl, seloc, delt, kount, trnch, ni, nk)
    if (phy_error_L) return

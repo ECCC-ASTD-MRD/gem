@@ -292,7 +292,6 @@ contains
       ier = min(wb_put('phy/sfcflx_filter_iter', sfcflx_filter_iter, options), ier)
       ier = min(wb_put('phy/convec'  ,convec   , options),ier)
       ier = min(wb_put('phy/delt'    ,delt     , options),ier)
-      ier = min(wb_put('phy/flux_consist', pbl_flux_consistency, options), ier)
       ier = min(wb_put('phy/rad_off', (radia == 'NIL'), options),ier)
       ier = min(wb_put('phy/radslope',radslope , options),ier)
       ier = min(wb_put('phy/update_alwater', (radia == 'CCCMARAD2'), options),ier)

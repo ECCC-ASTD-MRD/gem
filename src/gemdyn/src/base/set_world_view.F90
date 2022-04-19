@@ -31,10 +31,11 @@
       use spn_options
       use step_options
       use theo_options
-
+      use copy_and_open
+      
       use geomh
       use inp_mod
-      use out_collector, only: block_collect_set, Bloc_me
+      use out_collector
 
       use glb_ld
       use lun
@@ -45,15 +46,13 @@
       use outgrid
       use wb_itf_mod
       use ptopo
-      use tracers_attributes_mod, only: tracers_attributes
+      use tracers_attributes_mod
       implicit none
-#include <arch_specific.hf>
 
-#include <rmnlib_basics.hf>
       include "rpn_comm.inc"
 
       integer, external :: adv_config, gemdm_config, set_io_pes,&
-                           domain_decomp,sol_transpose
+                           domain_decomp,sol_transpose,get_file_unit
 
       character(len=50) :: LADATE
       integer :: istat,options,wload,hzd,monot,massc,unf
@@ -77,9 +76,10 @@
       end if
       Path_phy_S=trim(Path_input_S)//'/'
 
-! Read namelists from file Path_nml_S
-      unf= 0
-      if (fnom (unf,Path_nml_S, 'SEQ+OLD', 0) == 0) then
+!     Read namelists from file Path_nml_S
+
+      call cp_n_open (unf,RPN_COMM_comm ('GRID'),trim( Path_nml_S ))
+      if (unf > 0) then
          if (Lun_out >= 0) write (Lun_out, 6000) trim( Path_nml_S )
          err( 3) = theocases_nml   (unf)
          err( 4) = HORgrid_nml     (unf)
@@ -92,18 +92,9 @@
          err(11) = lam_nml         (unf)
          err(12) = out_nml         (unf)
          err(13) = spn_nml         (unf)
-         if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL' ) then
-            err(14) = dyn_fisl_nml (unf)
-            err(15) = adz_nml      (unf)
-            err(16) = hvdif_nml    (unf)
-         else if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_EXPO' ) then
-            err(14) = dyn_expo_nml (unf)
-         else
-            if (lun_out > 0) then
-               write (lun_out,1010) trim(Dynamics_Kernel_S)
-            end if
-            err(1)= -1
-         end if
+         err(14) = dyn_fisl_nml (unf)
+         err(15) = adz_nml      (unf)
+         err(16) = hvdif_nml    (unf)
          istat= fclos(unf)
       else
          if (Lun_out >= 0) write (Lun_out, 6001) trim( Path_nml_S )

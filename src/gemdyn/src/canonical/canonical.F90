@@ -153,7 +153,7 @@ contains
 
       ! FIXME: Ugly workaround for Step_runstrt_S not being initialized when
       ! optimization (-O2) is enabled.  This print makes everything work.
-      print *, 'canonical.Step_runstrt_S = ', Step_runstrt_S
+   !   print *, 'canonical.Step_runstrt_S = ', Step_runstrt_S
 
       if (Ctrl_canonical_williamson_L .and. Williamson_case == 7) then
          Step_runstrt_S='19781221.000000'

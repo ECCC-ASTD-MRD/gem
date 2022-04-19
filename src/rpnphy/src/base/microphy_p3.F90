@@ -22,11 +22,16 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       3.1.6.4                                                                   !
-! Last updated:  2021-09-10                                                                !
+! Version:       3.1.6.6                                                                   !
+! Last updated:  2022-03-14                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MICROPHY_P3
+
+#ifdef ECCCGEM
+ use tdpack, only: foew, foewa, fohrx, foewaf
+ use tdpack_const, only: aerk1w
+#endif
 
  implicit none
 
@@ -113,7 +118,7 @@
 
  ! Local variables and parameters:
  logical, save                :: is_init = .false.
- character(len=16), parameter :: version_p3               = '3.1.6.4 '!version number of P3
+ character(len=16), parameter :: version_p3               = '3.1.6.6 '!version number of P3
  character(len=16), parameter :: version_intended_table_1 = '4'     !lookupTable_1 version intended for this P3 version
  character(len=16), parameter :: version_intended_table_2 = '4'     !lookupTable_2 version intended for this P3 version
  character(len=1024)          :: version_header_table_1             !version number read from header, table 1
@@ -1189,10 +1194,10 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
    if (n_iceCat > 3) iwc0(:,:) = iwc0(:,:) + qitot_4(:,:)
    
    ! External forcings are distributed evenly over steps
-   qqdelta = (qvap-qvap_m) / float(n_substep)
+   qqdelta = (qvap/(1-qvap)-qvap_m/(1-qvap_m)) / float(n_substep)
    ttdelta = (temp-temp_m) / float(n_substep)
    ! initialise for the 1st substepping
-   qvap = qvap_m
+   qvap = qvap_m/(1-qvap_m) ! mixing ratio instead of specific humidity
    temp = temp_m
 
   !if (kount == 0) then
@@ -1262,7 +1267,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
       snd_ave(:) = 0.
    endif
 
-   tmparr_ik = (1.e+5/pres)**0.286  !for optimization of calc of theta, temp
+   ! Optimization of calc of theta, temp
+   tmparr_ik = (1.e+5/pres)**(rd*inv_cp)  
 
    do i_substep = 1, n_substep
 
@@ -1297,7 +1303,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
       if (global_status /= STATUS_OK) return
 
      !convert back to temperature:
-     !temp = theta*(pres*1.e-5)**0.286
+     !temp = theta*(pres*1.e-5)**(rd*inv_cp)
       temp = theta/tmparr_ik
 
       if (n_substep > 1) then
@@ -1314,6 +1320,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
       endif
 
    enddo  !i_substep loop
+
+   ! retransferring mixing ratio to specific humidity (only t* is needed)
+   qvap = qvap/(1+qvap)
 
    if (n_substep > 1) then
       tmp1 = 1./float(n_substep)
@@ -6042,9 +6051,16 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
  real    :: e_pres         !saturation vapor pressure [Pa]
 
  !------------------
+#ifdef ECCCGEM
 
- e_pres = polysvp1(t_atm,i_wrt)
- qv_sat = ep_2*e_pres/max(1.e-3,(p_atm-e_pres))
+  if (i_wrt.eq.1) e_pres = foew(t_atm)
+  if (i_wrt.eq.0) e_pres = foewa(t_atm)
+  qv_sat = ep_2*e_pres/max(1.e-3,(p_atm-e_pres))
+
+#else
+  e_pres = polysvp1(t_atm,i_wrt)
+  qv_sat = ep_2*e_pres/max(1.e-3,(p_atm-e_pres))
+#endif
 
  return
  end function qv_sat

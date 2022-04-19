@@ -48,8 +48,6 @@ contains
       options = WB_REWRITE_NONE+WB_IS_LOCAL
 
       iverb = wb_verbosity(WB_MSG_FATAL)
-      ier = wb_get('phy/flux_consist',atm_tplus)
-      if (.not.RMN_IS_OK(ier)) atm_tplus = .true.
       ier = wb_verbosity(WB_MSG_INFO)
       
       ier = WB_OK

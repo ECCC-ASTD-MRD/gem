@@ -3,4 +3,4 @@
 	url = ../cmake_rpn.git
 [submodule "ci-env"]
 	path = ci-env
-	url = ../ci-env
+	url = ../ci-env.git

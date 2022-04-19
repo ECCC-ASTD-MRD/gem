@@ -28,25 +28,15 @@
       use step_options
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       include "rpn_comm.inc"
 
-      integer, parameter :: BUFSIZE=10000
-      integer, external :: fnom, wkoffit
+      integer, external :: fnom, wkoffit!, get_file_unit
 
       character(len=3)   :: mycol_S, myrow_S
-      character(len=1024):: fn, scratch_dir
+      character(len=1024):: fn!, scratch_dir
       integer :: nc, err, unf
-      integer, dimension(BUFSIZE) :: bufnml, bufoutcfg, bufinphycfg
       integer, dimension(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey) :: colrow
-      interface
-         function mkstemp (template) result(fd) BIND(c,name='mkstemp')
-         import :: C_CHAR, C_INT
-         character(C_CHAR), dimension (*), intent(IN) :: template
-         integer(C_INT) :: fd
-         end function mkstemp
-      end interface
 !
 !-------------------------------------------------------------------
 !
@@ -70,57 +60,10 @@
          Ptopo_colrow(0,:,        -1) = Ptopo_colrow(0,:,0           )
          Ptopo_colrow(0,:,Ptopo_npey) = Ptopo_colrow(0,:,Ptopo_npey-1)
       endif
-! 4x4 LAM
-!            8           8           9          10          11          11
-!            8           8           9          10          11          11
-!            4           4           5           6           7           7
-!            0           0           1           2           3           3
-!            0           0           1           2           3           3
-! 4x4 GY
-!           -1          -1          -1          -1          -1          -1
-!           -1           8           9          10          11          -1
-!           -1           4           5           6           7          -1
-!           -1           0           1           2           3          -1
-!           -1          -1          -1          -1          -1          -1
-!
-! Local copies of model_settings.nml, output_settings and
-! physics_input_table in scratch_dir/
-!
-      Path_nml_S    = trim(Path_work_S)//'/model_settings.nml'
-      Path_outcfg_S = trim(Path_work_S)//'/output_settings'
+
+      Path_nml_S      = trim(Path_work_S)//'/model_settings.nml'
+      Path_outcfg_S   = trim(Path_work_S)//'/output_settings'
       Path_phyincfg_S = trim(Path_input_S)//'/physics_input_table'
-
-      if (Ptopo_myproc == 0) then
-         call array_from_file(bufnml,size(bufnml),Path_nml_S)
-         call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
-         call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
-      end if
-
-      call RPN_COMM_bcast(bufnml,size(bufnml),"MPI_INTEGER"          ,0,&
-                                                 "grid",err )
-      call RPN_COMM_bcast(bufoutcfg,size(bufoutcfg),"MPI_INTEGER"    ,0,&
-                                                 "grid",err )
-      call RPN_COMM_bcast(bufinphycfg,size(bufinphycfg),"MPI_INTEGER",0,&
-                                                 "grid",err )
-      if (clib_getenv ('GEM_scratch_dir',scratch_dir) < 0) &
-                                         scratch_dir='/tmp'
-
-      Path_nml_S      = trim(scratch_dir)//'/model_settings_'&
-                        //'XXXXXX'//C_NULL_CHAR
-
-      Path_outcfg_S   = trim(scratch_dir)//'/output_settings_'&
-                        //'XXXXXX'//C_NULL_CHAR
-
-      Path_phyincfg_S = trim(scratch_dir)//'/physics_input_table_'&
-                        //'XXXXXX'//C_NULL_CHAR
-
-      err = mkstemp(path_nml_s)
-      err = mkstemp(Path_outcfg_S)
-      err = mkstemp(Path_phyincfg_S)
-
-      call array_to_file (bufnml,size(bufnml),trim(Path_nml_S))
-      call array_to_file (bufoutcfg,size(bufoutcfg),trim(Path_outcfg_S))
-      call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow
 

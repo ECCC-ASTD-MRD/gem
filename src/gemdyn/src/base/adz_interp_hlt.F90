@@ -80,12 +80,14 @@ contains
             end do
             end do
 !$omp end do
-!$omp single
-            call rpn_comm_xch_halo (extended, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
-               l_ni,l_nj, F_nptr*l_nk, Adz_halox,Adz_haloy, .false.,.false., l_ni,0)
-!$omp end single
             stkpntr(n)= c_loc(extended(1,1,1,n))
          end do
+
+!$omp single
+         call rpn_comm_xch_halo (extended, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
+               l_ni,l_nj, F_nptr*l_nk, Adz_halox,Adz_haloy, .false.,.false., l_ni,0)
+!$omp end single
+
          if (present(F_post)) then
             if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
 !$omp single
