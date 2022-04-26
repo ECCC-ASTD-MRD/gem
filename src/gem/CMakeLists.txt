@@ -28,6 +28,7 @@ target_link_libraries(maingemdm
    modelutils_tmg_stubs
    modelutils_ov_ifort
    vgrid
+   tdpack
    rpncomm
    rmn
    massv
@@ -37,8 +38,8 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-if (NOT "${GEMDYN_SRC}" STREQUAL "" OR NOT "${RPNCOMM_SRC}" STREQUAL "" OR NOT "${MODELUTILS_SRC}" STREQUAL ""
-      OR NOT "${VGRID_SRC}" STREQUAL "" OR NOT "${RPNCOMM_SRC}" STREQUAL "" OR NOT "${RMN_SRC}" STREQUAL ""  OR NOT "${MASSV_SRC}" STREQUAL "")
-    add_dependencies(maingemdm ${GEMDYN_SRC} ${RPNPHY_SRC} ${MODELUTILS_SRC} ${VGRID_SRC} ${RPNCOMM_SRC} ${RMN_SRC} ${MASSV_SRC})
+if (NOT "${gemdyn_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${modelutils_SRC}" STREQUAL ""
+      OR NOT "${vgrid_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${rmn_SRC}" STREQUAL ""  OR NOT "${massv_SRC}" STREQUAL "")
+    add_dependencies(maingemdm ${gemdyn_SRC} ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
 endif()
 install(TARGETS maingemdm RUNTIME DESTINATION bin)

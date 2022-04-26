@@ -104,6 +104,7 @@ else()
 endif()
 message(STATUS "(EC) Compiler version: ${COMPILER_VERSION}")
 
+# Some variables for cmake-configured files
 string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M")
 if(DEFINED ENV{COMP_ARCH})
   set(EC_COMPILER "$ENV{COMP_ARCH}")
@@ -124,7 +125,6 @@ else()
   set(EC_ARCH "${BUILD_ARCH}/${EC_COMPILER}")
 endif()
 
-#set(PACKAGE_PREFIX ${OS}-${COMPILER_SUITE}-${COMPILER_VERSION})
 set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Working environment directory")
 if(DEFINED ENV{GEM_WORK})
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Working directory prefix" FORCE)
@@ -136,14 +136,15 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
+# list of binaries depends on built sources
 list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
-if (NOT "${MODELUTILS_SRC}" STREQUAL "" )
+if (NOT "${modelutils_SRC}" STREQUAL "" )
   list(APPEND BINARIES yy2global flipit yydecode yyencode)
 endif()
-if (NOT "${RPNPHY_SRC}" STREQUAL "" )
+if (NOT "${rpnphy_SRC}" STREQUAL "" )
   list(APPEND BINARIES feseri prphynml )
 endif()
-if (NOT "${GEMDYN_SRC}" STREQUAL "" )
+if (NOT "${gemdyn_SRC}" STREQUAL "" )
   list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
 endif()
 

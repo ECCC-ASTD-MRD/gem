@@ -10,9 +10,6 @@ git checkout dev-submodules
 # Updating submodule from gitlab.science.gc.ca
 git submodule update --init --recursive
 
-# Updating submodule from github.com (not available yet)
-git -c submodule."ci-env".update=none submodule update --init --recursive
-
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
 
@@ -57,8 +54,6 @@ The structure of the build and work directories is different whether the $storag
   - build-ubuntu-18.04-amd64-64-intel-19.0.3.199
   - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
 
-# Using Visual Studio Code
+# Updating submodule from github.com (not available yet)
+git -c submodule."ci-env".update=none submodule update --init --recursive
 
-See instructions on the Visual Studio Code Wiki page: https://wiki.cmc.ec.gc.ca/wiki/Visual_Studio_Code
-to load the appropriate SSM domains.  It can then be launched by executing the vstudio script.
-You can open a terminal within VSCode and go to the working directory to run GEM.
