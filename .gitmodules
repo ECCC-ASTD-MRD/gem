@@ -26,3 +26,6 @@
 [submodule "src/gemdyn"]
 	path = src/gemdyn
 	url = https://gitlab.science.gc.ca/cpi001/gemdyn.git
+[submodule "src/rpn-si/tdpack"]
+	path = src/rpn-si/tdpack
+	url = https://gitlab.science.gc.ca/RPN-SI/tdpack
