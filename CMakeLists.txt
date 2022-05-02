@@ -93,14 +93,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # get name and version of operating system
-execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/os.sh" OUTPUT_VARIABLE OS)
+execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/utils/os.sh" OUTPUT_VARIABLE OS)
 message(STATUS "(EC) Operating system is: ${OS}")
 
 # get name and version of compiler
 if(DEFINED ENV{COMPILER_VERSION})
    set(COMPILER_VERSION $ENV{COMPILER_VERSION})
 else()
-  execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/project/compiler.sh ${COMPILER_SUITE}" OUTPUT_VARIABLE COMPILER_VERSION)
+  execute_process(COMMAND sh "-c" "${CMAKE_SOURCE_DIR}/utils/compiler.sh ${COMPILER_SUITE}" OUTPUT_VARIABLE COMPILER_VERSION)
 endif()
 message(STATUS "(EC) Compiler version: ${COMPILER_VERSION}")
 

@@ -1,14 +1,23 @@
-# How to get, compile and run GEM on a stick at the CMC.
+# How to get, compile and run GEM at the CMC.
 Warning: dev-submodules branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
-# getting gem-devel git repository
-git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
-cd gem-devel
+# getting gem git repository
+git clone git@gitlab.science.gc.ca:cpi001/gem.git
+cd gem
 git checkout dev-submodules
+# if you want, create your own branch
+git branch mybranch
 
-# Updating submodule from gitlab.science.gc.ca
+# Either updating all submodules
 git submodule update --init --recursive
+
+# or updating only some submodules, for a smaller size of the clone directory
+# Example with gemdyn
+# Updating the necessary submodules (compulsory)
+git submodule update --init ci-env cmake_rpn
+# Updating gemdyn
+git submodule update --init --recursive src/gemdyn
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
@@ -19,10 +28,14 @@ git submodule update --init --recursive
 # Please note you cannot compile with Intel and then with GNU in the same shell
 . ./.eccc_setup_gnu
 
-# Before the first build:
-. ./.eccc_initial_setup
+# Before the first build, or if you made important changes (such as updating
+# other submodules, or removing source files):
+. ./.initial_setup
 
 # building and installing GEM
+# see Makefile for options
+# for example, make cmake-gemdyn-only compile only gemdyn
+# make cmake compile everything and will need to have all the submodules
 make cmake
 make -j
 make work
@@ -53,7 +66,3 @@ The structure of the build and work directories is different whether the $storag
   - GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
   - build-ubuntu-18.04-amd64-64-intel-19.0.3.199
   - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
-
-# Updating submodule from github.com (not available yet)
-git -c submodule."ci-env".update=none submodule update --init --recursive
-

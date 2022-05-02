@@ -12,10 +12,10 @@ else
     unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
     export OMP_STACKSIZE=4G
 
-    COMPILER_SUITE=${1}
-    platform=$(project/os.sh)
+    export COMPILER_SUITE=${1}
+    platform=$(utils/os.sh)
     if [ -z "${EC_ARCH}" ]; then
-        COMPILER_VERSION=$(project/compiler.sh ${COMPILER_SUITE})
+        COMPILER_VERSION=$(utils/compiler.sh ${COMPILER_SUITE})
         export COMPILER_VERSION
     fi
 

@@ -9,21 +9,33 @@ variables:
 stages:
   - build
   - run_configs_U2
-  - run_configs_gnu
-  - run_configs_intel
+  - run_configs_U1_gnu
+  - run_configs_U1_intel
 
 before_script:
-    - export CLICOLOR_FORCE=1
+  - export CLICOLOR_FORCE=1
 
-build_intel_dorpnsi:
+build_gnu_gem_only:
+  stage: build
+  only:
+  - dev-submodules
+  when: always
+  script:
+    - . ./.eccc_setup_gnu
+    - . ./.initial_setup
+    - make cmake-gem-only
+    - make -j `nproc`
+    - make -j `nproc` work
+
+build_intel_gem_only:
   stage: build
   only:
   - dev-submodules
   when: always
   script:
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
-    - make cmake-with-system-rpn
+    - . ./.initial_setup
+    - make cmake-gem-only
     - make -j `nproc`
     - make -j `nproc` work
 
@@ -37,7 +49,7 @@ build_xc50:
   script:
     - set +e
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -53,7 +65,7 @@ build_U2:
     - set +e
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
     - make -j `nproc`
@@ -87,15 +99,266 @@ build_U2:
       fi
     - test "${_status}" == "ED"
 
+CANO_W7cascP_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_W7cascP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+CANO_dcmip163r100_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_dcmip163r100
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+CANO_wil7_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_wil7
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+GEM_GY_FISL_P_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_P
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+GEM_LU_FISL_H_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+GEM_LU_OFFC_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_OFFC
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+PTOPO_GYH_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_GYH
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+PTOPO_LUP_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_LUP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+RSTRT_GYP_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=RSTRT_cfgs_GYP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+THEO_bubbleG_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=THEO_cfgs_bubbleG
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+THEO_schar_U2:
+  stage: run_configs_U2
+  tags:
+  - U2
+  only:
+  - 5.2-branch
+  dependencies:
+  - build_U2
+  when: always
+  script:
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=THEO_cfgs_schar
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
 build_intel:
   stage: build
   only:
   - dev-submodules
   when: always
   script:
-    - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_intel
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -106,7 +369,7 @@ build_intel:
     - gem_dbase
 
 5.2GEM_GY_FISL_H_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -126,7 +389,7 @@ build_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -146,7 +409,7 @@ CANO_W7cascP_intel:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -166,7 +429,7 @@ CANO_dcmip163r100_intel:
     - test "${_status}" == "ED"
 
 CANO_wil7_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -186,7 +449,7 @@ CANO_wil7_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -206,7 +469,7 @@ GEM_GY_FISL_P_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -226,7 +489,7 @@ GEM_LU_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -246,7 +509,7 @@ GEM_LU_OFFC_intel:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -266,7 +529,7 @@ PTOPO_GYH_intel:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -286,7 +549,7 @@ PTOPO_LUP_intel:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -306,7 +569,7 @@ RSTRT_GYP_intel:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   dependencies:
   - build_intel
   when: always
@@ -324,7 +587,7 @@ THEO_bubbleG_intel:
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
-  stage: run_configs_intel
+  stage: run_configs_U1_intel
   only:
   - dev-submodules
   dependencies:
@@ -350,9 +613,9 @@ build_gnu:
   when: always
   script:
     - set +e
-    - ln -sf /home/cpi001/gem_dbase .
     - . ./.eccc_setup_gnu
-    - . ./.eccc_initial_setup
+    - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
@@ -363,7 +626,7 @@ build_gnu:
     - gem_dbase
 
 5.2GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -384,7 +647,7 @@ build_gnu:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -405,7 +668,7 @@ CANO_W7cascP_gnu:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -426,7 +689,7 @@ CANO_dcmip163r100_gnu:
     - test "${_status}" == "ED"
 
 CANO_wil7_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -447,7 +710,7 @@ CANO_wil7_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -468,7 +731,7 @@ GEM_GY_FISL_P_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -489,7 +752,7 @@ GEM_LU_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -510,7 +773,7 @@ GEM_LU_OFFC_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -531,7 +794,7 @@ PTOPO_GYH_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -552,7 +815,7 @@ PTOPO_LUP_gnu:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -573,7 +836,7 @@ RSTRT_GYP_gnu:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
@@ -594,7 +857,7 @@ THEO_bubbleG_gnu:
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_U1_gnu
   only:
   - dev-submodules
   dependencies:
