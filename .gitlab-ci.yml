@@ -19,8 +19,8 @@ build_gnu_gem_only:
   stage: build
   only:
   - dev-submodules
-  when: always
   script:
+    - set +e
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
     - make cmake-gem-only
@@ -31,7 +31,6 @@ build_intel_gem_only:
   stage: build
   only:
   - dev-submodules
-  when: always
   script:
     - . ./.eccc_setup_intel
     - . ./.initial_setup
@@ -45,7 +44,6 @@ build_xc50:
   - XC50-login
   only:
   - dev-submodules
-  when: always
   script:
     - set +e
     - . ./.eccc_setup_intel
@@ -104,7 +102,7 @@ CANO_W7cascP_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -127,7 +125,7 @@ CANO_dcmip163r100_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -150,7 +148,7 @@ CANO_wil7_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -173,7 +171,7 @@ GEM_GY_FISL_P_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -196,7 +194,7 @@ GEM_LU_FISL_H_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -219,7 +217,7 @@ GEM_LU_OFFC_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -242,7 +240,7 @@ PTOPO_GYH_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -265,7 +263,7 @@ PTOPO_LUP_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -288,7 +286,7 @@ RSTRT_GYP_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -332,7 +330,7 @@ THEO_schar_U2:
   tags:
   - U2
   only:
-  - 5.2-branch
+  - dev-submodules
   dependencies:
   - build_U2
   when: always
