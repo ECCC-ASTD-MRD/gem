@@ -1,0 +1,40 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+! 002    P.Vaillancourt   (Sep 14) - updated to gcm17/ckdlw4.f(see ckdlw.ftn90)  - new dimensions 
+!
+      real gwl1gh, gwl2gh, gwl3gh, gwl4gh
+      real gwl5gh, gwl7gh, gwl8gh, gwl9gh
+      real cl1co2gh
+      real cl2h2ogh, cl2csgh, cl2cfgh
+      real cl3h2ogh, cl3csgh, cl3cfgh
+      real cl4h2ogh, cl4n2ogh, cl4ch4gh
+      real cl5h2ogh, cl5o3gh, cl5csgh, cl5cfgh
+      real cl7h2ogh, cl7co2gh, cl7o3gh
+      real cl8h2ogh, cl9h2ogh
+!
+      integer    ntl
+      parameter (ntl=28)
+!
+      COMMON /CCC2_BANDL1GH/ GWL1GH(5), CL1CO2GH(5,ntl,5)
+      COMMON /CCC2_BANDL2GH/ GWL2GH(1), CL2H2OGH(5,ntl), &
+                                   CL2CSGH(5,3), CL2CFGH(5,3)
+      COMMON /CCC2_BANDL3GH/ GWL3GH(3), CL3H2OGH(5,ntl,3), CL3CSGH(5,4), &
+                        CL3CFGH(5,4)
+      COMMON /CCC2_BANDL4GH/ GWL4GH(5), CL4H2OGH(5,ntl,5), CL4N2OGH(5,ntl,5), &
+                                   CL4CH4GH(5,ntl,5)
+      COMMON /CCC2_BANDL5GH/ GWL5GH(4), CL5H2OGH(5,ntl,4), CL5O3GH(5,ntl,4), &
+                                   CL5CSGH(5,4,2), CL5CFGH(5,4,2)
+      COMMON /CCC2_BANDL7GH/ GWL7GH(7), CL7H2OGH(5,ntl,4), &
+                                   CL7CO2GH(5,ntl,7), CL7O3GH(2)
+      COMMON /CCC2_BANDL8GH/ GWL8GH(3), CL8H2OGH(5,ntl,3)
+      COMMON /CCC2_BANDL9GH/ GWL9GH(6), CL9H2OGH(5,ntl,6)
+
+

@@ -1,0 +1,79 @@
+#!/bin/bash
+
+myself=$0
+DESC='Open a new RDE experiment with pre-set SRCPATH'
+USAGE="USAGE: ${myself##*/} [-h] [-v] [--dodeps]"
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  :  
+        --dodeps   : add known dependencies to the src path
+Will produce SRCPATH for all known ARCH \$(rdevar rde_known_base_arch_list)
+
+EOF
+}
+
+myverbose=
+dodeps=0
+EC_ARCH_LIST="$(rdevar rde_known_base_arch_list)"
+#TODO: 
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) myverbose=-v ;;
+      (--dodeps) dodeps=1 ;;
+      (-*|*) echo "ERROR: Unrecognized option $1"
+         echo -e $USAGE
+         echo "---- ABORT ----"
+         exit 1;;
+   esac
+   shift
+done
+
+if [[ x$modelutils == x  ]] ; then
+    cat <<EOF
+ERROR: \$modelutils not defined or does not exists
+       modelutils=$modelutils
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+    exit 1
+fi
+if [[ x$rpnphy == x || ! -d $rpnphy/src ]] ; then
+    cat <<EOF
+ERROR: \$rpnphy not defined or src subdir does not exists
+       rpnphy=$rpnphy
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+    exit 1
+fi
+
+
+INCLIST="${modelutils}/include ${rpnphy}/include"
+SRCLIST="${rpnphy}/src"
+TOPDIRS="${rpnphy}"
+if [[ $dodeps == 1 ]] ; then
+   SRCLIST="${modelutils}/src ${rpnphy}/src"
+   TOPDIRS="${modelutils} ${rpnphy}"
+fi
+
+rm -f $(rdevar srcpathfile)
+for myarch in $EC_ARCH_LIST ; do
+   myarchold=$(rdevar --arch ${myarch} base_arch)
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --include "${INCLIST}"
+done

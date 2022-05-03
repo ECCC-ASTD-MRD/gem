@@ -1,0 +1,4 @@
+!
+      real extab(nbs,5), omab(nbs,5), gab(nbs,5), absab(nbl,5)
+      common /aeros / extab, omab, gab, absab
+
