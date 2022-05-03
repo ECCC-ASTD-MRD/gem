@@ -26,3 +26,17 @@
 [submodule "ci-env-modelutils"]
 	path = src/modelutils/ci-env
 	url = ../ci-env.git
+[submodule "cmake_rpn-rpnphy"]
+	path = src/rpnphy/cmake_rpn
+	url = ../cmake_rpn.git
+	branch = dev
+[submodule "ci-env-rpnphy"]
+	path = src/rpnphy/ci-env
+	url = ../ci-env.git
+[submodule "cmake_rpn-gemdyn"]
+	path = src/gemdyn/cmake_rpn
+	url = ../cmake_rpn.git
+	branch = dev
+[submodule "ci-env-gemdyn"]
+	path = src/gemdyn/ci-env
+	url = ../ci-env.git

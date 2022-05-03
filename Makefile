@@ -12,22 +12,6 @@ debug-plus: ; $(MAKE) cmake-debug-plus
 cmake-with-system-rpn:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
 
-# Using installed RPN and GEM libraries
-cmake-gem-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN, modelutils and rpnphy libraries
-cmake-gemdyn-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN, modelutils and gemdyn libraries
-cmake-rpnphy-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN and modelutils libraries
-cmake-rpnphy-gemdyn-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
-
 # Compiling everything
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${GEM_GIT_DIR} )
