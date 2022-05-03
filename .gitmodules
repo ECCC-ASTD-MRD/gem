@@ -16,12 +16,13 @@
 	path = src/rpn-si/rmn
 	url = https://gitlab.science.gc.ca/RPN-SI/librmn.git
 	branch=dev
-[submodule "src/rpnphy"]
-	path = src/rpnphy
-	url = ../rpnphy.git
-[submodule "src/gemdyn"]
-	path = src/gemdyn
-	url = ../gemdyn.git
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
 	url = https://gitlab.science.gc.ca/RPN-SI/tdpack.git
+[submodule "cmake_rpn-modelutils"]
+	path = src/modelutils/cmake_rpn
+	url = ../cmake_rpn.git
+	branch = dev
+[submodule "ci-env-modelutils"]
+	path = src/modelutils/ci-env
+	url = ../ci-env.git
