@@ -1,0 +1,50 @@
+in=MG; freq=0; search=GEOP;      hinterp=near;
+in=TM; freq=0; search=ANAL;      hinterp=linear;
+in=LH; freq=0; search=GEOP;      hinterp=linear;
+in=Y7; freq=0; search=GEOP;      hinterp=linear;
+in=Y8; freq=0; search=GEOP;      hinterp=linear;
+in=Y9; freq=0; search=GEOP;      hinterp=linear;
+in=GA; freq=0; search=GEOP;      hinterp=near;
+in=I8; freq=0; search=ANAL,CLIM; hinterp=near;   tinterp=linear
+in=I9; freq=0; search=ANAL;      hinterp=linear; levels= 1,2;
+in=I7; freq=0; search=ANAL;      hinterp=linear; levels= 1,3;
+in=ZP; freq=0; search=GEOP;      hinterp=linear;
+in=SD; freq=0; search=ANAL,CLIM; hinterp=near;   levels= 1,5; tinterp=linear
+in=I0; freq=0; search=ANAL,CLIM; hinterp=linear; levels= 1,2; tinterp=linear
+in=VF; freq=0; search=GEOP;      hinterp=near;   levels= 1,26;
+in=LG; freq=0; search=ANAL,CLIM; hinterp=near;   tinterp=linear
+
+in=HS; freq=0; search=ANAL,CLIM; hinterp=near;   tinterp=linear
+in=VG; freq=0; search=GEOP;      hinterp=near;
+
+in=ME; freq=0; search=GEOP;      hinterp=cubic;
+
+in=AL; freq=0; search=GEOP,CLIM; hinterp=near;  tinterp=any; #etk=NO SNOW
+
+in=I1; freq=0; search=ANAL;      hinterp=near; levels= 1,2;
+in=I2; freq=0; search=ANAL;      hinterp=near;
+in=I3; freq=0; search=ANAL;      hinterp=near;
+in=I4; freq=0; search=ANAL;      hinterp=near;
+
+in=I6; freq=0; search=ANAL;      hinterp=near;
+## in=XA; freq=0; search=ANAL;      hinterp=near;
+
+in=J1; freq=0; search=GEOP;      hinterp=near; levels= 1,3;
+in=J2; freq=0; search=GEOP;      hinterp=near; levels= 1,3;
+
+in=DN; freq=0; search=ANAL;      hinterp=near;
+
+in=ICEL; freq=0; search=ANAL,CLIM; hinterp=near; tinterp=linear
+
+## in=FSA;  freq=0; search=GEOP;    hinterp=linear; levels= 1,4;
+## in=SLA;  freq=0; search=GEOP;    hinterp=linear; levels= 1,4;
+
+in=AL; freq=0; search=CLIM;     hinterp=near;  tinterp=any; #etk=NO SNOW
+
+in=P0; freq=0,1; search=INREP; hinterp=cubic; levels=0; tinterp=linear
+
+in=TT; freq=0,1; search=INREP;     hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear
+
+in=UU; IN2=VV ; freq=0,1; search=INREP; hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear
+
+in=EN; freq=0; search=INREP;     hinterp=cubic; levels=  -1; vinterp=linear; tinterp=linear

@@ -1,0 +1,11 @@
+#!/bin/bash
+_perm=${1:-u+r}
+_dom=${2:-/dev/null}
+#_here=${PWD}
+#cd $_dom
+chmod $_perm $_dom 2>/dev/null
+for subdir in $(ls -d etc lib bin share all* aix* linux* 2>/dev/null) ; do
+    chmod -R $_perm ${_dom%/}/${subdir%/} 2>/dev/null
+done
+#cd ${_here}
+exit 0

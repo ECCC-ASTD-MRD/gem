@@ -1,0 +1,58 @@
+#!/bin/bash
+
+myself=$0
+DESC='Open a new RDE experiment with pre-set SRCPATH'
+USAGE="USAGE: ${myself##*/} [-h] [-v]"
+
+#---- Functions ------------------------------------------------------
+#====
+usage_long() {
+         toto=$(echo -e $USAGE)
+         more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  :  
+Will produce SRCPATH for all known ARCH \$(rdevar rde_known_base_arch_list)
+
+EOF
+}
+
+myverbose=
+EC_ARCH_LIST="$(rdevar rde_known_base_arch_list)"
+#TODO: 
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) myverbose=-v ;;
+      (-*|*) echo "ERROR: Unrecognized option $1"
+         echo -e $USAGE
+         echo "---- ABORT ----"
+         exit 1;;
+   esac
+   shift
+done
+
+if [[ x$modelutils == x || ! -d $modelutils/src ]] ; then
+   cat <<EOF
+ERROR: \$modelutils not defined or src subdir does not exists
+       modelutils=$modelutils
+       Cannot setup the experiment diretory
+
+       Please make sure you loaded the full GEM development environment
+---- ABORT ----
+EOF
+   exit 1
+fi
+
+SRCLIST="${modelutils}/include ${modelutils}/src"
+TOPDIRS="${modelutils}"
+
+rm -f $(rdevar srcpathfile)
+for myarch in $EC_ARCH_LIST ; do
+   myarchold=$(rdevar --arch ${myarch} base_arch)
+   rdeaddsrc ${myverbose} -R --arch ${myarchold} --reset --topdirs "${TOPDIRS}" ${SRCLIST}
+done

@@ -1,0 +1,15 @@
+#!/bin/bash
+_mybasedir=${1:-/dev/null}
+_myrelpath=${2:-.}
+_postchmod=${3:-u+r}
+_mydir=${_mybasedir}
+_mysubdirlist=$(echo ${_myrelpath} | tr '/' ' ')
+for _mysubdir in ${_mysubdirlist} ; do
+   _mydir=${_mydir}/${_mysubdir}
+   if [[ ! -r ${_mydir} ]] ; then
+      chmod u+w ${_mydir%/*}
+      mkdir -p ${_mydir}
+      chmod ${_postchmod} ${_mydir%/*} ${mydir}
+   fi
+done
+exit 0
