@@ -1,0 +1,30 @@
+      REAL D1(9)
+      REAL A0,A1,A2,A3,A4
+      REAL TORPFACT
+
+!     SEUIL DU COS DE L'ANGLE SOLAIRE A PARTIR DUQUEL ON CONSIDERE
+!     QUE LE SOLEIL EST LEVE.
+      REAL SEUIL_SOL
+      PARAMETER (SEUIL_SOL=1.E-5)
+
+!     CONSTANTS TO CALCULATE CLOUD COVER OFFLINE (Delage, from "Metro")
+      PARAMETER (A0=-0.435)
+      PARAMETER (A1=5.183E-3)
+      PARAMETER (A2=-8.364E-6)
+      PARAMETER (A3=5.972E-9)
+      PARAMETER (A4=-1.56E-12)
+      PARAMETER (TORPFACT=1.0)
+      DATA D1/1.00,0.97,0.94,0.89,0.85,0.80,0.71,0.65,0.33/
+
+
+! Parameters to be used for approximate cloud cover calculation
+! in off-line mode (MEC)
+!
+! SEUIL_SOL  threshold value for solar contant
+! A0         regression parameter
+! A1         regression parameter
+! A2         regression parameter
+! A3         regression parameter
+! A4         regression parameter
+! TORPFACT   turbidity factor
+! D1         class of cloud cover correspondence (1-8 octas)

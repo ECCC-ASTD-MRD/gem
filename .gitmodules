@@ -1,0 +1,8 @@
+[submodule "cmake_rpn"]
+	path = cmake_rpn
+	url = ../cmake_rpn.git
+	branch = dev
+[submodule "ci-env"]
+	path = ci-env
+	url = ../ci-env.git
+	branch = master

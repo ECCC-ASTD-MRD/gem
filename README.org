@@ -1,0 +1,48 @@
+RPN Physics parameterisations
+
+* At CMC
+
+** Clone rpnphy repository
+
+#+begin_src
+git clone git@gitlab.science.gc.ca:cpi001/rpnphy.git
+cd rpnphy
+git submodule update --init --recursive
+#+end_src
+
+** Build and install
+
+#+begin_src
+. .eccc_setup_intel
+# or, to compile with gnu:
+. .eccc_setup_gnu
+mkdir build
+cd build
+cmake .. [-DCMAKE_INSTALL_PREFIX=${your_choice}]
+make -j 4
+make install
+make package
+#+end_src
+
+* Outside CMC (External users) (Not yet fully available)
+
+** Build dependencies
+
+- CMake 3.12+
+- librmn with shared libraries (https://github.com/ECCC-ASTD-MRD/librmn/tree/dev)
+- vgrid with shared libraries (https://github.com/ECCC-ASTD-MRD/vgrid/tree/dev)
+- rpncomm (https://github.com/ECCC-ASTD-MRD/rpncomm)
+- modelutils 
+
+Note: =cmake_rpn= and =ci-env= are included as a submodule but =ci-env= is not available externally. 
+Please run =git -c submodule."ci-env".update=none submodule update --init --recursive= in the git repo after having cloned.
+
+** Build and install
+
+#+begin_src
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=${your_choice} -DRMN_ROOT=${librmn_install_path} -DVGRID_ROOT=${vgrid_install_path} -DMODELUTILS_ROOT=${modelutils_install_path} 
+make -j 4
+make install
+#+end_src

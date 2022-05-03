@@ -1,0 +1,49 @@
+      integer, parameter :: maxbus=1000
+      integer, parameter :: BUSNM_VN=1
+      integer, parameter :: BUSNM_ON=2
+      integer, parameter :: BUSNM_IN=3
+      integer, parameter :: BUSNM_SN=4
+      integer, parameter :: BUSNM_MAX=4  !increment when adding new names
+
+      integer, parameter :: BUSPAR_I0=1
+      integer, parameter :: BUSPAR_NIK=2
+      integer, parameter :: BUSPAR_INIT=3
+      integer, parameter :: BUSPAR_STAG=4
+      integer, parameter :: BUSPAR_ESP=5
+      integer, parameter :: BUSPAR_FMUL=6
+      integer, parameter :: BUSPAR_NK=7
+      integer, parameter :: BUSPAR_MOSAIC=8
+      integer, parameter :: BUSPAR_WLOAD=9
+      integer, parameter :: BUSPAR_HZD=10
+      integer, parameter :: BUSPAR_MONOT=11
+      integer, parameter :: BUSPAR_MASSC=12
+      integer, parameter :: BUSPAR_VMIN=13
+      integer, parameter :: BUSPAR_VMAX=14
+      integer, parameter :: BUSPAR_MAXPAR=14  !increment when adding new params
+
+      integer, parameter :: BUSPAR_STAG_SFC=0
+      integer, parameter :: BUSPAR_STAG_MOM=0
+      integer, parameter :: BUSPAR_STAG_THERMO=1
+      integer, parameter :: BUSPAR_STAG_ENERGY=2
+
+      character(len=16) entnm(maxbus,BUSNM_MAX),dynnm(maxbus,BUSNM_MAX)
+      character(len=16) pernm(maxbus,BUSNM_MAX),volnm(maxbus,BUSNM_MAX)
+      common   /busesc/ entnm, dynnm, pernm, volnm
+
+      character(len=60) entdc(maxbus),dyndc(maxbus)
+      character(len=60) perdc(maxbus),voldc(maxbus)
+      common   /busesc/ entdc, dyndc, perdc, voldc
+
+      integer entpar(maxbus,BUSPAR_MAXPAR),dynpar(maxbus,BUSPAR_MAXPAR)
+      integer perpar(maxbus,BUSPAR_MAXPAR),volpar(maxbus,BUSPAR_MAXPAR)
+      common /busesi/ entpar,dynpar,perpar,volpar
+
+      integer         enttop,dyntop,pertop,voltop
+      common /busesi/ enttop,dyntop,pertop,voltop
+
+      integer         entspc,dynspc,perspc,volspc
+      common /busesi/ entspc,dynspc,perspc,volspc
+
+      integer         esp_busent, esp_busper, esp_busdyn, esp_busvol
+      common /dimgmm/ esp_busent, esp_busper, esp_busdyn, esp_busvol
+

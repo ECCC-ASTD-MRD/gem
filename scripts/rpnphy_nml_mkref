@@ -1,0 +1,59 @@
+#!/bin/bash
+# @Object: Create a reference nml for rpnphy
+# @Author: S.Chamberland
+# @Date:   Feb 2016, Jan 2021
+
+DESC='Create a reference nml for rpnphy'
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} -v rpnphy_settings.${rpnphy_version}.ref" \
+   "positional"   'nargs=*'        "rpnphy_settings.${rpnphy_version}.ref"     "[FILENAME]" \
+   "-v,--verbose" 'action=count'   '0'     '[verbose mode]' \
+   ++++ $*)
+myverbose=''
+[[ ${verbose} -gt 0 ]] && myverbose='-v' || true
+
+myfile="${1:-rpnphy_settings.${rpnphy_version}.ref}"
+
+if [[ x"${myfile}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a destination filename
+EOF
+   exit 1
+fi
+
+if [[ x"${rpnphy_version}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: RPNPHY environement not properly set, \${rpnphy_version} not defined.
+EOF
+   exit 1
+fi
+
+abs=$(which prphynml_${BASE_ARCH}.Abs)
+if [[ x"${abs}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: RPNPHY environement not properly set, cannot find all print nml prog
+       prphynml=${abs:-prphynml_${BASE_ARCH}.Abs}
+EOF
+   exit 1
+fi
+
+here=$(pwd)
+localtmp=$(mktemp -d ${TMPDIR:-/tmp/${USER}}/XXXXXX)
+mkdir -p ${localtmp}
+cd ${localtmp}
+
+${abs}
+nmlfilename='phydict.nml'
+rpy.nml_clean -f ${nmlfilename} -d -c -s -m 300 -t 'xst_stn_latlon(lat,lon,name) xst_stn_ij(i,j,name)'
+
+[[ x${myfile} == x${myfile#/} ]] && myfile=${here}/${myfile} || true
+mv ${nmlfilename} ${myfile}
+
+cd ${here}
+rm -rf ${localtmp}
+exit 0
+

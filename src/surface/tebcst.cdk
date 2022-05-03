@@ -1,0 +1,9 @@
+!
+       INTEGER roof_layer, road_layer, wall_layer
+!
+!      Number of roof layers
+       PARAMETER (roof_layer=3)
+!      Number of road layers
+       PARAMETER (road_layer=3)
+!      Number of wall layers
+       PARAMETER (wall_layer=3)

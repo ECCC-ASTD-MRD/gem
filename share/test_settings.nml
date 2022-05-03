@@ -1,0 +1,58 @@
+ &surface_cfgs
+
+ ICELAC           = .false.    ,
+ ICEMELT          = .true.     ,
+ IMPFLX           = .true.     ,
+ LIMSNODP         = .true.     ,
+ SCHMSOL          = 'isba'     ,
+ Z0TLAT           = 25.,30.    ,
+ ZTA              = -1.        , 
+ ZUA              = -1.        ,
+
+ /
+
+ &convection_cfgs
+
+ DEEP             = 'kfc'      , 
+ KFCDEPTH         = 4000.      ,
+ KFCDLEV          = 0.5        ,
+ KFCDET           = 0.         ,
+ KFCPCP           = 'conspcpn' ,
+ KFCRAD           = 1500.      ,
+ KFCTIMEA         = 3600.      ,
+ KFCTIMEC         = 3600.      ,
+ KFCTRIG4         = 0.,0.,0.05,0.05,
+ KFCTRIGL         = 0.01       ,
+ KFCTRIGLAT       = .true.     ,
+ TRIGLAT          = 25.,30.    ,
+
+ /
+
+ &physics_cfgs
+
+ TEST_PHY         = .true.     ,
+
+ RADIA            = 'cccmarad' ,  
+ KNTRAD           = 4          ,
+ RADFLTR          = .false.    ,
+ TS_FLXIR         = .true.     ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'gwd86'    ,
+ NON_ORO          = .true.     ,
+ LMETOX           = .true.     , 
+
+ LONGMEL          = 'boujo'    ,
+ FLUVERT          = 'clef'     ,
+
+ SHLCVT           = 'conres','ktrsnt_mg',
+ STCOND           = 'consun'   ,
+ INILWC           = .true.     ,
+
+ KTICEFRAC        = .false.    ,
+
+ PCPTYPE          = 'bourge'   ,
+
+ QCO2             = 380.0      ,
+
+/
