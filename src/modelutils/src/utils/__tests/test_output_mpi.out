@@ -1,0 +1,52 @@
+
+ etk_S=toto;
+ units_S=steps;
+ filt_pass=0;
+ filt_coef=3.;
+ datyp=134;
+ closeopen=2;
+ nbits=16;
+ ip3=123;
+ ndigits=6;
+ linbot=0;
+ vinterp_S=cubic;
+ debug_L=f;
+ flip_L=f;
+ rewrite_L=t;
+
+ xnbit([UU,II],bits,32)
+ filtre([G3],coef,0.1,pass,3)
+
+ levels=1,surf;
+ levels=2,model,[1,5,10];
+ levels=3,all;
+ levels=4,pres,[500.,850.];
+ levels=5,pres,linear,[500.,850.];
+ levels=6,pres,cubic,linbot,1,[500.,700.,850.];
+
+ grid=1,model;
+ grid=2,core;
+
+ steps=1,step,[1];
+
+#Surface fields
+ sortie_d([S0],        grid, 1, levels, 1, steps, 1)
+ sortie_d([S3],        grid, 2, levels, 3, steps, 1)
+
+#Multi level ground fields
+ sortie_d([G0],        grid, 2, levels, 1, steps, 1)
+ sortie_d([G3],        grid, 2, levels, 3, steps, 1)
+
+#Multi level up air fields
+ sortie_d([A0],        grid, 2, levels, 1, steps, 1)
+ sortie_d([A1],        grid, 1, levels, 1, steps, 1)
+ sortie_d([A2],        grid, 1, levels, 2, steps, 1)
+ sortie_d([A3],        grid, 2, levels, 3, steps, 1)
+ sortie_d([A4],        grid, 1, levels, 4, steps, 1)
+ sortie_d([A5],        grid, 1, levels, 5, steps, 1)
+ sortie_d([A6],        grid, 1, levels, 6, steps, 1)
+
+
+#Multi level up air fields, physic output
+ sortie_p([Q0,Q1],     grid, 1, levels, 4, steps, 1)
+

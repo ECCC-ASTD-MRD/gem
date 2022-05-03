@@ -1,0 +1,89 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  ORD_SOUMET_SHELL: "/bin/bash"
+  ORD_SOUMET_C: "20"
+  ORD_SOUMET_TMPFS: "8G"
+  ORD_SOUMET_M: "80G"
+  ORD_SOUMET_W: "30"
+
+stages:
+  - build
+
+before_script:
+    - export CLICOLOR_FORCE=1
+
+build_U2:
+  stage: build
+  tags:
+  - U2
+  when: always
+  script:
+    - set +e
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - mkdir build-intel-U2
+    - cd build-intel-U2
+    - cmake ..
+    - make -j `nproc`
+    - make package
+    - ~/ci-admin-bundle/bin/ci-package-ssm.sh package
+    - make install
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build-intel-U2/package
+
+build_xc50:
+  stage: build
+  tags:
+  - XC50-login
+  when: always
+  script:
+    - set +e
+    - . ./.eccc_setup_intel
+    - mkdir build-intel-xc50
+    - cd build-intel-xc50
+    - cmake ..
+    - make -j `nproc`
+    - make package
+    - ~/ci-admin-bundle/bin/ci-package-ssm.sh package
+    - make install
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build-intel-xc50/package
+
+build_intel:
+  stage: build
+  when: always
+  script:
+    - . ./.eccc_setup_intel
+    - mkdir build-intel
+    - cd build-intel
+    - cmake ..
+    - make -j `nproc`
+    - make package
+    - ~/ci-admin-bundle/bin/ci-package-ssm.sh package
+    - make install
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build-intel/package
+
+build_gnu_7.4:
+  stage: build
+  when: always
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - mkdir build-gnu-7.4.0
+    - cd build-gnu-7.4.0
+    - cmake ..
+    - make -j `nproc`
+    - make package
+    - ~/ci-admin-bundle/bin/ci-package-ssm.sh package
+    - make install
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build-gnu-7.4.0/package

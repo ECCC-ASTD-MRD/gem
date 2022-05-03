@@ -1,0 +1,21 @@
+version=100
+
+@time_cfgs
+options(WB_REWRITE_UNTIL)
+define(Step_runstrt_S[c16,0])
+define(Step_leapyears_L[l4,0])
+define(Step_total[i4,0])
+define(Step_rsti[i4,0])
+define(Step_bkup[i4,0])
+define(Step_gstat[i4,0])
+define(Step_dt[r8,0])
+#step_spinphy, step_nesdt
+Step_runstrt_S = '20080101.000000'
+Step_leapyears_L = .true.
+Step_total = 0
+Step_rsti  = 9999999
+Step_bkup  = 9999999
+Step_gstat = 9999999
+Step_dt    = -1.
+
+@
