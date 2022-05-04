@@ -17,8 +17,6 @@ before_script:
 
 build_gnu_gem_only:
   stage: build
-  only:
-  - dev-submodules
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -29,8 +27,6 @@ build_gnu_gem_only:
 
 build_intel_gem_only:
   stage: build
-  only:
-  - dev-submodules
   script:
     - . ./.eccc_setup_intel
     - . ./.initial_setup
@@ -42,8 +38,6 @@ build_xc50:
   stage: build
   tags:
   - XC50-login
-  only:
-  - dev-submodules
   script:
     - set +e
     - . ./.eccc_setup_intel
@@ -56,8 +50,6 @@ build_U2:
   stage: build
   tags:
   - U2
-  only:
-  - dev-submodules
   when: always
   script:
     - set +e
@@ -78,8 +70,6 @@ build_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -101,8 +91,6 @@ CANO_W7cascP_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -124,8 +112,6 @@ CANO_dcmip163r100_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -147,8 +133,6 @@ CANO_wil7_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -170,8 +154,6 @@ GEM_GY_FISL_P_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -193,8 +175,6 @@ GEM_LU_FISL_H_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -216,8 +196,6 @@ GEM_LU_OFFC_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -239,8 +217,6 @@ PTOPO_GYH_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -262,8 +238,6 @@ PTOPO_LUP_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -285,8 +259,6 @@ RSTRT_GYP_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -329,8 +301,6 @@ THEO_schar_U2:
   stage: run_configs_U2
   tags:
   - U2
-  only:
-  - dev-submodules
   dependencies:
   - build_U2
   when: always
@@ -350,8 +320,6 @@ THEO_schar_U2:
 
 build_intel:
   stage: build
-  only:
-  - dev-submodules
   when: always
   script:
     - . ./.eccc_setup_intel
@@ -368,8 +336,6 @@ build_intel:
 
 5.2GEM_GY_FISL_H_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -388,8 +354,6 @@ build_intel:
 
 CANO_W7cascP_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -408,8 +372,6 @@ CANO_W7cascP_intel:
 
 CANO_dcmip163r100_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -428,8 +390,6 @@ CANO_dcmip163r100_intel:
 
 CANO_wil7_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -448,8 +408,6 @@ CANO_wil7_intel:
 
 GEM_GY_FISL_P_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -468,8 +426,6 @@ GEM_GY_FISL_P_intel:
 
 GEM_LU_FISL_H_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -488,8 +444,6 @@ GEM_LU_FISL_H_intel:
 
 GEM_LU_OFFC_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -508,8 +462,6 @@ GEM_LU_OFFC_intel:
 
 PTOPO_GYH_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -528,8 +480,6 @@ PTOPO_GYH_intel:
 
 PTOPO_LUP_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -548,8 +498,6 @@ PTOPO_LUP_intel:
 
 RSTRT_GYP_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -586,8 +534,6 @@ THEO_bubbleG_intel:
 
 THEO_schar_intel:
   stage: run_configs_U1_intel
-  only:
-  - dev-submodules
   dependencies:
   - build_intel
   when: always
@@ -606,8 +552,6 @@ THEO_schar_intel:
 
 build_gnu:
   stage: build
-  only:
-  - dev-submodules
   when: always
   script:
     - set +e
@@ -625,8 +569,6 @@ build_gnu:
 
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -646,8 +588,6 @@ build_gnu:
 
 CANO_W7cascP_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -667,8 +607,6 @@ CANO_W7cascP_gnu:
 
 CANO_dcmip163r100_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -688,8 +626,6 @@ CANO_dcmip163r100_gnu:
 
 CANO_wil7_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -709,8 +645,6 @@ CANO_wil7_gnu:
 
 GEM_GY_FISL_P_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -730,8 +664,6 @@ GEM_GY_FISL_P_gnu:
 
 GEM_LU_FISL_H_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -751,8 +683,6 @@ GEM_LU_FISL_H_gnu:
 
 GEM_LU_OFFC_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -772,8 +702,6 @@ GEM_LU_OFFC_gnu:
 
 PTOPO_GYH_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -793,8 +721,6 @@ PTOPO_GYH_gnu:
 
 PTOPO_LUP_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -814,8 +740,6 @@ PTOPO_LUP_gnu:
 
 RSTRT_GYP_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -835,8 +759,6 @@ RSTRT_GYP_gnu:
 
 THEO_bubbleG_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always
@@ -856,8 +778,6 @@ THEO_bubbleG_gnu:
 
 THEO_schar_gnu:
   stage: run_configs_U1_gnu
-  only:
-  - dev-submodules
   dependencies:
   - build_gnu
   when: always

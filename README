@@ -12,6 +12,13 @@ git branch mybranch
 # Either updating all submodules
 git submodule update --init --recursive
 
+# or updating only some submodules, for a smaller size of the clone directory
+# Example with gemdyn
+# Updating the necessary submodules (compulsory)
+git submodule update --init ci-env cmake_rpn
+# Updating gemdyn
+git submodule update --init --recursive src/gemdyn
+
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
 
@@ -27,6 +34,8 @@ git submodule update --init --recursive
 
 # building and installing GEM
 # see Makefile for options
+# for example, make cmake-gemdyn-only compile only gemdyn
+# make cmake compile everything and will need to have all the submodules
 make cmake
 make -j
 make work
