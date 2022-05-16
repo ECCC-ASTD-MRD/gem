@@ -9,15 +9,11 @@ git checkout dev-subtrees
 # if you want, create your own branch
 git branch mybranch
 
-# Either updating all submodules
+# Update all submodules, including rpn-si libraries
 git submodule update --init --recursive
-
-# or updating only some submodules, for a smaller size of the clone directory
-# Example with gemdyn
-# Updating the necessary submodules (compulsory)
+# or updating only the necessary submodules, for a smaller size of the clone directory
+# Updating the necessary submodules (compulsory), leaving rpn-si libraries
 git submodule update --init ci-env cmake_rpn
-# Updating gemdyn
-git submodule update --init --recursive src/gemdyn
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh

@@ -5,28 +5,9 @@ SHELL = /bin/bash
 
 default: build
 
-debug: ; $(MAKE) cmake-debug
-debug-plus: ; $(MAKE) cmake-debug-plus
-
 # Using installed RPN libraries (rmn, vgrid, rpncomm, massv, tdpack)
 cmake-with-system-rpn:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN and GEM libraries
-cmake-gem-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN, modelutils and rpnphy libraries
-cmake-gemdyn-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_RPNPHY=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN, modelutils and gemdyn libraries
-cmake-rpnphy-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE -DWITH_SYSTEM_GEMDYN=TRUE ${GEM_GIT_DIR} )
-
-# Using installed RPN and modelutils libraries
-cmake-rpnphy-gemdyn-only:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_SYSTEM_MODELUTILS=TRUE ${GEM_GIT_DIR} )
 
 # Compiling everything
 cmake:
@@ -37,8 +18,8 @@ cmake-debug:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug ${GEM_GIT_DIR} )
 
 # Extra debug (see extra checks defined in cmake_rpn compiler presets and in CMakeLists.txt)
-cmake-debug-plus:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DEXTRA_DEBUG=1 ${GEM_GIT_DIR} )
+cmake-debug-extra:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON ${GEM_GIT_DIR} )
 
 .PHONY: build
 build:

@@ -17,22 +17,6 @@ enable_language(C)
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
 
-# Adding specific flags for GEM
-if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
-  if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl")
-  else()
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl")
-  endif()
-elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-  set(LAPACK_LIBRARIES "lapack")
-  set(BLAS_LIBRARIES "blas")
-endif()
-
 # CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "(EC) CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
@@ -73,6 +57,31 @@ else()
 endif()
 
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
+# Adding specific flags for GEM
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
+  if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268")
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl")
+  else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268")
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl")
+  endif()
+elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
+  set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -ftree-vectorize")
+  set(LAPACK_LIBRARIES "lapack")
+  set(BLAS_LIBRARIES "blas")
+  if (EXTRA_CHECKS)
+    # in addition to extra checks defined in cmake_rpn compiler presets
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")
+  endif()
+endif()
+
+# Printing flags
+message(STATUS "(EC) CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+message(STATUS "(EC) CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")
 
 if (${CMAKE_BUILD_TYPE} MATCHES Debug )
   message(STATUS "(EC) CMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}")
@@ -82,7 +91,6 @@ endif()
 # Figure out the correct arch-dependent include path
 set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "(EC) Build architecture: ${BUILD_ARCH}")
-
 message(STATUS "(EC) Sources directory is: ${CMAKE_SOURCE_DIR}")
 message(STATUS "(EC) Build directory is: ${CMAKE_BINARY_DIR}")
 

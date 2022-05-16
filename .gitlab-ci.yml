@@ -33,6 +33,7 @@ build_intel_gem_only:
     - make cmake-gem-only
     - make -j `nproc`
     - make -j `nproc` work
+  allow_failure: true
 
 build_xc50:
   stage: build
@@ -45,6 +46,7 @@ build_xc50:
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
+  allow_failure: true
 
 build_U2:
   stage: build
@@ -73,6 +75,7 @@ build_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -94,6 +97,7 @@ CANO_W7cascP_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -115,6 +119,7 @@ CANO_dcmip163r100_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -136,6 +141,7 @@ CANO_wil7_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -157,6 +163,7 @@ GEM_GY_FISL_P_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -178,6 +185,7 @@ GEM_LU_FISL_H_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -199,6 +207,7 @@ GEM_LU_OFFC_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -220,6 +229,7 @@ PTOPO_GYH_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -241,6 +251,7 @@ PTOPO_LUP_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -262,6 +273,7 @@ RSTRT_GYP_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -283,6 +295,7 @@ THEO_bubbleG_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -304,6 +317,7 @@ THEO_schar_U2:
   dependencies:
   - build_U2
   when: always
+  allow_failure: true
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -339,6 +353,7 @@ build_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -357,6 +372,7 @@ CANO_W7cascP_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -375,6 +391,7 @@ CANO_dcmip163r100_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -393,6 +410,7 @@ CANO_wil7_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -411,6 +429,7 @@ GEM_GY_FISL_P_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -429,6 +448,7 @@ GEM_LU_FISL_H_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -447,6 +467,7 @@ GEM_LU_OFFC_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -465,6 +486,7 @@ PTOPO_GYH_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -483,6 +505,7 @@ PTOPO_LUP_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -501,6 +524,7 @@ RSTRT_GYP_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -519,6 +543,7 @@ THEO_bubbleG_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -537,6 +562,7 @@ THEO_schar_intel:
   dependencies:
   - build_intel
   when: always
+  allow_failure: true
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -572,6 +598,7 @@ build_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -591,6 +618,7 @@ CANO_W7cascP_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -610,6 +638,7 @@ CANO_dcmip163r100_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -629,6 +658,7 @@ CANO_wil7_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -648,6 +678,7 @@ GEM_GY_FISL_P_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -667,6 +698,7 @@ GEM_LU_FISL_H_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -686,6 +718,7 @@ GEM_LU_OFFC_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -705,6 +738,7 @@ PTOPO_GYH_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -724,6 +758,7 @@ PTOPO_LUP_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -743,6 +778,7 @@ RSTRT_GYP_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -762,6 +798,7 @@ THEO_bubbleG_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -781,6 +818,7 @@ THEO_schar_gnu:
   dependencies:
   - build_gnu
   when: always
+  allow_failure: true
   script:
     - set +e
     - . ./.eccc_setup_gnu
