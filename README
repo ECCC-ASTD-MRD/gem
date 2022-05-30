@@ -3,8 +3,8 @@ Warning: dev-subtrees branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
 # getting gem git repository
-git clone git@gitlab.science.gc.ca:cpi001/gem.git
-cd gem
+git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
+cd gem-devel
 git checkout dev-subtrees
 # if you want, create your own branch
 git branch mybranch
