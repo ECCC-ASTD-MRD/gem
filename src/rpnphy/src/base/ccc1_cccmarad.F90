@@ -33,7 +33,7 @@ contains
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL, GRAV, PI, STEFAN
       use cldoppro_MP, only: cldoppro_MP2
-      use sfclayer_mod, only: sl_prelim, sl_sfclayer, SL_OK
+      use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use series_mod, only: series_xst, series_isstep
       use phy_options
       use phy_status, only: phy_error_L
@@ -337,7 +337,7 @@ contains
             enddo
          enddo
 
-         call vssqrt (shtj,s_qrt,ni*nk)
+         call gem_vssqrt (shtj,s_qrt,ni*nk)
 
          do i = 1, ni
             shtj(i,1)  = sig(i,1) * shtj(i,1)
@@ -414,8 +414,8 @@ contains
 
          ws_vs=my_udiag*my_udiag+my_vdiag*my_vdiag
 
-         call vspown1(ws, ws_vs, 1.705, ni)
-         call vspown1(cosas_vs, zcosas, 1.4, ni)
+         call gem_vspown1(ws, ws_vs, 1.705, ni)
+         call gem_vspown1(cosas_vs, zcosas, 1.4, ni)
          alwcap = 0.3
          do i = 1, ni
             ! au pas de temps zero zglsea n est pas defini car

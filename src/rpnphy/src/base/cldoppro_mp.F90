@@ -381,12 +381,12 @@ contains
 
 
     !..."no stratospheric lwc" mode when CLIMAT or STRATOS = true
-    !...no clouds above TOPC or where HU < MINQ (see nocld.cdk for topc and minq)
+    !...no clouds above TOPC (see nocld.cdk)
     if (nostrlwc) then
        do k=1,nkm1
           do i=1,ni
              press = sig(i,k)*ps(i)
-             if (topc > press .or. minq >= zhumoins(i,k)) then
+             if (topc > press) then
                 cldfxp(i,k) = 0.0   ! explicit
                 cldfmp(i,k) = 0.0   ! implicit
                 liqwcin (i,k) = 0.0 ! implicit
@@ -533,7 +533,7 @@ contains
           vs1(i,k) = liqwcin(i,k) * aird(i,k) * rec_cdd(i,k)
        end do
     end do
-    call vspown1(rew, vs1, THIRD, nkm1 * ni)
+    call gem_vspown1(rew, vs1, THIRD, nkm1 * ni)
 
     do k = 1, nkm1
        do i = 1, ni
@@ -551,7 +551,7 @@ contains
              vs1(i,k) = 1000. * icewcin(i,k) * aird(i,k)
           enddo
        enddo
-       call vspown1(rei, vs1, 0.216, nkm1 * ni)
+       call gem_vspown1(rei, vs1, 0.216, nkm1 * ni)
 
        do k = 1, nkm1
           do i = 1, ni
@@ -872,7 +872,7 @@ contains
        enddo
     endif
 
-    call vsexp(trans_exp, vs1, ni*nkm1)
+    call gem_vsexp(trans_exp, vs1, ni*nkm1)
 
     do i = 1, ni
        zctp(i) = 110000.
@@ -945,7 +945,7 @@ contains
        att(i) = -0.1*tot(i)
     enddo
 
-    call vsexp(z_exp, att, ni)
+    call gem_vsexp(z_exp, att, ni)
 
     do i=1,ni
        znt(i) = ztcc(i)*(1.-z_exp(i))

@@ -1,5 +1,5 @@
 subroutine test_sfclayer
-   use sfclayer_mod, only:sl_put,sl_get,sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer, only:sl_put,sl_get,sl_prelim,sl_sfclayer,SL_OK
    implicit none
  
    integer, parameter :: NI=1,STDERR=0,STDOUT=6

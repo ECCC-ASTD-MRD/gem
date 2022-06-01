@@ -6,8 +6,8 @@ target_link_libraries(toc2nml
    rpnphy
    modelutils
    vgrid
+#   tdpack
    rmn
-   massv
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
@@ -18,7 +18,7 @@ target_include_directories(toc2nml PRIVATE
   ${CMAKE_BINARY_DIR}/src/vgrid
  )
 
-add_dependencies(toc2nml gemdyn rpnphy modelutils vgrid rmn massv)
+add_dependencies(toc2nml gemdyn rpnphy modelutils vgrid rmn)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/maingem_monitor_output.c

@@ -116,10 +116,10 @@
         bf(i,2)     =  xx(i,1)
         urbf(i,1)   =  uu * (xx(i,1) - xx0)
   100 continue
-      call vsexp(bs,bs,il2-il1+1)
-      call vsexp(bf0,bf0,il2-il1+1)
-      call vsexp(bf(1,1),bf(1,1),il2-il1+1)
-      call vsexp(bf(1,2),bf(1,2),il2-il1+1)
+      call gem_vsexp(bs,bs,il2-il1+1)
+      call gem_vsexp(bf0,bf0,il2-il1+1)
+      call gem_vsexp(bf(1,1),bf(1,1),il2-il1+1)
+      call gem_vsexp(bf(1,2),bf(1,2),il2-il1+1)
       do  i = il1, il2
         dbf(i,1)    =  bf(i,2) - bf(i,1)
       enddo
@@ -136,7 +136,7 @@
           bf(i,kp1) =  xx(i,k)
           urbf(i,k) =  uu * (xx(i,k) - xx(i,km1))
   200     continue
-          call vsexp(bf(1,kp1),bf(1,kp1),il2-il1+1)
+          call gem_vsexp(bf(1,kp1),bf(1,kp1),il2-il1+1)
           do  i = il1, il2
             dbf(i,k)  =  bf(i,kp1) - bf(i,k)
           enddo

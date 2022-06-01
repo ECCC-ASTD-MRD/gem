@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module linoz_mod
+module linoz_param
    implicit none
    public
    save
@@ -50,4 +50,4 @@ module linoz_mod
    
    logical, parameter :: local_dbg = .true.
 
-end module linoz_mod
+end module linoz_param

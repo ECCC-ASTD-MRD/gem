@@ -10,7 +10,10 @@ file(GLOB F_FILES main/flipit.F90 main/yy2global.F90 main/yydecode.F90 main/yyen
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(modelutils STATIC ${F_FILES} ${C_FILES})
+add_dependencies(modelutils vgrid tdpack)
+
 target_include_directories(modelutils PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+include_directories( ${CMAKE_BINARY_DIR}/src/tdpack )
 include_directories( ${CMAKE_BINARY_DIR}/src/vgrid )
 
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)

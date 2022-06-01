@@ -221,9 +221,8 @@ contains
       ! ============================================
       do I = 1, IX
          PSB(I)=PS(I)*1.E-3
-         SIGKFC(I,KX  ) = SIGT(I,KX-1)+0.75*(SIGT(I,KX)-SIGT(I,KX-1))
       enddo
-      DO K=1,KX-1
+      DO K=1,KX
          DO I=1,IX
             SIGKFC(I,K) = SIGT(I,K)
          END DO
@@ -264,8 +263,8 @@ contains
       end do
 
       do I=1,IX
-         DPP(I,1)   = ( SIGKFC(I,KX)-SIGKFC(I,KX-1) ) * PSB(I)*1.E3
-         DPP(I,KX)  = ( SIGKFC(I,2) -SIGKFC(I,1)    ) * PSB(I)*1.E3
+         DPP(I,1)   = ( 1. - 0.5*(SIGKFC(I,KX)+SIGKFC(I,KX-1))) * PSB(I)*1.E3      
+         DPP(I,KX)  = 0.5 * ( SIGKFC(I,2) -SIGKFC(I,1)    ) * PSB(I)*1.E3          
       end do
 
       do K=2,KX-1

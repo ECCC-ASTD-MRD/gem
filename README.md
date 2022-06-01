@@ -44,52 +44,52 @@ To compile and run GEM, you will need:
 - basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
 
 ```
-    git clone https://github.com/ECCC-ASTD-MRD/gem.git
-    cd gem
-    # Checkout 5.2 branch:
-    git checkout 5.2-branch
-    # Update submodules:
-	# cmake_rpn and ci-env are included as submodules, but ci-env is not available externally. 
-	git -c submodule."ci-env".update=none submodule update --init --recursive
- 
-    # Download the data files required to run GEM
-    ./download-dbase.sh .
+git clone https://github.com/ECCC-ASTD-MRD/gem.git
+cd gem
+# Checkout 5.2 branch:
+git checkout 5.2-branch
+# Update submodules:
+# cmake_rpn and ci-env are included as submodules, but ci-env is not available externally. 
+git -c submodule."ci-env".update=none submodule update --init --recursive
 
-    # Important: in order to set environment variables needed to run GEM, use the
-    # following setup file, after setting up your compiler environment:
-    . ./.common_setup gnu
-    # or
-    . ./.common_setup intel
+# Download the data files required to run GEM
+./download-dbase.sh .
+
+# Important: in order to set environment variables needed to run GEM, use the
+# following setup file, after setting up your compiler environment:
+. ./.common_setup gnu
+# or
+. ./.common_setup intel
 	
-    # Create a build directory
-    # The build directory has very little value in itself and can be placed
-    # outside the project directory
-    mkdir -p build
-    cd build
-	# Alternatively, you can use a script that will create a build and work
-    # directory named after the operating system and compiler suite used
-	. ./.initial_setup
-	cd build[...]
+# Create a build directory
+# The build directory has very little value in itself and can be placed
+# outside the project directory
+mkdir -p build
+cd build
+# Alternatively, you can use a script that will create a build and work
+# directory named after the operating system and compiler suite used
+. ./.initial_setup
+cd build[...]
 	
-	# default compiler is gnu
-    cmake ..
-	# or, for Intel:
-    cmake .. -DCOMPILER_SUITE=intel
-    # Create an execution environment for GEM
-    make -j work
+# default compiler is gnu
+cmake ..
+# or, for Intel:
+cmake .. -DCOMPILER_SUITE=intel
+# Create an execution environment for GEM
+make -j work
 
-    # You should now have a work directory created in the form of:
-    # work-${OS_NAME}-${COMPILER_NAME} 
-    cd ..
-    cd work-${OS_NAME}-${COMPILER_NAME}
-    # Configure the model with one of the configurations
-    # and execute the model, for example:
-    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+# You should now have a work directory created in the form of:
+# work-${OS_NAME}-${COMPILER_NAME} 
+cd ..
+cd work-${OS_NAME}-${COMPILER_NAME}
+# Configure the model with one of the configurations
+# and execute the model, for example:
+runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 
-    # use tools to see list the records in the output files
-    voir -iment RUNMOD/output/cfg0000/ ...
-    fststat -fst RUNMOD/output/cfg0000/ ...
+# use tools to see list the records in the output files
+voir -iment RUNMOD/output/cfg0000/ ...
+fststat -fst RUNMOD/output/cfg0000/ ...
 ```
 
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
@@ -127,19 +127,18 @@ link:
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
   of commands, which you will need to adapt for your setup:
-    - On Ubuntu:
-        ```
-          export PATH=/usr/lib/openmpi/bin:${PATH}
-          export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
-        or
-          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
-
-        ```
-    - On Fedora:
-        ```
-          export PATH=/usr/lib64/openmpi/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
-        ```
+  - On Ubuntu:
+    ```
+    export PATH=/usr/lib/openmpi/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
+    # or
+    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
+    ```
+  - On Fedora:
+    ```
+    export PATH=/usr/lib64/openmpi/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
+    ```
 
 ### Intel compiler suite
 
@@ -218,10 +217,10 @@ Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
 example *work-Fedora-34-x86_64-gnu-11.2.1*
 
 ```
-    cd work-${OS-NAME}_${COMPILER-NAME}
-    # Configure and execute the model for a specific case, for example:
-    runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
-    runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+cd work-${OS-NAME}_${COMPILER-NAME}
+# Configure and execute the model for a specific case, for example:
+runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
+runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 ```
 
 *runmod.sh*'s ```-ptopo``` argument can be used to specify the number of CPU to
@@ -230,8 +229,12 @@ use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
 
 If you get an error message saying runprep.sh or gem_dbase is not found,
 make sure to set the environment variables using the setup file situated in
-the main directory: 
-*./.common_setup gnu* or *./.common_setup intel*
+the main directory:
+```
+./.common_setup gnu
+# or
+./.common_setup intel
+```
 
 An in-house script (**r.run_in_parallel**) is used to run the model. If you
 want to use another command, or if it doesn't work in your environment, edit
@@ -246,25 +249,25 @@ The model stores its outputs in FST files.  The following tools can be used to p
 various tasks on the output files:
 
 - ```voir``` lists the records in FST files:
-    ```
-        voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
-    ```
+  ```
+  voir -iment RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+  ```
 
 - ```fststat``` produces statistical means of the records in a FST file:
-    ```
-        fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
-    ```
+  ```
+  fststat -fst RUNMOD.dir/output/cfg0000/laststep0000000024/000-000/dm2009042700-000-000010
+  ```
 
 - ```pgsm``` can be used to interpolate records to a different grid
-    ```
-        pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
-    ```
+  ```
+  pgsm -iment <input FST> -ozsrt <output FST> -i <pgsm.directives>
+  ```
 
 - ```editfst``` enables basic record manipulations, such as copying to another
     file.
-    ```
-        editfst -s <input FST> -d <output FST> -i <editfst.directives>
-    ```
+  ```
+  editfst -s <input FST> -d <output FST> -i <editfst.directives>
+  ```
 
 [SPI](http://eer.cmc.ec.gc.ca/software/SPI) is a scientific and meteorological
 virtual globe offering processing, analysis and visualization capabilities,
@@ -304,9 +307,9 @@ Then run the two scripts with the following commands, to prepare the input,
 and then run the model:
 
 ```
-    cd work-${OS-NAME}_${COMPILER-NAME}
-    runprep.sh -dircfg configurations/experience
-    runmod.sh -dircfg configurations/experience
+cd work-${OS-NAME}_${COMPILER-NAME}
+runprep.sh -dircfg configurations/experience
+runmod.sh -dircfg configurations/experience
 ```
 
 ## Modifying the grid and getting meteorological data

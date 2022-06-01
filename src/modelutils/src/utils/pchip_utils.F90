@@ -48,7 +48,7 @@ contains
       integer :: status                                         !Return status
 
       ! Local variables
-      integer :: k,nki,nko,istat,i
+      integer :: k,nki,nko,istat,i,ko
       real, dimension(size(y,dim=1)) :: myZ1i,myZ2i
       real, dimension(size(y,dim=1),size(y,dim=2)) :: yext,zext
       character(len=LONG_CHAR) :: myDirec
@@ -85,19 +85,26 @@ contains
       endif
 
       ! Extend arrays to integration bounds
-      do i=1,size(yext,dim=1)
-         yext(i,2:nko-1) = yi(i,:)
-         yext(i,1) = yi(i,1)
-         yext(i,nko) = yi(i,nki)
-         zext(i,2:nko-1) = zi(i,:)
-         zext(i,1) = max(myZ2i(i), 2*zi(i,1)-zi(i,2))
-         zext(i,nko) = min(myZ1i(i), 2*zi(i,nki)-zi(i,nki-1))
+      do k=1,nki
+         ko = k + PCHIP_EXT/2
+         do i=1,size(y,dim=1)
+            y(i,ko) = yi(i,k)
+            z(i,ko) = zi(i,k)
+         enddo
+      enddo
+      do i=1,size(y,dim=1)
+         y(i,1) = yi(i,1)
+         y(i,nko) = yi(i,nki)
+         z(i,1) = max(myZ2i(i), 2*zi(i,1)-zi(i,2))
+         z(i,nko) = min(myZ1i(i), 2*zi(i,nki)-zi(i,nki-1))
       enddo
 
       ! Invert arrays if necessary
       istat = clib_toupper(myDirec)
       select case (myDirec)
       case ('DOWN')
+         zext(:,:) = z(:,:)
+         yext(:,:) = y(:,:)
          do k=1,nko
             z(:,nko-k+1) = zi(:,1) - zext(:,k)
             y(:,nko-k+1) = yext(:,k)
@@ -105,8 +112,6 @@ contains
          if (present(z1)) z1 = zi(:,1) - myZ2i
          if (present(z2)) z2 = zi(:,1) - myZ1i
       case ('UP')
-         z  = zext
-         y  = yext
          if (present(z1)) z1 = myZ1i
          if (present(z2)) z2 = myZ2i
       case DEFAULT
@@ -128,16 +133,17 @@ contains
       integer :: status                                         !Return status
 
       ! Local variables
-      integer :: k,nk,i
+      integer :: k,nk,i,ni
 
       ! Set return status
       status = PCHIP_ERR
       
       ! Compute layer properties
+      ni = size(y,dim=1)
       nk = size(y,dim=2)
-      do k=nk,2,-1
-         do i=1,size(h,dim=1)
-            h(i,k)   =  z(i,k-1)-z(i,k)
+      do k=2,nk
+         do i=1,ni
+            h(i,k) = z(i,k-1)-z(i,k)
             del(i,k) = (y(i,k-1)-y(i,k))/h(i,k)
          enddo
       enddo
@@ -195,34 +201,43 @@ contains
       integer :: status                                         !Return status
 
       ! Local variables
-      integer :: nk,i,k
-      real :: w1,w2
+      integer :: ni,nk,i,k
+      real :: w1,w2,delk,delkp
 
       ! Set return status
       status = PCHIP_ERR
 
+      ! Compute slopes at interior points
+      ni = size(h,dim=1)
       nk = size(h,dim=2)
-      do i=1,size(h,dim=1)
-
-         ! Compute slopes at interior points
-         do k=(nk-1),2,-1
-            if (del(i,k) == 0. .or. del(i,k+1) == 0. .or. sign(1.,del(i,k))*sign(1.,del(i,k+1)) < 0. ) then
+      do k=2,nk-1
+         do i=1,ni
+            delk = del(i,k)
+            delkp = del(i,k+1)
+            if (delk == 0. .or. delkp == 0. .or. sign(1.,delk)*sign(1.,delkp) < 0.) then
                d(i,k) = 0.
             else
                w1 = 2.*h(i,k) + h(i,k+1)
                w2 = 2.*h(i,k+1) + h(i,k)
-               d(i,k) = (w1+w2)*del(i,k+1)*del(i,k) / (del(i,k)*w1+del(i,k+1)*w2)
+               d(i,k) = (w1+w2)*delkp*delk / (delk*w1+delkp*w2)
             endif
          enddo
+      enddo
 
-         ! Compute slopes at end points
+      ! Compute slopes at end points
+      do i=1,ni
          d(i,1) = ((2.*h(i,2) + h(i,3))*del(i,2) - h(i,2)*del(i,3)) / (h(i,2) + h(i,3))
          if (sign(1.,d(i,2)) /= sign(1.,del(i,2))) d(i,1) = 0.
-         if (sign(1.,del(i,2)) /= sign(1.,del(i,3)) .and. abs(d(i,1)) > abs(3*del(i,2))) d(i,1) = 3.*del(i,1)
+         if (sign(1.,del(i,2)) /= sign(1.,del(i,3))) then
+            if (abs(d(i,1)) > abs(3*del(i,2))) d(i,1) = 3.*del(i,1)
+         endif
+      enddo
+      do i=1,ni
          d(i,nk) = ((2.*h(i,nk) + h(i,nk-1))*del(i,nk) - h(i,nk)*del(i,nk-1)) / (h(i,nk) + h(i,nk-1))
          if (sign(1.,d(i,nk)) /= sign(1.,del(i,nk))) d(i,nk) = 0.
-         if (sign(1.,del(i,nk)) /= sign(1.,del(i,nk-1)) .and. abs(d(i,nk)) < abs(3*del(i,nk))) d(i,nk) = 3.*del(i,nk)
-
+         if (sign(1.,del(i,nk)) /= sign(1.,del(i,nk-1))) then
+            if (abs(d(i,nk)) < abs(3*del(i,nk))) d(i,nk) = 3.*del(i,nk)
+         endif
       enddo
  
       ! Successful completion

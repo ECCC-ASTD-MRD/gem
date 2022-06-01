@@ -264,7 +264,7 @@ contains
             endif NONLOCAL
          end do
       end do
-      call vsrec(rgam0,gam0,ni*(nkm1))
+      call gem_vsrec(rgam0,gam0,ni*(nkm1))
       do k=1,nkm1
 !vdir nodep
          do j=1,ni

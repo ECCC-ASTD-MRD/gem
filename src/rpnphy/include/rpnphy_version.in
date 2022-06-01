@@ -1,5 +1,5 @@
        character(len=50),parameter :: RPNPHY_NAME_S = "RPNPHY"
-       character(len=50),parameter :: RPNPHY_VERSION_S = "6.2.0-a15"
+       character(len=50),parameter :: RPNPHY_VERSION_S = "6.2.0-a17"
        character(len=50),parameter :: RPNPHY_DSTP_S = "@BUILD_DATE@"
        character(len=50),parameter :: RPNPHY_EC_ARCH_S = "@EC_ARCH@"
        character(len=50),parameter :: RPNPHY_ORDENV_ARCH_S = "@EC_ORDENV_ARCH@"

@@ -10,12 +10,6 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
-if ( (DEFINED ENV{EC_ARCH}) AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 2021))
-  if (NOT DEFINED ENV{CRAYPE_VERSION})
-    set(EXTRA_LIBRARIES "-lopen-pal")
-  endif()
-endif()
-
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
@@ -24,17 +18,17 @@ target_link_libraries(checkdmpart
    modelutils
    modelutils_tmg_stubs
    vgrid
+   tdpack
    mpi-extras
    rpncomm
    rmn
-   massv
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(checkdmpart gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn massv)
+add_dependencies(checkdmpart gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
@@ -44,15 +38,15 @@ target_link_libraries(gemgrid
    modelutils
    modelutils_tmg_stubs
    vgrid
+   tdpack
    mpi-extras
    rpncomm
    rmn
-   massv
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(gemgrid gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn massv)
+add_dependencies(gemgrid gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -62,17 +56,17 @@ target_link_libraries(prgemnml
    modelutils
    modelutils_tmg_stubs
    vgrid
+   tdpack
    mpi-extras
    rpncomm
    rmn
-   massv
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prgemnml gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn massv)
+add_dependencies(prgemnml gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
 install(TARGETS checkdmpart gemgrid prgemnml RUNTIME 
         DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)

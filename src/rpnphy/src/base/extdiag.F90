@@ -145,7 +145,7 @@ contains
                work2d1(i, k) = 1.e-5*p(i, k)
             end do
          end do
-         call vspown1(work2d1, work2d1, -CAPPA, ni*nk)
+         call gem_vspown1(work2d1, work2d1, -CAPPA, ni*nk)
          do k=1, nk
             do i=1, ni
                work2d1(i, k) = ztplus(i, k)*work2d1(i, k)
@@ -208,7 +208,7 @@ contains
             work1d(i) = zuplus(i, nk)*zuplus(i, nk) + &
                  zvplus(i, nk)*zvplus(i, nk)
          end do
-         call vssqrt(work1d, work1d, ni)
+         call gem_vssqrt(work1d, work1d, ni)
          call series_xst(work1d, 'VE', trnch)
       endif
 

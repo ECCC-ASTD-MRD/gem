@@ -120,7 +120,7 @@ subroutine clsgs8(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    do k=1,nk-1
       lnsig(:,k) = s(:,k+1)/s(:,k)
    end do
-   call vslog(lnsig,lnsig,n*(nk-1))
+   call gem_vslog(lnsig,lnsig,n*(nk-1))
    dz(:,1:nk-1) = -RGASD*tve(:,1:nk-1)*lnsig(:,1:nk-1)*gravinv
    dz(:,nk) = 0.0
    call dvrtdf( dthldz, thlm, dz, n, n, n, nk)
@@ -128,7 +128,7 @@ subroutine clsgs8(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
 
    ! Compute subgrid standard deviation of supersaturation (s) on e-levels following Eq. 10 of BCMT95
    c1coef = c1*max(zn,50.)*max(ze,50.)
-   call vssqrt(c1coef,c1coef,n*(nk-1))
+   call gem_vssqrt(c1coef,c1coef,n*(nk-1))
    sigmas = 0.
    do k=1,nk-1
       sigmas(:,k) = c1coef(:,k) * abs(acoef(:,k)*dqwdz(:,k) - bcoef(:,k)*dthldz(:,k))

@@ -19,7 +19,7 @@
 subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    use tdpack_const, only: PI
    use phy_status, only: phy_error_L
-   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options, only: atm_external, atm_tplus, radslope, vamin, sl_Lmin_soil, &
         zu, zt, impflx, thermal_stress, z0tevol
    use sfcbus_mod

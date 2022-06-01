@@ -84,17 +84,13 @@ module sfc_options
         'FAIRALL'  &
         /)
 
-   !# Diurnal SST scheme active coolskin if .true.
-   logical           :: diusst_coolskin = .true.
-   namelist /surface_cfgs/ diusst_coolskin
+   !# Diurnal SST scheme active over freshwater lakes if .true.
+   logical           :: diusst_lakes = .true.
+   namelist /surface_cfgs/ diusst_lakes
 
-   !# Diurnal SST scheme active coolskin over freshwater lakes if .true.
-   logical           :: diusst_coolskin_lakes = .true.
-   namelist /surface_cfgs/ diusst_coolskin_lakes
-
-   !# Diurnal SST scheme active warmlayer if .true.
-   logical           :: diusst_warmlayer = .true.
-   namelist /surface_cfgs/ diusst_warmlayer
+   !# Diurnal SST scheme active over ocean if .true.
+   logical           :: diusst_ocean = .true.
+   namelist /surface_cfgs/ diusst_ocean
 
    !# Diurnal SST scheme active warmlayer over freshwater lakes if .true.
    logical           :: diusst_warmlayer_lakes = .true.
@@ -417,7 +413,7 @@ module sfc_options
 contains
 
    function sfc_options_init() result(F_istat)
-      use sfclayer_mod, only: sl_get, SL_OK
+      use sfclayer, only: sl_get, SL_OK
       implicit none
       integer :: F_istat
 #include <msg.h>

@@ -253,14 +253,14 @@
                ytmp_8(i,j)=-qbar
             end do
          end do
-         call vexp( xtmp_8, ytmp_8, nij )
+         call gem_vexp( xtmp_8, ytmp_8, nij )
          do j= j0, jn
             do i= i0, in
                xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j)  &
                                            +Ver_dcdz_8%t(k)*F_sl(i,j))
             end do
          end do
-         call vrec ( ytmp_8, xtmp_8, nij )
+         call gem_vrec ( ytmp_8, xtmp_8, nij )
          w1=Ver_idz_8%t(k)/rgasd_8
          do j= j0, jn
             do i= i0, in

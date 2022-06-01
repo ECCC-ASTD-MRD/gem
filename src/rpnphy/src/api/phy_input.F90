@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module phy_input_mod
+module phy_input
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use iso_c_binding
    use rpn_comm_itf_mod
@@ -32,19 +32,19 @@ module phy_input_mod
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
 
-   use phyfoldmeta_mod, only: phyfold
+   use phyfold, only: phyfold1
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
    use phygridmap, only: phydim_ni, phydim_nj , phydim_nk, phy_lcl_ni, &
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
         phy_lclcore_gid, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id
-   use phyinputdiag_mod, only: phyinputdiag
+   use phyinputdiag, only: phyinputdiag1
    use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia, debug_initonly_L, vgrid_M_S, vgrid_T_S
-   use physimple_transforms_mod, only: physimple_transforms3d
+   use physimple_transforms, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phy_typedef, only: phymeta
 
    private
-   public :: phy_input
+   public :: phy_input1
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -70,7 +70,7 @@ module phy_input_mod
 contains
 
    !/@*
-   function phy_input(pre_fold_opr_clbk, F_step, F_incfg_S, F_basedir_S, &
+   function phy_input1(pre_fold_opr_clbk, F_step, F_incfg_S, F_basedir_S, &
         F_geoname_S) result(F_istat)
       implicit none
       !@objective 
@@ -313,7 +313,7 @@ contains
       call msg_verbosity(iverb)
       ! ---------------------------------------------------------------------
       return
-   end function phy_input
+   end function phy_input1
 
 
    !/@*
@@ -356,7 +356,7 @@ contains
          my_inputid = input_new(my_jdateo, my_idt, my_incfg_S)
          istat = my_inputid
          if (RMN_IS_OK(istat)) then
-            call phyinputdiag(my_inputid)
+            call phyinputdiag1(my_inputid)
             my_nbvar = input_nbvar(my_inputid)
             istat = input_set_basedir(my_inputid, my_basedir_S)
             istat = min(input_setgridid(my_inputid, phy_lclcore_gid), istat)
@@ -385,7 +385,7 @@ contains
                  F_iotype=iotype)
          endif
          if (RMN_IS_OK(istat)) then
-            call phyinputdiag(my_inputobj)
+            call phyinputdiag1(my_inputobj)
             my_nbvar = inputio_nbvar(my_inputobj)
             istat = inputio_set_filename(my_inputobj, 'geop', my_geoname_S, &
                  IS_DIR, INPUT_FILES_GEOP)
@@ -693,9 +693,9 @@ contains
       endif
       !#TODO: re-use metadata from above, use phyfoldmeta
       if (my_icat == 1) then
-         istat = phyfold(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz)
+         istat = phyfold1(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz)
       else
-         istat = phyfold(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz, my_icat)
+         istat = phyfold1(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz, my_icat)
       endif
       deallocate(dataarr)      
       !#TODO: WARNING: (phyfold) Horizontal sub domaine Not yet supported
@@ -773,4 +773,4 @@ contains
    end function priv_checklist
 
 
-end module phy_input_mod
+end module phy_input

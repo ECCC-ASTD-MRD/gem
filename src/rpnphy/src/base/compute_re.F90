@@ -99,7 +99,7 @@ subroutine compute_re1(REI, REW, &
             VS1(I,K) = (LWC(I,K)/1000.0) * REC_CDD(I,K) !* AIRD(I,K) * REC_CDD(I,K)
          enddo
       enddo
-      call VSPOWN1(REW, VS1, THIRD, NK * LMX)
+      call gem_vspown1(REW, VS1, THIRD, NK * LMX)
 
       !...    THIS PARAMETERIZATION FROM H. BARKER, BASED ON AIRCRAFT DATA
       !       RANGE 4-17 MICRON IS THAT SPECIFIED BY SLINGO FOR
@@ -117,7 +117,7 @@ subroutine compute_re1(REI, REW, &
                  * (LWC(I,K)/1000.0) * REC_CDD(I,K) !* AIRD(I,K) * REC_CDD(I,K)
          enddo
       enddo
-      call VSPOWN1(REW, VS1,THIRD, NK * LMX)
+      call gem_vspown1(REW, VS1,THIRD, NK * LMX)
 
       do K = 1, NK
          do I = 1, LMX
@@ -145,7 +145,7 @@ subroutine compute_re1(REI, REW, &
    !...        EFFECTIVE RADIUS FOR ICE CLOUDS
 
 
-   call VSPOWN1(ZRIEFF, ZRIEFF_VS, 0.216, NK * LMX)
+   call gem_vspown1(ZRIEFF, ZRIEFF_VS, 0.216, NK * LMX)
    do K = 1, NK
       do I = 1, LMX
          if (IWC(I,K) .ge. 1.E-9)                              then

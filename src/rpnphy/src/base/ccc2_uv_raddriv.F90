@@ -14,13 +14,13 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-module ccc2_uv_raddriv_mod
+module ccc2_uv_raddriv
    private
-   public :: ccc2_uv_raddriv
+   public :: ccc2_uv_raddriv1
 
 contains
    
-subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
+subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
      fslo, fsamoon, ps, shtj, sig, &
      tt, o3, o3top, &
      qq, co2, ch4, &
@@ -30,7 +30,7 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
      fa, mrk2, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
-   use phy_options, only: RAD_NUVBRANDS,rad_atmpath
+   use phy_options, only: RAD_NUVBRANDS, rad_atmpath, rad_sun_angle_fix_l
    use ens_perturb, only: ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
@@ -159,7 +159,7 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    real, dimension(ilg,lay) :: cldmg
    real, dimension(ilg) :: o3topg
    real, dimension(ilg) :: albsur
-   real, dimension(ilg) :: rmug
+   real, dimension(ilg) :: rmug, rmu0
    real, dimension(ilg) :: dmix
    integer, dimension(ilg,lay) :: inptg
    integer, dimension(ilg,lay) :: inptmg
@@ -415,7 +415,12 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
-
+      if (.not.rad_sun_angle_fix_l) then
+         rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
+      else
+         rmu0(ilg1:ilg2) = rmu(ilg1:ilg2)
+      endif
+      
       DO230: do i = ilg1, ilg2
          j = isun(i)
          mcontg(i)               =  mcont(j) !mcontg is subset of mcont
@@ -559,9 +564,9 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
                   j = isun(i)
                   vs_tau(i) = taucs(j,k,ib)
                enddo
-               call vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
+               call gem_vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
             else
-               call vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
+               call gem_vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
             endif
             do i = ilg1, ilg2
                j = isun(i)
@@ -691,7 +696,7 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
                     a1g(i,1) * cumdtr(i,2,lev) + &
                     a1g(i,2) * cumdtr(i,3,lev) + &
                     a1g(i,3) * cumdtr(i,4,lev)
-               a1(i,2)             =  rgw * rmug(i)
+               a1(i,2)             =  rgw * rmu0(i)
                !PV fluxes in VIS_UV sub-bands
                   fatb(J,IG)          =   TRAN(I,2,LEV)* A1(I,2)
                   fadb(J,IG)          =   X * BS(I) * A1(I,2)
@@ -706,6 +711,6 @@ subroutine ccc2_uv_raddriv(fatb, fadb, fafb, fctb, fcdb, fcfb, &
       enddo DO480
    499   continue
    return
-end subroutine ccc2_uv_raddriv
+end subroutine ccc2_uv_raddriv1
 
-end module ccc2_uv_raddriv_mod
+end module ccc2_uv_raddriv

@@ -122,7 +122,7 @@
             PRES(j,k)=SE(j,k)*PS(j)
          END DO
       END DO
-      call vslog(WORK,WORK,N*NK)
+      call gem_vslog(WORK,WORK,N*NK)
 !
       CALL mfoqst3(QSAT,TE,PRES,N,NK,N)
 !

@@ -77,7 +77,7 @@ subroutine rigrad1b(RI,GAMA,GAMAQ,TBL,DUDZ2,T,TVE,Q,QE, &
          RI(j,k)=SIGMA(j,k+1)/SIGMA(j,k)
       enddo
    enddo
-   call VSLOG(RI,RI,N*(NK-1))
+   call gem_vslog(RI,RI,N*(NK-1))
 
    do k = 1, NK - 1
       do j = 1, N

@@ -9,6 +9,7 @@ list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*" )
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(rpnphy STATIC ${F_FILES})
+add_dependencies(rpnphy modelutils vgrid tdpack)
 target_include_directories(rpnphy BEFORE PRIVATE 
   series
   surface )
@@ -16,6 +17,7 @@ target_include_directories(rpnphy BEFORE PRIVATE
 include_directories(
   ${CMAKE_SOURCE_DIR}/src/modelutils/include
   ${CMAKE_BINARY_DIR}/src/vgrid
+  ${CMAKE_BINARY_DIR}/src/tdpack
   ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules )
 
 target_include_directories(rpnphy PRIVATE ../include base utils)
@@ -25,3 +27,4 @@ add_dependencies(rpnphy rpnphy_chm_stubs)
 file(GLOB F_CHMSTUBS_FILES chm_stubs/*.F90)
 add_library(rpnphy_chm_stubs STATIC ${F_CHMSTUBS_FILES})
 add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
+add_dependencies(rpnphy_chm_stubs modelutils vgrid tdpack rpncomm rmn)

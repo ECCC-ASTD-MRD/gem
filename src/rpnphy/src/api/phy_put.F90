@@ -18,7 +18,7 @@ module phy_put_mod
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus, PATHLENGTH
-   use phyfoldmeta_mod, only: phyfoldmeta
+   use phyfold, only: phyfoldmeta1
    private
    public :: phy_put
 
@@ -121,7 +121,7 @@ contains
 
       ! Fold information onto the bus
       !#TODO: check 2d to 3d through the phyfoldmeta itf
-      F_istat = phyfoldmeta(F_fld, istart, iend, metaplus)
+      F_istat = phyfoldmeta1(F_fld, istart, iend, metaplus)
      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
       endif
@@ -218,7 +218,7 @@ contains
       ! Fold information onto the bus
       lijk = lbound(F_fld)
       fld1(istart(1):,istart(2):,istart(3):) => F_fld(lijk(1):,lijk(2):,lijk(3):)
-      F_istat = phyfoldmeta(fld1, istart, iend, metaplus)
+      F_istat = phyfoldmeta1(fld1, istart, iend, metaplus)
      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
       endif
@@ -320,7 +320,7 @@ contains
       lijk = lbound(F_fld)
       fld1(istart(1):,istart(2):,istart(3):,istart(4):) => &
            F_fld(lijk(1):,lijk(2):,lijk(3):,lijk(4):)
-      F_istat = phyfoldmeta(fld1, istart, iend, metaplus)
+      F_istat = phyfoldmeta1(fld1, istart, iend, metaplus)
      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
       endif

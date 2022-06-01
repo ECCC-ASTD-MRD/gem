@@ -44,7 +44,6 @@ subroutine DVRTDF(R , X , DS, N , MR , MX , NK)
    integer J,K
 
    do K=1,NK-1
-!DIR$ IVDEP
       do J=1,N
          R(J,K)=(X(J,K+1)-X(J,K))/DS(j,K)
       enddo

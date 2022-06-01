@@ -27,7 +27,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    use phygridmap, only: ijdrv_phy
    use sfc_options
    use sfcbus_mod
-   use sfclayer_mod, only: sl_adjust,SL_OK
+   use sfclayer, only: sl_adjust,SL_OK
    use cpl_itf, only: cpl_update
    implicit none
 !!!#include <arch_specific.hf>

@@ -73,10 +73,10 @@ subroutine tkealg2(estar,en,zn,ze,dvdz2,buoy_flux,diss,shr,buoy,tau,n,nk)
 
    ! Precompute roots in double precision
    work_8(:,1:nk-1) = b_over_c(:,1:nk-1)
-   call vsqrt(work_8,work_8,n*(nk-1))
+   call gem_vsqrt(work_8,work_8,n*(nk-1))
    b_over_c(:,1:nk-1) = work_8(:,1:nk-1)
    work_8 = en
-   call vsqrt(work_8,work_8,n*(nk-1))
+   call gem_vsqrt(work_8,work_8,n*(nk-1))
    sqrt_tke = work_8
 
    ! Solve the algabraic TKE equation

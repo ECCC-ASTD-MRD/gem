@@ -49,8 +49,8 @@ subroutine MFDLESMX(RES,TT,FF,DF,NI,NK)
          fesid(i,k) =FESIF(tt(i,k))
       enddo
    enddo
-   call vexp(foewad,foewad,ni*nk)
-   call vexp(fesid,fesid,ni*nk)
+   call gem_vexp(foewad,foewad,ni*nk)
+   call gem_vexp(fesid,fesid,ni*nk)
    do k=1,nk
       do i=1,ni
          foewad(i,k)=aerk1w*foewad(i,k)

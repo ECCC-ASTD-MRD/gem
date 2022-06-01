@@ -14,31 +14,31 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-module phyfoldmeta_mod
+module phyfold
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk, ijdrv_phy
    use phy_typedef
    use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
    implicit none
    private
-   public :: phyfoldmeta, phyfoldmeta2d, phyfoldmeta3d, phyfoldmeta3dicat, phyfoldmeta4d, phyfold
+   public :: phyfoldmeta1, phyfoldmeta2d, phyfoldmeta3d, phyfoldmeta3dicat, phyfoldmeta4d, phyfold1
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
 
-   interface phyfoldmeta
+   interface phyfoldmeta1
       module procedure phyfoldmeta2d
       module procedure phyfoldmeta3d
       module procedure phyfoldmeta3dicat
       module procedure phyfoldmeta4d
-   end interface phyfoldmeta
+   end interface phyfoldmeta1
 
-   interface phyfold
+   interface phyfold1
       module procedure phyfold2d
       module procedure phyfold3d
       module procedure phyfold3dicat
       module procedure phyfold4d
-   end interface phyfold
+   end interface phyfold1
 
 contains
 
@@ -377,4 +377,4 @@ contains
       return
    end function phyfold4d
 
-end module phyfoldmeta_mod
+end module phyfold

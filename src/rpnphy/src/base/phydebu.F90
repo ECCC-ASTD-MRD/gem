@@ -23,7 +23,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use phybus, only: entbus, perbus, dynbus, volbus
    use phybusalloc, only: phybusalloc1
    use microphy_utils, only: mp_init
-   use ghg_mod, only: ghg_init
+   use ghg, only: ghg_init
    use mixing_length, only: ML_CLOSURES
    use ens_perturb, only: ens_spp_map, ENS_OK
    implicit none
@@ -158,10 +158,8 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
             phy_error_L = .true.
             !# compute the table needed to generate variability
             !  for the  stochastic cloud generator
-!!$            call TABULATE_XCW()
 
             !# read in data blocks for ISCCP simulator code
-!!$            call READ_ISCCPDATA()
             if (phy_error_L) return
          endif
 

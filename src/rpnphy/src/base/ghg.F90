@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
-module ghg_mod
+module ghg
    use iso_c_binding
    use rpn_comm_itf_mod
    use clib_itf_mod, only: clib_isreadok, clib_tolower
@@ -240,4 +240,4 @@ contains
    end function priv_bcast
 
 
-end module ghg_mod
+end module ghg

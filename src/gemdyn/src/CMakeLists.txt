@@ -14,11 +14,12 @@ list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/src/no_mpi/mai
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(gemdyn STATIC ${F_FILES} ${C_FILES})
-
+add_dependencies(gemdyn rpnphy modelutils vgrid tdpack mpi-extras rpncomm rmn)
 target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
    ${CMAKE_CURRENT_SOURCE_DIR}/base
    ${CMAKE_SOURCE_DIR}/src/modelutils/include
+   ${CMAKE_BINARY_DIR}/src/tdpack
    ${CMAKE_BINARY_DIR}/src/vgrid
    ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules
    ${CMAKE_BINARY_DIR}/src/rpnphy/rpnphy/modules

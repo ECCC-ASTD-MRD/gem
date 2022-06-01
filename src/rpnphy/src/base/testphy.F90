@@ -1,4 +1,4 @@
-module testphy_mod
+module testphy
   ! Implementation of RPN physics test stub
   use, intrinsic :: iso_fortran_env, only: INT64, REAL64
   use vgrid_descriptors, only: vgrid_descriptor
@@ -421,7 +421,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function itf_phy_step(F_kount) result(F_istat)
     ! Take a physics step
-    use phy_itf, only: phy_input,phy_step
+    use phy_itf, only: phy_input1, phy_step
 
     ! Input arguments
     integer, intent(in) :: F_kount                      !step number
@@ -442,7 +442,7 @@ contains
     endif
        
     ! Process physics inputs
-    istat = phy_input(prefold_opr,F_kount,trim(input_path)//'/configs/physics_input_table', &
+    istat = phy_input1(prefold_opr,F_kount,trim(input_path)//'/configs/physics_input_table', &
          trim(input_path)//'/MODEL_INPUT/','geophy/Phy_geophy.fst')
     call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics input')
     
@@ -606,5 +606,5 @@ contains
     return
   end function itf_phy_output
 
-end module testphy_mod
+end module testphy
 

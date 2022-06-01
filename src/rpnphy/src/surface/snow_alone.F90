@@ -10,7 +10,7 @@
                            RHOSNO, RESA, &  
                            DT,Z0,Z0LOC,FCOR, ZUSL,ZTSL, LAT, PSN,N) 
 !
-      use sfclayer_mod, only: sl_sfclayer,SL_OK
+      use sfclayer, only: sl_sfclayer,SL_OK
       use tdpack
       use sfc_options
       use svs_configs

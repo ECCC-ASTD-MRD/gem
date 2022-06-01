@@ -542,7 +542,7 @@ contains
       integer, dimension(size(yi,dim=1)) :: k1,k2
       real :: da,delF,hlow,hhigh
       real, dimension(1) :: root
-      real, dimension(size(yi,dim=1)) :: z1,z2,zc,z1i,z2i
+      real, dimension(size(yi,dim=1)) :: z1,z2,zc,z1i,z2i,signa
       real, dimension(size(yi,dim=2)+PCHIP_EXT) :: F
       real, dimension(size(yi,dim=1),size(yi,dim=2)) :: yyi
       real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: z,y,h,del,b,c,d
@@ -557,8 +557,11 @@ contains
       nk = size(yi,dim=2)
  
       ! For the integral solution a() should always be positive, so negate yi() if necessary
-      do i=1,n
-         yyi(i,:) = sign(1.,a(i)) * yi(i,:)
+      signa(:) = sign(1.,a(:))
+      do k=1,nk
+         do i=1,n
+            yyi(i,k) = signa(i) * yi(i,k)
+         enddo
       enddo
 
       ! Set bounds of integral
@@ -781,13 +784,16 @@ contains
       ! Find subdomain
       n = size(z,dim=1)
       nk = size(z,dim=2)
-      k1 = nk
-      k2 = 2
       do i=1,n
-         do k=nk,2,-1
-            if (z1(i) >= z(i,k) .and. z1(i) < z(i,k-1)) k1(i) = k
-            if (z2(i) >= z(i,k) .and. z2(i) < z(i,k-1)) k2(i) = k
+         k = nk
+         do while (z1(i) >= z(i,k) .and. k > 1)
+            k = k-1
          enddo
+         k1(i) = min(nk, k+1)
+         do while (z2(i) >= z(i,k) .and. k > 1)
+            k = k-1
+         enddo
+         k2(i) = min(nk, k+1)
       enddo
 
       ! Successful completion

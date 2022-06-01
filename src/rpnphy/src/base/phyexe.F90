@@ -14,14 +14,14 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module phyexe_mod
+module phyexe
    private
-   public :: phyexe
+   public :: phyexe1
    
 contains
 
 !/@*
-subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
+subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    use debug_mod, only: init2nan
    use apply_rad_tendencies, only: apply_rad_tendencies1
    use calcdiag, only: calcdiag1
@@ -152,6 +152,6 @@ subroutine phyexe(dbus, fbus, vbus, trnch, kount, ni, nk)
    call msg_verbosity(iverb)
    !----------------------------------------------------------------
    return
-end subroutine phyexe
+end subroutine phyexe1
 
-end module phyexe_mod
+end module phyexe

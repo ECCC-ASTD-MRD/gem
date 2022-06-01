@@ -147,7 +147,7 @@ subroutine ccc1_lwtran (fu, fd, slwf, tauci, omci, &
       enddo
    enddo
 
-   call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-l2+1))
+   call gem_vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-l2+1))
 
    DO150: do k = l2, maxc
       km1 = k - 1

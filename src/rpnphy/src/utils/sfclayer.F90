@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module sfclayer_mod
+module sfclayer
   use, intrinsic :: iso_fortran_env, only: REAL64
   use tdpack
   use sfclayer_funcs
@@ -599,8 +599,8 @@ contains
        lzz0(j) = (z0rm(j) + zu(j)) / z0(j)
        lzz0t(j) = (z0rt(j) + zt(j)) / z0t(j)
     enddo
-    call vslog(lzz0t, lzz0t, n)
-    call vslog(lzz0, lzz0, n)
+    call gem_vslog(lzz0t, lzz0t, n)
+    call gem_vslog(lzz0, lzz0, n)
 
     ! Update estimate of the Obukhov length and stability functions
     ROW: do j=1,n
@@ -782,8 +782,8 @@ contains
        lzz0(j) = 1 + zu(j) / z0(j)
        lzz0t(j) = 1 + zt(j) / z0t(j)
     enddo
-    call vslog(lzz0t, lzz0t, ni)
-    call vslog(lzz0, lzz0, ni)
+    call gem_vslog(lzz0t, lzz0t, ni)
+    call gem_vslog(lzz0, lzz0, ni)
 
     ! Compute state variables at the diagnostic levels
     ROW: do j=1,ni
@@ -885,4 +885,4 @@ contains
     return
   end function pblheight
 
-end module sfclayer_mod
+end module sfclayer

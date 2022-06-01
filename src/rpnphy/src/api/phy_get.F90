@@ -18,7 +18,7 @@ module phy_get_mod
   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
   use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT
   use phygetmetaplus_mod, only: PATHLENGTH, phymetaplus, phygetmetaplus
-  use phyunfoldmeta_mod, only: phyunfoldmeta
+  use phyunfold, only: phyunfoldmeta1
   private
   public :: phy_get
 
@@ -132,7 +132,7 @@ contains
 
       ! Unfold physics field and copy into output array
       !#TODO: check 2d to 3d through the phyunfoldmeta itf
-      F_istat = phyunfoldmeta(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif
@@ -234,7 +234,7 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif
@@ -340,7 +340,7 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3),istart(4):iend(4)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif

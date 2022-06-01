@@ -18,7 +18,7 @@
 subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
      n, m, nk)
    use tdpack
-   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use cpl_itf     , only: cpl_update
    use sfc_options
    use sfcbus_mod
@@ -411,9 +411,9 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    ! 5.     Prognostic evolution of SST (based on Zeng and Beljaars; GRL 2005)
    ! -------------------------------------------------------------------------
 
-   DIURNAL_SST: if ( diusst == 'FAIRALL') then
+   DIURNAL_SST: if ( diusst == 'FAIRALL' ) then
 
-      if (cplocn) then
+      if (cplocn .and. diusst_ocean) then
          call physeterror('water', 'cplocn=true, diusst NOT taken care of yet')
          return
       endif
@@ -430,81 +430,69 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       frv_w = frv_a * sqrt(rho_a/rho_w) !friction velocity of water
       q_bal = -(fv_wat + fc_wat + (emis*stefan*sst**4 - zfdsi)) !surface energy balance (without shortwave)
 
-      ! Compute cool skin properties on request
-      COOL_SKIN: if ( diusst_coolskin ) then
+      ! Cool skin parameterization 
 
-         ! Estimate the depth and cooling effect of the cold skin layer (typically 1mm-1cm and 0.3K)
-         ! Solar radiation absorbed in the skin layer
-         where (zskin_depth < skin_depth_min)
-            skin_solar = 0.1 !estimate proposed by Fairall et al. (JGR 1996) section 2.4
+      ! Estimate the depth and cooling effect of the cold skin layer (typically 1mm-1cm and 0.3K)
+      ! Solar radiation absorbed in the skin layer
+      where (zskin_depth < skin_depth_min)
+         skin_solar = 0.1 !estimate proposed by Fairall et al. (JGR 1996) section 2.4
+      elsewhere
+         skin_solar = 0.067 + 11.*zskin_depth - (6.6e-5/zskin_depth) * (1.-exp(-zskin_depth/8.e-4))
+      endwhere
+      ! Updated skin layer depth (cold skin only exists when net heat is being extracted from the surface)
+      skin_q = q_bal + (1.-alvis_wat)*zflusolis*skin_solar
+      ! Compute Saunders' constant of proportionality (lambda)
+      if (saunders == 'fairall') then !follow Fariall et al. (GRL; 1996)
+         where (skin_q <= 0.)
+            lambda = 6.*(1. + ((-16.*grav*alpha_w*visc_w**3)/(frv_w**4*diff_w**2*rho_w*cv_w) * (skin_q))**0.75)**(-1./3.)
          elsewhere
-            skin_solar = 0.067 + 11.*zskin_depth - (6.6e-5/zskin_depth) * (1.-exp(-zskin_depth/8.e-4))
+            lambda = 6.
          endwhere
-         ! Updated skin layer depth (cold skin only exists when net heat is being extracted from the surface)
-         skin_q = q_bal + (1.-alvis_wat)*zflusolis*skin_solar
-         ! Compute Saunders' constant of proportionality (lambda)
-         if (saunders == 'fairall') then !follow Fariall et al. (GRL; 1996)
-            where (skin_q <= 0.)
-               lambda = 6.*(1. + ((-16.*grav*alpha_w*visc_w**3)/(frv_w**4*diff_w**2*rho_w*cv_w) * (skin_q))**0.75)**(-1./3.)
+      elseif (saunders == 'artale') then !follow Artale et al. (JGR; 2002)
+         where (vmodd > 10.)
+            gamma = 6.
+         elsewhere (vmodd > 7.5)
+            gamma = 1.6*vmodd - 10.
+         elsewhere
+            gamma = 0.2*vmodd + 0.5
+         endwhere
+         lambda = 86400.*frv_w*cond_w/(gamma*rho_w*cv_w*ref_depth*visc_w)
+      else
+         call physeterror('water', 'No Saunders constants defined for '//trim(saunders))
+         return
+      endif
+      zskin_depth = lambda * visc_w / (sqrt(rho_a/rho_w)*frv_a)
+      zskin_depth = max(min(zskin_depth,0.01),skin_depth_min) !limit skin depth to physical values
+      ! Compute cool skin temperature increment (difference SST - T(zskin_depth))
+      zskin_inc = zskin_depth / cond_w * (skin_q)
+      if (saunders == 'fairall') zskin_inc = min(zskin_inc,0.)
+      if (.not.diusst_lakes) where (mlac(:) > LAKE_MASK_THRESHOLD) zskin_inc(:) = 0.
+      if (.not.diusst_ocean) where (mlac(:) < LAKE_MASK_THRESHOLD) zskin_inc(:) = 0.
+
+      ! Warm layer parameterization
+
+      ! Estimate the evolving temperature departure in the warm layer implicitly (secant iterations)
+      this_inc = zdsst ; prev_inc = zdsst+10.*dsst_epsilon ; i = 0
+      do while (maxval(abs(this_inc-prev_inc)) > dsst_epsilon .and. i < max_iter)
+         i = i+1
+         where (abs(this_inc-prev_inc) > dsst_epsilon)
+            denom = warm_func(this_inc)-warm_func(prev_inc)
+            where (abs(denom) > 1.e-8)
+               ! Use local slope to estimate new increment value
+               warm_increment = this_inc - warm_func(this_inc)*((this_inc-prev_inc)/denom)
+               prev_inc = this_inc
+               this_inc = warm_increment
             elsewhere
-               lambda = 6.
+               ! Attempt a reset of the increment difference if the function is locally flat
+               warm_increment = this_inc
+               prev_inc = this_inc+10.*dsst_epsilon
             endwhere
-         elseif (saunders == 'artale') then !follow Artale et al. (JGR; 2002)
-            where (vmodd > 10.)
-               gamma = 6.
-            elsewhere (vmodd > 7.5)
-               gamma = 1.6*vmodd - 10.
-            elsewhere
-               gamma = 0.2*vmodd + 0.5
-            endwhere
-            lambda = 86400.*frv_w*cond_w/(gamma*rho_w*cv_w*ref_depth*visc_w)
-         else
-            call physeterror('water', 'No Saunders constants defined for '//trim(saunders))
-            return
-         endif
-         zskin_depth = lambda * visc_w / (sqrt(rho_a/rho_w)*frv_a)
-         zskin_depth = max(min(zskin_depth,0.01),skin_depth_min) !limit skin depth to physical values
-         ! Compute cool skin temperature increment (difference SST - T(zskin_depth))
-         zskin_inc = zskin_depth / cond_w * (skin_q)
-         if (saunders == 'fairall') zskin_inc = min(zskin_inc,0.)
-         if (.not.diusst_coolskin_lakes) then
-            where (mlac(:) > LAKE_MASK_THRESHOLD) zskin_inc(:) = 0.
-         endif
-
-      endif COOL_SKIN
-
-      ! Compute warm layer properties on request
-      WARM_LAYER: if ( diusst_warmlayer ) then
-
-         ! Estimate the evolving temperature departure in the warm layer implicitly (secant iterations)
-         this_inc = zdsst ; prev_inc = zdsst+10.*dsst_epsilon ; i = 0
-         do while (maxval(abs(this_inc-prev_inc)) > dsst_epsilon .and. i < max_iter)
-            i = i+1
-            where (abs(this_inc-prev_inc) > dsst_epsilon)
-               denom = warm_func(this_inc)-warm_func(prev_inc)
-               where (abs(denom) > 1.e-8)
-                  ! Use local slope to estimate new increment value
-                  warm_increment = this_inc - warm_func(this_inc)*((this_inc-prev_inc)/denom)
-                  prev_inc = this_inc
-                  this_inc = warm_increment
-               elsewhere
-                  ! Attempt a reset of the increment difference if the function is locally flat
-                  warm_increment = this_inc
-                  prev_inc = this_inc+10.*dsst_epsilon
-               endwhere
-            endwhere
-         enddo
-         ! Do not apply warm layer over lakes unless requested
-         if (diusst_warmlayer_lakes) then
-            zdsst(:) = warm_increment(:)
-         else
-            where (mlac(:) < LAKE_MASK_THRESHOLD)
-               zdsst(:) = warm_increment(:)
-            endwhere
-         endif
-
-      endif WARM_LAYER
-
+         endwhere
+      enddo
+      if (diusst_lakes .and. diusst_warmlayer_lakes) &
+           where (mlac(:) > LAKE_MASK_THRESHOLD) zdsst(:) = warm_increment(:)
+      if (diusst_ocean) where (mlac(:) < LAKE_MASK_THRESHOLD) zdsst(:) = warm_increment(:)
+      
    endif DIURNAL_SST
 
    !--------------------------------------

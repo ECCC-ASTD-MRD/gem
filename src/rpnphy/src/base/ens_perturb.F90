@@ -365,7 +365,7 @@ contains
 
        fac_convec = ptpfacreduc
        if (associated(zabekfc) .and. &
-            (convec=='KFC' .or. convec=='KFC2' .or. convec=='KFC3')) then
+            (convec=='KFC' .or. convec=='KFC2')) then
           if (zabekfc(i).le.ptpcape) fac_convec = 1.0
        endif
        counter_w(i) = 0

@@ -25,7 +25,7 @@ contains
         PZREF, PUREF, PU, PV, PQA, PTA, PRHOA, PRAIN, PSNOW, PLW, PDIR_SW,   &
         PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFU, PSFV, &
         PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PLAT)
-      use sfclayer_mod, only: sl_prelim
+      use sfclayer, only: sl_prelim
 
       !****  *COUPLING_TEB$n * - Driver for TEB
       !

@@ -83,7 +83,7 @@ subroutine hines_exp(darr, data_zmax, alt, alt_exp,     &
          exp_fac(i,l)=(alt_exp-alt(i,l))/hscale
        end do
     end do
-    call vexp(exp_fac,exp_fac,lev2*(il2-il1+1))
+    call gem_vexp(exp_fac,exp_fac,lev2*(il2-il1+1))
 
     do l = 1,lev2
        do i = il1,il2

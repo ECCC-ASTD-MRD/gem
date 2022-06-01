@@ -138,22 +138,4 @@ contains
       return
    end function spline_coef
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function upper(str) result(uc_str)
-      use clib_itf_mod, only: clib_toupper
-      ! Return an upper cased version of a string
-      character(len=*), intent(in) :: str
-      character(len=len_trim(str)) :: uc_str
- 
-      ! Local variables
-      integer :: istat
-
-      ! Upper case string
-      uc_str = str
-      istat = clib_toupper(uc_str)
-
-      ! End of subprogram
-      return
-   end function upper
-
 end module spline_utils

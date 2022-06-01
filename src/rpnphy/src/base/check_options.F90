@@ -61,7 +61,6 @@ function check_options2() result(F_istat)
         .not.any(convec == (/ &
         'KFC     ', &
         'KFC2    ', &
-        'KFC3    ', &
         'BECHTOLD', &
         'NIL     '  &
         /))) then
@@ -75,7 +74,6 @@ function check_options2() result(F_istat)
         .not.any(convec == (/ &
         'KFC     ', &
         'KFC2    ', &
-        'KFC3    ', &
         'BECHTOLD', &
         'NIL     '  &
         /))) then
@@ -111,8 +109,7 @@ function check_options2() result(F_istat)
 
    if ( PCPTYPE == 'BOURGE3D')then
       if (STCOND /= 'CONSUN'    .or. &
-           (CONVEC /= 'KFC' .and. CONVEC /= 'KFC2' .and. &
-           CONVEC /= 'KFC3' .and. CONVEC /= 'BECHTOLD'))   then
+           (CONVEC /= 'KFC' .and. CONVEC /= 'KFC2' .and. CONVEC /= 'BECHTOLD'))   then
          call msg(MSG_ERROR,'(check_options) option mismatch: with ' // &
               'PCPTYPE=BOURGE3D you can only use STCOND=CONSUN or KFC')
          return

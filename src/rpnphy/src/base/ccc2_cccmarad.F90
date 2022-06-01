@@ -36,11 +36,11 @@ contains
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
-      use linoz_mod, only: mwt_air, mwt_o3, p_linoz_meso
+      use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
-      use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+      use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
       use ens_perturb, only: ens_nc2d, ens_spp_get
-      use ccc2_uv_raddriv_mod, only: ccc2_uv_raddriv
+      use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -385,9 +385,9 @@ contains
             avgcos = (rmu0 + rmu2) * 0.5
 
             ws_vs=my_udiag*my_udiag+my_vdiag*my_vdiag
-            call vspown1(ws, ws_vs, 1.705, ni)
+            call gem_vspown1(ws, ws_vs, 1.705, ni)
 
-            call vspown1(cosas_vs, avgcos, 1.4, ni)
+            call gem_vspown1(cosas_vs, avgcos, 1.4, ni)
             zalwater  = 0.0
             alwcap = 0.3
             do i = 1, ni
@@ -459,7 +459,7 @@ contains
             enddo
          enddo
 
-         call vssqrt(shtj, s_qrt, ni*nk)
+         call gem_vssqrt(shtj, s_qrt, ni*nk)
 
          do i = 1, ni
             shtj(i, 1) = sig(i, 1) * shtj(i, 1)
@@ -588,7 +588,7 @@ contains
             if (timings_L) call timing_start_omp(413, 'rad_uvindex', 410)
             ! appel diagnostique pour calculer fatb,fctb...
             ! utiliser rmu0 (temps courant)
-            call ccc2_uv_raddriv(zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
+            call ccc2_uv_raddriv1(zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
                  fslo, zfsamoon, ps, shtj, sig, &
                  temp, o3uv, zoztoit, &
                  qq, co2, zch4,  &
@@ -873,8 +873,8 @@ contains
 
          ws_vs=my_udiag*my_udiag+my_vdiag*my_vdiag
 
-         call vspown1(ws, ws_vs, 1.705, ni)
-         call vspown1(cosas_vs, avgcos, 1.4, ni)
+         call gem_vspown1(ws, ws_vs, 1.705, ni)
+         call gem_vspown1(cosas_vs, avgcos, 1.4, ni)
          alwcap = 0.3
          zalwater  = 0.0
          do i = 1, ni

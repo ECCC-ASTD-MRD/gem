@@ -323,7 +323,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    !                                Lacarrere (1989)
 
    IF_BOUJO: if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
-      call VSPOWN1 (X1,SE,-CAPPA,N*NK)
+      call gem_vspown1 (X1,SE,-CAPPA,N*NK)
       do K=1,NK
          do J=1,N
             !# Virtual potential temperature (THV)
@@ -475,7 +475,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
                TEMPO(j) = 1.0
             endif
          enddo
-         call vslog(tempo,tempo,n)
+         call gem_vslog(tempo,tempo,n)
          do j=1,n
 
             !     TERME DE PRODUCTION MECANIQUE

@@ -74,7 +74,7 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(LAPACK_LIBRARIES "lapack")
   set(BLAS_LIBRARIES "blas")
   if (EXTRA_CHECKS)
-    # in addition to extra checks defined in cmake_rpn compiler presets    
+    # in addition to extra checks defined in cmake_rpn compiler presets
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")
   endif()
 endif()

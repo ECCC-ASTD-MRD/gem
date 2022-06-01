@@ -13,10 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END -------------------------------
 
-module physlb_mod
+module physlb
    use phy_status, only: phy_error_L
    use phy_options
-   use phyexe_mod, only: phyexe
+   use phyexe, only: phyexe1
    private
    public :: physlb1
 
@@ -74,7 +74,7 @@ contains
 !!$       call testphy_phyexe(dbus, fbus, vbus, &
 !!$         jdo, kount, ni, nk)
       else
-         call phyexe(dbus, fbus, vbus, &
+         call phyexe1(dbus, fbus, vbus, &
               jdo, kount, ni, nk)
       endif
       if (phy_error_L) return
@@ -83,4 +83,4 @@ contains
       !     ---------------------------------------------------------------
    end subroutine physlb1
 
-end module physlb_mod
+end module physlb

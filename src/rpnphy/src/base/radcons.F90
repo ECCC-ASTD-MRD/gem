@@ -80,10 +80,10 @@ subroutine radcons2(ni, trnch)
       enddo
    enddo
 
-   call  vscos(sla_cos, sla_rad,   4*ni)
-   call  vssin(sla_sin, sla_rad,   4*ni)
-   call  vssin(sla_2sin,sla_2cos,  4*ni)
-   call  vscos(sla_2cos,sla_2cos,  4*ni)
+   call  gem_vscos(sla_cos, sla_rad,   4*ni)
+   call  gem_vssin(sla_sin, sla_rad,   4*ni)
+   call  gem_vssin(sla_2sin,sla_2cos,  4*ni)
+   call  gem_vscos(sla_2cos,sla_2cos,  4*ni)
 
    do i = 1, ni
 

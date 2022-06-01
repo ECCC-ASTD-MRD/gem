@@ -4,3 +4,6 @@
 [submodule "ci-env"]
 	path = ci-env
 	url = ../ci-env.git
+[submodule "src/rpn-si/tdpack"]
+	path = src/rpn-si/tdpack
+	url = ../tdpack.git

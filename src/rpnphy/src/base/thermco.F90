@@ -73,9 +73,9 @@ subroutine thermco3(t,qv,qc,sw,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,be
       pres(:,k) = sw(:,k)*ps
    enddo
    ffice = fice
-   call vspown1(exner,sw,CAPPA,n*nk)
+   call gem_vspown1(exner,sw,CAPPA,n*nk)
    work8 = exner
-   call vrec(exnerr,work8,n*nk)
+   call gem_vrec(exnerr,work8,n*nk)
    
    ! Compute conserved variables from state inputs
    COMPUTE_CONSERVED: if (inmode) then

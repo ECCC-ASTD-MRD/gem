@@ -19,7 +19,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use iso_c_binding
    use, intrinsic :: iso_fortran_env, only: INT64
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
-   use sfclayer_mod,   only : sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer,   only : sl_prelim,sl_sfclayer,SL_OK
    use modd_town,      only : xtown,                            &
         xq_town,                               &
         xu_canyon,                             &

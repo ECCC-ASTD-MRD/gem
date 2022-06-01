@@ -40,7 +40,7 @@
                    FTEMP, FVAP, ZQS, FRV, & 
                    ALFAT, ALFAQ, ILMO, HST, TRAD, N)
       use tdpack
-      use sfclayer_mod, only: sl_sfclayer,SL_OK
+      use sfclayer, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
       implicit none

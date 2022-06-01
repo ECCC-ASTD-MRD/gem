@@ -92,8 +92,8 @@ subroutine SUNCOS2(SCOS,SSIN,STAN,BSIN,BCOS,LMX,XLAT,XLON,HZ,DAYOFYEAR, slope_L)
 ! express in radians
       EOT=EOT*15.*PI/180.
 !
-      call VSCOS(tmcos(1),XLAT(1),LMX)
-      call VSSIN(tmsin(1),XLAT(1),LMX)
+      call gem_vscos(tmcos(1),XLAT(1),LMX)
+      call gem_vssin(tmsin(1),XLAT(1),LMX)
 !
       do I=1,LMX
       DH=HZ*PI/12. +XLON(I) -PI + EOT

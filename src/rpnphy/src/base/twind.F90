@@ -97,10 +97,10 @@ subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
         WINSPD(J) = UD(J)**2 + VD(J)**2
       end do
 !
-      call VSSQRT (SDTSWS, SDTSWS, N)
-      call VSSQRT (SDX   , SDX   , N)
-      call VSSQRT (WINSPD, WINSPD, N)
-      call VSATAN2 (SDTSWD, SDX, WINSPD, N)
+      call gem_vssqrt (SDTSWS, SDTSWS, N)
+      call gem_vssqrt (SDX   , SDX   , N)
+      call gem_vssqrt (WINSPD, WINSPD, N)
+      call gem_vsatan2 (SDTSWD, SDX, WINSPD, N)
 !
       do J=1,N
         SDTSWD(J) = RAD2DEG*abs( SDTSWD(J) )
@@ -108,7 +108,7 @@ subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
 !
 !
 !                                Virtual potential temperature (THVE)
-      call VSPOWN1 (WORK,SE,-CAPPA,N*NK)
+      call gem_vspown1 (WORK,SE,-CAPPA,N*NK)
 !
       do K=1,NK
       do J=1,N

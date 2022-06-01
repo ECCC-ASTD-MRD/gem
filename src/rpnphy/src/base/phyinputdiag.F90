@@ -15,14 +15,14 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module phyinputdiag_mod
+module phyinputdiag
    use phy_options
    use phy_typedef, only: phymeta
    use phy_getmeta_mod, only: phy_getmeta
    private
-   public :: phyinputdiag, phyinputdiag_id, phyinputdiag_obj
+   public :: phyinputdiag1, phyinputdiag_id, phyinputdiag_obj
 
-   interface phyinputdiag
+   interface phyinputdiag1
       module procedure phyinputdiag_id
       module procedure phyinputdiag_obj
    end interface
@@ -190,4 +190,4 @@ contains
       return
    end subroutine phyinputdiag_obj
 
-end module phyinputdiag_mod
+end module phyinputdiag

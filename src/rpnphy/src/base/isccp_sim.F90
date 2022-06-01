@@ -246,7 +246,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
             tmpexp3D(j,ilev) = -0.02*(at(j,ilev)-t0)
           end do
         end do
-        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do 125 ilev=1,nlev
           do j=il1, il2 !1,npoints
@@ -280,7 +280,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
             tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
           end do
         end do
-        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do ilev=1,nlev
           do j=il1, il2 !1,npoints
@@ -312,7 +312,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
             tmpexp2D(j) = 1307.27/skt(j)
           end do
 
-        call VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
+        call gem_vsexp(tmpexp2D,tmpexp2D,(il2-il1+1))
 
         do j=il1, il2 !1,npoints
 !add in surface emission
@@ -342,7 +342,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
             tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
           end do
         end do
-        call VSEXP(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
+        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
 
         do ilev=1,nlev
            do j=il1, il2 !1,npoints
@@ -384,7 +384,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1307.27/skt(j)
           end do
-          call VSEXP(tmpexp2D,tmpexp2D,(il2-il1+1))
+          call gem_vsexp(tmpexp2D,tmpexp2D,(il2-il1+1))
 
         do j=il1, il2 !1,npoints
 !add in surface emission
@@ -424,7 +424,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1307.27/(attrop(j)-5.)
           end do
-          call VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call gem_vsexp(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
           do j=il1, il2 !1,npoints
 !compute minimum brightness temperature and optical depth
@@ -444,7 +444,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
              taumin(j) = max(min(transmax(j),0.9999999),0.001)
           enddo
 
-          call VSLOG(taumin(il1),taumin(il1),(il2-il1+1))
+          call gem_vslog(taumin(il1),taumin(il1),(il2-il1+1))
           do j=il1, il2 !1,npoints
             taumin(j) = -1.0*taumin(j)
           end do
@@ -463,7 +463,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = -1. * tauir(j)
           end do
-          call VSEXP(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call gem_vsexp(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
                 do j=il1, il2 !1,npoints
                    if (tau(j) .gt. (tauchk            )) then
@@ -491,13 +491,13 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           do j=il1, il2 !1,npoints
             tmpexp2D(j) = 1. + (1./fluxtop(j))
           end do
-          call VSLOG(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
+          call gem_vslog(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
 
 ! CLEAR COLUMNS
           do j=il1, il2 !1,npoints
             tmplog2D(j) = 1. + (1./fluxtop_clrsky(j))
           end do
-          call VSLOG(tmplog2D(il1),tmplog2D(il1),(il2-il1+1))
+          call gem_vslog(tmplog2D(il1),tmplog2D(il1),(il2-il1+1))
 
           do j=il1, il2 !1,npoints
              if (tau(j) .gt. (tauchk            )) then

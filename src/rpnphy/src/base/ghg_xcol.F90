@@ -20,7 +20,7 @@
 ! where delta_p is between levels and vmr are at mid-levels
 !-----------------------------------------------------------------------
 
-      use linoz_mod, only: avno, mwt_air, local_dbg
+      use linoz_param, only: avno, mwt_air, local_dbg
       use tdpack_const, only: GRAV
       implicit none
 #include <arch_specific.hf>

@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-module physimple_transforms_mod
+module physimple_transforms
 
 contains
 
@@ -116,4 +116,4 @@ contains
       return
    end subroutine physimple_transforms3d
 
-end module physimple_transforms_mod
+end module physimple_transforms

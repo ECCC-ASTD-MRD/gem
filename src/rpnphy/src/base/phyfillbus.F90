@@ -20,7 +20,7 @@ function phyfillbus(F_kount) result(F_istat)
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
-   use phyfoldmeta_mod, only: phyfold
+   use phyfold, only: phyfold1
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -68,7 +68,7 @@ function phyfillbus(F_kount) result(F_istat)
          if (associated(src2d)) then
             src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
             istat = min( &
-                 phyfold(src2d1,FLD_INIT(i),'P',ijkmin,ijkmax), &
+                 phyfold1(src2d1,FLD_INIT(i),'P',ijkmin,ijkmax), &
                  istat)
          else
             call msg(MSG_ERROR,'(phyfillbus) missing GMM var: '//trim(FLD_INIT(i)))
@@ -112,7 +112,7 @@ function phyfillbus(F_kount) result(F_istat)
             if (associated(src2d)) then
                ijkmax(3) = 1
                src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
-               err = phyfold(src2d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
+               err = phyfold1(src2d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR,'(phyfillbus) Problem folding 2d pointer for: '//trim(varname_S))
                istat = min(err,istat)
@@ -132,7 +132,7 @@ function phyfillbus(F_kount) result(F_istat)
                   ijkmax(3) = 1
                endif
                src3d1(1:,1:,1:) => src3d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,k0:)
-               err = phyfold(src3d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
+               err = phyfold1(src3d1,trim(metalist(i)%vname),'D',ijkmin,ijkmax)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR,'(phyfillbus) Problem folding 3d pointer for: '//trim(varname_S))
                istat = min(err,istat)

@@ -24,7 +24,7 @@ subroutine linoz_tend(o3, &
      do3dt,                             &
      timestep, ni, lay, lev)
    use phy_options
-   use linoz_mod
+   use linoz_param
    implicit none
 #include <arch_specific.hf>
    !@object Stratospheric Ozone chemistry
@@ -210,7 +210,7 @@ subroutine linoz_tend_ghg( &
      dch4dt, dn2odt, df11dt, df12dt,    &
      timestep, ni, lay, lev)
    use phy_options
-   use linoz_mod
+   use linoz_param
    implicit none
 #include <arch_specific.hf>
    !@object Stratospheric Ozone chemistry

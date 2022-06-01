@@ -137,24 +137,20 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    integer, dimension(n) :: slk, mlen
    real :: dtfac
    real, dimension(n) :: e_sfc,beta_sfc,tkesrc,ricmin,ricmax,diffcoef
-   real, dimension(n,nk) :: znold,dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
+   real, dimension(n,nk) :: dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
         shr_term,shr_ng,zero,buoy_term,frac,fm,fh
    real, dimension(n,nk,3) :: w_cld
 
    ! External symbols
    integer, external :: neark
-
-   ! Keep the mixing lenght zn from the previous time step
-   znold  = zn
  
    ! Initialization
    if(kount.eq.0) then
-      do k=1,nk
-         do j=1,n
-            zn(j,k)=min(KARMAN*(z(j,k)+z0(j)),ML_LMDA)
-            zd(j,k)=zn(j,k)
-         end do
-      end do
+      if (.not.any('zn' == phyinread_list_s(1:phyinread_n))) then
+         do k=1,nk
+            zn(:,k)=min(KARMAN*(z(:,k)+z0(:)),ML_LMDA)
+         enddo
+      endif
       if (.not.any('qtbl' == phyinread_list_s(1:phyinread_n))) qc = 0.
       if (.not.any('fnn' == phyinread_list_s(1:phyinread_n))) fnn = 0.
       if (.not.any('fblgauss' == phyinread_list_s(1:phyinread_n))) fngauss = 0.
@@ -197,15 +193,12 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    ! Compute mixing and dissipation length scales
    mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
-        enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
+        enold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount)
    if (stat /= PHY_OK) then
       call physeterror('moistke', 'error returned by mixing length calculation')
       return
    endif
-
-   ! Recycling of length scales
-   if (any('zn'==phyinread_list_s(1:phyinread_n))) zn = znold
 
    ! Output length scales for time series
    call series_xst(zn, 'L1', trnch)

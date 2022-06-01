@@ -9,7 +9,7 @@
 DOMAIN=`hostname -d`
 
 if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+    . ./ci-env/latest/rhel-8-amd-64/gnu-9.3.0.sh
 else 
     . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
 fi

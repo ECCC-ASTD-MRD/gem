@@ -102,7 +102,7 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
       enddo
    enddo
 
-   call vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
+   call gem_vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
 
    DO100: do i = il1, il2
       fd(i,1,1)         =  slwf(i)

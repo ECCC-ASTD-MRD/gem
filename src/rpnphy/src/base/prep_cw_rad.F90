@@ -143,13 +143,13 @@ contains
       enddo
 
       !...  "no stratospheric lwc" mode when CLIMAT or STRATOS = true
-      !...  no clouds above TOPC or where HU < MINQ (see nocld.cdk for topc and minq)
+      !...  no clouds above TOPC (see nocld.cdk)
 
       if (nostrlwc) then
          do k = 1,nkm1
             do i = 1,ni
                press = sigma(i,k)*ps(i)
-               if (topc > press .or. minq >= qm(i,k) ) then
+               if (topc > press) then
                   cloud(i,k) = 0.0
                   zlwc (i,k) = 0.0
                   ziwc (i,k) = 0.0
@@ -217,7 +217,7 @@ contains
       !     as in cldoptx4 of phy4.2 - after Rockel et al, Beitr. Atmos. Phys, 1991,
       !     p.10 (depends on T only [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
 
-      call VSEXP(frac, vtcel, nkm1*ni)
+      call gem_vsexp(frac, vtcel, nkm1*ni)
       do k = 1,nkm1
          do i = 1,ni
             if (tcel(i,k) >= 0.) then
@@ -325,7 +325,7 @@ contains
                   vtcel(i,k) = .037*tcel(i,k)
                enddo
             enddo
-            call VSPOWN1(vliqwcin, liqwcin, 0.141, nkm1*ni) !ancien-bug-defaut
+            call gem_vspown1(vliqwcin, liqwcin, 0.141, nkm1*ni) !ancien-bug-defaut
          else
             do k = 1,nkm1
                do i = 1,ni
@@ -336,10 +336,10 @@ contains
                   twcdens(i,k) = rhoa*liqwcin(i,k)*1000.
                enddo
             enddo
-            call VSPOWN1(vliqwcin, twcdens, 0.141, nkm1*ni) !nouveau-debug
+            call gem_vspown1(vliqwcin, twcdens, 0.141, nkm1*ni) !nouveau-debug
          endif
 
-         call VSEXP(frac, vtcel, nkm1*ni)
+         call gem_vsexp(frac, vtcel, nkm1*ni)
          do k = 1,nkm1
             do i = 1,ni
                frac(i,k) = vliqwcin(i,k)*frac(i,k)

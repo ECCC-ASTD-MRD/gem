@@ -70,7 +70,7 @@ subroutine ccc1_strandn(tran, attn, attntop, rmu, dp, o3, rmu3, ib, &
                tau(i)        = (cs1o3(ig) * o3(i,k) + xx(i)) * dp(i,k)
                tau_vs(i)     =  - tau(i) / rmu(i)
             enddo
-            call vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
+            call gem_vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
             do i = il1, il2
                tran(i,1,kp1) =  tran(i,1,k) * tau_vs(i)
                tran(i,2,kp1) =  tran(i,1,kp1)
@@ -84,7 +84,7 @@ subroutine ccc1_strandn(tran, attn, attntop, rmu, dp, o3, rmu3, ib, &
                tau(i)        =  cs1o3(ig) * o3(i,k) * dp(i,k)
                tau_vs(i)     =  - tau(i) / rmu(i)
             enddo
-            call vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
+            call gem_vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
             do i = il1, il2
                !             tau           =  cs1o3(ig) * o3(i,k) * dp(i,k)
                tran(i,1,kp1) =  tran(i,1,k) * tau_vs(i)

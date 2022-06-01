@@ -20,7 +20,7 @@
 ! where delta_p is between levels and vmr are at mid-levels
 !-----------------------------------------------------------------------
 
-      use linoz_mod, only: avno, mwt_air, du_o3
+      use linoz_param, only: avno, mwt_air, du_o3
       use tdpack_const, only: GRAV
 
       implicit none

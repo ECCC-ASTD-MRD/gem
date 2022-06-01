@@ -26,7 +26,7 @@ contains
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
     use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
-    use physlb_mod, only: physlb1
+    use physlb, only: physlb1
     use cpl_itf   , only: cpl_step
     use phybus, only: perbus, dynbus, volbus
     use ens_perturb, only: ens_spp_stepinit, ENS_OK
