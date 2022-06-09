@@ -65,7 +65,7 @@ subroutine yy2global()
 !!$   integer, external :: fnom,fstouv,fstfrm,fstlir,fstluk,fstinf,fstinl,fstlnk
 !!$   integer, external :: fstecr,fstprm,exdb,exfin
 !!$   integer, external :: ezqkdef,ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
-   integer, external :: longueur
+!   integer, external :: longueur
 
    integer, parameter :: maxnfiles=80
    integer, parameter :: maxvar=300
@@ -564,7 +564,7 @@ subroutine yy2global()
       endif
       deltat_8=(dble(deet)*dble(npas))/3600.0
       call incdatr(datev,dateo,deltat_8)
-      yyetiket=etiket(1:longueur(etiket))
+      yyetiket=etiket(1:len_trim(etiket))
       if (typvar.eq.'C') datev=-1
 
       !  The size of these work fields depend if they are U,V, or PHI grids
