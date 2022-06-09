@@ -105,16 +105,14 @@ module cnv_options
    !# * 'SEC     ' :
    !# * 'KFC     ' :
    !# * 'KFC2    ' :
-   !# * 'KFC3    ' :
    !# * 'BECHTOLD' :
    character(len=16) :: deep            = 'nil'
    namelist /convection_cfgs/ deep
-   character(len=*), parameter :: DEEP_OPT(6) = (/ &
+   character(len=*), parameter :: DEEP_OPT(5) = (/ &
         'NIL     ', &
         'SEC     ', &
         'KFC     ', &
         'KFC2    ', &
-        'KFC3    ', &
         'BECHTOLD'  &
         /)
 
@@ -187,16 +185,16 @@ module cnv_options
    real              :: kfcdepth        = 4000.
    namelist /convection_cfgs/ kfcdepth
 
-   !# Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2' and 'kfc3'
+   !# Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2'
    real              :: kfcdpdd         = 10000.
    namelist /convection_cfgs/ kfcdpdd
 
    !# 
-   !# Generate wind tendencies (CMT) in deep=KFC,KFC2,KFC3
+   !# Generate wind tendencies (CMT) in deep=KFC,KFC2
    !# * 'NIL      ': No wind tendencies applied
    !# * 'ECMWF_PH2': ECMWF approach over anvil only, as implemented in phase 2 with bug 
-   !# * 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2,KFC3 only)
-   !# * 'GKI      ': GKI approach (KFC2,KFC3 only)
+   !# * 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2 only)
+   !# * 'GKI      ': GKI approach (KFC2 only)
    character(len=16) :: cmt_type        = 'NIL'
    namelist /convection_cfgs/ cmt_type
    character(len=*), parameter :: CMT_TYPE_OPT(4) = (/ &

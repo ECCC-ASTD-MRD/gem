@@ -68,7 +68,7 @@
                end do
             end do
 
-            call vsexp(t2,t1,l_ni*l_nj)
+            call gem_vsexp(t2,t1,l_ni*l_nj)
 
             do j=1,l_nj
                do i=1,l_ni
@@ -87,7 +87,7 @@
                end do
             end do
 
-            call vsexp(t2,t1,l_ni*l_nj)
+            call gem_vsexp(t2,t1,l_ni*l_nj)
 
             do j=1,l_nj
                do i=1,l_ni

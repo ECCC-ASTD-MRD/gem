@@ -3,4 +3,3 @@
 ! 001    P. Vaillancourt (Feb 12) - increase pressure threshold to protect radiation code from clouds above 5hPa
 !
    real, parameter :: TOPC=500.         !Top level for cloud tendencies (Pa)
-   real, parameter :: MINQ=1e-6         !Minimum specific humidity for cloud tendencies (kg/kg)

@@ -144,7 +144,7 @@ contains
       ! Eliminate cloud,deep and mid  tendencies at upper levels and in dry regions on user request
       if (climat .or. stratos) then
          press(:,:) = zsigt(:,:) * spread(zpmoins(:), dim=2, ncopies=nk)
-         where(press < TOPC .or. zhumoins <= MINQ)
+         where(press < TOPC)
             zcte = 0.
             zste = 0.
             zmte = 0.
@@ -157,7 +157,7 @@ contains
             zsqre = 0.
          endwhere
          if (associated(zprcten)) then
-            where(press < TOPC .or. zhumoins <= MINQ)
+            where(press < TOPC)
                zprcten = 0.
             endwhere
          endif

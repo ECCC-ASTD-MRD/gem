@@ -137,9 +137,9 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
             RHPD(I,K)=VHP(I,K)*HD(I)
          enddo
       enddo
-      call VREC(RHD (1,2), RHD(1,2),N*(NK-2))
-      call VREC(RHMD(1,2),RHMD(1,2),N*(NK-2))
-      call VREC(RHPD(1,2),RHPD(1,2),N*(NK-2))
+      call gem_vrec(RHD (1,2), RHD(1,2),N*(NK-2))
+      call gem_vrec(RHMD(1,2),RHMD(1,2),N*(NK-2))
+      call gem_vrec(RHPD(1,2),RHPD(1,2),N*(NK-2))
       do K=2,NK-1,1
          do I=1,N
             A(I,K)=KU(I,K-1)*RHMD(I,K)
@@ -205,9 +205,9 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
             RHPD(I,K)=VHP(I,K)*HD(I)
          enddo
       enddo
-      call VREC( RHD(1,2), RHD(1,2),N*(NKX-2))
-      call VREC(RHMD(1,2),RHMD(1,2),N*(NKX-2))
-      call VREC(RHPD(1,2),RHPD(1,2),N*(NKX-2))
+      call gem_vrec( RHD(1,2), RHD(1,2),N*(NKX-2))
+      call gem_vrec(RHMD(1,2),RHMD(1,2),N*(NKX-2))
+      call gem_vrec(RHPD(1,2),RHPD(1,2),N*(NKX-2))
       do K=2,NKX-1,1
          do I=1,N
             KUM=0.5*(KU(I,K-1)+KU(I,K))

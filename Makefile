@@ -5,7 +5,7 @@ SHELL = /bin/bash
 
 default: build
 
-# Using installed RPN libraries (rmn, vgrid, rpncomm, massv, tdpack)
+# Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack)
 cmake-with-system-rpn:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
 

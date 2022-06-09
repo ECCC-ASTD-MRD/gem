@@ -24,7 +24,7 @@
                            DT,Z0,Z0LOC,FCOR,LAT,ZUSL,ZTSL,PSNVHA, N)
 !
       use tdpack
-      use sfclayer_mod, only: sl_sfclayer,SL_OK
+      use sfclayer, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
       implicit none

@@ -284,7 +284,7 @@
 
 !     Calculate PN
       if (pnpn /= 0) then
-         call vslog (w2, p0, l_ninj)
+         call gem_vslog (w2, p0, l_ninj)
          call pnm (w1, vt(l_minx,l_miny,nk_src), fis0, w2, wlao, &
                    ttx, htx, nk_under, l_minx, l_maxx, l_miny, l_maxy, 1)
          if (Outd_filtpass(pnpn,set) > 0) &
@@ -317,7 +317,7 @@
                ! Must do exchange if calculating in the halos
                call rpn_comm_xch_halo(w1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                                       1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-               call vsexp (w2,w1,l_ninj)
+               call gem_vsexp (w2,w1,l_ninj)
                do j=l_miny,l_maxy
                   do i=l_minx,l_maxx
                      w1(i,j) = w2(i,j)*Cstv_pref_8
@@ -426,11 +426,11 @@
 
 !            Calculate PX (in px), thermo levels.
 !            And output all the levels!
-             call vsexp(px_ta(l_minx,l_miny,1),wlnph_ta(l_minx,l_miny,1),(l_ninj*G_nk))
+             call gem_vsexp(px_ta(l_minx,l_miny,1),wlnph_ta(l_minx,l_miny,1),(l_ninj*G_nk))
              px_ta(:,:,G_nk+1) = p0
 
 !            Calculate PX (in px), momentum levels.
-             call vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*G_nk)
+             call gem_vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*G_nk)
              px_m(:,:,G_nk+1) = p0
 
          end if

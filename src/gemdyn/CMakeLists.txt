@@ -37,10 +37,6 @@ if (NOT RMN_FOUND)
   endif()
 endif()
 
-if (NOT MASSV_FOUND)
-  find_package(MASSV)
-endif()
-
 if (NOT rpncomm_FOUND)
    find_package(rpncomm ${rpncomm_REQ_VERSION} CONFIG)
 endif()

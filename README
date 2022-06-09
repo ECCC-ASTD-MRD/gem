@@ -1,19 +1,16 @@
 # How to get, compile and run GEM at the CMC.
-Warning: dev-subtrees branch uses submodules. Make sure you follow the
+Warning: 5.2_rmn20 branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
 # getting gem git repository
-git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
-cd gem-devel
-git checkout dev-subtrees
+git clone git@gitlab.science.gc.ca:RPN-SI/gem.git
+cd gem
+git checkout 5.2_rmn20
 # if you want, create your own branch
 git branch mybranch
 
-# Update all submodules, including rpn-si libraries
+# Update submodules
 git submodule update --init --recursive
-# or updating only the necessary submodules, for a smaller size of the clone directory
-# Updating the necessary submodules (compulsory), leaving rpn-si libraries
-git submodule update --init ci-env cmake_rpn
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
@@ -30,8 +27,8 @@ git submodule update --init ci-env cmake_rpn
 
 # building and installing GEM
 # see Makefile for options
-# for example, make cmake-gemdyn-only compile only gemdyn
-# make cmake compile everything and will need to have all the submodules
+# for example, make cmake-with-system-rpn compile using intalled rpn-si libraries
+# make cmake compile all the sources
 make cmake
 make -j
 make work

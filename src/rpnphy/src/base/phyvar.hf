@@ -352,6 +352,8 @@
    PHYVAR2D1(h_cb,       "VN=h_cb      ; ON=H_CB; VB=v0; VD=height of cloud base                                ; MIN=0")
    PHYVAR2D1(h_sn,       "VN=h_sn      ; ON=H_SN; VB=v0; VD=height of snow level                                ; MIN=0")
    PHYVAR2D1(hpar,       "VN=hpar      ; ON=ZQ  ; VB=p0; VD=height of parcel ascent                             ; MIN=0")
+   PHYVAR3D1(hrl,        "VN=hrl       ; ON=HRL ; VB=v0; VD=relative hum with respect to liquid          ;  VS=T; MIN=0")
+   PHYVAR3D1(hrli,       "VN=hrli      ; ON=HRLI; VB=v0; VD=relative hum with respect to ice or liquid   ;  VS=T; MIN=0")
    PHYVAR2DC(hrsmax,     "VN=hrsmax    ; ON=HRMX; VB=p0; VD=screen max rel hum over last moyhr hours            ; MIN=0", lmoyhr)
    PHYVAR2DC(hrsmin,     "VN=hrsmin    ; ON=HRMN; VB=p0; VD=screen min rel hum over last moyhr hours            ; MIN=0", lmoyhr)
    PHYVAR3D1(hst,        "VN=hst       ; ON=H1  ; VB=p0; VD=PBL height for stable case                    ; VS="//nag//"  ; MIN=0")

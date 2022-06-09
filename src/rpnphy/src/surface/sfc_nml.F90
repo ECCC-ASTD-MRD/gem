@@ -22,7 +22,7 @@ function sfc_nml2(F_namelist) result(F_istat)
    use sfc_options
    use sfcbus_mod
    use cpl_itf, only: cpl_nml
-   use sfclayer_mod, only: sl_put, SL_OK
+   use sfclayer, only: sl_put, SL_OK
    implicit none
 !!!#include <arch_specific.hf>
    !@objective Set defaults values and read surface namelist

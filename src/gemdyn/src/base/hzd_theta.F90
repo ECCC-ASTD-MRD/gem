@@ -35,7 +35,7 @@
 
       do k=1,G_nk
          pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
-         call vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
+         call gem_vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
                        real(cappa_8),l_ni*l_nj)
          th(1:l_ni,1:l_nj,k) = tt1   (1:l_ni,1:l_nj,k) * &
                                pres_t(1:l_ni,1:l_nj,k)

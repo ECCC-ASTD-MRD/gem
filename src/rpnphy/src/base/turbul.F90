@@ -226,7 +226,7 @@ contains
          xh(i)=max(0.0,xh(i))
          work2(i)=zh(i)*xh(i)
       end do
-      call vspown1 (xh,work2,1./3.,ni)
+      call gem_vspown1 (xh,work2,1./3.,ni)
       do i=1,ni
          zwstar(i) = xh(i)
          ztstar(i) = max(zftemp_ag(i)/max(zwstar(i),WSTAR_MIN),0.)

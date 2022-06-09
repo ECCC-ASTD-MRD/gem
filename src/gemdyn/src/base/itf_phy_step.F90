@@ -17,7 +17,7 @@
 
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
-      use phy_itf, only: phy_input,phy_step,phy_snapshot
+      use phy_itf, only: phy_input1, phy_step,phy_snapshot
       use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld, sfcflxfilt_o, nsurfag
       use init_options
@@ -83,7 +83,7 @@
       !if (F_step_kount == 0) call itf_phy_glbstat('befinp')
 
       call gemtime_start ( 45, 'PHY_input', 40 )
-      err_input = phy_input ( itf_phy_prefold_opr, F_step_kount, &
+      err_input = phy_input1 ( itf_phy_prefold_opr, F_step_kount, &
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
 
       !if (F_step_kount == 0) call itf_phy_glbstat('Aftinp')

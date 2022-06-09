@@ -163,10 +163,10 @@
       end do
 
       dimy = l_nj+2*G_haloy
-      call vrec ( geomh_invcy2_8  , geomh_cy2_8 , dimy )
-      call vrec ( geomh_invcyv2_8 , geomh_cyv2_8, dimy )
-      call vrec ( geomh_invcy_8   , geomh_cy_8  , dimy )
-      call vrec ( geomh_invcyv_8  , geomh_cyv_8 , dimy )
+      call gem_vrec ( geomh_invcy2_8  , geomh_cy2_8 , dimy )
+      call gem_vrec ( geomh_invcyv2_8 , geomh_cyv2_8, dimy )
+      call gem_vrec ( geomh_invcy_8   , geomh_cy_8  , dimy )
+      call gem_vrec ( geomh_invcyv_8  , geomh_cyv_8 , dimy )
 
       do j=1-G_haloy, l_nj+G_haloy
          indx = offj + j

@@ -24,9 +24,11 @@ module microphy_my2
  public :: mp_my2_main
  public :: my2_phybusinit, my2_lwc, my2_iwc
 
- private :: NccnFNC,SxFNC,gamma,gser,gammln,gammp,cfg,gamminc,polysvp,qsat,check_values
+ private :: NccnFNC,SxFNC,gamma,gser,gammln,cfg,polysvp,qsat,check_values
+ ! private :: gamminc,gammp
  private :: sedi_wrapper_2,sedi_1D,count_columns,des_OF_Ds,Dm_x,iLAMDA_x,N_Cooper,Nos_Thompson
- private :: maxsat,erf  ! Added by C.Jouan april2015
+ ! private :: erf  ! Added by C.Jouan april2015
+!  private :: maxsat  ! Added by C.Jouan april2015
 !  private :: activate    ! Added by C.Jouan april2015
 
  contains
@@ -267,45 +269,45 @@ end subroutine gser
  end function gammln
 !======================================================================!
 
- real function gammp(a,x)
+!  real function gammp(a,x)
 
-! USES gcf,gser
+! ! USES gcf,gser
 
-! Returns the incomplete gamma function P(a,x)
+! ! Returns the incomplete gamma function P(a,x)
 
- implicit none
+!  implicit none
 
- real :: a,x,gammcf,gamser,gln
+!  real :: a,x,gammcf,gamser,gln
 
- if(x.lt.a+1.)then
-    call gser(gamser,a,x,gln)
-    gammp=gamser
- else
-    call cfg(gammcf,a,x,gln)
-    gammp=1.-gammcf
- endif
- return
+!  if(x.lt.a+1.)then
+!     call gser(gamser,a,x,gln)
+!     gammp=gamser
+!  else
+!     call cfg(gammcf,a,x,gln)
+!     gammp=1.-gammcf
+!  endif
+!  return
 
- end function gammp
+!  end function gammp
 !======================================================================!
 
- real function erf(x)                ! Added by C.Jouan april2015
+ ! real function erf(x)                ! Added by C.Jouan april2015
 
- ! USES gammp
- ! Returns the error function erf(x ).
+ ! ! USES gammp
+ ! ! Returns the error function erf(x ).
 
- implicit none
+ ! implicit none
 
- real :: x
+ ! real :: x
 
- if(x.lt.0.)then
-    erf=-gammp(.5,x**2)
- else
-    erf=gammp(.5,x**2)
- endif
- return
+ ! if(x.lt.0.)then
+ !    erf=-gammp(.5,x**2)
+ ! else
+ !    erf=gammp(.5,x**2)
+ ! endif
+ ! return
 
- end function erf
+ ! end function erf
 !======================================================================!
 
  subroutine cfg(gammcf,a,x,gln)
@@ -347,14 +349,14 @@ end subroutine gser
 end subroutine cfg
 !======================================================================!
 
- real function gamminc(p,xmax)
+!  real function gamminc(p,xmax)
 
-! USES gammp, gammln
-! Returns incomplete gamma function, gamma(p,xmax)= P(p,xmax)*GAMMA(p)
- real :: p,xmax
- gamminc= gammp(p,xmax)*exp(gammln(p))
+! ! USES gammp, gammln
+! ! Returns incomplete gamma function, gamma(p,xmax)= P(p,xmax)*GAMMA(p)
+!  real :: p,xmax
+!  gamminc= gammp(p,xmax)*exp(gammln(p))
 
- end function gamminc
+!  end function gamminc
 !======================================================================!
 
  real function polysvp(T,type)
@@ -970,12 +972,12 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
       VV_Q    = gamfact1d(k)*iLAMxB0*ckQx1
    end function VV_Q
 
-   real function VV_Qg()
-   !Calculates Q-weighted fall velocity
-!     iLAMx is already computed in 'calc_grpl_params' (for graupel only)
-      iLAMxB0 = iLAMx**bfx
-      VV_Qg   = gamfact1d(k)*iLAMxB0*ckQx1
-   end function VV_Qg
+!    real function VV_Qg()
+!    !Calculates Q-weighted fall velocity
+! !     iLAMx is already computed in 'calc_grpl_params' (for graupel only)
+!       iLAMxB0 = iLAMx**bfx
+!       VV_Qg   = gamfact1d(k)*iLAMxB0*ckQx1
+!    end function VV_Qg
 
  end subroutine sedi_1D
 
@@ -1146,45 +1148,45 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 !  end subroutine activate
 !=======================================================================
 
- subroutine maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
-!=======================================================================
-! Purpose:
-! Calculates maximum supersaturation for one aerosol mode.
-!
-! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
-! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
-!
-!-----------------------------------------------------------------------
+!  subroutine maxsat( zeta, eta, f1, f2, smc, s_max ) ! Added by C.Jouan april2015
+! !=======================================================================
+! ! Purpose:
+! ! Calculates maximum supersaturation for one aerosol mode.
+! !
+! ! Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+! ! 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+! !
+! !-----------------------------------------------------------------------
 
-   implicit none
+!    implicit none
 
-   real     :: smc        ! critical supersaturation
-   real     :: zeta, eta
-   real     :: f1, f2
-   real     :: s_max       ! maximum supersaturation
-   real     :: g1, g2
-   real     :: rdummy
-!-----------------------------------------------------------------------
+!    real     :: smc        ! critical supersaturation
+!    real     :: zeta, eta
+!    real     :: f1, f2
+!    real     :: s_max       ! maximum supersaturation
+!    real     :: g1, g2
+!    real     :: rdummy
+! !-----------------------------------------------------------------------
 
-   if( eta > 1.e-20 )then  
-     g1  = sqrt( zeta/eta )
-     g1  = g1*g1*g1
-     g2  = smc/sqrt( eta + 3*zeta )
-     g2  = sqrt(g2)
-     g2  = g2*g2*g2
-     rdummy = ( f1*g1 + f2*g2 )/( smc*smc )
-   else
-     rdummy = 1.e20
-   endif
+!    if( eta > 1.e-20 )then  
+!      g1  = sqrt( zeta/eta )
+!      g1  = g1*g1*g1
+!      g2  = smc/sqrt( eta + 3*zeta )
+!      g2  = sqrt(g2)
+!      g2  = g2*g2*g2
+!      rdummy = ( f1*g1 + f2*g2 )/( smc*smc )
+!    else
+!      rdummy = 1.e20
+!    endif
 
-   if( s_max > 0. )then
-     s_max = 1./sqrt(rdummy)
-   else
-     s_max = 1.e-20
-   end if
+!    if( s_max > 0. )then
+!      s_max = 1./sqrt(rdummy)
+!    else
+!      s_max = 1.e-20
+!    end if
 
 
- end subroutine maxsat
+!  end subroutine maxsat
 !==============================================================================!
 !_______________________________________________________________________________________!
 

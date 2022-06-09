@@ -846,7 +846,7 @@ module phy_options
 
    !# Special treatment of stratosphere;
    !# if .true. ignore convection/condensation tendencies where pressure is lower
-   !# than topc or specific humidity is lower than minq as specified in nocld.cdk
+   !# than topc as specified in nocld.cdk
    logical           :: stratos      = .false.
    namelist /physics_cfgs/ stratos
    namelist /physics_cfgs_p/ stratos

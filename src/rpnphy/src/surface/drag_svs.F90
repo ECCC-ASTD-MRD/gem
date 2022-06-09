@@ -27,7 +27,7 @@
                               N)
       use tdpack
       use sfc_options
-      use sfclayer_mod, only: sl_sfclayer,SL_OK
+      use sfclayer, only: sl_sfclayer,SL_OK
       use svs_configs
 !
       implicit none

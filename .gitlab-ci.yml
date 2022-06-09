@@ -8,51 +8,49 @@ variables:
 
 stages:
   - build
-  - run_configs_U2
-  - run_configs_U1_gnu
-  - run_configs_U1_intel
+  - run_configs_intel
+#  - run_configs_gnu
 
 before_script:
   - export CLICOLOR_FORCE=1
 
-build_gnu_gem_only:
+# U2 GNU 9.3.0
+build_gnu:
   stage: build
+  only:
+  - 5.2_rmn20
   script:
     - set +e
     - . ./.eccc_setup_gnu
-    - . ./.initial_setup
-    - make cmake-gem-only
-    - make -j `nproc`
-    - make -j `nproc` work
-
-build_intel_gem_only:
-  stage: build
-  script:
-    - . ./.eccc_setup_intel
-    - . ./.initial_setup
-    - make cmake-gem-only
-    - make -j `nproc`
-    - make -j `nproc` work
-  allow_failure: true
-
-build_xc50:
-  stage: build
-  tags:
-  - XC50-login
-  script:
-    - set +e
-    - . ./.eccc_setup_intel
     - . ./.initial_setup
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   allow_failure: true
 
-build_U2:
+# U2 Intel 2022
+build_intel_with_rpn:
   stage: build
-  tags:
-  - U2
   when: always
+  only:
+  - 5.2_rmn20
+  script:
+    - set +e
+    - export ORDENV_DIST=rhel
+    - . ./.eccc_setup_intel
+    - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
+    - make cmake-with-system-rpn
+    - make -j `nproc`
+    - make -j `nproc` work
+  allow_failure: true
+
+# U2 Intel 2022
+build_intel:
+  stage: build
+  when: always
+  only:
+  - 5.2_rmn20
   script:
     - set +e
     - export ORDENV_DIST=rhel
@@ -68,13 +66,15 @@ build_U2:
     - work-rhel-8-icelake-64-intel-2021.5.0
     - gem_dbase
 
-5.2GEM_GY_FISL_H_U2:
-  stage: run_configs_U2
+5.2GEM_GY_FISL_H:
+  stage: run_configs
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -91,13 +91,15 @@ build_U2:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
   allow_failure: true
+  only:
+  - 5.2_rmn20
   script:
     - export ORDENV_DIST=rhel
     - . ./.eccc_setup_intel
@@ -113,12 +115,14 @@ CANO_W7cascP_U2:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -135,12 +139,14 @@ CANO_dcmip163r100_U2:
     - test "${_status}" == "ED"
 
 CANO_wil7_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -157,12 +163,14 @@ CANO_wil7_U2:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -179,12 +187,14 @@ GEM_GY_FISL_P_U2:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -201,12 +211,14 @@ GEM_LU_FISL_H_U2:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -223,12 +235,14 @@ GEM_LU_OFFC_U2:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -245,12 +259,14 @@ PTOPO_GYH_U2:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -267,12 +283,14 @@ PTOPO_LUP_U2:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -289,12 +307,14 @@ RSTRT_GYP_U2:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -311,12 +331,14 @@ THEO_bubbleG_U2:
     - test "${_status}" == "ED"
 
 THEO_schar_U2:
-  stage: run_configs_U2
+  stage: run_configs_intel
   tags:
   - U2
   dependencies:
   - build_U2
   when: always
+  only:
+  - 5.2_rmn20
   allow_failure: true
   script:
     - export ORDENV_DIST=rhel
@@ -332,503 +354,242 @@ THEO_schar_U2:
       fi
     - test "${_status}" == "ED"
 
-build_intel:
-  stage: build
-  when: always
-  script:
-    - . ./.eccc_setup_intel
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - make -j `nproc`
-    - make -j `nproc` work
-  artifacts:
-    expire_in: 2 hrs
-    paths:
-    - work-ubuntu-18.04-skylake-64-intel-19.0.3.199
-    - gem_dbase
+# 5.2GEM_GY_FISL_H_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=5.2GEM_cfgs_GY_FISL_H
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-5.2GEM_GY_FISL_H_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=5.2GEM_cfgs_GY_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# CANO_W7cascP_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=CANO_cfgs_W7cascP
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-CANO_W7cascP_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_W7cascP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# CANO_dcmip163r100_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=CANO_cfgs_dcmip163r100
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-CANO_dcmip163r100_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_dcmip163r100
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# CANO_wil7_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=CANO_cfgs_wil7
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-CANO_wil7_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_wil7
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# GEM_GY_FISL_P_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=GEM_cfgs_GY_FISL_P
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-GEM_GY_FISL_P_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_P
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# GEM_LU_FISL_H_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=GEM_cfgs_LU_FISL_H
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-GEM_LU_FISL_H_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# GEM_LU_OFFC_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=GEM_cfgs_LU_OFFC
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-GEM_LU_OFFC_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_OFFC
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# PTOPO_GYH_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=PTOPO_cfgs_GYH
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-PTOPO_GYH_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_GYH
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# PTOPO_LUP_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=PTOPO_cfgs_LUP
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-PTOPO_LUP_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_LUP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# RSTRT_GYP_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=RSTRT_cfgs_GYP
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-RSTRT_GYP_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=RSTRT_cfgs_GYP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# THEO_bubbleG_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=THEO_cfgs_bubbleG
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"
 
-THEO_bubbleG_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_bubbleG
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-THEO_schar_intel:
-  stage: run_configs_U1_intel
-  dependencies:
-  - build_intel
-  when: always
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_schar
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-build_gnu:
-  stage: build
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - make -j `nproc`
-    - make -j `nproc` work
-  artifacts:
-    expire_in: 2 hrs
-    paths:
-    - work-ubuntu-18.04-amd64-64-gnu-7.4.0
-    - gem_dbase
-
-5.2GEM_GY_FISL_H_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=5.2GEM_cfgs_GY_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_W7cascP_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_W7cascP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_dcmip163r100_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_dcmip163r100
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_wil7_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_wil7
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_GY_FISL_P_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_P
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_LU_FISL_H_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_LU_OFFC_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_OFFC
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-PTOPO_GYH_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_GYH
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-PTOPO_LUP_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_LUP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-RSTRT_GYP_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=RSTRT_cfgs_GYP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-THEO_bubbleG_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_bubbleG
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
-THEO_schar_gnu:
-  stage: run_configs_U1_gnu
-  dependencies:
-  - build_gnu
-  when: always
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_schar
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
+# THEO_schar_gnu:
+#   stage: run_configs_U1_gnu
+#   dependencies:
+#   - build_gnu
+#   when: always
+#   allow_failure: true
+#   script:
+#     - set +e
+#     - . ./.eccc_setup_gnu
+#     - cd $GEM_WORK
+#     - CFG=THEO_cfgs_schar
+#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
+#     - _status=ABORT
+#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+#     - if [ "${_status}" == "ED" ]; then
+#       _status=ABORT;
+#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+#       fi
+#     - test "${_status}" == "ED"

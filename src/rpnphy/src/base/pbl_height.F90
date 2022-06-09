@@ -25,7 +25,7 @@ contains
    function pbl_height1(hpbl,temp,hum,uwind,vwind,hghtm,hghtt,sigt,temp_s,hum_s,psfc, &
         z0m,z0t,lat,fcor,n,nk) result(status)
       use tdpack_const, only: CAPPA, CPD, EPS1, GRAV
-      use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+      use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

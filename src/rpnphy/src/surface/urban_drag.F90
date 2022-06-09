@@ -28,7 +28,7 @@ subroutine URBAN_DRAG2(PTSTEP, PT_CANYON, PQ_CANYON,                    &
                           PAC_WALL, PAC_ROAD, PAC_ROAD_WAT, PAC_TOP,        &
                           PU_CAN, PRI,                                      &
                           ZTRDZT,ZTRFZT,ZUZT,ZVZT                           )
-       use sfclayer_mod, only: sl_sfclayer,SL_OK
+       use sfclayer, only: sl_sfclayer,SL_OK
        use sfc_options
 
 !!****  *URBAN_DRAG*

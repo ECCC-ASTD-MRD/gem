@@ -272,7 +272,7 @@ subroutine sgo16flx3(uu, vv, utend, vtend, ttend, utendgwd4, vtendgwd4, &
          vmodb(i) = u(i,lrefm)*u(i,lrefm) + v(i,lrefm)*v(i,lrefm)
          vmodb(i) = sqrt(vmodb(i))
       enddo
-      !call VSQRT(vmodb,vmodb,jyes)
+      
       do i=1,jyes
          lrefm = izt0(i)
          if (vmodb(i) <= 1.)  vmodb(i) = 1.

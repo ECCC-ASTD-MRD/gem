@@ -172,8 +172,8 @@ subroutine MCICA_CLD_GENERATOR(ZF, AVG_CF, AVG_QLW,AVG_QIW, &
          end do ! IL
       end do ! K
 
-      call VSEXP(ALPHA,ALPHA,LAY*(IL2-IL1+1))
-      call VSEXP(RCORR,RCORR,LAY*(IL2-IL1+1))
+      call gem_vsexp(ALPHA,ALPHA,LAY*(IL2-IL1+1))
+      call gem_vsexp(RCORR,RCORR,LAY*(IL2-IL1+1))
 
       do I=1,NX_LOC
 
@@ -219,7 +219,7 @@ subroutine MCICA_CLD_GENERATOR(ZF, AVG_CF, AVG_QLW,AVG_QIW, &
 !    * cumulative probability Y
 !    * relative standard deviation SIGMA
 ! Take care that the definition of RIND2 is consistent with subroutine
-! TABULATE_XCW
+! TABULATE _XCW
 
                         RIND1 = Y(IL) * (N1 - 1) + 1.0
                         IND1  = max(1, min(int(RIND1), N1-1))

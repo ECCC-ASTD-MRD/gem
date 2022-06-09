@@ -131,7 +131,7 @@
  1002   continue
        endif
 !
-       call vsexp(atten,atten,il2-il1+1)
+       call gem_vsexp(atten,atten,il2-il1+1)
 !
       else
        if (inpt(1).lt.950)                                          then

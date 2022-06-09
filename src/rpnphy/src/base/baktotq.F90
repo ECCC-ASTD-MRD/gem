@@ -96,7 +96,7 @@ subroutine baktotq8(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
    TAUINV = 1./TAU
 
    ! Update conserved variables following diffusion
-   call vspown1(exner,sw,CAPPA,nk*n)
+   call gem_vspown1(exner,sw,CAPPA,nk*n)
    thl_star = thl + tau*dthl
    qw_star = qw + tau*dqw
 

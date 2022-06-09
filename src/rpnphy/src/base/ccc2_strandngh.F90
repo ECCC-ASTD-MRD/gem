@@ -146,7 +146,7 @@
                                  taua(i,k)
               dtr1(i)         =   - (tau(i) - tauoma(i,k)) / rmu(i)
             enddo
-            call vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
+            call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
             do 100 i = il1, il2
 !              dto3            =  dt(i,k) + 23.13
 !              tau(i)          = ((cs1o3gh(1,ig) +
@@ -176,7 +176,7 @@
                                  dp(i,k) + taua(i,k)
               dtr1(i)         =   - (tau(i) - tauoma(i,k)) / rmu(i)
             enddo
-            call vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
+            call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
             do 110 i = il1, il2
 !             tau             = (cs1o3gh(1,ig) + dto3 * (cs1o3gh(2,ig) +
 !     1                           dto3 * cs1o3gh(3,ig))) * o3(i,k) *
@@ -222,7 +222,7 @@
             tau(i)            =  taug(i,k) + taua(i,k)
             dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
           enddo
-          call vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
+          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
           do 200 i = il1, il2
 !           tau               =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)
@@ -265,7 +265,7 @@
             tau(i)            =  taug(i,k) + taua(i,k)
             dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
           enddo
-          call vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
+          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
           do 300 i = il1, il2
 !           tau(i)            =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)
@@ -324,7 +324,7 @@
             tau(i)            =  taug(i,k) + taua(i,k)
             dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
           enddo
-          call vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
+          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
           do 400 i = il1, il2
 !           tau(i)            =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)

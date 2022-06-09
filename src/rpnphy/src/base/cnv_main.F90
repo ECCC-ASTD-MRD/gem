@@ -308,7 +308,7 @@ contains
          ztlc = zrckfc
          zqckfc = zprcten + zpriten
 
-      else if (any(convec == (/'KFC2', 'KFC3'/))) then
+      else if (convec == 'KFC2') then
 
          call kfrpn4(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
               uu,vv,wz, &

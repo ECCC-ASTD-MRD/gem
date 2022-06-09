@@ -190,6 +190,8 @@
    MKPTR2D(zgzmom, gzmom, vbus)
    MKPTR2D(zgztherm, gztherm, vbus)
    MKPTR1D(zh, h, fbus)
+   MKPTR2D(zhrl, hrl, vbus)
+   MKPTR2D(zhrli, hrli, vbus)
    MKPTR1D(zhrsmax, hrsmax, fbus)
    MKPTR1D(zhrsmin, hrsmin, fbus)
    MKPTR2D(zhufcp, hufcp, fbus)

@@ -57,6 +57,15 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(BLAS_LIBRARIES "blas")
 endif()
 
+string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M")
+if(DEFINED ENV{COMP_ARCH})
+  set(EC_COMPILER "$ENV{COMP_ARCH}")
+endif()
+if(DEFINED ENV{ORDENV_ARCH})
+  set(EC_ORDENV_ARCH "$ENV{ORDENV_ARCH}")
+endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.in ${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.inc @ONLY)
+
 add_subdirectory(src/main modelutils-main)
 add_subdirectory(src modelutils)
 

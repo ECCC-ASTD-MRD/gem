@@ -19,7 +19,7 @@
 subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use, intrinsic :: iso_fortran_env, only: INT64
    use phy_status, only: phy_error_L
-   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &

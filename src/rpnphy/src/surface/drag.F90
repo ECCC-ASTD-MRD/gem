@@ -22,7 +22,7 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
      CH, CD, HRSURF, HUSURF, HV, DEL, ZQS, &
      CTU, N)
    use tdpack
-   use sfclayer_mod, only: sl_sfclayer,SL_OK
+   use sfclayer, only: sl_sfclayer,SL_OK
    use sfc_options
    implicit none
 !!!#include <arch_specific.hf>

@@ -1,4 +1,4 @@
-!COMP_ARCH=intel-2016.1.156 ; -suppress=-C
+!COMP_ARCH=inteloneapi-2022.1.2 ; -suppress=-C
 !COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-C
 !COMP_ARCH=intel-19.0.3.199 ; -suppress=-C
 !COMP_ARCH=PrgEnv-intel-6.0.5 ; -suppress=-C

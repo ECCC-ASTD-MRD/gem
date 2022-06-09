@@ -18,8 +18,8 @@
 subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
      N, M, NK)
    use tdpack
-   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
-   use cpl_itf     , only: cpl_update
+   use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
+   use cpl_itf, only: cpl_update
    use sfc_options
    use sfcbus_mod
    implicit none

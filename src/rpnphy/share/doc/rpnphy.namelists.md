@@ -18,8 +18,8 @@
 | cmt_ecmwf_lambda | CMT lambda factor for cmt_type=ECMWF* formulations | 2. | real |
 | cmt_gki_cdown | CMT GKI for downdraft coef for cmt_type=GKI | 0. | real |
 | cmt_gki_cup | CMT GKI for updraft coef for cmt_type=GKI | 0.7 | real |
-| cmt_type | <br>Generate wind tendencies (CMT) in deep=KFC,KFC2,KFC3<br>- 'NIL      ': No wind tendencies applied<br>- 'ECMWF_PH2': ECMWF approach over anvil only, as implemented in phase 2 with bug<br>- 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2,KFC3 only)<br>- 'GKI      ': GKI approach (KFC2,KFC3 only) | 'NIL' | character(len=16) |
-| deep | Deep convection scheme name<br>- 'NIL     ' :<br>- 'SEC     ' :<br>- 'KFC     ' :<br>- 'KFC2    ' :<br>- 'KFC3    ' :<br>- 'BECHTOLD' : | 'nil' | character(len=16) |
+| cmt_type | <br>Generate wind tendencies (CMT) in deep=KFC,KFC2<br>- 'NIL      ': No wind tendencies applied<br>- 'ECMWF_PH2': ECMWF approach over anvil only, as implemented in phase 2 with bug<br>- 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2 only)<br>- 'GKI      ': GKI approach (KFC2 only) | 'NIL' | character(len=16) |
+| deep | Deep convection scheme name<br>- 'NIL     ' :<br>- 'SEC     ' :<br>- 'KFC     ' :<br>- 'KFC2    ' :<br>- 'BECHTOLD' : | 'nil' | character(len=16) |
 | deep_cloudobj | Treat convective clouds as cloud objects | .false. | logical |
 | deep_codecay | Decay timescale for convective cloud objects (seconds) | 600. | real |
 | deep_conserve | Conservation corrections for deep convective scheme<br>- 'NIL   ' : No conservation correction applied<br>- 'TEND  ' : Temperature and moisture tendencies corrected<br>- 'PRECIP' : Surface precipitation rate corrected | 'PRECIP' | character(len=16) |
@@ -27,7 +27,7 @@
 | deep_timeent |  | -1. | real |
 | deep_timerefresh |  | -1. | real |
 | kfcdepth | Minimum depth of conv. updraft for KFC  trigger (m) | 4000. | real |
-| kfcdpdd | Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2' and 'kfc3' | 10000. | real |
+| kfcdpdd | Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2' | 10000. | real |
 | kfcprod | Compute production terms for Kain-Fritsch scheme | .false. | logical |
 | kfcrad | Initial convective updraft radius in KFC scheme(m) | 1500. | real |
 | kfcradw | Convective updraft radius over water in KFC scheme(m) | -1. | real |
@@ -178,7 +178,7 @@
 | sgo_windfac | Description of threshold for mean wind speed for blocking |  |  |
 | simisccp | (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.<br>WARNING: This option is no longuer suppored, will be removed | .false. | logical |
 | stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme<br>- 'KESSLER   ' : Kessler warm rain scheme | 'NIL' | character(len=16) |
-| stratos | Special treatment of stratosphere;<br>if .true. ignore convection/condensation tendencies where pressure is lower<br>than topc or specific humidity is lower than minq as specified in nocld.cdk | .false. | logical |
+| stratos | Special treatment of stratosphere;<br>if .true. ignore convection/condensation tendencies where pressure is lower<br>than topc as specified in nocld.cdk | .false. | logical |
 | taufac | Factor used in the gwd formulation = 1/(LENGTH SCALE) | 8.E-6 | real |
 | test_phy | Run the physics in test harness mode | .false. | logical |
 | timings_l | Print runtime timings | .false. | logical |
@@ -204,9 +204,8 @@
 | adj_i0_snow | Adjust surface temperature over snow after reading (coherency check) | .true. | logical |
 | beta | Prandtl number for neutral stability (initialized by SL module) | 0. | real |
 | diusst | Diurnal SST scheme<br>- 'NIL    ' : No Diurnal SST scheme<br>- 'FAIRALL' : #TODO: define | 'NIL' | character(len=16) |
-| diusst_coolskin | Diurnal SST scheme active coolskin if .true. | .true. | logical |
-| diusst_coolskin_lakes | Diurnal SST scheme active coolskin over freshwater lakes if .true. | .true. | logical |
-| diusst_warmlayer | Diurnal SST scheme active warmlayer if .true. | .true. | logical |
+| diusst_lakes | Diurnal SST scheme active over freshwater lakes if .true. | .true. | logical |
+| diusst_ocean | Diurnal SST scheme active over ocean if .true. | .true. | logical |
 | diusst_warmlayer_lakes | Diurnal SST scheme active warmlayer over freshwater lakes if .true. | .true. | logical |
 | dp_svs | Depth of soil layers in [METERS] in SVS land surface scheme (schmsol=SVS) | -1.0 | real |
 | ice_emiss |  | -1. | real |

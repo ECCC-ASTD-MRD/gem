@@ -28,7 +28,7 @@ contains
       use tdpack_const, only: CAPPA, CONSOL2, GRAV, PI, STEFAN, RGASD
       use phy_options
       use phybus
-      use linoz_mod
+      use linoz_param
       use tendency, only: apply_tendencies
       implicit none
 #include <arch_specific.hf>
@@ -173,7 +173,7 @@ contains
          enddo
       enddo
 
-      call vssqrt(shtj,s_qrt,ni*nk)
+      call gem_vssqrt(shtj,s_qrt,ni*nk)
 
       do i = 1, ni
          shtj(i,1) = zsigw(i,1) * shtj(i,1)

@@ -1,6 +1,6 @@
 subroutine testphy_main()
   ! Test stub top-level for the RPN physics package
-  use testphy_mod, only: PT_TEST_TYPES, pt_run
+  use testphy, only: PT_TEST_TYPES, pt_run
   implicit none
 
 #include <rmnlib_basics.hf>

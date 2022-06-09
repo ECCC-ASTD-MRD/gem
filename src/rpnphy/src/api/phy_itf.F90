@@ -20,7 +20,7 @@ module phy_itf
   use phy_typedef
   use phy_nml_mod
   use phy_init_mod
-  use phy_input_mod
+  use phy_input
   use phy_step_mod
   use phy_get_mod
   use phy_getmeta_mod

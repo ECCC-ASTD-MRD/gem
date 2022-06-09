@@ -27,14 +27,13 @@ target_link_libraries(checkdmpart
    tdpack
    rpncomm
    rmn
-   massv
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(checkdmpart gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
+add_dependencies(checkdmpart gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
@@ -47,12 +46,11 @@ target_link_libraries(gemgrid
    tdpack
    rpncomm
    rmn
-   massv
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
    )
-add_dependencies(gemgrid gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
+add_dependencies(gemgrid gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -65,13 +63,12 @@ target_link_libraries(prgemnml
    tdpack
    rpncomm
    rmn
-   massv
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prgemnml gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
+add_dependencies(prgemnml gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)

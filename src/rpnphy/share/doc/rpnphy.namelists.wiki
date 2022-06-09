@@ -105,11 +105,11 @@ CMT GKI for updraft coef for cmt_type=GKI
 |-
 | cmt_type ||
 
-Generate wind tendencies (CMT) in deep=KFC,KFC2,KFC3
+Generate wind tendencies (CMT) in deep=KFC,KFC2
 * 'NIL      ': No wind tendencies applied
 * 'ECMWF_PH2': ECMWF approach over anvil only, as implemented in phase 2 with bug
-* 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2,KFC3 only)
-* 'GKI      ': GKI approach (KFC2,KFC3 only)
+* 'ECMWF    ': ECMWF approach, debugged and applied over whole cloud (KFC2 only)
+* 'GKI      ': GKI approach (KFC2 only)
 | 'NIL' || character(len=16)
 
 |-
@@ -119,7 +119,6 @@ Deep convection scheme name
 * 'SEC     ' :
 * 'KFC     ' :
 * 'KFC2    ' :
-* 'KFC3    ' :
 * 'BECHTOLD' :
 | 'nil' || character(len=16)
 
@@ -163,7 +162,7 @@ Minimum depth of conv. updraft for KFC  trigger (m)
 
 |-
 | kfcdpdd ||
-Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2' and 'kfc3'
+Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2'
 | 10000. || real
 
 |-
@@ -1028,7 +1027,7 @@ Condensation scheme name
 | stratos ||
 Special treatment of stratosphere;
 if .true. ignore convection/condensation tendencies where pressure is lower
-than topc or specific humidity is lower than minq as specified in nocld.cdk
+than topc as specified in nocld.cdk
 | .false. || logical
 
 |-
@@ -1123,18 +1122,13 @@ Diurnal SST scheme
 | 'NIL' || character(len=16)
 
 |-
-| diusst_coolskin ||
-Diurnal SST scheme active coolskin if .true.
+| diusst_lakes ||
+Diurnal SST scheme active over freshwater lakes if .true.
 | .true. || logical
 
 |-
-| diusst_coolskin_lakes ||
-Diurnal SST scheme active coolskin over freshwater lakes if .true.
-| .true. || logical
-
-|-
-| diusst_warmlayer ||
-Diurnal SST scheme active warmlayer if .true.
+| diusst_ocean ||
+Diurnal SST scheme active over ocean if .true.
 | .true. || logical
 
 |-

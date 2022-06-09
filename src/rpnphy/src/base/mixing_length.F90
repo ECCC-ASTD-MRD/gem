@@ -204,7 +204,7 @@ contains
    
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
-        enold, znold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
+        enold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount) result(stat)
      use phy_options, only: ilongmel, pbl_diss, pbl_mlturb_diss, timings_L
      use ens_perturb, only: ens_spp_get
@@ -221,7 +221,6 @@ contains
      real, dimension(:,:), intent(in) :: se                !sigma values for half (energy) levels
      real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
      real, dimension(:,:), intent(in) :: enold             !TKE from previous time step (m2/s2)
-     real, dimension(:,:), intent(in) :: znold             !mixing length from previous time step (m)
      real, dimension(:,:), intent(in) :: buoy              !buoyancy flux (m2/s2)
      real, dimension(:,:), intent(in) :: rig               !gradient Richardson number
      real, dimension(:,:,:), intent(in) :: w_cld           !cloud-layer velocity scales (m/s)
@@ -237,16 +236,18 @@ contains
      real, intent(in) :: tau                               !time step (s)
      integer, intent(in) :: kount                          !step number
      real, dimension(:,:), intent(inout) :: pri            !inverse Prandtl number
-     real, dimension(:,:), intent(out) :: zn               !mixing length (m)
+     real, dimension(:,:), intent(inout) :: zn             !mixing length (m)
      real, dimension(:,:), intent(out) :: zd               !dissipation length (m)
 
      ! Local variables and common blocks
+     include "phyinput.inc"
 #include "clefcon.cdk"
      integer :: n, nk, j, k
      real, dimension(size(t,dim=1)) :: mlemod, mlemodt, mlmult
      real, dimension(size(t,dim=1),size(t,dim=2)) :: zn_blac, zd_blac, pri_blac, &
           zn_boujo, zd_boujo, pri_boujo, zn_turboujo, zd_turboujo, pri_turboujo, &
-          zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, exner, weight, rif
+          zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, exner, weight, &
+          rif, znold
      logical :: one_ml_form, mlemod_calc, mlemodt_calc
      logical, dimension(size(t,dim=1),size(t,dim=2)) :: boujo_valid
      
@@ -266,6 +267,9 @@ contains
      n = size(t, dim=1)
      nk = size(t, dim=2)
 
+     ! Retain mixing length information from previous step
+     znold(:,:) = zn(:,:)
+     
      ! Obtain stochastic parameter information
      mlmult(:) = ens_spp_get('ml_mult', mrk2, 1.)
      mlemod(:) = ens_spp_get('ml_emod', mrk2, 0.)
@@ -277,7 +281,7 @@ contains
      ! Precompute state variables if required
      if (any(mlen(:) == ML_BOUJO) .or. any(mlen(:) == ML_TURBOUJO) .or. &
           mlemod_calc .or. mlemodt_calc) then
-        call vspown1(exner,se,-CAPPA,n*nk)
+        call gem_vspown1(exner,se,-CAPPA,n*nk)
         te(1:n,1:nk)  = t(1:n,1:nk)
         qce(1:n,1:nk) = qc(1:n,1:nk)
         tv = te*(1.0+DELTA*qe-qce)*exner
@@ -483,6 +487,9 @@ contains
      ! Adjust dissipation length scale on user request
      if (pbl_diss == 'LIM50') zd = min(zd,50.)
 
+     ! Recycling of length scales
+     if (any('zn'==phyinread_list_s(1:phyinread_n))) zn(:,:) = znold(:,:)
+     
      ! Completed timings
      if (timings_L) call timing_stop_omp(500)
      
@@ -766,16 +773,20 @@ contains
             call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for upwards displacement')
             return
          endif
+         if (any(lup(1:nc,ki) > ML_MIN)) then
          if (int_solve(ldown(1:nc,ki),-y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),'down',found=intok(1:nc)) == INT_ERR) then
-            call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for downwards displacement')
-            return
+               call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for downwards displacement')
+               return
+            endif
+            where (.not.intok(1:nc))
+               ldown(1:nc,ki) = zdep(1:nc)
+            elsewhere
+               ldown(1:nc,ki) = min(ldown(1:nc,ki),zdep(1:nc))
+            endwhere
+         else        
+            ldown(1:nc,ki) = ML_MIN
          endif
-         where (.not.intok(1:nc))
-            ldown(1:nc,ki) = zdep(1:nc)
-         elsewhere
-            ldown(1:nc,ki) = min(ldown(1:nc,ki),zdep(1:nc))
-         endwhere
-
+         
          ! Select final mixing length
          do j=1,n
             nc = indx(j)

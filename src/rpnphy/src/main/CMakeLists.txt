@@ -1,4 +1,4 @@
-message(STATUS "(EC) Generating rpnphy main Makefile")
+message(STATUS "(EC) Generating rpnphy binaries Makefile")
 
 add_executable(feseri mainfeseri.F90)
 target_link_libraries(feseri
@@ -7,12 +7,11 @@ target_link_libraries(feseri
    vgrid
    rpncomm
    rmn
-   massv
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(feseri rpnphy ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
+add_dependencies(feseri rpnphy ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(prphynml mainprphynml.F90)
 target_link_libraries(prphynml
@@ -22,11 +21,10 @@ target_link_libraries(prphynml
    vgrid
    rpncomm
    rmn
-   massv
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    ${EXTRA_LIBRARIES}
 )
-add_dependencies(prphynml rpnphy ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC} ${massv_SRC})
+add_dependencies(prphynml rpnphy ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 install(TARGETS feseri prphynml RUNTIME DESTINATION bin)

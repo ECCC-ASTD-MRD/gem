@@ -96,8 +96,7 @@ subroutine phybusinit(ni,nk)
    lkfbe   = any(convec == (/ &
         'BECHTOLD', &
         'KFC     ', &
-        'KFC2    ', &
-        'KFC3    '  &
+        'KFC2    ' &
         /))
    lshal   = (conv_shal /= 'NIL')
    lshbkf  = (conv_shal == 'BECHTOLD')

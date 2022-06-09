@@ -99,9 +99,9 @@
       END IF
 
       tmp2d = p0/p
-      call vspown1(exp1_cappa, tmp2d, cappa, lev*lmx)
+      call gem_vspown1(exp1_cappa, tmp2d, cappa, lev*lmx)
       tmp2d = p/p0
-      call vspown1(exp2_cappa, tmp2d, cappa, lev*lmx)
+      call gem_vspown1(exp2_cappa, tmp2d, cappa, lev*lmx)
 
       DO J=1,LEV
       DO K=1,LMX

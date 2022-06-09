@@ -617,9 +617,9 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                   j = isun(i)
                   vs_tau(i) = taucs(j,k,ib)
                enddo
-               call vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
+               call gem_vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
             else
-               call vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
+               call gem_vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
             endif
             DO310b: do i = ilg1, ilg2
                j = isun(i)
@@ -1128,7 +1128,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                do i = il1, il2
                   tran0(i)  =  - a1(i,1)
                enddo
-               call vsexp(tran0(il1),tran0(il1),il2-il1+1)
+               call gem_vsexp(tran0(il1),tran0(il1),il2-il1+1)
                do i = il1, il2
                   if (pfull(i,1) .gt. 0.001) then
                      x               =  max(a1(i,1), 1.e-10)

@@ -29,7 +29,7 @@ contains
       use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
       use integrals, only: int_profile, INT_OK
       use pbl_height, only: pbl_height1
-      use sfclayer_mod, only: sl_prelim, sl_sfclayer, SL_OK
+      use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use phy_options
       use phybus
       use phybudget, only: pb_compute, pb_residual
@@ -77,7 +77,7 @@ contains
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, dimension(ni,nk) :: presinv, t2inv, tiinv, lwcp, iwcp
-      real, dimension(ni,nk-1) :: q_grpl, iiwc
+      real, dimension(ni,nk-1) :: q_grpl, iiwc, prest
 
 #define PHYPTRDCL
 #include "calcdiag_ptr.hf"
@@ -594,6 +594,19 @@ contains
       if (associated(zconq1)) zconq1(:) = real(pw1(:))
 
       !****************************************************************
+      !     Moisture diagnostics
+      !     --------------------
+      do k=1,nkm1
+         prest(:,k) = zpplus(:) * zsigt(:,k) 
+      enddo
+      ! Calculate HRL (liquid), including diag level nk
+      call mfohr4(zhrl, zhuplus, ztplus, prest, ni, nkm1, ni, .false.)
+      call mfohr4(zhrl(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.false.)
+      ! Calculate HRI or HRL (ice or liquid), including diag level nk
+      call mfohr4(zhrli, zhuplus, ztplus, prest, ni, nkm1, ni, .true.)
+      call mfohr4(zhrli(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.true.)
+
+      !****************************************************************
       !     AVERAGES
       !     --------
 
@@ -602,7 +615,7 @@ contains
 
          !pre-calculate screen wind modulus
          uvs(1:ni) = zudiag(1:ni)*zudiag(1:ni) + zvdiag(1:ni)*zvdiag(1:ni)
-         call VSSQRT(uvs,uvs,ni)
+         call gem_vssqrt(uvs,uvs,ni)
 
          IF_RESET_0: if (lkount0 .or. lreset) then
 
@@ -726,7 +739,6 @@ contains
             if (any(convec == (/ &
                  'KFC     ', &
                  'KFC2    ', &
-                 'KFC3    ', &
                  'BECHTOLD'  &
                  /))) then
                zabekfcm(:)  = 0.0
@@ -1114,7 +1126,6 @@ contains
          if (any(convec == (/ &
               'KFC     ', &
               'KFC2    ', &
-              'KFC3    ', &
               'BECHTOLD'  &
               /))) then
             do k = 1, nk-1

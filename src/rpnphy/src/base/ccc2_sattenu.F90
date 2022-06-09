@@ -99,7 +99,7 @@
                           o3(i) +  cs1o2gh3 * o2(i)) * dp(i)
               atten(i) =   - tau / rmu(i)
   100       continue
-            call vsexp(atten(il1),atten(il1),il2-il1+1)
+            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           else
             do 110 i = il1, il2
               dto3     =  dt(i) + 23.13
@@ -108,7 +108,7 @@
                           o3(i) * dp(i)
               atten(i) =   - tau / rmu(i)
   110       continue
-            call vsexp(atten(il1),atten(il1),il2-il1+1)
+            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           endif
         else
 !
@@ -120,7 +120,7 @@
                           cs1o21 * o2(i)) * dp(i)
               atten(i) =  - tau / rmu(i)
   120       continue
-            call vsexp(atten(il1),atten(il1),il2-il1+1)
+            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           else
             do 130 i = il1, il2
               dto3     =  dt(i) + 23.13
@@ -128,7 +128,7 @@
                           dto3 * cs1o3(3,ig))) * o3(i) * dp(i)
               atten(i) =  - tau / rmu(i)
   130       continue
-            call vsexp(atten(il1),atten(il1),il2-il1+1)
+            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           endif
         endif
 !

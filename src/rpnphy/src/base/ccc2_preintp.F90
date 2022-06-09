@@ -124,7 +124,7 @@
             p0(i)   = pp(i,1)*pp(i,1) / pp(i,2)
             dip0(i) = p0(i) * pp(i,1)
           enddo
-          if (il2.ge.il1) call vssqrt(dip0,dip0,il2-il1+1)
+          if (il2.ge.il1) call gem_vssqrt(dip0,dip0,il2-il1+1)
           do 900 i = il1, il2
             dip0(i)   = (dip0(i) - pp(i,1)) / (p0(i) - pp(i,1))
   900     continue

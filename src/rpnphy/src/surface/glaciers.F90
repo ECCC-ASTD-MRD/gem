@@ -17,7 +17,7 @@
 !/@*
 subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    use tdpack
-   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+   use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
    implicit none

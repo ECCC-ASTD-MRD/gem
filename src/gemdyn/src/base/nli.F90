@@ -271,7 +271,7 @@
                xtmp_8(i,j) = F_t(i,j,k) * w1
             end do
          end do
-         call vlog ( ytmp_8, xtmp_8, nij )
+         call gem_vlog ( ytmp_8, xtmp_8, nij )
          if(Schm_opentop_L.and.k == k0t) then
             do j= j0, jn
                do i= i0, in
@@ -329,7 +329,7 @@
                                  + Ver_dcdz_8%m(k)*F_sl(i,j)
             end do
          end do
-         call vlog(ytmp_8, xtmp_8, nij)
+         call gem_vlog(ytmp_8, xtmp_8, nij)
          do j = j0, jn
             do i = i0, in
                F_nc(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) +  &
