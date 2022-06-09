@@ -16,8 +16,8 @@ c
       integer pnextra2,pnextra3
 c
       integer fstprm,pnseqout,ilen
-      integer longueur,wkoffit,ikind
-      external longueur,qqexit,ccard,wkoffit
+      integer wkoffit,ikind
+      external qqexit,ccard,wkoffit
 c
       real*8 prtmp8
 c
@@ -75,8 +75,9 @@ c
       endif
 c
       ikind = wkoffit(ptvar(1))
-c      write(*,*) 'IKIND = ',ikind
-      if(ikind .ne. 33 .and. ikind .ne. 1) call qqexit(1)
+c      write(*,*) 'IKIND ====== ',ikind
+      if(ikind .ne. 33 .and. ikind .ne. 34 .and. ikind .ne. 1) call qqex
+     %it(1)
 c     ------ Initialisation des clefs de recherche -----
 c
       if (ptvar(2) .ne. '-1') then
@@ -84,7 +85,7 @@ c
       elseif(ptvar(3) .ne. '-1') then
         read(ptvar(3)(1:8),*) pndatprintv
         read(ptvar(3)(9:),'(a8)') cltimev
-        ilen = longueur(cltimev)
+        ilen = len_trim(cltimev)
         cltimev = '00000000'
         read(ptvar(3)(9:9+ilen),'(a)') cltimev(1:ilen)
         read(cltimev,*) pntimev
