@@ -67,9 +67,7 @@ build_intel:
     - gem_dbase
 
 5.2GEM_GY_FISL_H:
-  stage: run_configs
-  tags:
-  - U2
+  stage: run_configs_intel
   dependencies:
   - build_U2
   when: always
@@ -92,8 +90,6 @@ build_intel:
 
 CANO_W7cascP_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -116,8 +112,6 @@ CANO_W7cascP_U2:
 
 CANO_dcmip163r100_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -140,8 +134,6 @@ CANO_dcmip163r100_U2:
 
 CANO_wil7_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -164,8 +156,6 @@ CANO_wil7_U2:
 
 GEM_GY_FISL_P_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -188,8 +178,6 @@ GEM_GY_FISL_P_U2:
 
 GEM_LU_FISL_H_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -212,8 +200,6 @@ GEM_LU_FISL_H_U2:
 
 GEM_LU_OFFC_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -236,8 +222,6 @@ GEM_LU_OFFC_U2:
 
 PTOPO_GYH_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -260,8 +244,6 @@ PTOPO_GYH_U2:
 
 PTOPO_LUP_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -284,8 +266,6 @@ PTOPO_LUP_U2:
 
 RSTRT_GYP_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -308,8 +288,6 @@ RSTRT_GYP_U2:
 
 THEO_bubbleG_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
@@ -332,8 +310,6 @@ THEO_bubbleG_U2:
 
 THEO_schar_U2:
   stage: run_configs_intel
-  tags:
-  - U2
   dependencies:
   - build_U2
   when: always
