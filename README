@@ -2,36 +2,46 @@
 Warning: 5.2_rmn20 branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
-# getting gem git repository
+# getting gem in one step: cloning git repository, checking out 5.2_rmn20
+# branch, and updating submodules 
+git clone --branch 5.2_rmn20 --recursive git@gitlab.science.gc.ca:RPN-SI/gem.git
+cd gem
+
+# or getting it in three steps:
 git clone git@gitlab.science.gc.ca:RPN-SI/gem.git
 cd gem
 git checkout 5.2_rmn20
+git submodule update --init --recursive
+
 # if you want, create your own branch
 git branch mybranch
 
-# Update submodules
-git submodule update --init --recursive
-
-# preparing gem-devel compilation
+# preparing gem compilation
+# linking to database
 ./scripts/link-dbase.sh
 
+# loading compilers and libraries
+# either with Intel
 . ./.eccc_setup_intel
 
-# Or with gnu
+# or with gnu
 # Please note you cannot compile with Intel and then with GNU in the same shell
 . ./.eccc_setup_gnu
 
 # Before the first build, or if you made important changes (such as updating
-# other submodules, or removing source files):
+# submodules, or removing source files):
 . ./.initial_setup
 
 # building and installing GEM
 # see Makefile for options
-# for example, make cmake-with-system-rpn compile using intalled rpn-si libraries
-# make cmake compile all the sources
+# for example:
+# make cmake-with-system-rpn : compile using stable installed rpn-si
+# libraries (such as librmn 19.7)
+# whereas:
+# make cmake : compile all the sources in the clone repository, including
+# the latest development versions of rpn-si libraries, such as librmn 20
 make cmake
-make -j
-make work
+make -j work
 
 # running GEM: example
 cd $GEM_WORK
@@ -40,8 +50,8 @@ runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 
 # structure of the working environment
 The following environment variables are created (examples):
-- GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
-- GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+- GEM_DIR=/users/dor/armn/cpi/local/gem_ubuntu-18.04-amd64-64-intel-19.0.3.199
+- GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem
 - GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
 - GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
 - COMPILER_SUITE=intel
@@ -50,12 +60,12 @@ The following environment variables are created (examples):
 The structure of the build and work directories is different whether the $storage_model environment variable exists:
 
 - Example if $storage_model exists:
-  - GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
+  - GEM_DIR=/users/dor/armn/cpi/local/gem_ubuntu-18.04-amd64-64-intel-19.0.3.199
   - in GEM_GIT_DIR:
-    . build-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/build
-    . work-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+    . build-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem_ubuntu-18.04-amd64-64-intel-19.0.3.199/build
+    . work-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem_ubuntu-18.04-amd64-64-intel-19.0.3.199/work
 
 - Example if $storage_model doesn't exist:
-  - GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+  - GEM_DIR=/users/dor/armn/cpi/ords/gem/gem
   - build-ubuntu-18.04-amd64-64-intel-19.0.3.199
   - work-ubuntu-18.04-amd64-64-intel-19.0.3.199

@@ -20,10 +20,7 @@ eval `cclargs_lite -D " " $0 \
 
 set -ex
 
-BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
-if [[ -z "${BIN}" ]] ; then
-   BIN=$(which checkdmpart)
-fi
+BIN=$(which checkdmpart)
 
 ici=${PWD}
 ROOT_WORK=${PWD}/checkdmpart$$
