@@ -92,9 +92,12 @@ voir -iment RUNMOD/output/cfg0000/ ...
 fststat -fst RUNMOD/output/cfg0000/ ...
 ```
 
-[SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
-2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
+[SPI](https://github.com/ECCC-ASTD-MRD/SPI) can be used to view the output
+files.
 
+2D fields can also be displayed with
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) (make sure you
+use feat_cmake branch)
 
 -----------------------------------------------------------------
 # Extended instructions:
@@ -269,12 +272,12 @@ various tasks on the output files:
   editfst -s <input FST> -d <output FST> -i <editfst.directives>
   ```
 
-[SPI](http://eer.cmc.ec.gc.ca/software/SPI) is a scientific and meteorological
-virtual globe offering processing, analysis and visualization capabilities,
-with a user interface similar to Google Earth and NASA World Wind, developed by
-Environment Canada.
+[SPI](https://github.com/ECCC-ASTD-MRD/SPI) is a scientific and
+meteorological virtual globe offering processing, analysis and visualization
+capabilities, with a user interface similar to Google Earth and NASA World
+Wind, developed by Environment Canada.
 
-[xrec](https://gitlab.com/gem-ec/xoas) is another visualization program which
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) is another visualization program which
 can be used to display 2D meteorological fields stored in the FST files,
 developed by Research Informatics Services, Meteorological Research Division,
 Environment and Climate Change Canada.
