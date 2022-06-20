@@ -32,9 +32,6 @@ set(ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "include ${ARCH}-${COMPILER}.cmake")
 include("${ARCH}-${COMPILER}.cmake")
 
-# TODO: This isn't used presently.  Check to see if we need it
-# set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
-
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 
 # To build without OpenMP, you have to add -DWITH_OPENMP=0 to the cmake command line
@@ -91,11 +88,6 @@ message(STATUS "Compiler version is: ${COMPILER} ${COMP_VERSION}")
 # Enable distclean target
 include("distclean.cmake")
 
-set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f;f90;F90 CACHE STRING "Fortran extension files")
-
-# This was changed so that there cannot be an upstream call
-#set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules CACHE STRING "Where Fortran modules go")
-
 get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY CACHE)
 message(STATUS "ROOT=${ROOT}")
 #message(STATUS "Sources directory is: ${CMAKE_CURRENT_SOURCE_DIR}")
@@ -121,7 +113,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(${ROOT}/src src)
 
-# TODO: Move this to cmake_shared
 function(dir_writable DIR_PATH REQUIRED)
     # Check that the path given in DIR_PATH is writable.  If DIR_PATH does not
     # exist, it checks if it can be created.
@@ -141,8 +132,6 @@ function(dir_writable DIR_PATH REQUIRED)
     endif()
     set(DIR_WRITABLE PARENT_SCOPE NOT DIR_NOT_WRITABLE)
 endfunction()
-# END TODO: Move this to cmake_shared
-
 
 set(WORK_PREFIX ${ROOT}/work CACHE FILEPATH "Execution environment directory")
 message(STATUS "WORK_PREFIX=${WORK_PREFIX}")

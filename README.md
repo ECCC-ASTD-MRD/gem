@@ -42,8 +42,12 @@ See below for extended instructions and requirements.
     ./fststat -fst RUNMOD.dir/output/cfg0000/ ...
 ```
 
-[SPI](http://eer.cmc.ec.gc.ca/software/SPI) can be used to view the output files.
-2D fields can also be displayed with [xrec](https://gitlab.com/gem-ec/xoas)
+[SPI](https://github.com/ECCC-ASTD-MRD/SPI) can be used to view the output
+files.
+
+2D fields can also be displayed with
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) (make sure you
+use feat_cmake branch)
 
 -----------------------------------------------------------------
 # Extended instructions:
@@ -163,7 +167,7 @@ example *work-Fedora-32-x86_64-gnu-10.2.1*
 
 *runmod*'s ```-ptopo``` argument can be used to specify the number of CPU to
 use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
-8 cpus for global Yin-Yang - see the [manual](doc/GEM-manual.pdf) for details)
+8 cpus for global Yin-Yang.
 
 **mpirun** is used to run the model.  You can specify another command
 by editing *scripts/Um_model.sh either in the original scripts in the
@@ -207,7 +211,7 @@ virtual globe offering processing, analysis and visualization capabilities,
 with a user interface similar to Google Earth and NASA World Wind, developed by
 Environment Canada.
 
-[xrec](https://gitlab.com/gem-ec/xoas) is another visualization program which
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) is another visualization program which
 can be used to display 2D meteorological fields stored in the FST files,
 developed by Research Informatics Services, Meteorological Research Division,
 Environment and Climate Change Canada.

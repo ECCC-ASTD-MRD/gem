@@ -4,7 +4,7 @@ include(FindMPI)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 
-file(GLOB FTNSRC */*.F90)
+file(GLOB FTNSRC */*.F90 */*.f90)
 file(GLOB CSRC  */*.c)
 
 add_compile_options( "${EXTRA_FLAGS}" )

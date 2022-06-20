@@ -6,7 +6,7 @@ include(FindMPI OPTIONAL)
 include_directories(${MPI_INCLUDE_PATH})
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 
-file(GLOB FTNSRC */*.F90)
+file(GLOB FTNSRC */*.F90 */*.f90)
 
 add_compile_options(${AVG_FLAG})
 include_directories(series)
