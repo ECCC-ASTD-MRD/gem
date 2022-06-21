@@ -8,7 +8,7 @@
 DOMAIN=`hostname -d`
 
 if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.4.0.sh
+    . ./ci-env/latest/rhel-8-amd-64/gnu-9.3.0.sh
     . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.4.0_ubuntu-18.04-amd64-64
     . r.load.dot rpn/vgrid/6.6.0
     . r.load.dot /home/cpi001/data/ords/packages-ssm/rpncomm_4.6.2-gnu-7.4.0_ubuntu-18.04-amd64-64
