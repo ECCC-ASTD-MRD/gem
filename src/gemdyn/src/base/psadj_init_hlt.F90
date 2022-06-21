@@ -15,8 +15,7 @@
 
 !**s/r psadj_init - Estimate area for Yin-Yang/LAM and Store air mass at initial time for Yin-Yang
 
-      subroutine psadj_init (F_kount)
-
+      subroutine psadj_init_hlt (F_kount)
       use adz_mem
       use cstv
       use dynkernel_options
@@ -26,14 +25,15 @@
       use gmm_geof
       use gmm_pw
       use HORgrid_options
+      use mem_tstp
       use lam_options
       use psadjust
       use rstr
       use ptopo
+      use omp_timing
+      use omp_lib
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -46,20 +46,40 @@
 
       include 'mpif.h'
       include 'rpn_comm.inc'
-      integer :: err,i,j,i0_c,in_c,j0_c,jn_c,comm
+      integer :: err,i,j,comm,dim,dimHx,dimVx,OMP_max_threads
       logical, save :: done_area_L       = .false.
       logical, save :: done_yy_initial_L = .false.
-      real(kind=REAL64), dimension(l_minx:l_maxx,l_miny:l_maxy) :: p0_dry_8,p0_1_8
-      real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_8
-      real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
-      real(kind=REAL64) :: l_avg_8,x_avg_8,gathS(Ptopo_numproc*Ptopo_ncolors)
+      real(kind=REAL64), dimension(:,:)  , pointer :: p0_dry_8,p0_1_8,thread_sum
+      real(kind=REAL64), dimension(:,:,:), pointer :: pm_8
+      real, dimension(:,:,:), pointer :: sumq
+      real(kind=REAL64) :: sum_lcl(2),l_avg_8,x_avg_8,gathS(Ptopo_numproc*Ptopo_ncolors)
       logical :: almost_zero
+!$omp threadprivate(done_area_L,done_yy_initial_L)
+
 !
 !     ---------------------------------------------------------------
 !
+      OMP_max_threads=OMP_get_max_threads()
+      dimHx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      dimVx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      sumq  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1: )
+      p0_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(    1:) ; dim=dimHx
+      p0_dry_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimHx
+      pm_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1_8(dim+1:); dim=dim+dimVx
+      thread_sum(1:2,0:OMP_get_max_threads()-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_get_max_threads()
+      thread_sum=0.
+
+!$omp single
       if ( Schm_psadj < 0 .and. Schm_psadj > 2) then
          call gem_error(-1,'PSADJ_INIT','PSADJ OPTION NOT VALIDE')
       end if
+!$omp end single
+
+!$omp single
+      if (Schm_psadj > 0 .and. OMP_max_threads > 1 .and. .not.Grd_yinyang_L ) then
+         call gem_error(-1,'PSADJ_INIT','OMP_max_THREADS > 1 NOT AVAILABLE FOR LAM WITH SCHM_PSADJ > 0')
+      end if
+!$omp end single
 
       comm = RPN_COMM_comm ('MULTIGRID')
 
@@ -67,35 +87,37 @@
       !-------------
       if (.not.done_area_L) then
 
-         l_avg_8 = 0.0d0
-         x_avg_8 = 0.0d0
-
+      sum_lcl(1)=0.d0
+      sum_lcl(2)=0.d0
+!$omp do
          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-
-               l_avg_8 = l_avg_8 + geomh_area_mask_8(i,j)
-
-               if (fis0(i,j) > 1.) x_avg_8 = x_avg_8 + geomh_area_mask_8(i,j)
-
+               sum_lcl(1)= sum_lcl(1) + geomh_area_mask_8(i,j)
+               if (fis0(i,j) > 1.) sum_lcl(2) = sum_lcl(2) + geomh_area_mask_8(i,j)
             end do
          end do
+!$omp end do nowait
+         thread_sum(1,OMP_get_thread_num()) = sum_lcl(1)
+         thread_sum(2,OMP_get_thread_num()) = sum_lcl(2)
+!$OMP BARRIER
 
+!$omp single
+         l_avg_8 = sum(thread_sum(1,:))
          call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
          PSADJ_scale_8 = sum(gathS)
 
-
+         x_avg_8 = sum(thread_sum(2,:))
          call MPI_Allgather(x_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
          PSADJ_fact_8  = sum(gathS)/PSADJ_scale_8
-
 
          PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
 
          if (.not.almost_zero(PSADJ_fact_8)) PSADJ_fact_8 = (1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
+!$omp end single
 
          done_area_L = .true.
 
       end if
-
 
       if (Schm_psadj==0) goto 999
 
@@ -111,41 +133,56 @@
 
       !Obtain Wet surface pressure/Pressure Momentum at TIME P
       !-------------------------------------------------------
-      p0_wet_8 => pw_p0_plus_8
-      pm_8     => pw_pm_plus_8
-
-      !Compute Dry surface pressure at TIME P (Schm_psadj==2)
-      !------------------------------------------------------
-      if (Schm_psadj==2) call dry_sfc_pressure_8 (p0_dry_8,pm_8,p0_wet_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
-
-      i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n
 
       !Obtain Surface pressure minus Cstv_pref_8
       !-----------------------------------------
-      if (Schm_psadj==1) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_wet_8(i0_c:in_c,j0_c:jn_c) - Cstv_pref_8
-      if (Schm_psadj==2) p0_1_8(i0_c:in_c,j0_c:jn_c) = p0_dry_8(i0_c:in_c,j0_c:jn_c) - Cstv_pref_8
+      if (Schm_psadj==1) then
+!$omp do
+        do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+           p0_1_8(i,j) = pw_p0_plus_8(i,j) - Cstv_pref_8
+         end do
+        end do
+!$omp end do
+      endif
+
+      !Compute Dry surface pressure at TIME P (Schm_psadj==2)
+      !------------------------------------------------------
+      if (Schm_psadj==2) then
+        call dry_sfc_pressure_hlt_8(p0_dry_8,pw_pm_plus_8,pw_p0_plus_8,sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
+!$omp do
+        do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            p0_1_8(i,j) = p0_dry_8(i,j) - Cstv_pref_8
+         end do
+        end do
+!$omp end do
+      endif
+
 
       !Store air mass at initial time
       !------------------------------
-      l_avg_8 = 0.0d0
-
+      sum_lcl(1) = 0.0d0
+!$omp do
       do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-
-            l_avg_8 = l_avg_8 + p0_1_8(i,j) * geomh_area_mask_8(i,j)
-
+            sum_lcl(1) = sum_lcl(1) + p0_1_8(i,j) * geomh_area_mask_8(i,j)
          end do
       end do
+!$omp end do nowait
+      thread_sum(1,OMP_get_thread_num()) = sum_lcl(1)
+!$OMP BARRIER
 
-
+!$omp single
+      l_avg_8 = sum(thread_sum(1,:))
       call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
 
       PSADJ_g_avg_ps_initial_8 = sum(gathS) * PSADJ_scale_8
 
+      if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
+!$omp end single
 
-
-  999 if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
-!
+  999 continue
 !     ---------------------------------------------------------------
 !
       return

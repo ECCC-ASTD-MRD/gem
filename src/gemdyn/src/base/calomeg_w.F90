@@ -55,7 +55,7 @@
 
 
       integer :: i,j,k
-      real, dimension(l_ni,l_nj) :: t1,t2
+      real :: w1
 !     __________________________________________________________________
 !
 
@@ -64,15 +64,7 @@
          do k=1,l_nk
             do j=1,l_nj
                do i=1,l_ni
-                  t1(i,j)= F_lnp(i,j,k)
-               end do
-            end do
-
-            call gem_vsexp(t2,t1,l_ni*l_nj)
-
-            do j=1,l_nj
-               do i=1,l_ni
-                  F_ww (i,j,k) = -grav_8 *F_wt1(i,j,k)*t2(i,j) / &
+                  F_ww (i,j,k) = -grav_8 *F_wt1(i,j,k)*exp(F_lnp(i,j,k)) / &
                                   (rgasd_8*F_tt1(i,j,k))
                end do
             end do
@@ -83,15 +75,8 @@
          do k=1,l_nk
             do j=1,l_nj
                do i=1,l_ni
-                  t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j) + Ver_c_8%t(k)*F_sl(i,j)
-               end do
-            end do
-
-            call gem_vsexp(t2,t1,l_ni*l_nj)
-
-            do j=1,l_nj
-               do i=1,l_ni
-                  F_ww (i,j,k) = -grav_8 *F_wt1(i,j,k)*t2(i,j)/ &
+                  w1= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j) + Ver_c_8%t(k)*F_sl(i,j)
+                  F_ww (i,j,k) = -grav_8 *F_wt1(i,j,k)*exp(w1)/ &
                                   (rgasd_8*F_tt1(i,j,k))
                end do
             end do

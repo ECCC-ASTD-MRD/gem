@@ -16,78 +16,88 @@
 !**s/r  pre_jacobio3D -  BlocJacobi_3D additive-Schwarz preconditioner with
 !                        local solver = "separable" approximate elliptic problem
 !
-      subroutine pre_jacobi3D2 ( Sols,Rhs,ii0,iin,jj0,jjn,Ni,Nj,Nk)
+      subroutine pre_jacobi3D2 ( Sols,Rhs_b,Ni,Nj,Nk)
+      use dyn_fisl_options
       use glb_ld
       use opr
-      use ptopo
-      use dyn_fisl_options
+      use sol
       use prec
-
+      use mem_tstp
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       integer Ni,Nj,Nk
-      integer ii0, iin, jj0, jjn
-      real(kind=REAL64) Rhs(Ni,Nj,Nk),Sols(Ni,Nj,Nk)
+      real(kind=REAL64), dimension(Ni,Nj,Nk), intent(in) :: Rhs_b
+      real(kind=REAL64), dimension(Ni,Nj,Nk), intent(out) :: Sols
 
 !author
 !       Abdessamad Qaddouri -  2013
-!
-      integer i,j,k,l,jr
-      real(kind=REAL64) fdg(Ni,Nj,Nk), w2_8(Ni,Nj,Nk)
-      integer ii,jj,iloc,jloc
 
+      integer i,j,k,jr,ii,jj,iloc,jloc
 !
 !     ---------------------------------------------------------------
-
-      jloc=0
-         do j= jj0, jjn
-            jloc=jloc+1
-            jj=j+l_j0-1
-                call dgemm ( 'N','N', Ni, nk, nk, 1.0D0,     &
-                         rhs(1,jloc,1), Ni*Nj,Opr_lzevec_8,&
-                         G_nk,0.0d0, w2_8 (1,jloc,1), Ni*Nj )
+!
+!$omp do
+      do j= 1, nj
+            jj=Sol_jj0 + j+l_j0 - 2
+         call dgemm ( 'N','N', Ni, nk, nk, 1.0D0,     &
+                     rhs_b(1,j,1), Ni*Nj,Opr_lzevec_8,&
+                     G_nk,0.0d0, w2_8 (1,j,1), Ni*Nj )
             do k=1,Nk
-               iloc=0
-               do i = ii0, iin
-                  iloc=iloc+1
-                  ii= i+l_i0-1
-                  w2_8(iloc,jloc,k)= Opr_opsxp0_8(G_ni+ii) * &
-                      Opr_opsyp0_8(G_nj+jj) * w2_8(iloc,jloc,k)
+               do i = 1, ni
+                  ii= Sol_ii0+i+l_i0 - 2
+                  w2_8(i,j,k)= Opr_opsxp0_8(G_ni+ii) * &
+                      Opr_opsyp0_8(G_nj+jj) * w2_8(i,j,k)
                end do
             end do
          end do
 
+!$omp end do
+
+!$omp do
       do k=1,Nk
          call dgemm ( 'T','N',Ni,Nj,Ni,1.0d0,Prec_xevec_8,Ni,&
                       w2_8(1,1,k),Ni,0.0d0,fdg(1,1,k),Ni)
+
          do j =2, Nj
-            jr =  j - 1
             do i=1,Ni
-               fdg(i,j,k) = fdg(i,j,k) - Prec_ai_8(i,j,k)*fdg(i,jr,k)
+               fdg(i,j,k) = fdg(i,j,k) - Prec_ai_8(i,j,k)*fdg(i,j-1,k)
             end do
          end do
+
          j = Nj
          do i=1,Ni
             fdg(i,j,k) = fdg(i,j,k)/Prec_bi_8(i,j,k)
          end do
+
          do j = Nj-1, 1, -1
-            jr =  j + 1
             do i=1 , Ni
-               fdg(i,j,k)=(fdg(i,j,k)-Prec_ci_8(i,j,k)*fdg(i,jr,k))/Prec_bi_8(i,j,k)
+               fdg(i,j,k)=(fdg(i,j,k)-Prec_ci_8(i,j,k)*fdg(i,j+1,k))/Prec_bi_8(i,j,k)
             end do
          end do
 
          call dgemm ( 'N','N',Ni,Nj,Ni,1.0d0,Prec_xevec_8,Ni,&
                       fdg(1,1,k),Ni,0.d0,w2_8(1,1,k),Ni )
       end do
+!$omp end do
 
+!$omp do
       do j=1,Nj
          call dgemm ( 'N','T', Ni, nk, nk, 1.0D0,     &
                       w2_8(1,j,1), Ni*Nj, Opr_zevec_8,&
-                      G_nk,0.0d0, Sols (1,j,1), Ni*Nj  )
+                      G_nk,0.0d0, w3_8 (1,j,1), Ni*Nj  )
       end do
+!$omp end do
+
+!$omp single
+        do k=1,nk
+           do j=1,nj
+              do i=1,ni
+                 Sols(i,j,k)= w3_8 (i,j,k)
+              enddo
+           enddo
+        enddo
+!$omp end single
 !
 !     ---------------------------------------------------------------
 !

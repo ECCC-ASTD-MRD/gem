@@ -12,39 +12,25 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r yyg_blend - Blending ut1, vt1 and zdt1 over
-!                  Yin-Yang total overlap region
 
-      subroutine yyg_blend
-      use dyn_fisl_options
-      use gem_timing
-      use step_options
-      use gmm_vt1
+!**s/r pw_update_UV - Update physical unstaggered horizonal wind
+!                     components pw_uu_plus and pw_vv_plus
+
+      subroutine pw_update_UV_hlt()
       use glb_ld
-      use yyg_param
+      use gmm_pw
+      use gmm_vt1
+      use omp_timing
       implicit none
-#include <arch_specific.hf>
+!     ________________________________________________________________
 !
-!----------------------------------------------------------------------
-!
-!$omp single
-      if (Schm_nblendyy                 >  0) then
-      if (mod(Step_kount,Schm_nblendyy) == 0) then
+      call gtmg_start (5, 'PW_UPDATE', 0)
 
-         call gemtime_start ( 7, 'YYG_BLEND', 0)
+      call hwnd_stag_hlt ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
+                           l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
 
-         call yyg_blend_sca ( zdt1, YYG_BLEN_q2q, &
-                              l_minx,l_maxx,l_miny,l_maxy,G_nk )
-
-         call yyg_blend_uv ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk )
-
-         call gemtime_stop (7)
-
-      end if
-      end if
-!$omp end single
-!
-!----------------------------------------------------------------------
+      call gtmg_stop (5)
+!     ________________________________________________________________
 !
       return
-      end subroutine yyg_blend
+      end subroutine pw_update_UV_hlt

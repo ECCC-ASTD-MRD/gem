@@ -74,7 +74,8 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (.not. Ctrl_testcases_L) return
+!$omp single
+      if (.not. Ctrl_testcases_L) goto 999
 
       Terminator_L = Dcmip_Terminator_L.or.Williamson_Terminator_L
 
@@ -83,7 +84,7 @@
       !-------------------
       if (F_action_S=="SET_ZETA") then
 
-         if (Dcmip_case==0.or.trim(Dynamics_Kernel_S)/='DYNAMICS_FISL_P') return
+         if (Dcmip_case==0.or.trim(Dynamics_Kernel_S)/='DYNAMICS_FISL_P') goto 999
 
          if (Lun_out > 0) then
             write (Lun_out,1005) G_nk,Hyb_rcoef
@@ -247,7 +248,7 @@
 
             call wil_uvcase1 (ut0,vt0,l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.,Lctl_step)
 
-            return
+            goto 999
 
          end if
 
@@ -264,7 +265,7 @@
              if (Dcmip_case==13) call dcmip_tracers13_transport (ut0,vt0,wt0,zdt0,bidon,bidon,bidon,bidon, &
                                                                  bidon,bidon,bidon,bidon,bidon,            &
                                                                  l_minx,l_maxx,l_miny,l_maxy,G_nk,.true.)
-             return
+             goto 999
 
          end if
 
@@ -434,9 +435,11 @@
          call handle_error(-1,'CANONICAL_CASES','F_action_S unknown')
 
       end if
+ 999  continue
 !
 !---------------------------------------------------------------------
 !
+!$omp end single
       return
 
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &

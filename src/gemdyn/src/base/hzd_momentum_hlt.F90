@@ -13,44 +13,43 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_theta - applies horizontal diffusion on theta
-!
-      subroutine hzd_theta
-      use hzd_exp
-      use gmm_pw
-      use gmm_vt1
-      use tdpack
-      use glb_ld
-      use lun
-      implicit none
+!**s/r hzd_momentum - applies horizontal diffusion on zdt and possibly on u and v
+!                     to smooth momentum components for trajectory calculations after
+!                     a Crank-Nicholson step avoiding pole problems
 
-      integer k
-      real, parameter :: p_naught=100000., eps=1.0e-5
-      real :: pres_t(l_ni,l_nj,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
+      subroutine hzd_momentum_hlt ()
+      use gmm_vt0
+      use hzd_exp_hlt
+      use HORgrid_options
+      use hvdif_options
+      use dyn_fisl_options
+      use mem_tstp
+      use glb_ld
+      implicit none
 !
 !-------------------------------------------------------------------
 !
+      if (Schm_hzdadw_L) then
 
-      do k=1,G_nk
-         pres_t(1:l_ni,1:l_nj,k) = (p_naught/pw_pt_plus(1:l_ni,1:l_nj,k))**cappa_8
-         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
-!NOTE: painting the halo regions in order to avoid float error when dble(X)
-!      under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
-         th(l_minx:0     ,:     ,k) = tcdk_8
-         th(l_ni+1:l_maxx,:     ,k) = tcdk_8
-         th(1:l_ni,l_miny:0     ,k) = tcdk_8
-         th(1:l_ni,l_nj+1:l_maxy,k) = tcdk_8
-      end do
+         call hzd_exp_deln ( ut0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_exp_deln ( vt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_exp_deln (zdt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
 
-      call hzd_exp_visco ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
+         if (Grd_yinyang_L) then
+!$omp single
+            call yyg_xchng (zdt0,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
+                            G_nk, .false., 'CUBIC', .false.)
+            call yyg_xchng_vec_uv2uv (ut0,vt0,l_minx,l_maxx,&
+                                      l_miny,l_maxy,G_nk)
+!$omp end single
+         end if
+      end if
 
-      do k=1,G_nk
-         tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &
-                                pres_t(1:l_ni,1:l_nj,k)
-      end do
-
+!$omp single
+      call hzd_smago_momentum()
+!$omp end single
 !
 !-------------------------------------------------------------------
 !
       return
-      end
+      end subroutine hzd_momentum_hlt

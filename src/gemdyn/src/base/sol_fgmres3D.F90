@@ -19,16 +19,19 @@
       use dyn_fisl_options
       use dynkernel_options
       use glb_ld
-      use lam_options
       use ldnh
       use sol
-      use opr
+      use lam_options
+      use omp_lib
+      use mem_tstp
+      use prec
       use ptopo
-      use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
+      include 'mpif.h'
+      include 'rpn_comm.inc'
       ! Initial guess on input, approximate solution on output
       real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(inout) :: solution
 
@@ -52,8 +55,6 @@
 
       real(kind=REAL64), intent(out) :: conv
 
-!Authors: A. Qdddouri & R. Aider  (2021)
-
       ! References
       !
       ! C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations, SIAM, 1995
@@ -62,87 +63,74 @@
       ! Y. Saad, Iterative Methods for Sparse Linear Systems. SIAM, 2003.
       ! (http://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf)
       !
-      ! Katarzyna Świrydowicz, Julien Langou, Shreyas Ananthan, Ulrike Meier Yang, Stephen Thomas
-      ! Low synchronization Gram-Schmidt and GMRES algorithms
-      ! To appear in Numerical Linear Algebra with Applications (TODO: update reference when paper is published)
-      !
+      ! K. Swirydowicz, J. Langou, S. Ananthan, U. Yang, and S. Thomas:
+      ! Low synchronization Gram–Schmidt and GMRES algorithms. United States: N. p., 2020. Web. doi:10.1002/nla.2343.
+      ! (https://onlinelibrary.wiley.com/doi/10.1002/nla.2343)
 
-      integer :: i, j, k, k0, k1, nk, ii, jj, ierr
-      integer :: initer, outiter, nextit, it
-      real(kind=REAL64) :: relative_tolerance, r0
-      real(kind=REAL64) :: norm_residual, nu, t
-      real(kind=REAL64), dimension(maxinner+1, maxinner) :: hessenberg
+      integer :: i, j, k, k0, k1, ii, jj, ierr
 
-      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk) :: work_space
-      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk, maxinner+1) :: vv
-      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy, l_nk,maxinner) :: wint_82
-      real(kind=REAL64), dimension(maxinner+1, maxinner+1) :: rr, tt
+      integer :: initer, outiter, it
+      real(kind=REAL64) ::   t
+      real(kind=REAL64) :: local_dot(2), glb_dot(2), l_avg_8(2), r_avg_8(2)
+      real(kind=REAL64), dimension(maxinner+1,2) :: v_local_prod, v_prod, v_avg_8
 
-      real(kind=REAL64) :: local_dot(2), glb_dot(2)
-      real(kind=REAL64), dimension(:,:), allocatable :: v_local_prod, v_prod
-
-      real(kind=REAL64), dimension(maxinner+1) :: rot_cos, rot_sin, gg
+      real(kind=REAL64) :: rrp
 
       logical almost_zero
 
-      real(kind=REAL64) :: ro2,rr2, temp
-      integer i0, in, j0, jn, ii0, iin, jj0, jjn
-      integer imin, imax, jmin, jmax
-      integer niloc,njloc, ni_val, nj_val
+      integer i0, in, j0, jn
+      integer niloc,njloc, nii, njj, nk
 
-      k0=1+Lam_gbpil_T
-      nk=l_nk-k0+1
+      nii = Sol_iin-Sol_ii0+1
+      njj = Sol_jjn-Sol_jj0+1
 
       niloc = (l_ni-pil_e)-(1+pil_w)+1
       njloc = (l_nj-pil_n)-(1+pil_s)+1
+      k0=1+Lam_gbpil_T
+      nk=l_nk-k0+1
 
       i0 = 1  + sol_pil_w
       in = l_ni - sol_pil_e
       j0 = 1  + sol_pil_s
       jn = l_nj - sol_pil_n
 
-      ii0  = 1    - ovlpx
-      iin  = l_ni + ovlpx
-      jj0  = 1    - ovlpy
-      jjn  = l_nj + ovlpy
-
-      imin = ii0
-      imax = iin
-      jmin = jj0
-      jmax = jjn
-
-      if (Ptopo_mycol==1)  ii0  = 0
-      if (Ptopo_mycol.eq.Ptopo_npex-2)  iin = l_ni+1
-      if (Ptopo_myrow==1)  jj0  = 0
-      if (Ptopo_myrow.eq.Ptopo_npey-2)  jjn = l_nj+1
-
-      if (l_east)  iin = l_ni-sol_pil_e
-      if (l_west)  ii0 = 1+sol_pil_w
-      if (l_north) jjn = l_nj-sol_pil_n
-      if (l_south) jj0 = 1+sol_pil_s
-      ni_val = iin-ii0+1
-      nj_val = jjn-jj0+1
-
       outiter = 0
       nbiter = 0
 
       conv = 0.d0
 
-      vv = 0.d0
-      wint_82 = 0.d0
+!$omp do
+            do it=1,maxinner+1
+               do k=1,l_nk
+                  do j=sol_jmin,sol_jmax
+                     do i=sol_imin,sol_imax
+                        vv(i,j,k,it) = 0.d0
+                        work_space(i,j,k) = 0.d0
+                     end do
+                  end do
+               end do
+            enddo
+!$omp end do
+!$omp do
+            do it=1,maxinner+1
+               do k=1,l_nk
+                  do j=sol_jj0,sol_jjn
+                     do i=sol_ii0,sol_iin
+                        wint_8(i,j,k,it) = 0.d0
+                     end do
+                  end do
+               end do
+            enddo
+!$omp end do
 
-      call matvec3D ( solution, work_space,ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy)
+      ! Residual of the initial iterate
+      call matvec3D ( solution, work_space,ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy, &
+                      sol_imin,sol_imax,sol_jmin,sol_jmax)
 
-      ! Index 1 : Compute ||b*b|| to determine the required error for convergence
+      !  Compute ||b*b|| to determine the required error for convergence
 
-      local_dot(1) = 0.0d0
-      do k=k0,l_nk
-         do j=j0,jn
-            do i=i0,in
-               local_dot(1) = local_dot(1) + (rhs_b(i,j,k)*rhs_b(i,j,k))
-            end do
-         end do
-      end do
+      local_dot(1)=0.d0
+!$omp do
       do k=k0,l_nk
          do j=j0,jn
             do i=i0,in
@@ -150,10 +138,23 @@
             end do
          end do
       end do
+!$omp enddo
+
+!$omp do
+      do k=k0,l_nk
+         do j=j0,jn
+            do i=i0,in
+               local_dot(1) = local_dot(1) + (rhs_b(i,j,k)*rhs_b(i,j,k))
+            end do
+         end do
+      end do
+!$omp enddo
+      thread_s(1,OMP_get_thread_num()) = local_dot(1)
+!$OMP BARRIER
 
       do
-
-         local_dot(2) = 0.0d0
+      local_dot(2)=0.d0
+!$omp single
          do k=k0,l_nk
             do j=j0,jn
                do i=i0,in
@@ -161,14 +162,21 @@
                end do
             end do
          end do
+!$omp end single
+         thread_s(2,OMP_get_thread_num()) = local_dot(2)
+!$OMP BARRIER
 
-         call RPN_COMM_allreduce(local_dot, glb_dot, 2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+!$omp single
+         l_avg_8(1) = sum(thread_s(1,:))
+         l_avg_8(2) = sum(thread_s(2,:))
 
-
+         call RPN_COMM_allreduce(l_avg_8, glb_dot, 2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
          r0 = sqrt(glb_dot(1))
          norm_residual = sqrt(glb_dot(2))
+!$omp end single
+!$OMP BARRIER
 
-         ! Scale tolerance according to the norm of b
+         ! Scale tolerance according to the norm of b;
          relative_tolerance = tolerance * r0
 
          ! Current guess is a good enough solution
@@ -177,6 +185,9 @@
          end if
 
          nu = 1.0d0 / norm_residual
+         conv = norm_residual / r0
+
+!$omp do
          do k=k0,l_nk
             do j=j0,jn
                do i=i0,in
@@ -184,122 +195,177 @@
                end do
             end do
          end do
-
-         conv = norm_residual / r0
+!$omp enddo
 
          ! initialize 1-st term of rhs of hessenberg system.
-         gg(1) = norm_residual
+         gg(1) =  norm_residual
          gg(2:) = 0.d0
 
-         tt = 0.d0
-         rr = 0.d0
+         tt = 0.
+         rr = 0.
 
-         initer = 0
-
-         do
+         do initer=1,maxinner
 
             nbiter = nbiter + 1
-            initer = initer + 1
-            nextit = initer + 1
-! Preconditionning RAS
-             call rpn_comm_xch_halo_8 (vv(:,:,k0:l_nk,initer) ,   &
-                                      imin, imax, jmin, jmax, l_ni, l_nj,nk, &
-                                      ovlpx, ovlpy, G_periodx, G_periody, l_ni,0 )
 
-            call pre_jacobi3D2 (wint_82(ii0:iin,jj0:jjn,:,initer),vv(ii0:iin,jj0:jjn,:,initer), &
-                                        ii0,iin,jj0,jjn,ni_val,nj_val,l_nk)
-!
+            ! Preconditionning: Restricted Additive Schwarz (RAS)
+!$omp single
+            call rpn_comm_xch_halo_8 (vv(:,:,k0:l_nk,initer),Sol_imin,Sol_imax,Sol_jmin,Sol_jmax, &
+                                      l_ni,l_nj,nk,ovlpx,ovlpy,G_periodx,G_periody,l_ni,0)
+!$omp end single
+            call pre_jacobi3D2 (wint_8(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), &
+                                    vv(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), nii,njj,l_nk)
 
-            call matvec3D (wint_82(:,:,:,initer),vv(:,:,:,nextit),imin,imax,jmin,jmax)
-
+            !Matrix-Vector product
+            call matvec3D (wint_8(:,:,:,initer),vv(:,:,:,initer+1),Sol_ii0,Sol_iin,Sol_jj0,Sol_jjn, &
+                           Sol_imin,Sol_imax,Sol_jmin,Sol_jmax)
 
             ! Modified Gram-Schmidt from Świrydowicz et al. (2018)
+                  v_local_prod  = 0.d0
+                  v_lcl_sum = 0.d0
+                  v_prod   = 0.d0
 
-            ! TODO : avoid memory allocation
-            allocate( v_local_prod(initer+1,3), v_prod(initer+1,3) )
-            v_local_prod = 0.d0 ; v_prod = 0.d0
-
+!$omp do
             do it=1,initer+1
                do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
                         v_local_prod(it,1) = v_local_prod(it,1) + ( vv(i, j, k, it) * vv(i, j, k, initer) )
-                        v_local_prod(it,2) = v_local_prod(it,2) + ( vv(i, j, k, it) * vv(i, j, k, nextit) )
+                        v_local_prod(it,2) = v_local_prod(it,2) + ( vv(i, j, k, it) * vv(i, j, k, initer+1) )
                      end do
                   end do
                end do
-            end do
+            enddo
+!$omp enddo
 
-            call RPN_COMM_allreduce(v_local_prod, v_prod, nextit*2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+            do it =1,initer+1
+               thread_s2(1,it,OMP_get_thread_num()) = v_local_prod(it,1)
+               thread_s2(2,it,OMP_get_thread_num()) = v_local_prod(it,2)
+            enddo
+!$omp BARRIER
 
-            tt(1:initer-1,initer) = v_prod(1:initer-1,1)
-            rr(initer,initer)     = v_prod(initer,1)
-            rr(1:initer,nextit)   = v_prod(1:initer,2)
-            ro2=v_prod(nextit,2)
+!$omp single
+            do it =1,initer+1
+               v_avg_8(it,1) = sum(thread_s2(1,it,:))
+            enddo
+            do it =1,initer+1
+               v_avg_8(it,2) = sum(thread_s2(2,it,:))
+            enddo
+            call RPN_COMM_allreduce(v_avg_8(1:initer+1,:), v_prod(1:initer+1,:), (initer+1)*2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
 
-            deallocate ( v_local_prod, v_prod)
+            do it=1,initer-1
+               tt(it,initer) = v_prod(it,1)
+            enddo
 
+            do it=1,initer
+               rr(it,initer+1) = v_prod(it,2)
+            enddo
+
+            rr(initer,initer) = v_prod(initer,1)
             rr(initer,initer) = sqrt( rr(initer,initer) )
-            vv(i0:in, j0:jn, 1:l_nk, initer)  = vv(i0:in, j0:jn, 1:l_nk, initer) / rr(initer,initer)
+            rr(initer,initer+1) = rr(initer,initer+1) / rr(initer,initer)
+            ro2 = v_prod(initer+1,2)
+!$omp end single
+!$omp BARRIER
 
-            rr(initer,nextit) = rr(initer,nextit) / rr(initer,initer)
 
-            if (nextit > 2) then
-               tt(1:initer-1, initer) = tt(1:initer-1, initer) / rr(initer,initer)
+
+!$omp do
+            do k=k0,l_nk
+               do j=j0,jn
+                  do i=i0,in
+                     vv(i, j, k, initer)  = vv(i, j, k, initer) / rr(initer,initer)
+                  enddo
+               enddo
+            enddo
+!$omp enddo
+
+
+!$omp single
+            if (initer > 1) then
+               do it=1,initer-1
+                  tt(it, initer) = tt(it, initer) / rr(initer,initer)
+               enddo
             end if
 
             tt(initer,initer) = 1.d0
             tt(1:initer-1, initer) = - matmul( tt(1:initer-1, 1:initer-1), tt(1:initer-1, initer) )
-            rr(1:initer,nextit) = matmul( transpose(tt(1:initer, 1:initer)), rr(1:initer,nextit) )
+            rr(1:initer,initer+1) = matmul( transpose(tt(1:initer, 1:initer)), rr(1:initer,initer+1) )
+!$omp end single
 
-            rr2=0.d0
+            ! Compute rr2=rr(:,initer+1)*rr(:,initer+1) needed in the computation of vv(:,:,:,initer+1) estimated norm
+            rrp=0.d0 ; rr2=0.d0
+!$omp do
             do i=1,initer
-                rr2=rr2 + rr(i,nextit)*rr(i,nextit)
+                rrp = rrp + rr(i,initer+1)*rr(i,initer+1)
             enddo
+!$omp enddo
+            thread_s(4,OMP_get_thread_num()) = rrp
+!$omp BARRIER
+!$omp single
+            rr2  = sum(thread_s(4,:))
+!$omp end single
 
             do it=1,initer
-               temp=rr(it,nextit)
+!$omp do
                do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
-                        vv(i, j, k, nextit) = vv(i, j, k, nextit) - vv(i, j, k, it) * temp
+                        vv(i, j, k, initer+1) = vv(i, j, k, initer+1) - vv(i, j, k, it) * rr(it,initer+1)
                      end do
                   end do
                end do
+!$omp enddo
             end do
 
-            ! Compute estimated norm nu=sqrt(ro2-rr2)
-            if( (ro2-rr2) > 0.) then
+            ! Compute estimated norm of vv(:,:,:,initer+1): from GHYSELS et al. (Journal of Scientific Computing 2013)
+              if( (ro2-rr2) > 0.) then
+!$omp single
                nu=sqrt(ro2-rr2)
-               rr(nextit,nextit) =  nu
-            ! Compute exact norm
+               rr(initer+1,initer+1) =  nu
+!$omp end single
+            ! Or in case (ro2-rr2)<= 0 compute exact norm
             else
-               local_dot = 0.d0
+
+               local_dot(1) = 0.d0; lcl_sum=0.d0
+!$omp do
                do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
-                        local_dot = local_dot + (vv(i, j, k, nextit) * vv(i, j, k, nextit))
+                        local_dot(1) = local_dot(1) + (vv(i, j, k, initer+1) * vv(i, j, k, initer+1))
                      end do
                   end do
                end do
-            call RPN_COMM_allreduce(local_dot,nu,1,"MPI_double_precision","MPI_sum","MULTIGRID",ierr)
-            rr(nextit,nextit) = sqrt(nu)
+!$omp enddo
+            thread_s(3,OMP_get_thread_num()) = local_dot(1)
+!$OMP BARRIER
+
+!$omp single
+            r_avg_8 = sum(thread_s(3,:))
+            call RPN_COMM_allreduce(r_avg_8,nu,1,"MPI_double_precision","MPI_sum","MULTIGRID",ierr)
+            rr(initer+1,initer+1) = sqrt(nu)
+!$omp end single
+!$OMP BARRIER
             endif
 
-            if ( .not. almost_zero( rr(nextit,nextit) ) ) then
-               nu = 1.d0 / rr(nextit,nextit)
-
+            if ( .not. almost_zero( rr(initer+1,initer+1) ) ) then
+               nu = 1.d0 / rr(initer+1,initer+1)
+!$omp do
                do k=k0,l_nk
                   do j=j0,jn
                      do i=i0,in
-                        vv(i, j, k, nextit) = vv(i, j, k, nextit) * nu
+                        vv(i, j, k, initer+1) = vv(i, j, k, initer+1) * nu
                      end do
                   end do
                end do
+!$omp enddo
 
             end if
 
-            hessenberg(1:nextit,initer) = rr(1:nextit,nextit)
+!$omp single
+            do it=1,initer+1
+               hessenberg(it,initer) = rr(it,initer+1)
+            enddo
 
             ! Form and store the information for the new Givens rotation
             if (initer > 1) then
@@ -309,29 +375,29 @@
                   hessenberg(k1,initer) = rot_cos(k1)*t + rot_sin(k1)*hessenberg(k,initer)
                   hessenberg(k,initer) = -rot_sin(k1)*t + rot_cos(k1)*hessenberg(k,initer)
                end do
-
             end if
 
-            nu = sqrt(hessenberg(initer,initer)**2 + hessenberg(nextit,initer)**2)
+            nu = sqrt(hessenberg(initer,initer)**2 + hessenberg(initer+1,initer)**2)
+
             if ( .not. almost_zero(nu) ) then
                nu = 1.d0 / nu
                rot_cos(initer) = hessenberg(initer,initer) * nu
-               rot_sin(initer) = hessenberg(nextit,initer) * nu
+               rot_sin(initer) = hessenberg(initer+1,initer) * nu
 
-               gg(nextit) = -rot_sin(initer) * gg(initer)
+               gg(initer+1) = -rot_sin(initer) * gg(initer)
                gg(initer) =  rot_cos(initer) * gg(initer)
 
-               hessenberg(initer,initer) = rot_cos(initer) * hessenberg(initer,initer) + rot_sin(initer) * hessenberg(nextit,initer)
-            end if
+               hessenberg(initer,initer) = rot_cos(initer) * hessenberg(initer,initer) + rot_sin(initer) * hessenberg(initer+1,initer)
 
-            norm_residual = abs(gg(nextit))
+            end if
+!$omp end single
+
+            norm_residual = abs(gg(initer+1))
 
             conv = norm_residual / r0
-
             if ((initer >= maxinner) .or. (norm_residual <= relative_tolerance)) then
                exit
-            end if
-
+            endif
          end do
 
 
@@ -339,7 +405,9 @@
          ! was reached or the absolute residual is below the scaled tolerance.
 
          ! Solve upper triangular system
-         gg(initer) = gg(initer) / hessenberg(initer,initer)
+!$omp single
+          gg(initer) = gg(initer) / hessenberg(initer,initer)
+
          do ii=2,initer
             k  = initer - ii + 1
             k1 = k + 1
@@ -349,41 +417,47 @@
             end do
             gg(k) = t / hessenberg(k,k)
          end do
+!$omp end single
 
          ! Form linear combination to get solution.
          do it=1,initer
-            t = gg(it)
 
+!$omp do
             do k=k0,l_nk
                do j=j0,jn
 !DIR$ SIMD
                   do i=i0,in
-                     solution(i, j, k) = solution(i, j, k) + t * wint_82(i, j, k, it)
+                     solution(i, j, k) = solution(i, j, k) + gg(it)* wint_8(i, j, k, it)
                   end do
                end do
             end do
+!$omp enddo
 
          end do
 
          outiter = outiter + 1
+
 
          if (norm_residual <= relative_tolerance .or. outiter >= maxouter) then
             return
          end if
 
          ! Solution is not convergent : compute residual vector and continue.
+!$omp  single
          do it=1,initer
-            jj = nextit - it + 1
+            jj = initer+1 - it + 1
             gg(jj-1) = -rot_sin(jj-1) * gg(jj)
             gg(jj)   =  rot_cos(jj-1) * gg(jj)
          end do
+!$omp end single
 
-         do it=1,nextit
+         do it=1,initer+1
             t = gg(it)
             if (it == 1) then
                t = t - 1.d0
             end if
 
+!$omp do
             do k=k0,l_nk
                do j=j0,jn
 !DIR$ SIMD
@@ -392,10 +466,11 @@
                   end do
                end do
             end do
+!$omp enddo
 
          end do
 
-      end do
+     end do
 
       return
       end

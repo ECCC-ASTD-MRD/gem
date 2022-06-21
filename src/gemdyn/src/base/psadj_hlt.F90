@@ -41,25 +41,34 @@
       include 'mpif.h'
       include 'rpn_comm.inc'
       logical :: LAM_L
-      integer :: err,i,j,k,empty_i,comm,dim,dimH
-      real :: empty,w1
-      real, dimension(:,:), pointer :: qts,delps
-      real(kind=REAL64),dimension(:  ), pointer :: g_avg_8
-      real(kind=REAL64),dimension(:,:), pointer :: p0_0_8,p0_1_8,fl_0_8,thread_sum
+      integer :: err,i,j,k,n,MAX_iteration,empty_i,comm,dim,dimH,dimV,dimHx,dimVx
+      real :: empty
+      real, dimension(:,:  ), pointer :: delq
+      real, dimension(:,:,:), pointer :: qt0i
+      real, dimension(:,:,:), pointer :: sumq
+      real(kind=REAL64),dimension(:    ), pointer :: g_avg_8
+      real(kind=REAL64),dimension(:,:  ), pointer :: p0_0_8,p0_1_8,fl_0_8,thread_sum
+      real(kind=REAL64),dimension(:,:  ), pointer :: p0_dry_0_8,p0_dry_1_8
       real(kind=REAL64) :: l_avg_8(2),g_avg_ps_1_8,g_avg_ps_0_8,g_avg_fl_0_8,substract_8,sum_lcl(2)
       real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors),gathS(Ptopo_numproc*Ptopo_ncolors)
-!     
+
 !---------------------------------------------------------------------
 !
       dimH= l_ni*l_nj
-      qts   (1:l_ni,1:l_nj) => WS1(1:)
-      delps (1:l_ni,1:l_nj) => WS1(dimH+1:)
+      dimHx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      dimV= l_ni*l_nj*l_nk
+      dimVx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      delq  (1:l_ni,1:l_nj) => WS1(1:)            ; dim=     dimH
+      sumq  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(dim+1:); dim=dim+dimVx
+      qt0i  (1:l_ni,1:l_nj,1:l_nk+1) => WS1(dim+1:)
       p0_0_8(1:l_ni,1:l_nj) => WS1_8(    1:) ; dim=       dimH
       p0_1_8(1:l_ni,1:l_nj) => WS1_8(dim+1:) ; dim=   dim+dimH
+      p0_dry_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimHx
+      p0_dry_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimHx
       fl_0_8(1:l_ni,1:l_nj) => WS1_8(dim+1:) ; dim= 2*dim+dimH
       thread_sum(1:2,0:OMP_get_max_threads()-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_get_max_threads()
       g_avg_8(1:2) => WS1_8(dim+1:) ; dim= dim+2
-      
+
       !Update Pressure PW_MOINS in accordance with TIME M
       !--------------------------------------------------
       call pressure_hlt ( pw_pm_moins,pw_pt_moins,pw_p0_moins,pw_log_pm,pw_log_pt, &
@@ -69,6 +78,9 @@
       LAM_L = .not.Grd_yinyang_L
 
 !!!! MUSTBE re-writen for OMP      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER DYNSTEP")
+!$omp single
+      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER DYNSTEP")
+!$omp end single
 
       if ( Schm_psadj == 0 ) return
 
@@ -76,13 +88,14 @@
 
       if ( LAM_L .and. Init_mode_L ) return
 
-      comm = RPN_COMM_comm ('MULTIGRID')
       substract_8 = 1.0d0
+      if (LAM_L) substract_8 = 0.0d0
+
+      comm = RPN_COMM_comm ('MULTIGRID')
 
       !LAM: Estimate FLUX_out/FLUX_in and Evaluate water tracers at TIME M
       !-------------------------------------------------------------------
       if (LAM_L) then
-         substract_8 = 0.0d0
          Adz_flux => Adz_flux_3CWP_PS
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
@@ -98,9 +111,12 @@
          end do
 !$omp end do nowait
 
-         !Obtain Surface pressure minus Cstv_pref_8
-         !-----------------------------------------
-         if (Adz_k0t==1) then
+
+         !Obtain Wet Surface pressure minus Cstv_pref_8 at TIME P
+         !-------------------------------------------------------
+         if (Schm_psadj==1) then
+
+           if (Adz_k0t==1) then
 !$omp do
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
@@ -108,7 +124,7 @@
                end do
             end do
 !$omp end do
-         else
+           else
 !$omp do
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
@@ -116,7 +132,25 @@
                end do
             end do
 !$omp end do
-         endif
+           endif
+
+         endif !Schm_psadj==1
+
+         !Compute Dry surface pressure at TIME P (Schm_psadj==2)
+         !------------------------------------------------------
+         if (Schm_psadj==2) then
+            call dry_sfc_pressure_hlt_8(p0_dry_1_8,pw_pm_plus_8,pw_p0_plus_8,sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
+         !Obtain Wet Surface pressure minus Cstv_pref_8
+         !---------------------------------------------
+!$omp do
+            do j=1+pil_s,l_nj-pil_n
+               do i=1+pil_w,l_ni-pil_e
+                  p0_1_8(i,j) = p0_dry_1_8(i,j) - substract_8*Cstv_pref_8
+               end do
+            end do
+!$omp end do
+         endif !Schm_psadj==2
+
          !Estimate air mass on CORE at TIME P
          !-----------------------------------
          sum_lcl= 0.d0
@@ -137,44 +171,74 @@
 !$omp end single
 
          g_avg_ps_1_8 = g_avg_8(1) * PSADJ_scale_8
-         
+
       else
 
          g_avg_ps_1_8 = PSADJ_g_avg_ps_initial_8
 
       end if
-      
-!$omp do
-      do j= 1, l_nj
-         do i= 1, l_ni
-            qts(i,j) = qt0(i,j,l_nk+1)
-         end do
-      end do
-!$omp end do
 
-      !Obtain Surface pressure minus Cstv_pref_8
-      !-----------------------------------------
-      if (Adz_k0t==1) then
-!$omp do
-         do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               p0_0_8(i,j) = pw_p0_moins_8(i,j) - substract_8*Cstv_pref_8 
-            end do
-         end do
-!$omp end do
-      else
-!$omp do
-         do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               p0_0_8(i,j) = pw_pm_moins_8(i,j,l_nk+1) - pw_pm_moins_8(i,j,Adz_k0t) - substract_8*Cstv_pref_8 
-            end do
-         end do
-!$omp end do
-      endif
+      MAX_iteration = 10
+      if (Schm_psadj==1) MAX_iteration = 1
 
-      !Obtain FLUX on NEST+CORE at TIME M
-      !----------------------------------
-      if (LAM_L) then
+      do n = 1, MAX_iteration
+
+        if (n==1) then
+!$omp do collapse(2)
+          do k=1,l_nk+1
+            do j=1+pil_s,l_nj-pil_n
+              do i=1+pil_w,l_ni-pil_e
+                 qt0i(i,j,k) = qt0(i,j,k)
+              end do
+            end do
+          end do
+!$omp end do
+        endif
+
+
+
+        !Obtain Wet Surface pressure minus Cstv_pref_8 at time M (Schm_psadj==1)
+        !-----------------------------------------------------------------------
+        if (Schm_psadj==1) then
+
+          if (Adz_k0t==1) then
+!$omp do
+           do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               p0_0_8(i,j) = pw_p0_moins_8(i,j) - substract_8*Cstv_pref_8
+            end do
+           end do
+!$omp end do
+          else
+!$omp do
+           do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               p0_0_8(i,j) = pw_pm_moins_8(i,j,l_nk+1) - pw_pm_moins_8(i,j,Adz_k0t) - substract_8*Cstv_pref_8
+            end do
+           end do
+!$omp end do
+          endif
+
+        endif !Schm_psadj==1
+
+        !Compute Dry surface pressure at TIME M (Schm_psadj==2)
+        !------------------------------------------------------
+        if (Schm_psadj==2) then
+        call dry_sfc_pressure_hlt_8(p0_dry_0_8,pw_pm_moins_8,pw_p0_moins_8,sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'M')
+!$omp do
+          !Obtain Dry Surface pressure minus Cstv_pref_8
+          !---------------------------------------------
+          do j=1+pil_s,l_nj-pil_n
+             do i=1+pil_w,l_ni-pil_e
+               p0_0_8(i,j) = p0_dry_0_8(i,j) - substract_8*Cstv_pref_8
+             end do
+          end do
+!$omp end do
+        endif
+
+        !Obtain FLUX on NEST+CORE at TIME M
+        !----------------------------------
+        if (LAM_L) then
 !$omp do
          do j=Adz_j0b,Adz_jnb
             do k=1,l_nk
@@ -185,19 +249,22 @@
             end do
          end do
 !$omp end do
-      end if
+        end if
 
-      sum_lcl= 0.d0 ; g_avg_8= 0.d0
+        sum_lcl(1)= 0.d0
+        sum_lcl(2)= 0.d0
+        g_avg_8(1)= 0.d0
+        g_avg_8(2)= 0.d0
 !$omp do
-      do j=1+pil_s,l_nj-pil_n
+        do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
             sum_lcl(1)= sum_lcl(1) +  p0_0_8(i,j) * geomh_area_mask_8(i,j)
          end do
-      end do
+        end do
 !$omp end do nowait
-      thread_sum(1,OMP_get_thread_num()) = sum_lcl(1)
+        thread_sum(1,OMP_get_thread_num()) = sum_lcl(1)
 
-      if (LAM_L) then
+        if (LAM_L) then
 !$omp do
          do j=Adz_j0b,Adz_jnb
             do i=Adz_i0b,Adz_inb
@@ -215,22 +282,22 @@
             g_avg_8(i) = sum(gathV(i,:))
          end do
 !$omp end single
-      else
+        else
 !$OMP BARRIER
 !$omp single
          l_avg_8(1) = sum(thread_sum(1,:))
          call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
          g_avg_8(1) = sum(gathS)
 !$omp end single
-      endif
+        endif
 
-      g_avg_ps_0_8 = g_avg_8(1) * PSADJ_scale_8
-      g_avg_fl_0_8 = g_avg_8(2) * PSADJ_scale_8
+        g_avg_ps_0_8 = g_avg_8(1) * PSADJ_scale_8
+        g_avg_fl_0_8 = g_avg_8(2) * PSADJ_scale_8
 
-      !Correct surface pressure in order to preserve air mass on CORE (taking FLUX mass into account in LAM)
-      !-----------------------------------------------------------------------------------------------------
+        !Correct surface pressure in order to preserve air mass on CORE (taking FLUX mass into account in LAM)
+        !-----------------------------------------------------------------------------------------------------
 !$omp do
-      do j=1+pil_s,l_nj-pil_n
+        do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
             if (fis0(i,j) > 1.) then ! bad coding ???
                pw_p0_moins_8(i,j) = pw_p0_moins_8(i,j) + &
@@ -242,39 +309,36 @@
             qt0(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8 * &
                     (log(pw_p0_moins_8(i,j))-GVM%lg_pstar_8(i,j,l_nk+1))
          end do
-      end do
+        end do
 !$omp end do
 
-      !Adjust q at the other vertical levels at TIME M
-      !-----------------------------------------------
+        !Adjust q at the other vertical levels at TIME M
+        !-----------------------------------------------
 !$omp do
-      do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            delps(i,j) = exp(GVM%lg_pstar_8(i,j,l_nk+1))*&
-                        (exp(qt0(i,j,l_nk+1)/(rgasd_8*Cstv_Tstr_8))-&
-                         exp(qts(i,j)/(rgasd_8*Cstv_Tstr_8)))
-         end do
-      end do
+        do j=1+pil_s,l_nj-pil_n
+          do i=1+pil_w,l_ni-pil_e
+            delq(i,j) = qt0(i,j,l_nk+1) - qt0i(i,j,l_nk+1)
+          end do
+        end do
 !$omp end do
 
 !$omp do collapse(2)
-      do k=1,l_nk
-         do j=1+pil_s,l_nj-pil_n
+        do k=1,l_nk
+          do j=1+pil_s,l_nj-pil_n
             do i=1+pil_w,l_ni-pil_e
-               w1 = exp(qt0(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k))
-               qt0(i,j,k) = rgasd_8*Cstv_Tstr_8*&
-                         (log(w1+delps(i,j)*exp(GVM%lg_pstar_8(i,j,k))/&
-                          exp(GVM%lg_pstar_8(i,j,l_nk+1)))-GVM%lg_pstar_8(i,j,k))
+                qt0(i,j,k) =  qt0i(i,j,k) + delq(i,j)
             end do
-         end do
-      end do
+          end do
+        end do
 !$omp end do
 
-      !Update Pressure PW_MOINS in accordance with TIME M
-      !--------------------------------------------------
-      call pressure_hlt ( pw_pm_moins,pw_pt_moins,pw_p0_moins,pw_log_pm,pw_log_pt, &
-                          pw_pm_moins_8,pw_p0_moins_8, &
-                          l_minx,l_maxx,l_miny,l_maxy,l_nk,0 )
+        !Update Pressure PW_MOINS in accordance with TIME M
+        !--------------------------------------------------
+        call pressure_hlt ( pw_pm_moins,pw_pt_moins,pw_p0_moins,pw_log_pm,pw_log_pt, &
+                            pw_pm_moins_8,pw_p0_moins_8, &
+                            l_minx,l_maxx,l_miny,l_maxy,l_nk,0 )
+      end do !END MAX_iteration
+
 !$omp single
       if ( Schm_psadj_print_L.and.Lun_out>0.and.Ptopo_couleur==0 ) then
          write(Lun_out,*)    ''
@@ -285,8 +349,12 @@
          write(Lun_out,*)    '------------------------------------------------------------------------------'
 
       end if
-!$omp end single
+
 !!!! MUSTBE re-writen for OMP      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER PSADJ")
+
+      if ( Schm_psadj_print_L ) call stat_psadj (0,"AFTER PSADJ")
+
+!$omp end single
 
  1004 format(1X,A15,E19.12,A3,E19.12,A3,E19.12)
 !

@@ -22,6 +22,7 @@
       use step_options
       use theo_options
       use omp_timing
+      use gmm_pw
       implicit none
 
       integer icn, keep_itcn
@@ -30,15 +31,15 @@
 !
       keep_itcn = Schm_itcn
 
-      call psadj_init ( Step_kount )
-
 !$omp parallel
+      call psadj_init_hlt ( Step_kount )
+
       call gtmg_start (10, 'DYNSTEP', 10)
       do icn = 1,Schm_itcn-1
 
          call fislh_tstpdyn (icn) ! Solver NOT done yet
 
-         call hzd_momentum() ! NOT done yet
+         call hzd_momentum_hlt ()
 
       end do
 
@@ -54,19 +55,19 @@
       call gtmg_stop (10)
 
       call t02t1()
-!$omp end parallel
 
-      call HOR_bndry ()
+      call HOR_bndry_hlt ()
 
       call canonical_cases ("VRD")
 
-      call hzd_main ()
+      call hzd_main_hlt ()
 
       if (Grd_yinyang_L) call yyg_blend()
 
-      call pw_update_GW()
-      call pw_update_UV()
-      call pw_update_T()
+      call pw_update_GW_hlt ()
+      call pw_update_UV_hlt ()
+      call pw_update_T_hlt  ()
+!$omp end parallel
 
       if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
 

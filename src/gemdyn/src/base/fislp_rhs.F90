@@ -189,7 +189,7 @@
                xtmp_8(i,j) = F_t(i,j,k) / Cstv_Tstr_8
             end do
          end do
-         call gem_vlog( ytmp_8, xtmp_8, nij )
+         ytmp_8= log(xtmp_8)
          do j= j0, jn
             do i= i0, in
                w1=Ver_wpstar_8(k)*BsPq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPq(i,j,k)+BsPq(i,j,km))
@@ -207,7 +207,7 @@
                                  + Ver_dcdz_8%m(k) * F_sl(i,j)
             end do
          end do
-         call gem_vlog( ytmp_8, xtmp_8, nij)
+         ytmp_8= log(xtmp_8)
          do j = j0, jn
             do i = i0, in
                tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomh_invDXM_8(j) &

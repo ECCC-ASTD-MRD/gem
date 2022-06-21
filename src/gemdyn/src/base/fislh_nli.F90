@@ -74,7 +74,8 @@
 
 !$omp do
       do k=1, l_nk
-         logQ(0,0,k)=0.
+         logQ(:,0,k)=0.
+         logQ(0,:,k)=0.
       end do
 !$omp enddo nowait
 !$omp do collapse(2)

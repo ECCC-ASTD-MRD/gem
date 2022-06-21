@@ -408,7 +408,7 @@ contains
  1000    format(/A,' W: ',1pe13.6, &
                    ' U: ',1pe13.6, &
                    ' S: ',1pe13.6, &
-                  ', Mem: ',i7,' (Kbytes/PE) ',a)
+                  ', Mem: ',i8,' (Kbytes/PE) ',a)
  1001    format(/'ACCUMULATED TIME: W: ',1pe13.6, &
                    ' U: ',1pe13.6, &
                    ' S: ',1pe13.6)

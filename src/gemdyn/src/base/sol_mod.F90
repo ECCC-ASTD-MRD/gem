@@ -20,7 +20,6 @@ module sol
    public
    save
 
-
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH THE SOLVER                                |
@@ -39,13 +38,13 @@ module sol
 ! sol_stencilp         | stencils for P coordinates MATVEC               |
 !-------------------------------------------------------------------------
 
-
    character(len=4) :: Sol_type_fft
    integer :: sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
    integer :: sol_niloc,sol_njloc,sol_nloc,sol_nk,Sol_sock_nk
    integer :: sol_i0,sol_in,sol_j0,sol_jn,sol_numank
    integer :: Sol_miny,Sol_maxy,Sol_mink,Sol_maxk
    integer :: Sol_ldni, Sol_istart, Sol_iend
+   integer :: Sol_ii0,Sol_iin,Sol_jj0,Sol_jjn,Sol_imin,Sol_imax,Sol_jmin,Sol_jmax
 
    real, dimension(:,:,:), allocatable :: Sol_rhs
 
@@ -66,9 +65,17 @@ module sol
    !  Each array is in (k,i,j) order.
    !  - Sol_xpose contains the 4D working array (lni, lnj, lnk, npex) for the improved
    !              MPI transposer
-   real(kind=REAL64), dimension(:,:,:  ), contiguous, pointer :: Sol_a,Sol_b,Sol_c,Sol_fft
+   real(kind=REAL64), dimension(:,:,:), contiguous, pointer :: Sol_a,Sol_b,Sol_c,Sol_fft
    real(kind=REAL64), dimension(:,:,:,:), contiguous, pointer :: Sol_xpose
    real(kind=REAL64), dimension(:,:,:  ), pointer :: Sol_saved=>null()
+
+      real(kind=REAL64) :: norm_residual, relative_tolerance, nu , r0, rr2, ro2, lcl_sum(2)
+      real(kind=REAL64),dimension(:      ), allocatable :: gg,rot_cos, rot_sin
+      real(kind=REAL64),dimension(:,:    ), allocatable :: v_lcl_sum,rr,tt, hessenberg,thread_s
+      real(kind=REAL64),dimension(:,:,:  ), allocatable :: work_space,thread_s2,fdg,w2_8,w3_8
+      real(kind=REAL64),dimension(:,:,:,:), allocatable :: vv, wint_8
+      real(kind=REAL64),dimension(:,:,:,:), allocatable :: A1,A2,B1,B2,C1,C2
+      real             ,dimension (:,:,: ), allocatable :: fdg2
 
    ! Normalization factor for the FFT
    real(kind=REAL64) :: Sol_pri

@@ -69,23 +69,29 @@ module hvdif_options
    namelist /hvdif_p/ Hzd_smago_prandtl_hu
 
    !# Coefficient of background diffusion added to the coefficient computed using the
-   !# Smagorinsky approach. The first element of the array determines the constant value
-   !# of background diffusion coeff. below Hzd_smago_lev(1). The second element represents
-   !# the value at Hzd_smago_lev(2). The third element determines the maximum coefficient
-   !# at the model top. Two ramps of COS^2-type are used between Hzd_smago_lev(1) and
-   !# Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid.
-   real, dimension(3):: Hzd_smago_lnr = [ -1., 0., -1. ]
+   !# Smagorinsky approach. Two options are available.
+   !# (i)  Fixed background diffusion: Just assign a single value, e.g., 0.2, and the resultant
+   !#      diffusion will be similar to standard del-2 diffusion with Hzd_lnr=0.2.
+   !# (ii) Vertically variable diffusion: Takes three values. The first element of the array determines
+   !#      the constant value of background diffusion coeff. below Hzd_smago_lev(1). The second
+   !#      the value at Hzd_smago_lev(2). The third element determines the maximum coefficient
+   !#      element represents at the model top. Two ramps of COS^2-type are used between
+   !#      Hzd_smago_lev(1) and Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid.
+   real, dimension(3):: Hzd_smago_lnr = [ -1., -1., -1. ]
    namelist /hvdif  / Hzd_smago_lnr
    namelist /hvdif_p/ Hzd_smago_lnr
 
    !# The levels (bot,top) in the hybrid coordinate where the background diffusion
    !# coefficient varies between the value defined by Hzd_smago_lnr(1) and Hzd_smago_lnr(2).
-   real, dimension(2):: Hzd_smago_lev = [ 0.7, 0.4 ]
+   !# In GEM-P: the values should be in the units of hyb, e.g. Hzd_smago_lev = 0.7, 0.4
+   !# In GEM-H: the values should be in the units of hyb_H, e.g. Hzd_smago_lev = 3000., 7500.
+
+   real, dimension(2):: Hzd_smago_lev = [ -1., -1. ]
    namelist /hvdif  / Hzd_smago_lev
    namelist /hvdif_p/ Hzd_smago_lev
 
    !# If TRUE then background diffusion is applied to THETA and HU.
-   logical :: Hzd_smago_theta_base_L = .true.
+   logical :: Hzd_smago_theta_base_L = .false.
    namelist /hvdif  / Hzd_smago_theta_base_L
    namelist /hvdif_p/ Hzd_smago_theta_base_L
 

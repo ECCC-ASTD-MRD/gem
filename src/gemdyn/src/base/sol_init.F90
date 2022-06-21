@@ -46,6 +46,10 @@
          FISLH_LHS_metric_L = .false.
       endif
 
+      if ((Schm_autobar_L) .and. dynamics_Kernel_S == 'DYNAMICS_FISL_H') then
+         FISLH_LHS_metric_L = .false.
+      endif
+
       isol_i = 1.0d0
       isol_d = 0.0d0
 
@@ -70,11 +74,6 @@
                write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol3D_krylov_S =', Sol3D_krylov_S
                return
                endif
-               call gmm_build_meta4D (savemeta,  1,l_ni,0,0,l_ni,&
-                                                 1,l_nj,0,0,l_nj,&
-                                                 1,l_nk,0,0,l_nk,&
-                                       0,0,0,0,0,0,GMM_NULL_FLAGS)
-               istat= gmm_create('SOL_SAVED',Sol_saved,savemeta, GMM_FLAG_RSTR+GMM_FLAG_IZER)
             case('ITERATIVE_2D')
                if (sol2D_precond_S /= 'JACOBI'  .and.  sol2D_precond_S /= 'REDBLACK'  ) then
                if (Lun_out > 0) &

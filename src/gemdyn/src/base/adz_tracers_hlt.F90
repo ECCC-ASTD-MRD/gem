@@ -65,7 +65,7 @@
 
       !Resetting done at each timestep before calling adz_post_tr
       !----------------------------------------------------------
-      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0 .and. after_psadj_L) call set_post_tr ()
+      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0 .and. after_psadj_L) call set_post_tr_hlt ()
 
       if (Tr3d_ntrTRICUB_WP>0) then
          call gtmg_start (37, 'TRICUB_WP', 33)

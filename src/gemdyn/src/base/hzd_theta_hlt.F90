@@ -15,42 +15,53 @@
 
 !**s/r hzd_theta - applies horizontal diffusion on theta
 !
-      subroutine hzd_theta
-      use hzd_exp
+      subroutine hzd_theta_hlt
+      use hzd_exp_hlt
       use gmm_pw
       use gmm_vt1
       use tdpack
+      use gem_options
       use glb_ld
-      use lun
+      use hvdif_options
+      use mem_tstp
       implicit none
 
-      integer k
+      integer i,j,k,dim
       real, parameter :: p_naught=100000., eps=1.0e-5
-      real :: pres_t(l_ni,l_nj,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
+      real, dimension(:,:,:), pointer :: pres_t, th, wk
 !
 !-------------------------------------------------------------------
 !
+      dim= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      pres_t (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(      1:)
+      th     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(  dim+1:)
+      wk     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(2*dim+1:)
 
+!$omp do collapse(2)
       do k=1,G_nk
-         pres_t(1:l_ni,1:l_nj,k) = (p_naught/pw_pt_plus(1:l_ni,1:l_nj,k))**cappa_8
-         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
-!NOTE: painting the halo regions in order to avoid float error when dble(X)
-!      under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
-         th(l_minx:0     ,:     ,k) = tcdk_8
-         th(l_ni+1:l_maxx,:     ,k) = tcdk_8
-         th(1:l_ni,l_miny:0     ,k) = tcdk_8
-         th(1:l_ni,l_nj+1:l_maxy,k) = tcdk_8
+         do j=1-G_haloy, l_nj+G_haloy
+            do i=1-G_halox, l_ni+G_halox
+               pres_t(i,j,k)= (p_naught/pw_pt_plus(i,j,k))**cappa_8
+               th    (i,j,k)= tt1(i,j,k) * pres_t(i,j,k)
+            end do
+         end do
       end do
+!$omp end do
 
-      call hzd_exp_visco ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
+      call hzd_exp_deln ( th, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+                             l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
+!$omp do collapse(2)
       do k=1,G_nk
-         tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &
-                                pres_t(1:l_ni,1:l_nj,k)
+         do j=1, l_nj
+            do i=1, l_ni
+               tt1(i,j,k)= th(i,j,k) / pres_t(i,j,k)
+            end do
+         end do
       end do
-
+!$omp end do
 !
 !-------------------------------------------------------------------
 !
       return
-      end
+      end subroutine hzd_theta_hlt

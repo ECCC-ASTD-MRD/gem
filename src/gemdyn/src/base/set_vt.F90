@@ -22,6 +22,7 @@
       use gmm_vth
       use mem_tracers
       use gmm_tracers
+      use gmm_geof
       use gmm_pw
       use gmm_smag
       use gmm_phy
@@ -52,7 +53,7 @@
       dimh= (l_maxx-l_minx+1) * (l_maxy-l_miny+1)
       dim = dimH * (6*l_nk + 2)
       gmm_nbplans = dim
-      
+
       call gmm_build_meta1D ( mymeta, 1,dim,0,0,dim, &
                               0,GMM_NULL_FLAGS )
 
@@ -60,11 +61,11 @@
       istat = min(gmm_create('DYNT2',dynt2,mymeta,flag_r_n),istat)
       istat = min(gmm_create('DYNT1',dynt1,mymeta,flag_r_n),istat)
       istat = min(gmm_create('DYNT0',dynt0,mymeta,flag_r_n),istat)
-      
+
       allocate (timlvl2(7),timlvl1(7),timlvl0(7))
 
       dim = dimH * l_nk
-      
+
       timlvl2(1)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(      1:)
       timlvl2(2)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(  dim+1:)
       timlvl2(3)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(2*dim+1:)
@@ -80,7 +81,7 @@
       istat= min(gmm_create(gmmk_wt2_s ,timlvl2(5)%pntr_3d,meta3d_nk ,0),istat)
       istat= min(gmm_create(gmmk_zdt2_s ,timlvl2(6)%pntr_3d,meta3d_nk ,0),istat)
       istat= min(gmm_create(gmmk_st2_s ,timlvl2(1)%pntr_2d,meta2d ,0),istat)
-      
+
       timlvl1(1)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(      1:)
       timlvl1(2)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(  dim+1:)
       timlvl1(3)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(2*dim+1:)
@@ -208,6 +209,9 @@
       istat = min(gmm_create(gmmk_airm1_s,airm1,meta3d_nk,flag_r_n),istat)
       istat = min(gmm_create(gmmk_airm0_s,airm0,meta3d_nk,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pkps_s ,pkps ,meta3d_nk,flag_r_n),istat)
+
+      istat = min(gmm_create(gmmk_dgzm_s   ,dgzm  ,meta3d_nk  ,0),istat)
+      istat = min(gmm_create(gmmk_dgzt_s   ,dgzt  ,meta3d_nk  ,0),istat)
 
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR_CONS/*)')

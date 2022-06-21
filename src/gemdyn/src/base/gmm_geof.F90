@@ -38,6 +38,8 @@ module gmm_geof
       real, pointer, contiguous, dimension (:,:,:) :: topo_high => null()
       real, pointer, contiguous, dimension (:,:) :: me_full => null()
       real, pointer, contiguous, dimension (:,:) :: me_large => null()
+      real, pointer, contiguous, dimension (:,:,:) :: dgzm     => null()
+      real, pointer, contiguous, dimension (:,:,:) :: dgzt     => null()
 
       integer, parameter :: MAXNAMELENGTH = 32
 
@@ -48,5 +50,7 @@ module gmm_geof
       character(len=MAXNAMELENGTH), parameter :: gmmk_topo_high_s = 'TOPOHIGH'
       character(len=MAXNAMELENGTH), parameter :: gmmk_me_full_s   = 'MEFULL'
       character(len=MAXNAMELENGTH), parameter :: gmmk_me_large_s  = 'MELARGE'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_dgzm_s      = 'DGZM'
+      character(len=MAXNAMELENGTH), parameter :: gmmk_dgzt_s      = 'DGZT'
 
 end module gmm_geof
