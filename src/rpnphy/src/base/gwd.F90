@@ -26,7 +26,7 @@ contains
         std_p_prof, tau, kount, trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
-      use tdpack_const, only: CAPPA, GRAV, RGASD
+      use tdpack_const, only: CAPPA_8, GRAV, RGASD
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -173,30 +173,16 @@ contains
       do k=1,nkm1-1
          do j=1,ni
             s1(j,k) = 0.5*(s(j,k)+s(j,k+1))
-            s2(j,k) = dble(s(j,k))
+            s3(j,k) = exp(CAPPA_8*log(s1(j,k)))
+            s2(j,k) = exp(CAPPA_8*log(dble(s(j,k))))
          enddo
-         call gem_vlog(s3(1,k), s1(1,k), ni)
-         call gem_vlog(s2(1,k), s2(1,k), ni)
-         do j=1,ni
-            s3(j,k) = CAPPA*s3(j,k)
-            s2(j,k) = CAPPA*s2(j,k)
-         enddo
-         call gem_vexp(s3(1,k), s3(1,k), ni)
-         call gem_vexp(s2(1,k), s2(1,k), ni)
       enddo
 
       do j=1,ni
          s1(j,nkm1) = 0.5*(s(j,nkm1)+1.)
-         s2(j,nkm1) = dble(s(j,nkm1))
+         s3(j,nkm1) = exp(CAPPA_8*log(s1(j,nkm1)))
+         s2(j,nkm1) = exp(CAPPA_8*log(dble(s(j,nkm1))))
       enddo
-      call gem_vlog(s3(1,nkm1), s1(1,nkm1), ni)
-      call gem_vlog(s2(1,nkm1), s2(1,nkm1), ni)
-      do j=1,ni
-         s3(j,nkm1) = CAPPA*s3(j,nkm1)
-         s2(j,nkm1) = CAPPA*s2(j,nkm1)
-      enddo
-      call gem_vexp(s3(1,nkm1), s3(1,nkm1), ni)
-      call gem_vexp(s2(1,nkm1), s2(1,nkm1), ni)
 
       IF_SGO16: if (gwdrag == 'SGO16') then
          if (timings_L) call timing_start_omp(418, 'gwdsgo', 417)

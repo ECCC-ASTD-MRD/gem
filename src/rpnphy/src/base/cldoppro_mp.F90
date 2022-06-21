@@ -107,12 +107,12 @@ contains
 
     integer, dimension(ni) :: ih, ib, ih2, ib2, ih3, ib3 
 
-    real, dimension(ni) :: trmin, tmem, tot, att, z_exp
+    real, dimension(ni) :: trmin, tmem
     real, dimension(ni) :: trmin2, tmem2
     real, dimension(:), allocatable :: tausimp, omsimp, gsimp, taulimp, omlimp, glimp
 
     real, dimension(ni,nkm1) :: transmissint, trans_exp, trav2d
-    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
+    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, dp
     real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
 
     real, dimension(ni,nk,nk) :: ff,ff2
@@ -120,7 +120,7 @@ contains
 
     logical :: nostrlwc, readfield_L
     integer :: i, j, k, kind, ip, l, mpcat, istat1, istat2
-    real :: rec_grav, cut, press
+    real :: rec_grav, cut, press, tot
     real :: rew1, rew2, rew3, dg, dg2, dg3, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, y3
     real :: taulw, omlw, glw, tauli, omli, gli
     real :: tauswmp, omswmp, gswmp
@@ -198,8 +198,8 @@ contains
     MKPTR2Dm1(zsnow, qnplus, dbus)
     MKPTR2Dm1(ztmoins, tmoins, dbus)
 
-    call init2nan(trmin, tmem, tot, att, z_exp)
-    call init2nan(transmissint, trans_exp, trav2d, aird, rew, rei, rec_cdd, vs1, dp)
+    call init2nan(trmin, tmem)
+    call init2nan(transmissint, trans_exp, trav2d, aird, rew, rei, rec_cdd, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
     call init2nan(ff, iwcinmp, iwpinmp, effradi)
 
@@ -530,13 +530,7 @@ contains
              rec_cdd(i,k) = 0.002
           endif
           aird(i,k) = sig(i,k) * ps(i) / ( tt(i,k) * RGASD )  !aird is air density in kg/m3
-          vs1(i,k) = liqwcin(i,k) * aird(i,k) * rec_cdd(i,k)
-       end do
-    end do
-    call gem_vspown1(rew, vs1, THIRD, nkm1 * ni)
-
-    do k = 1, nkm1
-       do i = 1, ni
+          rew(i,k) = (liqwcin(i,k) * aird(i,k) * rec_cdd(i,k))**THIRD
           rew(i,k) = min(max(4., 754.6 * rew(i,k)), 17.0)
        end do
     end do
@@ -548,13 +542,7 @@ contains
     if (ioptrei == 1) then
        do k = 1, nkm1
           do i = 1, ni
-             vs1(i,k) = 1000. * icewcin(i,k) * aird(i,k)
-          enddo
-       enddo
-       call gem_vspown1(rei, vs1, 0.216, nkm1 * ni)
-
-       do k = 1, nkm1
-          do i = 1, ni
+             rei(i,k) = (1000. * icewcin(i,k) * aird(i,k))**0.216
              rei(i,k) = max(min(83.8*rei(i,k), 50.0), 20.0)
           end do
        end do
@@ -856,7 +844,6 @@ contains
     !
     do k = 1, nkm1
        do i = 1, ni
-          vs1(i,k) = - 1.64872 * taucl(i,k,6)
           if (sig(i,k) <= rad_siglim(4)) ih(i) = k
           if (sig(i,k) <= rad_siglim(3)) ib(i) = k
        enddo
@@ -872,12 +859,11 @@ contains
        enddo
     endif
 
-    call gem_vsexp(trans_exp, vs1, ni*nkm1)
-
     do i = 1, ni
        zctp(i) = 110000.
        zctt(i) = 310.
        top(i) = .true.
+       trans_exp(i,1) = exp(- 1.64872 * taucl(i,1,6))
        transmissint(i,1) = 1. - cldfrac(i,1) * (1. - trans_exp(i,1) )
        if ((1. - transmissint(i,1)) > 0.99 .and. top(i)) then
           zctp(i) = sig(i,1)*ps(i)
@@ -888,6 +874,7 @@ contains
 
     do k = 2, nkm1
        do i = 1, ni
+          trans_exp(i,k) = exp(- 1.64872 * taucl(i,k,6))
           transmissint(i,k) = transmissint(i,k-1) * (1. - cldfrac(i,k) * &
                (1.-trans_exp(i,k) ) )
           if ((1. - transmissint(i,k)) > 0.99 .and. top(i)) then
@@ -940,15 +927,8 @@ contains
        zeccl(i) = 1. - ff(i,IB(i),nk   )
        ztcc(i)  = 1. - ff2(i,1,nk)
        ! new NT formulation: TCC*(1-exp(-0.1* total cloud optical depth for visible))
-       tot(i) = ztopthw(i) + ztopthi(i)
-       ! att is a tuneable factor
-       att(i) = -0.1*tot(i)
-    enddo
-
-    call gem_vsexp(z_exp, att, ni)
-
-    do i=1,ni
-       znt(i) = ztcc(i)*(1.-z_exp(i))
+       tot = ztopthw(i) + ztopthi(i)
+       znt(i) = ztcc(i)*(1.-exp(-0.1*tot))
     enddo
 
     if (etccdiag) then

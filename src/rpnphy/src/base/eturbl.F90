@@ -183,7 +183,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 #include "machcon.cdk"
    include "phyinput.inc"
 
-   real, dimension(N) :: TEMPO,XB
+   real, dimension(N) :: XB
    real, dimension(N,2) :: WK
    real, dimension(N,NK) :: WORK,ZE,C,X,DSGDZ,X1,FM,FH
    real, dimension(N,4*NK) :: B
@@ -192,7 +192,7 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 
    !     temporary variables used to convert a #@$%!& CVMG.. expression
 
-   real yuk1,yuk2,dtfac
+   real yuk1,yuk2,dtfac, r4tmp
 
    real, parameter :: EPSILON_B=1.E-8,PETIT=1.E-6,LMDA=200.
    real ZNOLD(N,NK),beta_sfc(n)
@@ -257,9 +257,6 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
 
    !                               A) BLACKADAR (1962)
 
-
-   TEMPO = 0.23*SQRT(DXDY) !high resolution (<850m) adjustment to neutral mixing length
-
    ! Compute the PBL stability functions
    stat = psf_stabfunc(rig,z,fm,fh, &
         blend_bottom=pbl_slblend_layer(1),blend_top=pbl_slblend_layer(2))
@@ -269,10 +266,11 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
       return
    endif
 
-   ! Compute the Blackadar (1962) mixing length
+   ! Compute the Blackadar (1962) mixing length,
+   ! including high-resolution (<850m) reduction of asymtotic value
    do k=1,nke
       do j=1,n
-         lmn = min(KARMAN*(z(j,k)+z0(j)),min(tempo(j),LMDA))
+         lmn = min(KARMAN*(z(j,k)+z0(j)),min(0.23*sqrt(dxdy(j)),LMDA))
          zn_blac(j,k) = lmn / fm(j,k)
       enddo
    enddo
@@ -323,11 +321,10 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
    !                                Lacarrere (1989)
 
    IF_BOUJO: if (any(longmel == (/'BOUJO   ', 'TURBOUJO'/))) then
-      call gem_vspown1 (X1,SE,-CAPPA,N*NK)
       do K=1,NK
          do J=1,N
             !# Virtual potential temperature (THV)
-            X1(J,K)=TE(J,K)*(1.0+DELTA*QE(J,K)-QCE(J,K))*X1(J,K)
+            X1(J,K)=TE(J,K)*(1.0+DELTA*QE(J,K)-QCE(J,K))* (SE(J,K)**(-CAPPA))
          end do
       end do
       if (ml_calc_boujo(zn_boujo, x1, enold, w_cld, z, se, ps) /= PHY_OK) then
@@ -470,21 +467,18 @@ subroutine ETURBL13(EN,ENOLD,ZN,ZD,RIF,TURBREG,RIG,SHR2,GAMA,HOL,FN, &
             !              TERMES DE PRODUCTION MECANIQUE ET THERMIQUE NULS SI EN=C
             if ((EN(J,K)-C(J,K)).ne.0.0) then
                yuk2=abs((B(J,K)-C(J,K)) / (EN(J,K)-C(J,K)))
-               tempo(j)=max(yuk2,exp_explim)
+               r4tmp = log(max(yuk2,exp_explim))
             else
-               TEMPO(j) = 1.0
+               r4tmp = 0.  !# log(1.0)
             endif
-         enddo
-         call gem_vslog(tempo,tempo,n)
-         do j=1,n
 
             !     TERME DE PRODUCTION MECANIQUE
 
-            ZE(J,K)=-ZE(J,K)*tempo(j) *tauinv
+            ZE(J,K)=-ZE(J,K)*r4tmp *tauinv
 
             !     TERME DE PRODUCTION THERMIQUE
 
-            X(J,K)=-X(J,K)  *tempo(j) *tauinv
+            X(J,K)=-X(J,K)  *r4tmp *tauinv
 
             !     TERME DE DISSIPATION VISQUEUSE
             C(J,K)=-X(J,K)-ZE(J,K)+(B(J,K)-EN(J,K))*TAUINV

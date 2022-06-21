@@ -80,13 +80,13 @@ contains
       integer j,k,typet,typem
       real rhortvsg,mrhocmu,localstefan
       real tplusnk,qplusnk,uplusnk,vplusnk
-      real rsg,du,dv,dsig
+      real rsg,du,dv,dsig, rgam
 #include "phymkptr.hf"
       include "surface.cdk"
 
       real, dimension(ni) :: bmsg, btsg, a, aq, bq, sfc_density, fsloflx, fm_mult, fh_mult
       real, dimension(nkm1) :: se, sig
-      real, dimension(ni,nkm1) ::  kmsg, ktsg, rgam0, wthl_ng, wqw_ng, uw_ng, vw_ng, &
+      real, dimension(ni,nkm1) ::  kmsg, ktsg, wthl_ng, wqw_ng, uw_ng, vw_ng, &
            c, d, unused, zero, qclocal, ficelocal
       real, dimension(ni,nk) :: gam0
       real, dimension(ni,nkm1), target :: thl, qw, tthl, tqw, dkem, dket, tu2m, tu2t
@@ -111,7 +111,7 @@ contains
       !---------------------------------------------------------------------
 
       call init2nan(bmsg, btsg, a, aq, bq, sfc_density, fsloflx, se, sig)
-      call init2nan(kmsg, ktsg, rgam0, wthl_ng, wqw_ng, uw_ng, vw_ng, c, d, unused)
+      call init2nan(kmsg, ktsg, wthl_ng, wqw_ng, uw_ng, vw_ng, c, d, unused)
       call init2nan(zero, qclocal, ficelocal, gam0)
       call init2nan(thl, qw, tthl, tqw, dkem, dket)
 
@@ -262,15 +262,10 @@ contains
                uw_ng(j,k)   = 0.0
                vw_ng(j,k)   = 0.0
             endif NONLOCAL
-         end do
-      end do
-      call gem_vsrec(rgam0,gam0,ni*(nkm1))
-      do k=1,nkm1
-!vdir nodep
-         do j=1,ni
-            zgte(j,k) = zgte(j,k)*rgam0(j,k)
-            zgq(j,k)  = zgq(j,k)*rgam0(j,k)
-            zgql(j,k) = zgql(j,k)*rgam0(j,k)
+            rgam = 1./gam0(j,k)
+            zgte(j,k) = zgte(j,k) * rgam
+            zgq(j,k)  = zgq(j,k)  * rgam
+            zgql(j,k) = zgql(j,k) * rgam
          end do
       end do
       se = seloc(1,:)

@@ -41,11 +41,8 @@ subroutine radcons2(ni, trnch)
    real sin_s    ! South 
    real sin_w    ! West 
 
-   real, dimension(ni,4) :: sla_cos
-   real, dimension(ni,4) :: sla_sin
-   real, dimension(ni,4) :: sla_2cos
-   real, dimension(ni,4) :: sla_2sin
-   real, dimension(ni,4) :: sla_rad
+   real, dimension(4) :: sla_cos, sla_sin, sla_2cos, sla_2sin
+   real :: sla_rad
 
 #define MKPTR1D(NAME1,NAME2,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni) => BUS(NAME2:,trnch)
 #define MKPTR2D(NAME1,NAME2,N3,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni,1:N3) => BUS(NAME2:,trnch)
@@ -73,48 +70,44 @@ subroutine radcons2(ni, trnch)
    ! facteur de conversion d'angle de degre a radian
    pi180 =   pi/180.0
 
-   do n = 1, 4
-      do i = 1, ni
-         sla_rad(i,n)  = zsla(i,n)*pi180
-         sla_2cos(i,n) = sla_rad(i,n)*0.50
-      enddo
-   enddo
-
-   call  gem_vscos(sla_cos, sla_rad,   4*ni)
-   call  gem_vssin(sla_sin, sla_rad,   4*ni)
-   call  gem_vssin(sla_2sin,sla_2cos,  4*ni)
-   call  gem_vscos(sla_2cos,sla_2cos,  4*ni)
-
    do i = 1, ni
+
+      do n = 1, 4
+         sla_rad  = zsla(i,n)*pi180
+         sla_cos(n) = cos(sla_rad)
+         sla_sin(n) = sin(sla_rad)
+         sla_2sin(n) = sin(sla_rad*0.50)
+         sla_2cos(n) = cos(sla_rad*0.50)
+      enddo
 
       sum =  zfsa(i,1) + zfsa(i,2) + zfsa(i,3) + zfsa(i,4) 
 
-      zc1slop(i) = zfsa(i,1)*sla_cos(i,1) +   & 
-           zfsa(i,2)*sla_cos(i,2) +          &
-           zfsa(i,3)*sla_cos(i,3) +         &
-           zfsa(i,4)*sla_cos(i,4)
+      zc1slop(i) = zfsa(i,1)*sla_cos(1) +   & 
+           zfsa(i,2)*sla_cos(2) +          &
+           zfsa(i,3)*sla_cos(3) +         &
+           zfsa(i,4)*sla_cos(4)
       zc1slop(i) = zc1slop(i) + (1-sum)
 
-      zc2slop(i) = zfsa(i,1)*sla_sin(i,1)*cos_n +   & 
-           zfsa(i,2)*sla_sin(i,2)*cos_e +           &
-           zfsa(i,3)*sla_sin(i,3)*cos_s +          & 
-           zfsa(i,4)*sla_sin(i,4)*cos_w
+      zc2slop(i) = zfsa(i,1)*sla_sin(1)*cos_n +   & 
+           zfsa(i,2)*sla_sin(2)*cos_e +           &
+           zfsa(i,3)*sla_sin(3)*cos_s +          & 
+           zfsa(i,4)*sla_sin(4)*cos_w
 
-      zc3slop(i) = zfsa(i,1)*sla_sin(i,1)*sin_n +   & 
-           zfsa(i,2)*sla_sin(i,2)*sin_e +           &
-           zfsa(i,3)*sla_sin(i,3)*sin_s +          & 
-           zfsa(i,4)*sla_sin(i,4)*sin_w
+      zc3slop(i) = zfsa(i,1)*sla_sin(1)*sin_n +   & 
+           zfsa(i,2)*sla_sin(2)*sin_e +           &
+           zfsa(i,3)*sla_sin(3)*sin_s +          & 
+           zfsa(i,4)*sla_sin(4)*sin_w
 
-      zc4slop(i) = zfsa(i,1)*sla_2cos(i,1)*sla_2cos(i,1) + & 
-           zfsa(i,2)*sla_2cos(i,2)*sla_2cos(i,2) +       &
-           zfsa(i,3)*sla_2cos(i,3)*sla_2cos(i,3) +      & 
-           zfsa(i,4)*sla_2cos(i,4)*sla_2cos(i,4)
+      zc4slop(i) = zfsa(i,1)*sla_2cos(1)*sla_2cos(1) + & 
+           zfsa(i,2)*sla_2cos(2)*sla_2cos(2) +       &
+           zfsa(i,3)*sla_2cos(3)*sla_2cos(3) +      & 
+           zfsa(i,4)*sla_2cos(4)*sla_2cos(4)
       zc4slop(i) = zc4slop(i)+ (1-sum)
 
-      zc5slop(i) = zfsa(i,1)*sla_2sin(i,1)*sla_2sin(i,1) +  & 
-           zfsa(i,2)*sla_2sin(i,2)*sla_2sin(i,2) +        &
-           zfsa(i,3)*sla_2sin(i,3)*sla_2sin(i,3) +       & 
-           zfsa(i,4)*sla_2sin(i,4)*sla_2sin(i,4)
+      zc5slop(i) = zfsa(i,1)*sla_2sin(1)*sla_2sin(1) +  & 
+           zfsa(i,2)*sla_2sin(2)*sla_2sin(2) +        &
+           zfsa(i,3)*sla_2sin(3)*sla_2sin(3) +       & 
+           zfsa(i,4)*sla_2sin(4)*sla_2sin(4)
 
    end do
 

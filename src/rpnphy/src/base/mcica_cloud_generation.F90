@@ -157,23 +157,18 @@ subroutine MCICA_CLD_GENERATOR(ZF, AVG_CF, AVG_QLW,AVG_QIW, &
 
       do K=1, LAY !K_TOP,K_BASE-1
          do IL = IL1, IL2
-!            IF (RLC_CF(IL,K) .GT. 0.0) THEN
-!              ALPHA(IL,K) = EXP(-(ZF(IL,K) - ZF(IL,K+1)) / RLC_CF(IL,K))
-               ALPHA(IL,K) = -(ZF(IL,K) - ZF(IL,K+1)) / RLC_CF(IL,K)
-!            ELSE
-!               ALPHA(IL,K) = 0.0
-!            END IF
-!            IF (RLC_CW(IL,K) .GT. 0.0) THEN
-!              RCORR(IL,K) = EXP(-(ZF(IL,K) - ZF(IL,K+1)) / RLC_CW(IL,K))
-              RCORR(IL,K) = -(ZF(IL,K) - ZF(IL,K+1)) / RLC_CW(IL,K)
-!            ELSE
-!               RCORR(IL,K) = 0.0
-!            END IF
+           IF (RLC_CF(IL,K) .GT. 0.0) THEN
+             ALPHA(IL,K) = EXP(-(ZF(IL,K) - ZF(IL,K+1)) / RLC_CF(IL,K))
+           ELSE
+              ALPHA(IL,K) = 0.0
+           END IF
+           IF (RLC_CW(IL,K) .GT. 0.0) THEN
+              RCORR(IL,K) = EXP(-(ZF(IL,K) - ZF(IL,K+1)) / RLC_CW(IL,K))
+           ELSE
+              RCORR(IL,K) = 0.0
+           END IF
          end do ! IL
       end do ! K
-
-      call gem_vsexp(ALPHA,ALPHA,LAY*(IL2-IL1+1))
-      call gem_vsexp(RCORR,RCORR,LAY*(IL2-IL1+1))
 
       do I=1,NX_LOC
 

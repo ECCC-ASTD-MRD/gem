@@ -87,10 +87,10 @@
 !
       do 100 i = il1, il2
         dt          =  gt(i) * rtstand - 1.0
-        bs(i)       =   xp(1,ib) + &
+        bs(i)       =  exp(xp(1,ib) + &
                                   dt * (xp(2,ib) + dt * (xp(3,ib) + &
                                   dt * (xp(4,ib) + dt * (xp(5,ib) + &
-                                  dt *  xp(6,ib) ))))
+                                  dt *  xp(6,ib) )))) )
 !
 ! The following line extrapolates the temperature above model top for moon layer temperature
 !        dt          = (2. * tfull(i,1) - tfull(i,2)) * rtstand - 1.0
@@ -109,38 +109,28 @@
         xx(i,1)     =  xp(1,ib) + dt * (xp(2,ib) + dt * (xp(3,ib) + &
                                   dt * (xp(4,ib) + dt * (xp(5,ib) + &
                                   dt *  xp(6,ib) ))))
-!
-        bf0(i)      =  xxt
+
+        bf0(i)      =  exp(xxt)
         urbf0(i)    =  uu * (xx0 - xxt)
-        bf(i,1)     =  xx0
-        bf(i,2)     =  xx(i,1)
+        bf(i,1)     =  exp(xx0)
+        bf(i,2)     =  exp(xx(i,1))
         urbf(i,1)   =  uu * (xx(i,1) - xx0)
-  100 continue
-      call gem_vsexp(bs,bs,il2-il1+1)
-      call gem_vsexp(bf0,bf0,il2-il1+1)
-      call gem_vsexp(bf(1,1),bf(1,1),il2-il1+1)
-      call gem_vsexp(bf(1,2),bf(1,2),il2-il1+1)
-      do  i = il1, il2
         dbf(i,1)    =  bf(i,2) - bf(i,1)
-      enddo
-!
-      do 205 k = 2, lay
+ 100 continue
+
+      do k = 2, lay
         km1 = k - 1
         kp1 = k + 1
-        do 200 i = il1, il2
+        do i = il1, il2
           dt        =  tfull(i,kp1) * rtstand - 1.0
           xx(i,k)   =  xp(1,ib) + dt * (xp(2,ib) + dt * (xp(3,ib) + &
                                   dt * (xp(4,ib) + dt * (xp(5,ib) + &
                                   dt *  xp(6,ib) ))))
-!
-          bf(i,kp1) =  xx(i,k)
+
+          bf(i,kp1) =  exp(xx(i,k))
           urbf(i,k) =  uu * (xx(i,k) - xx(i,km1))
-  200     continue
-          call gem_vsexp(bf(1,kp1),bf(1,kp1),il2-il1+1)
-          do  i = il1, il2
-            dbf(i,k)  =  bf(i,kp1) - bf(i,k)
-          enddo
-  205   continue
-!
+          dbf(i,k)  =  bf(i,kp1) - bf(i,k)
+        enddo
+      enddo
       return
       end

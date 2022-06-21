@@ -98,11 +98,9 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
       do i = il1, il2
          taul1(i,km1)    =  taual(i,km1) + taug(i,km1)
          rtaul1(i,km1)   =  taul1(i,km1) * ru
-         dtr_vs(i,km1)   =  - rtaul1(i,km1)
+         dtr_vs(i,km1)   =  exp(dble(- rtaul1(i,km1)))
       enddo
    enddo
-
-   call gem_vexp(dtr_vs,dtr_vs,(il2-il1+1)*(lev-1))
 
    DO100: do i = il1, il2
       fd(i,1,1)         =  slwf(i)

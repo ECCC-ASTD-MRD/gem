@@ -63,9 +63,8 @@ subroutine SUNCOS2(SCOS,SSIN,STAN,BSIN,BCOS,LMX,XLAT,XLON,HZ,DAYOFYEAR, slope_L)
 !
 !*
 
-      real, dimension(LMX) :: tmcos
-      real, dimension(LMX) :: tmsin
-!
+      real, dimension(LMX) :: tmcos, tmsin
+
       AJOUR=1.
        if(DAYOFYEAR.ne.0.) AJOUR=DAYOFYEAR
 
@@ -91,12 +90,11 @@ subroutine SUNCOS2(SCOS,SSIN,STAN,BSIN,BCOS,LMX,XLAT,XLON,HZ,DAYOFYEAR, slope_L)
       EOT=EOT/60.
 ! express in radians
       EOT=EOT*15.*PI/180.
-!
-      call gem_vscos(tmcos(1),XLAT(1),LMX)
-      call gem_vssin(tmsin(1),XLAT(1),LMX)
-!
+
       do I=1,LMX
       DH=HZ*PI/12. +XLON(I) -PI + EOT
+      tmcos(I)=cos(XLAT(I))
+      tmsin(I)=sin(XLAT(I))
       SCOS(I)=AMAX1(tmsin(I)*SDEC + tmcos(I)*CDEC*cos(DH), 0.00001)
       SCOS(I)=AMIN1(SCOS(I), 1.0)
       enddo

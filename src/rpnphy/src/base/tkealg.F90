@@ -58,37 +58,26 @@ subroutine tkealg2(estar,en,zn,ze,dvdz2,buoy_flux,diss,shr,buoy,tau,n,nk)
 
    ! Local variable declaration
    integer :: j,k
-   real :: clamda
-   real, dimension(n,nk) :: b,c,b_over_c,sqrt_tke
-   real(kind=8), dimension(n,nk) :: work_8
+   real :: clamda,sqrt_tke
+   real, dimension(n,nk) :: b,c,b_over_c
+   real(kind=8) :: r8tmp
 
-   ! Compute coefficients for TKE equation
+   ! Compute coefficients (dble precision) and solve the algebraic TKE equation
    do k=1,nk-1
       do j=1,n
          b(j,k) = BLCONST_CK*zn(j,k)*(dvdz2(j,k) - buoy_flux(j,k))
          c(j,k) = BLCONST_CE/ze(j,k)
-         b_over_c(j,k) = (abs(b(j,k)/c(j,k)))
-      enddo
-   enddo
-
-   ! Precompute roots in double precision
-   work_8(:,1:nk-1) = b_over_c(:,1:nk-1)
-   call gem_vsqrt(work_8,work_8,n*(nk-1))
-   b_over_c(:,1:nk-1) = work_8(:,1:nk-1)
-   work_8 = en
-   call gem_vsqrt(work_8,work_8,n*(nk-1))
-   sqrt_tke = work_8
-
-   ! Solve the algabraic TKE equation
-   do k=1,nk-1
-      do j=1,n
+         r8tmp = (abs(b(j,k)/c(j,k)))
+         b_over_c(j,k) = sqrt(r8tmp)
+         r8tmp = en(j,k)
+         sqrt_tke = sqrt(r8tmp)
          if( abs(b(j,k)) < epsilon(b) ) then
-            estar(j,k) = sqrt_tke(j,k) / (1.+0.5*sqrt_tke(j,k)*c(j,k)*tau)
+            estar(j,k) = sqrt_tke / (1.+0.5*sqrt_tke*c(j,k)*tau)
          elseif( b(j,k) > 0. ) then
             estar(j,k) = b_over_c(j,k)*( -1.0+2.0/(1.0+exp(-b_over_c(j,k)*c(j,k)*tau) * &
-                 (-1.0+2.0/(1.0+sqrt_tke(j,k)/b_over_c(j,k)))) )
+                 (-1.0+2.0/(1.0+sqrt_tke/b_over_c(j,k)))) )
          else
-            estar(j,k)=b_over_c(j,k)*tan(min(tanlim,max(atan(sqrt_tke(j,k)/b_over_c(j,k)) - &
+            estar(j,k)=b_over_c(j,k)*tan(min(tanlim,max(atan(sqrt_tke/b_over_c(j,k)) - &
                  0.5*b_over_c(j,k)*c(j,k)*tau , 0.0 ) ) )
          endif
          estar(j,k) = max(ETRMIN,estar(j,k)**2)

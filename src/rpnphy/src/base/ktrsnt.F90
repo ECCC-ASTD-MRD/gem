@@ -664,10 +664,7 @@ subroutine KTRSNT4(CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
       CRRL(jl)=max(0.,CRRL(jl))
       CRRI(jl)=ZFICE(jl,NK)*CRRL(jl)
       CRRL(jl)=max(0.,CRRL(jl)-CRRI(jl))
-      CPR(jl) = max( 1.E-12, CPR(jl)*rGRAV3 )
-   end do
-   call gem_vslog (cpr,cpr,ni)
-   do jl=1,NI
+      CPR(jl) =log(max( 1.E-12, CPR(jl)*rGRAV3 ))
       CPR(jl) = 2.5 + .125 * CPR(jl)
       CPR(jl) = min( max( DBDT(jl) * TAUCU / ( 1. + DBDT(jl)*TAUCU ) , &
            CPR(jl) ) , 0.8 )

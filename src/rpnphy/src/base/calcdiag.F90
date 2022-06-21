@@ -614,8 +614,7 @@ contains
       IF_ACCUM_0: if (laccum) then
 
          !pre-calculate screen wind modulus
-         uvs(1:ni) = zudiag(1:ni)*zudiag(1:ni) + zvdiag(1:ni)*zvdiag(1:ni)
-         call gem_vssqrt(uvs,uvs,ni)
+         uvs(1:ni) = sqrt(zudiag(1:ni)*zudiag(1:ni) + zvdiag(1:ni)*zvdiag(1:ni))
 
          IF_RESET_0: if (lkount0 .or. lreset) then
 

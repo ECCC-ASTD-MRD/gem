@@ -24,12 +24,10 @@
       REAL CLWC,GAMSAT,GAMW,GB
       REAL RHO,WC,WCCON,WCFAC,WCOBS,WCSTA
           REAL LWC(LMX,LEV), SIG(lmx,LEV), T(MM ,LEV), REC_T(MM ,LEV)
-      REAL P(LMX,LEV),GA(LMX,LEV),EXP1_CAPPA(LMX,LEV),EXP2_CAPPA(LMX,LEV)
+      REAL P(LMX,LEV),GA(LMX,LEV),EXP1_CAPPA,EXP2_CAPPA
       REAL PSOL(LMX)   ,HT(LMX,LEV)
       LOGICAL LHIG(LMX,LEV), SATUCO
       REAL P0, REC_CAPPA, REC_RGASD
-
-      real :: tmp2d(lmx,lev)
 
 !Author
 !          L.Garand (1989)
@@ -98,23 +96,20 @@
          CALL mfoqsa3 (GA,T,P,LMX,LEV,LMX)
       END IF
 
-      tmp2d = p0/p
-      call gem_vspown1(exp1_cappa, tmp2d, cappa, lev*lmx)
-      tmp2d = p/p0
-      call gem_vspown1(exp2_cappa, tmp2d, cappa, lev*lmx)
-
       DO J=1,LEV
       DO K=1,LMX
+         exp1_cappa = (p0/p(K,J))**CAPPA
+         exp2_cappa = (p(K,J)/p0)**CAPPA
               GA(K,J) = HT(K,J)*GA(K,J)/(CAPPA*T(K,J))
               GB = GA(K,J) * EPS1 * HT(K,J) * REC_T(K,J)
               GAMSAT = T(K,J) * (GB - GA(K,J)) / (1. + GB)
 ! . . . . GAMMA W = (D THETA/DP) ON THETA ES CONST (BETTS EQ(4))
-              GAMW = EXP1_CAPPA(K,J)*CAPPA/P(K,J)*GAMSAT
+              GAMW = EXP1_CAPPA*CAPPA/P(K,J)*GAMSAT
 ! . . . . AIR DENSITY [KG/M3].
               RHO = P(K,J)*REC_RGASD*REC_T(K,J)
 ! . . . . LWC = (CP*1000[G/KG]/L)*(T/THETA)*GAMSAT*RHO*DP*MIXING.
       CLWC=1000./HT(K,J)
-      WCOBS = CLWC*EXP2_CAPPA(K,J)*GAMW*RHO*1693.
+      WCOBS = CLWC*EXP2_CAPPA*GAMW*RHO*1693.
 !             UNITS [G/M3]. (DP = 30 MB AND MIXING = 0.56433)
 ! . . . . FIT OF MEAN WC FROM OBSERVATIONS (FEIGELSON, 1977)
 !             WC OBS = (4.35E-5 * T(K,J) - 0.0174) * T(K,J) + 1.734

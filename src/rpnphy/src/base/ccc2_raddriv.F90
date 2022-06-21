@@ -215,10 +215,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    integer, dimension(nbl) :: kgl
    integer, dimension(nbl) :: kglgh
 
-   real, dimension(ilg ) :: tran0
-   real, dimension(ilg ) :: vs_tau
-
-   real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
+   real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30, tran0
    real solarc, fracs, x, gw, rgw, dfnet, gwgh, rsolarc, pgw
    real ubeta0, epsd0, hrcoef, uu3, cut, seuil,specirr,qmr,qmin
    integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig
@@ -660,15 +657,6 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
          !----------------------------------------------------------------------
 
          DO310: do k = 1, lay
-            if (k.eq.1) then
-               do i = ilg1, ilg2
-                  j = isun(i)
-                  vs_tau(i) = taucs(j,k,ib)
-               enddo
-               call gem_vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
-            else
-               call gem_vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
-            endif
             do i = ilg1, ilg2
                j = isun(i)
                a11                   =  tauae(j,k,1) * extab(ib,1)
@@ -701,11 +689,11 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                   if (k .eq. 1) then
                      tauci(i,k)        =  taucs(j,k,ib)
                      x                 =  taucs(j,k,ib) + &
-                          9.2 * vs_tau(i)
+                          9.2 * sqrt(taucs(j,k,ib))
                   else
                      tauci(i,k)        =  tauci(i,k-1) + taucs(j,k,ib)
                      x                 =  taucs(j,k,ib) + &
-                          9.2 * vs_tau(i)
+                          9.2 * sqrt(tauci(i,k-1))
                   endif
 
                   taucsg(i,k)         =  taucs(j,k,ib) / (1.0 + 0.185 * &
@@ -1226,22 +1214,19 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
                     dt, a1(1,5), inpt, il1, il2, ilg)
 
                do i = il1, il2
-                  tran0(i)  =  - a1(i,1)
-               enddo
-               call gem_vsexp(tran0(il1),tran0(il1),il2-il1+1)
-               do i = il1, il2
+                  tran0 = exp(- a1(i,1))
                   if (pfull(i,1) .gt. 0.001) then
                      x               =  max(a1(i,1), 1.e-10)
                      ubeta0          = 1.6487213 * a1(i,3) / x
                      epsd0           = ubeta0 + 1.0
                      if (abs(epsd0) .gt. 0.001) then
-                        c2(i)         =  c1(i) * tran0(i) + &
-                             (bf(i,1) - a1(i,2) * tran0(i)) / epsd0
+                        c2(i)         =  c1(i) * tran0 + &
+                             (bf(i,1) - a1(i,2) * tran0) / epsd0
                      else
-                        c2(i)         =  c1(i)*tran0(i)+x*a1(i,2)*tran0(i)
+                        c2(i)         =  c1(i)*tran0+x*a1(i,2)*tran0
                      endif
                   else
-                     c2(i)           =  c1(i) * tran0(i)
+                     c2(i)           =  c1(i) * tran0
                   endif
                enddo
 

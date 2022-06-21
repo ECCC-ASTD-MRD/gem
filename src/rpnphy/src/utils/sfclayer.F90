@@ -596,11 +596,9 @@ contains
 
     ! Compute neutral stability functions
     do j=1,n
-       lzz0(j) = (z0rm(j) + zu(j)) / z0(j)
-       lzz0t(j) = (z0rt(j) + zt(j)) / z0t(j)
+       lzz0(j) = log((z0rm(j) + zu(j)) / z0(j))
+       lzz0t(j) = log((z0rt(j) + zt(j)) / z0t(j))
     enddo
-    call gem_vslog(lzz0t, lzz0t, n)
-    call gem_vslog(lzz0, lzz0, n)
 
     ! Update estimate of the Obukhov length and stability functions
     ROW: do j=1,n
@@ -779,11 +777,9 @@ contains
 
     ! Initialize neutral stability functions
     do j=1,ni
-       lzz0(j) = 1 + zu(j) / z0(j)
-       lzz0t(j) = 1 + zt(j) / z0t(j)
+       lzz0(j) = log(1 + zu(j) / z0(j))
+       lzz0t(j) = log(1 + zt(j) / z0t(j))
     enddo
-    call gem_vslog(lzz0t, lzz0t, ni)
-    call gem_vslog(lzz0, lzz0, ni)
 
     ! Compute state variables at the diagnostic levels
     ROW: do j=1,ni

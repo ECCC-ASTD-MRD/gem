@@ -69,7 +69,7 @@ contains
       integer :: i, k, stat, ksl(ni)
       real :: cf1, cf2, eturbtau, uet, ilmot, &
            fhz, fim, fit, hst_local, &
-           work2(ni), b(ni,nkm1*4), xb(ni), xh(ni)
+           b(ni,nkm1*4), xb(ni), xh(ni)
 
       real, pointer, dimension(:) :: zbt_ag, zfrv_ag, zftemp_ag, &
            zfvap_ag, zhst_ag, zilmo_ag, zz0_ag, ztsurf  !#TODO: should be contiguous
@@ -86,7 +86,7 @@ contains
       real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce, qe
       !----------------------------------------------------------------
 
-      call init2nan(work2, xb, xh)
+      call init2nan(xb, xh)
       call init2nan(b, c, x, wk2d, enold, tmom, qmom, te, qce, qe)
 
       MKPTR1D(zalfat, alfat, vbus)
@@ -224,10 +224,7 @@ contains
          xh(i)=(GRAV/(xb(i)*ztve(i,ksl(i)))) * ( xb(i)*zftemp_ag(i) &
               + DELTA*ztve(i,ksl(i))*zfvap_ag(i) )
          xh(i)=max(0.0,xh(i))
-         work2(i)=zh(i)*xh(i)
-      end do
-      call gem_vspown1 (xh,work2,1./3.,ni)
-      do i=1,ni
+         xh(i) = (zh(i)*xh(i))**(1./3.)
          zwstar(i) = xh(i)
          ztstar(i) = max(zftemp_ag(i)/max(zwstar(i),WSTAR_MIN),0.)
       enddo

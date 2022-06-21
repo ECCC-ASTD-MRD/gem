@@ -63,7 +63,7 @@ subroutine ccc2_strandn3(tran, attn, attntop, rmu, dp, dt, o3, o2, &
 
 
    integer i, k, kp1, lev1m1
-   real tau(ilg), xx(ilg),tau_vs(ilg)
+   real tau, xx
    real dto3
 
 
@@ -86,15 +86,11 @@ subroutine ccc2_strandn3(tran, attn, attntop, rmu, dp, dt, o3, o2, &
             kp1 = k + 1
             do i = il1, il2
                dto3          = dt(i,k) + 23.13
-               xx(i)         = (cs1o21 - 0.881e-05 * rmu3(i)) * o2(i,k)
-               tau(i)        = ((cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
-                    dto3 * cs1o3(3,ig))) * o3(i,k) + xx(i)) * &
+               xx            = (cs1o21 - 0.881e-05 * rmu3(i)) * o2(i,k)
+               tau           = ((cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
+                    dto3 * cs1o3(3,ig))) * o3(i,k) + xx) * &
                     dp(i,k)
-               tau_vs(i)     =  - tau(i) / rmu(i)
-            enddo
-            call gem_vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
-            do i = il1, il2
-               tran(i,1,kp1) =  tran(i,1,k) * tau_vs(i)
+               tran(i,1,kp1) =  tran(i,1,k) * exp(- tau / rmu(i))
                tran(i,2,kp1) =  tran(i,1,kp1)
             enddo
          enddo
@@ -104,14 +100,9 @@ subroutine ccc2_strandn3(tran, attn, attntop, rmu, dp, dt, o3, o2, &
             kp1 = k + 1
             do i = il1, il2
                dto3          =  dt(i,k) + 23.13
-               tau(i)        =  (cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
+               tau           =  (cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
                     dto3 * cs1o3(3,ig))) * o3(i,k) * dp(i,k)
-               tau_vs(i)     =  - tau(i) / rmu(i)
-            enddo
-            call gem_vsexp(tau_vs(il1),tau_vs(il1),il2-il1+1)
-            do i = il1, il2
-               !             tau           =  cs1o3(ig) * o3(i,k) * dp(i,k)
-               tran(i,1,kp1) =  tran(i,1,k) * tau_vs(i)
+               tran(i,1,kp1) =  tran(i,1,k) * exp(- tau / rmu(i))
                tran(i,2,kp1) =  tran(i,1,kp1)
             enddo
          enddo

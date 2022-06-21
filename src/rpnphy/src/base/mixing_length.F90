@@ -246,7 +246,7 @@ contains
      real, dimension(size(t,dim=1)) :: mlemod, mlemodt, mlmult
      real, dimension(size(t,dim=1),size(t,dim=2)) :: zn_blac, zd_blac, pri_blac, &
           zn_boujo, zd_boujo, pri_boujo, zn_turboujo, zd_turboujo, pri_turboujo, &
-          zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, exner, weight, &
+          zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, weight, &
           rif, znold
      logical :: one_ml_form, mlemod_calc, mlemodt_calc
      logical, dimension(size(t,dim=1),size(t,dim=2)) :: boujo_valid
@@ -281,10 +281,9 @@ contains
      ! Precompute state variables if required
      if (any(mlen(:) == ML_BOUJO) .or. any(mlen(:) == ML_TURBOUJO) .or. &
           mlemod_calc .or. mlemodt_calc) then
-        call gem_vspown1(exner,se,-CAPPA,n*nk)
         te(1:n,1:nk)  = t(1:n,1:nk)
         qce(1:n,1:nk) = qc(1:n,1:nk)
-        tv = te*(1.0+DELTA*qe-qce)*exner
+        tv = te*(1.0+DELTA*qe-qce)*(se**(-CAPPA))
      endif
      boujo_valid(:,:) = .false.
      zn_boujo(:,:) = -1.
@@ -852,7 +851,9 @@ contains
       real :: c_stab_h,c_stab_m       ! c_h, c_m for stable conditions
       real :: l_min                   ! minimum for "integral" length scale
       real :: recip_l_stable          ! 1/l_stable
-      real :: ri_int                  ! vertically integrated Ri
+      real :: wf                      ! 
+      real, dimension(size(en,dim=1)) :: &
+           ri_int         ! vertically integrated function of Ri
       real, dimension(size(en,dim=1)) :: &
            recip_inf      ! 1/l_inf, where l_inf is length scale away from surface
       real, dimension(size(en,dim=1),size(en,dim=2)) :: &
@@ -900,13 +901,13 @@ contains
          enddo
 
          ! Integrate upwards for lup using trapezoidal integration
-         ri_int=0.
+         ri_int = 0.
          do k=nk-1,2,-1
             do j=1,n
-               ri_int = ri_int + 0.5 * (zs(j,k)-zs(j,k+1)) &
+               ri_int(j) = ri_int(j) + 0.5 * (zs(j,k)-zs(j,k+1)) &
                     * (f_ri(j,k)+f_ri(j,k+1))
-               ri_int = max(   0.0, ri_int )
-               lup(j,k)  = max( 1.e-6, ri_int )
+               ri_int(j) = max(   0.0, ri_int(j) )
+               lup(j,k)  = max( 1.e-6, ri_int(j) )
             enddo
          enddo
 
@@ -914,11 +915,11 @@ contains
          ri_int = 0.
          do k=2,nk-1
             do j=1,n
-               ri_int = ri_int + 0.5 * (zs(j,k-1)-zs(j,k)) &
+               ri_int(j) = ri_int(j) + 0.5 * (zs(j,k-1)-zs(j,k)) &
                     * (f_ri(j,k-1)+f_ri(j,k))
-               ri_int = max(   0.0, ri_int )
+               ri_int(j) = max(   0.0, ri_int(j) )
                ! Near-surface increase to reduce its influence in stable case (L&H Section 6)
-               ldown(j,k)= max( 75.*exp(-zs(j,k)/500.) , ri_int )
+               ldown(j,k)= max( 75.*exp(-zs(j,k)/500.) , ri_int(j) )
             enddo
          enddo
 
@@ -982,10 +983,12 @@ contains
                !         ! between the larger original values (f_cs=1) and the smaller
                !         ! values proposed by mailhot and lock (2004) from les of gabls.
                !         ! set in nlcalc.
-               !         ! -------------------------------------------------------------
-               c_stab_h  = (1.+2.*f_cs(j,k)) * c_stab_h
-               c_stab_m  = (1.+3.*f_cs(j,k)) * c_stab_m
-               c_stab_d  = (1.+   f_cs(j,k)) * c_stab_d
+               !         ! -------------------------------------------------------------               
+               wf = max(0.,min(1.,f_cs(j,k)))
+               c_stab_h  = (1.-wf) * c_stab_h + wf * 0.2 
+               c_stab_m  = (1.-wf) * c_stab_m + wf * 0.2 * min( 3., 1.+2.*ri(j,k) )
+               c_stab_d  = (1.-wf) * c_stab_d + wf * 0.071
+               
                recip_l_stable = sqrt( dthv(j,k) ) /  &
                     ( (c_stab_h*sqrt(en(j,k)))**3. + w_cld(j,k,1)**3. )**(1./3.)
                l_h(j,k) = 1.0/sqrt( (1.0/l_h(j,k)) + recip_l_stable**2. )

@@ -97,18 +97,16 @@
               tau      =  1.02 * ((cs1o3gh(1,ig) + dto3 * &
                          (cs1o3gh(2,ig) + dto3 * cs1o3gh(3,ig))) * &
                           o3(i) +  cs1o2gh3 * o2(i)) * dp(i)
-              atten(i) =   - tau / rmu(i)
+              atten(i) = exp(- tau / rmu(i))
   100       continue
-            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           else
             do 110 i = il1, il2
               dto3     =  dt(i) + 23.13
               tau      =  1.02 * (cs1o3gh(1,ig) + dto3 * &
                          (cs1o3gh(2,ig) + dto3 * cs1o3gh(3,ig))) * &
                           o3(i) * dp(i)
-              atten(i) =   - tau / rmu(i)
+              atten(i) = exp(- tau / rmu(i))
   110       continue
-            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           endif
         else
 !
@@ -118,17 +116,15 @@
               tau      =  1.02 * ((cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
                           dto3 * cs1o3(3,ig))) * o3(i) + &
                           cs1o21 * o2(i)) * dp(i)
-              atten(i) =  - tau / rmu(i)
+              atten(i) =  exp(- tau / rmu(i))
   120       continue
-            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           else
             do 130 i = il1, il2
               dto3     =  dt(i) + 23.13
               tau      =  1.02 * (cs1o3(1,ig) + dto3 * (cs1o3(2,ig) + &
                           dto3 * cs1o3(3,ig))) * o3(i) * dp(i)
-              atten(i) =  - tau / rmu(i)
+              atten(i) =  exp(- tau / rmu(i))
   130       continue
-            call gem_vsexp(atten(il1),atten(il1),il2-il1+1)
           endif
         endif
 !

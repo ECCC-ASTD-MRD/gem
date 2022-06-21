@@ -105,10 +105,10 @@ subroutine clsgs8(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
 
    ! Local variables
    integer :: j,k
-   real :: fnn_weight,sigmas_cu,hfc
+   real :: fnn_weight,sigmas_cu,hfc,lnsig,c1coef
    real(kind=8) :: gravinv
    real, dimension(n) :: wf,fnnreduc
-   real, dimension(n,nk) :: dz,dqwdz,dthldz,sigmas,q1,weight,lnsig,thlm,qwm,c1coef,wh
+   real, dimension(n,nk) :: dz,dqwdz,dthldz,sigmas,q1,weight,thlm,qwm,wh
 
    ! Retrieve stochastic information for parameter perturbations
    fnnreduc(:) = ens_spp_get('fnnreduc', mrk2, fnn_reduc)
@@ -118,20 +118,22 @@ subroutine clsgs8(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
    call vint_thermo2mom(thlm, thl, vcoef, n, nk)
    call vint_thermo2mom(qwm,  qw,  vcoef, n, nk)
    do k=1,nk-1
-      lnsig(:,k) = s(:,k+1)/s(:,k)
+      do j=1,n
+         lnsig   = log(s(j,k+1)/s(j,k))
+         dz(j,k) = -RGASD*tve(j,k)*lnsig*gravinv
+      end do
    end do
-   call gem_vslog(lnsig,lnsig,n*(nk-1))
-   dz(:,1:nk-1) = -RGASD*tve(:,1:nk-1)*lnsig(:,1:nk-1)*gravinv
    dz(:,nk) = 0.0
    call dvrtdf( dthldz, thlm, dz, n, n, n, nk)
-   call dvrtdf ( dqwdz , qwm , dz, n, n, n, nk)
+   call dvrtdf( dqwdz , qwm , dz, n, n, n, nk)
 
    ! Compute subgrid standard deviation of supersaturation (s) on e-levels following Eq. 10 of BCMT95
-   c1coef = c1*max(zn,50.)*max(ze,50.)
-   call gem_vssqrt(c1coef,c1coef,n*(nk-1))
    sigmas = 0.
    do k=1,nk-1
-      sigmas(:,k) = c1coef(:,k) * abs(acoef(:,k)*dqwdz(:,k) - bcoef(:,k)*dthldz(:,k))
+      do j=1,n
+         c1coef = sqrt(c1(j,k)*max(zn(j,k),50.)*max(ze(j,k),50.))
+         sigmas(j,k) = c1coef * abs(acoef(j,k)*dqwdz(j,k) - bcoef(j,k)*dthldz(j,k))
+      end do
    end do
 
    ! Compute the normalized saturation defecit (Q1)

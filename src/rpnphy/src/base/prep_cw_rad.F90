@@ -70,11 +70,11 @@ contains
       include "surface.cdk"
       include "nocld.cdk"
 
-      real, dimension(ni,nkm1) ::  frac, lwcth, tcel, vtcel, vliqwcin, twcdens
+      real, dimension(ni,nkm1) ::  lwcth
       real rhoa
 
       integer :: i, k
-      real    :: dp, lwcm1, iwcm1, zz, rec_grav, press
+      real    :: dp, lwcm1, iwcm1, zz, rec_grav, press, frac, tcel, vliqwcin, twcdens
       logical :: nostrlwc, hascond_L
 
       real, pointer, contiguous :: znt(:)
@@ -95,7 +95,7 @@ contains
       MKPTR2D(zqiplus, qiplus, dbus)
       MKPTR2D(zsnow, qnplus, dbus)
 
-      call init2nan(frac, lwcth, tcel, vtcel, vliqwcin)
+      call init2nan(lwcth)
 
       rec_grav = 1./GRAV
       nostrlwc = (climat.or.stratos)
@@ -205,32 +205,24 @@ contains
 
             endif
 
-            !       calculation of argument for call vsexp
-            tcel(i,k) = tm(i,k)-TCDK
-            vtcel(i,k) = -.003102*tcel(i,k)*tcel(i,k)
+            !     liquid/solid water partition when not provided by
+            !     microphysics scheme
+            !     as in cldoptx4 of phy4.2 - after Rockel et al, Beitr. Atmos. Phys, 1991,
+            !     p.10 (depends on T only [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
 
-         end do
-      end do DO_K
-
-      !     liquid/solid water partition when not provided by
-      !     microphysics scheme
-      !     as in cldoptx4 of phy4.2 - after Rockel et al, Beitr. Atmos. Phys, 1991,
-      !     p.10 (depends on T only [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
-
-      call gem_vsexp(frac, vtcel, nkm1*ni)
-      do k = 1,nkm1
-         do i = 1,ni
-            if (tcel(i,k) >= 0.) then
-               frac(i,k) = 1.0
+            tcel = tm(i,k)-TCDK
+            frac = exp(-.003102*tcel*tcel)
+            if (tcel >= 0.) then
+               frac = 1.0
             else
-               frac(i,k) = .0059+.9941*frac(i,k)
+               frac = .0059+.9941*frac
             endif
-            if (frac(i,k) < 0.01) frac(i,k) = 0.
+            if (frac < 0.01) frac = 0.
 
-            icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
-            liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
+            icewcin(i,k) = (1.-frac)*liqwcin(i,k)
+            liqwcin(i,k) = frac*liqwcin(i,k)
          enddo
-      enddo
+      enddo DO_K
 
       !     calculate in-cloud liquid and ice water paths in each layer
       !     note: the calculation of the thickness of the layers done here is not
@@ -318,44 +310,28 @@ contains
          !    (depends on T and twc) [frac=twc^(0.141)*exp(0.037*(tcel))]
          !    PV; feb 2016: simplification of code, eliminate ioptpart=1; if you want it DIY
 
-         if (.not.prep_cw_rad_fix_l) then
-            do k = 1,nkm1
-               do i = 1,ni
-                  tcel(i,k) = tm(i,k)-TCDK
-                  vtcel(i,k) = .037*tcel(i,k)
-               enddo
-            enddo
-            call gem_vspown1(vliqwcin, liqwcin, 0.141, nkm1*ni) !ancien-bug-defaut
-         else
-            do k = 1,nkm1
-               do i = 1,ni
-                  tcel(i,k) = tm(i,k)-TCDK
-                  vtcel(i,k) = .037*tcel(i,k)
-                  press = sigma(i,k)*ps(i)
-                  rhoa = press/(tm(i,k)*RGASD)
-                  twcdens(i,k) = rhoa*liqwcin(i,k)*1000.
-               enddo
-            enddo
-            call gem_vspown1(vliqwcin, twcdens, 0.141, nkm1*ni) !nouveau-debug
-         endif
-
-         call gem_vsexp(frac, vtcel, nkm1*ni)
          do k = 1,nkm1
             do i = 1,ni
-               frac(i,k) = vliqwcin(i,k)*frac(i,k)
-            enddo
-         enddo
-         do k = 1,nkm1
-            do I = 1,ni
-               if (tcel(i,k) >= 0.) then
-                  frac(i,k) = 1.0
-               elseif (tcel(i,k) < -38.) then
-                  frac(i,k) = 0.0
+               if (.not.prep_cw_rad_fix_l) then
+                  vliqwcin = liqwcin(i,k)**0.141  !# ancien-bug-defaut
+               else
+                  press = sigma(i,k)*ps(i)
+                  rhoa = press/(tm(i,k)*RGASD)
+                  twcdens = rhoa*liqwcin(i,k)*1000.
+                  vliqwcin = twcdens**0.141  !# nouveau-debug
                endif
-               if (frac(i,k) < 0.01) frac(i,k) = 0.
 
-               icewcin(i,k) = (1.-frac(i,k))*liqwcin(i,k)
-               liqwcin(i,k) = frac(i,k)*liqwcin(i,k)
+               tcel = tm(i,k)-TCDK
+               frac = vliqwcin*exp(.037*tcel)
+               if (tcel >= 0.) then
+                  frac = 1.0
+               elseif (tcel < -38.) then
+                  frac = 0.0
+               endif
+               if (frac < 0.01) frac = 0.
+
+               icewcin(i,k) = (1.-frac)*liqwcin(i,k)
+               liqwcin(i,k) = frac*liqwcin(i,k)
             enddo
          enddo
 

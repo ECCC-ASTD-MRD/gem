@@ -151,8 +151,7 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
    real rec2p13,tauchk
 
    ! Specific to GEM implementation
-   real tmpexp2D(npoints),tmpexp3D(npoints,nlev)
-   real tmplog2D(npoints)
+   real tmpexp
 
    tauchk = -1.*log(0.9999999)
    rec2p13=1./2.13
@@ -240,16 +239,8 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
         pstd = 1.013250E+06
         t0 = 296.
 
-! COMPUTE THE EXP ALL AT ONCE
-        do ilev=1,nlev
-          do j=il1, il2 !1,npoints
-            tmpexp3D(j,ilev) = -0.02*(at(j,ilev)-t0)
-          end do
-        end do
-        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
-
         do 125 ilev=1,nlev
-          do j=il1, il2 !1,npoints
+           do j=il1, il2 !1,npoints
 !press and dpress are dyne/cm2 = Pascals *10
                press(j) = pfull(j,ilev)*10.
                dpress(j) = (phalf(j,ilev+1)-phalf(j,ilev))*10
@@ -260,9 +251,9 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
                rhoave(j) = (press(j)/pstd)*(t0/at(j,ilev))
                rh20s(j) = rvh20(j)*rhoave(j)
                rfrgn(j) = rhoave(j)-rh20s(j)
-!               tmpexp(j) = exp(-0.02*(at(j,ilev)-t0))
+               tmpexp   = exp(-0.02*(at(j,ilev)-t0))
                tauwv(j) = wk(j)*1.e-20*( &
-                 (0.0224697*rh20s(j)*tmpexp3D(j,ilev)) + &
+                 (0.0224697*rh20s(j)*tmpexp) + &
                       (3.41817e-7*rfrgn(j)) )*0.98
                dem_wv(j,ilev) = 1. - exp( -1. * tauwv(j))
           enddo
@@ -274,21 +265,11 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           trans_layers_above_clrsky(j)=1.
         enddo
 
-! COMPUTE THE EXP ALL AT ONCE
         do ilev=1,nlev
           do j=il1, il2 !1,npoints
-            tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
-          end do
-        end do
-        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
-
-        do ilev=1,nlev
-          do j=il1, il2 !1,npoints
-
 ! Black body emission at temperature of the layer
 
-!	        bb(j)=1 / ( exp(1307.27/at(j,ilev)) - 1. )
-               bb(j)=1 / ( tmpexp3D(j,ilev) - 1. )
+             bb(j)=1 / ( exp(1307.27/at(j,ilev)) - 1. )
                 !bb(j)= 5.67e-8*at(j,ilev)**4
 
 ! increase TOA flux by flux emitted from layer
@@ -307,17 +288,10 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
           enddo
         enddo   !loop over level
 
-! COMPUTE THE EXP ALL AT ONCE
-          do j=il1, il2 !1,npoints
-            tmpexp2D(j) = 1307.27/skt(j)
-          end do
-
-        call gem_vsexp(tmpexp2D,tmpexp2D,(il2-il1+1))
 
         do j=il1, il2 !1,npoints
 !add in surface emission
-!          bb(j)=1/( exp(1307.27/skt(j)) - 1. )
-          bb(j)=1/( tmpexp2D(j) - 1. )
+           bb(j)=1/( exp(1307.27/skt(j)) - 1. )
           !bb(j)=5.67e-8*skt(j)**4
 
           fluxtop_clrsky(j) = fluxtop_clrsky(j) + emsfc_lw(j) * bb(j) &
@@ -336,20 +310,11 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
            trans_layers_above(j)=1.
         enddo
 
-! COMPUTE THE EXP ALL AT ONCE
-        do ilev=1,nlev
-          do j=il1, il2 !1,npoints
-            tmpexp3D(j,ilev) = 1307.27/at(j,ilev)
-          end do
-        end do
-        call gem_vsexp(tmpexp3D,tmpexp3D,nlev*(il2-il1+1))
-
         do ilev=1,nlev
            do j=il1, il2 !1,npoints
 ! Black body emission at temperature of the layer
 
-!              bb(j)=1 / ( exp(1307.27/at(j,ilev)) - 1. )
-              bb(j)=1 / ( tmpexp3D(j,ilev) - 1. )
+              bb(j)=1 / ( exp(1307.27/at(j,ilev)) - 1. )
              !bb(j)= 5.67e-8*at(j,ilev)**4
            enddo
 
@@ -380,16 +345,9 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
            enddo                ! j
         enddo                   ! ilev
 
-! COMPUTE THE EXP ALL AT ONCE
-          do j=il1, il2 !1,npoints
-            tmpexp2D(j) = 1307.27/skt(j)
-          end do
-          call gem_vsexp(tmpexp2D,tmpexp2D,(il2-il1+1))
-
         do j=il1, il2 !1,npoints
 !add in surface emission
-!           bb(j)=1/( exp(1307.27/skt(j)) - 1. )
-           bb(j)=1/( tmpexp2D(j) - 1. )
+           bb(j)=1/( exp(1307.27/skt(j)) - 1. )
           !bb(j)=5.67e-8*skt(j)**4
         end do
 
@@ -420,16 +378,9 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
 !Note that this is discussed on pages 85-87 of
 !the ISCCP D level documentation (Rossow et al. 1996)
 
-! COMPUTE THE EXP ALL AT ONCE
-          do j=il1, il2 !1,npoints
-            tmpexp2D(j) = 1307.27/(attrop(j)-5.)
-          end do
-          call gem_vsexp(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
-
           do j=il1, il2 !1,npoints
 !compute minimum brightness temperature and optical depth
-!            btcmin(j) = 1. /  ( exp(1307.27/(attrop(j)-5.)) - 1. )
-             btcmin(j) = 1. /  ( tmpexp2D(j) - 1. )
+             btcmin(j) = 1. /  ( exp(1307.27/(attrop(j)-5.)) - 1. )
           enddo
 
           do j=il1, il2 !1,npoints
@@ -440,14 +391,8 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
 !tauir(j) has a realistic value should the next if block be
 !bypassed
              tauir(j) = tau(j) * rec2p13
-!             taumin(j) = -1.0*log(max(min(transmax(j),0.9999999),0.001))
-             taumin(j) = max(min(transmax(j),0.9999999),0.001)
+             taumin(j) = -1.0*log(max(min(transmax(j),0.9999999),0.001))
           enddo
-
-          call gem_vslog(taumin(il1),taumin(il1),(il2-il1+1))
-          do j=il1, il2 !1,npoints
-            taumin(j) = -1.0*taumin(j)
-          end do
 
           if (top_height .eq. 1) then
              do j=il1, il2 !1,npoints
@@ -459,18 +404,11 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
              enddo
              do icycle=1,2
 
-! COMPUTE THE EXP ALL AT ONCE
-          do j=il1, il2 !1,npoints
-            tmpexp2D(j) = -1. * tauir(j)
-          end do
-          call gem_vsexp(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
-
                 do j=il1, il2 !1,npoints
                    if (tau(j) .gt. (tauchk            )) then
                       if (transmax(j) .gt. 0.001 .and. &
                            transmax(j) .le. 0.9999999) then
-!                         emcld(j) = 1. - exp(-1. * tauir(j)  )
-                         emcld(j) = 1. - tmpexp2D(j)
+                         emcld(j) = 1. - exp(-1. * tauir(j)  )
                          fluxtop(j) = fluxtopinit(j) - &
                               ((1.-emcld(j))*fluxtop_clrsky(j))
                          fluxtop(j)=max(1.E-06, &
@@ -486,32 +424,17 @@ subroutine ISCCP_SIM1(tau, ptop,                      &! OUTPUT
              enddo
           endif
 
-! COMPUTE THE LOG ALL AT ONCE (CLEAR AND CLOUDY SKY)
-! CLOUDY COLUMNS
-          do j=il1, il2 !1,npoints
-            tmpexp2D(j) = 1. + (1./fluxtop(j))
-          end do
-          call gem_vslog(tmpexp2D(il1),tmpexp2D(il1),(il2-il1+1))
-
-! CLEAR COLUMNS
-          do j=il1, il2 !1,npoints
-            tmplog2D(j) = 1. + (1./fluxtop_clrsky(j))
-          end do
-          call gem_vslog(tmplog2D(il1),tmplog2D(il1),(il2-il1+1))
-
           do j=il1, il2 !1,npoints
              if (tau(j) .gt. (tauchk            )) then
 !cloudy box
-!                tb(j)= 1307.27/ (log(1. + (1./fluxtop(j))))
-                tb(j)= 1307.27/ tmpexp2D(j)
+                tb(j)= 1307.27/ (log(1. + (1./fluxtop(j))))
                 if (top_height.eq.1.and.tauir(j).lt.taumin(j)) then
                    tb(j) = attrop(j) - 5.
                    tau(j) = 2.13*taumin(j)
                 end if
              else
 !clear sky brightness temperature
-!                tb(j) = 1307.27/(log(1.+(1./fluxtop_clrsky(j))))
-                tb(j) = 1307.27/tmplog2D(j)
+                tb(j) = 1307.27/(log(1.+(1./fluxtop_clrsky(j))))
              end if
           enddo                 ! j
 

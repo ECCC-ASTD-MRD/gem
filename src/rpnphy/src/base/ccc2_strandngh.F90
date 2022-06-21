@@ -120,7 +120,7 @@
 !*
       integer i, k, kp1, im, init
       real absc,dto3
-      real tau(ilg),dtr1(ilg),taug(ilg,lay)
+      real tau,dtr1,taug(ilg,lay)
 
       do 10 i = il1, il2
         tran(i,1,1)           =  atten(i)
@@ -139,59 +139,53 @@
             kp1 = k + 1
             do i = il1, il2
               dto3            =  dt(i,k) + 23.13
-              tau(i)          = ((cs1o3gh(1,ig) + &
+              tau             = ((cs1o3gh(1,ig) + &
                                  dto3 * (cs1o3gh(2,ig) + &
                                  dto3 * cs1o3gh(3,ig))) * o3(i,k) + &
                                  cs1o2gh3 * o2(i,k)) * dp(i,k) + &
                                  taua(i,k)
-              dtr1(i)         =   - (tau(i) - tauoma(i,k)) / rmu(i)
-            enddo
-            call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
-            do 100 i = il1, il2
+               dtr1            =  exp( - (tau    - tauoma(i,k)) / rmu(i) )
 !              dto3            =  dt(i,k) + 23.13
-!              tau(i)          = ((cs1o3gh(1,ig) +
+!              tau             = ((cs1o3gh(1,ig) +
 !     1                           dto3 * (cs1o3gh(2,ig) +
 !     2                           dto3 * cs1o3gh(3,ig))) * o3(i,k) +
 !     3                           cs1o2gh3 * o2(i,k)) * dp(i,k) +
 !     4                           taua(i,k)
-              tran(i,1,kp1)   =  tran(i,1,k) * dtr1(i)
+              tran(i,1,kp1)   =  tran(i,1,k) * dtr1   
 !
               if (cldfrac(i,k) .lt. cut)                            then
-                tran(i,2,kp1) =  tran(i,2,k) * dtr1(i)
+                tran(i,2,kp1) =  tran(i,2,k) * dtr1   
               else
-                absc          = (1.0-cldfrac(i,k))*dtr1(i)+cldfrac(i,k)* &
-                                 exp( -(tau(i)+taucs(i,k)-tauomc(i,k)) &
+                absc          = (1.0-cldfrac(i,k))*dtr1   +cldfrac(i,k)* &
+                                 exp( -(tau   +taucs(i,k)-tauomc(i,k)) &
                                  / rmu(i))
                 tran(i,2,kp1) =  tran(i,2,k) * absc
               endif
-  100       continue
+           enddo
   105     continue
         else
           do 115 k = 1, lay
             kp1 = k + 1
             do i = il1, il2
               dto3            =  dt(i,k) + 23.13
-              tau(i)          = (cs1o3gh(1,ig) + dto3 * (cs1o3gh(2,ig) + &
+              tau             = (cs1o3gh(1,ig) + dto3 * (cs1o3gh(2,ig) + &
                                  dto3 * cs1o3gh(3,ig))) * o3(i,k) * &
                                  dp(i,k) + taua(i,k)
-              dtr1(i)         =   - (tau(i) - tauoma(i,k)) / rmu(i)
-            enddo
-            call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
-            do 110 i = il1, il2
+              dtr1            =   exp( - (tau    - tauoma(i,k)) / rmu(i) )
 !             tau             = (cs1o3gh(1,ig) + dto3 * (cs1o3gh(2,ig) +
 !     1                           dto3 * cs1o3gh(3,ig))) * o3(i,k) *
 !     2                           dp(i,k) + taua(i,k)
-              tran(i,1,kp1)   =  tran(i,1,k) * dtr1(i)
+              tran(i,1,kp1)   =  tran(i,1,k) * dtr1   
 !
               if (cldfrac(i,k) .lt. cut)                            then
-                tran(i,2,kp1) =  tran(i,2,k) * dtr1(i)
+                tran(i,2,kp1) =  tran(i,2,k) * dtr1   
               else
-                absc          =(1.0-cldfrac(i,k))*dtr1(i)+cldfrac(i,k) * &
-                                 exp( - (tau(i)+taucs(i,k)-tauomc(i,k)) &
+                absc          =(1.0-cldfrac(i,k))*dtr1   +cldfrac(i,k) * &
+                                 exp( - (tau   +taucs(i,k)-tauomc(i,k)) &
                                  / rmu(i))
                 tran(i,2,kp1) =  tran(i,2,k) * absc
               endif
-  110       continue
+           enddo
   115     continue
         endif
       gwgh =  gws1gh(ig)
@@ -219,23 +213,20 @@
         do 205 k = 1, lay
           kp1 = k + 1
           do i = il1, il2
-            tau(i)            =  taug(i,k) + taua(i,k)
-            dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
-          enddo
-          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
-          do 200 i = il1, il2
+            tau               =  taug(i,k) + taua(i,k)
+            dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i) )
 !           tau               =  taug(i,k) + taua(i,k)
-            tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)
+            tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
 !
             if (cldfrac(i,k) .lt. cut)                              then
-              tran(i,2,kp1)   =  tran(i,2,k) * dtr1(i)
+              tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
-              absc            = (1.0-cldfrac(i,k))*dtr1(i)+cldfrac(i,k)* &
-                                 exp( -(tau(i)+taucs(i,k)-tauomc(i,k)) &
+              absc            = (1.0-cldfrac(i,k))*dtr1   +cldfrac(i,k)* &
+                                 exp( -(tau   +taucs(i,k)-tauomc(i,k)) &
                                  / rmu(i))
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
-  200     continue
+         enddo
   205   continue
 !
         gwgh =  gws2gh(ig)
@@ -262,23 +253,20 @@
         do 305 k = 1, lay
           kp1 = k + 1
           do i = il1, il2
-            tau(i)            =  taug(i,k) + taua(i,k)
-            dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
-          enddo
-          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
-          do 300 i = il1, il2
-!           tau(i)            =  taug(i,k) + taua(i,k)
-            tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)
+            tau               =  taug(i,k) + taua(i,k)
+            dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i))
+!           tau               =  taug(i,k) + taua(i,k)
+            tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
 !
             if (cldfrac(i,k) .lt. cut)                              then
-              tran(i,2,kp1)   =  tran(i,2,k) * dtr1(i)
+              tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
-              absc            = (1.0-cldfrac(i,k))*dtr1(i)+cldfrac(i,k)* &
-                                 exp( - (tau(i)+taucs(i,k)-tauomc(i,k)) &
+              absc            = (1.0-cldfrac(i,k))*dtr1   +cldfrac(i,k)* &
+                                 exp( - (tau   +taucs(i,k)-tauomc(i,k)) &
                                  / rmu(i))
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
-  300     continue
+         enddo
   305   continue
 !
         gwgh =  gws3gh(ig)
@@ -321,23 +309,20 @@
         do 405 k = 1, lay
           kp1 = k + 1
           do i = il1, il2
-            tau(i)            =  taug(i,k) + taua(i,k)
-            dtr1(i)           =   - (tau(i) - tauoma(i,k)) / rmu(i)
-          enddo
-          call gem_vsexp(dtr1(il1),dtr1(il1),il2-il1+1)
-          do 400 i = il1, il2
-!           tau(i)            =  taug(i,k) + taua(i,k)
-            tran(i,1,kp1)     =  tran(i,1,k) * dtr1(i)
+            tau               =  taug(i,k) + taua(i,k)
+            dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i) )
+!           tau               =  taug(i,k) + taua(i,k)
+            tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
 !
             if (cldfrac(i,k) .lt. cut)                              then
-              tran(i,2,kp1)   =  tran(i,2,k) * dtr1(i)
+              tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
-              absc            = (1.0-cldfrac(i,k))*dtr1(i)+cldfrac(i,k)* &
-                                 exp(-(tau(i)+taucs(i,k)-tauomc(i,k)) &
+              absc            = (1.0-cldfrac(i,k))*dtr1   +cldfrac(i,k)* &
+                                 exp(-(tau   +taucs(i,k)-tauomc(i,k)) &
                                  / rmu(i))
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
-  400     continue
+         enddo
   405   continue
 !
         gwgh =  gws4gh(ig)
