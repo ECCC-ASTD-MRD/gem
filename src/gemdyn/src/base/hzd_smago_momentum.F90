@@ -28,12 +28,10 @@
 !
 !Author:  Syed Husain
 !
-      logical :: smago_in_rhs_L, switch_on_wzd
+      logical :: switch_on_wzd
 !-------------------------------------------------------------------
 !
-      smago_in_rhs_L=.false.
-
-      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) .and. (.not. smago_in_rhs_L) ) return
+      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(1) <=0.) ) return
 
       if (Lun_debug_L) write (Lun_out,1000)
 

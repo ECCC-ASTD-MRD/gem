@@ -15,7 +15,8 @@
 
 !** matvec3D Matrix-vector product subroutines (P & H coordinates)
 !
-      subroutine matvec3D(F_vector, F_prod, minx,maxx,miny,maxy)
+      subroutine matvec3D(F_vector, F_prod, F_minx, F_maxx, F_miny, F_maxy,&
+                              F_i0,F_in,F_j0,F_jn)
       use dyn_fisl_options
       use geomh
       use gem_options
@@ -28,10 +29,10 @@
       use metric
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
-      integer, intent(in) ::  minx,maxx,miny,maxy
-      real(kind=REAL64), dimension(minx:maxx,miny:maxy,l_nk), intent(in) :: F_vector
-      real(kind=REAL64), dimension(1-ovlpx:l_ni+ovlpx,1-ovlpy:l_nj+ovlpy,l_nk), intent(out) :: F_prod
+
+      integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy,F_i0,F_in,F_j0,F_jn
+      real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy,l_nk), intent(in) :: F_vector
+      real(kind=REAL64), dimension(F_i0:F_in,F_j0:F_jn,l_nk), intent(out) :: F_prod
 
 ! Author:
 
@@ -40,7 +41,6 @@
       integer :: i, j, k, k0, k0t, km, kp
       real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,0:l_nk+1) :: vector
       real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy,l_nk) :: work_8
-      real, dimension(l_minx:l_maxx, l_miny:l_maxy,l_nk+1) :: fdg2
 
 ! MATVEC in case H coordinates and FISLH_metric_L=.false. , and P coordinates
 
@@ -57,7 +57,6 @@
 
          call rpn_comm_xch_halo_8 (vector(:,:,0:l_nk+1),l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, l_nk+2, &
                            G_halox, G_haloy, G_periodx, G_periody, l_ni,0 )
-
 
          do k=1,l_nk
             do j=1+sol_pil_s, l_nj-sol_pil_n
@@ -95,8 +94,18 @@
          k0t=k0
          if (Schm_opentop_L) k0t=k0-1
 
-         fdg2(:,:,:) = 0.
 
+!$omp single
+         do k = 1, l_nk+1
+            do j=l_miny,l_maxy
+               do i=l_minx,l_maxx
+                  !fdg2(i,j,k)=0.
+               end do
+            end do
+         end do
+!$omp end single
+
+!$omp do
          do k = k0, l_nk
             do j=1+sol_pil_s, l_nj-sol_pil_n
                do i=1+sol_pil_w, l_ni-sol_pil_e
@@ -104,29 +113,39 @@
                end do
             end do
          end do
+!$omp enddo
 
+!$omp do
          do j=1+sol_pil_s, l_nj-sol_pil_n
             do i=1+sol_pil_w, l_ni-sol_pil_e
                   fdg2(i,j,l_nk+1) =GVM%mc_alfas_H_8(i,j) * F_vector(i,j,l_nk)   &
                                    -GVM%mc_betas_H_8(i,j) * F_vector(i,j,l_nk-1)
             end do
          end do
+!$omp enddo
          if (Schm_opentop_L) then
+!$omp do
             do j=1+sol_pil_s, l_nj-sol_pil_n
                do i=1+sol_pil_w, l_ni-sol_pil_e
                   fdg2(i,j,k0t) = GVM%mc_alfat_8(i,j)* F_vector(i,j,k0)
                end do
             end do
+!$omp enddo
          endif
 
          if ( Grd_yinyang_L) then
+!$omp single
             call yyg_xchng (fdg2, l_minx,l_maxx,l_miny,l_maxy, &
                                   l_ni,l_nj, l_nk+1, .false., 'CUBIC', .true.)
+!$omp end single
          else
-            call rpn_comm_xch_halo(fdg2 ,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk+1, &
+!$omp single
+            call rpn_comm_xch_halo(fdg2,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk+1, &
                                 1,1,G_periodx,G_periody,l_ni,0 )
+!$omp end single
          endif
 
+!$omp do collapse(2)
          do k=k0,l_nk
             do j=1+sol_pil_s, l_nj-sol_pil_n
                km=max(k-1,1)
@@ -150,6 +169,8 @@
                      end do
                   end do
                end do
+!$omp enddo
+
 
       endif
 

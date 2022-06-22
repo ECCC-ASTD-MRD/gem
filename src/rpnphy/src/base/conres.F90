@@ -117,12 +117,11 @@
 !     Precomputations for optimisation on IBM
       DO k=1,NK
          DO j=1,N
-            WORK(j,k)=SIGMA(j,NK)/SIGMA(j,k)
+            WORK(j,k)=log(SIGMA(j,NK)/SIGMA(j,k))
             TE(j,k)=FOTTV(TVE(j,k),QE(j,k))
             PRES(j,k)=SE(j,k)*PS(j)
          END DO
       END DO
-      call gem_vslog(WORK,WORK,N*NK)
 !
       CALL mfoqst3(QSAT,TE,PRES,N,NK,N)
 !

@@ -113,7 +113,7 @@
                        coef1(5,n))))
 !
           tau      =  (x1 + (x2 - x1) * dip(i)) * 1.02 * s1(i) * dp(i)
-          atten(i) =    - tau / rmu(i)
+          atten(i) =  exp(- tau / rmu(i))
  1000   continue
        else
         n =  inpt(1) - 1000
@@ -127,12 +127,10 @@
                        coef1(5,n))))
 !
           tau      =  (x1 + (x2 - x1) * dip(i)) * 1.02 * s1(i) * dp(i)
-          atten(i) =    - tau / rmu(i)
+          atten(i) =  exp(- tau / rmu(i))
  1002   continue
        endif
-!
-       call gem_vsexp(atten,atten,il2-il1+1)
-!
+
       else
        if (inpt(1).lt.950)                                          then
         do 2000 i = il1, il2

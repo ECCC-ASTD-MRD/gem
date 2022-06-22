@@ -124,10 +124,10 @@ contains
       logical,dimension(ni)     :: thold
       integer,dimension(ni)     :: p7,p8
       real,dimension(ni)        :: p1,p3,p4,p5,p6,pbl,albpla,fdl,ful,fslo,&
-           rmu0,v1,ws,ws_vs,cosas_vs
+           rmu0,v1
       real,dimension(nk)      :: p10,p11
       real,dimension(ni*npcl)   :: p2
-      real,dimension(ni,nk)    :: shtj,tfull,s_qrt
+      real,dimension(ni,nk)    :: shtj,tfull
       real,dimension(ni,nbs)    :: salb
       real,dimension(ni,nkm1,5)   :: tauae
       real,dimension(ni,nkm1,nbs) :: exta,exoma,exomga,fa,taucs,omcs,gcs
@@ -135,8 +135,7 @@ contains
 
       integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
       real(REAL64) :: hz_8
-      real :: hz, hzp, ptopoz, alwcap, fwcap, albrmu
-!!$      real :: ptop
+      real :: hz, hzp, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss
       logical :: lcsw, lclw, aerosolback
       integer :: il1,il2
@@ -181,8 +180,8 @@ contains
       if (.not.associated(zo3fk)) zo3fk => zo3s
 
       call init2nan(p1, p3, p4, p5, p6, pbl, albpla, fdl, ful, fslo)
-      call init2nan(rmu0, v1, ws, ws_vs, cosas_vs, p10, p11, p2, cldtot)
-      call init2nan(shtj, tfull, s_qrt, salb, sigma_qcw, rlc_cf, rlc_cw)
+      call init2nan(rmu0, v1, p10, p11, p2, cldtot)
+      call init2nan(shtj, tfull, salb, sigma_qcw, rlc_cf, rlc_cw)
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
       call init2nan(omcl, gcl, liqwcin_s, icewcin_s)
       call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
@@ -311,8 +310,8 @@ contains
 
 
          do i = 1, ni
-            s_qrt(i,1) = sig(i,1) / sig(i,2)
-            s_qrt(i,nk) = 1.0
+            shtj(i,1) = sig(i,1) * sqrt(sig(i,1) / sig(i,2))
+            shtj(i,nk) = 1.0
             ! The following line extrapolates the temperature above model top
             ! for moon layer temperature
             !     tfull(i,1) = 0.5 * (3.0 * temp(i,1) - temp(i,2))
@@ -332,15 +331,9 @@ contains
          enddo
          do k = 2, nkm1
             do i = 1, ni
-               s_qrt(i,k) = sig(i,k-1) * sig(i,k)
+               shtj(i,k) = sqrt(sig(i,k-1) * sig(i,k))
                tfull(i,k) = 0.5 * (temp(i,k-1) + temp(i,k))
             enddo
-         enddo
-
-         call gem_vssqrt (shtj,s_qrt,ni*nk)
-
-         do i = 1, ni
-            shtj(i,1)  = sig(i,1) * shtj(i,1)
          enddo
 
          ! calculate aerosol optical properties
@@ -412,18 +405,15 @@ contains
          ! of the previous time step, rather than the end
          !-----------------------------------------------------------------------
 
-         ws_vs=my_udiag*my_udiag+my_vdiag*my_vdiag
-
-         call gem_vspown1(ws, ws_vs, 1.705, ni)
-         call gem_vspown1(cosas_vs, zcosas, 1.4, ni)
          alwcap = 0.3
          do i = 1, ni
             ! au pas de temps zero zglsea n est pas defini car
             ! la radiation est faite avant la sfc
             if (zmg(i) .le. 0.01 .and. zglsea(i) .le. 0.01 .and. &
                  zml(i) .le. 0.01 .and. zcosas(i) .gt. seuil ) then
-               fwcap      = amin1 (3.84e-06 * ws(i), 1.0)
-               albrmu     = 0.037 / (1.1 * cosas_vs(i) + 0.15)
+               ws         = (my_udiag(i)*my_udiag(i) + my_vdiag(i)*my_vdiag(i))**1.705
+               fwcap      = amin1 (3.84e-06 * ws, 1.0)
+               albrmu     = 0.037 / (1.1 * (zcosas(i)**1.4) + 0.15)
                salb(i,1)  = (1.-fwcap) * albrmu + fwcap * alwcap
                salb(i,1)  = amax1 (amin1 (salb(i,1), 0.80), 0.03)
                do l = 2, nbs

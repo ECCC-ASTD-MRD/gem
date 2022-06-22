@@ -26,6 +26,8 @@
       use glb_ld
       use cstv
       use lun
+      use metric
+      use tdpack, only : rgasd_8, grav_8
       use tr3d
       use mem_tracers
       use gmm_itf_mod
@@ -43,7 +45,9 @@
       real, dimension(:,:), pointer :: ptr2d
       real, dimension(:,:,:), pointer :: ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv,tv,pw_uu_plus0,pw_vv_plus0,pw_tt_plus0
-      real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
+      real, dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: delq
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1) :: qt1i
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pm_dyn_8
       real(kind=REAL64),dimension(l_minx:l_maxx,l_miny:l_maxy)        :: p0_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_phy_8
@@ -128,7 +132,7 @@
       !---------------------------------------------------------
       if (source_ps_L) then
 
-         MAX_iteration = 5 
+         MAX_iteration = 5
 
          iteration = 1
 
@@ -139,6 +143,16 @@
          pm_dyn_8(i0_c:in_c,j0_c:jn_c,1:l_nk+1) = pw_pm_plus_8(i0_c:in_c,j0_c:jn_c,1:l_nk+1)
 
          do while (iteration<MAX_iteration)
+
+            if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H'.and.iteration==1) then
+              do k=1,l_nk+1
+                do j=1+pil_s,l_nj-pil_n
+                  do i=1+pil_w,l_ni-pil_e
+                    qt1i(i,j,k) = qt1(i,j,k)
+                  end do
+                end do
+              end do
+            endif
 
             !Estimate Pressure Momentum at TIME P (AFTER PHY)
             !------------------------------------------------
@@ -162,11 +176,39 @@
                end do
             end do
 
+            if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+
+             do j=1+pil_s,l_nj-pil_n
+                do i=1+pil_w,l_ni-pil_e
+                   st1(i,j)= log(p0_8(i,j)/Cstv_pref_8)
+                end do
+             end do
+
+            else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+
             do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
-                  st1(i,j)= log(p0_8(i,j)/Cstv_pref_8)
+               qt1(i,j,l_nk+1) = rgasd_8*Cstv_Tstr_8 * &
+                            (log(p0_8(i,j))-GVM%lg_pstar_8(i,j,l_nk+1))
                end do
             end do
+
+            delq=0.
+            do j=1+pil_s,l_nj-pil_n
+               do i=1+pil_w,l_ni-pil_e
+                delq(i,j) = qt1(i,j,l_nk+1) - qt1i(i,j,l_nk+1)
+               end do
+            end do
+
+            do k=l_nk,1,-1
+              do j=1+pil_s,l_nj-pil_n
+                do i=1+pil_w,l_ni-pil_e
+                  qt1(i,j,k) = qt1i(i,j,k) + delq(i,j)
+                end do
+              end do
+            end do
+
+            end if
 
             iteration = iteration + 1
 
@@ -190,7 +232,7 @@
 
       ! Compute tendencies and reset physical world if requested
       PHY_COUPLING: if (all(phy_cplm == 1.) .and. all(phy_cplt == 1.)) then
-         
+
          ! Pure split coupling
          phy_uu_tend = 0.
          phy_vv_tend = 0.
@@ -203,7 +245,7 @@
             phy_tv_tend(1:l_ni,1:l_nj,1:l_nk) = tv(1:l_ni,1:l_nj,1:l_nk) - tt1(1:l_ni,1:l_nj,1:l_nk)
             phy_tv_tend = phy_tv_tend/Cstv_dt_8
          end if
-         
+
       else
 
          ! Incorporate a component of phy forcing in the rhs of dyn equations
@@ -228,9 +270,9 @@
             pw_vv_plus(:,:,k) = pw_vv_plus0(:,:,k) + phy_cplm(:,:)*(pw_vv_plus(:,:,k)-pw_vv_plus0(:,:,k))
             pw_tt_plus(:,:,k) = pw_tt_plus0(:,:,k) + phy_cplt(:,:)*(pw_tt_plus(:,:,k)-pw_tt_plus0(:,:,k))
          enddo
-         
+
       endif PHY_COUPLING
-     
+
    else
 
       cnt = 0

@@ -18,7 +18,7 @@
       subroutine main_gmm_storage()
       use adz_mem
       use dynkernel_options
-      use dyn_fisl_options  
+      use dyn_fisl_options
       use gem_options
       use glb_ld
       use gmm_geof
@@ -33,7 +33,6 @@
       use ldnh
       use tr3d
       implicit none
-#include <arch_specific.hf>
 
 #include "gmm_gem_flags.hf"
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
@@ -81,7 +80,7 @@
 
       istat = gmm_create(gmmk_me_full_s, me_full  , meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_me_large_s, me_large, meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      
+
       allocate (rhs_zero(l_minx:l_maxx,l_miny:l_maxy,l_nk))
       allocate (rhsb(l_minx:l_maxx,l_miny:l_maxy))
       rhsb = 0.
@@ -129,7 +128,7 @@
       rhs_sol= 0.
 
       endif
-             
+
       if (Dynamics_hauteur_L) then
          allocate ( GVM%zmom_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
                     GVM%ztht_8(l_minx:l_maxx,l_miny:l_maxy,0:G_nk+1), &
@@ -165,3 +164,4 @@
 !
       return
       end
+

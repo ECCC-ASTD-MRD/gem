@@ -329,11 +329,6 @@
       deallocate (x_8, y_8, xpos, ypos)
       deallocate (xposU, yposV )
 
-
-      call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
-
-      call memusage (6)
-
       call rpn_comm_FINALIZE(err)
 !
 !-------------------------------------------------------------------

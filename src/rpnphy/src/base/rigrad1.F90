@@ -71,17 +71,11 @@ subroutine rigrad1b(RI,GAMA,GAMAQ,TBL,DUDZ2,T,TVE,Q,QE, &
       WW(j) = FOTVT( T(j,1), Q(j,1) )
    end do
 
-
-   do k = 1, NK - 1
-      do j = 1, N
-         RI(j,k)=SIGMA(j,k+1)/SIGMA(j,k)
-      enddo
-   enddo
-   call gem_vslog(RI,RI,N*(NK-1))
-
    do k = 1, NK - 1
       do j = 1, N
 
+         RI(j,k) = log(SIGMA(j,k+1)/SIGMA(j,k))
+         
          !           TEMPERATURES VIRTUELLES
 
          TVK = WW(j)

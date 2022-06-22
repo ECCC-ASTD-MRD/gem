@@ -82,7 +82,7 @@ contains
       ! ziarplus age of air                3D  air   seconds
 
       real, dimension(ni, nkm1) :: ptop, pbot       ! nk-1 layers
-      real, dimension(ni, nk)   :: shtj, s_qrt      ! nk "flux" levels
+      real, dimension(ni, nk)   :: shtj             ! nk "flux" levels
 
       real, dimension(ni, nkm1) :: o3_vmr, o3c_vmr, ch4_vmr, n2o_vmr, f11_vmr, f12_vmr ! nk-1 layers
       real, dimension(ni, nkm1) :: o3new, ch4new, f11new, f12new, n2onew          !GMV3
@@ -164,21 +164,15 @@ contains
       ! Calculate shtj, sigma at flux levels
       
       do i = 1, ni
-         s_qrt(i,1) = zsigw(i,1) / zsigw(i,2)
-         s_qrt(i,nk) = 1.0
+         shtj(i,1) = zsigw(i,1) * sqrt(zsigw(i,1) / zsigw(i,2))
+         shtj(i,nk) = 1.0
       enddo
+      
       do k = 2, nkm1
          do i = 1, ni
-            s_qrt(i,k) = zsigw(i,k-1) * zsigw(i,k)
+            shtj(i,k) = sqrt(zsigw(i,k-1) * zsigw(i,k))
          enddo
       enddo
-
-      call gem_vssqrt(shtj,s_qrt,ni*nk)
-
-      do i = 1, ni
-         shtj(i,1) = zsigw(i,1) * shtj(i,1)
-      enddo
-
 
       ! --------------------
       !  Loop on longitudes

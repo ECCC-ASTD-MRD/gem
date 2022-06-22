@@ -61,10 +61,6 @@
          call gem_error(-1,'PSADJ_INIT','PSADJ OPTION NOT VALIDE')
       end if
 
-      if ( Schm_psadj == 2 .and. trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
-         call gem_error(-1,'PSADJ_INIT','PSADJ=2 NOT AVAILABLE in GEM-H')
-      end if
-
       comm = RPN_COMM_comm ('MULTIGRID')
 
       !Estimate area
@@ -87,8 +83,10 @@
          call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
          PSADJ_scale_8 = sum(gathS)
 
+
          call MPI_Allgather(x_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
          PSADJ_fact_8  = sum(gathS)/PSADJ_scale_8
+
 
          PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
 
@@ -97,6 +95,7 @@
          done_area_L = .true.
 
       end if
+
 
       if (Schm_psadj==0) goto 999
 
@@ -138,9 +137,12 @@
          end do
       end do
 
+
       call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
 
       PSADJ_g_avg_ps_initial_8 = sum(gathS) * PSADJ_scale_8
+
+
 
   999 if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
 !

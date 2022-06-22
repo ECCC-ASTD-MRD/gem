@@ -38,30 +38,15 @@ subroutine MFDLESMX(RES,TT,FF,DF,NI,NK)
    ! NK       vertical dimension
    !*
    integer i,k
-   real(REAL64), dimension(ni,nk) :: foewad
-   real(REAL64), dimension(ni,nk) :: fesid
-   real(REAL64), dimension(ni,nk) :: fesmxd
+   real(REAL64) :: foewad, fesid, fesmxd
 
    !***********************************************************************
    do k=1,nk
       do i=1,ni
-         foewad(i,k)=FOEWAF(tt(i,k))
-         fesid(i,k) =FESIF(tt(i,k))
-      enddo
-   enddo
-   call gem_vexp(foewad,foewad,ni*nk)
-   call gem_vexp(fesid,fesid,ni*nk)
-   do k=1,nk
-      do i=1,ni
-         foewad(i,k)=aerk1w*foewad(i,k)
-         fesid(i,k) =aerk1i*fesid(i,k)
-         fesmxd(i,k)=FESMXX(ff(i,k),fesid(i,k),foewad(i,k))
-      enddo
-   enddo
-   do k=1,nk
-      do i=1,ni
-         res(i,k)=&
-              FDLESMXX(tt(i,k),ff(i,k),df(i,k),foewad(i,k),fesid(i,k),fesmxd(i,k))
+         foewad = aerk1w * exp(dble(FOEWAF(tt(i,k))))
+         fesid  = aerk1i * exp(dble(FESIF(tt(i,k))))
+         fesmxd = FESMXX(ff(i,k),fesid,foewad)
+         res(i,k) = FDLESMXX(tt(i,k),ff(i,k),df(i,k),foewad,fesid,fesmxd)
       enddo
    enddo
 

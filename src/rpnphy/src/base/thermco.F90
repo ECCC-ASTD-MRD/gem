@@ -66,21 +66,18 @@ subroutine thermco3(t,qv,qc,sw,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,be
    ! Local variable declarations
    integer :: j,k
    real, dimension(n,nk) :: pres,exner,qsat,dqsat,th,tl,ffice,tfice,dfice,work
-   real(kind=8), dimension(n,nk) :: exnerr,work8
 
    ! Precompute pressure and Exner function
    do k=1,nk
       pres(:,k) = sw(:,k)*ps
+      exner(:,k) = sw(:,k)**CAPPA
    enddo
    ffice = fice
-   call gem_vspown1(exner,sw,CAPPA,n*nk)
-   work8 = exner
-   call gem_vrec(exnerr,work8,n*nk)
    
    ! Compute conserved variables from state inputs
    COMPUTE_CONSERVED: if (inmode) then
       if ( type .eq. 0 ) call ficemxp2(ffice,tfice,dfice,tif,n,nk)
-      th = t*exnerr
+      th = dble(t) / dble(exner)
       thl = th * (1.0-((CHLC+ffice*CHLF)/CPD) * (qc/t))
       qw = qv + qc
    endif COMPUTE_CONSERVED

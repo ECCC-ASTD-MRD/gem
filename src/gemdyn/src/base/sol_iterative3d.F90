@@ -37,10 +37,7 @@
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(in) ::  F_rhs_sol
       real(kind=REAL64), dimension(F_ni,F_nj,F_nk), intent(inout) ::  F_lhs_sol
 
-!author
-!     Abdessamad Qaddouri -- January 2014
-!
-      integer :: its
+      integer :: i,j,k,its
       real(kind=REAL64) :: conv
 
 !
@@ -48,18 +45,38 @@
 !
 !$omp single
 !      call statf_dm (F_rhs_sol, 'RHS', 1, 'TSTP', 1,F_ni,1,F_nj,1,l_Nk,1,1,1,G_ni,G_nj,l_nk,8)
+!$omp end single
 
-
-
-      F_lhs_sol = Sol_saved
+!$omp single
+      do k=1, F_nk
+         do j=1,F_nj
+            do i=1,F_ni
+               F_lhs_sol(i,j,k) = Sol_saved(i,j,k)
+            enddo
+         enddo
+      enddo
+!$omp end single
 
       call sol_fgmres3d (F_lhs_sol, F_rhs_sol, sol_fgm_eps, sol_im, sol_fgm_maxits, its, conv)
 
+!$omp single
       if ( F_print_L ) then
          write(Lun_out, "(3x,'FGMRES converged at iteration', i4,' to a solution with relative residual',1pe14.7)") its, conv
       end if
-      Sol_saved = F_lhs_sol
+!$omp end single
 
+!$omp single
+      do k=1, F_nk
+         do j=1,F_nj
+            do i=1,F_ni
+               Sol_saved(i,j,k) = F_lhs_sol(i,j,k)
+            enddo
+         enddo
+      enddo
+!$omp end single
+
+
+!$omp single
 !      call statf_dm (F_lhs_sol, 'LHS', 1, 'TSTP', 1,F_ni,1,F_nj,1,l_Nk,1,1,1,G_ni,G_nj,l_nk,8)
 !$omp end single
 

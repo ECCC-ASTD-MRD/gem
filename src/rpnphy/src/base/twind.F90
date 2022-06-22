@@ -81,7 +81,6 @@ subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
       real, dimension(N      ) :: WINSPD
       real, dimension(N      ) :: SDX
       real, dimension(N,NK   ) :: THVE
-      real, dimension(N,NK   ) :: WORK
       real, dimension(N,2    ) :: W1
 !
 !***********************************************************************
@@ -92,27 +91,21 @@ subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
       do J=1,N
         W1(J,1) = USTAR(J)**2
         W1(J,2) = CW*WSTAR(J)**2
-        SDTSWS(J) = CU*W1(J,1) + W1(J,2)
-        SDX(J) = CV*W1(J,1) + W1(J,2)
-        WINSPD(J) = UD(J)**2 + VD(J)**2
+        SDTSWS(J) = sqrt(CU*W1(J,1) + W1(J,2))
+        SDX(J) = sqrt(CV*W1(J,1) + W1(J,2))
+        WINSPD(J) = sqrt(UD(J)**2 + VD(J)**2)
+        SDTSWD(J) = atan2(SDX(J), WINSPD(J))
       end do
-!
-      call gem_vssqrt (SDTSWS, SDTSWS, N)
-      call gem_vssqrt (SDX   , SDX   , N)
-      call gem_vssqrt (WINSPD, WINSPD, N)
-      call gem_vsatan2 (SDTSWD, SDX, WINSPD, N)
-!
+
       do J=1,N
         SDTSWD(J) = RAD2DEG*abs( SDTSWD(J) )
       end do
-!
-!
+
 !                                Virtual potential temperature (THVE)
-      call gem_vspown1 (WORK,SE,-CAPPA,N*NK)
-!
+
       do K=1,NK
       do J=1,N
-        THVE(J,K) = TVE(J,K)*WORK(J,K)
+        THVE(J,K) = TVE(J,K) * (SE(J,K)**(-CAPPA))
       end do
       end do
 !
