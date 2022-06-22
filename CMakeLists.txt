@@ -71,8 +71,8 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_N
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
   set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -ftree-vectorize")
-  set(LAPACK_LIBRARIES "lapack")
-  set(BLAS_LIBRARIES "blas")
+  find_package(LAPACK)
+  find_package(BLAS)
   if (EXTRA_CHECKS)
     # in addition to extra checks defined in cmake_rpn compiler presets
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")

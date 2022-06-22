@@ -11,11 +11,10 @@ target_link_libraries(toc2nml
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
    )
 target_include_directories(toc2nml PRIVATE
   ${VGRID_INCLUDE_DIR}
- )
+  )
 
 add_dependencies(toc2nml gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rmn_SRC})
 

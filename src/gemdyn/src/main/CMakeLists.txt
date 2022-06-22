@@ -10,12 +10,6 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
-if ( (DEFINED ENV{EC_ARCH}) AND (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 2021) )
-  if (NOT DEFINED ENV{CRAYPE_VERSION})
-    set(EXTRA_LIBRARIES "-lopen-pal")
-  endif()
-endif()
-
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
@@ -31,7 +25,6 @@ target_link_libraries(checkdmpart
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(checkdmpart gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
@@ -48,8 +41,7 @@ target_link_libraries(gemgrid
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
-   )
+)
 add_dependencies(gemgrid gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(prgemnml mainprgemnml.F90)
@@ -67,7 +59,6 @@ target_link_libraries(prgemnml
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(prgemnml gemdyn ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
