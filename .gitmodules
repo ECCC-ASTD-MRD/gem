@@ -14,7 +14,7 @@
         url = https://gitlab.science.gc.ca/RPN-SI/rpncomm.git
 [submodule "src/rpn-si/rmn"]
 	path = src/rpn-si/rmn
-        url = https://gitlab.science.gc.ca/RPN-SI/rmn.git
+        url = https://gitlab.science.gc.ca/RPN-SI/librmn.git
 	branch=dev
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
