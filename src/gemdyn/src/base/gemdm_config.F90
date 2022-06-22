@@ -172,9 +172,9 @@
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S = dumc_S
 
-      if (Hzd_smago_param > 0. .or. Hzd_smago_lnr(2) > 0.) then
-         if (Hzd_smago_lnr(1) > Hzd_smago_lnr(2) .or. Hzd_smago_lnr(1)<0.) Hzd_smago_lnr(1)=Hzd_smago_lnr(2)
-         if (Hzd_smago_lnr(3) < Hzd_smago_lnr(2) .or. Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
+      if (Hzd_smago_lnr(1) > 0.) then
+         if (Hzd_smago_lnr(2)<0.) Hzd_smago_lnr(2)=Hzd_smago_lnr(1)
+         if (Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
       end if
 
       G_ni  = Grd_ni

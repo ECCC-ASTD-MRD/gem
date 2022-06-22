@@ -55,7 +55,6 @@
       integer :: i, j, k, km, nij, k0t
       real :: w5,w6
       real(kind=REAL64)  :: w1, w2, w3, w4, Pbar, qbar
-      real(kind=REAL64), dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real  , dimension(Minx:Maxx,Miny:Maxy,Nk+1) :: GP
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=.5d0
 !     __________________________________________________________________
@@ -246,25 +245,14 @@
 
       do k=k0t,l_nk
          km=max(k-1,1)
-         do j= j0, jn
-            do i= i0, in
-               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
-               qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)
-               ytmp_8(i,j)=-qbar
-            end do
-         end do
-         call gem_vexp( xtmp_8, ytmp_8, nij )
-         do j= j0, jn
-            do i= i0, in
-               xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j)  &
-                                           +Ver_dcdz_8%t(k)*F_sl(i,j))
-            end do
-         end do
-         call gem_vrec ( ytmp_8, xtmp_8, nij )
          w1=Ver_idz_8%t(k)/rgasd_8
          do j= j0, jn
             do i= i0, in
-               F_t(i,j,k)=ytmp_8(i,j)*(Cstv_Tstr_8-w1*(GP(i,j,k+1)-GP(i,j,k)))
+               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
+               qbar=-(Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k))
+               w2= exp(qbar)*(one+Ver_dbdz_8%t(k)*F_s (i,j)  &
+                                 +Ver_dcdz_8%t(k)*F_sl(i,j))
+               F_t(i,j,k)=(Cstv_Tstr_8-w1*(GP(i,j,k+1)-GP(i,j,k)))/w2
             end do
          end do
       end do

@@ -191,14 +191,14 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    integer, dimension(nbs) :: kgsgh
    integer, dimension(nbl) :: kglgh
 
-   real, dimension(ilg ) :: vs_tau
-
    real a11, a12, a13, a21, a22, a23, a31, a32, a33, c20, c30
    real solarc, fracs, x, gw, rgw
    real cut, seuil,specirr,qmr,qmin
-   integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig
+   integer i, k, lev1, maxc, jyes, lengath, j, kp1, ig
    logical gh
    integer ilg1,ilg2 !subsize of il1,il2
+
+   integer, parameter :: IB = 1
 
    parameter (seuil=1.e-3)
    parameter (qmin=1.5e-6)
@@ -546,12 +546,10 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
       !     fcdb:  CLEAR SKY ,DOWNWARD AT THE SURFACE DIRECT FLUX, for 6 VIS-UV bands
       !     fcfb:  CLEAR SKY ,DOWNWARD AT THE SURFACE DIFFUSE FLUX, for 6 VIS-UV bands
       !----------------------------------------------------------------------
-
-      DO480: do ib = 1, 1
-
+         
          do i = ilg1, ilg2
             j = isun(i)
-            albsur(i)               =  salb(j,ib)
+            albsur(i)               =  salb(j,1)
          enddo
 
          !----------------------------------------------------------------------
@@ -559,37 +557,28 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
          !----------------------------------------------------------------------
 
          DO310: do k = 1, lay
-            if (k.eq.1) then
-               do i = ilg1, ilg2
-                  j = isun(i)
-                  vs_tau(i) = taucs(j,k,ib)
-               enddo
-               call gem_vssqrt(vs_tau,vs_tau,ilg2-ilg1+1)
-            else
-               call gem_vssqrt(vs_tau(1),tauci(1,k-1),ilg2-ilg1+1)
-            endif
             do i = ilg1, ilg2
                j = isun(i)
-               a11                   =  tauae(j,k,1) * extab(ib,1)
-               a12                   =  tauae(j,k,2) * extab(ib,2)
-               a13                   =  tauae(j,k,3) * extab(ib,3)
+               a11                   =  tauae(j,k,1) * extab(1,1)
+               a12                   =  tauae(j,k,2) * extab(1,2)
+               a13                   =  tauae(j,k,3) * extab(1,3)
                taua(i,k)             =  a11 + a12 + a13 + &
-                    exta(j,k,ib) * dps(i,k)
+                    exta(j,k,1) * dps(i,k)
 
-               a21                   =  a11 * omab(ib,1)
-               a22                   =  a12 * omab(ib,2)
-               a23                   =  a13 * omab(ib,3)
+               a21                   =  a11 * omab(1,1)
+               a22                   =  a12 * omab(1,2)
+               a23                   =  a13 * omab(1,3)
                tauoma(i,k)           =  a21 + a22 + a23 + &
-                    exoma(j,k,ib) * dps(i,k)
+                    exoma(j,k,1) * dps(i,k)
 
-               a31                   =  a21 * gab(ib,1)
-               a32                   =  a22 * gab(ib,2)
-               a33                   =  a23 * gab(ib,3)
+               a31                   =  a21 * gab(1,1)
+               a32                   =  a22 * gab(1,2)
+               a33                   =  a23 * gab(1,3)
                tauomga(i,k)          =  a31 + a32 + a33 + &
-                    exomga(j,k,ib) * dps(i,k)
+                    exomga(j,k,1) * dps(i,k)
 
-               f1(i,k)               =  a31 * gab(ib,1) + a32 * gab(ib,2) + &
-                    a33 * gab(ib,3) + fa(j,k,ib)
+               f1(i,k)               =  a31 * gab(1,1) + a32 * gab(1,2) + &
+                    a33 * gab(1,3) + fa(j,k,1)
 
                !----------------------------------------------------------------------
                !     scaling the cloud optical properties due to subgrid variability
@@ -598,24 +587,24 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
 
                if (cldg(i,k) .ge. cut) then
                   if (k .eq. 1) then
-                     tauci(i,k)        =  taucs(j,k,ib)
-                     x                 =  taucs(j,k,ib) + &
-                          9.2 * vs_tau(i)
+                     tauci(i,k)        =  taucs(j,k,1)
+                     x                 =  taucs(j,k,1) + &
+                          9.2 * sqrt(taucs(j,k,1))
                   else
-                     tauci(i,k)        =  tauci(i,k-1) + taucs(j,k,ib)
-                     x                 =  taucs(j,k,ib) + &
-                          9.2 * vs_tau(i)
+                     tauci(i,k)        =  tauci(i,k-1) + taucs(j,k,1)
+                     x                 =  taucs(j,k,1) + &
+                          9.2 * sqrt(tauci(i,k-1))
                   endif
 
-                  taucsg(i,k)         =  taucs(j,k,ib) / (1.0 + 0.185 * &
+                  taucsg(i,k)         =  taucs(j,k,1) / (1.0 + 0.185 * &
                        x * dmix(i) * bf(i,k))
 
-                  c20                 =  taucsg(i,k) * omcs(j,k,ib)
+                  c20                 =  taucsg(i,k) * omcs(j,k,1)
                   tauomc(i,k)         =  tauoma(i,k) + c20
 
-                  c30                 =  c20 * gcs(j,k,ib)
+                  c30                 =  c20 * gcs(j,k,1)
                   tauomgc(i,k)        =  tauomga(i,k) + c30
-                  f2(i,k)             =  f1(i,k) + c30 * gcs(j,k,ib)
+                  f2(i,k)             =  f1(i,k) + c30 * gcs(j,k,1)
                else
                   tauci(i,k)          =  0.0
                   taucsg(i,k)         =  0.0
@@ -634,7 +623,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
          gh = .false.
 
           ! simplified version of do 440 loop for uvindex flux calculations
-           DO400b: do ig = 3, kgs(ib)
+           DO400b: do ig = 3, kgs(1)
 
                !----------------------------------------------------------------------
                !     raylev, visible rayleigh scattering, it is dependant on ig.
@@ -648,7 +637,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
                !     about 1 mb, water vapor contribution is small.
                !----------------------------------------------------------------------
 
-               call ccc2_sattenu4(a1, ib, ig, rmug, o3topg, co2g, ch4g, o2g, &
+               call ccc2_sattenu4(a1, IB, ig, rmug, o3topg, co2g, ch4g, o2g, &
                     pfullg, a1g(1,12), dts, a1(1,5), inptg, gh, &
                     ilg1, ilg2, ilg)
 
@@ -659,7 +648,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
 
             if (lev1 .gt. 1) then
                call ccc2_strandn3(tran, bs, a1, rmug, dps, dts, o3g, o2g, a1(1,3), &
-                    ib, ig, lev1, ilg1, ilg2, ilg, lay, lev)
+                    IB, ig, lev1, ilg1, ilg2, ilg, lay, lev)
 
             else
                do i = ilg1, ilg2
@@ -667,7 +656,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
                enddo
             endif
 
-            call ccc2_gasopts5(taug, gw, dps, ib, ig, o3g, qgs, co2g, ch4g, o2g, &
+            call ccc2_gasopts5(taug, gw, dps, IB, ig, o3g, qgs, co2g, ch4g, o2g, &
                  inptmg, mcontg, omci, dts, a1(1,3), lev1, gh, &
                  ilg1, ilg2, ilg, lay)
 
@@ -680,7 +669,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
                  ilg1, ilg2, ilg, lay, lev)
 
             if (lev1 .gt. 1) then
-               call ccc2_stranup3(refl, dps, dts, o3g, o2g, ib, ig, lev1, &
+               call ccc2_stranup3(refl, dps, dts, o3g, o2g, IB, ig, lev1, &
                     ilg1, ilg2, ilg, lay, lev)
             endif
 
@@ -708,7 +697,6 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
 
            enddo DO400b
 
-      enddo DO480
    499   continue
    return
 end subroutine ccc2_uv_raddriv1

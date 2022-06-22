@@ -14,6 +14,8 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+!#Note: used only in isccp_sim_driver... may not be worht updating/optimizing
+
 subroutine compute_re1(REI, REW, &
      lwc, iwc, aird, &
      mg, ml, &

@@ -132,16 +132,10 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
             VHP(I,K)=S(I,K+1)-S(I,K)
             HD(I)=SK(I,K)-SK(I,K-1)
             !           THE FOLLOWING LHS ARE IN real(REAL64)
-            RHD(I,K)=HD(I)
-            RHMD(I,K)=VHM(I,K)*HD(I)
-            RHPD(I,K)=VHP(I,K)*HD(I)
-         enddo
-      enddo
-      call gem_vrec(RHD (1,2), RHD(1,2),N*(NK-2))
-      call gem_vrec(RHMD(1,2),RHMD(1,2),N*(NK-2))
-      call gem_vrec(RHPD(1,2),RHPD(1,2),N*(NK-2))
-      do K=2,NK-1,1
-         do I=1,N
+            RHD(I,K)=1.d0/HD(I)
+            RHMD(I,K)=1.d0/(VHM(I,K)*HD(I))
+            RHPD(I,K)=1.d0/(VHP(I,K)*HD(I))
+
             A(I,K)=KU(I,K-1)*RHMD(I,K)
             C(I,K)=KU(I,K)*RHPD(I,K)
             B(I,K)=-A(I,K)-C(I,K)
@@ -199,17 +193,10 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
             enddo
          endif
          do I=1,N
-            !       THE FOLLOWING LHS ARE IN real(REAL64)
-            RHD(I,K)=HD(I)
-            RHMD(I,K)=VHM(I,K)*HD(I)
-            RHPD(I,K)=VHP(I,K)*HD(I)
-         enddo
-      enddo
-      call gem_vrec( RHD(1,2), RHD(1,2),N*(NKX-2))
-      call gem_vrec(RHMD(1,2),RHMD(1,2),N*(NKX-2))
-      call gem_vrec(RHPD(1,2),RHPD(1,2),N*(NKX-2))
-      do K=2,NKX-1,1
-         do I=1,N
+            RHD(I,K)=1.d0/HD(I)
+            RHMD(I,K)=1.d0/(VHM(I,K)*HD(I))
+            RHPD(I,K)=1.d0/(VHP(I,K)*HD(I))
+            
             KUM=0.5*(KU(I,K-1)+KU(I,K))
             KUP=0.5*(KU(I,K+1)+KU(I,K))
             A(I,K)=KUM*RHMD(I,K)

@@ -44,13 +44,13 @@ subroutine hines_exp(darr, data_zmax, alt, alt_exp,     &
    integer  il1, il2, lev1, lev2, nlons, nlevs
    real(REAL64) :: alt_exp
    real(REAL64) :: darr(nlons,nlevs), data_zmax(nlons), alt(nlons,nlevs)
-   real(REAL64) :: exp_fac(nlons,nlevs)
    !*@/
 
    integer  levbot, levtop, lincr, i, l
-   real(REAL64) :: hscale
+   real(REAL64) :: rhscale, exp_fac
    !-----------------------------------------------------------------------
-    hscale = 5.e3
+    rhscale = 1./5.e3
+   
 
     !  index of lowest altitude level (bottom of drag calculation).
  
@@ -80,15 +80,9 @@ subroutine hines_exp(darr, data_zmax, alt, alt_exp,     &
 
     do l = 1,lev2
        do i = il1,il2
-         exp_fac(i,l)=(alt_exp-alt(i,l))/hscale
-       end do
-    end do
-    call gem_vexp(exp_fac,exp_fac,lev2*(il2-il1+1))
-
-    do l = 1,lev2
-       do i = il1,il2
           if (alt(i,l) .ge. alt_exp)  then
-             darr(i,l) = data_zmax(i) * exp_fac(i,l)
+             exp_fac = exp((alt_exp-alt(i,l))*rhscale)
+             darr(i,l) = data_zmax(i) * exp_fac
           end if
        end do
     end do

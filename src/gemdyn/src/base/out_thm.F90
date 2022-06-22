@@ -135,18 +135,18 @@
 
 !     Obtain humidity HUT1 and other GMM variables
       nullify (gmm_hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
-      istat= gmm_get('TR/'//'HU'//':P', gmm_hut1      )
-      istat= gmm_get(gmmk_tt1_s       , tt1       )
-      istat= gmm_get(gmmk_wt1_s       , wt1       )
-      istat= gmm_get(gmmk_fis0_s      , fis0      )
+      istat= gmm_get('TR/'//'HU'//':P', gmm_hut1  )
+!      istat= gmm_get(gmmk_tt1_s       , tt1       )
+!      istat= gmm_get(gmmk_wt1_s       , wt1       )
+!      istat= gmm_get(gmmk_fis0_s      , fis0      )
       istat= gmm_get(gmmk_pw_log_pm_s , wlnph_m   )
       istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
-      istat= gmm_get(gmmk_pw_tt_plus_s, pw_tt_plus)
-      istat= gmm_get(gmmk_pw_p0_plus_s, pw_p0_plus)
-      istat= gmm_get(gmmk_st1_s       , st1       )
+!      istat= gmm_get(gmmk_pw_tt_plus_s, pw_tt_plus)
+!      istat= gmm_get(gmmk_pw_p0_plus_s, pw_p0_plus)
+!      istat= gmm_get(gmmk_st1_s       , st1       )
       istat= gmm_get(gmmk_diag_tt_s   , tdiag     )
       istat= gmm_get(gmmk_diag_hu_s   , qdiag     )
-      istat= gmm_get(gmmk_sls_s       , sls       )
+!      istat= gmm_get(gmmk_sls_s       , sls       )
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
@@ -197,7 +197,7 @@
                   'MELS',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
                   knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
             endif
-         end if         
+         end if
       if (pnmx /= 0)then
             call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
@@ -282,9 +282,9 @@
 
       lastdt = Lctl_step
 
-!     Calculate PN
+!     Compute PN
       if (pnpn /= 0) then
-         call gem_vslog (w2, p0, l_ninj)
+         w2= log(p0)
          call pnm (w1, vt(l_minx,l_miny,nk_src), fis0, w2, wlao, &
                    ttx, htx, nk_under, l_minx, l_maxx, l_miny, l_maxy, 1)
          if (Outd_filtpass(pnpn,set) > 0) &
@@ -295,7 +295,7 @@
               knd,-1,1, ind0, 1, Outd_nbit(pnpn,set),.false. )
       end if
 
-!     Calculate P0
+!     Compute P0
       if (pnp0 /= 0) then
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
@@ -310,17 +310,9 @@
               knd,-1,1,ind0, 1, Outd_nbit(pnp0,set),.false.)
          if(Schm_sleve_L)then
             if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' )then
-               ! This is constant during the integration. This could be done just once and saved, is it worthwile??
-               istat = gmm_get (gmmk_sls_s ,sls )
-               ! Pourquoi faire cette copie??
-               w1(:,:)= sls(:,:)
-               ! Must do exchange if calculating in the halos
-               call rpn_comm_xch_halo(w1,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
-                                      1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-               call gem_vsexp (w2,w1,l_ninj)
                do j=l_miny,l_maxy
                   do i=l_minx,l_maxx
-                     w1(i,j) = w2(i,j)*Cstv_pref_8
+                     w1(i,j) = exp(sls(i,j))*Cstv_pref_8
                   end do
                end do
                call out_fstecr (w1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
@@ -424,14 +416,13 @@
             allocate ( px_ta(l_minx:l_maxx,l_miny:l_maxy,G_nk+1),&
                        px_m (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
-!            Calculate PX (in px), thermo levels.
-!            And output all the levels!
-             call gem_vsexp(px_ta(l_minx,l_miny,1),wlnph_ta(l_minx,l_miny,1),(l_ninj*G_nk))
-             px_ta(:,:,G_nk+1) = p0
+!            Compute PX on thermo levels
+             px_ta(:,:,1:G_nk)= exp(wlnph_ta(:,:,1:G_nk))
+             px_ta(:,:,G_nk+1)= p0
 
-!            Calculate PX (in px), momentum levels.
-             call gem_vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*G_nk)
-             px_m(:,:,G_nk+1) = p0
+!            Compute PX on momentum levels
+             px_m(:,:,1:G_nk)= exp(wlnph_m(:,:,1:G_nk))
+             px_m(:,:,G_nk+1)= p0
 
          end if
 
@@ -448,13 +439,13 @@
                      'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
                      knd,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
 !code a revoir
-!!$                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then                   
+!!$                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 !!$                   call out_px_diag_level(w1,hybm(G_nk+2)*grav_8, &
-!!$                        l_minx,l_maxx,l_miny,l_maxy,G_nk,px_m,gzm)                
+!!$                        l_minx,l_maxx,l_miny,l_maxy,G_nk,px_m,gzm)
 !!$                   work=gz_diag_m/grav_8
 !!$                   call out_fstecr(w1,l_minx,l_maxx,l_miny,l_maxy,work, &
 !!$                        'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
-!!$                        4,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )                
+!!$                        4,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
 !!$                   call out_px_diag_level(w1,hybt(G_nk+2)*grav_8, &
 !!$                        l_minx,l_maxx,l_miny,l_maxy,G_nk,px_m,gzm)
 !!$                   work=gz_diag_t/grav_8
@@ -577,7 +568,7 @@
 
             if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) &
                call gem_error(-1,'out_thm','REVIEW WE CODE for DYNAMICS_FISL_H')
-            
+
             istat = gmm_get(gmmk_zdt1_s,zdt1)
             allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
             ffwe(:,:,G_nk)= 0.

@@ -78,8 +78,7 @@ contains
       integer :: k
       real :: wrk(ni,nkscope-1)
       !----------------------------------------------------------------
-      wrk(:,1:nkscope-1) = sigt(:,2:nkscope) - sigt(:,1:nkscope-1)
-      call gem_vsrec(wrk, wrk, size(wrk))
+      wrk(:,1:nkscope-1) = 1. / (sigt(:,2:nkscope) - sigt(:,1:nkscope-1))
       atq2m(:,1) = 0.
       do k = 2, nkscope
          atq2m(:,k) = (sigt(:,k) - sigm(:,k)) * wrk(:,k-1)
@@ -107,8 +106,7 @@ contains
       integer :: k
       real :: wrk(ni,nkscope-1)
       !----------------------------------------------------------------
-      wrk(:,1:nkscope-1) = sigm(:,2:nkscope) - sigm(:,1:nkscope-1)
-      call gem_vsrec(wrk, wrk, size(wrk))
+      wrk(:,1:nkscope-1) = 1. / (sigm(:,2:nkscope) - sigm(:,1:nkscope-1))
       do k = 1, nkscope-1
          atq2t(:,k) = (sigt(:,k) - sigm(:,k)) * wrk(:,k)
       enddo

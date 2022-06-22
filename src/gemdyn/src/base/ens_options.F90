@@ -362,7 +362,7 @@ contains
          spp_L          =  Ens_conf .and. len_trim(Ens_spplist(1)) > 0
 
          if(Lun_out >= 0) then
-            write(Lun_out,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
+            write(Lun_out,"(a,i0)" )'Ens_mc_seed   = ',Ens_mc_seed
             write(Lun_out,'(a,l5)' )'Ens_skeb_conf  = ',Ens_skeb_conf
             write(Lun_out,'(a,l5)' )'Ens_stat  = ',Ens_stat
             write(Lun_out,'(a,l5)' )'Ens_skeb_div   = ',Ens_skeb_div

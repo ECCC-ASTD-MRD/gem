@@ -15,7 +15,6 @@
 !**s/r set_geomh - initialize model geometry
 
       subroutine set_geomh()
-      ! initialize model horizontal geometry
       use dcst
       use gem_options
       use ctrl
@@ -31,12 +30,11 @@
       use wb_itf_mod
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       integer, external :: ezgdef_fmem,gdll
       integer offi,offj,indx,err,dgid,hgc_array(4), nicore, njcore
       integer gphy_i0, gphy_in, gphy_j0, gphy_jn, gphy_ni, gphy_nj, gphy_nicore, gphy_njcore
-      integer i,j,dimy,istat,ni,nj,offset, glbphy_gid, glbphycore_gid
+      integer i,j,istat,ni,nj,offset, glbphy_gid, glbphycore_gid
       real xfi(0:l_ni+1),yfi(0:l_nj+1)
       real gxfi(G_ni),gyfi(G_nj)
       real(kind=REAL64) posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
@@ -101,19 +99,7 @@
          geomh_latgs(i) =  posy_8(i)
          geomh_latgv(i) = geomh_latF(i)
       end do
-!!$      print*, geomh_longs
-!!$      print*, 'allo'
-!!$      print*, geomh_longu
-!!$      print*, 'allo'
-!!$      print*, geomh_latgs
-!!$      print*, 'allo'
-!!$      print*, geomh_latgv
-!!$      print*, 'allo'
-!!$      print*, 1-G_halox, G_ni+G_halox
-!!$      print*, 1-G_haloy, G_nj+G_haloy,G_ni,G_nj
-!!$      call gem_error(-1,'','')      
-!!$          -3         102
-!!$          -3          82          98          78
+
       allocate (geomh_x_8 (l_minx:l_maxx),geomh_xu_8 (l_minx:l_maxx),&
                 geomh_sx_8(l_minx:l_maxx),geomh_sy_8 (l_miny:l_maxy),&
                 geomh_cx_8(l_minx:l_maxx),geomh_cy_8 (l_miny:l_maxy),&
@@ -160,13 +146,11 @@
          geomh_cyv_8 (j)= cos( geomh_yv_8(j) )
          geomh_cyv2_8(j)= cos( geomh_yv_8(j) )**2
          geomh_cyM_8 (j)= geomh_cyv_8(j)
+         geomh_invcy2_8 (j) = 1.d0/geomh_cy2_8  (j)
+         geomh_invcyv2_8(j) = 1.d0/geomh_cyv2_8 (j)
+         geomh_invcy_8  (j) = 1.d0/geomh_cy_8   (j)
+         geomh_invcyv_8 (j) = 1.d0/geomh_cyv_8  (j)
       end do
-
-      dimy = l_nj+2*G_haloy
-      call gem_vrec ( geomh_invcy2_8  , geomh_cy2_8 , dimy )
-      call gem_vrec ( geomh_invcyv2_8 , geomh_cyv2_8, dimy )
-      call gem_vrec ( geomh_invcy_8   , geomh_cy_8  , dimy )
-      call gem_vrec ( geomh_invcyv_8  , geomh_cyv_8 , dimy )
 
       do j=1-G_haloy, l_nj+G_haloy
          indx = offj + j

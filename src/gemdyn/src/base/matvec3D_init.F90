@@ -33,11 +33,12 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
+!Author: A. Qaddouri & R. Aider  2021
+!
       integer j, jj, i, ii, id, k
       real(kind=REAL64)  :: di_8
       real(kind=REAL64)  :: xxx, yyy
       real(kind=REAL64), parameter :: one=1.d0, zero=0.d0, half=0.5d0
-      real(kind=REAL64), dimension(l_minx:l_maxx, l_miny:l_maxy,l_nk,15) :: A1, B1 ,A2, B2,C1
 
       integer, parameter :: IDX_POINT=1, IDX_WEST=2, IDX_EAST=3, IDX_NORTH=4, IDX_SOUTH=5, IDX_TOP=6, IDX_BOTTOM=7
 
@@ -58,7 +59,7 @@
                do i=1+sol_pil_w, l_ni-sol_pil_e
                   ii=i+l_i0-1
 
-                  Sol_stencilp_8(i,j,IDX_POINT,k) = Cstv_hco0_8 * (Opr_opszp2_8(G_nk+k) + Opr_opszpl_8(G_nk+k) &
+                  Sol_stencilp_8(i,j,IDX_POINT,k) = Cstv_hco0_8 * (Cstv_hco3_8*Opr_opszp2_8(G_nk+k) + Cstv_hco3_8*Opr_opszpl_8(G_nk+k) &
                               + xxx * Opr_opszpm_8(G_nk+k) + yyy * Opr_opszp0_8(G_nk+k)) &
                               + Opr_opszp0_8(G_nk+k) * (Opr_opsxp2_8(G_ni+ii) * di_8     &
                               + Opr_opsxp0_8(G_ni+ii) * Opr_opsyp2_8(G_nj+jj))           &
@@ -76,9 +77,9 @@
                   Sol_stencilp_8(i,j,IDX_NORTH,k) = Opr_opsxp0_8(G_ni+ii) * Opr_opsyp2_8(2*G_nj+jj) * Opr_opszp0_8(G_nk+k) &
                               / (Opr_opsxp0_8(G_ni+ii) * Opr_opsyp0_8(G_nj+jj))
 
-                  Sol_stencilp_8(i,j,IDX_TOP,k) = Cstv_hco0_8 * (Opr_opszp2_8(k) + Opr_opszpl_8(k) + xxx * Opr_opszpm_8(k))
+                  Sol_stencilp_8(i,j,IDX_TOP,k) = Cstv_hco0_8 * (Cstv_hco3_8*Opr_opszp2_8(k) + Cstv_hco3_8*Opr_opszpl_8(k) + xxx * Opr_opszpm_8(k))
 
-                  Sol_stencilp_8(i,j,IDX_BOTTOM,k) = Cstv_hco0_8 * (Opr_opszp2_8(2*G_nk+k) + Opr_opszpl_8(2*G_nk+k) + xxx * Opr_opszpm_8(2*G_nk+k))
+                  Sol_stencilp_8(i,j,IDX_BOTTOM,k) = Cstv_hco0_8 * (Cstv_hco3_8*Opr_opszp2_8(2*G_nk+k) + Cstv_hco3_8*Opr_opszpl_8(2*G_nk+k) + xxx * Opr_opszpm_8(2*G_nk+k))
 
                end do
             end do

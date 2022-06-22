@@ -16,15 +16,13 @@
 !**s/r hzd_theta - applies horizontal diffusion on theta
 !
       subroutine hzd_theta
-      use hzd_ctrl
+      use hzd_exp
       use gmm_pw
       use gmm_vt1
       use tdpack
       use glb_ld
       use lun
       implicit none
-#include <arch_specific.hf>
-
 
       integer k
       real, parameter :: p_naught=100000., eps=1.0e-5
@@ -34,20 +32,17 @@
 !
 
       do k=1,G_nk
-         pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
-         call gem_vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
-                       real(cappa_8),l_ni*l_nj)
-         th(1:l_ni,1:l_nj,k) = tt1   (1:l_ni,1:l_nj,k) * &
-                               pres_t(1:l_ni,1:l_nj,k)
-!NOTE, zeroing in halo regions in order to avoid float error when dble(X)
-!  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
+         pres_t(1:l_ni,1:l_nj,k) = (p_naught/pw_pt_plus(1:l_ni,1:l_nj,k))**cappa_8
+         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
+!NOTE: painting the halo regions in order to avoid float error when dble(X)
+!      under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
          th(l_minx:0     ,:     ,k) = tcdk_8
          th(l_ni+1:l_maxx,:     ,k) = tcdk_8
          th(1:l_ni,l_miny:0     ,k) = tcdk_8
          th(1:l_ni,l_nj+1:l_maxy,k) = tcdk_8
       end do
 
-      call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
+      call hzd_exp_visco ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
       do k=1,G_nk
          tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &
