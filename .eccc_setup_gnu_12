@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Source this file to:
+# - Load module for gnu 12 (on science only)
+# - Load a script for common setup to all compilers
+
+. ./ci-env/latest/profile.sh
+export MODULEPATH=~sidr000/modules:$MODULEPATH
+module load gcc12
+export EC_ARCH=rhel-8-icelake-64/gnu-12.1.0
+export COMPILER_SUITE=gnu
+COMPILER_VERSION=$(utils/compiler.sh gnu)
+export COMPILER_VERSION
+
+. ./.common_setup ${COMPILER_SUITE}

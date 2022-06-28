@@ -1,10 +1,10 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
-	url = ../cmake_rpn.git
+	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn.git
 	branch = dev
 [submodule "ci-env"]
 	path = ci-env
-	url = ../ci-env.git
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env.git
 [submodule "src/rpn-si/vgrid"]
 	path = src/rpn-si/vgrid
         url = https://gitlab.science.gc.ca/RPN-SI/vgrid.git
@@ -21,22 +21,22 @@
         url = https://gitlab.science.gc.ca/RPN-SI/tdpack.git
 [submodule "cmake_rpn-modelutils"]
 	path = src/modelutils/cmake_rpn
-	url = ../cmake_rpn.git
+	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn.git
 	branch = dev
 [submodule "ci-env-modelutils"]
 	path = src/modelutils/ci-env
-	url = ../ci-env.git
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env.git
 [submodule "cmake_rpn-rpnphy"]
 	path = src/rpnphy/cmake_rpn
-	url = ../cmake_rpn.git
+	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn.git
 	branch = dev
 [submodule "ci-env-rpnphy"]
 	path = src/rpnphy/ci-env
-	url = ../ci-env.git
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env.git
 [submodule "cmake_rpn-gemdyn"]
 	path = src/gemdyn/cmake_rpn
-	url = ../cmake_rpn.git
+	url = https://gitlab.science.gc.ca/RPN-SI/cmake_rpn.git
 	branch = dev
 [submodule "ci-env-gemdyn"]
 	path = src/gemdyn/ci-env
-	url = ../ci-env.git
+	url = https://gitlab.science.gc.ca/RPN-SI/ci-env.git

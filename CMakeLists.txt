@@ -166,6 +166,7 @@ add_custom_target(work
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
 )
 
+ec_package_name()                 # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
@@ -176,6 +177,6 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
 set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_PREFIX}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${PROJECT_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${GEM_VERSION}")
 include(CPack)
