@@ -168,6 +168,27 @@ CANO_wil7_intel:
       fi
     - test "${_status}" == "ED"
 
+GEM_cfgs_intel:
+  stage: run_configs_intel
+  dependencies:
+  - build_intel
+  when: always
+  only:
+  - dev-subtrees
+  allow_failure: true
+  script:
+    - . ./.eccc_setup_intel
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
 GEM_GY_FISL_P_intel:
   stage: run_configs_intel
   dependencies:
@@ -457,6 +478,28 @@ CANO_wil7_gnu:
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
+    - test "${_status}" == "ED"
+
+GEM_cfgs_gnu:
+  stage: run_configs_gnu
+  dependencies:
+  - build_gnu-12.1.0
+  when: always
+  only:
+  - dev-subtrees
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu_12
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
