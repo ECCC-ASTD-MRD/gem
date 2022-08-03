@@ -3,20 +3,30 @@ Warning: dev-subtrees branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
 # getting gem git repository
+# choose one of the following methods
+
+# 1. cloning only the necessary submodules (gemdyn, modelutils, rpnphy) in one step
+git clone --branch dev-subtrees --recurse-submodules=":(exclude)src/rpn-si/*" git@gitlab.science.gc.ca:cpi001/gem-devel.git
+cd gem-devel
+
+# 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
+git clone --branch dev-subtrees --recursive git@gitlab.science.gc.ca:cpi001/gem-devel.git
+cd gem-devel
+
+# 3. or cloning in several steps
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 git checkout dev-subtrees
-# if you want, create your own branch
-git branch mybranch
-
 # Update all submodules, including rpn-si libraries
 git submodule update --init --recursive
 # or updating only the necessary submodules, for a smaller size of the clone directory
-# Updating the necessary submodules (compulsory), leaving rpn-si libraries
-git submodule update --init ci-env cmake_rpn
+ git -c submodule."src/rpn-si/rmn".update=none -c submodule."src/rpn-si/tdpack".update=none -c submodule."src/rpn-si/vgrid".update=none -c submodule."src/rpn-si/rpncomm".update=none submodule update --init --recursive
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
+
+# if you want, create your own branch
+git checkout -b mybranch
 
 . ./.eccc_setup_intel
 
@@ -30,8 +40,9 @@ git submodule update --init ci-env cmake_rpn
 
 # building and installing GEM
 # see Makefile for options
-# for example, make cmake-gemdyn-only compile only gemdyn
-# make cmake compile everything and will need to have all the submodules
+# for example, make cmake-all compiles everything: we need to
+# update rpn-si submodules to use it (see above)
+# make cmake compiles only gemdyn, modelutils and rpnphy
 make cmake
 make -j
 make work

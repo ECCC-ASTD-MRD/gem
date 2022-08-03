@@ -16,7 +16,7 @@ version=@PROJECT_VERSION@
 env=@EC_CI_ENV@
 arch=@EC_ARCH@
 
-has_rmn=@RMN_VERSION@
+has_rmn=@rmn_VERSION@
 has_tdpack=@tdpack_VERSION@
 has_vgrid=@VGRID_VERSION@
 has_modelutils=@modelutils_VERSION@
