@@ -23,7 +23,7 @@ build_gnu-9.3.0:
     - set +e
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
-    - make cmake
+    - make cmake-all
     - make -j `nproc`
     - make -j `nproc` work
   allow_failure: true
@@ -39,7 +39,7 @@ build_gnu-12.1.0:
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
+    - make cmake-all
     - make -j `nproc`
     - make work
   artifacts:
@@ -59,7 +59,7 @@ build_intel_with_rpn:
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-with-system-rpn
+    - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   allow_failure: true
@@ -75,7 +75,7 @@ build_intel:
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
+    - make cmake-all
     - make -j `nproc`
     - make -j `nproc` work
   artifacts:
