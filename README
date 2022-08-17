@@ -1,22 +1,22 @@
 # How to get, compile and run GEM at the CMC.
-Warning: dev-subtrees branch uses submodules. Make sure you follow the
+Warning: 5.2_cmake branch uses submodules. Make sure you follow the
 instructions below for that branch.
 
 # getting gem git repository
 # choose one of the following methods
 
 # 1. cloning only the necessary submodules (gemdyn, modelutils, rpnphy) in one step
-git clone --branch dev-subtrees --recurse-submodules=":(exclude)src/rpn-si/*" git@gitlab.science.gc.ca:cpi001/gem-devel.git
+git clone --branch 5.2_cmake --recurse-submodules=":(exclude)src/rpn-si/*" git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 
 # 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
-git clone --branch dev-subtrees --recursive git@gitlab.science.gc.ca:cpi001/gem-devel.git
+git clone --branch 5.2_cmake --recursive git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 
 # 3. or cloning in several steps
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
-git checkout dev-subtrees
+git checkout 5.2_cmake
 # Update all submodules, including rpn-si libraries
 git submodule update --init --recursive
 # or updating only the necessary submodules, for a smaller size of the clone directory
