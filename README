@@ -44,8 +44,11 @@ git checkout -b mybranch
 # update rpn-si submodules to use it (see above)
 # make cmake compiles only gemdyn, modelutils and rpnphy
 make cmake
+# compile
 make -j
+# install in working directory
 make work
+# you can also use make -j work to compile and install in the same step.
 
 # running GEM: example
 cd $GEM_WORK
