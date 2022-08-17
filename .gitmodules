@@ -47,4 +47,4 @@
 	branch = dev
 [submodule "gem-maestro"]
 	path = gem-maestro
-	url = git@gitlab.science.gc.ca:cpi001/gem-maestro.git
+	url = https://gitlab.science.gc.ca:cpi001/gem-maestro.git
