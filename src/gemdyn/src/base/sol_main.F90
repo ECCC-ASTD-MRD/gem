@@ -45,11 +45,6 @@
                            F_conv_L, offi, offj )
 !$omp end single
 
-      else if (trim(Sol_type_S) == 'ITERATIVE_2D') then
-!$omp single
-            call sol_iterative2d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
-                                   F_conv_L, offi, offj )
-!$omp end single
       else ! 'ITERATIVE_3D'
             call sol_iterative3d ( F_rhs, F_solution, F_ni, F_nj, F_nk, &
                                    F_conv_L )

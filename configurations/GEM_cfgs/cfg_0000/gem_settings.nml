@@ -21,7 +21,7 @@
 /
 
 &dyn_kernel
-  dynamics_hydro_l  = .true.
+  dynamics_hydro_l  = .false.
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
 

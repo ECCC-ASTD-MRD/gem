@@ -148,6 +148,11 @@
       Dynamics_FISL_L    = Dynamics_Kernel_S(1:13)  == 'DYNAMICS_FISL'
       Dynamics_hauteur_L = Dynamics_Kernel_S(14:15) == '_H'
 
+      if (Dynamics_hydro_L.and.Dynamics_hauteur_L) then
+         if(lun_out>0) write (Lun_out, '(/"   ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H")' )
+         return
+      endif
+
       select case ( trim(Dynamics_Kernel_S) )
          case ('DYNAMICS_FISL_P')
             call set_zeta ( hyb, G_nk )

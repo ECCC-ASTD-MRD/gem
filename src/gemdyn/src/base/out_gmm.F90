@@ -46,9 +46,9 @@
 
 !     Setup the indexing for output
       call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
-      indo(G_nk+1)= G_nk+1
+      indo(nko+1)= G_nk+1
 
-      do ii=1,Outd_var_max(set)
+      do ii= 1, Outd_var_max(set)
       do  i= 1, gmm_cnt
 
          if ( trim(Outd_varnm_S(ii,set)) == trim(GMM_tbl%vname(i)) ) then
@@ -87,10 +87,8 @@
                                      -1,1,ind0,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(GMM_tbl%vname(i),tr3,tmp_meta)
-               NK= G_nk ; WNK= nko
-               if ((tmp_meta%l(3)%high>G_nk).and.write_diag_lev) then
-                  NK= G_nk+1 ; WNK= nko+1
-               endif
+               NK= tmp_meta%l(3)%high ; WNK= nko
+               if ((tmp_meta%l(3)%high>G_nk).and.write_diag_lev) WNK= nko+1
                call out_fstecr (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                      tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                   level_type,nomvar,Outd_convmult(ii,set),&
