@@ -61,6 +61,7 @@
             F_metric%lg_pstar_8(i,j,G_nk+1)=log(1.d5)-grav_8*F_metric%zmom_8(i,j,G_nk+1)/(rgasd_8*Cstv_Tstr_8)
          end do
       end do
+
       do k=1,G_nk
          do j=1-G_haloy,l_nj+G_haloy
             do i=1-G_halox,l_ni+G_halox
@@ -78,6 +79,7 @@
       err=0
       if (minval(dgzm)<0. .or. minval(dgzt)<0. ) err=-1
       call gem_error (err,'vertical_metric','Heights NOT monotonically decreasing from model top')
+
       do j=1-G_haloy,l_nj+G_haloy
          do k=G_nk,1,-1
             do i=1-G_halox,l_ni+G_halox
@@ -102,11 +104,17 @@
             end do
          end do
       end do
+
       do j=1-G_haloy+1,l_nj+G_haloy-1
 !DIR$ SIMD
          do i=1-G_halox+1,l_ni+G_halox-1
-            F_metric%ztht_8(i,j,G_nk)= ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*F_topo(i,j)+Ver_c_8%t(G_nk)*F_sls(i,j))/grav_8
             F_metric%mc_css_H_8(i,j) = one/(gama_8*(isol_i*F_metric%mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
+         end do
+      end do
+      do j=1-G_haloy,l_nj+G_haloy
+!DIR$ SIMD
+         do i=1-G_halox,l_ni+G_halox
+            F_metric%ztht_8(i,j,G_nk)= ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*F_topo(i,j)+Ver_c_8%t(G_nk)*F_sls(i,j))/grav_8
          end do
       end do
 
@@ -279,8 +287,15 @@
       do j=1-G_haloy+1,l_nj+G_haloy-1
 !DIR$ SIMD
          do i=1-G_halox+1,l_ni+G_halox-1
-            F_metric%ztht_8(i,j,G_nk)= ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*F_topo(i,j)+Ver_c_8%t(G_nk)*F_sls(i,j))/grav_8
             F_metric%mc_css_H_8(i,j) = one/(gama_8*(isol_i*F_metric%mc_iJz_8(i,j,G_nk)+isol_d*Ver_idz_8%t(G_nk)-half*mu_8))
+         end do
+      end do
+!$omp enddo
+!$omp do
+      do j=1-G_haloy,l_nj+G_haloy
+!DIR$ SIMD
+         do i=1-G_halox,l_ni+G_halox
+            F_metric%ztht_8(i,j,G_nk)= ver_z_8%t(G_nk)+Cstv_bar1_8*(Ver_b_8%t(G_nk)*F_topo(i,j)+Ver_c_8%t(G_nk)*F_sls(i,j))/grav_8
          end do
       end do
 !$omp enddo

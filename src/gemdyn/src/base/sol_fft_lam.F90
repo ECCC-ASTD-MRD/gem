@@ -24,7 +24,7 @@
       use glb_ld
       use glb_pil
       use ptopo
-      use sol
+      use sol_mem
       use adz_mem
       use dyn_fisl_options
       use gem_timing
@@ -33,7 +33,6 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <RPN_MPI.hf>
-#include <arch_specific.hf>
 
       integer F_t0nis, F_t0njs, F_t0nj, F_t2nis, F_t2ni
       integer F_t1nks, F_gnk,   F_nk  , F_t1nk , F_gni, F_gnj

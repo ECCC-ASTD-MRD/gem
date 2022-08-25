@@ -24,7 +24,7 @@ contains
       use geomh
       use glb_ld
       use opr
-      use sol
+      use sol_mem
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>

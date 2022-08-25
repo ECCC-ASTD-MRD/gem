@@ -21,7 +21,7 @@
       use HORgrid_options
       use gem_options
       use glb_ld
-      use sol
+      use sol_mem
       use opr
       use, intrinsic :: iso_fortran_env
       implicit none

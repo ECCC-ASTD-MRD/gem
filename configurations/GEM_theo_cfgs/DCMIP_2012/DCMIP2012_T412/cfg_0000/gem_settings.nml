@@ -32,9 +32,11 @@
 
   Stat_liste  = 'ALL_DYN_T1', 'ALL_TR_T1',
 /
+ &sol
+  Sol_type_S = 'DIRECT'
+/
 
  &dyn_fisl
-  Sol_type_S = 'DIRECT'   ,
 
   Cstv_tstr_8     = 240.0 ,
 

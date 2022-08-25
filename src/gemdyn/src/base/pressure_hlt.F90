@@ -37,7 +37,7 @@
       real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_8
 
       integer :: i, j, k, i0,in,j0,jn
-      real(kind=REAL64) :: log_pt
+      real(kind=REAL64) :: log_pt,tt,dz,h,weight
       real, pointer, dimension(:,:,:) :: qt
 !     
 !---------------------------------------------------------------------
@@ -48,56 +48,73 @@
       j0= 1-G_haloy ; jn= l_nj+G_haloy
 
 !$omp do collapse(2)
-         do k=1,l_nk+1
-            do j= j0, jn
-               do i= i0, in
-                  F_pm_8    (i,j,k) = qt(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k)
-                  F_log_pm_4(i,j,k) = F_pm_8(i,j,k)
-               end do
+      do k=1,l_nk+1
+         do j= j0, jn
+            do i= i0, in
+               F_pm_8    (i,j,k) = qt(i,j,k)/(rgasd_8*Cstv_Tstr_8)+GVM%lg_pstar_8(i,j,k)
+               F_log_pm_4(i,j,k) = F_pm_8(i,j,k)
             end do
          end do
-!$omp end do
-!$omp do collapse(2)
-         do k=1,l_nk
-            do j= j0, jn
-               do i= i0, in
-                  log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
-                  F_log_pt_4(i,j,k) = log_pt
-                  F_pt_4    (i,j,k) = exp(log_pt)
-               end do
-            end do
-         end do
-!$omp end do
-!$omp do collapse(2)
-         do k=1,l_nk
-            do j= j0, jn
-               do i= i0, in
-                  F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
-                  F_pm_4    (i,j,k) = F_pm_8(i,j,k)
-               end do
-            end do
-         end do
+      end do
 !$omp end do
 
-         k= l_nk+1
-!$omp do
+!$omp do collapse(2)
+      do k=1,l_nk
+         do j= j0, jn
+            do i= i0, in
+            !   log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
+
+               h=.5d0*(GVM%ztht_8(i,j,k)+GVM%zmom_8(i,j,k+1))
+               weight= (h-GVM%ztht_8(i,j,k+1))/(GVM%ztht_8(i,j,k)-GVM%ztht_8(i,j,k+1))
+               tt=weight*tt1(i,j,k)+(1.d0-weight)*tt1(i,j,min(k+1,l_nk))
+               tt=grav_8/rgasd_8/tt
+               dz=GVM%ztht_8(i,j,k)-GVM%zmom_8(i,j,k+1)
+               log_pt= F_pm_8(i,j,k+1)-tt*dz
+
+!!$               h=.5d0*(GVM%ztht_8(i,j,k)+GVM%zmom_8(i,j,k))
+!!$               weight= (h-GVM%ztht_8(i,j,k))/(GVM%ztht_8(i,j,k)-GVM%ztht_8(i,j,k-1))
+!!$               t3=(1.d0-weight)*tt1(i,j,k)+weight*tt1(i,j,max(k-1,1))
+!!$               tt=grav_8/rgasd_8/t3
+!!$               dz3=GVM%ztht_8(i,j,k)-GVM%zmom_8(i,j,k)
+!!$               log_pt3= F_pm_8(i,j,k)-tt*dz3
+
+               F_log_pt_4(i,j,k) = log_pt
+               F_pt_4    (i,j,k) = exp(log_pt)
+            end do
+         end do
+      end do
+!$omp end do
+
+!$omp do collapse(2)
+      do k=1,l_nk
          do j= j0, jn
             do i= i0, in
                F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
-               F_pm_4    (i,j,k) = F_pm_8    (i,j,k)
-               F_pt_4    (i,j,k) = F_pm_4    (i,j,k)
-               F_log_pt_4(i,j,k) = F_log_pm_4(i,j,k)
+               F_pm_4    (i,j,k) = F_pm_8(i,j,k)
             end do
          end do
+      end do
+!$omp end do
+
+      k= l_nk+1
+!$omp do
+      do j= j0, jn
+         do i= i0, in
+            F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
+            F_pm_4    (i,j,k) = F_pm_8    (i,j,k)
+            F_pt_4    (i,j,k) = F_pm_4    (i,j,k)
+            F_log_pt_4(i,j,k) = F_log_pm_4(i,j,k)
+         end do
+      end do
 !$omp end do
 
 !$omp do
-         do j= j0, jn
-            do i= i0, in
-               F_p0_8(i,j) = F_pm_8(i,j,l_nk+1)
-               F_p0_4(i,j) = F_pm_4(i,j,l_nk+1)
-            end do
+      do j= j0, jn
+         do i= i0, in
+            F_p0_8(i,j) = F_pm_8(i,j,l_nk+1)
+            F_p0_4(i,j) = F_pm_4(i,j,l_nk+1)
          end do
+      end do
 !$omp end do
 !     
 !---------------------------------------------------------------------

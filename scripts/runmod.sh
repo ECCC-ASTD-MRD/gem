@@ -15,14 +15,19 @@ eval `cclargs_lite -D " " $0 \
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\
    -smt           ""           ""          "[SMT controler (AIX) (smtdyn x smtphy)]"\
    -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
+   -nodespec      "NoNe"       "NoNe"      "[Node distribution specification]"\
    -inorder       "0"          "5"         "[Order listing]"\
-   -debug         "0"          "1"         "[Debug session]"\
+   -debug         "0"          "gdb"       "[Debug session: gdb, ddt]"\
    -task_basedir  "RUNMOD"     "RUNMOD"    "[Task dir name]"\
    -no_setup      "0"          "1"         "[Do not run setup]"\
    -_status       "ABORT"      "ABORT"     "[Return status]"\
    -_endstep      ""           ""          "[Last time step performed]"\
    -_npe          "1"          "1"         "[Number of subdomains]"\
   ++ ${arguments}`
+
+
+export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
+export EXP_CONFIG_DIR=$(true_path ${dircfg})/cfg_$(printf "%04d" ${cfg%%:*})
 
 restart=0
 
@@ -85,16 +90,19 @@ _npe=$((npex*npey))
 ngrids=1
 for i in ${TASK_INPUT}/cfg_* ; do
    GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
-   if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
+   OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
+   if [ -n "${GRDTYP}" ] ; then
+      if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
+   else
+      if [ -n "${OPSCFG}" ] ; then ngrids=${OPSCFG##*:} ; fi
+   fi
+   unset GRDTYP OPSCFG
    break
 done
 
 for i in ${TASK_INPUT}/cfg_* ; do
    dname=$(basename $i)
    mkdir -p ${TASK_OUTPUT}/${dname} ${TASK_WORK}/${dname}
-   if [ "$GRDTYP" == "GY" ] ; then
-      mkdir -p ${TASK_WORK}/${dname}/YIN ${TASK_WORK}/${dname}/YAN
-   fi
    if [ -e ${TASK_INPUT}/${dname}/configexp.cfg ] ; then
       cp ${TASK_INPUT}/${dname}/configexp.cfg ${TASK_OUTPUT}/${dname}
    fi
@@ -112,17 +120,6 @@ for i in ${TASK_INPUT}/cfg_* ; do
          cd ${TASK_WORK}/$dname/busper ; \
          tar xvf ${TASK_INPUT}/${dname}/BUSPER.tar)
    fi
-   # Set date if not in settings file already
-   RUNSTART=$(fetchnml.sh Step_runstrt_S step ${TASK_WORK}/${dname}/model_settings.nml)
-   if [[ -z "${RUNSTART}" ]] ; then
-      date_file=${TASK_INPUT}/${dname}/MODEL_ANALYSIS/analysis_validity_date
-      if [ -e ${date_file} ] ; then
-         RUNSTART=$(cat ${date_file})
-         value="Step_runstrt_S=\"$RUNSTART\""
-         cat ${TASK_WORK}/${dname}/model_settings.nml | sed "s/\&step/\&step\n${value}/" > $TMPDIR/nmlfile$$
-         mv $TMPDIR/nmlfile$$ ${TASK_WORK}/${dname}/model_settings.nml
-      fi
-   fi
 done
 
 export DOMAIN_start=$(echo ${cfg} | cut -d: -f1)
@@ -134,13 +131,22 @@ if [ ${DOMAIN_wide} -lt 1 ] ; then
   DOMAIN_wide=1
 fi
 export DOMAIN_wide=${DOMAIN_wide}
-
 alongYfirst=.false.
 if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
 # Use performance timers on request
 if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
 
-if [ ${debug}  -gt 0 ] ; then export RPN_COMM_DIAG=2 ; fi
+if [[ "x${debug}" != "x0" ]] ; then
+   export RPN_COMM_DIAG=2
+   [[ "x${debug}" == "x1" ]] && export debug=gdb || true
+   if [[ "x$(which ${debug} 2>/dev/null)" == "x" ]] ; then
+      printf "ERROR: cannot find requested debug tool '${debug}'\n"
+      if [[ "x${debug}" == "xddt" ]] ; then
+         printf "    Maybe you forgot to load forge? Try:\n    . ssmuse-sh -x main/opt/forge/20.0.3\n"
+      fi
+      exit 1
+   fi
+fi
 
 cd $TASK_WORK
 
@@ -172,6 +178,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    printf "\n LAUNCHING rungem.sh for domain: cfg_${domain_number} $(date)\n\n"
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
+      -nodespec ${nodespec} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
       -barrier ${barrier} -inorder ${inorder}
 

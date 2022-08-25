@@ -14,6 +14,7 @@ eval `cclargs_lite $0 \
   -dom_start "1"     "1"     "[Starting domain number         ]"\
   -dom_end   "1"     "1"     "[Ending domain number           ]"\
   -inorder   "0"     "5"     "[Ordered listing                ]"\
+  -nodespec      "NoNe"       "NoNe"      "[Node distribution specification]"\
   -barrier   "0"     "0"     "[DO NOT run binary              ]"\
   -debug     "0"     "1"     "[Debug option                   ]"\
   -_status   "ABORT" "ABORT" "[return status                  ]"\

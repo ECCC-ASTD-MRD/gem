@@ -28,7 +28,7 @@
       real, dimension(Mminx:Mmaxx,Mminy:Mmaxy,nk), intent(OUT) ::  F_t
 
       integer :: i,j,k,ii
-      real(kind=REAL64) :: theta, ex,r,rad
+      real :: theta, ex,r,rad,inc
 !
 !     ---------------------------------------------------------------
 !
@@ -58,10 +58,14 @@
                ii=i+l_i0-1
                r = sqrt( ( ((ii)-bubble_ictr) * dble(bubble_dx) )**2 + ( ((k)-bubble_kctr) * dble(bubble_dz) )**2)
                rad = bubble_rad*dble(bubble_dx)
+               inc = exp( - ((r - rad)/100.d0)**2 )
+               theta = bubble_theta
                if ( r <= rad ) then
                    theta = bubble_theta + 0.5d0
                else
-                   theta = bubble_theta + 0.5d0 * exp( -(r - rad)**2 / 100.d0**2 );
+                  if (inc/0.5 > 0.005) then
+                     theta = bubble_theta + 0.5d0 * inc
+                  endif
                end if
                ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%t(k)
                F_t(i,j,k) = theta * ex

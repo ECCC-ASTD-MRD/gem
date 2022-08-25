@@ -17,12 +17,11 @@
 !
       subroutine sol_main ( F_rhs, F_solution, F_ni, F_nj, F_nk, F_conv_L )
       use ctrl
-      use dyn_fisl_options
+      use sol_options
       use lun
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       logical, intent(in) :: F_conv_L
       integer, intent(in) :: F_ni, F_nj, F_nk

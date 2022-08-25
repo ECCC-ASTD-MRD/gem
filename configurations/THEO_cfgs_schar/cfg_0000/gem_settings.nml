@@ -32,11 +32,13 @@
   hyb_rcoef      = 1.,1.
  /
 
+ &sol
+ Sol_type_S='DIRECT'
+ /
 
  &dyn_fisl
   Cstv_tstr_8    = 240.
   Cstv_bA_8 = 0.5
-  Sol_type_S='DIRECT'
  /
 
  &gem_cfgs

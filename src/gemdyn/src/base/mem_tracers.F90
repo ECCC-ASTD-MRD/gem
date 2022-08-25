@@ -39,29 +39,37 @@ contains
       character(len=*), intent(IN) :: F_name_S
       real, pointer, dimension (:,:,:), intent(OUT) :: F_pntr
 
-      character(len=1 ) tf
+      character(len=2 ) tf
       character(len=64) name
       integer n, indx,dim
 
       dim = (l_maxx-l_minx+1) * (l_maxy-l_miny+1) * l_nk
-      tr_get = -1
+      tr_get = -99999 ; nullify (F_pntr)
       indx = index(F_name_s,":")
       name= F_name_s ; tf= 'P'
       if (indx > 0) then
          name = F_name_S(1:indx-1)
-         tf   = F_name_S(indx+1:)
+         tf   = F_name_S(indx+1: )
       endif
       do n=1,Tr3d_ntr
          if (trim(Tr3d_name_S(n)) == trim(name) )then
             tr_get=n
-            if (tf=='M') then
-            F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt0((n-1)*dim+1:)
-            else
-            F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt1((n-1)*dim+1:)
-            endif
-            return
+            select case(tf)
+            case('M' , 'm')
+               F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt0((n-1)*dim+1:)
+            case('P' , 'p')
+               F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt1((n-1)*dim+1:)
+            case('T2' , 't2')
+               F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt2((n-1)*dim+1:)
+            case default
+               tr_get= -99999
+               print*, 'Timeframe ',tf,' for tracer ',trim(name),' NOT FOUND'
+            end select
          endif
       end do
+      if (tr_get<0) then
+         print*, 'Tracer ',trim(name),' NOT FOUND'
+      endif
 
       return
       end function tr_get

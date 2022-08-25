@@ -102,7 +102,7 @@ contains
       end if
 
       G_nk = 0
-      VERgrid_nml= -1 ; nml_must= .true. ; nml_S= 'vert_layers'
+      VERgrid_nml= -1 ; nml_must= .false. ; nml_S= 'vert_layers'
 
       rewind(F_unf)
       read (F_unf, nml=vert_layers, end= 1001, err=1003)
@@ -150,12 +150,17 @@ contains
       VERgrid_config = -1
       
       select case ( trim(Dynamics_Kernel_S) )
+         
          case('DYNAMICS_FISL_P')
             G_nk = 0
             do k = 1, maxhlev
                if (hyb(k) < 0.) exit
                G_nk = k
             end do
+            if (G_nk==0) then
+               if (Lun_out >= 0) write (Lun_out,*) 'ERROR: G_nk= 0'
+               return
+            endif
 
          case ('DYNAMICS_FISL_H')
             call levels (hyb_H,maxhlev,G_nk,Hyb_lid_height,Hyb_nkequal,&
@@ -169,17 +174,5 @@ contains
 !
       return
       end function VERgrid_config
-
-   function VERgrid_options_init() result(F_istat)
-      implicit none
-      integer :: F_istat
-#include <rmnlib_basics.hf>
-      logical, save :: init_L = .false.
-      F_istat = RMN_OK
-      if (init_L) return
-      init_L = .true.
-
-      return
-   end function VERgrid_options_init
 
 end module VERgrid_options

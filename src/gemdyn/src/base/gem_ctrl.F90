@@ -30,6 +30,7 @@
       use rstr
       use gem_timing
       use tr3d
+      use gmm_vt1
       implicit none
 
 !object
@@ -42,6 +43,8 @@
 !     ---------------------------------------------------------------
 !
       call gemtime ( Lun_out, 'GEM_CTRL: START', .false. )
+
+      call final_setup ()
 
       if ( .not. Rstri_rstn_L ) then
          call indata()

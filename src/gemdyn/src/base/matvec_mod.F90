@@ -8,7 +8,7 @@ module matvec
    use glb_ld
    use ldnh
    use opr
-   use sol
+   use sol_mem
    use, intrinsic :: iso_fortran_env
    implicit none
 #include <arch_specific.hf>
@@ -143,7 +143,7 @@ contains
    subroutine matvec_yy(F_vector, F_prod)
       use glb_ld      , only: l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj,l_nk,G_periodx, G_periody,l_i0,l_j0
       use ldnh        , only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
-      use sol         , only: sol_pil_s, sol_pil_n, sol_pil_w, sol_pil_e
+      use sol_mem
       use gem_options , only: G_halox, G_haloy
       use geomh
       use HORgrid_options, only: Grd_yinyang_L

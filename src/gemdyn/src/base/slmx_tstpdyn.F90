@@ -26,7 +26,6 @@
       use mem_tstp
       use gmm_geof
       use gmm_pw
-      use gmm_vth
       use gem_options
       use step_options
       use lam_options

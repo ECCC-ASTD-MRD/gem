@@ -27,9 +27,11 @@
   LCTL_RXSTAT_S   = 'GLB_8',
   Tr3d_list_S =  'Q1,mono=0,mass=0,hzd=0',
 /
+ &sol
+  Sol_type_S = 'DIRECT'
+/
 
  &dyn_fisl
-  Sol_type_S = 'DIRECT'        ,
 
   Cstv_tstr_8     = 273.15     ,
 

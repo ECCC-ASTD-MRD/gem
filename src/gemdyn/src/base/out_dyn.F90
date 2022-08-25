@@ -16,6 +16,7 @@
 !**s/r out_dyn - perform dynamic output
 
       subroutine out_dyn ( F_reg_out, F_casc_L )
+      use dynkernel_options
       use gem_options
       use init_options
       use grdc_options
@@ -29,7 +30,6 @@
       use step_options
       use gem_timing
       implicit none
-#include <arch_specific.hf>
 
       logical F_reg_out, F_casc_L
 
@@ -86,7 +86,11 @@
 
             call out_tracer (levset, kk)
 
-            call out_thm    (levset, kk)
+            if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
+               call out_thm_hlt (levset, kk)
+            else
+               call out_thm    (levset, kk)
+            endif
 
             call out_uv     (levset, kk)
 

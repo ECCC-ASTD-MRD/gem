@@ -19,6 +19,7 @@
                                    print_conv_L, F_offi, F_offj )
       use dyn_fisl_options
       use lam_options
+      use sol_options
       use glb_ld
       use HORgrid_options
       use ldnh
@@ -27,7 +28,6 @@
       use opr
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       logical, intent(in) :: print_conv_L
       integer, intent(in) :: F_ni, F_nj, F_nk, F_offi, F_offj

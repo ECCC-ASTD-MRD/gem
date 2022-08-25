@@ -20,7 +20,15 @@ eval `cclargs_lite -D " " $0 \
 
 set -ex
 
-BIN=$(which checkdmpart)
+BIN=build-$ORDENV_PLAT/bin/$COMP_ARCH/checkdmpart_${BASE_ARCH}.Abs
+if [ ! -x ${BIN} ] ; then
+   BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
+else
+   BIN=$(true_path ${BIN})
+fi
+if [[ -z "${BIN}" ]] ; then
+   BIN=$(which checkdmpart)
+fi
 
 ici=${PWD}
 ROOT_WORK=${PWD}/checkdmpart$$
@@ -41,17 +49,25 @@ cdm_eigen_S='${cache}'
 EOF
 
 GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
-#GRDTYP=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml grid/grd_typ_s 2> /dev/null)
+OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
+if [ -z "${GRDTYP}" ] ; then
+    GRDTYP=LU
+    ngrids=1
+    if [ -n "${OPSCFG}" ] ; then
+       if [ $(echo $OPSCFG | grep ":" | wc -l) -gt 0 ] ; then ngrids=${OPSCFG##*:} ; fi
+    fi
+    if [ ${ngrids} -eq 2 ] ; then GRDTYP=GY ; fi
+fi
 if [[ "$GRDTYP" == "GY" ]] ; then 
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YAN/000-000/constantes
    cp checkdm.nml ${WORKDIR}/YIN/000-000
    mv checkdm.nml ${WORKDIR}/YAN/000-000
    ngrids=2
 else
    mkdir -p ${WORKDIR}/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/000-000/constantes
    mv checkdm.nml ${WORKDIR}/000-000
    ngrids=1
 fi
@@ -73,7 +89,6 @@ printf "\n RUNNING ${BIN} \n"
 lis=checkdmpartlis$$
 echo checkdmpart_status='ABORT' > checkdmpart_status.dot
 gem_mpirun.sh -pgm ${BIN} -npex ${ngrids} -inorder 1> $lis 2>&1
-
 . checkdmpart_status.dot
 grep topo_allowed checkdmpart_status.dot > $TMPDIR/listopoallowed$$
 cnt=$(cat $TMPDIR/listopoallowed$$ | wc -l)
@@ -88,17 +103,17 @@ if [ "${checkdmpart_status}" != 'OK' ] ; then
    printf "\n  Error: Problem with ${bin}\n\n"
    _status="ABORT_${bin}"
 else
-     printf "\n  MPI topology allowed\n"
-     cat $TMPDIR/listopoallowed$$
-     if [ -n "${MAX_PES_IO}" ] ; then
-        printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
-     fi
-     _status='OK'
-  if [ "${SOLVER}" != 'OK' ] ; then
-   printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
-   printf "\n         THE SOLVER WILL NOT WORK\n\n"
-   _status='ABORT_solver'
-  fi
+   printf "\n  MPI topology allowed\n"
+   cat $TMPDIR/listopoallowed$$
+   if [ -n "${MAX_PES_IO}" ] ; then
+      printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
+   fi
+   _status='OK'
+   if [ "${SOLVER}" != 'OK' ] ; then
+      printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
+      printf "\n         THE SOLVER WILL NOT WORK\n\n"
+      _status='ABORT_solver'
+   fi
 fi
 /bin/rm -f $TMPDIR/listopoallowed$$ 
 . r.return.dot
