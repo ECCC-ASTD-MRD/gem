@@ -3,6 +3,7 @@
 *.swp
 *.swo
 *.pyc
+__pycache__
 gem_dbase
 gem_dbase.tar.gz
 /build*
