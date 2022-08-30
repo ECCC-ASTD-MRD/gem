@@ -18,7 +18,7 @@ before_script:
 build_gnu-9.3.0:
   stage: build
   only:
-  - 5.2_cmake
+  - dev
   script:
     - set +e
     - . ./.eccc_setup_gnu
@@ -33,7 +33,7 @@ build_gnu-12.1.0:
   stage: build
   when: always
   only:
-  - 5.2_cmake
+  - dev
   script:
     - set +e
     - . ./.eccc_setup_gnu_12
@@ -53,7 +53,7 @@ build_intel_with_rpn:
   stage: build
   when: always
   only:
-  - 5.2_cmake
+  - dev
   script:
     - set +e
     - . ./.eccc_setup_intel
@@ -69,7 +69,7 @@ build_intel:
   stage: build
   when: always
   only:
-  - 5.2_cmake
+  - dev
   script:
     - set +e
     - . ./.eccc_setup_intel
@@ -90,7 +90,7 @@ build_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -112,7 +112,7 @@ CANO_W7cascP_intel:
   when: always
   allow_failure: true
   only:
-  - 5.2_cmake
+  - dev
   script:
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
@@ -132,7 +132,7 @@ CANO_dcmip163r100_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -153,7 +153,7 @@ CANO_wil7_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -174,7 +174,7 @@ GEM_cfgs_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -195,7 +195,7 @@ GEM_GY_FISL_P_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -216,7 +216,7 @@ GEM_GY_FISL_H_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -237,7 +237,7 @@ GEM_GY_FISL_H_ens_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -258,7 +258,7 @@ GEM_LU_FISL_H_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -279,7 +279,7 @@ GEM_LU_OFFC_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -300,7 +300,7 @@ PTOPO_GYH_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -321,7 +321,7 @@ PTOPO_LUP_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -342,7 +342,7 @@ RSTRT_GYP_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -363,7 +363,7 @@ THEO_bubbleG_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -384,7 +384,7 @@ THEO_schar_intel:
   - build_intel
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_intel
@@ -405,7 +405,7 @@ THEO_schar_intel:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -427,7 +427,7 @@ CANO_W7cascP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -449,7 +449,7 @@ CANO_dcmip163r100_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -471,7 +471,7 @@ CANO_wil7_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -493,7 +493,7 @@ GEM_cfgs_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -515,7 +515,7 @@ GEM_GY_FISL_P_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -537,9 +537,9 @@ GEM_GY_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_gnu_12
@@ -560,9 +560,9 @@ GEM_GY_FISL_H_ens_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - . ./.eccc_setup_gnu_12
@@ -583,7 +583,7 @@ GEM_LU_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -605,7 +605,7 @@ GEM_LU_OFFC_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -627,7 +627,7 @@ PTOPO_GYH_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -649,7 +649,7 @@ PTOPO_LUP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -671,7 +671,7 @@ RSTRT_GYP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -693,7 +693,7 @@ THEO_bubbleG_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
@@ -715,7 +715,7 @@ THEO_schar_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - 5.2_cmake
+  - dev
   allow_failure: true
   script:
     - set +e
