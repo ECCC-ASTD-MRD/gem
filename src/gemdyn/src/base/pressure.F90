@@ -43,7 +43,7 @@
       real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_8
 
       integer :: i, j, k, i0,in,j0,jn
-      real(kind=REAL64) :: pres_m, pres_t, log_pt, tt,dz,h,weight
+      real(kind=REAL64) :: pres_m, pres_t, log_pt
       real, pointer, dimension(:,:,:) :: qt
       real, pointer, dimension(:,:)   :: st
 !
@@ -69,13 +69,7 @@
          do k=1,l_nk
             do j= j0, jn
                do i= i0, in
-               !   log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
-                  h=.5d0*(GVM%ztht_8(i,j,k)+GVM%zmom_8(i,j,k+1))
-                  weight= (h-GVM%ztht_8(i,j,k+1))/(GVM%ztht_8(i,j,k)-GVM%ztht_8(i,j,k+1))
-                  tt=weight*tt1(i,j,k)+(1.d0-weight)*tt1(i,j,min(k+1,l_nk))
-                  tt=grav_8/rgasd_8/tt
-                  dz=GVM%ztht_8(i,j,k)-GVM%zmom_8(i,j,k+1)
-                  log_pt= F_pm_8(i,j,k+1)-tt*dz
+                  log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
                   F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
                   F_pm_4    (i,j,k) = F_pm_8(i,j,k)
                   F_log_pt_4(i,j,k) = log_pt
