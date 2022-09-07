@@ -48,3 +48,5 @@
 [submodule "gem-maestro"]
 	path = gem-maestro
 	url =../gem-maestro.git
+	branch = master
+
