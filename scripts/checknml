@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]] ; do
       (--ref=*)  refmode=0; reffile="${1#*=}";;
       (--nml=*) nml="--nml ${1#*=}";;
       (--) shift ; break;;
-      (-*) myerror "Option Not recognized: ${1}";;
+      (-*) echo "Option Not recognized: ${1}";;
       (*)
          if [[ x"${previous}" == x"-r" || x"${previous}" == x"--ref" ]] ; then
             refmode=0; reffile=${1};
@@ -75,7 +75,7 @@ if [[ $refmode == 1 ]] ; then
 fi
 
 if [[ ! -f ${reffile:-/NO/SUCH/FILE} ]] ; then
-   myerror "Reference nml file should exists and does not: ${reffile:-/NO/SUCH/FILE}
+   echo "Reference nml file should exists and does not: ${reffile:-/NO/SUCH/FILE}
        Try with: ${MYSELF} ${myverb} ${checktypes} ${nml} -r -- ${nmlfiles}"
 fi
 
