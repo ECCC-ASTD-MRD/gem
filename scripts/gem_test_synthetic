@@ -1,0 +1,51 @@
+#!/bin/bash
+
+/bin/rm -rf THEO_cfgs_*
+cp -r ${SRC_TESTS}/THEO_cfgs_* .
+
+for i in $(ls -1d THEO_cfgs* 2>/dev/null) ; do
+  echo TREATING: $i
+  /bin/rm -rf PREP/* RUNMOD/* 
+  CFG=$i
+  if [ -z "${NORUN_GEM}" ] ; then
+    /bin/rm -f RESULTS/$EXP/listings/${CFG}_mod.lis
+    printf "couleur_model=red\n" > RESULTS/$EXP/status/${CFG}_MODEL
+    . $CFG/cfg_0000/configexp.cfg
+    printf "couleur=red\n" > RESULTS/$EXP/status/${CFG}_couleur
+    _status="ABORT"
+    . r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder 1> RESULTS/$EXP/listings/${CFG}_mod.lis 2>&1
+    if [ "${_status}" == "ED" ] ; then
+      printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
+      /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}
+      out=$(echo $CFG | cut -d"_" -f3).fst
+      flipit.Abs -i RUNMOD/output/cfg_0000/laststep_000*/000-000/dm*_00[1-4] -o RESULTS/$EXP/fst/${CFG}/$out 1> /dev/null 2> /dev/null
+    fi
+  fi
+  . gem_test_results
+done
+
+/bin/rm -rf CANO_cfgs_*
+cp -r ${SRC_TESTS}/CANO_cfgs_* .
+
+for i in CANO_cfgs_* ; do
+  echo TREATING: $i
+  /bin/rm -rf PREP/* RUNMOD/* 
+  CFG=$i
+  if [ -z "${NORUN_GEM}" ] ; then
+    /bin/rm -f RESULTS/$EXP/listings/${CFG}_prep.lis RESULTS/$EXP/listings/${CFG}_mod.lis
+    printf "couleur_model=red\n" > RESULTS/$EXP/status/${CFG}_MODEL
+    . $CFG/cfg_0000/configexp.cfg
+    _status="ABORT"
+    . r.call.dot runprep.sh -dircfg $CFG 1> RESULTS/$EXP/listings/${CFG}_prep.lis 2>&1
+    if [ "${_status}" == "ED" ] ; then
+	_status="ABORT"
+	. r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder 1> RESULTS/$EXP/listings/${CFG}_mod.lis 2>&1
+      if [ "${_status}" == "ED" ] ; then
+        printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
+        /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}
+        mv RUNMOD/output/cfg_0000/laststep_000*/0*/* RESULTS/$EXP/fst/${CFG} 2> /dev/null
+      fi
+    fi
+  fi
+  . gem_test_results
+done

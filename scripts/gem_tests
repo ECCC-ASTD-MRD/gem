@@ -1,0 +1,146 @@
+#!/bin/bash
+#
+arguments=$*
+eval `cclargs_lite $0 \
+  -ctrl  ""   ""        "[]" \
+  -exp   ""   ""        "[]" \
+  -norun "0"  "1"       "[]" \
+  -mail  ""   "1"       "[]" \
+  ++ $arguments`
+
+if [ ! -f .ssmuse_gem -a ! -f .eccc_setup ] ; then
+   printf "\n   This $0 script must be launch from a gem experiment working directory -- ABORT\n\n"
+   exit 1
+else
+   GOAS=1
+   if [ -f .ssmuse_gem ] ; then GOAS=0 ; fi
+fi
+
+if [ $GOAS -gt 0 ] ; then
+   if [ -z "${GEM_GIT_DIR}" ] ; then
+      printf  "\n  GOAS-GEM environment NOT initialized - dot file .eccc_setup - Abort\n\n"
+   fi
+else
+   if [ -z "${ATM_MODEL_BNDL}" ] ; then
+      printf  "\n  RDE-GEM environment NOT initialized - dot file .ssmuse_gem - Abort\n\n"
+      exit 1
+   fi
+fi
+
+if [ -f ${HOME}/.gem_tests_rc ] ; then
+    . ${HOME}/.gem_tests_rc
+else
+    GEM_test_RI=1
+    GEM_test_acid=1
+    GEM_test_rstrt=1
+    GEM_test_ptopo=1
+    GEM_test_synthetic=1
+fi
+EXP=${exp:-NONAME}
+ici=${PWD}
+REP_gemtest=TESTS_GEM
+
+if [ $GOAS -gt 0 ] ; then
+   SRC_TESTS=${GEM_GIT_DIR}/configurations
+   GT_scripts=${GEM_GIT_DIR}/scripts
+   mkdir -p ${REP_gemtest}
+   cd ${REP_gemtest}
+   ln -sf ${ici}/bin .
+else
+   echo RDE ????
+   exit 1
+fi
+
+if [ -n "${ctrl}" ] ; then
+   if [ -d ${ctrl} ] ; then
+      CTRL=${ctrl} 
+   else
+      CTRL=${PWD}/RESULTS/$(basename ${ctrl})
+   fi
+fi
+if [ ! -d ${CTRL} ] ; then
+   unset CTRL
+fi
+
+/bin/rm -rf PREP RUNMOD
+mkdir -p PREP RUNMOD RESULTS/$EXP/status RESULTS/$EXP/listings/ RESULTS/$EXP/fst
+
+unset NORUN_GEM OMP_NUM_THREADS
+if [ $norun -eq 1 ] ; then
+   export NORUN_GEM='yes'
+else
+   /bin/rm -f RESULTS/$EXP/status/*_couleur
+fi
+
+if [ $GEM_test_RI -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_RI
+fi
+
+if [ $GEM_test_acid -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_acid
+fi
+
+if [ $GEM_test_rstrt -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_rstrt
+fi
+
+if [ $GEM_test_ptopo -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_ptopo
+fi
+# for some reason gem_test_synthetic must be called last
+if [ $GEM_test_synthetic -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_synthetic
+fi
+
+TST_RESULTS=${CTRL}
+
+nb=$(ls -1 RESULTS/$EXP/status/*_couleur 2> /dev/null | wc -l)
+nby=0 ; nbr=0
+printf "\n   ##### REPORT on experiment $EXP #####\n" > RESULTS/$EXP/REPORT
+if [ $nb -gt 0 ] ; then
+   for i in RESULTS/$EXP/status/*_couleur ; do
+      unset undefined_ctrl
+      . $i
+      item=$(basename $i | sed 's/_couleur//')
+      printf "   $item ===> $couleur\n" >> RESULTS/$EXP/REPORT
+      if [ "${couleur}" == "yellow" ] ; then
+        nby=1
+        if [ -z "${undefined_ctrl}" -a -n "${TST_RESULTS}" ] ; then
+          bn=$(basename $i}) ; bn=${bn%%_couleur*}
+          lis=${bn}_mod.lis
+          printf "   xxdiff $(true_path ./)/RESULTS/$EXP/listings/${lis} ${TST_RESULTS}/listings/${lis}\n" --text >> RESULTS/$EXP/REPORT
+          printf "   xrec -imflds $(true_path ./)/RESULTS/$EXP/fst/${bn}/* ${TST_RESULTS}/fst/${bn}/*\n" >> RESULTS/$EXP/REPORT
+        fi
+      fi
+      if [ "${couleur}" == "red" ] ; then
+         nbr=1
+      fi
+   done
+fi
+
+COLOR='GREEN'
+if [ $nbr -gt 0 ] ; then
+  COLOR='RED'
+elif  [ $nby -gt 0 ] ; then
+  COLOR='YELLOW'
+fi
+printf "   ###### ${COLOR} ###### ${COLOR} ###### ${COLOR} ###### ${COLOR} #####\n" >> RESULTS/$EXP/REPORT
+cat RESULTS/$EXP/REPORT
+
+cat > ${HOME}/.gem_tests_rc <<EOF
+GEM_test_RI=$GEM_test_RI
+GEM_test_acid=$GEM_test_acid
+GEM_test_rstrt=$GEM_test_rstrt
+GEM_test_ptopo=$GEM_test_ptopo
+GEM_test_synthetic=$GEM_test_synthetic
+EOF
+
+if [ -n "${mail}" ] ; then
+    cnt=$(echo ${mail} | grep "@" | wc -l)
+    if [ $cnt -gt 0 ] ; then
+       dest=$mail
+    else
+       dest=$(ssh ${TRUE_HOST} ldapsearch -xLLL uid=${USER} | grep mail: | cut -d" " -f2)
+    fi  
+    mail -s "GEM_TESTS ${EXP}-${TRUE_HOST} ${COLOR}" $dest $EXP < RESULTS/$EXP/REPORT
+fi

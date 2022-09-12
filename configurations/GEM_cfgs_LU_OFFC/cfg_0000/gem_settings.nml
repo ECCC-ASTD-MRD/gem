@@ -46,12 +46,13 @@
   hyb_flat= 45000.
   hyb_rcoef = 3., 15., 0., 100.
 /
- &sol
+
+&sol
   Sol_one_transpose_L = .true.
   Sol_type_S      = 'DIRECT'
 /
 
- &dyn_fisl
+  &dyn_fisl
   Cstv_bA_8 = 0.5
   Cstv_bA_m_8 = 0.5
   Cstv_bA_nh_8 = 0.5

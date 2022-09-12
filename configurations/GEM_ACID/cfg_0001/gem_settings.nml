@@ -20,10 +20,6 @@
   Dynamics_hydro_L = .false.
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
- &sol
-  Sol_type_S = 'DIRECT'
-  Sol_yyg_eps = 1.e-04
-/
  &dyn_fisl
   Schm_itcn       = 2          ,
   Schm_itnlh      = 2

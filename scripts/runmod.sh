@@ -15,19 +15,14 @@ eval `cclargs_lite -D " " $0 \
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\
    -smt           ""           ""          "[SMT controler (AIX) (smtdyn x smtphy)]"\
    -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
-   -nodespec      "NoNe"       "NoNe"      "[Node distribution specification]"\
    -inorder       "0"          "5"         "[Order listing]"\
-   -debug         "0"          "gdb"       "[Debug session: gdb, ddt]"\
+   -debug         "0"          "1"         "[Debug session]"\
    -task_basedir  "RUNMOD"     "RUNMOD"    "[Task dir name]"\
    -no_setup      "0"          "1"         "[Do not run setup]"\
    -_status       "ABORT"      "ABORT"     "[Return status]"\
    -_endstep      ""           ""          "[Last time step performed]"\
    -_npe          "1"          "1"         "[Number of subdomains]"\
   ++ ${arguments}`
-
-
-export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
-export EXP_CONFIG_DIR=$(true_path ${dircfg})/cfg_$(printf "%04d" ${cfg%%:*})
 
 restart=0
 
@@ -131,6 +126,7 @@ if [ ${DOMAIN_wide} -lt 1 ] ; then
   DOMAIN_wide=1
 fi
 export DOMAIN_wide=${DOMAIN_wide}
+
 alongYfirst=.false.
 if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
 # Use performance timers on request
@@ -178,7 +174,6 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    printf "\n LAUNCHING rungem.sh for domain: cfg_${domain_number} $(date)\n\n"
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
-      -nodespec ${nodespec} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
       -barrier ${barrier} -inorder ${inorder}
 

@@ -57,16 +57,14 @@ Lam_gbpil_t=20
 /
   Sol_type_S = 'ITERATIVE_2D' 
   Sol_type_S = 'DIRECT'
-  
- &sol
+&sol
   Sol_type_S = 'ITERATIVE_3D'
-  sol_precond3D_S = 'RAS'
+  Sol_precond3D_S = 'RAS'
+  Sol_ovlpx= 3
+  Sol_ovlpy= 5
   Sol_fgm_eps= 1.e-05
   Sol_yyg_eps = 1.e-04
-  sol_ovlpx= 3
-  sol_ovlpy= 5
 /
-
  &dyn_fisl
   Cstv_tstr_8     = 240.0
   Schm_nblendyy   = 1
@@ -158,13 +156,13 @@ Inp_npes=4
  KFCTRIGL   = 0.01
  TRIGLAT    = 25., 30.
 /
+&ensembles
+     ens_conf      = .true.        ,
      Ens_spplist   =
         'kfctrig4', 'longmel', 'rei_mult', 'mid_minemf', 'sgo_phic',
         'crad_mult', 'hu0min', 'hu0max',  'dpdd_mult', 'hetero_mult',
         'tkesrc', 'deeptrig', 'ricmin',
         'ml_mult', 'fnnreduc', 'cmtcup', 'adv_rhsint', 'phycpl','ADV_UTRAJ','ADV_VTRAJ','ADV_WTRAJ'
-&ensembles
-     ens_conf      = .true.        ,
      ens_mc_seed   = 1           ,
      ens_skeb_conf = .true.     ,
      ens_ptp_conf  = .true.       ,

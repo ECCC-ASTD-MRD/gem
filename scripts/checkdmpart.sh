@@ -20,15 +20,7 @@ eval `cclargs_lite -D " " $0 \
 
 set -ex
 
-BIN=build-$ORDENV_PLAT/bin/$COMP_ARCH/checkdmpart_${BASE_ARCH}.Abs
-if [ ! -x ${BIN} ] ; then
-   BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
-else
-   BIN=$(true_path ${BIN})
-fi
-if [[ -z "${BIN}" ]] ; then
-   BIN=$(which checkdmpart)
-fi
+BIN=$(which checkdmpart)
 
 ici=${PWD}
 ROOT_WORK=${PWD}/checkdmpart$$
@@ -60,14 +52,14 @@ if [ -z "${GRDTYP}" ] ; then
 fi
 if [[ "$GRDTYP" == "GY" ]] ; then 
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
-   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YIN/000-000/constantes
-   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
    cp checkdm.nml ${WORKDIR}/YIN/000-000
    mv checkdm.nml ${WORKDIR}/YAN/000-000
    ngrids=2
 else
    mkdir -p ${WORKDIR}/000-000
-   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/000-000/constantes
+   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
    mv checkdm.nml ${WORKDIR}/000-000
    ngrids=1
 fi
@@ -89,6 +81,7 @@ printf "\n RUNNING ${BIN} \n"
 lis=checkdmpartlis$$
 echo checkdmpart_status='ABORT' > checkdmpart_status.dot
 gem_mpirun.sh -pgm ${BIN} -npex ${ngrids} -inorder 1> $lis 2>&1
+
 . checkdmpart_status.dot
 grep topo_allowed checkdmpart_status.dot > $TMPDIR/listopoallowed$$
 cnt=$(cat $TMPDIR/listopoallowed$$ | wc -l)
@@ -103,17 +96,17 @@ if [ "${checkdmpart_status}" != 'OK' ] ; then
    printf "\n  Error: Problem with ${bin}\n\n"
    _status="ABORT_${bin}"
 else
-   printf "\n  MPI topology allowed\n"
-   cat $TMPDIR/listopoallowed$$
-   if [ -n "${MAX_PES_IO}" ] ; then
-      printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
-   fi
-   _status='OK'
-   if [ "${SOLVER}" != 'OK' ] ; then
-      printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
-      printf "\n         THE SOLVER WILL NOT WORK\n\n"
-      _status='ABORT_solver'
-   fi
+     printf "\n  MPI topology allowed\n"
+     cat $TMPDIR/listopoallowed$$
+     if [ -n "${MAX_PES_IO}" ] ; then
+        printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
+     fi
+     _status='OK'
+  if [ "${SOLVER}" != 'OK' ] ; then
+   printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
+   printf "\n         THE SOLVER WILL NOT WORK\n\n"
+   _status='ABORT_solver'
+  fi
 fi
 /bin/rm -f $TMPDIR/listopoallowed$$ 
 . r.return.dot

@@ -153,6 +153,20 @@ if [ "${gtype}" == "'GU'" -o "${gtype}" == "'GY'" ] ; then
   input=''
 fi
 
+# Temporary check
+HEIGHT=$(fetchnml.sh dynamics_Kernel_S dyn_kernel ${nmlfile})
+HYDRO=$(fetchnml.sh dynamics_hydro_l dyn_kernel ${nmlfile})
+if [ -n "${HEIGHT}" -a -n "${HYDRO}" ] ; then
+   HEIGHT=$(echo $HEIGHT | cut -d"_" -f3)
+   HYDRO=$(echo $HYDRO | cut -c2)
+   if [ "${HEIGHT}" == "H" -o "${HEIGHT}" == "h" ] ; then
+      if [ "${HYDRO}" == "T" -o "${HYDRO}" == "t" ] ; then
+         printf "\n ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H - ABORT\n\n"
+         exit 1
+      fi
+   fi
+fi
+
 # Preparation splitting of input files
 splitdir=${o}/analysis
 inrepdir=${o}/model_inrep

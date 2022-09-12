@@ -1,0 +1,27 @@
+  if [ -f RESULTS/$EXP/status/${CFG}_MODEL ] ; then
+    . RESULTS/$EXP/status/${CFG}_MODEL
+  else
+    couleur_model=red
+  fi
+  COULEUR=${couleur_model}
+  messg=''
+
+  if [ "${couleur_model}" == "yellow" -a -n "${CTRL}" ] ; then
+    if [ -e $CTRL/listings/${CFG}_mod.lis ] ; then
+      cnt=$(diff RESULTS/$EXP/listings/${CFG}_mod.lis $CTRL/listings/${CFG}_mod.lis --text | grep -iv Memory --text | grep -i mean: --text | wc -l)
+      if [ $cnt -lt 1 ] ; then
+        COULEUR=green
+      fi
+    else
+      COULEUR="${couleur_model}"
+		messg="   undefined_ctrl=$CTRL"
+    fi
+  fi
+  result=RESULTS/$EXP/status/${CFG}_couleur
+  printf "couleur=$COULEUR\n" > $result
+  if [ -n "${messg}" ] ; then
+     printf "undefined_ctrl=$CTRL\n" >> $result
+  fi
+  . $result
+  printf "   $(basename $result | sed 's/_couleur//') ===> $couleur $messg\n"
+  
