@@ -33,20 +33,6 @@
 | bubble_theta |  | 303.16 | real |
 
 
-### dyn_expo Namelist
-
-| Name          | Description            |  Default Value | Type |
-| ------------- | ---------------------- | -------------- | ---- |
-| adv_alpha_hor | Free parameter to control horizontal artificial diffusion in upwind advection scheme | 0.5 | real |
-| adv_alpha_ver | Free parameter to control vertical artificial diffusion in upwind advection scheme | 0.5 | real |
-| cstv_tstr_8 |  |  |  |
-| exp_integrator_s | Type of integrator<br>- 'EPI2'<br>- 'EPI3' | 'EPI3' | character(len=16) |
-| kiops_krylov_size | An estimate of the appropriate Krylov size | 16 | integer |
-| kiops_krylov_size_max | The maximum Krylov size in adaptive procedure | 64 | integer |
-| kiops_krylov_size_min | The minimum Krylov size in adaptive procedure | 1 | integer |
-| kiops_tolerance | Tolerance to achieve in KIOPS | 1.19209d-07 | real(kind=REAL64) |
-
-
 ### dyn_fisl Namelist
 
 | Name          | Description            |  Default Value | Type |
@@ -56,9 +42,6 @@
 | cstv_ba_nh_8 | SL off-centering parameter for nonhydrostatic | 0.5 | real(kind=REAL64) |
 | cstv_psadj_8 | Fraction of adjustment to be given to the ocean | 1.d0 | real(kind=REAL64) |
 | cstv_tstr_8 | T* basic state temperature (K) | 240.0 | real(kind=REAL64) |
-| gauss_niter | 3D preconditioner for iterative solver | 2 | integer |
-| ovlpx | 3D preconditioner for iterative solver | 4 | integer |
-| ovlpy | 3D preconditioner for iterative solver | 4 | integer |
 | schm_advec | * 0   ->          NO advection<br>- 1   -> traditional advection<br>- 2   -> consistent advection with respect to off-centering<br>- 3   -> reversed advection with respect to off-centering | 1 | integer |
 | schm_bitpattern_l | True-> Modify slightly code behaviour to ensure bitpattern<br>reproduction in restart mode using FST file | .false. | logical |
 | schm_dry_mixing_ratio_l | True-> Tracers are mixing ratios with respect to dry air mass | .false. | logical |
@@ -74,16 +57,6 @@
 | schm_psadj_print_l | True-> print dry/wet air masses | .false. | logical |
 | schm_topo_l | True-> to use topography | .true. | logical |
 | schm_wload_l | Apply water loading in the calculations | .false. | logical |
-| sol2d_precond_s | 2D preconditioner for iterative solver | 'JACOBI' | character(len=26) |
-| sol3d_krylov_s | Krylov method for 3d iterative solver (FGMRES or FBICGSTAB) | 'FGMRES' | character(len=26) |
-| sol3d_precond_s | 3D preconditioner for iterative solver | 'RAS' | character(len=26) |
-| sol_fgm_eps | Epsilon convergence criteria for none Yin-Yang iterative solver | 1.d-07 | real(kind=REAL64) |
-| sol_fgm_maxits | maximum number of iterations allowed for none Yin-Yang iterative solver | 200 | integer |
-| sol_im | size of Krylov subspace in iterative solver - should not exceed 100 | 15 | integer |
-| sol_one_transpose_l | True => use the one-transpose solver | .false. | logical |
-| sol_type_s | Type of solver<br>- 'ITERATIF'<br>- 'DIRECT' | 'DIRECT' | character(len=26) |
-| sol_yyg_eps | Epsilon convergence criteria for the Yin-Yang iterative solver | 1.d-04 | real(kind=REAL64) |
-| sol_yyg_maxits | maximum number of iterations allowed for the Yin-Yang iterative solver | 40 | integer |
 
 
 ### dyn_kernel Namelist
@@ -179,7 +152,7 @@
 | grdc_latr | Latitude on rotated grid of ref point, Grdc_iref,Grdc_jref (degrees) | 0. | real |
 | grdc_lonr | Longitude on rotated grid of ref point, Grdc_iref,Grdc_jref (degrees) | 180. | real |
 | grdc_maxcfl | Max Supported Courrant number;<br>Pilot area=Grdc_maxcfl +Grdc_bsc_base+Grdc_bsc_ext1 | 1 | integer |
-| grdc_nbits | Number of bits for the packing factor | 32 | integer |
+| grdc_nbits | Number of bits for the packing factor |  |  |
 | grdc_nfe | Nesting interval specified with digits ending with one character<br>for the units:<br>- S : seconds<br>- D : days<br>- M : minutes<br>- H : hours | ' ' | character(len=15) |
 | grdc_ni | Number of points along X | 0 | integer |
 | grdc_nj | Number of points along Y | 0 | integer |
@@ -221,12 +194,12 @@
 | hzd_pwr_theta | Order of the background diffusion operator on theta<br>2, 4, 6, 8 | -1 | integer |
 | hzd_pwr_tr | Order of the background diffusion operator on tracers | -1 | integer |
 | hzd_smago_fric_heat | Frictional heating is considered when Hzd_smago_fric_heat>0. | 0. | real |
-| hzd_smago_lev | The levels (bot,top) in the hybrid coordinate where the background diffusion<br>coefficient varies between the value defined by Hzd_smago_lnr(1) and Hzd_smago_lnr(2). |  |  |
-| hzd_smago_lnr | Coefficient of background diffusion added to the coefficient computed using the<br>Smagorinsky approach. The first element of the array determines the constant value<br>of background diffusion coeff. below Hzd_smago_lev(1). The second element represents<br>the value at Hzd_smago_lev(2). The third element determines the maximum coefficient<br>at the model top. Two ramps of COS^2-type are used between Hzd_smago_lev(1) and<br>Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid. |  |  |
+| hzd_smago_lev |  |  |  |
+| hzd_smago_lnr | Coefficient of background diffusion added to the coefficient computed using the<br>Smagorinsky approach. Two options are available.<br>(i)  Fixed background diffusion: Just assign a single value, e.g., 0.2, and the resultant<br>diffusion will be similar to standard del-2 diffusion with Hzd_lnr=0.2.<br>(ii) Vertically variable diffusion: Takes three values. The first element of the array determines<br>the constant value of background diffusion coeff. below Hzd_smago_lev(1). The second<br>the value at Hzd_smago_lev(2). The third element determines the maximum coefficient<br>element represents at the model top. Two ramps of COS^2-type are used between<br>Hzd_smago_lev(1) and Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid. |  |  |
 | hzd_smago_param | Main Smagorinsky control parameter (usual range 0.1-0.3) | -1. | real |
 | hzd_smago_prandtl | Apply Smago diffusion on theta using Hzd_smago_param/Hzd_smago_prandtl parameter | -1. | real |
 | hzd_smago_prandtl_hu | Apply Smago diffusion on HU using Hzd_smago_param/Hzd_smago_prandtl_hu parameter | -1. | real |
-| hzd_smago_theta_base_l | If TRUE then background diffusion is applied to THETA and HU. | .true. | logical |
+| hzd_smago_theta_base_l | If TRUE then background diffusion is applied to THETA and HU. | .false. | logical |
 | p_lmvd_high_lat | Latitude at which the multiplication factor becomes P_lmvd_weigh_high_lat | 30.0 | real |
 | p_lmvd_low_lat | latitude at which the multiplication factor becomes P_lmvd_weigh_low_lat | 5.0 | real |
 | p_lmvd_weigh_high_lat | Multiplication factor of P_pbl_spng at latitude P_lmvd_high_lat | 1.0 | real |
@@ -302,6 +275,13 @@
 | mtn_zblen_thk |  | 0. | real |
 
 
+### ops_cfgs Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| ops_configuration_s | Main selector for Operational configurations combo defaults | '' | character(len=32) |
+
+
 ### out Namelist
 
 | Name          | Description            |  Default Value | Type |
@@ -322,6 +302,25 @@
 | out3_npey | Total number of PEs along npey for output using MID collector | -1 | integer |
 | out3_postproc_fact | Sortie jobs lauched every Out3_postproc_fact*Out3_close_interval_S | 6 | integer |
 | out3_vinterp_type_s | Vertical interpolation scheme for output | 'linear' | character(len=12) |
+
+
+### sol Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| sol_fgm_eps | Epsilon convergence criteria for none Yin-Yang iterative solver | 1.d-07 | real(kind=REAL64) |
+| sol_fgm_maxits |  | 200 | integer |
+| sol_gauss_niter | 3D preconditioner for iterative solver | 2 | integer |
+| sol_im | size of Krylov subspace in iterative solver - should not exceed 100 | 15 | integer |
+| sol_krylov3d_s | Krylov method for 3d iterative solver (FGMRES or FBICGSTAB) | 'FGMRES' | character(len=26) |
+| sol_one_transpose_l | True => use the one-transpose solver | .false. | logical |
+| sol_ovlpx | 3D preconditioner for iterative solver | 4 | integer |
+| sol_ovlpy | 3D preconditioner for iterative solver | 4 | integer |
+| sol_precond2d_s | 2D preconditioner for iterative solver | 'JACOBI' | character(len=26) |
+| sol_precond3d_s | 3D preconditioner for iterative solver | 'RAS' | character(len=26) |
+| sol_type_s | Type of solver<br>- 'ITERATIF'<br>- 'DIRECT' | 'DIRECT' | character(len=26) |
+| sol_yyg_eps | Epsilon convergence criteria for the Yin-Yang iterative solver | 1.d-04 | real(kind=REAL64) |
+| sol_yyg_maxits | maximum number of iterations allowed for the Yin-Yang iterative solver | 40 | integer |
 
 
 ### spn Namelist

@@ -861,3 +861,18 @@ fileVersion: 5.2.0-a16 > 5.2.0-a17
 #------
 fileVersion: 5.2.0-a17 > 5.2.0-a18
 
+#------
+fileVersion: 5.2.0-a18 > 5.2.0-a19
+rm:  dyn_fisl/gauss_niter
+rm:  dyn_fisl/ovlpx
+rm:  dyn_fisl/ovlpy
+rm:  dyn_fisl/sol2d_precond_s
+rm:  dyn_fisl/sol3d_krylov_s
+rm:  dyn_fisl/sol3d_precond_s
+rm:  dyn_fisl/sol_fgm_eps
+rm:  dyn_fisl/sol_fgm_maxits
+rm:  dyn_fisl/sol_im
+rm:  dyn_fisl/sol_one_transpose_l
+rm:  dyn_fisl/sol_type_s
+rm:  dyn_fisl/sol_yyg_eps
+rm:  dyn_fisl/sol_yyg_maxits
