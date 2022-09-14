@@ -32,7 +32,10 @@ contains
       use debug_mod, only: init2nan
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL2, GRAV, PI, STEFAN
-      use cldoppro_MP, only: cldoppro_MP2
+      use cldoppro_MP, only: cldoppro_MP3
+      use cldoppro_noMP, only: cldoppro_noMP1
+      use diagno_clouds, only: diagno_clouds2
+      use prep_cw_rad, only: prep_cw_rad3
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -138,7 +141,7 @@ contains
       real(REAL64) :: hz_8
       real :: hz, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
-      logical :: lcsw, lclw, aerosolback,thisstepisrad,nextstepisrad,thisstepisraduv
+      logical :: aerosolback,thisstepisrad,nextstepisrad,thisstepisraduv
       integer :: il1, il2
       character(len=1) :: niuv
 
@@ -173,7 +176,7 @@ contains
 
       include "solcons.cdk"
 
-      data lcsw, lclw, aerosolback / .true., .true., .true./
+      data aerosolback /.true./
       ! note: if you use lclw=false; must decomment some lines at end of raddriv.F90
 
       !----------------------------------------------------------------
@@ -181,7 +184,7 @@ contains
 
 #undef PHYPTRDCL
 #include "cccmarad_ptr.hf"
-
+      
       radlinoz_L = (rad_linoz_L .and. llinoz)
       radlinghg_L = (rad_linoz_L .and. llingh)
       if (.not.associated(zo3fk)) zo3fk => zo3s
@@ -304,17 +307,13 @@ contains
       zfcfb = 0.0
 
       ! calculate cloud optical properties and dependent diagnostic
-      ! cloud variables
-      ! such as cloud cover, effective and true; cloud top temp and pressure
-      ! called every timestep
-      !
+
       if (stcond(1:3)=='MP_') then
-         call cldoppro_MP2(dbus, fbus, vbus, &
+         call cldoppro_MP3(dbus, fbus, vbus, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, zgztherm, ps, &   
-              ni, nkm1, nk, kount)
+              temp, sig, ps, ni, nkm1, nk, kount)
          if (phy_error_L) return
       else
          if (.not.associated(ztcsl)) ztcsl => dummy1d
@@ -323,16 +322,24 @@ contains
          if (.not.associated(ztczl)) ztczl => dummy1d
          if (.not.associated(ztczm)) ztczm => dummy1d
          if (.not.associated(ztczh)) ztczh => dummy1d
-         call cldoppro5(taucs, omcs, gcs, taucl, omcl, gcl, &
-              ztopthw, ztopthi, zecc,ztcc, &
-              zeccl, zeccm, zecch, &
-              ztcsl, ztcsm, ztcsh, &
-              ztczl, ztczm, ztczh, zgztherm, &     
-              zctp, zctt, liqwcin, icewcin, &
+         call prep_cw_rad3(fbus, dbus, &
+                 temp, qq, ps, sig, &
+                 cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
+                 kount, ni, nk, nkm1)
+         call cldoppro_noMP1(fbus,vbus,taucs, omcs, gcs, taucl, omcl, gcl, &
+              liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, zmg, zml, zmrk2, ni, &
+              temp, sig, ps, trnch, ni, &
               ni, nkm1, nk)
       endif
+
+      ! calculate diagnostic cloud variables
+      ! such as cloud cover, effective and true; cloud top temp and pressure
+
+      call diagno_clouds2(fbus, vbus,taucs, taucl,  &
+             zgztherm, cldfrac, &
+             temp, sig, ps, trnch, ni, &
+             ni, nkm1, nk)
 
       ! is this or next step a radiation timestep?
       thisstepisraduv = ((kntraduv_S /= '') .and. &
@@ -613,7 +620,7 @@ contains
               zcf12, f113, f114, o2, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
               cldfrac, tauae, exta, exoma, exomga, &
-              fa, absa, lcsw, lclw, zmrk2, .not.DO_UV_ONLY, &
+              fa, absa, rad_sw, rad_lw, zmrk2, .not.DO_UV_ONLY, &
               il1, il2, ni, nkm1, nk)
 
          ! ti (t2): infrared (solar) cooling (heating) rate

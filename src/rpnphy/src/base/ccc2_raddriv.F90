@@ -128,6 +128,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 #include "ccc_tracegases.cdk"
 #include "ccc_aeros.cdk"
 #include "tables.cdk"
+include "nocld.cdk"
 
    integer, dimension(ilg) :: mtop
    real, dimension(ilg) :: c1
@@ -232,7 +233,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    !     uu3 = 3 * u * u, u = 1 / e^0.5
    !----------------------------------------------------------------------
 
-   data hrcoef, uu3, cut / 9.9565841e-05, 1.1036383, 0.001 /
+   data hrcoef, uu3 / 9.9565841e-05, 1.1036383 /
    !old      data specirr /1366.2035/
    data specirr /1367.9396/
 
@@ -244,6 +245,8 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
    data kgs   / 6, 4, 6, 4 /
    data kgl   / 1, 1, 2, 5, 2, 3, 3, 6, 4 /
+
+   cut = cldfth ! specified in nocld.cdk, .001 in CCCMA code
 
    if (std_p_prof(1).lt.1000.0) then
       !   for maximum height about 0.005 hPa
@@ -1299,22 +1302,22 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
       enddo
 
       !     decommenter cette partie si on fait lclw = false sinon ca plante
-      !      else
-      !         do i = il1, il2
-      !           fdl(i)       = 0.0
-      !           ful(i)       = 0.0
-      !           clt(i)       = 0.0
-      !           clb(i)       = 0.0
-      !           flxdl(i,lev) = 0.0
-      !           flxul(i,lev) = 0.0
-      !         enddo
-      !         do k = 1, lay
-      !         do i = il1, il2
-      !           flxdl(i,k)   = 0.0
-      !           flxul(i,k)   = 0.0
-      !           hrl(i,k)     = 0.0
-      !         enddo
-      !         enddo
+            else
+               do i = il1, il2
+                 fdl(i)       = 0.0
+                 ful(i)       = 0.0
+                 clt(i)       = 0.0
+                 clb(i)       = 0.0
+                 flxdl(i,lev) = 0.0
+                 flxul(i,lev) = 0.0
+               enddo
+               do k = 1, lay
+               do i = il1, il2
+                 flxdl(i,k)   = 0.0
+                 flxul(i,k)   = 0.0
+                 hrl(i,k)     = 0.0
+               enddo
+               enddo
    endif
    !     (lclw)
 

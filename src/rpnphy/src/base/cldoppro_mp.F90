@@ -17,16 +17,16 @@
 module cldoppro_MP
    implicit none
    private
-   public :: cldoppro_MP2
+   public :: cldoppro_MP3
 
 contains
 
    !/@*
-  subroutine cldoppro_MP2(dbus, fbus, vbus, &
+  subroutine cldoppro_MP3(dbus, fbus, vbus, &
        taucs, omcs, gcs, taucl, omcl, gcl, &
        liqwcin, icewcin, &
        liqwpin, icewpin, cldfrac, &
-       tt, sig, gz, ps, ni, nkm1, nk, kount)
+       tt, sig, ps, ni, nkm1, nk, kount)
     use, intrinsic :: iso_fortran_env, only: INT64
     use debug_mod, only: init2nan
     use tdpack_const, only: GRAV, RGASD
@@ -47,7 +47,7 @@ contains
     real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
     real, intent(inout), dimension(ni,nkm1) :: liqwpin, icewpin
     real, intent(inout) :: cldfrac(ni,nkm1)
-    real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), gz(ni,nkm1), ps(ni)  
+    real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), ps(ni)
 
     !          - output -
     ! taucs    cloud solar optical thickness
@@ -102,39 +102,30 @@ contains
 
     real, parameter :: THIRD = 1./3.
 
-    logical, dimension(ni) :: top
     logical, dimension(ni,nkm1) :: nocloud
 
-    integer, dimension(ni) :: ih, ib, ih2, ib2, ih3, ib3 
 
-    real, dimension(ni) :: trmin, tmem
-    real, dimension(ni) :: trmin2, tmem2
     real, dimension(:), allocatable :: tausimp, omsimp, gsimp, taulimp, omlimp, glimp
 
-    real, dimension(ni,nkm1) :: transmissint, trans_exp, trav2d
-    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, dp
+    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
     real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
 
-    real, dimension(ni,nk,nk) :: ff,ff2
     real, dimension(:,:,:), allocatable :: iwcinmp, iwpinmp, effradi
 
     logical :: nostrlwc, readfield_L
-    integer :: i, j, k, kind, ip, l, mpcat, istat1, istat2
-    real :: rec_grav, cut, press, tot
+    integer :: i, j, k, l, mpcat, istat1, istat2
+    real :: rec_grav,  press
     real :: rew1, rew2, rew3, dg, dg2, dg3, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, y3
     real :: taulw, omlw, glw, tauli, omli, gli
     real :: tauswmp, omswmp, gswmp
     real :: taulwmp, omlwmp, glwmp
-    real :: xnu, xnu2
 
     real, pointer, dimension(:,:), contiguous :: zqcmoins, zqimoins, zqnmoins, zqgmoins
     real, pointer, dimension(:,:), contiguous :: zqti1m, zqti2m, zqti3m, zqti4m
     real, pointer, dimension(:,:), contiguous :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
-    real, pointer, dimension(:), contiguous :: ztopthw,ztopthi,ztcc,zecc,zeccl,zeccm,zecch,znt
-    real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
-    real, pointer, dimension(:), contiguous :: ztczl,ztczm,ztczh  
-    real, pointer, dimension(:), contiguous :: zmg,zml,zctp,zctt
-    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zftot
+    real, pointer, dimension(:), contiguous :: ztopthw,ztopthi
+    real, pointer, dimension(:), contiguous :: zmg,zml
+    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
          zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
@@ -142,22 +133,8 @@ contains
     !----------------------------------------------------------------
     call msg_toall(MSG_DEBUG, 'cldoppro_MP [BEGIN]')
 
-    MKPTR1D(zctp, ctp, vbus)
-    MKPTR1D(zctt, ctt, vbus)
-    MKPTR1D(zecc, ecc, fbus)
-    MKPTR1D(zecch, ecch, fbus)
-    MKPTR1D(zeccl, eccl, fbus)
-    MKPTR1D(zeccm, eccm, fbus)
     MKPTR1D(zmg, mg, fbus)
     MKPTR1D(zml, ml, fbus)
-    MKPTR1D(znt, nt, fbus)
-    MKPTR1D(ztcc, tcc, fbus)
-    MKPTR1D(ztcsl, tcsl, fbus)
-    MKPTR1D(ztcsm, tcsm, fbus)
-    MKPTR1D(ztcsh, tcsh, fbus)
-    MKPTR1D(ztczl, tczl, fbus) 
-    MKPTR1D(ztczm, tczm, fbus)  
-    MKPTR1D(ztczh, tczh, fbus)  
     MKPTR1D(ztiwp, tiwp, fbus)
     MKPTR1D(ztiwpin, tiwpin, fbus)
     MKPTR1D(ztlwp, tlwp, fbus)
@@ -171,7 +148,6 @@ contains
     MKPTR2Dm1(zeffradi3, effradi3, fbus)
     MKPTR2Dm1(zeffradi4, effradi4, fbus)
     MKPTR2Dm1(zfmp, fmp, fbus)
-    MKPTR2Dm1(zftot, ftot, fbus)
     MKPTR2Dm1(zfxp, fxp, fbus)
     MKPTR2Dm1(zgraupel, qgplus, dbus)
     MKPTR2Dm1(zhumoins, humoins, dbus)
@@ -198,10 +174,9 @@ contains
     MKPTR2Dm1(zsnow, qnplus, dbus)
     MKPTR2Dm1(ztmoins, tmoins, dbus)
 
-    call init2nan(trmin, tmem)
-    call init2nan(transmissint, trans_exp, trav2d, aird, rew, rei, rec_cdd, dp)
+    call init2nan(aird, rew, rei, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
-    call init2nan(ff, iwcinmp, iwpinmp, effradi)
+    call init2nan(iwcinmp, iwpinmp, effradi)
 
     ! Allocate cateory-dependent space
     if (stcond(1:5)=='MP_P3')  mpcat = p3_ncat
@@ -277,8 +252,8 @@ contains
              ! nuageuse pour l'appel a la radiation a kount=0seulement.
              ! ces valeurs seront remplacees par celles calculees dans
              ! les modules de condensation.
-             call cldwin(zfmp,zlwcimp,ztmoins,zhumoins,zpmoins, &
-                  trav2d,zsigw,ni,nkm1,satuco)
+             call cldwin1(zfmp,zlwcimp,ztmoins,zhumoins,zpmoins, &
+                  zsigw,ni,nkm1,satuco)
              do k=1,nkm1
                 do i=1,ni
                    cldfmp(i,k) = zfmp(i,k)
@@ -289,8 +264,6 @@ contains
        endif
     endif
 
-    ! begin -code previously in prep_cw_rad
-    ! Initialization of cloud (from prep_cw_rad)
     readfield_L = .false.
     if (any(dyninread_list_s == 'qc') .or. &
          any(phyinread_list_s(1:phyinread_n) == 'tr/mpqc:p')) then
@@ -369,7 +342,7 @@ contains
              do l=1,mpcat
                 iwcinmps(i,k) = iwcinmps(i,k) + iwcinmp(i,k,l)
              enddo
-             if (lwcinmp(i,k) + iwcinmps(i,k) > 1.e-6) then
+             if (lwcinmp(i,k) + iwcinmps(i,k) > 1.e-6) then   ! not coherent with the rest
                 cldfxp(i,k) = 1
              else
                 cldfxp(i,k) = 0
@@ -404,7 +377,7 @@ contains
        do i=1,ni
 
           ! Normalize water contents to get in-cloud values
-          if (cldfmp(i,k) < 0.01) then
+          if (cldfmp(i,k) < cldfth) then
              liqwcin(i,k) = 0.
              icewcin(i,k) = 0.
              cldfmp(i,k) = 0.
@@ -421,7 +394,7 @@ contains
              endif
           enddo
 
-          if (cldfxp(i,k) < 0.01) then
+          if (cldfxp(i,k) < cldfth) then
              lwcinmp(i,k) = 0.
              do l=1,mpcat
                 iwcinmp(i,k,l) = 0.0
@@ -479,22 +452,22 @@ contains
        enddo
     enddo
 
-    !FIXME: coherence of thresholds on cloud fraction vs water path vs water content everywhere in code...
-    cut = 0.001
     do k=1,nkm1
        do i=1,ni
-          if (lwpinmp(i,k) <= 0.001 .and. iwpinmps(i,k) <= 0.001) then
+          if (lwpinmp(i,k) <= wpth .and. iwpinmps(i,k) <= wpth) then
              cldfxp(i,k) = 0.
           endif
-          if (liqwpin(i,k) <= 0.001 .and. icewpin(i,k) <= 0.001) then
+          if (liqwpin(i,k) <= wpth .and. icewpin(i,k) <= wpth) then
              cldfmp(i,k) = 0.
           endif
-          nocloud(i,k) = (liqwpin(i,k)+lwpinmp(i,k)+icewpin(i,k)+iwpinmps(i,k) <= cut)
+          nocloud(i,k) = (liqwpin(i,k)+lwpinmp(i,k)+icewpin(i,k)+iwpinmps(i,k) <= wpth)
           ztlwp(i)     = ztlwp(i)   + liqwpin(i,k)*cldfmp(i,k) + lwpinmp(i,k)*cldfxp(i,k)
           ztiwp(i)     = ztiwp(i)   + icewpin(i,k)*cldfmp(i,k) + iwpinmps(i,k)*cldfxp(i,k)
           zlwcrad(i,k) = liqwcin(i,k)*cldfmp(i,k) + lwcinmp(i,k)*cldfxp(i,k)
           ziwcrad(i,k) = icewcin(i,k)*cldfmp(i,k) + iwcinmps(i,k)*cldfxp(i,k)
-          cldfrac(i,k) = max(min(cldfmp(i,k)+cldfxp(i,k), 1.0), 0.0)
+          cldfrac(i,k) = max(min(cldfmp(i,k)+cldfxp(i,k), 1.0), 0.0)                    ! no overlap=ops
+!          cldfrac(i,k) = max(min(max(cldfmp(i,k),cldfxp(i,k)), 1.0), 0.0)                ! max overlap
+!          cldfrac(i,k) = min(1., max(0.,  1. - (1.-cldfmp(i,k))*(1.-cldfxp(i,k))))       ! random overlap
           if (nocloud(i,k)) then
              cldfrac(i,k) = 0.0
           endif
@@ -508,8 +481,6 @@ contains
        ztiwp(i) = ztiwp(i) * 0.001
     enddo
 
-    !     end -code previously in prep_cw_rad
-    !
     !     initialize output fields
     !
     do i = 1, ni
@@ -581,7 +552,7 @@ contains
              else
                 rew2 = rew(i,k) * rew(i,k)
                 rew3 = rew2 * rew(i,k)
-                if (liqwpin(i,k) > 0.001) then  !implicit
+                if (liqwpin(i,k) > wpth) then  !implicit
                    tausw = liqwpin(i,k) * &
                         (aws(1,j) + aws(2,j) / rew(i,k) + &
                         aws(3,j) / rew2 + aws(4,j) / rew3)
@@ -596,7 +567,7 @@ contains
                 endif
 
 
-                if (icewpin(i,k) > 0.001) then  !implicit
+                if (icewpin(i,k) > wpth) then  !implicit
                    dg   = 1.5396 * rei(i,k)
                    dg2  = dg  * dg
                    dg3  = dg2 * dg
@@ -612,7 +583,7 @@ contains
                 endif
 
 
-                if (lwpinmp(i,k) > 0.001) then  !explicit
+                if (lwpinmp(i,k) > wpth) then  !explicit
                    rew1 = zeffradc(i,k) * 1.e+6
                    if (kount == 0) rew1 = 10.    ![microns] assign value at step zero (in case QC is non-zero at initial conditions)
                    rew1 = min(max(4., rew1), 40.0)
@@ -632,7 +603,7 @@ contains
                 endif
 
                 do l=1,mpcat  !explicit
-                   if (iwpinmp(i,k,l) > 0.001 .and. effradi(i,k,l) < 1.e-4) then
+                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then
                       dg   = 1.5396 * effradi(i,k,l)*1.e6  ![microns]
                       !if (kount == 0) dg = 1.5396*50.   ![microns] assign value at step zero (in case "QI" is non-zero at initial conditions)
                       dg   = min(max(dg, 15.), 110.)  ! max value is lower otherwise, model is crashing
@@ -710,7 +681,7 @@ contains
                 rew2 = rew(i,k) * rew(i,k)
                 rew3 = rew2 * rew(i,k)
 
-                if (liqwpin(i,k) > 0.001) then
+                if (liqwpin(i,k) > wpth) then
                    taulw = liqwpin(i,k) * (awl(1,j) + awl(2,j) * rew(i,k)+ &
                         awl(3,j) / rew(i,k) + awl(4,j) / rew2 + &
                         awl(5,j) / rew3)
@@ -729,7 +700,7 @@ contains
                 !     icewpin(i,k) / tauli for single scattering albedo
                 !----------------------------------------------------------------------
 
-                if (icewpin(i,k) > 0.001) then
+                if (icewpin(i,k) > wpth) then
                    dg    = 1.5396 * rei(i,k)
                    dg2   = dg  * dg
                    dg3   = dg2 * dg
@@ -746,7 +717,7 @@ contains
                    gli   = 0.
                 endif
 
-                if (lwpinmp(i,k) > 0.001) then
+                if (lwpinmp(i,k) > wpth) then
                    rew1 = zeffradc(i,k) * 1.e6
                    rew1 = min(max(4., rew1), 40.0)  !TEST, JM
                    if (kount == 0) rew1 = 10.    !assign value at step zero (in case QC is non-zero at initial conditions)
@@ -772,7 +743,7 @@ contains
                 endif
 
                 do l=1,mpcat
-                   if (iwpinmp(i,k,l) > 0.001 .and. effradi(i,k,l) < 1.e-4) then
+                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then
                       dg = 1.5396 * effradi(i,k,l)*1.e6
                       if (kount == 0) dg = 1.5396*50.     !assign value at step zero (in case "QI" is non-zero at initial conditions)
                       dg  = min(max(dg, 15.), 110.)  ! max value is lower to avoid model crashing!
@@ -829,120 +800,6 @@ contains
        enddo
     enddo DO_NBL
 
-    !
-    !     diagnostics: cloud top pressure (ctp) and temperature (ctt)
-    !     using the cloud optical depth at window region (band 6) to
-    !     calculate the emissivity
-    !
-    !     calcul des indices IH et IB pour nuages 2-D
-    !     IH = niveau le plus pres de sigma=0.4
-    !     IB = niveau le plus pres de sigma=0.7
-    !     IH2 = niveau le plus pres de sigma=0.45 pour compatibilite avec meme variable pour era5
-    !     IB2 = niveau le plus pres de sigma=0.8  pour compatibilite avec meme variable pour era5
-    !     IH3 = niveau le plus pres de height=6.5km  for compatibility with the same variable for Calipso-GOCCP
-    !     IB3 = niveau le plus pres de height=3.2km  for compatibility with the same variable for Calipso-GOCCP 
-    !
-    do k = 1, nkm1
-       do i = 1, ni
-          if (sig(i,k) <= rad_siglim(4)) ih(i) = k
-          if (sig(i,k) <= rad_siglim(3)) ib(i) = k
-       enddo
-    enddo
-    if (etccdiag) then
-       do k = 1, nkm1
-          do i = 1, ni
-             if (sig(i,k) <= rad_siglim(2)) ih2(i) = k
-             if (sig(i,k) <= rad_siglim(1)) ib2(i) = k
-             if (gz(i,k)  >= rad_zlim(2))   ih3(i) = k
-             if (gz(i,k)  >= rad_zlim(1))   ib3(i) = k
-          enddo
-       enddo
-    endif
-
-    do i = 1, ni
-       zctp(i) = 110000.
-       zctt(i) = 310.
-       top(i) = .true.
-       trans_exp(i,1) = exp(- 1.64872 * taucl(i,1,6))
-       transmissint(i,1) = 1. - cldfrac(i,1) * (1. - trans_exp(i,1) )
-       if ((1. - transmissint(i,1)) > 0.99 .and. top(i)) then
-          zctp(i) = sig(i,1)*ps(i)
-          zctt(i) = tt(i,1)
-          top(i) = .false.
-       end if
-    end do
-
-    do k = 2, nkm1
-       do i = 1, ni
-          trans_exp(i,k) = exp(- 1.64872 * taucl(i,k,6))
-          transmissint(i,k) = transmissint(i,k-1) * (1. - cldfrac(i,k) * &
-               (1.-trans_exp(i,k) ) )
-          if ((1. - transmissint(i,k)) > 0.99 .and. top(i)) then
-             zctp(i) = sig(i,k)*ps(i)
-             zctt(i) = tt(i,k)
-             top(i) = .false.
-          end if
-       end do
-    end do
-
-    !...  compute total, high cloud, middle cloud and low cloud effective cloud cover (nt) as in radir7
-    !     using the cloud optical depth at window region (band 6) to
-    !     calculate the emissivity
-
-    do l=1,nk-1
-       do i=1,ni
-          ff(i,l,l) = 1.
-          tmem(i) = 1.
-          trmin(i) = 1. 
-          ff2(i,l,l) = 1.
-          tmem2(i) = 1.
-          trmin2(i) = 1.
-       enddo
-       ip=l+1
-       do k=ip,nk
-          kind = k-2
-          kind = max0(kind,1)
-          do i=1,ni
-             xnu = 1. - cldfrac(i,k-1)*(1. - trans_exp(i,k-1)) ! for effective cloud covers
-             xnu2= 1. - cldfrac(i,k-1)                         ! for true cloud covers
-             if (cldfrac(i,kind) < 0.01) then
-                tmem(i)  = ff(i,l,k-1)
-                trmin(i) = xnu
-                tmem2(i)  = ff2(i,l,k-1)
-                trmin2(i) = xnu2
-             else
-                trmin(i) = min(trmin(i), xnu)
-                trmin2(i) = min(trmin2(i), xnu2)
-             endif
-             ff(i,l,k)  = tmem(i) * trmin(i)
-             ff2(i,l,k) = tmem2(i) * trmin2(i)
-          enddo
-       enddo
-    enddo
-
-    do i=1,ni
-       zecc(i)  = 1. - ff(i,1,nk)
-       zecch(i) = 1. - ff(i, 1   ,IH(i))
-       zeccm(i) = 1. - ff(i,IH(i),IB(i))
-       zeccl(i) = 1. - ff(i,IB(i),nk   )
-       ztcc(i)  = 1. - ff2(i,1,nk)
-       ! new NT formulation: TCC*(1-exp(-0.1* total cloud optical depth for visible))
-       tot = ztopthw(i) + ztopthi(i)
-       znt(i) = ztcc(i)*(1.-exp(-0.1*tot))
-    enddo
-
-    if (etccdiag) then
-       do  i=1,ni
-          ztcsh(i) = 1. - ff2(i,1,IH2(i))
-          ztcsm(i) = 1. - ff2(i,IH2(i),IB2(i))
-          ztcsl(i) = 1. - ff2(i,IB2(i),nk)
-          ! to calculate 2-d cloud fraction with calipso-GOCCP height criteria
-          ztczh(i) = 1. - ff2(i,1,IH3(i))
-          ztczm(i) = 1. - ff2(i,IH3(i),IB3(i))
-          ztczl(i) = 1. - ff2(i,IB3(i),nk)
-       enddo
-    endif
-
     ! Garbage collection
     deallocate(tausimp, omsimp, gsimp, taulimp, omlimp, glimp)
     deallocate(iwcinmp, iwpinmp, effradi)
@@ -950,7 +807,7 @@ contains
     call msg_toall(MSG_DEBUG, 'cldoppro_MP [END]')
     !----------------------------------------------------------------
     return
-  end subroutine cldoppro_MP2
+  end subroutine cldoppro_MP3
 
 end module cldoppro_MP
 

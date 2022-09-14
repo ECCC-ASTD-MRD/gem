@@ -74,7 +74,7 @@
 | debug_trace_l | Print a trace of the phy functions (MSG verbosity = debug) | .false. | logical |
 | diffuw | Diffuse vertical motion if .true. | .false. | logical |
 | etrmin2 | Minimal value for TKE in stable case (for 'CLEF') | 1.E-4 | real |
-| fluvert | Boundary layer processes<br>- 'NIL    ': no vertical diffusion<br>- 'CLEF   ': non-cloudy boundary layer formulation<br>- 'MOISTKE': cloudy boundary layer formulation<br>- 'SURFACE': TODO<br>- 'SIMPLE ': a very simple mixing scheme for neutral PBLs | 'NIL' | character(len=16) |
+| fluvert | Boundary layer processes<br>- 'NIL    ': no vertical diffusion<br>- 'CLEF   ': non-cloudy boundary layer formulation<br>- 'MOISTKE': cloudy boundary layer formulation<br>- 'SURFACE': TODO<br>- 'SIMPLE ': a very simple mixing scheme for neutral PBLs<br>- 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1) | 'NIL' | character(len=16) |
 | fnn_mask | (MOISTKE only) Apply factor fnn_reduc<br>- .false.: everywhere<br>- .true.: over water only | .false. | logical |
 | fnn_reduc | (MOISTKE only) Reduction factor (between 0. and 1.) to be applied to the<br>parameter FNN (turbulent flux enhancement due to boundary layer clouds) | 1. | real |
 | fnnmod | (CLEF+CONRES only) Non-dimensional parameter (must be >= 1.) that controls<br>the value of the flux enhancement factor in CONRES | 2. | real |
@@ -139,6 +139,7 @@
 | pbl_tkediff | Adjustment to coefficient for TKE diffusion | 1. | real |
 | pbl_tkediff2dt | Control of time scale for TKE diffusion | .false. | logical |
 | pbl_turbsl_depth | Depth (Pa) of the always-turbulent near-surface layer in the PBL | 3000. | real |
+| pbl_ysu_rpnsolve | Use RPNphy solver for diffusion equations from YSU coefficients | .false. | logical |
 | pbl_zerobc | Use true (motionless) surface boundary conditions for TKE diffusion | .false. | logical |
 | pbl_zntau | Relaxation timescale (s) for mixing length smoothing | 7200. | real |
 | pcptype | Scheme to determine precipitation type<br>- 'NIL     ': no call to bourge<br>- 'BOURGE  ': use Bourgouin algorithm (bourge1) to determine precip. types.<br>- 'BOURGE3D':<br>- 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS<br>- 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only) | 'NIL' | character(len=16) |
@@ -159,8 +160,10 @@
 | rad_conserve | Conservation corrections for radiation scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
 | rad_esfc | Use emissivity computed by the surface schemes | .false. | logical |
 | rad_linoz_l | Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only) | .false. | logical |
+| rad_lw | Compute and apply tendencies from longwave radiation | .true. | logical |
 | rad_siglim | For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp<br>TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma;<br>EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; |  |  |
 | rad_sun_angle_fix_l | Fix use of effective solar zenith angle | .false. | logical |
+| rad_sw | Compute and apply tendencies from shortwave radiation | .true. | logical |
 | rad_zlim | For calculation of DIAGNOSTIC low, mid and high TRUE cloud covers in cldoppro and cldoppro_mp with height criteria for Calipso-GOCCP<br>TRUE:      rad_zlim(1)=limit between low and mid clouds in height; rad_zlim(2)=limit between mid and high clouds in height; |  |  |
 | radghg_l | Use climatological values of GHG in radiation (CCCMARAD2 only) | .false. | logical |
 | radia | Radiation scheme<br>- 'NIL      ': no radiation scheme<br>- 'CCCMARAD ': most advanced radiation scheme<br>- 'CCCMARAD2': most advanced radiation scheme v2 | 'NIL' | character(len=16) |
@@ -254,11 +257,11 @@
 | z0dir | Use directional roughness length if .true. | .false. | logical |
 | z0hcon | Constant value of thermal roughness length (m) applied over water within<br>latitudinal band defined by z0tlat | 4.0e-5 | real |
 | z0min | Minimum value of momentum roughness length (m) | 1.5e-5 | real |
-| z0mtype | Momentum roughness length formulation over water<br>- 'CHARNOCK' : #TODO: define<br>- 'BELJAARS' : #TODO: define | 'CHARNOCK' | character(len=16) |
+| z0mtype | Momentum roughness length formulation over water<br>- 'CHARNOCK' : Standard Charnock clipped at high wind speed<br>- 'BELJAARS' : #TODO: define<br>- 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)<br>- 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013) | 'CHARNOCK' | character(len=16) |
 | z0seaice | Roughness length for sea ice | 1.6e-4 | real |
 | z0tevol | Thermal roughness length formulation over vegetation<br>- 'FIXED' : Uses z0h = z0m<br>- 'ZILI95': evolves with u* | 'FIXED' | character(len=16) |
 | z0tlat | Latitude (2 elements, in degrees) used to specify Z0T over water<br>- If :lat: <= Z0TLAT(1) constant Z0T.<br>- If :lat: >= Z0TLAT(2) Charnock's relation.<br>- In between, linear interpolation is used. | 0. | real |
-| z0ttype | Thermal roughness length formulation over water<br>- 'MOMENTUM' : Uses z0h = z0m (replaces key z0trdps300=.false.)<br>- 'DEACU12'  : #TODO: define  (replaces key z0trdps300=.true.)<br>- 'ECMWF'    : #TODO: define  (New formulation used by ECMWF) | 'MOMENTUM' | character(len=16) |
+| z0ttype | Thermal roughness length formulation over water<br>- 'MOMENTUM' : Uses z0h = z0m (replaces key z0trdps300=.false.)<br>- 'DEACU12'  : #TODO: define  (replaces key z0trdps300=.true.)<br>- 'ECMWF'    : #TODO: define  (New formulation used by ECMWF)<br>- 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)<br>- 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013) | 'MOMENTUM' | character(len=16) |
 | zt | Height at which to compute screen-level temperature (m) | 1.5 | real |
 | zu | Height at which to compute anemomenter-level winds (m) | 10. | real |
 

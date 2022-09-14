@@ -2936,7 +2936,7 @@ contains
           ! Convert updraft areas into cloud fractions.
           ! Clip cloud fraction to eliminate negative values.
 
-          CLOUDS (I,NK) = max(0.,AREAUP(I,NK)/DXDY(I))
+          CLOUDS (I,NK) = min(1.,max(0.,AREAUP(I,NK)/DXDY(I)))
           if (K < KLCL) CLOUDS (I,NK) = 0.
 
           ! Normalize condensate mixing ratio
@@ -3308,7 +3308,7 @@ contains
 
     do K=1,KX
        do I=1,IX
-          CLOUDS(I,K) = AREAUP(I,K)/DXDY(I)
+          CLOUDS (I,K) = min(1.,max(0.,AREAUP(I,K)/DXDY(I)))
        end do
     end do
 

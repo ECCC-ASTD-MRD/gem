@@ -25,16 +25,14 @@ contains
    subroutine prep_cw_rad3(fbus, dbus, &
         tm, qm, ps, sigma, cloud, &
         liqwcin, icewcin, liqwpin, icewpin, &
-        trav2d,  &
-        kount, trnch, ni, nk, nkm1)
+        kount, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, TCDK, RGASD
       use phy_options
       use phybus
-      use series_mod, only: series_xst
       implicit none
-      !@Author L. Spacek (Oct 2004)
+
       !@Object  Prepare liquid/ice water contents and cloudiness for the radiation
       !@Arguments
       !     - input -
@@ -43,7 +41,6 @@ contains
       !     ps       surface pressure
       !     sigma    sigma levels
       !     kount    index of timestep
-      !     trnch    number of the slice
       !     task     task number
       !     ni       horizontal dimension
       !     nk       number of layers, including the diag level
@@ -55,12 +52,12 @@ contains
       !     icewpin  in-cloud ice    water path (g/m^2)
       !     cloud    cloudiness passed to radiation
 
-      integer, intent(in) :: kount, trnch, ni, nk, nkm1
+      integer, intent(in) :: kount, ni, nk, nkm1
       real, pointer, contiguous :: dbus(:), fbus(:)
       real, intent(inout) :: tm(ni,nk), qm(ni,nk), ps(ni), sigma(ni,nk)
       real, intent(inout) :: liqwcin(ni,nk), icewcin(ni,nk)
       real, intent(inout) :: liqwpin(ni,nk), icewpin(ni,nk)
-      real, intent(inout) :: cloud(ni,nk), trav2d(ni,nk)
+      real, intent(inout) :: cloud(ni,nk)
       !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -70,33 +67,24 @@ contains
       include "surface.cdk"
       include "nocld.cdk"
 
-      real, dimension(ni,nkm1) ::  lwcth
+      real, dimension(ni,nkm1) ::  dp
       real rhoa
 
       integer :: i, k
-      real    :: dp, lwcm1, iwcm1, zz, rec_grav, press, frac, tcel, vliqwcin, twcdens
+      real    :: rec_grav, press, frac, tcel, vliqwcin, twcdens
       logical :: nostrlwc, hascond_L
 
-      real, pointer, contiguous :: znt(:)
-      real, pointer, dimension(:,:), contiguous :: zftot, ziwc, zlwc, zqcplus, &
-           zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
-      !----------------------------------------------------------------
+      real, pointer, dimension(:,:), contiguous :: zftot, ziwc, zlwc, zqcplus
 
-      MKPTR1D(znt, nt, fbus)
+      !----------------------------------------------------------------
 
       MKPTR2D(zftot, ftot, fbus)
       MKPTR2D(ziwc, iwc, fbus)
       MKPTR2D(zlwc, lwc, fbus)
       MKPTR2D(zqcplus, qcplus, dbus)
-      MKPTR2D(zqi_cat1, qti1plus, dbus)
-      MKPTR2D(zqi_cat2, qti2plus, dbus)
-      MKPTR2D(zqi_cat3, qti3plus, dbus)
-      MKPTR2D(zqi_cat4, qti4plus, dbus)
-      MKPTR2D(zqiplus, qiplus, dbus)
-      MKPTR2D(zsnow, qnplus, dbus)
 
-      call init2nan(lwcth)
-
+      call init2nan(dp)
+      
       rec_grav = 1./GRAV
       nostrlwc = (climat.or.stratos)
       hascond_L = (stcond /= 'NIL')
@@ -108,8 +96,8 @@ contains
          !     ces valeurs seront remplacees par celles calculees dans
          !     les modules de condensation.
 
-         call cldwin(zftot, zlwc, tm, qm, ps, &
-              trav2d, sigma, ni, nkm1, satuco)
+         call cldwin1(zftot, zlwc, tm, qm, ps, &
+              sigma, ni, nkm1, satuco)
       endif
 
       !     Diagnostic initialization of QC has been suppressed (because
@@ -119,22 +107,14 @@ contains
       if ((any(dyninread_list_s == 'qc') .or. &
            any(phyinread_list_s(1:phyinread_n) == 'tr/qc:p')) .and. &
            .not. any(phyinread_list_s(1:phyinread_n) == 'lwc') ) then
-         call cldwin(zftot, zlwc, tm, qm, ps, &
-              trav2d, sigma, ni, nkm1, satuco)
+         call cldwin1(zftot, zlwc, tm, qm, ps, &
+              sigma, ni, nkm1, satuco)
          do k = 1,nkm1
             do i = 1,ni
                zlwc(i,k) = zqcplus(i,k)
             enddo
          enddo
       endif
-
-      !     For maximum of lwc (when using newrad) or Liquid water content when
-      !     istcond=1 Always execute this part of the code to allow calculation
-      !     of NT in calcNT
-
-      call liqwc(lwcth, sigma, tm, ps, ni, nkm1, ni, satuco)
-
-      !     extracted from newrad3
 
       do k = 1,nkm1
          do i = 1,ni
@@ -158,113 +138,22 @@ contains
          enddo
       endif
 
-      !     ************************************************************
-      !     one branch for radia /= CCCMARAD and a simplified branch for radia=CCCMARAD
-      !     -----------------------------------------------------------
-      !
-      !      If(radia /= 'CCCMARAD') Then
-      !
-      !    Always execute this part of the code to allow calculation of NT in calcNT
-
-
-      DO_K: do k = 1,nkm1
-         do i = 1,ni
-            liqwcin(i,k) = max(zlwc(i,k),0.)
-            icewcin(i,k) = 0.0
-
-            if (hascond_L) then
-               if ((liqwcin(i,k)+icewcin(i,k)) > 1.e-6) then
-                  cloud(i,k) = max(cloud(i,k) ,0.01)
-               else
-                  cloud(i,k) = 0.0
-               endif
-            endif
-
-            if (cloud(i,k) < 0.01) then
-               liqwcin(i,k) = 0.
-               icewcin(i,k) = 0.
-            endif
-
-            !     Min,Max of cloud
-
-            cloud(i,k) = min(cloud(i,k),1.)
-            cloud(i,k) = max(cloud(i,k),0.)
-
-            if (hascond_L) then
-
-               !     Normalize water contents to get in-cloud values
-
-               zz = max(cloud(i,k),0.05)
-               lwcm1 = liqwcin(i,k)/zz
-               iwcm1 = icewcin(i,k)/zz
-
-               !     Consider diabatic lifting limit when Sundquist scheme only
-
-               liqwcin(i,k) = min(lwcm1,lwcth(i,k))
-               icewcin(i,k) = min(iwcm1,lwcth(i,k))
-
-            endif
-
-            !     liquid/solid water partition when not provided by
-            !     microphysics scheme
-            !     as in cldoptx4 of phy4.2 - after Rockel et al, Beitr. Atmos. Phys, 1991,
-            !     p.10 (depends on T only [frac = .0059+.9941*Exp(-.003102 * tcel*tcel)]
-
-            tcel = tm(i,k)-TCDK
-            frac = exp(-.003102*tcel*tcel)
-            if (tcel >= 0.) then
-               frac = 1.0
-            else
-               frac = .0059+.9941*frac
-            endif
-            if (frac < 0.01) frac = 0.
-
-            icewcin(i,k) = (1.-frac)*liqwcin(i,k)
-            liqwcin(i,k) = frac*liqwcin(i,k)
-         enddo
-      enddo DO_K
-
-      !     calculate in-cloud liquid and ice water paths in each layer
-      !     note: the calculation of the thickness of the layers done here is not
-      !     coherent with what is done elsewhere for newrad (radir and sun) or
-      !     cccmarad this code was extracted from cldoptx4 for phy4.4 dp(nk) is wrong
-
       do i = 1,ni
-         dp = 0.5*(sigma(i,1)+sigma(i,2))
-         dp = max(dp*ps(i),0.)
-         icewpin(i,1) = icewcin(i,1)*dp*rec_grav*1000.
-         liqwpin(i,1) = liqwcin(i,1)*dp*rec_grav*1000.
-
-         dp = 0.5*(1.-sigma(i,nkm1))
-         dp = max(dp*ps(i),0.)
-         icewpin(i,nkm1) = icewcin(i,nkm1)*dp*rec_grav*1000.
-         liqwpin(i,nkm1) = liqwcin(i,nkm1)*dp*rec_grav*1000.
+         dp(i,1) = 0.5*(sigma(i,1)+sigma(i,2))
+         dp(i,1) = max(dp(i,1)*ps(i),0.)
+         dp(i,nkm1) = 1. - 0.5*(sigma(i,nkm1) + sigma(i,nkm1-1))
+         dp(i,nkm1) = max(dp(i,nkm1)*ps(i),0.)
       end do
 
       do k = 2,nkm1-1
          do i = 1,ni
-            dp = 0.5*(sigma(i,k+1)-sigma(i,k-1))
-            dp = max(dp*ps(i),0.)
-            icewpin(i,k) = icewcin(i,k)*dp*rec_grav*1000.
-            liqwpin(i,k) = liqwcin(i,k)*dp*rec_grav*1000.
+            dp(i,k) = 0.5*(sigma(i,k+1)-sigma(i,k-1))
+            dp(i,k) = max(dp(i,k)*ps(i),0.)
          end do
       end do
 
-
-      !... cccmarad simplified branch
-      !      Else
-
-      IF_CCCMARAD: if (radia(1:8) == 'CCCMARAD') then
-
-         !    Begin - Calculation of NT - reproduction of NT obtained with newrad
-         !    code (see cldoptx4)
-
-         call calcnt(liqwpin, icewpin, cloud, znt, ni, nkm1, nk)
-         call series_xst(znt, 'nt', trnch)
-
-         !     End - Calculation of NT - reproduction of NT obtained with newrad code
-         !     (see cldoptx4)
-         !     impose coherent thresholds to cloud fraction and content
+!     impose same threshold on cloud fraction  has used in RT
+!     Normalize water contents to get in-cloud values
 
          do k = 1,nkm1
             do i = 1,ni
@@ -272,32 +161,14 @@ contains
                cloud  (i,k) = max(cloud(i,k),0.)
                liqwcin(i,k) = max(zlwc (i,k),0.)
                icewcin(i,k) = max(ziwc (i,k),0.)
-
-               !            If ((liqwcin(i,k)+icewcin(i,k)) <= 1.e-6) Then
-               !               cloud(i,k) = 0.0
-               !            Endif
-
-               if ((liqwcin(i,k)+icewcin(i,k)) > 1.e-6) then
-                  cloud(i,k) = max(cloud(i,k) ,0.01)
-               else
-                  cloud(i,k) = 0.0
-               endif
-
-
-               if (cloud(i,k) < 0.01) then
-                  liqwcin(i,k) = 0.
-                  icewcin(i,k) = 0.
-                  cloud(i,k) = 0.0
-               endif
-
-               !     Normalize water contents to get in-cloud values
-
-               if (hascond_L) then
-                  !               zz = Max(cloud(i,k),0.01)
-                  zz = max(cloud(i,k),0.05)
-                  liqwcin(i,k) = liqwcin(i,k)/zz
-                  icewcin(i,k) = icewcin(i,k)/zz
-               endif
+                  if (cloud(i,k) <= cldfth) then
+                     liqwcin(i,k) = 0.
+                     icewcin(i,k) = 0.
+                     cloud(i,k) = 0.0
+                  else
+                     liqwcin(i,k) = liqwcin(i,k)/cloud(i,k)
+                     icewcin(i,k) = icewcin(i,k)/cloud(i,k)
+                  endif
             end do
          enddo
 
@@ -336,43 +207,13 @@ contains
          enddo
 
          !    calculate in-cloud liquid and ice water paths in each layer
-         !    note: the calculation of the thickness of the layers done here is
-         !    not coherent with what is done elsewhere for newrad (radir and sun)
-         !    or cccmarad this code was extracted from cldoptx4 for phy4.4
-         !    dp(nk) is wrong
-
-         do i = 1,ni
-            dp = 0.5*(sigma(i,1)+sigma(i,2))
-            dp = dp*ps(i)
-            icewpin(i,1) = icewcin(i,1)*dp*rec_grav*1000.
-            liqwpin(i,1) = liqwcin(i,1)*dp*rec_grav*1000.
-            dp = 0.5*(1.-sigma(i,nkm1))
-            dp = dp*ps(i)
-            icewpin(i,nkm1) = icewcin(i,nkm1)*dp*rec_grav*1000.
-            liqwpin(i,nkm1) = liqwcin(i,nkm1)*dp*rec_grav*1000.
-         end do
-
-         do k = 2,nkm1-1
-            do i = 1,ni
-               dp = 0.5*(sigma(i,k+1)-sigma(i,k-1))
-               dp = dp*ps(i)
-               icewpin(i,k) = icewcin(i,k)*dp*rec_grav*1000.
-               liqwpin(i,k) = liqwcin(i,k)*dp*rec_grav*1000.
-            end do
-         end do
-
-         !     to impose coherence between cloud fraction and thresholds on liqwpin
-         !     and icewpin in calculations of cloud optical properties (cldoppro)
-         !     in cccmarad
 
          do k = 1,nkm1
             do i = 1,ni
-               if (liqwpin(i,k) <= 0.001 .and. icewpin(i,k) <= 0.001) &
-                    cloud(i,k) = 0.0
+               icewpin(i,k) = icewcin(i,k)*dp(i,k)*rec_grav*1000.
+               liqwpin(i,k) = liqwcin(i,k)*dp(i,k)*rec_grav*1000.
             end do
          end do
-
-      endif IF_CCCMARAD
 
       !     to simulate a clear sky radiative transfer, de-comment following lines
       !        do k = 1,nkm1

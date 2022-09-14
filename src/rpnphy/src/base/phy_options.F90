@@ -157,15 +157,17 @@ module phy_options
    !# * 'MOISTKE': cloudy boundary layer formulation
    !# * 'SURFACE': TODO
    !# * 'SIMPLE ': a very simple mixing scheme for neutral PBLs
+   !# * 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1)
    character(len=16) :: fluvert      = 'NIL'
    namelist /physics_cfgs/ fluvert
    namelist /physics_cfgs_p/ fluvert
-   character(len=*), parameter :: FLUVERT_OPT(5) = (/ &
+   character(len=*), parameter :: FLUVERT_OPT(6) = (/ &
         'NIL    ', &
         'CLEF   ', &
         'MOISTKE', &
         'SURFACE', &
-        'SIMPLE '  &
+        'SIMPLE ', &
+        'YSU    ' &
         /)
 
    !# (MOISTKE only) Apply factor fnn_reduc
@@ -536,6 +538,11 @@ module phy_options
    namelist /physics_cfgs/ pbl_turbsl_depth
    namelist /physics_cfgs_p/ pbl_turbsl_depth
 
+   !# Use RPNphy solver for diffusion equations from YSU coefficients
+   logical           :: pbl_ysu_rpnsolve = .false.
+   namelist /physics_cfgs/ pbl_ysu_rpnsolve
+   namelist /physics_cfgs_p/ pbl_ysu_rpnsolve
+
    !# Relaxation timescale (s) for mixing length smoothing
    real              :: pbl_zntau    = 7200.
    namelist /physics_cfgs/ pbl_zntau
@@ -683,6 +690,11 @@ module phy_options
    namelist /physics_cfgs/ rad_esfc
    namelist /physics_cfgs_p/ rad_esfc
 
+   !# Compute and apply tendencies from longwave radiation
+   logical :: rad_lw = .true.
+   namelist /physics_cfgs/ rad_lw
+   namelist /physics_cfgs_p/ rad_lw
+   
    !# For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp
    !# TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma; 
    !# EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; 
@@ -695,6 +707,11 @@ module phy_options
    namelist /physics_cfgs/ rad_sun_angle_fix_l
    namelist /physics_cfgs_p/ rad_sun_angle_fix_l
 
+   !# Compute and apply tendencies from shortwave radiation
+   logical :: rad_sw = .true.
+   namelist /physics_cfgs/ rad_sw
+   namelist /physics_cfgs_p/ rad_sw
+   
    !# For calculation of DIAGNOSTIC low, mid and high TRUE cloud covers in cldoppro and cldoppro_mp with height criteria for Calipso-GOCCP
    !# TRUE:      rad_zlim(1)=limit between low and mid clouds in height; rad_zlim(2)=limit between mid and high clouds in height; 
    real, dimension(2) :: rad_zlim = (/3200.,6500./)

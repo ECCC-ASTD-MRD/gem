@@ -1005,7 +1005,7 @@ subroutine convect_shallow_c(KLON, KLEV, ITEST, ICONV, PDTCONV, &
             if (ZWU(JI,JK) > 1.E-2 .and. JK >= ILCL(JI)) then
                ZW1 = ZUTHV(JI,JK)*RD /ZPRES(JI,JK)
                PCLOUD(JL,JK) = PUMF(JL,JK)/( ZW1* ZWU(JI,JK))
-               PCLOUD(JL,JK) = max(0.0, PCLOUD(JL,JK))
+               PCLOUD(JL,JK) = min(1.,max(0.0, PCLOUD(JL,JK)))
             endif
 
             ! Cloud liquid and ice water mixing ratio in updraft, normalized by convective cloud
