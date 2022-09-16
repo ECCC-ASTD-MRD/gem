@@ -21,24 +21,23 @@
       use glb_ld
       use fislh_sol
       use lun
-      use sol
+      use sol_mem
+      use sol_options
       use gmm_itf_mod
       use ptopo
       implicit none
 
       character(len=16) :: dumc_S
-      integer istat
-      type(gmm_metadata) :: savemeta
 !
 !-------------------------------------------------------------------
 !
       sol_init = -1
       call low2up  (Sol_type_S ,dumc_S)
       Sol_type_S = trim(dumc_S)
-      call low2up  (Sol2D_precond_S ,dumc_S)
-      Sol2D_precond_S = trim(dumc_S)
-      call low2up  (Sol3D_precond_S ,dumc_S)
-      Sol3D_precond_S = trim(dumc_S)
+      call low2up  (Sol_precond2D_S ,dumc_S)
+      Sol_precond2D_S = trim(dumc_S)
+      call low2up  (Sol_precond3D_S ,dumc_S)
+      Sol_precond3D_S = trim(dumc_S)
 
       FISLH_LHS_metric_L = .true.
 
@@ -69,15 +68,15 @@
       case default
          select case(Sol_type_S)
             case('ITERATIVE_3D')
-               if (Sol3D_krylov_S /= 'FGMRES' .and. Sol3D_krylov_S /= 'FBICGSTAB') then
+               if (Sol_krylov3D_S /= 'FGMRES' .and. Sol_krylov3D_S /= 'FBICGSTAB') then
                if (Lun_out > 0) &
-               write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol3D_krylov_S =', Sol3D_krylov_S
+               write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol_krylov3D_S =', Sol_krylov3D_S
                return
                endif
             case('ITERATIVE_2D')
-               if (sol2D_precond_S /= 'JACOBI'  .and.  sol2D_precond_S /= 'REDBLACK'  ) then
+               if (Sol_precond2D_S /= 'JACOBI'  .and.  Sol_precond2D_S /= 'REDBLACK'  ) then
                if (Lun_out > 0) &
-               write(Lun_out, *) 'ABORT: WRONG CHOICE OF PRECONDITIONER FOR 2D ITERATIVE SOLVER: sol2D_precond_S =', Sol2D_precond_S
+               write(Lun_out, *) 'ABORT: WRONG CHOICE OF PRECONDITIONER FOR 2D ITERATIVE SOLVER: Sol_precond2D_S =', Sol_precond2D_S
                return
                endif
             case default

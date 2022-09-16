@@ -23,20 +23,21 @@
       use glb_ld
       use cstv
       use lun
-      use sol
+      use sol_mem
+      use sol_options
       use ldnh
       use ptopo
-      use gmm_itf_mod
+      use gmm_table
       use opr
       use prec
       use trp
       use omp_lib
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       type(gmm_metadata) :: savemeta
       integer k,ni,nj,istat
+      integer :: f1,f2,f3,f4, nx1, nx2, ny1, ny2
       real(kind=REAL64) yg_8(G_nj), wk(G_nk)
 !     __________________________________________________________________
 !
@@ -48,7 +49,7 @@
       if ( Sol_type_S(1:9) == 'ITERATIVE' ) then
 
          if (Sol_type_S(11:12) == '2D') then
-            if (Lun_out > 0) write (Lun_out,1001) trim(sol2D_precond_S)
+            if (Lun_out > 0) write (Lun_out,1001) trim(Sol_precond2D_S)
          else
             ni=ldnh_maxx-ldnh_minx+1
             nj=ldnh_maxy-ldnh_miny+1
@@ -57,8 +58,9 @@
                                               1,l_nk,0,0,l_nk,&
                                     0,0,0,0,0,0,GMM_NULL_FLAGS)
             istat= gmm_create('SOL_SAVED',Sol_saved,savemeta, GMM_FLAG_RSTR+GMM_FLAG_IZER)
+            gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='SOL_SAVED' ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='MM' ; GMM_tbl%fst(gmm_cnt)='SOLS'
 
-            if (Lun_out > 0) write (Lun_out,1002) trim(Sol3D_krylov_S), trim(sol3D_precond_S)
+            if (Lun_out > 0) write (Lun_out,1002) trim(Sol_krylov3D_S), trim(Sol_precond3D_S)
 
          end if
 
@@ -77,27 +79,47 @@
          if (allocated(Prec_invbi_8)) deallocate (Prec_invbi_8)
          if (allocated(Prec_ci_8)) deallocate (Prec_ci_8)
 
-         select case(sol3D_precond_S)
+         select case(Sol_precond3D_S)
            case ('RAS') ! Restrictive Additive Schwarz preconditioner
-              Sol_ii0  = 1    - ovlpx
-              Sol_iin  = l_ni + ovlpx
-              Sol_jj0  = 1    - ovlpy
-              Sol_jjn  = l_nj + ovlpy
+              Sol_ii0  = 1    - Sol_ovlpx
+              Sol_iin  = l_ni + Sol_ovlpx
+              Sol_jj0  = 1    - Sol_ovlpy
+              Sol_jjn  = l_nj + Sol_ovlpy
 
               Sol_imin = Sol_ii0
               Sol_imax = Sol_iin
               Sol_jmin = Sol_jj0
               Sol_jmax = Sol_jjn
 
-              if (Ptopo_mycol==1)  Sol_ii0  = 0
-              if (Ptopo_mycol == Ptopo_npex-2)  Sol_iin = l_ni+1
-              if (Ptopo_myrow==1)  Sol_jj0  = 0
-              if (Ptopo_myrow == Ptopo_npey-2)  Sol_jjn = l_nj+1
+              f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))
+              f2 = G_ni-f1*(Ptopo_npex-1)
+              f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
+              f4 = G_nj-f3*(Ptopo_npey-1)
+
+              nx1 = l_ni - glb_pil_w - 1
+              nx2 = f2 - glb_pil_e - 1
+              ny1 = l_nj - glb_pil_s - 1
+              ny2 = f4 - glb_pil_n - 1
+
+              if (Ptopo_mycol==1)  then
+                 Sol_ii0  = 1 -  min(Sol_ovlpx,nx1)
+              endif
+              if (Ptopo_myrow==1)  then
+                 Sol_jj0  = 1 -  min(Sol_ovlpy,ny1)
+              endif
+
+              if (Ptopo_mycol.eq.Ptopo_npex-2) then
+                 Sol_iin = l_ni + min(Sol_ovlpx,nx2)
+              endif
+              if (Ptopo_myrow.eq.Ptopo_npey-2) then
+                 Sol_jjn = l_nj + min(Sol_ovlpy,ny2)
+              endif
 
               if (l_west)  Sol_ii0 = 1 + sol_pil_w
               if (l_east)  Sol_iin = l_ni - sol_pil_e
               if (l_south) Sol_jj0 = 1 + sol_pil_s
               if (l_north) Sol_jjn = l_nj - sol_pil_n
+
 
               sol_niloc=Sol_iin-Sol_ii0+1
               sol_njloc=Sol_jjn-Sol_jj0+1
@@ -113,7 +135,7 @@
               call eigenabc_local2 (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
                              Prec_bi_8,Prec_invbi_8,Prec_ci_8,&
                              sol_niloc,sol_njloc,Schm_nith,wk)
-           case default
+      case default
               sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
               sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
               sol_nloc = sol_niloc*sol_njloc*Schm_nith
@@ -144,8 +166,11 @@
          ni= Sol_iin-Sol_ii0+1
          nj= Sol_jjn-Sol_jj0+1
          allocate (fdg(ni,nj,l_nk),w2_8(ni,nj,l_nk),w3_8(ni,nj,l_nk))
-         allocate (fdg2(l_minx:l_maxx,l_miny:l_maxy,l_nk+1)) ; fdg2=0.
-
+         allocate (fdg2(l_minx:l_maxx,l_miny:l_maxy,l_nk+1))
+         work_space= 0.
+         wint_8=0.
+         vv= 0.
+         fdg2=0.
       else                      ! Using the direct solver
 
          do k= 1, G_nk

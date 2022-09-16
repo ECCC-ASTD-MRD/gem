@@ -6,15 +6,6 @@
  &dyn_kernel
    Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
 /
-  Schm_itcn       = 1
-  Schm_itnlh      = 1
-
-  Sol_type_S = 'ITERATIVE_3D' 
- &dyn_fisl
-/
-
- &gem_cfgs
-/
 
  &bubble_cfgs2
   bubble_ni = 41 ,  bubble_nj = 1 , bubble_nk = 150

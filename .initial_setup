@@ -15,13 +15,12 @@ if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
         /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
         mkdir -p build-${GEM_ARCH} ${GEM_WORK}
     fi
-
-    if [ -n "${EC_ARCH}" ]; then
-        if [ "$COMPILER_SUITE" == "intel" ] ; then
-            SETUP_FILE=.eccc_setup_intel
-        else
-            SETUP_FILE=.eccc_setup_gnu
-        fi
+    
+    if [ "$COMPILER_SUITE" == "intel" ] ; then
+        SETUP_FILE=.eccc_setup_intel
+    else
+        SETUP_FILE=.eccc_setup_gnu
+    fi
 
 cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
 ici=\$PWD
@@ -29,7 +28,7 @@ cd ${GEM_GIT_DIR}
 . $SETUP_FILE
 cd \$ici
 EOF
-    fi
+
 else
     echo "GEM environment variables not set! Make sure you use .common_setup script first."
 fi

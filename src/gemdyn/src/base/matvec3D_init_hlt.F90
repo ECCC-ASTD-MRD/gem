@@ -24,7 +24,7 @@
       use ldnh
       use dynkernel_options
       use opr
-      use sol
+      use sol_mem
       use ver
       use metric
       use mem_tstp

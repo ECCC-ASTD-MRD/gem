@@ -27,12 +27,14 @@
  &adz_cfgs2
  Adz_slt_winds = .true.
 /
-  Sol_type_S = 'ITERATIVE_2D' 
-  Sol_type_S = 'DIRECT'
- &dyn_fisl
+
+&sol
+  Sol_one_transpose_L = .false.
+  Sol_type_S      = 'DIRECT',   Sol_yyg_eps = 1.e-04
+/
+
+&dyn_fisl
   Cstv_tstr_8     = 240.0
-  Sol_type_S = 'DIRECT' 
-  Sol_yyg_eps = 1.e-04
   Schm_nblendyy   = 1
   Schm_itcn       = 2          , Schm_wload_L      = .true.
   Schm_itnlh      = 2

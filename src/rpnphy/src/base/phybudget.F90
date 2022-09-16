@@ -69,9 +69,9 @@ contains
 
     ! Arguments
     real, dimension(:), pointer, contiguous :: F_enri           !Integrated energy budget residual (m3/s2)
-    real, dimension(:), pointer, contiguous :: F_pwri           !Integrated total water budget residual (m)
+    real, dimension(:), pointer, contiguous :: F_pwri           !Integrated total water budget residual (Kg/m2)
     real(KIND=REAL64), dimension(:), intent(out) :: F_eni       !Integrated energy (m3/s2)
-    real(KIND=REAL64), dimension(:), intent(out) :: F_pwi       !Integrated total water (m)
+    real(KIND=REAL64), dimension(:), intent(out) :: F_pwi       !Integrated total water (Kg/m2)
     real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
     real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
     real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus
@@ -327,7 +327,7 @@ contains
     real, dimension(:), pointer, contiguous :: F_enri           !Integrated energy budget residual (m3/s2)
     real, dimension(:), pointer, contiguous :: F_pwri           !Integrated total water budget residual (m)
     real(KIND=REAL64), dimension(:), intent(in) :: F_eni0       !Initial integrated energy (m3/s2)
-    real(KIND=REAL64), dimension(:), intent(in) :: F_pwi0       !Initial integrated total water (m)
+    real(KIND=REAL64), dimension(:), intent(in) :: F_pwi0       !Initial integrated total water (Kg/m2)
     real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
     real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
     real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus

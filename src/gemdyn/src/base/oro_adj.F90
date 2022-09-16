@@ -64,6 +64,7 @@
       use dynkernel_options
       use HORgrid_options
       use lam_options
+      use sol_options
       use step_options
       use mem_nest
       use gmm_geof

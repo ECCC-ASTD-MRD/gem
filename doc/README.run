@@ -5,9 +5,6 @@
 #  variables needed to run GEM
 . ./.common_setup [gnu|intel]
 
-# Warning: this is a development branch:
-# some configurations may not work
-
 cd gem/work[...]
 #-ptopo [npx] x [npy] x [OMP_NUM_THREADS] where npx, npy is for MPI topology
 
@@ -20,7 +17,6 @@ runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 runmod.sh  -dircfg configurations/GEM_cfgs_GY_FISL_P -ptopo 2x2x2
 
 #Schaer case - must run with -ptopo 10x1
-runprep.sh -dircfg configurations/THEO_cfgs_schar
 runmod.sh  -dircfg configurations/THEO_cfgs_schar -ptopo 10x1
 \rm schaer
 flipit -i RUNMOD/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-000_004 -o schaer
@@ -28,7 +24,6 @@ flipit -i RUNMOD/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-00
 xrec -imflds schaer
 
 #Bubble case - must run with -ptopo 5x1
-runprep.sh -dircfg configurations/THEO_cfgs_bubbleG
 runmod.sh  -dircfg configurations/THEO_cfgs_bubbleG -ptopo 5x1
 \rm bubble
 flipit -i RUNMOD/output/cfg_0000/laststep_0000000216/000-000/dm2011012200-000-000_001 -o bubble

@@ -12,7 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
@@ -34,9 +33,9 @@
       use levels
       use outp
       use ver
-      use gmm_itf_mod
       use rstr
       use var_gmm
+      use gmm_table
       use gmm_pw, only: gmmk_pw_uslt_s, gmmk_pw_vslt_s
       use path
       use clib_itf_mod
@@ -81,12 +80,16 @@
       istat = GMM_OK
       nullify(ptr2d)
       istat = min(gmm_create(gmmk_diag_tt_s, ptr2d ,meta2d),istat)
+      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_tt_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diTT'
       nullify(ptr2d)
       istat = min(gmm_create(gmmk_diag_hu_s, ptr2d ,meta2d),istat)
+      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_hu_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diHU'
       nullify(ptr2d)
       istat = min(gmm_create(gmmk_diag_uu_s, ptr2d ,meta2d),istat)
+      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_uu_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diUU'
       nullify(ptr2d)
       istat = min(gmm_create(gmmk_diag_vv_s, ptr2d ,meta2d),istat)
+      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_vv_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diVV'
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'itf_phy_init ERROR at gmm_create('//trim(diag_prefix)//'*)')
 

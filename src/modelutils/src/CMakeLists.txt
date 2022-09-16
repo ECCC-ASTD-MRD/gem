@@ -1,11 +1,13 @@
 message(STATUS "(EC) Generating modelutils librairies Makefile")
 
-include(FindMPI)
+find_package(MPI)
+if (MPI_FOUND)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+endif()
 
 file(GLOB C_FILES */*.c)
-file(GLOB F_FILES main/flipit.F90 main/yy2global.F90 main/yydecode.F90 main/yyencode.F90 base/*F90 driver/*.F90 utils/*.F90 tdpack/*F90)
+file(GLOB F_FILES main/flipit.F90 main/yy2global.F90 main/yydecode.F90 main/yyencode.F90 base/*F90 driver/*.F90 utils/*.F90)
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 

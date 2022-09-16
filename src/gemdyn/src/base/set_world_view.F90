@@ -21,7 +21,6 @@
       use adz_options
       use coriolis
       use dcmip_options
-      use dyn_expo_options
       use gem_options
       use hvdif_options
       use init_options
@@ -30,9 +29,10 @@
       use out_options
       use spn_options
       use step_options
+      use sol_options
       use theo_options
       use copy_and_open
-      
+
       use geomh
       use inp_mod
       use out_collector
@@ -95,6 +95,7 @@
          err(14) = dyn_fisl_nml (unf)
          err(15) = adz_nml      (unf)
          err(16) = hvdif_nml    (unf)
+         err(17) = sol_nml        (unf)
          istat= fclos(unf)
       else
          if (Lun_out >= 0) write (Lun_out, 6001) trim( Path_nml_S )
@@ -153,13 +154,10 @@
       err(1) = lam_nml         (-1)
       err(1) = out_nml         (-1)
       err(1) = spn_nml         (-1)
-      if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL' ) then
-         err(1) = dyn_fisl_nml (-1)
-         err(1) = adz_nml      (-1)
-         err(1) = hvdif_nml    (-1)
-      else if ( Dynamics_Kernel_S(1:13) == 'DYNAMICS_EXPO' ) then
-         err(1) = dyn_expo_nml (-1)
-      end if
+      err(1) = dyn_fisl_nml (-1)
+      err(1) = adz_nml      (-1)
+      err(1) = hvdif_nml    (-1)
+      err(1) = sol_nml    (-1)
 
       if (lun_out > 0) then
          f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))

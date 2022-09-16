@@ -62,7 +62,7 @@ if [ -e "${nmlfile}" ] ; then
    # Verify namelist entries on request
    if [ ${check_namelist} -gt 0 ] ; then
       nml_to_check="convection_cfgs dyn_fisl dyn_kernel gem_cfgs grid hvdif init out physics_cfgs series step surface_cfgs vert_layers ensembles"
-      ${bin}checknml2 --nml="${nml_to_check}" -r -- ${nmlfile}
+      ${bin}checknml --nml="${nml_to_check}" -r -- ${nmlfile}
    fi
    if [ ${npex} -gt 1 -o ${npey} -gt 1 ] ; then
       . r.call.dot ${bin}checkdmpart.sh -gemnml ${nmlfile} -cfg ${mydomain} -cache "${cache}" -npex ${npex} -npey ${npey} -verbose $verbose
@@ -124,7 +124,7 @@ if [ -e "${anal}" ] ; then
       fi
    fi
    cd ${work}
-   
+
    if r.filetype ${local_anal_file} -t 1 33 ; then
 
    # Run the user-defined headscript
@@ -142,8 +142,8 @@ if [ -e "${anal}" ] ; then
       exit 1
    fi
 else
-    printf "\n   FILE ${anal} - NOT FOUND - ABORT  \n\n"
-    exit 1
+      printf "\n   FILE ${anal} - NOT FOUND - ABORT  \n\n"
+      exit 1
 fi
 date
 set -ex
@@ -151,6 +151,20 @@ gtype=$(fetchnml.sh grd_typ_s grid ${nmlfile})
 #gtype=$(${bin}rpy.nml_get -f ${nmlfile} grid/grd_typ_s)
 if [ "${gtype}" == "'GU'" -o "${gtype}" == "'GY'" ] ; then
   input=''
+fi
+
+# Temporary check
+HEIGHT=$(fetchnml.sh dynamics_Kernel_S dyn_kernel ${nmlfile})
+HYDRO=$(fetchnml.sh dynamics_hydro_l dyn_kernel ${nmlfile})
+if [ -n "${HEIGHT}" -a -n "${HYDRO}" ] ; then
+   HEIGHT=$(echo $HEIGHT | cut -d"_" -f3)
+   HYDRO=$(echo $HYDRO | cut -c2)
+   if [ "${HEIGHT}" == "H" -o "${HEIGHT}" == "h" ] ; then
+      if [ "${HYDRO}" == "T" -o "${HYDRO}" == "t" ] ; then
+         printf "\n ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H - ABORT\n\n"
+         exit 1
+      fi
+   fi
 fi
 
 # Preparation splitting of input files

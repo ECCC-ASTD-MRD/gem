@@ -32,7 +32,7 @@ subroutine nml_gem()
    use HORgrid_options
    use VERgrid_options
    use dynkernel_options
-   use dyn_expo_options
+   use dyn_fisl_options
    use gem_options
    use adz_options
    use grdc_options

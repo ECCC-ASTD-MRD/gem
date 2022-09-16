@@ -32,7 +32,10 @@ contains
       use debug_mod, only: init2nan
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL, GRAV, PI, STEFAN
-      use cldoppro_MP, only: cldoppro_MP2
+      use cldoppro_MP, only: cldoppro_MP3
+      use cldoppro_noMP, only: cldoppro_noMP1
+      use diagno_clouds, only: diagno_clouds2
+      use prep_cw_rad, only: prep_cw_rad3
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use series_mod, only: series_xst, series_isstep
       use phy_options
@@ -251,13 +254,11 @@ contains
       ! such as cloud cover, effective and true; cloud top temp and pressure
       ! called every timestep
       if (stcond(1:3)=='MP_') then
-
-         call cldoppro_MP2(dbus, fbus, vbus, &
+         call cldoppro_MP3(dbus, fbus, vbus, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, zgztherm, ps, &      
-              ni, nkm1, nk, kount)
+              temp, sig, ps, ni, nkm1, nk, kount)
          if (phy_error_L) return
 
       else
@@ -268,16 +269,21 @@ contains
          if (.not.associated(ztczl)) ztczl => dummy1d
          if (.not.associated(ztczm)) ztczm => dummy1d
          if (.not.associated(ztczh)) ztczh => dummy1d
-         call cldoppro5(taucs, omcs, gcs, taucl, omcl, gcl, &
-              ztopthw, ztopthi, zecc, ztcc, &
-              zeccl, zeccm, zecch, &
-              ztcsl, ztcsm, ztcsh, &
-              ztczl, ztczm, ztczh, zgztherm, & 
-              zctp, zctt, liqwcin, icewcin, &
+         call prep_cw_rad3(fbus, dbus, &
+                 temp, qq, ps, sig, &
+                 cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
+                 kount, ni, nk, nkm1)
+         call cldoppro_noMP1(fbus,vbus,taucs, omcs, gcs, taucl, omcl, gcl, &
+              liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, zmg, zml, zmrk2, ni, &
+              temp, sig, ps, trnch, ni, &
               ni, nkm1, nk)
+
       endif
+      call diagno_clouds2(fbus,vbus,taucs, taucl,  &
+             zgztherm, cldfrac, &
+             temp, sig, ps, trnch, ni, &
+             ni, nkm1, nk)
 
       ! pour les pas de temps radiatifs
       IF_RADIA_ON: if (kount == 0 .or. mod(kount-1, kntrad) .eq. 0) then

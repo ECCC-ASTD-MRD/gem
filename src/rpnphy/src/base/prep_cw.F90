@@ -69,7 +69,9 @@ contains
       implicit none
 !!!#include <arch_specific.hf>
 
-      !@Object Save water contents and cloudiness in the permanent bus
+      !@Object
+      ! When  non MP schemes are used; merge cloud fractions and water contents from both implicit and  explicit cloud
+      ! sources"  for radiation
       !@Arguments
       !          - Input -
       ! ni       horizontal dimension
@@ -149,10 +151,14 @@ contains
          cfblxp = 0.
       endif
 
-      ! If we have the CONSUN scheme, the cloud water from MoisTKE has
+      
+      ! Recette 1 - La traditionnelle
+      ! the cloud water from MoisTKE has
       ! priority over the cloud water from the grid-scale scheme.
-
-      if (stcond == 'CONSUN' .and. fluvert == 'MOISTKE') then
+      ! water contents are combined assuming no overlap
+      ! cloud fractions are combined assuming random overlap
+      
+      if (fluvert == 'MOISTKE') then
          do k=1,nk
             do i=1,ni
                if (zqtbl(i,k) > zqcplus(i,k))then
@@ -162,27 +168,7 @@ contains
             enddo
          enddo
       endif
-
-      ! Add the cloud water (liquid and solid) coming from shallow and deep
-      ! cumulus clouds (only for the Kain-Fritsch schemes).
-      ! Note that no conditions are used for these calculations ...
-      ! qldi, qsdi, and qlsc, qssc are zero if these schemes are not used.
-      ! Also note that qldi, qsdi, qlsc and qssc are NOT IN-CLOUD values
-      ! (multiplication done in kfcp4 and ktrsnt)
-      !
-      ! For Sundqvist schemes all
-      ! the cloud water is put in LWC (and will be partitioned later in prep_cw_rad)
-
       zlwc = zlwc + zqldi + zqsdi + zqlsc + zqssc + zqlmi + zqsmi
-
-      ! Combine explicit and Implicit clouds using the random overlap
-      ! approximation:
-      !     CFBLXP is either fxp or fbl depending on choice of merging between explicit and moistke
-      !     FDC is for deep convection clouds
-      !          (always defined as necessary for condensation too)
-      !     FSC is for the shallow convection clouds
-      !     FMC is for mid-level convective clouds
-
       do k=1,nk
          do i=1,ni
             zftot(i,k) = min(1., max(0., &
@@ -190,6 +176,30 @@ contains
                  ))
          enddo
       enddo
+
+!!$      ! Recette 2 - Min overlap for all sources
+!!$      if(.false.) then
+!!$        zlwc =  zqcplus + zqtbl + zqldi + zqsdi + zqlsc + zqssc + zqlmi + zqsmi
+!!$        do k=1,nk
+!!$           do i=1,ni
+!!$              zftot(i,k) = zfxp(i,k)+zfbl(i,k)+zfdc(i,k)+zfsc(i,k)+zfmc(i,k)  
+!!$              zftot(i,k) = min(1., max(0., zftot(i,k) )) 
+!!$           enddo
+!!$        enddo
+!!$      endif
+
+!!$      ! Recette 3 - Min overlap for all implicit sources(including pbl) ; random overlap to combine explicit and implicit
+!!$      if(.false.) then
+!!$         zlwc =  zqtbl + zqldi + zqsdi + zqlsc + zqssc + zqlmi + zqsmi
+!!$         do k=1,nk
+!!$            do i=1,ni
+!!$               cfblxp(i,k) = min(1., max(0., zfbl(i,k)+zfdc(i,k)+zfsc(i,k)+zfmc(i,k) )) 
+!!$               zftot(i,k) = min(1., max(0., 1. - (1.-cfblxp(i,k))*(1.-zfxp(i,k)) ))  
+!!$               zlwc(i,k) = zlwc(i,k) + zqcplus(i,k)*(1.-cfblxp(i,k))
+!!$            enddo
+!!$         enddo
+!!$      endif
+
       !----------------------------------------------------------------
       return
    end subroutine prep_cw_noMP
@@ -201,7 +211,7 @@ contains
 !!!#include <arch_specific.hf>
 
       !@Object
-      ! When MP schemes are used; merge water contents from "implicit cloud
+      ! When MP schemes are used; merge cloud fractions and water contents from "implicit cloud
       ! sources"  for radiation
       !
       !@Arguments
@@ -307,10 +317,11 @@ contains
       !     FMP is the sum over the implicit, FXP: the explicit, FTOT: total
       do k=1,nkm1
          do i=1,ni
-            zfmp(i,k) = min(1., max(0., &     ! random overlap
+            zfmp(i,k) = min(1., max(0., &     ! random overlap  == OPS
                  1. - (1.-zfbl(i,k))*(1.-zfdc(i,k))*(1.-zfsc(i,k))*(1.-zfmc(i,k)) &
                  ))
-            zftot(i,k) = min(1., max(0., &    ! maximum overlap
+!            zfmp(i,k) = min(1., max(0., zfbl(i,k)+zfdc(i,k)+zfsc(i,k)+zfmc(i,k) )) ! no overlap
+            zftot(i,k) = min(1., max(0., &    ! no overlap - should use same recipe as in  cldoppro_mp; this variable is diagnostic
                  zfmp(i,k)+zfxp(i,k) &
                  ))
 

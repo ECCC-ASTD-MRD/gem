@@ -23,7 +23,7 @@
       use glb_ld
       use lun
       use glb_pil
-      use sol
+      use sol_mem
       use opr
       use, intrinsic :: iso_fortran_env
       implicit none

@@ -3,3 +3,5 @@
 ! 001    P. Vaillancourt (Feb 12) - increase pressure threshold to protect radiation code from clouds above 5hPa
 !
    real, parameter :: TOPC=500.         !Top level for cloud tendencies (Pa)
+   real, parameter :: WPTH=.001         ! water path threshold used in radiative transfer(gm-2)
+   real, parameter :: CLDFTH=.001       ! cloud fraction threshold used radiative transfer

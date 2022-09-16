@@ -30,7 +30,6 @@ target_link_libraries(maingemdm
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(maingemdm gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 

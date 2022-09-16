@@ -25,7 +25,7 @@
       use lam_options
       use glb_ld
       use ldnh
-      use sol
+      use sol_mem
       use metric
       use, intrinsic :: iso_fortran_env
       implicit none

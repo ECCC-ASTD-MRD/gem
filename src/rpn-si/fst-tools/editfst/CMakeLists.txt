@@ -7,7 +7,6 @@ target_link_libraries(editfst
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 
 add_dependencies(editfst rmn)

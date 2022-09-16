@@ -10,7 +10,7 @@ target_link_libraries(feseri
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
+   
 )
 add_dependencies(feseri rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
@@ -25,7 +25,7 @@ target_link_libraries(prphynml
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
+   
 )
 add_dependencies(prphynml rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 

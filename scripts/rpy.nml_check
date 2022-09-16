@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+rpy.nml_check -r REF_NAMELIST -f USER_NAMELIST
+"""
+import os.path
+import sys
+import re
+import argparse
+import logging
+from rpnpy.ftnnml import *
+
+refloat = re.compile(r'[+-]?(\d+(\.\d*)?|\.\d+)([eEdD][+-]?\d+)?$')
+
+def guessType(mystr):
+    """ """
+    try:
+        i = int(str(mystr))
+        return 'ni'
+    except:
+        pass
+    try:
+        i = float(str(mystr))
+        return 'n' if float(int(i)) == i else 'nf'
+    except:
+        pass
+    try:
+        if refloat.match(str(mystr).strip()):
+            return 'nf'
+    except:
+        pass
+    if str(mystr).strip().lower() in ('t', 'f', 'true', 'false', '.t.', '.f.', '.true.', '.false.'):
+        return 'b'
+    else:
+        return 's'
+    #TODO: check for list?
+
+
+def cmpNml(ref_nml_file, user_nml_file, nmlNames, checkTypes):
+    """ """
+    status = 0
+    try:
+        cfgref = FtnNmlFile(ref_nml_file)
+        cfgusr = FtnNmlFile(user_nml_file)
+    except:
+        logging.warning('{0}\n'.format(str(sys.exc_info()[1])))
+        sys.exit(1)
+    if len(nmlNames) == 0:
+        nmlNames = cfgref.keys()
+    for nml in cfgref.keys():
+        if nml not in nmlNames:
+            continue
+        if not nml in cfgusr.keys():
+            logging.info('Namelist "{0}" is not present in user namelist file'.format(nml))
+        else:
+            nmlref = cfgref.get(nml)
+            nmlusr = cfgusr.get(nml)
+            usrkeys = nmlusr.keys()
+            for k in usrkeys:
+                try:
+                    vr = nmlref.get(k).get('v')
+                    vu = nmlusr.get(k).get('v')
+                except:
+                    status = 1
+                    logging.error('Extra nml key: {0} / {1}\n'
+                                  .format(nml, k))
+                    continue
+                tr = guessType(vr)
+                tu = guessType(vu)
+                if tr[0] != tu[0]:
+                    msg = 'Different type nml key: {0} / {1} = {2} ==> {3} ([{4}] ==> [{5}]\n'\
+                        .format(nml, k, vr, vu, tr, tu)
+                    if checkTypes:
+                        status = 1
+                        logging.error(msg)
+                    ## else:
+                    ##     logging.warning(msg) #TODO: comment out since it is still buggy, taking 6*64 as a string instead of a list of int
+            for k in nmlref.keys():
+                if not k in usrkeys:
+                    logging.info('Namelist / Key "{0} / {1}" is not present in user namelist file'.format(nml, k))
+
+    return status
+
+
+if __name__ == "__main__":
+    # Command line arguments
+    desc="Compare a namelist file to a reference one."
+    usage="%(prog)s [options] -r REF_NAMELIST -f USER_NAMELIST"
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-r", "--ref", dest="ref_nml_file",
+                        type=str, default="gem_settings.nml.ref",
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']",
+                        metavar="REF_NML_FILENAME")
+    parser.add_argument("-f", "--file", dest="user_nml_file",
+                        type=str, default="./gem_settings.nml",
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']",
+                        metavar="USER_NML_FILENAME")
+    parser.add_argument("-v", "--verbose", dest="verbose",
+                        action="store_true",
+                        help="Print not conforming entries compared to ref")
+    parser.add_argument("-q", "--quiet", dest="quiet",
+                        action="store_true",
+                        help="Do not print anything, even error")
+    parser.add_argument("-t", "--types", dest="types",
+                        action="store_true",
+                        help="Check namelist values type")
+    parser.add_argument("-n", "--nml", dest="nmlNames",
+                        nargs='*', type=str, default=[],
+                        help="Names of namelists to check")
+
+    #TODO: check option type, values, ...
+
+    args = parser.parse_args()
+
+    loglev=logging.WARNING
+    if args.verbose:
+        loglev=logging.INFO
+    if args.quiet:
+        loglev=logging.CRITICAL
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=loglev)
+
+    stat = cmpNml(args.ref_nml_file, args.user_nml_file, args.nmlNames, args.types)
+    sys.exit(stat)

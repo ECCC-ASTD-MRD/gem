@@ -112,7 +112,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    real, dimension(n) :: zusurfzt, zvsurfzt, zqd
 
    integer I
-   real qsat_o_salty, delh, delq
+   real qsat_o_salty, delh, delq, zw, z1, z2, re
    logical            :: cplupd
 
    !** ------------------------------------------------------------------
@@ -221,7 +221,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       select case (z0mtype)
       case ('BELJAARS') 
          Z0M_ADJUST = AM*K_VISC/max(ZFRV,ZFRVMIN)
-      case ('CHARNOCK')
+      case ('CHARNOCK','WRF1','WRF2')
          Z0M_ADJUST = 0.
       case DEFAULT
          call physeterror('water', 'Unsupported z0mtype: '//trim(z0mtype))
@@ -233,6 +233,16 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          Z0M(I) = max( min( BETA1*ZFRV(I)**2/GRAV + Z0M_ADJUST(I),Z0MAX ) , Z0MIN )
       enddo
 
+      ! WRF isftcflx=1/2
+      if (z0mtype == 'WRF1' .or. z0mtype == 'WRF2') then
+         do i=1,n
+            zw = min(1., (zfrv(i)/1.06)**0.3)
+            z1 = 0.011*zfrv(i)**2/GRAV + 1.59e-5
+            z2 = 10./exp(9.5*max(zfrv(i),zfrvmin)**(-1./3.)) + 1.65e-6/max(zfrv(i),0.01)
+            z0m(i) = max(1.27e-7, min(zw*z2 + (1-zw)*z1, 2.85e-3))
+         enddo
+      endif
+      
    endif
 
    select case (z0ttype)
@@ -242,6 +252,13 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       z0h = min(6.e-6/max(zfrv,ZFRVMIN),5.e-4)
    case ('MOMENTUM')
       z0h = z0m
+   case ('WRF1')
+      z0h = 1e-4
+   case ('WRF2')
+      do i=1,n
+         re = zfrv(i) * z0m(i)/k_visc
+         z0h(i) = max(zfrv(i), Z0MIN) * exp(-karman*(7.3 * re**0.25 * 7.3**0.5 - 5.))
+      enddo
    case DEFAULT
       call physeterror('water', 'Unsupported z0ttype: '//trim(z0ttype))
       return
@@ -316,10 +333,10 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
 
 !VDIR NODEP
    do I=1,N
-
+      
       ZTSURF   (I) = SST (I)
       ZTSRAD   (I) = SST (I)
-
+      
       ZALFAT   (I) = - CTU(I) * ( SST(I)-TH(I) )
       ZALFAQ   (I) = - CTU(I) * ( QS(I)-HU(I) )
       if (.not.IMPFLX) CTU (I) = 0.

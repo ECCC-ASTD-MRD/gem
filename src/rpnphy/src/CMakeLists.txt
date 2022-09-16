@@ -1,7 +1,9 @@
 message(STATUS "(EC) Generating rpnphy libraries Makefile")
 
-include(FindMPI OPTIONAL)
+find_package(MPI)
+if (MPI_FOUND)
 set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+endif()
 
 file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 series/*.F90 surface/*.F90 utils/*.F90)
 list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*" )

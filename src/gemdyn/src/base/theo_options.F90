@@ -154,6 +154,7 @@ contains
 !
       subroutine theo_data
       use dynkernel_options
+      use gem_options
       use glb_ld
       use gmm_itf_mod
       use gmm_geof
@@ -211,8 +212,8 @@ contains
 
             call bubble_fislH_data ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy,G_nk )
             do k=1,g_nk+1
-               do j=1,l_nj
-                  do i=1,l_ni
+               do j= 1-G_haloy, l_nj+G_haloy
+                  do i= 1-G_halox, l_ni+G_halox
                      ex=1.d0-grav_8/(cpd_8*bubble_theta)*Ver_z_8%m(k)
                      pp=1.d5*ex**(1.d0/cappa_8)
                      qt1(i,j,k)=rgasd_8*Cstv_Tstr_8*log(pp/1.d5)+grav_8*Ver_z_8%m(k)

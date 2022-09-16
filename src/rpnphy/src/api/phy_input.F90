@@ -145,8 +145,9 @@ contains
       endif
 
       call chm_load_emissions2(F_basedir_S, F_step, inputobj, nbvar)
-      if (phy_error_l) then
-         F_istat = RMN_ERR
+      if (phy_error_l) F_istat = RMN_ERR
+      call collect_error(F_istat)
+      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_ERROR, '(phy_input) problem in chm_load_emissions')
          return
       endif

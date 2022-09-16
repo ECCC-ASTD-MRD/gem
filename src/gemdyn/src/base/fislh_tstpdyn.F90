@@ -87,7 +87,7 @@
 !     Perform Semi-Lagrangian advection
 
       call gtmg_start (25, 'ADVECTION', 20)
-      call adz_main_h (dt_8)
+      call adz_main_h ()
       call gtmg_stop (25)
 
       call gtmg_start (27, 'PRE', 20)

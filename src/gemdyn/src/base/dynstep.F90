@@ -19,6 +19,7 @@
       use dynkernel_options
       use dyn_fisl_options
       use gem_options
+      use sol_options
       use gmm_vt1
       use gmm_vt2
       use gmm_pw
@@ -29,10 +30,9 @@
       use gem_timing
       use theo_options
       implicit none
-#include <arch_specific.hf>
 
       logical, save :: done=.false.
-      integer icn, keep_itcn, nrow, np
+      integer icn, keep_itcn, np
 !
 !     ---------------------------------------------------------------
 !

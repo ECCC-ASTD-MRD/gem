@@ -19,11 +19,10 @@
       subroutine eigenabc_local2 ( eval_local, evec_local, ai_local, &
                          bi_local,bi_local_inv,ci_local,Ni,Nj,Nk,wk)
       use HORgrid_options
-      use dyn_fisl_options
       use gem_options
       use glb_ld
       use glb_pil
-      use sol
+      use sol_mem
       use opr
       use ptopo
       use, intrinsic :: iso_fortran_env
@@ -80,7 +79,7 @@
 
          cst=wk(k)
          iloc=0
-          do i = Sol_ii0,Sol_iin
+         do i = Sol_ii0,Sol_iin
             iloc=iloc+1
             jloc=0
             do j = Sol_jj0,Sol_jjn-1
@@ -88,7 +87,7 @@
                jloc=jloc+1
                di_8= Opr_opsyp0_8(G_nj+jj) / (cos( G_yg_8 (jj) )**2)
                b_81(iloc,jloc)=eval_local(iloc) * di_8 + &
-                     Opr_opsyp2_8(G_nj+jj)+cst*Opr_opsyp0_8(G_nj+jj)
+               Opr_opsyp2_8(G_nj+jj)+cst*Opr_opsyp0_8(G_nj+jj)
                c_81(iloc,jloc)=Opr_opsyp2_8(2*G_nj+jj)
                a_81(iloc,jloc+1)=c_81(iloc,jloc)
             end do
@@ -96,13 +95,13 @@
             jj=Sol_jjn+l_j0-1
             di_8= Opr_opsyp0_8(G_nj+jj) / (cos( G_yg_8 (jj)) **2)
             b_81(iloc,jloc+1)=eval_local(iloc)*di_8 + Opr_opsyp2_8(G_nj+jj) + &
-                                cst*Opr_opsyp0_8(G_nj+jj)
+            cst*Opr_opsyp0_8(G_nj+jj)
+            
             a_81(iloc,1  )= zero
             c_81(iloc,jloc+1) = zero
             if(jloc+1 > 1) a_81(iloc,jloc+1) =c_81(iloc, jloc)
-
+            
          end do
-
          ai_local(:,:,k)=zero;bi_local(:,:,k)=zero;ci_local(:,:,k)=zero
 
          do i=1,Ni

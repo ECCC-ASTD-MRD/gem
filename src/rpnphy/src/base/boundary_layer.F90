@@ -33,6 +33,7 @@ contains
       use phybus
       use tendency, only: apply_tendencies
       use turbul, only: turbul2
+      use pbl_ysu, only: pbl_ysu1
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -140,6 +141,9 @@ contains
             call physeterror('boundary_layer', 'Problem in phy_simple')
             return
          endif
+      elseif (fluvert == 'YSU') then
+         istat = pbl_ysu1(dbus, fbus, vbus, cdt1, trnch, ni, nk, nkm1)
+         if (phy_error_L) return
       endif
 
       ! Pre-PBL state for budget
@@ -166,10 +170,9 @@ contains
       end do
 
       ! Apply diffusion operator to compute PBL tendencies
-      call difver8(dbus, fbus, vbus, seloc, &
-           cdt1, kount, trnch, ni, nk, nkm1)
+      call difver8(dbus, fbus, vbus, seloc, cdt1, kount, trnch, ni, nk, nkm1)
       if (phy_error_L) return
-
+         
       ! Adjust PBL tendencies to impose conservation
       if (pb_conserve(pbl_conserve, ztdifv, zqdifv, dbus, fbus, vbus, &
            F_dqc=zldifv, F_shf=zfc, F_wvf=zflw, F_inttype='linear') /= PHY_OK) then

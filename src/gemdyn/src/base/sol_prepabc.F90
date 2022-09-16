@@ -21,12 +21,11 @@
       use glb_pil
       use numa
       use opr
-      use sol
+      use sol_mem
       use trp
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
    
       integer NK
       real(kind=REAL64), intent(in) :: F_hcon_8(NK)

@@ -31,9 +31,11 @@
   Vtopo_start_S  = "0p"   ,
   Vtopo_length_S = "360p" ,
 /
+ &sol
+  Sol_type_S = 'DIRECT'
+/
 
  &dyn_fisl
-  Sol_type_S = 'DIRECT'   ,
 
   Cstv_tstr_8     = 300.0 ,
 

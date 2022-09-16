@@ -14,6 +14,7 @@ eval `cclargs_lite $0 \
   -dom_start "1"     "1"     "[Starting domain number         ]"\
   -dom_end   "1"     "1"     "[Ending domain number           ]"\
   -inorder   "0"     "5"     "[Ordered listing                ]"\
+  -nodespec  "NoNe"  "NoNe"  "[Node distribution specification]"\
   -barrier   "0"     "0"     "[DO NOT run binary              ]"\
   -debug     "0"     "1"     "[Debug option                   ]"\
   -_status   "ABORT" "ABORT" "[return status                  ]"\
@@ -51,7 +52,7 @@ else
   unset INORDER
   if [ ${inorder} -gt 0 ] ; then INORDER="-inorder -tag"; fi
   CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup"
-  if [[ x$debug != x0 ]] ; then CMD="${CMD} -gdb" ; fi
+  if [[ x$debug != x0 ]] ; then CMD="${CMD} -debug $debug" ; fi
   
   printf "\n EXECUTING: $CMD\n\n"
   $CMD

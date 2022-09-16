@@ -16,11 +16,11 @@
 !** fgmres - Flexible generalized minimum residual method (with restarts).
 !
       subroutine sol_fgmres3d (solution, rhs_b, tolerance, maxinner, maxouter, nbiter, conv)
-      use dyn_fisl_options
       use dynkernel_options
       use glb_ld
       use ldnh
-      use sol
+      use sol_mem
+      use sol_options
       use lam_options
       use omp_lib
       use mem_tstp
@@ -28,7 +28,6 @@
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       include 'mpif.h'
       include 'rpn_comm.inc'
@@ -211,7 +210,7 @@
             ! Preconditionning: Restricted Additive Schwarz (RAS)
 !$omp single
             call rpn_comm_xch_halo_8 (vv(:,:,k0:l_nk,initer),Sol_imin,Sol_imax,Sol_jmin,Sol_jmax, &
-                                      l_ni,l_nj,nk,ovlpx,ovlpy,G_periodx,G_periody,l_ni,0)
+                                      l_ni,l_nj,nk,Sol_ovlpx,Sol_ovlpy,G_periodx,G_periody,l_ni,0)
 !$omp end single
             call pre_jacobi3D2 (wint_8(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), &
                                     vv(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), nii,njj,l_nk)
