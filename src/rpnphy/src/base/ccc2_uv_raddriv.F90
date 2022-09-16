@@ -111,6 +111,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
 #include "ccc_tracegases.cdk"
 #include "ccc_aeros.cdk"
 #include "tables.cdk"
+include "nocld.cdk"
 
    integer, dimension(ilg) :: mtop
    real, dimension(ilg) :: c1
@@ -210,7 +211,6 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    !     uu3 = 3 * u * u, u = 1 / e^0.5
    !----------------------------------------------------------------------
 
-   data cut / 0.001 /
    data specirr /1367.9396/
 
    !----------------------------------------------------------------------
@@ -220,6 +220,8 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    !----------------------------------------------------------------------
 
    data kgs   / 6, 4, 6, 4 /
+   cut = cldfth ! specified in nocld.cdk, .001 in CCCMA code
+
 
    if (std_p_prof(1).lt.1000.0) then
       !   for maximum height about 0.005 hPa

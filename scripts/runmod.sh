@@ -85,16 +85,19 @@ _npe=$((npex*npey))
 ngrids=1
 for i in ${TASK_INPUT}/cfg_* ; do
    GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
-   if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
+   OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
+   if [ -n "${GRDTYP}" ] ; then
+      if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
+   else
+      if [ -n "${OPSCFG}" ] ; then ngrids=${OPSCFG##*:} ; fi
+   fi
+   unset GRDTYP OPSCFG
    break
 done
 
 for i in ${TASK_INPUT}/cfg_* ; do
    dname=$(basename $i)
    mkdir -p ${TASK_OUTPUT}/${dname} ${TASK_WORK}/${dname}
-   if [ "$GRDTYP" == "GY" ] ; then
-      mkdir -p ${TASK_WORK}/${dname}/YIN ${TASK_WORK}/${dname}/YAN
-   fi
    if [ -e ${TASK_INPUT}/${dname}/configexp.cfg ] ; then
       cp ${TASK_INPUT}/${dname}/configexp.cfg ${TASK_OUTPUT}/${dname}
    fi
@@ -111,17 +114,6 @@ for i in ${TASK_INPUT}/cfg_* ; do
       (mkdir -p ${TASK_WORK}/$dname/busper ; \
          cd ${TASK_WORK}/$dname/busper ; \
          tar xvf ${TASK_INPUT}/${dname}/BUSPER.tar)
-   fi
-   # Set date if not in settings file already
-   RUNSTART=$(fetchnml.sh Step_runstrt_S step ${TASK_WORK}/${dname}/model_settings.nml)
-   if [[ -z "${RUNSTART}" ]] ; then
-      date_file=${TASK_INPUT}/${dname}/MODEL_ANALYSIS/analysis_validity_date
-      if [ -e ${date_file} ] ; then
-         RUNSTART=$(cat ${date_file})
-         value="Step_runstrt_S=\"$RUNSTART\""
-         cat ${TASK_WORK}/${dname}/model_settings.nml | sed "s/\&step/\&step\n${value}/" > $TMPDIR/nmlfile$$
-         mv $TMPDIR/nmlfile$$ ${TASK_WORK}/${dname}/model_settings.nml
-      fi
    fi
 done
 
@@ -140,7 +132,17 @@ if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
 # Use performance timers on request
 if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
 
-if [ ${debug}  -gt 0 ] ; then export RPN_COMM_DIAG=2 ; fi
+if [[ "x${debug}" != "x0" ]] ; then
+   export RPN_COMM_DIAG=2
+   [[ "x${debug}" == "x1" ]] && export debug=gdb || true
+   if [[ "x$(which ${debug} 2>/dev/null)" == "x" ]] ; then
+      printf "ERROR: cannot find requested debug tool '${debug}'\n"
+      if [[ "x${debug}" == "xddt" ]] ; then
+         printf "    Maybe you forgot to load forge? Try:\n    . ssmuse-sh -x main/opt/forge/20.0.3\n"
+      fi
+      exit 1
+   fi
+fi
 
 cd $TASK_WORK
 

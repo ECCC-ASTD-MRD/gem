@@ -6,13 +6,11 @@ target_link_libraries(toc2nml
    rpnphy
    modelutils
    vgrid
-#   tdpack
    rmn
    ${ompfftw}
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
    )
 target_include_directories(toc2nml PRIVATE
   ${CMAKE_BINARY_DIR}/src/vgrid

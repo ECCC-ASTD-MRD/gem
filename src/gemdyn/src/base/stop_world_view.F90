@@ -16,10 +16,10 @@
 !**s/r stop_world_view - Update status file and stop MPI
 
       subroutine stop_world_view
-      use phy_itf, only: phy_terminate
+      use phy_itf
       use step_options
       use gem_options
-      use dyn_fisl_options
+      use sol_options
       use ctrl
       use lun
       use path
@@ -32,7 +32,7 @@
       use gem_timing
       use omp_timing
       implicit none
-#include <arch_specific.hf>
+
       integer, external :: exfin
 
       character(len=256) :: postjob_S

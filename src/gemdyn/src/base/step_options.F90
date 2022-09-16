@@ -81,6 +81,7 @@ contains
       integer function step_nml (F_unf)
       use timestr_mod
       use lun
+      use path
       use rstr
       use clib_itf_mod
       use, intrinsic :: iso_fortran_env
@@ -90,6 +91,7 @@ contains
       integer F_unf
 
       character(len=64) :: nml_S
+      character(len=1024) ladate
       logical nml_must
       integer err
       real(kind=REAL64) nesdt,nsteps
@@ -106,7 +108,7 @@ contains
          return
       end if
 
-      step_nml= -1 ; nml_must= .true. ; nml_S= 'step'
+      step_nml= -1 ; nml_must= .false. ; nml_S= 'step'
 
       rewind(F_unf)
       read (F_unf, nml=step, end= 1001, err=1003)
@@ -134,7 +136,7 @@ contains
 
       if (Step_dt < 0.) then
          if (Lun_out > 0) write(Lun_out,*)  &
-                    ' Step_dt must be specified in namelist &step'
+                    ' ERROR: Step_dt must be specified in namelist &step or otherwise'
          goto 9999
       end if
 
@@ -185,6 +187,16 @@ contains
          err= min( timestr2step (Step_spinphy, Fcst_spinphy_S, Step_dt), err)
       end if
 
+      if (Step_runstrt_S == 'NIL') then
+         ladate=trim(Path_input_S)//'/MODEL_ANALYSIS/analysis_validity_date'
+         open ( 47,file=trim(ladate),status='OLD', &
+                form='formatted',iostat=err )
+         if ( err == 0 ) then
+            read (47,*) Step_runstrt_S 
+            close(47)
+         endif
+      endif
+
       if (err < 0) goto 9999
 
       Step_delay= Step_initial
@@ -199,18 +211,5 @@ contains
 !
  9999 return
       end function step_nml
-
-   function step_options_init() result(F_istat)
-      use, intrinsic :: iso_fortran_env
-      implicit none
-      integer :: F_istat
-#include <rmnlib_basics.hf>
-      logical, save :: init_L = .false.
-      F_istat = RMN_OK
-      if (init_L) return
-      init_L = .true.
-
-      return
-   end function step_options_init
 
 end module step_options

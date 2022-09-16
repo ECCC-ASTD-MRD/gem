@@ -17,6 +17,7 @@ env=@EC_CI_ENV@
 arch=@EC_ARCH@
 
 has_rmn=@RMN_VERSION@@RMN_STATE@
+has_tdpack=@tdpack_VERSION@
 has_vgrid=@VGRID_VERSION@@VGRID_STATE@
 has_modelutils=@modelutils_VERSION@@modelutils_STATE@
 has_rpncomm=@rpncomm_VERSION@@rpncomm_STATE@
@@ -40,9 +41,10 @@ Available values for OPTION include:
   --env          environment version used [${env}]
   --arch         architecture of build [${arch}]
   --has-rmn      which version of librmn is it compiled with [${has_rmn}]
+  --has-tdpack   which version of tdpack is it compiled with [${has_tdpack}]
   --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
-  --has-modelutils which version of modelutils is it compiled with [${has_modelutils}]
   --has-rpncomm  which version of rpncomm is it compiled with [${has_rpncomm}]
+  --has-modelutils which version of modelutils is it compiled with [${has_modelutils}]
   --has-rpnphy   which version of rpnphy is it compiled with [${has_rpnphy}]
   --has-gemdyn   which version of gemdyn is it compiled with [${has_gemdyn}]
 
@@ -94,7 +96,11 @@ while test $# -gt 0; do
 
     --has-rmn)
        	echo ${has_rmn:-no}
-       	;;
+       	    ;;
+        
+    --has-tdpack)
+        echo ${has_tdpack:-no}
+          ;;
 
     --has-vgrid)
        	echo ${has_vgrid:-no}

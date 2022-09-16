@@ -1,0 +1,60 @@
+#!/bin/ksh
+
+/bin/rm -rf GEM_cfgs_acid* PREP/* RUNMOD/*
+
+REF_ACID=${SRC_TESTS}/GEM_ACID
+mkdir    -p GEM_cfgs_acid1 GEM_cfgs_acid2
+cp -r $REF_ACID/cfg_0000 GEM_cfgs_acid1
+cp -r $REF_ACID/cfg_0001 GEM_cfgs_acid2/cfg_0000 
+cp $REF_ACID/configexp.cfg GEM_cfgs_acid1/cfg_0000
+cp $REF_ACID/configexp.cfg GEM_cfgs_acid2/cfg_0000
+
+CFG=ACID_driver
+echo TREATING: $CFG
+cat >> GEM_cfgs_acid1/cfg_0000/configexp.cfg <<EOF
+GEM_inrep=$ATM_MODEL_DFILES/bcmk
+GEM_anal=\$GEM_inrep/2009042700_000
+EOF
+cat >> GEM_cfgs_acid2/cfg_0000/configexp.cfg <<EOF
+GEM_inrep=${PWD}/RESULTS/$EXP/fst/${CFG}/casc
+GEM_anal=$ATM_MODEL_DFILES/bcmk/2009042700_000
+EOF
+
+if [ -z "${NORUN_GEM}" ] ; then
+  /bin/rm -f RESULTS/$EXP/listings/${CFG}_prep.lis RESULTS/$EXP/listings/${CFG}_mod.lis
+  printf "couleur_model=red\n" > RESULTS/$EXP/status/${CFG}_MODEL
+  _status="ABORT"
+  . r.call.dot runprep.sh -dircfg GEM_cfgs_acid1 1> RESULTS/$EXP/listings/${CFG}_prep.lis 2>&1
+  if [ "${_status}" == "ED" ] ; then
+      _status="ABORT"
+     . r.call.dot runmod.sh -dircfg GEM_cfgs_acid1 -ptopo 4x4 -inorder 1> RESULTS/$EXP/listings/${CFG}_mod.lis 2>&1
+    if [ "${_status}" == "ED" ] ; then
+      printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
+      /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}/casc
+      mv RUNMOD/output/cfg_0000/laststep_000*/0*/* RESULTS/$EXP/fst/${CFG}
+      mv RESULTS/$EXP/fst/${CFG}/casc_* RESULTS/$EXP/fst/${CFG}/casc
+    fi
+  fi
+
+  CFG=ACID_casc
+  /bin/rm -rf RESULTS/$EXP/listings/${CFG}_prep.lis RESULTS/$EXP/listings/${CFG}_mod.lis RUNMOD/* PREP/*
+  printf "couleur_model=red\n" > RESULTS/$EXP/status/${CFG}_MODEL
+  _status="ABORT"
+  . r.call.dot runprep.sh -dircfg GEM_cfgs_acid2 1> RESULTS/$EXP/listings/${CFG}_prep.lis 2>&1
+  if [ "${_status}" == "ED" ] ; then
+    _status="ABORT"
+    . r.call.dot runmod.sh -dircfg GEM_cfgs_acid2 -ptopo 4x4 -inorder 1> RESULTS/$EXP/listings/${CFG}_mod.lis 2>&1
+    if [ "${_status}" == "ED" ] ; then
+      printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
+      /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}
+     mv RUNMOD/output/cfg_0000/laststep_000*/0*/* RESULTS/$EXP/fst/${CFG}
+   fi
+ fi
+fi
+
+CFG=ACID_driver
+. gem_test_results
+  CFG=ACID_casc
+. gem_test_results
+
+

@@ -5,7 +5,6 @@ target_link_libraries(pgsm
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 
 add_dependencies(pgsm rmn)

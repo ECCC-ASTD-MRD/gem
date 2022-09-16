@@ -230,6 +230,8 @@ runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
 8 cpus for global Yin-Yang.
 
+*Do not use runprep.sh for theoretical configurations, use only runmod.sh.*
+
 If you get an error message saying runprep.sh or gem_dbase is not found,
 make sure to set the environment variables using the setup file situated in
 the main directory:

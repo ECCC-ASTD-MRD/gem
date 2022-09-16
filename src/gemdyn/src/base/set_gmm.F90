@@ -14,11 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r set_gmm
-!
+
       subroutine set_gmm
       use gem_options
       use glb_ld
-      use gmm_itf_mod
+      use gmm_table
       use rstr
       use var_gmm
       implicit none
@@ -55,6 +55,15 @@
                             0,GMM_NULL_FLAGS)
 
       if (Rstri_rstn_L) istat = gmm_checkpoint_all(GMM_READ_CKPT)
+
+      allocate ( GMM_tbl%vname(gmm_max_elem),&
+                 GMM_tbl%ara  (gmm_max_elem),&
+                 GMM_tbl%cn   (gmm_max_elem),&
+                 GMM_tbl%fst  (gmm_max_elem) )
+      GMM_tbl%vname= 'UNDEFINED'
+      GMM_tbl%ara  = 'UNDEFINED'
+      GMM_tbl%cn   = 'UNDEFINED'
+      GMM_tbl%fst  = 'UNDEFINED'
 !
 !-------------------------------------------------------------------
 !

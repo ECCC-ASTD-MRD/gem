@@ -54,7 +54,6 @@
          j0 = 1 ; jn = G_nj
 !         i0 = 1-G_halox ; in = G_ni+G_halox
 !         j0 = 1-G_haloy ; jn = G_nj+G_haloy
-
          do n=1,stat_nombre
             indx = index(stat_liste(n),"TR/")
             if (indx == 0) then
@@ -95,10 +94,6 @@
                endif
             endif
          end do
-
-!         if ((Ptopo_numproc == 1).and.(Ctrl_theoc_L)) then
-!            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
-!         end if
 
          if (Dynamics_FISL_L .and. Lctl_step > 0) call adz_cfl()
 
@@ -144,6 +139,21 @@
          call low2up  (stat_liste(k),dumc_S)
          stat_liste(k) = dumc_S
 
+         if (stat_liste(k) == 'ALL_DYN_T2') then
+            cnt = cnt + 1
+            tmp_liste(cnt  ) = 'URT2'
+            tmp_liste(cnt+1) = 'VRT2'
+            tmp_liste(cnt+2) = 'ZDT2'
+            tmp_liste(cnt+3) = 'WT2'
+            tmp_liste(cnt+4) = 'TT2'
+            tmp_liste(cnt+5) = 'ST2'
+            cnt = cnt + 5
+            if((.not.Dynamics_hydro_L) .or. Dynamics_hauteur_L)then
+               tmp_liste(cnt+1) = 'QT2'
+               cnt = cnt + 1
+            end if
+            cycle
+         end if
          if ((stat_liste(k) == 'ALL_DYN_T1') .or. (stat_liste(k) == 'ALL')) then
             cnt = cnt + 1
             tmp_liste(cnt  ) = 'URT1'
@@ -172,6 +182,13 @@
                tmp_liste(cnt+1) = 'QT0'
                cnt = cnt + 1
             end if
+            cycle
+         end if
+         if (stat_liste(k) == 'ALL_TR_T2') then
+            do n=1,tr3d_ntr
+               cnt = cnt + 1
+               tmp_liste(cnt) = 'TR/'//trim(Tr3d_name_S(n))//':t2'
+            end do
             cycle
          end if
          if ((stat_liste(k) == 'ALL_TR_T1') .or. (stat_liste(k) == 'ALL')) then

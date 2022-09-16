@@ -24,6 +24,10 @@ Lam_gbpil_t=5
   Fcst_rstrt_S = '40h'
 /
 
+&Adz_cfgs
+	Adz_slt_winds = .true.
+/
+
 &gem_cfgs
   Vtopo_length_S = '1h'
   Tr3d_list_S =  'HU,  wload=0,mono=0,mass=0,hzd=1,min=0.',
@@ -39,17 +43,23 @@ Lam_gbpil_t=5
   LCTL_RXSTAT_S   = 'GLB_8',
   stat_liste= 'ALL_DYN_T1','ALL_TR_T1','ALL_DYN_T0','ALL_TR_T0'
 /
-  Sol_type_S = 'ITERATIVE_2D' 
-  Sol_type_S = 'DIRECT'
+
+&sol
+  Sol_type_S = 'ITERATIVE_3D'
+  Sol_precond3D_S = 'RAS'
+  Sol_yyg_eps = 1.e-04
+/
  &dyn_fisl
   Cstv_tstr_8     = 240.0
-  Sol_type_S = 'DIRECT' 
-  Sol_yyg_eps = 1.e-04
   Schm_nblendyy   = 1
   Schm_itcn       = 2          , Schm_wload_L      = .true.
   Schm_itnlh      = 2
   Schm_hzdadw_L     = .true.
   Schm_psadj= 0
+  Schm_phycpl_S = 'AVG'
+  Cstv_bA_8 = 0.6
+  Cstv_bA_m_8 = 0.7
+  Cstv_bA_nh_8 = 0.8
 /
   hzd_smago_param = 3.
   hzd_smago_lnr = .6

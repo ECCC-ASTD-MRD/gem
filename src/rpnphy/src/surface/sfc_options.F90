@@ -348,13 +348,17 @@ module sfc_options
    namelist /surface_cfgs/ z0min
 
    !# Momentum roughness length formulation over water
-   !# * 'CHARNOCK' : #TODO: define
+   !# * 'CHARNOCK' : Standard Charnock clipped at high wind speed
    !# * 'BELJAARS' : #TODO: define
+   !# * 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)
+   !# * 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013)
    character(len=16) :: z0mtype     = 'CHARNOCK'
    namelist /surface_cfgs/ z0mtype
-   character(len=*), parameter :: Z0MTYPE_OPT(2) = (/ &
+   character(len=*), parameter :: Z0MTYPE_OPT(4) = (/ &
         'CHARNOCK', &
-        'BELJAARS'  &
+        'BELJAARS', &
+        'WRF1    ', &
+        'WRF2    ' &
         /)
 
    !# Roughness length for sea ice
@@ -365,12 +369,16 @@ module sfc_options
    !# * 'MOMENTUM' : Uses z0h = z0m (replaces key z0trdps300=.false.)
    !# * 'DEACU12'  : #TODO: define  (replaces key z0trdps300=.true.)
    !# * 'ECMWF'    : #TODO: define  (New formulation used by ECMWF)
+   !# * 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)
+   !# * 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013)
    character(len=16) :: z0ttype     = 'MOMENTUM'
    namelist /surface_cfgs/ z0ttype
-   character(len=*), parameter :: Z0TTYPE_OPT(3) = (/ &
+   character(len=*), parameter :: Z0TTYPE_OPT(5) = (/ &
         'MOMENTUM', &
         'DEACU12 ', &
-        'ECMWF   '  &
+        'ECMWF   ', &
+        'WRF1    ', &
+        'WRF2    ' &
         /)
 
    !# Thermal roughness length formulation over vegetation

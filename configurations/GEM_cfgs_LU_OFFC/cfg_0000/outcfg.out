@@ -10,19 +10,8 @@
  levels=5,pres,[1000., 925., 850., 700., 500., 250.];
  levels=6,pres,[850.];
 
- steps=1,hour,0.;
- steps=2,hour,<0.,240.,1.>;
- steps=3,hour,<0.,240.,3.>;
- steps=4,hour,[24.,72.,120.];
- steps=5,hour,<0.,144.,3.>,<150.,240.,6.>;
- steps=6,step,<0.,240.,1.>;
+ steps=1,step,<0.,240.,3.>;
 
- sortie_p([Z0,LH,VG,MT,MG,HS,AL,GL,LG,SD,TM,TS,TP,2F], grid, 1, levels, 1, steps, 1)
- sortie_p([FV,FC,FI,FS,FB,FL,SI,FQ,EI,IIR,ICR], grid, 1, levels, 1, steps, 2)
- sortie_p([TM,DSST,SINC,TG,NT,RT,PC,RC], grid, 1, levels, 1, steps, 5)
- sortie_p([PR], grid, 1, levels, 1, steps, 3)
- sortie_p([I0,I1,I2,I3,I4,I5,I6,I7,I8,I9,DN,SD],grid, 1, levels, 1, steps, 2)
-
- sortie([TT,GZ,ES,UU,VV,WW], grid, 1, levels, 2, steps, 2)
- sortie([TT,GZ,UU,VV,WW,QT1], grid, 1, levels, 1, steps, 2)
- sortie([URT1,VRT1,ZDT1,HU,P0,PN,ME], grid, 1, levels, 1, steps, 6)
+ sortie([TT,GZ,ES,UU,VV,WW], grid, 1, levels, 2, steps, 1)
+ sortie([TT,GZ,UU,VV,WW,QT1], grid, 1, levels, 1, steps, 1)
+ sortie([URT1,VRT1,ZDT1,HU,P0,PN,ME], grid, 1, levels, 1, steps, 1)

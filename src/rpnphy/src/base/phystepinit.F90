@@ -75,7 +75,7 @@ contains
       character(len=1)  :: bus_S
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
       integer                :: i,k,ivar,nvars,istat
-      real                   :: sc,rcdt1
+      real                   :: rcdt1
       real, dimension(ni,nk) :: work
       real, dimension(ni,nk) :: qe
       real, target :: tmp1d(ni)
@@ -86,10 +86,10 @@ contains
       type(phymeta), pointer :: metalist(:)
 
       real, pointer, dimension(:), contiguous :: &
-           zdlat, zfcor, zpmoins, ztdiag, zthetaa, &
+           zdlat, zfcor, zpmoins, ztdiag, &
            zqdiag, zza, zztsl, zzusl, zme, zp0, &
            zudiag, zvdiag, zmg, zz0, zz1, zz2, zz3, &
-           zz4, ztls, ztss, zrainrate, zsnowrate, zthetaap, zpplus, &
+           zz4, ztls, ztss, zrainrate, zsnowrate, zpplus, &
            zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
            zcone0, zconq0, zcone1, zconq1, zconedyn, zconqdyn
       real, pointer, dimension(:,:), contiguous :: &
@@ -119,8 +119,6 @@ contains
       MKPTR1D(ztdiag, tdiag, fbus)
       MKPTR1D(zudiag, udiag, fbus)
       MKPTR1D(zvdiag, vdiag, fbus)
-      MKPTR1D(zthetaa, thetaa, vbus)
-      MKPTR1D(zthetaap, thetaap, vbus)
       MKPTR1D(zza, za, vbus)
       MKPTR1D(zztsl, ztsl, vbus)
       MKPTR1D(zzusl, zusl, vbus)
@@ -465,9 +463,7 @@ contains
       call mfotvt(ztve, ztve, qe, ni, nk-1, ni)
 
       do i=1,ni
-         sc = zsigt(i,nk-1)**(-CAPPA)
-         zthetaa(i) = sc*ztmoins(i,nk-1)
-         zthetaap(i) = sc*ztplus(i,nk-1)
+
          zfcor(i) = 2.*OMEGA*sin(zdlat(i))
       end do
       if (zua > 0. .and. zta > 0.) then

@@ -26,8 +26,7 @@
 
  &lam
   Lam_blendoro_L = .false.     ,
-  Lam_gbpil_T=3
-  Lam_blend_T=3
+  Lam_toptt_L=.true.
 /
 
  &vert_layers
@@ -48,17 +47,22 @@
   hyb_rcoef = 3., 15., 0., 100.
 /
 
- &dyn_fisl
+&sol
+  Sol_one_transpose_L = .true.
+  Sol_type_S      = 'DIRECT'
+/
+
+  &dyn_fisl
   Cstv_bA_8 = 0.5
   Cstv_bA_m_8 = 0.5
   Cstv_bA_nh_8 = 0.5
-  Sol_type_S      = 'DIRECT'
   Cstv_tstr_8     = 240.0      ,
   Schm_itcn       = 2          , 
   Schm_itnlh      = 2          , 
   Schm_wload_L    = .true.     ,
   Schm_hzdadw_L   = .false.    , 
   Schm_advec      = 2
+  Schm_phycpl_S = 'RHS'
 /
  &hvdif2
   Hzd_pwr         = 6          , Hzd_lnr       = -0.04

@@ -29,6 +29,7 @@
       use gmm_vt1
       use gmm_pw
       use gmm_phy
+      use gmm_table
       use lun
       use mem_tracers
       use step_options
@@ -191,6 +192,13 @@
 
          istat = min(gmm_create(gmmk_clyref_s,clyref,mymeta3d_nk_t, flag_r_n),istat)
          istat = min(gmm_create(gmmk_clyerr_s,clyerr,mymeta3d_nk_t, flag_r_n),istat)
+
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_dtv_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TT' ; GMM_tbl%fst(gmm_cnt)=gmmk_dtv_s
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_pth_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TT' ; GMM_tbl%fst(gmm_cnt)=gmmk_pth_s
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_cly_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TT' ; GMM_tbl%fst(gmm_cnt)=gmmk_cly_s
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_irt_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)=gmmk_irt_s
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_art_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)=gmmk_art_s
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_wrt_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)=gmmk_wrt_s
 
          if (GMM_IS_ERROR(istat)) &
              call msg(MSG_ERROR,'set_vt ERROR at gmm_create(CANO)')

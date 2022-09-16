@@ -1,0 +1,377 @@
+ &grid
+  Grd_typ_S = 'GY', Grd_ni = 107
+  Grd_maxcfl = 2
+ /
+
+  Dynamics_Kernel_S = 'DYNAMICS_EXPO_H'
+  dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+ &dyn_kernel
+   Dynamics_hydro_L  = .false.
+   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+/
+
+ &grid2
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 2
+/
+  Grd_maxcfl = 2
+ &grid_LU
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 0.
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 4
+/
+&lam2
+Lam_gbpil_t=20
+/
+
+ &step
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = "2h"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 900.
+  Fcst_rstrt_S = '40h'
+/
+
+ &gem_cfgs
+  Tr3d_list_S =  'HU,  wload=0,mono=0,mass=0,hzd=1,min=0.',
+                 'MPNC,wload=0,mono=1,mass=1,hzd=0,min=0.',
+                 'MPNR,wload=0,mono=0,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
+                 'MPQC,wload=1,mono=2,mass=1,hzd=0,min=0.',
+                 'MPQR,wload=1,mono=1,mass=2,hzd=0,min=0.',
+                 'QTI1,wload=1,mono=0,mass=0,hzd=1,min=0.',
+                 'QMI1,wload=0,mono=1,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
+                 'NTI1,wload=0,mono=2,mass=2,hzd=0,min=0.,intp=BICUBH_QV',
+                 'BMI1,wload=0,mono=0,mass=1,hzd=0,min=0.,intp=BICUBH_QV',
+					  
+  LCTL_RXSTAT_S   = 'GLB_8',
+  stat_liste= 'ALL_DYN_T1','ALL_TR_T1','ALL_DYN_T0','ALL_TR_T0'
+/
+  Sol_type_S = 'ITERATIVE_2D' 
+  Sol_type_S = 'DIRECT'
+&sol
+  Sol_type_S = 'ITERATIVE_3D'
+  Sol_precond3D_S = 'RAS'
+  Sol_ovlpx= 3
+  Sol_ovlpy= 5
+  Sol_fgm_eps= 1.e-05
+  Sol_yyg_eps = 1.e-04
+/
+ &dyn_fisl
+  Cstv_tstr_8     = 240.0
+  Schm_nblendyy   = 1
+  Schm_itcn       = 2          , Schm_wload_L      = .true.
+  Schm_itnlh      = 2
+  Schm_hzdadw_L     = .true.
+  Schm_psadj= 1
+/
+
+ &hvdif
+  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
+  hzd_smago_param = 3.
+  hzd_smago_lnr = .6
+  Hzd_smago_prandtl_hu=2.
+  Vspng_coeftop   =  380000.   , Vspng_nk        = 6
+  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
+  P_lmvd_weigh_high_lat = 0.0
+/
+ &vert_layers
+  G_nk=60, Hyb_first_height=40., Hyb_lid_height=60000.
+  hyb_flat= 45000.
+  hyb_rcoef = 3., 15.
+/ 
+ 0., 100.
+ 3., 15.,
+
+ &inp
+Inp_npes=4
+/
+ &init
+  Init_balgm_L    = .true.     , Init_dftr_L     = .true.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "base"   , Out3_ip3=-1
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  Out3_nbitg      = 32         , Out3_cliph_L     = .true.    ,
+  Out3_linbot     =  3         ,
+  Out3_close_interval_S= '1h'  , Out3_postproc_fact= 30
+/
+
+ &surface_cfgs
+ SCHMSOL   = 'ISBA'
+ ICELAC    = .true., ICEMELT    = .true.
+ LIMSNODP  = .true., SALTY_QSAT = .false.
+ IMPFLX    = .true.,
+ Z0TLAT    = 25., 30.
+ DIUSST    = 'fairall'
+/
+
+ &physics_cfgs
+ moyhr    = 1
+ RADIA    = 'cccmarad', KNTRAD_S = '1h'
+ STRATOS  = .true.
+
+ GWDRAG           = 'SGO16'    , NON_ORO  = .true.
+ hines_flux_filter= 5          , LMETOX   = .true.
+ sgo_tdfilter = -1.
+
+ LONGMEL    = 'boujo'
+ FLUVERT    = 'clef'
+
+ PBL_RICRIT = 0.25,2. ,  PBL_SHAL   = 'conres'
+ PBL_ZNTAU  = 600.    ,  PBL_DISS   = 'lim50',
+
+ STCOND     = 'MP_P3'
+ INILWC     = .true.
+
+/
+ phystat_dble_l = .true.
+ phystat_2d_l = .false.
+ phystat_freq_S = '0h'
+ phystat_list_s = 'ALLVARS=EDPV'
+ phystat_input_l = .false.
+ debug_mem_L = .true
+ debug_trace_L = .true
+
+ &convection_cfgs
+ DEEP       = 'kfc'      , SHAL     = 'ktrsnt'
+ KFCRAD     = 1500.      , KFCDEPTH = 4000.
+ KFCTRIG4   = 0.,0.,0.05,0.05
+ KFCTRIGLAT = .true.
+ KFCTRIGL   = 0.01
+ TRIGLAT    = 25., 30.
+/
+&ensembles
+     ens_conf      = .true.        ,
+     Ens_spplist   =
+        'kfctrig4', 'longmel', 'rei_mult', 'mid_minemf', 'sgo_phic',
+        'crad_mult', 'hu0min', 'hu0max',  'dpdd_mult', 'hetero_mult',
+        'tkesrc', 'deeptrig', 'ricmin',
+        'ml_mult', 'fnnreduc', 'cmtcup', 'adv_rhsint', 'phycpl','ADV_UTRAJ','ADV_VTRAJ','ADV_WTRAJ'
+     ens_mc_seed   = 1           ,
+     ens_skeb_conf = .true.     ,
+     ens_ptp_conf  = .true.       ,
+     ens_stat      = .true.           ,
+     ens_skeb_div  = .true.          ,
+     ens_skeb_dif  = .true.          , ens_skeb_gwd      = .true.     ,
+     ens_skeb_bfc  = 1.0d-01         , ens_skeb_lam      = 3.13e+05   ,
+     ens_skeb_alph = 0.50            , ens_skeb_alpt     = 2.0        ,
+     ens_skeb_nlon = 384             , ens_skeb_nlat  =  192 ,
+     ens_skeb_trnl =  60             , ens_skeb_trnh  =  192 ,
+     ens_skeb_min  = -1.             , ens_skeb_max   = 1. ,
+     ens_skeb_std  = 0.27            , ens_skeb_tau   = 129600. ,
+     ens_skeb_str  = 1.39            ,
+     ens_ptp_ncha  =  1              ,
+     ens_ptp_nlon  = 16              , ens_ptp_nlat  =  8 ,
+     ens_ptp_trnl  =  1              , ens_ptp_trnh  =  8 ,
+     ens_ptp_min   = 0.5             , ens_ptp_max   = 1.5 ,
+     ens_ptp_std   = 0.27            , ens_ptp_tau   = 129600. ,
+     ens_ptp_str = 1.39              ,
+     ens_ptp_env_u = 0.99            , ens_ptp_env_b = 0.99 ,
+/
+@spp_kfctrig4
+     spp_range = 0., .01
+     spp_nlat  = 32
+     spp_trn   = 1, 32 
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 43200. 
+@
+
+@spp_tkesrc
+     spp_range = 0,1
+     spp_nlat  = 32 
+     spp_trn   = 1, 32
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 3600.
+@
+
+@spp_ricmin
+
+     spp_range = 0,1
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 21600.
+@
+
+@spp_mid_minemf
+     spp_range = 1e6, 1e8
+     spp_nlat  = 32
+     spp_trn   = 1, 32
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 30000.
+@
+
+@spp_sgo_phic
+     spp_range = 0.05, 0.25
+     spp_nlat  = 8
+     spp_trn   = 1, 8
+     spp_str   = 1.39
+     spp_std   = 0.27
+     spp_tau   = 129600.
+@
+
+@spp_rei_mult
+     spp_range = .5, 1.5
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 86400.
+@
+
+@spp_hetero_mult
+     spp_range = .5, 1.5
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 86400.
+@
+
+@spp_crad_mult
+     spp_range = .4, 2.
+     spp_nlat  = 32
+     spp_trn   = 1, 32
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 7200.
+@
+
+@spp_dpdd_mult
+     spp_range = .2, 2.
+     spp_nlat  = 32
+     spp_trn   = 1, 32
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 7200.
+@
+
+@spp_hu0min
+     spp_range = .7, .925
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 86400.
+@
+
+@spp_hu0max
+     spp_range = .85, .99
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 86400.
+@
+
+@spp_longmel
+     spp_type  = 'discrete'
+     spp_values= 'turboujo', 'turboujo', 'turboujo', 'blac62', 'boujo'
+     spp_nlat  = 8
+     spp_trn   = 1, 8
+     spp_str   = 1.39
+     spp_std   = 0.27
+     spp_tau   = 129600.
+@
+
+@spp_deeptrig
+     spp_type  = 'discrete'
+     spp_values= 'original', 'original', 'tke', 'kain04'
+     spp_nlat  = 32
+     spp_trn   = 1, 32
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 43200.
+@
+
+@spp_adv_utraj
+     spp_range = -1,1
+     spp_nlat  = 8
+     spp_trn   = 1, 8
+     spp_str   = 2.
+     spp_std   = 0.27
+     spp_tau   = 259200.
+@
+
+@spp_adv_vtraj
+     spp_range = -1,1
+     spp_nlat  = 8
+     spp_trn   = 1, 8
+     spp_str   = 2.
+     spp_std   = 0.27
+     spp_tau   = 259200.
+@
+
+@spp_adv_wtraj
+     spp_range = .75,1.33
+     spp_nlat  = 8
+     spp_trn   = 1, 8
+     spp_str   = 2.
+     spp_std   = 0.27
+     spp_tau   = 259200.
+@
+
+@spp_ml_mult
+     spp_range = .4,2.5
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 21600.
+@ 
+
+@spp_fnnreduc
+     spp_range = .5,1
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 21600.
+@
+
+@spp_cmtcup
+     spp_range = 0,1
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 1.
+     spp_std   = 0.27
+     spp_tau   = 21600.
+@
+
+@spp_adv_rhsint
+     spp_range = -.5,.5
+     spp_nlat  = 64 
+     spp_trn   = 1, 64
+     spp_str   = 2.
+     spp_std   = 0.27
+     spp_tau   = 43200.
+@
+
+@spp_phycpl
+     spp_range = 0.,1.
+     spp_nlat  = 16
+     spp_trn   = 1, 16
+     spp_str   = 2.
+     spp_std   = 0.27
+     spp_tau   = 43200.
+@

@@ -56,7 +56,7 @@ module grdc_options
    namelist /grdc_p/ Grdc_maxcfl
 
    !# Number of bits for the packing factor
-   integer :: Grdc_nbits = 32
+   integer, dimension(2) :: Grdc_nbits = [ 16, 12 ]
    namelist /grdc/ Grdc_nbits
    namelist /grdc_p/ Grdc_nbits
 

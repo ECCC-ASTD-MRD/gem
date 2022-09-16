@@ -34,7 +34,6 @@
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
  &dyn_fisl
-  Sol_type_S = 'DIRECT'        , SOL_YYG_EPS = 1.e-4
   Schm_itcn       = 2          ,
   Schm_itnlh      = 2
   Cstv_tstr_8     = 240.0      ,

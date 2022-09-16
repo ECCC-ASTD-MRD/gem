@@ -20,10 +20,7 @@ eval `cclargs_lite -D " " $0 \
 
 set -ex
 
-BIN=$(which checkdmpart_${BASE_ARCH}.Abs)
-if [[ -z "${BIN}" ]] ; then
-   BIN=$(which checkdmpart)
-fi
+BIN=$(which checkdmpart)
 
 ici=${PWD}
 ROOT_WORK=${PWD}/checkdmpart$$
@@ -44,7 +41,15 @@ cdm_eigen_S='${cache}'
 EOF
 
 GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
-#GRDTYP=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml grid/grd_typ_s 2> /dev/null)
+OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
+if [ -z "${GRDTYP}" ] ; then
+    GRDTYP=LU
+    ngrids=1
+    if [ -n "${OPSCFG}" ] ; then
+       if [ $(echo $OPSCFG | grep ":" | wc -l) -gt 0 ] ; then ngrids=${OPSCFG##*:} ; fi
+    fi
+    if [ ${ngrids} -eq 2 ] ; then GRDTYP=GY ; fi
+fi
 if [[ "$GRDTYP" == "GY" ]] ; then 
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
    ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes

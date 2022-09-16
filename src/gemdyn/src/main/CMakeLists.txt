@@ -26,7 +26,6 @@ target_link_libraries(checkdmpart
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(checkdmpart gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
@@ -44,7 +43,6 @@ target_link_libraries(gemgrid
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(gemgrid gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 
@@ -64,7 +62,6 @@ target_link_libraries(prgemnml
    fftw3
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
-   ${EXTRA_LIBRARIES}
 )
 add_dependencies(prgemnml gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
 

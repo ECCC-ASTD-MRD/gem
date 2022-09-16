@@ -30,7 +30,7 @@ contains
       use glb_ld, only : l_ni, l_nj, l_nk, l_i0, l_j0, &
                          G_periodx, G_periody
       ! Import solver pilot region from sol
-      use sol, only    : sol_pil_e, sol_pil_w, sol_pil_n, sol_pil_s
+      use sol_mem
       use glb_pil
 
       use, intrinsic :: iso_fortran_env

@@ -1,0 +1,96 @@
+#!/bin/bash
+# @Object: Check nml validity by comparing to a reference one.
+# @Author: S.Chamberland
+# @Date:   June 2017
+# @Date: August 2022, modified by Chantal Pic for GoaS
+
+MYSELF=${0##*/}
+
+DESC='Check nml validity by comparing to a reference one.'
+USAGE="USAGE: ${MYSELF} [-v|-q] [-h] [-r [REF_NML_FILENAME]] [--nml=NML_NAMES] [--] [NML_FILENAME]"
+usage_long() {
+   usage=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$usage
+
+Options:
+    -h, --help       : print this help
+    -v, --verbose    : verbose mode
+    -q, --quiet      : quiet mode
+    -r, --ref        : build a new ref. nml file
+    -t, --types      : check nml values type
+    --ref=REF_FILE   : use provided REF_NML_FILENAME
+    --nml=NML_NAMES  : keep only NML_NAMES in comparison
+
+With -r and without REF_NML_FILENAME, gem_nml_mkref is used to create a ref. nml.
+Default NML_FILENAME is ./gem_settings.nml
+
+EOF
+}
+
+ATM_MODEL_VERSION=${ATM_MODEL_VERSION/_*}
+
+refmode=0
+reffile=${GEM_GIT_DIR}/src/gem/nml_ref/gem_settings.${ATM_MODEL_VERSION}.ref
+nmlfiles=""
+nml=""
+myverb=""
+previous=""
+checktypes=''
+while [[ $# -gt 0 ]] ; do
+   case ${1} in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1)); myverb="-v";;
+      (-r|--ref) refmode=1; reffile="$TMPDIR/refnml$$";;
+      (-t|--types) checktypes='-t';;
+      (-q|--quiet) verbose=0; myverb="-q";;
+      (--ref=*)  refmode=0; reffile="${1#*=}";;
+      (--nml=*) nml="--nml ${1#*=}";;
+      (--) shift ; break;;
+      (-*) echo "Option Not recognized: ${1}";;
+      (*)
+         if [[ x"${previous}" == x"-r" || x"${previous}" == x"--ref" ]] ; then
+            refmode=0; reffile=${1};
+         else
+            nmlfiles="${nmlfiles} ${1}";
+         fi;;
+   esac
+   previous=$1
+   shift
+done
+nmlfiles="${nmlfiles} $@"
+
+if [[ x"${nmlfiles}" == x" " ]] ; then
+   nmlfiles="./gem_settings.nml"
+fi
+
+if [ ! -f ${nmlfiles# } ] ; then
+   echo "ERROR: cannot find ${nmlfiles}" 2>&1
+   exit 1
+fi
+
+if [[ $refmode == 1 ]] ; then
+   gem_nml_mkref ${myverb} ${reffile}
+fi
+
+if [[ ! -f ${reffile:-/NO/SUCH/FILE} ]] ; then
+   echo "Reference nml file should exists and does not: ${reffile:-/NO/SUCH/FILE}
+       Try with: ${MYSELF} ${myverb} ${checktypes} ${nml} -r -- ${nmlfiles}"
+fi
+
+status=0
+for item in ${nmlfiles} ; do
+   rpy.nml_check ${myverb} ${nml} ${checktypes} -r ${reffile} -f ${item}
+   status=$?
+   if [[ $status == 0 ]] ; then
+      echo "Namelists are all ok in file ${item} compared to ${reffile}"
+   fi
+done
+
+if [[ $refmode == 1 ]] ; then
+   /bin/rm -f ${reffile} 2>/dev/null || true
+fi
+
+exit ${status}

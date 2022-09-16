@@ -2,6 +2,7 @@
 
 # For internal use at ECCC
 # Source this file to:
+# - Load profile and code-tools for gnu
 # - Load libraries
 # - Set compiler version
 # - Load a script for common setup to all compilers

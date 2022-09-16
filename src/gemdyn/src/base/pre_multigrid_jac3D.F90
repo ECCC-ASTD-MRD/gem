@@ -124,7 +124,7 @@ contains
       use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy ! Allocated limits for Lhs/Rhs
       use glb_ld, only: l_ni, l_nj, l_nk, l_i0, l_j0 ! Local grid offsets and extents
       use glb_pil, only: glb_pil_s, glb_pil_w ! Global pilot region sizes
-      use sol, only: sol_pil_w, sol_pil_e, sol_pil_s, sol_pil_n ! Local pilot region sizes
+      use sol_mem
 
       real(kind=REAL64), intent(in), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Rhs
       real(kind=REAL64), intent(out), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk) :: Lhs
@@ -223,7 +223,7 @@ contains
       !use ldnh, only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
       use glb_ld, only: l_nk, l_i0, l_j0, & ! Vertical level count, local->global grid offsets
                         G_ni, G_nj, l_ni, l_nj ! Number of points in i/j, global/local
-      use sol, only: sol_pil_n, sol_pil_e ! Local solver-specific pilot regions
+      use sol_mem
       use glb_pil, only: glb_pil_s, glb_pil_w, glb_pil_e, glb_pil_n ! Global pilot region sizes
 
       ! Loop variables

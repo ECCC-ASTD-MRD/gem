@@ -22,7 +22,7 @@
       use geomh
       use glb_ld
       use cstv
-      use sol
+      use sol_mem
       use opr
       use, intrinsic :: iso_fortran_env
       implicit none

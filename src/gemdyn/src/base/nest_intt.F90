@@ -43,10 +43,14 @@
 !
 !     ---------------------------------------------------------------
 !
+!     The following code is NON re-entrant so we use a
+!     a single + broadcast strategy for tx
+!$omp single
       dayfrac = dble(Step_kount) * Cstv_dt_8 * rsid
       call incdatsd  (datev, Step_runstrt_S, dayfrac)
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx, yy,mo,dd,hh,mm,ss)
+!$omp end single copyprivate(tx)
 
       dayfrac = Step_nesdt*rsid
       

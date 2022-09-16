@@ -83,7 +83,12 @@
       Ptopo_last_domain_L = (Domains_fin == Domains_last)
 
       Grd_yinyang_L = .false. ; Grd_yinyang_S = ''
-      if (Domains_ngrids == 2) Grd_yinyang_L = .true.
+      if ((Domains_ngrids < 1) .or. (Domains_ngrids > 2)) then
+         write(6,'(/a,i4)') 'Unknown multigrid configuration: ABORT in init_component with Domains_ngrids=',Domains_ngrids
+         stop -1
+      else
+         if (Domains_ngrids == 2) Grd_yinyang_L = .true.
+      endif
 
       ! Obtain mydomain
       mydomain = RPN_COMM_get_my_domain(Domains_num, Domains_deb)
@@ -145,6 +150,8 @@
 
          if (Ptopo_couleur == 0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur == 1) Grd_yinyang_S = 'YAN'
+         if (Ptopo_myproc  == 0) ierr= clib_mkdir (trim(Grd_yinyang_S))
+         call rpn_comm_barrier("grid", ierr)
          ierr= clib_chdir(trim(Grd_yinyang_S))
          Ptopo_ncolors = 2
       else
@@ -153,7 +160,7 @@
          Ptopo_world_numproc = Ptopo_numproc
          Ptopo_world_myproc  = Ptopo_myproc
       end if
-      
+
       call numa_init ()
       
       ! Initialize OpenMP
