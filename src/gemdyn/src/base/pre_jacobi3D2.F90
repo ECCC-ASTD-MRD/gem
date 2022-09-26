@@ -20,7 +20,7 @@
       use dyn_fisl_options
       use glb_ld
       use opr
-      use sol
+      use sol_mem
       use prec
       use mem_tstp
       use, intrinsic :: iso_fortran_env
@@ -33,7 +33,7 @@
 !author
 !       Abdessamad Qaddouri -  2013
 
-      integer i,j,k,jr,ii,jj,iloc,jloc
+      integer i,j,k,ii,jj
 !
 !     ---------------------------------------------------------------
 !

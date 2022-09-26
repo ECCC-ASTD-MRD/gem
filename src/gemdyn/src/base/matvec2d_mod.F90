@@ -37,7 +37,7 @@ contains
       use geomh
       use glb_ld
       use opr
-      use sol
+      use sol_mem
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -79,7 +79,7 @@ contains
    subroutine matvec2d_prod(F_vector, F_prod, level)
       use glb_ld         , only: l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, G_periodx, G_periody
       use ldnh           , only: ldnh_minx, ldnh_maxx, ldnh_miny, ldnh_maxy
-      use sol            , only: sol_pil_s, sol_pil_n, sol_pil_w, sol_pil_e
+      use sol_mem
       use gem_options    , only: G_halox, G_haloy
       use HORgrid_options, only: Grd_yinyang_L
       use, intrinsic :: iso_fortran_env

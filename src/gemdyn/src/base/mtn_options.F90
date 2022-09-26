@@ -224,8 +224,7 @@ contains
            F_sls(Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q    (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1)
 
-      type(gmm_metadata) :: mymeta
-      integer :: i,j,k,i00,istat
+      integer :: i,j,k,i00
       real    :: a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1, psurf
       real    :: hauteur, press, theta, tempo, dx, slp, slpmax, exner
       real(kind=REAL64)  :: temp1, temp2, oneoRT

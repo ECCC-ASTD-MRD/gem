@@ -1,0 +1,37 @@
+#!/bin/bash
+arguments=$*
+eval `cclargs_lite $0 \
+  -ctrl  ""   ""        "[]" \
+  -exp   ""   ""        "[]" \
+  -norun "0"  "1"       "[]" \
+  -mail  ""   "1"       "[]" \
+  ++ $arguments`
+
+if [ ! -f .ssmuse_gem ] ; then
+   printf "\n   This $0 script must be launch from an open gem experiment directory -- ABORT\n\n"
+   exit 1
+fi
+
+JOB=gem_tests_batch
+
+if [ -n "${mail}" ] ; then
+    MAIL="-mail $mail"
+else
+    unset MAIL
+fi
+    
+cat > $JOB <<EOF
+if [ -f \${HOME}/.profile.d/interactive/post ] ; then
+   . \${HOME}/.profile.d/interactive/post
+fi
+cd $PWD
+. .ssmuse_gem
+if [ $norun -eq 1 ] ; then
+  export NORUN_GEM='yes'
+fi
+time gem_tests -exp $exp -ctrl $ctrl $MAIL
+EOF
+
+cat $JOB
+ord_soumet $JOB -mach ${TRUE_HOST} -cm 2G -t 3600 -mpi -cpus 40x1
+

@@ -122,7 +122,7 @@ contains
          return
       end if
 
-      HORgrid_nml= -1 ; nml_must= .true. ; nml_S= 'grid'
+      HORgrid_nml= -1 ; nml_must= .false. ; nml_S= 'grid'
 
       rewind(F_unf)
       read (F_unf, nml=grid, end= 1001, err=1003)

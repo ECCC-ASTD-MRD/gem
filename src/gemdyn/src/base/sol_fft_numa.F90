@@ -22,7 +22,7 @@
       use glb_pil
       use ptopo
       use ldnh
-      use sol
+      use sol_mem
       use numa
       use trp
       use adz_mem
@@ -31,7 +31,6 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <RPN_MPI.hf>
-#include <arch_specific.hf>
 
       real(kind=REAL64), dimension(ldnh_maxx,ldnh_maxy,G_nk), intent(IN ) :: F_Rhs
       real(kind=REAL64), dimension(ldnh_maxx,ldnh_maxy,G_nk), intent(OUT) :: F_Sol

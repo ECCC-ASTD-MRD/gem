@@ -28,8 +28,6 @@
 /
 
  &dyn_fisl
-  Sol_type_S = 'DIRECT'   ,
-
   Cstv_tstr_8     = 240.0 ,
 
   Cstv_bA_8       = 0.6        ,

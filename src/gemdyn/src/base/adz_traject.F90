@@ -13,25 +13,51 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine adz_traject (F_dtA_8, F_dtzA_8, F_dtD_8, F_dtzD_8)
+      subroutine adz_traject (F_dt_8)
       use glb_ld
+      use cstv
       use geomh
       use ver
+      use dyn_fisl_options
       use adz_options
       use adz_mem
       use, intrinsic :: iso_fortran_env
       implicit none
       
-      real(kind=REAL64), intent(IN) :: F_dtA_8,F_dtzA_8,F_dtD_8,F_dtzD_8
+      real(kind=REAL64), intent(IN) :: F_dt_8
 
       include "tricublin_f90.inc"
       integer :: iter,i,j,k,kk1,nb,k00
       integer,dimension(l_ni) :: kk
+      real(kind=REAL64) :: dtA_8,dtzA_8,dtD_8,dtzD_8
       real(kind=REAL64), dimension(l_ni) :: xm,ym,zm
       real(kind=REAL64) pos
 !
 !     ---------------------------------------------------------------
 !
+      if (Schm_advec == 1) then ! traditional advection
+         dtA_8  = F_dt_8 * 0.5d0
+         dtzA_8 = F_dt_8 * 0.5d0
+      end if
+      if (Schm_advec == 2) then ! consistent advection
+         dtA_8  = F_dt_8 * Cstv_bA_m_8
+         dtzA_8 = F_dt_8 * Cstv_bA_8
+      end if
+      if (Schm_advec == 3) then ! reversed advection
+         dtA_8  = (1.d0-Cstv_bA_m_8)*F_dt_8
+         dtzA_8 = (1.d0-Cstv_bA_8)*F_dt_8
+      end if
+
+      dtD_8  = F_dt_8 - dtA_8
+      dtzD_8 = F_dt_8 - dtzA_8
+
+      if (Schm_advec == 0) then ! no advection
+         dtA_8  = 0.d0
+         dtD_8  = 0.d0
+         dtzA_8 = 0.d0
+         dtzD_8 = 0.d0
+      end if
+
       call adz_prepareWinds ()
 
       k00=Adz_k0m
@@ -45,15 +71,15 @@
              do j= 1, l_nj
                 do i= 1, l_ni
                   xm(i) = dble(i+l_i0-1) - &
-                    ( F_dtD_8 * Adz_uvw_dep(1,i,j,k)  &
-                    + F_dtA_8 * Adz_uu_arr(i,j,k) )&
+                    ( dtD_8 * Adz_uvw_dep(1,i,j,k)  &
+                    + dtA_8 * Adz_uu_arr(i,j,k) )&
                     * geomh_inv_hx_8
                   ym(i) = dble(j+l_j0-1) - &
-                    ( F_dtD_8 * Adz_uvw_dep(2,i,j,k)  &
-                    + F_dtA_8 * Adz_vv_arr(i,j,k) )&
+                    ( dtD_8 * Adz_uvw_dep(2,i,j,k)  &
+                    + dtA_8 * Adz_vv_arr(i,j,k) )&
                     * geomh_inv_hy_8
-                  pos = Ver_z_8%m(k)- F_dtzD_8* Adz_uvw_dep(3,i,j,k) &
-                                    - F_dtzA_8* Adz_ww_arr(i,j,k)
+                  pos = Ver_z_8%m(k)- dtzD_8* Adz_uvw_dep(3,i,j,k) &
+                                    - dtzA_8* Adz_ww_arr(i,j,k)
                   zm(i) = min(max(pos,Ver_zmin_8),Ver_zmax_8)
 
                   kk1 = (zm(i) - ver_z_8%m(0)  ) * adz_ovdzm_8 + 1.d0
@@ -92,7 +118,11 @@
       
 !$omp single
       Adz_niter = Adz_itraj
+      call rpn_comm_xch_halo_8 (Adz_wpxyz, -1,l_ni+2, -1,l_nj+2,&
+                 l_ni,l_nj, 3*l_nk, 2,2, .false.,.false., l_ni,0)
 !$omp end single
+                 
+      call adz_interp_traj (dtzD_8, dtzA_8, F_dt_8)
 
 !     ---------------------------------------------------------------
 !

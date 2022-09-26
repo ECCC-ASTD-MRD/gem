@@ -1,0 +1,93 @@
+#!/bin/ksh
+
+/bin/rm -rf PTOPO_cfgs_* PREP/* RUNMOD/*
+cp -r ${SRC_TESTS}/PTOPO_cfgs_* .
+
+for i in PTOPO_cfgs_* ; do
+  echo TREATING: $i
+  CFG=$i
+  status_file=RESULTS/$EXP/status/${CFG}_MODEL
+  if [ -z "${NORUN_GEM}" ] ; then
+    /bin/rm -f RESULTS/$EXP/listings/${CFG}_prep.lis RESULTS/$EXP/listings/${CFG}_mod.lis
+    _status="ABORT"
+    printf "couleur_model=red\n" > ${status_file}.1
+    . r.call.dot runprep.sh -dircfg $CFG 1> RESULTS/$EXP/listings/${CFG}_prep.lis_1 2>&1
+    if [ "${_status}" == "ED" ] ; then
+       . $CFG/ptopo_0.cfg
+       _status="ABORT"
+      . r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder > RESULTS/$EXP/listings/${CFG}_mod.lis_1 2>&1
+      if [ "${_status}" == "ED" ] ; then
+         printf "couleur_model=yellow\n" >> ${status_file}.1
+         . $CFG/ptopo_1.cfg
+         _status="ABORT"
+         printf "couleur_model=red\n" > ${status_file}.2
+         . r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder >  RESULTS/$EXP/listings/${CFG}_mod.lis_2 2>&1
+         if [ "${_status}" == "ED" ] ; then
+            printf "couleur_model=yellow\n" >> ${status_file}.2
+         fi
+         . $CFG/ptopo_2.cfg
+         _status="ABORT"
+         printf "couleur_model=red\n" > ${status_file}.3
+         . r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder >  RESULTS/$EXP/listings/${CFG}_mod.lis_3 2>&1
+         if [ "${_status}" == "ED" ] ; then
+            printf "couleur_model=yellow\n" >> ${status_file}.3
+         fi
+         . $CFG/ptopo_3.cfg
+         _status="ABORT"
+         printf "couleur_model=red\n" > ${status_file}.4
+         . r.call.dot runmod.sh -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder >  RESULTS/$EXP/listings/${CFG}_mod.lis_4 2>&1
+         if [ "${_status}" == "ED" ] ; then
+            printf "couleur_model=yellow\n" >> ${status_file}.4
+         fi
+      fi
+    fi
+    COULEUR="yellow"
+    for st in ${status_file}.* ; do
+       unset couleur_model
+       . $st
+       if [ "${couleur_model}" == "red" ] ; then
+          COULEUR="red"
+          n=${st##*.}
+          n=$((n-1))
+          echo "ABORT with config $CFG/ptopo_${n}.cfg"
+          cat $CFG/ptopo_${n}.cfg
+       fi
+    done
+    printf "couleur_model=${COULEUR}\n" > ${status_file}
+  fi
+
+  . ${status_file}
+
+  COULEUR="red"
+  if [ "${couleur_model}" == "yellow" ] ; then
+    if [ -e RESULTS/$EXP/listings/${CFG}_mod.lis_1 -a -e RESULTS/$EXP/listings/${CFG}_mod.lis_2 ] ; then
+      n=$(grep "GEM_RUN: END OF THE TIME LOOP AT TIMESTEP" RESULTS/$EXP/listings/${CFG}_mod.lis_1 --text | tail -1 | awk '{printf $NF}')
+      nc=$((5-$(echo $n | wc -c)))
+      grep -i mean: RESULTS/$EXP/listings/${CFG}_mod.lis_1 --text | grep "oe-00000-00000:$(printf "%${nc}s $n")" --text > t1
+      grep -i mean: RESULTS/$EXP/listings/${CFG}_mod.lis_2 --text | grep "oe-00000-00000:$(printf "%${nc}s $n")" --text > t2
+      nb=$(cat t1 | wc -l)
+      cnt1=1
+      if [ $nb -gt 0 ] ; then cnt1=$(diff t1 t2 | wc -l) ; fi
+      if [ $cnt1 -gt 0 ] ; then echo Bitpattern differences ${CFG}_mod.lis_1 ${CFG}_mod.lis_2 ; fi
+                              
+      grep -i mean: RESULTS/$EXP/listings/${CFG}_mod.lis_3 --text | grep "oe-00000-00000:$(printf "%${nc}s $n")" --text > t2
+      cnt2=1
+      if [ $nb -gt 0 ] ; then cnt2=$(diff t1 t2 | wc -l) ; fi
+      if [ $cnt2 -gt 0 ] ; then echo Bitpattern differences ${CFG}_mod.lis_1 ${CFG}_mod.lis_3 ; fi
+                              
+      grep -i mean: RESULTS/$EXP/listings/${CFG}_mod.lis_4 --text | grep "oe-00000-00000:$(printf "%${nc}s $n")" --text > t2
+      cnt3=1
+      if [ $nb -gt 0 ] ; then cnt3=$(diff t1 t2 | wc -l) ; fi
+      if [ $cnt3 -gt 0 ] ; then echo Bitpattern differences ${CFG}_mod.lis_1 ${CFG}_mod.lis_4 ; fi
+
+      if [ $nb -gt 0 -a $cnt1 -lt 1 -a $cnt2 -lt 1 -a $cnt3 -lt 1 ] ; then
+        COULEUR=green
+      fi
+    fi
+  fi
+  result=RESULTS/$EXP/status/${CFG}_couleur
+  printf "couleur=$COULEUR\n" > $result
+  . $result
+  printf "   $(basename $result | sed 's/_couleur//') ===> $couleur\n"
+done
+

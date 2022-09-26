@@ -21,7 +21,7 @@
 /
 
 &dyn_kernel
-  dynamics_hydro_l  = .true.
+  dynamics_hydro_l  = .false.
   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
 /
 
@@ -29,9 +29,12 @@
   lctl_rxstat_s   = 'GLB_8',
 /
 
-&dyn_fisl
+ &sol
   Sol_type_S = 'ITERATIVE_3D'
-  sol3D_precond_S = 'RAS'
+  sol_precond3D_S = 'RAS'
+/
+
+&dyn_fisl
   cstv_tstr_8     = 240.0
   schm_nblendyy   = 1
   schm_itcn       = 2          , schm_wload_l      = .false.

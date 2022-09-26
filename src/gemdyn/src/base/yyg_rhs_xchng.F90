@@ -19,7 +19,7 @@
                                  NK,iter,Linfini )
       use geomh
       use glb_ld
-      use sol
+      use sol_mem
       use ptopo
       use yyg_rhs
       use, intrinsic :: iso_fortran_env

@@ -111,7 +111,7 @@
             tt0 (1:pil_w, 1:l_nj , k) = nest_t (1:pil_w, 1:l_nj , k)
             wt0 (1:pil_w, 1:l_nj , k) = nest_w (1:pil_w, 1:l_nj , k)
             zdt0(1:pil_w, 1:l_nj , k) = nest_zd(1:pil_w, 1:l_nj , k)
-            F_rhsu (pil_w,1+pil_s:l_nj-pil_n,1:l_nk) = invT_m_8 * nest_u(pil_w,1+pil_s:l_nj-pil_n,1:l_nk)
+            F_rhsu (pil_w,1+pil_s:l_nj-pil_n,k) = invT_m_8 * nest_u(pil_w,1+pil_s:l_nj-pil_n,k)
             if (k==1) &
             st0 (1:pil_w, 1:l_nj) = nest_s (1:pil_w,1:l_nj)
          endif

@@ -81,6 +81,7 @@ contains
       real rhortvsg,mrhocmu,localstefan
       real tplusnk,qplusnk,uplusnk,vplusnk
       real rsg,du,dv,dsig, rgam
+      logical :: compute_tend
 #include "phymkptr.hf"
       include "surface.cdk"
 
@@ -208,6 +209,9 @@ contains
 
       MKPTR3D(zvcoef, vcoef, 2, vbus)
 
+      ! Decide whether to compute PBL tendencies
+      compute_tend = .true.
+      if (fluvert == 'YSU') compute_tend = pbl_ysu_rpnsolve
       
       if (kount == 0 .and. sfcflx_filter_order > 0) then
          do j=1,ni
@@ -301,9 +305,11 @@ contains
       ! ** U-Component Wind Diffusion **
 
       ! Compute tendency for u-component wind diffusion
-      call difuvdfj1(tu,uu,kmsg,zero,uw_ng,zero,zero,bmsg,sg,seloc,tau, &
-           typem,1.,ni,ni,ni,nkm1)
-      if (phy_error_L) return
+      if (compute_tend) then
+         call difuvdfj1(tu,uu,kmsg,zero,uw_ng,zero,zero,bmsg,sg,seloc,tau, &
+              typem,1.,ni,ni,ni,nkm1)
+         if (phy_error_L) return
+      endif
 
       ! Diagnose atmospheric fluxes for u-component wind
       call atmflux3(zturbuf,uu,tu,kmsg,gam0,uw_ng,zero(1,nkm1), &
@@ -312,9 +318,11 @@ contains
       ! ** V-Component Wind Diffusion **
 
       ! Compute tendency for v-component wind diffusion
-      call difuvdfj1(tv,vv,kmsg,zero,vw_ng,zero,zero,bmsg,sg,seloc,tau, &
-           typem,1.,ni,ni,ni,nkm1)
-      if (phy_error_L) return
+      if (compute_tend) then
+         call difuvdfj1(tv,vv,kmsg,zero,vw_ng,zero,zero,bmsg,sg,seloc,tau, &
+              typem,1.,ni,ni,ni,nkm1)
+         if (phy_error_L) return
+      endif
 
       ! Diagnose atmospheric fluxes for v-component wind
       call atmflux3(zturbvf,vv,tv,kmsg,gam0,vw_ng,zero(1,nkm1), &
@@ -326,7 +334,7 @@ contains
       ! ** Vertical Motion Diffusion **
 
       ! Compute tendency for vertical motion diffusion on user request
-      if (diffuw) then
+      if (diffuw .and. compute_tend) then
          call difuvdfj1(tw,w,kmsg,zero,zero,zero,zero,zero,sg,sigef,tau, &
               typet,1.,ni,ni,ni,nkm1)
          if (phy_error_L) return
@@ -355,9 +363,11 @@ contains
       endif
 
       ! Compute tendency for moisture diffusion
-      call difuvdfj1(tconserv_q,conserv_q,ktsg,zgq,wqw_ng,zero,aq,bq,sg,sigef,tau, &
-           typet,1.,ni,ni,ni,nkm1)
-      if (phy_error_L) return
+      if (compute_tend) then
+         call difuvdfj1(tconserv_q,conserv_q,ktsg,zgq,wqw_ng,zero,aq,bq,sg,sigef,tau, &
+              typet,1.,ni,ni,ni,nkm1)
+         if (phy_error_L) return
+      endif
 
       ! Diagnose atmospheric fluxes for moisture
       call atmflux3(zturbqf,conserv_q,tconserv_q,ktsg,gam0,wqw_ng, &
@@ -389,10 +399,12 @@ contains
       endif
 
       ! Compute tendency for temperature diffusion
-      call difuvdfj1(tconserv_t,conserv_t,ktsg,zgte,wthl_ng,zero,aq,bq,sg,sigef,tau, &
-           typet,1.,ni,ni,ni,nkm1)
-      if (phy_error_L) return
-
+      if (compute_tend) then
+         call difuvdfj1(tconserv_t,conserv_t,ktsg,zgte,wthl_ng,zero,aq,bq,sg,sigef,tau, &
+              typet,1.,ni,ni,ni,nkm1)
+         if (phy_error_L) return
+      endif
+         
       ! Convert conserved variable tendencies to state (T,Q) variable tendencies
       if (fluvert == 'MOISTKE') then
          call baktotq8(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
@@ -401,7 +413,7 @@ contains
       endif
 
       ! Compute tendency for condensate diffusion
-      if (pbl_diff_condens) then
+      if (pbl_diff_condens .and. compute_tend) then
          aq = 0.
          bq = 0.
          call difuvdfj1(tqc,zqcplus,ktsg,zgq,wqw_ng,zero,aq,bq,sg,sigef,tau, &

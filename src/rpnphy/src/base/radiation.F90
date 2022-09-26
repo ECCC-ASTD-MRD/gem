@@ -29,8 +29,6 @@ contains
       use debug_mod, only: init2nan
       use ccc1_cccmarad, only: cccmarad1
       use ccc2_cccmarad, only: ccc2_cccmarad2
-      use prep_cw_rad, only: prep_cw_rad3
-      use diagno_cw_rad, only: diagno_cw_rad1
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -79,20 +77,6 @@ contains
       nkm1 = nk - 1
 
       IF_RAD: if (radia /= 'NIL') then
-
-         if (stcond(1:3) /= 'MP_') then
-
-            call prep_cw_rad3(fbus, dbus, &
-                 ztmoins, zhumoins, zpmoins, zsigw, &
-                 cldfrac, liqwcin, icewcin, liqwp, icewp, &
-                 trav2d, &
-                 kount, trnch, ni, nk, nkm1)
-
-            call diagno_cw_rad1(fbus, vbus, &
-                 liqwcin, icewcin, liqwp, icewp, &
-                 cldfrac, &
-                 trnch, ni, nk)
-         endif
 
          select case (radia)
          case('CCCMARAD')

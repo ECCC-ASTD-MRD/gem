@@ -16,10 +16,10 @@
    subroutine itf_phy_geom (F_istat)
    use dcst
    use lam_options
+   use gmm_table
    use gmm_geof
    use geomh
    use glb_ld
-   use gmm_itf_mod
    use mem_nest
    use tdpack
    use, intrinsic :: iso_fortran_env
@@ -47,6 +47,7 @@
 
    nullify(wrk1)
    istat = gmm_create('DLAT',wrk1,mymeta,GMM_FLAG_RSTR)
+   gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='DLAT'; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='LAT'
    if (RMN_IS_OK(istat)) then
       wrk1 = deg2rad_8*geomh_latrx
    else
@@ -56,6 +57,7 @@
 
    nullify(wrk1)
    istat = gmm_create('DLON',wrk1,mymeta,GMM_FLAG_RSTR)
+   gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='DLON'; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='LON'
    if (RMN_IS_OK(istat)) then
       where(geomh_lonrx >= 0)
          wrk1 = deg2rad_8*geomh_lonrx
@@ -69,6 +71,7 @@
 
    nullify(wrk1)
    istat = gmm_create('DXDY',wrk1,mymeta,GMM_FLAG_RSTR)
+   gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='DXDY'; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='DXDY'
    if (RMN_IS_OK(istat)) then
       do j = 1,l_nj
          do i = 1,l_ni
@@ -82,6 +85,7 @@
 
    nullify(wrk1)
    istat = gmm_create('TDMASK',wrk1,mymeta,GMM_FLAG_RSTR)
+   gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='TDMASK'; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='PMSK'
    if (RMN_IS_OK(istat)) then
       wrk1(1:l_ni,1:l_nj) = 1.
       nest_it = ( Lam_0ptend_L .and. &

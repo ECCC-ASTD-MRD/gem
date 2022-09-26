@@ -112,7 +112,7 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
    if (phy_error_L) return
    
-   call surface1(trnch, kount, delt, ni, nk)
+   call surface1(dbus, fbus, vbus, trnch, kount, delt, ni, nk)
    if (phy_error_L) return
 
    call turbulence2(dbus, fbus, vbus, ficebl, seloc, delt, kount, trnch, ni, nk)

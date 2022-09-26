@@ -23,7 +23,8 @@
       use glb_ld
       use lun
       use ldnh
-      use sol
+      use sol_options
+      use sol_mem
       use opr
       use ptopo
       use trp
@@ -31,7 +32,6 @@
       use gem_timing
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       logical, intent(in) :: F_print_L
       integer, intent(in) :: F_ni,F_nj,F_nk,F_offi, F_offj

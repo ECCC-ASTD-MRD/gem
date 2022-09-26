@@ -2,7 +2,6 @@
   Theo_case_S= 'MTN_SCHAR'
 /
 
-
  &mtn_cfgs
   mtn_ni = 401 ,  mtn_nj = 1 ,  mtn_nk = 65
   mtn_dx = 500.
@@ -32,12 +31,10 @@
   hyb_rcoef      = 1.,1.
  /
 
-
  &dyn_fisl
   Cstv_tstr_8    = 240.
   Cstv_bA_8 = 0.5
-  Sol_type_S='DIRECT'
- /
+/
 
  &gem_cfgs
   Vtopo_length_S = '2400s'
@@ -47,7 +44,6 @@
   Lam_ctebcs_L   = .true.
   Lam_blend_H    = 25
 /
-
 
  &out
   Out3_nbitg    = 32

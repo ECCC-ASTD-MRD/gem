@@ -183,6 +183,7 @@
 
          if ((prout).and.(.not.Rstri_rstn_L)) then
             write (output_unit,1005) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+            write (output_unit,1007) Grdc_nbits
             write (output_unit,1006) Grdc_gif-Grdc_gid+1,xpx(Grdc_gid),xpx(Grdc_gif),&
                            Grdc_gjf-Grdc_gjd+1,ypx(Grdc_gjd),ypx(Grdc_gjf)
             write (output_unit,1001)
@@ -211,6 +212,7 @@
  1006 format ( ' Cascade grid output dimensions and coverage: ',&
                  /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
                  /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES')
+ 1007 format (' Cascade grid compaction: ',2i4)
  1015 format (' Output grid too large: will be clipped at ',a,' boundary of current grid')
  1200 format (72('#'))
 !

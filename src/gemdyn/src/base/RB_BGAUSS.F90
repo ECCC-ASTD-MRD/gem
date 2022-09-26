@@ -3,16 +3,15 @@
 !
 
       Subroutine RB_BGAUSS(F_SOL,F_RHS,minx, maxx, miny, maxy,NK)
-      use dyn_fisl_options
-      use sol         , only: sol_pil_s, sol_pil_n, sol_pil_w, sol_pil_e
-      use gem_options , only: G_halox, G_haloy
-
+      use sol_mem
+      use sol_options
+      use gem_options
       use prec
       use glb_ld
       use ptopo
-
       use, intrinsic :: iso_fortran_env
       implicit none
+      
       integer, intent(in) :: minx, maxx, miny, maxy, NK
       real(kind=REAL64), dimension(minx:maxx, miny:maxy,NK), intent(in) :: F_RHS
       real(kind=REAL64), dimension(minx:maxx, miny:maxy,NK), intent(out) :: F_SOL
@@ -38,7 +37,7 @@
                                       Prec_xevec_8, niloc, njloc, NK,&
                                         Prec_ai_8, Prec_bi_8, Prec_ci_8 )
 
-      do icol =1,Gauss_Niter
+      do icol =1,Sol_Gauss_Niter
               call rpn_comm_xch_halo_8 (Swork_space,l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, NK, &
                        G_halox, G_haloy, G_periodx, G_periody, l_ni,0 )
               if (icol == P_mycol) then

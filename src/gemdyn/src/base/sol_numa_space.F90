@@ -15,13 +15,12 @@
 
       logical function sol_numa_space (F_checkparti_L)
       use ISO_C_Binding
-      use dyn_fisl_options
       use glb_ld
       use ldnh
       use lun
       use trp
       use numa
-      use sol
+      use sol_mem
       use ptopo
       implicit none
 

@@ -4,7 +4,7 @@
       subroutine  bord_cor (Rhs,lhs, Minx, Maxx, Miny, Maxy, nil, njl, Nk)
       use glb_ld
       use opr
-      use sol
+      use sol_mem
       use, intrinsic :: iso_fortran_env
       implicit none
 !

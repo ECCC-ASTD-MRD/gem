@@ -1,0 +1,38 @@
+#!/bin/ksh
+
+/bin/rm -rf GEM_cfgs_*
+cp -r ${SRC_TESTS}/GEM_cfgs_* .
+
+for i in GEM_cfgs* ; do
+  echo TREATING: $i
+  /bin/rm -rf PREP/* RUNMOD/* 
+  CFG=$i
+  if [ -z "${NORUN_GEM}" ] ; then
+    /bin/rm -f RESULTS/$EXP/listings/${CFG}_prep.lis RESULTS/$EXP/listings/${CFG}_mod.lis
+    printf "couleur_model=red\n" > RESULTS/$EXP/status/${CFG}_MODEL
+    . $CFG/cfg_0000/configexp.cfg
+    cp $CFG/cfg_0000/gem_settings.nml .
+    grille 1> RESULTS/$EXP/listings/${CFG}_grille.lis 2>&1
+    status_grille=$?
+    . r.call.dot checkdmpart.sh -gemnml gem_settings.nml -cache $PWD -verbose 1> RESULTS/$EXP/listings/${CFG}_checkdmpart.lis 2>&1
+    status_checkdmpart=$_status
+    if [ $status_grille -ne 0 -o "${status_checkdmpart}" != 'OK' ] ;then
+       if [ $status_grille -ne 0 ] ; then echo Problem with software grille ; fi
+       if [ "${status_checkdmpart}" != 'OK' ] ; then echo Problem with software checkdmpart ; fi
+    else
+       _status="ABORT"
+       . r.call.dot runprep.sh -dircfg $CFG 1> RESULTS/$EXP/listings/${CFG}_prep.lis 2>&1
+       if [ "${_status}" == "ED" ] ; then
+          _status="ABORT"
+          . r.call.dot runmod.sh  -dircfg $CFG -ptopo $GEMTEST_ptopo -inorder 1> RESULTS/$EXP/listings/${CFG}_mod.lis 2>&1
+          if [ "${_status}" == "ED" ] ; then
+             printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
+             /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}
+             mv RUNMOD/output/cfg_0000/laststep_000*/0*/* RESULTS/$EXP/fst/${CFG}
+          fi
+       fi
+    fi
+  fi
+  . gem_test_results
+done
+

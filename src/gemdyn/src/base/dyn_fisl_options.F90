@@ -134,75 +134,6 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_phycpl_S
    namelist /dyn_fisl_p/ Schm_phycpl_S
 
-  !Sol
-
-   !# Type of solver
-   !# * 'ITERATIF'
-   !# * 'DIRECT'
-   character(len=26) :: sol_type_S = 'DIRECT'
-   namelist /dyn_fisl  / Sol_type_S
-   namelist /dyn_fisl_p/ Sol_type_S
-
-   !# Epsilon convergence criteria for none Yin-Yang iterative solver
-   real(kind=REAL64) :: sol_fgm_eps   = 1.d-07
-   namelist /dyn_fisl  / Sol_fgm_eps
-   namelist /dyn_fisl_p/ Sol_fgm_eps
-
-   !# Epsilon convergence criteria for the Yin-Yang iterative solver
-   real(kind=REAL64) :: sol_yyg_eps   = 1.d-04
-   namelist /dyn_fisl  / Sol_yyg_eps
-   namelist /dyn_fisl_p/ Sol_yyg_eps
-
-   !# maximum number of iterations allowed for none Yin-Yang iterative solver
-   integer :: sol_fgm_maxits= 200
-   namelist /dyn_fisl  / Sol_fgm_maxits
-   namelist /dyn_fisl_p/ Sol_fgm_maxits
-
-   !# maximum number of iterations allowed for the Yin-Yang iterative solver
-   integer :: sol_yyg_maxits= 40
-   namelist /dyn_fisl  / Sol_yyg_maxits
-   namelist /dyn_fisl_p/ Sol_yyg_maxits
-
-   !# size of Krylov subspace in iterative solver - should not exceed 100
-   integer :: sol_im = 15
-   namelist /dyn_fisl  / Sol_im
-   namelist /dyn_fisl_p/ Sol_im
-
-   !# 2D preconditioner for iterative solver
-   character(len=26) :: sol2D_precond_S = 'JACOBI'
-   namelist /dyn_fisl  / Sol2D_precond_S
-   namelist /dyn_fisl_p/ Sol2D_precond_S
-
-   !# 3D preconditioner for iterative solver
-   character(len=26) :: sol3D_precond_S = 'RAS'
-   namelist /dyn_fisl  / Sol3D_precond_S
-   namelist /dyn_fisl_p/ Sol3D_precond_S
-
-   !# 3D preconditioner for iterative solver
-   integer :: Gauss_Niter = 2
-   namelist /dyn_fisl  / Gauss_Niter
-   namelist /dyn_fisl_p/ Gauss_Niter
-
-   !# Krylov method for 3d iterative solver (FGMRES or FBICGSTAB)
-   character(len=26) :: Sol3D_krylov_S = 'FGMRES'
-   namelist /dyn_fisl  / Sol3D_krylov_S
-   namelist /dyn_fisl_p/ Sol3D_krylov_S
-
-   !# 3D preconditioner for iterative solver
-    integer :: ovlpx = 4
-    namelist /dyn_fisl  / ovlpx
-    namelist /dyn_fisl_p/ ovlpx
-
-   !# 3D preconditioner for iterative solver
-    integer :: ovlpy = 4
-    namelist /dyn_fisl  / ovlpy
-    namelist /dyn_fisl_p/ ovlpy
-
-   !# True => use the one-transpose solver
-   logical :: Sol_one_transpose_L = .false.
-   namelist /dyn_fisl  / Sol_one_transpose_L
-   namelist /dyn_fisl_p/ Sol_one_transpose_L
-
    logical Schm_opentop_L
    integer Schm_nith
 
@@ -235,7 +166,7 @@ contains
          return
       end if
 
-      dyn_fisl_nml= -1 ; nml_must= .true. ; nml_S= 'dyn_fisl'
+      dyn_fisl_nml= -1 ; nml_must= .false. ; nml_S= 'dyn_fisl'
 
       rewind(F_unf)
       read (F_unf, nml=dyn_fisl, end= 1001, err=1003)

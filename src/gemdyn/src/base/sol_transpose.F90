@@ -21,11 +21,11 @@
       use glb_ld
       use ldnh
       use lun
-      use sol
+      use sol_mem
+      use sol_options
       use trp
       use numa
       implicit none
-#include <arch_specific.hf>
 
       logical, intent(in) :: F_checkparti_L
       integer, intent(in) :: F_npex, F_npey

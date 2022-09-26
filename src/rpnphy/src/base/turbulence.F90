@@ -141,10 +141,7 @@ contains
       endif
 
       ! Turbulent vertical diffusion using the PBL scheme
-      if (any(fluvert == (/&
-           'MOISTKE', &
-           'CLEF   ', &
-           'SIMPLE '/))) then
+      if (.not.(fluvert == 'NIL' .or. fluvert == 'SURFACE')) then
          call boundary_layer4(dbus, fbus, vbus, ficebl, seloc, cdt1, kount, trnch, ni, nk)
          if (phy_error_L) return
       endif

@@ -231,27 +231,6 @@ GEM_GY_FISL_H_intel:
       fi
     - test "${_status}" == "ED"
 
-GEM_GY_FISL_H_ens_intel:
-  stage: run_configs_intel
-  dependencies:
-  - build_intel
-  when: always
-  only:
-  - dev
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_intel
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_H_ensembles
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
 GEM_LU_FISL_H_intel:
   stage: run_configs_intel
   dependencies:
@@ -371,11 +350,7 @@ THEO_bubbleG_intel:
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
@@ -392,11 +367,7 @@ THEO_schar_intel:
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu:
@@ -554,29 +525,6 @@ GEM_GY_FISL_H_gnu:
       fi
     - test "${_status}" == "ED"
 
-GEM_GY_FISL_H_ens_gnu:
-  stage: run_configs_gnu
-  dependencies:
-  - build_gnu-12.1.0
-  when: always
-  only:
-  - dev
-  only:
-  - dev
-  allow_failure: true
-  script:
-    - . ./.eccc_setup_gnu_12
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_H_ensembles
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
-    - test "${_status}" == "ED"
-
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
   dependencies:
@@ -702,11 +650,7 @@ THEO_bubbleG_gnu:
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
@@ -724,9 +668,5 @@ THEO_schar_gnu:
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
-      fi
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
     - test "${_status}" == "ED"

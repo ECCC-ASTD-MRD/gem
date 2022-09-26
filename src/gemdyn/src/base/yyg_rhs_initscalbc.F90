@@ -21,7 +21,7 @@
       use glb_ld
       use glb_pil
       use ptopo
-      use sol
+      use sol_mem
       use tdpack
       use yyg_rhs
       use, intrinsic :: iso_fortran_env

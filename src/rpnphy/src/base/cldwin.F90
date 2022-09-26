@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
+subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    use, intrinsic :: iso_fortran_env, only: INT64
    use tdpack, only: FOQST, FOQSA
    implicit none
@@ -207,4 +207,4 @@ subroutine CLDWIN(BM,FM,T,HU,PS,TRAV,SIGMA,NI,NK,SATUCO)
    enddo DOK
    !--------------------------------------------------------
    return
-end subroutine CLDWIN
+end subroutine CLDWIN1

@@ -366,7 +366,7 @@ contains
       real, dimension(:), intent(in), optional :: F_shf         !Surface turbulent sensible heat flux (W/m2) [0.]
       real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_rad         !Net radiation flux TOA-surface (W/m2) [0.]
-      real(REAL64), dimension(:), intent(out) :: F_resid        !Energy residual (non-conservation)
+      real(REAL64), dimension(:), intent(out) :: F_resid        !Energy residual(Wm-2 if norm_en=1.) (non-conservation)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
@@ -423,7 +423,7 @@ contains
       real, dimension(:), intent(in) :: F_shf                   !Surface turbulent sensible heat flux (W/m2)
       real, dimension(:), intent(in) :: F_wvf                   !Surface turbulent water vapour flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_rad                   !Net radiation flux TOA-surface (W/m2)
-      real, dimension(:), intent(out) :: F_src                  !Energy boundary source
+      real, dimension(:), intent(out) :: F_src                  !Energy boundary source (W/m2)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
@@ -468,8 +468,8 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg)
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
-      real(REAL64), dimension(:), intent(out) :: F_pwi          !Integrated total water (m)
-      real, dimension(:,:), intent(out), optional :: F_pw       !Profile of total water (m)
+      real(REAL64), dimension(:), intent(out) :: F_pwi          !Integrated total water (Kg/m2)
+      real, dimension(:,:), intent(out), optional :: F_pw       !Profile of total water (kg/kg)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
@@ -518,8 +518,8 @@ contains
       real, dimension(:,:), intent(in), optional :: F_dqi       !Solid condensate tendency (kg/kg/s) [0.]
       character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
       logical, intent(in), optional :: F_abs                    !Computed integrated absolute value of total water [.false.]
-      real(REAL64), dimension(:), intent(out) :: F_dpwi   !Integrated total water (m)
-      real, dimension(:,:), intent(out), optional :: F_dpw      !Profile of total water (m)
+      real(REAL64), dimension(:), intent(out) :: F_dpwi         !Integrated total water (kg/m2)
+      real, dimension(:,:), intent(out), optional :: F_dpw      !Profile of total water (kg/kg)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
@@ -656,7 +656,7 @@ contains
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s)
-      real(REAL64), dimension(:), intent(out) :: F_resid        !Residual of field
+      real(REAL64), dimension(:), intent(out) :: F_resid        !Residual of field (kg/m2/s if norm_pw=1. or W/m2 if norm_pw=1./CHLC)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
@@ -695,7 +695,7 @@ contains
       real, dimension(:), intent(in) :: F_rain                  !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_snow                  !Surface solid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in) :: F_wvf                   !Surface turbulent water vapour flux (kg/m2/s)
-      real, dimension(:), intent(out) :: F_src                  !Energy boundary source
+      real, dimension(:), intent(out) :: F_src                  !Boundary source of total water (kg/m2/s)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables

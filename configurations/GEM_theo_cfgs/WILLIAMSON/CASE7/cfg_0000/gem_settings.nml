@@ -27,9 +27,11 @@
  &gem_cfgs
   LCTL_RXSTAT_S   = 'GLB_8',
 /
+ &sol
+  Sol_type_S = 'DIRECT'
+/
 
  &dyn_fisl
-  Sol_type_S = 'DIRECT'        ,
 
   Cstv_bA_8       = 0.5        ,
 

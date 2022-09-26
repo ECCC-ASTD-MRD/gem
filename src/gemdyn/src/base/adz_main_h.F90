@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine adz_main_h (F_dt_8)
+      subroutine adz_main_h ()
       use ISO_C_BINDING
       use dyn_fisl_options
       use cstv
@@ -24,45 +24,12 @@
       use mem_tstp
       implicit none
 
-      real(kind=REAL64), intent(IN) :: F_dt_8
-
       integer :: n
-      real(kind=REAL64) :: dtA_8,dtzA_8,dtD_8,dtzD_8
       type(Adz_pntr_stack), dimension(3), target :: stack
 !
 !     ---------------------------------------------------------------
 !
-      if (Schm_advec == 1) then ! traditional advection
-         dtA_8  = F_dt_8 * 0.5d0
-         dtzA_8 = F_dt_8 * 0.5d0
-      end if
-      if (Schm_advec == 2) then ! consistent advection
-         dtA_8  = F_dt_8 * Cstv_bA_m_8
-         dtzA_8 = F_dt_8 * Cstv_bA_8
-      end if
-      if (Schm_advec == 3) then ! reversed advection
-         dtA_8  = (1.d0-Cstv_bA_m_8)*F_dt_8
-         dtzA_8 = (1.d0-Cstv_bA_8)*F_dt_8
-      end if
-
-      dtD_8  = F_dt_8 - dtA_8
-      dtzD_8 = F_dt_8 - dtzA_8
-
-      if (Schm_advec == 0) then ! no advection
-         dtA_8  = 0.d0
-         dtD_8  = 0.d0
-         dtzA_8 = 0.d0
-         dtzD_8 = 0.d0
-      end if
-
-      call adz_traject (dtA_8, dtzA_8, dtD_8, dtzD_8)
-
-!$omp single
-      call rpn_comm_xch_halo_8 (Adz_wpxyz, -1,l_ni+2, -1,l_nj+2,&
-                 l_ni,l_nj, 3*l_nk, 2,2, .false.,.false., l_ni,0)
-!$omp end single
-
-      call adz_interp_traj (dtzD_8, dtzA_8, F_dt_8)
+      call adz_traject (Cstv_dt_8)
 
       stack(1)%src =>  orhsu_ext
       stack(1)%dst =>  rhsu

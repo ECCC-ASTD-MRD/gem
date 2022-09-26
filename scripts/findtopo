@@ -100,16 +100,7 @@ lis=${TMPDIR}/checkdmpartlis$$
 . r.call.dot checkdmpart.sh -gemnml ${nml} -npex ${npex_low},${npex_high} -npey ${npey_low},${npey_high} -verbose 1> $lis 2>&1
 
 if [ "${_status}" != 'OK' ] ; then
-   printf "Abort: Potential problem with namelists in ${nml}\n"
-   printf "       Checking namelist with: checknml --ref --types --nml='grid step' -- ${nml}\n"
-   checknml --ref --types --nml='grid step' -- ${nml}
-   if [[ $? -eq 1 ]] ; then
-      /bin/rm -f ${TMPDIR}/findtopolis$$ checkdmpart_status.dot
-      printf "Abort -- See above namelist errors\n"
-   else
-      printf "Abort -- For error details see: ${TMPDIR}/findtopolis$$ checkdmpart_status.dot\n"
-   fi
-   /bin/rm -f $lis
+   cat $lis ; /bin/rm -f $lis
    exit 1
 fi
 
