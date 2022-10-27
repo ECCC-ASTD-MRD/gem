@@ -27,11 +27,9 @@
       use step_options
       use tdpack
       use numa
-      use gem_timing
       use omp_timing
       use version
       implicit none
-#include <arch_specific.hf>
 
       include 'rpn_comm.inc'
       include 'gemdyn_version.inc'
@@ -137,9 +135,9 @@
          ierr = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 
-      call gemtime_init ( Ptopo_myproc, 'MOD' )
+!      call gemtime_init ( Ptopo_myproc, 'MOD' )
       call gtmg_init ()
-      call gemtime_start ( 1, 'GEMDM', 0)
+      call gtmg_start ( 1, 'GEMDM', 0)
 
       ! Some MPI cummunicators + init colors
       Ptopo_intracomm = RPN_COMM_comm ('GRID')

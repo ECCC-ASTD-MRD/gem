@@ -17,7 +17,6 @@
 
       subroutine yyg_blend
       use dyn_fisl_options
-      use gem_timing
       use step_options
       use gmm_vt1
       use glb_ld
@@ -31,14 +30,10 @@
       if (Schm_nblendyy                 >  0) then
       if (mod(Step_kount,Schm_nblendyy) == 0) then
 
-         call gemtime_start ( 7, 'YYG_BLEND', 0)
-
          call yyg_blend_sca ( zdt1, YYG_BLEN_q2q, &
                               l_minx,l_maxx,l_miny,l_maxy,G_nk )
 
          call yyg_blend_uv ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk )
-
-         call gemtime_stop (7)
 
       end if
       end if

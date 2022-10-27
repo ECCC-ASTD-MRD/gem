@@ -33,7 +33,7 @@
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
+
       integer j, jj, i, ii, id, k
       real(kind=REAL64)  :: di_8
       real(kind=REAL64)  :: xxx, yyy
@@ -42,7 +42,9 @@
 
       integer  km, kp,k0,k0t
       integer sol_pil_w_ext, sol_pil_e_ext, sol_pil_s_ext, sol_pil_n_ext
-
+!
+!     ---------------------------------------------------------------
+!
       if (.not. FISLH_LHS_metric_L ) then
 
 !$omp single
@@ -113,14 +115,12 @@
                      B1(i,j,k,id)=0.d0
                      B2(i,j,k,id)=0.d0
                      C1(i,j,k,id)=0.d0
-                     !Sol_stencilh_8(i,j,k,id) =0.d0
-                     !Sol_stencilh  (i,j,k,id) =0.d0
                   enddo
                enddo
             enddo
          enddo
 !$omp end do
-!
+
          k=k0
 !$omp do
          do j=1+sol_pil_s, l_nj-sol_pil_n
@@ -268,6 +268,9 @@
 !$omp enddo
 
       endif
-
-   end subroutine matvec3D_init_hlt
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end subroutine matvec3D_init_hlt
 

@@ -54,13 +54,7 @@
       enddo
 !$omp end do
 
-      if ( Dynamics_hauteur_L .and. FISLH_LHS_metric_L ) then
-         call sol_fgmres_hlt ( F_lhs_sol, F_rhs_sol, sol_fgm_eps, sol_im, &
-                               sol_fgm_maxits, its, conv, F_print_L )
-      else
-         call sol_fgmres3d ( F_lhs_sol, F_rhs_sol, sol_fgm_eps, sol_im, &
-                             sol_fgm_maxits, its, conv )
-      endif
+      call sol_fgmres ( F_lhs_sol, F_rhs_sol, F_print_L )
                           
 !$omp do collapse(2)
       do k=1, F_nk

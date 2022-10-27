@@ -26,7 +26,7 @@
       use lun
       use tr3d
       use mem_tracers
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -43,7 +43,7 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      call gemtime_start ( 60, 'HZD_main', 1 )
+      call gtmg_start ( 60, 'HZD_main', 1 )
       xch_UV = .false.
       xch_TT = .false.
       xch_TR = .false.
@@ -66,11 +66,11 @@
 !**********************************
 
       if ( switch_on_THETA ) then
-         call gemtime_start ( 61, 'HZD_theta', 60 )
+         call gtmg_start ( 61, 'HZD_theta', 60 )
          xch_TT = .true.
          call pw_update_GW ()
          call hzd_theta ()
-         call gemtime_stop  ( 61 )
+         call gtmg_stop  ( 61 )
       end if
 
 !**********************************
@@ -78,7 +78,7 @@
 !**********************************
 
       if ( switch_on_TR ) then
-         call gemtime_start ( 62, 'HZD_tracers', 60 )
+         call gtmg_start ( 62, 'HZD_tracers', 60 )
          xch_TR = .true.
          do i=1, Tr3d_ntr
             if (Tr3d_hzd(i)) then
@@ -86,7 +86,7 @@
                                l_minx,l_maxx,l_miny,l_maxy,G_nk)
             end if
          end do
-         call gemtime_stop  ( 62 )
+         call gtmg_stop  ( 62 )
       end if
 
 !************************
@@ -94,14 +94,14 @@
 !************************
 
       if ( switch_on_UVW ) then
-         call gemtime_start ( 64, 'HZD_bkgrnd', 60 )
+         call gtmg_start ( 64, 'HZD_bkgrnd', 60 )
          xch_UV = .true.
          xch_TT = .true.
          xch_WZD= .true.
          call hzd_ctrl4 ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 (zdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call gemtime_stop ( 64 )
+         call gtmg_stop ( 64 )
       end if
 
 !********************
@@ -109,17 +109,17 @@
 !********************
 
       if ( switch_on_vrtspng_UVT ) then
-         call gemtime_start ( 65, 'V_SPNG', 60 )
+         call gtmg_start ( 65, 'V_SPNG', 60 )
          xch_UV = .true.
          xch_TT = .true.
          call hzd_exp_deln ( ut1,  'U', l_minx,l_maxx,l_miny,l_maxy,&
                              Vspng_nk, F_VV=vt1, F_type_S='VSPNG' )
          call hzd_exp_deln ( tt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                              Vspng_nk, F_type_S='VSPNG' )
-         call gemtime_stop ( 65 )
+         call gtmg_stop ( 65 )
       end if
       if ( switch_on_vrtspng_W ) then
-         call gemtime_start ( 65, 'V_SPNG', 60 )
+         call gtmg_start ( 65, 'V_SPNG', 60 )
          xch_WZD= .true.
          if (Vspng_riley_L) then
             if (.not. associated(weight)) then
@@ -146,7 +146,7 @@
             call hzd_exp_deln ( wt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                                 Vspng_nk, F_type_S='VSPNG' )
          end if
-         call gemtime_stop ( 65 )
+         call gtmg_stop ( 65 )
       end if
 
 !**********************
@@ -154,10 +154,10 @@
 !**********************
 
       if ( switch_on_eqspng ) then
-         call gemtime_start ( 67, 'EQUA_SPNG', 60)
+         call gtmg_start ( 67, 'EQUA_SPNG', 60)
          xch_UV= .true.
          call eqspng_drv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call gemtime_stop ( 67 )
+         call gtmg_stop ( 67 )
       end if
 
       call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
@@ -186,7 +186,7 @@
 
       call hzd_smago_main()
 
-      call gemtime_stop ( 60 )
+      call gtmg_stop ( 60 )
 
  1000 format(3X,'MAIN HORIZONTAL DIFFUSION : (S/R HZD_MAIN)')
 !

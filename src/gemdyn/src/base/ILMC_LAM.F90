@@ -21,7 +21,7 @@
       use adz_options
       use dynkernel_options
       use gem_options
-      use gem_timing
+      use omp_timing
       use glb_pil
       use gmm_tracers
       use HORgrid_options
@@ -62,7 +62,7 @@
 !
 !---------------------------------------------------------------------
 !
-      call gemtime_start (73, 'ILMC_', 38)
+!      call gtmg_start (73, 'ILMC_', 38)
 
       !Localize Tracer TIME M requiring ILMC monotonicity
       !--------------------------------------------------
@@ -137,7 +137,7 @@
       !------------------------------------------------------
       if (.NOT.done_allocate_L) then
 
-         call gemtime_start (93, 'ALLOC_', 73)
+!         call gtmg_start (93, 'ALLOC_', 73)
 
          !Allocation
          !----------
@@ -215,11 +215,11 @@
 
          done_allocate_L = .true.
 
-         call gemtime_stop  (93)
+!         call gtmg_stop  (93)
 
       end if
 
-      call gemtime_start (94, 'X_HALO', 73)
+!      call gtmg_start (94, 'X_HALO', 73)
 
       !Fill Halos of F_ILMC/MIN/MAX/AIR_MASS_M
       !---------------------------------------
@@ -231,18 +231,18 @@
 
       Adz_set_post_tr = 0
 
-      call gemtime_stop  (94)
+!      call gtmg_stop  (94)
 
       reset = 0 ! Use to accumulate DIAGNOSTICS in LOOP
 
       !-----------------------------------------------------------------------------------
       !LOOP: Compute ILMC solution while preserving mass: USE ELEMENTS inside/outside CORE
       !-----------------------------------------------------------------------------------
-      call gemtime_start (96, 'LOOP__', 73)
+!      call gtmg_start (96, 'LOOP__', 73)
       call ilmc_lam_loop ()
-      call gemtime_stop  (96)
+!      call gtmg_stop  (96)
 
-      call gemtime_start (98, 'MINMAX', 73)
+!      call gtmg_start (98, 'MINMAX', 73)
 
       !Reset Min-Max Monotonicity if requested
       !---------------------------------------
@@ -272,11 +272,11 @@
 
       end if
 
-      call gemtime_stop  (98)
+!      call gtmg_stop  (98)
 
       if (Adz_verbose>0) call ilmc_lam_write (3)
 
-      call gemtime_stop  (73)
+!      call gtmg_stop  (73)
 !
 !---------------------------------------------------------------------
 !

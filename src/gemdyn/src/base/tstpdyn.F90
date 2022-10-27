@@ -36,7 +36,7 @@
       use lun
       use tdpack
       use yyg_param
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -64,7 +64,7 @@
 
       if ( F_icn == 1 ) then       ! Compute RHS
 
-         call gemtime_start ( 20, 'RHS', 10 )
+         call gtmg_start ( 20, 'RHS', 10 )
 
 !        Compute the right-hand sides of the governing equations
          call fislp_rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
@@ -92,7 +92,7 @@
               l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
               orhsw_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
          endif
-         call gemtime_stop (20)
+         call gtmg_stop (20)
 
          call firstguess ()
 
@@ -112,13 +112,15 @@
 
 ! Perform Semi-Lagrangian advection
 
-      call gemtime_start (21, 'ADZ_MAIN', 10)
+      call gtmg_start (21, 'ADZ_MAIN', 10)
       Adz_icn= F_icn
-      call adz_main_h (Cstv_dt_8)
+!$omp parallel
+      call adz_main ()
+!$omp end parallel
 
-      call gemtime_stop(21)
+      call gtmg_stop(21)
 
-      call gemtime_start (22, 'PRE', 10)
+      call gtmg_start (22, 'PRE', 10)
 
       if ( F_icn == 1 ) call oro_adj ()
 
@@ -128,7 +130,7 @@
                  rhsb, nest_t, l_minx,l_maxx,l_miny,l_maxy,&
                  i0, j0, in, jn, k0, l_nk )
 
-      call gemtime_stop (22)
+      call gtmg_stop (22)
 
       if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 
@@ -137,7 +139,7 @@
 
       do iln=1,Schm_itnlh
 
-         call gemtime_start ( 23, 'NLI', 10 )
+         call gtmg_start ( 23, 'NLI', 10 )
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
@@ -148,21 +150,22 @@
                    sls, fis0, nl_b, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
-         call gemtime_stop (23)
+         call gtmg_stop (23)
 
-         call gemtime_start ( 24, 'SOL', 10 )
+         call gtmg_start ( 24, 'SOL', 10 )
 
 !        Solve the elliptic problem
          print_conv = (iln   == Schm_itnlh ) .and. &
                       (F_icn == Schm_itcn  ) .and. &
                       (Ptopo_couleur == 0  ) .and. &
                       (Lun_out > 0)
-
+!$omp parallel
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, print_conv)
+!$omp end parallel
 
-         call gemtime_stop (24)
+         call gtmg_stop (24)
 
-         call gemtime_start ( 25, 'BAC', 10 )
+         call gtmg_start ( 25, 'BAC', 10 )
 
 !        Back subtitution
          call  bac (lhs_sol, sls, fis0                        ,&
@@ -172,7 +175,7 @@
                     l_minx, l_maxx, l_miny, l_maxy            ,&
                     ni,nj,l_nk,i0, j0, k0, in, jn)
 
-         call gemtime_stop (25)
+         call gtmg_stop (25)
 
          if (Grd_yinyang_L) then
             call yyg_xchng_vec_uv2uv (ut0, vt0,&

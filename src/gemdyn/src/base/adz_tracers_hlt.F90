@@ -29,8 +29,8 @@
 !     ---------------------------------------------------------------
 !
       after_psadj_L = .not.F_before_psadj_L
-!      sto_phy_L= associated(mcrhsint)
-
+!     sto_phy_L= associated(mcrhsint)
+      
       call gtmg_start (33, 'ADZ_TRACERS', 10)
 
 !$omp single
