@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn)
+#----- Append EC specific module path
+list(APPEND CMAKE_MODULE_PATH $ENV{EC_CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake_rpn/modules)
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
@@ -162,7 +163,6 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
-    COMMAND /bin/cp ${CMAKE_BINARY_DIR}/GEM-config ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
 )
 

@@ -5,8 +5,8 @@ instructions below for that branch.
 # getting gem git repository
 # choose one of the following methods
 
-# 1. cloning only the necessary submodules (gemdyn, modelutils, rpnphy) in one step
-git clone --branch 5.2_cmake --recurse-submodules=":(exclude)src/rpn-si/*" git@gitlab.science.gc.ca:cpi001/gem-devel.git
+# 1. cloning only the necessary components:
+git clone --branch 5.2_cmake git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 
 # 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
@@ -17,10 +17,8 @@ cd gem-devel
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 git checkout 5.2_cmake
-# Update all submodules, including rpn-si libraries
+# Update rpn-si libraries submodules
 git submodule update --init --recursive
-# or updating only the necessary submodules, for a smaller size of the clone directory
- git -c submodule."src/rpn-si/rmn".update=none -c submodule."src/rpn-si/tdpack".update=none -c submodule."src/rpn-si/vgrid".update=none -c submodule."src/rpn-si/rpncomm".update=none submodule update --init --recursive
 
 # preparing gem-devel compilation
 ./scripts/link-dbase.sh
@@ -32,10 +30,11 @@ git checkout -b mybranch
 
 # Or with gnu
 # Please note you cannot compile with Intel and then with GNU in the same shell
+# Please also note that you should compile with RPN-SI libraries sources on science
 . ./.eccc_setup_gnu
 
 # Before the first build, or if you made important changes (such as updating
-# other submodules, or removing source files):
+# other submodules, or adding or removing source files):
 . ./.initial_setup
 
 # building and installing GEM
