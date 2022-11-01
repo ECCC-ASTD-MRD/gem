@@ -28,3 +28,6 @@ build:
 .PHONY: work
 work: 
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) work )
+
+package: cmake
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) package )
