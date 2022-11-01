@@ -24,8 +24,8 @@ target_include_directories(gemdyn PRIVATE
    ${rpncomm_GEN_INCLUDE_DIR}
    ${modelutils_INCLUDE_DIRS}
    ${modelutils_MODULES_DIR}
-   ${rpnphy_INCLUDE_DIRS}
-   ${rpnphy_MODULES_DIR}
+   ${phy_INCLUDE_DIRS}
+   ${phy_MODULES_DIR}
    ${RMN_INCLUDE_DIR_EXTRA}
 )
 
