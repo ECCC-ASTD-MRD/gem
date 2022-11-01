@@ -17,8 +17,3 @@
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
         url = https://gitlab.science.gc.ca/RPN-SI/tdpack.git
-[submodule "gem-maestro"]
-	path = gem-maestro
-	url =../gem-maestro.git
-	branch = master
-
