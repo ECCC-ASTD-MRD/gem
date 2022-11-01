@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<MODULE name="gem">
+    <SUBMITS sub_name="Prep"/>
+    <TASK name="Prep">
+        <SUBMITS sub_name="Runmod" type="user"/>
+    </TASK>
+    <NPASS_TASK name="Runmod">
+        <SUBMITS sub_name="Sortie" type="user"/> 
+    </NPASS_TASK>
+    <NPASS_TASK name="Sortie"/>
+</MODULE>
