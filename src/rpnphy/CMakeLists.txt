@@ -43,10 +43,6 @@ if (NOT VGRID_FOUND)
   find_package(VGRID ${VGRID_REQ_VERSION})
 endif()
 
-if (NOT modelutils_FOUND)
-   find_package(modelutils ${modelutils_REQ_VERSION} CONFIG)
-endif()
-
 # Adding specific flags for rpnphy
 if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
