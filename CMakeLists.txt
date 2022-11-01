@@ -71,7 +71,6 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_N
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
-  set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -ftree-vectorize")
   find_package(LAPACK)
   find_package(BLAS)
   if (EXTRA_CHECKS)
@@ -147,15 +146,11 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
 list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
-if (NOT "${modelutils_SRC}" STREQUAL "" )
-  list(APPEND BINARIES yy2global flipit yydecode yyencode)
-endif()
-if (NOT "${rpnphy_SRC}" STREQUAL "" )
+list(APPEND BINARIES yy2global flipit yydecode yyencode)
+if (NOT "${phy_SRC}" STREQUAL "" )
   list(APPEND BINARIES feseri prphynml )
 endif()
-if (NOT "${gemdyn_SRC}" STREQUAL "" )
-  list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
-endif()
+list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
 
 install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
 

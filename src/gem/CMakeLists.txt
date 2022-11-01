@@ -36,8 +36,6 @@ target_link_libraries(maingemdm
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-if (NOT "${gemdyn_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${modelutils_SRC}" STREQUAL ""
-      OR NOT "${vgrid_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${rmn_SRC}" STREQUAL "")
-    add_dependencies(maingemdm ${gemdyn_SRC} ${rpnphy_SRC} ${modelutils_SRC} ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
-endif()
+add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
+
 install(TARGETS maingemdm RUNTIME DESTINATION bin)
