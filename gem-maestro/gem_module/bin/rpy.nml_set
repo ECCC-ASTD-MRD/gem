@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+import re
+import sys
+import shutil
+import argparse
+import logging
+from rpnpy.ftnnml import *
+
+if __name__ == "__main__":
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+    
+    cleanName = lambda x: x.lower().replace('\n',' ').strip()
+
+    # Command line arguments
+    desc="Set a value, rename variable name or namelists, create new variable or namelist in a Fortran namelist file"
+    usage = """
+    %(prog)s [options] [-n namelist] key1=value1 [key2=value2] ...
+    %(prog)s [options] nml1/key1=value [nml2/key2=value] ...
+    %(prog)s [options] -- nml1/key1=value [nml2/key2=value] ...
+    """
+    epilog="""
+    """
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog, 
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-f", "--file", dest="nml_file", 
+                        type=str, default="./gem_settings.nml", 
+                        metavar="NML_FILE", 
+                        help="Name of FILE containing namelist [default 'gem_settings.nml']")
+    parser.add_argument("-b", "--backup", dest="backup", 
+                        action="store_true", 
+                        help="Create a backup (.bkp) of the input FILE")
+    parser.add_argument("-n", "--namelist", dest="nml_name", 
+                        type=str, default="", 
+                        metavar="NAMELIST", 
+                        help="NAMELIST to search for keys")
+    parser.add_argument("-c", "--clean", dest="clean", 
+                        action="store_true", 
+                        help="Clean up nml file from supurious content")
+    parser.add_argument("-d", "--downcase", dest="downcase", 
+                        action="store_true", 
+                        help="Downcase all nml and var names")
+    
+    parser.add_argument(dest="nml_keys", 
+                        nargs='+', type=str, default=[], 
+                        metavar='[key1=value] [nml2/key2=value]', 
+                        help="")
+    args = parser.parse_args()
+
+    # Create backup if requested
+    if args.backup:
+        bkpfile = args.nml_file+'.bkp'
+        try:
+            shutil.copy(args.nml_file,bkpfile)
+        except IOError:
+            logging.error('Aborting because requested backup cannot be created\n')
+            sys.exit(1)
+
+    # Check for required inputs
+    ## keymode=0
+    ## try:
+    ##     args.nml_keys[0].index('=')
+    ## except IndexError:
+    ##     parser.print_help()
+    ##     sys.exit(1)
+    ## except ValueError: 
+    ##     keymode=1
+
+    namelist = (args.nml_name if args.nml_name else '')
+    setlist  = args.nml_keys
+    ## if keymode:
+    ##     try:
+    ##         namelist = args.nml_keys[0]
+    ##         setlist  = args.nml_keys[1:]
+    ##     except IndexError: 
+    ##         parser.print_help()
+    ##         sys.exit(1)
+    
+    # Add/modify value for key in settings file
+    cfg = FtnNmlFile(args.nml_file)
+    for entry in setlist:
+        try:
+            (key,value) = re.split('=',entry)
+        except ValueError:
+            logging.warning('Key/value pairs must be written as key=value or nml/key=value... skipping {}\n'.format(entry))
+            continue
+        try:
+            (nml2, key2) = re.split('/',key)
+        except ValueError:
+            if namelist.strip():
+                (nml2, key2) = (namelist, key)
+            else:
+                logging.warning('Key/value pairs must be written as key=value or nml/key=value... skipping {}\n'.format(entry))
+                continue
+        (nml2, key2) = (cleanName(nml2), cleanName(key2))
+        if not nml2 in cfg.keys():
+            cfg.add(FtnNmlSection(nml2))
+        if not key2 in cfg.get(nml2).keys():
+            cfg.get(nml2).add(FtnNmlKeyVal(key2,FtnNmlVal(value)))
+        else:
+            cfg.get(nml2).get(key2).get('v').set(value)
+    
+    # Write modified settings file
+    try:
+        cfg.write(args.nml_file,clean=args.clean,uplowcase=args.downcase)
+    except IOError:
+        logging.error('Cannot write to {}\n'.format(args.nml_file))
+        sys.exit(1)
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
