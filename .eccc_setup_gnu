@@ -2,23 +2,28 @@
 
 # Source this file to:
 # - Load profile and code-tools for gnu
-# - Load libraries
+# - Load libraries (on ECCC side only)
 # - Load a script for common setup to all compilers
 
 DOMAIN=`hostname -d`
 
-if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/rhel-8-amd-64/gnu-9.3.0.sh
-#    . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.4.0_ubuntu-18.04-amd64-64
-#    . r.load.dot rpn/vgrid/6.6.0
-#    . r.load.dot /home/cpi001/data/ords/packages-ssm/rpncomm_4.6.2-gnu-7.4.0_ubuntu-18.04-amd64-64
-else 
-    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
+# Please update rpn-si submodules on gpscc and science
+if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gpscc2/gnu-9.3.0
+elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gnu-9.3.0
+else
+    # RPN-SI libraries available for gnu 7.5.0 on ECCC side
+    # You can either use the installed version (19.7.0) or use the sources (20 alpha)
+    . r.load.dot /fs/ssm/eccc/mrd/rpn/code-tools/ENV/cdt-1.5.8/gnu-7.5.0
     . r.load.dot rpn/libs/19.7.0
     . r.load.dot rpn/libs/19.7.1/tdpack_1.6.0-gnu-7.5.0_ubuntu-18.04-amd64-64
     . r.load.dot rpn/vgrid/6.6.0
     . r.load.dot /data/ords/armn/armncpi/packages-ssm/rpncomm_4.6.2-gnu-7.5.0_ubuntu-18.04-amd64-64
 fi
+
+# We need a more recent version of cmake than the one available by default
+. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
