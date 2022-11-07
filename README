@@ -1,6 +1,9 @@
 # How to get, compile and run GEM at the CMC.
-Warning: 5.2_cmake branch uses submodules. Make sure you follow the
-instructions below for that branch.
+# For general information, a setup script and information on Maestro, see
+# # README_general file
+
+Warning: 5.2_cmake and dev branches use submodules. Make sure you follow the
+instructions below.
 
 # getting gem git repository
 # choose one of the following methods
@@ -17,7 +20,7 @@ cd gem-devel
 git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 git checkout 5.2_cmake
-# Update rpn-si libraries submodules
+# Update rpn-si libraries and cmake_rpn submodules
 git submodule update --init --recursive
 
 # preparing gem-devel compilation
