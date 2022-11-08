@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn/modules)
+
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
