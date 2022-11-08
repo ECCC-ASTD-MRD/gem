@@ -22,7 +22,11 @@ include_directories(
   ${CMAKE_BINARY_DIR}/src/tdpack
   ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules )
 
-target_include_directories(rpnphy PRIVATE ../include base utils)
+target_include_directories(rpnphy PRIVATE
+  ../include
+  base
+  utils
+)
 add_dependencies(rpnphy rpnphy_cpl_stubs)
 add_dependencies(rpnphy rpnphy_chm_stubs)
 

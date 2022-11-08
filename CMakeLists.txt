@@ -80,6 +80,11 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   endif()
 endif()
 
+if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
+  find_package(LAPACK)
+  find_package(BLAS)
+endif()
+
 # Printing flags
 message(STATUS "(EC) CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 message(STATUS "(EC) CMAKE_Fortran_FLAGS=${CMAKE_Fortran_FLAGS}")

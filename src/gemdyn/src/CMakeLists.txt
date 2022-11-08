@@ -25,6 +25,11 @@ target_include_directories(gemdyn PRIVATE
    ${CMAKE_BINARY_DIR}/src/rpnphy/rpnphy/modules
 )
 
+target_link_libraries(gemdyn
+  $<$<LINK_LANGUAGE:Fortran>:OpenMP::OpenMP_Fortran>
+  $<$<LINK_LANGUAGE:C>:OpenMP::OpenMP_C>
+  )
+
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_CHECKS AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_compile_options(gemdyn PRIVATE "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:Fortran>>:-fcheck=bounds>" )
