@@ -1,0 +1,10 @@
+<NODE_RESOURCES>
+  <BATCH machine="${FRONTEND}" 
+         memory="5G" 
+         mpi="0" 
+         wallclock="30"
+         catchup="3" 
+         cpu="1" 
+         soumet_args="-waste 100" />
+  <ABORT_ACTION name="stop"/>
+</NODE_RESOURCES>

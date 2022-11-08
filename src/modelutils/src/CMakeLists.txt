@@ -33,10 +33,3 @@ add_dependencies(modelutils_stubs ${PROJECT_NAME}_build_info)
 
 add_library(modelutils_tmg_stubs STATIC tmg_stubs/tmg_stubs.F90)
 add_dependencies(modelutils_tmg_stubs ${PROJECT_NAME}_build_info)
-
-install(TARGETS modelutils modelutils DESTINATION lib)
-install(TARGETS modelutils_ov_ifort modelutils_ov_ifort DESTINATION lib)
-install(TARGETS modelutils_stubs modelutils_stubs DESTINATION lib)
-install(TARGETS modelutils_tmg_stubs modelutils_tmg_stubs DESTINATION lib)
-install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/ DESTINATION include)

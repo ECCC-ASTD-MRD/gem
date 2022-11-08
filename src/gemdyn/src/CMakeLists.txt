@@ -24,10 +24,15 @@ target_include_directories(gemdyn PRIVATE
    ${rpncomm_GEN_INCLUDE_DIR}
    ${modelutils_INCLUDE_DIRS}
    ${modelutils_MODULES_DIR}
-   ${rpnphy_INCLUDE_DIRS}
-   ${rpnphy_MODULES_DIR}
+   ${phy_INCLUDE_DIRS}
+   ${phy_MODULES_DIR}
    ${RMN_INCLUDE_DIR_EXTRA}
 )
+
+target_link_libraries(gemdyn
+  $<$<LINK_LANGUAGE:Fortran>:OpenMP::OpenMP_Fortran>
+  $<$<LINK_LANGUAGE:C>:OpenMP::OpenMP_C>
+  )
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_CHECKS AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -35,7 +40,3 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
     message(STATUS "(EC) Extra debug flags for gemdyn: -fcheck=bounds")
   endif()
 endif()
-
-install(TARGETS gemdyn gemdyn DESTINATION lib)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/${NAME}-config DESTINATION bin)
-install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)

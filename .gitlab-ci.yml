@@ -21,6 +21,7 @@ build_gnu-9.3.0:
   - dev
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
     - make cmake-all
@@ -36,6 +37,7 @@ build_gnu-12.1.0:
   - dev
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
@@ -56,6 +58,7 @@ build_intel_with_rpn:
   - dev
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
@@ -72,6 +75,7 @@ build_intel:
   - dev
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
@@ -93,6 +97,7 @@ build_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -114,6 +119,7 @@ CANO_W7cascP_intel:
   only:
   - dev
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -135,6 +141,7 @@ CANO_dcmip163r100_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -156,6 +163,7 @@ CANO_wil7_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -177,6 +185,7 @@ GEM_cfgs_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs
@@ -198,6 +207,7 @@ GEM_GY_FISL_P_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -219,6 +229,7 @@ GEM_GY_FISL_H_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
@@ -240,6 +251,7 @@ GEM_LU_FISL_H_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -261,6 +273,7 @@ GEM_LU_OFFC_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -282,6 +295,7 @@ PTOPO_GYH_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -303,6 +317,7 @@ PTOPO_LUP_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -324,6 +339,7 @@ RSTRT_GYP_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -345,6 +361,7 @@ THEO_bubbleG_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -362,6 +379,7 @@ THEO_schar_intel:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
@@ -380,6 +398,7 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -402,6 +421,7 @@ CANO_W7cascP_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -424,6 +444,7 @@ CANO_dcmip163r100_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -446,6 +467,7 @@ CANO_wil7_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -468,6 +490,7 @@ GEM_cfgs_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=GEM_cfgs
@@ -490,6 +513,7 @@ GEM_GY_FISL_P_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -513,6 +537,7 @@ GEM_GY_FISL_H_gnu:
   - dev
   allow_failure: true
   script:
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
@@ -535,6 +560,7 @@ GEM_LU_FISL_H_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -557,6 +583,7 @@ GEM_LU_OFFC_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -579,6 +606,7 @@ PTOPO_GYH_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -601,6 +629,7 @@ PTOPO_LUP_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -623,6 +652,7 @@ RSTRT_GYP_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -645,6 +675,7 @@ THEO_bubbleG_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -663,6 +694,7 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
+    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar

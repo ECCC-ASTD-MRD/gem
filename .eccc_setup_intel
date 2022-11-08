@@ -8,19 +8,28 @@
 export COMPILER_SUITE=intel
 DOMAIN=`hostname -d`
 
-if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/rhel-8-icelake-64/inteloneapi-2022.1.2.sh
+if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gpscc2/inteloneapi-2022.1.2
+    export COMPILER_VERSION=2021.5.0
+elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/inteloneapi-2022.1.2
     export COMPILER_VERSION=2021.5.0
     . r.load.dot rpn/libs/20220216
     . r.load.dot rpn/vgrid/20220216
     . r.load.dot /home/cpi001/data/ords/packages-ssm
 else
-    . ./ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
+    
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/ECCC/intel-19.0.3.199
+    . r.load.dot /fs/ssm/main/opt/openmpi/openmpi-3.1.2--hpcx-2.4.0-mofed-4.6--intel-19.0.3.199
+    . r.load.dot /fs/ssm/main/opt/openmpi-setup/openmpi-setup-0.3
     export COMPILER_VERSION=19.0.3.199
     . r.load.dot rpn/libs/19.7.0
     . r.load.dot rpn/libs/19.7.1
     . r.load.dot rpn/vgrid/6.6.0
     . r.load.dot /data/ords/armn/armncpi/packages-ssm
 fi
+
+# We need a more recent version of cmake than the one available by default
+. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 . ./.common_setup ${COMPILER_SUITE}
