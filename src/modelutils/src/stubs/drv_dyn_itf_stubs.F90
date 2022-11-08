@@ -51,7 +51,7 @@
          character(len=512) :: tmp_S
          nullify(F_dxdy)
          F_istat = -1
-         write(tmp_S,*) F_i0,F_j0,F_ni,F_nj
+         write(tmp_S, '(i0,1x,i0,1x,i0,1x,i0)') F_i0,F_j0,F_ni,F_nj
          call msg(MSG_ERROR, '(dyn_dxdy) Called a Stub with: '//tmp_S)
          return
       end function dyn_dxdy

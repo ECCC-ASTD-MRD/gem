@@ -52,6 +52,7 @@ module phy_init_mod
    logical, parameter :: ALONGX = .true.
    logical, parameter :: FILL = .true.
    logical, parameter :: DO_ABORT = .true.
+   logical, parameter :: PBL_FLUX_CONSISTENCY = .true.
 
    integer, external :: chm_init
 
@@ -292,6 +293,8 @@ contains
       ier = min(wb_put('phy/sfcflx_filter_iter', sfcflx_filter_iter, options), ier)
       ier = min(wb_put('phy/convec'  ,convec   , options),ier)
       ier = min(wb_put('phy/delt'    ,delt     , options),ier)
+      if (fluvert /= 'SURFACE') &
+           ier = min(wb_put('phy/flux_consist', PBL_FLUX_CONSISTENCY, options), ier)
       ier = min(wb_put('phy/rad_off', (radia == 'NIL'), options),ier)
       ier = min(wb_put('phy/radslope',radslope , options),ier)
       ier = min(wb_put('phy/update_alwater', (radia == 'CCCMARAD2'), options),ier)
@@ -393,6 +396,8 @@ contains
       ier = min(wb_get('sfc/indx_water'  ,indx_water  ),ier)
       ier = min(wb_get('sfc/indx_ice'    ,indx_ice    ),ier)
       ier = min(wb_get('sfc/indx_urb'    ,indx_urb    ),ier)
+      ier = min(wb_get('sfc/indx_lake'   ,indx_lake   ),ier)
+      ier = min(wb_get('sfc/indx_river'  ,indx_river  ),ier)
       ier = min(wb_get('sfc/indx_agrege' ,indx_agrege ),ier)
       ier = min(wb_get('sfc/l07_ah'      ,l07_ah      ),ier)
       ier = min(wb_get('sfc/l07_am'      ,l07_am      ),ier)
@@ -488,6 +493,9 @@ contains
 
       if (RMN_IS_OK(F_istat)) &
            F_istat = itf_cpl_init(F_path_S, print_L, unout, F_dateo, F_dt)
+
+!!$      print *,'(phy_init) printbus' ; call flush(6)
+!!$      call printbus('P')
 
       phy_init_ctrl = PHY_CTRL_INI_OK
       ! --------------------------------------------------------------------

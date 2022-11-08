@@ -89,7 +89,7 @@ contains
      case ('stderr','STDERR')
         call msg_toall(MSG_WARNING,'(sl_put_i4) STDERR is ignored by the MSG messaging system')
      case DEFAULT
-        write(tmp_S, *) val
+        write(tmp_S, '(i0)') val
         call msg_toall(MSG_WARNING,'(sl_put_i4) cannot set '//trim(key)//'='//trim(tmp_S))
         return
      end select

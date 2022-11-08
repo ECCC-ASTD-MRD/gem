@@ -59,6 +59,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    real :: dt, rhoair
 
    integer :: F_istat
+   character(len=1024) :: msg_S
 
    !@Author B. Bilodeau (Dec 1998)
    !@Revisions
@@ -84,14 +85,17 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    ! 019      J. Toviessi (July 2009) - added modifications for radslope
    ! 020      L. Spacek   (Nov 2011)  - insert calculations of tve, za etc.
    !                                    call to calz, lin_kdif_sim1
+   ! 021      K. Winger,M. Mackay   (Feb 2017/Sep 2022)  - Add call to lake and river (M.A.) models
    !*@/
 #include <msg.h>
    include "sfcinput.cdk"
 
-   logical :: do_glaciers, do_ice, do_urb
+   logical :: do_glaciers, do_ice, do_urb, do_lake, do_river
    integer :: i, k, sommet
-   integer :: ni_soil,  ni_glacier,  ni_water,  ni_ice, ni_urb
-   integer :: siz_soil, siz_glacier, siz_water, siz_ice, siz_urb
+   integer :: ni_soil,  ni_glacier,  ni_water,  ni_ice, ni_urb, ni_lake, &
+        ni_river
+   integer :: siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, siz_lake, &
+        siz_river 
    real :: lemin, lemax, mask
 
    !     les poids
@@ -102,22 +106,27 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    integer,dimension(ni,indx_max) :: rangs
    real   ,dimension(ni,indx_max) :: poids
    integer,dimension(ni)            :: rg_soil, rg_water, rg_ice,  &
-        rg_glacier, rg_urb
+        rg_glacier, rg_urb, rg_lake, rg_river
    integer,dimension(2,ni)          :: lcl_indx
    integer,dimension(nvarsurf)      :: ptr_soil, ptr_water, ptr_ice, &
-        ptr_glacier, ptr_urb
+        ptr_glacier, ptr_urb, ptr_lake, ptr_river
    real,   dimension(surfesptot*ni) :: bus_soil, bus_water, bus_ice, &
-        bus_glacier, bus_urb
+        bus_glacier, bus_urb, bus_lake, bus_river
    !
    real, pointer, dimension(:)      :: zdtdiag, zmg, zfvapliq, zfvapliqaf, &
         zglacier, zglsea, zpmoins, zpplus, ztdiag, ztnolim, zurban, zztsl, &
         zqdiag, zudiag, zvdiag,zicedp,ztwater, zqdiagstn, ztdiagstn, &
-        zudiagstn, zvdiagstn, zqdiagstnv, ztdiagstnv, zudiagstnv, zvdiagstnv
+        zudiagstn, zvdiagstn, zqdiagstnv, ztdiagstnv, zudiagstnv, zvdiagstnv, &
+        zlakefr, zriverfr, zgridarea, zlakd, zlakearea
+   real, pointer, dimension(:)    :: ztke, zhdpth, zlkiceh, zsniceh, zexpw, zdtemp, zdelu, zgred, zrhomix, ztsed, zroficeh
+   real, pointer, dimension(:)    :: zsnol, zrhosnol, ztsnowl, zalbsnol, zwsnowl, zlst, zhlaksil, zficl
    real, pointer, dimension(:,:)    :: poids_out, zfvap, zilmo, zrunofftot, &
-        zrunofftotaf, ztmoins, ztplus, &
+        ztmoins, ztplus, &
         zhuplus,zuplus,zvplus,zsnodp, &
         zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp, zqdiagtypv, ztdiagtypv, &
         zudiagtypv, zvdiagtypv, ztddiagtyp, ztddiagtypv
+   real, pointer, dimension(:,:)  :: ztlak, zlatflw, zwatflow
+   real, pointer, dimension(:)    :: zrofinlak, zlstd, zlstf, zlfxi, zlfxo
    !     ---------------------------------------------------------------
    F_istat = RMN_ERR
 
@@ -152,6 +161,36 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    MKPTR1D(ztnolim, tnolim)
    MKPTR1D(zurban, urban)
    MKPTR1D(zztsl, ztsl)
+   MKPTR1D(zlakefr, lakefr)
+   MKPTR1D(zgridarea, gridarea)
+   MKPTR1D(zlakearea, lakearea)
+   MKPTR1D(zlakd, lakd)
+   MKPTR1D(zriverfr, riverfr)
+
+   MKPTR1D(ztke, tke)
+   MKPTR1D(zhlaksil, hlaksil)
+   MKPTR1D(zrofinlak, rofinlak)
+   MKPTR1D(zlfxi, lfxi)
+   MKPTR1D(zlfxo, lfxo)
+   MKPTR1D(zlstd, lstd)
+   MKPTR1D(zlstf, lstf)
+   MKPTR1D(zlst, lst)
+   MKPTR1D(zhdpth, hdpth)
+   MKPTR1D(zlkiceh, lkiceh)
+   MKPTR1D(zsniceh, sniceh)
+   MKPTR1D(zexpw, expw)
+   MKPTR1D(zdtemp, dtemp)
+   MKPTR1D(zdelu, delu)
+   MKPTR1D(zgred, gred)
+   MKPTR1D(zrhomix, rhomix)
+   MKPTR1D(ztsed, tsed)
+   MKPTR1D(zroficeh, roficeh)
+   MKPTR1D(zsnol,snol)
+   MKPTR1D(zficl,ficl)
+   MKPTR1D(zrhosnol,rhosnol)
+   MKPTR1D(ztsnowl,tsnowl)
+   MKPTR1D(zalbsnol,albsnol)
+   MKPTR1D(zwsnowl,wsnowl)
 
    MKPTR2D(poids_out, sfcwgt)
    MKPTR2D(zfvap, fvap)
@@ -159,7 +198,6 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    MKPTR2D(zqdiagtyp, qdiagtyp)
    MKPTR2D(zqdiagtypv, qdiagtypv)
    MKPTR2D(zrunofftot, runofftot)
-   MKPTR2D(zrunofftotaf, runofftotaf)
    MKPTR2D(zsnodp, snodp)
    MKPTR2D(ztddiagtyp, tddiagtyp)
    MKPTR2D(ztddiagtypv, tddiagtypv)
@@ -175,6 +213,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    MKPTR2D(zvdiagtypv, vdiagtypv)
    MKPTR2D(zvplus, vplus)
 
+   MKPTR2D(ztlak, tlak)
+   MKPTR2D(zlatflw, latflw)
+   MKPTR2D(zwatflow, watflow)
+
 
    ! Update coupling fields GL, TM, SD and I8
 
@@ -186,14 +228,14 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
            ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
    endif
 
-   ! mg, glsea, glacier et urban doivent etre bornes entre 0 et 1
+   ! mg, glsea, glacier, urban, lakefr, et riverfr doivent etre bornes entre 0 et 1
    ! pour que les poids soient valides
 
    do i=1,ni
-      lemin = min(zmg(i),zglsea(i),zglacier(i),zurban(i))
-      lemax = max(zmg(i),zglsea(i),zglacier(i),zurban(i))
+      lemin = min(zmg(i),zglsea(i),zglacier(i),zurban(i),zlakefr(i),zriverfr(i))
+      lemax = max(zmg(i),zglsea(i),zglacier(i),zurban(i),zlakefr(i),zriverfr(i))
       if (lemin.lt.0. .or. lemax.gt.1.) then
-         call msg_toall(MSG_ERROR, '(sfc_main) INVALID WEIGHTS FOR SURFACE PROCESSES, MAKE SURE THAT LAND-SEA MASK, SEA ICE FRACTION, FRACTION OF GLACIERS, MASK OF URBAN AREAS, ARE BOUNDED BETWEEN 0 AND 1')
+         call msg_toall(MSG_ERROR, '(sfc_main) INVALID WEIGHTS FOR SURFACE PROCESSES, MAKE SURE THAT LAND-SEA MASK, SEA ICE FRACTION, FRACTION OF GLACIERS, MASK OF URBAN AREAS lakes rivers, ARE BOUNDED BETWEEN 0 AND 1')
          return
       endif
    end do
@@ -201,7 +243,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    ! initialisations
 
    rangs=0. ; poids=0. ; rg_soil=0. ; rg_glacier=0.
-   rg_water=0. ; rg_ice=0. ; rg_urb=0.
+   rg_water=0. ; rg_ice=0. ; rg_urb=0. ; rg_lake=0. ; rg_river=0.
 
    ! calcul des poids
 
@@ -220,10 +262,22 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
       poids(i,indx_urb )    =     mask  * (1.-zglacier(i))*zurban(i)
       ! glaciers continentaux
       poids(i,indx_glacier) =     mask  * zglacier(i)
-      ! eau
-      poids(i,indx_water)   = (1.-mask) * (1.-zglsea(i))
+      ! eau (***salee/ocean si lacs et rivieres specifiees)
+      poids(i,indx_water)   = (1.-mask - zlakefr(i) - zriverfr(i) ) * (1.-zglsea(i))
+      !mackay test - restore limit
+      ! M.A. to be verified 
+       if ( schmlake.eq.'CSLM'.and. poids(i,indx_water) .lt. critmask) then ! If less than 0.1%
+           poids(i,indx_water) = 0.0
+       endif
       ! glace marine
-      poids(i,indx_ice)     = (1.-mask) * zglsea(i)
+      poids(i,indx_ice)     = (1.-mask - zlakefr(i) - zriverfr(i) ) *     zglsea(i)
+      ! lacs
+      poids(i,indx_lake)    =   zlakefr(i)
+      if ( schmlake.eq.'CSLM'.and. poids(i,indx_lake) .lt. critmask) then ! If less than 0.1%
+          poids(i,indx_lake) = 0.0
+      endif
+      ! rivieres
+      poids(i,indx_river)   =   zriverfr(i)
 
    end do
 
@@ -232,6 +286,8 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    ni_soil      = 0; bus_soil(1)    = 0.
    ni_glacier   = 0; bus_glacier(1) = 0.
    ni_urb       = 0; bus_urb(1)     = 0.
+   ni_lake      = 0; bus_lake(1)    = 0.
+   ni_river     = 0; bus_river(1)   = 0.
 
    ! definition des "rangs"
    ! agregation
@@ -268,6 +324,18 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          rg_urb(ni_urb)       = i
       endif
 
+      if (poids(i,indx_lake).gt.0.0) then
+         ni_lake              = ni_lake + 1
+         rangs(i,indx_lake)   = ni_lake
+         rg_lake(ni_lake)     = i
+      endif
+
+      if (poids(i,indx_river).gt.0.0) then
+         ni_river             = ni_river + 1
+         rangs(i,indx_river)   = ni_river
+         rg_river(ni_river)     = i
+      endif
+
    end do DO_AGREG
 
    !******************************
@@ -300,7 +368,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
               ni_soil, ni_soil, nk-1)
 
       elseif (schmsol.eq.'SVS') then
-
+         
          call svs(bus_soil, siz_soil, &
               ptr_soil, nvarsurf, &
               dt, kount, trnch, &
@@ -472,26 +540,157 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
            ni, indx_urb, trnch, CP_FROM_SFCBUS)
    endif
 
+
+   !******************************
+   !        LAKES                *
+   !******************************
+
+   sommet = 1
+   do i=1,nvarsurf
+      ptr_lake(i) = sommet
+      sommet = sommet + vl(i)%niveaux * vl(i)%mul * vl(i)%mosaik * ni_lake
+   end do
+
+   siz_lake = max(surfesptot*ni_lake,1)
+   write(msg_S,*) siz_lake
+
+   do_lake = .false.
+
+   if (siz_lake.gt.1) then
+
+      do_lake = .true.
+
+      do i=1,siz_lake
+         bus_lake(i) = 0.0
+      end do
+
+      ! transvidage des 3 bus dans bus_lake
+      call copybus3(bus_lake, siz_lake, &
+           ptr_lake, nvarsurf, &
+           rg_lake, ni_lake, &
+           ni, indx_lake, trnch, CP_TO_SFCBUS)
+
+      lcl_indx(1,1:ni_lake) = rg_lake(1:ni_lake)
+      lcl_indx(2,1:ni_lake) = trnch
+
+      if (schmlake.eq.'CSLM') then
+         
+         call cslm_main( bus_lake, siz_lake   ,  &
+           ptr_lake, nvarsurf    ,  &
+           lcl_indx , trnch, kount,  &
+           ni_lake , ni_lake, nk-1 )
+      else
+         
+         call water2( bus_lake, siz_lake   ,  &
+           ptr_lake, nvarsurf    ,  &
+           lcl_indx , kount,  &
+           ni_lake , ni_lake, nk-1 )
+         if (phy_error_L) return
+      endif
+
+      call copybus3(bus_lake, siz_lake, &
+           ptr_lake, nvarsurf, &
+           rg_lake, ni_lake, &
+           ni, indx_lake, trnch, CP_FROM_SFCBUS)
+
+   endif
+
+   ! !******************************
+   ! !        RIVERS       - NOT DEFINED - THIS IS ONLY A PLACEHOLDER
+   ! !******************************
+
+   ! sommet = 1
+   ! do i=1,nvarsurf
+   !    ptr_river(i) = sommet
+   !    sommet = sommet + vl(i)%niveaux * vl(i)%mul * vl(i)%mosaik * ni_river
+   ! end do
+
+   ! siz_river = max(surfesptot*ni_river,1)
+
+   ! do_river = .false.
+
+   ! if (siz_river.gt.1) then
+
+   !    do_river = .true.
+
+   !    do i=1,siz_river
+   !       bus_river(i) = 0.0
+   !    end do
+
+   !    ! transvidage des 3 bus dans bus_river
+   !    call copybus3(bus_river, siz_river, &
+   !         ptr_river, nvarsurf, &
+   !         rg_river, ni_river, &
+   !         ni, indx_river, trnch, CP_TO_SFCBUS)
+
+   !    lcl_indx(1,1:ni_river) = rg_river(1:ni_river)
+   !    lcl_indx(2,1:ni_river) = trnch
+
+   !    call water2( bus_river, siz_river   ,  &
+   !         ptr_river, nvarsurf    ,  &
+   !         lcl_indx , kount,  &
+   !         ni_river , ni_river, nk-1 )
+   !       if (phy_error_L) return
+
+   !    call copybus3(bus_river, siz_river, &
+   !         ptr_river, nvarsurf, &
+   !         rg_river, ni_river, &
+   !         ni, indx_river, trnch, CP_FROM_SFCBUS)
+   ! endif
+
+!  For CSLM: reduce runofftot and latflaf by the fraction of lakes for all land surfaces 
+!  except lake before the aggregation is performed (to be modified once rivers are activated)
+   !  and pass the reduced amount to CSLM as input at the next timestep
+
+
+   !!!!!!!!!! CSLM_RUNOFF  TO BE MOVED AND MADE TO WORK FOR ISBA !!!!!!!!!!!!!!!!
+   
+   CSLM_RUNOFF:if (schmlake .eq.'CSLM') then
+      zrofinlak = 0.
+
+      if (schmsol .eq.'SVS') then
+         ! Adjustments only defined for SVS for now. 
+         do i=1,ni
+            if (poids(i,indx_lake).gt.0.0) then
+               ! Surface runoff
+               zrofinlak(i)             = zrunofftot(i,indx_soil) * (zlakefr(i)) * poids(i,indx_soil)/poids(i,indx_lake)
+               zrunofftot(i,indx_soil)  = zrunofftot(i,indx_soil) * (1-zlakefr(i))
+               ! Add a portion of lateral flow coming from the land tile
+               do k=1,khyd
+                  zrofinlak(i)          = zrofinlak(i) + (zlatflw(i,k) * (zlakefr(i)) * poids(i,indx_soil)/poids(i,indx_lake))
+                  zlatflw(i,k)          = zlatflw(i,k)               * (1-zlakefr(i))
+               enddo
+               ! Add a portion of base drainage from land tile
+               zrofinlak(i)             = zrofinlak(i) + (zwatflow(i,khyd+1) * (zlakefr(i)) * poids(i,indx_soil)/poids(i,indx_lake))
+               zwatflow(i,khyd+1)       = zwatflow(i,khyd+1)         * (1-zlakefr(i))
+               if (do_urb) then
+                  zrofinlak(i)          = zrofinlak(i) + (zrunofftot(i,indx_urb) * (zlakefr(i)) * poids(i,indx_urb)/poids(i,indx_lake))
+                  zrunofftot(i,indx_urb)= zrunofftot(i,indx_urb)     * (1-zlakefr(i))
+               endif
+               if (do_glaciers) then
+                  zrofinlak(i)          = zrofinlak(i) + (zrunofftot(i,indx_glacier) * (zlakefr(i)) * poids(i,indx_glacier)/poids(i,indx_lake))
+                  zrunofftot(i,indx_glacier) = zrunofftot(i,indx_glacier) * (1-zlakefr(i))
+               endif
+               
+            endif
+         enddo
+      endif
+   ENDIF CSLM_RUNOFF
+
    !******************************
    !     AGREGATION              *
    !******************************
 
-   call agrege2( &
-        bus_soil, bus_glacier, bus_water, bus_ice, bus_urb, &
-        siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, &
-        ni_soil,  ni_glacier,  ni_water,  ni_ice,  ni_urb, &
-        ptr_soil, ptr_glacier, ptr_water, ptr_ice, ptr_urb, &
+   call agrege3( &
+        bus_soil, bus_glacier, bus_water, bus_ice, bus_urb, bus_lake, bus_river, &
+        siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, siz_lake, siz_river, &
+         ni_soil,  ni_glacier,  ni_water,  ni_ice,  ni_urb,  ni_lake,  ni_river, &
+        ptr_soil, ptr_glacier, ptr_water, ptr_ice, ptr_urb, ptr_lake, ptr_river, &
         nvarsurf, &
         rangs, poids, ni, trnch, &
-        do_glaciers, do_ice, do_urb)
+        do_glaciers, do_ice, do_urb, do_lake, do_river)
 
-   !       ACCUMULATE RUNNOFF FOR EACH SURFACE TYPE
-   do k=1,nsurf+1
-      do i=1,ni
-         zrunofftotaf(i,k) = zrunofftotaf(i,k) + zrunofftot(i,k)
-      enddo
-   enddo
-
+  
    !*****************************
    ! UPDATE DIAG LEVEL AT START *
    !*****************************
@@ -547,6 +746,12 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
 
    if (SCHMURB.ne.'NIL') then
       poids_out(:,indx_urb    ) = poids(:,indx_urb    )
+   endif
+   if (SCHMLAKE.ne.'NIL') then
+      poids_out(:,indx_lake   ) = poids(:,indx_lake   )
+   endif
+   if (SCHMRIVER.ne.'NIL') then
+      poids_out(:,indx_river  ) = poids(:,indx_river  )
    endif
 
    do i=1,ni

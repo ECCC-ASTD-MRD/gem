@@ -39,39 +39,39 @@ SUBROUTINE read_isccpdata()
 
 !MODULES
 
-      INTEGER  fclos,fnom,longueur
-      EXTERNAL fclos,fnom,longueur,getenvc
+      INTEGER  fclos,fnom
+      EXTERNAL fclos,fnom,getenvc
 
 !----------------------------------------------------------------------
 
 ! ALWAYS CHECK FOR DATA FILES IN $EXECDIR/
 
       call getenvc('EXECDIR',execdir )
-      execdir = execdir(1:longueur(execdir)) // '/'
+      execdir = execdir(1:len_trim(execdir)) // '/'
 
 ! OTHERWISE, OPEN THE FILES AND READ THE DATA IN DIRECTORY
 !     '$' // $MODEL // '/dfiles/ISCCP_DATA_FILES'
 
       call getenvc('MODEL',modeln )
       call getenvc( modeln,modelp )
-      modelp = modelp(1:longueur(modelp)) // '/dfiles/ISCCP_DATA_FILES/'
+      modelp = modelp(1:len_trim(modelp)) // '/dfiles/ISCCP_DATA_FILES/'
 
 ! START WITH tautab
 
       fn  ='tautab.formatted'
-      fe  = execdir(1:longueur(execdir)) // fn
+      fe  = execdir(1:len_trim(execdir)) // fn
 
       inquire( file=fe,err=0001,iostat=io,exist=ex )
 
       if (ex) then
          fn = fe
       else
-         fn  = modelp(1:longueur(modelp)) // fn
+         fn  = modelp(1:len_trim(modelp)) // fn
       endif
 
       goto 2
 
-    1 fn  = modelp(1:longueur(modelp)) // fn
+    1 fn  = modelp(1:len_trim(modelp)) // fn
 
     2 fio = 0
       IER = fnom( fio, fn,'SEQ+FTN+FMT+OLD',0 )
@@ -83,19 +83,19 @@ SUBROUTINE read_isccpdata()
 ! END WITH invtau
 
       fn  ='invtau.formatted'
-      fe  = execdir(1:longueur(execdir)) // fn
+      fe  = execdir(1:len_trim(execdir)) // fn
 
       inquire( file=fe,err=0003,iostat=io,exist=ex )
 
       if (ex) then
          fn = fe
       else
-         fn  = modelp(1:longueur(modelp)) // fn
+         fn  = modelp(1:len_trim(modelp)) // fn
       endif
 
       goto 4
 
-    3 fn  = modelp(1:longueur(modelp)) // fn
+    3 fn  = modelp(1:len_trim(modelp)) // fn
 
     4 fio = 0
       IER = fnom( fio, fn,'SEQ+FTN+FMT+OLD',0 )

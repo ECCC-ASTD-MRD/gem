@@ -178,7 +178,7 @@ load_ssm_bndl_part() {
    fi
    if [[ x$myarch == xall || x$myarch == x${BASE_ARCH} ]] ; then
       [[ x$mypkg != x ]] && mypkg="${mypkg}@"
-      . s.ssmuse.dot ${mypkg}$mydom
+      . r.load.dot ${mypkg}$mydom
    fi
 }
 

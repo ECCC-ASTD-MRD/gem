@@ -1,51 +1,46 @@
-!# Model 2: ... as Model 1 but with ptr w/ right rank and bounds
-!# * close to original gesdict
-!# * auto-generated phyptr/phybus module
-!# * ptr w/ right rank and bounds... compiler can check rank, bounds are less coder error prone
-!# * VS more explicit
-!# * @ now for multi cat
-!# * multi cat ok for multi-lvl
 
-!# TODO: change VS=? by ?vgrid=?
-
-   !# Notes for VS=:        #TODO: double check this
-   !# SLB: 3d, Mom levels    (stag=0)
-   !# SLC: 3d, Thermo levels (stag=1)
-   !# SLS: 3d, Energy levels (stag=2)
-   !# ROW: 2d, surface or ground levels
-   !# '*N': can be added to SLB, SLC, SLS for multi-categories
-   !# '*N': can be added to ROW for multi-levels or multi categories (not both yet)
-   !# '@N': mosaic no longer supported
 
 #include "phymkptr.hf"
 
-!!$   !# 2d sfc vars
-!!$   PHYVAR2D1(v1, 'VN=v1 ; ON=v1 ; VB=v0 ; VD=v1 desc')
-!!$   PHYVAR2DC(v2, 'VN=v2 ; ON=v2 ; VB=v0 ; VD=v2 desc', lcond)
-!!$
-!!$   !# 2d+1 (3d) sfc vars (multi lvl)
-!!$   PHYVAR3D1(v3, 'VN=v3 ; ON=v3 ; VB=v0 ; VS=A*2 ; VD=v3 desc')
-!!$   PHYVAR3DC(v4, 'VN=v4 ; ON=v4 ; VB=v0 ; VS=A*2 ; VD=v4 desc', lcond)
-!!$
-!!$   !# 2d+1 (3d) sfc vars (multi cat) ... ?4d with nk=1?
-!!$   PHYVAR3D1(v5, 'VN=v5 ; ON=v5 ; VB=v0 ; VS=A@3 ; VD=v5 desc')
-!!$   PHYVAR3DC(v6, 'VN=v6 ; ON=v6 ; VB=v0 ; VS=A@3 ; VD=v6 desc', lcond)
-!!$
-!!$   !# 2d+1+1 (4d) sfc vars (multi lvl & multi cat)
-!!$   PHYVAR4D1(v7, 'VN=v7 ; ON=v7 ; VB=v0 ; VS=A*2@3 ; VD=v7 desc')
-!!$   PHYVAR4DC(v8, 'VN=v8 ; ON=v8 ; VB=v0 ; VS=A*2@3 ; VD=v8 desc', lcond)
-!!$
-!!$   !# 3d vars
-!!$   PHYVAR3D1(v9, 'VN=v9 ; ON=v9 ; VB=v0 ; VS=T ; VD=v9 desc')
-!!$   PHYVAR3D1(va, 'VN=va ; ON=va ; VB=v0 ; VS=M ; VD=va desc')
-!!$   PHYVAR3D1(vb, 'VN=vb ; ON=vb ; VB=v0 ; VS=E ; VD=vb desc')
-!!$   PHYVAR3DC(vc, 'VN=vc ; ON=vc ; VB=v0 ; VS=T ; VD=vc desc', lcond)
-!!$
-!!$   !# 3d +1 (4d) (multi cat)
-!!$   PHYVAR4D1(vd, 'VN=vd ; ON=vd ; VB=v0 ; VS=T@2 ; VD=vd desc')
-!!$   PHYVAR4DC(ve, 'VN=ve ; ON=ve ; VB=v0 ; VS=T@2 ; VD=ve desc', lcond)
+   !# Notes for VS=:
+   !# M:   3d, Mom levels    (PHY_STAG_MOM, stag=0)
+   !# M*N: 4d, Mom levels multi category (PHY_STAG_MOM, stag=0)
+   !# T  : 3d, Thermo levels (PHY_STAG_THERMO, stag=1)
+   !# T*N: 4d, Thermo levels multi category (PHY_STAG_THERMO, stag=1)
+   !# E  : 3d, Energy levels (PHY_STAG_ENERGY, stag=2)
+   !# E*N: 4d, Energy levels multi category (PHY_STAG_ENERGY, stag=2)
+   !# A  : 2d, (arbitrary) surface or ground levels (PHY_STAG_SFC, stag=0)
+   !# A*N: 3d, (arbitrary multi category/levels) surface or ground levels (PHY_STAG_SFC, stag=0)
+   !# '*N': can be added to SLB, SLC, SLS for multi-categories
+   !# '*N': can be added to ROW for multi-levels or multi categories (not both yet)
+   !# '@N': mosaic (no longer supported)
 
-!#TODO: split VB=[edpv][01]
+   !# !# 2d sfc vars
+   !# PHYVAR2D1(v1, 'VN=v1 ; ON=v1 ; VB=v0 ; VD=v1 desc')
+   !# PHYVAR2DC(v2, 'VN=v2 ; ON=v2 ; VB=v0 ; VD=v2 desc', lcond)
+   !#
+   !# !# 2d+1 (3d) sfc vars (multi lvl)
+   !# PHYVAR3D1(v3, 'VN=v3 ; ON=v3 ; VB=v0 ; VS=A*2 ; VD=v3 desc')
+   !# PHYVAR3DC(v4, 'VN=v4 ; ON=v4 ; VB=v0 ; VS=A*2 ; VD=v4 desc', lcond)
+   !#
+   !# !# 2d+1 (3d) sfc vars (multi cat) ... ?4d with nk=1?
+   !# PHYVAR3D1(v5, 'VN=v5 ; ON=v5 ; VB=v0 ; VS=A@3 ; VD=v5 desc')
+   !# PHYVAR3DC(v6, 'VN=v6 ; ON=v6 ; VB=v0 ; VS=A@3 ; VD=v6 desc', lcond)
+   !#
+   !# !# 2d+1+1 (4d) sfc vars (multi lvl & multi cat)
+   !# PHYVAR4D1(v7, 'VN=v7 ; ON=v7 ; VB=v0 ; VS=A*2@3 ; VD=v7 desc')
+   !# PHYVAR4DC(v8, 'VN=v8 ; ON=v8 ; VB=v0 ; VS=A*2@3 ; VD=v8 desc', lcond)
+   !#
+   !# !# 3d vars
+   !# PHYVAR3D1(v9, 'VN=v9 ; ON=v9 ; VB=v0 ; VS=T ; VD=v9 desc')
+   !# PHYVAR3D1(va, 'VN=va ; ON=va ; VB=v0 ; VS=M ; VD=va desc')
+   !# PHYVAR3D1(vb, 'VN=vb ; ON=vb ; VB=v0 ; VS=E ; VD=vb desc')
+   !# PHYVAR3DC(vc, 'VN=vc ; ON=vc ; VB=v0 ; VS=T ; VD=vc desc', lcond)
+   !#
+   !# !# 3d +1 (4d) (multi cat)
+   !# PHYVAR4D1(vd, 'VN=vd ; ON=vd ; VB=v0 ; VS=T@2 ; VD=vd desc')
+   !# PHYVAR4DC(ve, 'VN=ve ; ON=ve ; VB=v0 ; VS=T@2 ; VD=ve desc', lcond)
+
 
    PHYVAR2DC(abekfc,     "VN=abekfc    ; ON=ABE ; VB=p0; VD=ABE calculated in KF                                 ; MIN=0", lkfbe)
    PHYVAR2DC(abekfcm,    "VN=abekfcm   ; ON=ABEM; VB=p0; VD=avg abekfc                                           ; MIN=0", lmoyhrkf)
@@ -99,7 +94,9 @@
    PHYVAR2DC(c3slop,     "VN=C3SL      ; ON=C3SL; VB=p0; VD=C3 for radslope", lrslp)
    PHYVAR2DC(c4slop,     "VN=C4SL      ; ON=C4SL; VB=p0; VD=C4 for radslope", lrslp)
    PHYVAR2DC(c5slop,     "VN=C5SL      ; ON=C5SL; VB=p0; VD=C5 for radslope", lrslp)
-   PHYVAR2D1(cang,       "VN=cang      ; ON=CX  ; VB=v0; VD=cosine of the solar angle")
+   
+   PHYVAR2D1(cang,       "VN=cang      ; ON=CX  ; VB=v0; VD=cosine of the solar angle (TODO: same as cosz?)")
+   
    PHYVAR2DC(capekfc,    "VN=capekfc   ; ON=CAPE; VB=p0; VD=CAPE calculated in KF                                ; MIN=0", lkfbe)
    PHYVAR2DC(capekfcm,   "VN=capekfcm  ; ON=CAPM; VB=p0; VD=avg capekfc                                          ; MIN=0", lmoyhrkf)
    PHYVAR2DC(tauckfc,    "VN=tauckfc   ; ON=TAUC; VB=p0; VD=Actual convective adjustment time scale in KF        ; MIN=0", lkfbe)
@@ -180,7 +177,9 @@
    PHYVAR2DC(conqtotm,   "VN=conqtotm  ; ON=CQAM; VB=p0; VD=accumulation of conqtot", lcons)
    PHYVAR2D1(cosas,      "VN=cosas     ; ON=CO  ; VB=p0; VD=time avg over kntrad of cosine of the solar angle ")
    PHYVAR2D1(cosn,       "VN=cosn      ; ON=CON ; VB=p0; VD=like cosas but for next RT time interval ")
-   PHYVAR2D1(cosz,       "VN=cosz      ; ON=M4  ; VB=p0; VD=cosine of the solar angle")
+   
+   PHYVAR2D1(cosz,       "VN=cosz      ; ON=M4  ; VB=p0; VD=cosine of the solar angle (TODO: same as cang?)")
+   
    PHYVAR2D1(cowlcl,     "VN=cowlcl    ; ON=COWL; VB=p0; VD=convective cloud object updraft at LCL (m/s)")
    PHYVAR2D1(cozlcl,     "VN=cozlcl    ; ON=COZL; VB=p0; VD=convective cloud object cloud base height (m)")
    PHYVAR3D1(cqce,       "VN=cqce      ; ON=CQCE; VB=v0; VD=conv. QC tendency (detrained condensate)      ; VS=T")
@@ -310,7 +309,7 @@
    PHYVAR2DC(fqm,        "VN=fqm       ; ON=FQM ; VB=p0; VD=surf. momentum flux over last moyhr hours           ; MIN=0", lmoyhr)
    PHYVAR2DC(frfrac,     "VN=frfrac    ; ON=U14 ; VB=p1; VD=fraction of freezing precip (surface scheme)        ; MIN=0; IN=FCFR", lpcp_frac)
    PHYVAR3D1(frv,        "VN=frv       ; ON=B5  ; VB=p0; VD=friction velocity                             ; VS="//nag//"  ; MIN=0")
-   PHYVAR3DC(fsa,        "VN=fsa       ; ON=FSA ; VB=e1; VD=fraction of aspect                            ; VS=row*4      ; IN=FSA;", lrslp)
+   PHYVAR3DC(fsa,        "VN=fsa       ; ON=FSA ; VB=e1; VD=fraction of aspect                            ; VS=A*4      ; IN=FSA;", lrslp)
    PHYVAR2D1(fsaf,       "VN=fsaf      ; ON=AS  ; VB=p0; VD=accumulation of fdss                                ; MIN=0")
    PHYVAR2D1(fsamoon,    "VN=fsamoon   ; ON=FSAM; VB=p0; VD=energy absbd btn toa and mdl top")
    PHYVAR3DC(fsc,        "VN=fsc       ; ON=FSC ; VB=p0; VD=shallow convection cloud fraction                    ; VS=T; MIN=0", lshal)
@@ -574,7 +573,7 @@
    PHYVAR3D1(sigm,       "VN=PW_PM:P   ; ON=SL  ; VB=d1; VD=sigma momentum values                         ; VS=M; MIN=0")
    PHYVAR2D1(sigs,       "VN=sigs      ; ON=SSS ; VB=p"//isss(1:1)//"; VD=subgrid orography SD (small scale)")
    PHYVAR3D1(sigt,       "VN=PW_PT:P   ; ON=SIGT; VB=d1; VD=sigma thermo values                           ; VS=T; MIN=0")
-   PHYVAR3DC(sla,        "VN=sla       ; ON=SLA ; VB=e1; VD=mean slope with aspect                        ; VS=row*4      ; =IN=SLA;", lrslp)
+   PHYVAR3DC(sla,        "VN=sla       ; ON=SLA ; VB=e1; VD=mean slope with aspect                        ; VS=A*4      ; =IN=SLA;", lrslp)
    PHYVAR2D1(slope,      "VN=slope     ; ON=Y4  ; VB=p0; VD=unresolved topo slope")
    PHYVAR2D1(slwp,       "VN=slwp      ; ON=IB  ; VB=v0; VD=integrated SLW                                      ; MIN=0")
    PHYVAR2D1(slwp2,      "VN=slwp2     ; ON=B2  ; VB=v0; VD=integrated SLW (bottom to s2)                       ; MIN=0")

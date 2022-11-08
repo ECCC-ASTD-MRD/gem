@@ -35,13 +35,13 @@ subroutine time2sec_main()
   
   !  Enforce mandatory arguments
   if (timestr == def(1)) then
-     write(STDERR,*) "Error: a time string (-time) must be provided "//trim(timestr)
+     write(STDERR, '(a)') "Error: a time string (-time) must be provided "//trim(timestr)
      return
   endif
 
   istat = str_toreal(dt,dtstr)
   if (.not.RMN_IS_OK(istat)) then
-     write(STDERR,*) "Error: invalid number provided for delta_T (-dt): "//trim(dtstr)
+     write(STDERR, '(a)') "Error: invalid number provided for delta_T (-dt): "//trim(dtstr)
      return
   endif
   dt_8 = dt
@@ -49,10 +49,10 @@ subroutine time2sec_main()
   !  Call library function to retrieve number of seconds from time string
   istat = timestr2sec(sec,timestr,dt_8)
   if (.not.RMN_IS_OK(istat)) then
-     write(STDERR,*) "Error: unable to convert date string "//trim(timestr)
+     write(STDERR, '(a)') "Error: unable to convert date string "//trim(timestr)
      return
   else
-     write(STDOUT,*) sec
+     write(STDOUT, '(i0)') sec
   endif
   
   return

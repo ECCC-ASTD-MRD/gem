@@ -30,6 +30,7 @@ subroutine coherence3(ni, trnch)
    ! 001      see version 5.6.0 for previous history
    ! 002      add ADJ_I0_SNOW key/cfg in front of I0 adjustement due to snow
    !          presence on the ground ( M. Abrahamowicz , July 2015)
+   ! 003      M. Mackay (2018/2022)  Add code for CSLM
    !
    !@Object Assure the coherence between the different masks
    !         (i.e., MG, GLSEA, and GLACIER) and the surface fields
@@ -108,6 +109,8 @@ subroutine coherence3(ni, trnch)
             zglacier (i)              = 0.0
             zsnodp   (i,indx_soil)    = 0.0
             zsnodp   (i,indx_glacier) = 0.0
+            if (schmurb  == 'TEB') zsnodp   (i,indx_urb ) = 0.0
+            if (schmlake /= 'NIL') zsnodp   (i,indx_lake) = 0.0
 
          end if
       end do

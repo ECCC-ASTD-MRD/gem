@@ -1,3 +1,39 @@
+### grid Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| grd_dx | (LU only) Mesh length (resolution) in x-direction (degrees) | 0. | real |
+| grd_dy | (LU only) Mesh length (resolution) in y-direction (degrees) | 0. | real |
+| grd_iref | Reference Point I | -1 | integer |
+| grd_jref | Reference Point J | -1 | integer |
+| grd_latr | Latitude on rotated grid of reference point (degrees) | 0. | real |
+| grd_lonr | Longitude on rotated grid of reference point (degrees) | 180. | real |
+| grd_maxcfl | Max Supported Courrant number;<br>Pilot area = Grd_maxcfl_fact * Grd_maxcfl+Grd_bsc_base+Grd_bsc_ext1 | 1 | integer |
+| grd_ni | Number of points along NI | 0 | integer |
+| grd_nj | Number of points along NJ | 0 | integer |
+| grd_overlap | (GY only) Overlap extent along latitude axis for GY grid (degrees) | 0. | real |
+| grd_typ_s | Type of grid described using 2 characters:<br>- "GY" : Global Yin-Yang<br>- "LU" : LAM    Uniform | '' | character(len=2) |
+| grd_xlat1 | Geographic longitude of the center of the computational domain (degrees) | 0. | real |
+| grd_xlat2 | Geographic latitude of a point on the equator of the computational domain<br>east of  Grd_xlon1,Grd_xlat1  (degrees) | 0. | real |
+| grd_xlon1 | Geographic latitude of the center of the computational domain (degrees) | 180. | real |
+| grd_xlon2 | Geographic longitude of a point on the equator of the computational domain<br>east of Grd_xlon1,Grd_xlat1  (degrees) | 270. | real |
+
+
+### vert_layers Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| g_nk |  |  |  |
+| hyb | array of model levels (pressure),  0.0 < HYB < 1.0 |  |  |
+| hyb_first_height |  | 40. | real |
+| hyb_flat | a level (in the units of hyb or hyb_H above which<br>the vertical coordinate becomes flat | -1. | real |
+| hyb_h | array of model levels (height  ),  hyb_H > 0.0 |  |  |
+| hyb_lid_height |  | 60000. | real |
+| hyb_lin_depth |  | -1. | real |
+| hyb_nkequal |  | -1 | integer |
+| hyb_rcoef | pair of coefficients (min,max) to control the flattenning of the<br>vertical coordinate |  |  |
+
+
 ### adz_cfgs Namelist
 
 | Name          | Description            |  Default Value | Type |
@@ -158,27 +194,6 @@
 | grdc_nj | Number of points along Y | 0 | integer |
 | grdc_start_s | Time string (units D, H, M or S) from the start of the run to<br>start producing the cascade files | ' ' | character(len=15) |
 | grdc_trnm_s | List of tracers to be written from piloting run | '@#$%' | character(len=4) |
-
-
-### grid Namelist
-
-| Name          | Description            |  Default Value | Type |
-| ------------- | ---------------------- | -------------- | ---- |
-| grd_dx | (LU only) Mesh length (resolution) in x-direction (degrees) | 0. | real |
-| grd_dy | (LU only) Mesh length (resolution) in y-direction (degrees) | 0. | real |
-| grd_iref | Reference Point I | -1 | integer |
-| grd_jref | Reference Point J | -1 | integer |
-| grd_latr | Latitude on rotated grid of reference point (degrees) | 0. | real |
-| grd_lonr | Longitude on rotated grid of reference point (degrees) | 180. | real |
-| grd_maxcfl | Max Supported Courrant number;<br>Pilot area = Grd_maxcfl_fact * Grd_maxcfl+Grd_bsc_base+Grd_bsc_ext1 | 1 | integer |
-| grd_ni | Number of points along NI | 0 | integer |
-| grd_nj | Number of points along NJ | 0 | integer |
-| grd_overlap | (GY only) Overlap extent along latitude axis for GY grid (degrees) | 0. | real |
-| grd_typ_s | Type of grid described using 2 characters:<br>- "GY" : Global Yin-Yang<br>- "LU" : LAM    Uniform | '' | character(len=2) |
-| grd_xlat1 | Geographic longitude of the center of the computational domain (degrees) | 0. | real |
-| grd_xlat2 | Geographic latitude of a point on the equator of the computational domain<br>east of  Grd_xlon1,Grd_xlat1  (degrees) | 0. | real |
-| grd_xlon1 | Geographic latitude of the center of the computational domain (degrees) | 180. | real |
-| grd_xlon2 | Geographic longitude of a point on the equator of the computational domain<br>east of Grd_xlon1,Grd_xlat1  (degrees) | 270. | real |
 
 
 ### hvdif Namelist
@@ -361,21 +376,6 @@
 | Name          | Description            |  Default Value | Type |
 | ------------- | ---------------------- | -------------- | ---- |
 | theo_case_s |  | 'NONE' | character(len=15) |
-
-
-### vert_layers Namelist
-
-| Name          | Description            |  Default Value | Type |
-| ------------- | ---------------------- | -------------- | ---- |
-| g_nk |  |  |  |
-| hyb | array of model levels (pressure),  0.0 < HYB < 1.0 |  |  |
-| hyb_first_height |  | 40. | real |
-| hyb_flat | a level (in the units of hyb or hyb_H above which<br>the vertical coordinate becomes flat | -1. | real |
-| hyb_h | array of model levels (height  ),  hyb_H > 0.0 |  |  |
-| hyb_lid_height |  | 60000. | real |
-| hyb_lin_depth |  | -1. | real |
-| hyb_nkequal |  | -1 | integer |
-| hyb_rcoef | pair of coefficients (min,max) to control the flattenning of the<br>vertical coordinate |  |  |
 
 
 ### dcmip Namelist

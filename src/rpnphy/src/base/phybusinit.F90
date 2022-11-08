@@ -108,7 +108,8 @@ subroutine phybusinit(ni,nk)
         'BOURGE ', &
         'NIL    ', &
         'SPS_W19', &
-        'SPS_FRC'  &
+        'SPS_FRC', &
+        'SPS_H13'  &
         /))
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')

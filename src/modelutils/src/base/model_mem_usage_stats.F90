@@ -83,7 +83,7 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
 97       format('Memory ==> largest MPI process: #', i3, f14.3, ' Gb')
          if (fijk > (moy+var)) write(msgUnit,97) i-1, fijk
       end do
-!!$      write(msgUnit,*) 'Memory each process [Gb]:',memoryt/1000000.
+!!$      write(msgUnit, '(a,f0.3)') 'Memory each process [Gb]:',memoryt/1000000.
    endif
    !----------------------------------------------------------------
 

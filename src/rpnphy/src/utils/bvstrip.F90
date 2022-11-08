@@ -15,13 +15,13 @@
 
 !/@*
 function bvstrip(F_name) result(F_norm)
-  use phy_typedef
+  use phymem, only: PHY_NAMELEN
   implicit none
   !@objective Strip bus variable names of extraneous information
   !@arguments
   character(len=*), intent(in) :: F_name        !Bus variable name
   !@return
-  character(len=PHY_MAXNAMELENGTH) :: F_norm    !Normalized name
+  character(len=PHY_NAMELEN) :: F_norm          !Normalized name
   !@author Ron McTaggart-Cowan, 2014-03
   !@description
   integer :: i

@@ -43,7 +43,7 @@ subroutine fpe_handler(sig, code)
    if (code == FPE$INVALID .or. code == FPE$ZERODIVIDE .or. code == FPE$OVERFLOW) then
       call msg_buffer_flush()
    endif
-   write(msg_s,*) 'Traceback: Application SIGFPE error! sig=', sig,', code=', code,':'
+   write(msg_s, '(a,1x,i0,1x,a,1x,i0,1x,a)') 'Traceback: Application SIGFPE error! sig=', sig,', code=', code, ':'
    if (code == FPE$INVALID) msg_s = trim(msg_s)//'INVALID'
    if (code == FPE$ZERODIVIDE) msg_s = trim(msg_s)//'ZERODIVIDE'
    if (code == FPE$OVERFLOW) msg_s = trim(msg_s)//'OVERFLOW'
@@ -54,7 +54,7 @@ subroutine fpe_handler(sig, code)
 #else
 
    call msg(MSG_WARNING,'(fpe_handler) Not yet available')
-   write(msg_s,*) 'called with: sig=', sig,', code=', code
+   write(msg_s, '(a,1x,i0,1x,a,1x,i0)') 'called with: sig=', sig,', code=', code
    call msg(MSG_WARNING,'(fpe_handler) '//msg_s)
    call flush(6)
 

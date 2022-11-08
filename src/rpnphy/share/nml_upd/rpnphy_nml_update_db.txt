@@ -581,3 +581,8 @@ fileVersion: 6.2.0-a18 > 6.2.0-a19
 #New:  physics_cfgs/pbl_ysu_rpnsolve
 #New:  physics_cfgs/rad_lw
 #New:  physics_cfgs/rad_sw
+#------
+fileVersion: 6.2.0-a19 > 6.2.0-a20
+rm:  physics_cfgs/cond_dbletd_fix
+#New:  surface_cfgs/schmlake
+#New:  surface_cfgs/schmriver

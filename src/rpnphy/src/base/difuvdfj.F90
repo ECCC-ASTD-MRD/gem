@@ -16,7 +16,7 @@
 
 !/@*
 subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
-     TAU, type, F, NU, NR, N, NK)
+     TAU, itype, F, NU, NR, N, NK)
    use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
 !!!#include <arch_specific.hf>
@@ -25,17 +25,17 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    real TU(NU, NK), U(NU, NK), KU(NR, NK), GU(NR, NK), R(NR,NK)
    real JNG(NR, NK)
    real ALFA(N), BETA(N), S(n,NK), SK(n,NK), TAU, F
-   integer type
+   integer itype
 
    !@Author R. Benoit (Mar 89)
    !@Revisions
    ! 001      R. Benoit (Aug 93) -Local sigma: s and sk become 2D
    ! 002      B. Bilodeau (Dec 94) - "IF" tests on integer
    !          instead of character.
-   ! 003      J. Mailhot (Sept 00) - Add type 4='EB'
+   ! 003      J. Mailhot (Sept 00) - Add itype 4='EB'
    ! 004      A. PLante (June 2003) - IBM conversion
    !             - calls to vrec routine (from massvp4 library)
-   ! 005      J. Mailhot/L. Spacek (Dec 07) - Add type 5='ET' and cleanup
+   ! 005      J. Mailhot/L. Spacek (Dec 07) - Add itype 5='ET' and cleanup
    ! 006      J. Mailhot (Aug 12) - Add argument and modifications (non-gradient flux,
    !                                geometric averaging) and change name to difuvdfj1
    !@Object
@@ -51,14 +51,14 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    ! GU       optional countergradient term
    ! JNG      optional non-gradient flux term
    ! R        optional inhomogeneous term
-   ! ALFA     inhomogeneous term for the surface flux (for type 1='U', 2='UT' or 5='ET'or 6='ST')
-   !          surface boundary condition (for type 4='EB')
+   ! ALFA     inhomogeneous term for the surface flux (for itype 1='U', 2='UT' or 5='ET'or 6='ST')
+   !          surface boundary condition (for itype 4='EB')
    ! BETA     homogeneous term for the surface flux
    ! S        sigma coordinates of full levels
    ! SK       sigma coordinates of diffusion coefficient
    !          (or staggered variables) levels
    ! TAU      length of timestep
-   ! TYPE     type of variable to diffuse (1='U',2='UT',3='E',4='EB' or 5='ET' or 6='ST')
+   ! ITYPE    itype of variable to diffuse (1='U',2='UT',3='E',4='EB' or 5='ET' or 6='ST')
    ! F        weighting factor for time 'N+1'
    ! NU       1st dimension of TU and U
    ! NR       1st dimension of KU, GU, JNG and R
@@ -90,18 +90,18 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    st(i)=s(i,1)-0.5*(s(i,2)-s(i,1))
    sb(i)=1.
 
-   if (type.le.2) then
+   if (itype.le.2) then
       NKX=NK
       SCK1=1
-      if (type.eq.2) then
+      if (itype.eq.2) then
          SCK1=0
       endif
-   else if (type.eq.3 .or. type.eq.4) then
+   else if (itype.eq.3 .or. itype.eq.4) then
       NKX=NK-1
-   else if (type.eq.5 .or. type.eq.6) then
+   else if (itype.eq.5 .or. itype.eq.6) then
       NKX=NK
    else
-      write(msg_S, *) type
+      write(msg_S, '(i0)') itype
       call physeterror('difuvdfj', 'Type inconnu: '//trim(msg_S))
       return
    endif
@@ -109,7 +109,7 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    ! (1) CONSTRUIRE L'OPERATEUR TRIDIAGONAL DE DIFFUSION N=(A,B,C)
    !                ET LE TERME CONTRE-GRADIENT (DANS D)
 
-   if (type.le.2) then
+   if (itype.le.2) then
 
       !     K=1
 
@@ -156,9 +156,9 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
          D(I,NK)=(0-KU(I,NK-1)*GU(I,NK-1)-JNG(I,NK-1))/HD(I)
       enddo
 
-   else if (type.eq.3 .or. type.eq.4 .or. type.eq.5 .or. type.eq.6) then
+   else if (itype.eq.3 .or. itype.eq.4 .or. itype.eq.5 .or. itype.eq.6) then
 
-      !     TYPE='E' or 'EB' or 'ET'
+      !     ITYPE='E' or 'EB' or 'ET'
 
       !     K=1
 
@@ -187,7 +187,7 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
             VHP(I,K)=SK(I,K+1)-SK(I,K)
             HD(I)=S(I,K+1)-S(I,K)
          enddo
-         if (K==NK-1 .and. type==6) then !VIRTUAL LEVEL FOR TYPE='ST'
+         if (K==NK-1 .and. itype==6) then !VIRTUAL LEVEL FOR ITYPE='ST'
             do I=1,N
                HD(I) = 0.5*(SK(I,K+1)+SK(I,K))-S(I,K)
             enddo
@@ -211,11 +211,11 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
 
       !     K=NKX
 
-      if (type.eq.3 .or. type.eq.5 .or. type.eq.6) then
+      if (itype.eq.3 .or. itype.eq.5 .or. itype.eq.6) then
 
-         !       TYPE='E' or 'ET' or 'ST'
+         !       ITYPE='E' or 'ET' or 'ST'
 
-         if (type.eq.6) then !virtual level for TYPE='ST'
+         if (itype.eq.6) then !virtual level for ITYPE='ST'
             do I=1,N
                HD(I)=SB(i)-0.5*(SK(i,NKX)+SK(i,NKX-1))
             enddo
@@ -235,9 +235,9 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
                  -(JNG(I,NKX)+JNG(I,NKX-1)) )/(2.*HD(I))
          enddo
 
-      else if (type.eq.4) then
+      else if (itype.eq.4) then
 
-         !       TYPE='EB'
+         !       ITYPE='EB'
 
          do I=1,N
             HM=SK(i,NK-1)-SK(i,NK-2)
@@ -282,16 +282,16 @@ subroutine DIFUVDFj1(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
    ! (4) AJOUTER TERME DE FLUX DE SURFACE
 
    SFCFLUX = .true.
-   select case (type)
-   case (:2) !TYPE='U'/'UT'
+   select case (itype)
+   case (:2) !ITYPE='U'/'UT'
       do I=1,N
          HD(I) = SB(i) - SK(i,NK-1)
       enddo
-   case (5) !TYPE='ET'
+   case (5) !ITYPE='ET'
       do I=1,N
          HD(I) = SB(i) - S(i,NKX)
       enddo
-   case (6) !TYPE='ST'
+   case (6) !ITYPE='ST'
       do I=1,N
          HD(I) = SB(i) - 0.5*(SK(i,NKX)+SK(i,NKX-1))
       enddo

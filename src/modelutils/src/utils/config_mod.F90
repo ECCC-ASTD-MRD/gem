@@ -296,9 +296,9 @@ contains
       if (F_pkg_S /= '') then
          ii = len_trim(F_pkg_S)
          if (F_pkg_S(ii:ii) == '/') ii = ii-1
-         write(msgUnit,*) '@'//trim(F_pkg_S(1:ii))
+         write(msgUnit, '(a)') '@'//trim(F_pkg_S(1:ii))
       else
-         write(msgUnit,*) '@'
+         write(msgUnit,'(a)') '@'
       endif
       istat = wb_keys(keys,nkeys,F_pkg_S)
       do ikey = 1, nkeys
@@ -308,7 +308,7 @@ contains
             if (typelen == 4) then
                if (array_size == 0) then
                   istat = wb_get(keys(ikey),rval)
-                  write(msgUnit,*) trim(keys(ikey))//' = ',rval
+                  write(msgUnit,'(a,g0)') trim(keys(ikey))//' = ',rval
                else
                   istat = wb_get(keys(ikey),raval,nvals)
                   if (nvals <= MAX_PRINT) then

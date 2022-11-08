@@ -194,11 +194,11 @@ contains
       integer :: i
       character(len=512) :: str
       !--------------------------------------------------------------------
-      write(str, *) F_i_array(1)
+      write(str, '(i0)') F_i_array(1)
       call str_tab2space(str)
       F_str_out_S = adjustl(str)
       do i = 2, size(F_i_array)
-         write(str, *) F_i_array(i)
+         write(str, '(i0)') F_i_array(i)
          call str_tab2space(str)
          F_str_out_S = trim(F_str_out_S)//F_sep_S//trim(adjustl(str))
       enddo

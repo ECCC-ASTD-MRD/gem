@@ -782,7 +782,7 @@ contains
       endif
       F_ingridid = ingridid
       F_istat = RMN_OK
-       write(dummy2_S,*) F_istat, F_ip1,F_ip2,F_ingridid,F_jdatev
+      write(dummy2_S, '(i0,1x,i0,1x,i0,1x,i0,1x,i0)') F_istat, F_ip1, F_ip2, F_ingridid, F_jdatev
       call msg(MSG_DEBUG,'(input_files) read [END]'//dummy2_S)
       !------------------------------------------------------------------
       return

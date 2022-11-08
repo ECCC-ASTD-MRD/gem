@@ -14,7 +14,6 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module series_step_mod
-   use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
    use phygridmap, only: phydim_ni, phydim_nj
    use series_options
    use series_geop_mod, only: series_geop

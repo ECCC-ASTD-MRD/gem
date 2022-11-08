@@ -88,11 +88,6 @@ module phy_options
         'TEND'  &
         /)
 
-   !# Fix to remove double convective tendency application (temporary)
-   logical :: cond_dbletd_fix = .false.
-   namelist /physics_cfgs/ cond_dbletd_fix
-   namelist /physics_cfgs_p/ cond_dbletd_fix
-
    !# Evaporation parameter for Sunqvist gridscale condensation
    real           :: cond_evap       = 2.e-4
    namelist /physics_cfgs/ cond_evap
@@ -559,15 +554,17 @@ module phy_options
    !# * 'BOURGE3D':
    !# * 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS
    !# * 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only)
+   !# * 'SPS_H13 ': phase separation based on near-surface hydrometeor temperature (from Harder and Pomeroy, 2013). Only for SPS
    character(len=16) :: pcptype      = 'NIL'
    namelist /physics_cfgs/ pcptype
    namelist /physics_cfgs_p/ pcptype
-   character(len=*), parameter :: PCPTYPE_OPT(5) = (/ &
+   character(len=*), parameter :: PCPTYPE_OPT(6) = (/ &
         'NIL     ', &
         'BOURGE  ', &
         'BOURGE3D', &
         'SPS_W19 ', &
-        'SPS_FRC ' &
+        'SPS_FRC ', &
+        'SPS_H13 ' &
         /)
 
    !# Print stats for phy_input read var

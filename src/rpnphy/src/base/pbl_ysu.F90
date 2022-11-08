@@ -54,9 +54,14 @@ contains
     integer :: k, ki, istat, step, nstep
     integer, dimension(ni) :: kpbl
     real :: stepdt, idt
-    real, pointer, dimension(:), contiguous :: zp0, zz0, zmg, &
-         zwstar, zudiag, zvdiag, zqsurf, zzusl, zztsl, ztsrad, &
-         zz0t, zdlat, zfcor, zalfat, zalfaq, zbt, zbm, zfc, zfv
+#ifdef __INTEL19_COMPILER
+    real, pointer, dimension(:) :: zz0, zqsurf, zz0t, zbt, zfc, zfv
+#else
+    real, pointer, dimension(:), contiguous :: zz0, zqsurf, zz0t, zbt, zfc, zfv
+#endif
+    real, pointer, dimension(:), contiguous :: zp0, zmg, &
+         zwstar, zudiag, zvdiag, zzusl, zztsl, ztsrad, &
+         zdlat, zfcor, zalfat, zalfaq, zbm
     real, dimension(ni) :: dusfc, dvsfc, dtsfc, dqsfc, ldelta, zero, wspd, &
          lmg, lfsh, vmod, vdir, thair, ribsl, fmsl, fhsl, &
          lfh, lfv, rho, lfrv, lfrv0, hpbl

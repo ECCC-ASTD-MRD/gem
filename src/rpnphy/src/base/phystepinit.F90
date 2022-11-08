@@ -29,11 +29,9 @@ contains
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
       use calcz0_mod, only: calcz0
-      use phy_getmeta_mod, only: phy_getmeta
       use phy_options
-      use phy_typedef, only: phymeta
+      use phymem, only: phymeta, phyvar, pbuslist, pvarlist, phymem_find, PHY_DBUSIDX, PHY_VBUSIDX, PHY_MAXVARS
       use phybus
-      use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
       use series_mod, only: series_xst
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
@@ -71,10 +69,10 @@ contains
       include "phyinput.inc"
 
       logical,parameter:: SHORTMATCH_L = .true.
+      logical,parameter:: QUIET_L = .true.
 
-      character(len=1)  :: bus_S
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
-      integer                :: i,k,ivar,nvars,istat
+      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS)
       real                   :: rcdt1
       real, dimension(ni,nk) :: work
       real, dimension(ni,nk) :: qe
@@ -82,8 +80,8 @@ contains
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
 
-      type(phymetaplus) :: meta_m, meta_p
-      type(phymeta), pointer :: metalist(:)
+      type(phyvar), target :: myphyvar(1)
+      type(phymeta), pointer :: vmeta, var_m, var_p
 
       real, pointer, dimension(:), contiguous :: &
            zdlat, zfcor, zpmoins, ztdiag, &
@@ -207,49 +205,33 @@ contains
          !# Init diag level of dyn bus (copy down) if var not read
          !# this is needed in debug mode since the bus is init with NaN
          !# It needs to be done at kount==0 and at every restart
-         bus_S = 'D'
-         nullify(metalist)
-         nvars = phy_getmeta(metalist, '', F_npath='V', F_bpath=bus_S, &
-              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
-         do ivar = 1, nvars
-            istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
-                 F_bpath=bus_S, F_quiet=.true., F_shortmatch=.false.)
-            if (.not.any(meta_m%meta%vname == phyinread_list_s(1:phyinread_n))) then
-
-               if (meta_m%meta%nk >= nk) then
-                  !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
-                  tmp1(1:ni,1:nk) => meta_m%vptr(:,trnch)
-                  if (.not.RMN_IS_OK(assert_not_naninf(tmp1(:,nk)))) then
-                     if (any(metalist(ivar)%vname == (/"pw_gz:m", "pw_wz:p"/)).or.&
-                          metalist(ivar)%vname(1:3) == "tr/") then
-                        tmp1(:,nk) = 0
-                     else
-                        tmp1(:,nk) = tmp1(:,nk-1)
-                     endif
-                  endif
-               endif
+         do ivar = 1, pbuslist(PHY_DBUSIDX)%nvars
+            vmeta => pbuslist(PHY_DBUSIDX)%meta(ivar)
+            if (any(vmeta%vname == phyinread_list_s(1:phyinread_n))) cycle
+            if (vmeta%nk < nk) cycle
+            !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
+            tmp1(1:ni,1:nk) => vmeta%bptr(vmeta%i0:vmeta%in,trnch)
+            if (RMN_IS_OK(assert_not_naninf(tmp1(:,nk)))) cycle
+            if (any(vmeta%vname == (/"pw_gz:m", "pw_wz:p"/)).or.&
+                 vmeta%vname(1:3) == "tr/") then
+               tmp1(:,nk) = 0
+            else
+               tmp1(:,nk) = tmp1(:,nk-1)
             endif
          enddo
-         deallocate(metalist, stat=istat)
 
          !# Reset Vol bus var to zero if var not read
          !# this is needed in debug mode since the bus is init with NaN
-         bus_S = 'V'
-         nullify(metalist)
-         nvars = phy_getmeta(metalist, '', F_npath='V', F_bpath=bus_S, &
-              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
-         do ivar = 1, nvars
-            istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
-                 F_bpath=bus_S, F_quiet=.true., F_shortmatch=.false.)
-            if (.not.any(meta_m%meta%vname == phyinread_list_s(1:phyinread_n))) &
-                 meta_m%vptr(:,trnch) = 0.
+         do ivar = 1, pbuslist(PHY_VBUSIDX)%nvars
+            vmeta => pbuslist(PHY_VBUSIDX)%meta(ivar)            
+            if (.not.any(vmeta%vname == phyinread_list_s(1:phyinread_n))) &
+                 vmeta%bptr(vmeta%i0:vmeta%in,trnch) = 0.
          enddo
-         deallocate(metalist, stat=istat)
 
          !#TODO: check that memgap is still filled with NANs on all buses
       else
          !#TODO: allow vol bus var recycling
-         vbus = 0.
+         pbuslist(PHY_VBUSIDX)%bptr(:,trnch) = 0.
       endif IF_DEBUG
 
       rcdt1 = 1. / dt
@@ -425,45 +407,48 @@ contains
          call series_xst(work, 'XL', trnch)
       endif
 
-      nullify(metalist)
-      nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-           F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
+      nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
       do ivar = 1, nvars
-         call gmmx_name_parts(metalist(ivar)%vname, prefix_S, basename_S, &
-              time_S, ext_S)
+         vmeta => pvarlist(ivalist(ivar))%meta
+         call gmmx_name_parts(vmeta%vname, prefix_S, basename_S, time_S, ext_S)
          if (all(time_S /= (/':M', ':m'/)) .and. &
-              .not.any(metalist(ivar)%vname == (/'tr/hu:m', 'tr/hu:p'/)) &
+              .not.any(vmeta%vname == (/'tr/hu:m', 'tr/hu:p'/)) &
               ) then
-            istat = phygetmetaplus(meta_m, &
+            istat = phymem_find(myphyvar, &
                  trim(prefix_S)//trim(basename_S)//':M', F_npath='V', &
                  F_bpath='D', F_quiet=.true., F_shortmatch=.false.)
-            istat = min(phygetmetaplus(meta_p, &
-                 trim(prefix_S)//trim(basename_S)//':P', F_npath='V', &
-                 F_bpath='D', F_quiet=.true., F_shortmatch=.false.),istat)
-            if (RMN_IS_OK(istat)) then
+            if (istat > 0) then
+               var_m => myphyvar(1)%meta
+               var_p => pvarlist(ivalist(ivar))%meta
                !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
-               tmp1(1:ni,1:nk) => meta_m%vptr(:,trnch)
-               tmp2(1:ni,1:nk) => meta_p%vptr(:,trnch)
+               tmp1(1:ni,1:nk) => var_m%bptr(var_m%i0:var_m%in,trnch)
+               tmp2(1:ni,1:nk) => var_p%bptr(var_p%i0:var_p%in,trnch)
                tmp1(1:ni,nk) = tmp2(1:ni,nk)
+!!$            else
+!!$               call msg(MSG_WARNING, '(phystepinit) Var not found: '//trim(prefix_S)//trim(basename_S)//':M')
             endif
          endif
       enddo
       if (clip_tr_L) then
          do ivar = 1, nvars
-            if (.not.any(metalist(ivar)%vname == (/'tr/hu:m', 'tr/hu:p'/))) then
-               istat = phygetmetaplus(meta_m, metalist(ivar)%vname, F_npath='V', &
+            vmeta => pvarlist(ivalist(ivar))%meta
+            if (.not.any(vmeta%vname == (/'tr/hu:m', 'tr/hu:p'/))) then
+               istat = phymem_find(myphyvar, vmeta%vname, F_npath='V', &
                     F_bpath='D', F_quiet=.true., F_shortmatch=.false.)
-               tmp2(1:ni,1:nk-1) => meta_m%vptr(:,trnch)
-               tmp2 = min(max(meta_m%meta%vmin, tmp2), meta_m%meta%vmax)
+               if (istat > 0) then
+                  var_m => myphyvar(1)%meta
+                  tmp2(1:ni,1:nk-1) => var_m%bptr(var_m%i0:var_m%in,trnch)
+                  tmp2 = min(max(var_m%vmin, tmp2), var_m%vmax)
+!!$               else
+!!$                  call msg(MSG_WARNING, '(phystepinit) Var not found: '//trim(vmeta%vname))
+               endif
             endif
          enddo
       endif
-      deallocate(metalist, stat=istat)
-
+      
       call mfotvt(ztve, ztve, qe, ni, nk-1, ni)
 
       do i=1,ni
-
          zfcor(i) = 2.*OMEGA*sin(zdlat(i))
       end do
       if (zua > 0. .and. zta > 0.) then
@@ -477,6 +462,7 @@ contains
            'NIL   ', &
            'BOURGE'/))) then
          tmp1d = 0.
+         nullify(tmpptr)
          call surf_precip1(ztmoins(:,nk-1), &
               tmp1d, tmp1d, &
               zrlc, ztls, zrsc, ztss, &
@@ -484,6 +470,7 @@ contains
               zrainrate, zsnowrate, ni)
       elseif (any(pcptype == (/ &
            'SPS_W19', &
+           'SPS_H13', &
            'SPS_FRC'/))) then
          tmp1d = zp0*zsigt(:,nk-1)
          call surf_precip1(ztmoins(:,nk-1), &

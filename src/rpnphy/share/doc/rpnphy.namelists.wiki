@@ -344,11 +344,6 @@ Conservation corrections for gridscale condensation
 | 'NIL' || character(len=16)
 
 |-
-| cond_dbletd_fix ||
-Fix to remove double convective tendency application (temporary)
-| .false. || logical
-
-|-
 | cond_evap ||
 Evaporation parameter for Sunqvist gridscale condensation
 | 2.e-4 || real
@@ -818,6 +813,7 @@ Scheme to determine precipitation type
 * 'BOURGE3D':
 * 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS
 * 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only)
+* 'SPS_H13 ': phase separation based on near-surface hydrometeor temperature (from Harder and Pomeroy, 2013). Only for SPS
 | 'NIL' || character(len=16)
 
 |-
@@ -1256,6 +1252,20 @@ read-in high vegetation roughness for SVS if .true.
 Takes into account effect of ocean salinity on saturation specific
 humidity at ocean surface (boundary condition for LH flux calculation)
 | .false. || logical
+
+|-
+| schmlake ||
+Lake surface processes
+* 'NIL' :
+* 'FLAKE' :
+* 'CSLM' :
+| 'NIL' || character(len=16)
+
+|-
+| schmriver ||
+River surface processes
+* 'NIL' :
+| 'NIL' || character(len=16)
 
 |-
 | schmsol ||

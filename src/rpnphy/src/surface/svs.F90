@@ -508,10 +508,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       ENDIF
 !
       CALL UPDATE_SVS ( WSOILT, ISOILT, WVEGT, &
-                       bus(x(latflw  ,1,1)), bus(x(watflow ,1,1)),  &
                        bus(x(WSOIL   ,1,1)), bus(x(ISOIL   ,1,1)),  &
-                       bus(x(WVEG    ,1,1)), bus(x(WSOILM  , 1,1)), &
-                       bus(x(latflaf ,1,1)), bus(x(drainaf ,1,1)),  &
+                       bus(x(WVEG    ,1,1)), bus(x(WSOILM  ,1,1)), &
                        N )
 !
   

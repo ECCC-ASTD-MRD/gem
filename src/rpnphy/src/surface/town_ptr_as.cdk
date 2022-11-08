@@ -42,13 +42,25 @@
       zzenith  (1:n) => bus( x( zenith,1,1)       : )
       zztsl    (1:n) => bus( x( ztsl,1,1)         : )
       zzusl    (1:n) => bus( x( zusl,1,1)         : )
-      pta    (1:n)     => bus(x(tmoins       ,1,nk) :)
-      pqa    (1:n)     => bus(x(humoins      ,1,nk) :)
-      pu     (1:n)     => bus(x(umoins       ,1,nk) :)
-      pv     (1:n)     => bus(x(vmoins       ,1,nk) :)
-      pthetaa(1:n)     => bus(x(thetaa       ,1,1)  :)
-      ppa    (1:n)     => bus(x(pmoins       ,1,1 ) :)
-      pps    (1:n)     => bus(x(pmoins       ,1,1 ) :)
+
+      if (atm_tplus) then
+         pta    (1:n)     => bus(x(tplus        ,1,nk) :)
+         pqa    (1:n)     => bus(x(huplus       ,1,nk) :)
+         pu     (1:n)     => bus(x(uplus        ,1,nk) :)
+         pv     (1:n)     => bus(x(vplus        ,1,nk) :)
+         pthetaa(1:n)     => bus(x(thetaap      ,1,1)  :)
+         ppa    (1:n)     => bus(x(pplus        ,1,1 ) :)
+         pps    (1:n)     => bus(x(pplus       ,1,1 ) :)
+      else   
+         pta    (1:n)     => bus(x(tmoins       ,1,nk) :)
+         pqa    (1:n)     => bus(x(humoins      ,1,nk) :)
+         pu     (1:n)     => bus(x(umoins       ,1,nk) :)
+         pv     (1:n)     => bus(x(vmoins       ,1,nk) :)
+         pthetaa(1:n)     => bus(x(thetaa       ,1,1)  :)
+         ppa    (1:n)     => bus(x(pmoins       ,1,1 ) :)
+         pps    (1:n)     => bus(x(pmoins       ,1,1 ) :)
+      endif
+      
       psol_sw(1:n,1:1) => bus(x(flusolis     ,1,1 ) :)
       pdir_sw(1:n,1:1) => bus(x(fsd         ,1,1 ) :)
       psca_sw(1:n,1:1) => bus(x(fsf         ,1,1 ) :)

@@ -197,11 +197,6 @@ contains
          a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
          a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
       endif
-      
-      !# application des tendances convectives de qc (pour consun)
-      if (stcond == 'CONSUN' .and. .not.cond_dbletd_fix) then
-         call apply_tendencies(qcp, zcqce, ztdmask, ni, nk, nkm1)
-      endif
 
       !Application of standard microphysical tendencies
       call apply_tendencies(ttp, zste,  ztdmask, ni, nk, nkm1)

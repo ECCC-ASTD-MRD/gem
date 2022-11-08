@@ -173,7 +173,7 @@ contains
       if (present(F_vgrid_m_S)) vgrid_m_S = F_vgrid_m_S
       if (present(F_vgrid_t_S)) vgrid_t_S = F_vgrid_t_S
 
-      write(string_S, *) '(inputio) new [BEGIN]', F_jdateo, F_dt, trim(filename_S)
+      write(string_S, '(a,1x,i0,1x,i0,1x,a)') '(inputio) new [BEGIN]', F_jdateo, F_dt, trim(filename_S)
       call msg(MSG_DEBUG, string_S)
  
       if (present(F_ip1list)) then
@@ -200,7 +200,7 @@ contains
          F_inputobj%id = m_id
       endif
 
-      write(string_S, *) '(inputio) new [END]', F_istat
+      write(string_S, '(a,1x,i0)') '(inputio) new [END]', F_istat
       call msg(MSG_DEBUG, string_S)
       return
       !----------------------------------------------------------------------
@@ -448,7 +448,7 @@ contains
       endif
 
       call collect_error(F_istat)
-      write(msg_S, '(a, i6)') trim(fld%vn1_S), F_istat
+      write(msg_S, '(a,1x,i0)') trim(fld%vn1_S), F_istat
 
       istat = priv_freefld(fld, fld12vt)
       istat = priv_freefld(fld1, fld12vt)
@@ -637,7 +637,7 @@ contains
       if (RMN_IS_OK(F_istat)) then
          F_istat = priv_read(F_cfg, F_cfgvar, F_cfgfile, fileidx, F_fld)
       endif
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) frh [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -796,10 +796,10 @@ contains
             usealtin_L = (alt_S == '')
          endif
          if (usealtin_L) then
-            write(dummy_S, *) jdate_to_cmc(jdatev)
+            write(dummy_S, '(i0)') jdate_to_cmc(jdatev)
             F_fld%alt_S = ADD_PREFIX3(F_fld%id, F_fileidx, trim(adjustl(dummy_S)), ALT_VGRID_H_FLDNAME)
 !!$         else if (ispressout_L .and. .not.ispressin_L) then  !#TODO
-!!$            write(dummy_S, *) jdate_to_cmc(jdatev)
+!!$            write(dummy_S, '(i0)') jdate_to_cmc(jdatev)
 !!$            F_fld%alt_S = ADD_PREFIX3(F_fld%id, F_fileidx, trim(adjustl(dummy_S)), ALT_VGRID_P_FLDNAME)
          else
             istat = vgd_get(vgrid, 'RFLD', F_fld%sfc_S(1), quiet=.true.)
@@ -903,7 +903,7 @@ contains
 
       endif IF_VINT2
 
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) find [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -968,7 +968,7 @@ contains
       !#TODO: level by level (hstats) warning...
       if (RMN_IS_OK(F_istat)) then
          call str_concat_i(tmp_S, pk1, ', ')
-         write(msg_S, '(i4, a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
+         write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
          call msg(MSG_INFO, '(inputio) Read ' &
               //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)//': '//msg_S)
          if (.not.isassoc_L) F_fld%dalloc_L = .true.
@@ -1050,7 +1050,7 @@ contains
 
       if (RMN_IS_OK(F_istat)) call priv_set_scope(F_fld)
 
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) read [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -1136,7 +1136,7 @@ contains
          vn_S = ADD_PREFIX(F_fld%id, F_fld%vn1_S)
          F_istat = time_interp_status(vn_S, F_jdatev, tint)
       endif IF_NONE
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) tint_status [END] '//trim(msg_S))
        !------------------------------------------------------------------
       return
@@ -1191,7 +1191,7 @@ contains
            F_istat = priv_altvcoor_set(F_fld%alt_S, F_fld%palt)
 !!$      F_istat = priv_altvcoor_set(F_fld%alt_S, F_fld%dalt)
 
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) tint_set [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -1251,7 +1251,7 @@ contains
 !!$         nullify(F_fld%d1, F_fld%d2)
 !!$      endif
 
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) tint_get [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -1279,7 +1279,7 @@ contains
       F_istat = RMN_ERR
       if (.not.(associated(F_fldin%d1) .and. &
            (F_fldin%vn2_S == ' ' .or. associated(F_fldin%d2)))) then
-         write(msg_S, *) F_istat
+         write(msg_S, '(i0)') F_istat
          call msg(MSG_DEBUG, '(inputio) vint [END] for "'//trim(F_fldin%vn1_S)// &
               '", No associated ptr '//trim(msg_S))
          return
@@ -1434,7 +1434,7 @@ contains
          enddo
 
       endif IF_VINT
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) vint [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return
@@ -1506,7 +1506,7 @@ contains
 
       endif IF_TINT
 
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(inputio) tint [END] '//trim(msg_S))
       !------------------------------------------------------------------
       return

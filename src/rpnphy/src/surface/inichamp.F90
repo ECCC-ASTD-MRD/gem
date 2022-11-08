@@ -24,6 +24,9 @@ subroutine inichamp4(kount, trnch, ni, nk)
    integer, intent(in) :: kount, trnch , ni, nk
 
    !@Author B. Bilodeau (July 1997)
+   !@Revisions
+   ! 001 K. Winger      (Feb 2017) - Add initialization for lake fraction and rivers (m.a.)
+   ! 002 M. Mackay      (Oct 2018/Sep 2022) - Code added for CSLM
    !@Object initialize arrays.
    !@Arguments
    !          - Input -
@@ -41,7 +44,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
    integer :: i
    real, dimension(ni) :: land
-   real, pointer, dimension(:)   :: zglacier, zglsea, zh, &
+   real, pointer, dimension(:)   :: zglacier, zglsea, zh, zlst, &
         zmg, zsnoden, ztglacier, ztmice, ztsrad, ztwater
    real, pointer, dimension(:,:) :: zhst, ztmoins
    !***********************************************************************
@@ -56,6 +59,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
       MKPTR1D(zglacier, glacier)
       MKPTR1D(zglsea, glsea)
       MKPTR1D(zh, h)
+      MKPTR1D(zlst, lst)
       MKPTR1D(zmg, mg)
       MKPTR1D(ztglacier, tglacier)
       MKPTR1D(ztmice, tmice)
@@ -64,7 +68,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
 
       MKPTR2D(zhst, hst)
       MKPTR2D(ztmoins, tmoins)
-
+      
    endif PRE_INIT
 
    ! Initialization of surface fields
@@ -91,10 +95,21 @@ subroutine inichamp4(kount, trnch, ni, nk)
          if (schmurb.ne.'NIL') then
             zhst(i,indx_urb ) = 300.
          endif
+         if (schmlake.ne.'NIL') then
+            zhst(i,indx_lake ) = 300.
+         endif
+         if (schmriver.ne.'NIL') then
+            zhst(i,indx_river ) = 300.
+         endif
          zh   (i) = 300.
          ! Initial radiative surface temperature estimate for the radiation scheme
          if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
+
+           if (schmlake.ne.'NIL') then
+            ztsrad(i) = zmg(i)*ztsrad(i) + (1.-zmg(i))*zlst(i)
+           else
             ztsrad(i) = zmg(i)*ztsrad(i) + (1.-zmg(i))*ztwater(i)
+           endif
             ztsrad(i) = (1.-zglsea(i)*(1.-zmg(i)))*ztsrad(i) + &
                  (zglsea(i)*(1.-zmg(i)))*ztmice(i)
             ztsrad(i) = (1.-zglacier(i)*zmg(i))*ztsrad(i) + &

@@ -16,8 +16,7 @@
 
 module phyunfold
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk, ijdrv_phy
-   use phy_typedef
-   use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
+   use phymem, only: phymeta, phyvar, phymem_find
    implicit none
    private
    public :: phyunfoldmeta1, phyunfoldmeta2d, phyunfoldmeta3d, phyunfoldmeta4d, phyunfold1
@@ -41,32 +40,31 @@ module phyunfold
 contains
 
    !/@*
-   function phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, F_metaplus) result(F_istat)
+   function phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, F_meta) result(F_istat)
       implicit none
       !@object Transfer data from p_runlgt space
       !@params
       integer,intent(in) :: F_ijk0(4), F_ijk1(4)
       real,intent(out) :: F_dest(:,:,:,:)
-      type(phymetaplus), intent(in) :: F_metaplus
+      type(phymeta), intent(in) :: F_meta
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
       integer :: i, j, k, ik, k1, m, m1
-      type(phymeta) :: mymeta
+      real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
-      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_metaplus%meta%vname))
+      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_meta%vname))
       F_istat = RMN_ERR
-      mymeta = F_metaplus%meta
 
       ! Bound checking
       if (any(F_ijk0(:) < 1) .or. &
            F_ijk1(1) > phy_lcl_ni .or. &
            F_ijk1(2) > phy_lcl_nj .or. &
-           F_ijk1(3)+(F_ijk1(4)-1)*phydim_nk > mymeta%n(3)) then
+           F_ijk1(3)+(F_ijk1(4)-1)*phydim_nk > F_meta%nlcl(3)) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
-              trim(mymeta%vname)//' on '//trim(mymeta%bus))
+              trim(F_meta%vname)//' on '//trim(F_meta%bus))
          print *,'Requested:',F_ijk1
-         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,mymeta%n(3),':',mymeta%nk,mymeta%fmul
+         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,F_meta%nlcl(3),':',F_meta%nk,F_meta%fmul
          return
       endif
 
@@ -78,16 +76,17 @@ contains
       endif
 
       ! Transfer from the physics folded space into the 3D dest grid
-!$omp parallel private(i,j,k,ik,k1,m,m1)
+!$omp parallel private(i,j,k,ik,k1,m,m1,vptr)
 !$omp do
       do j = 1, phydim_nj
+         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
          do m = F_ijk0(4), F_ijk1(4)
             do k = F_ijk0(3), F_ijk1(3)
                do i = 1, phydim_ni
                   ik = (m-1)*phydim_ni*phydim_nk + (k-1)*phydim_ni + i
                   k1 = 1+k-F_ijk0(3)
                   m1 = 1+m-F_ijk0(4)
-                  F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j),k1,m1) = F_metaplus%vptr(ik,j)
+                  F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j),k1,m1) = vptr(ik)
                end do
             end do
          end do
@@ -96,39 +95,38 @@ contains
 !$omp end parallel
 
       F_istat = RMN_OK
-      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [END] '//trim(F_metaplus%meta%vname))
+      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [END] '//trim(F_meta%vname))
       !---------------------------------------------------------------
       return
    end function phyunfoldmeta4d
 
 
    !/@*
-   function phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, F_metaplus) result(F_istat)
+   function phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, F_meta) result(F_istat)
       implicit none
       !@object Transfer data from p_runlgt space
       !@params
       integer,intent(in) :: F_ijk0(3), F_ijk1(3)
       real,intent(out) :: F_dest(:,:,:)
-      type(phymetaplus), intent(in) :: F_metaplus
+      type(phymeta), intent(in) :: F_meta
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
       integer :: i, j, k, ik, k1
-      type(phymeta) :: mymeta
+      real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
-      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_metaplus%meta%vname))
+      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_meta%vname))
       F_istat = RMN_ERR
-      mymeta = F_metaplus%meta
 
       ! Bound checking
       if (any(F_ijk0(:) < 1) .or. &
            F_ijk1(1) > phy_lcl_ni .or. &
            F_ijk1(2) > phy_lcl_nj .or. &
-           F_ijk1(3) > mymeta%n(3)) then
+           F_ijk1(3) > F_meta%nlcl(3)) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
-              trim(mymeta%vname)//' on '//trim(mymeta%bus))
+              trim(F_meta%vname)//' on '//trim(F_meta%bus))
          print *,'Requested:',F_ijk1
-         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,mymeta%n(3),':',mymeta%nk,mymeta%fmul
+         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,F_meta%nlcl(3),':',F_meta%nk,F_meta%fmul
          return
       endif
 
@@ -140,14 +138,15 @@ contains
       endif
 
       ! Transfer from the physics folded space into the 3D dest grid
-!$omp parallel private(i,j,k,ik)
+!$omp parallel private(i,j,k,ik,vptr)
 !$omp do
       do j = 1, phydim_nj
+         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
          do k = F_ijk0(3), F_ijk1(3)
             do i = 1, phydim_ni
                ik = (k-1)*phydim_ni + i
                k1 = 1+k-F_ijk0(3)
-               F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j),k1) = F_metaplus%vptr(ik,j)
+               F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j),k1) = vptr(ik)
             end do
          end do
       end do
@@ -155,36 +154,35 @@ contains
 !$omp end parallel
 
       F_istat = RMN_OK
-      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [END] '//trim(F_metaplus%meta%vname))
+      call msg(MSG_DEBUG, '(phyunfoldmeta3d) [END] '//trim(F_meta%vname))
       !---------------------------------------------------------------
       return
    end function phyunfoldmeta3d
 
    !/@*
-   function phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, F_metaplus) result(F_istat)
+   function phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, F_meta) result(F_istat)
       implicit none
       !@object Transfer data from p_runlgt space
       !@params
       integer,intent(in) :: F_ijk0(2), F_ijk1(2)
       real,intent(out) :: F_dest(:,:)
-      type(phymetaplus), intent(in) :: F_metaplus
+      type(phymeta), intent(in) :: F_meta
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
       integer :: i, j
-      type(phymeta) :: mymeta
+      real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
       F_istat = RMN_ERR
-      mymeta = F_metaplus%meta
 
       ! Bound checking
       if (any(F_ijk0(:) < 1) .or. &
            F_ijk1(1) > phy_lcl_ni .or. &
            F_ijk1(2) > phy_lcl_nj) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
-              trim(mymeta%vname)//' on '//trim(mymeta%bus))
+              trim(F_meta%vname)//' on '//trim(F_meta%bus))
          print *,'Requested:',F_ijk1
-         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,mymeta%n(3),':',mymeta%nk,mymeta%fmul
+         print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,F_meta%nlcl(3),':',F_meta%nk,F_meta%fmul
         return
       endif
 
@@ -197,11 +195,12 @@ contains
 
       !#TODO: adapt for 4D vars (ni,nk*fmul,nj)
       ! Transfer from the physics folded space into the 3D dest grid
-!$omp parallel private(i,j)
+!$omp parallel private(i,j,vptr)
 !$omp do
       do j = 1, phydim_nj
+         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
          do i = 1, phydim_ni
-            F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j)) = F_metaplus%vptr(i,j)
+            F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j)) = vptr(i)
          end do
       end do
 !$omp end do
@@ -228,17 +227,18 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-      type(phymetaplus) :: mymetaplus
+      type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
-      F_istat = phygetmetaplus(mymetaplus, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(F_istat)) then
+      if (F_istat <= 0) then
          call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
               trim(F_nomvar_S)//' on '//trim(F_bus_S))
+         F_istat = RMN_ERR
          return
       endif
 
-      F_istat = phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, mymetaplus)
+      F_istat = phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
       !---------------------------------------------------------------
       return
    end function phyunfold4d
@@ -259,17 +259,18 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-      type(phymetaplus) :: mymetaplus
+      type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
-      F_istat = phygetmetaplus(mymetaplus, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
+      if (F_istat <= 0) then
+        call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
               trim(F_nomvar_S)//' on '//trim(F_bus_S))
+         F_istat = RMN_ERR
          return
       endif
 
-      F_istat = phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, mymetaplus)
+      F_istat = phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
       !---------------------------------------------------------------
       return
    end function phyunfold3d
@@ -290,17 +291,18 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-      type(phymetaplus) :: mymetaplus
+      type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
-      F_istat = phygetmetaplus(mymetaplus, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(F_istat)) then
+      if (F_istat <= 0) then
          call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
               trim(F_nomvar_S)//' on '//trim(F_bus_S))
+         F_istat = RMN_ERR
          return
       endif
 
-      F_istat = phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, mymetaplus)
+      F_istat = phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
       !---------------------------------------------------------------
       return
    end function phyunfold2d

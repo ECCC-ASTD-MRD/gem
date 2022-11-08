@@ -62,7 +62,6 @@
 | advectke | Turbulent kinetic energy advect. is active if .true. | .false. | logical |
 | clip_tr_l | Clip tracers negative values | .true. | logical |
 | cond_conserve | Conservation corrections for gridscale condensation<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
-| cond_dbletd_fix | Fix to remove double convective tendency application (temporary) | .false. | logical |
 | cond_evap | Evaporation parameter for Sunqvist gridscale condensation | 2.e-4 | real |
 | cond_hmrst | Minimum cloud mixing ratio (kg/kg) for autoconversion in<br>Sunqvist gridscale condensation | 3.e-4 | real |
 | cond_hu0max | Max allowed values of modified hu00 (threshold relative humidity<br>for stratiform condensation, Sunqvist gridscale condensation) | 0.975 | real |
@@ -142,7 +141,7 @@
 | pbl_ysu_rpnsolve | Use RPNphy solver for diffusion equations from YSU coefficients | .false. | logical |
 | pbl_zerobc | Use true (motionless) surface boundary conditions for TKE diffusion | .false. | logical |
 | pbl_zntau | Relaxation timescale (s) for mixing length smoothing | 7200. | real |
-| pcptype | Scheme to determine precipitation type<br>- 'NIL     ': no call to bourge<br>- 'BOURGE  ': use Bourgouin algorithm (bourge1) to determine precip. types.<br>- 'BOURGE3D':<br>- 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS<br>- 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only) | 'NIL' | character(len=16) |
+| pcptype | Scheme to determine precipitation type<br>- 'NIL     ': no call to bourge<br>- 'BOURGE  ': use Bourgouin algorithm (bourge1) to determine precip. types.<br>- 'BOURGE3D':<br>- 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS<br>- 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only)<br>- 'SPS_H13 ': phase separation based on near-surface hydrometeor temperature (from Harder and Pomeroy, 2013). Only for SPS | 'NIL' | character(len=16) |
 | phystat_2d_l | Physic statistics output for 3d varables:<br>- .false. : mean, var, min and max for the whole 3d fiels<br>- .true.  : mean, var, min and max are done for each levels independently | .false. | logical |
 | phystat_dble_l | Use double presision for physic statistics output | .false. | logical |
 | phystat_freq_s | Physic statistics output Frequency | '0h' | character(len=16) |
@@ -229,6 +228,8 @@
 | read_emis | read-in land surface emissivity if .true. | .false. | logical |
 | read_z0vh | read-in high vegetation roughness for SVS if .true. | .false. | logical |
 | salty_qsat | Takes into account effect of ocean salinity on saturation specific<br>humidity at ocean surface (boundary condition for LH flux calculation) | .false. | logical |
+| schmlake | Lake surface processes<br>- 'NIL' :<br>- 'FLAKE' :<br>- 'CSLM' : | 'NIL' | character(len=16) |
+| schmriver | River surface processes<br>- 'NIL' : | 'NIL' | character(len=16) |
 | schmsol | Land surface processes<br>- 'NIL ' : No Land surface processes<br>- 'ISBA' : Interaction Soil Biosphere Atmosphere (ISBA) land sfc scheme<br>- 'SVS ' : Soil, Vegetation, and Snow (SVS) (Multibudget) land sfc scheme | 'ISBA' | character(len=16) |
 | schmurb | Urban surface processes<br>- 'NIL' : No Urban surface processes<br>- 'TEB' : Town Energy Balance (TEB) urban scheme | 'NIL' | character(len=16) |
 | sl_func_stab | Class of stability functions (stable case) to use in the surface layer<br>- 'DELAGE97  ' : Use functions described by Delage (1997; BLM)<br>- 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)<br>- 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO | 'DELAGE97' | character(len=16) |
