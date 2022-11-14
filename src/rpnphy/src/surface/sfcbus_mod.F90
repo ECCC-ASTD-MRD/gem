@@ -183,7 +183,6 @@ module sfcbus_mod
       SFCVAR(ilmo, 'ilmo')
       SFCVAR(impervu, 'impervu')
       SFCVAR(isoil, 'isoil')
-      SFCVAR(kcl, 'kcl')
       SFCVAR(khc, 'khc')
       SFCVAR(km, 'km')
       SFCVAR(ksat, 'ksat')
@@ -612,7 +611,7 @@ contains
             vl(i)%mosaik = vmeta%mosaic + 1
             mulmax = max(mulmax, vl(i)%mul)
          else
-            call msg(MSG_WARNING, '(sfcbus_init) var not found: '//trim(vl(i)%n))
+!!$            call msg(MSG_WARNING, '(sfcbus_init) var not found: '//trim(vl(i)%n))
             cycle
          endif
 

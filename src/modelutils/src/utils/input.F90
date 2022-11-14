@@ -663,7 +663,7 @@ contains
            FST_FIND_NEAR,F_hdata,F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev)
       F_foundjdatev = 0
       if (F_istat /= RMN_ERR) F_foundjdatev = findjdatev
-      write(tmp_S, '(i0)') F_istat,F_foundjdatev
+      write(tmp_S, '(i0,i0)') F_istat,F_foundjdatev
       call msg(MSG_DEBUG,'(input) read_interp_clim [END] '//trim(tmp_S))
       !------------------------------------------------------------------
       return

@@ -275,7 +275,7 @@ contains
       integer :: istat,nvar,n
       character(len=1024) :: string_S
       !----------------------------------------------------------------------
-      write(string_S, '(a,1x,i0,1x,i0,1x,a)') '(outcfg_new) ',trim(F_tag_S),F_dateo,F_dt,trim(F_filename_S)
+      write(string_S, *) '(outcfg_new) ',trim(F_tag_S),F_dateo,F_dt,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_id = RMN_ERR

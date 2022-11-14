@@ -7,7 +7,8 @@ module phymem
    private
    
    public :: phymem_busidx, phymem_init, phymem_alloc, phymem_isalloc
-   public :: phymem_find, phymem_find_idxa, phymem_find_var !# , phymem_add
+   public :: phymem_gmmname, phymem_busreset
+   public :: phymem_find, phymem_find_idxv, phymem_find_var !# , phymem_add
    public :: phymem_getmeta, phymem_getptr, phymem_getptr1d, phymem_getptr2d, phymem_getptr3d
    public :: phymeta, phybus, phyvar
    
@@ -52,7 +53,7 @@ module phymem
       integer :: nlcl(3) !# local tile dims in "not folded" space
       integer :: ibus    !# index of bus containing the field
       integer :: idxb    !# var index in the specified bus, pbuslist(ibus)%meta(idxb)
-      integer :: idxv    !# var index in the specified bus, pvarlist(idxa)%meta
+      integer :: idxv    !# var index in the specified bus, pvarlist(idxv)%meta
       integer :: i0      !# index of first element in the bus pointer, pbuslist(ibus)%bptr(i0:in,:)
       integer :: in      !# in=i0+size-1; index of first element in the bus pointer, pbuslist(ibus)%bptr(i0:in,:)      
       integer :: init    !# 1 = init/mandatory, 0 otherwise
@@ -88,7 +89,7 @@ module phymem
    end type phyvar
 
    interface phymem_find
-      module procedure phymem_find_idxa
+      module procedure phymem_find_idxv
       module procedure phymem_find_var
    end interface phymem_find
 
@@ -134,6 +135,55 @@ contains
       !---------------------------------------------------------------
       return
    end function phymem_busidx
+
+   
+   !/@*
+   function phymem_gmmname(F_busidx) result(F_gmmname)
+      implicit none
+      !@objective 
+      !@arguments
+      integer, intent(in) :: F_busidx
+      !@return
+      character(len=32) :: F_gmmname
+      !*@/
+      !---------------------------------------------------------------
+      F_gmmname = ''
+      if (F_busidx > 0 .and. F_busidx <= PHY_NBUSES) &
+           F_gmmname = trim(PHY_BUSID(F_busidx))//'BUS_3d'
+      !---------------------------------------------------------------
+      return
+   end function phymem_gmmname
+   
+
+   !/@*
+   function phymem_busreset(F_busidx, F_value) result(F_istat)
+      implicit none
+      integer, intent(in) :: F_busidx
+      real, intent(in), optional :: F_value
+      !@objective 
+      !@arguments
+      !@return
+      integer :: F_istat
+      !*@/
+      integer :: istat
+      real :: rvalue
+      !---------------------------------------------------------------
+      F_istat = PHY_ERROR
+      if (F_busidx <1 .and. F_busidx > PHY_NBUSES) then
+         call msg(MSG_ERROR, '(phymem) busreset F_busidx out of range')
+         return
+      endif
+      if (.not.isallocated) then
+         call msg(MSG_ERROR, '(phymem) busreset - must call phymem_alloc first')
+         return
+      endif
+      rvalue = 0.
+      if (present(F_value)) rvalue = F_value
+      pbuslist(F_busidx)%bptr = rvalue
+      F_istat = PHY_OK
+      !---------------------------------------------------------------
+      return
+   end function phymem_busreset
 
    
    !/@*
@@ -239,7 +289,7 @@ contains
               init, GMM_NULL_FLAGS)
          init = GMM_FLAG_IZER + gmmflags(ib)
          if (F_debug) init = GMM_FLAG_INAN + gmmflags(ib)
-         gmmname = trim(PHY_BUSID(ib))//'BUS_3d'
+         gmmname = phymem_gmmname(ib)
          nullify(pbuslist(ib)%bptr)
          istat = gmm_create(gmmname, pbuslist(ib)%bptr, gmmmeta, init)
          if (GMM_IS_OK(istat)) &
@@ -273,12 +323,12 @@ contains
 
    
    !/@*
-   function phymem_find_idxa(F_idxalist, F_name, F_npath, F_bpath, &
+   function phymem_find_idxv(F_idxvlist, F_name, F_npath, F_bpath, &
         F_quiet, F_shortmatch, F_flagstr) result(F_nmatch)
       implicit none
       !@objective Retreive list of var indices in pvarlist for matching ones
       !@arguments
-      integer, intent(out) :: F_idxalist(:)       !# List of indices in pvarlist for var matching provided params
+      integer, intent(out) :: F_idxvlist(:)       !# List of indices in pvarlist for var matching provided params
       character(len=*),  intent(in), optional :: F_name     !# Name of field to retrieve (input, variable or output name)
       character(len=*),  intent(in), optional :: F_npath    !# Name path to search ['VOI']
       character(len=*),  intent(in), optional :: F_bpath    !# Bus path to search ['PVD']
@@ -296,7 +346,7 @@ contains
       logical :: match_L, quiet_L
       !---------------------------------------------------------------
       F_nmatch = PHY_ERROR
-      F_idxalist = -1
+      F_idxvlist = -1
       if (.not.isallocated) then
          call msg(MSG_ERROR,'(phymem_find) phymem_alloc must be called before')
          return
@@ -396,19 +446,19 @@ contains
 
             !# save matched indices
             if (cnt > 0) then
-               if (any(iv == F_idxalist(1:cnt))) cycle
+               if (any(iv == F_idxvlist(1:cnt))) cycle
             endif
-            if (cnt >= size(F_idxalist)) then
+            if (cnt >= size(F_idxvlist)) then
                if (.not.quiet_L) &
-                    call msg(MSG_WARNING,'(phymem_find) F_idxalist buffer overflow')
+                    call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow')
                exit
             endif
 
             cnt = cnt + 1
-            F_idxalist(cnt) = iv
+            F_idxvlist(cnt) = iv
 
          enddo DO_PVARLIST
-         if (cnt >= size(F_idxalist)) exit
+         if (cnt >= size(F_idxvlist)) exit
 
       enddo DO_NPATH
       
@@ -420,7 +470,7 @@ contains
       F_nmatch = cnt
       !---------------------------------------------------------------
       return
-   end function phymem_find_idxa
+   end function phymem_find_idxv
 
 
    !/@*
@@ -442,7 +492,7 @@ contains
       character(len=PHY_NAMELEN) :: name, npath, bpath
       character(len=256) :: flagstr
       logical :: shortmatch_L, quiet_L
-      integer :: iv, idxalist(PHY_MAXVARS), istat
+      integer :: iv, idxvlist(PHY_MAXVARS), istat
       !---------------------------------------------------------------
       F_nmatch = PHY_ERROR
       if (.not.isallocated) then
@@ -476,10 +526,10 @@ contains
       flagstr = ' '
       if (present(F_flagstr)) flagstr = F_flagstr
 
-      F_nmatch = phymem_find_idxa(idxalist, name, npath, bpath, quiet_L, shortmatch_L, flagstr)
+      F_nmatch = phymem_find_idxv(idxvlist, name, npath, bpath, quiet_L, shortmatch_L, flagstr)
       if (F_nmatch <= 0) return
 
-      !TODO: should it be an error to limit the max number of returned values? it's not in find_idxa
+      !TODO: should it be an error to limit the max number of returned values? it's not in find_idxv
 !!$      if (F_nmatch > size(F_varlist)) then
 !!$         if (.not.quiet_L) call msg(MSG_WARNING,'(phymem_find) F_varlist buffer overflow')
 !!$         F_nmatch = PHY_ERROR
@@ -491,7 +541,7 @@ contains
             if (.not.quiet_L) call msg(MSG_WARNING,'(phymem_find) F_varlist buffer overflow')
             exit
          endif
-         F_varlist(iv)%meta => pvarlist(idxalist(iv))%meta
+         F_varlist(iv)%meta => pvarlist(idxvlist(iv))%meta
       enddo
       !---------------------------------------------------------------
       return
@@ -499,12 +549,12 @@ contains
 
 
    !/@*
-   function phymem_getmeta(F_meta, F_idxa) result(F_istat)
+   function phymem_getmeta(F_meta, F_idxv) result(F_istat)
       implicit none
-      !@objective Return meta from pvarlist(idxa)
+      !@objective Return meta from pvarlist(idxv)
       !@arguments
-      type(phymeta), pointer    :: F_meta  !# pvarlist(F_idxa)%meta
-      integer,       intent(in) :: F_idxa  !# pvarlist index of the field
+      type(phymeta), pointer    :: F_meta  !# pvarlist(F_idxv)%meta
+      integer,       intent(in) :: F_idxv  !# pvarlist index of the field
       !@return
       integer :: F_istat
       !*@/
@@ -516,11 +566,11 @@ contains
          call msg(MSG_ERROR,'(phymem_get) phymem_alloc must be called before')
          return
       endif
-      if (F_idxa < 1 .or. F_idxa > npvarlist) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxa out of range')
+      if (F_idxv < 1 .or. F_idxv > npvarlist) then
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
          return
       endif
-      F_meta => pvarlist(F_idxa)%meta
+      F_meta => pvarlist(F_idxv)%meta
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -528,12 +578,12 @@ contains
 
    
    !/@*
-   function phymem_getptr1d(F_ptr, F_idxa, F_trnch) result(F_istat)
+   function phymem_getptr1d(F_ptr, F_idxv, F_trnch) result(F_istat)
       implicit none
-      !@objective Associate pointer 1d to pvarlist(idxa) for specified slice
+      !@objective Associate pointer 1d to pvarlist(idxv) for specified slice
       !@arguments
       real, pointer, contiguous :: F_ptr(:)  !# data(1:nikf)
-      integer, intent(in) :: F_idxa   !# pvarlist index of the field
+      integer, intent(in) :: F_idxv   !# pvarlist index of the field
       integer, intent(in) :: F_trnch !# slice index of the field
       !@return
       integer :: F_istat
@@ -545,15 +595,15 @@ contains
          call msg(MSG_ERROR,'(phymem_get) phymem_alloc must be called before')
          return
       endif
-      if (F_idxa < 1 .or. F_idxa > npvarlist) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxa out of range')
+      if (F_idxv < 1 .or. F_idxv > npvarlist) then
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
          return
       endif
       
-      i0 = pvarlist(F_idxa)%meta%i0
-      nikfm = pvarlist(F_idxa)%meta%size
-      in = pvarlist(F_idxa)%meta%in
-      F_ptr(1:nikfm) => pvarlist(F_idxa)%meta%bptr(i0:in,F_trnch)
+      i0 = pvarlist(F_idxv)%meta%i0
+      nikfm = pvarlist(F_idxv)%meta%size
+      in = pvarlist(F_idxv)%meta%in
+      F_ptr(1:nikfm) => pvarlist(F_idxv)%meta%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -561,12 +611,12 @@ contains
 
    
    !/@*
-   function phymem_getptr2d(F_ptr, F_idxa, F_trnch) result(F_istat)
+   function phymem_getptr2d(F_ptr, F_idxv, F_trnch) result(F_istat)
       implicit none
-      !@objective Associate pointer 2d to pvarlist(idxa) for specified slice
+      !@objective Associate pointer 2d to pvarlist(idxv) for specified slice
       !@arguments
       real, pointer, contiguous :: F_ptr(:,:)  !# data(1:ni, 1:nkf)
-      integer, intent(in) :: F_idxa   !# pvarlist index of the field
+      integer, intent(in) :: F_idxv   !# pvarlist index of the field
       integer, intent(in) :: F_trnch !# slice index of the field
       !@return
       integer :: F_istat
@@ -578,16 +628,16 @@ contains
          call msg(MSG_ERROR,'(phymem_get) phymem_alloc must be called before')
          return
       endif
-      if (F_idxa < 1 .or. F_idxa > npvarlist) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxa out of range')
+      if (F_idxv < 1 .or. F_idxv > npvarlist) then
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
          return
       endif
 
-      i0 = pvarlist(F_idxa)%meta%i0
-      ni = pvarlist(F_idxa)%meta%ni
-      in = pvarlist(F_idxa)%meta%in
-      nkf = pvarlist(F_idxa)%meta%nk * pvarlist(F_idxa)%meta%fmul * (pvarlist(F_idxa)%meta%mosaic+1)
-      F_ptr(1:ni,1:nkf) => pvarlist(F_idxa)%meta%bptr(i0:in,F_trnch)
+      i0 = pvarlist(F_idxv)%meta%i0
+      ni = pvarlist(F_idxv)%meta%ni
+      in = pvarlist(F_idxv)%meta%in
+      nkf = pvarlist(F_idxv)%meta%nk * pvarlist(F_idxv)%meta%fmul * (pvarlist(F_idxv)%meta%mosaic+1)
+      F_ptr(1:ni,1:nkf) => pvarlist(F_idxv)%meta%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -595,12 +645,12 @@ contains
 
    
    !/@*
-   function phymem_getptr3d(F_ptr, F_idxa, F_trnch) result(F_istat)
+   function phymem_getptr3d(F_ptr, F_idxv, F_trnch) result(F_istat)
       implicit none
-      !@objective Associate pointer 3d to pvarlist(idxa) for specified slice
+      !@objective Associate pointer 3d to pvarlist(idxv) for specified slice
       !@arguments
       real, pointer, contiguous :: F_ptr(:,:,:)  !# data(1:ni, 1:nk, 1:nf)
-      integer, intent(in) :: F_idxa   !# pvarlist index of the field
+      integer, intent(in) :: F_idxv   !# pvarlist index of the field
       integer, intent(in) :: F_trnch !# slice index of the field
       !@return
       integer :: F_istat
@@ -612,17 +662,17 @@ contains
          call msg(MSG_ERROR,'(phymem_get) phymem_alloc must be called before')
          return
       endif
-      if (F_idxa < 1 .or. F_idxa > npvarlist) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxa out of range')
+      if (F_idxv < 1 .or. F_idxv > npvarlist) then
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
          return
       endif
 
-      i0 = pvarlist(F_idxa)%meta%i0
-      ni = pvarlist(F_idxa)%meta%ni
-      in = pvarlist(F_idxa)%meta%in
-      nk = pvarlist(F_idxa)%meta%nk
-      nfm = pvarlist(F_idxa)%meta%fmul * (pvarlist(F_idxa)%meta%mosaic+1)
-      F_ptr(1:ni,1:nk,1:nfm) => pvarlist(F_idxa)%meta%bptr(i0:in,F_trnch)
+      i0 = pvarlist(F_idxv)%meta%i0
+      ni = pvarlist(F_idxv)%meta%ni
+      in = pvarlist(F_idxv)%meta%in
+      nk = pvarlist(F_idxv)%meta%nk
+      nfm = pvarlist(F_idxv)%meta%fmul * (pvarlist(F_idxv)%meta%mosaic+1)
+      F_ptr(1:ni,1:nk,1:nfm) => pvarlist(F_idxv)%meta%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
