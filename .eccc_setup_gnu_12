@@ -6,7 +6,7 @@
 
 export MODULEPATH=~sidr000/modules:$MODULEPATH
 module load gcc12
-export EC_ARCH=rhel-8-amd64-64/gnu-12.1.0
+export EC_ARCH=rhel-8-amd-64/gnu-12.1.0
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
