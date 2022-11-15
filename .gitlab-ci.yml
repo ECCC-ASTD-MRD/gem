@@ -86,7 +86,7 @@ build_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -109,7 +109,7 @@ CANO_W7cascP_intel:
   when: always
   allow_failure: true
   only:
-  - dev
+  - 5.2_cmake
   script:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
@@ -130,7 +130,7 @@ CANO_dcmip163r100_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -152,7 +152,7 @@ CANO_wil7_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -174,7 +174,7 @@ GEM_cfgs_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -196,7 +196,7 @@ GEM_GY_FISL_P_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -218,7 +218,7 @@ GEM_GY_FISL_H_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -240,7 +240,7 @@ GEM_LU_FISL_H_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -262,7 +262,7 @@ GEM_LU_OFFC_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -284,7 +284,7 @@ PTOPO_GYH_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -306,7 +306,7 @@ PTOPO_LUP_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -328,7 +328,7 @@ RSTRT_GYP_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -350,7 +350,7 @@ THEO_bubbleG_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -368,7 +368,7 @@ THEO_schar_intel:
   - build_intel
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -386,7 +386,7 @@ THEO_schar_intel:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -409,7 +409,7 @@ CANO_W7cascP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -432,7 +432,7 @@ CANO_dcmip163r100_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -455,7 +455,7 @@ CANO_wil7_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -478,7 +478,7 @@ GEM_cfgs_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -501,7 +501,7 @@ GEM_GY_FISL_P_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -524,9 +524,7 @@ GEM_GY_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
-  only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -548,7 +546,7 @@ GEM_LU_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -571,7 +569,7 @@ GEM_LU_OFFC_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -594,7 +592,7 @@ PTOPO_GYH_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -617,7 +615,7 @@ PTOPO_LUP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -640,7 +638,7 @@ RSTRT_GYP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -663,7 +661,7 @@ THEO_bubbleG_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
@@ -682,7 +680,7 @@ THEO_schar_gnu:
   - build_gnu-12.1.0
   when: always
   only:
-  - dev
+  - 5.2_cmake
   allow_failure: true
   script:
     - set +e

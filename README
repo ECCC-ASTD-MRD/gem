@@ -1,6 +1,6 @@
 # How to get, compile and run GEM at the CMC.
 # For general information, a setup script and information on Maestro, see
-# # README_general file
+# README_general file
 
 Warning: 5.2_cmake and dev branches use submodules. Make sure you follow the
 instructions below.
