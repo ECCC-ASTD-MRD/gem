@@ -30,14 +30,12 @@
       F_after_psadj_L = .not.F_before_psadj_L
       sto_phy_L= associated(mcrhsint)
 
-      call gemtime_start (33, 'ADZ_TRACERS', 10)
-      call time_trace_barr (gem_time_trace, 1, Gem_trace_barr,&
-                            Ptopo_intracomm, MPI_BARRIER)
+      call gtmg_start (33, 'ADZ_TRACERS', 10)
 
       if (Adz_verbose>0 .and. F_before_psadj_L) call stat_mass_tracers (1,"BEFORE ADVECTION")
 
       if (Tr3d_ntrTRICUB_NT>0 .and. F_before_psadj_L) then
-         call gemtime_start (34, 'ADZ_TRNT_3C', 33)
+         call gtmg_start (34, 'ADZ_TRNT_3C', 33)
          deb= Tr3d_debTRICUB_NT
          do n=1, Tr3d_ntrTRICUB_NT ! Tricubic NO post treatment
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
@@ -46,11 +44,11 @@
          call adz_tricub_rhs ( Adz_stack, Tr3d_ntrTRICUB_NT    ,&
            Adz_pt,Adz_cpntr_t,Adz_num_t                        ,&
            Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t )
-         call gemtime_stop (34)
+         call gtmg_stop (34)
       end if
 
       if (Tr3d_ntrBICHQV_NT>0 .and. F_before_psadj_L) then
-         call gemtime_start (35, 'ADZ_TRNT_2CQV', 33)
+         call gtmg_start (35, 'ADZ_TRNT_2CQV', 33)
          deb= Tr3d_debBICHQV_NT
          do n=1, Tr3d_ntrBICHQV_NT ! BicubicH+QuinticV NO post treatment
             Adz_stack(n)%src => tracers_P(deb+n-1)%pntr
@@ -60,7 +58,7 @@
               Adz_pt,Adz_num_t,Adz_i0,Adz_in                ,&
               Adz_j0,Adz_jn,Adz_k0t )
 
-         call gemtime_stop (35)
+         call gtmg_stop (35)
       end if
 
       !Resetting done at each timestep before calling adz_post_tr
@@ -68,7 +66,7 @@
       if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0 .and. F_after_psadj_L) call set_post_tr ()
 
       if (Tr3d_ntrTRICUB_WP>0) then
-         call gemtime_start (37, 'ADZ_TRWP_3C', 33)
+         call gtmg_start (37, 'ADZ_TRWP_3C', 33)
          Adz_post => Adz_post_3CWP
          Adz_flux => Adz_flux_3CWP
          deb= Tr3d_debTRICUB_WP
@@ -90,7 +88,7 @@
                 Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,1,F_post=Tr_3CWP )
             call adz_BC_LAM_zlf_0 (Tr3d_ntrTRICUB_WP,1)
          end if
-         call gemtime_stop (37)
+         call gtmg_stop (37)
 
          !Apply ILMC shape-preserving for Tr_3CWP
          !---------------------------------------
@@ -99,7 +97,7 @@
       end if
 
       if (Tr3d_ntrBICHQV_WP>0) then
-         call gemtime_start (39, 'ADZ_TRWP_2CQV', 33)
+         call gtmg_start (39, 'ADZ_TRWP_2CQV', 33)
          Adz_post => Adz_post_BQWP
          Adz_flux => Adz_flux_BQWP
          deb= Tr3d_debBICHQV_WP
@@ -121,7 +119,7 @@
                 Adz_i0b,Adz_inb,Adz_j0b,Adz_jnb,1,F_post=Tr_BQWP )
             call adz_BC_LAM_zlf_0 (Tr3d_ntrBICHQV_WP,1)
          end if
-         call gemtime_stop (39)
+         call gtmg_stop (39)
 
          !Apply ILMC shape-preserving for Tr_BQWP
          !---------------------------------------
@@ -153,7 +151,7 @@
 
       if (Adz_verbose>0 .and. F_after_psadj_L) call stat_mass_tracers (0,"AFTER ADVECTION")
 
-      call gemtime_stop (33)
+      call gtmg_stop (33)
 !
 !     ---------------------------------------------------------------
 !

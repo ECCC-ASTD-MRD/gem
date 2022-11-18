@@ -18,7 +18,6 @@
 
       subroutine yyg_xchng_vec_uv2uv ( F_u, F_v, Minx,Maxx,Miny,Maxy,NK )
       use ISO_C_BINDING
-      use gem_timing
       use yyg_param
       implicit none
 #include <arch_specific.hf>
@@ -30,8 +29,6 @@
 !
 !----------------------------------------------------------------------
 !
-      call gemtime_start ( 6, 'YYG_XCHNG', 0)
-
       call yyg_SendRecv_v ( F_u, F_v, YYG_PILT_uv2u, YYG_PILT_uv2v, &
                             Minx,Maxx,Miny,Maxy,NK )
 
@@ -65,8 +62,6 @@
          end do
 
       end if
-
-      call gemtime_stop (6)
 !
 !----------------------------------------------------------------------
 !

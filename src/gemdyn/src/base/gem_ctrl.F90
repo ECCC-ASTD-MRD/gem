@@ -28,7 +28,7 @@
       use mem_nest
       use lun
       use rstr
-      use gem_timing
+      use omp_timing
       use tr3d
       use gmm_vt1
       implicit none
@@ -65,7 +65,7 @@
                  1,1, 1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
                    
       call gemtime ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
-      call gemtime_stop ( 2 )
+      call gtmg_stop ( 2 )
 
       if (  Init_mode_L ) call initial (rstrt_L)
 

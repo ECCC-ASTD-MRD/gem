@@ -21,7 +21,7 @@
       use cstv
       use dyn_fisl_options
       use dynkernel_options
-      use gem_timing
+      use omp_timing
       use geomh
       use gmm_geof
       use gmm_vt0
@@ -91,15 +91,11 @@
       !-------------------------------------------------------------------
       if (LAM_L) then
 
-         call gemtime_start (32, 'C_BCFLUX_PS', 10)
-
          Adz_flux => Adz_flux_3CWP_PS
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
          !-----------------------------------------------------------------------
          call adz_BC_LAM_Aranami (empty,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
-
-         call gemtime_stop (32)
 
          !Evaluate water tracers at TIME M (Schm_psadj==2)
          !------------------------------------------------
