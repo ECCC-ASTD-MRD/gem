@@ -21,9 +21,9 @@ add_executable(maingemdm maingemdm.F90)
 
 target_link_libraries(maingemdm
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
-   rpnphy_chm_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
+   ${chm_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    modelutils_ov_ifort
