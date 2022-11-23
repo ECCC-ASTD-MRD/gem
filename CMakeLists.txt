@@ -147,7 +147,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 # list of binaries depends on built sources
 list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
-if (NOT "${phy_SRC}" STREQUAL "" )
+if ("${phy_SRC}" STREQUAL "rpnphy" )
   list(APPEND BINARIES feseri prphynml )
 endif()
 list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )

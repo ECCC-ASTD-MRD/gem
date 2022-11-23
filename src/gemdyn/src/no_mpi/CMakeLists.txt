@@ -3,7 +3,7 @@ message(STATUS "(EC) Generating gem_monitor* and toc2nml makefiles")
 add_executable(toc2nml maintoc2nml.F90)
 target_link_libraries(toc2nml
    gemdyn
-   rpnphy
+   ${phy_LIBRARIES}
    modelutils
    vgrid
    rmn
