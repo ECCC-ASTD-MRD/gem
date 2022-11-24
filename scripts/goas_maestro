@@ -50,13 +50,14 @@ mkdir -p $suite_name suites
 ln -sf $suite_name suites/${expgem}
 cp -r ${REF}/* $suite_name
 ici=$PWD
-cd $suite_name
-CONFIG=${cfg}/cfg_0000
+
+CONFIG=$(true_path ${cfg}/cfg_0000)
 if [ ! -d ${CONFIG} ] ; then
   printf  "\n  Config directory ${CONFIG} NOT available - ABORT\n\n"
   exit 1
 fi
 
+cd $suite_name
 ln -s ${CONFIG}/configexp.cfg experiment.cfg
 ln -s $module modules/gem
 export SEQ_EXP_HOME=${suite_name}

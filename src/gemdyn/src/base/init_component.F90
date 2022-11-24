@@ -113,6 +113,13 @@
                      Ptopo_npex,Ptopo_npey,Domains_num,Domains_ngrids )
       ierr = RPN_COMM_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 
+      COMM_world     = MPI_COMM_WORLD
+      COMM_grid      = RPN_COMM_comm ('GRID')
+      COMM_multigrid = RPN_COMM_comm ('MULTIGRID')
+      COMM_gridpeers = RPN_COMM_comm ('GRIDPEERS')
+      COMM_ew        = RPN_COMM_comm ('EW')
+      COMM_ns        = RPN_COMM_comm ('NS')
+
       lun_out     = -1
       Lun_debug_L = .false.
 
