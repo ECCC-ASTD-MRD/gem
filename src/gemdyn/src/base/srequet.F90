@@ -75,8 +75,8 @@
 !    'process_f_callback' will set the input file and activate all the
 !    functions declared in "rpn_fortran_callback" calls previously.
 !
-      integer process_f_callback,longueur
-      external process_f_callback,longueur
+      integer process_f_callback
+      external process_f_callback
       integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
       external set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
 

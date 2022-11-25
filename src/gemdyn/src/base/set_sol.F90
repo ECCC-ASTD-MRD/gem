@@ -98,10 +98,10 @@
               f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
               f4 = G_nj-f3*(Ptopo_npey-1)
 
-              nx1 = l_ni - glb_pil_w - 1
-              nx2 = f2 - glb_pil_e - 1
-              ny1 = l_nj - glb_pil_s - 1
-              ny2 = f4 - glb_pil_n - 1
+              nx1 = l_ni - glb_pil_w 
+              nx2 = f2 - glb_pil_e 
+              ny1 = l_nj - glb_pil_s 
+              ny2 = f4 - glb_pil_n 
 
               if (Ptopo_mycol==1)  then
                  Sol_ii0  = 1 -  min(Sol_ovlpx,nx1)

@@ -83,9 +83,8 @@
 !     in the output routines. The maximum number of definitions is 4.
 !
 
-      integer i, j, gridset,gridout(5),longueur
+      integer i, j, gridset,gridout(5)
       integer niout,njout
-      external longueur
       character(len=8) grdtyp_S
 !
 !-------------------------------------------------------------------
