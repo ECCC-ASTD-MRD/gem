@@ -49,10 +49,10 @@
                               G_nk, 1-G_halox*west ,l_ni+G_halox*east,&
                               1-G_haloy*south,l_nj+G_haloy*north)
          pw_gz_plus(:,:,1:l_nk)= fi(:,:,1:l_nk)
-         if (Lun_debug_L) then
+         if (Lctl_debug_L) then
             do k=1,G_nk
-               do j=1-G_haloy,l_nj+G_haloy
-                  do i=1-G_halox,l_ni+G_halox
+               do j=1-G_haloy*south,l_nj+G_haloy*north
+                  do i=1-G_halox*west,l_ni+G_halox*east
                      dgzm(i,j,k)=fi(i,j,k)-fi(i,j,k+1)
                   end do
                end do

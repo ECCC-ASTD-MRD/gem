@@ -170,7 +170,7 @@
 
       if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
       if (Grdc_start <  0) Grdc_start= Lctl_step
-      if (Grdc_end   <  0) Grdc_end  = Step_total
+      if (Grdc_end   <  0) Grdc_end  = Step_total + max(Step_initial,0) !Fcst_end steps
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
 
