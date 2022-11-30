@@ -35,7 +35,7 @@ subroutine inichamp4(kount, trnch, ni, nk)
    ! ni       horizontal dimension
    ! nk       vertical dimension
 
-#include <msg.h>
+#include <rmn/msg.h>
    include "sfcinput.cdk"
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)

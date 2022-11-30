@@ -445,7 +445,7 @@ contains
       use sfclayer, only: sl_get, SL_OK
       implicit none
       integer :: F_istat
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
       logical, save :: init_L = .false.
       F_istat = RMN_OK

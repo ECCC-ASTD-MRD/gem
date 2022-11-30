@@ -18,7 +18,7 @@ module lhn_mod
   ! apply Latent Heat Nudging at beginning of model integration
    implicit none
    private
-#include <msg.h>
+#include <rmn/msg.h>
    public :: lhn2
 
 

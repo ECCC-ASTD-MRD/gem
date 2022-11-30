@@ -22,7 +22,7 @@ module phy_put_mod
    public :: phy_put
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
   interface phy_put
      module procedure phy_put_2d

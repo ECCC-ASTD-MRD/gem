@@ -33,7 +33,7 @@ function sfc_nml2(F_namelist) result(F_istat)
    integer :: F_istat
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    include "tebcst.cdk"

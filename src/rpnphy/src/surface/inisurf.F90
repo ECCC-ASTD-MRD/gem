@@ -22,7 +22,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    use svs_configs
    implicit none
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
    !@Object Transfer and initialize geophysical fields for the
    !        surface schemes

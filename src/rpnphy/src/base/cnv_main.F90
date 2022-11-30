@@ -63,7 +63,7 @@ contains
       ! 003   -JY-PV-Jul2015- Separate deep and shallow convection scheme in unified bechtold scheme
       ! 004   -JY-PV-Nov2016- Bkf-shallow only checked if no deep convection is active
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
       include "surface.cdk"

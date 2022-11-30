@@ -35,7 +35,7 @@ subroutine intozon2(jour, mois)
    !          the input jour is 15
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include "radiation.cdk"
 #include "ozopnt.cdk"
 

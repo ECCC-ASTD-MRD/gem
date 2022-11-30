@@ -33,7 +33,7 @@ module series_write_mod
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
 contains
 

@@ -24,7 +24,7 @@ module gesdictmod
    public :: gesdictadd, gesdictcheck
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    
 contains
 
@@ -205,7 +205,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    !       FLAGS= ;       ===> list of keywords '+' separated
    !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, parameter :: MAXVALPERCHAR = 34
 

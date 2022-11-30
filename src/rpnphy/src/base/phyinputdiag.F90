@@ -41,7 +41,7 @@ contains
       !@author Stephane Chamberland,2014-11
       !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       logical,parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
@@ -117,7 +117,7 @@ contains
       !@author Stephane Chamberland, 2017-09
       !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       logical, parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S, prefix_S, basename_S, time_S, ext_S

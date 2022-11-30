@@ -46,7 +46,7 @@ contains
       ! ni       horizontal running length
       ! nk       vertical dimension
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
       integer :: i
       integer, dimension(ni,nk) :: zilab

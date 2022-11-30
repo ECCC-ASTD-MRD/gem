@@ -27,7 +27,7 @@ module phy_nml_mod
    public :: phy_nml
 
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    include "rpnphy_version.inc"

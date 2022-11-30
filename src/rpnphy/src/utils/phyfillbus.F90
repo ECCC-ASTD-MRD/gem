@@ -16,6 +16,7 @@
 
 module phyfillbus
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
+   use rmn_gmm
    use clib_itf_mod, only: clib_tolower, clib_toupper
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phyfold, only: phyfoldmeta1, phyfold1
@@ -37,9 +38,8 @@ function phyfillbus1(F_kount) result(F_istat)
    !@author  Michel Desgagne  -   summer 2013
    !@object  Transfer data to p_runlgt space
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
 
    integer, parameter :: MUST_INIT = 1
    character(len=*), parameter :: FLD_INIT(4) = (/ &

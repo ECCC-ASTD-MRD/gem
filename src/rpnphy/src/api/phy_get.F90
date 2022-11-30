@@ -22,7 +22,7 @@ module phy_get_mod
   public :: phy_get
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
   interface phy_get
      module procedure phy_get_2d

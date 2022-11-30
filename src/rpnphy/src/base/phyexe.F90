@@ -69,7 +69,7 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    !          common physics library. it returns tendencies to the
    !          dynamics.
    !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
    include "tables.cdk"
    include "physteps.cdk"

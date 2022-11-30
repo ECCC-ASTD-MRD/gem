@@ -17,8 +17,9 @@ target_include_directories(rpnphy PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include 
   ${modelutils_INCLUDE_DIRS}
   ${modelutils_MODULES_DIR}
-  ${VGRID_INCLUDE_DIR}
+  ${vgrid_INCLUDE_DIRS}
   ${tdpack_INCLUDE_DIRS}
+  ${rmn_INCLUDE_DIRS}
   )
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION} )

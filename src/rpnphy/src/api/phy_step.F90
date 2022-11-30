@@ -43,7 +43,7 @@ contains
     !*@/
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
     include "physteps.cdk"
 

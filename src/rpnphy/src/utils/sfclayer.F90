@@ -22,7 +22,7 @@ module sfclayer
   private
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
   ! Public parameters
   integer, parameter, public :: SL_OK    = RMN_OK           !Return code for success

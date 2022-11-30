@@ -46,7 +46,7 @@ contains
 
       !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
       logical, parameter :: OVERWRITE_L = .true.

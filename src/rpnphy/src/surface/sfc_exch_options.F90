@@ -36,7 +36,7 @@ contains
       ! 001 K. Winger/M. Mackay    (Feb 2017/Sep 2022) - Add 'indx_lake' and 'indx_river' (M.A.)
       !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
       include "isbapar.cdk"
       include "tebcst.cdk"

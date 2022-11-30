@@ -58,7 +58,7 @@ contains
       ! dbus     dynamics input field
       ! vbus     physics tendencies and other output fields from the physics
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
       integer :: i, k
       real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
