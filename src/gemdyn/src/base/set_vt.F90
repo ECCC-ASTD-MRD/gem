@@ -34,7 +34,7 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include "gmm_gem_flags.hf"
 
       type(gmm_metadata) :: mymeta

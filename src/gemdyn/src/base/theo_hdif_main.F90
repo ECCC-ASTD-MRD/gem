@@ -19,7 +19,7 @@
       use gmm_vt1
       use HORgrid_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -54,7 +54,7 @@
       subroutine theo_hdif_ctl(F_f2dif, Minx,Maxx,Miny,Maxy, NK)
       use gem_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use theo_dif
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -106,7 +106,7 @@
       subroutine theo_hdif(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu_dif,m,n)
       use gem_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>

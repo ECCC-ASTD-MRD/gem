@@ -24,7 +24,7 @@
       use dyn_fisl_options
       use dynkernel_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_vt0
       use gmm_vt1
       use gmm_pw
@@ -58,7 +58,7 @@
       !========================================================================
 
 #include "gmm_gem_flags.hf"
-#include <msg.h>
+#include <rmn/msg.h>
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 

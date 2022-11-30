@@ -25,7 +25,7 @@
       use geomh
       use tdpack
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use var_gmm
       implicit none
 #include <arch_specific.hf>

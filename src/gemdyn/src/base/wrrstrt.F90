@@ -22,7 +22,7 @@
       use init_options
       use lun
       use psadjust
-      use gmm_itf_mod
+      use rmn_gmm
       use wb_itf_mod
       use gem_timing
       use tr3d

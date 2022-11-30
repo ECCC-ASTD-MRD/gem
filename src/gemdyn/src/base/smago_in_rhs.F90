@@ -25,7 +25,7 @@
       use dynkernel_options
       use hvdif_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_smag
       use geomh
       use hzd_mod

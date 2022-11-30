@@ -24,7 +24,7 @@
       use ens_options
       use ens_param
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use HORgrid_options
       use gem_options
       use init_options

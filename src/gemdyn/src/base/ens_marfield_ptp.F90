@@ -31,7 +31,7 @@
       use glb_ld
       use cstv
       use lun
-      use gmm_itf_mod
+      use rmn_gmm
       use path
       use ptopo
       use out_mod

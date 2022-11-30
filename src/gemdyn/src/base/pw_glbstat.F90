@@ -22,7 +22,7 @@
       use glb_ld
       use tr3d
       use mem_tracers
-      use gmm_itf_mod
+      use rmn_gmm
       implicit none
 
       character(len=*) name_S

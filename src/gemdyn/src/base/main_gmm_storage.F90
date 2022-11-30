@@ -22,7 +22,7 @@
       use gem_options
       use glb_ld
       use gmm_geof
-      use gmm_itf_mod
+      use rmn_gmm
       use HORgrid_options
       use init_options
       use lun

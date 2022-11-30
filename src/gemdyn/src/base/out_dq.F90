@@ -26,7 +26,7 @@
       use levels
       use outd
       use ver
-      use gmm_itf_mod
+      use rmn_gmm
       use outgrid
       implicit none
 #include <arch_specific.hf>

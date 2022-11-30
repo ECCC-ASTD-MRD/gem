@@ -20,7 +20,7 @@
       use ens_gmm_dim
       use ens_gmm_var
       use ens_options
-      use gmm_itf_mod
+      use rmn_gmm
       use var_gmm
       use ens_spp
       implicit none

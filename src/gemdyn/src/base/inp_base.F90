@@ -387,7 +387,7 @@ contains
                            Minx, Maxx, Miny, Maxy )
       use gmm_geof
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use dyn_fisl_options
       use HORgrid_options
       use lam_options
@@ -625,7 +625,7 @@ contains
       use cstv
       use gmm_pw
       use gmm_geof
-      use gmm_itf_mod
+      use rmn_gmm
       implicit none
 
       logical, intent(in) :: F_sleve_L

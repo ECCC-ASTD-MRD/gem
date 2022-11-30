@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module ens_gmm_dim
-   use gmm_itf_mod
+   use rmn_gmm
    implicit none
    public
    save

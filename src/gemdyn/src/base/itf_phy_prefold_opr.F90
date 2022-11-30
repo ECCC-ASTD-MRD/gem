@@ -33,7 +33,7 @@ function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
 
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    real, dimension(l_ni,l_nj,F_k0:F_kn) :: data_dyngrid
 
