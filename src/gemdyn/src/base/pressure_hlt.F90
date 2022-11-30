@@ -19,12 +19,15 @@
       subroutine pressure_hlt ( F_pm_4,F_pt_4,F_p0_4,F_log_pm_4,F_log_pt_4,F_pm_8,F_p0_8, &
                             F_minx,F_maxx,F_miny,F_maxy,F_nk,F_time )
       use dyn_fisl_options
+      use dynkernel_options
       use gem_options
       use glb_ld
+      use gmm_geof
       use gmm_vt0
       use gmm_vt1
       use metric
       use tdpack
+      use ver
       implicit none
 
       !arguments
@@ -37,16 +40,20 @@
       real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_8
 
       integer :: i, j, k, i0,in,j0,jn
-      real(kind=REAL64) :: log_pt
+      real(kind=REAL64) :: pres_m, pres_t, log_pt
       real, pointer, dimension(:,:,:) :: qt
+      real, pointer, dimension(:,:)   :: st
 !     
 !---------------------------------------------------------------------
 !
       if (F_time==1) qt => qt1
       if (F_time==0) qt => qt0
+      if (F_time==1) st => st1
+      if (F_time==0) st => st0
       i0= 1-G_halox ; in= l_ni+G_halox
       j0= 1-G_haloy ; jn= l_nj+G_haloy
 
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 !$omp do collapse(2)
          do k=1,l_nk+1
             do j= j0, jn
@@ -99,6 +106,37 @@
             end do
          end do
 !$omp end do
+
+      else
+
+!$omp do collapse(2)
+         do k=1,l_nk+1
+           do j= j0, jn
+            do i= i0, in
+               pres_m = Ver_a_8%m(k) + Ver_b_8%m(k) * st(i,j)&
+                       +Ver_c_8%m(k) * sls(i,j)
+               pres_t = Ver_a_8%t(k) + Ver_b_8%t(k) * st(i,j)&
+                       +Ver_c_8%t(k) * sls(i,j)
+               F_log_pm_4(i,j,k) = pres_m
+               F_log_pt_4(i,j,k) = pres_t
+               F_pm_8    (i,j,k) = exp(pres_m)
+               F_pm_4    (i,j,k) = F_pm_8(i,j,k)
+               F_pt_4    (i,j,k) = exp(pres_t)
+            end do
+           end do
+         end do
+!$omp end do
+
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_p0_8(i,j)= F_pm_8(i,j,l_nk+1)
+            F_p0_4(i,j)= F_pm_8(i,j,l_nk+1)
+         end do
+         end do
+!$omp end do
+
+      end if
 !     
 !---------------------------------------------------------------------
 !
