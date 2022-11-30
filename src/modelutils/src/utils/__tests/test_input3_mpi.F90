@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@
 subroutine test_input3_mpi()
@@ -27,13 +27,13 @@ subroutine test_input3_mpi()
    use vgrid_wb
    use ezgrid_mod
    use hinterp4yy_mod
+   use rmn_gmm
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04
 !@/
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <WhiteBoard.hf>
+#include <rmn/WhiteBoard.hf>
    include "rpn_comm.inc"
    include "drv_dyn_itf.inc"
    integer,parameter :: NDIGITS = 4

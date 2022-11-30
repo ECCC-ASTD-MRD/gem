@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@
 subroutine test_input4d()
@@ -29,12 +29,12 @@ subroutine test_input4d()
    use statfld_dm_mod
    use testutils
    use vgrid_wb
+   use rmn_gmm
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04, 2017-09
 !@/
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
    include "rpn_comm.inc"
 
    integer,parameter :: NVAR = 34

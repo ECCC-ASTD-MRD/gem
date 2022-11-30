@@ -24,7 +24,7 @@ use iso_c_binding
    !@author Stephane Chamberland, 2011-04
    !@/
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
+#include <rmn/WhiteBoard.hf>
    include "rpn_comm.inc"
 
    integer,parameter :: NI0=11,NJ0=13,HALO=2

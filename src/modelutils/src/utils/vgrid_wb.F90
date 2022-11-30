@@ -23,6 +23,7 @@ module vgrid_wb
    use vGrid_Descriptors
    use vgrid_ov, only: vgrid_nullify
    use wb_itf_mod
+   use rmn_gmm
    implicit none
    private
    !@objective Whiteboard (data store) for vgrid + ip1 <=> index association
@@ -96,8 +97,7 @@ module vgrid_wb
 !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    character(len=*),parameter :: PREFIXI_S = 'VGWBI/'
    character(len=*),parameter :: PREFIXV_S = 'VGWB/'

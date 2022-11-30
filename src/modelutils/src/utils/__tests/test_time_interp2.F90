@@ -13,19 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@
 subroutine test_time_interp2()
 use iso_c_binding
    use testutils
    use time_interp_mod
+   use rmn_gmm
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04
 !@/
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
    include "rpn_comm.inc"
    real,parameter :: EPSILON = 1.e-5
    character(len=512) :: dateo_S,varname_S,dummy_S,vgrid_S,sfcfld_S

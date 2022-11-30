@@ -25,7 +25,7 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
    integer, intent(in) :: Ptopo_numproc, Ptopo_myproc
    !@author M. Desgagne -- Summer 2013
    !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
 #if defined (AIX)
 

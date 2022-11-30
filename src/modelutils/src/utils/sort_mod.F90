@@ -33,7 +33,7 @@ module sort_mod
    private
    public :: SORT_UP,SORT_DOWN,SORT_FROMVALUES,SORT_FROMINDEX,SORT_UNIQUE, &
         & sort,reverse,sort_get_indices
-#include <msg.h>
+#include <rmn/msg.h>
 
    !---- Parameters -------------------------------------------------
    logical,parameter :: SORT_UP   = .true.

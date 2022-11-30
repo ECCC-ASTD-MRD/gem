@@ -25,7 +25,7 @@ subroutine drv_ptopo_ndoms(F_ndomains,F_dom_deb,F_istat)
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
  
    character(len=16) :: ndomains_S,tmp1_S,tmp2_S
    integer :: dom_fin

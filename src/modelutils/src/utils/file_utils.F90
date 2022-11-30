@@ -21,7 +21,7 @@ function file_open_existing(F_fileName_S,F_fileType_S) result(F_fileUnit)
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    !@objective Open a file, handle error and return unit
    !@arguments
    character(len=*) :: F_fileName_S,F_fileType_S

@@ -17,6 +17,7 @@ module drv_grid_mod
    use ptopo_utils
    use hgrid_wb
    use ezgrid_mod
+   use rmn_gmm
    implicit none
    private
    !@objective Manage Grid configuration
@@ -33,8 +34,7 @@ module drv_grid_mod
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "drv_dyn_itf.inc"
 

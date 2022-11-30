@@ -1,5 +1,5 @@
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 subroutine fpe_setup()
 

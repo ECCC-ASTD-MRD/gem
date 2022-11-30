@@ -20,7 +20,7 @@ subroutine model_usage_stats(F_msg_S,F_print_accum_L)
    character(len=*), intent(in) :: F_msg_S
    logical, intent(in) :: F_print_accum_L
 !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, external :: get_max_rss
    double precision, external :: omp_get_wtime

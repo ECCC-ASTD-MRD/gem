@@ -43,7 +43,7 @@ module input_files_mod
    !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface input_files_set_name
       module procedure input_files_set_name0

@@ -3,7 +3,7 @@ subroutine test_integrals
    ! Test integral equation solver
    implicit none
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Local parameters
    integer, parameter :: NI=1

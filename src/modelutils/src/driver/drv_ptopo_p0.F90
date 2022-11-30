@@ -29,7 +29,7 @@ subroutine drv_ptopo_p0(F_npx,F_npy)
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    logical,parameter :: IS_BEGIN_L = .true.
    character(len=*),parameter :: section_S = 'ptopo_cfgs'

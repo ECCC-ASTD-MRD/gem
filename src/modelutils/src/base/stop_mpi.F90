@@ -19,7 +19,7 @@ subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
    implicit none
 !!!#include <arch_specific.hf>
 #include "stop_mpi.h"
-#include "msg.h"
+#include <rmn/msg.h>
 
    !@objective 
    !@arguments

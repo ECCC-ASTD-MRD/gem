@@ -23,7 +23,7 @@ use iso_c_binding
    !@author Stephane Chamberland, 2012-01
    !@/
 #include <rmnlib_basics.hf>
-#include <WhiteBoard.hf>
+#include <rmn/WhiteBoard.hf>
    include "rpn_comm.inc"
 
    logical,parameter :: PE0_ONLY = .true.

@@ -17,7 +17,7 @@
 module inputio_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_tolower
-   use gmm_itf_mod, only: gmm_metadata, gmm_get, gmm_create, GMM_NULL_FLAGS, GMM_FLAG_RSTR
+   use rmn_gmm, only: gmm_metadata, gmm_get, gmm_create, GMM_NULL_FLAGS, GMM_FLAG_RSTR
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_get, vgd_free, VGD_OK, operator(==)
    use incfg2_mod
    use inputio_files_mod
@@ -54,7 +54,7 @@ module inputio_mod
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
 #define MK_ID2CHAR(ID) trim(achar(65+ID))
 #define ADD_PREFIX(ID,VN) 'io/'//MK_ID2CHAR(ID)//'/'//VN

@@ -35,7 +35,7 @@ module fstmpi_mod
    public :: FST_READONLY,FST_FIND_LT,FST_FIND_LE,FST_FIND_NEAR,FST_FIND_GE,FST_FIND_GT,FST_NPAK_DEFAULT,FST_NPAK_FULL32
 !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
 

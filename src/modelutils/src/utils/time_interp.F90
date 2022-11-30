@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@*
 module time_interp_mod
@@ -20,6 +20,7 @@ module time_interp_mod
    use clib_itf_mod, only: clib_tolower
    use wb_itf_mod
    use mu_jdate_mod
+   use rmn_gmm
    implicit none
    private
    !@objective 
@@ -62,7 +63,6 @@ module time_interp_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
 
    interface time_interp_dates
       module procedure time_interp_dates_4

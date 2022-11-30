@@ -28,7 +28,7 @@ module convert_units_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface convert_units
       module procedure convert_units_r4_2d

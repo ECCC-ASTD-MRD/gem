@@ -31,7 +31,7 @@ module config_mod
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    character(len=RMN_PATH_LEN),save :: m_basedir_S = '.'
    integer,save :: m_me_pe     = -1

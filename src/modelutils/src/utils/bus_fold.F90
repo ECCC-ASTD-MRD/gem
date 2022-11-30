@@ -13,12 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END --------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@*
 module bus_fold_mod
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use clib_itf_mod, only: clib_tolower
+   use rmn_gmm
    implicit none
    private
    public :: bus_fold_set, bus_fold, bus_unfold
@@ -32,7 +33,6 @@ module bus_fold_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
    integer,parameter :: MAXBUS = 32
    logical,parameter :: UPDATE_L = .true.
 

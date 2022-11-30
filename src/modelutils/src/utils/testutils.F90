@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 !NOTE: testutils crash on AIX-powerpc7 with MAXLEN >= 1024
 #define DEF_MSG_MAXLEN 512
 #define DEF_MSG_OK 'OK   '

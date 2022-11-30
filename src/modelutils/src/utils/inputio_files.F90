@@ -39,7 +39,7 @@ module inputio_files_mod
    !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, parameter :: NMAX_NLIST = 16
    integer, parameter :: FILE_AVAIL = -1

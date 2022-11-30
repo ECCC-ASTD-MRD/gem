@@ -19,6 +19,7 @@ module hgrid_wb
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use wb_itf_mod
    use ezgrid_mod
+   use rmn_gmm
    implicit none
    private
    !@objective Whiteboard (data store) for ezscint id + halo, ij0, stag,...
@@ -32,8 +33,7 @@ module hgrid_wb
 !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer,parameter :: HGRID_DIEZE = 1
    integer,parameter :: HGRID_PERIODIC = 1
