@@ -94,9 +94,7 @@
 !$omp parallel
       call adz_tracers (.true.)
 
-!$omp single
-      call psadj ( Step_kount )
-!$omp end single
+      call psadj_hlt ( Step_kount )
 
       call adz_tracers (.false.)
 !$omp end parallel

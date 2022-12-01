@@ -58,7 +58,9 @@
 
       call HOR_bndry_hlt ()
 
+!$omp single
       call canonical_cases ("VRD")
+!$omp end single
 
       call hzd_main_hlt ()
 
