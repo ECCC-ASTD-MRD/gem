@@ -8,6 +8,7 @@
       use HORgrid_options
       use VERgrid_options
       use dynkernel_options
+      use sol_options
       use geomh
       use lun
       use path
