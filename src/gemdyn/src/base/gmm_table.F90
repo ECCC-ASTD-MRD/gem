@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module gmm_table
-      use gmm_itf_mod
+      use rmn_gmm
       implicit none
       public
       save

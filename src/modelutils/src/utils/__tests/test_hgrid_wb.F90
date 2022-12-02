@@ -19,12 +19,12 @@ subroutine test_hgrid_wb()
    use testutils
    use ezgrid_mod
    use hgrid_wb
+   use rmn_gmm
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04
    !@/
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
 #include <clib_interface_mu.hf>
    integer,parameter :: NI0=11,NJ0=13
    integer :: istat,ig1,ig2,ig3,ig4, i,j,gid_z1,gid_z2,gid_z1b,i0,j0,lni,lnj,hx,hy

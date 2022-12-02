@@ -43,13 +43,14 @@ module phy_input
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phyfillbus, only: phyfillbus1
 
+   use rmn_gmm
+
    private
    public :: phy_input1
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "phyinput.inc"
 

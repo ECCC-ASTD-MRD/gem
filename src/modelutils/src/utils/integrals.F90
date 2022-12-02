@@ -21,7 +21,7 @@ module integrals
    implicit none
    private
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Generic functions
    interface int_profile

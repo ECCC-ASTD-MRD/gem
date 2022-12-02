@@ -40,7 +40,7 @@ function iniptsurf5() result(F_istat)
    ! 009      M. Mackay (Sep 2022)   - CSLM added
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: nb_agrege = 48

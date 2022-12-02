@@ -21,7 +21,7 @@ module series_nml_mod
    public :: series_nml
 
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter, public :: SER_NML_ERR  = RMN_ERR

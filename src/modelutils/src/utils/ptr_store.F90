@@ -30,7 +30,7 @@ module ptr_store
 !@/
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface ptr_store_new
       module procedure ptr_store_new_r4_3d

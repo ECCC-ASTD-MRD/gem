@@ -1,5 +1,5 @@
 
-#include <msg.h>
+#include <rmn/msg.h>
 
       !/@*
       function dyn_grid_init(F_ni,F_nj,F_halox,F_haloy,F_periodx,F_periody,F_grid_id) result(F_istat)

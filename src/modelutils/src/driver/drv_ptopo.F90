@@ -52,7 +52,7 @@ module drv_ptopo_mod
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    !- privates vars and parameters
    character(len=*),parameter :: status_file_name_S = 'status_drv.dot'

@@ -46,7 +46,7 @@ contains
       !@revisions
       ! * L. Spacek (oct 2011) - Complete remake
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
       real, parameter :: QQ = 4.25e-6 

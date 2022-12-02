@@ -87,7 +87,7 @@ contains
     !        calculate vertical integrals of liquid/ice hydrometeors
     !        output merged fields of liquid water content,  ice water content and cloud fraction
     !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
     include "cldop.cdk"

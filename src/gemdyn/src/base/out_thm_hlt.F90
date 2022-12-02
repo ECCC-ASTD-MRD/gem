@@ -39,7 +39,7 @@
       use outp
       use outd
       use ver
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 

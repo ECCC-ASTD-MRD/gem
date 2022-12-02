@@ -571,7 +571,7 @@ contains
       implicit none
       integer :: F_istat
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
       ! Variables define below are visible 

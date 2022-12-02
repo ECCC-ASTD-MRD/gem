@@ -76,7 +76,7 @@ contains
       ! string    input description string including all tokens (IN is optional)
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
       integer, external :: str_split2keyval
 

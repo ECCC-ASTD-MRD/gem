@@ -15,7 +15,8 @@ add_library(modelutils STATIC ${F_FILES} ${C_FILES})
 add_dependencies(modelutils ${PROJECT_NAME}_build_info)
 target_include_directories(modelutils PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  ${VGRID_INCLUDE_DIR}
+  ${rmn_INCLUDE_DIRS}
+  ${vgrid_INCLUDE_DIRS}
   ${rpncomm_INCLUDE_DIRS}
   ${rpncomm_GEN_INCLUDE_DIR}
   ${tdpack_INCLUDE_DIRS}
@@ -27,7 +28,7 @@ add_dependencies(modelutils_ov_ifort modelutils)
 add_dependencies(modelutils_ov_ifort ${PROJECT_NAME}_build_info)
 
 add_library(modelutils_stubs STATIC stubs/drv_dyn_itf_stubs.F90)
-target_include_directories(modelutils_stubs PRIVATE ${VGRID_INCLUDE_DIR} )
+target_include_directories(modelutils_stubs PRIVATE ${vgrid_INCLUDE_DIRS} )
 add_dependencies(modelutils_stubs modelutils)
 add_dependencies(modelutils_stubs ${PROJECT_NAME}_build_info)
 

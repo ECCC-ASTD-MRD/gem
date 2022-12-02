@@ -29,7 +29,7 @@
       use dyn_fisl_options
       use geomh
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use HORgrid_options
       use lun
       use tdpack

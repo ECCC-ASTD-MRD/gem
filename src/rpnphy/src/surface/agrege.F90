@@ -25,7 +25,7 @@ subroutine agrege3( &
    use sfcbus_mod
    implicit none
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer ni, trnch, ptsurfsiz
    integer ptr_soil(ptsurfsiz), ptr_glacier(ptsurfsiz)

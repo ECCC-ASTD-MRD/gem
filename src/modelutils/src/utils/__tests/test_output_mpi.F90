@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@
 subroutine test_output_mpi()
@@ -26,12 +26,12 @@ subroutine test_output_mpi()
    use hgrid_wb
    use fstmpi_mod
    use ezgrid_mod
+   use rmn_gmm
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-09
    !@/
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
 
    real,parameter :: PRES_MB2PA = 100.
    integer, parameter :: MAX_ITEM = 99

@@ -45,7 +45,7 @@ contains
       real, dimension(:), pointer, contiguous :: fbus, vbus
       real :: dt
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
       include "sfcinput.cdk"
 
       real, pointer, dimension(:), contiguous :: zaccevap, zdrain, zdrainaf, zfvapliqaf,&

@@ -29,7 +29,7 @@
    integer F_istat
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    logical :: nest_it
    integer :: i,j,istat

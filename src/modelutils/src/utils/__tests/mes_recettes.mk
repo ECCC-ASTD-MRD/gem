@@ -50,7 +50,6 @@ tmp_print_list: tmp_create_lists.o tmp_print_list.o
 test_file_utils.o: test_file_utils.ftn90 ../utils4tests.hf
 test_handle_error.o: test_handle_error.ftn90 ../utils4tests.hf
 test_handle_error2.o: test_handle_error2.ftn90 ../utils4tests.hf
-test_msg.o: test_msg.ftn90 ../msg.h ../utils4tests.hf
 test_stop_mpi.o: test_stop_mpi.ftn90 ../stop_mpi.h ../utils4tests.hf
 
 copy_hgrid: copy_hgrid.o

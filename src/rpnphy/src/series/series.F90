@@ -24,7 +24,7 @@ module series_mod
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    public :: series_nml, series_init, series_terminate, series_stepinit, &
         series_stepend, series_pause, series_resume, series_isstep, &

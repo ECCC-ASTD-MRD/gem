@@ -20,6 +20,7 @@ module vinterp_mod
    use vgrid_ov, only: vgrid_nullify
    use vgrid_wb
    use samevgrid_mod
+   use rmn_gmm
    implicit none
    private
    !@objective 
@@ -31,8 +32,7 @@ module vinterp_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
-#include <mu_gmm.hf>
+#include <rmn/msg.h>
 
    interface vinterp
       module procedure vinterp0

@@ -41,7 +41,7 @@ contains
       real, dimension(:,:), pointer, contiguous :: nti1p                   !Ice number concentration (#/m3)
       real, dimension(:), pointer, contiguous :: tdmask                    !Tendency mask
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
       ! Local variables

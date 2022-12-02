@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module var_gmm
-   use gmm_itf_mod
+   use rmn_gmm
    implicit none
    public
    save

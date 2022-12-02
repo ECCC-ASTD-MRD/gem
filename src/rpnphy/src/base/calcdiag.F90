@@ -58,7 +58,7 @@ contains
       !@Author B. Bilodeau Feb 2003
       !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
       include "surface.cdk"

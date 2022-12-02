@@ -1,6 +1,6 @@
 module phymem
    use clib_itf_mod, only: clib_toupper, clib_tolower
-   use gmm_itf_mod, only: gmm_metadata, gmm_create, gmm_get, GMM_IS_OK, GMM_FLAG_RSTR, GMM_FLAG_IZER, GMM_FLAG_INAN, GMM_NULL_FLAGS, GMM_MAXNAMELENGTH
+   use rmn_gmm, only: gmm_metadata, gmm_create, gmm_get, GMM_IS_OK, GMM_FLAG_RSTR, GMM_FLAG_IZER, GMM_FLAG_INAN, GMM_NULL_FLAGS, GMM_MAXNAMELENGTH
    use str_mod, only: str_normalize
    use phy_status, only: PHY_OK, PHY_ERROR
    implicit none
@@ -15,7 +15,7 @@ module phymem
    public :: pbuslist, pvarlist, npvarlist
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, parameter, public :: PHY_NBUSES = 4
    integer, parameter, public :: PHY_MAXVARS = 1000  !# max nb vr per bus (need at least double for all 4: phyvar has ~900 entries

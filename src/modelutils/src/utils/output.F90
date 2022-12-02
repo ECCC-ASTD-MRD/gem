@@ -25,6 +25,7 @@ module output_mod
    use vgrid_wb
    use vGrid_Descriptors
    use ptr_store
+   use rmn_gmm
    implicit none
    private
    !@objective 
@@ -39,8 +40,7 @@ module output_mod
 !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface output_new
       module procedure outcfg_new_4

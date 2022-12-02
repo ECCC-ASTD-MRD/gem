@@ -14,7 +14,7 @@ module wb_itf_mod
    !@author  Stephane Chamberland, 2010-06
 !*@/
 
-#include <WhiteBoard.hf>
+#include <rmn/WhiteBoard.hf>
 
    integer,parameter :: wb_OK = WB_OK
    integer,parameter :: wb_ERROR = WB_ERROR

@@ -25,7 +25,7 @@ subroutine test_drv_path()
    !@author Stephane Chamberland, 2012-02
 !@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    character(len=RMN_PATH_LEN) :: basedir_S,work_S,input_S,output_S,work_domaine_S,work_grid_S,tmp_S,input_domaine_S
 
    integer :: istat,npx,npy

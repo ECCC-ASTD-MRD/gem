@@ -13,8 +13,8 @@ endif()
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid
@@ -31,8 +31,8 @@ add_dependencies(checkdmpart gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid
@@ -47,8 +47,8 @@ add_dependencies(gemgrid gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid

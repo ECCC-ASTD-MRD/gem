@@ -37,7 +37,7 @@ module output_files_mod
 !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer,save :: m_postprocstep(OUTCFG_NCFG_MAX) = -1
 

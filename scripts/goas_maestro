@@ -51,10 +51,10 @@ ln -sf $suite_name suites/${expgem}
 cp -r ${REF}/* $suite_name
 ici=$PWD
 
-CONFIG=$(true_path ${cfg}/cfg_0000)
-if [ ! -d ${CONFIG} ] ; then
-  printf  "\n  Config directory ${CONFIG} NOT available - ABORT\n\n"
-  exit 1
+CONFIG=$(true_path ${cfg}/cfg_0000 2> /dev/null || true)
+if [ -z "${CONFIG}" ] ; then
+   printf  "\n  Invalid config directory ${cfg} - ABORT\n\n"
+   exit
 fi
 
 cd $suite_name
@@ -87,8 +87,6 @@ GEM_outcfg=${CONFIG}/outcfg.out
 GEM_phy_intable=${CONFIG}/physics_input_table
 #GEM_headscript_E=
 GEM_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
-GEM_check_settings=0
-GEM_check_version=0
 rmn_date=20220509
 . r.load.dot rpn/utils/\${rmn_date}
 EOF

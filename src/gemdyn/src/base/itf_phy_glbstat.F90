@@ -22,7 +22,7 @@
       use glb_ld
       use tr3d
       use phy_itf, only: phy_get,phymeta,phy_getmeta
-      use gmm_itf_mod
+      use rmn_gmm
       implicit none
 
       character(len=*) name_S

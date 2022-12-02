@@ -208,7 +208,7 @@ contains
       use type_mod
       use ver
       use gmm_pw
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>

@@ -2,7 +2,7 @@
 module testtiming_mod
    public
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 contains
 

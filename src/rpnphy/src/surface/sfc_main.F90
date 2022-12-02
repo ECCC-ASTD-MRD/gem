@@ -87,7 +87,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    !                                    call to calz, lin_kdif_sim1
    ! 021      K. Winger,M. Mackay   (Feb 2017/Sep 2022)  - Add call to lake and river (M.A.) models
    !*@/
-#include <msg.h>
+#include <rmn/msg.h>
    include "sfcinput.cdk"
 
    logical :: do_glaciers, do_ice, do_urb, do_lake, do_river

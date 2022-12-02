@@ -22,8 +22,7 @@ module phy_getmeta_mod
    use phymem, only: npvarlist, phyvar, phymem_find
    private
 #include <rmnlib_basics.hf>
-#include <msg.h>
-#include <mu_gmm.hf>
+#include <rmn/msg.h>
 
    public :: phy_getmeta, phy_getmeta_single, phy_getmeta_list
 

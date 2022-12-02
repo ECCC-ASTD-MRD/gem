@@ -27,8 +27,8 @@ else()
   add_compile_definitions(WITHOUT_OpenMP)
 endif()
 
-if (NOT RMN_FOUND)
-  find_package(RMN ${RMN_REQ_VERSION} REQUIRED)
+if (NOT rmn_FOUND)
+  find_package(rmn ${RMN_REQ_VERSION} CONFIG)
 endif()
 
 if (NOT rpncomm_FOUND)
@@ -39,8 +39,8 @@ if (NOT tdpack_FOUND)
   find_package(tdpack ${tdpack_REQ_VERSION} CONFIG)
 endif()
 
-if (NOT VGRID_FOUND)
-  find_package(VGRID ${VGRID_REQ_VERSION})
+if (NOT vgrid_FOUND)
+  find_package(vgrid ${vgrid_REQ_VERSION} CONFIG)
 endif()
 
   # Adding specific flags for modelutils
@@ -70,7 +70,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.in ${CMAKE
 
 add_subdirectory(src/main modelutils-main)
 add_subdirectory(src modelutils)
-
 
 #----- Packaging
 ec_package_name()                 # Define package prefix  

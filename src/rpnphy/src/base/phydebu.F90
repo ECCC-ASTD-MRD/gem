@@ -99,7 +99,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    !          2) it reads the radiation files if necessary.
    !          3) it constructs the 3 main buses dictionaries.
    !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    include "clefcon.cdk"

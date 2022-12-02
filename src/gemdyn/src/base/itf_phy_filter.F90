@@ -24,7 +24,7 @@ module itf_phy_filter
    integer, public, save :: nsurfag = 1
 
    ! External decalarations
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Module variables
    integer, save :: hw = 0                           !Filter half-width (gridpoints)
@@ -143,7 +143,7 @@ contains
       use HORgrid_options
       use glb_ld
       use cstv
-      use gmm_itf_mod
+      use rmn_gmm
       ! Smooth selected scheme-based tendency from full physics tendency.
       implicit none
 

@@ -53,7 +53,7 @@ function output_writestep(F_id,F_step,F_callback) result(F_istat)
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    logical,parameter :: NOPRINT = .false.
    integer,parameter :: MAX_ITEM = 999
    character(len=4)  :: mylist_S(MAX_ITEM)

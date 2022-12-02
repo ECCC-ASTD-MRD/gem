@@ -13,7 +13,6 @@
       use path
       use ptopo
       use version
-      use sol_options
       implicit none
 
 #include <rmnlib_basics.hf>

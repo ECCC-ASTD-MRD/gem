@@ -39,7 +39,7 @@ module fstmpio_mod
         FST_FIND_GT, FST_NPAK_DEFAULT, FST_NPAK_FULL32, FST_FIND_DIAG_T, FST_FIND_DIAG_M
 !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
 

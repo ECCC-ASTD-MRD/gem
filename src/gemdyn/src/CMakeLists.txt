@@ -19,14 +19,14 @@ target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
    base
    ${tdpack_INCLUDE_DIRS}
-   ${VGRID_INCLUDE_DIR}
+   ${vgrid_INCLUDE_DIRS}
    ${rpncomm_INCLUDE_DIRS}
    ${rpncomm_GEN_INCLUDE_DIR}
+   ${rmn_INCLUDE_DIRS}
    ${modelutils_INCLUDE_DIRS}
    ${modelutils_MODULES_DIR}
    ${phy_INCLUDE_DIRS}
    ${phy_MODULES_DIR}
-   ${RMN_INCLUDE_DIR_EXTRA}
 )
 
 target_link_libraries(gemdyn

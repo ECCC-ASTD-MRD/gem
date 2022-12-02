@@ -26,7 +26,7 @@ function sfc_get_input_param()  result(istat)
    !@Author L. Spacek (Fall 2013)
    !@Revisions
    !*
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "sfcinput.cdk"
 

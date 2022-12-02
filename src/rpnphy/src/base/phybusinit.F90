@@ -38,7 +38,7 @@ subroutine phybusinit(ni,nk)
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
    
-#include <msg.h>
+#include <rmn/msg.h>
    include "surface.cdk"
    include "mcica.cdk"
    include "clefcon.cdk"

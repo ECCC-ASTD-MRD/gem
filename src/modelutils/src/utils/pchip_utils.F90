@@ -21,7 +21,7 @@ module pchip_utils
    implicit none
    private
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Internal parameters
    integer, parameter :: LONG_CHAR=16                           !Long character string length

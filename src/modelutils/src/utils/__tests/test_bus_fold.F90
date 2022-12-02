@@ -22,7 +22,7 @@ subroutine test_bus_fold()
    !@author Stephane Chamberland, 2012-02
    !@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    integer,parameter :: NI=4, NJ=3, NK=5, HX=1, HY=2
    integer,parameter :: BNI1=NI, BNI2=2*NI
    integer,parameter :: BHXY3 = -1,BHXY4 = 1

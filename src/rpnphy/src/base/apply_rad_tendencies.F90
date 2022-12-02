@@ -45,7 +45,7 @@ contains
 
       !@Author Ron McTaggart-Cowan, Summer 2017
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 #include "phymkptr.hf"
 

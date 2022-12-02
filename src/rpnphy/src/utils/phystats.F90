@@ -29,7 +29,7 @@ subroutine phystats(F_stepcount, F_delt)
    !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Fall 2015
    !*@/
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
    logical, parameter :: NOSHORTMATCH_L = .false.
 

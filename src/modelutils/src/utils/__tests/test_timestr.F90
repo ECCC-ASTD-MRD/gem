@@ -13,7 +13,7 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@*
 subroutine test_timestr()

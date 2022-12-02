@@ -33,6 +33,7 @@ contains
 
    !/@*
    function phy_snapshot(F_mode) result(F_istat)
+      use rmn_gmm
       implicit none
       !@Arguments
       character(len=*), intent(in) :: F_mode  !Snapshot mode: PHY_SNAPSHOT_STORE/RESUME
@@ -43,8 +44,7 @@ contains
       !*@/
 
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
       type(gmm_metadata) :: gmmmeta
       integer :: istat

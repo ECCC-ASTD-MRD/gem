@@ -13,14 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 
 !/@
 subroutine test_vinterp()
    use, intrinsic :: iso_fortran_env, only: REAL64
    use iso_c_binding
    use testutils
-   use gmm_itf_mod
+   use rmn_gmm
    use vGrid_Descriptors
    use vgrid_wb
    use vinterp_mod

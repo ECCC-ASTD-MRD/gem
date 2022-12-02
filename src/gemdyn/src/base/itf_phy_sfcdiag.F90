@@ -16,7 +16,7 @@
       subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, &
                                   F_var_S, F_status, F_quiet_L)
       use phy_itf, only: phy_get
-      use gmm_itf_mod
+      use rmn_gmm
       use HORgrid_options
       use glb_ld
       use outp

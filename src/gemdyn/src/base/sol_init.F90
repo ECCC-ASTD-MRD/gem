@@ -23,7 +23,7 @@
       use lun
       use sol_mem
       use sol_options
-      use gmm_itf_mod
+      use rmn_gmm
       use ptopo
       implicit none
 

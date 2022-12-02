@@ -30,13 +30,8 @@ else()
   add_compile_definitions(WITHOUT_OpenMP)
 endif()
 
-if (NOT RMN_FOUND)
-  find_package(RMN ${RMN_REQ_VERSION} REQUIRED)
-  if (RMN_FOUND) 
-    find_path(RMN_INCLUDE_DIR_EXTRA
-      NAMES convert_ip123.inc
-      PATHS ${EC_INCLUDE_PATH})
-  endif()
+if (NOT rmn_FOUND)
+  find_package(rmn ${RMN_REQ_VERSION} CONFIG)
 endif()
 
 if (NOT rpncomm_FOUND)
@@ -47,8 +42,8 @@ if (NOT tdpack_FOUND)
   find_package(tdpack ${tdpack_REQ_VERSION} CONFIG)
 endif()
 
-if (NOT VGRID_FOUND)
-  find_package(VGRID ${VGRID_REQ_VERSION})
+if (NOT vgrid_FOUND)
+  find_package(vgrid ${vgrid_REQ_VERSION} CONFIG)
 endif()
 
 # Adding specific flags for gemdyn
@@ -96,7 +91,3 @@ set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${PROJECT_VERSION}")
 include(CPack)
-
-if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
-  set(CMAKE_INSTALL_PREFIX "${PACKAGE_NAME}" CACHE FILEPATH "CMake Installation prefix" FORCE)
-endif()

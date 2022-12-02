@@ -57,7 +57,7 @@ contains
       ! 001      new arguments in call to mydmom_main
       ! 002      PV-nov2014: fix communication between deep convection and MY_Dm
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
       include "surface.cdk"
 
       ! Local parameters

@@ -23,7 +23,7 @@ module phyunfold
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface phyunfoldmeta1
       module procedure phyunfoldmeta2d
@@ -226,7 +226,7 @@ contains
       !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
       F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
@@ -258,7 +258,7 @@ contains
       !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
       F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
@@ -290,7 +290,7 @@ contains
       !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       type(phyvar) :: myphyvar(1)
       !---------------------------------------------------------------
       F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
