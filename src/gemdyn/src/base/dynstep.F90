@@ -27,7 +27,7 @@
       use HORgrid_options
       use lun
       use step_options
-      use gem_timing
+      use omp_timing
       use theo_options
       implicit none
 
@@ -53,10 +53,11 @@
       call rpn_comm_xch_halo (Adz_uu_ext, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
                     l_ni,l_nj, 3*l_nk, Adz_halox,Adz_haloy, .false.,.false., l_ni,0)
 
-
       if (trim(Sol_type_S) == 'ITERATIVE_3D') then
          if (.not. done) then
-            call matvec3d_init()
+!$omp parallel
+            call matvec3d_init_hlt ()
+!$omp end parallel
          endif
          done =.true.
       endif
@@ -68,7 +69,7 @@
       end select
 
       if (Lun_debug_L) write(Lun_out,1000)
-      call gemtime_start ( 10, 'DYNSTEP', 1 )
+      call gtmg_start ( 10, 'DYNSTEP', 1 )
 
       keep_itcn = Schm_itcn
 
@@ -90,11 +91,13 @@
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
+!$omp parallel
       call adz_tracers (.true.)
 
-      call psadj ( Step_kount )
+      call psadj_hlt ( Step_kount )
 
       call adz_tracers (.false.)
+!$omp end parallel
 
       call t02t1()
 
@@ -114,7 +117,7 @@
 
       Schm_itcn = keep_itcn
 
-      call gemtime_stop ( 10 )
+      call gtmg_stop ( 10 )
 
  1000 format( &
       /,'CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP)', &

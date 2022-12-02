@@ -21,7 +21,7 @@
 
       use adz_mem
       use dynkernel_options
-      use gem_timing
+      use omp_timing
       use geomh
       use HORgrid_options
       use ptopo
@@ -57,11 +57,11 @@
 !
 !---------------------------------------------------------------------
 !
-      call gemtime_start (15, 'MASS__', 74)
+!      call gtmg_start (15, 'MASS__', 74)
 
       c_mass_8 = 0.0d0
 
-      call gemtime_start (18, 'SOMME_', 15)
+!      call gtmg_start (18, 'SOMME_', 15)
 
       do n=1,F_ntr_bc
 
@@ -92,9 +92,9 @@
 
       end do
 
-      call gemtime_stop  (18)
+!      call gtmg_stop  (18)
 
-      call gemtime_start (19, 'REDUCE', 15)
+!      call gtmg_start (19, 'REDUCE', 15)
 
       comm = RPN_COMM_comm ('MULTIGRID')
 
@@ -110,9 +110,9 @@
 
       F_mass_X_8 = gc_mass_8
 
-      call gemtime_stop (19)
+!      call gtmg_stop (19)
 
-      call gemtime_stop (15)
+!      call gtmg_stop (15)
 !
 !---------------------------------------------------------------------
 !

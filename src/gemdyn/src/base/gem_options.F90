@@ -112,16 +112,6 @@ module gem_options
    integer stat_nombre
    integer Vtopo_start, Vtopo_ndt
 
-   !# Frequency of trace timer dump
-   integer :: Gem_trace_freq = -1
-   namelist /gem_cfgs  / Gem_trace_freq
-   namelist /gem_cfgs_p/ Gem_trace_freq
-
-   !# trace timer with mpi barrier
-   integer :: Gem_trace_ctrl = 0
-   namelist /gem_cfgs  / Gem_trace_ctrl
-   namelist /gem_cfgs_p/ Gem_trace_ctrl
-
 contains
 
 !**s/r gem_nml - Read namelist gem

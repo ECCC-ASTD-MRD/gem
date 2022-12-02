@@ -35,7 +35,7 @@
       use dcst
       use ver
       use metric
-      use fislh_sol
+      use sol_mem
       use mem_tstp
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -48,7 +48,7 @@
 
       integer :: i, j, k, km
       real, dimension(:,:,:), pointer :: tots, logT, logQ
-      real(kind=REAL64) :: c0,c1,div,w1,w2,barz,barzp,t_interp,u_interp,v_interp,i_hydro
+      real(kind=REAL64) :: c0,div,w1,w2,w3,barz,barzp,t_interp,u_interp,v_interp,i_hydro
       real(kind=REAL64) :: tau_8, tau_m_8, tau_nh_8, invT_8, invT_m_8, invT_nh_8
       real(kind=REAL64), parameter :: one=1.d0, half=0.5d0
 !     __________________________________________________________________
@@ -66,7 +66,7 @@
       invT_nh_8= one/tau_nh_8
 
       c0 = Dcst_rayt_8**2
-      c1 = grav_8 * tau_8
+      w3 = grav_8 * tau_8
 
       tots(1:l_ni,1:l_nj,1:l_nk) => WS1(1:)
       logT(1:l_ni,1:l_nj,1:l_nk) => WS1(  l_ni*l_nj*l_nk+1:)
@@ -172,7 +172,7 @@
    !           Compute Nt
    !           ~~~~~~~~~~
                w1 = invT_8*( logT(i,j,k) - (one-one/tots(i,j,k)) )
-               nl_t(i,j,k) = gama_8 * ( c1 * w1 + nl_w(i,j,k) )
+               nl_t(i,j,k) = gama_8 * ( w3 * w1 + nl_w(i,j,k) )
             end do
          end do
       end do

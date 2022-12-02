@@ -47,18 +47,20 @@
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
-      call adz_tracers_hlt (.true.) ! Mass fixing NOT done yet
+      call adz_tracers (.true.) ! Mass fixing NOT done yet
 
       call psadj_hlt ( Step_kount )
 
-      call adz_tracers_hlt (.false.)
+      call adz_tracers (.false.)
       call gtmg_stop (10)
 
       call t02t1()
 
       call HOR_bndry_hlt ()
 
+!$omp single
       call canonical_cases ("VRD")
+!$omp end single
 
       call hzd_main_hlt ()
 

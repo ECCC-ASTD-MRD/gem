@@ -1,39 +1,41 @@
 #!/bin/bash
 #
-# ex: goas_maestro -exp /home/mid001/home/goas/5.2.0-a18/trunk
+# ex: goas_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
 #     goas_maestro -f -exp HRDPS_H -module /home/mid001/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
+#
 arguments=$*
 eval `cclargs_lite $0 \
-  -exp     "$PWD"  "$PWD"  "[]" \
-  -cfg     "$PWD/configurations/GEM_cfgs"      "$PWD/configurations/GEM_cfgs"      "[]" \
-  -xfer    ""      ""      "[]" \
-  -module  ""      ""      "[]" \
-  -ptopo   "1x1x1" "1x1x1" "[]" \
-  -t       "10"    "10"    "[]" \
-  -f       "0"     "1"     "[]" \
-  -nosubmit "1"    "0"     "[]" \
+  -exp      "$PWD"  "$PWD"  "[]" \
+  -cfg      "$PWD/configurations/GEM_cfgs" "$PWD/configurations/GEM_cfgs" "[]" \
+  -xfer     ""      ""      "[]" \
+  -module   ""      ""      "[]" \
+  -ptopo    "1x1x1" "1x1x1" "[]" \
+  -t        "10"    "10"    "[]" \
+  -f        "0"     "1"     "[]" \
+  -nosubmit "0"     "1"     "[]" \
   ++ $arguments`
 
 cd ${exp}
-if [ ! -s .eccc_setup_intel ] ; then
+GEM_INSTALL=$(dirname $PWD)
+REF=${GEM_INSTALL}/gem-maestro/GEM_RI_MAESTRO
+module=${module:-${GEM_INSTALL}/gem-maestro/gem_module}
+
+if [ ! -s .eccc_setup ] ; then
    printf "\n Experiment directory ${exp} is NOT conformed - exiting\n\n"
    exit 1
 fi
 if [ -z "${ATM_MODEL_VERSION}" ] ; then
-   . .eccc_setup_intel
+   . .eccc_setup
 fi
 
-set -ex
-expgem=$(basename $PWD)
-if [ ! -d ${cfg}/cfg_0000 ] ; then cfg=$PWD/configurations/$(basename $cfg); fi
+expgem=$(basename ${GEM_INSTALL})
+mach=$(basename $PWD)
 expM=$(basename $cfg)
 XFER="\${TRUE_HOST}:\${SEQ_EXP_HOME}/hub/\${TRUE_HOST}/gridpt/prog/gem"
 XFER=${xfer:-${XFER}}
-REF=${PWD}/gem-maestro/GEM_RI_MAESTRO
-module=${module:-${PWD}/gem-maestro/gem_module}
 
 NAME_exp=goas/${ATM_MODEL_VERSION}/${expgem}/${expM}
-suite_name=${HOME}/.suites/${NAME_exp}
+suite_name=${HOME}/.suites/${NAME_exp}/$mach
 
 if [ -d $suite_name ] ; then
    if [ $f -gt 0 ] ; then
@@ -45,16 +47,17 @@ if [ -d $suite_name ] ; then
 fi
 
 mkdir -p $suite_name suites
-ln -sf $suite_name suites
+ln -sf $suite_name suites/${expgem}
 cp -r ${REF}/* $suite_name
 ici=$PWD
-cd $suite_name
-CONFIG=${cfg}/cfg_0000
-if [ ! -d ${CONFIG} ] ; then
-  printf  "\n  Config directory ${CONFIG} NOT available - ABORT\n\n"
-  exit 1
+
+CONFIG=$(true_path ${cfg}/cfg_0000 2> /dev/null || true)
+if [ -z "${CONFIG}" ] ; then
+   printf  "\n  Invalid config directory ${cfg} - ABORT\n\n"
+   exit
 fi
 
+cd $suite_name
 ln -s ${CONFIG}/configexp.cfg experiment.cfg
 ln -s $module modules/gem
 export SEQ_EXP_HOME=${suite_name}
@@ -78,21 +81,18 @@ echo "ATM_MODEL_DFILES_DEFAULT=${ATM_MODEL_DFILES}" > ${CONFIG}/configexp.cfg
 cat tmp$$ >> ${CONFIG}/configexp.cfg
 /bin/rm -f tmp$$
 cat >> ${CONFIG}/configexp.cfg <<EOF
-GEM_ovbin=${exp}
+GEM_ovbin=${GEM_INSTALL}
 GEM_settings=${CONFIG}/gem_settings.nml
 GEM_outcfg=${CONFIG}/outcfg.out
 GEM_phy_intable=${CONFIG}/physics_input_table
 #GEM_headscript_E=
-GEM_version="GOAS:${exp}:${ATM_MODEL_VERSION}"
-GEM_check_settings=0
-GEM_check_version=0
+GEM_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
 rmn_date=20220509
 . r.load.dot rpn/utils/\${rmn_date}
 EOF
-cat ${CONFIG}/configexp.cfg
 
 set -ex
-if [ ${nosubmit} -gt 0 ] ; then
+if [ ${nosubmit} -eq 0 ] ; then
    maestro -s submit -n /gem -d 0000000000 -i
 fi
 

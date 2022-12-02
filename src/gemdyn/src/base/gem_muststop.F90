@@ -25,7 +25,7 @@
       use path
       use ptopo
       use step_options
-      use gem_timing
+      use omp_timing
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -43,7 +43,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call gemtime_start ( 70, 'MUSTOP', 1 )
+      call gtmg_start ( 70, 'MUSTOP', 1 )
 
       pe0_master_L = (Ptopo_myproc == 0) .and. (Ptopo_couleur == 0)
 
@@ -108,12 +108,7 @@
       if (gem_muststop) call wrrstrt()
 
       call gemtime ( Lun_out, 'CURRENT TIMESTEP', .false. )
-      call gemtime_stop (70)
-
-      ! for now MD
-!!$      if ( (Step_kount>0) .and. (Gem_trace_ctrl>0) .and.&
-!!$           (mod(Step_kount,Gem_trace_freq)==0) ) &
-!!$           call gemtime_trace_dump ()
+      call gtmg_stop (70)
 
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
               ' was released for postprocessing at timestep: ',i9)

@@ -13,7 +13,6 @@
       use path
       use ptopo
       use version
-      use gem_timing, only : gemtime
       implicit none
 
 #include <rmnlib_basics.hf>

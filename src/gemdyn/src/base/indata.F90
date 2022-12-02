@@ -30,7 +30,7 @@
       use step_options
       use theo_options
       use tr3d
-      use gem_timing
+      use omp_timing
       use mem_tracers
       implicit none
 
@@ -46,7 +46,7 @@
       if (synthetic_data_L) then
          call synthetic_data ()
       else
-         call gemtime_start ( 71, 'INITIAL_input', 2)
+         call gtmg_start ( 71, 'INITIAL_input', 2)
 
          call get_topo ()
 
@@ -57,7 +57,7 @@
          dimens=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
                         perturb_nbits, perturb_npts, dimens )
-         call gemtime_stop  ( 71 )
+         call gtmg_stop  ( 71 )
       end if
 
       call gemtime ( Lun_out, 'AFTER INITIAL INPUT', .false. )

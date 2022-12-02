@@ -18,22 +18,25 @@
       subroutine pw_update_GW()
       use dynkernel_options
       use gem_options
-      use gem_timing
+      use omp_timing
       use glb_ld
       use gmm_geof
       use gmm_pw
       use gmm_vt1
+      use gmm_geof
+      use lun
       use metric
       use tdpack
       implicit none
 #include <arch_specific.hf>
 
+      integer i,j,k
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: fi
 !     ________________________________________________________________
 
       if (Schm_autobar_L) return
 
-      call gemtime_start ( 5, 'PW_UPDATE', 0)
+      call gtmg_start ( 5, 'PW_UPDATE', 0)
 
       pw_wz_plus= wt1
       pw_me_plus= fis0
@@ -46,9 +49,20 @@
                               G_nk, 1-G_halox*west ,l_ni+G_halox*east,&
                               1-G_haloy*south,l_nj+G_haloy*north)
          pw_gz_plus(:,:,1:l_nk)= fi(:,:,1:l_nk)
-      end if
-
-      call gemtime_stop (5)
+         if (Lctl_debug_L) then
+            do k=1,G_nk
+               do j=1-G_haloy*south,l_nj+G_haloy*north
+                  do i=1-G_halox*west,l_ni+G_halox*east
+                     dgzm(i,j,k)=fi(i,j,k)-fi(i,j,k+1)
+                  end do
+               end do
+            end do
+            call glbstat ( dgzm,'DGZM',"metric",l_minx,l_maxx,l_miny,l_maxy,1,l_nk,&
+                           1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,l_nk )
+         end if
+      endif
+      
+      call gtmg_stop (5)
 !     ________________________________________________________________
 !
       return
