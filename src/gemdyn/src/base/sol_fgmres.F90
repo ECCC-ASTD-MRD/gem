@@ -15,8 +15,7 @@
 
 !** fgmres - Flexible generalized minimum residual method(with restarts).
 
-      subroutine sol_fgmres_hlt ( solution, rhs_b, tolerance, maxinner, &
-                                  maxouter, nbiter, conv, F_print_L )
+      subroutine sol_fgmres ( solution, rhs_b, F_print_L )
       use dynkernel_options
       use glb_ld
       use ldnh
@@ -39,22 +38,6 @@
       ! Right hand side of the linear system.
       real(kind=REAL64), dimension(ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: rhs_b
 
-      ! Tolerance to achieve. The algorithm terminates when the relative
-      ! residual is below tolerance.
-      real(kind=REAL64), intent(in) :: tolerance
-
-      ! Restarts the method every maxinner inner iterations.
-      integer, intent(in) :: maxinner
-
-      ! Specifies the maximum number of outer iterations.
-      ! Iteration will stop after maxinner*maxouter steps
-      ! even if the specified tolerance has not been achieved.
-      integer, intent(in) :: maxouter
-
-      ! Total number of iteration performed
-      integer, intent(out) :: nbiter
-
-      real(kind=REAL64), intent(out) :: conv
       logical, intent(in) :: F_print_L
 
       ! References
@@ -69,39 +52,18 @@
       ! Low synchronization Gram–Schmidt and GMRES algorithms. United States: N. p., 2020. Web. doi:10.1002/nla.2343.
       ! (https://onlinelibrary.wiley.com/doi/10.1002/nla.2343)
 
-      integer :: i, j, k, k0, k1, ii, jj, ierr
-
-      integer :: initer, outiter, it
-      real(kind=REAL64) ::   t
-      real(kind=REAL64) :: local_dot(2), glb_dot(2), l_avg_8(2), r_avg_8(2)
-      real(kind=REAL64), dimension(maxinner+1,2) :: v_local_prod, v_prod, v_avg_8
-
-      real(kind=REAL64) :: rrp
-
       logical almost_zero
 
-      integer i0, in, j0, jn
-      integer niloc,njloc, nii, njj, nk
+      integer :: i, j, k, k1, ii, jj, ierr
+      integer :: initer, outiter, it, nbiter
+
+      real(kind=REAL64) :: t, conv, local_dot(2), glb_dot(2), l_avg_8(2), r_avg_8(2)
+      real(kind=REAL64), dimension(sol_im+1,2) :: v_local_prod, v_prod, v_avg_8
+      real(kind=REAL64) :: rrp, wrr2, wro2, wnu , wr0, residual, Rel_tolerance
 !
 !     ---------------------------------------------------------------
 !
-      nii = Sol_iin-Sol_ii0+1
-      njj = Sol_jjn-Sol_jj0+1
-
-      niloc = (l_ni-pil_e)-(1+pil_w)+1
-      njloc = (l_nj-pil_n)-(1+pil_s)+1
-      k0=1+Lam_gbpil_T
-      nk=l_nk-k0+1
-
-      i0 = 1  + sol_pil_w
-      in = l_ni - sol_pil_e
-      j0 = 1  + sol_pil_s
-      jn = l_nj - sol_pil_n
-
-      outiter = 0
-      nbiter = 0
-
-      conv = 0.d0
+      outiter= 0 ; nbiter= 0 ; conv= 0.d0
 
       ! Residual of the initial iterate
       call matvec_hlt ( solution  , ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,&
@@ -110,84 +72,85 @@
       !  Compute ||b*b|| to determine the required error for convergence
 
       local_dot(1)=0.d0
+!!$omp master
 !$omp do collapse(2)
-      do k=k0,l_nk
-         do j=j0,jn
-            do i=i0,in
+      do k=Sol_k0,l_nk
+         do j=Sol_j0,Sol_jn
+            do i=Sol_i0,Sol_in
                vv(i,j,k,1)  = rhs_b(i,j,k) - work_space(i,j,k)
                local_dot(1) = local_dot(1) + (rhs_b(i,j,k)*rhs_b(i,j,k))
             end do
          end do
       end do
 !$omp enddo
-      thread_s(1,OMP_get_thread_num()) = local_dot(1)
-!$OMP BARRIER
+!!$omp end master
 
-      do
-      local_dot(2)=0.d0
+      do ! MAIN OUTER ITERATION
+         local_dot(2)=0.d0
+!!$omp master
 !$omp do collapse(2)
-!!$omp single
-         do k=k0,l_nk
-            do j=j0,jn
-               do i=i0,in
+         do k=Sol_k0,l_nk
+            do j=Sol_j0,Sol_jn
+               do i=Sol_i0,Sol_in
                   local_dot(2) = local_dot(2) + (vv(i, j, k, 1) * vv(i, j, k, 1))
                end do
             end do
          end do
 !$omp enddo
-!!$omp end single
-         thread_s(2,OMP_get_thread_num()) = local_dot(2)
+!!$omp end master
+         thread_s(1:2,OMP_get_thread_num()) = local_dot(1:2)
 !$OMP BARRIER
 
 !$omp single
          l_avg_8(1) = sum(thread_s(1,:))
          l_avg_8(2) = sum(thread_s(2,:))
-
          call RPN_COMM_allreduce(l_avg_8, glb_dot, 2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
-         r0 = sqrt(glb_dot(1))
-         norm_residual = sqrt(glb_dot(2))
-!$omp end single
-!$OMP BARRIER
+         wr0      = sqrt(glb_dot(1))
+         residual = sqrt(glb_dot(2))
+
+!$omp end single copyprivate(wr0, residual)
+
+!         wr0      = sqrt(glb_dot(1))
+!         residual = sqrt(glb_dot(2))
 
          ! Scale tolerance according to the norm of b;
-         relative_tolerance = tolerance * r0
-         conv = norm_residual / r0
+         Rel_tolerance = sol_fgm_eps * wr0
+         conv = residual / wr0
          if ((OMP_get_thread_num() == 0).and.F_print_L) &
          write(Lun_out, "(3x,'FGMRES convergence at iteration', i4,' relative residual=',1pe14.7)") nbiter, conv
 
          ! Current guess is a good enough solution
-         if (norm_residual < relative_tolerance) return
+         if (residual < Rel_tolerance) return
 
-         nu = 1.0d0 / norm_residual
+         wnu = 1.0d0 / residual
 
 !$omp do collapse(2)
-         do k=k0,l_nk
-            do j=j0,jn
-               do i=i0,in
-                  vv(i,j,k,1) = vv(i,j,k,1) * nu
+         do k=Sol_k0,l_nk
+            do j=Sol_j0,Sol_jn
+               do i=Sol_i0,Sol_in
+                  vv(i,j,k,1) = vv(i,j,k,1) * wnu
                end do
             end do
          end do
 !$omp enddo
 
          ! initialize 1-st term of rhs of hessenberg system.
-         gg(1 ) = norm_residual
+         gg(1 ) = residual
          gg(2:) = 0.d0
 
-         tt = 0.
-         rr = 0.
+         tt = 0. ; rr = 0.
 
-         do initer=1,maxinner
+         do initer=1,sol_im
 
             nbiter = nbiter + 1
 
             ! Preconditionning: Restricted Additive Schwarz (RAS)
 !$omp single
-            call rpn_comm_xch_halo_8 (vv(sol_imin,sol_jmin,k0,initer),Sol_imin,Sol_imax,Sol_jmin,Sol_jmax, &
-                                      l_ni,l_nj,nk,Sol_ovlpx,Sol_ovlpy,G_periodx,G_periody,l_ni,0)
+            call rpn_comm_xch_halo_8 (vv(sol_imin,sol_jmin,Sol_k0,initer),Sol_imin,Sol_imax,Sol_jmin,Sol_jmax, &
+                                      l_ni,l_nj,Sol_nk,Sol_ovlpx,Sol_ovlpy,G_periodx,G_periody,l_ni,0)
 !$omp end single
             call pre_jacobi_hlt (wint_8(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), &
-                                     vv(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), nii,njj,l_nk)
+                                     vv(Sol_ii0:Sol_iin,Sol_jj0:Sol_jjn,:,initer), sol_niloc,sol_njloc,l_nk)
 
             !Matrix-Vector product
             call matvec_hlt (wint_8(sol_ii0,sol_jj0,1,initer),Sol_ii0,Sol_iin,Sol_jj0,Sol_jjn,&
@@ -199,20 +162,19 @@
             v_prod        = 0.d0
 
             do it=1,initer+1
-!!$omp single
+!!$omp master
 !$omp do collapse(2)
-               do k=k0,l_nk
-                  do j=j0,jn
-                     do i=i0,in
+               do k=Sol_k0,l_nk
+                  do j=Sol_j0,Sol_jn
+                     do i=Sol_i0,Sol_in
                         v_local_prod(it,1) = v_local_prod(it,1) + ( vv(i, j, k, it) * vv(i, j, k, initer  ) )
                         v_local_prod(it,2) = v_local_prod(it,2) + ( vv(i, j, k, it) * vv(i, j, k, initer+1) )
                      end do
                   end do
                end do
-!!$omp end single
 !$omp enddo
-               thread_s2(1,it,OMP_get_thread_num()) = v_local_prod(it,1)
-               thread_s2(2,it,OMP_get_thread_num()) = v_local_prod(it,2)
+!!$omp end master
+               thread_s2(1:2,it,OMP_get_thread_num()) = v_local_prod(it,1:2)
             enddo
 !$omp BARRIER
 
@@ -221,7 +183,8 @@
                v_avg_8(it,1) = sum(thread_s2(1,it,:))
                v_avg_8(it,2) = sum(thread_s2(2,it,:))
             enddo
-            call RPN_COMM_allreduce(v_avg_8(1:initer+1,:), v_prod(1:initer+1,:), (initer+1)*2, "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
+            call RPN_COMM_allreduce(v_avg_8(1:initer+1,:), v_prod(1:initer+1,:), (initer+1)*2,&
+                                    "MPI_double_precision", "MPI_sum", "MULTIGRID", ierr)
             do it=1,initer-1
                tt(it,initer) = v_prod(it,1)
             enddo
@@ -232,14 +195,13 @@
             rr(initer,initer) = sqrt( rr(initer,initer) )
             rr(initer,initer+1) = rr(initer,initer+1) / rr(initer,initer)
 
-            ro2 = v_prod(initer+1,2)
-!$omp end single
-!$omp BARRIER
+            wro2 = v_prod(initer+1,2)
+!$omp end single copyprivate(wro2)
 
 !$omp do collapse(2)
-            do k=k0,l_nk
-               do j=j0,jn
-                  do i=i0,in
+            do k=Sol_k0,l_nk
+               do j=Sol_j0,Sol_jn
+                  do i=Sol_i0,Sol_in
                      vv(i, j, k, initer)  = vv(i, j, k, initer) / rr(initer,initer)
                   enddo
                enddo
@@ -258,8 +220,8 @@
             rr(1:initer,initer+1) = matmul( transpose(tt(1:initer, 1:initer)), rr(1:initer,initer+1) )
 !$omp end single
 
-            ! Compute rr2=rr(:,initer+1)*rr(:,initer+1) needed in the computation of vv(:,:,:,initer+1) estimated norm
-            rrp=0.d0 ; rr2=0.d0
+            ! Compute wrr2=rr(:,initer+1)*rr(:,initer+1) needed in the computation of vv(:,:,:,initer+1) estimated norm
+            rrp=0.d0 ; wrr2=0.d0
 !$omp do
             do i=1,initer
                rrp = rrp + rr(i,initer+1)*rr(i,initer+1)
@@ -267,15 +229,14 @@
 !$omp enddo
             thread_s(4,OMP_get_thread_num()) = rrp
 !$omp BARRIER
-!$omp single
-            rr2  = sum(thread_s(4,:))
-!$omp end single
+
+            wrr2  = sum(thread_s(4,:))
 
             do it=1,initer
 !$omp do collapse(2)
-               do k=k0,l_nk
-                  do j=j0,jn
-                     do i=i0,in
+               do k=Sol_k0,l_nk
+                  do j=Sol_j0,Sol_jn
+                     do i=Sol_i0,Sol_in
                         vv(i, j, k, initer+1) = vv(i, j, k, initer+1) - vv(i, j, k, it) * rr(it,initer+1)
                      end do
                   end do
@@ -284,42 +245,43 @@
             end do
 
             ! Compute estimated norm of vv(:,:,:,initer+1): from GHYSELS et al. (Journal of Scientific Computing 2013)
-            if( (ro2-rr2) > 0.) then
+            if( (wro2-wrr2) > 0.) then
 !$omp single
-               nu=sqrt(ro2-rr2)
-               rr(initer+1,initer+1) =  nu
+               wnu=sqrt(wro2-wrr2)
+               rr(initer+1,initer+1) =  wnu
 !$omp end single
-            ! Or in case (ro2-rr2)<= 0 compute exact norm
+            ! Or in case (wro2-wrr2)<= 0 compute exact norm
             else
                
                local_dot(1) = 0.d0; lcl_sum=0.d0
+!!$omp master
 !$omp do collapse(2)
-               do k=k0,l_nk
-                  do j=j0,jn
-                     do i=i0,in
+               do k=Sol_k0,l_nk
+                  do j=Sol_j0,Sol_jn
+                     do i=Sol_i0,Sol_in
                         local_dot(1) = local_dot(1) + (vv(i, j, k, initer+1) * vv(i, j, k, initer+1))
                      end do
                   end do
                end do
 !$omp enddo
+!!$omp end master
                thread_s(3,OMP_get_thread_num()) = local_dot(1)
 !$OMP BARRIER
 
 !$omp single
                r_avg_8 = sum(thread_s(3,:))
-               call RPN_COMM_allreduce(r_avg_8,nu,1,"MPI_double_precision","MPI_sum","MULTIGRID",ierr)
-               rr(initer+1,initer+1) = sqrt(nu)
+               call RPN_COMM_allreduce(r_avg_8,wnu,1,"MPI_double_precision","MPI_sum","MULTIGRID",ierr)
+               rr(initer+1,initer+1) = sqrt(wnu)
 !$omp end single
-!$OMP BARRIER
             endif
 
             if ( .not. almost_zero( rr(initer+1,initer+1) ) ) then
-               nu = 1.d0 / rr(initer+1,initer+1)
+               wnu = 1.d0 / rr(initer+1,initer+1)
 !$omp do collapse(2)
-               do k=k0,l_nk
-                  do j=j0,jn
-                     do i=i0,in
-                        vv(i, j, k, initer+1) = vv(i, j, k, initer+1) * nu
+               do k=Sol_k0,l_nk
+                  do j=Sol_j0,Sol_jn
+                     do i=Sol_i0,Sol_in
+                        vv(i, j, k, initer+1) = vv(i, j, k, initer+1) * wnu
                      end do
                   end do
                end do
@@ -342,12 +304,12 @@
                end do
             end if
 
-            nu = sqrt(hessenberg(initer,initer)**2 + hessenberg(initer+1,initer)**2)
+            wnu = sqrt(hessenberg(initer,initer)**2 + hessenberg(initer+1,initer)**2)
 
-            if ( .not. almost_zero(nu) ) then
-               nu = 1.d0 / nu
-               rot_cos(initer) = hessenberg(initer,initer) * nu
-               rot_sin(initer) = hessenberg(initer+1,initer) * nu
+            if ( .not. almost_zero(wnu) ) then
+               wnu = 1.d0 / wnu
+               rot_cos(initer) = hessenberg(initer,initer) * wnu
+               rot_sin(initer) = hessenberg(initer+1,initer) * wnu
 
                gg(initer+1) = -rot_sin(initer) * gg(initer)
                gg(initer) =  rot_cos(initer) * gg(initer)
@@ -356,12 +318,12 @@
             end if
 !$omp end single
 
-            norm_residual = abs(gg(initer+1))
+            residual = abs(gg(initer+1))
 
-            conv = norm_residual / r0
+            conv = residual / wr0
             if ((OMP_get_thread_num() == 0).and.F_print_L) &
             write(Lun_out, "(3x,'FGMRES convergence at iteration', i4,' relative residual=',1pe14.7)") nbiter, conv
-            if ((initer >= maxinner) .or. (norm_residual <= relative_tolerance)) exit
+            if ((initer >= sol_im) .or. (residual <= Rel_tolerance)) exit
          end do
 
          ! At this point either the maximum number of inner iterations
@@ -386,10 +348,10 @@
          do it=1,initer
 
 !$omp do collapse(2)
-            do k=k0,l_nk
-               do j=j0,jn
+            do k=Sol_k0,l_nk
+               do j=Sol_j0,Sol_jn
 !DIR$ SIMD
-                  do i=i0,in
+                  do i=Sol_i0,Sol_in
                      solution(i, j, k) = solution(i, j, k) + gg(it)* wint_8(i, j, k, it)
                   end do
                end do
@@ -400,7 +362,7 @@
 
          outiter = outiter + 1
 
-         if (norm_residual <= relative_tolerance .or. outiter >= maxouter) return
+         if (residual <= Rel_tolerance .or. outiter >= sol_fgm_maxits) return
 
          ! Solution is not convergent : compute residual vector and continue.
 !$omp  single
@@ -418,10 +380,10 @@
             end if
 
 !$omp do collapse(2)
-            do k=k0,l_nk
-               do j=j0,jn
+            do k=Sol_k0,l_nk
+               do j=Sol_j0,Sol_jn
 !DIR$ SIMD
-                  do i=i0,in
+                  do i=Sol_i0,Sol_in
                      vv(i, j, k, 1) = vv(i, j, k, 1) + t * vv(i, j, k, it)
                   end do
                end do
@@ -434,4 +396,4 @@
 !     ---------------------------------------------------------------
 !
       return
-      end subroutine sol_fgmres_hlt
+      end subroutine sol_fgmres

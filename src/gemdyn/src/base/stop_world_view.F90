@@ -29,7 +29,7 @@
       use numa
       use ptopo
       use version
-      use gem_timing
+      use omp_timing
       use omp_timing
       implicit none
 
@@ -67,8 +67,7 @@
       call gemtime ( Lun_out, 'END OF RUN', .true. )
       call memusage ( Lun_out )
 
-      call gemtime_stop ( 1 )
-      call gemtime_terminate( Ptopo_myproc, 'GEMDM' )
+      call gtmg_stop ( 1 )
       call gtmg_terminate( Ptopo_myproc )
 
 !     Free all one-sided MPI windows

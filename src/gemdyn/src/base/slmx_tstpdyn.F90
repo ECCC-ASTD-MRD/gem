@@ -36,7 +36,7 @@
       use lun
       use tdpack
       use yyg_param
-      use gem_timing
+      use omp_timing
       use stat_mpi
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -63,7 +63,7 @@
       k0t=k0
       if (Schm_opentop_L) k0t=k0-1
       
-      call gemtime_start (20, 'Advection', 10)
+      call gtmg_start (20, 'Advection', 10)
 
       savedt = Cstv_dt_8
       if ( F_icn == 1 ) call t02t2 ()
@@ -113,7 +113,7 @@
 
 !     Perform Semi-Lagrangian advection
 
-      call adz_main_h (dt_8)
+      call adz_main ()
 
       if ( F_icn == 1 ) call oro_adj ()
       
@@ -123,14 +123,14 @@
       call fislh_pre (dt_8, i0, j0, k0, in, jn, k0t )
 
 !$omp end parallel
-      call gemtime_stop (20)
+      call gtmg_stop (20)
 
       ni = ldnh_maxx-ldnh_minx+1
       nj = ldnh_maxy-ldnh_miny+1
 
       do iln=1,Schm_itnlh
 
-         call gemtime_start ( 23, 'NLI', 10 )
+         call gtmg_start ( 23, 'NLI', 10 )
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
@@ -154,9 +154,9 @@
          call fislh_nli (dt_8, i0, j0, k0, in, jn, k0t)
 !$omp end parallel
 
-         call gemtime_stop (23)
+         call gtmg_stop (23)
 
-         call gemtime_start ( 24, 'SOL', 10 )
+         call gtmg_start ( 24, 'SOL', 10 )
 
 !        Solve the elliptic problem
          print_conv = (iln   == Schm_itnlh ) .and. &
@@ -167,9 +167,9 @@
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, print_conv)
 !         call statf_dm (lhs_sol, 'LHS', 1, 'TSTP', 1,ni,1,nj,1,l_Nk,1,1,1,G_ni,G_nj,l_nk,8)
 
-         call gemtime_stop (24)
+         call gtmg_stop (24)
 
-         call gemtime_start ( 25, 'BAC', 10 )
+         call gtmg_start ( 25, 'BAC', 10 )
 !$omp parallel
 
 !        Back subtitution
@@ -191,7 +191,7 @@
 !$omp end single
 
 !$omp end parallel
-         call gemtime_stop (25)
+         call gtmg_stop (25)
       end do
 
       if (Grd_yinyang_L) then

@@ -12,8 +12,8 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r sol_2d - Elliptic solver based on vertical decomposition leading
-!               to F_nk 2D horizontal elliptic problems to solve.
+!**   s/r sol_direct - Elliptic solver based on vertical decomposition
+!             leading to F_nk 2D horizontal elliptic problems to solve
 !
       subroutine sol_direct ( F_rhs_8, F_sol_8, F_ni, F_nj, F_nk, &
                               F_print_L, F_offi, F_offj )
@@ -29,7 +29,7 @@
       use ptopo
       use trp
       use adz_mem
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -49,8 +49,6 @@
       nij = (ldnh_maxy-ldnh_miny+1)*(ldnh_maxx-ldnh_minx+1)
 
       n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
-      call time_trace_barr(gem_time_trace, 1, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
 
 !$omp parallel private (i,j,k) shared (F_offi,F_offj,ni,nij,Sol_rhs_8)
 !$omp do
@@ -66,8 +64,6 @@
       end do
 !$omp enddo
 !$omp end parallel
-      call time_trace_barr(gem_time_trace, 11000+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
 
       if (Grd_yinyang_L) then
 
@@ -137,9 +133,6 @@
       end do
 !$omp enddo
 !$omp end parallel
-
-      call time_trace_barr(gem_time_trace, 11800+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
 
  1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
  1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)

@@ -19,7 +19,7 @@
       use dynkernel_options
       use gem_options
       use omp_timing
-      use gem_timing
+      use omp_timing
       use glb_ld
       use gmm_geof
       use gmm_pw
