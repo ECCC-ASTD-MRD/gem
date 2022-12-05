@@ -18,7 +18,7 @@ arch=@EC_ARCH@
 
 has_rmn=@rmn_VERSION@
 has_tdpack=@tdpack_VERSION@
-has_vgrid=@VGRID_VERSION@
+has_vgrid=@vgrid_VERSION@
 has_modelutils=@modelutils_VERSION@
 has_rpncomm=@rpncomm_VERSION@
 has_rpnphy=@rpnphy_VERSION@
