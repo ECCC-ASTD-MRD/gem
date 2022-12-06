@@ -184,12 +184,23 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    zq6 (1:n)        => bus( x(yq6,1,indx_sfc)         : )
    zq7 (1:n)        => bus( x(yq7,1,indx_sfc)         : )
 
-   hu       (1:n) => bus( x(huplus,1,nk)      : )
-   ps       (1:n) => bus( x(pplus,1,1)        : )
-   th       (1:n) => bus( x(thetaap,1,1)      : )
-   tt       (1:n) => bus( x(tplus,1,nk)       : )
-   uu       (1:n) => bus( x(uplus,1,nk)       : )
-   vv       (1:n) => bus( x(vplus,1,nk)       : )
+   if (atm_tplus) then
+      hu       (1:n) => bus( x(huplus,1,nk)      : )
+      ps       (1:n) => bus( x(pplus,1,1)        : )
+      th       (1:n) => bus( x(thetaap,1,1)      : )
+      tt       (1:n) => bus( x(tplus,1,nk)       : )
+      uu       (1:n) => bus( x(uplus,1,nk)       : )
+      vv       (1:n) => bus( x(vplus,1,nk)       : )
+   else
+      hu       (1:n) => bus( x(humoins,1,nk)     : )
+      ps       (1:n) => bus( x(pmoins,1,1)       : )
+      th       (1:n) => bus( x(thetaa,1,1)       : )
+      tt       (1:n) => bus( x(tmoins,1,nk)      : )
+      uu       (1:n) => bus( x(umoins,1,nk)      : )
+      vv       (1:n) => bus( x(vmoins,1,nk)      : )
+   endif
+
+   !------------------------------------------------------------------------
 
 
    ! 0.     Precompute local SST from "base" SST (ts) and diurnal components

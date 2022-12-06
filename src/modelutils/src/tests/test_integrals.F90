@@ -56,7 +56,7 @@ subroutine test_integrals
         call msg(MSG_WARNING,'(checkint) Cannot open profile output file')
    istat = int_solve(zval,df,z,zdep,a,cdir,fd_unittest=fd_prof)
    if (istat == INT_ERR) call msg(MSG_ERROR,'(checkint) Error returned by int_solve')
-   write(STDOUT,*) istat
+   write(STDOUT, '(i0)') istat
    if (fclos(fd_prof) /= RMN_OK) &
         call msg(MSG_WARNING,'(checkint) Cannot close profile output file')
 
@@ -64,7 +64,7 @@ subroutine test_integrals
    fd_sol = 0
    if (fnom(fd_sol,sol_file,'SEQ',0) /= RMN_OK) &
         call msg(MSG_WARNING,'(checkint) Cannot open solution output file')
-   write(fd_sol,*) zdep + dir*zval
+   write(fd_sol, '(f0.3)') zdep + dir*zval
    if (fclos(fd_sol) /= RMN_OK) &
         call msg(MSG_WARNING,'(checkint) Cannot close solution output file')
 

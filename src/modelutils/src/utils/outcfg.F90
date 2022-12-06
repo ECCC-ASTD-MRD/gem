@@ -275,7 +275,7 @@ contains
       integer :: istat,nvar,n
       character(len=1024) :: string_S
       !----------------------------------------------------------------------
-      write(string_S,*) '(outcfg_new) ',trim(F_tag_S),F_dateo,F_dt,trim(F_filename_S)
+      write(string_S, *) '(outcfg_new) ',trim(F_tag_S),F_dateo,F_dt,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_id = RMN_ERR
@@ -372,7 +372,7 @@ contains
 
       F_id = m_ncfgs
 
-      write(string_S,*) '(outcfg_new) ',F_id,m_ncfgs,trim(F_tag_S),':',trim(F_filename_S)
+      write(string_S, '(a,1x,i0,1x,i0,1x,a)') '(outcfg_new) ',F_id,m_ncfgs,trim(F_tag_S)//' : '//trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
       !----------------------------------------------------------------------
       return
@@ -397,7 +397,7 @@ contains
       integer :: istat
       character(len=2048) :: key_S, val_S, string_S, msg_S
       !----------------------------------------------------------------------
-      write(string_S,'(a,i3,a)') '(outcfg_parse_string)', F_id, trim(F_string_S)
+      write(string_S, '(a,i3,a)') '(outcfg_parse_string)', F_id, trim(F_string_S)
       call msg(MSG_DEBUG, string_S)
 
       F_istat = priv_str2kv(F_string_S, key_S, val_S)
@@ -469,7 +469,7 @@ contains
             call msg(MSG_INFO,'(outcfg) '//trim(key_S)//': '//trim(msg_S))
          case('filt_coef')
             istat = str_toreal(m_cfgs(F_id)%filt_coef,val_S)
-            write(msg_S,*) m_cfgs(F_id)%filt_coef
+            write(msg_S, '(f0.3)') m_cfgs(F_id)%filt_coef
             call msg(MSG_INFO,'(outcfg) '//trim(key_S)//': '//trim(msg_S))
          case('vinterp_s')
             istat = priv_str2str(m_cfgs(F_id)%vinterp_S,val_S,KNOWN_V_INT,1)
@@ -848,7 +848,7 @@ contains
       integer :: istat,istat2,fileid,n
       character(len=2048) :: string_S,string1_S
       !---------------------------------------------------------------------
-      write(string_S,*) '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
+      write(string_S, '(a,1x,i0.1x,a)') '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_istat = RMN_ERR

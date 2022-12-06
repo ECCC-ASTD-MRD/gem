@@ -183,7 +183,6 @@ module sfcbus_mod
       SFCVAR(ilmo, 'ilmo')
       SFCVAR(impervu, 'impervu')
       SFCVAR(isoil, 'isoil')
-      SFCVAR(kcl, 'kcl')
       SFCVAR(khc, 'khc')
       SFCVAR(km, 'km')
       SFCVAR(ksat, 'ksat')
@@ -473,6 +472,41 @@ module sfcbus_mod
       SFCVAR(zenith, 'zenith')
       SFCVAR(ztsl, 'ztsl')
       SFCVAR(zusl, 'zusl')
+      ! mdm - Lake variables
+      ! M.A.- Need to include in alphabetical order !
+      SFCVAR(lakefr, 'lakefr')
+      SFCVAR(riverfr, 'riverfr')
+      SFCVAR(gridarea, 'gridarea')
+      SFCVAR(lakearea, 'lakearea')
+      SFCVAR(lakd, 'lakd')
+      SFCVAR(rofinlak, 'rofinlak')
+      SFCVAR(rofinlakaf, 'rofinlakaf')
+      SFCVAR(lfxi, 'lfxi')
+      SFCVAR(lfxo, 'lfxo')
+      SFCVAR(evlak, 'evlak')
+      SFCVAR(lstd, 'lstd')
+      SFCVAR(lstf, 'lstf')
+      SFCVAR(hlaksil, 'hlaksil')
+      SFCVAR(tlak, 'tlak')
+      SFCVAR(tke, 'tke')
+      SFCVAR(lst, 'lst')
+      SFCVAR(lsten, 'lsten')
+      SFCVAR(hdpth, 'hdpth')
+      SFCVAR(lkiceh, 'lkiceh')
+      SFCVAR(sniceh, 'sniceh')
+      SFCVAR(expw, 'expw')
+      SFCVAR(dtemp, 'dtemp')
+      SFCVAR(delu, 'delu')
+      SFCVAR(gred, 'gred')
+      SFCVAR(rhomix, 'rhomix')
+      SFCVAR(tsed, 'tsed')
+      SFCVAR(roficeh, 'roficeh')
+      SFCVAR(snol, 'snol')
+      SFCVAR(ficl, 'ficl')
+      SFCVAR(rhosnol, 'rhosnol')
+      SFCVAR(tsnowl, 'tsnowl')
+      SFCVAR(albsnol, 'albsnol')
+      SFCVAR(wsnowl, 'wsnowl')
 
    end type SFCVARLIST_T
 
@@ -482,7 +516,9 @@ module sfcbus_mod
    integer, parameter :: INDX_ICE     =  4
    integer, parameter :: INDX_AGREGE  =  5
    integer, parameter :: INDX_URB     =  6
-   integer, parameter :: INDX_MAX     =  6
+   integer, parameter :: INDX_LAKE    =  7
+   integer, parameter :: INDX_RIVER   =  8
+   integer, parameter :: INDX_MAX     =  8
 
    type(SFCVARLIST_T), target  :: vd
    type(SFCVAR_T), allocatable :: vl(:)
@@ -500,6 +536,7 @@ module sfcbus_mod
    integer :: fvapliqaf=0
    integer :: insmavg=0
    integer :: isoil=0
+   integer :: latflw=0  
    integer :: latflaf=0
    integer :: leg=0
    integer :: legaf=0
@@ -513,8 +550,12 @@ module sfcbus_mod
    integer :: levaf=0
    integer :: overfl=0
    integer :: overflaf=0
+   integer :: rofinlak=0  
+   integer :: rofinlakaf=0  
    integer :: rootdp=0
+   integer :: runofftot=0  
    integer :: runofftotaf=0
+   integer :: watflow=0
    integer :: wflux=0
    integer :: wfluxaf=0
    integer :: wsoil=0
@@ -525,24 +566,28 @@ contains
    function sfcbus_init() result(F_istat)
       use clib_itf_mod, only: clib_toupper
       use phy_typedef, only: phymeta
-      use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
-      use sfc_options, only: schmurb
+      use phymem, only: phymeta, phyvar, phymem_find
+      use sfc_options, only: schmurb, schmlake, schmriver
       implicit none
       integer :: F_istat
 
 #include <msg.h>
 #include <rmnlib_basics.hf>
 
+      ! Variables define below are visible 
+
       integer :: i, istat, mulmax, idxmax
       type(SFCVAR_T) :: vl0(1)
-      type(phymeta) :: mymeta
-      type(phymetaplus) :: mymetaplus
+      type(phyvar) :: myvar(1)
+      type(phymeta), pointer :: vmeta
 
       F_istat = RMN_ERR
 
       if (nsurf == 0) then
          idxmax = max(INDX_SOIL, INDX_GLACIER, INDX_WATER, INDX_ICE, INDX_AGREGE)
          if (schmurb /= 'NIL') idxmax = max(idxmax, INDX_URB)
+         if (schmlake /= 'NIL') idxmax = max(idxmax, INDX_LAKE)
+         if (schmriver/= 'NIL') idxmax = max(idxmax, INDX_RIVER)
          nsurf = idxmax - 1
       endif
  
@@ -555,16 +600,19 @@ contains
          vl(i)%i = i
          istat = clib_toupper(vl(i)%n)
          nullify(busptr(i)%ptr)
-         istat = phygetmetaplus(mymetaplus, vl(i)%n, F_npath='V', &
+         istat = phymem_find(myvar, vl(i)%n, F_npath='V', &
               F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
-         if (istat >= 0) then
-            mymeta = mymetaplus%meta
-            busptr(i)%ptr => mymetaplus%vptr
-            vl(i)%doagg_L = (mymeta%bus(1:1) /= 'E')
-            vl(i)%mul = mymeta%fmul
-            vl(i)%niveaux = mymeta%nk
-            vl(i)%mosaik = mymeta%mosaic + 1
+         if (istat > 0) then
+            vmeta => myvar(1)%meta
+            busptr(i)%ptr => vmeta%bptr(vmeta%i0:vmeta%in,:)
+            vl(i)%doagg_L = (vmeta%bus(1:1) /= 'E')
+            vl(i)%mul = vmeta%fmul
+            vl(i)%niveaux = vmeta%nk
+            vl(i)%mosaik = vmeta%mosaic + 1
             mulmax = max(mulmax, vl(i)%mul)
+         else
+!!$            call msg(MSG_WARNING, '(sfcbus_init) var not found: '//trim(vl(i)%n))
+            cycle
          endif
 
          select case(vl(i)%n)
@@ -575,53 +623,63 @@ contains
          case('Z0T')
             z0t_i = i
          case('ACCEVAP')
-            accevap = mymetaplus%index
+            accevap = vmeta%i0
          case('DRAIN')
-            drain = mymetaplus%index
+            drain = vmeta%i0
          case('DRAINAF')
-            drainaf = mymetaplus%index
+            drainaf = vmeta%i0
          case('FVAPLIQAF')
-            fvapliqaf = mymetaplus%index
+            fvapliqaf = vmeta%i0
          case('INSMAVG')
-            insmavg = mymetaplus%index
+            insmavg = vmeta%i0
          case('ISOIL')
-            isoil = mymetaplus%index
+            isoil = vmeta%i0 
          case('LATFLAF')
-            latflaf = mymetaplus%index
+            latflaf = vmeta%i0
+         case('LATFLW')
+            latflw = vmeta%i0   
          case('LEG')
-            leg = mymetaplus%index
+            leg = vmeta%i0
          case('LEGAF')
-            legaf = mymetaplus%index
+            legaf = vmeta%i0
          case('LER')
-            ler = mymetaplus%index
+            ler = vmeta%i0
          case('LERAF')
-            leraf = mymetaplus%index
+            leraf = vmeta%i0
          case('LES')
-            les = mymetaplus%index
+            les = vmeta%i0
          case('LESAF')
-            lesaf = mymetaplus%index
+            lesaf = vmeta%i0
          case('LETR')
-            letr = mymetaplus%index
+            letr = vmeta%i0
          case('LETRAF')
-            letraf = mymetaplus%index
+            letraf = vmeta%i0
          case('LEV')
-            lev = mymetaplus%index
+            lev = vmeta%i0
          case('LEVAF')
-            levaf = mymetaplus%index
+            levaf = vmeta%i0
          case('OVERFL')
-            overfl = mymetaplus%index
+            overfl = vmeta%i0
          case('OVERFLAF')
-            overflaf = mymetaplus%index
+            overflaf = vmeta%i0
+         case('ROFINLAK')
+            rofinlak = vmeta%i0     
+         case('ROFINLAKAF')
+            rofinlakaf = vmeta%i0   
          case('ROOTDP')
-            rootdp = mymetaplus%index
+            rootdp = vmeta%i0
+         case('RUNOFFTOT')
+            runofftot = vmeta%i0            
          case('RUNOFFTOTAF')
-            runofftotaf = mymetaplus%index
+            runofftotaf = vmeta%i0
+         case('WATFLOW')
+            watflow = vmeta%i0  
          case('WFLUX')
-            wflux = mymetaplus%index
+            wflux = vmeta%i0
          case('WFLUXAF')
-            wfluxaf = mymetaplus%index
+            wfluxaf = vmeta%i0
          case('WSOIL')
-            wsoil = mymetaplus%index
+            wsoil = vmeta%i0
          end select
 
       enddo

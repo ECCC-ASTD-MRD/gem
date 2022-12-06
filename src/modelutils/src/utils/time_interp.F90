@@ -457,7 +457,7 @@ contains
 
 !!$      write(msg_S,'(a,i,f9.6,a)') ' Status0/weight0: ',istat,weight,' '// &
 !!$      trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      write(msg_S,*) 'Status0/weight0: ',istat,weight,' '//trim(F_varname_S)// &
+      write(msg_S, '(a,1x,i0,1x,g0,1x,a)') 'Status0/weight0: ',istat,weight,' '//trim(F_varname_S)// &
            ' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
       call msg(MSG_INFOPLUS,'(time_interp)'//trim(msg_S))
 
@@ -494,7 +494,7 @@ contains
  
 !!$      write(msg_S,'(a,i,f9.6,a)') ' Status/weight: ',F_istat,weight,' '// &
 !!$     trim(F_varname_S)//' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
-      write(msg_S,*) 'Status/weight: ',F_istat,weight,' '//trim(F_varname_S)// &
+      write(msg_S, '(a,1x,i0,1x,g0,1x,a)') 'Status/weight: ',F_istat,weight,' '//trim(F_varname_S)// &
            ' at '//trim(datev_S)//' [type='//trim(itype_S)//']'
       call msg(MSG_INFOPLUS,'(time_interp)'//trim(msg_S))
       !----------------------------------------------------------------------
@@ -740,7 +740,7 @@ contains
          datev_S = jdate_to_print(F_datev)
 !!$         write(msg_S,'(a,2e14.6,a)') trim(dummy_S)//' valid at '//trim(datev_S)// &
 !!$             ' [minmax=',minval(dummy3d),maxval(dummy3d),']'
-         write(msg_S,'(a)') trim(dummy_S)//' valid at '//trim(datev_S)
+         write(msg_S, '(a)') trim(dummy_S)//' valid at '//trim(datev_S)
       endif
       call msg(MSG_INFOPLUS,'(time_interp) Retrieve: '//trim(msg_S))
       if (.not.RMN_IS_OK(F_istat)) return
@@ -899,13 +899,13 @@ contains
                  trim(datev_S)//' [minmax=',minval(F_data),maxval(F_data), &
                  '] (data=',1.-weight,'*data0 + ',weight,'*data1)'
          else
-            write(msg_S,'(a,a,2e14.6,a)') trim(varname_S),' valid at '//trim(datev_S)// &
+            write(msg_S, '(a,a,2e14.6,a)') trim(varname_S),' valid at '//trim(datev_S)// &
                  ' [minmax=',minval(F_data),maxval(F_data),']'
          endif
          call msg(MSG_INFOPLUS,'(time_interp) Get ('//trim(itype_S)//'): '//trim(msg_S))
       endif
       F_istat = max(RMN_OK, nint(abs(weight)*TIME_INTERP_WEIGHT_FACT))
-      write(msg_S, *) F_istat
+      write(msg_S, '(i0)') F_istat
       call msg(MSG_DEBUG, '(time_interp) get ptr [END] '//trim(msg_S))
       !----------------------------------------------------------------------
       return

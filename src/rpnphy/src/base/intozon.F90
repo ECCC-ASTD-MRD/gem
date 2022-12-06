@@ -79,13 +79,13 @@ subroutine intozon2(jour, mois)
          goz(j) = gozon12(j,basem) + &
               (gozon12(j,destm)-gozon12(j,basem))*total*ecoule
       enddo
-      write(tmp_S,*) 'day=', jour, ', month=', mois, ' [',total*ecoule*100.,'%]',basem,destm
+      write(tmp_S, '(a,1x,i0,1x,a,1x,i0,1x,a,1x,f0.3,1x,a,1x,i0,1x,a,1x,i0)') 'day=', jour, ', month=', mois, ' [',total*ecoule*100.,'%]',basem, ', ', destm
       call msg(MSG_INFO,'intozon: ozone interpolated to '//tmp_S)
    else
       do j=1,nlp
          goz(j) = gozon12(j,destm)
       enddo
-      write(tmp_S,*) 'day=', jour, ', month=', mois
+      write(tmp_S, '(a,1x,i0,1x,a,1x,i0)') 'day=', jour, ', month=', mois
       call msg(MSG_INFO,'intozon: ozone interpolated to '//tmp_S)
    endif
    !-----------------------------------------------------------------

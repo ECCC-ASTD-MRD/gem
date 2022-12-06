@@ -48,7 +48,7 @@ module sfc_options
 
    !#
    logical           :: atm_external = .false.
-   logical           :: atm_tplus  = .true.
+   logical           :: atm_tplus  = .false.
    logical           :: climat     = .false.
    logical           :: cplocn     = .false.
    real              :: delt       = 0.
@@ -210,6 +210,27 @@ module sfc_options
    character(len=*), parameter :: SCHMURB_OPT(2) = (/ &
         'NIL', &
         'TEB'  &
+        /)
+
+   !# Lake surface processes
+   !# * 'NIL' :
+   !# * 'FLAKE' :
+   !# * 'CSLM' :
+   character(len=16) :: schmlake    = 'NIL'
+   namelist /surface_cfgs/ schmlake
+   character(len=*), parameter :: SCHMLAKE_OPT(3) = (/ &
+        'NIL  ', &
+        'FLAKE' , &
+        'CSLM ' &
+        /)
+
+   !# River surface processes
+   !# * 'NIL' :
+   character(len=16) :: schmriver    = 'NIL'
+   namelist /surface_cfgs/ schmriver
+   character(len=*), parameter :: SCHMRIVER_OPT(2) = (/ &
+        'NIL   ', &
+        'RIVERS' &
         /)
 
    !# Minimum Obukhov length (L) for glaciers

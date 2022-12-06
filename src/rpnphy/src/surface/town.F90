@@ -73,7 +73,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use modd_csts
    use modi_coupling_teb2, only: coupling_teb2
    use modi_sunpos
-   use sfc_options, only: atm_external, jdateo, zu, zt, impflx &
+   use sfc_options, only: atm_tplus, atm_external, jdateo, zu, zt, impflx &
         ,urb_diagwind, urb_diagtemp
    use sfcbus_mod
    implicit none

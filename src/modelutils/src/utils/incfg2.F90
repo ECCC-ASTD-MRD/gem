@@ -208,7 +208,7 @@ contains
       if (present(F_vgrid_m_S)) vgrid_m_S = F_vgrid_m_S
       if (present(F_vgrid_t_S)) vgrid_t_S = F_vgrid_t_S
 !!$      if (present(F_maxbufsize)) F_incfgobj%maxbufsize = F_maxbufsize
-      write(string_S, *) '(incfg) new [BEGIN]', F_jdateo, F_dt, trim(filename_S)
+      write(string_S, '(a,1x,i0,1x,i0,1x,a)') '(incfg) new [BEGIN]', F_jdateo, F_dt, trim(filename_S)
       call msg(MSG_DEBUG, string_S)
 
       F_istat = RMN_ERR
@@ -286,7 +286,7 @@ contains
          F_incfgobj%init_L = .false.
       endif
 
-      write(string_S, *) '(incfg) new [END]', F_istat, nvar, F_incfgobj%n
+      write(string_S, '(a,1x,i0,1x,i0,1x,i0)') '(incfg) new [END]', F_istat, nvar, F_incfgobj%n
       call msg(MSG_DEBUG, string_S)
       !----------------------------------------------------------------------
       return
@@ -308,7 +308,7 @@ contains
       integer :: nkeys
       character(len=1024) :: string_S, kv_S(2, NMAX)
       !----------------------------------------------------------------------
-      write(string_S, *) '(incfg) add_string [BEGIN]', trim(F_string_S)
+      write(string_S, '(a)') '(incfg) add_string [BEGIN] '//trim(F_string_S)
       call msg(MSG_DEBUG, string_S)
 
       string_S = F_string_S
@@ -319,7 +319,7 @@ contains
          nkeys = str_split2keyval(kv_S, string_S, NMAX)
          F_istat = incfg_add(F_incfgobj, kv_S)
       endif
-      write(string_S, *) '(incfg) add_string [END]', F_istat
+      write(string_S, '(a,1x,i0)') '(incfg) add_string [END]', F_istat
       call msg(MSG_DEBUG, string_S)
       !----------------------------------------------------------------------
       return
@@ -336,7 +336,7 @@ contains
       integer :: index, istat, k, ii
       character(len=1024) :: key_S, val_S, string_S
       !----------------------------------------------------------------------
-      write(string_S, *) '(incfg) add_kv [BEGIN]', trim(F_kv_S(1, 1)), &
+      write(string_S, '(5a)') '(incfg) add_kv [BEGIN] ', trim(F_kv_S(1, 1)), &
            ':=:', trim(F_kv_S(2, 1)), '; ...'
       call msg(MSG_DEBUG, string_S)
 
@@ -441,7 +441,7 @@ contains
       endif
       F_incfgobj%n = index
       F_istat = index
-      write(string_S, *) '(incfg) add_kv [END]', F_istat
+      write(string_S, '(a,1x,i0)') '(incfg) add_kv [END]', F_istat
       call msg(MSG_DEBUG, string_S)
       !----------------------------------------------------------------------
       return
@@ -981,7 +981,7 @@ contains
       integer :: istat, fileid
       character(len=1024) :: string_S
       !---------------------------------------------------------------------
-      write(string_S, *) 'priv_parse_cfgfile:', trim(F_filename_S)
+      write(string_S, '(a)') 'priv_parse_cfgfile: '//trim(F_filename_S)
       call msg(MSG_DEBUG, string_S)
 
       F_nvar = RMN_ERR

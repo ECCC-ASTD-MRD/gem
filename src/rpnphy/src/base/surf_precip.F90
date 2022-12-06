@@ -18,6 +18,7 @@ module surf_precip
    use tdpack_const, only: TCDK
    use phy_options, only: stcond, pcptype
    use modi_wetbulbt, only: wetbulbt
+   use modi_hydromet_temp, only: hydromet_temp
    implicit none
    private
    public :: surf_precip1, surf_precip3
@@ -28,6 +29,7 @@ module surf_precip
    integer, parameter :: OPT_OTHER = 2
    integer, parameter :: OPT_SPS_W19 = 3
    integer, parameter :: OPT_SPS_FRC = 4
+   integer, parameter :: OPT_SPS_H13 = 5
 
 contains
  
@@ -99,6 +101,7 @@ contains
          option = OPT_NIL
          if (pcptype == 'SPS_W19') option = OPT_SPS_W19
          if (pcptype == 'SPS_FRC') option = OPT_SPS_FRC
+         if (pcptype == 'SPS_H13') option = OPT_SPS_H13
       else if (stcond == 'CONSUN') then
          option = OPT_CONSUN
       else
@@ -114,6 +117,8 @@ contains
          call surf_precip_other(tt, tls, tss, totrate, rainrate, snowrate, ni)
       case (OPT_SPS_W19)
          call surf_precip_sps_w19(tt, hu, pp, totrate, rainrate, snowrate, ni)
+      case (OPT_SPS_H13)
+         call surf_precip_sps_h13(tt, hu, pp, totrate, rainrate, snowrate, ni)
       case (OPT_SPS_FRC)
          call surf_precip_sps_frc(tt, hu, pp, totrate, &
               rainfrac, snowfrac, frfrac, pefrac, &
@@ -464,7 +469,70 @@ contains
       return
    end subroutine surf_precip_sps_w19
   
+   subroutine surf_precip_sps_h13(tt, hu, pp, totrate, rainrate, snowrate, ni)
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Determine the phase of precipitation reaching the surface
+      !@Arguments
+      !          - Input -
+      ! tt       low-level air temperature
+      ! hu       low-level air specific humidity
+      ! pp       low-level air pressure
+      ! totrate  total precipitation rate
+      !          - Output -
+      ! rainrate rate of precipitation at the surface (liquid)
+      ! snowrate rate of precipitation at the surface (solid)
 
+      integer, intent(in) :: ni
+      real, dimension(ni), intent(in) :: tt, hu, pp, totrate
+      real, dimension(ni), intent(out) :: rainrate, snowrate
+
+      !@Notes
+      !   Rain-snow partitionong scheme based on hydrometeor temperature 
+      !   developped by Harder and Pomeroy (HP, 2013)
+      !   To be used only for SPS
+      !*@/
+      integer :: i
+      real :: zd, ze 
+      real, dimension(ni) :: ti, prain, ta
+      !----------------------------------------------------------------
+      !      Constant for the SPS_H13 options
+      zd = 2.630006 ! [-]
+      ze = 0.09336 ! [-]
+
+      ! Temperature in C
+      ta(:) = tt(:) - TCDK
+
+      ! Compute hydrometeor temperature (in deg C) using an iterative method 
+      ti(:) =  hydromet_temp(pp(:), ta(:), hu(:))       
+
+
+      do i=1,ni         
+
+         ! Compute rain fraction 
+         !               1.
+         !    fr = -----------------
+         !          1.+ ZD* ZE^TI  
+         ! with TI in deg C in the range [-4, 4]
+
+         if(ti(i) > 4) then
+             prain(i) =  1.
+         else if(ti(i)<-4) then
+             prain(i) =  0.
+         else
+             prain(i) =  1./(1.+zd* ze**(ti(i)))
+         endif
+
+         if (prain(i) < 0.01) prain(i) = 0.   ! remove rain fraction less that 1 percent
+         if (prain(i) > 0.99) prain(i) = 1.   ! remove snow fraction less that 1 percent
+
+         ! Compute rain and snow rates
+         rainrate(i) = prain(i)*totrate(i)
+         snowrate(i) = max(0.,(1. - prain(i))*totrate(i))
+      end do
+      !----------------------------------------------------------------
+      return
+   end subroutine surf_precip_sps_h13
    !/@*
    subroutine surf_precip_sps_frc(tt, hu, pp, totrate, &
         rainfrac, snowfrac, frfrac, pefrac, &
@@ -494,7 +562,7 @@ contains
       !@Notes
       !   Rain/snow partitioning is provided directly in the meteorological forcing used to drive SPS.
       !   Option useful to use the phase separation from an atmospheric model to drive SPS 
-      !   See Vionnet et al (2021, WRR) for examples
+      !   See Vionnet et al (2022, WRR) for examples
       !   The partioning of Wang et al (2019) is used as a backup if the fraction is not defined
       !*@/
       integer :: i

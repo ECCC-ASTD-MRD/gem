@@ -62,11 +62,6 @@ subroutine yy2global()
 
    include "rmnlib_basics.inc"
 
-!!$   integer, external :: fnom,fstouv,fstfrm,fstlir,fstluk,fstinf,fstinl,fstlnk
-!!$   integer, external :: fstecr,fstprm,exdb,exfin
-!!$   integer, external :: ezqkdef,ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
-   integer, external :: longueur
-
    integer, parameter :: maxnfiles=80
    integer, parameter :: maxvar=300
    integer, parameter :: nklemax=6
@@ -138,7 +133,7 @@ subroutine yy2global()
    call ccard(liste,defaut,val,nklemax,npos)
 
    ! do i=1,nklemax
-   !    write(6,*)'val=',val(i)
+   !    write(6, '(a)') 'val='//val(i)
    ! enddo
    yyfile_S=val(1)
    nml_S=val(2)
@@ -155,11 +150,11 @@ subroutine yy2global()
    if (clib_isdir(yyfile_S).gt.0) then
       !     print *,'unit',iunyy,' for ',trim(yyfile_S)
       print *,'directory found for U grid files'
-      write(*,*) 'directory found for yyfile_S'
+      write(*, '(a)') 'directory found for yyfile_S'
       ier=clib_glob(filelist_yy,yyfiles,trim(yyfile_S)//'/*',maxnfiles)
-      write(*,*)'yyfiles found =',yyfiles
+      write(*, '(a,1x,i0)') 'yyfiles found =',yyfiles
       if (yyfiles.eq.0) then
-         write(0,*)'Problem: No files found in -iyy : ABORT'
+         write(0, '(a)') 'Problem: No files found in -iyy : ABORT'
          call qqexit(-1)
       endif
       allocate(unit_yy(yyfiles))
@@ -167,7 +162,7 @@ subroutine yy2global()
       do i=1,yyfiles
          err_iunyy = fnom(unit_yy(i), filelist_yy(i),'RND+OLD+R/O',0)
          if (err_iunyy.ne.0) then
-            write(0,*)'Problem with fnom on file ',trim(filelist_yy(i)),': ABORT'
+            write(0, '(a)') 'Problem with fnom on file '//trim(filelist_yy(i))//': ABORT'
             call qqexit(-1)
          endif
          !         print *,i,'yinfile=',trim(filelist_yy(i))
@@ -178,13 +173,13 @@ subroutine yy2global()
    else if (clib_isfile(yyfile_S).gt.0) then
       err_iunyy = fnom(iunyy, yyfile_S,'RND+OLD+R/O',0)
       if (err_iunyy.ne.0) then
-         write(0,*)'Problem with file -iyy : ABORT'
+         write(0, '(a)') 'Problem with file -iyy : ABORT'
          call qqexit(-1)
       endif
       ier = FSTOUV(iunyy, 'RND')
    else
-      write(0,*) 'ERROR: Opening these input file(s)'
-      write(0,*) 'OR ERROR in: -iyy  ',trim(yyfile_S)
+      write(0, '(a)') 'ERROR: Opening these input file(s)'
+      write(0, '(a)') 'OR ERROR in: -iyy  '//trim(yyfile_S)
       call qqexit(-1)
    endif
 
@@ -192,7 +187,7 @@ subroutine yy2global()
    myvarnum=0
    ier= fnom(iunnml, nml_S,'SEQ+OLD',0)
    if(ier.ne.0) then
-      write(*,*) 'WARNING: file opening failed: for ',trim(nml_S)
+      write(*, '(a)') 'WARNING: file opening failed: for '//trim(nml_S)
    else
       yy2enml_L = .true.
       do i=1,MAXVAR
@@ -238,15 +233,15 @@ subroutine yy2global()
       enddo
 
    endif
-   if (print_L) write(*,*) 'Number of variables found in namelist=',myvarnum,' MAXVAR=',maxvar
+   if (print_L) write(*, '(a,1x,i0,1x,a,1x,i0)') 'Number of variables found in namelist=',myvarnum,' MAXVAR=',maxvar
    if (print_L) write(*,900)
 
 100 continue
 
    if (ier.eq.0) then
-      if (myvarnum.eq.0) write(*,*) 'WARNING: Namelist interp not found in',trim(nml_S)
+      if (myvarnum.eq.0) write(*, '(a)') 'WARNING: Namelist interp not found in '//trim(nml_S)
    endif
-   if (myvarnum.eq.0) write(*,*) 'WARNING:Will use CUBIC interpolation, NO CLIPPING for ALL variables'
+   if (myvarnum.eq.0) write(*, '(a)') 'WARNING:Will use CUBIC interpolation, NO CLIPPING for ALL variables'
 900 format('+',30('-'),'+')
 901 format('|',1x,'NOMVAR',1x,'|',' INTERP  ','|',1x,'code| clip|')
 902 format('|',1x,a4,3x,'| ',a7,1x,'|',1x,i3,1x,'|',1x,L3,1x,'|')
@@ -256,7 +251,7 @@ subroutine yy2global()
    !   Open the output file
    ier= fnom(iunout, globfile_S,'RND+NEW',0)
    if(ier.ne.0) then
-      write(0,*) 'ERROR: file opening failed: abort',trim(globfile_S)
+      write(0, '(a)') 'ERROR: file opening failed: abort '//trim(globfile_S)
       call qqexit(ier)
    else
       ier = FSTOUV(iunout, 'RND')
@@ -273,7 +268,7 @@ subroutine yy2global()
          print *,'no analysis fields found'
          ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'C',' ',list_yy,NYY,nrectot)
          if (NYY.eq.0) then
-            write(0,*)'ERROR: No fields found!!'
+            write(0, '(a)') 'ERROR: No fields found!!'
             call qqexit(-1)
          else
             print *,NYY, 'climatology fields found'
@@ -559,12 +554,12 @@ subroutine yy2global()
          deallocate(zwork,zzwork)
          cycle
       else if (myni.ne.ni .or. mynj.ne.nj) then
-         write(0,*)'ERROR:',trim(NOMVAR),' is not same grid size!!'
+         write(0, '(a)') 'ERROR:' //trim(NOMVAR),' is not same grid size!!'
          call qqexit(-1)
       endif
       deltat_8=(dble(deet)*dble(npas))/3600.0
       call incdatr(datev,dateo,deltat_8)
-      yyetiket=etiket(1:longueur(etiket))
+      yyetiket=etiket(1:len_trim(etiket))
       if (typvar.eq.'C') datev=-1
 
       !  The size of these work fields depend if they are U,V, or PHI grids
@@ -589,7 +584,7 @@ subroutine yy2global()
          enddo
          key = fstinf(iunyy,NI1,NJ1,NK1,datev,' ',ip1,ip2,ip3,typvar,"VV")
          if(key.lt.0) then
-            write(0,*) 'ERROR: cannot find VV in yin file: abort'
+            write(0, '(a)') 'ERROR: cannot find VV in yin file: abort'
             call qqexit(key)
          endif
 
@@ -801,7 +796,7 @@ subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
          call yy_int_cub_lag(gg(i,j),g2,imx(k),imy(k),1,1,  &
               ni,nj,t(k),p(k),x,y)
       else
-         write(0,*)'Error interpolation code!!'
+         write(0, '(a)') 'Error interpolation code!!'
          call qqexit(-1)
       endif
       if (clip) then

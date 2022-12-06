@@ -208,7 +208,7 @@ contains
       !----------------------------------------------------------------------
       filename_S = ''
       if (present(F_filename_S)) filename_S = F_filename_S
-      write(string_S,*) '(incfg) new [BEGIN]',F_dateo,F_dt,trim(filename_S)
+      write(string_S, '(a,1x,i0,1x,i0,1x,a)') '(incfg) new [BEGIN]',F_dateo,F_dt,trim(filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_id = RMN_ERR
@@ -275,7 +275,7 @@ contains
       F_id = m_nlist
       m_list(m_nlist)%n = nvar
 
-      write(string_S,*) '(incfg) new [END]',m_nlist,nvar,m_list(m_nlist)%n
+      write(string_S, '(a,1x,i0,1x,i0,1x,i0)') '(incfg) new [END]',m_nlist,nvar,m_list(m_nlist)%n
       call msg(MSG_DEBUG,string_S)
       !----------------------------------------------------------------------
       return
@@ -301,7 +301,7 @@ contains
       integer :: nkeys
       character(len=1024) :: string_S,kv_S(2,NMAX)
       !----------------------------------------------------------------------
-      write(string_S,*) '(incfg) add_string [BEGIN]',F_id,trim(F_string_S)
+      write(string_S, '(a,1x,i0,1x,a)') '(incfg) add_string [BEGIN]',F_id,trim(F_string_S)
       call msg(MSG_DEBUG,string_S)
 
       F_istat = priv_check_idx(F_id)
@@ -315,7 +315,7 @@ contains
          nkeys = str_split2keyval(kv_S,string_S,NMAX)
          F_istat = incfg_add_kv(F_id,kv_S)
       endif
-      write(string_S,*) '(incfg) add_string [END]',F_istat
+      write(string_S, '(a,1x,i0)') '(incfg) add_string [END]',F_istat
       call msg(MSG_DEBUG,string_S)
       !----------------------------------------------------------------------
       return
@@ -336,8 +336,8 @@ contains
       integer :: index, istat,k,ii
       character(len=1024) :: key_S,val_S,string_S
       !----------------------------------------------------------------------
-      write(string_S,*) '(incfg) add_kv [BEGIN]',F_id,trim(F_kv_S(1,1)),':=:', &
-           trim(F_kv_S(2,1)),'; ...'
+      write(string_S, '(a,1x,i0,1x,a)') '(incfg) add_kv [BEGIN]',F_id,trim(F_kv_S(1,1))//':=:'// &
+           trim(F_kv_S(2,1))//'; ...'
       call msg(MSG_DEBUG,string_S)
 
       F_istat = priv_check_idx(F_id)
@@ -433,7 +433,7 @@ contains
       endif
       m_list(F_id)%n = index
       F_istat = index
-      write(string_S,*) '(incfg) add_kv [END]',F_istat
+      write(string_S, '(a,1x,i0)') '(incfg) add_kv [END]',F_istat
       call msg(MSG_DEBUG,string_S)
       !----------------------------------------------------------------------
       return
@@ -760,7 +760,7 @@ contains
       integer :: istat,fileid
       character(len=1024) :: string_S
       !---------------------------------------------------------------------
-      write(string_S,*) 'priv_parse_cfgfile:',F_id,trim(F_filename_S)
+      write(string_S, '(a,1x,i0,1x,a)') 'priv_parse_cfgfile:',F_id,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_nvar = RMN_ERR

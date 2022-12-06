@@ -2,8 +2,8 @@ message(STATUS "(EC) Generating modelutils librairies Makefile")
 
 find_package(MPI)
 if (MPI_FOUND)
-set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
-set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
+  set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+  set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 endif()
 
 file(GLOB C_FILES */*.c)

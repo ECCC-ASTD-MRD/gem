@@ -26,6 +26,8 @@ contains
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
       use sfcbus_mod
+      use svs_configs
+      
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -49,12 +51,13 @@ contains
       real, pointer, dimension(:), contiguous :: zaccevap, zdrain, zdrainaf, zfvapliqaf,&
            zisoil, zlatflaf, zleg, zlegaf, &
            zler, zleraf, zles, zlesaf, zletr, zletraf, zlev, zlevaf, zoverfl, &
-           zoverflaf, zrootdp, zwflux, zwfluxaf, zwsoil, zinsmavg
+           zoverflaf, zrofinlak, zrofinlakaf, zrootdp, zwflux, zwfluxaf, zwsoil, zinsmavg
 
-      real, pointer, dimension(:,:), contiguous :: zrunofftotaf
-
+      real, pointer, dimension(:,:), contiguous :: zlatflw, zrunofftot, &
+           zrunofftotaf, zwatflow
+      
       logical :: lacchr
-      integer :: i, moyhr_steps
+      integer :: i, k, moyhr_steps
       real :: moyhri, tmp_r
       !-------------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [BEGIN]')
@@ -81,13 +84,19 @@ contains
       MKPTR1D(zlevaf, levaf, fbus)
       MKPTR1D(zoverfl, overfl, vbus)
       MKPTR1D(zoverflaf, overflaf, fbus)
+      MKPTR1D(zrofinlak, rofinlak, fbus)
+      MKPTR1D(zrofinlakaf, rofinlakaf, fbus)
       MKPTR1D(zrootdp, rootdp, fbus)
       MKPTR1D(zwflux, wflux, vbus)
       MKPTR1D(zwfluxaf, wfluxaf, fbus)
       MKPTR1D(zinsmavg, insmavg, fbus)
 
+      MKPTR2D(zlatflw,latflw,nl_svs,fbus)
+      MKPTR2D(zrunofftot,runofftot,nsurf+1,vbus)
       MKPTR2D(zrunofftotaf,runofftotaf,nsurf+1,fbus)
+      MKPTR2D(zwatflow,watflow,nl_svs+1,fbus)
 
+      
       lacchr = .false.
       if (acchr > 0) then
          lacchr = (mod(step_driver-1, acchr) == 0)
@@ -112,6 +121,15 @@ contains
             zrunofftotaf(:,:) = 0.
 
          endif IF_RESET
+
+         IF_KOUNT_NE_0: if (kount /= 0) then
+            !       ACCUMULATE RUNNOFF FOR EACH SURFACE TYPE
+            do k=1,nsurf+1
+               do i=1,ni
+                  zrunofftotaf(i,k) = zrunofftotaf(i,k) + zrunofftot(i,k)
+               enddo
+            enddo
+         ENDIF IF_KOUNT_NE_0
       endif IF_ISBA_SVS
 
 
@@ -197,13 +215,45 @@ contains
             zlatflaf(:) = 0.
             
          endif IF_RESET_SVS
-      
+
+         IF_KOUNT_NE_0_SVS:if (kount /= 0) then
+
+            ! E. Gaborit: 
+            ! Taken out from svs_update since latflw and watflow have to be 
+            ! modified prior to the accumulation in case a lake model is run
+            do i=1,ni
+               !       ACCUMULATE LATERAL FLOW FOR EACH SOIL LAYER
+               do k=1,khyd
+                  zlatflaf(i)  = zlatflaf(i) + zlatflw(i,k)       
+               enddo
+               !       ACCUMULATION OF DRAINAGE (BASE FLOW)
+               ! Drainage is the vertical flow across the bottom of the lowermost 
+               ! active layer: level = # khyd + 1
+               zdrainaf(i) = zdrainaf(i) + zwatflow(i,khyd+1)
+            enddo           
+
+         ENDIF IF_KOUNT_NE_0_SVS
 
       endif IF_SVS
 
+      ! CSLM only accumulators
+      IF_CSLM: if (schmlake == 'CSLM') then
+         
+         ! Reset accumulators at t=T+00hr 
+         IF_RESET_CSLM: if (kount == 0 .or. lacchr) then
+            zrofinlakaf(:)=0.0
+         ENDIF IF_RESET_CSLM
 
+         IF_KOUNT_NE_0_CSLM:if (kount /= 0) then
+            do i=1,ni
+               ! Accumulate ROFINLAK for water balance verification
+               zrofinlakaf(i) = zrofinlakaf(i) + zrofinlak(i)
+            enddo
+         ENDIF IF_KOUNT_NE_0_CSLM
+         
+      ENDIF IF_CSLM
 
-
+      
       if (timings_L) call timing_stop_omp(480)
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [END]')
       !-------------------------------------------------------------------

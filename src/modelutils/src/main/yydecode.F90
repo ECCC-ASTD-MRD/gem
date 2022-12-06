@@ -28,6 +28,7 @@ subroutine yydecode()
    integer i,j,nhours,datev,key,iun1,iun2,iun3,sindx
    integer nlis,lislon, ni1,nj1,nk1,ni,nj,err,lindex
    integer, dimension(:), allocatable :: liste,niv
+   logical secondMETA_L
 
    real(REAL64), dimension(:),allocatable :: posz
    real  , dimension(:),allocatable :: yy,champ
@@ -36,7 +37,7 @@ subroutine yydecode()
    !
    !-------------------------------------------------------------------
    !
-   err = exdb('YYDECODE','2.1', 'NON')
+   err = exdb('YYDECODE','3.0', 'NON')
 
    NPOS = 1
    call CCARD(LISTEc,DEF,VAL,3,NPOS)
@@ -45,6 +46,7 @@ subroutine yydecode()
    in_S  = val(3)
 
    iun1 = 0 ; iun2 = 0 ; iun3 = 0
+   secondmeta_L=.false.
 
    if (fnom(iun1,in_S,'RND+OLD',0) >= 0) then
       if (fstouv(iun1,'RND') < 0) then
@@ -146,12 +148,25 @@ subroutine yydecode()
 
       if (trim(var_S) == '^>') cycle
       if ((trim(var_S) == '^^') .or. (trim(var_S) == '>>') &
-           .or. (trim(var_S) == '!!' )) then
+           .or. (trim(var_S) == '!!') .or. (trim(var_S) == 'META' )) then
          allocate(posz(ni*nj))
          err = fstluk(posz, liste(i),ni1,nj1,nk1)
-         err = FSTECR(posz, dummy, -bit, iun2, dte, det, ipas, ni1, nj1,&
+         if (trim(var_S) == 'META') then
+             if (secondmeta_L) then
+                 err = FSTECR(posz, dummy, -bit, iun3, dte, det, ipas, ni1, nj1,&
+                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S,&
+                 g1, g2, g3, g4, dty, .false.)
+             else
+                 err = FSTECR(posz, dummy, -bit, iun2, dte, det, ipas, ni1, nj1,&
+                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S,&
+                 g1, g2, g3, g4, dty, .false.)
+                 secondmeta_L=.true.
+             endif
+         else
+              err = FSTECR(posz, dummy, -bit, iun2, dte, det, ipas, ni1, nj1,&
               nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S,&
               g1, g2, g3, g4, dty, .true.)
+         endif
          if (trim(var_S) == '!!' ) &
               err = FSTECR(posz, dummy, -bit, iun3, dte, det, ipas, ni1, nj1,&
               nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S,&
@@ -190,7 +205,7 @@ subroutine yydecode()
    err = fstfrm(iun2)
    err = fstfrm(iun3)
 
-   err = exfin('YYDECODE','2.0', 'OK')
+   err = exfin('YYDECODE','3.0', 'OK')
 
 8000 format (/' Unable to fnom: '  ,a/)
 8001 format (/' Unable to fstouv: ',a/)

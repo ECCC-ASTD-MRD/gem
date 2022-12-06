@@ -20,8 +20,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use rpn_comm_itf_mod
    use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L
    use phy_options
-   use phybus, only: entbus, perbus, dynbus, volbus
-   use phybusalloc, only: phybusalloc1
+   use phymem, only: phymem_alloc
    use microphy_utils, only: mp_init
    use ghg, only: ghg_init
    use mixing_length, only: ML_CLOSURES
@@ -188,8 +187,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       return
    endif
    
-   ! CONSTRUCTION OF THE 4 MAIN BUSES DICTIONARIES:
-   ! BUSENT, BUSDYN, BUSPER and BUSVOL
+   ! CONSTRUCTION OF THE MAIN BUSES DICTIONARIES:
    ! - - - - - - - - - - - - - - - - -
    call phybusinit(p_ni, p_nk)
    if (phy_error_L) then
@@ -197,8 +195,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       return
    endif
 
-   nullify(entbus, perbus, dynbus, volbus)
-   ier = phybusalloc1(p_nj, entbus, perbus, dynbus, volbus)
+   ier = phymem_alloc(p_nj, debug_mem_L)
    if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
 
    ! moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.

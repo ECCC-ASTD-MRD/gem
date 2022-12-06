@@ -19,16 +19,15 @@ module phy_getmeta_mod
    use clib_itf_mod, only: clib_toupper
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
-   use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus, PATHLENGTH
-   use gesdictmod, only: nbusvartot
+   use phymem, only: npvarlist, phyvar, phymem_find
    private
 #include <rmnlib_basics.hf>
 #include <msg.h>
 #include <mu_gmm.hf>
 
-   include "buses.cdk"
+   public :: phy_getmeta, phy_getmeta_single, phy_getmeta_list
 
-   public :: phy_getmeta, phy_getmeta_single, phy_getmeta_list, PATHLENGTH
+   integer, parameter, public :: PATHLENGTH = 8
 
    interface phy_getmeta
       module procedure phy_getmeta_single
@@ -98,8 +97,7 @@ contains
       character(len=PHY_MAXNAMELENGTH) :: npath, bpath
       integer :: istat, maxmeta, i, nmatch
       logical :: quiet, shortmatch, to_alloc
-      type(phymetaplus), target  :: metaplus(nbusvartot)
-      type(phymetaplus), pointer :: metaplus_p(:)
+      type(phyvar) :: myphyvar(npvarlist)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
@@ -111,7 +109,7 @@ contains
       npath = NPATH_DEFAULT
       bpath = BPATH_DEFAULT
       quiet = .false.
-      maxmeta = size(metaplus)
+      maxmeta = size(myphyvar)
       shortmatch = .false.
       if (present(F_npath)) then
          if (len_trim(F_npath) /= 0) then
@@ -132,14 +130,13 @@ contains
       if (present(F_shortmatch)) shortmatch = F_shortmatch
 
       !# Retrieve metadata into temporary space
-      metaplus_p => metaplus
-      nmatch = phygetmetaplus(metaplus_p, F_name, npath, bpath, &
-           maxmeta, quiet, shortmatch)
+      nmatch = phymem_find(myphyvar, F_name, npath, bpath, quiet, shortmatch)
 
       !# Extract public part of the metadata
       if (nmatch > 0) then
          to_alloc = .true.
          if (associated(F_meta)) then
+            !#TODO: should not do this because a pointer is not necessarily allocated... would be an API change
             if (size(F_meta) < nmatch) then
                deallocate(F_meta, stat=istat)
             else
@@ -148,12 +145,9 @@ contains
          endif
          if (to_alloc) allocate(F_meta(nmatch))
          do i = 1, nmatch
-            F_meta(i) = metaplus_p(i)%meta
+            F_meta(i) = myphyvar(i)%meta
          enddo
       endif
-
-      if (associated(metaplus_p) .and..not.associated(metaplus_p, metaplus)) &
-           deallocate(metaplus_p, stat=istat)
 
       F_istat = nmatch
       return
