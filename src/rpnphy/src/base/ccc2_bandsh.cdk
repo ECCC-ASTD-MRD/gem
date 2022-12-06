@@ -1,0 +1,28 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+! 002    P.Vaillancourt   (Sep 14) - updated to gcm17/ckdsw4.f(see ckdsw.ftn90)  
+!
+      real gws1gh, cs1o3gh,  cs1o2gh3
+      real gws2gh, cs2h2ogh, cs2o2gh
+      real gws3gh, cs3h2ogh, cs3co2gh
+      real gws4gh, cs4h2ogh, cs4co2gh, CS4CH4GH
+!
+      integer    ntl
+      parameter (ntl=28)
+!
+
+      COMMON /CCC2_BANDS1GH/ GWS1GH(3), CS1O3GH(3,3), CS1O2GH3
+      COMMON /CCC2_BANDS2GH/ GWS2GH(4), CS2H2OGH(5,ntl), CS2O2GH(5,ntl,3)
+      COMMON /CCC2_BANDS3GH/ GWS3GH(4), CS3H2OGH(5,ntl,2),CS3CO2GH(5,ntl,4)
+      COMMON /CCC2_BANDS4GH/ GWS4GH(9), CS4H2OGH(5,ntl,6), CS4CO2GH(5,ntl,6), &
+                                   CS4CH4GH(5,ntl)
+
+

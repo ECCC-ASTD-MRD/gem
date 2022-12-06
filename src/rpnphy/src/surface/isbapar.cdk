@@ -1,0 +1,6 @@
+
+      real, parameter :: ansmax  = 0.80
+      real, parameter :: todry   = 0.008
+      real, parameter :: rhomin  = 0.05
+      real, parameter :: rhosdef = 0.15
+      real, parameter :: wcrn    = 10.0

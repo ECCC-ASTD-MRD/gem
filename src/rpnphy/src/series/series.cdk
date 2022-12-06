@@ -1,0 +1,83 @@
+      integer, parameter :: &
+           CNSRSFM = 1000, &
+           CNSRPFM = 1000, &
+           CNSRGEO = 25, &
+           SERG_STRING_LENGTH = 128, &
+           NVAR    = 1000, &
+           STN_STRING_LENGTH = 128, &
+           MAXSTAT = 5000, &
+           STN_NAME_LENGTH = 128, &
+           STN_MISSING = -9999
+
+      type station_latlon
+        sequence
+        character(STN_NAME_LENGTH) :: name
+        real :: lat,lon
+      end type station_latlon
+      type station
+        sequence
+        character(STN_NAME_LENGTH) :: name
+        real :: lat,lon
+        integer :: i,j,index            !# Full grid i,j; stn Full index
+        integer :: stcori,stcorj,lclsta !# Lcl  grid i,j; stn lcl index
+      end type station
+
+      integer :: P_serg_srsrf, P_serg_srprf, P_serg_srwri, P_serg_serstp
+      common /pserg_i/ P_serg_srsrf , P_serg_srprf, P_serg_srwri
+      common /pserg_i/ P_serg_serstp
+
+      type(station_latlon) :: xst_stn_latlon(MAXSTAT)
+      common /xst_station_latlon/ xst_stn_latlon
+
+      integer :: P_serg_ver, P_serg_unf
+      character(len=SERG_STRING_LENGTH) :: P_serg_srsrf_s(cnsrsfm), &
+                                           P_serg_srprf_s(cnsrpfm)
+      logical :: P_serg_sroff_L, P_serg_srsus_L
+
+      common /pserg_i/ P_serg_ver,     P_serg_unf
+      common /pserg_c/ P_serg_srsrf_s, P_serg_srprf_s
+      common /pserg_l/ P_serg_sroff_L, P_serg_srsus_L
+
+      integer :: xst_nstat,xst_dimsers,xst_dimserp,xst_unout,xst_master_pe
+      type(station) :: xst_stn(MAXSTAT)
+
+      common /xst_i/ xst_nstat,xst_dimsers,xst_dimserp,xst_unout,xst_master_pe
+      common /xst_station/ xst_stn
+
+      real, dimension(:,:)  , pointer :: xstb_sers, xstb_sersx
+      real, dimension(:,:,:), pointer :: xstb_serp, xstb_serpx
+      common /xst_pt/ xstb_sers,xstb_serp,xstb_sersx,xstb_serpx
+
+      logical initok, series_paused
+      COMMON /xst_l/ initok, series_paused
+
+      integer :: mxsrf,mxprf,mxstt,mxnvo,nstat_g
+      integer :: nstat,nsurf,nprof,tsver,tsmoyhr,srwri,ninjnk(3)
+      integer :: noutser, serint, kount
+      common /xst_i/ mxsrf,mxprf,mxstt,mxnvo,nstat_g,&
+           nstat,nsurf,nprof,tsver,tsmoyhr,srwri,ninjnk,&
+           noutser, serint, kount
+
+      integer, dimension(:,:), pointer :: lastout_surf, lastout_prof
+      common /xst_pti/ lastout_surf, lastout_prof
+
+      real(REAL64) :: heure
+      common /xst_r8/ heure
+
+      character(len=4) :: surface(NVAR,2), profils(NVAR,2)
+      common /xst_c/ surface, profils
+
+      integer, dimension(:), pointer :: jstat,istat_g,jstat_g,statnum
+      integer, dimension(:,:), pointer :: ijstat
+      real   , dimension(:)  , pointer :: kam
+      real   , dimension(:,:), pointer :: sers
+      real   , dimension(:,:,:), pointer :: serp
+      character(len=STN_STRING_LENGTH), dimension(:), pointer :: name
+      common /xst_p/ jstat,istat_g,jstat_g,statnum, &
+           ijstat,kam,sers,serp,name
+
+      namelist /series/ P_serg_srprf_s
+      namelist /series/ P_serg_srsrf_s
+      namelist /series/ P_serg_srwri
+      namelist /series/ P_serg_serstp
+      namelist /series/ xst_stn_latlon
