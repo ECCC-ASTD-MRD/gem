@@ -1,0 +1,30 @@
+#!/bin/bash
+##
+# git diff call-back s/r for external diff [Diff Wrapper]
+# Based on example program in
+# http://stackoverflow.com/questions/255202/how-do-i-view-git-diff-output-with-visual-diff-program
+#
+# @usage export ECDIFF=xxdiff ; export ECDIFFARGS=""
+# @usage export GIT_EXTERNAL_DIFF=`which r.git-diff-wrapper`
+# @usage git diff
+#
+# @date  5 Jan 2010
+# @author Stephane Chamberland
+##
+
+# Git diff provides 7 params:
+# file-name old-file old-hex old-mode new-file new-hex new-mode
+NAME=${1}
+LEFT=$(true_path ${2})
+RIGHT=$(true_path ${5})
+
+LEFT2=left/$(echo ${NAME} | tr '/' '_')
+RIGHT2=right/$(echo ${NAME} | tr '/' '_')
+
+# diff is called by git with 7 parameters:
+# path old-file old-hex old-mode new-file new-hex new-mode
+cd ${ECDIFFTMPDIR:-${TMPDIR:-/tmp}/$$}
+rm -f $LEFT2 $RIGHT2
+mkdir {left,right} 2>/dev/null || true
+cp $LEFT $LEFT2
+cp $RIGHT $RIGHT2

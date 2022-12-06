@@ -1,0 +1,19 @@
+#!/bin/bash
+depot=$1
+tag=$2
+destdir=$3
+
+if [[ $# -ne 2 ]] ; then
+   echo "USAGE: $0 URL_2_GIT_DEPOT GIT_TAG [/dest/dir]"
+   exit 1
+fi
+
+if [[ x$dest == x ]] ; then
+   git archive --format=tar --remote=$depot $tag | gzip > ${tag}.tgz
+elif [[ -d $dest ]] ; then
+   git archive --format=tar --remote=$depot $tag | tar -x -C $dest
+else
+   echo "ERROR: /dest/dir NOT a dir: $dest"
+   echo "USAGE: $0 URL_2_GIT_DEPOT GIT_TAG [/dest/dir]"
+   exit 1
+fi
