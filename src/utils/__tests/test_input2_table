@@ -1,0 +1,46 @@
+in=MG; freq=0; search=GEOP;      interp=near;  
+in=TM; freq=0; search=ANAL;      interp=linear;
+in=LH; freq=0; search=GEOP;      interp=linear;
+in=Y7; freq=0; search=GEOP;      interp=linear;
+in=Y8; freq=0; search=GEOP;      interp=linear;
+in=Y9; freq=0; search=GEOP;      interp=linear;
+in=GA; freq=0; search=GEOP;      interp=near;
+in=I8; freq=0; search=ANAL,CLIM; interp=near;   timeint=linear
+in=I9; freq=0; search=ANAL;      interp=linear; levels= 1,2;
+in=I7; freq=0; search=ANAL;      interp=linear; levels= 1,3;
+in=ZP; freq=0; search=GEOP;      interp=linear;
+in=SD; freq=0; search=ANAL,CLIM; interp=near;   levels= 1,5; timeint=linear
+in=I0; freq=0; search=ANAL,CLIM; interp=linear; levels= 1,2; timeint=linear
+in=VF; freq=0; search=GEOP;      interp=near;   levels= 1,26; 
+in=LG; freq=0; search=ANAL,CLIM; interp=near;   timeint=linear
+
+in=HS; freq=0; search=ANAL,CLIM; interp=near;   timeint=linear
+in=VG; freq=0; search=GEOP;      interp=near;
+
+in=ME; freq=0; search=GEOP;      interp=cubic;
+
+in=AL; freq=0; search=GEOP,CLIM; interp=near;  timeint=any; #etk=NO SNOW
+
+in=I1; freq=0; search=ANAL;      interp=near; levels= 1,2;
+in=I2; freq=0; search=ANAL;      interp=near;
+in=I3; freq=0; search=ANAL;      interp=near;
+in=I4; freq=0; search=ANAL;      interp=near;
+
+in=I6; freq=0; search=ANAL;      interp=near;
+in=XA; freq=0; search=ANAL;      interp=near;
+
+in=J1; freq=0; search=GEOP;      interp=near; levels= 1,3;
+in=J2; freq=0; search=GEOP;      interp=near; levels= 1,3;
+
+in=DN; freq=0; search=ANAL;      interp=near;
+
+in=ICEL; freq=0; search=ANAL,CLIM; interp=near; timeint=linear
+
+in=FSA;  freq=0; search=GEOP;    interp=linear; levels= 1,4;
+in=SLA;  freq=0; search=GEOP;    interp=linear; levels= 1,4;
+
+in=AL; freq=0; search=INREP;     interp=near;  timeint=any; #etk=NO SNOW
+
+in=TT; freq=0; search=INREP;     interp=cubic; levels=  -1;
+
+in=UU; IN2=VV ; freq=0; search=INREP; interp=cubic; levels=  -1;

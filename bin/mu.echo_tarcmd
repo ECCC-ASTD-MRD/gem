@@ -1,0 +1,7 @@
+#!/bin/bash
+_TarCmd="echo tar"
+tar --help 1>/dev/null 2>/dev/null && _TarCmd=tar
+gtar --help 1>/dev/null 2>/dev/null && _TarCmd=gtar
+gnutar --help 1>/dev/null 2>/dev/null && _TarCmd=gnutar
+echo ${_TarCmd}
+exit 0
