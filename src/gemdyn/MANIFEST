@@ -1,5 +1,5 @@
 NAME       : gemdyn
-VERSION    : 5.2.0-a20
+VERSION    : 5.2.0-a21
 BUILD      : Debug
 DESCRIPTION: GEM dynamical core
 SUMMARY    : 
@@ -11,8 +11,10 @@ DOC	   : https://wiki.cmc.ec.gc.ca/wiki/GEM
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-RMN  >= 19.7.0
+rmn  >= 20.0.0
+tdpack >= 1.6.1
 vgrid >= 6.6.0
-rpncomm >= 4.5.4
-modelutils = 1.7.0-a20
-rpnphy = 6.2.0-a20
+rpncomm >= 4.6.2
+modelutils = 1.7.0-a21
+rpnphy = 6.2.0-a21
+
