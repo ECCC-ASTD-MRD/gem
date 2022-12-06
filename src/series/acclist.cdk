@@ -1,0 +1,124 @@
+!
+! Author
+!          K. Winger  (Apr 2006)
+
+! Revisions
+! 001      B. Dugas   (May 2006) - Add documentation
+! 002      P. Vaillancourt (Jun 2006) - Add ACLB,ACLT,ACSB,ACST
+!
+! Object
+!          Current list of valid (accumulator) variables to be
+!          used by the zeracc and seracc management routines.
+!          The names are given for model output (M) and time
+!          series output (T)
+!
+! Radiation
+!  M   T
+! AB   AB   Incoming solar energy flux at TOA
+! ACLB ACLB Net clear sky lw flux at surface
+! ACLT ACLT Net clear sky lw flux at TOA
+! ACSB ACSB Net clear sky solar flux at surface
+! ACST ACST Net clear sky solar flux at TOA
+! AD   AD   IR energy flux towards ground
+! AI   AI   Net IR energy flux at the surface
+! AR   AR   Outgoing IR energy flux at model lid
+! AS   AS   VIS energy flux absorbed by the surface
+! AU   AU   Outgoing VIS energy flux at model lid
+! N4   AF   VIS energy flux towards ground
+! N5   --   Soil surf. upward infrared flux
+! N6   --   Soil surf. upward solar flux
+! NF   NF   2-D cloud cover
+!
+! Convection/condensation
+!  M   T
+! A1   --   Liquid convective precipitation
+! A2   --   Liquid stratified precipitation
+! A3   --   Solid convective precipitation
+! A4   --   Solid stratified precipitation
+! A8   --   Liquid shallow convective precipitation
+! A9   --   Solid shallow convective precipitation
+! FR   --   Freezing precipitation
+! N2   --   Liquid precipitation (ISBA)
+! N3   --   Solid precipitation at surface
+! PE   --   Refrozen precipitation
+! RN   --   Liquid precipitation
+! SN   --   Snow precipitation
+! --   PR   Total precipitation
+! --   PC   Convective precipitation
+! --   PY   Deep convection precipitation
+! --   PZ   Shallow convection precipitation rate
+! --   AE   Stratiform precipitation
+!
+! Surface processes
+!  M   T
+! AH   AH   Surface heat flux (upward)
+! AG   AG   Heat flux in the ground
+! AW   AW   surface momentum flux
+! AV   AV   Surface water vapor flux (upward)
+! N0   --   Surface runoff
+! N7   --   Soil surface upward water flux
+! O1   --   Base drainage
+! O5   --   Bare ground LE flux
+! O6   --   Direct veg LE flux
+! O7   --   Sublimation from snow
+! O8   --   Vegetation transpiration
+! O9   --   Evaporation from vegetation
+! S7   S7   Zonal momentum flux
+! S8   S8   Meridional momentum flux
+!
+!*
+!
+      INTEGER     NBR
+      PARAMETER  (NBR = 45 )
+      character(len=4) PERMIS(2,NBR)
+!
+      DATA  PERMIS / &
+           'AB'  ,'AB', &
+           'ACLB','ACLB', &
+           'ACLT','ACLT', &
+           'ACSB','ACSB', &
+           'ACST','ACST', &
+           'AD'  ,'AD', &
+           'AI'  ,'AI', &
+           'AR'  ,'AR', &
+           'AS'  ,'AS', &
+           'AU'  ,'AU', &
+           'N4'  ,'AF', &
+           'N5'  ,'--', &
+           'N6'  ,'--', &
+           'NF'  ,'NF', &
+           'A1'  ,'--', &
+           'A2'  ,'--', &
+           'A3'  ,'--', &
+           'A4'  ,'--', &
+           'A8'  ,'--', &
+           'A9'  ,'--', &
+           'FR'  ,'--', &
+           'N2'  ,'--', &
+           'N3'  ,'--', &
+           'PE'  ,'--', &
+           'RN'  ,'--', &
+           'SN'  ,'--', &
+           '--'  ,'PR', &
+           '--'  ,'PC', &
+           '--'  ,'PY', &
+           '--'  ,'PZ', &
+           '--'  ,'AE', &
+           'AH'  ,'AH', &
+           'AG'  ,'AG', &
+           'AW'  ,'AW', &
+           'AV'  ,'AV', &
+           'N0'  ,'--', &
+           'N7'  ,'--', &
+           'O1'  ,'--', &
+           'O5'  ,'--', &
+           'O6'  ,'--', &
+           'O7'  ,'--', &
+           'O8'  ,'--', &
+           'O9'  ,'--', &
+           'S7'  ,'S7', &
+           'S8'  ,'S8' &
+                       /
+
+      SAVE PERMIS
+

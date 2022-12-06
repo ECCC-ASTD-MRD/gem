@@ -1,0 +1,65 @@
+#undef PHYMKPTR1
+#include "phymkptr.hf"
+
+   MKPTR2D(zairplus, airplus, dbus)
+   MKPTR2D(zo3lplus,  o3lplus , dbus)
+   MKPTR2D(zch4lplus, ch4lplus, dbus)
+   MKPTR2D(zn2olplus, n2olplus, dbus)
+   MKPTR2D(zf11lplus, f11lplus, dbus)
+   MKPTR2D(zf12lplus, f12lplus, dbus)
+
+   MKPTR2D(zsigw,    sigw   , dbus)
+   MKPTR2D(zhuplus,  huplus , dbus)
+   MKPTR2D(ztplus,   tplus  , dbus) !tmois ???
+
+   MKPTR1D(zpplus, pmoins, fbus)
+   MKPTR1D(ztdmask, tdmask, fbus)
+
+   MKPTR2D(zttce     , ttce   ,  fbus)
+   MKPTR2D(zlin4     , lin4   ,  fbus)
+   MKPTR2D(zlin5     , lin5   ,  fbus)
+   MKPTR2D(zlin6     , lin6   ,  fbus)
+   MKPTR2D(zlin7     , lin7   ,  fbus)
+   MKPTR2D(zlin8     , lin8   ,  fbus)
+   MKPTR2D(zlin9     , lin9   ,  fbus)
+   MKPTR2D(zlin10    , lin10  ,  fbus)
+   MKPTR2D(zlin11    , lin11  ,  fbus)
+
+   MKPTR2D(zo3ce     , o3ce   ,  fbus)
+   MKPTR2D(zo3fk     , o3fk   , fbus)
+   MKPTR2D(zch4c     , ch4c   ,  fbus)
+   MKPTR2D(zn2oc     , n2oc   ,  fbus)
+   MKPTR2D(zcf1c     , cf1c   ,  fbus)
+   MKPTR2D(zcf2c     , cf2c   ,  fbus)
+
+   MKPTR2D(zch4      , ch4    ,  vbus)
+   MKPTR2D(zn2o      , n2o    ,  vbus)
+   MKPTR2D(zcf11     , cf11   ,  vbus)
+   MKPTR2D(zcf12     , cf12   ,  vbus)
+
+   MKPTR2D(zo1chmtd  , o1chmtd,  vbus)
+   MKPTR2D(zo3chmtd  , o3chmtd,  vbus)
+   MKPTR2D(zo4chmtd  , o4chmtd,  vbus)
+   MKPTR2D(zo6chmtd  , o6chmtd,  vbus)
+   MKPTR2D(zo7chmtd  , o7chmtd,  vbus)
+
+   MKPTR2D(zch4chmtd  , ch4chmtd,  vbus)
+   MKPTR2D(zn2ochmtd  , n2ochmtd,  vbus)
+   MKPTR2D(zf11chmtd  , f11chmtd,  vbus)
+   MKPTR2D(zf12chmtd  , f12chmtd,  vbus)
+
+   MKPTR2D(zo3col  , o3col,  vbus)
+   MKPTR2D(zo3ccol , o3ccol, vbus)
+   MKPTR2D(zch4col , ch4col, vbus)
+   MKPTR2D(zn2ocol , n2ocol, vbus)
+   MKPTR2D(zf11col , f11col, vbus)
+   MKPTR2D(zf12col , f12col, vbus)
+
+   MKPTR1D(zo3tc   , o3tc,  vbus)
+   MKPTR1D(zo3ctc  , o3ctc, vbus)
+   MKPTR1D(zch4tc  , ch4tc, vbus)
+   MKPTR1D(zn2otc  , n2otc, vbus)
+   MKPTR1D(zf11tc  , f11tc, vbus)
+   MKPTR1D(zf12tc  , f12tc, vbus)
+
+

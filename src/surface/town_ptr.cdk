@@ -1,0 +1,53 @@
+      real, pointer, dimension(:) :: zalfaq
+      real, pointer, dimension(:) :: zalfat
+      real, pointer, dimension(:) :: zalvis
+      real, pointer, dimension(:) :: zalscatw
+      real, pointer, dimension(:) :: zazim
+      real, pointer, dimension(:) :: zbm
+      real, pointer, dimension(:) :: zbt
+      real, pointer, dimension(:) :: zdlat
+      real, pointer, dimension(:) :: zdlon
+      real, pointer, dimension(:) :: zemtw
+      real, pointer, dimension(:) :: zfc
+      real, pointer, dimension(:) :: zfcor
+      real, pointer, dimension(:) :: zfrv
+      real, pointer, dimension(:) :: zftemp
+      real, pointer, dimension(:) :: zfv
+      real, pointer, dimension(:) :: zfvap
+      real, pointer, dimension(:) :: zhst
+      real, pointer, dimension(:) :: zilmo
+      real, pointer, dimension(:) :: zqdiag
+      real, pointer, dimension(:) :: zqsurf
+      real, pointer, dimension(:) :: zrainrate
+      real, pointer, dimension(:) :: zrunofftot
+      real, pointer, dimension(:) :: zsnodp
+      real, pointer, dimension(:) :: zsnowrate
+      real, pointer, dimension(:) :: ztdiag
+      real, pointer, dimension(:) :: ztsrad
+      real, pointer, dimension(:) :: ztsradtw
+      real, pointer, dimension(:) :: ztsun
+      real, pointer, dimension(:) :: ztsurf
+      real, pointer, dimension(:) :: zudiag
+      real, pointer, dimension(:) :: zvdiag
+      real, pointer, dimension(:) :: zz0
+      real, pointer, dimension(:) :: zz0t
+      real, pointer, dimension(:) :: zzenith
+      real, pointer, dimension(:) :: zztsl
+      real, pointer, dimension(:) :: zzusl
+   real,pointer,dimension(:) :: zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
+   real,pointer,dimension(:) :: zqdiagtypv, ztdiagtypv, zudiagtypv, zvdiagtypv
+   real, pointer, dimension(:,:)   :: psol_sw     ! global ingoing solar radiation
+   real, pointer, dimension(:,:)   :: pdir_sw     ! direct ingoing solar radiation
+   real, pointer, dimension(:,:)   :: psca_sw     ! diffuse ingoing solar radiation
+   real, pointer, dimension(:)     :: plw         ! ingoing longwave radiation
+   real, pointer, dimension(:)     :: pta         ! air temperature at forcing level
+   real, pointer, dimension(:)     :: pqa         ! air specific humidity at forcing level
+   real, pointer, dimension(:)     :: pu          ! zonal wind component       
+   real, pointer, dimension(:)     :: pv          ! meridional wind component       
+   real, pointer, dimension(:)     :: pps         ! surface pressure 
+   real, pointer, dimension(:)     :: ppa         ! air pressure at forcing level
+   real, pointer, dimension(:)     :: pthetaa     ! air potential temperature at forcing level
+   real, pointer, dimension(:)     :: pzref       ! height of forcing level for t and q
+   real, pointer, dimension(:)     :: puref       ! height of forcing level for the wind
+
+
