@@ -61,7 +61,6 @@
       OMP_max_threads=OMP_get_max_threads()
       dimH= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
       dimV= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      sumq  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1: ) 
       p0_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(    1:) ; dim=dimH
       p0_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimH
       thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_max_threads

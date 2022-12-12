@@ -26,7 +26,10 @@
  &adz_cfgs2
  Adz_slt_winds = .true.
 /
-
+&sol
+  Sol_type_S = 'DIRECT'
+/
+  
  &dyn_fisl
   Cstv_tstr_8     = 240.0
   Schm_nblendyy   = 1

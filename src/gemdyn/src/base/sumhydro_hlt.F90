@@ -15,33 +15,34 @@
 
 !**s/r sumhydro - Sum over Hydrometeors
 !
-      subroutine sumhydro_hlt (F_qh,minx,maxx,miny,maxy,nk,ntr,F_tracers)
-      use dyn_fisl_options
+      subroutine sumhydro_hlt ( F_qh, minx,maxx,miny,maxy,nk,ntr,&
+                                F_tracers, F_wload_L )
       use gem_options
       use glb_ld
       use tr3d
       use mem_tracers
+      use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
-      integer, intent(in) :: minx,maxx,miny,maxy,nk,ntr
-      real, intent(in ) :: F_tracers(minx:maxx,miny:maxy,nk,ntr)
-      real, intent(out) :: F_qh(minx:maxx,miny:maxy,nk)
+      logical, intent(IN ) :: F_wload_L
+      integer, intent(IN ) :: minx,maxx,miny,maxy,nk,ntr
+      real   , intent(IN ) :: F_tracers(minx:maxx,miny:maxy,nk,ntr)
+      real(kind=REAL64), intent(OUT) :: F_qh(minx:maxx,miny:maxy,nk)
 
       integer i, j, k, n
 !     ________________________________________________________________
 !
 !$omp do collapse(2)
       do k = 1, l_nk
-        do j= 1-G_haloy, l_nj+G_haloy
-          do i= 1-G_halox, l_ni+G_halox
+        do j= miny, maxy
+          do i= minx, maxx
              F_qh(i,j,k)=0.
           end do
         end do
       end do
 !$omp end do
-
-      if (.not.Schm_wload_L) return
+      
+      if (.not.F_wload_L) return
 
 !     Sum over Hydrometeors
       do n = 1, Tr3d_ntr

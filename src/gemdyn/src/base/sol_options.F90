@@ -21,7 +21,7 @@ module sol_options
    !# Type of solver
    !# * 'ITERATIF'
    !# * 'DIRECT'
-   character(len=26) :: Sol_type_S = 'DIRECT'
+   character(len=26) :: Sol_type_S = 'ITERATIVE_3D'
    namelist /sol  / Sol_type_S
 
    !# Epsilon convergence criteria for none Yin-Yang iterative solver

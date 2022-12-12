@@ -22,15 +22,11 @@
       use glb_ld
       use gmm_pw
       use tr3d
-      use masshlt
       use mem_tracers
       use tdpack, only: grav_8
       use ver
-
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -47,48 +43,39 @@
 
       integer :: i,j,k
       real(kind=REAL64) :: dens,inv_grav
-      real, pointer, dimension(:,:,:) :: pr_m,tr
+      real, pointer, dimension(:    ) :: tr
+      real, pointer, dimension(:,:,:) :: pr_m,hu
 !
 !---------------------------------------------------------------------
 !
       !Obtain Momentum pressure levels at appropriate time
       !---------------------------------------------------
-      if (F_time == 1) pr_m => pw_pm_plus
-      if (F_time == 0) pr_m => pw_pm_moins
+      if (F_time == 1) then
+         pr_m => pw_pm_plus
+         tr   => trt1
+         hu   => tracers_P(Tr3d_hu)%pntr
+      endif
+      if (F_time == 0) then
+         pr_m => pw_pm_moins
+         tr   => trt0
+         hu   => tracers_M(Tr3d_hu)%pntr
+      endif
 
       !Evaluate water tracers at appropriate time if dry mixing ratio
       !--------------------------------------------------------------
-!$omp do collapse(2)
-         do k=F_k0,l_nk
-           do j=1,l_nj
-             do i=1,l_ni
-               sumq(i,j,k) = 0.d0
-             enddo
-           enddo
-         enddo
-!$omp end do
 
+      call sumhydro_hlt (sumq_8,F_minx,F_maxx,F_miny,F_maxy,F_nk,Tr3d_ntr,&
+                         tr, Schm_dry_mixing_ratio_L.and.Schm_wload_L)
       if (Schm_dry_mixing_ratio_L) then
-
-         if (F_time == 1) then
-            call sumhydro_hlt (sumq,F_minx,F_maxx,F_miny,F_maxy,F_nk,Tr3d_ntr, trt1)
-            tr=>tracers_P(Tr3d_hu)%pntr
-         endif
-         if (F_time == 0) then
-            call sumhydro_hlt (sumq,F_minx,F_maxx,F_miny,F_maxy,F_nk,Tr3d_ntr, trt0)
-            tr=>tracers_M(Tr3d_hu)%pntr
-         endif
-
 !$omp do collapse(2)
          do k=F_k0,l_nk
            do j=1,l_nj
              do i=1,l_ni
-               sumq(i,j,k) = sumq(i,j,k) + tr(i,j,k)
+               sumq_8(i,j,k) = sumq_8(i,j,k) + hu(i,j,k)
              enddo
            enddo
          enddo
 !$omp end do
-
       end if
 
       !Evaluate Air Mass
@@ -103,7 +90,7 @@
          F_air_mass(F_minx:0     ,j,k)= 0.
          F_air_mass(l_ni+1:F_maxx,j,k)= 0.
          do i=1,l_ni
-            dens= + (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k) * inv_grav
+            dens= + (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq_8(i,j,k)) * Ver_idz_8%t(k) * inv_grav
             F_air_mass(i,j,k) = dens * geomh_area_8(i,j) * Ver_dz_8%t(k)
          end do
          end do

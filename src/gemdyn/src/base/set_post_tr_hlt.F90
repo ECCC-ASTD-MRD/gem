@@ -41,8 +41,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      sumq  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1:) 
-
       call gtmg_start (52, 'AIR_MASS', 36)
 
       !SET_POST_TR has just been launched
