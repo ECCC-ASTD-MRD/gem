@@ -33,6 +33,9 @@ else
         export GEM_GIT_DIR=$PWD
         export ATM_MODEL_DFILES=${GEM_GIT_DIR}/gem_dbase
         export ATM_MODEL_VERSION=`cat MANIFEST | sed -n '/VERSION/s/.*: //p'`
+        export gemdyn_version=`cat src/gemdyn/MANIFEST | sed -n '/VERSION/s/.*: //p'`
+        export rpnphy_version=`cat src/rpnphy/MANIFEST | sed -n '/VERSION/s/.*: //p'`
+        export modelutils_version=`cat src/modelutils/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
         export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
