@@ -43,7 +43,7 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    use tendency, only: tendency5
    use turbulence, only: turbulence2
    use lhn_mod, only: lhn2
-   use chm_mod, only: chm_exe
+   use chm_headers_mod, only: chm_exe
    implicit none
 !!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
