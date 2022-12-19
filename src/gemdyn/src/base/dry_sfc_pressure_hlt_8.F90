@@ -16,36 +16,37 @@
 !**s/r dry_sfc_pressure_8 - Compute dry air surface pressure REAL64
 !
       subroutine dry_sfc_pressure_hlt_8 (F_drysfcp0_8,presT_8,p0T_8,F_k0,F_timelevel_S)
+      use dyn_fisl_options
       use glb_ld
       use tr3d
       use mem_tracers
-      use masshlt
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       character(len=1) :: F_timelevel_S
       real(kind=REAL64) F_drysfcp0_8(l_minx:l_maxx,l_miny:l_maxy),&
                              presT_8(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                                p0T_8(l_minx:l_maxx,l_miny:l_maxy)
       integer i,j,k,F_k0
-      real, pointer, dimension(:,:,:)         :: tr
+      real, pointer, dimension(:    ) :: tr
+      real, pointer, dimension(:,:,:) :: hu
 !     ________________________________________________________________
 !
       if (F_timelevel_S == 'P') then
-         call sumhydro_hlt (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr, trt1)
-         tr=>tracers_P(Tr3d_hu)%pntr
+         tr   => trt1
+         hu   => tracers_P(Tr3d_hu)%pntr
       endif
       if (F_timelevel_S == 'M') then
-         call sumhydro_hlt (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr, trt0)
-         tr=>tracers_M(Tr3d_hu)%pntr
+         tr   => trt0
+         hu   => tracers_M(Tr3d_hu)%pntr
       endif
+      call sumhydro_hlt (sumq_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr, tr, Schm_wload_L)
 
 !$omp do collapse(2)
       do k=F_k0,l_nk
         do j=1+pil_s,l_nj-pil_n
           do i=1+pil_w,l_ni-pil_e
-          sumq(i,j,k)= sumq(i,j,k) + tr(i,j,k)
+          sumq_8(i,j,k)= sumq_8(i,j,k) + hu(i,j,k)
           end do
         end do
       end do
@@ -57,12 +58,12 @@
          do k=F_k0,l_nk-1
             do i=1+pil_w,l_ni-pil_e
                F_drysfcp0_8(i,j)= F_drysfcp0_8(i,j) + &
-                    (1.-sumq(i,j,k))*(presT_8(i,j,k+1) - presT_8(i,j,k))
+                    (1.-sumq_8(i,j,k))*(presT_8(i,j,k+1) - presT_8(i,j,k))
             end do
          end do
          do i=1+pil_w,l_ni-pil_e
             F_drysfcp0_8(i,j)= F_drysfcp0_8(i,j) + &
-                 (1.-sumq(i,j,l_nk))*(p0T_8(i,j) - presT_8(i,j,l_nk))
+                 (1.-sumq_8(i,j,l_nk))*(p0T_8(i,j) - presT_8(i,j,l_nk))
          end do
       end do
 !$omp end do

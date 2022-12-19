@@ -20,7 +20,6 @@ module masshlt
    save
 
    integer :: OMP_max_threads
-   real            , dimension(:,:,:), pointer :: sumq
    real(kind=REAL64),dimension(:,:  ), pointer :: p0_0_8,p0_1_8,p0_dry_0_8,p0_dry_1_8,thread_sum
    real(kind=REAL64),dimension(:    ), pointer :: g_avg_8
 
