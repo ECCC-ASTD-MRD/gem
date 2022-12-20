@@ -3,17 +3,25 @@
 # For internal use at ECCC
 # Source this file to:
 # - Load profile and code-tools for gnu
-# - Load libraries
-# - Set compiler version
+# - Load RPN-SI libraries 
 # - Load a script for common setup to all compilers
 
 DOMAIN=`hostname -d`
 
-if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/rhel-8-amd-64/gnu-9.3.0.sh
+# Note: update rpn-si submodules on gpscc and ECCC, as some of RPN-SI
+# libraries are not yet available for GNU 9.3 on these platforms.
+
+if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gpscc2/gnu-9.3.0
+elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gnu-9.3.0
+    # Load latest version of RPN-SI libraries
+    . r.load.dot rpn/libs/20221125-alpha
 else 
-    . ./ci-env/latest/ubuntu-18.04-amd-64/gnu-7.5.0.sh
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/ECCC/gnu-9.3.0
 fi
+# We need a more recent version of cmake than the one available by default
+. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)

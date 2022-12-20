@@ -52,14 +52,14 @@ if [ -z "${GRDTYP}" ] ; then
 fi
 if [[ "$GRDTYP" == "GY" ]] ; then 
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YAN/000-000/constantes
    cp checkdm.nml ${WORKDIR}/YIN/000-000
    mv checkdm.nml ${WORKDIR}/YAN/000-000
    ngrids=2
 else
    mkdir -p ${WORKDIR}/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/000-000/constantes
    mv checkdm.nml ${WORKDIR}/000-000
    ngrids=1
 fi

@@ -1,4 +1,4 @@
-message(STATUS "(EC) Generating gemdm Makefile")
+message(STATUS "(EC) Generating maingem* Makefile")
 
 find_package(MPI)
 if (MPI_FOUND)
@@ -13,17 +13,17 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.in ${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.F90)
 
 add_executable(maingemdm maingemdm.F90)
+
 target_link_libraries(maingemdm
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
-   rpnphy_chm_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
+   ${chm_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    modelutils_ov_ifort
    vgrid
    tdpack
-   mpi-extras
    rpncomm
    rmn
    ${ompfftw}
@@ -31,7 +31,6 @@ target_link_libraries(maingemdm
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(maingemdm gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
+add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
-install(TARGETS maingemdm RUNTIME 
-  DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
+install(TARGETS maingemdm RUNTIME DESTINATION bin)

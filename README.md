@@ -2,13 +2,12 @@
 
 **The 5.2 branch is a development version.**
 
-# At CMC
+# At CMC only (internal users)
 
 ```
 Clone gem repository
 cd gem
 git checkout 5.2-branch
-git submodule update --init --recursive
 
 ./scripts/link-dbase.sh
 . ./.eccc_setup_intel
@@ -20,8 +19,7 @@ Before the first build:
 # building and installing GEM
 # please see other options in Makefile
 make cmake
-make build
-make work
+make -j work
 
 # running GEM: example
 cd $GEM_WORK
@@ -41,16 +39,15 @@ To compile and run GEM, you will need:
 - OpenMP support (optional)
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
+- basic Unix utilities such as cmake (version 3.10 minimum), bash, sed, etc.
 
 ```
-git clone https://github.com/ECCC-ASTD-MRD/gem.git
+# clone everything, including libraries and tools included as git submodules
+git clone --branch 5.2-branch --recursive https://github.com/ECCC-ASTD-MRD/gem.git
 cd gem
-# Checkout 5.2 branch:
-git checkout 5.2-branch
-# Update submodules:
-# cmake_rpn and ci-env are included as submodules, but ci-env is not available externally. 
-git -c submodule."ci-env".update=none submodule update --init --recursive
+
+# If you cloned without the --recursive option above, update submodules:
+git submodule update --init --recursive
 
 # Download the data files required to run GEM
 ./download-dbase.sh .
@@ -61,16 +58,11 @@ git -c submodule."ci-env".update=none submodule update --init --recursive
 # or
 . ./.common_setup intel
 	
-# Create a build directory
+# Method 1 - Create a build directory
 # The build directory has very little value in itself and can be placed
 # outside the project directory
 mkdir -p build
 cd build
-# Alternatively, you can use a script that will create a build and work
-# directory named after the operating system and compiler suite used
-. ./.initial_setup
-cd build[...]
-	
 # default compiler is gnu
 cmake ..
 # or, for Intel:
@@ -78,10 +70,24 @@ cmake .. -DCOMPILER_SUITE=intel
 # Create an execution environment for GEM
 make -j work
 
-# You should now have a work directory created in the form of:
-# work-${OS_NAME}-${COMPILER_NAME} 
-cd ..
-cd work-${OS_NAME}-${COMPILER_NAME}
+# Method 2 - Alternatively, you can use a script that will create a build and work
+# directory named after the computer operating system and the compiler suite
+# used, without having to create a build directory as mentioned in Method 1 above. 
+# In that case, you can then use the provided Makefile, using the commands
+# make cmake and make -j work, directly, without having to move to the 
+# build directory:
+# in the main directory:
+. ./.initial_setup
+make cmake
+make -j work
+
+# Either with Method 1 or 2, you should now have a work directory in the
+# main directory of gem, created with a name in the form of: 
+# work-[OS_NAME]-[COMPILER_NAME]
+cd work-[OS_NAME]-[COMPILER_NAME]
+or 
+cd $GEM_WORK
+
 # Configure the model with one of the configurations
 # and execute the model, for example:
 runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
@@ -131,25 +137,28 @@ link:
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
   of commands, which you will need to adapt for your setup:
   - On Ubuntu:
-    ```
+  
+```
     export PATH=/usr/lib/openmpi/bin:${PATH}
     export LD_LIBRARY_PATH=/usr/lib/openmpi/lib:$LD_LIBRARY_PATH
-    # or
+# or
     export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/openmpi/lib:$LD_LIBRARY_PATH
-    ```
+```
+
   - On Fedora:
-    ```
+
+```
     export PATH=/usr/lib64/openmpi/bin:$PATH
     export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
-    ```
+```
 
 ### Intel compiler suite
 
 - Changes to the C and Fortran flags can be done in the  **CMakeLists.txt**
   file, under the section **# Adding specific flags for GEM**.
 - You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
-- You may need to modify ```-march``` to generate code that can run on
-  your system
+- You may need to modify ```-march``` to generate code that can run on your
+  system
 - Make sure the compilers and libraries are in the appropriate
   environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
 - As gnu is the default compiler suite, use the following command to compile
@@ -189,7 +198,7 @@ If the compiler or compile options are not right:
 
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
-(work-${OS_NAME}-${COMPILER_NAME}). For example
+(work-[OS_NAME]-[COMPILER_NAME]). For example
 *work-Fedora-34-x86_64-gnu-11.2.1* would be created in the main directory,
 and the following executables installed in the *bin* sub-folder: 
 - cclargs_lite
@@ -216,11 +225,13 @@ architecture, compiler, and flags used.
 
 ## Running GEM
 
-Go to the working directory, named *work-${OS-NAME}_${COMPILER-NAME}*, for
+Go to the working directory, named *work-[OS_NAME]-[COMPILER_NAME]*, for
 example *work-Fedora-34-x86_64-gnu-11.2.1*
 
 ```
-cd work-${OS-NAME}_${COMPILER-NAME}
+cd work-[OS_NAME]-[COMPILER_NAME]
+or
+cd $GEM_WORK
 # Configure and execute the model for a specific case, for example:
 runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
@@ -235,6 +246,7 @@ use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
 If you get an error message saying runprep.sh or gem_dbase is not found,
 make sure to set the environment variables using the setup file situated in
 the main directory:
+
 ```
 ./.common_setup gnu
 # or
@@ -312,7 +324,7 @@ Then run the two scripts with the following commands, to prepare the input,
 and then run the model:
 
 ```
-cd work-${OS-NAME}_${COMPILER-NAME}
+cd work-[OS_NAME]-[COMPILER_NAME]
 runprep.sh -dircfg configurations/experience
 runmod.sh -dircfg configurations/experience
 ```

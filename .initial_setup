@@ -15,7 +15,7 @@ if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
         /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
         mkdir -p build-${GEM_ARCH} ${GEM_WORK}
     fi
-    
+
     if [ "$COMPILER_SUITE" == "intel" ] ; then
         SETUP_FILE=.eccc_setup_intel
     else
