@@ -123,6 +123,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 #include "ccc_tracegases.cdk"
 #include "ccc_aeros.cdk"
 #include "tables.cdk"
+include "nocld.cdk"
 
    integer, dimension(ilg) :: mtop
    real, dimension(ilg) :: c1
@@ -223,7 +224,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    !     uu3 = 3 * u * u, u = 1 / e^0.5
    !----------------------------------------------------------------------
 
-   data hrcoef, uu3, cut / 9.9565841e-05, 1.1036383, 0.001 /
+   data hrcoef, uu3 / 9.9565841e-05, 1.1036383 /
 
    !----------------------------------------------------------------------
    !     this code can be extended to about 100 km, if the model top level
@@ -234,6 +235,8 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 
    data kgs   / 6, 4, 6, 4 /
    data kgl   / 1, 1, 2, 3, 2, 2, 3, 6, 4 /
+
+   cut = cldfth ! specified in nocld.cdk, .001 in CCCMA code
 
    if (std_p_prof(1).lt.1000.0) then
       !   for maximum height about 0.005 hPa

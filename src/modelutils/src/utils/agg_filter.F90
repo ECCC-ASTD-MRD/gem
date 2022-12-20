@@ -24,7 +24,7 @@ module agg_filter_mod
    public :: aggreg
    !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    interface aggreg

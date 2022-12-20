@@ -26,7 +26,7 @@ module drv_levels_mod
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "drv_dyn_itf.inc"
 

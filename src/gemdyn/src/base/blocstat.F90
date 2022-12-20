@@ -20,7 +20,7 @@
       use dynkernel_options
       use gem_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use ptopo
       use gem_timing
       use mem_tracers
@@ -119,7 +119,7 @@
       use dynkernel_options
       use gem_options
       use tr3d
-      use gmm_itf_mod
+      use rmn_gmm
       use gem_timing
       implicit none
 #include <arch_specific.hf>

@@ -37,7 +37,7 @@ module phy_output_mod
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface phy_output
       module procedure phy_output0

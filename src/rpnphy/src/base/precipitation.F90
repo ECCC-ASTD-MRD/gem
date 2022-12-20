@@ -55,7 +55,7 @@ contains
 
       !@Author L.Spacek, November 2011
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
       include "nocld.cdk"
 

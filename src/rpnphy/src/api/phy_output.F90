@@ -17,7 +17,7 @@ function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    !@objective
    !@arguments
    integer,intent(in) :: F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core(4)

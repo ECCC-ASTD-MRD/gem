@@ -20,12 +20,13 @@ module gmmx_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_tolower
    use wb_itf_mod
-   !use gmm_itf_mod
+   !use rmn_gmm
    use vardict_mod
    use str_mod
    use hgrid_wb
    use vgrid_wb
    use vGrid_Descriptors
+   use rmn_gmm
    implicit none
    private
    !@objective GMM/Buses data/metadata managment tool
@@ -39,8 +40,7 @@ module gmmx_mod
 !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
-#include <mu_gmm.hf>
+#include <rmn/msg.h>
 
    interface gmmx_new
       module procedure gmmx_new0

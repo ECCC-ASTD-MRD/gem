@@ -33,7 +33,7 @@ contains
     !@revision
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
     integer :: istat
     ! ---------------------------------------------------------------------

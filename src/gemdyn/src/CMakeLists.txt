@@ -14,16 +14,25 @@ list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/src/no_mpi/mai
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(gemdyn STATIC ${F_FILES} ${C_FILES})
-add_dependencies(gemdyn rpnphy modelutils vgrid tdpack mpi-extras rpncomm rmn)
+add_dependencies(gemdyn ${PROJECT_NAME}_build_info)
 target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
-   ${CMAKE_CURRENT_SOURCE_DIR}/base
-   ${CMAKE_SOURCE_DIR}/src/modelutils/include
-   ${CMAKE_BINARY_DIR}/src/tdpack
-   ${CMAKE_BINARY_DIR}/src/vgrid
-   ${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules
-   ${CMAKE_BINARY_DIR}/src/rpnphy/rpnphy/modules
+   base
+   ${tdpack_INCLUDE_DIRS}
+   ${vgrid_INCLUDE_DIRS}
+   ${rpncomm_INCLUDE_DIRS}
+   ${rpncomm_GEN_INCLUDE_DIR}
+   ${rmn_INCLUDE_DIRS}
+   ${modelutils_INCLUDE_DIRS}
+   ${modelutils_MODULES_DIR}
+   ${phy_INCLUDE_DIRS}
+   ${phy_MODULES_DIR}
 )
+
+target_link_libraries(gemdyn
+  $<$<LINK_LANGUAGE:Fortran>:OpenMP::OpenMP_Fortran>
+  $<$<LINK_LANGUAGE:C>:OpenMP::OpenMP_C>
+  )
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   if (EXTRA_CHECKS AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -31,4 +40,3 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
     message(STATUS "(EC) Extra debug flags for gemdyn: -fcheck=bounds")
   endif()
 endif()
-

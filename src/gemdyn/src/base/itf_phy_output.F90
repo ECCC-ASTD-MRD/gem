@@ -34,7 +34,7 @@
       use outp
       use out_listes
       use out_mod
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>

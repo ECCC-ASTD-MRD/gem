@@ -56,7 +56,7 @@ contains
       !@revisions
       ! * I. Ivanova (2015) - Complete remake
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
       include "phyinput.inc"
       include "ccc_tracegases.cdk"

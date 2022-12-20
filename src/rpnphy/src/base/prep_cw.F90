@@ -22,7 +22,7 @@ module prep_cw
    private
    public :: prep_cw3
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
 contains

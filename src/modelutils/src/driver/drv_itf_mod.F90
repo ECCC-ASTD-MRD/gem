@@ -22,6 +22,7 @@ module drv_itf_mod
    use wb_itf_mod
    use env_utils
    use str_mod
+   use rmn_gmm
    use config_mod, only: config_init
    use drv_ptopo_mod, only: drv_ptopo_init,drv_ptopo_terminate
    use drv_path_mod, only: drv_path_config_dir0_S
@@ -44,8 +45,7 @@ module drv_itf_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
 contains
 

@@ -22,13 +22,13 @@ module series_init_mod
    use phygridmap, only: ijphy, phydim_nj, drv_glb_ni, drv_glb_nj
    use series_options
    use series_write_mod, only: series_write
+   use rmn_gmm
    implicit none
    private
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
-#include "mu_gmm.hf"
+#include <rmn/msg.h>
 
    public :: series_init
 

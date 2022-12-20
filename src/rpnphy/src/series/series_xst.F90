@@ -22,7 +22,7 @@ module series_xst_mod
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    public :: series_xst_geo, series_xst, series_isstep, series_isvar
 

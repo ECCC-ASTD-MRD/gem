@@ -18,7 +18,7 @@ subroutine itf_phy_diag ()
    use gmm_pw
    use HORgrid_options
    use ctrl
-   use gmm_itf_mod
+   use rmn_gmm
    use glb_ld
    use outp
    use wb_itf_mod
@@ -32,7 +32,7 @@ subroutine itf_phy_diag ()
    !*@/
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Local variable declarations
    logical, save :: init_L= .false., dodiag_L= .true.

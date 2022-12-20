@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module extdiag
+   use phymem, only: pvarlist, npvarlist
    implicit none
    private
    public :: extdiag3
@@ -45,9 +46,8 @@ contains
 
       !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
-      include "buses.cdk"
 
       logical, parameter :: OVERWRITE_L = .true.
 
@@ -58,7 +58,7 @@ contains
       real, dimension(ni, nk) :: p, work2d1, work2d2
 
       real, pointer, dimension(:) , contiguous :: zpmoins, busptr2d, ztdew, zflusolaf, &
-           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1
+           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1, bptr
       real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
            zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
            zqcplus, zftot, zfbl, zqtbl, zfdc
@@ -237,59 +237,34 @@ contains
       endif
 
       !# Extract Series for all bus var
-      !#TODO: use phygetmetaplus w/ meta%vptr
-      do ivar=1,dyntop
-         oname  = dynnm(ivar, BUSNM_ON)
+      do ivar=1,npvarlist
+         oname = pvarlist(ivar)%meta%oname
          if (series_isvar(oname)) then
-            kam    = dynpar(ivar, BUSPAR_NK)
-            busidx = dynpar(ivar, BUSPAR_I0)
-            if (busidx < 1) cycle
+            kam    = pvarlist(ivar)%meta%nk
+            busidx = pvarlist(ivar)%meta%i0
+            if (busidx < 1) cycle            
             if (kam == 1) then
-               busptr2d(1:ni) => dbus(busidx:)
+               select case (pvarlist(ivar)%meta%bus)
+               case('D')
+                  bptr => dbus
+               case('P')
+                  bptr => fbus
+               case('V')
+                  bptr => vbus
+               case default
+                  cycle
+               end select
+               busptr2d(1:ni) => bptr(busidx:)
                call series_xst(busptr2d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             else
-               busptr3d(1:ni,1:kam) => dbus(busidx:)
+               busptr3d(1:ni,1:kam) => bptr(busidx:)
                call series_xst(busptr3d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             endif
-         endif
+        endif
       enddo
-      do ivar=1,pertop
-         oname  = pernm(ivar, BUSNM_ON)
-         if (series_isvar(oname)) then
-            kam    = perpar(ivar, BUSPAR_NK)
-            busidx = perpar(ivar, BUSPAR_I0)
-            if (busidx < 1) cycle
-            if (kam == 1) then
-               busptr2d(1:ni) => fbus(busidx:)
-               call series_xst(busptr2d, oname, trnch, &
-                    F_overwrite_L=.not.OVERWRITE_L)
-            else
-               busptr3d(1:ni,1:kam) => fbus(busidx:)
-               call series_xst(busptr3d, oname, trnch, &
-                    F_overwrite_L=.not.OVERWRITE_L)
-            endif
-         endif
-      enddo
-      do ivar=1,voltop
-         oname  = volnm(ivar, BUSNM_ON)
-         if (series_isvar(oname)) then
-            kam    = volpar(ivar, BUSPAR_NK)
-            busidx = volpar(ivar, BUSPAR_I0)
-            if (busidx < 1) cycle
-            if (kam == 1) then
-               busptr2d(1:ni) => vbus(busidx:)
-               call series_xst(busptr2d, oname, trnch, &
-                    F_overwrite_L=.not.OVERWRITE_L)
-            else
-               busptr3d(1:ni,1:kam) => vbus(busidx:)
-               call series_xst(busptr3d, oname, trnch, &
-                    F_overwrite_L=.not.OVERWRITE_L)
-            endif
-         endif
-      enddo
-
+      
       if (timings_L) call timing_stop_omp(495)
       call msg_toall(MSG_DEBUG, 'extdiag [END]')
       !----------------------------------------------------------------

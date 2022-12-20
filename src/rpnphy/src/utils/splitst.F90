@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ----------------------------
 
 module splitst
+   use phymem, only: PHY_STAG_SFC, PHY_STAG_MOM, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_BUSID
    implicit none
    private
    public :: splitst4
@@ -23,14 +24,16 @@ contains
 
    function splitst4(cvn, con, cin, csn, cvd1, cvd2, cvs, fmosaik, fmul,  &
         cvb, dynini, stagg, F_vmin, F_vmax, F_wload, F_hzd, F_monot, F_massc, &
-        F_string_S) result(F_istat)
+        F_flags, F_string_S) result(F_istat)
       use str_mod
+      use clib_itf_mod, only: clib_toupper
       use tracers_attributes_mod, only: tracers_attributes
       use phy_options
       implicit none
 !!!#include <arch_specific.hf>
       character(len=*), intent(in)  :: F_string_S
       character(len=*), intent(out) :: con,cvn,cin,csn,cvd1,cvd2,cvb,cvs
+      character(len=*), intent(out) :: F_flags(:)
       integer, intent(out) ::  fmul,fmosaik,dynini,stagg
       real, intent(out) :: F_vmin, F_vmax
       integer, intent(out) :: F_wload, F_hzd, F_monot, F_massc
@@ -61,13 +64,19 @@ contains
       ! cvb       bus identification (VB)
       ! dynini    flag for initialysation by the dynamics (1=yes)
       ! stagg     flag for staggered levels (0=non staggered; 1=staggered)
+      ! vmin      minvalue for the field
+      ! vmax      maxvalue for the field
+      ! wload     water loading flag
+      ! hzd       horizontal diffusion flag
+      ! monot     monotoicity flag
+      ! massc     mass conserversion flag
+      ! flags     other flags
       !
       !            - Input -
       ! string    input description string including all tokens (IN is optional)
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
-      include "buses.cdk"
+#include <rmn/msg.h>
 
       integer, external :: str_split2keyval
 
@@ -84,8 +93,9 @@ contains
       integer,parameter :: IDX_HZD = 11
       integer,parameter :: IDX_MONOT = 12
       integer,parameter :: IDX_MASSC = 13
+      integer,parameter :: IDX_FLAGS = 14
 
-      integer,parameter :: NIDX = 13
+      integer,parameter :: NIDX = 14
       integer,parameter :: NIDX_MIN = 5
       integer,parameter :: NIDX_EXTRA = 32 - NIDX
       integer,parameter :: NIDX_MAX = NIDX + NIDX_EXTRA
@@ -105,11 +115,12 @@ contains
            'wload  ', &
            'hzd    ', &
            'monot  ', &
-           'massc  '  &
+           'massc  ', &
+           'flags  '  &
            /)
 
-      character(len=1024) :: string_S,kv_S(2,NIDX_MAX),s1_S,s2_S,attr_S
-      integer :: nkeys, istat, ind,iwload, ihzd, imonot, imassc
+      character(len=1024) :: string_S,kv_S(2,NIDX_MAX),s1_S,s2_S,attr_S,str2(2)
+      integer :: nkeys, istat, ind,iwload, ihzd, imonot, imassc, n
       real :: rvmin
       !-------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -133,28 +144,32 @@ contains
          attr_S = cvn(ind+1: )
          cvn  = cvn(1:ind-1)
       endif
-      istat = tracers_attributes(attr_S, iwload, ihzd, imonot, imassc, rvmin, F_ignore_L=.true.)
-      !#TODO: should we allow use of this syntax anymore? if yes, apply these... warning, default values can be changed in tracers_attributes
-
+      if (attr_S /= ' ') then
+         istat = tracers_attributes(attr_S, iwload, ihzd, imonot, imassc, rvmin, F_ignore_L=.true.)
+         call msg(MSG_WARNING, '(splitst/gesdict) Attibute specified within vname depracated: '//trim(kv_S(VAL,IDX_VN)))
+      endif
+      
       con  = kv_S(VAL,IDX_ON)
       cin = con
       if (kv_S(VAL,IDX_IN) /= '') cin  = kv_S(VAL,IDX_IN)
       csn = con
       if (kv_S(VAL,IDX_SN) /= '') csn  = kv_S(VAL,IDX_SN)
       cvd1 = kv_S(VAL,IDX_VD)
+      call str_normalize(cvd1)
+      istat = clib_toupper(cvd1)
       cvd2 = kv_S(VAL,IDX_VS)
       cvs  = kv_S(VAL,IDX_VS)(1:1)
       cvb  = kv_S(VAL,IDX_VB)(1:1)
 
       select case(cvs)
       case("A")  !# arbitrary
-         stagg = BUSPAR_STAG_SFC
+         stagg = PHY_STAG_SFC
       case("M")  !# momentum
-         stagg = BUSPAR_STAG_MOM
+         stagg = PHY_STAG_MOM
       case("T")  !# thermo
-         stagg = BUSPAR_STAG_THERMO
+         stagg = PHY_STAG_THERMO
       case("E")  !# energy
-         stagg = BUSPAR_STAG_ENERGY
+         stagg = PHY_STAG_ENERGY
       case default
          call msg(MSG_ERROR,'(gesdict) VS=(SHAPE) NOT ALLOWED: '//trim(string_S))
          return
@@ -163,7 +178,7 @@ contains
       dynini = 0
       if (kv_S(VAL,IDX_VB)(2:2) == '1') dynini = 1
 
-      if (.not.any(cvb == (/'E','D','P','V'/)))  then
+      if (.not.any(cvb == PHY_BUSID(:)))  then
          call msg(MSG_ERROR,'(gesdict) VB=(BUS) NOT ALLOWED: '//trim(string_S))
          return
       endif
@@ -218,6 +233,51 @@ contains
       if (kv_S(VAL,IDX_MASSC) /= '') then
          istat = str_toint(F_massc, kv_S(VAL,IDX_MASSC))
          if (.not.RMN_IS_OK(istat)) return
+      endif
+
+      F_flags = ''
+      if (kv_S(VAL,IDX_FLAGS) /= '') then
+         call str_split2list(F_flags,kv_S(VAL,IDX_FLAGS),'+',size(F_flags))
+         do n=1,size(F_flags)
+            call str_normalize(F_flags(n))
+            istat = clib_toupper(F_flags(n))
+         enddo
+         if (.not.RMN_IS_OK(istat)) return
+         if (any(F_flags == 'WLOAD')) then
+            if (kv_S(VAL,IDX_WLOAD) /= '') then
+               call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both WLOAD= and FLAGS=WLOAD: '//trim(F_string_S))
+               return
+            endif
+            F_wload = 1
+         endif
+         if (any(F_flags == 'HZD')) then
+            if (kv_S(VAL,IDX_HZD) /= '') then
+               call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both HZD= and FLAGS=HZD: '//trim(F_string_S))
+               return
+            endif
+            F_hzd = 1
+         endif
+         do n=1,size(F_flags)
+            call str_split2list(str2,F_flags(n),'=',size(str2))
+            if (str2(1) == 'MASSC') then
+               if (kv_S(VAL,IDX_MASSC) /= '') then
+                  call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both MASSC= and FLAGS=MASSC: '//trim(F_string_S))
+                  return
+               endif
+               istat = str_toint(F_massc, str2(2))
+            endif
+            if (str2(1) == 'MONOT') then
+               if (kv_S(VAL,IDX_MONOT) /= 'IDX_MONOT') then
+                  call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both = and FLAGS=MONOT: '//trim(F_string_S))
+                  return
+               endif
+               istat = str_toint(F_monot, str2(2))
+            endif
+            if (.not.RMN_IS_OK(istat)) then
+               call msg(MSG_ERROR,'(splitst/gesdict) Bad flag value: '//trim(F_flags(n)))
+               return
+            endif
+         enddo
       endif
 
       F_istat = RMN_OK

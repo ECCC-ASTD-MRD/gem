@@ -22,7 +22,7 @@ module mixing_length
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    private
 
    ! External symbols
@@ -987,7 +987,7 @@ contains
                wf = max(0.,min(1.,f_cs(j,k)))
                c_stab_h  = (1.-wf) * c_stab_h + wf * 0.2 
                c_stab_m  = (1.-wf) * c_stab_m + wf * 0.2 * min( 3., 1.+2.*ri(j,k) )
-               c_stab_d  = (1.-wf) * c_stab_d + wf * 0.071
+               c_stab_d  = (1.-wf) * c_stab_d + wf * 0.2 * min( 3., 1.+2.*ri(j,k) )
                
                recip_l_stable = sqrt( dthv(j,k) ) /  &
                     ( (c_stab_h*sqrt(en(j,k)))**3. + w_cld(j,k,1)**3. )**(1./3.)

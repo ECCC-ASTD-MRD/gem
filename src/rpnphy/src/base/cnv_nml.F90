@@ -30,7 +30,7 @@ function cnv_nml2(F_namelist) result(F_istat)
    integer :: F_istat
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: CNV_NML_ERR = RMN_ERR

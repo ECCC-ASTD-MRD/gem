@@ -28,7 +28,7 @@ module ghg
    public :: ghg_init
 
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: GHG_YEAR = 1

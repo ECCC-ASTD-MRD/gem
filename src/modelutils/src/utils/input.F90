@@ -43,7 +43,7 @@ module input_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface input_new
       module procedure incfg_new_4
@@ -380,7 +380,7 @@ contains
          if (fld%vint_S /= 'none') istat = vgd_free(fld%vgrid)
          deallocate(fld%ip1list,stat=istat)
       endif
-      write(tmp_S,*) F_istat
+      write(tmp_S, '(i0)') F_istat
       call msg(MSG_DEBUG,'(input) get_vect [END] '//trim(tmp_S))
       !----------------------------------------------------------------------
       return
@@ -582,7 +582,7 @@ contains
 
       end select IF_TINT
 
-      write(tmp_S,*) F_istat
+      write(tmp_S, '(i0)') F_istat
       call msg(MSG_DEBUG,'(input) input_data [END] '//trim(tmp_S))
       !------------------------------------------------------------------
       return
@@ -663,7 +663,7 @@ contains
            FST_FIND_NEAR,F_hdata,F_sfcfld,F_vgrid_S,F_sfc_S,F_foundjdatev)
       F_foundjdatev = 0
       if (F_istat /= RMN_ERR) F_foundjdatev = findjdatev
-      write(tmp_S,*) F_istat,F_foundjdatev
+      write(tmp_S, '(i0,i0)') F_istat,F_foundjdatev
       call msg(MSG_DEBUG,'(input) read_interp_clim [END] '//trim(tmp_S))
       !------------------------------------------------------------------
       return
@@ -824,7 +824,7 @@ contains
       if (associated(ip1list) .and. ip1list_alloc_L) &
            deallocate(ip1list,stat=istat)
 
-      write(tmp_S,*) F_istat
+      write(tmp_S, '(i0)') F_istat
       call msg(MSG_DEBUG,'(input) read_interp [END] '//trim(tmp_S))
       !----------------------------------------------------------------------
       return
@@ -913,7 +913,7 @@ contains
 
       endif IF_VINT
 
-      write(tmp_S,*) F_istat
+      write(tmp_S, '(i0)') F_istat
       call msg(MSG_DEBUG,'(input) vinterp [END] '//trim(tmp_S))
       !------------------------------------------------------------------
       return

@@ -33,8 +33,8 @@
       integer nx,ny,nz,ig1,ig2,ig3
       real buf(nx,ny,nz),maxrange
 
-      integer  fnom,fstinl,fstecr,fclos,longueur
-      external fnom,fstinl,fstecr,fclos,longueur
+      integer  fnom,fstinl,fstecr,fclos
+      external fnom,fstinl,fstecr,fclos
 
       character(len=7) :: startindx
       character(len=1024) :: fn
@@ -47,8 +47,8 @@
 !-------------------------------------------------------------------
 !
       write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_mycol
-      fn = Path_input_S(1:longueur(Path_input_S))// &
-           filename(1:longueur(filename))//'_'//startindx
+      fn = Path_input_S(1:len_trim(Path_input_S))// &
+           filename(1:len_trim(filename))//'_'//startindx
 
       unf = 0
       err = fnom  (unf, fn, 'rnd', 0)

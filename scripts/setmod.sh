@@ -28,10 +28,9 @@ eval `cclargs_lite -D " " $0 \
   -data_cfg      ""  ""    "[input data for domain ]"\
   ++ $arguments`
 set -x
-AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
 default_DIR_ATM=${ATM_MODEL_DFILES}
 default_PATH_ATMDATA=${ATM_MODEL_DFILES}/datafiles/modeldata
-default_DIR_SIO=${AFSISIO}/datafiles/constants
+default_DIR_SIO=${CMCCONST}
 
 geophy=${default_DIR_ATM}/bcmk/geophy
 climato=${default_DIR_ATM}/bcmk/climato

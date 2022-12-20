@@ -32,6 +32,7 @@ subroutine sfc_businit(moyhr,ni,nk)
    ! 002      B. Dugas   (Oct 2010) - A few small corrections
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    ! 004      M. Abrahamowicz (May 2016) - Add SVS
+   ! 005      M. MacKay       (Oct 2018/Sep 2022) - Add CSLM
    !*@/
 
 #include "phymkptr.hf"
@@ -47,7 +48,6 @@ subroutine sfc_businit(moyhr,ni,nk)
         hc_roofen, hc_wall, hc_wallen, le_industry, le_industryen, le_road, &
         le_roof, le_town, le_traffic, le_trafficen, le_wall, nat, naten, pav, &
         paven, q_canyon, q_canyonen, rn_road, rn_roof, rn_town, rn_wall, &
-        runofftot, &
         sroad_alb, sroad_alben, sroad_emis, sroad_emisen, sroad_rho, &
         sroad_rhoen, sroad_scheme, sroad_t, sroad_ten, sroad_ts, sroad_tsen, &
         sroad_wsnow, sroad_wsnowen, sroof_alb, sroof_alben, sroof_emis, &
@@ -80,6 +80,11 @@ subroutine sfc_businit(moyhr,ni,nk)
         z0en, z0veg, z0tveg, qdiagtyp, tdiagtyp, udiagtyp, vdiagtyp, &
         qdiagtypv, tdiagtypv, udiagtypv, vdiagtypv, tddiagtyp, tddiagtypv
    character(len=2) :: nm, nagg, nrow
+   !--------   FOR CSLM -----------------
+   integer :: tke, hdpth, lkiceh, sniceh, expw, dtemp, delu, gred, rhomix, tsed, roficeh, &
+              snol, rhosnol, tsnowl, albsnol, wsnowl, tlak, lst, hlaksil, gridarea, &
+             ficl, lakd, lfxi, lfxo, lstd, lstf, lakearea, lakefr, riverfr, evlak
+   character(len=2) :: nlklv
    !--------   FOR SVS -----------------
    character(len=2) :: ngl, nglp1, nstel, nstpl, iemib, iicel, izp, izvg2
    integer :: acroot, algr, alvl , alvh, avg_gwsol, clayen, co2i1, cvh, cvl, d50, d95, &
@@ -88,18 +93,25 @@ subroutine sfc_businit(moyhr,ni,nk)
         fbcof, frootd, gamvh, gamvl, grkef, grksat, hfluxsa, hfluxsv, &
         impervu, &
         khc, ksat, ksatc, laictem, laideci, laiva, laivf26, laivh, laivl, &
-        latflw, lesv, psi, psisat, psngrvl, psnvh, psnvha, &
+        lesv, psi, psisat, psngrvl, psnvh, psnvha, &
         rcctem, resagr, resavg, resasa, resasv, resaef, rglvh, rglvl, &
         rnetsa, rnetsv, rsnowsa, &
         rsnowsv, rveg, sanden, skyview, slop, snodpl, snval, &
         snvden,  snvdp, snvma,  snvro, stomrvh, stomrvl, svs_wta, &
         tground, tsa, tsnavg, tsnow, tsnowveg, &
         tsvavg, tvege,  vegh, vegl, vegtrans, vgctem, &
-        watflow, wsoilm, wfcdp, wfcint, wsnv, &
+        wsoilm, wfcdp, wfcint, wsnv, &
         z0ha, z0hbg, z0hvg, z0mland, z0mlanden, z0mvg, z0mvh, z0mvhen, z0mvl
 
    !---------------------------------------------------------------------
+   
+   include "cslm.cdk"
+   if (schmlake == 'CSLM') then
+      !  nlklv is the maximum number of lake levels
+      write(nlklv,'(i2)') nlakmax
+   endif
 
+   
    if (schmsol == 'SVS') then
       ! initialize levels for soil texture data
       call init_soil_text_levels()
@@ -142,6 +154,8 @@ subroutine sfc_businit(moyhr,ni,nk)
 
 
    !#TODO: check if schmsol conditional
+   PHYVAR2D1(lakefr,       'VN=lakefr       ;ON=LAKF;VD=Lake fraction in the grid cell                                       ;VB=p0        ;MIN=0')
+   PHYVAR2D1(riverfr,      'VN=riverfr      ;ON=RIVF;VD=River fraction in the grid cell                                      ;VB=p0        ;MIN=0')
    PHYVAR2D1(cgsat,        'VN=cgsat        ;ON=6I  ;VD=thermal coef. at saturation                                          ;VB=p0')
    PHYVAR2D1(dsst,         'VN=dsst         ;ON=DSST;VD=warm layer diurnal SST increment                                     ;VB=p0')
    PHYVAR2D1(dtdiag,       'VN=dtdiag       ;ON=DLIM;VD=DeltaT at screen level of tdiaglim                                   ;VB=p0')
@@ -407,7 +421,45 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(z0mvl,        'VN=z0mvl        ;ON=Z0VL;VD=local mom roughness length for low veg.                           ;VB=p0')
    endif IF_SVS
 
+   IF_LAKES: if (schmlake == 'CSLM') then
+      PHYVAR3D1(tlak,          'VN=tlak        ;ON=TLAK;   VD=lake temperature profile                 ;VS=A*'//nlklv//'    ;VB=p1')
 
+      
+
+      PHYVAR2D1(tke,          'VN=tke          ;ON=TKEL    ;VD=lake mixed layer tke                                          ;VB=p1')
+      PHYVAR2D1(rofinlak,     'VN=rofinlak     ;ON=ROFL    ;VD=runoff input to lake                                          ;VB=p1')
+      PHYVAR2D1(rofinlakaf,   'VN=rofinlakaf   ;ON=RLAF    ;VD=accumulated runoff input to lake                              ;VB=p0')
+      PHYVAR2D1(lfxi,         'VN=lfxi         ;ON=LFXI    ;VD=accumulated lake water flux in (kg/m2)                        ;VB=p0')
+      PHYVAR2D1(lfxo,         'VN=lfxo         ;ON=LFXO    ;VD=accumulated lake water flux out (kg/m2)                       ;VB=p0')
+      PHYVAR2D1(evlak,        'VN=evlak        ;ON=EVLA    ;VD=accumulated lake evaporation removed from runoff (kg/m2)      ;VB=p0')
+      PHYVAR2D1(lstd,         'VN=lstd         ;ON=LSTD    ;VD=initial lake water storage (kg/m2)                            ;VB=p0')
+      PHYVAR2D1(lstf,         'VN=lstf         ;ON=LSTF    ;VD=final lake water storage (kg/m2)                              ;VB=p0')
+      PHYVAR2D1(gridarea,     'VN=gridarea     ;ON=AREA    ;VD=surface area (m2) of grid cell                                ;VB=p0')
+      PHYVAR2D1(lakearea,     'VN=lakearea     ;ON=LACS    ;VD=surface area (km2) of lake                                    ;VB=p1')
+      PHYVAR2D1(lakd,         'VN=lakd         ;ON=LAKD;    VD=Mean lake depth (m)                                           ;VB=p1; IN=DEEP;')
+      PHYVAR2D1(lst,          'VN=lst          ;ON=LST     ;VD=lake surface temperature                                      ;VB=p1')
+      PHYVAR2D1(hlaksil,      'VN=hlaksil      ;ON=HSIL    ;VD=height of lake water above sill                               ;VB=p1')
+      PHYVAR2D1(tsed,         'VN=tsed         ;ON=TSDL    ;VD=lake sediment temperature                                     ;VB=p1')
+      PHYVAR2D1(snol,         'VN=snol         ;ON=SNOL    ;VD=snow on lake ice                                              ;VB=p1')
+      PHYVAR2D1(ficl,         'VN=ficl         ;ON=FICL    ;VD=fractional lake ice cover                                     ;VB=p0')
+      PHYVAR2D1(rhosnol,      'VN=rhosnol      ;ON=RSNL    ;VD=density ofsnow on lake ice                                    ;VB=p1')
+      PHYVAR2D1(tsnowl,       'VN=tsnowl       ;ON=TSNL    ;VD=temp of snow on lake ice                                      ;VB=p1')
+      PHYVAR2D1(albsnol,      'VN=albsnol      ;ON=ASNL    ;VD=alb. of snow on lake ice                                      ;VB=p1')
+      PHYVAR2D1(wsnowl,       'VN=wsnowl       ;ON=WSNL    ;VD=liq.water of snow on lake ice                                 ;VB=p1')
+      PHYVAR2D1(delu,         'VN=delu         ;ON=DELU    ;VD=current jump across lake m.l.                                 ;VB=p1')
+      PHYVAR2D1(hdpth,        'VN=hdpth        ;ON=HDPL    ;VD=lake mixed layer depth                                        ;VB=p0')
+      PHYVAR2D1(lkiceh,       'VN=lkiceh       ;ON=LICE    ;VD=total lake ice thickness                                      ;VB=p1')
+      PHYVAR2D1(sniceh,       'VN=sniceh       ;ON=SICE    ;VD=lake snow-ice thickness                                       ;VB=p1')
+      PHYVAR2D1(expw,         'VN=expw         ;ON=EXPWL   ;VD=expansivity of lake water                                     ;VB=p0')
+      PHYVAR2D1(dtemp,        'VN=dtemp        ;ON=DTEMPL  ;VD=temp jump across lake m.l.                                    ;VB=p0')
+      PHYVAR2D1(gred,         'VN=gred         ;ON=GREDL   ;VD=red. grav. across lake m.l.                                   ;VB=p0')
+      PHYVAR2D1(rhomix,       'VN=rhomix       ;ON=RHOMIXL ;VD=lake mix. layer density                                       ;VB=p0')
+      PHYVAR2D1(roficeh,      'VN=roficeh      ;ON=ROFICEHL ;VD=lake ice from snow melt                                      ;VB=p0')
+   endif IF_LAKES
+
+   IF_RIVERS: if (schmriver /= 'NIL') then
+      !PHYVAR2D1(riverfr,     'VN=riverfr      ;ON=RIVF;VD=River fraction in the grid cell                    ;VB=p0        ;MIN=0')
+   endif IF_RIVERS
 
 
    if (schmurb /= 'TEB') return

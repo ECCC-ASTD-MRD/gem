@@ -17,11 +17,13 @@
 
 module phyinputdiag
    use phy_options
-   use phy_typedef, only: phymeta
-   use phy_getmeta_mod, only: phy_getmeta
+   use phymem, only: phymeta, pvarlist, phymem_find, PHY_MAXVARS
    private
    public :: phyinputdiag1, phyinputdiag_id, phyinputdiag_obj
 
+   logical,parameter:: SHORTMATCH_L = .true.
+   logical,parameter:: QUIET_L = .true.
+  
    interface phyinputdiag1
       module procedure phyinputdiag_id
       module procedure phyinputdiag_obj
@@ -39,12 +41,12 @@ contains
       !@author Stephane Chamberland,2014-11
       !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       logical,parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
-      integer :: istat,ivar,nvars
-      type(phymeta), pointer :: metalist(:)
+      integer :: istat,ivar,nvars, ivalist(PHY_MAXVARS)
+      type(phymeta), pointer :: vmeta
       ! ---------------------------------------------------------------------
       istat = RMN_OK
 
@@ -62,22 +64,21 @@ contains
          istat = min(input_add(F_inputid,'in=HU; '//trim(incfg_S)),istat)
          call msg(MSG_INFO,'(phyinputdiag) Adding: HU')
 
-         nullify(metalist)
-         nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
+         nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
          do ivar = 1,nvars
-            call gmmx_name_parts(metalist(ivar)%vname,prefix_S,basename_S,time_S,ext_S)
-            if  (metalist(ivar)%vname /= 'tr/hu:m' .and. &
-                 metalist(ivar)%vname /= 'tr/hu:p' .and. &
+            vmeta => pvarlist(ivalist(ivar))%meta
+            call gmmx_name_parts(vmeta%vname,prefix_S,basename_S,time_S,ext_S)
+            if  (vmeta%vname /= 'tr/hu:m' .and. &
+                 vmeta%vname /= 'tr/hu:p' .and. &
                  all(time_S /= (/':M',':m'/))) then
-               inname_S = metalist(ivar)%iname
-               if (inname_S == ' ') inname_S = metalist(ivar)%oname
-               if (inname_S == ' ') inname_S = metalist(ivar)%vname
+               inname_S = vmeta%iname
+               if (inname_S == ' ') inname_S = vmeta%oname
+               if (inname_S == ' ') inname_S = vmeta%vname
                if (any(dyninread_list_s(:) == inname_S)) then
                   istat = min(input_add(F_inputid,'in='//trim(inname_S)//'; '//trim(incfg_S)),istat)
-                  call msg(MSG_INFO,'(phyinputdiag) Adding: '//trim(inname_S)//' for '//trim(metalist(ivar)%vname))
+                  call msg(MSG_INFO,'(phyinputdiag) Adding: '//trim(inname_S)//' for '//trim(vmeta%vname))
                else
-                  call msg(MSG_INFO,'(phyinputdiag) Skipping (not read by dyn): '//trim(inname_S)//' for '//trim(metalist(ivar)%vname))
+                  call msg(MSG_INFO,'(phyinputdiag) Skipping (not read by dyn): '//trim(inname_S)//' for '//trim(vmeta%vname))
                endif
             endif
          enddo
@@ -116,12 +117,12 @@ contains
       !@author Stephane Chamberland, 2017-09
       !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       logical, parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S, prefix_S, basename_S, time_S, ext_S
-      integer :: istat, ivar, nvars
-      type(phymeta), pointer :: metalist(:)
+      integer :: istat, ivar, nvars, ivalist(PHY_MAXVARS)
+      type(phymeta), pointer :: vmeta
       ! ---------------------------------------------------------------------
       istat = RMN_OK
 
@@ -140,27 +141,26 @@ contains
          istat = min(inputio_add(F_inputobj%cfg, 'in=HU; '//trim(incfg_S)), istat)
          call msg(MSG_INFO, '(phyinputdiag) Adding: HU')
 
-         nullify(metalist)
-         nvars = phy_getmeta(metalist, 'tr/', F_npath='V', F_bpath='D', &
-              F_maxmeta=-1, F_shortmatch=SHORTMATCH_L)
+         nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
          do ivar = 1, nvars
-            call gmmx_name_parts(metalist(ivar)%vname, prefix_S, basename_S, &
+            vmeta => pvarlist(ivalist(ivar))%meta
+            call gmmx_name_parts(vmeta%vname, prefix_S, basename_S, &
                  time_S, ext_S)
-            if  (metalist(ivar)%vname /= 'tr/hu:m' .and. &
-                 metalist(ivar)%vname /= 'tr/hu:p' .and. &
+            if  (vmeta%vname /= 'tr/hu:m' .and. &
+                 vmeta%vname /= 'tr/hu:p' .and. &
                  all(time_S /= (/':M', ':m'/))) then
-               inname_S = metalist(ivar)%iname
-               if (inname_S == ' ') inname_S = metalist(ivar)%oname
-               if (inname_S == ' ') inname_S = metalist(ivar)%vname
+               inname_S = vmeta%iname
+               if (inname_S == ' ') inname_S = vmeta%oname
+               if (inname_S == ' ') inname_S = vmeta%vname
                if (any(dyninread_list_s(:) == inname_S)) then
                   istat = min(inputio_add(F_inputobj%cfg, 'in='//trim(inname_S)// &
                        '; '//trim(incfg_S)), istat)
                   call msg(MSG_INFO, '(phyinputdiag) Adding: '//trim(inname_S)// &
-                       ' for '//trim(metalist(ivar)%vname))
+                       ' for '//trim(vmeta%vname))
                else
                   call msg(MSG_INFO, &
                        '(phyinputdiag) Skipping (not read by dyn): '// &
-                       trim(inname_S)//' for '//trim(metalist(ivar)%vname))
+                       trim(inname_S)//' for '//trim(vmeta%vname))
                endif
             endif
          enddo

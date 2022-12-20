@@ -1,6 +1,6 @@
 module outp
    use dimout, only: MAXELEM,MAXSET
-   use gmm_itf_mod, only: GMM_MAXNAMELENGTH
+   use rmn_gmm, only: GMM_MAXNAMELENGTH
    implicit none
    public
    save

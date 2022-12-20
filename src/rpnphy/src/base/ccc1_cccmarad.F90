@@ -103,7 +103,7 @@ contains
       ! mcont               in raddriv
       ! lstart              in qozon3
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
       include "surface.cdk"
       include "clefcon.cdk"

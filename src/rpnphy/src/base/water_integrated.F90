@@ -79,7 +79,7 @@ contains
     real dsg,dpsg,qctemp
     real :: s1=1., s2=0.8, s3=0.6, s4=0.4
     logical :: scool=.false.
-#include <msg.h>
+#include <rmn/msg.h>
 
     !----------------------------------------------------------------
     call msg_toall(MSG_DEBUG, 'water_integrated [BEGIN]')

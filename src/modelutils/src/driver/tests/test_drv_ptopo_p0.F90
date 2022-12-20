@@ -24,7 +24,7 @@ subroutine test_drv_ptopo_p0()
    !@author Stephane Chamberland, 2012-02
 !@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    character(len=*),parameter :: section_S = 'ptopo_cfgs'
    character(len=*),parameter :: statusfile_S = './status_mod.dot'
 

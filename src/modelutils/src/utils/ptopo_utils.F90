@@ -100,7 +100,7 @@ module ptopo_utils
    !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface ptopo_get_io_params
       module procedure ptopo_get_io_params_0

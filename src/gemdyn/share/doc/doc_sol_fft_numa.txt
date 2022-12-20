@@ -1,0 +1,75 @@
+#Architectural documentation for sol_fft_numa, the one-transpose NUMA direct solver
+
+Christopher Subich, Michel Desgagné, Michel Valin
+
+January 2020
+
+##-1- Introduction and rationale
+
+Sol_fft_numa provides an alternative implementation of GEM's FFT-based direct solver.  The traditional implementation is found in sol_fft_lam, and scaling studies have shown that its overall runtime is dominated by the cost of the parallel transposes required to implement the FFT (in x) and tridiagonal solve (in y).
+
+This modified solver elimiantes the second of the two parallel transposes, and it relies on a shared memory region to implement the tridiagonal portion of the solve.  Timing measurements show a considerable speedup over the traditional solver for operational-like grids and process distributions, and we expect the relative performance advantage to increase with larger numbers of processs and/or future supercomputer deployments.
+
+This solver imposes a particular requirement on the process distribution: NPey (the number of processes dividing the y-dimension of the grid) must be either a multiple of or divisor of the number of processes per NUMA region.  The shared memory region used by this solver should either have a complete view of the grid along y (true when NPNuma is a multiple of NPey), or alternately the grid should split along y into a small number of NUMA regions (true when NPNuma divides NPey).  The latter option involves some serialization and latency inside the tridiagonal solve.
+
+If this process distribution requirement is not satisfied, the older solver (sol_fft_lam) is used instead.  This determination is made in sol_transpose, which sets the enabling flag sol_one_transpose_L based on the return value of sol_numa_space (which performs the check itself).  If this solver is enabled, the computation of the "second" transpose is disabled, freeing GEM from its associated restrictions on how g_nj must divide into NPey processes.
+
+##-2- A high-level view of the solution algorithm
+
+By default (elsewhere in GEM, outside the solver), each process holds a section of the global grid that contains all z (k) values but is split along x (i) and y (j).  The solver is tasked with solving a Helmholtz problem for the geopotential at the new timelevel (based on a linearization about GEM's reference state).
+
+The solver first splits the problem in z by taking a modal decomposition.  Because the reference state has flat topography, the Helmholtz problem is separable into a number of independent vertical modes in z, each of which gives rise to a two-dimensional problem in x and y.  This vertical mode decomposition happens outside thes sol_fft family of subroutines, inside sol_direct (which ultimately calls sol_fft)
+
+Once given the right-hand side of the Helmhotlz problem, sol_fft_numa performs the following steps:
+
+   1. Each process participates in the x-transpose, where the (local_x, local_y, global_z) grid is exchanged among other processes in the x-row to give a four-dimensional array of (local_x, local_y, local_z, proc_x).  This particular form of the exchange allows each process to send and receive a single, contiguous chunk of data per partner, without packing/unpacking inside the transpose routine.
+
+   2. This four-dimensional array is rearranged for the Fourier Transform in the x dimension.  Our FFT library (currently FFTW, but this restriction is fairly general) requires that the memory strides between logically adjacent x-elements be constant, and this is not true in the four-dimensional representation.  The array is shuffled into a local array of shape (global_x, local_y, local_z).
+
+   3. The FFT is invoked on this data in the x-dimension, and the output is stored in a shared memory region.  This memory region is shared on the NUMA node (currently equivalent to a single physical CPU on the compute nodes), and it has shape (local_z, global_x, numa_y).  When NPNuma is a multiple of NPey, this shared memory region is a global view of the grid along y (numa_y = global_y), otherwise it is a fraction of the total (numa_y = global_y / (NPey/NPNuma)).
+
+   This array has a (z,x,y) ordering, which is different than the original (x,y,z) ordering.  This ordering gives each process the best opportunity to write its data into the shared-memory region without causing CPU cache conflicts with other processes inside the NUMA region.  FFTW allows us flexibility in the ordering/strides of its input and output arrays, so we can incorporate this in-core transpose into the FFT step.
+
+   4. The tridiagonal solver is run over this shared memory region.  The tridiagonal solver is an adaptation of the Thomas / ripple algorithm (https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm), where the relevant entries in the forward and backward substitution passes have been precomputed so that only additions and multiplications are necessary.  Each process in the NUMA region operates independently in this shared memory region, dividing the region along the x dimension.
+
+   In the event that NPey > NPNuma, this algorithm partially serializes.  The forward substitution pass sweeps from j=1 to j=max_y, where (j) depends on the value computed for (j-1); the "upper" portion of the grid must wait for the "lower" portion to complete and send its intermediate data (via MPI_Send/MPI_Recv).  The backward substitution pass reverses this process, and it sweeps from j=max_y to j=1 with the opposite dependency.
+
+   For modest factors (i.e. NPey / NNuma small), this does not appear to impose a significant performance penalty, but it is measurable.  The tridiagonal solve is fast compared to the FFT or parallel transposes, so the serialization is not yet the limiting factor on scalability.
+
+   5-7.  With the tridiagonal solve complete, the solver takes the inverse Fourier transform in x (inverting step 3), rearranges the data for the transpose (inverting step 2), and finally inverts the row transpose (inverting step 1).  The output of the solve is returned to sol_direct to invert the vertical mode decomposition and continue with the timestep.
+
+##-3- Implementation notes
+
+Sol_fft_numa uses arrays initialized elsewhere.  These are:
+
+   * Sol_sol_8 and Sol_rhs_8, allocated in set_sol.F90 and passed as parameters (F_Sol and F_Rhs) to sol_fft_numa.  These arrays are the LHS (solution) and RHS of the Helmholtz problem.  The RHS array is calculated in sol_direct (via the vertical mode decomposition) and provides the input data for the solver, and the LHS array is filled by the solver and provides the output solution.
+
+   * Sol_fft, allocated in sol_numa_space and passed as a paremter (F_fft) to sol_fft_numa.  This array is part of the shared memory region, and it serves as the destination of the x-FFT.  
+
+   * Sol_a, Sol_b, and Sol_c, allocated in sol_numa_space, initialized by sol_prepabc (called from set_sol), and ultimately passed as parameters (F_a, F_b, F_c) to sol_fft_numa.  These arrays are also part of the shared memory region, and they allow for a memory-region-global view of the matrix factors used in the tridiagonal solve.  These arrays are not modified as part of the solution process.
+
+   * Sol_xpose, allocated in set_sol and used as a module-level variable from sol_mod.  This array holds the intermediate (local_x, local_y, local_z, proc_x) representation used by the MPI transpose.
+
+   * Sol_dwfft, also allocated in set_sol and used as a module-level variable.  This array holds the memory-shuffled (global_x, local_y, local_z) representation, of the data, and it is used as the source array for the forward FFT and the destination array for the inverse FFT.
+
+   * Forward_plan and reverse_plan, initialized in set_sol and used as module-level variables.  These are opaque handles for the FFT, returned by make_r2r_dft_plan in gem_fft_mod.  That module currently acts as an interface layer between GEM and FFTW, and the use of opaque handles allows us the flexibility to change FFT implementations in the future.
+
+Sol_fft_numa also performs its own initialization at first invocation: it grabs handles to the "east/west" and "north/south" communicators and calls RPN_mpi_transpose_setup, which must be called before the first use of the transpose routines.  This could potentially cause conflicts if the transpose routines are re-initialized elsewhere, but this does not yet occur.
+
+The grid indexing conventions used by sol_fft_numa are:
+
+   * F_Sol and F_Rhs have size (1:ldnh_maxx, 1:ldnh_maxy, and 1:G_nk), matching the local grid decomposition in space.
+
+   * The auxillary arrays F_a, F_b, F_c, and F_fft have bounds Sol_mink:Sol_maxk and 1:G_ni in z and x respectively.  F_a and F_b have bounds Sol_miny:Sol_maxy in y, F_c includes a padding plane at Sol_miny-1, and F_fft includes padding at both Sol_miny-1 and Sol_maxy+1.  These bounds variables are set in sol_numa_space.  Sol_miny is derived from ldnh_j0 (sol_transpose), Sol_maxy from ldnh_nj, Sol_mink from trp_12sn0, and Sol_maxk from trp12_sn.  These latter variables are generated as part of the transpose-calculation process in sol_transpose.
+
+   * The x-decomposition of the tridiagonal solve is governed by Sol_istart and Sol_iend, also set in sol_numa_space.
+
+The FFT involves a normalization constant, Sol_pri.  This normalization factor is incorporated into the first step of the tridiagonal solve, when F_fft (the output of the Fourier transform) is read for the first time.
+
+##-4- Modification concerns
+
+Sol_fft_numa contains a hidden assumption about process ordering: it assumes that process N's eastern neighbour has process number (N+Potpo_npey).  This dependency arises because the routine directly reads Ptopo_gindx to shuffle the MPI-transposed array to its intermediate form for the FFT (and the reverse for the inverse transform/transpose).  This choice allows sol_fft_numa to be indifferent to the details of the grid decomposition (i.e. it doesn't require even distribution of G_ni over the NPex processes in the row), but it then builds in the aforementioned process-numbering requirement.  If this is ever changed, the solution would be to derive the grid strucutre more generally -- either through a two-dimensional equivalent to Ptopo_gindx (currently set in glbpos) or through a more complete scan of the one-dimensional structure.
+
+A future improvement for sol_fft_numa may be to recompute the tridiagonal solver factors (currently F_a, F_b, F_c) as part of the solution process.  These factors are computed from 1D stencils in sol_prepabc, but the result is three three-dimensional arrays.  Recomputing is expected to reduce memory bandwidth at the cost of more computation.  This portion of the solver is probably more limited by memory bandwidth, at least in the global-y case where NNuma is a divisor of NPey.
+
+

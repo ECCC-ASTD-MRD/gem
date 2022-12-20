@@ -4,6 +4,8 @@
       integer indx_water
       integer indx_ice
       integer indx_urb
+      integer indx_lake
+      integer indx_river
       integer indx_agrege
       integer nagrege
 !
@@ -33,6 +35,8 @@
       common / surfacei / indx_water
       common / surfacei / indx_ice
       common / surfacei / indx_urb
+      common / surfacei / indx_lake
+      common / surfacei / indx_river
       common / surfacei / indx_agrege
       common / surfacei / nagrege
 !

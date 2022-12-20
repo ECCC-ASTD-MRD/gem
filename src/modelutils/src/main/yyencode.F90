@@ -35,7 +35,7 @@ subroutine yyencode()
 
    !-------------------------------------------------------------------
 
-   err = exdb('YYENCODE','2.0', 'NON')
+   err = exdb('YYENCODE','3.0', 'NON')
    NPOS = 1
    call CCARD(LISTEc,DEF,VAL,3,NPOS)
    yin_S = val(1)
@@ -145,9 +145,20 @@ subroutine yyencode()
 
       key= FSTINF(iun2, NI1, NJ1, NK1, datev, ' ', p1, p2, p3, typ_S, var_S)
 
-      if (var_S == '!!' .or. var_S == '>>' .or. var_S == '^^') then
+      if (var_S == '!!' .or. var_S == '>>' .or. var_S == '^^' .or. var_S == 'META') then
          if (var_S == '!!') then
             err = fstluk(champ,liste(i),ni1,nj1,nk1)
+            err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
+                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
+                 g1, g2, g3, g4, dty, .false.)
+         endif
+         if (var_S == 'META') then
+            err = fstluk(champ,liste(i),ni1,nj1,nk1)
+            err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
+                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
+                 g1, g2, g3, g4, dty, .false.)
+            key = FSTINF(iun2, NI1, NJ1, NK1, datev, ' ', -1, -1, -1, typ_S, var_S)
+            err = fstluk(champ,key,ni1,nj1,nk1)
             err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
                  nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
                  g1, g2, g3, g4, dty, .false.)
@@ -189,8 +200,8 @@ subroutine yyencode()
          err= fstprm(liste(i), dte, det, ipas, ni, nj, nk1, bit , &
               dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, &
               g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-         if(trim(var_S).ne.'!!'.and.trim(var_S).ne.'>>'.and.&
-              trim(var_S).ne.'^^') then
+         if(trim(var_S).ne.'!!'.and.trim(var_S).ne.'META'.and.&
+              trim(var_S).ne.'>>'.and.trim(var_S).ne.'^^') then
             if (g1 == ip1 .and. g2 == ip2 .and. g3 == ip3) then
                if (trim(var_S) == 'UT1' .or. trim(var_S)  ==  'URT1') then
                   p2a = g2-1
@@ -265,7 +276,7 @@ subroutine yyencode()
 
    err = fstfrm(iun3)
 
-   err = exfin('YYENCODE','2.0', 'OK')
+   err = exfin('YYENCODE','3.0', 'OK')
 
 8000 format (/' Unable to fnom: '  ,a/)
 8001 format (/' Unable to fstouv: ',a/)

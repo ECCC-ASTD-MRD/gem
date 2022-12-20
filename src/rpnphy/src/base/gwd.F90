@@ -83,7 +83,7 @@ contains
       !            +2*nk       -"-         for gather on s, sh
       !                           - 3*nk   s1,s2,s3 change from 1d to 2d
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 #include <rmnlib_basics.hf>
 

@@ -28,7 +28,7 @@ contains
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb, only: physlb1
     use cpl_itf   , only: cpl_step
-    use phybus, only: perbus, dynbus, volbus
+    use phymem, only: pbuslist, PHY_DBUSIDX, PHY_PBUSIDX, PHY_VBUSIDX
     use ens_perturb, only: ens_spp_stepinit, ENS_OK
     implicit none
 
@@ -43,7 +43,7 @@ contains
     !*@/
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
     include "physteps.cdk"
 
@@ -68,7 +68,7 @@ contains
        F_istat = RMN_OK
        return
     endif
-    
+
     if (F_stepcount == 0) then
       if (.not.WB_IS_OK(wb_get('dyn/sgo_tdfilter',gwd_sig))) gwd_sig = -1.
       if (sgo_tdfilter /= gwd_sig) then
@@ -105,8 +105,8 @@ contains
     call cpl_step(F_stepcount, F_stepdriver)
 
 !$omp parallel
-    call physlb1(dynbus, perbus, volbus, &
-         size(dynbus,1), size(perbus,1), size(volbus,1), &
+    call physlb1(pbuslist(PHY_DBUSIDX)%bptr, pbuslist(PHY_PBUSIDX)%bptr, pbuslist(PHY_VBUSIDX)%bptr, &
+         size(pbuslist(PHY_DBUSIDX)%bptr,1), size(pbuslist(PHY_PBUSIDX)%bptr,1), size(pbuslist(PHY_VBUSIDX)%bptr,1), &
          F_stepcount, phydim_ni, phydim_nj, phydim_nk, pslic)
 !$omp end parallel
     if (phy_error_L) return

@@ -1,9 +1,24 @@
 [submodule "cmake_rpn"]
 	path = cmake_rpn
 	url = ../cmake_rpn.git
-[submodule "ci-env"]
-	path = ci-env
-	url = ../ci-env.git
+	branch = dev
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
 	url = ../tdpack.git
+	branch = dev
+[submodule "src/rpn-si/rmn"]
+	path = src/rpn-si/rmn
+	url = ../librmn.git
+	branch = dev
+[submodule "src/rpn-si/vgrid"]
+	path = src/rpn-si/vgrid
+	url = ../vgrid.git
+	branch = dev
+[submodule "src/rpn-si/rpncomm"]
+	path = src/rpn-si/rpncomm
+	url = ../rpncomm.git
+	branch = dev
+[submodule "src/rpn-si/fst-tools"]
+	path = src/rpn-si/fst-tools
+	url = ../fst-tools.git
+	branch = dev

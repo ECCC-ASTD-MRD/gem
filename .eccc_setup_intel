@@ -7,14 +7,20 @@
 # - Load a script for common setup to all compilers
 
 export COMPILER_SUITE=intel
+export COMPILER_VERSION=2021.5.0
 DOMAIN=`hostname -d`
 
-if [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . ./ci-env/latest/rhel-8-icelake-64/inteloneapi-2022.1.2.sh
-    export COMPILER_VERSION=2021.5.0
+if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gpscc2/inteloneapi-2022.1.2
+elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/inteloneapi-2022.1.2
 else
-    . ./ci-env/latest/ubuntu-18.04-amd-64/intel-19.0.3.199.sh
-    export COMPILER_VERSION=19.0.3.199
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/ECCC/inteloneapi-2022.1.2
 fi
+# Load latest version of RPN-SI libraries
+. r.load.dot rpn/libs/20221125-alpha
+
+# We need a more recent version of cmake than the one available by default
+. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 . ./.common_setup ${COMPILER_SUITE}

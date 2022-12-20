@@ -19,6 +19,7 @@ module phy_snapshot_mod
    use series_mod, only: series_pause, series_resume
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use cpl_itf, only: cpl_snapshot
+   use phymem, only: phymem_gmmname, PHY_PBUSIDX
    implicit none
    private
    !@Public Functions
@@ -32,6 +33,7 @@ contains
 
    !/@*
    function phy_snapshot(F_mode) result(F_istat)
+      use rmn_gmm
       implicit none
       !@Arguments
       character(len=*), intent(in) :: F_mode  !Snapshot mode: PHY_SNAPSHOT_STORE/RESUME
@@ -42,12 +44,12 @@ contains
       !*@/
 
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
-      type(gmm_metadata) :: meta_busper
+      type(gmm_metadata) :: gmmmeta
       integer :: istat
-      real, pointer :: BUSPER_3d_digf(:,:), BUSPER_3d(:,:)
+      real, pointer :: busprt_digf(:,:), busptr(:,:)
+      character(len=32) :: gmmname, gmmname_digf
       ! ------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl == PHY_NONE) then
@@ -58,22 +60,24 @@ contains
          return
       endif
       
-      nullify(BUSPER_3d_digf, BUSPER_3d)
+      gmmname = phymem_gmmname(PHY_PBUSIDX)
+      gmmname_digf = trim(gmmname)//'_digf'
+      nullify(busprt_digf, busptr)
 
       select case (F_mode)
 
       case (PHY_SNAPSHOT_STORE)
 
-         istat= gmm_get('BUSPER_3d', BUSPER_3d, meta_busper)
-         if (.not.associated(BUSPER_3d)) then
+         istat= gmm_get(gmmname, busptr, gmmmeta)
+         if (.not.associated(busptr)) then
             call msg(MSG_ERROR,'(phy_snapshot) Cannot find BUSPER')
             return
          endif
-         istat= gmm_create('BUSPER_3d_digf', BUSPER_3d_digf, meta_busper, GMM_FLAG_RSTR)
-         istat= gmm_get('BUSPER_3d_digf', BUSPER_3d_digf)
-         if (associated(BUSPER_3d_digf)) then
+         istat= gmm_create(gmmname_digf, busprt_digf, gmmmeta, GMM_FLAG_RSTR)
+         istat= gmm_get(gmmname_digf, busprt_digf)
+         if (associated(busprt_digf)) then
             call msg(MSG_INFO,'(phy_snapshot) Saving BUSPER')
-            BUSPER_3d_digf = BUSPER_3d
+            busprt_digf = busptr
          else
             call msg(MSG_ERROR,'(phy_snapshot) Cannot save BUSPER')
          endif
@@ -82,11 +86,11 @@ contains
 
       case (PHY_SNAPSHOT_RESUME)
 
-         istat= gmm_get('BUSPER_3d_digf', BUSPER_3d_digf)
-         istat= gmm_get('BUSPER_3d', BUSPER_3d)
-         if (associated(BUSPER_3d_digf) .and. associated(BUSPER_3d)) then
+         istat= gmm_get(gmmname_digf, busprt_digf)
+         istat= gmm_get(gmmname, busptr)
+         if (associated(busprt_digf) .and. associated(busptr)) then
             call msg(MSG_INFO,'(phy_snapshot) Restoring BUSPER')
-            BUSPER_3d = BUSPER_3d_digf
+            busptr = busprt_digf
          else
             call msg(MSG_ERROR,'(phy_snapshot) Cannot restore BUSPER')
          endif

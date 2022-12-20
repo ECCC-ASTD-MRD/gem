@@ -15,7 +15,7 @@
 
 !**s/r gemdm_config - Establish final model configuration
 !
-#include <msg.h>
+#include <rmn/msg.h>
 
       integer function gemdm_config()
       use dynkernel_options

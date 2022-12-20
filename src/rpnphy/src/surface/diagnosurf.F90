@@ -47,7 +47,7 @@ contains
       !          (not used for the moment)
       ! TRNCH    row number
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 
 #define PTR1D(NAME2,IDX) busptr(vd%NAME2%i)%ptr(1+IDX:1+IDX+ni-1,trnch)
 

@@ -18,7 +18,7 @@
       subroutine t02t1()
       use dynkernel_options
       use glb_ld
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_contiguous
       use gmm_vt1
       use gmm_vt0

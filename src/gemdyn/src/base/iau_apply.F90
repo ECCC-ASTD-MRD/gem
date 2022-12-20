@@ -17,7 +17,7 @@ subroutine iau_apply (F_kount)
    use iso_c_binding
 
    use clib_itf_mod, only: clib_toupper, clib_tolower
-   use gmm_itf_mod
+   use rmn_gmm
    use input_mod, only: input_new, input_add, input_nbvar, input_set_basedir, &
         input_set_filename, input_setgridid, input_isvarstep, input_meta, input_get
    use inputio_mod, only: inputio_new, inputio_add, inputio_nbvar, &
@@ -62,7 +62,7 @@ subroutine iau_apply (F_kount)
 
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    include "rpn_comm.inc"
 
    integer, parameter :: STATS_PRECISION = 8

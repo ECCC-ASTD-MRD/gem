@@ -18,6 +18,7 @@
 subroutine gmmx_name_ci(F_nameout_S,F_namein_S,F_update_L)
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_tolower
+   use rmn_gmm
    implicit none
    !@objective Search GMM labels in a case insensitive way
    !@arguments
@@ -26,7 +27,6 @@ subroutine gmmx_name_ci(F_nameout_S,F_namein_S,F_update_L)
    character(len=*),intent(out):: F_nameout_S
    !@author S.Chamberland, 2012-06
    !*@/
-#include <mu_gmm.hf>
 
    integer,parameter :: NMAX = 4096
    integer,save :: nkeys = 0

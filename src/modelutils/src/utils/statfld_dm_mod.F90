@@ -33,7 +33,7 @@ module statfld_dm_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
       integer, parameter :: IDX_LNI = 1
       integer, parameter :: IDX_LNJ = 2

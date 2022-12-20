@@ -25,7 +25,7 @@
 
       use glb_ld
       use cstv
-      use gmm_itf_mod
+      use rmn_gmm
       use ens_spp, only: spp_ncha
       implicit none
 #include <arch_specific.hf>

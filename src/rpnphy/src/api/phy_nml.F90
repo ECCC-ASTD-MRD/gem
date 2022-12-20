@@ -27,7 +27,7 @@ module phy_nml_mod
    public :: phy_nml
 
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    include "rpnphy_version.inc"
@@ -328,7 +328,7 @@ contains
          return
       endif
 
-      if (fluvert /= "SURFACE" .and. any(pcptype == (/'SPS_W19', 'SPS_FRC'/))) then
+      if (fluvert /= "SURFACE" .and. any(pcptype == (/'SPS_W19', 'SPS_FRC', 'SPS_H13'/))) then
          call msg(MSG_ERROR,'(phy_nml_check) pcptype = '//trim(pcptype)//' can only be used with fluvert = "SURFACE" ')
          return
       end if

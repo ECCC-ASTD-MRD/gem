@@ -139,7 +139,7 @@ contains
         F_monot, F_massc, F_vmin, F_vmax, F_intp_S, F_ignore_L) result(F_istat)
       use clib_itf_mod, only: clib_toupper
       implicit none
-#include <msg.h>
+#include <rmn/msg.h>
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@objective

@@ -13,13 +13,12 @@ endif()
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid
    tdpack
-   mpi-extras
    rpncomm
    rmn
    ${ompfftw}
@@ -27,35 +26,33 @@ target_link_libraries(checkdmpart
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(checkdmpart gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
+add_dependencies(checkdmpart gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid
    tdpack
-   mpi-extras
    rpncomm
    rmn
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(gemgrid gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
+add_dependencies(gemgrid gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
    gemdyn
-   rpnphy
-   rpnphy_cpl_stubs
+   ${phy_LIBRARIES}
+   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid
    tdpack
-   mpi-extras
    rpncomm
    rmn
    ${ompfftw}
@@ -63,8 +60,6 @@ target_link_libraries(prgemnml
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(prgemnml gemdyn rpnphy modelutils vgrid mpi-extras rpncomm rmn)
+add_dependencies(prgemnml gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
-install(TARGETS checkdmpart gemgrid prgemnml RUNTIME 
-        DESTINATION ${ROOT}/work-${OS}-${COMPILER}-${COMP_VERSION}/bin)
-
+install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)

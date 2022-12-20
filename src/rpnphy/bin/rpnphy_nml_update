@@ -1,0 +1,31 @@
+#!/bin/bash
+
+DESC='Update rpnphy Fortran Namelists file'
+
+toVersion=${rpnphy_version:-$(cat ${rpnphy:-rpnphy}/VERSION | cut -d/ -f2)}
+defaultDB=${rpnphy:-rpnphy}/share/nml_upd/rpnphy_nml_update_db.txt
+defaultFile=./gem_settings.nml
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} --from VERSION1 [--to VERSION2] [-v] [-b] [-i INFILENAME] [-o OUTFILENAME] [--config=CONFIG_FILE]" \
+   "-v,--verbose" 'action=count'   "0"     "[verbose mode]" \
+   "-i,--file"    'type=str'       "${defaultFile}"  "[Input Namelist filename]" \
+   "-o,--outfile" 'type=str'       ""      "[Output Namelist filename - default: same as input]" \
+   "-b,--backup"  'action=count'   "0"     "[Create a backup (.bkp) of the input FILE]" \
+   "-f,--from"    'type=str'       ""      "[Version of the orginal file]" \
+   "-d,--to"      'type=str'       "${toVersion}"  "[File will be updated to VERSION2]" \
+   "-c,--config"  'type=str'       "${defaultDB}"  "[Updater config file ]" \
+   "--debug"      'action=count'   "0"     "[Debug mode]" \
+   ++++ $*)
+myverbose=''
+[[ ${verbose} -gt 0 ]] && myverbose='-v' || true
+mybackup=''
+[[ ${backup} -gt 0 ]] && mybackup='-b' || true
+mydebug=''
+[[ ${debug} -gt 0 ]] && mydebug='--debug' || true
+[[ "x${outfile}" == "x" ]] && outfile=${file} || true
+
+modelscripts_nml_update ${myverbose} ${mybackup} ${mydebug} -i ${file} -o ${outfile} -f ${from} -d ${to} -c ${config} --prefix rpnphy

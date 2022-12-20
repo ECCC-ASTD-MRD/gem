@@ -5,11 +5,11 @@ module testphy
   use clib_itf_mod, only: clib_toupper
   use wb_itf_mod
   use mu_jdate_mod
+  use rmn_gmm
   implicit none
   private
 
   ! External definitions
-#include <mu_gmm.hf>
 #include <rmnlib_basics.hf>
 
   ! External parameters
@@ -369,7 +369,7 @@ contains
  
     ! Internal parameters
     !#TODO: this modules needs to be updated, we are now at API 17
-    integer, parameter :: COMPATIBILITY_LVL=19 !#TODO: was 6... may need to review
+    integer, parameter :: COMPATIBILITY_LVL=20 !#TODO: was 6... may need to review
 
     ! Internal variables
     integer(INT64) :: jdateo

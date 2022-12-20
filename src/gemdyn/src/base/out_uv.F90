@@ -28,7 +28,7 @@
       use levels
       use outp
       use outd
-      use gmm_itf_mod
+      use rmn_gmm
       implicit none
 #include <arch_specific.hf>
 

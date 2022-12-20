@@ -32,7 +32,7 @@ contains
       !     Checks the values after intrepolation, preform
       !     conversions of units and simple transformations
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
       real(REAL64),parameter :: ONE_8   = 1.0d0

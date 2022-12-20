@@ -22,7 +22,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    use svs_configs
    implicit none
 !!!#include <arch_specific.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
    !@Object Transfer and initialize geophysical fields for the
    !        surface schemes
@@ -41,10 +41,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !       The snow depth is converted in metre (in this s/r)
    !       when the 'entry variables' are transfered to the
    !       permanent variables.
+   !@Revisions
+   ! 001      M. Mackay   (Sep 2022)  - CSLM added
    !*@/
 
    include "isbapar.cdk"
    include "sfcinput.cdk"
+   !include "cslm.cdk"
 
    real, parameter :: z0ice = 0.001
    real, parameter :: z0sea = 0.001
@@ -59,13 +62,19 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
    real, pointer, dimension(:) :: &
         zdrainaf, zemisr, zemistg, zemistgen, zglacier, zglsea, &
-        zglsea0, zicedp, ziceline, zlhtg, zmg, zml, zresa, zresagr, zresavg, &
-        zresasa, zresasv, zslop, zsnoal, zsnoalen, zsnoagen, zsnodpl, zsnoden, &
+        zglsea0, zicedp, ziceline, zlakefr, zlhtg, zmg, zml, zresa, zresagr, zresavg, &
+        zresasa, zresasv, zriverfr, zslop, zsnoal, zsnoalen, zsnoagen, zsnodpl, zsnoden, &
         zsnoma, zsnoro, zsnvden, zsnvdp, zsnvma, ztsrad, ztwater, &
         zz0en, zz0mland, zz0mlanden, zz0mvh, zz0mvhen, zz0veg, zz0tveg
+
+   real, pointer, dimension(:) :: &
+        zrofinlakaf, zlfxi , zlfxo , zevlak
+
+   
    real, pointer, dimension(:,:) :: &
         zalvis, zclay, zclayen, zsand, zsanden, zsnodp, &
         ztglacier, ztmice, ztmoins, ztsoil, zvegf, zz0, zz0t
+  
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
 #define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -84,6 +93,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zglsea0,glsea0)
    MKPTR1D(zicedp,icedp)
    MKPTR1D(ziceline,iceline)
+   MKPTR1D(zlakefr,lakefr)
    MKPTR1D(zlhtg,lhtg)
    MKPTR1D(zmg,mg)
    MKPTR1D(zml,ml)
@@ -92,6 +102,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zresavg,resavg)
    MKPTR1D(zresasa,resasa)
    MKPTR1D(zresasv,resasv)
+   MKPTR1D(zriverfr, riverfr)
    MKPTR1D(zslop,slop)
    MKPTR1D(zsnoal,snoal)
    MKPTR1D(zsnoalen,snoalen)
@@ -113,6 +124,12 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zz0veg,z0veg)
    MKPTR1D(zz0tveg,z0tveg)
 
+   MKPTR1D(zrofinlakaf,rofinlakaf)
+   MKPTR1D(zlfxi,lfxi)
+   MKPTR1D(zlfxo,lfxo)
+   MKPTR1D(zevlak,evlak)
+   
+
    MKPTR2D(zalvis,alvis)
    MKPTR2D(zclay,clay)
    MKPTR2D(zclayen,clayen)
@@ -126,6 +143,8 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR2D(zvegf,vegf)
    MKPTR2D(zz0,z0)
    MKPTR2D(zz0t,z0t)
+
+
 
    ! Several treatments on geophysical fields valid for isba
    ! the water temperature (tm) is decreased for points where the
@@ -151,16 +170,15 @@ subroutine inisurf4(kount, ni, nk, trnch)
       end do
    endif
 
-   ! From the "entry" to the "permanent" bus
-   !
    !========================================================================
    !          for variables common to all surface schemes
    !========================================================================
    !
    !
 !VDIR NODEP
-   DO_I: do i=1,ni
-      if (any('alvis' == phyinread_list_s(1:phyinread_n))) then
+   
+   if (any('alvis' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          nk1 = size(zalvis,2)
          zalvis(i,indx_soil   ) = zalvis(i,nk1)
          zalvis(i,indx_glacier) = zalvis(i,nk1)
@@ -170,30 +188,46 @@ subroutine inisurf4(kount, ni, nk, trnch)
          if (schmurb.ne.'NIL') then
             zalvis(i,indx_urb ) = zalvis(i,nk1)
          endif
-      endif
+         if (schmlake.ne.'NIL') then
+            zalvis(i,indx_lake ) = zalvis(i,nk1)
+         endif
+         if (schmriver.ne.'NIL') then
+            zalvis(i,indx_river ) = zalvis(i,nk1)
+         endif
+      enddo
+   endif
 
-      if (kount == 0 .and. .not.any('emisr' == phyinread_list_s(1:phyinread_n))) then
+   if (kount == 0 .and. .not.any('emisr' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          zemisr(i) = 1.
-      endif
+      enddo
+   endif
 
-      !       --- snodp deja en metres
-      if (any('snodp' == phyinread_list_s(1:phyinread_n))) then
+   !       --- snodp deja en metres
+   if (any('snodp' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          zsnodp(i,indx_water  ) = 0.0
-      endif
+      enddo
+   endif
 
-      if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
+   if (any('tsoil' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          ztsrad(i) = ztsoil(i,1)
-      endif
+      enddo
+   endif
 
-      if (z0veg_only) then
+   if (z0veg_only) then
+      do i=1,ni
          if (schmsol == 'ISBA')then
             zz0en(i) = zz0veg(i)
          else if (schmsol == 'SVS') then
             zz0en(i) = max(zz0mlanden(i), Z0MLAND_MIN_SVS)
          endif
-      endif
+      enddo
+   endif
 
-      if (z0veg_only .or. any('z0en' == phyinread_list_s(1:phyinread_n))) then
+   if (z0veg_only .or. any('z0en' == phyinread_list_s(1:phyinread_n))) then
+      do i=1, ni
          zz0 (i,indx_soil   ) = max(zz0en(i),z0min)
          if (z0veg_only) then
             zz0 (i,indx_glacier) = Z0GLA
@@ -203,6 +237,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
          zz0 (i,indx_water  ) = z0sea
          zz0 (i,indx_ice    ) = z0ice
          zz0 (i,indx_agrege ) = max(zz0en(i),z0min)
+         if (schmlake.ne.'NIL') then
+            zz0(i,indx_lake ) = z0sea
+         endif
+         if (schmriver.ne.'NIL') then
+            zz0(i,indx_river ) = z0sea
+         endif
+
          zz0t(i,indx_soil   ) = max(zz0en(i),z0min)
          if (z0veg_only)  then
             zz0t(i,indx_glacier) = Z0GLA
@@ -212,25 +253,54 @@ subroutine inisurf4(kount, ni, nk, trnch)
          zz0t(i,indx_water  ) = z0sea
          zz0t(i,indx_ice    ) = z0ice
          zz0t(i,indx_agrege ) = max(zz0en(i),z0min)
-      endif
-      if (any('z0veg' == phyinread_list_s(1:phyinread_n))) then
+         if (schmlake.ne.'NIL') then
+            zz0t(i,indx_lake ) = z0sea
+         endif
+         if (schmriver.ne.'NIL') then
+            zz0t(i,indx_river ) = z0sea
+         endif
+      enddo
+   endif
+      
+   if (any('z0veg' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          zz0veg (i) = max(zz0veg(i),z0min)
          zz0tveg(i) = max(zz0veg(i),z0min)
-      endif
-      if (any('glsea0' == phyinread_list_s(1:phyinread_n))) then
+      enddo
+   endif
+   
+   if (any('glsea0' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          zglsea (i) = zglsea0(i)
-      endif
-      !       Mask for the lakes
-      if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
+      enddo
+   endif
+
+   !  Mask for the lakes, lake fraction and river fraction
+   !  set lake fraction to zero if no lake scheme 
+   !  Also set river fraction to 0.0 in all cases for now
+   !  leave mask for lake untouched because used even when no lake
+   !  scheme
+   if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
+      do i=1,ni
          zml(i) = zvegf(i,3)
-      endif
-      if (kount == 0 .and. .not.icelac) ziceline(i) = 1.
+          if (schmlake.ne.'NIL') then
+             zlakefr(i)  = zvegf(i,3)
+             zriverfr(i) = 0.0
+          else            
+             zlakefr(i) = 0.0
+             zriverfr(i) = 0.0
+          endif
+       enddo
+    endif
 
-   end do DO_I
+    if (kount == 0 .and. .not.icelac) then
+       do i=1,ni
+          ziceline(i) = 1.
+       enddo
+    endif
 
-
-   if (any('tmice' == phyinread_list_s(1:phyinread_n))) then
-      do k=1,nl
+    if (any('tmice' == phyinread_list_s(1:phyinread_n))) then
+       do k=1,nl
          do i=1,ni
             ztmice(i,k) = min(tcdk, ztmice(i,k))
          end do

@@ -138,7 +138,7 @@ contains
          end if
       end if
 
-      ascending_L = (F_srclev(1,1,1) < F_srclev(1,1,nks))
+      ascending_L = (F_srclev(F_i0,F_j0,1) < F_srclev(F_i0,F_j0,nks))
       k_surf = 1
       k_ciel = nks
       if (.not.ascending_L) then

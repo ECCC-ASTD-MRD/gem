@@ -37,7 +37,7 @@ module vgrid_from_file_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, parameter :: VGRID_FROM_FILE_NORFLD = RMN_ERR - 1
    integer, parameter :: MAXLEV=1024, NLEVTYP=2, IKIND_SURF=3

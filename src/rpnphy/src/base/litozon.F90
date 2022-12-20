@@ -42,7 +42,7 @@ subroutine litozon(F_file_S, F_myproc)
    !          the input jour is 15
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include "ozopnt.cdk"
 
    external :: rd_ozone

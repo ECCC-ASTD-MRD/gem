@@ -25,7 +25,7 @@ subroutine test_drv_ptopo_mpi()
    !@author Stephane Chamberland, 2012-02
 !@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer,parameter :: NGRIDS_DEFAULT = 1
    integer,parameter :: NGRIDS_MIN = 1

@@ -38,7 +38,7 @@ module fstmpi_read_mod
    public :: FST_FIND_LT, FST_FIND_LE, FST_FIND_NEAR, FST_FIND_GE, FST_FIND_GT
 !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
 

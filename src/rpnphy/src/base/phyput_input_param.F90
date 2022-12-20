@@ -29,7 +29,7 @@ function phyput_input_param() result(istat)
    !@return
    integer :: istat
 
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "phyinput.inc"
    include "physteps.cdk"

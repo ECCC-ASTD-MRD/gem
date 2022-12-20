@@ -1,0 +1,16 @@
+{
+   "name": "@NAME@",
+   "version": "@PROJECT_VERSION@@EC_COMP@",
+   "platform": "@EC_PLAT@",
+   "compiler": "@EC_COMP@",
+   "maintainer": "@MAINTAINER@",
+   "summary": "@SUMMARY@ (@URL@)",
+   "description": "@DESCRIPTION@",
+   "requires": "",
+   "x-build-date": "@BUILD_TIMESTAMP@",
+   "x-buildinfo": "@GIT_VERSION@",
+   "x-build-platform": "@EC_PLAT@",
+   "x-build-user": "@EC_USER@",
+   "x-build-host": "@OS_HOSTNAME@",
+   "x-build-uname": "('@OS_HOSTNAME@', '@OS_FQDN@', '@OS_RELEASE@', '@OS_VERSION@', '@OS_PLATFORM@')"
+}

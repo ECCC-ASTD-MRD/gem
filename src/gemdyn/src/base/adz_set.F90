@@ -25,7 +25,7 @@
       use lam_options
       use init_options
       use step_options
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_pw
       use mem_tstp
       use ptopo

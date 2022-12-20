@@ -18,7 +18,7 @@ subroutine drv_print_banner(F_begin_L)
 !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    character(len=512),save :: version_number_S = '',version_title_S = ''
 

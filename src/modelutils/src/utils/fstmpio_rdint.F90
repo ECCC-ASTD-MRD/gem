@@ -40,7 +40,7 @@ module fstmpio_rdhint_mod
    public :: FST_FIND_DIAG_T, FST_FIND_DIAG_M
 !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
 

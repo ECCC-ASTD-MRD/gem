@@ -6,7 +6,7 @@
 ! - service.rpn@ec.gc.ca
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
 !-------------------------------------------------------------------------- 
-#include "../msg.h"
+#include "rmn/msg.h"
 
 !/@*
 subroutine test_msg()

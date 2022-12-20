@@ -40,7 +40,7 @@ contains
       ! interpolation to momentum, thermo and energy levels.
       !*@/
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
       !----------------------------------------------------------------
       F_istat = RMN_ERR
       if (st(1,1) < 0) then       ! model is unstaggered

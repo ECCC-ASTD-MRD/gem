@@ -44,7 +44,7 @@ function check_options2() result(F_istat)
    ! 009      A. Glazer   (July 2015) - Added options for lightning diagnostics
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: MAXSLOFLUX = 20

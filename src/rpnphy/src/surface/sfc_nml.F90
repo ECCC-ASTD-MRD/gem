@@ -33,7 +33,7 @@ function sfc_nml2(F_namelist) result(F_istat)
    integer :: F_istat
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    include "tebcst.cdk"
@@ -156,6 +156,8 @@ contains
       istat = clib_toupper(z0mtype)
       istat = clib_toupper(z0ttype)
       istat = clib_toupper(z0tevol)
+      istat = clib_toupper(schmlake)
+      istat = clib_toupper(schmriver)
 
       if (.not.any(schmsol == SCHMSOL_OPT)) then
          call str_concat(msg_S, SCHMSOL_OPT,', ')
@@ -166,6 +168,18 @@ contains
       if (.not.any(schmurb == SCHMURB_OPT)) then
          call str_concat(msg_S, SCHMURB_OPT,', ')
          call msg(MSG_ERROR,'(sfc_nml_check) schmurb = '//trim(schmurb)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (.not.any(schmlake == SCHMLAKE_OPT)) then
+         call str_concat(msg_S, SCHMLAKE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) schmlake = '//trim(schmlake)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (.not.any(schmriver == SCHMRIVER_OPT)) then
+         call str_concat(msg_S, SCHMRIVER_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) schmriver = '//trim(schmriver)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
@@ -196,7 +210,7 @@ contains
       if ( (min(z0tlat(1), z0tlat(2)) <  0.0)    .or. &
            (max(z0tlat(1), z0tlat(2)) > 90.0)    .or. &
            (z0tlat(1) > z0tlat(2))         )    then
-         write(msg_S,*) z0tlat(1), z0tlat(2)
+         write(msg_S, '(2f0.3)') z0tlat(1), z0tlat(2)
          call msg(MSG_ERROR, '(sfc_nml_check) zz0tlat = '//trim(msg_S)//' : should be in 0. to 90. and z0tlat(1) < z0tlat(2)')
          return
       endif
@@ -257,7 +271,7 @@ contains
          ! KDP option for SVS now OBSOLETE, USERS SHOULD USE KHYD instead
          !--- MAKE MODEL ABORT IF USER SPECIFIES A VALUE WHEN USING SVS
          if (kdp /= -1) then
-            write(msg_S,*) '(sfc_nml_check) KDP=',kdp,' should not be used with SVS. '//&
+            write(msg_S, '(a,1x,i0,1x,a)') '(sfc_nml_check) KDP=',kdp,'should not be used with SVS. '//&
                  'This sfc config variable is OBSOLETE and should be removed from surface_cfgs. '//&
                  'To change last/deepest soil layer considered during the accumulation '//&
                  'of lateral flow and drainage, use surface_cfg variable KHYD instead'
@@ -296,7 +310,7 @@ contains
             call msg(MSG_ERROR, msg_S)
             return
          else if (nk >= 3 .and. khyd <= 1) then
-            write(msg_S,*) '(sfc_nml_check)  Last hydro drainage/lateral flow layer level: '//&
+            msg_S = '(sfc_nml_check)  Last hydro drainage/lateral flow layer level: '//&
                  'KHYD needs to be specified by USER because not using DEFAULT SVS set-up'
             call msg(MSG_ERROR, msg_S)
             return
@@ -305,9 +319,9 @@ contains
          ! CHECK THAT DEPTH IS INCREASING and SAVE NUMBER OF LAYERS
          do k=1,nk-1
             if (dp_svs(k) >= dp_svs(k+1)) then
-               write(msg_S,*) '(sfc_nml_check) SVS layer depths badly specified: '//&
-                    'dp_svs(k)=',dp_svs(k),' (k=',k,') should be shallower than '//&
-                    'dl_svs(k+1)=',dp_svs(k+1),' (k+1=',k+1,')'
+               write(msg_S, '(a,1x,f0.3,1x,a,1x,i0,1x,a,1x,f0.3,1x,a,1x,i0,1x,a)') '(sfc_nml_check) SVS layer depths badly specified: '//&
+                    'dp_svs(k)=', dp_svs(k), ' (k=', k, ') should be shallower than '//&
+                    'dl_svs(k+1)=', dp_svs(k+1), ' (k+1=', k+1 ,')'
                call msg(MSG_ERROR, msg_S)
                return
             endif
@@ -394,6 +408,8 @@ contains
       !# phybusinit / gesdict defines nrow = nagg = nsurf+1
       idxmax = max(indx_soil, indx_glacier, indx_water, indx_ice, indx_agrege)
       if (schmurb /= 'NIL') idxmax = max(idxmax, indx_urb)
+      if (schmlake  /= 'NIL') idxmax = max(idxmax, indx_lake)
+      if (schmriver /= 'NIL') idxmax = max(idxmax, indx_river)
       nsurf = idxmax - 1
 
       !# Z0tlat to radians
@@ -409,6 +425,8 @@ contains
       istat = min(wb_put('sfc/nsurf', nsurf, options), istat)
       istat = min(wb_put('sfc/schmsol', schmsol, options), istat)
       istat = min(wb_put('sfc/schmurb', schmurb, options), istat)
+      istat = min(wb_put('sfc/schmlake', schmlake, options), istat)
+      istat = min(wb_put('sfc/schmriver', schmriver, options), istat)
       istat = min(wb_put('sfc/snoalb_anl', snoalb_anl, options), istat)
       iverb = wb_verbosity(iverb)
       if (istat /= WB_OK) then

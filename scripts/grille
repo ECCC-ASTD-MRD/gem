@@ -41,11 +41,11 @@ GRDTYP=$(fetchnml.sh grd_typ_s grid gem_settings.nml)
 if [[ "${GRDTYP}" == "GY" ]] ; then 
    ngrids=2
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YIN/000-000/constantes
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/YAN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YIN/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/YAN/000-000/constantes
 else
    mkdir -p ${WORKDIR}/000-000
-   ln -s ${ATM_MODEL_DFILES:-${AFSISIO:-/home/binops/afsi/sio}}/datafiles/constants/thermoconsts ${WORKDIR}/000-000/constantes
+   ln -s ${CMCCONST}/thermoconsts ${WORKDIR}/000-000/constantes
 fi
 
 export TASK_INPUT=${ROOT_WORK}

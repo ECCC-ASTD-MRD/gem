@@ -16,7 +16,8 @@
 
 subroutine radcons2(ni, trnch)
    use tdpack_const
-   use phybus, only: entbus, perbus, sla, fsa, c1slop, c2slop, c3slop, c4slop, c5slop
+   use phybus, only: sla, fsa, c1slop, c2slop, c3slop, c4slop, c5slop
+   use phymem, only: pbuslist, PHY_EBUSIDX, PHY_PBUSIDX
    implicit none
 !!!#include <arch_specific.hf> 
 
@@ -47,8 +48,11 @@ subroutine radcons2(ni, trnch)
 #define MKPTR1D(NAME1,NAME2,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni) => BUS(NAME2:,trnch)
 #define MKPTR2D(NAME1,NAME2,N3,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni,1:N3) => BUS(NAME2:,trnch)
 
-   real, pointer, dimension(:) :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop
-   real, pointer, dimension(:,:) :: zsla, zfsa
+   real, pointer, contiguous, dimension(:) :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop
+   real, pointer, contiguous, dimension(:,:) :: zsla, zfsa, entbus, perbus
+
+   entbus => pbuslist(PHY_EBUSIDX)%bptr(:,:)
+   perbus => pbuslist(PHY_PBUSIDX)%bptr(:,:)
 
    MKPTR2D(zsla, sla, 4, entbus)
    MKPTR2D(zfsa, fsa, 4, entbus)

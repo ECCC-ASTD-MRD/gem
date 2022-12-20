@@ -189,7 +189,7 @@ contains
 
   subroutine weights_soil_texture()
 
-#include <msg.h>
+#include <rmn/msg.h>
     use sfc_options
     implicit none
     integer :: unout

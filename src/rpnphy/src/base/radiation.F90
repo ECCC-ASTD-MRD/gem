@@ -53,7 +53,7 @@ contains
 
       !@Author L.Spacek, November 2011
       !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
       integer :: yy, mo, dd, hh, mn, ss, nkm1

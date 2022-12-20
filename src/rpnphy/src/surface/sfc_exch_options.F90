@@ -33,21 +33,24 @@ contains
       !        of each execution of the model
       !@Author  L. Spacek (Spring 2013)
       !@Revisions
+      ! 001 K. Winger/M. Mackay    (Feb 2017/Sep 2022) - Add 'indx_lake' and 'indx_river' (M.A.)
       !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
       include "isbapar.cdk"
       include "tebcst.cdk"
 
       integer :: ier, options, iverb, i
-      logical :: debug_alldiag_L
+      logical :: debug_alldiag_L, tmp_atm_tplus
       !---------------------------------------------------------------------
       F_istat = RMN_ERR
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
 
       iverb = wb_verbosity(WB_MSG_FATAL)
+      ier = wb_get('phy/flux_consist',tmp_atm_tplus)
+      if (RMN_IS_OK(ier)) atm_tplus = tmp_atm_tplus
       ier = wb_verbosity(WB_MSG_INFO)
       
       ier = WB_OK
@@ -84,6 +87,8 @@ contains
       ier = min(wb_put('sfc/indx_water',indx_water,options),ier)
       ier = min(wb_put('sfc/indx_ice',indx_ice,options),ier)
       ier = min(wb_put('sfc/indx_urb',indx_urb,options),ier)
+      ier = min(wb_put('sfc/indx_lake',indx_lake,options),ier)
+      ier = min(wb_put('sfc/indx_river',indx_river,options),ier)
       ier = min(wb_put('sfc/indx_agrege',indx_agrege,options),ier)
       ier = min(wb_put('sfc/l07_ah',l07_ah,options),ier)
       ier = min(wb_put('sfc/l07_am',l07_am,options),ier)

@@ -32,8 +32,8 @@ module phy_input
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
 
-   use phyfold, only: phyfold1
-   use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
+   use phymem, only: phymeta, phyvar, npvarlist, pvarlist, phymem_find, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_DBUSIDX
+   use phyfold, only: phyfoldmeta1
    use phygridmap, only: phydim_ni, phydim_nj , phydim_nk, phy_lcl_ni, &
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
         phy_lclcore_gid, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id
@@ -41,20 +41,18 @@ module phy_input
    use phy_options, only: jdateo, delt, dyninread_list_s, intozot, phystat_input_l, phystat_2d_l, phystat_dble_l, ninblocx, ninblocy, input_type, debug_trace_L, radia, debug_initonly_L, vgrid_M_S, vgrid_T_S
    use physimple_transforms, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
-   use phy_typedef, only: phymeta
+   use phyfillbus, only: phyfillbus1
+
+   use rmn_gmm
 
    private
    public :: phy_input1
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    include "phyinput.inc"
-   include "buses.cdk"
-
-   integer, external :: phyent2per, phyfillbus
 
    logical, parameter :: IS_DIR = .true.
  
@@ -97,10 +95,10 @@ contains
       integer :: idt, ismandatory, readlist_nk(PHYINREAD_MAX)
       real, pointer, dimension(:,:,:) :: data, data2
       character(len=4) :: inname_S, inname2_S
-      character(len=32) :: varname_S, varname2_S, readlist_S(PHYINREAD_MAX), horiz_interp_S, vert_instep_S, vgrid_S, str32
+      character(len=32) :: varname2_S, readlist_S(PHYINREAD_MAX), horiz_interp_S, vert_instep_S, vgrid_S, str32
       character(len=512) :: str512, dummylist_S(10)
-      type(phymeta) :: meta1, meta2
-      type(phymetaplus) :: meta1plus, meta2plus
+      type(phymeta), pointer :: meta1, meta2
+      type(phyvar) :: myphyvar(1)
       real :: vmin, vmax
       logical :: prep_vinterp_done_L
       ! ---------------------------------------------------------------------
@@ -125,7 +123,7 @@ contains
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
       !# Retrieve input from the model dynamics into the dynamics bus
-      istat = phyfillbus(F_step)
+      istat = phyfillbus1(F_step)
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_ERROR, '(phy_input) problem filling buses')
          return
@@ -192,27 +190,32 @@ contains
             cycle VARLOOP
          endif
 
-         istat = phygetmetaplus(meta1plus,inname_S, F_npath='IOV', &
+         nullify(meta1, meta2)
+         istat = phymem_find(myphyvar,inname_S, F_npath='IOV', &
               F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
-         meta1 = meta1plus%meta
-         if (RMN_IS_OK(istat) .and. inname2_S /= ' ') then
-            istat = phygetmetaplus(meta2plus,inname2_S, F_npath='IOV', &
-                 F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
-            meta2 = meta2plus%meta
-            varname2_S = meta2%vname
-         else
-            varname2_S = ' '
+         if (istat > 0) then
+            meta1 => myphyvar(1)%meta
+            if (inname2_S /= ' ') then
+               istat = phymem_find(myphyvar,inname2_S, F_npath='IOV', &
+                    F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
+               if (istat > 0) then
+                  meta2 => myphyvar(1)%meta
+                  varname2_S = meta2%vname                  
+               endif
+            else
+               varname2_S = ' '
+               meta2 => meta1
+            endif
          endif
-         if (.not.RMN_IS_OK(istat)) then
+         if (istat <= 0) then
             call msg(MSG_INFO,'(phy_input) ignoring var, not declared in bus: '//trim(inname_S)//' : '//trim(inname2_S))
             cycle VARLOOP !# var not needed
          endif
              
-         varname_S  = meta1%vname
          if (ismandatory == -1) ismandatory = meta1%init
 
          vgrid_S = PHY_VGRID_M_S !#MOM/SLB
-         if (meta1%stag == BUSPAR_STAG_THERMO .or. meta1%stag == BUSPAR_STAG_ENERGY) vgrid_S = PHY_VGRID_T_S !#THERMO/SLC, ENERGY/SLS
+         if (meta1%stag == PHY_STAG_THERMO .or. meta1%stag == PHY_STAG_ENERGY) vgrid_S = PHY_VGRID_T_S !#THERMO/SLC, ENERGY/SLS
          if (vert_instep_S /= 'none' .and. .not.prep_vinterp_done_L) then
             prep_vinterp_done_L = .true.
             istat = priv_prep_vinterp()
@@ -238,16 +241,16 @@ contains
                if (inname2_S /= ' ') &
                     inname2_S = trim(inname2_S)//trim(str_encode_num(icat))
             endif
-!!$            print *,'(phy_input)0 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
+!!$            print *,'(phy_input)0 ',trim(meta1%vname),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
 
             nullify(data, data2)
             if (input_type == 'GEM_4.8') then
-               istat = input_get(inputid, ivar, F_step, phy_lcl_gid, vgrid_S, data, data2, F_ovname1_S=inname_S, F_ovname2_S=inname2_S) !#TODO: ovname
+               istat = input_get(inputid, ivar, F_step, phy_lcl_gid, vgrid_S, data, data2, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
             else
                istat = inputio_get(inputobj, ivar, F_step, data, data2, &
                     F_vgrid_S=vgrid_S, F_ovname1_S=inname_S, F_ovname2_S=inname2_S)
             endif
-!!$            print *,'(phy_input)1 ',trim(varname_S),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
+!!$            print *,'(phy_input)1 ',trim(meta1%vname),icat,'/',icat1,':',trim(inname_S),meta1%nk,meta1%fmul ; call flush(6)
             if (.not.(RMN_IS_OK(istat) .and. &
                  associated(data) .and. &
                  (inname2_S == ' ' .or. associated(data2)))) then
@@ -255,27 +258,27 @@ contains
                if (associated(data2)) deallocate(data2,stat=istat)
                nullify(data, data2)
                if (ismandatory == 0) then
-                  call msg(MSG_WARNING,'(phy_input) missing optional var: '//trim(inname_S)//' : '//trim(varname_S)//' ('//trim(inname2_S)//' : '//trim(varname2_S)//')')
+                  call msg(MSG_WARNING,'(phy_input) missing optional var: '//trim(inname_S)//' : '//trim(meta1%vname)//' ('//trim(inname2_S)//' : '//trim(varname2_S)//')')
                   cycle VARLOOP
                endif
-               call msg(MSG_ERROR,'(phy_input) missing var: '//trim(inname_S)//' : '//trim(varname_S))
+               call msg(MSG_ERROR,'(phy_input) missing var: '//trim(inname_S)//' : '//trim(meta1%vname))
                F_istat = RMN_ERR
 !!$            cycle VARLOOP
                call msg_verbosity(iverb)
                return
             endif
 
-            if (inname_S == 'tm') tmidx = meta1plus%index
+            if (inname_S == 'tm') tmidx = meta1%i0
 
             vmin = max(vmin, meta1%vmin)
             vmax = min(vmax, meta1%vmax)
-            istat = priv_fold(F_step, varname_S, inname_S, meta1%bus, data, icat, &
-                 &           readlist_nk, readlist_S, nread, horiz_interp_S, &
-                 &           meta1%n(3), vmin, vmax, pre_fold_opr_clbk)
+            istat = priv_fold(F_step, meta1, inname_S, data, icat, &
+                 &            readlist_nk, readlist_S, nread, horiz_interp_S, &
+                 &            vmin, vmax, pre_fold_opr_clbk)
             if (inname2_S /= ' ' .and. RMN_IS_OK(istat)) then
-               istat = priv_fold(F_step, varname2_S, inname2_S, meta2%bus, data2, icat, &
-                    &           readlist_nk, readlist_S, nread, horiz_interp_S, &
-                    &           meta2%n(3), vmin, vmax, pre_fold_opr_clbk)
+               istat = priv_fold(F_step, meta2, inname2_S, data2, icat, &
+                    &            readlist_nk, readlist_S, nread, horiz_interp_S, &
+                    &            vmin, vmax, pre_fold_opr_clbk)
             endif
 
 #ifndef __GFORTRAN__
@@ -297,7 +300,6 @@ contains
 
       if (RMN_IS_OK(F_istat) .and. nread > 0) then
          call msg(MSG_INFO,'(phy_input) All needed var were found')
-         F_istat = phyent2per(readlist_S, nread, F_step)
       endif
 
       phyinread_n = nread
@@ -635,14 +637,14 @@ contains
 
 
    !/@*
-   function priv_fold(my_step, my_varname_S, my_inname_S, my_bus_S, my_data, &
+   function priv_fold(my_step, my_meta, my_inname_S, my_data, &
         my_icat, my_readlist_nk, my_readlist_S, my_nread, my_horiz_interp_S, &
-        my_nk, my_vmin, my_vmax, pre_fold_opr_clbk) result(my_istat)
+        my_vmin, my_vmax, pre_fold_opr_clbk) result(my_istat)
       implicit none
-      character(len=*) :: my_varname_S, my_inname_S, my_bus_S, &
-           my_readlist_S(:), my_horiz_interp_S
+      type(phymeta) :: my_meta
+      character(len=*) :: my_inname_S, my_readlist_S(:), my_horiz_interp_S
       real, dimension(:,:,:), pointer :: my_data
-      integer :: my_step, my_icat, my_readlist_nk(:), my_nread, my_nk, my_istat
+      integer :: my_step, my_icat, my_readlist_nk(:), my_nread, my_istat
       real    :: my_vmin, my_vmax
       integer,external :: pre_fold_opr_clbk
       !*@/
@@ -655,16 +657,16 @@ contains
       ! ---------------------------------------------------------------------
       minxyz = lbound(my_data)
       maxxyz = ubound(my_data)
-      call physimple_transforms3d(my_varname_S, my_inname_S, my_data)
+      call physimple_transforms3d(my_meta%vname, my_inname_S, my_data)
       allocate(dataarr(minxyz(1):maxxyz(1),minxyz(2):maxxyz(2),minxyz(3):maxxyz(3)))
       dataarr(:,:,:) = my_data(:,:,:)
-      my_istat = pre_fold_opr_clbk(dataarr, my_varname_S, my_horiz_interp_S, &
+      my_istat = pre_fold_opr_clbk(dataarr, my_meta%vname, my_horiz_interp_S, &
            minxyz(1), maxxyz(1), minxyz(2), maxxyz(2), minxyz(3), maxxyz(3))
       
       dataarr(:,:,:) = min(max(my_vmin, dataarr(:,:,:)), my_vmax)
 
-      name_S = my_varname_S
-      if (my_icat > 1) write(name_S,'(a,a,i2.2,a)') trim(my_varname_S),'[',my_icat,']'
+      name_S = my_meta%vname
+      if (my_icat > 1) write(name_S,'(a,a,i2.2,a)') trim(my_meta%vname),'[',my_icat,']'
       IF_STATS: if (phystat_input_l) then
          stat_precision = 4
          if (phystat_dble_l) stat_precision = 8
@@ -680,12 +682,12 @@ contains
          endif
       endif IF_STATS
 
-      if (maxxyz(3) == minxyz(3) .and. my_nk > 1) then
+      if (maxxyz(3) == minxyz(3) .and. my_meta%nlcl(3) > 1) then
          !# Put read data into diag level
-         data2(1:,1:,my_nk:) => dataarr(:,:,minxyz(3):)
+         data2(1:,1:,my_meta%nlcl(3):) => dataarr(:,:,minxyz(3):)
          minxyz = lbound(data2)
          maxxyz = ubound(data2)
-         maxxyz(3) = my_nk
+         maxxyz(3) = my_meta%nlcl(3)
          minxyz(3) = maxxyz(3)
       else
          data2(1:,1:,1:) => dataarr(:,:,:)
@@ -694,9 +696,9 @@ contains
       endif
       !#TODO: re-use metadata from above, use phyfoldmeta
       if (my_icat == 1) then
-         istat = phyfold1(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz)
+         istat = phyfoldmeta1(data2, minxyz, maxxyz, my_meta)
       else
-         istat = phyfold1(data2, trim(my_varname_S), trim(my_bus_S), minxyz, maxxyz, my_icat)
+         istat = phyfoldmeta1(data2, minxyz, maxxyz, my_icat, my_meta)
       endif
       deallocate(dataarr)      
       !#TODO: WARNING: (phyfold) Horizontal sub domaine Not yet supported
@@ -732,26 +734,33 @@ contains
       logical, parameter :: NOSHORTMATCH_L = .false.
       integer, parameter :: MUST_INIT = 1
       integer :: nvars,nvars2,ivar,istat
-      type(phymetaplus), pointer :: metalist(:)
+!!$      type(phyvar) :: varlist(npvarlist)
       character(len=512) :: str512
+      character(len=32) :: vnamelist(512)
       ! ---------------------------------------------------------------------
       F_istat = RMN_OK
       if (F_step /= 0) return
       call msg(MSG_INFO,'(phy_input) Checking for mandatory variables.')
 
-      nullify(metalist)
-      nvars = phygetmetaplus(metalist, F_name=' ', F_npath='V', F_bpath='EPV', &
-           F_maxmeta=-1, F_quiet=.true., F_shortmatch=NOSHORTMATCH_L)
+!!$      nvars = phymem_find(varlist, F_name=' ', F_npath='V', F_bpath='EPV', &
+!!$           F_quiet=.true., F_shortmatch=NOSHORTMATCH_L)
       !#NOTE: For dynamic bus, the init bit has a different meaning and is checked in phyfillbus
 
       str512 = ''
       nvars2 = 0
-      do ivar = 1,nvars
-         if (metalist(ivar)%meta%init == MUST_INIT) then
+      do ivar = 1, npvarlist
+         if (pvarlist(ivar)%meta%ibus == PHY_DBUSIDX) cycle
+         !#NOTE: For dynamic bus, the init bit has a different meaning and is checked in phyfillbus
+
+         if (pvarlist(ivar)%meta%init == MUST_INIT) then
+            if (nvars2 >= size(vnamelist)) then
+               call msg(MSG_WARNING, '(phy_input) checklist overflow -- some missing vars may not be listed')
+               exit
+            endif
             nvars2 = nvars2 + 1
-            metalist(nvars2)%meta%vname = metalist(ivar)%meta%vname
-            istat = clib_tolower(metalist(nvars2)%meta%vname)
-            str512 = trim(str512)//', '//trim(metalist(nvars2)%meta%vname)
+            vnamelist(nvars2) = pvarlist(ivar)%meta%vname
+            istat = clib_tolower(vnamelist(nvars2))
+            str512 = trim(str512)//', '//trim(vnamelist(nvars2))
          end if
       end do
       call msg(MSG_INFO,'(phy_input) Required variables: '//str512(2:len_trim(str512)))
@@ -762,13 +771,11 @@ contains
 
       do ivar = 1,nvars2
          if (F_nread == 0 .or. &
-              .not.any(F_readlist_S(1:F_nread) == metalist(ivar)%meta%vname)) then
+              .not.any(F_readlist_S(1:F_nread) == vnamelist(ivar))) then
             F_istat = RMN_ERR
-            call msg(MSG_ERROR,'(phy_input) Missing mandatory var (physics_input_table missing entry?): '//trim(metalist(ivar)%meta%vname))
+            call msg(MSG_ERROR,'(phy_input) Missing mandatory var (physics_input_table missing entry?): '//trim(vnamelist(ivar)))
          endif
       end do
-
-      deallocate(metalist,stat=istat)
       ! ---------------------------------------------------------------------
       return
    end function priv_checklist

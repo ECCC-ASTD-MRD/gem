@@ -1,11 +1,14 @@
 module phy_typedef
    use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK
+   use phymem, only: phymeta, PHY_NAMELEN, PHY_MAXFLAGS, PHY_STAG_SFC, PHY_STAG_MOM, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
    implicit none
-   public
-   integer, parameter :: PHY_MAXNAMELENGTH=32
+   private
+   public :: PHY_MAXNAMELENGTH, PHY_MAXFLAGS, phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_ERROR, PHY_NONE, PHY_OK
 
-   character(len=*), parameter :: NPATH_DEFAULT='VOI'
-   character(len=*), parameter :: BPATH_DEFAULT='VPDE'
+   integer, parameter :: PHY_MAXNAMELENGTH = PHY_NAMELEN
+   
+   character(len=*), parameter :: NPATH_DEFAULT = PHY_NPATH_DEFAULT
+   character(len=*), parameter :: BPATH_DEFAULT = PHY_BPATH_DEFAULT
 
    ! iname : The input FST name of the field (referred to as 'I' throughout the API)
    ! oname : The output FST name of the field (referred to as 'O' throughout the API).
@@ -22,17 +25,7 @@ module phy_typedef
    ! monot : tracer attribute, a flag defining whether or not the use monoton interpolation in the advection
    ! massc : tracer attribute, a flag defining whether or not the use a mass conservation scheme in the advection
    ! n     : A length three vector that defines the extent of each dimension of the field (shape).
-   
-   type phymeta
-      sequence
-      character(len=PHY_MAXNAMELENGTH) :: iname,oname,vname
-      character(len=4) :: bus
-      integer :: init,stag,esp,fmul,nk,mosaic
-      logical :: wload,hzd
-      integer :: monot,massc
-      real    :: vmin,vmax
-      integer :: n(3)
-   end type phymeta
+   ! flags : list of keywords associated with the field
 
 contains
 

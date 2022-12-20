@@ -16,13 +16,13 @@ version=@PROJECT_VERSION@
 env=@EC_CI_ENV@
 arch=@EC_ARCH@
 
-has_rmn=@RMN_VERSION@@RMN_STATE@
+has_rmn=@rmn_VERSION@
 has_tdpack=@tdpack_VERSION@
-has_vgrid=@VGRID_VERSION@@VGRID_STATE@
-has_modelutils=@modelutils_VERSION@@modelutils_STATE@
-has_rpncomm=@rpncomm_VERSION@@rpncomm_STATE@
-has_rpnphy=@rpnphy_VERSION@@rpnphy_STATE@
-has_gemdyn=@gemdyn_VERSION@@gemdyn_STATE@
+has_vgrid=@vgrid_VERSION@
+has_modelutils=@modelutils_VERSION@
+has_rpncomm=@rpncomm_VERSION@
+has_rpnphy=@rpnphy_VERSION@
+has_gemdyn=@gemdyn_VERSION@
 
 usage()
 {
@@ -57,87 +57,87 @@ fi
 
 while test $# -gt 0; do
     case "$1" in
-    # this deals with options in the style
-    # --option=value and extracts the value part
-    # [not currently used]
-    -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
-    *) value= ;;
+        # this deals with options in the style
+        # --option=value and extracts the value part
+        # [not currently used]
+        -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+        *) value= ;;
     esac
 
     case "$1" in
 
-    --help)
-	usage 0
-	;;
+        --help)
+	    usage 0
+	    ;;
 
-    --cc)
-       	echo ${cc:-no}
-       	;;
-
-    --fc)
-       	echo ${fc:-no}
-       	;;
-
-    --cflags)
-       	echo ${cflags}
-       	;;
-           
-    --fflags)
-       	echo ${fflags}
-       	;;
-
-    --defs)
-       	echo ${defs}
-       	;;
-
-    --libs)
-       	echo ${libs}
-       	;;
-
-    --has-rmn)
-       	echo ${has_rmn:-no}
+        --cc)
+       	    echo ${cc:-no}
        	    ;;
-        
-    --has-tdpack)
-        echo ${has_tdpack:-no}
-          ;;
 
-    --has-vgrid)
-       	echo ${has_vgrid:-no}
-       	;;
+        --fc)
+       	    echo ${fc:-no}
+       	    ;;
 
-    --has-rpncomm)
-       	echo ${has_rpncomm:-no}
-       	;;
+        --cflags)
+       	    echo ${cflags}
+       	    ;;
 
-    --has-modelutils)
-       	echo ${has_modelutils:-no}
-       	;;
-    
-    --has-rpnphy)
-       	echo ${has_rpnphy:-no}
-       	;;
-    
-    --has-gemdyn)
-       	echo ${has_gemdyn:-no}
-       	;;
-    
-    --version)
-	echo ${version}
-	;;
-    
-    --env)
-        echo ${env}
-        ;;
-    
-    --arch)
-        echo ${arch}
-        ;;
-    
-    *)
-        echo "unknown option: $1"
-	usage 1
-	;;
+        --fflags)
+       	    echo ${fflags}
+       	    ;;
+
+        --defs)
+       	    echo ${defs}
+       	    ;;
+
+        --libs)
+       	    echo ${libs}
+       	    ;;
+
+        --has-rmn)
+       	    echo ${has_rmn:-no}
+       	    ;;
+
+        --has-tdpack)
+       	    echo ${has_tdpack:-no}
+       	    ;;
+
+        --has-vgrid)
+       	    echo ${has_vgrid:-no}
+       	    ;;
+
+        --has-rpncomm)
+       	    echo ${has_rpncomm:-no}
+       	    ;;
+
+        --has-modelutils)
+       	    echo ${has_modelutils:-no}
+       	    ;;
+
+        --has-rpnphy)
+       	    echo ${has_rpnphy:-no}
+       	    ;;
+
+        --has-gemdyn)
+       	    echo ${has_gemdyn:-no}
+       	    ;;
+
+        --version)
+	    echo ${version}
+	    ;;
+
+        --env)
+            echo ${env}
+            ;;
+
+        --arch)
+            echo ${arch}
+            ;;
+
+        *)
+            echo "unknown option: $1"
+	    usage 1
+	    ;;
     esac
     shift
 done

@@ -38,7 +38,7 @@ subroutine phybusinit(ni,nk)
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
    
-#include <msg.h>
+#include <rmn/msg.h>
    include "surface.cdk"
    include "mcica.cdk"
    include "clefcon.cdk"
@@ -108,7 +108,8 @@ subroutine phybusinit(ni,nk)
         'BOURGE ', &
         'NIL    ', &
         'SPS_W19', &
-        'SPS_FRC'  &
+        'SPS_FRC', &
+        'SPS_H13'  &
         /))
    lmoistke= (fluvert == 'MOISTKE')
    lccc2   = (radia == 'CCCMARAD2')

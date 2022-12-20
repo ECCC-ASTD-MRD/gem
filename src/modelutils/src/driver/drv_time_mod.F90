@@ -15,11 +15,11 @@ module drv_time_mod
    use config_mod
    use cmcdate_mod
    use sort_mod
+   use rmn_gmm
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <mu_gmm.hf>
-#include <msg.h>
+#include <rmn/msg.h>
    private
    !@objective Manage time steping
    !@author

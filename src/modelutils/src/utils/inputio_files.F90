@@ -39,7 +39,7 @@ module inputio_files_mod
    !@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    integer, parameter :: NMAX_NLIST = 16
    integer, parameter :: FILE_AVAIL = -1
@@ -161,7 +161,7 @@ contains
       endif
 
       F_inputobj%nfiles = max(F_inputobj%nfiles, ifile)
-      write(msg_S, *) ifile, F_inputobj%nfiles
+      write(msg_S, '(i0,1x,i0)') ifile, F_inputobj%nfiles
       call msg(MSG_DEBUG, '(inputio_files) set_name [END] '//trim(F_key_S)//':'//trim(msg_S))
       !----------------------------------------------------------------------
       return
@@ -298,7 +298,7 @@ contains
          F_inputobj%files(fileidx)%unit = fstmpio_open(trim(filename_S), &
               FST_READONLY, F_inputobj%files(fileidx)%isdir_L)
          if (F_inputobj%files(fileidx)%unit > 1) then
-            write(unit_S, *) F_inputobj%files(fileidx)%unit
+            write(unit_S, '(i0)') F_inputobj%files(fileidx)%unit
             call msg(MSG_INFOPLUS, '(inputio_files) opened file '//trim(unit_S)//': ' &
                  //trim(F_inputobj%basedir_S)//'/'//F_inputobj%files(fileidx)%name_S)
          endif
@@ -310,7 +310,7 @@ contains
       else
          F_funit = F_inputobj%files(fileidx)%unit
       endif
-      write(unit_S, *) F_funit
+      write(unit_S, '(i0)') F_funit
       call msg(MSG_DEBUG, '(inputio_files) open [END]'//trim(unit_S))
       !------------------------------------------------------------------
       return
@@ -334,7 +334,7 @@ contains
       F_istat = RMN_OK
       do ii = 1, F_inputobj%nfiles
          if (F_inputobj%files(ii)%unit > 0) then
-            write(unit_S, *) F_inputobj%files(ii)%unit
+            write(unit_S, '(i0)') F_inputobj%files(ii)%unit
             call msg(MSG_INFOPLUS, '(inputio_files) closing file '//trim(unit_S)//': ' &
                  //trim(F_inputobj%basedir_S)//'/'//F_inputobj%files(ii)%name_S)
             istat = fstmpio_close(F_inputobj%files(ii)%unit)

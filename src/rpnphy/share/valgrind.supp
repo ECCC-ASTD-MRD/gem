@@ -1,0 +1,28 @@
+{
+   ptr-2003_syntax
+   Memcheck:Addr1
+   fun:*
+   ...
+}
+
+{
+   undef-wkoffit
+   Memcheck:Cond
+   ...
+   fun:*wkoffit*
+   ...
+}
+
+{
+   undef-difdatr
+   Memcheck:Cond
+   fun:difdatr*
+   ...
+}
+
+{
+   undef-incdatr
+   Memcheck:Cond
+   fun:incdatr*
+   ...
+}

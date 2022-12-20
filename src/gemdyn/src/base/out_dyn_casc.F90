@@ -21,7 +21,7 @@
       use glb_ld
       use HORgrid_options
       use gmm_geof
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_pw
       use gmm_vt1
       use grdc_options

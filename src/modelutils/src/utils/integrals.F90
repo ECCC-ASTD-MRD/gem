@@ -21,7 +21,7 @@ module integrals
    implicit none
    private
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    ! Generic functions
    interface int_profile
@@ -630,7 +630,7 @@ contains
                      dz = -dz
                   endif
                   if (a(i) < 0.) floc = -floc
-                  write(fd_unittest,*) zloc+dz, floc
+                  write(fd_unittest, '(2f0.3)') zloc+dz, floc
                enddo
             endif
 #endif

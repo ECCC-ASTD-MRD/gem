@@ -16,14 +16,13 @@
 
 module phy_get_mod
   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-  use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT
-  use phygetmetaplus_mod, only: PATHLENGTH, phymetaplus, phygetmetaplus
   use phyunfold, only: phyunfoldmeta1
+  use phymem, only: phymeta, phyvar, phymem_find, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
   private
   public :: phy_get
 
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
   interface phy_get
      module procedure phy_get_2d
@@ -31,6 +30,7 @@ module phy_get_mod
      module procedure phy_get_4d
   end interface phy_get
 
+  integer, parameter :: PATHLENGTH = 8
 
 contains
 
@@ -59,7 +59,7 @@ contains
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
       type(phymeta) :: meta
-      type(phymetaplus) :: metaplus
+      type(phyvar) :: myphyvar(1)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -69,27 +69,27 @@ contains
       endif
 
       ! Set default values
-      npath = NPATH_DEFAULT
+      npath = PHY_NPATH_DEFAULT
       if (present(F_npath)) npath = F_npath
-      if (len_trim(npath) == 0) npath = NPATH_DEFAULT
+      if (len_trim(npath) == 0) npath = PHY_NPATH_DEFAULT
 
-      bpath = BPATH_DEFAULT
+      bpath = PHY_BPATH_DEFAULT
       if (present(F_bpath)) bpath = F_bpath
-      if (len_trim(bpath) == 0) bpath = BPATH_DEFAULT
+      if (len_trim(bpath) == 0) bpath = PHY_BPATH_DEFAULT
 
       allow_realloc = .false. ; quiet_L = .false.
       if (present(F_realloc)) allow_realloc = F_realloc
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phygetmetaplus(metaplus, F_name, npath, bpath, &
+      istat = phymem_find(myphyvar, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(istat) .or. istat == 0) then
+      if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = metaplus%meta
+      meta = myphyvar(1)%meta
       if (present(F_meta)) F_meta = meta
 
       ! Set automatic grid dimensions
@@ -99,7 +99,7 @@ contains
             istart = F_start
          end where
       endif
-      iend = (/meta%n(1:2),1/)
+      iend = (/meta%nlcl(1:2),1/)
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -120,7 +120,7 @@ contains
                call msg(MSG_INFOPLUS,'(phy_get) reallocating output array')
                deallocate(F_fld)
             else
-               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%n
+               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
                call msg(MSG_WARNING,'(phy_get) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
                return
             endif
@@ -132,7 +132,7 @@ contains
 
       ! Unfold physics field and copy into output array
       !#TODO: check 2d to 3d through the phyunfoldmeta itf
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif
@@ -166,7 +166,7 @@ contains
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
       type(phymeta) :: meta
-      type(phymetaplus) :: metaplus
+      type(phyvar) :: myphyvar(1)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -176,27 +176,27 @@ contains
       endif
 
       ! Set default values
-      npath = NPATH_DEFAULT
+      npath = PHY_NPATH_DEFAULT
       if (present(F_npath)) npath = F_npath
-      if (len_trim(npath) == 0) npath = NPATH_DEFAULT
+      if (len_trim(npath) == 0) npath = PHY_NPATH_DEFAULT
 
-      bpath = BPATH_DEFAULT
+      bpath = PHY_BPATH_DEFAULT
       if (present(F_bpath)) bpath = F_bpath
-      if (len_trim(bpath) == 0) bpath = BPATH_DEFAULT
+      if (len_trim(bpath) == 0) bpath = PHY_BPATH_DEFAULT
 
       allow_realloc = .false. ; quiet_L = .false.
       if (present(F_realloc)) allow_realloc = F_realloc
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phygetmetaplus(metaplus, F_name, npath, bpath, &
+      istat = phymem_find(myphyvar, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(istat) .or. istat == 0) then
+      if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = metaplus%meta
+      meta = myphyvar(1)%meta
       if (present(F_meta)) F_meta = meta
 
       ! Set automatic grid dimensions
@@ -206,7 +206,7 @@ contains
             istart = F_start
          end where
       endif
-      iend = meta%n
+      iend = meta%nlcl
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -223,7 +223,7 @@ contains
                call msg(MSG_INFOPLUS,'(phy_get) reallocating output array')
                deallocate(F_fld)
             else
-               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%n
+               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
                call msg(MSG_WARNING,'(phy_get) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
                return
             endif
@@ -234,7 +234,7 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif
@@ -268,7 +268,7 @@ contains
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
       type(phymeta) :: meta
-      type(phymetaplus) :: metaplus
+      type(phyvar) :: myphyvar(1)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -278,27 +278,27 @@ contains
       endif
 
       ! Set default values
-      npath = NPATH_DEFAULT
+      npath = PHY_NPATH_DEFAULT
       if (present(F_npath)) npath = F_npath
-      if (len_trim(npath) == 0) npath = NPATH_DEFAULT
+      if (len_trim(npath) == 0) npath = PHY_NPATH_DEFAULT
 
-      bpath = BPATH_DEFAULT
+      bpath = PHY_BPATH_DEFAULT
       if (present(F_bpath)) bpath = F_bpath
-      if (len_trim(bpath) == 0) bpath = BPATH_DEFAULT
+      if (len_trim(bpath) == 0) bpath = PHY_BPATH_DEFAULT
 
       allow_realloc = .false. ; quiet_L = .false.
       if (present(F_realloc)) allow_realloc = F_realloc
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phygetmetaplus(metaplus, F_name, npath, bpath, &
+      istat = phymem_find(myphyvar, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
-      if (.not.RMN_IS_OK(istat) .or. istat == 0) then
+      if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = metaplus%meta
+      meta = myphyvar(1)%meta
       if (present(F_meta)) F_meta = meta
 
       ! Set automatic grid dimensions
@@ -308,7 +308,7 @@ contains
             istart = F_start
          end where
       endif
-      iend0(1:2) = meta%n(1:2)
+      iend0(1:2) = meta%nlcl(1:2)
       iend0(3)   = meta%nk
       iend0(4)   = meta%fmul * (meta%mosaic + 1)
       iend(1:4)  = iend0(1:4)
@@ -340,7 +340,7 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3),istart(4):iend(4)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, metaplus)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
       endif

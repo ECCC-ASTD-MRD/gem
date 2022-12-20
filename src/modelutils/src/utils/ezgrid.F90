@@ -36,7 +36,7 @@ module ezgrid_mod
    integer,parameter,public :: EZGRID_0_360 = 2
    !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
 !!$   integer,external :: gdll,ezget_nsubgrids,ezget_subgridids,ezgdef_supergrid,msg_getUnit

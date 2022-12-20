@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include <msg.h>
+#include <rmn/msg.h>
 !NOTE: testutils crash on AIX-powerpc7 with MAXLEN >= 1024
 #define DEF_MSG_MAXLEN 512
 #define DEF_MSG_OK 'OK   '
@@ -310,7 +310,7 @@ contains
 !!$      if (F_userval > infinity_4 .or. F_userval < -infinity_4) then
       if (.not.ieee_is_finite(F_userval)) then
          ok_L = .false.
-         write(msg_S,*) trim(F_msg_S)//' - Value is Inf'
+         write(msg_S, '(a)') trim(F_msg_S)//' - Value is Inf'
       else
          ok_L = .true.
          msg_S = F_msg_S
@@ -319,10 +319,10 @@ contains
 !!$         if (F_userval /= F_userval) then
       if (ieee_is_nan(F_userval)) then
             ok_L = .false.
-            write(msg_S,*) trim(F_msg_S)//' - Value is NaN'
+            write(msg_S, '(a)') trim(F_msg_S)//' - Value is NaN'
          else
             ok_L = .true.
-            write(msg_S,*) trim(F_msg_S)//' - Value is a valid number'
+            write(msg_S, '(a)') trim(F_msg_S)//' - Value is a valid number'
          endif
       endif
       call testutils_assert_ok0(ok_L,m_name_S,msg_S)
@@ -346,11 +346,11 @@ contains
       do i = lbound(F_userval,1), ubound(F_userval,1)
          if (.not.ieee_is_finite(F_userval(i))) then
             ok_L = .false.
-            write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i
+            write(msg_S, '(a,1x,i0)') trim(F_msg_S)//' - Inf value found at: ',i
          endif
          if (ieee_is_nan(F_userval(i))) then
             ok_L = .false.
-            write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i
+            write(msg_S, '(a,1x,i0)') trim(F_msg_S)//' - NaN value found at: ',i
          endif
          if (.not.ok_L) exit
       enddo
@@ -376,11 +376,11 @@ contains
          do i = lbound(F_userval,1), ubound(F_userval,1)
             if (.not.ieee_is_finite(F_userval(i,j))) then
                ok_L = .false.
-               write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i,j
+               write(msg_S, '(a,1x,i0,1x,i0)') trim(F_msg_S)//' - Inf value found at: ',i,j
             endif
             if (ieee_is_nan(F_userval(i,j))) then
                ok_L = .false.
-               write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i,j
+               write(msg_S, '(a,1x,i0,1x,i0)') trim(F_msg_S)//' - NaN value found at: ',i,j
             endif
             if (.not.ok_L) exit
          enddo
@@ -409,11 +409,11 @@ contains
             do i = lbound(F_userval,1), ubound(F_userval,1)
                if (.not.ieee_is_finite(F_userval(i,j,k))) then
                   ok_L = .false.
-                  write(msg_S,*) trim(F_msg_S)//' - Inf value found at: ',i,j,k
+                  write(msg_S, '(a,1x,i0,1x,i0,1x,i0)') trim(F_msg_S)//' - Inf value found at: ',i,j,k
                endif
                if (ieee_is_nan(F_userval(i,j,k))) then
                   ok_L = .false.
-                  write(msg_S,*) trim(F_msg_S)//' - NaN value found at: ',i,j,k
+                  write(msg_S, '(a,1x,i0,1x,i0,1x,i0)') trim(F_msg_S)//' - NaN value found at: ',i,j,k
                endif
                if (.not.ok_L) exit
             enddo
@@ -446,7 +446,7 @@ contains
          mymaxlen = len(msg_S)/2 - len_trim(v0) - len_trim(vsep)
          vu = F_userval(1:min(len_trim(F_userval),mymaxlen))
          v1 = F_expected(1:min(len_trim(F_expected),mymaxlen))
-         write(msg_S,*) trim(v0),trim(vu),trim(vsep),trim(v1)
+         write(msg_S, '(4a)') trim(v0),trim(vu),trim(vsep),trim(v1)
       endif
       call testutils_assert_ok0(ok_L,m_name_S,msg_S)
       ! ---------------------------------------------------------------------
@@ -471,13 +471,13 @@ contains
          ok_L = .false.
          n = size(F_userval)
          if (n /= size(F_expected)) then
-            write(msg_S,*) trim(F_msg_S)//' - nb values differ, got,exp:',size(F_userval),' != ',size(F_expected)
+            write(msg_S, '(a,1x,i0,1x,a,1x,i0)') trim(F_msg_S)//' - nb values differ, got,exp:',size(F_userval),' != ',size(F_expected)
          else
             v0 = trim(F_msg_S)//' - got,exp:'
             vsep = ' != '
             !TODO-later: make sure what is written in msg_S is not too long
             if (n == 1) then
-               write(msg_S,*) trim(v0),trim(F_userval(1)),trim(vsep),trim(F_expected(1))
+               write(msg_S, '(4a)') trim(v0),trim(F_userval(1)),trim(vsep),trim(F_expected(1))
 
             else if (n == 1) then
                write(msg_S,*) trim(v0),trim(F_userval(1)),', ', &

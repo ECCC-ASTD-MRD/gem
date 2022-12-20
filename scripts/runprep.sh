@@ -18,7 +18,7 @@ eval `cclargs_lite -D " " $0 \
   -_status       "ABORT"      "ABORT"       "[Return status             ]"\
   ++ $arguments`
 
-export AFSISIO=${AFSISIO:-${ATM_MODEL_DFILES}}
+export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
 
 DOMAIN_start=$(echo ${cfg} | cut -d":" -f1)
 DOMAIN_end=$(  echo ${cfg} | cut -d":" -f2)

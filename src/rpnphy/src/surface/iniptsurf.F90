@@ -37,9 +37,10 @@ function iniptsurf5() result(F_istat)
    ! 007      M. Desgagne (Apr 2009) - Add coupling values (TMICECPL, MCCPL)
    ! 008      V.Lee (Mar 2011)       - mosaik=real number of mosaic tiles + 1
    !                                   to calculate pointer position
+   ! 009      M. Mackay (Sep 2022)   - CSLM added
    !*@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: nb_agrege = 48
@@ -47,10 +48,12 @@ function iniptsurf5() result(F_istat)
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
    integer, parameter :: nb_urb = 95
+   integer, parameter :: nb_lake = 26
+   integer, parameter :: nb_river = 4
 
    character(len=16) :: agrege_out(nb_agrege), &
         glaciers_out(nb_glaciers), water_out(nb_water), ice_out(nb_ice), &
-        urb_out(nb_urb), tmp_S
+        urb_out(nb_urb), lake_out(nb_lake), river_out(nb_river), tmp_S
    integer :: j, l, m, ier
  
    ! les variables de sortie du module "soils" ont preseance
@@ -120,6 +123,18 @@ function iniptsurf5() result(F_istat)
         'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13'         &
         /
 
+   ! liste des variables de sortie du modules "lake"
+   data lake_out    / &
+        'TLAK', 'LST', 'TKE',  'HDPTH', 'LKICEH', 'SNICEH', 'EXPW',  &
+        'DTEMP', 'DELU', 'GRED', 'RHOMIX', 'TSED', 'ROFICEH',           &
+        'SNOL', 'RHOSNOL', 'TSNOWL', 'ALBSNOL', 'WSNOWL', 'HLAKSIL',    &
+        'ROFINLAK', 'FICL', 'LFXI', 'LFXO', 'LSTD', 'LSTF', 'EVLAK'  &
+        /
+  ! liste des variables de sortie du modules "river"
+   data river_out    / &
+        'LST', 'DSST', 'SKIN_DEPTH', 'SKIN_INC' &
+        /
+
    F_istat = RMN_ERR
 
    ier = sfcbus_init()
@@ -162,6 +177,8 @@ function iniptsurf5() result(F_istat)
       !         = 4 --> bus de "ice"       "    "      "      "     "
       !         = 5 --> moyenne des 5      "    "      "      "     "
       !         = 6 --> bus de "urb"       "    "      "      "     "
+      !         = 7 --> bus de "lakes"     "    "      "      "     "
+      !         = 8 --> bus de "river"     "    "      "      "     "
       !  voir comdeck "indx_sfc.cdk"
 
       !  variables agregees
@@ -187,6 +204,13 @@ function iniptsurf5() result(F_istat)
                statut(j,indx_ice    ) = indx_ice
                if (schmurb /= 'NIL') then
                   statut(j, indx_urb) = indx_urb
+               endif
+               if (schmlake /= 'NIL') then
+                  statut(j, indx_lake) = indx_lake
+               endif
+
+               if (schmriver /= 'NIL') then
+                  statut(j, indx_river) = indx_river
                endif
 
             else if (vl(j)%mul > 1 .and. vl(j)%mul /= nsurf+1) then
@@ -230,6 +254,24 @@ function iniptsurf5() result(F_istat)
          end do
       endif
 
+      if (schmlake /= 'NIL') then
+         ! variables de sortie du module "lake"
+         ! Tous les "niveaux" de la variable sont assignes au module lake
+         do l = 1, nb_lake
+            if (lake_out(l) == vl(j)%n) &
+               statut(j, 1:vl(j)%mul) = indx_lake
+         end do
+      endif
+
+      if (schmriver /= 'NIL') then
+         ! variables de sortie du module "river"
+         ! Tous les "niveaux" de la variable sont assignes au module river
+         do l = 1, nb_river
+            if (river_out(l) == vl(j)%n) &
+               statut(j, 1:vl(j)%mul) = indx_river
+         end do
+      endif
+
       ! les autres variables seront transferees du module "soils"
       do m=1,vl(j)%mul
          if (statut(j,m) == 0) statut(j,m) = indx_soil
@@ -238,19 +280,27 @@ function iniptsurf5() result(F_istat)
    end do DO_JVAR2
 
    call msg(MSG_INFO,'(iniptsurf) TYPES OF SURFACE :')
-   write(tmp_S,*) indx_soil
+   write(tmp_S, '(i0)') indx_soil
    call msg(MSG_INFO,'(iniptsurf) SOIL             '//trim(tmp_S))
-   write(tmp_S,*) indx_glacier
+   write(tmp_S, '(i0)') indx_glacier
    call msg(MSG_INFO,'(iniptsurf) GLACIERS         '//trim(tmp_S))
-   write(tmp_S,*) indx_water
+   write(tmp_S, '(i0)') indx_water
    call msg(MSG_INFO,'(iniptsurf) WATER            '//trim(tmp_S))
-   write(tmp_S,*) indx_ice
+   write(tmp_S, '(i0)') indx_ice
    call msg(MSG_INFO,'(iniptsurf) MARINE ICE       '//trim(tmp_S))
    if (schmurb /= 'NIL') then
-      write(tmp_S,*) indx_urb
+      write(tmp_S, '(i0)') indx_urb
       call msg(MSG_INFO,'(iniptsurf) URBAN AREAS      '//trim(tmp_S))
    endif
-   write(tmp_S,*) indx_agrege
+   if (schmlake /= 'NIL') then
+      write(tmp_S, '(i0)') indx_lake
+      call msg(MSG_INFO,'(iniptsurf) LAKES            '//trim(tmp_S))
+   endif
+   if (schmriver /= 'NIL') then
+      write(tmp_S, '(i0)') indx_river
+      call msg(MSG_INFO,'(iniptsurf) RIVERS           '//trim(tmp_S))
+   endif
+   write(tmp_S, '(i0)') indx_agrege
    call msg(MSG_INFO,'(iniptsurf) AGGREGATED VALUE '//trim(tmp_S))
 
    F_istat = RMN_OK

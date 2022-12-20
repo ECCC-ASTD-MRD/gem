@@ -16,7 +16,7 @@
 module series_geop_mod
    use tdpack_const, only: PI
    use phygridmap, only: phydim_ni, phydim_nj
-   use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
+   use phymem, only: phyvar, phymem_find
    use series_options
    use series_xst_mod, only: series_xst_geo
    implicit none
@@ -24,7 +24,7 @@ module series_geop_mod
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    public :: series_geop
 
@@ -49,11 +49,11 @@ contains
       !      fields to be used by the unwrapper.
       integer :: j, istat
       real :: prcon, w1(phydim_ni)
-      type(phymetaplus) :: metaplus
+      type(phyvar) :: myvar(1)
       !---------------------------------------------------------------
 
-#define BUSSLICE(META,JJ) META%vptr(1:phydim_ni,JJ)
-
+#define BUSSLICE(VAR,JJ) VAR(1)%meta%bptr(VAR(1)%meta%i0:VAR(1)%meta%i0+phydim_ni-1,JJ)
+      
       call msg(MSG_INFO, PKGNAME_S//'Extracting Geop fields')
 
       prcon = 180./pi
@@ -63,84 +63,106 @@ contains
          call series_xst_geo(w1, 'MA', j)
       end do
 
-      istat = phygetmetaplus(metaplus, 'DLAT', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'DLAT', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j) * prcon
-         call series_xst_geo(w1, 'LA', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j) * prcon
+            call series_xst_geo(w1, 'LA', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'DLON', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'DLON', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j) * prcon
-         where(w1 < 0.) w1 = w1 + 360.
-         call series_xst_geo(w1, 'LO', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j) * prcon
+            where(w1 < 0.) w1 = w1 + 360.
+            call series_xst_geo(w1, 'LO', j)
+         end do
+      endif
 
       !#TODO: loop over var
-      istat = phygetmetaplus(metaplus, 'Z0', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'Z0', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'ZP', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'ZP', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'MG', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'MG', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'MG', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'MG', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'LHTG', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'LHTG', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'LH', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'LH', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'ALVIS', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'ALVIS', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'AL', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'AL', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'SNODP', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'SNODP', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'SD', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'SD', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'TWATER', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'TWATER', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'TM', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'TM', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'TSOIL', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'TSOIL', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'TP', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'TP', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'GLSEA', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'GLSEA', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'GL', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'GL', j)
+         end do
+      endif
 
-      istat = phygetmetaplus(metaplus, 'WSOIL', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(myvar, 'WSOIL', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
-      do j= 1, phydim_nj
-         w1(1:phydim_ni) = BUSSLICE(metaplus,j)
-         call series_xst_geo(w1, 'HS', j)
-      end do
+      if (istat > 0) then
+         do j= 1, phydim_nj
+            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            call series_xst_geo(w1, 'HS', j)
+         end do
+      endif
       !---------------------------------------------------------------
       return
    end subroutine series_geop

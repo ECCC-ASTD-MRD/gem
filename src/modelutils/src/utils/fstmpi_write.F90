@@ -32,7 +32,7 @@ module fstmpi_write_mod
    public :: FST_NPAK_DEFAULT,FST_NPAK_FULL32
 !@/
 
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 !!!#include <arch_specific.hf>
 

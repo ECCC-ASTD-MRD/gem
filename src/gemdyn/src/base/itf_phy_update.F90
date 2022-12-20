@@ -30,7 +30,7 @@
       use tdpack, only : rgasd_8, grav_8
       use tr3d
       use mem_tracers
-      use gmm_itf_mod
+      use rmn_gmm
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>

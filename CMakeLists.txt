@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn)
+#----- Append EC specific module path
+list(APPEND CMAKE_MODULE_PATH $ENV{EC_CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake_rpn/modules)
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
@@ -17,25 +18,9 @@ enable_language(C)
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
 
-# CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "(EC) CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  set(CMAKE_BUILD_TYPE "Release")
-  message(STATUS "(EC) No build type selected, default to ${CMAKE_BUILD_TYPE}")
-endif()
-message(STATUS "(EC) Configuring for ${CMAKE_BUILD_TYPE} build type")
-
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
-# necessary for rmn 19.7.0
-if (OPENMP_FOUND)
-  add_compile_definitions(WITH_OpenMP)
-  message(STATUS "(EC) Adding extra -DWITH_OpenMP")
-else()
-  add_compile_definitions(WITHOUT_OpenMP)
-  message(STATUS "(EC) Adding extra -DWITHOUT_OpenMP")
-endif()
 
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)
@@ -70,13 +55,15 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_N
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
-  set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -ftree-vectorize")
-  find_package(LAPACK)
-  find_package(BLAS)
   if (EXTRA_CHECKS)
     # in addition to extra checks defined in cmake_rpn compiler presets
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow -fimplicit-none")
   endif()
+endif()
+
+if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
+  find_package(LAPACK)
+  find_package(BLAS)
 endif()
 
 # Printing flags
@@ -142,27 +129,17 @@ else()
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
-# Include an architecture dependent file that contains include files for a
-# particular architecture and compiler, using the default value of the
-# compiler or the argument given to cmake command.
-message(STATUS "(EC) arch-dependent include directory: ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}")
-
-include_directories(
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/archdep/include/${BUILD_ARCH}-${COMPILER_SUITE}
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/mpi-extras
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/rpncomm
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/rmn/PUBLIC_INCLUDES
-   ${CMAKE_SOURCE_DIR}/src/rpn-si/RPN/compiler_includes
-)
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
-list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
+# list of binaries depends on built sources
+list(APPEND BINARIES maingemdm cclargs_lite fstinfo r.filetype)
 if (NOT DEFINED ENV{EC_ARCH})
   list(APPEND BINARIES editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
-list(APPEND BINARIES feseri prphynml )
+if ("${phy_SRC}" STREQUAL "rpnphy" )
+  list(APPEND BINARIES feseri prphynml )
+endif()
 list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
 
 install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
@@ -171,8 +148,11 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
+    COMMAND /bin/ln -sf ${WORK_PREFIX}/bin/fstinfo ${WORK_PREFIX}/bin/r.fstinfo
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
-)
+  )
+
+ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
@@ -180,10 +160,9 @@ set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_VENDOR "ECCC")
 set(CPACK_PACKAGE_CONTACT "${MAINTAINER}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README-EC")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_PREFIX}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${PROJECT_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${GEM_VERSION}")
 include(CPack)

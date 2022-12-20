@@ -23,7 +23,7 @@
       use dcst
       use gem_options
       use geomh
-      use gmm_itf_mod
+      use rmn_gmm
       use gmm_smag
       use gmm_pw
       use glb_ld

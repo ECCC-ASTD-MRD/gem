@@ -87,7 +87,7 @@ contains
     !        calculate vertical integrals of liquid/ice hydrometeors
     !        output merged fields of liquid water content,  ice water content and cloud fraction
     !*@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include "phymkptr.hf"
 
     include "cldop.cdk"
@@ -176,7 +176,6 @@ contains
 
     call init2nan(aird, rew, rei, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
-    call init2nan(iwcinmp, iwpinmp, effradi)
 
     ! Allocate cateory-dependent space
     if (stcond(1:5)=='MP_P3')  mpcat = p3_ncat
@@ -190,7 +189,10 @@ contains
             'Cannot allocate category-dependent tables')
        return
     endif
-    
+
+    call init2nan(iwcinmp, iwpinmp, effradi)    
+    call init2nan(tausimp, omsimp, gsimp, taulimp, omlimp, glimp)    
+
     rec_grav = 1./GRAV
     nostrlwc = (climat.or.stratos)
     ztlwp    = 0.0
@@ -377,7 +379,8 @@ contains
        do i=1,ni
 
           ! Normalize water contents to get in-cloud values
-          if (cldfmp(i,k) < cldfth) then
+!          if (cldfmp(i,k) < cldfth) then ! must revert to a18 value until agregation of implicit amd explicit op properties problem is fixed
+          if (cldfmp(i,k) < .01) then
              liqwcin(i,k) = 0.
              icewcin(i,k) = 0.
              cldfmp(i,k) = 0.
@@ -394,7 +397,8 @@ contains
              endif
           enddo
 
-          if (cldfxp(i,k) < cldfth) then
+!          if (cldfxp(i,k) < cldfth) then ! must revert to a18 value until agregation of implicit amd explicit op properties problem is fixed
+          if (cldfxp(i,k) < .01) then
              lwcinmp(i,k) = 0.
              do l=1,mpcat
                 iwcinmp(i,k,l) = 0.0
@@ -681,7 +685,7 @@ contains
                 rew2 = rew(i,k) * rew(i,k)
                 rew3 = rew2 * rew(i,k)
 
-                if (liqwpin(i,k) > wpth) then
+                if (liqwpin(i,k) > wpth) then    !implicit
                    taulw = liqwpin(i,k) * (awl(1,j) + awl(2,j) * rew(i,k)+ &
                         awl(3,j) / rew(i,k) + awl(4,j) / rew2 + &
                         awl(5,j) / rew3)
@@ -700,7 +704,7 @@ contains
                 !     icewpin(i,k) / tauli for single scattering albedo
                 !----------------------------------------------------------------------
 
-                if (icewpin(i,k) > wpth) then
+                if (icewpin(i,k) > wpth) then    !implicit
                    dg    = 1.5396 * rei(i,k)
                    dg2   = dg  * dg
                    dg3   = dg2 * dg
@@ -717,7 +721,7 @@ contains
                    gli   = 0.
                 endif
 
-                if (lwpinmp(i,k) > wpth) then
+                if (lwpinmp(i,k) > wpth) then    !explicit
                    rew1 = zeffradc(i,k) * 1.e6
                    rew1 = min(max(4., rew1), 40.0)  !TEST, JM
                    if (kount == 0) rew1 = 10.    !assign value at step zero (in case QC is non-zero at initial conditions)
@@ -743,7 +747,7 @@ contains
                 endif
 
                 do l=1,mpcat
-                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then
+                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then    !explicit
                       dg = 1.5396 * effradi(i,k,l)*1.e6
                       if (kount == 0) dg = 1.5396*50.     !assign value at step zero (in case "QI" is non-zero at initial conditions)
                       dg  = min(max(dg, 15.), 110.)  ! max value is lower to avoid model crashing!

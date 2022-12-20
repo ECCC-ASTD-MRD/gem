@@ -34,7 +34,7 @@ module hinterp4yy_mod
    !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
    interface hinterp4yy2d
       module procedure hinterp4yy2d_scalar

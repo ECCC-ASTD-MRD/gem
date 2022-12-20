@@ -22,7 +22,7 @@ subroutine test_tr_attr()
    !@objective 
    !@author Stephane Chamberland, 2011-04, 2017-09
 !@/
-#include <msg.h>
+#include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
    integer, parameter :: default_wload= 0

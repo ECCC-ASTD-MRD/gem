@@ -4,7 +4,7 @@ module rootfind
    implicit none
    private
 #include <rmnlib_basics.hf>
-#include <msg.h>
+#include <rmn/msg.h>
 
 
    ! Internal parameters
@@ -76,9 +76,7 @@ contains
           xhigh = xhigh + xfuzz*dx
           if (F_fx(xlow)*F_fx(xhigh) > 0.) then
 
-             write(0,*) 'bracketing interval has no root'
-
-             call msg(MSG_ERROR,'(rf_nrbnd) Bracketing interval (F_xlow,F_xhigh) has no root')
+             call msg_toall(MSG_ERROR,'(rf_nrbnd) Bracketing interval (F_xlow,F_xhigh) has no root')
              return
           endif
        endif
@@ -124,9 +122,7 @@ contains
        ! Check for algorithm failure
        if (iter >= maxit) then
 
-          write(0,*) 'failed to find root'
-
-          call msg(MSG_ERROR,'(rf_nrbnd) Failed to find a root')
+          call msg_toall(MSG_ERROR,'(rf_nrbnd) Failed to find a root')
           return
        endif
 
