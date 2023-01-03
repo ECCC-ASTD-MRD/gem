@@ -43,14 +43,14 @@
 !Author:  Claude Girard and Syed Husain
 !
       integer :: i, j, k, istat, i0, in, j0, jn
-      real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, ks
+      real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, ks, tension2, shear2_z
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v, smagcoef_ut, smagcoef_vt
-      real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension_u, shear_u, tension_v, shear_v
+      real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension2_u, shear2_u, tension2_v, shear2_v
       real, dimension(lminx:lmaxx,lminy:lmaxy,G_nk) :: th
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: F_du, F_dv, F_dzd, F_dw, hutmp, pres_t, thtmp
       real, pointer, dimension (:,:,:) :: hu
       real, dimension(nk) :: base_coefM, base_coefT, base_coefTH
-      real :: cdelta2, tension_z, shear
+      real :: cdelta2, tension2_z, shear2
       real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
       real :: crit_coef, imult
       logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
@@ -81,7 +81,7 @@
          call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
                          pw_pm_plus_8,pw_p0_plus_8, &
                          l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
-
+         
          call rpn_comm_xch_halo( F_t, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk, &
                            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call rpn_comm_xch_halo( pw_pt_plus, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, G_nk+1, &
@@ -133,6 +133,9 @@
                shear_z(i,j) = ((F_v(i+1,j,k) - F_v(i,j,k)) * geomh_invDXv_8(j)) &
                             + ((F_u(i,j+1,k) * geomh_invcy_8(j+1) - F_u(i,j,k) * geomh_invcy_8(j)) &
                                  * geomh_invDY_8 * geomh_cyv_8(j))
+
+               tension2(i,j)=tension(i,j)**2
+               shear2_z(i,j)=shear_z(i,j)**2
             end do
          end do
 
@@ -154,19 +157,19 @@
             do j=j0-1, jn+1
                do i=i0-1, in+1
 
-                  tension_z = 0.25d0 * (tension(i,j) + tension(i+1,j) + tension(i,j+1) + tension(i+1,j+1))
-                  shear     = 0.25d0 * (shear_z(i,j) + shear_z(i-1,j) + shear_z(i,j-1) + shear_z(i-1,j-1))
-                  tension_u(i,j) = 0.5d0 * (tension(i,j) + tension(i+1,j))
-                  shear_u(i,j)   = 0.5d0 * (shear_z(i,j) + shear_z(i,j-1))
-                  tension_v(i,j) = 0.5d0 * (tension(i,j+1) + tension(i,j))
-                  shear_v(i,j)   = 0.5d0 * (shear_z(i,j) + shear_z(i-1,j))
+                  tension2_z = 0.25d0 * (tension2(i,j) + tension2(i+1,j) + tension2(i,j+1) + tension2(i+1,j+1))
+                  shear2     = 0.25d0 * (shear2_z(i,j) + shear2_z(i-1,j) + shear2_z(i,j-1) + shear2_z(i-1,j-1))
+                  tension2_u(i,j) = 0.5d0 * (tension2(i,j) + tension2(i+1,j))
+                  shear2_u(i,j)   = 0.5d0 * (shear2_z(i,j) + shear2_z(i,j-1))
+                  tension2_v(i,j) = 0.5d0 * (tension2(i,j+1) + tension2(i,j))
+                  shear2_v(i,j)   = 0.5d0 * (shear2_z(i,j) + shear2_z(i-1,j))
 
-                  smag(i,j,k) = min((cdelta2 * sqrt(tension(i,j)**2 + shear**2)) + base_coefM(k), crit_coef)
-                  smagcoef_z(i,j) = min((cdelta2 * sqrt(tension_z**2 + shear_z(i,j)**2)) + base_coefM(k), crit_coef)
-                  smagcoef_u(i,j) = min((cdelta2 * sqrt(tension_u(i,j)**2 + shear_u(i,j)**2)) + base_coefT(k), crit_coef)
-                  smagcoef_v(i,j) = min((cdelta2 * sqrt(tension_v(i,j)**2 + shear_v(i,j)**2)) + base_coefT(k), crit_coef)
-                  smagcoef_ut(i,j) = min((cdelta2 *sqrt(tension_u(i,j)**2 + shear_u(i,j)**2)) + base_coefTH(k), crit_coef)
-                  smagcoef_vt(i,j) = min((cdelta2 *sqrt(tension_v(i,j)**2 + shear_v(i,j)**2)) + base_coefTH(k), crit_coef)
+                  smag(i,j,k) = min((cdelta2 * sqrt(tension2(i,j) + shear2)) + base_coefM(k), crit_coef)
+                  smagcoef_z(i,j) = min((cdelta2 * sqrt(tension2_z + shear2_z(i,j))) + base_coefM(k), crit_coef)
+                  smagcoef_u(i,j) = min((cdelta2 * sqrt(tension2_u(i,j) + shear2_u(i,j))) + base_coefT(k), crit_coef)
+                  smagcoef_v(i,j) = min((cdelta2 * sqrt(tension2_v(i,j) + shear2_v(i,j))) + base_coefT(k), crit_coef)
+                  smagcoef_ut(i,j) = min((cdelta2 *sqrt(tension2_u(i,j) + shear2_u(i,j))) + base_coefTH(k), crit_coef)
+                  smagcoef_vt(i,j) = min((cdelta2 *sqrt(tension2_v(i,j) + shear2_v(i,j))) + base_coefTH(k), crit_coef)
 
                   smagcoef_u(i,j) = smagcoef_u(i,j) * geomh_invDX_8(j)
                   smagcoef_v(i,j) = smagcoef_v(i,j) * geomh_cyv_8(j) * geomh_invDY_8
@@ -238,7 +241,7 @@
                   F_w(i,j,k) = F_w(i,j,k) + F_dw(i,j)
                end do
             end do
-
+           
          end if
 
          if (switch_on_theta) then

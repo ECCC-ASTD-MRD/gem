@@ -18,19 +18,19 @@
       subroutine pw_update_T()
       use glb_ld
       use gmm_pw
-      use gem_timing
+      use omp_timing
       implicit none
 #include <arch_specific.hf>
 
 !     ________________________________________________________________
 !
-      call gemtime_start ( 5, 'PW_UPDATE', 0)
+      call gtmg_start ( 5, 'PW_UPDATE', 0)
 !
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
       call tt2virt (pw_tt_plus, .false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      call gemtime_stop (5)
+      call gtmg_stop (5)
 !     ________________________________________________________________
 !
       return

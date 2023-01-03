@@ -19,7 +19,7 @@
 
       use adz_mem
       use adz_options
-      use gem_timing
+      use omp_timing
       use gmm_pw
       use gmm_tracers
 
@@ -38,20 +38,20 @@
 !
 !     ---------------------------------------------------------------
 !
-      call gemtime_start (36, 'C_SETPOST', 33)
+      call gtmg_start (36, 'C_SETPOST', 33)
 
       !SET_POST_TR has just been launched
       !----------------------------------
       Adz_set_post_tr  = 1
 
-      call gemtime_start (52, 'AIR_MASS', 36)
+      call gtmg_start (52, 'AIR_MASS', 36)
 
       !Reset Air Mass at TIME P and TIME M
       !-----------------------------------
       call get_air_mass (airm1,1,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0t)
       call get_air_mass (airm0,0,l_minx,l_maxx,l_miny,l_maxy,l_nk, Adz_k0t)
 
-      call gemtime_stop  (52)
+      call gtmg_stop  (52)
 
       !Reset pr_t(k)/pr_s at TIME M (used in Bermejo-Conde)
       !----------------------------------------------------
@@ -66,7 +66,7 @@
          end do
       end do
 
-      call gemtime_stop (36)
+      call gtmg_stop (36)
 !
 !     ---------------------------------------------------------------
 !

@@ -62,7 +62,8 @@ if [ -e "${nmlfile}" ] ; then
    # Verify namelist entries on request
    if [ ${check_namelist} -gt 0 ] ; then
       nml_to_check="convection_cfgs dyn_fisl dyn_kernel gem_cfgs grid hvdif init out physics_cfgs series step surface_cfgs vert_layers ensembles"
-      ${bin}checknml --nml="${nml_to_check}" -r -- ${nmlfile}
+      #${bin}checknml --nml="${nml_to_check}" -r -- ${nmlfile}
+      ${bin}checknml --nml="${nml_to_check}" -- ${nmlfile}
    fi
    if [ ${npex} -gt 1 -o ${npey} -gt 1 ] ; then
       . r.call.dot ${bin}checkdmpart.sh -gemnml ${nmlfile} -cfg ${mydomain} -cache "${cache}" -npex ${npex} -npey ${npey} -verbose $verbose

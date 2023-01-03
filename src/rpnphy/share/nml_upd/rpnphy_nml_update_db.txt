@@ -589,3 +589,8 @@ rm:  physics_cfgs/cond_dbletd_fix
 #------
 fileVersion: 6.2.0-a20 > 6.2.0-a21
 
+#------
+fileVersion: 6.2.0-a21 > 6.2.0-a22
+rm:  physics_cfgs/prep_cw_rad_fix_l
+#New:  physics_cfgs/rad_part_nomp
+rm:  physics_cfgs/simisccp

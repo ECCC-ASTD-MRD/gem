@@ -18,7 +18,6 @@ module omp_timing
       use ISO_C_BINDING
       use, intrinsic :: iso_fortran_env
       implicit none
-!#include <time_trace.hf>
 
       public
 
@@ -189,5 +188,5 @@ contains
 !
       return
       end subroutine gtmg_terminate
-
+      
 end module omp_timing

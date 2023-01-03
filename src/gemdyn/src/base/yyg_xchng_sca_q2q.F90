@@ -20,7 +20,6 @@
                                      F_ni, F_nj, Nk, F_interpo_S       ,&
                                      mono_L, do_xch )
       use ISO_C_BINDING
-      use gem_timing
       use yyg_param
       implicit none
 #include <arch_specific.hf>
@@ -35,8 +34,6 @@
 !
 !----------------------------------------------------------------------
 !
-      call gemtime_start ( 6, 'YYG_XCHNG', 0)
-
       call yyg_SendRecv_s ( F_src, F_comm, Minx,Maxx,Miny,Maxy, &
                             NK, F_interpo_S, mono_L )
 
@@ -68,8 +65,6 @@
                l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
           endif
       endif
-
-      call gemtime_stop (6)
 !
 !----------------------------------------------------------------------
 !

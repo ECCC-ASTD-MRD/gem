@@ -13,13 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 module mem_tracers
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
       integer :: tracers_block_size = 4
       integer :: tracers_nblocks
-      real, pointer, dimension (:) :: trt2, trt1, trt0, trdf, trtb
+      real, dimension    (:), pointer :: trt2, trt1, trt0, trdf, trtb
+      real(kind=REAL64), dimension(:,:,:), pointer :: sumq_8
 
       type :: memTR_pntrs
          real, dimension(:,:,:), pointer :: pntr

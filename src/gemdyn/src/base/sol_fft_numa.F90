@@ -27,7 +27,7 @@
       use trp
       use adz_mem
       use dyn_fisl_options
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <RPN_MPI.hf>
@@ -48,7 +48,6 @@
       n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
       
 ! Forward transpose (resuls= G_ni in memory on all Pes)
-      call gemtime_start ( 53, 'TRP1', 24 )
       ! Transpose to the 4D representation.  This representation takes the local array
       ! of shape (lni, lnj, gnk) and returns an array of shape (lni, lnj, lnk, npex),
       ! which turns the MPI portion of the transpose into the sending/receiving of single,
@@ -98,11 +97,6 @@
          end do
       end do
 
-      call gemtime_stop (53)
-      call gemtime_start ( 54, 'FFTW', 24 )
-      call time_trace_barr(gem_time_trace, 11100+n, Gem_trace_barr, &
-                                      Ptopo_intracomm, MPI_BARRIER)
-
       ! The FFT routine uses internal parallelism (fftw), so it should be
       ! called outside of a parallel region
 
@@ -119,14 +113,12 @@
                   (1+Lam_pil_w):(G_ni-Lam_pil_e),            & ! 2nd dim = i
                   (ldnh_j0+pil_s):(ldnh_nj+ldnh_j0-pil_n-1)))  ! 3rd dim = j
 
-      call gemtime_stop (54)
 
       ! The MPI barrier acts to ensure that each process in this NUMA region has completed
       ! its transform and assigned the output to F_fft.  If this is not present, then a
       ! process could run ahead of that shared-memory assignment and operate on invalid
       ! data.
       call MPI_Barrier ( Numa_sockcomm, err )
-      call gemtime_start ( 56, 'TRID', 24 )
 
       ! Tri-diagonal solver
       ! We only need to execute the tridiagonal solve if there are points to solve for
@@ -224,11 +216,8 @@
          call MPI_Barrier ( Numa_sockcomm, err )
       endif ! End if sol_sock_nk > 0
       
-      call gemtime_stop (56)
-
 
 ! Inverse projection ( r = x * w )
-      call gemtime_start ( 54, 'FFTW', 24 )
 
       ! Execute the inverse FFT.  The source is now the shared-memory F_fft array, whereas
       ! the destination is Sol_dwfft.
@@ -241,12 +230,7 @@
                       (1+pil_s):(ldnh_nj-pil_n),             & ! 2nd dim = j
                       1:sol_nk))                               ! 3rd dim = k
 
-      call gemtime_stop (54)
-      call time_trace_barr(gem_time_trace, 11600+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
-
 ! Backward transpose to bring back the solution in model space
-      call gemtime_start ( 53, 'TRP1', 24 )
 
       ! The solution is now in Sol_dwfft, but we need to create the stacked representation for the
       ! new inverse transpose.  This time, to assign memory in contiguous order we must loop over
@@ -266,9 +250,6 @@
                ldnh_maxx*2, ldnh_maxy, sol_nk, & ! Bounds on the transpose, x multiplied by 2 for double precision
                err)
 
-      call gemtime_stop (53)
-      call time_trace_barr(gem_time_trace, 11700+n, Gem_trace_barr,&
-                           Ptopo_intracomm, MPI_BARRIER)
 !     __________________________________________________________________
 !
       return

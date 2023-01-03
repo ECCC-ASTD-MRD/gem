@@ -6,8 +6,6 @@
 
 DESC='Create a reference nml for gemdyn'
 
-gemdyn_version=${ATM_MODEL_VERSION}
-
 eval $(rpy.cclargparse \
    -D " " \
    ${0##*/} \
@@ -28,7 +26,7 @@ EOF
    exit 1
 fi
 
-if [[ x"${ATM_MODEL_VERSION}" == x"" ]] ; then
+if [[ x"${gemdyn_version}" == x"" ]] ; then
    cat 1>&2 <<EOF
 ERROR: gemdyn environment not properly set, \${gemdyn_version} not defined.
 EOF

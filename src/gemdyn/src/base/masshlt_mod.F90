@@ -13,12 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-module fislh_sol
+module masshlt
    use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
 
-   real(kind=REAL64) :: isol_i, isol_d
+   integer :: OMP_max_threads
+   real(kind=REAL64),dimension(:,:  ), pointer :: p0_0_8,p0_1_8,p0_dry_0_8,p0_dry_1_8,thread_sum
+   real(kind=REAL64),dimension(:    ), pointer :: g_avg_8
 
-end module fislh_sol
+end module masshlt

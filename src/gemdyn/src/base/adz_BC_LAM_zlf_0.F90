@@ -19,7 +19,7 @@
 
       use adz_mem
       use adz_options
-      use gem_timing
+      use omp_timing
       use tr3d
 
       use, intrinsic :: iso_fortran_env
@@ -47,7 +47,7 @@
 !
 !---------------------------------------------------------------------
 !
-      call gemtime_start (85, 'ZLF_0______', 36)
+!      call gtmg_start (85, 'ZLF_0______', 36)
 
       !------------------------------------------------------------------
       !Prepare Bermejo-Conde LAM with ZLF before High-order Interpolation
@@ -94,7 +94,7 @@
 
       end if
 
-      call gemtime_stop  (85)
+!      call gtmg_stop  (85)
 !
 !---------------------------------------------------------------------
 !

@@ -17,7 +17,7 @@ module adz_interp_rhs_mod
   use ISO_C_BINDING
   use adz_mem
   use adz_options
-  use gem_timing
+  use omp_timing
   use HORgrid_options
   use tr3d
   use ptopo
@@ -58,22 +58,20 @@ contains
               Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy, l_ni, 0)
          stkpntr(n)= c_loc(extended(1,1,1,n))
       end do
-      call time_trace_barr(gem_time_trace, 10500+Adz_cnt_int,&
-                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
 
       if (present(F_post)) then
-         call gemtime_start (83, 'C_BCFLUX_TR', 37)
+         call gtmg_start (83, 'C_BCFLUX_TR', 37)
          if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
             call adz_BC_LAM_Aranami (extended,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx, &
                                      Adz_lminy,Adz_lmaxy,F_post,F_nptr)
          endif
-         call gemtime_stop  (83)
+         call gtmg_stop  (83)
       end if
       
       sto_L= associated(mcrhsint)
       linmima_l = present(F_post) .or. sto_L
 
-      if (linmima_l) call gemtime_start (84, 'TRICUBLIN', 37)
+      if (linmima_l) call gtmg_start (84, 'TRICUBLIN', 37)
 
       ni = F_in-F_i0+1
       nj = F_jn-F_j0+1
@@ -152,9 +150,7 @@ contains
          endif
          n1=n2+1
       end do
-      if (linmima_l) call gemtime_stop (84)
-      call time_trace_barr(gem_time_trace, 10600+adz_cnt_int,&
-                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
+      if (linmima_l) call gtmg_stop (84)
 !
 !---------------------------------------------------------------------
 !

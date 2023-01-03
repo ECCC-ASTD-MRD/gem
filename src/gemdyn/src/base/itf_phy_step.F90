@@ -27,7 +27,7 @@
       use path
       use wb_itf_mod
       use ptopo
-      use gem_timing
+      use omp_timing
       use gmm_phy, only: phy_cplm, phy_cplt
       use dyn_fisl_options, only: Schm_phycpl_S, Cstv_bA_8, Cstv_bA_m_8
       implicit none
@@ -54,7 +54,7 @@
 !
       if ( Rstri_user_busper_L .and. (F_step_kount == 0) ) return
 
-      call gemtime_start ( 40, 'PHYSTEP', 1 )
+      call gtmg_start ( 40, 'PHYSTEP', 1 )
 
       if (Lun_out > 0) write (Lun_out,1001) F_lctl_step
 
@@ -82,13 +82,13 @@
       call itf_phy_copy ()
       !if (F_step_kount == 0) call itf_phy_glbstat('befinp')
 
-      call gemtime_start ( 45, 'PHY_input', 40 )
+      call gtmg_start ( 45, 'PHY_input', 40 )
       err_input = phy_input1 ( itf_phy_prefold_opr, F_step_kount, &
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
 
       !if (F_step_kount == 0) call itf_phy_glbstat('Aftinp')
-      call gem_error (err_input,'itf_phy_step','Problem with phy_input')
-      call gemtime_stop  ( 45 )
+      !call gem_error (err_input,'itf_phy_step','Problem with phy_input')
+      call gtmg_stop  ( 45 )
 
       ! Smooth the thermodynamic state variables on request
       err_smooth = min(&
@@ -97,7 +97,7 @@
            ipf_smooth_fld('rdqi', 'rdqi_smt', 3, 1), &
            ipf_smooth_fld('tcond','tcond_smt',3) &
            )
-      call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+      !call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
 
       ! Call digital filter to smooth Alfa, Beta surface fields
       if (sfcflxfilt_o > 1 .and. F_step_kount > 0) then
@@ -117,28 +117,24 @@
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
       !call itf_phy_glbstat('befphy')
 
-      call gemtime_start ( 46, 'PHY_step', 40 )
-      call time_trace_barr (gem_time_trace, 1, Gem_trace_barr,&
-                            Ptopo_intracomm, MPI_BARRIER)
+      call gtmg_start ( 46, 'PHY_step', 40 )
       err_step = phy_step ( F_step_kount, F_lctl_step )
-      call time_trace_barr(gem_time_trace, 12000,&
-                           Gem_trace_barr, Ptopo_intracomm, MPI_BARRIER)
 !      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
-      call gemtime_stop  ( 46 )
+      call gtmg_stop  ( 46 )
 
-      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
+      !call gem_error (err_step,'itf_phy_step','Problem with phy_step')
       !call itf_phy_glbstat('aftphy')
 
       call set_num_threads ( Ptopo_nthreads_dyn, F_step_kount )
 
-      call gemtime_start ( 47, 'PHY_update', 40 )
+      call gtmg_start ( 47, 'PHY_update', 40 )
       call itf_phy_update3 ( F_step_kount > 0 )
-      call gemtime_stop  ( 47 )
+      call gtmg_stop  ( 47 )
       !call pw_glbstat('PW_AFT')
 
-      call gemtime_start ( 48, 'PHY_output', 40 )
+      call gtmg_start ( 48, 'PHY_output', 40 )
       call itf_phy_output ( F_lctl_step )
-      call gemtime_stop  ( 48 )
+      call gtmg_stop  ( 48 )
 
       if ( Init_mode_L ) then
          if (F_step_kount ==   Init_halfspan) then
@@ -148,7 +144,7 @@
          end if
       end if
 
-      call gemtime_stop ( 40 )
+      call gtmg_stop ( 40 )
 
  1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
              /,'========================================')

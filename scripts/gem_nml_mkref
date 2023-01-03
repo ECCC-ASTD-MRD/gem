@@ -1,0 +1,63 @@
+#!/bin/bash
+# @Object: Create a reference nml for gem
+# @Author: S.Chamberland
+# @Date:   Feb 2016
+
+set -x
+DESC='Create a reference nml for gem'
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} -v gem_settings.${gem_version}.ref" \
+   "positional"   'nargs=*'        "gem_settings.${gem_version}.ref"     "[FILENAME]" \
+   "-v,--verbose" 'action=count'   '0'     '[verbose mode]' \
+   ++++ $*)
+myverbose=''
+[[ ${verbose} -gt 0 ]] && myverbose='-v' || true
+
+myfile="${1:-gem_settings.${gem_version}.ref}"
+
+if [[ x"${myfile}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a destination filename
+EOF
+   exit 1
+fi
+
+if [[ x"${ATM_MODEL_VERSION}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: GEM environment not properly set, \${gem_version} not defined.
+EOF
+   exit 1
+fi
+
+a=$(which gemdyn_nml_mkref)
+b=$(which rpnphy_nml_mkref)
+if [[ x"${a}" == x"" || x"${b}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: GEM environment not properly set, cannot find all print nml progs
+       gemdyn_nml_mkref
+       rpnphy_nml_mkref
+EOF
+   exit 1
+fi
+
+here=$(pwd)
+localtmp=$(mktemp -d ${TMPDIR:-/tmp/${USER}}/XXXXXX)
+mkdir -p ${localtmp}
+cd ${localtmp}
+
+${a} ${myverbose} filea
+${b} ${myverbose} fileb
+nmlfilename='gem_settings.nml.ref'
+cat filea fileb > ${nmlfilename}
+
+[[ x${myfile} == x${myfile#/} ]] && myfile=${here}/${myfile} || true
+mv ${nmlfilename} ${myfile}
+
+cd ${here}
+rm -rf ${localtmp}
+exit 0
+set +x

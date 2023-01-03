@@ -19,7 +19,7 @@
 
       use adz_mem
       use adz_options
-      use gem_timing
+      use omp_timing
       use HORgrid_options
       use lun
       use mem_tracers
@@ -53,9 +53,9 @@
 !
       LAM_L = .not.Grd_yinyang_L
 
+!      call gtmg_start (38, 'C_TR_POST', 33)
+      
       if (F_wp /=0) then
-
-         call gemtime_start (38, 'C_TR_POST', 33)
 
          !--------------------------------------------------------------------------------------------------
          !Apply Clipping or ILMC Shape-preserving and Store Localization in Adz_bc for all tracers using B-C
@@ -120,7 +120,7 @@
 
          if (Adz_verbose>0) call adz_post_tr_write (2)
 
-         call gemtime_stop (38)
+!         call gtmg_stop (38)
 
          return
 
@@ -130,7 +130,7 @@
 
       if (n_bc_TOTAL==0) return
 
-      call gemtime_start (38, 'C_TR_POST', 33)
+!      call gtmg_start (38, 'C_TR_POST', 33)
 
       !--------------------------------------------------------------------
       !Prepare and Apply Bermejo-Conde mass-fixer for all tracers in Adz_bc
@@ -227,7 +227,7 @@
 
       end do
 
-      call gemtime_stop (38)
+!      call gtmg_stop (38)
 !
 !---------------------------------------------------------------------
 !

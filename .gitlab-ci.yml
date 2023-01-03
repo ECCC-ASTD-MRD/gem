@@ -22,7 +22,7 @@ build_gnu-9.3.0:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
-    - make cmake-all
+    - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   allow_failure: true
@@ -37,7 +37,7 @@ build_gnu-12.1.0:
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-all
+    - make cmake
     - make -j `nproc`
     - make work
   artifacts:
@@ -45,21 +45,6 @@ build_gnu-12.1.0:
     paths:
     - work-rhel-8-icelake-64-gnu-12.1.0
     - gem_dbase
-
-# U2 Intel 2022
-build_intel_with_rpn:
-  stage: build
-  when: always
-  script:
-    - set +e
-    - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_intel
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - make -j `nproc`
-    - make -j `nproc` work
-  allow_failure: true
 
 # U2 Intel 2022
 build_intel:
@@ -71,7 +56,7 @@ build_intel:
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-all
+    - make cmake
     - make -j `nproc`
     - make -j `nproc` work
   artifacts:

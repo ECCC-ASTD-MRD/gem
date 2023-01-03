@@ -72,6 +72,9 @@ module ptopo
    integer Ptopo_nodes     , Ptopo_ncolors     , Ptopo_couleur
    integer Ptopo_intracomm , Ptopo_intercomm   , Ptopo_tag
    integer Ptopo_world_myproc, Ptopo_world_numproc
+   integer COMM_world, COMM_grid, COMM_multigrid
+   integer COMM_gridpeers, COMM_ew, COMM_ns
+      
    logical Ptopo_last_domain_L
 
    integer, dimension(  :,:), allocatable :: Ptopo_gindx, &

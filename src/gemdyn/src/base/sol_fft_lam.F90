@@ -27,7 +27,7 @@
       use sol_mem
       use adz_mem
       use dyn_fisl_options
-      use gem_timing
+      use omp_timing
       use lun
       use ldnh
       use, intrinsic :: iso_fortran_env
@@ -79,7 +79,6 @@
 !     __________________________________________________________________
 !
       n= (Adz_icn-1)*Schm_itnlh + Adz_itnl
-      call gemtime_start ( 53, 'TRP1', 24 )
 
       ! Update: 2020 Dec, csubich
       ! RPN_Comm_transpose inside the RPNComm library assumes that the x-transpose reduces
@@ -123,9 +122,6 @@
          end do
       end do
 
-      call gemtime_stop (53)
-      call gemtime_start ( 54, 'FFTW', 24 )
-
       do i= 1,F_gni
          Sol_dwfft(F_t0nj+1-pil_n:F_t0njs,        1:F_t1nk ,i)= zero
          Sol_dwfft(             1:pil_s  ,        1:F_t1nk ,i)= zero
@@ -142,12 +138,9 @@
             end do
          end do
       end do
-      call gemtime_stop (54)
-      call gemtime_start ( 55, 'TRP2', 24 )
+
       call rpn_comm_transpose( Sol_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, Sol_dg2, 2, 2 )
-      call gemtime_stop (55)
-      call gemtime_start ( 56, 'TRID', 24 )
 
       ptotal = F_t2ni-Sol_pil_e-Sol_pil_w-1
       plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
@@ -178,21 +171,15 @@
             end do
          end do
       end do
-      call gemtime_stop (56)
 
-      call gemtime_start ( 55, 'TRP2', 24 )
       ! Invert the x/y transpose
       call rpn_comm_transpose( Sol_dwfft, 1, F_t0njs, F_gnj, (F_t1nks-1+1),&
                                1, F_t2nis, F_gni, Sol_dg2,- 2, 2 )
-      call gemtime_stop (55)
 
-      call gemtime_start ( 54, 'FFTW', 24 )
       call execute_r2r_dft_plan(reverse_plan, &
              Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)), &
              Sol_dwfft((1+pil_s):(F_t0njs-pil_n),1:F_nk,(1+Lam_pil_w):(G_ni-Lam_pil_e)))
-      call gemtime_stop (54)
 
-      call gemtime_start ( 53, 'TRP1', 24 )
       ! Invert the x/z transpose, again using the "stacked" transpose routine.  First, repackage
       ! Sol_dwfft into the stacked representation:
 
@@ -212,8 +199,6 @@
       call RPN_MPI_ez_transpose_xz(LoC(F_Sol), LoC(Sol_xpose), .false., & ! Arrays, marking the inverse transpose
                ldnh_maxx*2, ldnh_maxy, sol_nk, & ! Logical bounds on the transpose, multiplying x by 2 to account for double precision
                err) ! Error flag
-
-      call gemtime_stop (53)
 
 !     __________________________________________________________________
 !

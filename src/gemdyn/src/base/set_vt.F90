@@ -179,7 +179,8 @@
       end if
 
       allocate (tracers_P(Tr3d_ntr), tracers_M(Tr3d_ntr), tracers_t2(Tr3d_ntr))
-
+      allocate (sumq_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+      
       dim = (l_maxx-l_minx+1) * (l_maxy-l_miny+1) * l_nk
       do i=1,Tr3d_ntr
          nullify(tracers_P(i)%pntr)
