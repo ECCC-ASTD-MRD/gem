@@ -109,9 +109,10 @@ contains
 
       real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp
       real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zmrk2
-      real, pointer, dimension(:), contiguous :: zmg,zml,ztopthw,ztopthi
+      real, pointer, dimension(:), contiguous :: zmg,zml,ztopthw,ztopthi,zdlat
       !----------------------------------------------------------------
 
+      MKPTR1D(zdlat, dlat, fbus)
       MKPTR1D(zmg, mg, fbus)
       MKPTR1D(zml, ml, fbus)
       MKPTR1D(ztlwp, tlwp, fbus)
@@ -252,6 +253,17 @@ contains
       case ('SIGMA')
          ! Radius varies from 60um (near-surface) to 15um (upper-troposphere)
          rei(:,:) = max(sig(:,:)-0.25, 0.0)*60. + 15.
+      case ('ECMWF')
+         ! see IFS documentation for Cy47R3 -eqns 2.74 and 2.75 - beware of parenthesis error for first term
+         do k = 1, nkm1
+            do i = 1, ni
+               zrieff(i,k) = 1000. * icewcin(i,k) * aird(i,k) ! convert to gm-3
+               zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
+               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*abs(zdlat(i)))) ! impose a lat dependent min
+               rei(i,k) = 0.64952*zrieff(i,k)
+               rei(i,k) =  min(rei(i,k), 70.0) ! necessary to avoid crashes
+            enddo
+         enddo
       case DEFAULT
          ! Radius is a user-specified constant (in microns)
          rei(:,:) = rei_const
@@ -279,6 +291,8 @@ contains
       !     parameterization for ice cloud:
       !     fu 1996, j. clim., 9, 2223-2337.
       !     fu et al. 1998 j. clim., 11, 2223-2337.
+      ! NOTE:  In two Fu papers, opt prop are tested for DG from 15-130microns or REI from 10-90 microns(using dg=1.5395xrei)
+      !        but in practice, rei must be below 70microns or the model crashes
       !----------------------------------------------------------------------
 
       DO_LOOP1: do j = 1, nbs

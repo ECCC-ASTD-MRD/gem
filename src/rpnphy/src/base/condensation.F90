@@ -203,6 +203,19 @@ contains
       call apply_tendencies(qqp, zsqe,  ztdmask, ni, nk, nkm1)
       if (associated(qcp)) call apply_tendencies(qcp, zsqce, ztdmask, ni, nk, nkm1)
       if (associated(qrp)) call apply_tendencies(qrp, zsqre, ztdmask, ni, nk, nkm1)
+      !# TODO: automate that clipping with info from gesdict
+      if (stcond == 'MP_P3') then
+         ! call priv_check_negative(qqp, 0., 'huplus')
+         qqp = max(0., qqp)
+         if (associated(qcp)) then
+            ! call priv_check_negative(qcp, 0., 'qcplus')
+            qcp = max(0., qcp)
+         endif
+         if (associated(qrp)) then
+            ! call priv_check_negative(qrp, 0., 'qrplus')
+            qrp = max(0., qrp)
+         endif
+      endif
 
       ! Post-scheme budget analysis: post-scheme state and residuals
       if (pb_residual(zconecnd, zconqcnd, l_en0, l_pw0, dbus, fbus, vbus, &
@@ -231,5 +244,20 @@ contains
       !----------------------------------------------------------------
       return
    end subroutine condensation4
+
+   
+!!$   subroutine priv_check_negative(F_fld, F_minval, F_name)
+!!$      implicit none
+!!$      real, pointer, contiguous :: F_fld(:,:)
+!!$      real, intent(in) :: F_minval
+!!$      character(len=*), intent(in) :: F_name
+!!$      real :: x
+!!$      !----------------------------------------------------------------
+!!$      x = minval(F_fld)
+!!$      if ((F_minval - x) > abs(x)*epsilon(x)) &
+!!$           call msg_toall(MSG_WARNING, '(condensation) Post P3 Negative values for: '//trim(F_name))
+!!$      !----------------------------------------------------------------
+!!$      return
+!!$   end subroutine priv_check_negative
 
 end module condensation

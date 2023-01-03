@@ -31,7 +31,7 @@
 !
 !=============================================================================
 
-module chm_mod
+module chm_headers_mod
 
 contains
 
@@ -51,4 +51,4 @@ contains
       return
    end subroutine chm_exe
 
-end module chm_mod
+end module chm_headers_mod

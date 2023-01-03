@@ -147,7 +147,6 @@
 | phystat_freq_s | Physic statistics output Frequency | '0h' | character(len=16) |
 | phystat_input_l | Print stats for phy_input read var | .false. | logical |
 | phystat_list_s | Physic statistics output: bus variable list that should be included in physics<br>"block" stats. Possible values:<br>- Long varnames<br>- Short varnames<br>- 'ALLVARS=EDPV': all variables from E, D, P, V buses (any combination of the 4 letters); | ' ' | character(len=32) |
-| prep_cw_rad_fix_l | Fix Liquid solid separation in prep_cw_rad | .false. | logical |
 | qcfc11 | CFC11 bckgrnd atmospheric concentration (PPMV) | -1. | real |
 | qcfc12 | CFC12 bckgrnd atmospheric concentration (PPMV) | -1 | real |
 | qch4 | CH4 bckgrnd atmospheric concentration (PPMV) | -1. | real |
@@ -160,6 +159,7 @@
 | rad_esfc | Use emissivity computed by the surface schemes | .false. | logical |
 | rad_linoz_l | Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only) | .false. | logical |
 | rad_lw | Compute and apply tendencies from longwave radiation | .true. | logical |
+| rad_part_nomp | Phase partition of total water content for radiation when CONSUN is used<br>- 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged<br>- 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931<br>- 'ECMWF' : IFS docu CY25R1<br>- 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991 | 'BOUOPS' | character(len=16) |
 | rad_siglim | For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp<br>TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma;<br>EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; |  |  |
 | rad_sun_angle_fix_l | Fix use of effective solar zenith angle | .false. | logical |
 | rad_sw | Compute and apply tendencies from shortwave radiation | .true. | logical |
@@ -178,7 +178,6 @@
 | sgo_stabfac | Turns on/off the amplification factor (due to stability) of the drag<br>coefficient in the orographic blocking scheme | .true. | logical |
 | sgo_tdfilter | Standard deviation length scale (gridpoints) of Gaussian smoother<br>applied to wind GWD tendencies | 1. | real |
 | sgo_windfac | Description of threshold for mean wind speed for blocking |  |  |
-| simisccp | (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.<br>WARNING: This option is no longuer suppored, will be removed | .false. | logical |
 | stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme<br>- 'KESSLER   ' : Kessler warm rain scheme | 'NIL' | character(len=16) |
 | stratos | Special treatment of stratosphere;<br>if .true. ignore convection/condensation tendencies where pressure is lower<br>than topc as specified in nocld.cdk | .false. | logical |
 | taufac | Factor used in the gwd formulation = 1/(LENGTH SCALE) | 8.E-6 | real |

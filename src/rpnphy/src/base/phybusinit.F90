@@ -40,10 +40,9 @@ subroutine phybusinit(ni,nk)
    
 #include <rmn/msg.h>
    include "surface.cdk"
-   include "mcica.cdk"
    include "clefcon.cdk"
 
-   character(len=6)  :: nag, ntp, nmar, wwz, nuv, isss
+   character(len=6)  :: nag, nmar, wwz, nuv, isss
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
    logical :: lrslp
@@ -73,8 +72,6 @@ subroutine phybusinit(ni,nk)
    !# nagg is the dimension of aggregrated variables
    write(nag,'(a,i2)') 'A*', nagrege
 
-   !# nipt is the number of tau/cloud top pressure bins in ISCCP histograms
-   write(ntp,'(a,i2)') 'A*', ntau*nptop
    write(nuv,'(a,i2)') 'A*', RAD_NUVBRANDS
 
    !# nmar is the number of 2d Markov fields

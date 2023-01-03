@@ -848,11 +848,6 @@ Physic statistics output: bus variable list that should be included in physics
 | ' ' || character(len=32)
 
 |-
-| prep_cw_rad_fix_l ||
-Fix Liquid solid separation in prep_cw_rad
-| .false. || logical
-
-|-
 | qcfc11 ||
 CFC11 bckgrnd atmospheric concentration (PPMV)
 | -1. || real
@@ -915,6 +910,15 @@ Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only)
 | rad_lw ||
 Compute and apply tendencies from longwave radiation
 | .true. || logical
+
+|-
+| rad_part_nomp ||
+Phase partition of total water content for radiation when CONSUN is used
+* 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged
+* 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931
+* 'ECMWF' : IFS docu CY25R1
+* 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991
+| 'BOUOPS' || character(len=16)
 
 |-
 | rad_siglim ||
@@ -1018,12 +1022,6 @@ applied to wind GWD tendencies
 | sgo_windfac ||
 Description of threshold for mean wind speed for blocking
 |  || 
-
-|-
-| simisccp ||
-(DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.
-WARNING: This option is no longuer suppored, will be removed
-| .false. || logical
 
 |-
 | stcond ||

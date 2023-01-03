@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
+subroutine blcloud6(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
      wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz,&
      hpar,frv,z0m,fb_surf,gzmom,ze,s,sw,ps,dudz2,ri,&
      dthv,tau,vcoef,n,nk,ncld)
@@ -168,4 +168,4 @@ subroutine blcloud5(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
    ri(:,nk) = 0.
 
    return
-end subroutine blcloud5
+end subroutine blcloud6
