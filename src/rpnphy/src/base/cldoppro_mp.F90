@@ -543,6 +543,7 @@ contains
     !     fu 1996, j. clim., 9, 2223-2337.
     !     fu et al. 1998 j. clim., 11, 2223-2337.
     !     NOTE:  In two Fu papers, opt prop are tested for DG from 15-130microns or REI from 10-90 microns(using dg=1.5395xrei)
+    !            but in practice, rei must be below 70microns or the model crashes
     !----------------------------------------------------------------------
 
 

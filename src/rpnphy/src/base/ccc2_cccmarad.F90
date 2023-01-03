@@ -112,7 +112,6 @@ contains
       include "ccc_tracegases.cdk"
       include "tables.cdk"
       include "phyinput.inc"
-      include "mcica.cdk"
 
       logical, parameter :: SLOPE_L = .true.
       logical, parameter :: DO_UV_ONLY = .true.
@@ -149,26 +148,6 @@ contains
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       
-      ! isccp
-
-      real :: &
-           liqwcin_s(ni, nkm1, nx_loc),  &! subcolumns of cloud liquid water
-           icewcin_s(ni, nkm1, nx_loc)    ! subcolumns of cloud ice water
-
-      real :: &
-           sigma_qcw(ni, nkm1),         &! std. dev. of cloud water/mean cloud water
-           rlc_cf(ni, nkm1),            &! decorelation length for cloud amount (km)
-           rlc_cw(ni, nkm1),            &! decorrelation length for cloud condensate(km)
-           cldtot(ni)                 ! total cloud fraction as computed using
-      ! stochastic cloud generator
-
-      integer :: &
-           ncldy(ni),                &! number of cloudy subcolumns
-           iseed(ni)                  ! integer pseudo-random number seed
-
-      real :: &
-           rseed                     ! real pseudo-random number seed
-
       real, target :: dummy1d(ni)
       
 #define PHYPTRDCL
@@ -190,11 +169,10 @@ contains
       if (.not.associated(zo3fk)) zo3fk => zo3s
 
       call init2nan(p1, p3, p4, p5, p6, pbl, albpla, fdl, ful, fslo)
-      call init2nan(rmu0, v1, p10, p11, p2, cldtot)
+      call init2nan(rmu0, v1, p10, p11, p2)
       call init2nan(shtj, tfull, co2, f113, f114, o2, salb)
-      call init2nan(sigma_qcw, rlc_cf, rlc_cw)
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
-      call init2nan(omcl, gcl, liqwcin_s, icewcin_s)
+      call init2nan(omcl, gcl)
       call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
       call init2nan(dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
       
@@ -495,48 +473,6 @@ contains
 
          ! Initialize surface emissivity
          if (.not.rad_esfc) zemisr(:) = 1.0
-
-         IF_SIMISCCP: if (simisccp) then
-
-            ! ISCCP
-
-            ! seed random number generator
-
-            do i = 1, ni
-               ! generate the random number based on local latitude, longitude, hour
-               ! and julien day.  created so that the size of the seed should not
-               ! exceed 2^31-1.  if it does then there will be problems.
-
-               rseed = 1.0e5*((zdlat(i)+(pi/2.0))*2.0*pi+ zdlon(i)) &
-                    + hz*1.0e6 &
-                    + julien*100.0
-
-               iseed(i) = int(rseed)
-            end do
-
-            ! call random_seed(generator=2) ! specific to ibm
-            call random_seed(put=iseed)
-
-            ! define the cloud overlap parameters and horizontal variability
-
-            call prep_mcica(rlc_cf, rlc_cw, sigma_qcw, cldfrac, ni, il1, il2, nkm1)
-
-            ! generate sub-olumns of liquid and ice water contents
-
-            call mcica_cld_gen(cldfrac, liqwcin, icewcin, rlc_cf, rlc_cw, &
-                 sigma_qcw, temp, sig, ps, ni, il1, il2, nkm1, &
-                 ncldy, liqwcin_s, icewcin_s, cldtot)
-
-            ! call the ISCCP simulator
-
-            call isccp_sim_driver( &
-                 zitp, zictp, zitau, zicep, zitcf,  &! output
-                 zisun, &
-                 liqwcin_s, icewcin_s, ps, sig, shtj,         &! input
-                 il1, il2, ni, nkm1, nk, &
-                 zcosas, ztsrad, temp, qq, zmg, zml)
-
-         endif IF_SIMISCCP
 
          ! Use FK ozone above stratopause 1hPa and era5 (zo3ce) below
          if (.not.associated(zo3fk, zo3s)) zo3s = zo3fk  !kg /kg air mmr

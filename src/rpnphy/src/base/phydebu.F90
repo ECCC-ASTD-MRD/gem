@@ -153,15 +153,6 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
          call litblrad(fichier, myproc)
          if (phy_error_L) return
 
-         if (simisccp) then
-            phy_error_L = .true.
-            !# compute the table needed to generate variability
-            !  for the  stochastic cloud generator
-
-            !# read in data blocks for ISCCP simulator code
-            if (phy_error_L) return
-         endif
-
          !# read GHG concentration factor file
          path = trim(F_path_S)//'/CLIMATO' !#ghg-table-1950-2015_v1'
          ier = ghg_init(path, jdateo, myproc)

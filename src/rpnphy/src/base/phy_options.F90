@@ -598,10 +598,6 @@ module phy_options
    namelist /physics_cfgs/ phystat_list_s
 !!$   namelist /physics_cfgs_p/ phystat_list_s
 
-   !# Fix Liquid solid separation in prep_cw_rad
-   logical           :: prep_cw_rad_fix_l = .false.
-   namelist /physics_cfgs/ prep_cw_rad_fix_l
-   namelist /physics_cfgs_p/ prep_cw_rad_fix_l
 
    !# CFC11 bckgrnd atmospheric concentration (PPMV)
    real              :: qcfc11       = -1.
@@ -645,16 +641,33 @@ module phy_options
         'LI06     '  &
         /)
 
+   !# Phase partition of total water content for radiation when CONSUN is used
+   !# * 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged
+   !# * 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931
+   !# * 'ECMWF' : IFS docu CY25R1
+   !# * 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991
+   character(len=16) :: rad_part_nomp  = 'BOUOPS'
+   namelist /physics_cfgs/ rad_part_nomp
+   namelist /physics_cfgs_p/ rad_part_nomp
+   character(len=*), parameter :: RAD_PART_NOMP_OPT(4) = (/ &
+        'BOUOPS  ', &
+        'BOUDALA ',  &
+        'ECMWF   ',  &
+        'ROCKEL  '  &
+        /)
+
    !# Optical properties of ice cloud from condensation scheme for radiation
    !# * 'CCCMA'      : Radius estimate from CCCMA
    !# * 'SIGMA'      : Altitude-dependent ice radius
+   !# * 'ECMWF'      : Radius estimate from ecmwf
    character(len=16) :: rad_cond_rei = '15.'
    real              :: rei_const    = -1.
    namelist /physics_cfgs/ rad_cond_rei
    namelist /physics_cfgs_p/ rad_cond_rei
-   character(len=*), parameter :: RAD_COND_REI_OPT(2) = (/ &
+   character(len=*), parameter :: RAD_COND_REI_OPT(3) = (/ &
         'CCCMA', &
-        'SIGMA'  &
+        'SIGMA',  &
+        'ECMWF'  &
         /)
 
    !# Optical properties of liquid cloud from condensation scheme for radiation
@@ -834,12 +847,6 @@ module phy_options
    real, dimension(2) :: sgo_windfac = (/2.,0.01/)
    namelist /physics_cfgs/ sgo_windfac
    namelist /physics_cfgs_p/ sgo_windfac
-
-   !# (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.
-   !# WARNING: This option is no longuer suppored, will be removed
-   logical           :: simisccp     = .false.
-   namelist /physics_cfgs/ simisccp
-   namelist /physics_cfgs_p/ simisccp
 
    !# Condensation scheme name
    !# * 'NIL       ' : No explicit condensation scheme used
