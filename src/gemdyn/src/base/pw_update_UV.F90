@@ -20,18 +20,18 @@
       use glb_ld
       use gmm_pw
       use gmm_vt1
-      use gem_timing
+      use omp_timing
       implicit none
 #include <arch_specific.hf>
 
 !     ________________________________________________________________
 !
-      call gemtime_start ( 5, 'PW_UPDATE', 0)
+      call gtmg_start ( 5, 'PW_UPDATE', 0)
 
       call hwnd_stag ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
                        l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
 
-      call gemtime_stop (5)
+      call gtmg_stop (5)
 !     ________________________________________________________________
 !
       return

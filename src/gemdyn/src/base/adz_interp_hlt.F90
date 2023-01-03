@@ -90,10 +90,8 @@ contains
 
          if (present(F_post)) then
             if (.not.Grd_yinyang_L.and.Adz_BC_LAM_flux==1) then
-!$omp single
-               call adz_BC_LAM_Aranami (extended,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx, &
-                                        Adz_lminy,Adz_lmaxy,F_post,F_nptr)
-!$omp end single
+                call adz_BC_LAM_Aranami_hlt (extended,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx, &
+                                             Adz_lminy,Adz_lmaxy,F_post,F_nptr)
             endif
          end if
       endif

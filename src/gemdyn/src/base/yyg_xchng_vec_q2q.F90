@@ -18,7 +18,6 @@
 
       subroutine yyg_xchng_vec_q2q ( F_u, F_v, Minx,Maxx,Miny,Maxy, NK )
       use ISO_C_BINDING
-      use gem_timing
       use gem_options
       use glb_ld
       use ptopo
@@ -37,8 +36,6 @@
 !
 !----------------------------------------------------------------------
 !
-      call gemtime_start ( 6, 'YYG_XCHNG', 0)
-
       call rpn_comm_xch_halo(F_u, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo(F_v, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
@@ -108,8 +105,6 @@
          end do
 
       end if
-
-      call gemtime_stop (6)
 !
 !----------------------------------------------------------------------
 !

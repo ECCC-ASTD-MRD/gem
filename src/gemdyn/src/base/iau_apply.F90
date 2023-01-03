@@ -48,7 +48,7 @@ subroutine iau_apply (F_kount)
    use var_gmm
    use VERgrid_options, only: VGRID_M_S, VGRID_T_S
 
-   use gem_timing
+   use omp_timing
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -108,7 +108,7 @@ subroutine iau_apply (F_kount)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
 
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
-   call gemtime_start(50, 'IAU', 1)
+   call gtmg_start(50, 'IAU', 1)
 
    ptopo_iotype = PTOPO_IODIST
 
@@ -505,7 +505,7 @@ subroutine iau_apply (F_kount)
       call msg(MSG_INFO, ' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//&
            trim(datev_S))
    end if
-   call gemtime_stop(50)
+   call gtmg_stop(50)
    !--------------------------------------------------------------------------
    return
 end subroutine iau_apply

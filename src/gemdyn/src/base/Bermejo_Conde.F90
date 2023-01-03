@@ -21,7 +21,7 @@
       use adz_options
       use ctrl
       use dyn_fisl_options
-      use gem_timing
+      use omp_timing
       use gmm_tracers
       use HORgrid_options
 
@@ -65,7 +65,7 @@
       if (Schm_psadj==0.and.Grd_yinyang_L.and..NOT.Ctrl_testcases_L) &
          call gem_error(-1,'BERMEJO-CONDE','Schm_psadj should be > 0 when YIN-YANG')
 
-      call gemtime_start (74, 'BermejoC', 38)
+!      call gtmg_start (74, 'BermejoC', 38)
 
       LAM_L = .not.Grd_yinyang_L
 
@@ -104,7 +104,7 @@
 
          mass_deficit_8(n) = mass_tot_m_8(n) - mass_tot_p_8(n)
 
-         call gemtime_start (16, 'WEIGHT', 74)
+!         call gtmg_start (16, 'WEIGHT', 74)
 
          !---------------------------------------------------
          !Prepare Bermejo-Conde correction: Additive approach
@@ -171,7 +171,7 @@
 
          end if
 
-         call gemtime_stop  (16)
+!         call gtmg_stop  (16)
 
       end do
 
@@ -201,7 +201,7 @@
 
          if (Adz_verbose>0) call Bermejo_Conde_write (4)
 
-         call gemtime_start (17, 'MINMAX', 74)
+!         call gtmg_start (17, 'MINMAX', 74)
 
          !---------------------------------------------
          !Apply Bermejo-Conde correction (BC_MIN_MAX=F)
@@ -250,11 +250,11 @@
 
          end if
 
-         call gemtime_stop  (17)
+!         call gtmg_stop  (17)
 
       end do
 
-      call gemtime_start (17, 'MINMAX', 74)
+!      call gtmg_start (17, 'MINMAX', 74)
 
       !---------------------------------------------------
       !Apply Bermejo-Conde correction (BC_MIN_MAX=T) PART2
@@ -287,7 +287,7 @@
 
       end if
 
-      call gemtime_stop  (17)
+!      call gtmg_stop  (17)
 
       if (reset_epsilon_L.or.Adz_verbose>0) then
 
@@ -313,7 +313,7 @@
 
       end if
 
-      call gemtime_stop (74)
+!      call gtmg_stop (74)
 !
 !---------------------------------------------------------------------
 !

@@ -16,6 +16,7 @@
 !**s/r tt2virt - Update physical quantities
 !
       subroutine tt2virt (F_t, F_tt2tv, Minx, Maxx, Miny, Maxy, Nk)
+      use dyn_fisl_options
       use glb_ld
       use gem_options
       use gmm_pw
@@ -30,7 +31,6 @@
       real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(inout) :: F_t
 
       real, pointer, dimension(:,:,:)  :: tvirt,tt
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumpqj
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
@@ -45,16 +45,16 @@
          tt => pw_tt_plus
       end if
      
-      sumpqj = 0.
-
-      call sumhydro (sumpqj, Minx, Maxx, Miny, Maxy, Nk,Tr3d_ntr, trt1)
+!$omp parallel
+      call sumhydro_hlt (sumq_8, Minx, Maxx, Miny, Maxy, Nk, Tr3d_ntr, trt1, Schm_wload_L)
+!$omp end parallel
 
       if (.not.F_tt2tv) then
-         call mfottvh2 (F_t, tvirt, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+         call mfottvh2 (F_t, tvirt, tracers_P(Tr3d_hu)%pntr, real(sumq_8),&
                         minx, maxx, miny, maxy, l_nk, &
                         1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, F_tt2tv)
       else
-         call mfottvh2 (tt, F_t, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+         call mfottvh2 (tt, F_t, tracers_P(Tr3d_hu)%pntr, real(sumq_8),&
                         minx, maxx, miny, maxy, l_nk, &
                         1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, F_tt2tv)
       end if
@@ -67,6 +67,7 @@
 !
       subroutine tt2virt2 (F_t, F_tt2tv, Minx, Maxx, Miny, Maxy, Nk,&
                            F_i0,F_in,F_j0,F_nj)
+      use dyn_fisl_options
       use glb_ld
       use gmm_pw
       use gmm_vt1
@@ -80,7 +81,6 @@
       real, dimension(Minx:Maxx, Miny:Maxy, Nk), intent(inout) :: F_t
 
       real, pointer, dimension(:,:,:)  :: tvirt,tt
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumpqj
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
@@ -95,15 +95,15 @@
          tt => pw_tt_plus
       end if
 
-      sumpqj = 0.
-
-      call sumhydro (sumpqj, Minx, Maxx, Miny, Maxy, Nk,Tr3d_ntr, trt1)
+!$omp parallel
+      call sumhydro_hlt (sumq_8, Minx, Maxx, Miny, Maxy, Nk, Tr3d_ntr, trt1, Schm_wload_L)
+!$omp end parallel
 
       if (.not.F_tt2tv) then
-         call mfottvh2 (F_t, tvirt, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+         call mfottvh2 (F_t, tvirt, tracers_P(Tr3d_hu)%pntr, real(sumq_8),&
                minx, maxx, miny, maxy, l_nk, F_i0,F_in,F_j0,F_nj,F_tt2tv)
       else
-         call mfottvh2 (tt, F_t, tracers_P(Tr3d_hu)%pntr, sumpqj,&
+         call mfottvh2 (tt, F_t, tracers_P(Tr3d_hu)%pntr, real(sumq_8),&
            minx, maxx, miny, maxy, l_nk, F_i0,F_in,F_j0,F_nj, F_tt2tv)
       end if
 !

@@ -32,6 +32,9 @@
 
       call set_world_view()
 
+! Initialize the ensemble prevision system
+
+      call itf_ens_init()
 
 ! Initialize the physics parameterization package
 
@@ -46,10 +49,6 @@
       call main_gmm_storage()
 
       call set_dyn_opr()
-
-! Initialize the ensemble prevision system
-
-      call itf_ens_init()
 
 ! Run GEM
 

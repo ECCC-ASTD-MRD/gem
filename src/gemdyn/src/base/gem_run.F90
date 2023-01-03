@@ -26,7 +26,7 @@
       use init_options
       use rstr
       use step_options
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -83,7 +83,6 @@
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
          call rpn_comm_barrier ("GRID", err)
-! for now         call time_trace_step(gem_time_trace, Step_kount)
 
          if (Lun_out > 0) then
 

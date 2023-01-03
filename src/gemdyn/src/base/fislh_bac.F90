@@ -19,7 +19,6 @@
 !             - Height-type vertical coordinate
 
       subroutine fislh_bac ( F_dt_8, i0, j0, k0, in, jn ,k0t )
-      use fislh_sol
       use gem_options
       use dynkernel_options
       use dyn_fisl_options
@@ -32,6 +31,7 @@
       use glb_ld
       use cstv
       use ver
+      use sol_mem
       use metric
       use ctrl
       use, intrinsic :: iso_fortran_env

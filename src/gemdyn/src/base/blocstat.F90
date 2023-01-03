@@ -22,7 +22,7 @@
       use glb_ld
       use rmn_gmm
       use ptopo
-      use gem_timing
+      use omp_timing
       use mem_tracers
       implicit none
 #include <arch_specific.hf>
@@ -46,7 +46,7 @@
       flag = flag .or. F_forceit_L
 
       if (flag) then
-         call gemtime_start ( 99, 'BLOCSTAT', 1 )
+         call gtmg_start ( 99, 'BLOCSTAT', 1 )
 
          if (Ptopo_myproc == 0) write(output_unit,1000) Lctl_step
 
@@ -99,7 +99,7 @@
 
          if (Ptopo_myproc == 0) write(output_unit,1001)
          
-         call gemtime_stop ( 99 )
+         call gtmg_stop ( 99 )
 
       end if
 
@@ -120,7 +120,7 @@
       use gem_options
       use tr3d
       use rmn_gmm
-      use gem_timing
+      use omp_timing
       implicit none
 #include <arch_specific.hf>
 

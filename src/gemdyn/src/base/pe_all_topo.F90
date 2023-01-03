@@ -21,7 +21,7 @@
       use ctrl
       use HORgrid_options
       use lun
-      use gem_timing
+      use omp_timing
       use path
       use ptopo
       use rstr
@@ -41,7 +41,7 @@
 !-------------------------------------------------------------------
 !
       call gemtime ( Lun_out, 'STARTING GEMDM', .false. )
-      call gemtime_start ( 2, 'INIT_GEM', 1)
+      call gtmg_start ( 2, 'INIT_GEM', 1)
 
       colrow = 0
       colrow(Ptopo_couleur,Ptopo_mycol,Ptopo_myrow) = Ptopo_myproc
@@ -112,7 +112,7 @@
       use lun
       use path
       use clib_itf_mod
-      use gem_timing
+      use omp_timing
       implicit none
 
       character(len=*), intent(in) :: F_path_S
@@ -140,7 +140,7 @@
       use ISO_C_BINDING
       use lun
       use path
-      use gem_timing
+      use omp_timing
       implicit none
       integer, intent(in) :: x, y
       character (len=7) :: filename
