@@ -21,7 +21,7 @@ module sol_options
    !# Type of solver
    !# * 'ITERATIF'
    !# * 'DIRECT'
-   character(len=26) :: Sol_type_S = 'DIRECT'
+   character(len=26) :: Sol_type_S = 'ITERATIVE_3D'
    namelist /sol  / Sol_type_S
 
    !# Epsilon convergence criteria for none Yin-Yang iterative solver
@@ -43,10 +43,6 @@ module sol_options
    !# size of Krylov subspace in iterative solver - should not exceed 100
    integer :: sol_im = 15
    namelist /sol  / Sol_im
-
-   !# 2D preconditioner for iterative solver
-   character(len=26) :: Sol_precond2D_S = 'JACOBI'
-   namelist /sol  / Sol_precond2D_S
 
    !# 3D preconditioner for iterative solver
    character(len=26) :: Sol_precond3D_S = 'RAS'
@@ -119,7 +115,6 @@ contains
       sol_nml= 1
 
       err = clib_toupper(Sol_type_S)
-      err = clib_toupper(Sol_precond2D_S)
       err = clib_toupper(Sol_precond3D_S)
       err = clib_toupper(Sol_krylov3D_S)
 

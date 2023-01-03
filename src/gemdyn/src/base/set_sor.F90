@@ -188,7 +188,7 @@
       Out_rot(1:4) = rotall(:,1)  ;  Out_rot(5:8) = rotall(:,2)
       Out_etik_S   = Out3_etik_s ; Out_gridtyp_S= 'E'
       Out_endstepno= min(Step_total+Step_initial, Lctl_step+rsti)
-      Out_endstepno= Out_endstepno - Step_initial !in step_kount space
+      Out_endstepno= Out_endstepno - min(Step_initial, 0)  ! Fcst_end steps
       Out_deet     = int(Cstv_dt_8)
       if ( Ctrl_canonical_dcmip_L ) &
       Out_deet= int(dcmip_mult_X(Cstv_dt_8))

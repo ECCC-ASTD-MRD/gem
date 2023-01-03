@@ -13,3 +13,9 @@ src/gemdyn/include/gemdyn_version.inc
 src/gemdyn/src/main/main*.F90
 src/modelutils/include/modelutils_version.inc
 src/rpnphy/include/rpnphy_version.inc
+DYN
+PHY
+configurations_orig
+gem-maestro_orig
+scripts_orig
+src_orig

@@ -1,2 +1,0 @@
-#define FORTRAN_SOURCE
-#include <time_trace.h>

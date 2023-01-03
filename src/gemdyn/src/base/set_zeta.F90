@@ -402,18 +402,18 @@
                heightp1 = 0.
             end if
 
-            call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
+      !      call convip(pnip1,Ver_hyb%m(k),5,1,dumc,.false.)
             write (Lun_out,1006) k,Ver_hyb%m(k),height, &
-                                 height-heightp1,pnip1
+                                 height-heightp1,Ver_a_8%m(k),Ver_b_8%m(k),Ver_c_8%m(k)
          end do
       end if
 
-      if (Lun_debug_L) call prgenab()
+!      if (Lun_debug_L) call prgenab()
 
  1004 format (/'PRESSURE at the MODEL LID (PTOP)= ',es15.5,' Pa')
  1005 format ( 'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ',&
-               'Grd_rcoef= ',4f7.2/2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
- 1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
+               'Grd_rcoef= ',4f7.2/2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',6x,'A',11x,'B',11x,'C')
+ 1006 format (1x,i4,3x,es15.5,2(6x,f6.0),3f12.5)
 !
 !     __________________________________________________________________
 !

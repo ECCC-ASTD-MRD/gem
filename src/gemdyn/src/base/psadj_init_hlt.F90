@@ -28,6 +28,7 @@
       use mem_tstp
       use lam_options
       use psadjust
+      use masshlt
       use rstr
       use ptopo
       use omp_timing
@@ -46,28 +47,26 @@
 
       include 'mpif.h'
       include 'rpn_comm.inc'
-      integer :: err,i,j,comm,dim,dimHx,dimVx,OMP_max_threads
+      integer :: err,i,j,comm,dim,dimH,dimV
       logical, save :: done_area_L       = .false.
       logical, save :: done_yy_initial_L = .false.
-      real(kind=REAL64), dimension(:,:)  , pointer :: p0_dry_8,p0_1_8,thread_sum
-      real(kind=REAL64), dimension(:,:,:), pointer :: pm_8
-      real, dimension(:,:,:), pointer :: sumq
+      real(kind=REAL64), dimension(:,:  ), pointer :: p0_dry_8
       real(kind=REAL64) :: sum_lcl(2),l_avg_8,x_avg_8,gathS(Ptopo_numproc*Ptopo_ncolors)
       logical :: almost_zero
 !$omp threadprivate(done_area_L,done_yy_initial_L)
 
 !
 !     ---------------------------------------------------------------
-!
+! 
       OMP_max_threads=OMP_get_max_threads()
-      dimHx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-      dimVx= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      sumq  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1: )
-      p0_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(    1:) ; dim=dimHx
-      p0_dry_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimHx
-      pm_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1_8(dim+1:); dim=dim+dimVx
-      thread_sum(1:2,0:OMP_get_max_threads()-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_get_max_threads()
+      dimH= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      dimV= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
+      p0_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(    1:) ; dim=dimH
+      p0_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimH
+      thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_max_threads
+      g_avg_8(1:2) => WS1_8(dim+1:) ; dim= dim+2
       thread_sum=0.
+      p0_dry_8 => p0_0_8
 
 !$omp single
       if ( Schm_psadj < 0 .and. Schm_psadj > 2) then
@@ -75,11 +74,6 @@
       end if
 !$omp end single
 
-!$omp single
-      if (Schm_psadj > 0 .and. OMP_max_threads > 1 .and. .not.Grd_yinyang_L ) then
-         call gem_error(-1,'PSADJ_INIT','OMP_max_THREADS > 1 NOT AVAILABLE FOR LAM WITH SCHM_PSADJ > 0')
-      end if
-!$omp end single
 
       comm = RPN_COMM_comm ('MULTIGRID')
 
@@ -149,7 +143,7 @@
       !Compute Dry surface pressure at TIME P (Schm_psadj==2)
       !------------------------------------------------------
       if (Schm_psadj==2) then
-        call dry_sfc_pressure_hlt_8(p0_dry_8,pw_pm_plus_8,pw_p0_plus_8,sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Adz_k0t,'P')
+        call dry_sfc_pressure_hlt_8(p0_dry_8,pw_pm_plus_8,pw_p0_plus_8,Adz_k0t,'P')
 !$omp do
         do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
@@ -178,9 +172,9 @@
       call MPI_Allgather(l_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
 
       PSADJ_g_avg_ps_initial_8 = sum(gathS) * PSADJ_scale_8
-
-      if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
 !$omp end single
+
+      if (Schm_psadj_print_L) call stat_psadj_hlt(1,"BEFORE DYNSTEP")
 
   999 continue
 !     ---------------------------------------------------------------

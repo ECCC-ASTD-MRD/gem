@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_sol - Computes matrices a,b,c for the elliptic solver
+!**s/r set_sol
 
       subroutine set_sol
       use HORgrid_options
@@ -48,21 +48,17 @@
 
       if ( Sol_type_S(1:9) == 'ITERATIVE' ) then
 
-         if (Sol_type_S(11:12) == '2D') then
-            if (Lun_out > 0) write (Lun_out,1001) trim(Sol_precond2D_S)
-         else
-            ni=ldnh_maxx-ldnh_minx+1
-            nj=ldnh_maxy-ldnh_miny+1
-            call gmm_build_meta4D (savemeta,  1,ni,0,0,ni,&
-                                              1,nj,0,0,nj,&
-                                              1,l_nk,0,0,l_nk,&
-                                    0,0,0,0,0,0,GMM_NULL_FLAGS)
-            istat= gmm_create('SOL_SAVED',Sol_saved,savemeta, GMM_FLAG_RSTR+GMM_FLAG_IZER)
-            gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='SOL_SAVED' ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='MM' ; GMM_tbl%fst(gmm_cnt)='SOLS'
+         ni=ldnh_maxx-ldnh_minx+1
+         nj=ldnh_maxy-ldnh_miny+1
+         call gmm_build_meta4D (savemeta,  1,ni,0,0,ni,&
+                                1,nj,0,0,nj,&
+                                1,l_nk,0,0,l_nk,&
+                                0,0,0,0,0,0,GMM_NULL_FLAGS)
+         istat= gmm_create('SOL_SAVED',Sol_saved,savemeta, GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)='SOL_SAVED' ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='MM' ; GMM_tbl%fst(gmm_cnt)='SOLS'
 
-            if (Lun_out > 0) write (Lun_out,1002) trim(Sol_krylov3D_S), trim(Sol_precond3D_S)
+         if (Lun_out > 0) write (Lun_out,1002) trim(Sol_krylov3D_S), trim(Sol_precond3D_S)
 
-         end if
 
          do k= 1, G_nk
             wk(k) = (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
@@ -70,8 +66,14 @@
 
          sol_pil_w= pil_w ; sol_pil_e= pil_e
          sol_pil_s= pil_s ; sol_pil_n= pil_n
-
+         Sol_i0 = 1    + pil_w
+         Sol_in = l_ni - pil_e
+         Sol_j0 = 1    + pil_s
+         Sol_jn = l_nj - pil_n      
+         Sol_k0 = 1+Lam_gbpil_T
+         Sol_nk = l_nk-Sol_k0+1
 !! Bloc extension == restrictive Jacobi preconditionner
+
          if (allocated(Prec_xevec_8)) deallocate (Prec_xevec_8)
          if (allocated(Prec_xeval_8)) deallocate (Prec_xeval_8)
          if (allocated(Prec_ai_8)) deallocate (Prec_ai_8)
@@ -80,7 +82,7 @@
          if (allocated(Prec_ci_8)) deallocate (Prec_ci_8)
 
          select case(Sol_precond3D_S)
-           case ('RAS') ! Restrictive Additive Schwarz preconditioner
+            case ('RAS')              ! Restrictive Additive Schwarz preconditioner
               Sol_ii0  = 1    - Sol_ovlpx
               Sol_iin  = l_ni + Sol_ovlpx
               Sol_jj0  = 1    - Sol_ovlpy
@@ -96,10 +98,10 @@
               f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
               f4 = G_nj-f3*(Ptopo_npey-1)
 
-              nx1 = l_ni - glb_pil_w - 1
-              nx2 = f2 - glb_pil_e - 1
-              ny1 = l_nj - glb_pil_s - 1
-              ny2 = f4 - glb_pil_n - 1
+              nx1 = l_ni - glb_pil_w 
+              nx2 = f2 - glb_pil_e 
+              ny1 = l_nj - glb_pil_s 
+              ny2 = f4 - glb_pil_n 
 
               if (Ptopo_mycol==1)  then
                  Sol_ii0  = 1 -  min(Sol_ovlpx,nx1)
@@ -115,16 +117,16 @@
                  Sol_jjn = l_nj + min(Sol_ovlpy,ny2)
               endif
 
-              if (l_west)  Sol_ii0 = 1 + sol_pil_w
+              if (l_west)  Sol_ii0 = 1    + sol_pil_w
               if (l_east)  Sol_iin = l_ni - sol_pil_e
-              if (l_south) Sol_jj0 = 1 + sol_pil_s
+              if (l_south) Sol_jj0 = 1    + sol_pil_s
               if (l_north) Sol_jjn = l_nj - sol_pil_n
 
 
               sol_niloc=Sol_iin-Sol_ii0+1
               sol_njloc=Sol_jjn-Sol_jj0+1
               sol_nloc = sol_niloc*sol_njloc*Schm_nith
-
+              
               allocate (Prec_xevec_8(sol_niloc,sol_niloc)    ,&
                         Prec_xeval_8(sol_niloc), &
                          Prec_ai_8(sol_niloc,sol_njloc,G_nk),&
@@ -135,7 +137,7 @@
               call eigenabc_local2 (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
                              Prec_bi_8,Prec_invbi_8,Prec_ci_8,&
                              sol_niloc,sol_njloc,Schm_nith,wk)
-      case default
+           case default
               sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
               sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
               sol_nloc = sol_niloc*sol_njloc*Schm_nith
@@ -149,6 +151,7 @@
                               sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
          end select
 
+         allocate (Sol_stencilh_8(1+sol_pil_w:l_ni-sol_pil_e,1+sol_pil_s:l_nj-sol_pil_n,l_nk,15))
          allocate (gg(1:sol_im+1),rot_cos(1:sol_im+1), rot_sin(1:sol_im+1))
          allocate (v_lcl_sum(1:sol_im+1,1:2),rr(1:sol_im+1,1:sol_im+1),&
                    tt(1:sol_im+1,1:sol_im+1), hessenberg(1:sol_im+1, 1:sol_im))
@@ -157,6 +160,7 @@
                    wint_8(sol_ii0:sol_iin,sol_jj0:sol_jjn,1:l_nk,1:sol_im+1))
          allocate (thread_s(1:4,0:OMP_get_max_threads()-1),&
                    thread_s2(1:2,1:sol_im+1,0:OMP_get_max_threads()-1))
+         
          allocate (A1(l_minx:l_maxx, l_miny:l_maxy,1:l_nk,1:15),&
                    A2(l_minx:l_maxx, l_miny:l_maxy,1:l_nk,1:15),&
                    B1(l_minx:l_maxx, l_miny:l_maxy,1:l_nk,1:15),&
@@ -171,6 +175,9 @@
          wint_8=0.
          vv= 0.
          fdg2=0.
+         thread_s= 0.
+         thread_s2= 0.
+
       else                      ! Using the direct solver
 
          do k= 1, G_nk
@@ -268,10 +275,6 @@
 
       end if
 
-
- 1001 format(/,'WILL USE FGMRES 2D ITERATIVE SOLVER WITH ',a, &
-               ' PRECONDITIONNER' &
-             /,'=============================================')
  1002 format(/,'WILL USE ',a,' 3D ITERATIVE SOLVER WITH ',a, &
                ' PRECONDITIONNER' &
              /,'=============================================')

@@ -73,6 +73,8 @@ module adz_mem
 
       type(Adz_pntr_stack), pointer, dimension(:) :: Adz_stack
 
+      real, allocatable, target, dimension(:,:,:,:) :: Adz_o,Adz_i
+
 ! Adz_pxyzm and Adz_wpxyz are a history carrying variables: must be part of the restart
 
       real, pointer, dimension (:,:,:,:), contiguous  :: Adz_pxyzm=>null()

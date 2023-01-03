@@ -19,7 +19,7 @@
       use dynkernel_options
       use dyn_fisl_options
       use glb_ld
-      use fislh_sol
+      use sol_mem
       use lun
       use sol_mem
       use sol_options
@@ -34,8 +34,6 @@
       sol_init = -1
       call low2up  (Sol_type_S ,dumc_S)
       Sol_type_S = trim(dumc_S)
-      call low2up  (Sol_precond2D_S ,dumc_S)
-      Sol_precond2D_S = trim(dumc_S)
       call low2up  (Sol_precond3D_S ,dumc_S)
       Sol_precond3D_S = trim(dumc_S)
 
@@ -71,12 +69,6 @@
                if (Sol_krylov3D_S /= 'FGMRES' .and. Sol_krylov3D_S /= 'FBICGSTAB') then
                if (Lun_out > 0) &
                write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol_krylov3D_S =', Sol_krylov3D_S
-               return
-               endif
-            case('ITERATIVE_2D')
-               if (Sol_precond2D_S /= 'JACOBI'  .and.  Sol_precond2D_S /= 'REDBLACK'  ) then
-               if (Lun_out > 0) &
-               write(Lun_out, *) 'ABORT: WRONG CHOICE OF PRECONDITIONER FOR 2D ITERATIVE SOLVER: Sol_precond2D_S =', Sol_precond2D_S
                return
                endif
             case default
