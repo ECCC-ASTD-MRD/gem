@@ -16,32 +16,31 @@
 !**s/r pw_update_T - Update physical temperature from virtual temperature tt1
 
       subroutine pw_update_T_hlt ()
+      use dyn_fisl_options
       use glb_ld
       use gem_options
       use gmm_pw
       use gmm_vt1
       use tr3d
       use mem_tracers
-      use mem_tstp
       use tdpack
       use omp_timing
       implicit none
 
       integer i,j,k
-      real, dimension(:,:,:), pointer :: wk
 !
 !     ________________________________________________________________
 !
       call gtmg_start (5, 'PW_UPDATE', 0)
 
-      wk(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1:)
-      call sumhydro_hlt (wk, l_minx,l_maxx,l_miny,l_maxy, l_nk,Tr3d_ntr, trt1)
+      call sumhydro_hlt (sumq_8, l_minx,l_maxx,l_miny,l_maxy, l_nk,&
+                         Tr3d_ntr, trt1, Schm_wload_L)
 
 !$omp do collapse(2)
       do k= 1,l_nk
          do j=1-g_haloy, l_nj+g_haloy
             do i=1-g_halox, l_ni+g_halox
-               pw_tt_plus(i,j,k) = fottvh(tt1(i,j,k),tracers_p(tr3d_hu)%pntr(i,j,k),wk(i,j,k))
+               pw_tt_plus(i,j,k) = fottvh(tt1(i,j,k),tracers_p(tr3d_hu)%pntr(i,j,k),real(sumq_8(i,j,k)))
             end do
          end do
       end do

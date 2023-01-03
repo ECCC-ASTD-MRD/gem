@@ -318,11 +318,6 @@ contains
             Ens_ptp_ncha = 0
          endif
 
-         if ((Grd_typ_S /= 'GU'.and.Grd_typ_S /= 'GY').and.Ens_skeb_conf) then
-            if(Lun_out >= 0) write(Lun_out,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
-            ens_nml = -1
-         end if
-
          if ((Ens_mc_seed < 0))then
             if(Lun_out >= 0)write(Lun_out,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
             ens_nml = -1

@@ -161,8 +161,6 @@
 | ------------- | ---------------------- | -------------- | ---- |
 | g_halox | number of points for the halo on X | 4 | integer |
 | g_haloy | number of points for the halo on Y | 4 | integer |
-| gem_trace_ctrl | trace timer with mpi barrier | 0 | integer |
-| gem_trace_freq | Frequency of trace timer dump | -1 | integer |
 | heap_nk | Heap memory will be painted to NaN using an array wrk01(G_ni,G_nj,Heap_nk) | -1 | integer |
 | lctl_cktimeleft_l | True->to check for time left in job | .false. | logical |
 | lctl_debug_l | True->to print more information to std output | .false. | logical |
@@ -331,9 +329,8 @@
 | sol_one_transpose_l | True => use the one-transpose solver | .false. | logical |
 | sol_ovlpx | 3D preconditioner for iterative solver | 4 | integer |
 | sol_ovlpy | 3D preconditioner for iterative solver | 4 | integer |
-| sol_precond2d_s | 2D preconditioner for iterative solver | 'JACOBI' | character(len=26) |
 | sol_precond3d_s | 3D preconditioner for iterative solver | 'RAS' | character(len=26) |
-| sol_type_s | Type of solver<br>- 'ITERATIF'<br>- 'DIRECT' | 'DIRECT' | character(len=26) |
+| sol_type_s | Type of solver<br>- 'ITERATIF'<br>- 'DIRECT' | 'ITERATIVE_3D' | character(len=26) |
 | sol_yyg_eps | Epsilon convergence criteria for the Yin-Yang iterative solver | 1.d-04 | real(kind=REAL64) |
 | sol_yyg_maxits | maximum number of iterations allowed for the Yin-Yang iterative solver | 40 | integer |
 

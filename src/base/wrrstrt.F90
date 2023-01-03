@@ -24,7 +24,7 @@
       use psadjust
       use rmn_gmm
       use wb_itf_mod
-      use gem_timing
+      use omp_timing
       use tr3d
       implicit none
 #include <arch_specific.hf>

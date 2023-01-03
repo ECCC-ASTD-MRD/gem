@@ -8,12 +8,12 @@
       use HORgrid_options
       use VERgrid_options
       use dynkernel_options
+      use sol_options
       use geomh
       use lun
       use path
       use ptopo
       use version
-      use gem_timing, only : gemtime
       implicit none
 
 #include <rmnlib_basics.hf>
@@ -83,6 +83,9 @@
          if (VERgrid_config () < 0) goto 9999
          err = VERgrid_nml (-1)
 
+         if (sol_nml  (unf) < 0) goto 9999
+         err = sol_nml  (-1)
+
          if (step_nml  (unf) < 0) goto 9999
          err = step_nml  (-1)
          Step_runstrt_S='2011020300'
@@ -112,7 +115,6 @@
             endif
          end do
          end do
-         call gemtime ( Lun_out, 'AFTER domain_decomp', .false. )
       endif
 
       if (cnt == 1) then
@@ -128,7 +130,6 @@
          end do
          write(npex_S,'(i6.6)') max_io_pes
          if (Ptopo_couleur == 0) call write_status_file3 ('MAX_PES_IO='//trim(npex_S))
-         call gemtime ( Lun_out, 'AFTER io_pe_valid', .false. )
       endif
 
       call write_status_file3 ('SOLVER=OK')
@@ -140,10 +141,8 @@
          call canonical_cases ("SET_GEOM")
          if (cdm_eigen_S /= 'NONE@#$%') then
             call set_opr () !compute and store eigen values
-            call gemtime ( Lun_out, 'AFTER set_opr', .false. )
          endif
          call set_params (.false., err)
-         call gemtime ( Lun_out, 'AFTER set_params', .false. )
          if (Ptopo_couleur == 0) then
             if (err == 0) then
                call write_status_file3 ('SOLVER=OK')

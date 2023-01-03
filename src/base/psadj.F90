@@ -21,7 +21,7 @@
       use cstv
       use dyn_fisl_options
       use dynkernel_options
-      use gem_timing
+      use omp_timing
       use geomh
       use gmm_geof
       use gmm_vt0
@@ -58,7 +58,7 @@
       real(kind=REAL64), pointer, dimension(:,:)   :: p0_wet_1_8,p0_wet_0_8
       real(kind=REAL64), pointer, dimension(:,:,:) :: pm_8
       real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: qts,delps,pw_pm
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: sumq
+!      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: sumq
       real(kind=REAL64) :: l_avg_8(2),g_avg_8(2),g_avg_ps_1_8,g_avg_ps_0_8,g_avg_fl_0_8,substract_8
       real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors),gathS(Ptopo_numproc*Ptopo_ncolors)
       logical :: LAM_L
@@ -91,33 +91,31 @@
       !-------------------------------------------------------------------
       if (LAM_L) then
 
-         call gemtime_start (32, 'C_BCFLUX_PS', 10)
-
          Adz_flux => Adz_flux_3CWP_PS
 
          !Estimate FLUX_out/FLUX_in using Tracer=1 based on Aranami et al. (2015)
          !-----------------------------------------------------------------------
          call adz_BC_LAM_Aranami (empty,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
 
-         call gemtime_stop (32)
-
          !Evaluate water tracers at TIME M (Schm_psadj==2)
          !------------------------------------------------
          if (Schm_psadj==2) then
 
-            call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr,trt0)
+!$omp parallel
+            call sumhydro_hlt (sumq_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr,trt0, Schm_wload_L)
+!$omp end parallel
             tr=>tracers_M(Tr3d_hu)%pntr
 
             do k=Adz_k0t,l_nk
-               sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tracers_M(Tr3d_hu)%pntr(1:l_ni,1:l_nj,k)
+               sumq_8(1:l_ni,1:l_nj,k) = sumq_8(1:l_ni,1:l_nj,k) + tracers_M(Tr3d_hu)%pntr(1:l_ni,1:l_nj,k)
             end do
 
          else
 
-            sumq = 0.
+            sumq_8 = 0.
 
          end if
-
+!stop
       end if
 
       !Estimate or Recuperate air mass on CORE at TIME P
@@ -198,7 +196,7 @@
                fl_0_8(:,j) = 0.0d0
                do k=1,l_nk
                   do i=Adz_i0b,Adz_inb
-                     fl_0_8(i,j) = fl_0_8(i,j) + (1.-sumq(i,j,k)) * (pm_8(i,j,k+1) - pm_8(i,j,k)) &
+                     fl_0_8(i,j) = fl_0_8(i,j) + (1.-sumq_8(i,j,k)) * (pm_8(i,j,k+1) - pm_8(i,j,k)) &
                                    * (Adz_flux(1)%fi(i,j,k) - Adz_flux(1)%fo(i,j,k))
                  end do
                end do

@@ -43,7 +43,7 @@
       use rstr
       use wb_itf_mod
       use ptopo
-      use gem_timing
+      use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -170,7 +170,7 @@
 
       if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
       if (Grdc_start <  0) Grdc_start= Lctl_step
-      if (Grdc_end   <  0) Grdc_end  = Step_total
+      if (Grdc_end   <  0) Grdc_end  = Step_total + max(Step_initial,0) !Fcst_end steps
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
 
@@ -290,14 +290,6 @@
          err= min( timestr2step (Vtopo_ndt,Vtopo_length_S,Step_dt),err)
       end if
       Vtopo_L = (Vtopo_ndt > 0)
-
-      Gem_trace_barr= (Gem_trace_ctrl > 1)
-      if (Gem_trace_freq<=0) then
-         Gem_trace_freq= 2*Step_total
-      else
-         Gem_trace_freq= min(Step_total,Gem_trace_freq)
-         Gem_trace_freq= Step_total/Gem_trace_freq
-      endif
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/1X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &

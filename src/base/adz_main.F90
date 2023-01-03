@@ -13,67 +13,57 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine adz_main ( orhsu, rhsu, orhsv, rhsv, orhsc ,&
-                            rhsc, orhst,  rhst, orhsf, rhsf ,&
-                            orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
+      subroutine adz_main ()
       use ISO_C_BINDING
+      use dyn_fisl_options
+      use cstv
+      use gem_options
       use adz_mem
-      use adz_interp_rhs_mod
+      use adz_interp_hlt_mod
       use dynkernel_options
-      use gem_timing
-      use gmm_vt0
-      use gmm_vt1
-      use gem_timing
-      use gmm_pw
+      use mem_tstp
       implicit none
-#include <arch_specific.hf>
 
-      integer,intent(in) :: Minx,Maxx,Miny,Maxy, Nk
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(in)  :: &
-                             orhsu, orhsv, orhsc, orhst, orhsf, orhsw
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),target,intent(out) :: &
-                             rhsu, rhsv, rhsc,  rhst, rhsf, rhsw
       integer :: n
+      type(Adz_pntr_stack), dimension(3), target :: stack
 !
 !     ---------------------------------------------------------------
 !
-      call gemtime_start (30, 'ADZ_TRAJEC', 21)
-      call adz_traject (pw_uu_plus, pw_vv_plus, zdt1, &
-                        ut0       ,    vt0    , zdt0, &
-                        l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      call gemtime_stop (30)
+      call adz_traject (Cstv_dt_8)
 
-      call gemtime_start (31, 'ADZ_INTP_RH', 21)
-
-      Adz_stack(1)%src => orhsu
-      Adz_stack(1)%dst =>  rhsu
-      call adz_tricub_rhs ( Adz_stack,1,Adz_pmu,Adz_cpntr_q,Adz_num_u,&
+      stack(1)%src =>  orhsu_ext
+      stack(1)%dst =>  rhsu
+      call adz_tricub_hlt ( stack,1,Adz_pmu,Adz_cpntr_q,Adz_num_u,&
                             Adz_i0u,Adz_inu,Adz_j0,Adz_jn,Adz_k0 )
 
-      Adz_stack(1)%src => orhsv
-      Adz_stack(1)%dst =>  rhsv
-      call adz_tricub_rhs ( Adz_stack,1,Adz_pmv,Adz_cpntr_q,Adz_num_v,&
+      stack(1)%src => orhsv_ext
+      stack(1)%dst =>  rhsv
+      call adz_tricub_hlt ( stack,1,Adz_pmv,Adz_cpntr_q,Adz_num_v,&
                             Adz_i0,Adz_in,Adz_j0v,Adz_jnv,Adz_k0 )
 
-      Adz_stack(1)%src => orhsc
-      Adz_stack(1)%dst =>  rhsc
-      call adz_tricub_rhs ( Adz_stack,1,Adz_pm ,Adz_cpntr_q,Adz_num_q,&
+      stack(1)%src => orhsc_ext
+      stack(1)%dst =>  rhsc
+      call adz_tricub_hlt ( stack,1,Adz_pm ,Adz_cpntr_q,Adz_num_q,&
                             Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0 )
 
-      Adz_stack(1)%src => orhst
-      Adz_stack(1)%dst =>  rhst
-      Adz_stack(2)%src => orhsf
-      Adz_stack(2)%dst =>  rhsf
+      stack(1)%src => orhst_ext
+      stack(1)%dst =>  rhst
+      stack(2)%src => orhsf_ext
+      stack(2)%dst =>  rhsf
       n= 2
       if((.not.Dynamics_hydro_L) .or. Dynamics_hauteur_L) then
          n= 3
-         Adz_stack(n)%src => orhsw
-         Adz_stack(n)%dst =>  rhsw
+         stack(n)%src => orhsw_ext
+         stack(n)%dst =>  rhsw
       endif
-      call adz_tricub_rhs ( Adz_stack,n,Adz_pt ,Adz_cpntr_t,Adz_num_t,&
+      call adz_tricub_hlt ( stack,n,Adz_pt ,Adz_cpntr_t,Adz_num_t,&
                             Adz_i0,Adz_in,Adz_j0,Adz_jn,Adz_k0t )
+!$OMP BARRIER
 
-      call gemtime_stop (31)
+!$omp single
+      call rpn_comm_xch_halo( rhsu, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,2*G_nk,&
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
 !
 !     ---------------------------------------------------------------
 !

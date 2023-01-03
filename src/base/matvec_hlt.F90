@@ -38,6 +38,12 @@
 !
 !     ---------------------------------------------------------------
 !
+      if( .not. FISLH_LHS_metric_L) then
+         call matvec_p ( F_vector, F_minx,F_maxx,F_miny,F_maxy,&
+                         F_prod  , F_i0,F_in,F_j0,F_jn, F_nk )
+         return
+      endif
+
       k0=1+Lam_gbpil_T
       k0t=k0 ; if (Schm_opentop_L) k0t=k0-1
 

@@ -26,7 +26,7 @@
       use out_meta
       use out3
       use ptopo
-      use gem_timing
+      use omp_timing
       implicit none
 #include <arch_specific.hf>
 
@@ -53,9 +53,9 @@
       if ( (nis < 1) .or. (njs < 1) ) return
 
       if (out_type_S == 'REGDYN') then
-         call gemtime_start ( 81, 'OUT_DUCOL', 80)
+         call gtmg_start ( 81, 'OUT_DUCOL', 80)
       else
-         call gemtime_start ( 91, 'OUT_PUCOL', 48)
+         call gtmg_start ( 91, 'OUT_PUCOL', 48)
       end if
 
       if (Out3_ezcoll_L) then
@@ -90,11 +90,11 @@
       end if
 
       if (out_type_S == 'REGDYN') then
-         call gemtime_stop (81)
-         call gemtime_start ( 82, 'OUT_DUECR', 80)
+         call gtmg_stop (81)
+         call gtmg_start ( 82, 'OUT_DUECR', 80)
       else
-         call gemtime_stop (91)
-         call gemtime_start ( 92, 'OUT_PUECR', 48)
+         call gtmg_stop (91)
+         call gtmg_start ( 92, 'OUT_PUECR', 48)
       end if
 
       IOPE: if (iope_L) then
@@ -162,9 +162,9 @@
       end if IOPE
 
       if (out_type_S == 'REGDYN') then
-         call gemtime_stop (82)
+         call gtmg_stop (82)
       else
-         call gemtime_stop (92)
+         call gtmg_stop (92)
       end if
 !
 !--------------------------------------------------------------------
