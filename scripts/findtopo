@@ -12,8 +12,6 @@ eval $(rpy.cclargs \
    -npey_high   "0"    "0"    "[upper bound for npey           ]"\
    -omp         "1"    "1"    "[number of omp threads          ]"\
    -smt         "1"    "2"    "[smt levels                     ]"\
-   -low         "0"    "0"    "[lower bound for number of nodes]"\
-   -high        "245"  "5000" "[upper bound for number of nodes]"\
    -nml         "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
    ++ $*)
 
@@ -89,7 +87,7 @@ if [ $npey_high -lt 1 ] ; then
 fi
 
 # Machine specific (XC50)
-CORESperNODE=40
+CORESperNODE=80
 THREADSperCORE=${smt}
 THREADSperNODE=$((CORESperNODE*THREADSperCORE))
 
@@ -122,10 +120,8 @@ while read line ; do
    cores=$(echo "scale=0; ${nodes} * ${CORESperNODE}" | bc -l)
    n=$((nthreads/THREADSperNODE))
 
-   if [ $n -ge $low -a $n -le $high ] ; then
-      printf ""TOPO:"%5i "x"%5i  "NODES="%8.2f  "CORES="%6.0f  "MPI="%6i "SUBDOMAINS="%5i "x"%5i %s\n"\
+   printf ""TOPO:"%5i "x"%5i  "NODES="%8.2f  "CORES="%6.0f  "MPI="%6i "SUBDOMAINS="%5i "x"%5i %s\n"\
          $npex $npey $nodes $cores $((npex*npey*mult)) $((GNI/npex)) $((GNJ/npey)) ${FULLNODE}
-   fi
 done < ${TMPDIR}/findtopolis$$
 /bin/rm -f ${TMPDIR}/findtopolis$$ $lis
 

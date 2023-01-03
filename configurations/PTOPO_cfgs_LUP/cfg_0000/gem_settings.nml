@@ -53,7 +53,10 @@
   hyb_rcoef = 3., 15., 0., 100.
 
 /
-
+&sol
+  Sol_type_S = 'DIRECT'
+/
+  
  &dyn_fisl
   Cstv_tstr_8     = 240.0      ,
   Schm_itcn       = 2          , 

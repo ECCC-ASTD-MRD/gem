@@ -18,7 +18,7 @@ for i in $(ls -1d THEO_cfgs* 2>/dev/null) ; do
       printf "couleur_model=yellow\n" > RESULTS/$EXP/status/${CFG}_MODEL
       /bin/rm -rf RESULTS/$EXP/fst/${CFG} ; mkdir -p RESULTS/$EXP/fst/${CFG}
       out=$(echo $CFG | cut -d"_" -f3).fst
-      flipit.Abs -i RUNMOD/output/cfg_0000/laststep_000*/000-000/dm*_00[1-4] -o RESULTS/$EXP/fst/${CFG}/$out 1> /dev/null 2> /dev/null
+      flipit -i RUNMOD/output/cfg_0000/laststep_000*/000-000/dm*_00[1-4] -o RESULTS/$EXP/fst/${CFG}/$out 1> /dev/null 2> /dev/null
     fi
   fi
   . gem_test_results
