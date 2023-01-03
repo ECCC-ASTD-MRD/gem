@@ -69,7 +69,7 @@ contains
       integer :: i, k, stat, ksl(ni)
       real :: cf1, cf2, eturbtau, uet, ilmot, &
            fhz, fim, fit, hst_local, &
-           b(ni,nkm1*4), xb(ni), xh(ni)
+           b(ni,nkm1*4), xb(ni), xh(ni), fbsurf(ni)
 
       real, pointer, dimension(:) :: zbt_ag, zfrv_ag, zftemp_ag, &
            zfvap_ag, zhst_ag, zilmo_ag, zz0_ag, ztsurf  !#TODO: should be contiguous
@@ -86,7 +86,7 @@ contains
       real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce, qe
       !----------------------------------------------------------------
 
-      call init2nan(xb, xh)
+      call init2nan(xb, xh, fbsurf)
       call init2nan(b, c, x, wk2d, enold, tmom, qmom, te, qce, qe)
 
       MKPTR1D(zalfat, alfat, vbus)
@@ -223,6 +223,7 @@ contains
          xb(i)=1.0+DELTA*qe(i,ksl(i))
          xh(i)=(GRAV/(xb(i)*ztve(i,ksl(i)))) * ( xb(i)*zftemp_ag(i) &
               + DELTA*ztve(i,ksl(i))*zfvap_ag(i) )
+         fbsurf(i)=xh(i)
          xh(i)=max(0.0,xh(i))
          xh(i) = (zh(i)*xh(i))**(1./3.)
          zwstar(i) = xh(i)
@@ -237,10 +238,10 @@ contains
          zuwng = 0.
          zvwng = 0.
 
-         call moistke12(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zkt,zqtbl,zc1pbl,zfnn, &
+         call moistke13(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zkt,zqtbl,zc1pbl,zfnn, &
               zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
               zumoins,zvmoins,ztmoins,ztve,zhumoins,qe,zpmoins,zsigm,se,zsigw, &
-              zze,zz0_ag,zgzmom,zfrv_ag,zwstar,zturbreg, &
+              zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
               zmrk2,zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
          if (phy_error_L) return
 

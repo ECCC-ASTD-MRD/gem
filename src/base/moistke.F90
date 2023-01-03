@@ -15,11 +15,11 @@
 !-------------------------------------- LICENCE END --------------------------
 
 !/@*
-subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
+subroutine moistke13(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
      fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
      wthl_ng,wqw_ng,uw_ng,vw_ng, &
      u,v,t,tve,q,qe,ps,s,se,sw, &
-     z,z0,gzmom,frv,wstar,turbreg, &
+     z,z0,gzmom,frv,wstar,fbsurf,turbreg, &
      mrk2,vcoef,dxdy,tau,kount,trnch,n,nk)
    use, intrinsic :: iso_fortran_env, only: INT64
    use tdpack, only: CAPPA, DELTA, GRAV, KARMAN, RGASD
@@ -44,6 +44,7 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    real, dimension(n), intent(in) :: z0              !roughness length (m)
    real, dimension(n), intent(in) :: frv             !friction velocity (m/s)
    real, dimension(n), intent(in) :: wstar           !convective velocity scale
+   real, dimension(n), intent(in) :: fbsurf          !surface buoyancy flux (TODO: units)
    real, dimension(n), intent(in) :: dxdy            !horizontal grid area (m^2)
    real, dimension(n,nk), intent(in) :: enold        !TKE of previous time step (m2/s2)
    real, dimension(n,nk), intent(in) :: qe           !specific humidity on e-lev (kg/kg)
@@ -164,9 +165,9 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    ricmin = ens_spp_get('ricmin', mrk2, pbl_ricrit(1))
    
    ! Estimate boundary layer cloud properties and nonlocal fluxes
-   call blcloud5(u,v,t,tve,q,qc,fnn,frac,fngauss,fnnonloc,w_cld, &
+   call blcloud6(u,v,t,tve,q,qc,fnn,frac,fngauss,fnnonloc,w_cld, &
         wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz, &
-        hpar,frv,z0,wstar,gzmom,z,s,sw,ps,shr2,rig, &
+        hpar,frv,z0,fbsurf,gzmom,z,s,sw,ps,shr2,rig, &
         buoy,tau,vcoef,n,nk,size(w_cld,dim=3))
 
    ! Output Richardson number time series
@@ -325,4 +326,4 @@ subroutine moistke12(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    endif UPDATE_TKE
 
    return
-end subroutine moistke12
+end subroutine moistke13

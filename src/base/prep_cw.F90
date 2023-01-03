@@ -159,14 +159,15 @@ contains
       ! cloud fractions are combined assuming random overlap
       
       if (fluvert == 'MOISTKE') then
-         do k=1,nk
-            do i=1,ni
-               if (zqtbl(i,k) > zqcplus(i,k))then
-                  zlwc(i,k) = zqtbl(i,k)
-                  cfblxp(i,k) = zfbl(i,k)
-               endif
-            enddo
-         enddo
+         if (associated(zqcplus)) then
+            where (zqtbl(:,:) > zqcplus(:,:))
+               zlwc(:,:) = zqtbl(:,:)
+               cfblxp(:,:) = zfbl(:,:)
+            endwhere
+         else
+            zlwc(:,:) = zqtbl(:,:)
+            cfblxp(:,:) = zfbl(:,:)
+         endif
       endif
       zlwc = zlwc + zqldi + zqsdi + zqlsc + zqssc + zqlmi + zqsmi
       do k=1,nk
