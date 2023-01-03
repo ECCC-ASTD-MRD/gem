@@ -81,7 +81,6 @@ if [[ ! -f ${reffile:-/NO/SUCH/FILE} ]] ; then
 fi
 
 status=0
-which rpy.nml_check
 for item in ${nmlfiles} ; do
    rpy.nml_check ${myverb} ${nml} ${checktypes} -r ${reffile} -f ${item}
    status=$?

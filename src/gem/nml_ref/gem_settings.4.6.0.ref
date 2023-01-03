@@ -1,0 +1,218 @@
+ &grid
+  Grd_typ_S       = 'GU'      , GRD_GAUSS_L=.true.
+  Grd_ni          = 40        , Grd_nj          = 20        ,
+ /
+
+ &grid2
+  Grd_typ_S       = 'GY'       ,
+  Grd_nj          = 21         ,
+ /
+
+ &gement
+
+  e_schm_stlag    = .true.     , e_schm_adcub    = .true.     ,
+
+  Topo_filmx_L    = .true.     ,
+  Topo_dgfmx_L    = .true.     ,
+  Topo_dgfms_L    = .true.     ,
+
+  Topo_clip_oro_L = .false.    ,
+
+/
+
+ &adw_cfgs
+  Adw_nosetint_L   = .true.    ,
+/
+
+ &step
+  Fcst_end_S      = "6h"       , Step_rsti = 500
+  Step_gstat      = 192        , 
+  Step_dt         = 1800.      ,
+/
+
+ &gem_cfgs
+
+  hyb = 0.0001,
+0.000176875 ,
+0.000305961 ,
+0.00050908 ,
+0.000810608 ,
+0.00122946 ,
+0.00180251 ,
+0.00255483 ,
+0.00349556 ,
+0.00466656 ,
+0.00607754 ,
+0.0077548 ,
+0.00968393 ,
+0.0119081 ,
+0.0144711 ,
+0.0172098 ,
+0.020292 ,
+0.0236372 ,
+0.0272474 ,
+0.0310405 ,
+0.0350176 ,
+0.0392652 ,
+0.0436999 ,
+0.0481515 ,
+0.0527916 ,
+0.0574486 ,
+0.062122 ,
+0.0667243 ,
+0.0712543 ,
+0.0756232 ,
+0.079917 ,
+0.0839587 ,
+0.0876579 ,
+0.0920727 ,
+0.0964992 ,
+0.101826 ,
+0.108061 ,
+0.115214 ,
+0.122394 ,
+0.131406 ,
+0.141367 ,
+0.152288 ,
+0.165099 ,
+0.180754 ,
+0.196514 ,
+0.213311 ,
+0.23116 ,
+0.249128 ,
+0.269122 ,
+0.289253 ,
+0.311454 ,
+0.333811 ,
+0.35632 ,
+0.380954 ,
+0.405758 ,
+0.432734 ,
+0.458890 ,
+0.487252 ,
+0.515808 ,
+0.545586 ,
+0.575565 ,
+0.606786 ,
+0.639265 ,
+0.67196 ,
+0.704869 ,
+0.735844 ,
+0.765922 ,
+0.792918 ,
+0.818956 ,
+0.844021 ,
+0.865905 ,
+0.886769 ,
+0.906602 ,
+0.924285 ,
+0.94091 ,
+0.956465 ,
+0.970944 ,
+0.983221 ,
+0.994402 ,
+
+  Grd_rcoef = 4.5,4.5          , Cstv_ptop_8    = 7.5         ,
+ 
+  Lctl_debug_L    = .false.    ,
+
+  Sol_type_S = 'DIRECT'        ,
+
+  Cstv_tstr_8     = 240.0      ,
+
+  Hzd_type_S      = 'HO_IMP'   , Hzd_pwr         = 6          ,
+                                 Hzd_lnr         = 0.04       ,
+
+  Init_balgm_L    = .false.     , Init_dftr_L     = .false.    ,
+  Init_dfwin_L    = .true.     , Init_dfnp       = 3         ,
+  Init_dfpl_8     = 21600.     ,
+
+  Vspng_coeftop   =  500000.   , Vspng_nk        = 6  
+  Vspng_zmean_L   = .false.    ,
+
+  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1,
+
+  Schm_hydro_L    = .true.     , 
+  Schm_itcn       = 2          , Schm_modcn      = 1          ,
+  Schm_itnlh      = 2          , Schm_itraj      = 3          , 
+  Schm_adcub_L    = .true.     ,
+                                 Schm_psadj_L    = .false.    ,
+  Schm_xwvt3      = 0          , Schm_wload_L    = .false.    ,
+
+  Out3_etik_s     = 'GEM_MODULE'   ,
+  Out3_zund       = 2500, 2000, 1500,
+  Out3_nbitg      = 12         , Out3_cliph_L     = .true.    ,
+  Out3_cubzt_L    = .false.    , Out3_cubuv_L     = .false.   ,
+  Out3_cubds_L    = .false.    , Out3_cubqs_L     = .false.   ,
+  Out3_cubdd_L    = .false.    , Out3_cubqq_L     = .false.   ,
+  Out3_cubww_L    = .false.    , Out3_linbot      =  3        ,
+  Out3_postfreq   = 90,
+  P_lmvd_weigh_high_lat = 0.0        , Clim_inincr_L    = .false.   ,
+
+/
+
+ &physics_cfgs
+ SCHMSOL          = 'ISBA'     ,
+ RADIA            = 'cccmarad'   ,  KNTRAD          = 4          ,
+ RADFLTR          = .false.    ,
+ TS_FLXIR         = .true.     ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'gwd86'    ,
+ NON_ORO          = .true.     ,
+ hines_flux_filter= 5
+ LMETOX           = .true.     , 
+
+ LONGMEL          = 'boujo'    ,
+ FLUVERT          = 'clef'     , PBL_RICRIT=0.25,2.,
+ IMPFLX           = .true.     ,
+
+ SHLCVT           = 'conres'   ,'ktrsnt_mg'                    ,
+ KFCPCP           = 'conspcpn' ,
+ CONVEC           = 'kfc'      , STCOND  ='consun'             ,
+ HC2              = 0.8        ,
+ HF2              = 0.8        , HM2             = 0.8         ,
+ INILWC           = .true.     ,
+
+ KFCRAD           = 1500.      , KFCDEPTH        = 4000.       ,
+ KFCDLEV          = 0.5        , KFCDET          = 0.          ,
+ KFCTIMEC         = 3600.      , KFCTIMEA        = 3600.       ,
+ KFCTRIG4         = 0.,0.,0.05,0.05,
+ KFCTRIGLAT       = .true.     ,
+ KFCTRIGL         = 0.01       ,
+ TRIGLAT          = 25., 30.   ,
+ KTICEFRAC       = .false.     ,
+
+ PCPTYPE          = 'bourge3d'   ,
+
+ SALTY_QSAT       = .true.   ,
+
+ ICELAC           = .true.     ,
+
+ AGREGAT          = .true.     ,
+ PARSOL           = 2.3E+06,.8E+06,2.0E+06,0.5E-06,0.1E-06,1.1E-06,
+ ICEMELT          = .true.     , QCO2             = 380.0      ,
+ ZTA              = -1.        , ZUA              = -1.        ,
+
+ Z0TLAT           = 25., 30.   ,
+ LIMSNODP         = .true.     ,
+/
+
+ &series
+
+  P_serg_srwri     = 1          ,
+  P_serg_serstp    = 12         ,
+
+  P_serg_srsrf_s   = 'PR', 
+
+  P_serg_srprf_s   = 'TT',
+
+  Xst_stn_latlon   = 'ZERO',0.,0.,
+
+/
+
+&__gemupcfg__
+orig_version=4.6.0,
+from_version=4.6.0,
+version=4.6.0,
+/
