@@ -634,6 +634,7 @@ contains
             endif
          endif
       enddo
+!!$      F_istat = min(F_istat, minval(F_fld%k1(1:F_fld%nkeys)))
       if (RMN_IS_OK(F_istat)) then
          F_istat = priv_read(F_cfg, F_cfgvar, F_cfgfile, fileidx, F_fld)
       endif
@@ -964,17 +965,18 @@ contains
          endif
       endif IF_BLOCIO
       F_fld%hstat = maxval(F_fld%hstats(1:F_fld%nkeys))
+      F_istat = min(F_istat, minval(F_fld%hstats(1:F_fld%nkeys)))
 
       !#TODO: level by level (hstats) warning...
+      call str_concat_i(tmp_S, pk1, ', ')
+      write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
       if (RMN_IS_OK(F_istat)) then
-         call str_concat_i(tmp_S, pk1, ', ')
-         write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
          call msg(MSG_INFO, '(inputio) Read ' &
               //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)//': '//msg_S)
          if (.not.isassoc_L) F_fld%dalloc_L = .true.
       else
          call msg(MSG_WARNING, '(inputio) Problem reading: ' &
-              //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S))
+              //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)//': '//msg_S)
          return
       endif
 

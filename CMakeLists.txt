@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 #----- Append EC specific module path
-list(APPEND CMAKE_MODULE_PATH $ENV{EC_CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake_rpn/modules)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn/modules $ENV{EC_CMAKE_MODULE_PATH})
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
@@ -18,25 +18,9 @@ enable_language(C)
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
 
-# CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "(EC) CMAKE_BUILD_TYPE can be one of Debug, Release, RelWithDebInfo, MinSizeRel")
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-  message(STATUS "(EC) No build type selected, default to ${CMAKE_BUILD_TYPE}")
-endif()
-message(STATUS "(EC) Configuring for ${CMAKE_BUILD_TYPE} build type")
-
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
-# necessary for rmn 19.7.0
-if (OPENMP_FOUND)
-  add_compile_definitions(WITH_OpenMP)
-  message(STATUS "(EC) Adding extra -DWITH_OpenMP")
-else()
-  add_compile_definitions(WITHOUT_OpenMP)
-  message(STATUS "(EC) Adding extra -DWITHOUT_OpenMP")
-endif()
 
 option(WITH_OPENACC "Build with OpenACC support" OFF)
 if (WITH_OPENACC)

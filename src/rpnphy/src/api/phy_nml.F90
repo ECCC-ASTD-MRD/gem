@@ -223,6 +223,7 @@ contains
       istat = clib_toupper(rad_cond_rei)
       istat = clib_toupper(rad_cond_rew)
       istat = clib_toupper(rad_conserve)
+      istat = clib_toupper(rad_part_nomp)
       istat = clib_toupper(radia)
       istat = clib_toupper(stcond)
       istat = clib_toupper(tofd)
@@ -339,6 +340,13 @@ contains
          return
       end if
 
+      if (.not.any(rad_part_nomp == RAD_PART_NOMP_OPT)) then
+         call str_concat(msg_S,RAD_PART_NOMP_OPT,', ')
+         call msg(MSG_ERROR,'(phy_nml_check) rad_part_nomp = '//trim(rad_part_nomp)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+ 
+
       if (.not.RMN_IS_OK(str_toreal(rei_const,rad_cond_rei))) then
          if (.not.any(rad_cond_rei == RAD_COND_REI_OPT)) then
             call str_concat(msg_S,RAD_COND_REI_OPT,', ')
@@ -376,11 +384,6 @@ contains
      if (.not.any(tofd == TOFD_OPT)) then
          call str_concat(msg_S,TOFD_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) tofd = '//trim(tofd)//' : Should be one of: '//trim(msg_S))
-         return
-      endif
- 
-      if (simisccp) then
-         call msg(MSG_ERROR,'(phy_nml_check) simisccp=.true. -- no longuer supported')
          return
       endif
 

@@ -177,13 +177,20 @@ contains
        ivplust(:,ki) = vplust(:,k)
        itplus(:,ki) = ztplus(:,k)
        iqplus(:,ki) = zhuplus(:,k)
-       iqcplus(:,ki) = zqcplus(:,k)
        iexner(:,ki) = exner(:,k)
        ipresm(:,ki+1) = presm(:,k)
        iprest(:,ki) = prest(:,k)
        idzt(:,ki) = dzt(:,k)
        ithrad(:,ki) = thrad(:,k)
     enddo
+    if (associated(zqcplus)) then
+       do k=1,nkm1
+          ki = nkm1 - (k-1)
+          iqcplus(:,ki) = zqcplus(:,k)
+       enddo
+    else
+       iqcplus(:,:) = 0.
+    endif
     ipresmo(:,:) = ipresm(:,:)
     ikm(:,:) = 0.
     ikt(:,:) = 0.
@@ -273,10 +280,19 @@ contains
        vdifvt(:,k) = (ivplust(:,ki) - vplust(:,k)) * idt
        ztdifv(:,k) = (itplus(:,ki) - ztplus(:,k)) * idt
        zqdifv(:,k) = (iqplus(:,ki) - zhuplus(:,k)) * idt
-       if (NDIFF > 1) zqcdifv(:,k) = (iqcplus(:,ki) - zqcplus(:,k)) * idt
        zkm(:,k) = ikm(:,min(ki+1,nkm1))
        zkt(:,k) = ikt(:,min(ki+1,nkm1))
-    enddo       
+    enddo
+    if (NDIFF > 1) then
+       if (associated(zqcplus)) then
+          do k=1,nkm1
+             ki = nkm1 - (k-1)
+             zqcdifv(:,k) = (iqcplus(:,ki) - zqcplus(:,k)) * idt
+          enddo
+       else
+          zqcdifv(:,:) = 0.
+       endif
+    endif
     
     ! Interpolate momentum-level variables to thermodynamic levels
     call vint_thermo2mom(zudifv, udifvt, zvcoef, ni, nkm1)

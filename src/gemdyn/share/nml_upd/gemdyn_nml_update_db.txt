@@ -882,3 +882,7 @@ fileVersion: 5.2.0-a19 > 5.2.0-a20
 #------
 fileVersion: 5.2.0-a20 > 5.2.0-a21
 
+#------
+fileVersion: 5.2.0-a21 > 5.2.0-a22
+rm:  gem_cfgs/gem_trace_ctrl
+rm:  gem_cfgs/gem_trace_freq

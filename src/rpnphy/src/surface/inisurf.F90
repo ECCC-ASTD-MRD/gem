@@ -527,11 +527,12 @@ subroutine inisurf4(kount, ni, nk, trnch)
 !                          on vegetation
 !
    
-      if (any('vegf' == phyinread_list_s(1:phyinread_n))) then
+      if (any('vegf' == phyinread_list_s(1:phyinread_n)) .or. &
+           (kntveg > 0 .and. mod(kount,kntveg) == 0)) then
          if(vf_type == "CCILCECO") then            
-            call inicover_svs_ccilceco(0, ni, trnch)
+            call inicover_svs_ccilceco(kount, ni, trnch)
          else
-            call inicover_svs(0, ni, trnch)
+            call inicover_svs(kount, ni, trnch)
          endif
       endif
 !
