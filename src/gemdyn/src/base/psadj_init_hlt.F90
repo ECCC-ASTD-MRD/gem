@@ -65,7 +65,6 @@
       p0_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimH
       thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_max_threads
       g_avg_8(1:2) => WS1_8(dim+1:) ; dim= dim+2
-      thread_sum=0.
       p0_dry_8 => p0_0_8
 
 !$omp single

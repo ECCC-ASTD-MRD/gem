@@ -62,8 +62,6 @@
       thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(1:) ; dim= 2*OMP_max_threads
       g_avg_8(1:2) => WS1_8(dim+1:) 
 
-      thread_sum=0.d0
-
       !Set CORE limits
       !---------------
       i0_c = 1+pil_w ; j0_c = 1+pil_s ; in_c = l_ni-pil_e ; jn_c = l_nj-pil_n ; k0 = Adz_k0t 
