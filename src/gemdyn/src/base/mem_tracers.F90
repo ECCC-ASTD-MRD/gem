@@ -22,6 +22,7 @@ module mem_tracers
       integer :: tracers_nblocks
       real, dimension    (:), pointer :: trt1, trt0, trdf, trtb
       real(kind=REAL64), dimension(:,:,:), pointer :: sumq_8
+      real, pointer, dimension (:,:,:) :: air_mass, w_tr
 
       type :: memTR_pntrs
          real, dimension(:,:,:), pointer :: pntr
