@@ -34,7 +34,7 @@
 !$omp parallel
       call psadj_init_hlt ( Step_kount )
 
-      call gtmg_start (10, 'DYNSTEP', 10)
+      call gtmg_start (10, 'DYNSTEP', 1)
       do icn = 1,Schm_itcn-1
 
          call fislh_tstpdyn (icn) ! Solver NOT done yet
@@ -52,7 +52,6 @@
       call psadj_hlt ( Step_kount )
 
       call adz_tracers (.false.)
-      call gtmg_stop (10)
 
       call t02t1()
 
@@ -72,6 +71,8 @@
       if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
 
       Schm_itcn = keep_itcn
+      
+      call gtmg_stop (10)
 !
 !     ---------------------------------------------------------------
 !
