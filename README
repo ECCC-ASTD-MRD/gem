@@ -9,7 +9,7 @@ instructions below.
 # choose one of the following methods
 
 # 1. cloning only the necessary component (cmake_rpn):
-git clone --branch --recurse-submodules=":(exclude)src/rpn-si/*" 5.2_cmake git@gitlab.science.gc.ca:cpi001/gem-devel.git
+git clone --branch 5.2_cmake --recurse-submodules=":(exclude)src/rpn-si/*" 5.2_cmake git@gitlab.science.gc.ca:cpi001/gem-devel.git
 cd gem-devel
 
 # 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
