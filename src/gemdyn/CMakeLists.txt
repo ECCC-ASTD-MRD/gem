@@ -23,13 +23,6 @@ include(ec_compiler_presets)
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
 
-# necessary for rmn 19.7.0
-if (OPENMP_FOUND)
-  add_compile_definitions(WITH_OpenMP)
-else()
-  add_compile_definitions(WITHOUT_OpenMP)
-endif()
-
 if (NOT rmn_FOUND)
   find_package(rmn ${RMN_REQ_VERSION} CONFIG)
 endif()
