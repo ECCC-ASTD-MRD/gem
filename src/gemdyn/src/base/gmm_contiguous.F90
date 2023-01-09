@@ -22,10 +22,8 @@
          real, dimension(:,:,:), pointer :: pntr_3d
          end type gmm_contiguous_pntrs
       integer gmm_nbplans
-      real, pointer, contiguous, dimension (:) :: dynt2 => null()
       real, pointer, contiguous, dimension (:) :: dynt1 => null()
       real, pointer, contiguous, dimension (:) :: dynt0 => null()
-      type(gmm_contiguous_pntrs), allocatable :: timlvl2(:)
       type(gmm_contiguous_pntrs), allocatable :: timlvl1(:)
       type(gmm_contiguous_pntrs), allocatable :: timlvl0(:)
 
