@@ -21,6 +21,13 @@ target_include_directories(modelutils PRIVATE
   ${rpncomm_GEN_INCLUDE_DIR}
   ${tdpack_INCLUDE_DIRS}
   )
+
+target_link_libraries(modelutils PUBLIC
+  OpenMP::OpenMP_Fortran
+  OpenMP::OpenMP_C
+  )
+
+
 set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
 
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
