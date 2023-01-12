@@ -18,14 +18,10 @@ enable_language(C Fortran)
 
 ec_build_info()            # Generate build information
 include(ec_compiler_presets)
-include(ec_openmp)
 
-# necessary for rmn 19.7.0
-if (OPENMP_FOUND)
-  add_compile_definitions(WITH_OpenMP)
-else()
-  add_compile_definitions(WITHOUT_OpenMP)
-endif()
+# To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
+set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
+include(ec_openmp)
 
 if (NOT rmn_FOUND)
   find_package(rmn ${RMN_REQ_VERSION} CONFIG)
@@ -43,7 +39,7 @@ if (NOT vgrid_FOUND)
   find_package(vgrid ${vgrid_REQ_VERSION} CONFIG)
 endif()
 
-  # Adding specific flags for modelutils
+# Adding specific flags for modelutils
 if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
