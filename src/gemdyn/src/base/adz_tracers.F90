@@ -33,9 +33,7 @@
       
       call gtmg_start (33, 'ADZ_TRACERS', 10)
 
-!$omp single
-      if (Adz_verbose>0 .and. F_before_psadj_L) call stat_mass_tracers (1,"BEFORE ADVECTION")
-!$omp end single
+      if (Adz_verbose>0 .and. F_before_psadj_L) call stat_mass_tracers_hlt (1,"BEFORE ADVECTION")
 
       if (Tr3d_ntrTRICUB_NT>0 .and. F_before_psadj_L) then
          call gtmg_start (34, 'TRICUB_NT', 33)
@@ -159,9 +157,7 @@
          call adz_BC_LAM_zlf_0_hlt (Tr3d_ntrBICHQV_WP,2)
       end if
 
-!$omp single
-      if (Adz_verbose>0 .and. after_psadj_L) call stat_mass_tracers (0,"AFTER ADVECTION")
-!$omp end single
+      if (Adz_verbose>0 .and. after_psadj_L) call stat_mass_tracers_hlt (0,"AFTER ADVECTION")
 
       call gtmg_stop (33)
 !
