@@ -70,7 +70,6 @@
          ptop(l_minx:l_maxx,l_miny:l_maxy), p0(l_minx:l_maxx,l_miny:l_maxy),&
          deg2rad,zd2etad
 
-      real, dimension(:,:  ), pointer    :: tdiag,qdiag
       real, dimension(:,:,:), pointer    :: gmm_hut1, wlnph_m, wlnph_ta
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
                                             tt_pres,vt_pres,w5,w6,cible,&
@@ -133,12 +132,10 @@
       if (pnth /= 0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
-      nullify (gmm_hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
+      nullify (gmm_hut1,wlnph_m,wlnph_ta)
       istat= gmm_get('TR/'//'HU'//':P', gmm_hut1  )
       istat= gmm_get(gmmk_pw_log_pm_s , wlnph_m   )
       istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
-      istat= gmm_get(gmmk_diag_tt_s   , tdiag     )
-      istat= gmm_get(gmmk_diag_hu_s   , qdiag     )
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 

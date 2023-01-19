@@ -20,15 +20,27 @@
       use glb_ld
       use gmm_pw
       use gmm_vt1
+      use glb_ld
+      use outp
       use omp_timing
       implicit none
+
+      integer i,j
 !     ________________________________________________________________
 !
       call gtmg_start (5, 'PW_UPDATE', 0)
 
       call hwnd_stag_hlt ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
                            l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
-
+!$omp do
+      do j=l_miny, l_maxy
+         do i=l_minx,l_maxx
+            udiag(i,j) = pw_uu_plus(i,j,G_nk)
+            vdiag(i,j) = pw_vv_plus(i,j,G_nk)
+         end do
+      end do
+!$omp end do
+      
       call gtmg_stop (5)
 !     ________________________________________________________________
 !
