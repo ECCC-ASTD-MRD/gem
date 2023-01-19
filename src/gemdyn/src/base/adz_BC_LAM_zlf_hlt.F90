@@ -56,8 +56,6 @@
          j0_e =    1 + pil_s - ext*south
          jn_e = l_nj - pil_n + ext*north
 
-
-!        if (l_west)  F1(1     :i0_e-1,1     :F_nj,  1:F_nk) = 0.
          if (l_west) then
 !$omp do collapse(2)
            do i=1,i0_e-1
@@ -70,7 +68,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_east)  F1(in_e+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
          if (l_east) then
 !$omp do collapse(2)
            do i=in_e+1,F_ni
@@ -83,7 +80,6 @@
 !$omp enddo nowait 
          endif
 
-!        if (l_south) F1(1     :F_ni,  1     :j0_e-1,1:F_nk) = 0.
          if (l_south) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -96,7 +92,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_north) F1(1     :F_ni,  jn_e+1:F_nj,  1:F_nk) = 0.
          if (l_north) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -109,7 +104,6 @@
 !$omp enddo nowait
          endif
 
-!        F1(i0_e:in_e,j0_e:jn_e,1:k0d2-1) = 0.
 !$omp do collapse(2)
          do i=i0_e,in_e
             do j=j0_e,jn_e
@@ -129,14 +123,6 @@
          j0_c = 1    + pil_s
          jn_c = l_nj - pil_n
 
-!        if (l_west)  F2(1     :i0_c-1,1     :F_nj,  1:F_nk) = F1(1     :i0_c-1,1     :F_nj,  1:F_nk)
-!        if (l_east)  F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
-!        if (l_south) F2(1     :F_ni,  1     :j0_c-1,1:F_nk) = F1(1     :F_ni,  1     :j0_c-1,1:F_nk)
-!        if (l_north) F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
-
-!        F2(i0_c:in_c,j0_c:jn_c,1:k0-1) = F1(i0_c:in_c,j0_c:jn_c,1:k0-1)
-
-!        if (l_west)  F2(1     :i0_c-1,1     :F_nj,  1:F_nk) = F1(1     :i0_c-1,1     :F_nj,  1:F_nk)
          if (l_west) then
 !$omp do collapse(2)
            do i=1,i0_c-1
@@ -149,7 +135,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_east)  F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
          if (l_east) then
 !$omp do collapse(2)
            do i=in_c+1,F_ni
@@ -162,7 +147,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_south) F2(1     :F_ni,  1     :j0_c-1,1:F_nk) = F1(1     :F_ni,  1     :j0_c-1,1:F_nk)
          if (l_south) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -175,7 +159,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_north) F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
          if (l_north) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -188,7 +171,6 @@
 !$omp enddo nowait
          endif
 
-!        F2(i0_c:in_c,j0_c:jn_c,1:k0-1) = F1(i0_c:in_c,j0_c:jn_c,1:k0-1)
 !$omp do collapse(2)
          do i=i0_c,in_c
             do j=j0_c,jn_c
@@ -210,13 +192,6 @@
          j0_b =    1 + BCS_BASE*south
          jn_b = l_nj - BCS_BASE*north
 
-!        if (l_west)  F1(1     :i0_b-1,1     :F_nj,  1:F_nk) = 0.
-!        if (l_east)  F1(in_b+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
-!        if (l_south) F1(1     :F_ni,  1     :j0_b-1,1:F_nk) = 0.
-!        if (l_north) F1(1     :F_ni,  jn_b+1:F_nj,  1:F_nk) = 0.
-
-
-!        if (l_west)  F1(1     :i0_b-1,1     :F_nj,  1:F_nk) = 0.
          if (l_west) then
 !$omp do collapse(2)
            do i=1,i0_b-1
@@ -229,7 +204,6 @@
 !$omp enddo 
          endif
 
-!        if (l_east)  F1(in_b+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
          if (l_east) then
 !$omp do collapse(2)
            do i=in_b+1,F_ni
@@ -242,7 +216,6 @@
 !$omp enddo 
          endif
 
-!        if (l_south) F1(1     :F_ni,  1     :j0_b-1,1:F_nk) = 0.
          if (l_south) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -255,7 +228,6 @@
 !$omp enddo 
          endif
 
-!        if (l_north) F1(1     :F_ni,  jn_b+1:F_nj,  1:F_nk) = 0.
          if (l_north) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -277,14 +249,6 @@
          j0_c = 1    + pil_s
          jn_c = l_nj - pil_n
 
-!        if (l_west)  F1(1     :i0_c-1,1     :F_nj,  1:F_nk) = F2(1     :i0_c-1,1     :F_nj,  1:F_nk)
-!        if (l_east)  F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
-!        if (l_south) F1(1     :F_ni,  1     :j0_c-1,1:F_nk) = F2(1     :F_ni,  1     :j0_c-1,1:F_nk)
-!        if (l_north) F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
-
-!        F1(i0_c:in_c,j0_c:jn_c,1:k0-1) = F2(i0_c:in_c,j0_c:jn_c,1:k0-1)
-
-!        if (l_west)  F1(1     :i0_c-1,1     :F_nj,  1:F_nk) = F2(1     :i0_c-1,1     :F_nj,  1:F_nk)
          if (l_west) then
 !$omp do collapse(2)
            do i=1,i0_c-1
@@ -297,7 +261,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_east)  F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
          if (l_east) then
 !$omp do collapse(2)
            do i=in_c+1,F_ni
@@ -310,7 +273,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_south) F1(1     :F_ni,  1     :j0_c-1,1:F_nk) = F2(1     :F_ni,  1     :j0_c-1,1:F_nk)
          if (l_south) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -323,7 +285,6 @@
 !$omp enddo nowait
          endif
 
-!        if (l_north) F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
          if (l_north) then
 !$omp do collapse(2)
            do i=1,F_ni
@@ -336,7 +297,6 @@
 !$omp enddo nowait
          endif
 
-!        F1(i0_c:in_c,j0_c:jn_c,1:k0-1) = F2(i0_c:in_c,j0_c:jn_c,1:k0-1)
 !$omp do collapse(2)
          do i=i0_c,in_c
             do j=j0_c,jn_c
