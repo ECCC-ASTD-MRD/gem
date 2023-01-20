@@ -45,7 +45,6 @@
            vv(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
       real, dimension(:    ), allocatable::prprlvl,rf
       real, dimension(:    ), pointer, save :: hybm  => null()
-      real, dimension(:,:  ), pointer :: udiag,vdiag => null()
       real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres,cible
       real hybm_gnk2(1)
       integer ind0(1)
@@ -72,11 +71,9 @@
       i0 = 1 ; in = l_ni
       j0 = 1 ; jn = l_nj
 
-      nullify (pw_uu_plus, pw_vv_plus, udiag, vdiag)
+      nullify (pw_uu_plus, pw_vv_plus)
       istat = gmm_get(gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get(gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get(gmmk_diag_uu_s   , udiag     )
-      istat = gmm_get(gmmk_diag_vv_s   , vdiag     )
 
       if (Level_typ_S(levset) == 'M') then  ! Output on model levels
 

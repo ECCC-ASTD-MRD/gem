@@ -44,7 +44,6 @@
       integer :: k, nbits, istat, indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
       real, dimension(:    ), pointer :: hybm,hybt,hybt_w
-      real, dimension(:,:  ), pointer :: tdiag,udiag,vdiag,qdiag
       real, dimension(:,:,:), pointer :: ptr3d,tr2,wlnph_ta,wlnph_m
 
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,1:G_nk+1),target :: tr1
@@ -57,14 +56,11 @@
 !
 !------------------------------------------------------------------
 !
-      nullify (pw_tt_plus,pw_uu_plus,pw_vv_plus,tdiag,udiag,vdiag)
+      nullify (pw_tt_plus,pw_uu_plus,pw_vv_plus)
       istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
       istat = gmm_get (gmmk_pw_p0_plus_s, pw_p0_plus)
-      istat = gmm_get (gmmk_diag_tt_s   , tdiag     )
-      istat = gmm_get (gmmk_diag_uu_s   , udiag     )
-      istat = gmm_get (gmmk_diag_vv_s   , vdiag     )
 
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       istat = gmm_get(gmmk_fis0_s,fis0)
@@ -88,8 +84,6 @@
       hybm_gnk2(1)=hybm(G_nk+2)
       hybt_gnk2(1)=hybt(G_nk+2)
       ind0(1)=1
-
-      call itf_phy_diag()
 
       Out_reduc_l = .true.
 
@@ -179,7 +173,6 @@
                             G_nk, indo, G_nk, nbits,.false. )
          if ( Out3_sfcdiag_L ) then
             if (trim(varname)=='TR/HU:P') then
-               istat = gmm_get(gmmk_diag_hu_s,qdiag)
                if (istat == 0) &
                call out_fstecr ( qdiag ,l_minx,l_maxx,l_miny,l_maxy, &
                                   hybt_gnk2,Grdc_trnm_S(k),1.,0.,4, &
