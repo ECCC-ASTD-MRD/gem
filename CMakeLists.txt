@@ -137,6 +137,8 @@ endif()
 list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
 
 install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
+install(DIRECTORY scripts/ DESTINATION script USE_SOURCE_PERMISSIONS PATTERN "support" EXCLUDE)
+install(DIRECTORY ../gem-maestro/ DESTINATION share/maestro USE_SOURCE_PERMISSIONS)
 
 add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}

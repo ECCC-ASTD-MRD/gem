@@ -16,10 +16,14 @@ mkdir -p ${profileDirPath}
 cat > ${profilePath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
 export ${packageName%%_*}_DIR="$packageHome"
+export PATH="$packageHome/script:$packageHome/share/maestro/gem_module/bin:\$PATH"
+export ATM_MODEL_VERSION=@GEM_VERSION@
 EOF
 
 cat > ${loginPath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
-export ${packageName%%_*}_DIR="$packageHome"
+setenv ${packageName%%_*}_DIR "$packageHome"
+setenv PATH "$packageHome/script:$packageHome/share/maestro/gem_module/bin:script:\$PATH"
+setenv ATM_MODEL_VERSION @GEM_VERSION@
 EOF
 
