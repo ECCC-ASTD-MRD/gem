@@ -19,6 +19,7 @@
       use dyn_fisl_options
       use dynkernel_options
       use glb_ld
+      use cstv
       use HORgrid_options
       use gmm_geof
       use rmn_gmm
@@ -41,7 +42,7 @@
 
       character(len=512) varname
       logical, save :: done=.false.
-      integer :: k, nbits, istat, indo(G_nk+2)
+      integer :: i,j,k, nbits, istat, indo(G_nk+2)
       integer, dimension(:), pointer  :: ip1m
       real, dimension(:    ), pointer :: hybm,hybt,hybt_w
       real, dimension(:,:,:), pointer :: ptr3d,tr2,wlnph_ta,wlnph_m
@@ -109,6 +110,21 @@
       if (.not. Schm_autobar_L) then
          call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                    'P0  ',.01, 0., 2,-1,1, ind0, 1, nbits, .false. )
+         if(Schm_sleve_L)then
+            if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' )then
+               do j=l_miny,l_maxy
+                  do i=l_minx,l_maxx
+                     tr1(i,j,1) = exp(sls(i,j))*Cstv_pref_8
+                  end do
+               end do
+               call out_fstecr (tr1,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
+                       'P0LS',0.01,0.,2,-1,1, ind0, 1, nbits, .false. )
+            else
+               call out_fstecr(sls,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+                  'MELS',1.,0.,2,-1,1, ind0, 1, nbits, .false. )
+            end if
+         end if
+
       end if
 
       call out_fstecr ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&

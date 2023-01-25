@@ -142,8 +142,7 @@
          ierr = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 
-!      call gemtime_init ( Ptopo_myproc, 'MOD' )
-      call gtmg_init ()
+      call gtmg_init ( Ptopo_myproc, 'MOD' )
       call gtmg_start ( 1, 'GEMDM', 0)
 
       ! Some MPI cummunicators + init colors
