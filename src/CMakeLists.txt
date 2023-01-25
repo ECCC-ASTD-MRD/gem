@@ -76,3 +76,8 @@ if ( NOT "${vgrid_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "
   add_dependencies(modelutils ${vgrid_SRC} ${tdpack_SRC} ${rpncomm_SRC} ${rmn_SRC})
 endif()
 add_dependencies(gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
+
+# To be installed only with package
+install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "support" EXCLUDE)
+install(DIRECTORY ../gem-maestro/ DESTINATION share/maestro USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ../configurations/ DESTINATION configurations USE_SOURCE_PERMISSIONS)
