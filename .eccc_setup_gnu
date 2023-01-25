@@ -15,7 +15,7 @@ if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
     . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/SCIENCE/gnu-9.3.0
     # Load latest version of RPN-SI libraries
-    . r.load.dot rpn/libs/20221125-alpha
+    . r.load.dot rpn/libs/20230125-beta1
 else
     . r.load.dot rpn/code-tools/ENV/cdt-1.6.0/ECCC/gnu-9.3.0
 fi

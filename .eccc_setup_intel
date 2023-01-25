@@ -18,8 +18,7 @@ else
 fi
 
 # Load latest version of RPN-SI libraries
-#. r.load.dot rpn/libs/20221125-alpha
-. r.load.dot /home/sici000/ci_package/ssm/staging/libs/
+. r.load.dot rpn/libs/20230125-beta1
 
 # We need a more recent version of cmake than the one available by default
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1
