@@ -111,6 +111,8 @@ module svs_configs
   ! espilon to be used to avoid division by zero/testing on zero (defined here 
   ! so that consistent between subroutines
   REAL, PARAMETER :: EPSILON_SVS = 1.00E-7
+  ! espilon to be used for testing temperature (in Kelvin)
+  REAL, PARAMETER :: EPSILON_SVS_TK = 1.00E-4
 
   ! Constants related to roughness
   !---------------------------------------------------------

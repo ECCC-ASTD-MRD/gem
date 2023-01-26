@@ -317,11 +317,11 @@ contains
          elseif (mid_emfmod == 'LATMOD1') then
             ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
-                 ( ww*1.5e7 + (1.-ww)*1.0e7 )
+                 ( ww*(1.5*minemf(i)) + (1.-ww)*(1.*minemf(i)) )
          elseif (mid_emfmod == 'LATMOD2') then
             ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
-                 ( ww*1.25e7 + (1.-ww)*0.8e7 )
+                 ( ww*(1.25*minemf(i)) + (1.-ww)*(0.8*minemf(i)) )
          endif
 
          ! Find the first level that meets the vertical motion criterion

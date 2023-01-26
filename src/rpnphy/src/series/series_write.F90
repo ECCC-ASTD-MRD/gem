@@ -315,7 +315,7 @@ contains
       !---------------------------------------------------------------
       nullify(ip1_m, ip1_t, vtbl_t)
       istat = vgrid_wb_get('phy-t', vcoord, ip1_t)
-      istat = vgd_get(vcoord, 'VTBL - vgrid_descriptor table', vtbl_t, quiet=.true.)
+      istat = vgd_get(vcoord, 'VTBL - vgrid_descriptor table', vtbl_t)
       istat = vgd_free(vcoord)
       if (associated(ip1_t)) deallocate(ip1_t,stat=istat)
       !#TODO: why next 3 lines

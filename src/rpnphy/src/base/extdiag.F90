@@ -58,7 +58,7 @@ contains
       real, dimension(ni, nk) :: p, work2d1, work2d2
 
       real, pointer, dimension(:) , contiguous :: zpmoins, busptr2d, ztdew, zflusolaf, &
-           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1, bptr
+           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1, bptr, zfl
       real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
            zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
            zqcplus, zftot, zfbl, zqtbl, zfdc
@@ -74,6 +74,7 @@ contains
 
       MKPTR2D(zfbl, fbl, fbus)
       MKPTR2D(zfdc, fdc, fbus)
+      MKPTR1D(zfl, fl, vbus)
       MKPTR1D(zflusolaf, flusolaf, fbus)
       MKPTR2D(zftot, ftot, fbus)
       MKPTR1D(zhrsmax, hrsmax, fbus)
@@ -95,6 +96,8 @@ contains
       MKPTR2D(zvplus, vplus, dbus)
       MKPTR2D(zwplus, wplus, dbus)
       MKPTR2D(zze, ze, vbus)
+
+      call series_xst(zfl, 'fl', trnch)
 
       ! Extract time series and zonal diagnostics on nk levels
 

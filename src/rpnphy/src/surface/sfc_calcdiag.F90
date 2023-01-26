@@ -22,7 +22,7 @@ module sfc_calcdiag
 contains
 
    !/@*
-   subroutine sfc_calcdiag3(fbus,vbus,moyhr,acchr,dt,kount,step_driver,ni)
+   subroutine sfc_calcdiag3(fbus,vbus,moyhr,acchr,dt,kount,step_driver,trnch,ni)
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
       use sfcbus_mod
@@ -40,8 +40,9 @@ contains
       !          - input -
       ! kount    timestep number
       ! dt       length of timestep
+      ! trnch    slice number
       ! n        horizontal running length
-      integer :: moyhr, acchr, kount, step_driver, ni
+      integer :: moyhr, acchr, kount, step_driver, trnch, ni
       real, dimension(:), pointer, contiguous :: fbus, vbus
       real :: dt
       !*@/
@@ -63,38 +64,38 @@ contains
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [BEGIN]')
       if (timings_L) call timing_start_omp(480, 'sfc_calcdiag', 46)
 
-#define MKPTR1D(PTR1,NAME2,BUS)    nullify(PTR1); if (NAME2 > 0) PTR1(1:ni) => BUS(NAME2:)
-#define MKPTR2D(PTR1,NAME2,N3,BUS) nullify(PTR1); if (NAME2 > 0) PTR1(1:ni,1:N3) => BUS(NAME2:)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
 
-      MKPTR1D(zaccevap, accevap, fbus)
-      MKPTR1D(zdrain, drain, fbus)
-      MKPTR1D(zdrainaf, drainaf, fbus)
-      MKPTR1D(zfvapliqaf, fvapliqaf, fbus)
-      MKPTR1D(zisoil, isoil, fbus)
-      MKPTR1D(zlatflaf, latflaf, fbus)
-      MKPTR1D(zleg, leg, vbus)
-      MKPTR1D(zlegaf, legaf, fbus)
-      MKPTR1D(zler, ler, vbus)
-      MKPTR1D(zleraf, leraf, fbus)
-      MKPTR1D(zles, les, vbus)
-      MKPTR1D(zlesaf, lesaf, fbus)
-      MKPTR1D(zletr, letr, vbus)
-      MKPTR1D(zletraf, letraf, fbus)
-      MKPTR1D(zlev, lev, vbus)
-      MKPTR1D(zlevaf, levaf, fbus)
-      MKPTR1D(zoverfl, overfl, vbus)
-      MKPTR1D(zoverflaf, overflaf, fbus)
-      MKPTR1D(zrofinlak, rofinlak, fbus)
-      MKPTR1D(zrofinlakaf, rofinlakaf, fbus)
-      MKPTR1D(zrootdp, rootdp, fbus)
-      MKPTR1D(zwflux, wflux, vbus)
-      MKPTR1D(zwfluxaf, wfluxaf, fbus)
-      MKPTR1D(zinsmavg, insmavg, fbus)
+      MKPTR1D(zaccevap, accevap)
+      MKPTR1D(zdrain, drain)
+      MKPTR1D(zdrainaf, drainaf)
+      MKPTR1D(zfvapliqaf, fvapliqaf)
+      MKPTR1D(zisoil, isoil)
+      MKPTR1D(zlatflaf, latflaf)
+      MKPTR1D(zleg, leg)
+      MKPTR1D(zlegaf, legaf)
+      MKPTR1D(zler, ler)
+      MKPTR1D(zleraf, leraf)
+      MKPTR1D(zles, les)
+      MKPTR1D(zlesaf, lesaf)
+      MKPTR1D(zletr, letr)      
+      MKPTR1D(zletraf, letraf)
+      MKPTR1D(zlev, lev)
+      MKPTR1D(zlevaf, levaf)
+      MKPTR1D(zoverfl, overfl)
+      MKPTR1D(zoverflaf, overflaf)
+      MKPTR1D(zrofinlak, rofinlak)
+      MKPTR1D(zrofinlakaf, rofinlakaf)
+      MKPTR1D(zrootdp, rootdp)
+      MKPTR1D(zwflux, wflux)
+      MKPTR1D(zwfluxaf, wfluxaf)
+      MKPTR1D(zinsmavg, insmavg)
 
-      MKPTR2D(zlatflw,latflw,nl_svs,fbus)
-      MKPTR2D(zrunofftot,runofftot,nsurf+1,vbus)
-      MKPTR2D(zrunofftotaf,runofftotaf,nsurf+1,fbus)
-      MKPTR2D(zwatflow,watflow,nl_svs+1,fbus)
+      MKPTR2D(zlatflw,latflw)
+      MKPTR2D(zrunofftot,runofftot)
+      MKPTR2D(zrunofftotaf,runofftotaf)
+      MKPTR2D(zwatflow,watflow)
 
       
       lacchr = .false.

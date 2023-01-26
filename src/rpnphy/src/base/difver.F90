@@ -25,7 +25,7 @@ contains
    subroutine difver8(dbus, fbus, vbus, seloc, tau, &
         kount, trnch, ni, nk, nkm1)
       use debug_mod, only: init2nan
-      use tdpack_const, only: CAPPA, CHLC, CHLF, CPD, DELTA, GRAV, RGASD, STEFAN
+      use tdpack_const, only: CAPPA, CHLC, CHLF, CPD, DELTA, GRAV, RGASD
       use phy_options
       use phy_status, only: phy_error_L
       use phybus
@@ -78,14 +78,14 @@ contains
       real, parameter :: WEIGHT_BM=0.5
 
       integer j,k,typet,typem
-      real rhortvsg,mrhocmu,localstefan
+      real rhortvsg,mrhocmu
       real tplusnk,qplusnk,uplusnk,vplusnk
       real rsg,du,dv,dsig, rgam
       logical :: compute_tend
 #include "phymkptr.hf"
       include "surface.cdk"
 
-      real, dimension(ni) :: bmsg, btsg, a, aq, bq, sfc_density, fsloflx, fm_mult, fh_mult
+      real, dimension(ni) :: bmsg, btsg, aq, bq, sfc_density, fsloflx, fm_mult, fh_mult
       real, dimension(nkm1) :: se, sig
       real, dimension(ni,nkm1) ::  kmsg, ktsg, wthl_ng, wqw_ng, uw_ng, vw_ng, &
            c, d, unused, zero, qclocal, ficelocal
@@ -96,7 +96,7 @@ contains
       real, pointer, dimension(:) :: zbt_ag, zbt_ag0, zfc_ag, zfv_ag, zqsurf_ag, zfvap_ag  !#TODO: should be contiguous
       real, pointer, dimension(:), contiguous   :: ps
       real, pointer, dimension(:), contiguous   :: zalfat, zalfat0, zalfaq, &
-           zalfaq0, zbm, zbm0, zfdsi, zfdss, zfl, zfnsi, zfq, zmg, ztsrad, &
+           zalfaq0, zbm, zbm0, zfdsi, zfdss, zfq, zmg, ztsrad, &
            zustress, zvstress, zue, zh
       real, pointer, dimension(:), contiguous :: zflw, zfsh
       real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
@@ -111,7 +111,7 @@ contains
 
       !---------------------------------------------------------------------
 
-      call init2nan(bmsg, btsg, a, aq, bq, sfc_density, fsloflx, se, sig)
+      call init2nan(bmsg, btsg, aq, bq, sfc_density, fsloflx, se, sig)
       call init2nan(kmsg, ktsg, wthl_ng, wqw_ng, uw_ng, vw_ng, c, d, unused)
       call init2nan(zero, qclocal, ficelocal, gam0)
       call init2nan(thl, qw, tthl, tqw, dkem, dket)
@@ -139,9 +139,7 @@ contains
       MKPTR1D(zbm0, bm0, fbus)
       MKPTR1D(zfdsi, fdsi, fbus)
       MKPTR1D(zfdss, fdss, fbus)
-      MKPTR1D(zfl, fl, vbus)
       MKPTR1D(zflw, flw, vbus)
-      MKPTR1D(zfnsi, fnsi, vbus)
       MKPTR1D(zfq, fq, fbus)
       MKPTR1D(zfsh, fsh, vbus)
       MKPTR1D(zh, h, fbus)
@@ -459,9 +457,6 @@ contains
       call atmflux3(zturbtf,t,tt,ktsg,gam0,wthl_ng,aq,bq, &
            ps,t,q,tau,sg,sigef,zvcoef,c,d,3,ni,nkm1,trnch)
 
-      ! Diagnose final surface balance
-      localstefan = STEFAN
-      if (radia == 'NIL') localstefan = 0.
 !vdir nodep
       do j = 1, ni
          rhortvsg = ps(j)/GRAV
@@ -499,9 +494,6 @@ contains
          zfsh(j)    = zalfaq(j) + btsg(j)*qplusnk  ! units of s-1
          zflw(j)    = rhortvsg*zfsh(j)             ! water density flux - units of kg m-2 s-1
          zfsh(j)    = zflw(j)/sfc_density(j)       ! spec hum flux - units of ms-1
-         a(j)     = zfdsi(j)*localstefan/STEFAN
-         zfnsi(j) = a(j)-localstefan*ztsrad(j)**4
-         zfl(j)   = zfnsi(j) + zfdss(j) - zfv_ag(j) - zfc_ag(j)
       enddo
 
       ! Time series diagnostics
@@ -524,9 +516,6 @@ contains
       call series_xst(zfv(:,indx_water),   'h6', trnch)
       call series_xst(zfv(:,indx_ice),     'h7', trnch)
       call series_xst(zfv(:,indx_agrege),  'fv', trnch)
-      call series_xst(a, 'fi', trnch)
-      call series_xst(zfnsi, 'si', trnch)
-      call series_xst(zfl, 'fl', trnch)
       call series_xst(zkm, 'km', trnch)
       call series_xst(zkt, 'kt', trnch)
 
