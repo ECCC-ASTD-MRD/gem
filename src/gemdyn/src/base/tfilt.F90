@@ -13,67 +13,50 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r fislh_dynstep - Control of the dynamical timestep of the model
+!** s/r tfilt - Asselin time filter
 
-      subroutine fislh_dynstep ()
-      use dyn_fisl_options
-      use gem_options
-      use HORgrid_options
-      use step_options
-      use theo_options
-      use omp_timing
-      use gmm_pw
+      subroutine tfilt ()
+      use glb_ld
+      use glb_pil
+      use gmm_vt2
+      use gmm_vt1
+      use gmm_vt0
       implicit none
 
-      integer icn, keep_itcn
-!
+      integer i,j,k
+      integer i0, in, j0, jn
+      real c1, grtf
+!     
 !     ---------------------------------------------------------------
 !
-      keep_itcn = Schm_itcn
+      grtf = 0.05
 
-!$omp parallel
-      call psadj_init_hlt ( Step_kount )
-
-      call gtmg_start (10, 'DYNSTEP', 10)
-      do icn = 1,Schm_itcn-1
-
-         call fislh_tstpdyn (icn) ! Solver NOT done yet
-
-         call hzd_momentum_hlt ()
-
+      if (grtf.le.0.0) then
+         return
+      else
+         c1=(1.-2.*grtf)
+      endif
+      
+      i0= 1   +pil_w
+      in= l_ni-pil_e
+      j0= 1   +pil_s
+      jn= l_nj-pil_n
+!$omp do
+      do k= 1,l_nk
+         do j= j0, jn
+         do i= i0, in
+            ut1(i,j,k) = c1*ut1(i,j,k) + grtf*(ut0(i,j,k)+ut2(i,j,k))
+            vt1(i,j,k) = c1*vt1(i,j,k) + grtf*(vt0(i,j,k)+vt2(i,j,k))
+            tt1(i,j,k) = c1*tt1(i,j,k) + grtf*(tt0(i,j,k)+tt2(i,j,k))
+            wt1(i,j,k) = c1*wt1(i,j,k) + grtf*(wt0(i,j,k)+wt2(i,j,k))
+            zdt1(i,j,k)= c1*zdt1(i,j,k)+ grtf*(zdt0(i,j,k)+zdt2(i,j,k))
+            qt1(i,j,k) = c1*qt1(i,j,k) + grtf*(qt0(i,j,k)+qt2(i,j,k))
+         end do
+         end do
       end do
-
-      call fislh_tstpdyn (Schm_itcn)
-
-      if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
-
-      call adz_tracers (.true.) ! Mass fixing NOT done yet
-
-      call psadj_hlt ( Step_kount )
-
-      call adz_tracers (.false.)
-      call gtmg_stop (10)
-
-      call t02t1()
-
-      call HOR_bndry_hlt ()
-
-      call canonical_cases ("VRD")
-
-      call hzd_main_hlt ()
-
-      if (Grd_yinyang_L) call yyg_blend()
-
-      call pw_update_GW_hlt ()
-      call pw_update_UV_hlt ()
-      call pw_update_T_hlt  ()
-!$omp end parallel
-
-      if ( Lctl_step-Vtopo_start == Vtopo_ndt) Vtopo_L = .false.
-
-      Schm_itcn = keep_itcn
+!$omp enddo
 !
 !     ---------------------------------------------------------------
 !
       return
-      end subroutine fislh_dynstep
+      end subroutine tfilt

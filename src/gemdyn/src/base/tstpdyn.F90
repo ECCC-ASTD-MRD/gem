@@ -61,11 +61,10 @@
       k0= 1+Lam_gbpil_T
 
       if (Lun_debug_L) write(Lun_out,1000)
-      call gtmg_start (20, 'TSTPDYN', 10)
 
       if ( F_icn == 1 ) then       ! Compute RHS
 
-         call gtmg_start ( 21, 'RHS', 20 )
+         call gtmg_start ( 20, 'RHS', 10 )
 
 !        Compute the right-hand sides of the governing equations
          call fislp_rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
@@ -93,7 +92,7 @@
               l_ni,l_nj,l_nk, Adz_halox,Adz_haloy,.false.,.false.,&
               orhsw_ext,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,l_ni,0)
          endif
-         call gtmg_stop (21)
+         call gtmg_stop (20)
 
          call firstguess ()
 
@@ -113,15 +112,15 @@
 
 ! Perform Semi-Lagrangian advection
 
-      call gtmg_start (22, 'ADZ_MAIN', 20)
+      call gtmg_start (21, 'ADZ_MAIN', 10)
       Adz_icn= F_icn
 !$omp parallel
       call adz_main ()
 !$omp end parallel
 
-      call gtmg_stop(22)
+      call gtmg_stop(21)
 
-      call gtmg_start (23, 'PRE', 20)
+      call gtmg_start (22, 'PRE', 10)
 
       if ( F_icn == 1 ) call oro_adj ()
 
@@ -131,7 +130,7 @@
                  rhsb, nest_t, l_minx,l_maxx,l_miny,l_maxy,&
                  i0, j0, in, jn, k0, l_nk )
 
-      call gtmg_stop (23)
+      call gtmg_stop (22)
 
       if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 
@@ -140,7 +139,7 @@
 
       do iln=1,Schm_itnlh
 
-         call gtmg_start ( 24, 'NLI', 20 )
+         call gtmg_start ( 23, 'NLI', 10 )
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
@@ -151,9 +150,9 @@
                    sls, fis0, nl_b, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
-         call gtmg_stop (24)
+         call gtmg_stop (23)
 
-         call gtmg_start ( 25, 'SOL', 20 )
+         call gtmg_start ( 24, 'SOL', 10 )
 
 !        Solve the elliptic problem
          print_conv = (iln   == Schm_itnlh ) .and. &
@@ -164,9 +163,9 @@
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, print_conv)
 !$omp end parallel
 
-         call gtmg_stop (25)
+         call gtmg_stop (24)
 
-         call gtmg_start ( 26, 'BAC', 20 )
+         call gtmg_start ( 25, 'BAC', 10 )
 
 !        Back subtitution
          call  bac (lhs_sol, sls, fis0                        ,&
@@ -176,7 +175,7 @@
                     l_minx, l_maxx, l_miny, l_maxy            ,&
                     ni,nj,l_nk,i0, j0, k0, in, jn)
 
-         call gtmg_stop (26)
+         call gtmg_stop (25)
 
          if (Grd_yinyang_L) then
             call yyg_xchng_vec_uv2uv (ut0, vt0,&
@@ -195,8 +194,6 @@
       if (Grd_yinyang_L) then
          call yyg_int_xch_scal (wt0, G_nk, .false., 'CUBIC', .false.)
       end if
-
-      call gtmg_stop (20)
 
 !     ---------------------------------------------------------------
 !
