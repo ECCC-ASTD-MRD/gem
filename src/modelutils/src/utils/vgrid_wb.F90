@@ -142,7 +142,7 @@ contains
       type(vgrid_descriptor), intent(in) :: F_vgrid
       logical :: F_pkind_L           !# True if pressure kind
       integer :: istat, ikind
-      istat = vgd_get(F_vgrid, key='KIND', value=ikind, quiet=.true.)
+      istat = vgd_get(F_vgrid, key='KIND', value=ikind)
       F_pkind_L = vgrid_wb_is_press_kind_i(ikind)
       return
    end function vgrid_wb_is_press_kind_v
@@ -374,7 +374,7 @@ contains
       if (.not.RMN_IS_OK(F_id)) return
 
       nullify(vtbl)
-      istat = vgd_get(F_vgrid, key='VTBL', value=vtbl, quiet=.true.)
+      istat = vgd_get(F_vgrid, key='VTBL', value=vtbl)
       if (istat /= VGD_OK .or. .not.associated(vtbl)) then
          call msg(MSG_WARNING, '(vgrid_wb_put) problem cloning vgrid for: '//trim(F_name_S))
          F_id = RMN_ERR
@@ -385,7 +385,7 @@ contains
       if (F_sfcfld_S /= ' ') then
          sfcfld_S = F_sfcfld_S
       else
-         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S)
          if (istat /= VGD_OK) sfcfld_S = ' '
       endif
 
@@ -393,7 +393,7 @@ contains
       if (F_sfcfld2_S /= ' ') then
          sfcfld2_S = F_sfcfld2_S
       else
-         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld2_S, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld2_S)
          if (istat /= VGD_OK) sfcfld2_S = ' '
       endif
 
@@ -744,7 +744,7 @@ contains
       ismaster_L = (me == ipe_master)
       nullify(vtbl_8)
       if (ismaster_L) then
-         F_istat = vgd_get(F_vgrid, 'VTBL', vtbl_8, quiet=.true.)
+         F_istat = vgd_get(F_vgrid, 'VTBL', vtbl_8)
          n123 = ubound(vtbl_8)
          sfcfld_S  = F_sfcfld_S
          sfcfld2_S = F_sfcfld2_S
