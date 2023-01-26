@@ -19,7 +19,7 @@ export ${packageName%%_*}_DIR="$packageHome"
 export PATH="$packageHome/bin:$packageHome/scripts:$packageHome/share/maestro/gem_module/bin:\$PATH"
 export ATM_MODEL_VERSION=@GEM_VERSION@
 export ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
-export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
+export CMCCONST=\${ATM_MODEL_DFILES}/datafiles/constants
 EOF
 
 cat > ${loginPath} << EOF
@@ -28,6 +28,6 @@ setenv ${packageName%%_*}_DIR "$packageHome"
 setenv PATH "$packageHome/bin:$packageHome/scripts:$packageHome/share/maestro/gem_module/bin:\$PATH"
 setenv ATM_MODEL_VERSION @GEM_VERSION@
 setenv ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
-setenv CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
+setenv CMCCONST=\${ATM_MODEL_DFILES}/datafiles/constants
 EOF
 
