@@ -46,7 +46,7 @@
       real(kind=REAL64) :: tracer_8
       logical :: do_subset_GY_L
       real, pointer, dimension (:,:,:) :: fld_tr
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: air_mass,fld_ONE,w_tr
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: fld_ONE
       character(len=21) :: type_S
       character(len=7)  :: time_S
       character(len=8)  :: in_S

@@ -54,8 +54,7 @@
       real(kind=REAL64) :: l_avg_8(2),g_avg_ps_wet_8,g_avg_ps_dry_8,sum_lcl(2)
       real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors)
       character(len= 7) :: time_S
-      thread_sum=0.
-
+!
 !---------------------------------------------------------------------
 !
       comm = RPN_COMM_comm ('MULTIGRID')

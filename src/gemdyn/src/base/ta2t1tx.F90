@@ -15,15 +15,14 @@
 
 !**s/r ta2t1tx -  Transfer variables ta into t1
 
-      subroutine ta2t1tx
+      subroutine ta2t1tx ()
       use glb_ld
       use gmm_vt1
       use gmm_vta
       use gem_options
       use mem_tracers
+      use outp
       implicit none
-
-#include <arch_specific.hf>
 !
 !     ---------------------------------------------------------------
 !
@@ -35,8 +34,12 @@
        qt1(1:l_ni,1:l_nj,:)=  qta(1:l_ni,1:l_nj,:)
        st1(1:l_ni,1:l_nj  )=  sta(1:l_ni,1:l_nj  )
       trt1 = trdf
+      udiag(:,:) = diag_dgf(:,:,1)
+      vdiag(:,:) = diag_dgf(:,:,2)
+      tdiag(:,:) = diag_dgf(:,:,3)
+      qdiag(:,:) = diag_dgf(:,:,4)
 !
 !     ---------------------------------------------------------------
 !
       return
-      end
+      end subroutine ta2t1tx
