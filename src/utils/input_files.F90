@@ -503,9 +503,9 @@ contains
          call msg(MSG_WARNING,'(input_files) vgrid, problem getting vgrid from file for '//trim(F_varname_S))
          return
       endif
-      istat = vgd_get(vgrid, 'RFLD', sfcfld_S, quiet=.true.)
+      istat = vgd_get(vgrid, 'RFLD', sfcfld_S)
       if (istat /= VGD_OK) sfcfld_S = ' '
-      istat = vgd_get(vgrid, 'RFLS', sfcfld2_S, quiet=.true.)
+      istat = vgd_get(vgrid, 'RFLS', sfcfld2_S)
       if (istat /= VGD_OK) sfcfld2_S = ' '
       F_vgrid_S = 'in/'//trim(F_varname_S)
       istat = vgrid_wb_get(F_vgrid_S, vgrid0)
@@ -600,9 +600,9 @@ contains
          call msg(MSG_WARNING,'(input_files) Problem reading vgrid Sfc Ref field')
       endif
       if (rfls_L) then
-         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld_S, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='RFLS', value=sfcfld_S)
       else
-         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='RFLD', value=sfcfld_S)
       endif
       if (associated(F_sfcfld) .and. any(sfcfld_S == (/'P0','p0'/))) then
          F_sfcfld = F_sfcfld * MB2PA

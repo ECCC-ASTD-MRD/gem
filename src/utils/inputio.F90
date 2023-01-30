@@ -803,10 +803,10 @@ contains
 !!$            write(dummy_S, '(i0)') jdate_to_cmc(jdatev)
 !!$            F_fld%alt_S = ADD_PREFIX3(F_fld%id, F_fileidx, trim(adjustl(dummy_S)), ALT_VGRID_P_FLDNAME)
          else
-            istat = vgd_get(vgrid, 'RFLD', F_fld%sfc_S(1), quiet=.true.)
+            istat = vgd_get(vgrid, 'RFLD', F_fld%sfc_S(1))
             F_fld%sfc_S(1) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(1))
             if (istat /= VGD_OK) F_fld%sfc_S(1) = ' '
-            istat = vgd_get(vgrid, 'RFLS', F_fld%sfc_S(2), quiet=.true.)
+            istat = vgd_get(vgrid, 'RFLS', F_fld%sfc_S(2))
             F_fld%sfc_S(2) = ADD_PREFIX2(F_fld%id, F_fileidx, F_fld%sfc_S(2))
             if (istat /= VGD_OK) F_fld%sfc_S(2) = ' '
          endif
@@ -1037,7 +1037,7 @@ contains
             if (associated(F_fld%psfc)) then
                do ivar = 1, size(F_fld%sfc_S)
                   vn_S = RM_PREFIX2(F_fld%sfc_S(ivar))
-                  if (any(vn_S == (/'P0','p0'/))) then
+                  if (any(vn_S == (/'P0  ','p0  ','P0LS','p0ls'/))) then
                      F_fld%psfc(:,:,ivar) = F_fld%psfc(:,:,ivar) * MB2PA
                   endif
                enddo
