@@ -25,11 +25,11 @@
            WTA, CG, PSNGRVL,  & 
            Z0H, ALGR, EMGR, PSNVH, PSNVHA,   &
            ALVA, LAIVA, CVPA, EVA, Z0HA, Z0MVG, RGLA, STOMRA ,&  
-           GAMVA, N )
+           GAMVA, N, SOILHCAPZ, SOILCONDZ, CONDDRY, CONDSLD )
          !
         use tdpack_const, only: PI
         use svs_configs
-        use sfc_options, only: read_emis, urban_params_new
+        use sfc_options, only: read_emis, svs_urban_params
      implicit none
 !!!#include <arch_specific.hf>
 
@@ -51,7 +51,8 @@
       REAL EMISVH(N), EMISVL(N), ETG(N), Z0MVL(N), RGLVH(N), RGLVL(N)
       REAL Z0HA(N), Z0MVG(N), RGLA(N), STOMRA(N), STOMRVH(N), STOMRVL(N)
       REAL GAMVL(N), GAMVH(N), GAMVA(N)
-      
+      REAL SOILHCAPZ(N,NL_SVS), SOILCONDZ(N,NL_SVS)
+      REAL CONDDRY(N,NL_SVS), CONDSLD(N,NL_SVS)
       
 !Author
 !          S. Belair et al. (January 2009)
@@ -106,6 +107,8 @@
 ! DECI     fraction of high vegetation that is deciduous
 ! EVER     fraction of high vegetation that is evergreen
 ! LAID     LAI of deciduous trees
+! CONDSLD  Soilds thermal conductivity
+! CONDDRY  Dry thermal conductivity
 !
 !           - Output -
 ! WTA      Weights for SVS surface types as seen from SPACE
@@ -132,19 +135,22 @@
 include "isbapar.cdk"
 
 !
-      INTEGER I
+      INTEGER I, K
 !
-      REAL LAMI, CI, DAY
+      REAL LAMI, CI, DAY, RHOI, RHOW, CW, LAMW
 ! 
       REAL ADRYSAND, AWETSAND, ADRYCLAY, AWETCLAY
       REAL EDRYSAND, EWETSAND, EDRYCLAY, EWETCLAY
-
+!      
+      REAL LOG_CONDI, LOG_CONDW, XF, XU, WORK1, WORK2, WORK3, CONDSAT
+      REAL SATDEG, KERSTEN
+!
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
            zcs, zcsv, z0_snow_low
 
       REAL :: CVAMIN = 1.0E-5
 
-      IF (URBAN_PARAMS_NEW) THEN
+      IF (SVS_URBAN_PARAMS) THEN
          CVAMIN = 0.3E-5   ! matches value of CVDAT(21) reset in inicover_svs.F90
       ENDIF
 !
@@ -162,7 +168,12 @@ include "isbapar.cdk"
 !
       LAMI   = 2.22
       CI     = 2.106E3
+      RHOI   = 917.  
       DAY    = 86400.
+
+      LAMW = 0.57 ! Thermal conductivity of water
+      CW   = 4.218E+3
+      RHOW = 1000
 !                       Albedo values from literature
       ADRYSAND = 0.35
       AWETSAND = 0.24
@@ -526,6 +537,46 @@ include "isbapar.cdk"
 
       endif
 
+!
+!
+!       10.      SOIL THERMAL PROPERTIES PROFILE using PL98
+!               ------------------------------------------
+!
+!
+       LOG_CONDI = LOG(LAMI)
+       LOG_CONDW = LOG(LAMW)
+
+       DO I=1,N
+
+          DO K=1,NL_SVS
+
+!                        Kersten parameter for thermal conductivity
+             XF = WF(I,K) / (WF(I,K) + MAX(WD(I,K),0.001))
+             XU = (1.0-XF) * WSAT(I,K)
+
+             WORK1   = LOG(CONDSLD(I,K))*(1.0-WSAT(I,K))
+             WORK2   = LOG_CONDI*(WSAT(I,K)-XU)
+             WORK3   = LOG_CONDW*XU
+             CONDSAT = EXP(WORK1+WORK2+WORK3)
+             SATDEG  = MAX(0.1, (WF(I,K) + WD(I,K))/WSAT(I,K))  ! degree of saturation
+             SATDEG  = MIN(1.0,SATDEG)
+             KERSTEN  = LOG10(SATDEG) + 1.0               ! Kersten number
+
+!                       Put in a smooth transition from thawed to frozen soils:
+!                       simply linearly weight Kersten number by frozen fraction
+!                       in soil:
+             KERSTEN  = (1.0-XF)*KERSTEN + XF *SATDEG
+
+!                       Thermal conductivity
+             SOILCONDZ(I,K) = KERSTEN*(CONDSAT-CONDDRY(I,K)) + CONDDRY(I,K)
+
+!                       Heat capacity (J m-3 K-1)
+             SOILHCAPZ(I,K) = (1. - WSAT(I,K)) * 2700. * 733. + WD(I,K) * CW * RHOW &
+                             + WF(I,K) * CI * RHOI
+
+          END DO
+
+       END DO
 
       RETURN
       END
