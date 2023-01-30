@@ -24,7 +24,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
-        vf_type
+        vf_type,lsoil_freezing_svs1,lwater_ponding_svs1,critwater
    use svs_configs
    implicit none
 !!!#include <arch_specific.hf>
@@ -111,6 +111,15 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zzusl
    real,pointer,dimension(:) :: zztsl
 
+   real,pointer,dimension(:) :: zslop
+   real,pointer,dimension(:) :: wsatur1
+   real,pointer,dimension(:) :: isoil1
+   real,pointer,dimension(:) :: wsoil1
+   real,pointer,dimension(:) :: zwatpond
+   real,pointer,dimension(:) :: zmaxpond
+   real,pointer,dimension(:) :: zvegh
+   real,pointer,dimension(:) :: zvegl
+   
 !
 !
 
@@ -127,6 +136,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: rgla, rhoa, snowrate_mm, stom_rs, stomra
    real,dimension(n) :: suncosa, sunother1, sunother2, sunother3
    real,dimension(n) :: sunother4, trad, tva, vdir, vmod, vmod_lmin, wrmax, wvegt
+   real,dimension(n) :: wsaturc1
 ! 
    real, dimension(n,nl_svs) :: isoilt, wsoilt
 !
@@ -135,7 +145,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       real,pointer,dimension(:) :: zfsolis
 !     
       integer yy, mo, dd, hh, mn, sec
-      REAL HZ, HZ0, JULIEN
+      REAL HZ, HZ0, JULIEN, pond_infilt
 
       integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200    
 !
@@ -167,6 +177,15 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zvdiagtyp(1:n) => bus( x(vdiagtyp,1,indx_sfc) : )
       zzusl    (1:n) => bus( x(zusl,1,1)         : )
       zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+
+      wsatur1  (1:n) => bus( x(wsat,1,1)         : )
+      isoil1   (1:n) => bus( x(isoil,1,1)        : )
+      zwatpond (1:n) => bus( x(watpond,1,1)      : )
+      zmaxpond (1:n) => bus( x(maxpond,1,1)      : )
+      wsoil1   (1:n) => bus( x(wsoil,1,1)        : )
+      zslop    (1:n) => bus( x(slop,1,1)        : )
+      zvegh    (1:n) => bus( x(vegh,1,1)        : )
+      zvegl    (1:n) => bus( x(vegl,1,1)        : )
 
       if (atm_tplus) then
          hu       (1:n) => bus( x(huplus,1,nk)      : )
@@ -229,6 +248,15 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
 
       ENDDO
+
+      IF(lwater_ponding_svs1 .and. kount==1) THEN
+          DO I=1,N
+!           EG: Adjust max. ponding depth according to bare ground fraction: consider 10mm over bare ground
+	    zmaxpond(I) = zmaxpond(I) * (zvegh(I)+zvegl(I)) + 0.01 * (1.-zvegh(I)-zvegl(I))
+!	    EG: Adjust max. ponding depth according to slope
+            zmaxpond(I) = max(0.0,zmaxpond(I)*(1.0E-10)**zslop(I))
+         END DO
+      ENDIF
 !
 !******************************************************************
 !                  SVS SUBROUTINES START HERE
@@ -258,6 +286,25 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
 !
 !
+! EG CODE RELATED TO PONDING OPTION
+      IF (lwater_ponding_svs1) then
+          DO I=1,N
+             
+             wsaturc1(I)= max((wsatur1(I)-isoil1(I)-0.00001), CRITWATER)
+             if (wsoil1(I).lt.wsaturc1(I).and.zwatpond(I).gt.0.0) then 
+               ! Amount of ponded water that infiltrates in the soil      
+               pond_infilt = min(zwatpond(I),(wsaturc1(I)-wsoil1(I))*dl_svs(1))
+               ! Update near-surface soil moisture and amount of ponded water
+               wsoil1(I) = wsoil1(I) + pond_infilt / dl_svs(1)
+               zwatpond(I) = zwatpond(I) - pond_infilt
+             endif
+          ENDDO
+      ELSE
+         DO I=1,N
+            zwatpond(I)= 0.0
+         ENDDO
+      END IF
+! END EG CODE RELATED TO PONDING OPTION
 
       CALL SOILI_SVS( BUS(x(WSOIL ,1,1)), &
            BUS(x(ISOIL  ,1,1)), &  
@@ -287,7 +334,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(PSNVH  ,1,1)), BUS(x(PSNVHA ,1,1)), &  
            ALVA, BUS(x(LAIVA  ,1,1)), CVPA, EVA, BUS(x(Z0HA ,1,1)),&
            BUS(x(Z0MVG,1,1)), RGLA, STOMRA,   &
-           GAMVA, N)
+           GAMVA, N,    &
+           BUS(x(SOILHCAPZ,1,1)), BUS(x(SOILCONDZ,1,1)), BUS(x(CONDDRY   ,1,1)), BUS(x(CONDSLD  ,1,1)) )
 !
 !     
 
@@ -446,6 +494,24 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       if (phy_error_L) return
 !
 !
+      IF(LSOIL_FREEZING_SVS1) THEN
+
+              ! Optional activation of soil freezing
+
+              CALL SOIL_FREEZING(DT, &
+                bus(x(tpsoil   ,1,1)),bus(x(vegl    ,1,1)),&
+                bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
+                bus(x(psnvha  ,1,1)), bus(x(soilcondz,1,1)), &
+                bus( x(soilhcapz,1,1)), &
+                bus(x(tground, 1,1)), &
+                bus(x(wsoil   ,1,1)) , bus(x(isoil   ,1,1)), &
+                bus(x(snoro   ,1,1)) , bus(x(snodpl   ,1,1)), &
+                bus(x(tsnow   ,1,2)) ,  &
+                bus(x(snvro   ,1,1)) , bus(x(snvdp   ,1,1)), &
+                bus(x(tsnowveg   ,1,2)) ,bus(x(tperm, 1,1)),   &
+                bus(x(wunfrz, 1,1)), &
+                N )
+      ENDIF
 
       CALL HYDRO_SVS ( DT,      & 
            bus(x(eg      ,1,1)), bus(x(er      ,1,1)),&
@@ -466,7 +532,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(psi     ,1,1)), bus(x(grksat  ,1,1)),&
            bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
            bus(x(latflw  ,1,1)), &
-           bus(x(runofftot ,1,indx_soil)), N)
+           bus(x(runofftot ,1,indx_soil)), N, bus(x(watpond ,1,1)), &
+           bus(x(maxpond ,1,1)))
 
 
 

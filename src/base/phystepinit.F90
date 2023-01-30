@@ -75,7 +75,6 @@ contains
       integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS)
       real                   :: rcdt1
       real, dimension(ni,nk) :: work
-      real, dimension(ni,nk) :: qe
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
@@ -94,7 +93,7 @@ contains
            zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
-           zgztherm, ztve, zfneige, zfip, &
+           zgztherm, zfneige, zfip, &
            zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
            zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim
       real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
@@ -165,7 +164,6 @@ contains
       MKPTR2D(ztadv, tadv, vbus)
       MKPTR2D(ztmoins, tmoins, dbus)
       MKPTR2D(ztplus, tplus, dbus)
-      MKPTR2D(ztve, tve, vbus)
       MKPTR2D(zuadv, uadv, vbus)
       MKPTR2D(zumoins, umoins, dbus)
       MKPTR2D(zuplus, uplus, dbus)
@@ -196,7 +194,7 @@ contains
       MKPTR2D(zqhm, qhmoins, dbus)
       MKPTR2D(zqim, qimoins, dbus)
 
-      call init2nan(work, qe)
+      call init2nan(work)
       call init2nan(tmp1d)
       call init2nan(en0, pw0, en1, pw1)
 
@@ -275,12 +273,6 @@ contains
       ! calcul de z0 avec z1,z2,z3,z4 et umoins,vmoins
       if (z0dir) call calcz0(zmg, zz0, zz1, zz2, zz3, zz4, &
            zumoins(:,nk-1), zvmoins(:,nk-1), ni)
-
-      ! calcul du facteur de coriolis (fcor), de la hauteur du
-      ! dernier niveau actif (za) et de la temperature potentielle
-      ! a ce niveau (thetaa)
-      ztve(:,1:nk-1) = ztmoins(:,1:nk-1)
-      qe(:,1:nk-1)   = zhumoins(:,1:nk-1)
 
       ! Initialize diagnostic level values in the profile
       if (any('pw_tt:p' == phyinread_list_s(1:phyinread_n))) then
@@ -445,8 +437,6 @@ contains
             endif
          enddo
       endif
-      
-      call mfotvt(ztve, ztve, qe, ni, nk-1, ni)
 
       do i=1,ni
          zfcor(i) = 2.*OMEGA*sin(zdlat(i))

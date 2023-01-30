@@ -118,7 +118,7 @@ include "isbapar.cdk"
       INTEGER I
 !
 !
-      REAL LAMI, CICE, DAY
+      REAL LAMI, CICE, DAY, CWAT, DT_12MIN
       
       REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
       REAL CRMIN, CRMAX, TAUHOUR, RHOE, MYOMEGA
@@ -153,6 +153,8 @@ include "isbapar.cdk"
       RHOICE  = 0.9
       ANSMIN  = 0.5
       MYOMEGA   = ( 2*PI )/ DAY
+      CWAT    = 4.187E3  ! Specific heat of water
+      DT_12MIN = 12.*60. ! 12 min in sec  
 !
       RAIN1   = 2.8e-5 ! mm/s
       RAIN2   = 2.8e-4 ! mm/s
@@ -450,6 +452,7 @@ include "isbapar.cdk"
 !                                of falling water is the same as that
 !                                of air at diag. level.
 !
+    IF(SVS_SNOW_RAIN=='BELAIR03' .OR. SVS_SNOW_RAIN=='BELAIR03_DTGEM') THEN
       DO I=1,N
         IF (RR(I).LT.RAIN1) THEN
           FMLTRAIN(I) = 0.
@@ -463,7 +466,15 @@ include "isbapar.cdk"
       DO I=1,N
        
          IF (T2M(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
+
+            IF(SVS_SNOW_RAIN=='BELAIR03') THEN 
+                ! Original formulation from Belair et al. (2003)
             MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT )
+            ELSE IF(SVS_SNOW_RAIN=='BELAIR03_DTGEM') THEN 
+                ! Revised formulation to remove the dependency of melt to the time step
+                ! Use the time step of GEM at the time when the parameterisation has been developped (12 min)
+                MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT_12MIN )
+            ENDIF
            
             MELT_RAIN(I) = FMLTRAIN(I) * MLTRAIN
             
@@ -476,6 +487,25 @@ include "isbapar.cdk"
         
         END IF
       END DO  
+   ELSE IF (SVS_SNOW_RAIN =='NONE') THEN
+      DO I=1,N
+            MELT_RAIN(I) = 0.0
+      END DO
+
+   ELSE IF (SVS_SNOW_RAIN =='L21' ) THEN
+ 
+     !  Assume all the energy brought by rain is used ot melt the snowpack.
+     ! Parameterization used in Vionnet et al. (2020) and Leonardini et al. (2021)
+      DO I=1,N
+         IF (T2M(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
+            MELT_RAIN(I)  = RR(I)*  CWAT* ( T2M(I)-TRPL ) /CHLF
+            MELT_RAIN(I) = MIN( MELT_RAIN(I), MAX( (SM(I)*(DMELT(I)/SNODP(I))/DT) - MELT_L1(I),0.0) )
+         ELSE
+            MELT_RAIN(I) = 0.0
+        END IF
+      END DO
+ 
+    ENDIF
 !
 !
 !

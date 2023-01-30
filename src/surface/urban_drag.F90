@@ -275,8 +275,8 @@ Z0H_CAN(:) = max( PZ0_TOWN(:),1.e-20 )
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEIGHT/3., &
-     ZTS_TOWN/PEXNS,ZQ_TOWN,PZ0_TOWN,Z0H_TOWN,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue,&
-     tdiaglim=TOWN_TDIAGLIM)
+     ZTS_TOWN/PEXNS,ZQ_TOWN,PZ0_TOWN,Z0H_TOWN,PLAT,fcor,optz0=8,L_min=sl_Lmin_town, coefm=cmu,  &
+     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM)
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag mom.', 'error returned by sl_sfclayer()')
@@ -294,8 +294,8 @@ stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEI
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF,PZREF, &
-     PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue, &
-     hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt,  &
+     PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,L_min=sl_Lmin_town,coefm=cmu,  &
+     coeft=ctu,ue=ue,hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt,   &
      tdiaglim=TOWN_TDIAGLIM)
 
               PAC_ROOF(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:)
@@ -328,8 +328,8 @@ PAC_ROOF_WAT(:) = PAC_ROOF(:) * min ( 1. , ZLE_MAX(:)/ZLE(:) )
 ! z0h = z0m - option 1 in compz0
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/2.,PZREF+PBLD_HEIGHT/2., &
-     PT_CANYON/PEXNS,PQ_CANYON,PZ0_TOWN,Z0H_can,PLAT,fcor,optz0=1,coefm=cmu,coeft=ctu,ue=ue,&
-     tdiaglim=TOWN_TDIAGLIM)
+     PT_CANYON/PEXNS,PQ_CANYON,PZ0_TOWN,Z0H_can,PLAT,fcor,optz0=1,L_min=sl_Lmin_town,coefm=cmu, &
+     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM)
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag canyon', 'error returned by sl_sfclayer()')
@@ -385,8 +385,8 @@ do JLOOP=1,3
 ! z0h computed with Kanda (2007) formulation - option 8 in compz0
 ! compute T at z=xzt above the road
   stat = sl_sfclayer(PT_CANYON/PEXNS,PQ_CANYON,PU_CAN+ZW_CAN,PVDIR,PBLD_HEIGHT/2.,PBLD_HEIGHT/2., &
-     PTS_ROAD/PEXNS,PQ_CANYON,PZ0_ROAD,Z0H_ROAD,PLAT,fcor,optz0=8,coefm=cmu,coeft=ctu,ue=ue, &
-     hghtt_diag=zt,t_diag=ztrdzt,tdiaglim=TOWN_TDIAGLIM)
+     PTS_ROAD/PEXNS,PQ_CANYON,PZ0_ROAD,Z0H_ROAD,PLAT,fcor,optz0=8,L_min=sl_Lmin_town,coefm=cmu,  &
+     coeft=ctu,ue=ue, hghtt_diag=zt,t_diag=ztrdzt,tdiaglim=TOWN_TDIAGLIM)
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag road', 'error returned by sl_sfclayer()')
