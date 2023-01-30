@@ -25,25 +25,10 @@ build_gnu-9.3.0:
     - make cmake
     - make -j `nproc`
     - make -j `nproc` work
-  allow_failure: true
-
-# U2 GNU 12.1.0 with OpenMPI
-build_gnu-12.1.0:
-  stage: build
-  when: always
-  script:
-    - set +e
-    - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - make -j `nproc`
-    - make work
   artifacts:
     expire_in: 2 hrs
     paths:
-    - work-rhel-8-icelake-64-gnu-12.1.0
+    - work-rhel-8-amd64-64-gnu-9.3.0
     - gem_dbase
 
 # U2 Intel 2022
@@ -368,7 +353,7 @@ THEO_schar_intel:
 5.2GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -376,7 +361,7 @@ THEO_schar_intel:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -391,7 +376,7 @@ THEO_schar_intel:
 CANO_W7cascP_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -399,7 +384,7 @@ CANO_W7cascP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -414,7 +399,7 @@ CANO_W7cascP_gnu:
 CANO_dcmip163r100_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -422,7 +407,7 @@ CANO_dcmip163r100_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -437,7 +422,7 @@ CANO_dcmip163r100_gnu:
 CANO_wil7_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -445,7 +430,7 @@ CANO_wil7_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -460,7 +445,7 @@ CANO_wil7_gnu:
 GEM_cfgs_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -468,7 +453,7 @@ GEM_cfgs_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -483,7 +468,7 @@ GEM_cfgs_gnu:
 GEM_GY_FISL_P_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -491,7 +476,7 @@ GEM_GY_FISL_P_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -506,14 +491,14 @@ GEM_GY_FISL_P_gnu:
 GEM_GY_FISL_H_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -528,7 +513,7 @@ GEM_GY_FISL_H_gnu:
 GEM_LU_FISL_H_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -536,7 +521,7 @@ GEM_LU_FISL_H_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -551,7 +536,7 @@ GEM_LU_FISL_H_gnu:
 GEM_LU_OFFC_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -559,7 +544,7 @@ GEM_LU_OFFC_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -574,7 +559,7 @@ GEM_LU_OFFC_gnu:
 PTOPO_GYH_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -582,7 +567,7 @@ PTOPO_GYH_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -597,7 +582,7 @@ PTOPO_GYH_gnu:
 PTOPO_LUP_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -605,7 +590,7 @@ PTOPO_LUP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -620,7 +605,7 @@ PTOPO_LUP_gnu:
 RSTRT_GYP_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -628,7 +613,7 @@ RSTRT_GYP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -643,7 +628,7 @@ RSTRT_GYP_gnu:
 THEO_bubbleG_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -651,7 +636,7 @@ THEO_bubbleG_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -662,7 +647,7 @@ THEO_bubbleG_gnu:
 THEO_schar_gnu:
   stage: run_configs_gnu
   dependencies:
-  - build_gnu-12.1.0
+  - build_gnu-9.3.0
   when: always
   only:
   - tags
@@ -670,7 +655,7 @@ THEO_schar_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg

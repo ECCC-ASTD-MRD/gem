@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 #----- Append EC specific module path
-list(APPEND CMAKE_MODULE_PATH $ENV{EC_CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake_rpn/modules)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn/modules $ENV{EC_CMAKE_MODULE_PATH})
 
 include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
@@ -57,7 +57,7 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
   if (EXTRA_CHECKS)
     # in addition to extra checks defined in cmake_rpn compiler presets
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow -fimplicit-none")
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")
   endif()
 endif()
 
@@ -132,7 +132,7 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-list(APPEND BINARIES maingemdm cclargs_lite fstinfo r.filetype)
+list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
 if (NOT DEFINED ENV{EC_ARCH})
   list(APPEND BINARIES editfst fstcomp fststat pgsm voir )
 endif()
@@ -148,7 +148,6 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
-    COMMAND /bin/ln -sf ${WORK_PREFIX}/bin/fstinfo ${WORK_PREFIX}/bin/r.fstinfo
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
   )
 
