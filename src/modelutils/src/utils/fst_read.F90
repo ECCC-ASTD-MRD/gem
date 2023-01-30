@@ -399,9 +399,9 @@ contains
                   call msg_verbosity_get(vb0)
                   call msg_verbosity(MYMSG_QUIET)
                   if (F_ip1s(1) == FST_FIND_DIAG_M) then
-                     istat = vgd_get(vgrid, 'DIPM', F_ip1s(1), quiet=.true.)
+                     istat = vgd_get(vgrid, 'DIPM', F_ip1s(1))
                   else
-                     istat = vgd_get(vgrid, 'DIPT', F_ip1s(1), quiet=.true.)
+                     istat = vgd_get(vgrid, 'DIPT', F_ip1s(1))
                   endif
                   call msg_verbosity(vb0)
                endif IF_DIAG
@@ -533,9 +533,9 @@ contains
                   call msg_verbosity_get(vb0)
                   call msg_verbosity(MYMSG_QUIET)
                   if (F_ip1s(1) == FST_FIND_DIAG_M) then
-                     istat = vgd_get(vgrid, 'DIPM', F_ip1s(1), quiet=.true.)
+                     istat = vgd_get(vgrid, 'DIPM', F_ip1s(1))
                   else
-                     istat = vgd_get(vgrid, 'DIPT', F_ip1s(1), quiet=.true.)
+                     istat = vgd_get(vgrid, 'DIPT', F_ip1s(1))
                   endif
                   call msg_verbosity(vb0)
                endif IF_DIAG
@@ -1077,7 +1077,7 @@ contains
       if (istat /= VGD_OK) return
 
       F_lvltyp_S = 'M'
-      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
+      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s)
       if (.not.(istat == VGD_OK .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
@@ -1085,7 +1085,7 @@ contains
       endif
 
       F_lvltyp_S = 'T'
-      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s,quiet=.true.)
+      istat = vgd_get(F_vgrid,'VIP'//trim(F_lvltyp_S),F_ip1s)
       if (.not.(istat == VGD_OK .and. associated(F_ip1s))) return
       if (any(ip1 == F_ip1s)) then
          F_istat = size(F_ip1s)
