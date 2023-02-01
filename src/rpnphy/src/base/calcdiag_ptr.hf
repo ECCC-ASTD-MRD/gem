@@ -166,6 +166,8 @@
    MKPTR1D(zflwm, flwm, fbus)
    MKPTR1D(zfneige1d, fneige, fbus)
    MKPTR2D(zfneige2d, fneige3d, fbus)
+   MKPTR1D(zfns, fns, vbus)
+   MKPTR1D(zfnsaf, fnsaf, fbus)
    MKPTR1D(zfnsi, fnsi, vbus)
    MKPTR1D(zfoudre, foudre, vbus)
    MKPTR1D(zfq, fq, fbus)

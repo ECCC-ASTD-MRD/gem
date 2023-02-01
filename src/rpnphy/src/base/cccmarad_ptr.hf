@@ -84,6 +84,8 @@
       MKPTR2DN(zfcdb, fcdb, ni, RAD_NUVBRANDS, vbus)
       MKPTR2DN(zfcfb, fcfb, ni, RAD_NUVBRANDS, vbus)
       MKPTR2DN(zfctb, fctb, ni, RAD_NUVBRANDS, vbus)
+      MKPTR1D(zfnsi, fnsi, vbus)
+      MKPTR1D(zfns, fns, vbus)
       MKPTR1D(zfsd, fsd, vbus)
       MKPTR1D(zfsf, fsf, vbus)
       MKPTR1D(zfsi, fsi, vbus)

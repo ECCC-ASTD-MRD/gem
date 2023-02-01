@@ -5,6 +5,8 @@ SHELL = /bin/bash
 
 default: build
 
+MAKEFLAGS += --no-print-directory
+
 # Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack)
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
@@ -29,5 +31,5 @@ build:
 work: 
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) work )
 
-package: cmake
+package: 
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) package )

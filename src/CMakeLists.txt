@@ -17,7 +17,7 @@ else()
     set(rmn_EXTRA_INCLUDE_DIR "${CMAKE_BINARY_DIR}/src/rmn/include" CACHE PATH "extra rmn include directory" FORCE)
     set(rmn_FOUND TRUE CACHE BOOL "Control whether rmn library was found")
     # TODO: move this declaration to "target_include_directories" in submodules
-    include_directories(${rmn_PUBLIC_INCLUDE_DIR} ${rmn_INCLUDE_DIRS} ${rmn_EXTRA_INCLUDE_DIR})
+    include_directories(${rmn_PUBLIC_INCLUDE_DIR} ${rmn_INCLUDE_DIRS} ${rmn_EXTRA_INCLUDE_DIR} "${CMAKE_BINARY_DIR}/src/rmn/App/src")
     add_subdirectory(rpn-si/rmn rmn)
    else()
      message(ERROR " -- (EC) No rmn directory found!")

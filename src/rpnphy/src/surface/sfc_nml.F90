@@ -347,6 +347,13 @@ contains
             return
          endif
 
+         if (.not.any(svs_snow_rain == SVS_SNOW_RAIN_OPT)) then
+            call str_concat(msg_S, SVS_SNOW_RAIN_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_snow_rain = '//trim(svs_snow_rain)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif
+         
          if (.not.any(soiltext == SOILTEXT_OPT)) then
             call str_concat(msg_S, SOILTEXT_OPT, ', ')
             call msg(MSG_ERROR, '(sfc_nml_check) soiltext = '//trim(soiltext)//&

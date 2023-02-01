@@ -672,7 +672,9 @@ contains
          ! physics time step and full timestep
          ! NOTE: top of model and NOT top of atmosphere fluxes must be used
          ! znetrad(i) = (SW net TOM - SW net suface) + (LW net TOM - LW net sfc)
-         znetrad(i) = ( (zfluxds(i,1)-zfluxus(i,1)) - zfdss(i)) + ( (zfluxdl(i,1)-zfluxul(i,1)) - (zfluxdl(i,nk)-zfluxul(i,nk)))
+         zfnsi(i) =  zfluxdl(i,nk)-zfluxul(i,nk)
+         znetrad(i) = ( (zfluxds(i,1)-zfluxus(i,1)) - zfdss(i)) + ( (zfluxdl(i,1)-zfluxul(i,1)) - zfnsi(i) )
+         zfns(i) =  zfnsi(i)+zfdss(i)
 
          ! iv represente le flux entrant au sommet de l'atmosphere
          ! if below ensures iv is zero when sun is set
@@ -726,6 +728,8 @@ contains
          call series_xst(zcsb   , 'csb',  trnch)
          call series_xst(zcosas , 'co',   trnch)
          call series_xst(zcang  , 'cx',   trnch)
+         call series_xst(zfdsi  , 'fi', trnch)
+         call series_xst(zfnsi  , 'si', trnch)
 
          !PV for uv band fluxes
          ! zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb

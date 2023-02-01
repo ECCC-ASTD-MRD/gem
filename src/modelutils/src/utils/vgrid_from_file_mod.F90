@@ -198,7 +198,7 @@ contains
          j = j+1
          if (associated(vg_iplist)) deallocate(vg_iplist,stat=ier)
          nullify(vg_iplist)
-         ier = vgd_get(F_vgrid,'VIP'//trim(levtype_S(j)),vg_iplist,quiet=.true.)
+         ier = vgd_get(F_vgrid,'VIP'//trim(levtype_S(j)),vg_iplist)
          if (ier /= VGD_OK) then
             call msg(MSG_WARNING,'(vgrid_from_file) Problem with vgd_get for VIP'//trim(levtype_S(j)))
             return
@@ -533,10 +533,10 @@ contains
       if (present(F_rfls_L)) then
          if (F_rfls_L) rfld_s = 'RFLS'
       endif
-      istat = vgd_get(F_vgrid, key=rfld_s, value=sfcfld_S, quiet=.true.)
+      istat = vgd_get(F_vgrid, key=rfld_s, value=sfcfld_S)
       if (istat /= VGD_OK) then
-         istat = vgd_get(F_vgrid, key='KIND', value=ikind, quiet=.true.)
-         istat = vgd_get(F_vgrid, key='VERS', value=ivers, quiet=.true.)
+         istat = vgd_get(F_vgrid, key='KIND', value=ikind)
+         istat = vgd_get(F_vgrid, key='VERS', value=ivers)
          if ((rfld_s == 'RFLD' .and. ikind == 2 .and. ivers == 1) .or. &
               (rfld_s == 'RFLS' .and. ikind /= 5 .and. ivers /= 100)) then
             F_sfcRefKey = VGRID_FROM_FILE_NORFLD

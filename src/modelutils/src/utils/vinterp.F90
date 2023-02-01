@@ -584,7 +584,7 @@ contains
       F_istat = RMN_ERR
 
       rfld_S = ''
-      istat = vgd_get(F_vgrid, key='RFLD', value=rfld_S, quiet=.true.)
+      istat = vgd_get(F_vgrid, key='RFLD', value=rfld_S)
       need_rfld_L = (rfld_S /= '')
 
       IF_SFCFLD: if (associated(F_sfcfld) .and. need_rfld_L) then

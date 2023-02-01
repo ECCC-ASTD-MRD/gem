@@ -1231,6 +1231,16 @@ over sea-ice and glacier if .true.
 | .false. || logical
 
 |-
+| lsoil_freezing_svs1 ||
+If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology
+| .false. || logical
+
+|-
+| lwater_ponding_svs1 ||
+If .true., SVS1 simulates water ponding at the surface
+| .false. || logical
+
+|-
 | owflux ||
 (coupling) fluxes over ocean are taken from ocean model if .true.
 | .false. || logical
@@ -1311,6 +1321,11 @@ Mimimum Obukhov length (L) for soil surfaces
 | -1. || real
 
 |-
+| sl_lmin_town ||
+Minimum Obukhov length (L) for town
+| -1. || real
+
+|-
 | sl_lmin_water ||
 Minimum Obukhov length (L) for water
 | -1. || real
@@ -1360,6 +1375,16 @@ use local momentum (no snow) roughness for SVS if .true.
 | .false. || logical
 
 |-
+| svs_snow_rain ||
+
+| 'BELAIR03' || character(len=16)
+
+|-
+| svs_urban_params ||
+New urban surface parameters within SVS only (not used in TEB)
+| .false. || logical
+
+|-
 | tdiaglim ||
 Limit temperature inversions to 8K/40m in surface layer if .true.
 | .false. || logical
@@ -1372,11 +1397,6 @@ Adjust temperature diagnostic in TEB in the street  if .true.
 |-
 | urb_diagwind ||
 Adjust wind diagnostic in TEB in the street  if .true.
-| .false. || logical
-
-|-
-| urban_params_new ||
-New urban surface parameters
 | .false. || logical
 
 |-

@@ -87,7 +87,7 @@
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
 
       !if (F_step_kount == 0) call itf_phy_glbstat('Aftinp')
-      !call gem_error (err_input,'itf_phy_step','Problem with phy_input')
+      call gem_error (err_input,'itf_phy_step','Problem with phy_input')
       call gtmg_stop  ( 45 )
 
       ! Smooth the thermodynamic state variables on request
@@ -97,7 +97,7 @@
            ipf_smooth_fld('rdqi', 'rdqi_smt', 3, 1), &
            ipf_smooth_fld('tcond','tcond_smt',3) &
            )
-      !call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+      call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
 
       ! Call digital filter to smooth Alfa, Beta surface fields
       if (sfcflxfilt_o > 1 .and. F_step_kount > 0) then
@@ -122,7 +122,7 @@
 !      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
       call gtmg_stop  ( 46 )
 
-      !call gem_error (err_step,'itf_phy_step','Problem with phy_step')
+      call gem_error (err_step,'itf_phy_step','Problem with phy_step')
       !call itf_phy_glbstat('aftphy')
 
       call set_num_threads ( Ptopo_nthreads_dyn, F_step_kount )

@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine inisoili_svs(ni, trnch)
+   use tdpack
    use sfcbus_mod
    use svs_configs
    use sfc_options
@@ -31,16 +32,17 @@ subroutine inisoili_svs(ni, trnch)
    !             - Input -
    ! NI          longueur d'une tranche horizontale
 
-   integer :: i, k, kk
-   REAL b, usb, fb, crit1_wfcint, crit2_wfcint
+   integer :: i, k, kk, jj
+   REAL b, usb, fb, crit1_wfcint, crit2_wfcint, ts
    
    ! "geo" variables are on the levels of the geophysical soil texture datbase
    REAL, dimension(ni,nl_stp) :: wsat_geo, wwilt_geo, wfc_geo, b_geo, psisat_geo, &
-           ksat_geo, wfcint_geo, fb_geo
+           ksat_geo, wfcint_geo, fb_geo, quartz_geo,rhosoil_geo,conddry_geo,condsld_geo , wunfrz_geo
    real, pointer, dimension(:) :: zcgsat, zgrkef, zdraindens, zslop
 
    ! variables on the levels of SVS
-   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zpsisat, zsand, zwfc, zwfcint, zwsat, zwwilt 
+   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zpsisat, zsand, zwfc, zwfcint, zwsat, zwwilt, & 
+                                         zconddry, zcondsld , zquartz, zrhosoil,zwunfrz 
 
   
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
@@ -60,7 +62,13 @@ subroutine inisoili_svs(ni, trnch)
    MKPTR2D(zwfc, wfc)
    MKPTR2D(zwfcint, wfcint)
    MKPTR2D(zwsat, wsat)
+   MKPTR2D(zwunfrz, wunfrz)
    MKPTR2D(zwwilt , wwilt)
+   MKPTR2D(zconddry , conddry)
+   MKPTR2D(zcondsld , condsld)
+   MKPTR2D(zrhosoil , rhosoil)
+   MKPTR2D(zquartz , quartz)
+
    
 
    ! calculate soil parameters on native GEO layers, and then map them unto model layers. 
@@ -109,6 +117,37 @@ subroutine inisoili_svs(ni, trnch)
             wfcint_geo(i,k) = wfc_geo(i,k)
          endif
          
+       ! Compute soil thermal properties for soil freezing
+
+!       Quartz content (ref : NL95 & PL98)):
+        quartz_geo(i,k)  = 0.038 + 0.0095*zsand(i,k)
+
+!       Soil dry density (PL98):
+        rhosoil_geo(i,k) = (1.0-wsat_geo(i,k))*2700.
+
+!       Soil solid conductivity:
+        if (quartz_geo(i,k).gt.0.20) then
+           condsld_geo(i,k) = (7.7**quartz_geo(i,k)) *  &
+                           (2.0**(1.0-quartz_geo(i,k)))
+        endif
+        if (quartz_geo(i,k).le.0.20) then
+           condsld_geo(i,k) = (7.7**quartz_geo(i,k)) *  &
+                           (3.0**(1.0-quartz_geo(i,k)))
+        endif
+
+!       Soil dry conductivity:
+        conddry_geo(i,k) = (0.135*rhosoil_geo(i,k) + 64.7) / &
+                        (2700. - 0.947*rhosoil_geo(i,k))
+
+!       Unfrozen residual water content obtained from Niu and Yang (2006)
+!       Average value between -10 and -2 deg C
+        wunfrz_geo(i,k) = 0. 
+        do jj = 0,4
+            ts =263.15+ 2.*jj
+            wunfrz_geo(i,k)     =  wunfrz_geo(i,k)+ wsat_geo(i,k)*(CHLF*(ts-273.15)/(ts*(-1.0*psisat_geo(i,k))*9.81))**(-1.0*usb)
+        enddo
+        wunfrz_geo(i,k) =  wunfrz_geo(i,k)/5.   
+         
       enddo
    enddo
    ! "Map" GEO soil properties unto model soil layers
@@ -125,6 +164,11 @@ subroutine inisoili_svs(ni, trnch)
             zpsisat(i,k)  = zpsisat(i,k) + psisat_geo(i,kk)  * weights( k , kk)
             zksat  (i,k)  = zksat  (i,k) + ksat_geo  (i,kk)  * weights( k , kk)
             zwfcint(i,k)  = zwfcint(i,k) + wfcint_geo(i,kk)  * weights( k , kk)
+            zconddry  (i,k)  = zconddry  (i,k) + conddry_geo  (i,kk)  * weights( k , kk)
+            zcondsld  (i,k)  = zcondsld  (i,k) + condsld_geo  (i,kk)  * weights( k , kk)
+            zquartz   (i,k)  = zquartz   (i,k) + quartz_geo   (i,kk)  * weights( k , kk)
+            zrhosoil  (i,k)  = zrhosoil  (i,k) + rhosoil_geo  (i,kk)  * weights( k , kk)  
+            zwunfrz   (i,k)  = zwunfrz   (i,k) + wunfrz_geo   (i,kk)  * weights( k , kk)
             
          enddo
       enddo

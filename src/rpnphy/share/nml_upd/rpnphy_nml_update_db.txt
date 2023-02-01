@@ -594,3 +594,10 @@ fileVersion: 6.2.0-a21 > 6.2.0-a22
 rm:  physics_cfgs/prep_cw_rad_fix_l
 #New:  physics_cfgs/rad_part_nomp
 rm:  physics_cfgs/simisccp
+#------
+fileVersion: 6.2.0-a22 > 6.2.0-a23
+#New:  surface_cfgs/lsoil_freezing_svs1
+#New:  surface_cfgs/lwater_ponding_svs1
+#New:  surface_cfgs/sl_lmin_town
+#New:  surface_cfgs/svs_snow_rain
+mv:  surface_cfgs/urban_params_new > surface_cfgs/svs_urban_params

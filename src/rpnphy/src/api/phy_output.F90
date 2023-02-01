@@ -47,8 +47,8 @@ function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,
       p_ip1 => ip1
       istat = vgrid_wb_put('surf',VGRID_SURF_TYPE,p_ip1)
 !!$      nullify(ip1m,ip1t)
-!!$      istat = vgd_get(F_vgrid,'VIPM',ip1m,quiet=.true.)
-!!$      istat = vgd_get(F_vgrid,'VIPT',ip1t,quiet=.true.)
+!!$      istat = vgd_get(F_vgrid,'VIPM',ip1m)
+!!$      istat = vgd_get(F_vgrid,'VIPT',ip1t)
 !!$      istat = vgrid_wb_put('ref-m',F_vgrid,ip1m)
 !!$      istat = vgrid_wb_put('ref-t',F_vgrid,ip1t)
       !TODO: gmm put p0? for ref-t/ref-m

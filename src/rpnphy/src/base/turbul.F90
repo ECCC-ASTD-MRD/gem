@@ -81,7 +81,7 @@ contains
            ztve, zze, zzn, zwtng, zwqng, zuwng, zvwng, zqcmoins, zhumoins, &
            zsigm, zsigt, zsigw, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
            zftot, zlwc, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
-           zrig, zshear2, zvcoef, zqmoins, zc1pbl, zbuoy, zmrk2
+           zrig, zshear2, zvcoef, zc1pbl, zbuoy, zmrk2
 
       real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce, qe
       !----------------------------------------------------------------
@@ -131,7 +131,6 @@ contains
       MKPTR2D(zkt, kt, vbus)
       MKPTR2D(zlwc, lwc, fbus)
       MKPTR2D(zqcmoins, qcmoins, dbus)
-      MKPTR2D(zqmoins, humoins, dbus)
       MKPTR2D(zqtbl, qtbl, fbus)
       MKPTR2D(zrif, rif, vbus)
       MKPTR2D(zrig, rig, vbus)
@@ -164,7 +163,6 @@ contains
       endif
 
       eturbtau = delt
-      qe(:,1:nkm1) = zqmoins(:,1:nkm1)
 
       !  filtre temporel
 
@@ -215,6 +213,9 @@ contains
          end do
       end do
 
+      ! Compute thermodynamic quantities on energy levels
+      qe(:,1:nkm1) = zhumoins(:,1:nkm1)
+      call mfotvt(ztve, ztmoins, zhumoins, ni, nkm1, ni)
 
       ! convective velocity scale w*
       ! (passed to MOISTKE3 through XH)

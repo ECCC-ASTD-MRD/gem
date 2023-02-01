@@ -248,6 +248,10 @@ module sfc_options
    !# Minimum Obukhov length (L) for water
    real           :: sl_Lmin_water = -1.
    namelist /surface_cfgs/ sl_Lmin_water
+
+   !# Minimum Obukhov length (L) for town
+   real           :: sl_Lmin_town = -1.
+   namelist /surface_cfgs/ sl_Lmin_town
    
    !# Define bulk Ri values for near-neutral regime in the surface layer
    real           :: sl_rineutral = 0.
@@ -297,6 +301,15 @@ module sfc_options
         'SOILGRIDS' &
         /)
 
+   !# If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology
+   logical           :: lsoil_freezing_svs1 = .false.
+   namelist /surface_cfgs/ lsoil_freezing_svs1 
+
+   !# If .true., SVS1 simulates water ponding at the surface
+   logical           :: lwater_ponding_svs1 = .false.
+   namelist /surface_cfgs/ lwater_ponding_svs1 
+
+
    !# Use snow albedo "I6" directly if .true.;
    !# Use snow age "XA" to calculate snow albedo if .false.
    logical           :: snoalb_anl  = .true.
@@ -315,8 +328,21 @@ module sfc_options
    logical           :: svs_local_z0m     = .false.
    namelist /surface_cfgs/ svs_local_z0m  
    
-
-
+   !# Option to deal with melt due to rain on snow in SVS snow scheme
+   !# BELAIR03: Original formulation from Belair et al. (2003)
+   !# BELAIR03_DTGEM: Revised formulation of Belair et al. (2003) using the time step of GEM at the time when the parameterisation has been
+   !developped (12 min). Recommended for coupled applications with short time steps (< 5 min). 
+   !# NONE: Snow melt due to rain deactivated
+   !# LEONARDINI21:  Assume all the energy brought by rain is used to melt the snowpack (see Leonardini et al. (2021)
+   ! Options REV and L21 remvoe the large sensitivity to the time step found with DEF.  
+   character(len=16) :: svs_snow_rain   = 'BELAIR03'
+   namelist /surface_cfgs/ svs_snow_rain
+   character(len=*), parameter :: SVS_SNOW_RAIN_OPT(4) = (/ &
+        'BELAIR03         ',  &
+        'BELAIR03_DTGEM   ',  &
+        'NONE             ',  &
+        'LEONARDINI21     ' &
+        /)
 
    
    !# Limit temperature inversions to 8K/40m in surface layer if .true.
@@ -427,9 +453,9 @@ module sfc_options
    real              :: zu = 10.
    namelist /surface_cfgs/ zu
 
-   !# New urban surface parameters
-   logical           :: urban_params_new = .false.
-   namelist /surface_cfgs/ urban_params_new
+   !# New urban surface parameters within SVS only (not used in TEB)
+   logical           :: svs_urban_params = .false.
+   namelist /surface_cfgs/ svs_urban_params
  
    !# Adjust wind diagnostic in TEB in the street  if .true.
    logical           :: urb_diagwind = .false.

@@ -149,7 +149,7 @@ contains
       !     ---------------------------
 
       ! Derived screen-level fields
-      if (.not.(lkount0 .and. fluvert /= 'NIL')) then
+      if (.not.(lkount0 .and. fluvert /= 'NIL').or.fluvert=='SURFACE') then
 
          ! Clip the screen level relative humidity to a range from 0-1
          call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
@@ -592,6 +592,9 @@ contains
       endif
       if (associated(zcone1)) zcone1(:) = real(en1(:))
       if (associated(zconq1)) zconq1(:) = real(pw1(:))
+
+      ! Compute surface energy budget (
+      zfl(:)   = zfns(:) - zfv_ag(:) - zfc_ag(:)
 
       !****************************************************************
       !     Moisture diagnostics
@@ -1241,9 +1244,10 @@ contains
             zfsiaf(:) = 0.
             zfsvaf(:) = 0.
             zparraf(:) = 0.
+            zsiaf(:) = 0.
+            zfnsaf(:) = 0.
          endif
          if (fluvert /= 'NIL') then
-            zsiaf(:) = 0.
             zflaf(:) = 0.
             zfcaf(:) = 0.
             zfvaf(:) = 0.
@@ -1283,10 +1287,11 @@ contains
                zfsiaf    (i) = zfsiaf (i) + zfsi  (i) * dt
                zfsvaf    (i) = zfsvaf (i) + zfsv  (i) * dt
                zparraf   (i) = zparraf(i) + zparr (i) * dt
+               zsiaf (i) = zsiaf (i) + zfnsi(i) * dt
+               zfnsaf (i) = zfnsaf (i) + zfns(i) * dt
             endif
 
             if (fluvert /= 'NIL') then
-               zsiaf (i) = zsiaf (i) + zfnsi(i) * dt
                zflaf (i) = zflaf (i) + zfl  (i) * dt
                zfcaf (i) = zfcaf (i) + zfc_ag(i) * dt
                zfvaf (i) = zfvaf (i) + zfv_ag(i) * dt

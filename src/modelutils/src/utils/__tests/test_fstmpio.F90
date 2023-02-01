@@ -735,7 +735,7 @@ subroutine test_fstmpio_vgrid(F_bcmk_S)
    call testutils_assert_eq(size(ip1list), 158, 'meta size(ip1list)')
    call testutils_assert_eq(ip1list(1:3), (/97642568, 97690568, 97738568/), 'meta ip1list')
    call testutils_assert_eq('M', lvltyp_S, 'meta lvltyp_S')
-   istat = vgd_get(vgrid, key='RFLD', value=sfcfld_S, quiet=.true.)
+   istat = vgd_get(vgrid, key='RFLD', value=sfcfld_S)
    call testutils_assert_eq('P0', sfcfld_S, 'meta sfcfld_S')
 
    istat = fstmpio_close(funit)

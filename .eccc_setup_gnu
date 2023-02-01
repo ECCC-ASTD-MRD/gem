@@ -16,7 +16,9 @@ else
 fi
 
 # Load latest version of RPN-SI libraries
-. r.load.dot rpn/libs/20230125-beta1
+# Doesn't work for now
+# You need to update the submodules to compile with GNU
+#. r.load.dot rpn/libs/20230125-beta1
 
 # We need a more recent version of cmake than the one available by default
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1

@@ -28,9 +28,7 @@ cd ${TASK_WORK}/${DOMAIN}
 rep_in=${TASK_INPUT}/${DOMAIN}
 rep_ou=${TASK_WORK}/${DOMAIN}/files_2_xfer
 
-if [ -s ${rep_in}/configexp.cfg ] ; then
-  . ${rep_in}/configexp.cfg
-fi
+. ${TASK_INPUT}/status_${DOMAIN##*_}
 
 GEM_YINYANG=${GEM_YINYANG:-0}
 if [ $GEM_YINYANG -gt 0 ] ; then
