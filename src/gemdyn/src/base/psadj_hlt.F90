@@ -33,6 +33,7 @@
       use tdpack
       use tr3d
       use mem_tstp
+      use mem_tracers
       use omp_timing
       use omp_lib
       use, intrinsic :: iso_fortran_env
@@ -48,6 +49,7 @@
       real, dimension(:,:  ), pointer :: delq
       real, dimension(:,:,:), pointer :: qt0i
       real(kind=REAL64), dimension(:,:  ), pointer :: fl_0_8
+      real(kind=REAL64), dimension(:,:,:), pointer :: sumqi_8
       real(kind=REAL64) :: l_avg_8(2),g_avg_ps_1_8,g_avg_ps_0_8,g_avg_fl_0_8,substract_8,sum_lcl(2)
       real(kind=REAL64) :: gathV(2,Ptopo_numproc*Ptopo_ncolors),gathS(Ptopo_numproc*Ptopo_ncolors)
 
@@ -64,6 +66,7 @@
       p0_dry_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimH
       p0_dry_1_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim=dim+dimH
       fl_0_8(l_minx:l_maxx,l_miny:l_maxy) => WS1_8(dim+1:) ; dim= 2*dim+dimH
+      sumqi_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1_8(dim+1:); dim=dim+dimV
       thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(dim+1:) ; dim= dim+2*OMP_max_threads
       g_avg_8(1:2) => WS1_8(dim+1:) ; dim= dim+2
 
@@ -99,14 +102,37 @@
          call gtmg_start (32, 'C_BCFLUX_PS', 10)
          call adz_BC_LAM_Aranami_hlt (empty,Adz_pb,Adz_num_b,1,Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,empty_i,MAXTR3D+1)
          call gtmg_stop (32)
-!$omp do
-         do j=1,l_nj
-            do i=1,l_ni
-               fl_0_8(i,j) = 0.0d0
-            end do
-         end do
-!$omp end do nowait
 
+         !Evaluate water tracers at TIME M (Schm_psadj==2)
+         !------------------------------------------------
+         if (Schm_psadj==2) then
+            call sumhydro_hlt (sumqi_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr, trt0, Schm_wload_L)
+!$omp do collapse(2)
+            do k=1,l_nk
+             do j=1,l_nj
+              do i=1,l_ni
+               sumqi_8(i,j,k) = sumqi_8(i,j,k) + tracers_M(Tr3d_hu)%pntr(i,j,k)
+              end do
+             end do
+            end do
+!$omp end do
+         else
+!$omp do collapse(2)
+            do k=1,l_nk
+             do j=1,l_nj
+              do i=1,l_ni
+               sumqi_8(i,j,k) = 0.
+              end do
+             end do
+            end do
+!$omp end do
+         end if
+         
+        endif
+
+        !Estimate or Recuperate air mass on CORE at TIME P
+        !-------------------------------------------------
+        if (LAM_L.or.Schm_psadj==2) then
 
          !Obtain Wet Surface pressure minus Cstv_pref_8 at TIME P
          !-------------------------------------------------------
@@ -237,9 +263,10 @@
         if (LAM_L) then
 !$omp do
          do j=Adz_j0b,Adz_jnb
+            fl_0_8(:,j) = 0.0d0
             do k=1,l_nk
                do i=Adz_i0b,Adz_inb
-                  fl_0_8(i,j) = fl_0_8(i,j) + (pw_pm_moins_8(i,j,k+1) - pw_pm_moins_8(i,j,k)) &
+                  fl_0_8(i,j) = fl_0_8(i,j) + (1.-sumqi_8(i,j,k))*(pw_pm_moins_8(i,j,k+1) - pw_pm_moins_8(i,j,k)) &
                                    * (Adz_flux(1)%fi(i,j,k) - Adz_flux(1)%fo(i,j,k))
                end do
             end do
