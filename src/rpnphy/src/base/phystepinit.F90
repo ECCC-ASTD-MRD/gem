@@ -72,7 +72,7 @@ contains
       logical,parameter:: QUIET_L = .true.
 
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
-      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS)
+      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS),ind_sfc
       real                   :: rcdt1
       real, dimension(ni,nk) :: work
       real, target :: tmp1d(ni)
@@ -141,11 +141,13 @@ contains
       MKPTR1D(zfrfrac, frfrac, fbus)
       MKPTR1D(zpefrac, pefrac, fbus)
 
+      ind_sfc = nk
       if (any(pcptype == (/ &
            'NIL   ', &
            'BOURGE'/))) then
          MKPTR2DN(zfneige, fneige, ni, 1, fbus)
          MKPTR2DN(zfip, fip, ni, 1, fbus)
+         if (mpdiag_for_sfc) ind_sfc = 1
       else
          MKPTR2D(zfneige, fneige3d, fbus)
          MKPTR2D(zfip, fip3d, fbus)
@@ -448,9 +450,8 @@ contains
          enddo
       endif
 
-      if (any(pcptype == (/ &
-           'NIL   ', &
-           'BOURGE'/))) then
+      if (pcptype == 'NIL' .or. & 
+           (pcptype == 'BOURGE' .and. .not.mpdiag_for_sfc)) then
          tmp1d = 0.
          nullify(tmpptr)
          call surf_precip1(ztmoins(:,nk-1), &
@@ -468,10 +469,11 @@ contains
               zrlc, ztls, zrsc, ztss, &
               zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
               zrainrate, zsnowrate, ni)
-      elseif (pcptype == 'BOURGE3D') then
+      elseif (pcptype == 'BOURGE3D' .or. &
+           (pcptype == 'BOURGE' .and. mpdiag_for_sfc)) then
          call surf_precip3(ztmoins(:,nk-1), &
               zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, &
-              zfneige(:,nk), zfip(:,nk), ni)
+              zfneige(:,ind_sfc), zfip(:,ind_sfc), ni)
       endif
       if (timings_L) call timing_stop_omp(405)
       call msg_toall(MSG_DEBUG, 'phystepinit [END]')

@@ -16,7 +16,7 @@
 
 module surf_precip
    use tdpack_const, only: TCDK
-   use phy_options, only: stcond, pcptype
+   use phy_options, only: stcond, pcptype, mpdiag_for_sfc
    use modi_wetbulbt, only: wetbulbt
    use modi_hydromet_temp, only: hydromet_temp
    implicit none
@@ -188,11 +188,17 @@ contains
       ! OPTiONS:  Depending on the explicit scheme used during the integration,
       !           we have three options for specifying the phase of 
       !           precipitation reaching the ground
-      select case (stcond)
+      select case (stcond(1:3))
       case ('NIL') 
          call surf_precip_nil(tt, totrate, rainrate, snowrate, ni)
-      case ('CONSUN')
+      case ('CON')
          call surf_precip3_consun(totrate, fneige, fip, rainrate, snowrate, ni)
+      case ('MP_')
+         if (mpdiag_for_sfc) then
+            call surf_precip3_consun(totrate, fneige, fip, rainrate, snowrate, ni)
+         else
+            call surf_precip_other(tt, tls, tss, totrate, rainrate, snowrate, ni)
+         endif
       case DEFAULT
          call surf_precip_other(tt, tls, tss, totrate, rainrate, snowrate, ni)
       end select
