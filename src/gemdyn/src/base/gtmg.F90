@@ -25,9 +25,9 @@ module omp_timing
       integer, parameter :: MAX_event=500
 
       character(len=16) nam_subr_S(MAX_instrumented)
-      character(len= 4) lcltime_name_S(MAX_instrumented)
 
-      logical, save :: Gem_timing_dyn_L, timing_barrier_L
+      logical, save :: Gem_timing_dyn_L, New_timing_dyn_L, &
+                       timing_barrier_L
 
       integer timer_cnt (MAX_instrumented), timer_level (MAX_instrumented)
 
@@ -35,8 +35,10 @@ module omp_timing
 
 contains
 
-      subroutine gtmg_init ()
+      subroutine gtmg_init ( myproc, msg )
       implicit none
+      character(len=*), intent(in) :: msg
+      integer         , intent(in) :: myproc
 #include <clib_interface_mu.hf>
 
       character(len=16) timer_type_S,dumc_S
@@ -47,17 +49,21 @@ contains
 !
       if (clib_getenv ('GEMDYN_TIMING',timer_type_S) < 0) then
          Gem_timing_dyn_L = .false.
+         New_timing_dyn_L = .true.
          timing_barrier_L = .false.
       else
          call low2up (timer_type_S,dumc_S)
          timer_type_S= dumc_S
          Gem_timing_dyn_L = timer_type_S(1:3) == 'DYN'
+         New_timing_dyn_L = timer_type_S(1:3) == 'NEW'
          timing_barrier_L = timer_type_S(4:6) == '_WB'
       endif
 
       if (Gem_timing_dyn_L) then
          sum_tb= 0.; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
          total_time= omp_get_wtime()
+      else
+         call timing_init2 ( myproc, msg )
       endif
 
       call rpn_comm_barrier ("GRID", err)
@@ -88,6 +94,8 @@ contains
          timer_level(mynum) = mylevel
          tb         (mynum) = omp_get_wtime()
          timer_cnt  (mynum) = timer_cnt(mynum) + 1
+      else if(New_timing_dyn_L) then
+         call timing_start2 ( mynum, myname_S, mylevel )
       endif
 !$omp end single
 !
@@ -113,6 +121,8 @@ contains
       if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
       if (Gem_timing_dyn_L) then
          sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime() - tb (mynum))
+      else if(New_timing_dyn_L) then
+         call timing_stop (mynum)
       endif
 !$omp end single
 !
@@ -121,7 +131,7 @@ contains
       return
       end subroutine gtmg_stop
 
-      subroutine gtmg_terminate ( myproc )
+      subroutine gtmg_terminate ( myproc, msg )
       use ptopo
       use glb_ld
       use path
@@ -131,7 +141,8 @@ contains
       use step_options
       implicit none
 
-      integer, intent(in) :: myproc
+      character(len=*), intent(in) :: msg
+      integer         , intent(in) :: myproc
 
       character(len=16) name
       character(len=64) fmt,nspace
@@ -142,10 +153,12 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (.not.Gem_timing_dyn_L) return
+      if (.not.New_timing_dyn_L .and. .not.Gem_timing_dyn_L) return
+
+
+      if (Gem_timing_dyn_L) then
 
       if (myproc /= 0) return
-
       print *,'_______________________________________________________________'
       print *,'__________________OMP_TIMINGS ON PE #0_________________________'
 
@@ -154,7 +167,6 @@ contains
 
       do i = 1,MAX_instrumented
          lvl= 0 ; elem= i
- !        print*, i,trim(nam_subr_S(elem)),flag(elem)
  55      if ( (trim(nam_subr_S(elem)) /= '') .and. (.not.flag(elem)) ) then
 
             write (nspace,'(i3)') 5*lvl+1
@@ -181,8 +193,11 @@ contains
             endif
          endif
       end do
-
       print *,'_______________________________________________________________'
+
+      else
+         call timing_terminate2 ( myproc, msg )
+      endif
 !
 !-------------------------------------------------------------------
 !

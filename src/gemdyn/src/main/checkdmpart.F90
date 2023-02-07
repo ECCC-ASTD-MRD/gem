@@ -25,7 +25,7 @@
       character(len=16) npex_S,npey_S
       character(len=2048) cdm_eigen_S,fn
       integer cdm_npex(2), cdm_npey(2), unf, cnt
-      integer pe_xcoord(1000), pe_ycoord(1000)
+      integer, dimension(:), allocatable ::  pe_xcoord, pe_ycoord
       integer err,ierr(4),npex,npey,i,max_io_pes
 
       namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_eigen_S
@@ -120,14 +120,15 @@
       if (cnt == 1) then
          npex= cdm_npex(1) ; npey=cdm_npey(1)
          max_io_pes=npex*npey
-         do i= 1, npex*npey
-            err= RPN_COMM_io_pe_valid_set (pe_xcoord,pe_ycoord,i,&
-            npex,npey,.false.,0)
+         allocate (pe_xcoord(max_io_pes),pe_ycoord(max_io_pes))
+         do i= 1, max_io_pes
+            err= RPN_COMM_io_pe_valid_set (pe_xcoord,pe_ycoord,i,npex,npey,.false.,0)
             if (err /= 0) then
                max_io_pes= i-1
                exit
             endif
          end do
+         deallocate (pe_xcoord,pe_ycoord)
          write(npex_S,'(i6.6)') max_io_pes
          if (Ptopo_couleur == 0) call write_status_file3 ('MAX_PES_IO='//trim(npex_S))
       endif

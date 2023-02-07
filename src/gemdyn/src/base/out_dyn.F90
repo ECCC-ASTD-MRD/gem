@@ -29,19 +29,24 @@
       use out_vref, only: out_vref_itf
       use step_options
       use omp_timing
+    !  use glb_ld
+    !  use tr3d
+    !  use mem_tracers
       implicit none
 
       logical F_reg_out, F_casc_L
 
 #include <rmnlib_basics.hf>
 
-      character(len=15) prefix
+      character(len=15) prefix,vname
       logical ontimec,flag_clos
-      integer kk,jj,levset,gridset,istat
+      integer kk,jj,levset,gridset,istat,n,deb
+      real, dimension(:,:,:),pointer :: tracers
 !
 !----------------------------------------------------------------------
 !
       call gtmg_start ( 80, 'OUT_DYN', 1)
+      
       if (.not.Lun_debug_L) istat= fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
 
       Out_type_S   = 'REGDYN'
@@ -59,7 +64,6 @@
          call canonical_cases ("OUT")
 
          ! Precompute diagnostic level values
-         call itf_phy_diag()
 
          do jj=1, outd_sorties(0,Lctl_step)
 

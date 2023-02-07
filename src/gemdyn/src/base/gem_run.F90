@@ -116,18 +116,17 @@
          end if
 
          if ( Ctrl_phyms_L.or.Dcmip_physics_L ) then
-            call tt2virt (tt1, .true., &
-            l_minx,l_maxx,l_miny,l_maxy, G_nk)
+            call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
             call itf_phy_UVupdate()
             call pw_update_GW()
          end if
-
-         if ( Init_mode_L ) call digflt ! digital filter
 
          call out_dyn (.true., .false.) ! regular output
 
          call blocstat (.false.)
 
+         if ( Init_mode_L ) call digflt ! digital filter
+         
          if (Lun_out > 0) write(Lun_out,3000) Lctl_step
 
          call save_restart()

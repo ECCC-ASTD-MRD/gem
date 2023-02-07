@@ -16,23 +16,24 @@
 !**s/r pw_update_UV - Update physical unstaggered horizonal wind
 !                     components pw_uu_plus and pw_vv_plus
 
-      subroutine pw_update_UV()
+      subroutine pw_update_UV ()
       use glb_ld
       use gmm_pw
       use gmm_vt1
+      use outp
       use omp_timing
       implicit none
-#include <arch_specific.hf>
-
 !     ________________________________________________________________
 !
       call gtmg_start ( 5, 'PW_UPDATE', 0)
 
       call hwnd_stag ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
                        l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
-
+      udiag(:,:) = pw_uu_plus(:,:,G_nk)
+      vdiag(:,:) = pw_vv_plus(:,:,G_nk)
+      
       call gtmg_stop (5)
 !     ________________________________________________________________
 !
       return
-      end
+      end subroutine pw_update_UV
