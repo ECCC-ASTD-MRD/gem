@@ -17,7 +17,6 @@
       use dynkernel_options
       use gmm_table
       use gmm_contiguous
-      use gmm_vt2
       use gmm_vt1
       use gmm_vt0
       use mem_tracers
@@ -58,38 +57,14 @@
       call gmm_build_meta1D ( mymeta, 1,dim,0,0,dim, &
                               0,GMM_NULL_FLAGS )
 
-      nullify(dynt2,dynt1,dynt0)
-      istat = min(gmm_create('DYNT2',dynt2,mymeta,flag_r_n),istat)
+      nullify(dynt1,dynt0)
       istat = min(gmm_create('DYNT1',dynt1,mymeta,flag_r_n),istat)
       istat = min(gmm_create('DYNT0',dynt0,mymeta,flag_r_n),istat)
 
-      allocate (timlvl2(7),timlvl1(7),timlvl0(7))
+      allocate (timlvl1(7),timlvl0(7))
 
       dim = dimH * l_nk
-
-      timlvl2(1)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(      1:)
-      timlvl2(2)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(  dim+1:)
-      timlvl2(3)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(2*dim+1:)
-      timlvl2(4)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk+1)=> dynt2(3*dim+1:)
-      timlvl2(5)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(4*dim+dimH+1:)
-      timlvl2(6)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt2(5*dim+dimH+1:)
-      timlvl2(1)%pntr_2d(l_minx:l_maxx,l_miny:l_maxy) => dynt2(6*dim+dimH+1:)
-
-      istat= min(gmm_create(gmmk_ut2_s ,timlvl2(1)%pntr_3d,meta3d_nk ,0),istat)
-      istat= min(gmm_create(gmmk_vt2_s ,timlvl2(2)%pntr_3d,meta3d_nk ,0),istat)
-      istat= min(gmm_create(gmmk_tt2_s ,timlvl2(3)%pntr_3d,meta3d_nk ,0),istat)
-      istat= min(gmm_create(gmmk_qt2_s ,timlvl2(4)%pntr_3d,meta3d_nk1 ,0),istat)
-      istat= min(gmm_create(gmmk_wt2_s ,timlvl2(5)%pntr_3d,meta3d_nk ,0),istat)
-      istat= min(gmm_create(gmmk_zdt2_s ,timlvl2(6)%pntr_3d,meta3d_nk ,0),istat)
-      istat= min(gmm_create(gmmk_st2_s ,timlvl2(1)%pntr_2d,meta2d ,0),istat)
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_ut2_s  ; GMM_tbl%ara(gmm_cnt)='UU' ; GMM_tbl%cn(gmm_cnt)='MM' ; GMM_tbl%fst(gmm_cnt)=gmmk_ut2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_vt2_s  ; GMM_tbl%ara(gmm_cnt)='VV' ; GMM_tbl%cn(gmm_cnt)='MM' ; GMM_tbl%fst(gmm_cnt)=gmmk_vt2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_tt2_s  ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TH' ; GMM_tbl%fst(gmm_cnt)=gmmk_tt2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_qt2_s  ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='MQ' ; GMM_tbl%fst(gmm_cnt)=gmmk_qt2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_wt2_s  ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TH' ; GMM_tbl%fst(gmm_cnt)=gmmk_wt2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_zdt2_s ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='TH' ; GMM_tbl%fst(gmm_cnt)=gmmk_zdt2_s
-      gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_st2_s  ; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)=gmmk_st2_s
-      
+    
       timlvl1(1)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(      1:)
       timlvl1(2)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(  dim+1:)
       timlvl1(3)%pntr_3d(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  => dynt1(2*dim+1:)
@@ -153,13 +128,6 @@
       istat = gmm_get (gmmk_wt1_s , wt1)
       istat = gmm_get (gmmk_qt1_s , qt1)
       istat = gmm_get (gmmk_zdt1_s, zdt1)
-      istat = gmm_get (gmmk_ut2_s , ut2)
-      istat = gmm_get (gmmk_vt2_s , vt2)
-      istat = gmm_get (gmmk_tt2_s , tt2)
-      istat = gmm_get (gmmk_st2_s , st2)
-      istat = gmm_get (gmmk_wt2_s , wt2)
-      istat = gmm_get (gmmk_qt2_s , qt2)
-      istat = gmm_get (gmmk_zdt2_s, zdt2)
 
       istat = GMM_OK
 
@@ -168,32 +136,30 @@
                               0,GMM_NULL_FLAGS )
 
       istat = GMM_OK
-      nullify(trt0,trt1,trt2,trdf)
+      nullify(trt0,trt1,trdf)
       istat = min(gmm_create('TRACERS:t0',trt0,mymeta,flag_r_n),istat)
       istat = min(gmm_create('TRACERS:t1',trt1,mymeta,flag_r_n),istat)
-      istat = min(gmm_create('TRACERS:t2',trt2,mymeta,flag_r_n),istat)
       istat = min(gmm_create('TRACERS:df',trdf,mymeta,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
       end if
 
-      allocate (tracers_P(Tr3d_ntr), tracers_M(Tr3d_ntr), tracers_t2(Tr3d_ntr))
+      allocate (tracers_P(Tr3d_ntr), tracers_M(Tr3d_ntr))
       allocate (sumq_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+      allocate (air_mass(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
+      allocate (w_tr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
       
       dim = (l_maxx-l_minx+1) * (l_maxy-l_miny+1) * l_nk
       do i=1,Tr3d_ntr
          nullify(tracers_P(i)%pntr)
          tracers_P(i)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt1((i-1)*dim+1:)
          tracers_M(i)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt0((i-1)*dim+1:)
-         tracers_t2(i)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt2((i-1)*dim+1:)
 !     necessary to create those GMM tracers variables for phy_input
          nvar(1:maxlenght)='' ; nvar= 'TR/'//trim(Tr3d_name_S(i))//':M'
          istat= min(gmm_create(nvar,tracers_M(i)%pntr,meta3d_nk,0),istat)
          nvar(1:maxlenght)='' ; nvar= 'TR/'//trim(Tr3d_name_S(i))//':P'
          istat= min(gmm_create(nvar,tracers_P(i)%pntr,meta3d_nk,0),istat)
-         nvar(1:maxlenght)='' ; nvar= 'TR/'//trim(Tr3d_name_S(i))//':t2'
-         istat= min(gmm_create(nvar,tracers_t2(i)%pntr,meta3d_nk,0),istat)
       end do
 
       !Allocation if Bermejo-Conde LAM ZFL

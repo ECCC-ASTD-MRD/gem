@@ -68,7 +68,7 @@
       call memusage ( Lun_out )
 
       call gtmg_stop ( 1 )
-      call gtmg_terminate( Ptopo_myproc )
+      call gtmg_terminate( Ptopo_myproc, 'GEMDM' )
 
 !     Free all one-sided MPI windows
       call MPI_Win_free  (Inp_window,err)

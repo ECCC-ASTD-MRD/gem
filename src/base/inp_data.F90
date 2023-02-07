@@ -33,7 +33,6 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors
       implicit none
-#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       character(len=*), intent(in):: F_datev
@@ -48,9 +47,11 @@
       logical urt1_l, ut1_l
       integer n, nka, nka_tt, nka_hu, deb, err
       integer, dimension (:), pointer :: TT_ip1_list, HU_ip1_list
-      real, dimension (:,:  ), pointer :: Sp0_q,Sp0_u,Sp0_v, &
-                                          Dp0_q,Dp0_u,Dp0_v, &
-                                          Dlsp0_q,Dlsp0_u,Dlsp0_v,meqr
+      real, dimension (:,:  ), pointer :: Sp0_q,Sp0_u,Sp0_v      ,&
+                                          Slsp0_q,Slsp0_u,Slsp0_v,&
+                                          Dp0_q,Dp0_u,Dp0_v      ,&
+                                          Dlsp0_q,Dlsp0_u,Dlsp0_v
+      real, dimension (:,:,:), pointer :: meqr    
       real, dimension (:,:  ), pointer :: dummy
       real, dimension (:,:,:), pointer :: dstlev,srclev
       real, dimension (:,:,:), pointer :: tv,ttr,hur
@@ -70,14 +71,13 @@
 
       call inp_tv (tv, ttr, hur, TT_ip1_list, HU_ip1_list, nka_tt,nka_hu)
 
-      nullify ( Sp0_q,Sp0_u,Sp0_v,&
+      nullify ( Sp0_q,Sp0_u,Sp0_v,Slsp0_q,Slsp0_u,Slsp0_v,&
                 Dp0_q,Dp0_u,Dp0_v,Dlsp0_q,Dlsp0_u,Dlsp0_v )
 
-      call inp_src_surface ( Sp0_q,Sp0_u,Sp0_v,F_topo,nka_tt )
-
+      call inp_src_surface ( Sp0_q,Sp0_u,Sp0_v,Slsp0_q,Slsp0_u,Slsp0_v,F_topo,nka_tt )
       call inp_dst_surface ( F_s, Dp0_q, Dp0_u, Dp0_v,&
-                             Dlsp0_q,Dlsp0_u,Dlsp0_v ,&
-                             TT_ip1_list,Sp0_q,meqr,tv,F_topo,F_orols,&
+                             Dlsp0_q,Dlsp0_u,Dlsp0_v ,Sp0_q,Slsp0_q, &
+                             TT_ip1_list,meqr,tv,F_topo,F_orols,&
                              Schm_sleve_L,l_minx,l_maxx,l_miny,l_maxy,&
                              nka_tt,1-G_halox,l_ni+G_halox           ,&
                                     1-G_haloy,l_nj+G_haloy )
@@ -86,8 +86,10 @@
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk))
 
       nullify(dummy)
+
       call inp_src_levels ( srclev, nka, TT_ip1_list, Inp_vgd_src,Sp0_q,&
-                   dummy,GZ3d%valq,GZ3d%ip1, l_minx,l_maxx,l_miny,l_maxy)
+                Slsp0_q,GZ3d%valq,GZ3d%ip1, l_minx,l_maxx,l_miny,l_maxy)
+
       call inp_dst_levels ( dstlev, Ver_vgdobj, Ver_ip1%t,&
                              Dp0_q, Dlsp0_q,G_nk )
 
@@ -120,7 +122,7 @@
          vname= trim(Tr3d_name_S(n))
          deb= (n-1)*l_nk+1
          if (trim(vname) /= 'HU') then
-            err = inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t, Sp0_q,&
+            err = inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t, Sp0_q,Slsp0_q,&
                             Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,&
                             F_tracers(l_minx,l_miny,deb),&
                             l_minx,l_maxx,l_miny,l_maxy,G_nk        ,&
@@ -135,17 +137,17 @@
       end do
 
       err = inp_get ( 'QT1',  'Q', Ver_ip1%m,&
-                      Sp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_q,&
+                      Sp0_q, Slsp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_q,&
                       l_minx,l_maxx,l_miny,l_maxy,G_nk+1,F_quiet_L=.true.)
       Inp_qt_L= ( err == 0 )
 
       err = inp_get ( 'WT1',  'Q', Ver_ip1%t,&
-                   Sp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_w,&
+                   Sp0_q, Slsp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_w,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true.)
       Inp_w_L= ( err == 0 )
 
       err = inp_get ('ZDT1', 'Q', Ver_ip1%t,&
-                   Sp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_zd,&
+                   Sp0_q, Slsp0_q, Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_zd,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true.)
       Inp_zd_L= ( err == 0 )
 
@@ -153,22 +155,22 @@
 
       if (F_stag_L) then
          err = inp_get ( 'URT1', 'U', Ver_ip1%m               ,&
-                   Sp0_u, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
          if ( err == 0 ) then
             err = inp_get ( 'VRT1', 'V', Ver_ip1%m            ,&
-                   Sp0_v, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
          end if
          urt1_L= ( err == 0 )
 
          if (.not. urt1_L) then
             err = inp_get ( 'UT1', 'U', Ver_ip1%m              ,&
-                   Sp0_u, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
             if ( err == 0 ) then
                err = inp_get ( 'VT1', 'V', Ver_ip1%m           ,&
-                   Sp0_v, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
                    l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
             end if
             ut1_L= ( err == 0 )
@@ -176,7 +178,8 @@
       end if
 
       if ((.not. urt1_L) .and. (.not. ut1_L)) then
-         call inp_hwnd ( F_u,F_v, F_stag_L, Sp0_q,Sp0_u,Sp0_v     ,&
+         call inp_hwnd ( F_u,F_v, F_stag_L, &
+                         Sp0_q,Sp0_u,Sp0_v,Slsp0_q,Slsp0_u,Slsp0_v,&
                          Dp0_q,Dp0_u,Dp0_v,Dlsp0_q,Dlsp0_u,Dlsp0_v,&
                          GZ3d%valq,GZ3d%valu,GZ3d%valv,GZ3d%ip1            ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )

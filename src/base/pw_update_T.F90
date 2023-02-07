@@ -18,6 +18,9 @@
       subroutine pw_update_T()
       use glb_ld
       use gmm_pw
+      use outp
+      use mem_tracers
+      use tr3d
       use omp_timing
       implicit none
 #include <arch_specific.hf>
@@ -30,6 +33,9 @@
 !     --------------------------------------------
 !
       call tt2virt (pw_tt_plus, .false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      tdiag(:,:) = pw_tt_plus(:,:,G_nk)
+      qdiag(:,:) = tracers_P(Tr3d_hu)%pntr(:,:,G_nk)
+
       call gtmg_stop (5)
 !     ________________________________________________________________
 !

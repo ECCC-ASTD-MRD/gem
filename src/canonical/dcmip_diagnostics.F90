@@ -60,7 +60,7 @@
       character(len= 12) :: name_S
       character(len= 9)  :: communicate_S
 
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: air_mass
+!      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: air_mass
 
       logical :: almost_zero
 !

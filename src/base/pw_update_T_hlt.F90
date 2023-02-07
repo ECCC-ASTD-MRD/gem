@@ -21,6 +21,7 @@
       use gem_options
       use gmm_pw
       use gmm_vt1
+      use outp
       use tr3d
       use mem_tracers
       use tdpack
@@ -45,7 +46,15 @@
          end do
       end do
 !$omp end do
-
+!$omp do
+      do j=l_miny, l_maxy
+         do i=l_minx,l_maxx
+            tdiag(i,j) = pw_tt_plus(i,j,G_nk)
+            qdiag(i,j) = tracers_P(Tr3d_hu)%pntr(i,j,G_nk)
+         end do
+      end do
+!$omp end do
+      
       call gtmg_stop (5)
 !
 !     ________________________________________________________________

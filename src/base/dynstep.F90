@@ -21,7 +21,6 @@
       use gem_options
       use sol_options
       use gmm_vt1
-      use gmm_vt2
       use gmm_pw
       use adz_mem
       use HORgrid_options
