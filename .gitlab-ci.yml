@@ -8,8 +8,8 @@ variables:
 
 stages:
   - build
-  - run_configs_gnu
   - run_configs_intel
+  - run_configs_gnu
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -24,7 +24,6 @@ build_gnu-9.3.0:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
-    - make -j `nproc`
     - make -j `nproc` work
   artifacts:
     expire_in: 2 hrs
@@ -43,7 +42,6 @@ build_intel:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
-    - make -j `nproc`
     - make -j `nproc` work
   artifacts:
     expire_in: 2 hrs
