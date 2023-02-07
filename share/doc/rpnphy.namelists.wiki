@@ -563,6 +563,12 @@ Switch for aerosol activation scheme (1 = default, 2 = ARG + Aerosol climatology
 | 1 || integer
 
 |-
+| mpdiag_for_sfc ||
+Use diagnostic pcp types for surface for MP scheme when .true.
+otherwise use MP scheme pcp types
+| .false. || logical
+
+|-
 | my_ccntype ||
 Switch for airmass type (1 = maritime, 2 = continental)
 | 1 || integer
