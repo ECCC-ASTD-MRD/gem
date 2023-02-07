@@ -567,6 +567,12 @@ module phy_options
         'SPS_H13 ' &
         /)
 
+   !# Use diagnostic pcp types for surface for MP scheme when .true.
+   !# otherwise use MP scheme pcp types
+   logical           :: mpdiag_for_sfc = .false.
+   namelist /physics_cfgs/ mpdiag_for_sfc
+   namelist /physics_cfgs_p/ mpdiag_for_sfc
+
    !# Print stats for phy_input read var
    logical           :: phystat_input_l = .false.
    namelist /physics_cfgs/ phystat_input_l

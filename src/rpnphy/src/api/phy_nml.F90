@@ -334,6 +334,8 @@ contains
          return
       end if
 
+      if (stcond(1:3) /= "MP_") mpdiag_for_sfc = .false.
+
       if (.not.any(rad_atmpath == RAD_ATMPATH_OPT)) then
          call str_concat(msg_S,RAD_ATMPATH_OPT,', ')
          call msg(MSG_ERROR,'(phy_nml_check) rad_atmpath = '//trim(rad_atmpath)//' : Should be one of: '//trim(msg_S))
