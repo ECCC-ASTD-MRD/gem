@@ -63,13 +63,8 @@ if [ -e ${PREP_dir}/IAUREP ] ; then
   iaurep=${PREP_dir}/IAUREP
 fi
 
-if [ -d build-$ORDENV_PLAT/bin/$COMP_ARCH ] ; then
-   BINMOD=build-$ORDENV_PLAT/bin/$COMP_ARCH
-   ATMMOD=${BINMOD}/maingemdm_${BASE_ARCH}.Abs
-else
-   BINMOD=${PWD}/bin
-   ATMMOD=${BINMOD}/maingemdm
-fi
+ATMMOD=$(which maingemdm)
+BINMOD=$(dirname ${ATMMOD})
 
 if [ -n "$gem_cfgfile" ] ; then
   . $gem_cfgfile
@@ -91,6 +86,7 @@ if [ -n "$gem_cfgfile" ] ; then
   PHYTB=${GEM_phy_intable:-${phytbl}}
   CACHEDIR=${GEM_cache:-$CACHEDIR}
   BINMOD=${GEM_ovbin:-${BINMOD}}
+  ATMMOD=${BINMOD}/maingemdm
 else
   config='<no value>'
 fi

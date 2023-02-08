@@ -40,8 +40,10 @@ cdm_eigen_S='${cache}'
 /
 EOF
 
-GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
-OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
+GRDTYP=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- grid/grd_typ_s 2> /dev/null)
+OPSCFG=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2> /dev/null)
+#GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
+#OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
 if [ -z "${GRDTYP}" ] ; then
     GRDTYP=LU
     ngrids=1
@@ -96,17 +98,17 @@ if [ "${checkdmpart_status}" != 'OK' ] ; then
    printf "\n  Error: Problem with ${bin}\n\n"
    _status="ABORT_${bin}"
 else
-     printf "\n  MPI topology allowed\n"
-     cat $TMPDIR/listopoallowed$$
-     if [ -n "${MAX_PES_IO}" ] ; then
-        printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
-     fi
-     _status='OK'
-  if [ "${SOLVER}" != 'OK' ] ; then
-   printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
-   printf "\n         THE SOLVER WILL NOT WORK\n\n"
-   _status='ABORT_solver'
-  fi
+   printf "\n  MPI topology allowed\n"
+   cat $TMPDIR/listopoallowed$$
+   if [ -n "${MAX_PES_IO}" ] ; then
+      printf "\n  MAXIMUM number of I/O PES for this configuration is: $(echo ${MAX_PES_IO} | sed 's/^0*//')\n\n"
+   fi
+    _status='OK'
+   if [ "${SOLVER}" != 'OK' ] ; then
+      printf "\n  Error: VERTICAL LAYERING IS INCOMPATIBLE WITH THE TIMESTEP"
+      printf "\n         THE SOLVER WILL NOT WORK\n\n"
+      _status='ABORT_solver'
+   fi
 fi
 /bin/rm -f $TMPDIR/listopoallowed$$ 
 . r.return.dot

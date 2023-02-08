@@ -6,14 +6,15 @@ printf "$0 ${arguments}\n\n"
 
 # Process command line arguments
 eval `cclargs_lite -D " " $0 \
-   -pgm     ""      ""   "[Program name]"\
-   -npex    "1"     "1"  "[]"\
-   -npey    "1"     "1"  "[]"\
-   -tag       ""     ""  "[]"\
-   -debug     "0"    "1" "[]"\
-   -inorder   ""     ""  "[]"\
-   -minstdout ""     ""  "[]"\
-   -nocleanup ""     ""  "[]"\
+   -pgm       ""      ""      "[Program name]"\
+   -npex      "1"     "1"     "[]"\
+   -npey      "1"     "1"     "[]"\
+   -nodespec  "NoNe"  "NoNe"  "[]"\
+   -tag       ""      ""      "[]"\
+   -debug     "0"     "gdb"   "[]"\
+   -inorder   ""      ""      "[]"\
+   -minstdout ""      ""      "[]"\
+   -nocleanup ""      ""      "[]"\
   ++ ${arguments}`
 
 which r.run_in_parallel 2> /dev/null

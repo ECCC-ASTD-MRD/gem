@@ -41,14 +41,28 @@ while [ ${domain_number} -le ${DOMAIN_end} ] ; do
    /bin/rm -rf ${DEST}
    mkdir -p ${DEST}
    . ${dircfg}/${dname}/configexp.cfg
+   if [[ -n ${GEM_headscript_E} ]] ; then
+      headscript_E=$(which ${GEM_headscript_E})
+      if [[ ! -x ${headscript_E:-__No_Such_File_-} ]] ; then
+         echo "ERROR: cannot find/execute headscript ${GEM_headscript_E}" 1>&2
+         _status='ABORT'
+         . r.return.dot
+      fi
+   else
+      headscript_E=''
+   fi
    GEM_check_settings=${GEM_check_settings:-0}
    . r.call.dot prep_domain.sh -anal ${GEM_anal} -input \'${GEM_inrep}\' \
-      -o ${DEST} -work ${work} -headscript ${GEM_headscript_E} -bin \
+      -o ${DEST} -work ${work} -headscript ${headscript_E} -bin \
       -check_namelist ${GEM_check_settings} \
       -npex ${npex} -npey ${npey} -cache $GEM_cache \
       -nmlfile ${dircfg}/${dname}/gem_settings.nml -nthreads $npe\
       -verbose ${verbose} -abort ${abort_prefix}${domain_number}
-   ln -s ${GEM_inrep} ${DEST}/MODEL_inrep 2> /dev/null || true
+   if [[ -n ${GEM_inrep} ]] ; then
+      ln -s ${GEM_inrep} ${DEST}/MODEL_inrep || true
+   else
+      mkdir -p ${DEST}/MODEL_inrep || true
+   fi
    domain_number=$(printf "%04d" $(( domain_number+1 )))
 done
 

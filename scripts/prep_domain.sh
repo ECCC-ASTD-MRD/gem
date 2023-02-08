@@ -148,15 +148,17 @@ else
 fi
 date
 set -ex
-gtype=$(fetchnml.sh grd_typ_s grid ${nmlfile})
-#gtype=$(${bin}rpy.nml_get -f ${nmlfile} grid/grd_typ_s)
+gtype=$(rpy.nml_get -u -f ${nmlfile} -- grid/grd_typ_s 2>/dev/null)
+#gtype=$(fetchnml.sh grd_typ_s grid ${nmlfile})
 if [ "${gtype}" == "'GU'" -o "${gtype}" == "'GY'" ] ; then
   input=''
 fi
 
 # Temporary check
-HEIGHT=$(fetchnml.sh dynamics_Kernel_S dyn_kernel ${nmlfile})
-HYDRO=$(fetchnml.sh dynamics_hydro_l dyn_kernel ${nmlfile})
+#HEIGHT=$(fetchnml.sh dynamics_Kernel_S dyn_kernel ${nmlfile})
+HEIGHT=$(rpy.nml_get -u -f ${nmlfile} -- dyn_kernel/dynamics_Kernel_S 2>/dev/null)
+#HYDRO=$(fetchnml.sh dynamics_hydro_l dyn_kernel ${nmlfile})
+HYDRO=$(rpy.nml_get  -u -f ${nmlfile} -- dyn_kernel/dynamics_hydro_l 2>/dev/null)
 if [ -n "${HEIGHT}" -a -n "${HYDRO}" ] ; then
    HEIGHT=$(echo $HEIGHT | cut -d"_" -f3)
    HYDRO=$(echo $HYDRO | cut -c2)
