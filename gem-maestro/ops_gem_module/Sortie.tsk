@@ -1,0 +1,252 @@
+#!/bin/bash
+
+printf "\n=====>  Sortie.tsk starts: `date` ###########\n\n"
+
+nthreads=$(nodeinfo -n ${SEQ_NODE} | grep node.cpu= | cut -d '=' -f 2)
+nthreads=${nthreads##*x}
+if [ $nthreads -lt 1 ] ; then nthreads=1 ; fi
+
+abort_prefix=abort_Um_output_
+
+sub_par=$((nthreads/DOMAIN_total))
+if [ $sub_par -lt 1 ] ; then sub_par=1 ; fi
+
+count=0
+DOMAIN_number=$SLICE_start
+while [ $DOMAIN_number -le $SLICE_end ] ; do
+
+   count=$(( count + 1 ))
+   DOMAIN_number4=$(printf "%04d" ${DOMAIN_number})
+   bname=cfg_$DOMAIN_number4
+   listing=Um_output_${bname}.lis
+   ${TASK_BIN}/Um_output.sh -domain ${bname}       \
+              -xcasc ${MOD_GEM_xcasc_rep} -d2z ${MOD_GEM_d2z}     \
+              -dplusp ${MOD_GEM_dplusp} -prefix ${MOD_GEM_prefix} \
+              -yyoutgrid ${MOD_GEM_yyoutgrid} -nthreads ${sub_par}\
+              -cleanup ${MOD_GEM_clean} \
+              -serdate ${MOD_GEM_use_serdate:-0} \
+              -abortf ${abort_prefix}${bname} 1> ${listing} 2>&1 &
+
+   DOMAIN_number=$((DOMAIN_number+1))
+
+   if [[ $count -eq $nthreads ]]; then
+      date ; wait ; date
+      count=0
+   fi
+done
+date ; wait ; date
+
+# Check for aborted functions
+if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
+   echo "ERROR: One or more function calls aborted ... see work/Um_output_*.lis listings for details"
+   if [[ $(find . -name "${abort_prefix}*" | wc -l) -lt 9 ]] ; then
+      for item in $(find . -name "${abort_prefix}*") ; do
+         item1=${item%_*}
+         item1=${item1##*_}
+         echo ==== Um_output_cfg_${item1}.lis
+         cat Um_output_cfg_${item1}.lis
+         echo ----
+      done
+   fi
+   exit 1
+fi
+
+transfer(){
+   # transfer a file or directory to the target host
+   printf "\n  TRANSFERT STARTS: $(date)\n\n"
+   set -ex
+
+   # process arguments
+   local_src=${1}
+   dir_dest=${2}
+   file_dest=${3}
+   ext=${4}
+
+   # set error return status
+   touch .abort${ext}
+   set +e #need to allow execution to continue to accumulate transfer errors
+
+   # determine file destination
+   full_dest=$(readlink ${TASK_OUTPUT}/${dir_dest})
+
+   # remove destination file before attempting link (for rerunnability on AIX)
+   if [[ $(basename ${xfer_cmd}) == "ln" ]] ; then
+      rm -f ${full_dest}/${file_dest}
+   fi
+
+   # transfer file
+   if [[ "${xfer_args##${xfer_args%%?}}" == ":" ]] ; then sep="" ; else sep=" " ; fi
+   if [ -d ${local_src} ] ; then
+      dir_dest=${full_dest##*:}/$(basename ${local_src})
+      mach_dest=${full_dest%%:*}
+      cmd_prefix=
+      if [[ -n "${mach_dest}" ]] ; then cmd_prefix="ssh ${mach_dest}" ; fi
+      ${cmd_prefix} mkdir -p ${dest_dir}
+      for file in $(ls -1 ${local_src}/) ; do
+         $TASK_BIN/file_transfer ${xfer_args}${sep}${local_src}/${file} ${mach_dest}:${dir_dest}
+      done
+   else
+      $TASK_BIN/file_transfer ${xfer_args}${sep}${local_src} ${full_dest}/${file_dest}
+   fi
+
+   # clear error status for return
+   if [[ $? == 0 ]] ; then
+      rm -f .abort${ext}
+      if [ ${MOD_GEM_clean} -gt 0 ] ; then rm -rf ${local_src} ; fi
+   fi
+   set -e
+   rm -f .active${ext}
+   printf "\n  TRANSFERT ENDS: $(date)\n\n"
+}
+
+# Process available files in the input directory
+domain_list=$(ls -1d ${TASK_WORK}/cfg_* || true)
+for file in ${domain_list} ; do 
+
+   mydomain=$(basename ${file})
+   size=$(du -s -m ${TASK_WORK}/${mydomain})
+   printf "\n=====>  Transfer of ${mydomain} ${size} Mbytes `date` ###########\n\n"
+
+   set +ex
+   transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer/* 2> /dev/null | grep -v casc_ || true)
+   set -ex
+
+   if [[ -n ${transfer_list} ]] ; then
+      count=0
+      for fn in ${transfer_list}; do
+         count=$(( count + 1 ))
+         set +ex
+         # Determine the file type
+         type=$(basename ${fn} | cut -c1-2)
+         levl=$(printf "%-2s" ${type} | cut -c2 | sed 's/[0-9]//g')
+         if [[ "${levl}"x == ""x || "${levl}"x == " "x ]] ; then 
+            levl=$(printf "%-2s" ${type} | cut -c1)
+            type="ZZ"
+         fi
+         
+         # Sort files into type-specific directories on transfer
+         fname_dest=$(basename ${fn})
+         case "$type" in
+            "dm" | "dp" | "dh" | "pm" | "pp" | "ph")
+               
+               nn=$(basename $fn | cut -c 3-12 | sed 's/[a-zA-Z]//' | wc -m)
+               if [ $nn -ge 10 ] ; then
+                  case "$levl" in
+                     "m") path_dest='model'  ;;
+                     "p") path_dest='pres'   ;;
+                     "h") path_dest='height' ;;
+                     *) path_dest='unknown'  ;;
+                  esac
+                  fname_dest=$(basename $fn | cut -c 1)$(basename $fn | cut -c 3-100)
+               else
+                  path_dest=other
+               fi
+               ;;
+            "ZZ")
+               case "$levl" in
+                  "m" | "p" | "h")
+                     nn=$(basename $fn | cut -c 3-12 | sed 's/[a-zA-Z]//' | wc -m)
+                     if [ $nn -ge 10 ] ; then
+                        case "$levl" in
+                           "m") path_dest='model'  ;;
+                           "p") path_dest='pres'   ;;
+                           "h") path_dest='height' ;;
+                           *) path_dest='unknown'  ;;
+                        esac
+                        fname_dest=$(basename $fn | cut -c 2-100)
+                     else
+                        path_dest=other
+                     fi
+                     ;;
+               esac
+               ;;
+            *)
+               path_dest=other
+               ;;
+         esac
+         
+         # Transfer up to "$nthreads" files simultaneously
+         set -ex
+         ext=$(echo $fn | sed 's|/|_|g')
+         echo ${mydomain}/${path_dest}:${fname_dest} >> ${TASK_OUTPUT}/${mydomain}/List_${Sortie}
+         transfer ${fn} ${mydomain}/${path_dest} ${fname_dest} ${ext} 1> transfer_$(basename ${fn}).lis 2>&1 &
+         if [[ $count -eq $nthreads ]]; then
+            date ; wait ; date
+            count=0
+         fi
+      done
+      date ; wait ; date
+   fi
+
+   transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer -type d 2> /dev/null | grep casc_ || true)
+
+   if [ -n ${transfer_list} ] ; then
+      count=0
+      for fn in ${transfer_list}; do
+         count=$(( count + 1 ))
+         ext=$(echo $fn | sed 's|/|_|g')
+         transfer ${fn} ${mydomain}/other ${fname_dest} ${ext} 1> transfer_$(basename ${fn}).lis 2>&1 &
+         if [[ $count -eq $nthreads ]]; then
+            date ; wait ; date
+            count=0
+         fi
+      done
+      date ; wait ; date
+   fi
+done
+
+# Process listings upon request
+mydomain=cfg_${DOMAIN_end4}
+if [[ -L ${TASK_INPUT}/Model_npass && -h ${TASK_OUTPUT}/${mydomain}/listings ]] ; then
+   printf "\n=====>  Transfer of listings `date` ###########\n\n"
+   last_npass=$(cat ${TASK_INPUT}/Model_npass | head -n 1)
+   for cnt in $(seq 0 ${last_npass}) ; do
+      clone=$(printf "%03d" $cnt)
+      id=$(nodehistory -n ${SEQ_CONTAINER}/Runmod.+${clone} -edate ${SEQ_DATE} | grep MESSAGE=end | tail -n 1 | cut -d '=' -f 4)
+      if [ -z "${id}" ] ; then
+         wait_period=10 ; maxcnt=12 ; cnt=0
+         while [ -z "${id}" ] ; do
+            if [ $cnt -gt $maxcnt ] ; then
+               printf "\n   WARNING - Runmod listing NOT available\n\n"
+               break
+            fi
+            echo waiting $wait_period sec for Runmod listing
+            date ; sleep $wait_period
+            id=$(nodehistory -n ${SEQ_CONTAINER}/Runmod.+${clone} -edate ${SEQ_DATE} | grep MESSAGE=end | tail -n 1 | cut -d '=' -f 4)
+            cnt=$((cnt+1))
+         done
+      fi
+      if [ -n "${id}" ] ; then
+         nodelister -n ${SEQ_CONTAINER}/Runmod.+${clone} -type success -d ${SEQ_DATE} -o ${TASK_WORK}/model_listing
+         transfer ${TASK_WORK}/model_listing ${mydomain}/listings ${expname}_$(echo ${SEQ_DATE} | cut -c 1-10)_M_${id}.out.${clone} listings
+      fi
+   done
+fi
+
+# Check for any aborted transfers
+if [[ $(find . -name ".abort*" | wc -l) -gt 0 ]] ; then
+   echo "Aborted transfers associated with the following paths:"
+   ls -1 .abort*
+   exit 1
+else
+   if [ ${MOD_GEM_clean} -gt 0 ] ; then
+      printf "\n=====>  Cleaning up work space `date` ###########\n\n"
+      /bin/rm -rf ${SEQ_WORKBASE}/${SEQ_CONTAINER}/Sortie${SEQ_LOOP_EXT}/output \
+              ${SEQ_WORKBASE}/${SEQ_CONTAINER}/Sortie${SEQ_LOOP_EXT}/work
+   fi
+fi
+
+# Launch user specified child npass task (MOD_GEM_tailsubmit)
+if [ -n "${MOD_GEM_tailsubmit}" ] ;then
+   tailjob=$(basename ${MOD_GEM_tailsubmit})
+   if [[ ${SEQ_XFER} != "stop" ]] ; then
+      echo "$SEQ_LOOP_EXT" | grep "\^last" && last=^last || last=
+      if [[ -n "$SEQ_CONTAINER_LOOP_ARGS" ]]; then
+         $SEQ_BIN/maestro -n ${MOD_GEM_tailsubmit} -s submit ${SEQ_CONTAINER_LOOP_ARGS},${tailjob}=${Sortie}${last} -f ${SEQ_XFER}
+      else
+         $SEQ_BIN/maestro -n ${MOD_GEM_tailsubmit} -s submit -l ${tailjob}=${Sortie}${last} -f ${SEQ_XFER}
+      fi
+   fi
+fi
+
+printf "\n=====>  Sortie.tsk ends: `date` ###########\n\n"

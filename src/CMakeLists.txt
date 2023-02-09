@@ -79,7 +79,9 @@ add_dependencies(gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_
 
 # To be installed only with package
 install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "support" EXCLUDE)
-install(DIRECTORY ../gem-maestro/ DESTINATION share/maestro USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ../gem-maestro/GEM_RI_MAESTRO DESTINATION share/maestro USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ../gem-maestro/gem_module DESTINATION share/maestro/GEM_RI_MAESTRO/modules USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ../gem-maestro/ops_gem_module DESTINATION share/maestro/GEM_RI_MAESTRO/modules USE_SOURCE_PERMISSIONS)
 install(FILES "${CMAKE_SOURCE_DIR}/configurations/GEM_cfgs/cfg_0000/gem_settings.nml" DESTINATION share/maestro/GEM_RI_MAESTRO/configs)
 install(FILES "${CMAKE_SOURCE_DIR}/configurations/GEM_cfgs/cfg_0000/outcfg.out" DESTINATION share/maestro/GEM_RI_MAESTRO/configs)
 install(FILES "${CMAKE_SOURCE_DIR}/configurations/GEM_cfgs/cfg_0000/physics_input_table" DESTINATION share/maestro/GEM_RI_MAESTRO/configs)
