@@ -62,11 +62,14 @@ LOG_WARNINGS=0
 LOG_ERRORS=0
 LOG_RETRY=0
 
-declare -A LOG_LEVELS=([MUST]=-1 [ERROR]=0 [WARNING]=1 [INFO]=2 [DEBUG]=3 [EXTRA]=4)
+typeset -A LOG_LEVELS
+LOG_LEVELS=( [MUST]=-1 [ERROR]=0 [WARNING]=1 [INFO]=2 [DEBUG]=3 [EXTRA]=4 )
 
-declare -A APP_COLORS=([BLINK]="\x1b[5m" [BLACK]="\x1b[30m" [RED]="\x1b[31m" [GREEN]="\x1b[32m" [ORANGE]="\x1b[33m" [YELLOW]="\x1b[1m\x1b[33m" [BLUE]="\x1b[34m" [MAGENTA]="\x1b[35m" [CYAN]="\x1b[36m" [LIGHTCYAN]="\x1b[1m\x1b[36m" [GRAY]="\x1b[37m" [RESET]="\x1b[0m")
-declare -A LOG_COLORS=([MUST]="" [ERROR]="${APP_COLORS[RED]}" [WARNING]="${APP_COLORS[YELLOW]}" [INFO]="" [DEBUG]="${APP_COLORS[LIGHTCYAN]}" [EXTRA]="${APP_COLORS[CYAN]}" [PROGRESS]="${APP_COLORS[MAGENTA]}")
+typeset -A APP_COLORS
+APP_COLORS=( [BLINK]="\x1b[5m" [BLACK]="\x1b[30m" [RED]="\x1b[31m" [GREEN]="\x1b[32m" [ORANGE]="\x1b[33m" [YELLOW]="\x1b[1m\x1b[33m" [BLUE]="\x1b[34m" [MAGENTA]="\x1b[35m" [CYAN]="\x1b[36m" [LIGHTCYAN]="\x1b[1m\x1b[36m" [GRAY]="\x1b[37m" [RESET]="\x1b[0m" )
 
+typeset -A LOG_COLORS
+LOG_COLORS=( [MUST]="" [ERROR]="${APP_COLORS[RED]}" [WARNING]="${APP_COLORS[YELLOW]}" [INFO]="" [DEBUG]="${APP_COLORS[LIGHTCYAN]}" [EXTRA]="${APP_COLORS[CYAN]}" [PROGRESS]="${APP_COLORS[MAGENTA]}" )
 
 #----------------------------------------------------------------------------
 # Nom      : <log_start>
@@ -231,9 +234,9 @@ log_end() {
 # Remarques :
 #----------------------------------------------------------------------------
 log_print() {
-   local level=${1}
-   local msg=${2}
-   local time=${3}
+   typeset level=${1}
+   typeset msg=${2}
+   typeset time=${3}
 
    #----- Adjust count for errors/warnings
    case "$level" in
@@ -248,10 +251,10 @@ log_print() {
    [[ -n $time ]] && time=" $(log_time $time)"
 
    #----- Check for event time
-   local datetime=""
+   typeset datetime=""
    [[ ${LOG_TIME} -eq 1 && $level != "MUST" ]] && datetime="($(date)) "
 
-   local levels="($level) "
+   typeset levels="($level) "
    [[ $level = "MUST" ]] && levels=""
 
    #----- Build the full message
@@ -287,11 +290,11 @@ log_print() {
 # Remarques :
 #----------------------------------------------------------------------------
 log_progress() {
-   local percent="$1"
-   local msg="$2"
+   typeset percent="$1"
+   typeset msg="$2"
 
    #----- If we need to add the time
-   local datetime=""
+   typeset datetime=""
    [[ ${LOG_TIME} -eq 1 ]] && datetime="($(date)) "
 
    #----- Build message
@@ -324,9 +327,9 @@ log_progress() {
 # Remarques :
 #----------------------------------------------------------------------------
 log_mail() {
-   local subject=${1}
-   local file=${2}
-   local address=${3}
+   typeset subject=${1}
+   typeset file=${2}
+   typeset address=${3}
 
    if [[ $address = "" ]]; then
       address=${LOG_MAILTO}
@@ -358,8 +361,8 @@ log_mail() {
 # Remarques   :
 #----------------------------------------------------------------------------
 log_time() {
-   local secs=$1
-   local hours mins
+   typeset secs=$1
+   typeset hours mins
 
    hours=$((secs / 3600))
    secs=$((secs % 3600))
@@ -417,9 +420,9 @@ log_registererrorhandler() {
 # Remarques :
 #----------------------------------------------------------------------------
 log_errorhandler() {
-   local n=${#FUNCNAME[@]}
-   local fn
-   local msg="Trapped error at [${BASH_SOURCE[1]}:${BASH_LINENO[0]}] when executing [$BASH_COMMAND]"
+   typeset n=${#FUNCNAME[@]}
+   typeset fn
+   typeset msg="Trapped error at [${BASH_SOURCE[1]}:${BASH_LINENO[0]}] when executing [$BASH_COMMAND]"
 
    #----- Add the stacktrace
    for ((i=1; i<$n-1; i++)); do

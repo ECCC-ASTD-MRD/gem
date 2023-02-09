@@ -137,7 +137,7 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    call calcdiag1(dbus, fbus, vbus, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(fbus, vbus, moyhr, acchr, delt, kount, step_driver, ni)
+   call sfc_calcdiag3(fbus, vbus, moyhr, acchr, delt, kount, step_driver, trnch, ni)
    if (phy_error_L) return
 
    call chm_exe(dbus, fbus, vbus, trnch, kount)

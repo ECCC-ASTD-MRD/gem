@@ -72,10 +72,9 @@ contains
       logical,parameter:: QUIET_L = .true.
 
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
-      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS)
+      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS),ind_sfc
       real                   :: rcdt1
       real, dimension(ni,nk) :: work
-      real, dimension(ni,nk) :: qe
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
@@ -94,7 +93,7 @@ contains
            zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
-           zgztherm, ztve, zfneige, zfip, &
+           zgztherm, zfneige, zfip, &
            zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
            zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim
       real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
@@ -142,11 +141,13 @@ contains
       MKPTR1D(zfrfrac, frfrac, fbus)
       MKPTR1D(zpefrac, pefrac, fbus)
 
+      ind_sfc = nk
       if (any(pcptype == (/ &
            'NIL   ', &
            'BOURGE'/))) then
          MKPTR2DN(zfneige, fneige, ni, 1, fbus)
          MKPTR2DN(zfip, fip, ni, 1, fbus)
+         if (mpdiag_for_sfc) ind_sfc = 1
       else
          MKPTR2D(zfneige, fneige3d, fbus)
          MKPTR2D(zfip, fip3d, fbus)
@@ -165,7 +166,6 @@ contains
       MKPTR2D(ztadv, tadv, vbus)
       MKPTR2D(ztmoins, tmoins, dbus)
       MKPTR2D(ztplus, tplus, dbus)
-      MKPTR2D(ztve, tve, vbus)
       MKPTR2D(zuadv, uadv, vbus)
       MKPTR2D(zumoins, umoins, dbus)
       MKPTR2D(zuplus, uplus, dbus)
@@ -196,7 +196,7 @@ contains
       MKPTR2D(zqhm, qhmoins, dbus)
       MKPTR2D(zqim, qimoins, dbus)
 
-      call init2nan(work, qe)
+      call init2nan(work)
       call init2nan(tmp1d)
       call init2nan(en0, pw0, en1, pw1)
 
@@ -275,12 +275,6 @@ contains
       ! calcul de z0 avec z1,z2,z3,z4 et umoins,vmoins
       if (z0dir) call calcz0(zmg, zz0, zz1, zz2, zz3, zz4, &
            zumoins(:,nk-1), zvmoins(:,nk-1), ni)
-
-      ! calcul du facteur de coriolis (fcor), de la hauteur du
-      ! dernier niveau actif (za) et de la temperature potentielle
-      ! a ce niveau (thetaa)
-      ztve(:,1:nk-1) = ztmoins(:,1:nk-1)
-      qe(:,1:nk-1)   = zhumoins(:,1:nk-1)
 
       ! Initialize diagnostic level values in the profile
       if (any('pw_tt:p' == phyinread_list_s(1:phyinread_n))) then
@@ -445,8 +439,6 @@ contains
             endif
          enddo
       endif
-      
-      call mfotvt(ztve, ztve, qe, ni, nk-1, ni)
 
       do i=1,ni
          zfcor(i) = 2.*OMEGA*sin(zdlat(i))
@@ -458,9 +450,8 @@ contains
          enddo
       endif
 
-      if (any(pcptype == (/ &
-           'NIL   ', &
-           'BOURGE'/))) then
+      if (pcptype == 'NIL' .or. & 
+           (pcptype == 'BOURGE' .and. .not.mpdiag_for_sfc)) then
          tmp1d = 0.
          nullify(tmpptr)
          call surf_precip1(ztmoins(:,nk-1), &
@@ -478,10 +469,11 @@ contains
               zrlc, ztls, zrsc, ztss, &
               zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
               zrainrate, zsnowrate, ni)
-      elseif (pcptype == 'BOURGE3D') then
+      elseif (pcptype == 'BOURGE3D' .or. &
+           (pcptype == 'BOURGE' .and. mpdiag_for_sfc)) then
          call surf_precip3(ztmoins(:,nk-1), &
               zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, &
-              zfneige(:,nk), zfip(:,nk), ni)
+              zfneige(:,ind_sfc), zfip(:,ind_sfc), ni)
       endif
       if (timings_L) call timing_stop_omp(405)
       call msg_toall(MSG_DEBUG, 'phystepinit [END]')

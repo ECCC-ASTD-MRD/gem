@@ -54,7 +54,7 @@
 
       dayfrac = Step_nesdt*rsid
       
-      call gtmg_start (23, 'NEST_input', 20)
+      call gtmg_start (30, 'NEST_input', 20)
 
 !$omp master
       if (tx < Lam_tdeb) then
@@ -117,8 +117,8 @@
       end if
 !$omp end master
 !$OMP BARRIER
-      call gtmg_stop (23)
-      call gtmg_start (24, 'NEST_tint', 20)
+      call gtmg_stop (30)
+      call gtmg_start (31, 'NEST_tint', 20)
 
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
@@ -128,7 +128,7 @@
          nest_now(i) = a*nest_deb(i) + b*nest_fin(i)
       end do
 !$omp enddo
-      call gtmg_stop (24)
+      call gtmg_stop (31)
       
 !      call nest_glbstat ((/'now','deb','fin'/),3)
 

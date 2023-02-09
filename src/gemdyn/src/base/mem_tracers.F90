@@ -20,8 +20,9 @@ module mem_tracers
 
       integer :: tracers_block_size = 4
       integer :: tracers_nblocks
-      real, dimension    (:), pointer :: trt2, trt1, trt0, trdf, trtb
+      real, dimension    (:), pointer :: trt1, trt0, trdf, trtb
       real(kind=REAL64), dimension(:,:,:), pointer :: sumq_8
+      real, pointer, dimension (:,:,:) :: air_mass, w_tr
 
       type :: memTR_pntrs
          real, dimension(:,:,:), pointer :: pntr
@@ -29,7 +30,6 @@ module mem_tracers
 
       type(memTR_pntrs), allocatable :: tracers_P (:)
       type(memTR_pntrs), allocatable :: tracers_M (:)
-      type(memTR_pntrs), allocatable :: tracers_t2 (:)
       type(memTR_pntrs), allocatable :: tracers_B (:)
 
 contains
@@ -61,8 +61,6 @@ contains
                F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt0((n-1)*dim+1:)
             case('P' , 'p')
                F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt1((n-1)*dim+1:)
-            case('T2' , 't2')
-               F_pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => trt2((n-1)*dim+1:)
             case default
                tr_get= -99999
                print*, 'Timeframe ',tf,' for tracer ',trim(name),' NOT FOUND'

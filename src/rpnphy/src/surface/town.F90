@@ -74,7 +74,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use modi_coupling_teb2, only: coupling_teb2
    use modi_sunpos
    use sfc_options, only: atm_tplus, atm_external, jdateo, zu, zt, impflx &
-        ,urb_diagwind, urb_diagtemp
+        ,urb_diagwind, urb_diagtemp, sl_Lmin_town, vamin
    use sfcbus_mod
    implicit none
 !!!#include <arch_specific.hf>
@@ -462,7 +462,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 
    !     PRELIM
    !     ----
-      I = SL_PRELIM(PTA,PQA,PU,PV,PPS,PUREF,MIN_WIND_SPEED=1E-4,SPD_AIR=ZVMOD,DIR_AIR=ZVDIR, &
+      I = SL_PRELIM(PTA,PQA,PU,PV,PPS,PUREF,MIN_WIND_SPEED=VAMIN,SPD_AIR=ZVMOD,DIR_AIR=ZVDIR, &
            RHO_AIR=PRHOA)
 
    IF (I /= SL_OK) THEN
@@ -511,8 +511,8 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 !-----------------------------------------------------------------------------
    !# Compute town surface layer var. (need for  udiag, zbm & the implicit condition)
    i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf,  &
-        zz0,zz0t,zdlat,zfcor,optz0=0,hghtm_diag=zu,hghtt_diag=zt,      &
-        ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,          &
+        zz0,zz0t,zdlat,zfcor,optz0=0,L_min=sl_Lmin_town,hghtm_diag=zu, &
+        hghtt_diag=zt,ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,  &
         coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag)
 
    if (i /= SL_OK) then
@@ -542,7 +542,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       else
       ! sl_sfclayer between  road and mid-canyon for zt => compute ztdiag
      i = sl_sfclayer(xt_canyon,xq_canyon,xu_canyon,zvdir,xbld_height/2.0,xbld_height/2.0,xt_road(:,1),xq_canyon, &
-        xz0_road,xz0_road/10.0,zdlat,zfcor,optz0=8,hghtm_diag=zu,hghtt_diag=zt,      &
+        xz0_road,xz0_road/10.0,zdlat,zfcor,optz0=8,L_min=sl_Lmin_town,hghtm_diag=zu,hghtt_diag=zt,      &
         t_diag=ztdiag)
 
       if (i /= SL_OK) then

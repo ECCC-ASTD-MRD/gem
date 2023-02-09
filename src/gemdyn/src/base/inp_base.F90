@@ -40,9 +40,9 @@ contains
 !                interpolation to F_hgrid_S hor. grid and perform
 !                vertical interpolation to F_vgrid_S vertical grid
 
-      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1       ,&
-                         F_sfc_src, F_sfc_dst, F_sfcLS_dst           ,&
-                         F_gz, F_GZ_ip1, F_dest , Minx,Maxx,Miny,Maxy,&
+      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1         ,&
+                         F_sfc_src, F_sfcLS_src, F_sfc_dst, F_sfcLS_dst,&
+                         F_gz, F_GZ_ip1, F_dest , Minx,Maxx,Miny,Maxy  ,&
                          F_nk, F_inttype_S, F_quiet_L )
 
       implicit none
@@ -53,7 +53,7 @@ contains
       integer                   , intent(in) :: Minx,Maxx,Miny,Maxy, F_nk
       integer, dimension(:)  , pointer, intent(in) :: F_ver_ip1,F_gz_ip1
       real, dimension (:,:), pointer, intent(in) :: &
-                                      F_sfc_src,F_sfc_dst,F_sfcLS_dst
+                              F_sfc_src,F_sfcLS_src,F_sfc_dst,F_sfcLS_dst
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out):: F_dest
       real, dimension(:,:,:), pointer, intent(in ) :: F_gz
 
@@ -62,7 +62,6 @@ contains
       logical quiet_L
       integer nka
       integer, dimension (:    ), pointer :: ip1_list
-      real   , dimension (:,:  ), pointer :: dummy
       real   , dimension (:,:,:), pointer :: wrkr,srclev,dstlev
 !
 !---------------------------------------------------------------------
@@ -71,7 +70,7 @@ contains
       if ( any (Inp_blacklist_S(1:MAX_blacklist) == trim(F_var_S)) ) &
            return
 
-      nullify (ip1_list, wrkr, dummy)
+      nullify (ip1_list, wrkr)
       quiet_L=.false.
       if (present(F_quiet_L)) quiet_L= F_quiet_L
 
@@ -88,7 +87,7 @@ contains
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,F_nk) )
 
       call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, &
-         F_sfc_src, dummy, F_gz, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
+         F_sfc_src, F_sfcLS_src, F_gz, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
       call inp_dst_levels ( dstlev, Ver_vgdobj, F_ver_ip1,&
                             F_sfc_dst, F_sfcLS_dst, F_nk )
@@ -398,9 +397,9 @@ contains
       character(len=*), intent(in) :: F_datev
       integer         , intent(in) :: Minx, Maxx, Miny, Maxy
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_topo,F_topo_LS
-      real, dimension (:,:), pointer    , intent(inout) :: F_meqr
+      real, dimension (:,:,:), pointer    , intent(inout) :: F_meqr
 
-      integer i,j,err,nka
+      integer i,j,err,err_ls,nka
       integer, dimension (:), pointer :: ip1_list
       real, dimension (:,:,:), pointer :: wrk
       real, dimension (:,:), pointer :: ls
@@ -411,6 +410,7 @@ contains
 !
       if (associated(F_meqr)) deallocate (F_meqr)
       nullify (F_meqr, wrk, ip1_list)
+      err_ls= -1
 
       err = inp_read_mt ( 'OROGRAPHY', 'Q', wrk, 1, ip1_list, nka )
 
@@ -418,16 +418,24 @@ contains
          deallocate (ip1_list) ; nullify (ip1_list)
       end if
       if ( associated(wrk) ) then
-         allocate (F_meqr(l_minx:l_maxx,l_miny:l_maxy))
-         F_meqr(:,:) = wrk(:,:,1)
+         allocate (F_meqr(l_minx:l_maxx,l_miny:l_maxy,2))
+         F_meqr(:,:,1) = wrk(:,:,1)
          deallocate (wrk) ; nullify (wrk)
+         err_ls = inp_read_mt ( 'MELS', 'Q', wrk, 1, ip1_list, nka, F_quiet_L=.true.)
+         if ( associated(wrk) ) then
+            F_meqr(:,:,2) = wrk(:,:,1)
+            deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
+         endif
       endif
-
       if ( trim(F_datev) == trim(Step_runstrt_S) ) then
          if ( associated(F_meqr) ) then
-            topo_low(:,:,1) = F_meqr(:,:)
-            call mc2_topols (topo_low(:,:,2),F_meqr,&
-                             l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+            topo_low(:,:,1) = F_meqr(:,:,1)
+            if (err_ls == 0) then
+               topo_low(:,:,2) = F_meqr(:,:,2)
+            else
+               call mc2_topols (topo_low(:,:,2),F_meqr,&
+                       l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+            endif
         else
             Vtopo_L= .false.
          end if
@@ -441,12 +449,16 @@ contains
       if ( associated(F_meqr) .and. .not. Grd_yinyang_L) then
       if ( Lam_blendoro_L ) then
          allocate (ls(l_minx:l_maxx,l_miny:l_maxy))
-         call mc2_topols (ls,F_meqr,&
-                          l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+         if (err_ls == 0) then
+            ls(:,:) = F_meqr(:,:,2)
+         else
+            call mc2_topols (ls,F_meqr,&
+                   l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
+         endif
          do j= 1-G_haloy, l_nj+G_haloy
             do i= 1-G_halox, l_ni+G_halox
                F_topo(i,j)= F_topo(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
-                            F_meqr(i,j)*nest_weightm(i,j,G_nk+1)
+                            F_meqr(i,j,1)*nest_weightm(i,j,G_nk+1)
                F_topo_LS(i,j)= F_topo_LS(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
                                ls(i,j)*nest_weightm(i,j,G_nk+1)
             enddo
@@ -507,16 +519,15 @@ contains
 
 !**s/r inp_src_surface - Read surface information from input dataset
 
-      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_topo,F_nka )
+      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,F_topo,F_nka )
       use dynkernel_options
-
       implicit none
 
       integer, intent(in) :: F_nka
-      real   , dimension (:,:), pointer, intent(inout) :: F_sq,F_su,F_sv
+      real   , dimension (:,:), pointer, intent(inout) :: F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv
       real   , dimension (*  ),          intent(in   ) :: F_topo
 
-      integer err,i,j,k,nk,kind
+      integer err,err2,i,j,k,nk,kind
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
       real   , dimension (:    ), allocatable :: rna
@@ -527,7 +538,10 @@ contains
       if (associated(F_sq)) deallocate (F_sq)
       if (associated(F_su)) deallocate (F_su)
       if (associated(F_sv)) deallocate (F_sv)
-      nullify (F_sq,F_su,F_sv,ip1_list,wrk)
+      if (associated(F_LSsq)) deallocate (F_LSsq)
+      if (associated(F_LSsu)) deallocate (F_LSsu)
+      if (associated(F_LSsv)) deallocate (F_LSsv)
+      nullify (F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,ip1_list,wrk)
 
       if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
 
@@ -561,7 +575,17 @@ contains
          F_su(:,:) = wrk(:,:,2)
          F_sv(:,:) = wrk(:,:,3)
          deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
-
+         err2 = inp_read_mt ( 'P0LS', grid_S, wrk, 3,&
+                              ip1_list, nk,F_quiet_L=.true.)
+         if (associated(wrk)) then
+            allocate ( F_LSsq(l_minx:l_maxx,l_miny:l_maxy),&
+                       F_LSsu(l_minx:l_maxx,l_miny:l_maxy),&
+                       F_LSsv(l_minx:l_maxx,l_miny:l_maxy) )
+            F_LSsq(:,:) = wrk(:,:,1)*100.
+            F_LSsu(:,:) = wrk(:,:,2)*100.
+            F_LSsv(:,:) = wrk(:,:,3)*100.
+            deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
+         endif
       else
          if (Inp_kind == 2.or.Schm_autobar_L) then
             if (Inp_src_PX_L) then
@@ -619,7 +643,8 @@ contains
 !**s/r inp_dst_surface - compute destination surface information
 
       subroutine inp_dst_surface (F_p0,F_q,F_u,F_v,F_lsq,F_lsu,F_lsv   ,&
-                                  F_ip1list, F_sq0, F_me, F_tv,F_topo  ,&
+                                  F_sq0, F_sLSq0, &
+                                  F_ip1list, F_me, F_tv,F_topo  ,&
                                   F_orols,F_sleve_L,Minx,Maxx,Miny,Maxy,&
                                   F_nka, F_i0, F_in, F_j0, F_jn)
       use cstv
@@ -633,17 +658,16 @@ contains
                              F_i0,F_in,F_j0,F_jn
       integer, dimension (:) , pointer, intent(inout) :: F_ip1list
       real, dimension(*), intent(in) :: F_tv
-      real, dimension(:,:), pointer, intent(in) :: F_sq0
+      real, dimension(:,:), pointer, intent(in) :: F_sq0,F_sLSq0
       real, dimension(Minx:Maxx,Miny:Maxy), intent(out) :: F_p0
       real, dimension(Minx:Maxx,Miny:Maxy), intent(in) :: F_topo,F_orols
       real   , dimension (:,:), pointer, intent(inout) :: F_q,F_u,F_v,&
                                                     F_lsq,F_lsu,F_lsv
-      real   , dimension (:,:), pointer , intent(inout) :: F_me
+      real   , dimension (:,:,:), pointer , intent(inout) :: F_me
 
       character(len=4) vname
       integer i,j,typ
       real lev
-      real, dimension (:,:  ), pointer :: dummy
       real, dimension (:,:,:), pointer :: srclev
       real(kind=REAL64) :: oneoRT
       logical sfcTT_L
@@ -668,8 +692,7 @@ contains
          end if
          allocate (srclev(l_minx:l_maxx,l_miny:l_maxy,F_nka))
          F_q= F_sq0
-         nullify(dummy)
-         call inp_3dpres ( Inp_vgd_src,F_ip1list,F_sq0,dummy,&
+         call inp_3dpres ( Inp_vgd_src,F_ip1list,F_sq0,F_sLSq0,&
                            srclev,1,F_nka )
          srclev(:,:,F_nka)= F_sq0(:,:)
          call adj_ss2topo ( F_p0, F_topo, srclev, F_me, F_tv,&
@@ -1187,8 +1210,8 @@ contains
 !                 and  vertical interpolation to momentum levels
 
       subroutine inp_hwnd ( F_u,F_v, F_stag_L    ,&
-                            F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
-                            F_ssq0LS,F_ssu0LS,F_ssv0LS                ,&
+                      F_ssqr,F_ssur,F_ssvr, F_ssqrLS,F_ssurLS,F_ssvrLS,&
+                      F_ssq0,F_ssu0,F_ssv0, F_ssq0LS,F_ssu0LS,F_ssv0LS,&
                             F_gz_q, F_gz_u, F_gz_v, F_GZ_ip1          ,&
                             Minx,Maxx,Miny,Maxy, F_nk )
       implicit none
@@ -1197,8 +1220,8 @@ contains
       integer                , intent(in)  :: Minx,Maxx,Miny,Maxy, F_nk
       integer, dimension(:)  , pointer, intent(in)  :: F_GZ_ip1
       real, dimension (:,:), pointer, intent(in) :: &
-                             F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
-                             F_ssq0LS,F_ssu0LS,F_ssv0LS
+                             F_ssqr,F_ssur,F_ssvr, F_ssqrLS,F_ssurLS,F_ssvrLS,&
+                             F_ssq0,F_ssu0,F_ssv0, F_ssq0LS,F_ssu0LS,F_ssv0LS
       real, dimension (:,:,:), pointer, intent(in) :: F_gz_q, F_gz_u, &
                                                       F_gz_v
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_u, F_v
@@ -1206,13 +1229,12 @@ contains
 !     local variables
       integer nka
       integer, contiguous, dimension (:    ), pointer :: ip1_list, ip1_target
-      real   , dimension (:,:  ), pointer :: dummy
       real   , contiguous, dimension (:,:,:), pointer :: srclev,dstlev
       real   , contiguous, dimension (:,:,:), pointer :: ur,vr
 !
 !---------------------------------------------------------------------
 !
-      nullify (ip1_list, ur, vr, dummy)
+      nullify (ip1_list, ur, vr)
       if (F_stag_L) then
          call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka )
       else
@@ -1226,7 +1248,7 @@ contains
       if (F_stag_L) then
 
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssur,&
-                            dummy, F_gz_u, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
+                            F_ssurLS, F_gz_u, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
 
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
@@ -1238,7 +1260,7 @@ contains
                          levtype=Inp_levtype_S )
 
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssvr,&
-                            dummy, F_gz_v, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
+                            F_ssvrLS, F_gz_v, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
                               F_ssv0, F_ssv0Ls, G_nk)
@@ -1251,7 +1273,7 @@ contains
       else
 
          call inp_src_levels (srclev, nka, ip1_list, Inp_vgd_src, F_ssqr,&
-                            dummy, F_gz_q, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
+                            F_ssqrLS, F_gz_q, F_GZ_ip1,Minx,Maxx,Miny,Maxy)
 
          call inp_dst_levels (dstlev, Ver_vgdobj, ip1_target,&
                               F_ssq0, F_ssq0Ls, G_nk)
@@ -1325,6 +1347,9 @@ contains
          F_3dv%nk= lislon
          call convip (F_3dv%ip1(F_3dv%nk), level, &
                       F_3dv%kind, -1,dumc,.false. )
+         if (Lun_out > 0) write(lun_out,9000) F_3dv%nk,F_var_S,F_3dv%kind
+ 9000 format(x,i3,' levels of ',a,' provided in input file with kind=',i5)
+
 !!$         limit_near_sfc= abs(level-1.)
 !!$         if (F_3dv%kind==21) limit_near_sfc=level  
 !!$         if (F_3dv%kind==2 ) limit_near_sfc=0.

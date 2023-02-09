@@ -1,5 +1,5 @@
 NAME       : gemdyn
-VERSION    : 5.2.0-a22
+VERSION    : 5.2.0-a24
 BUILD      : Debug
 DESCRIPTION: GEM dynamical core
 SUMMARY    : 
@@ -15,6 +15,6 @@ rmn  >= 20.0.0
 tdpack >= 1.6.1
 vgrid >= 6.6.0
 rpncomm >= 4.6.2
-modelutils = 1.7.0-a22
-rpnphy = 6.2.0-a22
+modelutils = 1.7.0-a24
+rpnphy = 6.2.0-a24
 

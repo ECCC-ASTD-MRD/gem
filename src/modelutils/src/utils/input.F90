@@ -743,9 +743,9 @@ contains
          call msg_verbosity_get(vb0)
          call msg_verbosity(MYMSG_QUIET)
          if (F_fld%vtype == VTYPE_TDIAG) then
-            istat = min(vgd_get(vgrid,'DIPT',ip1list0(1),quiet=.true.),istat)
+            istat = min(vgd_get(vgrid,'DIPT',ip1list0(1)),istat)
          else
-            istat = min(vgd_get(vgrid,'DIPM',ip1list0(1),quiet=.true.),istat)
+            istat = min(vgd_get(vgrid,'DIPM',ip1list0(1)),istat)
          endif
          call msg_verbosity(vb0)
          if (RMN_IS_OK(istat) .and. RMN_IS_OK(ip1list0(1))) then

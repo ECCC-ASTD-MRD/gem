@@ -30,6 +30,7 @@
       use step_options
       use theo_options
       use tr3d
+      use outp
       use omp_timing
       use mem_tracers
       implicit none
@@ -110,6 +111,11 @@
 
       call pw_update_GW()
       call pw_init     ()
+      
+      udiag(:,:) = pw_uu_plus(:,:,G_nk)
+      vdiag(:,:) = pw_vv_plus(:,:,G_nk)
+      tdiag(:,:) = pw_tt_plus(:,:,G_nk)
+      qdiag(:,:) = tracers_P(Tr3d_hu)%pntr(:,:,G_nk)
 
       call out_outdir()
 

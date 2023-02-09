@@ -12,18 +12,13 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!/@*
-subroutine itf_phy_diag ()
-   use phy_itf, only: phy_get
-   use gmm_pw
-   use HORgrid_options
-   use ctrl
-   use rmn_gmm
-   use glb_ld
-   use outp
-   use wb_itf_mod
-   implicit none
-#include <arch_specific.hf>
+
+      subroutine itf_phy_diag ()
+      use phy_itf, only: phy_get
+      use HORgrid_options
+      use outp
+      use wb_itf_mod
+      implicit none
 
    !@objective
    ! To compute diagnostic level values using the surface layer module.
@@ -31,51 +26,22 @@ subroutine itf_phy_diag ()
    !@author  Ron McTaggart-Cowan - Winter 2015
    !*@/
 
-#include <rmnlib_basics.hf>
-#include <rmn/msg.h>
-
    ! Local variable declarations
-   logical, save :: init_L= .false., dodiag_L= .true.
-   integer :: istat,i,j
-   real :: zu,zt
-   real, dimension(:,:  ), pointer :: tdiag,qdiag,udiag,vdiag,ptr2d
-   real, dimension(:,:,:), pointer :: tt,uu,vv,hu
+      logical, save :: init_L= .false., dodiag_L= .true.
+      integer :: istat,i,j
+      real :: zu,zt
+      real, dimension(:,:  ), pointer :: ptr2d
 !
 !----------------------------------------------------------------------
-!
-   ! Retrieve diagnostic level
-   nullify(tdiag,qdiag,udiag,vdiag)
-   istat = gmm_get(gmmk_diag_tt_s,tdiag)
-   istat = gmm_get(gmmk_diag_uu_s,udiag)
-   istat = gmm_get(gmmk_diag_vv_s,vdiag)
-   istat = gmm_get(gmmk_diag_hu_s,qdiag)
-
-   ! Retrieve physical world and humidity state information
-   nullify(tt,uu,vv,hu)
-   istat = gmm_get(gmmk_pw_tt_plus_s,tt)
-   istat = gmm_get(gmmk_pw_uu_plus_s,uu)
-   istat = gmm_get(gmmk_pw_vv_plus_s,vv)
-   istat = gmm_get('TR/HU:P'        ,hu)
-
-   ! Pre-fill diagnostic fields with copy-down for outside phy domain
-   do j=l_miny,l_maxy
-   do i=l_minx,l_maxx
-      tdiag(i,j) = tt(i,j,G_nk)
-      udiag(i,j) = uu(i,j,G_nk)
-      vdiag(i,j) = vv(i,j,G_nk)
-      qdiag(i,j) = hu(i,j,G_nk)
-   end do
-   end do
-
-   ! Retrieve physics information only if physics is active
-   if (Ctrl_phyms_L) then
+!     
+! Retrieve physics information only if physics is active
       if (.not. init_L) then
          istat = wb_get('phy/zu', zu)
          istat = wb_get('phy/zt', zt)
          dodiag_L = (zu >= 0. .and. zt >= 0.)
          init_L = .true.
       end if
-   ! Retrieve physics internal diagnostics
+! Retrieve physics internal diagnostics
       if (dodiag_L) then
          ptr2d => tdiag(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
          istat = phy_get(ptr2d,'tdiag',F_npath='V')
@@ -85,11 +51,9 @@ subroutine itf_phy_diag ()
          istat = phy_get(ptr2d,'vdiag',F_npath='V')
          ptr2d => qdiag(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn)
          istat = phy_get(ptr2d,'qdiag',F_npath='V')
-         Outp_diag_S= ''
       endif
-   endif
 !
 !----------------------------------------------------------------------
 !
-   return
-end subroutine itf_phy_diag
+      return
+      end subroutine itf_phy_diag

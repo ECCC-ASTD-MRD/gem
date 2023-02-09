@@ -22,6 +22,11 @@ target_include_directories(rpnphy PRIVATE
   ${rmn_INCLUDE_DIRS}
   )
 
+target_link_libraries(rpnphy PUBLIC
+  OpenMP::OpenMP_Fortran
+  OpenMP::OpenMP_C
+  )
+
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION} )
 add_dependencies(rpnphy rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
 add_dependencies(rpnphy rpnphy_chm_stubs ${PROJECT_NAME}_build_info)

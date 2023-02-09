@@ -48,7 +48,7 @@ subroutine coherence3(ni, trnch)
    real, pointer, dimension(:) :: zalveg,  zcveg,  zgamveg,  zglacier,  zglsea,  zicedp,  zlai,  zmg,  zrgl,  zrootdp,  zsnoal, zsnoden, zsnoma,  zsnoro,  zstomr,  zvegfrac,  zwsnow,  zwveg
 !!$      real, pointer, dimension(:) :: zsdepth
 
-   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp, ztglacier, ztsoil, zwsoil
+   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp, ztglacier, ztsoil, zwsoil,ztpsoil
    ! SVS
    real, pointer, dimension(:) :: zsnodpl, zsnval, zsnvden, zsnvdp, zsnvma, zsnvro, zvegh, zvegl, zwsnv
 
@@ -91,6 +91,7 @@ subroutine coherence3(ni, trnch)
    MKPTR2D(zsnodp,   snodp)
    MKPTR2D(ztglacier,tglacier)
    MKPTR2D(ztsoil,   tsoil)
+   MKPTR2D(ztpsoil,   tpsoil)
    MKPTR2D(zwsoil,   wsoil)
  
    !***************************************************************
@@ -184,6 +185,7 @@ subroutine coherence3(ni, trnch)
                do k=1,nl_svs
                   zwsoil(i,k)   = 1.0
                   zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)   = -1.0
                enddo
                zwveg    (i)      = 0.0
                zrootdp  (i)      = 0.0
@@ -198,6 +200,21 @@ subroutine coherence3(ni, trnch)
                zwsnv(i)   = 0.0
             endif
          enddo      
+
+         if (lsoil_freezing_svs1) then
+            do i=1,ni
+               if (zmg(i).ge.critmask) then
+                  ! OVER LAND, *NOT* ESTHETIC PURPOSE ONLY
+                  do k=1,nl_svs
+                     ! Make sure tsoil=TRPL if have ice and tsoil > TRPL
+                     !if ( zisoil(i,k).gt.0.0 .and. ztpsoil(i,k).gt.TRPL ) &
+                     if ( zisoil(i,k).gt.0.0 .and. (ztpsoil(i,k)-TRPL) .gt. EPSILON_SVS_TK)  &
+                          ztpsoil(i,k)=TRPL
+                  enddo
+               endif
+            enddo
+         endif  
+
       endif IF_SVS
 
    endif NEW_MG_MASK
@@ -306,6 +323,7 @@ subroutine coherence3(ni, trnch)
                do k=1,nl_svs
                   zwsoil(i,k)   = 1.0
                   zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)  = -1.0
                enddo
 
                zwveg    (i)      = 0.0

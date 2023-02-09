@@ -44,7 +44,7 @@ subroutine moistke13(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
    real, dimension(n), intent(in) :: z0              !roughness length (m)
    real, dimension(n), intent(in) :: frv             !friction velocity (m/s)
    real, dimension(n), intent(in) :: wstar           !convective velocity scale
-   real, dimension(n), intent(in) :: fbsurf          !surface buoyancy flux (TODO: units)
+   real, dimension(n), intent(in) :: fbsurf          !surface buoyancy flux (m^2 s^(-3))
    real, dimension(n), intent(in) :: dxdy            !horizontal grid area (m^2)
    real, dimension(n,nk), intent(in) :: enold        !TKE of previous time step (m2/s2)
    real, dimension(n,nk), intent(in) :: qe           !specific humidity on e-lev (kg/kg)

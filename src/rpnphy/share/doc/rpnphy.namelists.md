@@ -98,6 +98,7 @@
 | longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag | 'BLAC62' | character(len=16) |
 | moyhr | Time length (hours) for special time averaged physics variables | 0 | integer |
 | mp_aeroact | Switch for aerosol activation scheme (1 = default, 2 = ARG + Aerosol climatology) | 1 | integer |
+| mpdiag_for_sfc | Use diagnostic pcp types for surface for MP scheme when .true.<br>otherwise use MP scheme pcp types | .false. | logical |
 | my_ccntype | Switch for airmass type (1 = maritime, 2 = continental) | 1 | integer |
 | my_diagon | Compute MY Diagnostic fields if .true. | .true. | logical |
 | my_iceon | Ice-phase switched on if .true. | .true. | logical |
@@ -223,6 +224,8 @@
 | lake_leadfrac | Lead fraction for ice-covered lakes | 0. | real |
 | leadfrac | Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac) | 0.03 | real |
 | limsnodp | Limit snow depth to 10 cm for calculation of heat conductivity of snow<br>over sea-ice and glacier if .true. | .false. | logical |
+| lsoil_freezing_svs1 | If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology | .false. | logical |
+| lwater_ponding_svs1 | If .true., SVS1 simulates water ponding at the surface | .false. | logical |
 | owflux | (coupling) fluxes over ocean are taken from ocean model if .true. | .false. | logical |
 | read_emis | read-in land surface emissivity if .true. | .false. | logical |
 | read_z0vh | read-in high vegetation roughness for SVS if .true. | .false. | logical |
@@ -236,6 +239,7 @@
 | sl_lmin_glacier | Minimum Obukhov length (L) for glaciers | -1. | real |
 | sl_lmin_seaice | Minimum Obukhov length (L) for sea ice | -1. | real |
 | sl_lmin_soil | Mimimum Obukhov length (L) for soil surfaces | -1. | real |
+| sl_lmin_town | Minimum Obukhov length (L) for town | -1. | real |
 | sl_lmin_water | Minimum Obukhov length (L) for water | -1. | real |
 | sl_rineutral | Define bulk Ri values for near-neutral regime in the surface layer | 0. | real |
 | sl_z0ref | Use a reference roughness for surface layer calculations | .false. | logical |
@@ -245,10 +249,11 @@
 | svs_dynamic_z0h | use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true. | .false. | logical |
 | svs_hrsurf_sltext | use hrsurf based on soil texture for SVS if .true. | .false. | logical |
 | svs_local_z0m | use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
+| svs_snow_rain |  | 'BELAIR03' | character(len=16) |
+| svs_urban_params | New urban surface parameters within SVS only (not used in TEB) | .false. | logical |
 | tdiaglim | Limit temperature inversions to 8K/40m in surface layer if .true. | .false. | logical |
 | urb_diagtemp | Adjust temperature diagnostic in TEB in the street  if .true. | .false. | logical |
 | urb_diagwind | Adjust wind diagnostic in TEB in the street  if .true. | .false. | logical |
-| urban_params_new | New urban surface parameters | .false. | logical |
 | use_eff_surf_tq |  | .false. | logical |
 | use_photo | OPTION TO USE PHOTOSYNTHESIS CODE FOR STOMATAL RESISTANCE in SVS | .true. | logical |
 | veg_rs_mult | Factor multiplying stomatal resistance in ISBA | 1. | real |

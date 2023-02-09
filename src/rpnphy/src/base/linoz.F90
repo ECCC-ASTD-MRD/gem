@@ -298,6 +298,9 @@ contains
       ! Apply linoz tendencies micro g /kg air
       call apply_tendencies(zo3lplus,zo3chmtd, ztdmask, ni, nk, nkm1)
 
+      ! Diagnostic level 1.5m: copy down the bottom hybrid level
+      zo3lplus(:,nk)=zo3lplus(:,nkm1)
+
       !do i =1,ni
       !   do k = 1, nkm1    !1=TOA, nk-1=SFC
 

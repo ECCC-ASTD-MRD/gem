@@ -15,6 +15,7 @@
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
+      use app, only: Lib_LogLevelNo,APP_LIBVGRID,APP_ERROR
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use VERgrid_options, only: VGRID_M_S, VGRID_T_S
@@ -78,26 +79,29 @@
       gmmk_diag_uu_s = trim(diag_prefix)//'UU'
       gmmk_diag_vv_s = trim(diag_prefix)//'VV'
       istat = GMM_OK
-      nullify(ptr2d)
-      istat = min(gmm_create(gmmk_diag_tt_s, ptr2d ,meta2d),istat)
+      nullify(udiag,vdiag,tdiag,qdiag)
+      istat = min(gmm_create(gmmk_diag_tt_s, tdiag ,meta2d),istat)
       gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_tt_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diTT'
-      nullify(ptr2d)
-      istat = min(gmm_create(gmmk_diag_hu_s, ptr2d ,meta2d),istat)
+      istat = min(gmm_create(gmmk_diag_hu_s, qdiag ,meta2d),istat)
       gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_hu_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diHU'
-      nullify(ptr2d)
-      istat = min(gmm_create(gmmk_diag_uu_s, ptr2d ,meta2d),istat)
+      istat = min(gmm_create(gmmk_diag_uu_s, udiag ,meta2d),istat)
       gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_uu_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diUU'
-      nullify(ptr2d)
-      istat = min(gmm_create(gmmk_diag_vv_s, ptr2d ,meta2d),istat)
+      istat = min(gmm_create(gmmk_diag_vv_s, vdiag ,meta2d),istat)
       gmm_cnt=gmm_cnt+1 ; GMM_tbl%vname(gmm_cnt)=gmmk_diag_vv_s; GMM_tbl%ara(gmm_cnt)='QQ' ; GMM_tbl%cn(gmm_cnt)='SF' ; GMM_tbl%fst(gmm_cnt)='diVV'
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'itf_phy_init ERROR at gmm_create('//trim(diag_prefix)//'*)')
-
+      allocate (diag_dgf(l_minx:l_maxx,l_miny:l_maxy,1:4))
+      istat = gmm_get (gmmk_diag_tt_s, tdiag)
+      istat = gmm_get (gmmk_diag_hu_s, qdiag)
+      istat = gmm_get (gmmk_diag_uu_s, udiag)
+      istat = gmm_get (gmmk_diag_vv_s, vdiag)
+           
       Out3_sfcdiag_L= .false.
 
       ! Continue only if the physics is being run
       if (.not.Ctrl_phyms_L) return
 
+      iverb = Lib_LogLevelNo(APP_LIBVGRID,APP_ERROR)
       if (Lun_out > 0) write(Lun_out,1000)
 
 ! Collect the list of potentialy requested output physics vars
