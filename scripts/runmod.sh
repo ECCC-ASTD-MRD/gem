@@ -26,7 +26,7 @@ eval `cclargs_lite -D " " $0 \
   ++ ${arguments}`
 
 
-export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
+export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
 
 restart=0
 
