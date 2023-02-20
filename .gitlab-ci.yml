@@ -25,7 +25,11 @@ build_gnu-9.3.0:
     - make cmake-all
     - make -j `nproc`
     - make -j `nproc` work
-  allow_failure: true
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - work-rhel-8-amd64-64-gnu-9.3.0
+    - gem_dbase
 
 # U2 GNU 12.1.0 with OpenMPI
 build_gnu-12.1.0:
@@ -38,13 +42,8 @@ build_gnu-12.1.0:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc`
-    - make work
-  artifacts:
-    expire_in: 2 hrs
-    paths:
-    - work-rhel-8-icelake-64-gnu-12.1.0
-    - gem_dbase
+    - make -j `nproc` work
+  allow_failure: true
 
 # U2 Intel 2022
 build_intel_with_rpn:
@@ -57,7 +56,6 @@ build_intel_with_rpn:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
-    - make -j `nproc`
     - make -j `nproc` work
   allow_failure: true
 
@@ -72,7 +70,6 @@ build_intel:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc`
     - make -j `nproc` work
   artifacts:
     expire_in: 2 hrs
