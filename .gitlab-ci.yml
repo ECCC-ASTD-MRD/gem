@@ -22,8 +22,8 @@ build_gnu-9.3.0:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc`
     - make -j `nproc` work
   artifacts:
     expire_in: 2 hrs
@@ -40,7 +40,6 @@ build_gnu-12.1.0:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
     - make -j `nproc` work
   allow_failure: true
