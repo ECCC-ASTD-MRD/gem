@@ -55,12 +55,15 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_N
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
-  find_package(LAPACK)
-  find_package(BLAS)
   if (EXTRA_CHECKS)
     # in addition to extra checks defined in cmake_rpn compiler presets
     set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -ffpe-trap=underflow")
   endif()
+endif()
+
+if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
+  find_package(LAPACK)
+  find_package(BLAS)
 endif()
 
 # Printing flags
@@ -129,7 +132,10 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
+list(APPEND BINARIES maingemdm)
+if (NOT DEFINED ENV{EC_ARCH})
+  list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
+endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
 if ("${phy_SRC}" STREQUAL "rpnphy" )
   list(APPEND BINARIES feseri prphynml )
@@ -143,9 +149,9 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
-)
+  )
 
-ec_package_name()                 # Define package prefix
+ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
