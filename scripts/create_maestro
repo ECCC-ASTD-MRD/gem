@@ -1,14 +1,14 @@
 #!/bin/bash
 #
 # GoaS git clone environment
-# ie: goas_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
-# ie: goas_maestro -f -exp $HOME/path_of_my_clone -module $HOME/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
-#  - suite created at $HOME/.suites/goas/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}/${mach}}
-# ie: goas_maestro -location [mysuite_name]
+# ie: create_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
+# ie: create_maestro -f -exp $HOME/path_of_my_clone -module $HOME/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
+#  - suite created at $HOME/.suites/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}/${mach}}
+# ie: create_maestro -location [mysuite_name]
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 # GEM SSM package environment (ignores -exp)
-# ie: goas_maestro -location [mysuite_name] -cfg $GEM_DIR/configurations/GEM_cfgs
+# ie: create_maestro -location [mysuite_name] -cfg $GEM_DIR/configurations/GEM_cfgs
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 arguments=$*
@@ -32,7 +32,7 @@ if [[ -z "${GEM_GIT_DIR}" ]] ; then
    NAME_exp=${location}
    if [[ -z "${location}" ]] ; then
         printf "\n    Missing experiment name for Maestro suite\n"
-        printf "\n  ie: goas_maestro -location TOTO \n"
+        printf "\n  ie: create_maestro -location TOTO \n"
         printf "\n  will create: $HOME/.suites/TOTO \n\n"
       exit 1
    fi

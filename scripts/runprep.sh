@@ -11,7 +11,7 @@ printf "$0 ${arguments}\n\n"
 . r.entry.dot
 eval `cclargs_lite -D " " $0 \
   -cfg           "0:0"          "0:0"       "[multi domains to run      ]"\
-  -dircfg        "GEM_cfgs"     "GEM_cfgs"  "[location of config files  ]"\
+  -dircfg        "configurations/GEM_cfgs"  "configurations/GEM_cfgs"  "[location of config files  ]"\
   -npe           "1"            "1"         "[# of simultaneous threads ]"\
   -checkpart     "1x1"         "1x1"        "[MPI topology to check     ]"\
   -verbose       "0"            "1"         "[verbose mode              ]"\

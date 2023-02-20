@@ -1,4 +1,5 @@
       program filetyp
+      use app
       implicit none
       character *8 cle(10)
       character *4096 def(10),val(10)
@@ -49,7 +50,6 @@
       data msgs(36) /'FICHIER CMCARC v4'/
       data msgs(37) /'FICHIER CMCARC v5'/
 
-
       ipos = 0
       call ccard (cle,def,val,10,ipos)
       do i = 1, 8
@@ -63,33 +63,25 @@
           enddo
           if(ier .ne. 0) ier = 1
         else
-          write(6,66) 'File type is ',msgs(ier)  ! print message and return file type
+          write(6,66) 'File type is ',msgs(ier)  ! print message and return file type     
         endif
       else if (ier .eq. -1) then
          call system('file '//trim(val(1))//' -m $ARMNLIB_DATA/magic.extra:/usr/share/misc/magic '//trim(val(10)))
 
 !         call system('file '//val(1))
       else if (ier .eq. -2) then
-         write(6,77)
+        call app_log(APP_ERROR,'File empty')
       else if (ier .eq. -3) then
-        write(6,88)
+        call app_log(APP_ERROR,'File does not exist or can not open')
       else
-        write(6,99)
+        call app_log(APP_ERROR,'File corrupt')
       endif
- 
+
  66   format(/,a,a60,/)
- 77   format(/,'File empty',/)
- 88   format(/,'File does not exist or can not open',/)
- 99   format(/,'File corrupt',/)
+
 
       call qqexit(ier)
 !      call qqexit(and(127,ier))
 !      call qqexit(and(255,ier))
       stop
-      end
-      
-      character *128 function product_id_tag()
-      implicit none
-      product_id_tag='$Id$'
-      return
       end

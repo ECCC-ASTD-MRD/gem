@@ -9,7 +9,7 @@ printf "$0 ${arguments}\n\n"
 . r.entry.dot
 eval `cclargs_lite -D " " $0 \
    -cfg           "0:0"        "0:0"       "[Configurations number/range (START:END)]"\
-   -dircfg        "GEM_cfgs"   "GEM_cfgs"  "[Location of config files]"\
+   -dircfg        "configurations/GEM_cfgs"   "configurations/GEM_cfgs"  "[Location of config files]"\
    -barrier       "0"          "0"         "[DO NOT run binary]"\
    -timing        "0"          "0"         "[Report performance timers]"\
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\

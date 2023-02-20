@@ -67,9 +67,11 @@ endif()
 
 add_subdirectory(gemdyn gemdyn)
 add_subdirectory(gem gem)
-add_subdirectory(rpn-si/cclargs cclargs)
-add_subdirectory(rpn-si/fstinfo fstinfo)
-add_subdirectory(rpn-si/filetype filetype)
+if (NOT DEFINED ENV{EC_ARCH})
+  add_subdirectory(rpn-si/cclargs cclargs)
+  add_subdirectory(rpn-si/fst-tools fst-tools)
+  add_subdirectory(rpn-si/filetype filetype)
+endif()
 
 # Declare the dependencies of all the components, whether sources where used or not
 if ( NOT "${vgrid_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${rmn_SRC}" STREQUAL "" OR NOT "${tdpack_SRC}" STREQUAL "")
