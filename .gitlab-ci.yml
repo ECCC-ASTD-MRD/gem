@@ -9,7 +9,7 @@ variables:
 stages:
   - build
   - run_configs_intel
-  - run_configs_gnu
+  - run_configs_gnu_12
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -395,7 +395,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -419,7 +419,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -443,7 +443,7 @@ CANO_W7cascP_gnu:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -467,7 +467,7 @@ CANO_dcmip163r100_gnu:
     - test "${_status}" == "ED"
 
 CANO_wil7_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -491,7 +491,7 @@ CANO_wil7_gnu:
     - test "${_status}" == "ED"
 
 GEM_cfgs_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -515,7 +515,7 @@ GEM_cfgs_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -539,7 +539,7 @@ GEM_GY_FISL_P_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -562,7 +562,7 @@ GEM_GY_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -586,7 +586,7 @@ GEM_LU_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -610,7 +610,7 @@ GEM_LU_OFFC_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -634,7 +634,7 @@ PTOPO_GYH_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -658,7 +658,7 @@ PTOPO_LUP_gnu:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -682,7 +682,7 @@ RSTRT_GYP_gnu:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -702,7 +702,7 @@ THEO_bubbleG_gnu:
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
-  stage: run_configs_gnu
+  stage: run_configs_gnu_12
   dependencies:
   - build_gnu-12.1.0
   when: always
