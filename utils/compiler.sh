@@ -10,6 +10,9 @@ case $1 in
         type ifort >/dev/null &&
             COMPILER_VERSION=`ifort -V 2>&1 | head -n 1 | sed "s/.*Version \([^ ]*\).*$/\1/"`
         ;;
+    nvhpc)
+        COMPILER_VERSION=`nvcc --version | grep release | sed "s/.*V\([^ ]*\).*$/\1/"`
+        ;;
     pgi)
         COMPILER_VERSION=`pgfortran --version  | sed -n "/fortran/ s/.*pgfortran \([^ ]*\).*$/\1/p"`
         ;;

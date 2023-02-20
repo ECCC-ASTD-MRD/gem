@@ -63,13 +63,13 @@ while test $# -gt 0; do
         -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
         *) value= ;;
     esac
-    
+
     case "$1" in
-        
+
         --help)
 	    usage 0
 	    ;;
-        
+
         --cc)
        	    echo ${cc:-no}
        	    ;;
@@ -89,51 +89,51 @@ while test $# -gt 0; do
         --defs)
        	    echo ${defs}
        	    ;;
-        
+
         --libs)
        	    echo ${libs}
        	    ;;
-        
+
         --has-rmn)
        	    echo ${has_rmn:-no}
        	    ;;
-        
+
         --has-tdpack)
        	    echo ${has_tdpack:-no}
        	    ;;
-        
+
         --has-vgrid)
        	    echo ${has_vgrid:-no}
        	    ;;
-        
+
         --has-rpncomm)
        	    echo ${has_rpncomm:-no}
        	    ;;
-        
+
         --has-modelutils)
        	    echo ${has_modelutils:-no}
        	    ;;
-        
+
         --has-rpnphy)
        	    echo ${has_rpnphy:-no}
        	    ;;
-        
+
         --has-gemdyn)
        	    echo ${has_gemdyn:-no}
        	    ;;
-        
+
         --version)
 	    echo ${version}
 	    ;;
-        
+
         --env)
             echo ${env}
             ;;
-        
+
         --arch)
             echo ${arch}
             ;;
-        
+
         *)
             echo "unknown option: $1"
 	    usage 1

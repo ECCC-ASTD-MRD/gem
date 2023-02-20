@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# For internal use at ECCC
+
 # Source this file to:
 # - Load profile, Intel compiler. and code-tools for Intel
 # - Load libraries

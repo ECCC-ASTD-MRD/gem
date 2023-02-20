@@ -9,7 +9,7 @@ variables:
 stages:
   - build
   - run_configs_intel
-  - run_configs_gnu_9
+  - run_configs_gnu_9.3.0
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -405,7 +405,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -417,7 +417,7 @@ THEO_schar_intel:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -430,7 +430,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -442,7 +442,7 @@ CANO_W7cascP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -455,7 +455,7 @@ CANO_W7cascP_gnu:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -467,7 +467,7 @@ CANO_dcmip163r100_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -480,7 +480,7 @@ CANO_dcmip163r100_gnu:
     - test "${_status}" == "ED"
 
 CANO_wil7_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -492,7 +492,7 @@ CANO_wil7_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -505,7 +505,7 @@ CANO_wil7_gnu:
     - test "${_status}" == "ED"
 
 GEM_cfgs_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -517,7 +517,7 @@ GEM_cfgs_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -530,7 +530,7 @@ GEM_cfgs_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -542,7 +542,7 @@ GEM_GY_FISL_P_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -555,7 +555,7 @@ GEM_GY_FISL_P_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -566,7 +566,7 @@ GEM_GY_FISL_H_gnu:
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -579,7 +579,7 @@ GEM_GY_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -591,7 +591,7 @@ GEM_LU_FISL_H_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -604,7 +604,7 @@ GEM_LU_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -616,7 +616,7 @@ GEM_LU_OFFC_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -629,7 +629,7 @@ GEM_LU_OFFC_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -641,7 +641,7 @@ PTOPO_GYH_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -654,7 +654,7 @@ PTOPO_GYH_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -666,7 +666,7 @@ PTOPO_LUP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -679,7 +679,7 @@ PTOPO_LUP_gnu:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -691,7 +691,7 @@ RSTRT_GYP_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -704,7 +704,7 @@ RSTRT_GYP_gnu:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -716,7 +716,7 @@ THEO_bubbleG_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -725,7 +725,7 @@ THEO_bubbleG_gnu:
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
-  stage: run_configs_gnu_9
+  stage: run_configs_gnu_9.3.0
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -737,7 +737,7 @@ THEO_schar_gnu:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu_12
+    - . ./.eccc_setup_gnu
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg

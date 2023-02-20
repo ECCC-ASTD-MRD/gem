@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# For internal use at ECCC
+
 # Source this file to:
 # - Load profile and code-tools for gnu
 # - Load RPN-SI libraries 

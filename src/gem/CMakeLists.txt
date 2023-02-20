@@ -10,11 +10,6 @@ if (WITH_OPENMP)
    set(ompfftw "-lfftw3_omp")
 endif()
 
-if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-  find_package(LAPACK)
-  find_package(BLAS)
-endif()
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.in ${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.F90)
 
 add_executable(maingemdm maingemdm.F90)
