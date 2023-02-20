@@ -86,6 +86,7 @@ build_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -110,6 +111,7 @@ CANO_W7cascP_intel:
   when: always
   allow_failure: true
   only:
+  - dev
   - tags
   - 5.2_cmake
   script:
@@ -132,6 +134,7 @@ CANO_dcmip163r100_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -155,6 +158,7 @@ CANO_wil7_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -178,6 +182,7 @@ GEM_cfgs_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -201,6 +206,7 @@ GEM_GY_FISL_P_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -224,6 +230,7 @@ GEM_GY_FISL_H_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -247,6 +254,7 @@ GEM_LU_FISL_H_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -270,6 +278,7 @@ GEM_LU_OFFC_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -293,6 +302,7 @@ PTOPO_GYH_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -316,6 +326,7 @@ PTOPO_LUP_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -339,6 +350,7 @@ RSTRT_GYP_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -362,6 +374,7 @@ THEO_bubbleG_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -381,6 +394,7 @@ THEO_schar_intel:
   - build_intel
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -400,6 +414,7 @@ THEO_schar_intel:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -424,6 +439,7 @@ CANO_W7cascP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -448,6 +464,7 @@ CANO_dcmip163r100_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -472,6 +489,7 @@ CANO_wil7_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -496,6 +514,7 @@ GEM_cfgs_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -520,6 +539,7 @@ GEM_GY_FISL_P_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -544,6 +564,7 @@ GEM_GY_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -567,6 +588,7 @@ GEM_LU_FISL_H_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -591,6 +613,7 @@ GEM_LU_OFFC_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -615,6 +638,7 @@ PTOPO_GYH_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -639,6 +663,7 @@ PTOPO_LUP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -663,6 +688,7 @@ RSTRT_GYP_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -687,6 +713,7 @@ THEO_bubbleG_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
@@ -707,6 +734,7 @@ THEO_schar_gnu:
   - build_gnu-12.1.0
   when: always
   only:
+  - dev
   - tags
   - 5.2_cmake
   allow_failure: true
