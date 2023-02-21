@@ -502,7 +502,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       DO 120 I=1,N
           ZPONDL(I)=0.0
           LKICEH0(I)=LKICEH(I)
-          ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+!         ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+          ICELIM=(1.909E-4)*(LLAK(I))**0.666667 ! VE Mackay GRL 2023
           FICE(I)=MIN(ICELIM,LKICEH(I))/ICELIM   
           FTOT(I)=1.0
           SNOM1(I)=SNO(I)
@@ -1222,7 +1223,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! --RESET SNICEH IF ICE HAS COMPLETELY MELTED; ENSURE CONSISTENCY BETWEEN
 !   FICE AND LKICEH
        IF  (LKICEH(I) .LE. 0.0 ) SNICEH(I)=0.0
-       ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+!      ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+       ICELIM=(1.909E-4)*(LLAK(I))**0.666667 ! VE Mackay GRL 2023
        FICE(I)=MIN(ICELIM,LKICEH(I))/ICELIM
 
 605   CONTINUE
