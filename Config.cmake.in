@@ -1,0 +1,45 @@
+set(GEM_VERSION @PROJECT_VERSION@ CACHE INTERNAL "GEM version")
+
+@PACKAGE_INIT@
+
+# [[DOC]] for find_package (lists variables that are set automatically by CMake)
+# https://cmake.org/cmake/help/v3.0/command/find_package.html
+# [[DOC]] https://cmake.org/cmake/help/v3.14/manual/cmake-developer.7.html
+
+set(_supported_components shared static)
+
+#----- Set include directory
+set_and_check(${CMAKE_FIND_PACKAGE_NAME}_INCLUDE_DIRS "@PACKAGE_INCLUDE_INSTALL_DIR@")
+
+#----- Set the library
+if(BUILD_SHARED_LIBS)
+   list(APPEND ${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS shared)
+endif()
+
+if("shared" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS)
+   set_and_check(${CMAKE_FIND_PACKAGE_NAME}_LIBRARIES "@PACKAGE_LIB_INSTALL_DIR@/lib${CMAKE_FIND_PACKAGE_NAME}.so")
+   add_library(${CMAKE_FIND_PACKAGE_NAME} SHARED IMPORTED)
+   set(${CMAKE_FIND_PACKAGE_NAME}_shared_FOUND TRUE)
+else()
+   set_and_check(${CMAKE_FIND_PACKAGE_NAME}_LIBRARIES "@PACKAGE_LIB_INSTALL_DIR@/lib${CMAKE_FIND_PACKAGE_NAME}.a")
+   add_library(${CMAKE_FIND_PACKAGE_NAME} STATIC IMPORTED)
+   set(${CMAKE_FIND_PACKAGE_NAME}_static_FOUND TRUE)
+endif()
+
+#----- Create the imported target
+string(TOUPPER ${CMAKE_FIND_PACKAGE_NAME} up)
+set_target_properties(${CMAKE_FIND_PACKAGE_NAME} PROPERTIES
+   IMPORTED_LOCATION             ${${CMAKE_FIND_PACKAGE_NAME}_LIBRARIES}
+   INTERFACE_INCLUDE_DIRECTORIES ${${CMAKE_FIND_PACKAGE_NAME}_INCLUDE_DIRS}
+   INTERFACE_COMPILE_DEFINITIONS HAVE_${up}="${${CMAKE_FIND_PACKAGE_NAME}_VERSION}"
+)
+
+#----- Check that everything is there and undefines ${PACKAGE_NAME}_FOUND if it's not the case
+check_required_components(${CMAKE_FIND_PACKAGE_NAME})
+
+#----- This part should eventually disapear once cmake handles it
+if( NOT ${CMAKE_FIND_PACKAGE_NAME}_FIND_QUIETLY )
+   message(STATUS "Found ${CMAKE_FIND_PACKAGE_NAME} version ${${CMAKE_FIND_PACKAGE_NAME}_VERSION}")
+   message(STATUS "Found ${CMAKE_FIND_PACKAGE_NAME} libraries ${${CMAKE_FIND_PACKAGE_NAME}_LIBRARIES}")
+   message(STATUS "Found ${CMAKE_FIND_PACKAGE_NAME} includes ${${CMAKE_FIND_PACKAGE_NAME}_INCLUDE_DIRS}")
+endif()

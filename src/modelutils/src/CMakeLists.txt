@@ -27,7 +27,6 @@ target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_C
   )
 
-
 set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
 
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
@@ -41,3 +40,9 @@ add_dependencies(modelutils_stubs ${PROJECT_NAME}_build_info)
 
 add_library(modelutils_tmg_stubs STATIC tmg_stubs/tmg_stubs.F90)
 add_dependencies(modelutils_tmg_stubs ${PROJECT_NAME}_build_info)
+
+install(TARGETS modelutils
+    PUBLIC_HEADER DESTINATION include
+    LIBRARY       DESTINATION lib
+    ARCHIVE       DESTINATION lib)
+install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
