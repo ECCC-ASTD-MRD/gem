@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ex: goas_batch -cfg configurations/GEM_cfgs_GY_FISL_H
+# ie: goas_batch -cfg configurations/GEM_cfgs_GY_FISL_H
 #     goas_batch -cfg configurations/GEM_cfgs_LU_FISL_H -ptopo 2x2x10 -mach underhill
 #
 arguments=$*

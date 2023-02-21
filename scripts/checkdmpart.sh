@@ -40,10 +40,10 @@ cdm_eigen_S='${cache}'
 /
 EOF
 
-GRDTYP=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- grid/grd_typ_s 2> /dev/null)
-OPSCFG=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2> /dev/null)
-#GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
-#OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
+#GRDTYP=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- grid/grd_typ_s 2> /dev/null)
+#OPSCFG=$(rpy.nml_get -u -f ${WORKDIR}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2> /dev/null)
+GRDTYP=$(fetchnml.sh grd_typ_s grid ${WORKDIR}/model_settings.nml)
+OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${WORKDIR}/model_settings.nml)
 if [ -z "${GRDTYP}" ] ; then
     GRDTYP=LU
     ngrids=1

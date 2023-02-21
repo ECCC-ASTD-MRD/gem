@@ -5,6 +5,6 @@
          wallclock="15" 
          catchup="1" 
          cpu="1x1x1" 
-         cpu_multiplier="2" 
+         cpu_multiplier="1" 
          soumet_args="-mpi -waste 100" />
 </NODE_RESOURCES>

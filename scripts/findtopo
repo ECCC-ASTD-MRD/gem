@@ -20,8 +20,9 @@ if [ ! -e ${nml} ] ; then
 fi
 
 
-GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
 #GRDTYP=$(fetchnml.sh grd_typ_s grid ${nml} | sed "s/'//g" | tr 'a-z' 'A-Z')
+GRDTYP=$(fetchnml.sh grd_typ_s grid ${nml})
 if [ -z "${GRDTYP}" ] ; then
    printf "\nERROR: Cannot determine Grid type\n"
    printf "Abort: Check grid/Grd_typ_S in ${nml}\n\n"
@@ -30,8 +31,9 @@ fi
 
 re_isnumber='^[0-9]+([.][0-9]+)?$'
 
-GNI=$(rpy.nml_get -f ${nml} grid/GNI | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GNI=$(rpy.nml_get -f ${nml} grid/GNI | sed "s/'//g" | tr 'a-z' 'A-Z')
 #GNI=$(fetchnml.sh grd_ni grid ${nml} | sed "s/'//g")
+GNI=$(fetchnml.sh grd_ni grid ${nml})
 if [[ ! -z "${GNI}" ]] ; then
    if ! [[ ${GNI} =~ ${re_isnumber} ]] ; then
       printf "\nError: grid/Grd_ni (${GNI}) is NOT a number in $nml\n"
@@ -40,8 +42,9 @@ if [[ ! -z "${GNI}" ]] ; then
    fi
 fi
 
-GNJ=$(rpy.nml_get -f ${nml} grid/GNJ | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GNJ=$(rpy.nml_get -f ${nml} grid/GNJ | sed "s/'//g" | tr 'a-z' 'A-Z')
 #GNJ=$(fetchnml.sh grd_nj grid ${nml} | sed "s/'//g")
+GNJ=$(fetchnml.sh grd_nj grid ${nml})
 if [[ ! -z "${GNJ}" ]] ; then
    if ! [[ ${GNJ} =~ ${re_isnumber} ]] ; then
       printf "\nError: grid/Grd_nj (${GNJ}) is NOT a number in $nml\n"

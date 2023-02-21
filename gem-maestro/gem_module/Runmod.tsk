@@ -55,6 +55,7 @@ fi
 # Run the model
 . r.call.dot ${TASK_BIN}/runmod.sh \
    -ptopo ${ptopo} -smt ${nthreads} -inorder ${MOD_GEM_inorder} \
+   -nodespec ${MOD_GEM_nodespec} \
    -barrier ${MOD_GEM_barrier} -timing ${MOD_GEM_timing} \
    -cfg ${domain_cfgs} -no_setup -debug ${MOD_GEM_debug}
 
