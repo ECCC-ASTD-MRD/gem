@@ -10,6 +10,7 @@ stages:
   - build
   - run_configs_intel
   - run_configs_gnu_9.3.0
+  - run_configs_gnu_12.1.0
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -40,9 +41,15 @@ build_gnu-12.1.0:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
     - make -j `nproc` work
   allow_failure: true
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - work-rhel-8-amd-64-gnu-12.1.0
+    - gem_dbase
 
 # U2 Intel 2022
 build_intel_with_rpn:
@@ -743,4 +750,29 @@ THEO_schar_gnu:
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+    - test "${_status}" == "ED"
+
+5.2GEM_GY_FISL_H_gnu:
+  stage: run_configs_gnu_12.1.0
+  dependencies:
+  - build_gnu-12.1.0
+  when: always
+  only:
+  - dev
+  - tags
+  - 5.2_cmake
+  allow_failure: true
+  script:
+    - set +e
+    - . ~/ci-env/latest/profile.sh
+    - . ./.eccc_setup_gnu_12
+    - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo;
+      fi
     - test "${_status}" == "ED"
