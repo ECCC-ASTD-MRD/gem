@@ -14,4 +14,5 @@ export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
 
+export ORDENV_PLAT=rhel-8-amd-64
 . ./.common_setup ${COMPILER_SUITE}

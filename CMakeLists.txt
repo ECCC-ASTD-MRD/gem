@@ -134,7 +134,6 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 # list of binaries depends on built sources
 list(APPEND BINARIES maingemdm)
 if ((NOT DEFINED ENV{EC_ARCH} ) OR (NOT DEFINED ((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))))
-  message(STATUS "We are compiling rpn-si tools")
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
