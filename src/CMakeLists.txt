@@ -80,7 +80,7 @@ endif()
 add_dependencies(gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 # To be installed only with package
-install(DIRECTORY ../scripts/    DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "support" EXCLUDE)
+install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
 install(DIRECTORY ../gem-maestro/ DESTINATION gem-maestro USE_SOURCE_PERMISSIONS)
 install(DIRECTORY ../configurations/ DESTINATION configurations USE_SOURCE_PERMISSIONS)
 install(FILES "${CMAKE_SOURCE_DIR}/src/gem/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
