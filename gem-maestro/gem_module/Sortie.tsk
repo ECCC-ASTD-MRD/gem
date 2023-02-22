@@ -169,7 +169,7 @@ for file in ${domain_list} ; do
          set -ex
          ext=$(echo $fn | sed 's|/|_|g')
          echo ${mydomain}/${path_dest}:${fname_dest} >> ${TASK_OUTPUT}/${mydomain}/List_${Sortie}
-         transfer ${fn} ${mydomain}/${path_dest} ${fname_dest} ${ext} 1> transfer_$(basename ${fn}).lis 2>&1 &
+         transfer ${fn} ${mydomain}/${path_dest} ${fname_dest} ${ext} 1> transfer_$(basename ${fn})_${mydomain}.lis 2>&1 &
          if [[ $count -eq $nthreads ]]; then
             date ; wait ; date
             count=0
@@ -185,7 +185,7 @@ for file in ${domain_list} ; do
       for fn in ${transfer_list}; do
          count=$(( count + 1 ))
          ext=$(echo $fn | sed 's|/|_|g')
-         transfer ${fn} ${mydomain}/other ${fname_dest} ${ext} 1> transfer_$(basename ${fn}).lis 2>&1 &
+         transfer ${fn} ${mydomain}/other ${fname_dest} ${ext} 1> transfer_$(basename ${fn})_${mydomain}.lis 2>&1 &
          if [[ $count -eq $nthreads ]]; then
             date ; wait ; date
             count=0
