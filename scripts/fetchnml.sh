@@ -4,7 +4,7 @@
 string=`echo $1 | tr "[a-z]" "[A-Z]"`
 namelist=`echo $2 | tr "[a-z]" "[A-Z]"`
 
-cat > tmp$$ <<EOF
+cat > $TMPDIR/tmp$$ <<EOF
 function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
 function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
 function trim(s)  { return rtrim(ltrim(s)); }
@@ -120,5 +120,5 @@ func findkey(name,mystring)
          return(mykey)
 }
 EOF
-cat $3 | tr "\"" "\'" | tr "[a-z]" "[A-Z]" | awk -f tmp$$ 
-/bin/rm -f tmp$$
+cat $3 | tr "\"" "\'" | tr "[a-z]" "[A-Z]" | awk -f $TMPDIR/tmp$$ 
+/bin/rm -f $TMPDIR/tmp$$
