@@ -1,65 +1,69 @@
 ##### Introducing the GOAS development environment for GEM #####
 
-For many years GEM developers have been using the
-in-house development tool RDE to manage compilation,
-linkage and other shell environment features ultimately
-allowing the users to develop and test their GEM code.
-This RDE system was based on G-Make and it has recently
-shown weaknesses in areas such as code dependencies, proper
-linking sequence and more importantly transparency in
-controlling the compilation, linking process and makefile
-target definitions. It has therefore been decided to replace
-RDE by a more modern approach which is safer, hopefully more
-convivial and more importantly based on public/supported software.
+For many years GEM developers have been using the in-house development tool
+RDE to manage compilation, linkage and other shell environment features
+ultimately allowing the users to develop and test their GEM code.  This RDE
+system was based on G-Make and it has recently shown weaknesses in areas
+such as code dependencies, proper linking sequence and more importantly
+transparency in controlling the compilation, linking process and makefile
+target definitions. It has therefore been decided to replace RDE by a more
+modern approach which is safer, hopefully more convivial and more
+importantly based on public/supported software.
 
-This new system is called GOAS and is entirely based on CMake.
-The learning curve to switch to this new system is relatively low
-once the user understands the code storage structure and the
-location of the compiled code and binaries. Although it is entirely
-possible to use goas with a single git clone and proceed as
-intructed in a README file, we provide a set of basic tools in
+This new system is called GOAS and is entirely based on CMake.  The learning
+curve to switch to this new system is relatively low once the user
+understands the code storage structure and the location of the compiled code
+and binaries. Although it is entirely possible to use GOAS with a single git
+clone and proceed as intructed in a README file, we provide a set of basic
+tools in:
 
 /users/dor/armn/dyn/ovbin
 or
 /home/sdyn001/ovbin
-which most of you must already have in your PATH. If not I
-encourage you to do so.
+which most of you must already have in your PATH.
+If not I encourage you to do so.
 
 The main git depot is at
 git@gitlab.science.gc.ca:cpi001/gem-devel.git
 currently on branch 5.2_cmake
 
-For an easier transition towards goas we suggest to use the
-wrapper goas_install the following way:
+For an easier transition towards GOAS we suggest to use the wrapper
+goas_install the following way:
 
-goas_install -version 5.2.0-a18 -exp trunk
+goas_install -version 5.2.0-a23 -exp trunk
 
-which will
-clone the depot into a familiar name directory, compile all the code
-and create the executables for Intel. You can then go into the
-work-[platform] directory to run the model as before using provided
-configurations.
+which will:
+clone the depot into a familiar name directory, compile all the code, and
+create the executables for Intel. You can then go into the work-[platform]
+directory to run the model as before using provided configurations.
 
 Environment can simply be set with
 . .eccc_setup_[intel,gnu]
 Compilation and linking is done with
 make -j work
 
-Unlike RDE, the whole source code is available for modifications
-under subdirectories src/ , scripts/ , gem-maestro/ , configurations/
+Unlike RDE, the whole source code is available for modifications under
+subdirectories src/ , scripts/ , gem-maestro/ , configurations/
 
 The depot also provides for the use of Maestro.
 There are 2 ways:
 1) With the usual date cycler of /home/sdyn001/CYCLER/v_4.0.7
-   for which you can find an exemple at
-	/home/mid001/cycles/5.2/GDPS15K_g5.2.0-a18_H20_HCTR
-	Note the name 'g5.2.0-a18' which is here important.
-	Also take a look at file suite.cfg for variables:
-      REP_GOAS=/home/mid001/home/goas/5.2.0-a18/trunk (for exemple)
-      RC_gem_ovbin=${REP_GOAS}
-      RC_module_gem=${REP_GOAS}/gem-maestro/gem_module
+     Also take a look at file suite.cfg for variables:
+     REP_GOAS=$HOME/home/goas/5.2.0-a23/trunk (for example)
+     RC_gem_ovbin=${REP_GOAS}
+     RC_module_gem=${REP_GOAS}/gem-maestro/gem_module
 
-2) Run a particular configuration under maestro:
-	goas_maestro -exp [configurations/GEM_cfgs_GY_FISL_H] for example
+2) Or creating a simple maestro suite when working under ${GEM_GIT_DIR}/work-*
+a) create_maestro (uses GEM_cfgs configuration)
+   creates maestro suite in
+   $HOME/.suites/goas/$GEM_version/${GEM_GIT_DIR}/GEM_cfgs/work-*
+b) create_maestro -exp [configurations/GEM_cfgs_GY_FISL_H] for example
+   creates maestro suite in
+   $HOME/.suites/goas/$GEM_version/${GEM_GIT_DIR}/GEM_cfgs_GY_FISL_H/work-*
+c) create_maestro -location TATA
+   creates maestro suite using GEM_cfgs in 
+   $HOME/.suites/TATA
 
-Michel Desgagné
+A link for each suite is made under ${GEM_GIT_DIR}/work-*/suites/[name_of_suite]
+for each maestro suite created.
+
