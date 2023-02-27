@@ -34,8 +34,8 @@ ATM_MODEL_VERSION=${ATM_MODEL_VERSION/_*}
 refmode=0
 # Use GEM_GIT_DIR if it exists (when developing with a git clone)
 reffile=${GEM_GIT_DIR:+${GEM_GIT_DIR}/src/gem}
-# otherwise, use GEM_DIR (when using installed GEM)
-reffile=${reffile:-${GEM_DIR}/share}
+# otherwise, use GEM_SSM_DIR (when using installed GEM)
+reffile=${reffile:-${GEM_SSM_DIR}/share}
 # Append path to reference file
 reffile=${reffile}/nml_ref/gem_settings.${ATM_MODEL_VERSION}.ref
 

@@ -33,9 +33,11 @@ while [ ${idom} -le ${dom_end} ] ; do
 done
 
 export DOMAINS_this_instance=${cfglist}
+#export OMP_STACKSIZE=4G
 export OMP_NUM_THREADS=$nomp
 
 printf "\n Running `readlink ${TASK_BIN}/ATM_MOD.Abs` on $npe_total ($npex x $npey) PEs:\n"
+printf " OMP_STACKSIZE=$OMP_STACKSIZE\n"
 printf " OMP_NUM_THREADS=$OMP_NUM_THREADS\n\n"
 printf " ##### UM_TIMING: Um_model.sh STARTING AT: `date`\n"
 

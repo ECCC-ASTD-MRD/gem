@@ -3,18 +3,18 @@
 # GoaS git clone environment
 # ie: create_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
 # ie: create_maestro -f -exp $HOME/path_of_my_clone -module $HOME/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
-#  - suite created at $HOME/.suites/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}/${mach}}
+#  - suite created at $HOME/.suites/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
 # ie: create_maestro -location [mysuite_name]
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 # GEM SSM package environment (ignores -exp)
-# ie: create_maestro -location [mysuite_name] -cfg $GEM_DIR/configurations/GEM_cfgs
+# ie: create_maestro -location [mysuite_name] -cfg $GEM_SSM_DIR/share/configurations/GEM_cfgs
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 arguments=$*
 eval `cclargs_lite $0 \
   -exp      "$PWD"  "$PWD"  "[]" \
-  -cfg      "" "" "[[ \\$GEM_(GIT)_DIR/configurations/GEM_cfgs ]]" \
+  -cfg      "" "" "[[ [\\$GEM_GIT_DIR]:[\\$GEM_SSM_DIR/share]/configurations/GEM_cfgs ]]" \
   -xfer     ""      ""      "[]" \
   -module   ""      ""      "[]" \
   -location ""      ""      "[[ $HOME/.suites/[location] ]]" \
@@ -28,7 +28,7 @@ if [[ -z "${GEM_GIT_DIR}" ]] ; then
    #SSM package mode
    echo "not GEM GIT mode"
    ici=${PWD}
-   GEM_INSTALL=${GEM_DIR}
+   GEM_INSTALL=${GEM_SSM_DIR}
    NAME_exp=${location}
    if [[ -z "${location}" ]] ; then
         printf "\n    Missing experiment name for Maestro suite\n"
@@ -36,14 +36,11 @@ if [[ -z "${GEM_GIT_DIR}" ]] ; then
         printf "\n  will create: $HOME/.suites/TOTO \n\n"
       exit 1
    fi
-   if [[ -e "${cfg}" ]]; then
-      echo "Using configuration from ${cfg}"
-   else
-      cfg=${GEM_DIR}/configurations/GEM_cfgs
-      echo "Using configuration from ${cfg}"
-   fi
+   cfg=${cfg:-${GEM_SSM_DIR}/share/configurations/GEM_cfgs}
    GEM_OVBIN=${GEM_INSTALL}/bin
    GEM_BIN_version=${ATM_MODEL_VERSION}
+   REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO
+   module=${module:-${GEM_INSTALL}/share/gem-maestro/gem_module}
 
 else
    #working GEM_GIT_DIR mode
@@ -63,13 +60,13 @@ else
    mach=$(basename $PWD)
    cfg=${cfg:-${PWD}/configurations/GEM_cfgs}
    expM=$(basename $cfg)
-   NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}/${mach}}
+   NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
    GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
    GEM_BIN_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
+   REF=${GEM_INSTALL}/gem-maestro/GEM_RI_MAESTRO
+   module=${module:-${GEM_INSTALL}/gem-maestro/gem_module}
 fi
 
-REF=${GEM_INSTALL}/gem-maestro/GEM_RI_MAESTRO
-module=${module:-${GEM_INSTALL}/gem-maestro/gem_module}
 XFER="\${TRUE_HOST}:\${SEQ_EXP_HOME}/hub/\${TRUE_HOST}/gridpt/prog/gem"
 XFER=${xfer:-${XFER}}
 suite_name=${HOME}/.suites/${NAME_exp}
@@ -104,6 +101,11 @@ if [ -z "${CONFIG}" ] ; then
    exit
 fi
 
+#Obtain default physcis_input_table path
+    default_phytab=${GEM_GIT_DIR:+${GEM_GIT_DIR}/src/rpnphy/include}
+    default_phytab=${default_phytab:-${GEM_SSM_DIR}/share/rpnphy}
+    PHYTABLE=${default_phytab}/physics_input_table
+
 cd $suite_name
 ln -s $module modules/gem
 export SEQ_EXP_HOME=${suite_name}
@@ -128,10 +130,14 @@ cat >> ${suite_name}/experiment.cfg <<EOF
 GEM_ovbin=${GEM_OVBIN}
 GEM_settings=${CONFIG}/gem_settings.nml
 GEM_outcfg=${CONFIG}/outcfg.out
-GEM_phy_intable=${CONFIG}/physics_input_table
 #GEM_headscript_E=
 GEM_version=${GEM_BIN_version}
 EOF
+if [ -f ${CONFIG}/physics_input_table ] ; then
+   echo "GEM_phy_intable=${CONFIG}/physics_input_table" >> ${suite_name}/experiment.cfg
+else
+   echo "#GEM_phy_intable=${PHYTABLE}" >> ${suite_name}/experiment.cfg
+fi
 
 set -ex
 if [ ${nosubmit} -eq 0 ] ; then

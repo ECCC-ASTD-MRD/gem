@@ -66,3 +66,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/rpnphy_version.in ${CMAKE_CUR
 
 add_subdirectory(src/main rpnphy-main)
 add_subdirectory(src rpnphy)
+
+ec_build_config()                 # Create build configuration script
