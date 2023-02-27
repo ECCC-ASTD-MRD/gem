@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Source this file to:
+# - Load profile, Intel compiler. and code-tools for Intel
+# - Load libraries
+# - Load a script for common setup to all compilers
+
+DOMAIN=`hostname -d`
+
+if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/gpscc2/inteloneapi-2021.4.0
+elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/inteloneapi-2021.4.0
+else
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/ECCC/inteloneapi-2021.4.0
+fi
+
+# We need a more recent version of cmake than the one available by default
+. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
+
+export COMPILER_SUITE=intel
+export COMPILER_VERSION=2021.4.0
+
+. ./.common_setup ${COMPILER_SUITE}
