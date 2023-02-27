@@ -548,7 +548,11 @@ contains
       real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: z,y,h,del,b,c,d
       logical, dimension(size(yi,dim=1)) :: myFound
       character(len=LONG_CHAR) :: myDirec
-
+#ifdef DEBUG
+      integer :: ku
+      real :: dz,floc,zloc
+#endif
+      
       ! Set error return status
       status = INT_ERR
 
@@ -630,7 +634,7 @@ contains
                      dz = -dz
                   endif
                   if (a(i) < 0.) floc = -floc
-                  write(fd_unittest, '(2f0.3)') zloc+dz, floc
+                  write(fd_unittest, '(2(e,x))') zloc+dz, floc
                enddo
             endif
 #endif

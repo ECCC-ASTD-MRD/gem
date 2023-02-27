@@ -45,10 +45,10 @@
       !     Calculate and print the mass of each tracer scaled by area
       !===============================================================
 
-      integer :: i,j,k,n,k0,count,i0_c,in_c,j0_c,jn_c,i0_sb,in_sb,j0_sb,jn_sb,k0_sb,dim,dimV
+      integer :: i,j,k,n,k0,count,i0_c,in_c,j0_c,jn_c,i0_sb,in_sb,j0_sb,jn_sb,k0_sb,dim
       real(kind=REAL64) :: tracer_8
       logical :: do_subset_GY_L
-      real, pointer, dimension (:,:,:) :: fld_tr, air_mass, w_tr
+      real, pointer, dimension (:,:,:) :: fld_tr
       character(len=21) :: type_S
       character(len=7)  :: time_S
       character(len=8)  :: in_S
@@ -56,13 +56,8 @@
 !---------------------------------------------------------------------
 !
       OMP_max_threads=OMP_get_max_threads()
-      dimV= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      air_mass  (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(    1:) ; dim= dimV
-      w_tr      (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1+dim:)
       thread_sum(1:2,0:OMP_max_threads-1) => WS1_8(1:) ; dim= 2*OMP_max_threads
       g_avg_8(1:2) => WS1_8(dim+1:) 
-
-      thread_sum=0.d0
 
       !Set CORE limits
       !---------------

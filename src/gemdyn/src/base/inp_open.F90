@@ -24,7 +24,6 @@
       use inp_base
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       character(len=*), intent(IN) :: F_datev
 
@@ -108,7 +107,7 @@
              ((Inp_kind == 1).and.(Inp_version == 3)) ) then
             err= vgd_get ( Inp_vgd_src, key='PREF',value=Inp_pref_a_8 )
          end if
-         if (Lun_out > 0) write(lun_out,9000) 'VGD: kind= ',Inp_kind
+         if (Lun_out > 0) write(lun_out,9000) Inp_kind, Inp_version
       else
          if (Inp_src_PX_L) then
             Inp_kind = PX3d%kind
@@ -123,7 +122,8 @@
                           'Unable to determine vertical structure')
          endif
       end if
- 9000 format(a,i3)
+ 9000 format(' Input vertical description obtained with vgd_get: '/&
+             ' Inp_kind, Inp_version= ',i5,',',i5)
 
       Inp_src_hauteur_L = (Inp_kind == 21) .or. Inp_src_GZ_L
       
@@ -140,7 +140,7 @@
          mesg= 'Input data with PX vertical descriptors NOT allowed with dynamics on heights'
          err= -1
       endif
-      call gem_error (err, 'inp_open', trim(mesg))
+      call gem_error (err, 'inp_open', trim(mesg))      
 !
 !-----------------------------------------------------------------------
 !

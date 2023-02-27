@@ -136,6 +136,8 @@
       call itf_phy_output ( F_lctl_step )
       call gtmg_stop  ( 48 )
 
+      call itf_phy_diag ()
+      
       if ( Init_mode_L ) then
          if (F_step_kount ==   Init_halfspan) then
             err = phy_snapshot('W')

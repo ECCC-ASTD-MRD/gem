@@ -31,9 +31,7 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor, vgd_get, vgd_free, VGD_OK, VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
-
       implicit none
-#include <arch_specific.hf>
 
       integer, intent(in) :: levset, set
 
@@ -47,7 +45,6 @@
       save hybt
       real,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), target :: w4
       real,dimension(:,:,:), allocatable :: cible
-      real, dimension(:,:  ), pointer :: qdiag
       real, dimension(:,:,:), pointer :: tr5,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
       real hybt_gnk2(1)
@@ -57,6 +54,8 @@
 !
 !----------------------------------------------------------------------
 !
+      lijk(3) = G_nk+1
+      uijk(3) = G_nk+1
       ptr3d => w4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:G_nk+1)
 
       if (Level_typ_S(levset) == 'M') then  ! output tracers on model levels
@@ -92,18 +91,16 @@
 
             if (outvar_L) then
                w4(:,:,1:G_nk) = tracers_P(indxtr)%pntr(:,:,1:G_nk)
-               model_nk = G_nk
+               model_nk= G_nk ; istat= -1
                if (write_diag_lev) then
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
-                     istat = gmm_get(gmmk_diag_hu_s,qdiag)
-                     if (istat == 0) w4(:,:,G_nk+1) = qdiag(:,:)
+                     w4(:,:,G_nk+1) = qdiag(:,:)
+                     istat= 0
                   else
                      w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if
-               else
-                  istat=-1
                end if
                if (istat == 0) model_nk = G_nk + 1
 
@@ -165,17 +162,16 @@
 
             if (outvar_L) then
                w4(:,:,1:G_nk) = tracers_P(indxtr)%pntr(:,:,1:G_nk)
+               istat= -1
                if (out3_sfcdiag_L) then
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
-                     istat = gmm_get(gmmk_diag_hu_s,qdiag)
-                     if (istat == 0) w4(:,:,G_nk+1) = qdiag(:,:)
+                     w4(:,:,G_nk+1) = qdiag(:,:)
+                     istat= 0
                   else
                      w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
                      istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if
-               else
-                  istat=-1
                end if
                if (istat == 0) then
                   call vertint2 ( tr5,cible,nko, w4 ,pw_log_pt,G_nk+1,&

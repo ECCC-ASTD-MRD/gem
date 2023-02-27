@@ -54,7 +54,7 @@ subroutine test_integrals
    fd_prof = 0
    if (fnom(fd_prof,prof_file,'SEQ',0) /= RMN_OK) &
         call msg(MSG_WARNING,'(checkint) Cannot open profile output file')
-   istat = int_solve(zval,df,z,zdep,a,cdir,fd_unittest=fd_prof)
+   istat = int_solve(zval,dir*df,z,zdep,a,cdir,fd_unittest=fd_prof)   
    if (istat == INT_ERR) call msg(MSG_ERROR,'(checkint) Error returned by int_solve')
    write(STDOUT, '(i0)') istat
    if (fclos(fd_prof) /= RMN_OK) &

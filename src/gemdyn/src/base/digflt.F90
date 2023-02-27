@@ -15,16 +15,15 @@
 
 !**s/r digflt -  Compute digitally filtered fields
 
-     subroutine digflt
+      subroutine digflt ()
       use step_options
       use gmm_vt1
       use gmm_vta
       use init_options
       use glb_ld
       use mem_tracers
+      use outp
       implicit none
-
-#include <arch_specific.hf>
 
       integer i, j, k
       real dfcoef
@@ -61,8 +60,14 @@
       else
          if ( Step_kount == Init_halfspan ) trdf = trt1
       endif
+      if ( Step_kount == Init_halfspan ) then
+         diag_dgf(:,:,1) = udiag(:,:)
+         diag_dgf(:,:,2) = vdiag(:,:)
+         diag_dgf(:,:,3) = tdiag(:,:)
+         diag_dgf(:,:,4) = qdiag(:,:)
+      endif
 !     __________________________________________________________________
 !
       return
-      end
+      end subroutine digflt
 

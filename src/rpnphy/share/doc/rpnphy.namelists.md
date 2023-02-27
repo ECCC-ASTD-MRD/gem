@@ -98,6 +98,7 @@
 | longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag | 'BLAC62' | character(len=16) |
 | moyhr | Time length (hours) for special time averaged physics variables | 0 | integer |
 | mp_aeroact | Switch for aerosol activation scheme (1 = default, 2 = ARG + Aerosol climatology) | 1 | integer |
+| mpdiag_for_sfc | Use diagnostic pcp types for surface for MP scheme when .true.<br>otherwise use MP scheme pcp types | .false. | logical |
 | my_ccntype | Switch for airmass type (1 = maritime, 2 = continental) | 1 | integer |
 | my_diagon | Compute MY Diagnostic fields if .true. | .true. | logical |
 | my_iceon | Ice-phase switched on if .true. | .true. | logical |

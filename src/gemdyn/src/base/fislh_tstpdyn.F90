@@ -40,13 +40,6 @@
 !     
 !     ---------------------------------------------------------------
 !
-!!$      if (Step_kount > 1) then
-!!$!$omp single
-!!$         call slmx_tstpdyn (F_icn)
-!!$!$omp end single
-!!$         return
-!!$      endif
-
       i0= 1   +pil_w
       in= l_ni-pil_e
       j0= 1   +pil_s
@@ -86,18 +79,18 @@
 
 !     Perform Semi-Lagrangian advection
 
-      call gtmg_start (25, 'ADVECTION', 20)
+      call gtmg_start (22, 'ADVECTION', 20)
       call adz_main ()
-      call gtmg_stop (25)
+      call gtmg_stop (22)
 
-      call gtmg_start (27, 'PRE', 20)
+      call gtmg_start (23, 'PRE', 20)
       if ( F_icn == 1 ) call oro_adj ()
       
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
 
       call fislh_pre (dt_8, i0, j0, k0, in, jn, k0t )
-      call gtmg_stop (27)
+      call gtmg_stop (23)
 
       do iln=1,Schm_itnlh
 
@@ -113,9 +106,9 @@
          end if
 !$omp end single
 
-         call gtmg_start (28, 'NLI', 20)
+         call gtmg_start (24, 'NLI', 20)
          call fislh_nli (dt_8, i0, j0, k0, in, jn, k0t)
-         call gtmg_stop (28)
+         call gtmg_stop (24)
 
 !        Solve the elliptic problem
          print_conv = (iln   == Schm_itnlh ) .and. &
@@ -123,14 +116,14 @@
                       (Ptopo_couleur == 0  ) .and. &
                       (Lun_out > 0)
 
-         call gtmg_start (29, 'SOL', 20)
+         call gtmg_start (25, 'SOL', 20)
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, print_conv)
-         call gtmg_stop (29)
+         call gtmg_stop (25)
 
 !        Back subtitution
-         call gtmg_start (30, 'BAC', 20)
+         call gtmg_start (26, 'BAC', 20)
          call fislh_bac (dt_8, i0, j0, k0, in, jn, k0t)
-         call gtmg_stop (30)
+         call gtmg_stop (26)
 !$omp single
          if (Grd_yinyang_L) then
             call yyg_xchng_vec_uv2uv (ut0, vt0,&
