@@ -8,9 +8,9 @@ variables:
 
 stages:
   - build
-  - run_configs_intel
-  - run_configs_gnu_9.3.0
-  - run_configs_gnu_12.1.0
+  - run_intel_with_libs
+  - run_gnu_9.3.0_mpich
+  - run_gnu_12.1.0_openmpi
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -48,11 +48,11 @@ build_gnu-12.1.0:
   artifacts:
     expire_in: 2 hrs
     paths:
-    - work-rhel-8-amd-64-gnu-12.1.0
+    - work-rhel-8-amd64-64-gnu-12.1.0
     - gem_dbase
 
 # U2 Intel 2022
-build_intel_with_rpn:
+build_intel_with_libs:
   stage: build
   when: always
   script:
@@ -63,10 +63,14 @@ build_intel_with_rpn:
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake
     - make -j `nproc` work
-  allow_failure: true
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - work-rhel-8-icelake-64-intel-2021.5.0
+    - gem_dbase
 
 # U2 Intel 2022
-build_intel:
+build_intel_with_src:
   stage: build
   when: always
   script:
@@ -77,21 +81,18 @@ build_intel:
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
     - make -j `nproc` work
-  artifacts:
-    expire_in: 2 hrs
-    paths:
-    - work-rhel-8-icelake-64-intel-2021.5.0
-    - gem_dbase
+  allow_failure: true
 
 5.2GEM_GY_FISL_H_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_libs
   when: always
   only:
   - dev
   - tags
   - 5.2_cmake
+  - feat_ops_publish
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -108,9 +109,9 @@ build_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   allow_failure: true
   only:
@@ -132,9 +133,9 @@ CANO_W7cascP_intel:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -156,9 +157,9 @@ CANO_dcmip163r100_intel:
     - test "${_status}" == "ED"
 
 CANO_wil7_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -180,9 +181,9 @@ CANO_wil7_intel:
     - test "${_status}" == "ED"
 
 GEM_cfgs_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -204,9 +205,9 @@ GEM_cfgs_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -228,9 +229,9 @@ GEM_GY_FISL_P_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -252,9 +253,9 @@ GEM_GY_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -276,9 +277,9 @@ GEM_LU_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -300,9 +301,9 @@ GEM_LU_OFFC_intel:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -324,9 +325,9 @@ PTOPO_GYH_intel:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -348,9 +349,9 @@ PTOPO_LUP_intel:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -372,9 +373,9 @@ RSTRT_GYP_intel:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -392,9 +393,9 @@ THEO_bubbleG_intel:
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
-  stage: run_configs_intel
+  stage: run_intel_with_libs
   dependencies:
-  - build_intel
+  - build_intel_with_rpn
   when: always
   only:
   - dev
@@ -412,7 +413,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -437,7 +438,7 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -462,7 +463,7 @@ CANO_W7cascP_gnu:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -487,7 +488,7 @@ CANO_dcmip163r100_gnu:
     - test "${_status}" == "ED"
 
 CANO_wil7_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -512,7 +513,7 @@ CANO_wil7_gnu:
     - test "${_status}" == "ED"
 
 GEM_cfgs_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -537,7 +538,7 @@ GEM_cfgs_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -562,7 +563,7 @@ GEM_GY_FISL_P_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -586,7 +587,7 @@ GEM_GY_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -611,7 +612,7 @@ GEM_LU_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -636,7 +637,7 @@ GEM_LU_OFFC_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -661,7 +662,7 @@ PTOPO_GYH_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -686,7 +687,7 @@ PTOPO_LUP_gnu:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -711,7 +712,7 @@ RSTRT_GYP_gnu:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -732,7 +733,7 @@ THEO_bubbleG_gnu:
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
-  stage: run_configs_gnu_9.3.0
+  stage: run_gnu_9.3.0_mpich
   dependencies:
   - build_gnu-9.3.0
   when: always
@@ -753,7 +754,7 @@ THEO_schar_gnu:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu_12:
-  stage: run_configs_gnu_12.1.0
+  stage: run_gnu_12.1.0_openmpi
   dependencies:
   - build_gnu-12.1.0
   when: always
@@ -761,6 +762,7 @@ THEO_schar_gnu:
   - dev
   - tags
   - 5.2_cmake
+  - feat_ops_publish
   allow_failure: true
   script:
     - set +e
