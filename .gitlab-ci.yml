@@ -111,7 +111,7 @@ build_intel_with_src:
 CANO_W7cascP_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   allow_failure: true
   only:
@@ -135,7 +135,7 @@ CANO_W7cascP_intel:
 CANO_dcmip163r100_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -159,7 +159,7 @@ CANO_dcmip163r100_intel:
 CANO_wil7_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -183,7 +183,7 @@ CANO_wil7_intel:
 GEM_cfgs_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -207,7 +207,7 @@ GEM_cfgs_intel:
 GEM_GY_FISL_P_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -231,7 +231,7 @@ GEM_GY_FISL_P_intel:
 GEM_GY_FISL_H_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -255,7 +255,7 @@ GEM_GY_FISL_H_intel:
 GEM_LU_FISL_H_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -279,7 +279,7 @@ GEM_LU_FISL_H_intel:
 GEM_LU_OFFC_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -303,7 +303,7 @@ GEM_LU_OFFC_intel:
 PTOPO_GYH_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -327,7 +327,7 @@ PTOPO_GYH_intel:
 PTOPO_LUP_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -351,7 +351,7 @@ PTOPO_LUP_intel:
 RSTRT_GYP_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -375,7 +375,7 @@ RSTRT_GYP_intel:
 THEO_bubbleG_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
@@ -395,7 +395,7 @@ THEO_bubbleG_intel:
 THEO_schar_intel:
   stage: run_intel_with_libs
   dependencies:
-  - build_intel_with_rpn
+  - build_intel_with_libs
   when: always
   only:
   - dev
