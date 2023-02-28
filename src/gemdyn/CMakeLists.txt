@@ -69,3 +69,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/main/maingemgrid.in ${CMAKE_CURRE
 add_subdirectory(src/no_mpi gemdyn-no_mpi)
 add_subdirectory(src gemdyn)
 add_subdirectory(src/main gemdyn-main)
+
+ec_build_config()                 # Create build configuration script

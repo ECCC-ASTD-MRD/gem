@@ -66,3 +66,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.in ${CMAKE
 
 add_subdirectory(src/main modelutils-main)
 add_subdirectory(src modelutils)
+
+ec_build_config()                 # Create build configuration script

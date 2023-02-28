@@ -40,6 +40,24 @@ epilog0 = r"""Example:
     "a" "b" are given as positional args, the result will be
         positional=a:b
 
+    "--_no-exit_" can be added as first arg to return an error code instead
+    of exiting on errors. This is usefull to specify in a dotted/sourced
+    script where it would otherwise exit the shell.
+    The caller should then check "$?"
+
+    eval $(rpy.cclargparse \
+           --_no-exit_ \
+           -D ":" \
+           ". script.dot" \
+           "Script description" \
+           "Help Epilog message" \
+           "positional"   'nargs=2'        'default_pos'  '[description_pos]' \
+           "-v,--verbose" 'action=count'          '0'     '[description_v]' \
+           ++++ "$@")
+    if [[ $? -ne 0 ]] ; then return 1 ; fi
+    echo positional="$*"
+    echo verbose="$verbose"
+
     For more information on possible options that can be specified in
     the 2nd column, see python's argparse documentation at:
 
@@ -74,6 +92,10 @@ def parse_arg_desc():
 
     # Get first 3/4 lines before actual args (delimiter, name, desc, epilog)
     delimiter = ':'
+    noexit = False
+    if sys.argv[0] == '--_no-exit_':
+        noexit = True
+        sys.argv.pop(0)
     if sys.argv[0] == '-D':
         if len(sys.argv) < 5:
             abort("Need to specify '-D Delimiter Name Description Epilog'")
@@ -124,7 +146,7 @@ def parse_arg_desc():
 
         ## sys.stderr.write("Add: {} {}\n".format(str(nl), str(od)))
         parser.add_argument(*nl, **od)
-    return parser, options, delimiter
+    return parser, options, delimiter, noexit
 
 
 def parse_arg_desc0(n, o, d, h):
@@ -198,7 +220,7 @@ def parse_arg_desc0(n, o, d, h):
     return nl, od
 
 
-def parse_args(parser, options, delimiter):
+def parse_args(parser, options, delimiter, noexit):
     """
     """
     if len(sys.argv) == 0 or sys.argv[0] != '++++':
@@ -217,7 +239,10 @@ def parse_args(parser, options, delimiter):
             parser.print_help(sys.stderr)
         else:
             sys.stderr.write("\n"+" ".join(exc.args)+"\n")
-        sys.stdout.write("exit 1;")
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
         sys.exit(1)
     ## sys.stderr.write("2{}\n".format(sys.argv))
     ## sys.stderr.write("3{}\n".format(args))
@@ -226,13 +251,19 @@ def parse_args(parser, options, delimiter):
     # Special case for -h
     if args.help:
         parser.print_help(sys.stderr)
-        sys.stdout.write("exit 1;")
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
         sys.exit(1)
 
     # Special cases for unknown args
     if unknown and len(unknown):
         sys.stderr.write("ERROR: ("+parser.prog+") unrecognized arguments: "+" ".join(unknown)+"\n")
-        sys.stdout.write("exit 1;")
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
         sys.exit(1)
 
     sys.stdout.write("CCLARGS_OUT_KEYS='"+
@@ -259,10 +290,10 @@ def parse_args(parser, options, delimiter):
 
 if __name__ == "__main__":
     ## sys.stderr.write("0{}\n".format(sys.argv))
-    parser, options, delimiter = parse_arg_desc()
+    parser, options, delimiter, noexit = parse_arg_desc()
     ## sys.stderr.write("${}\n".format(sys.argv))
     ## sys.stderr.write("{}\n".format(parser))
     ## sys.stderr.write("{}\n".format(options))
     ## sys.stderr.write("{}\n".format(delimiter))
-    parse_args(parser, options, delimiter)
+    parse_args(parser, options, delimiter, noexit)
 
