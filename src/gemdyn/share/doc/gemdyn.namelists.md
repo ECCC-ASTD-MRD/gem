@@ -321,7 +321,7 @@
 
 | Name          | Description            |  Default Value | Type |
 | ------------- | ---------------------- | -------------- | ---- |
-| sol_fgm_eps | Epsilon convergence criteria for none Yin-Yang iterative solver | 1.d-07 | real(kind=REAL64) |
+| sol_fgm_eps | Relative tolerance for convergence of the elliptic iterative solver,<br>norm(residual) < tol*norm(b) | 1.d-07 | real(kind=REAL64) |
 | sol_fgm_maxits |  | 200 | integer |
 | sol_gauss_niter | 3D preconditioner for iterative solver | 2 | integer |
 | sol_im | size of Krylov subspace in iterative solver - should not exceed 100 | 15 | integer |
@@ -331,7 +331,7 @@
 | sol_ovlpy | 3D preconditioner for iterative solver | 4 | integer |
 | sol_precond3d_s | 3D preconditioner for iterative solver | 'RAS' | character(len=26) |
 | sol_type_s | Type of solver<br>- 'ITERATIF'<br>- 'DIRECT' | 'ITERATIVE_3D' | character(len=26) |
-| sol_yyg_eps | Epsilon convergence criteria for the Yin-Yang iterative solver | 1.d-04 | real(kind=REAL64) |
+| sol_yyg_eps | Absolute tolerance for convergence of the classical Schwarz algorithm<br>in Yin Yang configurations, norm(residual) < tol | 1.d-04 | real(kind=REAL64) |
 | sol_yyg_maxits | maximum number of iterations allowed for the Yin-Yang iterative solver | 40 | integer |
 
 

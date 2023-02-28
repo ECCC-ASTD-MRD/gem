@@ -24,11 +24,13 @@ module sol_options
    character(len=26) :: Sol_type_S = 'ITERATIVE_3D'
    namelist /sol  / Sol_type_S
 
-   !# Epsilon convergence criteria for none Yin-Yang iterative solver
+   !# Relative tolerance for convergence of the elliptic iterative solver, 
+   !# norm(residual) < tol*norm(b)
    real(kind=REAL64) :: Sol_fgm_eps   = 1.d-07
    namelist /sol  / Sol_fgm_eps
 
-   !# Epsilon convergence criteria for the Yin-Yang iterative solver
+   !# Absolute tolerance for convergence of the classical Schwarz algorithm 
+   !# in Yin Yang configurations, norm(residual) < tol
    real(kind=REAL64) :: Sol_yyg_eps   = 1.d-04
    namelist /sol  / Sol_yyg_eps
    namelist /sol_p/ Sol_yyg_eps
