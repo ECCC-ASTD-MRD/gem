@@ -33,3 +33,11 @@ work:
 
 package: 
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) package )
+
+clean:
+	. ./.initial_setup
+
+distclean:
+	. ./.clean_all
+
+

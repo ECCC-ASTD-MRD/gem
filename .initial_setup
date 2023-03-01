@@ -3,6 +3,8 @@
 # Source this file to:
 # - Create the build and work directories for the specific architecture and compiler versions
 #   according to the existence or not of the storage_model environment variable
+# If these directories already exist, they will be deleted, and recreated.
+# Additionally, a setup file is copied in the work directory as a shortcut.
 
 if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
     if [ -n "${storage_model}" ] ; then
