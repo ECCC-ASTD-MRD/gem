@@ -113,7 +113,9 @@ makelinks -f  -e ${NAME_exp}
 
 cd ${ici}
 #
-GRDTYP=$(fetchnml.sh grd_typ_s grid ${CONFIG}/gem_settings.nml)
+#GRDTYP=$(fetchnml.sh grd_typ_s grid ${CONFIG}/gem_settings.nml)
+#GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+GRDTYP=$(rpy.nml_get -u -f ${CONFIG}/gem_settings.nml -- grid/grd_typ_s)
 if [[ ${GRDTYP} == "GY" ]] ; then
   cpu_mult=2
 else

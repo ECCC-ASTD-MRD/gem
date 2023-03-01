@@ -88,10 +88,10 @@ _npe=$((npex*npey))
 
 ngrids=1
 for i in ${TASK_INPUT}/cfg_* ; do
-#   GRDTYP=$(rpy.nml_get -u -f ${i}/model_settings.nml -- grid/grd_typ_s 2>/dev/null)
-#   OPSCFG=$(rpy.nml_get -u -f ${i}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2>/dev/null)
-    GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
-    OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
+   GRDTYP=$(rpy.nml_get -u -f ${i}/model_settings.nml -- grid/grd_typ_s 2>/dev/null)
+   OPSCFG=$(rpy.nml_get -u -f ${i}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2>/dev/null)
+#  GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
+#  OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
    if [ -n "${GRDTYP}" ] ; then
       if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
    else

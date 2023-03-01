@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# ie: getnml.sh grd_nj grid gem_settings.nml
+# ie: fetchnml.sh grd_nj grid gem_settings.nml
+# pas encore fini
 string=`echo $1 | tr "[a-z]" "[A-Z]"`
 namelist=`echo $2 | tr "[a-z]" "[A-Z]"`
 
@@ -92,10 +93,10 @@ if (nml == 1 && key==0) {
         }
     }
 }
-END {
-if (nmlfound !=1) { printf("WARNING: Namelist ${namelist}  not found\n")}
-if (nmlfound ==1 && mykey ==0) { printf("WARNING: Key ${string} in namelist ${namelist} not found\n")}
-}
+#END {
+#if (nmlfound !=1) { printf("WARNING: Namelist ${namelist}  not found\n")}
+#if (nmlfound ==1 && mykey ==0) { printf("WARNING: Key ${string} in namelist ${namelist} not found\n")}
+#}
 
 func findkey(name,mystring)
 {
