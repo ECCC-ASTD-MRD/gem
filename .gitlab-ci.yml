@@ -4,7 +4,7 @@ variables:
   ORD_SOUMET_TMPFS: "10G"
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
-  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_STRATEGY: none
 
 stages:
   - build
@@ -24,6 +24,7 @@ build:gnu-9.3.0-mpich:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
+    - git submodule update --recursive --init
     - . ./.eccc_setup_gnu
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
@@ -42,6 +43,7 @@ build:gnu-12.1.0-openmpi:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
+    - git submodule update --recursive --init
     - . ./.eccc_setup_gnu_12
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
@@ -63,6 +65,7 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
+    - git submodule update --recursive --init
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
