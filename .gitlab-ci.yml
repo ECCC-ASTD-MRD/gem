@@ -95,11 +95,13 @@ package:rhel-8-icelake-64-intel-2022.1.2:
    only:
       - tags
       - dev
+      - feat_ops_publish
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2022.1.2
    script:
       - set +e
+      - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel
       - set -e
       - cd build_rhel-8-icelake-64-intel-2022.1.2
@@ -128,11 +130,13 @@ package:rhel-8-icelake-64-intel-2021.4.0:
    only:
       - tags
       - dev
+      - feat_ops_publish
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2021.4.0
    script:
       - set +e
+      - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel_2021.4.0
       - set -e
       - cd build_rhel-8-icelake-64-intel-2021.4.0
