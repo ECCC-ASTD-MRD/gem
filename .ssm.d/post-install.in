@@ -16,6 +16,7 @@ mkdir -p ${profileDirPath}
 cat > ${profilePath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
 export ${packageName%%_*}_SSM_DIR="$packageHome"
+export gemmod=\${GEM_SSM_DIR}/share/gem-maestro/gem_module
 export PATH="$packageHome/scripts:$packageHome/share/gem-maestro/gem_module/bin:\$PATH"
 export ATM_MODEL_VERSION=@GEM_VERSION@
 export ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
@@ -26,6 +27,7 @@ EOF
 cat > ${loginPath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
 setenv ${packageName%%_*}_SSM_DIR "$packageHome"
+setenv gemmod=\${GEM_SSM_DIR}/share/gem-maestro/gem_module
 setenv PATH="$packageHome/scripts:$packageHome/share/gem-maestro/gem_module/bin:\$PATH"
 setenv ATM_MODEL_VERSION @GEM_VERSION@
 setenv ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
