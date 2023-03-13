@@ -25,6 +25,6 @@ fi
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 export COMPILER_SUITE=intel
-export COMPILER_VERSION=2021.5.0
+export COMPILER_VERSION=2022.1.2
 
 . ./.common_setup ${COMPILER_SUITE}

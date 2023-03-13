@@ -8,15 +8,18 @@ variables:
 
 stages:
   - build
-  - run_intel_with_libs
+  - package
+  - deploy
+  - run_intel_icelake
   - run_gnu_9.3.0_mpich
   - run_gnu_12.1.0_openmpi
 
 before_script:
   - export CLICOLOR_FORCE=1
+   - source ~/ci-admin/env/init.sh
 
 # U2 GNU 9.3.0 with oneAPI
-build_gnu-9.3.0:
+build:gnu-9.3.0-mpich:
   stage: build
   script:
     - set +e
@@ -25,7 +28,7 @@ build_gnu-9.3.0:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc` work
+    - time make -j $NCPUS work
   artifacts:
     expire_in: 2 hrs
     paths:
@@ -33,7 +36,7 @@ build_gnu-9.3.0:
     - gem_dbase
 
 # U2 GNU 12.1.0 with OpenMPI
-build_gnu-12.1.0:
+build:gnu-12.1.0-openmpi:
   stage: build
   when: always
   script:
@@ -43,34 +46,18 @@ build_gnu-12.1.0:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc` work
+    - time make -j $NCPUS work
   allow_failure: true
   artifacts:
     expire_in: 2 hrs
     paths:
-    - work-rhel-8-amd64-64-gnu-12.1.0
+    - work-rhel-8-amd-64-gnu-12.1.0
     - gem_dbase
 
-# U2 Intel 2022
-build_intel_with_libs:
-  stage: build
-  when: always
-  script:
-    - set +e
-    - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_intel
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - make -j `nproc` work
-  artifacts:
-    expire_in: 2 hrs
-    paths:
-    - work-rhel-8-icelake-64-intel-2021.5.0
-    - gem_dbase
+#----- rhel-8-icelake-64-intel-2022.1.2
 
-# U2 Intel 2022
-build_intel_with_src:
+# U2 Intel 2022 with RPN-SI sources
+build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   stage: build
   when: always
   script:
@@ -80,19 +67,88 @@ build_intel_with_src:
     - . ./.initial_setup
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
     - make cmake-all
-    - make -j `nproc` work
+    - time make -j $NCPUS
   allow_failure: true
 
+# U2 Intel 2022 with installed RPN-SI libs
+# Used for testing configs and for SSM package
+build:rhel-8-icelake-64-intel-2022.1.2:
+  stage: build
+  when: always
+  script:
+    - set +e
+    - . ~/ci-env/latest/profile.sh
+    - . ./.eccc_setup_intel
+    - . ./.initial_setup
+    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
+    - make cmake
+    - time make -j $NCPUS work
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build_rhel-8-icelake-64-intel-2022.1.2
+    - work-rhel-8-icelake-64-intel-2022.1.2
+    - gem_dbase
+
+package:rhel-8-icelake-64-intel-2022.1.2:
+   stage: package
+   only:
+      - tags
+      - dev
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2022.1.2
+   script:
+      - set +e
+      - . ./.eccc_setup_intel
+      - set -e
+      - cd build_rhel-8-icelake-64-intel-2022.1.2
+      - make package
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+# U2 Intel 2021 with installed RPN-SI libs
+# Used for SSM package
+build:rhel-8-icelake-64-intel-2021.4.0:
+  stage: build
+  when: always
+  script:
+    - set +e
+    - . ~/ci-env/latest/profile.sh
+    - . ./.eccc_setup_intel_2021.4.0
+    - . ./.initial_setup
+    - make cmake
+    - time make -j $NCPUS
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+    - build_rhel-8-icelake-64-intel-2021.4.0
+
+package:rhel-8-icelake-64-intel-2021.4.0:
+   stage: package
+   only:
+      - tags
+      - dev
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2021.4.0
+   script:
+      - set +e
+      - . ./.eccc_setup_intel_2021.4.0
+      - set -e
+      - cd build_rhel-8-icelake-64-intel-2021.4.0
+      - make package
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
 5.2GEM_GY_FISL_H_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
   - 5.2_cmake
-  - feat_ops_publish
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -109,9 +165,9 @@ build_intel_with_src:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   allow_failure: true
   only:
@@ -133,9 +189,9 @@ CANO_W7cascP_intel:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -157,9 +213,9 @@ CANO_dcmip163r100_intel:
     - test "${_status}" == "ED"
 
 CANO_wil7_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -181,9 +237,9 @@ CANO_wil7_intel:
     - test "${_status}" == "ED"
 
 GEM_cfgs_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -205,9 +261,9 @@ GEM_cfgs_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -229,9 +285,9 @@ GEM_GY_FISL_P_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -253,9 +309,9 @@ GEM_GY_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -277,9 +333,9 @@ GEM_LU_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -301,9 +357,9 @@ GEM_LU_OFFC_intel:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -325,9 +381,9 @@ PTOPO_GYH_intel:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -349,9 +405,9 @@ PTOPO_LUP_intel:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -373,9 +429,9 @@ RSTRT_GYP_intel:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -393,9 +449,9 @@ THEO_bubbleG_intel:
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
-  stage: run_intel_with_libs
+  stage: run_intel_icelake
   dependencies:
-  - build_intel_with_libs
+  - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
@@ -415,7 +471,7 @@ THEO_schar_intel:
 5.2GEM_GY_FISL_H_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -440,7 +496,7 @@ THEO_schar_intel:
 CANO_W7cascP_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -465,7 +521,7 @@ CANO_W7cascP_gnu:
 CANO_dcmip163r100_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -490,7 +546,7 @@ CANO_dcmip163r100_gnu:
 CANO_wil7_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -515,7 +571,7 @@ CANO_wil7_gnu:
 GEM_cfgs_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -540,7 +596,7 @@ GEM_cfgs_gnu:
 GEM_GY_FISL_P_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -565,7 +621,7 @@ GEM_GY_FISL_P_gnu:
 GEM_GY_FISL_H_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -589,7 +645,7 @@ GEM_GY_FISL_H_gnu:
 GEM_LU_FISL_H_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -614,7 +670,7 @@ GEM_LU_FISL_H_gnu:
 GEM_LU_OFFC_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -639,7 +695,7 @@ GEM_LU_OFFC_gnu:
 PTOPO_GYH_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -664,7 +720,7 @@ PTOPO_GYH_gnu:
 PTOPO_LUP_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -689,7 +745,7 @@ PTOPO_LUP_gnu:
 RSTRT_GYP_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -714,7 +770,7 @@ RSTRT_GYP_gnu:
 THEO_bubbleG_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -735,7 +791,7 @@ THEO_bubbleG_gnu:
 THEO_schar_gnu:
   stage: run_gnu_9.3.0_mpich
   dependencies:
-  - build_gnu-9.3.0
+  - build:gnu-9.3.0-mpich
   when: always
   only:
   - dev
@@ -756,13 +812,12 @@ THEO_schar_gnu:
 5.2GEM_GY_FISL_H_gnu_12:
   stage: run_gnu_12.1.0_openmpi
   dependencies:
-  - build_gnu-12.1.0
+  - build:gnu-12.1.0-openmpi
   when: always
   only:
   - dev
   - tags
   - 5.2_cmake
-  - feat_ops_publish
   allow_failure: true
   script:
     - set +e
