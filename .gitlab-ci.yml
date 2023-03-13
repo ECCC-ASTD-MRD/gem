@@ -16,7 +16,7 @@ stages:
 
 before_script:
   - export CLICOLOR_FORCE=1
-   - source ~/ci-admin/env/init.sh
+  - source ~/ci-admin/env/init.sh
 
 # U2 GNU 9.3.0 with oneAPI
 build:gnu-9.3.0-mpich:
