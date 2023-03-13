@@ -86,7 +86,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   artifacts:
     expire_in: 2 hrs
     paths:
-    - build_rhel-8-icelake-64-intel-2022.1.2
+    - build-rhel-8-icelake-64-intel-2022.1.2
     - work-rhel-8-icelake-64-intel-2022.1.2
     - gem_dbase
 
@@ -104,7 +104,7 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel
       - set -e
-      - cd build_rhel-8-icelake-64-intel-2022.1.2
+      - cd build-rhel-8-icelake-64-intel-2022.1.2
       - make package
       - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
@@ -123,7 +123,7 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   artifacts:
     expire_in: 2 hrs
     paths:
-    - build_rhel-8-icelake-64-intel-2021.4.0
+    - build-rhel-8-icelake-64-intel-2021.4.0
 
 package:rhel-8-icelake-64-intel-2021.4.0:
    stage: package
@@ -139,9 +139,19 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel_2021.4.0
       - set -e
-      - cd build_rhel-8-icelake-64-intel-2021.4.0
+      - cd build-rhel-8-icelake-64-intel-2021.4.0
       - make package
       - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+deploy:staging:
+   stage: deploy
+   only:
+      - tags
+      - dev
+      - feat_ops_publish
+      - schedules
+   script:
+      - ~/ci-admin-bundle/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
 
 #----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
 5.2GEM_GY_FISL_H_intel:
