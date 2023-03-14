@@ -31,7 +31,7 @@ build:gnu-9.3.0-mpich:
     - make cmake-all
     - time make -j $NCPUS work
   artifacts:
-    expire_in: 2 hrs
+    expire_in: 4 hrs
     paths:
     - work-rhel-8-amd64-64-gnu-9.3.0
     - gem_dbase
@@ -51,7 +51,7 @@ build:gnu-12.1.0-openmpi:
     - time make -j $NCPUS work
   allow_failure: true
   artifacts:
-    expire_in: 2 hrs
+    expire_in: 4 hrs
     paths:
     - work-rhel-8-amd-64-gnu-12.1.0
     - gem_dbase
@@ -87,7 +87,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - make cmake
     - time make -j $NCPUS work
   artifacts:
-    expire_in: 2 hrs
+    expire_in: 4 hrs
     paths:
     - build-rhel-8-icelake-64-intel-2022.1.2
     - work-rhel-8-icelake-64-intel-2022.1.2
@@ -107,9 +107,9 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel
       - set -e
-      - cd build-rhel-8-icelake-64-intel-2022.1.2
       - make package
-      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+      - cd build-rhel-8-icelake-64-intel-2022.1.2
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
 # U2 Intel 2021 with installed RPN-SI libs
 # Used for SSM package
@@ -124,7 +124,7 @@ build:rhel-8-icelake-64-intel-2021.4.0:
     - make cmake
     - time make -j $NCPUS
   artifacts:
-    expire_in: 2 hrs
+    expire_in: 4 hrs
     paths:
     - build-rhel-8-icelake-64-intel-2021.4.0
 
@@ -142,8 +142,164 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - . ~/ci-env/latest/profile.sh
       - . ./.eccc_setup_intel_2021.4.0
       - set -e
-      - cd build-rhel-8-icelake-64-intel-2021.4.0
       - make package
+      - cd build-rhel-8-icelake-64-intel-2021.4.0
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- ubuntu-18.04-amd64_inteloneapi-2021.4.0
+build:ubuntu-18.04-amd64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "40"
+   stage: build
+   only:
+     - master
+     - dev
+     - tags
+     - feat_ops_publish
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel_2021.4.0
+      - . ./.initial_setup
+      - set -e
+      - make cmake
+      - time make -j $NCPUS
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+         - build-ubuntu-18.04-amd64-64-intel-2021.4.0
+
+package:ubuntu-18.04-amd64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+   stage: package
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+      - feat_ops_publish
+   dependencies:
+      - build:ubuntu-18.04-amd64-intel-2021.4.0
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel_2021.4.0
+      - set -e
+      - make package
+      - cd build-ubuntu-18.04-amd64-64-intel-2021.4.0
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- ubuntu-18.04-amd64_inteloneapi-2022.1.2
+build:ubuntu-18.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "40"
+   stage: build
+   only:
+     - master
+     - dev
+     - tags
+     - feat_ops_publish
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel
+      - . ./.initial_setup
+      - set -e
+      - make cmake
+      - time make -j $NCPUS
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+         - build-ubuntu-18.04-amd64-64-intel-2022.1.2
+
+package:ubuntu-18.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+   stage: package
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+      - feat_ops_publish
+   dependencies:
+      - build:ubuntu-18.04-amd64-intel-2022.1.2
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel
+      - set -e
+      - make package
+      - cd build-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
+build:ubuntu-22.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "40"
+   stage: build
+   only:
+     - master
+     - dev
+     - tags
+     - feat_ops_publish
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel
+      - . ./.initial_setup
+      - set -e
+      - make cmake
+      - time make -j $NCPUS
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+         - build-ubuntu-22.04-amd64-64-intel-2022.1.2
+
+package:ubuntu-22.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+   stage: package
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+      - feat_ops_publish
+   dependencies:
+      - build:ubuntu-22.04-amd64-intel-2022.1.2
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - . ./.eccc_setup_intel
+      - set -e
+      - make package
+      - cd build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
 deploy:staging:
@@ -154,7 +310,7 @@ deploy:staging:
       - feat_ops_publish
       - schedules
    script:
-      - ~/ci-admin-bundle/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
+      - ~/ci-admin/bin/ci-stage-ssm.sh gem GEM "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
 
 #----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
 5.2GEM_GY_FISL_H_intel:
