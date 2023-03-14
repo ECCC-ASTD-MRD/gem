@@ -59,7 +59,7 @@ runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 
 # structure of the working environment
 The following environment variables are created (examples):
-- GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
+- GEM_STORAGE_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
 - GEM_GIT_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
 - GEM_WORK=work-ubuntu-18.04-amd64-64-intel-19.0.3.199
 - GEM_ARCH=ubuntu-18.04-amd64-64-intel-19.0.3.199
@@ -69,12 +69,12 @@ The following environment variables are created (examples):
 The structure of the build and work directories is different whether the $storage_model environment variable exists:
 
 - Example if $storage_model exists:
-  - GEM_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
+  - GEM_STORAGE_DIR=/users/dor/armn/cpi/local/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199
   - in GEM_GIT_DIR:
     . build-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/build
     . work-ubuntu-18.04-amd64-64-intel-19.0.3.199 -> /local/drive1/armn/armncpi/storage/goas/gem-devel_ubuntu-18.04-amd64-64-intel-19.0.3.199/work
 
 - Example if $storage_model doesn't exist:
-  - GEM_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
+  - GEM_STORAGE_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
   - build-ubuntu-18.04-amd64-64-intel-19.0.3.199
   - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
