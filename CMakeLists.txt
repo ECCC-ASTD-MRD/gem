@@ -147,7 +147,7 @@ install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
 add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
-    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
+    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/share/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
   )
 

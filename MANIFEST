@@ -1,4 +1,4 @@
-NAME       : GEM
+NAME       : gem
 VERSION    : 5.2.0-b2
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
