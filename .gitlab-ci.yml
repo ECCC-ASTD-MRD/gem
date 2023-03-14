@@ -94,6 +94,11 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - gem_dbase
 
 package:rhel-8-icelake-64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
    stage: package
    only:
       - tags
@@ -129,6 +134,11 @@ build:rhel-8-icelake-64-intel-2021.4.0:
     - build-rhel-8-icelake-64-intel-2021.4.0
 
 package:rhel-8-icelake-64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
    stage: package
    only:
       - tags
@@ -178,6 +188,9 @@ package:ubuntu-18.04-amd64-intel-2021.4.0:
       ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
    stage: package
    only:
       - master
@@ -230,6 +243,9 @@ package:ubuntu-18.04-amd64-intel-2022.1.2:
       ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
    stage: package
    only:
       - master
@@ -279,9 +295,12 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
       ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-22.04-amd64_latest
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
    stage: package
    only:
       - master
