@@ -6,13 +6,13 @@
 # If these directories already exist, they will be deleted, and recreated.
 # Additionally, a setup file is copied in the work directory as a shortcut.
 
-if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
+if [ -n "${GEM_STORAGE_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
     if [ -n "${storage_model}" ] ; then
-        /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
-        mkdir -p ${GEM_DIR}/work
-        mkdir -p ${GEM_DIR}/build
-        ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
-        ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
+        /bin/rm -rf ${GEM_STORAGE_DIR} build-${GEM_ARCH} ${GEM_WORK}
+        mkdir -p ${GEM_STORAGE_DIR}/work
+        mkdir -p ${GEM_STORAGE_DIR}/build
+        ln -sf ${GEM_STORAGE_DIR}/build ${PWD}/build-${GEM_ARCH}
+        ln -sf ${GEM_STORAGE_DIR}/work ${PWD}/${GEM_WORK}
     else
         /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
         mkdir -p build-${GEM_ARCH} ${GEM_WORK}
