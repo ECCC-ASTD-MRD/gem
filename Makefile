@@ -36,7 +36,7 @@ package:
 
 # make clean in build directory, to remove compiler and linker generated files
 buildclean:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && VERBOSE=1 $(MAKE) clean )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) clean )
 
 # Delete and recreate build and work directories, to start from a clean plate
 clean:
