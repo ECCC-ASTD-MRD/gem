@@ -6,27 +6,29 @@ Use create_maestro to create your suite.
 
 Example:
 
-create_maestro -location [mysuite_name] -cfg $GEM_SSM_DIR/share/configurations/GEM_cfgs
+create_maestro -location [mysuite_name] -cfg $gem_DIR/share/configurations/GEM_cfgs
 
-(default configuration is $GEM_SSM_DIR/share/configurations/GEM_cfgs)
+(default configuration is $gem_DIR/share/configurations/GEM_cfgs)
 
 -----------------------
 
 For those who have uploaded GEM via the GoaS method to use your own binaries,
 scripts, etc.:
 
-You must be in your $GEM_GIT_DIR/work-* directory to use the script "create_maestro"
+You must be in your $gem_DIR/work-* directory to use the script "create_maestro"
+In your $gem_DIR/work-* directory, you will see a link for the 
+configurations to $gem_DIR/share/configurations
 
 Here are 3 examples in creating maestro suites
 a) create_maestro (uses GEM_cfgs configuration)
    creates maestro suite in
-   $HOME/.suites/goas/$GEM_version/${GEM_GIT_DIR}/GEM_cfgs_work-*
+   $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_work-*
 b) create_maestro -exp [configurations/GEM_cfgs_GY_FISL_H] for example
    creates maestro suite in
-   $HOME/.suites/goas/$GEM_version/${GEM_GIT_DIR}/GEM_cfgs_GY_FISL_H_work-*
+   $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_GY_FISL_H_work-*
 c) create_maestro -location TATA
    creates maestro suite using GEM_cfgs in
    $HOME/.suites/TATA
 
-A link for each suite is made under ${GEM_GIT_DIR}/work-*/suites/[name_of_suite]
+A link for each suite is made under ${gem_DIR}/work-*/suites/[name_of_suite]
 for each maestro suite created.
