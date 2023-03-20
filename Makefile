@@ -9,19 +9,19 @@ MAKEFLAGS += --no-print-directory
 
 # Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack)
 cmake:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${gem_DIR} )
 
 # Compiling everything: you need to update rpn-si libraries (rmn, vgrid, rpncomm, tdpack) submodules to do this
 cmake-all:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${gem_DIR} )
 
 # with CMAKE_BUILD_TYPE=Debug
 cmake-debug:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_SYSTEM_RPN=TRUE $${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_SYSTEM_RPN=TRUE ${gem_DIR} )
 
 # Extra debug (see extra checks defined in cmake_rpn compiler presets and in CMakeLists.txt)
 cmake-debug-extra:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_SYSTEM_RPN=TRUE -DEXTRA_CHECKS=ON ${GEM_GIT_DIR} )
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_SYSTEM_RPN=TRUE -DEXTRA_CHECKS=ON ${gem_DIR} )
 
 .PHONY: build
 build:

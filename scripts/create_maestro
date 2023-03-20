@@ -8,13 +8,13 @@
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 # GEM SSM package environment (ignores -exp)
-# ie: create_maestro -location [mysuite_name] -cfg $GEM_SSM_DIR/share/configurations/GEM_cfgs
+# ie: create_maestro -location [mysuite_name] -cfg $gem_DIR/share/configurations/GEM_cfgs
 #  - suite created at $HOME/.suites/[mysuite_name]
 #
 arguments=$*
 eval `cclargs_lite $0 \
   -exp      "$PWD"  "$PWD"  "[]" \
-  -cfg      "" "" "[[ [\\$GEM_GIT_DIR]:[\\$GEM_SSM_DIR/share]/configurations/GEM_cfgs ]]" \
+  -cfg      "" "" "[\\$gem_DIR/share]/configurations/GEM_cfgs ]" \
   -xfer     ""      ""      "[]" \
   -module   ""      ""      "[]" \
   -location ""      ""      "[[ $HOME/.suites/[location] ]]" \
@@ -24,11 +24,11 @@ eval `cclargs_lite $0 \
   -nosubmit "0"     "1"     "[]" \
   ++ $arguments`
 
-if [[ -z "${GEM_GIT_DIR}" ]] ; then
+if [[ -z "${GEM_STORAGE_DIR}" ]] ; then
    #SSM package mode
    echo "not GEM GIT mode"
    ici=${PWD}
-   GEM_INSTALL=${GEM_SSM_DIR}
+   GEM_INSTALL=${gem_DIR}
    NAME_exp=${location}
    if [[ -z "${location}" ]] ; then
         printf "\n    Missing experiment name for Maestro suite\n"
@@ -36,21 +36,19 @@ if [[ -z "${GEM_GIT_DIR}" ]] ; then
         printf "\n  will create: $HOME/.suites/TOTO \n\n"
       exit 1
    fi
-   cfg=${cfg:-${GEM_SSM_DIR}/share/configurations/GEM_cfgs}
+   cfg=${cfg:-${gem_DIR}/share/configurations/GEM_cfgs}
    GEM_OVBIN=${GEM_INSTALL}/bin
    GEM_BIN_version=${ATM_MODEL_VERSION}
-   REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO
-   module=${module:-${GEM_INSTALL}/share/gem-maestro/gem_module}
 
 else
-   #working GEM_GIT_DIR mode
+   #Cloned depot mode
    echo "In GEM GIT mode"
    cd ${exp}
    ici=${exp}
    GEM_INSTALL=$(dirname $PWD)
    if [ ! -s .eccc_setup ] ; then
       printf "\n Experiment directory ${exp} is NOT your work directory \n\n"
-      printf "\n -exp should be in $GEM_GIT_DIR/work* - exiting\n\n"
+      printf "\n -exp should be in $gem_DIR/work* - exiting\n\n"
       exit 1
    fi
    if [ -z "${ATM_MODEL_VERSION}" ] ; then
@@ -58,15 +56,15 @@ else
    fi
    expgem=$(basename ${GEM_INSTALL})
    mach=$(basename $PWD)
-   cfg=${cfg:-${PWD}/configurations/GEM_cfgs}
+   cfg=${cfg:-${gem_DIR}/share/configurations/GEM_cfgs}
    expM=$(basename $cfg)
    NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
    GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
    GEM_BIN_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
-   REF=${GEM_INSTALL}/gem-maestro/GEM_RI_MAESTRO
-   module=${module:-${GEM_INSTALL}/gem-maestro/gem_module}
 fi
 
+REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO
+module=${module:-${GEM_INSTALL}/share/gem-maestro/gem_module}
 XFER="\${TRUE_HOST}:\${SEQ_EXP_HOME}/hub/\${TRUE_HOST}/gridpt/prog/gem"
 XFER=${xfer:-${XFER}}
 suite_name=${HOME}/.suites/${NAME_exp}
@@ -82,7 +80,8 @@ fi
 
 mkdir -p $suite_name
 
-if [[ -e "${GEM_GIT_DIR}" ]] ; then
+if [[ -e "${GEM_STORAGE_DIR}" ]] ; then
+#in GIT mode
    mkdir -p suites
    if [ -z "${location}" ] ; then
      /bin/rm -f suites/${expM}_${mach}
@@ -101,9 +100,9 @@ if [ -z "${CONFIG}" ] ; then
    exit
 fi
 
-#Obtain default physcis_input_table path
-    default_phytab=${GEM_GIT_DIR:+${GEM_GIT_DIR}/src/rpnphy/include}
-    default_phytab=${default_phytab:-${GEM_SSM_DIR}/share/rpnphy}
+#Obtain default physics_input_table path
+    default_phytab=${GEM_STORAGE_DIR:+${gem_DIR}/src/rpnphy/include}
+    default_phytab=${default_phytab:-${gem_DIR}/share/rpnphy}
     PHYTABLE=${default_phytab}/physics_input_table
 
 cd $suite_name
@@ -137,8 +136,10 @@ GEM_version=${GEM_BIN_version}
 EOF
 if [ -f ${CONFIG}/physics_input_table ] ; then
    echo "GEM_phy_intable=${CONFIG}/physics_input_table" >> ${suite_name}/experiment.cfg
+   printf  "\n physics_input_table is taken from ${CONFIG}/physics_input_table\n"
 else
    echo "#GEM_phy_intable=${PHYTABLE}" >> ${suite_name}/experiment.cfg
+   printf  "\n default physics_input_table will be used\n"
 fi
 
 set -ex
@@ -149,4 +150,9 @@ fi
 set +ex
 printf "\n  Configuration file used is ${cfg} \n\n"
 printf  "\n Added experiment.cfg in $suite_name for maestro \n"
+if [ -f ${CONFIG}/physics_input_table ] ; then
+   printf  "\n Using physics_input_table from ${CONFIG}/physics_input_table\n"
+else
+   printf  "\n Using default physics_input_table\n"
+fi
 printf  "\n  Directory $suite_name is now available\n\n"

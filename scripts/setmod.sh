@@ -137,8 +137,9 @@ while [ $domain_number -le $DOMAIN_end ] ; do
   if [ -e ${dircfg}/${dname}/physics_input_table ] ; then
     PHYTABLE=${dircfg}/${dname}/physics_input_table
   else
-    default_phytab=${GEM_GIT_DIR:+${GEM_GIT_DIR}/src/rpnphy/include}
-    default_phytab=${default_phytab:-${GEM_SSM_DIR}/share/rpnphy}
+#   default_phytab=${gem_DIR:+${gem_DIR}/src/rpnphy/include}
+    default_phytab=${GEM_STORAGE_DIR:+${gem_DIR}/src/rpnphy/include}
+    default_phytab=${default_phytab:-${gem_DIR}/share/rpnphy}
     PHYTABLE=${default_phytab}/physics_input_table
   fi
   tskcfg -rep2cfg ${dname} -gem_cfgfile $CFGFILE  \

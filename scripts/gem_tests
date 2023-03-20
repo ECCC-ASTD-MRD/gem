@@ -17,7 +17,7 @@ else
 fi
 
 if [ $GOAS -gt 0 ] ; then
-   if [ -z "${GEM_GIT_DIR}" ] ; then
+   if [ -z "${gem_DIR}" ] ; then
       printf  "\n  GOAS-GEM environment NOT initialized - dot file .eccc_setup - Abort\n\n"
    fi
 else
@@ -41,8 +41,8 @@ ici=${PWD}
 REP_gemtest=TESTS_GEM
 
 if [ $GOAS -gt 0 ] ; then
-   SRC_TESTS=${GEM_GIT_DIR}/configurations
-   GT_scripts=${GEM_GIT_DIR}/scripts
+   SRC_TESTS=${gem_DIR}/share/configurations
+   GT_scripts=${gem_DIR}/scripts
    mkdir -p ${REP_gemtest}
    cd ${REP_gemtest}
    ln -sf ${ici}/bin .
