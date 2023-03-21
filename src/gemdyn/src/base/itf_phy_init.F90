@@ -15,7 +15,6 @@
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
-      use app, only: Lib_LogLevelNo,APP_LIBVGRID,APP_ERROR
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,vgd_free,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use VERgrid_options, only: VGRID_M_S, VGRID_T_S
@@ -101,7 +100,6 @@
       ! Continue only if the physics is being run
       if (.not.Ctrl_phyms_L) return
 
-      iverb = Lib_LogLevelNo(APP_LIBVGRID,APP_ERROR)
       if (Lun_out > 0) write(Lun_out,1000)
 
 ! Collect the list of potentialy requested output physics vars
