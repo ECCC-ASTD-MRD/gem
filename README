@@ -9,17 +9,17 @@ instructions below.
 # choose one of the following methods
 
 # 1. cloning only the necessary components:
-git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
-cd gem-devel
+git clone git@gitlab.science.gc.ca:MIG/gem.git
+cd gem
 
 # 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
 # (necessary, for now, to compile with gnu)
-git clone --recursive git@gitlab.science.gc.ca:cpi001/gem-devel.git
-cd gem-devel
+git clone --recursive git@gitlab.science.gc.ca:MIG/gem.git
+cd gem
 
 # 3. or cloning in several steps
-git clone git@gitlab.science.gc.ca:cpi001/gem-devel.git
-cd gem-devel
+git clone git@gitlab.science.gc.ca:MIG/gem.git
+cd gem
 # Update rpn-si libraries and cmake_rpn submodules
 git submodule update --init --recursive
 
@@ -30,7 +30,7 @@ git checkout name_of_the_branch # checkout a branch
 # if you want, create your own branch
 git checkout -b mybranch
 
-# preparing gem-devel compilation
+# preparing gem compilation
 ./scripts/link-dbase.sh
 
 . ./.eccc_setup_intel
@@ -63,24 +63,27 @@ runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 
 # structure of the working environment
-The following environment variables are created (examples):
-- GEM_STORAGE_DIR=/users/dor/armn/cpi/local/gem/ubuntu-18.04-amd64-64-intel-2022.1.2
-- gem_DIR=/users/dor/armn/cpi/ords/gem
-- GEM_WORK=work-ubuntu-18.04-amd64-64-intel-2022.1.2
-- GEM_ARCH=ubuntu-18.04-amd64-64-intel-2022.1.2
-- COMPILER_SUITE=intel
-- COMPILER_VERSION=2022.1.2
-
 The structure of the build and work directories is different whether the
 $storage_model environment variable exists:
 
-- Example if $storage_model exists:
-  - GEM_STORAGE_DIR=/users/dor/armn/cpi/local/gem/ubuntu-18.04-amd64-64-intel-2022.1.2
-  - in gem_DIR:
-    . build-ubuntu-18.04-amd64-64-intel-2022.1.2 ->  /local/drive1/armn/armncpi/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
-    . work-ubuntu-18.04-amd64-64-intel-2022.1.2 -> /local/drive1/armn/armncpi/storage/gem/ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+The following environment variables are created (examples):
+- gem_DIR = directory where the git clone was created
+- GEM_WORK = work directory
+- GEM_ARCH = architecture, for example ubuntu-18.04-amd64-64-intel-2022.1.2
+- COMPILER_SUITE = compiler suite, for example Intel
+- COMPILER_VERSION = compiler version, for example 2022.1.2
 
-- Example if $storage_model doesn't exist:
-  - GEM_STORAGE_DIR=/users/dor/armn/cpi/ords/gem/gem-devel
-  - build-ubuntu-18.04-amd64-64-intel-2022.1.2
-  - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+- GEM_STORAGE_DIR = where build and work directories are situated
+  - Example if $storage_model variable exists:
+    - GEM_STORAGE_DIR=/local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2
+    - in gem_DIR:
+      - build-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
+      - work-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+
+  - Example if $storage_model variable doesn't exist:
+    - GEM_STORAGE_DIR=$HOME/gem/
+    - directories situated in gem_DIR:
+      - build-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
