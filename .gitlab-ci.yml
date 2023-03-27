@@ -8,11 +8,11 @@ variables:
 
 stages:
   - build
-  - package
-  - deploy
   - run_intel_icelake
   - run_gnu_9.3.0_mpich
   - run_gnu_12.1.0_openmpi
+  - package
+  - deploy
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -122,7 +122,6 @@ package:rhel-8-icelake-64-intel-2022.1.2:
    only:
       - tags
       - dev
-      - feat_ops_publish
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2022.1.2
@@ -144,6 +143,10 @@ build:rhel-8-icelake-64-intel-2021.4.0:
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  only:
+  - tags
+  - dev
+  - schedules
   when: always
   script:
     - set +e
@@ -167,7 +170,6 @@ package:rhel-8-icelake-64-intel-2021.4.0:
    only:
       - tags
       - dev
-      - feat_ops_publish
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2021.4.0
@@ -195,7 +197,6 @@ build:ubuntu-18.04-amd64-intel-2021.4.0:
      - master
      - dev
      - tags
-     - feat_ops_publish
    script:
       - set +e
       - . ~/ci-env/latest/profile.sh
@@ -225,7 +226,6 @@ package:ubuntu-18.04-amd64-intel-2021.4.0:
       - dev
       - tags
       - schedules
-      - feat_ops_publish
    dependencies:
       - build:ubuntu-18.04-amd64-intel-2021.4.0
    environment:
@@ -255,7 +255,6 @@ build:ubuntu-18.04-amd64-intel-2022.1.2:
      - master
      - dev
      - tags
-     - feat_ops_publish
    script:
       - set +e
       - . ~/ci-env/latest/profile.sh
@@ -285,7 +284,6 @@ package:ubuntu-18.04-amd64-intel-2022.1.2:
       - dev
       - tags
       - schedules
-      - feat_ops_publish
    dependencies:
       - build:ubuntu-18.04-amd64-intel-2022.1.2
    environment:
@@ -315,7 +313,6 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
      - master
      - dev
      - tags
-     - feat_ops_publish
    script:
       - set +e
       - . ~/ci-env/latest/profile.sh
@@ -345,7 +342,6 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - dev
       - tags
       - schedules
-      - feat_ops_publish
    dependencies:
       - build:ubuntu-22.04-amd64-intel-2022.1.2
    environment:
@@ -365,7 +361,6 @@ deploy:staging:
    only:
       - tags
       - dev
-      - feat_ops_publish
       - schedules
    script:
       - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
