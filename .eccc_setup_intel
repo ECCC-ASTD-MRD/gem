@@ -10,11 +10,11 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/gpscc2/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gpscc2/inteloneapi-2022.1.2
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/inteloneapi-2022.1.2
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/ECCC/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/ECCC/inteloneapi-2022.1.2
 fi
 
 # Load latest version of RPN-SI libraries and utilities

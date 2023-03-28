@@ -10,11 +10,11 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/gpscc2/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gpscc2/gnu-9.3.0
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/SCIENCE/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gnu-9.3.0
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.1/ECCC/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/ECCC/gnu-9.3.0
 fi
 
 # Load latest version of RPN-SI libraries
