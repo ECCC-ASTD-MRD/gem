@@ -78,7 +78,7 @@ contains
       real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw
       real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
       real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
-           zwdifv, zqcdifv
+           zwdifv, zqcdifv, ztmoins, zqmoins, ztve
 
       ! External symbols
       integer, external :: pbl_simple
@@ -87,8 +87,10 @@ contains
       call init2nan(l_en0,l_pw0)
 
       ! Pointers to busdyn
+      MKPTR2D(zqmoins, humoins, dbus)
       MKPTR2D(zqplus, huplus, dbus)
       MKPTR2D(zsigt, sigt, dbus)
+      MKPTR2D(ztmoins, tmoins, dbus)
       MKPTR2D(ztplus, tplus, dbus)
       MKPTR2D(zumoins, umoins, dbus)
       MKPTR2D(zuplus, uplus, dbus)
@@ -116,6 +118,7 @@ contains
       MKPTR2D(zgztherm, gztherm, vbus)
       MKPTR2D(zqcdifv, qcdifv, vbus)
       MKPTR2D(zqdifv, qdifv, vbus)
+      MKPTR2D(ztve, tve, vbus)      
       MKPTR2D(ztdifv, tdifv, vbus)
       MKPTR2D(zudifv, udifv, vbus)
       MKPTR2D(zvdifv, vdifv, vbus)
@@ -128,6 +131,9 @@ contains
       zero = 0.
       rcdt1 = 1./cdt1
       nkm1 = nk-1
+      
+      ! Compute thermodynamic quantities on energy levels
+      call mfotvt(ztve, ztmoins, zqmoins, ni, nkm1, ni)
 
       ! Turbulence closures used to compute diffusion coefficients
       if (any(fluvert == (/ &
