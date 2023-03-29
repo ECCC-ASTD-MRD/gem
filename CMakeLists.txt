@@ -66,7 +66,10 @@ if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_I
   find_package(BLAS)
 endif()
 
-set(FFTW_USE_STATIC_LIBS TRUE)
+if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel")
+  set(FFTW_USE_STATIC_LIBS TRUE)
+endif()  
+
 find_package(FFTW REQUIRED)
 if (WITH_OPENMP)
    set(FFTW FFTW::FloatOpenMP)
