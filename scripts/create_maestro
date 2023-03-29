@@ -97,7 +97,7 @@ cp -r ${REF}/* $suite_name
 CONFIG=$(true_path ${cfg}/cfg_0000 2> /dev/null || true)
 if [ -z "${CONFIG}" ] ; then
    printf  "\n  Invalid config directory ${cfg} - ABORT\n\n"
-   exit
+   exit 1
 fi
 
 #Obtain default physics_input_table path
