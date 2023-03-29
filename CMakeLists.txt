@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 #----- Append EC specific module path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn/modules $ENV{EC_CMAKE_MODULE_PATH})
@@ -64,6 +64,14 @@ endif()
 if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
   find_package(LAPACK)
   find_package(BLAS)
+endif()
+
+set(FFTW_USE_STATIC_LIBS TRUE)
+find_package(FFTW REQUIRED)
+if (WITH_OPENMP)
+   set(FFTW FFTW::FloatOpenMP)
+else()
+   set(FFTW FFTW::Float)
 endif()
 
 # Printing flags

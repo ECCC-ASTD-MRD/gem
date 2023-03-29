@@ -6,10 +6,6 @@ if (MPI_FOUND)
    set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 endif()
 
-if (WITH_OPENMP)
-   set(ompfftw "-lfftw3_omp")
-endif()
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.in ${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.F90)
 
 add_executable(maingemdm maingemdm.F90)
@@ -26,8 +22,8 @@ target_link_libraries(maingemdm
    tdpack
    rpncomm
    rmn
-   ${ompfftw}
-   fftw3
+   ${FFTW}
+   ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
