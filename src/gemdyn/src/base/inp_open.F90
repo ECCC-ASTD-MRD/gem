@@ -111,11 +111,11 @@
       else
          if (Inp_src_PX_L) then
             Inp_kind = PX3d%kind
-            if (Lun_out > 0)write(lun_out,9000) 'SRC_VERT3DPX: kind= ',&
+            if (Lun_out > 0)write(lun_out,9100) 'SRC_VERT3DPX: kind= ',&
                                                 Inp_kind
          else if (Inp_src_GZ_L) then
             Inp_kind = GZ3d%kind
-            if (Lun_out > 0)write(lun_out,9000) 'SRC_VERT3DGZ: kind= ',&
+            if (Lun_out > 0)write(lun_out,9100) 'SRC_VERT3DGZ: kind= ',&
                                                  Inp_kind
          else
             call gem_error ( -1, 'inp_open', &
@@ -123,7 +123,9 @@
          endif
       end if
  9000 format(' Input vertical description obtained with vgd_get: '/&
-             ' Inp_kind, Inp_version= ',i5,',',i5)
+            ' Inp_kind, Inp_version= ',i5,',',i5)
+ 9100  format(' Input vertical description obtained with ',a,': '/&
+            ' Inp_kind= ',i5)
 
       Inp_src_hauteur_L = (Inp_kind == 21) .or. Inp_src_GZ_L
       
