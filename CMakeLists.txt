@@ -72,9 +72,9 @@ endif()
 
 find_package(FFTW REQUIRED)
 if (WITH_OPENMP)
-   set(FFTW FFTW::FloatOpenMP)
+   set(FFTW FFTW::DoubleOpenMP)
 else()
-   set(FFTW FFTW::Float)
+   set(FFTW FFTW::Double)
 endif()
 
 # Printing flags

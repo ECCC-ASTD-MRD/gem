@@ -27,6 +27,7 @@ target_link_libraries(maingemdm
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
+
 add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
 
 install(TARGETS maingemdm RUNTIME DESTINATION bin)
