@@ -46,7 +46,7 @@ option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunne
 if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -qopenmp-link=static -static_mpi -static-libgcc -static-intel -diag-disable 5268")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268")
     set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl")
   else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
