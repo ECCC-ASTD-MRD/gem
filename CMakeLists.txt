@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 #----- Append EC specific module path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_rpn/modules $ENV{EC_CMAKE_MODULE_PATH})
@@ -64,6 +64,17 @@ endif()
 if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
   find_package(LAPACK)
   find_package(BLAS)
+endif()
+
+if((DEFINED ENV{EC_ARCH}) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel"))
+  set(FFTW_USE_STATIC_LIBS TRUE)
+endif()  
+
+find_package(FFTW REQUIRED)
+if (WITH_OPENMP)
+   set(FFTW FFTW::DoubleOpenMP)
+else()
+   set(FFTW FFTW::Double)
 endif()
 
 # Printing flags
@@ -132,9 +143,9 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-list(APPEND BINARIES maingemdm cclargs_lite r.fstinfo r.filetype)
-if (NOT DEFINED ENV{EC_ARCH})
-  list(APPEND BINARIES editfst fstcomp fststat pgsm voir )
+list(APPEND BINARIES maingemdm)
+if ((NOT DEFINED ENV{EC_ARCH} ) OR ( NOT ( (WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))))
+  list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
 if ("${phy_SRC}" STREQUAL "rpnphy" )
@@ -147,10 +158,32 @@ install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
 add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
-    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/configurations ${WORK_PREFIX}
+    COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/share/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
   )
 
+#----- Generate the config file for the project to be usable via cmake's find_package command
+set(INCLUDE_INSTALL_DIR include)
+set(LIB_INSTALL_DIR     lib)
+set(CONFIG_INSTALL_DIR  "${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}")
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    "Config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
+    PATH_VARS           INCLUDE_INSTALL_DIR LIB_INSTALL_DIR
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    COMPATIBILITY SameMajorVersion
+)
+install(FILES   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION "${CONFIG_INSTALL_DIR}"
+)
+
+#----- Packaging
 ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files

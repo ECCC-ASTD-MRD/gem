@@ -18,6 +18,7 @@
       subroutine init_component()
       use iso_c_binding
       use clib_itf_mod
+      use app!, only: Lib_LogLevelNo,APP_LIBVGRID,APP_ERROR
       use dcst
       use glb_ld
       use domains
@@ -27,6 +28,7 @@
       use step_options
       use tdpack
       use numa
+      use wb_itf_mod
       use omp_timing
       use version
       implicit none
@@ -87,6 +89,10 @@
       else
          if (Domains_ngrids == 2) Grd_yinyang_L = .true.
       endif
+
+      ierr = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
+                       WB_REWRITE_NONE+WB_IS_LOCAL )
+      ierr = Lib_LogLevelNo(APP_LIBVGRID,APP_FATAL)  
 
       ! Obtain mydomain
       mydomain = RPN_COMM_get_my_domain(Domains_num, Domains_deb)

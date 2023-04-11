@@ -1,0 +1,158 @@
+#!/bin/bash
+#
+# GoaS git clone environment
+# ie: create_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
+# ie: create_maestro -f -exp $HOME/path_of_my_clone -module $HOME/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
+#  - suite created at $HOME/.suites/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
+# ie: create_maestro -location [mysuite_name]
+#  - suite created at $HOME/.suites/[mysuite_name]
+#
+# GEM SSM package environment (ignores -exp)
+# ie: create_maestro -location [mysuite_name] -cfg $gem_DIR/share/configurations/GEM_cfgs
+#  - suite created at $HOME/.suites/[mysuite_name]
+#
+arguments=$*
+eval `cclargs_lite $0 \
+  -exp      "$PWD"  "$PWD"  "[]" \
+  -cfg      "" "" "[\\$gem_DIR/share]/configurations/GEM_cfgs ]" \
+  -xfer     ""      ""      "[]" \
+  -module   ""      ""      "[]" \
+  -location ""      ""      "[[ $HOME/.suites/[location] ]]" \
+  -ptopo    "1x1x1" "1x1x1" "[]" \
+  -t        "10"    "10"    "[]" \
+  -f        "0"     "1"     "[]" \
+  -nosubmit "0"     "1"     "[]" \
+  ++ $arguments`
+
+if [[ -z "${GEM_STORAGE_DIR}" ]] ; then
+   #SSM package mode
+   echo "not GEM GIT mode"
+   ici=${PWD}
+   GEM_INSTALL=${gem_DIR}
+   NAME_exp=${location}
+   if [[ -z "${location}" ]] ; then
+        printf "\n    Missing experiment name for Maestro suite\n"
+        printf "\n  ie: create_maestro -location TOTO \n"
+        printf "\n  will create: $HOME/.suites/TOTO \n\n"
+      exit 1
+   fi
+   cfg=${cfg:-${gem_DIR}/share/configurations/GEM_cfgs}
+   GEM_OVBIN=${GEM_INSTALL}/bin
+   GEM_BIN_version=${ATM_MODEL_VERSION}
+
+else
+   #Cloned depot mode
+   echo "In GEM GIT mode"
+   cd ${exp}
+   ici=${exp}
+   GEM_INSTALL=$(dirname $PWD)
+   if [ ! -s .eccc_setup ] ; then
+      printf "\n Experiment directory ${exp} is NOT your work directory \n\n"
+      printf "\n -exp should be in $gem_DIR/work* - exiting\n\n"
+      exit 1
+   fi
+   if [ -z "${ATM_MODEL_VERSION}" ] ; then
+      . .eccc_setup
+   fi
+   expgem=$(basename ${GEM_INSTALL})
+   mach=$(basename $PWD)
+   cfg=${cfg:-${gem_DIR}/share/configurations/GEM_cfgs}
+   expM=$(basename $cfg)
+   NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
+   GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
+   GEM_BIN_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
+fi
+
+REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO
+module=${module:-${GEM_INSTALL}/share/gem-maestro/gem_module}
+XFER="\${TRUE_HOST}:\${SEQ_EXP_HOME}/hub/\${TRUE_HOST}/gridpt/prog/gem"
+XFER=${xfer:-${XFER}}
+suite_name=${HOME}/.suites/${NAME_exp}
+
+if [ -d $suite_name ] ; then
+   if [ $f -gt 0 ] ; then
+      /bin/rm -rf $suite_name
+   else
+      printf "\n    experiment directory $suite_name already exist ==> use -f\n\n"
+      exit 1
+   fi
+fi
+
+mkdir -p $suite_name
+
+if [[ -e "${GEM_STORAGE_DIR}" ]] ; then
+#in GIT mode
+   mkdir -p suites
+   if [ -z "${location}" ] ; then
+     /bin/rm -f suites/${expM}_${mach}
+     ln -sf $suite_name suites/${expM}_${mach}
+   else
+     /bin/rm -f suites/${NAME_exp}
+     ln -sf $suite_name suites/${NAME_exp}
+   fi
+fi
+
+cp -r ${REF}/* $suite_name
+
+CONFIG=$(true_path ${cfg}/cfg_0000 2> /dev/null || true)
+if [ -z "${CONFIG}" ] ; then
+   printf  "\n  Invalid config directory ${cfg} - ABORT\n\n"
+   exit 1
+fi
+
+#Obtain default physics_input_table path
+    default_phytab=${GEM_STORAGE_DIR:+${gem_DIR}/src/rpnphy/include}
+    default_phytab=${default_phytab:-${gem_DIR}/share/rpnphy}
+    PHYTABLE=${default_phytab}/physics_input_table
+
+cd $suite_name
+ln -s $module modules/gem
+export SEQ_EXP_HOME=${suite_name}
+makelinks -f  -e ${NAME_exp}
+
+cd ${ici}
+#
+#GRDTYP=$(fetchnml.sh grd_typ_s grid ${CONFIG}/gem_settings.nml)
+#GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+GRDTYP=$(rpy.nml_get -u -f ${CONFIG}/gem_settings.nml -- grid/grd_typ_s)
+if [[ ${GRDTYP} == "GY" ]] ; then
+  cpu_mult=2
+else
+  cpu_mult=1
+fi
+
+nodesetres -n /gem/Runmod -v wallclock=${t} cpu_multiplier=${cpu_mult} \
+                             cpu=${ptopo} soumet_args="-waste 100"
+
+cat ${CONFIG}/configexp.cfg | sed '/GEM_version=/d' | sed '/GEM_ovbin=/d' | sed '/GEM_settings=/d' | sed '/GEM_outcfg=/d' | sed '/GEM_xfer=/d' | sed '/GEM_headscript_E=/d' | sed '/GEM_phy_intable=/d' | sed '/GEM_check_settings=/d' > ${suite_name}/experiment.cfg
+
+#echo "ATM_MODEL_DFILES_DEFAULT=${ATM_MODEL_DFILES}" > ${CONFIG}/configexp.cfg
+cat >> ${suite_name}/experiment.cfg <<EOF
+GEM_ovbin=${GEM_OVBIN}
+GEM_settings=${CONFIG}/gem_settings.nml
+GEM_outcfg=${CONFIG}/outcfg.out
+#GEM_headscript_E=
+GEM_version=${GEM_BIN_version}
+EOF
+if [ -f ${CONFIG}/physics_input_table ] ; then
+   echo "GEM_phy_intable=${CONFIG}/physics_input_table" >> ${suite_name}/experiment.cfg
+   printf  "\n physics_input_table is taken from ${CONFIG}/physics_input_table\n"
+else
+   echo "#GEM_phy_intable=${PHYTABLE}" >> ${suite_name}/experiment.cfg
+   printf  "\n default physics_input_table will be used\n"
+fi
+
+set -ex
+if [ ${nosubmit} -eq 0 ] ; then
+   maestro -s submit -n /gem -d 0000000000 -i
+fi
+
+set +ex
+printf "\n  Configuration file used is ${cfg} \n\n"
+printf  "\n Added experiment.cfg in $suite_name for maestro \n"
+if [ -f ${CONFIG}/physics_input_table ] ; then
+   printf  "\n Using physics_input_table from ${CONFIG}/physics_input_table\n"
+else
+   printf  "\n Using default physics_input_table\n"
+fi
+printf  "\n  Directory $suite_name is now available\n\n"

@@ -1,27 +1,27 @@
 #!/bin/bash
 #
-DESC="Find valid topology for GEM"
+printf "To find valid PE topology for GEM\n"
 
-eval $(rpy.cclargs \
-   -D ":" \
-   --desc   "${DESC}" \
-   ${0##*/} \
-   -npex_low   "1"    "1"    "[lower bound for npex           ]"\
-   -npex_high  "0"    "0"    "[upper bound for npex           ]"\
-   -npey_low    "1"    "1"    "[lower bound for npey           ]"\
-   -npey_high   "0"    "0"    "[upper bound for npey           ]"\
-   -omp         "1"    "1"    "[number of omp threads          ]"\
-   -smt         "1"    "2"    "[smt levels                     ]"\
-   -nml         "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
-   ++ $*)
+arguments=$*
+eval `cclargs_lite -D " " $0  \
+   -npex_low     "1"    "1"    "[(lower bound for npex)       ]"\
+   -npex_high    "0"    "0"    "[(upper bound for npex)       ]"\
+   -npey_low     "1"    "1"    "[(lower bound for npey)       ]"\
+   -npey_high    "0"    "0"    "[(upper bound for npey)       ]"\
+   -omp          "1"    "1"    "[(number of omp threads)      ]"\
+   -smt          "1"    "2"    "[(smt levels)                 ]"\
+   -corespernode "80"   "80"   "[(number of cores in one node)]"\
+   -nml          "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
+   ++ $arguments`
 
 if [ ! -e ${nml} ] ; then
    printf "\n   File ${nml} NOT available -- ABORT\n\n"
    exit 1
 fi
 
-GRDTYP=$(fetchnml.sh grd_typ_s grid ${nml} | sed "s/'//g" | tr 'a-z' 'A-Z')
-#GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+
+GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GRDTYP=$(fetchnml.sh grd_typ_s grid ${nml})
 if [ -z "${GRDTYP}" ] ; then
    printf "\nERROR: Cannot determine Grid type\n"
    printf "Abort: Check grid/Grd_typ_S in ${nml}\n\n"
@@ -30,8 +30,8 @@ fi
 
 re_isnumber='^[0-9]+([.][0-9]+)?$'
 
-GNI=$(fetchnml.sh grd_ni grid ${nml} | sed "s/'//g")
-#GNI=$(rpy.nml_get -f ${nml} grid/Grd_ni 2>/dev/null | sed "s/'//g")
+GNI=$(rpy.nml_get -f ${nml} grid/GNI | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GNI=$(fetchnml.sh grd_ni grid ${nml})
 if [[ ! -z "${GNI}" ]] ; then
    if ! [[ ${GNI} =~ ${re_isnumber} ]] ; then
       printf "\nError: grid/Grd_ni (${GNI}) is NOT a number in $nml\n"
@@ -40,8 +40,8 @@ if [[ ! -z "${GNI}" ]] ; then
    fi
 fi
 
-GNJ=$(fetchnml.sh grd_nj grid ${nml} | sed "s/'//g")
-#GNJ=$(rpy.nml_get -f ${nml} grid/Grd_nj 2>/dev/null | sed "s/'//g")
+GNJ=$(rpy.nml_get -f ${nml} grid/GNJ | sed "s/'//g" | tr 'a-z' 'A-Z')
+#GNJ=$(fetchnml.sh grd_nj grid ${nml})
 if [[ ! -z "${GNJ}" ]] ; then
    if ! [[ ${GNJ} =~ ${re_isnumber} ]] ; then
       printf "\nError: grid/Grd_nj (${GNJ}) is NOT a number in $nml\n"
@@ -86,13 +86,14 @@ if [ $npey_high -lt 1 ] ; then
    npey_high=$((GNJ/10))
 fi
 
-# Machine specific (XC50)
-CORESperNODE=80
+# Machine specific
+CORESperNODE=${corespernode}
 THREADSperCORE=${smt}
 THREADSperNODE=$((CORESperNODE*THREADSperCORE))
 
 echo INVESTIGATING NODES: $((npex_low*npey_low*omp*mult/THREADSperNODE)) $((npex_high*npey_high*omp*mult/THREADSperNODE))
-echo with NPEX_LOW= $npex_low NPEX_HIGH= $npex_high NPEY_LOW= $npey_low NPEY_HIGH= $npey_high
+echo with NPEX_LOW= $npex_low NPEX_HIGH= $npex_high NPEY_LOW= $npey_low NPEY_HIGH= $npey_high for CORESperNODE=$CORESperNODE, SMT=$smt
+echo
 
 lis=${TMPDIR}/checkdmpartlis$$
 . r.call.dot checkdmpart.sh -gemnml ${nml} -npex ${npex_low},${npex_high} -npey ${npey_low},${npey_high} -verbose 1> $lis 2>&1
@@ -115,7 +116,7 @@ while read line ; do
    nodes_int=$(echo ${nodes} | cut -d "." -f1)
    FULLNODE=""
    if [ $((nodes_int*THREADSperNODE)) -eq ${nthreads} ] ; then
-      FULLNODE=FULL_NODE_XC50smt${smt}
+      FULLNODE=FULL_NODE_smt${smt}
    fi
    cores=$(echo "scale=0; ${nodes} * ${CORESperNODE}" | bc -l)
    n=$((nthreads/THREADSperNODE))

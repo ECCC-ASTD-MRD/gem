@@ -1418,7 +1418,8 @@ Vertical interpolation scheme for output
 
 |-
 | sol_fgm_eps ||
-Epsilon convergence criteria for none Yin-Yang iterative solver
+Relative tolerance for convergence of the elliptic iterative solver,
+norm(residual) < tol*norm(b)
 | 1.d-07 || real(kind=REAL64)
 
 |-
@@ -1470,7 +1471,8 @@ Type of solver
 
 |-
 | sol_yyg_eps ||
-Epsilon convergence criteria for the Yin-Yang iterative solver
+Absolute tolerance for convergence of the classical Schwarz algorithm
+in Yin Yang configurations, norm(residual) < tol
 | 1.d-04 || real(kind=REAL64)
 
 |-

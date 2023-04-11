@@ -40,3 +40,9 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
     message(STATUS "(EC) Extra debug flags for gemdyn: -fcheck=bounds")
   endif()
 endif()
+
+install(TARGETS gemdyn
+    PUBLIC_HEADER DESTINATION include
+    LIBRARY       DESTINATION lib
+    ARCHIVE       DESTINATION lib)
+install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)

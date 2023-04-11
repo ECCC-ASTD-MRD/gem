@@ -213,12 +213,9 @@ contains
          end do
       end do
 
-      ! Compute thermodynamic quantities on energy levels
-      qe(:,1:nkm1) = zhumoins(:,1:nkm1)
-      call mfotvt(ztve, ztmoins, zhumoins, ni, nkm1, ni)
-
       ! convective velocity scale w*
       ! (passed to MOISTKE3 through XH)
+      qe(:,1:nkm1) = zhumoins(:,1:nkm1)
       stat = neark(zsigt, zpmoins, 1000., ni, nkm1, ksl)
       do i=1,ni
          xb(i)=1.0+DELTA*qe(i,ksl(i))

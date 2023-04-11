@@ -6,10 +6,6 @@ if (MPI_FOUND)
    set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 endif()
 
-if (WITH_OPENMP)
-   set(ompfftw "-lfftw3_omp")
-endif()
-
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
@@ -21,8 +17,8 @@ target_link_libraries(checkdmpart
    tdpack
    rpncomm
    rmn
-   ${ompfftw}
-   fftw3
+   ${FFTW}
+   ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
@@ -55,8 +51,8 @@ target_link_libraries(prgemnml
    tdpack
    rpncomm
    rmn
-   ${ompfftw}
-   fftw3
+   ${FFTW}
+   ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )

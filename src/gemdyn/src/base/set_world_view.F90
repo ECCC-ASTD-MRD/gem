@@ -64,8 +64,7 @@
 !-------------------------------------------------------------------
 !
       err(:) = 0
-      err(1) = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
-                       WB_REWRITE_NONE+WB_IS_LOCAL )
+
       if (Grd_yinyang_L) then
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'&
                                       //trim(Grd_yinyang_S)

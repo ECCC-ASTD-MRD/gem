@@ -1,5 +1,5 @@
 NAME       : modelutils
-VERSION    : 1.7.0-a24
+VERSION    : 1.7.0-b2
 BUILD      : 
 DESCRIPTION: Model utility functions
 SUMMARY    : modelutils is a collection of Fortran tools made for GEM and other models. 

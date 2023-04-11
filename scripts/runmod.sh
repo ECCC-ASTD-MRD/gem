@@ -9,20 +9,24 @@ printf "$0 ${arguments}\n\n"
 . r.entry.dot
 eval `cclargs_lite -D " " $0 \
    -cfg           "0:0"        "0:0"       "[Configurations number/range (START:END)]"\
-   -dircfg        "GEM_cfgs"   "GEM_cfgs"  "[Location of config files]"\
+   -dircfg        "configurations/GEM_cfgs"   "configurations/GEM_cfgs"  "[Location of config files]"\
    -barrier       "0"          "0"         "[DO NOT run binary]"\
    -timing        "0"          "0"         "[Report performance timers]"\
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\
    -smt           ""           ""          "[SMT controler (AIX) (smtdyn x smtphy)]"\
    -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
+   -nodespec      "NoNe"       "NoNe"      "[Node distribution specification]"\
    -inorder       "0"          "5"         "[Order listing]"\
-   -debug         "0"          "1"         "[Debug session]"\
+   -debug         "0"          "gdb"       "[Debug session: gdb, ddt]"\
    -task_basedir  "RUNMOD"     "RUNMOD"    "[Task dir name]"\
    -no_setup      "0"          "1"         "[Do not run setup]"\
    -_status       "ABORT"      "ABORT"     "[Return status]"\
    -_endstep      ""           ""          "[Last time step performed]"\
    -_npe          "1"          "1"         "[Number of subdomains]"\
   ++ ${arguments}`
+
+
+export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
 
 restart=0
 
@@ -84,8 +88,10 @@ _npe=$((npex*npey))
 
 ngrids=1
 for i in ${TASK_INPUT}/cfg_* ; do
-   GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
-   OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
+   GRDTYP=$(rpy.nml_get -u -f ${i}/model_settings.nml -- grid/grd_typ_s 2>/dev/null)
+   OPSCFG=$(rpy.nml_get -u -f ${i}/model_settings.nml -- ops_cfgs/Ops_configuration_S 2>/dev/null)
+#  GRDTYP=$(fetchnml.sh grd_typ_s grid ${i}/model_settings.nml)
+#  OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${i}/model_settings.nml)
    if [ -n "${GRDTYP}" ] ; then
       if [ "$GRDTYP" == "GY" ] ; then ngrids=2 ; fi
    else
@@ -126,7 +132,6 @@ if [ ${DOMAIN_wide} -lt 1 ] ; then
   DOMAIN_wide=1
 fi
 export DOMAIN_wide=${DOMAIN_wide}
-
 alongYfirst=.false.
 if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
 # Use performance timers on request
@@ -134,7 +139,7 @@ if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
 
 if [[ "x${debug}" != "x0" ]] ; then
    export RPN_COMM_DIAG=2
-   [[ "x${debug}" == "x1" ]] && export debug=gdb || true
+   [[ "x${debug}" == "xgdb" || "x${debug}" == "x1"  ]] && export debug=gdb || true
    if [[ "x$(which ${debug} 2>/dev/null)" == "x" ]] ; then
       printf "ERROR: cannot find requested debug tool '${debug}'\n"
       if [[ "x${debug}" == "xddt" ]] ; then
@@ -174,6 +179,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    printf "\n LAUNCHING rungem.sh for domain: cfg_${domain_number} $(date)\n\n"
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
+      -nodespec ${nodespec} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
       -barrier ${barrier} -inorder ${inorder}
 

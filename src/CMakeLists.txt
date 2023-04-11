@@ -67,12 +67,21 @@ endif()
 
 add_subdirectory(gemdyn gemdyn)
 add_subdirectory(gem gem)
-add_subdirectory(rpn-si/cclargs cclargs)
-add_subdirectory(rpn-si/fst-tools fst-tools)
-add_subdirectory(rpn-si/filetype filetype)
+if ((NOT DEFINED ENV{EC_ARCH} ) OR ( NOT ( (WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))))
+  add_subdirectory(rpn-si/cclargs cclargs)
+  add_subdirectory(rpn-si/fst-tools fst-tools)
+  add_subdirectory(rpn-si/filetype filetype)
+endif()
 
 # Declare the dependencies of all the components, whether sources where used or not
 if ( NOT "${vgrid_SRC}" STREQUAL "" OR NOT "${rpncomm_SRC}" STREQUAL "" OR NOT "${rmn_SRC}" STREQUAL "" OR NOT "${tdpack_SRC}" STREQUAL "")
   add_dependencies(modelutils ${vgrid_SRC} ${tdpack_SRC} ${rpncomm_SRC} ${rmn_SRC})
 endif()
 add_dependencies(gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rpncomm_SRC} ${rmn_SRC})
+
+# To be installed only with package
+install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
+install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
+install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
+install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)

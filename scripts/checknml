@@ -31,9 +31,11 @@ EOF
 }
 
 ATM_MODEL_VERSION=${ATM_MODEL_VERSION/_*}
-
 refmode=0
-reffile=${GEM_GIT_DIR}/src/gem/nml_ref/gem_settings.${ATM_MODEL_VERSION}.ref
+reffile=${reffile:-${gem_DIR}/share}
+# Append path to reference file
+reffile=${reffile}/nml_ref/gem_settings.${ATM_MODEL_VERSION}.ref
+
 nmlfiles=""
 nml=""
 myverb=""

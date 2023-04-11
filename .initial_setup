@@ -3,32 +3,35 @@
 # Source this file to:
 # - Create the build and work directories for the specific architecture and compiler versions
 #   according to the existence or not of the storage_model environment variable
+# If these directories already exist, they will be deleted, and recreated.
+# Additionally, a setup file is copied in the work directory as a shortcut.
 
-if [ -n "${GEM_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
+if [ -n "${GEM_STORAGE_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
     if [ -n "${storage_model}" ] ; then
-        /bin/rm -rf ${GEM_DIR} build-${GEM_ARCH} ${GEM_WORK}
-        mkdir -p ${GEM_DIR}/work
-        mkdir -p ${GEM_DIR}/build
-        ln -sf ${GEM_DIR}/build ${PWD}/build-${GEM_ARCH}
-        ln -sf ${GEM_DIR}/work ${PWD}/${GEM_WORK}
+        /bin/rm -rf ${GEM_STORAGE_DIR} build-${GEM_ARCH} ${GEM_WORK}
+        mkdir -p ${GEM_STORAGE_DIR}/work
+        mkdir -p ${GEM_STORAGE_DIR}/build
+        ln -sf ${GEM_STORAGE_DIR}/build ${PWD}/build-${GEM_ARCH}
+        ln -sf ${GEM_STORAGE_DIR}/work ${PWD}/${GEM_WORK}
     else
         /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
         mkdir -p build-${GEM_ARCH} ${GEM_WORK}
     fi
 
-    if [ "$COMPILER_SUITE" == "intel" ] ; then
-        SETUP_FILE=.eccc_setup_intel
-    else
-        SETUP_FILE=.eccc_setup_gnu
-    fi
+    if [ -n "${EC_ARCH}" ]; then
+        if [ "$COMPILER_SUITE" == "intel" ] ; then
+            SETUP_FILE=.eccc_setup_intel
+        else
+            SETUP_FILE=.eccc_setup_gnu
+        fi
 
 cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
 ici=\$PWD
-cd ${GEM_GIT_DIR}
+cd ${gem_DIR}
 . $SETUP_FILE
 cd \$ici
 EOF
-
+    fi
 else
     echo "GEM environment variables not set! Make sure you use .common_setup script first."
 fi

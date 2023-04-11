@@ -7,8 +7,8 @@ target_link_libraries(toc2nml
    modelutils
    vgrid
    rmn
-   ${ompfftw}
-   fftw3
+   ${FFTW}
+   ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    )
