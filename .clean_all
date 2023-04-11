@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Source this file to:
+# - Delete the build and work directories for the specific architecture and compiler versions
+#   according to the existence or not of the storage_model environment variable
+
+if [ -n "${GEM_STORAGE_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
+    if [ -n "${storage_model}" ] ; then
+        /bin/rm -rf ${GEM_STORAGE_DIR} build-${GEM_ARCH} ${GEM_WORK}
+        echo "Deleting ${GEM_STORAGE_DIR} build-${GEM_ARCH} ${GEM_WORK}"
+    else
+        /bin/rm -rf build-${GEM_ARCH} ${GEM_WORK}
+        echo "Deleting build-${GEM_ARCH} ${GEM_WORK}"
+    fi
+else
+    echo "GEM environment variables not set! Don't know which build and work directories should be deleted."
+    echo "Make sure you use .common_setup script first."
+fi

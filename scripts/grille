@@ -1,28 +1,20 @@
 #!/bin/bash
+#
+printf "To visualize and produce a GEM grid\n"
+
 arguments=$*
-DESC="Visualize and produce a GEM grid"
-eval $(rpy.cclargs \
-          -D ":" \
-          --desc "${DESC}" \
-          ${0##*/} \
+eval `cclargs_lite -D " " $0  \
           -xrec     "0"   "1"   "[Visualize grid with xrec                ]"\
           -spi      "0"   "1"   "[Visualize grid with spi                 ]"\
           -max2     "0"   "1"   "[Visualize grid with max2                ]"\
           -genphysx "0"   "1"   "[Produce geophysical fields with genphysx]"\
-          ++ $arguments)
+          ++ $arguments`
 
 printf "\n#########################\n"
 printf " GRILLE utility for gem \n"
 printf "########################### \n\n"
 
-if [[ -d build-${ORDENV_PLAT}/bin/${COMP_ARCH} ]] ; then
-   export PATH=${PWD}/build-${ORDENV_PLAT}/bin/${COMP_ARCH}:$PATH
-fi
-#GENGRID=$(which gemgrid_${BASE_ARCH}.Abs || true)
 GENGRID=$(which gemgrid || true)
-#if [[ -z "${GENGRID}" ]] ; then
-#   GENGRID=$(which maingemgrid)
-#fi
 
 if [[ ! -s gem_settings.nml ]] ; then
    printf "\n Must provide file gem_settings.nml\n containing a valid &grid namelist\n\n"
@@ -36,8 +28,8 @@ WORKDIR=${ROOT_WORK}/cfg_0000
 cp gem_settings.nml ${WORKDIR}/model_settings.nml
 
 ngrids=1
-GRDTYP=$(fetchnml.sh grd_typ_s grid gem_settings.nml)
-#GRDTYP=$(rpy.nml_get -u -f gem_settings.nml grid/Grd_typ_s)
+GRDTYP=$(rpy.nml_get -u -f gem_settings.nml grid/Grd_typ_s)
+#GRDTYP=$(fetchnml.sh grd_typ_s grid gem_settings.nml)
 if [[ "${GRDTYP}" == "GY" ]] ; then 
    ngrids=2
    mkdir -p ${WORKDIR}/YIN/000-000 ${WORKDIR}/YAN/000-000
@@ -58,6 +50,7 @@ export CCARD_ARGS="-dom_start 0 -dom_end 0 -ngrids ${ngrids} -input ${TASK_INPUT
 #================== Produce Grid Pos Rec ================
 /bin/rm -f tape1 tape1_core tape1_free tape2 tape2_core tape2_free 2> /dev/null
 cd ${ROOT_WORK}
+set -ex
 gem_mpirun.sh -pgm $GENGRID -npex 1 -npex ${ngrids} -inorder
 
 find ${WORKDIR} -type f -name "*tape*"      -exec mv {} . \;

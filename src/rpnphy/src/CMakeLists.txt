@@ -41,3 +41,8 @@ target_include_directories(rpnphy_chm_stubs PRIVATE
   ${modelutils_MODULES_DIR}
   )
 
+install(TARGETS rpnphy
+    PUBLIC_HEADER DESTINATION include
+    LIBRARY       DESTINATION lib
+    ARCHIVE       DESTINATION lib)
+install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)

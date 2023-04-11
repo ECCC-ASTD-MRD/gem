@@ -9,7 +9,7 @@ if [[ $# -eq 0 ]] ; then
     echo "Example: . ./.common_setup gnu"
     echo "Example: . ./.common_setup intel"
 else
-    unset GEM_ARCH GEM_WORK GEM_DIR GEM_GIT_DIR
+    unset GEM_ARCH GEM_WORK GEM_STORAGE_DIR gem_DIR
     export OMP_STACKSIZE=4G
 
     export COMPILER_SUITE=${1}
@@ -25,19 +25,19 @@ else
         
         if [ -n "${storage_model}" ] ; then
            DIR=$(echo $(basename $(dirname $PWD))/$(basename $PWD))
-           GEM_DIR=${storage_model}/goas/${DIR}/${GEM_ARCH}
+           GEM_STORAGE_DIR=${storage_model}/goas/${DIR}/${GEM_ARCH}
         else
-           GEM_DIR=${PWD}
+           GEM_STORAGE_DIR=${PWD}
         fi
-        export GEM_DIR
-        export GEM_GIT_DIR=$PWD
-        export ATM_MODEL_DFILES=${GEM_GIT_DIR}/gem_dbase
+        export GEM_STORAGE_DIR
+        export gem_DIR=$PWD
+        export ATM_MODEL_DFILES=${gem_DIR}/gem_dbase
         export ATM_MODEL_VERSION=`cat MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export gemdyn_version=`cat src/gemdyn/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export rpnphy_version=`cat src/rpnphy/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export modelutils_version=`cat src/modelutils/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
-        export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
+        export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
     fi
 fi

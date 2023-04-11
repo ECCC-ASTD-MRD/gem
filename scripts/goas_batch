@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# ie: goas_batch -cfg configurations/GEM_cfgs_GY_FISL_H
+#     goas_batch -cfg configurations/GEM_cfgs_LU_FISL_H -ptopo 2x2x10 -mach underhill
+#
+arguments=$*
+eval `cclargs_lite $0 \
+  -exp      "$PWD"   "$PWD"      "[]" \
+  -cfg      "$PWD/configurations/GEM_cfgs" "$PWD/configurations/GEM_cfgs" "[]" \
+  -mach     "robert" "underhill" "[]" \
+  -ptopo    "1x1x1"  "1x1x1"     "[]" \
+  -t        "300"     "300"        "[]" \
+  -nosubmit "0"      "1"         "[]" \
+  ++ $arguments`
+
+cd ${exp}
+GEM_INSTALL=$(dirname $PWD)
+expgem=$(basename ${GEM_INSTALL})
+
+if [ ! -s .eccc_setup ] ; then
+   printf "\n Experiment directory ${exp} is NOT conformed - exiting\n\n"
+   exit 1
+fi
+if [ -z "${ATM_MODEL_VERSION}" ] ; then
+   . .eccc_setup
+fi
+
+cfg=$(true_path ${cfg})
+Vg=$(echo $ATM_MODEL_VERSION | sed 's/\.//g' | sed 's/-//g')
+GRDTYP=$(fetchnml.sh grd_typ_s grid ${CONFIG}/gem_settings.nml)
+if [[ ${GRDTYP} == "GY" ]] ; then
+  cpu_mult=2
+else
+  cpu_mult=1
+fi
+ptopo=$(echo ${ptopo} | tr "X" "x")
+npex=$(echo ${ptopo} | cut -d "x" -f 1)
+npey=$(echo ${ptopo} | cut -d "x" -f 2)
+nomp=$(echo ${ptopo} | cut -d "x" -f 3)
+npex=${npex:-1}
+npey=${npey:-1}
+nomp=${nomp:-1}
+npes=$((npex*npey*cpu_mult))
+
+jn=G${expgem}${Vg}-$(basename $cfg)-${mach}${ptopo}
+rep=${jn}-run
+mkdir -p $rep
+
+cat > $jn <<EOF
+. .profile.d/interactive/post
+export GEMDYN_TIMING=DYN_WB
+cd ${PWD}
+. .eccc_setup
+cd ${rep}
+ln -s ../bin .
+
+runprep.sh -dircfg ${cfg}
+runmod.sh  -dircfg ${cfg} -ptopo ${ptopo} -inorder
+
+# ord_soumet $PWD/${jn} -mach ${mach} -mpi -cpus ${nomp}x${npes} -t $t -cm 5G -waste 100
+
+EOF
+
+set -ex
+if [ ${nosubmit} -eq 0 ] ; then
+   ord_soumet $PWD/${jn} -mach ${mach} -mpi -cpus ${nomp}x${npes} -t $t -cm 5G -waste 100
+   printf "\n Batch job $PWD/$jn was submitted to ${mach}\n\n"
+else
+   printf "\n Batch job $PWD/$jn is ready \n\n"
+fi
+

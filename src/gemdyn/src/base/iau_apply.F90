@@ -155,6 +155,7 @@ subroutine iau_apply (F_kount)
            '; typvar=R; hinterp=cubic'
       call msg(MSG_INFO, '(iau_apply) add input: in=P0;'//trim(incfg_S))
       istat = min(inputio_add(inputobj%cfg, 'in=P0; '//trim(incfg_S)), istat)
+      incfg_S = trim(incfg_S)//'; vinterp=c-cond'
       ivar = 1
       do while (len_trim(Iau_tracers_S(ivar)) > 0)
          istat = min(clib_tolower(Iau_tracers_S(ivar)), istat)

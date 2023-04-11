@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+Parse list of args for bash
+"""
+import sys
+import argparse
+
+desc0 = "Parse list of args for bash"
+epilog0 = r"""Example:
+
+    eval $(rpy.cclargparse \
+           -D ":" \
+           ${0##*/} \
+           "Script description" \
+           "Help Epilog message" \
+           "positional"   'nargs=2'        'default_pos'  '[description_pos]' \
+           "--opt1"       'required=True'  'default_op1'  '[description_op1]' \
+           "--opt2"       'nargs=*'        'default_op2'  '[description_op2]' \
+           "-v,--verbose" 'action=count'          '0'     '[description_v]' \
+           "+v"           'action=count, dest=v2' '2'     '[description_v2]' \
+           "--keep,-k"    'action=store_true'     'false' '[description_k]' \
+           "--num,-n"     'type=int'              '2'     '[description_num]' \
+           ++++ "$@")
+    echo positional="$*"
+    echo opt1="$opt1"
+    echo opt2="$opt2"
+    echo verbose="$verbose"
+    echo v2="$v2"
+    echo keep="$keep"
+    echo num="$num"
+
+    The "-D ':'" and "positional ..." lines are optional
+
+    The delimiter specified by the -D option is used to concatenate
+    the list of values for any arg.
+    For example if the delimiter is ':' and
+    "a" "b" are given as positional args, the result will be
+        positional=a:b
+
+    "--_no-exit_" can be added as first arg to return an error code instead
+    of exiting on errors. This is usefull to specify in a dotted/sourced
+    script where it would otherwise exit the shell.
+    The caller should then check "$?"
+
+    eval $(rpy.cclargparse \
+           --_no-exit_ \
+           -D ":" \
+           ". script.dot" \
+           "Script description" \
+           "Help Epilog message" \
+           "positional"   'nargs=2'        'default_pos'  '[description_pos]' \
+           "-v,--verbose" 'action=count'          '0'     '[description_v]' \
+           ++++ "$@")
+    if [[ $? -ne 0 ]] ; then return 1 ; fi
+    echo positional="$*"
+    echo verbose="$verbose"
+
+    For more information on possible options that can be specified in
+    the 2nd column, see python's argparse documentation at:
+
+    https://docs.python.org/2.7/library/argparse.html
+    """
+
+
+class ArgumentParser(argparse.ArgumentParser):
+
+    def error(self, message):
+        ## sys.stderr.write(repr(self))
+        ## raise argparse.ArgumentError(self, "ERROR: ({}) {}".format(self.prog, message))
+        raise Exception("ERROR: ({}) {}".format(self.prog, message))
+
+
+def abort(msg):
+    sys.stderr.write("\nERROR: " + str(msg) + "\n\n")
+    sys.stderr.write(desc0 + "\n\n" + epilog0 + "\n")
+    sys.exit(1)
+
+
+def parse_arg_desc():
+    """
+    """
+    # Ignore 1st arg, caller name
+    sys.argv.pop(0)
+
+    # Catch cclargs -h
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
+        sys.stderr.write(desc0 + "\n\n" + epilog0 + "\n")
+        sys.exit(1)
+
+    # Get first 3/4 lines before actual args (delimiter, name, desc, epilog)
+    delimiter = ':'
+    noexit = False
+    if sys.argv[0] == '--_no-exit_':
+        noexit = True
+        sys.argv.pop(0)
+    if sys.argv[0] == '-D':
+        if len(sys.argv) < 5:
+            abort("Need to specify '-D Delimiter Name Description Epilog'")
+        else:
+            sys.argv.pop(0)
+            delimiter = sys.argv.pop(0)
+    elif len(sys.argv) < 3:
+        abort("Need to specify 'Name Description Epilog'")
+
+    name   = sys.argv.pop(0)
+    desc   = sys.argv.pop(0)
+    epilog = sys.argv.pop(0)
+    usage = "%(prog)s [-h] [positional] [options]"
+
+    if len(sys.argv) < 1 or sys.argv[0][0] not in ('-', '+', 'p'):
+        abort("Need to specify at least one arg starting with [-/+]")
+
+    # Create parse object with at leas -h,--help option
+    parser = ArgumentParser(
+        prog=name,
+        description=desc,
+        usage=usage,
+        epilog=epilog,
+        prefix_chars='-+',
+        add_help=False)
+    parser.add_argument("-h", "--help", dest="help",
+                        action="store_true",
+                        help="Print this help/usage message")
+
+    # Parse options description
+    options = []
+    while sys.argv:
+        if sys.argv[0] == '++++':
+            break
+        if len(sys.argv) < 4:
+            abort("Every Arg should be specified with '--name,-n' 'opt=val,opt=val' 'default' 'description'\nProblem with:" + str(sys.argv))
+
+        n = sys.argv.pop(0)
+        o = sys.argv.pop(0)
+        d = sys.argv.pop(0)
+        h = sys.argv.pop(0)
+
+        nl, od = parse_arg_desc0(n, o, d, h)
+        if nl[0] == 'positional':
+            options.append('positional')
+        else:
+            options.append(od['dest'])
+
+        ## sys.stderr.write("Add: {} {}\n".format(str(nl), str(od)))
+        parser.add_argument(*nl, **od)
+    return parser, options, delimiter, noexit
+
+
+def parse_arg_desc0(n, o, d, h):
+    """
+    """
+    # Split long and short names, special case for positional
+    nl = n.split(',')
+    if n != 'positional' and \
+        (len(nl) > 2 or not (nl[0][0] in ('-', '+') and
+                             (len(nl) == 1 or nl[1][0] in ('-', '+')))):
+        abort("Every Arg should be specified with '--name,-n' 'opt=val,opt=val' 'default' 'description'\nProblem with:" + str(n))
+
+    # Split options into a dict
+    try:
+        od = dict((b[0].strip(), b[1]) for b in
+                  [a.split('=') for a in o.split(',')])
+    except:
+        abort("Every Arg should be specified with '--name,-n' 'opt=val,opt=val' 'default' 'description'\nProblem with:" + str(n) + " " + str(o))
+
+    # Add name to options unless already specified
+    if 'dest' not in od.keys():
+        if len(nl) == 1 or len(nl[0]) > len(nl[1]):
+            od['dest'] = nl[0].lstrip('+-')
+        else:
+            od['dest'] = nl[1].lstrip('+-')
+
+    # Add default to options unless already specified
+    if 'default' not in od.keys():
+        od['default'] = d
+
+    # Options special cases
+    if 'required' in od.keys():
+        od['required'] = True if od['required'].lower()[0] == 't' else False
+    if 'action' in od.keys():
+        if od['action'] == 'count':
+            od['default'] = 0  #TODO: should we ignore user's default?
+        elif od['action'] == 'store_true':
+            od['default'] = False
+        elif od['action'] == 'store_false':
+            od['default'] = True
+    odtypes = {
+        'str'   : str,
+        'int'   : int,
+        'float' : float
+        }
+    if 'type' in od.keys():
+        od['type'] = odtypes[od['type']]
+        if od['type'] == int:
+            od['default'] = int(od['default'])
+        elif od['type'] == float:
+            od['default'] = float(od['default'])
+
+    # Add help to options unless already specified
+    if 'help' not in od.keys():
+        h = h.strip()
+        if h.startswith('['):
+            h = h[1:-1] if h.endswith(']') else h
+        od['help'] = h + " (default=" + repr(od['default']) + ")"
+
+    # Options special cases part 2
+    if 'nargs' in od.keys():
+        if od['nargs'].isdigit():
+            od['nargs'] = int(od['nargs'])
+            if od['nargs'] > 1:
+                od['help'] += " (nargs=" + str(od['nargs']) + ")"
+        else:
+            od['help'] += " (nargs=" + str(od['nargs']) + ")"
+    if nl[0] == 'positional':
+        del(od['dest'])
+
+    return nl, od
+
+
+def parse_args(parser, options, delimiter, noexit):
+    """
+    """
+    if len(sys.argv) == 0 or sys.argv[0] != '++++':
+        abort("Arguments description section should end with ++++")
+
+    #TODO: should we convert from - to --... may cause problems for arg value starting with '-' (optional then?)
+    ## sys.argv = ['-'+a if (len(a) > 2 and a[0] == '-' and a[1] != '-') else a for a in sys.argv]
+
+    ## Parse provided args
+    ## sys.stderr.write("1{}\n".format(sys.argv))
+    try:
+        (args, unknown) = parser.parse_known_args()
+    ## except argparse.ArgumentError as exc:
+    except Exception as exc:
+        if '-h' in sys.argv or '--help' in sys.argv:
+            parser.print_help(sys.stderr)
+        else:
+            sys.stderr.write("\n"+" ".join(exc.args)+"\n")
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
+        sys.exit(1)
+    ## sys.stderr.write("2{}\n".format(sys.argv))
+    ## sys.stderr.write("3{}\n".format(args))
+    ## sys.stderr.write("4{}\n".format(unknown))
+
+    # Special case for -h
+    if args.help:
+        parser.print_help(sys.stderr)
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
+        sys.exit(1)
+
+    # Special cases for unknown args
+    if unknown and len(unknown):
+        sys.stderr.write("ERROR: ("+parser.prog+") unrecognized arguments: "+" ".join(unknown)+"\n")
+        if noexit:
+            sys.stdout.write("(exit 1);")
+        else:
+            sys.stdout.write("exit 1;")
+        sys.exit(1)
+
+    sys.stdout.write("CCLARGS_OUT_KEYS='"+
+                     " ".join(options)
+                     +"'; ")
+    sys.stdout.write("CCLARGS_KEYS='"+
+                     " ".join(options)
+                     +"'; ")
+    
+    for nn in options:
+        v = getattr(args,nn)
+        if isinstance(v, (list, tuple)):
+            v = delimiter.join(v)
+        v = ' ' if v is None else v
+        if nn == 'positional':
+            #TODO: check if "set -- $*" should be there instead of "set ..."
+            ## sys.stderr.write("set nil ; shift ;  set -- $* " + repr(v) +" ; \n")
+            sys.stdout.write("set nil ; shift ;  set -- $* " + repr(v) +" ; ")
+        else:
+            ## sys.stderr.write(str(nn)+"="+repr(v)+";\n")
+            #sys.stdout.write(str(nn)+"="+repr(v)+";")
+            sys.stdout.write(str(nn)+"="+repr(v)+";")
+
+
+if __name__ == "__main__":
+    ## sys.stderr.write("0{}\n".format(sys.argv))
+    parser, options, delimiter, noexit = parse_arg_desc()
+    ## sys.stderr.write("${}\n".format(sys.argv))
+    ## sys.stderr.write("{}\n".format(parser))
+    ## sys.stderr.write("{}\n".format(options))
+    ## sys.stderr.write("{}\n".format(delimiter))
+    parse_args(parser, options, delimiter, noexit)
+

@@ -182,7 +182,7 @@
               'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
             if(Schm_sleve_L)then
-               call out_fstecr(sls,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+               call out_fstecr(orols,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
                   'MELS',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
                   knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
             endif
