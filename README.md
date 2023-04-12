@@ -102,8 +102,7 @@ fststat -fst RUNMOD/output/cfg0000/ ...
 files.
 
 2D fields can also be displayed with
-[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) (make sure you
-use feat_cmake branch)
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec)
 
 -----------------------------------------------------------------
 # Extended instructions:
@@ -291,10 +290,10 @@ meteorological virtual globe offering processing, analysis and visualization
 capabilities, with a user interface similar to Google Earth and NASA World
 Wind, developed by Environment Canada.
 
-[xrec](https://github.com/ECCC-ASTD-MRD/xrec/tree/feat_cmake) is another visualization program which
-can be used to display 2D meteorological fields stored in the FST files,
-developed by Research Informatics Services, Meteorological Research Division,
-Environment and Climate Change Canada.
+[xrec](https://github.com/ECCC-ASTD-MRD/xrec) is another visualization
+program which can be used to display 2D meteorological fields stored in the
+FST files, developed by Research Informatics Services, Meteorological
+Research Division, Environment and Climate Change Canada.
 
 ## Configurations files
 
