@@ -6,9 +6,11 @@ if (MPI_FOUND)
    set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.in ${CMAKE_CURRENT_SOURCE_DIR}/maingemdm.F90)
-
 add_executable(maingemdm maingemdm.F90)
+target_include_directories(maingemdm PUBLIC
+   ${phy_INCLUDE_DIRS}
+   ${dyn_INCLUDE_DIRS}
+   ${modelutils_INCLUDE_DIRS})
 
 target_link_libraries(maingemdm
    gemdyn

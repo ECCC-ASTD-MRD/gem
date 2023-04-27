@@ -1,8 +1,8 @@
       subroutine gem_error (F_errorCode, F_FromSubName, F_Message)
-use iso_c_binding
-      use lun
+      use iso_c_binding
+      use app
       implicit none
-#include <arch_specific.hf>
+
       integer :: F_errorCode
       character(len=*) :: F_FromSubName
       character(len=*) :: F_Message
@@ -16,12 +16,12 @@ use iso_c_binding
                                "MPI_MIN",RPN_COMM_MULTIGRID,err)
 
       if (errcode < 0) then
-         if (Lun_out > 0) write(Lun_out,2000) F_FromSubName, F_Message
+         call app_log(APP_FATAL,F_FromSubName//': '//F_Message)
          call rpn_comm_FINALIZE(err)
-         stop
+         app_status=app_end(errcode)
+         stop app_status
       end if
 
-2000  format (/60('#')/2x,a': ',a/2x,'ABORT'/60('#')/)
    !---------------------------------------------------------------------
    return
 end subroutine gem_error

@@ -16,6 +16,7 @@
 
       logical function gem_muststop (F_finalstep)
       use iso_c_binding
+      use app
       use clib_itf_mod
       use cstv
       use gem_options
@@ -102,6 +103,9 @@
          end if
 
       end if
+
+!     Check for SIGTERM signal
+      gem_muststop=app_isdone()
 
       gem_muststop = gem_muststop .and. .not.end_of_run_L
 
