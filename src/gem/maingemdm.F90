@@ -9,6 +9,7 @@ program gem
 
   app_ptr=app_init(0,PROJECT_NAME_STRING,VERSION,PROJECT_DESCRIPTION_STRING,BUILD_TIMESTAMP)
   call app_libregister(APP_LIBVGRID,HAVE_VGRID)
+!  call app_libregister(APP_LIBTDPACK,HAVE_TDPACK)
   call app_libregister(APP_LIBGEMDYN,GEMDYN_VERSION_S)
   call app_libregister(APP_LIBRPNPHY,RPNPHY_VERSION_S)
   call app_libregister(APP_LIBMDLUTIL,MODELUTILS_VERSION_S)

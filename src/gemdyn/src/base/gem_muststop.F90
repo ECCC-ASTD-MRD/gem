@@ -69,6 +69,9 @@
          gem_muststop = flag
       end if
 
+!     Check for SIGTERM signal
+      gem_muststop=gem_muststop .or. app_isdone()
+
       if ( Fcst_rstrt_S /= 'NIL' ) then
          if ( (Step_kount > 0) .and. (.not. Init_mode_L .or. (Step_kount < Init_halfspan)) )  then
             gem_muststop = gem_muststop .or. &
@@ -103,9 +106,6 @@
          end if
 
       end if
-
-!     Check for SIGTERM signal
-      gem_muststop=app_isdone()
 
       gem_muststop = gem_muststop .and. .not.end_of_run_L
 
