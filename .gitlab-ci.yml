@@ -5,63 +5,84 @@ variables:
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
   GIT_SUBMODULE_STRATEGY: none
+  BUILD_BASE_BASE_DIR: /home/sici000/special_builds
+  BUILD_BASE_DIR: /home/sici000/special_builds/precaution
+  PIPELINE_SUBDIR: /home/sici000/special_builds/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 stages:
   - build
   - run_intel_icelake
-  - run_gnu_9.3.0_mpich
-  - run_gnu_12.1.0_openmpi
+  - run_gnu_9.3.0
+  - run_gnu_12.1.0
+  - package
+  - deploy
 
 before_script:
   - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
 
-# U2 GNU 9.3.0 with oneAPI
-build:gnu-9.3.0-mpich:
+#----- rhel-8-amd64_gnu-9.3.0
+build:rhel-8-amd64_gnu-9.3.0:
   variables:
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  tags:
+    - concurrent
+  when: always
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - git submodule update --recursive --init
     - . ./.eccc_setup_gnu
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-all
-    - time make -j $NCPUS work
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0 .
+    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
+    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
   artifacts:
     expire_in: 4 hrs
     paths:
     - work-rhel-8-amd64-64-gnu-9.3.0
     - gem_dbase
 
-# U2 GNU 12.1.0 with OpenMPI
-build:gnu-12.1.0-openmpi:
+#----- rhel-8-amd64_gnu-12.1.0
+build:rhel-8-amd64_gnu-12.1.0:
   variables:
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  tags:
+    - concurrent
   when: always
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - git submodule update --recursive --init
     - . ./.eccc_setup_gnu_12
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-all
-    - time make -j $NCPUS work
+    - git submodule update --recursive --init
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0 .
+    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
+    - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make -j work
   allow_failure: true
   artifacts:
     expire_in: 4 hrs
     paths:
-    - work-rhel-8-amd-64-gnu-12.1.0
+    - work-rhel-8-amd64-64-gnu-12.1.0
     - gem_dbase
 
 #----- rhel-8-icelake-64-intel-2022.1.2
@@ -73,20 +94,24 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  tags:
+    - concurrent
   when: always
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
-    - git submodule update --recursive --init
+    - set -e
     - . ./.eccc_setup_intel
-    - . ./.initial_setup
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake-all
+    - git submodule update --recursive --init
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
+    - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
     - time make -j $NCPUS
   allow_failure: true
 
 # U2 Intel 2022 with installed RPN-SI libs
-# Used for testing configs
+# Used for testing configs and for SSM package
 build:rhel-8-icelake-64-intel-2022.1.2:
   variables:
      ORD_SOUMET_CPUS: "4"
@@ -94,22 +119,54 @@ build:rhel-8-icelake-64-intel-2022.1.2:
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  tags:
+    - concurrent
   when: always
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
+    - set -e
     - . ./.eccc_setup_intel
-    - . ./.initial_setup
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2 .
     - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
-    - make cmake
-    - time make -j $NCPUS work
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
+    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
   artifacts:
     expire_in: 4 hrs
     paths:
     - work-rhel-8-icelake-64-intel-2022.1.2
     - gem_dbase
 
+package:rhel-8-icelake-64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_CPUS: "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - tags
+      - dev
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2022.1.2
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
 # U2 Intel 2021 with installed RPN-SI libs
+# Used for SSM package
 build:rhel-8-icelake-64-intel-2021.4.0:
   variables:
      ORD_SOUMET_CPUS: "4"
@@ -117,6 +174,8 @@ build:rhel-8-icelake-64-intel-2021.4.0:
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
+  tags:
+  - concurrent
   only:
   - tags
   - dev
@@ -125,10 +184,97 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
+    - set -e
     - . ./.eccc_setup_intel_2021.4.0
-    - . ./.initial_setup
-    - make cmake
+    - SRC_DIR=$(pwd)
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
+    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
     - time make -j $NCPUS
+
+package:rhel-8-icelake-64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_CPUS: "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - tags
+      - dev
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2021.4.0
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - . ./.eccc_setup_intel_2021.4.0
+      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- ubuntu-18.04-amd64_inteloneapi-2021.4.0
+build:ubuntu-18.04-amd64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS: "4"
+      ORD_SOUMET_W: "30"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: build
+   tags:
+     - concurrent
+   only:
+     - master
+     - dev
+     - tags
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel_2021.4.0
+      - SRC_DIR=$(pwd)
+      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
+      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+      - time make -j $NCPUS
+
+package:ubuntu-18.04-amd64-intel-2021.4.0:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+   dependencies:
+      - build:ubuntu-18.04-amd64-intel-2021.4.0
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel_2021.4.0
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
+      - make package
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
 #----- ubuntu-18.04-amd64_inteloneapi-2022.1.2
 build:ubuntu-18.04-amd64-intel-2022.1.2:
@@ -141,6 +287,8 @@ build:ubuntu-18.04-amd64-intel-2022.1.2:
       ORD_SOUMET_M: "8G"
       ORD_SOUMET_TMPFS: "1G"
    stage: build
+   tags:
+     - concurrent
    only:
      - master
      - dev
@@ -148,12 +296,45 @@ build:ubuntu-18.04-amd64-intel-2022.1.2:
    script:
       - set +e
       - . ~/ci-env/latest/profile.sh
+      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - . ./.initial_setup
-      - set -e
-      - make cmake
+      - SRC_DIR=$(pwd)
+      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+
+package:ubuntu-18.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-18.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+   dependencies:
+      - build:ubuntu-18.04-amd64-intel-2022.1.2
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - make package
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
 #----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
 build:ubuntu-22.04-amd64-intel-2022.1.2:
@@ -166,6 +347,8 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       ORD_SOUMET_M: "8G"
       ORD_SOUMET_TMPFS: "1G"
    stage: build
+   tags:
+     - concurrent
    only:
      - master
      - dev
@@ -173,23 +356,68 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
    script:
       - set +e
       - . ~/ci-env/latest/profile.sh
+      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - . ./.initial_setup
-      - set -e
-      - make cmake
+      - SRC_DIR=$(pwd)
+      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+
+package:ubuntu-22.04-amd64-intel-2022.1.2:
+   variables:
+      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_IMAGE   : eccc/eccc_all_default_ubuntu-22.04-amd64_latest
+      ORD_SOUMET_PROJECT : eccc_mrd
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - master
+      - dev
+      - tags
+      - schedules
+   dependencies:
+      - build:ubuntu-22.04-amd64-intel-2022.1.2
+   environment:
+      name: testing
+   script:
+      - set +e
+      - . ~/ci-env/latest/profile.sh
+      - set -e
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - make package
+      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+deploy:staging:
+   stage: deploy
+   tags:
+      - concurrent
+   only:
+      - tags
+      - dev
+      - schedules
+   script:
+      - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
 
 #----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
 5.2GEM_GY_FISL_H_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -207,6 +435,8 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
 
 CANO_W7cascP_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
@@ -214,7 +444,6 @@ CANO_W7cascP_intel:
   only:
   - dev
   - tags
-  - 5.2_cmake
   script:
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
@@ -231,13 +460,14 @@ CANO_W7cascP_intel:
 
 CANO_dcmip163r100_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -255,13 +485,14 @@ CANO_dcmip163r100_intel:
 
 CANO_wil7_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -279,13 +510,14 @@ CANO_wil7_intel:
 
 GEM_cfgs_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -303,13 +535,14 @@ GEM_cfgs_intel:
 
 GEM_GY_FISL_P_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -327,13 +560,14 @@ GEM_GY_FISL_P_intel:
 
 GEM_GY_FISL_H_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -351,13 +585,14 @@ GEM_GY_FISL_H_intel:
 
 GEM_LU_FISL_H_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -375,13 +610,14 @@ GEM_LU_FISL_H_intel:
 
 GEM_LU_OFFC_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -399,13 +635,14 @@ GEM_LU_OFFC_intel:
 
 PTOPO_GYH_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -423,13 +660,14 @@ PTOPO_GYH_intel:
 
 PTOPO_LUP_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -447,13 +685,14 @@ PTOPO_LUP_intel:
 
 RSTRT_GYP_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -471,13 +710,14 @@ RSTRT_GYP_intel:
 
 THEO_bubbleG_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -491,13 +731,14 @@ THEO_bubbleG_intel:
 
 THEO_schar_intel:
   stage: run_intel_icelake
+  tags:
+    - U2
   dependencies:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - . ~/ci-env/latest/profile.sh
@@ -510,19 +751,21 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -535,19 +778,21 @@ THEO_schar_intel:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -560,19 +805,21 @@ CANO_W7cascP_gnu:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -585,19 +832,21 @@ CANO_dcmip163r100_gnu:
     - test "${_status}" == "ED"
 
 CANO_wil7_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -610,19 +859,21 @@ CANO_wil7_gnu:
     - test "${_status}" == "ED"
 
 GEM_cfgs_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -635,19 +886,21 @@ GEM_cfgs_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -660,18 +913,21 @@ GEM_GY_FISL_P_gnu:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
+    - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -684,19 +940,21 @@ GEM_GY_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -709,19 +967,21 @@ GEM_LU_FISL_H_gnu:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -734,19 +994,21 @@ GEM_LU_OFFC_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -759,19 +1021,21 @@ PTOPO_GYH_gnu:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -784,19 +1048,21 @@ PTOPO_LUP_gnu:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -809,19 +1075,21 @@ RSTRT_GYP_gnu:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -830,19 +1098,21 @@ THEO_bubbleG_gnu:
     - test "${_status}" == "ED"
 
 THEO_schar_gnu:
-  stage: run_gnu_9.3.0_mpich
+  stage: run_gnu_9.3.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-9.3.0-mpich
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -851,19 +1121,21 @@ THEO_schar_gnu:
     - test "${_status}" == "ED"
 
 5.2GEM_GY_FISL_H_gnu_12:
-  stage: run_gnu_12.1.0_openmpi
+  stage: run_gnu_12.1.0
+  tags:
+    - U2
   dependencies:
-  - build:gnu-12.1.0-openmpi
+  - build:rhel-8-amd64_gnu-12.1.0
   when: always
   only:
   - dev
   - tags
-  - 5.2_cmake
   allow_failure: true
   script:
     - set +e
     - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_gnu_12
+    - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
