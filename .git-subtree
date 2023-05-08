@@ -1,4 +1,4 @@
-src/modelutils git@gitlab.science.gc.ca:cpi001/modelutils.git modelutils_1.7-branch_cmake
-src/rpnphy git@gitlab.science.gc.ca:cpi001/rpnphy.git master
-src/gemdyn git@gitlab.science.gc.ca:cpi001/gemdyn.git master
-gem-maestro git@gitlab.science.gc.ca:cpi001/gem-maestro.git feat_ssm
+--prefix=src/modelutils git@gitlab.science.gc.ca:MIG/modelutils.git modelutils_1.7-branch
+--prefix=src/rpnphy git@gitlab.science.gc.ca:MIG/rpnphy.git rpnphy_6.2-branch
+--prefix=src/gemdyn git@gitlab.science.gc.ca:dynamics_research/gemdyn.git 5.2
+--prefix=share/gem-maestro git@gitlab.science.gc.ca:cpi001/gem-maestro.git dev
