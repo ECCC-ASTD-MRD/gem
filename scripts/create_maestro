@@ -13,10 +13,10 @@
 #
 arguments=$*
 eval `cclargs_lite $0 \
-  -exp      "$PWD"  "$PWD"  "[]" \
-  -cfg      "" "" "[\\$gem_DIR/share]/configurations/GEM_cfgs ]" \
+  -exp      "$PWD"  "$PWD"  "[[ GIT path work directory ]]" \
+  -cfg      "\\$gem_DIR/share/configurations/GEM_cfgs" "\\$gem_DIR/share/configurations/GEM_cfgs" "[]" \
   -xfer     ""      ""      "[]" \
-  -module   ""      ""      "[]" \
+  -module   "\\$gem_DIR/share/gem-maestro/gem_module"  "\\$gem_DIR/share/gem-maestro/gem_module"      "[]" \
   -location ""      ""      "[[ $HOME/.suites/[location] ]]" \
   -ptopo    "1x1x1" "1x1x1" "[]" \
   -t        "10"    "10"    "[]" \
@@ -24,7 +24,7 @@ eval `cclargs_lite $0 \
   -nosubmit "0"     "1"     "[]" \
   ++ $arguments`
 
-if [[ -z "${GEM_STORAGE_DIR}" ]] ; then
+if [[ -z "${GEM_WORK}" ]] ; then
    #SSM package mode
    echo "not GEM GIT mode"
    ici=${PWD}
@@ -60,7 +60,7 @@ else
    expM=$(basename $cfg)
    NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
    GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
-   GEM_BIN_version="GOAS:${GEM_INSTALL}:${ATM_MODEL_VERSION}"
+   GEM_BIN_version="GOAS:${GEM_INSTALL}/work-${GEM_ARCH}:${ATM_MODEL_VERSION}"
 fi
 
 REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO
@@ -80,7 +80,7 @@ fi
 
 mkdir -p $suite_name
 
-if [[ -e "${GEM_STORAGE_DIR}" ]] ; then
+if [[ ! -z "${GEM_WORK}" ]] ; then
 #in GIT mode
    mkdir -p suites
    if [ -z "${location}" ] ; then
@@ -101,7 +101,7 @@ if [ -z "${CONFIG}" ] ; then
 fi
 
 #Obtain default physics_input_table path
-    default_phytab=${GEM_STORAGE_DIR:+${gem_DIR}/src/rpnphy/include}
+    default_phytab=${GEM_WORK:+${gem_DIR}/src/rpnphy/include}
     default_phytab=${default_phytab:-${gem_DIR}/share/rpnphy}
     PHYTABLE=${default_phytab}/physics_input_table
 
