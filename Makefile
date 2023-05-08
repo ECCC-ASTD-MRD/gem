@@ -11,6 +11,10 @@ MAKEFLAGS += --no-print-directory
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE ${gem_DIR} )
 
+# Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack) and static Intel libraries
+cmake-static:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=TRUE -DSTATIC_INTEL=ON ${gem_DIR} )
+
 # Compiling everything: you need to update rpn-si libraries (rmn, vgrid, rpncomm, tdpack) submodules to do this
 cmake-all:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_SYSTEM_RPN=FALSE ${gem_DIR} )
