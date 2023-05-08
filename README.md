@@ -1,68 +1,99 @@
 # How to get, compile and run GEM at the CMC.
-# For general information, a setup script and information on Maestro, see
-# README_general file
+
+For general information, a setup script and information on Maestro, see
+README_general file
 
 Warning: this repository uses submodules. Make sure you follow the
 instructions below.
 
-# getting gem git repository
-# choose one of the following methods
+## Getting gem git repository
 
-# 1. cloning only the necessary components:
+### Choose one of the following methods:
+
+1. cloning only the necessary components:
+```
 git clone git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
+```
 
-# 2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
-# (necessary, for now, to compile with gnu)
+2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
+   (necessary, for now, to compile with gnu)
+```
 git clone --recursive git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
+```
 
-# 3. or cloning in several steps
+3. or cloning in several steps
+```
 git clone git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
-# Update rpn-si libraries and cmake_rpn submodules
+```
+Update rpn-si libraries and cmake_rpn submodules
+```
 git submodule update --init --recursive
+```
 
-# choosing your branch
+## Choosing your branch
+```
 git branch -a # list all branches
 git checkout name_of_the_branch # checkout a branch
+```
 
-# if you want, create your own branch
+if you want, create your own branch
+```
 git checkout -b mybranch
+```
 
-# preparing gem compilation
+## Preparing gem compilation for Intel compiler
+```
 ./scripts/link-dbase.sh
-
 . ./.eccc_setup_intel
+```
 
-# Or with gnu
-# Please note you cannot compile with Intel and then with GNU in the same shell
-# Please also note that, for now,  you need to compile with RPN-SI libraries
-# sources (see methods 2. and 3. above)
+### Or for gnu
+
+Please note you cannot compile with Intel and then with GNU in the same shell
+Please also note that, for now,  you need to compile with RPN-SI libraries
+sources (see methods 2. and 3. above)
+```
 . ./.eccc_setup_gnu
+```
 
-# Before the first build, or if you made important changes (such as updating
-# other submodules, or adding or removing source files):
+Before the first build, or if you made important changes (such as updating
+other submodules, or adding or removing source files):
+```
 . ./.initial_setup
+```
 
-# building and installing GEM
-# see Makefile for options
-# for example, make cmake-all compiles everything: you need to
-# update rpn-si submodules to use it (see method 2. above)
-# make cmake compiles only gemdyn, modelutils and rpnphy
+## Building and installing GEM
+
+See Makefile for options
+For example, make cmake-all compiles everything: you need to
+update rpn-si submodules to use it (see method 2. above)
+make cmake compiles only gemdyn, modelutils and rpnphy
+```
 make cmake
-# compile
+```
+Compile
+```
 make -j
-# install in working directory
+```
+install in working directory
+```
 make -j work
-# you can also use make -j work to compile and install in the same step.
+```
 
-# running GEM: example
+You can also use make -j work to compile and install in the same step.
+
+## Running GEM: example
+
+```
 cd $GEM_WORK
 runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
+```
 
-# structure of the working environment
+### Structure of the working environment
 The structure of the build and work directories is different whether the
 $storage_model environment variable exists:
 
