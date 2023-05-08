@@ -18,11 +18,8 @@ add_dependencies(gemdyn ${PROJECT_NAME}_build_info)
 target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
    base
-   ${tdpack_INCLUDE_DIRS}
-   ${vgrid_INCLUDE_DIRS}
    ${rpncomm_INCLUDE_DIRS}
    ${rpncomm_GEN_INCLUDE_DIR}
-   ${rmn_INCLUDE_DIRS}
    ${modelutils_INCLUDE_DIRS}
    ${modelutils_MODULES_DIR}
    ${phy_INCLUDE_DIRS}
@@ -30,8 +27,13 @@ target_include_directories(gemdyn PRIVATE
 )
 
 target_link_libraries(gemdyn PUBLIC
+  rmn::rmn-ompi
+  vgrid::vgrid
+  tdpack::tdpack
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  MPI::MPI_Fortran
+  MPI::MPI_C
   )
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
