@@ -17,14 +17,13 @@ target_include_directories(rpnphy PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include 
   ${modelutils_INCLUDE_DIRS}
   ${modelutils_MODULES_DIR}
-  ${vgrid_INCLUDE_DIRS}
-  ${tdpack_INCLUDE_DIRS}
-  ${rmn_INCLUDE_DIRS}
   )
 
 target_link_libraries(rpnphy PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  vgrid::vgrid
+  tdpack::tdpack
   )
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION} )
