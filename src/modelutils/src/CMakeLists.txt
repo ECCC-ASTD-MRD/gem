@@ -13,18 +13,18 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(modelutils STATIC ${F_FILES} ${C_FILES})
 add_dependencies(modelutils ${PROJECT_NAME}_build_info)
+
 target_include_directories(modelutils PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  ${rmn_INCLUDE_DIRS}
-  ${vgrid_INCLUDE_DIRS}
   ${rpncomm_INCLUDE_DIRS}
   ${rpncomm_GEN_INCLUDE_DIR}
-  ${tdpack_INCLUDE_DIRS}
   )
 
 target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  tdpack::tdpack
+  vgrid::vgrid
   )
 
 set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
@@ -32,14 +32,23 @@ set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
 add_dependencies(modelutils_ov_ifort modelutils)
 add_dependencies(modelutils_ov_ifort ${PROJECT_NAME}_build_info)
+target_link_libraries(modelutils_ov_ifort PUBLIC
+  rmn::rmn
+  )
+
 
 add_library(modelutils_stubs STATIC stubs/drv_dyn_itf_stubs.F90)
-target_include_directories(modelutils_stubs PRIVATE ${vgrid_INCLUDE_DIRS} )
 add_dependencies(modelutils_stubs modelutils)
 add_dependencies(modelutils_stubs ${PROJECT_NAME}_build_info)
+target_link_libraries(modelutils_stubs PUBLIC
+  vgrid::vgrid
+  )
 
 add_library(modelutils_tmg_stubs STATIC tmg_stubs/tmg_stubs.F90)
 add_dependencies(modelutils_tmg_stubs ${PROJECT_NAME}_build_info)
+target_link_libraries(modelutils_tmg_stubs PUBLIC
+  vgrid::vgrid
+  )
 
 install(TARGETS modelutils
     PUBLIC_HEADER DESTINATION include
