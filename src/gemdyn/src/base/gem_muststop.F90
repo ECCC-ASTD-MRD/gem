@@ -70,7 +70,7 @@
       end if
 
 !     Check for SIGTERM signal
-      gem_muststop=gem_muststop .or. (app_isdone() .gt. 0)
+      gem_muststop=gem_muststop .or. (app_isdone())
 
       if ( Fcst_rstrt_S /= 'NIL' ) then
          if ( (Step_kount > 0) .and. (.not. Init_mode_L .or. (Step_kount < Init_halfspan)) )  then
