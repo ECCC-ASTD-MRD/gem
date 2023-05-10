@@ -28,7 +28,7 @@ if (NOT rmn_FOUND)
 endif()
 
 if (NOT rpncomm_FOUND)
-  find_package(rpncomm ${rpncomm_REQ_VERSION} COMPONENTS REQUIRED)
+  find_package(rpncomm ${rpncomm_REQ_VERSION} COMPONENTS static REQUIRED)
 endif()
 
 if (NOT tdpack_FOUND)
