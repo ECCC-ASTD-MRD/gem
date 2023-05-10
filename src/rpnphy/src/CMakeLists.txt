@@ -24,16 +24,16 @@ target_link_libraries(rpnphy PUBLIC
   OpenMP::OpenMP_C
   vgrid::vgrid
   tdpack::tdpack
+  modelutils
   )
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION} )
-add_dependencies(rpnphy rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
-add_dependencies(rpnphy rpnphy_chm_stubs ${PROJECT_NAME}_build_info)
+add_dependencies(rpnphy rpnphy_cpl_stubs rpnphy_chm_stubs modelutils ${PROJECT_NAME}_build_info)
 
 file(GLOB F_CHMSTUBS_FILES chm_stubs/*.F90)
 add_library(rpnphy_chm_stubs STATIC ${F_CHMSTUBS_FILES})
 add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
-add_dependencies(rpnphy_chm_stubs ${PROJECT_NAME}_build_info)
+add_dependencies(rpnphy_chm_stubs modelutils ${PROJECT_NAME}_build_info)
 add_dependencies(rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
 target_include_directories(rpnphy_chm_stubs PRIVATE
   ${modelutils_INCLUDE_DIRS}
