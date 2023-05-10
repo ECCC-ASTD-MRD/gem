@@ -5,9 +5,9 @@ variables:
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
   GIT_SUBMODULE_STRATEGY: none
-  BUILD_BASE_BASE_DIR: /home/sici000/special_builds
-  BUILD_BASE_DIR: /home/sici000/special_builds/precaution
-  PIPELINE_SUBDIR: /home/sici000/special_builds/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
+  BUILD_BASE_BASE_DIR: /home/saci000/special_builds
+  BUILD_BASE_DIR: /home/saci000/special_builds/precaution
+  PIPELINE_SUBDIR: /home/saci000/special_builds/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 stages:
   - build
