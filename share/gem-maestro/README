@@ -1,6 +1,6 @@
 Default gem_module is GEM_module
 For those who want to use the new module (no StageIN, StageOUT), 
-recreate the symbolic link to point to mid_module
+recreate the symbolic link to point to nostage_module
 or use -module [path_to_module_name]
 
 Documentation on script "create_maestro"
