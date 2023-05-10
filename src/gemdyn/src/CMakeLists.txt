@@ -14,7 +14,8 @@ list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/src/no_mpi/mai
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
 
 add_library(gemdyn STATIC ${F_FILES} ${C_FILES})
-add_dependencies(gemdyn ${PROJECT_NAME}_build_info)
+add_dependencies(gemdyn ${phy_SRC} modelutils ${PROJECT_NAME}_build_info)
+
 target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
    base
@@ -30,6 +31,7 @@ target_link_libraries(gemdyn PUBLIC
   rmn::rmn-ompi
   vgrid::vgrid
   tdpack::tdpack
+  rpncomm::rpncomm
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
   MPI::MPI_Fortran

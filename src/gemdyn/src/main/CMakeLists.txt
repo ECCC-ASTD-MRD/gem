@@ -17,7 +17,7 @@ target_link_libraries(checkdmpart
    modelutils_tmg_stubs
    vgrid::vgrid
    tdpack::tdpack
-   rpncomm
+   rpncomm::rpncomm
    rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
@@ -26,7 +26,7 @@ target_link_libraries(checkdmpart
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(checkdmpart gemdyn ${phy_SRC} modelutils ${rpncomm_SRC})
+add_dependencies(checkdmpart gemdyn ${phy_SRC} modelutils)
 
 add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
@@ -37,14 +37,14 @@ target_link_libraries(gemgrid
    modelutils_tmg_stubs
    vgrid::vgrid
    tdpack::tdpack
-   rpncomm
+   rpncomm::rpncomm
    rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(gemgrid gemdyn ${phy_SRC} modelutils ${rpncomm_SRC})
+add_dependencies(gemgrid gemdyn ${phy_SRC} modelutils)
 
 add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
@@ -55,7 +55,7 @@ target_link_libraries(prgemnml
    modelutils_tmg_stubs
    vgrid::vgrid
    tdpack::tdpack
-   rpncomm
+   rpncomm::rpncomm
    rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
@@ -64,6 +64,6 @@ target_link_libraries(prgemnml
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-add_dependencies(prgemnml gemdyn ${phy_SRC} modelutils ${rpncomm_SRC})
+add_dependencies(prgemnml gemdyn ${phy_SRC} modelutils)
 
 install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)
