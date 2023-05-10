@@ -24,7 +24,7 @@ target_link_libraries(maingemdm
    modelutils_ov_ifort
    vgrid::vgrid
    tdpack::tdpack
-   rpncomm
+   rpncomm::rpncomm
    rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
@@ -34,6 +34,6 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
 )
 
-add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils ${rpncomm_SRC})
+add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils)
 
 install(TARGETS maingemdm RUNTIME DESTINATION bin)
