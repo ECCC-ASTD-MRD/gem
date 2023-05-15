@@ -19,8 +19,6 @@ add_dependencies(gemdyn ${phy_SRC} modelutils ${PROJECT_NAME}_build_info)
 target_include_directories(gemdyn PRIVATE
    ${CMAKE_CURRENT_SOURCE_DIR}/../include
    base
-   ${rpncomm_INCLUDE_DIRS}
-   ${rpncomm_GEN_INCLUDE_DIR}
    ${modelutils_INCLUDE_DIRS}
    ${modelutils_MODULES_DIR}
    ${phy_INCLUDE_DIRS}
