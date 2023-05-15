@@ -117,14 +117,6 @@ See \`cado --help\` for more detailed info
 "
 }
 
-# Variable to generalize: GEM_GIT_DIR used for this check only.
-# GEM_GIT_DIR -> $(eval echo \${this_project}_GIT_DIR})
-this_project_lower=$(echo ${this_project} | tr '[:upper:]' '[:lower:]')
-if [[ $(realpath $PWD) != $(realpath $(eval echo \${${this_project_lower}_DIR})) ]] ; then
-  printf "$0: \033[1;31mERROR\033[0m: This command must be run from the top of the source code repository\n"
-  exit 1
-fi
-# The above could be replaced by a `cd` to ${gem_DIR}
 
 # Variable to generalize: GEM_ARCH used to compose build_dir and its name
 # is used in the text below.  Could be
@@ -139,6 +131,15 @@ if [[ -z $(eval echo \${${this_project}_ARCH}) ]] ; then
     echo "is necessary for the build with or without this helper."
     exit 1
 fi
+
+# Variable to generalize: GEM_GIT_DIR used for this check only.
+# GEM_GIT_DIR -> $(eval echo \${this_project}_GIT_DIR})
+this_project_lower=$(echo ${this_project} | tr '[:upper:]' '[:lower:]')
+if [[ $(realpath $PWD) != $(realpath $(eval echo \${${this_project_lower}_DIR})) ]] ; then
+  printf "$0: \033[1;31mERROR\033[0m: This command must be run from the top of the source code repository\n"
+  exit 1
+fi
+# The above could be replaced by a `cd` to ${gem_DIR}
 
 if ! build_dir=$(realpath build-$(eval echo \${${this_project}_ARCH})) ; then
     echo "ERROR running true_path on 'build-\${GEM_ARCH}'."
@@ -160,7 +161,8 @@ case "${name}" in
       clean) cmd=${clean_command} ;;
       help|--help) print_cado_help ; exit 0 ;;
       -h) print_cado_short_help ; exit 0 ;;
-      *)    printf "\033[1;31mERROR\033[0m: Unknown command '${name}', see \`cado help\`\n"; exit 1 ;;
+      '') printf "\033[1;31mERROR\033[0m: A command is required\n"; print_cado_short_help ; exit 1 ;;
+      *)  printf "\033[1;31mERROR\033[0m: Unknown command '${name}', see \`cado help\`\n"; exit 1 ;;
 esac
 
 printf "$0: running command \033[1;36m%s\033[0m\n" "${cmd}"
