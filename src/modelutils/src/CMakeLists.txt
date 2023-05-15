@@ -16,8 +16,6 @@ add_dependencies(modelutils ${PROJECT_NAME}_build_info)
 
 target_include_directories(modelutils PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  ${rpncomm_INCLUDE_DIRS}
-  ${rpncomm_GEN_INCLUDE_DIR}
   )
 
 target_link_libraries(modelutils PUBLIC
@@ -25,6 +23,7 @@ target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_C
   tdpack::tdpack
   vgrid::vgrid
+  rpncomm::rpncomm
   )
 
 set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
