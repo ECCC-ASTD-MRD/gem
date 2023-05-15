@@ -5,7 +5,7 @@ message(STATUS "(EC) WITH_SYSTEM_RPN = ${WITH_SYSTEM_RPN}")
 if ((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))
   find_package(rmn ${rmn_REQ_VERSION} COMPONENTS static REQUIRED)
   find_package(tdpack ${tdpack_REQ_VERSION} COMPONENTS static REQUIRED)
-  find_package(rpncomm ${rpncomm_REQ_VERSION} COMPONENTS static REQUIRED)
+  find_package(rpncomm ${rpncomm_REQ_VERSION} REQUIRED)
   find_package(vgrid ${vgrid_REQ_VERSION} COMPONENTS static REQUIRED)
   
 # Use sources for RPN libraries (WITH_SYSTEM_RPN=FALSE)
