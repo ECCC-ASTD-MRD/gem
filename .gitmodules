@@ -9,11 +9,11 @@
 [submodule "src/rpn-si/rpncomm"]
 	path = src/rpn-si/rpncomm
         url = https://gitlab.science.gc.ca/RPN-SI/rpncomm.git
-	branch = dev
+	branch = main
 [submodule "src/rpn-si/rmn"]
 	path = src/rpn-si/rmn
         url = https://gitlab.science.gc.ca/RPN-SI/librmn.git
-	branch = dev
+	branch = master
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
         url = https://gitlab.science.gc.ca/RPN-SI/tdpack.git
@@ -21,5 +21,4 @@
 [submodule "src/rpn-si/fst-tools"]
 	path = src/rpn-si/fst-tools
 	url = https://gitlab.science.gc.ca/RPN-SI/fst-tools.git
-	branch = dev
-
+	branch = master
