@@ -1,6 +1,7 @@
 
 cado_commands=(
     cmake
+    cmake-static
     cmake-all
     cmake-debug
     cmake-debug-extra

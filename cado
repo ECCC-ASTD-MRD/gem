@@ -30,9 +30,10 @@
 this_project=GEM
 
             cmake_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=TRUE  "$@"'
+     cmake_static_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=TRUE  -DSTATIC_INTEL=ON "$@"'
         cmake_all_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=FALSE "$@"'
       cmake_debug_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=TRUE  -DCMAKE_BUILD_TYPE=Debug" $@"'
-cmake_debug_extra_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=TRUE -DCMAKE_BUILD_TYPE=Debug" -DEXTRA_CHECKS_ON $@"'
+cmake_debug_extra_command='cmake -S . -B ${build_dir} -DWITH_SYSTEM_RPN=TRUE  -DCMAKE_BUILD_TYPE=Debug" -DEXTRA_CHECKS_ON $@"'
 
   build_command='cmake --build ${build_dir} -- "$@"'
    work_command='cmake --build ${build_dir} --target work -- "$@"'
@@ -56,22 +57,19 @@ Shortcuts for configuring and building ${this_project}.
 \033[1mCOMMANDS\033[0m:
   \033[4mconfiguration\033[0m:
     \033[1mcmake\033[0m:
-        Generate makefiles for building the project with installed RPN
+        Generate Makefiles for building the project with installed RPN
         dependencies instead of the ones included as submodules.
+    \033[1mcmake-static\033[0m:
+        Generate Makefiles for building the project with static Intel libraries.
     \033[1mcmake-all\033[0m:
-        Generate Maekfiles for building the project with the RPN libraries
-        included as submodules instead of the system installed ones.  This
+        Generate Makefiles for building the project with the RPN libraries
+        included as submodules instead of the system-installed ones.  This
         allows the developer to be exactly sure what they are using at the cost
         of longer build time.
     \033[1mcmake-debug\033[0m:
-        Generate Makefiles for compiling with debug flags.  This command also
-        uses the RPN libraries included as submodules.  This also allows for
-        better debugging because the developer to add print statements in some
-        library functions that they would not otherwise have access to.
+        Generate Makefiles for compiling with debug flags. 
     \033[1mcmake-debug-extra\033[0m:
-        Generate Makefiles for compiling with debug flags and extra checks
-        like.  This command also uses the RPN libraries included as submodules
-        to allow for maximal debugging possibilities.
+        Generate Makefiles for compiling with debug flags and extra checks.
 
   \033[4mbuilding\033[0m:
     Additional arguments will be passed to the build tool (make).  For example
@@ -89,7 +87,7 @@ NOTE:
     - Because CMake supports and encourages out-of-tree builds, the equivalent of
       distclean target from the GNU standard is simply removing the build directory.
     - Running one of the cmake commands after another can change some build options
-      for example, runnign \`cado cmake-all\` will cause the project to be built
+      for example, running \`cado cmake-all\` will cause the project to be built
       with the RPN libraries included as submodules.  It is possible to switch to
       building with the system RPN libraries by running \`cado cmake\` without
       needing to delete the build directory and start over. 
@@ -102,10 +100,11 @@ print_cado_short_help(){
 
 COMMANDS:
   configuration: (additional arguments forwarded to CMake)
-    cmake: WITH_SYSTEM_RPN=false
-    cmake-all: WITH_SYSTEM_RPN=true
-    cmake-debug: WITH_SYSTEM_RPN=true, compile with debug flags
-    cmake-debug-extra: WITH_SYSTEM_RPN=true, compile with debug flags and extra compile-time checks
+    cmake: configure using installed RPN libraries (-DWITH_SYSTEM_RPN=true)
+    cmake-static: configure using installed RPN libraries and static Intel libraries (-DSTATIC_INTEL=ON)
+    cmake-all: configure using sources of RPN libraries (-DWITH_SYSTEM_RPN=false)
+    cmake-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug)
+    cmake-debug-extra:  configure with debug flags and extra compile-time checks (-DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON)
 
   building: (Additional arguments forwarded to make (like -j))
     build: Build entire project
@@ -152,15 +151,16 @@ cmd=""
 
 case "${name}" in
                 cmake) cmd=${cmake_command} ;;
+         cmake-static) cmd=${cmake_static_command} ;;
             cmake-all) cmd=${cmake_all_command} ;;
           cmake-debug) cmd=${cmake_debug_command} ;;
     cmake-debug-extra) cmd=${cmake_debug_extra_command} ;;
-      build) cmd=${build_command} ;;
-       work) cmd=${work_command} ;;
-    package) cmd=${package_command} ;;
-      clean) cmd=${clean_command} ;;
-      help|--help) print_cado_help ; exit 0 ;;
-      -h) print_cado_short_help ; exit 0 ;;
+                build) cmd=${build_command} ;;
+                 work) cmd=${work_command} ;;
+              package) cmd=${package_command} ;;
+                clean) cmd=${clean_command} ;;
+          help|--help) print_cado_help ; exit 0 ;;
+                   -h) print_cado_short_help ; exit 0 ;;
       '') printf "\033[1;31mERROR\033[0m: A command is required\n"; print_cado_short_help ; exit 1 ;;
       *)  printf "\033[1;31mERROR\033[0m: Unknown command '${name}', see \`cado help\`\n"; exit 1 ;;
 esac
