@@ -13,8 +13,6 @@ target_link_libraries(toc2nml PUBLIC
    ${BLAS_LIBRARIES}
    )
 
-add_dependencies(toc2nml gemdyn ${phy_SRC} modelutils)
-
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/maingem_monitor_output.c
   COMMAND sed 's/main_gem_monitor_output/main/' ${CMAKE_CURRENT_SOURCE_DIR}/gem_monitor_output.c > ${CMAKE_CURRENT_SOURCE_DIR}/maingem_monitor_output.c
