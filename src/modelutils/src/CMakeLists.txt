@@ -34,7 +34,7 @@ add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
 add_dependencies(modelutils_ov_ifort modelutils)
 add_dependencies(modelutils_ov_ifort ${PROJECT_NAME}_build_info)
 target_link_libraries(modelutils_ov_ifort PUBLIC
-  rmn::rmn-ompi
+  rmn::rmn
   )
 
 
