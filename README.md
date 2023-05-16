@@ -67,23 +67,34 @@ other submodules, or adding or removing source files):
 
 ## Building and installing GEM
 
-See Makefile for options
-For example, make cmake-all compiles everything: you need to
-update rpn-si submodules to use it (see method 2. above)
-make cmake compiles only gemdyn, modelutils and rpnphy
+There is a new script aimed at replacing the top-level Makefile.
+For now, both still coexist.
+See cado help or the content of the Makefile for options.
+For example: cado cmake-all or make cmake-all generates Makefiles to compile
+everything: you would need to update rpn-si submodules to use it (see method
+2. above)
+
+cado cmake or make cmake configures only gem, gemdyn, modelutils and rpnphy
 ```
+cado cmake
+or 
 make cmake
 ```
 Compile
 ```
+cado build -j
+or
 make -j
 ```
 install in working directory
 ```
+cado work -j
 make -j work
 ```
 
-You can also use make -j work to compile and install in the same step.
+cado work -j or  make -j work can be used to compile and install in the same step.
+
+See others options with cado -h (short help) or cado help
 
 ## Running GEM: example
 
