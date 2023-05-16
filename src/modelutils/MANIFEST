@@ -11,7 +11,7 @@ DOC	   : https://wiki.cmc.ec.gc.ca/wiki/Modelutils
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-rmn  >= 20.0.0
-tdpack >= 1.6.1
-vgrid >= 6.6.0
-rpncomm >= 4.6.2
+rmn  >= 20.0.1
+tdpack >= 1.6.2
+vgrid >= 6.9.2
+rpncomm >= 4.6.3

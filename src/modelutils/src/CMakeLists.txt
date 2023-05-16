@@ -9,14 +9,14 @@ endif()
 file(GLOB C_FILES */*.c)
 file(GLOB F_FILES main/flipit.F90 main/yy2global.F90 main/yydecode.F90 main/yyencode.F90 base/*F90 driver/*.F90 utils/*.F90)
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
+set(PROJECT_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(modelutils STATIC ${F_FILES} ${C_FILES})
 add_dependencies(modelutils ${PROJECT_NAME}_build_info)
 
-target_include_directories(modelutils PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  )
+target_include_directories(modelutils PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
+target_include_directories(modelutils PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>)
 
 target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_Fortran
@@ -26,13 +26,15 @@ target_link_libraries(modelutils PUBLIC
   rpncomm::rpncomm
   )
 
-set_target_properties(modelutils PROPERTIES VERSION ${PROJECT_VERSION} )
-
+set_target_properties(modelutils PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    OUTPUT_NAME modelutils)
+   
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
 add_dependencies(modelutils_ov_ifort modelutils)
 add_dependencies(modelutils_ov_ifort ${PROJECT_NAME}_build_info)
 target_link_libraries(modelutils_ov_ifort PUBLIC
-  rmn::rmn
+  rmn::rmn-ompi
   )
 
 
@@ -50,7 +52,8 @@ target_link_libraries(modelutils_tmg_stubs PUBLIC
   )
 
 install(TARGETS modelutils
-    PUBLIC_HEADER DESTINATION include
     LIBRARY       DESTINATION lib
     ARCHIVE       DESTINATION lib)
 install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
+
+
