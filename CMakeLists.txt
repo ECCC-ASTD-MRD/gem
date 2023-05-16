@@ -159,7 +159,7 @@ if ((NOT DEFINED ENV{EC_ARCH} ) OR (NOT((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
-if ("${phy_SRC}" STREQUAL "rpnphy" )
+if ("${phy_LIBRARIES}" STREQUAL "rpnphy" )
   list(APPEND BINARIES feseri prphynml )
 endif()
 list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end)

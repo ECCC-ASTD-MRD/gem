@@ -37,22 +37,12 @@ else()
 endif()
 
 add_subdirectory(modelutils modelutils)
-set(modelutils_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/modelutils/include" CACHE PATH "modelutils include directory" FORCE)
-set(modelutils_MODULES_DIR "${CMAKE_BINARY_DIR}/src/modelutils/modelutils/modules" CACHE PATH "modelutils modules directory" FORCE)
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
-  set(phy_SRC "rpnphy" CACHE STRING "rpnphy sources")
-  set(phy_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/rpnphy/include" CACHE PATH "rpnphy include directory" FORCE)
-  set(phy_MODULES_DIR "${CMAKE_BINARY_DIR}/src/rpnphy/rpnphy/modules" CACHE PATH "rpnphy modules directory" FORCE)
   set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
   set(cpl_LIBRARIES rpnphy_cpl_stubs CACHE STRING "rpnphy coupling library")
   set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry library")
   add_subdirectory(rpnphy rpnphy)
-endif()
-
-if (EXISTS ${CMAKE_SOURCE_DIR}/src/gemdyn/CMakeLists.txt)
-  set(dyn_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/gemdyn/include" CACHE PATH "rpnphy include directory" FORCE)
-  set(dyn_MODULES_DIR "${CMAKE_BINARY_DIR}/src/gemdyn/gemdyn/modules" CACHE PATH "rpnphy modules directory" FORCE)
 endif()
 
 add_subdirectory(gemdyn gemdyn)

@@ -9,10 +9,6 @@ if (MPI_FOUND)
 endif()
 
 add_executable(maingemdm maingemdm.F90)
-target_include_directories(maingemdm PUBLIC
-   ${phy_INCLUDE_DIRS}
-   ${dyn_INCLUDE_DIRS}
-   ${modelutils_INCLUDE_DIRS})
 
 target_link_libraries(maingemdm
    gemdyn
@@ -33,7 +29,5 @@ target_link_libraries(maingemdm
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
-
-add_dependencies(maingemdm gemdyn ${phy_SRC} modelutils)
 
 install(TARGETS maingemdm RUNTIME DESTINATION bin)
