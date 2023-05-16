@@ -18,7 +18,7 @@ else
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20230414
+. r.load.dot rpn/libs/20230516
 . r.load.dot rpn/utils/20230414
 
 # Load Intel FFTW if on rhel
