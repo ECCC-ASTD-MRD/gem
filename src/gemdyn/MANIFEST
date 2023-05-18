@@ -1,5 +1,5 @@
 NAME       : gemdyn
-VERSION    : 5.2.0-b4
+VERSION    : 5.2.0-rc1
 BUILD      : 
 DESCRIPTION: GEM dynamical core
 SUMMARY    : 
@@ -14,5 +14,6 @@ rmn  >= 20.0.1
 tdpack >= 1.6.2
 vgrid >= 6.9.2
 rpncomm >= 4.6.3
-modelutils = 1.7.0-b1
-rpnphy = 6.2.0-b3
+modelutils = 1.7.0-rc1
+rpnphy = 6.2.0-rc1
+
