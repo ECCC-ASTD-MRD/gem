@@ -10,16 +10,16 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gpscc2/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gpscc2/inteloneapi-2022.1.2
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/inteloneapi-2022.1.2
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/ECCC/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/ECCC/inteloneapi-2022.1.2
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20230228-beta4
-. r.load.dot rpn/utils/20230228-beta4
+. r.load.dot rpn/libs/20230516
+. r.load.dot rpn/utils/20230414
 
 # Load Intel FFTW if on rhel
 if  [[ ${ORDENV_DIST} = "rhel" ]]; then
@@ -34,3 +34,6 @@ export COMPILER_SUITE=intel
 export COMPILER_VERSION=2022.1.2
 
 . ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=TRUE

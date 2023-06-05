@@ -10,18 +10,16 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gpscc2/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gpscc2/gnu-9.3.0
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/SCIENCE/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gnu-9.3.0
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.2/ECCC/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/ECCC/gnu-9.3.0
 fi
 
 # Load latest version of RPN-SI libraries
-# Doesn't work for now
-# You need to update the submodules to compile with GNU
-#. r.load.dot rpn/libs/20230228-beta4
-. r.load.dot rpn/utils/20230228-beta4
+. r.load.dot rpn/libs/20230516
+. r.load.dot rpn/utils/20230414
 
 # We need a more recent version of cmake than the one available by default
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1
@@ -31,3 +29,6 @@ COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
 
 . ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=TRUE
