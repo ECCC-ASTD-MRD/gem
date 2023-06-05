@@ -36,6 +36,7 @@ else
         export gemdyn_version=`cat src/gemdyn/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export rpnphy_version=`cat src/rpnphy/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export modelutils_version=`cat src/modelutils/MANIFEST | sed -n '/VERSION/s/.*: //p'`
+        export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
         export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}

@@ -5,6 +5,10 @@ cado_commands=(
     cmake-all
     cmake-debug
     cmake-debug-extra
+    cmake-mach
+    cmake-mach-static
+    cmake-all-mach
+    cmake-mach-debug
     build
     work
     package
