@@ -1,0 +1,19 @@
+      integer, parameter :: ndco2=10, ndo3=9 , ndwat=10, ntt=141, &
+                            nco2 =2 , mx  =50, mxx  =mx*ndwat+1 , &
+                            no3  =mx*ndo3 +1 , ncx  =mx*ndco2+1 , &
+                  ntotal= 5+mxx*(3*ntt+(ncx+1)*nco2)+2*mxx+3*ntt+ &
+                          2*nco2*ntt + no3
+
+!     POINTEURS DES CHAMPS DE RADIATION
+      integer g1,g2,g3,th2o,tro3,yg3,bcn,dbcn,bo3,dbo3,to3,uu,tt
+      common /rad_p/ g1,g2,g3,th2o,tro3,yg3,bcn,dbcn,bo3,dbo3, &
+                       to3,uu,tt
+
+      real g(ntotal)
+
+!     ozone climatologique
+      real, dimension(:  ), pointer :: goz
+      real, dimension(:,:), pointer :: gozon12
+
+      common /rad_r/ g,goz,gozon12
+
