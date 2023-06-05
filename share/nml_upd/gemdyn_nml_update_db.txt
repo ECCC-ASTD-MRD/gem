@@ -1,0 +1,897 @@
+version=nml.2
+
+## file: gem_settings.nml > newname
+## class: settings > newclass
+
+file: gem_settings.nml
+class: Settings
+
+## # Syntax
+##
+## fileVersion: old_version > new_version
+## mv:  old_nml / old_var > new_nml / new_var
+## rm:  old_nml / old_var
+## set: nml / var = old_default > new_default
+## call: python_module.python_function
+## # Called as: python_function(nml_object, old_version, new_version, verbose, debug)
+## # Shoud return the updated cfg object
+## exec: external_script_name
+## # Called from shell as: script_name config_filename old_version new_version verbose debug
+## # Shoud edit the config_filename in place
+## msg: Message to print when Verbose
+
+
+#------
+fileVersion: 4.6.0 > 4.6.1
+
+fileVersion: 4.6.1 > 4.6.2
+rm:  gem_cfgs / p_zong_nbin
+rm:  gem_cfgs / p_zong_znli
+rm:  gem_cfgs / p_zong_znmod
+rm:  gem_cfgs / p_zong_znprf_s
+rm:  gem_cfgs / p_zong_znsrf_s
+rm:  gem_cfgs / p_zong_znsus_l
+
+fileVersion: 4.6.2 > 4.6.3
+# New: gem_cfgs / hzd_njpole_theta = 0
+
+#------
+fileVersion: 4.6.3 > 4.7.0
+# New: adw_cfgs / adw_catmullrom_l = F 
+# New: gem_cfgs / schm_cub_traj_l = F
+# New: gem_cfgs / schm_hor_int_traj_l = F
+# New: gem_cfgs / schm_nblendyy = 0
+# New: gem_cfgs / schm_phyms_l = F
+# New: gem_cfgs / schm_source_ps_l = F
+# New: gem_cfgs / sol2d_precond_s = 
+# New: gem_cfgs / sol3d_krylov_s = 
+# New: gem_cfgs / sol3d_precond_s = 
+# New: gem_cfgs / tr3d_list_s = 
+# New: mtn_cfgs / schm_cub_traj_l = F
+
+# Special Cases
+call: gem_upcfg_463_470.main
+# mv: gem_cfgs / init_dfnp       > gem_cfgs / init_dflength_s
+# mv: gem_cfgs / init_dfpl_8     > gem_cfgs / init_dfpl_s
+# mv: gem_cfgs / out3_postfreq   > gem_cfgs / out3_postfreq_s
+# mv: step / step_rsti           > step / fcst_rstrt_s
+# mv: step / step_bkup           > step / fcst_bkup_s
+# mv: step / step_gstat          > step / fcst_gstat_s
+# mv: step / step_spinphy        > step / fcst_spinphy_s
+# mv: step / step_nesdt          > step / fcst_nesdt_s
+
+rm:  adw_cfgs / adw_cub_traj_L
+rm:  adw_cfgs / adw_gccsa_L
+rm:  adw_cfgs / adw_nosetint_L
+
+rm:  gem_cfgs / acid_pilot_l
+rm:  gem_cfgs / acid_readposi_l
+rm:  gem_cfgs / acid_readsol_l
+rm:  gem_cfgs / acid_test_l
+rm:  gem_cfgs / cstv_ptop_8
+rm:  gem_cfgs / hzd_1d_l
+rm:  gem_cfgs / hzd_njpole_theta
+rm:  gem_cfgs / hzd_t0_0_l
+rm:  gem_cfgs / hzd_t1_0_l
+rm:  gem_cfgs / hzd_tr3d_name_s
+rm:  gem_cfgs / hzd_type_s
+rm:  gem_cfgs / out3_zund
+rm:  gem_cfgs / p_dumpbus
+rm:  gem_cfgs / p_dumpbus_s
+rm:  gem_cfgs / re_introduce_bug_on_vt_to_validate_rc3
+rm:  gem_cfgs / schm_adw_extrap_l
+rm:  gem_cfgs / sol_precond_s
+
+rm:  gement / e_schm_adcub
+rm:  gement / e_schm_stlag
+mv:  gement / e_tr3d_list_s    > gement / tr3d_list_s
+mv:  gement / e_tr_anydate_l   > gement / tr3d_anydate_l
+rm:  gement / pil_hblen
+rm:  gement / pil_lancemodel
+rm:  gement / topo_clip_oro_l
+rm:  gement / topo_dgfms_l
+rm:  gement / topo_dgfmx_l
+rm:  gement / topo_filmx_l
+
+rm:  mtn_cfgs / cstv_ptop_8
+rm:  mtn_cfgs / eigv_parity_l
+rm:  mtn_cfgs / init_balgm_l
+rm:  mtn_cfgs / init_dfnp
+rm:  mtn_cfgs / init_dfpl_8
+rm:  mtn_cfgs / init_dftr_l
+rm:  mtn_cfgs / init_dfwin_l
+rm:  mtn_cfgs / out3_closestep
+rm:  mtn_cfgs / out3_etik_s
+rm:  mtn_cfgs / out3_flipit_l
+rm:  mtn_cfgs / schm_autobar_l
+rm:  mtn_cfgs / schm_modcn
+rm:  mtn_cfgs / schm_phyms_l
+rm:  mtn_cfgs / schm_psadj_l
+rm:  mtn_cfgs / schm_superwinds_l
+rm:  mtn_cfgs / schm_xwvt3
+rm:  mtn_cfgs / tr3d_userntr
+
+# set: gem_cfgs / schm_modcn = 0 > 6
+
+fileVersion: 4.7.0 > 4.7.2
+# No changes
+
+fileVersion: 4.7.2 > 4.7.3
+# No changes
+
+#------
+fileVersion: 4.7.3 > 4.8.rc5
+
+# New: adw_cfgs / adw_bc_min_max_l = F
+# New: adw_cfgs / adw_ilmc_min_max_l = F
+# New: adw_cfgs / adw_ilmc_sweep_max = 0
+# New: adw_cfgs / adw_pil_sub_e = 0
+# New: adw_cfgs / adw_pil_sub_n = 0
+# New: adw_cfgs / adw_pil_sub_s = 0
+# New: adw_cfgs / adw_pil_sub_w = 0
+# New: adw_cfgs / adw_verbose = 0
+# New: gem_cfgs / cstv_ba_nh_8 = 0.000000000000000E+000
+# New: gem_cfgs / cstv_re_8 = 0.000000000000000E+000
+# New: gem_cfgs / hzd_div_damp = 0.0000000E+00
+# New: gem_cfgs / hzd_smago_l = F
+# New: gem_cfgs / hzd_smago_param = 0.0000000E+00
+# New: gem_cfgs / hzd_theta_njpole_gu_only = 0
+# New: gem_cfgs / hzd_type_s = ,
+# New: gem_cfgs / hzd_xidot_l = F
+# New: gem_cfgs / iau_ninblocx = 0
+# New: gem_cfgs / iau_ninblocy = 0
+# New: gem_cfgs / inp_blacklist_s = ,
+# New: gem_cfgs / inp_npes = 0
+# New: gem_cfgs / out3_npes = 0
+# New: gem_cfgs / schm_advec = 0
+# New: gem_cfgs / schm_adxlegacy_l = F
+# New: gem_cfgs / schm_capa_var_l = F
+# New: gem_cfgs / schm_cub_coriolis_l = F
+# New: gem_cfgs / schm_lift_ltl_l = F
+# New: gem_cfgs / schm_mteul = 0
+# New: gem_cfgs / schm_settls_l = F
+# New: gem_cfgs / spn_cutoff_scale_large = 0.0000000E+00
+# New: gem_cfgs / spn_cutoff_scale_small = 0.0000000E+00
+# New: gem_cfgs / spn_nudging_s = ,
+# New: gem_cfgs / spn_relax_hours = 0.0000000E+00
+# New: gem_cfgs / spn_start_lev = 0.0000000E+00
+# New: gem_cfgs / spn_step = 0
+# New: gem_cfgs / spn_trans_shape_s = ,
+# New: gem_cfgs / spn_up_const_lev = 0.0000000E+00
+# New: gem_cfgs / spn_weight_l = F
+# New: gem_cfgs / spn_wt_pwr = 0
+# New: mtn_cfgs / cstv_ba_nh_8 = 0.000000000000000E+000
+# New: mtn_cfgs / cstv_re_8 = 0.000000000000000E+000
+# New: mtn_cfgs / hdif_lnr = 0.0000000E+00
+# New: mtn_cfgs / hdif_pwr = 0
+# New: mtn_cfgs / mtn_hght_top = 0.0000000E+00
+# New: mtn_cfgs / out3_etik_s = ,
+# New: mtn_cfgs / out3_close_interval_s
+# New: mtn_cfgs / schm_advec = 0
+# New: mtn_cfgs / schm_lift_ltl_l = F
+# New: mtn_cfgs / schm_mteul = 0
+# New: mtn_cfgs / schm_settls_l = F
+# New: mtn_cfgs / sol_type_s = ,
+
+# New: step / fcst_alarm_s = ,
+# New: step / fcst_bkup_additional_s = ,
+
+# Special Cases
+call: gem_upcfg_473_48rc5.main
+# mv: gem_cfgs / out3_closestep = 0 > gem_cfgs / out3_close_interval_s
+# mv: gem_cfgs / out3_postfreq_s > gem_cfgs / out3_postproc_fact = 0
+# rm: gem_cfgs / out3_unit_s
+# phys str option name changed (MP, ...)
+
+rm: gem_cfgs / clim_climat_l
+rm: gem_cfgs / clim_inincr_l
+rm: gem_cfgs / eigv_parity_l
+rm: gem_cfgs / out3_cubdd_l
+rm: gem_cfgs / out3_cubds_l
+rm: gem_cfgs / out3_cubqq_l
+rm: gem_cfgs / out3_cubqs_l
+rm: gem_cfgs / out3_cubuv_l
+rm: gem_cfgs / out3_cubww_l
+rm: gem_cfgs / out3_cubzt_l
+rm: gem_cfgs / out3_debug_l
+rm: gem_cfgs / out3_fullplane_l
+rm: gem_cfgs / out3_newout_l
+rm: gem_cfgs / out3_satues_l
+rm: gem_cfgs / out3_uencode_l
+rm: gem_cfgs / rstri_glbcol_l
+rm: gem_cfgs / schm_hor_int_traj_l
+rm: gem_cfgs / schm_modcn
+rm: gem_cfgs / schm_pcsty_l
+rm: gem_cfgs / schm_pheat_l
+rm: gem_cfgs / schm_phyms_l
+rm: gem_cfgs / schm_xwvt3
+rm: gem_cfgs / vspng_vec_l
+
+rm: gement / anal_cond_l
+rm: gement / pil_bmf_l
+rm: gement / pil_dx
+rm: gement / pil_jobend_s
+rm: gement / pil_jobstrt_s
+mv: gement / tr3d_anydate_l  > gem_cfgs / tr3d_anydate_l
+
+rm: gement / tr3d_list_s
+# ?mv?: gem_cfgs / tr3d_list_s
+
+rm: gement / var_q
+rm: gement / var_tt
+rm: gement / var_uu
+rm: gement / var_w
+rm: gement / var_zd
+
+rm: grid / grd_dxmax
+rm: grid / grd_dymax
+rm: grid / grd_nila
+rm: grid / grd_njla
+
+rm: mtn_cfgs / g_halox
+rm: mtn_cfgs / g_haloy
+rm: mtn_cfgs / grd_nila
+rm: mtn_cfgs / grd_njla
+rm: mtn_cfgs / hzd_lnr
+rm: mtn_cfgs / hzd_pwr
+rm: mtn_cfgs / hzd_type_s
+rm: mtn_cfgs / lam_ctebcs_l
+rm: mtn_cfgs / lctl_rxstat_s
+rm: mtn_cfgs / pres_ptop
+rm: mtn_cfgs / schm_adcub_l
+rm: mtn_cfgs / schm_itraj
+rm: mtn_cfgs / step_rsti
+rm: mtn_cfgs / vspng_coeftop
+rm: mtn_cfgs / vspng_nk
+
+rm: theo_cfgs / out3_etik_s
+
+#------
+fileVersion: 4.8.rc5 > 4.8.rc6
+
+#------
+fileVersion: 4.8.rc6 > 4.8.rc7
+# New: gem_cfgs / Hzd_smago_prandtl = -1.
+# New: gem_cfgs / Schm_psadj_lam_L = .false.
+# New: gem_cfgs / Out3_npex = -1
+# New: gem_cfgs / Out3_npey = -1
+
+rm: gem_cfgs / Hzd_smago_L
+rm: gem_cfgs / Schm_lift_ltl_L
+
+
+#------
+fileVersion: 4.8.rc7 > 4.8.3
+
+# New: gem_cfgs / heap_nk
+# New: gem_cfgs / inp_vertintype_tracers_s
+rm: gem_cfgs / out3_flipit_l
+rm: gem_cfgs / schm_mteul
+# New: gem_cfgs / schm_nolog_l
+# New: gem_cfgs / tr3d_default_s
+
+rm: grid / grd_gauss_l
+
+# New: mtn_cfgs / schm_nologt_l
+rm: mtn_cfgs / schm_mteul
+
+#------
+fileVersion: 4.8.3 > 4.8-LTS.15
+
+# New: adw_cfgs / adw_scaling
+
+# New: gem_cfgs / schm_dry_mixing_ratio_l
+# New: gem_cfgs / schm_psadj_print_l
+
+call: gem_upcfg_483_48LTS11.main
+# Special Cases
+# Convert schm_psadj
+# rm: gem_cfgs / schm_psadj_l
+# New: gem_cfgs / schm_psadj
+# Convert fcst_alarm_s
+# mv: step / fcst_alarm_s > step / step_alarm
+# rm: step / fcst_alarm_s
+
+
+#------
+fileVersion: 4.8-LTS.15 > 5.0.a1
+
+rm: adw_cfgs / adw_scaling
+
+# New: gem_cfgs / cstv_ba_m_8
+# New: gem_cfgs / eqspng_in_rhs_l
+# New: gem_cfgs / hzd_before_phy_l
+# New: gem_cfgs / hzd_in_rhs_l
+# New: gem_cfgs / hzd_smago_lnr
+# New: gem_cfgs / imp_pgradw_l
+# New: gem_cfgs / out3_vinterp_type_s
+rm: gem_cfgs / schm_dry_mixing_ratio_l
+# New: gem_cfgs / schm_predictor
+
+rm: gem_cfgs / schm_settls_l
+# New: gem_cfgs / smago_in_rhs_l
+# New: gem_cfgs / stag_destag_l
+# New: gem_cfgs / top_spng_in_rhs_l
+# New: gem_cfgs / vspng_riley_l
+rm: gem_cfgs / schm_psadj_print_l
+
+# New: mtn_cfgs / cstv_ba_m_8
+# New: mtn_cfgs / imp_pgradw_l
+rm: mtn_cfgs / schm_settls_l
+
+mv: mtn_cfgs / schm_nologt_l > mtn_cfgs / schm_nolog_l
+
+call: gem_upcfg_48LTS11_50a1.main
+# Special Cases
+# Convert schm_psadj
+# rm: gem_cfgs / schm_psadj
+# New: gem_cfgs / schm_psadj_l
+# Convert vtopo to str
+# rm: gem_cfgs / vtopo_ndt
+# rm: gem_cfgs / vtopo_start
+# New: gem_cfgs / vtopo_length_s
+# New: gem_cfgs / vtopo_start_s
+# Convert grid iref
+# rm: grdc / grdc_iref
+# rm: grdc / grdc_jref
+# rm: grid / grd_iref
+# rm: grid / grd_jref
+# Convert fcst_alarm_s
+# New: step / fcst_alarm_s
+# rm: step / step_alarm
+
+
+#------
+fileVersion: 5.0.a1 > 5.0.a2
+
+mv: adw_cfgs / adw_bc_min_max_l > adv_cfgs / adv_bc_min_max_l
+rm: adw_cfgs / adw_catmullrom_l
+rm: adw_cfgs / adw_ckbd_l
+rm: adw_cfgs / adw_exdg_l
+mv: adw_cfgs / adw_ilmc_min_max_l > adv_cfgs / adv_ilmc_min_max_l
+mv: adw_cfgs / adw_ilmc_sweep_max > adv_cfgs / adv_ilmc_sweep_max
+mv: adw_cfgs / adw_mono_l > adv_cfgs / adv_rhst_mono_l
+mv: adw_cfgs / adw_pil_sub_e > adv_cfgs / adv_pil_sub_e
+mv: adw_cfgs / adw_pil_sub_n > adv_cfgs / adv_pil_sub_n
+mv: adw_cfgs / adw_pil_sub_s > adv_cfgs / adv_pil_sub_s
+mv: adw_cfgs / adw_pil_sub_w > adv_cfgs / adv_pil_sub_w
+rm: adw_cfgs / adw_positive_l
+rm: adw_cfgs / adw_stats_l
+# New: adv_cfgs / adv_slice_rebuild
+mv: adw_cfgs / adw_verbose > adv_cfgs / adv_verbose
+
+rm: gem_cfgs / schm_adxlegacy_l
+rm: gem_cfgs / schm_nolog_l
+rm: gem_cfgs / schm_superwinds_l
+
+rm: mtn_cfgs / schm_nolog_l
+
+
+#------
+fileVersion: 5.0.a2 > 5.0.a3
+
+rm: gem_cfgs / eqspng_in_rhs_l
+rm: gem_cfgs / hzd_before_phy_l
+rm: gem_cfgs / hzd_theta_njpole_gu_only
+rm: gem_cfgs / hzd_type_s
+rm: gem_cfgs / hzd_xidot_l
+# New: gem_cfgs / hzd_smago_prandtl_hu
+rm: gem_cfgs / imp_pgradw_l
+rm: gem_cfgs / schm_cub_coriolis_l
+rm: gem_cfgs / schm_predictor
+rm: gem_cfgs / schm_tlift
+rm: gem_cfgs / smago_in_rhs_l
+rm: gem_cfgs / stag_destag_l
+rm: gem_cfgs / top_spng_in_rhs_l
+rm: gem_cfgs / vspng_njpole
+rm: gem_cfgs / vspng_zmean_l
+
+rm: mtn_cfgs / imp_pgradw_l
+rm: mtn_cfgs / schm_lift_ltl_l
+
+
+#------
+fileVersion: 5.0.a3 > 5.0.a4
+
+# New: adv_cfgs / adv_catmullrom_l
+# New: adv_cfgs / adv_scaling
+
+# New: gem_cfgs / eq_ramp_l
+# New: gem_cfgs / schm_dry_mixing_ratio_l
+# New: gem_cfgs / schm_wlint_l
+
+# New: mtn_cfgs / schm_wlint_l
+
+call: gem_upcfg_50a3_50a4.main
+# Special Cases
+# Convert fcst_alarm_s
+# rm: step / fcst_alarm_s
+# New: step / step_alarm
+
+
+#------
+fileVersion: 5.0.a4 > 5.0.a5
+
+# New: gem_cfgs / cstv_psadj_8
+# New: gem_cfgs / cstv_psref_8
+# New: gem_cfgs / hzd_smago_bot_lev
+# New: gem_cfgs / hzd_smago_fric_heat
+# New: gem_cfgs / hzd_smago_min_lnr
+# New: gem_cfgs / hzd_smago_theta_nobase_l
+# New: gem_cfgs / hzd_smago_top_lev
+# New: gem_cfgs / schm_bcavg_l
+# New: gem_cfgs / schm_eulmtn_l
+# New: gem_cfgs / schm_sleve_l
+# New: gem_cfgs / schm_psadj_print_l
+
+
+call: gem_upcfg_50a4_50a5.main
+# Special Cases
+# Convert schm_psadj
+# rm: gem_cfgs / schm_psadj_l
+# New: gem_cfgs / schm_psadj
+# Convert vtopo to str
+# rm: mtn_cfgs / vtopo_ndt
+# rm: mtn_cfgs / vtopo_start
+# New: mtn_cfgs / vtopo_length_s
+# New: mtn_cfgs / vtopo_start_s
+
+
+#------
+fileVersion: 5.0.a5 > 5.0.a6
+
+rm: adv_cfgs / adv_ilmc_min_max_l
+
+mv: gem_cfgs / grd_rcoef > gem_cfgs / hyb_rcoef
+mv: mtn_cfgs / grd_rcoef > mtn_cfgs / hyb_rcoef
+
+rm: gem_cfgs / hzd_difva_l
+rm: gem_cfgs / hzd_prof_s
+rm: gem_cfgs / lam_acidtest_l
+# New: gem_cfgs / zblen_hmin
+
+rm: williamson / williamson_alpha
+rm: williamson / williamson_case
+
+#------
+fileVersion: 5.0.a6 > 5.0.a7
+
+# New: bubble_cfgs / bubble_domain_top
+# New: bubble_cfgs / bubble_dx
+# New: bubble_cfgs / bubble_gnk
+# New: bubble_cfgs / bubble_hyb
+# New: bubble_cfgs / bubble_ictr
+# New: bubble_cfgs / bubble_kctr
+# New: bubble_cfgs / bubble_ni
+# New: bubble_cfgs / bubble_nj
+# New: bubble_cfgs / bubble_pref_8
+# New: bubble_cfgs / bubble_rad
+# New: bubble_cfgs / bubble_theta
+
+# New: gem_cfgs / out3_liebxch_iter
+rm: gem_cfgs / schm_wlint_l
+
+rm: mtn_cfgs / cstv_ba_8
+rm: mtn_cfgs / cstv_ba_m_8
+rm: mtn_cfgs / cstv_ba_nh_8
+rm: mtn_cfgs / cstv_dt_8
+rm: mtn_cfgs / cstv_re_8
+rm: mtn_cfgs / cstv_tstr_8
+rm: mtn_cfgs / g_nk
+rm: mtn_cfgs / g_periodx
+rm: mtn_cfgs / g_periody
+rm: mtn_cfgs / grd_dx
+rm: mtn_cfgs / grd_dy
+rm: mtn_cfgs / grd_ni
+rm: mtn_cfgs / grd_nj
+rm: mtn_cfgs / hdif_lnr
+rm: mtn_cfgs / hdif_pwr
+rm: mtn_cfgs / hyb
+rm: mtn_cfgs / hyb_rcoef
+rm: mtn_cfgs / lam_blend_h
+rm: mtn_cfgs / lam_blend_hx
+rm: mtn_cfgs / lam_blend_hy
+# New: mtn_cfgs / mtn_dx
+# New: mtn_cfgs / mtn_gnk
+# New: mtn_cfgs / mtn_ni
+# New: mtn_cfgs / mtn_nj
+# New: mtn_cfgs / mtn_pref_8
+rm: mtn_cfgs / out3_close_interval_s
+rm: mtn_cfgs / out3_etik_s
+rm: mtn_cfgs / schm_advec
+rm: mtn_cfgs / schm_cub_traj_l
+rm: mtn_cfgs / schm_hydro_l
+rm: mtn_cfgs / schm_itcn
+rm: mtn_cfgs / schm_itnlh
+rm: mtn_cfgs / schm_trapeze_l
+rm: mtn_cfgs / schm_wlint_l
+rm: mtn_cfgs / sol_type_s
+rm: mtn_cfgs / step_gstat
+rm: mtn_cfgs / step_total
+rm: mtn_cfgs / vtopo_length_s
+rm: mtn_cfgs / vtopo_start_s
+rm: mtn_cfgs / zblen_l
+rm: mtn_cfgs / zblen_spngthick
+rm: mtn_cfgs / zblen_spngtt_l
+
+rm: theo_cfgs / lctl_debug_l
+
+#------
+fileVersion: 5.0.a7 > 5.0.a8
+
+rm: gem_cfgs / schm_source_ps_l
+
+call: gem_upcfg_50a7_50a8.main
+# Special Cases
+# rm: gem_cfgs / hzd_smago_theta_nobase_l = F
+# New: gem_cfgs / hzd_smago_theta_base_l = T
+# rm: gem_cfgs / hzd_smago_bot_lev = 0.7000000
+# rm: gem_cfgs / hzd_smago_top_lev = 0.4000000
+# New: gem_cfgs / hzd_smago_lev = 0.7000000    ,  0.4000000
+# rm: gem_cfgs / hzd_smago_lnr = 0.0000000E+00
+# rm: gem_cfgs / hzd_smago_min_lnr = -1.000000
+# New: gem_cfgs / hzd_smago_lnr = -1.000000    ,  0.0000000E+00,  -1.000000
+
+#------
+fileVersion: 5.0.a8 > 5.0.a9
+
+set: gem_cfgs / Schm_itraj = 2 > 3
+
+#------
+fileVersion: 5.0.a9 > 5.0.a10
+
+#------
+fileVersion: 5.0.a10 > 5.0.a11
+
+rm:  bubble_cfgs / bubble_domain_top
+rm:  bubble_cfgs / bubble_gnk
+rm:  bubble_cfgs / bubble_hyb
+rm:  bubble_cfgs / bubble_pref_8
+rm:  mtn_cfgs / mtn_gnk
+rm:  mtn_cfgs / mtn_hght_top
+rm:  mtn_cfgs / mtn_pref_8
+
+New: bubble_cfgs / bubble_nk = 100
+New: bubble_cfgs / bubble_dz = 10.00000
+New: mtn_cfgs / mtn_dz = 300.0000
+New: mtn_cfgs / mtn_nk = 65
+New: mtn_cfgs / mtn_zblen_thk = 0.0000000E+00
+
+New: grdc / grdc_iref = -1
+New: grdc / grdc_jref = -1
+New: grid / grd_iref = -1
+New: grid / grd_jref = -1
+
+rm:  gem_cfgs / zblen_hmin
+rm:  gem_cfgs / zblen_l
+rm:  gem_cfgs / zblen_spngthick
+rm:  gem_cfgs / zblen_spngtt_l
+
+New: gem_cfgs / lctl_cktimeleft_l = F
+
+#------
+fileVersion: 5.0.a11 > 5.0.a12
+
+New: gem_cfgs / iau_input_type_s = OLD
+New: gem_cfgs / iau_stats_l = F
+New: gem_cfgs / schm_phycpl_s = split
+
+#------
+fileVersion: 5.0.a12 > 5.0.b1
+
+rm: gem_cfgs / hzd_in_rhs_l
+
+#------
+fileVersion: 5.0.b1 > 5.0.b2
+
+#------
+fileVersion: 5.0.b2 > 5.0.b3
+
+#------
+fileVersion: 5.0.b3 > 5.0.b4
+
+New: adv_cfgs / adv_slt_winds = F
+
+#------
+fileVersion: 5.0.b4 > 5.0.b5
+
+#------
+fileVersion: 5.0.b5 > 5.0.b6
+
+
+#------
+fileVersion: 5.0.b6 > 5.0.b7
+
+#------
+fileVersion: 5.0.b7 > 5.0.b8
+
+# Set: gem_cfgs / hyb_rcoef = 2*1.000000       , 2*-1.000000
+rm: gem_cfgs / schm_sleve_l
+
+#------
+fileVersion: 5.0.b8 > 5.0.b9
+
+#------
+fileVersion: 5.0.b9 > 5.0.rc1
+
+#------
+fileVersion: 5.0.rc1 > 5.0.rc2
+
+#------
+fileVersion: 5.0.rc2 > 5.0.rc3
+
+#------
+fileVersion: 5.0.rc3 > 5.0.rc3
+
+#------
+fileVersion: 5.0.rc3 > 5.0.rc5
+
+#------
+fileVersion: 5.0.rc5 > 5.0.0
+#New:  gem_cfgs/out3_gzfix_extrap
+
+#------
+fileVersion: 5.0.0 > 5.0-u1.rc1
+
+#------
+fileVersion: 5.0-u1.rc1 > 5.0-u1.rc2
+
+#------
+fileVersion: 5.0-u1.rc2 > 5.0-u1.rc3
+#------
+fileVersion: 5.0-u1.rc3 > 5.0-u1.rc4
+
+#------
+fileVersion: 5.0.0 > 5.0.1
+
+#------
+fileVersion: 5.0.1 > 5.1.a3
+msg: "WARNING: dyn nml are not auto updated from 5.0 to 5.1"
+
+rm:  grdc / grdc_hblen
+rm:  grdc / grdc_initphy_l
+#New:  grdc / grdc_fullgrid_l
+
+#------
+fileVersion: 5.1.a3 > 5.1.a4
+
+#------
+fileVersion: 5.1.a4 > 5.1.a5
+
+rm: dyn_fisl / schm_adcub_l
+rm: dyn_fisl / schm_psadj_lam_l
+rm: adv_cfgs / adv_bc_lam_zlf_l
+rm: adv_cfgs / adv_catmullrom_l
+
+New: adv_cfgs / adv_bc_lam_flux = 1
+New: adv_cfgs / adv_bc_pexp_list = 9*1.000000
+New: bubble_cfgs / bubble_gaus_l = F
+
+#------
+fileVersion: 5.1.a5 > 5.1.a6
+#New:  dyn_fisl/gauss_niter
+rm:  dyn_fisl/schm_itraj
+rm:  dyn_fisl/schm_trapeze_l
+
+#------
+fileVersion: 5.1.a6 > 5.1.a7
+rm:  adv_cfgs/adv_bc_lam_flux
+rm:  adv_cfgs/adv_bc_min_max_l
+rm:  adv_cfgs/adv_bc_pexp_list
+rm:  adv_cfgs/adv_ilmc_min_max_l
+rm:  adv_cfgs/adv_ilmc_sweep_max
+rm:  adv_cfgs/adv_pil_sub_e
+rm:  adv_cfgs/adv_pil_sub_n
+rm:  adv_cfgs/adv_pil_sub_s
+rm:  adv_cfgs/adv_pil_sub_w
+rm:  adv_cfgs/adv_rhst_mono_l
+rm:  adv_cfgs/adv_verbose
+rm:  dyn_fisl/schm_sleve_l
+rm:  dyn_fisl/sol_fft_l
+rm:  init/iau_input_type_s
+#New:  mtn_cfgs/mtn_pos_seed
+#New:  mtn_cfgs/mtn_wind_seed
+#New:  surface_cfgs/isba_no_warm_sn_freez
+#New:  vert_layers/hyb_h
+
+#------
+fileVersion: 5.1.a7 > 5.1.a8
+rm:  dyn_fisl/schm_cub_traj_l
+#------
+fileVersion: 5.1.a8 > 5.1-u1.a8
+
+
+#------
+fileVersion: 5.1.a8 > 5.1.a9
+#rm:  dyn_kernel/schm_autobar_l
+#New:  mtn_cfgs/mtn_rcoef
+
+#------
+fileVersion: 5.1-u1.a8 > 5.1-u1.a9
+#rm:  dyn_kernel/schm_autobar_l
+#New:  mtn_cfgs/mtn_rcoef
+
+#------
+fileVersion: 5.1.a9 > 5.1-u1.a9
+
+#------
+fileVersion: 5.1.a9 > 5.1.a10
+rm:  dyn_fisl/cstv_psref_8
+rm:  dyn_fisl/cstv_re_8
+rm:  dyn_fisl/schm_bcavg_l
+rm:  dyn_fisl/schm_capa_var_l
+rm:  dyn_fisl/schm_eulmtn_l
+rm:  hvdif/hzd_div_damp
+#------
+fileVersion: 5.1.a10 > 5.1.a11
+
+#------
+fileVersion: 5.1.a11 > 5.1.0-a11+nc5
+#New:  gem_cfgs/gem_trace_ctrl
+#New:  gem_cfgs/gem_trace_freq
+#------
+fileVersion: 5.1.0-a11+nc5 > 5.1.0-a12
+
+#New:  vert_layers/hyb_flat
+
+#------
+fileVersion: 5.1.0-a12 > 5.1.0-a13
+
+#------
+fileVersion: 5.1.0-a13 > 5.1.0-a14
+#New:  ensembles/ens_ptp_latmax
+#New:  ensembles/ens_recycle_mc
+rm:  ensembles/Ens_iau_mc
+rm:  ensembles/Ens_first_init_mc
+
+#------
+fileVersion: 5.1.0-a14 > 5.1.0-b1
+
+#------
+fileVersion: 5.1.0-b1 > 5.1.0-b2
+
+#------
+fileVersion: 5.1.0-b2 > 5.1.0-rc1
+
+#------
+fileVersion: 5.1.0-rc1 > 5.1.0-rc2
+
+#------
+fileVersion: 5.1.0-rc2 > 5.1.0-rc3
+
+#------
+fileVersion: 5.1.0-rc3 > 5.1.0-rc4
+
+#------
+fileVersion: 5.1.0-rc4 > 5.1.0-rc5
+#New:  gem_cfgs/legacy_reduce_l
+
+#------
+fileVersion: 5.1.0-rc5 > 5.1.0-rc6
+
+#------
+fileVersion: 5.2.0-rc6 > 5.1.0-rc7
+
+#------
+fileVersion: 5.1.0-rc7 > 5.1.0-rc8
+
+#------
+fileVersion: 5.1.0-rc8 > 5.1.0-rc9
+
+#------
+fileVersion: 5.1.0-rc9 > 5.1.0-rc10
+#New:  ensembles/ens_skeb_tndfix
+
+#------
+fileVersion: 5.1.0-rc10 > 5.2.0-a1
+rm:  gem_cfgs/legacy_reduce_l
+
+#------
+fileVersion: 5.2.0-a1 > 5.2.0-a2
+#New:  dyn_fisl/sol_one_transpose_l
+rm:  spn/spn_nudging_s
+#New:  spn/spn_freq
+rm:  spn/spn_step
+
+#------
+fileVersion: 5.2.0-a2 > 5.2.0-a3
+
+#------
+fileVersion: 5.2.0-a3 > 5.2.0-a4
+#New:  dyn_fisl/schm_orols_fromgeophy_l
+#New:  dyn_fisl/schm_orols_np
+#New:  dyn_fisl/schm_orols_rc
+#------
+fileVersion: 5.2.0-a4 > 5.2.0-a5
+
+#------
+fileVersion: 5.2.0-a5 > 5.2.0-a6
+rm:  ensembles/ens_ptp_tlc
+#New:  vert_layers/g_nk
+#New:  vert_layers/hyb_first_height
+#New:  vert_layers/hyb_lid_height
+#New:  vert_layers/hyb_nkequal
+#------
+fileVersion: 5.2.0-a6 > 5.2.0-a7
+
+#------
+fileVersion: 5.2.0-a7 > 5.2.0-a8
+#New:  dyn_fisl/ovlpx
+#New:  dyn_fisl/ovlpy
+#New:  dyn_kernel/lhs_metric_l
+#New:  vert_layers/hyb_lin_depth
+#------
+fileVersion: 5.2.0-a8 > 5.2.0-a9
+
+#------
+fileVersion: 5.2.0-a9 > 5.2.0-a10
+
+#------
+fileVersion: 5.2.0-a10 > 5.2.0-a11
+rm:  dyn_kernel/lhs_metric_l
+
+#------
+fileVersion: 5.2.0-a11 > 5.2.0-a12
+
+#------
+fileVersion: 5.2.0-a12 > 5.2.0-a13
+
+#------
+fileVersion: 5.2.0-a13 > 5.2.0-a14
+
+#------
+fileVersion: 5.2.0-a14 > 5.2.0-a15
+
+set: dyn_fisl / sol3d_precond_s = "JACOBI" > "RAS"
+#------
+fileVersion: 5.2.0-a15 > 5.2-u2.0-a15
+fileVersion: 5.2.0-a15 > 5.2.0-a16
+fileVersion: 5.2.0-a16 > 5.2-u2.0-a16
+fileVersion: 5.2-u2.0-a15 > 5.2-u2.0-a16
+
+#------
+fileVersion: 5.1-u2.1-rc1 > 5.1-u2.1-rc2
+
+#------
+fileVersion: 5.1-u2.1-rc2 > 5.1.2
+
+#------
+fileVersion: 5.2.0-a16 > 5.2.0-a17
+
+#------
+fileVersion: 5.2.0-a17 > 5.2.0-a18
+
+#------
+fileVersion: 5.2.0-a18 > 5.2.0-a19
+rm:  dyn_fisl/gauss_niter
+rm:  dyn_fisl/ovlpx
+rm:  dyn_fisl/ovlpy
+rm:  dyn_fisl/sol2d_precond_s
+rm:  dyn_fisl/sol3d_krylov_s
+rm:  dyn_fisl/sol3d_precond_s
+rm:  dyn_fisl/sol_fgm_eps
+rm:  dyn_fisl/sol_fgm_maxits
+rm:  dyn_fisl/sol_im
+rm:  dyn_fisl/sol_one_transpose_l
+rm:  dyn_fisl/sol_type_s
+rm:  dyn_fisl/sol_yyg_eps
+rm:  dyn_fisl/sol_yyg_maxits
+#------
+fileVersion: 5.2.0-a19 > 5.2.0-a20
+
+#------
+fileVersion: 5.2.0-a20 > 5.2.0-a21
+
+#------
+fileVersion: 5.2.0-a21 > 5.2.0-a22
+rm:  gem_cfgs/gem_trace_ctrl
+rm:  gem_cfgs/gem_trace_freq
+#------
+fileVersion: 5.2.0-a22 > 5.2.0-a23
+
+#------
+fileVersion: 5.2.0-a23 > 5.2.0-a24
+
+#------
+fileVersion: 5.2.0-a24 > 5.2.0-b1
+
