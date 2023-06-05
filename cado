@@ -1,0 +1,178 @@
+#!/bin/bash
+#
+# Explanation that this is not part of the CMake workflow but is just a helper
+# to save some typing.
+#
+# Basically there are two commands to know:
+#
+# 1. Configure a build directory.  Generate makefiles
+#
+#      cmake -S SOURCE_DIR -B BUILD_DIR [-DOPTION=VALUE ...]
+#
+#   The options are provided by the project maintainers to enable the users
+#   to change aspects of the build process without needing to understand cmake.
+#
+#   This is also equivalent to doing
+#
+#      mkdir BUILD_DIR
+#      cd BUILD_DIR
+#      cmake SOURCE_DIR
+#
+# 2. Building the entire project or single targets
+#
+#      cmake --build BUILD_DIR [--target TARGET] [-- -j [N]]
+#
+#   this is exactly equivalent to CD'ing into BUILD_DIR and doing
+#
+#      make [-j N] [TARGET]
+#
+
+this_project=GEM
+
+            cmake_command='cmake -S . -B ${build_dir}  "$@"'
+     cmake_static_command='cmake -S . -B ${build_dir}  -DSTATIC_INTEL=ON "$@"'
+        cmake_all_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir} "$@"'
+      cmake_debug_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" $@"'
+cmake_debug_extra_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" -DEXTRA_CHECKS_ON $@"'
+
+  build_command='cmake --build ${build_dir} -- "$@"'
+   work_command='cmake --build ${build_dir} --target work -- "$@"'
+package_command='cmake --build ${build_dir} --target package -- "$@"'
+  clean_command='cmake --build ${build_dir} --target clean -- "$@"'
+
+print_cado_help(){
+  printf "Usage: cado COMMAND ..
+
+Shortcuts for configuring and building ${this_project}.
+
+\033[1mDESCRIPTION\033[0m:
+    This project is configured using CMake.  To get started, you must first run
+    one of the \`cado cmake*\` commands which will configure the project to be
+    built following certain options described below.
+    
+    Once this is done, one of the other commands (build, work, package, clean)
+    may be used build the project and possibly install it to the working
+    directory
+
+\033[1mCOMMANDS\033[0m:
+  \033[4mconfiguration\033[0m:
+    \033[1mcmake\033[0m:
+        Generate Makefiles for building the project with installed RPN
+        dependencies when at CMC, or with their sources outside CMC.
+    \033[1mcmake-static\033[0m:
+        Generate Makefiles for building the project with static Intel libraries.
+    \033[1mcmake-all\033[0m:
+        Generate Makefiles for building the project with the RPN libraries
+        included as submodules instead of the system-installed ones.  This
+        allows the developer to be exactly sure what they are using at the cost
+        of longer build time.
+    \033[1mcmake-debug\033[0m:
+        Generate Makefiles for compiling with debug flags. 
+    \033[1mcmake-debug-extra\033[0m:
+        Generate Makefiles for compiling with debug flags and extra checks.
+
+  \033[4mbuilding\033[0m:
+    Additional arguments will be passed to the build tool (make).  For example
+    \`cado build -j\`
+    \033[1mbuild\033[0m:
+        Build the entire project
+    \033[1mwork\033[0m:
+        Build the entire project and install it in the working directory
+    \033[1mpackage\033[0m:
+        Build the entire project and create an SSM package.
+    \033[1mclean\033[0m:
+        Clean all build artifacts (.o, .a, .so, and executables)
+  
+NOTE:
+    - Because CMake supports and encourages out-of-tree builds, the equivalent of
+      distclean target from the GNU standard is simply removing the build directory.
+    - Running one of the cmake commands after another can change some build options
+      for example, running \`cado cmake-all\` will cause the project to be built
+      with the RPN libraries included as submodules.  It is possible to switch to
+      building with the system RPN libraries by running \`cado cmake\` without
+      needing to delete the build directory and start over. 
+
+"
+}
+
+print_cado_short_help(){
+  printf "cado COMMAND [...]
+
+COMMANDS:
+  configuration: (additional arguments forwarded to CMake)
+    cmake: configure using installed RPN libraries at CMC (and sources outside CMC)
+    cmake-static: configure using installed RPN libraries and static Intel libraries (-DSTATIC_INTEL=ON)
+    cmake-all: configure using sources of RPN libraries (WITH_SYSTEM_RPN is set to FALSE)
+    cmake-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug)
+    cmake-debug-extra:  configure with debug flags and extra compile-time checks (-DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON)
+
+  building: (Additional arguments forwarded to make (like -j))
+    build: Build entire project
+    work: Build entire project, install to working directory
+    package: Build entire project, create SSM package
+    clean: Delete build artifacts
+
+See \`cado --help\` for more detailed info
+"
+}
+
+
+# Variable to generalize: GEM_ARCH used to compose build_dir and its name
+# is used in the text below.  Could be
+# ${GEM_ARCH} -> $(eval echo \${${this_project}_ARCH}) (in the if)
+# \${GEM_ARCH} -> \${${this_project}_ARCH} (in the text)
+# build_dir=$(realpath build-$(eval echo \${${this_project}_ARCH}))
+if [[ -z $(eval echo \${${this_project}_ARCH}) ]] ; then
+    echo "$0: This convenience helper uses \${${this_project}_ARCH} to set the cmake build"
+    echo "and install directories as build-\${${this_project}_ARCH} and work-\${${this_project}_ARCH}"
+    echo "but the variable is not set.  This indicates that the environment"
+    echo "setup 'source .common_setup <compiler>' has not been done.  This"
+    echo "is necessary for the build with or without this helper."
+    exit 1
+fi
+
+# Variable to generalize: GEM_GIT_DIR used for this check only.
+# GEM_GIT_DIR -> $(eval echo \${this_project}_GIT_DIR})
+this_project_lower=$(echo ${this_project} | tr '[:upper:]' '[:lower:]')
+if [[ $(realpath $PWD) != $(realpath $(eval echo \${${this_project_lower}_DIR})) ]] ; then
+  printf "$0: \033[1;31mERROR\033[0m: This command must be run from the top of the source code repository\n"
+  exit 1
+fi
+# The above could be replaced by a `cd` to ${gem_DIR}
+
+if ! build_dir=$(realpath build-$(eval echo \${${this_project}_ARCH})) ; then
+    echo "ERROR running true_path on 'build-\${GEM_ARCH}'."
+fi
+echo "Using build directory '${build_dir}'"
+
+name=$1
+shift
+cmd=""
+
+case "${name}" in
+                cmake) cmd=${cmake_command} ;;
+         cmake-static) cmd=${cmake_static_command} ;;
+            cmake-all) cmd=${cmake_all_command} ;;
+          cmake-debug) cmd=${cmake_debug_command} ;;
+    cmake-debug-extra) cmd=${cmake_debug_extra_command} ;;
+                build) cmd=${build_command} ;;
+                 work) cmd=${work_command} ;;
+              package) cmd=${package_command} ;;
+                clean) cmd=${clean_command} ;;
+          help|--help) print_cado_help ; exit 0 ;;
+                   -h) print_cado_short_help ; exit 0 ;;
+      '') printf "\033[1;31mERROR\033[0m: A command is required\n"; print_cado_short_help ; exit 1 ;;
+      *)  printf "\033[1;31mERROR\033[0m: Unknown command '${name}', see \`cado help\`\n"; exit 1 ;;
+esac
+
+printf "$0: running command \033[1;36m%s\033[0m\n" "${cmd}"
+eval echo ${cmd}
+eval ${cmd}
+
+cmd_exit_code=$?
+if [[ ${cmd_exit_code} == 0 ]] ; then
+  printf "$0: Command '${name}' (\033[36m${cmd}\033[0m) completed successfully\n"
+else
+  printf "$0: Command '${name}' (\033[36m${cmd}\033[0m) completed failed with code ${cmd_exit_code}\n"
+fi
+exit ${cmd_exit_code}

@@ -1,0 +1,78 @@
+
+cado_commands=(
+    cmake
+    cmake-static
+    cmake-all
+    cmake-debug
+    cmake-debug-extra
+    build
+    work
+    package
+    help
+)
+
+#
+# If not using the IF in _complete_targets, then we could list only some "favorite" targets
+# and save the user from getting a large amount of targets.
+#
+favorite_makefile_targets=(
+    work
+    maingemdm
+    rpnphy
+    rmn
+    modelutils
+    # ...
+)
+
+_cado(){
+    echo "================================================" >> ~/.log.txt
+    local cur prev words cword
+    _init_completion || return
+    COMPREPLY=()
+
+    echo "cur=$cur, prev=$prev, words='${words[*]}', cword=$cword, words[1]=${words[1]}" >> ~/.log.txt
+
+    if (( cword == 1 )) ; then
+        COMPREPLY=($(compgen -W "${cado_commands[*]}" -- ${cur}))
+    elif [[ "${words[1]}" == "build" ]] ; then
+        _complete_targets build-${GEM_ARCH}
+    fi
+}
+
+_complete_targets(){
+    #
+    # In the original shortcut Makefile, tab completion would only complete
+    # targets of that Makefile.  This call to _get_makefile_targets would
+    # get over a hundred results.  Perhaps it is better to only list some
+    # targets in the targets array above instead and not have this if
+    #
+    # if [[ -d "${1}" ]] ; then
+    #     _get_makefile_targets ${1}
+    # fi
+    COMPREPLY+=( $(compgen -W "${favorite_makefile_targets[*]}" -- "${cur}") )
+}
+
+#
+# I just found the code in the make completion script with a tiny bit of
+# modifications.  This gives too much stuff though, people would probably
+# not want that.
+#
+_get_makefile_targets(){
+    local build_dir=$1
+    #
+    # Completion for `make` is normally lazy loaded the first time you invoke
+    # completion for `make in a given shell.  This provides the function
+    # _make_target_extract_script used below
+    #
+    if [[ "$(type -t _make)" != function ]] ; then
+        _completion_loader make
+    fi
+    #
+    local reset=$(shopt -po posix); set +o posix
+    COMPREPLY=( $(cd ${build_dir} && LC_ALL=C \
+        make -npq __BASH_MAKE_COMPLETION__=1 \
+        .DEFAULT 2>/dev/null | \
+        command sed -nf <(_make_target_extract_script -- "${cur}") ) )
+    $reset
+}
+complete -F _cado cado
