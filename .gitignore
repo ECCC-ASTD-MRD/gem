@@ -8,7 +8,6 @@ gem_dbase
 gem_dbase.tar.gz
 /build*
 /work*
-src/gem/maingemdm.F90
 src/gemdyn/include/gemdyn_version.inc
 src/gemdyn/src/main/main*.F90
 src/gemdyn/src/no_mpi/maingem_monitor_end.c
