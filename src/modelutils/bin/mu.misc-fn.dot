@@ -1,0 +1,218 @@
+#!/bin/bash
+myself=$(true_path $0 2>/dev/null)
+myself=${myself:-SHELL}
+_lockfile=~/.lock.${myself##*/}
+#_notifyemail=''
+_notify=1
+
+#====
+set_lock() {
+   _lockfile=${_lockfile:-~/.lock.${0##*/}}
+   if [[ -r $_lockfile ]] ; then
+      cat 1>&2 <<EOF
+ERROR: a lock file exists for this script (${0##*/})
+       this maybe because 
+       1- another instance is already running, 
+          then you'll need to wait for its end 
+          or kill it before starting this task.
+       2- Or a previous run left the lock file behind
+          you'll need to delete it, then run this script again 
+          rm -f $_lockfile
+-- ABORT --
+EOF
+      exit 1
+   fi
+
+   touch $_lockfile
+   if [[ ! -r $_lockfile ]] ; then
+      cat 1>&2 <<EOF
+WARNING: was unable to create the lockfile; multiple instances of this script may collide
+EOF
+   fi
+}
+
+unset_lock() {
+   _lockfile=${_lockfile:-~/.lock.${0##*/}}
+   rm -f ${_lockfile}
+}
+
+#====
+define_TarCmd() {
+   _TarCmd="echo tar"
+   tar --help 1>/dev/null 2>/dev/null && _TarCmd=tar
+   gtar --help 1>/dev/null 2>/dev/null && _TarCmd=gtar
+   gnutar --help 1>/dev/null 2>/dev/null && _TarCmd=gnutar
+   echo ${_TarCmd}
+}
+
+#====
+exit_on_error() {
+   echo -e $1
+   echo
+   echo -e $USAGE
+   echo "---- ABORT ----"
+   unset_lock
+   if [[ x$_notify == x1 ]] ; then
+      send_email_notice ERROR "$1"
+   fi
+   exit 1
+
+}
+
+#====
+send_email_notice() {
+   __status=$1
+   __msg=$2
+   __notifyemail=${_notifyemail:-${USER:-${LOGNAME}}@ec.gc.ca}
+   mail -s "${myself##*/} ; status=${__status} ; ${__msg}" ${__notifyemail} <<EOF
+The following program 
+$myself
+notify of status=${__status}
+on ${TRUE_HOST:-${HOSTNAME}}
+msg=${__msg}
+.
+EOF
+}
+
+#====
+ssm_pkg_need_install() {
+   _dom=${1:-/dev/null}
+   _pkg=${2:-SCRAP}
+   _overwrite=${3:-0}
+   _need=0
+   [[ ! -r $_dom/$_pkg ]] && _need=1
+   [[ ! -r $_dom/etc/ssm.d/installed/$_pkg ]] && _need=1
+   [[ x"${_pkg##*_}" == x"multi" ]] && _need=1
+   [[ x${_overwrite} == x1 ]] && _need=1
+   echo $_need
+}
+
+#====
+ssm_pkg_need_publish() {
+   _dom=${1:-/dev/null}
+   _pkg=${2:-SCRAP}
+   _overwrite=${3:-0}
+   _need=0
+   [[ ! -r $_dom/$_pkg ]] && _need=1
+   [[ ! -r $_dom/etc/ssm.d/published/$_pkg ]] && _need=1
+   [[ x"${_pkg##*_}" == x"multi" ]] && _need=1
+   [[ x${_overwrite} == x1 ]] && _need=1
+   echo $_need
+}
+
+#==== 
+mkdir_tree() {
+   _mybasedir=${1:-/dev/null}
+   _myrelpath=${2:-.}
+   _mydir=${_mybasedir}
+   _mysubdirlist=$(echo ${_myrelpath} | tr '/' ' ')
+   for _mysubdir in ${_mysubdirlist} ; do
+      _mydir=${_mydir}/${_mysubdir}
+      if [[ ! -r ${_mydir} ]] ; then
+         chmod 755 ${_mydir%/*}
+         mkdir -p ${_mydir}
+         chmod 555 ${_mydir%/*} ${mydir}
+      fi
+   done
+}
+
+#==== chmod on all dom non pkg subdir
+chmod_dom() {
+   _perm=$1
+   _dom=$2
+   chmod $_perm $_dom
+   for subdir in $(ls -d etc lib bin share all* aix* linux* 2>/dev/null) ; do
+      chmod -R $_perm ${_dom%/}/${subdir%/}
+   done
+}
+chmod_ssm_dom() {
+   _perm=${1:-u+r}
+   _dom=${2:-/dev/null}
+   _here=${PWD}
+   cd $_dom
+   chmod $_perm $_dom 2>/dev/null
+   for subdir in $(ls -d etc lib bin share all* aix* linux* 2>/dev/null) ; do
+      chmod -R $_perm ${_dom%/}/${subdir%/} 2>/dev/null
+   done
+   cd ${_here}
+}
+
+#==== Rename an ssm pkg before installation
+rename_ssm_pkg() {
+   _depotdir=${1:-/dev/null}
+   _pkg0=${2:-SCRAP0}
+   _pkg=${3:-${_pkg0}}
+   _wkdir=${4:-${TMPDIR:-/tmp/$$}}
+   _here=${PWD}
+   mkdir -p ${_wkdir} 2>/dev/null
+   cd ${_wkdir}
+   _pkg1=${_depotdir}/${_pkg0}
+   if [[ x${_pkg0} != x${_pkg} ]] ; then
+      TarCmd=$(define_TarCmd)
+      $TarCmd xzf ${_depotdir}/${_pkg0}.ssm 2>/dev/null
+      mv ${_pkg0} ${_pkg}
+      $TarCmd czf ${_pkg}.ssm ./${_pkg}
+      rm -rf ./${_pkg}
+      _pkg1=${_wkdir}/${_pkg}
+   fi
+   cd ${_here}
+   echo ${_pkg1}.ssm
+}
+
+#==== arch conditional ssmuse of ssm_bndl_part [ARCH:pkg@dom]
+load_ssm_bndl_part() {
+   myexternal=$1
+   myarchdom=${myexternal##*@}
+   myarchpkg=${myexternal%%@*}
+   if [[ x$myarchpkg == x$myarchdom ]] ; then #ARCH:dom || dom
+      mypkg=''
+      mydom=${myarchdom##*:}
+      myarch=${myarchdom%%:*}
+      [[ x$myarch == x$mydom ]] && myarch='all'
+   else #ARCH:pkg@dom || pkg@dom
+      mypkg=''
+      mydom=${myarchdom}
+      mypkg=${myarchpkg##*:}
+      myarch=${myarchpkg%%:*}
+      [[ x$myarch == x$mypkg ]] && myarch='all'
+   fi
+   if [[ x$myarch == xall || x$myarch == x${BASE_ARCH} ]] ; then
+      [[ x$mypkg != x ]] && mypkg="${mypkg}@"
+      . r.load.dot ${mypkg}$mydom
+   fi
+}
+
+
+#==== 
+rm_chmod () {
+   mydir=$(true_path $1)
+   myparent=${mydir%/*}
+   if [[ -d $mydir && -d $myparent ]] ; then
+      chmod u+w $myparent
+      chmod -R u+w $mydir 
+      rm -rf $mydir 
+      chmod u-w $myparent
+   fi
+}
+
+rm_uninstall () {
+   mydir=$(true_path ${1:-/dev/null})
+   mydom=${mydir%/*}
+   mypkg=${mydir%##*/}
+   _here=${PWD}
+   if [[ ! -d $mydom ]] ; then
+      return
+   fi 
+   cd $mydom
+   if [[ -d $myparent/etc/ssm.d/installed/$mypkg ]] ; then
+      chmod_dom u+w $mydom
+      if [[ -d $myparent/etc/ssm.d/published/$mypkg ]] ; then
+         ssm unpublish -y -d $mydom -p $mypkg
+      fi
+      ssm uninstall -y -d $mydom -p $mypkg
+      chmod_dom u-w $mydom
+   else
+      rm_chmod $mydir
+   fi
+   cd ${_here}
+}

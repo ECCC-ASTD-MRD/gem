@@ -1,0 +1,168 @@
+#!/usr/bin/env python
+import sys,os
+import subprocess
+import tempfile
+
+class Int_sol(dict):
+    """Test integral equation solver"""
+
+    def __init__(self, alpha=5, beta=0.002, L=250, nk=10, dz=100, zdep=100, a=250,
+                 dir=1, zexp=0, debug=0, **kwargs):
+        """Class constructor"""
+        self.exec_name = "test_integrals.Abs"
+        self.params = ['alpha','beta','L','nk','dz','zdep','a','dir','zexp']
+        self.debug = debug
+        for p in self.params: self[p] = locals()[p]
+
+    def __del__(self):
+        """Class destructor"""
+        if not self.debug:
+            os.remove(self.const_file.name)
+            os.remove(self.prof_file.name)
+            os.remove(self.sol_file.name)
+
+    def solve(self, name, descrip):
+        """Execute integration to solve equation"""
+        self.name = name
+        sys.stdout.write('Testing '+self.__class__.__name__+' '+str(descrip)+
+                         ' ('+str(self.name)+') ... ')
+        self.const_file = self._createInputs()
+        self.prof_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
+        self.sol_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
+        path = subprocess.check_output("rdevar build/bin",shell=True).decode()
+        #TODO: this path (build/bin) should already be in $PATH, no need
+        testbin = os.path.join(path.rstrip(),self.exec_name)
+        self.run_cmd = ' '.join([testbin,self.const_file.name,self.prof_file.name,
+                                 self.sol_file.name])
+        self.return_status = int(subprocess.check_output(self.run_cmd,shell=True).rstrip())
+
+    def check(self, expected, tol=10, stat=0, plot=True, **kwargs):
+        """Confirm that the answer is correct within a tolerance"""
+        self._retrieveOutputs()
+        if plot: self._plot()
+        passed = abs(self.result-expected) < tol and self.return_status == stat
+        if passed:
+            msg = 'ok'
+        else:
+            if self.return_status != stat:
+                msg = 'fail [return status '+str(self.return_status)+' instead of expected '+str(stat)+']'
+            else:
+                msg = 'fail ['+str(self.result)+' instead of expected '+str(expected)+']'
+        sys.stdout.write(msg+'\n')
+        if self.debug > 0:
+            sys.stdout.write('  Rerun test: '+self.run_cmd+'\n')
+            try:
+                sys.stdout.write('  Rerun plot: '+self.plot_cmd+'\n')
+            except AttributeError:
+                pass
+        if passed: return True
+        return False
+
+    def _createInputs(self):
+        """Create input file for test"""
+        const_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
+        with const_file as const:
+            const.write(" ".join(self.params)+"\n")
+            const.write(" ".join(map(str,[self[v] for v in self.params]))+"\n")
+        return const_file
+
+    def _retrieveOutputs(self):
+        """Retrieve outputs from the integral test"""
+        with open(self.sol_file.name,mode="r") as sol:
+            self.result = float(sol.read())
+        #print(self.result)
+
+    def _plot(self):
+        """Generate plots for test"""
+        self.plot_cmd = "test_integrals_plot.R "+" ".join([self.const_file.name,
+              self.prof_file.name,self.sol_file.name,self.name])
+        plot_output = subprocess.check_output(self.plot_cmd,shell=True)
+        if self.debug > 1:
+            sys.stdout.write(plot_output+'\n')
+
+class Test(dict):
+    """Container for a suite of tests of a component class (sc)"""
+    def __init__(self, sc, debug=0, plot=True):
+        """Constructor for specifc class"""
+        self.sc = sc
+        self.debug = debug
+        self.plot = plot
+        self.result = {'pass':0,'fail':0}
+
+    def run(self, name, descrip, expected, **kwargs):
+        """Dispatch test exection"""
+        self.test = self.sc(debug=self.debug, **kwargs)
+        self.test.solve(name, descrip)
+        if self.test.check(expected, plot=self.plot, **kwargs):
+            self.result['pass'] += 1
+        else:
+            self.result['fail'] += 1
+
+    def summary(self):
+        """Produce summary of results"""
+        fail = self.result['fail']
+        if fail == 0:
+            msg = "All tests succeeded."
+        else:
+            total = self.result['pass']+fail
+            msg = str(fail)+"/"+str(total)+" tests failed ("+str(int(100*fail/total))+"%)."
+        sys.stdout.write(" ** "+self.test.__class__.__name__+": "+msg+"\n")
+        return fail
+
+class Unbuffered(object):
+    """A utility class that produced unbuffered output with sys.stdout"""
+    def __init__(self, stream):
+        self.stream = stream
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+################################################################################################
+
+# Run Test Package
+if __name__ == "__main__":
+
+    # Initializations
+    sys.stdout = Unbuffered(sys.stdout)
+    failed = 0
+
+    # Handle command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Manage integral module unit tests')
+    parser.add_argument('-v', action='count', default=0,
+                        help='Produce verbose output and save derived files')
+    parser.add_argument('--no-plots', dest='noplots', action='store_true',
+                        help='Suppress generation of verifying plots')
+    args = parser.parse_args()
+
+    # Tests for the integral solver    
+    sol_test = Test(Int_sol, debug=args.v, plot=(not args.noplots))
+    sol_test.run('umxf', 'upwards first layer local maximum', 117, a=50)
+    sol_test.run('umnf', 'upwards first layer local minimum', 224, a=-50, zdep=210)
+    sol_test.run('uincf', 'upwards first layer monotonic increase', 285, a=100, zdep=250)
+    sol_test.run('udecf', 'upwards first layer monotonic decrease', 190, a=-120, zdep=150)
+    sol_test.run('umx', 'upwards interior local maximum', 620, a=400, zdep=180)
+    sol_test.run('umn', 'upwards interior local minimum', 244, a=-125, zdep=80)
+    sol_test.run('uinc', 'upwards monotonic increase', 588, a=300, zdep=100)
+    sol_test.run('udec', 'upwards monotonic decrease', 365, a=-300, L=450, zdep=280)
+#    sol_test.run('utop', 'upwards top with INT_NOSOL return code', 1000, a=700, zdep=350,stat=2)
+    sol_test.run('dmxf', 'downwards first layer local maximum', 380, a=20, zdep=395, dir=-1)
+    sol_test.run('dmnf', 'downwards first layer local minimum', 754, a=-100, zdep=780, dir=-1)
+    sol_test.run('dincf', 'downwards first layer monotonic increase', 410, a=75, zdep=480, dir=-1)
+    sol_test.run('ddecf', 'downwards first layer monotonic decrease', 529, a=-200, zdep=580, L=400, dir=-1)
+    sol_test.run('dmx', 'downwards interior local maximum', 380, a=100, zdep=520, dir=-1)
+    sol_test.run('dmn', 'downwards interior local minimum', 270, a=-200, zdep=460, dir=-1)
+    sol_test.run('dinc', 'downwards monotonic increase', 341, a=400, zdep=460, L=500, dir=-1)
+    sol_test.run('ddec', 'downwards monotonic decrease', 520, a=-200, zdep=740, dir=-1)
+#    sol_test.run('dbot', 'downwards bottom with INT_NOSOL return code', 100, a=-300, zdep=450, dir=-1, stat=2)
+    sol_test.run('vuinc', 'variable upwards interior monotonic increase', 768, a=250, zdep=400, zexp=.05, L=600)
+    sol_test.run('vdmnf', 'variable downwards first layer local minimum', 1076, a=-150, zdep=1120, dir=-1, zexp=.05, L=550)
+    failed += sol_test.summary()
+
+    # Shut down testing
+    sys.exit(failed)

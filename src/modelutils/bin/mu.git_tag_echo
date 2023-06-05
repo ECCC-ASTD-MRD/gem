@@ -1,0 +1,10 @@
+#!/bin/bash
+#prefix=${1:-_}
+[[ ! -d .git ]] && exit 1
+git describe --tags --exact-match HEAD 2>/dev/null
+if [[ $? != 0 ]] ; then
+   echo $(git rev-parse --abbrev-ref HEAD | sed 's/-branch//')-$(git log -1 --format="%ci" | cut -d" " -f1 | sed 's/-//g')-$(git rev-parse --short HEAD)
+fi
+#git log --pretty=oneline | head -1 | cut -d " " -f1
+#git tag --contains $(git log --pretty=oneline | head -1 | cut -d " " -f1) 
+#git show-ref --tags | grep $(git describe --tags --exact-match HEAD) | grep ${prefix:-_} | cut -d"/" -f3

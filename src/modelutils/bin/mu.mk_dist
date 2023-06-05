@@ -1,0 +1,15 @@
+#!/bin/bash
+srcdir=$1
+dstfile=$2
+
+_TarCmd="echo tar"
+tar --help 1>/dev/null 2>/dev/null && _TarCmd=tar
+gtar --help 1>/dev/null 2>/dev/null && _TarCmd=gtar
+gnutar --help 1>/dev/null 2>/dev/null && _TarCmd=gnutar
+
+if [[ $# -ne 2 ]] ; then
+   echo "USAGE: $0 SRCDIR DESTFILE"
+   exit 1
+fi
+
+${_TarCmd} czf ${dstfile} ${srcdir}

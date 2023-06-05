@@ -1,0 +1,17 @@
+NAME       : modelutils
+VERSION    : 1.7.0-rc1
+BUILD      : 
+DESCRIPTION: Model utility functions
+SUMMARY    : modelutils is a collection of Fortran tools made for GEM and other models. 
+MAINTAINER : Stephane Chamberland - Stephane.Chamberland@ec.gc.ca
+URL        : https://gitlab.science.gc.ca/MIG/modelutils
+DOC	   : https://wiki.cmc.ec.gc.ca/wiki/Modelutils
+
+# Dependencies 
+#    =,<,<=,>,>= : Version rules
+#    ~           : Optional
+
+rmn  >= 20.0.1
+tdpack >= 1.6.2
+vgrid >= 6.9.2
+rpncomm >= 4.6.3

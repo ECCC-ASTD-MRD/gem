@@ -1,0 +1,10 @@
+#!/bin/bash
+/bin/rm -f bidon.f
+cat > bidon.f <<eof
+      program bidon
+      call $1
+      stop
+      end
+eof
+make bidon.o
+/bin/rm -f bidon.f

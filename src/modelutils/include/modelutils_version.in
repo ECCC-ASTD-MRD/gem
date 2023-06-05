@@ -1,0 +1,7 @@
+       character(len=50),parameter :: MODELUTILS_NAME_S = "MODELUTILS"
+       character(len=50),parameter :: MODELUTILS_VERSION_S = "@modelutils_VERSION@"
+       character(len=50),parameter :: MODELUTILS_DSTP_S = "@BUILD_DATE@"
+       character(len=50),parameter :: MODELUTILS_EC_ARCH_S = "@EC_ARCH@"
+       character(len=50),parameter :: MODELUTILS_ORDENV_ARCH_S = "@EC_ORDENV_ARCH@"
+       character(len=50),parameter :: MODELUTILS_ORDENV_PLAT_S = "@EC_PLAT@"
+       character(len=50),parameter :: MODELUTILS_COMP_ARCH_S = "@EC_COMPILER@"
