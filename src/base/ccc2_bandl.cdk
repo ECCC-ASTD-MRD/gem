@@ -1,0 +1,48 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+! 002    P.Vaillancourt   (Sep 14) - updated to gcm17/ckdlw4.f(see ckdlw.ftn90)  - new dimensions - new cl3ch4
+
+      real gwl1, gwl2, gwl3, gwl4, gwl5, gwl6, gwl7, gwl8, gwl9
+      real cl1h2o, cl1co2, cl2h2o, cl2cs, cl2cf
+      real cl3h2o, cl3ch4, cl3cs, cl3cf
+      real cl4h2o, cl4n2o, cl4ch4, cl4cs, cl4cf, cl4f12
+      real cl5h2o, cl5o3, cl5cs, cl5cf, cl5f11, cl5f12
+      real cl6h2o, cl6f11, cl6f12, cl6cs, cl6cf
+      real cl7h2ou, cl7h2od, cl7co2u, cl7co2d
+      real cl7n2o, cl7o3, cl7cs, cl7cf
+      real cl8h2o, cl8cs, cl8cf
+      real cl9h2o, cl9cs, cl9cf
+!
+      integer    mtl
+      parameter (mtl=18)
+!
+      COMMON /CCC2_BANDL1/ GWL1(1), CL1H2O(5,mtl), CL1CO2(5,mtl)
+      COMMON /CCC2_BANDL2/ GWL2(1), CL2H2O(5,mtl), CL2CS(5,3), CL2CF(5,3)
+      COMMON /CCC2_BANDL3/ GWL3(2), CL3H2O(5,mtl,2), CL3CH4(2), CL3CS(5,4,2), &
+                      CL3CF(5,4,2)
+      COMMON /CCC2_BANDL4/ GWL4(5), CL4H2O(5,mtl,5), CL4N2O(5,mtl,5), &
+                      CL4CH4(5,mtl,5), CL4CS(5,4,5), CL4CF(5,4,5), &
+                      CL4F12(5)
+      COMMON /CCC2_BANDL5/ GWL5(2), CL5H2O(5,mtl,2), CL5O3(5,mtl,2), &
+                               CL5CS(5,4,2), CL5CF(5,4,2), &
+                               CL5F11(2), CL5F12(2)
+      COMMON /CCC2_BANDL6/ GWL6(3), CL6H2O(5,mtl,3), CL6F11(5,mtl,3), &
+                               CL6F12(5,mtl,3), CL6CS(5,4), &
+                               CL6CF(5,4)
+      COMMON /CCC2_BANDL7/ GWL7(3), CL7H2OU(5,11,3), CL7H2OD(5,5,7,3), &
+                             CL7CO2U(5,11,3), CL7CO2D(5,5,7,3), &
+                             CL7N2O(3), CL7O3(3), &
+                             CL7CS(5,5,4,3), CL7CF(5,5,4,3)
+      COMMON /CCC2_BANDL8/ GWL8(6), CL8H2O(5,mtl,6), CL8CS(5,6,4), &
+                               CL8CF(5,6,4)
+      COMMON /CCC2_BANDL9/ GWL9(4), CL9H2O(5,mtl,4), CL9CS(5,6,4), &
+                               CL9CF(5,6,4)
+

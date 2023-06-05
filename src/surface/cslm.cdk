@@ -1,0 +1,25 @@
+! CSLM parameters
+!
+      INTEGER, PARAMETER :: NLAKMAX  = 20       !MAXIMUM NUMBER OF LAKE LEVELS 
+      INTEGER, PARAMETER :: NLAKMIN  = 3        !MINIMUM NUMBER OF LAKE LEVELS 
+! fixed lake parameters
+      REAL, PARAMETER :: HLAKCON = 10.0
+      REAL, PARAMETER :: LLAKCON =737.0
+      REAL, PARAMETER :: BLAKCON = 0.9
+! fixed rating curve parameters for lake outflow
+!      REAL, PARAMETER :: RC1CON = 0.1
+      REAL, PARAMETER :: RC1CON = 1.77143
+      REAL, PARAMETER :: RC2CON = 1.5
+      REAL, PARAMETER :: RUNFRACCON = 0.5
+! fixed water extinction coefficients
+      REAL, PARAMETER :: CQ1ACON = 0.5817
+      REAL, PARAMETER :: CQ2ACON = 0.4183
+      REAL, PARAMETER :: CQ2BCON = 6.89
+      REAL, PARAMETER :: CQ3ACON = 0.0
+      REAL, PARAMETER :: CQ3BCON = 69.0
+! fixed ice  extinction coefficients (from Patterson and Hamblin, 1988, L&O)
+      REAL, PARAMETER :: CQ1BICON = 1.5
+      REAL, PARAMETER :: CQ2BICON = 20.0
+      REAL, PARAMETER :: CQ3BICON = 69.0
+! Constant to tune evaporation when calculating CSLM output runoff (Etienne Gaborit 2022)
+      REAL, PARAMETER :: ADJ_CSLM_LIQUEVAP = 2.0

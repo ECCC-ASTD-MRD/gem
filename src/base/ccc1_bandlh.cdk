@@ -1,0 +1,38 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+!
+      real gwl1gh, gwl2gh, gwl3gh, gwl4gh
+      real gwl5gh, gwl7gh, gwl8gh, gwl9gh
+      real cl1co2gh
+      real cl2h2ogh, cl2csgh, cl2cfgh
+      real cl3h2ogh, cl3csgh, cl3cfgh
+      real cl4h2ogh, cl4n2ogh, cl4ch4gh
+      real cl5h2ogh, cl5o3gh, cl5csgh, cl5cfgh
+      real cl7h2ogh, cl7co2gh, cl7o3gh
+      real cl8h2ogh, cl9h2ogh
+!
+      integer    ntl
+      parameter (ntl=28)
+!
+      common /bandl1gh/ gwl1gh(5), cl1co2gh(5,ntl,5)
+      common /bandl2gh/ gwl2gh(1), cl2h2ogh(5,ntl),   cl2csgh(5,3), &
+                                   cl2cfgh(5,3)
+      common /bandl3gh/ gwl3gh(3), cl3h2ogh(5,ntl,3), cl3csgh(5,4), &
+                                   cl3cfgh(5,4)
+      common /bandl4gh/ gwl4gh(4), cl4h2ogh(5,ntl,4), cl4n2ogh(5,ntl,4), &
+                                   cl4ch4gh(5,ntl,4)
+      common /bandl5gh/ gwl5gh(4), cl5h2ogh(5,ntl,4), cl5o3gh(5,ntl,4), &
+                                   cl5csgh(5,4,2),   cl5cfgh(5,4,2)
+      common /bandl7gh/ gwl7gh(7), cl7h2ogh(5,ntl,4), cl7co2gh(5,ntl,7), &
+                                   cl7o3gh(2)
+      common /bandl8gh/ gwl8gh(3), cl8h2ogh(5,ntl,3)
+      common /bandl9gh/ gwl9gh(6), cl9h2ogh(5,ntl,6)
+

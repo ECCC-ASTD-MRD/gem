@@ -1,0 +1,3 @@
+      real, dimension(:), pointer :: std_p_prof
+      
+      common /tablesp/ std_p_prof

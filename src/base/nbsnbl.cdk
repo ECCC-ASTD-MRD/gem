@@ -1,0 +1,10 @@
+!
+!
+!authors
+!        j. li, m. lazarre, cccma, rt code for gcm4 (ref: j. li, h. w. barker,
+!         2005: jas vol. 62, no. 2, pp. 286\226309)
+!        p. vaillancourt, d. talbot, rpn, cmc; adapted for cmc/rpn physics (may2006)
+!
+      integer nbs, nbl
+      parameter (nbs = 4, nbl = 9)
+!

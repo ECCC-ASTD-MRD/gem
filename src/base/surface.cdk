@@ -1,0 +1,63 @@
+!
+      integer indx_soil
+      integer indx_glacier
+      integer indx_water
+      integer indx_ice
+      integer indx_urb
+      integer indx_lake
+      integer indx_river
+      integer indx_agrege
+      integer nagrege
+!
+      logical cortm
+      logical z0dir
+!
+      real    beta
+      real    bh91_a, bh91_b, bh91_c, bh91_d
+      real    critlac
+      real    critmask
+      real    critsnow
+      real    d97_as
+      real    dg92_ci
+      real    l07_ah, l07_am
+      real    leadfrac
+      real    n0rib
+      real    vamin
+      real    veg_rs_mult
+      real    zt, zta
+      real    zu, zua
+
+      character(len=16) sl_func_stab
+      character(len=16) sl_func_unstab
+!
+      common / surfacei / indx_soil
+      common / surfacei / indx_glacier
+      common / surfacei / indx_water
+      common / surfacei / indx_ice
+      common / surfacei / indx_urb
+      common / surfacei / indx_lake
+      common / surfacei / indx_river
+      common / surfacei / indx_agrege
+      common / surfacei / nagrege
+!
+      common / surfacel / cortm
+      common / surfacel / z0dir
+!
+      common / surfacer / beta
+      common / surfacer / bh91_a, bh91_b, bh91_c, bh91_d
+      common / surfacer / critlac
+      common / surfacer / critmask
+      common / surfacer / critsnow
+      common / surfacer / d97_as
+      common / surfacer / dg92_ci
+      common / surfacer / l07_ah
+      common / surfacer / l07_am
+      common / surfacer / leadfrac
+      common / surfacer / n0rib
+      common / surfacer / vamin
+      common / surfacer / veg_rs_mult
+      common / surfacer / zt, zta
+      common / surfacer / zu, zua
+
+      common / surfacec / sl_func_stab
+      common / surfacec / sl_func_unstab

@@ -1,0 +1,44 @@
+!
+!Authors
+!        J. Li, M. Lazare, CCCMA, rt code for gcm4
+!        (Ref: J. Li, H. W. Barker, 2005:
+!        JAS Vol. 62, no. 2, pp. 286\226309)
+!        P. Vaillancourt, D. Talbot, RPN/CMC;
+!        adapted for CMC/RPN physics (May 2006)
+!
+!Revisions
+! 001    M.Lazarre,K.Winger,P.Vaillancourt   (Apr 08) - use integer variables instead of actual integers
+
+      real gwl1, gwl2, gwl3, gwl4, gwl5, gwl6, gwl7, gwl8, gwl9
+      real cl1h2o, cl1co2, cl2h2o, cl2cs, cl2cf
+      real cl3h2o, cl3cs, cl3cf
+      real cl4h2o, cl4n2o, cl4ch4, cl4cs, cl4cf, cl4f12
+      real cl5h2o, cl5o3, cl5cs, cl5cf, cl5f11, cl5f12
+      real cl6h2o, cl6f11, cl6f12, cl6cs, cl6cf
+      real cl7h2ou, cl7h2od, cl7co2u, cl7co2d
+      real cl7n2o, cl7o3, cl7cs, cl7cf
+      real cl8h2o, cl8cs, cl8cf
+      real cl9h2o, cl9cs, cl9cf
+!
+      integer    mtl
+      parameter (mtl=18)
+!
+      common /bandl1/ gwl1(1), cl1h2o(5,mtl),   cl1co2(5,mtl)
+      common /bandl2/ gwl2(1), cl2h2o(5,mtl),   cl2cs(5,3),   cl2cf(5,3)
+      common /bandl3/ gwl3(2), cl3h2o(5,mtl,2), cl3cs(5,4,2), &
+                               cl3cf(5,4,2)
+      common /bandl4/ gwl4(3), cl4h2o(5,mtl,3), cl4n2o(5,mtl,3), &
+                               cl4ch4(5,mtl,3), cl4cs(5,4,3), &
+                               cl4cf(5,4,3),   cl4f12(3)
+      common /bandl5/ gwl5(2), cl5h2o(5,mtl,2), cl5o3(5,mtl,2), &
+                               cl5cs(5,4,2),   cl5cf(5,4,2), &
+                               cl5f11(2),      cl5f12(2)
+      common /bandl6/ gwl6(2), cl6h2o(5,mtl,2), cl6f11(5,mtl), &
+                               cl6f12(5,mtl),   cl6cs(5,4),   cl6cf(5,4)
+      common /bandl7/ gwl7(3), cl7h2ou(5,11,3),cl7h2od(5,5,7,3), &
+                      cl7co2u(5,11,3),cl7co2d(5,5,7,3), cl7n2o(5,mtl,3), &
+                      cl7o3(3),cl7cs(5,5,4,3),  cl7cf(5,5,4,3)
+      common /bandl8/ gwl8(6), cl8h2o(5,mtl,6), cl8cs(5,6,4), &
+                               cl8cf(5,6,4)
+      common /bandl9/ gwl9(4), cl9h2o(5,mtl,4), cl9cs(5,6,4), &
+                      cl9cf(5,6,4)
