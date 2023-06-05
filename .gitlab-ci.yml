@@ -102,6 +102,7 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
     - . ~/ci-env/latest/profile.sh
     - set -e
     - . ./.eccc_setup_intel
+    - export WITH_SYSTEM_RPN=FALSE
     - git submodule update --recursive --init
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
     - SRC_DIR=$(pwd)

@@ -1,7 +1,7 @@
 # How to get, compile and run GEM at the CMC.
 
 For general information, a setup script and information on Maestro, see
-README_general file
+README_general and share/gem-maestro/README files
 
 Warning: this repository uses submodules. Make sure you follow the
 instructions below.
@@ -33,13 +33,15 @@ Update rpn-si libraries and cmake_rpn submodules
 git submodule update --init --recursive
 ```
 
-## Choosing your branch
-```
-git branch -a # list all branches
-git checkout name_of_the_branch # checkout a branch
-```
+## Choosing a version
 
-if you want, create your own branch
+```
+git branch # what is the current branch
+git branch -a # list all branches (look at the list of remote branches to choose from)
+git tag # list tags (if you want to select a tagged version)
+git checkout <hash|branch|tag> # checkout a branch, a tag, or a specific hash. Example: git checkout 5.3
+```
+Or, if you want, create your own branch from the current branch
 ```
 git checkout -b mybranch
 ```
@@ -53,8 +55,6 @@ git checkout -b mybranch
 ### Or for gnu
 
 Please note you cannot compile with Intel and then with GNU in the same shell
-Please also note that, for now,  you need to compile with RPN-SI libraries
-sources (see methods 2. and 3. above)
 ```
 . ./.eccc_setup_gnu
 ```
@@ -69,12 +69,10 @@ other submodules, or adding or removing source files):
 
 There is a new script aimed at replacing the top-level Makefile.
 For now, both still coexist.
-See cado help or the content of the Makefile for options.
-For example: cado cmake-all or make cmake-all generates Makefiles to compile
-everything: you would need to update rpn-si submodules to use it (see method
-2. above)
+See cado -h (short help) or cado help or the content of the Makefile for options.
+For example: cado cmake or make cmake generates Makefiles to compile gem,
+gemdyn, modelutils and rpnphy
 
-cado cmake or make cmake configures only gem, gemdyn, modelutils and rpnphy
 ```
 cado cmake
 or 
@@ -91,10 +89,16 @@ install in working directory
 cado work -j
 make -j work
 ```
+cado work -j or make -j work can be used to compile and install in the same step.
 
-cado work -j or  make -j work can be used to compile and install in the same step.
+In development mode, gem is compiled using Intel shared libraries: use the
+following command to compile with static libraries:
+```
+cado cmake-static
+```
 
 See others options with cado -h (short help) or cado help
+
 
 ## Running GEM: example
 
@@ -104,7 +108,7 @@ runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 ```
 
-### Structure of the working environment
+## Structure of the working environment
 The structure of the build and work directories is different whether the
 $storage_model environment variable exists:
 

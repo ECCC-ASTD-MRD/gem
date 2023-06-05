@@ -14,3 +14,6 @@ src/gemdyn/src/no_mpi/maingem_monitor_end.c
 src/gemdyn/src/no_mpi/maingem_monitor_output.c
 src/modelutils/include/modelutils_version.inc
 src/rpnphy/include/rpnphy_version.inc
+share/gem-maestro/GEM_module/VERSION
+share/gem-maestro/nostage_module/VERSION
+ 

@@ -24,13 +24,13 @@ which most of you must already have in your PATH.
 If not I encourage you to do so.
 
 The main git depot is at
-git@gitlab.science.gc.ca:cpi001/gem-devel.git
-currently on branch 5.2_cmake
+git@gitlab.science.gc.ca:MIG/gem.git
+currently on branch 5.2
 
 For an easier transition towards GOAS we suggest to use the wrapper
 goas_install the following way:
 
-goas_install -version 5.2.0-a23 -exp trunk
+goas_install -version 5.2.0-rc1 -exp trunk
 
 which will:
 clone the depot into a familiar name directory, compile all the code, and
@@ -43,7 +43,7 @@ Compilation and linking is done with
 make -j work
 
 Unlike RDE, the whole source code is available for modifications under
-subdirectories src/ , scripts/ , gem-maestro/ , configurations/
+subdirectories src/ , scripts/ , share/gem-maestro/ , share/configurations/
 
 The depot also provides for the use of Maestro.
 There are 2 ways:

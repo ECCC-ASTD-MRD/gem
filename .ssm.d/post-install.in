@@ -17,7 +17,7 @@ cat > ${profilePath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
 export ${packageName%%_*}_DIR="$packageHome"
 export gemmod=\${gem_DIR}/share/gem-maestro/gem_module
-export PATH="$packageHome/scripts:$packageHome/share/gem-maestro/gem_module/bin:\$PATH"
+export PATH="$packageHome/scripts:\$PATH"
 export ATM_MODEL_VERSION=@GEM_VERSION@
 export ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
 export CMCCONST=\${CMCCONST:-\${ATM_MODEL_DFILES}/datafiles/constants}
@@ -28,7 +28,7 @@ cat > ${loginPath} << EOF
 #----- Add the <PackageName>_DIR variable for cmake builds
 setenv ${packageName%%_*}_DIR "$packageHome"
 setenv gemmod=\${gem_DIR}/share/gem-maestro/gem_module
-setenv PATH="$packageHome/scripts:$packageHome/share/gem-maestro/gem_module/bin:\$PATH"
+setenv PATH="$packageHome/scripts:\$PATH"
 setenv ATM_MODEL_VERSION @GEM_VERSION@
 setenv ATM_MODEL_DFILES=/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles
 setenv CMCCONST=\${CMCCONST:-\${ATM_MODEL_DFILES}/datafiles/constants}
