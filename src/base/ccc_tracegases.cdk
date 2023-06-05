@@ -1,0 +1,11 @@
+!
+      real co2_ppm, ch4_ppm, n2o_ppm, f11_ppm, f12_ppm
+      real f113_ppm, f114_ppm
+      real rmco2, rmch4, rmn2o, rmo2, rmf11, rmf12
+      real rmf113, rmf114
+!
+      common /trace/ co2_ppm, ch4_ppm, n2o_ppm, f11_ppm, f12_ppm, &
+                     f113_ppm, f114_ppm, &
+                     rmco2, rmch4, rmn2o, rmo2, rmf11, rmf12, &
+                     rmf113, rmf114
+

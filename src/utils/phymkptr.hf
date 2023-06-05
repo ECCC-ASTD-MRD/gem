@@ -1,0 +1,120 @@
+
+#ifdef PHY_FUTURE_IF_EVER
+#ifdef PHYPTR
+#define PHYVAR2D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:) => null()
+#define PHYVAR3D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:,:) => null()
+#define PHYVAR4D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:,:,:) => null()
+#define PHYVAR2DC(NAME, PTR, DESC, COND) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR3DC(NAME, PTR, DESC, COND) PHYVAR3D(NAME, PTR, DESC)
+#define PHYVAR4DC(NAME, PTR, DESC, COND) PHYVAR4D(NAME, PTR, DESC)
+#else
+#define PHYVAR2D(NAME, PTR, DESC) call gesdict1(ni, nk, NAME, PTR, DESC)
+#define PHYVAR3D(NAME, PTR, DESC) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR4D(NAME, PTR, DESC) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR2DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR3DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR4DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
+#define PHYVAR2DK(NAME, PTR, DESC, KEYWORD) PHYVAR2DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#define PHYVAR3DK(NAME, PTR, DESC, KEYWORD) PHYVAR3DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#define PHYVAR4DK(NAME, PTR, DESC, KEYWORD) PHYVAR4DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#endif
+#endif
+
+#ifndef PHYMKPTR
+#define PHYMKPTR
+#ifdef PHYPTR
+
+   real, pointer :: dummy2d(:,:), dummy3d(:,:,:), dummy4d(:,:,:,:)
+
+#define PHYVAR2D1(NAME, DESC) integer :: NAME = 0
+#define PHYVAR3D1(NAME, DESC) integer :: NAME = 0
+#define PHYVAR4D1(NAME, DESC) integer :: NAME = 0
+
+#define PHYVAR2DC(NAME, DESC, COND) PHYVAR2D1(NAME, DESC)
+#define PHYVAR3DC(NAME, DESC, COND) PHYVAR3D1(NAME, DESC)
+#define PHYVAR4DC(NAME, DESC, COND) PHYVAR4D1(NAME, DESC)
+#define PHYVAR2DK(NAME, DESC, KEYWORD) PHYVAR2D1(NAME, DESC)
+#define PHYVAR3DK(NAME, DESC, KEYWORD) PHYVAR3D1(NAME, DESC)
+#define PHYVAR4DK(NAME, DESC, KEYWORD) PHYVAR4D1(NAME, DESC)
+
+#else
+
+#ifdef PHY_FUTURE_IF_EVER
+#define PHYVAR2D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy2d, DESC)
+#define PHYVAR3D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy3d, DESC)
+#define PHYVAR4D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy4d, DESC)
+#endif
+
+#define PHYVAR2D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC//" ; VS=A")
+#define PHYVAR3D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC)
+#define PHYVAR4D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC)
+
+#define PHYVAR2DC(NAME, DESC, COND) if (COND) PHYVAR2D1(NAME, DESC)
+#define PHYVAR3DC(NAME, DESC, COND) if (COND) PHYVAR3D1(NAME, DESC)
+#define PHYVAR4DC(NAME, DESC, COND) if (COND) PHYVAR4D1(NAME, DESC)
+#define PHYVAR2DK(NAME, DESC, KEYWORD) PHYVAR2DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#define PHYVAR3DK(NAME, DESC, KEYWORD) PHYVAR3DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#define PHYVAR4DK(NAME, DESC, KEYWORD) PHYVAR4DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+
+#endif
+#endif
+
+
+#ifndef PHYMKPTR1
+#define PHYMKPTR1
+
+#ifdef MKPTR1DN
+#undef MKPTR1DN
+#endif
+#ifdef MKPTR1D
+#undef MKPTR1D
+#endif
+#ifdef MKPTR1DK
+#undef MKPTR1DK
+#endif
+#ifdef MKPTR2DN
+#undef MKPTR2DN
+#endif
+#ifdef MKPTR2D
+#undef MKPTR2D
+#endif
+#ifdef MKPTR2Dm1
+#undef MKPTR2Dm1
+#endif
+#ifdef MKPTR3DN
+#undef MKPTR3DN
+#endif
+#ifdef MKPTR3D
+#undef MKPTR3D
+#endif
+
+#ifdef PHYPTRDCL
+
+#define MKPTR1DN(PNAME,PIDX,NI,PBUS) real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
+
+!!$TODO: #define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,PIDX+(KK-1)*ni,ni,PBUS)
+#define MKPTR1DK(PNAME,PIDX,KK,PBUS) real, dimension(:), pointer :: PNAME
+   
+#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)
+#define MKPTR2Dm1(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nkm1,PBUS)
+
+#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) real, dimension(:,:,:), pointer, contiguous :: PNAME
+#define MKPTR3D(PNAME,PIDX,NN,PBUS) MKPTR3DN(PNAME,PIDX,ni,nk,NN,PBUS)
+
+#else
+
+#define MKPTR1DN(PNAME,PIDX,NI,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI) => PBUS(PIDX:)
+#define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
+#define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,(PIDX+(KK-1)*ni),ni,PBUS)
+
+#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI,1:NK) => PBUS(PIDX:)
+#define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)
+#define MKPTR2Dm1(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nkm1,PBUS)
+
+#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI,1:NK,1:NN) => PBUS(PIDX:)
+#define MKPTR3D(PNAME,PIDX,NN,PBUS) MKPTR3DN(PNAME,PIDX,ni,nk,NN,PBUS)
+
+#endif
+#endif
