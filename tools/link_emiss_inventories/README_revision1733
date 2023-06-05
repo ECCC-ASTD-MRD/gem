@@ -1,0 +1,36 @@
+*** USER BE WARE ****
+*********************
+Starting with revision 1733, it is no longer necessary to provide
+the gridded emissions (whether anthropogenic or biogenic) on the EXACT same grid that you are using for your 
+simulation. As long as your domain of choice is contained within the domain of the gridded emissions, the emissions will be read.
+For ACCURACY, it is essential that the grid points of your domain be coincident with the grid points of the gridded emissions;
+AND that the grid spacing of your model grid be the same as the grid spacing of the gridded emissions.
+If there is a mismatch, the emissions will be interpolated, and the interpolation method will be "Nearest"
+
+*** CHANGE IN EXECUTABLE ***
+****************************
+Starting with revision 1733 the preparation of the emissions no longer requires an
+executable. The preparation will be done by one of the tasks of the GM maestro suite.
+
+*** CHANGE IN DIRECTORY STRUCTURE ****
+**************************************
+If you are using emissions, the Maestro suite requires that you specify their location. For major points
+and area emissions, you need to specify the directories where they are found, and for the biogenic emissions
+the full path and name of the file.
+
+The Emissions Task of the maestro suite expects to find within the area and major point directories to following
+structure:
+
+   area_emissions_directory/month/area_shortmonth_day.fst 
+   and
+   mjrpt_emissions_directory/month/major_shortmonth_day.fst 
+   
+   where month takes the values {january february march april may june july august september october november december}
+         shortmonth, the values {jan feb mar apr may jun jul aug sep oct nov dec}
+   and   day, the values {sun mon tue wed thu fri sat}
+
+The script "link_emissions_directories.ksh" provided in this directory can help you establish 
+the appropriate structure. In its current form, it provides an example of how to link the current operational
+emissions (found of the backend in the directory /fs/cmo/data/emissions_can2006_us2012_10km/) to the required structure
+
+
