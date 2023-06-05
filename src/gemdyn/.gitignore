@@ -1,0 +1,5 @@
+*.[oa]
+*~
+include/gemdyn_version.inc
+src/main/maingemgrid.F90
+src/main/maincheckdmpart.F90

@@ -1,0 +1,7 @@
+       character(len=50),parameter :: GEMDYN_NAME_S = "GEMDYN"
+       character(len=50),parameter :: GEMDYN_VERSION_S = "@gemdyn_VERSION@"
+       character(len=50),parameter :: GEMDYN_DSTP_S = "@BUILD_DATE@"
+       character(len=50),parameter :: GEMDYN_EC_ARCH_S = "@EC_ARCH@"
+       character(len=50),parameter :: GEMDYN_ORDENV_ARCH_S = "@EC_ORDENV_ARCH@"
+       character(len=50),parameter :: GEMDYN_ORDENV_PLAT_S = "@EC_PLAT@"
+       character(len=50),parameter :: GEMDYN_COMP_ARCH_S = "@EC_COMPILER@"
