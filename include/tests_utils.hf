@@ -1,0 +1,11 @@
+
+#if !defined(__UTILS4TEST__)
+#define __UTILS4TEST__
+
+#define TEST_STR_LEN 1024
+#define TEST_FAILED_MSG 'TEST_FAILED'
+#define TEST_PASSED_MSG 'TEST_OK'
+
+#endif
+
+integer, external :: utils4test_toy_mpi_init

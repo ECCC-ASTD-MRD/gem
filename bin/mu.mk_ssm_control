@@ -1,0 +1,19 @@
+#!/bin/bash
+package=$1
+version=$2
+arch=$3
+buildinfo=$4
+desc=$5
+[[ x$desc != x ]] && [[ -f $desc ]] && desc="$(cat $desc | tr '\n' ';')" 
+[[ x$buildinfo != x ]] && [[ -f $buildinfo ]] && buildinfo="$(cat $buildinfo | tr '\n' ' ')" 
+
+
+cat <<EOF
+Package: $package
+Version: $version
+Platform: $arch
+Maintainer: $USER
+BuildInfo: $buildinfo
+Description: $desc
+EOF
+exit 0

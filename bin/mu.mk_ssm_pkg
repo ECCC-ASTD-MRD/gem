@@ -1,0 +1,101 @@
+#!/bin/bash
+##
+# Create an SSM pkg from a dir and a template
+#
+# @usage mu.mk_ssm_pkg -s SOURCE_DIR -n PKGNAME -v VERSION [-a SSMARCH] [-t TEMPLATE_PKG] [-r SSMDEPOTDIR] [-d DESCRIPTION] [-b BUILDFINFO]
+#
+# @date   May 2012
+# @author Stephane Chamberland
+##
+set -e
+
+DESC='Create an SSM pck from a dir and an template'
+USAGE="USAGE: ${0##*/} -s SOURCE_DIR -n PKGNAME -v VERSION [-a SSMARCH] [-t TEMPLATE_PKG] [-r SSMDEPOTDIR] [-d DESCRIPTION] [-b BUILDFINFO]"
+
+contentdir=
+pkgname=
+version=
+ssmarch=multi
+buildinfo=
+desc=
+ssmpkg_tmpl=${modelutils}/share/ssmpkg/PKG_V998V_multi
+ssmdepotdir=~/SsmDepot
+
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      -s) shift ; contentdir=$1 ;;
+      -n) shift ; pkgname=$1 ;;
+      -v) shift ; version=$1 ;;
+      -a) shift ; ssmarch=$1 ;;
+      -t) shift ; ssmpkg_tmpl=$1 ;;
+      -r) shift ; ssmdepotdir=$1 ;;
+      -d) shift ; desc=$1 ;;
+      -b) shift ; buildinfo=$1 ;;
+      (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+      *) posargs="$posargs $1" ; ((posargsnum=posargsnum+1));;
+   esac
+   shift
+done
+
+_status=
+[[ x$pkgname == x || x$version == x || x$ssmarch == x ]] && _status="${_status} [Missing Mandatory Arg]"
+[[ ! -d $contentdir ]] && _status="${_status} [no such SOURCE_DIR]"
+[[ ! -d $ssmdepotdir ]] && _status="${_status} [no such SSMDEPOTDIR]"
+[[ ! -f $ssmpkg_tmpl ]] && _status="${_status} [no such TEMPLATE_PKG]"
+if [[ "x$_status" != x ]] ; then
+   cat <<EOF
+ERROR: wrong arguments
+$_status
+ ${0##*/} \\
+   -s $contentdir \\
+   -n $pkgname \\
+   -v $version \\
+   -a $ssmarch \\
+   -t $ssmpkg_tmpl \\
+   -r $ssmdepotdir \\
+   -d $desc \\
+   -b $buildinfo
+EOF
+   echo -e $USAGE
+   exit 1
+fi
+
+contentdir=$(true_path $contentdir)
+ssmdepotdir=$(true_path $ssmdepotdir)
+ssmpkg_tmpl=$(true_path $ssmpkg_tmpl)
+[[ x$desc != x ]] && [[ -f $desc ]] && desc="$(cat $desc | tr '\n' ';')" 
+[[ x$buildinfo != x ]] && [[ -f $buildinfo ]] && buildinfo="$(cat $buildinfo | tr '\n' ' ')" 
+
+_TarCmd="echo tar"
+tar --help 1>/dev/null 2>/dev/null && _TarCmd=tar
+gtar --help 1>/dev/null 2>/dev/null && _TarCmd=gtar
+gnutar --help 1>/dev/null 2>/dev/null && _TarCmd=gnutar
+
+wkdir=${TMPDIR:-/tmp/$$}/${0##*/}-wkdir-$$
+mkdir -p $wkdir 2>/dev/null || true
+cd $wkdir
+rm -rf $wkdir/* 2>/dev/null || true
+
+ssmpkg=${pkgname}_${version}_$ssmarch
+tmplname=${ssmpkg_tmpl##*/}
+tmplname=${tmplname%.*}
+${_TarCmd} xzf ${ssmpkg_tmpl}
+mv ${tmplname} $ssmpkg
+rsync -a ${contentdir}/ $ssmpkg/
+rm -rf $ssmpkg/.git  2>/dev/null || true
+
+cat > $ssmpkg/.ssm.d/control <<EOF
+Package: $pkgname
+Version: $version
+Platform: $ssmarch (${BASE_ARCH})
+Maintainer: $USER
+BuildInfo: $buildinfo
+Description: $desc
+EOF
+
+echo ${ssmdepotdir} > .SsmDepot
+$ssmpkg/maint/make-ssm && rm -rf $ssmpkg
+ls -l ${ssmdepotdir}/$ssmpkg.ssm
+
+cd ..
+rm -rf $wkdir 2>/dev/null || true
