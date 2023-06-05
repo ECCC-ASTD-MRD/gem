@@ -16,6 +16,7 @@
 
       logical function gem_muststop (F_finalstep)
       use iso_c_binding
+      use app
       use clib_itf_mod
       use cstv
       use gem_options
@@ -67,6 +68,9 @@
          call RPN_COMM_bcast (flag, 1, "MPI_LOGICAL",0,"MULTIGRID",err)
          gem_muststop = flag
       end if
+
+!     Check for SIGTERM signal
+      gem_muststop=gem_muststop .or. (app_isdone())
 
       if ( Fcst_rstrt_S /= 'NIL' ) then
          if ( (Step_kount > 0) .and. (.not. Init_mode_L .or. (Step_kount < Init_halfspan)) )  then

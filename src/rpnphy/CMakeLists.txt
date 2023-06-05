@@ -24,19 +24,19 @@ set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
 
 if (NOT rmn_FOUND)
-  find_package(rmn ${RMN_REQ_VERSION} CONFIG)
+  find_package(rmn ${rmn_REQ_VERSION} COMPONENTS static ompi REQUIRED)
 endif()
 
 if (NOT rpncomm_FOUND)
-   find_package(rpncomm ${rpncomm_REQ_VERSION} CONFIG)
+  find_package(rpncomm ${rpncomm_REQ_VERSION} REQUIRED)
 endif()
 
 if (NOT tdpack_FOUND)
-  find_package(tdpack ${tdpack_REQ_VERSION} CONFIG)
+  find_package(tdpack ${tdpack_REQ_VERSION} COMPONENTS static REQUIRED)
 endif()
 
 if (NOT vgrid_FOUND)
-  find_package(vgrid ${vgrid_REQ_VERSION} CONFIG)
+  find_package(vgrid ${vgrid_REQ_VERSION} COMPONENTS static REQUIRED)
 endif()
 
 # Adding specific flags for rpnphy

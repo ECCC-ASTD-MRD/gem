@@ -161,9 +161,6 @@
       call gemtime ( Lun_out, 'END OF CHECKDMPART', .true. )
       call memusage (Lun_out)
 
-      if (Lun_out > 0) &
-      err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
-
  9999 call rpn_comm_FINALIZE(err)
 
  8000 format (/,'========= ABORT ============='/)

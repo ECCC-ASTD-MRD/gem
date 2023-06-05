@@ -1,0 +1,279 @@
+{
+ cond-rpn_comm_init
+ Memcheck:Cond
+ ...
+ fun:rpn_comm_init_multi_level*
+ ...
+}
+
+{
+ undef-rpn_comm_init
+ Memcheck:Value8
+ ...
+ fun:rpn_comm_init_multi_level*
+ ...
+}
+
+{
+ cond-clib_schhide
+ Memcheck:Cond
+ ...
+ fun:clib_*_schhide*
+ ...
+}
+
+{
+ cond-wb_put
+ Memcheck:Cond
+ ...
+ fun:wb_put*
+ ...
+}
+
+{
+ inv-wb_put
+ Memcheck:Addr8
+ ...
+ fun:wb_put*
+ ...
+}
+
+{
+ param-wb_put
+ Memcheck:Param
+ sched_setaffinity(mask)
+ fun:syscall
+ ...
+ fun:wb_put*
+}
+
+{
+ cond-fnom
+ Memcheck:Cond
+ ...
+ fun:fnom*
+ ...
+}
+
+{
+ undef-fnom
+ Memcheck:Value8
+ ...
+ fun:fnom*
+ ...
+}
+
+{
+ inv-fnom
+ Memcheck:Addr8
+ ...
+ fun:fnom*
+ ...
+}
+
+{
+ inv-fstouv
+ Memcheck:Addr8
+ ...
+ fun:c_fstouv*
+ ...
+}
+
+{
+ undef-fclos
+ Memcheck:Value8
+ ...
+ fun:c_fclos
+ ...
+}
+
+{
+ cond-fstecr
+ Memcheck:Cond
+ ...
+ fun:fstecr*
+ ...
+}
+
+{
+ undef-fstecr
+ Memcheck:Value8
+ ...
+ fun:fstecr*
+ ...
+}
+
+{
+ cond-fstlir
+ Memcheck:Cond
+ ...
+ fun:fstlir*
+ ...
+}
+
+{
+ cond-fstinf
+ Memcheck:Cond
+ ...
+ fun:*fstinf*
+ ...
+}
+
+{
+ cond-constnt
+ Memcheck:Cond
+ ...
+ fun:constnt*
+ ...
+}
+
+{
+ undef-constnt
+ Memcheck:Value8
+ ...
+ fun:constnt*
+ ...
+}
+
+{
+ inv-constnt
+ Memcheck:Addr4
+ ...
+ fun:constnt*
+ ...
+}
+
+{
+ inv-nml
+ Memcheck:Addr8
+ ...
+ fun:for_read_seq_nml
+ ...
+}
+
+{
+ cond-nml
+ Memcheck:Cond
+ ...
+ fun:for_read_seq_nml
+ ...
+}
+
+{
+ undef-nml
+ Memcheck:Value8
+ ...
+ fun:for_read_seq_nml
+ ...
+}
+
+{
+ cond-phyrd
+ Memcheck:Cond
+ ...
+ fun:for_write_seq_lis
+ fun:phyrdfile*
+ ...
+}
+
+{
+ inv-phyrd
+ Memcheck:Addr8
+ ...
+ fun:for_write_seq_lis
+ fun:phyrdfile*
+ ...
+}
+
+{
+ undef-phyrd
+ Memcheck:Value8
+ ...
+ fun:for_write_seq_lis
+ fun:phyrdfile*
+ ...
+}
+
+{
+ undef-inquire
+ Memcheck:Cond
+ ...
+ fun:for_inquire
+ ...
+}
+
+{
+ cond-fillbus_fork
+ Memcheck:Cond
+ ...
+ fun:*fork_call
+ ...
+ fun:phyfillbus*
+ ...
+}
+
+{
+ inv-phy_input
+ Memcheck:Addr8
+ ...
+ fun:for_read_seq_fmt
+ ...
+ fun:phy_input_mod*
+ ...
+}
+
+{
+ cond-phy_input
+ Memcheck:Cond
+ ...
+ fun:for_read_seq_fmt
+ ...
+ fun:phy_input_mod*
+ ...
+}
+
+{
+ undef-phy_input
+ Memcheck:Value8
+ ...
+ fun:for_read_seq_fmt
+ ...
+ fun:phy_input_mod*
+ ...
+}
+
+{
+ cond-ezqkdef
+ Memcheck:Cond
+ ...
+ fun:ezqkdef*
+ ...
+}
+
+{
+ undef-exit
+ Memcheck:Value8
+ ...
+ fun:for_stop_core
+ fun:MAIN*
+ ...
+}
+
+{
+ free-exit
+ Memcheck:Free
+ ...
+ fun:for_stop_core
+ fun:MAIN*
+ ...
+}
+
+{
+ inv-exit
+ Memcheck:Addr8
+ ...
+ fun:for_stop_core
+ fun:MAIN*
+ ...
+}
+

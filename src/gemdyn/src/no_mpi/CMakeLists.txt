@@ -1,22 +1,17 @@
 message(STATUS "(EC) Generating gem_monitor* and toc2nml makefiles")
 
 add_executable(toc2nml maintoc2nml.F90)
-target_link_libraries(toc2nml
+target_link_libraries(toc2nml PUBLIC
    gemdyn
    ${phy_LIBRARIES}
    modelutils
-   vgrid
-   rmn
+   vgrid::vgrid
+   rmn::rmn
    ${FFTW}
    ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
    )
-target_include_directories(toc2nml PRIVATE
-  ${vgrid_INCLUDE_DIRS}
-  )
-
-add_dependencies(toc2nml gemdyn ${phy_SRC} modelutils ${vgrid_SRC} ${rmn_SRC})
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/maingem_monitor_output.c

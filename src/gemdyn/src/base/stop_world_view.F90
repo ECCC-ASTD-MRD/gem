@@ -16,6 +16,7 @@
 !**s/r stop_world_view - Update status file and stop MPI
 
       subroutine stop_world_view
+      use app
       use phy_itf
       use step_options
       use gem_options
@@ -32,8 +33,6 @@
       use omp_timing
       use omp_timing
       implicit none
-
-      integer, external :: exfin
 
       character(len=256) :: postjob_S
       logical continue_L
@@ -96,7 +95,6 @@
                print*, 'EXPORTS: ',i,nexports(i)/Ptopo_numproc
             enddo
          endif
-         err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
       end if
 
       call rpn_comm_FINALIZE(err)

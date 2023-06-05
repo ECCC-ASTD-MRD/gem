@@ -6,43 +6,42 @@ if (MPI_FOUND)
 endif()
 
 file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 series/*.F90 surface/*.F90 utils/*.F90)
-list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*" )
+list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*")
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
+set(PROJECT_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(rpnphy STATIC ${F_FILES})
+target_include_directories(rpnphy PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
+target_include_directories(rpnphy PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>)
+
 target_include_directories(rpnphy PRIVATE
   utils
   base
-  ${CMAKE_CURRENT_SOURCE_DIR}/../include 
-  ${modelutils_INCLUDE_DIRS}
-  ${modelutils_MODULES_DIR}
-  ${vgrid_INCLUDE_DIRS}
-  ${tdpack_INCLUDE_DIRS}
-  ${rmn_INCLUDE_DIRS}
   )
 
 target_link_libraries(rpnphy PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  vgrid::vgrid
+  tdpack::tdpack
+  modelutils
+  rpnphy_cpl_stubs
+  rpnphy_chm_stubs 
   )
 
-set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION} )
-add_dependencies(rpnphy rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
-add_dependencies(rpnphy rpnphy_chm_stubs ${PROJECT_NAME}_build_info)
+set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION})
+add_dependencies(rpnphy ${PROJECT_NAME}_build_info)
 
 file(GLOB F_CHMSTUBS_FILES chm_stubs/*.F90)
 add_library(rpnphy_chm_stubs STATIC ${F_CHMSTUBS_FILES})
-add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
 add_dependencies(rpnphy_chm_stubs ${PROJECT_NAME}_build_info)
+target_link_libraries(rpnphy_chm_stubs PUBLIC modelutils)
+
+add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
 add_dependencies(rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
-target_include_directories(rpnphy_chm_stubs PRIVATE
-  ${modelutils_INCLUDE_DIRS}
-  ${modelutils_MODULES_DIR}
-  )
 
 install(TARGETS rpnphy
-    PUBLIC_HEADER DESTINATION include
     LIBRARY       DESTINATION lib
     ARCHIVE       DESTINATION lib)
 install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)

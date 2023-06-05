@@ -40,12 +40,11 @@
       integer, external :: model_timeout_alarm, OMP_get_max_threads
 
       character(len=256) :: my_dir
-      logical :: is_official_L, alongY_L
+      logical :: alongY_L
       integer :: ierr, mydomain
       integer, parameter :: nargs=11, npos=0
       character(len=16) listec(nargs)
       character(len=2048) def(nargs), val(nargs)
-      character(len=50) :: DSTP,name_S,arch_S,compil_S,user_S
 !
 !--------------------------------------------------------------------
 !
@@ -135,17 +134,6 @@
 
          call  open_status_file3 (trim(Path_output_S)//'/status_MOD.dot')
          call write_status_file3 ('_status=ABORT' )
-
-         call atm_model_getversion2 (name_S,Version_number_S,DSTP,&
-                              arch_S,compil_S,user_S,is_official_L)
-         if (is_official_L) then
-            Version_title_S=trim(name_S)//' --- Release of: '//trim(DSTP)
-         else
-            Version_title_S=trim(name_S)//' --- '//trim(user_S)//&
-                              ' Build: '//trim(DSTP)
-         end if
-
-         ierr = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 
       call gtmg_init ( Ptopo_myproc, 'MOD' )

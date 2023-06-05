@@ -31,12 +31,8 @@ work:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) work )
 
 # make clean in build directory, to remove compiler and linker generated files
-buildclean:
-	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) clean )
-
-# Delete and recreate build and work directories, to start from a clean plate
 clean:
-	. ./.initial_setup
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && $(MAKE) clean )
 
 # Delete the build and work directories
 distclean:

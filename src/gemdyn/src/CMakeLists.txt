@@ -12,26 +12,25 @@ list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/src/main/main*
 list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/gemdyn/src/no_mpi/main*" )
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules )
+set(PROJECT_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(gemdyn STATIC ${F_FILES} ${C_FILES})
 add_dependencies(gemdyn ${PROJECT_NAME}_build_info)
-target_include_directories(gemdyn PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-   base
-   ${tdpack_INCLUDE_DIRS}
-   ${vgrid_INCLUDE_DIRS}
-   ${rpncomm_INCLUDE_DIRS}
-   ${rpncomm_GEN_INCLUDE_DIR}
-   ${rmn_INCLUDE_DIRS}
-   ${modelutils_INCLUDE_DIRS}
-   ${modelutils_MODULES_DIR}
-   ${phy_INCLUDE_DIRS}
-   ${phy_MODULES_DIR}
-)
+
+target_include_directories(gemdyn PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
+target_include_directories(gemdyn PRIVATE base)
 
 target_link_libraries(gemdyn PUBLIC
+  rmn::rmn-ompi
+  vgrid::vgrid
+  tdpack::tdpack
+  rpncomm::rpncomm
+  modelutils
+  ${phy_LIBRARIES}
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  MPI::MPI_Fortran
+  MPI::MPI_C
   )
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
@@ -42,7 +41,6 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 install(TARGETS gemdyn
-    PUBLIC_HEADER DESTINATION include
     LIBRARY       DESTINATION lib
     ARCHIVE       DESTINATION lib)
 install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)

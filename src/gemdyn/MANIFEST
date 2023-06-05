@@ -1,19 +1,19 @@
 NAME       : gemdyn
-VERSION    : 5.2.0-b3
-BUILD      : Debug
+VERSION    : 5.2.0-rc1
+BUILD      : 
 DESCRIPTION: GEM dynamical core
 SUMMARY    : 
 MAINTAINER : Stephane Gaudreault - Stephane.Gaudreault@ec.gc.ca
-URL        : https://gitlab.science.gc.ca/cpi001/gemdyn
-DOC	   : https://wiki.cmc.ec.gc.ca/wiki/GEM
+URL        : https://gitlab.science.gc.ca/dynamics_research/gemdyn
 
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-rmn  >= 20.0.0
-tdpack >= 1.6.1
-vgrid >= 6.6.0
-rpncomm >= 4.6.2
-modelutils = 1.7.0-b2
-rpnphy = 6.2.0-b3
+rmn  >= 20.0.1
+tdpack >= 1.6.2
+vgrid >= 6.9.2
+rpncomm >= 4.6.3
+modelutils = 1.7.0-rc1
+rpnphy = 6.2.0-rc1
+

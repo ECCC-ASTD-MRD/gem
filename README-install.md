@@ -17,9 +17,9 @@ Before the first build:
 . ./.initial_setup
 
 # building and installing GEM
-# please see other options in Makefile
-make cmake
-make -j work
+# please see other options with cado -h
+cado cmake
+cado -j work
 
 # running GEM: example
 cd $GEM_WORK
@@ -39,7 +39,7 @@ To compile and run GEM, you will need:
 - OpenMP support (optional)
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 3.10 minimum), bash, sed, etc.
+- basic Unix utilities such as cmake (version 3.16 minimum), bash, sed, etc.
 
 ```
 # clone everything, including libraries and tools included as git submodules
@@ -72,16 +72,16 @@ cmake .. -DCOMPILER_SUITE=intel
 # Create an execution environment for GEM
 make -j work
 
-# Method 2 - Alternatively, you can use a script that will create a build and work
-# directory named after the computer operating system and the compiler suite
-# used, without having to create a build directory as mentioned in Method 1 above. 
-# In that case, you can then use the provided Makefile, using the commands
-# make cmake and make -j work, directly, without having to move to the 
-# build directory:
+# Method 2 - Alternatively, you can use a script that will create a build
+# and work directory named after the computer operating system and the
+# compiler suite used, without having to create a build directory as
+# mentioned in Method 1 above.  In that case, you can then use the cado
+# script, using the commands cado cmake and cado work -j directly, without
+# having to move to the build directory:
 # in the main directory:
 . ./.initial_setup
-make cmake
-make -j work
+cado cmake
+cado work -j
 
 # Either with Method 1 or 2, you should now have a work directory in the
 # main directory of gem, created with a name in the form of: 
@@ -117,7 +117,7 @@ To compile and run GEM, you will need:
 - OpenMP support (optional)
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 2.8.7 minimum), bash, sed, etc.
+- basic Unix utilities such as cmake (version 3.16 minimum), bash, sed, etc.
 
 ## Data for examples
 
