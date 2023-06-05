@@ -1,0 +1,5 @@
+! Current step count and driver step number
+
+      integer step_kount, step_driver
+
+      common / dynstep_i / step_kount, step_driver

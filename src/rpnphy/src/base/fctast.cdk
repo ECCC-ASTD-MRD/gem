@@ -1,0 +1,29 @@
+!      -----------------------------------------------------------
+
+! - Astronomical functions
+! you will find the description in the annex 1 of the documentation
+! RRS is the distance Sun-Earth
+! RDS is the declination of the Earth
+! RET is the equation of time
+
+! Orbit of the earth
+
+      real :: RTETA,REL,REM,RRS,RLLS,RLLLS,RDS,RET
+      real :: PTIME,PTETA
+
+      RTETA(PTIME) = PTIME/(RDAY*365.25)
+      REL(PTETA) = 1.7535+6.283076*PTETA
+      REM(PTETA) = 6.240075+6.283020*PTETA
+      RRS(PTETA) = REA*(1.0001-0.0163*SIN(REL(PTETA))&
+          &+0.0037*COS(REL(PTETA)))
+! Relative movement Sun/Earth
+      RLLS(PTETA) = 4.8951+6.283076*PTETA
+      RLLLS(PTETA) = 4.8952+6.283320*PTETA-0.0075*SIN(REL(PTETA))&
+         &-0.0326*COS(REL(PTETA))-0.0003*SIN(_TWO_*REL(PTETA))&
+         &+0.0002*COS(_TWO_*REL(PTETA))
+      RDS(PTETA) = ASIN(SIN(REPSM)*SIN(RLLLS(PTETA)))
+      RET(PTETA) = 591.8*SIN(_TWO_*RLLS(PTETA))-459.4*SIN(REM(PTETA))&
+       &+39.5*SIN(REM(PTETA))*COS(_TWO_*RLLS(PTETA))&
+       &-12.7*SIN(4.*RLLS(PTETA))-4.8*SIN(_TWO_*REM(PTETA))
+!    -------------------------------------------------------------
+

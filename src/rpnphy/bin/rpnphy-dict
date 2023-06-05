@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Usage: rpnphy-dict dircfg
+
+if [[ "x$1" == "x-h" || "x$1" == "x--help" ]] ; then
+   printf "Usage: rpnphy-dic DIRCFG\n" 1>&2
+   exit 0
+fi
+
+dircfg=${1:-GEM_cfgs}
+dircfg=${dircfg%/}
+
+
+nmlfile=${dircfg}/cfg_0000/gem_settings.nml
+outfile=${dircfg}/cfg_0000/outcfg.out
+
+if [[ ! -r ${nmlfile} ]] ; then
+   printf "ERROR: problem finding the namelist file: ${nmlfile}\n" 1>&2
+   exit 1
+fi
+
+nmlfilebk=$(mktemp ${nmlfile}-bk-XXXXXX)
+outfilebk=$(mktemp ${outfile}-bk-XXXXXX)
+cp ${nmlfile} ${nmlfilebk} 
+mv ${outfile} ${outfilebk}
+touch ${outfile}
+
+# Set small grid
+grtyp="$(rpy.nml_get -f ${nmlfile} --unquote -- grid/grd_typ_s)"
+if [[ "x${grtyp}" == "xGY" ]] ; then
+   rpy.nml_set -f ${nmlfile} --  grid/grd_ni=95
+elif [[ "x${grtyp}" == "xLU" ]] ; then
+   rpy.nml_set -f ${nmlfile} --  grid/grd_ni=80 grid/grd_nj=60 grid/grd_iref=40 grid/grd_jref=30
+else
+   printf "ERROR: problem getting grtyp from ${nmlfile}\n" 1>&2
+   rm -f ${nmlfilebk}
+   mv ${outfilebk} ${outfile}
+   exit 1
+fi
+     
+# Set zero step
+fcst_start="$(rpy.nml_get -f ${nmlfile} --unquote -- step/fcst_start_S 2>/dev/null)"
+[[ "x${fcst_start}" == "x" ]] && fcst_start=0 || true
+rpy.nml_set -f ${nmlfile} -- step/fcst_end_s=${fcst_start}
+
+# Make sure all diag var are allocated in the bus
+rpy.nml_set -f ${nmlfile} -- physics_cfgs/debug_alldiag_L=.true.
+
+# Remove other costly options
+rpy.nml_del -f ${nmlfile} -- physics_cfgs/phystat_list_s 2>/dev/null
+rpy.nml_set -f ${nmlfile} -- physics_cfgs/debug_initonly_L=.true.
+
+# Run GEM for one step
+printf "Running GEM to get the list of physics bus vars... please wait\n" 1>&2
+ptopo=1x1x1
+gemrun ${dircfg} --ptopo=${ptopo} >/dev/null
+logfile="log/runmod_${dircfg#*_}_${ptopo}_${ORDENV_PLAT}.log"
+
+# Extract the list of var
+cat ${logfile} | grep -a oe-00000-00000 | grep -a oe-00000-00000 | egrep -a ': \| [A-Z0-9_/:]* [ ]*\|   "[A-Z0-9_]*"   \|' | cut -d'|' -f3-4 | sort -u
+
+# Cleanup
+rm -f ${logfile}
+mv ${nmlfilebk} ${nmlfile}
+mv ${outfilebk} ${outfile}
