@@ -1,0 +1,17 @@
+program maingemgrid
+  call gemgrid
+end program maingemgrid
+
+subroutine atm_model_getversion2(name_S,version_S,date_S,arch_S,compil_S,user_S,is_official_L)
+  implicit none
+  character(len=*),intent(out) :: name_S,version_S,date_S,arch_S,user_S,compil_S
+  logical,intent(out) :: is_official_L
+  name_S = "gemgrid"
+  version_S = "@PROJECT_VERSION@"
+  date_S = "@BUILD_DATE@"
+  arch_S = "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}"
+  user_S = "@EC_USER@"
+  compil_S = "@EC_ARCH@"
+  is_official_L = .false.
+  return
+end subroutine atm_model_getversion2
