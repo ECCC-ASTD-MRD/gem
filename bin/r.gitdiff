@@ -1,0 +1,314 @@
+#!/bin/bash
+##
+# Diff script "wrapper" that superseed native "git diff" to
+# - use external diff program
+# - (TODO) diff between working dir and repository path
+# - pass diff option to external diff program
+#
+# @usage r.gitdiff [-w] [-B] [i] [-q] [-d] -v] [--*diff*] [git diff options] [FILENAME|BRANCH|TAG] [FILENAME|BRANCH|TAG]
+#
+# @date   5 Jan 2010
+# @author Stephane Chamberland
+##
+
+DESC='Diff script "wrapper" that superseed native "git diff" to, use external diff program, diff between working dir and repository path and pass diff option to external diff program; options have same meaning than diff'
+USAGE="USAGE: ${0##*/} [-w] [-B] [i] [-q] [-d] -v] [--*diff*] [GIT_DIFF_OPTIONS] [FILENAME|BRANCH|TAG] [FILENAME|BRANCH|TAG]"
+
+export ECDIFF=${ECDIFF:-diff}
+export ECDIFFARGS=${ECDIFFARGS:-""}
+export TMPDIR=${TMPDIR:-/tmp}
+# GITDIFFARGS=""
+
+quick=0
+dirdiff=0
+posargs=""
+posargsnum=0
+verbose=0
+ignorewhite=""
+ignorecase=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      -q) quick=1;;
+      -d) dirdiff=1;;
+      -v) verbose=1;;
+      -[wB]) ignorewhite="${ignorewhite}${1#-}";;
+      (-wB|-Bw) ignorewhite="wB";;
+      -i) ignorecase="i";;
+      --*diff*) export ECDIFF=${1#--} ;;
+      (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+      #        -*) echo "ERROR: Unrecognized option $1"
+      #            echo -e $USAGE
+      #            echo "---- ABORT ----"
+      #            exit 1;;
+      *) posargs="$posargs $1" ; ((posargsnum=posargsnum+1));;
+   esac
+   shift
+done
+if [[ "x${ignorewhite}" != "x" ]] ; then
+   ECDIFFARGS="$ECDIFFARGS -${ignorewhite}"
+fi
+if [[ "x${ignorecase}" != "x" ]] ; then
+   ECDIFFARGS="$ECDIFFARGS -${ignorecase}"
+fi
+if [[ $quick = 1 ]] ; then
+   GITDIFFARGS="--name-only -M -C --find-copies-harder"
+fi
+#if [[ $posargsnum -ge 3 ]] ; then
+#    echo "ERROR: support for more that 2 files/dir diff not yet implemented"
+#    echo -e $USAGE
+#    echo "---- ABORT ----"
+#    exit 1
+#fi
+
+if [[ $dirdiff == 0 ]] ; then
+   export GIT_EXTERNAL_DIFF=$(which r.git-diff-wrapper)
+else
+   export GIT_EXTERNAL_DIFF=$(which r.git-diff-wrapper-cp)
+   export ECDIFFTMPDIR=${ECDIFFTMPDIR:-${TMPDIR:-/tmp}}/$$
+   mkdir -p ${ECDIFFTMPDIR}/{left,right}
+fi
+
+if [[ "x${posargs# }" != "x" ]]; then
+   echo "+git diff ${GITDIFFARGS} ${posargs# }" 1>&2
+   git diff ${GITDIFFARGS} ${posargs# }
+else
+   echo "+git diff ${GITDIFFARGS}" 1>&2
+   git diff ${GITDIFFARGS}
+fi
+
+if [[ $dirdiff == 1 ]] ; then
+   ${ECDIFF:-xxdiff} ${ECDIFFARGS} ${ECDIFFTMPDIR}/{left,right}
+   rm -rf ${ECDIFFTMPDIR}/{left,right}
+fi
+exit 0
+
+#=========================================================
+#=========================================================
+#=========================================================
+#=========================================================
+
+##
+# extract file from svn repos or return nothing if local file
+#
+# @param url
+# @returns echo tmpfilepath [if file is extracted]
+# @returns 0/1 [on sucess/error]
+##
+mygetfile() {
+   if [[ -r $1 ]] ; then
+      return 0
+   fi
+   _filename=${1##*/}
+   _filename=${_filename%@*} #remove revision number
+   _tmpfile=$TMPDIR/${_filename}.$$
+   svn cat $1 > ${_tmpfile} 2>/dev/null
+   if [[ $? -eq 0 ]] ; then
+      echo ${_tmpfile}
+      return 0
+   else
+      return 1
+   fi
+}
+
+##
+# get info about provided url
+#
+# @param url
+# @returns urltype [lf:local file;rf:repository file;ld:local dir;rd:repository dir;0:does not exist]
+##
+mygeturlinfo() {
+   mytype="0"
+   if [[ -r $1 ]] ; then
+      if [[ -d $1 ]] ; then
+         mytype="ld"
+      else
+         mytype="lf"
+      fi
+   else
+      urlinfo=$(svn info $1 2>/dev/null | grep "Node Kind:")
+      if [[ "x${urlinfo#*: }" == "xfile" ]] ; then
+         mytype="rf"
+      elif [[ "x${urlinfo#*: }" == "xdirectory" ]] ; then
+         mytype="rd"
+      fi
+   fi
+   echo $mytype
+   if [[ x$mytype == x0 ]] ; then
+      return 1
+   else
+      return 0
+   fi
+}
+
+##
+# Return Path component of an URL[@REV]/FILE/DIR
+#
+# @param URL
+# @param (optional) TYPE [rf, lf, rd, ld]
+# @returns PATH [with "scheme" if any]
+##
+geturldirname() {
+   _mytype=$2
+   if [[ "x${_mytype}" == "x" ]] ; then
+      _mytype=$(mygeturlinfo $1)
+   fi
+   if [[ "x${_mytype}" == "xlf" || "x${_mytype}" == "xrf" ]] ; then
+      _urldir=${1%/*}
+      if [[ "x${_urldir}" == "x$1" ]] ; then
+         _urldir="."
+      fi
+   else
+      _urldir=$1
+   fi
+   _urldir=${_urldir%@*} #remove revision number
+   echo ${_urldir:-.}
+}
+
+##
+# Return FILENAME component of an URL[@REV]/FILE/DIR
+#
+# @param URL
+# @param (optional) TYPE [rf, lf, rd, ld]
+# @returns FILENAME [empty if URL point to a dir]
+##
+geturlfilename() {
+   _mytype=$2
+   if [[ "x${_mytype}" == "x" ]] ; then
+      _mytype=$(mygeturlinfo $1)
+   fi
+   if [[ "x${_mytype}" == "xlf" || "x${_mytype}" == "xrf" ]] ; then
+      _filename=${1##*/}
+      _filename=${_filename%@*} #remove revision number
+   else
+      _urldir=""
+   fi
+   echo $_filename
+}
+
+##
+# Return REV component of an URL[@REV]/FILE/DIR
+#
+# @param URL
+# @returns REV [empty if no REV]
+##
+geturlrev() {
+   _urlrev=${1##*@}
+   if [[ "x${_urlrev}" == "x$1" ]] ; then
+      _urlrev=""
+   else
+      _urlrev="@${_urlrev}"
+   fi
+   echo ${_urlrev}
+}
+
+##
+#
+##
+if [[ $posargsnum -eq 0 ]] ; then
+   #compare local dir to base
+   if [[ $quick = 1 ]] ; then
+      svn status
+   else
+      $BASESVNDIFFCMD
+   fi
+   exit 0
+fi
+
+##
+#
+##
+if [[ $posargsnum -eq 1 ]] ; then
+   mytype=$(mygeturlinfo $posargs)
+   if [[ $mytype == "rf" || $mytype == "rd" ]] ; then
+      posargsnum=2
+      posargs="$posargs ."
+   else
+      if [[ $quick -eq 1 ]] ; then
+         svn status $posargs
+      else
+         $BASESVNDIFFCMD $posargs
+      fi
+   fi
+fi
+
+##
+#
+##
+if [[ $posargsnum -eq 2 ]] ; then
+   url1="${posargs% *}"
+   url2="${posargs#* }"
+   mytype1=$(mygeturlinfo $url1)
+   mytype2=$(mygeturlinfo $url2)
+
+   if [[ "x$(echo $mytype1 | grep r)" != "x" && "x$(echo $mytype2 | grep r)" != "x" ]] ; then
+      if [[ $quick -eq 1 ]] ; then
+         $BASESVNDIFFCMD --summarize $posargs
+      else
+         $BASESVNDIFFCMD $posargs
+      fi
+      exit 0
+   fi
+
+   if [[ x$(echo "$mytype1" | grep "f") != x ]] ; then
+      filelist=$(geturlfilename $url1)
+   elif [[ x$(echo "$mytype2" | grep "f") != x ]] ; then
+      filelist=$(geturlfilename $url2)
+   else
+      tmpfilelist=$TMPDIR/tmpfilelist.$$
+      if [[ $mytype1 == "rd" ]] ; then
+         svn list $url1 > $tmpfilelist 2>/dev/null
+      else
+         ls -1 $url1 > $tmpfilelist 2>/dev/null
+      fi
+      if [[ $mytype2 == "rd" ]] ; then
+         svn list $url2 >> $tmpfilelist 2>/dev/null
+      else
+         ls -1 $url2 >> $tmpfilelist 2>/dev/null
+      fi
+      filelist=$(cat $tmpfilelist 2>/dev/null | sort -u)
+      /bin/rm -f $tmpfilelist
+   fi
+   urldir1=$(geturldirname $url1 $mytype1)
+   urldir2=$(geturldirname $url2 $mytype2)
+   url1rev=$(geturlrev $url1)
+   url2rev=$(geturlrev $url2)
+   for filename in $filelist ; do
+      tmpfile1=$(mygetfile $urldir1/$filename$url1rev)
+      tmpfile2=$(mygetfile $urldir2/$filename$url2rev)
+      tmpfile1b=${tmpfile1:-$urldir1/$filename}
+      tmpfile2b=${tmpfile2:-$urldir2/$filename}
+      if   [[ -r $tmpfile1b && ! -r $tmpfile2b ]] ; then
+         echo "Only in $urldir1: $filename"
+      elif [[ -r $tmpfile2b && ! -r $tmpfile1b ]] ; then
+         echo "Only in $urldir2: $filename"
+      else
+         if [[ "x$(diff -q $ECDIFFARGS $tmpfile1b $tmpfile2b)" != "x" ]] ; then
+            if [[ $quick -eq 1 ]] ; then
+               echo "Files $urldir1/$filename $urldir2/$filename differ"
+            else
+               echo $ECDIFF $ECDIFFARGS $tmpfile1b $tmpfile2b
+               $ECDIFF $ECDIFFARGS $tmpfile1b $tmpfile2b
+            fi
+         elif [[ $verbose -eq 1 ]] ; then
+            echo "Not modified: $filename"
+         fi
+      fi
+      /bin/rm -f $tmpfile1 $tmpfile2
+   done
+fi
+
+##
+#
+##
+if [[ $posargsnum -ge 3 ]] ; then
+   echo "ERROR: support for more that 2 files/dir diff not yet implemented"
+   echo -e $USAGE
+   echo "---- ABORT ----"
+   exit 1
+fi
+
+exit 0
+
+# .svn/text-base/NAME.svn-base
+
+

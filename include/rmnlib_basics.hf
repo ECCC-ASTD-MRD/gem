@@ -1,0 +1,20 @@
+!/@*
+!@objective Provide basic set of constants and interfaces to librmn fn
+!*@/
+
+#if !defined(RMNLIB_H)
+#define RMNLIB_H
+
+!- STATUS
+#define RMN_IS_OK(STATUS) (STATUS>RMN_ERR)
+#define RMN_COMBINE_STATUS min
+
+!- BIT(FLAGS) OPERATIONS [flag = 2^n !single bit ; flags = sum(flag1,flag2...)]
+#define FLAG_TST_ANY(container,flags) (iand(container,flags).ne.0) 
+#define FLAG_TST_ALL(container,flags) (iand(container,flags).eq.flags) 
+#define FLAG_SET(container,flags) (ior(container,flags))
+#define FLAG_CLR(container,flags) (iand(container,not(flags)))
+
+#endif
+
+include "rmnlib_basics.inc"

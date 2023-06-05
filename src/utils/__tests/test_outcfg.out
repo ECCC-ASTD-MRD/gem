@@ -1,0 +1,71 @@
+# altname('UT1>UU','VT1>VV')
+# altname(['UT2>U2','VT2>V2'])
+# altname('UT3>U3')
+#
+# convert([UU,VV],MPS2KT)
+# convert([TT],K2C)
+# convert([P0],PA2MB)
+# convert([GZ],M2DAM)
+# convert([II],add,0.,multi,1.)
+
+ etk_S=toto;
+ units_S=hour;
+ filt_pass=2;
+ filt_coef=3.;
+ datyp=134;
+ closeopen=seconds,6;
+ closeopen=minutes,7;
+ closeopen=hours,8;
+ closeopen=days,9;
+ closeopen=5;
+ nbits=16;
+ ip3=123;
+ ndigits=6;
+ linbot=1;
+ vinterp_S=lin;
+ debug_L=f;
+ flip_L=t;
+ flip_L=.true.;
+ flip_L=f;
+ rewrite_L=t;
+
+ xnbit([UU,II,13],bits,32)
+ filtre([13],coef,0.1,pass,3)
+
+ levels=1,model,0;
+ levels=2,model,[1,5,10];
+ levels=3,model,<1,18,4>;
+ levels=4,model,-1;
+ levels=5,model,all;
+ levels=6,model,surf;
+ levels=7,model,diag;
+ levels=8,pres,[500.,850.];
+ levels=9,pres,cubic,[500.,850.];
+ levels=10,pres,linear,[500.,850.];
+ levels=11,pres,cubic,linbot,2,
+         [500.,850.];
+ levels=12,all;
+ levels=13,surf;
+
+ grid=4,model;
+ grid=2,core;
+ grid=1,reduc,4,10,4,10,2;
+ grid=3,reduc,3,-3,3,-3;
+ grid=5,reduc,"NEW",2,11,2,15;
+ grid=7,core,"CO";
+
+ steps=1,step,all;
+ steps=2,step,-1;
+ steps=3,hour,<0.,48.,1.>;
+ #steps=4,init,step,<0,6,1>;
+ steps=5,step,[1,3,9,11];
+
+ sortie_d([II],        grid, 4, levels, 1, steps, 5)
+ sortie_d(BB,        grid, 4, levels, 1, steps, 5)
+ sortie_d("CC",        grid, 4, levels, 1, steps, 5)
+ sortie_d([AA1,AA2],   grid, 2, levels, 11, steps, 1)
+ sortie_d([AA1],   grid, 2, levels, 1, steps, 1)
+ sortie_d([13,39,911], grid, 3, levels, 3, 
+          steps, 3)
+ sortie_p([UU,U2],     grid, 1, levels, 4, steps, 1)
+

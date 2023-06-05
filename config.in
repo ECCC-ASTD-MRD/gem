@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# Copyright 2021, Her Majesty the Queen in right of Canada
+#
+# This forms the basis for the xx-config utility, which tells you
+# various things about the library installation.
+
+cc="@CMAKE_C_COMPILER_ID@ @CMAKE_C_COMPILER_VERSION@"
+fc="@CMAKE_Fortran_COMPILER_ID@ @CMAKE_Fortran_COMPILER_VERSION@"
+cflags="@EC_C_FLAGS@"
+fflags="@EC_Fortran_FLAGS@"
+defs="@EC_CMAKE_DEFINITIONS@"
+libs=CMAKE_LIBS
+
+version=@PROJECT_VERSION@
+env=@EC_CI_ENV@
+arch=@EC_ARCH@
+
+has_rmn=@rmn_VERSION@
+has_tdpack=@tdpack_VERSION@
+has_vgrid=@vgrid_VERSION@
+has_rpncomm=@rpncomm_VERSION@
+
+usage()
+{
+    cat <<EOF
+Usage: @NAME@-config [OPTION]
+
+Available values for OPTION include:
+
+  --help         display this help message and exit
+  --cc           C compiler [${cc}]
+  --fc           FORTRAN compiler [${fc}]
+  --cflags       C compiler flags [${cflags}]
+  --fflags       Fortran compiler flags [${fflags}]
+  --defs         Preprocessor definitions [${defs}]
+  --version      modelutils version [${version}]
+  --env          environment version used [${env}]
+  --arch         architecture of build [${arch}]
+  --has-rmn      which version of librmn is it compiled with [${has_rmn}]
+  --has-tdpack   which version of tdpack is it compiled with [${has_tdpack}]
+  --has-vgrid    which version of vgrid is it compiled with [${has_vgrid}]
+  --has-rpncomm  which version of rpncomm is it compiled with [${has_rpncomm}]
+
+EOF
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    # this deals with options in the style
+    # --option=value and extracts the value part
+    # [not currently used]
+    -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) value= ;;
+    esac
+
+    case "$1" in
+
+    --help)
+	usage 0
+	;;
+
+    --cc)
+       	echo ${cc:-no}
+       	;;
+
+    --fc)
+       	echo ${fc:-no}
+       	;;
+
+    --cflags)
+       	echo ${cflags}
+       	;;
+           
+    --fflags)
+       	echo ${fflags}
+       	;;
+
+    --defs)
+       	echo ${defs}
+       	;;
+
+    --libs)
+       	echo ${libs}
+       	;;
+
+    --has-rmn)
+       	echo ${has_rmn:-no}
+       	;;
+
+    --has-tdpack)
+       	echo ${has_tdpack:-no}
+       	;;
+
+    --has-vgrid)
+       	echo ${has_vgrid:-no}
+       	;;
+
+    --has-rpncomm)
+       	echo ${has_rpncomm:-no}
+       	;;
+
+    --version)
+	echo ${version}
+	;;
+        
+    --env)
+       echo ${env}
+       ;;
+       
+    --arch)
+       echo ${arch}
+       ;;
+       
+    *)
+        echo "unknown option: $1"
+	    usage 1
+	    ;;
+    esac
+    shift
+done
+
+exit 0
