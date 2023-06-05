@@ -1,0 +1,40 @@
+#!/bin/bash 
+PKGNAME=$1
+PKGVERSION=$2
+DESTDIR=${3:-.}
+MODE=${4:-sh}
+NAMEFMT=${5:-l}
+if [[ x$PKGNAME == x || x$PKGVERSION == x ]] ; then
+    echo "ERROR: PKGNAME or PKGVERSION not provided"
+    echo "USAGE: $0 PKGNAME PKGVERSION LIBDIR MODDIR"
+    exit 1
+fi
+PKGNAME=$(echo $PKGNAME | tr 'a-z' 'A-Z')
+PKGVERSION=$(echo $PKGVERSION)
+pkgname_=$(echo $PKGNAME | tr 'A-Z' 'a-z')
+production_date=$(date '+%Y-%m-%d %H:%M %Z')
+
+mkdir -p ${DESTDIR} 2>/dev/null || true
+chmod u+w ${DESTDIR} || true
+versionfilename=${DESTDIR}/${pkgname_}_version.dot
+[[ x${NAMEFMT} == xs ]] && versionfilename=${DESTDIR}/.VERSION
+prefix='export'
+sep='='
+if [[ x$MODE == xc ]] ; then
+   versionfilename=${DESTDIR}/${pkgname_}_version.h
+   prefix='#define'
+   sep=' '
+elif [[ x$MODE == xf ]] ; then
+   versionfilename=${DESTDIR}/${pkgname_}_version.inc
+   prefix='       character(len=50),parameter ::'
+   sep=' = '
+fi
+cat > ${versionfilename} << EOF
+$prefix ${PKGNAME}_NAME_S${sep}"${PKGNAME}"
+$prefix ${PKGNAME}_VERSION_S${sep}"${PKGVERSION}"
+$prefix ${PKGNAME}_DSTP_S${sep}"${production_date}"
+$prefix ${PKGNAME}_EC_ARCH_S${sep}"${EC_ARCH}"
+EOF
+[[ $? == 0 ]] && echo ${versionfilename} & exit 0
+exit 1
+

@@ -1,0 +1,12 @@
+#!/bin/bash
+if [[ x${ORDENV_PLAT} != x && x$1 == x--ord ]] ; then
+   echo ${ORDENV_PLAT}
+   exit 0
+fi
+myarch=${1:-${BASE_ARCH}}
+[[ x$myarch == xAIX ]] && echo aix53-ppc-64 && exit 0
+[[ x$myarch == xLinux ]] && echo linux26-i686 && exit 0
+[[ x$myarch == xAIX-powerpc7 ]] && echo aix61-ppc-64 && exit 0
+[[ x$myarch == xLinux_x86-64 ]] && echo linux26-x86-64 && exit 0
+echo multi
+exit 0

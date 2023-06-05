@@ -1,0 +1,26 @@
+#!/bin/bash
+
+ISOFFICIAL='.false.'
+[[ x$ATM_MODEL_ISOFFICIAL == xtrue ]] && ISOFFICIAL='.true.'
+MYARCH="$(uname -s)-$(uname -p|grep -v unknown)$(uname -v|cut -d' ' -f1|sed 's/#//').$(uname -r)"
+COMP_ARCH=${COMP_ARCH:-${EC_ARCH#*/}}
+
+cat <<EOF
+       program modelbidon
+          call $1
+          stop
+       end program modelbidon
+
+       subroutine atm_model_getversion(name_S,version_S,date_S,arch_S,compil_S,is_official_L)
+          implicit none
+          character(len=*),intent(out) :: name_S,version_S,date_S,arch_S,compil_S
+          logical,intent(out) :: is_official_L
+          name_S = "$(echo ${ATM_MODEL_NAME:-$1} | tr 'a-z' 'A-Z')"
+          version_S = "${ATM_MODEL_VERSION:-?.?}"
+          date_S = "$(date '+%Y-%m-%d %H:%M %Z')"
+          arch_S = "${BASE_ARCH:-$MYARCH}"
+          compil_S = "${COMP_ARCH:-${EC_ARCH#*/}} [${PGI_VERSION}${XLF_VERSION}]"
+          is_official_L = ${ISOFFICIAL:-.false.}
+          return
+       end subroutine atm_model_getversion
+EOF

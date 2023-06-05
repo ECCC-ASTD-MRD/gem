@@ -1,0 +1,14 @@
+
+      integer, parameter :: MAX_instrumented=512
+      integer, parameter :: MAX_threads=128
+
+      integer(INT64) :: timer_cnt(MAX_instrumented, MAX_threads)
+      integer :: timer_level(MAX_instrumented)
+      common/timing_i/ timer_cnt, timer_level
+
+      real(REAL64) :: tb(MAX_instrumented, MAX_threads)
+      real(REAL64) :: sum_tb(MAX_instrumented, MAX_threads)
+      common/timing_r8/ sum_tb,tb
+
+      character(len=16) :: Timing_S, nam_subr_S(MAX_instrumented)
+      common/timing_c/ nam_subr_S , Timing_S
