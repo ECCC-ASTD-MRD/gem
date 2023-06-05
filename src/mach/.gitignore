@@ -1,0 +1,15 @@
+imported_headers
+build-*
+work-*
+bin 
+include 
+lib 
+share
+.rde.[cl]*
+.rde.srcpath.dot
+.linkit.log 
+BINMOD 
+PREP 
+RUNMOD 
+gm-test*
+*listing*
