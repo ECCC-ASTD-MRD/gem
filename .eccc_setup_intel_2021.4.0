@@ -34,3 +34,6 @@ export COMPILER_SUITE=intel
 export COMPILER_VERSION=2021.4.0
 
 . ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=TRUE

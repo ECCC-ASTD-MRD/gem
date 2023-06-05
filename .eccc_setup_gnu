@@ -29,3 +29,6 @@ COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
 
 . ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=TRUE
