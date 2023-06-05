@@ -18,6 +18,17 @@ enable_language(C)
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
 
+# Option for compiling or not with Intel static libraries
+option(STATIC_INTEL "Whether to compile with static Intel libraries" OFF)
+if ((("$ENV{ECCI_PROCESS}" STREQUAL "staging") OR (STATIC_INTEL)) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel"))
+  message(STATUS "(EC) Building with static Intel libraries")
+  # Use static MPI libraries: must be set before calling find_package(MPI)
+  set(MPI_COMPILER_FLAGS "${MPI_COMPILER_FLAGS} -static_mpi -nostrip")
+  set(STATIC_LINK_INTEL_FLAGS "-static-libgcc -static-libstdc++ -qopenmp-link=static")
+endif()
+
+find_package(MPI)
+
 # To build without OpenMP, you have to add -DWITH_OPENMP=FALSE to the cmake command line
 set(WITH_OPENMP TRUE CACHE BOOL "Control whether to use OpenMP")
 include(ec_openmp)
@@ -45,13 +56,13 @@ option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunne
 # Adding specific flags for GEM
 if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
   else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl ${STATIC_LINK_INTEL_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl ${STATIC_LINK_INTEL_FLAGS}")
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
@@ -68,7 +79,7 @@ endif()
 
 if((DEFINED ENV{EC_ARCH}) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel"))
   set(FFTW_USE_STATIC_LIBS TRUE)
-endif()  
+endif()
 
 find_package(FFTW REQUIRED)
 if (WITH_OPENMP)
@@ -144,17 +155,18 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
 list(APPEND BINARIES maingemdm)
-if ((NOT DEFINED ENV{EC_ARCH} ) OR ( NOT ( (WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR (ENV{WITH_SYSTEM_RPN}))))
+if ((NOT DEFINED ENV{EC_ARCH} ) OR (NOT((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR ($ENV{WITH_SYSTEM_RPN}))))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
-if ("${phy_SRC}" STREQUAL "rpnphy" )
+if ("${phy_LIBRARIES}" STREQUAL "rpnphy" )
   list(APPEND BINARIES feseri prphynml )
 endif()
-list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end )
+list(APPEND BINARIES gemgrid checkdmpart prgemnml toc2nml gem_monitor_output gem_monitor_end)
 
 install(TARGETS ${BINARIES} RUNTIME DESTINATION ${WORK_PREFIX}/bin)
 
+# install only a subset of targets
 add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
