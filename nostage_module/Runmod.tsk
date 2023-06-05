@@ -1,0 +1,127 @@
+#!/bin/bash
+
+_checkpoint 0 "GEM_module Runmod.tsk"
+
+# Check that the workspace is not on the user's home
+${TASK_BIN}/Um_checkfs.sh .
+
+# Aquire the correct MPICH implementation  #TODO: is this still needed?
+if [[ ${BASE_ARCH} = Linux ]] ; then
+   . r.load.dot mpich2
+fi
+
+# Obtain sequencer information and adjust settings file
+ptopo=$(nodeinfo -n ${SEQ_NODE} -f res | grep node\.cpu= | cut -d '=' -f 2)
+
+# We currently do not allow over-comitting of OMP threads
+omp_nthreads=$(echo ${ptopo} | cut -d "x" -f 3)
+smtdyn=$(echo ${model_nthreads} | cut -d "x" -f 1)
+smtphy=$(echo ${model_nthreads} | cut -d "x" -f 2)
+if [[ ${smtdyn} -gt ${omp_nthreads} ]] ; then smtdyn=${omp_nthreads}; fi
+if [[ ${smtphy} -gt ${omp_nthreads} ]] ; then smtphy=${omp_nthreads}; fi
+nthreads="${smtdyn}x${smtphy}"
+
+setfile=model_settings.nml
+domain_list=$(ls -1d ${TASK_INPUT}/cfg_*)
+for file in ${domain_list} ; do
+   if [[ -d ${file} ]] ; then
+      mydomain=$(basename ${file})
+      workspace=${TASK_WORK}/${mydomain}; mkdir -p ${TASK_WORK}/${mydomain}
+      cd ${workspace}
+
+      # Insert additional information into settings file
+      cp ${TASK_INPUT}/${mydomain}/${setfile} .
+      if [[ -n "${MOD_GEM_etik}" ]] ; then
+         ${TASK_BIN}/rpy.nml_set -f ${setfile} out/Out3_etik_S=\'${MOD_GEM_etik}\'
+      fi
+
+      #  Extract archived restart files on request (for rerunability)
+      if [[ ${MOD_GEM_save_rstrt} > 0 ]] ; then
+         arch=${workspace}/.archive_${Runmod}
+         if [[ -d ${arch} ]] ; then
+            rsync -av ${arch}/ ${workspace}
+         else
+            find ${workspace} -name "*restart*" -exec rm -f {} \;
+         fi
+      fi
+   fi
+   cd ${TASK_WORK}
+done
+
+if [[ -n "${MOD_GEM_cpl_expname}" ]] ; then
+   export GOSSIPSERVER=mgi_${MOD_GEM_cpl_expname}_${SEQ_SHORT_DATE}_${SEQ_LOOP_EXT}
+fi
+
+# Run the model
+. r.call.dot ${TASK_BIN}/runmod.sh \
+   -ptopo ${ptopo} -smt ${nthreads} -inorder ${MOD_GEM_inorder} \
+   -nodespec ${MOD_GEM_nodespec} \
+   -barrier ${MOD_GEM_barrier} -timing ${MOD_GEM_timing} \
+   -cfg ${domain_cfgs} -no_setup -debug ${MOD_GEM_debug}
+
+# Handle model return status
+if [[ "$_status" == "ABORT" ]] ; then
+   # Problem with the integration
+   if [[ -n "${MOD_GEM_cpl_expname}" ]] ; then gclient 4 || true ; fi
+   printf "\nProblem with runmod.sh\n\n"
+   nodelogger -n ${SEQ_NODE} -s abort -d ${SEQ_DATE} ${SEQ_LOOP_ARGS} -m "Error encountered during model integration"
+   exit 1
+fi
+action="end"
+if [[ "$_status" == "ED" ]] ; then
+   # Force iteration status end with ^last tag
+   clone=${Runmod}^last
+   if [[ ${MOD_GEM_clean} -gt 0 ]] ; then
+      /bin/rm -rf ${SEQ_WORKBASE}/${SEQ_CONTAINER}/StageIN${SEQ_CONTAINER_LOOP_EXT}/output/* &
+   fi
+elif [[ "$_status" == "RS" ]] ; then
+   # Restart for the next time-slice by creating a working directory linked 
+   #  back to the first slice
+   if [[ ${SEQ_XFER} != "stop" ]] ; then
+      action="submit"
+   fi
+   nbclone=$(printf "%d" ${Runmod})
+   clone=$(printf "%03d" $((${nbclone}+1)))
+   for file in ${domain_list} ; do
+      if [[ -d ${file} ]] ; then
+         mydomain=$(basename ${file})
+         workspace=${TASK_WORK}/${mydomain}
+         cd ${workspace}
+
+         # Backup of resart files on request (for rerunability)
+         if [[ ${MOD_GEM_save_rstrt} > 0 ]] ; then
+            arch=${workspace}/.archive_${clone}
+            mkdir -p ${arch}
+            rsync -av --exclude '.archive*' --include '*/' --include='*restart*' --exclude='*' ${workspace}/ ${arch}
+         fi
+      fi
+      cd ${TASK_WORK}
+   done
+
+   # Create linkback for working directory
+   model_workbase=${TASK_BASEDIR%${Runmod}}
+   rm -fr ${model_workbase}${clone}
+   ln -s ${model_workbase}000 ${model_workbase}${clone}
+
+else
+   echo "Unknown _status ${_status} retrieved"
+   exit 1
+fi
+
+# Launch next restart increment
+if [[ -n "${SEQ_CONTAINER_LOOP_ARGS}" ]]; then
+   args="${SEQ_CONTAINER_LOOP_ARGS},Runmod=${clone}"
+else
+   args="-l Runmod=${clone}"
+fi
+
+if [[ -z "${MOD_GEM_cpl_expname}" ]] ; then
+   ${SEQ_BIN}/maestro -n ${SEQ_CONTAINER}/Runmod -s ${action} ${args}
+else
+   gclient 4 || true
+fi
+
+printf "STATUS_GEMDM=%s\n" ${_status}
+wait
+
+_checkpoint 1 "GEM_module Runmod.tsk"
