@@ -1,0 +1,10 @@
+imported_headers
+build-*
+work-*
+bin 
+include/mach_version.inc
+lib 
+.rde.[cl]*
+.rde.srcpath.dot
+gm-test*
+*listing*

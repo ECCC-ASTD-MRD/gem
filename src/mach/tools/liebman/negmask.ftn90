@@ -1,0 +1,24 @@
+  subroutine negmask(mask,ni,nj)
+
+!     Andre Plante march 2 2000.
+
+!     Make the negative of the mask.
+
+      implicit none
+
+      integer ni,nj,ij
+       
+      real mask(ni*nj)
+
+      do ij=1,ni*nj
+!         if(nint(mask(ij)).eq.0)then
+         if(mask(ij).eq.0)then
+            mask(ij)=1
+         else
+            mask(ij)=0
+         endif
+      enddo
+      
+      return
+
+  end subroutine negmask

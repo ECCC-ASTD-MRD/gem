@@ -1,0 +1,20 @@
+NAME       : mach
+VERSION    : 3.2.0-rc1
+BUILD      : 
+DESCRIPTION: MACH chemistry library
+SUMMARY    : Atmospheric gas and aerosol chemistry module within RPN physics. This replaces the rpnphy_chm_stubs library within rpnphy. This library also carries some modifications of base rpnphy codes under src/gemmod directory. These are listed explicitly in 'GEMMOD_OBJ_FILES' and used in final linking of the executable.
+MAINTAINER : ECCC/S&T/ASTD/AQRI
+URL        : https://gitlab.science.gc.ca/ARQI-GEMMACH
+DOC        : https://wiki.cmc.ec.gc.ca/wiki/GEMMACH
+
+# Dependencies 
+#    =,<,<=,>,>= : Version rules
+#    ~           : Optional
+
+rmn  >= 20.0.1
+tdpack >= 1.6.2
+vgrid >= 6.9.2
+rpncomm >= 4.6.3
+modelutils = 1.7.0-rc1
+rpnphy = 6.2.0-rc1
+gemdyn = 5.2.0-rc1

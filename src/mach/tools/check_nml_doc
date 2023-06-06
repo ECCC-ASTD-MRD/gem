@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+def error(msg):
+  print("Error: %s"%msg)
+  exit(1)
+
+# Get list of all declared chemistry options.
+options = []
+with open("CHEM/chm_nml_mod.ftn90",'r') as f:
+  reading_namelist = False
+  for line in f.readlines():
+    line = line.strip()
+    if len(line) == 0: continue
+    if line.startswith('namelist'):
+      reading_namelist = True
+    if not reading_namelist: continue
+    options.extend(line.rstrip('&').replace(',',' ').split())
+    if not line.endswith('&'): break
+options = [o.lower() for o in options if o not in ('','namelist','/chemistry_cfgs/')]
+
+# Get list of all initialized chemistry options.
+init_options = []
+with open("CHEM/chm_nml.ftn90",'r') as f:
+  for line in f.readlines():
+    line = line.strip()
+    if line.startswith('!'): continue
+    if '=' not in line: continue
+    var = line.split('=')[0].strip().lower()
+    if ' ' in var: continue
+    if '(' in var: continue
+    init_options.append(var)
+
+# Check for uninitialized options.
+uninitialized = sorted(set(options)-set(init_options))
+if len(uninitialized) > 0:
+  error("The following chemistry options are not initialized in chm_nml: %s"%uninitialized)
+
+# Get list of documented options.
+documented = []
+with open("README_namelist.md",'r') as f:
+  chem_doc = False
+  for line in f.readlines():
+    line = line.replace(' ','')
+    line = line.replace('\\','')
+    line = line.lower()
+    if line.startswith('#') and line.find('chemistry') >= 0:
+      chem_doc = True
+    if line.startswith('#'): continue
+    if not chem_doc: continue
+    line = line.split('|')
+    if len(line) != 7: continue
+    var = line[1]
+    if var.startswith(':'): continue
+    if var == 'name': continue
+    if '(' in var:
+      var = var.split('(')[0]
+    documented.append(var)
+
+# Check for undocumented options.
+undocumented = sorted(set(options)-set(documented))
+if len(undocumented) > 0:
+  error("The following chemistry options are not documented in README_namelist.md: %s"%undocumented)
+
+# Check for documented options that no longer exist.
+removed = sorted(set(documented)-set(options))
+if len(removed) > 0:
+  error("The following chemistry options are mentioned in README_namelist.md, but can not be found in the code: %s"%removed)
+
+print ("Chemistry namlist documentation OK")
+
