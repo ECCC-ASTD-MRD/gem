@@ -1,7 +1,0 @@
-       character(len=50),parameter :: GEMMACH_NAME_S = "GEMMACH"
-       character(len=50),parameter :: GEMMACH_VERSION_S = "@rpnphy_VERSION@"
-       character(len=50),parameter :: GEMMACH_DSTP_S = "@BUILD_DATE@"
-       character(len=50),parameter :: GEMMACH_EC_ARCH_S = "@EC_ARCH@"
-       character(len=50),parameter :: GEMMACH_ORDENV_ARCH_S = "@EC_ORDENV_ARCH@"
-       character(len=50),parameter :: GEMMACH_ORDENV_PLAT_S = "@EC_PLAT@"
-       character(len=50),parameter :: GEMMACH_COMP_ARCH_S = "@EC_COMPILER@"
