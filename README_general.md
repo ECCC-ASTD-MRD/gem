@@ -1,4 +1,4 @@
-##### Introducing the GOAS development environment for GEM #####
+# Introducing the GOAS development environment for GEM
 
 For many years GEM developers have been using the in-house development tool
 RDE to manage compilation, linkage and other shell environment features
@@ -17,51 +17,81 @@ and binaries. Although it is entirely possible to use GOAS with a single git
 clone and proceed as intructed in a README file, we provide a set of basic
 tools in:
 
+```
 /users/dor/armn/dyn/ovbin
 or
 /home/sdyn001/ovbin
+```
 which most of you must already have in your PATH.
 If not I encourage you to do so.
 
 The main git depot is at
+```
 git@gitlab.science.gc.ca:MIG/gem.git
+```
 currently on branch 5.2
 
 For an easier transition towards GOAS we suggest to use the wrapper
 goas_install the following way:
 
+```
 goas_install -version 5.2.0-rc1 -exp trunk
+```
 
 which will:
-clone the depot into a familiar name directory, compile all the code, and
-create the executables for Intel. You can then go into the work-[platform]
-directory to run the model as before using provided configurations.
 
-Environment can simply be set with
+- clone the depot into a familiar name directory,
+- compile all the code, and
+- create the executables for Intel.
+
+You can then go into the work-[platform] directory to run the model as
+before using provided configurations.
+
+Environment can simply be set with:
+```
 . .eccc_setup_[intel,gnu]
+```
+
 Compilation and linking is done with
+```
 make -j work
+```
 
 Unlike RDE, the whole source code is available for modifications under
 subdirectories src/ , scripts/ , share/gem-maestro/ , share/configurations/
 
 The depot also provides for the use of Maestro.
+
 There are 2 ways:
+
 1) With the usual date cycler of /home/sdyn001/CYCLER/v_4.0.7
-      Also take a look at file suite.cfg for variables:
-      REP_GOAS=$HOME/home/goas/5.2.0-a23/trunk (for example)
-      RC_gem_ovbin=${REP_GOAS}
-      RC_module_gem=${REP_GOAS}/gem-maestro/gem_module
+
+   Also take a look at file suite.cfg for variables:
+      
+   REP_GOAS=$HOME/home/goas/5.2.0-a23/trunk (for example)
+      
+   RC_gem_ovbin=${REP_GOAS}
+      
+   RC_module_gem=${REP_GOAS}/gem-maestro/gem_module
 
 2) Or creating a simple maestro suite when working under ${gem_DIR}/work-*
+
 a) create_maestro (uses GEM_cfgs configuration)
-   creates maestro suite in
+
+   creates maestro suite in:
+   
    $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_work-*
+
 b) create_maestro -exp [configurations/GEM_cfgs_GY_FISL_H] for example
+
    creates maestro suite in
+   
    $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_GY_FISL_H_work-*
+
 c) create_maestro -location TATA
+
    creates maestro suite using GEM_cfgs in 
+
    $HOME/.suites/TATA
 
 A link for each suite is made under ${gem_DIR}/work-*/suites/[name_of_suite]

@@ -73,18 +73,25 @@ See cado -h (short help) or cado help or the content of the Makefile for options
 For example: cado cmake or make cmake generates Makefiles to compile gem,
 gemdyn, modelutils and rpnphy
 
+Configure:
 ```
 cado cmake
 or 
 make cmake
 ```
-Compile
+
+To configure for mach, use:
+```
+cado cmake-mach
+```
+
+Compile:
 ```
 cado build -j
 or
 make -j
 ```
-install in working directory
+Install in working directory
 ```
 cado work -j
 make -j work
@@ -95,10 +102,11 @@ In development mode, gem is compiled using Intel shared libraries: use the
 following command to compile with static libraries:
 ```
 cado cmake-static
+or
+cado cmake-mach-static
 ```
 
 See others options with cado -h (short help) or cado help
-
 
 ## Running GEM: example
 
