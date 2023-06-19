@@ -83,6 +83,11 @@ module ens_options
    integer :: Ens_skeb_ncha = 1
    namelist /ensembles/ Ens_skeb_ncha
 
+   !# apply tendencies from permanent bus on digital filter reset
+   !# (3D MARKOV CHAINES)
+   logical :: Ens_skeb_tndfix = .true.
+   namelist / ensembles/ Ens_skeb_tndfix
+
    !# low wave number truncation limit used in 3D Markov chain (used by SKEB)
    !# (3D MARKOV CHAINES)
    integer :: Ens_skeb_trnl = 2
