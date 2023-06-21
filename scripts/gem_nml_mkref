@@ -3,7 +3,6 @@
 # @Author: S.Chamberland
 # @Date:   Feb 2016
 
-set -x
 DESC='Create a reference nml for gem'
 
 eval $(rpy.cclargparse \
@@ -33,6 +32,8 @@ EOF
    exit 1
 fi
 
+export gemdyn_version=${gemdyn_version:-${ATM_MODEL_VERSION}}
+export rpnphy_version=${rpnphy_version:-${ATM_MODEL_VERSION}}
 a=$(which gemdyn_nml_mkref)
 b=$(which rpnphy_nml_mkref)
 if [[ x"${a}" == x"" || x"${b}" == x"" ]] ; then
@@ -60,4 +61,3 @@ mv ${nmlfilename} ${myfile}
 cd ${here}
 rm -rf ${localtmp}
 exit 0
-set +x
