@@ -14,7 +14,7 @@ target_link_libraries(feseri
 add_executable(prphynml mainprphynml.F90)
 target_link_libraries(prphynml
    rpnphy
-   tdpack
+   tdpack::tdpack 
    modelutils
    vgrid::vgrid
    rpncomm::rpncomm
