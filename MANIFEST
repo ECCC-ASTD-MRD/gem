@@ -15,6 +15,6 @@ tdpack >= 1.6.2
 vgrid >= 6.9.2
 rpncomm >= 4.6.3
 modelutils = 1.7.0-rc1
-rpnphy = 6.2.0-rc2
+rpnphy = 6.2.0-rc3
 gemdyn = 5.2.0-rc2
 mach = 3.2.0-rc1
