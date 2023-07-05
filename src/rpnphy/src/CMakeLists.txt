@@ -12,6 +12,9 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
 set(PROJECT_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(rpnphy STATIC ${F_FILES})
+
+target_compile_definitions(rpnphy PUBLIC ECCCGEM)
+
 target_include_directories(rpnphy PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
 target_include_directories(rpnphy PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>)
 

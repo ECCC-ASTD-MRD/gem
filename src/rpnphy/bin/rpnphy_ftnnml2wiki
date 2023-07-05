@@ -1,0 +1,132 @@
+#!/bin/bash
+
+MYSELF="${0##*/}"
+DESC='Produce nml doc'
+USAGE="USAGE: ${MYSELF} [-v] [--comp COMPONENTS] [-o OUTDIR] [--wiki | --md]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help     : print this help
+    -v, --verbose  : verbose mode
+        --comp     : List of components to look into
+        --wiki     : produce wiki markup
+        --md       : produce markdown markup
+        --sort     : Sort Nml Var alphabetically
+    -o, --outdir   : dir where to put resulting doc files
+EOF
+}
+
+
+## Get list of components
+# getcomplist() {
+#    if [[ -f DEPENDENCIES ]] ; then
+#       export RDEDEPS="$(cat DEPENDENCIES | cut -d= -f1 | tr '\n' ' ')"
+#    else
+#       echo "ERROR: cannot find DEPENDENCIES file" 1>&2
+#       exit 1
+#       # export RDECOMPONENTS="$(find . -maxdepth 1 -type d | cut -d/ -f2 | grep -e '^[a-zA-Z]\+' | grep -v GEM_cfg | tr '\n' ' ')"
+#       #TODO: define RDEDEPS from RDECOMPONENTS + provided base URL + version info
+#    fi
+
+#    if [[ "x${RDEDEPS}" == "x" ]] ; then
+#       echo "ERROR: no known DEPENDENCIES" 1>&2
+#       exit 1
+#    fi
+#    echo ${RDEDEPS}
+# }
+
+##
+_verbose=0
+_complist=''  #"$(getcomplist)"
+_outdir="."
+_format='wiki'
+_md=''
+_sort=''
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--_verbose) ((_verbose=_verbose+1));;
+      (--wiki) _format='wiki' ; _md='' ;;
+      (--md)  _format='md' ; _md='--md' ;;
+      (--comp) _complist="";;
+      (--sort) _sort="--sort";;
+      (-o|--outdir) ;;
+      (*)
+         case ${previous} in
+            (--comp) _complist="${_complist} ${1}" ;;
+            (-o|--outdir) _outdir="${1}"
+            (*)
+               echo "Option Not recognized: ${1}" 1>&2
+               usage_long
+               exit 1;;
+         esac;;
+   esac
+   if [[ x${1#-} != x${1} ]] ; then
+      previous=${1}
+   fi
+   shift
+done
+
+
+## rdegrep -e -i '^[ ]*namelist[ ]*/'
+
+ignorefile="rpnphy/src/series/series.cdk"
+ignorenml="split3df_in split3df_out cdm_cfgs"
+
+for name in ${_complist}; do
+   if [[ ! -d ${name} ]] ; then
+      cat 1>&2 <<EOF
+ERROR: cannot find ${name}
+       you may either link ${name} dir
+          ln -s /PATH/TO/${name} ${name}
+       or remove ${name} it from the DEPENDENCIES file
+       then re-run this script
+EOF
+      exit 1
+   fi
+
+   echo "====== COMPONENT: ${name}"
+
+   rm -f ${_outdir:-.}/${name}.${_format}
+
+   filelist="$(egrep -Ri '^[ ]*namelist[ ]*/' ${name} 2>/dev/null | cut -d: -f1 | sort -u | tr '\n' ' ')"
+
+   for myfile in ${filelist} ; do
+
+   echo "==== File: ${name} / ${myfile}"
+
+      if [[ x$(echo ":${ignorefile}:" | tr ' ' ':' | grep ":${myfile}:") != x ]] ; then
+         echo Skipping ${myfile} 1>&2
+         continue
+      fi
+
+      nmllist="$(egrep -Ri '^[ ]*namelist[ ]*/' ${myfile} 2>/dev/null | cut -d/ -f2 | tr 'A-Z' 'a-z' | sed 's/ //g' | sort -u | tr '\n' ' ')"
+      for mynml in ${nmllist} ; do
+
+         echo "== Nml: ${name} / ${myfile} / ${mynml}"
+
+         if [[ x$(echo ":${ignorenml}:" | tr ' ' ':' | grep ":${mynml}:") != x ]] ; then
+            echo Skipping ${myfile} ${mynml} 1>&2
+            continue
+         fi
+
+         if [[ ${mynml} == ${mynml%_p} ]] ; then
+            echo ${myfile} ${mynml} 1>&2
+            set -x
+            rpy.ftnnml2wiki ${_md} ${_sort} -i ${myfile} -n ${mynml} >> ${_outdir:-.}/${name}.namelists.${_format}
+            set +x
+         else
+            echo Skipping ${myfile} ${mynml} 1>&2
+         fi
+
+      done
+
+   done
+
+done
