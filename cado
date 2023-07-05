@@ -41,6 +41,7 @@ cmake_mach_static_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DSTATIC
 
   build_command='cmake --build ${build_dir} -- "$@"'
    work_command='cmake --build ${build_dir} --target work -- "$@"'
+install_command='cmake --build ${build_dir} --target install -- "$@"'
 package_command='cmake --build ${build_dir} --target package -- "$@"'
   clean_command='cmake --build ${build_dir} --target clean -- "$@"'
 
@@ -169,6 +170,7 @@ case "${name}" in
      cmake-mach-debug) cmd=${cmake_mach_debug_command} ;;
                 build) cmd=${build_command} ;;
                  work) cmd=${work_command} ;;
+              install) cmd=${install_command} ;;
               package) cmd=${package_command} ;;
                 clean) cmd=${clean_command} ;;
           help|--help) print_cado_help ; exit 0 ;;
