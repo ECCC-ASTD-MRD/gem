@@ -80,7 +80,8 @@ elif [[ "$_status" == "RS" ]] ; then
    if [[ ${SEQ_XFER} != "stop" ]] ; then
       action="submit"
    fi
-   nbclone=$(printf "%d" ${Runmod})
+   # Must use 10# to indicate decimal (leading zeros mean octal) for the value of Runmod
+   nbclone=$(printf "%d" $((10#${Runmod})))
    clone=$(printf "%03d" $((${nbclone}+1)))
    for file in ${domain_list} ; do
       if [[ -d ${file} ]] ; then
