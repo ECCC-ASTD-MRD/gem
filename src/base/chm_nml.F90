@@ -140,8 +140,12 @@ integer function chm_nml (F_namelist, lun_out)
    wf_case              = 0
    chm_pblh_min_l       = .false.
    chm_ae_spread_l      = .false.
-   chm_ammonia_bidi_s   = 'OFF'
-   chm_ammonia_gep      = (/ 1000.0, 1000.0, 1000.0, 500.0, 1000.0, 2000.0, 800.0, 0.0, 20.0, 100.0, 20.0, 0.0, 0.0, 0.0, 0.0 /)
+   chm_nh3_bidi_s       = 'OFF'
+   chm_nh3_gep2d_l      = .false.
+   chm_nh3_gep          = (/ 1000.0, 1000.0, 1000.0, 500.0, 1000.0, 2000.0, 800.0, 0.0, 20.0, 100.0, 20.0, 0.0, 0.0, 0.0, 0.0 /)
+   chm_nh4_soil_loss    = 72. ! hours
+   chm_soil_ph2d_l      = .false.
+   chm_soil_ph          = (/ 5.5, 5.5, 5.5, 5.5, 5.5, 5.5, 7.5, 8.0, 5.5, 5.5, 5.5, 8.1, 8.1, 8.1, 8.0 /)
 !
    aerosize             = -1.0
    chm_bkgd_ch4         = 1.8   ! in ppm unit
@@ -596,8 +600,8 @@ integer function chm_nml (F_namelist, lun_out)
 
 !     Ammonia bidirectional flux
 !     ==========================
-      select case (chm_ammonia_bidi_s)
-         case ('GEP', 'GEP2D')
+      select case (chm_nh3_bidi_s)
+         case ('STATIC', 'DYNAMIC')
             write(chm_lun_out, *) '> Ammonia bidirectional flux enabled'
             write(chm_lun_out, *) '> '
             write(chm_lun_out, *) '> Warning'
@@ -611,7 +615,7 @@ integer function chm_nml (F_namelist, lun_out)
             continue
          case default
             write(0, *) '### Error in chm_nml ###'
-            write(0, *) '# CHM_AMMONIA_BIDI_S unknown: ', chm_ammonia_bidi_s
+            write(0, *) '# CHM_NH3_BIDI_S unknown: ', chm_nh3_bidi_s
             write(0, *) '###         ABORT         ###'
             istatus = min(istatus,-1)
       end select
@@ -628,7 +632,7 @@ integer function chm_nml (F_namelist, lun_out)
                write(chm_lun_out, *) '> No dry deposition package selected'
                write(chm_lun_out, *) '> chm_diag_drydep_l set to  .false. '
             endif
-            if (trim(chm_ammonia_bidi_s) /= 'OFF') then
+            if (trim(chm_nh3_bidi_s) /= 'OFF') then
                write(0, *) '### Error in chm_nml ###'
                write(0, *) '# Ammonia bidirectional flux requires a dry deposition scheme.'
                write(0, *) '###         ABORT         ###'

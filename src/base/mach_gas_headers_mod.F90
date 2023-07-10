@@ -43,15 +43,19 @@ module mach_gas_headers_mod
    interface
 !end trap head
 
-subroutine mach_gas_drydep_main(busper, busvol, metvar2d, lfu, iseasn)
-   use chm_ptopo_grid_mod,   only: chm_ni
-   use chm_metvar_mod,       only: SIZE_MV2D
+subroutine mach_gas_drydep_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
+                                lfu, iseasn)
+   use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
+   use chm_species_info_mod, only: nb_dyn_tracers
+   use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
    use mach_drydep_mod,      only: lucprm
-   integer(kind=4), intent   (in) :: iseasn  (chm_ni)
    real(kind=4),    dimension(:), pointer, contiguous :: busper
    real(kind=4),    dimension(:), pointer, contiguous :: busvol
+   real(kind=4),    intent   (in) :: chem_tr (chm_ni, chm_nk + 1, nb_dyn_tracers)
    real(kind=4),    intent   (in) :: metvar2d(chm_ni, SIZE_MV2D)
+   real(kind=4),    intent   (in) :: metvar3d(chm_ni, chm_nk, SIZE_MV3D)
    real(kind=4),    intent   (in) :: lfu     (chm_ni, lucprm)
+   integer(kind=4), intent   (in) :: iseasn  (chm_ni)
 end subroutine mach_gas_drydep_main
 
 subroutine mach_gas_drydep_solver(vd, aero_resist, diff_resist, surf_resist, &
@@ -85,14 +89,17 @@ subroutine mach_gas_drydep_solver2(vd, aero_resist, diff_resist, surf_resist, &
    real(kind=4), optional, intent(out) :: vdg (lucprm, chm_ni)
 end subroutine mach_gas_drydep_solver2
 
-subroutine mach_gas_bidi(vdg, metvar2d, busper, busvol)
-   use chm_metvar_mod,       only: SIZE_MV2D
+subroutine mach_gas_bidi(busper, busvol, chem_tr, metvar2d, metvar3d, vdg)
    use mach_drydep_mod,      only: lucprm
-   use chm_ptopo_grid_mod,   only: chm_ni
-   real(kind=4),    intent   (in) :: vdg      (lucprm, chm_ni)
-   real(kind=4),    intent   (in) :: metvar2d (chm_ni, SIZE_MV2D)
+   use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
+   use chm_species_info_mod, only: nb_dyn_tracers
+   use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
    real(kind=4),    dimension(:), pointer, contiguous :: busper
    real(kind=4),    dimension(:), pointer, contiguous :: busvol
+   real(kind=4),    intent   (in) :: chem_tr  (chm_ni, chm_nk + 1, nb_dyn_tracers)
+   real(kind=4),    intent   (in) :: metvar2d (chm_ni, SIZE_MV2D)
+   real(kind=4),    intent   (in) :: metvar3d (chm_ni, chm_nk, SIZE_MV3D)
+   real(kind=4),    intent   (in) :: vdg      (lucprm, chm_ni)
 end subroutine mach_gas_bidi
 
 subroutine mach_gas_drydep_stat(vd, aero_resist, diff_resist, surf_resist, &

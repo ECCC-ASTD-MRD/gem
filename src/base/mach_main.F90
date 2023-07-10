@@ -168,7 +168,8 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
          if (local_dbg) then
             write (chm_lun_out, *) 'Compute the dry deposition for gas: ', chm_gas_drydep_s
          end if
-         call mach_gas_drydep_main(busper, busvol, metvar2d, landuse, iseasn)
+         call mach_gas_drydep_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
+                                   landuse, iseasn)
 !
       case default
          if (local_dbg) then

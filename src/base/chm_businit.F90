@@ -176,12 +176,36 @@ subroutine chm_businit(F_ni, F_nk)
                       species_master(i) % bd_string  )
       end if
 
+      if (species_master(i) % bdt_name /= UNASSIGNED) then
+         call gesdict(F_ni, F_nk,                    &
+                      species_master(i) % BDT_OFFSET, &
+                      species_master(i) % bdt_string  )
+      end if
+      
       if (species_master(i) % gep_name /= UNASSIGNED) then
          call gesdict(F_ni, F_nk,                    &
                       species_master(i) % GEP_OFFSET, &
                       species_master(i) % gep_string  )
       end if
 
+      if (species_master(i) % epd_name /= UNASSIGNED) then
+         call gesdict(F_ni, F_nk,                    &
+                      species_master(i) % EPD_OFFSET, &
+                      species_master(i) % epd_string  )
+      end if
+
+      if (species_master(i) % epa_name /= UNASSIGNED) then
+         call gesdict(F_ni, F_nk,                    &
+                      species_master(i) % EPA_OFFSET, &
+                      species_master(i) % epa_string  )
+      end if
+
+      if (species_master(i) % sph_name /= UNASSIGNED) then
+         call gesdict(F_ni, F_nk,                    &
+                      species_master(i) % SPH_OFFSET, &
+                      species_master(i) % sph_string  )
+      end if
+      
       if (species_master(i) % vd_name /= UNASSIGNED) then
          call gesdict(F_ni, F_nk,                    &
                       species_master(i) % VD_OFFSET, &

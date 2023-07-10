@@ -91,7 +91,7 @@ subroutine chm_load_metvar(busdyn, busper, busvol, metvar2d, metvar3d)
      write(chm_lun_out, *) "MV3D_TPLUS      , tplus    : " , MV3D_TPLUS   , tplus
      write(chm_lun_out, *) "MV3D_WS         , u/vplus  : " , MV3D_WS      , uplus, " + ",vplus
      write(chm_lun_out, *) "MV3D_HUPLUS     , huplus   : " , MV3D_HUPLUS  , huplus
-     write(chm_lun_out, *) "MV3D_QCPLUS     , qcplus   : " , MV3D_QCPLUS  , qcplus
+     write(chm_lun_out, *) "MV3D_QCPLUS     , qcplus   : " , MV3D_QCPLUS  , qcplus, " + ",qrplus
      write(chm_lun_out, *) "MV3D_SIGM       , sigm     : " , MV3D_SIGM    , sigm
      write(chm_lun_out, *) "MV3D_SIGT       , sigt     : " , MV3D_SIGT    , sigt
      write(chm_lun_out, *) "MV3D_WPLUS      , wplus    : " , MV3D_WPLUS   , wplus
@@ -193,6 +193,12 @@ subroutine chm_load_metvar(busdyn, busper, busvol, metvar2d, metvar3d)
                                              busdyn(vplus + this_ik)**2)
 
         metvar3d(i, k, MV3D_WPLUS)    = busdyn(wplus     + this_ik)
+
+        ! Account for rain water from the MP schemes in the total cloud water content
+        if (qrplus > 0) then
+           metvar3d(i, k, MV3D_QCPLUS) = metvar3d(i, k, MV3D_QCPLUS) + &
+                                         max(0.,busdyn(qrplus   + this_ik))
+        end if
 
         if (chm_indirect_l) then
            metvar3d(i, k, MV3D_NCPLUS)= busdyn(ncplus     + this_ik)

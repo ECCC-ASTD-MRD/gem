@@ -103,11 +103,6 @@ module mach_drydep_mod
 !  en         Constant for Jarvis scheme
 !  isimple    Use (1) or not (0) simple scheme for solar radiation effect on
 !             stomata aperture. Default is 0 for more complex scheme
-!  inew       (=1)  We are extending last paper of ZHANG et al.
-!                   to all gas species for non-stomatal resistance
-!             (=0)  We are take non-stomatal resistance from ZHANG for Ozone only.
-!  insz       (=0)  Bypass non-stomatal resistance (ZHANG et al. 2002) for all
-!                   species
 !                 
 
    real(kind=4), parameter :: prandtl   = 0.72
@@ -118,9 +113,6 @@ module mach_drydep_mod
    real(kind=4), parameter :: dzero     = 0.6052
    real(kind=4), parameter :: en        = 2.302585
    integer(kind=4)         :: isimple   = 0
-   integer(kind=4)         :: inew      = 1
-   integer(kind=4)         :: inew2     = 0
-   integer(kind=4)         :: insz      = 0
 
 ! depo. species pointer defined in gas mechanism package
    type depo
