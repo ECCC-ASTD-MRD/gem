@@ -82,17 +82,19 @@ set -e
 # 2023-Apr/May Jack C - update to use git clone from local git repo and to
 #   compile using cmake, there's no version check, thus no compatible with RDE
 #   (only work with cmake compile version), also some simplificaiton of script.
-#
+# 2023May Jack C - run outputs is combined in `run-gm-integration-test` and
+#   submit `validate-gm-integration-test` when '$cntrl_fl_opt!=new'
+#   Header notes of have not been revised.
 ###
 
 scriptstartdate=$(date '+%C%y%m%d%H%M%S')
 
 usage="\n
-USAGE: TOOLS/gm-integration-test/initialize-gm-integration-test.sh [-h | <-d> <-n> <-l DIR> 2>&1 > gm-test-${TRUE_HOST}-listings.txt] \n
+USAGE: <in MIG/GEM repo> ./src/mach/tools/gm-integration-test/initialize-gm-integration-test.sh \n
 OPTIONS: \n
   -h      help\n
   -d      compilation in debug mode\n
-  -n      prepare new control file\n
+  -n      skip fstcomp with ref. output in validate-gm-integration-test.sh \n
   -l DIR  sets the control input and output directory to be 'DIR'\n
 '< >' brackets surrounding options indicate that you can choose any combination of these options.\n\n
 For description of the integration test, please read the notes at the beginning of the script.\n"
@@ -130,7 +132,7 @@ done
 shift $((OPTIND -1))
 
 # Define integration test version:
-Test_version=gm320rc1
+Test_version=gm320rc3
 
 # Define runmod cpu topo ('-ptopo 1x1x1' MPIxOMP )
 export GMJobPtopo=10x8x1  # default GMJobTopo=10x8x1
@@ -206,6 +208,7 @@ control_dir=/space/${current_hall}/sitestore/eccc/aq/r1/sarq000/gmtest/${Test_ve
 control_input_dir=${control_dir}/gm-input
 [[ ! -d $control_input_dir ]] && echo "Error: control_input_dir not exist: $control_input_dir" && exit 1
 cp -r ${control_input_dir}/* ${TASK_INPUT}/
+echo -e "Integration input file: ${control_input_dir} /n" | tee -a ${gmtestinfo}
 
 ## override config files e.g:
 ##  'physics_input_table->gm_phy_intable'; 'model_settings.nml->gem_settings.nml'
@@ -235,7 +238,6 @@ cp ${mach_dir}/tools/gm-integration-test/initialize-gm-integration-test.sh ${TAS
 cp ${mach_dir}/tools/gm-integration-test/compile-gm-for-integration-test.sh ${TASK_BIN}
 cp ${mach_dir}/tools/gm-integration-test/run-gm-integration-test.sh ${TASK_BIN}
 cp ${mach_dir}/tools/gm-integration-test/validate-gm-integration-test.sh ${TASK_BIN}
-if [[ "${cntrl_fl_opt}" == "new" ]] ; then cp ${mach_dir}/tools/gm-integration-test/prepare-new-gm-integration-test.sh ${TASK_BIN} ; fi
 
 # Set the task resources
 export GMJobMach=${TRUE_HOST}

@@ -102,7 +102,7 @@
 !
 ! Arguments:     OUT
 !    VD       -> Deposition velocity for deposition gas species (m/s)
-!    VDG      -> Deposition velocity for ammonia through ground (m/s) (optional; required when chm_ammonia_bidi_s != 'OFF')
+!    VDG      -> Deposition velocity for ammonia through ground (m/s) (optional; required when chm_nh3_bidi_s != 'OFF')
 !
 ! DIFF_RESIST -> Molecular diffusion resistance for deposition gas species (s/m)
 !
@@ -125,7 +125,7 @@ subroutine mach_gas_drydep_solver(vd, aero_resist, diff_resist, surf_resist, &
                                    chm_mar_halo_l, chm_gas_drydep_s
    use chm_consphychm_mod,   only: karman, tcdk, rgasd
    use mach_drydep_mod,      only: gas_depo, nsn, prandtl, b4, ao, bo, co, &
-                                   dzero, isimple, inew, insz, laindex_sat,&
+                                   dzero, isimple, laindex_sat, &
                                    rcutd, rgdso2, rgdo3, rexpo3, rexpso2,  &
                                    rcanp, rsmin, tmin, tmax, topt, laindex
    use chm_species_info_mod, only: species_master
@@ -416,9 +416,6 @@ subroutine mach_gas_drydep_solver(vd, aero_resist, diff_resist, surf_resist, &
             rcan = rcanp(nlus, isea)
 
           ! total surface resistance (see JACOBSON 1999, WESELEY 1989)
-          ! this part is only for ozone: new scheme for non-stomatal for ozone
-          ! ref. ZHANG et al., Atmos. Env., 36, 2002.
-          ! however if inew=1 treat all gases with this scheme
             if (chm_mar_halo_l .and. (specie == sp_O3) .and. (nlus == 14)) then
 
                rground = 0.0
@@ -431,32 +428,6 @@ subroutine mach_gas_drydep_solver(vd, aero_resist, diff_resist, surf_resist, &
                rinvrcx = 1.75 * karman * sqrt(psurf/rgasd/tsurfk/1027.)*ustar/scpr_w**(0.66667) +  &
                          10**(-0.25 - 0.013*tsurfm) *  &
                          sqrt( exp(-8772.2/tsurfk + 51.5) * 1.46e6*exp(-9134./tsurfk) * 1.1e-6*exp(-1896./tsurfk) )
-
-            else if ((insz == 1) .and. ((specie == sp_O3) .or. (inew == 1))) then
-
-             ! the following is from ZHANG. et AL. (2002), Atmospheric Env.
-             ! if rain or dew is present, switch to another equation (see, ZHANG
-             ! et al., 2002).
-               if ((lai(nlus) > 0.001) .and. (lai(nlus) < 10.0)) then
-
-                  iuss = 1.0 / (ustar * ustar)
-                  lain = exp(0.25 * log(lai(nlus)))
-                  laid = 1.0 / lain
-
-                  rground = rcan * iuss * lain + rsoil
-
-                  if (wst > 0.499) then
-                   ! for wet canopies
-                     rcut = rcut / 20
-                     rnsinv = 1.0 / rground + sqrt(lai(nlus)) * ustar / rcut
-                  else
-                   ! for dry canopies
-                     rnsinv = 1.0 / rground + 1.0 / (rcut * exp(-0.03 * 100 * humr) * laid / ustar)
-                  end if
-
-                  rinvrcx = (1.0 - wst) / (rsx + rmx) + rnsinv
-
-               end if
 
           ! adjustment for snow (see Robichaud, 1991)
           ! Only applies to SO2

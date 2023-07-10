@@ -38,23 +38,29 @@
 !            IN
 
 !              busper      --> Permanent bus
-!              metvar2d    --> Array of 2-D MET fields from the Physics buses
+!              chem_tr     --> Chemical tracers concentrations (ug/kg)
+!              metvar2d    --> Array of 2-D MET fields from the physics buses
+!              metvar3d    --> Array of 3-D MET fields from the physics buses
 !              lfu         --> Land-use fractions
 !              iseasn      --> Assigned season descriptors
 !
 !            IN/OUT
+!
+!              busper --> Permanent bus
 !              busvol --> Volatile bus
 !
 !==============================================================================
 !
 !!if_on
-subroutine mach_gas_drydep_main(busper, busvol, metvar2d, lfu, iseasn)
-   use chm_ptopo_grid_mod,   only: chm_ni
-   use chm_metvar_mod,       only: SIZE_MV2D
+subroutine mach_gas_drydep_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
+                                lfu, iseasn)
+   use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
+   use chm_species_info_mod, only: nb_dyn_tracers
+   use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
    use mach_drydep_mod,      only: lucprm
 !!if_off
    use chm_utils_mod,        only: global_debug, ik, CHM_MSG_DEBUG
-   use chm_nml_mod,          only: chm_timings_L, chm_gas_drydep_s, chm_ammonia_bidi_s
+   use chm_nml_mod,          only: chm_timings_L, chm_gas_drydep_s, chm_nh3_bidi_s
    use chm_species_info_mod, only: sm
    use chm_species_idx_mod,  only: sp_LU15, sp_LAI, sp_NH3
    use mach_gas_headers_mod, only: mach_gas_drydep_solver, mach_gas_drydep_stat, &
@@ -63,11 +69,13 @@ subroutine mach_gas_drydep_main(busper, busvol, metvar2d, lfu, iseasn)
    use mach_drydep_mod,      only: nb_gas_depo, gas_depo
    implicit none
 !!if_on
-   integer(kind=4), intent   (in) :: iseasn  (chm_ni)
    real(kind=4),    dimension(:), pointer, contiguous :: busper
    real(kind=4),    dimension(:), pointer, contiguous :: busvol
+   real(kind=4),    intent   (in) :: chem_tr (chm_ni, chm_nk + 1, nb_dyn_tracers)
    real(kind=4),    intent   (in) :: metvar2d(chm_ni, SIZE_MV2D)
+   real(kind=4),    intent   (in) :: metvar3d(chm_ni, chm_nk, SIZE_MV3D)
    real(kind=4),    intent   (in) :: lfu     (chm_ni, lucprm)
+   integer(kind=4), intent   (in) :: iseasn  (chm_ni)
 !!if_off
 !
 !  Local variables
@@ -103,7 +111,7 @@ subroutine mach_gas_drydep_main(busper, busvol, metvar2d, lfu, iseasn)
 
 !  Compute dry deposition velocity for all chemical species of interest
 
-   if (trim(chm_ammonia_bidi_s) /= 'OFF' .or. sm(sp_NH3) % vdg_offset > 0) then
+   if (trim(chm_nh3_bidi_s) /= 'OFF' .or. sm(sp_NH3) % vdg_offset > 0) then
 
       allocate(vdg(lucprm, chm_ni))
 
@@ -135,8 +143,8 @@ subroutine mach_gas_drydep_main(busper, busvol, metvar2d, lfu, iseasn)
                                 lfu, metvar2d)
    end if
 
-   if (trim(chm_ammonia_bidi_s) /= 'OFF') then
-      call mach_gas_bidi(vdg, metvar2d, busper, busvol)
+   if (trim(chm_nh3_bidi_s) /= 'OFF') then
+      call mach_gas_bidi(busper, busvol, chem_tr, metvar2d, metvar3d, vdg)
    end if
 
    do lk = 1, lucprm
