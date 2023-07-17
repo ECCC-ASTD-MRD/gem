@@ -10,11 +10,12 @@ target_link_libraries(feseri
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
+add_dependencies(feseri rpnphy ${modelutils_SRC})
 
 add_executable(prphynml mainprphynml.F90)
 target_link_libraries(prphynml
    rpnphy
-   tdpack
+   tdpack::tdpack 
    modelutils
    vgrid::vgrid
    rpncomm::rpncomm
@@ -22,5 +23,6 @@ target_link_libraries(prphynml
    ${LAPACK_LIBRARIES}
    ${BLAS_LIBRARIES}
 )
+add_dependencies(prphynml rpnphy ${modelutils_SRC})
 
 install(TARGETS feseri prphynml RUNTIME DESTINATION bin)
