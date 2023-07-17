@@ -34,9 +34,14 @@ this_project=GEM
         cmake_all_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir} "$@"'
       cmake_debug_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" $@"'
 cmake_debug_extra_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" -DEXTRA_CHECKS_ON $@"'
+       cmake_mach_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
+cmake_mach_static_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DSTATIC_INTEL=ON "$@"'
+   cmake_all_mach_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
+ cmake_mach_debug_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DCMAKE_BUILD_TYPE=Debug" $@"'
 
   build_command='cmake --build ${build_dir} -- "$@"'
    work_command='cmake --build ${build_dir} --target work -- "$@"'
+install_command='cmake --build ${build_dir} --target install -- "$@"'
 package_command='cmake --build ${build_dir} --target package -- "$@"'
   clean_command='cmake --build ${build_dir} --target clean -- "$@"'
 
@@ -105,6 +110,10 @@ COMMANDS:
     cmake-all: configure using sources of RPN libraries (WITH_SYSTEM_RPN is set to FALSE)
     cmake-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug)
     cmake-debug-extra:  configure with debug flags and extra compile-time checks (-DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON)
+    cmake-mach: configure using installed RPN libraries (-DWITH_MACH=TRUE)
+    cmake-mach-static: configure using installed RPN libraries and static Intel libraries (-DSTATIC_INTEL=ON -DWITH_MACH=TRUE)
+    cmake-all-mach: configure using sources of RPN libraries (WITH_SYSTEM_RPN is set to FALSE -DWITH_MACH=TRUE)
+    cmake-mach-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug -DWITH_MACH=TRUE)
 
   building: (Additional arguments forwarded to make (like -j))
     build: Build entire project
@@ -155,8 +164,13 @@ case "${name}" in
             cmake-all) cmd=${cmake_all_command} ;;
           cmake-debug) cmd=${cmake_debug_command} ;;
     cmake-debug-extra) cmd=${cmake_debug_extra_command} ;;
+           cmake-mach) cmd=${cmake_mach_command} ;;
+    cmake-mach-static) cmd=${cmake_mach_static_command} ;;
+       cmake-all-mach) cmd=${cmake_all_mach_command} ;;
+     cmake-mach-debug) cmd=${cmake_mach_debug_command} ;;
                 build) cmd=${build_command} ;;
                  work) cmd=${work_command} ;;
+              install) cmd=${install_command} ;;
               package) cmd=${package_command} ;;
                 clean) cmd=${clean_command} ;;
           help|--help) print_cado_help ; exit 0 ;;

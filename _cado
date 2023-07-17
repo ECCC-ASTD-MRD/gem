@@ -5,8 +5,13 @@ cado_commands=(
     cmake-all
     cmake-debug
     cmake-debug-extra
+    cmake-mach
+    cmake-mach-static
+    cmake-all-mach
+    cmake-mach-debug
     build
     work
+    install
     package
     help
 )
@@ -21,6 +26,7 @@ favorite_makefile_targets=(
     rpnphy
     rmn
     modelutils
+    install
     # ...
 )
 
