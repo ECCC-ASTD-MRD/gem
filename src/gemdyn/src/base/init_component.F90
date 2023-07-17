@@ -89,8 +89,6 @@
          if (Domains_ngrids == 2) Grd_yinyang_L = .true.
       endif
 
-      ierr = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
-                       WB_REWRITE_NONE+WB_IS_LOCAL )
       ierr = Lib_LogLevelNo(APP_LIBVGRID,APP_FATAL)  
 
       ! Obtain mydomain
@@ -177,6 +175,8 @@
       call msg_set_can_write (Ptopo_myproc == 0)
 
       call pe_all_topo()
+      ierr = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
+                       WB_REWRITE_NONE+WB_IS_LOCAL )
 
       ! Initialize local sub domain boundaries flags
       G_periodx = .false.
