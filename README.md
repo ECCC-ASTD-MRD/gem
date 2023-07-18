@@ -16,8 +16,7 @@ git clone git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
 ```
 
-2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
-   (necessary, for now, to compile with gnu)
+2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step:
 ```
 git clone --recursive git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
@@ -134,10 +133,10 @@ The following environment variables are created (examples):
       - build-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
         /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
       - work-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/work
 
   - Example if $storage_model variable doesn't exist:
     - GEM_STORAGE_DIR=$HOME/gem/
     - directories situated in gem_DIR:
       - build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+      - work-ubuntu-18.04-amd64-64-intel-2022.1.2
