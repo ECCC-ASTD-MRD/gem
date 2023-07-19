@@ -15,7 +15,7 @@
 
 !**s/r ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013)
 
-      subroutine ILMC_LAM ( F_ns, F_name_S, F_i0, F_in, F_j0, F_jn )
+      subroutine ILMC_LAM_hlt ( F_ns, F_name_S, F_i0, F_in, F_j0, F_jn )
 
       use adz_mem
       use adz_options
@@ -27,6 +27,7 @@
       use HORgrid_options
       use ilmc_lam_array
       use ptopo
+      use omp_lib
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -54,7 +55,12 @@
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
               o_shoot,u_shoot,ratio_max,ratio_min
 
-      real, pointer, dimension(:,:,:) :: F_ilmc,air_mass_m
+      real, pointer, dimension(:,:,:) :: F_ilmc, air_mass_m
+      
+      type (a_ilmc), dimension(:,:,:,:), pointer :: sweep_rd
+
+      integer np
+      integer :: HLT_start, HLT_end, local_np
 
       logical :: limit_i_L
 
@@ -68,13 +74,21 @@
       !--------------------------------------------------
       F_ilmc => Adz_stack(F_ns)%dst
 
+!$omp single
       if (Adz_verbose>0) call ilmc_lam_write (1)
+!$omp end single
 
       !Recall AIR MASS at TIME_M
       !-------------------------
       air_mass_m => airm0
 
+      !Allocation and Define surrounding cells for each sweep
+      !------------------------------------------------------
+      sweep_rd => sweep_rd0
+
+!$omp single
       if (Adz_verbose>0) call ilmc_lam_write (2)
+!$omp end single
 
       !Horizontal grid: MIN/MAX and [F_i0,F_in] x [F_j0,F_jn]
       !------------------------------------------------------
@@ -107,6 +121,7 @@
       if (.not.l_south) jl = max(jl_,g_j0-offj) 
       if (.not.l_north) jr = min(jr_,g_jn-offj) 
 
+!$omp single
       !Print if Halo needs to be reduced for PE close to W/E/S/N LAM boundary 
       !----------------------------------------------------------------------
       if (.not.done_print_L) then
@@ -133,37 +148,11 @@
 
       done_print_L = .true.
 
-      !Allocation and Define surrounding cells for each sweep
-      !------------------------------------------------------
+      !Define surrounding cells for each sweep
+      !---------------------------------------
       if (.NOT.done_allocate_L) then
 
-!         call gtmg_start (93, 'ALLOC_', 73)
-
-         !Allocation
-         !----------
-         allocate (sweep_rd(Adz_ILMC_sweep_max,il:ir,jl:jr,l_nk))
-
-         do k=1,l_nk
-            do j=jl,jr
-            do i=il,ir
-            do n=1,Adz_ILMC_sweep_max
-
-               w1   = 2*n + 1
-               w2   = w1-2
-               size = 2*(w1**2 + w1*w2 + w2*w2)
-
-               allocate (sweep_rd(n,i,j,k)%i_rd(size))
-               allocate (sweep_rd(n,i,j,k)%j_rd(size))
-               allocate (sweep_rd(n,i,j,k)%k_rd(size))
-
-            end do
-            end do
-            end do
-         end do
-
-         !Define surrounding cells for each sweep
-         !---------------------------------------
-         do k=Adz_k0t,l_nk
+       do k=Adz_k0t,l_nk
 
             kx_m = k ; kx_p = k
 
@@ -174,7 +163,7 @@
 
                   sweep_rd(sweep,i,j,k)%cell = 0
 
-                  if (.NOT.Schm_autobar_L) then
+                  if (.NOT.Dynamics_autobar_L) then
 
                      kx_m = max(k-sweep,Adz_k0t) ; kx_p = min(k+sweep,l_nk)
 
@@ -188,7 +177,7 @@
 
                         limit_i_L = (jx/=j-sweep.and.jx/=j+sweep)
 
-                        if (.NOT.Schm_autobar_L) limit_i_L = limit_i_L.and.(kx>k-sweep.and.kx<k+sweep)
+                        if (.NOT.Dynamics_autobar_L) limit_i_L = limit_i_L.and.(kx>k-sweep.and.kx<k+sweep)
 
                         do ix = max(i-sweep,il),min(i+sweep,ir)
 
@@ -211,13 +200,14 @@
             end do
             end do
 
-         end do
+       end do
 
-         done_allocate_L = .true.
+       done_allocate_L=.true.
+
+      endif
 
 !         call gtmg_stop  (93)
 
-      end if
 
 !      call gtmg_start (94, 'X_HALO', 73)
 
@@ -229,6 +219,8 @@
       call rpn_comm_xch_halo (Adz_post(F_ns)%min,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
       call rpn_comm_xch_halo (Adz_post(F_ns)%max,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
 
+!$omp end single
+
       Adz_set_post_tr = 0
 
 !      call gtmg_stop  (94)
@@ -239,13 +231,14 @@
       !LOOP: Compute ILMC solution while preserving mass: USE ELEMENTS inside/outside CORE
       !-----------------------------------------------------------------------------------
 !      call gtmg_start (96, 'LOOP__', 73)
-      call ilmc_lam_loop ()
+      call ilmc_lam_loop_hlt ()
 !      call gtmg_stop  (96)
 
 !      call gtmg_start (98, 'MINMAX', 73)
 
       !Reset Min-Max Monotonicity if requested
       !---------------------------------------
+!$omp single
       if (Adz_ILMC_min_max_L) then
 
          do k=Adz_k0t,l_nk
@@ -276,6 +269,7 @@
 
       if (Adz_verbose>0) call ilmc_lam_write (3)
 
+!$omp end single
 !      call gtmg_stop  (73)
 !
 !---------------------------------------------------------------------
@@ -284,7 +278,7 @@
 
 contains
 
-      include 'ilmc_lam_loop.inc'
+      include 'ilmc_lam_loop_hlt.inc'
 !
 !---------------------------------------------------------------------
 !
@@ -386,4 +380,4 @@ contains
 
       end subroutine ILMC_LAM_write
 
-      end subroutine ILMC_LAM
+      end subroutine ILMC_LAM_hlt
