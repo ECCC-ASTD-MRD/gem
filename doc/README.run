@@ -20,6 +20,7 @@ runmod.sh  -dircfg configurations/GEM_cfgs_GY_FISL_P -ptopo 2x2x2
 runmod.sh  -dircfg configurations/THEO_cfgs_schar -ptopo 10x1
 \rm schaer
 flipit -i RUNMOD/output/cfg_0000/laststep_0000000450/000-000/dm2011012200-000-000_004 -o schaer
+#You can use xrec to visualise the records
 #you will need to install and compile xrec -- see https://github.com/ECCC-ASTD-MRD/xrec
 xrec -imflds schaer
 
@@ -27,6 +28,7 @@ xrec -imflds schaer
 runmod.sh  -dircfg configurations/THEO_cfgs_bubbleG -ptopo 5x1
 \rm bubble
 flipit -i RUNMOD/output/cfg_0000/laststep_0000000216/000-000/dm2011012200-000-000_001 -o bubble
+#You can use xrec to visualise the records
 #you will need to install and compile xrec -- see https://github.com/ECCC-ASTD-MRD/xrec
 xrec -imflds bubble
 Choose variable TH, step 120
