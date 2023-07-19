@@ -26,5 +26,5 @@ module ilmc_lam_array
       integer                       :: cell ! # neighbors in a given sweep
    end type a_ilmc
 
-   type (a_ilmc), dimension(:,:,:,:), pointer :: sweep_rd
+   type (a_ilmc), dimension(:,:,:,:), pointer :: sweep_rd0
 end module ilmc_lam_array

@@ -1,5 +1,5 @@
 NAME       : gemdyn
-VERSION    : 5.2.0-rc2
+VERSION    : 5.3.0-a1
 BUILD      : 
 DESCRIPTION: GEM dynamical core
 SUMMARY    : 
@@ -9,7 +9,4 @@ URL        : https://gitlab.science.gc.ca/dynamics_research/gemdyn
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-
-modelutils = 1.7.0-rc1
-rpnphy = 6.2.0-rc1
 

@@ -65,7 +65,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo 
          endif
 
          if (l_east) then
@@ -77,7 +77,7 @@
                  enddo
               enddo
            enddo 
-!$omp enddo nowait 
+!$omp enddo 
          endif
 
          if (l_south) then
@@ -89,7 +89,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo 
          endif
 
          if (l_north) then
@@ -101,7 +101,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo 
          endif
 
 !$omp do collapse(2)
@@ -132,7 +132,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo 
          endif
 
          if (l_east) then
@@ -144,7 +144,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
          if (l_south) then
@@ -156,7 +156,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
          if (l_north) then
@@ -168,7 +168,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo 
          endif
 
 !$omp do collapse(2)
@@ -258,7 +258,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
          if (l_east) then
@@ -270,7 +270,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
          if (l_south) then
@@ -282,7 +282,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
          if (l_north) then
@@ -294,7 +294,7 @@
                  enddo
               enddo
            enddo
-!$omp enddo nowait
+!$omp enddo
          endif
 
 !$omp do collapse(2)

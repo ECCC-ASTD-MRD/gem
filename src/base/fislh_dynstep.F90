@@ -47,11 +47,11 @@
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
-      call adz_tracers (.true.) ! Mass fixing NOT done yet
+      call adz_tracers_interp ()
 
       call psadj_hlt ( Step_kount )
 
-      call adz_tracers (.false.)
+      call adz_tracers_massfixing ()
 
       call t02t1()
 
