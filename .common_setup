@@ -39,6 +39,7 @@ else
         export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
         export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
+        export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
     fi
 fi
