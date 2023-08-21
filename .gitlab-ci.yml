@@ -1145,6 +1145,6 @@ THEO_schar_gnu:
     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
     - if [ "${_status}" == "ED" ]; then
       _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
       fi
     - test "${_status}" == "ED"
