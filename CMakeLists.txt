@@ -7,13 +7,10 @@ include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
 ec_parse_manifest()        # Parse MANIFEST file
 
-project(${NAME} DESCRIPTION "${DESCRIPTION}")
+project(${NAME} DESCRIPTION "${DESCRIPTION}" LANGUAGES C Fortran)
 set(PROJECT_VERSION ${VERSION}${STATE})
 set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
 message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
-
-enable_language(Fortran)
-enable_language(C)
 
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
