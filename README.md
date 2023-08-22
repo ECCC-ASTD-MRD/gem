@@ -17,7 +17,7 @@ Before the first build:
 . ./.initial_setup
 
 # building and installing GEM
-# please see other options with cado -h
+# please see other options with cado -h or by using tab completion
 cado cmake
 cado -j work
 
@@ -39,7 +39,7 @@ To compile and run GEM, you will need:
 - OpenMP support (optional)
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 3.16 minimum), bash, sed, etc.
+- basic Unix utilities such as cmake (version 3.20 minimum), bash, sed, etc.
 
 ```
 # clone everything, including libraries and tools included as git submodules
@@ -65,8 +65,6 @@ mkdir -p build
 cd build
 # default compiler is gnu
 cmake ..
-# or, for Intel:
-cmake .. -DCOMPILER_SUITE=intel
 # Create an execution environment for GEM
 make -j work
 
@@ -98,7 +96,7 @@ voir -iment RUNMOD/output/cfg0000/ ...
 fststat -fst RUNMOD/output/cfg0000/ ...
 ```
 
-[SPI](https://github.com/ECCC-ASTD-MRD/SPI) can be used to view the output
+[SPI](https://github.com/ECCC-ASTD-MRD/SPI-Bundle) can be used to view the output
 files.
 
 2D fields can also be displayed with
@@ -115,7 +113,7 @@ To compile and run GEM, you will need:
 - OpenMP support (optional)
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
-- basic Unix utilities such as cmake (version 3.16 minimum), bash, sed, etc.
+- basic Unix utilities such as cmake (version 3.20 minimum), bash, sed, etc.
 
 ## Data for examples
 
@@ -131,7 +129,7 @@ link:
 - By default GEM is configured to use gfortran and gcc compilers, and OpenMPI
 - Changes to the C and Fortran flags can be done in the  **CMakeLists.txt**
   file, under the section **# Adding specific flags for GEM**.
-- You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
+- You can also check  the C and Fortran flags in **cmake_rpn/modules/ec_compiler_presets/default/Linux-x86_64/gnu.cmake**
 - Make sure the compilers and libraries paths are set in the appropriate
   environment variables (PATH and LD_LIBRARY_PATH).  Here are some examples
   of commands, which you will need to adapt for your setup:
@@ -155,13 +153,13 @@ link:
 
 - Changes to the C and Fortran flags can be done in the  **CMakeLists.txt**
   file, under the section **# Adding specific flags for GEM**.
-- You can also check  the C and Fortran flags in **cmake_rpn/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
+- You can also check  the C and Fortran flags in **cmake_rpn/modules/ec_compiler_presets/default/Linux-x86_64/intel.cmake**
 - You may need to modify ```-march``` to generate code that can run on your
   system
 - Make sure the compilers and libraries are in the appropriate
   environment variables (```PATH``` and ```LD_LIBRARY_PATH```)
-- As gnu is the default compiler suite, use the following command to compile
-  with Intel: ```cmake .. -DCOMPILER_SUITE=intel```
+- As gnu is the default compiler suite, you may have to use the following
+  command to compile with Intel: ```cmake .. -DCOMPILER_SUITE=intel```
 
 ## Compiling and installing GEM
 
@@ -181,12 +179,12 @@ command line.
 This release has been tested with GNU and Intel compilers on Linux x86_64.
 Other compilers have also been used in the past, but have not been tested
 with the current release.  You will likely have to modify the *.cmake files
-in the **cmake_rpn/ec_compiler_presets/default/** folder.
+in the **cmake_rpn/modules/ec_compiler_presets/default/** folder.
 
 If you get error messages (for example, compiler, OpenMP or MPI/OpenMPI not
 found), make sure that the ```PATH``` and ```LD_LIBRARY_PATH``` environment
 variables contain the appropriate paths.  You can also add
-```-DCMAKE_VERBOSE_MAKEFILE=ON``` to you **cmake** command line to generate
+```-DCMAKE_VERBOSE_MAKEFILE=ON``` to your **cmake** command line to generate
 verbose makefiles which will print the exact compiler command lines issued.
 
 If the compiler or compile options are not right:
@@ -198,7 +196,7 @@ If the compiler or compile options are not right:
 The installation process will create a directory named after the operating system
 on which the compilation was executed, and the compiler you used
 (work-[OS_NAME]-[COMPILER_NAME]). For example
-*work-Fedora-34-x86_64-gnu-11.2.1* would be created in the main directory,
+*work-FedoraLinux-37-x86_64-gnu-12.3.1* would be created in the main directory,
 and the following executables installed in the *bin* sub-folder: 
 - cclargs_lite
 - checkdmpart
@@ -219,13 +217,23 @@ and the following executables installed in the *bin* sub-folder:
 - voir
 - yy2global
 
-A script named GEM-config is also installed. It displays a summary of the
+A script named gem-config is also installed. It displays a summary of the
 architecture, compiler, and flags used.
+
+## Structure of the working environment
+
+The following environment variables are created:
+- gem_DIR = directory where the git clone was created
+- GEM_WORK = work directory
+- GEM_ARCH = architecture, for example FedoraLinux-37-x86_64-gnu-12.3.1
+- ATM_MODEL_DFILES = gem database directory
+- COMPILER_SUITE = compiler suite, for example gnu
+- COMPILER_VERSION = compiler version, for example 12.3.1
 
 ## Running GEM
 
 Go to the working directory, named *work-[OS_NAME]-[COMPILER_NAME]*, for
-example *work-Fedora-34-x86_64-gnu-11.2.1*
+example *work-FedoraLinux-37-x86_64-gnu-12.3.1*
 
 ```
 cd work-[OS_NAME]-[COMPILER_NAME]
@@ -236,7 +244,7 @@ runprep.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 runmod.sh -dircfg configurations/GEM_cfgs_GY_FISL_P
 ```
 
-*runmod.sh*'s ```-ptopo``` argument can be used to specify the number of CPU to
+*runmod.sh* ```-ptopo``` argument can be used to specify the number of CPU to
 use.  For example,  ```-ptopo 2x2x1``` will use 4 cpus for a LAM, and
 8 cpus for global Yin-Yang.
 
@@ -285,7 +293,7 @@ various tasks on the output files:
   editfst -s <input FST> -d <output FST> -i <editfst.directives>
   ```
 
-[SPI](https://github.com/ECCC-ASTD-MRD/SPI) is a scientific and
+[SPI](https://github.com/ECCC-ASTD-MRD/SPI-Bundle) is a scientific and
 meteorological virtual globe offering processing, analysis and visualization
 capabilities, with a user interface similar to Google Earth and NASA World
 Wind, developed by Environment Canada.
@@ -300,8 +308,8 @@ Research Division, Environment and Climate Change Canada.
 The execution of all three components of GEM is configurable through the use
 of three configuration files called:
 - gem_settings.nml: file containing some namelists to configure the model execution
-- outcfg.out: file use to configure the model output
-- configexp.cfg: file use to configure the execution shell environment
+- outcfg.out: file used to configure the model output
+- configexp.cfg: file used to configure the execution shell environment
 
 Examples of these files can be found in the test cases in the configurations
 directory.
