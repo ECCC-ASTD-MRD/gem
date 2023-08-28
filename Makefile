@@ -10,7 +10,11 @@ MAKEFLAGS += --no-print-directory
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake ${gem_DIR} )
 
-# Outside CMC: COMPILER_SUITE must be specified for Intel
+# Using static Intel libraries
+cmake-static:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DSTATIC_INTEL=ON ${gem_DIR} )
+
+# Outside CMC: COMPILER_SUITE may need to be specified for Intel
 cmake-intel:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCOMPILER_SUITE=intel ${gem_DIR} )
 

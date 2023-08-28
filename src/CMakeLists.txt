@@ -1,5 +1,9 @@
 set(WITH_SYSTEM_RPN FALSE CACHE BOOL "Control whether to use installed RPN-SI libs")
-message(STATUS "(EC) WITH_SYSTEM_RPN = ${WITH_SYSTEM_RPN}")
+if ($ENV{WITH_SYSTEM_RPN})
+  message(STATUS "(EC) Using RPN-SI installed libraries = $ENV{WITH_SYSTEM_RPN}")
+else()
+  message(STATUS "(EC) Using RPN-SI installed libraries = ${WITH_SYSTEM_RPN}")
+endif()
 
 # Use installed RPN libraries (WITH_SYSTEM_RPN=TRUE)
 if ((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR ($ENV{WITH_SYSTEM_RPN}))
@@ -41,7 +45,7 @@ add_subdirectory(modelutils modelutils)
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
   set(cpl_LIBRARIES rpnphy_cpl_stubs CACHE STRING "rpnphy coupling library")
-  set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry library")
+  set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry stub library")
   add_subdirectory(rpnphy rpnphy)
 endif()
 
@@ -57,7 +61,7 @@ endif()
 
 # To be installed only with package
 install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
-install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
 install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
+
 install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
 install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
