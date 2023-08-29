@@ -10,16 +10,16 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.4/SCIENCE/gpscc2/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gpscc2/gnu-9.3.0
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.4/SCIENCE/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gnu-9.3.0
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.4/ECCC/gnu-9.3.0
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/ECCC/gnu-9.3.0
 fi
 
 # Load latest version of RPN-SI libraries
-. r.load.dot rpn/libs/20230531
-. r.load.dot rpn/utils/20230531
+. r.load.dot mrd/rpn/libs/20230531
+. r.load.dot mrd/rpn/utils/20230531
 
 # We need a more recent version of cmake than the one available by default
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1
