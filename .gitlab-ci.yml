@@ -77,7 +77,7 @@ build:rhel-8-amd64_gnu-12.1.0:
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
     - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
     - time make -j $NCPUS
-    - time make -j work
+    - time make work
   allow_failure: true
   artifacts:
     expire_in: 4 hrs
@@ -195,6 +195,7 @@ build:rhel-8-icelake-64-intel-2021.4.0:
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
     - time make -j $NCPUS
+    - time make work
 
 package:rhel-8-icelake-64-intel-2021.4.0:
    variables:
@@ -248,6 +249,7 @@ build:ubuntu-18.04-amd64-intel-2021.4.0:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
 
 package:ubuntu-18.04-amd64-intel-2021.4.0:
    variables:
@@ -308,6 +310,7 @@ build:ubuntu-18.04-amd64-intel-2022.1.2:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
 
 package:ubuntu-18.04-amd64-intel-2022.1.2:
    variables:
@@ -368,6 +371,7 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
@@ -428,6 +432,7 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
@@ -488,6 +493,7 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-gnu-11.4.0
       - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
 
 package:ubuntu-22.04-amd64-gnu-11.4.0:
    variables:
