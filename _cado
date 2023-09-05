@@ -47,12 +47,9 @@ favorite_makefile_targets=(
 )
 
 _cado(){
-    echo "================================================" >> ~/.log.txt
     local cur prev words cword
     _init_completion || return
     COMPREPLY=()
-
-    echo "cur=$cur, prev=$prev, words='${words[*]}', cword=$cword, words[1]=${words[1]}" >> ~/.log.txt
 
     if (( cword == 1 )) ; then
         COMPREPLY=($(compgen -W "${cado_commands[*]}" -- ${cur}))
