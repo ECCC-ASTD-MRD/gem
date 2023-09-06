@@ -4,18 +4,15 @@ program gem
    implicit none
 
 #include <gem_build_info.h>
-#include <gemdyn_version.inc>
-#include <rpnphy_version.inc>
-#include <modelutils_version.inc>
 
    integer(kind=int32) ierror
 
    app_ptr=app_init(0,PROJECT_NAME_STRING,VERSION,PROJECT_DESCRIPTION_STRING,BUILD_TIMESTAMP)
    call app_libregister(APP_LIBVGRID,HAVE_VGRID)
    call app_libregister(APP_LIBTDPACK,HAVE_TDPACK)
-   call app_libregister(APP_LIBGEMDYN,GEMDYN_VERSION_S)
-   call app_libregister(APP_LIBRPNPHY,RPNPHY_VERSION_S)
-   call app_libregister(APP_LIBMDLUTIL,MODELUTILS_VERSION_S)
+   call app_libregister(APP_LIBDYN,dyn_VERSION)
+   call app_libregister(APP_LIBPHY,phy_VERSION)
+   call app_libregister(APP_LIBMDLUTIL,modelutils_VERSION)
 
    call MPI_INIT(ierror)
    call app_start()
