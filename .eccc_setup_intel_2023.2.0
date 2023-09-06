@@ -18,8 +18,8 @@ else
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20230725
-. r.load.dot rpn/utils/20230725
+. r.load.dot rpn/libs/20230906
+. r.load.dot rpn/utils/20230906
 
 # Load Intel FFTW if on rhel
 #if  [[ ${ORDENV_DIST} = "rhel" ]]; then
