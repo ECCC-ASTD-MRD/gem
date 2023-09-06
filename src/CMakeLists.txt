@@ -84,14 +84,18 @@ install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_
 install(CODE "
    message(STATUS \"Generating nml\")
    execute_process(
-     COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref)
+     COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
+     COMMAND_ERROR_IS_FATAL ANY
+)
    execute_process(
      COMMAND ${CMAKE_SOURCE_DIR}/scripts/rpy/rpy.nml_get -v -f ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
      OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv
+     COMMAND_ERROR_IS_FATAL ANY
      )
    execute_process(
      COMMAND cut ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv -d= -f1
-     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k)
+     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
+     COMMAND_ERROR_IS_FATAL ANY)
      ")
 
 install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
