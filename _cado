@@ -1,4 +1,6 @@
+this_project=`cat MANIFEST | sed -n '/NAME/s/.*: //p'`
 
+if [[ ${this_project} == gem ]] ; then
 cado_commands=(
     cmake
     cmake-static
@@ -15,11 +17,25 @@ cado_commands=(
     package
     help
 )
+else
+cado_commands=(
+    cmake
+    cmake-static
+    cmake-all
+    cmake-debug
+    cmake-debug-extra
+    build
+    work
+    install
+    package
+    help
+)
+fi
 
 #
 # If not using the IF in _complete_targets, then we could list only some "favorite" targets
 # and save the user from getting a large amount of targets.
-#
+# Examples:
 favorite_makefile_targets=(
     work
     maingemdm
@@ -31,12 +47,9 @@ favorite_makefile_targets=(
 )
 
 _cado(){
-    echo "================================================" >> ~/.log.txt
     local cur prev words cword
     _init_completion || return
     COMPREPLY=()
-
-    echo "cur=$cur, prev=$prev, words='${words[*]}', cword=$cword, words[1]=${words[1]}" >> ~/.log.txt
 
     if (( cword == 1 )) ; then
         COMPREPLY=($(compgen -W "${cado_commands[*]}" -- ${cur}))

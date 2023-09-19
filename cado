@@ -27,17 +27,17 @@
 #      make [-j N] [TARGET]
 #
 
-this_project=GEM
-
+this_project=`cat MANIFEST | sed -n '/NAME/s/.*: //p'`
+                   
             cmake_command='cmake -S . -B ${build_dir}  "$@"'
      cmake_static_command='cmake -S . -B ${build_dir}  -DSTATIC_INTEL=ON "$@"'
         cmake_all_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir} "$@"'
-      cmake_debug_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" $@"'
-cmake_debug_extra_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug" -DEXTRA_CHECKS_ON $@"'
+      cmake_debug_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug "$@"'
+cmake_debug_extra_command='cmake -S . -B ${build_dir}  -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON "$@"'
        cmake_mach_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
 cmake_mach_static_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DSTATIC_INTEL=ON "$@"'
    cmake_all_mach_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
- cmake_mach_debug_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DCMAKE_BUILD_TYPE=Debug" $@"'
+ cmake_mach_debug_command='cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE -DCMAKE_BUILD_TYPE=Debug "$@"'
 
   build_command='cmake --build ${build_dir} -- "$@"'
    work_command='cmake --build ${build_dir} --target work -- "$@"'
@@ -125,32 +125,24 @@ See \`cado --help\` for more detailed info
 "
 }
 
-
-# Variable to generalize: GEM_ARCH used to compose build_dir and its name
-# is used in the text below.  Could be
-# ${GEM_ARCH} -> $(eval echo \${${this_project}_ARCH}) (in the if)
-# \${GEM_ARCH} -> \${${this_project}_ARCH} (in the text)
-# build_dir=$(realpath build-$(eval echo \${${this_project}_ARCH}))
-if [[ -z $(eval echo \${${this_project}_ARCH}) ]] ; then
-    echo "$0: This convenience helper uses \${${this_project}_ARCH} to set the cmake build"
-    echo "and install directories as build-\${${this_project}_ARCH} and work-\${${this_project}_ARCH}"
+this_project_upper=$(echo ${this_project} | tr '[:lower:]' '[:upper:]')
+if [[ -z $(eval echo \${${this_project_upper}_ARCH}) ]] ; then
+    echo "$0: This convenience helper uses \${${this_project_upper}_ARCH} to set the cmake build"
+    echo "and install directories as build-\${${this_project_upper}_ARCH} and work-\${${this_project_upper}_ARCH}"
     echo "but the variable is not set.  This indicates that the environment"
     echo "setup 'source .common_setup <compiler>' has not been done.  This"
     echo "is necessary for the build with or without this helper."
     exit 1
 fi
 
-# Variable to generalize: GEM_GIT_DIR used for this check only.
-# GEM_GIT_DIR -> $(eval echo \${this_project}_GIT_DIR})
 this_project_lower=$(echo ${this_project} | tr '[:upper:]' '[:lower:]')
 if [[ $(realpath $PWD) != $(realpath $(eval echo \${${this_project_lower}_DIR})) ]] ; then
   printf "$0: \033[1;31mERROR\033[0m: This command must be run from the top of the source code repository\n"
   exit 1
 fi
-# The above could be replaced by a `cd` to ${gem_DIR}
 
-if ! build_dir=$(realpath build-$(eval echo \${${this_project}_ARCH})) ; then
-    echo "ERROR running true_path on 'build-\${GEM_ARCH}'."
+if ! build_dir=$(realpath build-$(eval echo \${${this_project_upper}_ARCH})) ; then
+    echo "ERROR running true_path on 'build-\${this_project_upper}_ARCH}'."
 fi
 echo "Using build directory '${build_dir}'"
 

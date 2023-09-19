@@ -27,7 +27,7 @@ module chm_phyvar_mod
                      rainrate, gzmom, gztherm, kt, ftot, f12,     &
                      rnflx, snoflx, fevp, qrkfc, kfcrf, kfcsf,    &
                      kfmrf, kfmsf, mg, alvis, lwc, cldrad, o3s,   &
-                     shear2, rig, ncplus, o3ce
+                     shear2, rig, ncplus, o3ce, qrplus
 
    save
 

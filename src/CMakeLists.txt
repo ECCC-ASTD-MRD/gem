@@ -47,6 +47,7 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(cpl_LIBRARIES rpnphy_cpl_stubs CACHE STRING "rpnphy coupling library")
   set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry stub library")
   add_subdirectory(rpnphy rpnphy)
+  set(phy_VERSION ${rpnphy_VERSION} CACHE STRING "rpnphy version")
 endif()
 
 set(WITH_MACH FALSE CACHE BOOL "Control whether to compile with mach")
@@ -60,7 +61,11 @@ if ((WITH_MACH) OR (CACHE WITH_MACH) OR ($ENV{WITH_MACH}))
   endif()
 endif()
 
-add_subdirectory(gemdyn gemdyn)
+if (EXISTS ${CMAKE_SOURCE_DIR}/src/gemdyn/CMakeLists.txt)
+  add_subdirectory(gemdyn gemdyn)
+  set(dyn_VERSION ${gemdyn_VERSION} CACHE STRING "gemdyn version")
+endif()
+
 add_subdirectory(gem gem)
 
 # Add those tools only for external users, or if WITH_SYSTEM_RPN is FALSE
@@ -79,14 +84,18 @@ install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_
 install(CODE "
    message(STATUS \"Generating nml\")
    execute_process(
-     COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref)
+     COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
+     COMMAND_ERROR_IS_FATAL ANY
+)
    execute_process(
      COMMAND ${CMAKE_SOURCE_DIR}/scripts/rpy/rpy.nml_get -v -f ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
      OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv
+     COMMAND_ERROR_IS_FATAL ANY
      )
    execute_process(
      COMMAND cut ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv -d= -f1
-     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k)
+     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
+     COMMAND_ERROR_IS_FATAL ANY)
      ")
 
 install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)

@@ -16,7 +16,7 @@
 #
 #   The script relies on:
 #       1. Existence of directory structure needed for Runmod task with root directory being placed at ${TASK_BASEDIR}
-#       2. Existence of reference output file named ${control_dir}/gm-output/${IntegrationTest_version}_${TRUE_HOST}/model/${test_date}_${test_fhr}
+#       2. Existence of reference output file named ${control_dir}/gm-output/${IntegrationTest_version}_${TRUE_HOST}/model/${rundate}_${fhr}
 #   If any of these are missing, or not up to date, the script will fail. The error messages are provided throughout the
 #   script to indicate the obvious issues and failure of the script to behave as expected.
 #
@@ -31,7 +31,8 @@
 # Update: January 2023
 #
 # 2023-Apr. Jack C - source GEM environment, minor tweak, simplify,
-#         remove HARDCODD $test_date etc.
+#         remove HARDCODD $rundate etc.
+# 2023-May. Jack C - simplify to just fstcomp of output with ref./cntrl output
 #
 ###
 
@@ -44,7 +45,6 @@ control_dir=$3
 TASK_BASEDIR=$4
 gmtestinfo=$5
 cmpl_opt=$6
-
 
 # update log
 echo -e "\n== Starting script: validate-gm-integration-test: $scriptstartdate == \n" | tee -a ${gmtestinfo}
@@ -60,83 +60,42 @@ export TASK_INPUT=${TASK_BASEDIR}/input
 export TASK_WORK=${TASK_BASEDIR}/work
 export TASK_OUTPUT=${TASK_BASEDIR}/output
 
-ln -sf $(which editfst) ${TASK_BIN}
+cp -a $(which fstcomp) ${TASK_BIN}
 
-# Define the output hour to compare
-test_fhr=024
+# output fst files to compare
+ctrl_output=${control_dir}/gm-output_${TRUE_HOST}/model
+[[ "${cmpl_opt}" == "dbg" ]] && ctrl_output=${control_dir}/gm-output_${TRUE_HOST}_${cmpl_opt}/model
+fhr=024
+rundate=$(basename ${ctrl_output}/??????????_${fhr} |cut -c1-10)
+ctrl_outfile=${ctrl_output}/${rundate}_${fhr}
+test_outfile=${TASK_OUTPUT}/${rundate}_${fhr}
 
-# Define run output
-TASK_OUTPUT=${TASK_BASEDIR}/output
-case ${test_fhr} in
- 000) test_step=072 ;;
- 009) test_step=144 ;;
- 012) test_step=144 ;;
- 021) test_step=288 ;;
- 024) test_step=288 ;;
-esac
-test_date=$(basename ${TASK_OUTPUT}/cfg_0000/laststep_0000000${test_step}/000-000/pm*-000-000_${test_fhr} |cut -c3-12)
-dmoutfile=${TASK_OUTPUT}/cfg_0000/laststep_0000000${test_step}/000-000/dm${test_date}-000-000_${test_fhr}
-pmoutfile=${TASK_OUTPUT}/cfg_0000/laststep_0000000${test_step}/000-000/pm${test_date}-000-000_${test_fhr}
-outfile=${TASK_OUTPUT}/${test_date}_${test_fhr}
-if [ ! -f ${dmoutfile} ] ; then
- echo -e "\n\n ERROR: GEM dynamics output file, ${dmoutfile}, is unavailable. \n\n" | tee -a ${gmtestinfo}
- exit 1
-else
- echo -e "\n Location of GEM dynamics output:\n ${dmoutfile}" | tee -a ${gmtestinfo}
-fi
-if [ ! -f ${pmoutfile} ] ; then
- echo -e "\n\n ERROR: GEM physics output file, ${pmoutfile}, is unavailable. \n\n" | tee -a ${gmtestinfo}
- exit 1
-else
- echo -e "\n Location of GEM physics output:\n ${pmoutfile}" | tee -a ${gmtestinfo}
-fi
-
-# combine pm,dm level outputs in one
-for f in ${TASK_OUTPUT}/cfg_0000/laststep_0000000${test_step}/00*/?m${test_date}-*_${test_fhr} ; do
- ${TASK_BASEDIR}/bin/editfst -s $f -d ${outfile} -i <<EOD
- exclure(-1,['>>','^^','!!','>^'],-1)
-EOD
-done
-${TASK_BIN}/editfst -s ${dmoutfile} -d ${outfile} -i <<EOD
- desire(-1,['>>','^^','!!','>^'],-1)
-EOD
-if [ ! -f ${outfile} ] ; then
- echo -e "\n\n ERROR: The output is not successfully combined \n\n" | tee -a ${gmtestinfo}
- exit 1
-fi
-
-# input reference control output
-test_outfile=$outfile
-ctrl_outfile=${control_dir}/gm-output_${TRUE_HOST}/model/${test_date}_${test_fhr}
-[[ "${cmpl_opt}" == "dbg" ]] && \
- ctrl_outfile=${control_dir}/gm-output_${TRUE_HOST}_${cmpl_opt}/model/${test_date}_${test_fhr}
-if [ ! -f ${ctrl_outfile} ] ; then
- echo -e "\n\n ERROR: control output file, ${ctrl_outfile}, is unavailable. \n\n" | tee -a ${gmtestinfo}
- exit 1
-else
- echo -e "\n Location of ref. control: ${ctrl_outfile}" | tee -a ${gmtestinfo}
- echo -e "\n Location of test outfile: ${test_outfile}" | tee -a ${gmtestinfo}
-fi
+[[ ! -f ${ctrl_outfile} ]] && \
+  echo -e "\n ERROR: control file not found: ${ctrl_outfile}" |tee -a ${gmtestinfo} && exit 1
+[[ ! -f ${test_outfile} ]] && \
+  echo -e "\n ERROR: run output not found: ${test_outfile}" |tee -a ${gmtestinfo} && exit 1
+echo -e "\n ref. control: ${ctrl_outfile}" | tee -a ${gmtestinfo}
+echo -e "\n test outfile: ${test_outfile}" | tee -a ${gmtestinfo}
 
 # Compare the output with the existing resutls
 complistfile=${TASK_BASEDIR}/fstcomp_listing
-fstcomp -a ${ctrl_outfile} -b ${test_outfile} > ${complistfile}
+${TASK_BIN}/fstcomp -a ${ctrl_outfile} -b ${test_outfile} > ${complistfile}
 if [ -f ${complistfile} ] && [[ $(grep -i  "error" ${complistfile}) == "" ]] ; then
  if [[ $(grep '<' ${complistfile}) != "" ]] ; then
-  echo -e "\n\n ***\n ERROR: New binary does not reproduce control test.\n ***\n\n" | tee -a ${gmtestinfo}
+  echo -e "\n *** ERROR: New binary does not reproduce control test. ***\n" | tee -a ${gmtestinfo}
   exit 1
  elif [[ $(grep "0.0000E+00  0.0000E+00  0.0000E+00" ${complistfile}) != "" ]] || \
       [[ $(grep "0.0000E+00 0.0000E+00 0.0000E+00" ${complistfile}) != "" ]] ; then
-  echo -e "\n\n ***\n Congratulations: New binary reproduces control test.\n ***\n\n" | tee -a ${gmtestinfo}
+  echo -e "\n *** New binary reproduces reference output. ***\n" | tee -a ${gmtestinfo}
  else
-  echo -e "\n\n ***\n ERROR: Comparison seem not to produce any results.\n ***\n\n" | tee -a ${gmtestinfo}
+  echo -e "\n *** ERROR: Comparison seem not to produce any results. ***\n" | tee -a ${gmtestinfo}
   exit 1
  fi
 else
- echo -e "\n\n ***\n ERROR: Comparison of the output failed.\n ***\n\n" | tee -a ${gmtestinfo}
+ echo -e "\n *** ERROR: Comparison of the output failed. ***\n" | tee -a ${gmtestinfo}
  exit 1
 fi
 
 # Tell the world how long it took to validate GEM-MACH integration test results
-echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds for the validation script to run. == \n" | tee -a ${gmtestinfo}
+echo -e "\n== DONE with validation script == \n" | tee -a ${gmtestinfo}
 

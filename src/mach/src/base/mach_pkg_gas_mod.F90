@@ -134,7 +134,9 @@ module mach_pkg_gas_mod
                                          chm_get_mj_emis_l, chm_htap_emis_l,   &
                                          chm_mono_s, chm_mass_s,               &
                                          chm_active_ch4_l, gas_ppb_out_list_s, &
-                                         chm_ammonia_bidi_s
+                                         chm_nh3_bidi_s, chm_nh3_gep2d_l,      &
+                                         chm_soil_ph2d_l
+
          use chm_species_idx_mod
          use chm_species_info_mod, only: species_master, unassigned
          use mach_drydep_mod,      only: gas_depo, nb_gas_depo
@@ -309,14 +311,32 @@ module mach_pkg_gas_mod
          end if
 
 ! ammonia bidirectional flux
-         if (trim(chm_ammonia_bidi_s) /= 'OFF' .and. sp_NH3 > 0) then
+         if (trim(chm_nh3_bidi_s) /= 'OFF' .and. sp_NH3 > 0) then
 
             species_master(sp_NH3) % bd_name   = "NHBD"
             species_master(sp_NH3) % bd_string = "VN=BIDI_NH3; ON=NHBD; VD=NH3 bidirectional flux (g/s) ; VS=A ; VB=V0"
 
-            if (trim(chm_ammonia_bidi_s) == 'GEP2D') then
+            if (chm_nh3_gep2d_l) then
                species_master(sp_NH3) % gep_name   = "NHGP"
-               species_master(sp_NH3) % gep_string = "VN=EP_NH3; ON=NHGP; VD=NH3 ground emissions potential ; VS=A*15 ; VB=P0"
+               species_master(sp_NH3) % gep_string = "VN=GEP_NH3; ON=NHGP; VD=NH3 static ground emissions potential ; VS=A*15 ; VB=P1"
+            end if
+            
+            if (trim(chm_nh3_bidi_s) == 'DYNAMIC') then
+               
+               species_master(sp_NH3) % epd_name   = "NHGD"
+               species_master(sp_NH3) % epd_string = "VN=EPD_NH3; ON=NHGD; VD=NH3 dynamic ground emissions potential ; VS=A*15 ; VB=P1"
+
+               species_master(sp_NH3) % bdt_name   = "NHTA"
+               species_master(sp_NH3) % bdt_string = "VN=TAU_NH3; ON=NHTA; VD=NH3 bidirectional flux time scale (h) ; VS=A*15 ; VB=V0"
+
+               species_master(sp_NH3) % epa_name   = "NHGA"
+               species_master(sp_NH3) % epa_string = "VN=EPA_NH3; ON=NHGA; VD=NH3 atmospheric deposition potential ; VS=A ; VB=V0"
+
+               if (chm_soil_ph2d_l) then
+                  species_master(sp_NH3) % sph_name   = "SLPH"
+                  species_master(sp_NH3) % sph_string = "VN=SOIL_PH; ON=SLPH; VD=Soil pH ; VS=A*15 ; VB=P1"
+               end if
+               
             end if
 
          end if

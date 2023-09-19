@@ -113,6 +113,7 @@ fi
 
 ## Check that all domains have compatible configurations  #TODO: in runprep
 domain_number=${DOMAIN_start}
+setting0=""
 while [[ ${domain_number} -le ${DOMAIN_end} ]] ; do
    dname1=cfg_$(printf "%04d" ${domain_number})
    NMLFILE=${TASK_OUTPUT}/${dname1}/gem_settings.nml

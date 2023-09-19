@@ -194,6 +194,17 @@ Diagnostic Wet Deposition Fields
 
 Note: Available when chm\_diag\_wetdep\_L is set to .true.
 
+Bidirectional Flux Fields (ammonia)
+----------------------
+
+| Field Name | Description | Note |
+| :------ | :------: | :-----: |
+| NHVG | Deposition velocity for ground pathway (s/m) | output |
+| NHBD | NH3 emissions from bidirectional flux scheme (g/s) | output |
+| NHGP | NH3 static ground emissions potential | input |
+| NHGD | NH3 dynamic ground emissions potential | input |
+| NHTA | NH3 bidirectional flux time scale (hours) | output |
+| SLPH | Spoil PH | input |
 
 Miscellaneous Fields
 ----------------------

@@ -7,13 +7,10 @@ include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
 ec_parse_manifest()        # Parse MANIFEST file
 
-project(${NAME} DESCRIPTION "${DESCRIPTION}")
+project(${NAME} DESCRIPTION "${DESCRIPTION}" LANGUAGES C Fortran)
 set(PROJECT_VERSION ${VERSION}${STATE})
 set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
 message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
-
-enable_language(Fortran)
-enable_language(C)
 
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
@@ -97,9 +94,6 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug )
   message(STATUS "(EC) CMAKE_Fortran_FLAGS_DEBUG=${CMAKE_Fortran_FLAGS_DEBUG}")
 endif()
 
-# Figure out the correct arch-dependent include path
-set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-message(STATUS "(EC) Build architecture: ${BUILD_ARCH}")
 message(STATUS "(EC) Sources directory is: ${CMAKE_SOURCE_DIR}")
 message(STATUS "(EC) Build directory is: ${CMAKE_BINARY_DIR}")
 
@@ -139,6 +133,7 @@ endif()
 if(DEFINED ENV{EC_ARCH})
   set(EC_ARCH "$ENV{EC_ARCH}")
 else()
+  set(BUILD_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
   set(EC_ARCH "${BUILD_ARCH}/${EC_COMPILER}")
 endif()
 

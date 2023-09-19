@@ -16,8 +16,7 @@ git clone git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
 ```
 
-2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step
-   (necessary, for now, to compile with gnu)
+2. or cloning everything, including rpn-si libraries (rmn, vgrid, rpncomm, tdpack) in one step:
 ```
 git clone --recursive git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
@@ -28,7 +27,11 @@ cd gem
 git clone git@gitlab.science.gc.ca:MIG/gem.git
 cd gem
 ```
-Update rpn-si libraries and cmake_rpn submodules
+Update only cmake_rpn submodules, for example if you want to modify the default compilation flags
+```
+git submodule update --init cmake_rpn
+```
+Update everything: rpn-si libraries, utilities and cmake_rpn submodules
 ```
 git submodule update --init --recursive
 ```
@@ -39,9 +42,9 @@ git submodule update --init --recursive
 git branch # what is the current branch
 git branch -a # list all branches (look at the list of remote branches to choose from)
 git tag # list tags (if you want to select a tagged version)
-git checkout <hash|branch|tag> # checkout a branch, a tag, or a specific hash. Example: git checkout 5.3
+git checkout <hash|branch|tag> # checkout a branch, a tag, or a specific hash.  Example: git checkout 5.3
 ```
-Or, if you want, create your own branch from the current branch
+Before making changes, create your own branch from the current branch
 ```
 git checkout -b mybranch
 ```
@@ -116,6 +119,66 @@ runprep.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 runmod.sh -dircfg ./configurations/GEM_cfgs_LU_FISL_H
 ```
 
+If you come back later, and you want to run the executables you compiled
+before, you just need to use the following command before going into the
+$GEM_WORK directory:
+```
+. ./.eccc_setup_intel
+or, if you compiled with gnu:
+. ./.eccc_setup_gnu
+```
+
+## Some tips for compilation
+
+When the cado cmake command is called, information is printed, for example
+the list of compilation flags used, such as (example with Intel on science
+side):
+```
+-- (EC) CMAKE_C_FLAGS=-fp-model precise -traceback -Wtrigraphs -xICELAKE-SERVER -diag-disable=10441 -qmkl 
+-- (EC) CMAKE_Fortran_FLAGS=-convert big_endian -align array32byte -assume byterecl -fp-model source -fpe0 -traceback -stand f08 -xICELAKE-SERVER -diag-disable=5268,7025,7373 -qmkl -static-intel
+```
+
+If you choose the debug version (cado cmake-debug), some flags are added to the previous ones, and, again, printed when cado cmake-debug is called:
+```
+-- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g -ftrapuv
+-- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g -ftrapuv
+```
+With cado cmake-debug-extra:
+```
+-- (EC) CMAKE_C_FLAGS=-fp-model precise -traceback -Wtrigraphs -xICELAKE-SERVER -diag-disable=10441 -Wall -qmkl 
+-- (EC) CMAKE_Fortran_FLAGS=-convert big_endian -align array32byte -assume byterecl -fp-model source -fpe0 -traceback -stand f08 -xICELAKE-SERVER -diag-disable=5268,7025,7373 -warn all -check all -qmkl -static-intel
+```
+
+These flags come from default compiler rules set up by RPN-SI and are applied to all the compilation processes.
+
+If you want to change those flags, you can either:
+- update the cmake_rpn submodule so that you can edit the files and modify those flags directly:
+  - git submodule update --init cmake_rpn
+  - make the changes in the file corresponding to the platform and compiler used, such as:
+    cmake_rpn/modules/ec_compiler_presets/ECCC/rhel-8-icelake-64/inteloneapi-2022.1.2.cmake
+- or edit the CMakeLists.txt file and add the flags at the end of the following lines (for Intel):
+```
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
+```
+
+If you want to change or add flags for a specific part of GEM, for example rpnphy, you can either:
+- change the flags for all sources, by editing the src/rpnphy/CMakeLists.txt
+  file and add the flags at the end of the following lines (for Intel):
+```
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268")
+```
+- or, if you want to change or add flags for a specific source file only,
+  edit the CMakeLists.txt file situated in the directory where this source
+  file is added.
+  For example, for the source file rpnphy/src/utils/sfclayer.F90, edit the
+  rpnphy/src/CMakeLists.txt, and modify the following line according to your
+  needs (here we are adding the -C flag to the default flags:
+```
+set_source_files_properties(utils/sfclayer.F90 PROPERTIES COMPILE_OPTIONS "-C")
+```
+
 ## Structure of the working environment
 The structure of the build and work directories is different whether the
 $storage_model environment variable exists:
@@ -134,10 +197,10 @@ The following environment variables are created (examples):
       - build-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
         /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
       - work-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-19.0.3.199/work
+        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/work
 
   - Example if $storage_model variable doesn't exist:
     - GEM_STORAGE_DIR=$HOME/gem/
     - directories situated in gem_DIR:
       - build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - work-ubuntu-18.04-amd64-64-intel-19.0.3.199
+      - work-ubuntu-18.04-amd64-64-intel-2022.1.2

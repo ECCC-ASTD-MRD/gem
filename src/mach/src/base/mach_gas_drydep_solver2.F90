@@ -62,7 +62,7 @@
 !
 ! Arguments:     OUT
 !    VD       -> Deposition velocity for deposition gas species (m/s)
-!    VDG      -> Deposition velocity for ammonia through ground (m/s) (optional; required when chm_ammonia_bidi_s != 'OFF')
+!    VDG      -> Deposition velocity for ammonia through ground (m/s) (optional; required when chm_nh3_bidi_s != 'OFF')
 !
 ! DIFF_RESIST -> Molecular diffusion resistance for deposition gas species (s/m)
 !
@@ -85,7 +85,7 @@ subroutine mach_gas_drydep_solver2(vd, aero_resist, diff_resist, surf_resist, &
    use chm_nml_mod,          only: chm_bkgd_co2
    use chm_consphychm_mod,   only: karman, pi, tcdk
    use mach_drydep_mod,      only: gas_depo, nsn, prandtl, b4, ao, bo, co,     &
-                                   dzero, isimple, inew2, insz,                &
+                                   dzero, isimple,                             &
                                    rcutd, rgdso2, rgdo3, rexpo3, rexpso2, zz0, &
                                    rcanp, rsmin, tmin, tmax, topt, laindex
    use chm_species_info_mod, only: species_master
@@ -333,33 +333,9 @@ subroutine mach_gas_drydep_solver2(vd, aero_resist, diff_resist, surf_resist, &
             end if
 
          ! total surface resistance (see JACOBSON 1999, WESELEY 1989)
-         ! inew2=0,insz=1  : calculate non-stomatal resistance for ozone only
-         ! inew2=1         : calculate non-stomatal resistance for all species
-            if ((inew2 == 1) .or. ((specie == sp_O3) .and. (insz == 1))) then
-
-                if ((lai > 0.001) .and. (lai < 10.0)) then
-
-                   iuss = 1.0 / (ustar(nlus) * ustar(nlus))
-                   lain = exp(0.25 * log(lai))
-                   laid = 1.0 / lain
-
-                   rground = rcan * iuss * lain + rsoil
-                   
-                   if (wst > 0.499) then
-                  ! for wet canopies
-                      rcut = rcut / 20.0
-                      rnsinv = 1.0 / rground + sqrt(lai) * ustar(nlus) / rcut
-                   else
-                  ! for dry canopies
-                      rnsinv = 1.0 / rground + 1.0 / (rcut * exp(-0.03 * 100.0 * humr) * laid / ustar(nlus))
-                   end if
-                   
-                   rinvrcx = (1.0 - wst) / rsx + rnsinv
-
-                end if
 
             ! adjustment for snow (see for ex. figure 3, Robichaud 1991 for SO2)
-            else if (specie == sp_SO2 .and. isnow == 1 .and. (nlus /= 13 .and. nlus /= 14)) then
+            if (specie == sp_SO2 .and. isnow == 1 .and. (nlus /= 13 .and. nlus /= 14)) then
 
                rground = rcan + rsoil + expts
                

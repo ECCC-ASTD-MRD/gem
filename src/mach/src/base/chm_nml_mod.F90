@@ -63,9 +63,9 @@ module chm_nml_mod
    character(len=NMLKEY_LEN) chm_aqueous_s         ! Name of aqueous phase chemistry scheme (Default = 'undefined')
    character(len=NMLKEY_LEN) chm_met_modulation_s  ! Meteorological modulation of fugitive dust emissions (Default = 'OFF')
    character(len=NMLKEY_LEN) chm_wdep_scav_coef_s  ! Switch to change below-cloud scavenging parameterization for particles (Default = 'SLINN')
+   character(len=NMLKEY_LEN) chm_nh3_bidi_s        ! Name of ammonia bidirectional flux scheme (Default = 'OFF')
    character(len=NMLKEY_LEN) chm_mass_s            ! Name of mass conservation scheme       (Default = 'bc'  )
    character(len=NMLKEY_LEN) chm_mono_s            ! Name of monotonicity scheme            (Default = 'clip')
-   character(len=NMLKEY_LEN) chm_ammonia_bidi_s    ! Name of ammonia bidirectional flux scheme (Default = 'OFF')
 
    logical(kind=4) chm_master                        ! If false, then GEM should run as if in chm_stub mode  (Def=T)
    logical(kind=4) chm_emis_master                   ! if false, reading all types (mobile,biogenic, major) of emissions are off (Def=T)
@@ -106,6 +106,8 @@ module chm_nml_mod
                                                      ! in gas dry deposition                       (Default = .false.)
    logical(kind=4) chm_sat_seasons_l                 ! True to enable satellite LAI - based adjustment of seasons in
                                                      ! biogenic emissions modules (Default = .false.)
+   logical(kind=4) chm_nh3_gep2d_l                   ! Read in ammonia ground emission potential values as 2D surface fields? (Default = .false.)
+   logical(kind=4) chm_soil_ph2d_l                   ! Read in soil pH values as a 2D surface field? (Default = .false.)
    logical(kind=4) chm_cffeps_online_l               ! True to enable online CFFEPS calculations   (Default = .false.)
    integer(kind=4) chm_moyhr                         ! Accumulation interval in hours              (Default = 24     )
    integer(kind=4) chm_acchr                         ! Running mean interval in hours              (Default = 24     )
@@ -126,7 +128,10 @@ module chm_nml_mod
    real(kind=4) chm_kt_minmax(3)    ! 1:min 2:max 3:urban-min vertical diffusion coeff. override GEM input Kt in mach_input_check
    real(kind=4) chm_urban_abl_min   ! Nighttime ABL increment due to urban heat island generated using TEB, from Ren et al
    real(kind=4) aero_opt_wavel(15)  ! Mid-band wavelengths (in meters) for AOD calculation
-   real(kind=4) chm_ammonia_gep(15) ! Ground emission potential values used for ammonia bidirectional flux for option chm_ammonia_bidi_s = 'GEP' (15 land-use categories)
+
+   real(kind=4) chm_nh3_gep(15)              ! Ammonia ground emission potential values used if chm_nh3_gep2d_l = .false. (15 land-use categories)
+   real(kind=4) chm_nh4_soil_loss            ! Loss time constant for ammonium in soil (hours)
+   real(kind=4) chm_soil_ph(15)              ! Soil pH values used when chm_soil_ph2d_l = .false. (15 land-use categories)
 
    character(len=NOMV_LEN) gas_ppb_out_list_s(40)    ! Comma-separated list of (ppb output name) of
                                                      ! gas species to output in unit of ppb (Default = 'O3', 'N2', 'NO', 'S2')
@@ -154,7 +159,8 @@ module chm_nml_mod
                              chm_diag_wetdep_l,     chm_diag_drydep_l,      chm_diag_accum_l,   chm_diag_colum_l,  &
                              chm_diag_aerosols_l,   chm_diag_aero_opt_l,    chm_moyhr,          chm_acchr,         &
                              chm_step_factor,       chm_kt_minmax,          chm_timings_l,      chm_debug_trace_l, &
-                             chm_debug_2d_i,        chm_debug_3d_i,         chm_ammonia_bidi_s, chm_ammonia_gep,   &
+                             chm_debug_2d_i,        chm_debug_3d_i,         chm_nh3_bidi_s,     chm_nh3_gep2d_l,   &
+                             chm_nh3_gep,           chm_nh4_soil_loss,      chm_soil_ph2d_l,    chm_soil_ph,       &
                              em_nesdt,              aerosize,               nk_start,           nk_start_pm,       &
                              gas_ppb_out_list_s,    chm_bkgd_ch4,           chm_bkgd_co2,       aero_opt_wavel,    &
                              dbg_lat,               dbg_lon,                dbg_lev,            dbg_step, dbg_itr, &

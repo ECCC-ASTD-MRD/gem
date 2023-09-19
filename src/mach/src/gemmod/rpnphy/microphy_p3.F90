@@ -1848,6 +1848,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
  real, dimension(kts:kte) :: V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,flux_qx,flux_nx,   &
                              flux_nit,flux_qir,flux_bir
 
+ real, dimension(kts:kte) :: avg_mflux_i,avg_mflux_r
+
  real, dimension(kts:kte) :: SCF,iSCF,SPF,iSPF,SPF_clr,Qv_cld,Qv_clr
  real                     :: ssat_cld,ssat_clr,ssat_r,supi_cld,sup_cld,sup_r
 
@@ -2020,6 +2022,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
  prt_sol   = 0.
  mflux_r   = 0.
  mflux_i   = 0.
+ avg_mflux_i = 0.0
+ avg_mflux_r = 0.0
  prec      = 0.
  mu_r      = 0.
  diag_ze   = -99.
@@ -3611,6 +3615,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
        dt_left   = dt  !time remaining for sedi over full model (mp) time step
        prt_accum = 0.  !precip rate for individual category
+       avg_mflux_r = 0.0 !sub-step averaged rain mass flux
 
       !find bottom
        do k = kbot,k_qxtop,kdir
@@ -3676,6 +3681,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
              flux_qx(k) = V_qr(k)*qr(i,k)*rho(i,k)
              flux_nx(k) = V_nr(k)*nr(i,k)*rho(i,k)
              mflux_r(i,k) = flux_qx(k)  !store mass flux for use in visibility diagnostic)
+             avg_mflux_r(k) = avg_mflux_r(k) + flux_qx(k)*dt_sub
           enddo
 
           !accumulated precip during time step
@@ -3707,6 +3713,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
        enddo substep_sedi_r
 
        prt_liq(i) = prt_liq(i) + prt_accum*inv_rhow*odt
+       avg_mflux_r = avg_mflux_r * odt
 
     endif qr_present
 
@@ -3732,6 +3739,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
           dt_left   = dt  !time remaining for sedi over full model (mp) time step
           prt_accum = 0.  !precip rate for individual category
+          avg_mflux_i = 0.0 !sub-step averaged ice mass flux
 
          !find bottom
           do k = kbot,k_qxtop,kdir
@@ -3807,6 +3815,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
                 flux_bir(k) = V_qit(k)*birim(i,k,iice)*rho(i,k)
                !flux_zit(k) = V_zit(k)*zitot(i,k,iice)*rho(i,k)
                 mflux_i(i,k) = flux_qit(k)  !store mass flux for use in visibility diagnostic)
+                avg_mflux_i(k) = avg_mflux_i(k) + flux_qit(k)*dt_sub
              enddo
 
              !accumulated precip during time step
@@ -3851,6 +3860,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
           enddo substep_sedi_i
 
           prt_sol(i) = prt_sol(i) + prt_accum*inv_rhow*odt
+          avg_mflux_i = avg_mflux_i * odt
 
        endif qi_present
 
@@ -4190,8 +4200,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 !.....................................................
    !Diagnostics for chemistry module: precipitation fluxes
     do k = kbot,ktop,kdir
-       diag_3d(i,k,1) = mflux_r(i, k)  !liquid precipitation flux
-       diag_3d(i,k,2) = mflux_i(i, k)  ! solid precipitation flux
+       diag_3d(i,k,1) = avg_mflux_r(k) ! mflux_r(i, k)  !liquid precipitation flux
+       diag_3d(i,k,2) = avg_mflux_i(k) ! mflux_i(i, k)  ! solid precipitation flux
     end do
 
  enddo i_loop_main

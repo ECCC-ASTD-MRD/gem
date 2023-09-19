@@ -94,10 +94,30 @@ module chm_species_info_mod
       character (len=DICTSTRING_LEN) :: bd_string = unassigned
       integer(kind=4)                :: bd_offset = -1
 
-!    Entry on permanent bus the for the ground emissions potential
+!    Entry on the volatile bus for bidirectional flux time scale
+      character (len=NOMV_LEN)       :: bdt_name   = unassigned
+      character (len=DICTSTRING_LEN) :: bdt_string = unassigned
+      integer(kind=4)                :: bdt_offset = -1
+      
+!    Entry on permanent bus for the static values of the ground emissions potential
       character (len=NOMV_LEN)       :: gep_name   = unassigned
       character (len=DICTSTRING_LEN) :: gep_string = unassigned
       integer(kind=4)                :: gep_offset = -1 
+
+!    Entry on permanent bus for the dynamic values of the ground emissions potential
+      character (len=NOMV_LEN)       :: epd_name   = unassigned
+      character (len=DICTSTRING_LEN) :: epd_string = unassigned
+      integer(kind=4)                :: epd_offset = -1
+
+!    Entry on volatile bus for the diagnostic atmospheric deposition potential
+      character (len=NOMV_LEN)       :: epa_name   = unassigned
+      character (len=DICTSTRING_LEN) :: epa_string = unassigned
+      integer(kind=4)                :: epa_offset = -1
+
+!    Entry on permanent bus for soil pH
+      character (len=NOMV_LEN)       :: sph_name   = unassigned
+      character (len=DICTSTRING_LEN) :: sph_string = unassigned
+      integer(kind=4)                :: sph_offset = -1
       
 !    Entry on the volatile bus for the vertical diffusion velocities
       character (len=NOMV_LEN)       :: vd_name   = unassigned
@@ -208,7 +228,11 @@ module chm_species_info_mod
       array(1:array_size) % mae_name = UNASSIGNED
       array(1:array_size) % me_name  = UNASSIGNED
       array(1:array_size) % bd_name  = UNASSIGNED
+      array(1:array_size) % bdt_name  = UNASSIGNED
       array(1:array_size) % gep_name  = UNASSIGNED
+      array(1:array_size) % epd_name  = UNASSIGNED
+      array(1:array_size) % epa_name  = UNASSIGNED
+      array(1:array_size) % sph_name  = UNASSIGNED
       array(1:array_size) % vd_name  = UNASSIGNED
       array(1:array_size) % vdg_name = UNASSIGNED
       array(1:array_size) % ra_name  = UNASSIGNED
@@ -295,10 +319,34 @@ module chm_species_info_mod
          write (iunit, *) "bd  Offset       : ", species_master(id) % bd_offset
       end if
 
+      if (species_master(id) % bdt_name /= UNASSIGNED) then
+         write (iunit, *) "bdt  Output name  : ", species_master(id) % bdt_name
+         write (iunit, *) "bdt  String       : ", species_master(id) % bdt_string
+         write (iunit, *) "bdt  Offset       : ", species_master(id) % bdt_offset
+      end if
+
       if (species_master(id) % gep_name /= UNASSIGNED) then
          write (iunit, *) "gep  Output name  : ", species_master(id) % gep_name
          write (iunit, *) "gep  String       : ", species_master(id) % gep_string
          write (iunit, *) "gep  Offset       : ", species_master(id) % gep_offset
+      end if
+
+      if (species_master(id) % epd_name /= UNASSIGNED) then
+         write (iunit, *) "epd  Output name  : ", species_master(id) % epd_name
+         write (iunit, *) "epd  String       : ", species_master(id) % epd_string
+         write (iunit, *) "epd  Offset       : ", species_master(id) % epd_offset
+      end if
+
+      if (species_master(id) % epa_name /= UNASSIGNED) then
+         write (iunit, *) "epa  Output name  : ", species_master(id) % epa_name
+         write (iunit, *) "epa  String       : ", species_master(id) % epa_string
+         write (iunit, *) "epa  Offset       : ", species_master(id) % epa_offset
+      end if
+
+      if (species_master(id) % sph_name /= UNASSIGNED) then
+         write (iunit, *) "sph  Output name  : ", species_master(id) % sph_name
+         write (iunit, *) "sph  String       : ", species_master(id) % sph_string
+         write (iunit, *) "sph  Offset       : ", species_master(id) % sph_offset
       end if
       
       if (species_master(id) % vd_name /= UNASSIGNED) then
