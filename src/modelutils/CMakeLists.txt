@@ -9,12 +9,10 @@ include(ec_init)           # Initialise compilers and ec specific functions
 ec_git_version()           # Get version from git state
 ec_parse_manifest()        # Parse MANIFEST file
 
-project(${NAME} DESCRIPTION "${DESCRIPTION}")
+project(${NAME} DESCRIPTION "${DESCRIPTION}" LANGUAGES C Fortran)
 set(PROJECT_VERSION ${VERSION}${STATE})
 set(modelutils_VERSION ${PROJECT_VERSION} CACHE INTERNAL "modelutils version" FORCE) # Needed for cascaded version identification
 message(STATUS "(EC) ${PROJECT_NAME} version = ${PROJECT_VERSION}")
-
-enable_language(C Fortran)
 
 ec_build_info()            # Generate build information
 include(ec_compiler_presets)
@@ -54,15 +52,6 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   find_package(LAPACK)
   find_package(BLAS)
 endif()
-
-string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M")
-if(DEFINED ENV{COMP_ARCH})
-  set(EC_COMPILER "$ENV{COMP_ARCH}")
-endif()
-if(DEFINED ENV{ORDENV_ARCH})
-  set(EC_ORDENV_ARCH "$ENV{ORDENV_ARCH}")
-endif()
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.in ${CMAKE_CURRENT_SOURCE_DIR}/include/modelutils_version.inc @ONLY)
 
 add_subdirectory(src/main modelutils-main)
 add_subdirectory(src modelutils)
