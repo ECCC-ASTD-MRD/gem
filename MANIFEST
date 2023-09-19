@@ -1,5 +1,5 @@
 NAME       : rpnphy
-VERSION    : 6.2.0-rc3
+VERSION    : 6.3.0-a1
 BUILD      : 
 DESCRIPTION: RPN Physics parameterisations
 SUMMARY    : The RPN Physics Library consists of a comprehensive description of the most important physical processes in the atmosphere and at the surface, and provides a unified library environment on which dynamical models can easily interface. The physical parameterizations modify the model basic variables, by adding tendencies due to various physical processes. These processes are either unresolvable by the model dynamics (e.g., turbulent transfers), unresolved (e.g., deep convection, gravity wave drag), or simply missing from the basic dynamic equations (e.g., radiation, surface processes). 
@@ -11,4 +11,4 @@ DOC	   : https://wiki.cmc.ec.gc.ca/wiki/RPNPhy
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
 
-modelutils = 1.7.0-rc1
+modelutils = 1.8.0-a1

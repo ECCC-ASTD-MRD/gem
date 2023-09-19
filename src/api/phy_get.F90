@@ -17,7 +17,7 @@
 module phy_get_mod
   use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
   use phyunfold, only: phyunfoldmeta1
-  use phymem, only: phymeta, phyvar, phymem_find, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
+  use phymem, only: phymeta, phymem_find, phymem_getmeta_copy, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
   private
   public :: phy_get
 
@@ -53,13 +53,12 @@ contains
       integer :: F_istat                                     !Return status (RMN_OK or RMN_ERR)
       !@author Ron McTaggart-Cowan and Stephane Chamberland - Winter 2015
       !*@/
-      integer :: istat
+      integer :: istat, idxv1(1)
       integer, dimension(3) :: istart, iend
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -82,15 +81,15 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
-      if (present(F_meta)) F_meta = meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      if (present(F_meta)) F_meta = vmeta
 
       ! Set automatic grid dimensions
       istart = 1
@@ -99,7 +98,7 @@ contains
             istart = F_start
          end where
       endif
-      iend = (/meta%nlcl(1:2),1/)
+      iend = (/vmeta%nlcl(1:2),1/)
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -120,7 +119,7 @@ contains
                call msg(MSG_INFOPLUS,'(phy_get) reallocating output array')
                deallocate(F_fld)
             else
-               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
+               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), vmeta%nlcl
                call msg(MSG_WARNING,'(phy_get) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
                return
             endif
@@ -132,9 +131,9 @@ contains
 
       ! Unfold physics field and copy into output array
       !#TODO: check 2d to 3d through the phyunfoldmeta itf
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, vmeta)
       if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return
@@ -160,13 +159,12 @@ contains
       integer :: F_istat                                     !Return status (RMN_OK or RMN_ERR)
       !@author Ron McTaggart-Cowan - Spring 2014
       !*@/
-      integer :: istat
+      integer :: istat, idxv1(1)
       integer, dimension(3) :: istart, iend
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -189,15 +187,15 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
-      if (present(F_meta)) F_meta = meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      if (present(F_meta)) F_meta = vmeta
 
       ! Set automatic grid dimensions
       istart = 1
@@ -206,7 +204,7 @@ contains
             istart = F_start
          end where
       endif
-      iend = meta%nlcl
+      iend = vmeta%nlcl
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -223,7 +221,7 @@ contains
                call msg(MSG_INFOPLUS,'(phy_get) reallocating output array')
                deallocate(F_fld)
             else
-               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
+               write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), vmeta%nlcl
                call msg(MSG_WARNING,'(phy_get) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
                return
             endif
@@ -234,9 +232,9 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, vmeta)
       if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return
@@ -262,13 +260,12 @@ contains
       integer :: F_istat                                     !Return status (RMN_OK or RMN_ERR)
       !@author Ron McTaggart-Cowan - Spring 2014
       !*@/
-      integer :: istat
+      integer :: istat, idxv1(1)
       integer, dimension(4) :: istart, iend, iend0
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: to_alloc, allow_realloc, quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -291,15 +288,15 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_get) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
-      if (present(F_meta)) F_meta = meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      if (present(F_meta)) F_meta = vmeta
 
       ! Set automatic grid dimensions
       istart = 1
@@ -308,9 +305,9 @@ contains
             istart = F_start
          end where
       endif
-      iend0(1:2) = meta%nlcl(1:2)
-      iend0(3)   = meta%nk
-      iend0(4)   = meta%fmul * (meta%mosaic + 1)
+      iend0(1:2) = vmeta%nlcl(1:2)
+      iend0(3)   = vmeta%nk
+      iend0(4)   = vmeta%fmul * (vmeta%mosaic + 1)
       iend(1:4)  = iend0(1:4)
       if (present(F_end)) then
          where (F_end > 0)
@@ -340,9 +337,9 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2),istart(3):iend(3),istart(4):iend(4)))
 
       ! Unfold physics field into output array
-      F_istat = phyunfoldmeta1(F_fld, istart, iend, meta)
+      F_istat = phyunfoldmeta1(F_fld, istart, iend, vmeta)
       if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return

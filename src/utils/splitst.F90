@@ -15,15 +15,14 @@
 !-------------------------------------- LICENCE END ----------------------------
 
 module splitst
-   use phymem, only: PHY_STAG_SFC, PHY_STAG_MOM, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_BUSID
    implicit none
    private
    public :: splitst4
 
 contains
 
-   function splitst4(cvn, con, cin, csn, cvd1, cvd2, cvs, fmosaik, fmul,  &
-        cvb, dynini, stagg, F_vmin, F_vmax, F_wload, F_hzd, F_monot, F_massc, &
+   function splitst4(cvn, con, cin, csn, cvd1, cvs, fmosaik, fmul,  &
+        cvb, dynini, F_vmin, F_vmax, F_wload, F_hzd, F_monot, F_massc, &
         F_flags, F_string_S) result(F_istat)
       use str_mod
       use clib_itf_mod, only: clib_toupper
@@ -32,11 +31,12 @@ contains
       implicit none
 !!!#include <arch_specific.hf>
       character(len=*), intent(in)  :: F_string_S
-      character(len=*), intent(out) :: con,cvn,cin,csn,cvd1,cvd2,cvb,cvs
+      character(len=*), intent(out) :: con,cvn,cin,csn,cvd1,cvb,cvs
       character(len=*), intent(out) :: F_flags(:)
-      integer, intent(out) ::  fmul,fmosaik,dynini,stagg
+      integer, intent(out) ::  fmul,fmosaik,dynini
       real, intent(out) :: F_vmin, F_vmax
-      integer, intent(out) :: F_wload, F_hzd, F_monot, F_massc
+      integer, intent(out) :: F_monot, F_massc
+      logical, intent(out) :: F_wload, F_hzd
       integer :: F_istat
       !
       !Author
@@ -50,6 +50,22 @@ contains
       ! 004      V. Lee (Mar 2011) - fmosaik = 0 if no mosaic tiles.
       !
       !Object
+      !    The recognized token in "F_string_S" are:
+      !         VN=  ;       ===> formal name
+      !         ON=  ;       ===> output name (4 letters only)
+      !         IN=  ;       ===> input  name (4 letters only)
+      !         SN=  ;       ===> series name (4 letters only)
+      !         VD=  ;       ===> formal description
+      !         VS=  ;       ===> variable shape (accepted shapes are M, T, E and
+      !                           A with +, - or * followed by an integer)
+      !         VB=  ;       ===> bus identification (D, P and V)
+      !         MIN= ;       ===> minimum value of the field
+      !         MAX= ;       ===> maximum value of the field
+      !       WLOAD= ;       ===> water load flag (default=0)
+      !         HZD= ;       ===> Horizontal diffusion (default=0)
+      !       MASSC= ;       ===> mass conserv (default=0)
+      !       MONOT= ;       ===> monotone interpolation (default=1)
+      !       FLAGS= ;       ===> list of keywords '+' separated
       !
       !Arguments
       !            - Output -
@@ -57,13 +73,11 @@ contains
       ! con       output name (ON)
       ! cin       input name (IN)
       ! cvd1      formal description (VD)
-      ! cvd2      complete shape (VS)
       ! cvs       shape --A, M, T, E-- (VS)
       ! fmosaik   mosaic factor (number of types of soil surfaces for CLASS)
       ! fmul      multiplicative factor
       ! cvb       bus identification (VB)
       ! dynini    flag for initialysation by the dynamics (1=yes)
-      ! stagg     flag for staggered levels (0=non staggered; 1=staggered)
       ! vmin      minvalue for the field
       ! vmax      maxvalue for the field
       ! wload     water loading flag
@@ -119,6 +133,7 @@ contains
            'flags  '  &
            /)
 
+      character(len=64) :: prefix_S, basename_S, time_S, ext_S
       character(len=1024) :: string_S,kv_S(2,NIDX_MAX),s1_S,s2_S,attr_S,str2(2)
       integer :: nkeys, istat, ind,iwload, ihzd, imonot, imassc, n
       real :: rvmin
@@ -128,12 +143,13 @@ contains
       string_S = F_string_S
       call str_tab2space(string_S)
       string_S = adjustl(string_S)
+      istat = clib_toupper(string_S)
 
       kv_S = ' '
       kv_S(KEY,1:NIDX) = KNOWN_KEYS(1:NIDX)
       nkeys = str_split2keyval(kv_S,string_S,NIDX_MAX)
       if (nkeys < NIDX_MIN .or. any(kv_S(VAL,1:NIDX_MIN) == ' ')) then
-         call msg(MSG_ERROR,'(gesdict) Mandatory params not all provided for: '//trim(string_S))
+         call msg(MSG_ERROR,'(splitst) Mandatory params not all provided for: '//trim(string_S))
          return
       endif
 
@@ -146,7 +162,7 @@ contains
       endif
       if (attr_S /= ' ') then
          istat = tracers_attributes(attr_S, iwload, ihzd, imonot, imassc, rvmin, F_ignore_L=.true.)
-         call msg(MSG_WARNING, '(splitst/gesdict) Attibute specified within vname depracated: '//trim(kv_S(VAL,IDX_VN)))
+         call msg(MSG_WARNING, '(splitst) Attibute specified within vname deprecated: '//trim(kv_S(VAL,IDX_VN)))
       endif
       
       con  = kv_S(VAL,IDX_ON)
@@ -157,31 +173,11 @@ contains
       cvd1 = kv_S(VAL,IDX_VD)
       call str_normalize(cvd1)
       istat = clib_toupper(cvd1)
-      cvd2 = kv_S(VAL,IDX_VS)
       cvs  = kv_S(VAL,IDX_VS)(1:1)
       cvb  = kv_S(VAL,IDX_VB)(1:1)
 
-      select case(cvs)
-      case("A")  !# arbitrary
-         stagg = PHY_STAG_SFC
-      case("M")  !# momentum
-         stagg = PHY_STAG_MOM
-      case("T")  !# thermo
-         stagg = PHY_STAG_THERMO
-      case("E")  !# energy
-         stagg = PHY_STAG_ENERGY
-      case default
-         call msg(MSG_ERROR,'(gesdict) VS=(SHAPE) NOT ALLOWED: '//trim(string_S))
-         return
-      end select
-
       dynini = 0
       if (kv_S(VAL,IDX_VB)(2:2) == '1') dynini = 1
-
-      if (.not.any(cvb == PHY_BUSID(:)))  then
-         call msg(MSG_ERROR,'(gesdict) VB=(BUS) NOT ALLOWED: '//trim(string_S))
-         return
-      endif
 
       string_S = kv_S(VAL,IDX_VS)(2:len_trim(kv_S(VAL,IDX_VS)))
       call str_split(s1_S,s2_S,string_S,'@')
@@ -211,16 +207,18 @@ contains
          if (.not.RMN_IS_OK(istat)) return
       endif
 
-      F_wload = 0
+      F_wload = .false.
       if (kv_S(VAL,IDX_WLOAD) /= '') then
-         istat = str_toint(F_wload, kv_S(VAL,IDX_WLOAD))
+         istat = str_toint(iwload, kv_S(VAL,IDX_WLOAD))
          if (.not.RMN_IS_OK(istat)) return
+         F_wload = (iwload > 0)
       endif
 
-      F_hzd = 0
+      F_hzd = .false.
       if (kv_S(VAL,IDX_HZD) /= '') then
-         istat = str_toint(F_hzd, kv_S(VAL,IDX_HZD))
+         istat = str_toint(ihzd, kv_S(VAL,IDX_HZD))
          if (.not.RMN_IS_OK(istat)) return
+         F_hzd = (ihzd > 0)
       endif
 
       F_monot = 1
@@ -245,41 +243,44 @@ contains
          if (.not.RMN_IS_OK(istat)) return
          if (any(F_flags == 'WLOAD')) then
             if (kv_S(VAL,IDX_WLOAD) /= '') then
-               call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both WLOAD= and FLAGS=WLOAD: '//trim(F_string_S))
+               call msg(MSG_ERROR,'(splitst) Cannor specify both WLOAD= and FLAGS=WLOAD: '//trim(F_string_S))
                return
             endif
-            F_wload = 1
+            F_wload = .true.
          endif
          if (any(F_flags == 'HZD')) then
             if (kv_S(VAL,IDX_HZD) /= '') then
-               call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both HZD= and FLAGS=HZD: '//trim(F_string_S))
+               call msg(MSG_ERROR,'(splitst) Cannor specify both HZD= and FLAGS=HZD: '//trim(F_string_S))
                return
             endif
-            F_hzd = 1
+            F_hzd = .true.
          endif
          do n=1,size(F_flags)
             call str_split2list(str2,F_flags(n),'=',size(str2))
             if (str2(1) == 'MASSC') then
                if (kv_S(VAL,IDX_MASSC) /= '') then
-                  call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both MASSC= and FLAGS=MASSC: '//trim(F_string_S))
+                  call msg(MSG_ERROR,'(splitst) Cannor specify both MASSC= and FLAGS=MASSC: '//trim(F_string_S))
                   return
                endif
                istat = str_toint(F_massc, str2(2))
             endif
             if (str2(1) == 'MONOT') then
                if (kv_S(VAL,IDX_MONOT) /= 'IDX_MONOT') then
-                  call msg(MSG_ERROR,'(splitst/gesdict) Cannor specify both = and FLAGS=MONOT: '//trim(F_string_S))
+                  call msg(MSG_ERROR,'(splitst) Cannor specify both = and FLAGS=MONOT: '//trim(F_string_S))
                   return
                endif
                istat = str_toint(F_monot, str2(2))
             endif
             if (.not.RMN_IS_OK(istat)) then
-               call msg(MSG_ERROR,'(splitst/gesdict) Bad flag value: '//trim(F_flags(n)))
+               call msg(MSG_ERROR,'(splitst) Bad flag value: '//trim(F_flags(n)))
                return
             endif
          enddo
       endif
 
+      call gmmx_name_parts(cvn, prefix_S, basename_S, time_S, ext_S)
+      if (time_S /= ':P') F_wload = .false.  !# For backward compat
+      
       F_istat = RMN_OK
       !-------------------------------------------------------------------
       return

@@ -23,7 +23,7 @@ contains
 
 
    !/@*
-   subroutine cldoppro_noMP1(fbus,vbus,taucs, omcs, gcs, taucl, omcl, gcl, &
+   subroutine cldoppro_noMP1(pvars,taucs, omcs, gcs, taucl, omcl, gcl, &
         liqwcin, icewcin, &
         liqwpin, icewpin, cldfrac, &
         tt, sig, ps, trnch, m, &
@@ -31,15 +31,16 @@ contains
       use debug_mod, only: init2nan
       use tdpack_const
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use series_mod, only: series_xst
       use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, m, nkm1,nk, trnch
-      real, pointer, contiguous :: fbus(:), vbus(:)
       real, intent(out), dimension(ni,nkm1,nbs) :: taucs, omcs, gcs
       real, intent(out), dimension(ni,nkm1,nbl) :: taucl, omcl, gcl
       real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
@@ -54,6 +55,8 @@ contains
       !        calculate cloud optical properties for ccc radiative transfer scheme
       !
       !Arguments
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - output -
       ! taucs    cloud solar optical thickness
       ! omcs     cloud solar scattering albedo
@@ -110,20 +113,20 @@ contains
       real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp
       real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zmrk2
       real, pointer, dimension(:), contiguous :: zmg,zml,ztopthw,ztopthi,zdlat
-      !----------------------------------------------------------------
+     !----------------------------------------------------------------
 
-      MKPTR1D(zdlat, dlat, fbus)
-      MKPTR1D(zmg, mg, fbus)
-      MKPTR1D(zml, ml, fbus)
-      MKPTR1D(ztlwp, tlwp, fbus)
-      MKPTR1D(ztiwp, tiwp, fbus)
-      MKPTR2D(zlwcrad, lwcrad, vbus)
-      MKPTR2D(ziwcrad, iwcrad, vbus)
-      MKPTR2D(zcldrad, cldrad, vbus)
-      MKPTR1D(ztopthi, topthi, fbus)
-      MKPTR1D(ztopthw, topthw, fbus)
+      MKPTR1D(zdlat, dlat, pvars)
+      MKPTR1D(zmg, mg, pvars)
+      MKPTR1D(zml, ml, pvars)
+      MKPTR1D(ztlwp, tlwp, pvars)
+      MKPTR1D(ztiwp, tiwp, pvars)
+      MKPTR2D(zlwcrad, lwcrad, pvars)
+      MKPTR2D(ziwcrad, iwcrad, pvars)
+      MKPTR2D(zcldrad, cldrad, pvars)
+      MKPTR1D(ztopthi, topthi, pvars)
+      MKPTR1D(ztopthw, topthw, pvars)
 
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
+      MKPTR2D(zmrk2, mrk2, pvars)
 
 
       !----------------------------------------------------------------

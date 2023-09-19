@@ -21,7 +21,7 @@ module phyexe
 contains
 
 !/@*
-subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
+subroutine phyexe1(pvars, kount, ni, nk, trnch)
    use debug_mod, only: init2nan
    use apply_rad_tendencies, only: apply_rad_tendencies1
    use calcdiag, only: calcdiag1
@@ -33,13 +33,14 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
    use metox, only: metox3
    use phy_status, only: phy_error_L
    use phy_options
-   use phybus
+   use phymem, only: phyvar, PHY_BUSIDXV, PHY_DBUSIDX, PHY_PBUSIDX, PHY_VBUSIDX
    use phystepinit, only: phystepinit3
    use precipitation, only: precipitation4
    use prep_cw, only: prep_cw3
    use radiation, only: radiation3
    use sfc_calcdiag, only: sfc_calcdiag3
    use surface, only: surface1
+   use inichamp, only: inichamp4
    use tendency, only: tendency5
    use turbulence, only: turbulence2
    use lhn_mod, only: lhn2
@@ -48,20 +49,16 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
 !!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
    !@arguments
-   !          - input -
-   ! dbus     dynamics input field
    !          - input/output -
-   ! fbus     historic variables for the physics
-   !          - output -
-   ! vbus     physics tendencies and other output fields from the physics
+   ! pvars    list of all phy vars (meta + slab data)
    !          - input -
    ! trnch    slice number
    ! kount    timestep number
-   ! n        horizontal running length
+   ! ni       horizontal running length
    ! nk       vertical dimension
 
+   type(phyvar), pointer, contiguous :: pvars(:)
    integer, intent(in) :: trnch, kount, ni, nk
-   real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
    !@author L. Spacek (oct 2011)
    !@notes
@@ -79,6 +76,11 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
    real, dimension(ni,nk) :: seloc, ficebl
+   
+   real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
+   dbus => pvars(PHY_BUSIDXV(PHY_DBUSIDX))%data
+   fbus => pvars(PHY_BUSIDXV(PHY_PBUSIDX))%data
+   vbus => pvars(PHY_BUSIDXV(PHY_VBUSIDX))%data
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
@@ -90,63 +92,63 @@ subroutine phyexe1(dbus, fbus, vbus, trnch, kount, ni, nk)
 
    nkm1 = nk-1
 
-   call inichamp4(kount, trnch, ni, nk)
+   call inichamp4(pvars, kount, ni, nk)
    if (phy_error_L) return
 
-   call phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        vbus, dbus, fbus, seloc, delt, kount, trnch, ni, nk)
+   call phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
+        seloc, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
-   call radiation3(dbus, fbus, vbus, ni, nk, kount, trnch)
+   call radiation3(pvars, kount, ni, nk, trnch)
    if (phy_error_L) return
 
-   call metox3(dbus, vbus, fbus, ni, nk)
+   call metox3(pvars, ni, nk)
    if (phy_error_L) return
    
-   call linoz3(dbus, vbus, fbus, delt, kount, ni, nkm1, nk)
+   call linoz3(pvars, delt, kount, ni, nk, nkm1)
    if (phy_error_L) return
    
-   call gwd9(dbus, fbus, vbus, std_p_prof, delt, kount, trnch, ni, nk, nkm1)
+   call gwd9(pvars, std_p_prof, delt, kount, ni, nk, nkm1, trnch)
    if (phy_error_L) return
    
-   call apply_rad_tendencies1(dbus, vbus, fbus, ni, nk, nkm1)
+   call apply_rad_tendencies1(pvars, ni, nk, nkm1)
    if (phy_error_L) return
    
-   call surface1(dbus, fbus, vbus, trnch, kount, delt, ni, nk)
+   call surface1(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
-   call turbulence2(dbus, fbus, vbus, ficebl, seloc, delt, kount, trnch, ni, nk)
+   call turbulence2(pvars, ficebl, seloc, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
-   call precipitation4(dbus, fbus, vbus, delt, ni, nk, kount, trnch)
+   call precipitation4(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call prep_cw3(fbus, dbus, vbus, ficebl, ni, nk)
+   call prep_cw3(pvars, ficebl, ni, nk)
    if (phy_error_L) return
 
-   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, vbus, dbus, &
+   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, pvars, &
         1./delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call lhn2(dbus, fbus, vbus, delt, ni, nk, kount)
+   call lhn2(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call ens_ptp_apply(dbus, vbus, fbus, ni, nk, kount)
+   call ens_ptp_apply(pvars, kount, ni, nk)
    if (phy_error_L) return
 
-   call calcdiag1(dbus, fbus, vbus, delt, kount, ni, nk)
+   call calcdiag1(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(fbus, vbus, moyhr, acchr, delt, kount, step_driver, trnch, ni)
+   call sfc_calcdiag3(pvars, moyhr, acchr, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
    call chm_exe(dbus, fbus, vbus, trnch, kount)
    if (phy_error_L) return
 
-   call diagnosurf5(ni, trnch)
+   call diagnosurf5(pvars, ni, trnch)
    if (phy_error_L) return
 
-   call extdiag3(dbus, fbus, vbus, trnch, ni, nk)
+   call extdiag3(pvars, ni, nk, trnch)
 
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [END]')
    call msg_verbosity(iverb)

@@ -21,12 +21,15 @@ module sfc_main
 contains
 
 !/@*
-function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
+function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    use tdpack, only: DELTA, RGASD
    use phy_status, only: phy_error_L
    use phygridmap, only: ijdrv_phy
+   use phymem, only: phyvar
    use sfc_options
    use sfcbus_mod
+   use copybus, only: copybus3
+   use agrege, only: agrege3
    use sfclayer, only: sl_adjust,SL_OK
    use cpl_itf, only: cpl_update
    implicit none
@@ -35,13 +38,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    !@Object Main interface subroutine for the surface processes
    !@Arguments
    !          - Input/Output -
-   ! D        dynamic             bus
-   ! F        permanent variables bus
-   ! V        volatile (output)   bus
-   !          - Input -
-   ! DSIZ     dimension of D
-   ! FSIZ     dimension of F
-   ! VSIZ     dimension of V
+   ! pvars    list of all phy vars (meta + slab data)
    !          - Input -
    ! TRNCH    row number
    ! KOUNT    timestep number
@@ -54,13 +51,11 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    logical, parameter :: CP_TO_SFCBUS = .true.
    logical, parameter :: CP_FROM_SFCBUS = .false.
 
-   integer :: trnch,kount,ni, nk
-
-   real :: dt, rhoair
-
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: trnch,kount,ni, nk
+   real, intent(in) :: dt
    integer :: F_istat
-   character(len=1024) :: msg_S
-
+   
    !@Author B. Bilodeau (Dec 1998)
    !@Revisions
    ! 001      J. Mailhot  (Jul 2000) - Changes to add MOISTKE option (fluvert=MOISTKE)
@@ -96,7 +91,7 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
         ni_river
    integer :: siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, siz_lake, &
         siz_river 
-   real :: lemin, lemax, mask
+   real :: lemin, lemax, mask, rhoair
 
    !     les poids
    !     les "rangs" (dans l'espace de la grille complete)
@@ -131,10 +126,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    F_istat = RMN_ERR
 
    call msg_toall(MSG_DEBUG, 'sfc_main [BEGIN]')
-
-
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
+   
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
+#define PTR1D(NAME2) pvars(vd%NAME2%idxv)%data(:)
 
    MKPTR1D(zdtdiag, dtdiag)
    MKPTR1D(zmg, mg)
@@ -355,10 +350,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          bus_soil(i) = 0.0
       end do
       ! transvidage des 3 bus dans bus_soil
-      call copybus3(bus_soil, siz_soil, &
+      call copybus3(pvars, bus_soil, siz_soil, &
            ptr_soil, nvarsurf, &
            rg_soil, ni_soil, &
-           ni, indx_soil, trnch, CP_TO_SFCBUS)
+           ni, indx_soil, CP_TO_SFCBUS)
 
       if (schmsol.eq.'ISBA') then
 
@@ -377,10 +372,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
       endif
       if (phy_error_L) return
 
-      call copybus3(bus_soil, siz_soil, &
+      call copybus3(pvars, bus_soil, siz_soil, &
            ptr_soil, nvarsurf, &
            rg_soil, ni_soil, &
-           ni, indx_soil, trnch, CP_FROM_SFCBUS)
+           ni, indx_soil, CP_FROM_SFCBUS)
    endif
 
    !******************************
@@ -402,10 +397,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
       end do
 
       ! transvidage des 3 bus dans bus_water
-      call copybus3(bus_water, siz_water, &
+      call copybus3(pvars, bus_water, siz_water, &
            ptr_water, nvarsurf, &
            rg_water, ni_water, &
-           ni, indx_water, trnch, CP_TO_SFCBUS)
+           ni, indx_water, CP_TO_SFCBUS)
 
       lcl_indx(1,1:ni_water) = rg_water(1:ni_water)
       lcl_indx(2,1:ni_water) = trnch
@@ -416,10 +411,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
            ni_water , ni_water, nk-1)
       if (phy_error_L) return
 
-      call copybus3(bus_water, siz_water, &
+      call copybus3(pvars, bus_water, siz_water, &
            ptr_water, nvarsurf, &
            rg_water, ni_water, &
-           ni, indx_water, trnch, CP_FROM_SFCBUS)
+           ni, indx_water, CP_FROM_SFCBUS)
    endif
 
    !******************************
@@ -443,10 +438,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          bus_ice(i) = 0.0
       end do
       ! transvidage des 3 bus dans bus_ice
-      call copybus3(bus_ice, siz_ice, &
+      call copybus3(pvars, bus_ice, siz_ice, &
            ptr_ice, nvarsurf, &
            rg_ice, ni_ice, &
-           ni, indx_ice, trnch, CP_TO_SFCBUS)
+           ni, indx_ice, CP_TO_SFCBUS)
 
       lcl_indx(1,1:ni_ice) = rg_ice(1:ni_ice)
       lcl_indx(2,1:ni_ice) = trnch
@@ -457,10 +452,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
            ni_ice  , ni_ice, nk-1)
       if (phy_error_L) return
 
-      call copybus3(bus_ice, siz_ice, &
+      call copybus3(pvars, bus_ice, siz_ice, &
            ptr_ice, nvarsurf, &
            rg_ice, ni_ice, &
-           ni, indx_ice, trnch, CP_FROM_SFCBUS)
+           ni, indx_ice, CP_FROM_SFCBUS)
    endif
 
    !******************************
@@ -485,20 +480,20 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          bus_glacier(i) = 0.0
       end do
       ! transvidage des 3 bus dans bus_glacier
-      call copybus3(bus_glacier, siz_glacier, &
+      call copybus3(pvars, bus_glacier, siz_glacier, &
            ptr_glacier, nvarsurf, &
            rg_glacier, ni_glacier, &
-           ni, indx_glacier, trnch, CP_TO_SFCBUS)
+           ni, indx_glacier, CP_TO_SFCBUS)
 
       call glaciers2(bus_glacier, siz_glacier, &
            ptr_glacier, nvarsurf, &
            ni_glacier, ni_glacier, nk-1)
       if (phy_error_L) return
 
-      call copybus3(bus_glacier, siz_glacier, &
+      call copybus3(pvars, bus_glacier, siz_glacier, &
            ptr_glacier, nvarsurf, &
            rg_glacier, ni_glacier, &
-           ni, indx_glacier, trnch, CP_FROM_SFCBUS)
+           ni, indx_glacier, CP_FROM_SFCBUS)
    endif
 
    !******************************
@@ -522,10 +517,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          bus_urb(i) = 0.0
       end do
       ! transvidage des 3 bus dans bus_urb
-      call copybus3(bus_urb, siz_urb, &
+      call copybus3(pvars, bus_urb, siz_urb, &
            ptr_urb, nvarsurf, &
            rg_urb, ni_urb, &
-           ni, indx_urb, trnch, CP_TO_SFCBUS)
+           ni, indx_urb, CP_TO_SFCBUS)
 
       call town2(bus_urb, siz_urb, &
            ptr_urb, nvarsurf, &
@@ -534,10 +529,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
            nk-1)
       if (phy_error_L) return
 
-      call copybus3(bus_urb, siz_urb, &
+      call copybus3(pvars, bus_urb, siz_urb, &
            ptr_urb, nvarsurf, &
            rg_urb, ni_urb, &
-           ni, indx_urb, trnch, CP_FROM_SFCBUS)
+           ni, indx_urb, CP_FROM_SFCBUS)
    endif
 
 
@@ -552,7 +547,6 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    end do
 
    siz_lake = max(surfesptot*ni_lake,1)
-   write(msg_S,*) siz_lake
 
    do_lake = .false.
 
@@ -565,10 +559,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
       end do
 
       ! transvidage des 3 bus dans bus_lake
-      call copybus3(bus_lake, siz_lake, &
+      call copybus3(pvars, bus_lake, siz_lake, &
            ptr_lake, nvarsurf, &
            rg_lake, ni_lake, &
-           ni, indx_lake, trnch, CP_TO_SFCBUS)
+           ni, indx_lake, CP_TO_SFCBUS)
 
       lcl_indx(1,1:ni_lake) = rg_lake(1:ni_lake)
       lcl_indx(2,1:ni_lake) = trnch
@@ -588,10 +582,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
          if (phy_error_L) return
       endif
 
-      call copybus3(bus_lake, siz_lake, &
+      call copybus3(pvars, bus_lake, siz_lake, &
            ptr_lake, nvarsurf, &
            rg_lake, ni_lake, &
-           ni, indx_lake, trnch, CP_FROM_SFCBUS)
+           ni, indx_lake, CP_FROM_SFCBUS)
 
    endif
 
@@ -618,10 +612,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    !    end do
 
    !    ! transvidage des 3 bus dans bus_river
-   !    call copybus3(bus_river, siz_river, &
+   !    call copybus3(pvars, bus_river, siz_river, &
    !         ptr_river, nvarsurf, &
    !         rg_river, ni_river, &
-   !         ni, indx_river, trnch, CP_TO_SFCBUS)
+   !         ni, indx_river, CP_TO_SFCBUS)
 
    !    lcl_indx(1,1:ni_river) = rg_river(1:ni_river)
    !    lcl_indx(2,1:ni_river) = trnch
@@ -632,10 +626,10 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    !         ni_river , ni_river, nk-1 )
    !       if (phy_error_L) return
 
-   !    call copybus3(bus_river, siz_river, &
+   !    call copybus3(pvars, bus_river, siz_river, &
    !         ptr_river, nvarsurf, &
    !         rg_river, ni_river, &
-   !         ni, indx_river, trnch, CP_FROM_SFCBUS)
+   !         ni, indx_river, CP_FROM_SFCBUS)
    ! endif
 
 !  For CSLM: reduce runofftot and latflaf by the fraction of lakes for all land surfaces 
@@ -681,13 +675,13 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    !     AGREGATION              *
    !******************************
 
-   call agrege3( &
+   call agrege3(pvars, &
         bus_soil, bus_glacier, bus_water, bus_ice, bus_urb, bus_lake, bus_river, &
         siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, siz_lake, siz_river, &
          ni_soil,  ni_glacier,  ni_water,  ni_ice,  ni_urb,  ni_lake,  ni_river, &
         ptr_soil, ptr_glacier, ptr_water, ptr_ice, ptr_urb, ptr_lake, ptr_river, &
         nvarsurf, &
-        rangs, poids, ni, trnch, &
+        rangs, poids, ni, &
         do_glaciers, do_ice, do_urb, do_lake, do_river)
 
   

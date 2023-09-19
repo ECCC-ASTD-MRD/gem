@@ -22,7 +22,7 @@ module precipitation
 contains
 
    !/@*
-   subroutine precipitation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
+   subroutine precipitation4(pvars, dt, kount, ni, nk)
       use debug_mod, only: init2nan
       use tdpack_const, only: RAUW
       use shal_ktrsnt, only: sc_ktrsnt
@@ -30,7 +30,8 @@ contains
       use condensation, only: condensation4
       use phy_status, only: phy_error_L
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use tendency, only: apply_tendencies
       implicit none
 !!!#include <arch_specific.hf>
@@ -42,16 +43,13 @@ contains
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! kount    timestep number
-      ! trnch    slice number
       !
       !          - Input/Output -
-      ! dbus     dynamics input field
-      ! fbus     historic variables for the physics
-      ! vbus     physics tendencies and other output fields from the physics
+      ! pvars    list of all phy vars (meta + slab data)
 
-      integer, intent(in) :: ni,nk,kount,trnch
+      type(phyvar), pointer, contiguous :: pvars(:)
+      integer, intent(in) :: ni,nk,kount
       real,    intent(in) :: dt
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author L.Spacek, November 2011
       !*@/
@@ -64,57 +62,60 @@ contains
       real :: irhow
       real, dimension(ni,nk) :: press, t0, q0, qc0
 
-      real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm
+      real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm, ztdmask
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
-           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins
+           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns
       !----------------------------------------------------------------
 
       ! Early return moist processes are inactive
       if (convec == 'NIL' .and. stcond == 'NIL' .and. conv_shal == 'NIL') return
       call msg_toall(MSG_DEBUG, 'precipitation [BEGIN]')
 
-      ! Assign local bus pointers
-      MKPTR2D(zcqce, cqce, vbus)
-      MKPTR2D(zcqe, cqe, vbus)
-      MKPTR2D(zcte, cte, vbus)
-      MKPTR2D(zhucond, hucond, vbus)
-      MKPTR2D(zmqe, mqe, vbus)
-      MKPTR2D(zhumoins, humoins, dbus)
-      MKPTR2D(zhuplus, huplus, dbus)
-      MKPTR2D(zhushal, hushal, vbus)
-      MKPTR1D(zpmoins, pmoins, fbus)
-      MKPTR2D(zprcten, prcten, fbus)
-      MKPTR2D(zprctnm, prctnm, vbus)
-      MKPTR2D(zmqce, mqce, vbus)
-      MKPTR2D(zqcmoins, qcmoins, dbus)
-      MKPTR2D(zqcphytd, qcphytd, vbus)
-      MKPTR2D(zqcplus, qcplus, dbus)
-      MKPTR2D(zqrphytd, qrphytd, vbus)
-      MKPTR1D(zrckfc, rckfc, fbus)
-      MKPTR2D(zsigt, sigt, dbus)
-      MKPTR2D(zsqce, sqce, vbus)
-      MKPTR2D(zsqe, sqe, vbus)
-      MKPTR2D(zsqre, sqre, vbus)
-      MKPTR2D(zste, ste, vbus)
-      MKPTR2D(ztcond, tcond, vbus)
-      MKPTR1D(ztlc, tlc, fbus)
-      MKPTR1D(ztlcm, tlcm, vbus)
-      MKPTR1D(ztlcs, tlcs, vbus)
-      MKPTR1D(ztls, tls, fbus)
-      MKPTR2D(zmte, mte, vbus)
-      MKPTR2D(ztplus, tplus, dbus)
-      MKPTR1D(ztsc, tsc, fbus)
-      MKPTR1D(ztscs, tscs, vbus)
-      MKPTR2D(ztshal, tshal, vbus)
-      MKPTR1D(ztss, tss, fbus)
+      MKPTR2D(zcqce, cqce, pvars)
+      MKPTR2D(zcqe, cqe, pvars)
+      MKPTR2D(zcte, cte, pvars)
+      MKPTR2D(zhucond, hucond, pvars)
+      MKPTR2D(zmqe, mqe, pvars)
+      MKPTR2D(zhumoins, humoins, pvars)
+      MKPTR2D(zhuplus, huplus, pvars)
+      MKPTR2D(zhushal, hushal, pvars)
+      MKPTR1D(zpmoins, pmoins, pvars)
+      MKPTR2D(zprcten, prcten, pvars)
+      MKPTR2D(zprctnm, prctnm, pvars)
+      MKPTR2D(zmqce, mqce, pvars)
+      MKPTR2D(zqcmoins, qcmoins, pvars)
+      MKPTR2D(zqcphytd, qcphytd, pvars)
+      MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zqrphytd, qrphytd, pvars)
+      MKPTR1D(zrckfc, rckfc, pvars)
+      MKPTR2D(zsigt, sigt, pvars)
+      MKPTR2D(zsqce, sqce, pvars)
+      MKPTR2D(zsqe, sqe, pvars)
+      MKPTR2D(zsqre, sqre, pvars)
+      MKPTR2D(zste, ste, pvars)
+      MKPTR2D(ztcond, tcond, pvars)
+      MKPTR1D(ztlc, tlc, pvars)
+      MKPTR1D(ztlcm, tlcm, pvars)
+      MKPTR1D(ztlcs, tlcs, pvars)
+      MKPTR1D(ztls, tls, pvars)
+      MKPTR2D(zmte, mte, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
+      MKPTR1D(ztsc, tsc, pvars)
+      MKPTR1D(ztscs, tscs, pvars)
+      MKPTR2D(ztshal, tshal, pvars)
+      MKPTR1D(ztss, tss, pvars)
+      
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR2D(zprctns, prctns, pvars)
+      MKPTR2D(zpritns, pritns, pvars)
 
       ! Local initialization
       nkm1 = nk-1
       call init2nan(t0, q0, qc0, press)
       
       ! Run "special" pre-convection shallow scheme
-      call sc_ktrsnt(dbus, fbus, vbus, dt, ni, nkm1)
+      call sc_ktrsnt(pvars, dt, ni, nkm1)
       if (phy_error_L) return
 
       ! Store current state
@@ -131,13 +132,13 @@ contains
       
       ! Run deep and shallow convective schemes
       if (timings_L) call timing_start_omp(435, 'cnv_main', 46)
-      call cnv_main4(dbus, fbus, vbus, dt, ni, nk, kount)
+      call cnv_main4(pvars, dt, kount, ni, nk)
       if (timings_L) call timing_stop_omp(435)
       if (phy_error_L) return
 
       ! Run the gridscale condensation / microphysics scheme
       if (timings_L) call timing_start_omp(440, 'condensation', 46)
-      call condensation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
+      call condensation4(pvars, dt, kount, ni, nk)
       if (timings_L) call timing_stop_omp(440)
       if (phy_error_L) return
 
@@ -188,19 +189,19 @@ contains
       if (.not.any(stcond == (/'MP_MY2', 'MP_P3 '/))) then
          ztplus(:,1:nkm1) = t0(:,1:nkm1)
          zhuplus(:,1:nkm1) = q0(:,1:nkm1)
-         call apply_tendencies(dbus,vbus,fbus,tplus,tcond,ni,nk,nkm1)
-         call apply_tendencies(dbus,vbus,fbus,huplus,hucond,ni,nk,nkm1)
+         call apply_tendencies(ztplus,ztcond,ztdmask,ni,nk,nkm1)
+         call apply_tendencies(zhuplus,zhucond,ztdmask,ni,nk,nkm1)
          if (associated(zqcplus)) then
             zqcplus(:,1:nkm1) = qc0(:,1:nkm1)
-            call apply_tendencies(dbus,vbus,fbus,qcplus,qcphytd,ni,nk,nkm1)
+            call apply_tendencies(zqcplus,zqcphytd,ztdmask,ni,nk,nkm1)
          endif
         ! Apply BECHTOLD shallow convective tendencies 
         if (conv_shal == 'BECHTOLD') then
-           call apply_tendencies(dbus,vbus,fbus,tplus,tshal,ni,nk,nkm1)
-           call apply_tendencies(dbus,vbus,fbus,huplus,hushal,ni,nk,nkm1)
+           call apply_tendencies(ztplus,ztshal,ztdmask,ni,nk,nkm1)
+           call apply_tendencies(zhuplus,zhushal,ztdmask,ni,nk,nkm1)
            if (associated(zqcplus)) then
-              call apply_tendencies(dbus,vbus,fbus,qcplus,prctns,ni,nk,nkm1)
-              call apply_tendencies(dbus,vbus,fbus,qcplus,pritns,ni,nk,nkm1)
+              call apply_tendencies(zqcplus,zprctns,ztdmask,ni,nk,nkm1)
+              call apply_tendencies(zqcplus,zpritns,ztdmask,ni,nk,nkm1)
            endif
         endif
       endif

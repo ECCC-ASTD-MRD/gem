@@ -17,6 +17,7 @@
 module phybudget
   use, intrinsic :: iso_fortran_env, only: REAL64
   use phy_status, only: PHY_OK, PHY_ERROR
+  use phymem, only: phyvar
   implicit none
   private
 
@@ -25,6 +26,10 @@ module phybudget
   public :: pb_compute          !Compute physics energy budget terms
   public :: pb_residual         !Compute physics energy budget residual
   public :: pb_conserve         !Adjust tendencies to close physics energy budget
+  
+#include <arch_specific.hf>
+#include <rmnlib_basics.hf>   
+#include "phymkptr.hf"
 
   ! Internal parameters
   integer, parameter :: SHORT_STRING=16
@@ -58,23 +63,18 @@ contains
   end function pb_init
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function pb_compute(F_enri, F_pwri, F_eni, F_pwi, F_dbus, F_pbus, F_vbus, &
+  function pb_compute(F_enri, F_pwri, F_eni, F_pwi, F_pvars, &
        F_nk, F_inttype) result(F_istat)
-    use phybus, only: pmoins, tplus, huplus, sigw
+    use phybusidx, only: pmoins, tplus, huplus, sigw
     use energy_budget, only: eb_en, eb_pw
     implicit none
-#include <arch_specific.hf>
-#include <rmnlib_basics.hf>   
-#include "phymkptr.hf"
 
     ! Arguments
     real, dimension(:), pointer, contiguous :: F_enri           !Integrated energy budget residual (m3/s2)
     real, dimension(:), pointer, contiguous :: F_pwri           !Integrated total water budget residual (Kg/m2)
     real(KIND=REAL64), dimension(:), intent(out) :: F_eni       !Integrated energy (m3/s2)
     real(KIND=REAL64), dimension(:), intent(out) :: F_pwi       !Integrated total water (Kg/m2)
-    real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
     integer, intent(in) :: F_nk                                 !Number of levels (not including diagnostic)
     character(len=*), intent(in), optional :: F_inttype         !Integral type [INTTYPE_DEFAULT]
     integer :: F_istat                                          !Return status of subprogram
@@ -114,13 +114,13 @@ contains
     if (present(F_inttype)) inttype = F_inttype
 
     ! Retrieve required bus entries
-    MKPTR1D(zpmoins, pmoins, F_pbus)
-    MKPTR2Dm1(ztplus, tplus, F_dbus)
-    MKPTR2Dm1(zhuplus, huplus, F_dbus)
-    MKPTR2Dm1(zsigw, sigw, F_dbus)
+    MKPTR1D(zpmoins, pmoins, F_pvars)
+    MKPTR2Dm1(ztplus, tplus, F_pvars)
+    MKPTR2Dm1(zhuplus, huplus, F_pvars)
+    MKPTR2Dm1(zsigw, sigw, F_pvars)
 
     ! Compute condensate contents
-    if (pb_condensate(lwc, iwc, F_dbus, F_pbus, F_vbus) /= PHY_OK) then
+    if (pb_condensate(lwc, iwc, F_pvars) /= PHY_OK) then
        call physeterror('phybudget::pb_residual', &
             'Cannot compute condensate contents')
        return
@@ -155,22 +155,17 @@ contains
   end function pb_compute
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function pb_conserve(F_cons, F_ttend, F_qtend, F_dbus, F_pbus, F_vbus, &
+  function pb_conserve(F_cons, F_ttend, F_qtend, F_pvars, &
        F_dqc, F_dqi, F_rain, F_snow, F_shf, F_wvf, F_rad, F_inttype) result(F_istat)
-    use phybus, only: pmoins, tplus, huplus, sigw
+    use phybusidx, only: pmoins, tplus, huplus, sigw
     use energy_budget, only: eb_conserve_en, eb_conserve_pw
     implicit none
-#include <arch_specific.hf>
-#include <rmnlib_basics.hf>   
-#include "phymkptr.hf"
 
     ! Arguments
     character(len=*), intent(in) :: F_cons                      !Conservation type
     real, dimension(:,:), intent(inout) :: F_ttend              !Temperature tendency (K/s)
     real, dimension(:,:), intent(inout) :: F_qtend              !Moisture tendency (kg/kg/s)
-    real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
     real, dimension(:,:), intent(in), optional :: F_dqc         !Liquid condensate tendency (kg/kg/s)
     real, dimension(:,:), intent(in), optional :: F_dqi         !Solid condensate tendency (kg/kg/s)
     real, dimension(:), intent(in), optional :: F_rain          !Surface liquid precipitation flux (kg/m2/s) [0.]
@@ -250,13 +245,13 @@ contains
     endif
 
     ! Retrieve required bus entries
-    MKPTR1D(zpmoins, pmoins, F_pbus)
-    MKPTR2Dm1(ztplus, tplus, F_dbus)
-    MKPTR2Dm1(zhuplus, huplus, F_dbus)
-    MKPTR2Dm1(zsigw, sigw, F_dbus)
+    MKPTR1D(zpmoins, pmoins, F_pvars)
+    MKPTR2Dm1(ztplus, tplus, F_pvars)
+    MKPTR2Dm1(zhuplus, huplus, F_pvars)
+    MKPTR2Dm1(zsigw, sigw, F_pvars)
 
     ! Compute condensate contents
-    if (pb_condensate(lwc, iwc, F_dbus, F_pbus, F_vbus) /= PHY_OK) then
+    if (pb_condensate(lwc, iwc, F_pvars) /= PHY_OK) then
        call physeterror('phybudget::pb_residual', &
             'Cannot compute condensate contents')
        return
@@ -312,25 +307,20 @@ contains
   end function pb_conserve
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function pb_residual(F_enri, F_pwri, F_eni0, F_pwi0, F_dbus, &
-       F_pbus, F_vbus, F_dt, F_nk, F_rain, F_snow, F_shf, &
+  function pb_residual(F_enri, F_pwri, F_eni0, F_pwi0, F_pvars, &
+       F_dt, F_nk, F_rain, F_snow, F_shf, &
        F_wvf, F_rad, F_inttype) result(F_istat)
-    use phybus, only: pmoins, tplus, huplus, sigw
+    use phybusidx, only: pmoins, tplus, huplus, sigw
     use energy_budget, only: eb_en, eb_pw, eb_residual_en, &
          eb_residual_pw
     implicit none
-#include <arch_specific.hf>
-#include <rmnlib_basics.hf>   
-#include "phymkptr.hf"
 
     ! Arguments
     real, dimension(:), pointer, contiguous :: F_enri           !Integrated energy budget residual (m3/s2)
     real, dimension(:), pointer, contiguous :: F_pwri           !Integrated total water budget residual (m)
     real(KIND=REAL64), dimension(:), intent(in) :: F_eni0       !Initial integrated energy (m3/s2)
     real(KIND=REAL64), dimension(:), intent(in) :: F_pwi0       !Initial integrated total water (Kg/m2)
-    real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
     real, intent(in) :: F_dt                                    !Time step (s)
     integer, intent(in) :: F_nk                                 !Number of levels (not including diagnostic)
     real, dimension(:), intent(in), optional :: F_rain          !Surface liquid precipitation flux (kg/m2/s) [0.]
@@ -406,21 +396,21 @@ contains
     endif
 
     ! Retrieve required bus entries
-    MKPTR1D(zpmoins, pmoins, F_pbus)
-    MKPTR2Dm1(ztplus, tplus, F_dbus)
-    MKPTR2Dm1(zhuplus, huplus, F_dbus)
-    MKPTR2Dm1(zsigw, sigw, F_dbus)
+    MKPTR1D(zpmoins, pmoins, F_pvars)
+    MKPTR2Dm1(ztplus, tplus, F_pvars)
+    MKPTR2Dm1(zhuplus, huplus, F_pvars)
+    MKPTR2Dm1(zsigw, sigw, F_pvars)
 
     ! Compute condensate contents
-    if (pb_condensate(lwc, iwc, F_dbus, F_pbus, F_vbus) /= PHY_OK) then
+    if (pb_condensate(lwc, iwc, F_pvars) /= PHY_OK) then
        call physeterror('phybudget::pb_residual', &
             'Cannot compute condensate contents')
        return
     endif
 
     ! Compute current energy budget state
-    if (pb_compute(F_enri, F_pwri, eni, pwi, F_dbus, F_pbus, &
-         F_vbus, nkm1, F_inttype=inttype) /= PHY_OK) then
+    if (pb_compute(F_enri, F_pwri, eni, pwi, F_pvars, &
+         nkm1, F_inttype=inttype) /= PHY_OK) then
        call physeterror('phybudget::pb_residual', &
             'Cannot compute current budget state')
        return
@@ -454,18 +444,15 @@ contains
   end function pb_residual
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function pb_condensate(lwc, iwc, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus, only: qtbl
+  function pb_condensate(lwc, iwc, F_pvars) result(F_istat)
+    use phybusidx, only: qtbl
     use microphy_utils, only: mp_lwc, mp_iwc
     implicit none
-#include "phymkptr.hf"
 
     ! Arguments
     real, dimension(:,:), intent(out) :: lwc                    !Liquid water content (kg/kg)
     real, dimension(:,:), intent(out) :: iwc                    !Ice water content (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus           !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus           !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus           !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
     integer :: F_istat                                          !Return status of subprogram
 
     ! Internal variables
@@ -478,15 +465,15 @@ contains
     nkm1 = size(lwc, dim=2)
 
     ! Content from microphysical sources
-    if (mp_lwc(lwc, F_dbus, F_pbus, F_vbus) /= PHY_OK .or. &
-         mp_iwc(iwc, F_dbus, F_pbus, F_vbus) /= PHY_OK) then
+    if (mp_lwc(lwc, F_pvars) /= PHY_OK .or. &
+         mp_iwc(iwc, F_pvars) /= PHY_OK) then
        call physeterror('phybudget::pb_residual', &
             'Cannot compute condensate contents')
        return
     endif
 
     ! Content from other sources
-    MKPTR2Dm1(zqtbl, qtbl, F_pbus)
+    MKPTR2Dm1(zqtbl, qtbl, F_pvars)
     lwc(:,:) = lwc(:,:) + zqtbl(:,:)
 
     ! End of subprogram

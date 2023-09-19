@@ -21,25 +21,24 @@ module surface
 
 contains
 
-   subroutine surface1(dbus, fbus, vbus, trnch, kount, delt, ni, nk)
+   subroutine surface1(pvars, delt, kount, ni, nk, trnch)
       ! Call API for surface schemes
       use sfc_main, only: sfc_main2
       use phy_options, only: fluvert, timings_L
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use tdpack_const, only: CAPPA
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
       ! Input arguments
-      real, dimension(:), pointer, contiguous :: dbus   !Dynamnics bus
-      real, dimension(:), pointer, contiguous :: fbus   !Permanent bus
-      real, dimension(:), pointer, contiguous :: vbus   !Volatile bus
-      integer, intent(in) :: trnch                      !Slice number
-      integer, intent(in) :: kount                      !Time step number
-      real, intent(in) :: delt                          !Time step (sec)
-      integer, intent(in) :: ni                         !Number of columns
-      integer, intent(in) :: nk                         !Number of levels
+      type(phyvar), pointer, contiguous :: pvars(:)  !all phy vars (meta + slab data)
+      integer, intent(in) :: trnch                     !Slice number
+      integer, intent(in) :: kount                     !Time step number
+      real, intent(in) :: delt                         !Time step (sec)
+      integer, intent(in) :: ni                        !Number of columns
+      integer, intent(in) :: nk                        !Number of levels
 
       ! Internal variables
       integer :: istat, i, nkm1
@@ -54,11 +53,11 @@ contains
 
       ! Associate pointers to bus entries
       nkm1 = nk-1
-      MKPTR2Dm1(zsigt, sigt, dbus)
-      MKPTR2Dm1(ztmoins, tmoins, dbus)
-      MKPTR2Dm1(ztplus, tplus, dbus)
-      MKPTR1D(zthetaa, thetaa, vbus)
-      MKPTR1D(zthetaap, thetaap, vbus)     
+      MKPTR2Dm1(zsigt, sigt, pvars)
+      MKPTR2Dm1(ztmoins, tmoins, pvars)
+      MKPTR2Dm1(ztplus, tplus, pvars)
+      MKPTR1D(zthetaa, thetaa, pvars)
+      MKPTR1D(zthetaap, thetaap, pvars)     
 
       ! Compute first-level potential temperatures
       do i=1,ni
@@ -69,7 +68,7 @@ contains
 
       ! Call main surface driver
       if (timings_L) call timing_start_omp(425, 'surface', 46)
-      istat = sfc_main2(trnch, kount, delt, ni, nk)
+      istat = sfc_main2(pvars, trnch, kount, delt, ni, nk)
       if (timings_L) call timing_stop_omp(425)
       if (phy_error_L .or. .not.RMN_IS_OK(istat)) then
          call physeterror('surface', 'Problem in sfc_main')

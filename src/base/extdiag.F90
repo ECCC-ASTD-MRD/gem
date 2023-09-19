@@ -15,34 +15,31 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module extdiag
-   use phymem, only: pvarlist, npvarlist
    implicit none
    private
    public :: extdiag3
 
 contains
    !/@*
-   subroutine extdiag3(dbus, fbus, vbus, trnch, ni, nk)
+   subroutine extdiag3(pvars, ni, nk, trnch)
       use tdpack_const, only: CAPPA
       use series_mod, only: series_xst, series_isstep, series_isvar
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar, nphyvars
       implicit none
 !!!#include <arch_specific.hf>
       !@Object calculate averages and accumulators of tendencies and diagnostics
       !@Arguments
-      !          - Input/Output -
-      ! fbus     permanent bus
-      !          - input -
-      ! dbus     dynamic bus
-      ! vbus     volatile (output) bus
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - input -
       ! trnch    slice number
       ! ni       horizontal running length
       ! nk       vertical dimension
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: trnch, ni, nk
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author B. Bilodeau Feb 2003 - from serdyn5 and phyexe1
       !*@/
@@ -52,7 +49,7 @@ contains
       logical, parameter :: OVERWRITE_L = .true.
 
       character(len=4) :: oname
-      integer :: i, k, s1, kam, ivar, busidx, nkm1
+      integer :: i, k, kam, ivar, busidx, nkm1
 
       real, dimension(ni)     :: work1d
       real, dimension(ni, nk) :: p, work2d1, work2d2
@@ -69,33 +66,32 @@ contains
       call msg_toall(MSG_DEBUG, 'extdiag [BEGIN]')
       if (timings_L) call timing_start_omp(495, 'extdiag', 46)
 
-      s1 = ni*(nk-1)-1
       nkm1 = nk-1
 
-      MKPTR2D(zfbl, fbl, fbus)
-      MKPTR2D(zfdc, fdc, fbus)
-      MKPTR1D(zfl, fl, vbus)
-      MKPTR1D(zflusolaf, flusolaf, fbus)
-      MKPTR2D(zftot, ftot, fbus)
-      MKPTR1D(zhrsmax, hrsmax, fbus)
-      MKPTR1D(zhrsmin, hrsmin, fbus)
-      MKPTR2D(zhuplus, huplus, dbus)
-      MKPTR1D(zhusavg, husavg, fbus)
-      MKPTR1D(zpmoins, pmoins, fbus)
-      MKPTR2D(zqcplus, qcplus, dbus)
-      MKPTR2D(zqtbl, qtbl, fbus)
-      MKPTR2D(zsigw, sigw, dbus)
-      MKPTR2D(ztcond, tcond, vbus)
-      MKPTR1D(ztdew, tdew, vbus)
-      MKPTR2D(ztplus, tplus, dbus)
-      MKPTR1D(zttmaxs1, ttmax+S1, fbus)
-      MKPTR1D(zttmins1, ttmin+S1, fbus)
-      MKPTR2D(zuplus, uplus, dbus)
-      MKPTR1D(zuvsavg, uvsavg, fbus)
-      MKPTR1D(zuvsmax, uvsmax, fbus)
-      MKPTR2D(zvplus, vplus, dbus)
-      MKPTR2D(zwplus, wplus, dbus)
-      MKPTR2D(zze, ze, vbus)
+      MKPTR2D(zfbl, fbl, pvars)
+      MKPTR2D(zfdc, fdc, pvars)
+      MKPTR1D(zfl, fl, pvars)
+      MKPTR1D(zflusolaf, flusolaf, pvars)
+      MKPTR2D(zftot, ftot, pvars)
+      MKPTR1D(zhrsmax, hrsmax, pvars)
+      MKPTR1D(zhrsmin, hrsmin, pvars)
+      MKPTR2D(zhuplus, huplus, pvars)
+      MKPTR1D(zhusavg, husavg, pvars)
+      MKPTR1D(zpmoins, pmoins, pvars)
+      MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zqtbl, qtbl, pvars)
+      MKPTR2D(zsigw, sigw, pvars)
+      MKPTR2D(ztcond, tcond, pvars)
+      MKPTR1D(ztdew, tdew, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
+      MKPTR1DK(zttmaxs1, ttmax, nk, pvars)
+      MKPTR1DK(zttmins1, ttmin, nk, pvars)
+      MKPTR2D(zuplus, uplus, pvars)
+      MKPTR1D(zuvsavg, uvsavg, pvars)
+      MKPTR1D(zuvsmax, uvsmax, pvars)
+      MKPTR2D(zvplus, vplus, pvars)
+      MKPTR2D(zwplus, wplus, pvars)
+      MKPTR2D(zze, ze, pvars)
 
       call series_xst(zfl, 'fl', trnch)
 
@@ -222,46 +218,35 @@ contains
       ! Prepare only lowest-level component visibilities for series
       if (stcond(1:6) == 'MP_MY2') then
          do i=1,ni
-            work1d(i) = vbus(vis+(nkm1-1)*ni+i-1)
+            work1d(i) = pvars(vis)%data(i+(nkm1-1)*ni)
          enddo
          call series_xst(work1d,    'VIS' , trnch)
          do i=1,ni
-            work1d(i) = vbus(vis1+(nkm1-1)*ni+i-1)
+            work1d(i) = pvars(vis1)%data(i+(nkm1-1)*ni)
          enddo
          call series_xst(work1d,    'VIS1', trnch)
          do i=1,ni
-            work1d(i) = vbus(vis2+(nkm1-1)*ni+i-1)
+            work1d(i) = pvars(vis2)%data(i+(nkm1-1)*ni)
          enddo
          call series_xst(work1d,    'VIS2', trnch)
          do i=1,ni
-            work1d(i) = vbus(vis3+(nkm1-1)*ni+i-1)
+            work1d(i) = pvars(vis3)%data(i+(nkm1-1)*ni)
          enddo
          call series_xst(work1d,    'VIS3', trnch)
       endif
 
       !# Extract Series for all bus var
-      do ivar=1,npvarlist
-         oname = pvarlist(ivar)%meta%oname
+      do ivar=1,nphyvars
+         oname = pvars(ivar)%meta%oname
          if (series_isvar(oname)) then
-            kam    = pvarlist(ivar)%meta%nk
-            busidx = pvarlist(ivar)%meta%i0
-            if (busidx < 1) cycle            
+            kam    = pvars(ivar)%meta%nk
+            if (.not.associated(pvars(ivar)%data)) cycle
             if (kam == 1) then
-               select case (pvarlist(ivar)%meta%bus)
-               case('D')
-                  bptr => dbus
-               case('P')
-                  bptr => fbus
-               case('V')
-                  bptr => vbus
-               case default
-                  cycle
-               end select
-               busptr2d(1:ni) => bptr(busidx:)
+               busptr2d(1:ni) => pvars(ivar)%data(:)
                call series_xst(busptr2d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             else
-               busptr3d(1:ni,1:kam) => bptr(busidx:)
+               busptr3d(1:ni,1:kam) => pvars(ivar)%data(:)
                call series_xst(busptr3d, oname, trnch, &
                     F_overwrite_L=.not.OVERWRITE_L)
             endif

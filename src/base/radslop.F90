@@ -22,10 +22,11 @@ module radslop
 contains
 
    !/@*
-   subroutine radslop3(fbus, vbus, ni, hz, julien, trnch)
+   subroutine radslop3(pvars, hz, julien, ni, trnch)
       use debug_mod, only: init2nan
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use series_mod, only: series_xst
       implicit none
 !!!#include <arch_specific.hf>
@@ -33,16 +34,15 @@ contains
       !@Object add the effects of the sloping terrain to the radiation computation.
       !@Arguments
       !          - Input/Output -
-      ! f        field of permanent physics variables
-      !          - Input
-      ! v        field of volatile physics variables
+      ! pvars    list of all phy vars (meta + slab data)
+      !          - Input -
       ! ni       horizontal dimension
       ! hz       Greenwich hour (0 to 24)
       ! julien   Julien days
       ! trnch    number of the slice
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, trnch
-      real, pointer, contiguous :: fbus(:), vbus(:)
       real, intent(in) :: julien
       real, intent(in) :: hz
 
@@ -56,18 +56,18 @@ contains
       integer :: i
       !----------------------------------------------------------------
 
-      MKPTR1D(zc1slop, c1slop, fbus)
-      MKPTR1D(zc2slop, c2slop, fbus)
-      MKPTR1D(zc3slop, c3slop, fbus)
-      MKPTR1D(zc4slop, c4slop, fbus)
-      MKPTR1D(zc5slop, c5slop, fbus)
-      MKPTR1D(zdlat, dlat, fbus)
-      MKPTR1D(zdlon, dlon, fbus)
-      MKPTR1D(zfluslop, fluslop, fbus)
-      MKPTR1D(zfsd0, fsd0, fbus)
-      MKPTR1D(zfsf0, fsf0, fbus)
-      MKPTR1D(zvv1, vv1, fbus)
-      MKPTR1D(zap, ap, vbus)
+      MKPTR1D(zc1slop, c1slop, pvars)
+      MKPTR1D(zc2slop, c2slop, pvars)
+      MKPTR1D(zc3slop, c3slop, pvars)
+      MKPTR1D(zc4slop, c4slop, pvars)
+      MKPTR1D(zc5slop, c5slop, pvars)
+      MKPTR1D(zdlat, dlat, pvars)
+      MKPTR1D(zdlon, dlon, pvars)
+      MKPTR1D(zfluslop, fluslop, pvars)
+      MKPTR1D(zfsd0, fsd0, pvars)
+      MKPTR1D(zfsf0, fsf0, pvars)
+      MKPTR1D(zvv1, vv1, pvars)
+      MKPTR1D(zap, ap, pvars)
 
       if (.not.radslope) then
          zfluslop(1:ni) = 0.0

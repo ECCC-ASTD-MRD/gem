@@ -1,7 +1,4 @@
 
-
-#include "phymkptr.hf"
-
    !# Notes for VS=:
    !# M:   3d, Mom levels    (PHY_STAG_MOM, stag=0)
    !# M*N: 4d, Mom levels multi category (PHY_STAG_MOM, stag=0)
@@ -457,7 +454,7 @@
 
    PHYVAR3DC(o3ccol,     "VN=o3ccol    ; ON=ZOC ; VB=v0; VD=ozone FK-ERA5 climato  total column (D.U.)    ; VS=T", llinoz)
    PHYVAR3DC(o3ccolm,    "VN=o3ccolm   ; ON=AZOC; VB=p0; VD=avg o3ccol 3D                                 ; VS=T", lmoyhroz)
-   PHYVAR2DC(o3ctc,      "VN=o3ctc     ; ON=YOC ; VB=v0; VD=ozone FK-ERA5 climato  total column (D.U.)          ", llinoz)
+   PHYVAR2DC(o3ctc,      "VN=o3ctc     ; ON=YOC ; VB=v0; VD=ozone FK-ERA5 climato  total column (D.U.) (sum?)    ", llinoz)
    PHYVAR2DC(o3ctcm,     "VN=o3ctcm    ; ON=AYOC; VB=p0; VD=avg o3ctc 2D                                        ", lmoyhroz)
    PHYVAR3DC(o3chmtd,    "VN=chmtd_o3  ; ON=DO3L; VB=v0; VD=O3 tdcy linoz (ug /kg/ sec)                   ; VS=T", llinoz)
    PHYVAR3DC(o3chmtdm,   "VN=o3chmtdm  ; ON=ADO3; VB=p0; VD=o3chmtd avg over the moyhr hrs                ; VS=T", lmoyhroz)

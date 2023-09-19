@@ -32,7 +32,7 @@ module phy_input
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
 
-   use phymem, only: phymeta, phyvar, npvarlist, pvarlist, phymem_find, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_DBUSIDX
+   use phymem, only: phymeta, nphyvars, phymem_find, phymem_getmeta, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_DBUSIDX
    use phyfold, only: phyfoldmeta1
    use phygridmap, only: phydim_ni, phydim_nj , phydim_nk, phy_lcl_ni, &
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
@@ -91,14 +91,13 @@ contains
       integer, save :: nbvar = 0
       type(INPUTIO_T), save :: inputobj
 
-      integer :: ivar, istat, istat2, tmidx, nread, iverb, icat, icat0, icat1
+      integer :: ivar, istat, istat2, tmidx, nread, iverb, icat, icat0, icat1, idxv1(1)
       integer :: idt, ismandatory, readlist_nk(PHYINREAD_MAX)
       real, pointer, dimension(:,:,:) :: data, data2
       character(len=4) :: inname_S, inname2_S
       character(len=32) :: varname2_S, readlist_S(PHYINREAD_MAX), horiz_interp_S, vert_instep_S, vgrid_S, str32
       character(len=512) :: str512, dummylist_S(10)
       type(phymeta), pointer :: meta1, meta2
-      type(phyvar) :: myphyvar(1)
       real :: vmin, vmax
       logical :: prep_vinterp_done_L
       ! ---------------------------------------------------------------------
@@ -191,15 +190,15 @@ contains
          endif
 
          nullify(meta1, meta2)
-         istat = phymem_find(myphyvar,inname_S, F_npath='IOV', &
+         istat = phymem_find(idxv1, inname_S, F_npath='IOV', &
               F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
          if (istat > 0) then
-            meta1 => myphyvar(1)%meta
+            istat = phymem_getmeta(meta1, idxv1(1))
             if (inname2_S /= ' ') then
-               istat = phymem_find(myphyvar,inname2_S, F_npath='IOV', &
+               istat = phymem_find(idxv1, inname2_S, F_npath='IOV', &
                     F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
                if (istat > 0) then
-                  meta2 => myphyvar(1)%meta
+                  istat = phymem_getmeta(meta2, idxv1(1))
                   varname2_S = meta2%vname                  
                endif
             else
@@ -734,31 +733,29 @@ contains
       logical, parameter :: NOSHORTMATCH_L = .false.
       integer, parameter :: MUST_INIT = 1
       integer :: nvars,nvars2,ivar,istat
-!!$      type(phyvar) :: varlist(npvarlist)
       character(len=512) :: str512
       character(len=32) :: vnamelist(512)
+      type(phymeta), pointer :: vmeta
       ! ---------------------------------------------------------------------
       F_istat = RMN_OK
       if (F_step /= 0) return
       call msg(MSG_INFO,'(phy_input) Checking for mandatory variables.')
 
-!!$      nvars = phymem_find(varlist, F_name=' ', F_npath='V', F_bpath='EPV', &
-!!$           F_quiet=.true., F_shortmatch=NOSHORTMATCH_L)
-      !#NOTE: For dynamic bus, the init bit has a different meaning and is checked in phyfillbus
-
       str512 = ''
       nvars2 = 0
-      do ivar = 1, npvarlist
-         if (pvarlist(ivar)%meta%ibus == PHY_DBUSIDX) cycle
+      do ivar = 1, nphyvars
+         nullify(vmeta)
+         istat = phymem_getmeta(vmeta, ivar)
+         if (vmeta%ibus == PHY_DBUSIDX) cycle
          !#NOTE: For dynamic bus, the init bit has a different meaning and is checked in phyfillbus
 
-         if (pvarlist(ivar)%meta%init == MUST_INIT) then
+         if (vmeta%init == MUST_INIT) then
             if (nvars2 >= size(vnamelist)) then
                call msg(MSG_WARNING, '(phy_input) checklist overflow -- some missing vars may not be listed')
                exit
             endif
             nvars2 = nvars2 + 1
-            vnamelist(nvars2) = pvarlist(ivar)%meta%vname
+            vnamelist(nvars2) = vmeta%vname
             istat = clib_tolower(vnamelist(nvars2))
             str512 = trim(str512)//', '//trim(vnamelist(nvars2))
          end if

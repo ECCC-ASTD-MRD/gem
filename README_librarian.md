@@ -40,8 +40,8 @@ MYVERSION=${MYVERSION# *}
 cat >> src/${component}/share/nml_upd/${component}_nml_update_db.txt << EOF
 #------
 fileVersion: ${MYVERSION0} > ${MYVERSION}
-$(diff ${component}/share/nml_ref/${component}_settings.${MYVERSION0}.ref.k \
-       ${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref.k \
+$(diff src/${component}/share/nml_ref/${component}_settings.${MYVERSION0}.ref.k \
+       src/${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref.k \
        | egrep '(>|<)' \
        | sed 's/=/ = /g' | sed 's/>/#New: /' | sed 's/</rm: /')
 EOF
@@ -50,9 +50,11 @@ EOF
 # Update nml doc
 ```
 cd src
+export PATH=$(pwd)/${component}/bin:${PATH}
 ${component}_ftnnml2wiki --comp ${component} --sort --wiki
 ${component}_ftnnml2wiki --comp ${component} --sort --md
 mv ${component}.namelists.* ${component}/share/doc
+cd ..
 ```
 
 # Commit
@@ -71,7 +73,8 @@ Move patch from GEM dev to rpnphy depot
 # Steps to be done in a GEM dev env.
 
 ```
-# git subtree split ...
+component=rpnphy
+git subtree split --prefix=src/${component} 
 git format-patch FROM..HEAD
 ```
 
