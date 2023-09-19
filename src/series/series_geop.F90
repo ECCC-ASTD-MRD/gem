@@ -48,7 +48,7 @@ contains
       !      initialisation. It extracts and produce output of constant
       !      fields to be used by the unwrapper.
       integer :: j, istat, idxv1(1)
-      real, pointer :: ptr1d(:)
+      real, pointer, contiguous :: ptr1d(:)
       real :: prcon, w1(phydim_ni)
       !---------------------------------------------------------------
       
