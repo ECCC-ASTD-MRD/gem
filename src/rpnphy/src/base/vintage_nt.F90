@@ -21,15 +21,14 @@ module vintage_nt
 contains
    
    !/@*
-   subroutine vintage_nt1(fbus,  &
-        tm, ps, sigma,  &
-        cloud,    &
+   subroutine vintage_nt1(  &
+        tm, ps, sigma, zlwc,  &
+        cloud, znt,    &
         trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, TCDK, RGASD
       use phy_options
-      use phybus
       use series_mod, only: series_xst
       implicit none
 
@@ -39,25 +38,24 @@ contains
       !     tm       temperature
       !     ps       surface pressure
       !     sigma    sigma levels
+      !     zlwc     total water content (consun) arrives from zlwc=qcplus (in prep_cw)
       !     cloud    cloud fraction
       !     trnch    number of the slice
       !     ni       horizontal dimension
       !     nk       number of layers, including the diag level
       !     nkm1     number of layers, excluding the diag level
       !     - output -
-      !      znt - vintage effective total cloud cover
+      !     znt - vintage effective total cloud cover
       !
-      !      zlwc - total water content (consun) arrives from zlwc=qcplus (in prep_cw)
 
 
       integer, intent(in) :: trnch, ni, nk, nkm1
-      real, pointer, contiguous :: fbus(:)
-      real, intent(in) :: tm(ni,nk), ps(ni), sigma(ni,nk)
+      real, intent(in) :: tm(ni,nk), ps(ni), sigma(ni,nk), zlwc(ni,nkm1)
       real, intent(inout) :: cloud(ni,nkm1)
+      real, intent(inout) :: znt(ni)
       !*@/
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include "phymkptr.hf"
 
       include "phyinput.inc"
 
@@ -78,14 +76,7 @@ contains
       real, parameter :: REI = 15.
       real, parameter :: REC_REI = 1. / REI
       real, parameter :: KI = .0003 + 1.290 * REC_REI
-
-      real, pointer, contiguous :: znt(:)
-      real, pointer, dimension(:,:), contiguous :: zlwc
-
       !----------------------------------------------------------------
-
-      MKPTR1D(znt, nt, fbus)
-      MKPTR2D(zlwc, lwc, fbus)
 
       call init2nan(lwcth, vliqwcin)
 

@@ -1002,7 +1002,7 @@ END subroutine p3_init
 
 function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                                      &
                               qvap_m,qvap,temp_m,temp,dt,dt_max,ww,psfc,gztherm,sigma,kount,      &
-                              trnch,ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,    &
+                              ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,    &
                               prt_grpl,prt_pell,prt_hail,prt_sndp,diag_Zet,diag_Zec,diag_effc,    &
                               qc,nc,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,   &
                               clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,        &
@@ -1031,7 +1031,6 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
  integer, intent(in)                    :: ni                    ! number of columns in slab           -
  integer, intent(in)                    :: nk                    ! number of vertical levels           -
  integer, intent(in)                    :: kount                 ! time step counter                   -
- integer, intent(in)                    :: trnch                 ! number of slice                     -
  integer, intent(in)                    :: n_diag_2d             ! number of 2D diagnostic fields
  integer, intent(in)                    :: n_diag_3d             ! number of 3D diagnostic fields
 
@@ -6252,47 +6251,47 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
     return
   end function p3_phybusinit
 
+
+#include "phymkptr.hf"
+
+  
   ! Compute total water mass
-  function p3_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function p3_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
+    use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, zqrp
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(zqrp, qrplus, F_pvars)
     F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
     F_istat = PHY_OK
     return
   end function p3_lwc
 
   ! Compute total ice mass
-  function p3_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function p3_iwc(F_qitot, F_pvars) result(F_istat)
+    use phybusidx
+    use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqti1p, zqti2p, zqti3p, zqti4p
     F_istat = PHY_ERROR
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqti1p, qti1plus, F_dbus)
-    MKPTR2Dm1(zqti2p, qti2plus, F_dbus)
-    MKPTR2Dm1(zqti3p, qti3plus, F_dbus)
-    MKPTR2Dm1(zqti4p, qti4plus, F_dbus)
+    MKPTR2Dm1(zqti1p, qti1plus, F_pvars)
+    MKPTR2Dm1(zqti2p, qti2plus, F_pvars)
+    MKPTR2Dm1(zqti3p, qti3plus, F_pvars)
+    MKPTR2Dm1(zqti4p, qti4plus, F_pvars)
     F_qitot = 0.
     if (associated(zqti1p)) F_qitot = F_qitot + zqti1p
     if (associated(zqti2p)) F_qitot = F_qitot + zqti2p

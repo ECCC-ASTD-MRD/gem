@@ -1,7 +1,8 @@
 
-#define MKPTR1D(NAME1,NAME2)     nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni)      => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR1D2(NAME1,NAME2,I0) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni)      => busptr(vd%NAME2%i)%ptr(I0:,trnch)
-#define MKPTR2D(NAME1,NAME2,NN)  nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:NN) => busptr(vd%NAME2%i)%ptr(:,trnch)
+
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR1D2(NAME1,NAME2,I0) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni)     => pvars(vd%NAME2%idxv)%data(I0:)
+#define MKPTR2D(NAME1,NAME2,NN) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:NN) => pvars(vd%NAME2%idxv)%data(:)
 
       MKPTR1D(zalb_road, alb_road)
       MKPTR1D(zalb_roaden, alb_roaden)

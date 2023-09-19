@@ -14,21 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine inisoili_svs(ni, trnch)
+module inisoili_svs_mod
+   implicit none
+   private
+   
+   public :: inisoili_svs
+   
+contains
+   
+subroutine inisoili_svs(pvars, ni)
    use tdpack
    use sfcbus_mod
    use svs_configs
    use sfc_options
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ni, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni
 
    !@Author  Maria Abrahamowicz, Stephane Belair , Vincent Fortin (20xx)
    !@Object  Compute soil properties for given soil texture. Compute these properties on 
    !         native levels of database providing soil texture, and then map properties 
    !         unto SVS levels.
    !@Arguments
+   !             - Input/Ouput -
+   ! pvars       list of all phy vars (meta + slab data)
    !             - Input -
    ! NI          longueur d'une tranche horizontale
 
@@ -45,8 +57,8 @@ subroutine inisoili_svs(ni, trnch)
                                          zconddry, zcondsld , zquartz, zrhosoil,zwunfrz 
 
   
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
    MKPTR1D(zcgsat, cgsat)
    MKPTR1D(zdraindens, draindens)
@@ -184,3 +196,5 @@ subroutine inisoili_svs(ni, trnch)
 
    return
  end subroutine inisoili_svs
+
+end module inisoili_svs_mod

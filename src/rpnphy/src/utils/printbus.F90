@@ -17,13 +17,14 @@
 !/@*
 subroutine printbus(F_bus_S)
    use clib_itf_mod, only: clib_toupper
-   use phymem, only: pbuslist, phymem_busidx
+   use phymem, only: phymeta, nphyvars, phymem_busidx, phymem_getmeta
    implicit none
    character(len=*),intent(in) :: F_bus_S
    !*@/
 !!!#include <arch_specific.hf>
    integer :: iv, ib, istat
    character(len=64) :: vname, oname, desc
+   type(phymeta), pointer :: vmeta
    ! ---------------------------------------------------------------------
    ib = phymem_busidx(F_bus_S)
 
@@ -41,21 +42,25 @@ subroutine printbus(F_bus_S)
    end select
    write(6,110)
    write(6,130)
-   do iv = 1, pbuslist(ib)%nvars
-      vname = pbuslist(ib)%meta(iv)%vname
-      oname = pbuslist(ib)%meta(iv)%oname
-      desc  = pbuslist(ib)%meta(iv)%desc
+   do iv = 1, nphyvars
+      nullify(vmeta)
+      istat = phymem_getmeta(vmeta, iv)
+      if (istat < 0) cycle
+      if (vmeta%ibus /= ib) cycle
+      vname = vmeta%vname
+      oname = vmeta%oname
+      desc  = vmeta%desc
       istat = clib_toupper(vname)
       istat = clib_toupper(oname)
       istat = clib_toupper(desc)
       write (6,120) &
            vname, oname, desc, &
-           pbuslist(ib)%meta(iv)%i0, &
-           pbuslist(ib)%meta(iv)%size, &
-           pbuslist(ib)%meta(iv)%fmul, &
-           pbuslist(ib)%meta(iv)%mosaic, &
-           pbuslist(ib)%meta(iv)%init, &
-           pbuslist(ib)%meta(iv)%stag
+           vmeta%i0, &
+           vmeta%size, &
+           vmeta%fmul, &
+           vmeta%mosaic, &
+           vmeta%init, &
+           vmeta%stag
    end do
 
    write(6,130)

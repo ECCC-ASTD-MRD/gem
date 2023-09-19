@@ -22,22 +22,22 @@ module diagno_clouds
 contains
 
    !/@*
-   subroutine diagno_clouds2(fbus,vbus,taucs, taucl,  &
+   subroutine diagno_clouds2(pvars, taucs, taucl,  &
         gz, cloud, &
         tt, sig, ps,  trnch, m, &
         ni, nkm1, nk)
       use debug_mod, only: init2nan
       use tdpack_const
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use vintage_nt, only: vintage_nt1
-      use series_mod, only: series_xst
       implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, m, nkm1, nk
-      real, pointer, contiguous :: fbus(:), vbus(:)
       real, intent(in), dimension(ni,nkm1,nbs) :: taucs
       real, intent(in), dimension(ni,nkm1,nbl) :: taucl
       real, intent(in) :: gz(m,nkm1)   
@@ -48,6 +48,8 @@ contains
       !        calculate true and effective cloud covers, cloud top pressure and temperature, calculate NT
       !
       !Arguments
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - output -
       ! ctp      cloud top pressure
       ! ctt      cloud top temperature
@@ -88,26 +90,30 @@ contains
       real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
       real, pointer, dimension(:), contiguous :: ztczl,ztczm,ztczh
       real, pointer, dimension(:), contiguous :: zctp,zctt
-
+      real, pointer, dimension(:,:), contiguous :: zlwc
       !----------------------------------------------------------------
 
-      MKPTR1D(zctp, ctp, vbus)
-      MKPTR1D(zctt, ctt, vbus)
-      MKPTR1D(zecc, ecc, fbus)
-      MKPTR1D(zecch, ecch, fbus)
-      MKPTR1D(zeccl, eccl, fbus)
-      MKPTR1D(zeccm, eccm, fbus)
-      MKPTR1D(znt, nt, fbus)
-      MKPTR1D(ztcc, tcc, fbus)
-      MKPTR1D(ztcsl, tcsl, fbus)
-      MKPTR1D(ztcsm, tcsm, fbus)
-      MKPTR1D(ztcsh, tcsh, fbus)
-      MKPTR1D(ztczl, tczl, fbus)
-      MKPTR1D(ztczm, tczm, fbus)
-      MKPTR1D(ztczh, tczh, fbus)
-      MKPTR1D(ztopthi, topthi, fbus)
-      MKPTR1D(ztopthw, topthw, fbus)
-
+      MKPTR1D(zctp, ctp, pvars)
+      MKPTR1D(zctt, ctt, pvars)
+      MKPTR1D(zecc, ecc, pvars)
+      MKPTR1D(zecch, ecch, pvars)
+      MKPTR1D(zeccl, eccl, pvars)
+      MKPTR1D(zeccm, eccm, pvars)
+      MKPTR1D(znt, nt, pvars)
+      MKPTR1D(ztcc, tcc, pvars)
+      MKPTR1D(ztcsl, tcsl, pvars)
+      MKPTR1D(ztcsm, tcsm, pvars)
+      MKPTR1D(ztcsh, tcsh, pvars)
+      MKPTR1D(ztczl, tczl, pvars)
+      MKPTR1D(ztczm, tczm, pvars)
+      MKPTR1D(ztczh, tczh, pvars)
+      MKPTR1D(ztopthi, topthi, pvars)
+      MKPTR1D(ztopthw, topthw, pvars)
+      
+      if (stcond(1:3) /= 'MP_') then
+         MKPTR2D(zlwc, lwc, pvars)
+      endif
+      
       !----------------------------------------------------------------
       call init2nan(transmissint, trans_exp)
       call init2nan(aird, rec_cdd, vs1)
@@ -227,9 +233,9 @@ contains
             znt(i) = ztcc(i)*(1.-exp(-0.1*(ztopthw(i) + ztopthi(i))))
          enddo
       else
-         call vintage_nt1(fbus, &
-              tt, ps, sig, &
-              cldfrac, trnch, ni, nk, nkm1)
+         call vintage_nt1( &
+              tt, ps, sig, zlwc, &
+              cldfrac, znt, trnch, ni, nk, nkm1)
       endif
 
 

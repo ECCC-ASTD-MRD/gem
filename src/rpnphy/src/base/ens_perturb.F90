@@ -166,7 +166,6 @@ contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function spp_get_r(key, chains, default) result(values)
-    use phybus
     ! Retrieve the row of parameter values for the specified key
     character(len=*), intent(in) :: key         !Name of requested chain element
     real, dimension(:,:), intent(in) :: chains  !Set of Markov chains
@@ -183,7 +182,6 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function spp_get_rv(key, chains, default) result(values)
-    use phybus
     ! Retrieve the row of parameter values for the specified key
     character(len=*), intent(in) :: key         !Name of requested chain element
     real, dimension(:,:), intent(in) :: chains  !Set of Markov chains
@@ -200,7 +198,6 @@ contains
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function spp_get_c(key, chains, default) result(strings)
-    use phybus
     ! Retrieve the row of parameter strings for the specified key
     character(len=*), intent(in) :: key         !Name of requested chain element
     real, dimension(:,:), intent(in) :: chains  !Set of Markov chains
@@ -232,7 +229,6 @@ contains
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function spp_get_i(key, chains, default) result(mappings)
-    use phybus
     ! Retrieve the row of parameter strings for the specified key
     character(len=*), intent(in) :: key         !Name of requested chain element
     real, dimension(:,:), intent(in) :: chains  !Set of Markov chains
@@ -282,15 +278,16 @@ contains
   end function spp_index
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine ens_ptp_apply(dbus,vbus,fbus,ni,nk,kount)
+  subroutine ens_ptp_apply(pvars,kount,ni,nk)
     use tdpack_const
     use phy_options
-    use phybus
+    use phybusidx
+    use phymem, only: phyvar
     implicit none
 !!!#include <arch_specific.hf>
 
+    type(phyvar), pointer, contiguous :: pvars(:)
     integer, intent(in) :: ni,nk,kount
-    real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
     real fac_ptp_m,fac_ptp_t,fac_convec
 
@@ -305,9 +302,8 @@ contains
     !@arguments
     !  Name        I/O                 Description
     !----------------------------------------------------------------
-    ! dbus          I                  dynamics input field
-    ! vbus         I/O                 physics tendencies
-    ! fbus          I                  historic variables for the physics
+    ! pvars        I/O                 all phy vars (meta + slab data)
+    ! kount         I                  timestep number
     ! ni            I                  horizontal running length
     ! nk            I                  vertical dimension
     !----------------------------------------------------------------
@@ -341,17 +337,17 @@ contains
     call msg_toall(MSG_DEBUG, 'ens_ptp [BEGIN]')
     if (timings_L) call timing_start_omp(455, 'ens_ptp', 46)
 
-    MKPTR1D(zabekfc, abekfc, fbus)
-    MKPTR1D(zmrk2, mrk2, fbus)
-    MKPTR2D(zsigm, sigm, dbus)
-    MKPTR2D(zsigt, sigt, dbus)
-    MKPTR2D(ztplus, tplus, dbus)
-    MKPTR2D(zuplus, uplus, dbus)
-    MKPTR2D(zvplus, vplus, dbus)
-    MKPTR2D(zwplus, wplus, dbus)
-    MKPTR2D(ztphytd, tphytd, vbus)
-    MKPTR2D(zuphytd, uphytd, vbus)
-    MKPTR2D(zvphytd, vphytd, vbus)
+    MKPTR1D(zabekfc, abekfc, pvars)
+    MKPTR1D(zmrk2, mrk2, pvars)
+    MKPTR2D(zsigm, sigm, pvars)
+    MKPTR2D(zsigt, sigt, pvars)
+    MKPTR2D(ztplus, tplus, pvars)
+    MKPTR2D(zuplus, uplus, pvars)
+    MKPTR2D(zvplus, vplus, pvars)
+    MKPTR2D(zwplus, wplus, pvars)
+    MKPTR2D(ztphytd, tphytd, pvars)
+    MKPTR2D(zuphytd, uphytd, pvars)
+    MKPTR2D(zvphytd, vphytd, pvars)
 
     if (kount.lt.1) then
        do i=1,ni

@@ -17,7 +17,8 @@
 module prep_cw
    use debug_mod, only: init2nan
    use phy_options
-   use phybus
+   use phybusidx
+   use phymem, only: phyvar
    implicit none
    private
    public :: prep_cw3
@@ -28,7 +29,7 @@ module prep_cw
 contains
 
   !/@*
-   subroutine prep_cw3(fbus, dbus, vbus, ficebl, ni, nk)
+   subroutine prep_cw3(pvars, ficebl, ni, nk)
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -39,12 +40,10 @@ contains
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
-      ! dbus     dynamic             bus
-      ! fbus     permanent variables bus
-      ! vbus     volatile (output)   bus
+      ! pvars    list of all phy vars (meta + slab data)
       !*@/
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: ficebl(ni,nk)
       !*@/
       integer :: nkm1
@@ -53,9 +52,9 @@ contains
       if (timings_L) call timing_start_omp(445, 'prep_cw', 46)
       if (stcond(1:3) == 'MP_') then
          nkm1 = nk-1
-         call prep_cw_MP(fbus, vbus, ficebl, ni, nk, nkm1)
+         call prep_cw_MP(pvars, ficebl, ni, nk, nkm1)
       else
-         call prep_cw_noMP(fbus, dbus, vbus, ni, nk)
+         call prep_cw_noMP(pvars, ni, nk)
       endif
       if (timings_L) call timing_stop_omp(445)
       call msg_toall(MSG_DEBUG, 'prep_cw [END]')
@@ -65,7 +64,7 @@ contains
 
 
    !/@*
-   subroutine prep_cw_noMP(fbus, dbus, vbus, ni, nk)
+   subroutine prep_cw_noMP(pvars, ni, nk)
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -77,13 +76,11 @@ contains
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
-      ! dbus     dynamic             bus
-      ! fbus     permanent variables bus
-      ! vbus     volatile (output)   bus
+      ! pvars    list of all phy vars (meta + slab data)
       !*@/
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@Author L. Spacek (Oct 2004)
       !*@/
@@ -95,21 +92,21 @@ contains
            zqcplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
            zqsdi, zqssc, zqtbl
       !----------------------------------------------------------------
-      MKPTR2D(zfbl, fbl, fbus)
-      MKPTR2D(zfdc, fdc, fbus)
-      MKPTR2D(zfmc, fmc, fbus)
-      MKPTR2D(zfsc, fsc, fbus)
-      MKPTR2D(zftot, ftot, fbus)
-      MKPTR2D(zfxp, fxp, fbus)
-      MKPTR2D(zlwc, lwc, fbus)
-      MKPTR2D(zqcplus, qcplus, dbus)
-      MKPTR2D(zqldi, qldi, fbus)
-      MKPTR2D(zqlmi, qlmi, vbus)
-      MKPTR2D(zqlsc, qlsc, vbus)
-      MKPTR2D(zqsdi, qsdi, fbus)
-      MKPTR2D(zqsmi, qsmi, vbus)
-      MKPTR2D(zqssc, qssc, vbus)
-      MKPTR2D(zqtbl, qtbl, fbus)
+      MKPTR2D(zfbl, fbl, pvars)
+      MKPTR2D(zfdc, fdc, pvars)
+      MKPTR2D(zfmc, fmc, pvars)
+      MKPTR2D(zfsc, fsc, pvars)
+      MKPTR2D(zftot, ftot, pvars)
+      MKPTR2D(zfxp, fxp, pvars)
+      MKPTR2D(zlwc, lwc, pvars)
+      MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zqldi, qldi, pvars)
+      MKPTR2D(zqlmi, qlmi, pvars)
+      MKPTR2D(zqlsc, qlsc, pvars)
+      MKPTR2D(zqsdi, qsdi, pvars)
+      MKPTR2D(zqsmi, qsmi, pvars)
+      MKPTR2D(zqssc, qssc, pvars)
+      MKPTR2D(zqtbl, qtbl, pvars)
 
       zero(:,:) =  0.0
 
@@ -207,7 +204,7 @@ contains
 
 
    !/@*
-   subroutine prep_cw_MP(fbus, vbus, ficebl, ni, nk, nkm1)
+   subroutine prep_cw_MP(pvars, ficebl, ni, nk, nkm1)
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -224,11 +221,10 @@ contains
       ! nkm1     vertical scope of the operator
       !
       !      - Input/Output -
-      ! fbus     permanent variables bus
-      ! vbus     volatile (output)   bus
+      ! pvars list of all phy vars (meta + slab data)
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk, nkm1
-      real, dimension(:), pointer, contiguous :: fbus, vbus
       real, intent(in) :: ficebl(ni,nk)
 
       !@Author
@@ -242,22 +238,22 @@ contains
            ziwcimp, zlwcimp, zqldi, zqlsc, zqsdi, zqssc, zqtbl, zfmc, &
            zqlmi, zqsmi
       !----------------------------------------------------------------
-      MKPTR2D(zfbl, fbl, fbus)
-      MKPTR2D(zfdc, fdc, fbus)
-      MKPTR2D(zfmc, fmc, fbus)
-      MKPTR2D(zfmp, fmp, fbus)
-      MKPTR2D(zfsc, fsc, fbus)
-      MKPTR2D(zftot, ftot, fbus)
-      MKPTR2D(zfxp, fxp, fbus)
-      MKPTR2D(zlwcimp, lwcimp, fbus)
-      MKPTR2D(ziwcimp, iwcimp, fbus)
-      MKPTR2D(zqldi, qldi, fbus)
-      MKPTR2D(zqlmi, qlmi, vbus)
-      MKPTR2D(zqlsc, qlsc, vbus)
-      MKPTR2D(zqsdi, qsdi, fbus)
-      MKPTR2D(zqsmi, qsmi, vbus)
-      MKPTR2D(zqssc, qssc, vbus)
-      MKPTR2D(zqtbl, qtbl, fbus)
+      MKPTR2D(zfbl, fbl, pvars)
+      MKPTR2D(zfdc, fdc, pvars)
+      MKPTR2D(zfmc, fmc, pvars)
+      MKPTR2D(zfmp, fmp, pvars)
+      MKPTR2D(zfsc, fsc, pvars)
+      MKPTR2D(zftot, ftot, pvars)
+      MKPTR2D(zfxp, fxp, pvars)
+      MKPTR2D(zlwcimp, lwcimp, pvars)
+      MKPTR2D(ziwcimp, iwcimp, pvars)
+      MKPTR2D(zqldi, qldi, pvars)
+      MKPTR2D(zqlmi, qlmi, pvars)
+      MKPTR2D(zqlsc, qlsc, pvars)
+      MKPTR2D(zqsdi, qsdi, pvars)
+      MKPTR2D(zqsmi, qsmi, pvars)
+      MKPTR2D(zqssc, qssc, pvars)
+      MKPTR2D(zqtbl, qtbl, pvars)
 
       zero(1:ni,1:nkm1) =  0.0
 

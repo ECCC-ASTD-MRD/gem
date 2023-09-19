@@ -22,7 +22,7 @@ module condensation
 contains
 
    !/@*
-   subroutine condensation4(dbus, fbus, vbus, dt, ni, nk, kount, trnch)
+   subroutine condensation4(pvars, dt, kount, ni, nk)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, DELTA, RGASD, CAPPA
@@ -34,7 +34,8 @@ contains
       use microphy_my2, only: mp_my2_main
       use phy_options
       use phy_status, only: phy_error_L, PHY_OK
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use water_integrated, only: wi_integrate
       use ens_perturb, only: ens_nc2d
@@ -43,14 +44,11 @@ contains
 #include <rmnlib_basics.hf>
       !@Object Interface to convection/condensation
       !@Arguments
-      real, dimension(:), pointer, contiguous :: dbus   !Dynamics bus
-      real, dimension(:), pointer, contiguous :: fbus   !Permanent bus
-      real, dimension(:), pointer, contiguous :: vbus   !Volatile bus
+      type(phyvar), pointer, contiguous :: pvars(:)   !all phy vars (meta + slab data)
       integer, intent(in) :: ni                         !Row length
       integer, intent(in) :: nk                         !Number of levels (including diagnostic)
       real, intent(in) :: dt                            !Time step (s)
       integer, intent(in) :: kount                      !Step number
-      integer, intent(in) :: trnch                      !Physics slice number
 
       !@Author L.Spacek, November 2011
       !@Revisions
@@ -75,7 +73,7 @@ contains
 
 #define PHYPTRDCL
 #include "condensation_ptr.hf"
-
+      
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'condensation [BEGIN]')
 
@@ -103,7 +101,7 @@ contains
       
       ! Pre-scheme state for budget
       if (pb_compute(zconecnd, zconqcnd, l_en0, l_pw0, &
-           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+           pvars, nkm1) /= PHY_OK) then
          call physeterror('condensation', 'Problem computing preliminary budget')
          return
       endif
@@ -130,7 +128,7 @@ contains
               zfice, zmrk2, ni, nkm1)
 
          ! Adjust tendencies to impose conservation
-         if (pb_conserve(cond_conserve, zste, zsqe, dbus, fbus, vbus, &
+         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
               F_dqc=zsqce, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
             call physeterror('condensation', &
                  'Cannot correct conservation for '//trim(stcond))
@@ -155,7 +153,7 @@ contains
          ! Predicted Particle Properties (P3) microphysics
          istat1 = mp_p3_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend, &
               qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,sigma,   &
-              kount,trnch,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
+              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,          &
               a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_zet,a_zec,          &
               a_effradc,qcp,ncp,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,  &
               p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,      &
@@ -169,7 +167,7 @@ contains
          endif
 
          ! Adjust tendencies to impose conservation
-         if (pb_conserve(cond_conserve, zste, zsqe, dbus, fbus, vbus, &
+         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
               F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
             call physeterror('condensation', &
                  'Cannot correct conservation for '//trim(stcond))
@@ -218,15 +216,15 @@ contains
       endif
 
       ! Post-scheme budget analysis: post-scheme state and residuals
-      if (pb_residual(zconecnd, zconqcnd, l_en0, l_pw0, dbus, fbus, vbus, &
+      if (pb_residual(zconecnd, zconqcnd, l_en0, l_pw0, pvars, &
            delt, nkm1, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
          call physeterror('condensation', 'Problem computing final budget')
          return
       endif
 
       ! Compute profile diagnostics <<< should be done outside the model >>>
-      istat1 = mp_lwc(qtl, dbus, fbus, vbus)
-      istat2 = mp_iwc(qts, dbus, fbus, vbus)
+      istat1 = mp_lwc(qtl, pvars)
+      istat2 = mp_iwc(qts, pvars)
       if (istat1 /= PHY_OK .or. istat2 /= PHY_OK) then
          call physeterror('condensation', &
               'Cannot compute water/ice for hydrometeor integrals')

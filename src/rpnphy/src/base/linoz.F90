@@ -22,12 +22,13 @@ module linoz
 contains
 
    !/@*
-   subroutine linoz3(dbus, vbus, fbus, dt, kount, ni, nkm1, nk)
+   subroutine linoz3(pvars, dt, kount, ni, nk, nkm1)
       use iso_c_binding
       use debug_mod, only: init2nan
       use tdpack_const, only: CAPPA, CONSOL2, GRAV, PI, STEFAN, RGASD
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use linoz_param
       use tendency, only: apply_tendencies
       implicit none
@@ -38,19 +39,16 @@ contains
       ! Produces the ozone tendency due to stratospheric 
       ! photochemistry (based on LINOZ scheme)
       !@arguments
-      ! n        horizonal index
-      ! nkm1     vertical  index nk-1
-      ! nk       vertical  index
+      ! pvars    list of all phy vars (meta + slab data)
+      ! ni       horizontal running length
+      ! nk       vertical dimension
+      ! nkm1     vertical dimension nk-1
       ! dt       timestep
-      ! trnch    index of vertical slice n*nk
       ! kount    number of timesteps
-      ! vbus     volatile bus
-      ! fbus     permanent bus
-      ! dbus     dynamics bus
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nkm1, nk, kount
       real,    intent(in) :: dt
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@author J. de Grandpre (ARQI): February 2013
       !@revisions

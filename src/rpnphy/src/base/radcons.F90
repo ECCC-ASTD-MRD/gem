@@ -14,21 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine radcons2(ni, trnch)
+module radcons
+   implicit none
+   private
+   
+   public :: radcons2
+   
+contains
+
+subroutine radcons2(pvars, ni)
    use tdpack_const
-   use phybus, only: sla, fsa, c1slop, c2slop, c3slop, c4slop, c5slop
-   use phymem, only: pbuslist, PHY_EBUSIDX, PHY_PBUSIDX
+   use phybusidx, only: sla, fsa, c1slop, c2slop, c3slop, c4slop, c5slop
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf> 
 
-   integer ni, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni
 
    !@Author  J.Mailhot, A. Erfani, J. Toviessi (July 2009)
    !@Object Calculate constants required to define the radiation along the 
    !        slopes. 
    !Arguments
+   ! pvars         list of all phy vars (meta + slab data)
    ! ni            horizontal dimension 
 
+#include "phymkptr.hf"
+  
    integer i, n
    real sum
    real pi180 
@@ -45,22 +57,16 @@ subroutine radcons2(ni, trnch)
    real, dimension(4) :: sla_cos, sla_sin, sla_2cos, sla_2sin
    real :: sla_rad
 
-#define MKPTR1D(NAME1,NAME2,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni) => BUS(NAME2:,trnch)
-#define MKPTR2D(NAME1,NAME2,N3,BUS) nullify(NAME1); if (NAME2 > 0) NAME1(1:ni,1:N3) => BUS(NAME2:,trnch)
-
    real, pointer, contiguous, dimension(:) :: zc1slop, zc2slop, zc3slop, zc4slop, zc5slop
-   real, pointer, contiguous, dimension(:,:) :: zsla, zfsa, entbus, perbus
+   real, pointer, contiguous, dimension(:,:) :: zsla, zfsa  !, entbus, perbus
 
-   entbus => pbuslist(PHY_EBUSIDX)%bptr(:,:)
-   perbus => pbuslist(PHY_PBUSIDX)%bptr(:,:)
-
-   MKPTR2D(zsla, sla, 4, entbus)
-   MKPTR2D(zfsa, fsa, 4, entbus)
-   MKPTR1D(zc1slop, c1slop, perbus)
-   MKPTR1D(zc2slop, c2slop, perbus)
-   MKPTR1D(zc3slop, c3slop, perbus)
-   MKPTR1D(zc4slop, c4slop, perbus)
-   MKPTR1D(zc5slop, c5slop, perbus)
+   MKPTR2DNL(zsla, sla, pvars)
+   MKPTR2DNL(zfsa, fsa, pvars)
+   MKPTR1D(zc1slop, c1slop, pvars)
+   MKPTR1D(zc2slop, c2slop, pvars)
+   MKPTR1D(zc3slop, c3slop, pvars)
+   MKPTR1D(zc4slop, c4slop, pvars)
+   MKPTR1D(zc5slop, c5slop, pvars)
 
    cos_n  = cos(pi)         ! North 
    cos_e  = cos(1.5*pi)     ! East 
@@ -117,3 +123,5 @@ subroutine radcons2(ni, trnch)
 
    return
 end subroutine radcons2
+
+end module radcons

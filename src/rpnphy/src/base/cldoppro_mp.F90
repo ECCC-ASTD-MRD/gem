@@ -22,7 +22,7 @@ module cldoppro_MP
 contains
 
    !/@*
-  subroutine cldoppro_MP3(dbus, fbus, vbus, &
+  subroutine cldoppro_MP3(pvars, &
        taucs, omcs, gcs, taucl, omcl, gcl, &
        liqwcin, icewcin, &
        liqwpin, icewpin, cldfrac, &
@@ -31,7 +31,8 @@ contains
     use debug_mod, only: init2nan
     use tdpack_const, only: GRAV, RGASD
     use phy_options
-    use phybus
+    use phybusidx
+    use phymem, only: phyvar
     implicit none
 
 !!!#include <arch_specific.hf>
@@ -41,7 +42,7 @@ contains
     !@Arguments
     integer, intent(in) :: ni, nkm1, nk, kount
 
-    real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
+    type(phyvar), pointer, contiguous :: pvars(:)
     real, intent(out), dimension(ni,nkm1,nbs) :: taucs, omcs, gcs
     real, intent(out), dimension(ni,nkm1,nbl) :: taucl, omcl, gcl
     real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
@@ -49,6 +50,8 @@ contains
     real, intent(inout) :: cldfrac(ni,nkm1)
     real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), ps(ni)
 
+    !          - input/output -
+    ! pvars    list of all phy vars (meta + slab data)
     !          - output -
     ! taucs    cloud solar optical thickness
     ! omcs     cloud solar scattering albedo
@@ -129,50 +132,49 @@ contains
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
          zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
-
     !----------------------------------------------------------------
     call msg_toall(MSG_DEBUG, 'cldoppro_MP [BEGIN]')
 
-    MKPTR1D(zmg, mg, fbus)
-    MKPTR1D(zml, ml, fbus)
-    MKPTR1D(ztiwp, tiwp, fbus)
-    MKPTR1D(ztiwpin, tiwpin, fbus)
-    MKPTR1D(ztlwp, tlwp, fbus)
-    MKPTR1D(ztlwpin, tlwpin, fbus)
-    MKPTR1D(ztopthi, topthi, fbus)
-    MKPTR1D(ztopthw, topthw, fbus)
-    MKPTR2Dm1(zcldrad, cldrad, vbus)
-    MKPTR2Dm1(zeffradc, effradc, fbus)
-    MKPTR2Dm1(zeffradi1, effradi1, fbus)
-    MKPTR2Dm1(zeffradi2, effradi2, fbus)
-    MKPTR2Dm1(zeffradi3, effradi3, fbus)
-    MKPTR2Dm1(zeffradi4, effradi4, fbus)
-    MKPTR2Dm1(zfmp, fmp, fbus)
-    MKPTR2Dm1(zfxp, fxp, fbus)
-    MKPTR2Dm1(zgraupel, qgplus, dbus)
-    MKPTR2Dm1(zhumoins, humoins, dbus)
-    MKPTR2Dm1(zqti1m, qti1moins, dbus)
-    MKPTR2Dm1(zqti2m, qti2moins, dbus)
-    MKPTR2Dm1(zqti3m, qti3moins, dbus)
-    MKPTR2Dm1(zqti4m, qti4moins, dbus)
-    MKPTR2Dm1(ziwcimp, iwcimp, fbus)
-    MKPTR2Dm1(ziwcrad, iwcrad, vbus)
-    MKPTR2Dm1(zlwcimp, lwcimp, fbus)
-    MKPTR2Dm1(zlwcrad, lwcrad, vbus)
-    MKPTR2Dm1(zpmoins, pmoins, fbus)
-    MKPTR2Dm1(zqcmoins, qcmoins, dbus)
-    MKPTR2Dm1(zqcplus, qcplus, dbus)
-    MKPTR2Dm1(zqgmoins, qgmoins, dbus)
-    MKPTR2Dm1(zqi_cat1, qti1plus, dbus)
-    MKPTR2Dm1(zqi_cat2, qti2plus, dbus)
-    MKPTR2Dm1(zqi_cat3, qti3plus, dbus)
-    MKPTR2Dm1(zqi_cat4, qti4plus, dbus)
-    MKPTR2Dm1(zqimoins, qimoins, dbus)
-    MKPTR2Dm1(zqiplus, qiplus, dbus)
-    MKPTR2Dm1(zqnmoins, qnmoins, dbus)
-    MKPTR2Dm1(zsigw, sigw, dbus)
-    MKPTR2Dm1(zsnow, qnplus, dbus)
-    MKPTR2Dm1(ztmoins, tmoins, dbus)
+    MKPTR1D(zmg, mg, pvars)
+    MKPTR1D(zml, ml, pvars)
+    MKPTR1D(ztiwp, tiwp, pvars)
+    MKPTR1D(ztiwpin, tiwpin, pvars)
+    MKPTR1D(ztlwp, tlwp, pvars)
+    MKPTR1D(ztlwpin, tlwpin, pvars)
+    MKPTR1D(ztopthi, topthi, pvars)
+    MKPTR1D(ztopthw, topthw, pvars)
+    MKPTR2Dm1(zcldrad, cldrad, pvars)
+    MKPTR2Dm1(zeffradc, effradc, pvars)
+    MKPTR2Dm1(zeffradi1, effradi1, pvars)
+    MKPTR2Dm1(zeffradi2, effradi2, pvars)
+    MKPTR2Dm1(zeffradi3, effradi3, pvars)
+    MKPTR2Dm1(zeffradi4, effradi4, pvars)
+    MKPTR2Dm1(zfmp, fmp, pvars)
+    MKPTR2Dm1(zfxp, fxp, pvars)
+    MKPTR2Dm1(zgraupel, qgplus, pvars)
+    MKPTR2Dm1(zhumoins, humoins, pvars)
+    MKPTR2Dm1(zqti1m, qti1moins, pvars)
+    MKPTR2Dm1(zqti2m, qti2moins, pvars)
+    MKPTR2Dm1(zqti3m, qti3moins, pvars)
+    MKPTR2Dm1(zqti4m, qti4moins, pvars)
+    MKPTR2Dm1(ziwcimp, iwcimp, pvars)
+    MKPTR2Dm1(ziwcrad, iwcrad, pvars)
+    MKPTR2Dm1(zlwcimp, lwcimp, pvars)
+    MKPTR2Dm1(zlwcrad, lwcrad, pvars)
+    MKPTR2Dm1(zpmoins, pmoins, pvars)
+    MKPTR2Dm1(zqcmoins, qcmoins, pvars)
+    MKPTR2Dm1(zqcplus, qcplus, pvars)
+    MKPTR2Dm1(zqgmoins, qgmoins, pvars)
+    MKPTR2Dm1(zqi_cat1, qti1plus, pvars)
+    MKPTR2Dm1(zqi_cat2, qti2plus, pvars)
+    MKPTR2Dm1(zqi_cat3, qti3plus, pvars)
+    MKPTR2Dm1(zqi_cat4, qti4plus, pvars)
+    MKPTR2Dm1(zqimoins, qimoins, pvars)
+    MKPTR2Dm1(zqiplus, qiplus, pvars)
+    MKPTR2Dm1(zqnmoins, qnmoins, pvars)
+    MKPTR2Dm1(zsigw, sigw, pvars)
+    MKPTR2Dm1(zsnow, qnplus, pvars)
+    MKPTR2Dm1(ztmoins, tmoins, pvars)
 
     call init2nan(aird, rew, rei, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)

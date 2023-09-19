@@ -25,10 +25,10 @@ module lhn_mod
 contains
 
   !/@*
-  subroutine lhn2(dbus, fbus, vbus, &
-                  dt, ni, nk, kount)
+  subroutine lhn2(pvars, dt, kount, ni, nk)
      use phy_options
-     use phybus
+     use phybusidx
+     use phymem, only: phyvar
      use tendency, only: apply_tendencies
      use debug_mod, only: init2nan
      
@@ -40,19 +40,16 @@ contains
      !@Object Apply latent heat nudging during model integration
      !@Arguments
      !
+     !          - input/output -
+     ! pvars    list of all phy vars (meta + slab data)
      !          - Input -
      ! dt       timestep (sec.)
      ! ni       horizontal running length
      ! nk       vertical dimension
      ! kount    timestep number
+     type(phyvar), pointer, contiguous :: pvars(:)
      integer, intent(in) :: kount, ni, nk
      real, intent(in) :: dt
-
-     !          - Input/Output -
-     ! dbus     dynamics input field
-     ! fbus     historic variables for the physics
-     ! vbus     physics tendencies and other output fields from the physics
-     real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
      !@Author D.Jacques 
 
@@ -108,7 +105,7 @@ contains
      real    :: pr_ratio, scale_fact, r, temp_at_obs_height
      real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
      real, pointer, dimension(:,:), contiguous :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm
-     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs
+     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs, ztdmask
      real, pointer, dimension(:), contiguous   :: radar_pr, radar_qi, model_rt
      
      !do nothing if LHN not in use
@@ -119,7 +116,7 @@ contains
      !Output diagnostic:  
      ! 
      !code for decision tree
-     MKPTR1D(ztree, tree, vbus)
+     MKPTR1D(ztree, tree, pvars)
      ztree = 0.
 
      !lhn_weight must be specified in gem_settings.nml
@@ -149,41 +146,43 @@ contains
      !Output diagnostics:  
      ! 
      !scaling factor used in LHN 
-     MKPTR1D(zlhnr, lhnr, vbus)
+     MKPTR1D(zlhnr, lhnr, pvars)
      zlhnr = 0.
      !moisture tendency due to LHN
-     MKPTR2D(zlhm, tlhm, vbus)
+     MKPTR2D(zlhm, tlhm, pvars)
      zlhm  = 0.
      !total moisture added/removed in a column
-     MKPTR1D(zlhs, tlhs, vbus)
+     MKPTR1D(zlhs, tlhs, pvars)
      zlhs  = 0.
      !temperature tendencies due to Latent Heat Nudging
-     MKPTR2D(tinc, tlhn, vbus)
+     MKPTR2D(tinc, tlhn, pvars)
      tinc  = 0.
 
      !Model variables
      !
      !temperature
-     MKPTR2D(temp_k, tplus, dbus)
+     MKPTR2D(temp_k, tplus, pvars)
      !AGL heights (m) on thermo levels
-     MKPTR2D(heights_agl, gztherm, vbus)
+     MKPTR2D(heights_agl, gztherm, pvars)
      !vapor mixing ratio
-     MKPTR2D(qv, huplus, dbus)
+     MKPTR2D(qv, huplus, pvars)
      !model surface pressure
-     MKPTR1D(psp, pmoins, fbus)
+     MKPTR1D(psp, pmoins, pvars)
      !model level
-     MKPTR2D(sigma, sigt, dbus)
+     MKPTR2D(sigma, sigt, pvars)
 
+     MKPTR1D(ztdmask, tdmask, pvars)
+     
      !Horizontally smoothed quantities
      !
      !temperature tendencies due to latent heat release
-     MKPTR2D(ttend, tcond_smt, fbus)
+     MKPTR2D(ttend, tcond_smt, pvars)
      !modeled precip rate
-     MKPTR1D(model_rt, rt_smt, fbus)
+     MKPTR1D(model_rt, rt_smt, pvars)
      !observed precip rate
-     MKPTR1D(radar_pr, rdpr_smt, fbus)
+     MKPTR1D(radar_pr, rdpr_smt, pvars)
      !observation quality index
-     MKPTR1D(radar_qi, rdqi_smt, fbus)
+     MKPTR1D(radar_qi, rdqi_smt, pvars)
 
   
      !record relative humidity and temperature before LHN
@@ -304,7 +303,7 @@ contains
         endif
      enddo
   
-     call apply_tendencies(dbus, vbus, fbus, tplus, tlhn, ni, nk)
+     call apply_tendencies(temp_k, tinc, ztdmask, ni, nk)
   
      !compute increments to humidity to conserve RH
      do k = 1,nk
@@ -329,7 +328,7 @@ contains
   
      !change increment into a tendency
      zlhm = zlhm/dt
-     call apply_tendencies(dbus, vbus, fbus, huplus, tlhm, ni, nk)
+     call apply_tendencies(qv, zlhm, ztdmask, ni, nk)
      
   end subroutine lhn2
 

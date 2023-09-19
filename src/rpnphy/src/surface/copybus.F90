@@ -14,17 +14,27 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine copybus3(bus_sfc, sfcsiz, &
+module copybus
+   implicit none
+   private
+   
+   public :: copybus3
+   
+contains
+
+subroutine copybus3(pvars, bus_sfc, sfcsiz, &
      ptsurf, ptsurfsiz, &
      masque, ni_sfc, ni, &
-     indx_sfc, trnch, ramasse)
+     indx_sfc, ramasse)
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 
+   type(phyvar), pointer, contiguous :: pvars(:)
    logical ramasse
    integer sfcsiz, indx_sfc, ni, ni_sfc, ptsurfsiz
-   integer masque(ni_sfc), ptsurf(ptsurfsiz), trnch
+   integer masque(ni_sfc), ptsurf(ptsurfsiz)
    real bus_sfc(sfcsiz)
 
    !@Author  B. Bilodeau Sept 1999
@@ -41,6 +51,7 @@ subroutine copybus3(bus_sfc, sfcsiz, &
    !             is false.
    !@Arguments
    !             - Input/Output -
+   ! pvars       list of all phy vars (meta + slab data)
    ! BUS_SFC     "mini-bus" for one of 4 surface types
    !             - Input -
    ! SFCSIZ      dimension of BUS_SFC
@@ -67,9 +78,9 @@ subroutine copybus3(bus_sfc, sfcsiz, &
    DO_VAR: do var = 1, nvarsurf
 
       if (vl(var)%niveaux <= 0 .or. .not.vl(var)%doagg_L) cycle DO_VAR
-      if (.not.associated(busptr(var)%ptr)) cycle DO_VAR
+      if (vl(var)%idxv <= 0) cycle DO_VAR
 
-      bus_ori(1:) => busptr(var)%ptr(1:,trnch)
+      bus_ori(1:) => pvars(vl(var)%idxv)%data(:)
 
       DO_MUL: do m = 1, vl(var)%mul*vl(var)%mosaik
 
@@ -117,3 +128,5 @@ subroutine copybus3(bus_sfc, sfcsiz, &
 
    return
 end subroutine copybus3
+
+end module copybus
