@@ -5,7 +5,32 @@ Updating the rpnphy depot for a GEM release
 # Steps to be done in a GEM dev env.
 
 ... include code from contrubutors & test ...
+... see with RPN-SI if there are updates needed to rpnphy's CMakeLists.txt ...
 
+Tests
+=====
+
+Make sure to test with GFortran and intel
+
+1st shell
+```
+. .ssmuse_gem intel
+. .intial_setup
+make cmake
+make -j4
+make work
+# ... run tests...
+```
+
+2nd shell
+```
+. .ssmuse_gem gnu
+. .intial_setup
+make cmake
+make -j4
+make work
+# ... run tests...
+```
 
 Finalize
 ========
