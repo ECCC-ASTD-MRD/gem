@@ -1,26 +1,5 @@
 #!/bin/bash
 
-#/* Part of the Maestro sequencer software package.
-# * Copyright (C) 2011-2015  Canadian Meteorological Centre
-# *                          Environment Canada
-# *
-# * Maestro is free software; you can redistribute it and/or
-# * modify it under the terms of the GNU Lesser General Public
-# * License as published by the Free Software Foundation,
-# * version 2.1 of the License.
-# *
-# * Maestro is distributed in the hope that it will be useful,
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# * Lesser General Public License for more details.
-# *
-# * You should have received a copy of the GNU Lesser General Public
-# * License along with this library; if not, write to the
-# * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-# * Boston, MA 02111-1307, USA.
-# */
-
-
 # This script dumps all variables defined in the current
 # shell before wrapping a call to task_setup.py.  It should
 # be executed in the current shell using `. task_setup.dot [ARGS]`
@@ -122,12 +101,13 @@ rm -f ${TS_abort_file}
 
 # Set up task environment
 if [ -n "${TASK_BASEDIR}" ] ; then
-  if [[ ! -x `which realpath` ]] ; then
-    printf '\nUnable to find realpath in your environment\n' ${TASK_BASEDIR}
-    exit 1
+  setup_truepath=${TASK_BASEDIR}/.setup/task_setup_truepath
+  if [[ ! -x ${setup_truepath} ]] ; then
+    setup_truepath=$(which true_path)
+    printf '\tUnable to find true_path in %s ... will use %s\n' ${TASK_BASEDIR} ${setup_truepath}
   fi
-  if [ -d ${TASK_BASEDIR}/bin ] ; then TASK_BIN=$(realpath ${TASK_BASEDIR}/bin); export TASK_BIN ; fi
-  if [ -d ${TASK_BASEDIR}/work ] ; then TASK_WORK=$(realpath ${TASK_BASEDIR}/work) ; export TASK_WORK; fi
-  if [ -d ${TASK_BASEDIR}/input ] ; then TASK_INPUT=$(realpath ${TASK_BASEDIR}/input) ; export TASK_INPUT; fi
-  if [ -d ${TASK_BASEDIR}/output ] ; then TASK_OUTPUT=$(realpath ${TASK_BASEDIR}/output) ; export TASK_OUTPUT; fi
+  if [ -d ${TASK_BASEDIR}/bin ] ; then TASK_BIN=$(${setup_truepath} ${TASK_BASEDIR}/bin); export TASK_BIN ; fi
+  if [ -d ${TASK_BASEDIR}/work ] ; then TASK_WORK=$(${setup_truepath} ${TASK_BASEDIR}/work) ; export TASK_WORK; fi
+  if [ -d ${TASK_BASEDIR}/input ] ; then TASK_INPUT=$(${setup_truepath} ${TASK_BASEDIR}/input) ; export TASK_INPUT; fi
+  if [ -d ${TASK_BASEDIR}/output ] ; then TASK_OUTPUT=$(${setup_truepath} ${TASK_BASEDIR}/output) ; export TASK_OUTPUT; fi
 fi
