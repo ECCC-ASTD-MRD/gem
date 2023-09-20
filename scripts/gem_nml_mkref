@@ -50,8 +50,8 @@ localtmp=$(mktemp -d ${TMPDIR:-/tmp/${USER}}/XXXXXX)
 mkdir -p ${localtmp}
 cd ${localtmp}
 
-${a} ${myverbose} filea
-${b} ${myverbose} fileb
+${a} ${myverbose} filea || exit 1
+${b} ${myverbose} fileb || exit 1
 nmlfilename='gem_settings.nml.ref'
 cat filea fileb > ${nmlfilename}
 
