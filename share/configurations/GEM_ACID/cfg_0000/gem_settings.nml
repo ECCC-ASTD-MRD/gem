@@ -43,7 +43,7 @@
   Lam_0ptend_L  = .false.
 /
  &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr         = 0.04       ,
+  Hzd_pwr         = 4          , Hzd_lnr         = 0.04       ,
   Vspng_coeftop   =  500000.   , Vspng_nk        = 6  
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1,
 /
