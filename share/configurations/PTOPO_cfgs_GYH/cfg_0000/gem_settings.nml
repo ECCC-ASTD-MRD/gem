@@ -39,11 +39,8 @@
   Schm_psadj= 0
 /
 
-  hzd_smago_param = 3.
-  hzd_smago_lnr = .6
-  Hzd_smago_prandtl_hu=2.
  &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
+  Hzd_pwr         = 4          , Hzd_lnr       = 0.04
   Vspng_coeftop   =  380000.   , Vspng_nk        = 6
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
   P_lmvd_weigh_high_lat = 0.0
