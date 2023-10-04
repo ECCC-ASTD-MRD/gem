@@ -57,16 +57,10 @@ Lam_gbpil_t=5
   Schm_hzdadw_L     = .true.
   Schm_psadj= 0
   Schm_phycpl_S = 'AVG'
-  Cstv_bA_8 = 0.6
-  Cstv_bA_m_8 = 0.7
-  Cstv_bA_nh_8 = 0.8
 /
-  hzd_smago_param = 3.
-  hzd_smago_lnr = .6
-  Hzd_smago_prandtl_hu=2.
 
  &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
+  Hzd_pwr         = 4          , Hzd_lnr       = 0.04
   Vspng_coeftop   =  380000.   , Vspng_nk        = 6
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
   P_lmvd_weigh_high_lat = 0.0
@@ -99,7 +93,6 @@ Lam_gbpil_t=5
  0.36414043E+04,  0.33113760E+04,  0.29963164E+04,  0.26959851E+04,  0.24104956E+04,  0.21411509E+04,  0.18889203E+04,
  0.16543748E+04,  0.14377098E+04,  0.12387908E+04,  0.10572026E+04,  0.89229810E+03,  0.74325543E+03,  0.60785242E+03,
  0.48407559E+03,  0.37209671E+03,  0.27309692E+03,  0.18836304E+03,  0.11854238E+03,  0.63249203E+02,  0.21093637E+02
-  hyb_flat= 45000.
   hyb_rcoef = 3., 15., 0., 100.
 / 0., 100.
  3., 15.,
