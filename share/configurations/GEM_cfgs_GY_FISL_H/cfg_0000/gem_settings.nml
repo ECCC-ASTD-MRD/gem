@@ -75,17 +75,13 @@ Lam_gbpil_t=20
 /
 
  &hvdif
-  Hzd_pwr         = 6          , Hzd_lnr       = -0.04
-  hzd_smago_param = 3.
-  hzd_smago_lnr = .6
-  Hzd_smago_prandtl_hu=2.
+  Hzd_pwr         = 4          , Hzd_lnr       = 0.04
   Vspng_coeftop   =  380000.   , Vspng_nk        = 6
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
   P_lmvd_weigh_high_lat = 0.0
 /
  &vert_layers
   G_nk=60, Hyb_first_height=40., Hyb_lid_height=60000.
-  hyb_flat= 45000.
   hyb_rcoef = 3., 15.
 / 
  0., 100.
