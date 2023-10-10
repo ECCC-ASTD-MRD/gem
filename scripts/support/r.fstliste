@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+set -o errexit
 eval `cclargs_lite $0 "[ Utilitaire pour extraire des parametres des fichiers standard]"\
  -izfst bidon "[rep et nom du fichier standard]"\
  -datev =-1 "[date de validite (stamp)]"\
@@ -23,7 +25,7 @@ then
 fi
 #
 list=""
-r.fstinfo -izfst ${izfst} -datev =${datev} -vdatev =${vdatev} -etiket "${etiket}" -ip1 =${ip1} -ip2 =${ip2} -ip3 =${ip3} -typvar "${typvar}" -nomvar "${nomvar}" \
+r.fstinfo -izfst ${izfst} -datev =${datev} -vdatev =${vdatev} -etiket ${etiket} -ip1 =${ip1} -ip2 =${ip2} -ip3 =${ip3} -typvar ${typvar} -nomvar ${nomvar} \
  -otxt ${TMPDIR}/fstlist.$$ > /dev/null 2>&1
 typeset -i infoexit=$?
 if [ $infoexit -ne 0 ]

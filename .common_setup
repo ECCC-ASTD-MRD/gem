@@ -38,8 +38,15 @@ else
         export modelutils_version=`cat src/modelutils/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
-        export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
-        export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
+        # Check if at ECCC, and if GOAS_SCRIPT_MODE variable doesn't exist
+        if [ -n "${EC_ARCH}" -a -z "${GOAS_SCRIPT_MODE}" ]; then
+            export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
+            echo "Scripts installed in SSM domains will be used"
+        else
+            export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
+            export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
+            echo "GEM repository scripts will be used"
+        fi 
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
     fi
 fi

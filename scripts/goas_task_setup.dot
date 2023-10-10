@@ -1,29 +1,8 @@
 #!/bin/bash
 
-#/* Part of the Maestro sequencer software package.
-# * Copyright (C) 2011-2015  Canadian Meteorological Centre
-# *                          Environment Canada
-# *
-# * Maestro is free software; you can redistribute it and/or
-# * modify it under the terms of the GNU Lesser General Public
-# * License as published by the Free Software Foundation,
-# * version 2.1 of the License.
-# *
-# * Maestro is distributed in the hope that it will be useful,
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# * Lesser General Public License for more details.
-# *
-# * You should have received a copy of the GNU Lesser General Public
-# * License along with this library; if not, write to the
-# * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-# * Boston, MA 02111-1307, USA.
-# */
-
-
 # This script dumps all variables defined in the current
-# shell before wrapping a call to task_setup.py.  It should
-# be executed in the current shell using `. task_setup.dot [ARGS]`
+# shell before wrapping a call to goas_task_setup.py.  It should
+# be executed in the current shell using `. goas_task_setup.dot [ARGS]`
 # where all ARGS are passed directly to the task setup utility.
 
 # Define subroutine to check for matching arguments
@@ -45,11 +24,11 @@ checkarg()
   unset pattern
 }
 
-# Define subroutine to run task_setup.py
+# Define subroutine to run goas_task_setup.py
 launch_setup(){
    arg_varcache=
    if [[ -n "${TS_config_file}" && $(grep -Ec '^\s*#[^#].*`' ${TS_config_file} ) -gt 0 ]] ; then
-      task_setup_cachegen ${TS_config_file} ${TS_varcache_file}
+      goas_task_setup_cachegen ${TS_config_file} ${TS_varcache_file}
       arg_varcache="--varcache ${TS_varcache_file}"
    fi
    (
@@ -63,13 +42,13 @@ launch_setup(){
    else
       printf "** TASK_SETUP begins **\n"
       rm -f ${TS_abort_file}
-      task_setup.py --environment=${TS_setvar_file} ${arg_varcache} ${arglist} || touch ${TS_abort_file}
+      goas_task_setup.py --environment=${TS_setvar_file} ${arg_varcache} ${arglist} || touch ${TS_abort_file}
       printf "** TASK_SETUP ends **\n"
    fi
 }
 
 # Check command line arguments for the configuration file and task directory
-. o.set_array.dot argv $*
+. goas_set_array.dot argv $*
 TS_config_file=
 TASK_BASEDIR=
 arglist=
@@ -85,10 +64,10 @@ while [ -n "${argv[$i]}" ] ; do
   i=$((i+1))
 done
 if [ -z "${TS_config_file}" ] ; then
-  echo "WARNING: task_setup.dot was unable to find a -f or --file argument"
+  echo "WARNING: goas_task_setup.dot was unable to find a -f or --file argument"
 fi
 if [ ! -f "${TS_config_file}" ] ; then
-  echo "WARNING: task_setup.dot was unable to find specified configuration file "${TS_config_file}
+  echo "WARNING: goas_task_setup.dot was unable to find specified configuration file "${TS_config_file}
 fi
 arglist="${arglist} ${TS_config_file}"
 
