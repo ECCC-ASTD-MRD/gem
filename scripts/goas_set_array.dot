@@ -1,4 +1,4 @@
-## o.set_array.dot
+## goas_set_array.dot
 #  creates a shell-independant array with name $1, containing the rest of the elements sent.
 
 aRrAy_NaMe=$1

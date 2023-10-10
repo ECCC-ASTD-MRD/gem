@@ -1,5 +1,4 @@
 #!/bin/bash
-
 LocalArgs=1
 split=" "
 while [[ -n $LocalArgs ]]
