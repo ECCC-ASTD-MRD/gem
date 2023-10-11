@@ -68,6 +68,22 @@ other submodules, or adding or removing source files):
 . ./.initial_setup
 ```
 
+### Scripts
+
+Scripts in scripts/support and scripts/rpy directories are a copy of scripts
+already loaded from SSM domains when a .eccc_setup file is called. By
+default, they are not used, but if you want to test or modify them, you can
+override SSM scripts by setting GOAS_SCRIPT_MODE variable before sourcing
+.eccc_setup_intel or .eccc_setup_gnu:
+
+```
+export GOAS_SCRIPT_MODE=true
+```
+
+Please also note that if you load maestro, maestro scripts will be used,
+either in a maestro suite or when running GEM interactively. Otherwise, goas
+task setup files situated in the scripts directory will be used instead.
+
 ## Building and installing GEM
 
 There is a new script aimed at replacing the top-level Makefile.
