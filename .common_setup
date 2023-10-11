@@ -36,16 +36,24 @@ else
         export gemdyn_version=`cat src/gemdyn/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export rpnphy_version=`cat src/rpnphy/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export modelutils_version=`cat src/modelutils/MANIFEST | sed -n '/VERSION/s/.*: //p'`
-        export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
-        # Check if at ECCC, and if GOAS_SCRIPT_MODE variable doesn't exist
-        if [ -n "${EC_ARCH}" -a -z "${GOAS_SCRIPT_MODE}" ]; then
-            export PATH=${PWD}/scripts:${PWD}/src/rpnphy/bin:${PWD}/${GEM_WORK}/bin:${PATH}
-            echo "Scripts installed in SSM domains will be used"
+        # Check if at ECCC
+        if [ -n "${EC_ARCH}" ]; then
+            # export mach_version (not available externally)
+            export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
+            # Check whether GOAS_SCRIPT_MODE variable exists
+            if [ -z "${GOAS_SCRIPT_MODE}" ]; then 
+                export PATH=${PWD}/scripts:${PWD}/src/rpnphy/bin:${PWD}/${GEM_WORK}/bin:${PATH}
+                echo "RPN-SI and rpnpy scripts loaded from SSM domains will be used"
+            else
+                export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/src/rpnphy/bin:${PWD}/${GEM_WORK}/bin:${PATH}
+                export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
+                echo "GOAS_SCRIPT_MODE set: GEM scripts in scripts/support and scripts/rpy will be used instead of SSM domains scripts"
+            fi
+        # for external use, always add all scripts to PATH, without message
         else
             export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/src/rpnphy/bin:${PWD}/${GEM_WORK}/bin:${PATH}
             export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
-            echo "GEM repository scripts will be used"
         fi 
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
     fi
