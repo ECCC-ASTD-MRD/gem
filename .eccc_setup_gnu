@@ -8,18 +8,13 @@
 # - Load a script for common setup to all compilers
 
 DOMAIN=`hostname -d`
-platform=$(utils/os.sh)
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
     . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/gpscc2/gnu-9.3.0
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
     . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/gnu-9.3.0
 else
-    if [[ $platform =~ "ubuntu-18" ]]; then
-        . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/ECCC/gnu-9.3.0
-    elif [[ $platform =~ "ubuntu-22" ]]; then
-        . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/ECCC/gnu
-    fi
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/ECCC/gnu
 fi
 
 # Load latest version of RPN-SI libraries and utilities
@@ -34,8 +29,7 @@ fi
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then
     echo ""
-    echo "Warning: maestro is not loaded!"
-    echo "Be aware that GoaS setup scripts will be used instead of maestro scripts"
+    echo "Maestro is not loaded: GEM task setup scripts will be used instead of maestro scripts."
 else
     echo "Maestro ${MAESTRO_VERSION} scripts will be used"
 fi
