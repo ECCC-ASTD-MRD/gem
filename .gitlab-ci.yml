@@ -5,9 +5,6 @@ variables:
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
   GIT_SUBMODULE_STRATEGY: none
-  BUILD_BASE_BASE_DIR: /home/saci000/special_builds
-  BUILD_BASE_DIR: /home/saci000/special_builds/precaution
-  PIPELINE_SUBDIR: /home/saci000/special_builds/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 stages:
   - build
@@ -20,6 +17,7 @@ stages:
 before_script:
   - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
+  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 #----- rhel-8-amd64_gnu-9.3.0
 build:rhel-8-amd64_gnu-9.3.0:
