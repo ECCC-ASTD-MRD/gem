@@ -202,21 +202,21 @@ $storage_model environment variable exists:
 The following environment variables are created (examples):
 - gem_DIR = directory where the git clone was created
 - GEM_WORK = work directory
-- GEM_ARCH = architecture, for example ubuntu-18.04-amd64-64-intel-2022.1.2
+- GEM_ARCH = architecture, for example ubuntu-22.04-amd64-64-intel-2022.1.2
 - COMPILER_SUITE = compiler suite, for example Intel
 - COMPILER_VERSION = compiler version, for example 2022.1.2
 
 - GEM_STORAGE_DIR = where build and work directories are situated
   - Example if $storage_model variable exists:
-    - GEM_STORAGE_DIR=/local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2
+    - GEM_STORAGE_DIR=/local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2
     - in gem_DIR:
-      - build-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
-      - work-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/work
+      - build-ubuntu-22.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2/build
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2/work
 
   - Example if $storage_model variable doesn't exist:
     - GEM_STORAGE_DIR=$HOME/gem/
     - directories situated in gem_DIR:
-      - build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - work-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2
