@@ -142,6 +142,7 @@ $GEM_WORK directory:
 . ./.eccc_setup_intel
 or, if you compiled with gnu:
 . ./.eccc_setup_gnu
+cd $GEM_WORK
 ```
 
 ## Some tips for compilation
