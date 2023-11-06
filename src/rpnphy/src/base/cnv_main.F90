@@ -22,12 +22,13 @@ module cnv_main
 contains
 
    !/@*
-   subroutine cnv_main4(dbus, fbus, vbus, dt, ni, nk, kount)
+   subroutine cnv_main4(pvars, dt, kount, ni, nk)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, RAUW
       use phy_status, only: phy_error_L, PHY_OK
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use phy_options
       use cnv_options
       use kfrpn, only: kfrpn4
@@ -49,12 +50,10 @@ contains
       ! kount    timestep number
       !
       !          - Input/Output -
-      ! dbus     dynamics input field
-      ! fbus     historic variables for the physics
-      ! vbus     physics tendencies and other output fields from the physics
+      ! pvars    list of all phy vars (meta + slab data)
  
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk, kount
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: dt
       !@Author L.Spacek, November 2011
       !@Revisions
@@ -130,142 +129,141 @@ contains
            zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
 
       logical :: kfcmom
-      
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'cnv_main [BEGIN]')
 
       nkm1 = nk - 1
       kfcmom = (cmt_type_i /= CMT_NONE)
 
-      MKPTR1D(psm, pmoins, fbus)
-      MKPTR1D(psp, pmoins, fbus)
-      MKPTR1D(zabekfc, abekfc, fbus)
-      MKPTR1D(zcapekfc, capekfc, fbus)
-      MKPTR1D(ztauckfc, tauckfc, fbus)
-      MKPTR1D(zcinkfc, cinkfc, fbus)
-      MKPTR1D(zcoadvu, coadvu, fbus)
-      MKPTR1D(zcoadvv, coadvv, fbus)
-      MKPTR1D(zcoage, coage, fbus)
-      MKPTR1D(zconedc, conedc, vbus)
-      MKPTR1D(zconemc, conemc, vbus)
-      MKPTR1D(zconesc, conesc, vbus)
-      MKPTR1D(zconqdc, conqdc, vbus)
-      MKPTR1D(zconqmc, conqmc, vbus)
-      MKPTR1D(zconqsc, conqsc, vbus)
-      MKPTR1D(zcowlcl, cowlcl, fbus)
-      MKPTR1D(zcozlcl, cozlcl, fbus)
-      MKPTR1D(zdlat, dlat, fbus)
-      MKPTR1D(zdxdy, dxdy, fbus)
-      MKPTR1D(zfcpflg, fcpflg, fbus)
-      MKPTR1D(zkkfc, kkfc, vbus)
-      MKPTR1D(zkmid, kmid, vbus)
-      MKPTR1D(zkshal, kshal, vbus)
-      MKPTR1D(zmainc, mainc, vbus)
-      MKPTR1D(zmcd, mcd, vbus)
-      MKPTR1D(zmg, mg, fbus)
-      MKPTR1D(zml, ml, fbus)
-      MKPTR1D(zmpeff, mpeff, vbus)
-      MKPTR1D(zpeffkfc, peffkfc, fbus)
-      MKPTR1D(zrckfc, rckfc, fbus)
-      MKPTR1D(ztlcm, tlcm, vbus)
-      MKPTR1D(zrice_int, rice_int, fbus)
-      MKPTR1D(zrliq_int, rliq_int, fbus)
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR1D(ztlc, tlc, fbus)
-      MKPTR1D(ztlcs, tlcs, vbus)
-      MKPTR1D(ztsc, tsc, fbus)
-      MKPTR1D(ztscs, tscs, vbus)
-      MKPTR1D(ztstar, tstar, vbus)
-      MKPTR1D(zwklcl, wklcl, fbus)
-      MKPTR1D(zwstar, wstar, vbus)
-      MKPTR1D(zwumaxkfc, wumaxkfc, fbus)
-      MKPTR1D(zzbasekfc, zbasekfc, fbus)
-      MKPTR1D(zztopkfc, ztopkfc, fbus)
+      MKPTR1D(psm, pmoins, pvars)
+      MKPTR1D(psp, pmoins, pvars)
+      MKPTR1D(zabekfc, abekfc, pvars)
+      MKPTR1D(zcapekfc, capekfc, pvars)
+      MKPTR1D(ztauckfc, tauckfc, pvars)
+      MKPTR1D(zcinkfc, cinkfc, pvars)
+      MKPTR1D(zcoadvu, coadvu, pvars)
+      MKPTR1D(zcoadvv, coadvv, pvars)
+      MKPTR1D(zcoage, coage, pvars)
+      MKPTR1D(zconedc, conedc, pvars)
+      MKPTR1D(zconemc, conemc, pvars)
+      MKPTR1D(zconesc, conesc, pvars)
+      MKPTR1D(zconqdc, conqdc, pvars)
+      MKPTR1D(zconqmc, conqmc, pvars)
+      MKPTR1D(zconqsc, conqsc, pvars)
+      MKPTR1D(zcowlcl, cowlcl, pvars)
+      MKPTR1D(zcozlcl, cozlcl, pvars)
+      MKPTR1D(zdlat, dlat, pvars)
+      MKPTR1D(zdxdy, dxdy, pvars)
+      MKPTR1D(zfcpflg, fcpflg, pvars)
+      MKPTR1D(zkkfc, kkfc, pvars)
+      MKPTR1D(zkmid, kmid, pvars)
+      MKPTR1D(zkshal, kshal, pvars)
+      MKPTR1D(zmainc, mainc, pvars)
+      MKPTR1D(zmcd, mcd, pvars)
+      MKPTR1D(zmg, mg, pvars)
+      MKPTR1D(zml, ml, pvars)
+      MKPTR1D(zmpeff, mpeff, pvars)
+      MKPTR1D(zpeffkfc, peffkfc, pvars)
+      MKPTR1D(zrckfc, rckfc, pvars)
+      MKPTR1D(ztlcm, tlcm, pvars)
+      MKPTR1D(zrice_int, rice_int, pvars)
+      MKPTR1D(zrliq_int, rliq_int, pvars)
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztlc, tlc, pvars)
+      MKPTR1D(ztlcs, tlcs, pvars)
+      MKPTR1D(ztsc, tsc, pvars)
+      MKPTR1D(ztscs, tscs, pvars)
+      MKPTR1D(ztstar, tstar, pvars)
+      MKPTR1D(zwklcl, wklcl, pvars)
+      MKPTR1D(zwstar, wstar, pvars)
+      MKPTR1D(zwumaxkfc, wumaxkfc, pvars)
+      MKPTR1D(zzbasekfc, zbasekfc, pvars)
+      MKPTR1D(zztopkfc, ztopkfc, pvars)
 
-      MKPTR2D(sigma, sigw, dbus)
+      MKPTR2D(sigma, sigw, pvars)
 
-      MKPTR2Dm1(nti1p, nti1plus, dbus)
-      MKPTR2Dm1(qti1p, qti1plus, dbus)
-      MKPTR2Dm1(ncp, ncplus, dbus)
-      MKPTR2Dm1(nip, niplus, dbus)
-      MKPTR2Dm1(qcm, qcmoins, dbus)
-      MKPTR2Dm1(qcp, qcplus, dbus)
-      MKPTR2Dm1(qip, qiplus, dbus)
-      MKPTR2Dm1(qqm, humoins, dbus)
-      MKPTR2Dm1(qqp, huplus, dbus)
-      MKPTR2Dm1(ttm, tmoins, dbus)
-      MKPTR2Dm1(qrp, qrplus, dbus)
-      MKPTR2Dm1(ttp, tplus, dbus)
-      MKPTR2Dm1(uu, uplus, dbus)
-      MKPTR2Dm1(vv, vplus, dbus)
-      MKPTR2Dm1(wz, wplus, dbus)
-      MKPTR2Dm1(zcqce, cqce, vbus)
-      MKPTR2Dm1(zcqe, cqe, vbus)
-      MKPTR2Dm1(zcte, cte, vbus)
-      MKPTR2Dm1(zen, en, fbus)
-      MKPTR2Dm1(zfdc, fdc, fbus)
-      MKPTR2Dm1(zfmc, fmc, fbus)
-      MKPTR2Dm1(zfsc, fsc, fbus)
-      MKPTR2Dm1(zgztherm, gztherm, vbus)
-      MKPTR2Dm1(zhufcp, hufcp, fbus)
-      MKPTR2Dm1(zmqe, mqe, vbus)
-      MKPTR2Dm1(zhupostshal, hupostshal, fbus)
-      MKPTR2Dm1(zhushal, hushal, vbus)
-      MKPTR2Dm1(zkt, kt, vbus)
-      MKPTR2Dm1(zprcten, prcten, fbus)
-      MKPTR2Dm1(zprctnm, prctnm, vbus)
-      MKPTR2Dm1(zprctns, prctns, vbus)
-      MKPTR2Dm1(zpriten, priten, fbus)
-      MKPTR2Dm1(zpritnm, pritnm, vbus)
-      MKPTR2Dm1(zpritns, pritns, vbus)
-      MKPTR2Dm1(zqckfc, qckfc, fbus)
-      MKPTR2Dm1(zmqce, mqce, vbus)
-      MKPTR2Dm1(zqcz, qcz, vbus)
-      MKPTR2Dm1(zqdifv, qdifv, vbus)
-      MKPTR2Dm1(zqlsc, qlsc, vbus)
-      MKPTR2Dm1(zqssc, qssc, vbus)
+      MKPTR2Dm1(nti1p, nti1plus, pvars)
+      MKPTR2Dm1(qti1p, qti1plus, pvars)
+      MKPTR2Dm1(ncp, ncplus, pvars)
+      MKPTR2Dm1(nip, niplus, pvars)
+      MKPTR2Dm1(qcm, qcmoins, pvars)
+      MKPTR2Dm1(qcp, qcplus, pvars)
+      MKPTR2Dm1(qip, qiplus, pvars)
+      MKPTR2Dm1(qqm, humoins, pvars)
+      MKPTR2Dm1(qqp, huplus, pvars)
+      MKPTR2Dm1(ttm, tmoins, pvars)
+      MKPTR2Dm1(qrp, qrplus, pvars)
+      MKPTR2Dm1(ttp, tplus, pvars)
+      MKPTR2Dm1(uu, uplus, pvars)
+      MKPTR2Dm1(vv, vplus, pvars)
+      MKPTR2Dm1(wz, wplus, pvars)
+      MKPTR2Dm1(zcqce, cqce, pvars)
+      MKPTR2Dm1(zcqe, cqe, pvars)
+      MKPTR2Dm1(zcte, cte, pvars)
+      MKPTR2Dm1(zen, en, pvars)
+      MKPTR2Dm1(zfdc, fdc, pvars)
+      MKPTR2Dm1(zfmc, fmc, pvars)
+      MKPTR2Dm1(zfsc, fsc, pvars)
+      MKPTR2Dm1(zgztherm, gztherm, pvars)
+      MKPTR2Dm1(zhufcp, hufcp, pvars)
+      MKPTR2Dm1(zmqe, mqe, pvars)
+      MKPTR2Dm1(zhupostshal, hupostshal, pvars)
+      MKPTR2Dm1(zhushal, hushal, pvars)
+      MKPTR2Dm1(zkt, kt, pvars)
+      MKPTR2Dm1(zprcten, prcten, pvars)
+      MKPTR2Dm1(zprctnm, prctnm, pvars)
+      MKPTR2Dm1(zprctns, prctns, pvars)
+      MKPTR2Dm1(zpriten, priten, pvars)
+      MKPTR2Dm1(zpritnm, pritnm, pvars)
+      MKPTR2Dm1(zpritns, pritns, pvars)
+      MKPTR2Dm1(zqckfc, qckfc, pvars)
+      MKPTR2Dm1(zmqce, mqce, pvars)
+      MKPTR2Dm1(zqcz, qcz, pvars)
+      MKPTR2Dm1(zqdifv, qdifv, pvars)
+      MKPTR2Dm1(zqlsc, qlsc, pvars)
+      MKPTR2Dm1(zqssc, qssc, pvars)
       
-      MKPTR2Dm1(zsufcp, sufcp, fbus)
-      MKPTR2Dm1(zsvfcp, svfcp, fbus)
+      MKPTR2Dm1(zsufcp, sufcp, pvars)
+      MKPTR2Dm1(zsvfcp, svfcp, pvars)
       
-      MKPTR2Dm1(ztfcp, tfcp, fbus)
-      MKPTR2Dm1(zmte, mte, vbus)
-      MKPTR2Dm1(zrnflx, rnflx, fbus)
-      MKPTR2Dm1(zsnoflx, snoflx, fbus)
-      MKPTR2Dm1(ztpostshal, tpostshal, fbus)
-      MKPTR2Dm1(ztshal, tshal, vbus)
-      MKPTR2Dm1(ztusc, tusc, vbus)
-      MKPTR2Dm1(ztvsc, tvsc, vbus)
+      MKPTR2Dm1(ztfcp, tfcp, pvars)
+      MKPTR2Dm1(zmte, mte, pvars)
+      MKPTR2Dm1(zrnflx, rnflx, pvars)
+      MKPTR2Dm1(zsnoflx, snoflx, pvars)
+      MKPTR2Dm1(ztpostshal, tpostshal, pvars)
+      MKPTR2Dm1(ztshal, tshal, pvars)
+      MKPTR2Dm1(ztusc, tusc, pvars)
+      MKPTR2Dm1(ztvsc, tvsc, pvars)
       
-      MKPTR2Dm1(zufcp, ufcp, fbus)
-      MKPTR2Dm1(zufcp1, ufcp1, fbus)
-      MKPTR2Dm1(zufcp2, ufcp2, fbus)
-      MKPTR2Dm1(zufcp3, ufcp3, fbus)
+      MKPTR2Dm1(zufcp, ufcp, pvars)
+      MKPTR2Dm1(zufcp1, ufcp1, pvars)
+      MKPTR2Dm1(zufcp2, ufcp2, pvars)
+      MKPTR2Dm1(zufcp3, ufcp3, pvars)
       
-      MKPTR2Dm1(zumfs, umfs, vbus)
-      MKPTR2Dm1(zumid, umid, vbus)
+      MKPTR2Dm1(zumfs, umfs, pvars)
+      MKPTR2Dm1(zumid, umid, pvars)
       
-      MKPTR2Dm1(zvfcp, vfcp, fbus)
-      MKPTR2Dm1(zvfcp1, vfcp1, fbus)
-      MKPTR2Dm1(zvfcp2, vfcp2, fbus)
-      MKPTR2Dm1(zvfcp3, vfcp3, fbus)
+      MKPTR2Dm1(zvfcp, vfcp, pvars)
+      MKPTR2Dm1(zvfcp1, vfcp1, pvars)
+      MKPTR2Dm1(zvfcp2, vfcp2, pvars)
+      MKPTR2Dm1(zvfcp3, vfcp3, pvars)
       
-      MKPTR2Dm1(zwklclplus, wklclplus, dbus)
-      MKPTR2Dm1(zvmid, vmid, vbus)
-      MKPTR2Dm1(zareaup, areaup, fbus)
-      MKPTR2Dm1(zdmfkfc, dmfkfc, fbus)
-      MKPTR2Dm1(zkfcrf, kfcrf, fbus)
-      MKPTR2Dm1(zkfcsf, kfcsf, fbus)
-      MKPTR2Dm1(zkfmrf, kfmrf, vbus)
-      MKPTR2Dm1(zkfmsf, kfmsf, vbus)
-      MKPTR2Dm1(zqldi, qldi, fbus)
-      MKPTR2Dm1(zqlmi, qlmi, vbus)
-      MKPTR2Dm1(zqrkfc, qrkfc, fbus)
-      MKPTR2Dm1(zqsdi, qsdi, fbus)
-      MKPTR2Dm1(zqsmi, qsmi, vbus)
-      MKPTR2Dm1(zumfkfc, umfkfc, fbus)
+      MKPTR2Dm1(zwklclplus, wklclplus, pvars)
+      MKPTR2Dm1(zvmid, vmid, pvars)
+      MKPTR2Dm1(zareaup, areaup, pvars)
+      MKPTR2Dm1(zdmfkfc, dmfkfc, pvars)
+      MKPTR2Dm1(zkfcrf, kfcrf, pvars)
+      MKPTR2Dm1(zkfcsf, kfcsf, pvars)
+      MKPTR2Dm1(zkfmrf, kfmrf, pvars)
+      MKPTR2Dm1(zkfmsf, kfmsf, pvars)
+      MKPTR2Dm1(zqldi, qldi, pvars)
+      MKPTR2Dm1(zqlmi, qlmi, pvars)
+      MKPTR2Dm1(zqrkfc, qrkfc, pvars)
+      MKPTR2Dm1(zqsdi, qsdi, pvars)
+      MKPTR2Dm1(zqsmi, qsmi, pvars)
+      MKPTR2Dm1(zumfkfc, umfkfc, pvars)
 
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
+      MKPTR2D(zmrk2, mrk2, pvars)
 
       call init2nan(l_en0, l_pw0)
       call init2nan(dummy1, dummy2, geop) 
@@ -378,7 +376,7 @@ contains
 
          ! Pre-shallow scheme state for budget
          if (pb_compute(zconesc, zconqsc, l_en0, l_pw0, &
-              dbus, fbus, vbus, nkm1) /= PHY_OK) then
+              pvars, nkm1) /= PHY_OK) then
             call physeterror('cnv_main', &
                  'Problem computing preliminary budget for '//trim(conv_shal))
             return
@@ -399,7 +397,7 @@ contains
          if (phy_error_L) return
 
          ! Adjust tendencies to impose conservation
-         if (pb_conserve(shal_conserve, ztshal, zhushal, dbus, fbus, vbus, &
+         if (pb_conserve(shal_conserve, ztshal, zhushal, pvars, &
               F_dqc=zprctns, F_dqi=zpritns) /= PHY_OK) then
             call physeterror('cnv_main', &
                  'Cannot correct conservation for '//trim(conv_shal))
@@ -419,7 +417,7 @@ contains
               ztdmask, ni, nk, nkm1)
 
          ! Post-scheme budget analysis
-         if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, dbus, fbus, vbus, &
+         if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, pvars, &
               delt, nkm1) /= PHY_OK) then
             call physeterror('cnv_main', &
                  'Problem computing final budget for '//trim(conv_shal))
@@ -435,7 +433,7 @@ contains
 
       ! Pre-deep CPS state for budget
       if (pb_compute(zconedc, zconqdc, l_en0, l_pw0, &
-           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+           pvars, nkm1) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Problem computing preliminary budget for '//trim(convec))
          return
@@ -447,7 +445,7 @@ contains
       if (associated(zqckfc)) zcqce = zcqce + zqckfc
 
       ! Adjust deep tendencies to impose conservation
-      if (pb_conserve(deep_conserve, zcte, zcqe, dbus, fbus, vbus, &
+      if (pb_conserve(deep_conserve, zcte, zcqe, pvars, &
            F_dqc=zcqce, F_dqi=zpriten, F_rain=ztlc, F_snow=ztsc) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Cannot correct conservation for '//trim(convec))
@@ -467,7 +465,7 @@ contains
            qti1p, nti1p, ztdmask, ni, nk, nkm1)
 
       ! Post-deep budget analysis
-      if (pb_residual(zconedc, zconqdc, l_en0, l_pw0, dbus, fbus, vbus, &
+      if (pb_residual(zconedc, zconqdc, l_en0, l_pw0, pvars, &
            delt, nkm1, F_rain=ztlc, F_snow=ztsc) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Problem computing final budget for '//trim(convec))
@@ -476,7 +474,7 @@ contains
 
       ! Pre-midlevel CPS state for budget
       if (pb_compute(zconemc, zconqmc, l_en0, l_pw0, &
-           dbus, fbus, vbus, nkm1) /= PHY_OK) then
+           pvars, nkm1) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Problem computing preliminary budget for '//trim(conv_mid))
          return
@@ -502,7 +500,7 @@ contains
       if (phy_error_L) return
 
       ! Adjust midlevel tendencies to impose conservation
-      if (pb_conserve(mid_conserve, zmte, zmqe, dbus, fbus, vbus, &
+      if (pb_conserve(mid_conserve, zmte, zmqe, pvars, &
            F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Cannot correct conservation for '//trim(conv_mid))
@@ -520,7 +518,7 @@ contains
            qti1p, nti1p, ztdmask, ni, nk, nkm1)
 
       ! Post-midlevel budget analysis
-      if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, dbus, fbus, vbus, &
+      if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &
            delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
          call physeterror('cnv_main', &
               'Problem computing final budget for '//trim(conv_mid))

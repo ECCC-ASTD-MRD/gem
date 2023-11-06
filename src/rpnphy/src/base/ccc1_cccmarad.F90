@@ -22,7 +22,7 @@ module ccc1_cccmarad
 contains
 
    !/@*
-   subroutine cccmarad1(dbus, fbus, vbus, &
+   subroutine cccmarad1(pvars, &
         temp, qq, ps, sig, &
         tau, kount , &
         trnch, ni, nkm1, nk, &
@@ -40,7 +40,8 @@ contains
       use series_mod, only: series_xst, series_isstep
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
@@ -48,17 +49,15 @@ contains
 
       !@Arguments
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nkm1, nk
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real, intent(inout) :: temp(ni,nk), qq(ni,nkm1), ps(ni), sig(ni,nkm1+1)
       real, intent(inout) :: liqwcin(ni,nkm1), icewcin(ni,nkm1), cldfrac(ni*nkm1)
       real, intent(inout) :: liqwpin(ni,nkm1), icewpin(ni,nkm1)
       real, intent(in) :: tau
 
       !          - input/output -
-      ! dbus     field of dyn variables
-      ! fbus     field of permanent physics variables
-      ! vbus     field of volatile physics variables
+      ! pvars    list of all phy vars (meta + slab data)
       !          - input -
       ! temp     temperature
       ! qq       specific humidity
@@ -235,7 +234,7 @@ contains
       ! such as cloud cover, effective and true; cloud top temp and pressure
       ! called every timestep
       if (stcond(1:3)=='MP_') then
-         call cldoppro_MP3(dbus, fbus, vbus, &
+         call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
@@ -250,18 +249,18 @@ contains
          if (.not.associated(ztczl)) ztczl => dummy1d
          if (.not.associated(ztczm)) ztczm => dummy1d
          if (.not.associated(ztczh)) ztczh => dummy1d
-         call prep_cw_rad3(fbus, dbus, &
+         call prep_cw_rad3(pvars, &
                  temp, qq, ps, sig, &
                  cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
                  kount, ni, nk, nkm1)
-         call cldoppro_noMP1(fbus,vbus,taucs, omcs, gcs, taucl, omcl, gcl, &
+         call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
               temp, sig, ps, trnch, ni, &
               ni, nkm1, nk)
 
       endif
-      call diagno_clouds2(fbus,vbus,taucs, taucl,  &
+      call diagno_clouds2(pvars, taucs, taucl,  &
              zgztherm, cldfrac, &
              temp, sig, ps, trnch, ni, &
              ni, nkm1, nk)

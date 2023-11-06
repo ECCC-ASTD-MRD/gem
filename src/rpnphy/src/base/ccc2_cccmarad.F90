@@ -22,7 +22,7 @@ module ccc2_cccmarad
 contains
 
    !/@*
-   subroutine ccc2_cccmarad2(dbus, fbus, vbus, &
+   subroutine ccc2_cccmarad2(pvars, &
         temp, qq, ps, sig, &
         tau, kount , &
         trnch, ni, nkm1, nk, &
@@ -38,7 +38,8 @@ contains
       use prep_cw_rad, only: prep_cw_rad3
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
       use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
@@ -48,8 +49,8 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nkm1, nk
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real, intent(inout) :: temp(ni,nk), qq(ni,nkm1), ps(ni), sig(ni,nkm1+1)
       real, intent(inout) :: liqwcin(ni,nkm1), icewcin(ni,nkm1), cldfrac(ni*nkm1)
       real, intent(inout) :: liqwpin(ni,nkm1), icewpin(ni,nkm1)
@@ -62,9 +63,7 @@ contains
       !        executes ccc radiative transfer for infrared and solar radiation
       !@Arguments
       !          - input/output -
-      ! dbus     field of dyn variables
-      ! fbus     field of permanent physics variables
-      ! vbus     field of volatile physics variables
+      ! pvars    list of all phy vars (meta + slab data)
       !          - input -
       ! temp     temperature
       ! qq       specific humidity
@@ -149,7 +148,7 @@ contains
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       
       real, target :: dummy1d(ni)
-      
+
 #define PHYPTRDCL
 #include "cccmarad_ptr.hf"
 
@@ -287,7 +286,7 @@ contains
       ! calculate cloud optical properties and dependent diagnostic
 
       if (stcond(1:3)=='MP_') then
-         call cldoppro_MP3(dbus, fbus, vbus, &
+         call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
@@ -300,11 +299,11 @@ contains
          if (.not.associated(ztczl)) ztczl => dummy1d
          if (.not.associated(ztczm)) ztczm => dummy1d
          if (.not.associated(ztczh)) ztczh => dummy1d
-         call prep_cw_rad3(fbus, dbus, &
+         call prep_cw_rad3(pvars, &
                  temp, qq, ps, sig, &
                  cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
                  kount, ni, nk, nkm1)
-         call cldoppro_noMP1(fbus,vbus,taucs, omcs, gcs, taucl, omcl, gcl, &
+         call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
               temp, sig, ps, trnch, ni, &
@@ -314,7 +313,7 @@ contains
       ! calculate diagnostic cloud variables
       ! such as cloud cover, effective and true; cloud top temp and pressure
 
-      call diagno_clouds2(fbus, vbus,taucs, taucl,  &
+      call diagno_clouds2(pvars, taucs, taucl,  &
              zgztherm, cldfrac, &
              temp, sig, ps, trnch, ni, &
              ni, nkm1, nk)

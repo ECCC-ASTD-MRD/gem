@@ -5,7 +5,32 @@ Updating the rpnphy depot for a GEM release
 # Steps to be done in a GEM dev env.
 
 ... include code from contrubutors & test ...
+... see with RPN-SI if there are updates needed to rpnphy's CMakeLists.txt ...
 
+Tests
+=====
+
+Make sure to test with GFortran and intel
+
+1st shell
+```
+. .ssmuse_gem intel
+. .intial_setup
+make cmake
+make -j4
+make work
+# ... run tests...
+```
+
+2nd shell
+```
+. .ssmuse_gem gnu
+. .intial_setup
+make cmake
+make -j4
+make work
+# ... run tests...
+```
 
 Finalize
 ========
@@ -40,8 +65,8 @@ MYVERSION=${MYVERSION# *}
 cat >> src/${component}/share/nml_upd/${component}_nml_update_db.txt << EOF
 #------
 fileVersion: ${MYVERSION0} > ${MYVERSION}
-$(diff ${component}/share/nml_ref/${component}_settings.${MYVERSION0}.ref.k \
-       ${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref.k \
+$(diff src/${component}/share/nml_ref/${component}_settings.${MYVERSION0}.ref.k \
+       src/${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref.k \
        | egrep '(>|<)' \
        | sed 's/=/ = /g' | sed 's/>/#New: /' | sed 's/</rm: /')
 EOF
@@ -50,9 +75,11 @@ EOF
 # Update nml doc
 ```
 cd src
+export PATH=$(pwd)/${component}/bin:${PATH}
 ${component}_ftnnml2wiki --comp ${component} --sort --wiki
 ${component}_ftnnml2wiki --comp ${component} --sort --md
 mv ${component}.namelists.* ${component}/share/doc
+cd ..
 ```
 
 # Commit
@@ -71,7 +98,8 @@ Move patch from GEM dev to rpnphy depot
 # Steps to be done in a GEM dev env.
 
 ```
-# git subtree split ...
+component=rpnphy
+git subtree split --prefix=src/${component} 
 git format-patch FROM..HEAD
 ```
 

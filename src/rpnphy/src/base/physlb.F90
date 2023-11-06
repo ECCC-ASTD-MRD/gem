@@ -14,46 +14,38 @@
 !---------------------------------- LICENCE END -------------------------------
 
 module physlb
+   use phymem, only: phyvar, phymem_get_slabvars
    use phy_status, only: phy_error_L
    use phy_options
    use phyexe, only: phyexe1
+   use testphy_phyexe, only: testphy_phyexe1
    private
    public :: physlb1
 
 !!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 
 contains
 
    !/@*
-   subroutine physlb1(busdyn3D ,busper3D, busvol3D, &
-        dsiz, fsiz, vsiz, kount, ni, nj, nk, pslic)
+   subroutine physlb1(kount, ni, nj, nk, pslic)
       implicit none
       !@Author L. Spacek (May 2010)
       !@Object The main physics subroutine
       !@Arguments
       
-      integer, intent(in) :: dsiz, fsiz, vsiz, kount, ni, nj, nk
+      integer, intent(in) :: kount, ni, nj, nk
       integer, intent(inout) :: pslic
-      real, dimension(:,:), pointer, contiguous :: busdyn3D, busper3D, busvol3D
       
-      !          - Input/Output -
-      ! busdyn3D  - dynamics input field
-      ! busper3D  - historic variables for the physics
-      !
-      !          - Output -
-      ! busvol3D  - physics tendencies and other output fields from the physics
       !          - Input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! kount    timestep number
       ! ni       horizontal running length
       ! nj       number of slices
       ! nk       vertical dimension
       !*@/
 
-      integer :: jdo
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
+      integer :: jdo, istat
+      type(phyvar), pointer, contiguous :: pvars(:)
       !     ---------------------------------------------------------------
 
 100   continue
@@ -65,17 +57,17 @@ contains
 
       if (jdo > nj) return
 
-      dbus(1:dsiz) => busdyn3D(:,jdo)
-      fbus(1:fsiz) => busper3D(:,jdo)
-      vbus(1:vsiz) => busvol3D(:,jdo)
-      
+      nullify(pvars)
+      istat = phymem_get_slabvars(pvars, jdo)
+      if (.not.RMN_IS_OK(istat)) then
+         call physeterror('physlb1', 'Problem getting slab vars pointers')
+         return
+      endif
+           
       if (test_phy) then
-         call physeterror('physlb1', 'testphy_phyexe needs to be updated')
-!!$       call testphy_phyexe(dbus, fbus, vbus, &
-!!$         jdo, kount, ni, nk)
+         call testphy_phyexe1(pvars, kount, ni, nk, jdo)
       else
-         call phyexe1(dbus, fbus, vbus, &
-              jdo, kount, ni, nk)
+         call phyexe1(pvars, kount, ni, nk, jdo)
       endif
       if (phy_error_L) return
 

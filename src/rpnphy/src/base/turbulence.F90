@@ -22,8 +22,8 @@ module turbulence
 contains
 
    !/@*
-   subroutine turbulence2(dbus, fbus, vbus, ficebl, seloc, cdt1, &
-        kount, trnch, ni, nk)
+   subroutine turbulence2(pvars, ficebl, seloc, cdt1, &
+        kount, ni, nk, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: RGASD, CPD
       use boundary_layer, only: boundary_layer4
@@ -31,32 +31,28 @@ contains
       use form_drag, only: form_drag1
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use tendency, only: apply_tendencies
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object
       !@Arguments
-      !          - Input -
-      ! dbus     dynamics input field
-      !          - Input/Output -
-      ! fbus     historic variables for the physics
-      !          - Output -
-      ! vbus     physics tendencies and other output fields from the physics
+      !          - Input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - Input -
       ! dt       timestep (sec.)
       ! trnch    slice number
       ! kount    timestep number
-      ! icpu     cpu number executing slice "trnch"
       ! n        horizontal running length
       ! nk       vertical dimension
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: trnch, kount, ni, nk
       real, dimension(ni,nk), intent(inout) :: ficebl
       real, dimension(ni,nk), intent(in) :: seloc
       real, intent(in) :: cdt1
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
 
       !@Author L. Spacek (Nov 2011)
       !*@/
@@ -76,27 +72,27 @@ contains
       if (timings_L) call timing_start_omp(430, 'turbulence', 46)
 
       ! Reshape bus entries
-      MKPTR1D(zpplus, pplus, vbus)
-      MKPTR1D(zsigs, sigs, fbus)
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR1D(ztsrad, tsrad, fbus)
-      MKPTR1D(zutautofd, utautofd, vbus)
-      MKPTR1D(zvtautofd, vtautofd, vbus)
-      MKPTR2D(zsigt, sigt, dbus)
-      MKPTR2D(zsigm, sigm, dbus)
+      MKPTR1D(zpplus, pplus, pvars)
+      MKPTR1D(zsigs, sigs, pvars)
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztsrad, tsrad, pvars)
+      MKPTR1D(zutautofd, utautofd, pvars)
+      MKPTR1D(zvtautofd, vtautofd, pvars)
+      MKPTR2D(zsigt, sigt, pvars)
+      MKPTR2D(zsigm, sigm, pvars)
 
-      MKPTR2D(zgzmom, gzmom, vbus)
-      MKPTR2D(zumoins, umoins, dbus)
-      MKPTR2D(zuplus, uplus, dbus)
-      MKPTR2D(zutofd, utofd, vbus)
-      MKPTR2D(zvmoins, vmoins, dbus)
-      MKPTR2D(zvplus, vplus, dbus)
-      MKPTR2D(zvtofd, vtofd, vbus)
-      MKPTR2D(ztplus, tplus, dbus)
-      MKPTR2D(zttofd, ttofd, vbus)
-      MKPTR2DN(zz0, z0, ni, nagrege, fbus)
+      MKPTR2D(zgzmom, gzmom, pvars)
+      MKPTR2D(zumoins, umoins, pvars)
+      MKPTR2D(zuplus, uplus, pvars)
+      MKPTR2D(zutofd, utofd, pvars)
+      MKPTR2D(zvmoins, vmoins, pvars)
+      MKPTR2D(zvplus, vplus, pvars)
+      MKPTR2D(zvtofd, vtofd, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
+      MKPTR2D(zttofd, ttofd, pvars)
+      MKPTR2D(zz0, z0, pvars)
 
-      MKPTR3D(zvcoef, vcoef, 2, vbus)
+      MKPTR3D(zvcoef, vcoef, pvars)
       
       call init2nan(dkem,dket,rho)
 
@@ -142,7 +138,7 @@ contains
 
       ! Turbulent vertical diffusion using the PBL scheme
       if (.not.(fluvert == 'NIL' .or. fluvert == 'SURFACE')) then
-         call boundary_layer4(dbus, fbus, vbus, ficebl, seloc, cdt1, kount, trnch, ni, nk)
+         call boundary_layer4(pvars, ficebl, seloc, cdt1, kount, ni, nk, trnch)
          if (phy_error_L) return
       endif
 

@@ -20,7 +20,7 @@ module phyfillbus
    use clib_itf_mod, only: clib_tolower, clib_toupper
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phyfold, only: phyfoldmeta1, phyfold1
-   use phymem, only: pbuslist, PHY_DBUSIDX
+   use phymem, only: phymeta, nphyvars, phymem_getmeta, PHY_DBUSIDX
    implicit none
 
    private
@@ -55,6 +55,7 @@ function phyfillbus1(F_kount) result(F_istat)
    integer :: iv, k0, istat, err, ijkmin(3), ijkmax(3)
    real, pointer :: src2d(:,:), src3d(:,:,:)
    real, pointer :: src2d1(:,:), src3d1(:,:,:)
+   type(phymeta), pointer :: vmeta
    !     ---------------------------------------------------------------
    F_istat = RMN_ERR
 
@@ -69,9 +70,8 @@ function phyfillbus1(F_kount) result(F_istat)
          istat = min(gmm_get(FLD_INIT(iv), src2d, gmeta), istat)
          if (associated(src2d)) then
             src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
-            istat = min( &
-                 phyfold1(src2d1, FLD_INIT(iv), 'P', ijkmin, ijkmax), &
-                 istat)
+            istat = min(istat, &
+                 phyfold1(src2d1, FLD_INIT(iv), 'P', ijkmin, ijkmax))
          else
             call msg(MSG_ERROR, '(phyfillbus) missing GMM var: '//trim(FLD_INIT(iv)))
             istat = RMN_ERR
@@ -87,10 +87,11 @@ function phyfillbus1(F_kount) result(F_istat)
    ! Pull dynamics state into the bus
    istat = 0
    
-   DO_VAR: do iv= 1, pbuslist(PHY_DBUSIDX)%nvars
-      IF_INIT: if (pbuslist(PHY_DBUSIDX)%meta(iv)%init == MUST_INIT) then
+   DO_VAR: do iv= 1, nphyvars
+      istat = phymem_getmeta(vmeta, iv)
+      if (vmeta%ibus /= PHY_DBUSIDX .or. vmeta%init /= MUST_INIT) cycle
 
-         call gmmx_name_parts(trim(pbuslist(PHY_DBUSIDX)%meta(iv)%vname), prefix_S, basename_S, time_S, ext_S)
+         call gmmx_name_parts(trim(vmeta%vname), prefix_S, basename_S, time_S, ext_S)
          varname_S = trim(prefix_S)//trim(basename_S)//trim(time_S)
          err = clib_toupper(varname_S)
          err = gmm_getmeta(trim(varname_S), gmeta)
@@ -99,7 +100,7 @@ function phyfillbus1(F_kount) result(F_istat)
             err = gmm_getmeta(trim(varname_S), gmeta)
          endif
          if (.not.RMN_IS_OK(err)) then
-            call msg(MSG_WARNING, '(phyfillbus) Dyn bus var not found in GMM: '//trim(pbuslist(PHY_DBUSIDX)%meta(iv)%vname))
+            call msg(MSG_WARNING, '(phyfillbus) Dyn bus var not found in GMM: '//trim(vmeta%vname))
             cycle
          endif
 
@@ -112,7 +113,7 @@ function phyfillbus1(F_kount) result(F_istat)
             if (associated(src2d)) then
                ijkmax(3) = 1
                src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
-               err = phyfoldmeta1(src2d1, ijkmin, ijkmax, pbuslist(PHY_DBUSIDX)%meta(iv))
+               err = phyfoldmeta1(src2d1, ijkmin, ijkmax, vmeta)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR, '(phyfillbus) Problem folding 2d pointer for: '//trim(varname_S))
                istat = min(err, istat)
@@ -125,12 +126,12 @@ function phyfillbus1(F_kount) result(F_istat)
             if (associated(src3d)) then
                k0 = 1
                ijkmax(3) = min(phydim_nk, gmeta%l(3)%high)
-               if (pbuslist(PHY_DBUSIDX)%meta(iv)%nk == 1) then
+               if (vmeta%nk == 1) then
                   k0 = gmeta%l(3)%high
                   ijkmax(3) = 1
                endif
                src3d1(1:,1:,1:) => src3d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn,k0:)
-               err = phyfoldmeta1(src3d1, ijkmin, ijkmax, pbuslist(PHY_DBUSIDX)%meta(iv))
+               err = phyfoldmeta1(src3d1, ijkmin, ijkmax, vmeta)
                if (.not.RMN_IS_OK(err)) &
                     call msg(MSG_ERROR, '(phyfillbus) Problem folding 3d pointer for: '//trim(varname_S))
                istat = min(err, istat)
@@ -140,7 +141,6 @@ function phyfillbus1(F_kount) result(F_istat)
             endif
          endif IF_3D
 
-      endif IF_INIT
    end do DO_VAR
    if (.not.GMM_IS_OK(istat)) then
       call msg(MSG_ERROR, '(phyfillbus) cannot access required dynamics inputs')

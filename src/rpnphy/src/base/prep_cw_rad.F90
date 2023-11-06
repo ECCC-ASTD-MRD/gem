@@ -22,7 +22,7 @@ module prep_cw_rad
 contains
 
    !/@*
-   subroutine prep_cw_rad3(fbus, dbus, &
+   subroutine prep_cw_rad3(pvars, &
         tm, qm, ps, sigma, cloud, &
         liqwcin, icewcin, liqwpin, icewpin, &
         kount, ni, nk, nkm1)
@@ -30,11 +30,14 @@ contains
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, TCDK, RGASD, TRPL
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       implicit none
 
       !@Object  Prepare liquid/ice water contents and cloudiness for the radiation
       !@Arguments
+      !     - input/output -
+      !     pvars    list of all phy vars (meta + slab data)
       !     - input -
       !     tm       temperature
       !     qm       specific humidity
@@ -52,8 +55,8 @@ contains
       !     icewpin  in-cloud ice    water path (g/m^2)
       !     cloud    cloudiness passed to radiation
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, ni, nk, nkm1
-      real, pointer, contiguous :: dbus(:), fbus(:)
       real, intent(inout) :: tm(ni,nk), qm(ni,nk), ps(ni), sigma(ni,nk)
       real, intent(inout) :: liqwcin(ni,nk), icewcin(ni,nk)
       real, intent(inout) :: liqwpin(ni,nk), icewpin(ni,nk)
@@ -76,13 +79,12 @@ contains
       logical :: nostrlwc, hascond_L
 
       real, pointer, dimension(:,:), contiguous :: zftot, ziwc, zlwc, zqcplus
-
       !----------------------------------------------------------------
 
-      MKPTR2D(zftot, ftot, fbus)
-      MKPTR2D(ziwc, iwc, fbus)
-      MKPTR2D(zlwc, lwc, fbus)
-      MKPTR2D(zqcplus, qcplus, dbus)
+      MKPTR2D(zftot, ftot, pvars)
+      MKPTR2D(ziwc, iwc, pvars)
+      MKPTR2D(zlwc, lwc, pvars)
+      MKPTR2D(zqcplus, qcplus, pvars)
 
       call init2nan(dp, tcel, frac)
 

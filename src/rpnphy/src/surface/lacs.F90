@@ -14,20 +14,32 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine lacs4(F_climat_L, ni, trnch)
+module lacs
+   implicit none
+   private
+   
+   public :: lacs4
+   
+contains
+   
+subroutine lacs4(pvars, F_climat_L, ni)
    use tdpack_const, only: TRPL
    use sfc_options
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   logical F_climat_L
-   integer ni, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   logical, intent(in) ::  F_climat_L
+   integer, intent(in) ::  ni
 
    !@Author Bernard Bilodeau (June 2001)
    !@Object define sea ice fraction and thickness over lakes
    !@Arguments
+   !       - Input/Ouput -
+   ! pvars      list of all phy vars (meta + slab data)
    !          - Input -
    ! F_climat_L climate mode logical key
    ! ni         horizontal length
@@ -40,7 +52,7 @@ subroutine lacs4(F_climat_L, ni, trnch)
    real, pointer, dimension(:) :: zglsea, zicedp, ziceline, zml, ztwater, &
         zvegf
 
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
 
    MKPTR1D(zglsea,glsea)
    MKPTR1D(zicedp,icedp)
@@ -124,3 +136,5 @@ subroutine lacs4(F_climat_L, ni, trnch)
 
    return
 end subroutine lacs4
+
+end module lacs

@@ -22,13 +22,15 @@ module diagnosurf
 contains
 
    !/@*
-   subroutine diagnosurf5(ni, trnch)
+   subroutine diagnosurf5(pvars, ni, trnch)
       use series_mod, only: series_xst, series_isstep, series_isvar
       use sfc_options
       use sfcbus_mod
+      use phymem, only: phyvar
       implicit none
 !!!#include <arch_specific.hf>
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, trnch
 
       !@Author  B. Bilodeau (Sept 1999)
@@ -40,6 +42,8 @@ contains
       !@Object Time-series and zonal diagnostics extractions
       !       of surface-related variables
       !@Arguments
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - Input -
       ! NI       horizontal dimensions of fields
       !          number of elements processed in the horizontal
@@ -49,7 +53,7 @@ contains
       !*@/
 #include <rmn/msg.h>
 
-#define PTR1D(NAME2,IDX) busptr(vd%NAME2%i)%ptr(1+IDX:1+IDX+ni-1,trnch)
+#define PTR1D(NAME2,IDX) pvars(vd%NAME2%idxv)%data(1+IDX:1+IDX+ni-1)
 
       if (.not.series_isstep()) return
 

@@ -14,11 +14,28 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+module inisurf
+   implicit none
+   private
+   
+   public :: inisurf4
+   
+contains
+
 !/@*
-subroutine inisurf4(kount, ni, nk, trnch)
+subroutine inisurf4(pvars, kount, ni, nk)
    use tdpack_const, only: TRPL, TCDK, RAUW
    use sfc_options
    use sfcbus_mod
+   use lacs, only: lacs4
+   use inicover, only: inicover2
+   use coherence, only: coherence3
+   use inisoili, only: inisoili2
+   use inicover_svs_mod, only: inicover_svs
+   use inicover_svs_ccilceco_mod, only: inicover_svs_ccilceco
+   use inisoili_svs_mod, only: inisoili_svs
+   use initown, only: initown3
+   use phymem, only: phyvar
    use svs_configs
    implicit none
 !!!#include <arch_specific.hf>
@@ -28,13 +45,12 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !        surface schemes
    !@Arguments
    !       - Input/Ouput -
-   ! f        field for permanent physics variables
-   ! fsiz     dimension of f
-   ! e        field for entry variables
-   ! esiz     dimension of e
+   ! pvars    list of all phy vars (meta + slab data)
+   !       - Input -
    ! ni       horizontal dimension
 
-   integer ni, nk, kount, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni, nk, kount
 
    !@Author Stephane Belair (February 1999)
    !@NOTE: This subroutine expects snow depth in cm.
@@ -76,8 +92,8 @@ subroutine inisurf4(kount, ni, nk, trnch)
         ztglacier, ztmice, ztmoins, ztsoil, zvegf, zz0, zz0t
   
 
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
    !-------------------------------------------------------------
 
@@ -311,7 +327,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    !                             for lakes only
    !========================================================================
 
-   call lacs4(climat, ni, trnch)
+   call lacs4(pvars, climat, ni)
 
    !========================================================================
    !     Special cases
@@ -398,7 +414,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
       if (any('vegf' == phyinread_list_s(1:phyinread_n)) .or. &
            (kntveg > 0 .and. mod(kount,kntveg) == 0)) then
-         call inicover2(kount, ni, trnch)
+         call inicover2(pvars, kount, ni)
       endif
 
       ! Sand and clay fractions of the soil are taken as simple averages
@@ -416,13 +432,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
 
       ! Make sure the entry fields are coherent ...
 
-      call coherence3(ni, trnch)
+      call coherence3(pvars, ni)
 
       ! Initialize the soil characteristics using the soil texture
 
       if (any('clay' == phyinread_list_s(1:phyinread_n)) .or. &
            any('sand' == phyinread_list_s(1:phyinread_n))) then
-         call inisoili2(ni, trnch)
+         call inisoili2(pvars, ni)
       endif
 
    end if IF_ISBA
@@ -530,9 +546,9 @@ subroutine inisurf4(kount, ni, nk, trnch)
       if (any('vegf' == phyinread_list_s(1:phyinread_n)) .or. &
            (kntveg > 0 .and. mod(kount,kntveg) == 0)) then
          if(vf_type == "CCILCECO") then            
-            call inicover_svs_ccilceco(kount, ni, trnch)
+            call inicover_svs_ccilceco(pvars, kount, ni)
          else
-            call inicover_svs(kount, ni, trnch)
+            call inicover_svs(pvars, kount, ni)
          endif
       endif
 !
@@ -597,13 +613,13 @@ subroutine inisurf4(kount, ni, nk, trnch)
                enddo
             enddo
             ! initialize soil characteristics 
-            call inisoili_svs( ni, trnch )
+            call inisoili_svs(pvars, ni)
          endif clay_n_sand
       endif soil_data
 
       ! Make sure the entry fields are coherent ...
-      call coherence3(ni, trnch)
-   
+      call coherence3(pvars, ni)
+
 
      END IF IF_SVS
 
@@ -616,7 +632,9 @@ subroutine inisurf4(kount, ni, nk, trnch)
    ! Note that TEB variables do not support reading for kount>0:  phyincread_list_s
    !  would need to be processed within initown() to implement this support.
    if (kount == 0 .and. schmurb == 'TEB') &
-        call initown3(ni, trnch)
+        call initown3(pvars, ni)
 
    return
 end subroutine inisurf4
+
+end module inisurf

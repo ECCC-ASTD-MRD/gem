@@ -14,21 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-subroutine inicover2(kount, ni, trnch)
+module inicover
+   implicit none
+   private
+   
+   public :: inicover2
+   
+contains
+
+   subroutine inicover2(pvars, kount, ni)
    use mu_jdate_mod, only: jdate_day_of_year
    use sfc_options
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer ni, kount, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni, kount
 
    !@Author Bernard Bilodeau and Stephane Belair (May 2000)
    !@Revision
    ! 001      see version 5.5.0 for previous history
    !@Object Initialize vegetation fields for the surface schemes
    !@Arguments
+   !       - Input/Ouput -
+   ! pvars    list of all phy vars (meta + slab data)
    !       - Input -
    ! kount    current timestep number
    ! ni       horizontal slice dimension
@@ -279,7 +291,7 @@ subroutine inicover2(kount, ni, trnch)
       vegdatds(18)  = interpveg(juliens, vegcrops)
       vegdatds(19)  = interpveg(juliens, vegcrops)
 
-#define PTR1D(NAME2) busptr(vd%NAME2%i)%ptr(1,trnch)
+#define PTR1D(NAME2) pvars(vd%NAME2%idxv)%data(:)
 
       call aggcovernat(PTR1D(vegf), laidatdn, laidatds, PTR1D(lai), &
            PTR1D(dlat), ni, nclass)
@@ -302,3 +314,5 @@ subroutine inicover2(kount, ni, trnch)
 
    return
 end subroutine inicover2
+
+end module inicover

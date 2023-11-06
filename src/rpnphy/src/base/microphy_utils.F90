@@ -39,11 +39,10 @@ module microphy_utils
 
   ! Total water mass calculation
   abstract interface
-     function lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
+     function lwc(F_qltot, F_pvars) result(F_istat)
+       use phymem, only: phyvar
        real, dimension(:,:), intent(out) :: F_qltot
-       real, dimension(:), pointer, contiguous :: F_dbus
-       real, dimension(:), pointer, contiguous :: F_pbus
-       real, dimension(:), pointer, contiguous :: F_vbus
+       type(phyvar), pointer, contiguous :: F_pvars(:)  !All phy vars (meta + slab data)
        integer :: F_istat
      end function lwc
   end interface
@@ -51,11 +50,10 @@ module microphy_utils
   
   ! Total ice mass calculation
   abstract interface
-     function iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
+     function iwc(F_qitot, F_pvars) result(F_istat)
+       use phymem, only: phyvar
        real, dimension(:,:), intent(out) :: F_qitot
-       real, dimension(:), pointer, contiguous :: F_dbus
-       real, dimension(:), pointer, contiguous :: F_pbus
-       real, dimension(:), pointer, contiguous :: F_vbus
+       type(phyvar), pointer, contiguous :: F_pvars(:)  !All phy vars (meta + slab data)
        integer :: F_istat
      end function iwc
   end interface
@@ -148,13 +146,12 @@ contains
   end function nil_phybusinit
 
   ! Compute total water mass
-  function nil_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-     use phybus
+  function nil_lwc(F_qltot, F_pvars) result(F_istat)
+     use phymem, only: phyvar
+     ! use phybusidx
      implicit none
      real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-     real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-     real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-     real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+     type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
      integer :: F_istat                                  !Return status
      F_qltot(:,:) = 0.
      F_istat = PHY_OK
@@ -162,14 +159,13 @@ contains
   end function nil_lwc
 
   ! Compute total ice mass
-  function nil_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-     use phybus
+  function nil_iwc(F_qitot, F_pvars) result(F_istat)
+     use phymem, only: phyvar
+     ! use phybusidx
      use phy_status, only: PHY_OK, PHY_ERROR
      implicit none
      real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-     real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-     real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-     real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+     type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
      integer :: F_istat                                  !Return status
      F_qitot(:,:) = 0.
      F_istat = PHY_OK

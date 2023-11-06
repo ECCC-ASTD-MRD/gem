@@ -14,17 +14,29 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine initown3(ni, trnch)
+module initown
+   implicit none
+   private
+   
+   public :: initown3
+   
+contains
+
+   subroutine initown3(pvars, ni)
    use sfc_options
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ni, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni
 
    !@Author Aude Lemonsu (March 2004)
    !@Object Transfer and initialize initial fields for TEB
    !@Arguments
+   !       - Input/Ouput -
+   ! pvars    list of all phy vars (meta + slab data)
    !       - Input -
    ! ni       horizontal dimension
 
@@ -189,3 +201,5 @@ subroutine initown3(ni, trnch)
 
    return
 end subroutine initown3
+
+end module initown

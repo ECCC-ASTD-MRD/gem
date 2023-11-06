@@ -15,20 +15,16 @@
 !-------------------------------------- LICENCE END --------------------------
 
 module sfcbus_mod
+   use phymem, only: phymeta, phymem_find, phymem_getmeta, PHY_EBUSIDX
    implicit none
    public
    save
 
-#define SFCVAR(MYVAR,MYNAME) type(SFCVAR_T) :: MYVAR = SFCVAR_T(-1,0,0,0,0,.false.,MYNAME)
-
-   type :: sfcptr
-      sequence
-      real, pointer :: ptr(:,:)
-   end type sfcptr
+#define SFCVAR(MYVAR,MYNAME) type(SFCVAR_T) :: MYVAR = SFCVAR_T(-1,-1,0,0,0,0,.false.,MYNAME)
 
    type :: SFCVAR_T
       sequence
-      integer :: i, agg, mul, niveaux, mosaik
+      integer :: i, idxv, agg, mul, niveaux, mosaik
       logical :: doagg_L
       character(len=32) :: n
    end type SFCVAR_T
@@ -541,7 +537,6 @@ module sfcbus_mod
 
    type(SFCVARLIST_T), target  :: vd
    type(SFCVAR_T), allocatable :: vl(:)
-   type(sfcptr), allocatable :: busptr(:)
    integer, allocatable :: statut(:,:)
 
    integer :: surfesptot = 0
@@ -585,7 +580,6 @@ contains
    function sfcbus_init() result(F_istat)
       use clib_itf_mod, only: clib_toupper
       use phy_typedef, only: phymeta
-      use phymem, only: phymeta, phyvar, phymem_find
       use sfc_options, only: schmurb, schmlake, schmriver
       implicit none
       integer :: F_istat
@@ -595,9 +589,8 @@ contains
 
       ! Variables define below are visible 
 
-      integer :: i, istat, mulmax, idxmax
+      integer :: i, istat, mulmax, idxmax, ivar1(1)
       type(SFCVAR_T) :: vl0(1)
-      type(phyvar) :: myvar(1)
       type(phymeta), pointer :: vmeta
 
       F_istat = RMN_ERR
@@ -612,19 +605,17 @@ contains
  
       nvarsurf = size(transfer(vd, vl0))
       allocate(vl(nvarsurf))
-      allocate(busptr(nvarsurf))
       vl = transfer(vd, vl)
       mulmax = 0
       do i = 1,nvarsurf
          vl(i)%i = i
          istat = clib_toupper(vl(i)%n)
-         nullify(busptr(i)%ptr)
-         istat = phymem_find(myvar, vl(i)%n, F_npath='V', &
+         istat = phymem_find(ivar1, vl(i)%n, F_npath='V', &
               F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
          if (istat > 0) then
-            vmeta => myvar(1)%meta
-            busptr(i)%ptr => vmeta%bptr(vmeta%i0:vmeta%in,:)
-            vl(i)%doagg_L = (vmeta%bus(1:1) /= 'E')
+            istat = phymem_getmeta(vmeta, ivar1(1))
+            vl(i)%idxv = vmeta%idxv
+            vl(i)%doagg_L = (vmeta%ibus /= PHY_EBUSIDX)
             vl(i)%mul = vmeta%fmul
             vl(i)%niveaux = vmeta%nk
             vl(i)%mosaik = vmeta%mosaic + 1
@@ -642,63 +633,63 @@ contains
          case('Z0T')
             z0t_i = i
          case('ACCEVAP')
-            accevap = vmeta%i0
+            accevap = ivar1(1)
          case('DRAIN')
-            drain = vmeta%i0
+            drain = ivar1(1)
          case('DRAINAF')
-            drainaf = vmeta%i0
+            drainaf = ivar1(1)
          case('FVAPLIQAF')
-            fvapliqaf = vmeta%i0
+            fvapliqaf = ivar1(1)
          case('INSMAVG')
-            insmavg = vmeta%i0
+            insmavg = ivar1(1)
          case('ISOIL')
-            isoil = vmeta%i0 
+            isoil = ivar1(1) 
          case('LATFLAF')
-            latflaf = vmeta%i0
+            latflaf = ivar1(1)
          case('LATFLW')
-            latflw = vmeta%i0   
+            latflw = ivar1(1)   
          case('LEG')
-            leg = vmeta%i0
+            leg = ivar1(1)
          case('LEGAF')
-            legaf = vmeta%i0
+            legaf = ivar1(1)
          case('LER')
-            ler = vmeta%i0
+            ler = ivar1(1)
          case('LERAF')
-            leraf = vmeta%i0
+            leraf = ivar1(1)
          case('LES')
-            les = vmeta%i0
+            les = ivar1(1)
          case('LESAF')
-            lesaf = vmeta%i0
+            lesaf = ivar1(1)
          case('LETR')
-            letr = vmeta%i0
+            letr = ivar1(1)
          case('LETRAF')
-            letraf = vmeta%i0
+            letraf = ivar1(1)
          case('LEV')
-            lev = vmeta%i0
+            lev = ivar1(1)
          case('LEVAF')
-            levaf = vmeta%i0
+            levaf = ivar1(1)
          case('OVERFL')
-            overfl = vmeta%i0
+            overfl = ivar1(1)
          case('OVERFLAF')
-            overflaf = vmeta%i0
+            overflaf = ivar1(1)
          case('ROFINLAK')
-            rofinlak = vmeta%i0     
+            rofinlak = ivar1(1)     
          case('ROFINLAKAF')
-            rofinlakaf = vmeta%i0   
+            rofinlakaf = ivar1(1)   
          case('ROOTDP')
-            rootdp = vmeta%i0
+            rootdp = ivar1(1)
          case('RUNOFFTOT')
-            runofftot = vmeta%i0            
+            runofftot = ivar1(1)            
          case('RUNOFFTOTAF')
-            runofftotaf = vmeta%i0
+            runofftotaf = ivar1(1)
          case('WATFLOW')
-            watflow = vmeta%i0  
+            watflow = ivar1(1)  
          case('WFLUX')
-            wflux = vmeta%i0
+            wflux = ivar1(1)
          case('WFLUXAF')
-            wfluxaf = vmeta%i0
+            wfluxaf = ivar1(1)
          case('WSOIL')
-            wsoil = vmeta%i0
+            wsoil = ivar1(1)
          end select
 
       enddo

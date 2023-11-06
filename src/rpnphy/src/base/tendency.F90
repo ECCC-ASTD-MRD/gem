@@ -22,8 +22,6 @@ module tendency
 #include "phymkptr.hf"
 
    interface apply_tendencies
-      module procedure apply_tendencies_bus
-      module procedure apply_tendencies_bus2
       module procedure apply_tendencies_ptr
    end interface apply_tendencies
 
@@ -31,9 +29,10 @@ contains
 
    !/@*
    subroutine tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        vbus, dbus, rcdt1, kount, ni, nk)
+        pvars, rcdt1, kount, ni, nk)
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use ens_perturb, only: ptp_L
       implicit none
 !!!#include <arch_specific.hf>
@@ -44,19 +43,18 @@ contains
 
       integer, intent(in) :: kount, ni, nk
       real, dimension(ni,nk), intent(in) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-      real, dimension(:), pointer, contiguous :: dbus, vbus
+      type(phyvar), pointer, contiguous :: pvars(:)
       real, intent(in)  :: rcdt1
 
       ! ni       horizontal running length
       ! nk       vertical dimension
       ! rcdt1    1/cdt1
-      ! uplus0   initial value of dbus(uplus)
-      ! vplus0   initial value of dbus(vplus)
-      ! tplus0   initial value of dbus(tplus)
-      ! huplus0  initial value of dbus(huplus)
-      ! qcplus0  initial value of dbus(qcplus)
-      ! dbus     dynamics input field
-      ! vbus     physics tendencies and other output fields from the physics
+      ! uplus0   initial value of pvars(uplus)
+      ! vplus0   initial value of pvars(vplus)
+      ! tplus0   initial value of pvars(tplus)
+      ! huplus0  initial value of pvars(huplus)
+      ! qcplus0  initial value of pvars(qcplus)
+      ! pvars    list of all phy vars (meta + slab data)
       !*@/
 #include <rmn/msg.h>
 
@@ -66,22 +64,22 @@ contains
       call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
       if (timings_L) call timing_start_omp(450, 'tendency', 46)
 
-      MKPTR2D(zhuphytd, huphytd, vbus)
-      MKPTR2D(zhuplus , huplus, dbus)
-      MKPTR2D(zqcphytd, qcphytd, vbus)
-      MKPTR2D(zqcplus , qcplus, dbus)
-      MKPTR2D(zqdifv  , qdifv, vbus)
-      MKPTR2D(ztdifv  , tdifv, vbus)
-      MKPTR2D(ztphytd , tphytd, vbus)
-      MKPTR2D(ztplus  , tplus, dbus)
-      MKPTR2D(zuphytd , uphytd, vbus)
-      MKPTR2D(zudifv  , udifv, vbus)
-      MKPTR2D(zuplus  , uplus, dbus)
-      MKPTR2D(zvphytd , vphytd, vbus)
-      MKPTR2D(zvdifv  , vdifv, vbus)
-      MKPTR2D(zvplus  , vplus, dbus)
-      MKPTR2D(zwphytd , wphytd, vbus)
-      MKPTR2D(zwplus  , wplus, dbus)
+      MKPTR2D(zhuphytd, huphytd, pvars)
+      MKPTR2D(zhuplus , huplus, pvars)
+      MKPTR2D(zqcphytd, qcphytd, pvars)
+      MKPTR2D(zqcplus , qcplus, pvars)
+      MKPTR2D(zqdifv  , qdifv, pvars)
+      MKPTR2D(ztdifv  , tdifv, pvars)
+      MKPTR2D(ztphytd , tphytd, pvars)
+      MKPTR2D(ztplus  , tplus, pvars)
+      MKPTR2D(zuphytd , uphytd, pvars)
+      MKPTR2D(zudifv  , udifv, pvars)
+      MKPTR2D(zuplus  , uplus, pvars)
+      MKPTR2D(zvphytd , vphytd, pvars)
+      MKPTR2D(zvdifv  , vdifv, pvars)
+      MKPTR2D(zvplus  , vplus, pvars)
+      MKPTR2D(zwphytd , wphytd, pvars)
+      MKPTR2D(zwplus  , wplus, pvars)
 
       do k=1,nk
          do i=1,ni
@@ -133,127 +131,25 @@ contains
       return
    end subroutine tendency5
 
-
-   !/@*
-   subroutine apply_tendencies_bus(dbus,dsiz,vbus,vsiz,fbus,fsiz,ivar,iten,ni,nk,nkscope)
-      use phy_options
-      use phybus
-      implicit none
-!!!#include <arch_specific.hf>
-      !@Object Linear combination of two arrays
-      !@Arguments
-      !          - input -
-      ! ivar     variable  index
-      ! iten     tendency  index
-      ! ni       horizonal index
-      ! nk       vertical  index
-      ! nkscope  vertical  operator scope
-      ! vbus     volatile bus
-      ! fbus     permanent bus
-      !
-      !          - input/output -
-      ! dbus     dynamics bus
-
-      integer, intent(in)    :: dsiz,vsiz,fsiz,ivar,iten,ni,nk,nkscope
-      real, target, intent(in)    :: vbus(vsiz), fbus(fsiz)
-      real, target, intent(inout) :: dbus(dsiz)
-
-      !@Author L. Spacek (Oct 2011)
-      !*@/
-
-      integer :: k
-
-      real, pointer, dimension(:), contiguous   :: ztdmask
-      real, pointer, dimension(:,:), contiguous :: ziten, zivar
-      !----------------------------------------------------------------
-
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR2D(ziten, iten, vbus)
-      MKPTR2D(zivar, ivar, dbus)
-
-      if (.not.(associated(ztdmask) .and. associated(ziten) .and. associated(zivar))) then
-         call physeterror('apply_tendencies_bus', 'Problem getting pointers')
-         return
-      endif
-
-      do k=1,nkscope
-         zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
-     enddo
-
-      !----------------------------------------------------------------
-      return
-   end subroutine apply_tendencies_bus
-
-
-   !/@*
-   subroutine apply_tendencies_bus2(dbus, vbus, fbus, ivar, iten, ni, nk, nkscope)
-      use phy_options
-      use phybus
-      implicit none
-!!!#include <arch_specific.hf>
-      !@Object Linear combination of two arrays
-      !@Arguments
-      !          - input -
-      ! ivar     variable  index
-      ! iten     tendency  index
-      ! ni       horizonal index
-      ! nk       vertical  index
-      ! nkscope  vertical  operator scope
-      ! vbus     volatile bus
-      ! fbus     permanent bus
-      !
-      !          - input/output -
-      ! dbus     dynamics bus
-
-      real, target, intent(inout) :: dbus(:)
-      real, target, intent(in)    :: vbus(:),fbus(:)
-      integer, intent(in) :: ivar,iten,ni,nk
-      integer, intent(in), optional :: nkscope
-
-      !@Author L. Spacek (Oct 2011)
-      !*@/
-
-      integer :: k, nkscope1
-
-      real, pointer, dimension(:), contiguous   :: ztdmask
-      real, pointer, dimension(:,:), contiguous :: ziten, zivar
-      !----------------------------------------------------------------
-
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR2D(ziten, iten, vbus)
-      MKPTR2D(zivar, ivar, dbus)
-
-      nkscope1 = nk
-      if (present(nkscope)) nkscope1 = nkscope
-
-      if (.not.(associated(ztdmask) .and. associated(ziten) .and. associated(zivar))) then
-         call physeterror('apply_tendencies_bus2', 'Problem getting pointers')
-         return
-      endif
-
-      do k=1,nkscope1
-         zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
-     enddo
-
-      !----------------------------------------------------------------
-      return
-   end subroutine apply_tendencies_bus2
-
    
    !/@*
-   subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, nkscope, F_minval, F_maxval)
+   subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, F_nkscope, F_minval, F_maxval)
       use phy_options
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Linear combination of two arrays
       !@Arguments
-      integer, intent(in) :: ni, nk, nkscope
-      real, dimension(ni)  :: ztdmask
-      real, dimension(ni, nk) :: ziten, zivar
+      integer, intent(in) :: ni, nk
+      real, dimension(ni, nk), intent(in) :: ziten
+      real, dimension(ni), intent(in)  :: ztdmask
+      real, dimension(ni, nk), intent(inout) :: zivar
+      integer, intent(in), optional :: F_nkscope
       real, intent(in), optional :: F_minval, F_maxval
       !*@/
-      integer :: k
+      integer :: k, nkscope
      !----------------------------------------------------------------
+      nkscope = nk
+      if (present(F_nkscope)) nkscope = F_nkscope
       if (present(F_minval)) then
          if (present(F_maxval)) then
             do k=1,nkscope

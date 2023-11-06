@@ -17,7 +17,7 @@
 
 module phyinputdiag
    use phy_options
-   use phymem, only: phymeta, pvarlist, phymem_find, PHY_MAXVARS
+   use phymem, only: phymeta, phymem_find, phymem_getmeta, PHY_MAXVARS
    private
    public :: phyinputdiag1, phyinputdiag_id, phyinputdiag_obj
 
@@ -66,7 +66,7 @@ contains
 
          nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
          do ivar = 1,nvars
-            vmeta => pvarlist(ivalist(ivar))%meta
+            istat = phymem_getmeta(vmeta, ivalist(ivar))
             call gmmx_name_parts(vmeta%vname,prefix_S,basename_S,time_S,ext_S)
             if  (vmeta%vname /= 'tr/hu:m' .and. &
                  vmeta%vname /= 'tr/hu:p' .and. &
@@ -143,7 +143,7 @@ contains
 
          nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
          do ivar = 1, nvars
-            vmeta => pvarlist(ivalist(ivar))%meta
+            istat = phymem_getmeta(vmeta, ivalist(ivar))
             call gmmx_name_parts(vmeta%vname, prefix_S, basename_S, &
                  time_S, ext_S)
             if  (vmeta%vname /= 'tr/hu:m' .and. &

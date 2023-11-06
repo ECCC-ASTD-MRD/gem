@@ -1,30 +1,14 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
-!/@*
-subroutine phybusinit(ni,nk)
+subroutine phybusinit_legacy(ni,nk)
    use bus_builder, only: bb_keylist, bb_n
    use wb_itf_mod
    use cnv_options
    use phy_options
    use phy_status, only: phy_error_L, PHY_OK
-   use phybusidx
+   use phybus_legacy
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
-   use phymem, only: phymem_add
+   use phymem, only: phymem_get_i0_string
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -78,12 +62,12 @@ subroutine phybusinit(ni,nk)
    !# nmar is the number of 2d Markov fields
    write(nmar,'(a,i2)') 'A*', ens_nc2d
 
-   ! Retrieve bus requirements for microphysics scheme
-   if (mp_phybusinit() /= PHY_OK) then
-      call physeterror('phybusinit', &
-           'Cannot retrieve microphysics bus information')
-      return
-   endif
+!!$   ! Retrieve bus requirements for microphysics scheme
+!!$   if (mp_phybusinit() /= PHY_OK) then
+!!$      call physeterror('phybusinit', &
+!!$           'Cannot retrieve microphysics bus information')
+!!$      return
+!!$   endif
    
    lbourg3d= (pcptype == 'BOURGE3D')
    lgwdsm  = (sgo_tdfilter > 0.)
@@ -113,20 +97,20 @@ subroutine phybusinit(ni,nk)
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
 
-   ! Compute linoz diags only on demand
-   do i=1,nphyoutlist
-      out_linoz = any(phyoutlist_S(i) == (/ &
-           'ao3 ','ao3c','ach4','an2o','af11','af12',&
-           'zch4','zn2o','zf11','zf12',&
-           'ych4','yn2o','yf11','yf12',&
-           'azo3','azoc','azch','azn2','azf1','azf2',&
-           'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
-           'ado3','ado1','ado4','ado6','ado7', &
-           'adch','adn2','adf1','adf2' &
-           /))
-      if (out_linoz) exit
-   enddo
-   out_linoz = (out_linoz .or. debug_alldiag_L)
+!!$   ! Compute linoz diags only on demand
+!!$   do i=1,nphyoutlist
+!!$      out_linoz = any(phyoutlist_S(i) == (/ &
+!!$           'ao3 ','ao3c','ach4','an2o','af11','af12',&
+!!$           'zch4','zn2o','zf11','zf12',&
+!!$           'ych4','yn2o','yf11','yf12',&
+!!$           'azo3','azoc','azch','azn2','azf1','azf2',&
+!!$           'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
+!!$           'ado3','ado1','ado4','ado6','ado7', &
+!!$           'adch','adn2','adf1','adf2' &
+!!$           /))
+!!$      if (out_linoz) exit
+!!$   enddo
+!!$   out_linoz = (out_linoz .or. debug_alldiag_L)
    
    llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
    llinozout = (llinoz .and. out_linoz)
@@ -158,13 +142,13 @@ subroutine phybusinit(ni,nk)
    enddo
    ebdiag = (ebdiag .or. debug_alldiag_L)
 
-   ! Activate ECMWF diagnostics only if outputs are requested by the user
-   i = 1
-   do while (.not.ecdiag .and. i <= nphyoutlist)
-      if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
-      i = i+1
-   enddo
-   ecdiag = (ecdiag .or. debug_alldiag_L)
+!!$   ! Activate ECMWF diagnostics only if outputs are requested by the user
+!!$   i = 1
+!!$   do while (.not.ecdiag .and. i <= nphyoutlist)
+!!$      if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
+!!$      i = i+1
+!!$   enddo
+!!$   ecdiag = (ecdiag .or. debug_alldiag_L)
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
@@ -225,38 +209,37 @@ subroutine phybusinit(ni,nk)
    lcons = (lcons .or. debug_alldiag_L)
    lmoycons = (lcons .and. lmoyhr)
 
-   etccdiag = .false.
-   i = 1
-   do while (.not.etccdiag .and. i <= nphyoutlist)
-      if (any(phyoutlist_S(i) == (/ &
-           'tccm', 'tcsh', 'tshm', 'tcsl', 'tslm', 'tcsm', 'tsmm', &
-           'tczh', 'tzhm', 'tczl', 'tzlm', 'tczm', 'tzmm' &
-           /))) etccdiag = .true.
-      i = i+1
-   enddo
-   etccdiag = (etccdiag .or. debug_alldiag_L)
+!!$   etccdiag = .false.
+!!$   i = 1
+!!$   do while (.not.etccdiag .and. i <= nphyoutlist)
+!!$      if (any(phyoutlist_S(i) == (/ &
+!!$           'tccm', 'tcsh', 'tshm', 'tcsl', 'tslm', 'tcsm', 'tsmm', &
+!!$           'tczh', 'tzhm', 'tczl', 'tzlm', 'tczm', 'tzmm' &
+!!$           /))) etccdiag = .true.
+!!$      i = i+1
+!!$   enddo
+!!$   etccdiag = (etccdiag .or. debug_alldiag_L)
 
    
    lhn_init = (lhn /= 'NIL')
    lsfcflx = (sfcflx_filter_order > 0)
 
-   cmt_comp_diag = .false.
-   if (any(convec == (/'KFC2', 'KFC3'/)) .and. cmt_type_i /= CMT_NONE) then
-      i = 1
-      do while (.not.cmt_comp_diag .and. i <= nphyoutlist)
-         if (any(phyoutlist_S(i) == (/ &
-              'u6a ', 'u6b ', 'u6c ', 'u6am', 'u6bm', 'u6cm', &
-              'v7a ', 'v7b ', 'v7c ', 'v7am', 'v7bm', 'v7cm', &
-              'u6d ', 'u6dm', 'v7d ', 'v7dm' &
-              /))) cmt_comp_diag = .true.
-         i = i+1
-      enddo
-   endif
-   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L)
+!!$   cmt_comp_diag = .false.
+!!$   if (any(convec == (/'KFC2', 'KFC3'/)) .and. cmt_type_i /= CMT_NONE) then
+!!$      i = 1
+!!$      do while (.not.cmt_comp_diag .and. i <= nphyoutlist)
+!!$         if (any(phyoutlist_S(i) == (/ &
+!!$              'u6a ', 'u6b ', 'u6c ', 'u6am', 'u6bm', 'u6cm', &
+!!$              'v7a ', 'v7b ', 'v7c ', 'v7am', 'v7bm', 'v7cm', &
+!!$              'u6d ', 'u6dm', 'v7d ', 'v7dm' &
+!!$              /))) cmt_comp_diag = .true.
+!!$         i = i+1
+!!$      enddo
+!!$   endif
+!!$   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L)
 
-#include "phymkptr.hf"
+#include "phymkptr_legacy.hf"
 #include "phyvar.hf"
-   if (phy_error_L) return
 
    sigw = sigt
 
@@ -270,11 +253,7 @@ subroutine phybusinit(ni,nk)
    if (qcplusmp > 0) qcplus = qcplusmp
    if (qrphytdmp > 0) qrphytd = qrphytdmp
 
-   call sfc_businit(moyhr,ni,nk)
    if (phy_error_L) return
-
-   call chm_businit(ni,nk)
-  !-------------------------------------------------------------------
+   !-------------------------------------------------------------------
    return
-end subroutine phybusinit
-
+end subroutine phybusinit_legacy

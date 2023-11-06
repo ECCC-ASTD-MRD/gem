@@ -22,8 +22,7 @@ module radiation
 contains
 
    !/@*
-   subroutine radiation3(dbus, fbus, vbus, &
-        ni, nk, kount, trnch)
+   subroutine radiation3(pvars, kount, ni, nk, trnch)
       use iso_c_binding
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use debug_mod, only: init2nan
@@ -31,7 +30,8 @@ contains
       use ccc2_cccmarad, only: ccc2_cccmarad2
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use radslop, only: radslop3
       implicit none
 !!!#include <arch_specific.hf>
@@ -43,13 +43,11 @@ contains
       ! nk       vertical dimension
       ! kount    timestep number
       ! trnch    slice number
-      !          - Input/Output -
-      ! dbus     dynamics input field
-      ! fbus     historic variables for the physics
-      ! vbus     physics tendencies and other output fields from the physics
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
 
       integer, intent(in) :: ni, nk, kount, trnch
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
+      type(phyvar), pointer, contiguous :: pvars(:)
 
       !@Author L.Spacek, November 2011
       !*@/
@@ -66,11 +64,11 @@ contains
       call msg_toall(MSG_DEBUG, 'radiation [BEGIN]')
       if (timings_L) call timing_start_omp(410, 'radiation', 46)
 
-      MKPTR1D(zpmoins, pmoins, fbus)
+      MKPTR1D(zpmoins, pmoins, pvars)
 
-      MKPTR2D(ztmoins, tmoins, dbus)
-      MKPTR2D(zhumoins, humoins, dbus)
-      MKPTR2D(zsigw, sigw, dbus)
+      MKPTR2D(ztmoins, tmoins, pvars)
+      MKPTR2D(zhumoins, humoins, pvars)
+      MKPTR2D(zsigw, sigw, pvars)
 
       call init2nan(cldfrac, liqwcin, icewcin, liqwp, icewp, trav2d)
 
@@ -81,7 +79,7 @@ contains
          select case (radia)
          case('CCCMARAD')
 
-            call cccmarad1(dbus, fbus, vbus, &
+            call cccmarad1(pvars, &
                  ztmoins, zhumoins, &
                  zpmoins, zsigw, delt, kount, &
                  trnch, ni, nkm1, nk, &
@@ -90,7 +88,7 @@ contains
 
          case('CCCMARAD2')
 
-            call ccc2_cccmarad2(dbus, fbus, vbus, &
+            call ccc2_cccmarad2(pvars, &
                  ztmoins, zhumoins, &
                  zpmoins, zsigw, delt, kount, &
                  trnch, ni, nkm1, nk, &
@@ -106,7 +104,7 @@ contains
       hz = amod(hz0 + (float(kount)*delt)/3600., 24.)
       julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
 
-      call radslop3(fbus, vbus, ni, hz, julien, trnch)
+      call radslop3(pvars, hz, julien, ni, trnch)
 
       if (timings_L) call timing_stop_omp(410)
       call msg_toall(MSG_DEBUG, 'radiation [END]')

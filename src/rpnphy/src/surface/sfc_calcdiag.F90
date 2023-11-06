@@ -22,29 +22,28 @@ module sfc_calcdiag
 contains
 
    !/@*
-   subroutine sfc_calcdiag3(fbus,vbus,moyhr,acchr,dt,kount,step_driver,trnch,ni)
+   subroutine sfc_calcdiag3(pvars,moyhr,acchr,dt,kount,step_driver,ni)
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
-      use sfcbus_mod
+!!$      use sfcbus_mod
       use svs_configs
-      
+      use sfcbus_mod
+      use phymem, only: phyvar
+
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       !@Arguments
-      !          - Input/Output -
-      ! fbus     permanent bus
-      !          - input -
-      ! vbus     volatile (output) bus
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - input -
       ! kount    timestep number
       ! dt       length of timestep
-      ! trnch    slice number
       ! n        horizontal running length
-      integer :: moyhr, acchr, kount, step_driver, trnch, ni
-      real, dimension(:), pointer, contiguous :: fbus, vbus
-      real :: dt
+      type(phyvar), pointer, contiguous :: pvars(:)
+      integer, intent(in) :: moyhr, acchr, kount, step_driver, ni
+      real, intent(in) :: dt
       !*@/
 #include <rmn/msg.h>
       include "sfcinput.cdk"
@@ -64,8 +63,11 @@ contains
       call msg_toall(MSG_DEBUG, 'sfc_calcdiag [BEGIN]')
       if (timings_L) call timing_start_omp(480, 'sfc_calcdiag', 46)
 
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define PTR1D(NAME2) pvars(vd%NAME2%idxv)%data(:)
+
+#define MKPTR1D(NAME1,NAME2)     nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR1DK(NAME1,NAME2,K)  nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni)     => pvars(vd%NAME2%idxv)%data(1+ni*(K-1):)
+#define MKPTR2D(NAME1,NAME2)     nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
       MKPTR1D(zaccevap, accevap)
       MKPTR1D(zdrain, drain)
@@ -79,7 +81,7 @@ contains
       MKPTR1D(zleraf, leraf)
       MKPTR1D(zles, les)
       MKPTR1D(zlesaf, lesaf)
-      MKPTR1D(zletr, letr)      
+      MKPTR1D(zletr, letr)
       MKPTR1D(zletraf, letraf)
       MKPTR1D(zlev, lev)
       MKPTR1D(zlevaf, levaf)
@@ -137,8 +139,9 @@ contains
       ! ISBA only accumulators/calc.
       IF_ISBA: if (schmsol == 'ISBA') then
 
-         nullify(zwsoil)
-         if (wsoil > 0) zwsoil(1:ni) => fbus(wsoil+ni:)
+!!$         nullify(zwsoil)
+!!$         if (wsoil > 0) zwsoil(1:ni) => fbus(wsoil+ni:)
+         MKPTR1DK(zwsoil, wsoil, 2)
 
          if (moyhr > 0) then
             if (kount == 0 .or. mod(step_driver-1, moyhr) == 0) then

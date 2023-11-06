@@ -16,7 +16,7 @@
 
 module phyunfold
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk, ijdrv_phy
-   use phymem, only: phymeta, phyvar, phymem_find
+   use phymem, only: phymeta, phymem_find, phymem_getmeta_copy, phymem_getdata
    implicit none
    private
    public :: phyunfoldmeta1, phyunfoldmeta2d, phyunfoldmeta3d, phyunfoldmeta4d, phyunfold1
@@ -50,7 +50,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-      integer :: i, j, k, ik, k1, m, m1
+      integer :: i, j, k, ik, k1, m, m1, istat
       real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
       call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_meta%vname))
@@ -79,7 +79,8 @@ contains
 !$omp parallel private(i,j,k,ik,k1,m,m1,vptr)
 !$omp do
       do j = 1, phydim_nj
-         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
+         nullify(vptr)
+         istat = phymem_getdata(vptr, F_meta%idxv, j)
          do m = F_ijk0(4), F_ijk1(4)
             do k = F_ijk0(3), F_ijk1(3)
                do i = 1, phydim_ni
@@ -112,7 +113,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-      integer :: i, j, k, ik, k1
+      integer :: i, j, k, ik, k1, istat
       real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
       call msg(MSG_DEBUG, '(phyunfoldmeta3d) [BEGIN] '//trim(F_meta%vname))
@@ -141,7 +142,8 @@ contains
 !$omp parallel private(i,j,k,ik,vptr)
 !$omp do
       do j = 1, phydim_nj
-         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
+         nullify(vptr)
+         istat = phymem_getdata(vptr, F_meta%idxv, j)
          do k = F_ijk0(3), F_ijk1(3)
             do i = 1, phydim_ni
                ik = (k-1)*phydim_ni + i
@@ -170,7 +172,7 @@ contains
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-      integer :: i, j
+      integer :: i, j, istat
       real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
       F_istat = RMN_ERR
@@ -198,7 +200,8 @@ contains
 !$omp parallel private(i,j,vptr)
 !$omp do
       do j = 1, phydim_nj
-         vptr(1:F_meta%size) => F_meta%bptr(F_meta%i0:F_meta%in,j)
+         nullify(vptr)
+         istat = phymem_getdata(vptr, F_meta%idxv, j)
          do i = 1, phydim_ni
             F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j)) = vptr(i)
          end do
@@ -227,9 +230,10 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
+      integer :: istat, idxv1(1)
       !---------------------------------------------------------------
-      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(idxv1, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
       if (F_istat <= 0) then
          call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
@@ -237,8 +241,9 @@ contains
          F_istat = RMN_ERR
          return
       endif
-
-      F_istat = phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
+      
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      F_istat = phyunfoldmeta4d(F_dest, F_ijk0, F_ijk1, vmeta)
       !---------------------------------------------------------------
       return
    end function phyunfold4d
@@ -259,9 +264,10 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
+      integer :: istat, idxv1(1)
       !---------------------------------------------------------------
-      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(idxv1, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
       if (F_istat <= 0) then
         call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
@@ -270,7 +276,8 @@ contains
          return
       endif
 
-      F_istat = phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      F_istat = phyunfoldmeta3d(F_dest, F_ijk0, F_ijk1, vmeta)
       !---------------------------------------------------------------
       return
    end function phyunfold3d
@@ -291,9 +298,10 @@ contains
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
+      integer :: istat, idxv1(1)
       !---------------------------------------------------------------
-      F_istat = phymem_find(myphyvar, F_nomvar_S, F_npath='V', &
+      F_istat = phymem_find(idxv1, F_nomvar_S, F_npath='V', &
            F_bpath=F_bus_S, F_quiet=.true., F_shortmatch=.false.)
       if (F_istat <= 0) then
          call msg(MSG_WARNING,'(phyunfold) No matching bus entry for '// &
@@ -302,7 +310,8 @@ contains
          return
       endif
 
-      F_istat = phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, myphyvar(1)%meta)
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
+      F_istat = phyunfoldmeta2d(F_dest, F_ijk0, F_ijk1, vmeta)
       !---------------------------------------------------------------
       return
    end function phyunfold2d

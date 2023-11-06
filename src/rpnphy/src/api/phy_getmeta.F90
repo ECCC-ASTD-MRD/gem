@@ -18,8 +18,8 @@ module phy_getmeta_mod
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use clib_itf_mod, only: clib_toupper
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-   use phy_typedef, only: phymeta, NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
-   use phymem, only: npvarlist, phyvar, phymem_find
+   use phy_typedef, only: NPATH_DEFAULT, BPATH_DEFAULT, PHY_MAXNAMELENGTH
+   use phymem, only: phymeta, nphyvars, phymem_find, phymem_getmeta_copy
    private
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
@@ -94,9 +94,8 @@ contains
       !@author Ron McTaggart-Cowan - Spring 2014
       !*@/
       character(len=PHY_MAXNAMELENGTH) :: npath, bpath
-      integer :: istat, maxmeta, i, nmatch
+      integer :: istat, maxmeta, i, nmatch, idxv(nphyvars)
       logical :: quiet, shortmatch, to_alloc
-      type(phyvar) :: myphyvar(npvarlist)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
@@ -108,7 +107,7 @@ contains
       npath = NPATH_DEFAULT
       bpath = BPATH_DEFAULT
       quiet = .false.
-      maxmeta = size(myphyvar)
+      maxmeta = size(idxv)
       shortmatch = .false.
       if (present(F_npath)) then
          if (len_trim(F_npath) /= 0) then
@@ -129,7 +128,7 @@ contains
       if (present(F_shortmatch)) shortmatch = F_shortmatch
 
       !# Retrieve metadata into temporary space
-      nmatch = phymem_find(myphyvar, F_name, npath, bpath, quiet, shortmatch)
+      nmatch = phymem_find(idxv, F_name, npath, bpath, quiet, shortmatch)
 
       !# Extract public part of the metadata
       if (nmatch > 0) then
@@ -144,7 +143,7 @@ contains
          endif
          if (to_alloc) allocate(F_meta(nmatch))
          do i = 1, nmatch
-            F_meta(i) = myphyvar(i)%meta
+            istat = phymem_getmeta_copy(F_meta(i), idxv(i))
          enddo
       endif
 
