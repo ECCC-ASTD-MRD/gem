@@ -752,7 +752,11 @@ contains
             if (present(F_vgrid_S)) F_vgrid_S = vlist0_S(1)
             if (present(F_sfcfld_S)) F_sfcfld_S = vlist0_S(2)
             if (present(F_sfcfld2_S)) F_sfcfld2_S = vlist0_S(3)
-!!$         else
+         else
+            if (present(F_vgrid_S)) F_vgrid_S = ''
+            if (present(F_sfcfld_S)) F_sfcfld_S = ''
+            if (present(F_sfcfld2_S)) F_sfcfld2_S = ''
+            call msg(MSG_WARNING,'(time_interp) Retrieve: meta data not found for '//trim(varname_S))
 !!$            F_istat = TIME_INTERP_NOT_FOUND
          endif
       endif

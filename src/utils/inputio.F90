@@ -1032,6 +1032,8 @@ contains
                  F_cfg%commgid, F_fld%hgridid, F_fld%hgridcoreid)
          endif IF_BLOCIO2
          if (RMN_IS_OK(istat)) then
+            call msg(MSG_INFO, '(inputio) Read sfc ref fld: ' &
+                 //trim(RM_PREFIX2(F_fld%sfc_S(1)))//' '//trim(RM_PREFIX2(F_fld%sfc_S(2))))
             F_fld%hstat = max(F_fld%hstat, maxval(hstats))
             if (.not.isassoc2_L) F_fld%salloc_L = .true.
             if (associated(F_fld%psfc)) then
@@ -1045,10 +1047,16 @@ contains
          else
             F_istat = RMN_ERR
             call msg(MSG_WARNING, '(inputio) Problem reading sfc ref fld: ' &
-                 //trim(F_fld%sfc_S(1))//' '//trim(F_fld%sfc_S(2)))
+                 //trim(RM_PREFIX2(F_fld%sfc_S(1)))//' '//trim(RM_PREFIX2(F_fld%sfc_S(2))))
             return
          endif
       endif READ_SFC
+      if (F_fld%sfc_S(1) /= '' .and. F_fld%ks(1) < 0) then
+         call msg(MSG_WARNING, '(inputio) Problem finding sfc ref fld: ' &
+              //trim(RM_PREFIX2(F_fld%sfc_S(1)))//' '//trim(RM_PREFIX2(F_fld%sfc_S(2))))
+!!$         F_istat = RMN_ERR
+!!$         return
+      endif
 
       if (RMN_IS_OK(F_istat)) call priv_set_scope(F_fld)
 
