@@ -10,16 +10,16 @@
 DOMAIN=`hostname -d`
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/gpscc2/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/gpscc2/inteloneapi-2022.1.2
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/SCIENCE/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/inteloneapi-2022.1.2
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.3/ECCC/inteloneapi-2022.1.2
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/ECCC/inteloneapi-2022.1.2
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20230531
-. r.load.dot rpn/utils/20230531
+. r.load.dot rpn/libs/20230906
+. r.load.dot rpn/utils/20230906
 
 # Load Intel FFTW if on rhel
 if  [[ ${ORDENV_DIST} = "rhel" ]]; then

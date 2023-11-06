@@ -28,7 +28,7 @@ if [ -n "${GEM_STORAGE_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
 cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
 ici=\$PWD
 cd ${gem_DIR}
-. $SETUP_FILE
+. ./${SETUP_FILE}
 cd \$ici
 EOF
     fi
