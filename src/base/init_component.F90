@@ -34,7 +34,6 @@
       implicit none
 
       include 'rpn_comm.inc'
-      include 'gemdyn_version.inc'
 #include <rmnlib_basics.hf>
 
       integer, external :: model_timeout_alarm, OMP_get_max_threads
