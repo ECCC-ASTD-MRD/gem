@@ -14,19 +14,31 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine inicover_svs(kount, ni, trnch)
+module inicover_svs_mod
+   implicit none
+   private
+   
+   public :: inicover_svs
+   
+contains
+
+subroutine inicover_svs(pvars, kount, ni)
    use mu_jdate_mod, only: jdate_day_of_year
    use sfc_options
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-   integer ni, kount, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni, kount
 
    !@Author S. Belair et  M. Abrahamowicz (Jan 2016)
    !@Revision
    !@Object Initialize vegetation fields for SVS scheme
    !@Arguments
+   !       - Input/Ouput -
+   ! pvars    list of all phy vars (meta + slab data)
    !       - Input -
    ! kount    current timestep number
    ! ni       horizontal slice dimension
@@ -269,10 +281,10 @@ subroutine inicover_svs(kount, ni, trnch)
    data numin_z0m /1.E-4/
 
 ! This macro only gets pointer address to pass as an argument to calling function --- to MANIPULATE VARIABLE, USE MACROS  MK... below
-#define PTR1D(NAME2) busptr(vd%NAME2%i)%ptr(1,trnch)
+#define PTR1D(NAME2) pvars(vd%NAME2%idxv)%data(:)
 ! Assign local variables below
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
-#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
+#define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
       MKPTR1D(zdlat,dlat)
       MKPTR1D(zlaideci,laideci)
@@ -461,3 +473,5 @@ subroutine inicover_svs(kount, ni, trnch)
 
    return
  end subroutine inicover_svs
+
+end module inicover_svs_mod

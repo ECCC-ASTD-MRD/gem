@@ -186,8 +186,10 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       return
    endif
 
-   ier = phymem_alloc(p_nj, debug_mem_L)
+   ier = phymem_alloc(debug_mem_L)
    if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
+
+   call phybusinit_legacy(p_ni,p_nk)
 
    ! moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.
    ! conversion : nombre d'heures --> nombre de pas de temps.

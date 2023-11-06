@@ -17,8 +17,10 @@
 module microphy_my2
  use, intrinsic :: iso_fortran_env, only: REAL64
  use phy_status, only: phy_error_L
+ use phymem, only: phyvar
 
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
  private
  public :: mp_my2_main
@@ -4032,46 +4034,40 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   end function my2_phybusinit
 
   ! Compute total water mass
-  function my2_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function my2_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, zqrp
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(zqrp, qrplus, F_pvars)
     F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
     F_istat = PHY_OK
     return
   end function my2_lwc
 
   ! Compute total water mass
-  function my2_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function my2_iwc(F_qitot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqip, zqnp, zqgp, zqhp
     F_istat = PHY_ERROR
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqip, qiplus, F_dbus)
-    MKPTR2Dm1(zqnp, qnplus, F_dbus)
-    MKPTR2Dm1(zqgp, qgplus, F_dbus)
-    MKPTR2Dm1(zqhp, qhplus, F_dbus)
+    MKPTR2Dm1(zqip, qiplus, F_pvars)
+    MKPTR2Dm1(zqnp, qnplus, F_pvars)
+    MKPTR2Dm1(zqgp, qgplus, F_pvars)
+    MKPTR2Dm1(zqhp, qhplus, F_pvars)
     F_qitot(:,:) = zqip(:,:) + zqnp(:,:) + zqgp(:,:) + zqhp(:,:)
     F_istat = PHY_OK
     return

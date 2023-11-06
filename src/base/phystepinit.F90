@@ -22,16 +22,15 @@ module phystepinit
 contains
 
    !/@*
-   subroutine phystepinit3(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        vbus, dbus, fbus, seloc, dt, &
-        kount, trnch, ni, nk)
+   subroutine phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
+        seloc, dt, kount, ni, nk, trnch)
       use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
       use calcz0_mod, only: calcz0
       use phy_options
-      use phymem, only: phymeta, phyvar, pbuslist, pvarlist, phymem_find, PHY_DBUSIDX, PHY_VBUSIDX, PHY_MAXVARS
-      use phybus
+      use phymem, only: phyvar, phymeta, nphyvars, phymem_find, phymem_busreset, PHY_VBUSIDX, PHY_DBUSIDX
+      use phybusidx
       use series_mod, only: series_xst
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
@@ -42,11 +41,13 @@ contains
       !@Author L. Spacek (Oct 2011)
       !@Object Setup for physics timestep
       !@Arguments
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nk
       real, dimension(ni,nk), intent(out) :: uplus0, vplus0, wplus0, tplus0, &
            huplus0, qcplus0, seloc
-      real, pointer, contiguous :: vbus(:), dbus(:), fbus(:)
       real, intent(in) :: dt
+      !          - Input / output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - Input -
       ! dt       timestep (parameter) (sec.)
       ! trnch    slice number
@@ -58,9 +59,6 @@ contains
       ! tplus0   initial value of dbus(tplus)
       ! huplus0  initial value of dbus(huplus)
       ! qcplus0  initial value of dbus(qcplus)
-      !          - input/output -
-      ! dbus     dynamics input field
-      ! vbus     physics tendencies and other output fields from the physics
       !*@/
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
@@ -72,14 +70,13 @@ contains
       logical,parameter:: QUIET_L = .true.
 
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
-      integer                :: i,k,ivar,nvars,istat, ivalist(PHY_MAXVARS),ind_sfc
+      integer                :: i,k,ivar,nvars,istat, ivarlist(nphyvars),ind_sfc, idxv1(1)
       real                   :: rcdt1
       real, dimension(ni,nk) :: work
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
 
-      type(phyvar), target :: myphyvar(1)
       type(phymeta), pointer :: vmeta, var_m, var_p
 
       real, pointer, dimension(:), contiguous :: &
@@ -102,136 +99,133 @@ contains
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
       if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
           
-      MKPTR1D(zcone0, cone0, vbus)
-      MKPTR1D(zcone1, cone1, fbus)
-      MKPTR1D(zconedyn, conedyn, vbus)
-      MKPTR1D(zconq0, conq0, vbus)
-      MKPTR1D(zconq1, conq1, fbus)
-      MKPTR1D(zconqdyn, conqdyn, vbus)
-      MKPTR1D(zdlat, dlat, fbus)
-      MKPTR1D(zfcor, fcor, vbus)
-      MKPTR1D(zpmoins, pmoins, fbus)
-      MKPTR1D(zpplus, pplus, vbus)
-      MKPTR1D(zqdiag, qdiag, fbus)
-      MKPTR1D(ztdiag, tdiag, fbus)
-      MKPTR1D(zudiag, udiag, fbus)
-      MKPTR1D(zvdiag, vdiag, fbus)
-      MKPTR1D(zza, za, vbus)
-      MKPTR1D(zztsl, ztsl, vbus)
-      MKPTR1D(zzusl, zusl, vbus)
-      MKPTR1D(zme, me_moins, dbus)
-      MKPTR1D(zp0, p0_plus, dbus)
+      MKPTR1D(zcone0, cone0, pvars)
+      MKPTR1D(zcone1, cone1, pvars)
+      MKPTR1D(zconedyn, conedyn, pvars)
+      MKPTR1D(zconq0, conq0, pvars)
+      MKPTR1D(zconq1, conq1, pvars)
+      MKPTR1D(zconqdyn, conqdyn, pvars)
+      MKPTR1D(zdlat, dlat, pvars)
+      MKPTR1D(zfcor, fcor, pvars)
+      MKPTR1D(zpmoins, pmoins, pvars)
+      MKPTR1D(zpplus, pplus, pvars)
+      MKPTR1D(zqdiag, qdiag, pvars)
+      MKPTR1D(ztdiag, tdiag, pvars)
+      MKPTR1D(zudiag, udiag, pvars)
+      MKPTR1D(zvdiag, vdiag, pvars)
+      MKPTR1D(zza, za, pvars)
+      MKPTR1D(zztsl, ztsl, pvars)
+      MKPTR1D(zzusl, zusl, pvars)
+      MKPTR1D(zme, me_moins, pvars)
+      MKPTR1D(zp0, p0_plus, pvars)
 
-      MKPTR1D(zmg, mg, fbus)
-      MKPTR1D(zz0, z0, fbus)
-      MKPTR1D(zz1, z1, fbus)
-      MKPTR1D(zz2, z2, fbus)
-      MKPTR1D(zz3, z3, fbus)
-      MKPTR1D(zz4, z4, fbus)
+      MKPTR1D(zmg, mg, pvars)
+      MKPTR1D(zz0, z0, pvars)
+      MKPTR1D(zz1, z1, pvars)
+      MKPTR1D(zz2, z2, pvars)
+      MKPTR1D(zz3, z3, pvars)
+      MKPTR1D(zz4, z4, pvars)
 
-      MKPTR1D(zrlc, rlc, fbus)
-      MKPTR1D(zrsc, rsc, fbus)
-      MKPTR1D(ztls, tls, fbus)
-      MKPTR1D(ztss, tss, fbus)
-      MKPTR1D(zrainrate, rainrate, vbus)
-      MKPTR1D(zsnowrate, snowrate, vbus)
+      MKPTR1D(zrlc, rlc, pvars)
+      MKPTR1D(zrsc, rsc, pvars)
+      MKPTR1D(ztls, tls, pvars)
+      MKPTR1D(ztss, tss, pvars)
+      MKPTR1D(zrainrate, rainrate, pvars)
+      MKPTR1D(zsnowrate, snowrate, pvars)
 
-      MKPTR1D(zrainfrac, rainfrac, fbus)
-      MKPTR1D(zsnowfrac, snowfrac, fbus)
-      MKPTR1D(zfrfrac, frfrac, fbus)
-      MKPTR1D(zpefrac, pefrac, fbus)
+      MKPTR1D(zrainfrac, rainfrac, pvars)
+      MKPTR1D(zsnowfrac, snowfrac, pvars)
+      MKPTR1D(zfrfrac, frfrac, pvars)
+      MKPTR1D(zpefrac, pefrac, pvars)
 
       ind_sfc = nk
       if (any(pcptype == (/ &
            'NIL   ', &
            'BOURGE'/))) then
-         MKPTR2DN(zfneige, fneige, ni, 1, fbus)
-         MKPTR2DN(zfip, fip, ni, 1, fbus)
+         MKPTR2D(zfneige, fneige, pvars)
+         MKPTR2D(zfip, fip, pvars)
          if (mpdiag_for_sfc) ind_sfc = 1
       else
-         MKPTR2D(zfneige, fneige3d, fbus)
-         MKPTR2D(zfip, fip3d, fbus)
+         MKPTR2D(zfneige, fneige3d, pvars)
+         MKPTR2D(zfip, fip3d, pvars)
       endif
 
-      MKPTR2D(zgzmom, gzmom, vbus)
-      MKPTR2D(zgztherm, gztherm, vbus)
-      MKPTR2D(zgz_moins, gz_moins, dbus)
-      MKPTR2D(zhumoins, humoins, dbus)
-      MKPTR2D(zhuplus, huplus, dbus)
-      MKPTR2D(zqadv, qadv, vbus)
-      MKPTR2D(zqcmoins, qcmoins, dbus)
-      MKPTR2D(zqcplus, qcplus, dbus)
-      MKPTR2D(zsigm, sigm, dbus)
-      MKPTR2D(zsigt, sigt, dbus)
-      MKPTR2D(ztadv, tadv, vbus)
-      MKPTR2D(ztmoins, tmoins, dbus)
-      MKPTR2D(ztplus, tplus, dbus)
-      MKPTR2D(zuadv, uadv, vbus)
-      MKPTR2D(zumoins, umoins, dbus)
-      MKPTR2D(zuplus, uplus, dbus)
-      MKPTR2D(zvadv, vadv, vbus)
-      MKPTR2D(zvmoins, vmoins, dbus)
-      MKPTR2D(zvplus, vplus, dbus)
-      MKPTR2D(zwplus, wplus, dbus)
-      MKPTR2D(zze, ze, vbus)
+      MKPTR2D(zgzmom, gzmom, pvars)
+      MKPTR2D(zgztherm, gztherm, pvars)
+      MKPTR2D(zgz_moins, gz_moins, pvars)
+      MKPTR2D(zhumoins, humoins, pvars)
+      MKPTR2D(zhuplus, huplus, pvars)
+      MKPTR2D(zqadv, qadv, pvars)
+      MKPTR2D(zqcmoins, qcmoins, pvars)
+      MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zsigm, sigm, pvars)
+      MKPTR2D(zsigt, sigt, pvars)
+      MKPTR2D(ztadv, tadv, pvars)
+      MKPTR2D(ztmoins, tmoins, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
+      MKPTR2D(zuadv, uadv, pvars)
+      MKPTR2D(zumoins, umoins, pvars)
+      MKPTR2D(zuplus, uplus, pvars)
+      MKPTR2D(zvadv, vadv, pvars)
+      MKPTR2D(zvmoins, vmoins, pvars)
+      MKPTR2D(zvplus, vplus, pvars)
+      MKPTR2D(zwplus, wplus, pvars)
+      MKPTR2D(zze, ze, pvars)
 
-      MKPTR3D(zvcoef, vcoef, 2, vbus)
-
-      MKPTR2D(zqrp, qrplus, dbus)
-      MKPTR2D(zqrm, qrmoins, dbus)
-      MKPTR2D(zqti1p, qti1plus, dbus)
-      MKPTR2D(zqti2p, qti2plus, dbus)
-      MKPTR2D(zqti3p, qti3plus, dbus)
-      MKPTR2D(zqti4p, qti4plus, dbus)
-      MKPTR2D(zqti1m, qti1moins, dbus)
-      MKPTR2D(zqti2m, qti2moins, dbus)
-      MKPTR2D(zqti3m, qti3moins, dbus)
-      MKPTR2D(zqti4m, qti4moins, dbus)
-      MKPTR2D(zqnp, qnplus, dbus)
-      MKPTR2D(zqgp, qgplus, dbus)
-      MKPTR2D(zqhp, qhplus, dbus)
-      MKPTR2D(zqip, qiplus, dbus)
-      MKPTR2D(zqnm, qnmoins, dbus)
-      MKPTR2D(zqgm, qgmoins, dbus)
-      MKPTR2D(zqhm, qhmoins, dbus)
-      MKPTR2D(zqim, qimoins, dbus)
+      MKPTR3D(zvcoef, vcoef, pvars)
+      
+      MKPTR2D(zqrp, qrplus, pvars)
+      MKPTR2D(zqrm, qrmoins, pvars)
+      MKPTR2D(zqti1p, qti1plus, pvars)
+      MKPTR2D(zqti2p, qti2plus, pvars)
+      MKPTR2D(zqti3p, qti3plus, pvars)
+      MKPTR2D(zqti4p, qti4plus, pvars)
+      MKPTR2D(zqti1m, qti1moins, pvars)
+      MKPTR2D(zqti2m, qti2moins, pvars)
+      MKPTR2D(zqti3m, qti3moins, pvars)
+      MKPTR2D(zqti4m, qti4moins, pvars)
+      MKPTR2D(zqnp, qnplus, pvars)
+      MKPTR2D(zqgp, qgplus, pvars)
+      MKPTR2D(zqhp, qhplus, pvars)
+      MKPTR2D(zqip, qiplus, pvars)
+      MKPTR2D(zqnm, qnmoins, pvars)
+      MKPTR2D(zqgm, qgmoins, pvars)
+      MKPTR2D(zqhm, qhmoins, pvars)
+      MKPTR2D(zqim, qimoins, pvars)
 
       call init2nan(work)
       call init2nan(tmp1d)
       call init2nan(en0, pw0, en1, pw1)
 
       IF_DEBUG: if (debug_mem_L) then
-
-         !# Init diag level of dyn bus (copy down) if var not read
-         !# this is needed in debug mode since the bus is init with NaN
-         !# It needs to be done at kount==0 and at every restart
-         do ivar = 1, pbuslist(PHY_DBUSIDX)%nvars
-            vmeta => pbuslist(PHY_DBUSIDX)%meta(ivar)
+         DO_IVAR: do ivar= 1, nphyvars
+            vmeta => pvars(ivar)%meta
             if (any(vmeta%vname == phyinread_list_s(1:phyinread_n))) cycle
-            if (vmeta%nk < nk) cycle
-            !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
-            tmp1(1:ni,1:nk) => vmeta%bptr(vmeta%i0:vmeta%in,trnch)
-            if (RMN_IS_OK(assert_not_naninf(tmp1(:,nk)))) cycle
-            if (any(vmeta%vname == (/"pw_gz:m", "pw_wz:p"/)).or.&
-                 vmeta%vname(1:3) == "tr/") then
-               tmp1(:,nk) = 0
-            else
-               tmp1(:,nk) = tmp1(:,nk-1)
+            if (vmeta%ibus == PHY_DBUSIDX) then
+               !# Init diag level of dyn bus (copy down) if var not read
+               !# this is needed in debug mode since the bus is init with NaN
+               !# It needs to be done at kount==0 and at every restart
+               if (vmeta%nk < nk) cycle
+               !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
+               MKPTR2D(tmp1, ivar, pvars)
+               if (RMN_IS_OK(assert_not_naninf(tmp1(:,nk)))) cycle
+               if (any(vmeta%vname == (/"pw_gz:m", "pw_wz:p"/)).or.&
+                    vmeta%vname(1:3) == "tr/") then
+                  tmp1(:,nk) = 0
+               else
+                  tmp1(:,nk) = tmp1(:,nk-1)
+               endif
+            elseif (vmeta%ibus == PHY_VBUSIDX) then
+               !# Reset Vol bus var to zero if var not read
+               !# this is needed in debug mode since the bus is init with NaN
+               pvars(ivar)%data(:) = 0.
             endif
-         enddo
-
-         !# Reset Vol bus var to zero if var not read
-         !# this is needed in debug mode since the bus is init with NaN
-         do ivar = 1, pbuslist(PHY_VBUSIDX)%nvars
-            vmeta => pbuslist(PHY_VBUSIDX)%meta(ivar)            
-            if (.not.any(vmeta%vname == phyinread_list_s(1:phyinread_n))) &
-                 vmeta%bptr(vmeta%i0:vmeta%in,trnch) = 0.
-         enddo
-
+         enddo DO_IVAR
+         
          !#TODO: check that memgap is still filled with NANs on all buses
-      else
+      else  !IF_DEBUG
          !#TODO: allow vol bus var recycling
-         pbuslist(PHY_VBUSIDX)%bptr(:,trnch) = 0.
+         istat = phymem_busreset(pvars, PHY_VBUSIDX, 0.)
       endif IF_DEBUG
 
       rcdt1 = 1. / dt
@@ -365,7 +359,7 @@ contains
 
       ! Compute pre-physics budget state
       if (pb_compute(zcone0, zconq0, en0, pw0, &
-           dbus, fbus, vbus, nk-1) /= PHY_OK) then
+           pvars, nk-1) /= PHY_OK) then
          call physeterror('phystepinit', &
               'Problem computing pre-physics budget state')
          return
@@ -382,7 +376,7 @@ contains
       if (associated(zcone1)) en1(:) = dble(zcone1(:))
       pw1(:) = 0.
       if (associated(zconq1)) pw1(:) = dble(zconq1(:))
-      if (pb_residual(zconedyn, zconqdyn, en1, pw1, dbus, fbus, vbus, &
+      if (pb_residual(zconedyn, zconqdyn, en1, pw1, pvars, &
            delt, nk-1) /= PHY_OK) then
          call physeterror('phybusinit', &
               'Problem computing dynamics budget')
@@ -401,41 +395,37 @@ contains
          call series_xst(work, 'XL', trnch)
       endif
 
-      nvars = phymem_find(ivalist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
+      !# Time swap for tracers at diag level (other levels done in dyn)
+      nvars = phymem_find(ivarlist, 'tr/', 'V', 'D', QUIET_L, SHORTMATCH_L)
       do ivar = 1, nvars
-         vmeta => pvarlist(ivalist(ivar))%meta
+         vmeta => pvars(ivarlist(ivar))%meta
          call gmmx_name_parts(vmeta%vname, prefix_S, basename_S, time_S, ext_S)
          if (all(time_S /= (/':M', ':m'/)) .and. &
               .not.any(vmeta%vname == (/'tr/hu:m', 'tr/hu:p'/)) &
               ) then
-            istat = phymem_find(myphyvar, &
+            istat = phymem_find(idxv1, &
                  trim(prefix_S)//trim(basename_S)//':M', F_npath='V', &
                  F_bpath='D', F_quiet=.true., F_shortmatch=.false.)
             if (istat > 0) then
-               var_m => myphyvar(1)%meta
-               var_p => pvarlist(ivalist(ivar))%meta
                !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
-               tmp1(1:ni,1:nk) => var_m%bptr(var_m%i0:var_m%in,trnch)
-               tmp2(1:ni,1:nk) => var_p%bptr(var_p%i0:var_p%in,trnch)
+               tmp1(1:ni,1:nk) => pvars(idxv1(1))%data(:)
+               tmp2(1:ni,1:nk) => pvars(ivarlist(ivar))%data(:)
                tmp1(1:ni,nk) = tmp2(1:ni,nk)
 !!$            else
 !!$               call msg(MSG_WARNING, '(phystepinit) Var not found: '//trim(prefix_S)//trim(basename_S)//':M')
             endif
          endif
       enddo
+      
+      !# Tracers clipping
       if (clip_tr_L) then
          do ivar = 1, nvars
-            vmeta => pvarlist(ivalist(ivar))%meta
+            vmeta => pvars(ivarlist(ivar))%meta
             if (.not.any(vmeta%vname == (/'tr/hu:m', 'tr/hu:p'/))) then
-               istat = phymem_find(myphyvar, vmeta%vname, F_npath='V', &
-                    F_bpath='D', F_quiet=.true., F_shortmatch=.false.)
-               if (istat > 0) then
-                  var_m => myphyvar(1)%meta
-                  tmp2(1:ni,1:nk-1) => var_m%bptr(var_m%i0:var_m%in,trnch)
-                  tmp2 = min(max(var_m%vmin, tmp2), var_m%vmax)
-!!$               else
-!!$                  call msg(MSG_WARNING, '(phystepinit) Var not found: '//trim(vmeta%vname))
-               endif
+               !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
+               var_m => pvars(ivarlist(ivar))%meta
+               tmp2(1:ni,1:nk-1) => pvars(ivarlist(ivar))%data(:)
+               tmp2 = min(max(var_m%vmin, tmp2), var_m%vmax)
             endif
          enddo
       endif

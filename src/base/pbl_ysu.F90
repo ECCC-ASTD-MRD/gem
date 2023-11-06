@@ -22,24 +22,25 @@ module pbl_ysu
 contains
 
   !/@*
-  function pbl_ysu1(dbus, fbus, vbus, dt, trnch, ni, nk, nkm1) result(status)
+  function pbl_ysu1(pvars, dt, ni, nk, nkm1, trnch) result(status)
     use, intrinsic :: iso_fortran_env, only: INT64
     use debug_mod, only: init2nan
     use tdpack_const, only: CPD, DELTA, GRAV, KARMAN, CAPPA, RGASD, EPS1, &
          CHLC, RGASV
     use phy_options
-    use phybus
+    use phybusidx
+    use phymem, only: phyvar
     use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
     use module_bl_ysu, only: ysu2d
     implicit none
 #include <rmnlib_basics.hf>
     !@Object Wrapper for Yonsei University (YSU) PBL scheme
     !@Arguments
-    real, pointer, dimension(:), contiguous :: dbus, fbus, vbus !Bus data
-    real, intent(in) :: dt                                      !Time step (sec)
-    integer, intent(in) :: trnch                                !Slice number (tile j)
-    integer, intent(in) :: ni, nk, nkm1                         !Slab dimensions
-    integer :: status                                           !Return status (RMN_OK or RMN_ERR)
+    type(phyvar), pointer, contiguous :: pvars(:)  !list of all phy vars (meta + slab data)
+    real, intent(in) :: dt                           !Time step (sec)
+    integer, intent(in) :: trnch                     !Slice number (tile j)
+    integer, intent(in) :: ni, nk, nkm1              !Slab dimensions
+    integer :: status                                !Return status (RMN_OK or RMN_ERR)
 
     !@Author Ron McTaggart-Cowan (Summer 2022)
     !*@/
@@ -48,7 +49,7 @@ contains
 
     ! Internal parameters
     integer, parameter :: NDIFF=3
-    integer, parameter :: MAX_DT=30.                            !Maximum step (s)
+    integer, parameter :: MAX_DT=30.                 !Maximum step (s)
 
     ! Internal variables
     integer :: k, ki, istat, step, nstep
@@ -90,43 +91,43 @@ contains
     call init2nan(ipresm, ipresmo)
 
     ! Estract bus pointers
-    MKPTR2Dm1(zhuplus, huplus, dbus)
-    MKPTR1D(zp0, p0_plus, dbus)
-    MKPTR2Dm1(zqcplus, qcplus, dbus)
-    MKPTR2Dm1(zsigm, sigm, dbus)
-    MKPTR2Dm1(zsigt, sigt, dbus)
-    MKPTR2Dm1(ztplus, tplus, dbus)
-    MKPTR2Dm1(zuplus, uplus, dbus)
-    MKPTR2Dm1(zvplus, vplus, dbus)
-    MKPTR1D(zdlat, dlat, fbus)
-    MKPTR1D(zmg, mg, fbus)
-    MKPTR1DK(zqsurf, qsurf, indx_agrege, fbus)
-    MKPTR1D(ztsrad, tsrad, fbus)
-    MKPTR1D(zudiag, udiag, fbus)
-    MKPTR1D(zvdiag, vdiag, fbus)
-    MKPTR1DK(zz0, z0, indx_agrege, fbus)
-    MKPTR1DK(zz0t, z0t, indx_agrege, fbus)
-    MKPTR1D(zalfaq, alfaq, vbus)
-    MKPTR1D(zalfat, alfat, vbus)
-    MKPTR1D(zbm, bm, vbus)
-    MKPTR1DK(zbt, bt, indx_agrege, vbus)
-    MKPTR1DK(zfc, fc, indx_agrege, vbus)
-    MKPTR1DK(zfv, fv, indx_agrege, vbus)
-    MKPTR1D(zfcor, fcor, vbus)
-    MKPTR2Dm1(zgzmom, gzmom, vbus)
-    MKPTR2Dm1(zgztherm, gztherm, vbus)
-    MKPTR2D(zkm, km, vbus)
-    MKPTR2D(zkt, kt, vbus)
-    MKPTR2Dm1(zqcdifv, qcdifv, vbus)
-    MKPTR2Dm1(zqdifv, qdifv, vbus)
-    MKPTR2Dm1(ztdifv, tdifv, vbus)
-    MKPTR2Dm1(ztrad, trad, vbus)
-    MKPTR2Dm1(zudifv, udifv, vbus)
-    MKPTR3D(zvcoef, vcoef, 2, vbus)
-    MKPTR2Dm1(zvdifv, vdifv, vbus)
-    MKPTR1D(zwstar, wstar, vbus)
-    MKPTR1D(zztsl, ztsl, vbus)
-    MKPTR1D(zzusl, zusl, vbus)
+    MKPTR2Dm1(zhuplus, huplus, pvars)
+    MKPTR1D(zp0, p0_plus, pvars)
+    MKPTR2Dm1(zqcplus, qcplus, pvars)
+    MKPTR2Dm1(zsigm, sigm, pvars)
+    MKPTR2Dm1(zsigt, sigt, pvars)
+    MKPTR2Dm1(ztplus, tplus, pvars)
+    MKPTR2Dm1(zuplus, uplus, pvars)
+    MKPTR2Dm1(zvplus, vplus, pvars)
+    MKPTR1D(zdlat, dlat, pvars)
+    MKPTR1D(zmg, mg, pvars)
+    MKPTR1DK(zqsurf, qsurf, indx_agrege, pvars)
+    MKPTR1D(ztsrad, tsrad, pvars)
+    MKPTR1D(zudiag, udiag, pvars)
+    MKPTR1D(zvdiag, vdiag, pvars)
+    MKPTR1DK(zz0, z0, indx_agrege, pvars)
+    MKPTR1DK(zz0t, z0t, indx_agrege, pvars)
+    MKPTR1D(zalfaq, alfaq, pvars)
+    MKPTR1D(zalfat, alfat, pvars)
+    MKPTR1D(zbm, bm, pvars)
+    MKPTR1DK(zbt, bt, indx_agrege, pvars)
+    MKPTR1DK(zfc, fc, indx_agrege, pvars)
+    MKPTR1DK(zfv, fv, indx_agrege, pvars)
+    MKPTR1D(zfcor, fcor, pvars)
+    MKPTR2Dm1(zgzmom, gzmom, pvars)
+    MKPTR2Dm1(zgztherm, gztherm, pvars)
+    MKPTR2D(zkm, km, pvars)
+    MKPTR2D(zkt, kt, pvars)
+    MKPTR2Dm1(zqcdifv, qcdifv, pvars)
+    MKPTR2Dm1(zqdifv, qdifv, pvars)
+    MKPTR2Dm1(ztdifv, tdifv, pvars)
+    MKPTR2Dm1(ztrad, trad, pvars)
+    MKPTR2Dm1(zudifv, udifv, pvars)
+    MKPTR3D(zvcoef, vcoef, pvars)
+    MKPTR2Dm1(zvdifv, vdifv, pvars)
+    MKPTR1D(zwstar, wstar, pvars)
+    MKPTR1D(zztsl, ztsl, pvars)
+    MKPTR1D(zzusl, zusl, pvars)
 
     ! Compute pressure-based cubes
     do k=1,nkm1

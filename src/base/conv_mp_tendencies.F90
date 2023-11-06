@@ -42,7 +42,6 @@ contains
       real, dimension(:), pointer, contiguous :: tdmask                    !Tendency mask
 
 #include <rmn/msg.h>
-#include "phymkptr.hf"
 
       ! Local variables
       integer :: i,k

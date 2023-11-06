@@ -14,17 +14,29 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine inisoili2(ni, trnch)
+module inisoili
+   implicit none
+   private
+   
+   public :: inisoili2
+   
+contains
+   
+subroutine inisoili2(pvars, ni)
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ni, trnch
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer, intent(in) :: ni
 
    !@Author Stephane Belair (February 1999)
    !@Object Initialize the soil properties from the sand and clay
    !         fraction for 5 layers of the soil
    !@Arguments
+   !             - input/output -
+   ! pvars       list of all phy vars (meta + slab data)
    !             - Input -
    ! NI          longueur d'une tranche horizontale
 
@@ -33,7 +45,7 @@ subroutine inisoili2(ni, trnch)
         zcgsat, zclay, zpcoef, zsand, zwfc, &
         zwsat, zwwilt
 
-#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%i > 0 .and. associated(busptr(vd%NAME2%i)%ptr)) NAME1(1:ni) => busptr(vd%NAME2%i)%ptr(:,trnch)
+#define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
 
    MKPTR1D(zacoef, acoef)
    MKPTR1D(zbcoef, bcoef)
@@ -65,3 +77,5 @@ subroutine inisoili2(ni, trnch)
 
    return
 end subroutine inisoili2
+
+end module inisoili

@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 module microphy_consun
+  use phymem, only: phyvar
   implicit none
   private
 
@@ -24,6 +25,8 @@ module microphy_consun
   public :: consun_lwc          !Compute liquid water content
   public :: consun_iwc          !Compute ice water content
   
+#include "phymkptr.hf"
+
 contains
 
   subroutine consun(stt, sqt, swt, srr, ssr, scf, &
@@ -634,43 +637,37 @@ contains
   end function consun_phybusinit
 
   ! Compute total water mass
-  function consun_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function consun_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, ztplus
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(ztplus, tplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(ztplus, tplus, F_pvars)
     F_istat = consun_ice_partition(ztplus, zqcp, F_qliqs=F_qltot)
     return
   end function consun_lwc
 
   ! Compute total ice mass
-  function consun_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function consun_iwc(F_qitot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, ztplus
     F_istat = PHY_ERROR
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(ztplus, tplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(ztplus, tplus, F_pvars)
     F_istat = consun_ice_partition(ztplus, zqcp, F_qices=F_qitot)
     return
   end function consun_iwc

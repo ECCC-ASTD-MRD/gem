@@ -1,34 +1,13 @@
 
-#ifdef PHY_FUTURE_IF_EVER
-#ifdef PHYPTR
-#define PHYVAR2D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:) => null()
-#define PHYVAR3D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:,:) => null()
-#define PHYVAR4D(NAME, PTR, DESC) integer :: NAME = 0 ; real, pointer :: PTR(:,:,:,:) => null()
-#define PHYVAR2DC(NAME, PTR, DESC, COND) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR3DC(NAME, PTR, DESC, COND) PHYVAR3D(NAME, PTR, DESC)
-#define PHYVAR4DC(NAME, PTR, DESC, COND) PHYVAR4D(NAME, PTR, DESC)
-#else
-#define PHYVAR2D(NAME, PTR, DESC) call gesdict1(ni, nk, NAME, PTR, DESC)
-#define PHYVAR3D(NAME, PTR, DESC) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR4D(NAME, PTR, DESC) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR2DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR3DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR4DC(NAME, PTR, DESC, COND) if (COND) PHYVAR2D(NAME, PTR, DESC)
-#define PHYVAR2DK(NAME, PTR, DESC, KEYWORD) PHYVAR2DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
-#define PHYVAR3DK(NAME, PTR, DESC, KEYWORD) PHYVAR3DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
-#define PHYVAR4DK(NAME, PTR, DESC, KEYWORD) PHYVAR4DC(NAME, PTR, DESC, any(bb_keylist(:bb_n) == KEYWORD))
-#endif
-#endif
-
 #ifndef PHYMKPTR
 #define PHYMKPTR
 #ifdef PHYPTR
 
    real, pointer :: dummy2d(:,:), dummy3d(:,:,:), dummy4d(:,:,:,:)
 
-#define PHYVAR2D1(NAME, DESC) integer :: NAME = 0
-#define PHYVAR3D1(NAME, DESC) integer :: NAME = 0
-#define PHYVAR4D1(NAME, DESC) integer :: NAME = 0
+#define PHYVAR2D1(NAME, DESC) integer :: NAME = -1
+#define PHYVAR3D1(NAME, DESC) integer :: NAME = -1
+#define PHYVAR4D1(NAME, DESC) integer :: NAME = -1
 
 #define PHYVAR2DC(NAME, DESC, COND) PHYVAR2D1(NAME, DESC)
 #define PHYVAR3DC(NAME, DESC, COND) PHYVAR3D1(NAME, DESC)
@@ -39,15 +18,9 @@
 
 #else
 
-#ifdef PHY_FUTURE_IF_EVER
-#define PHYVAR2D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy2d, DESC)
-#define PHYVAR3D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy3d, DESC)
-#define PHYVAR4D1(NAME, DESC) call gesdict(ni, nk, NAME, dummy4d, DESC)
-#endif
-
-#define PHYVAR2D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC//" ; VS=A")
-#define PHYVAR3D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC)
-#define PHYVAR4D1(NAME, DESC) call gesdict(ni, nk, NAME, DESC)
+#define PHYVAR2D1(NAME, DESC) NAME = phymem_add(DESC//" ; VS=A")
+#define PHYVAR3D1(NAME, DESC) NAME = phymem_add(DESC)
+#define PHYVAR4D1(NAME, DESC) NAME = phymem_add(DESC)
 
 #define PHYVAR2DC(NAME, DESC, COND) if (COND) PHYVAR2D1(NAME, DESC)
 #define PHYVAR3DC(NAME, DESC, COND) if (COND) PHYVAR3D1(NAME, DESC)
@@ -63,58 +36,146 @@
 #ifndef PHYMKPTR1
 #define PHYMKPTR1
 
-#ifdef MKPTR1DN
-#undef MKPTR1DN
+#ifdef MKPTR1DNIKL
+#undef MKPTR1DNIKL
 #endif
+
 #ifdef MKPTR1D
 #undef MKPTR1D
 #endif
+
+#ifdef MKPTR1DNI
+#undef MKPTR1DNI
+#endif
+
 #ifdef MKPTR1DK
 #undef MKPTR1DK
 #endif
-#ifdef MKPTR2DN
-#undef MKPTR2DN
+
+#ifdef MKPTR1DL
+#undef MKPTR1DL
 #endif
+
+#ifdef MKPTR1DKL
+#undef MKPTR1DKL
+#endif
+
+#ifdef MKPTR2DNKL
+#undef MKPTR2DNKL
+#endif
+
 #ifdef MKPTR2D
 #undef MKPTR2D
 #endif
+
+#ifdef MKPTR2DNL
+#undef MKPTR2DNL
+#endif
+
+#ifdef MKPTR2DNK
+#undef MKPTR2DNK
+#endif
+
+#ifdef MKPTR2DN
+#undef MKPTR2DN
+#endif
+   
 #ifdef MKPTR2Dm1
 #undef MKPTR2Dm1
 #endif
-#ifdef MKPTR3DN
-#undef MKPTR3DN
+
+#ifdef MKPTR2DL
+#undef MKPTR2DL
 #endif
+
+#ifdef MKPTR2DLm1
+#undef MKPTR2DLm1
+#endif
+
+#ifdef MKPTR3DNKL
+#undef MKPTR3DNKL
+#endif
+
 #ifdef MKPTR3D
 #undef MKPTR3D
 #endif
 
 #ifdef PHYPTRDCL
 
-#define MKPTR1DN(PNAME,PIDX,NI,PBUS) real, dimension(:), pointer, contiguous :: PNAME
-#define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
+#define MKPTR1DNIKL(PNAME,IDXV,VARS)     real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1D(PNAME,IDXV,VARS)         real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1DNI(PNAME,IDXV,VARS)       real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1DK(PNAME,IDXV,KL,VARS)     real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1DL(PNAME,IDXV,LL,VARS)     real, dimension(:), pointer, contiguous :: PNAME
+#define MKPTR1DKL(PNAME,IDXV,KK,LL,VARS) real, dimension(:), pointer, contiguous :: PNAME
 
-!!$TODO: #define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,PIDX+(KK-1)*ni,ni,PBUS)
-#define MKPTR1DK(PNAME,PIDX,KK,PBUS) real, dimension(:), pointer :: PNAME
-   
-#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) real, dimension(:,:), pointer, contiguous :: PNAME
-#define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)
-#define MKPTR2Dm1(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nkm1,PBUS)
+#define MKPTR2DNKL(PNAME,IDXV,VARS)      real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2D(PNAME,IDXV,VARS)         real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2DNL(PNAME,IDXV,VARS)       real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2DNK(PNAME,IDXV,VARS)       real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2DN(PNAME,PIDX,NI,NK,VARS)  real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2Dm1(PNAME,IDXV,VARS)       real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2DL(PNAME,IDXV,LL,VARS)     real, dimension(:,:), pointer, contiguous :: PNAME
+#define MKPTR2DLm1(PNAME,IDXV,LL,VARS)   real, dimension(:,:), pointer, contiguous :: PNAME
 
-#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) real, dimension(:,:,:), pointer, contiguous :: PNAME
-#define MKPTR3D(PNAME,PIDX,NN,PBUS) MKPTR3DN(PNAME,PIDX,ni,nk,NN,PBUS)
+#define MKPTR3DNKL(PNAME,IDXV,VARS)      real, dimension(:,:,:), pointer, contiguous :: PNAME
+#define MKPTR3D(PNAME,IDXV,VARS)         real, dimension(:,:,:), pointer, contiguous :: PNAME
 
 #else
+   
+!# Get NL the total number of categories (NCAT is defined as FMUL * (mosaic+1))
+#define PHYMEMPTRNCAT(PMETA) PMETA%fmul * (PMETA%mosaic+1)
+!# Get NKL the total number of levels/cat (nk*ncat)
+#define PHYMEMPTRNKTOT(PMETA) PMETA%nk * PHYMEMPTRNCAT(PMETA)
+!# Get I0 for specified level/cat
+#define PHYMEMPTRI12D(PMETA,KL) 1 + max(0,(min(KL,PHYMEMPTRNKTOT(PMETA))-1))*PMETA%ni
 
-#define MKPTR1DN(PNAME,PIDX,NI,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI) => PBUS(PIDX:)
-#define MKPTR1D(PNAME,PIDX,PBUS) MKPTR1DN(PNAME,PIDX,ni,PBUS)
-#define MKPTR1DK(PNAME,PIDX,KK,PBUS) MKPTR1DN(PNAME,(PIDX+(KK-1)*ni),ni,PBUS)
+#define PHYMEMPTRI13D(PMETA,KL) 1 + max(0,(min(KL,PHYMEMPTRNKCAT(PMETA))-1))*PMETA%ni*PMETA%nk
+#define PHYMEMPTRI12DK(PMETA,KK,LL) PHYMEMPTRI13D(IDXV,LL) + max(0,(min(KK,PMETA%nk)-1))*PMETA%ni
 
-#define MKPTR2DN(PNAME,PIDX,NI,NK,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI,1:NK) => PBUS(PIDX:)
-#define MKPTR2D(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nk,PBUS)
-#define MKPTR2Dm1(PNAME,PIDX,PBUS) MKPTR2DN(PNAME,PIDX,ni,nkm1,PBUS)
+   
+!# Get 1d array (1:nikl) of field (if nk>1 or ncat>1 the array is "flatten" onto a 1d array)
+#define MKPTR1DNIKL(PNAME,IDXV,VARS)     nullify(PNAME); if (IDXV>0) PNAME(:) => VARS(IDXV)%data(:)
 
-#define MKPTR3DN(PNAME,PIDX,NI,NK,NN,PBUS) nullify(PNAME); if (PIDX>0) PNAME(1:NI,1:NK,1:NN) => PBUS(PIDX:)
-#define MKPTR3D(PNAME,PIDX,NN,PBUS) MKPTR3DN(PNAME,PIDX,ni,nk,NN,PBUS)
+!# Get 1d array (1:ni) of field (if nk>1 or fmul>1 get only the first level/cat)
+#define MKPTR1DNI(PNAME,IDXV,VARS)       nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(1:VARS(IDXV)%meta%ni)
+#define MKPTR1D(PNAME,IDXV,VARS)         MKPTR1DNI(PNAME,IDXV,VARS)
+
+!# Get 1d array (1:ni) for level/cat KL of field
+#define MKPTR1DK(PNAME,IDXV,KL,VARS)     nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(PHYMEMPTRI12D(VARS(IDXV)%meta,KL):)
+
+!# Get 1d array (1:ni) for level KK=1 of cat LL of field
+#define MKPTR1DL(PNAME,IDXV,LL,VARS)     nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(PHYMEMPTRI13D(VARS(IDXV)%meta,LL):)
+   
+!# Get 1d array (1:ni) for level KK of cat LL of field
+#define MKPTR1DKL(PNAME,IDXV,KK,LL,VARS) nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(PHYMEMPTRI12DK(VARS(IDXV)%meta,KK,LL):)
+   
+!# Get 2d array (1:ni,1:nkl) of field (if fmul>1 staked nk/ncat)
+#define MKPTR2DNKL(PNAME,IDXV,VARS)      nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:PHYMEMPTRNKTOT(VARS(IDXV)%meta)) => VARS(IDXV)%data(:)
+#define MKPTR2D(PNAME,IDXV,VARS)         MKPTR2DNKL(PNAME,IDXV,VARS)
+
+!# Get 2d array (1:ni,1:ncat) of field... will lead incorect results if nk>1 (we could make a non contiguous ptr to make it ok then)
+#define MKPTR2DNL(PNAME,IDXV,VARS)       nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:PHYMEMPTRNCAT(VARS(IDXV)%meta)) => VARS(IDXV)%data(:)
+
+!# Get 2d array (1:ni,1:nk) of field (if fmul>1 get only the first cat)
+#define MKPTR2DNK(PNAME,IDXV,VARS)       nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:VARS(IDXV)%meta%nk) => VARS(IDXV)%data(:)
+
+!# LEGACY macro... TODO: remove MKPTR2DN
+#define MKPTR2DN(PNAME,IDXV,NI,NK,VARS)  nullify(PNAME); if (IDXV>0) PNAME(1:max(1,min(NI,VARS(IDXV)%meta%ni)),1:max(1,min(NK,VARS(IDXV)%meta%nk))) => VARS(IDXV)%data(:)
+
+!# Get 2d array (1:ni,1:nk-1) of field (if fmul>1 get only the first cat)
+#define MKPTR2Dm1(PNAME,IDXV,VARS)       nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:max(1,VARS(IDXV)%meta%nk-1)) => VARS(IDXV)%data(:)
+   
+!# Get 2d array (1:ni,1:nk) for cat LL of field
+#define MKPTR2DL(PNAME,IDXV,LL,VARS)     nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:VARS(IDXV)%meta%nk) => VARS(IDXV)%data(PHYMEMPTRI13D(VARS(IDXV)%meta,LL):)
+!# Get 2d array (1:ni,1:nk-1) for cat LL of field
+#define MKPTR2DLm1(PNAME,IDXV,LL,VARS)   nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:max(1,VARS(IDXV)%meta%nk-1)) => VARS(IDXV)%data(PHYMEMPTRI13D(VARS(IDXV)%meta,LL):)
+
+!# Get 3d array (1:ni,1:nk,1:ncat) of field
+!!$#define MKPTR3DN(PNAME,IDXV,NI,NK,NL,VARS) nullify(PNAME); if (IDXV>0) PNAME(1:max(1,min(NI,VARS(IDXV)%meta%ni)),1:max(1,min(NK,VARS(IDXV)%meta%nk)),1:max(1,min(NL,PHYMEMPTRNCAT(VARS(IDXV)%meta)))) => VARS(IDXV)%data(:)
+!!$#define MKPTR3D(PNAME,IDXV,NL,VARS) nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:VARS(IDXV)%meta%nk,1:max(1,min(NL,PHYMEMPTRNCAT(VARS(IDXV)%meta)))) => VARS(IDXV)%data(:)
+#define MKPTR3DNKL(PNAME,IDXV,VARS)      nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:VARS(IDXV)%meta%nk,1:PHYMEMPTRNCAT(VARS(IDXV)%meta)) => VARS(IDXV)%data(:)
+#define MKPTR3D(PNAME,IDXV,VARS)         MKPTR3DNKL(PNAME,IDXV,VARS)
 
 #endif
 #endif

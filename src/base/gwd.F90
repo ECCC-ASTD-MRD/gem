@@ -22,14 +22,14 @@ module gwd
 contains
 
    !/@*
-   subroutine gwd9(dbus, fbus, vbus, &
-        std_p_prof, tau, kount, trnch, ni, nk, nkm1)
+   subroutine gwd9(pvars, std_p_prof, tau, kount, ni, nk, nkm1, trnch)
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CAPPA_8, GRAV, RGASD
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use series_mod, only: series_xst
       use tendency, only: apply_tendencies
       use ens_perturb, only: ens_nc2d, ens_spp_get
@@ -39,34 +39,15 @@ contains
       !@Object model the gravity wave drag
       !@Arguments
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: trnch, ni, nk, nkm1, kount
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
       real, intent(in) :: std_p_prof(nk)
       real, intent(in) :: tau
 
       !          - Input/Output -
-      ! f        field of permanent physics variables
-      ! sizef    dimension of F
-      ! u        u component of wind as input
-      !          u component of wind modified by the gravity wave
-      !          drag as output
-      ! v        v component of wind as input
-      !          v component of wind modified by the gravity wave
-      !          drag as output
+      ! pvars    list of all phy vars (meta + slab data)
       !          - Input -
-      ! t        virtual temperature
-      ! s        local sigma levels
       ! std_p_prof  standard pressure profil
-      !          - Output -
-      ! rug      gravity wave drag tendency on the u component of real
-      !          wind
-      ! rvg      gravity wave drag tendency on the v component of real
-      !          wind
-      ! run      non-oro. gravity wave drag tendency on the u component of real
-      !          wind
-      ! rvn      non-oro. gravity wave drag tendency on the v component of real
-      !          wind
-      ! rtn      non-oro. gravity wave drag tendency on temperature
       !          - Input -
       ! tau      timestep times a factor: 1 for two time-level models
       !                                   2 for three time-level models
@@ -119,36 +100,36 @@ contains
       call init2nan(tt, te, uu, vv, sigma, s1, s2, s3)
       call init2nan(utendno , vtendno, ttendno)
       
-      MKPTR1D(p, pmoins, fbus)
-      MKPTR1D(zdhdx, dhdx, fbus)
-      MKPTR1D(zdhdxdy, dhdxdy, fbus)
-      MKPTR1D(zdhdy, dhdy, fbus)
-      MKPTR1D(zlhtg, lhtg, fbus)
-      MKPTR1D(zmg, mg, fbus)
-      MKPTR1D(zmtdir, mtdir, fbus)
-      MKPTR1D(zslope, slope, fbus)
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR1D(zxcent, xcent, fbus)
+      MKPTR1D(p, pmoins, pvars)
+      MKPTR1D(zdhdx, dhdx, pvars)
+      MKPTR1D(zdhdxdy, dhdxdy, pvars)
+      MKPTR1D(zdhdy, dhdy, pvars)
+      MKPTR1D(zlhtg, lhtg, pvars)
+      MKPTR1D(zmg, mg, pvars)
+      MKPTR1D(zmtdir, mtdir, pvars)
+      MKPTR1D(zslope, slope, pvars)
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(zxcent, xcent, pvars)
 
-      MKPTR2Dm1(rtg, tgwd, vbus)
-      MKPTR2Dm1(rtn, tgno, vbus)
-      MKPTR2Dm1(rug, ugwd, vbus)
-      MKPTR2Dm1(run, ugno, vbus)
-      MKPTR2Dm1(rvg, vgwd, vbus)
-      MKPTR2Dm1(rvn, vgno, vbus)
-      MKPTR2Dm1(s, sigm, dbus)
-      MKPTR2Dm1(u, uplus, dbus)
-      MKPTR2Dm1(v, vplus, dbus)
+      MKPTR2Dm1(rtg, tgwd, pvars)
+      MKPTR2Dm1(rtn, tgno, pvars)
+      MKPTR2Dm1(rug, ugwd, pvars)
+      MKPTR2Dm1(run, ugno, pvars)
+      MKPTR2Dm1(rvg, vgwd, pvars)
+      MKPTR2Dm1(rvn, vgno, pvars)
+      MKPTR2Dm1(s, sigm, pvars)
+      MKPTR2Dm1(u, uplus, pvars)
+      MKPTR2Dm1(v, vplus, pvars)
 
-      MKPTR2Dm1(zugwdtd1, ugwd_td1, vbus)
-      MKPTR2Dm1(zvgwdtd1, vgwd_td1, vbus)
+      MKPTR2Dm1(zugwdtd1, ugwd_td1, pvars)
+      MKPTR2Dm1(zvgwdtd1, vgwd_td1, pvars)
 
-      MKPTR2D(zhuplus, huplus, dbus)
-      MKPTR2D(ztplus, tplus, dbus)
+      MKPTR2D(zhuplus, huplus, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
 
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
+      MKPTR2D(zmrk2, mrk2,  pvars)
       
-      MKPTR3D(zvcoef, vcoef, 2, vbus)
+      MKPTR3D(zvcoef, vcoef, pvars)
 
       split_tend_L = (associated(zugwdtd1) .and. associated(zvgwdtd1))
       if (.not.split_tend_L) then

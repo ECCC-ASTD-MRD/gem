@@ -22,11 +22,12 @@ module shal_ktrsnt
 contains
 
    !/@*
-  subroutine sc_ktrsnt(dbus, fbus, vbus, dt, ni, nk)
+  subroutine sc_ktrsnt(pvars, dt, ni, nkm1)
     use, intrinsic :: iso_fortran_env, only: REAL64
     use debug_mod, only: init2nan
     use phy_status, only: phy_error_L, PHY_OK
-    use phybus
+    use phybusidx
+    use phymem, only: phyvar
     use tdpack_const, only: RAUW
     use phy_options, only: conv_shal
     use cnv_options, only: shal_conserve
@@ -39,12 +40,10 @@ contains
     !@Objective Call to Kuo-transient shallow convection
     
     !@Arguments
-    real, dimension(:), pointer, contiguous :: dbus           !Dynamics bus
-    real, dimension(:), pointer, contiguous :: fbus           !Permanent bus
-    real, dimension(:), pointer, contiguous :: vbus           !Volatile bus
-    real, intent(in) :: dt                                    !Time step (s)
-    integer, intent(in) :: ni                                 !Row length
-    integer, intent(in) :: nk                                 !Levels (not including diagnostic)
+    type(phyvar), pointer, contiguous :: pvars(:)  !all phy vars (meta + slab data)
+    real, intent(in) :: dt                           !Time step (s)
+    integer, intent(in) :: ni                        !Row length
+    integer, intent(in) :: nkm1                      !Levels (not including diagnostic)
     
     !@Author Ron McTaggart-Cowan, Feb 2022
     
@@ -53,45 +52,43 @@ contains
 #include "phymkptr.hf"
 
     ! Local variables
-    integer :: nkm1
     real, pointer, dimension(:), contiguous :: psm, ztdmask, &
          zkshal, zconesc, zconqsc, ztlcs, ztscs
     real, pointer, dimension(:,:), contiguous :: qqm, sigma, ttp, &
          zgztherm, zhushal, ztshal, zfsc, zqlsc, zqssc, zqcz, &
          zqdifv, qqp
     real(kind=REAL64), dimension(ni) :: l_en0, l_pw0
-
+    
     ! Return if not running Kuo Transient scheme
     if (conv_shal /= 'KTRSNT') return
 
     ! Basic setup
     call init2nan(l_en0, l_pw0)
-    nkm1 = nk
 
     ! Extract bus information
-    MKPTR1D(psm, pmoins, fbus)
-    MKPTR1D(ztdmask, tdmask, fbus)
-    MKPTR1D(zkshal, kshal, vbus)
-    MKPTR1D(zconesc, conesc, vbus)
-    MKPTR1D(zconqsc, conqsc, vbus)
-    MKPTR1D(ztlcs, tlcs, vbus)
-    MKPTR1D(ztscs, tscs, vbus)
-    MKPTR2Dm1(qqm, humoins, dbus)
-    MKPTR2Dm1(qqp, huplus, dbus)
-    MKPTR2D(sigma, sigw, dbus)
-    MKPTR2Dm1(ttp, tplus, dbus)
-    MKPTR2Dm1(zgztherm, gztherm, vbus)
-    MKPTR2Dm1(zhushal, hushal, vbus)
-    MKPTR2Dm1(ztshal, tshal, vbus)
-    MKPTR2Dm1(zfsc, fsc, fbus)
-    MKPTR2Dm1(zqlsc, qlsc, vbus)
-    MKPTR2Dm1(zqssc, qssc, vbus)
-    MKPTR2Dm1(zqcz, qcz, vbus)
-    MKPTR2Dm1(zqdifv, qdifv, vbus)
+    MKPTR1D(psm, pmoins, pvars)
+    MKPTR1D(ztdmask, tdmask, pvars)
+    MKPTR1D(zkshal, kshal, pvars)
+    MKPTR1D(zconesc, conesc, pvars)
+    MKPTR1D(zconqsc, conqsc, pvars)
+    MKPTR1D(ztlcs, tlcs, pvars)
+    MKPTR1D(ztscs, tscs, pvars)
+    MKPTR2Dm1(qqm, humoins, pvars)
+    MKPTR2Dm1(qqp, huplus, pvars)
+    MKPTR2Dm1(sigma, sigw, pvars)
+    MKPTR2Dm1(ttp, tplus, pvars)
+    MKPTR2Dm1(zgztherm, gztherm, pvars)
+    MKPTR2Dm1(zhushal, hushal, pvars)
+    MKPTR2Dm1(ztshal, tshal, pvars)
+    MKPTR2Dm1(zfsc, fsc, pvars)
+    MKPTR2Dm1(zqlsc, qlsc, pvars)
+    MKPTR2Dm1(zqssc, qssc, pvars)
+    MKPTR2Dm1(zqcz, qcz, pvars)
+    MKPTR2Dm1(zqdifv, qdifv, pvars)
 
     ! Pre-shallow state for energy budget
     if (pb_compute(zconesc, zconqsc, l_en0, l_pw0, &
-         dbus, fbus, vbus, nkm1) /= PHY_OK) then
+         pvars, nkm1) /= PHY_OK) then
        call physeterror('shal_ktrsnt::sc_ktrsnt', &
             'Problem computing preliminary budget for '//trim(conv_shal))
        return
@@ -100,11 +97,11 @@ contains
     ! Shallow convective scheme (Kuo transient types)
     call shallconv5(ttp, qqm, sigma, zgztherm, psm, &
          ztshal, zhushal, ztlcs, ztscs, zqlsc, zqssc, zkshal, &
-         zfsc, zqcz, zqdifv, dt, ni, nk, nkm1)
+         zfsc, zqcz, zqdifv, dt, ni, nkm1, nkm1)
     if (phy_error_L) return
 
     ! Adjust tendencies to impose conservation
-    if (pb_conserve(shal_conserve, ztshal, zhushal, dbus, fbus, vbus, &
+    if (pb_conserve(shal_conserve, ztshal, zhushal, pvars, &
          F_rain=ztlcs*RAUW, F_snow=ztscs*RAUW) /= PHY_OK) then
        call physeterror('shal_ktrsnt::sc_ktrsnt', &
             'Cannot correct conservation for '//trim(conv_shal))
@@ -112,11 +109,11 @@ contains
     endif
 
     ! Apply shallow convective tendencies to state variables
-    call apply_tendencies(ttp, ztshal, ztdmask, ni, nk, nkm1)
-    call apply_tendencies(qqp, zhushal, ztdmask, ni, nk, nkm1)
+    call apply_tendencies(ttp, ztshal, ztdmask, ni, nkm1, nkm1)
+    call apply_tendencies(qqp, zhushal, ztdmask, ni, nkm1, nkm1)
 
     ! Post-scheme energy budget analysis
-    if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, dbus, fbus, vbus, &
+    if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, pvars, &
          dt, nkm1, F_rain=ztlcs*RAUW, F_snow=ztscs*RAUW) /= PHY_OK) then
        call physeterror('shal_ktrsnt::sc_ktrsnt', &
             'Problem computing final budget for '//trim(conv_shal))

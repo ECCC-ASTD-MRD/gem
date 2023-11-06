@@ -22,10 +22,11 @@ module metox
 contains
 
    !/@*
-   subroutine metox3(dbus, vbus, fbus, ni, nk)
+   subroutine metox3(pvars, ni, nk)
       use debug_mod, only: init2nan
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use tendency, only: apply_tendencies
       implicit none
 !!!#include <arch_specific.hf>
@@ -33,14 +34,12 @@ contains
       ! Produces the specific humidity tendency due to methane
       ! oxidation (based on ECMWF scheme)
       !@arguments
-      ! ni       horizonal index
-      ! nk       vertical  index
-      ! vbus     volatile bus
-      ! fbus     permanent bus
-      ! dbus     dynamics bus
+      ! pvars    list of all phy vars (meta + slab data)
+      ! ni       horizontal running length
+      ! nk       vertical dimension
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk
-      real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
 
       !@author M. Charron (RPN): November 2005
       !@revisions
@@ -61,12 +60,12 @@ contains
       call msg_toall(MSG_DEBUG, 'metox [BEGIN]')
       if (timings_L) call timing_start_omp(415, 'metox', 46)
 
-      MKPTR1D(psp, pmoins, fbus)
-      MKPTR1D(ztdmask, tdmask, fbus)
-      MKPTR2D(zhuplus, huplus, dbus)
-      MKPTR2D(sigma, sigw, dbus)
-      MKPTR2D(qqp, huplus, dbus)
-      MKPTR2D(oxme, qmetox, vbus)
+      MKPTR1D(psp, pmoins, pvars)
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR2D(zhuplus, huplus, pvars)
+      MKPTR2D(sigma, sigw, pvars)
+      MKPTR2D(qqp, huplus, pvars)
+      MKPTR2D(oxme, qmetox, pvars)
 
       call init2nan(press, kmetox)
 

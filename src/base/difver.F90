@@ -22,13 +22,14 @@ module difver
 contains
 
    !/@*
-   subroutine difver8(dbus, fbus, vbus, seloc, tau, &
-        kount, trnch, ni, nk, nkm1)
+   subroutine difver8(pvars, seloc, tau, &
+        kount, ni, nk, nkm1, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: CAPPA, CHLC, CHLF, CPD, DELTA, GRAV, RGASD
       use phy_options
       use phy_status, only: phy_error_L
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use series_mod, only: series_xst
       use ens_perturb, only: ens_nc2d, ens_spp_get
       implicit none
@@ -41,9 +42,7 @@ contains
       !                 based on J. Mailhot/A. Lock (Aug 2012)
 
       !          - Input/Output -
-      ! dbus     dynamic bus
-      ! fbus     field for permanent physics variables
-      ! vbus     volatile bus
+      ! pvars    list of all phy vars (meta + slab data)
       !          - output -
       ! tu       u  tendency
       ! tv       v  tendency
@@ -68,8 +67,8 @@ contains
       ! nk       vertical dimension
       ! nkm1     vertical operator scope
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nk, nkm1
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
       real, target :: seloc(ni,nkm1)
       real, intent(in) :: tau
 
@@ -108,7 +107,6 @@ contains
            zzd, zzn, zfc, zfv, zc1pbl, zturbqf, zturbtf, zturbuf, zturbvf, &
            zturbuvf, zmrk2
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
-
       !---------------------------------------------------------------------
 
       call init2nan(bmsg, btsg, aq, bq, sfc_density, fsloflx, se, sig)
@@ -117,95 +115,95 @@ contains
       call init2nan(thl, qw, tthl, tqw, dkem, dket)
 
       ! Pointer assignments
-      MKPTR1D(ps, pmoins, fbus)
+      MKPTR1D(ps, pmoins, pvars)
 
       if (sfcflx_filter_order <= 0) then
-         MKPTR1D(zalfaq, alfaq, vbus)
-         MKPTR1D(zalfat, alfat, vbus)
-         MKPTR1DK(zbt_ag, bt, indx_agrege, vbus)
+         MKPTR1D(zalfaq, alfaq, pvars)
+         MKPTR1D(zalfat, alfat, pvars)
+         MKPTR1DK(zbt_ag, bt, indx_agrege, pvars)
       else
          if (kount == 0) then
-            MKPTR1D(zalfaq0, alfaq, vbus)
-            MKPTR1D(zalfat0, alfat, vbus)
-            MKPTR1DK(zbt_ag0, bt, indx_agrege, vbus)
+            MKPTR1D(zalfaq0, alfaq, pvars)
+            MKPTR1D(zalfat0, alfat, pvars)
+            MKPTR1DK(zbt_ag0, bt, indx_agrege, pvars)
          endif
-         MKPTR1D(zalfaq, falfaq, fbus)
-         MKPTR1D(zalfat, falfat, fbus)
-         MKPTR1DK(zbt_ag, fbt, indx_agrege, fbus)
+         MKPTR1D(zalfaq, falfaq, pvars)
+         MKPTR1D(zalfat, falfat, pvars)
+         MKPTR1DK(zbt_ag, fbt, indx_agrege, pvars)
       endif
       
-      MKPTR1D(zbm, bm, vbus)
+      MKPTR1D(zbm, bm, pvars)
 
-      MKPTR1D(zbm0, bm0, fbus)
-      MKPTR1D(zfdsi, fdsi, fbus)
-      MKPTR1D(zfdss, fdss, fbus)
-      MKPTR1D(zflw, flw, vbus)
-      MKPTR1D(zfq, fq, fbus)
-      MKPTR1D(zfsh, fsh, vbus)
-      MKPTR1D(zh, h, fbus)
-      MKPTR1D(zmg, mg, fbus)
-      MKPTR1D(ztsrad, tsrad, fbus)
-      MKPTR1D(zue, ue, vbus)
-      MKPTR1D(zustress, ustress, vbus)
-      MKPTR1D(zvstress, vstress, vbus)
+      MKPTR1D(zbm0, bm0, pvars)
+      MKPTR1D(zfdsi, fdsi, pvars)
+      MKPTR1D(zfdss, fdss, pvars)
+      MKPTR1D(zflw, flw, pvars)
+      MKPTR1D(zfq, fq, pvars)
+      MKPTR1D(zfsh, fsh, pvars)
+      MKPTR1D(zh, h, pvars)
+      MKPTR1D(zmg, mg, pvars)
+      MKPTR1D(ztsrad, tsrad, pvars)
+      MKPTR1D(zue, ue, pvars)
+      MKPTR1D(zustress, ustress, pvars)
+      MKPTR1D(zvstress, vstress, pvars)
 
-      MKPTR1DK(zfc_ag, fc, indx_agrege, vbus)
-      MKPTR1DK(zfv_ag, fv, indx_agrege, vbus)
-      MKPTR1DK(zfvap_ag, fvap, indx_agrege, fbus)
-      MKPTR1DK(zqsurf_ag, qsurf, indx_agrege, fbus)
+      MKPTR1DK(zfc_ag, fc, indx_agrege, pvars)
+      MKPTR1DK(zfv_ag, fv, indx_agrege, pvars)
+      MKPTR1DK(zfvap_ag, fvap, indx_agrege, pvars)
+      MKPTR1DK(zqsurf_ag, qsurf, indx_agrege, pvars)
 
-      MKPTR2DN(zfc, fc, ni, nagrege, vbus)
-      MKPTR2DN(zfv, fv, ni, nagrege, vbus)
-      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, fbus)
+      MKPTR2DN(zfc, fc, ni, nagrege, pvars)
+      MKPTR2DN(zfv, fv, ni, nagrege, pvars)
+      MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, pvars)
 
-      MKPTR2D(zturbqf, turbqf, vbus)
-      MKPTR2D(zturbtf, turbtf, vbus)
-      MKPTR2D(zturbuf, turbuf, vbus)
-      MKPTR2D(zturbuvf, turbuvf, vbus)
-      MKPTR2D(zturbvf, turbvf, vbus)
+      MKPTR2D(zturbqf, turbqf, pvars)
+      MKPTR2D(zturbtf, turbtf, pvars)
+      MKPTR2D(zturbuf, turbuf, pvars)
+      MKPTR2D(zturbuvf, turbuvf, pvars)
+      MKPTR2D(zturbvf, turbvf, pvars)
 
-      MKPTR2Dm1(q, huplus, dbus)
-      MKPTR2Dm1(zqcplus, qcplus, dbus)
-      MKPTR2Dm1(sg, sigm, dbus)
-      MKPTR2Dm1(zsigm, sigm, dbus)
-      MKPTR2Dm1(zsigt, sigt, dbus)
-      MKPTR2Dm1(zsigw, sigw, dbus)
-      MKPTR2Dm1(t, tplus, dbus)
-      MKPTR2Dm1(tm, tmoins, dbus)
-      MKPTR2Dm1(tu, udifv, vbus)
-      MKPTR2Dm1(tv, vdifv, vbus)
-      MKPTR2Dm1(tt, tdifv, vbus)
-      MKPTR2Dm1(tq, qdifv, vbus)
-      MKPTR2Dm1(tqc, qcdifv, vbus)
-      MKPTR2Dm1(uu, uplus, dbus)
-      MKPTR2Dm1(vv, vplus, dbus)
-      MKPTR2Dm1(w, wplus, dbus)
-      MKPTR2Dm1(zc1pbl, c1pbl, vbus)
-      MKPTR2Dm1(zfbl, fbl, fbus)
-      MKPTR2Dm1(zfblgauss, fblgauss, fbus)
-      MKPTR2Dm1(zfblnonloc, fblnonloc, vbus)
-      MKPTR2Dm1(zfnn, fnn, fbus)
-      MKPTR2Dm1(zgq, gq, vbus)
-      MKPTR2Dm1(zgql, gql, vbus)
-      MKPTR2Dm1(zgte, gte, vbus)
-      MKPTR2Dm1(zgztherm, gztherm, vbus)
-      MKPTR2Dm1(zkm, km, vbus)
-      MKPTR2Dm1(zkt, kt, vbus)
-      MKPTR2Dm1(zqtbl, qtbl, fbus)
-      MKPTR2Dm1(ztve, tve, vbus)
-      MKPTR2Dm1(zuwng, uwng, vbus)
-      MKPTR2Dm1(zvwng, vwng, vbus)
-      MKPTR2Dm1(zwqng, wqng, vbus)
-      MKPTR2Dm1(zwtng, wtng, vbus)
-      MKPTR2Dm1(zzd, zd, fbus)
-      MKPTR2Dm1(zzn, zn, fbus)
+      MKPTR2Dm1(q, huplus, pvars)
+      MKPTR2Dm1(zqcplus, qcplus, pvars)
+      MKPTR2Dm1(sg, sigm, pvars)
+      MKPTR2Dm1(zsigm, sigm, pvars)
+      MKPTR2Dm1(zsigt, sigt, pvars)
+      MKPTR2Dm1(zsigw, sigw, pvars)
+      MKPTR2Dm1(t, tplus, pvars)
+      MKPTR2Dm1(tm, tmoins, pvars)
+      MKPTR2Dm1(tu, udifv, pvars)
+      MKPTR2Dm1(tv, vdifv, pvars)
+      MKPTR2Dm1(tt, tdifv, pvars)
+      MKPTR2Dm1(tq, qdifv, pvars)
+      MKPTR2Dm1(tqc, qcdifv, pvars)
+      MKPTR2Dm1(uu, uplus, pvars)
+      MKPTR2Dm1(vv, vplus, pvars)
+      MKPTR2Dm1(w, wplus, pvars)
+      MKPTR2Dm1(zc1pbl, c1pbl, pvars)
+      MKPTR2Dm1(zfbl, fbl, pvars)
+      MKPTR2Dm1(zfblgauss, fblgauss, pvars)
+      MKPTR2Dm1(zfblnonloc, fblnonloc, pvars)
+      MKPTR2Dm1(zfnn, fnn, pvars)
+      MKPTR2Dm1(zgq, gq, pvars)
+      MKPTR2Dm1(zgql, gql, pvars)
+      MKPTR2Dm1(zgte, gte, pvars)
+      MKPTR2Dm1(zgztherm, gztherm, pvars)
+      MKPTR2Dm1(zkm, km, pvars)
+      MKPTR2Dm1(zkt, kt, pvars)
+      MKPTR2Dm1(zqtbl, qtbl, pvars)
+      MKPTR2Dm1(ztve, tve, pvars)
+      MKPTR2Dm1(zuwng, uwng, pvars)
+      MKPTR2Dm1(zvwng, vwng, pvars)
+      MKPTR2Dm1(zwqng, wqng, pvars)
+      MKPTR2Dm1(zwtng, wtng, pvars)
+      MKPTR2Dm1(zzd, zd, pvars)
+      MKPTR2Dm1(zzn, zn, pvars)
 
-      MKPTR2Dm1(tw, wdifv, vbus)
-      MKPTR2Dm1(tl, ldifv, vbus)
-      MKPTR2Dm1(zpblsigs, pblsigs, vbus)
-      MKPTR2Dm1(zpblq1, pblq1, vbus)
+      MKPTR2Dm1(tw, wdifv, pvars)
+      MKPTR2Dm1(tl, ldifv, pvars)
+      MKPTR2Dm1(zpblsigs, pblsigs, pvars)
+      MKPTR2Dm1(zpblq1, pblq1, pvars)
 
-      MKPTR3D(zvcoef, vcoef, 2, vbus)
+      MKPTR3D(zvcoef, vcoef, pvars)
 
       ! Decide whether to compute PBL tendencies
       compute_tend = .true.

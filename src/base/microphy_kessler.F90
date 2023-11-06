@@ -16,6 +16,7 @@
 
 module microphy_kessler
   use, intrinsic :: iso_fortran_env
+  use phymem, only: phyvar
   implicit none
   private
 
@@ -186,35 +187,31 @@ contains
   end function kessler_phybusinit
 
   ! Compute total water mass
-  function kessler_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function kessler_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
 #include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
     F_qltot(:,:) = zqcp(:,:)
     F_istat = PHY_OK
     return
   end function kessler_lwc
 
   ! Compute total ice mass
-  function kessler_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function kessler_iwc(F_qitot, F_pvars) result(F_istat)
+    ! use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
     F_istat = PHY_ERROR
     F_qitot(:,:) = 0.

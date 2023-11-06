@@ -17,7 +17,7 @@
 module phy_put_mod
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
    use phyfold, only: phyfoldmeta1
-   use phymem, only: phymeta, phyvar, phymem_find, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
+   use phymem, only: phymeta, phymem_find, phymem_getmeta_copy, PHY_NPATH_DEFAULT, PHY_BPATH_DEFAULT
    private
    public :: phy_put
 
@@ -38,8 +38,7 @@ contains
    function phy_put_2d(F_fld, F_name, F_npath, F_bpath, F_start, &
         F_end, F_quiet) result(F_istat)
       implicit none
-      !@object
-      !	Transfer data to the physic space
+      !@object Transfer data to the physic space
       !@arguments
       real,             pointer              :: F_fld(:,:) !Field for the physics
       character(len=*), intent(in)           :: F_name     !Name of field to retrieve (input, variable or output name)
@@ -53,13 +52,12 @@ contains
       !@author Ron McTaggart-Cowan - Spring 2014
       !@revision
       !*@/
-      integer :: istat
+      integer :: istat, idxv1(1)
       integer, dimension(3) :: istart, iend
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
@@ -79,14 +77,14 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_put) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
 
       ! Set automatic grid dimensions
       istart = 1
@@ -95,7 +93,7 @@ contains
             istart = F_start
          end where
       endif
-      iend = (/meta%nlcl(1:2),1/)
+      iend = (/vmeta%nlcl(1:2),1/)
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -111,7 +109,7 @@ contains
       if (associated(F_fld)) then
          if (.not.(size(F_fld,dim=1) == iend(1)-istart(1)+1 .and. &
               size(F_fld,dim=2) == iend(2)-istart(2)+1)) then
-            write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
+            write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), vmeta%nlcl
             call msg(MSG_WARNING,'(phy_put) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
             return
          endif
@@ -122,9 +120,9 @@ contains
 
       ! Fold information onto the bus
       !#TODO: check 2d to 3d through the phyfoldmeta itf
-      F_istat = phyfoldmeta1(F_fld, istart, iend, meta)
+      F_istat = phyfoldmeta1(F_fld, istart, iend, vmeta)
      if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return
@@ -135,8 +133,7 @@ contains
    function phy_put_3d(F_fld, F_name, F_npath, F_bpath, F_start, &
         F_end, F_quiet) result(F_istat)
       implicit none
-      !@object
-      !	Transfer data to the physic space
+      !@object Transfer data to the physic space
       !@arguments
       real,             pointer              :: F_fld(:,:,:) !Field for the physics
       character(len=*), intent(in)           :: F_name     !Name of field to retrieve (input, variable or output name)
@@ -150,13 +147,12 @@ contains
       !@author Ron McTaggart-Cowan - Spring 2014
       !@revision
       !*@/
-      integer :: istat, lijk(3)
+      integer :: istat, lijk(3), idxv1(1)
       integer, dimension(3) :: istart, iend
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       real, pointer :: fld1(:,:,:)
 
       ! ---------------------------------------------------------------------
@@ -178,14 +174,14 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_put) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
 
       ! Set automatic grid dimensions
       istart = 1
@@ -195,7 +191,7 @@ contains
          end where
       endif
 
-      iend = meta%nlcl
+      iend = vmeta%nlcl
       if (present(F_end)) then
          where (F_end > 0)
             iend = F_end
@@ -207,7 +203,7 @@ contains
          if (.not.(size(F_fld,dim=1) == iend(1)-istart(1)+1 .and. &
               size(F_fld,dim=2) == iend(2)-istart(2)+1 .and. &
               size(F_fld,dim=3) >= iend(3)-istart(3)+1)) then
-            write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), meta%nlcl
+            write(msg_S,"(' :: target: ',3i4,5x,'phy: ',3i4)") shape(F_fld), vmeta%nlcl
             call msg(MSG_WARNING,'(phy_put) Invalid input pointer shape for '//trim(F_name)//trim(msg_S))
             return
          endif
@@ -219,9 +215,9 @@ contains
       ! Fold information onto the bus
       lijk = lbound(F_fld)
       fld1(istart(1):,istart(2):,istart(3):) => F_fld(lijk(1):,lijk(2):,lijk(3):)
-      F_istat = phyfoldmeta1(fld1, istart, iend, meta)
+      F_istat = phyfoldmeta1(fld1, istart, iend, vmeta)
      if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return
@@ -247,13 +243,12 @@ contains
       !@author Ron McTaggart-Cowan - Spring 2014
       !@revision
       !*@/
-      integer :: istat
+      integer :: istat, idxv1(1)
       integer, dimension(4) :: istart, iend, lijk, iend0
       character(len=PATHLENGTH) :: npath, bpath
       character(len=128) :: msg_S
       logical :: quiet_L
-      type(phymeta) :: meta
-      type(phyvar) :: myphyvar(1)
+      type(phymeta) :: vmeta
       real, pointer :: fld1(:,:,:,:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
@@ -274,14 +269,14 @@ contains
       if (present(F_quiet)) quiet_L = F_quiet
 
       ! Retrieve matching record information
-      istat = phymem_find(myphyvar, F_name, npath, bpath, &
+      istat = phymem_find(idxv1, F_name, npath, bpath, &
            F_quiet=quiet_L, F_shortmatch=.false.)
       if (istat <= 0) then
          if (.not. quiet_L) &
               call msg(MSG_WARNING,'(phy_put) Cannot retrieve metadata for '//trim(F_name))
          return
       endif
-      meta = myphyvar(1)%meta
+      istat = phymem_getmeta_copy(vmeta, idxv1(1))
 
       ! Set automatic grid dimensions
       istart = 1
@@ -291,9 +286,9 @@ contains
          end where
       endif
 
-      iend0(1:2) = meta%nlcl(1:2)
-      iend0(3)   = meta%nk
-      iend0(4)   = meta%fmul * (meta%mosaic + 1)
+      iend0(1:2) = vmeta%nlcl(1:2)
+      iend0(3)   = vmeta%nk
+      iend0(4)   = vmeta%fmul * (vmeta%mosaic + 1)
       iend(1:4)  = iend0(1:4)
       if (present(F_end)) then
          where (F_end > 0)
@@ -320,9 +315,9 @@ contains
       lijk = lbound(F_fld)
       fld1(istart(1):,istart(2):,istart(3):,istart(4):) => &
            F_fld(lijk(1):,lijk(2):,lijk(3):,lijk(4):)
-      F_istat = phyfoldmeta1(fld1, istart, iend, meta)
+      F_istat = phyfoldmeta1(fld1, istart, iend, vmeta)
      if (.not.RMN_IS_OK(F_istat)) then
-         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(meta%vname))
+         call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------
       return

@@ -16,7 +16,7 @@
 module series_geop_mod
    use tdpack_const, only: PI
    use phygridmap, only: phydim_ni, phydim_nj
-   use phymem, only: phyvar, phymem_find
+   use phymem, only: phymem_find, phymem_getdata
    use series_options
    use series_xst_mod, only: series_xst_geo
    implicit none
@@ -47,12 +47,10 @@ contains
       !      This subroutine is part of time serie's package
       !      initialisation. It extracts and produce output of constant
       !      fields to be used by the unwrapper.
-      integer :: j, istat
+      integer :: j, istat, idxv1(1)
+      real, pointer, contiguous :: ptr1d(:)
       real :: prcon, w1(phydim_ni)
-      type(phyvar) :: myvar(1)
       !---------------------------------------------------------------
-
-#define BUSSLICE(VAR,JJ) VAR(1)%meta%bptr(VAR(1)%meta%i0:VAR(1)%meta%i0+phydim_ni-1,JJ)
       
       call msg(MSG_INFO, PKGNAME_S//'Extracting Geop fields')
 
@@ -63,103 +61,136 @@ contains
          call series_xst_geo(w1, 'MA', j)
       end do
 
-      istat = phymem_find(myvar, 'DLAT', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'DLAT', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j) * prcon
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:) * prcon
             call series_xst_geo(w1, 'LA', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'DLON', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'DLON', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j) * prcon
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:) * prcon
             where(w1 < 0.) w1 = w1 + 360.
             call series_xst_geo(w1, 'LO', j)
          end do
       endif
 
       !#TODO: loop over var
-      istat = phymem_find(myvar, 'Z0', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'Z0', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'ZP', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'MG', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'MG', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'MG', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'LHTG', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'LHTG', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'LH', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'ALVIS', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'ALVIS', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'AL', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'SNODP', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'SNODP', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'SD', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'TWATER', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'TWATER', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'TM', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'TSOIL', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'TSOIL', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'TP', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'GLSEA', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'GLSEA', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            w1(1:phydim_ni) = ptr1d(:)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
             call series_xst_geo(w1, 'GL', j)
          end do
       endif
 
-      istat = phymem_find(myvar, 'WSOIL', 'V', 'P', F_quiet=.true., &
+      istat = phymem_find(idxv1, 'WSOIL', 'V', 'P', F_quiet=.true., &
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = BUSSLICE(myvar,j)
+            nullify(ptr1d)
+            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            if (istat < 0) cycle
+            w1(1:phydim_ni) = ptr1d(:)
             call series_xst_geo(w1, 'HS', j)
          end do
       endif

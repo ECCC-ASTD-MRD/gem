@@ -14,20 +14,30 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine agrege3( &
+module agrege
+   implicit none
+   private
+   
+   public :: agrege3
+   
+contains
+
+subroutine agrege3(pvars, &
      bus_soil, bus_glacier, bus_water, bus_ice, bus_urb, bus_lake, bus_river, &
      siz_soil, siz_glacier, siz_water, siz_ice, siz_urb, siz_lake, siz_river, &
      ni_soil,  ni_glacier,  ni_water,   ni_ice,  ni_urb,  ni_lake,  ni_river, &
      ptr_soil, ptr_glacier, ptr_water, ptr_ice, ptr_urb, ptr_lake, ptr_river, &
      ptsurfsiz, &
-     rangs, poids, ni, trnch, &
+     rangs, poids, ni, &
      do_glaciers, do_ice, do_urb, do_lake, do_river )
    use sfcbus_mod
+   use phymem, only: phyvar
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmn/msg.h>
 
-   integer ni, trnch, ptsurfsiz
+   type(phyvar), pointer, contiguous :: pvars(:)
+   integer ni, ptsurfsiz
    integer ptr_soil(ptsurfsiz), ptr_glacier(ptsurfsiz)
    integer ptr_water  (ptsurfsiz), ptr_ice  (ptsurfsiz)
    integer ptr_urb  (ptsurfsiz), ptr_lake(ptsurfsiz), ptr_river(ptsurfsiz)
@@ -53,6 +63,8 @@ subroutine agrege3( &
    !             from the 7 surface modules (sea ice, glaciers,
    !             water, soil, urban, lakes, and rivers).
    !@Arguments
+   !             - Input/Output -
+   ! pvars       list of all phy vars (meta + slab data)
    !             - Input -
    ! BUS_SOIL    "mini-bus" for soil     surface (from D, F and V)
    ! BUS_GLACIER "mini-bus" for glaciers surface (from D, F and V)
@@ -107,9 +119,9 @@ subroutine agrege3( &
    DO_VAR: do var=1,nvarsurf
 
       if (vl(var)%niveaux <= 0 .or. .not.vl(var)%doagg_L) cycle DO_VAR
-      if (.not.associated(busptr(var)%ptr)) cycle DO_VAR
+      if (vl(var)%idxv <= 0) cycle DO_VAR
 
-      bus_ori(1:) => busptr(var)%ptr(1:,trnch)
+      bus_ori(1:) => pvars(vl(var)%idxv)%data(:)
 
       DO_MUL: do m=1,vl(var)%mul     ! tient compte de la multiplicite des champs
 
@@ -220,7 +232,7 @@ subroutine agrege3( &
       if (n.eq.2) var_no = z0_i
       if (n.eq.3) var_no = z0t_i
 
-      bus_ori(1:) => busptr(var_no)%ptr(1:,trnch)
+      bus_ori(1:) => pvars(vl(var_no)%idxv)%data(:)
 
       DO_MUL2: do m=1,vl(var_no)%mul
 
@@ -333,3 +345,5 @@ subroutine agrege3( &
 
    return
 end subroutine agrege3
+
+end module agrege

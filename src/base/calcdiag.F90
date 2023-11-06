@@ -22,7 +22,7 @@ module calcdiag
 contains
 
    !/@*
-   subroutine calcdiag1(dbus, fbus, vbus, dt, kount, ni, nk)
+   subroutine calcdiag1(pvars, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
@@ -31,29 +31,24 @@ contains
       use pbl_height, only: pbl_height1
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use phy_options
-      use phybus
+      use phybusidx
+      use phymem, only: phyvar
       use phybudget, only: pb_compute, pb_residual
       use phy_status, only: PHY_OK
       implicit none
 !!!#include <arch_specific.hf>
       !@Arguments
-      !          - Input/Output -
-      ! dbus     dynamic bus
-      ! fbus     permanent bus
+      !          - input/output -
+      ! pvars    list of all phy vars (meta + slab data)
       !          - input -
-      ! vbus     volatile (output) bus
-      !          - input -
-      ! dsiz     dimension of d
-      ! fsiz     dimension of f
-      ! vsiz     dimension of v
       ! kount    timestep number
       ! dt       length of timestep
       ! n        horizontal running length
       ! nk       vertical dimension
 
+      type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, ni, nk
       real, intent(in) :: dt
-      real, pointer, contiguous :: dbus(:), fbus(:), vbus(:)
 
       !@Author B. Bilodeau Feb 2003
       !*@/
@@ -563,7 +558,7 @@ contains
       if (associated(zcone0)) en0(:) = dble(zcone0(:))
       pw0(:) = 0.
       if (associated(zconq0)) pw0(:) = dble(zconq0(:))
-      if (pb_residual(zconephy, zconqphy, en0, pw0, dbus, fbus, vbus, &
+      if (pb_residual(zconephy, zconqphy, en0, pw0, pvars, &
            delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
            F_rad=znetrad) /= PHY_OK) then
          call physeterror('calcdiag', &
@@ -576,7 +571,7 @@ contains
       if (associated(zcone1)) en1(:) = dble(zcone1(:))
       pw1(:) = 0.
       if (associated(zconq1)) pw1(:) = dble(zconq1(:))
-      if (pb_residual(zconetot, zconqtot, en1, pw1, dbus, fbus, vbus, &
+      if (pb_residual(zconetot, zconqtot, en1, pw1, pvars, &
            delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
            F_rad=znetrad) /= PHY_OK) then
          call physeterror('calcdiag', &
@@ -585,7 +580,7 @@ contains
       endif
       
       ! Compute post-physics budget state
-      if (pb_compute(zcone1, zconq1, en1, pw1, dbus, fbus, vbus, nkm1) /= PHY_OK) then
+      if (pb_compute(zcone1, zconq1, en1, pw1, pvars, nkm1) /= PHY_OK) then
          call physeterror('phystepinit', &
               'Problem computing post-physics budget state')
          return
@@ -1305,7 +1300,7 @@ contains
          end do DO_NI_ACC
       endif IF_KOUNT_NOT_0B
 
-      !# For output purpose, diag level values needs to be copied into nk level of corresponding dynbus var
+      !# For output purpose, diag level values needs to be copied into nk level of corresponding dyn var
       zhuplus(:,nk) = zqdiag
       ztplus(:,nk)  = ztdiag
       zuplus(:,nk)  = zudiag
