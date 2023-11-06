@@ -36,7 +36,7 @@ runmod.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
 To compile and run GEM, you will need:
 - Fortran and C compilers
 - An MPI implementation such as OpenMPI (with development package),
-- OpenMP support (optional)
+- OpenMP support
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
 - basic Unix utilities such as cmake (version 3.20 minimum), bash, sed, etc.
@@ -110,7 +110,7 @@ files.
 To compile and run GEM, you will need:
 - Fortran and C compilers
 - An MPI implementation such as OpenMPI (with development package),
-- OpenMP support (optional)
+- OpenMP support
 - (BLAS,LAPACK) or equivalent mathematical/scientific library (ie: MKL), with development package,
 - fftw3 library (with development package),
 - basic Unix utilities such as cmake (version 3.20 minimum), bash, sed, etc.
