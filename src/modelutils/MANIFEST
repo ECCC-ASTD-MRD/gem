@@ -1,5 +1,5 @@
 NAME       : modelutils
-VERSION    : 1.7.0-rc1
+VERSION    : 1.8.0-a1
 BUILD      : 
 DESCRIPTION: Model utility functions
 SUMMARY    : modelutils is a collection of Fortran tools made for GEM and other models. 
@@ -10,8 +10,3 @@ DOC	   : https://wiki.cmc.ec.gc.ca/wiki/Modelutils
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-
-rmn  >= 20.0.1
-tdpack >= 1.6.2
-vgrid >= 6.9.2
-rpncomm >= 4.6.3

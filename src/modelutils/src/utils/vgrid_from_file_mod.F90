@@ -40,7 +40,7 @@ module vgrid_from_file_mod
 #include <rmn/msg.h>
 
    integer, parameter :: VGRID_FROM_FILE_NORFLD = RMN_ERR - 1
-   integer, parameter :: MAXLEV=1024, NLEVTYP=2, IKIND_SURF=3
+   integer, parameter :: MAXLEV=16384, NLEVTYP=2, IKIND_SURF=3
    integer, parameter :: MYMSG_QUIET = 99
 
    interface vgrid_from_file
@@ -164,7 +164,7 @@ contains
 
       ier = fstinl(F_unit,ni,nj,nk,F_datev,' ',RMN_ANY_I,RMN_ANY_I,RMN_ANY_I,' ',F_varname_S,keylist,nkeys,size(keylist))
       if (ier < 0 .or. nkeys < 1) then
-         call msg(MSG_WARNING,'(vgrid_from_file) Cannot find any record for: '//trim(F_varname_S))
+         call msg_toall(MSG_WARNING,'(vgrid_from_file) Cannot find any record for: '//trim(F_varname_S))
          return
       endif
 
