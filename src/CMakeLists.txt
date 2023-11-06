@@ -47,9 +47,14 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(cpl_LIBRARIES rpnphy_cpl_stubs CACHE STRING "rpnphy coupling library")
   set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry stub library")
   add_subdirectory(rpnphy rpnphy)
+  set(phy_VERSION ${rpnphy_VERSION} CACHE STRING "rpnphy version")
 endif()
 
-add_subdirectory(gemdyn gemdyn)
+if (EXISTS ${CMAKE_SOURCE_DIR}/src/gemdyn/CMakeLists.txt)
+  add_subdirectory(gemdyn gemdyn)
+  set(dyn_VERSION ${gemdyn_VERSION} CACHE STRING "gemdyn version")
+endif()
+
 add_subdirectory(gem gem)
 
 # Add those tools only for external users, or if WITH_SYSTEM_RPN is FALSE
