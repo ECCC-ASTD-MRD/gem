@@ -1,11 +1,13 @@
 Names of GEM-MACH Output Variables
 ========================================================================================
 
+In GEM-MACH, chemical gas and aerosol species are advected as passive tracers. Therefore, their concentrations can be output from the dynamics part of the model (dm) in the units that are expected in the dynamical core of the model (ug/kg). Because these units are less commonly used in atmospheric chemistry, physics part of the model has a capability of outputing the concentrations in the more commonly used units (pm output in units of ppbV for gas concentrations and ug/m3 for aerosol concentrations).
+
 
 Gas Species Concentrations and Emissions
 ----------------------
 
-| ug/kg Output | ppbV Output (1) | Emissions (2) | Biogenic Emissions | Description | Mechanism / Note |
+| dm Output (ug/kg) | pm Output (ppbV) (1) | Emissions (g/s) (2) | Biogenic Emissions (g/s) | Description | Mechanism / Note |
 | :------ | :----- | :----- | :----- | :------: | :-----: |
 | TAF1 | AFG1 | EAF1 |      | Photoreactive monounsaturated dicarbonyl   | SAPRC07C,S only |
 | TAF2 | AFG2 |      |      | Lumped monounsaturated dicarbonyl aromatic | SAPRC07C,S only |
@@ -80,7 +82,7 @@ Notes:
 Aerosol Species Mass Concentrations and Emissions
 ----------------------
 
-| ug/kg Output (1) | ug/m3 Output (2) | Area Emission (3) | Fugitive Emission (3) | On-road Emissions | Description | Note |
+| dm Output (ug/kg) (1) | pm Output (ug/m3) (2) | Area Emission (g/s) (3) | Fugitive Emission (g/s) (3) | On-road Emissions (g/s) | Description | Note |
 | :------ | :----- | :----- | :----- | :----- | :------: | :-----: |
 | TSUX | SUYY | ESUX | FSUX | MSUX | Sulphate |  |
 | TSSX | SSYY | ESSX (4)|  |  | Sea Salt |  |
@@ -119,7 +121,7 @@ Notes:<br>
 Diagnostic Dry Deposition Fields for Gas Species
 ----------------------
 
-| Deposition Flux | Deposition Velocity | Total surface resistance | Quasi-laminar sublayer resistance (Wesely's Rb term) | Description | Note |
+| Deposition Flux (moles/m2) | Deposition Velocity (m/s) | Total surface resistance (s/m) | Quasi-laminar sublayer resistance (Wesely's Rb term) (s/m) | Description | Note |
 | :------ | :----- | :----- | :----- | :------: | :-----: |
 | DALD | VALD | ADRC | ADRB | Acetaldehyde and higher aldehydes |  |
 | DA3 | VA3 | A3RC | A3RB | C4+ alkanes |  |
@@ -157,7 +159,7 @@ Note: Available when chm\_diag\_drydep\_L is set to .true.
 Diagnostic Dry Deposition Fields for Aerosol Species
 ----------------------
 
-| Deposition Flux | Description | Note |
+| Deposition Flux (moles/m2) | Description | Note |
 | :------ | :------: | :-----: |
 | DAM | Dry Deposition of Ammonium |  |
 | DNI | Dry Deposition of Nitrate |  |
@@ -174,7 +176,7 @@ Note: Available when chm\_diag\_drydep\_L is set to .true.
 Diagnostic Wet Deposition Fields
 ----------------------
 
-| Deposition Flux | Description | Note |
+| Deposition Flux (moles/m2) | Description | Note |
 | :------ | :------: | :-----: |
 | WH22 | Wet deposition of H2O2 (hydrogen peroxide) |  |
 | WROO | Wet deposition of ROOH (organic peroxide) |  |
@@ -204,7 +206,7 @@ Bidirectional Flux Fields (ammonia)
 | NHGP | NH3 static ground emissions potential | input |
 | NHGD | NH3 dynamic ground emissions potential | input |
 | NHTA | NH3 bidirectional flux time scale (hours) | output |
-| SLPH | Spoil PH | input |
+| SLPH | Soil PH | input |
 
 Miscellaneous Fields
 ----------------------
@@ -217,14 +219,14 @@ Miscellaneous Fields
 | LURA | aerodynamic resistance (s/m) |  |
 | LAIK | Leaf Area index for BEIS3 |  |
 | LAIE | Monthly Leaf Area index | input |
-| ESNO | Biogenic std summer emission NO(g) |  |
-| ESIO | Biogenic std summer EMISS ISOP(g) |  |
-| ESVO | Biogenic std summer EMISS VOC(g) |  |
-| ESMO | Biogenic std summer EMISS MONO(g) |  |
-| EWNO | Biogenic std winter emission NO(g) |  |
-| EWIO | Biogenic std winter EMISS ISOP(g) |  |
-| EWVO | Biogenic std winter EMISS VOC(g) |  |
-| EWMO | Biogenic std winter EMISS MONO(g) |  |
+| ESNO | Biogenic std summer emission NO(g/s) |  |
+| ESIO | Biogenic std summer EMISS ISOP(g/s) |  |
+| ESVO | Biogenic std summer EMISS VOC(g/s) |  |
+| ESMO | Biogenic std summer EMISS MONO(g/s) |  |
+| EWNO | Biogenic std winter emission NO(g/s) |  |
+| EWIO | Biogenic std winter EMISS ISOP(g/s) |  |
+| EWVO | Biogenic std winter EMISS VOC(g/s) |  |
+| EWMO | Biogenic std winter EMISS MONO(g/s) |  |
 | KTN | KT new for vertical diffusion |  |
 | NWOC | SOA CREATED IN TIMESTEP |  |
 | NOY | NOy (ppb) |  |
@@ -259,4 +261,25 @@ Miscellaneous Fields
 | NHGP | NH3 ground emissions potential | Used in NH3 bidirectional flux (input) |
 | HSTR | KPP-solver internal time step on the model vertical levels ; Used in gas mechanisms using KPP rodas solver (output) |
 | HSTC | KPP-solver internal time step on the additional canopy vertical levels ; Used in gas mechanisms using KPP rodas solver (output) |
+
+
+Debug variables
+---------------
+
+Depending on the debugging needs, developers can assign values of internal model variables to the debug variables.
+
+To output these debug variables, besides the request in `outcfg.out`, a number of the debug variables is required to be provided in the namelist.
+
+Names of these debug variables are automatically created based on their requested number:
+* The first 3 characters are `2DB` for 2D variables, and `3DB` for 3D variables
+* The forth character depends on the number of variables requested.
+ * For the maximum of 18 variables, the values are: `1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, G, H, I`.
+ * For any number less than 18, the values are a subset of the above list, starting with 1 and ending with the chacarcter corresponding to the requested number of variables.
+
+Examples:
+
+* 2DB1, 2DB2, ... 2DBA, 2DBB, ...
+* 3DB1, 3DB2, ... 3DBA, 3DBB, ...
+
+For more details on the debug variables, read [README_compilation](README_compilation.md).
 

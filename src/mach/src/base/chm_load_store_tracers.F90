@@ -47,19 +47,21 @@ subroutine chm_load_store_tracers(busdyn, chem_tr, flag)
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
 !!if_off
-
    use chm_species_info_mod, only: species_master
+   use chm_utils_mod,        only: chm_error_l,  CHM_MSG_DEBUG
    implicit none
 !!if_on
    integer(kind=4), intent   (in) :: flag
    real(kind=4),    dimension(:), pointer, contiguous :: busdyn
    real(kind=4),    intent(inout) :: chem_tr(chm_ni, chm_nk + 1, nb_dyn_tracers)
 !!if_off
+   external msg_toall
 !
 ! Local Variables
 !
    integer(kind=4) :: isp, ii, kk, indx, busid
 !
+   call msg_toall(CHM_MSG_DEBUG, 'chm_load_store_tracers [BEGIN]')
    if (flag == 0) then
     ! Copy tracers concentrations from the dynamic bus
       do isp = 1, nb_dyn_tracers
@@ -90,6 +92,6 @@ subroutine chm_load_store_tracers(busdyn, chem_tr, flag)
          end if
       end do
    end if
-
+   call msg_toall(CHM_MSG_DEBUG, 'chm_load_store_tracers [END]')
    return
 end subroutine chm_load_store_tracers
