@@ -2,26 +2,29 @@
 
 ###
 #
-#   Script for running the GEM-MACH integration test and submitting one of the post-processing scripts:
-#        for validation of the integration test results, or for creation of the new control output.
+#   Script for running the GEM-MACH, combining the output and submitting  the post-processing script
+#        for validation of the integration test results. The combined output can be used as the new control output.
 #
-#   USAGE: ord_soumet ${TASK_BIN}/run-gm-integration-test.sh -args "${GEM_version} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listing
+#   USAGE: 
+#        ord_soumet ${TASK_BIN}/run-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listing
 #
 #        Note that the variables provided under quotes after "-args" will be
 #        read by this script as $1, $2, etc to fill in the values of apropriate variables
 #
 #   The script relies on:
 #       1. Existence of directory structure needed for Runmod task with root directory being placed at ${TASK_BASEDIR}
-#       2. Existence of GEM-MACH binary, and run-gm-integration-test.sh and validate-gm-integration-test.sh scripts to be in ${TASK_BIN} directory
-#       3. Existence of input files to be in ${TASK_INPUT} directory
+#       2. Existence of GEM super repository in ${TASK_BASEDIR}/GEM-MACH directory
+#       3. Existence of GEM-MACH binary and validate-gm-integration-test.sh scripts to be in ${TASK_BIN} directory
+#       4. Existence of input files to be in ${TASK_INPUT} directory
 #   If any of these are missing, or not up to date, the script will fail. The error messages are provided throughout the
 #   script to indicate the obvious issues and failure of the script to behave as expected.
 #
 #   Script:
 #     - Submits the model run
-#     - Following the succesfful model run and based on value of the ${cntrl_fl_opt} variable submits
-#       either the script for validation of the model results against the existing control output,
-#       or the script for preparing new control output.
+#     - Following the succesfful model run, combines the output in the fst files named as YYYYMMDDHH_hhh, 
+#       which can be used as new control output.
+#     - Based on value of the ${cntrl_fl_opt} variable submits the script for validation of the model results 
+#       against the existing control output
 #
 #   Note:
 #     Script passes ${cmpl_opt} variable to the validation script to ensure suitability of validation.
@@ -31,47 +34,40 @@
 # Date:   March 2022
 # Update: January 2023
 #
-# 2023-Apr. Jack C - update to run with cmake compilation.  Note that there is
-#   no version check, and this is not compatible with RDE
-#   (only work with cmake, after >GEM5.2_b2)
-# 2023-May Jack C - combine dm/pm output files after runmod finishes, and calls
-#   the validate script when "${cntrl_fl_opt}" != "new"
+#         April 2023, Jack C - update to run with cmake compilation.  Note that there is
+#          no version check, and this is not compatible with RDE
+#          (only work with cmake, after >GEM5.2_b2)
+#         May 2023, Jack C - combine dm/pm output files after runmod finishes, and calls
+#          the validate script when "${cntrl_fl_opt}" != "new"
+#         August 2023, Verica S-J - update documentation
+#
 ###
 
 scriptstartdate=$(date '+%C%y%m%d%H%M%S')
 
 # Read in arguments
-export GEM_version=$1
-IntegrationTest_version=$2
-control_dir=$3
-export TASK_BASEDIR=$4
-GMJobMach=$5
-GMJobMemory=$6
-GMJobQueue=$7
-GMJobProcTopo=$8
-gmtestinfo=$9
-cmpl_opt=${10}
-cntrl_fl_opt=${11}
+IntegrationTest_version=$1
+control_dir=$2
+export TASK_BASEDIR=$3
+GMJobMach=$4
+GMJobMemory=$5
+GMJobQueue=$6
+GMJobProcTopo=$7
+gmtestinfo=$8
+cmpl_opt=$9
+cntrl_fl_opt=${10}
 
-# update log
+# Update log
 echo -e "\n== Starting script: run-gm-integration-test: $scriptstartdate == \n" | tee -a ${gmtestinfo}
 
-# Check and load GEM environment
-gembndl=/fs/ssm/eccc/mrd/rpn/models/gem/bundles/${GEM_version}.bndl
-[[ ! -f $gembndl ]] && echo -d " ERROR: GEM environment file not available: $gembndl \n" && exit 1
-source r.load.dot /fs/ssm/eccc/mrd/rpn/models/gem/bundles/${GEM_version}
+# Load needed environment (instead of GEM environment)
+source ${TASK_BASEDIR}/GEM-MACH/.eccc_setup_intel
 
 # Define task directory structure
 export TASK_BIN=${TASK_BASEDIR}/bin
 export TASK_INPUT=${TASK_BASEDIR}/input
 export TASK_WORK=${TASK_BASEDIR}/work
 export TASK_OUTPUT=${TASK_BASEDIR}/output
-
-### Copy the scripts necessary for running GEM-MACH into the bin directory
-cp $(which r.run_in_parallel) ${TASK_BIN} ; ln -s ${TASK_BIN}/r.run_in_parallel ${TASK_BIN}/r.mpirun
-cp $(which rungem.sh) ${TASK_BIN}
-cp $(which runmod.sh) ${TASK_BIN}
-cp $(which editfst) ${TASK_BIN}
 
 # Submit the model run
 cd ${TASK_BASEDIR}
@@ -82,7 +78,7 @@ if [ "$_status" == "ABORT" ]; then
  exit 1
 fi
 
-# combine run outputs
+# Combine physics and dynamics outputs
 for fhr in 000 009 012 021 024 ; do
  case ${fhr} in
   000) run_step=072 ;;
@@ -107,7 +103,7 @@ for fhr in 000 009 012 021 024 ; do
  else
   echo -e "* physics output:\n ${pmoutfile} \n" | tee -a ${gmtestinfo}
  fi
- # combine pm,dm level outputs in one
+ # Combine pm and dm outputs in one
  for f in ${TASK_OUTPUT}/cfg_0000/laststep_0000000${run_step}/00*/?m${rundate}-*_${fhr} ; do
   ${TASK_BIN}/editfst -s $f -d ${outfile} -i <<EOD
  exclure(-1,['>>','^^','!!','>^'],-1)
@@ -116,26 +112,25 @@ EOD
  ${TASK_BIN}/editfst -s ${dmoutfile} -d ${outfile} -i <<EOD
  desire(-1,['>>','^^','!!','>^'],-1)
 EOD
- echo -e "*** combind output: ${outfile} \n"  | tee -a ${gmtestinfo}
+ echo -e "*** combined output: ${outfile} \n"  | tee -a ${gmtestinfo}
 done
 
-# Set the job resources
+# Set the validation job resources
 export PostProcJobTime=1200
 export PostProcJobProcTopo=40
 
-# Submit job to verification against ref. result
+# Submit job to verify results against control files
 if [[ "${cntrl_fl_opt}" != "new" ]]; then
    export PostProcJobName=vldtgm
-   echo -e "\n Submit model against a control run \n" | tee -a ${gmtestinfo}
+   echo -e "\n Validate results against a control run \n" | tee -a ${gmtestinfo}
    ord_soumet ${TASK_BIN}/validate-gm-integration-test.sh \
-              -args "${GEM_version} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" \
+              -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" \
               -mach ${GMJobMach} -cpus ${PostProcJobProcTopo} -cm ${GMJobMemory} \
               -t ${PostProcJobTime} -queue ${GMJobQueue} -jn ${PostProcJobName} \
               -listing ${TASK_BASEDIR}/listing
 else
-  echo -e "\n *** Integration run complete without fstcomp with reference *** \n " | tee -a ${gmtestinfo}
+  echo -e "\n *** Location of new control output: $(dirname ${outfile}) *** \n " | tee -a ${gmtestinfo}
 fi
 
 # Tell the world how long it took to run GEM-MACH
-echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) \
-         sec. for the GEM-MACH integration test script to run == \n" | tee -a ${gmtestinfo}
+echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds for the script that runs GEM-MACH and combines the output to run == \n" | tee -a ${gmtestinfo}

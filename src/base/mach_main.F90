@@ -66,12 +66,14 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
 !!if_off
-   use chm_utils_mod,        only: global_debug, chm_lun_out, chm_error_l, ik
+   use chm_utils_mod,        only: global_debug, chm_lun_out, chm_error_l, &
+                                   ik, CHM_MSG_DEBUG
    use chm_nml_mod,          only: chm_biog_s, chm_gas_drydep_s,           &
                                    chm_do_mjpts_l, chm_mj_treatment_s,     &
                                    chm_diag_accum_L, chm_diag_colum_L,     &
                                    chm_sat_seasons_l, chm_do_cffeps_l,     &
-                                   chm_pkg_gas_s, chm_pkg_pm_s, chm_vert_diff_s
+                                   chm_pkg_gas_s, chm_pkg_pm_s, chm_vert_diff_s, &
+                                   chm_debug_trace_L
    use chm_species_idx_mod,  only: sp_SO4
    use mach_drydep_mod,      only: lucprm
    use mach_pkg_gas_mod,     only: num_be_sp
@@ -123,17 +125,19 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
    real(kind=4)      :: emisbio_can(ni_can, nkt, num_be_sp)
    real(kind=4)      :: tracers_can(ni_can, nkc, nb_dyn_tracers)
 
+   external msg_toall
 !===============================================================================
 ! Code statements begin here
 !===============================================================================
 !
-   local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
+   local_dbg = ((chm_debug_trace_L .or. global_debug) .and. (chm_lun_out > 0))
 !
    if (local_dbg) then
       write (chm_lun_out, *) 'in mach_main'
       write (chm_lun_out, *) 'slab_index, step ', slab_index, step
       write (chm_lun_out, *) 'chm_ni, chm_nk ', chm_ni, chm_nk
    end if
+   call msg_toall(CHM_MSG_DEBUG, 'mach_main [BEGIN]')
 !
 !================================================================================
 ! Start of landuse and season calculations
@@ -422,9 +426,10 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
 !  Units conversion for a subset of PM and gases species before outputting them.
 !===============================================================================
 !
-   call mach_output (busper, busvol, chem_tr, metvar2d, metvar3d, landuse)
+    call mach_output (busper, busvol, chem_tr, metvar2d, metvar3d, landuse)
 !
 !===============================================================================
+    call msg_toall(CHM_MSG_DEBUG, 'mach_main [END]')
 
 return
 end subroutine mach_main

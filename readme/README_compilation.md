@@ -1,188 +1,231 @@
 # GEM-MACH Compilation
 
-## Building the binaries
+GEM-MACH model consists of the meteorological model (GEM) and chemistry library (MACH) called from physics part of GEM.
 
-### For the first time
+In CMAKE compiling environment, GEM source code consists of the set of subdirectories and the MACH code is one of these subdirectories. GEM GitLab repository is a superrepository in which dynamics, physics, chemistry, etc are subtrees of individual repositories. In other words, MACH subdirectory with chemistry source code is tracked in [this GEM-MACH](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH) repository, and is contained in the GEM repo as a subtree. Depending on the compilation choices GEM can be compiled with and without chemistry. Here, only compilation with chemistry is discussed.
 
-#### Set GEM environment variables
+Depending on the level of interest in GEM code, one can choose between different workflows:
+1. If you need to edit the GEM code, or if you want to manually build your binary,, the most convenient workflow is to:
+ * Clone both GEM and MACH repositories in two independent directories
+ * Work on MACH repo
+ * Change directory to the GEM repo
+ * `git subtree pull` MACH repo into GEM repo
+ * Compile GEM-MACH from the command line while in GEM repo
+2. Otherwise, you can automate the GEM-related parts of the build process:
+ * Clone only MACH repository
+ * Use GEM-MACH integration test to compile, run and validate GEM-MACH against the latest GEM-MACH version available in GitLab.
 
-* Set GEM environment
-  
-Use r.load.dot followed by GEM version from [README\_version.md](README_version.md):
+Note:
+There are variations of some of the steps in each of the choices and that below-described workflows are in flux. This readme will be updated as required.
 
-```
- . r.load.dot GEM/x/5.2.0-b1  ## This is an example for version x/5.2.0-b1. Obviously, you'll need to change the version.
-```
+## Building the Binaries for the First Time
 
-* Set environmental variable `storage_model`
+### Acquiring GEM-MACH Code
 
-```
-mkdir your_working_directory
-export storage_model=your_working_directory
-```
-**your\_working\_directory** is a directory you need to create somewhere on your /home/ords/ or the supercomputer /space/hall[1,2]/work/ filesystems. It will be used to store the CHEM library and GEM-MACH final binary.
+The MACH part of GEM-MACH code can be cloned from [ARQI-GEMMACH/GEM-MACH project](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH).
 
-* Unset environment variable `DEBUGMAKE` to enable default optimization
-
-```
-unset DEBUGMAKE
-```
-
-#### Prepare CHEM library
-
-* Set the RDE build environment for CHEM
+At present, the cmake version is only available through the `3.2` branch. To get to this branch, clone the repo and use `git switch`:
 
 ```
-cd your_checkout_directory/CHEM
-ouv_exp_gemmach   # this will use the storage_model
+cd <local_directory_where_one_keeps_different_versions_of_GEM-MACH_code>
+git clone git@gitlab.science.gc.ca:ARQI-GEMMACH/GEM-MACH.git <local_path_to_MACH_CMAKE_git_repository>
+cd <local_path_to_MACH_CMAKE_git_repository>
+git switch 3.2
 ```
 
-* Compile and build the CHEM library
+### Acquiring GEM code
+
+The GEM code, which is necessary for compiling GEM-MACH, can be cloned from the [MIG/gem project](https://gitlab.science.gc.ca/MIG/gem).
+
+If you are working on a feature that involves the GEM code, we recommend to start from the latest version of the code. If you're just working on chemistry, we recommend resetting the repo to the commit that is tagged as the GEM version that corresponds to the chemistry code you are working on.
 
 ```
-cd your_checkout_directory/CHEM
-make -j 8 mach
-```
-#### Compile GEM-MACH
-
-* Set the RDE build environment for GEM
-
-```
-cd your_checkout_directory/GEM
-ouv_exp_gem      # this will use the storage_model
+git clone git@gitlab.science.gc.ca:MIG/gem.git <local_path_to_GEM_CMAKE_git_repository>
+cd <local_path_to_GEM_CMAKE_git_repository>
+git reset --hard $(git rev-list -n 1 ${GEM_version_tag})
 ```
 
-* Create the symlinks to GEM libraries and binary
+### Making connection between GEM and GEM-MACH repositories
+
+#### Checking if the MACH code in GEM repository is same as in GEM-MACH repository
+
+There are two ways for this check:
+1. Compare `<local_path_to_MACH_CMAKE_git_repository>/src` and `<local_path_to_GEM_CMAKE_git_repository>/src/mach` directories (e.g. by using `xxdiff -BbwirD `)
+2. Compare the following two hashes:
+ * latest commit in 3.2 branch of `<local_path_to_MACH_CMAKE_git_repository>` or [ARQI-GEMMACH/GEM-MACH](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH) repository
+ * latest commit that is specified in the latest commit that starts with "Squashed 'src/mach/'" in `<local_path_to_GEM_CMAKE_git_repository>` or [MIG/gem](https://gitlab.science.gc.ca/MIG/gem) repository
+
+#### Connecting MACH with GEM repository
+
+Depending on an interest to keep the git structure of the repositories, there are two ways of connecting MACH repository to GEM repository:
+
+* If the MACH code in GEM repository is not the same as in GEM-MACH repository, or one wants to compile some other branch from `<local_path_to_MACH_CMAKE_git_repository>` repository instead of 3.2, git subtree pull choice of MACH into GEM repository:
 
 ```
-cd your_checkout_directory/GEM
-linkit           # this will use the storage_model
+cd <local_path_to_GEM_CMAKE_git_repository>
+git subtree pull --squash -P src/mach <local_path_to_MACH_CMAKE_git_repository> <name_of_branch_chosen_from_local_MACH_CMAKE_git_repository>
 ```
 
-* Compile and link GEM binaries to create GEM-MACH binary
+Note that git subtree pull of the local repository works only if both GEM and MACH repositories are on the same hall (either on hall5 or hall6).
+
+* For development and testing purposes, it is also possible to simply blow away the MACH subtree and replace it with a link to your MACH repo:
 
 ```
-cd your_checkout_directory/GEM
-make dep
-make -j 8 obj
-make gemdm
-```
-Note: if you want to free some space without removing the binaries, you can use "make clean" in each directory.  This will delete all the temporary files but keep the important one.  The drawback is that you'll have to compile everything again if you make any modification.
-
-
-### When you've made some modifications
-
-
-* If you have modified something in the CHEM:
-
-```
-cd your_checkout_directory/CHEM
-make mach       # this will compile all the changes at once
-```
-Note: Before you introduce modifications to CHEM code, please get familiar with [GEM-MACH coding standards](https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/Coding_standards).
-
-* If you have modified something in the GEM part:
-
-```
-cd your_checkout_directory/GEM
-make -j 8 obj     # if F90 file is modified
-```
-OR:
-```
-cd your_checkout_directory/GEM
-make dep     # if new dependencies were added in the F90 file
-make -j 8 obj
-```
-OR:
-```
-cd your_checkout_directory/GEM
-make -j 8 obj      # if cdk file is modified, this command has to be repeated
-make -j 8 obj      # first time to re-compile all dependencies and second to check that all objects are up to date
+cd <local_path_to_GEM_CMAKE_git_repository>
+rm -r src/mach
+ln -s <local_path_to_MACH_CMAKE_git_repository> src/mach
 ```
 
-Note that you can always use "make the_file.o" to compile each file separately, but that command will not build the libraries and necessary dependencies.
+### Compile GEM-MACH
 
-* Regardles which part you have modified, at **the end**:
+
+There are three options for compiling GEM-MACH:
+1. Using `cmake` commands directly, if you are familiar with `cmake` and have used it in other projects
+2. Using RPN's many layers of wrapper scripts that obfuscate the compilation process, but under the hood just call the cmake commands
+3. Using integration test that compiles, runs and verifies the results, all as batch processes submitted to the machine the test is initiated on
+
+Either of the two first cases requires setting up environment and compilation from GEM repository. The integration test, on the other hand, can also be ran from the MACH repository.
+
+#### Set necessary environment:
 
 ```
-cd your_checkout_directory/GEM
-make gemdm
+cd <local_path_to_GEM_CMAKE_git_repository>
+source ./.eccc_setup_intel
+source ./.initial_setup
 ```
 
-* Note on RDE 
+#### Compile GEM-MACH code on the command line:
 
-To retrieve a file from the GEM/PHY directories, use the following command:
+* The `cmake` way:
+
+As with a standard `cmake` workflow, run `cmake` command from build subdirectory of GEM repo, using the flag `-DWITH_MACH=TRUE`. The default setup for GEM is to use `build-${GEM_ARCH}` for build directory, and on U2, it translates to `build-rhel-8-icelake-64-intel-2022.1.2` subdirectory:
 
 ```
-cd your_checkout_directory/GEM
-rde co name_of_file.extension   # use the Tab key for automatic complition!
+cd <local_path_to_GEM_CMAKE_git_repository>/build-${GEM_ARCH}
+cmake -DWITH_MACH=TRUE ../ 2>&1 | tee ../make.cmake-mach.out
+make -j 10 work 2>&1 | tee ../make.work.out
 ```
 
-For more information on how to retrieve GEM files and how to compile after your modifications, visit [RDE tutorial](https://wiki.cmc.ec.gc.ca/wiki/RDE/1.0/Tutorial).
+* The RPN way:
 
-<!--
-===To speed things up a bit when compiling chemistry part===
-Add the "-j" option followed by the number of processors to be used to "make", e.g. in the CHEM, use 'make -j 8 mach'.
--->
+Run RPN wrapper for cmake directly from the GEM repository:<br>
 
+```
+cd <local_path_to_GEM_CMAKE_git_repository>
+make cmake-mach 2>&1 | tee make.cmake-mach.out
+make -j10 work 2>&1 | tee make.work.out
+```
+
+These save the listings of the compilation into `make.cmake-mach.out` and `make.work.out` files in `<local_path_to_GEM_CMAKE_git_repository>` and the GEM-MACH binary at `<local_path_to_GEM_CMAKE_git_repository>/work-${GEM_ARCH}/bin/maingemdm`
+
+#### Compile GEM-MACH running the integration test:
+
+Integration test can be ran from either local MACH repository or from src/mach directory of local GEM super repository.
+
+* From local MACH repository:
+
+Use the script that behind the scene, through the set of batch jobs, clones the appropriate tag version from GEM repo, git subtree pulls local MACH repo into the cloned GEM repo, compiles GEM-MACH, runs it and validates the results against the latest version of MACH in the remote 3.2 branch.
+
+```
+cd <local_path_to_MACH_CMAKE_git_repository>
+tools/gm-integration-test/initialize-gm-integration-test.sh -m
+```
+
+This will create a directory `/space/<current_hall>/sitestore/eccc/aq/r1/${USER}/maestro/${TRUE_HOST}/<test_version>/gm-test_<MACH_git_directory_basename>_<MACH_git_commit_hash>` and a link to it from `<local_path_to_MACH_CMAKE_git_repository>` named `gm-test-${TRUE_HOST}_<MACH_git_commit_hash>`. The binary will be `gm-test-${TRUE_HOST}_<MACH_git_commit_hash>/build/work-${GEM_ARCH}/bin/maingemdm`.
+
+* From local GEM super repository:
+
+Use the script that behind the scene, through the set of batch jobs, clones local GEM super repository with MACH already pulled in, compiles GEM-MACH, runs it and validates the results against the latest version of MACH in the remote 3.2 branch.
+
+```
+cd <local_path_to_GEMM_CMAKE_git_repository>/src/mach
+tools/gm-integration-test/initialize-gm-integration-test.sh
+```
+
+This will create a directory `/space/<current_hall>/sitestore/eccc/aq/r1/${USER}/maestro/${TRUE_HOST}/<test_version>/gm-test_<GEM_git_directory_basename>_<GEM_git_commit_hash>` and a link to it from `<local_path_to_GEM_CMAKE_git_repository>/src/mach` named `gm-test-${TRUE_HOST}_<GEM_git_commit_hash>`. The binary will be `gm-test-${TRUE_HOST}_<GEM_git_commit_hash>/build/work-${GEM_ARCH}/bin/maingemdm`.
+
+For detailed information on integration test, please read the comments at the beginning of the scripts in `tools/gm-integration-test`, with special attention to the beginning of `tools/gm-integration-test/initialize-gm-integration-test.sh`. `-h` option of the integration test also provides basic help.
+
+
+## Building the Binaries After Making Code Modifications
+
+* If code in `<local_path_to_GEM_CMAKE_git_repository>` is edited, repeat compilation:
+
+```
+cd <local_path_to_GEM_CMAKE_git_repository>
+make -j10 work 2>&1 > make.work.out
+```
+
+Re-running the cmake step should not be necessary unless you've made structural changes to the code. If you notice something weird happening, you can go back to the `make cmake-mach` step.
+
+* If code in `<local_path_to_MACH_CMAKE_git_repository>` is edited, follow one of the two options:
+
+ * Use `cmake`:
+  1. commit the changes in `<local_path_to_MACH_CMAKE_git_repository>`
+  2. pull in this new version into `<local_path_to_GEM_CMAKE_git_repository>` by repeating `git subtree pull`
+  3. repeat the compilation
+
+```
+cd <local_path_to_MACH_CMAKE_git_repository>
+git add <files_to_be_committed>
+git commit
+cd <local_path_to_GEM_CMAKE_git_repository>
+git subtree pull --squash -P src/mach git@gitlab.science.gc.ca:ARQI-GEMMACH/GEM-MACH.git <name_of_branch_chosen_from_local_MACH_CMAKE_git_repository>
+make -j10 work 2>&1 > make.work.out
+```
+
+The same caveats about possibly needing to re-run cmake apply here.
+
+ * Use the integration test:
+  1. commit the changes in `<local_path_to_MACH_CMAKE_git_repository>`
+  2. run integration test
+
+```
+cd <local_path_to_MACH_CMAKE_git_repository>
+git add <files_to_be_committed>
+git commit
+tools/gm-integration-test/initialize-gm-integration-test.sh
+```
+
+Note: Before you introduce modifications to MACH code, please get familiar with [GEM-MACH coding standards](https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/Coding_standards).
 
 ## Debugging mode
-If you want to debug the code, there are many ways to do so:
 
-### Use CHEM / GEM debug mode
+One can compile in a debug mode by replacing `cmake-mach` with `cmake-mach-debug` when compiling on command line using RPN wrappers, or utilizing `-d` option with the integration test.
 
-In RDE environment, `DEBUGMAKE` environment variable is used to trigger
-compilation with default debug options. 
+Binary produced in debug mode will require updating the model namelist that will be used at the run time by adding `chm_debug_trace_l=.true.` in `physics_cfgs` and `chemistry_cfgs` namelist-keys groups of `gem_settings.nml`. This type of binary will also produce large Runmod listing file.
 
-When `DEBUGMAKE` is set to 1, it will trigger verbose compilation with no optimization. It can be set for both compiling CHEM and GEM code, or it can be set for one and unset for the other code directory. Example below is for both directories.
+# Debug variables
 
-```
-export DEBUGMAKE=1
-
-cd your_checkout_directory/CHEM
-make buildclean
-make -j8 mach
-
-cd your_checkout_directory/GEM
-make buildclean
-make -j8 obj
-make gemdm
-```
-
-One can to further modify, suppress default debug options set by RDE by using
-user supplied `COMP_RULES_FILE` in `Makefile.user.mk`.
-This file can be modified with the defult rule file, see:
-https://wiki.cmc.ec.gc.ca/wiki/RDE/1.0/Ref#User_overrides
-
-Note: Compilation in debug mode will add some flags to the compilation/linkage and put the code in "verbose" mode so expect slower model execution and bigger listing files.
-
-### Using debug variables
+Depending on the debugging needs, one can assign values of internal model variables to the debug variables. To output these debug variables, besides adding the request in `outcfg.out`, one has to set non-default values for particular namelist keys in `gem_settings.nml`.
 
 It is possible to create up to 18 2D variables and up to 18 3D variables on the volatile bus for debugging purpose.
 
-#### gem_settings.nml
+### gem\_settings.nml
 
-The memory allocation is done automaticaly and is triggered by 2 keys in gem_settings.nml:
+Internal mechanism for automatic allocation of memory for these debug variables is triggered by setting the value of the following manelist keys to the number of desired 2D and 3D debug variables:
+
 ```
- chm_debug_2d_i = 0
- chm_debug_3d_i = 0
+ chm_debug_2d_i
+ chm_debug_3d_i
 ```
 
-Default value for both is 0.  When chm\_debug\_2d\_i integer value is greater than 0, that number of 2D variables will be created and allocated on the volatile bus.  Same for chm\_debug\_3d\_i.
+Default value for both keys is 0. To request an automatic allocation of memory, i.e. variable creation and space allocation on the volatile bus, set the desired key value to be an integer greater than 1:
 
-#### Output
+* For 2D variables, set `chm_debug_2d_i` to the desired number of 2D debug variables
+* For 3D variables, set `chm_debug_3d_i` to the desired number of 3D debug variables
 
-The output name of those variables will be automaticaly generated.<br>
-The first 3 characters will be 2DB for 2D variables, and 3DB for 3D variables.<br>
-The forth character will depend on the number of variable requested.<br>
-Values will be: 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, G, H, I<br>
-For a maximum of 18 values.<br>
-E.g.:
+### outcfg.out
 
-* 2DB1, 2DB2, ... 2DBA, 2DBB, ...
-* 3DB1, 3DB2, ... 3DBA, 3DBB, ...
+Output names for these variables are automatically generated as follows:
+* The first 3 characters are `2DB` for 2D variables, and `3DB` for 3D variables.
+* The forth character depends on the number of variables requested.
+ * For a maximum of 18 variables, the values are `1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, G, H, I`
+ * For any number less than 18, the values will be a subset from the above list, starting with 1 and ending with the character corresponding to the number requested in the namelist key
 
-The next lines are included in the current outcfg.out file:
+An example of the lines that need to be included in the `outcfg.out` file:
+
+```
  sortie_p([2DB1,2DB2,2DB3] , grid, 1, levels, 1, steps, 1)
  sortie_p([3DB1,3DB2,3DB3] , grid, 1, levels, 1, steps, 1)
-
+```
