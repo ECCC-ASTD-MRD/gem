@@ -188,11 +188,18 @@ build:rhel-8-icelake-64-intel-2021.4.0:
     - . ${ECCI_ENV}/latest/profile.sh
     - set -e
     - . ./.eccc_setup_intel_2021.4.0
-    - SRC_DIR=$(pwd)
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0 .
+    - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
     - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-8-icelake-64-intel-2021.4.0
 
 package:rhel-8-icelake-64-intel-2021.4.0:
    variables:
@@ -214,8 +221,6 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - . ${ECCI_ENV}/latest/profile.sh
       - set -e
       - . ./.eccc_setup_intel_2021.4.0
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -223,7 +228,7 @@ package:rhel-8-icelake-64-intel-2021.4.0:
 #----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
 build:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
@@ -243,15 +248,22 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - SRC_DIR=$(pwd)
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2 .
+      - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-ubuntu-22.04-amd64-64-intel-2022.1.2
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -276,8 +288,6 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -285,7 +295,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
 #----- ubuntu-22.04-amd64_inteloneapi-2023.2.0
 build:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
@@ -305,15 +315,22 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
-      - SRC_DIR=$(pwd)
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0 .
+      - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-ubuntu-22.04-amd64-64-intel-2023.2.0
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -338,8 +355,6 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -347,7 +362,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
 #----- ubuntu-22.04-amd64_gnu-11.4.0
 build:ubuntu-22.04-amd64-gnu-11.4.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -376,7 +391,7 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
 deploy:staging:
    stage: deploy
    tags:
-      - concurrent
+      - U2
    only:
       - tags
       - dev
