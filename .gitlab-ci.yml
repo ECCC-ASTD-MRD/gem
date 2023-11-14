@@ -256,10 +256,10 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-ubuntu-22.04-amd64-64-intel-2022.1.2
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
@@ -323,10 +323,10 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-ubuntu-22.04-amd64-64-intel-2023.2.0
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+      - work-ubuntu-22.04-amd64-64-intel-2023.2.0
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
