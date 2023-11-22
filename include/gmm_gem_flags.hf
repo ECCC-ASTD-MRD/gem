@@ -1,0 +1,20 @@
+! Define GEM constants to use as users (uuid) flags in GMM_meta
+
+!- Reserved values, defined in gmm.hf
+!      integer, parameter :: GMM_FLAG_STAG_X    =    64
+!      integer, parameter :: GMM_FLAG_STAG_Y    =   128
+!      integer, parameter :: GMM_FLAG_STAG_Z    =   256
+
+      integer(kind=INT64),parameter :: FLAG_LVL_T = GMM_FLAG_STAG_Z
+      integer(kind=INT64),parameter :: FLAG_LVL_M = 0
+
+      integer(kind=INT64),parameter :: FLAG_NEST    = FLAG_LVL_T * 2
+      integer(kind=INT64),parameter :: FLAG_NO_NEST = 0
+      integer(kind=INT64),parameter :: FLAG_DIGF    = FLAG_NEST * 2
+      integer(kind=INT64),parameter :: FLAG_NO_DIGF = 0
+
+!!$#define SET_GMM_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,MYMETA%a%uuid1,MYMETA%a%uuid2,MYMETA%a%initmode,ior(MYMETA%a%flags,MYFLAG)))
+!!$#define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
+!!$
+!!$#define IS_SET_GMM_FLAG(MYMETA,MYFLAG) (iand(MYMETA%a%flags,MYFLAG) > 0)
+!!$#define IS_SET_GMMUSR_FLAG(MYMETA,MYFLAG) (iand(MYMETA%a%uuid1,MYFLAG) > 0)

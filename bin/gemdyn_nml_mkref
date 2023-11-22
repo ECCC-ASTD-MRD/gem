@@ -1,0 +1,60 @@
+#!/bin/bash
+# @Object: Create a reference nml for gemdyn
+# @Author: S.Chamberland
+# @Date:   Feb 2016, Jan 2021
+
+DESC='Create a reference nml for gemdyn'
+
+eval $(rpy.cclargparse \
+   -D " " \
+   ${0##*/} \
+   "${DESC}" \
+   "Example: ${0##*/} -v gemdyn_settings.${gemdyn_version}.ref" \
+   "positional"   'nargs=*'        "gemdyn_settings.${gemdyn_version}.ref"     "[FILENAME]" \
+   "-v,--verbose" 'action=count'   '0'     '[verbose mode]' \
+   ++++ $*)
+myverbose=''
+[[ ${verbose} -gt 0 ]] && myverbose='-v' || true
+
+myfile="${1:-gemdyn_settings.${gemdyn_version}.ref}"
+
+if [[ x"${myfile}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: Need to provide a destination filename
+EOF
+   exit 1
+fi
+
+if [[ x"${gemdyn_version}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: gemdyn environement not properly set, \${gemdyn_version} not defined.
+EOF
+   exit 1
+fi
+
+abs=$(which gemprnml_${BASE_ARCH}.Abs)
+if [[ x"${abs}" == x"" ]] ; then
+   cat 1>&2 <<EOF
+ERROR: gemdyn environement not properly set, cannot find all print nml prog
+       gemprnml=${abs:-gemprnml_${BASE_ARCH}.Abs}
+EOF
+   exit 1
+fi
+
+here=$(pwd)
+localtmp=$(mktemp -d ${TMPDIR:-/tmp/${USER}}/XXXXXX)
+mkdir -p ${localtmp}
+cd ${localtmp}
+
+${abs}
+nmlfilename='gemdict.nml'
+rpy.nml_clean -f ${nmlfilename} -d -c -s -m 300
+
+[[ x${myfile} == x${myfile#/} ]] && myfile=${here}/${myfile} || true
+mv ${nmlfilename} ${myfile}
+
+cd ${here}
+rm -rf ${localtmp}
+exit 0
+
+
