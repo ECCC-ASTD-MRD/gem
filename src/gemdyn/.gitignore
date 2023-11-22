@@ -1,0 +1,4 @@
+*.[oa]
+*~
+src/main/maingemgrid.F90
+src/main/maincheckdmpart.F90
