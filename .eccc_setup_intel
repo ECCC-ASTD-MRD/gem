@@ -9,7 +9,7 @@
 
 DOMAIN=`hostname -d`
 
-# Check name of the script called to export corresponding Intel compiler version
+# Check name of the script called, to export corresponding Intel compiler version
 INTEL_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 case ${INTEL_SCRIPT_NAME} in
@@ -26,18 +26,18 @@ esac
 
 # According to the domain, load corresponding code-tools 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/gpscc2/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/SCIENCE/gpscc3/inteloneapi-${COMPILER_VERSION}
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/SCIENCE/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/SCIENCE/inteloneapi-${COMPILER_VERSION}
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.6/ECCC/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/ECCC/inteloneapi-${COMPILER_VERSION}
 fi
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot rpn/libs/20230906
 . r.load.dot rpn/utils/20230906
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc1
+. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
 
 # Load Intel FFTW if on rhel, and if using Intel 2021 or Intel 2022
 if  [[ ${ORDENV_DIST} = "rhel" ]]; then
