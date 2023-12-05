@@ -49,13 +49,18 @@ Before making changes, create your own branch from the current branch
 git checkout -b mybranch
 ```
 
-## Preparing gem compilation for Intel compiler
+## Linking to GEM database (to be done once)
+```
+./scripts/link-dbase.sh
+```
+
+## Preparing gem compilation for Intel compiler suite
 ```
 ./scripts/link-dbase.sh
 . ./.eccc_setup_intel
 ```
 
-### Or for gnu
+## Or preparing gem compilation for gnu compiler suite
 
 Please note you cannot compile with Intel and then with GNU in the same shell
 ```
