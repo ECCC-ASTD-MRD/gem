@@ -43,16 +43,16 @@ else
             export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
             # Check whether GOAS_SCRIPT_MODE variable exists
             if [ -z "${GOAS_SCRIPT_MODE}" ]; then 
-                export PATH=${PWD}/scripts:${PWD}/${GEM_WORK}/bin:${PATH}
+                export PATH=${PWD}/scripts:${PWD}/src/rpnphy/bin:${PWD}/src/modelutils/bin:${PWD}/src/gemdyn/bin:${PWD}/${GEM_WORK}/bin:${PATH}
                 echo "RPN-SI and rpnpy scripts loaded from SSM domains will be used"
             else
-                export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
+                export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/src/rpnphy/bin:${PWD}/src/modelutils/bin:${PWD}/src/gemdyn/bin:${PWD}/${GEM_WORK}/bin:${PATH}
                 export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
                 echo "GOAS_SCRIPT_MODE set: GEM scripts in scripts/support and scripts/rpy will be used instead of SSM domains scripts"
             fi
         # for external use, always add all scripts to PATH, without message
         else
-            export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/${GEM_WORK}/bin:${PATH}
+            export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/src/rpnphy/bin:${PWD}/src/modelutils/bin:${PWD}/src/gemdyn/bin:${PWD}/${GEM_WORK}/bin:${PATH}
             export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
         fi 
         export TMPDIR=${TMPDIR-$(mktemp -d /tmp/$USER-XXXX)}
