@@ -35,6 +35,7 @@ else
     GEM_test_rstrt=1
     GEM_test_ptopo=1
     GEM_test_synthetic=1
+    GEM_test_ops=1
 fi
 EXP=${exp:-NONAME}
 ici=${PWD}
@@ -87,6 +88,10 @@ fi
 if [ $GEM_test_ptopo -gt 0 ] ; then
     time . ${GT_scripts}/gem_test_ptopo
 fi
+
+if [ $GEM_test_ops -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_ops
+fi
 # for some reason gem_test_synthetic must be called last
 if [ $GEM_test_synthetic -gt 0 ] ; then
     time . ${GT_scripts}/gem_test_synthetic
@@ -133,6 +138,7 @@ GEM_test_acid=$GEM_test_acid
 GEM_test_rstrt=$GEM_test_rstrt
 GEM_test_ptopo=$GEM_test_ptopo
 GEM_test_synthetic=$GEM_test_synthetic
+GEM_test_ops=$GEM_test_ops
 EOF
 
 if [ -n "${mail}" ] ; then
