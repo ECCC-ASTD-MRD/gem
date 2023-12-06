@@ -8,7 +8,6 @@ variables:
 
 stages:
   - build
-  - build_mach
   - run_intel_icelake
   - run_gnu_9.3.0
   - run_gnu_12.1.0
@@ -18,7 +17,7 @@ stages:
 before_script:
   - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
-  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
+  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 #----- rhel-8-amd64_gnu-9.3.0
 build:rhel-8-amd64_gnu-9.3.0:
@@ -99,8 +98,8 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel
+    - set -e
     - export WITH_SYSTEM_RPN=FALSE
     - git submodule update --recursive --init
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
@@ -126,8 +125,8 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel
+    - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2 .
@@ -142,33 +141,6 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     paths:
     - work-rhel-8-icelake-64-intel-2022.1.2
     - gem_dbase
-
-#----- rhel-8-icelake-64-intel-2022.1.2
-# U2 Intel 2022 with installed RPN-SI libs
-# Test for gemmach
-build:rhel-8-icelake-64-intel-2022.1.2-mach:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build_mach
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
-    - . ./.eccc_setup_intel
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-mach
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-mach
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-mach .
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-mach
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_MACH=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
 
 package:rhel-8-icelake-64-intel-2022.1.2:
    variables:
@@ -188,8 +160,8 @@ package:rhel-8-icelake-64-intel-2022.1.2:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . ./.eccc_setup_intel
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -214,8 +186,8 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel_2021.4.0
+    - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0 .
@@ -247,8 +219,8 @@ package:rhel-8-icelake-64-intel-2021.4.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . ./.eccc_setup_intel_2021.4.0
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -273,9 +245,9 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
+      - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2 .
@@ -313,9 +285,9 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -340,9 +312,9 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
+      - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0 .
@@ -380,9 +352,9 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -440,8 +412,10 @@ findtopo:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
     - findtopo
 
@@ -458,8 +432,10 @@ findtopo:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -483,8 +459,10 @@ CANO_W7cascP_intel:
   - dev
   - tags
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -508,8 +486,10 @@ CANO_dcmip163r100_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -533,8 +513,10 @@ CANO_wil7_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -558,8 +540,10 @@ GEM_cfgs_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -583,8 +567,10 @@ GEM_GY_FISL_P_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -608,8 +594,10 @@ GEM_GY_FISL_H_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -633,8 +621,10 @@ GEM_LU_FISL_H_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -658,8 +648,10 @@ GEM_LU_OFFC_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -683,8 +675,10 @@ PTOPO_GYH_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -708,8 +702,10 @@ PTOPO_LUP_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -733,8 +729,10 @@ RSTRT_GYP_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -758,8 +756,10 @@ THEO_bubbleG_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -779,8 +779,10 @@ THEO_schar_intel:
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
