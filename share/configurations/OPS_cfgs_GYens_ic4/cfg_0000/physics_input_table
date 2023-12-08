@@ -1,0 +1,54 @@
+in=MG; 	 freq=0; 	  search=GEOP;	interp=near;  
+in=TM; 	 freq=0; 	  search=ANAL;  interp=linear;	timeint=any;
+in=LH; 	 freq=0; 	  search=GEOP;  interp=linear;
+in=Y7; 	 freq=0;  	  search=GEOP;  interp=linear;
+in=Y8; 	 freq=0; 	  search=GEOP;  interp=linear;
+in=Y9; 	 freq=0; 	  search=GEOP;  interp=linear;
+in=SSS; freq=0; search=GEOP;     interp=linear;
+in=GA; 	 freq=0; 	  search=GEOP;  interp=near;
+in=I8; 	 freq=0; 	  search=CLIM;  interp=near;    timeint=linear;
+#in=I9; 	 freq=HOUR,0,3,3; search=ANAL;	interp=linear;  timeint=any;	levels= 1,2;
+in=I9; 	 freq=0; search=ANAL;	interp=linear;  timeint=any;	levels= 1,2;
+#in=I7; 	 freq=HOUR,0,3,3; search=ANAL;	interp=linear;  timeint=any;	levels= 1,3;
+in=I7; 	 freq=0; search=ANAL;	interp=linear;  timeint=any;	levels= 1,3;
+in=ZP; 	 freq=0; 	  search=GEOP;  interp=linear;
+in=ZVG2; freq=0; search=GEOP;    interp=linear;
+#in=SD; 	 freq=HOUR,0,3,3; search=ANAL;	interp=near;    timeint=none;	levels= 1,5;
+in=SD; 	 freq=0; search=ANAL;	interp=near;    timeint=none;	levels= 1,5;
+in=I0; 	 freq=HOUR,0,3,3; search=ANAL;	interp=linear;  timeint=none;	levels= 1,2;
+in=VF; 	 freq=0;  	  search=GEOP;  interp=near;    		levels= 1,26;
+in=LG; 	 freq=0;  	  search=ANAL;  interp=near;    timeint=any;
+in=ME; 	 freq=0; 	  search=GEOP;  interp=cubic;
+in=AL; 	 freq=0; 	  search=CLIM;  interp=near;    timeint=any;
+in=I1; 	 freq=HOUR,0,3,3; search=ANAL;	interp=near;	timeint=none;	levels= 1,2;
+in=I2; 	 freq=0; 	  search=ANAL;  interp=near;
+in=I3; 	 freq=0; 	  search=ANAL;  interp=near;
+in=I4; 	 freq=0; 	  search=ANAL;  interp=near;
+in=I6; 	 freq=0; 	  search=ANAL;  interp=near;
+in=J1; 	 freq=0; 	  search=GEOP;  interp=near;			levels= 1,3;
+in=J2; 	 freq=0; 	  search=GEOP;  interp=near;			levels= 1,3;
+in=DN; 	 freq=0; 	  search=ANAL;  interp=near;
+in=ICEL; freq=0; 	  search=CLIM;  interp=near;	timeint=linear;
+in=EN;   freq=0; 	  search=ANAL;  interp=linear;					vinterp=linear;	
+in=TURB; freq=0;	  search=ANAL;	interp=near;					vinterp=linear;
+in=B5 ;  freq=0;          search=ANAL;  interp=linear;			levels= 1,5;
+in=H;    freq=0; 	  search=ANAL;  interp=linear;
+in=ZN;   freq=0; 	  search=ANAL;  interp=linear;					vinterp=linear;	
+in=FE  ; freq=0;          search=ANAL;      hinterp=linear; vinterp=l-cond; levels=-1;
+in=FN  ; freq=0;          search=ANAL;      hinterp=linear; vinterp=l-cond; levels=-1;
+in=NC  ; freq=0;          search=ANAL;      hinterp=linear; vinterp=l-cond; levels=-1;
+in=QTBL; freq=0;          search=ANAL;      hinterp=linear; vinterp=l-cond; levels=-1;
+
+in=CF1C; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1
+in=CF2C; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1
+in=CH4C; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1
+in=N2OC; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1
+in=O3CE; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+in=EMIB; freq=0; search=CLIM; interp=near; tint=linear;
+
+in=PML;  freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+in=DPDO; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+in=DPDT; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+in=DPDC; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+in=TTCE; freq=0; search=CLIM; hint=linear; vint=linear; tint=linear; levels= -1; mandatory=true;
+
