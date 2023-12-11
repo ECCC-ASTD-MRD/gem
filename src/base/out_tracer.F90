@@ -56,7 +56,7 @@
 !
       lijk(3) = G_nk+1
       uijk(3) = G_nk+1
-      ptr3d => w4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:G_nk+1)
+      ptr3d => w4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
 
       if (Level_typ_S(levset) == 'M') then  ! output tracers on model levels
 
