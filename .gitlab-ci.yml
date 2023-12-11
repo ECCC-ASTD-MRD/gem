@@ -38,7 +38,7 @@ build:rhel-8-amd64_gnu-9.3.0:
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0 .
-    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
@@ -69,8 +69,8 @@ build:rhel-8-amd64_gnu-12.1.0:
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0 .
-    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0 . 
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
     - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
@@ -130,7 +130,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2 .
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
@@ -153,7 +153,7 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - concurrent
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2022.1.2
@@ -180,7 +180,7 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   - concurrent
   only:
   - tags
-  - dev
+  - /^dev_5\.[0-9]$/
   - schedules
   when: always
   script:
@@ -212,7 +212,7 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - concurrent
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2021.4.0
@@ -240,7 +240,7 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
@@ -275,7 +275,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - concurrent
    only:
       - master
-      - dev
+      - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
@@ -307,7 +307,7 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
@@ -342,7 +342,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - concurrent
    only:
       - master
-      - dev
+      - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
@@ -374,7 +374,7 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
@@ -394,7 +394,7 @@ deploy:staging:
       - U2
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    script:
       - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
@@ -408,7 +408,7 @@ findtopo:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -428,7 +428,7 @@ findtopo:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -456,7 +456,7 @@ CANO_W7cascP_intel:
   when: always
   allow_failure: true
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   script:
     - set +e
@@ -482,7 +482,7 @@ CANO_dcmip163r100_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -509,7 +509,7 @@ CANO_wil7_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -536,7 +536,7 @@ GEM_cfgs_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -563,7 +563,7 @@ GEM_GY_FISL_P_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -590,7 +590,7 @@ GEM_GY_FISL_H_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -617,7 +617,7 @@ GEM_LU_FISL_H_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -644,7 +644,7 @@ GEM_LU_OFFC_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -671,7 +671,7 @@ PTOPO_GYH_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -698,7 +698,7 @@ PTOPO_LUP_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -725,7 +725,7 @@ RSTRT_GYP_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -752,7 +752,7 @@ THEO_bubbleG_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -775,7 +775,7 @@ THEO_schar_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -799,7 +799,7 @@ THEO_schar_intel:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -826,7 +826,7 @@ CANO_W7cascP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -853,7 +853,7 @@ CANO_dcmip163r100_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -880,7 +880,7 @@ CANO_wil7_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -907,7 +907,7 @@ GEM_cfgs_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -934,7 +934,7 @@ GEM_GY_FISL_P_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -961,7 +961,7 @@ GEM_GY_FISL_H_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -988,7 +988,7 @@ GEM_LU_FISL_H_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1015,7 +1015,7 @@ GEM_LU_OFFC_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1042,7 +1042,7 @@ PTOPO_GYH_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1069,7 +1069,7 @@ PTOPO_LUP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1096,7 +1096,7 @@ RSTRT_GYP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1123,7 +1123,7 @@ THEO_bubbleG_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1146,7 +1146,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1170,7 +1170,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-12.1.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
