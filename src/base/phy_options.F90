@@ -20,8 +20,6 @@ module phy_options
    public
    save
 
-   integer, parameter :: OPT_OPTIX_OLD     = 1
-   integer, parameter :: OPT_OPTIX_NEW     = 2
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
    logical           :: chemistry    = .false.
@@ -39,7 +37,6 @@ module phy_options
    logical           :: etccdiag     = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
-   integer           :: ioptix       = OPT_OPTIX_OLD
    integer           :: kntrad       = 1
    integer           :: kntraduv     = -1
    logical           :: llight       = .false.

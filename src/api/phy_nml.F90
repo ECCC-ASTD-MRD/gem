@@ -420,12 +420,6 @@ contains
       conv_shal = shal
       conv_mid = mid
 
-      if (STCOND(1:2) /= 'MP') then
-         IOPTIX = OPT_OPTIX_OLD
-      else
-         IOPTIX = OPT_OPTIX_NEW
-      endif
-
       !# Set flags for memory debugging
       if (debug_mem_L) init2nan_L = .true.
 
