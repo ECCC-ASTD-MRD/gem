@@ -32,7 +32,7 @@ module phy_input
    use vGrid_Descriptors, only: vgrid_descriptor, vgd_free
    use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
 
-   use phymem, only: phymeta, nphyvars, phymem_find, phymem_getmeta, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_DBUSIDX
+   use phymem, only: phymeta, nphyvars, phymem_find, phymem_getmeta, PHY_STAG_THERMO, PHY_STAG_ENERGY, PHY_DBUSIDX, PHY_MAXVARS
    use phyfold, only: phyfoldmeta1
    use phygridmap, only: phydim_ni, phydim_nj , phydim_nk, phy_lcl_ni, &
         phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phy_lcl_gid, &
@@ -55,7 +55,7 @@ module phy_input
    include "phyinput.inc"
 
    logical, parameter :: IS_DIR = .true.
- 
+
    character(len=32), parameter  :: PHY_VGRID_M_S = 'phy-m'
    character(len=32), parameter  :: PHY_VGRID_T_S = 'phy-t'
    character(len=32), parameter  :: PHY_RFLD_S    = 'PHYRFLD:M'
@@ -71,7 +71,7 @@ contains
    function phy_input1(pre_fold_opr_clbk, F_step, F_incfg_S, F_basedir_S, &
         F_geoname_S) result(F_istat)
       implicit none
-      !@objective 
+      !@objective
       !@arguments
       integer,external :: pre_fold_opr_clbk
       integer,intent(in) :: F_step
@@ -141,13 +141,15 @@ contains
          return
       endif
 
-      call chm_load_emissions2(F_basedir_S, F_step, inputobj, nbvar)
+#ifdef HAVE_MACH
+      call chm_load_emissions(F_basedir_S, F_step, inputobj, nbvar)
       if (phy_error_l) F_istat = RMN_ERR
       call collect_error(F_istat)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_ERROR, '(phy_input) problem in chm_load_emissions')
          return
       endif
+#endif
 
       !# Re-set the phy read list
       phyinread_n = 0
@@ -160,7 +162,7 @@ contains
       nread = 0
       readlist_nk(:) = 0
       readlist_S(:) = ' '
-      
+
       !# Read-interpolate-fold vars
       prep_vinterp_done_L = .false.
       tmidx = -1
@@ -199,7 +201,7 @@ contains
                     F_bpath='EDPV', F_quiet=.true., F_shortmatch=.false.)
                if (istat > 0) then
                   istat = phymem_getmeta(meta2, idxv1(1))
-                  varname2_S = meta2%vname                  
+                  varname2_S = meta2%vname
                endif
             else
                varname2_S = ' '
@@ -210,7 +212,7 @@ contains
             call msg(MSG_INFO,'(phy_input) ignoring var, not declared in bus: '//trim(inname_S)//' : '//trim(inname2_S))
             cycle VARLOOP !# var not needed
          endif
-             
+
          if (ismandatory == -1) ismandatory = meta1%init
 
          vgrid_S = PHY_VGRID_M_S !#MOM/SLB
@@ -219,7 +221,7 @@ contains
             prep_vinterp_done_L = .true.
             istat = priv_prep_vinterp()
          endif
-          
+
          if (meta1%nk > 1) then
             if (icat0 < 0) then
                icat0 = 1
@@ -347,7 +349,7 @@ contains
       if (input_type == 'GEM_4.8') ptopo_iotype = PTOPO_BLOC
       if (is_init_L) return
       is_init_L = .true.
- 
+
       if (any((/phydim_ni, phydim_nj/) == 0)) then
          call msg(MSG_ERROR, '(phy_input) problem getting bus size')
          my_istat = RMN_ERR
@@ -378,13 +380,13 @@ contains
             istat = inputio_new(my_inputobj, my_jdateo, my_idt, my_incfg_S, &
                  my_basedir_S, phy_lcl_gid, phy_lclcore_gid, phy_comm_io_id, &
                  F_li0=1, F_lin=phy_lcl_ni, F_lj0=1, F_ljn=phy_lcl_nj, &
-                 F_iotype=iotype)
+                 F_iotype=iotype, F_nvars_max=nphyvars)
          else
             iotype = PTOPO_IODIST
             istat = inputio_new(my_inputobj, my_jdateo, my_idt, my_incfg_S, &
                  my_basedir_S, drv_glb_gid, phy_glbcore_gid, phy_comm_io_id, &
                  F_li0=phy_lcl_i0, F_lin=phy_lcl_in, F_lj0=phy_lcl_j0, F_ljn=phy_lcl_jn, &
-                 F_iotype=iotype)
+                 F_iotype=iotype, F_nvars_max=nphyvars)
          endif
          if (RMN_IS_OK(istat)) then
             call phyinputdiag1(my_inputobj)
@@ -466,7 +468,7 @@ contains
       type(gmm_metadata) :: mymeta, mymeta2
       ! ---------------------------------------------------------------------
       my_istat = RMN_ERR
-      
+
       IF_INIT: if (.not.is_init_L) then
          is_init_L = .true.
 
@@ -481,7 +483,7 @@ contains
          mymeta%l(1) = gmm_layout(1,phy_lcl_ni,0,0,phy_lcl_ni)
          mymeta%l(2) = gmm_layout(1,phy_lcl_nj,0,0,phy_lcl_nj)
 
-         if (rfld_S /= '') then 
+         if (rfld_S /= '') then
             nullify(phy_rfld, phy_rfldls)
             istat = gmm_create(PHY_RFLD_S, phy_rfld, mymeta)
             if (rfldls_S /= '') &
@@ -518,7 +520,7 @@ contains
 
       endif IF_INIT
 
-      if (rfld_S /= '') then 
+      if (rfld_S /= '') then
          nullify(pw_rfld, pw_rfldls, phy_rfld, phy_rfldls)
          istat = gmm_get(rfld_S, pw_rfld)
          istat = gmm_get(PHY_RFLD_S, phy_rfld)
@@ -533,7 +535,7 @@ contains
             endif
          endif
       endif
-      
+
       if (altfld_M_S /= '') then
          nullify(pw_altfld, phy_altfld)
          istat = gmm_get(altfld_M_S, pw_altfld)
@@ -556,7 +558,7 @@ contains
       return
    end function priv_prep_vinterp
 
-   
+
    !/@*
    subroutine priv_dyninreadlist(my_step, my_list_s)
       implicit none
@@ -590,7 +592,7 @@ contains
             call msg(MSG_INFO,'(phy_input) No list of dyn read tracers found')
          endif
       endif
-      if (associated(my_list_s) .and. my_step /= 0) my_list_s(:) = ''  
+      if (associated(my_list_s) .and. my_step /= 0) my_list_s(:) = ''
       ! ---------------------------------------------------------------------
       return
    end subroutine priv_dyninreadlist
@@ -608,7 +610,7 @@ contains
       integer(INT64) :: dt_8, istep_8, jdatev
       ! ---------------------------------------------------------------------
       if (radia == 'NIL') return
-      
+
       if (intozot) then
          dt_8    = delt
          istep_8 = my_step
@@ -648,7 +650,7 @@ contains
       integer,external :: pre_fold_opr_clbk
       !*@/
       integer, save :: dimcache(STATFLD_NCACHE) = STATFLD_CACHE_DEFAULT
-      
+
       character(len=64) :: msg_S, name_S
       integer :: minxyz(3), maxxyz(3), istat, k, stat_precision
       real, pointer :: data2(:,:,:)
@@ -661,7 +663,7 @@ contains
       dataarr(:,:,:) = my_data(:,:,:)
       my_istat = pre_fold_opr_clbk(dataarr, my_meta%vname, my_horiz_interp_S, &
            minxyz(1), maxxyz(1), minxyz(2), maxxyz(2), minxyz(3), maxxyz(3))
-      
+
       dataarr(:,:,:) = min(max(my_vmin, dataarr(:,:,:)), my_vmax)
 
       name_S = my_meta%vname
@@ -699,7 +701,7 @@ contains
       else
          istat = phyfoldmeta1(data2, minxyz, maxxyz, my_icat, my_meta)
       endif
-      deallocate(dataarr)      
+      deallocate(dataarr)
       !#TODO: WARNING: (phyfold) Horizontal sub domaine Not yet supported
       if (.not.RMN_IS_OK(istat)) then
          my_istat = RMN_ERR

@@ -186,7 +186,10 @@ contains
       ! tplus=t0,huplus=hu0,qcp=q0 i.e. go back to thermo state AFTER KTRSNT
       ! must now re-apply masked(if climat .or.stratos) conv and cond tendencies
       ! must NOT re-apply shallow conv tendencies if shal == ktrsnt
-      if (.not.any(stcond == (/'MP_MY2', 'MP_P3 '/))) then
+      if (.not.any(stcond == (/&
+           'MP_MY2 ', &
+           'MP_P3  ', &
+           'MP_P3V3'/))) then
          ztplus(:,1:nkm1) = t0(:,1:nkm1)
          zhuplus(:,1:nkm1) = q0(:,1:nkm1)
          call apply_tendencies(ztplus,ztcond,ztdmask,ni,nk,nkm1)

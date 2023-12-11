@@ -24,7 +24,7 @@ subroutine phybusinit(ni,nk)
    use phybusidx
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
-   use phymem, only: phymem_add
+   use phymem, only: phymem_init, phymem_add
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -39,10 +39,11 @@ subroutine phybusinit(ni,nk)
    ! 003      L. Spacek  (Sep 2011) - Eliminate obsolete convection options
    !*@/
    
+#include <rmnlib_basics.hf>
 #include <rmn/msg.h>
    include "surface.cdk"
    include "clefcon.cdk"
-
+   
    character(len=6)  :: nag, nmar, wwz, nuv, isss
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
@@ -60,6 +61,12 @@ subroutine phybusinit(ni,nk)
    logical :: lsurfonly, lwindgust
    logical :: lpcp_frac
    !---------------------------------------------------------------------
+
+   ier = phymem_init()
+   if (.not.RMN_IS_OK(ier)) then
+      call physeterror('phybusinit', 'Problem with phymem module init')
+      return
+   endif
 
    iverb = wb_verbosity(WB_MSG_INFO)
 
@@ -273,8 +280,10 @@ subroutine phybusinit(ni,nk)
    call sfc_businit(moyhr,ni,nk)
    if (phy_error_L) return
 
+#ifdef HAVE_MACH
    call chm_businit(ni,nk)
-  !-------------------------------------------------------------------
+#endif
+   !-------------------------------------------------------------------
    return
 end subroutine phybusinit
 
