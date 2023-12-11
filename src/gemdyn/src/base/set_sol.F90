@@ -159,6 +159,7 @@
                    vv(sol_imin:sol_imax,sol_jmin:sol_jmax,1:l_nk,1:sol_im+1),&
                    wint_8(sol_ii0:sol_iin,sol_jj0:sol_jjn,1:l_nk,1:sol_im+1))
          allocate (thread_s(1:4,0:OMP_get_max_threads()-1),&
+                   thread_s128(1:4,0:OMP_get_max_threads()-1),&
                    thread_s2(1:2,1:sol_im+1,0:OMP_get_max_threads()-1))
          
          allocate (A1(l_minx:l_maxx, l_miny:l_maxy,1:l_nk,1:15),&
