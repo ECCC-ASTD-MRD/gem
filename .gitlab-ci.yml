@@ -8,7 +8,6 @@ variables:
 
 stages:
   - build
-  - build_mach
   - run_intel_icelake
   - run_gnu_9.3.0
   - run_gnu_12.1.0
@@ -18,7 +17,7 @@ stages:
 before_script:
   - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
-  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
+  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 #----- rhel-8-amd64_gnu-9.3.0
 build:rhel-8-amd64_gnu-9.3.0:
@@ -142,33 +141,6 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     paths:
     - work-rhel-8-icelake-64-intel-2022.1.2
     - gem_dbase
-
-#----- rhel-8-icelake-64-intel-2022.1.2
-# U2 Intel 2022 with installed RPN-SI libs
-# Test for gemmach
-build:rhel-8-icelake-64-intel-2022.1.2-mach:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build_mach
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-mach
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-mach
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-mach .
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-mach
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DWITH_MACH=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
 
 package:rhel-8-icelake-64-intel-2022.1.2:
    variables:
