@@ -121,7 +121,7 @@ contains
       integer(INT64), intent(in) :: F_jdateo
       integer :: F_istat
  
-      character(len=256), parameter :: GHG_FILENAME = 'ghg-table-1950-2015_v1'
+      character(len=256), parameter :: GHG_FILENAME = 'ghg-table'
       character(len=256), parameter :: GHG_VERSION  = 'version=ghg_concentrations_v1'
 
       !# File format: YYYY co2 n2o ch4 cfc11 cfc12

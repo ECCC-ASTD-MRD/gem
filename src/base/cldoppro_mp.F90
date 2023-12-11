@@ -294,7 +294,7 @@ contains
           enddo
        enddo
 
-    elseif (stcond=='MP_P3' .and. &
+    elseif (stcond(1:5) == 'MP_P3' .and. &
          (any(dyninread_list_s == 'qti1') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti1:p'))) then
 
        readfield_L = .true.
