@@ -305,11 +305,13 @@ physics_cfgs/nsloflux
 physics_cfgs/p3_debug
 physics_cfgs/p3_depfact
 physics_cfgs/p3_dtmax
+physics_cfgs/p3_liqfrac
 physics_cfgs/p3_ncat
 physics_cfgs/p3_pfrac
 physics_cfgs/p3_resfact
 physics_cfgs/p3_scpf_on
 physics_cfgs/p3_subfact
+physics_cfgs/p3_trplmomi
 physics_cfgs/p_runlgt
 physics_cfgs/pbl_cmu_timeavg
 physics_cfgs/pbl_conserve
@@ -473,7 +475,6 @@ theo_cfgs/theo_case_s
 vert_layers/g_nk
 vert_layers/hyb
 vert_layers/hyb_first_height
-vert_layers/hyb_flat
 vert_layers/hyb_h
 vert_layers/hyb_lid_height
 vert_layers/hyb_lin_depth
