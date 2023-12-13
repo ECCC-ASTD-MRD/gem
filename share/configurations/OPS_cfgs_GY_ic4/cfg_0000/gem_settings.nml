@@ -1,0 +1,216 @@
+&grid
+  grd_typ_s = 'GY', grd_ni = 107
+  Grd_maxcfl = 2
+/
+
+&grid_op_15km
+  Grd_typ_S       = 'GY'       ,
+  Grd_nj          = 683        ,
+  Grd_xlat1       = 57.        , Grd_xlon1       = 250.
+  Grd_xlat2       = 56.        , Grd_xlon2       = 291.
+  Grd_overlap     = 2.0        , Grd_maxcfl      = 5 
+/
+
+ &step
+  Fcst_start_S    = "-3h"      , Fcst_end_S      = "24h"       ,
+  Fcst_gstat_S = "3h"
+  Step_dt      = 900.
+/
+
+ &step_op_15km
+  Fcst_start_S    = "-3h"      , Fcst_end_S      = "240h"       ,
+  Fcst_gstat_S = "24h"
+  Step_dt      = 450.
+/
+
+ &adz_cfgs
+ Adz_slt_winds = .true.
+ adz_BC_min_max_L = .false.
+ adz_ILMC_min_max_L = .false.
+/
+
+ &dyn_kernel
+   Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+   Dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+
+ &gem_cfgs
+Tr3d_list_S =  'HU,wload=0,mono=2,mass=1,hzd=0,min=0.',
+               'QC,wload=1,mono=2,mass=1,hzd=0,min=0.',
+/
+
+ &sol
+  Sol_fgm_eps   = 1.d-05
+/
+
+ &dyn_fisl
+  Cstv_tstr_8 = 240.0
+  Schm_nblendyy     = 1
+  Schm_itcn       = 2
+  Schm_itnlh      = 2
+  Schm_hzdadw_L     = .true.
+  Schm_wload_L    = .true.
+  Schm_psadj        = 1
+/
+
+&vert_layers
+  hyb = 1.013731e-04, 1.627754e-04, 2.605143e-04, 4.131838e-04, 6.392740e-04,
+        9.585168e-04, 1.396009e-03, 1.982035e-03, 2.742135e-03, 3.699144e-03, 
+        4.872435e-03, 6.277705e-03, 7.927258e-03, 9.830644e-03, 1.199549e-02, 
+        1.442837e-02, 1.713573e-02, 2.012467e-02, 2.340372e-02, 2.698333e-02, 
+        3.085878e-02, 3.501382e-02, 3.943207e-02, 4.409839e-02, 4.899989e-02, 
+        5.412675e-02, 5.947273e-02, 6.503552e-02, 7.081704e-02, 7.682364e-02,
+        8.306636e-02, 8.956118e-02, 9.632945e-02, 1.033984e-01, 1.108018e-01,
+        1.185812e-01, 1.267869e-01, 1.354686e-01, 1.446622e-01, 1.544045e-01,
+        1.647347e-01, 1.756934e-01, 1.873232e-01, 1.996677e-01, 2.127722e-01,
+        2.266823e-01, 2.414443e-01, 2.571042e-01, 2.737070e-01, 2.912963e-01,
+        3.099130e-01, 3.295946e-01, 3.503738e-01, 3.722777e-01, 3.953262e-01,
+        4.195309e-01, 4.448380e-01, 4.710684e-01, 4.980296e-01, 5.255275e-01,
+        5.533735e-01, 5.813907e-01, 6.094182e-01, 6.373139e-01, 6.649557e-01,
+        6.922417e-01, 7.190894e-01, 7.453858e-01, 7.709042e-01, 7.954379e-01,
+        8.188151e-01, 8.409014e-01, 8.616011e-01, 8.808559e-01, 8.986422e-01,
+        9.149664e-01, 9.300043e-01, 9.439255e-01, 9.566650e-01, 9.680431e-01,
+        9.778685e-01, 9.860255e-01, 9.925241e-01, 9.975018e-01, 
+
+  hyb_H=
+    0.64765078E+05,  0.61484387E+05,  0.58097922E+05,  0.54647410E+05,  0.51260059E+05,  0.48051715E+05,  0.45091891E+05,
+    0.42408621E+05,  0.39991402E+05,  0.37818480E+05,  0.35865402E+05,  0.34107391E+05,  0.32520846E+05,  0.31080762E+05,
+    0.29757918E+05,  0.28537400E+05,  0.27406707E+05,  0.26354709E+05,  0.25371539E+05,  0.24448520E+05,  0.23581697E+05,
+    0.22768879E+05,  0.22006967E+05,  0.21292291E+05,  0.20620951E+05,  0.19988980E+05,  0.19391668E+05,  0.18824627E+05,
+    0.18284535E+05,  0.17768248E+05,  0.17272793E+05,  0.16795383E+05,  0.16333382E+05,  0.15884299E+05,  0.15445753E+05,
+    0.15015443E+05,  0.14591126E+05,  0.14171107E+05,  0.13754707E+05,  0.13341396E+05,  0.12930710E+05,  0.12522283E+05,
+    0.12115817E+05,  0.11711102E+05,  0.11307979E+05,  0.10906264E+05,  0.10502634E+05,  0.10095734E+05,  0.96856943E+04,
+    0.92727051E+04,  0.88570342E+04,  0.84390186E+04,  0.80190830E+04,  0.75977124E+04,  0.71754697E+04,  0.67529868E+04,
+    0.63318667E+04,  0.59153848E+04,  0.55064302E+04,  0.51074028E+04,  0.47201973E+04,  0.43462192E+04,  0.39864304E+04,
+    0.36414043E+04,  0.33113760E+04,  0.29963164E+04,  0.26959851E+04,  0.24104956E+04,  0.21411509E+04,  0.18889203E+04,
+    0.16543748E+04,  0.14377098E+04,  0.12387908E+04,  0.10572026E+04,  0.89229810E+03,  0.74325543E+03,  0.60785242E+03,
+    0.48407559E+03,  0.37209671E+03,  0.27309692E+03,  0.18836304E+03,  0.11854238E+03,  0.63249203E+02,  0.21093637E+02
+
+  hyb_rcoef = 3., 15.
+/
+
+ &inp
+  Inp_npes = 81
+/
+
+ &hvdif
+  Hzd_pwr         = 4          , Hzd_lnr       = 0.1
+  Hzd_pwr_theta   = 6          , Hzd_lnr_theta = 0.01
+  Vspng_coeftop   =  440000.   , Vspng_nk        = 6  
+
+  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
+  P_lmvd_weigh_high_lat = 0.0  ,
+/
+
+  Iau_tracers_S   = 'O3L'      ,
+ &init
+  Iau_period      = 21600.     , Iau_interval    = 3600.     ,
+
+  Init_balgm_L    = .false.    , Init_dftr_L     = .false.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '6h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_npes = 40 ,
+  Out3_etik_s     = 'ETIKET'   ,
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  Out3_nbitg      = 12         , Out3_cliph_L     = .true.    ,
+  Out3_postproc_fact= 24       , 
+  Out3_linbot     =  3
+/
+
+ &surface_cfgs
+ SCHMSOL   = 'ISBA'
+ ICELAC    = .true., ICEMELT    = .true.
+ LIMSNODP  = .true., SALTY_QSAT = .true.
+ IMPFLX    = .true.,
+ Z0MTYPE   = 'beljaars'
+ Z0TTYPE   = 'deacu12'
+ DIUSST    = 'fairall'
+ diusst_warmlayer_lakes = .false.
+ adj_i0_snow= .false.
+ sl_lmin_soil = 20.
+ sl_func_stab='beljaars91'
+ sl_z0ref = .true.
+ snow_emiss='.97'
+ ice_emiss='.97'
+ isba_soil_emiss = 'climato'
+ isba_zr_freeze = .true.
+ water_emiss='1.0'
+ sl_Lmin_glacier = 5.
+ sl_Lmin_seaice = 10.
+ z0seaice  = 5.4e-4
+ sl_Lmin_water = 10.
+/
+
+
+ &physics_cfgs
+ RADIA            = 'cccmarad2' , KNTRAD_S = '1h'
+ KNTRADUV_S = '1h',
+ radghg_L         = .true.      ,
+ rad_linoz_l      = .true.  ,
+ linoz_chm = 'ozone'    ,
+ rad_esfc         = .true.
+ STRATOS  = .true.
+ INTOZOT          = .true.     ,
+
+ GWDRAG           = 'sgo16'    , NON_ORO  = .true.
+ sgo_phic         = 0.15       ,
+ sgo_windfac      = 2., 0.5    ,
+ hines_flux_filter= 5          , LMETOX   = .true.
+
+ LONGMEL          = 'turboujo'
+ FLUVERT          = 'moistke'     , PBL_RICRIT=0.15,2.
+ FNN_MASK         = .true.  ,
+ FNN_REDUC        = 0.8     ,
+ pbl_dissheat     ='LOCAL_K'
+ pbl_mlturb_diss     =.true.
+ pbl_tkediff2dt=.true.
+ pbl_diss='lim50'
+ pbl_zntau=900.
+ pbl_cmu_timeavg = .true.
+
+ pbl_shal         = 'nil'   , STCOND= 'consun'
+ INILWC           = .true.
+
+ cond_conserve    = 'tend'
+ cond_evap        = 4.e-4
+
+ PCPTYPE          = 'bourge3d'
+
+/
+
+ &convection_cfgs
+ DEEP       = 'kfc2'      , SHAL     = 'bechtold'
+ KFCRAD     = 1500.      , KFCDEPTH = 3000.
+ KFCRADW    = 1250.
+ KFCTRIG4   = 0.,0.,0.17,0.17
+ kfctrigw   = 0.5, 1., 0.07, 0.0
+ cmt_type= ECMWF_PH2
+ kfcdpdd = 6000.
+
+ deep_timeconv='BECHTOLD09'
+ deep_timerefresh='1p'
+ KFCTAUCAPE = 15000.,1000.,-1,-1
+
+ bkf_entrains = 'siebesma03'
+ bkf_detrains = 'cuijpers95'
+ bkf_closures = 'equilibrium'
+ bkf_lshalm   = .true.
+ bkf_evaps    = .false.
+
+ mid = 'kf'
+ mid_conserve = 'tend'
+ mid_maxcape = 250. 
+ mid_emfmod = 'latmod1'
+
+ kfctrigtau = 3600.,
+ deep_cloudobj = .true.,
+ deep_codecay = 3600.
+
+/

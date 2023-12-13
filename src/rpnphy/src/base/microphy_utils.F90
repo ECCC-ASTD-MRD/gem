@@ -65,9 +65,12 @@ contains
   function mp_init(F_input_path) result(F_istat)
     use microphy_consun
     use microphy_p3, P3_STATUS_OK=>STATUS_OK
+    use microphy_p3v3, only: &
+         p3v3_init => p3_init, p3v3_phybusinit => p3_phybusinit, &
+         p3v3_lwc => p3_lwc, p3v3_iwc => p3_iwc
     use microphy_my2
     use microphy_kessler
-    use phy_options, only: stcond, p3_ncat
+    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac
     implicit none
     character(len=*), intent(in) :: F_input_path  !Directory containing initializing data
     integer :: F_istat                            !Return status (PHY_OK on success)
@@ -88,11 +91,17 @@ contains
        mp_lwc => consun_lwc
        mp_iwc => consun_iwc
     case ('MP_P3')
-       call p3_init(F_input_path, p3_ncat, stat=istat)
+       call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
        mp_phybusinit => p3_phybusinit
        mp_lwc => p3_lwc
        mp_iwc => p3_iwc
+    case ('MP_P3V3')
+       call p3v3_init(F_input_path, p3_ncat, stat=istat)
+       if (istat == P3_STATUS_OK) istat = PHY_OK
+       mp_phybusinit => p3v3_phybusinit
+       mp_lwc => p3v3_lwc
+       mp_iwc => p3v3_iwc
     case ('MP_MY2')
        istat = PHY_OK
        mp_phybusinit => my2_phybusinit

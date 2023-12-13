@@ -49,7 +49,11 @@ contains
       integer :: F_status
       !*@/
 
-      integer, external :: chm_nml, sfc_nml2, cnv_nml2, check_options2, msg_getUnit
+#ifdef HAVE_MACH
+      integer, external :: chm_nml
+#endif
+
+      integer, external :: sfc_nml2, cnv_nml2, check_options2, msg_getUnit
 
       integer :: err, unout
       character(len=1024) :: msg_S
@@ -94,12 +98,14 @@ contains
       err = series_nml(F_namelist)
       if (.not.RMN_IS_OK(err)) return
 
+#ifdef HAVE_MACH
       !# Read chemistry namelists and initialize chemistry configuration
       err = chm_nml(F_namelist, unout)
       if (err <= 0) then
          call msg(MSG_ERROR, '(phy_nml) Problem reading chemestry namelist')
          return
       endif
+#endif
 
       !# 
       err = phy_nml_post_init()
@@ -413,12 +419,6 @@ contains
       convec = deep
       conv_shal = shal
       conv_mid = mid
-
-      if (STCOND(1:2) /= 'MP') then
-         IOPTIX = OPT_OPTIX_OLD
-      else
-         IOPTIX = OPT_OPTIX_NEW
-      endif
 
       !# Set flags for memory debugging
       if (debug_mem_L) init2nan_L = .true.

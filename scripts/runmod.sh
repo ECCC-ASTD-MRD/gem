@@ -50,6 +50,10 @@ if [ ${no_setup} = 0 ] ; then
       setmod.sh \
          -cfg $(echo ${cfg} | cut -d : -f 1):$(echo ${cfg} | cut -d : -f 2) \
          -dircfg ${dircfg} -tsk_cfgfile ${TASK_CFGFILE} -dirdata ${datadir}
+      if [ -z "${MAESTRO_VERSION}" ]; then
+          echo "Maestro is not loaded: using GOAS task setup scripts: $gem_DIR/scripts/goas_task_setup.dot"
+          export TASK_SETUP=goas_task_setup.dot
+      fi
       if [ -z "${TASK_SETUP}" ] ; then
          cat <<EOF
   WARNING in $(basename $0)

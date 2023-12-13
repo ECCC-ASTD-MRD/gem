@@ -40,9 +40,6 @@
 
       real, dimension(l_ni,l_nj), intent(out) :: fgem
 !
-!author: Rabah Aider R.P.N-A
-!
-!arguments     none
 !
 #include <rmnlib_basics.hf>
 
@@ -71,8 +68,8 @@
       real(kind=REAL64),    dimension(:), allocatable  :: wrk1
       real(kind=REAL64),    dimension(:,:,:),allocatable :: cc
       real  ,    dimension(:,:),allocatable :: f
-      integer :: unf0, unf1, err, errop, itstep_s, iperiod_iau
-      character(len=1024) fn0, fn1
+      integer :: unf0, err, itstep_s, iperiod_iau
+      character(len=1024) fn
 !
 !---------------------------------------------------------------------
 !
@@ -137,13 +134,13 @@
          !Initialise spectral coeffs and stochastic params
          if(Ens_recycle_mc) then
             !Read saved stochastic numbers and spectral coeffs ar,br.ai,bi
-            if (ptopo_myproc==0 .and. ptopo_couleur==0) then
-                  unf0=1
-                  fn0= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SKEB.bin'
-                  open ( unf0,file=trim(fn0),status='OLD', &
-                             form='unformatted',iostat=errop )
-                  if (errop == 0) then
-                     write(output_unit,2000) 'READING', trim(fn0)
+            if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
+                  unf0=0
+                  fn= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SKEB.bin'
+                  ier=fnom(unf0,fn,'SEQ+UNF+OLD',0) 
+
+                  if (ier == 0) then
+                     write(output_unit,2000) 'READING', trim(fn)
                      do i=1,36
                         read (unf0)dumdum(i,1)
                      end do
@@ -155,12 +152,13 @@
                            read(unf0)bi_s(lmax-l+1,m)
                         end do
                      end do
-                     close(unf0)
+                     ier = fclos(unf0)
                   else
-                     write (output_unit, 3000) trim(fn0)
-                     call gem_error ( err,'read_markov_skeb', 'problem reading file' )
+                     write (output_unit, 3000) trim(fn)
                   endif
             endif
+                  call gem_error ( ier,'read_markov_skeb', 'problem reading file' )
+
             dim=ens_skeb_l*ens_skeb_m
             call RPN_COMM_bcast (dumdum,36,"MPI_INTEGER",0,"MULTIGRID", err)
             call RPN_COMM_bcast (ar_s,dim,"MPI_REAL",0, "MULTIGRID", err)
@@ -242,28 +240,29 @@
 ! Save random numbers and coefficient ar,ai,br,bi
       if (write_markov_l) then
          if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
-            fn1=trim(Out_dirname_S)//'/'// 'MRKV_SKEB.bin'
-            unf1=1
-            open ( unf1,file=trim(fn1),status='NEW', &
-                 form='unformatted',iostat=errop )
-            if ( errop == 0 ) then
-               write(output_unit,2000) 'WRITING', trim(fn1)
+            unf0=0
+            fn=trim(Out_dirname_S)//'/'// 'MRKV_SKEB.bin'
+            ier=fnom(unf0,fn,'SEQ+UNF+NEW',0)
+
+            if ( ier == 0 ) then
+               write(output_unit,2000) 'WRITING', trim(fn)
                do i=1,36
-                  write (unf1)dumdum(i,1)
+                  write (unf0)dumdum(i,1)
                end do
                do l=lmin,lmax
                   do m=1,l+1
-                     write(unf1)ar_s(lmax-l+1,m)
-                     write(unf1)ai_s(lmax-l+1,m)
-                     write(unf1)br_s(lmax-l+1,m)
-                     write(unf1)bi_s(lmax-l+1,m)
+                     write(unf0)ar_s(lmax-l+1,m)
+                     write(unf0)ai_s(lmax-l+1,m)
+                     write(unf0)br_s(lmax-l+1,m)
+                     write(unf0)bi_s(lmax-l+1,m)
                   end do
                end do
-               close(unf1)
+               ier=fclos(unf0)
             else
-               write(output_unit,4000) 'WRITING', trim(fn1)
+               write(output_unit,  4000) 'WRITING ', trim(fn)
             endif
          endif
+            call gem_error(ier,'Ens_marfield_SKEB','Error in writing Markov Chains files')
       endif
 
       do l=lmin,lmax
@@ -359,7 +358,7 @@
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_SKEB)', &
            /,'======================================================')
 
- 2000 format (/' MARKOV: ',a,' FILE ',a)
+ 2000 format (/' ENS_MARFIELD_SKEB : ',a,' FILE ',a)
 
  3000 format(' S/R  ENS_MARFIELD_SKEB : problem in opening MRKV_PARAM_SKEB file)', &
               /,'======================================================')

@@ -49,13 +49,18 @@ Before making changes, create your own branch from the current branch
 git checkout -b mybranch
 ```
 
-## Preparing gem compilation for Intel compiler
+## Linking to GEM database (to be done once)
+```
+./scripts/link-dbase.sh
+```
+
+## Preparing gem compilation for Intel compiler suite
 ```
 ./scripts/link-dbase.sh
 . ./.eccc_setup_intel
 ```
 
-### Or for gnu
+## Or preparing gem compilation for gnu compiler suite
 
 Please note you cannot compile with Intel and then with GNU in the same shell
 ```
@@ -67,6 +72,22 @@ other submodules, or adding or removing source files):
 ```
 . ./.initial_setup
 ```
+
+### Scripts
+
+Scripts in scripts/support and scripts/rpy directories are a copy of scripts
+already loaded from SSM domains when a .eccc_setup file is called. By
+default, they are not used, but if you want to test or modify them, you can
+override SSM scripts by setting GOAS_SCRIPT_MODE variable before sourcing
+.eccc_setup_intel or .eccc_setup_gnu:
+
+```
+export GOAS_SCRIPT_MODE=true
+```
+
+Please also note that if you load maestro, maestro scripts will be used,
+either in a maestro suite or when running GEM interactively. Otherwise, goas
+task setup files situated in the scripts directory will be used instead.
 
 ## Building and installing GEM
 
@@ -126,6 +147,7 @@ $GEM_WORK directory:
 . ./.eccc_setup_intel
 or, if you compiled with gnu:
 . ./.eccc_setup_gnu
+cd $GEM_WORK
 ```
 
 ## Some tips for compilation
@@ -186,21 +208,21 @@ $storage_model environment variable exists:
 The following environment variables are created (examples):
 - gem_DIR = directory where the git clone was created
 - GEM_WORK = work directory
-- GEM_ARCH = architecture, for example ubuntu-18.04-amd64-64-intel-2022.1.2
+- GEM_ARCH = architecture, for example ubuntu-22.04-amd64-64-intel-2022.1.2
 - COMPILER_SUITE = compiler suite, for example Intel
 - COMPILER_VERSION = compiler version, for example 2022.1.2
 
 - GEM_STORAGE_DIR = where build and work directories are situated
   - Example if $storage_model variable exists:
-    - GEM_STORAGE_DIR=/local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2
+    - GEM_STORAGE_DIR=/local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2
     - in gem_DIR:
-      - build-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/build
-      - work-ubuntu-18.04-amd64-64-intel-2022.1.2 is a link, such as:
-        /local/storage/gem/ubuntu-18.04-amd64-64-intel-2022.1.2/work
+      - build-ubuntu-22.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2/build
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2 is a link, such as:
+        /local/storage/gem/ubuntu-22.04-amd64-64-intel-2022.1.2/work
 
   - Example if $storage_model variable doesn't exist:
     - GEM_STORAGE_DIR=$HOME/gem/
     - directories situated in gem_DIR:
-      - build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - work-ubuntu-18.04-amd64-64-intel-2022.1.2
+      - build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2

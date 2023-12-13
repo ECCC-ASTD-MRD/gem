@@ -63,6 +63,11 @@
 !
 !     ---------------------------------------------------------------
 !
+      if (Sol_quadnorm_L) then
+         call sol_fgmres_QUAD ( solution, rhs_b, F_print_L )
+         return
+      endif
+      
       outiter= 0 ; nbiter= 0 ; conv= 0.d0
 
       ! Residual of the initial iterate

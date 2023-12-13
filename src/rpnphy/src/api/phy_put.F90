@@ -119,9 +119,8 @@ contains
       endif
 
       ! Fold information onto the bus
-      !#TODO: check 2d to 3d through the phyfoldmeta itf
       F_istat = phyfoldmeta1(F_fld, istart, iend, vmeta)
-     if (.not.RMN_IS_OK(F_istat)) then
+      if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_put) Cannot fold '//trim(vmeta%vname))
       endif
       ! ---------------------------------------------------------------------

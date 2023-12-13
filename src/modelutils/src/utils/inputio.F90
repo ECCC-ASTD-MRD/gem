@@ -124,7 +124,7 @@ contains
    function inputio_new(F_inputobj, F_jdateo, F_dt, F_filename_S, &
         F_basedir_S, F_hgridid, F_hgridcoreid, F_commgid, &
         F_ip1list, F_vgrid_m_S, F_vgrid_t_S, &
-        F_li0, F_lin, F_lj0, F_ljn, F_iotype) &
+        F_li0, F_lin, F_lj0, F_ljn, F_iotype, F_nvars_max) &
         result(F_istat)
       implicit none
       !@objective
@@ -141,10 +141,11 @@ contains
       character(len=*), intent(in), optional :: F_vgrid_t_S
       integer, intent(in), optional :: F_iotype
       integer, intent(in), optional :: F_li0, F_lin, F_lj0, F_ljn
+      integer, intent(in), optional :: F_nvars_max
       !@return
       integer :: F_istat
       !*@/
-      integer :: hgridid, hgridcoreid, commgid
+      integer :: hgridid, hgridcoreid, commgid, nvars_max
       character(len=1024) :: string_S, filename_S, basedir_S, vgrid_m_S, vgrid_t_S
       !----------------------------------------------------------------------
       F_inputobj%init_L = .false.
@@ -153,11 +154,13 @@ contains
       F_inputobj%l_j0 = -1*huge(1)
       F_inputobj%l_in = huge(1)
       F_inputobj%l_jn = huge(1)
+      nvars_max = -1
       if (present(F_li0)) F_inputobj%l_i0 = F_li0
       if (present(F_lj0)) F_inputobj%l_j0 = F_lj0
       if (present(F_lin)) F_inputobj%l_in = F_lin
       if (present(F_ljn)) F_inputobj%l_jn = F_ljn
-
+      if (present(F_nvars_max)) nvars_max = F_nvars_max
+      
       filename_S = ''
       basedir_S = ''
       hgridid = -1
@@ -179,11 +182,12 @@ contains
       if (present(F_ip1list)) then
          F_istat = incfg_new(F_inputobj%cfg, F_jdateo, F_dt, &
               filename_S, F_ip1list, hgridid, hgridcoreid, commgid, &
-              vgrid_m_S, vgrid_t_S)
+              vgrid_m_S, vgrid_t_S, F_nvars_max=nvars_max)
       else
          F_istat = incfg_new(F_inputobj%cfg, F_jdateo, F_dt, &
               filename_S, F_hgridid=hgridid, F_hgridcoreid=hgridcoreid, &
-              F_commgid=commgid, F_vgrid_m_S=vgrid_m_S, F_vgrid_t_S=vgrid_t_S)
+              F_commgid=commgid, F_vgrid_m_S=vgrid_m_S, F_vgrid_t_S=vgrid_t_S, &
+              F_nvars_max=nvars_max)
       endif
 
       if (RMN_IS_OK(F_istat)) then

@@ -13,20 +13,16 @@ module phymem
 #include <rmn/msg.h>
    
    !# Public functions
-   public :: phymem_busidx, phymem_alloc
+   public :: phymem_busidx, phymem_alloc, phymem_init
    public :: phymem_add, phymem_gmmname, phymem_busreset
    public :: phymem_find, phymem_find_idxv
    public :: phymem_getmeta, phymem_getmeta_copy, phymem_getdata
    public :: phymem_get_slabvars, phymem_get_i0_string
    
-   !# Public vars
-   integer, save, public :: nphyvars = 0  !# Total number of phy vars (size of pvmetas)
-
    !# Public constants
    integer, parameter, public :: PHY_NBUSES = 4
-   integer, parameter, public :: PHY_MAXVARS = 1000  !# max nb vr per bus (need at least double for all 4: phyvar has ~900 entries
    integer, parameter, public :: PHY_NAMELEN  = 32
-   integer, parameter, public :: PHY_DESCLEN  = 64
+   integer, parameter, public :: PHY_DESCLEN  = 256
    integer, parameter, public :: PHY_MAXFLAGS = 16
    
    integer, parameter, public :: PHY_STAG_SFC = 0
@@ -47,7 +43,10 @@ module phymem
    !# Bus Slab index in pvars
    integer, save, public :: PHY_BUSIDXV(PHY_NBUSES) = (/ -1, -1, -1, -1/)
 
-   
+   !# Public vars   
+   integer, save, public :: nphyvars = 0  !# Total number of phy vars (size of pvmetas)
+   integer, save, public :: PHY_MAXVARS(PHY_NBUSES) = (/0, 0, 0, 0/)
+
    !# Public Derived types -------------------------------------------------
    public :: phymeta, phyvar
 
@@ -110,7 +109,7 @@ module phymem
    end interface phymem_add
    
    interface phymem_busreset
-!!$      module procedure phymem_busreset1
+      module procedure phymem_busreset1
       module procedure phymem_busreset2
    end interface phymem_busreset
    
@@ -126,6 +125,8 @@ module phymem
    
    !# Private module vars --------------------------------------------------
    
+   integer, parameter :: DNVARS = 25
+
    type(phybus), save  :: pbuses(PHY_NBUSES)
    type(phymetaptr), pointer, contiguous, save :: pvmetas(:) => null()
 
@@ -134,6 +135,26 @@ module phymem
 
 contains
 
+   !/@*
+   function phymem_init(F_maxvars) result(F_istat)
+      implicit none
+      !@objective init phymem module and set maxvars
+      !@arguments
+      integer, intent(in), optional :: F_maxvars
+      !@return
+      integer :: F_istat
+      !*@/
+      !---------------------------------------------------------------
+      if (present(F_maxvars)) then
+         F_istat = priv_init(max(1, F_maxvars))
+      else
+         F_istat = priv_init()
+      endif
+      !---------------------------------------------------------------
+      return
+   end function phymem_init
+
+   
    !/@*
    function phymem_busidx(F_busname, F_quiet) result(F_busidx)
       implicit none
@@ -181,44 +202,45 @@ contains
    end function phymem_gmmname
    
 
-!!$   !/@*
-!!$   function phymem_busreset1(F_busidx, F_value, F_trnch) result(F_istat)
-!!$      implicit none
-!!$      integer, intent(in) :: F_busidx
-!!$      real, intent(in), optional :: F_value
-!!$      integer, intent(in), optional :: F_trnch
-!!$      !@objective Reset whole memory bus to specified value (default zero) on specified OMP silce (trnch, default: all slice)
-!!$      !@arguments
-!!$      !@return
-!!$      integer :: F_istat
-!!$      !*@/
-!!$      integer :: istat
-!!$      real :: rvalue
-!!$      !---------------------------------------------------------------
-!!$      F_istat = PHY_ERROR
-!!$      if (F_busidx <1 .and. F_busidx > PHY_NBUSES) then
-!!$         call msg(MSG_ERROR, '(phymem) busreset F_busidx out of range')
-!!$         return
-!!$      endif
-!!$      if (.not.isallocated) then
-!!$         call msg(MSG_ERROR, '(phymem) busreset - must call phymem_alloc first')
-!!$         return
-!!$      endif
-!!$      rvalue = 0.
-!!$      if (present(F_value)) rvalue = F_value
-!!$      if (present(F_trnch)) then
-!!$         if (F_trnch < 1 .or. F_trnch > phydim_nj) then
-!!$            call msg(MSG_ERROR,'(phymem_busreset) Requested F_trnch out of range')
-!!$            return
-!!$         endif
-!!$         pbuses(F_busidx)%bptr(:,F_trnch) = rvalue
-!!$      else
-!!$         pbuses(F_busidx)%bptr = rvalue
-!!$      endif
-!!$      F_istat = PHY_OK
-!!$      !---------------------------------------------------------------
-!!$      return
-!!$   end function phymem_busreset1
+   !/@*
+   function phymem_busreset1(F_busidx, F_value, F_trnch) result(F_istat)
+      implicit none
+      integer, intent(in) :: F_busidx
+      real, intent(in), optional :: F_value
+      integer, intent(in), optional :: F_trnch
+      !@objective Reset whole memory bus to specified value (default zero) on specified OMP silce (trnch, default: all slice)
+      !@arguments
+      !@return
+      integer :: F_istat
+      !*@/
+      integer :: istat
+      real :: rvalue
+      !---------------------------------------------------------------
+      F_istat = PHY_ERROR
+      if (F_busidx <1 .and. F_busidx > PHY_NBUSES) then
+         call msg(MSG_ERROR, '(phymem) busreset F_busidx out of range')
+         return
+      endif
+      if (.not.isallocated) then
+         call msg(MSG_ERROR, '(phymem) busreset - must call phymem_alloc first')
+         return
+      endif
+      rvalue = 0.
+      if (present(F_value)) rvalue = F_value
+      if (present(F_trnch)) then
+         if (F_trnch < 1 .or. F_trnch > phydim_nj) then
+            call msg(MSG_ERROR,'(phymem_busreset) Requested F_trnch out of range')
+            return
+         endif
+         pbuses(F_busidx)%bptr(:,F_trnch) = rvalue
+      else
+         pbuses(F_busidx)%bptr = rvalue
+      endif
+      F_istat = PHY_OK
+      !---------------------------------------------------------------
+      return
+   end function phymem_busreset1
+
    
    !/@*
    function phymem_busreset2(F_pvars, F_busidx, F_value) result(F_istat)
@@ -277,10 +299,8 @@ contains
               '(phymem_add) Unknown bus: '//trim(F_imeta%bus))
          return
       endif
-      if (pbuses(ibus)%nvars >= PHY_MAXVARS) then
-         call msg(MSG_ERROR, &
-              '(phymem_add) Too many vars - increase PHY_MAXVAR in phymem')
-         return
+      if (pbuses(ibus)%nvars >= PHY_MAXVARS(ibus)) then
+         istat = priv_resize(ibus, DNVARS)
       endif
       
       vmeta = F_imeta
@@ -602,57 +622,61 @@ contains
       nnpath = max(1,len_trim(npath))
       if (name == ' ') nnpath=1
       DO_NPATH: do in = 1, nnpath  !#TODO: avoid looping nnpath times
-         
-         DO_PVMETAS: do iv = 1, nphyvars
-            !# check bus
-            match_L = (nbpath == 0)
-            if (nbpath > 0) match_L = any(pvmetas(iv)%meta%bus == buses)
-            if (.not.match_L) cycle
-            !# check names
-            IF_NAME: if (name /= ' ') then
-               match_L = .false.
-               select case (npath(in:in))
-               case ('V')
-                  match_L = (pvmetas(iv)%meta%vname(1:slen) == name)
-               case ('I')
-                  match_L = (pvmetas(iv)%meta%iname(1:slen) == name)
-               case ('O')
-                  match_L = (pvmetas(iv)%meta%oname(1:slen) == name)
-               case ('S')
-                  match_L = (pvmetas(iv)%meta%sname(1:slen) == name)
-               case DEFAULT
-                  call msg(MSG_WARNING,'(phymem_find) Ignoring unknown variable path entry '//npath(in:in))
-                  cycle
-               end select
-               if (.not.match_L) cycle           
-            endif IF_NAME
-            !# check flags
-            IF_FLAG: if (nflags > 0) then
-               match_L = .true.
-               do ik = 1, nflags
-                  if (flags(ik) == ' ') exit
-                  if (.not.any(flags(ik) == pvmetas(iv)%meta%flags(:))) then
-                     match_L = .false.
-                     exit
-                  endif
-               enddo
-               if (.not.match_L) cycle  
-            endif IF_FLAG
 
-            !# save matched indices
-            if (cnt > 0) then
-               if (any(iv == F_idxvlist(1:cnt))) cycle
-            endif
-            if (cnt >= size(F_idxvlist)) then
-               if (.not.quiet_L) &
-                    call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow')
-               exit
-            endif
+         DO_BPATH: do ib = 1, max(1, nbpath)
 
-            cnt = cnt + 1
-            F_idxvlist(cnt) = iv
+            DO_PVMETAS: do iv = 1, nphyvars
+               !# check bus
+               match_L = (nbpath == 0)
+               if (nbpath > 0) match_L = (pvmetas(iv)%meta%bus == buses(ib))
+               if (.not.match_L) cycle
+               !# check names
+               IF_NAME: if (name /= ' ') then
+                  match_L = .false.
+                  select case (npath(in:in))
+                  case ('V')
+                     match_L = (pvmetas(iv)%meta%vname(1:slen) == name)
+                  case ('I')
+                     match_L = (pvmetas(iv)%meta%iname(1:slen) == name)
+                  case ('O')
+                     match_L = (pvmetas(iv)%meta%oname(1:slen) == name)
+                  case ('S')
+                     match_L = (pvmetas(iv)%meta%sname(1:slen) == name)
+                  case DEFAULT
+                     call msg(MSG_WARNING,'(phymem_find) Ignoring unknown variable path entry '//npath(in:in))
+                     cycle
+                  end select
+                  if (.not.match_L) cycle           
+               endif IF_NAME
+               !# check flags
+               IF_FLAG: if (nflags > 0) then
+                  match_L = .true.
+                  do ik = 1, nflags
+                     if (flags(ik) == ' ') exit
+                     if (.not.any(flags(ik) == pvmetas(iv)%meta%flags(:))) then
+                        match_L = .false.
+                        exit
+                     endif
+                  enddo
+                  if (.not.match_L) cycle  
+               endif IF_FLAG
 
-         enddo DO_PVMETAS
+               !# save matched indices
+               if (cnt > 0) then
+                  if (any(iv == F_idxvlist(1:cnt))) cycle
+               endif
+               if (cnt >= size(F_idxvlist)) then
+                  if (.not.quiet_L) &
+                       call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow')
+                  exit
+               endif
+
+               cnt = cnt + 1
+               F_idxvlist(cnt) = iv
+
+            enddo DO_PVMETAS
+            if (cnt >= size(F_idxvlist)) exit
+         enddo DO_BPATH
          if (cnt >= size(F_idxvlist)) exit
 
       enddo DO_NPATH
@@ -666,177 +690,6 @@ contains
       !---------------------------------------------------------------
       return
    end function phymem_find_idxv
-
-   
-!!$   !/@*
-!!$   function phymem_find_idxv_opti(F_idxvlist, F_name, F_npath, F_bpath, &
-!!$        F_quiet, F_shortmatch, F_flagstr) result(F_nmatch)
-!!$      implicit none
-!!$      !@objective Retreive list of var indices in pvmetas for matching ones
-!!$      !@arguments
-!!$      integer, intent(out) :: F_idxvlist(:)       !# List of indices in pvmetas for var matching provided params
-!!$      character(len=*),  intent(in), optional :: F_name     !# Name of field to retrieve (input, variable or output name)
-!!$      character(len=*),  intent(in), optional :: F_npath    !# Name path to search ['VOI']
-!!$      character(len=*),  intent(in), optional :: F_bpath    !# Bus path to search ['PVD']
-!!$      logical,           intent(in), optional :: F_quiet    !# Do not emit warning for unmatched entry [.false.]
-!!$      logical,           intent(in), optional :: F_shortmatch  !# if true, Match F_name against only the first len_trim(F_name) of input, variable or output name
-!!$      character(len=*),  intent(in), optional :: F_flagstr  !# '+' separated list of flags to match
-!!$      !@return
-!!$      integer :: F_nmatch  !# PHY_ERROR or number of matching vars
-!!$      !*@/
-!!$      character(len=PHY_NAMELEN) :: name, npath, bpath
-!!$      character(len=2) :: buses(PHY_NBUSES)
-!!$      character(len=256) :: flagstr
-!!$      character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)
-!!$      integer :: iadd, nflags, nflags2, in, istat, nbpath, ib, slen, nnpath, iv, priority, ik, ip, cnt
-!!$      integer :: matchidxv(nphyvars)
-!!$      logical :: match_L, quiet_L
-!!$      !---------------------------------------------------------------
-!!$      F_nmatch = PHY_ERROR
-!!$      F_idxvlist = -1
-!!$      if (.not.isallocated) then
-!!$         call msg(MSG_ERROR,'(phymem_find) phymem_alloc must be called before')
-!!$         return
-!!$      endif
-!!$
-!!$      name = ' '
-!!$      if (present(F_name)) then
-!!$         name  = F_name  ; call str_normalize(name)  ; istat = clib_tolower(name)
-!!$      endif
-!!$      
-!!$      npath = ' '
-!!$      if (present(F_npath)) then
-!!$         npath = F_npath ; call str_normalize(npath) ; istat = clib_toupper(npath)
-!!$      endif
-!!$      if (npath == ' ') npath = PHY_NPATH_DEFAULT
-!!$
-!!$      bpath = ' '
-!!$      if (present(F_bpath)) then
-!!$         bpath = F_bpath ; call str_normalize(bpath) ; istat = clib_toupper(bpath)
-!!$      endif
-!!$      if (bpath == ' ') bpath = PHY_BPATH_DEFAULT
-!!$
-!!$      quiet_L = .false.
-!!$      if (present(F_quiet)) quiet_L = F_quiet
-!!$
-!!$      iadd = 1
-!!$      if (present(F_shortmatch)) then
-!!$         if (F_shortmatch) iadd = 0
-!!$      endif
-!!$      
-!!$      flagstr = ' '
-!!$      if (present(F_flagstr)) flagstr = F_flagstr
-!!$      nflags = 0
-!!$      flags(:) = ' '
-!!$      if (flagstr /= ' ') then
-!!$         nflags = size(flags)
-!!$         call str_split2list(flags, flagstr, '+', nflags)
-!!$         nflags2 = 0
-!!$         do in = 1, nflags
-!!$            if (flags(in) == ' ') cycle
-!!$            nflags2 = nflags2+1
-!!$            if (in /= nflags2) flags(nflags2) = flags(in)
-!!$            call str_normalize(flags(nflags2))
-!!$            istat = clib_toupper(flags(nflags2))
-!!$         enddo
-!!$         nflags = nflags2
-!!$      endif
-!!$
-!!$      !# Loop to search for matching vars
-!!$      buses = ' '
-!!$      nbpath = len_trim(bpath)
-!!$      do ib = 1, min(nbpath, PHY_NBUSES)
-!!$         buses(ib) = bpath(ib:ib)
-!!$      enddo
-!!$
-!!$      slen = min(max(1,len_trim(name)+iadd),PHY_NAMELEN)
-!!$      nnpath = max(1,len_trim(npath))
-!!$      if (name == ' ') nnpath=1
-!!$      matchidxv(:) = -1
-!!$      DO_PVMETAS: do iv = 1, nphyvars
-!!$         match_L = .false.
-!!$         priority = -1
-!!$         
-!!$         !# check bus
-!!$         IF_BPATH: if (nbpath == 0) then
-!!$            match_L = .true.
-!!$            priority = 1
-!!$         else  !IF_BPATH
-!!$            do ib = 1, nbpath
-!!$               match_L = (pvmetas(iv)%meta%bus == buses(ib))
-!!$               if (.not.match_L) cycle
-!!$               priority = ib
-!!$               exit
-!!$            enddo
-!!$         endif IF_BPATH
-!!$         if (.not.match_L) cycle DO_PVMETAS
-!!$
-!!$         !# check names
-!!$         IF_NAME: if (name /= ' ') then
-!!$            match_L = .false.
-!!$            DO_NPATH: do in = 1, nnpath
-!!$               select case (npath(in:in))
-!!$               case ('V')
-!!$                  match_L = (pvmetas(iv)%meta%vname(1:slen) == name)
-!!$               case ('I')
-!!$                  match_L = (pvmetas(iv)%meta%iname(1:slen) == name)
-!!$               case ('O')
-!!$                  match_L = (pvmetas(iv)%meta%oname(1:slen) == name)
-!!$               case ('S')
-!!$                  match_L = (pvmetas(iv)%meta%sname(1:slen) == name)
-!!$               case DEFAULT
-!!$                  call msg(MSG_WARNING,'(phymem_find) Ignoring unknown variable path entry '//npath(in:in))
-!!$                  cycle DO_NPATH
-!!$               end select
-!!$               if (.not.match_L) cycle DO_NPATH
-!!$               priority = in
-!!$               exit DO_NPATH
-!!$            enddo DO_NPATH
-!!$         endif IF_NAME
-!!$         if (.not.match_L) cycle DO_PVMETAS
-!!$
-!!$         !# check flags
-!!$         IF_FLAG: if (nflags > 0) then
-!!$            match_L = .true.
-!!$            do ik = 1, nflags
-!!$               if (flags(ik) == ' ') exit
-!!$               if (.not.any(flags(ik) == pvmetas(iv)%meta%flags(:))) then
-!!$                  match_L = .false.
-!!$                  exit
-!!$               endif
-!!$            enddo
-!!$            if (.not.match_L) cycle DO_PVMETAS
-!!$         endif IF_FLAG
-!!$
-!!$         matchidxv(:) = priority
-!!$         
-!!$      enddo DO_PVMETAS
-!!$
-!!$      !# Extract/Sort matches
-!!$      cnt = 0
-!!$      do ip = 1, maxval(matchidxv)
-!!$         do iv = 1, nphyvars
-!!$            if (matchidxv(iv) /= ip) cycle
-!!$            cnt = cnt + 1
-!!$            if (cnt >= size(F_idxvlist)) then
-!!$               if (.not.quiet_L) &
-!!$                    call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow')
-!!$               exit
-!!$            endif            
-!!$            F_idxvlist(cnt) = iv
-!!$         enddo
-!!$         if (cnt >= size(F_idxvlist)) exit
-!!$      enddo
-!!$      
-!!$      if (cnt == 0 .and. .not.quiet_L) call msg(MSG_WARNING, &
-!!$           '(phymem_find) No matching entry found for name='// &
-!!$           trim(name)//', npath='//trim(npath)//', bpath='//trim(bpath)// &
-!!$           ', flags='//trim(flagstr))
-!!$
-!!$      F_nmatch = cnt
-!!$      !---------------------------------------------------------------
-!!$      return
-!!$   end function phymem_find_idxv_opti
    
 
    !/@*
@@ -1071,26 +924,29 @@ contains
    !#---- Private functions ------------------------------------------
 
    !/@*
-   function priv_init() result(F_istat)
+   function priv_init(F_dnvars) result(F_istat)
       implicit none
-      !@objective 
+      integer, intent(in), optional :: F_dnvars
       !@return
       integer :: F_istat
       !*@/
-      integer :: ib, istat
+      integer :: ib, istat, dnvars2
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (isinit) then
          call msg(MSG_ERROR, '(phymem) called priv_init twice')
          return
       endif
+      dnvars2 = DNVARS
+      if (present(F_dnvars)) dnvars2 = max(DNVARS, F_dnvars)
       isinit = .true.
       do ib = 1, PHY_NBUSES
          pbuses(ib)%busid = PHY_BUSID(ib)
          pbuses(ib)%nvars = 0
          pbuses(ib)%nsize = 0
-         allocate(pbuses(ib)%meta(PHY_MAXVARS), stat=istat)  !TODO: make MAXVAR dynamic
-         if (istat /= 0) then
+         nullify(pbuses(ib)%meta)
+         istat = priv_resize(ib, dnvars2)
+         if (istat /= PHY_OK) then
             call msg(MSG_ERROR, '(phymem) allocate problem in phymem_init')
             return
          endif
@@ -1101,6 +957,40 @@ contains
       !---------------------------------------------------------------
       return
    end function priv_init
+
+   
+   !/@*
+   function priv_resize(F_ib, F_dnvars) result(F_istat)
+      integer, intent(in) :: F_ib, F_dnvars
+      integer :: F_istat
+      !*@/
+      integer :: n, istat
+      type(phymeta), pointer, contiguous :: metaptr(:)
+      !---------------------------------------------------------------
+      F_istat = PHY_ERROR
+      if (.not.isinit) istat = priv_init()
+      if (isallocated) then
+         call msg(MSG_ERROR, '(phymem_resize) Cannot add var after allocation')
+         return
+      endif
+      if (max(1, min(F_ib, PHY_NBUSES)) /= F_ib) then
+         call msg(MSG_ERROR, '(phymem_resize) Bus number out of range')
+         return         
+      endif
+      PHY_MAXVARS(F_ib) = PHY_MAXVARS(F_ib) + max(0, F_dnvars)
+!!$      print *, '(phymem_resize) '//PHY_BUSID(F_ib)//':', PHY_MAXVARS(F_ib)
+      allocate(metaptr(PHY_MAXVARS(F_ib)), stat=istat)
+      if (associated(pbuses(F_ib)%meta)) then
+         do n=1,pbuses(F_ib)%nvars
+            metaptr(n) = pbuses(F_ib)%meta(n)
+         enddo
+         deallocate(pbuses(F_ib)%meta)
+      endif
+      pbuses(F_ib)%meta => metaptr
+      F_istat = PHY_OK
+      !---------------------------------------------------------------
+      return
+   end function priv_resize
 
   
    !/@*

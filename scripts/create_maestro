@@ -60,7 +60,12 @@ else
    expM=$(basename $cfg)
    NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
    GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
-   GEM_BIN_version="GOAS:${GEM_INSTALL}/work-${GEM_ARCH}:${ATM_MODEL_VERSION}"
+   if [ -z "${GOAS_SCRIPT_MODE}" ]; then
+      GEM_BIN_version="GOAS:${GEM_INSTALL}/work-${GEM_ARCH}:${ATM_MODEL_VERSION}"
+   else
+      echo "ATTN: This maestro suite will also use scripts/support in ${GEM_INSTALL}"
+      GEM_BIN_version="GOAS:${GEM_INSTALL}/work-${GEM_ARCH}:${ATM_MODEL_VERSION}:support_scripts"
+   fi
 fi
 
 REF=${GEM_INSTALL}/share/gem-maestro/GEM_RI_MAESTRO

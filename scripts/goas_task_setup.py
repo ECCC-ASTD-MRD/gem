@@ -1,27 +1,7 @@
 #!/usr/bin/env python3
 
-#/* Part of the Maestro sequencer software package.
-# * Copyright (C) 2011-2015  Canadian Meteorological Centre
-# *                          Environment Canada
-# *
-# * Maestro is free software; you can redistribute it and/or
-# * modify it under the terms of the GNU Lesser General Public
-# * License as published by the Free Software Foundation,
-# * version 2.1 of the License.
-# *
-# * Maestro is distributed in the hope that it will be useful,
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# * Lesser General Public License for more details.
-# *
-# * You should have received a copy of the GNU Lesser General Public
-# * License along with this library; if not, write to the
-# * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-# * Boston, MA 02111-1307, USA.
-# */
-
 #-------------------------------------------------------------------
-# task_setup.py
+# goas_task_setup.py
 #
 # Module / executable to perform task setup operations
 #-------------------------------------------------------------------
@@ -119,7 +99,7 @@ def mkdir_p(path):
         if value == errno.EEXIST:
             pass
         else:
-            sys.stderr.write('task_setup.py::os.makedirs() returned the following error information on an attempt to create ' \
+            sys.stderr.write('goas_task_setup.py::os.makedirs() returned the following error information on an attempt to create ' \
                              +path+': '+str(sys.exc_info())+"\n")
             raise
 
@@ -199,7 +179,7 @@ def resolveKeywords(entry,delim_exec='',set=None,verbose=False,internals={}):
             if dollar.search(elements[i]):
                 warnline="Error: found a $ character after resolution of "+element_orig+" to "+elements[i]+ \
                           "\n  The result of external keyword resolution cannot contain un-expanded shell variables.  Evaluate the\n"+\
-                          "  string or remove extra quoting / escape characters before the task_setup call to avoid this problem.  "
+                          "  string or remove extra quoting / escape characters before the goas_task_setup call to avoid this problem.  "
                 sys.stderr.write(warnline+'\n')
                 if (verbose): print(warnline)
     updated = ''.join(elements)
@@ -413,7 +393,7 @@ class Section(list):
         delim = re.compile(self.delimiter_exec+'(.*?)'+self.delimiter_exec)
         shell_dot_config = (self.cfg) and '. '+self.cfg+' >/dev/null 2>&1; ' or 'true; '
         if (self.varcacheFile):
-            shell_gen_cachefile = 'task_setup_cachegen '+self.cfg+' '+self.varcacheFile+' ; . '+self.varcacheFile+' ; '
+            shell_gen_cachefile = 'goas_task_setup_cachegen '+self.cfg+' '+self.varcacheFile+' ; . '+self.varcacheFile+' ; '
             command_prefix = 'if [[ -s '+self.varcacheFile+' ]] ; then . '+self.varcacheFile+' >/dev/null 2>&1 ; else '+shell_gen_cachefile+'fi ; '
         else:
             command_prefix = shell_dot_config
@@ -668,7 +648,7 @@ class Config(dict):
                                     print("Error: unable to remove task subdirectory "+sub)
                                     return(self.error)
                         else:
-                            print("Error: Invalid and/or changed subdirectory <-> section mapping in task_setup.py.")
+                            print("Error: Invalid and/or changed subdirectory <-> section mapping in goas_task_setup.py.")
                             print("   The requested task base directory "+self.taskdir+" contains a subdirectory that")
                             print("   is not recognized based on the configuration file "+self["file"]+"  If")
                             print("   this is a valid task base directory, please remove it manually and relaunch.")
@@ -758,7 +738,7 @@ class Config(dict):
                                        "create_target":False,
                                        "link_host":None,
                                        "link_only":False})
-        cachegen = which('task_setup_cachegen',verbose=self.verbosity)
+        cachegen = which('goas_task_setup_cachegen',verbose=self.verbosity)
         if cachegen:
             self._append_meta("setup",{"link":"task_setup_cachegen",
                                        "target":[cachegen],
@@ -815,7 +795,7 @@ class Config(dict):
                 else:
                     print("Error: unable to obtain directory status on "+host)
             if len(error) > 0:
-                sys.stderr.write("task_setup.py::_createTarget() attempt to connect to "+host+" returned STDERR "+error+"\n")
+                sys.stderr.write("goas_task_setup.py::_createTarget() attempt to connect to "+host+" returned STDERR "+error+"\n")
         else:
             if not os.path.isdir(directory):
                 try:
@@ -870,7 +850,7 @@ class Config(dict):
                         if currentSection:
                             print("Error: found header for "+head.group(1)+" while still in open section for "+currentSection)
                             print("  Perhaps the configuration file "+self["file"]+" is missing an </"+currentSection+"> end section tag?")
-                            sys.stderr.write("task_setup.py::getSections() failed parsing "+self["file"]+" at <"+head.group(1)+">\n")
+                            sys.stderr.write("goas_task_setup.py::getSections() failed parsing "+self["file"]+" at <"+head.group(1)+">\n")
                             self["sections"] = {}
                             return(self.error)
                         currentSection = head.group(1)
@@ -1064,7 +1044,7 @@ if __name__ == "__main__":
     if cfg.getSections():
         pass
     else:
-        if cfg.verbosity: print(" *** Error: task_setup.py unable to continue *** ")
+        if cfg.verbosity: print(" *** Error: goas_task_setup.py unable to continue *** ")
         sys.exit(1)
     if options.dryrun:
         cfg.write(sys.stdout)
@@ -1074,6 +1054,6 @@ if __name__ == "__main__":
         del cfg
         sys.exit(0)
     else:
-        if cfg.verbosity: print(" *** Error: problematic completion from task_setup.py *** ")
+        if cfg.verbosity: print(" *** Error: problematic completion from goas_task_setup.py *** ")
         del cfg
         sys.exit(1)

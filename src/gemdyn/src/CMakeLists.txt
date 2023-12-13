@@ -18,6 +18,7 @@ add_library(gemdyn STATIC ${F_FILES} ${C_FILES})
 add_dependencies(gemdyn ${PROJECT_NAME}_build_info)
 
 target_include_directories(gemdyn PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
+target_include_directories(gemdyn PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>)
 target_include_directories(gemdyn PRIVATE base)
 
 target_link_libraries(gemdyn PUBLIC

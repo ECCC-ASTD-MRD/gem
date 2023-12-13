@@ -5,9 +5,6 @@ variables:
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
   GIT_SUBMODULE_STRATEGY: none
-  BUILD_BASE_BASE_DIR: /home/saci000/special_builds
-  BUILD_BASE_DIR: /home/saci000/special_builds/precaution
-  PIPELINE_SUBDIR: /home/saci000/special_builds/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 stages:
   - build
@@ -20,6 +17,7 @@ stages:
 before_script:
   - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
+  - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
 #----- rhel-8-amd64_gnu-9.3.0
 build:rhel-8-amd64_gnu-9.3.0:
@@ -40,7 +38,7 @@ build:rhel-8-amd64_gnu-9.3.0:
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0 .
-    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
@@ -71,8 +69,8 @@ build:rhel-8-amd64_gnu-12.1.0:
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0 .
-    - ln -sf ${ECCI_DATA_DIR}/gem_dbase .
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-12.1.0 . 
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-12.1.0
     - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
@@ -100,8 +98,8 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel
+    - set -e
     - export WITH_SYSTEM_RPN=FALSE
     - git submodule update --recursive --init
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
@@ -127,12 +125,12 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel
+    - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2 .
-    - ln -sf  ${ECCI_DATA_DIR}/gem_dbase .
+    - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
@@ -155,15 +153,15 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - concurrent
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2022.1.2
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . ./.eccc_setup_intel
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -182,19 +180,26 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   - concurrent
   only:
   - tags
-  - dev
+  - /^dev_5\.[0-9]$/
   - schedules
   when: always
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - set -e
     - . ./.eccc_setup_intel_2021.4.0
-    - SRC_DIR=$(pwd)
+    - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0 .
+    - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
     - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-8-icelake-64-intel-2021.4.0
 
 package:rhel-8-icelake-64-intel-2021.4.0:
    variables:
@@ -207,149 +212,23 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - concurrent
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    dependencies:
       - build:rhel-8-icelake-64-intel-2021.4.0
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . ./.eccc_setup_intel_2021.4.0
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- ubuntu-18.04-amd64_inteloneapi-2021.4.0
-build:ubuntu-18.04-amd64-intel-2021.4.0:
-   variables:
-      ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu18.04
-      ORD_SOUMET_PROJECT : eccc_mrd
-      ORD_SOUMET_CPUS: "4"
-      ORD_SOUMET_W: "30"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: build
-   tags:
-     - concurrent
-   only:
-     - master
-     - dev
-     - tags
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
-      - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel_2021.4.0
-      - SRC_DIR=$(pwd)
-      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
-      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
-      - time make -j $NCPUS
-
-package:ubuntu-18.04-amd64-intel-2021.4.0:
-   variables:
-      ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu18.04
-      ORD_SOUMET_PROJECT : eccc_mrd
-      ORD_SOUMET_CPUS    : "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - master
-      - dev
-      - tags
-      - schedules
-   dependencies:
-      - build:ubuntu-18.04-amd64-intel-2021.4.0
-   environment:
-      name: testing
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
-      - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel_2021.4.0
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2021.4.0
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- ubuntu-18.04-amd64_inteloneapi-2022.1.2
-build:ubuntu-18.04-amd64-intel-2022.1.2:
-   variables:
-      ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu18.04
-      ORD_SOUMET_PROJECT : eccc_mrd
-      ORD_SOUMET_CPUS: "4"
-      ORD_SOUMET_W: "30"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: build
-   tags:
-     - concurrent
-   only:
-     - master
-     - dev
-     - tags
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
-      - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
-      - SRC_DIR=$(pwd)
-      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
-      - time make -j $NCPUS
-
-package:ubuntu-18.04-amd64-intel-2022.1.2:
-   variables:
-      ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu18.04
-      ORD_SOUMET_PROJECT : eccc_mrd
-      ORD_SOUMET_CPUS    : "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - master
-      - dev
-      - tags
-      - schedules
-   dependencies:
-      - build:ubuntu-18.04-amd64-intel-2022.1.2
-   environment:
-      name: testing
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
-      - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-18.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
 #----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
 build:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
@@ -361,23 +240,30 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - SRC_DIR=$(pwd)
+      - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2 .
+      - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+      - work-ubuntu-22.04-amd64-64-intel-2022.1.2
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -389,7 +275,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - concurrent
    only:
       - master
-      - dev
+      - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
@@ -399,11 +285,9 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -411,7 +295,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
 #----- ubuntu-22.04-amd64_inteloneapi-2023.2.0
 build:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
@@ -423,23 +307,30 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
-      - SRC_DIR=$(pwd)
+      - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0 .
+      - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
+      - time make work
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+      - work-ubuntu-22.04-amd64-64-intel-2023.2.0
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -451,7 +342,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - concurrent
    only:
       - master
-      - dev
+      - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
@@ -461,11 +352,9 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - set -e
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
+      - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
@@ -473,7 +362,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
 #----- ubuntu-22.04-amd64_gnu-11.4.0
 build:ubuntu-22.04-amd64-gnu-11.4.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc5
+      ORD_SOUMET_MACH    : gpsc7
       ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
       ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
@@ -485,7 +374,7 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
      - concurrent
    only:
      - master
-     - dev
+     - /^dev_5\.[0-9]$/
      - tags
    script:
       - set +e
@@ -499,46 +388,13 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
       - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
       - time make -j $NCPUS
 
-package:ubuntu-22.04-amd64-gnu-11.4.0:
-   variables:
-      ORD_SOUMET_MACH    : gpsc5
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
-      ORD_SOUMET_CPUS    : "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - master
-      - dev
-      - tags
-      - schedules
-   dependencies:
-      - build:ubuntu-22.04-amd64-gnu-11.4.0
-   environment:
-      name: testing
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - . r.env.dot --arch amd64
-      - . ./.eccc_setup_gnu
-      - set -e
-      - export FULL_BUILD_PATH=${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-gnu-11.4.0
-      - export PATH=${FULL_BUILD_PATH}/src/gemdyn/gemdyn-main:${FULL_BUILD_PATH}/src/rpnphy/rpnphy-main/:$PATH
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-gnu-11.4.0
-      - make package
-      - ~/ci-admin-bundle/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
 deploy:staging:
    stage: deploy
    tags:
-      - concurrent
+      - U2
    only:
       - tags
-      - dev
+      - /^dev_5\.[0-9]$/
       - schedules
    script:
       - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
@@ -552,12 +408,14 @@ findtopo:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
     - findtopo
 
@@ -570,12 +428,14 @@ findtopo:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -596,11 +456,13 @@ CANO_W7cascP_intel:
   when: always
   allow_failure: true
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -620,12 +482,14 @@ CANO_dcmip163r100_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -645,12 +509,14 @@ CANO_wil7_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -670,12 +536,14 @@ GEM_cfgs_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -695,12 +563,14 @@ GEM_GY_FISL_P_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -720,12 +590,14 @@ GEM_GY_FISL_H_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -745,12 +617,14 @@ GEM_LU_FISL_H_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -770,12 +644,14 @@ GEM_LU_OFFC_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -795,12 +671,14 @@ PTOPO_GYH_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -820,12 +698,14 @@ PTOPO_LUP_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -845,12 +725,14 @@ RSTRT_GYP_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -870,12 +752,14 @@ THEO_bubbleG_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -891,12 +775,14 @@ THEO_schar_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
+    - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
+    - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
@@ -913,7 +799,7 @@ THEO_schar_intel:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -940,7 +826,7 @@ CANO_W7cascP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -967,7 +853,7 @@ CANO_dcmip163r100_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -994,7 +880,7 @@ CANO_wil7_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1021,7 +907,7 @@ GEM_cfgs_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1048,7 +934,7 @@ GEM_GY_FISL_P_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1075,7 +961,7 @@ GEM_GY_FISL_H_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1102,7 +988,7 @@ GEM_LU_FISL_H_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1129,7 +1015,7 @@ GEM_LU_OFFC_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1156,7 +1042,7 @@ PTOPO_GYH_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1183,7 +1069,7 @@ PTOPO_LUP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1210,7 +1096,7 @@ RSTRT_GYP_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1237,7 +1123,7 @@ THEO_bubbleG_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1260,7 +1146,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
@@ -1284,7 +1170,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-12.1.0
   when: always
   only:
-  - dev
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:

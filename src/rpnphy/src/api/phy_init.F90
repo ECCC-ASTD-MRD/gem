@@ -54,8 +54,10 @@ module phy_init_mod
    logical, parameter :: DO_ABORT = .true.
    logical, parameter :: PBL_FLUX_CONSISTENCY = .true.
 
+#ifdef HAVE_MACH
    integer, external :: chm_init
-
+#endif
+   
 contains
 
    !/@*
@@ -371,6 +373,7 @@ contains
          return
       endif
 
+#ifdef HAVE_MACH
       !# Chemistry init
       ier = chm_init(F_path_S)
       call collect_error(ier)
@@ -378,7 +381,8 @@ contains
          call msg(MSG_ERROR,'(phy_init) Problem in chm_init')
          return
       endif
-
+#endif
+      
       ier = WB_OK
       ier = min(wb_get('sfc/beta'        ,beta        ),ier)
       ier = min(wb_get('sfc/bh91_a'      ,bh91_a      ),ier)

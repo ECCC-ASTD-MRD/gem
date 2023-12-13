@@ -1,7 +1,6 @@
 message(STATUS "(EC) Generating maingem* Makefile")
 
 if ((WITH_MACH) OR (CACHE WITH_MACH) OR (ENV{WITH_MACH}))
-  message(STATUS "(EC) chm_LIBRARIES= ${chm_LIBRARIES}")
   message(STATUS "(EC) List of GEMMOD object files: ${GEMMOD_OBJ_FILES}")
 endif()
 
@@ -29,7 +28,6 @@ target_link_libraries(maingemdm
    gemdyn
    ${phy_LIBRARIES}
    ${cpl_LIBRARIES}
-   ${chm_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    modelutils_ov_ifort
