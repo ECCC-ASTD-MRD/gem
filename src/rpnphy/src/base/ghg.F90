@@ -122,6 +122,7 @@ contains
       integer :: F_istat
  
       character(len=256), parameter :: GHG_FILENAME = 'ghg-table'
+      character(len=256), parameter :: GHG_FILENAME1 = 'ghg-table-1950-2015_v1'
       character(len=256), parameter :: GHG_VERSION  = 'version=ghg_concentrations_v1'
 
       !# File format: YYYY co2 n2o ch4 cfc11 cfc12
@@ -134,6 +135,11 @@ contains
 
       fullpath_S = trim(F_path)//'/'//trim(GHG_FILENAME)
       istat = clib_isreadok(fullpath_S)
+      if (.not.RMN_IS_OK(istat)) then
+         call msg(MSG_WARNING,'(ghg_init) File not found or not readable: '//trim(fullpath_S)//' trying with: '//GHG_FILENAME1)
+         fullpath_S = trim(F_path)//'/'//trim(GHG_FILENAME1)
+         istat = clib_isreadok(fullpath_S)
+      endif
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_WARNING,'(ghg_init) File not found or not readable: '//trim(fullpath_S))
          return
