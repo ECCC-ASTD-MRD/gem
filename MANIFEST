@@ -10,7 +10,7 @@ URL        : https://gitlab.science.gc.ca/MIG/gem
 modelutils = 1.7.0
 rpnphy = 6.2.1
 gemdyn = 5.2.0
-mach = 3.2.0-rc4.0-e
+mach = 3.2.1.0
 
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
