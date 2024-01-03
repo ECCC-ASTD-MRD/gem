@@ -79,8 +79,9 @@ if [ "$_status" == "ABORT" ]; then
 fi
 
 # Combine physics and dynamics outputs
-for fhr in 000 009 012 021 024 ; do
+for fhr in -003 000 009 012 021 024 ; do
  case ${fhr} in
+  -003) run_step=072 ;;
   000) run_step=072 ;;
   009) run_step=144 ;;
   012) run_step=144 ;;

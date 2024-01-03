@@ -158,8 +158,12 @@ repo_br=$(git branch --show-current)
 repo_id=$(git rev-parse --verify --short HEAD)
 
 # Determine hall of working directory
-current_site=$(echo ${repo_dir} | cut -d "/" -f3)
-current_hall=$(echo "${current_site//site/hall}")
+if [[ -n "$(echo ${repo_dir} | grep /ords/ )" ]] ; then 
+ current_hall=hall5
+else
+ current_site=$(echo ${repo_dir} | cut -d "/" -f3)
+ current_hall=$(echo "${current_site//site/hall}")
+fi
 
 if [[ "${mach_repo}" != "true" ]] ; then
    gmgit_dir=${repo_dir}/src/mach
@@ -180,7 +184,7 @@ vertag=${repo_id} # option tag ${GMJobPtopo}
 gmtestinfo=${gmgit_dir}/gm-test-${TRUE_HOST}-info.txt_${vertag}
 
 # Set work directory structure
-export TASK_BASEDIR=/space/${current_hall}/sitestore/eccc/aq/r1/${USER}/maestro/${TRUE_HOST}/${Test_version}/gm-test_${repo_bn}_${vertag}
+export TASK_BASEDIR=$(echo ${repo_dir} | sed "s/${USER}.*/${USER}/g")/maestro/${TRUE_HOST}/${Test_version}/gm-test_${repo_bn}_${vertag}
 [[ -d ${TASK_BASEDIR} ]] && rm -rf ${TASK_BASEDIR} && mkdir -p ${TASK_BASEDIR}
 ln -sf ${TASK_BASEDIR} ${gmgit_dir}/gm-test-${TRUE_HOST}_${vertag}
 export TASK_BIN=${TASK_BASEDIR}/bin
