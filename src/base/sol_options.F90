@@ -70,6 +70,10 @@ module sol_options
    logical :: Sol_one_transpose_L = .false.
    namelist /sol  / Sol_one_transpose_L
 
+   !# True => use quad precision for norm computation
+   logical :: Sol_quadnorm_L = .false.
+   namelist /sol  / Sol_quadnorm_L
+
 contains
 
 !**s/r sol_nml - Read namelist sol

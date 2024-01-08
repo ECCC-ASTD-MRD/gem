@@ -58,8 +58,6 @@ module VERgrid_options
    !# a level (in the units of hyb or hyb_H above which
    !# the vertical coordinate becomes flat
       real :: Hyb_flat = -1.
-      namelist /vert_layers  / Hyb_flat
-      namelist /vert_layers_p/ Hyb_flat
 
 contains
 

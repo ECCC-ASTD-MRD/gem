@@ -61,7 +61,7 @@
 ! idum                       Semence du g?n?rateur de nombres al?atoires
 !
       integer :: nlat, nlon, lmin, lmax, dlen
-      integer :: l ,m, n, nc,np, i, j, indx, ier, gmmstat, istat, gdyy
+      integer :: l ,m, n, nc,np, i, j, indx, gmmstat, istat, gdyy
       real    :: fstd, fstr, tau, sumsp , fact, fact2, offi, offj
       real    :: xfi(l_ni),yfi(l_nj)
       real(kind=REAL64)  :: rad2deg_8,  deg2rad_8, pri_8
@@ -84,11 +84,11 @@
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(2) :: spp_trn
       integer, dimension(Ens_ptp_ncha+spp_ncha) :: vlmin, vlmax, vnlon, vnlat
-      integer :: itstep_s, iperiod_iau, err, errop, ierr ,unf0, unf1, nch2d, spp_indx, stat
+      integer :: itstep_s, iperiod_iau, err, ier ,unf0, nch2d, spp_indx, stat
       integer :: lmx,mmx,mch2d
       character(len=WB_MAXNAMELENGTH) :: prefix, key, spp_type
       character(len=WB_MAXNAMELENGTH), dimension(Ens_ptp_ncha+spp_ncha) :: vname
-      character(len=1024) :: fn0, fn1
+      character(len=1024) :: fn
 !
 !-------------------------------------------------------------------
 !
@@ -221,16 +221,14 @@
          if(Ens_recycle_mc) then
             !Read saved stochastic numbers and spectral coeffs ar,br.ai,bi
             err=0
-            if (ptopo_myproc==0 ) then
+            if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
                do nc=1,nch2d
-                 unf0=0
-                 np=nc+1
-                 fn0= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SPP_'//trim(vname(nc))//'.bin'
-                  open ( unf0,file=trim(fn0),status='OLD', &
-                             form='unformatted',iostat=errop )
-                  if (errop == 0) then
-                     err=0
-                     write(output_unit,2000) 'READING', trim(fn0)
+                  np=nc+1
+                  unf0=0
+                  fn= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SPP_'//trim(vname(nc))//'.bin'
+                  ier=fnom(unf0,fn,'SEQ+UNF+OLD',0) 
+                  if (ier == 0) then
+                     write(output_unit,2000) 'READING', trim(fn)
                      do i=1,36
                         read (unf0)dumdum(i,np)
                      end do
@@ -242,21 +240,20 @@
                            read(unf0)bi_p(lmax-l+1,m,nc)
                         end do
                      end do
-                     close(unf0)
+                     ier=fclos(unf0)
                   else
                      err = -1
-                     write(output_unit, *) 'Error: problem opening Markov file '//trim(fn0)
+                     write(output_unit, *) 'Error: problem opening Markov file '//trim(fn)
                   endif
                enddo
             endif
             call gem_error(err,'Ens_marfield_ptp','Error in reading Markov files')
 
-
-            call RPN_COMM_bcast (dumdum,36*mch2d,"MPI_INTEGER",0,"MULTIGRID", ierr)
-            call RPN_COMM_bcast (ar_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ierr)
-            call RPN_COMM_bcast (ai_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ierr)
-            call RPN_COMM_bcast (br_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ierr)
-            call RPN_COMM_bcast (bi_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ierr)
+            call RPN_COMM_bcast (dumdum,36*mch2d,"MPI_INTEGER",0,"MULTIGRID", ier)
+            call RPN_COMM_bcast (ar_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ier)
+            call RPN_COMM_bcast (ai_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ier)
+            call RPN_COMM_bcast (br_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ier)
+            call RPN_COMM_bcast (bi_p, lmx*mmx*nch2d, "MPI_REAL",0, "MULTIGRID", ier)
 
          else
             do nc=1,nch2d
@@ -352,29 +349,32 @@
 
 ! Save random numbers and coefficient ar,ai,br,bi
          if (write_markov_l) then
+            err = 0
             if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
-               fn1=trim(Out_dirname_S)//'/'// 'MRKV_SPP_'//trim(vname(nc))//'.bin'
-               unf1=1
-               open ( unf1,file=trim(fn1),status='NEW', &
-                     form='unformatted',iostat=errop )
-               if ( errop == 0 ) then
-                  write(output_unit,2000) 'WRITING', trim(fn1)
+               unf0=0
+               fn=trim(Out_dirname_S)//'/'// 'MRKV_SPP_'//trim(vname(nc))//'.bin'
+               ier=fnom(unf0,fn,'SEQ+UNF+NEW',0)
+
+               if ( ier == 0 ) then
+                  write(output_unit,2000) 'WRITING', trim(fn)
                   do i=1,36
-                     write (unf1)dumdum(i,np)
+                     write (unf0)dumdum(i,np)
                   end do
                   do l=lmin,lmax
                      do m=1,l+1
-                        write(unf1)ar_p(lmax-l+1,m,nc)
-                        write(unf1)ai_p(lmax-l+1,m,nc)
-                        write(unf1)br_p(lmax-l+1,m,nc)
-                        write(unf1)bi_p(lmax-l+1,m,nc)
+                        write(unf0)ar_p(lmax-l+1,m,nc)
+                        write(unf0)ai_p(lmax-l+1,m,nc)
+                        write(unf0)br_p(lmax-l+1,m,nc)
+                        write(unf0)bi_p(lmax-l+1,m,nc)
                      end do
                   end do
-                  close(unf1)
+                  ier=fclos(unf0)
                else
-                  write(output_unit,4000) 'WRITING', trim(fn1)
+                  err = -1
+                  write(output_unit, *) 'Error: problem writing Markov Chain file '//trim(fn)
                endif
             endif
+            call gem_error(err,'Ens_marfield_ptp','Error in writing Markov Chains files')
          endif
 
          do l=lmin,lmax
@@ -490,16 +490,7 @@
 1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_PTP_SPP)', &
            /,'======================================================')
-1005 format (/' Problem:Cannot find Markov file: ',a)
 2000 format (/' MARKOV: ',a,' FILE ',a)
-
-3000 format (/' S/R  ENS_MARFIELD_PTP : problem in opening MRKV_PARAM_PTP_SPP file: ',a)
-
-!3000 format(' S/R  ENS_MARFIELD_PTP : problem in opening MRKV_PARAM_PTP_SPP file)', &
-!              ',a,')
-
-4000 format(' S/R  ENS_MARFIELD_PTP : problem in WRITING  MRKV_PARAM_PTP_SPP file)', &
-              /,'======================================================')
 6000 format('ens_marfield_ptp at gmm_get(',A,')')
 
 
