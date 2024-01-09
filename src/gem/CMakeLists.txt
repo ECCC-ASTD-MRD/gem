@@ -10,6 +10,12 @@ endif()
 
 add_executable(maingemdm maingemdm.F90)
 
+target_compile_definitions(maingemdm PUBLIC
+  dyn_VERSION="${dyn_VERSION}"
+  modelutils_VERSION="${modelutils_VERSION}"
+  phy_VERSION="${phy_VERSION}"
+)
+
 target_link_libraries(maingemdm
    gemdyn
    ${phy_LIBRARIES}
