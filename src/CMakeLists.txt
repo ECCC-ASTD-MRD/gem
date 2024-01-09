@@ -70,3 +70,5 @@ install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_
 
 install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
 install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/gemdyn/bin/gemdyn_nml_mkref" DESTINATION scripts)
