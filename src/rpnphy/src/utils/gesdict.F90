@@ -147,8 +147,7 @@ contains
                return
             endif
             if (desc == pbuslist(ibus)%meta(idxb)%desc) then
-               call msg(MSG_ERROR, '(gesdict) Duplicate entry (VD) for: '//trim(desc))
-               return
+               call msg(MSG_WARNING, '(gesdict) Duplicate entry (VD) for: '//trim(desc))
             endif
          enddo DO_VAR
       enddo DO_BUS
@@ -217,8 +216,8 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    character(len=3) ::   shape
    character(len=7) ::   struc
    character(len=PHY_NAMELEN) ::  varname, flags(PHY_MAXFLAGS)
-   character(len=48) ::  vdescrp
-   character(len=60) ::  vardesc
+   character(len=256) :: vdescrp
+   character(len=256) :: vardesc
    character(len=256) :: string
    integer :: nmosaic, fmul, dynini, stagg
    integer :: i, wload, hzd, monot, massc, istat
@@ -244,7 +243,7 @@ subroutine gesdict(ni, nk, lindex, lachaine)
    endif
 
    !# Mosaic field have an extra row for the averaged layer (1st row)
-   vardesc = vdescrp//';VS='//struc
+   vardesc = trim(vdescrp)//';VS='//struc
 
    i = MAXVALPERCHAR ** (len(outname) - max(len_trim(outname), len_trim(inname)))
    if (any(shape == (/'M', 'T', 'E'/)) .and. fmul > i) then
