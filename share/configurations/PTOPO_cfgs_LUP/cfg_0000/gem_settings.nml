@@ -116,7 +116,6 @@
  KFCRAD     = 500.       , 
  KFCDEPTH = 2000.
  KFCTRIG4   = 0.,0.,0.5,0.5,
- KFCMOM     = .false.
  deep_timeconv = '30m'
  shal_timeconv = '3h'
 /
