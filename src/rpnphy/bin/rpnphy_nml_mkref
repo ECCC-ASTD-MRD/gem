@@ -2,6 +2,7 @@
 # @Object: Create a reference nml for rpnphy
 # @Author: S.Chamberland
 # @Date:   Feb 2016, Jan 2021
+# @Date:   Dec 2022, modified by Chantal Pic for GoaS
 
 DESC='Create a reference nml for rpnphy'
 
@@ -27,16 +28,15 @@ fi
 
 if [[ x"${rpnphy_version}" == x"" ]] ; then
    cat 1>&2 <<EOF
-ERROR: RPNPHY environement not properly set, \${rpnphy_version} not defined.
+ERROR: RPNPHY environment not properly set, \${rpnphy_version} not defined.
 EOF
    exit 1
 fi
 
-abs=$(which prphynml_${BASE_ARCH}.Abs)
+abs=$(which prphynml)
 if [[ x"${abs}" == x"" ]] ; then
    cat 1>&2 <<EOF
-ERROR: RPNPHY environement not properly set, cannot find all print nml prog
-       prphynml=${abs:-prphynml_${BASE_ARCH}.Abs}
+ERROR: RPNPHY environment not properly set, cannot find all print nml prog
 EOF
    exit 1
 fi

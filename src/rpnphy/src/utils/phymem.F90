@@ -20,7 +20,7 @@ module phymem
    integer, parameter, public :: PHY_NBUSES = 4
    integer, parameter, public :: PHY_MAXVARS = 1000  !# max nb vr per bus (need at least double for all 4: phyvar has ~900 entries
    integer, parameter, public :: PHY_NAMELEN  = 32
-   integer, parameter, public :: PHY_DESCLEN  = 64
+   integer, parameter, public :: PHY_DESCLEN  = 256
    integer, parameter, public :: PHY_MAXFLAGS = 16
    
    integer, parameter, public :: PHY_STAG_SFC = 0

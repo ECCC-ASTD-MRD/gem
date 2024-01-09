@@ -79,8 +79,6 @@ contains
          F_status = PHY_NONE
          return
       endif
-      err = phy_nml_check()
-      if (.not.RMN_IS_OK(err)) return
 
       !# Read surface namelist
       err = sfc_nml2(F_namelist)
@@ -100,6 +98,10 @@ contains
          call msg(MSG_ERROR, '(phy_nml) Problem reading chemestry namelist')
          return
       endif
+      
+      !# Check namelist options validity and consistency
+      err = phy_nml_check()
+      if (.not.RMN_IS_OK(err)) return
 
       !# 
       err = phy_nml_post_init()
@@ -391,6 +393,11 @@ contains
 
       if (.not.any(sfcflx_filter_order == (/ -1, 2, 4 /))) then
          call msg(MSG_ERROR,'(phy_nml_check) sfcflx_filter_order must be -1, 2 or 4')
+         return
+      endif
+      
+      if (advectke .and. deep == 'KFC2') then
+         call msg(MSG_ERROR,'(phy_nml_check) Cannot use ADVECTKE with KFC2 (fix pending)')
          return
       endif
 

@@ -2,6 +2,7 @@
 # @Object: Create a reference nml for gemdyn
 # @Author: S.Chamberland
 # @Date:   Feb 2016, Jan 2021
+# @Date:   Aug 2022, modified by Chantal Pic for GoaS
 
 DESC='Create a reference nml for gemdyn'
 
@@ -27,16 +28,15 @@ fi
 
 if [[ x"${gemdyn_version}" == x"" ]] ; then
    cat 1>&2 <<EOF
-ERROR: gemdyn environement not properly set, \${gemdyn_version} not defined.
+ERROR: gemdyn environment not properly set, \${gemdyn_version} not defined.
 EOF
    exit 1
 fi
 
-abs=$(which gemprnml_${BASE_ARCH}.Abs)
+abs=$(which prgemnml)
 if [[ x"${abs}" == x"" ]] ; then
    cat 1>&2 <<EOF
-ERROR: gemdyn environement not properly set, cannot find all print nml prog
-       gemprnml=${abs:-gemprnml_${BASE_ARCH}.Abs}
+ERROR: gemdyn environment not properly set, cannot find all print nml prog, prgemnml
 EOF
    exit 1
 fi
@@ -56,5 +56,3 @@ mv ${nmlfilename} ${myfile}
 cd ${here}
 rm -rf ${localtmp}
 exit 0
-
-
