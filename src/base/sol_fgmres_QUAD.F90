@@ -15,7 +15,7 @@
 
 !** fgmres - Flexible generalized minimum residual method(with restarts).
 
-      subroutine sol_fgmres ( solution, rhs_b, F_print_L )
+      subroutine sol_fgmres_QUAD ( solution, rhs_b, F_print_L )
       use dynkernel_options
       use glb_ld
       use ldnh
@@ -59,15 +59,13 @@
 
       real(kind=REAL64) :: t, conv, local_dot(2), glb_dot(2), l_avg_8(2), r_avg_8(2)
       real(kind=REAL64), dimension(sol_im+1,2) :: v_local_prod, v_prod, v_avg_8
-      real(kind=REAL64) :: rrp, wrr2, wro2, wnu , wr0, residual, Rel_tolerance
+      real(kind=REAL64) :: wro2, wnu, wr0, residual, Rel_tolerance
+      real(kind=REAL128) :: rrp, wrr2
 !
 !     ---------------------------------------------------------------
 !
-      if (Sol_quadnorm_L) then
-         call sol_fgmres_QUAD ( solution, rhs_b, F_print_L )
-         return
-      endif
-      
+      if ((OMP_get_thread_num()==0).and. (ptopo_myproc==0)) print*,'=======SOL_FGMRES== QUAD PREC IN ESTIMATED NORM '      
+
       outiter= 0 ; nbiter= 0 ; conv= 0.d0
 
       ! Residual of the initial iterate
@@ -229,13 +227,14 @@
             rrp=0.d0 ; wrr2=0.d0
 !$omp do
             do i=1,initer
-               rrp = rrp + rr(i,initer+1)*rr(i,initer+1)
+               rrp = rrp + real(rr(i,initer+1), kind=REAL128)**2
             enddo
 !$omp enddo
-            thread_s(4,OMP_get_thread_num()) = rrp
+            thread_s(4,OMP_get_thread_num()) = real(rrp, kind=REAL64)
+            thread_s128(4,OMP_get_thread_num()) = rrp
 !$omp BARRIER
 
-            wrr2  = sum(thread_s(4,:))
+            wrr2  = sum(thread_s128(4,:))
 
             do it=1,initer
 !$omp do collapse(2)
@@ -252,7 +251,7 @@
             ! Compute estimated norm of vv(:,:,:,initer+1): from GHYSELS et al. (Journal of Scientific Computing 2013)
             if( (wro2-wrr2) > 0.) then
 !$omp single
-               wnu=sqrt(wro2-wrr2)
+               wnu = real( sqrt(wro2-wrr2), kind=REAL64 )
                rr(initer+1,initer+1) =  wnu
 !$omp end single
             ! Or in case (wro2-wrr2)<= 0 compute exact norm
@@ -280,19 +279,20 @@
 !$omp end single
             endif
 
-            if ( .not. almost_zero( rr(initer+1,initer+1) ) ) then
-               wnu = 1.d0 / rr(initer+1,initer+1)
+            if (  almost_zero( rr(initer+1,initer+1) ) ) then
+               if ((OMP_get_thread_num()==0).and. (ptopo_myproc==0)) print*,'========= FGMRES Happy breakdown !! ===='
+               exit
+            endif
+            wnu = 1.d0 / rr(initer+1,initer+1)
 !$omp do collapse(2)
-               do k=Sol_k0,l_nk
-                  do j=Sol_j0,Sol_jn
-                     do i=Sol_i0,Sol_in
-                        vv(i, j, k, initer+1) = vv(i, j, k, initer+1) * wnu
-                     end do
+            do k=Sol_k0,l_nk
+               do j=Sol_j0,Sol_jn
+                  do i=Sol_i0,Sol_in
+                     vv(i, j, k, initer+1) = vv(i, j, k, initer+1) * wnu
                   end do
                end do
+            end do
 !$omp enddo
-
-            end if
 
 !$omp single
             do it=1,initer+1
@@ -401,4 +401,4 @@
 !     ---------------------------------------------------------------
 !
       return
-      end subroutine sol_fgmres
+      end subroutine sol_fgmres_QUAD

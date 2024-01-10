@@ -207,6 +207,11 @@
          return
       end if
 
+      if ((Cstv_bA_8 < 0.5).or.(Cstv_bA_m_8 < 0.5).or.(Cstv_bA_nh_8 < 0.5)) then
+         if(lun_out>0) write (Lun_out, '(/"   ====> Cstv_bA_* < 0.5 not allowed")' )
+         return
+      endif
+
       if ( Cstv_bA_8 < Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
       if ( Cstv_bA_nh_8 < Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
 
