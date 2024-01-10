@@ -97,7 +97,7 @@ mpi_exec_Linux(){
 
          [[ "$bind" == bind ]] && bind=socket                     # For backward compatibility. Deprecated.
 
-         mpi_exec_linux_launch OPENMPI ${OPEN_MPI_PARMS} "$@"
+         mpi_exec_linux_launch OPENMPI ${OPEN_MPI_PARMS} -bind-to none "$@"
          ;;
       cray)
          mpi_aprun_linux_launch "$@"
