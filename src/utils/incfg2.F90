@@ -147,8 +147,8 @@ module incfg2_mod
       character(len=64) :: vgrid_m_S, vgrid_t_S
       integer, pointer :: ip1s(:)  !list of ip1 for lvl=-1
       integer(INT64) :: jdateo  !Initial date [jdate sec]
-      integer :: dt         !time step length [seconds]
-      integer :: n          !number of elements
+      integer :: dt          !time step length [seconds]
+      integer :: n, nmax     !number of elements
       integer :: hgridid     !dest grid id
       integer :: hgridcoreid !dest core grid id
       integer :: commgid     !rpn_comm_create_2dgrid id
@@ -173,7 +173,8 @@ contains
 
    !/@*
    function incfg_new(F_incfgobj, F_jdateo, F_dt, F_filename_S, F_ip1list, &
-        F_hgridid, F_hgridcoreid, F_commgid, F_vgrid_m_S, F_vgrid_t_S) &
+        F_hgridid, F_hgridcoreid, F_commgid, F_vgrid_m_S, F_vgrid_t_S,  &
+        F_nvars_max) &
         result(F_istat)
       implicit none
       !@objective
@@ -189,6 +190,7 @@ contains
 !!$      integer, intent(in), optional :: F_maxbufsize
       character(len=*), intent(in), optional :: F_vgrid_m_S
       character(len=*), intent(in), optional :: F_vgrid_t_S
+      integer, intent(in), optional :: F_nvars_max
       !@return
       integer :: F_istat
       !*@/
@@ -241,6 +243,10 @@ contains
       F_incfgobj%jdateo = F_jdateo
       F_incfgobj%dt = F_dt
       F_incfgobj%n = 0
+      F_incfgobj%nmax = NVAR_MAX
+      if (present(F_nvars_max)) then
+         if (F_nvars_max > 0) F_incfgobj%nmax = F_nvars_max
+      endif
       F_incfgobj%hgridid = -1
       F_incfgobj%hgridcoreid = -1
       F_incfgobj%commgid = commgid
@@ -249,7 +255,7 @@ contains
       F_incfgobj%vgrid_t_S = vgrid_t_S
 
       nullify(F_incfgobj%v)
-      allocate(F_incfgobj%v(NVAR_MAX), stat=istat)
+      allocate(F_incfgobj%v(F_incfgobj%nmax), stat=istat)
       if (istat /= 0) then
          call msg(MSG_ERROR,'(incfg) Problem allocating memory.')
          return
@@ -1004,7 +1010,7 @@ contains
       F_nvar = 0
       DOFILE: do
          read(fileid, '(a)', iostat=istat) string_S
-         if (istat /=0 .or. F_nvar+1 > NVAR_MAX) exit DOFILE
+         if (istat /=0 .or. F_nvar+1 > F_incfgobj%nmax) exit DOFILE
          call str_tab2space(string_S)
          string_S = adjustl(string_S)
          if (string_S(1:1)/='#' .and. string_S/=' ') then
