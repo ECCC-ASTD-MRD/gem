@@ -87,7 +87,7 @@ cd ..
 component=rpnphy
 MYVERSION=$(grep VERSION src/${component}/MANIFEST | cut -d: -f2)
 MYVERSION=${MYVERSION# *}
-git add src/${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref
+git add src/${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref*
 git commit -a -m "${component}: update VERSION, doc and nml ref (${component}_${MYVERSION})"
 ```
 
