@@ -8,7 +8,6 @@
 # - Load a script for common setup to all compilers
 
 DOMAIN=`hostname -d`
-platform=$(utils/os.sh)
 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
     . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/SCIENCE/gpscc3/gnu
