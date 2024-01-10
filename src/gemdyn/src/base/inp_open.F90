@@ -28,7 +28,9 @@
       character(len=*), intent(IN) :: F_datev
 
       character(len=2048) fn,root,mesg
-      integer i,err,err_code,unf,n123(3)
+      integer, parameter :: n123_dim=3
+      integer n123(n123_dim)
+      integer i,err,err_code,unf
       real(kind=REAL64), pointer :: vtbl_8(:,:,:)
 !
 !-----------------------------------------------------------------------
@@ -90,7 +92,7 @@
             end if
       endif
 
-      call rpn_comm_bcast ( n123, 4, "MPI_INTEGER", Inp_iobcast, &
+      call rpn_comm_bcast ( n123, n123_dim, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err )
 
       Inp_kind= -1
