@@ -17,7 +17,7 @@
 
 module phyinputdiag
    use phy_options
-   use phymem, only: phymeta, phymem_find, phymem_getmeta, PHY_MAXVARS
+   use phymem, only: phymeta, phymem_find, phymem_getmeta, PHY_MAXVARS, PHY_DBUSIDX
    private
    public :: phyinputdiag1, phyinputdiag_id, phyinputdiag_obj
 
@@ -45,7 +45,7 @@ contains
       logical,parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
-      integer :: istat,ivar,nvars, ivalist(PHY_MAXVARS)
+      integer :: istat,ivar,nvars, ivalist(PHY_MAXVARS(PHY_DBUSIDX))
       type(phymeta), pointer :: vmeta
       ! ---------------------------------------------------------------------
       istat = RMN_OK
@@ -121,7 +121,7 @@ contains
       logical, parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S, prefix_S, basename_S, time_S, ext_S
-      integer :: istat, ivar, nvars, ivalist(PHY_MAXVARS)
+      integer :: istat, ivar, nvars, ivalist(PHY_MAXVARS(PHY_DBUSIDX))
       type(phymeta), pointer :: vmeta
       ! ---------------------------------------------------------------------
       istat = RMN_OK

@@ -647,6 +647,11 @@ used to reduce step to below this value if necessary
 | 60. || real
 
 |-
+| p3_liqfrac ||
+For predicting the liquid fraction of mixed-phase particles in microphysics (P3)
+| .false. || logical
+
+|-
 | p3_ncat ||
 Number of ice-phase hydrometeor categories to use in the P3 microphysics
 scheme (currently limited to <5)
@@ -671,6 +676,11 @@ switch for subgrid cloud/precipitation fraction scheme (SCPF) in microphysics (P
 | p3_subfact ||
 calibration factor for ice sublimation in microphysics (P3)
 | 1.0 || real
+
+|-
+| p3_trplmomi ||
+For triple-moment ice in microphysics (P3)
+| .false. || logical
 
 |-
 | p_runlgt ||
@@ -1035,7 +1045,8 @@ Condensation scheme name
 * 'NIL       ' : No explicit condensation scheme used
 * 'CONSUN    ' : Sunqvist type condensation scheme
 * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
-* 'MP_P3     ' : P3 microphysics scheme
+* 'MP_P3     ' : P3 microphysics scheme (v5)
+* 'MP_P3V3   ' : P3 microphysics scheme (v3)
 * 'KESSLER   ' : Kessler warm rain scheme
 | 'NIL' || character(len=16)
 

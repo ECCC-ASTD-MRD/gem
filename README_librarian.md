@@ -97,17 +97,40 @@ Move patch from GEM dev to rpnphy depot
 
 # Steps to be done in a GEM dev env.
 
+# WARNING: need to "squash the merges" beforehand
+# Checck if there are merge commits
 ```
+FROM=${ATM_MODEL_VERSION:-__scrap__}
+git rev-list --min-parents=2 --count ${FROM}..HEAD
+```
+
+```
+FROM=${ATM_MODEL_VERSION:-__scrap__}
 component=rpnphy
-git subtree split --prefix=src/${component} 
-git format-patch FROM..HEAD
-```
+# git subtree split --prefix=src/${component}
+mkdir -p patches/${component}
+git format-patch -o patches/${component} \
+    -M -C --find-copies-harder -k --relative=src/${component} \
+    ${FROM}..HEAD
+``` 
 
 
 # Steps to be done in the rpnphy clone
 
 ```
-git am *.patch
+mydir=
+component=rpnphy
+for item in ${mydir}/patches/${component}/*.patch ; do
+    if [[ -s ${item} ]] ; then
+       git am -3 -k ${item}
+       if [[ $? != 0 ]] ; then
+          echo "ERROR: problem applying ${item}"
+          break
+       fi
+    else
+       echo "Ignoring: ${item}"
+    fi
+done
 ```
 
 # commit & tag & push

@@ -122,7 +122,7 @@ contains
            sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
            zufcp, zvfcp, zufcp1, zvfcp1, zufcp2, zvfcp2, zufcp3, zvfcp3,  zsufcp, zsvfcp, &
-           zprctns,zpritns,qti1p, nti1p, zfsc, zqlsc, zqssc, &
+           zprctns,zpritns,qti1p, nti1p, zti1p, zfsc, zqlsc, zqssc, &
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
            zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
@@ -182,6 +182,7 @@ contains
 
       MKPTR2D(sigma, sigw, pvars)
 
+      MKPTR2Dm1(zti1p, zti1plus, pvars)
       MKPTR2Dm1(nti1p, nti1plus, pvars)
       MKPTR2Dm1(qti1p, qti1plus, pvars)
       MKPTR2Dm1(ncp, ncplus, pvars)
@@ -200,7 +201,6 @@ contains
       MKPTR2Dm1(zcqce, cqce, pvars)
       MKPTR2Dm1(zcqe, cqe, pvars)
       MKPTR2Dm1(zcte, cte, pvars)
-      MKPTR2Dm1(zen, en, pvars)
       MKPTR2Dm1(zfdc, fdc, pvars)
       MKPTR2Dm1(zfmc, fmc, pvars)
       MKPTR2Dm1(zfsc, fsc, pvars)
@@ -265,6 +265,12 @@ contains
 
       MKPTR2D(zmrk2, mrk2, pvars)
 
+      if (advectke) then
+         MKPTR2Dm1(zen, enplus, pvars)
+      else
+         MKPTR2Dm1(zen, en, pvars)
+      endif
+      
       call init2nan(l_en0, l_pw0)
       call init2nan(dummy1, dummy2, geop) 
       call init2nan(ppres, pudr, pddr, phsflx, dmsedt)
@@ -413,8 +419,8 @@ contains
          endif
 
          ! Apply shallow convective tendencies for consdensed variables
-         call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, qti1p, nti1p, &
-              ztdmask, ni, nk, nkm1)
+         call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, &
+              qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
 
          ! Post-scheme budget analysis
          if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, pvars, &
@@ -462,7 +468,7 @@ contains
 
       ! Apply deep convective tendencies for consdensed variables
       call conv_mp_tendencies1(zprcten, zpriten, ttp, qcp, ncp, qip, nip, &
-           qti1p, nti1p, ztdmask, ni, nk, nkm1)
+            qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
 
       ! Post-deep budget analysis
       if (pb_residual(zconedc, zconqdc, l_en0, l_pw0, pvars, &
@@ -515,7 +521,7 @@ contains
 
       ! Apply mid-level convective tendencies for condensed variables
       call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
-           qti1p, nti1p, ztdmask, ni, nk, nkm1)
+            qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
 
       ! Post-midlevel budget analysis
       if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &

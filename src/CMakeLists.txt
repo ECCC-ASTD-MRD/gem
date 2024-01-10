@@ -30,16 +30,10 @@ target_link_libraries(rpnphy PUBLIC
   tdpack::tdpack
   modelutils
   rpnphy_cpl_stubs
-  rpnphy_chm_stubs 
   )
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(rpnphy ${PROJECT_NAME}_build_info)
-
-file(GLOB F_CHMSTUBS_FILES chm_stubs/*.F90)
-add_library(rpnphy_chm_stubs STATIC ${F_CHMSTUBS_FILES})
-add_dependencies(rpnphy_chm_stubs ${PROJECT_NAME}_build_info)
-target_link_libraries(rpnphy_chm_stubs PUBLIC modelutils)
 
 add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
 add_dependencies(rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
