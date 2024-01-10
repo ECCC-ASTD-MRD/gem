@@ -59,7 +59,7 @@ contains
 
       nullify(pvars)
       istat = phymem_get_slabvars(pvars, jdo)
-      if (.not.RMN_IS_OK(istat)) then
+      if (.not.(RMN_IS_OK(istat) .and. associated(pvars))) then
          call physeterror('physlb1', 'Problem getting slab vars pointers')
          return
       endif
@@ -69,6 +69,7 @@ contains
       else
          call phyexe1(pvars, kount, ni, nk, jdo)
       endif
+      deallocate(pvars)
       if (phy_error_L) return
 
       goto 100

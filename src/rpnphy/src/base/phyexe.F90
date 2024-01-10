@@ -17,7 +17,7 @@
 module phyexe
    private
    public :: phyexe1
-   
+
 contains
 
 !/@*
@@ -33,7 +33,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    use metox, only: metox3
    use phy_status, only: phy_error_L
    use phy_options
-   use phymem, only: phyvar, PHY_BUSIDXV, PHY_DBUSIDX, PHY_PBUSIDX, PHY_VBUSIDX
+   use phymem, only: phyvar
    use phystepinit, only: phystepinit3
    use precipitation, only: precipitation4
    use prep_cw, only: prep_cw3
@@ -44,7 +44,9 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    use tendency, only: tendency5
    use turbulence, only: turbulence2
    use lhn_mod, only: lhn2
+#ifdef HAVE_MACH
    use chm_headers_mod, only: chm_exe
+#endif
    implicit none
 !!!#include <arch_specific.hf>
    !@object this is the main interface subroutine for the cmc/rpn unified physics
@@ -76,11 +78,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
    real, dimension(ni,nk) :: seloc, ficebl
-   
-   real, dimension(:), pointer, contiguous :: dbus, fbus, vbus
-   dbus => pvars(PHY_BUSIDXV(PHY_DBUSIDX))%data
-   fbus => pvars(PHY_BUSIDXV(PHY_PBUSIDX))%data
-   vbus => pvars(PHY_BUSIDXV(PHY_VBUSIDX))%data
+
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
@@ -104,16 +102,16 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
 
    call metox3(pvars, ni, nk)
    if (phy_error_L) return
-   
+
    call linoz3(pvars, delt, kount, ni, nk, nkm1)
    if (phy_error_L) return
-   
+
    call gwd9(pvars, std_p_prof, delt, kount, ni, nk, nkm1, trnch)
    if (phy_error_L) return
-   
+
    call apply_rad_tendencies1(pvars, ni, nk, nkm1)
    if (phy_error_L) return
-   
+
    call surface1(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
@@ -142,9 +140,11 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call sfc_calcdiag3(pvars, moyhr, acchr, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
-   call chm_exe(dbus, fbus, vbus, trnch, kount)
+#ifdef HAVE_MACH
+   call chm_exe(pvars, trnch, kount)
    if (phy_error_L) return
-
+#endif
+   
    call diagnosurf5(pvars, ni, trnch)
    if (phy_error_L) return
 

@@ -130,7 +130,6 @@ contains
       if (to_alloc) allocate(F_fld(istart(1):iend(1),istart(2):iend(2)))
 
       ! Unfold physics field and copy into output array
-      !#TODO: check 2d to 3d through the phyunfoldmeta itf
       F_istat = phyunfoldmeta1(F_fld, istart, iend, vmeta)
       if (.not.RMN_IS_OK(F_istat)) then
          call msg(MSG_WARNING,'(phy_get) Cannot unfold '//trim(vmeta%vname))

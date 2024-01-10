@@ -20,8 +20,6 @@ module phy_options
    public
    save
 
-   integer, parameter :: OPT_OPTIX_OLD     = 1
-   integer, parameter :: OPT_OPTIX_NEW     = 2
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
    logical           :: chemistry    = .false.
@@ -39,7 +37,6 @@ module phy_options
    logical           :: etccdiag     = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
-   integer           :: ioptix       = OPT_OPTIX_OLD
    integer           :: kntrad       = 1
    integer           :: kntraduv     = -1
    logical           :: llight       = .false.
@@ -289,6 +286,16 @@ module phy_options
    logical         :: p3_debug = .false.
    namelist /physics_cfgs/ p3_debug
    namelist /physics_cfgs_p/ p3_debug
+
+   !# For triple-moment ice in microphysics (P3)
+   logical         :: p3_trplmomi = .false.
+   namelist /physics_cfgs/ p3_trplmomi
+   namelist /physics_cfgs_p/ p3_trplmomi
+
+   !# For predicting the liquid fraction of mixed-phase particles in microphysics (P3)
+   logical         :: p3_liqfrac = .false.
+   namelist /physics_cfgs/ p3_liqfrac
+   namelist /physics_cfgs_p/ p3_liqfrac
 
    !# switch for subgrid cloud/precipitation fraction scheme (SCPF) in microphysics (P3)
    logical         :: p3_scpf_on = .false.
@@ -858,16 +865,18 @@ module phy_options
    !# * 'NIL       ' : No explicit condensation scheme used
    !# * 'CONSUN    ' : Sunqvist type condensation scheme
    !# * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
-   !# * 'MP_P3     ' : P3 microphysics scheme
+   !# * 'MP_P3     ' : P3 microphysics scheme (v5)
+   !# * 'MP_P3V3   ' : P3 microphysics scheme (v3)
    !# * 'KESSLER   ' : Kessler warm rain scheme
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(5) = (/ &
+   character(len=*), parameter :: STCOND_OPT(6) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'MP_MY2    ', &
         'MP_P3     ', &
+        'MP_P3V3   ', &
         'KESSLER   ' &
         /)
 

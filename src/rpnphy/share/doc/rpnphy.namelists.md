@@ -114,11 +114,13 @@
 | p3_debug | switch for real-time debugging in microphysics (P3) | .false. | logical |
 | p3_depfact | calibration factor for ice deposition in microphysics (P3) | 1.0 | real |
 | p3_dtmax | Maximum time step (s) to be taken by the microphysics (P3) scheme, with time-splitting<br>used to reduce step to below this value if necessary | 60. | real |
+| p3_liqfrac | For predicting the liquid fraction of mixed-phase particles in microphysics (P3) | .false. | logical |
 | p3_ncat | Number of ice-phase hydrometeor categories to use in the P3 microphysics<br>scheme (currently limited to <5) | 1 | integer |
 | p3_pfrac | precipitation fraction factor used by SCPF in microphysics (P3) | 1.0 | real |
 | p3_resfact | model resolution factor used by SCPF in microphysics (P3) | 1.0 | real |
 | p3_scpf_on | switch for subgrid cloud/precipitation fraction scheme (SCPF) in microphysics (P3) | .false. | logical |
 | p3_subfact | calibration factor for ice sublimation in microphysics (P3) | 1.0 | real |
+| p3_trplmomi | For triple-moment ice in microphysics (P3) | .false. | logical |
 | p_runlgt | Vectoc lenght physics memory space folding for openMP | -1 | integer |
 | pbl_cmu_timeavg | Time-averaging of transfer coefficient for momentum to reduce 2-dt<br>oscillations in fluxes | .false. | logical |
 | pbl_conserve | Conservation corrections for PBL scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
@@ -179,7 +181,7 @@
 | sgo_stabfac | Turns on/off the amplification factor (due to stability) of the drag<br>coefficient in the orographic blocking scheme | .true. | logical |
 | sgo_tdfilter | Standard deviation length scale (gridpoints) of Gaussian smoother<br>applied to wind GWD tendencies | 1. | real |
 | sgo_windfac | Description of threshold for mean wind speed for blocking |  |  |
-| stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme<br>- 'KESSLER   ' : Kessler warm rain scheme | 'NIL' | character(len=16) |
+| stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme (v5)<br>- 'MP_P3V3   ' : P3 microphysics scheme (v3)<br>- 'KESSLER   ' : Kessler warm rain scheme | 'NIL' | character(len=16) |
 | stratos | Special treatment of stratosphere;<br>if .true. ignore convection/condensation tendencies where pressure is lower<br>than topc as specified in nocld.cdk | .false. | logical |
 | taufac | Factor used in the gwd formulation = 1/(LENGTH SCALE) | 8.E-6 | real |
 | test_phy | Run the physics in test harness mode | .false. | logical |

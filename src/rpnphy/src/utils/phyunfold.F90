@@ -138,6 +138,7 @@ contains
          return
       endif
 
+      !#TODO: adapt for 4D vars (ni,nk*fmul,nj)
       ! Transfer from the physics folded space into the 3D dest grid
 !$omp parallel private(i,j,k,ik,vptr)
 !$omp do
@@ -166,13 +167,13 @@ contains
       implicit none
       !@object Transfer data from p_runlgt space
       !@params
-      integer,intent(in) :: F_ijk0(2), F_ijk1(2)
+      integer,intent(in) :: F_ijk0(3), F_ijk1(3)
       real,intent(out) :: F_dest(:,:)
       type(phymeta), intent(in) :: F_meta
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013
       !*@/
-      integer :: i, j, istat
+      integer :: i, j, istat, k0, ik
       real, pointer, contiguous :: vptr(:)
       !---------------------------------------------------------------
       F_istat = RMN_ERR
@@ -180,12 +181,13 @@ contains
       ! Bound checking
       if (any(F_ijk0(:) < 1) .or. &
            F_ijk1(1) > phy_lcl_ni .or. &
-           F_ijk1(2) > phy_lcl_nj) then
+           F_ijk1(2) > phy_lcl_nj .or. &
+           F_ijk1(3) > F_meta%nlcl(3)) then
          call msg(MSG_WARNING,'(phyunfold) Out of bounds for '//&
               trim(F_meta%vname)//' on '//trim(F_meta%bus))
          print *,'Requested:',F_ijk1
          print *,'Phy      :',phy_lcl_ni,phy_lcl_nj,F_meta%nlcl(3),':',F_meta%nk,F_meta%fmul
-        return
+         return
       endif
 
       if ( F_ijk0(1) /= 1 .or. F_ijk0(2) /= 1 .or. &
@@ -194,16 +196,22 @@ contains
          call msg(MSG_WARNING,'(phyunfold) Horizontal sub domaine Not yet supported')
          return
       endif
+      if (F_ijk1(3) /= F_ijk0(3)) then
+         call msg(MSG_WARNING,'(phyunfold) Can only get 1 level for '//trim(F_meta%vname))
+         return
+      endif
 
       !#TODO: adapt for 4D vars (ni,nk*fmul,nj)
       ! Transfer from the physics folded space into the 3D dest grid
+      k0 = F_ijk0(3)
 !$omp parallel private(i,j,vptr)
 !$omp do
       do j = 1, phydim_nj
          nullify(vptr)
          istat = phymem_getdata(vptr, F_meta%idxv, j)
          do i = 1, phydim_ni
-            F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j)) = vptr(i)
+            ik = (k0-1)*phydim_ni + i
+            F_dest(ijdrv_phy(1,i,j),ijdrv_phy(2,i,j)) = vptr(ik)
          end do
       end do
 !$omp end do
@@ -290,7 +298,7 @@ contains
       !@params
       character(len=1),intent(in) :: F_bus_S
       character(len=*),intent(in) :: F_nomvar_S
-      integer,intent(in) :: F_ijk0(2), F_ijk1(2)
+      integer,intent(in) :: F_ijk0(3), F_ijk1(3)
       real,intent(out) :: F_dest(:,:)
       integer :: F_istat
       !@author Michel Desgagne  -   summer 2013

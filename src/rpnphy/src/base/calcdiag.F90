@@ -65,7 +65,7 @@ contains
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
 
-      logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr
+      logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_p3v5
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
@@ -91,6 +91,7 @@ contains
       call init2nan(en0, pw0, en1, pw1)
       call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc, lwcp, iwcp)
 
+      is_p3v5 = (stcond == 'MP_P3')
       lkount0 = (kount == 0)
       lmoyhr = (moyhr > 0)
       lacchr = .false.
@@ -240,10 +241,14 @@ contains
          if (associated(zass_sn3)) zass_sn3(:)  = 0.
          if (associated(zass_pe1)) zass_pe1(:)  = 0.
          if (associated(zass_pe2)) zass_pe2(:)  = 0.
-         if (associated(zass_pe2l)) zass_pe2l(:) = 0.
-         if (associated(zass_snd)) zass_snd(:)  = 0.
-         if (associated(zass_mx)) zass_mx(:)   = 0.
-         if (associated(zass_s2l)) zass_s2l(:)  = 0.
+         if (associated(zass_pe2l)) zass_pe2l(:)  = 0.
+         if (associated(zass_snd))  zass_snd(:)   = 0.
+         if (associated(zass_mx))   zass_mx(:)    = 0.
+         if (associated(zass_s2l))  zass_s2l(:)   = 0.
+         if (is_p3v5) then
+            if (associated(zass_ws))   zass_ws(:)    = 0.
+            if (associated(zsw_dhmax)) zsw_dhmax(:) = 0.
+         endif
 
       endif IF_RESET_PRECIP
 
@@ -294,6 +299,9 @@ contains
 !VDIR NODEP
          DO_NI: do i = 1,ni
 
+            ! Running time maximum hail size (ice P3 microphysics)
+            if (associated(zsw_dhmax) .and. is_p3v5) zsw_dhmax(i) = max(zsw_dhmax(i),a_diag_dhmax(i,nkm1))
+
             !taux des precipitations de la convection profonde
             zry(i) = ztsc(i) + ztlc(i)
 
@@ -331,6 +339,9 @@ contains
 
                !tss:  rate of solid precipitation (sum of all fozen precipitation types)
                ztss(i) = ztss_sn1(i) + ztss_sn2(i) +ztss_sn3(i) + ztss_pe1(i) + ztss_pe2(i)
+               if (is_p3v5) then
+                   ztss(i) = ztss(i) + ztss_ws(i)
+               endif
 
                !tss_mx:  rate of mixed precipitation (liquid and solid simultaneously [>0.01 mm/h each])
                if (ztls(i) > 2.78e-9 .and. ztss(i) > 2.78e-9) then   ![note: 2.78e-9 m/s = 0.01 mm/h]
@@ -356,6 +367,11 @@ contains
 
                !ass_sn2:  accumulation of snow
                zass_sn2(i) = zass_sn2(i) + ztss_sn2(i) * dt
+
+               !ass_ws:  accumulation of wet snow
+               if (is_p3v5) then
+                  zass_ws(i)  = zass_ws(i) + ztss_ws(i) * dt
+               endif
 
                !ass_sn3:  accumulation of graupel
                zass_sn3(i) = zass_sn3(i) + ztss_sn3(i) * dt
@@ -481,10 +497,17 @@ contains
                zsn(i)  = zsn(i)                                      &
                     + (ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i))*dt  &  !from microphysics
                     + sol_conv*dt                                  !from convective schemes
+               if (is_p3v5) then
+                    zsn(i) = zsn(i) + ztss_ws(i)*dt
+               endif
                !note: contribution to SN from microphysics is from ice, snow,
                !      and graupel, instantaneous solid-to-liquid ratio for
                !      pcp rate total snow (i+s+g):
-               tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i), 1.e-18)
+               if (is_p3v5) then
+                  tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i)+ztss_ws(i), 1.e-18)
+               else
+                  tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i), 1.e-18)
+               endif
                ztss_s2l(i) = ztss_snd(i)/tempo
 
             else
