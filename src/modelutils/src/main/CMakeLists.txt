@@ -34,4 +34,11 @@ target_link_libraries(yyencode
   ${LAPACK_LIBRARIES}
   ${BLAS_LIBRARIES} )
 
-install(TARGETS yy2global flipit yydecode yyencode RUNTIME DESTINATION bin)
+add_executable(test_integrals maintest_integrals.F90)
+target_link_libraries(test_integrals
+  modelutils
+  rmn::rmn
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES} )
+
+install(TARGETS yy2global flipit yydecode yyencode test_integrals RUNTIME DESTINATION bin)
