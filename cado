@@ -171,14 +171,15 @@ case "${name}" in
       *)  printf "\033[1;31mERROR\033[0m: Unknown command '${name}', see \`cado help\`\n"; exit 1 ;;
 esac
 
-printf "$0: running command \033[1;36m%s\033[0m\n" "${cmd}"
+printf "$0: running '${name}' command:\n"
 eval echo ${cmd}
 eval ${cmd}
 
 cmd_exit_code=$?
 if [[ ${cmd_exit_code} == 0 ]] ; then
-  printf "$0: Command '${name}' (\033[36m${cmd}\033[0m) completed successfully\n"
+  printf "$0: Command '${name}' completed successfully:\n"
 else
-  printf "$0: Command '${name}' (\033[36m${cmd}\033[0m) completed failed with code ${cmd_exit_code}\n"
+  printf "$0: Command '${name}' completed failed with code ${cmd_exit_code}:\n"
 fi
+eval echo ${cmd}
 exit ${cmd_exit_code}
