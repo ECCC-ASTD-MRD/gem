@@ -137,7 +137,7 @@ else()
   set(EC_ARCH "${BUILD_ARCH}/${EC_COMPILER}")
 endif()
 
-if(DEFINED ENV{EC_ARCH})
+if(EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
   configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/GEM_module/VERSION @ONLY)
   configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/nostage_module/VERSION @ONLY)
 endif()

@@ -75,8 +75,11 @@ endif()
 
 # To be installed only with package
 install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
-install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
 install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
+
+if (EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
+  install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
+endif()
 
 # Generate version specific nml
 install(CODE "
