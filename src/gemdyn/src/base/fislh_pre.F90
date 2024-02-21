@@ -136,9 +136,9 @@
                w1= (Ver_idz_8%m(1) + (isol_i*GVM%mc_Iz_8(i,j,1) - epsi_8)*Ver_wp_8%m(1))
                w2= (Ver_idz_8%m(1) - (isol_i*GVM%mc_Iz_8(i,j,1) - epsi_8)*Ver_wm_8%m(1))*Ver_onezero(1)
                rhsc(i,j,1) = rhsc(i,j,1) + invT_m_8* &
-                            (rhsf(i,j,1)-Ver_onezero(1)*rhsf(i,j,1))*Ver_idz_8%m(1) + &
+                            ((rhsf(i,j,1)-Ver_onezero(1)*rhsf(i,j,1))*Ver_idz_8%m(1) + &
                              isol_i*GVM%mc_Iz_8(i,j,1)* &
-                             (Ver_wp_8%m(1)*rhsf(i,j,1)+Ver_wm_8%m(1)*rhsf(i,j,1)*Ver_onezero(1)) &
+                             (Ver_wp_8%m(1)*rhsf(i,j,1)+Ver_wm_8%m(1)*rhsf(i,j,1)*Ver_onezero(1))) &
                            +(w1 * rhst(i,j,1) - w2 * rhst(i,j,1)) * Cstv_bar1_8
             end do
          end do
