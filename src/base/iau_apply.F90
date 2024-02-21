@@ -456,28 +456,28 @@ subroutine iau_apply (F_kount)
                ! Adjusting the surface value of qt1
                myptr0(1:l_ni,1:l_nj,l_nk+1) = &
                        myptr0(1:l_ni,1:l_nj,l_nk+1) + rgasd_8*Cstv_Tstr_8* &
-                       log(1 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
+                       log(1.d0 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
                            exp(GVM%lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
                            (rgasd_8*Cstv_Tstr_8) ) )
                
                ! Initializing delq with the surface value         
                delq(1:l_ni,1:l_nj)= rgasd_8*Cstv_Tstr_8* &
-                       log(1. + data0(1:l_ni,1:l_nj,1) / &
+                       log(1.d0 + data0(1:l_ni,1:l_nj,1) / &
                            exp(GVM%lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
                            (rgasd_8*Cstv_Tstr_8) ) )
 
                ! Integrating the hydrostatic relation with delq at the surface as boundary condition
-               do k = l_nk, 1
+               do k = l_nk, 1, -1
                   ! Computing delq at level k from k+1 for IAU increments
                   delq(1:l_ni,1:l_nj)=delq(1:l_ni,1:l_nj)+ grav_8*Cstv_Tstr_8* &
-                           (1./vt(1:l_ni,1:l_nj,k) - 1./tt1(1:l_ni,1:l_nj,k))/ & 
+                           (1.d0/vt(1:l_ni,1:l_nj,k) - 1.d0/tt1(1:l_ni,1:l_nj,k))/ & 
                            GVM%mc_iJz_8(1:l_ni,1:l_nj,k)
                   
                   ! Updating qt1 at level k with the IAU increments
                   myptr0(1:l_ni,1:l_nj,k) = &
                             myptr0(1:l_ni,1:l_nj,k) + rgasd_8*Cstv_Tstr_8* &
-                            log(1. + weight(F_kount)*(exp(delq(1:l_ni,1:l_nj)/ &
-                            (rgasd_8*Cstv_Tstr_8)) - 1.) )                 
+                            log(1.d0 + weight(F_kount)*(exp(delq(1:l_ni,1:l_nj)/ &
+                            (rgasd_8*Cstv_Tstr_8)) - 1.d0) )                 
                end do
             else
                myptr0(1:ni1,1:l_nj,:) = &
