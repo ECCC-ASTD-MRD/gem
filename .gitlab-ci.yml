@@ -385,7 +385,7 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
       - SRC_DIR=$(pwd)
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-gnu-11.4.0
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-gnu-11.4.0
-      - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
+      - cmake ${SRC_DIR}
       - time make -j $NCPUS
 
 deploy:staging:
