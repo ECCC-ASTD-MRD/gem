@@ -1,3 +1,2 @@
-Please read the
-[documentation](https://gitlab.science.gc.ca/MIG/gem/submitting-an-issue.md)
-on where to submit an issue for GEM
+Please read the documentation on where to submit an issue for GEM:
+    * https://gitlab.science.gc.ca/MIG/gem/blob/5.3/submitting-an-issue.md
