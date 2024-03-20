@@ -77,7 +77,6 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    character(len=64) :: tmp_S
 
    real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-   real, dimension(ni,nk) :: seloc, ficebl
 
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
@@ -86,7 +85,6 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
 
    call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0)
-   call init2nan(seloc, ficebl)
 
    nkm1 = nk-1
 
@@ -94,7 +92,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    if (phy_error_L) return
 
    call phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        seloc, delt, kount, ni, nk, trnch)
+        delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
    call radiation3(pvars, kount, ni, nk, trnch)
@@ -115,13 +113,13 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call surface1(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
-   call turbulence2(pvars, ficebl, seloc, delt, kount, ni, nk, trnch)
+   call turbulence2(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
    call precipitation4(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call prep_cw3(pvars, ficebl, ni, nk)
+   call prep_cw3(pvars, ni, nk)
    if (phy_error_L) return
 
    call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, pvars, &

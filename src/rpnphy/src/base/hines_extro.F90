@@ -14,42 +14,37 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
+module hines_extro
+   implicit none
+   private
+   public :: hines_extro5
+
+contains
+
 !/@*
-subroutine hines_extro5(nlons, nlevs, nazmth,       &
-     drag_u, drag_v, heat, diffco, flux_u, flux_v,  &
+subroutine hines_extro5(ni, nig, nkm1, naz,  &
+     drag_u, drag_v,  &
      vel_u, vel_v, bvfreq, density, visc_mol, alt,  &
-     rmswind, anis, k_alpha, sigsqmcw,              &
-     m_alpha,  mmin_alpha, sigma_t, sigmatm,        &
-     lev2, hflt, lorms, iheatcal)
-   use, intrinsic :: iso_fortran_env, only: REAL64
-   use mo_gwspectrum,     only: kstar, m_min,            &
-        &                       naz, slope, f1, f2, f3, f5, f6,  &
-        &                       icutoff, alt_cutoff, smco, nsmax
+     rmswind,  &
+     levbot, hflt)
+   use, intrinsic :: iso_fortran_env, only: REAL32
+   use mo_gwspectrum, only: m_min
+   use hines_wind, only: hines_wind1
+   use hines_wavnum, only: hines_wavnum1
+   use vert_smooth, only: vert_smooth1
+   use hines_flux, only: hines_flux4
    use phy_status, only: phy_error_L
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer :: nlons, nlevs, nazmth, lev2, hflt
+   integer, intent(in) :: ni, nig, nkm1, naz, levbot, hflt
 
-   real(REAL64) :: drag_u(nlons,nlevs),   drag_v(nlons,nlevs)
-   real(REAL64) :: heat(nlons,nlevs),     diffco(nlons,nlevs)
-   real(REAL64) :: flux_u(nlons,nlevs),   flux_v(nlons,nlevs)
-   real(REAL64) :: flux(nlons,nlevs,nazmth)
-   real(REAL64) :: vel_u(nlons,nlevs),    vel_v(nlons,nlevs)
-   real(REAL64) :: bvfreq(nlons,nlevs),   density(nlons,nlevs)
-   real(REAL64) :: visc_mol(nlons,nlevs), alt(nlons,nlevs)
-   real(REAL64) :: rmswind(nlons),      bvfb(nlons),   densb(nlons)
-   real(REAL64) :: anis(nlons,nazmth)
-   real(REAL64) :: sigma_t(nlons,nlevs), sigsqmcw(nlons,nlevs,nazmth)
-   real(REAL64) :: sigma_alpha(nlons,nlevs,nazmth), sigmatm(nlons,nlevs)
-
-   real(REAL64) :: m_alpha(nlons,nlevs,nazmth), v_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: ak_alpha(nlons,nazmth),      k_alpha(nlons,nazmth)
-   real(REAL64) :: mmin_alpha(nlons,nazmth)
-   real(REAL64) :: smoothr1(nlons,nlevs), smoothr2(nlons,nlevs)
-
-   logical :: lorms(nlons), losigma_t(nlons,nlevs)
+   real, intent(out) :: drag_u(ni,nkm1),   drag_v(ni,nkm1)
+   real(REAL32), intent(in) :: vel_u(ni,nkm1),    vel_v(ni,nkm1)
+   real(REAL32), intent(in) :: bvfreq(ni,nkm1),   density(ni,nkm1)
+   real(REAL32), intent(in) :: visc_mol(ni,nkm1), alt(ni,nkm1)
+   real(REAL32), intent(in) :: rmswind(ni)
 
    !@Authors
    !  aug. 13/95 - c. mclandress
@@ -68,8 +63,6 @@ subroutine hines_extro5(nlons, nlevs, nazmth,       &
    !              - Output -
    ! drag_u       zonal component of gravity wave drag (m/s^2).
    ! drag_v       meridional component of gravity wave drag (m/s^2).
-   ! heat         gravity wave heating (k/sec).
-   ! diffco       diffusion coefficient (m^2/sec)
    ! flux_u       zonal component of vertical momentum flux (pascals)
    ! flux_v       meridional component of vertical momentum flux (pascals)
    !              - Input -
@@ -81,18 +74,15 @@ subroutine hines_extro5(nlons, nlevs, nazmth,       &
    ! alt          altitude of momentum, density, buoyancy levels (m)
    !              (note: levels ordered so that alt(i,1) > alt(i,2), etc.)
    ! rmswind      root mean square gravity wave wind at lowest level (m/s).
-   ! anis         anisotropy factor (sum over azimuths is one)
-   ! lorms        .true. for drag computation (column selector)
    ! k_alpha      horizontal wavenumber of each azimuth (1/m).
-   ! lev2         index of last level (eg bottom) for drag calculation
-   !              (i.e., lev1 < lev2 <= nlevs).
-   ! nlons        number of longitudes.
-   ! nlevs        number of vertical levels.
-   ! nazmth       azimuthal array dimension (nazmth >= naz).
+   ! levbot       index of last level (eg bottom) for drag calculation
+   !              (i.e., lev1 < levbot <= nkm1).
+   ! ni           number of longitudes.
+   ! nig          horizontal operator scope
+   ! nkm1         number of vertical levels.
+   ! naz          azimuthal array dimension (naz >= naz).
    !              - ouput diagnostics -
    ! m_alpha      cutoff vertical wavenumber (1/m).
-   ! mmin_alpha   minimum value of cutoff wavenumber.
-   ! sigma_t      total rms horizontal wind (m/s).
    !              - work arrays -
    ! v_alpha      wind component at each azimuth (m/s) and if iheatcal=1
    !              holds vertical derivative of cutoff wavenumber.
@@ -104,124 +94,53 @@ subroutine hines_extro5(nlons, nlevs, nazmth,       &
    !              work array for icutoff = 1.
    ! losigma_t    .true. for total sigma not zero
    !*@/
-
-
-   !  internal variables.
-
-   integer :: i, n, l, lev1, il1, il2, iprint, iheatcal
-
+   
+   integer :: i, n, l
+   
+   real(REAL32) :: m_alpha(ni,naz,nkm1) ! cutoff vertical wavenumber (1/m)
+   real(REAL32) :: v_alpha(ni,naz,nkm1)
+   real(REAL32) :: densb(ni)
+   real(REAL32) :: ak_alpha(ni,naz)
    !-----------------------------------------------------------------------
 
-
-   ! range of longitude index:
-   il1 = 1
-   il2 = nlons
-
-   lev1=1              ! top level index
-
-   iprint = 0       !     * iprint     = 1 to print out various arrays.
-
-
    !  buoyancy and density at bottom level.
-
-   do i = il1,il2
-      bvfb(i)  = bvfreq(i,lev2)
-      densb(i) = density(i,lev2)
+   do i = 1,nig
+      densb(i) = density(i,levbot)
    end do
 
    !  initialize some variables
-
-   do n = 1,naz
-      do l=1,lev2
-         do i=il1,il2
-            m_alpha(i,l,n) =  m_min
+   do l=1,levbot
+      do n = 1,naz
+         do i = 1,nig
+            m_alpha(i,n,l) =  m_min
          end do
       end do
    end do
 
    !  compute azimuthal wind components from zonal and meridional winds.
-
-
-   call hines_wind ( v_alpha,   &
-        &                  vel_u, vel_v, naz,   &
-        &                  il1, il2, lev1, lev2, nlons, nlevs, nazmth )
+   call hines_wind1(v_alpha, vel_u, vel_v, levbot, ni, nig, nkm1, naz)
 
    !  calculate cutoff vertical wavenumber and velocity variances.
-
-   call hines_wavnum ( m_alpha, sigma_t, sigma_alpha, ak_alpha,   &
-        &              mmin_alpha, losigma_t,                     &
-        &              v_alpha, visc_mol, density, densb,         &
-        &              bvfreq, bvfb, rmswind, anis, lorms,        &
-        &              sigsqmcw, sigmatm,                         &
-        &              il1, il2, lev1, lev2, nlons, nlevs, nazmth)
+   call hines_wavnum1(m_alpha, ak_alpha,  &
+        &             v_alpha, visc_mol, density, densb,  &
+        &             bvfreq, rmswind,  &
+        &             levbot, ni, nig, nkm1, naz)
    if (phy_error_L) return
 
    !  smooth cutoff wavenumbers and total rms velocity in the vertical
-   !  direction nsmax times, using flux_u as temporary work array.
+   !  direction nsmax times
 
-   if (nsmax.gt.0)  then
-      do n = 1,naz
-         do l=1,lev2
-            do i=il1,il2
-               smoothr1(i,l) = m_alpha(i,l,n)
-            end do
-         end do
-         call vert_smooth (smoothr1,smoothr2, smco, nsmax,  &
-              &                       il1, il2, lev1, lev2, nlons, nlevs )
-         do l=lev1,lev2
-            do i=il1,il2
-               m_alpha(i,l,n) = smoothr1(i,l)
-            end do
-         end do
-      end do
-      call vert_smooth ( sigma_t, smoothr2, smco, nsmax, &
-           &                     il1, il2, lev1, lev2, nlons, nlevs )
-   end if
-
+   call vert_smooth1(m_alpha, levbot, ni, nig, nkm1, naz)
+      
    !  calculate zonal and meridional components of the
    !  momentum flux and drag.
+   call hines_flux4(drag_u, drag_v,        &
+        &           alt, density, densb,   &
+        &           m_alpha,  ak_alpha,    &
+        &           levbot, ni, nig, nkm1, naz, &
+        &           hflt)
 
-   call hines_flux4(flux_u, flux_v, flux, drag_u, drag_v,       &
-        &           alt, density, densb,                        &
-        &           m_alpha,  ak_alpha, k_alpha,                &
-        &           m_min, slope, naz,                          &
-        &           il1, il2, lev1, lev2, nlons, nlevs, nazmth, &
-        &           lorms, hflt)
-
-   !  cutoff drag above alt_cutoff, using bvfb as temporary work array.
-
-   if (icutoff.eq.1)  then
-      call hines_exp ( drag_u, bvfb, alt, alt_cutoff,  &
-           &                   il1, il2, lev1, lev2, nlons, nlevs )
-      call hines_exp ( drag_v, bvfb, alt, alt_cutoff,  &
-           &                   il1, il2, lev1, lev2, nlons, nlevs )
-   end if
-   if (phy_error_L) return
-
-   !  print out various arrays for diagnostic purposes.
-
-   if (iprint.eq.1)  then
-      call hines_print ( flux_u, flux_v, drag_u, drag_v, alt,     &
-           &             sigma_t, sigma_alpha, v_alpha, m_alpha,  &
-           &             1, 1, il1, il2, lev1, lev2,              &
-           &             naz, nlons, nlevs, nazmth)
-   end if
-
-   !  if not calculating heating rate and diffusion coefficient then finished.
-
-   if (iheatcal.ne.1)  return
-
-   call physeterror('hines_extro4', 'You are not supposed to call hines_heat')
-   return
-
-   !TODO: WTF: this would never be called
-   !  heating rate and diffusion coefficient.
-   call hines_heat ( heat, diffco,                                 &
-        &            alt, bvfreq, density, sigma_t, sigma_alpha,   &
-        &            flux, visc_mol, kstar, f1, f2, f3, f5, f6,    &
-        &            naz, il1, il2, lev1, lev2, nlons, nlevs,      &
-        &            nazmth, losigma_t )
-
-   return
    !-----------------------------------------------------------------------
 end subroutine hines_extro5
+
+end module hines_extro

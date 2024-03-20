@@ -105,7 +105,7 @@ contains
      real    :: pr_ratio, scale_fact, r, temp_at_obs_height
      real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
      real, pointer, dimension(:,:), contiguous :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm
-     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs, ztdmask
+     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs, ztdmaskxdt
      real, pointer, dimension(:), contiguous   :: radar_pr, radar_qi, model_rt
      
      !do nothing if LHN not in use
@@ -171,7 +171,7 @@ contains
      !model level
      MKPTR2D(sigma, sigt, pvars)
 
-     MKPTR1D(ztdmask, tdmask, pvars)
+     MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
      
      !Horizontally smoothed quantities
      !
@@ -303,7 +303,7 @@ contains
         endif
      enddo
   
-     call apply_tendencies(temp_k, tinc, ztdmask, ni, nk)
+     call apply_tendencies(temp_k, tinc, ztdmaskxdt, ni, nk)
   
      !compute increments to humidity to conserve RH
      do k = 1,nk
@@ -328,7 +328,7 @@ contains
   
      !change increment into a tendency
      zlhm = zlhm/dt
-     call apply_tendencies(qv, zlhm, ztdmask, ni, nk)
+     call apply_tendencies(qv, zlhm, ztdmaskxdt, ni, nk)
      
   end subroutine lhn2
 

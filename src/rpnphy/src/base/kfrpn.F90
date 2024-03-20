@@ -38,7 +38,7 @@ contains
     use, intrinsic :: iso_fortran_env, only: INT64
     use tdpack_const, only: CHLF, CPD, GRAV, PI, RGASD, TRPL
     use cnv_options
-    use phy_options, only: dyninread_list_S, cmt_comp_diag
+    use phy_options, only: dyninread_list_S, cmt_comp_diag, etrmin2
     use debug_mod, only: init2nan
     use tpdd, only: tpdd1
     use ens_perturb, only: ens_spp_get
@@ -356,7 +356,6 @@ contains
     external prof5
 
     ! Basic parameters
-#include "clefcon.cdk"
     include "phyinput.inc"
 
     ! User-adjustable parameters
@@ -856,7 +855,7 @@ contains
        QMIXG(I)=QMIXG(I)/DPTHMXG(I)
        QMIXG(I)=AMAX1( QMIXG(I),1.0E-10 )
        TKEMIXG(I)=TKEMIXG(I)/DPTHMXG(I)
-       TKEMIXG(I)=max(TKEMIXG(I),ETRMIN)
+       TKEMIXG(I)=max(TKEMIXG(I),etrmin2)
        ZMIX=ZMIX/DPTHMXG(I)
        PMIXG(I)=PMIXG(I)/DPTHMXG(I)
        ROCPQ=0.2854*(1.-0.28*QMIXG(I))

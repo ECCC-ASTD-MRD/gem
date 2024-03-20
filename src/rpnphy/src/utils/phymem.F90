@@ -15,7 +15,7 @@ module phymem
    !# Public functions
    public :: phymem_busidx, phymem_alloc, phymem_init
    public :: phymem_add, phymem_gmmname, phymem_busreset
-   public :: phymem_find, phymem_find_idxv
+   public :: phymem_find, phymem_find_idxv, phymem_updatemeta
    public :: phymem_getmeta, phymem_getmeta_copy, phymem_getdata
    public :: phymem_get_slabvars, phymem_get_i0_string
    
@@ -253,7 +253,6 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer :: istat
       real :: rvalue
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
@@ -702,7 +701,6 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer :: i0, nikfm, in
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       nullify(F_meta)
@@ -731,7 +729,6 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer :: i0, nikfm, in
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -748,6 +745,47 @@ contains
       return
    end function phymem_getmeta_copy
    
+   !/@*
+   function phymem_updatemeta(F_meta, F_idxv) result(F_istat)
+      implicit none
+      !@objective Return meta from pvmetas(idxv)
+      !@arguments
+      type(phymeta), intent(in) :: F_meta  !# new meta values
+      integer,       intent(in) :: F_idxv  !# pvmetas index of the field
+      !@return
+      integer :: F_istat
+      !*@/
+      !---------------------------------------------------------------
+      F_istat = PHY_ERROR
+      if (.not.isallocated) then
+         call msg(MSG_ERROR,'(phymem_updatemeta) phymem_alloc must be called before')
+         return
+      endif
+      if (F_idxv < 1 .or. F_idxv > nphyvars) then
+         call msg(MSG_ERROR,'(phymem_updatemeta) Requested F_idxv out of range')
+         return
+      endif
+
+      !#TODO: check which one can be updated, insure consistency...
+      pvmetas(F_idxv)%meta%init  = F_meta%init
+      pvmetas(F_idxv)%meta%stag  = F_meta%stag
+      pvmetas(F_idxv)%meta%wload = F_meta%wload
+      pvmetas(F_idxv)%meta%hzd   = F_meta%hzd
+      pvmetas(F_idxv)%meta%monot = F_meta%monot
+      pvmetas(F_idxv)%meta%massc = F_meta%massc
+      pvmetas(F_idxv)%meta%vmin  = F_meta%vmin
+      pvmetas(F_idxv)%meta%vmax  = F_meta%vmax
+      pvmetas(F_idxv)%meta%iname = F_meta%iname
+      pvmetas(F_idxv)%meta%oname = F_meta%oname
+      pvmetas(F_idxv)%meta%sname = F_meta%sname
+      pvmetas(F_idxv)%meta%desc  = F_meta%desc
+      pvmetas(F_idxv)%meta%flags(:) = F_meta%flags(:)
+      
+      F_istat = PHY_OK
+      !---------------------------------------------------------------
+      return
+   end function phymem_updatemeta
+
    
    !/@*
    function phymem_getdata1d(F_ptr, F_idxv, F_trnch) result(F_istat)

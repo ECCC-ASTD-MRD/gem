@@ -31,7 +31,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
-      use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ens_perturb, only: ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies
@@ -56,7 +56,7 @@ contains
       integer :: k
       real, dimension(ni) :: tradmult
       real, dimension(ni,nkm1) :: qrad, mtrad
-      real, dimension(:), pointer, contiguous :: zconerad, zconqrad, zps, ztdmask, znetrad
+      real, dimension(:), pointer, contiguous :: zconerad, zconqrad, zps, ztdmaskxdt, znetrad
       real, dimension(:,:), pointer, contiguous :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, zmrk2
       real(REAL64), dimension(ni) :: l_en0, l_pw0
       !----------------------------------------------------------------
@@ -68,7 +68,7 @@ contains
       MKPTR1D(zconqrad, conqrad, pvars)
       MKPTR1D(znetrad, netrad, pvars)
       MKPTR1D(zps, pmoins, pvars)
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
 
       MKPTR2Dm1(zgztherm, gztherm, pvars)
       MKPTR2Dm1(zqcplus, qcplus, pvars)
@@ -115,7 +115,7 @@ contains
       enddo
       
       ! Apply radiative tendencies
-      call apply_tendencies(ztplus, mtrad, ztdmask, ni, nk, nkm1)
+      call apply_tendencies(ztplus, mtrad, ztdmaskxdt, ni, nk, nkm1)
 
       ! Post-radiation budget analysis
       if (pb_residual(zconerad, zconqrad, l_en0, l_pw0, pvars, &

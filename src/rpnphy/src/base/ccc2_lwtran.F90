@@ -28,7 +28,7 @@ subroutine ccc2_lwtran4 (fu, fd, slwf, tauci, omci, &
    integer k, km1, km2, kp1, kp2, kx, kxm, kk, km3, nanu
    real cut, ubeta, epsd, epsu, zeta, taul2, ssalb
    real sf, ww, cow, tau2, sanu, xx, yy, dtr2, embk
-   real ru, wt, sx, sy, p1, p2, zz, x2, y2, x3, y3, wgrcow
+   real wt, sx, sy, p1, p2, zz, x2, y2, x3, y3, wgrcow
    real taudtr, bkins, anutau, dtrgw, fwins, fmbk
    real fu(ilg,2,lev), fd(ilg,2,lev)
    real slwf(ilg), tauci(ilg,lay), omci(ilg,lay), gci(ilg,lay), &
@@ -43,7 +43,7 @@ subroutine ccc2_lwtran4 (fu, fd, slwf, tauci, omci, &
    real(REAL64) :: dtr_vs(ilg,lay)
    integer nct(ilg), ncd(ilg,lay), ncu(ilg,lay), ncum(lay), ncdm(lay)
 
-   data  ru / 1.6487213 /
+   real, parameter :: ru = 1.6487213
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4

@@ -62,7 +62,7 @@ contains
       real :: irhow
       real, dimension(ni,nk) :: press, t0, q0, qc0
 
-      real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm, ztdmask
+      real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm, ztdmaskxdt
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
            zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns
@@ -106,7 +106,7 @@ contains
       MKPTR2D(ztshal, tshal, pvars)
       MKPTR1D(ztss, tss, pvars)
       
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR2D(zprctns, prctns, pvars)
       MKPTR2D(zpritns, pritns, pvars)
 
@@ -192,19 +192,19 @@ contains
            'MP_P3V3'/))) then
          ztplus(:,1:nkm1) = t0(:,1:nkm1)
          zhuplus(:,1:nkm1) = q0(:,1:nkm1)
-         call apply_tendencies(ztplus,ztcond,ztdmask,ni,nk,nkm1)
-         call apply_tendencies(zhuplus,zhucond,ztdmask,ni,nk,nkm1)
+         call apply_tendencies(ztplus, zhuplus, &
+              &                ztcond, zhucond, ztdmaskxdt,ni,nk,nkm1)
          if (associated(zqcplus)) then
             zqcplus(:,1:nkm1) = qc0(:,1:nkm1)
-            call apply_tendencies(zqcplus,zqcphytd,ztdmask,ni,nk,nkm1)
+            call apply_tendencies(zqcplus,zqcphytd,ztdmaskxdt,ni,nk,nkm1)
          endif
         ! Apply BECHTOLD shallow convective tendencies 
         if (conv_shal == 'BECHTOLD') then
-           call apply_tendencies(ztplus,ztshal,ztdmask,ni,nk,nkm1)
-           call apply_tendencies(zhuplus,zhushal,ztdmask,ni,nk,nkm1)
+           call apply_tendencies(ztplus, zhuplus,&
+                &                ztshal, zhushal, ztdmaskxdt,ni,nk,nkm1)
            if (associated(zqcplus)) then
-              call apply_tendencies(zqcplus,zprctns,ztdmask,ni,nk,nkm1)
-              call apply_tendencies(zqcplus,zpritns,ztdmask,ni,nk,nkm1)
+              call apply_tendencies(zqcplus, zqcplus,&
+                   &                zprctns, zpritns, ztdmaskxdt,ni,nk,nkm1)
            endif
         endif
       endif

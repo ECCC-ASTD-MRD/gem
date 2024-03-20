@@ -1,4 +1,4 @@
-!-------------------------------------a LICENCE BEGIN -------------------------
+!------------------------------------a LICENCE BEGIN -------------------------
 !Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
 !This is free but copyrighted software; you can use/redistribute/modify it under the terms
@@ -29,10 +29,11 @@ contains
        tt, sig, ps, ni, nkm1, nk, kount)
     use, intrinsic :: iso_fortran_env, only: INT64
     use debug_mod, only: init2nan
-    use tdpack_const, only: GRAV, RGASD
+    use tdpack_const, only: GRAV, RGASD, TCDK
     use phy_options
     use phybusidx
     use phymem, only: phyvar
+    use ens_perturb, only: ens_nc2d, ens_spp_get
     implicit none
 
 !!!#include <arch_specific.hf>
@@ -100,9 +101,6 @@ contains
 
     external :: cldoppro_data
 
-    integer, parameter :: IOPTREW = 1
-    integer, parameter :: IOPTREI = 2
-
     real, parameter :: THIRD = 1./3.
 
     logical, dimension(ni,nkm1) :: nocloud
@@ -112,6 +110,11 @@ contains
 
     real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
     real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
+    real, dimension(ni,nkm1) :: wexp,wimp
+    real, dimension(ni,nkm1) :: zrieff
+    real, dimension(ni) :: reifac
+    real, dimension(ni) :: rewfac
+
 
     real, dimension(:,:,:), allocatable :: iwcinmp, iwpinmp, effradi
 
@@ -122,19 +125,22 @@ contains
     real :: taulw, omlw, glw, tauli, omli, gli
     real :: tauswmp, omswmp, gswmp
     real :: taulwmp, omlwmp, glwmp
+    real :: mpcldth
+    real :: epsilon, epsilon2, betan, betad
 
     real, pointer, dimension(:,:), contiguous :: zqcmoins, zqimoins, zqnmoins, zqgmoins
     real, pointer, dimension(:,:), contiguous :: zqti1m, zqti2m, zqti3m, zqti4m
     real, pointer, dimension(:,:), contiguous :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
     real, pointer, dimension(:), contiguous :: ztopthw,ztopthi
-    real, pointer, dimension(:), contiguous :: zmg,zml
+    real, pointer, dimension(:), contiguous :: zmg,zml,zdlat
     real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
-         zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4
+         zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4,zmrk2
     !----------------------------------------------------------------
     call msg_toall(MSG_DEBUG, 'cldoppro_MP [BEGIN]')
 
+    MKPTR1D(zdlat, dlat, pvars)
     MKPTR1D(zmg, mg, pvars)
     MKPTR1D(zml, ml, pvars)
     MKPTR1D(ztiwp, tiwp, pvars)
@@ -175,9 +181,11 @@ contains
     MKPTR2Dm1(zsigw, sigw, pvars)
     MKPTR2Dm1(zsnow, qnplus, pvars)
     MKPTR2Dm1(ztmoins, tmoins, pvars)
+    MKPTR2D(zmrk2, mrk2, pvars)
 
-    call init2nan(aird, rew, rei, rec_cdd, vs1, dp)
+    call init2nan(zrieff,aird, rew, rei, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
+    call init2nan(reifac, rewfac)
 
     ! Allocate cateory-dependent space
     if (stcond(1:5)=='MP_P3')  mpcat = p3_ncat
@@ -207,6 +215,12 @@ contains
     iwcinmps = 0.0
     iwcinmp  = 0.0
     lwcinmp  = 0.0
+
+    if (rad_mpagg_l) then ! if relative weighting is used, also use standard cldfth
+      mpcldth  = cldfth
+    else
+      mpcldth  = 0.01
+    endif
 
     ! assume implicit sources have been agregated into zlwc and ziwc in subroutine prep_cw_MP
     do k=1,nkm1
@@ -377,12 +391,11 @@ contains
        enddo
     endif
 
+    ! Filter exp and imp clouds fracs below mpcldth
+    ! Normalize water contents to get in-cloud values
     DO_K: do k=1,nkm1
        do i=1,ni
-
-          ! Normalize water contents to get in-cloud values
-!          if (cldfmp(i,k) < cldfth) then ! must revert to a18 value until agregation of implicit amd explicit op properties problem is fixed
-          if (cldfmp(i,k) < .01) then
+          if (cldfmp(i,k) < mpcldth) then 
              liqwcin(i,k) = 0.
              icewcin(i,k) = 0.
              cldfmp(i,k) = 0.
@@ -390,17 +403,18 @@ contains
              liqwcin(i,k) = liqwcin(i,k)/cldfmp(i,k)
              icewcin(i,k) = icewcin(i,k)/cldfmp(i,k)
           endif
+
           ! remove ice water content if effective radius >= 1e-4,
-          ! since it will not be seen by radiation
+          ! since it will not be seen by radiation 
+          !best choice? how frequent? rei is limited to 70microns lower down
+          ! test showed practically no impact of this filtering
           do l=1,mpcat
              if (kount == 0) effradi(i,k,l) = 5.e-5
-             if (effradi(i,k,l) >= 1.e-4) then
+             if (effradi(i,k,l) >= 1.e-4) then  
                 iwcinmp(i,k,l) = 0.0
              endif
           enddo
-
-!          if (cldfxp(i,k) < cldfth) then ! must revert to a18 value until agregation of implicit amd explicit op properties problem is fixed
-          if (cldfxp(i,k) < .01) then
+          if (cldfxp(i,k) < mpcldth) then 
              lwcinmp(i,k) = 0.
              do l=1,mpcat
                 iwcinmp(i,k,l) = 0.0
@@ -412,7 +426,6 @@ contains
                 iwcinmp(i,k,l) = iwcinmp(i,k,l)/cldfxp(i,k)
              enddo
           endif
-
        end do
     end do DO_K
 
@@ -420,7 +433,7 @@ contains
 
     do i=1,ni
        dp(i,1) = 0.5*(sig(i,1) + sig(i,2))*rec_grav*1000.
-       dp(i,nkm1) = 1. - 0.5*(sig(i,nkm1) + sig(i,nkm1-1))*rec_grav*1000.
+       dp(i,nkm1) = (1. - 0.5*(sig(i,nkm1) + sig(i,nkm1-1)))*rec_grav*1000.
        dp(i,1) = max(dp(i,1)*ps(i), 0.)
        dp(i,nkm1) = max(dp(i,nkm1)*ps(i), 0.)
     end do
@@ -466,20 +479,40 @@ contains
           if (liqwpin(i,k) <= wpth .and. icewpin(i,k) <= wpth) then
              cldfmp(i,k) = 0.
           endif
-          nocloud(i,k) = (liqwpin(i,k)+lwpinmp(i,k)+icewpin(i,k)+iwpinmps(i,k) <= wpth)
-          ztlwp(i)     = ztlwp(i)   + liqwpin(i,k)*cldfmp(i,k) + lwpinmp(i,k)*cldfxp(i,k)
-          ztiwp(i)     = ztiwp(i)   + icewpin(i,k)*cldfmp(i,k) + iwpinmps(i,k)*cldfxp(i,k)
-          zlwcrad(i,k) = liqwcin(i,k)*cldfmp(i,k) + lwcinmp(i,k)*cldfxp(i,k)
-          ziwcrad(i,k) = icewcin(i,k)*cldfmp(i,k) + iwcinmps(i,k)*cldfxp(i,k)
-          cldfrac(i,k) = max(min(cldfmp(i,k)+cldfxp(i,k), 1.0), 0.0)                    ! no overlap=ops
+!          nocloud(i,k) = (liqwpin(i,k)+lwpinmp(i,k)+icewpin(i,k)+iwpinmps(i,k) <= wpth)    ! would be more coherent if based on cldfxp and cldfmp
+          nocloud(i,k) = (cldfxp(i,k) < mpcldth .and. cldfmp(i,k) < mpcldth)    ! would be more coherent if based on cldfxp and cldfmp
+          ztlwp(i)     = ztlwp(i)   + liqwpin(i,k)*cldfmp(i,k) + lwpinmp(i,k)*cldfxp(i,k)  !diag output
+          ztiwp(i)     = ztiwp(i)   + icewpin(i,k)*cldfmp(i,k) + iwpinmps(i,k)*cldfxp(i,k) !diag output
+          zlwcrad(i,k) = liqwcin(i,k)*cldfmp(i,k) + lwcinmp(i,k)*cldfxp(i,k)               !diag output
+          ziwcrad(i,k) = icewcin(i,k)*cldfmp(i,k) + iwcinmps(i,k)*cldfxp(i,k)              !diag output
+          cldfrac(i,k) = max(min(cldfmp(i,k)+cldfxp(i,k), 1.0), 0.0)       !no overlap=ops !diag output
 !          cldfrac(i,k) = max(min(max(cldfmp(i,k),cldfxp(i,k)), 1.0), 0.0)                ! max overlap
 !          cldfrac(i,k) = min(1., max(0.,  1. - (1.-cldfmp(i,k))*(1.-cldfxp(i,k))))       ! random overlap
           if (nocloud(i,k)) then
              cldfrac(i,k) = 0.0
+             zlwcrad(i,k) = 0.0
+             ziwcrad(i,k) = 0.0
           endif
           zcldrad(i,k) = cldfrac(i,k)
        end do
     end do
+
+    do k=1,nkm1
+      do i=1,ni
+          wexp(i,k) = 1.
+          wimp(i,k) = 1.
+      end do
+    end do
+    if (rad_mpagg_l) then ! use relative weighting to combine optical thicknesses of imp and exp clouds
+     do k=1,nkm1
+       do i=1,ni
+           if((cldfmp(i,k)+cldfxp(i,k)) >= mpcldth) then
+             wexp(i,k) = cldfxp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
+             wimp(i,k) = cldfmp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
+           endif
+       end do
+     end do
+    endif
 
     !     conversion d'unites : tlwp et tiwp en kg/m2
     do i=1,ni
@@ -494,38 +527,91 @@ contains
        ztopthi(i) = 0.0
     end do
 
-    ! begin-code : FOR EFFECTIVE RADII OF IMPLICIT CLOUDS (NON-mp SOURCES)
-    !           For calculation of effective radius of water clouds,
-    !           set cdd=cloud droplet concentration per cm^3 to 100 over oceans and 500 over land
-    !...   ioptrew=1 : as in newrad - from h. barker, based on aircraft data, range 4-17 micron from slingo
+! choice of effective radius for implicit water clouds
 
     do k = 1, nkm1
        do i = 1, ni
+    !     for BARKER case, set cloud droplet concentration per cm^3 to 100 over oceans and 500 over land
           if (zmg(i) <= 0.5 .and. zml(i) <= 0.5) then
              rec_cdd(i,k) = 0.01
           else
              rec_cdd(i,k) = 0.002
           endif
           aird(i,k) = sig(i,k) * ps(i) / ( tt(i,k) * RGASD )  !aird is air density in kg/m3
-          rew(i,k) = (liqwcin(i,k) * aird(i,k) * rec_cdd(i,k))**THIRD
-          rew(i,k) = min(max(4., 754.6 * rew(i,k)), 17.0)
        end do
     end do
 
-    !...   choice of effective radius for implicit ice clouds
-    !...   ioptrei=1 : from cccma (icewcin must be in g/m3)
-    !...   ioptrei=2 : constant in microns
+    select case (rad_cond_rew)
+      case ('BARKER')
+         ! Radius as in newrad: from H. Barker based on aircraft data (range 4-17um from Slingo)
+         rew(:,:) = min(max(4., 754.6 * (liqwcin*aird*rec_cdd)**THIRD), 17.0)
+      case ('NEWRAD')
+         ! Radius as in newrad: corresponds to so called new optical properties
+         vs1(:,:) = (1.0 + liqwcin(:,:) * 1.e4) &
+              * liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
+         rew(:,:) =  min(max(2.5, 3000. * vs1**THIRD), 50.0)
+      case ('ROTSTAYN03')
+         ! Radius according to Rotstayn and Liu (2003)
+         do k = 1, nkm1
+            do i = 1, ni
+               epsilon =  1.0 - 0.7 * exp(- 0.001 / rec_cdd(i,k))
+               epsilon2 =  epsilon * epsilon
+               betad =  1.0 + epsilon2
+               betan =  betad + epsilon2
+               rew(i,k) = 620.3504944*((betan*betan*liqwcin(i,k)*aird(i,k)) &
+                    / (betad / rec_cdd(i,k)) )**third
+               rew(i,k) =  min (max (2.5, rew(i,k)), 17.0)
+            end do
+         end do
+      case DEFAULT
+         ! Radius is a user-specified constant (in microns)
+         rew = rew_const
+    end select
 
-    if (ioptrei == 1) then
-       do k = 1, nkm1
-          do i = 1, ni
-             rei(i,k) = (1000. * icewcin(i,k) * aird(i,k))**0.216
-             rei(i,k) = max(min(83.8*rei(i,k), 50.0), 20.0)
-          end do
-       end do
-    elseif (ioptrei == 2) then
-       rei = 30.
-    endif
+      ! Adjust the effective radius using stochastic perturbations
+      rewfac(:) = ens_spp_get('rew_mult', zmrk2, default=1.)
+      do k=1, nkm1
+         rew(:,k) = rewfac(:) * rew(:,k)
+      enddo
+
+!...   choice of effective radius for implicit ice clouds
+
+     ! Effective radius of crystals in ice clouds
+      select case (rad_cond_rei)
+      case ('CCCMA')
+         ! Units of icewcin must be in g/m3 for this parameterization of rei (in microns)
+         zrieff(:,:) = (1000. * icewcin * aird)**0.216
+         where (icewcin(:,:) >= 1.e-9)
+            zrieff(:,:) = 83.8 * zrieff(:,:)
+         elsewhere
+            zrieff(:,:) = 20.
+         endwhere
+         rei(:,:) =  max(min(zrieff(:,:), 50.0), 20.0)
+      case ('SIGMA')
+         ! Radius varies from 60um (near-surface) to 15um (upper-troposphere)
+         rei(:,:) = max(sig(:,:)-0.25, 0.0)*60. + 15.
+      case ('ECMWF')
+         ! see IFS documentation for Cy47R3 -eqns 2.74 and 2.75 - beware of parenthesis error for first term
+         do k = 1, nkm1
+            do i = 1, ni
+               zrieff(i,k) = 1000. * icewcin(i,k) * aird(i,k) ! convert to gm-3
+               zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
+               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*abs(zdlat(i)))) ! impose a lat dependent min
+               rei(i,k) = 0.64952*zrieff(i,k)
+               rei(i,k) =  min(rei(i,k), 70.0) ! necessary to avoid crashes
+            enddo
+         enddo
+      case DEFAULT
+         ! Radius is a user-specified constant (in microns)
+         rei(:,:) = rei_const
+      end select
+
+      ! Adjust the effective radius using stochastic perturbations
+      reifac(:) = ens_spp_get('rei_mult', zmrk2, default=1.)
+      do k=1, nkm1
+         rei(:,k) = reifac(:) * rei(:,k)
+      enddo
+
     ! end-code : FOR EFFECTIVE RADII OF IMPLICIT CLOUDS (NON-mp SOURCES)
     !
     !----------------------------------------------------------------------
@@ -557,9 +643,9 @@ contains
                 omcs(i,k,j)  = 0.
                 gcs(i,k,j)   = 0.
              else
-                rew2 = rew(i,k) * rew(i,k)
-                rew3 = rew2 * rew(i,k)
                 if (liqwpin(i,k) > wpth) then  !implicit
+                   rew2 = rew(i,k) * rew(i,k)
+                   rew3 = rew2 * rew(i,k)
                    tausw = liqwpin(i,k) * &
                         (aws(1,j) + aws(2,j) / rew(i,k) + &
                         aws(3,j) / rew2 + aws(4,j) / rew3)
@@ -572,7 +658,6 @@ contains
                    omsw  = 0.
                    gsw   = 0.
                 endif
-
 
                 if (icewpin(i,k) > wpth) then  !implicit
                    dg   = 1.5396 * rei(i,k)
@@ -589,11 +674,10 @@ contains
                    gsi   = 0.
                 endif
 
-
                 if (lwpinmp(i,k) > wpth) then  !explicit
                    rew1 = zeffradc(i,k) * 1.e+6
                    if (kount == 0) rew1 = 10.    ![microns] assign value at step zero (in case QC is non-zero at initial conditions)
-                   rew1 = min(max(4., rew1), 40.0)
+                   rew1 = min(max(4., rew1), 40.0) !where does this 40 come from?
                    rew2 = rew1*rew1
                    rew3 = rew1*rew1*rew1
                    tauswmp = lwpinmp(i,k) * &
@@ -630,22 +714,23 @@ contains
 
                 !PV agregate SW optical properties for liq-imp + ice-imp + liq-exp + ice-exp
 
-                ! old recipe - see cldoppro3
+                ! cccma recipe  
                 !              taucs(i,k,j)  = tausw + tausi
                 !                y1          = omsw * tausw
                 !                y2          = omsi * tausi
                 !                omcs(i,k,j) = (y1 + y2) / taucs(i,k,j)
                 !                gcs (i,k,j) = (y1 * gsw + y2 * gsi) / (y1 + y2)
 
-                y1 = tausw + tausi
-                y2 = tausw*omsw + tausi*omsi
-                y3 = tausw*omsw*gsw + tausi*omsi*gsi
+                tausw=tausw*wimp(i,k)
+                tausi=tausi*wimp(i,k)
+                tauswmp=tauswmp*wexp(i,k)
 
-                y1 = y1 + tauswmp
-                y2 = y2 + tauswmp*omswmp
-                y3 = y3 + tauswmp*omswmp*gswmp
+                y1 = tausw + tausi + tauswmp
+                y2 = tausw*omsw + tausi*omsi + tauswmp*omswmp
+                y3 = tausw*omsw*gsw + tausi*omsi*gsi + tauswmp*omswmp*gswmp
 
                 do l=1,mpcat
+                   tausimp(l)=tausimp(l)*wexp(i,k)
                    y1 = y1 +  tausimp(l)
                    y2 = y2 +  tausimp(l)*omsimp(l)
                    y3 = y3 +  tausimp(l)*omsimp(l)*gsimp(l)
@@ -660,9 +745,8 @@ contains
                    omcs(i,k,j) = 0.
                    gcs (i,k,j) = 0.
                 endif
-                !
-                !     calculate the optical depth for water and ice cloud in visible
-                !
+
+                !  optical depth for water and ice cloud in visible for output
                 if (j == 1) then
                    ztopthw(i) = ztopthw(i) + tausw + tauswmp
                    ztopthi(i) = ztopthi(i) + tausi
@@ -685,10 +769,9 @@ contains
                 omcl(i,k,j)  = 0.
                 gcl(i,k,j)   = 0.
              else
-                rew2 = rew(i,k) * rew(i,k)
-                rew3 = rew2 * rew(i,k)
-
                 if (liqwpin(i,k) > wpth) then    !implicit
+                   rew2 = rew(i,k) * rew(i,k)
+                   rew3 = rew2 * rew(i,k)
                    taulw = liqwpin(i,k) * (awl(1,j) + awl(2,j) * rew(i,k)+ &
                         awl(3,j) / rew(i,k) + awl(4,j) / rew2 + &
                         awl(5,j) / rew3)
@@ -772,15 +855,15 @@ contains
 
                 !PV agregate LW optical properties for liq-imp + ice-imp + liq-exp + ice-exp
 
-                y1 = taulw + tauli
-                y2 = taulw*omlw + tauli*omli
-                y3 = taulw*omlw*glw + tauli*omli*gli
-
-                y1 = y1 + taulwmp
-                y2 = y2 + taulwmp*omlwmp
-                y3 = y3 + taulwmp*omlwmp*glwmp
+                taulw=taulw*wimp(i,k)
+                tauli=tauli*wimp(i,k)
+                taulwmp=taulwmp*wexp(i,k)
+                y1 = taulw + tauli + taulwmp
+                y2 = taulw*omlw + tauli*omli + taulwmp*omlwmp
+                y3 = taulw*omlw*glw + tauli*omli*gli + taulwmp*omlwmp*glwmp
 
                 do l=1,mpcat
+                   taulimp(l)=taulimp(l)*wexp(i,k)
                    y1 = y1 +  taulimp(l)
                    y2 = y2 +  taulimp(l)*omlimp(l)
                    y3 = y3 +  taulimp(l)*omlimp(l)*glimp(l)

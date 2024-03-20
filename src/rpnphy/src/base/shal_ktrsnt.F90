@@ -52,7 +52,7 @@ contains
 #include "phymkptr.hf"
 
     ! Local variables
-    real, pointer, dimension(:), contiguous :: psm, ztdmask, &
+    real, pointer, dimension(:), contiguous :: psm, ztdmaskxdt, &
          zkshal, zconesc, zconqsc, ztlcs, ztscs
     real, pointer, dimension(:,:), contiguous :: qqm, sigma, ttp, &
          zgztherm, zhushal, ztshal, zfsc, zqlsc, zqssc, zqcz, &
@@ -67,7 +67,7 @@ contains
 
     ! Extract bus information
     MKPTR1D(psm, pmoins, pvars)
-    MKPTR1D(ztdmask, tdmask, pvars)
+    MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
     MKPTR1D(zkshal, kshal, pvars)
     MKPTR1D(zconesc, conesc, pvars)
     MKPTR1D(zconqsc, conqsc, pvars)
@@ -109,8 +109,8 @@ contains
     endif
 
     ! Apply shallow convective tendencies to state variables
-    call apply_tendencies(ttp, ztshal, ztdmask, ni, nkm1, nkm1)
-    call apply_tendencies(qqp, zhushal, ztdmask, ni, nkm1, nkm1)
+    call apply_tendencies(ttp,    qqp, &
+         &                ztshal, zhushal, ztdmaskxdt, ni, nkm1, nkm1)
 
     ! Post-scheme energy budget analysis
     if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, pvars, &

@@ -129,7 +129,6 @@ contains
       external prof5
 
       ! Basic parameters
-#include "clefcon.cdk"
       include "phyinput.inc"
 
       ! User-adjustable parameters
