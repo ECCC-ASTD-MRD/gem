@@ -7,8 +7,8 @@ MAINTAINER : Chantal Pic - Chantal.Pic@ec.gc.ca
 URL        : https://gitlab.science.gc.ca/MIG/gem
 
 # Components
-modelutils = 1.8.0-a3
-rpnphy = 6.3.0-a4
+modelutils = 1.8.0-a6
+rpnphy = 6.3.0-a6
 gemdyn = 5.3.0-a5
 mach = 3.2.0-rc3
 
