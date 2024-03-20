@@ -42,7 +42,7 @@ contains
       integer dat2,dat3,istat,date0
       !------------------------------------------------------------------
       F_date_S = ' '
-      if (F_date <= 0) then
+      if (F_date == RMN_ERR) then
          write(F_date_S,"(i16)") F_date
          return
       endif
@@ -57,7 +57,7 @@ contains
       mm = mod(dat3,1000000)/10000
       ss = mod(dat3,10000)/100
 
-      write(F_date_S,"(i4.2,i2.2,i2.2,'.',i2.2,i2.2,i2.2)") yy,mo,dd,hh,mm,ss
+      write(F_date_S,"(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)") yy,mo,dd,hh,mm,ss
       !------------------------------------------------------------------
       return
    end function cmcdate_toprint
@@ -117,7 +117,7 @@ contains
       integer :: month,istat
       !------------------------------------------------------------------
       F_month = RMN_ERR
-      if (F_date <= 0) return
+      if (F_date == RMN_ERR) return
       date_S = cmcdate_toprint(F_date)
       month_S = date_S(5:6)
       read(month_S,*,iostat=istat) month
@@ -137,7 +137,7 @@ contains
       integer :: year,istat
       !------------------------------------------------------------------
       F_year = RMN_ERR
-      if (F_date <= 0) return
+      if (F_date == RMN_ERR) return
       date_S = cmcdate_toprint(F_date)
       year_S = date_S(1:4)
       read(year_S,*,iostat=istat) year

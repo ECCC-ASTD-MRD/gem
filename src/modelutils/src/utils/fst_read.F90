@@ -33,6 +33,10 @@ module fst_read_mod
    public :: fst_find, fst_read, fst_rdhint, fst_get_hgridid, fst_get_gridid, &
         fst_get_vgrid, fst_getmeta, fst_checkalloc, fst_checkalloc2
    public :: fst_find_vect, fst_find_0, fst_find_3d_vect, fst_find_3d_0
+
+   ! Public module var
+   logical, save, public :: fst_climate_mode = .false.
+   
    ! Public constants
    integer, parameter, public :: FST_FIND_LT    = -2 !find nearest datev .lt. F_datev
    integer, parameter, public :: FST_FIND_LE    = -1 !find nearest datev .le. F_datev
@@ -101,7 +105,7 @@ contains
       integer :: i,istat,keylist(NMAX),nkeys,keys2(NMAX),nkeys2,&
            datevfuzz,fuzzopr,min_time_res
       integer(INT64) :: dist64, dist064
-      integer :: ni1,nj1,nk1, datev, datev0, searchdate, &
+      integer :: ni1,nj1,nk1, datev, datev0, searchdate, searchyear, &
            dateo,deet,npas,nbits, datyp, ip1, ip2, ip3, &
            ig1, ig2, ig3, ig4, swa, lng, dltf, ubc, extra1, extra2, extra3
 !!$      real :: zp1
@@ -129,8 +133,9 @@ contains
 
       searchdate = F_datev
       min_time_res = FST_MIN_TIME_RES
-      if (searchdate >= 0) then
-         if (cmcdate_year(searchdate) <= 1980) &
+      if (searchdate /= RMN_ERR) then
+         searchyear = cmcdate_year(searchdate)
+         if ((searchyear <= 1980) .or. (searchyear >= 2236)) &
               min_time_res = FST_MIN_TIME_RES_PRE80
          select case(fuzzopr)
          case(FST_FIND_GT)
@@ -145,56 +150,76 @@ contains
       endif
 
       ip1 = F_ip1
-      if (ip1 == 1200) ip1 = 0
-      if (ip1 <= 0) then
-         F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
-              ip1,F_ip2,F_ip3,typvar_S,F_nomvar)
-         if (RMN_IS_OK(F_key)) then
+      if (F_ip1 == 1200) ip1 = 0
+
+      IF_CLIMATE: if (fst_climate_mode) then
+
+         if (F_ip1 == 0) ip1 = 1200
+         if (searchdate == RMN_ANY_DATE .or. datevfuzz <= 0) then
+            if (F_ip1 >= 0) ip1 = priv_ip1_all(ip1)
+            F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
+                 ip1,F_ip2,F_ip3,typvar_S,F_nomvar)
+            if (RMN_IS_OK(F_key)) then
+               F_datev = searchdate
+               write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+                    ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+                    '] [key=',F_key,']'
+            else
+               write(msg_S,'(a,3i10,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
+                    ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,']'
+            endif
+            call msg(MSG_DEBUG,msg_S)
+            return
+         endif
+
+      else  !IF_CLIMATE
+
+         if (ip1 <= 0) then
+            F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
+                 ip1,F_ip2,F_ip3,typvar_S,F_nomvar)
+            if (RMN_IS_OK(F_key)) then
+               F_datev = searchdate
+!!$            if (typvar_S /= RMN_ANY_TYP .and. present(F_typvar_S)) then
+!!$               F_typvar_S =  !#TODO:
+!!$            endif
+               write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+                    ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+                    '] [key=',F_key,']'
+               call msg(MSG_DEBUG,msg_S)
+               return
+            endif
+         endif
+
+         ip1 = F_ip1
+         if (F_ip1 == 0) ip1 = 1200
+         if (F_ip1 >= 0) then
+            ip1 = priv_ip1_all(ip1)
+            F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
+                 ip1,F_ip2,F_ip3,typvar_S,F_nomvar)
+         endif
+
+         if (RMN_IS_OK(F_key) .or. datevfuzz <= 0) then
             F_datev = searchdate
 !!$            if (typvar_S /= RMN_ANY_TYP .and. present(F_typvar_S)) then
 !!$               F_typvar_S =  !#TODO:
 !!$            endif
-            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
-                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
-                 '] [key=',F_key,']'
-            call msg(MSG_DEBUG,msg_S)
+            if (RMN_IS_OK(F_key)) then
+               write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
+                    ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
+                    '] [key=',F_key,']'
+               call msg(MSG_DEBUG,msg_S)
+            else
+               write(msg_S,'(a,3i10,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
+                    ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,']'
+               call msg(MSG_DEBUG, msg_S)
+            endif
             return
          endif
-      endif
 
-      ip1 = F_ip1
-      if (ip1 == 0) ip1 = 1200
-      if (F_ip1 >= 0) then
-!!$         call convip_plus(ip1, zp1, kind, RMN_CONV_IP2P, dummy_S, .not.RMN_CONV_USEFORMAT_L)
-!!$         ip1 = ip1_all(zp1,kind)
-         ip1 = priv_ip1_all(ip1)
-         F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
-              ip1,F_ip2,F_ip3,typvar_S,F_nomvar)
-!!$            F_key = fstinf(F_fileid,ni1,nj1,nk1,searchdate,RMN_ANY_ETK,  &
-!!$                 ip1_all(zp1,kind),F_ip2,F_ip3,typvar_S,F_nomvar)
-      endif
-
-      if (RMN_IS_OK(F_key) .or. datevfuzz <= 0) then
-         F_datev = searchdate
-!!$            if (typvar_S /= RMN_ANY_TYP .and. present(F_typvar_S)) then
-!!$               F_typvar_S =  !#TODO:
-!!$            endif
-         if (RMN_IS_OK(F_key)) then
-            write(msg_S,'(a,3i10,a,i12,a)') '(fst) Found: '//nomvar_S(1:4)// &
-                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3, &
-                 '] [key=',F_key,']'
-            call msg(MSG_DEBUG,msg_S)
-         else
-            write(msg_S,'(a,3i10,a)') '(fst) Not Found: '//nomvar_S(1:4)// &
-                 ' [datev='//cmcdate_toprint(F_datev)//'] [ip123=',F_ip1,F_ip2,F_ip3,']'
-            call msg(MSG_DEBUG, msg_S)
-         endif
-         return
-      endif
+      endif IF_CLIMATE
 
       nkeys = 0
       if (F_ip1 >= 0) then
-!!$         ip1 = ip1_all(zp1,kind)
          ip1 = priv_ip1_all(ip1)
          istat = fstinl(F_fileid,ni1,nj1,nk1,RMN_ANY_DATE,RMN_ANY_ETK,  &
               ip1,F_ip2,F_ip3,typvar_S,F_nomvar, &

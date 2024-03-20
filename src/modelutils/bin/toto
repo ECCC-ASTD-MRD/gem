@@ -1,0 +1,31 @@
+#!/usr/bin/env python2
+
+def sol_test_run(name,desc,result,alpha=5, beta=0.002, L=250, nk=80, dz=100, zdep=100, a=250,dir=1, zexp=0):
+    ni=250
+    print("   call run_loop('{:7}', {:-2.1f}, {:-5.3f}, {:-3.1f}, {:-3d}, {:-3d}, {:-3.1f}, {:-6.1f}, {:-6.1f}, {:-2d}, {:-4.2f})"
+          .format(name, alpha, beta, L, ni, nk, dz, zdep, a, dir, zexp))
+
+if __name__ == "__main__":
+    sol_test_run('default', '', 0)    
+    sol_test_run('dmx', 'downwards interior local maximum', 452, a=100, zdep=520, dir=-1)
+    sol_test_run('umxf', 'upwards first layer local maximum', 117, a=50)
+    sol_test_run('umnf', 'upwards first layer local minimum', 224, a=-50, zdep=210)
+    sol_test_run('uincf', 'upwards first layer monotonic increase', 285, a=100, zdep=250)
+    sol_test_run('udecf', 'upwards first layer monotonic decrease', 190, a=-120, zdep=150)
+    sol_test_run('umx', 'upwards interior local maximum', 620, a=400, zdep=180)
+    sol_test_run('umn', 'upwards interior local minimum', 244, a=-125, zdep=80)
+    sol_test_run('uinc', 'upwards monotonic increase', 588, a=300, zdep=100)
+    sol_test_run('udec', 'upwards monotonic decrease', 365, a=-300, L=450, zdep=280)
+###    sol_test_run('utop', 'upwards top with INT_NOSOL return code', 1000, a=700, zdep=350,stat=2)
+    sol_test_run('dmxf', 'downwards first layer local maximum', 380, a=20, zdep=395, dir=-1)
+    sol_test_run('dmnf', 'downwards first layer local minimum', 754, a=-100, zdep=780, dir=-1)
+    sol_test_run('dincf', 'downwards first layer monotonic increase', 410, a=75, zdep=480, dir=-1)
+    sol_test_run('ddecf', 'downwards first layer monotonic decrease', 529, a=-200, zdep=580, L=400, dir=-1)
+    sol_test_run('dmx', 'downwards interior local maximum', 380, a=100, zdep=520, dir=-1)
+    sol_test_run('dmn', 'downwards interior local minimum', 270, a=-200, zdep=460, dir=-1)
+    sol_test_run('dinc', 'downwards monotonic increase', 341, a=400, zdep=460, L=500, dir=-1)
+    sol_test_run('ddec', 'downwards monotonic decrease', 520, a=-200, zdep=740, dir=-1)
+###    sol_test_run('dbot', 'downwards bottom with INT_NOSOL return code', 100, a=-300, zdep=450, dir=-1, stat=2)
+    sol_test_run('vuinc', 'variable upwards interior monotonic increase', 768, a=250, zdep=400, zexp=.05, L=600)
+    sol_test_run('vdmnf', 'variable downwards first layer local minimum', 1076, a=-150, zdep=1120, dir=-1, zexp=.05, L=550)
+
