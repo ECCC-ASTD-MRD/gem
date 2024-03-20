@@ -42,7 +42,7 @@ contains
       use phy_status, only: phy_error_L
       use phybusidx
       use phymem, only: phyvar
-      use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ens_perturb, only: ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -105,7 +105,6 @@ contains
 #include <rmn/msg.h>
 
       include "surface.cdk"
-      include "clefcon.cdk"
       include "ozopnt.cdk"
       include "radiation.cdk"
       include "nbsnbl.cdk"
@@ -262,7 +261,7 @@ contains
       endif
       call diagno_clouds2(pvars, taucs, taucl,  &
              zgztherm, cldfrac, &
-             temp, sig, ps, trnch, ni, &
+             temp, sig, ps, trnch, &
              ni, nkm1, nk)
 
       ! pour les pas de temps radiatifs

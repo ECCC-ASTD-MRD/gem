@@ -67,16 +67,16 @@ contains
       nkext = size(yi,dim=2)+PCHIP_EXT
 
       ! Invert input arrays if necessary
-      if (pchip_extend(yi,zi,y,z) /= PCHIP_OK) then
+      if (pchip_extend(yi,zi,y,z,n,nko,nkext) /= PCHIP_OK) then
          call msg(MSG_WARNING,'(integral_pchip) Error returned by pchip_extend')
          return
       endif
 
       ! Compute layer thickness and deltas
-      istat = pchip_layers(y,z,h,del)
+      istat = pchip_layers(y,z,h,del,n,nkext)
 
       ! Compute interpolating polynomial coefficients
-      istat = pchip_coef(h,del,b,c,d)
+      istat = pchip_coef(h,del,b,c,d,n,nkext)
 
       ! Compute derivatives
       do i=1,n

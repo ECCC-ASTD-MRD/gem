@@ -22,8 +22,7 @@ module turbulence
 contains
 
    !/@*
-   subroutine turbulence2(pvars, ficebl, seloc, cdt1, &
-        kount, ni, nk, trnch)
+   subroutine turbulence2(pvars, cdt1, kount, ni, nk, trnch)
       use debug_mod, only: init2nan
       use tdpack_const, only: RGASD, CPD
       use boundary_layer, only: boundary_layer4
@@ -34,6 +33,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
+      use vintphy, only: vint_mom2thermo
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -50,8 +50,6 @@ contains
 
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: trnch, kount, ni, nk
-      real, dimension(ni,nk), intent(inout) :: ficebl
-      real, dimension(ni,nk), intent(in) :: seloc
       real, intent(in) :: cdt1
 
       !@Author L. Spacek (Nov 2011)
@@ -64,7 +62,7 @@ contains
       integer :: istat, istat1, j, k
       real dsig
       real, dimension(ni,nk) :: dkem, dket, rho
-      real, dimension(:), pointer, contiguous :: ztsrad, zpplus, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmask
+      real, dimension(:), pointer, contiguous :: ztsrad, zpplus, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmaskxdt
       real, dimension(:,:), pointer, contiguous :: zutofd, zvtofd, zgzmom, zumoins, zvmoins, zz0, zuplus, zvplus, zsigt, ztplus, zttofd, zsigm
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
@@ -74,7 +72,7 @@ contains
       ! Reshape bus entries
       MKPTR1D(zpplus, pplus, pvars)
       MKPTR1D(zsigs, sigs, pvars)
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(ztsrad, tsrad, pvars)
       MKPTR1D(zutautofd, utautofd, pvars)
       MKPTR1D(zvtautofd, vtautofd, pvars)
@@ -106,9 +104,8 @@ contains
             return
          endif
 
-         call apply_tendencies(zuplus, zutofd, ztdmask, ni, nk, nk)
-         call apply_tendencies(zvplus, zvtofd, ztdmask, ni, nk, nk)
-         
+         call apply_tendencies(zuplus, zvplus, &
+              &                zutofd, zvtofd, ztdmaskxdt, ni, nk, nk)
          ! dissipative heating calculations
          
          dkem = zuplus(:,1:nk) * zutofd(:,1:nk) + &
@@ -119,7 +116,7 @@ contains
             dket(j,nk) = dsig * dket(j,nk-1)
          end do
          zttofd = - (1./CPD) * dket         
-         call apply_tendencies(ztplus, zttofd, ztdmask, ni, nk, nk)
+         call apply_tendencies(ztplus, zttofd, ztdmaskxdt, ni, nk, nk)
          
          ! Diagnose surface stress
          zgzmom1 => zgzmom(:,1)
@@ -138,7 +135,7 @@ contains
 
       ! Turbulent vertical diffusion using the PBL scheme
       if (.not.(fluvert == 'NIL' .or. fluvert == 'SURFACE')) then
-         call boundary_layer4(pvars, ficebl, seloc, cdt1, kount, ni, nk, trnch)
+         call boundary_layer4(pvars, cdt1, kount, ni, nk, trnch)
          if (phy_error_L) return
       endif
 

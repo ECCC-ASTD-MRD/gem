@@ -23,7 +23,7 @@ contains
 
    !/@*
    subroutine phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        seloc, dt, kount, ni, nk, trnch)
+        dt, kount, ni, nk, trnch)
       use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
@@ -36,6 +36,7 @@ contains
       use surf_precip, only: surf_precip1, surf_precip3
       use phybudget, only: pb_compute, pb_residual
       use phy_status, only: PHY_OK
+      use vintphy, only: vint_mom2thermo
       implicit none
 !!!#include <arch_specific.hf>
       !@Author L. Spacek (Oct 2011)
@@ -44,7 +45,7 @@ contains
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nk
       real, dimension(ni,nk), intent(out) :: uplus0, vplus0, wplus0, tplus0, &
-           huplus0, qcplus0, seloc
+           huplus0, qcplus0
       real, intent(in) :: dt
       !          - Input / output -
       ! pvars    list of all phy vars (meta + slab data)
@@ -77,7 +78,7 @@ contains
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
 
-      type(phymeta), pointer :: vmeta, var_m, var_p
+      type(phymeta), pointer :: vmeta, var_m
 
       real, pointer, dimension(:), contiguous :: &
            zdlat, zfcor, zpmoins, ztdiag, &
@@ -85,14 +86,15 @@ contains
            zudiag, zvdiag, zmg, zz0, zz1, zz2, zz3, &
            zz4, ztls, ztss, zrainrate, zsnowrate, zpplus, &
            zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
-           zcone0, zconq0, zcone1, zconq1, zconedyn, zconqdyn
+           zcone0, zconq0, zcone1, zconq1, zconedyn, zconqdyn, &
+           ztdmask, ztdmaskxdt
       real, pointer, dimension(:,:), contiguous :: &
            zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
            zgztherm, zfneige, zfip, &
            zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
-           zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim
+           zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim, zsige
       real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
@@ -138,6 +140,9 @@ contains
       MKPTR1D(zfrfrac, frfrac, pvars)
       MKPTR1D(zpefrac, pefrac, pvars)
 
+      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
+
       ind_sfc = nk
       if (any(pcptype == (/ &
            'NIL   ', &
@@ -158,6 +163,7 @@ contains
       MKPTR2D(zqadv, qadv, pvars)
       MKPTR2D(zqcmoins, qcmoins, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zsige, sige, pvars)
       MKPTR2D(zsigm, sigm, pvars)
       MKPTR2D(zsigt, sigt, pvars)
       MKPTR2D(ztadv, tadv, pvars)
@@ -197,6 +203,10 @@ contains
       call init2nan(tmp1d)
       call init2nan(en0, pw0, en1, pw1)
 
+      if (kount == 0) then
+         ztdmaskxdt(:) = ztdmask(:) * delt
+      endif
+      
       IF_DEBUG: if (debug_mem_L) then
          DO_IVAR: do ivar= 1, nphyvars
             vmeta => pvars(ivar)%meta
@@ -243,7 +253,7 @@ contains
       zpplus(:) = zp0(:)
 
       sigw = sigt
-      istat = sigmalev3(zvcoef, seloc, zsigm, zsigt, ni, nk)
+      istat = sigmalev3(zvcoef, zsige, zsigm, zsigt, ni, nk)
       if (.not.RMN_IS_OK(istat)) then
          call physeterror('phystepinit', 'Problem in sigmalev')
          return
@@ -259,8 +269,13 @@ contains
       zgzmom(:,nk) = 0.
       call vint_mom2thermo(zgztherm, zgzmom, zvcoef, ni, nk)
 
-      zze = zgztherm
-      zze(:,nk-1:nk) = 0.
+      if (fluvert == 'RPNINT') then
+         zze = zgzmom
+         zze(:,nk) = 0.
+      else
+         zze = zgztherm
+         zze(:,nk-1:nk) = 0.
+      endif
       zza = zgzmom(:,nk-1)
       zzusl = zza
       zztsl = zgztherm(:,nk-1)

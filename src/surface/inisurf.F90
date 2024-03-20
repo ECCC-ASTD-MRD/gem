@@ -77,10 +77,10 @@ subroutine inisurf4(pvars, kount, ni, nk)
    integer :: i, k, nk1
 
    real, pointer, dimension(:) :: &
-        zdrainaf, zemisr, zemistg, zemistgen, zglacier, zglsea, &
-        zglsea0, zicedp, ziceline, zlakefr, zlhtg, zmg, zml, zresa, zresagr, zresavg, &
+        zdrainaf, zemisr, zemistg, zemistgen, zglacier, zglsea, zglsea0, zicedp, &
+        ziceline, zlakefr, zlhtg, zmaxpond, zmg, zml, zresa, zresagr, zresavg, &
         zresasa, zresasv, zriverfr, zslop, zsnoal, zsnoalen, zsnoagen, zsnodpl, zsnoden, &
-        zsnoma, zsnoro, zsnvden, zsnvdp, zsnvma, ztsrad, ztwater, &
+        zsnoma, zsnoro, zsnvden, zsnvdp, zsnvma, ztsrad, ztwater, zvegl, zvegh, &
         zz0en, zz0mland, zz0mlanden, zz0mvh, zz0mvhen, zz0veg, zz0tveg
 
    real, pointer, dimension(:) :: &
@@ -111,6 +111,7 @@ subroutine inisurf4(pvars, kount, ni, nk)
    MKPTR1D(ziceline,iceline)
    MKPTR1D(zlakefr,lakefr)
    MKPTR1D(zlhtg,lhtg)
+   MKPTR1D(zmaxpond,maxpond)
    MKPTR1D(zmg,mg)
    MKPTR1D(zml,ml)
    MKPTR1D(zresa,resa)
@@ -132,6 +133,8 @@ subroutine inisurf4(pvars, kount, ni, nk)
    MKPTR1D(zsnvma,snvma)
    MKPTR1D(ztsrad,tsrad)
    MKPTR1D(ztwater,twater)
+   MKPTR1D(zvegh,vegh)
+   MKPTR1D(zvegl,vegl)
    MKPTR1D(zz0en,z0en)
    MKPTR1D(zz0mland,z0mland)
    MKPTR1D(zz0mlanden,z0mlanden)
@@ -620,6 +623,15 @@ subroutine inisurf4(pvars, kount, ni, nk)
       ! Make sure the entry fields are coherent ...
       call coherence3(pvars, ni)
 
+      ! Initialization of maximum ponding depth if this modelling option is chosen
+      IF(lwater_ponding_svs1 .and. kount==0) THEN
+        DO i=1,ni
+          ! Adjust max. ponding depth according to bare ground fraction: consider 10mm over bare ground
+          zmaxpond(i) = zmaxpond(i) * (zvegh(i)+zvegl(i)) + 0.01 * (1.-zvegh(i)-zvegl(i))
+          ! Adjust max. ponding depth according to slope
+          zmaxpond(i) = max(0.0,zmaxpond(i)*(1.0E-10)**zslop(i))
+        END DO
+      ENDIF
 
      END IF IF_SVS
 

@@ -37,7 +37,6 @@ contains
       use kfmid, only: kfmid1
       use tendency, only: apply_tendencies
       use conv_mp_tendencies, only: conv_mp_tendencies1
-      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -66,7 +65,6 @@ contains
 #include "phymkptr.hf"
 
       include "surface.cdk"
-      include "comphy.cdk"
 
       real    :: cdt1, rcdt1
       integer :: i,k,niter, ier, nkm1
@@ -112,7 +110,7 @@ contains
 
       ! Pointer to buses
 
-      real, pointer, dimension(:), contiguous :: psm, psp, ztdmask, zfcpflg, zkkfc, zrckfc, &
+      real, pointer, dimension(:), contiguous :: psm, psp, ztdmaskxdt, zfcpflg, zkkfc, zrckfc, &
            ztlc, ztsc, zkshal, zwstar, zconedc, zconesc, zconqdc, zconqsc, ztlcs, ztscs, &
            ztstar, zcapekfc, ztauckfc, zcinkfc, zmg, zml, zdlat, zdxdy, zkmid, &
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
@@ -168,7 +166,7 @@ contains
       MKPTR1D(ztlcm, tlcm, pvars)
       MKPTR1D(zrice_int, rice_int, pvars)
       MKPTR1D(zrliq_int, rliq_int, pvars)
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(ztlc, tlc, pvars)
       MKPTR1D(ztlcs, tlcs, pvars)
       MKPTR1D(ztsc, tsc, pvars)
@@ -292,7 +290,7 @@ contains
       DEEP_CONVECTION: if (convec == 'SEC') then            ! ajustement convectif sec
          call secajus(zcte, ttp, sigma, psp, niter, 0.1, cdt1, ni, nkm1)
          if (phy_error_L) return
-         call apply_tendencies(ttp, zcte, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(ttp, zcte, ztdmaskxdt, ni, nk, nkm1)
 
       else if (convec == 'KFC') then
 
@@ -411,16 +409,19 @@ contains
          endif
          
          ! Apply shallow convective tendencies
-         call apply_tendencies(ttp, ztshal, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(qqp, zhushal, ztdmask, ni, nk, nkm1)
          if (bkf_lshalm) then
-            call apply_tendencies(uu, ztusc, ztdmask, ni, nk, nkm1)
-            call apply_tendencies(vv, ztvsc, ztdmask, ni, nk, nkm1)
+            call apply_tendencies(ttp,    qqp,     uu,    vv, &
+                 &                ztshal, zhushal, ztusc, ztvsc, &
+                 &                ztdmaskxdt, ni, nk, nkm1)
+         else
+            call apply_tendencies(ttp,    qqp, &
+                 &                ztshal, zhushal, ztdmaskxdt, ni, nk, nkm1)
+            
          endif
 
          ! Apply shallow convective tendencies for consdensed variables
          call conv_mp_tendencies1(zprctns, zpritns, ttp, qcp, ncp, qip, nip, &
-              qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
+              qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
 
          ! Post-scheme budget analysis
          if (pb_residual(zconesc, zconqsc, l_en0, l_pw0, pvars, &
@@ -459,16 +460,18 @@ contains
       endif
 
       ! Apply deep convective tendencies for non-condensed state variables
-      call apply_tendencies(ttp, zcte, ztdmask, ni, nk, nkm1)
-      call apply_tendencies(qqp, zcqe, ztdmask, ni, nk, nkm1)
       if (kfcmom) then
-         call apply_tendencies(uu, zufcp, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(vv, zvfcp, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(ttp,  qqp,  uu,    vv, &
+              &                zcte, zcqe, zufcp, zvfcp, &
+              &                ztdmaskxdt, ni, nk, nkm1)
+      else
+         call apply_tendencies(ttp,  qqp, &
+              &                zcte, zcqe, ztdmaskxdt, ni, nk, nkm1)         
       endif
 
       ! Apply deep convective tendencies for consdensed variables
       call conv_mp_tendencies1(zprcten, zpriten, ttp, qcp, ncp, qip, nip, &
-            qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
+            qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
 
       ! Post-deep budget analysis
       if (pb_residual(zconedc, zconqdc, l_en0, l_pw0, pvars, &
@@ -514,14 +517,18 @@ contains
       endif
 
       ! Apply midlevel convective tendencies for non-condensed state variables
-      call apply_tendencies(ttp, zmte, ztdmask, ni, nk, nkm1)
-      call apply_tendencies(qqp, zmqe, ztdmask, ni, nk, nkm1)
-      if (associated(zumid)) call apply_tendencies(uu, zumid, ztdmask, ni, nk, nkm1)
-      if (associated(zvmid)) call apply_tendencies(vv, zvmid, ztdmask, ni, nk, nkm1)
-
+      if (associated(zumid) .and. associated(zvmid)) then
+         call apply_tendencies(ttp,  qqp,  uu,    vv, &
+              &                zmte, zmqe, zumid, zvmid, &
+              &                ztdmaskxdt, ni, nk, nkm1)
+      else
+         call apply_tendencies(ttp,  qqp, &
+              &                zmte, zmqe, ztdmaskxdt, ni, nk, nkm1)
+      endif
+      
       ! Apply mid-level convective tendencies for condensed variables
       call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
-            qti1p, nti1p, zti1p, ztdmask, ni, nk, nkm1)
+            qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
 
       ! Post-midlevel budget analysis
       if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &

@@ -42,7 +42,7 @@
    MKPTR1D(psp, p0_plus, pvars)
    MKPTR1D(zconecnd, conecnd, pvars)
    MKPTR1D(zconqcnd, conqcnd, pvars)
-   MKPTR1D(ztdmask, tdmask, pvars)
+   MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
 
    MKPTR2D(sigma, sigw, pvars)
 

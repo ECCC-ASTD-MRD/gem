@@ -48,10 +48,6 @@ contains
       real, intent(in), optional :: blend_top            !height to end blending of SL functions [200m]
       integer :: stat                                    !return status
 
-      ! Common block
-!!!#include <arch_specific.hf>
-      include "clefcon.cdk"
-
       ! Local variables
       integer :: istat
       real :: myBlend_bottom,myBlend_top

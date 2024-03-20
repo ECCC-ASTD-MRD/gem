@@ -81,7 +81,6 @@ subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    real, parameter :: PSGBT = 0.8
    real, parameter :: PTCI = 238.
 
-#include "comphy.cdk"
    include "phyinput.inc"
 
    !____FUNCTION USED FOR CORRECTING OF THE U00 FOR SIGMA>0.9

@@ -39,7 +39,6 @@ contains
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use water_integrated, only: wi_integrate
-      use ens_perturb, only: ens_nc2d
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -226,10 +225,11 @@ contains
       endif
 
       !Application of standard microphysical tendencies
-      call apply_tendencies(ttp, zste,  ztdmask, ni, nk, nkm1)
-      call apply_tendencies(qqp, zsqe,  ztdmask, ni, nk, nkm1)
-      if (associated(qcp)) call apply_tendencies(qcp, zsqce, ztdmask, ni, nk, nkm1)
-      if (associated(qrp)) call apply_tendencies(qrp, zsqre, ztdmask, ni, nk, nkm1)
+      call apply_tendencies(ttp,  qqp, &
+           &                zste, zsqe, ztdmaskxdt, ni, nk, nkm1)
+      if (associated(qcp)) call apply_tendencies(qcp, zsqce, ztdmaskxdt, ni, nk, nkm1)
+      if (associated(qrp)) call apply_tendencies(qrp, zsqre, ztdmaskxdt, ni, nk, nkm1)
+
       !# TODO: automate that clipping with info from gesdict
       if (stcond(1:5) == 'MP_P3') then
          ! call priv_check_negative(qqp, 0., 'huplus')

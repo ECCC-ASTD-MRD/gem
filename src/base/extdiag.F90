@@ -49,13 +49,13 @@ contains
       logical, parameter :: OVERWRITE_L = .true.
 
       character(len=4) :: oname
-      integer :: i, k, kam, ivar, busidx, nkm1
+      integer :: i, k, kam, ivar, nkm1
 
       real, dimension(ni)     :: work1d
       real, dimension(ni, nk) :: p, work2d1, work2d2
 
       real, pointer, dimension(:) , contiguous :: zpmoins, busptr2d, ztdew, zflusolaf, &
-           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1, bptr, zfl
+           zuvsmax, zuvsavg, zhrsmax, zhrsmin, zhusavg, zttmins1, zttmaxs1, zfl
       real, pointer, dimension(:, :), contiguous :: zhuplus, zsigw, ztplus, &
            zuplus, zvplus, zwplus, ztcond, zze, busptr3d, &
            zqcplus, zftot, zfbl, zqtbl, zfdc

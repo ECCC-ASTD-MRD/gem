@@ -102,9 +102,6 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
-   include "clefcon.cdk"
-   include "machcon.cdk"
-
    logical, save :: okinit = .false.
 
    character(len=1024) :: fichier, path
@@ -116,27 +113,6 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
       call msg(MSG_ERROR,'(phydebu) VARIABLES: jdateo,delt NOT INITIALIZED')
       return
    endif
-
-   ! INITIALISATION DE VARIABLES POUR CLEF
-   ! - - - - - - - - - - - - - - - - - - -
-   ETRMIN = ETRMIN2
-   EXPLIM = 75.
-   TANLIM = exp(12. * ALOG(2.))
-
-   ! CONSTANTES NUMERIQUES DANS LA FERMETURE DU MODELE CLEF
-   ! - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   !     REF : THERRY ET LACARRERE
-   !           ANDRE ET AL.
-   !           BOUGEAULT
-   !           MAILHOT ET BENOIT , JAS 1982
-   !           WYNGAARD ET AL.
-   CLEFC1 = 3.75/1.75
-   CLEFC4 = 4.5
-   CLEFC6 = 4.85
-   CLEFC7 = 1.0-0.125*CLEFC6
-   CLEFC8 = 6.5
-   CLEFCB = 0.4
-   CLEFAE = 3.0*CLEFC4/CLEFC8
 
    ! RADIATION
    ! - - - - -

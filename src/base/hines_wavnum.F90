@@ -14,38 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
+module hines_wavnum
+   implicit none
+   private
+   public :: hines_wavnum1
+
+contains
+
 !/@*
-subroutine hines_wavnum(m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
-     &                  mmin_alpha, losigma_t,                       &
-     &                  v_alpha, visc_mol, density, densb,           &
-     &                  bvfreq, bvfb, rms_wind, anis, lorms,         &
-     &                  sigsqmcw, sigmatm,                           &
-     &                  il1, il2, levtop, levbot, nlons, nlevs, nazmth)
-   use, intrinsic :: iso_fortran_env, only: REAL64
-   use mo_gwspectrum,   only: kstar, m_min, slope, f1, f2, f3, naz
-   use phy_status, only: phy_error_L
+subroutine hines_wavnum1(m_alpha, ak_alpha,  &
+     &                   v_alpha, visc_mol, density, densb,  &
+     &                   bvfreq, rms_wind,  &
+     &                   levbot, ni, nig, nkm1, naz)
+   use, intrinsic :: iso_fortran_env, only: REAL32
+   use mo_gwspectrum, only: kstar, m_min, f1, f2, f3, rnaz
+   use hines_sigma, only: hines_sigma1
+   use hines_intgrl, only: hines_intgrl4
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer :: il1, il2, levtop, levbot, nlons, nlevs, nazmth
-   real(REAL64) :: m_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: sigma_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: sigalpmc(nlons,nlevs,nazmth)
-   real(REAL64) :: sigsqh_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: sigma_t(nlons,nlevs)
-   real(REAL64) :: sigmatm(nlons,nlevs)
-   real(REAL64) :: sigsqmcw(nlons,nlevs,nazmth)
-   real(REAL64) :: ak_alpha(nlons,nazmth)
-   real(REAL64) :: v_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: visc_mol(nlons,nlevs)
-   real(REAL64) :: f2mod(nlons,nlevs)
-   real(REAL64) :: density(nlons,nlevs),  densb(nlons)
-   real(REAL64) :: bvfreq(nlons,nlevs),   bvfb(nlons),  rms_wind(nlons)
-   real(REAL64) :: anis(nlons,nazmth)
-   real(REAL64) :: i_alpha(nlons,nazmth), mmin_alpha(nlons,nazmth)
-
-   logical :: lorms(nlons), losigma_t(nlons,nlevs), do_alpha(nlons,nazmth)
+   integer, intent(in) :: levbot, ni, nig, nkm1, naz
+   real(REAL32), intent(inout) :: m_alpha(ni,naz,nkm1) ! cutoff vertical wavenumber (1/m)
+   real(REAL32), intent(out) :: ak_alpha(ni,naz)
+   real(REAL32), intent(in) :: v_alpha(ni,naz,nkm1)
+   real(REAL32), intent(in) :: visc_mol(ni,nkm1)
+   real(REAL32), intent(in) :: density(ni,nkm1),  densb(ni)
+   real(REAL32), intent(in) :: bvfreq(ni,nkm1),  rms_wind(ni)
 
    !@Author
    !  aug. 10/95 - c. mclandress
@@ -79,17 +74,11 @@ subroutine hines_wavnum(m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
    ! bvfreq       background brunt vassala frequency (radians/sec).
    ! bvfb         background brunt vassala frequency at model bottom.
    ! rms_wind     root mean square gravity wave wind at lowest level (m/s).
-   ! anis         anisotropy factor (sum over azimuths is one)
-   ! lorms        .true. for drag computation at lowest level
    ! levbot       index of lowest vertical level.
-   ! levtop       index of highest vertical level
-   !              (note: if levtop < levbot then level index
-   !              increases from top down).
-   ! il1          first longitudinal index to use (il1 >= 1).
-   ! il2          last longitudinal index to use (il1 <= il2 <= nlons).
-   ! nlons        number of longitudes.
-   ! nlevs        number of vertical levels.
-   ! nazmth       azimuthal array dimension (nazmth >= naz).
+   ! ni           number of longitudes.
+   ! nig          horizontal operator scope
+   ! nkm1         number of vertical levels.
+   ! naz          azimuthal array dimension
 
    !             - work arrays -
    ! i_alpha      hines' integral at a single level.
@@ -98,106 +87,70 @@ subroutine hines_wavnum(m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
    !                   the lowest level
    !*@/
 
-   integer :: i, l, n, istart, lend, lincr, lbelow
+   integer, parameter :: KLEV = 1
+   integer, parameter :: KBELOW = KLEV+1
+   
+   real(REAL32), parameter :: t1 = 1.d-10
+   real(REAL32), parameter :: visc_min = 1.e-10
+   real(REAL32), parameter :: mmsq = m_min**2
+   real(REAL32), parameter :: m_min8 = m_min
 
-   real(REAL64) :: m_sub_m_turb, m_sub_m_mol, m_trial, mmsq
-   real(REAL64) :: visc, visc_min, sp1, f2mfac, deno, t1
+   integer :: i, l, n, lbelow
 
-   real(REAL64) :: n_over_m(nlons), sigfac(nlons)
+   real(REAL32) :: m_sub_m_turb, m_sub_m_mol, m_trial
+   real(REAL32) :: visc, deno
+
+   real(REAL32) :: n_over_m(ni), sigfac(ni), bvfb(ni), rbvfb(ni)
+   real(REAL32) :: sigma_t(ni,nkm1)        ! total rms gw wind (m/s)
+   real(REAL32) :: sigma_alpha(ni,naz,nkm1)
+   real(REAL32) :: mmin_alpha(ni,naz)   ! minumum value of m_alpha
+
+   real(REAL32) :: sigsqh_alpha(ni,naz)
+   real(REAL32) :: i_alpha(ni,naz)
+
+   logical :: do_alpha(ni,naz)
+   logical :: losigma_t(ni,2)
 
    !-----------------------------------------------------------------------
 
-
-   t1=1.d-10
-   visc_min = 1.e-10
-
-   sp1 = slope + 1.
-   mmsq = m_min**2
-
-
-   !  indices of levels to process.
-
-   if (levbot > levtop)  then
-      istart = levbot - 1
-      lend   = levtop
-      lincr  = -1
-   else
-      call physeterror('hines_wavnum', 'level index not increasing downward')
-      return
-   end if
-
-
-   !   initialize logical flags and arrays
-   do l=1,nlevs
-      losigma_t(:,l) = lorms(:)
-   enddo
-   do n=1,nazmth
-      do_alpha(:,n) = lorms(:)
-   enddo
-
-   sigsqh_alpha(:,:,:) = 0
-   i_alpha(:,:) = 0.0
-
-
+   ! initialize logical flags and arrays
    ! calculate azimuthal variances at bottom level using anisotropy factor
+   do i = 1,nig
+      bvfb(i)  = bvfreq(i,levbot)
+      rbvfb(i) = 1. / bvfb(i)  !#TODO: use vect pow fn
+   enddo
 
-   do n = 1,naz
-      do i = il1,il2
-         sigsqh_alpha(i,levbot,n) = anis(i,n)* rms_wind(i)**2
-      end do
-   end do
+   do n=1,naz
+      do i = 1,nig
+         do_alpha(i,n) = .true.
+         sigsqh_alpha(i,n) = rnaz * rms_wind(i)**2
+      enddo
+   enddo
 
    !  velocity variances at bottom level.
-
-   call hines_sigma ( sigma_t, sigma_alpha,     &
-        &                   sigsqh_alpha, naz, levbot,     &
-        &                   il1, il2, nlons, nlevs, nazmth)
-
-   call hines_sigma ( sigmatm, sigalpmc,     &
-        &                   sigsqmcw, naz, levbot,     &
-        &                   il1, il2, nlons, nlevs, nazmth)
+   call hines_sigma1(sigma_t, sigma_alpha, sigsqh_alpha, levbot, ni, nig, nkm1, naz)
 
    !  calculate cutoff wavenumber and spectral amplitude factor
    !  at bottom level where it is assumed that background winds vanish
    !  and also initialize minimum value of cutoff wavnumber.
 
-   if ( abs(slope-1.) < epsilon(1.) ) then
-      do n = 1,naz
-         do i = il1,il2
-            if (lorms(i)) then
-               m_alpha(i,levbot,n) =  bvfb(i) /    &
-                    &                             ( f1 * sigma_alpha(i,levbot,n)    &
-                    &                             + f2 * sigma_t(i,levbot) )
-               ak_alpha(i,n)   = 2. * sigsqh_alpha(i,levbot,n)    &
-                    &                        / ( m_alpha(i,levbot,n)**2 - mmsq )
-               mmin_alpha(i,n) = m_alpha(i,levbot,n)
-            endif
-         end do
+   do n = 1,naz
+      do i = 1,nig
+            m_alpha(i,n,levbot) = bvfb(i) /  &
+                 &                          ( f1 * sigma_alpha(i,n,levbot)  &
+                 &                          + f2 * sigma_t(i,levbot) )
+            ak_alpha(i,n) = 2. * sigsqh_alpha(i,n) &
+                 &                        / (m_alpha(i,n,levbot)**2 - mmsq)
+            mmin_alpha(i,n) = m_alpha(i,n,levbot)
       end do
-   else
-      do n = 1,naz
-         do i = il1,il2
-            if (lorms(i)) then
-               m_alpha(i,levbot,n) =  bvfb(i) /    &
-                    &                           ( f1 * sigma_alpha(i,levbot,n)    &
-                    &                           + f2 * sigma_t(i,levbot) )
-               ak_alpha(i,n)   = sigsqh_alpha(i,levbot,n)    &
-                    &                      / ( m_alpha(i,levbot,n)**sp1 / sp1 )
-               mmin_alpha(i,n) = m_alpha(i,levbot,n)
-            endif
-         end do
-      end do
-   endif
+   end do
 
    !  calculate quantities from the bottom upwards,
    !  starting one level above bottom.
 
-
-   do l = istart,lend,lincr
-
-      !  level beneath present level.
-
-      lbelow = l - lincr
+   losigma_t(1:nig,KBELOW) = .true.
+   DOLEVELS: do l = levbot-1,1,-1
+      lbelow = l + 1
 
       !  calculate n/m_m where m_m is maximum permissible value of the vertical
       !  wavenumber (i.e., m > m_m are obliterated) and n is buoyancy frequency.
@@ -206,110 +159,78 @@ subroutine hines_wavnum(m_alpha, sigma_t, sigma_alpha, ak_alpha,     &
       !  (m_sub_m_mol). since variance at this level is not yet known
       !  use value at level below.
 
-
-      do i = il1,il2
-         if (losigma_t(i,lbelow))   then
-
-            f2mfac=sigmatm(i,lbelow)**2
-            f2mod(i,lbelow) =1.+ 2.*f2mfac  &
-                 &                      / ( f2mfac+sigma_t(i,lbelow)**2 )
-
-            visc = max ( visc_mol(i,l), visc_min )
-            m_sub_m_turb = bvfreq(i,l)   &
-                 &                 / ( f2 *f2mod(i,lbelow)*sigma_t(i,lbelow))
+      do i = 1,nig
+         losigma_t(i,KLEV) = .true.
+         if (losigma_t(i,KBELOW))   then
+            visc = max(visc_mol(i,l), visc_min)
+            m_sub_m_turb = bvfreq(i,l) / (f2 * sigma_t(i,lbelow))
             m_sub_m_mol = (bvfreq(i,l)*kstar/visc)**0.33333333/f3
-
             if (m_sub_m_turb < m_sub_m_mol)  then
-               n_over_m(i) = f2 *f2mod(i,lbelow)*sigma_t(i,lbelow)
+               n_over_m(i) = f2 *sigma_t(i,lbelow)
             else
                n_over_m(i) = bvfreq(i,l) / m_sub_m_mol
             end if
-
          endif
       end do
-
 
       !  calculate cutoff wavenumber at this level.
 
-      do n = 1,naz
-         do i = il1,il2
-            if ( do_alpha(i,n) .and. losigma_t(i,lbelow) ) then
+      DONAZ: do n = 1,naz
+         do i = 1,nig
+            if (do_alpha(i,n) .and. losigma_t(i,KBELOW)) then
 
-               !  calculate trial value (variance at this level is not yet known:
-               !  use value at level below). if trial value negative or larger
-               !  minimum value (not permitted) then set it to minimum value.
+               ! calculate trial value (variance at this level is not yet known:
+               ! use value at level below). if trial value negative or larger
+               ! minimum value (not permitted) then set it to minimum value.
 
-               deno= f1 * (sigma_alpha(i,lbelow,n)+sigalpmc(i,lbelow,n)) + n_over_m(i) + v_alpha(i,l,n)
-               if (abs(deno).lt.t1) deno= sign(t1,deno)
+               deno= f1 * sigma_alpha(i,n,lbelow) + n_over_m(i) + v_alpha(i,n,l)
+               deno= sign(max(t1, abs(deno)), deno)
                m_trial = bvfb(i) / deno
-               !                m_trial = bvfb(i) / ( f1 * ( sigma_alpha(i,lbelow,n)+   &
-               !                     &       sigalpmc(i,lbelow,n)) + n_over_m(i) + v_alpha(i,l,n) )
 
-               if (m_trial <= 0. .or. m_trial > mmin_alpha(i,n))  then
-                  m_trial = mmin_alpha(i,n)
-               end if
-               m_alpha(i,l,n) = m_trial
+               if (m_trial <= 0.) m_trial = mmin_alpha(i,n)
+               m_alpha(i,n,l) = min(m_trial, mmin_alpha(i,n))
 
-               !  do not permit cutoff wavenumber to be less than minimum  value.
+               ! do not permit cutoff wavenumber to be less than minimum value.
+               m_alpha(i,n,l) = max(m_min8, m_alpha(i,n,l))
+               if (m_alpha(i,n,l) == m_min8) do_alpha(i,n) = .false.
 
-               if (m_alpha(i,l,n) < m_min) then
-                  m_alpha(i,l,n) = m_min
-               endif
-
-               !  reset minimum value of cutoff wavenumber if necessary.
-
-               if (m_alpha(i,l,n) < mmin_alpha(i,n))  then
-                  mmin_alpha(i,n) = m_alpha(i,l,n)
-               end if
+               ! reset minimum value of cutoff wavenumber if necessary.
+               mmin_alpha(i,n) = min(m_alpha(i,n,l), mmin_alpha(i,n))
+               
             else
 
-               m_alpha(i,l,n) = m_min
+               m_alpha(i,n,l) = m_min
 
             endif
          end do
-      end do
+      end do DONAZ
 
       !  calculate the hines integral at this level.
-
-      call hines_intgrl ( i_alpha,                                     &
-           &              v_alpha, m_alpha, bvfb, m_min, slope, naz,   &
-           &              l, il1, il2, nlons, nlevs, nazmth,           &
-           &              lorms, do_alpha )
-      ! i_alpha=0.
-      if (phy_error_L) return
-
+      call hines_intgrl4(i_alpha, v_alpha, m_alpha, rbvfb,  &
+           &             l, ni, nig, nkm1, naz)
 
       !  calculate the velocity variances at this level.
-
-      do i = il1,il2
-         sigfac(i) = densb(i) / density(i,l) * bvfreq(i,l) / bvfb(i)
+      do i = 1,nig
+         sigfac(i) = densb(i) / density(i,l) * bvfreq(i,l) * rbvfb(i)
       end do
 
       do n = 1,naz
-         do i = il1,il2
-            !           sigsqh_alpha(i,l,n)=0.
-            sigsqh_alpha(i,l,n) = sigfac(i) * ak_alpha(i,n) * i_alpha(i,n)
+         do i = 1,nig
+            sigsqh_alpha(i,n) = sigfac(i) * ak_alpha(i,n) * i_alpha(i,n)
          end do
       end do
-      call hines_sigma ( sigma_t, sigma_alpha, sigsqh_alpha, naz, l, &
-           &                    il1, il2, nlons, nlevs, nazmth )
-
-      call hines_sigma ( sigmatm, sigalpmc, sigsqmcw, naz, l,   &
-           &                     il1, il2, nlons, nlevs, nazmth )
-
+      call hines_sigma1(sigma_t, sigma_alpha, sigsqh_alpha, l, ni, nig, nkm1, naz)
 
       !  if total rms wind zero (no more drag) then set drag to false
-
-      do i=il1,il2
-         if ( sigma_t(i,l) < epsilon(1.) ) then
-            losigma_t(i,l) = .false.
-         endif
+      do i=1,nig
+         if (sigma_t(i,l) < epsilon(1.)) losigma_t(i,KLEV) = .false.
+         losigma_t(i,KBELOW) = losigma_t(i,KLEV)
       enddo
 
-      !  end of level loop.
-
-   end do
+   end do DOLEVELS
 
    !-----------------------------------------------------------------------
    return
-end subroutine hines_wavnum
+end subroutine hines_wavnum1
+
+end module hines_wavnum

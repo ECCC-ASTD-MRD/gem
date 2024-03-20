@@ -625,3 +625,8 @@ fileVersion: 6.3.0-a1 > 6.3.0-a3
 #------
 fileVersion: 6.3.0-a3 > 6.3.0-a4
 
+#------
+fileVersion: 6.3.0-a4 > 6.3.0-a6
+#New:  physics_cfgs/advecqtbl
+rm:  physics_cfgs/iheatcal
+#New:  physics_cfgs/rad_mpagg_l
