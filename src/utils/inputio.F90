@@ -973,7 +973,8 @@ contains
 
       !#TODO: level by level (hstats) warning...
       call str_concat_i(tmp_S, pk1, ', ')
-      write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
+      write(msg_S, '(i4)') size(pk1)
+      msg_S = trim(msg_S)//' levels [ip1='//trim(tmp_S)//']'
       if (RMN_IS_OK(F_istat)) then
          call msg(MSG_INFO, '(inputio) Read ' &
               //trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)//': '//msg_S)

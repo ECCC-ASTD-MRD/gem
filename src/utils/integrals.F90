@@ -15,8 +15,10 @@
 !-------------------------------------- LICENCE END ----------------------------
 
 module integrals
-   use, intrinsic :: iso_fortran_env, only: REAL64, INT64
-   use clib_itf_mod, only: clib_toupper
+   use, intrinsic :: iso_fortran_env, only: REAL64, REAL32
+   use pchip_utils, only: PCHIP_OK,PCHIP_EXT,PCHIP_DIR_UP,PCHIP_DIR_DOWN, &
+        pchip_coef
+   use rootfind, only: RF_OK,rf_nrbnd
 !!!#include <arch_specific.hf>
    implicit none
    private
@@ -38,30 +40,42 @@ module integrals
       module procedure integral_solve_sdepsa
    end interface int_solve
  
-   ! Internal parameters
-   integer, parameter :: LONG_CHAR=16                           !Long character string length
-   character(len=LONG_CHAR), parameter :: DEFAULT_TYPE='pchip'  !Default integration method
-
    ! Define API
+   integer, parameter, public :: INT_TYPE_PCHIP  = 1
+   integer, parameter, public :: INT_TYPE_STEP   = 2
+   integer, parameter, public :: INT_TYPE_LINEAR = 3
+   integer, parameter, public :: INT_DIR_UP      = PCHIP_DIR_UP
+   integer, parameter, public :: INT_DIR_DOWN    = PCHIP_DIR_DOWN
    integer, parameter, public :: INT_OK=0,INT_ERR=1             !Return statuses of functions
    public :: int_profile                                        !Compute integrals for a profile
    public :: int_solve                                          !Solve an integral equation
 
+   ! Internal parameters
+   integer, parameter :: DEFAULT_TYPE=INT_TYPE_PCHIP            !Default integration method
+   real, parameter :: TRD = 1./3.
+
 contains
 
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function integral_pchip(Ai,yi,zi,z1i,z2i) result(status)
-      use pchip_utils, only: PCHIP_OK,PCHIP_EXT,pchip_extend,pchip_layers,pchip_coef
+   function integral_pchip(zi,z1i,z2i,n,nk, &
+        yi,Aid,Ais,Sid,Sis) result(status)
       implicit none
 
       !@Arguments
-      real, dimension(:,:), intent(in) :: yi                    !Integrand
-      real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
-      real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
-      real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
-      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
-                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
-      integer :: status                                         !Return status of function
+      integer, intent(in) :: n, nk
+      real, intent(in) :: zi(n,nk)        !Vertical coordinate (monotonic, increasing from nk to 1)
+      real, intent(in) :: z1i(n)          !Lower limit of integration
+      real, intent(in) :: z2i(n)          !Upper limit of integration
+      real, intent(in) :: yi(n,nk)        !Integrand
+      
+      real(REAL64), intent(out), optional :: Aid(n,nk)   !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                         !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real, intent(out), optional :: Ais(n,nk)           !Integrated profile (as Aid but real32)
+      real(REAL64), intent(out), optional :: Sid(n)      !Integrated sum (Aid(:,1))
+      real, intent(out), optional :: Sis(n)              !Integrated sum (as Sid but real32)
+
+      integer :: status                                  !Return status of function
 
       !@Author A.Zadra (Aug 2016)
       !@Object calculate vertical integrals of a given profile
@@ -70,114 +84,169 @@ contains
       !        returning integrated quantity along the profile
 
       ! Local variable declaration
-      integer :: n,nk,i,k,istat
-      integer, dimension(size(yi,dim=1)) :: k1,k2
-      real :: hk,yk,dk,ck,bk,r,s
-      real, dimension(:), pointer :: z1iloc,z2iloc
-      real, dimension(size(yi,dim=1)) :: z1,z2
-      real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: z,y,h,del,b,c,d
-      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: A
+      real(REAL64), dimension(n) :: delta1, delta2
+      real :: w0,w1,w2
+      integer, dimension(n) :: k1,k2
+      integer :: nko,i,k,istat,ko,k1max,k2min
+      real(REAL64) :: hk,yk,dk,ck,bk,r,s,hk2,hk3,hk4,r2,r3,r4,s2,s3,s4
+      real(REAL64) :: delta
+      real, dimension(n) :: z1,z2
+      real, dimension(n,nk+PCHIP_EXT) :: z,y,h,del,b,c,d,h2,h4
+      real(REAL64), dimension(n,nk+PCHIP_EXT) :: A   !# REAL64 takes 130% more time
       logical :: bnd_invert
 
       ! Set error return status
       status = INT_ERR
 
-      ! Initialize bounds
-      n = size(yi,dim=1)
-      nk = size(yi,dim=2)
-
       ! Determine direction of integration
-      if (any(z1i<=z2i)) then
-         z1iloc => z1i
-         z2iloc => z2i
-         bnd_invert = .false.
-      else
-         z1iloc => z2i
-         z2iloc => z1i
-         bnd_invert = .true.
-      endif
- 
+      ! Extend input arrrays
       ! Invert input arrays if necessary
-      if (pchip_extend(yi,zi,y,z,z1i=z1iloc,z2i=z2iloc,z1=z1,z2=z2,direc='UP') /= PCHIP_OK) then
-         call msg(MSG_WARNING,'(integral_pchip) Error returned by pchip_extend')
-         return
-      endif
-
-      ! Compute layer thickness and deltas
-      istat = pchip_layers(y,z,h,del)
-
-      ! Compute interpolating polynomial coefficients
-      istat = pchip_coef(h,del,b,c,d)
-
-      ! Find subdomain
-      istat = subdomain(z,z1,z2,k1,k2)
-
-      ! Integral profile by interpolation
-      A = 0.
+      nko = nk+2
+      bnd_invert = any(z1i > z2i)
       do i=1,n
-         do k=k1(i),k2(i),-1
-            hk = h(i,k)
-            yk = y(i,k)
-            dk = d(i,k)
-            ck = c(i,k)
-            bk = b(i,k)
-
-            A(i,k-1) = A(i,k) + hk*yk &
-                 + (hk**2)*dk/2. &
-                 + (hk**3)*ck/3. &
-                 + (hk**4)*bk/4.
-
-            if (k == k1(i)) then
-               r = z1(i) - z(i,k)
-               A(i,k-1) = A(i,k-1) - ( r*yk &
-                    + (r**2)*dk/2. &
-                    + (r**3)*ck/3. &
-                    + (r**4)*bk/4. )
-            endif
-            if (k == k2(i)) then
-               s = z2(i) - z(i,k)
-               A(i,k-1) = A(i,k-1) + (s - hk)*yk &
-                    + (s**2 - hk**2)*dk/2. &
-                    + (s**3 - hk**3)*ck/3. &
-                    + (s**4 - hk**4)*bk/4.
-            endif
-         enddo
-         do k=k1(i)+1,nk
-            A(i,k) = A(i,k1(i))
-         enddo
-         do k=k2(i)-2,1,-1
-            A(i,k) = A(i,k2(i)-1)
+         if (bnd_invert) then
+            z1(i) = z2i(i)
+            z2(i) = z1i(i)
+         else
+            z1(i) = z1i(i)
+            z2(i) = z2i(i)
+         endif
+         y(i,1) = yi(i,1)
+         y(i,nko) = yi(i,nk)
+         z(i,1) = max(z2(i), 2*zi(i,1)-zi(i,2))
+         z(i,nko) = min(z1(i), 2*zi(i,nk)-zi(i,nk-1))
+      enddo
+      do k=1,nk
+         ko = k + 1
+         do i=1,n
+            y(i,ko) = yi(i,k)
+            z(i,ko) = zi(i,k)
+            h(i,ko) = z(i,ko-1)-z(i,ko)
+            del(i,ko) = (y(i,ko-1)-y(i,ko))/h(i,ko)
          enddo
       enddo
+      do i=1,n
+         h(i,1) = h(i,2) 
+         del(i,1) = del(i,2)
+         h(i,nko) = z(i,nko-1)-z(i,nko)
+         del(i,nko) = (y(i,nko-1)-y(i,nko))/h(i,nko)
+      enddo
 
+      ! Compute interpolating polynomial coefficients
+      istat = pchip_coef(h,del,b,c,d,n,nko)
+      
+      ! Find subdomain
+      istat = subdomain(z,z1,z2,k1,k2,n,nko)
+      
+      ! Integrate profile - upper and lower bounds values 
+      do i=1,n
+         k = min(max(1, k1(i)), nko)
+         yk = y(i,k)
+         dk = d(i,k)*0.5
+         ck = c(i,k)*TRD
+         bk = b(i,k)*0.25
+         r = z1(i) - z(i,k)
+         r2 = r*r
+         r3 = r2*r
+         r4 = r3*r
+         delta1(i) =  -1. * (&
+              r*yk + &
+              r2*dk + &
+              r3*ck + &
+              r4*bk)
+      enddo
+      do i=1,n
+         k = min(max(1, k2(i)), nko)
+         hk  = h(i,k)
+         hk2 = hk*hk
+         hk3 = hk2*hk
+         hk4 = hk3*hk
+         yk = y(i,k)
+         dk = d(i,k)*0.5
+         ck = c(i,k)*TRD
+         bk = b(i,k)*0.25
+         s = z2(i) - z(i,k)
+         s2 = s*s
+         s3 = s2*s
+         s4 = s3*s
+         delta2(i) =  &
+              (s - hk)*yk + &
+              (s2 - hk2)*dk + &
+              (s3 - hk3)*ck + &
+              (s4 - hk4)*bk
+      enddo
+
+      ! Integral profile by interpolation
+      A(:,nko) = 0.
+      do k=nko,3,-1
+         do i=1,n
+            w1 = float(1 - min(abs(k-k1(i)), 1))
+            w2 = float(1 - min(abs(k-k2(i)), 1))
+            w0 = float(min( &
+                 min(max(k1(i)-k, 0), 1), &
+                 min(max(k-k2(i), 0), 1) &
+                 ))
+            w0 = max(w0,w1,w2)
+            hk  = h(i,k)
+            hk2 = hk*hk
+            hk3 = hk2*hk
+            hk4 = hk3*hk
+            yk = y(i,k)
+            dk = d(i,k)*0.5
+            ck = c(i,k)*TRD
+            bk = b(i,k)*0.25
+            delta =  &
+                 hk*yk + &
+                 hk2*dk + &
+                 hk3*ck + &
+                 hk4*bk
+            A(i,k-1) = A(i,k) + w0*(delta &
+                 + w1 * delta1(i) &
+                 + w2 * delta2(i) &
+                 )
+         enddo
+      enddo
+      
       ! Return interior of domain only
       ! Negate result if bounds were inverted
       if (bnd_invert) then
-         Ai = -A(:,2:nk+1)
+         if (present(Aid)) Aid = -A(:,2:nk+1)
+         if (present(Ais)) Ais = -A(:,2:nk+1)
+         if (present(Sid)) Sid = -A(:,2)
+         if (present(Sis)) Sis = -A(:,2)
       else
-         Ai = A(:,2:nk+1)
+         if (present(Aid)) Aid = A(:,2:nk+1)
+         if (present(Ais)) Ais = A(:,2:nk+1)
+         if (present(Sid)) Sid = A(:,2)
+         if (present(Sis)) Sis = A(:,2)
       endif
-
+   
       ! Successful completion
       status = INT_OK
       return
    end function integral_pchip
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function integral_linear(Ai,yi,zi,z1i,z2i,type) result(status)
+   function integral_linear(zi,z1i,z2i,type,n,nk, &
+        yi,Aid,Ais,Sid,Sis) result(status)
       ! Integrate a quantity over a profile using linear interpolation, returning integrated quantity along the profile
-      use pchip_utils, only: PCHIP_OK,PCHIP_EXT,pchip_extend
       implicit none
 
       ! Arguments
-      real, dimension(:,:), intent(in) :: yi                    !Integrand
-      real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
-      real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
-      real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
-      character(len=*), intent(in) :: type                      !Linear subtype ('linear' or 'step')
-      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
-                                                                !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
-      integer :: status                                         !Return status of function
+      integer, intent(in) :: n, nk
+      real, intent(in) :: zi(n,nk)        !Vertical coordinate (monotonic, increasing from nk to 1)
+      real, intent(in) :: z1i(n)          !Lower limit of integration
+      real, intent(in) :: z2i(n)          !Upper limit of integration
+      integer, intent(in) :: type         !Linear subtype (INT_TYPE_LINEAR or INT_TYPE_STEP)
+      real, intent(in) :: yi(n,nk)        !Integrand
+      
+      real(REAL64), intent(out), optional :: Aid(n,nk)   !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+                                                         !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
+      real, intent(out), optional :: Ais(n,nk)           !Integrated profile (as Aid but real32)
+      real(REAL64), intent(out), optional :: Sid(n)      !Integrated sum (Aid(:,1))
+      real, intent(out), optional :: Sis(n)              !Integrated sum (as Sid but real32)
+
+      integer :: status                                  !Return status of function
 
       !Author
       !          R. McTaggart-Cowan and A.Zadra (July 2017)
@@ -187,75 +256,103 @@ contains
       !          using linear interpolation
 
       ! Local variable declaration
-      integer :: n,nk,nk2,i,k
-      real :: zmid, zmid_step_mask
-      real, dimension(:), pointer :: z1iloc,z2iloc
-      real, dimension(size(yi,dim=1)) :: z1,z2
-      real, dimension(size(yi,dim=1),size(yi,dim=2)+2) :: z,y,zh
-      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)+2) :: A
+      integer, dimension(n) :: k1, k2
+      real(REAL64), dimension(n) :: delta1, delta2
+      integer :: istat,k1i,k2i,kp
+      real :: invzz1,invzz2,w0,w1,w2
+      real :: zmid1,zmid2
+      integer :: nko,i,k,ko
+      real :: zmid_step_mask
+      real, dimension(n) :: z1,z2
+      real, dimension(n,nk+2) :: z,y,zh
+      real(REAL64), dimension(n,nk+2) :: A  !# REAL64 takes 160% more time
       logical :: bnd_invert
 
       ! Set error return status
       status = INT_ERR
 
-      ! Initialize bounds
-      n = size(yi,dim=1)
-      nk = size(yi,dim=2)
-
       ! Determine direction of integration
-      if (any(z1i<=z2i)) then
-         z1iloc => z1i
-         z2iloc => z2i
-         bnd_invert = .false.
-      else
-         z1iloc => z2i
-         z2iloc => z1i
-         bnd_invert = .true.
-      endif
-
-      ! Invert input arrays if necessary
-      if (pchip_extend(yi,zi,y,z,z1i=z1iloc,z2i=z2iloc,z1=z1,z2=z2,direc='UP') /= PCHIP_OK) then
-         call msg(MSG_WARNING,'(integral_linear) Error returned by pchip_extend')
-         return
-      endif
- 
+      ! Extend input arrrays
       ! Define layer interfaces
-      zh = 0.
-      nk2 = size(z,dim=2)
-      do k=nk2,2,-1
-         zh(:,k) = (z(:,k) + z(:,k-1)) / 2.
-      enddo
-
-      ! Integrate profile
-      A = 0.
-      zmid_step_mask = 1.
-      if (type == 'STEP') zmid_step_mask = 0.
+      nko = nk+2
+      bnd_invert = any(z1i > z2i)
       do i=1,n
-         k = nk2
-         do while (zh(i,k) < z1(i) .and. k > 1)
-            k = k-1
-         enddo
-         zmid = 0.5*(zh(i,k)+z1(i))
-         zmid = zmid_step_mask * zmid + (1.-zmid_step_mask) * z(i,k)
-         A(i,k) = (y(i,k) + (y(i,k-1)-y(i,k))*((zmid-z(i,k))/(z(i,k-1)-z(i,k)))) * (zh(i,k)-z1(i))
-         do while (zh(i,k) < z2(i) .and. k > 1)
-            k = k-1
-            A(i,k) = A(i,k+1) + y(i,k) * (zh(i,k)-zh(i,k+1))
-         enddo
-         zmid = 0.5*(zh(i,k+1)+z2(i))
-         zmid = zmid_step_mask * zmid + (1.-zmid_step_mask) * z(i,k)
-         A(i,k) = A(i,k+1) + (y(i,k) - (y(i,k)-y(i,k+1))*((z(i,k)-zmid)/(z(i,k)-z(i,k+1)))) * (z2(i)-zh(i,k+1))
-         do while (k > 1)
-            k = k-1
-            A(i,k) = A(i,k+1)
+         if (bnd_invert) then
+            z1(i) = z2i(i)
+            z2(i) = z1i(i)
+         else
+            z1(i) = z1i(i)
+            z2(i) = z2i(i)
+         endif
+         y(i,1) = yi(i,1)
+         y(i,nko) = yi(i,nk)
+         z(i,1) = max(z2(i), 2*zi(i,1)-zi(i,2))
+         z(i,nko) = min(z1(i), 2*zi(i,nk)-zi(i,nk-1))
+         zh(i,1) = 0.
+         zh(i,nko) = 0.
+      enddo
+      do k=1,nk
+         ko = k + 1
+         do i=1,n
+            y(i,ko) = yi(i,k)
+            z(i,ko) = zi(i,k)
+            zh(i,ko) = 0.5*(z(i,ko) + z(i,ko-1))
          enddo
       enddo
+      
+      ! Find subdomain
+      istat = subdomain2(zh,z1,z2,k1,k2,n,nko)
 
+      ! Integrate profile - upper and lower bounds values 
+      zmid_step_mask = 1.
+      if (type == INT_TYPE_STEP) zmid_step_mask = 0.
+      do i=1,n
+         k1i = min(max(2, k1(i)), nko)
+         zmid1 = 0.5*(zh(i,k1i)+z1(i))
+         zmid1 = zmid_step_mask * zmid1 + (1.-zmid_step_mask) * z(i,k1i)
+         invzz1 = 1./(z(i,k1i-1)-z(i,k1i))
+         delta1(i) = (y(i,k1i) + (y(i,k1i-1)-y(i,k1i))*((zmid1-z(i,k1i))*invzz1)) * (zh(i,k1i)-z1(i))
+      enddo
+      do i=1,n
+         k2i = min(max(1, k2(i)), nko-1)
+         zmid2 = 0.5*(zh(i,k2i+1)+z2(i))
+         zmid2 = zmid_step_mask * zmid2 + (1.-zmid_step_mask) * z(i,k2i)
+         invzz2 = 1./(z(i,k2i)-z(i,k2i+1))
+         delta2(i) = (y(i,k2i) - (y(i,k2i)-y(i,k2i+1))*((z(i,k2i)-zmid2)*invzz2)) * (z2(i)-zh(i,k2i+1))
+      enddo
+      
+      ! Integrate profile
+      A(:,nko) = 0.
+      do k=nko,2,-1
+         kp = min(k+1, nko)
+         do i=1,n
+            w1 = float(1 - min(abs(k-k1(i)), 1))
+            w2 = float(1 - min(abs(k-k2(i)), 1))
+            w0 = float(min( &
+                 min(max(k1(i)-k, 0), 1), &
+                 min(max(k-k2(i), 0), 1) &
+                 ))
+            w0 = max(w0,w1,w2)
+            A(i,k) = A(i,kp) + w0*( &
+                 w1 * delta1(i) + &
+                 w2 * delta2(i) + &
+                 (1. - max(w1,w2)) * y(i,k) * (zh(i,k)-zh(i,kp)) &
+                 )
+         enddo
+      enddo
+      
       ! Return interior of domain only
+      ! Negate result if bounds were inverted
       if (bnd_invert) then
-         Ai = -A(:,2:nk+1)
+         if (present(Aid)) Aid = -A(:,2:nk+1)
+         if (present(Ais)) Ais = -A(:,2:nk+1)
+         if (present(Sid)) Sid = -A(:,2)
+         if (present(Sis)) Sis = -A(:,2)
       else
-         Ai = A(:,2:nk+1)
+         if (present(Aid)) Aid = A(:,2:nk+1)
+         if (present(Ais)) Ais = A(:,2:nk+1)
+         if (present(Sid)) Sid = A(:,2)
+         if (present(Sis)) Sis = A(:,2)
       endif
 
       ! Successful completion
@@ -272,8 +369,8 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(REAL64), dimension(:,:), intent(out) :: Ai     !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
+      real(REAL64), dimension(:,:), intent(out) :: Ai           !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
                                                                 !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
 
@@ -284,8 +381,7 @@ contains
       !          Dispatch requests for vertical integration.
 
       ! Local variables
-      character(len=LONG_CHAR) :: myType
-      integer :: istat
+      integer :: myType, ni, nk
  
       ! Initialize return value
       status = INT_ERR
@@ -294,15 +390,16 @@ contains
       myType = DEFAULT_TYPE
       if (present(type)) myType = type
 
+      ni = size(yi,dim=1)
+      nk = size(yi,dim=2)
       ! Dispatch to integration function
-      istat = clib_toupper(myType)
       select case (myType)
-      case ('PCHIP')
-         status = integral_pchip(Ai,yi,zi,z1i,z2i)
-      case ('LINEAR','STEP')
-         status = integral_linear(Ai,yi,zi,z1i,z2i,myType)
+      case (INT_TYPE_PCHIP)
+         status = integral_pchip(zi,z1i,z2i,ni,nk,yi,aid=ai)
+      case (INT_TYPE_LINEAR, INT_TYPE_STEP)
+         status = integral_linear(zi,z1i,z2i,myType,ni,nk,yi,aid=ai)
       case DEFAULT
-         call msg(MSG_WARNING,'(integral_profile_vec_dble) invalid type of integral ('//trim(myType)//') requested')
+         call msg(MSG_WARNING,'(integral_profile_vec_dble) invalid type of integral requested')
          return
       end select
 
@@ -325,7 +422,7 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, dimension(:), target, intent(in) :: z1i             !Lower limit of integration
       real, dimension(:), target, intent(in) :: z2i             !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
       real, dimension(:,:), intent(out) :: Ai                   !Integrated profile A(z) = int^z (g(z')*y(z')*dz')
                                                                 !   where g(z)=1 for z1i<=z<=z2i (0 elsewhere)
       integer :: status                                         !Return status of function
@@ -337,17 +434,34 @@ contains
       !          Wrap call to double-precision calculation.
 
       ! Local variables
-      real(REAL64), dimension(size(Ai,dim=1),size(Ai,dim=2)) :: Ai_dble
-      character(len=LONG_CHAR) :: myType
+      integer :: myType, ni, nk
+
+      ! Initialize return value
+      status = INT_ERR
 
       ! Handle optional arguments
       myType = DEFAULT_TYPE
       if (present(type)) myType = type
 
-      ! Call full-precision calculation
-      status = integral_profile_vec_dble(Ai_dble,yi,zi,z1i,z2i,type=myType)
-      Ai = real(Ai_dble)
+      ni = size(yi,dim=1)
+      nk = size(yi,dim=2)
+      ! Dispatch to integration function
+      select case (myType)
+      case (INT_TYPE_PCHIP)
+         status = integral_pchip(zi,z1i,z2i,ni,nk,yi,ais=ai)
+      case (INT_TYPE_LINEAR, INT_TYPE_STEP)
+         status = integral_linear(zi,z1i,z2i,myType,ni,nk,yi,ais=ai)
+      case DEFAULT
+         call msg(MSG_WARNING,'(integral_profile_vec) invalid type of integral requested')
+         return
+      end select
 
+      ! Error handling
+      if (status /= INT_OK) then
+         call msg(MSG_WARNING,'(integral_profile_vec) error returned from integration subprogram')
+         return
+      end if
+      
       ! End of subprogram
       return
    end function integral_profile_vec
@@ -361,8 +475,8 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, dimension(:), intent(in) :: z1i                     !Lower limit of integration
       real, dimension(:), intent(in) :: z2i                     !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(REAL64), dimension(:), intent(out) :: Si       !Integrated value
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
+      real(REAL64), dimension(:), intent(out) :: Si             !Integrated value
       integer :: status                                         !Return status of function
 
       !Author
@@ -373,8 +487,7 @@ contains
       !          using PCHIP interpolation
 
       ! Local variables
-      real(REAL64), dimension(size(yi,dim=1),size(yi,dim=2)) :: Ai
-      character(len=LONG_CHAR) :: myType
+      integer :: myType, ni, nk
 
       ! Set error return status
       status = INT_ERR
@@ -384,16 +497,26 @@ contains
       if (present(type)) myType = type
 
       ! Compute integral profile
-      if (integral_profile_vec_dble(Ai,yi,zi,z1i,z2i,type=myType) /= INT_OK) then
-         call msg(MSG_WARNING,'(integral_profile_sum_dble) error returned by integration subprogram')
+      ni = size(yi,dim=1)
+      nk = size(yi,dim=2)
+      ! Dispatch to integration function
+      select case (myType)
+      case (INT_TYPE_PCHIP)
+         status = integral_pchip(zi,z1i,z2i,ni,nk,yi,sid=Si)
+      case (INT_TYPE_LINEAR, INT_TYPE_STEP)
+         status = integral_linear(zi,z1i,z2i,myType,ni,nk,yi,sid=Si)
+      case DEFAULT
+         call msg(MSG_WARNING,'(integral_profile_sum_dble) invalid type of integral requested')
          return
-      endif
+      end select
 
-      ! Select end-point for integrated value
-      Si = Ai(:,1)
-
-      ! Successful completion
-      status = INT_OK
+      ! Error handling
+      if (status /= INT_OK) then
+         call msg(MSG_WARNING,'(integral_profile_sum_dble) error returned from integration subprogram')
+         return
+      end if
+      
+      ! End of subprogram
       return
    end function integral_profile_sum_dble
 
@@ -406,7 +529,7 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, dimension(:), intent(in) :: z1i                     !Lower limit of integration
       real, dimension(:), intent(in) :: z2i                     !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
       real, dimension(:), intent(out) :: Si                     !Integrated value
       integer :: status                                         !Return status of function
 
@@ -417,16 +540,31 @@ contains
       !          Wrap call to double-precision calculations.
 
       ! Local variables
-      real(REAL64), dimension(size(Si)) :: Si_dble
-      character(len=LONG_CHAR) :: myType
+      integer :: myType, ni, nk
 
       ! Handle optional arguments
       myType = DEFAULT_TYPE
       if (present(type)) myType = type
 
-      ! Call full-precision calculation
-      status = integral_profile_sum_dble(Si_dble,yi,zi,z1i,z2i,type=myType)
-      Si = real(Si_dble)
+      ! Compute integral profile
+      ni = size(yi,dim=1)
+      nk = size(yi,dim=2)
+      ! Dispatch to integration function
+      select case (myType)
+      case (INT_TYPE_PCHIP)
+         status = integral_pchip(zi,z1i,z2i,ni,nk,yi,sis=Si)
+      case (INT_TYPE_LINEAR, INT_TYPE_STEP)
+         status = integral_linear(zi,z1i,z2i,myType,ni,nk,yi,sis=Si)
+      case DEFAULT
+         call msg(MSG_WARNING,'(integral_profile_sum) invalid type of integral requested')
+         return
+      end select
+
+      ! Error handling
+      if (status /= INT_OK) then
+         call msg(MSG_WARNING,'(integral_profile_sum) error returned from integration subprogram')
+         return
+      end if
 
       ! End of subprogram
       return
@@ -441,8 +579,8 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, intent(in) :: z1i                                   !Lower limit of integration
       real, intent(in) :: z2i                                   !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
-      real(REAL64), dimension(:), intent(out) :: Si       !Integrated value
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
+      real(REAL64), dimension(:), intent(out) :: Si             !Integrated value
       integer :: status                                         !Return status of function
 
       !Author
@@ -454,7 +592,7 @@ contains
 
       ! Local variables
       real, dimension(size(yi,dim=1)) :: vz1i,vz2i
-      character(len=LONG_CHAR) :: myType
+      integer :: myType
 
       ! Set error return status
       status = INT_ERR
@@ -485,7 +623,7 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, intent(in) :: z1i                                   !Lower limit of integration
       real, intent(in) :: z2i                                   !Upper limit of integration
-      character(len=*), intent(in), optional :: type            !Type of integration strategy to use (['pchip'],'linear','step')
+      integer, intent(in), optional :: type                     !Type of integration strategy to use (INT_TYPE_PCHIP, INT_TYPE_LINEAR or INT_TYPE_STEP)
       real, dimension(:), intent(out) :: Si                     !Integrated value
       integer :: status                                         !Return status of function
 
@@ -496,36 +634,49 @@ contains
       !          Wrap call to double-precision calculations.
 
       ! Local variables
-      real(REAL64), dimension(size(Si)) :: Si_dble
-      character(len=LONG_CHAR) :: myType
+      real, dimension(size(yi,dim=1)) :: vz1i,vz2i
+      integer :: myType
+
+      ! Set error return status
+      status = INT_ERR
 
       ! Handle optional arguments
       myType = DEFAULT_TYPE
       if (present(type)) myType = type
 
-      ! Call full-precision calculation
-      status = integral_profile_sum_scalbnd_dble(Si_dble,yi,zi,z1i,z2i,type=myType)
-      Si = real(Si_dble)
+      ! Compute integral profile
+      vz1i = z1i
+      vz2i = z2i
+      if (integral_profile_sum(Si,yi,zi,vz1i,vz2i,type=myType) /= INT_OK) then
+         call msg(MSG_WARNING,'(integral_profile_sum_scalbnd) Error returned by integration subprogram')
+         return
+      endif
 
       ! End of subprogram
+      status = INT_OK
       return
    end function integral_profile_sum_scalbnd
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   function integral_solve_vdep(zci,yi,zi,zidep,a,direc,fd_unittest,found) result(status)
+   function integral_solve_vdep(zci,yi,zi,zidep,a,direc,n,nki, &
+#ifdef DEBUG
+        fd_unittest, &
+#endif
+        found) result(status)
       ! Solve an integral equation using PCHIP interpolation
-      use pchip_utils, only: PCHIP_OK,PCHIP_EXT,pchip_extend,pchip_layers,pchip_coef
-      use rootfind, only: RF_OK,rf_nrbnd
       implicit none
       !@Arguments
-      real, dimension(:,:), intent(in) :: yi                    !Integrand
-      real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
-      real, dimension(:), intent(in) :: zidep                   !Departure level for integral
-      real, dimension(:), intent(in) :: a                       !Right hand side of integral equation
-      character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
-      real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
+      integer, intent(in) :: n,nki
+      real, dimension(n,nki), intent(in) :: yi                  !Integrand
+      real, dimension(n,nki), intent(in) :: zi                  !Vertical coordinate (monotonic, increasing from nki to 1)
+      real, dimension(n), intent(in) :: zidep                   !Departure level for integral
+      real, dimension(n), intent(in) :: a                       !Right hand side of integral equation
+      integer, intent(in) :: direc                              !Direction of integration (INT_DIR_UP or INT_DIR_DOWN)
+      real, dimension(n), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
+#ifdef DEBUG
       integer, intent(in), optional :: fd_unittest              !Open file descriptor for unit test results
-      logical, dimension(:), intent(out), optional :: found     !Found a solution to the integral equation within the column
+#endif
+      logical, dimension(n), intent(out), optional :: found     !Found a solution to the integral equation within the column
       integer :: status                                         !Return status of function
       !@Author A.Zadra (Aug 2016)
       !@Object solve an integral equation using PCHIP interpolation
@@ -533,156 +684,168 @@ contains
       !          The result is zci: the value of z at which the equation
       !                int^z (g(z')*y(z')*dz') = a
       !          is solved, with weight function g given by
-      !                     | 1.  , between zidep and zi(1) or zi(nk) depending on direc
+      !                     | 1.  , between zidep and zi(1) or zi(nki) depending on direc
       !              g(z) = |
       !                     | 0.  , otherwise
 
       ! Local variable declaration
-      integer :: n,nk,i,k,istat
-      integer, dimension(size(yi,dim=1)) :: k1,k2
-      real :: da,delF,hlow,hhigh
-      real, dimension(1) :: root
-      real, dimension(size(yi,dim=1)) :: z1,z2,zc,z1i,z2i,signa
-      real, dimension(size(yi,dim=2)+PCHIP_EXT) :: F
-      real, dimension(size(yi,dim=1),size(yi,dim=2)) :: yyi
-      real, dimension(size(yi,dim=1),size(yi,dim=2)+PCHIP_EXT) :: z,y,h,del,b,c,d
-      logical, dimension(size(yi,dim=1)) :: myFound
-      character(len=LONG_CHAR) :: myDirec
+      integer :: i,k,istat,wi
+      integer, dimension(n) :: k1,k2,k3
+      real :: delF,root,dfflow,dffhigh,ffzlow,ffzhigh,w0,w1,w2,hlow,hhigh,fflow,ffhigh,da
+      real, dimension(n) :: z1,z2,zc,hlow1,dfflow1,fflow1,hhigh2
+      real, dimension(n,nki+PCHIP_EXT) :: F2d
+      real, dimension(n,nki+PCHIP_EXT) :: z,y,h,del,b,c,d,d2c
+      integer :: k1max,k2min,nko,ko
 #ifdef DEBUG
       integer :: ku
       real :: dz,floc,zloc
 #endif
+
+      nko = nki+PCHIP_EXT
       
       ! Set error return status
       status = INT_ERR
-
-      ! Initialize array bounds
-      n = size(yi,dim=1)
-      nk = size(yi,dim=2)
- 
-      ! For the integral solution a() should always be positive, so negate yi() if necessary
-      signa(:) = sign(1.,a(:))
-      do k=1,nk
+      
+      ! Extend arrays to integration bounds
+      ! Set bounds of integral
+      ! Invert input arrays if necessary
+      IFDIREC: if (direc == PCHIP_DIR_DOWN) then
          do i=1,n
-            yyi(i,k) = signa(i) * yi(i,k)
+            y(i,nko) = sign(1., a(i))*yi(i,1)
+            y(i,1)   = sign(1., a(i))*yi(i,nki)
+            z(i,nko) = zi(i,1) - max(zidep(i),  2*zi(i,1)   - zi(i,2))
+            z(i,1)   = zi(i,1) - min(zi(i,nki), 2*zi(i,nki) - zi(i,nki-1))
+            z1(i)    = zi(i,1) - zidep(i)
+            z2(i)    = zi(i,1) - zi(i,nki)
          enddo
+         do k=nki,1,-1
+            ko = nko-k !# ko=k+PCHIP_EXT/2 ; ko=nko-ko+1
+            do i=1,n
+               y(i,ko)   = sign(1., a(i))*yi(i,k)
+               z(i,ko)   = zi(i,1) - zi(i,k)
+               h(i,ko)   = z(i,ko-1) - z(i,ko)
+               del(i,ko) = (y(i,ko-1) - y(i,ko)) / h(i,ko)
+            enddo
+         enddo
+      else  !#IFDIREC
+         do i=1,n
+            y(i,1)   = sign(1., a(i))*yi(i,1)
+            y(i,nko) = sign(1., a(i))*yi(i,nki)
+            z(i,1)   = max(zi(i,1),  2*zi(i,1)   - zi(i,2))
+            z(i,nko) = min(zidep(i), 2*zi(i,nki) - zi(i,nki-1))
+            z1(i)    = zidep(i)
+            z2(i)    = zi(i,1)
+         enddo
+         do k=1,nki
+            ko = k + 1 !#PCHIP_EXT/2
+            do i=1,n
+               y(i,ko)  = sign(1., a(i))*yi(i,k)
+               z(i,ko)  = zi(i,k)
+               h(i,ko)   = z(i,ko-1) - z(i,ko)
+               del(i,ko) = (y(i,ko-1) - y(i,ko)) / h(i,ko)
+            enddo
+         enddo
+      endif IFDIREC
+           
+      do i=1,n
+         h(i,1)   = h(i,2)
+         del(i,1) = del(i,2)
+         h(i,nko) = z(i,nko-1) - z(i,nko)
+         del(i,nko) = (y(i,nko-1) - y(i,nko)) / h(i,nko)
       enddo
 
-      ! Set bounds of integral
-      myDirec = direc
-      istat = clib_toupper(myDirec)
-      select case (myDirec)
-      case ('DOWN')
-         z1i = zi(:,nk)
-         z2i = zidep
-      case ('UP')
-         z1i = zidep
-         z2i = zi(:,1)
-      case DEFAULT
-         z1i = -1.
-         z2i = -1.
-      end select
-
-      ! Invert input arrays if necessary
-      if (pchip_extend(yyi,zi,y,z,z1i=z1i,z2i=z2i,z1=z1,z2=z2,direc=direc) /= PCHIP_OK) then
-         call msg(MSG_WARNING,'(integral_solve_vdep) Error returned by pchip_extend')
-         return
-      endif
-
-      ! Compute layer thickness and deltas
-      istat = pchip_layers(y,z,h,del)
-
       ! Compute interpolating polynomial coefficients
-      istat = pchip_coef(h,del,b,c,d)
+      istat = pchip_coef(h,del,b,c,d,n,nko)
 
       ! Find subdomain
-      istat = subdomain(z,z1,z2,k1,k2)
+      istat = subdomain(z,z1,z2,k1,k2,n,nko)
 
       ! Solve equation
-      zc = z2
       do i=1,n
-         myFound(i) = .false.
-         F = 0.
-         KLOOP: do k=k1(i),k2(i),-1
+         k = k1(i)
+         hlow1(i)   = z1(i)-z(i,k)
+         dfflow1(i) = dff(hlow1(i))
+         fflow1(i)  = ff(hlow1(i))
+         hhigh2(i)  = z2(i)-z(i,k2(i))
+      enddo
 
-            ! Set up integration bounds for polyomial in this layer
-            if (k == k1(i)) then
-               hlow = z1(i)-z(i,k)
-               hhigh = h(i,k)
-               F(k) = -ff(hlow)
-            elseif (k == k2(i)) then
-               hlow = 0.
-               hhigh = z2(i)-z(i,k)
-            else
-               hlow = 0.
-               hhigh = h(i,k)
-            endif
-
+      zc = z2
+      k3 = -1
+      F2d = 0.
+      k1max = min(maxval(k1), nko)
+      k2min = max(2, minval(k2))
+      KLOOP: do k=k1max,k2min,-1
+         do i=1,n
+            if (k > k1(i) .or. k < k2(i) .or. k3(i) /= -1) cycle
+            w1 = float(1 - min(abs(k-k1(i)), 1))
+            w2 = float(1 - min(abs(k-k2(i)), 1))
+            w0 = 1. - max(w1,w2)
+            
+            hlow  = w1*hlow1(i)  !# + w2*hlow2(i) + w0*0.
+            hhigh = w2*hhigh2(i) + (w0+w1)*h(i,k)
+            dfflow   = w1*dfflow1(i) + (w0+w2)*y(i,k)
+            fflow = w1*fflow1(i)  !# + (w0+w2)*0.
+            F2d(i,k) = F2d(i,k) - w1*fflow1(i)
+            
+            ffhigh  = ff(hhigh)
+            dffhigh = dff(hhigh)
+            
             ! Remaining RHS value for this layer
-            da  = abs(a(i)) - F(k)
-
-#ifdef DEBUG
-            ! Numerical integration for unit testing
-            if (present(fd_unittest)) then
-               do ku=1,50
-                  dz = (ku-1)/50.*(hhigh-hlow)
-                  zloc = z(i,k)
-                  floc = F(k)+ff(hlow+dz)
-                  dz = hlow + dz
-                  if (myDirec == 'DOWN') then
-                     zloc = z(i,1)-zloc
-                     dz = -dz
-                  endif
-                  if (a(i) < 0.) floc = -floc
-                  write(fd_unittest, '(2(e,x))') zloc+dz, floc
-               enddo
-            endif
-#endif
+            da  = abs(a(i)) - F2d(i,k)
 
             ! Check for a possible maximum within the layer
-            LOCAL_MAX: if (dff(hlow)*dff(hhigh) < 0.) then
-               if (rf_nrbnd(root,dff,d2ff,(/hlow/),(/hhigh/)) /= RF_OK) then
+            LOCAL_MAX: if (sign(1.,dfflow) /= sign(1.,dffhigh)) then
+               d2c(i,k) = d(i,k) + 2.*c(i,k)
+               istat = rf_nrbnd(root,dff,d2ff,hlow,hhigh,dfflow,dffhigh)
+#ifdef DEBUG
+               if (istat /= RF_OK) then
                   call msg(MSG_WARNING,'(integral_solve_vdep) Cannot find local root')
                   return
                endif
-               delF = ff(root(1))
-               if (delF >= da) hhigh = root(1)
+#endif
+               delF = ff(root)
+               w0 = min(max(sign(1.,da - delF), 0.), 1.)
+               hhigh  = w0*hhigh  + (1.-w0)*root
+               ffhigh = w0*ffhigh + (1.-w0)*delF
             endif LOCAL_MAX
 
             ! Integrate over layer
-            delF = ff(hhigh)
-            F(k-1) = F(k) + delF
+            F2d(i,k-1) = F2d(i,k) + ffhigh
 
             ! Numerical solution to compute position within the layer
-            if (delF >= da) then
-               myFound(i) = .true.
-               if (rf_nrbnd(root,ffz,dff,(/hlow/),(/hhigh/)) /= RF_OK) then
+            if (ffhigh >= da) then
+               k3(i) = k
+               istat = rf_nrbnd(root,ffz,dff,hlow,hhigh,fflow-da,ffhigh-da)
+#ifdef DEBUG
+               if (istat /= RF_OK) then
                   call msg(MSG_WARNING,'(integral_solve_vdep) Cannot solve integral equation')
                   return
                endif
-               zc(i) = root(1) + z(i,k)
+#endif
+               zc(i) = root + z(i,k)
             endif
 
-            if (myFound(i)) exit KLOOP
-         enddo KLOOP
+         enddo
+      enddo KLOOP
 
-         ! Final check that the solution height remains within bracketing interval
-         if (zc(i) < z1(i) .or. zc(i) > z2(i)) then
-            call msg(MSG_WARNING,'(integral_solve_vdep) Integral solution out of bounds')
-            return
-         endif
-      enddo
-
+#ifdef DEBUG
+      ! Final check that the solution height remains within bracketing interval
+      if (any(zc < z1) .or. any(zc > z2)) then
+         call msg(MSG_WARNING,'(integral_solve_vdep) Integral solution out of bounds')
+         return
+      endif
+#endif
+      
       ! Re-invert level if necessary
-      select case (myDirec)
-      case ('DOWN')
+      select case (direc)
+      case (PCHIP_DIR_DOWN)
          zci = zidep - (zi(:,1) - zc)
-      case ('UP')
+      case (PCHIP_DIR_UP)
          zci = zc - zidep
       end select
  
       ! Generate solution report on request
-      if (present(found)) found(:) = myFound(:)
+      if (present(found)) found = (k3 /= -1)
 
       ! Successful completion
       status = INT_OK
@@ -695,25 +858,25 @@ contains
       real function ff(x)
         ! Interploating polynomial
         real, intent(in) :: x
-        ff = x*y(i,k) + (d(i,k)/2.)*x**2. + (c(i,k)/3.)*x**3. + (b(i,k)/4.)*x**4
+        ff = x*(y(i,k) + x*(0.5*d(i,k) + x*(TRD*c(i,k) + x*0.25*b(i,k))))
       end function ff
 
       real function ffz(x)
         ! Interpolating polynomial with 0 on the RHS for root-finding
         real, intent(in) :: x
         ffz = ff(x) - da
-      end function ffz
+       end function ffz
 
       real function dff(x)
         ! First derivative of interpolating polynomial
         real, intent(in) :: x
-        dff = y(i,k) + d(i,k)*x + c(i,k)*x**2 + b(i,k)*x**3
+        dff = (y(i,k) + x*(d(i,k) + x*(c(i,k) + x*b(i,k))))
       end function dff
-
+     
       real function d2ff(x)
          ! Second derivative of interpolating polynomial
          real, intent(in) :: x
-         d2ff = d(i,k) + 2.*c(i,k) + 3*b(i,k)*x**2
+         d2ff = (d2c(i,k) + x*x*3.*b(i,k))
       end function d2ff
  
    end function integral_solve_vdep
@@ -726,16 +889,19 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, intent(in) :: zidep                                 !Departure level for integral
       real, dimension(:), intent(in) :: a                       !Right hand side of integral equation
-      character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
+      integer, intent(in) :: direc                              !Direction of integration (INT_DIR_UP or INT_DIR_DOWN)
       real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
       integer :: status                                         !Return status of function
       !@Author A.Zadra (Aug 2016)
       !@Object solve an integral equation using PCHIP interpolation
 
+      integer :: n,nk
       real, dimension(size(yi,dim=1)) :: vzidep
-
+      
+      n = size(yi,dim=1)
+      nk = size(yi,dim=2)
       vzidep = zidep
-      status = integral_solve_vdep(zci,yi,zi,vzidep,a,direc)
+      status = integral_solve_vdep(zci,yi,zi,vzidep,a,direc,n,nk)
       if (status /= INT_OK) then
          call msg(MSG_WARNING,'(integral_solve_sdep) Error returned by integral solver subprogram')
       endif
@@ -751,7 +917,7 @@ contains
       real, dimension(:,:), intent(in) :: zi                    !Vertical coordinate (monotonic, increasing from nk to 1)
       real, intent(in) :: zidep                                 !Departure level for integral
       real, intent(in) :: a                                     !Right hand side of integral equation
-      character(len=*), intent(in) :: direc                     !Direction of integration ('up', 'down')
+      integer, intent(in) :: direc                              !Direction of integration (INT_DIR_UP or INT_DIR_DOWN)
       real, dimension(:), intent(out) :: zci                    !Value of (z-zdep) for int^z (g(z')*y(z')*dz') = a
       integer :: status                                         !Return status of function
       !@Author A.Zadra (Aug 2016)
@@ -769,35 +935,37 @@ contains
    end function integral_solve_sdepsa
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function subdomain(z,z1,z2,k1,k2) result(status)
+
+!dir$ attributes forceinline :: subdomain
+   function subdomain(z,z1,z2,k1,k2,n,nk) result(status)
       !@Object Find subdomain
       !@Arguments
-      real, dimension(:,:), intent(in) :: z
-      real, dimension(:), intent(in) :: z1,z2
-      integer, dimension(:), intent(out) :: k1,k2
+      integer, intent(in) :: n,nk
+      real, dimension(n,nk), intent(in) :: z
+      real, dimension(n), intent(in) :: z1,z2
+      integer, dimension(n), intent(out) :: k1,k2
       !@Author A.Zadra (Aug 2016)
 
       integer :: status
 
       ! Local variables
-      integer :: n,nk,i,k
+      integer :: i,k
 
       ! Set return status
       status = INT_ERR
 
       ! Find subdomain
-      n = size(z,dim=1)
-      nk = size(z,dim=2)
-      do i=1,n
-         k = nk
-         do while (z1(i) >= z(i,k) .and. k > 1)
-            k = k-1
+      k1 = 2
+      k2 = 2
+      do k = nk,1,-1
+         do i = 1,n
+            if (z(i,k) > z1(i)) then
+               k1(i) = min(max(k+1, k1(i)), nk)
+            endif
+            if (z(i,k) >= z2(i)) then
+               k2(i) = max(k, k2(i))
+            endif
          enddo
-         k1(i) = min(nk, k+1)
-         do while (z2(i) >= z(i,k) .and. k > 1)
-            k = k-1
-         enddo
-         k2(i) = min(nk, k+1)
       enddo
 
       ! Successful completion
@@ -805,4 +973,41 @@ contains
       return
    end function subdomain
 
+   
+!dir$ attributes forceinline :: subdomain2
+   function subdomain2(z,z1,z2,k1,k2,n,nk) result(status)
+      !@Object Find subdomain
+      !@Arguments
+      integer, intent(in) :: n,nk
+      real, dimension(n,nk), intent(in) :: z
+      real, dimension(n), intent(in) :: z1,z2
+      integer, dimension(n), intent(out) :: k1,k2
+
+      integer :: status
+
+      ! Local variables
+      integer :: i,k
+
+      ! Set return status
+      status = INT_ERR
+
+      ! Find subdomain
+      k1 = 1
+      k2 = 1
+      do k = nk,2,-1
+         do i = 1,n
+            if (z(i,k) >= z2(i) .and. k1(i) /= 1) then
+               k2(i) = max(k2(i), k)
+            endif
+            if (z(i,k) >= z1(i)) then
+               k1(i) = max(k1(i), k)
+            endif
+         enddo
+      enddo
+
+      ! Successful completion
+      status = INT_OK
+      return
+   end function subdomain2
+   
 end module integrals
