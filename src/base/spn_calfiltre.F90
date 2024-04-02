@@ -53,8 +53,8 @@
          jl= j-Grd_extension-1
          do i=1+Spn_22pil_w,Spn_22n-Spn_22pil_e
             il= i+Spn_22n0-Grd_extension-2
-            nix = dble(il)/dble(ni_trunc)
-            njx = dble(jl)/dble(nj_trunc)
+            nix = dble(il)/dble(2.*ni_trunc)
+            njx = dble(jl)/dble(2.*nj_trunc)
             nkx = sqrt(nix*nix + njx*njx)
             if ( nkx > nk_cut ) then
                Spn_flt(i,j)= 0.0
