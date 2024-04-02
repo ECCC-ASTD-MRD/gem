@@ -15,7 +15,7 @@ mach = 3.2.0-rc3
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.0.4
-tdpack >= 1.6.3.1
-vgrid >= 6.9.3.1
-rpncomm >= 4.6.3.1
+rmn  >= 20.0.5
+tdpack >= 1.6.3.2
+vgrid >= 6.9.3.2
+rpncomm >= 4.6.3.2
