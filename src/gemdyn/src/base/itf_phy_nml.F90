@@ -25,7 +25,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer, parameter :: COMPATIBILITY_LVL = 20
+      integer, parameter :: COMPATIBILITY_LVL = 21
       integer err,phy_code
 !
 !     ---------------------------------------------------------------
