@@ -136,7 +136,7 @@ Inp_npes=4
  sgo_tdfilter = -1.
 
  LONGMEL    = 'boujo'
- FLUVERT    = 'clef'
+ FLUVERT    = 'moistke'
 
  PBL_RICRIT = 0.25,2. ,  PBL_SHAL   = 'conres'
  PBL_ZNTAU  = 600.    ,  PBL_DISS   = 'lim50',
