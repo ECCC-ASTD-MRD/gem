@@ -95,6 +95,7 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
    character(len=LONG_VARNAME) :: vname
    type(phyvar) :: myvar(1)
    type(phymeta), pointer :: cmeta
+   integer(kind=4)        :: bptr_i0, bptr_in
 
    call msg_toall(chm_msg_debug, 'mach_stepinit [BEGIN]')
 !
@@ -145,12 +146,22 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
          cmeta => myvar(1)%meta
          if (trim(vname) == 'LAI_ENT') then
             jj = (imonth - 1) * chm_ni
-            lai(1:chm_ni) => cmeta%bptr(1+jj:chm_ni+jj, trnch)
+            bptr_i0 = cmeta % i0 + jj
+            bptr_in = cmeta % i0 + jj + chm_ni
+            lai(1:chm_ni) => cmeta%bptr(bptr_i0:bptr_in, trnch)
          end if
-         if (trim(vname) == 'POPU_ENT') &
-            pop(1:chm_ni) => cmeta%bptr(1:chm_ni, trnch)
-         if (trim(vname) == 'FRT_BELD3') &
-            frt(1:chm_ni) => cmeta%bptr(1:chm_ni, trnch)
+         if (trim(vname) == 'POPU_ENT') then
+            bptr_i0 = cmeta % i0
+            bptr_in = cmeta % in
+            pop(1:chm_ni) => cmeta%bptr(bptr_i0:bptr_in, trnch)
+         endif
+         
+         if (trim(vname) == 'FRT_BELD3') then
+            bptr_i0 = cmeta % i0
+            bptr_in = cmeta % in
+            frt(1:chm_ni) => cmeta%bptr(bptr_i0:bptr_in, trnch)
+         endif
+         
       end do
 !
 !    If not using the monthly LAI input;
