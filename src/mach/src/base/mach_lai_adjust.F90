@@ -79,7 +79,7 @@
       return
    end if
    vmeta => myvar(1)%meta
-   jj = 0
+   jj = vmeta % i0 - 1
    do im = 1, nmth
       do ii = 1, chm_ni
          jj = jj + 1

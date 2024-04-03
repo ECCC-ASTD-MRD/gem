@@ -158,7 +158,7 @@ repo_br=$(git branch --show-current)
 repo_id=$(git rev-parse --verify --short HEAD)
 
 # Determine hall of working directory
-if [[ -n "$(echo ${repo_dir} | grep /ords/ )" ]] ; then 
+if [[ -n "$(echo ${repo_dir} | grep /homeu2/ )" ]] ; then 
  current_hall=hall5
 else
  current_site=$(echo ${repo_dir} | cut -d "/" -f3)
@@ -184,7 +184,7 @@ vertag=${repo_id} # option tag ${GMJobPtopo}
 gmtestinfo=${gmgit_dir}/gm-test-${TRUE_HOST}-info.txt_${vertag}
 
 # Set work directory structure
-export TASK_BASEDIR=$(echo ${repo_dir} | sed "s/${USER}.*/${USER}/g")/maestro/${TRUE_HOST}/${Test_version}/gm-test_${repo_bn}_${vertag}
+export TASK_BASEDIR=$(true_path -n ${HOME}/data_maestro/${TRUE_HOST})/maestro/${TRUE_HOST}/${Test_version}/gm-test_${repo_bn}_${vertag}
 [[ -d ${TASK_BASEDIR} ]] && rm -rf ${TASK_BASEDIR} && mkdir -p ${TASK_BASEDIR}
 ln -sf ${TASK_BASEDIR} ${gmgit_dir}/gm-test-${TRUE_HOST}_${vertag}
 export TASK_BIN=${TASK_BASEDIR}/bin
@@ -225,9 +225,10 @@ elif [[ "${mach_repo}" == "true" ]] ; then
    # git clone remote GEM super repo to working directory, reset it to the tagged GEM version, and
    # git subtree pull local MACH repo into the working-directory GEM super repo
    mach_dir=${gemmach_dir}/src/mach
-   git clone ${GEM_remote} ${gemmach_dir}
+   git clone -b ${GEM_version} ${GEM_remote} ${gemmach_dir}
    cd ${gemmach_dir}
-   git reset --hard $(git rev-list -n 1 ${GEM_version})
+   git switch -c ${Test_version}
+   export GIT_MERGE_AUTOEDIT=no
    git subtree pull --squash -P src/mach ${gmgit_dir} ${repo_br}
 fi
 
