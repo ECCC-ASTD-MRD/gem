@@ -815,7 +815,8 @@ contains
 
          src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
 
-         call sort_ip1 (liste_u,liste_sorted,lislon)
+         i= lislon
+         call sort_ip1 (liste_u,liste_sorted,i)
          call sort_ip1 (liste_v,liste_sorted,lislon)
 
          allocate (F_ip1(max(1,lislon)))
