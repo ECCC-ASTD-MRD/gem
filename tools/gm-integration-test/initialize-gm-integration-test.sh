@@ -89,7 +89,7 @@
 #          of from GEM repository; update documentation; rename build directory in work
 #          directory to GEM-MACH directory
 #         October/November 2023, Verica S-J - update to allow for running the test either
-#          from MACH repo or GEM super repo and to load environments from GEM super repo 
+#          from MACH repo or GEM super repo and to load environments from GEM super repo
 #          instead of released package
 ###
 
@@ -158,7 +158,7 @@ repo_br=$(git branch --show-current)
 repo_id=$(git rev-parse --verify --short HEAD)
 
 # Determine hall of working directory
-if [[ -n "$(echo ${repo_dir} | grep /homeu2/ )" ]] ; then 
+if [[ -n "$(echo ${repo_dir} | grep /homeu2/ )" ]] ; then
  current_hall=hall5
 else
  current_site=$(echo ${repo_dir} | cut -d "/" -f3)
@@ -219,7 +219,7 @@ gemmach_dir=${TASK_BASEDIR}/GEM-MACH
 
 if [[ "${mach_repo}" != "true" ]] ; then
    # git clone local GEM super repo and checkout current commit to working directory
-   git clone -l --single-branch ${repo_dir} ${gemmach_dir}
+   git clone -l --single-branch --no-hardlinks ${repo_dir} ${gemmach_dir}
    cd ${gemmach_dir}; git reset --hard ${repo_id}
 elif [[ "${mach_repo}" == "true" ]] ; then
    # git clone remote GEM super repo to working directory, reset it to the tagged GEM version, and
