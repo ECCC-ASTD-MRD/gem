@@ -47,9 +47,9 @@
 !                  3   inland lake                  13  Inland water
 !                  4   evergreen neddleleaf trees    1  Evergreen needleleaf forest
 !                  5   evergreen broadleaf trees     2  Evergreen broadleaf forest
-!                  6   deciduous neddleleaf trees    2  Evergreen broadleaf forest
-!                  7   deciduous broadleaf trees     3  Deciduous needleleaf forest
-!                  8   tropical broadleaf trees      4  Deciduous broadleaf forest
+!                  6   deciduous neddleleaf trees    3  Deciduous needleleaf forest
+!                  7   deciduous broadleaf trees     4  Deciduous broadleaf forest
+!                  8   tropical broadleaf trees      2  Evergreen broadleaf forest
 !                  9   drought deciduous trees       4  Deciduous broadleaf forest
 !                  10  evergreen broadleaf shrub    10  Dwarf trees, shrubs with ground cover (tundra)
 !                  11  deciduous shrubs             10  Dwarf trees, shrubs with ground cover (tundra)
