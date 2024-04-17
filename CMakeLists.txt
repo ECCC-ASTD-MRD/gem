@@ -150,7 +150,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/work-${OS}-${COMPILER_SUITE}-${COMPILER_VERSION}" CACHE FILEPATH "Working directory prefix" FORCE)
   endif()
 else()
-  set(WORK_PREFIX "${CMAKE_INSTALL_PREFIX}}" CACHE FILEPATH "Working directory prefix" FORCE)
+  set(WORK_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE FILEPATH "Working directory prefix" FORCE)
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
