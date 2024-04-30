@@ -45,6 +45,7 @@ phytbl=${phytbl:-'<no value>'}
 
 CACHEDIR='<no value>'
 iaurep='<no value>'
+nudge='<no value>'
 restart='<no value>'
 busper='<no value>'
 analysis='<no value>'
@@ -62,6 +63,9 @@ fi
 if [ -e ${PREP_dir}/IAUREP ] ; then
   iaurep=${PREP_dir}/IAUREP
 fi
+if [ -e ${PREP_dir}/NUDGE ] ; then
+  nudge=${PREP_dir}/NUDGE
+fi
 
 ATMMOD=$(which maingemdm)
 BINMOD=$(dirname ${ATMMOD})
@@ -75,6 +79,7 @@ if [ -n "$gem_cfgfile" ] ; then
   geophy=${GEM_geophy:-$geophy}
   climato=${GEM_climato:-$climato}
   iaurep=${GEM_iaurep:-$iaurep}
+  nudge=${GEM_nudge:-$nudge}
   restart=${GEM_restart_tarbal:-$restart}
   busper=${GEM_busper:-$busper}
   CONST=${GEM_const:-${CONST}}
@@ -105,6 +110,7 @@ cat >> $tsk_cfgfile <<EOF
 # $rep2cfg/BUSPER.tar $busper
 # $rep2cfg/CACHE $CACHEDIR
 # ${rep2cfg}/IAUREP ${iaurep}
+# ${rep2cfg}/NUDGE ${nudge}
 # ${rep2cfg}/constantes $CONST
 # ${rep2cfg}/ozone_clim.fst $OZONE
 # ${rep2cfg}/rad_table.fst $IRTAB

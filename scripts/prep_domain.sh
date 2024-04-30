@@ -96,7 +96,11 @@ if [ -e "${anal}" ] ; then
         if [[ -f ${item} ]] ; then
            editfst -s ${item} -d ${local_anal_file} -i 0
         elif [[ -d ${item} ]] ; then
-           ln -s $(readlink -e $item) ${o}/IAUREP
+           if [[ ${item} == 'nudge' ]] ; then
+              ln -s $(readlink -e $item) ${o}/NUDGE
+           else
+              ln -s $(readlink -e $item) ${o}/IAUREP
+           fi
         fi
      done
      set +x
@@ -113,8 +117,12 @@ if [ -e "${anal}" ] ; then
             editfst -s ${item} -d ${local_anal_file} -i 0
             /bin/rm -f ${item}
           elif [[ -d ${item} ]] ; then
-            mv $item ${o}/IAUREP
-          fi
+             if [[ ${item} == 'nudge' ]] ; then
+                mv $item ${o}/NUDGE
+             else
+                mv $item ${o}/IAUREP
+             fi
+         fi
         done
         set +x
       else
