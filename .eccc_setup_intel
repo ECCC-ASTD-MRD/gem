@@ -22,20 +22,23 @@ case ${INTEL_SCRIPT_NAME} in
     .eccc_setup_intel_2023.2.0)
         export COMPILER_VERSION=2023.2.0
         ;;
+    .eccc_setup_intel_2024.0.1)
+        export COMPILER_VERSION=2024.0.1
+        ;;
 esac
 
 # According to the domain, load corresponding code-tools 
 if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/SCIENCE/gpscc3/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/gpscc3/inteloneapi-${COMPILER_VERSION}
 elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/SCIENCE/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/inteloneapi-${COMPILER_VERSION}
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.8/ECCC/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/ECCC/inteloneapi-${COMPILER_VERSION}
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20240318
-. r.load.dot rpn/utils/20240318
+. r.load.dot rpn/libs/20240513
+. r.load.dot rpn/utils/20240513
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
 
