@@ -50,7 +50,7 @@
       data msgs(36) /'FICHIER CMCARC v4'/
       data msgs(37) /'FICHIER CMCARC v5'/
       data msgs(38) /'FICHIER HDF5'/
-      data msgs(39) /'RPN standard 98 with RSF backend'/
+      data msgs(39) /'RPN standard 24 with RSF backend'/
       data msgs(40) /'Generic RSF'/
       data msgs(41) /'SQLite 3 database'/
 
