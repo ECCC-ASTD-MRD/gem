@@ -42,20 +42,22 @@ endif()
 
 add_subdirectory(modelutils modelutils)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
-  set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
-  add_subdirectory(rpnphy rpnphy)
-  set(phy_VERSION ${rpnphy_VERSION} CACHE STRING "rpnphy version")
-endif()
-
-set(WITH_MACH FALSE CACHE BOOL "Control whether to compile with mach")
 if ((WITH_MACH) OR (CACHE WITH_MACH) OR ($ENV{WITH_MACH}))
   # Add gem-mach source files, if source directory exists
   if (EXISTS ${CMAKE_SOURCE_DIR}/src/mach/CMakeLists.txt)
     add_subdirectory(mach mach)
+    set(MACH_FILES ${CMAKE_SOURCE_DIR}/src/mach/src/base/*.F90)
+    set(MACH_INCLUDE_DIRECTORY ${CMAKE_SOURCE_DIR}/src/mach/include)
+    set(MACH_VERSION ${mach_VERSION} CACHE STRING "mach version")
   else()
     message(ERROR " -- (EC) You set WITH_MACH=TRUE, but no mach directory was found!")
   endif()
+endif()
+
+if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
+  set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
+  add_subdirectory(rpnphy rpnphy)
+  set(phy_VERSION ${rpnphy_VERSION} CACHE STRING "rpnphy version")
 endif()
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/gemdyn/CMakeLists.txt)
