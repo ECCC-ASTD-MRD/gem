@@ -1,4 +1,4 @@
- grid=1,model;
+grid=1,model;
 
  levels=1,eta,-1;
 
@@ -35,4 +35,5 @@
  xnbit([ DSU,  DNI,  DAM,  DCM,  DEC,  DPOM, DSOM, DSS, DSO4, DNOY        ], bits, 32)
  xnbit([ WSO3, WSO4, WNO3, WNH4, WCM,  WEC,  WPOM, WSOM, WSS,  WH22, WROO ], bits, 32)
  xnbit([ WH2O, PR,   RT,   VG                                             ], bits, 32)
+
 

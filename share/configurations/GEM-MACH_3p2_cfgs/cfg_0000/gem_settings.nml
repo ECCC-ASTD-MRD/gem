@@ -1,14 +1,14 @@
-
 &chemistry_cfgs
   chm_master          = .true.      ,
   chm_emis_master     = .true.      ,
   aerosize            = 0.005,1.280,5.12 ,
-  chm_aqhi_l          = .true.      ,
+  chm_aqhi_l          = .false.      ,
   chm_aqueous_s       = 'GONG'      ,
   chm_biog_s          = 'BEIS3.09'  ,
   chm_blcld_l         = .true.      ,
   chm_debug_2d_i      = 0           ,
   chm_debug_3d_i      = 0           ,
+  chm_debug_trace_l   = .false.     ,
   chm_dep_lai2d_l     = .true.      ,
   chm_diag_drydep_L   = .true.      ,
   chm_diag_wetdep_L   = .true.      ,
@@ -41,6 +41,7 @@
   chm_ss_ao_l           = .true.    ,
   chm_step_factor     = 3           ,
   chm_strato_s        = 'LINOZ'     ,
+  chm_timings_l       = .true.      ,
   chm_vert_diff_s     = 'RPNPHY'    ,
   chm_vit_l           = .true.      ,
   chm_wdep_scav_coef_s= 'WANG2014'  ,
@@ -342,3 +343,4 @@ step_runstrt_s='20220616.090000',
   Deep_cloudobj = .true.       ,
   Deep_codecay = 3600.         ,
 /
+
