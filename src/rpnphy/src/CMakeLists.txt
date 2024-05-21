@@ -29,14 +29,11 @@ target_link_libraries(rpnphy PUBLIC
   vgrid::vgrid
   tdpack::tdpack
   modelutils
-  rpnphy_cpl_stubs
   )
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(rpnphy ${PROJECT_NAME}_build_info)
 
-add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
-add_dependencies(rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
 
 install(TARGETS rpnphy
     LIBRARY       DESTINATION lib

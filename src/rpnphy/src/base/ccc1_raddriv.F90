@@ -28,7 +28,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fa, absa, lcsw, lclw, mrk2, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
-   use phy_options, only: RAD_NUVBRANDS, rad_atmpath, rad_sun_angle_fix_l
+   use phy_options, only: RAD_NUVBRANDS, rad_atmpath
    use ens_perturb, only: ens_nc2d
    implicit none
 
@@ -451,11 +451,7 @@ include "nocld.cdk"
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
-      if (.not.rad_sun_angle_fix_l) then
-         rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
-      else
-         rmu0(ilg1:ilg2) = rmu(ilg1:ilg2)
-      endif
+      rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
 
       DO230: do i = ilg1, ilg2
          j = isun(i)

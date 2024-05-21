@@ -25,7 +25,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
      MELTS_TOT, MELTS_RN, FTEMP, FVAP, N)
    use tdpack
    use sfc_options, only: rad_off, atm_external, isba_melting_fix, &
-        snow_emiss, &
+        isba_snow_melt_t2veg, snow_emiss, &
         snow_emiss_const, isba_soil_emiss, isba_soil_emiss_const
    implicit none
 !!!#include <arch_specific.hf>
@@ -162,7 +162,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    real :: TEMPO
    real, dimension(n) :: ZQSAT, ZDQSAT, ZQSATT, RORA, A, B, C, TN, &
         ZHV, FREEZFRAC, FREEZG, MELTG, TNMT0, MELTS, WORK, EG, ES, EV, &
-        FMLTRAIN, EMISSS, EMISSN
+        FMLTRAIN, EMISSS, EMISSN, TEMPO_T2
 
    !***********************************************************************
 
@@ -315,7 +315,14 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
 
    ! new temperature Ts(t) after melting
    do I=1,N
-      TEMPO=CT(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
+      if (isba_snow_melt_t2veg) then
+         TEMPO       = CT(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT * (1.-VEG(I))
+         TEMPO_T2(I) = CT(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT * VEG(I)
+      else
+         TEMPO = CT(I) * CHLF * (FREEZS(I)-MELTS(I)) * DT
+      endif
+      
+
       if ( (tempo < 0.) .and. (TST(I) > TRPL ) ) then
 
          ! Trying to COOL DOWN  surface temp. that is
@@ -463,7 +470,13 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    do I=1,N
       T2T(I) = (T2(I) + DT*TST(I)/86400.) / &
            (1.+DT/86400.)
-
+           
+      ! Include the effect of snow melt/freeze
+      if (isba_snow_melt_t2veg) then
+          T2T(I) = T2T(I) &
+               + TEMPO_T2(I)*DT/86400.
+      end if
+      
       ! Include the effect of soil freeze/thaw
       T2T(I) = T2T(I) &
            + RHOW*CG(I)*CHLF*D2(I)*DWATERDT(I)*DT/86400.

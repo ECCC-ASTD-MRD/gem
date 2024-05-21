@@ -19,7 +19,11 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
      N, M, NK)
    use tdpack
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
+
+#ifdef HAVE_NEMO
    use cpl_itf, only: cpl_update
+#endif
+
    use sfc_options
    use sfcbus_mod
    implicit none
@@ -972,64 +976,64 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       zudiagtypv = zudiag
       zvdiagtypv = zvdiag
 
-      if (cplocn) then
-         ! Update with fluxes and diagnostic variables from ocean model
-         cplupd=.false.
-         call cpl_update (vmod(1:n), 'UVI', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
-         if (cplupd) then
-           call cpl_update (FC_ICE(1:n), 'SHI' , lcl_indx, n)
-           call cpl_update (FV_ICE(1:n), 'LHI' , lcl_indx, n)
-           call cpl_update (ZUDIAG(1:n), 'ZUI' , lcl_indx, n)
-           call cpl_update (ZVDIAG(1:n), 'ZVI' , lcl_indx, n)
-           call cpl_update (ZTDIAG(1:n), 'ZTI' , lcl_indx, n)
-           call cpl_update (ZQDIAG(1:n), 'ZQI' , lcl_indx, n)
-           call cpl_update (TS    (1:n), 'I7I' , lcl_indx, n)
-           call cpl_update (ZTSRAD(1:n),   'T4I' , lcl_indx, n)
-           call cpl_update (QSICE (1:n),   'QSI' , lcl_indx, n)
-           call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
-           call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
-           call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
-           
-           ! Derives other variables from cpl_update output
-           ! assuming FC_ICE and FV_ICE were computed with
-           ! RHOA at the same level
-           if (zt_rho == zt) then
-             my_ta(1:n)=ztdiag(1:n)
-             my_qa(1:n)=zqdiag(1:n)
+#ifdef HAVE_NEMO
+      ! Update with fluxes and diagnostic variables from ocean model
+      cplupd=.false.
+      call cpl_update (vmod(1:n), 'UVI', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
+      if (cplupd) then
+        call cpl_update (FC_ICE(1:n), 'SHI' , lcl_indx, n)
+        call cpl_update (FV_ICE(1:n), 'LHI' , lcl_indx, n)
+        call cpl_update (ZUDIAG(1:n), 'ZUI' , lcl_indx, n)
+        call cpl_update (ZVDIAG(1:n), 'ZVI' , lcl_indx, n)
+        call cpl_update (ZTDIAG(1:n), 'ZTI' , lcl_indx, n)
+        call cpl_update (ZQDIAG(1:n), 'ZQI' , lcl_indx, n)
+        call cpl_update (TS    (1:n), 'I7I' , lcl_indx, n)
+        call cpl_update (ZTSRAD(1:n),   'T4I' , lcl_indx, n)
+        call cpl_update (QSICE (1:n),   'QSI' , lcl_indx, n)
+        call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
+        call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
+        call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
+        
+        ! Derives other variables from cpl_update output
+        ! assuming FC_ICE and FV_ICE were computed with
+        ! RHOA at the same level
+        if (zt_rho == zt) then
+          my_ta(1:n)=ztdiag(1:n)
+          my_qa(1:n)=zqdiag(1:n)
+        else
+          call physeterror('seaice', 'inconsistent density level')
+          return
+        endif
+        do I=1,N
+           RHOA  (I)= PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
+           ZALFAT(I)= FC_ICE(I)/(-CPD *RHOA(I))
+           ZALFAQ(I)= FV_ICE(I)/(-(CHLC+CHLF)*RHOA(I))
+           ZFTEMP(I) = -ZALFAT(I)
+           ZFVAP(I)  = -ZALFAQ(I)
+           T   (I,1)= TS(I)
+           if (IMPFLX) then
+             ! CTU consistent with ice-ocean model fluxes (as possible)
+             ! Uncertainties in CTU from interpolation/agregation
+             ! will be compensated by ZALFAT and ZALFAQ
+             delh=TS(I)-TH(I) ; delq=QSICE(I)-HU(I)
+             CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
+                            -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
+             CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
+                                     ! of null fluxes agregation/interpolation anyway
+                                     ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
+             ! ZALFAT and ZALFAQ consistent with FC_ICE and FV_ICE
+             ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
+             ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
            else
-             call physeterror('seaice', 'inconsistent density level')
-             return
+             CTU(I) = 0. !Redundant but less dangerous
            endif
-           do I=1,N
-              RHOA  (I)= PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
-              ZALFAT(I)= FC_ICE(I)/(-CPD *RHOA(I))
-              ZALFAQ(I)= FV_ICE(I)/(-(CHLC+CHLF)*RHOA(I))
-              ZFTEMP(I) = -ZALFAT(I)
-              ZFVAP(I)  = -ZALFAQ(I)
-              T   (I,1)= TS(I)
-              if (IMPFLX) then
-                ! CTU consistent with ice-ocean model fluxes (as possible)
-                ! Uncertainties in CTU from interpolation/agregation
-                ! will be compensated by ZALFAT and ZALFAQ
-                delh=TS(I)-TH(I) ; delq=QSICE(I)-HU(I)
-                CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
-                               -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
-                CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
-                                        ! of null fluxes agregation/interpolation anyway
-                                        ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
-                ! ZALFAT and ZALFAQ consistent with FC_ICE and FV_ICE
-                ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
-                ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
-              else
-                CTU(I) = 0. !Redundant but less dangerous
-              endif
-           end do
-           ! Diagnostic ustar based on agregated ice model stress (tau=rho*ustar**2)
-           call cpl_update (ZFRV  (1:n), 'FRI' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
-           ! Updated consistent CMU needed by implicit scheme using the following relation
-           ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
-         endif
+        end do
+        ! Diagnostic ustar based on agregated ice model stress (tau=rho*ustar**2)
+        call cpl_update (ZFRV  (1:n), 'FRI' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
+        ! Updated consistent CMU needed by implicit scheme using the following relation
+        ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
       endif
+#endif
 
       !--------------------------------------
       !   8.     Heat Stress Indices

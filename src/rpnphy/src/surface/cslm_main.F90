@@ -18,7 +18,6 @@
 subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, m, nk )
    !use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
-   use cpl_itf     , only: cpl_update
    use sfc_options
    use sfcbus_mod
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
