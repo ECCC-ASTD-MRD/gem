@@ -1,6 +1,0 @@
-grid=1,core;
-levels=1,eta, -1;
-
-steps=1,hour,<0,120,24>;
-
-sortie([GZ,UU,VV,ME],grid,1,levels,1,steps,1)
