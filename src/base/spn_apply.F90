@@ -18,6 +18,7 @@
 
       subroutine spn_apply ( F_ft1, F_nest, Minx, Maxx, Miny, Maxy, Nk )
       use spn_options
+      use gmm_vt1
       use glb_ld
       use glb_pil
       use HORgrid_options
@@ -86,6 +87,7 @@
          F_ft1(1:l_ni,1:l_nj,k)= F_ft1(1:l_ni,1:l_nj,k) + &
                 prof(k)*Spn_wrk(1:l_ni,1:l_nj,k)*Spn_weight
       end do
+
 !
 !----------------------------------------------------------------------
 !
