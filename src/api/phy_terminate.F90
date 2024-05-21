@@ -22,7 +22,11 @@ contains
 
   !/@*
   function phy_terminate() result(F_istat)
+
+#ifdef HAVE_NEMO
       use cpl_itf, only: cpl_terminate
+#endif
+
       use series_mod, only: series_terminate
       use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_error_L, phy_init_ctrl
       implicit none
@@ -52,8 +56,10 @@ contains
     ! Shut down time series
     istat = series_terminate()
 
+#ifdef HAVE_NEMO
     ! Shut down coupler
     call cpl_terminate (.true.)
+#endif
 
     if (phy_error_L) return
 

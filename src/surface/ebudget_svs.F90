@@ -22,7 +22,7 @@
                    RAT, THETAA, FCOR, ZUSL, ZTSL, HU, PS, &  
                    RHOA, WTA, Z0, Z0LOC, Z0H, & 
                    HRSURF, HV, DEL, RS, & 
-                   CG,CVP, EMIS, PSNG, &  
+                   CG,CVP, EMVG, PSNG, &  
                    RESAGR, RESAVG, RESASA, RESASV, &
                    RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
                    ALPHAS, &  
@@ -32,7 +32,7 @@
                    TSVS, & 
                    VEGH, VEGL, PSNVH,PSNVHA, & 
                    RR,WR,SNM,SVM, &
-                   ALBT, & 
+                   ALBT, EMIT, & 
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
                    BM, FQ, BT, RESAEF, & 
@@ -58,10 +58,10 @@
       REAL HU(N), PS(N), RHOA(N), WTA(N,svs_tilesp1), Z0(N)
       REAL Z0LOC(N), Z0H(N)
       REAL HV(N), DEL(N), RS(N)
-      REAL CG(N), CVP(N),  PSNG(N), EMIS(N)
+      REAL CG(N), CVP(N),  PSNG(N), EMVG(N)
       REAL LAI(N), GAMVEG(N), ALGR(N), EMGR(N)
       REAL RNET(N), HFLUX(N), LE(N), ALPHAS(N)
-      REAL ALBT(N)
+      REAL ALBT(N), EMIT(N)
       REAL LEG(N), LEV(N), LER(N), LETR(N), GFLUX(N)
       REAL EFLUX(N), BM(N), FQ(N), BT(N), LES(N)
       REAL FTEMP(N), FVAP(N), ER(N), ETR(N)
@@ -138,7 +138,7 @@
 ! RS        stomatal resistance
 ! CG        soil thermal coefficient
 ! CVP       AVERAGED vegetation thermal coefficient (with LAI effect)
-! EMIS      AVERAGED surface emissivity when vegetation fully grown
+! EMVG      AVERAGED snow-free veg. emissivity when vegetation fully grown
 ! PSNG      fraction of bare ground or low veg. covered by snow
 ! RESAGR    aerodynamical surface resistance for bare ground
 ! RESAVG    aerodynamical surface resistance for vegetation
@@ -169,6 +169,7 @@
 !
 !           - Output -
 ! ALBT      total surface albedo (snow + vegetation + bare ground)
+! EMIT      total surface emissivity (snow + vegetation + bare ground)
 ! RNET      net radiation
 ! HFLUX     sensible heat flux
 ! LE        latent heat flux
@@ -216,7 +217,7 @@
 !
 !     MULTIBUDGET VARIABLES 
 !     GR:ground, SN:snow, VG:vegetation, AG: aggregated 
-       real, dimension(n) :: a2, b2, c2, a3, b3, c3, zhv, freezfrac, emvg, &
+       real, dimension(n) :: a2, b2, c2, a3, b3, c3, zhv, freezfrac, &
             alvglai, zqsatgr, zdqsatgr, zqsatvg, zdqsatvg, zqsatgrt, zqsatvgt, &
             rnetgr, rnetvg, hfluxgr, hfluxvg, roragr, roravg,  &
             zqsatsno, tgrst, tgrdt, tvgst, tvgdt, esf, esvf, evf, &
@@ -243,7 +244,6 @@
       RAIN2  = 2.8e-7
 ! 
 !
-!
 !!       1.     GRID-AVERAGED ALBEDO, EMISSIVITY, AND ROUGHNESS LENGTH
 !       ------------------------------------------------------
 !                          (considering snow surfaces)
@@ -251,7 +251,7 @@
       DO I=1,N
 !
 !
-!                               Calculate grid-averaged albedo 
+!                               Calculate grid-averaged albedo and emissivity
 !
 !                               Using PSNVHA
 !        
@@ -259,6 +259,11 @@
                       WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
                       ALGR(I),ALVG(I),ALPHAS(I),ALPHASV(I))
 
+        EMIT(I) = AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
+                      WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
+                      EMGR(I),EMVG(I),EMISSN,EMISSN)
+
+        
 ! 
 !                               Recalculate vegetation-only albedo to take LAI
 !                               effect into account, can only consider it 
@@ -273,15 +278,7 @@
                ALVGLAI(I) = ALVG(I)
             ENDIF
 !
-!
-!                            
-!                               Calculate vegetation-only emissivity,
-!                               the only bark emissivity i could find
-!                               was for eucalyptus trees which is not
-!                               very helpful as the bark is usually very
-!                               bright
-        EMVG(I)  = EMIS(I) 
-!
+
       END DO
 !        2.     LATENT HEAT COEFFICIENTS - CORRECTION DUE TO FREEZING
 !               AND MELTING OF SOIL WATER

@@ -54,8 +54,10 @@ module phy_options
    logical           :: tdiaglim     = .false.
    integer           :: tlift        = 0
    integer           :: nphyoutlist  = 0
+   integer           :: nphystepoutlist = 0
    integer           :: ilongmel     = -1
-   character(len=32), pointer :: phyoutlist_S(:) => NULL()
+   character(len=32), pointer :: phyoutlist_S(:) => NULL()      !# requested at any step
+   character(len=32), pointer :: phystepoutlist_S(:) => NULL()  !# requested at present step
    character(len=32) :: vgrid_M_S = 'ref-m'
    character(len=32) :: vgrid_T_S = 'ref-t'
 
@@ -726,11 +728,6 @@ module phy_options
    namelist /physics_cfgs/ rad_siglim
    namelist /physics_cfgs_p/ rad_siglim
 
-   !# Fix use of effective solar zenith angle
-   logical           :: rad_sun_angle_fix_l = .false.
-   namelist /physics_cfgs/ rad_sun_angle_fix_l
-   namelist /physics_cfgs_p/ rad_sun_angle_fix_l
-
    !# use relative weigthing when combining opt props from implicit and explicit clouds
    logical           :: rad_mpagg_l = .false.
    namelist /physics_cfgs/ rad_mpagg_l
@@ -809,6 +806,17 @@ module phy_options
    real              :: rmscon       = 1.0
    namelist /physics_cfgs/ rmscon
    namelist /physics_cfgs_p/ rmscon
+
+   !# Latitudes for weight function of rmscon in GWD (/LAT1, LAT2, VAL1, VAL2/)
+   !# rmscon1 = weight * rmscon
+   !#    if ABS(LAT) <= LAT1: weight = VAL1
+   !#    if ABS(LAT) >= LAT2: weight = VAL2
+   !#    else: weight = VAL2 + (LAT2-ABS(LAT))*(VAL1-VAL2)/(LAT2-LAT1)
+   !# -1. values means rmscon has constant value (weight=1.)
+   real              :: rmscon_lat_weights(4) = (/ -1., -1., -1., -1. /)
+   namelist /physics_cfgs/ rmscon_lat_weights
+   namelist /physics_cfgs_p/ rmscon_lat_weights
+   
 
    !# water/ice phase for saturation calc. if .true.;
    !# water phase only for saturation calc. if .false.

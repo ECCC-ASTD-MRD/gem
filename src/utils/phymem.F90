@@ -339,6 +339,10 @@ contains
       pbuses(ibus)%nvars = idxb
       nphyvars = idxv
       
+      ! if (F_imeta%flags(1) /= '') then
+      !    print *,'(phymem_add_meta) ',trim(pbuses(ibus)%meta(idxb)%vname),':',trim(pbuses(ibus)%meta(idxb)%flags(1)),':',trim(pbuses(ibus)%meta(idxb)%flags(2))
+      ! endif
+
       F_idxv = idxv
       if (present(F_i0)) F_i0 = vmeta%i0
       !---------------------------------------------------------------
@@ -347,20 +351,22 @@ contains
 
    
    !/@*
-   function phymem_add_string(F_string, F_i0) result(F_idxv)
+   function phymem_add_string(F_string, F_i0, F_flags) result(F_idxv)
       !@objective Add physics var from string description
       !@arguments
       character(len=*), intent(in) :: F_string
       integer, intent(out), optional :: F_i0  !# Temporarily return i0 for backward compat
+      character(len=*), intent(in), optional :: F_flags
       !@return
       integer :: F_idxv  !# var index in pvmetas
       !@Notes
       !  See splitst.F90 for the input string description
       !*@/
       integer, parameter :: FSTNAMELEN = 4
-      integer :: istat
+      integer :: istat, n, nflags
       character(len=3) ::   shape
       type(phymeta) :: vmeta
+      character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)
       !---------------------------------------------------------------
       F_idxv = -1
       if (.not.isinit) istat = priv_init()
@@ -405,6 +411,31 @@ contains
          return
       endif
 
+      if (present(F_flags)) then
+         nflags = 0
+         do n=1,size(vmeta%flags)
+            if (vmeta%flags(n) == '') exit
+            nflags = nflags+1
+         enddo
+         call str_split2list(flags, F_flags, '+', size(flags))
+         do n=1,size(flags)
+            if (flags(n) == '') cycle
+            call str_normalize(flags(n))
+            istat = clib_toupper(flags(n))
+            if (any(vmeta%flags == flags(n))) cycle
+            nflags = nflags+1
+            if (nflags > size(vmeta%flags)) then
+               call physeterror('phymem_add', 'too many flags for: '//trim(F_string))
+               return
+            endif
+            vmeta%flags(nflags) = flags(n)
+         enddo
+      endif
+
+      ! if (vmeta%flags(1) /= '') then
+      !    print *,'(phymem_add_string) ',trim(vmeta%vname),':',trim(vmeta%flags(1)),':',trim(vmeta%flags(2))
+      ! endif
+      
       vmeta%nk = phydim_nk
       if (shape == "A") vmeta%nk = 1
 
@@ -533,7 +564,7 @@ contains
    
    !/@*
    function phymem_find_idxv(F_idxvlist, F_name, F_npath, F_bpath, &
-        F_quiet, F_shortmatch, F_flagstr) result(F_nmatch)
+        F_quiet, F_shortmatch, F_endmatch, F_flagstr, F_shortflag) result(F_nmatch)
       implicit none
       !@objective Retreive list of var indices in pvmetas for matching ones
       !@arguments
@@ -543,15 +574,19 @@ contains
       character(len=*),  intent(in), optional :: F_bpath    !# Bus path to search ['PVD']
       logical,           intent(in), optional :: F_quiet    !# Do not emit warning for unmatched entry [.false.]
       logical,           intent(in), optional :: F_shortmatch  !# if true, Match F_name against only the first len_trim(F_name) of input, variable or output name
+      logical,           intent(in), optional :: F_endmatch !# if true, match F_name against only the last len_trim(F_name) of input, variable or output name
       character(len=*),  intent(in), optional :: F_flagstr  !# '+' separated list of flags to match
+      logical,           intent(in), optional :: F_shortflag!# if true, match F_flagstr against only the first len_trim(F_name)
       !@return
       integer :: F_nmatch  !# PHY_ERROR or number of matching vars
       !*@/
-      character(len=PHY_NAMELEN) :: name, npath, bpath
+      character(len=PHY_NAMELEN) :: name, npath, bpath, fname
       character(len=2) :: buses(PHY_NBUSES)
       character(len=1024) :: flagstr
       character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)
-      integer :: nflags, nflags2, nbpath, ib, in, iv, ik, slen, iadd, istat, cnt, nnpath
+      integer :: nflags, nflags2, nbpath, ib, in, iv, ik, slen, iadd, istat, cnt, nnpath, &
+           iaddf, istart, isub, ikk
+      integer, dimension(PHY_MAXFLAGS) :: flen
       logical :: match_L, quiet_L
       !---------------------------------------------------------------
       F_nmatch = PHY_ERROR
@@ -585,6 +620,16 @@ contains
       if (present(F_shortmatch)) then
          if (F_shortmatch) iadd = 0
       endif
+
+      isub = PHY_NAMELEN
+      if (present(F_endmatch)) then
+         if (F_endmatch) isub = len_trim(name)
+      endif
+      
+      iaddf = 1
+      if (present(F_shortflag)) then
+         if (F_shortflag) iaddf = 0
+      endif
       
       flagstr = ' '
       if (present(F_flagstr)) then
@@ -605,6 +650,7 @@ contains
             if (in /= nflags2) flags(nflags2) = flags(in)
             call str_normalize(flags(nflags2))
             istat = clib_toupper(flags(nflags2))
+            flen(nflags2) = min(max(1, len_trim(flags(nflags2))+iaddf),PHY_NAMELEN)
          enddo
          nflags = nflags2
       endif
@@ -634,28 +680,30 @@ contains
                   match_L = .false.
                   select case (npath(in:in))
                   case ('V')
-                     match_L = (pvmetas(iv)%meta%vname(1:slen) == name)
+                     fname = pvmetas(iv)%meta%vname                  
                   case ('I')
-                     match_L = (pvmetas(iv)%meta%iname(1:slen) == name)
+                     fname = pvmetas(iv)%meta%iname
                   case ('O')
-                     match_L = (pvmetas(iv)%meta%oname(1:slen) == name)
+                     fname = pvmetas(iv)%meta%oname
                   case ('S')
-                     match_L = (pvmetas(iv)%meta%sname(1:slen) == name)
+                     fname = pvmetas(iv)%meta%sname
                   case DEFAULT
                      call msg(MSG_WARNING,'(phymem_find) Ignoring unknown variable path entry '//npath(in:in))
                      cycle
                   end select
-                  if (.not.match_L) cycle           
+                  istart = max(1, len_trim(fname)-isub+1)
+                  match_L = (fname(istart:istart+slen-1) == name)  
+                  if (.not.match_L) cycle
                endif IF_NAME
                !# check flags
                IF_FLAG: if (nflags > 0) then
-                  match_L = .true.
+                  match_L = .false.
                   do ik = 1, nflags
                      if (flags(ik) == ' ') exit
-                     if (.not.any(flags(ik) == pvmetas(iv)%meta%flags(:))) then
-                        match_L = .false.
-                        exit
-                     endif
+                     do ikk = 1,size(pvmetas(iv)%meta%flags)
+                        if (pvmetas(iv)%meta%flags(ikk) == ' ') exit
+                        if (flags(ik) == pvmetas(iv)%meta%flags(ikk)(1:flen(ik))) match_L = .true.
+                     enddo
                   enddo
                   if (.not.match_L) cycle  
                endif IF_FLAG

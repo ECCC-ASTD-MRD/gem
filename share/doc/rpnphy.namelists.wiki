@@ -950,11 +950,6 @@ EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4
 |  || 
 
 |-
-| rad_sun_angle_fix_l ||
-Fix use of effective solar zenith angle
-| .false. || logical
-
-|-
 | rad_sw ||
 Compute and apply tendencies from shortwave radiation
 | .true. || logical
@@ -987,6 +982,16 @@ Key for activation of the radiation along slopes
 | rmscon ||
 Launching level value of GW RMS wind (m/s) from non-orographic origin
 | 1.0 || real
+
+|-
+| rmscon_lat_weights ||
+Latitudes for weight function of rmscon in GWD (/LAT1, LAT2, VAL1, VAL2/)
+rmscon1 = weight * rmscon
+if ABS(LAT) <= LAT1: weight = VAL1
+if ABS(LAT) >= LAT2: weight = VAL2
+else: weight = VAL2 + (LAT2-ABS(LAT))*(VAL1-VAL2)/(LAT2-LAT1)
+-1. values means rmscon has constant value (weight=1.)
+| (/ -1., -1., -1., -1. /) || real
 
 |-
 | satuco ||
@@ -1204,9 +1209,22 @@ If .true. apply temporary fix to ISBA
 | .false. || logical
 
 |-
+| isba_snow_melt_t2veg ||
+Snow melt/freeze under vegetation impact T2 instead of TST
+| .false. || logical
+
+|-
 | isba_snow_z0veg ||
 Use the vegetation-only roughness length to compute vegetation snow fraction
 | .false. || logical
+
+|-
+| isba_snowfrac_bare ||
+Computation of bare ground snow fraction
+* 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)
+* 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991
+* 'SVS1'  : Use the same definition as in SVS1
+| 'NIL' || character(len=16)
 
 |-
 | isba_soil_emiss ||

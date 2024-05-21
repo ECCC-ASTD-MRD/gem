@@ -630,3 +630,9 @@ fileVersion: 6.3.0-a4 > 6.3.0-a6
 #New:  physics_cfgs/advecqtbl
 rm:  physics_cfgs/iheatcal
 #New:  physics_cfgs/rad_mpagg_l
+#------
+fileVersion: 6.3.0-a6 > 6.3.0-a7
+rm:  physics_cfgs/rad_sun_angle_fix_l
+#New:  physics_cfgs/rmscon_lat_weights
+#New:  surface_cfgs/isba_snow_melt_t2veg
+#New:  surface_cfgs/isba_snowfrac_bare

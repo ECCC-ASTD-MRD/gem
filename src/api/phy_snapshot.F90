@@ -18,7 +18,11 @@ module phy_snapshot_mod
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use series_mod, only: series_pause, series_resume
    use phy_status, only: phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
+
+#ifdef HAVE_NEMO
    use cpl_itf, only: cpl_snapshot
+#endif
+
    use phymem, only: phymem_gmmname, PHY_PBUSIDX
    implicit none
    private
@@ -102,9 +106,11 @@ contains
          return
       end select
 
+#ifdef HAVE_NEMO
       ! coupling may have something to do for snapshot
 
       call cpl_snapshot(F_mode)
+#endif
 
       F_istat = RMN_OK
       ! ------------------------------------------------------------------
