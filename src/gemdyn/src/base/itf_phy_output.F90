@@ -270,3 +270,48 @@
       end
 
 
+subroutine itf_phy_output_list(stepno)
+   use wb_itf_mod, only: wb_get, wb_put, WB_REWRITE_MANY
+   use clib_itf_mod, only: clib_tolower
+   use dimout, only: MAXELEM, MAXSET
+   use out_listes, only: outp_sorties
+   use outp, only: Outp_var_max, Outp_var_S
+   implicit none
+#include <arch_specific.hf>
+
+   integer, intent(in) :: stepno
+
+#include <rmnlib_basics.hf>
+#include <rmn/msg.h>
+
+   character(len=32) :: varlist_S(MAXELEM*MAXSET)
+   integer :: nn, jj, kk, ii, istat
+
+   integer, save :: n0 = -1
+   !----------------------------------------------------------------------
+   if (n0 == -1) then
+      istat = wb_get('itf_phy/PHYOUT', varlist_S, n0)
+      n0 = max(1, n0)
+   endif
+
+   ! Collect the list of requested output physics vars
+   nn = 0
+   varlist_S(1:n0) = ' '
+   do jj=1, outp_sorties(0,stepno)
+      kk = outp_sorties(jj,stepno)
+      do ii=1, Outp_var_max(kk)
+         nn = nn + 1
+         varlist_S(nn) = Outp_var_S(ii,kk)
+         istat = clib_tolower(varlist_S(nn))
+         if (nn > 1) then
+            if (any(varlist_S(nn) == varlist_S(1:nn-1))) nn = nn - 1
+         endif
+      enddo
+   enddo
+
+   istat = wb_put('itf_phy/PHYSTEPOUT_N', nn, WB_REWRITE_MANY)
+   istat = wb_put('itf_phy/PHYSTEPOUT_V', varlist_S(1:n0), WB_REWRITE_MANY)
+
+   !----------------------------------------------------------------------
+   return
+end subroutine itf_phy_output_list

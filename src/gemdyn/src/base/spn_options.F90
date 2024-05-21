@@ -18,17 +18,30 @@ module spn_options
    public
    save
 
-   !# Nudging profile lower end in hyb level (eg. 1.0 or 0.8)
-   !# profile will be set to 0. when hyb > 0.8
+   !# Nudging profile lower end in hyb level (eg. 0.8) or hyb_H level (for GEM-H)
+   !# profile will be set to 0. when hyb > Spn_start_lev
    real :: Spn_start_lev = 1.0
    namelist /spn  / Spn_start_lev
    namelist /spn_p/ Spn_start_lev
 
-   !# Nudging profile upper end in hyb level (eg. 0.0 or 0.2)
-   !# profile wll be set to 1.0 when hyb < 0.2
-   real :: Spn_up_const_lev = 0.0
-   namelist /spn  / Spn_up_const_lev
-   namelist /spn_p/ Spn_up_const_lev
+   !# Nudging profile: upper end for constant layer in hyb level (eg. 0.0 or 0.2) or hyb_H level (for GEM-H)
+   !# profile wll be set to 1.0 when hyb is between Spn_const_lev_bot and Spn_const_lev_top
+   real :: Spn_const_lev_top = 0.0
+   namelist /spn  / Spn_const_lev_top
+   namelist /spn_p/ Spn_const_lev_top
+
+   !# Nudging profile:  end for constant layer in hyb level (eg. 0.0 or 0.2) or hyb_H level (for GEM-H)
+   !# profile wll be set to 1.0 wehn hyb is between Spn_const_lev_bot and Spn_const_lev_top
+   real :: Spn_const_lev_bot = 0.0
+   namelist /spn  / Spn_const_lev_bot
+   namelist /spn_p/ Spn_const_lev_bot
+
+   !# Nudging profile upper end in hyb level (eg. 0.1) or hyb_H level (for GEM-H)
+   !# profile will be set to 0. when hyb < Spn_end_lev
+   real :: Spn_end_lev = 0.0
+   namelist /spn  / Spn_end_lev
+   namelist /spn_p/ Spn_end_lev
+   
 
    !# Nudging profile transition shape('COS2' or 'LINEAR')
    !# Set the shape between Spn_start_lev and Spn_up_const_lev
@@ -73,7 +86,18 @@ module spn_options
    integer :: Spn_wt_pwr = 2
    namelist /spn  / Spn_wt_pwr
    namelist /spn_p/ Spn_wt_pwr
-      
+
+   !# Availability interval of nudging data for Global Yin-Yang - in sec
+   !# Driving(nudging) data is available every Spn_yy_nudge_data_freq sec
+   integer :: Spn_yy_nudge_data_freq = -1
+   namelist /spn  / Spn_yy_nudge_data_freq
+   namelist /spn_p/ Spn_yy_nudge_data_freq
+
+   !# Nudging specific humidity (.true. or .false.).
+   logical :: Spn_nudge_HU_L = .false.
+   namelist /spn  / Spn_nudge_HU_L
+   namelist /spn_p/ Spn_nudge_HU_L
+
    character(len=16) :: Spn_nudging_S = ' ' ! depricated
    logical :: Spn_ON_L = .false.
    integer :: Spn_12smin, Spn_12smax, Spn_12sn, Spn_12sn0

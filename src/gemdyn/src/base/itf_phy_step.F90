@@ -86,17 +86,19 @@
 
       !call pw_glbstat('PW_BEF')
 
+      call gtmg_start ( 41, 'PHY_COPY', 40)
       call itf_phy_copy ()
       !if (F_step_kount == 0) call itf_phy_glbstat('befinp')
+      call gtmg_stop  ( 41 )
 
-      call gtmg_start ( 45, 'PHY_input', 40 )
+      call gtmg_start ( 42, 'PHY_input', 40 )
       err_input = phy_input1 ( itf_phy_prefold_opr, F_step_kount, &
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
-
       !if (F_step_kount == 0) call itf_phy_glbstat('Aftinp')
       call gem_error (err_input,'itf_phy_step','Problem with phy_input')
-      call gtmg_stop  ( 45 )
+      call gtmg_stop  ( 42 )
 
+      call gtmg_start ( 43, 'PHY_SMOOTH', 40)
       ! Smooth the thermodynamic state variables on request
       err_smooth = min(&
            ipf_smooth_fld('rt',   'rt_smt',   3, 1), &
@@ -105,22 +107,29 @@
            ipf_smooth_fld('tcond','tcond_smt',3) &
            )
       call gem_error (err_smooth,'itf_phy_step','Problem with ipf_smooth_fld')
+      call gtmg_stop  ( 43 )
 
       ! Call digital filter to smooth Alfa, Beta surface fields
+      call gtmg_start ( 44, 'PHY_DFILTER', 40)
       if (sfcflxfilt_o > 1 .and. F_step_kount > 0) then
          call dfilter('alfat','falfat',1)
          call dfilter('alfaq','falfaq',1)
          call dfilter('bt','fbt',nsurfag)
       endif
+      call gtmg_stop  ( 44 )
 
       ! Advect cloud objects
+      call gtmg_start ( 45, 'PHY_CLDOBJ', 40)
       if (.not.WB_IS_OK(wb_get('phy/deep_cloudobj',cloudobj))) cloudobj = .false.
       if (cloudobj .and. F_lctl_step > 0) then
          if (cldobj_displace() /= CLDOBJ_OK) then
               call gem_error (-1,'itf_phy_step','Problem with cloud object displacement')
          endif
       endif
+      call gtmg_stop  ( 45 )
 
+      call itf_phy_output_list(F_lctl_step)
+      
       call set_num_threads ( Ptopo_nthreads_phy, F_step_kount )
       !call itf_phy_glbstat('befphy')
 
@@ -143,8 +152,10 @@
       call itf_phy_output ( F_lctl_step )
       call gtmg_stop  ( 48 )
 
+      call gtmg_start ( 49, 'PHY_DIAG', 40 )
       call itf_phy_diag ()
-      
+      call gtmg_stop  ( 49 )
+
       if ( Init_mode_L ) then
          if (F_step_kount ==   Init_halfspan) then
             err = phy_snapshot('W')

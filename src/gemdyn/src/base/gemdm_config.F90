@@ -44,6 +44,7 @@
       use wb_itf_mod
       use ptopo
       use omp_timing
+      use spn_options
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -224,6 +225,13 @@
          return
       end if
 
+      if (Grd_yinyang_L .and. Spn_freq>0) then
+         if (Spn_yy_nudge_data_freq <0.) then
+            if (lun_out>0) write(Lun_out,9950)
+            return
+         end if
+      end if
+
       Ctrl_testcases_L = Ctrl_canonical_dcmip_L .or. &
                          Ctrl_canonical_williamson_L
 
@@ -315,6 +323,7 @@
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
+ 9950 format (/,'ABORT: Spn_yy_nudge_data_freq must be defined for spectral nudging with YY grid'/)
 !
 !-------------------------------------------------------------------
 !

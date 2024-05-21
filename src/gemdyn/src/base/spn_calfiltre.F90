@@ -58,7 +58,7 @@
             nkx = sqrt(nix*nix + njx*njx)
             if ( nkx > nk_cut ) then
                Spn_flt(i,j)= 0.0
-            else if ( nkx > 1.0 ) then
+            else if ( nkx > 1.0 .and. nkx<=nk_cut) then
                Spn_flt(i,j)=(cos( (pi_8/2.0)* ((nkx-1.)/(nk_cut-1.))))**2
             else
                Spn_flt(i,j)= 1.0
