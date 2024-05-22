@@ -224,7 +224,7 @@ contains
          return
       endif
       F_jsec_8 = RMN_ERR
-      if (F_cmcdate <= 0) return
+      if (F_cmcdate == RMN_ERR) return
 
       date0 = F_cmcdate
       istat = newdate(date0,dat2,dat3,RMN_DATE_STAMP2PRINT)

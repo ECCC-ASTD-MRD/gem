@@ -36,7 +36,7 @@ subroutine datf2p(mc2date,fstdate)
    mm = mod(dat3,1000000)/10000
    ss = mod(dat3,10000)/100
    write(mc2date,10) yy,mo,dd,hh,mm,ss
-10 format(i4.2,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+10 format(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
    !-------------------------------------------------------------------
    return
 end subroutine datf2p

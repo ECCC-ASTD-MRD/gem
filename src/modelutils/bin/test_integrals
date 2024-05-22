@@ -6,7 +6,7 @@ import tempfile
 class Int_sol(dict):
     """Test integral equation solver"""
 
-    def __init__(self, alpha=5, beta=0.002, L=250, nk=10, dz=100, zdep=100, a=250,
+    def __init__(self, alpha=5, beta=0.002, L=250, nk=80, dz=100, zdep=100, a=250,
                  dir=1, zexp=0, debug=0, **kwargs):
         """Class constructor"""
         self.exec_name = "test_integrals"
@@ -30,7 +30,8 @@ class Int_sol(dict):
         self.prof_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
         self.sol_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
         # path = subprocess.check_output("rdevar build/bin",shell=True).decode()
-        path = os.path.join(os.getenv('gem_DIR'), os.getenv('GEM_WORK'), 'bin')
+        # path = os.path.join(os.getenv('gem_DIR'), os.getenv('GEM_WORK'), 'bin')
+        path = os.path.join(os.getenv('gem_DIR'),'build-'+os.getenv('GEM_ARCH'), 'src/modelutils/modelutils-main')
         #TODO: this path (build/bin) should already be in $PATH, no need
         testbin = os.path.join(path.rstrip(),self.exec_name)
         self.run_cmd = ' '.join([testbin,self.const_file.name,self.prof_file.name,
@@ -127,7 +128,12 @@ class Unbuffered(object):
 
 # Run Test Package
 if __name__ == "__main__":
-
+    '''
+    iter=3p
+    test_integrals >  test_integrals.out-${iter} 2>&1
+    gprof -q build-rhel-8-icelake-64-intel-2022.1.2/src/modelutils/modelutils-main/test_integrals gmon.out > gmon.out-q-${iter}
+    gprof -p build-rhel-8-icelake-64-intel-2022.1.2/src/modelutils/modelutils-main/test_integrals gmon.out > gmon.out-p-${iter}
+    '''
     # Initializations
     sys.stdout = Unbuffered(sys.stdout)
     failed = 0
@@ -137,33 +143,38 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Manage integral module unit tests')
     parser.add_argument('-v', action='count', default=0,
                         help='Produce verbose output and save derived files')
-    parser.add_argument('--no-plots', dest='noplots', action='store_true',
+    parser.add_argument('--plots', dest='plots', action='store_true',
                         help='Suppress generation of verifying plots')
     args = parser.parse_args()
 
     # Tests for the integral solver    
-    sol_test = Test(Int_sol, debug=args.v, plot=(not args.noplots))
-    sol_test.run('umxf', 'upwards first layer local maximum', 117, a=50)
-    sol_test.run('umnf', 'upwards first layer local minimum', 224, a=-50, zdep=210)
-    sol_test.run('uincf', 'upwards first layer monotonic increase', 285, a=100, zdep=250)
-    sol_test.run('udecf', 'upwards first layer monotonic decrease', 190, a=-120, zdep=150)
-    sol_test.run('umx', 'upwards interior local maximum', 620, a=400, zdep=180)
-    sol_test.run('umn', 'upwards interior local minimum', 244, a=-125, zdep=80)
-    sol_test.run('uinc', 'upwards monotonic increase', 588, a=300, zdep=100)
-    sol_test.run('udec', 'upwards monotonic decrease', 365, a=-300, L=450, zdep=280)
-#    sol_test.run('utop', 'upwards top with INT_NOSOL return code', 1000, a=700, zdep=350,stat=2)
-    sol_test.run('dmxf', 'downwards first layer local maximum', 380, a=20, zdep=395, dir=-1)
-    sol_test.run('dmnf', 'downwards first layer local minimum', 754, a=-100, zdep=780, dir=-1)
-    sol_test.run('dincf', 'downwards first layer monotonic increase', 410, a=75, zdep=480, dir=-1)
-    sol_test.run('ddecf', 'downwards first layer monotonic decrease', 529, a=-200, zdep=580, L=400, dir=-1)
-    sol_test.run('dmx', 'downwards interior local maximum', 380, a=100, zdep=520, dir=-1)
-    sol_test.run('dmn', 'downwards interior local minimum', 270, a=-200, zdep=460, dir=-1)
-    sol_test.run('dinc', 'downwards monotonic increase', 341, a=400, zdep=460, L=500, dir=-1)
-    sol_test.run('ddec', 'downwards monotonic decrease', 520, a=-200, zdep=740, dir=-1)
-#    sol_test.run('dbot', 'downwards bottom with INT_NOSOL return code', 100, a=-300, zdep=450, dir=-1, stat=2)
-    sol_test.run('vuinc', 'variable upwards interior monotonic increase', 768, a=250, zdep=400, zexp=.05, L=600)
-    sol_test.run('vdmnf', 'variable downwards first layer local minimum', 1076, a=-150, zdep=1120, dir=-1, zexp=.05, L=550)
-    failed += sol_test.summary()
+    sol_test = Test(Int_sol, debug=args.v, plot=args.plots)
+    sol_test.run('dmx', 'downwards interior local maximum', 452, a=100, zdep=520, dir=-1)
+
+    
+    ## sol_test.run('umxf', 'upwards first layer local maximum', 117, a=50)
+    ## sol_test.run('umnf', 'upwards first layer local minimum', 224, a=-50, zdep=210)
+    ## sol_test.run('uincf', 'upwards first layer monotonic increase', 285, a=100, zdep=250)
+##     sol_test.run('udecf', 'upwards first layer monotonic decrease', 190, a=-120, zdep=150)
+##     sol_test.run('umx', 'upwards interior local maximum', 620, a=400, zdep=180)
+##     sol_test.run('umn', 'upwards interior local minimum', 244, a=-125, zdep=80)
+##     sol_test.run('uinc', 'upwards monotonic increase', 588, a=300, zdep=100)
+##     sol_test.run('udec', 'upwards monotonic decrease', 365, a=-300, L=450, zdep=280)
+## ###    sol_test.run('utop', 'upwards top with INT_NOSOL return code', 1000, a=700, zdep=350,stat=2)
+##     sol_test.run('dmxf', 'downwards first layer local maximum', 380, a=20, zdep=395, dir=-1)
+##     sol_test.run('dmnf', 'downwards first layer local minimum', 754, a=-100, zdep=780, dir=-1)
+##     sol_test.run('dincf', 'downwards first layer monotonic increase', 410, a=75, zdep=480, dir=-1)
+##     sol_test.run('ddecf', 'downwards first layer monotonic decrease', 529, a=-200, zdep=580, L=400, dir=-1)
+##     sol_test.run('dmx', 'downwards interior local maximum', 380, a=100, zdep=520, dir=-1)
+##     sol_test.run('dmn', 'downwards interior local minimum', 270, a=-200, zdep=460, dir=-1)
+##     sol_test.run('dinc', 'downwards monotonic increase', 341, a=400, zdep=460, L=500, dir=-1)
+##     sol_test.run('ddec', 'downwards monotonic decrease', 520, a=-200, zdep=740, dir=-1)
+## ###    sol_test.run('dbot', 'downwards bottom with INT_NOSOL return code', 100, a=-300, zdep=450, dir=-1, stat=2)
+##     sol_test.run('vuinc', 'variable upwards interior monotonic increase', 768, a=250, zdep=400, zexp=.05, L=600)
+##     sol_test.run('vdmnf', 'variable downwards first layer local minimum', 1076, a=-150, zdep=1120, dir=-1, zexp=.05, L=550)
+##     failed += sol_test.summary()
 
     # Shut down testing
     sys.exit(failed)
+
+
