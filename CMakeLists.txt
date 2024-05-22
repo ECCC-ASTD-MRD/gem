@@ -142,7 +142,6 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
   configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/nostage_module/VERSION @ONLY)
 endif()
 
-set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Working environment directory")
 if(DEFINED ENV{GEM_WORK})
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Working directory prefix" FORCE)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Install directory prefix" FORCE)

@@ -44,7 +44,6 @@ add_subdirectory(modelutils modelutils)
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
-  set(cpl_LIBRARIES rpnphy_cpl_stubs CACHE STRING "rpnphy coupling library")
   add_subdirectory(rpnphy rpnphy)
   set(phy_VERSION ${rpnphy_VERSION} CACHE STRING "rpnphy version")
 endif()
