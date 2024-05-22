@@ -116,7 +116,7 @@
  sgo_tdfilter     = -1
 
  LONGMEL          = 'boujo'    ,
- FLUVERT          = 'clef'     , PBL_RICRIT=0.25,2.,
+ FLUVERT          = 'moistke'     , PBL_RICRIT=0.25,2.,
  pbl_shal         = 'conres'
  STCOND           = 'MP_P3'    ,
  INILWC           = .true.     ,
