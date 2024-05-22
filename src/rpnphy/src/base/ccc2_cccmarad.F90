@@ -43,7 +43,7 @@ contains
       use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
       use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
-      use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ens_perturb, only: ens_spp_get
       use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
       implicit none
 !!!#include <arch_specific.hf>
@@ -104,7 +104,6 @@ contains
 #include <rmn/msg.h>
 
       include "surface.cdk"
-      include "clefcon.cdk"
       include "ozopnt.cdk"
       include "radiation.cdk"
       include "nbsnbl.cdk"
@@ -139,7 +138,7 @@ contains
       real(REAL64) :: hz_8
       real :: hz, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
-      logical :: aerosolback,thisstepisrad,nextstepisrad,thisstepisraduv
+      logical :: thisstepisrad,nextstepisrad,thisstepisraduv
       integer :: il1, il2
       character(len=1) :: niuv
 
@@ -154,7 +153,7 @@ contains
 
       include "solcons.cdk"
 
-      data aerosolback /.true./
+      logical, parameter ::  aerosolback = .true.
       ! note: if you use lclw=false; must decomment some lines at end of raddriv.F90
 
       !----------------------------------------------------------------
@@ -315,7 +314,7 @@ contains
 
       call diagno_clouds2(pvars, taucs, taucl,  &
              zgztherm, cldfrac, &
-             temp, sig, ps, trnch, ni, &
+             temp, sig, ps, trnch, &
              ni, nkm1, nk)
 
       ! is this or next step a radiation timestep?

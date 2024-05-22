@@ -64,6 +64,11 @@ module phy_options
    namelist /physics_cfgs/ acchr
    namelist /physics_cfgs_p/ acchr
 
+   !# Boundary layer cloud advect. is active if .true.
+   logical           :: advecqtbl     = .false.
+   namelist /physics_cfgs/ advecqtbl
+   namelist /physics_cfgs_p/ advecqtbl
+   
    !# Turbulent kinetic energy advect. is active if .true.
    logical           :: advectke     = .false.
    namelist /physics_cfgs/ advectke
@@ -138,28 +143,28 @@ module phy_options
    namelist /physics_cfgs/ diffuw
    namelist /physics_cfgs_p/ diffuw
 
-   !# Minimal value for TKE in stable case (for 'CLEF')
+   !# Minimal value for TKE in stable case
    real              :: etrmin2      = 1.E-4
    namelist /physics_cfgs/ etrmin2
    namelist /physics_cfgs_p/ etrmin2
 
    !# Boundary layer processes
    !# * 'NIL    ': no vertical diffusion
-   !# * 'CLEF   ': non-cloudy boundary layer formulation
    !# * 'MOISTKE': cloudy boundary layer formulation
    !# * 'SURFACE': TODO
    !# * 'SIMPLE ': a very simple mixing scheme for neutral PBLs
    !# * 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1)
+   !# * 'RPNINT ': RPN integrated PBL scheme
    character(len=16) :: fluvert      = 'NIL'
    namelist /physics_cfgs/ fluvert
    namelist /physics_cfgs_p/ fluvert
    character(len=*), parameter :: FLUVERT_OPT(6) = (/ &
         'NIL    ', &
-        'CLEF   ', &
         'MOISTKE', &
         'SURFACE', &
         'SIMPLE ', &
-        'YSU    ' &
+        'YSU    ', &
+        'RPNINT '&
         /)
 
    !# (MOISTKE only) Apply factor fnn_reduc
@@ -196,11 +201,6 @@ module phy_options
    integer           :: hines_flux_filter = 0
    namelist /physics_cfgs/ hines_flux_filter
    namelist /physics_cfgs_p/ hines_flux_filter
-
-   !# Consider heating from non-orog. drag if = 1
-   integer           :: iheatcal     = 0
-   namelist /physics_cfgs/ iheatcal
-   namelist /physics_cfgs_p/ iheatcal
 
    !# Comma-separated list of diagnostic level inputs to read.
    !# Default: indiag_list_s(1) = 'DEFAULT LIST',
@@ -251,6 +251,7 @@ module phy_options
    !# * 'BOUJO   ': mixing length calc. using Bougeault
    !# * 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)
    !# * 'LH      ': mixing length calc. using Lenderink and Holtslag
+   !# * 'MBOUJO  ': mixing length calc. using moist Bougeault
    character(len=16) :: longmel      = 'BLAC62'
    namelist /physics_cfgs/ longmel
    namelist /physics_cfgs_p/ longmel
@@ -729,6 +730,11 @@ module phy_options
    logical           :: rad_sun_angle_fix_l = .false.
    namelist /physics_cfgs/ rad_sun_angle_fix_l
    namelist /physics_cfgs_p/ rad_sun_angle_fix_l
+
+   !# use relative weigthing when combining opt props from implicit and explicit clouds
+   logical           :: rad_mpagg_l = .false.
+   namelist /physics_cfgs/ rad_mpagg_l
+   namelist /physics_cfgs_p/ rad_mpagg_l
 
    !# Compute and apply tendencies from shortwave radiation
    logical :: rad_sw = .true.

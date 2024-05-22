@@ -28,7 +28,7 @@ contains
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
       use integrals, only: int_profile, INT_OK
-      use pbl_height, only: pbl_height1
+      use pbl_utils, only: blheight
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use phy_options
       use phybusidx
@@ -115,7 +115,7 @@ contains
       endif
 
       !# Final PBL height
-      istat = pbl_height1(zh,ztplus,zhuplus,zuplus,zvplus,zgzmom,zgztherm,zsigt, &
+      istat = blheight(zh,ztplus,zhuplus,zuplus,zvplus,zgzmom,zgztherm,zsigt, &
            ztsurf,zqsurf,zpplus,zz0_ag,zz0t_ag,zdlat,zfcor,ni,nk-1)
 
       ! Compute winds at the lowest thermodynamic level

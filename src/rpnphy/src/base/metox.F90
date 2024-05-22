@@ -51,7 +51,7 @@ contains
       real, parameter :: QQ = 4.25e-6 
       real, parameter :: ALPHA1 = 0.5431969
 
-      real, pointer, dimension(:), contiguous :: psp, ztdmask
+      real, pointer, dimension(:), contiguous :: psp, ztdmaskxdt
       real, pointer, dimension(:,:), contiguous :: sigma, oxme, qqp, zhuplus
       real, dimension(ni,nk) :: press, kmetox
       !----------------------------------------------------------------
@@ -61,7 +61,7 @@ contains
       if (timings_L) call timing_start_omp(415, 'metox', 46)
 
       MKPTR1D(psp, pmoins, pvars)
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR2D(zhuplus, huplus, pvars)
       MKPTR2D(sigma, sigw, pvars)
       MKPTR2D(qqp, huplus, pvars)
@@ -82,7 +82,7 @@ contains
 
       oxme = kmetox*(QQ-qqp)
 
-      call apply_tendencies(zhuplus, oxme, ztdmask, ni, nk, nk-1)
+      call apply_tendencies(zhuplus, oxme, ztdmaskxdt, ni, nk, nk-1)
 
       if (timings_L) call timing_stop_omp(415)
       call msg_toall(MSG_DEBUG, 'metox [END]')

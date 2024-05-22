@@ -17,12 +17,16 @@
 module tendency
    implicit none
    private
-   public :: tendency5, apply_tendencies
-
+   public :: tendency5, apply_tendencies, apply_tendencies_mm
+   public :: apply_tendencies1, apply_tendencies2, apply_tendencies3, apply_tendencies4
+   
 #include "phymkptr.hf"
 
    interface apply_tendencies
-      module procedure apply_tendencies_ptr
+      module procedure apply_tendencies1
+      module procedure apply_tendencies2
+      module procedure apply_tendencies3
+      module procedure apply_tendencies4
    end interface apply_tendencies
 
 contains
@@ -133,7 +137,7 @@ contains
 
    
    !/@*
-   subroutine apply_tendencies_ptr(zivar, ziten, ztdmask, ni, nk, F_nkscope, F_minval, F_maxval)
+   subroutine apply_tendencies_mm(zivar, ziten, ztdmaskxdt, ni, nk, F_nkscope, F_minval, F_maxval)
       use phy_options
       implicit none
 !!!#include <arch_specific.hf>
@@ -141,40 +145,150 @@ contains
       !@Arguments
       integer, intent(in) :: ni, nk
       real, dimension(ni, nk), intent(in) :: ziten
-      real, dimension(ni), intent(in)  :: ztdmask
+      real, dimension(ni), intent(in)  :: ztdmaskxdt
       real, dimension(ni, nk), intent(inout) :: zivar
       integer, intent(in), optional :: F_nkscope
       real, intent(in), optional :: F_minval, F_maxval
       !*@/
       integer :: k, nkscope
-     !----------------------------------------------------------------
+      !----------------------------------------------------------------
       nkscope = nk
       if (present(F_nkscope)) nkscope = F_nkscope
       if (present(F_minval)) then
          if (present(F_maxval)) then
             do k=1,nkscope
                zivar(:,k) = max(F_minval, max(F_minval, &
-                    zivar(:,k) + ztdmask(:)*ziten(:,k)*delt))
+                    zivar(:,k) + ztdmaskxdt(:)*ziten(:,k)))
             end do
          else
             do k=1,nkscope
                zivar(:,k) = max(F_minval, &
-                    zivar(:,k) + ztdmask(:)*ziten(:,k)*delt)
+                    zivar(:,k) + ztdmaskxdt(:)*ziten(:,k))
             end do
          endif
       else if (present(F_maxval)) then
          do k=1,nkscope
             zivar(:,k) = min(F_maxval, &
-                 zivar(:,k) + ztdmask(:)*ziten(:,k)*delt)
+                 zivar(:,k) + ztdmaskxdt(:)*ziten(:,k))
          enddo
       else
          do k=1,nkscope
-            zivar(:,k) = zivar(:,k) + ztdmask(:)*ziten(:,k)*delt
+            zivar(:,k) = zivar(:,k) + ztdmaskxdt(:)*ziten(:,k)
          enddo
       endif
       !----------------------------------------------------------------
       return
-   end subroutine apply_tendencies_ptr
+   end subroutine apply_tendencies_mm
 
+   
+   !/@*
+   subroutine apply_tendencies1(zivar1, ziten1, ztdmaskxdt, ni, nk, F_nkscope)
+      use phy_options
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      integer, intent(in) :: ni, nk
+      real, dimension(ni, nk), intent(in) :: ziten1
+      real, dimension(ni), intent(in)  :: ztdmaskxdt
+      real, dimension(ni, nk), intent(inout) :: zivar1
+      integer, intent(in), optional :: F_nkscope
+      !*@/
+      integer :: i, k, nkscope
+      !----------------------------------------------------------------
+      nkscope = nk
+      if (present(F_nkscope)) nkscope = F_nkscope
+      do k=1,nkscope
+         do i=1,ni
+            zivar1(i,k) = zivar1(i,k) + ztdmaskxdt(i)*ziten1(i,k)
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies1
+   
+   !/@*
+   subroutine apply_tendencies2(zivar1, zivar2, ziten1, ziten2, ztdmaskxdt, ni, nk, F_nkscope)
+      use phy_options
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      integer, intent(in) :: ni, nk
+      real, dimension(ni, nk), intent(in) :: ziten1, ziten2
+      real, dimension(ni), intent(in)  :: ztdmaskxdt
+      real, dimension(ni, nk), intent(inout) :: zivar1, zivar2
+      integer, intent(in), optional :: F_nkscope
+      !*@/
+      integer :: i, k, nkscope
+      !----------------------------------------------------------------
+      nkscope = nk
+      if (present(F_nkscope)) nkscope = F_nkscope
+      do k=1,nkscope
+         do i=1,ni
+            zivar1(i,k) = zivar1(i,k) + ztdmaskxdt(i)*ziten1(i,k)
+            zivar2(i,k) = zivar2(i,k) + ztdmaskxdt(i)*ziten2(i,k)
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies2
+
+   !/@*
+   subroutine apply_tendencies3(zivar1, zivar2, zivar3, ziten1, ziten2, ziten3, ztdmaskxdt, ni, nk, F_nkscope)
+      use phy_options
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      integer, intent(in) :: ni, nk
+      real, dimension(ni, nk), intent(in) :: ziten1, ziten2, ziten3
+      real, dimension(ni), intent(in)  :: ztdmaskxdt
+      real, dimension(ni, nk), intent(inout) :: zivar1, zivar2, zivar3
+      integer, intent(in), optional :: F_nkscope
+      !*@/
+      integer :: i, k, nkscope
+      !----------------------------------------------------------------
+      nkscope = nk
+      if (present(F_nkscope)) nkscope = F_nkscope
+      do k=1,nkscope
+         do i=1,ni
+            zivar1(i,k) = zivar1(i,k) + ztdmaskxdt(i)*ziten1(i,k)
+            zivar2(i,k) = zivar2(i,k) + ztdmaskxdt(i)*ziten2(i,k)
+            zivar3(i,k) = zivar3(i,k) + ztdmaskxdt(i)*ziten3(i,k)
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies3
+   
+   !/@*
+   subroutine apply_tendencies4(zivar1, zivar2, zivar3, zivar4, ziten1, ziten2, ziten3, ziten4, ztdmaskxdt, ni, nk, F_nkscope)
+      use phy_options
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Linear combination of two arrays
+      !@Arguments
+      integer, intent(in) :: ni, nk
+      real, dimension(ni, nk), intent(in) :: ziten1, ziten2, ziten3, ziten4
+      real, dimension(ni), intent(in)  :: ztdmaskxdt
+      real, dimension(ni, nk), intent(inout) :: zivar1, zivar2, zivar3, zivar4
+      integer, intent(in), optional :: F_nkscope
+      !*@/
+      integer :: i, k, nkscope
+      !----------------------------------------------------------------
+      nkscope = nk
+      if (present(F_nkscope)) nkscope = F_nkscope
+      do k=1,nkscope
+         do i=1,ni
+            zivar1(i,k) = zivar1(i,k) + ztdmaskxdt(i)*ziten1(i,k)
+            zivar2(i,k) = zivar2(i,k) + ztdmaskxdt(i)*ziten2(i,k)
+            zivar3(i,k) = zivar3(i,k) + ztdmaskxdt(i)*ziten3(i,k)
+            zivar4(i,k) = zivar4(i,k) + ztdmaskxdt(i)*ziten4(i,k)
+         enddo
+      enddo
+      !----------------------------------------------------------------
+      return
+   end subroutine apply_tendencies4
 
 end module tendency

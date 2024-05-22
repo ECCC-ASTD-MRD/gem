@@ -34,6 +34,7 @@ module mixing_length
    integer, parameter :: ML_BOUJO=2                !Key for 'boujo' mixing length
    integer, parameter :: ML_TURBOUJO=3             !Key for 'turboujo' mixing length
    integer, parameter :: ML_LH=4                   !Key for 'lh' mixing length
+   integer, parameter :: ML_MBOUJO=5               !Key for 'mboujo' mixing length
    real, parameter :: ML_MIN=1.                    !Minimum mixing length (m)
    
    ! API types
@@ -47,11 +48,12 @@ module mixing_length
    real, parameter, public :: ML_LMDA=200.         !Maximum stable asymptotic mixing length for Blackadar (1962) estimate
    real, parameter, public :: ML_LMDAS=40.         !Minimum stable asymptotic mixing length for Lock (2007) estimate
    real, parameter, public :: ML_LMDA_UNSTAB=5000. !Maximum unstable mixing length for Blackadar (1962) estimate
-   type(closureMap), dimension(4), parameter, public :: ML_CLOSURES = (/ & !Available closures and mappings
+   type(closureMap), dimension(5), parameter, public :: ML_CLOSURES = (/ & !Available closures and mappings
         closureMap('BLAC62', ML_BLAC62), &
         closureMap('BOUJO', ML_BOUJO), &
         closureMap('TURBOUJO', ML_TURBOUJO), &
-        closureMap('LH', ML_LH)/)  !Remember to update the documentation strings in phy_options() if changes are made here
+        closureMap('LH', ML_LH), &
+        closureMap('MBOUJO', ML_MBOUJO)/)  !Remember to update the documentation strings in phy_options() if changes are made here
    
    ! Private variables
    logical :: initialized=.false.                  !Package initialization status
@@ -60,12 +62,9 @@ module mixing_length
    ! API subprograms
    public :: ml_init
    public :: ml_put
-   public :: ml_key
-   public :: ml_tfilt
    public :: ml_blend
    public :: ml_calc_blac
    public :: ml_calc_boujo
-   public :: ml_calc_lh
    public :: ml_compute
 
    ! Generic procedures
@@ -203,11 +202,13 @@ contains
    end function ml_put_s
    
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ml_compute(zn, zd, pri, mlen, t, qe, qc, z, gzmom, s, se, ps, &
+   integer function ml_compute(zn, zd, pri, mlen, t, qe, qc, fn, z, gzmom, s, se, ps, &
         enold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
         hpbl, lh, hpar, mrk2, dxdy, tau, kount) result(stat)
      use phy_options, only: ilongmel, pbl_diss, pbl_mlturb_diss, timings_L
      use ens_perturb, only: ens_spp_get
+     use pbl_utils, only: blweight
+     use pbl_utils, only: LAMINAR
      ! High-level function to compute and blend mixing lengths
 
      ! Argument declaration
@@ -215,6 +216,7 @@ contains
      real, dimension(:,:), intent(in) :: t                 !dry air temperature (K)
      real, dimension(:,:), intent(in) :: qe                !specific humidity on e-levels (kg/kg)
      real, dimension(:,:), intent(in) :: qc                !PBL cloud water content (kg/kg)
+     real, dimension(:,:), intent(in) :: fn                !PBL cloud fraction
      real, dimension(:,:), intent(in) :: z                 !height AGL of thermodynamic levels (m)
      real, dimension(:,:), intent(in) :: gzmom             !height AGL of momentum levels (m)
      real, dimension(:,:), intent(in) :: s                 !sigma values for full momentum levels
@@ -241,13 +243,12 @@ contains
 
      ! Local variables and common blocks
      include "phyinput.inc"
-#include "clefcon.cdk"
      integer :: n, nk, j, k
      real, dimension(size(t,dim=1)) :: mlemod, mlemodt, mlmult
      real, dimension(size(t,dim=1),size(t,dim=2)) :: zn_blac, zd_blac, pri_blac, &
           zn_boujo, zd_boujo, pri_boujo, zn_turboujo, zd_turboujo, pri_turboujo, &
           zn_lh, zd_lh, pri_lh, blend_hght, przn, te, tv, qce, weight, &
-          rif, znold
+          rif, znold, znu, znd, zn_mboujo, pri_mboujo, zd_mboujo
      logical :: one_ml_form, mlemod_calc, mlemodt_calc
      logical, dimension(size(t,dim=1),size(t,dim=2)) :: boujo_valid
      
@@ -269,6 +270,8 @@ contains
 
      ! Retain mixing length information from previous step
      znold(:,:) = zn(:,:)
+     znu(:,:) = 0.
+     znd(:,:) = 0.
      
      ! Obtain stochastic parameter information
      mlmult(:) = ens_spp_get('ml_mult', mrk2, 1.)
@@ -279,7 +282,7 @@ contains
      one_ml_form = all(mlen(:) == ilongmel) .and. .not.(mlemod_calc .or. mlemodt_calc)
 
      ! Precompute state variables if required
-     if (any(mlen(:) == ML_BOUJO) .or. any(mlen(:) == ML_TURBOUJO) .or. &
+     if (any(mlen(:) == ML_BOUJO) .or. any(mlen(:) == ML_TURBOUJO) .or. any(mlen(:)  == ML_MBOUJO) .or. &
           mlemod_calc .or. mlemodt_calc) then
         te(1:n,1:nk)  = t(1:n,1:nk)
         qce(1:n,1:nk) = qc(1:n,1:nk)
@@ -350,8 +353,8 @@ contains
         if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, z, s, ps, &
              mask=boujo_valid, init=.false.) /= PHY_OK) then
            call physeterror('moistke', 'error returned by B-L mixing length estimate')
-           return
-        endif
+           return           
+        endif 
         if (ml_calc_blac(zn_blac, rig, w_cld, z, z0, fm, hpbl, lh, przn=przn) /= PHY_OK) then
            call physeterror('moistke', 'error returned by Blackadar mixing length estimate')
            return
@@ -385,6 +388,36 @@ contains
         endif
      endif
 
+     ! Mixing length estimate based on a moist form of Bougeault and Lacarrere (1989)
+     if (any(mlen(:) == ML_MBOUJO)) then
+        if (ml_calc_mboujo(zn_mboujo, te, tv, qe, qce, fn, enold, z, se, ps, &
+             init=.false., znup=znu, zndown=znd) /= PHY_OK) then
+           call physeterror('mixing_length', 'error returned by moist B-L mixing length estimate')
+           return           
+        endif 
+        do k=1,nk
+           zn_mboujo(:,k) = zn_mboujo(:,k) * mlmult(:)
+        enddo
+        pri_mboujo = pri
+        rif = pri*rig
+        if (ml_tfilt(zn_mboujo, znold, tau, kount) /= PHY_OK) then
+           call physeterror('mixing_length::ml_calc', &
+                'error returned by mixing length time filtering')
+           return
+        endif
+        ! Dissipation via Eq. 13b of BFP92        
+        where(rig <= 0)
+           zd_mboujo(:,:) = 1. / (0.5*(1./znu(:,:)+1./znd(:,:))*(4./3.))
+        elsewhere
+           zd_mboujo(:,:) = 1. / (0.5*(1./znu(:,:)+1./znd(:,:))*(1. + 1./(3.+rig(:,:))))
+        endwhere
+        if (one_ml_form) then
+           zn = zn_mboujo
+           zd = zd_mboujo
+           pri = pri_mboujo
+        endif
+     endif
+     
      ! Mixing length estimate based on Lenderink and Holtslag (2004) modified for no-local Cu
      if (any(mlen(:) == ML_LH)) then
         przn = 1.
@@ -404,7 +437,7 @@ contains
            do k=1,nk
               zn_blac(:,k) = zn_blac(:,k) * mlmult(:)
            enddo
-           call blweight2(weight, s, ps, n, nk)
+           call blweight(weight, s, ps, n, nk)
            zn_lh(:,:) = zn_blac(:,:) + (zn_lh(:,:)-zn_blac(:,:))*weight(:,:)
            zd_lh(:,:) = zn_blac(:,:) + (zd_lh(:,:)-zn_blac(:,:))*weight(:,:)
            if (ml_tfilt(zn_lh, znold, tau, kount) /= PHY_OK) then
@@ -452,6 +485,10 @@ contains
               zn(j,:) = zn_boujo(j,:)
               zd(j,:) = zd_boujo(j,:)
               pri(j,:) = pri_boujo(j,:)
+           elseif (mlen(j) == ML_MBOUJO) then
+              zn(j,:) = zn_mboujo(j,:)
+              zd(j,:) = zd_mboujo(j,:)
+              pri(j,:) = pri_mboujo(j,:)   
            elseif (mlen(j) == ML_LH) then
               zn(j,:) = zn_lh(j,:)
               zd(j,:) = zd_lh(j,:)
@@ -673,7 +710,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_calc_boujo(zn,th,en,w_cld,zz,sigma,ps,mask,init) result(stat)
       ! Compute the Bougeault and Lacarrere (1989) length scales
-      use integrals, only: int_profile, int_solve, INT_ERR
+      use integrals, only: int_solve, INT_ERR, INT_DIR_UP, INT_DIR_DOWN
 
       ! Argument declaration
       real, dimension(:,:), intent(in) :: th                !virtual potential temperature on e-levs (K)
@@ -768,12 +805,12 @@ contains
          end do
 
          ! Solve integral equation in both vertical directions
-         if (int_solve(lup(1:nc,ki),y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),'up') == INT_ERR) then
+         if (int_solve(lup(1:nc,ki),y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),INT_DIR_UP,nc,nk) == INT_ERR) then
             call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for upwards displacement')
             return
          endif
          if (any(lup(1:nc,ki) > ML_MIN)) then
-         if (int_solve(ldown(1:nc,ki),-y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),'down',found=intok(1:nc)) == INT_ERR) then
+         if (int_solve(ldown(1:nc,ki),-y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),INT_DIR_DOWN,nc,nk,found=intok(1:nc)) == INT_ERR) then
                call msg(MSG_ERROR,'(ml_calc_boujo) error returned by integral solver for downwards displacement')
                return
             endif
@@ -797,17 +834,173 @@ contains
             ! Adjust mixing length for non-local cloud effects (Lock and Mailhot 2006)
             zn(j,ki) = (zn(j,ki)**3 + w_cld(j,ki,2)**3)**(1./3.)
          enddo
+         
+      enddo
+
+      ! Copy values into extremes
+      zn(:,1) = zn(:,2)
+      zn(:,nk) = zn(:,nk-1)
+      
+      ! Successful end of subprogram
+      stat = PHY_OK
+      return
+    end function ml_calc_boujo
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    integer function ml_calc_mboujo(zn,tt,th,qv,qc,fn,en,zz,sigma,ps,mask,init,znup,zndown) result(stat)
+      ! Compute a moist version of the Bougeault and Lacarrere (1989) length scales
+      use integrals, only: int_solve, INT_ERR, INT_DIR_UP, INT_DIR_DOWN
+      use tdpack, only: fqsmx, CPD, CAPPA
+      use pbl_ri_utils, only: thermco, compute_conserved, IMPLICIT_CLOUD
+      use pbl_utils, only: ficemxp
+
+      ! Argument declaration
+      real, dimension(:,:), intent(in) :: tt                !dry air temperature on e-levs (K)
+      real, dimension(:,:), intent(in) :: th                !virtual potential temperature on e-levs (K)
+      real, dimension(:,:), intent(in) :: qv                !specific humidity on e-levs (kg/kg)
+      real, dimension(:,:), intent(in) :: qc                !condensate specific mass on e-levs (kg/kg)
+      real, dimension(:,:), intent(in) :: fn                !PBL cloud fraction
+      real, dimension(:,:), intent(in) :: en                !turbulent kinetic energy (m2/s2)
+      real, dimension(:,:), intent(in) :: zz                !height of e-levs (m)
+      real, dimension(:,:), intent(in) :: sigma             !coordinate values for e-levs
+      real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
+      logical, dimension(:,:), intent(in), optional :: mask !calculation mask [.true.]
+      logical, intent(in), optional :: init                 !initialize the mixing length [.true.]
+      real, dimension(:,:), intent(inout) :: zn             !mixing length (m)
+      real, dimension(:,:), intent(out), optional :: znup,zndown
+
+      !Author
+      !           R. McTaggart-Cowan and A. Zadra (Spring 2024)
+      !
+      !Revision
+      !
+      !Object
+      !           Calculates the mixing length ZN and the dissipation
+      !           length ZE based on the Sanchez and Cuxart (2004; QJRMS)
+      !           moist adaptation of Bougeault and Lacarrere (1989)
+      !
+
+      ! Local variables and common blocks
+      integer :: n,nk,j,ki,istat,nc,k
+      integer, dimension(size(th,dim=1)) :: slk,indx
+      real :: gravinv, thvp, tp, pres, qsat, tl
+      real, dimension(size(th,dim=1)) :: a,zdep
+      real, dimension(size(th,dim=1),size(th,dim=2)) :: y, lup, ldown, zcoord, thl, qw, &
+           ccoef, leff, thlp, qwp, fice, exner, unused
+      logical :: myInit
+      logical, dimension(size(th,dim=1)) :: intok
+      logical, dimension(size(th,dim=1),size(th,dim=2)) :: myMask
+
+      ! Set return status
+      stat = PHY_ERROR
+
+      ! Check initialization status
+      if (.not.initialized) then
+         call msg_toall(MSG_ERROR,'(ml_calc_mboujo) mixing length package not initialized')
+         return
+      endif
+
+      ! Initialization
+      n = size(th,dim=1)
+      nk = size(th,dim=2)
+      gravinv = 1./GRAV
+      istat = neark(sigma,ps,1000.,n,nk,slk) !determine "surface layer" vertical index for buoyancy coefficient
+      myMask = .true.
+      if (present(mask)) myMask = mask
+      myInit = .true.
+      if (present(init)) myInit = init
+      exner(:,:) = sigma(:,:)**CAPPA
+      call ficemxp(fice, unused, unused, tt, n, nk)
+      call compute_conserved(thl, qw, tt, qv, qc, sigma, n, nk)
+
+      ! Expend TKE through vertical displacements
+      if (myInit) zn = -1.
+      do ki=2,nk-1
+
+         ! Compute parcel thermodynamic properties
+         do k=1,nk
+            thlp(:,k) = thl(:,ki)
+            qwp(:,k) = qw(:,ki)
+         enddo
+         call thermco(thlp, qwp, tt, fn, sigma, ps, IMPLICIT_CLOUD, n, nk, &
+              F_ccoef=ccoef, F_leff=leff)
+
+         ! Prepare integral equation components
+         nc = 0
+         indx = -1
+         do j=1,n
+            if (.not. myMask(j,ki)) cycle
+            nc = nc+1
+            indx(j) = nc
+            a(nc) = min(en(j,ki),4.)*th(j,slk(j))*gravinv
+            do k=1,nk
+               if (ccoef(j,k) > 0.) then
+                  tl = exner(j,k)*thlp(j,k)
+                  tp = tl + leff(j,k)/CPD*ccoef(j,k)
+                  pres = sigma(j,k)*ps(j)
+                  qsat = fqsmx(tp, pres, fice(j,k))  !assume similar ice frac in parcel and env instead of recomputing
+                  thvp = tp/exner(j,k) * (1. + (1.+DELTA)*qsat - qwp(j,k))
+               else
+                  thvp = thlp(j,k) * (1. + DELTA*qwp(j,k))
+               endif
+               y(nc,k) = th(j,k) - thvp              
+            enddo
+            zcoord(nc,:) = zz(j,:)
+            zdep(nc) = zz(j,ki)
+         end do
+         
+         ! Solve integral equation in both vertical directions
+         if (int_solve(lup(1:nc,ki),y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),INT_DIR_UP,nc,nk) == INT_ERR) then
+            call msg(MSG_ERROR,'(ml_calc_mboujo) error returned by integral solver for upwards displacement')
+            return
+         endif
+         if (int_solve(ldown(1:nc,ki),-y(1:nc,:),zcoord(1:nc,:),zdep(1:nc),a(1:nc),INT_DIR_DOWN,nc,nk,found=intok(1:nc)) == INT_ERR) then
+            call msg(MSG_ERROR,'(ml_calc_mboujo) error returned by integral solver for downwards displacement')
+            return
+         endif
+         where (.not.intok(1:nc))
+            ldown(1:nc,ki) = zdep(1:nc)
+         elsewhere
+            ldown(1:nc,ki) = min(ldown(1:nc,ki),zdep(1:nc))
+         endwhere
+
+         ! Select final mixing length
+         do j=1,n
+            nc = indx(j)
+            if (nc < 0) cycle
+            ldown(j,ki) = min(ldown(j,ki), zz(j,ki))
+            zn(j,ki) = min(lup(nc,ki), ldown(nc,ki))
+            zn(j,ki) = max(zn(j,ki),ML_MIN)
+         enddo
+
+         if (present(znup)) then
+            znup(:,ki) = lup(nc,ki)
+            znup(:,ki) = max(znup(:,ki), ML_MIN)
+         endif
+         if (present(zndown)) then
+            zndown(:,ki) = ldown(nc,ki)
+            zndown(:,ki) = min(zndown(:,ki),zz(:,ki))
+            zndown(:,ki) = max(zndown(:,ki), ML_MIN)
+         endif
 
       enddo
 
       ! Copy values into extremes
       zn(:,1) = zn(:,2)
       zn(:,nk) = zn(:,nk-1)
+      if (present(znup)) then
+         znup(:,1) = znup(:,2)
+         znup(:,nk) = znup(:,nk-1)
+      endif
+      if (present(zndown)) then
+         zndown(:,1) = zndown(:,2)
+         zndown(:,nk) = zndown(:,nk-1)
+      endif
 
       ! Successful end of subprogram
       stat = PHY_OK
       return
-   end function ml_calc_boujo
+    end function ml_calc_mboujo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_calc_lh(l_e,l_m,pri,dthv,en,w_cld,ri,zs,f_cs,hpar) result(stat)

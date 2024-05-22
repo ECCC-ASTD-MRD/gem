@@ -19,6 +19,7 @@ module prep_cw
    use phy_options
    use phybusidx
    use phymem, only: phyvar
+   use pbl_utils, only: ficemxp
    implicit none
    private
    public :: prep_cw3
@@ -29,14 +30,13 @@ module prep_cw
 contains
 
   !/@*
-   subroutine prep_cw3(pvars, ficebl, ni, nk)
+   subroutine prep_cw3(pvars, ni, nk)
       implicit none
 !!!#include <arch_specific.hf>
 
       !@Object Save water contents and cloudiness in the permanent bus
       !@Arguments
       !          - Input -
-      ! ficebl   fraction of ice
       ! ni       horizontal dimension
       ! nk       vertical dimension
       !          - Input/Output -
@@ -44,7 +44,6 @@ contains
       !*@/
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk
-      real, intent(in) :: ficebl(ni,nk)
       !*@/
       integer :: nkm1
       !----------------------------------------------------------------
@@ -52,7 +51,7 @@ contains
       if (timings_L) call timing_start_omp(445, 'prep_cw', 46)
       if (stcond(1:3) == 'MP_') then
          nkm1 = nk-1
-         call prep_cw_MP(pvars, ficebl, ni, nk, nkm1)
+         call prep_cw_MP(pvars, ni, nk, nkm1)
       else
          call prep_cw_noMP(pvars, ni, nk)
       endif
@@ -106,7 +105,12 @@ contains
       MKPTR2D(zqsdi, qsdi, pvars)
       MKPTR2D(zqsmi, qsmi, pvars)
       MKPTR2D(zqssc, qssc, pvars)
-      MKPTR2D(zqtbl, qtbl, pvars)
+      
+      if (advecqtbl) then
+         MKPTR2D(zqtbl, qtblplus, pvars)
+      else
+         MKPTR2D(zqtbl, qtbl, pvars)
+      endif
 
       zero(:,:) =  0.0
 
@@ -155,7 +159,7 @@ contains
       ! water contents are combined assuming no overlap
       ! cloud fractions are combined assuming random overlap
       
-      if (fluvert == 'MOISTKE') then
+      if (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT') then
          if (associated(zqcplus)) then
             where (zqtbl(:,:) > zqcplus(:,:))
                zlwc(:,:) = zqtbl(:,:)
@@ -204,7 +208,7 @@ contains
 
 
    !/@*
-   subroutine prep_cw_MP(pvars, ficebl, ni, nk, nkm1)
+   subroutine prep_cw_MP(pvars, ni, nk, nkm1)
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -215,7 +219,6 @@ contains
       !@Arguments
       !
       !      - Input -
-      ! ficebl   fraction of ice
       ! ni       horizontal dimension
       ! nk       vertical dimension
       ! nkm1     vertical scope of the operator
@@ -225,7 +228,6 @@ contains
 
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: ni, nk, nkm1
-      real, intent(in) :: ficebl(ni,nk)
 
       !@Author
       ! D. Paquin-Ricard (June 2017)
@@ -233,10 +235,11 @@ contains
       !*@/
 
       integer :: i, k
+      real, dimension(ni,nk) :: unused, ficebl
       real, target :: zero(ni,nk)
       real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zfmp,  &
            ziwcimp, zlwcimp, zqldi, zqlsc, zqsdi, zqssc, zqtbl, zfmc, &
-           zqlmi, zqsmi
+           zqlmi, zqsmi, ztplus
       !----------------------------------------------------------------
       MKPTR2D(zfbl, fbl, pvars)
       MKPTR2D(zfdc, fdc, pvars)
@@ -253,8 +256,14 @@ contains
       MKPTR2D(zqsdi, qsdi, pvars)
       MKPTR2D(zqsmi, qsmi, pvars)
       MKPTR2D(zqssc, qssc, pvars)
-      MKPTR2D(zqtbl, qtbl, pvars)
+      MKPTR2D(ztplus, tplus, pvars)
 
+      if (advecqtbl) then
+         MKPTR2D(zqtbl, qtblplus, pvars)
+      else
+         MKPTR2D(zqtbl, qtbl, pvars)
+      endif
+      
       zero(1:ni,1:nkm1) =  0.0
 
       if (convec == 'NIL') then
@@ -275,7 +284,7 @@ contains
          zfmc => zero(1:ni,1:nkm1)
       endif
 
-      if (fluvert /= 'MOISTKE') then
+      if (fluvert /= 'MOISTKE' .or. fluvert == 'RPNINT') then
          zfbl => zero(1:ni,1:nkm1)
          zqtbl => zero(1:ni,1:nkm1)
       endif
@@ -289,9 +298,10 @@ contains
       ! Add the cloud water (liquid and solid) coming from PBL, shallow  and deep cumulus clouds
       ! note that all condensates must be GRID-SCALE values (not in-cloud)
 
-      if (fluvert == 'MOISTKE') then
+      if (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT') then
+         call ficemxp(ficebl, unused, unused, ztplus, ni, nkm1)
          do k=1,nkm1
-            do i=1,ni
+            do i=1,ni               
                zlwcimp(i,k) = zqtbl(i,k) * (1.0 - ficebl(i,k))
                ziwcimp(i,k) = zqtbl(i,k) * ficebl(i,k)
             enddo

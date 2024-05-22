@@ -14,18 +14,24 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine hines_sigma(sigma_t,sigma_alpha,sigsqh_alpha,  &
-     &                 naz,lev,il1,il2,nlons,nlevs,nazmth)
-   use, intrinsic :: iso_fortran_env, only: REAL64
+module hines_sigma
+   implicit none
+   private
+   public :: hines_sigma1
+
+contains
+
+subroutine hines_sigma1(sigma_t, sigma_alpha, sigsqh_alpha,  &
+     &                  lev, ni, nig, nkm1, naz)
+   use, intrinsic :: iso_fortran_env, only: REAL32
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer  lev, naz, il1, il2
-   integer  nlons, nlevs, nazmth
-   real(REAL64) :: sigma_t(nlons,nlevs)
-   real(REAL64) :: sigma_alpha(nlons,nlevs,nazmth)
-   real(REAL64) :: sigsqh_alpha(nlons,nlevs,nazmth)
+   integer, intent(in) :: lev, ni, nig, nkm1, naz
+   real(REAL32), intent(out) :: sigma_t(ni,nkm1)
+   real(REAL32), intent(out) :: sigma_alpha(ni,naz,nkm1)
+   real(REAL32), intent(in)  :: sigsqh_alpha(ni,naz)
 
    !@Author
    !  aug. 7/95 - c. mclandress
@@ -42,78 +48,58 @@ subroutine hines_sigma(sigma_t,sigma_alpha,sigsqh_alpha,  &
    !               - Input -
    ! sigsqh_alpha  portion of wind variance from waves having wave
    !               normals in the alpha azimuth (m/s).
-   ! naz           actual number of horizontal azimuths used (must be 4 or 8).
    ! lev           altitude level to process.
-   ! il1           first longitudinal index to use (il1 >= 1).
-   ! il2           last longitudinal index to use (il1 <= il2 <= nlons).
-   ! nlons         number of longitudes.
-   ! nlevs         number of vertical levels.
-   ! nazmth        azimuthal array dimension (nazmth >= naz).
-
+   ! ni            number of longitudes.
+   ! nig           horizontal operator scope
+   ! nkm1          number of vertical levels.
+   ! naz           azimuthal array dimension (naz >= naz).
 
    !  internal variables.
-
-   integer  i, n
-   real(REAL64) :: sum_even, sum_odd, above_zero
+   real(REAL32), parameter :: ZERO = 0.
+   
+   integer :: i, n
+   real(REAL32) :: sum_even, sum_odd, above_zero
    !-----------------------------------------------------------------------
 
-   !  calculate azimuthal rms velocity for the 4 azimuth case.
-
-   if (naz.eq.4)  then
-      do i = il1,il2
-         above_zero= max(0.d0,sigsqh_alpha(i,lev,1)+sigsqh_alpha(i,lev,3))
-         sigma_alpha(i,lev,1) = sqrt(above_zero)
-         above_zero= max(0.d0,sigsqh_alpha(i,lev,2)+sigsqh_alpha(i,lev,4))
-         sigma_alpha(i,lev,2) = sqrt(above_zero)
-         sigma_alpha(i,lev,3) = sigma_alpha(i,lev,1)
-         sigma_alpha(i,lev,4) = sigma_alpha(i,lev,2)
-      end do
-   end if
-
    !  calculate azimuthal rms velocity for the 8 azimuth case.
-
-   if (naz.eq.8)  then
-      do i = il1,il2
-         sum_odd  = ( sigsqh_alpha(i,lev,1) + sigsqh_alpha(i,lev,3)   &
-              &             + sigsqh_alpha(i,lev,5) + sigsqh_alpha(i,lev,7) ) / 2.
-         sum_even = ( sigsqh_alpha(i,lev,2) + sigsqh_alpha(i,lev,4)   &
-              &             + sigsqh_alpha(i,lev,6) + sigsqh_alpha(i,lev,8) ) / 2.
-         above_zero= max(0.d0, sigsqh_alpha(i,lev,1)   &
-              &                           + sigsqh_alpha(i,lev,5) + sum_even )
-         sigma_alpha(i,lev,1) = sqrt(above_zero)
-         ! this next sqrt was indicated to produce FP invalid operation by xlf13
-         ! on at least one point on processor oe-0000-0385 out of 480 in a GY25 grid
-         above_zero= max(0.d0, sigsqh_alpha(i,lev,2)   &
-              &                           + sigsqh_alpha(i,lev,6) + sum_odd )
-         sigma_alpha(i,lev,2) = sqrt(above_zero)
-         above_zero= max(0.d0, sigsqh_alpha(i,lev,3)   &
-              &                           + sigsqh_alpha(i,lev,7) + sum_even )
-         sigma_alpha(i,lev,3) = sqrt(above_zero)
-         above_zero= max(0.d0, sigsqh_alpha(i,lev,4)   &
-              &                           + sigsqh_alpha(i,lev,8) + sum_odd )
-         sigma_alpha(i,lev,4) = sqrt(above_zero)
-         sigma_alpha(i,lev,5) = sigma_alpha(i,lev,1)
-         sigma_alpha(i,lev,6) = sigma_alpha(i,lev,2)
-         sigma_alpha(i,lev,7) = sigma_alpha(i,lev,3)
-         sigma_alpha(i,lev,8) = sigma_alpha(i,lev,4)
-      end do
-   end if
+   
+   do i = 1,nig
+      sum_odd  = (sigsqh_alpha(i,1) + sigsqh_alpha(i,3)   &
+           &             + sigsqh_alpha(i,5) + sigsqh_alpha(i,7)) / 2.
+      sum_even = (sigsqh_alpha(i,2) + sigsqh_alpha(i,4)   &
+           &             + sigsqh_alpha(i,6) + sigsqh_alpha(i,8)) / 2.
+      above_zero= max(ZERO, sigsqh_alpha(i,1) + sigsqh_alpha(i,5) + sum_even)
+      sigma_alpha(i,1,lev) = sqrt(above_zero)
+      ! this next sqrt was indicated to produce FP invalid operation by xlf13
+      ! on at least one point on processor oe-0000-0385 out of 480 in a GY25 grid
+      above_zero= max(ZERO, sigsqh_alpha(i,2) + sigsqh_alpha(i,6) + sum_odd)
+      sigma_alpha(i,2,lev) = sqrt(above_zero)
+      above_zero= max(ZERO, sigsqh_alpha(i,3) + sigsqh_alpha(i,7) + sum_even)
+      sigma_alpha(i,3,lev) = sqrt(above_zero)
+      above_zero= max(ZERO, sigsqh_alpha(i,4) + sigsqh_alpha(i,8) + sum_odd)
+      sigma_alpha(i,4,lev) = sqrt(above_zero)
+      sigma_alpha(i,5,lev) = sigma_alpha(i,1,lev)
+      sigma_alpha(i,6,lev) = sigma_alpha(i,2,lev)
+      sigma_alpha(i,7,lev) = sigma_alpha(i,3,lev)
+      sigma_alpha(i,8,lev) = sigma_alpha(i,4,lev)
+   end do
 
    !  calculate total rms velocity.
-
-   do i = il1,il2
+   do i = 1,nig
       sigma_t(i,lev) = 0.
    end do
    do n = 1,naz
-      do i = il1,il2
-         sigma_t(i,lev) = sigma_t(i,lev) + sigsqh_alpha(i,lev,n)
+      do i = 1,nig
+         sigma_t(i,lev) = sigma_t(i,lev) + sigsqh_alpha(i,n)
       end do
    end do
-   do i = il1,il2
-      above_zero= max(0.d0, sigma_t(i,lev))
+   do i = 1,nig
+      above_zero = max(ZERO, sigma_t(i,lev))
       sigma_t(i,lev) = sqrt(above_zero)
    end do
 
    !-----------------------------------------------------------------------
    return
-end subroutine hines_sigma
+end subroutine hines_sigma1
+
+end module hines_sigma

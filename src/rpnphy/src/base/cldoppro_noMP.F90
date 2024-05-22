@@ -34,7 +34,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use series_mod, only: series_xst
-      use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ens_perturb, only: ens_spp_get
       implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"

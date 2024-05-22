@@ -59,6 +59,7 @@
 | Name          | Description            |  Default Value | Type |
 | ------------- | ---------------------- | -------------- | ---- |
 | acchr | Time length (hours) for special time accumulated physics variables | 0 | integer |
+| advecqtbl | Boundary layer cloud advect. is active if .true. | .false. | logical |
 | advectke | Turbulent kinetic energy advect. is active if .true. | .false. | logical |
 | clip_tr_l | Clip tracers negative values | .true. | logical |
 | cond_conserve | Conservation corrections for gridscale condensation<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
@@ -72,14 +73,13 @@
 | debug_mem_l | Activate Debug memory mode | .false. | logical |
 | debug_trace_l | Print a trace of the phy functions (MSG verbosity = debug) | .false. | logical |
 | diffuw | Diffuse vertical motion if .true. | .false. | logical |
-| etrmin2 | Minimal value for TKE in stable case (for 'CLEF') | 1.E-4 | real |
-| fluvert | Boundary layer processes<br>- 'NIL    ': no vertical diffusion<br>- 'CLEF   ': non-cloudy boundary layer formulation<br>- 'MOISTKE': cloudy boundary layer formulation<br>- 'SURFACE': TODO<br>- 'SIMPLE ': a very simple mixing scheme for neutral PBLs<br>- 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1) | 'NIL' | character(len=16) |
+| etrmin2 | Minimal value for TKE in stable case | 1.E-4 | real |
+| fluvert | Boundary layer processes<br>- 'NIL    ': no vertical diffusion<br>- 'MOISTKE': cloudy boundary layer formulation<br>- 'SURFACE': TODO<br>- 'SIMPLE ': a very simple mixing scheme for neutral PBLs<br>- 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1)<br>- 'RPNINT ': RPN integrated PBL scheme | 'NIL' | character(len=16) |
 | fnn_mask | (MOISTKE only) Apply factor fnn_reduc<br>- .false.: everywhere<br>- .true.: over water only | .false. | logical |
 | fnn_reduc | (MOISTKE only) Reduction factor (between 0. and 1.) to be applied to the<br>parameter FNN (turbulent flux enhancement due to boundary layer clouds) | 1. | real |
 | fnnmod | (CLEF+CONRES only) Non-dimensional parameter (must be >= 1.) that controls<br>the value of the flux enhancement factor in CONRES | 2. | real |
 | gwdrag | Gravity wave drag formulation<br>- 'NIL  ': no Gravity wave drag<br>- 'SGO16': gravity wave drag + low-level blocking (new formulation 2016) | 'NIL' | character(len=16) |
 | hines_flux_filter | Number of times the 3-point filter will be applied to smooth the GW flux profiles | 0 | integer |
-| iheatcal | Consider heating from non-orog. drag if = 1 | 0 | integer |
 | indiag_list_s | Comma-separated list of diagnostic level inputs to read.<br>Default: indiag_list_s(1) = 'DEFAULT LIST',<br>expanded to: UU, VV, TT, HU + all dynamic Tracers | ' ' | character(len=32) |
 | inilwc | Initialize water content and cloud fraction seen by radiation for time 0 if .true. | .false. | logical |
 | input_type | Type of input system used<br>- 'DIST   ' : GEM 5.0 input system, RPN_COMM_IO/RPN_COMM_ezshuf_dist based<br>- 'BLOC   ' : GEM 5.0 input system, RPN_COMM_bloc based<br>- 'GEM_4.8' : GEM 4.8 input system, RPN_COMM_bloc based | 'DIST' | character(len=16) |
@@ -95,7 +95,7 @@
 | lhn_weight | Modulation factor for the magnitude of Latent Heat Nudging being applied<br>modulated_tendencies = lhn_weight*(LHN tendencies) | 0. | real |
 | linoz_chm | LINOZ prognostic stratospheric ozone<br>- 'NIL     ' :<br>- 'OZONE   ' :<br>- 'GHG     ' :<br>- 'OZONEGHG' : | 'NIL' | character(len=10) |
 | lmetox | Add methane oxydation as source of humidity in the stratosphere if .true. | .false. | logical |
-| longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag | 'BLAC62' | character(len=16) |
+| longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag<br>- 'MBOUJO  ': mixing length calc. using moist Bougeault | 'BLAC62' | character(len=16) |
 | moyhr | Time length (hours) for special time averaged physics variables | 0 | integer |
 | mp_aeroact | Switch for aerosol activation scheme (1 = default, 2 = ARG + Aerosol climatology) | 1 | integer |
 | mpdiag_for_sfc | Use diagnostic pcp types for surface for MP scheme when .true.<br>otherwise use MP scheme pcp types | .false. | logical |
@@ -162,6 +162,7 @@
 | rad_esfc | Use emissivity computed by the surface schemes | .false. | logical |
 | rad_linoz_l | Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only) | .false. | logical |
 | rad_lw | Compute and apply tendencies from longwave radiation | .true. | logical |
+| rad_mpagg_l | use relative weigthing when combining opt props from implicit and explicit clouds | .false. | logical |
 | rad_part_nomp | Phase partition of total water content for radiation when CONSUN is used<br>- 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged<br>- 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931<br>- 'ECMWF' : IFS docu CY25R1<br>- 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991 | 'BOUOPS' | character(len=16) |
 | rad_siglim | For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp<br>TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma;<br>EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; |  |  |
 | rad_sun_angle_fix_l | Fix use of effective solar zenith angle | .false. | logical |

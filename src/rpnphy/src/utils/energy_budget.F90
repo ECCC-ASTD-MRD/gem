@@ -17,6 +17,7 @@
 module energy_budget
    use, intrinsic :: iso_fortran_env, only: REAL64
    use tdpack, only: CHLC, CHLF, CPD, CPI, CPV, CPW, GRAV, TCDK, TRPL
+   use integrals, only: int_profile,INT_OK,INT_TYPE_PCHIP,INT_TYPE_STEP,INT_TYPE_LINEAR
    use phy_status, only: PHY_OK, PHY_ERROR
    implicit none
    private
@@ -34,6 +35,8 @@ module energy_budget
    public :: eb_conserve_en                                     !Impose energy conservation by adjusting temperature tendencies
    public :: eb_conserve_pw                                     !Impose total water conservation by adjusting humidity tendencies
 
+   public ::INT_TYPE_PCHIP,INT_TYPE_STEP,INT_TYPE_LINEAR
+   
    ! Local generic interfaces
    interface compute_lv
       module procedure compute_lv2d
@@ -45,8 +48,7 @@ module energy_budget
    end interface ice_partition
 
    ! Local parameters
-   integer, parameter :: LONG_CHAR=16                           !Length of standard character strings
-   character(len=LONG_CHAR), parameter :: DEFAULT_INTTYPE='pchip'!Default type of integration strategy
+   integer, parameter :: DEFAULT_INTTYPE=INT_TYPE_PCHIP         !Default type of integration strategy
 
    ! Local variables
    integer :: ksfc=1                                            !Near-surface level index
@@ -103,7 +105,7 @@ contains
       real, dimension(:), intent(in) :: F_p0                    !Surface pressure (Pa)
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg) [diagnosed]
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype       !Integral type ['pchip']
       real(REAL64), dimension(:), intent(out) :: F_eni          !Integrated energy (m3/s2)
       real, dimension(:,:), intent(out), optional :: F_en       !Profile of energy (m3/s2)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
@@ -111,7 +113,7 @@ contains
       ! Local variables
       integer :: istat
       real, dimension(size(F_tt,dim=1),F_nk) :: cpm,lv,ls,myqc,myqi,en,qw
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
 
       ! Set return values
       F_stat = PHY_ERROR
@@ -167,16 +169,16 @@ contains
       real, dimension(:,:), intent(in), optional :: F_dqc       !Liquid condensate tendency (kg/kg/s) [0.]
       real, dimension(:,:), intent(in), optional :: F_dqi       !Solid condensate tendency (kg/kg/s) [diagnosed]
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg) [diagnosed]
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype                !Integral type ['pchip']
       logical, intent(in), optional :: F_abs                    !Computed integrated absolute value of energy [.false.]
-      real(REAL64), dimension(:), intent(out) :: F_deni   !Integrated energy tendency (m3/s3)
+      real(REAL64), dimension(:), intent(out) :: F_deni         !Integrated energy tendency (m3/s3)
       real, dimension(:,:), intent(out), optional :: F_den      !Profile of energy tendency (m3/s3)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       integer :: istat
       real, dimension(size(F_tt,dim=1),F_nk) :: mydqc,mydqi,myqc,myqi,qw,dqw,cpm,lv,ls,dcpm,dlv,dls,den
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
       logical :: myAbs
 
       ! Set return values
@@ -256,7 +258,7 @@ contains
       real, dimension(:), intent(in), optional :: F_wvf         !Surface water vapour flux (kg/m2/s) [0.]
       real, dimension(:), intent(in), optional :: F_rad         !Net radiation flux TOA-surface (W/m2) [0.]
       logical, intent(in), optional :: F_mask                   !Apply offset only where tendencies are non-zero [true]
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype                !Integral type ['pchip']
       real, dimension(:,:), intent(out) :: F_dttc               !Conservative temperature humidity tendency (K/s)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
@@ -265,7 +267,7 @@ contains
       real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,myshf,mywvf,myrad,src,mult
       real, dimension(size(F_tt,dim=1),F_nk) :: myqc,myqi,mydqc,mydqi,qw,cpm,ls,lv,dcpm,dls,dlv,dqw,den,denc
       real(REAL64), dimension(size(F_tt,dim=1)) :: deni,dabseni
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
       logical :: mymask
 
       ! Set return values
@@ -457,7 +459,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function eb_pw(F_pwi,F_hu,F_qc,F_sig,F_p0,F_nk,F_qi,F_inttype,F_pw) result(F_stat)
       ! Compute the vertically integrated total water
-      use integrals, only: int_profile,INT_OK
       implicit none
 
       ! Arguments
@@ -467,14 +468,14 @@ contains
       real, dimension(:), intent(in) :: F_p0                    !Surface pressure (Pa)
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_qi        !Solid condensate (kg/kg)
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype                !Integral type ['pchip']
       real(REAL64), dimension(:), intent(out) :: F_pwi          !Integrated total water (Kg/m2)
       real, dimension(:,:), intent(out), optional :: F_pw       !Profile of total water (kg/kg)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables
       real, dimension(size(F_hu,dim=1),F_nk) :: qw
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
 
       ! Set return values
       F_stat = PHY_ERROR
@@ -505,7 +506,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function eb_dpw(F_dpwi,F_dhu,F_hu,F_sig,F_p0,F_nk,F_dqc,F_dqi,F_inttype,F_abs,F_dpw) result(F_stat)
       ! Compute the vertically integrated total water tendency
-      use integrals, only: int_profile,INT_OK
       implicit none
 
       ! Arguments
@@ -516,7 +516,7 @@ contains
       integer, intent(in) :: F_nk                               !Number of prognostic levels
       real, dimension(:,:), intent(in), optional :: F_dqc       !Liquid condensate tendency (kg/kg/s) [0.]
       real, dimension(:,:), intent(in), optional :: F_dqi       !Solid condensate tendency (kg/kg/s) [0.]
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype                !Integral type ['pchip']
       logical, intent(in), optional :: F_abs                    !Computed integrated absolute value of total water [.false.]
       real(REAL64), dimension(:), intent(out) :: F_dpwi         !Integrated total water (kg/m2)
       real, dimension(:,:), intent(out), optional :: F_dpw      !Profile of total water (kg/kg)
@@ -524,7 +524,7 @@ contains
 
       ! Local variables
       real, dimension(size(F_hu,dim=1),F_nk) :: dqw,mydqc,mydqi
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
       logical :: myAbs
 
       ! Set return values
@@ -578,7 +578,7 @@ contains
       real, dimension(:), intent(in), optional :: F_rain        !Surface liquid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_snow        !Surface solid precipitation flux (kg/m2/s)
       real, dimension(:), intent(in), optional :: F_wvf         !Surface turbulent water vapour flux (kg/m2/s)
-      character(len=*), intent(in), optional :: F_inttype       !Integral type ['pchip']
+      integer, intent(in), optional :: F_inttype                !Integral type ['pchip']
       real, dimension(:,:), intent(out) :: F_dhuc               !Conservative tendency (kg/kg/s)
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
@@ -587,7 +587,7 @@ contains
       real, dimension(size(F_tt,dim=1)) :: myrain,mysnow,mywvf,src,mult
       real, dimension(size(F_tt,dim=1),F_nk) :: mydqc,mydqi,dqw,dqwc
       real(REAL64), dimension(size(F_tt,dim=1)) :: dpw,dabspw
-      character(len=LONG_CHAR) :: myInttype
+      integer :: myInttype
 
       ! Set return values
       F_stat = PHY_ERROR
@@ -901,13 +901,12 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function integrate_profile(F_fldi,F_fld,F_sig,F_p0,F_inttype) result(F_stat)
-      use integrals, only: int_profile,INT_OK
       implicit none
       real, dimension(:,:), intent(in) :: F_fld                 !Field to integrate
       real, dimension(:,:), intent(in) :: F_sig                 !Sigma levels ()
       real, dimension(:), intent(in) :: F_p0                    !Surface pressure (Pa)
-      character(len=*), intent(in), optional :: F_inttype       !Integral type
-      real(REAL64), dimension(:), intent(out) :: F_fldi   !Integrated value
+      integer, intent(in), optional :: F_inttype                !Integral type
+      real(REAL64), dimension(:), intent(out) :: F_fldi         !Integrated value
       integer :: F_stat                                         !Return status (PHY_OK or PHY_ERROR)
 
       ! Local variables

@@ -734,7 +734,7 @@ contains
       !*@/
       logical, parameter :: NOSHORTMATCH_L = .false.
       integer, parameter :: MUST_INIT = 1
-      integer :: nvars,nvars2,ivar,istat
+      integer :: nvars2,ivar,istat
       character(len=512) :: str512
       character(len=32) :: vnamelist(512)
       type(phymeta), pointer :: vmeta

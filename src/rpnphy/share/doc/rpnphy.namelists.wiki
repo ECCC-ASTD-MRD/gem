@@ -327,6 +327,11 @@ Time length (hours) for special time accumulated physics variables
 | 0 || integer
 
 |-
+| advecqtbl ||
+Boundary layer cloud advect. is active if .true.
+| .false. || logical
+
+|-
 | advectke ||
 Turbulent kinetic energy advect. is active if .true.
 | .false. || logical
@@ -398,18 +403,18 @@ Diffuse vertical motion if .true.
 
 |-
 | etrmin2 ||
-Minimal value for TKE in stable case (for 'CLEF')
+Minimal value for TKE in stable case
 | 1.E-4 || real
 
 |-
 | fluvert ||
 Boundary layer processes
 * 'NIL    ': no vertical diffusion
-* 'CLEF   ': non-cloudy boundary layer formulation
 * 'MOISTKE': cloudy boundary layer formulation
 * 'SURFACE': TODO
 * 'SIMPLE ': a very simple mixing scheme for neutral PBLs
 * 'YSU    ': Yonsei University PBL scheme (from WRF 4.2.1)
+* 'RPNINT ': RPN integrated PBL scheme
 | 'NIL' || character(len=16)
 
 |-
@@ -441,11 +446,6 @@ Gravity wave drag formulation
 |-
 | hines_flux_filter ||
 Number of times the 3-point filter will be applied to smooth the GW flux profiles
-| 0 || integer
-
-|-
-| iheatcal ||
-Consider heating from non-orog. drag if = 1
 | 0 || integer
 
 |-
@@ -550,6 +550,7 @@ Mixing length calc. scheme
 * 'BOUJO   ': mixing length calc. using Bougeault
 * 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)
 * 'LH      ': mixing length calc. using Lenderink and Holtslag
+* 'MBOUJO  ': mixing length calc. using moist Bougeault
 | 'BLAC62' || character(len=16)
 
 |-
@@ -926,6 +927,11 @@ Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only)
 | rad_lw ||
 Compute and apply tendencies from longwave radiation
 | .true. || logical
+
+|-
+| rad_mpagg_l ||
+use relative weigthing when combining opt props from implicit and explicit clouds
+| .false. || logical
 
 |-
 | rad_part_nomp ||

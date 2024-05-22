@@ -14,16 +14,23 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-subroutine vert_smooth(darr, work, coeff, nsmooth,         &
-     &                 il1, il2, lev1, lev2, nlons, nlevs)
-   use, intrinsic :: iso_fortran_env, only: REAL64
+module vert_smooth
+   implicit none
+   private
+   public :: vert_smooth1
+
+contains
+
+   
+subroutine vert_smooth1(darr, levbot, ni, nig, nkm1, naz)
+   use, intrinsic :: iso_fortran_env, only: REAL32
+   use mo_gwspectrum, only: smco, rsum_wts, nsmax
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer  nsmooth, il1, il2, lev1, lev2, nlons, nlevs
-   real(REAL64) :: coeff
-   real(REAL64) :: darr(nlons,nlevs), work(nlons,nlevs)
+   integer, intent(in) :: levbot, ni, nig, nkm1, naz
+   real(REAL32), intent(inout) :: darr(ni,naz,nkm1)
 
    !@Author
    !  aug. 3/95 - c. mclandress
@@ -36,55 +43,49 @@ subroutine vert_smooth(darr, work, coeff, nsmooth,         &
    ! darr     smoothed array (on output),unsmoothed array of data (on input)
    !          - Input
    ! darr     unsmoothed array of data (on input).
-   ! work     work array of same dimension as darr.
-   ! coeff    smoothing coefficient for a 1:coeff:1 stencil.
+   ! smco     smoothing coefficient for a 1:coeff:1 stencil.
    !          (e.g., coeff = 2 will result in a smoother which
    !          weights the level l gridpoint by two and the two
    !          adjecent levels (l+1 and l-1) by one).
-   ! nsmooth  number of times to smooth in vertical.
+   ! nsmax    number of times to smooth in vertical.
    !          (e.g., nsmooth=1 means smoothed only once,
    !          nsmooth=2 means smoothing repeated twice, etc.)
-   ! il1      first longitudinal index to use (il1 >= 1).
-   ! il2      last longitudinal index to use (il1 <= il2 <= nlons).
-   ! lev1     first altitude level to use (lev1 >=1).
-   ! lev2     last altitude level to use (lev1 < lev2 <= nlevs).
-   ! nlons    number of longitudes.
-   ! nlevs    number of vertical levels.
+   ! levbot   last altitude level to use (lev1 < levbot <= nkm1).
+   ! ni       number of longitudes.
+   ! nig      horizontal operator scope
+   ! nkm1     number of vertical levels.
 
    !  internal variables.
 
-   integer  i, l, ns, lev1p, lev2m
-   real(REAL64) :: sum_wts
+   integer :: i, l, nz, ns
+   real(REAL32) :: work(ni,naz,nkm1)
    !-----------------------------------------------------------------------
 
-   !  calculate sum of weights.
+   !  smooth nsmax times
 
-   sum_wts = coeff + 2.
-
-   lev1p = lev1 + 1
-   lev2m = lev2 - 1
-
-   !  smooth nsmooth times
-
-   do ns = 1,nsmooth
+   do ns = 1,nsmax
 
       !  copy darr into work array.
-
-      do l = lev1,lev2
-         do i = il1,il2
-            work(i,l) = darr(i,l)
+      do l = 1,levbot
+         do nz = 1,naz
+            do i = 1,nig
+               work(i,nz,l) = darr(i,nz,l)
+            end do
          end do
       end do
 
       !  smooth array work in vertical direction and put into darr.
-
-      do l = lev1p,lev2m
-         do i = il1,il2
-            darr(i,l) = (work(i,l+1)+coeff*work(i,l)+work(i,l-1) ) / sum_wts
+      do l = 2,levbot-1
+         do nz = 1,naz
+            do i = 1,nig
+               darr(i,nz,l) = (work(i,nz,l+1) + smco*work(i,nz,l) + work(i,nz,l-1)) * rsum_wts
+            end do
          end do
       end do
    end do
 
    return
    !-----------------------------------------------------------------------
-end subroutine vert_smooth
+end subroutine vert_smooth1
+
+end module vert_smooth
