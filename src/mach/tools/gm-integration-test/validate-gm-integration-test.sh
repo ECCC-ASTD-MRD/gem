@@ -4,55 +4,55 @@
 #
 #   Script for for validating GEM-MACH integration test results.
 #
-#   USAGE: ord_soumet ${TASK_BIN}/validate-gm-integration-test.sh -args "${IntegrationTest_rpn_utils} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo}" -mach ${GMJobMach} -cpus ${VldtJobProcTopo} -cm ${GMJobMemory} -t ${VldtJobTime} -queue ${GMJobQueue} -jn ${VldtJobName} -listing ${TASK_BASEDIR}/listing
+#   USAGE: 
+#          ord_soumet ${TASK_BIN}/validate-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" -mach ${GMJobMach} -cpus ${VldtJobProcTopo} -cm ${GMJobMemory} -t ${VldtJobTime} -queue ${GMJobQueue} -jn ${VldtJobName} -listing ${TASK_BASEDIR}/listing
 #          or
-#          validate-gm-integration-test.sh ${IntegrationTest_rpn_utils} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} 2>&1 > gm-test-${TRUE_HOST}-validation-listings.txt
+#          validate-gm-integration-test.sh ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt} 2>&1 > gm-test-${TRUE_HOST}-validation-listings.txt
 #
 #   If the test is successful, the script will print:
 #   ***
-#   Congratulations: New binary reproduces control test.
+#   New binary reproduces reference output.
 #   ***
 #   on the screen or in the listings file.
 #
 #   The script relies on:
 #       1. Existence of directory structure needed for Runmod task with root directory being placed at ${TASK_BASEDIR}
-#       2. Existence of reference output file named ${control_dir}/gm-output/${IntegrationTest_version}_${TRUE_HOST}/model/${rundate}_${fhr}
+#       2. Existence of reference output file named ${control_dir}/gm-output/model/${rundate}_${fhr}
 #   If any of these are missing, or not up to date, the script will fail. The error messages are provided throughout the
 #   script to indicate the obvious issues and failure of the script to behave as expected.
 #
-#   The script will:
-#       - Compare results of the run with the previously saved results of the control run performed with the same input and a
-#         binary built with the last released GEM-MACH code.
-#       - Stop and provide the error message when there are issues with any of the described steps.
-#       - Time the execution.
+#   The script:
+#       - Loads environments available in GEM super repository in ${TASK_BASEDIR}/GEM-MACH
+#       - Compares results of the run with the previously saved results of the control run performed with the same input 
+#         and a binary built with the last released GEM-MACH code.
+#       - Stops and provides the error message when there are issues with any of the described steps.
+#       - Times the execution.
 #
 # Author: Verica Savic-Jovcic
 # Date:   March 2022
 # Update: January 2023
 #
-# 2023-Apr. Jack C - source GEM environment, minor tweak, simplify,
-#         remove HARDCODD $rundate etc.
-# 2023-May. Jack C - simplify to just fstcomp of output with ref./cntrl output
+#         April 2023, Jack C - replace RPN/utils with GEM environment, minor tweak, simplify,
+#          remove HARDCODD $rundate etc.
+#         May 2023, Jack C - simplify to just fstcomp of output with ref./cntrl output
+#         August 2023, Verica S-J - update documentation
 #
 ###
 
 scriptstartdate=$(date '+%C%y%m%d%H%M%S')
 
 # Read in arguments
-GEM_version=$1
-IntegrationTest_version=$2
-control_dir=$3
-TASK_BASEDIR=$4
-gmtestinfo=$5
-cmpl_opt=$6
+IntegrationTest_version=$1
+control_dir=$2
+TASK_BASEDIR=$3
+gmtestinfo=$4
+cmpl_opt=$5
 
-# update log
+# Update log
 echo -e "\n== Starting script: validate-gm-integration-test: $scriptstartdate == \n" | tee -a ${gmtestinfo}
 
-# Check and load GEM environment
-gembndl=/fs/ssm/eccc/mrd/rpn/models/gem/bundles/${GEM_version}.bndl
-[[ ! -f $gembndl ]] && echo -d " ERROR: GEM environment file not available: $gembndl \n" && exit 1
-source r.load.dot /fs/ssm/eccc/mrd/rpn/models/gem/bundles/${GEM_version}
+# Load necessary environment (instead of GEM environment)
+source ${TASK_BASEDIR}/GEM-MACH/.eccc_setup_intel
 
 # Define task directory structure
 export TASK_BIN=${TASK_BASEDIR}/bin
@@ -62,10 +62,10 @@ export TASK_OUTPUT=${TASK_BASEDIR}/output
 
 cp -a $(which fstcomp) ${TASK_BIN}
 
-# output fst files to compare
-ctrl_output=${control_dir}/gm-output_${TRUE_HOST}/model
-[[ "${cmpl_opt}" == "dbg" ]] && ctrl_output=${control_dir}/gm-output_${TRUE_HOST}_${cmpl_opt}/model
-fhr=024
+# Define the contorl and model output files to compare
+ctrl_output=${control_dir}/gm-output/model
+[[ "${cmpl_opt}" == "dbg" ]] && ctrl_output=${control_dir}/gm-output_${cmpl_opt}/model
+fhr=009
 rundate=$(basename ${ctrl_output}/??????????_${fhr} |cut -c1-10)
 ctrl_outfile=${ctrl_output}/${rundate}_${fhr}
 test_outfile=${TASK_OUTPUT}/${rundate}_${fhr}
@@ -77,7 +77,7 @@ test_outfile=${TASK_OUTPUT}/${rundate}_${fhr}
 echo -e "\n ref. control: ${ctrl_outfile}" | tee -a ${gmtestinfo}
 echo -e "\n test outfile: ${test_outfile}" | tee -a ${gmtestinfo}
 
-# Compare the output with the existing resutls
+# Compare the model output with the control files
 complistfile=${TASK_BASEDIR}/fstcomp_listing
 ${TASK_BIN}/fstcomp -a ${ctrl_outfile} -b ${test_outfile} > ${complistfile}
 if [ -f ${complistfile} ] && [[ $(grep -i  "error" ${complistfile}) == "" ]] ; then
@@ -97,5 +97,5 @@ else
 fi
 
 # Tell the world how long it took to validate GEM-MACH integration test results
-echo -e "\n== DONE with validation script == \n" | tee -a ${gmtestinfo}
+echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds for the validation script to run. == \n" | tee -a ${gmtestinfo}
 

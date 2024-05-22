@@ -47,10 +47,10 @@ subroutine chm_businit(F_ni, F_nk)
    integer(kind=4), intent(in) ::  F_ni, F_nk
 end subroutine chm_businit
 
-subroutine chm_exe(busdyn     , busper        , busvol     ,   &
-                    slab_index , step)
+subroutine chm_exe(pvars, slab_index, step)
+   use phymem, only: phyvar
    integer(kind=4), intent   (in) :: slab_index, step
-   real(kind=4), dimension(:), pointer, contiguous :: busdyn, busper, busvol
+   type(phyvar), pointer, contiguous :: pvars(:)
 end subroutine chm_exe
 
 subroutine chm_fst_closefile(file_unit)
@@ -68,30 +68,31 @@ end subroutine chm_fst_openfile
 subroutine chm_getphybus_struct( )
 end subroutine chm_getphybus_struct
 
-subroutine chm_load_emissions2(F_basedir_S, gem_tstep_num, inputobj, nbvar_input)
+subroutine chm_load_emissions(F_basedir_S, gem_tstep_num, inputobj, nbvar_input)
    use inputio_mod,          only: INPUTIO_T
    character(len=*)               :: F_basedir_S  !- base path for input data file
    integer(kind=4), intent(in)    :: gem_tstep_num
    type(INPUTIO_T), intent(inout) :: inputobj
    integer(kind=4), intent(inout) :: nbvar_input
-end subroutine chm_load_emissions2
+end subroutine chm_load_emissions
 
-subroutine chm_load_metvar(busdyn, busper, busvol, metvar2d, metvar3d)
+subroutine chm_load_metvar(pvars, metvar2d, metvar3d)
+  use phymem, only: phyvar
   use chm_metvar_mod
   use chm_ptopo_grid_mod, only: chm_ni, chm_nk
- real(kind=4),    dimension(:), pointer, contiguous :: busdyn
- real(kind=4),    dimension(:), pointer, contiguous :: busper
- real(kind=4),    dimension(:), pointer, contiguous :: busvol
+ type(phyvar), pointer, contiguous :: pvars(:)
  real(kind=4),    intent(out) :: metvar2d(chm_ni, SIZE_MV2D)
  real(kind=4),    intent(out) :: metvar3d(chm_ni, chm_nk, SIZE_MV3D)
 end subroutine chm_load_metvar
 
-subroutine chm_load_store_tracers(busdyn, chem_tr, flag)
+subroutine chm_load_store_tracers(pvars, busdyn, chem_tr, flag)
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
+   use phymem,               only: phyvar
    integer(kind=4), intent   (in) :: flag
    real(kind=4),    dimension(:), pointer, contiguous :: busdyn
    real(kind=4),    intent(inout) :: chem_tr(chm_ni, chm_nk + 1, nb_dyn_tracers)
+   type(phyvar),    pointer, contiguous :: pvars(:)
 end subroutine chm_load_store_tracers
 
 subroutine chm_mjrpts_get_emissions(file_unit, Fstack_emis, nb_sources, datev, &

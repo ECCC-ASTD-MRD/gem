@@ -57,6 +57,8 @@ module chm_utils_mod
    integer,  parameter :: dp = selected_real_kind(12, 307)
    integer,  parameter :: i4 = selected_int_kind(9)
    integer,  parameter :: i8 = selected_int_kind(14)
+   real(sp), parameter :: TINY_SP = TINY(0.0_sp)
+   real(sp), parameter :: HUGE_SP = HUGE(0.0_sp)
    real(dp), parameter :: TINY_DP = TINY(0.0_dp)
    real(dp), parameter :: HUGE_DP = HUGE(0.0_dp)
 

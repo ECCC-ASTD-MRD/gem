@@ -60,18 +60,21 @@
 !===============================================================================
 !
 !!if_on
-subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
+subroutine mach_main(pvars, busper, busvol, chem_tr, metvar2d, metvar3d, &
                      slab_index, step, ni_can, ni_nocan)
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
+   use phymem,               only: phyvar
 !!if_off
-   use chm_utils_mod,        only: global_debug, chm_lun_out, chm_error_l, ik
+   use chm_utils_mod,        only: global_debug, chm_lun_out, chm_error_l, &
+                                   ik, chm_msg_debug
    use chm_nml_mod,          only: chm_biog_s, chm_gas_drydep_s,           &
                                    chm_do_mjpts_l, chm_mj_treatment_s,     &
                                    chm_diag_accum_L, chm_diag_colum_L,     &
                                    chm_sat_seasons_l, chm_do_cffeps_l,     &
-                                   chm_pkg_gas_s, chm_pkg_pm_s, chm_vert_diff_s
+                                   chm_pkg_gas_s, chm_pkg_pm_s, chm_vert_diff_s, &
+                                   chm_debug_trace_L
    use chm_species_idx_mod,  only: sp_SO4
    use mach_drydep_mod,      only: lucprm
    use mach_pkg_gas_mod,     only: num_be_sp
@@ -98,6 +101,7 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
    integer(kind=4), intent   (in) :: ni_can, ni_nocan
    real(kind=4),    dimension(:), pointer, contiguous :: busper
    real(kind=4),    dimension(:), pointer, contiguous :: busvol
+   type(phyvar),    pointer, contiguous :: pvars(:)
    real(kind=4),    intent(inout) :: chem_tr(chm_ni, chm_nk + 1, nb_dyn_tracers)
    real(kind=4),    intent   (in) :: metvar2d(chm_ni, SIZE_MV2D)
    real(kind=4),    intent   (in) :: metvar3d(chm_ni, chm_nk, SIZE_MV3D)
@@ -122,24 +126,22 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
    real(kind=4)      :: metvar3dnocan(ni_nocan, chm_nk, SIZE_MV3D)
    real(kind=4)      :: emisbio_can(ni_can, nkt, num_be_sp)
    real(kind=4)      :: tracers_can(ni_can, nkc, nb_dyn_tracers)
+   character(len=64) :: tmp_S
 
+   external msg_toall
 !===============================================================================
 ! Code statements begin here
 !===============================================================================
 !
-   local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
-!
-   if (local_dbg) then
-      write (chm_lun_out, *) 'in mach_main'
-      write (chm_lun_out, *) 'slab_index, step ', slab_index, step
-      write (chm_lun_out, *) 'chm_ni, chm_nk ', chm_ni, chm_nk
-   end if
+   local_dbg = ((chm_debug_trace_L .or. global_debug) .and. (chm_lun_out > 0))
+   write(tmp_S, '(a,i5,a,i3)')'slab_index:',slab_index,' step:', step
+   call msg_toall(chm_msg_debug, trim(tmp_S) // 'mach_main [BEGIN]')
 !
 !================================================================================
 ! Start of landuse and season calculations
 !================================================================================
 !
-   call mach_landuse(busper, metvar2d, landuse)
+   call mach_landuse(pvars, metvar2d, landuse)
    if (chm_error_l) return
 !
    if (step <  1) then
@@ -422,9 +424,10 @@ subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
 !  Units conversion for a subset of PM and gases species before outputting them.
 !===============================================================================
 !
-   call mach_output (busper, busvol, chem_tr, metvar2d, metvar3d, landuse)
+    call mach_output (busper, busvol, chem_tr, metvar2d, metvar3d, landuse)
 !
 !===============================================================================
+    call msg_toall(chm_msg_debug, 'mach_main [END]')
 
 return
 end subroutine mach_main

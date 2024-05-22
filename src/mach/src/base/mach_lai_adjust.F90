@@ -51,7 +51,7 @@
    use chm_datime_mod,       only: imonth
    use chm_species_info_mod, only: sm
    use chm_species_idx_mod,  only: sp_LAI, sp_STSE
-   use phymem,               only: phymeta, phyvar, phymem_find
+   use phymem,               only: phymem_find, phymem_getdata
 !
    implicit none
 !!if_on
@@ -63,27 +63,26 @@
 !  Local variables:
    real(kind=4), dimension(nmth, chm_ni) :: lai_mnt
    real(kind=4)                          :: laimin, laimax
-   integer(kind=4)                       :: ii, im, jj, istat
-!
-   type(phyvar) :: myvar(1)
-   type(phymeta), pointer :: vmeta
+   real(kind=4), pointer, contiguous     :: bptr(:)
+   integer(kind=4)                       :: ii, im, jj, istat, idxv1(1)
 !
 
    call msg_toall(chm_msg_debug, 'mach_lai_adjust [BEGIN]')
 
-   istat = phymem_find(myvar, 'LAI_ENT', F_npath='V', F_bpath='E', &
+   istat = phymem_find(idxv1, 'LAI_ENT', F_npath='V', F_bpath='E', &
                           F_quiet=.false., F_shortmatch=.false.)
    if (istat < 0) then
       write(*, *) 'Error in retrieving LAI from the entry bus'
       chm_error_l = .true.
       return
    end if
-   vmeta => myvar(1)%meta
+   nullify(bptr)
+   istat = phymem_getdata(bptr, idxv1(1), trnch)
    jj = 0
    do im = 1, nmth
       do ii = 1, chm_ni
          jj = jj + 1
-         lai_mnt(im, ii) = max(vmeta%bptr(jj, trnch), 0.0)
+         lai_mnt(im, ii) = max(bptr(jj), 0.0)
       end do
    end do
 !

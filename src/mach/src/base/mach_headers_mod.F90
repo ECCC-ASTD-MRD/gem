@@ -205,25 +205,28 @@ subroutine mach_input_check(busvol, metvar2d, metvar3d, landuse)
    real(kind=4),    intent   (in) :: landuse (chm_ni, lucprm)
 end subroutine mach_input_check
 
-subroutine mach_landuse(busper, metvar2d, landuse_out)
+subroutine mach_landuse(pvars, metvar2d, landuse_out)
    use chm_ptopo_grid_mod,  only: chm_ni
    use chm_metvar_mod,      only: SIZE_MV2D
    use mach_drydep_mod,     only: lucprm
-   real(kind=4),    dimension(:), pointer, contiguous :: busper
+   use phymem,              only: phyvar
+   type(phyvar),    pointer, contiguous :: pvars(:)
    real(kind=4),    intent   (in) :: metvar2d   (chm_ni, SIZE_MV2D)
    real(kind=4),    intent  (out) :: landuse_out(chm_ni, lucprm)
 end subroutine mach_landuse
 
-subroutine mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, &
+subroutine mach_main(pvars, busper, busvol, chem_tr, metvar2d, metvar3d, &
                      slab_index, step, ni_can, ni_nocan)
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
+   use phymem,               only: phyvar
    integer(kind=4), intent   (in) :: slab_index
    integer(kind=4), intent   (in) :: step
    integer(kind=4), intent   (in) :: ni_can, ni_nocan
    real(kind=4),    dimension(:), pointer, contiguous :: busper
    real(kind=4),    dimension(:), pointer, contiguous :: busvol
+   type(phyvar),    pointer, contiguous :: pvars(:)
    real(kind=4),    intent(inout) :: chem_tr(chm_ni, chm_nk + 1, nb_dyn_tracers)
    real(kind=4),    intent   (in) :: metvar2d(chm_ni, SIZE_MV2D)
    real(kind=4),    intent   (in) :: metvar3d(chm_ni, chm_nk, SIZE_MV3D)
@@ -325,7 +328,7 @@ end subroutine mach_canopy_levels
 subroutine mach_canopy_transfer(chem_tr, tracers_can, metvar2d, metvar3d, &
                                 metvar3dcan, kmod, kcan, imod, ni_can, flag)
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk, nkt, nkc
-   use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D 
+   use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
    use chm_species_info_mod, only: nb_dyn_tracers
    integer(kind=4),   intent(in)    :: ni_can
    real(kind=4),      intent(inout) :: chem_tr(chm_ni, chm_nk+1, nb_dyn_tracers)

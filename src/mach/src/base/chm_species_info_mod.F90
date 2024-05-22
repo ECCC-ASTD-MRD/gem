@@ -48,7 +48,7 @@ module chm_species_info_mod
 
 !  Identification information
 !  *_name   => Short name, often same as output name
-!  *_string => String used by gesdict to allocate memory on the bus
+!  *_string => String used by phymem_add to allocate memory on the bus
 !  *_offset => Starting index on the physics bus
 !
 !    Entry on the dynamic bus

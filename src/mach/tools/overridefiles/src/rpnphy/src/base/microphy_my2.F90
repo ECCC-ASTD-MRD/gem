@@ -17,8 +17,10 @@
 module microphy_my2
  use, intrinsic :: iso_fortran_env, only: REAL64
  use phy_status, only: phy_error_L
+ use phymem, only: phyvar
 
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
  private
  public :: mp_my2_main
@@ -599,11 +601,18 @@ end subroutine cfg
 
  end subroutine check_values
 
-! chemistry module add massFlux3D
+
 !=====================================================================================!
+#ifdef HAVE_MACH
+! chemistry module add massFlux3D
   subroutine sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
                 massFlux_bot,kdir,kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afx_in,       &
                 bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in,massFlux3D)
+#else
+  subroutine sedi_wrapper_2(QX,NX,cat,epsQ,epsQ_sedi,epsN,dmx,ni,VxMax,DxMax,dt,     &
+                massFlux_bot,kdir,kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afx_in,       &
+                bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in)
+#endif
 
 !-------------------------------------------------------------------------------------!
 !  Wrapper for s/r SEDI, for computation on all vertical levels.  Called from MY2_MAIN.
@@ -617,7 +626,9 @@ end subroutine cfg
   real, dimension(:,:), intent(in)    :: DE,iDE,DZ,iDZ,gamfact
   real, intent(in)                    :: epsQ,epsQ_sedi,epsN,VxMax,dmx,DxMax,dt
   real, intent(in), optional          :: afx_in,bfx_in,cmx_in,ckQx1_in,ckQx2_in,ckQx4_in
+#ifdef HAVE_MACH
   real, dimension(:,:),  intent(out), optional :: massFlux3D
+#endif
   integer, dimension(:), intent(in)   :: ktop_sedi
   integer, intent(in)                 :: ni,cat,kbot,kdir
 
@@ -682,19 +693,32 @@ end subroutine cfg
       i= activeColumn(a)
      !From here, all sedi calcs are done for each column i
 
+#ifdef HAVE_MACH
       call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),gamfact(i,:),epsQ,epsN,           &
                    dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
                    afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,           &
                    ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in, massFlux1D=massFlux3D(i,:))
+#else
+      call sedi_1D(QX(i,:),NX(i,:),cat,DE(i,:),iDE(i,:),gamfact(i,:),epsQ,epsN,           &
+                   dmx,VxMax,DxMax,dt,DZ(i,:),iDZ(i,:),massFlux_bot(i),kdir,kbot,ktop(i), &
+                   afx_in=afx_in,bfx_in=bfx_in,cmx_in=cmx_in,ckQx1_in=ckQx1_in,           &
+                   ckQx2_in=ckQx2_in,ckQx4_in=ckQx4_in)
+#endif
 
    enddo  !a-loop
 
  end subroutine sedi_wrapper_2
 
 !=====================================================================================!
+#ifdef HAVE_MACH
 subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,          &
                     dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,afx_in,bfx_in,cmx_in,       &
                     ckQx1_in,ckQx2_in,ckQx4_in,massFlux1D,BX1d)
+#else
+subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,          &
+                    dt,DZ1d,iDZ1d,massFlux_bot,kdir,kbot,ktop,afx_in,bfx_in,cmx_in,       &
+                    ckQx1_in,ckQx2_in,ckQx4_in,BX1d)
+#endif
 
 !-------------------------------------------------------------------------------------!
 !  Performs 2-moment sedimentation on a single column for hydrometeor categories whose
@@ -736,7 +760,9 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 ! -- OUTPUT: --
 !
 ! massFlux_bot mass flux (at lowest model level)
+#ifdef HAVE_MACH
 ! massFlux1D   mass flux (along the vertical column)
+#endif
 !
 ! -- INPUT/OUTPUT: --
 !
@@ -749,7 +775,9 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
 
 ! PASSING PARAMETERS:
   real, dimension(:),  intent(inout), optional :: BX1d
+#ifdef HAVE_MACH
   real, dimension(:),  intent(out),   optional :: massFlux1D
+#endif
   real, dimension(:),  intent(inout) :: QX1d,NX1d
   real, dimension(:),  intent(in)    :: gamfact1d
   real,                intent(out)   :: massFlux_bot
@@ -819,6 +847,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
       enddo
 ! !    endif
 
+#ifdef HAVE_MACH
       if (present(massFlux1D)) then
          massFlux1D = 0.0
          do k= kbot,ktop,kdir
@@ -826,6 +855,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
          enddo
       endif
      !--
+#endif
 
    Vxmaxx= min( VxMax, maxval(VVQ(:)))
    if (kdir==1) then
@@ -1549,8 +1579,12 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   real,    parameter :: outfreq       =  60.    !frequency to compute output diagnostics [s]
 
   real, dimension(size(QC,dim=1),size(QC,dim=2)) :: DE,iDE,iDP,QSW,QSI,DZ,iDZ,zz,        &
-        gamfact,pres,zheight,QC_in,QR_in,NC_in,NR_in,tt0,qq0,qc0,qr0,                    &
+        gamfact,pres,zheight,QC_in,QR_in,NC_in,NR_in,tt0,qq0,qc0,qr0
+
+#ifdef HAVE_MACH
+  real, dimension(size(QC,dim=1),size(QC,dim=2)) :: &
         massFlux3D_r,massFlux3D_s,massFlux3D_i,massFlux3D_g,massFlux3D_h
+#endif
   real, dimension(size(QC,dim=1))                :: fluxM_r,fluxM_i,fluxM_s,fluxM_g,     &
         fluxM_h
 
@@ -3111,6 +3145,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
        QH(i,k)= QH(i,k) +Dirh*(QCLri+QCLir) -QMLhr +QVDvh +QCLch +Dsrh*(QCLrs+QCLsr)     &
                         +QCLih +QCLsh +QFZrh +QCLrh +QCNgh +Dgrh*(QCLrg+QCLgr)
 
+#ifdef HAVE_MACH
        ! Diagnostics for chemistry module:
            ! Cloud to rain rate
        SS(i,k,3) = (dim(QFZci, 0.) + dim(QCLcs, 0.) + dim(QCLcg, 0.) +       &
@@ -3118,6 +3153,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
            ! Evaporation from rain
        SS(i,k,4) =  dim(-QVDvi , 0.) + dim(-QVDvg , 0.) + dim(-QVDvs , 0.) + &
                     dim(-QVDvh , 0.)
+#endif
 
        ! N-Source/Sink Terms:
        NC(i,k)= NC(i,k) -NCLcs -NCLcg -NCLch -NFZci
@@ -3491,7 +3527,9 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
               QR(i,k) = 0.
               NR(i,k) = 0.
            endif
+#ifdef HAVE_MACH
            SS(i,k,4) = SS(i,k,4) + dim(QREVP, 0.0)
+#endif
         endif
 
        !homogeneous freezing of cloud:
@@ -3551,6 +3589,8 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   !----------------------------------------------------------------------------------!
   !                    End of warm-phase microphysics (Part 3)                       !
   !----------------------------------------------------------------------------------!
+
+#ifdef HAVE_MACH
   ! chemistry module estimate fractional evaporation
  do k = ktop-kdir,kbot,-kdir
     do i = 1,ni
@@ -3562,6 +3602,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
        endif
      enddo
   enddo
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.true.,DEBUG_abort,500)
   if (phy_error_L) return
@@ -3577,34 +3618,61 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
    RT_sn2 = 0.;  RT_sn3 = 0.;  RT_pe1 = 0.;  RT_pe2 = 0.;  RT_peL = 0.
 
 !---- For sedimentation on all levels:
+#ifdef HAVE_MACH
     call sedi_wrapper_2(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,VrMax,DrMax,dt,fluxM_r,kdir, &
                         kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afr,bfr,cmr,ckQr1,ckQr2,icexr9,massFlux3D_r)
+#else
+    call sedi_wrapper_2(QR,NR,1,epsQ,epsQr_sedi,epsN,dmr,ni,VrMax,DrMax,dt,fluxM_r,kdir, &
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afr,bfr,cmr,ckQr1,ckQr2,icexr9)
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,610)
   if (phy_error_L) return
 
+#ifdef HAVE_MACH
     call sedi_wrapper_2(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,ViMax,DiMax,dt,fluxM_i,kdir, &
                         kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afi,bfi,cmi,ckQi1,ckQi2,ckQi4,massFlux3D_i)
+#else
+    call sedi_wrapper_2(QI,NY,2,epsQ,epsQi_sedi,epsN,dmi,ni,ViMax,DiMax,dt,fluxM_i,kdir, &
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afi,bfi,cmi,ckQi1,ckQi2,ckQi4)
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,620)
   if (phy_error_L) return
 
+#ifdef HAVE_MACH
     call sedi_wrapper_2(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,VsMax,DsMax,dt,fluxM_s,kdir, &
                         kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afs,bfs,cms,ckQs1,ckQs2,iGS20,massFlux3D_s)
+#else
+    call sedi_wrapper_2(QN,NN,3,epsQ,epsQs_sedi,epsN,dms,ni,VsMax,DsMax,dt,fluxM_s,kdir, &
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afs,bfs,cms,ckQs1,ckQs2,iGS20)
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,630)
   if (phy_error_L) return
 
+#ifdef HAVE_MACH
     call sedi_wrapper_2(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,VgMax,DgMax,dt,fluxM_g,kdir, &
                         kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afg,bfg,cmg,ckQg1,ckQg2,ckQg4,massFlux3D_g)
+#else
+    call sedi_wrapper_2(QG,NG,4,epsQ,epsQg_sedi,epsN,dmg,ni,VgMax,DgMax,dt,fluxM_g,kdir, &
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afg,bfg,cmg,ckQg1,ckQg2,ckQg4)
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,640)
   if (phy_error_L) return
 
+#ifdef HAVE_MACH
     call sedi_wrapper_2(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,VhMax,DhMax,dt,fluxM_h,kdir, &
                         kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afh,bfh,cmh,ckQh1,ckQh2,ckQh4,massFlux3D_h)
+#else
+    call sedi_wrapper_2(QH,NH,5,epsQ,epsQh_sedi,epsN,dmh,ni,VhMax,DhMax,dt,fluxM_h,kdir, &
+                        kbot,ktop_sedi,DE,iDE,DZ,iDZ,gamfact,afh,bfh,cmh,ckQh1,ckQh2,ckQh4)
+#endif
+
 !====
 
+#ifdef HAVE_MACH
   !-- Diagnostics for chemistry module: precipitation fluxes
    do k=ktop,kbot,-kdir
       do i=1,ni
@@ -3613,6 +3681,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
       enddo
    enddo
   !==
+#endif
 
   if (DEBUG_ON) call check_values(Q,T,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,epsQ,epsN,.false.,DEBUG_abort,650)
   if (phy_error_L) return
@@ -4072,46 +4141,40 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   end function my2_phybusinit
 
   ! Compute total water mass
-  function my2_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function my2_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, zqrp
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(zqrp, qrplus, F_pvars)
     F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
     F_istat = PHY_OK
     return
   end function my2_lwc
 
   ! Compute total water mass
-  function my2_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function my2_iwc(F_qitot, F_pvars) result(F_istat)
+    use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqip, zqnp, zqgp, zqhp
     F_istat = PHY_ERROR
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqip, qiplus, F_dbus)
-    MKPTR2Dm1(zqnp, qnplus, F_dbus)
-    MKPTR2Dm1(zqgp, qgplus, F_dbus)
-    MKPTR2Dm1(zqhp, qhplus, F_dbus)
+    MKPTR2Dm1(zqip, qiplus, F_pvars)
+    MKPTR2Dm1(zqnp, qnplus, F_pvars)
+    MKPTR2Dm1(zqgp, qgplus, F_pvars)
+    MKPTR2Dm1(zqhp, qhplus, F_pvars)
     F_qitot(:,:) = zqip(:,:) + zqnp(:,:) + zqgp(:,:) + zqhp(:,:)
     F_istat = PHY_OK
     return

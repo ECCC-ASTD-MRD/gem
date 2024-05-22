@@ -56,7 +56,7 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
    use chm_datime_mod,       only: imonth
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
    use mach_pkg_misc_mod,    only: ent_vars_num
-   use phymem,               only: phymeta, phyvar, phymem_find
+   use phymem,               only: phymem_find, phymem_getdata
    use chm_phyvar_mod,       only: dxdy
 
    implicit none
@@ -68,8 +68,9 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
 !
 !  Declaration of local variables
 !
-   integer(kind=4)  :: ii, istat, jj, busid
+   integer(kind=4)  :: ii, istat, jj, busid, idxv1(1)
    real(kind=4), dimension(:), pointer :: pop, frt, lai
+   real(kind=4), pointer, contiguous   :: bptr(:)
    real(kind=4)     :: flandnonforest !  all non-forested land use types
    real(kind=4)     :: beam_penetration, pdens
 ! minimum value of the leaf area index for canopy shading to happen
@@ -93,8 +94,6 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
    real(kind=4), parameter :: beam_min = 0.45
 !
    character(len=LONG_VARNAME) :: vname
-   type(phyvar) :: myvar(1)
-   type(phymeta), pointer :: cmeta
 
    call msg_toall(chm_msg_debug, 'mach_stepinit [BEGIN]')
 !
@@ -135,22 +134,23 @@ subroutine mach_stepinit(busper, step, trnch, ni_can)
       nullify(lai, pop, frt)
       do ii = 1, ent_vars_num
          vname = chem_ent_vars(ii) % ent_name
-         istat = phymem_find(myvar, trim(vname), F_npath='V', F_bpath='E', &
+         istat = phymem_find(idxv1, trim(vname), F_npath='V', F_bpath='E', &
                              F_quiet=.false., F_shortmatch=.false.)
          if (istat < 0) then
             write(*, *) 'Error in retrieving ', trim(vname), ' from the entry bus'
             chm_error_l = .true.
             return
          end if
-         cmeta => myvar(1)%meta
+         nullify(bptr)
+         istat = phymem_getdata(bptr, idxv1(1), trnch)
          if (trim(vname) == 'LAI_ENT') then
             jj = (imonth - 1) * chm_ni
-            lai(1:chm_ni) => cmeta%bptr(1+jj:chm_ni+jj, trnch)
+            lai(1:chm_ni) => bptr(1+jj:chm_ni+jj)
          end if
          if (trim(vname) == 'POPU_ENT') &
-            pop(1:chm_ni) => cmeta%bptr(1:chm_ni, trnch)
+            pop(1:chm_ni) => bptr(1:chm_ni)
          if (trim(vname) == 'FRT_BELD3') &
-            frt(1:chm_ni) => cmeta%bptr(1:chm_ni, trnch)
+            frt(1:chm_ni) => bptr(1:chm_ni)
       end do
 !
 !    If not using the monthly LAI input;

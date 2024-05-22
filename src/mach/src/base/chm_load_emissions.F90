@@ -55,7 +55,7 @@
 !
 !==============================================================================
 !!if_on
-subroutine chm_load_emissions2(F_basedir_S, gem_tstep_num, inputobj, nbvar_input)
+subroutine chm_load_emissions(F_basedir_S, gem_tstep_num, inputobj, nbvar_input)
    use inputio_mod,          only: INPUTIO_T
 !!if_off
    use chm_utils_mod,        only: global_debug, chm_lun_out
@@ -630,4 +630,4 @@ subroutine chm_load_emissions2(F_basedir_S, gem_tstep_num, inputobj, nbvar_input
              /,'========================================')
    return
 
-end subroutine chm_load_emissions2
+end subroutine chm_load_emissions

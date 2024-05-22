@@ -20,7 +20,7 @@
 
 module chm_phyvar_mod
 !
-   use phybus, only: me_moins, p0_plus, sigm, sigt, o3lplus,      &
+   use phybusidx, only: me_moins, p0_plus, sigm, sigt, o3lplus,      &
                      tplus, huplus, qcplus, uplus, vplus, wplus,  &
                      dlat, dlon, dxdy, flusolis, glsea, cang, h,  &
                      qdiag, tdiag, tsurf, udiag, vdiag, ilmo, ue, &

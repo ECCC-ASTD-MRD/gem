@@ -5,22 +5,23 @@ set -e
 #
 #  Script for compiling GEM-MACH as a part of GEM-MACH integration test
 #
-#  Usage: ord_soumet ${TASK_BIN}/compile-gm-for-integration-test.sh -args "${GEM_version} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobTopo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${CmplJobProcTopo} -cm ${GMJobMemory} -t ${CmplJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${CmplJobName} -listing ${TASK_BASEDIR}/listing
+#  Usage:
+#        ord_soumet ${TASK_BIN}/compile-gm-for-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${CmplJobProcTopo} -cm ${GMJobMemory} -t ${CmplJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${CmplJobName} -listing ${TASK_BASEDIR}/listing
 #
 #   The script relies on:
 #       1. Existence of directory structure needed for Runmod task with root directory being placed at ${TASK_BASEDIR}
-#       2. Availability of requested GEM version
+#       2. Availability of GEM super repository in the ${TASK_BASEDIR}/GEM-MACH directory
 #   If any of these are missing, or not up to date, the script will fail. The error messages are provided throughout the
 #   script to indicate the obvious issues and failure of the script to behave as expected.
 #
 #  Script:
-#    1. Loads GEM environment for GEM version provided as an argument
+#    1. Loads environment provided in the GEM super repository
 #    2. Based on the value of ${cmpl_opt}:
 #       - Compiles GEM-MACH code available in ${TASK_BASEDIR}/GEM-MACH directory in debug mode or in usually utilized optimized mode
 #       - Sets &physics_cfgs/debug_trace_L and &chemistry_cfgs/chm_debug_trace_l namelist keys to .true. for the test that is set to run in the debug mode
-#    3. Copies the binary in ${TASK_BASEDIR}/bin directory
+#    3. Links the binary to ${TASK_BASEDIR}/bin directory
 #    4. Copies GEM scripts needed for running GEM-MACH integration test into ${TASK_BASEDIR}/bin directory
-#    5. Submits the GEM-MACH integration test
+#    5. Submits the GEM-MACH run
 #    6. Times the execution and saves it in the listings
 #
 #  Note:
@@ -31,32 +32,34 @@ set -e
 # Update: January 2023
 # Update: by Jack Chen and Verica Savic-Jovcic, March 2023
 #
-# 2023-Apr/May Jack C - update to compile using cmake with mach library as part
-#   of MIG's GEM git subtree.
-#   Note there is no version check, thus will not work with RDE.
+#         Apr/May 2023, Jack C - update to compile using cmake with mach library as part
+#          of MIG's GEM git subtree.
+#          Note there is no version check, thus will not work with RDE.
+#         August 2023, Verica S-J - update to compile from MACH repository using MACH version instead of GEM version,
+#          and update to documentation
+#         November 2023, Verica S-J - update to load environments from GEM super repository instead of GEM ssm release
 #
 ###
 scriptstartdate=$(date '+%C%y%m%d%H%M%S')
 
 # Read in arguments
-GEM_version=$1
-IntegrationTest_version=$2
-control_dir=$3
-TASK_BASEDIR=$4
-GMJobMach=$5
-GMJobMemory=$6
-GMJobQueue=$7
-GMJobTopo=$8
-gmtestinfo=$9
-cmpl_opt=${10}
-cntrl_fl_opt=${11}
+IntegrationTest_version=$1
+control_dir=$2
+TASK_BASEDIR=$3
+GMJobMach=$4
+GMJobMemory=$5
+GMJobQueue=$6
+GMJobTopo=$7
+gmtestinfo=$8
+cmpl_opt=$9
+cntrl_fl_opt=${10}
 
-# update log
+# Update log
 echo -e "\n== Strating script: compile-gm-for-integration-test. ${scriptstartdate}  == \n" | tee -a ${gmtestinfo}
 
 # Compile GEM-MACH with cmake (with system RPN library)
-echo -e "\n GEM-MACH compilation location: ${TASK_BASEDIR}/build \n"
-cmake_dir=${TASK_BASEDIR}/build
+echo -e "\n GEM-MACH compilation location: ${TASK_BASEDIR}/GEM-MACH \n"
+cmake_dir=${TASK_BASEDIR}/GEM-MACH
 cd ${cmake_dir}
 source ${cmake_dir}/.eccc_setup_intel
 source ${cmake_dir}/.initial_setup
@@ -64,6 +67,7 @@ source ${cmake_dir}/.initial_setup
 # Tell the world about GEM environment and compiler
 cat << EOF | tee -a ${gmtestinfo}
 GEM-MACH compilation location: ${cmake_dir}
+
 ORDENV_DIST: ${ORDENV_DIST}
 COMPILER_SUITE: ${COMPILER_SUITE}
 COMPILER_VERSION: ${COMPILER_VERSION}
@@ -79,7 +83,7 @@ link binary: ${cmake_dir}/work-${GEM_ARCH}/bin/maingemdm
 
 EOF
 
-# build Makefile, and compile/link binary
+# Build Makefile, and compile/link binary
 if [[ "${cmpl_opt}" == "dbg" ]] ; then
    (time make VERBOSE=1 cmake-mach-debug) |& tee ${cmake_dir}/make.cmake-mach-debug.out
    (time make VERBOSE=1 -j work) |& tee make.work.out
@@ -88,7 +92,7 @@ else
    (time make -j work) |& tee make.work.out
 fi
 
-### link compiled binary to TASK_BASEDIR/bin
+### Link compiled binary and copy all supporting programs to the bin directory
 TASK_BIN=${TASK_BASEDIR}/bin
 gemmach_abs=${cmake_dir}/work-${GEM_ARCH}/bin/maingemdm
 [[ ! -f ${gemmach_abs} ]] && echo -e "\nERROR: GEM-MACH binary not available $gemmach_abs \n" && exit 1
@@ -97,16 +101,24 @@ ln -s ${gemmach_abs} ${TASK_BIN}/ATM_MOD.Abs
 echo -e "\nGEM-MACH binary is copied to ${TASK_BIN}" | tee -a ${gmtestinfo}
 echo -e " GEM_ovbin=${TASK_BIN} \n\n"
 
+### Copy the scripts necessary for running GEM-MACH into the bin directory
+gemmach_bin=${cmake_dir}/work-${GEM_ARCH}/bin
+cp -r ${gemmach_bin}/* ${TASK_BIN}/
+cp $(which r.run_in_parallel) ${TASK_BIN} ; ln -s ${TASK_BIN}/r.run_in_parallel ${TASK_BIN}/r.mpirun
+cp $(which rungem.sh) ${TASK_BIN}
+cp $(which runmod.sh) ${TASK_BIN}
+cp $(which editfst) ${TASK_BIN}
+
 # Set the job resources
 export GMJobTime=1200
 export GMJobProcTopo=$GMJobTopo
 export GMJobName=rungm
 [[ "${cmpl_opt}" == "dbg" ]] && export GMJobTime=2400
 
-# Submit GEM-MACH integration test to run
+# Submit GEM-MACH run
 echo -e "\n == Submit the GEM-MACH integration-test run at $(date) == \n"
 ord_soumet ${TASK_BIN}/run-gm-integration-test.sh \
-           -args "${GEM_version} ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" \
+           -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" \
            -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} \
            -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listing
 
