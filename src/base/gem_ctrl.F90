@@ -57,6 +57,7 @@
                                nest_fullme,.false.,Step_runstrt_S,&
                                l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
          endif
+         call iau_apply (0)
       endif
       call glbstat ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy,1,1,&
                      1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,1 )
