@@ -39,9 +39,9 @@ else
         export CMCCONST=${ATM_MODEL_DFILES}/datafiles/constants
         # Check if at ECCC
         if [ -n "${EC_ARCH}" ]; then
-            if [ -e ${PWD}/src/mach ]; then
-               # export mach_version (not available externally)
-               export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
+            if [ -d ${PWD}/src/mach ]; then
+                # export mach_version (not available externally)
+                export mach_version=`cat src/mach/MANIFEST | sed -n '/VERSION/s/.*: //p'`
             fi
             # Check whether GOAS_SCRIPT_MODE variable exists
             if [ -z "${GOAS_SCRIPT_MODE}" ]; then 
