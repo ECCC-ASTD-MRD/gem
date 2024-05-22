@@ -13,7 +13,7 @@
    MKPTR2D(ztplus,   tplus  , pvars) !tmois ???
 
    MKPTR1D(zpplus, pmoins, pvars)
-   MKPTR1D(ztdmask, tdmask, pvars)
+   MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
 
    MKPTR2D(zttce     , ttce   ,  pvars)
    MKPTR2D(zlin4     , lin4   ,  pvars)

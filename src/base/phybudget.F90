@@ -16,6 +16,9 @@
 
 module phybudget
   use, intrinsic :: iso_fortran_env, only: REAL64
+  use energy_budget, only: eb_init, eb_en, eb_pw, eb_conserve_en, &
+       eb_conserve_pw, eb_en, eb_pw, eb_residual_en, eb_residual_pw, &
+       INT_TYPE_PCHIP,INT_TYPE_STEP,INT_TYPE_LINEAR
   use phy_status, only: PHY_OK, PHY_ERROR
   use phymem, only: phyvar
   implicit none
@@ -26,20 +29,19 @@ module phybudget
   public :: pb_compute          !Compute physics energy budget terms
   public :: pb_residual         !Compute physics energy budget residual
   public :: pb_conserve         !Adjust tendencies to close physics energy budget
+  public :: INT_TYPE_PCHIP,INT_TYPE_STEP,INT_TYPE_LINEAR
   
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>   
 #include "phymkptr.hf"
 
   ! Internal parameters
-  integer, parameter :: SHORT_STRING=16
-  character(len=SHORT_STRING), parameter :: INTTYPE_DEFAULT='pchip'
+  integer, parameter :: INTTYPE_DEFAULT=INT_TYPE_PCHIP
   
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function pb_init() result(F_istat)
-    use energy_budget, only: eb_init
     use phygridmap, only: phydim_nk
     ! Initialize the physics budget package
     implicit none
@@ -66,7 +68,6 @@ contains
   function pb_compute(F_enri, F_pwri, F_eni, F_pwi, F_pvars, &
        F_nk, F_inttype) result(F_istat)
     use phybusidx, only: pmoins, tplus, huplus, sigw
-    use energy_budget, only: eb_en, eb_pw
     implicit none
 
     ! Arguments
@@ -76,7 +77,7 @@ contains
     real(KIND=REAL64), dimension(:), intent(out) :: F_pwi       !Integrated total water (Kg/m2)
     type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
     integer, intent(in) :: F_nk                                 !Number of levels (not including diagnostic)
-    character(len=*), intent(in), optional :: F_inttype         !Integral type [INTTYPE_DEFAULT]
+    integer, intent(in), optional :: F_inttype                  !Integral type [INTTYPE_DEFAULT]
     integer :: F_istat                                          !Return status of subprogram
     
     !@Author   R. McTaggart-Cowan (2022)
@@ -96,7 +97,7 @@ contains
     real, dimension(:), pointer, contiguous :: zpmoins
     real, dimension(:,:), pointer, contiguous :: ztplus, zhuplus, &
          zsigw
-    character(len=SHORT_STRING) :: inttype
+    integer :: inttype
 
     ! Basic setup
     F_istat = PHY_ERROR
@@ -158,7 +159,6 @@ contains
   function pb_conserve(F_cons, F_ttend, F_qtend, F_pvars, &
        F_dqc, F_dqi, F_rain, F_snow, F_shf, F_wvf, F_rad, F_inttype) result(F_istat)
     use phybusidx, only: pmoins, tplus, huplus, sigw
-    use energy_budget, only: eb_conserve_en, eb_conserve_pw
     implicit none
 
     ! Arguments
@@ -173,7 +173,7 @@ contains
     real, dimension(:), intent(in), optional :: F_shf           !Surface turbulent sensible heat flux (W/m2) [0.]
     real, dimension(:), intent(in), optional :: F_wvf           !Surface turbulent water vapour flux (kg/m2/s) [0.]
     real, dimension(:), intent(in), optional :: F_rad           !Net radiation flux TOA-surface (W/m2) [0.]
-    character(len=*), intent(in), optional :: F_inttype         !Integral type [INTTYPE_DEFAULT]
+    integer, intent(in), optional :: F_inttype                  !Integral type [INTTYPE_DEFAULT]
     integer :: F_istat                                          !Return status of subprogram
     
     !@Author   R. McTaggart-Cowan (2022)
@@ -195,7 +195,7 @@ contains
     real, dimension(:), pointer, contiguous :: zpmoins
     real, dimension(:,:), pointer, contiguous :: ztplus, zhuplus, &
          zsigw
-    character(len=SHORT_STRING) :: inttype
+    integer :: inttype
 
     ! Basic setup
     F_istat = PHY_ERROR
@@ -311,8 +311,6 @@ contains
        F_dt, F_nk, F_rain, F_snow, F_shf, &
        F_wvf, F_rad, F_inttype) result(F_istat)
     use phybusidx, only: pmoins, tplus, huplus, sigw
-    use energy_budget, only: eb_en, eb_pw, eb_residual_en, &
-         eb_residual_pw
     implicit none
 
     ! Arguments
@@ -328,7 +326,7 @@ contains
     real, dimension(:), intent(in), optional :: F_shf           !Surface turbulent sensible heat flux (W/m2) [0.]
     real, dimension(:), intent(in), optional :: F_wvf           !Surface turbulent water vapour flux (kg/m2/s) [0.]
     real, dimension(:), intent(in), optional :: F_rad           !Net radiation flux TOA-surface (W/m2) [0.]
-    character(len=*), intent(in), optional :: F_inttype         !Integral type [INTTYPE_DEFAULT]
+    integer, intent(in), optional :: F_inttype                  !Integral type [INTTYPE_DEFAULT]
     integer :: F_istat                                          !Return status of subprogram
     
     !@Author   R. McTaggart-Cowan (2022)
@@ -351,7 +349,7 @@ contains
          zsigw
     real(kind=REAL64), dimension(size(F_eni0)) :: eni, pwi, enri, &
          pwri
-    character(len=SHORT_STRING) :: inttype
+    integer :: inttype
 
     ! Basic setup
     F_istat = PHY_ERROR
@@ -445,8 +443,9 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function pb_condensate(lwc, iwc, F_pvars) result(F_istat)
-    use phybusidx, only: qtbl
+    use phybusidx, only: qtbl, qtblplus
     use microphy_utils, only: mp_lwc, mp_iwc
+    use phy_options, only: advecqtbl
     implicit none
 
     ! Arguments
@@ -473,7 +472,11 @@ contains
     endif
 
     ! Content from other sources
-    MKPTR2Dm1(zqtbl, qtbl, F_pvars)
+    if (advecqtbl) then
+       MKPTR2Dm1(zqtbl, qtblplus, F_pvars)
+    else
+       MKPTR2Dm1(zqtbl, qtbl, F_pvars)
+    endif
     lwc(:,:) = lwc(:,:) + zqtbl(:,:)
 
     ! End of subprogram

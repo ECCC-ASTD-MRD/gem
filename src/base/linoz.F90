@@ -294,7 +294,7 @@ contains
       ! print*,'linoz: (2) o3chmtd (:,nk)',nk,zo3chmtd(:,nk)
 
       ! Apply linoz tendencies micro g /kg air
-      call apply_tendencies(zo3lplus,zo3chmtd, ztdmask, ni, nk, nkm1)
+      call apply_tendencies(zo3lplus,zo3chmtd, ztdmaskxdt, ni, nk, nkm1)
 
       ! Diagnostic level 1.5m: copy down the bottom hybrid level
       zo3lplus(:,nk)=zo3lplus(:,nkm1)
@@ -346,11 +346,9 @@ contains
          zf12chmtd = zf11chmtd *1E+9 * mwt_f12 /mwt_air ! micro g /kg air sec-1 <-- mole /mole sec-1
 
          ! Apply linoz tendencies micro g /kg air
-         call apply_tendencies(zch4lplus,zch4chmtd, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(zn2olplus,zn2ochmtd, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(zf11lplus,zf11chmtd, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(zf12lplus,zf12chmtd, ztdmask, ni, nk, nkm1)
-
+         call apply_tendencies(zch4lplus, zn2olplus, zf11lplus, zf12lplus, &
+              &                zch4chmtd, zn2ochmtd, zf11chmtd, zf12chmtd, &
+              &                ztdmaskxdt, ni, nk, nkm1)
 
       end if IF_LINGHG3
 

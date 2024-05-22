@@ -23,16 +23,19 @@ contains
 
    !/@*
    subroutine gwd9(pvars, std_p_prof, tau, kount, ni, nk, nkm1, trnch)
-      use, intrinsic :: iso_fortran_env, only: REAL64
+      use tdpack, only: CAPPA
       use debug_mod, only: init2nan
-      use tdpack_const, only: CAPPA_8, GRAV, RGASD
       use phy_options
       use phy_status, only: phy_error_L
       use phybusidx
       use phymem, only: phyvar
       use series_mod, only: series_xst
+      use equivmount, only: equivmount2
+      use sgo16flx,only: sgo16flx3
       use tendency, only: apply_tendencies
-      use ens_perturb, only: ens_nc2d, ens_spp_get
+      use ens_perturb, only: ens_spp_get
+      use vintphy, only: vint_mom2thermo, vint_thermo2mom
+      use gwspectrum, only: gwspectrum6
       implicit none
 !!!#include <arch_specific.hf>
       !@author J.Mailhot RPN(May1990)
@@ -71,18 +74,15 @@ contains
       logical, parameter :: DO_GWDRAG   = .true.
       logical, parameter :: DO_BLOCKING = .true.
 
-      real, dimension(ni) :: rland, rmscons
-      real, dimension(ni,nkm1) :: work, rtgm
+      real, dimension(ni) :: rmscons
+      real, dimension(ni,nkm1) :: tvirtmom, rtgm, sh, sexpk, shexpk
       real, dimension(ni,nk) :: tvirt
-      real(REAL64), dimension(ni) :: pp
-      real(REAL64), dimension(ni,nkm1) :: tt, te, uu, vv, sigma, s1, s2, s3, &
-           utendno , vtendno, ttendno
 
       integer :: j, k
       logical :: split_tend_L
 
       real, pointer, dimension(:), contiguous   :: p, zdhdxdy, zdhdx, zdhdy, &
-           zlhtg, zmg, zmtdir, zslope, zxcent, ztdmask
+           zlhtg, zmg, zmtdir, zslope, zxcent, ztdmaskxdt
       real, pointer, dimension(:,:), contiguous :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
            rtn, zhuplus, zugwdtd1, zvgwdtd1, zmrk2
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
@@ -93,12 +93,9 @@ contains
       call msg_toall(MSG_DEBUG, 'gwd [BEGIN]')
       if (timings_L) call timing_start_omp(417, 'gwd', 46)
 
-      call init2nan(rland, rmscons)
-      call init2nan(work, rtgm)
+      call init2nan(rmscons)
+      call init2nan(tvirtmom, rtgm, sh, sexpk, shexpk)
       call init2nan(tvirt)
-      call init2nan(pp)
-      call init2nan(tt, te, uu, vv, sigma, s1, s2, s3)
-      call init2nan(utendno , vtendno, ttendno)
       
       MKPTR1D(p, pmoins, pvars)
       MKPTR1D(zdhdx, dhdx, pvars)
@@ -108,26 +105,26 @@ contains
       MKPTR1D(zmg, mg, pvars)
       MKPTR1D(zmtdir, mtdir, pvars)
       MKPTR1D(zslope, slope, pvars)
-      MKPTR1D(ztdmask, tdmask, pvars)
+      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(zxcent, xcent, pvars)
 
-      MKPTR2Dm1(rtg, tgwd, pvars)
-      MKPTR2Dm1(rtn, tgno, pvars)
-      MKPTR2Dm1(rug, ugwd, pvars)
-      MKPTR2Dm1(run, ugno, pvars)
-      MKPTR2Dm1(rvg, vgwd, pvars)
-      MKPTR2Dm1(rvn, vgno, pvars)
-      MKPTR2Dm1(s, sigm, pvars)
-      MKPTR2Dm1(u, uplus, pvars)
-      MKPTR2Dm1(v, vplus, pvars)
+      MKPTR2DN(rtg, tgwd, ni, nkm1, pvars)
+      MKPTR2DN(rtn, tgno, ni, nkm1, pvars)
+      MKPTR2DN(rug, ugwd, ni, nkm1, pvars)
+      MKPTR2DN(run, ugno, ni, nkm1, pvars)
+      MKPTR2DN(rvg, vgwd, ni, nkm1, pvars)
+      MKPTR2DN(rvn, vgno, ni, nkm1, pvars)
+      MKPTR2DN(s, sigm, ni, nkm1, pvars)
+      MKPTR2DN(u, uplus, ni, nkm1, pvars)
+      MKPTR2DN(v, vplus, ni, nkm1, pvars)
 
-      MKPTR2Dm1(zugwdtd1, ugwd_td1, pvars)
-      MKPTR2Dm1(zvgwdtd1, vgwd_td1, pvars)
+      MKPTR2DN(zugwdtd1, ugwd_td1, ni, nkm1, pvars)
+      MKPTR2DN(zvgwdtd1, vgwd_td1, ni, nkm1, pvars)
 
-      MKPTR2D(zhuplus, huplus, pvars)
-      MKPTR2D(ztplus, tplus, pvars)
+      MKPTR2DN(zhuplus, huplus, ni, nk, pvars)
+      MKPTR2DN(ztplus, tplus, ni, nk, pvars)
 
-      MKPTR2D(zmrk2, mrk2,  pvars)
+      MKPTR2DN(zmrk2, mrk2,  ni, nk, pvars)
       
       MKPTR3D(zvcoef, vcoef, pvars)
 
@@ -138,43 +135,37 @@ contains
       endif
  
       IF_INIT: if (kount == 0) then
-         rland = -abs(nint(zmg))
-         call equivmount1(rland, zdhdx, zdhdy, zdhdxdy, &
-              ni, 1, ni, zslope, zxcent, zmtdir)
+         call equivmount2(zmg, zdhdx, zdhdy, zdhdxdy, &
+              zslope, zxcent, zmtdir, ni)
       endif IF_INIT
 
       ! tvirt - virtual temperature on thermo/energy levels
       call mfotvt(tvirt, ztplus, zhuplus, ni, nk, ni)
 
       ! Auxiliary sigma and sigma-related fields:
-      ! s1    - sigma on half (thermo) levels
-      ! s2    - sigma**cappa on full (mom) levels
-      ! s3    - sigma**cappa on half (thermo) levels
-
+      ! sh    - sigma on half (thermo) levels
       do k=1,nkm1-1
          do j=1,ni
-            s1(j,k) = 0.5*(s(j,k)+s(j,k+1))
-            s3(j,k) = exp(CAPPA_8*log(s1(j,k)))
-            s2(j,k) = exp(CAPPA_8*log(dble(s(j,k))))
+            sh(j,k) = 0.5*(s(j,k)+s(j,k+1))
+            sexpk(j,k) = s(j,k)**CAPPA
+            shexpk(j,k) = sh(j,k)**CAPPA
          enddo
       enddo
-
       do j=1,ni
-         s1(j,nkm1) = 0.5*(s(j,nkm1)+1.)
-         s3(j,nkm1) = exp(CAPPA_8*log(s1(j,nkm1)))
-         s2(j,nkm1) = exp(CAPPA_8*log(dble(s(j,nkm1))))
+         sh(j,nkm1) = 0.5*(s(j,nkm1)+1.)
+         sexpk(j,nkm1) = s(j,nkm1)**CAPPA
+         shexpk(j,nkm1) = sh(j,nkm1)**CAPPA
       enddo
+      !#TODO: use vect pow fn for sexpk, shexpk?
 
       IF_SGO16: if (gwdrag == 'SGO16') then
          if (timings_L) call timing_start_omp(418, 'gwdsgo', 417)
-
-         work(:,:) = real(s1(:,:))
-         rland = - abs(nint(zmg))  !# land-water index: -1=land, 0=water
+         
          call sgo16flx3(u, v, rug, rvg, rtgm, zugwdtd1, zvgwdtd1, &
-              tvirt, ztplus, s, work, &
-              nkm1, ni, 1, ni,                                   &
+              tvirt, ztplus, s, sh, sexpk, shexpk, &
+              nkm1, ni,                                  &
               tau, taufac,               &
-              rland, zlhtg, zslope, zxcent, zmtdir,          &
+              zmg, zlhtg, zslope, zxcent, zmtdir,          &
               sgo_cdmin, sgo_bhfac, sgo_phic,                &
               sgo_stabfac, sgo_nldirfac, zmrk2,              &
               DO_GWDRAG, DO_BLOCKING, split_tend_L)
@@ -192,43 +183,30 @@ contains
          if (timings_L) call timing_start_omp(419, 'gwdnon', 417)
 
          ! tt   - virtual temperature on momentum levels
-         call vint_thermo2mom(work, tvirt, zvcoef, ni, nkm1)
-         tt    = work
-
-         !# Copy to Double
-         !# TO CHECK: is 64bit really needed for non_oro
-         te(1:ni,1:nkm1) = tvirt(1:ni,1:nkm1)
-         uu    = u
-         vv    = v
-         pp    = p
-         sigma = s
+         call vint_thermo2mom(tvirtmom, tvirt, zvcoef, ni, nkm1)
 
          ! Retrieve stochastic parameter information on request
          rmscons(:) = ens_spp_get('rmscon', zmrk2, default=rmscon)
          
-         call gwspectrum6(sigma, s1, s2, s3, pp, te, &
-              tt, uu, vv, ttendno, vtendno, utendno, hines_flux_filter, &
-              GRAV, RGASD, rmscons, iheatcal, std_p_prof, non_oro_pbot, &
+         call gwspectrum6(s, sh, p, tvirt, &
+              tvirtmom, u, v, rvn, run, hines_flux_filter, &
+              rmscons, std_p_prof, non_oro_pbot, &
               ni, nkm1)
+         rtn = 0.
          if (phy_error_L) return
-
-         run = real(utendno)
-         rvn = real(vtendno)
-         rtn = real(ttendno)
 
          if (timings_L) call timing_stop_omp(419)
       endif IF_NON_ORO
 
       !# Apply tendencies
       if (gwdrag /= 'NIL') then
-         call apply_tendencies(u, rug, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(v, rvg, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(ztplus, rtg, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(u,   v,   ztplus, &
+              &                rug, rvg, rtg, ztdmaskxdt, ni, nk, nkm1)
       endif
       
       if (non_oro) then
-         call apply_tendencies(u, run, ztdmask, ni, nk, nkm1)
-         call apply_tendencies(v, rvn, ztdmask, ni, nk, nkm1)
+         call apply_tendencies(u,   v, &
+              &                run, rvn, ztdmaskxdt, ni, nk, nkm1)
       endif
       
       if (timings_L) call timing_stop_omp(417)

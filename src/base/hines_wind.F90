@@ -14,17 +14,22 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-subroutine hines_wind(v_alpha,vel_u,vel_v,  &
-     &                naz,il1,il2,lev1,lev2,nlons,nlevs,nazmth)
-   use, intrinsic :: iso_fortran_env, only: REAL64
+module hines_wind
+   implicit none
+   private
+   public :: hines_wind1
+
+contains
+
+subroutine hines_wind1(v_alpha, vel_u, vel_v, levbot, ni, nig, nkm1, naz)
+   use, intrinsic :: iso_fortran_env, only: REAL32
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer :: naz, il1, il2, lev1, lev2
-   integer :: nlons, nlevs, nazmth
-   real(REAL64) :: v_alpha(nlons,nlevs,nazmth)
-   real(REAL64) ::  vel_u(nlons,nlevs), vel_v(nlons,nlevs)
+   integer, intent(in) :: levbot, ni, nig, nkm1, naz
+   real(REAL32), intent(out) :: v_alpha(ni,naz,nkm1)
+   real(REAL32), intent(in) :: vel_u(ni,nkm1), vel_v(ni,nkm1)
 
    !@Author
    !  aug. 7/95 - c. mclandress
@@ -40,14 +45,11 @@ subroutine hines_wind(v_alpha,vel_u,vel_v,  &
    !          - Input -
    ! vel_u    background zonal wind component (m/s).
    ! vel_v    background meridional wind component (m/s).
-   ! naz      actual number of horizontal azimuths used (must be 4 or 8).
-   ! il1      first longitudinal index to use (il1 >= 1).
-   ! il2      last longitudinal index to use (il1 <= il2 <= nlons).
-   ! lev1     first altitude level to use (lev1 >=1).
-   ! lev2     last altitude level to use (lev1 < lev2 <= nlevs).
-   ! nlons    number of longitudes.
-   ! nlevs    number of vertical levels.
-   ! nazmth   azimuthal array dimension (nazmth >= naz).
+   ! levbot   last altitude level to use (1 < levbot <= nkm1).
+   ! ni       number of longitudes.
+   ! nig      horizontal operator scope
+   ! nkm1     number of vertical levels.
+   ! naz      azimuthal array dimension (naz >= naz).
 
    !          - constants in data statements -
    ! cos45    cosine of 45 degrees.
@@ -57,51 +59,32 @@ subroutine hines_wind(v_alpha,vel_u,vel_v,  &
 
    !  internal variables.
 
-   integer  i, l
-   real(REAL64) :: u, v, cos45, umin
+   real(REAL32), parameter :: cos45 = 0.7071068 !# cos(45) computed by compiler?
+   real(REAL32), parameter :: umin = 0.001
+
+   integer :: i, l
+   real(REAL32) :: u, v
    !-----------------------------------------------------------------------
-
-   cos45 = 0.7071068
-   umin  = 0.001
-
-   select case (naz)
-
-   case(4)  !  case with 4 azimuths.
-
-      do l = lev1,lev2
-         do i = il1,il2
-            u = vel_u(i,l)
-            v = vel_v(i,l)
-            if (abs(u) .lt. umin)  u = umin
-            if (abs(v) .lt. umin)  v = umin
-            v_alpha(i,l,1) = u
-            v_alpha(i,l,2) = v
-            v_alpha(i,l,3) = - u
-            v_alpha(i,l,4) = - v
-         end do
+   
+   do l = 1,levbot
+      do i = 1,nig
+         u = vel_u(i,l)
+         v = vel_v(i,l)
+         if (abs(u) < umin)  u = umin  !# u = sign(max(umin, abs(u)), u)
+         if (abs(v) < umin)  v = umin  !# v = sign(max(umin, abs(v)), v)
+         v_alpha(i,1,l) = u
+         v_alpha(i,2,l) = cos45 * ( v + u )
+         v_alpha(i,3,l) = v
+         v_alpha(i,4,l) = cos45 * ( v - u )
+         v_alpha(i,5,l) = - u
+         v_alpha(i,6,l) = - v_alpha(i,2,l)
+         v_alpha(i,7,l) = - v
+         v_alpha(i,8,l) = - v_alpha(i,4,l)
       end do
-
-   case (8)   !  case with 8 azimuths.
-
-      do l = lev1,lev2
-         do i = il1,il2
-            u = vel_u(i,l)
-            v = vel_v(i,l)
-            if (abs(u) .lt. umin)  u = umin
-            if (abs(v) .lt. umin)  v = umin
-            v_alpha(i,l,1) = u
-            v_alpha(i,l,2) = cos45 * ( v + u )
-            v_alpha(i,l,3) = v
-            v_alpha(i,l,4) = cos45 * ( v - u )
-            v_alpha(i,l,5) = - u
-            v_alpha(i,l,6) = - v_alpha(i,l,2)
-            v_alpha(i,l,7) = - v
-            v_alpha(i,l,8) = - v_alpha(i,l,4)
-         end do
-      end do
-
-   end select
+   end do
 
    !-----------------------------------------------------------------------
    return
-end subroutine hines_wind
+end subroutine hines_wind1
+
+end module hines_wind

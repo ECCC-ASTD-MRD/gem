@@ -42,7 +42,8 @@
 
 
 ! Section Geophysique, surface, masks
-   PHYVAR2D1(tdmask,     "VN=tdmask    ; ON=MPTD; VB=p0; VD=Horizontal weight for tendency application")
+   PHYVAR2D1(tdmask,     "VN=tdmask    ; ON=MPTD; VB=p0; VD=Horizontal weight for tendency application (nesting mask)")
+   PHYVAR2D1(tdmaskxdt,  "VN=tdmaskxdt ; ON=MXTD; VB=p0; VD=Horizontal weight for tendency application tdmask*delt")
    PHYVAR2D1(dlat,       "VN=dlat      ; ON=LA  ; VB=p0; VD=latitude")
    PHYVAR2D1(dlon,       "VN=dlon      ; ON=LO  ; VB=p0; VD=longitude")
    PHYVAR2D1(dxdy,       "VN=dxdy      ; ON=DX  ; VB=p0; VD=area of each model grid tile                         ; MIN=0")
@@ -324,6 +325,10 @@
 
 !Section turbulence schemes
    PHYVAR3D1(buoy,       "VN=buoy      ; ON=BUOY; VB=v0; VD=buoyancy computed by the PBL scheme            ; VS=E")
+   PHYVAR3D1(diffen,     "VN=diffen    ; ON=DFEN; VB=v0; VD=vertical diffusion of TKE                      ; VS=E; MIN=0")
+   PHYVAR3D1(dissen,     "VN=dissen    ; ON=DSEN; VB=v0; VD=dissipation of TKE                             ; VS=E; MIN=0")
+   PHYVAR3D1(dqcons,     "VN=dqcons    ; ON=DQCO; VB=v0; VD=conserved moisture (qcons) tendency for PBL    ; VS=E")
+   PHYVAR3D1(dtcons,     "VN=dtcons    ; ON=DTCO; VB=v0; VD=conserved temperature (tcons) tendency for PBL ; VS=E")
    PHYVAR3DC(en,         "VN=en        ; ON=EN  ; VB=p0; VD=turbulent kinetic energy                       ; VS=E; MIN=0", nadvtke)
    PHYVAR3DC(enmoins,    "VN=tr/en:M   ; ON=EM  ; VB=d1; VD=turbulent kinetic energy at time -             ; VS=E; MIN=0; HZD=1", ladvtke)
    PHYVAR3DC(enplus,     "VN=tr/en:P   ; ON=EPL ; VB=d1; VD=turbulent kinetic energy at time +             ; VS=E; MIN=0; HZD=1", ladvtke)
@@ -339,8 +344,15 @@
    PHYVAR3D1(km,         "VN=km        ; ON=KM  ; VB=v0; VD=momentum vertical diff. coeff.(m2/s)           ; VS=E; MIN=0")
    PHYVAR3D1(kt,         "VN=kt        ; ON=KT  ; VB=v0; VD=T/HU vertical diff. coeff.(m2/s)               ; VS=E; MIN=0")
    PHYVAR3DC(ldifv,      "VN=ldifv     ; ON=LDIF; VB=v0; VD=cloud water content tendency due to vert.diff. ; VS=T", lmoistke)
+   PHYVAR3D1(pri,        "VN=pri       ; ON=PRI ; VB=v0; VD=inverse Prandtl number                         ; VS=E; MIN=0")
+   PHYVAR3D1(qcons,      "VN=qcons     ; ON=QCON; VB=v0; VD=conserved moisture variable for PBL            ; VS=E")
+   PHYVAR3DC(qtblmoins,  "VN=tr/qtbl:M ; ON=QBLM; VB=d1; VD=PBL cloud at time -                            ; VS=E ; MIN=0; HZD=0; IN=QTBL", ladvqtbl)
+   PHYVAR3DC(qtblplus,   "VN=tr/qtbl:P ; ON=QBLP; VB=d1; VD=PBL cloud at time +                            ; VS=E ; MIN=0; HZD=0", ladvqtbl)
+   PHYVAR3D1(sige,       "VN=sige      ; ON=SIGE; VB=v0; VD=sigma for energy levels                        ; VS=E ; MIN=0")
+   PHYVAR3D1(tcons,      "VN=tcons     ; ON=TCON; VB=v0; VD=conserved temperature variable for PBL         ; VS=E")
    PHYVAR3D1(turbqf,     "VN=turbqf    ; ON=TFHU; VB=v0; VD=turbulent moisture flux in PBL scheme          ; VS=M")
    PHYVAR3D1(turbtf,     "VN=turbtf    ; ON=TFTT; VB=v0; VD=turbulent temperature flux in PBL scheme       ; VS=M")
+   PHYVAR3D1(turbtlf,    "VN=turbtlf   ; ON=TFTL; VB=v0; VD=turbulent theta_l flux in PBL scheme           ; VS=M")
    PHYVAR3D1(turbuf,     "VN=turbuf    ; ON=TFUU; VB=v0; VD=turbulent u-component flux in PBL scheme       ; VS=T")
    PHYVAR3D1(turbuvf,    "VN=turbuvf   ; ON=TFUV; VB=v0; VD=turbulent total momentum flux in PBL scheme    ; VS=T")
    PHYVAR3D1(turbvf,     "VN=turbvf    ; ON=TFVV; VB=v0; VD=turbulent v-component flux in PBL scheme       ; VS=T")

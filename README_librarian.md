@@ -14,8 +14,8 @@ Make sure to test with GFortran and intel
 
 1st shell
 ```
-. .ssmuse_gem intel
-. .intial_setup
+. ./.ssmuse_gem intel
+. ./.initial_setup
 make cmake
 make -j4
 make work
@@ -24,8 +24,8 @@ make work
 
 2nd shell
 ```
-. .ssmuse_gem gnu
-. .intial_setup
+. ./.ssmuse_gem gnu
+. ./.initial_setup
 make cmake
 make -j4
 make work

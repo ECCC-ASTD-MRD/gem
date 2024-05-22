@@ -14,17 +14,22 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-subroutine equivmount1(gc,sxx,syy,sxy, &
-     ilg,il1,il2, &
-     slope,xcent,mtdir)
+module equivmount
+   implicit none
+   private
+   public :: equivmount2
+
+contains
+
+subroutine equivmount2(gc, sxx, syy, sxy, slope, xcent, mtdir, ni)
    use, intrinsic :: iso_fortran_env, only: REAL64
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 
-   integer ilg,il1,il2
-   real gc(ilg),sxx(ilg),syy(ilg),sxy(ilg)
-   real slope(ilg),xcent(ilg),mtdir(ilg)
+   integer, intent(in) :: ni
+   real, intent(in) :: gc(ni), sxx(ni), syy(ni), sxy(ni)
+   real, intent(out) :: slope(ni), xcent(ni), mtdir(ni)
    !@Author
    !         A. Zadra - Feb 2002
    !                    based on formulae by Lott & Miller (1997)
@@ -39,37 +44,34 @@ subroutine equivmount1(gc,sxx,syy,sxy, &
    !         are interpolated
    !@Arguments
    !         - Input -
-   !GC       land-sea mask (between 0(sea) and -1(land))
+   !GC       land-sea mask (between 0(sea) and 1(land))
    !SXX      gradient correlation, x-direction
    !SYY      gradient correlation, y-direction
    !SXY      gradient cross-correlation, xy-directions
-   !ILG      total horizontal dimension
-   !IL1      index of 1st point to start calculation
-   !IL2      index of last point to stop calculation
+   !NI      total horizontal dimension
    !         - Output -
    !SLOPE    mountain slope
    !XCENT    mountain eccentricity
    !MTDIR    mountain direction
 
-   integer i
-   real(REAL64) :: zero,unit,piotwo,hmin
+   real(REAL64), parameter :: zero = 0.0
+   real(REAL64), parameter :: unit = 1.0
+   real(REAL64), parameter :: piotwo = .5*acos(-1.)
+   real(REAL64), parameter :: hmin = 3.0
+   
+   integer :: i
    real(REAL64) :: spls,smns,scrs,sppr,smpr
 
-   zero = 0.0
-   unit = 1.0
-   piotwo = .5*acos(-1.)
-   hmin = 3.0
-
    !     Initialize mountain parameters:
-   do i=1,ilg
+   do i=1,ni
       slope(i) = zero
       xcent(i) = unit
       mtdir(i) = zero
    enddo
 
    !     Mountain slope, eccentricity and direction:
-   do i=il1,il2
-      if (gc(i).eq.-1.) then
+   do i=1,ni
+      if (abs(nint(gc(i))) == 1.) then
          spls = .5*( sxx(i) + syy(i) )
          smns = .5*( sxx(i) - syy(i) )
          scrs = sxy(i)
@@ -79,21 +81,46 @@ subroutine equivmount1(gc,sxx,syy,sxy, &
          sppr = max(zero,sppr)
          slope(i) = sqrt(sppr)
 
-         if (sppr .lt. 1.e-10) then
+         if (sppr < 1.e-10) then
             xcent(i) = unit
          else
             xcent(i) = sqrt(smpr/sppr)
          endif
 
-         if ( abs(scrs) .lt. 1.e-10 .and. abs(smns) .lt. 1.e-10) then
+         if (abs(scrs) < 1.e-10 .and. abs(smns) < 1.e-10) then
             mtdir(i) = zero
          else
             mtdir(i) = .5*atan2(scrs,smns)
-            if (mtdir(i).gt.  piotwo ) mtdir(i) = mtdir(i) - 2.*piotwo
-            if (mtdir(i).lt.(-piotwo)) mtdir(i) = mtdir(i) + 2.*piotwo
+            if (mtdir(i) >  piotwo) mtdir(i) = mtdir(i) - 2.*piotwo
+            if (mtdir(i) < -piotwo) mtdir(i) = mtdir(i) + 2.*piotwo
          endif
       endif
    enddo
 
    return
+end subroutine equivmount2
+
+end module equivmount
+
+
+
+subroutine equivmount1(rgc,sxx,syy,sxy, &
+     ni,il1,il2, &
+     slope,xcent,mtdir)
+   use equivmount, only: equivmount2
+   implicit none
+!!!#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+
+   integer, intent(in) :: ni,il1,il2
+   real, intent(in) :: rgc(ni), sxx(ni), syy(ni), sxy(ni)
+   real, intent(out) :: slope(ni), xcent(ni), mtdir(ni)
+
+   real :: gc(ni)
+
+   gc(:) = - rgc(:)
+   call equivmount2(gc, sxx, syy, sxy, slope,xcent, mtdir, ni)
+   
+   return
 end subroutine equivmount1
+

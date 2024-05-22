@@ -21,8 +21,8 @@ module conv_mp_tendencies
 
 contains
 
-   subroutine conv_mp_tendencies1(liq_tend, ice_tend, ttp, qcp, ncp, qip, nip, qti1p, nti1p, zti1p, tdmask, ni, nk, nkm1)
-      use phy_options, only: stcond,my_ccntype,delt
+   subroutine conv_mp_tendencies1(liq_tend, ice_tend, ttp, qcp, ncp, qip, nip, qti1p, nti1p, zti1p, tdmaskxdt, ni, nk, nkm1)
+      use phy_options, only: stcond,my_ccntype
       use tdpack_const, only: TRPL
       use tendency, only: apply_tendencies
       implicit none
@@ -40,7 +40,7 @@ contains
       real, dimension(:,:), pointer, contiguous :: qti1p                   !Ice condensate mixing ratio (kg/kg)
       real, dimension(:,:), pointer, contiguous :: nti1p                   !Ice number mixing ratio (#/kg)
       real, dimension(:,:), pointer, contiguous :: zti1p                   !Ice 6th-moment mixing ratio (m6/kg)
-      real, dimension(:), pointer, contiguous :: tdmask                    !Tendency mask
+      real, dimension(:), pointer, contiguous :: tdmaskxdt                 !Tendency mask * delt
 
 #include <rmn/msg.h>
       
@@ -62,34 +62,27 @@ contains
 
          IF_MP_MY2: if (stcond(1:6) == 'MP_MY2') then !note: this includes 'MP_MY2'
 
-            !cloud droplets (number):
             !#TODO: use apply tendencies for clarity? Conditional outside loop (where?)
             do k = 1,nkm1
                do i = 1,ni
+                  
+                  !cloud droplets (number):
                   if (liq_tend(i,k) > 0.) then
                      if (qcp(i,k) > 1.e-9 .and. ncp(i,k) > 1.e-3) then
                         !assume mean size of the detrained droplets is the same size as those in the pre-existing clouds
-                        ncp(i,k) = ncp(i,k) + (ncp(i,k)/qcp(i,k))*tdmask(i)*liq_tend(i,k)*delt
+                        ncp(i,k) = ncp(i,k) + (ncp(i,k)/qcp(i,k))*tdmaskxdt(i)*liq_tend(i,k)
                         ncp(i,k) = min(ncp(i,k), 1.e+9)
                      else
                         !initialize cloud number mixing ratios based on specified aerosol type
                         ncp(i,k) = ncp_prescribed  !maritime aerosols
                      endif
                   endif
-               enddo
-            enddo
 
-            !cloud droplets (mass)
-            call apply_tendencies(qcp, liq_tend, tdmask, ni, nk, nkm1)
-
-            !ice crystals (number):
-            !#TODO: use apply tendencies for clarity? Conditional outside loop (where?)
-            do k = 1,nkm1
-               do i = 1,ni
+                  !ice crystals (number):
                   if (ice_tend(i,k) > 0.) then
                      if (qip(i,k) > 1.e-9 .and. nip(i,k) > 1.e-3) then
                         !assume mean size of the detrained ice is the same size as those in the pre-existing "anvil"
-                        nip(i,k) = nip(i,k) + (nip(i,k)/qip(i,k))*tdmask(i)*ice_tend(i,k)*delt
+                        nip(i,k) = nip(i,k) + (nip(i,k)/qip(i,k))*tdmaskxdt(i)*ice_tend(i,k)
                         nip(i,k) = min(nip(i,k), 1.e+7)
                      else
                         !initialize ice number mixing ratio based on Cooper (1986)
@@ -97,11 +90,13 @@ contains
                         nip(i,k) = min(nip(i,k), 1.e+7)
                      endif
                   endif
+                  
                enddo
             enddo
 
-            !ice crystals (mass):
-            call apply_tendencies(qip, ice_tend, tdmask, ni, nk, nkm1)
+            !cloud droplets (mass) and ice crystals (mass)
+            call apply_tendencies(qcp,      qip, &
+                 &                liq_tend, ice_tend, tdmaskxdt, ni, nk, nkm1)
 
          elseif (stcond(1:5) == 'MP_P3') then
 
@@ -114,7 +109,7 @@ contains
                      if (liq_tend(i,k) > 0.) then
                         if (qcp(i,k) > 1.e-9 .and. ncp(i,k) > 1.e-3) then
                            !assume mean size of the detrained droplets is the same size as those in the pre-existing clouds
-                           ncp(i,k) = ncp(i,k) + (ncp(i,k)/qcp(i,k))*tdmask(i)*liq_tend(i,k)*delt
+                           ncp(i,k) = ncp(i,k) + (ncp(i,k)/qcp(i,k))*tdmaskxdt(i)*liq_tend(i,k)
                            ncp(i,k) = min(ncp(i,k), 1.e+9)
                         else
                            !initialize cloud number mixing ratios based on specified aerosol type
@@ -125,9 +120,6 @@ contains
                enddo
             endif
 
-            !cloud droplets (mass):
-            call apply_tendencies(qcp, liq_tend, tdmask, ni, nk, nkm1)
-
             !ice crystals (number):
             ! note:  The initialization of ice number is the same for P3 as for MY2, but the two schemes have
             !         different variables.
@@ -137,7 +129,7 @@ contains
                   if (ice_tend(i,k) > 0.) then
                      if (qti1p(i,k) > 1.e-9 .and. nti1p(i,k) > 1.e-3) then
                         !assume mean size of the detrained ice is the same size as in the pre-existing "anvil"
-                        nti1p(i,k) = nti1p(i,k) + (nti1p(i,k)/qti1p(i,k))*tdmask(i)*ice_tend(i,k)*delt
+                        nti1p(i,k) = nti1p(i,k) + (nti1p(i,k)/qti1p(i,k))*tdmaskxdt(i)*ice_tend(i,k)
                         nti1p(i,k) = min(nti1p(i,k), 1.e+7)
                         if (associated(zti1p) .and. is_p3v5) zti1p(i,k) = min(zti1p(i,k), 1.e-18)
                      else
@@ -150,8 +142,10 @@ contains
                enddo
             enddo
 
-            !ice crystals (mass):
-            call apply_tendencies(qti1p, ice_tend, tdmask, ni, nk, nkm1)
+            !cloud droplets (mass) and ice crystals (mass):
+            !
+            call apply_tendencies(qcp,      qti1p, &
+                 &                liq_tend, ice_tend, tdmaskxdt, ni, nk, nkm1)
 
          endif IF_MP_MY2
 
@@ -160,7 +154,7 @@ contains
          total_tend = 0.
          if (associated(liq_tend)) total_tend(:,1:nkm1) = total_tend(:,1:nkm1) + liq_tend(:,1:nkm1)
          if (associated(ice_tend)) total_tend(:,1:nkm1) = total_tend(:,1:nkm1) + ice_tend(:,1:nkm1)
-         call apply_tendencies(qcp, total_tend, tdmask, ni, nk, nkm1)
+         call apply_tendencies(qcp, total_tend, tdmaskxdt, ni, nk, nkm1)
 
       endif IF_KFBE_MP
 

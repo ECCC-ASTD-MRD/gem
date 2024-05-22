@@ -32,6 +32,7 @@ contains
     use phymem, only: phyvar
     use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
     use module_bl_ysu, only: ysu2d
+    use vintphy, only: vint_mom2thermo, vint_thermo2mom
     implicit none
 #include <rmnlib_basics.hf>
     !@Object Wrapper for Yonsei University (YSU) PBL scheme
@@ -138,8 +139,8 @@ contains
     exnerrpn(:,:) = zsigt(:,:)**CAPPA
 
     ! Interpolate momentum-level variables to thermodynamic levels
-    call vint_mom2thermo(uplust, zuplus, zvcoef, ni, nkm1)
-    call vint_mom2thermo(vplust, zvplus, zvcoef, ni, nkm1)
+    call vint_mom2thermo(uplust, vplust, &
+         &               zuplus, zvplus, zvcoef, ni, nkm1)
 
     ! Diagnose lowest thermo-level winds from surface layer
     istat = sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), zuplus(:,nkm1), &
@@ -230,8 +231,8 @@ contains
           ustept(:,k) = iuplust(:,ki)
           vstept(:,k) = ivplust(:,ki)
        enddo
-       call vint_thermo2mom(ustepm, ustept, zvcoef, ni, nkm1)
-       call vint_thermo2mom(vstepm, vstept, zvcoef, ni, nkm1)
+       call vint_thermo2mom(ustepm, vstepm, &
+            &               ustept, vstept, zvcoef, ni, nkm1)
        lfrv(:) = max(sqrt(zbm(:) * (sqrt(ustepm(:,nkm1)**2 + vstepm(:,nkm1)**2))), 0.01)
        if (step == 1) lfrv0(:) = lfrv(:)
        lfh(:) = -rho(:)*CPD * (zalfat(:) + zbt(:)*thair(:)) * (lfrv(:)/lfrv0(:))
@@ -296,8 +297,8 @@ contains
     endif
     
     ! Interpolate momentum-level variables to thermodynamic levels
-    call vint_thermo2mom(zudifv, udifvt, zvcoef, ni, nkm1)
-    call vint_thermo2mom(zvdifv, vdifvt, zvcoef, ni, nkm1)
+    call vint_thermo2mom(zudifv, zvdifv, &
+         &               udifvt, vdifvt, zvcoef, ni, nkm1)
 
     ! Estimate near-surface diffusion coefficients
     zkm(:,nk) = min(KARMAN * lfrv(:) * zz0(:), zkm(:,nkm1))

@@ -42,7 +42,6 @@ subroutine phybusinit(ni,nk)
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
    include "surface.cdk"
-   include "clefcon.cdk"
    
    character(len=6)  :: nag, nmar, wwz, nuv, isss
    integer :: ier, iverb, nsurf, i
@@ -59,7 +58,7 @@ subroutine phybusinit(ni,nk)
    logical :: lcons, lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac
+   logical :: lpcp_frac, ladvqtbl
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -97,6 +96,7 @@ subroutine phybusinit(ni,nk)
    lrslp   = radslope
    ladvtke = advectke
    nadvtke = .not.ladvtke
+   ladvqtbl = advecqtbl
    lmoyhr  = (moyhr > 0 .or. dynout)
    lkfbe   = any(convec == (/ &
         'BECHTOLD', &
@@ -116,7 +116,7 @@ subroutine phybusinit(ni,nk)
         'SPS_FRC', &
         'SPS_H13'  &
         /))
-   lmoistke= (fluvert == 'MOISTKE')
+   lmoistke= (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT')
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
 

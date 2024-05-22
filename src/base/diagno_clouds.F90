@@ -15,6 +15,12 @@
 !-------------------------------------- LICENCE END ----------------------------
 
 module diagno_clouds
+   use debug_mod, only: init2nan
+   use tdpack_const
+   use phy_options
+   use phybusidx
+   use phymem, only: phyvar
+   use vintage_nt, only: vintage_nt1
    implicit none
    private
    public :: diagno_clouds2
@@ -24,24 +30,17 @@ contains
    !/@*
    subroutine diagno_clouds2(pvars, taucs, taucl,  &
         gz, cloud, &
-        tt, sig, ps,  trnch, m, &
+        tt, sig, ps,  trnch, &
         ni, nkm1, nk)
-      use debug_mod, only: init2nan
-      use tdpack_const
-      use phy_options
-      use phybusidx
-      use phymem, only: phyvar
-      use vintage_nt, only: vintage_nt1
       implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
       type(phyvar), pointer, contiguous :: pvars(:)
-      integer, intent(in) :: ni, m, nkm1, nk
+      integer, intent(in) :: trnch, ni, nkm1, nk
       real, intent(in), dimension(ni,nkm1,nbs) :: taucs
       real, intent(in), dimension(ni,nkm1,nbl) :: taucl
-      real, intent(in) :: gz(m,nkm1)   
-      real, intent(in), dimension(ni,nkm1) :: cloud, tt, sig
+      real, intent(in), dimension(ni,nkm1) :: gz, cloud, tt, sig
       real, intent(in), dimension(ni)    :: ps
 
       !Object
@@ -69,22 +68,6 @@ contains
       !*@/
 #include "phymkptr.hf"
 
-
-#include "cldop.cdk"
-
-      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac
-      logical, dimension(ni) :: top
-      real, dimension(m,nkm1) :: aird, rec_cdd, vs1
-      real, dimension(ni) :: trmin, tmem, trmin2, tmem2
-      real, dimension(ni,nk,nk) :: ff, ff2
-      integer, dimension(ni) :: ih, ih2, ih3, ib, ib2, ib3    
-
-      real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
-
-      integer :: i, k, kind, ip, l, trnch
-      real :: rec_grav
-      real :: xnu, xnu2
-
       real, pointer, dimension(:), contiguous :: ztopthw,ztopthi,znt
       real, pointer, dimension(:), contiguous :: ztcc,zecc,zeccl,zeccm,zecch
       real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
@@ -109,24 +92,61 @@ contains
       MKPTR1D(ztczh, tczh, pvars)
       MKPTR1D(ztopthi, topthi, pvars)
       MKPTR1D(ztopthw, topthw, pvars)
-      
+
+      nullify(zlwc)
       if (stcond(1:3) /= 'MP_') then
          MKPTR2D(zlwc, lwc, pvars)
       endif
       
+      !#Note: move computations in other function, away from the pointers (opimiz)
+      call priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps,  &
+        ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
+        ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
+        trnch, ni, nkm1, nk)
+
       !----------------------------------------------------------------
-      call init2nan(transmissint, trans_exp)
+      return
+   end subroutine diagno_clouds2
+      
+
+   !/@*
+   subroutine priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps, &
+        ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
+        ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
+        trnch, ni, nkm1, nk)
+      implicit none
+!!!#include <arch_specific.hf>
+#include "nbsnbl.cdk"
+
+      integer, intent(in) :: trnch, ni, nkm1, nk
+      real, intent(in), dimension(ni,nkm1,nbs) :: taucs
+      real, intent(in), dimension(ni,nkm1,nbl) :: taucl
+      real, intent(in), dimension(ni,nkm1) :: gz, cloud, tt, sig
+      real, intent(in), dimension(ni)    :: ps
+      real, dimension(ni) :: ztopthw, ztopthi, znt
+      real, dimension(ni) :: ztcc, zecc, zeccl, zeccm, zecch
+      real, dimension(ni) :: ztcsl, ztcsm, ztcsh
+      real, dimension(ni) :: ztczl, ztczm, ztczh
+      real, dimension(ni) :: zctp, zctt
+      real, pointer, dimension(:,:), contiguous :: zlwc
+
+#include "cldop.cdk"
+
+      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac
+      logical, dimension(ni) :: top
+      real, dimension(ni,nkm1) :: aird, rec_cdd, vs1
+      real, dimension(ni) :: trmin, tmem, trmin2, tmem2
+      real, dimension(ni,nk,nk) :: ff, ff2
+      integer, dimension(ni) :: ih, ih2, ih3, ib, ib2, ib3    
+
+      real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
+      integer :: i, k, k1, ip, l
+      real :: xnu, xnu2
+      !----------------------------------------------------------------
+      call init2nan(transmissint, trans_exp, cldfrac)
       call init2nan(aird, rec_cdd, vs1)
       call init2nan(trmin, tmem, trmin2, tmem2 )
       call init2nan(ff, ff2)
-      rec_grav=1./grav
-
-      do k = 1, nkm1
-         do i = 1, ni
-            cldfrac(i,k)=cloud(i,k)
-         enddo
-      enddo
-
 
       !     diagnostics: cloud top pressure (ctp) and temperature (ctt)
       !     using the cloud optical depth at window region (band 6) to
@@ -163,7 +183,7 @@ contains
          zctp (i)   = 110000.
          zctt (i)   = 310.
          top(i) = .true.
-         transmissint(i,1) = 1. - cldfrac(i,1) * (1.-trans_exp(i,1) )
+         transmissint(i,1) = 1. - cloud(i,1) * (1.-trans_exp(i,1) )
          if ( (1. - transmissint(i,1)) > 0.99 .and. top(i) ) then
             zctp(i) = sig(i,1)*ps(i)
             zctt(i) = tt(i,1)
@@ -173,9 +193,9 @@ contains
 
       do k = 2, nkm1
          do i = 1, ni
-            ! transmissint(i,k)=transmissint(i,k-1) * (1. - cldfrac(i,k) *
+            ! transmissint(i,k)=transmissint(i,k-1) * (1. - cloud(i,k) *
             !    1              exp (- 1.64872 * taucl(i,k,6)))
-            transmissint(i,k)=transmissint(i,k-1) * (1. - cldfrac(i,k) * &
+            transmissint(i,k)=transmissint(i,k-1) * (1. - cloud(i,k) * &
                  (1.-trans_exp(i,k) ) )
             if ( (1. - transmissint(i,k)) > 0.99 .and. top(i) ) then
                zctp(i) = sig(i,k)*ps(i)
@@ -200,12 +220,12 @@ contains
          enddo
          ip=l+1
          do k=ip,nk
-            kind=k-2
-            kind=max0(kind,1)
+            k1=k-2
+            k1=max0(k1,1)
             do i=1,ni
-               xnu=1.-cldfrac(i,k-1)*(1.-trans_exp(i,k-1) )
-               xnu2=1.-cldfrac(i,k-1)
-               if(cldfrac(i,kind) < 0.01) then
+               xnu=1.-cloud(i,k-1)*(1.-trans_exp(i,k-1) )
+               xnu2=1.-cloud(i,k-1)
+               if(cloud(i,k1) < 0.01) then
                   tmem(i)= ff(i,l,k-1)
                   trmin(i)= xnu
                   tmem2(i)= ff2(i,l,k-1)
@@ -233,6 +253,12 @@ contains
             znt(i) = ztcc(i)*(1.-exp(-0.1*(ztopthw(i) + ztopthi(i))))
          enddo
       else
+         !#Note: vintage_nt modify cldfrac, need a copy
+         do k = 1, nkm1
+            do i = 1, ni
+               cldfrac(i,k) = cloud(i,k)
+            enddo
+         enddo
          call vintage_nt1( &
               tt, ps, sig, zlwc, &
               cldfrac, znt, trnch, ni, nk, nkm1)
@@ -253,7 +279,7 @@ contains
 
       !----------------------------------------------------------------
       return
-   end subroutine diagno_clouds2
+   end subroutine priv_diagno_clouds2
    
 end module diagno_clouds
 

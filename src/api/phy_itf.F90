@@ -25,6 +25,7 @@ module phy_itf
   use phy_get_mod
   use phy_getmeta_mod
   use phy_put_mod
+  use phy_putmeta_mod
   use phy_terminate_mod
   use phy_restart_mod
   use phy_snapshot_mod
@@ -42,6 +43,6 @@ module phy_itf
   private :: PATHLENGTH, NPATH_DEFAULT, BPATH_DEFAULT
 
   ! Externally-accessible constants and variables
-  integer, parameter :: PHY_COMPATIBILITY_LVL = 20
+  integer, parameter :: PHY_COMPATIBILITY_LVL = 21
 
 end module phy_itf

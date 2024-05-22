@@ -82,24 +82,15 @@ function check_options2() result(F_istat)
       return
    endif
 
-   if (fluvert == 'CLEF' .and. &
-        .not.any(longmel == (/ &
-        'TURBOUJO', &
-        'BOUJO   ', &
-        'BLAC62  '  &
+   if (longmel == 'MBOUJO' .and. &
+        .not.any(fluvert == (/ &
+        'RPNINT' &
         /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//&
-           trim(fluvert)//' and longmel='//trim(longmel))
+      call msg(MSG_ERROR,'(check_options) option mismatch: longmel='//&
+           trim(longmel)//' and fluvert='//trim(fluvert))
       return
    endif
-
-  if (fluvert == 'CLEF' .and. &
-        .not.(pbl_nonloc == 'NIL')) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: fluvert='//&
-           trim(fluvert)//' and pbl_nonloc='//trim(pbl_nonloc))
-      return
-   endif
-
+   
    if (NSLOFLUX > MAXSLOFLUX) then
       write(str512, '(a,i3)') &
            '(check_options) NSLOFLUX CANNOT EXCEED A VALUE OF ', MAXSLOFLUX

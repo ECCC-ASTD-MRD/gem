@@ -249,14 +249,6 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
       ENDDO
 
-      IF(lwater_ponding_svs1 .and. kount==1) THEN
-          DO I=1,N
-!           EG: Adjust max. ponding depth according to bare ground fraction: consider 10mm over bare ground
-	    zmaxpond(I) = zmaxpond(I) * (zvegh(I)+zvegl(I)) + 0.01 * (1.-zvegh(I)-zvegl(I))
-!	    EG: Adjust max. ponding depth according to slope
-            zmaxpond(I) = max(0.0,zmaxpond(I)*(1.0E-10)**zslop(I))
-         END DO
-      ENDIF
 !
 !******************************************************************
 !                  SVS SUBROUTINES START HERE
@@ -327,6 +319,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(CLAY   ,1,1)), BUS(x(SAND   ,1,1)), &  
            BUS(x(DECIDUOUS,1,1)),BUS(x(EVERGREEN,1,1)), &  
            BUS(x(LAIDECI,1,1)),   &
+           BUS(x(CONDDRY   ,1,1)), BUS(x(CONDSLD  ,1,1)), &
            BUS(x(SVS_WTA,1,1)), CG, &
            BUS(x(PSNGRVL,1,1)),  &  
            BUS(x(Z0T  ,1,indx_soil)),  & 
@@ -334,8 +327,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(PSNVH  ,1,1)), BUS(x(PSNVHA ,1,1)), &  
            ALVA, BUS(x(LAIVA  ,1,1)), CVPA, EVA, BUS(x(Z0HA ,1,1)),&
            BUS(x(Z0MVG,1,1)), RGLA, STOMRA,   &
-           GAMVA, N,    &
-           BUS(x(SOILHCAPZ,1,1)), BUS(x(SOILCONDZ,1,1)), BUS(x(CONDDRY   ,1,1)), BUS(x(CONDSLD  ,1,1)) )
+           GAMVA,    &
+           BUS(x(SOILHCAPZ,1,1)), BUS(x(SOILCONDZ,1,1)), N )
 !
 !     
 
@@ -528,13 +521,12 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(wveg    ,1,1)), wvegt               ,&
            bus(x(wsoil   ,1,1)), wsoilt              ,&
            bus(x(isoil   ,1,1)), isoilt              ,&
-           bus(x(ksatc   ,1,1)), bus(x(khc     ,1,1)),&
+           bus(x(ksatc   ,1,1)), bus(x(maxpond ,1,1)), &
+           bus(x(khc     ,1,1)),                      &
            bus(x(psi     ,1,1)), bus(x(grksat  ,1,1)),&
            bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
            bus(x(latflw  ,1,1)), &
-           bus(x(runofftot ,1,indx_soil)), N, bus(x(watpond ,1,1)), &
-           bus(x(maxpond ,1,1)))
-
+           bus(x(runofftot ,1,indx_soil)), bus(x(watpond ,1,1)), N)
 
 
       IF( USE_PHOTO ) THEN

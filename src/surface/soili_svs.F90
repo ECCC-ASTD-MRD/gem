@@ -22,10 +22,11 @@
            GAMVH,GAMVL, &  
            LAIVH, LAIVL, &   
            Z0MVH, Z0MVL, Z0, CLAY, SAND, DECI, EVER,LAID,  &  
+           CONDDRY, CONDSLD, &  
            WTA, CG, PSNGRVL,  & 
            Z0H, ALGR, EMGR, PSNVH, PSNVHA,   &
            ALVA, LAIVA, CVPA, EVA, Z0HA, Z0MVG, RGLA, STOMRA ,&  
-           GAMVA, N, SOILHCAPZ, SOILCONDZ, CONDDRY, CONDSLD )
+           GAMVA, SOILHCAPZ, SOILCONDZ, N )
          !
         use tdpack_const, only: PI
         use svs_configs
@@ -107,7 +108,7 @@
 ! DECI     fraction of high vegetation that is deciduous
 ! EVER     fraction of high vegetation that is evergreen
 ! LAID     LAI of deciduous trees
-! CONDSLD  Soilds thermal conductivity
+! CONDSLD  Soil thermal conductivity
 ! CONDDRY  Dry thermal conductivity
 !
 !           - Output -
@@ -131,7 +132,9 @@
 ! RGLA     average vegetation parameter stomatal resistance
 ! STOMRA   average minimum stomatal resistance
 ! GAMVA    average stomatal resistance param. 
-!
+! SOILHCAPZ soil heat capacity
+! SOILCONDZ soil thermal conductivity
+
 include "isbapar.cdk"
 
 !

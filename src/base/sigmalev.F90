@@ -22,8 +22,9 @@ module sigmalev
 contains
 
    !/@*
-   function sigmalev3(vcoef, se, s, st, n, nk) result(F_istat)
-      implicit none
+  function sigmalev3(vcoef, se, s, st, n, nk) result(F_istat)
+    use phy_options, only: fluvert
+     implicit none
 !!!#include <arch_specific.hf>
       !@Arguments
       integer, intent(in)  :: n, nk          !# array dims
@@ -42,19 +43,20 @@ contains
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
       !----------------------------------------------------------------
-      F_istat = RMN_ERR
-      if (st(1,1) < 0) then       ! model is unstaggered
-         call msg(MSG_ERROR, 'SIGMALEV: model levels should be staggered')
-         return
-      endif
-      F_istat = RMN_OK
 
-      se(1:n,1:nk-2)  = st(1:n,1:nk-2)
-      se(1:n,nk-1:nk) = 1.
+      if (fluvert == 'RPNINT') then
+         se(1:n,1:nk-1)  = s(1:n,1:nk-1)
+         se(1:n,nk) = 1.
+      else
+         se(1:n,1:nk-2)  = st(1:n,1:nk-2)
+         se(1:n,nk-1:nk) = 1.
+      endif
 
       call mweights(vcoef(:,:,1), s, st, n, nk, nk-1)
       vcoef(:,nk,1) = vcoef(:,nk-1,1)  !#Note this change vcoef stats, avoid undef
       call tweights(vcoef(:,:,2), s, st, n, nk, nk)
+      
+      F_istat = RMN_OK
       !----------------------------------------------------------------
       return
    end function sigmalev3
