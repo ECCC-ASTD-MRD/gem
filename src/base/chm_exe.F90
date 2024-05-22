@@ -44,15 +44,12 @@
 !             step               -->    timestep number
 !
 !            IN/OUT
-!             busdyn    -->    dynamical bus
-!             busper    -->    permanent bus
-!             busvol    -->    volatile bus
+!             pvars    list of all phy vars (meta + slab data)
 !
 !=============================================================================
 !
 !!if_on
-subroutine chm_exe(busdyn     , busper        , busvol     ,   &
-                   slab_index , step)
+subroutine chm_exe(pvars, slab_index, step)
 !!if_off
    use chm_utils_mod,          only: chm_lun_out, global_debug, undefined, &
                                      chm_error_l, CHM_MSG_DEBUG
@@ -63,10 +60,12 @@ subroutine chm_exe(busdyn     , busper        , busvol     ,   &
    use chm_metvar_mod,         only: SIZE_MV2D, SIZE_MV3D
    use chm_headers_mod,        only: chm_load_metvar, chm_load_store_tracers
    use mach_headers_mod,       only: mach_main, mach_stepinit
+   use phymem,                 only: phyvar, &
+       PHY_BUSIDXV, PHY_DBUSIDX, PHY_PBUSIDX, PHY_VBUSIDX
    implicit none
 !!if_on
    integer(kind=4), intent   (in) :: slab_index, step
-   real(kind=4), dimension(:), pointer, contiguous :: busdyn, busper, busvol
+   type(phyvar), pointer, contiguous :: pvars(:)
 !!if_off
 !
 !  Declaration of local variables
@@ -81,11 +80,18 @@ subroutine chm_exe(busdyn     , busper        , busvol     ,   &
    logical(kind=4), save :: print_once=.true.
    integer(kind=4) :: iverb, ni_can, ni_nocan
    character(len=64) :: tmp_S
+
+   real, dimension(:), pointer, contiguous :: busdyn, busper, busvol
 !
 !  Declaration of external subroutines
 !
    external physeterror, msg_toall, timing_start_omp, timing_stop_omp, &
             msg_verbosity_get, msg_verbosity
+
+!! following can be replaced by just pvars
+   busdyn => pvars(PHY_BUSIDXV(PHY_DBUSIDX))%data
+   busper => pvars(PHY_BUSIDXV(PHY_PBUSIDX))%data
+   busvol => pvars(PHY_BUSIDXV(PHY_VBUSIDX))%data
 !
 !  Detect Master switch. If false, NORMAL EXIT WITH MESSAGE
 !
@@ -118,16 +124,21 @@ subroutine chm_exe(busdyn     , busper        , busvol     ,   &
 
    if (mod(step, chm_step_factor) == 0) then
 
-      call chm_load_metvar(busdyn, busper, busvol, metvar2d, metvar3d)
+      call chm_load_metvar(pvars, metvar2d, metvar3d)
+      if (chm_error_l) then
+         call physeterror('chm_exe', 'Problem in chm_load_metvar')
+         return
+      end if
 
-      call chm_load_store_tracers(busdyn, chem_tr, 0)
+      call chm_load_store_tracers(pvars, busdyn, chem_tr, 0)
 
       if (chm_model_s(1:4) == 'MACH') then
 
+!        call mach_stepinit(pvars, step, slab_index, ni_can)
          call mach_stepinit(busper, step, slab_index, ni_can)
 
          ni_nocan = chm_ni - ni_can
-         call mach_main(busper, busvol, chem_tr, metvar2d, metvar3d, slab_index,&
+         call mach_main(pvars, busper, busvol, chem_tr, metvar2d, metvar3d, slab_index,&
                         step, ni_can, ni_nocan)
          if (chm_error_l) then
             call physeterror('chm_exe', 'Problem in GEM-MACH')
@@ -135,8 +146,8 @@ subroutine chm_exe(busdyn     , busper        , busvol     ,   &
          end if
 
       end if
-!
-      call chm_load_store_tracers(busdyn, chem_tr, 1)
+
+      call chm_load_store_tracers(pvars, busdyn, chem_tr, 1)
 
    else
       if (local_dbg) then

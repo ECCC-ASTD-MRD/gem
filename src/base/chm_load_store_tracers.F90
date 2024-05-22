@@ -43,35 +43,40 @@
 !==============================================================================
 !
 !!if_on
-subroutine chm_load_store_tracers(busdyn, chem_tr, flag)
+subroutine chm_load_store_tracers(pvars, busdyn, chem_tr, flag)
    use chm_species_info_mod, only: nb_dyn_tracers
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
+   use phymem,               only: phyvar
 !!if_off
-
    use chm_species_info_mod, only: species_master
+   use chm_utils_mod,        only: chm_error_l,  CHM_MSG_DEBUG
+   use phymem,               only: phymem_find
    implicit none
 !!if_on
    integer(kind=4), intent   (in) :: flag
    real(kind=4),    dimension(:), pointer, contiguous :: busdyn
    real(kind=4),    intent(inout) :: chem_tr(chm_ni, chm_nk + 1, nb_dyn_tracers)
+   type(phyvar),    pointer, contiguous :: pvars(:)
 !!if_off
+   external msg_toall
 !
 ! Local Variables
 !
-   integer(kind=4) :: isp, ii, kk, indx, busid
+   integer(kind=4) :: isp, istat, busid, idxv1(1)
 !
+   call msg_toall(CHM_MSG_DEBUG, 'chm_load_store_tracers [BEGIN]')
    if (flag == 0) then
     ! Copy tracers concentrations from the dynamic bus
       do isp = 1, nb_dyn_tracers
-         if (species_master(isp) % dyn_offset > 0) then
-            busid = species_master(isp) % dyn_offset
-            indx = 0
-            do kk = 1, chm_nk + 1
-               do ii = 1, chm_ni
-                  chem_tr(ii, kk, isp) = busdyn(busid + indx)
-                  indx = indx + 1
-               end do
-            end do
+        if (species_master(isp) % dyn_offset > 0) then
+           istat = phymem_find(idxv1, species_master(isp)%dyn_name, F_npath='VOI',&
+                               F_bpath='D', F_quiet=.false., F_shortmatch=.false.)
+           if (istat < 0 .or. idxv1(1) < 0) then
+              write(*,*) 'phymem_find error:', istat, species_master(isp)%dyn_name
+              chm_error_l = .true.
+              return
+           end if
+           chem_tr(:,:,isp) = reshape(pvars(idxv1(1))%data,(/chm_ni,chm_nk/))
          else
             chem_tr(:, :, isp) = 0.0
          end if
@@ -79,17 +84,17 @@ subroutine chm_load_store_tracers(busdyn, chem_tr, flag)
    else
       do isp = 1, nb_dyn_tracers
          if (species_master(isp) % dyn_offset > 0) then
-            busid = species_master(isp) % dyn_offset
-            indx = 0
-            do kk = 1, chm_nk + 1
-               do ii = 1, chm_ni
-                  busdyn(busid + indx) = chem_tr(ii, kk, isp)
-                  indx = indx + 1
-               end do
-            end do
+           istat = phymem_find(idxv1, species_master(isp)%dyn_name, F_npath='VOI',&
+                               F_bpath='D', F_quiet=.false., F_shortmatch=.false.)
+           if (istat < 0 .or. idxv1(1) < 0) then
+              write(*,*) 'phymem_find error:', istat, species_master(isp)%dyn_name
+              chm_error_l = .true.
+              return
+           end if
+           pvars(idxv1(1))%data(:) = reshape(chem_tr(:,:,isp),(/chm_ni*chm_nk/))
          end if
       end do
    end if
-
+   call msg_toall(CHM_MSG_DEBUG, 'chm_load_store_tracers [END]')
    return
 end subroutine chm_load_store_tracers

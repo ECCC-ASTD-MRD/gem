@@ -86,7 +86,7 @@ subroutine mach_canopy_levels(busper, metvar3dcan, metvar3dnocan, metvar3d, &
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk, nkt, nkc
    use chm_metvar_mod,       only: SIZE_MV2D, SIZE_MV3D
 !!if_off
-   use chm_utils_mod,        only: ik, chm_error_l, global_debug
+   use chm_utils_mod,        only: ik, chm_error_l, global_debug, CHM_MSG_DEBUG
    use chm_species_info_mod, only: sm
    use chm_species_idx_mod,  only: sp_HC, sp_FRT
    use chm_consphychm_mod,   only: karman, pi, rgasd, delta
@@ -139,6 +139,7 @@ subroutine mach_canopy_levels(busper, metvar3dcan, metvar3dnocan, metvar3d, &
    logical(kind=4)                         :: local_dbg
 
    local_dbg = (.false. .or. global_debug)
+   call msg_toall(CHM_MSG_DEBUG, 'mach_canopy_levels [BEGIN]')
 !
 ! Initializations: Define canopy and non-canopy grid indirect addresses
    ic = 0
@@ -724,6 +725,7 @@ subroutine mach_canopy_levels(busper, metvar3dcan, metvar3dnocan, metvar3d, &
       end do
    end if
 !
+   call msg_toall(CHM_MSG_DEBUG, 'mach_canopy_levels [END]')
    return
 
 end subroutine mach_canopy_levels

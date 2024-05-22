@@ -1,5 +1,4 @@
 !__________________________________________________________________________________________
-
 ! This module contains the Predicted Particle Property (P3) bulk microphysics scheme.      !
 !                                                                                          !
 ! This code was originally written by H. Morrison,  MMM Division, NCAR (Dec 2012).         !
@@ -27,7 +26,7 @@
 ! Last updated:  2022-03-14                                                                !
 !__________________________________________________________________________________________!
 
- MODULE MICROPHY_P3
+ MODULE MICROPHY_P3v3
 
 #ifdef ECCCGEM
  use tdpack, only: foew, foewa, fohrx, foewaf
@@ -1003,7 +1002,7 @@ END subroutine p3_init
 
 function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                                      &
                               qvap_m,qvap,temp_m,temp,dt,dt_max,ww,psfc,gztherm,sigma,kount,      &
-                              trnch,ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,    &
+                              ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,    &
                               prt_grpl,prt_pell,prt_hail,prt_sndp,diag_Zet,diag_Zec,diag_effc,    &
                               qc,nc,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,   &
                               clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,        &
@@ -1032,7 +1031,6 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
  integer, intent(in)                    :: ni                    ! number of columns in slab           -
  integer, intent(in)                    :: nk                    ! number of vertical levels           -
  integer, intent(in)                    :: kount                 ! time step counter                   -
- integer, intent(in)                    :: trnch                 ! number of slice                     -
  integer, intent(in)                    :: n_diag_2d             ! number of 2D diagnostic fields
  integer, intent(in)                    :: n_diag_3d             ! number of 3D diagnostic fields
 
@@ -1847,8 +1845,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
  real, dimension(kts:kte) :: V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,flux_qx,flux_nx,   &
                              flux_nit,flux_qir,flux_bir
-
+#ifdef HAVE_MACH
  real, dimension(kts:kte) :: avg_mflux_i,avg_mflux_r
+#endif
 
  real, dimension(kts:kte) :: SCF,iSCF,SPF,iSPF,SPF_clr,Qv_cld,Qv_clr
  real                     :: ssat_cld,ssat_clr,ssat_r,supi_cld,sup_cld,sup_r
@@ -2022,8 +2021,10 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
  prt_sol   = 0.
  mflux_r   = 0.
  mflux_i   = 0.
+#ifdef HAVE_MACH
  avg_mflux_i = 0.0
  avg_mflux_r = 0.0
+#endif
  prec      = 0.
  mu_r      = 0.
  diag_ze   = -99.
@@ -3250,11 +3251,12 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
              enddo
           endif
       enddo  !iice-loop
-
+#ifdef HAVE_MACH
   !-- Diagnostics for chemistry module: cloud to rain rates;
       diag_3d(i,k,3) = qcaut+qcacc+sum(qccol)+sum(qcshd) !+sum(qcshd)
   !--              :evaporation rates
       diag_3d(i,k,4) = (qrevp + sum(qisub)) * dt
+#endif
 
 !---------------------------------------------------------------------------------
 ! update prognostic microphysics and thermodynamics variables
@@ -3405,7 +3407,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
        call impose_max_total_Ni(nitot(i,k,:),max_total_Ni,inv_rho(i,k))
        qv(i,k) = max(0., qv(i,k))
-
+#ifdef HAVE_MACH
   !-- Diagnostics for chemistry module: estimate fractional evaporation
        dum= diag_3d(i,k,4) + qr(i,k)
        do iice = 1,nCat
@@ -3416,6 +3418,7 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
        else
           diag_3d(i,k,4) = 0.
        end if
+#endif
 !---------------------------------------------------------------------------------
 
 555    continue
@@ -3615,8 +3618,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
        dt_left   = dt  !time remaining for sedi over full model (mp) time step
        prt_accum = 0.  !precip rate for individual category
+#ifdef HAVE_MACH
        avg_mflux_r = 0.0 !sub-step averaged rain mass flux
-
+#endif
       !find bottom
        do k = kbot,k_qxtop,kdir
           if (qr(i,k)*iSPF(k).ge.qsmall) then
@@ -3681,7 +3685,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
              flux_qx(k) = V_qr(k)*qr(i,k)*rho(i,k)
              flux_nx(k) = V_nr(k)*nr(i,k)*rho(i,k)
              mflux_r(i,k) = flux_qx(k)  !store mass flux for use in visibility diagnostic)
+#ifdef HAVE_MACH
              avg_mflux_r(k) = avg_mflux_r(k) + flux_qx(k)*dt_sub
+#endif
           enddo
 
           !accumulated precip during time step
@@ -3713,7 +3719,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
        enddo substep_sedi_r
 
        prt_liq(i) = prt_liq(i) + prt_accum*inv_rhow*odt
+#ifdef HAVE_MACH
        avg_mflux_r = avg_mflux_r * odt
+#endif
 
     endif qr_present
 
@@ -3739,7 +3747,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 
           dt_left   = dt  !time remaining for sedi over full model (mp) time step
           prt_accum = 0.  !precip rate for individual category
+#ifdef HAVE_MACH
           avg_mflux_i = 0.0 !sub-step averaged ice mass flux
+#endif
 
          !find bottom
           do k = kbot,k_qxtop,kdir
@@ -3815,7 +3825,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
                 flux_bir(k) = V_qit(k)*birim(i,k,iice)*rho(i,k)
                !flux_zit(k) = V_zit(k)*zitot(i,k,iice)*rho(i,k)
                 mflux_i(i,k) = flux_qit(k)  !store mass flux for use in visibility diagnostic)
+#ifdef HAVE_MACH
                 avg_mflux_i(k) = avg_mflux_i(k) + flux_qit(k)*dt_sub
+#endif
              enddo
 
              !accumulated precip during time step
@@ -3860,7 +3872,9 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
           enddo substep_sedi_i
 
           prt_sol(i) = prt_sol(i) + prt_accum*inv_rhow*odt
+#ifdef HAVE_MACH
           avg_mflux_i = avg_mflux_i * odt
+#endif
 
        endif qi_present
 
@@ -4198,11 +4212,13 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
     endif  !if present(diag_vis)
 
 !.....................................................
+#ifdef HAVE_MACH
    !Diagnostics for chemistry module: precipitation fluxes
     do k = kbot,ktop,kdir
        diag_3d(i,k,1) = avg_mflux_r(k) ! mflux_r(i, k)  !liquid precipitation flux
        diag_3d(i,k,2) = avg_mflux_i(k) ! mflux_i(i, k)  ! solid precipitation flux
     end do
+#endif
 
  enddo i_loop_main
 
@@ -6282,47 +6298,47 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
     return
   end function p3_phybusinit
 
+
+#include "phymkptr.hf"
+
+
   ! Compute total water mass
-  function p3_lwc(F_qltot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function p3_lwc(F_qltot, F_pvars) result(F_istat)
+    use phybusidx
+    use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqcp, zqrp
     F_istat = PHY_ERROR
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_dbus)
-    MKPTR2Dm1(zqrp, qrplus, F_dbus)
+    MKPTR2Dm1(zqcp, qcplus, F_pvars)
+    MKPTR2Dm1(zqrp, qrplus, F_pvars)
     F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
     F_istat = PHY_OK
     return
   end function p3_lwc
 
   ! Compute total ice mass
-  function p3_iwc(F_qitot, F_dbus, F_pbus, F_vbus) result(F_istat)
-    use phybus
+  function p3_iwc(F_qitot, F_pvars) result(F_istat)
+    use phybusidx
+    use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    real, dimension(:), pointer, contiguous :: F_dbus   !Dynamics bus
-    real, dimension(:), pointer, contiguous :: F_pbus   !Permanent bus
-    real, dimension(:), pointer, contiguous :: F_vbus   !Volatile bus
+    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
     integer :: F_istat                                  !Return status
-#include "phymkptr.hf"
     integer :: ni, nkm1
     real, dimension(:,:), pointer :: zqti1p, zqti2p, zqti3p, zqti4p
     F_istat = PHY_ERROR
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqti1p, qti1plus, F_dbus)
-    MKPTR2Dm1(zqti2p, qti2plus, F_dbus)
-    MKPTR2Dm1(zqti3p, qti3plus, F_dbus)
-    MKPTR2Dm1(zqti4p, qti4plus, F_dbus)
+    MKPTR2Dm1(zqti1p, qti1plus, F_pvars)
+    MKPTR2Dm1(zqti2p, qti2plus, F_pvars)
+    MKPTR2Dm1(zqti3p, qti3plus, F_pvars)
+    MKPTR2Dm1(zqti4p, qti4plus, F_pvars)
     F_qitot = 0.
     if (associated(zqti1p)) F_qitot = F_qitot + zqti1p
     if (associated(zqti2p)) F_qitot = F_qitot + zqti2p
@@ -6332,5 +6348,5 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
     return
   end function p3_iwc
 
-END MODULE MICROPHY_P3
+END MODULE MICROPHY_P3V3
 

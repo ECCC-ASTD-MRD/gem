@@ -48,7 +48,7 @@
 !!if_on
 subroutine chm_getphybus_struct( )
 !!if_off
-   use phymem,             only: phymeta, phyvar, phymem_find
+   use phymem,             only: phymeta, phymem_find, phymem_getmeta
    use chm_utils_mod,      only: chm_lun_out, global_debug, chm_stop, &
                                  chm_msg_debug
    use chm_phyvar_mod
@@ -56,8 +56,7 @@ subroutine chm_getphybus_struct( )
 !
 ! Local variables
 !
-   integer(kind=4)   :: istat
-   type(phyvar) :: myvar(1)
+   integer(kind=4)   :: istat, idxv1(1)
    type(phymeta), pointer :: vmeta
    logical(kind=4)   :: local_dbg
 !
@@ -66,43 +65,43 @@ subroutine chm_getphybus_struct( )
    local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
 !
 !  Get PHYS. (surface) buses- search vname F_npath='V' through F_bpath buses
-   istat = phymem_find(myvar, 'SNODP', F_npath='V', &
+   istat = phymem_find(idxv1, 'SNODP', F_npath='V', &
                        F_bpath='PDV', F_quiet=.false., F_shortmatch=.false.)
    call chm_stop('chm_getphybus get SNODP', istat)
-   vmeta => myvar(1)%meta
-   snodp = vmeta%i0
+   istat = phymem_getmeta(vmeta, idxv1(1))
+   snodp = vmeta%idxv
 
-   istat = phymem_find(myvar, 'VEGF', F_npath='V', &
+   istat = phymem_find(idxv1, 'VEGF', F_npath='V', &
                        F_bpath='PDV', F_quiet=.false., F_shortmatch=.false.)
    call chm_stop('chm_getphybus get VEGF', istat)
-   vmeta => myvar(1)%meta
-   vegf = vmeta%i0
+   istat = phymem_getmeta(vmeta, idxv1(1))
+   vegf = vmeta%idxv
 
-   istat = phymem_find(myvar, 'PSN', F_npath='V', &
+   istat = phymem_find(idxv1, 'PSN', F_npath='V', &
                        F_bpath='PDV', F_quiet=.false., F_shortmatch=.false.)
    call chm_stop('chm_getphybus get PSN', istat)
-   vmeta => myvar(1)%meta
-   psn = vmeta%i0
+   istat = phymem_getmeta(vmeta, idxv1(1))
+   psn = vmeta%idxv
 
-   istat = phymem_find(myvar, 'WSOIL', F_npath='V', &
+   istat = phymem_find(idxv1, 'WSOIL', F_npath='V', &
                        F_bpath='PDV', F_quiet=.false., F_shortmatch=.false.)
    call chm_stop('chm_getphybus get WSOIL', istat)
-   vmeta => myvar(1)%meta
-   wsoil = vmeta%i0
+   istat = phymem_getmeta(vmeta, idxv1(1))
+   wsoil = vmeta%idxv
 
-   istat = phymem_find(myvar, 'URBAN', F_npath='V', &
+   istat = phymem_find(idxv1, 'URBAN', F_npath='V', &
                        F_bpath='PDV', F_quiet=.false., F_shortmatch=.false.)
    call chm_stop('chm_getphybus get URBAN', istat)
-   vmeta => myvar(1)%meta
-   urban = vmeta%i0
+   istat = phymem_getmeta(vmeta, idxv1(1))
+   urban = vmeta%idxv
 
    if (local_dbg) then
-      write(chm_lun_out, *) 'FROM PHYS PER/VOL BUS:'
-      write(chm_lun_out, *) 'SNODP    -> (offset)  :', snodp
-      write(chm_lun_out, *) 'VEGF     -> (offset)  :', vegf
-      write(chm_lun_out, *) 'PSN      -> (offset)  :', psn
-      write(chm_lun_out, *) 'WSOIL    -> (offset)  :', wsoil
-      write(chm_lun_out, *) 'URBAN    -> (offset)  :', urban
+      write(chm_lun_out, *) 'FROM PHYS surface variable meta%idxv:'
+      write(chm_lun_out, *) 'SNODP    :', snodp
+      write(chm_lun_out, *) 'VEGF     :', vegf
+      write(chm_lun_out, *) 'PSN      :', psn
+      write(chm_lun_out, *) 'WSOIL    :', wsoil
+      write(chm_lun_out, *) 'URBAN    :', urban
       write(chm_lun_out, *) '-----------------------------------------------------'
       write(chm_lun_out, *) ' '
    endif

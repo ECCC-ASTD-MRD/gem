@@ -31,7 +31,7 @@
 ! Projet/Project : GEM-MACH
 ! Fichier/File   : chm_businit.ftn90
 ! Creation       : H. Landry (Janvier 2008)
-! Description    : Initialize chemistry buses by calling gesdict for
+! Description    : Initialize chemistry buses by calling phymem_add for
 !                  any declared field in the master array of species, and
 !                  set the chemistry timestep
 !
@@ -59,6 +59,7 @@ subroutine chm_businit(F_ni, F_nk)
    use chm_ptopo_grid_mod,      only: chm_ni, chm_nk, pm_nk, pm_nkc, nkt, nkc
    use mach_pkg_gas_mod,        only: chm_noy_out_l
    use mach_drydep_mod,         only: chm_lu15_out_l
+   use phymem,                  only: phymem_add
 
    implicit none
 !!if_on
@@ -67,14 +68,14 @@ subroutine chm_businit(F_ni, F_nk)
 !
 ! Local variables
 !
-   logical(kind=4)   :: local_dbg, iverb
+   logical(kind=4)   :: local_dbg, iverb, idxv
    integer(kind=4)   :: i, ent_offset
    integer(kind=4), parameter          :: maxtr3d = 250
    integer(kind=4), dimension(maxtr3d) :: build_me_species_index
 !
 !  External subroutines
 !
-   external gesdict, physeterror
+   external physeterror
    call msg_verbosity_get(iverb)
    if (chm_debug_trace_L) call msg_verbosity(chm_msg_debug)
    call msg_toall(chm_msg_debug, 'CHEM chm_businit [BEGIN]')
@@ -135,143 +136,120 @@ subroutine chm_businit(F_ni, F_nk)
       end if
 
       if (species_master(i) % per_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                     &
-                      species_master(i) % PER_OFFSET, &
-                      species_master(i) % per_string  )
+         idxv = phymem_add(species_master(i) % per_string, &
+                           species_master(i) % PER_OFFSET)
       end if
 
       if (species_master(i) % out_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                     &
-                      species_master(i) % OUT_OFFSET, &
-                      species_master(i) % out_string  )
+         idxv = phymem_add(species_master(i) % out_string, &
+                           species_master(i) % OUT_OFFSET)
       end if
 
       if (species_master(i) % ae_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % AE_OFFSET, &
-                      species_master(i) % ae_string  )
+         idxv = phymem_add(species_master(i) % ae_string, &
+                           species_master(i) % AE_OFFSET)
       end if
 
       if (species_master(i) % fae_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                     &
-                      species_master(i) % FAE_OFFSET, &
-                      species_master(i) % fae_string  )
-      end if
+         idxv = phymem_add(species_master(i) % fae_string, &
+                           species_master(i) % FAE_OFFSET)
+     end if
 
       if (species_master(i) % mae_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                     &
-                      species_master(i) % MAE_OFFSET, &
-                      species_master(i) % mae_string  )
+         idxv = phymem_add(species_master(i) % mae_string, &
+                           species_master(i) % MAE_OFFSET)
       end if
 
       if (species_master(i) % be_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % BE_OFFSET, &
-                      species_master(i) % be_string  )
+         idxv = phymem_add(species_master(i) % be_string, &
+                           species_master(i) % BE_OFFSET)
       end if
 
       if (species_master(i) % bd_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % BD_OFFSET, &
-                      species_master(i) % bd_string  )
+         idxv = phymem_add(species_master(i) % bd_string, &
+                           species_master(i) % BD_OFFSET)
       end if
 
       if (species_master(i) % bdt_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % BDT_OFFSET, &
-                      species_master(i) % bdt_string  )
+         idxv = phymem_add(species_master(i) % bdt_string, &
+                           species_master(i) % BDT_OFFSET)
       end if
-      
+
       if (species_master(i) % gep_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % GEP_OFFSET, &
-                      species_master(i) % gep_string  )
+         idxv = phymem_add(species_master(i) % gep_string, &
+                           species_master(i) % GEP_OFFSET)
       end if
 
       if (species_master(i) % epd_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % EPD_OFFSET, &
-                      species_master(i) % epd_string  )
+         idxv = phymem_add(species_master(i) % epd_string, &
+                           species_master(i) % EPD_OFFSET)
       end if
 
       if (species_master(i) % epa_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % EPA_OFFSET, &
-                      species_master(i) % epa_string  )
+         idxv = phymem_add(species_master(i) % epa_string, &
+                           species_master(i) % EPA_OFFSET)
       end if
 
       if (species_master(i) % sph_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % SPH_OFFSET, &
-                      species_master(i) % sph_string  )
+         idxv = phymem_add(species_master(i) % sph_string, &
+                           species_master(i) % SPH_OFFSET)
       end if
-      
+
       if (species_master(i) % vd_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % VD_OFFSET, &
-                      species_master(i) % vd_string  )
+         idxv = phymem_add(species_master(i) % vd_string, &
+                           species_master(i) % VD_OFFSET)
       end if
 
       if (species_master(i) % vdg_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % VDG_OFFSET, &
-                      species_master(i) % vdg_string  )
+         idxv = phymem_add(species_master(i) % vdg_string, &
+                           species_master(i) % VDG_OFFSET)
       end if
 
       if (species_master(i) % ra_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % RA_OFFSET, &
-                      species_master(i) % ra_string  )
+         idxv = phymem_add(species_master(i) % ra_string, &
+                           species_master(i) % RA_OFFSET)
       end if
 
       if (species_master(i) % rb_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % RB_OFFSET, &
-                      species_master(i) % rb_string  )
+         idxv = phymem_add(species_master(i) % rb_string, &
+                           species_master(i) % RB_OFFSET)
       end if
 
       if (species_master(i) % rc_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % RC_OFFSET, &
-                      species_master(i) % rc_string  )
+         idxv = phymem_add(species_master(i) % rc_string, &
+                           species_master(i) % RC_OFFSET)
       end if
 
       if (species_master(i) % dd_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % DD_OFFSET, &
-                      species_master(i) % dd_string  )
+         idxv = phymem_add(species_master(i) % dd_string, &
+                           species_master(i) % DD_OFFSET)
       end if
 
       if (species_master(i) % wd_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % WD_OFFSET, &
-                      species_master(i) % wd_string  )
+         idxv = phymem_add(species_master(i) % wd_string, &
+                           species_master(i) % WD_OFFSET)
       end if
 
 #if defined(MACH_TENDENCIES)
       if (species_master(i) % td_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % TD_OFFSET, &
-                      species_master(i) % td_string  )
+         idxv = phymem_add(species_master(i) % td_string, &
+                           species_master(i) % TD_OFFSET)
       end if
 
       if (species_master(i) % tp_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % TP_OFFSET, &
-                      species_master(i) % tp_string  )
+         idxv = phymem_add(species_master(i) % tp_string, &
+                           species_master(i) % TP_OFFSET)
       end if
 
       if (species_master(i) % tg_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                    &
-                      species_master(i) % TG_OFFSET, &
-                      species_master(i) % tg_string  )
+         idxv = phymem_add(species_master(i) % tg_string, &
+                           species_master(i) % TG_OFFSET)
       end if
 #endif
 
       if (species_master(i) % dyn_name /= UNASSIGNED) then
-         call gesdict(F_ni, F_nk,                     &
-                      species_master(i) % DYN_OFFSET, &
-                      species_master(i) % dyn_string  )
+         idxv = phymem_add(species_master(i) % dyn_string, &
+                           species_master(i) % DYN_OFFSET)
       end if
 
       if (species_master(i) % me_name /= UNASSIGNED) then
@@ -286,7 +264,8 @@ subroutine chm_businit(F_ni, F_nk)
 
 !  Set up entry bus chemistry fields
    do i = 1, ent_vars_num
-      call gesdict(F_ni, F_nk, ent_offset, chem_ent_vars(i) % ent_string)
+      idxv = phymem_add(chem_ent_vars(i) % ent_string, &
+                        ent_offset)
       if (local_dbg) then
          write (chm_lun_out, *) "Chemistry entry fields Index: ", &
                                  i, chem_ent_vars(i) % ent_name

@@ -20,7 +20,8 @@
 
 module mach_pkg_tendencies_mod
 #if defined(MACH_TENDENCIES)
-   use chm_utils_mod,        only: chm_lun_out, global_debug, NOMV_LEN, LONG_VARNAME
+   use chm_utils_mod,        only: chm_lun_out, global_debug, NOMV_LEN, LONG_VARNAME, &
+                                   CHM_MSG_DEBUG
    use chm_species_idx_mod
    use chm_species_info_mod, only: sm, UNASSIGNED, nb_dyn_tracers
    use chm_ptopo_grid_mod,   only: chm_ni, chm_nk
@@ -51,6 +52,7 @@ module mach_pkg_tendencies_mod
       logical(kind=4)                    :: local_dbg
 
       local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
+      call msg_toall(CHM_MSG_DEBUG, 'pkg_tendencies_metainit [BEGIN]')
 
       if (local_dbg) then
          write (chm_lun_out, *) "Entering pkg_tendencies_metainit"
@@ -82,6 +84,7 @@ module mach_pkg_tendencies_mod
       if (local_dbg) then
          write (chm_lun_out) "Leaving pkg_tendencies_metainit"
       end if
+      call msg_toall(CHM_MSG_DEBUG, 'pkg_tendencies_metainit [END]')
 
    end subroutine pkg_tendencies_metainit
 
@@ -103,6 +106,7 @@ module mach_pkg_tendencies_mod
       logical(kind=4) local_dbg
 
       local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
+      call msg_toall(CHM_MSG_DEBUG, 'tendencies_store [BEGIN]')
 
       if (local_dbg) then
          write (chm_lun_out, *) "Entering tendency_store"
@@ -147,6 +151,7 @@ module mach_pkg_tendencies_mod
       if (local_dbg) then
          write (chm_lun_out, *) "Leaving tendency_store"
       end if
+      call msg_toall(CHM_MSG_DEBUG, 'tendencies_store [END]')
 
    end subroutine tendency_store
 
@@ -169,6 +174,7 @@ module mach_pkg_tendencies_mod
       logical(kind=4) local_dbg
 
       local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
+      call msg_toall(CHM_MSG_DEBUG, 'tendencies_delta [BEGIN]')
 
       if (local_dbg) then
          write (chm_lun_out, *) "Entering tendency_delta"
@@ -216,6 +222,7 @@ module mach_pkg_tendencies_mod
       if (local_dbg) then
          write (chm_lun_out, *) "Leaving tendency_delta"
       end if
+      call msg_toall(CHM_MSG_DEBUG, 'tendencies_delta [END]')
    end subroutine tendency_delta
 
 

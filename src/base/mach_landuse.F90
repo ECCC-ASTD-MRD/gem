@@ -78,10 +78,11 @@
 !==============================================================================
 !
 !!if_on
-subroutine mach_landuse(busper, metvar2d, landuse_out)
+subroutine mach_landuse(pvars, metvar2d, landuse_out)
    use chm_ptopo_grid_mod,  only: chm_ni
    use chm_metvar_mod,      only: SIZE_MV2D
    use mach_drydep_mod,     only: lucprm
+   use phymem,              only: phyvar
 !!if_off
    use chm_utils_mod,       only: chm_lun_out, global_debug, ik, chm_error_l
    use chm_metvar_mod,      only: MV2D_GLSEA, MV2D_SNODP, MV2D_SNOF
@@ -90,7 +91,7 @@ subroutine mach_landuse(busper, metvar2d, landuse_out)
    use sfc_options,         only: schmurb
    implicit none
 !!if_on
-   real(kind=4),    dimension(:), pointer, contiguous :: busper
+   type(phyvar),    pointer, contiguous :: pvars(:)
    real(kind=4),    intent   (in) :: metvar2d   (chm_ni, SIZE_MV2D)
    real(kind=4),    intent  (out) :: landuse_out(chm_ni, lucprm)
 !!if_off
@@ -102,7 +103,7 @@ subroutine mach_landuse(busper, metvar2d, landuse_out)
    real(kind=4)                    :: glsea, snof
    real(kind=4)                    :: qchange, nwluf13, nwluf14, lufsum
    real(kind=4), parameter         :: tolerance = 0.01
-   integer(kind=4)                 :: i, j
+   integer(kind=4)                 :: i, j, this_ik
    logical(kind=4)                 :: local_dbg
 
    local_dbg = ((.false. .or. global_debug) .and. (chm_lun_out > 0))
@@ -111,20 +112,17 @@ subroutine mach_landuse(busper, metvar2d, landuse_out)
       write (chm_lun_out, *) 'Remapping of 26 landuse types to 15 landuse categories'
    end if
 !
-! Load vegetation fraction from permanent bus
-!
-   do j = 1, 26
-      do i = 1, chm_ni
-         metvar_vegf(i, j) = busper(vegf + ik(i, j, chm_ni))
-      end do
-   end do
+!  do j = 1, 26
+!     do i = 1, chm_ni
+!        this_ik = ik(i, j, chm_ni) + 1
+!        metvar_vegf(i, j) = pvars(vegf)%data(this_ik)
+!     enddo
+!  end do
+   metvar_vegf(:,:) = reshape(pvars(vegf)%data,(/chm_ni,26/))
 
   ! Update the URBAN fraction if running with 'TEB'
-   if (schmurb == 'TEB') then
-      do i = 1, chm_ni
-         metvar_vegf(i, 21) = busper(urban + i - 1)
-      end do
-   end if
+   if (schmurb == 'TEB')  &
+      metvar_vegf(:, 21) = pvars(urban)%data(:)
 
    do i = 1, chm_ni
       landuse_out(i,  1) = metvar_vegf(i,  4)

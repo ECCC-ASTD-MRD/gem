@@ -386,7 +386,7 @@ module mach_cam_utils_mod
       igs_O3   = post_increment(idx)
 
 ! Generic pointer to the organic peroxide gas specie
-      if (chm_pkg_gas_s(1:5) == 'ADOM2') then
+      if (chm_pkg_gas_s(1:5) == 'ADOM2' .or. chm_pkg_gas_s(1:3) == 'NIL') then
          sp_gooH = sp_ROOH
       else if (chm_pkg_gas_s(1:7) == 'SAPRC07') then
          sp_gooH = sp_XOOH
