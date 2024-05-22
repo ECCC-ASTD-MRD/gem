@@ -47,6 +47,7 @@ subroutine iau_apply (F_kount)
    use step_options
    use var_gmm
    use VERgrid_options, only: VGRID_M_S, VGRID_T_S
+   use rstr, only: Rstri_rstn_L
 
    use omp_timing
    implicit none
@@ -107,7 +108,8 @@ subroutine iau_apply (F_kount)
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
 
-   if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
+   if (Iau_period<=0. .or. Iau_interval<=0.) return
+
    call gtmg_start(50, 'IAU', 1)
 
    ptopo_iotype = PTOPO_IODIST
@@ -273,6 +275,9 @@ subroutine iau_apply (F_kount)
 
    end if IF_INIT
    
+   if (Cstv_dt_8*F_kount > Iau_period) return
+   if (F_kount == 0 .and. Rstri_rstn_L) return
+
    !# Update reference surface field for vgrid
    istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=rfld_S, &
         F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
