@@ -18,8 +18,8 @@ else
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20230906
-. r.load.dot rpn/utils/20230906
+. r.load.dot rpn/libs/20231219
+. r.load.dot rpn/utils/20231219
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
 
