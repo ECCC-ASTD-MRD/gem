@@ -25,9 +25,9 @@
 #define PHYVAR2DC(NAME, DESC, COND) if (COND) PHYVAR2D1(NAME, DESC)
 #define PHYVAR3DC(NAME, DESC, COND) if (COND) PHYVAR3D1(NAME, DESC)
 #define PHYVAR4DC(NAME, DESC, COND) if (COND) PHYVAR4D1(NAME, DESC)
-#define PHYVAR2DK(NAME, DESC, KEYWORD) PHYVAR2DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
-#define PHYVAR3DK(NAME, DESC, KEYWORD) PHYVAR3DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
-#define PHYVAR4DK(NAME, DESC, KEYWORD) PHYVAR4DC(NAME, DESC, any(bb_keylist(:bb_n) == KEYWORD))
+#define PHYVAR2DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC//" ; VS=A", F_flags=KEYWORD)
+#define PHYVAR3DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
+#define PHYVAR4DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
 
 #endif
 #endif

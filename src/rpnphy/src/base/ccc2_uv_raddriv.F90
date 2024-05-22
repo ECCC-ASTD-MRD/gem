@@ -30,7 +30,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
      fa, mrk2, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
-   use phy_options, only: RAD_NUVBRANDS, rad_atmpath, rad_sun_angle_fix_l
+   use phy_options, only: RAD_NUVBRANDS, rad_atmpath
    use ens_perturb, only: ens_nc2d
    implicit none
 !!!#include <arch_specific.hf>
@@ -404,7 +404,7 @@ include "nocld.cdk"
       ilg1=1
       ilg2=lengath
 
-      ! Set the effecitve solar path length
+      ! Set the effective solar path length
       select case (rad_atmpath)
       case ('RODGERS67')
          do i=ilg1,ilg2
@@ -417,12 +417,11 @@ include "nocld.cdk"
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
-      if (.not.rad_sun_angle_fix_l) then
-         rmu0(ilg1:ilg2) = rmug(ilg1:ilg2)
-      else
-         rmu0(ilg1:ilg2) = rmu(ilg1:ilg2)
-      endif
-      
+! for TOA fluxes, need non normalized solar angle(rmu and not rmug)
+      do i=ilg1,ilg2
+          j = isun(i)
+          rmu0(i) = rmu(j)
+      enddo 
       DO230: do i = ilg1, ilg2
          j = isun(i)
          mcontg(i)               =  mcont(j) !mcontg is subset of mcont

@@ -23,7 +23,7 @@ contains
 
    !/@*
    subroutine gwd9(pvars, std_p_prof, tau, kount, ni, nk, nkm1, trnch)
-      use tdpack, only: CAPPA
+      use tdpack, only: CAPPA, PI
       use debug_mod, only: init2nan
       use phy_options
       use phy_status, only: phy_error_L
@@ -80,9 +80,10 @@ contains
 
       integer :: j, k
       logical :: split_tend_L
+      real :: lat1, lat2, val1, val2, lat
 
       real, pointer, dimension(:), contiguous   :: p, zdhdxdy, zdhdx, zdhdy, &
-           zlhtg, zmg, zmtdir, zslope, zxcent, ztdmaskxdt
+           zlhtg, zmg, zmtdir, zslope, zxcent, ztdmaskxdt, zdlat
       real, pointer, dimension(:,:), contiguous :: u, v, ztplus, s, rug, rvg, rtg, run, rvn, &
            rtn, zhuplus, zugwdtd1, zvgwdtd1, zmrk2
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
@@ -107,6 +108,7 @@ contains
       MKPTR1D(zslope, slope, pvars)
       MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(zxcent, xcent, pvars)
+      MKPTR1D(zdlat, dlat, pvars)
 
       MKPTR2DN(rtg, tgwd, ni, nkm1, pvars)
       MKPTR2DN(rtn, tgno, ni, nkm1, pvars)
@@ -186,7 +188,26 @@ contains
          call vint_thermo2mom(tvirtmom, tvirt, zvcoef, ni, nkm1)
 
          ! Retrieve stochastic parameter information on request
-         rmscons(:) = ens_spp_get('rmscon', zmrk2, default=rmscon)
+         rmscons = ens_spp_get('rmscon', zmrk2, default=rmscon)
+
+         ! Modulate rmscons with latitude
+         IF_RMSCONLAT: if (all(rmscon_lat_weights >= 0.)) then
+            lat1 = rmscon_lat_weights(1)
+            lat2 = rmscon_lat_weights(2)
+            val1 = rmscon_lat_weights(3)
+            val2 = rmscon_lat_weights(4)
+            do j=1,ni
+               lat = abs(zdlat(j)*180./PI)
+               if (lat >= lat2)then
+                  rmscons(j) = rmscons(j) * val2
+               else if (lat <= lat1)then
+                  rmscons(j) = rmscons(j) * val1
+               else
+                  rmscons(j) = rmscons(j) * ( &
+                       val2 + (lat2-lat)*(val1-val2)/(lat2-lat1))
+               end if
+            end do
+         endif IF_RMSCONLAT
          
          call gwspectrum6(s, sh, p, tvirt, &
               tvirtmom, u, v, rvn, run, hines_flux_filter, &

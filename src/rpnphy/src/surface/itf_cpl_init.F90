@@ -14,10 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_istat)
+#ifdef HAVE_NEMO   
    use cpl_itf, only: cpl_init
    use phygridmap, only: drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, phydim_nk
    use sfc_options
+#endif
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -31,23 +33,14 @@ function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_ista
    !@authors    Francois Roy -- spring 2014
    !@revision
    ! v4_70 - Roy, F.  - initial version
-
-   integer :: istat
    !---------------------------------------------------------------
    F_istat = 0
-   if (.not.cplocn) return
-
-   istat = cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
+#ifdef HAVE_NEMO   
+   F_istat = cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
         drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, &
         phydim_nk, z0mtype, z0ttype, Z0TLAT)
-
-   if (istat < 0) then
-      F_istat = -1
-   else
-      cplocn = (istat == 1)
-      F_istat = 0
-   endif
+#endif
    !---------------------------------------------------------------
    return
 end function itf_cpl_init

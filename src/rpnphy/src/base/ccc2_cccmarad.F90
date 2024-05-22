@@ -45,6 +45,7 @@ contains
       use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
       use ens_perturb, only: ens_spp_get
       use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
+      use suncos, only: suncos3
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -111,7 +112,6 @@ contains
       include "tables.cdk"
       include "phyinput.inc"
 
-      logical, parameter :: SLOPE_L = .true.
       logical, parameter :: DO_UV_ONLY = .true.
       real, parameter :: seuil = 1.e-3
       
@@ -142,7 +142,6 @@ contains
       integer :: il1, il2
       character(len=1) :: niuv
 
-      real, dimension(ni) :: dummy1, dummy2, dummy3, dummy4
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       
@@ -171,7 +170,7 @@ contains
       call init2nan(shtj, tfull, co2, f113, f114, o2, salb)
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
       call init2nan(omcl, gcl)
-      call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
+      call init2nan(vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
       call init2nan(dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
       
       ! use integer variables instead of actual integers
@@ -334,8 +333,7 @@ contains
       julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
 
       ! cosine of solar zenith angle at greenwich hour
-      call suncos2(rmu0, dummy1, dummy2, dummy3, dummy4, ni, &
-           zdlat, zdlon, hz, julien, .not.SLOPE_L)
+      call suncos3(rmu0, ni, zdlat, zdlon, hz, julien)
       if (phy_error_L) return
 
       ! calculate the variation of solar constant
@@ -361,8 +359,7 @@ contains
             hz_8 = day_reminder / 360000.0d0
             hz  = hz_8
 
-            call suncos2(rmu2, dummy1, dummy2, dummy3, dummy4, ni, &
-                 zdlat, zdlon, hz, julien, .not.SLOPE_L)
+            call suncos3(rmu2, ni, zdlat, zdlon, hz, julien)
             if (phy_error_L) return
 
             avgcos = (rmu0 + rmu2) * 0.5
@@ -574,10 +571,10 @@ contains
             ! moduler les flux et les taux par le cosinus de l'angle solaire.
             ! rapport des cosinus : angle actuel sur angle moyen.
 
-            v1(i) = rmu0(i) / zcosas(i)
-            v1(i) = min(v1(i), 2.0)
-            zvv1(i)= v1(i)
             if (thold(i)) then
+               v1(i) = rmu0(i) / zcosas(i)
+               v1(i) = min(v1(i), 2.0)
+               zvv1(i)= v1(i)
                zfdss(i)     = zfdss0(i)         * v1(i)
                zev(i)       = zev0(i)           * v1(i)
                zflusolis(i) = (zfsd0(i)+zfsf0(i)) * v1(i)
@@ -620,10 +617,10 @@ contains
 
          thold=(zcosas > seuil .and. rmu0 > seuil)
          do i=1, ni
-            v1(i) = rmu0(i) / zcosas(i)
-            v1(i) = min(v1(i), 2.0)
-            zvv1(i)= v1(i)
             if (thold(i)) then
+               v1(i) = rmu0(i) / zcosas(i)
+               v1(i) = min(v1(i), 2.0)
+               zvv1(i)= v1(i)
                zfdss(i)     = zfdss0(i)         * v1(i)
                zev(i)       = zev0(i)           * v1(i)
                zflusolis(i) = (zfsd0(i)+zfsf0(i))  * v1(i)
@@ -757,8 +754,7 @@ contains
          hz_8 = day_reminder / 360000.0d0
          hz  = hz_8
 
-         call suncos2(rmu1, dummy1, dummy2, dummy3, dummy4, ni, &
-                      zdlat, zdlon, hz, julien, .not.SLOPE_L)
+         call suncos3(rmu1, ni, zdlat, zdlon, hz, julien)
          if (phy_error_L) return
 
          step=step+kntrad-1
@@ -768,8 +764,7 @@ contains
          hz_8 = day_reminder / 360000.0d0
          hz  = hz_8
 
-         call suncos2(rmu2, dummy1, dummy2, dummy3, dummy4, ni, &
-              zdlat, zdlon, hz, julien, .not.SLOPE_L)
+         call suncos3(rmu2, ni, zdlat, zdlon, hz, julien)
          if (phy_error_L) return
 
          avgcos = (rmu1 + rmu2) * 0.5

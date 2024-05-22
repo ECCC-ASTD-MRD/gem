@@ -14,8 +14,12 @@
 !---------------------------------- LICENCE END --------------------------------
 
 module phy_restart_mod
-   use clib_itf_mod, only: clib_toupper
+  use clib_itf_mod, only: clib_toupper
+
+#ifdef HAVE_NEMO
   use cpl_itf, only: cpl_restart
+#endif
+
   implicit none
   private
   public :: phy_restart
@@ -59,9 +63,10 @@ contains
        print *, 'F_spin_L ignored'
     endif
 
+#ifdef HAVE_NEMO
 ! coupling may have something to do for restart
-
     call cpl_restart(WorR_S)
+#endif
 
     F_istat = RMN_OK
 

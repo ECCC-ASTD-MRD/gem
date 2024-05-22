@@ -303,7 +303,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(draindens,    'VN=draindens    ;ON=DRND;VD=drainage density (m/m2)                                           ;VB=p1')
       PHYVAR2D1(eflux,        'VN=eflux        ;ON=EFLX;VD=specific hum. flux (=-alfaq)                                      ;VB=v0')
       PHYVAR2D1(eg,           'VN=eg           ;ON=EG  ;VD=evapo. rate over bare grnd(no frac)                               ;VB=v0')
-      PHYVAR2D1(emis,         'VN=emis         ;ON=EMI1;VD=emissivity of nat surface                                         ;VB=p0')
+      PHYVAR2D1(emis,         'VN=emis         ;ON=EMI1;VD=average natural land sfc emissivity (with snow)                   ;VB=p0')
       PHYVAR2D1(emisgr,       'VN=emisgr       ;ON=EMGR;VD=emissivity of bare ground                                         ;VB=p0')
       PHYVAR2D1(emistg,       'VN=emistg       ;ON=EMTG;VD=emissivity land surface with no snow (read-in)                    ;VB=p0')
       if (read_emis) &

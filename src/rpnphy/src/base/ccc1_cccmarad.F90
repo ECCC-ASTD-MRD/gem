@@ -43,6 +43,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use ens_perturb, only: ens_spp_get
+      use suncos, only: suncos3
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -111,7 +112,6 @@ contains
       include "ccc_tracegases.cdk"
       include "tables.cdk"
 
-      logical, parameter :: SLOPE_L = .true.
       real, parameter :: seuil = 1.e-3
 
       external :: ccc1_ckdlw, ccc1_ckdsw, ccc_dataero, ccc_tracedata
@@ -141,7 +141,6 @@ contains
       integer :: il1,il2
       character(len=1) :: niuv
 
-      real, dimension(ni) :: dummy1,dummy2,dummy3,dummy4
       real, dimension(ni) :: vmod2,vdir,th_air,my_tdiag,my_udiag,my_vdiag
 
       real, target :: dummy1d(ni)
@@ -166,7 +165,7 @@ contains
       call init2nan(shtj, tfull, salb)
       call init2nan(tauae, exta, exoma, exomga, fa, taucs, omcs, gcs, absa, taucl)
       call init2nan(omcl, gcl)
-      call init2nan(dummy1, dummy2, dummy3, dummy4, vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
+      call init2nan(vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
       
       !  use integer variables instead of actual integers
 
@@ -225,8 +224,7 @@ contains
 
       ! cosine of solar zenith angle at greenwich hour
 
-      call suncos2(rmu0, dummy1, dummy2, dummy3, dummy4, ni, &
-           zdlat, zdlon, hz, julien, .not.SLOPE_L)
+      call suncos3(rmu0, ni, zdlat, zdlon, hz, julien)
 
       ! calculate cloud optical properties and dependent diagnostic
       ! cloud variables
@@ -359,8 +357,7 @@ contains
          hz_8 = day_reminder / 360000.0d0
          hzp = hz_8
 
-         call suncos2(zcosas, dummy1, dummy2, dummy3, dummy4, ni, &
-              zdlat, zdlon, hzp, julien, .not.SLOPE_L)
+         call suncos3(zcosas, ni, zdlat, zdlon, hzp, julien)
 
          do i = 1, ni
             ! albedo (6% to 80%), temporally set the same for all 4 band

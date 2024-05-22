@@ -50,7 +50,6 @@ module sfc_options
    logical           :: atm_external = .false.
    logical           :: atm_tplus  = .false.
    logical           :: climat     = .false.
-   logical           :: cplocn     = .false.
    real              :: delt       = 0.
    integer(INT64)  :: jdateo     = 0
    logical           :: rad_off    = .false.
@@ -125,11 +124,27 @@ module sfc_options
    !# * No PSN factor for meting and freezing
    logical           :: isba_melting_fix = .false.
    namelist /surface_cfgs/ isba_melting_fix
-
+   
+   !# Snow melt/freeze under vegetation impact T2 instead of TST
+   logical           :: isba_snow_melt_t2veg = .false.
+   namelist /surface_cfgs/ isba_snow_melt_t2veg
+   
    !# Use the vegetation-only roughness length to compute vegetation snow fraction
    logical           :: isba_snow_z0veg = .false.
    namelist /surface_cfgs/ isba_snow_z0veg
 
+   !# Computation of bare ground snow fraction
+   !# * 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)
+   !# * 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991
+   !# * 'SVS1'  : Use the same definition as in SVS1
+   character(len=16)           :: isba_snowfrac_bare = 'NIL'
+   namelist /surface_cfgs/ isba_snowfrac_bare
+   character(len=*), parameter :: ISBA_SNOWFRAC_BARE_OPT(3) = (/ &
+        'NIL   ', &
+        'PHY98 ', &
+        'SVS1  '  &
+        /)
+   
    !# Emissivity for bare soil (ISBA scheme only)
    !# * '_constant_' : A fixed floating point value used as a constant
    !# * 'CLIMATO'    : Value read from an input climatology file (EMIB)

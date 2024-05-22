@@ -502,6 +502,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 !  runoff -- aggregated with all other surface tiles. Convert to mm
         zrunofftot(i) = xrunoff(i) * dt
         zalscatw (i)  = psca_alb   (i,1)
+        zemisr (i)     = pemis   (i)
         zemtw (i)     = pemis   (i)
         ztsradtw (i ) = ptrad   (i)
       end do
