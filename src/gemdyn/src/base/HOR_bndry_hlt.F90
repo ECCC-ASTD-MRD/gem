@@ -23,6 +23,8 @@
       use mem_tracers
       use gmm_pw
       use tr3d
+      use spn_options
+      
       implicit none
 #include <arch_specific.hf>
 
@@ -75,6 +77,12 @@
          end if
       end do
       endif
+
+!$omp single
+      if (Grd_yinyang_L .and. Spn_ON_L) call spn_main ()
+!$omp end single
+
+
 !
 !     ---------------------------------------------------------------
 !

@@ -28,9 +28,9 @@ module itf_phy_filter
 
    ! Module variables
    integer, save :: hw = 0                           !Filter half-width (gridpoints)
-   real, pointer, save :: wt_gauss1(:,:,:) => NULL() !Filter weights for each point
-   real, pointer, save :: wt_gauss2(:,:,:) => NULL() !Filter weights for each point
-   real, pointer, save :: wt_gauss3(:,:,:) => NULL() !Filter weights for each point
+   real, pointer, contiguous, save :: wt_gauss1(:,:,:) => NULL() !Filter weights for each point
+   real, pointer, contiguous, save :: wt_gauss2(:,:,:) => NULL() !Filter weights for each point
+   real, pointer, contiguous, save :: wt_gauss3(:,:,:) => NULL() !Filter weights for each point
    logical, save :: initialized = .false.            !Status indicators for package
 
    ! Public API
@@ -103,8 +103,8 @@ contains
       implicit none
 
       ! Argument declaration
-      real, intent(in) :: F_sig               !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
-      real, pointer :: F_weight(:,:,:)        !Filter weight stencil
+      real, intent(in) :: F_sig                     !Standard deviation of Gaussian filter (increase for more smoothing) [1 gridpoint]
+      real, pointer, contiguous :: F_weight(:,:,:)  !Filter weight stencil
 
       ! Local variables
       integer :: i,j,ii,jj,cnt
@@ -318,7 +318,7 @@ contains
       ! Local variables
       integer :: i,j,k,ii,jj,cnt
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,F_nk) :: ifld
-      real, dimension(:,:,:), pointer :: wt_gauss
+      real, dimension(:,:,:), pointer, contiguous :: wt_gauss
 
       ! Initialize return status
       F_status = RMN_ERR
@@ -353,18 +353,18 @@ contains
       end if
 
       ! Apply smoothing
-      F_ofld = 0.
 !$omp parallel private(k,j,i,cnt,ii,jj) shared(hw,wt_gauss,ifld)
 !$omp do
       do k=1,F_nk
-         do j=Grd_lphy_j0,Grd_lphy_jn
-            do i=Grd_lphy_i0,Grd_lphy_in
-               cnt = 0
-               do jj=-hw,hw
-                  do ii=-hw,hw
-                     cnt = cnt+1
+         F_ofld(:,:,k) = 0.
+         cnt = 0
+         do jj=-hw,hw
+            do ii=-hw,hw
+               cnt = cnt+1
+               do j=Grd_lphy_j0,Grd_lphy_jn
+                  do i=Grd_lphy_i0,Grd_lphy_in
                      F_ofld(i,j,k) = F_ofld(i,j,k) + wt_gauss(i,j,cnt)*ifld(i+ii,j+jj,k)
-                 end do
+                  end do
                end do
             end do
          end do

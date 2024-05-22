@@ -120,6 +120,8 @@
       call out_outdir()
 
       call iau_apply (0)
+      
+      call nudge_read (0,Lctl_step)
 
       if ( Ctrl_phyms_L ) call itf_phy_step (0,Lctl_step)
 

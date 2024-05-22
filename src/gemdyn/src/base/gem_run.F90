@@ -110,6 +110,8 @@
          call canonical_cases ("ERR")
 
          call iau_apply (Step_kount)
+         
+         call nudge_read (Step_kount, Lctl_step)
 
          if (Grd_yinyang_L .and. Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL') then
             call yyg_xchng_all()
