@@ -21,7 +21,6 @@ function sfc_nml2(F_namelist) result(F_istat)
    use str_mod, only: str_concat, str_toreal
    use sfc_options
    use sfcbus_mod
-   use cpl_itf, only: cpl_nml
    use sfclayer, only: sl_put, SL_OK
    implicit none
 !!!#include <arch_specific.hf>
@@ -40,7 +39,6 @@ function sfc_nml2(F_namelist) result(F_istat)
 
    integer, parameter :: SFC_NML_ERR = RMN_ERR
    integer, parameter :: SFC_NML_OK  = RMN_OK + 1
-   integer, parameter :: CPL_NML_OK  = 1
 
    integer :: err, unout
    !-------------------------------------------------------------------
@@ -57,13 +55,6 @@ function sfc_nml2(F_namelist) result(F_istat)
    if (.not.RMN_IS_OK(err)) return
 
    unout = msg_getUnit(MSG_INFO)
-   err   = cpl_nml(F_namelist, unout)
-   if (.not.RMN_IS_OK(err)) then
-      call msg(MSG_ERROR,'(sfc_nml) Probleme in cpl_nml')
-      return
-   endif
-   cplocn = (err ==  CPL_NML_OK)
-   if (cplocn) err = cpl_nml('print', unout)
 
    F_istat = SFC_NML_OK
    !-------------------------------------------------------------------
@@ -150,6 +141,7 @@ contains
       istat = clib_toupper(sl_func_unstab)
       istat = clib_toupper(snow_emiss)
       istat = clib_toupper(isba_soil_emiss)
+      istat = clib_toupper(isba_snowfrac_bare)
       istat = clib_toupper(soiltext)
       istat = clib_toupper(vf_type)
       istat = clib_toupper(water_emiss)
@@ -186,6 +178,12 @@ contains
       if (.not.any(diusst == DIUSST_OPT)) then
          call str_concat(msg_S, DIUSST_OPT,', ')
          call msg(MSG_ERROR,'(sfc_nml_check) diusst = '//trim(diusst)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+      
+      if (.not.any(isba_snowfrac_bare == ISBA_SNOWFRAC_BARE_OPT)) then
+         call str_concat(msg_S, ISBA_SNOWFRAC_BARE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) diusst = '//trim(isba_snowfrac_bare)//' : Should be one of: '//trim(msg_S))
          return
       endif
 

@@ -22,6 +22,9 @@ module phy_nml_mod
    use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK, PHY_CTRL_NML_OK, phy_init_ctrl
    use phy_options
    use cnv_options
+#ifdef HAVE_NEMO
+      use cpl_itf, only: cpl_nml
+#endif
    use mixing_length, only: ML_CLOSURES
    private
    public :: phy_nml
@@ -89,6 +92,15 @@ contains
       !# Read surface namelist
       err = sfc_nml2(F_namelist)
       if (.not.RMN_IS_OK(err)) return
+
+#ifdef HAVE_NEMO
+      !# Read coupling namelist and initialize coupling configuration
+      err   = cpl_nml(F_namelist, unout)
+      if (.not.RMN_IS_OK(err)) then
+         call msg(MSG_ERROR, '(phy_nml) Problem reading COUPLING namelist')
+         return
+      endif
+#endif
 
       !# Read convection namelist
       err = cnv_nml2(F_namelist)

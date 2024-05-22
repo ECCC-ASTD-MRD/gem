@@ -165,13 +165,13 @@
 | rad_mpagg_l | use relative weigthing when combining opt props from implicit and explicit clouds | .false. | logical |
 | rad_part_nomp | Phase partition of total water content for radiation when CONSUN is used<br>- 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged<br>- 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931<br>- 'ECMWF' : IFS docu CY25R1<br>- 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991 | 'BOUOPS' | character(len=16) |
 | rad_siglim | For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp<br>TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma;<br>EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; |  |  |
-| rad_sun_angle_fix_l | Fix use of effective solar zenith angle | .false. | logical |
 | rad_sw | Compute and apply tendencies from shortwave radiation | .true. | logical |
 | rad_zlim | For calculation of DIAGNOSTIC low, mid and high TRUE cloud covers in cldoppro and cldoppro_mp with height criteria for Calipso-GOCCP<br>TRUE:      rad_zlim(1)=limit between low and mid clouds in height; rad_zlim(2)=limit between mid and high clouds in height; |  |  |
 | radghg_l | Use climatological values of GHG in radiation (CCCMARAD2 only) | .false. | logical |
 | radia | Radiation scheme<br>- 'NIL      ': no radiation scheme<br>- 'CCCMARAD ': most advanced radiation scheme<br>- 'CCCMARAD2': most advanced radiation scheme v2 | 'NIL' | character(len=16) |
 | radslope | Key for activation of the radiation along slopes | .false. | logical |
 | rmscon | Launching level value of GW RMS wind (m/s) from non-orographic origin | 1.0 | real |
+| rmscon_lat_weights | Latitudes for weight function of rmscon in GWD (/LAT1, LAT2, VAL1, VAL2/)<br>rmscon1 = weight * rmscon<br>if ABS(LAT) <= LAT1: weight = VAL1<br>if ABS(LAT) >= LAT2: weight = VAL2<br>else: weight = VAL2 + (LAT2-ABS(LAT))*(VAL1-VAL2)/(LAT2-LAT1)<br>-1. values means rmscon has constant value (weight=1.) | (/ -1., -1., -1., -1. /) | real |
 | satuco | water/ice phase for saturation calc. if .true.;<br>water phase only for saturation calc. if .false. | .true. | logical |
 | sfcflx_filter_iter | Surface fluxes figital filter, number of iterations | 1 | integer |
 | sfcflx_filter_order | Surface fluxes digital filter order<br>- -1 : No filter<br>- 2 or 4: Apply filter 2nd or 4th order respectively | -1 | integer |
@@ -218,7 +218,9 @@
 | icemelt | Sea ice melting | .false. | logical |
 | impflx | Implicit surface fluxes if .true.; explicit fluxes if .false. | .false. | logical |
 | isba_melting_fix | If .true. apply temporary fix to ISBA<br>- timestep dependent KCOEF<br>- No PSN factor for meting and freezing | .false. | logical |
+| isba_snow_melt_t2veg | Snow melt/freeze under vegetation impact T2 instead of TST | .false. | logical |
 | isba_snow_z0veg | Use the vegetation-only roughness length to compute vegetation snow fraction | .false. | logical |
+| isba_snowfrac_bare | Computation of bare ground snow fraction<br>- 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)<br>- 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991<br>- 'SVS1'  : Use the same definition as in SVS1 | 'NIL' | character(len=16) |
 | isba_soil_emiss |  | -1. | real |
 | isba_zr_freeze | If .true., freeze precipitation reaching the ground in sub-zero conditions | .false. | logical |
 | kdp | OBSOLETE, REPLACED by KHYD !!! WILL BE EVENTUALLY REMOVED<br>Deepest active (permeable) soil layer in SVS land surface scheme (schmsol=SVS) | -1 | integer |

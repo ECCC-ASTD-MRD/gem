@@ -18,7 +18,7 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
      CGSAT, WSAT, WWILT, BCOEF, C1SAT, C2REF, ACOEF, PCOEF, CV, Z0, Z0VEG, &
      CG, ZC1, ZC2, WGEQ, CT, ZCS, PSN, PSNG, PSNV, PSNZ0, Z0TOT, Z0H, Z0HVEG, N)
    use tdpack_const, only: GRAV, PI
-   use sfc_options, only: isba_snow_z0veg
+   use sfc_options, only: isba_snow_z0veg, isba_snowfrac_bare
    implicit none
 !!!#include <arch_specific.hf>
    !@Object
@@ -89,7 +89,7 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
 
    integer i
 
-   real LAMI, CI, DAY, WCRN, BETAS, Z0SNOW
+   real LAMI, CI, DAY, WCRN, BETAS, Z0SNOW, Z0_PSNG
    real LAMTYP, LAMW, CW
    real, dimension(n) :: LAMS, CW1MAX, ETA, WMAX, SIGSQUARE, BETA, &
         X, Z0_PSNV
@@ -107,6 +107,7 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
    WCRN   = 10.0
    BETAS  = 0.408
    Z0SNOW = 0.005
+   Z0_PSNG= 0.03
 
    ! 1.     THE HEAT CAPACITY OF BARE-GROUND
    !         --------------------------------
@@ -168,12 +169,18 @@ subroutine SOILI2(TS, WG, W2, WF, WS, RHOS, VEG, &
    do I=1,N
 
       !# fraction of ground covered by snow
-      if (WS(I).lt.WCRN) then
-         PSNG(I) = WS(I) / WCRN
-      else
-         PSNG(I) = 1.
-      end if
-
+      IF(isba_snowfrac_bare=='PHY98') THEN 
+        PSNG(I) = WS(I) / (WS(I) + WCRN)
+      ELSE IF(isba_snowfrac_bare=='SVS1') THEN 
+        PSNG(I) = WS(I) / (WS(I)+RHOS(I)*5000.*Z0_PSNG)
+      ELSE
+         if (WS(I).lt.WCRN) then
+            PSNG(I) = WS(I) / WCRN
+         else
+            PSNG(I) = 1.
+         end if
+      endif
+         
       !# fraction of vegetation covered by snow
       PSNV(I) = WS(I) / (WS(I)+RHOS(I)*5000.*Z0_PSNV(I))
 

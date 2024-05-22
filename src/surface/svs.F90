@@ -95,6 +95,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: z0m
    real,pointer,dimension(:) :: z0mland   
    real,pointer,dimension(:) :: zdlat
+   real,pointer,dimension(:) :: zemisr
    real,pointer,dimension(:) :: zfcor
    real,pointer,dimension(:) :: zqdiag
    real,pointer,dimension(:) :: zqdiagtyp
@@ -163,6 +164,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       endif
       z0mland  (1:n) => bus( x(z0mland,1,1)      : )
       zdlat    (1:n) => bus( x(dlat,1,1)         : )
+      zemisr   (1:n) => bus( x(emisr,1,1)         : )      
       zfcor    (1:n) => bus( x(fcor,1,1)         : )
       zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
       zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
@@ -467,7 +469,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   bus(x(PSNVHA     ,1,1)),  &   
                   rainrate_mm,bus(x(WVEG   ,1,1)),bus(x(snoma,1,1)),&
                   bus(x(snvma,1,1)),&
-                  bus(x(ALVIS,1,indx_soil)),     & 
+                  bus(x(ALVIS,1,indx_soil)), bus(x(EMIS,1,1)), & 
                   bus(x(RNET_S     ,1,1)),    &   
                   bus(x(FC  ,1,indx_soil)), bus(x(FV  ,1,indx_soil)),   &    
                   bus(x(LEG        ,1,1)) , bus(x(LEV  ,1,1)),    &   
@@ -602,6 +604,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       do i=1,n
 !
 !
+        
+        bus(x(emisr  ,i,1        )) = bus(x(emis ,i,1        ))   
         bus(x(tsurf  ,i,indx_sfc )) = bus(x(tsa  ,i,1        ))
         bus(x(tsrad  ,i,1        )) = TRAD(i)
 !

@@ -7,6 +7,7 @@
       zbt      (1:n) => bus( x( bt,1,indx_urb)    : )
       zdlat    (1:n) => bus( x( dlat,1,1)         : )
       zdlon    (1:n) => bus( x( dlon,1,1)         : )
+      zemisr   (1:n) => bus( x( emisr,1,1)        : )        
       zemtw    (1:n) => bus( x( emtw,1,1)         : )        
       zfc      (1:n) => bus( x( fc,1,indx_urb)    : )
       zfcor    (1:n) => bus( x( fcor,1,1)         : )

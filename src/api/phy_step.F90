@@ -22,12 +22,17 @@ contains
   !/@*
   function phy_step (F_stepcount, F_stepdriver) result(F_istat)
     use wb_itf_mod, only: WB_OK, WB_IS_OK, wb_get
+    use str_mod, only: str_concat
     use series_mod, only: series_stepinit, series_stepend
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-    use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
+    use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L, nphyoutlist, nphystepoutlist, phystepoutlist_S
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb, only: physlb1
+
+#ifdef HAVE_NEMO
     use cpl_itf   , only: cpl_step
+#endif
+
     use ens_perturb, only: ens_spp_stepinit, ENS_OK
     implicit none
 
@@ -50,7 +55,8 @@ contains
 
     integer, save :: pslic
 
-    integer :: istat, sfcflxfilt
+    character(len=1024) :: msg_S, list_S
+    integer :: istat, sfcflxfilt, itmp
     real :: gwd_sig, lhn_sig
     !---------------------------------------------------------------
     F_istat = RMN_ERR
@@ -68,7 +74,7 @@ contains
        return
     endif
 
-    if (F_stepcount == 0) then
+    IF_KOUNT0: if (F_stepcount == 0) then
       if (.not.WB_IS_OK(wb_get('dyn/sgo_tdfilter',gwd_sig))) gwd_sig = -1.
       if (sgo_tdfilter /= gwd_sig) then
          call msg(MSG_ERROR, '(phy_step) sgo_tdfilter requested in but not supported by dyn')
@@ -84,7 +90,7 @@ contains
          call msg(MSG_ERROR, '(phy_step) sfcflx_filter_order requested in but not supported by dyn')
          return
       endif
-    endif
+    endif IF_KOUNT0
 
     istat = series_stepinit(F_stepcount)
     if (.not.RMN_IS_OK(istat)) &
@@ -92,7 +98,23 @@ contains
 
     if (ens_spp_stepinit(F_stepcount) /= ENS_OK) &
          call msg(MSG_ERROR,'(phy_step) Problem in ensemble step init')
-    
+
+    if (.not.associated(phystepoutlist_S)) &
+         allocate(phystepoutlist_S(max(1,nphyoutlist)))
+    istat = wb_get('itf_phy/PHYSTEPOUT_N', nphystepoutlist)
+    if (.not.WB_IS_OK(istat)) nphystepoutlist = 0
+    if (nphystepoutlist > 0) then
+       istat = wb_get('itf_phy/PHYSTEPOUT_V', phystepoutlist_S, itmp)
+       if (.not.WB_IS_OK(istat)) nphystepoutlist = 0
+    endif
+    ! if (nphystepoutlist == 0) then
+    !    list_S = '[No phy output requested for this step]'
+    ! else
+    !    call str_concat(list_S, phystepoutlist_S(1:nphystepoutlist), ', ')
+    ! endif
+    ! write(msg_S, '(a, i8,a,i4,a)') '[step=', F_stepdriver, '] (1:', nphystepoutlist, ')'
+    ! call msg(MSG_INFOPLUS, 'Phy Out Vars '//trim(msg_S)//': '//trim(list_S))
+
     pslic = 0
     step_kount  = F_stepcount
     step_driver = F_stepdriver
@@ -101,7 +123,9 @@ contains
     istat = min(sfc_get_input_param(),istat)
     if (istat /= WB_OK) call msg(MSG_ERROR,'(phy_step)')
 
+#ifdef HAVE_NEMO
     call cpl_step(F_stepcount, F_stepdriver)
+#endif
 
 !$omp parallel
     call physlb1(F_stepcount, phydim_ni, phydim_nj, phydim_nk, pslic)
