@@ -137,6 +137,11 @@ else()
   set(EC_ARCH "${BUILD_ARCH}/${EC_COMPILER}")
 endif()
 
+if(EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
+  configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/GEM_module/VERSION @ONLY)
+  configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/nostage_module/VERSION @ONLY)
+endif()
+
 set(WORK_PREFIX ${ROOT} CACHE FILEPATH "Working environment directory")
 if(DEFINED ENV{GEM_WORK})
     set(WORK_PREFIX "${CMAKE_SOURCE_DIR}/$ENV{GEM_WORK}" CACHE FILEPATH "Working directory prefix" FORCE)
@@ -150,7 +155,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
 list(APPEND BINARIES maingemdm)
-if ((NOT DEFINED ENV{EC_ARCH} ) OR (NOT((WITH_SYSTEM_RPN) OR (CACHE WITH_SYSTEM_RPN) OR ($ENV{WITH_SYSTEM_RPN}))))
+if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode)
@@ -167,6 +172,7 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/share/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
+#    COMMAND cd ${WORK_PREFIX}/bin && rm -f editfst && ln -sfv editfst* editfst
   )
 
 #----- Generate the config file for the project to be usable via cmake's find_package command

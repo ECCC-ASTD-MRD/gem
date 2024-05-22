@@ -1,5 +1,10 @@
 message(STATUS "(EC) Generating maingem* Makefile")
 
+if ((WITH_MACH) OR (CACHE WITH_MACH) OR (ENV{WITH_MACH}))
+  message(STATUS "(EC) chm_LIBRARIES= ${chm_LIBRARIES}")
+  message(STATUS "(EC) List of GEMMOD object files: ${GEMMOD_OBJ_FILES}")
+endif()
+
 find_package(MPI)
 if (MPI_FOUND)
    set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
@@ -10,6 +15,9 @@ endif()
 
 add_executable(maingemdm maingemdm.F90)
 
+# Debug: generate linker map file
+target_link_options(maingemdm PRIVATE "-Wl,-Map=maingemdm.map")
+
 target_compile_definitions(maingemdm PUBLIC
   dyn_VERSION="${dyn_VERSION}"
   modelutils_VERSION="${modelutils_VERSION}"
@@ -17,6 +25,7 @@ target_compile_definitions(maingemdm PUBLIC
 )
 
 target_link_libraries(maingemdm
+   ${GEMMOD_OBJ_FILES}
    gemdyn
    ${phy_LIBRARIES}
    ${cpl_LIBRARIES}
