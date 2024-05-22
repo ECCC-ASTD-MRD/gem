@@ -17,7 +17,7 @@
 
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
-      use phy_itf, only: phy_input1, phy_step,phy_snapshot
+      use phy_itf, only: PHY_MAXNAMELENGTH, phymeta, phy_input1, phy_step,phy_snapshot, phy_getmeta, phy_putmeta
       use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld, sfcflxfilt_o, nsurfag
       use init_options
@@ -26,10 +26,11 @@
       use rstr
       use path
       use wb_itf_mod
+      use clib_itf_mod
       use ptopo
       use omp_timing
       use gmm_phy, only: phy_cplm, phy_cplt
-      use dyn_fisl_options, only: Schm_phycpl_S, Cstv_bA_8, Cstv_bA_m_8
+      use dyn_fisl_options, only: Schm_phycpl_S, Cstv_bA_8, Cstv_bA_m_8, Schm_wload_L
       use phy_itf, only: phy_get,phy_put
       use ens_options, only: ens_skeb_tndfix
       implicit none
@@ -79,6 +80,8 @@
             phy_cplm(:,:) = 1.
             phy_cplt(:,:) = 1.
          end select
+
+         call priv_update_tracers_meta()
       end if
 
       !call pw_glbstat('PW_BEF')
@@ -164,10 +167,50 @@
 
       call gtmg_stop ( 40 )
 
- 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
+      return
+
+1001  format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
              /,'========================================')
 !
 !     ---------------------------------------------------------------
 !
+
+   contains
+
+      subroutine priv_update_tracers_meta()
+      implicit none
+      integer :: i, j, i1, istat, nmeta
+      character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
+                                          basename_S,time_S,ext_S
+      type(phymeta), dimension(:), pointer :: pmeta
+         
+      nmeta= 0 ; nullify(pmeta)
+      nmeta = phy_getmeta(pmeta, 'TR/', F_npath='V', F_bpath='D', &
+           F_quiet=.true., F_shortmatch=.true.)
+
+      do i=1,nmeta
+         varname_S = pmeta(i)%vname
+         istat = clib_toupper(varname_S)
+         call gmmx_name_parts(varname_S, prefix_S, basename_S, time_S, ext_S)
+         if (time_S/=':P') cycle
+         i1 = 0
+         do j=1,Tr3d_ntr
+            if (trim(Tr3d_name_S(j)) == basename_S) i1 = j
+         end do
+         if (i1 /= 0) then
+            pmeta(i)%hzd = Tr3d_hzd(i1)
+            pmeta(i)%wload = Tr3d_wload(i1) .and. Schm_wload_L
+            pmeta(i)%monot = Tr3d_mono(i1)
+            pmeta(i)%massc = Tr3d_mass(i1)
+            pmeta(i)%vmin = Tr3d_vmin(i1)
+            pmeta(i)%vmax = Tr3d_vmax(i1)
+!!$            pmeta(i)% = Tr3d_intp(i1)
+            istat = phy_putmeta(pmeta(i), pmeta(i)%vname, F_npath='V', F_bpath='D', F_quiet=.true.)
+         endif
+      end do
+      if (associated(pmeta)) deallocate(pmeta)
+         
       return
+      end subroutine priv_update_tracers_meta
+      
       end subroutine itf_phy_step

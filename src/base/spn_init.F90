@@ -32,8 +32,9 @@
 
       logical, external :: decomp
       integer, parameter :: lowest = 2
-      integer :: minx, maxx, n, npartiel, n0
+      integer :: minx, maxx, npartiel, n0
       integer :: k, err1, err2, tmdt
+      integer, dimension(Ptopo_npex) :: lnis      
       real    :: t_turn, b_turn
 !
 !----------------------------------------------------------------------
@@ -49,23 +50,23 @@
       if (Lun_out > 0) write(Lun_out,1002) ' Transpose 1===>2 for SPN:', &
                  ' G_nk distributed on Ptopo_npex PEs', G_nk,Ptopo_npex
       
-      if (.not. decomp (G_nk, minx, maxx, n, npartiel, 0, n0, &
+      if (.not. decomp (G_nk, minx, maxx, lnis, npartiel, 0, n0, &
                 .true., .true., Ptopo_npex, -1, .false., 3 )) err1 = -1
       
       Spn_12smin = minx
       Spn_12smax = maxx
-      Spn_12sn   = n
+      Spn_12sn   = lnis(1)
       Spn_12sn0  = n0
       
       if (Lun_out > 0) write(Lun_out,1002) ' Transpose 2===>2 for SPN:', &
                  ' G_ni distributed on Ptopo_npey PEs', G_ni,Ptopo_npey
 
-      if (.not. decomp (G_ni, minx, maxx, n, npartiel, 0, n0, &
+      if (.not. decomp (G_ni, minx, maxx, lnis, npartiel, 0, n0, &
                 .false., .true., Ptopo_npex, lowest, .false., 0 )) err1 = -1
 
       Spn_22min = minx
       Spn_22max = maxx
-      Spn_22n   = n
+      Spn_22n   = lnis(1)
       Spn_22n0  = n0
 
       Spn_22pil_w= 0 ;  Spn_22pil_e= 0
