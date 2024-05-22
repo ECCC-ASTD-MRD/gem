@@ -95,7 +95,7 @@ contains
       !@author
       !@revision
       !@/
-      integer,parameter :: NMAX = 9999
+      integer,parameter :: NMAX = 99999
 !!$      character(len=12) :: dummy_S
       character(len=1) :: grtyp_S
       character(len=2) :: typvar_S,typvar1_S
@@ -1071,7 +1071,7 @@ contains
       !@return
       integer :: F_istat
       !@/
-      integer,parameter :: NMAX = 9999
+      integer,parameter :: NMAX = 99999
       integer :: istat,keylist(NMAX),nkeys,k
       character(len=1) :: grtyp_S
       character(len=2) :: typvar_S
