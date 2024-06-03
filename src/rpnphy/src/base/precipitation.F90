@@ -203,8 +203,8 @@ contains
            call apply_tendencies(ztplus, zhuplus,&
                 &                ztshal, zhushal, ztdmaskxdt,ni,nk,nkm1)
            if (associated(zqcplus)) then
-              call apply_tendencies(zqcplus, zqcplus,&
-                   &                zprctns, zpritns, ztdmaskxdt,ni,nk,nkm1)
+              call apply_tendencies(zqcplus, zprctns, ztdmaskxdt,ni,nk,nkm1)
+              call apply_tendencies(zqcplus, zpritns, ztdmaskxdt,ni,nk,nkm1)
            endif
         endif
       endif
