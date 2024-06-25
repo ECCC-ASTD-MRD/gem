@@ -21,7 +21,7 @@ fi
 . r.load.dot rpn/libs/20240513
 . r.load.dot rpn/utils/20240513
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
+. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0
 
 # We need a more recent version of cmake than the one available by default
 . ssmuse-sh -d main/opt/cmake/cmake-3.21.1

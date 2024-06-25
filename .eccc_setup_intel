@@ -40,7 +40,7 @@ fi
 . r.load.dot rpn/libs/20240513
 . r.load.dot rpn/utils/20240513
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
+. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0
 
 # Load Intel FFTW if on rhel, and if using Intel 2021 or Intel 2022
 if  [[ ${ORDENV_DIST} = "rhel" ]]; then
