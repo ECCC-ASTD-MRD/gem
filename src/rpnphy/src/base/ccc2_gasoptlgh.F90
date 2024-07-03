@@ -14,24 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
+module ccc2_gasoptlgh
+   implicit none
+   private
+   public :: ccc2_gasoptlgh7
+   
+contains
+   
 subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
      co2, ch4, an2o, inpt, mcont, &
      dip, dt, lev1, gh, &
-     il1, il2, ilg, lay)
-
+     ni, lay)
+   use ccc2_tcontl, only: ccc2_tcontl2
+   use ccc2_tline1z_m, only: ccc2_tline1z
+   use ccc2_tline2z_m, only: ccc2_tline2z
+   use ccc2_tline3z_m, only: ccc2_tline3z
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, ib, ig, mcont(ilg), lev1, il1, il2
-   real taug(ilg,lay), gwgh
+   integer, intent(in) ::  ni, lay, ib, ig, lev1
+   integer :: mcont(ni)
+   real taug(ni,lay), gwgh
 
-   real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), co2(ilg,lay), &
-        ch4(ilg,lay), an2o(ilg,lay), dip(ilg,lay), &
-        dt(ilg,lay)
-   integer inpt(ilg,lay)
-   logical gh
-
-   integer initaug
+   real dp(ni,lay), o3(ni,lay), qq(ni,lay), co2(ni,lay), &
+        ch4(ni,lay), an2o(ni,lay), dip(ni,lay), &
+        dt(ni,lay)
+   integer inpt(ni,lay)
+   logical, intent(in) :: gh
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -100,9 +109,6 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
 
    integer  i, k , lc
 
-   data initaug /2/
-
-
    if (ib .eq. 1)                                                then
 
       !----------------------------------------------------------------------
@@ -110,8 +116,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z (taug, cl1co2gh(1,1,ig), co2, dp, dip, &
-           dt, inpt, lev1, gh, ntl, initaug, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, ntl, ni, ni, lay)
 
       gwgh =  gwl1gh(ig)
 
@@ -122,12 +127,11 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z (taug, cl2h2ogh, qq, dp, dip, &
-           dt, inpt, lev1, gh, ntl, initaug, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, ntl, ni, ni, lay)
 
       lc =  3
-      call ccc2_tcontl1 (taug, cl2csgh, cl2cfgh, qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl2csgh, cl2cfgh, qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       gwgh =  gwl2gh(ig)
 
@@ -138,13 +142,12 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z (taug, cl3h2ogh(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, ntl, initaug, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, ntl, ni, ni, lay)
 
       if (ig .eq. 1)                                                then
          lc =  4
-         call ccc2_tcontl1 (taug, cl3csgh, cl3cfgh, qq, dp, dip, dt, &
-              lc, inpt, mcont, gh, il1, il2, ilg, lay)
+         call ccc2_tcontl2(taug, cl3csgh, cl3cfgh, qq, dp, dip, dt, &
+              lc, inpt, mcont, gh, ni, ni, lay)
 
       endif
 
@@ -159,7 +162,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
 
       call ccc2_tline3z (taug,cl4h2ogh(1,1,ig),cl4ch4gh(1,1,ig), &
            cl4n2ogh(1,1,ig), qq, ch4, an2o, dp, dip, dt, inpt, &
-           lev1, gh, ntl, il1, il2, ilg, lay)
+           lev1, gh, ntl, ni, ni, lay)
 
       gwgh =  gwl4gh(ig)
 
@@ -170,14 +173,14 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !     direct mapping method
       !----------------------------------------------------------------------
 
-      call ccc2_tline2z (taug, cl5h2ogh(1,1,ig), cl5o3gh(1,1,ig), qq, o3, &
+      call ccc2_tline2z(taug, cl5h2ogh(1,1,ig), cl5o3gh(1,1,ig), qq, o3, &
            dp, dip, dt, inpt, &
-           lev1, gh, ntl, il1, il2, ilg, lay)
+           lev1, gh, ntl, ni, ni, lay)
 
       if (ig .le. 2)                                                then
          lc =  4
-         call ccc2_tcontl1 (taug, cl5csgh(1,1,ig), cl5cfgh(1,1,ig), qq, dp, dip, &
-              dt, lc, inpt, mcont, gh, il1, il2, ilg, lay)
+         call ccc2_tcontl2(taug, cl5csgh(1,1,ig), cl5cfgh(1,1,ig), qq, dp, dip, &
+              dt, lc, inpt, mcont, gh, ni, ni, lay)
       endif
 
       gwgh =  gwl5gh(ig)
@@ -195,9 +198,9 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       if (ig .le. 4)                                                then
-         call ccc2_tline2z (taug, cl7h2ogh(1,1,ig), cl7co2gh(1,1,ig), qq, co2, &
+         call ccc2_tline2z(taug, cl7h2ogh(1,1,ig), cl7co2gh(1,1,ig), qq, co2, &
               dp, dip, dt, inpt, &
-              lev1, gh, ntl, il1, il2, ilg, lay)
+              lev1, gh, ntl, ni, ni, lay)
 
          !----------------------------------------------------------------------
          !     simply add the o3 effect
@@ -205,7 +208,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
 
          if (ig .le. 2)                                              then
             do k = 1, lay
-               do i = il1, il2
+               do i = 1, ni
                   taug(i,k) =  taug(i,k) + cl7o3gh(ig) * o3(i,k) * dp(i,k)
                enddo
             enddo
@@ -213,8 +216,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       else
 
          call ccc2_tline1z (taug, cl7co2gh(1,1,ig), co2, dp, dip, &
-              dt, inpt, lev1, gh, ntl, initaug, &
-              il1, il2, ilg, lay)
+              dt, inpt, lev1, gh, ntl, ni, ni, lay)
       endif
 
       gwgh =  gwl7gh(ig)
@@ -226,8 +228,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z (taug, cl8h2ogh(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, ntl, initaug, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, ntl, ni, ni, lay)
 
       gwgh =  gwl8gh(ig)
 
@@ -238,8 +239,7 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z (taug, cl9h2ogh(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, ntl, initaug, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, ntl, ni, ni, lay)
 
       gwgh =  gwl9gh(ig)
 
@@ -247,3 +247,5 @@ subroutine ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qq, &
 
    return
 end subroutine ccc2_gasoptlgh7
+
+end module ccc2_gasoptlgh

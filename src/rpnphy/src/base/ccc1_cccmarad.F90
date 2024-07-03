@@ -240,12 +240,6 @@ contains
 
       else
 
-         if (.not.associated(ztcsl)) ztcsl => dummy1d
-         if (.not.associated(ztcsm)) ztcsm => dummy1d
-         if (.not.associated(ztcsh)) ztcsh => dummy1d
-         if (.not.associated(ztczl)) ztczl => dummy1d
-         if (.not.associated(ztczm)) ztczm => dummy1d
-         if (.not.associated(ztczh)) ztczh => dummy1d
          call prep_cw_rad3(pvars, &
                  temp, qq, ps, sig, &
                  cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
@@ -464,7 +458,10 @@ contains
                  zfctb(i,iuv)= zfctb0(i,iuv) * v1(i)
                  zfcdb(i,iuv)= zfcdb0(i,iuv) * v1(i)
                  zfcfb(i,iuv)= zfcfb0(i,iuv) * v1(i)
-               enddo
+              enddo
+            else
+               zfluxds(i,nk)       = 0.
+               zfluxus(i,nk)       = 0.
             endif
          enddo
 
@@ -474,6 +471,9 @@ contains
                   zt2(i,k)     = zt20(i,k) * v1(i)
                   zfluxds(i,k) = zfluxds0(i,k) * v1(i)
                   zfluxus(i,k) = zfluxus0(i,k) * v1(i)
+               else
+                  zfluxds(i,k) = 0.
+                  zfluxus(i,k) = 0.
                endif
             enddo
          enddo
@@ -528,6 +528,9 @@ contains
                if (thold(i)) then
                   zfluxds(i,k) = zfluxds0(i,k) * v1(i)
                   zfluxus(i,k) = zfluxus0(i,k) * v1(i)
+               else
+                  zfluxds(i,k) = 0.
+                  zfluxus(i,k) = 0.
                endif
             enddo
          enddo
@@ -569,18 +572,18 @@ contains
       IF_SERIES: if (series_isstep()) then
          call series_xst(zti    , 'ti', trnch)
          call series_xst(zt2    , 't2', trnch)
-         call series_xst(zctp   , 'bp', trnch)
-         call series_xst(zctt   , 'be', trnch)
+         if (associated(zctp)) call series_xst(zctp   , 'bp', trnch)
+         if (associated(zctt)) call series_xst(zctt   , 'be', trnch)
          call series_xst(ztopthw, 'w3', trnch)
          call series_xst(ztopthi, 'w4', trnch)
          call series_xst(ziv    , 'iv', trnch)
          call series_xst(p1     , 'nr', trnch)
-         call series_xst(ztcc   , 'tcc', trnch)
-         call series_xst(znt    , 'nt', trnch)
-         call series_xst(zecc   , 'ecc', trnch)
-         call series_xst(zeccl  , 'eccl', trnch)
-         call series_xst(zeccm  , 'eccm', trnch)
-         call series_xst(zecch  , 'ecch', trnch)
+         if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
+         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
+         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
          call series_xst(zev    , 'ev', trnch)
          call series_xst(zei    , 'ei', trnch)
          call series_xst(zap    , 'ap', trnch)

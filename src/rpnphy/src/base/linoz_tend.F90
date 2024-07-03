@@ -83,6 +83,11 @@ subroutine linoz_tend(o3, &
 
    ni2 = int(float(ni)/2.)
 
+   do4dt = 0.
+   do1dt = 0.
+   do6dt = 0.
+   do7dt = 0.
+   
    ! --------------------
    !  Loop on longitudes
    ! -------------------

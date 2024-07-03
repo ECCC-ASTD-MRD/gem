@@ -29,13 +29,15 @@ module microphy_consun
 
 contains
 
-  subroutine consun(stt, sqt, swt, srr, ssr, scf, &
+  subroutine consun(stt, sqt, swt, srr, ssr, scf, rhc, &
        tp, tm, qp, qm, cwp, cwm, &
        psp, psm, s, tau, &
        prflx, swflx, f12, fevp, icefrac, &
+       pblsigs, hpbl, gztherm, &
        mrk2, ni, nlev)
-    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, foqst, fodqs
-    use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc
+    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqst, fodqs
+    use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc, &
+         cond_sgspdf, cond_drhc
     use ens_perturb, only: ens_nc2d, ens_spp_get
     implicit none
 !!!#include <arch_specific.hf>
@@ -48,9 +50,10 @@ contains
          qp(ni,nlev)     , qm(ni,nlev)     , &
          cwp(ni,nlev)    , cwm(ni,nlev)    , &
          psp(ni)         , psm(ni)         , &
-         s(ni,*)         , &
+         s(ni,*)         , rhc(ni,nlev)    , &
          tau             , f12(ni,nlev)    , fevp(ni,nlev), &
-         icefrac(ni,nlev), mrk2(ni,ens_nc2d)
+         icefrac(ni,nlev), mrk2(ni,ens_nc2d), &
+         pblsigs(ni,nlev), hpbl(ni), gztherm(ni,nlev)
 
     !@Authors Claude Girard and Gerard Pellerin (1995)
     !@Revision
@@ -154,7 +157,8 @@ contains
          ZCWP   , XPRADD , DTMELT , DMELT  , EVAPRI , &
          XP     , QINCR  , HP0    , HE273  , HEDR   , &
          HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
-         COALES , SIGMIN
+         COALES , SIGMIN , XKM    , XKC    , XADIST , &
+         XBDIST 
     real    CBFEFF , CTFRZ1 ,  & 
          HKMELT , XDT    , DSNMAX , XSNOW  , &
          rTAU   , SNOW   , PRCP   , CONET  , &
@@ -198,9 +202,11 @@ contains
     real, dimension(NI     ) :: XFIXT
     real, dimension(NI     ) :: HU0MAX
     real, dimension(NI     ) :: HU0MIN
-    real, dimension(NI     ) :: XBHU
     real, dimension(NI     ) :: HMRST
     real, dimension(NI     ) :: ICEACC
+    real, dimension(NI,NLEV) :: RHCRIT
+    real, dimension(NI,NLEV) :: DRHC
+    real, dimension(NI     ) :: XBHU
 
     !-----------------------------------------------------------------------
     ! III) STATEMENT FUNCTIONS
@@ -277,6 +283,42 @@ contains
     SIGMIN = 0.7
     SIGMAX = 0.9
     XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
+    do jk=1,nlev
+       do il=1,ni
+          ! Set basic profile of rhcrit
+          rhcrit(il,jk) = HU0MIN(il) + XBHU(il) * ( S(il,jk) - SIGMIN )
+          rhcrit(il,jk) = max(HU0MIN(il), min(HU0MAX(il), rhcrit(il,jk)))
+          ! Adjust rhcrit for cold temperatures
+          x = 1.+ 0.15 * max( 0., 238. - TM(il,jk) )
+          x = ( HU0MAX(il) - rhcrit(il,jk) ) * ( 1. - 1. / x )
+          rhcrit(il,jk)= min(rhcrit(il,jk) + x, HU0MAX(il))
+!!$          ! Adjust rhcrit for subgrid moisture variance in the PBL
+!!$          x = 1. - (gztherm(il,jk) - 1.5*hpbl(il)) / max(2*hpbl(il) - 1.5*hpbl(il), 1.)
+!!$          x = max(min(x, 1.), 0.)
+          x = 1. !apply variance-based RHc for full column
+          if (cond_sgspdf == 'TRIANGULAR') then
+             xwrk = max(1. - sqrt(6.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
+          elseif (cond_sgspdf == 'UNIFORM') then
+             xwrk = max(1. - sqrt(3.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
+          else
+             x = 0.  !do not use PBL SGS variance estimate 
+          endif
+          rhcrit(il,jk) = min(x * xwrk + (1. - x) * rhcrit(il,jk), 0.999)
+       enddo
+    enddo
+
+    ! Compute change in critical relative humidity for condensation
+    if (minval(rhc) >= 0. .and. cond_drhc) then
+       do il=1,ni
+          do jk=1,nlev
+             DRHC(il,jk) = (rhcrit(il,jk) - rhc(il,jk)) * rTAU
+             rhc(il,jk) = rhcrit(il,jk)
+          enddo
+       enddo
+    else
+       DRHC(:,:) = 0.
+       rhc(:,:) = rhcrit(:,:)
+    endif
     xo = 1.e-12
 
     ! SUNQVIST cloud water and precipitation scheme
@@ -332,50 +374,66 @@ contains
           HU = amin1( HU, 1. )
           HU = amax1( HU, 0. )
 
-          HUZ00t= HU0MIN(il) + XBHU(il) * ( S(il,jk) - SIGMIN )
-          HUZ00t= max( HU0MIN(il), min( HU0MAX(il), HUZ00t ) )
-
-          x = 1.+ 0.15 * max( 0., 238. - TM(il,jk) )
-          x = ( HU0MAX(il) - HUZ00t ) * ( 1. - 1. / x )
-          HUZ00t= AMIN1( HUZ00t + x , HU0MAX(il) )
-
-          SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-HUZ00t) )
-          SCF(il,jk) = amax1( SCF(il,jk) , 0. )
-!!$         mask = sign(1., -1.*abs(SCF(il,jk)))+1./2.
-!!$         HCONDt = mask * (- CWP(il,jk) * rTAU
+          ! Diagnose cloud fraction and PDF-dependent SCF-based parameters (A and B)        
+          if (cond_sgspdf == 'TRIANGULAR') then
+             if (HU <= rhcrit(il,jk)) then
+                SCF(il,jk) = 0.
+             elseif (HU < (5. + rhcrit(il,jk)) / 6.) then
+                xwrk = acos(3./(2.*sqrt(2.)) * (HU-rhcrit(il,jk))/(1.-rhcrit(il,jk)))
+                SCF(il,jk) = 4.*cos(PI/3. + xwrk/3.)**2
+                
+             else
+                SCF(il,jk) = 1. - (3./sqrt(2.) * (1.-HU)/(1.-rhcrit(il,jk)))**(2./3.)
+             endif
+             SCF(il,jk) = max(SCF(il,jk) , 0.)
+             if (SCF(il,jk) < 0.5) then
+                XADIST = 1. - sqrt(2.)/3. * (3.-SCF(il,jk)) * sqrt(SCF(il,jk))
+                XBDIST = (1. - rhcrit(il,jk)) * sqrt(2.)/2. * (1.-SCF(il,jk)) * sqrt(SCF(il,jk))
+             else
+                XADIST = sqrt(2.)/3. * (1.-SCF(il,jk))**1.5
+                XBDIST = SCF(il,jk) * (1.-rhcrit(il,jk)) * sqrt(2.)/2. * sqrt(1.-SCF(il,jk))
+             endif
+          else
+             SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-rhcrit(il,jk)) )
+             SCF(il,jk) = max(SCF(il,jk) , 0.)
+             XADIST = (1.-SCF(il,jk))**2
+             XBDIST = SCF(il,jk) * (2. * (1.-rhcrit(il,jk)) * (1.-SCF(il,jk)))
+          endif
+          
+          ! Full evaporation of any existing condensate when there are no clouds
           if( SCF(il,jk) .eq. 0. ) then
              HCONDt = - CWP(il,jk) * rTAU
           else
              HCONDt = 0.
           endif
-          XB = SCF(il,jk)
-          XN = 2. * HQSAT(il,jk) * (1.-HUZ00t) * XB * ( 1.-XB )
-          XK =   ( XB * ( XN - xo ) + xo ) &
-               / ( XB * ( XN + CWM(il,jk) ) + xo )
 
-          QM(il,jk) = amin1( QM(il,jk) , HQSAT(il,jk) )
+          ! Closure-based estimate of ratio between accession and moistening (k),
+          ! noting important limits for b=0 (km=1, kc=0) and b=1 (km=0, kc=0)
+          XN = (SCF(il,jk) * (HQSAT(il,jk) * XBDIST + CWM(il,jk)) + xo)
+          XKM = (SCF(il,jk) * (HQSAT(il,jk) * XBDIST - xo) + xo) / XN
+          XKC = (SCF(il,jk) * (HQSAT(il,jk) * CWM(il,jk) * XADIST)) / XN
 
+          ! Compute accessions
+          QM(il,jk) = min( QM(il,jk) , HQSAT(il,jk) )
           HDTAD(il) = ( TP(il,jk) - TM(il,jk) ) * rTAU
           HDQAD= ( QP(il,jk) - QM(il,jk) ) * rTAU
           HDCWAD(il) = ( CWP(il,jk) - CWM(il,jk) ) * rTAU
-
           HDPAD = ( PSP(il) - PSM(il) ) / HPS(il) * rTAU
           HDQSAD = HSQ * HDTAD(il) + HSQ2 * HDPAD
           HDQSAD = max( HDQSAD, - HQSAT(il,jk) * rTAU )
+          HACCES = ( HDQAD - HU* HDQSAD )
           HCIMP(il) = 1. / ( 1. + HLDCP(il) * HSQ )
-          HACCES= ( HDQAD- HU* HDQSAD ) &
-               / ( 1. + HU * HLDCP(il)*HSQ )
           HDQMX(il) = ( ( QM(il,jk) - HQSAT(il,jk) ) * rTAU &
                +  HDQAD- HDQSAD ) * HCIMP(il)
-
-          !           ( n.b.important limits: if b=0, then k=1; if b=1, then k=0 )
-
-          XCOND =   ( 1. - XK * ( 1. - XB ) ) * HACCES
+          
+          ! Compute condensation
+          XCOND = ((1. - XKM * (1. - SCF(il,jk))) * HACCES - XKC * DRHC(il,jk)) / &
+               ( 1. + HU * HLDCP(il)*HSQ )
           XCOND = amax1( XCOND , - CWP(il,jk) * rTAU )
 
+          ! Add to forced condensate evaporation for total condensation
           HCONDt = HCONDt + XCOND
-
-
+          
           ! ------------------------------------------------------------
           ! CORRECT THE above CALCULATIONS OF NET CONDENSATION
           ! a) IN CASES OF RESIDUAL SUPER-SATURATION (because, in cloudy

@@ -105,12 +105,7 @@ contains
       MKPTR2D(zqsdi, qsdi, pvars)
       MKPTR2D(zqsmi, qsmi, pvars)
       MKPTR2D(zqssc, qssc, pvars)
-      
-      if (advecqtbl) then
-         MKPTR2D(zqtbl, qtblplus, pvars)
-      else
-         MKPTR2D(zqtbl, qtbl, pvars)
-      endif
+      MKPTR2D(zqtbl, qtbl, pvars)
 
       zero(:,:) =  0.0
 
@@ -159,7 +154,7 @@ contains
       ! water contents are combined assuming no overlap
       ! cloud fractions are combined assuming random overlap
       
-      if (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT') then
+      if (fluvert == 'MOISTKE') then
          if (associated(zqcplus)) then
             where (zqtbl(:,:) > zqcplus(:,:))
                zlwc(:,:) = zqtbl(:,:)
@@ -256,13 +251,8 @@ contains
       MKPTR2D(zqsdi, qsdi, pvars)
       MKPTR2D(zqsmi, qsmi, pvars)
       MKPTR2D(zqssc, qssc, pvars)
+      MKPTR2D(zqtbl, qtbl, pvars)
       MKPTR2D(ztplus, tplus, pvars)
-
-      if (advecqtbl) then
-         MKPTR2D(zqtbl, qtblplus, pvars)
-      else
-         MKPTR2D(zqtbl, qtbl, pvars)
-      endif
       
       zero(1:ni,1:nkm1) =  0.0
 
@@ -284,7 +274,7 @@ contains
          zfmc => zero(1:ni,1:nkm1)
       endif
 
-      if (fluvert /= 'MOISTKE' .or. fluvert == 'RPNINT') then
+      if (fluvert /= 'MOISTKE') then
          zfbl => zero(1:ni,1:nkm1)
          zqtbl => zero(1:ni,1:nkm1)
       endif
@@ -298,7 +288,7 @@ contains
       ! Add the cloud water (liquid and solid) coming from PBL, shallow  and deep cumulus clouds
       ! note that all condensates must be GRID-SCALE values (not in-cloud)
 
-      if (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT') then
+      if (fluvert == 'MOISTKE') then
          call ficemxp(ficebl, unused, unused, ztplus, ni, nkm1)
          do k=1,nkm1
             do i=1,ni               

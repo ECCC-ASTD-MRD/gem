@@ -30,12 +30,10 @@ contains
       use phy_status, only: phy_error_L, PHY_OK
       use phybusidx
       use phymem, only: phyvar
-      use vintphy, only: vint_thermo2mom1
       use tendency, only: apply_tendencies
       use pbl_maintke, only: maintke
       use pbl_ysu, only: pbl_ysu1
       use pbl_sim, only: simplepbl
-      use pbl_utils, only: ficemxp
       use pbl_ri_diffuse, only: diffuseall
       use pbl_diffuse, only: difver
       implicit none
@@ -69,7 +67,7 @@ contains
       real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmaskxdt
       real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw
       real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
-      real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, zldifv, &
+      real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, &
            zwdifv, zqcdifv, ztmoins, zqmoins, ztve, zvcoef
 
       ! External symbols
@@ -109,12 +107,9 @@ contains
       MKPTR2D(ztdifv, tdifv, pvars)
       MKPTR2D(zudifv, udifv, pvars)
       MKPTR2D(zvdifv, vdifv, pvars)
-      MKPTR2D(zldifv, ldifv, pvars)
       MKPTR2D(zvcoef, vcoef, pvars)
       MKPTR2D(zwdifv, wdifv, pvars)
-
-      if (ldifv <= 0) zldifv => zero
-
+      
       ! Initialization
       zero = 0.
       rcdt1 = 1./cdt1
@@ -122,7 +117,6 @@ contains
       
       ! Compute thermodynamic quantities on energy levels
       call mfotvt(ztve, ztmoins, zqmoins, ni, nkm1, ni)
-      if (fluvert == 'RPNINT') call vint_thermo2mom1(ztve ,ztve, zvcoef, ni, nkm1)
 
       ! Turbulence closures used to compute diffusion coefficients
       if (any(fluvert == (/ &
@@ -174,7 +168,7 @@ contains
          
       ! Adjust PBL tendencies to impose conservation
       if (pb_conserve(pbl_conserve, ztdifv, zqdifv, pvars, &
-           F_dqc=zldifv, F_shf=zfc, F_wvf=zflw, F_inttype=INT_TYPE_LINEAR) /= PHY_OK) then
+           F_dqc=zqcdifv, F_shf=zfc, F_wvf=zflw, F_inttype=INT_TYPE_LINEAR) /= PHY_OK) then
          call physeterror('boundary_layer', &
               'Cannot correct conservation for '//trim(fluvert))
          return
@@ -184,7 +178,7 @@ contains
       call apply_tendencies(zqplus, ztplus, zuplus, zvplus, &
            &                zqdifv, ztdifv, zudifv, zvdifv, &
            &                ztdmaskxdt, ni, nk, nkm1)
-      if (associated(zqcplus)) &
+      if (associated(zqcplus) .and. fluvert /= 'RPNINT') &
            call apply_tendencies(zqcplus, zqcdifv, ztdmaskxdt, ni, nk, nkm1)
       if (diffuw) call apply_tendencies(zwplus, zwdifv, ztdmaskxdt, ni, nk, nkm1)
       

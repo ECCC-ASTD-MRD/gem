@@ -26,8 +26,8 @@
 !    https://github.com/P3-microphysics/P3-microphysics                                    !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       5.3.4                                                                     !
-! Last updated:  2023 Oct                                                                  !
+! Version:       5.3.6                                                                     !
+! Last updated:  2024 June                                                                  !
 !__________________________________________________________________________________________!
 
  MODULE microphy_p3
@@ -145,10 +145,10 @@
 
 ! Local variables and parameters:
  logical, save                  :: is_init = .false.
- character(len=1024), parameter :: version_p3                    = '5.3.4'
- character(len=1024), parameter :: version_intended_table_1_2mom = '6.5-2momI'
- character(len=1024), parameter :: version_intended_table_1_3mom = '6.5-3momI'
- character(len=1024), parameter :: version_intended_table_2      = '6.0'
+ character(len=1024), parameter :: version_p3                    = '5.3.6'
+ character(len=1024), parameter :: version_intended_table_1_2mom = '6.6-2momI'
+ character(len=1024), parameter :: version_intended_table_1_3mom = '6.6-3momI'
+ character(len=1024), parameter :: version_intended_table_2      = '6.1'
 
  character(len=1024)            :: version_header_table_1_2mom
  character(len=1024)            :: version_header_table_1_3mom
@@ -1097,15 +1097,15 @@ END subroutine p3_init
                               qvap_m,qvap,temp_m,temp,dt,dt_max,ww,psfc,gztherm,gzmom,sigma,kount,&
                               ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,          &
                               prt_grpl,prt_pell,prt_hail,prt_sndp,prt_wsnow,diag_Zet,diag_Zec,    &
-                              diag_effc,qc,nc,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,          &
-                              clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,        &
-                              diag_vis1,diag_vis2,diag_vis3,diag_slw,                             &
-                              scpf_on,scpf_pfrac,scpf_resfact,cldfrac,maxD_hail,                  &
-                              qi_type_1,qi_type_2,qi_type_3,qi_type_4,qi_type_5,qi_type_6,        &
-                              qitot_1,qirim_1,nitot_1,birim_1,diag_effi_1,zitot_1,qiliq_1,        &
-                              qitot_2,qirim_2,nitot_2,birim_2,diag_effi_2,zitot_2,qiliq_2,        &
-                              qitot_3,qirim_3,nitot_3,birim_3,diag_effi_3,zitot_3,qiliq_3,        &
-                              qitot_4,qirim_4,nitot_4,birim_4,diag_effi_4,zitot_4,qiliq_4)        &
+                              diag_effc,qc_m,qc,nc,qr_m,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,  &
+                              clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,          &
+                              diag_vis1,diag_vis2,diag_vis3,diag_slw,                               &
+                              scpf_on,scpf_pfrac,scpf_resfact,cldfrac,maxD_hail,                    &
+                              qi_type_1,qi_type_2,qi_type_3,qi_type_4,qi_type_5,qi_type_6,          &
+                              qitot_1m,qitot_1,qirim_1,nitot_1,birim_1,diag_effi_1,zitot_1,qiliq_1, &
+                              qitot_2m,qitot_2,qirim_2,nitot_2,birim_2,diag_effi_2,zitot_2,qiliq_2, &
+                              qitot_3m,qitot_3,qirim_3,nitot_3,birim_3,diag_effi_3,zitot_3,qiliq_3, &
+                              qitot_4m,qitot_4,qirim_4,nitot_4,birim_4,diag_effi_4,zitot_4,qiliq_4) &
                               result(end_status)
 
 !------------------------------------------------------------------------------------------!
@@ -1132,42 +1132,48 @@ END subroutine p3_init
  real, intent(in)                       :: dt_max                ! maximum timestep for microphysics   s
  real, intent(in)                       :: clbfact_dep           ! calibration factor for deposition
  real, intent(in)                       :: clbfact_sub           ! calibration factor for sublimation
- real, intent(inout), dimension(ni,nk)  :: qc                    ! cloud mixing ratio, mass            kg kg-1
- real, intent(inout), dimension(ni,nk)  :: nc                    ! cloud mixing ratio, number          #  kg-1
- real, intent(inout), dimension(ni,nk)  :: qr                    ! rain  mixing ratio, mass            kg kg-1
- real, intent(inout), dimension(ni,nk)  :: nr                    ! rain  mixing ratio, number          #  kg-1
+ real, intent(inout), dimension(ni,nk)  :: qc                    ! cloud specific ratio, mass            kg kg-1
+ real, intent(inout), dimension(ni,nk)  :: nc                    ! cloud specific ratio, number          #  kg-1
+ real, intent(inout), dimension(ni,nk)  :: qr                    ! rain  specific ratio, mass            kg kg-1
+ real, intent(inout), dimension(ni,nk)  :: nr                    ! rain  specific ratio, number          #  kg-1
+ real, intent(in),    dimension(ni,nk)  :: qc_m                  ! cloud specific ratio, mass t-         kg kg-1
+ real, intent(in),    dimension(ni,nk)  :: qr_m                  ! rain  specific ratio, mass t-         kg kg-1
 
- real, dimension(:,:), pointer, contiguous  :: qitot_1           ! ice   mixing ratio, mass (total)    kg kg-1
- real, dimension(:,:), pointer, contiguous  :: qirim_1           ! ice   mixing ratio, mass (rime)     kg kg-1
- real, dimension(:,:), pointer, contiguous  :: nitot_1           ! ice   mixing ratio, number          #  kg-1
- real, dimension(:,:), pointer, contiguous  :: birim_1           ! ice   mixing ratio, volume          m3 kg-1
- real, dimension(:,:), pointer, contiguous  :: diag_effi_1       ! ice   effective radius, (cat 1)     m
- real, dimension(:,:), pointer, contiguous  :: zitot_1           ! ice   mixing ratio, reflectivity    m^6 kg-1
- real, dimension(:,:), pointer, contiguous  :: qiliq_1           ! ice   mixing ratio, mass (liquid)   kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_1           ! ice   specific ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_1m          ! ice   specific ratio, mass (t-)       kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_1           ! ice   specific ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_1           ! ice   specific ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_1           ! ice   specific ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_1       ! ice   effective radius, (cat 1)       m
+ real, dimension(:,:), pointer, contiguous  :: zitot_1           ! ice   specific ratio, reflectivity    m^6 kg-1
+ real, dimension(:,:), pointer, contiguous  :: qiliq_1           ! ice   specific ratio, mass (liquid)   kg kg-1
 
- real, dimension(:,:), pointer, contiguous  :: qitot_2           ! ice   mixing ratio, mass (total)    kg kg-1
- real, dimension(:,:), pointer, contiguous  :: qirim_2           ! ice   mixing ratio, mass (rime)     kg kg-1
- real, dimension(:,:), pointer, contiguous  :: nitot_2           ! ice   mixing ratio, number          #  kg-1
- real, dimension(:,:), pointer, contiguous  :: birim_2           ! ice   mixing ratio, volume          m3 kg-1
- real, dimension(:,:), pointer, contiguous  :: diag_effi_2       ! ice   effective radius, (cat 2)     m
- real, dimension(:,:), pointer, contiguous  :: zitot_2           ! ice   mixing ratio, reflectivity    m^6 kg-1
- real, dimension(:,:), pointer, contiguous  :: qiliq_2           ! ice   mixing ratio, mass (liquid)   kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_2           ! ice   specific ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_2m          ! ice   specific ratio, mass (t-)       kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_2           ! ice   specific ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_2           ! ice   specific ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_2           ! ice   specific ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_2       ! ice   effective radius, (cat 2)       m
+ real, dimension(:,:), pointer, contiguous  :: zitot_2           ! ice   specific ratio, reflectivity    m^6 kg-1
+ real, dimension(:,:), pointer, contiguous  :: qiliq_2           ! ice   specific ratio, mass (liquid)   kg kg-1
 
- real, dimension(:,:), pointer, contiguous  :: qitot_3           ! ice   mixing ratio, mass (total)    kg kg-1
- real, dimension(:,:), pointer, contiguous  :: qirim_3           ! ice   mixing ratio, mass (rime)     kg kg-1
- real, dimension(:,:), pointer, contiguous  :: nitot_3           ! ice   mixing ratio, number          #  kg-1
- real, dimension(:,:), pointer, contiguous  :: birim_3           ! ice   mixing ratio, volume          m3 kg-1
- real, dimension(:,:), pointer, contiguous  :: diag_effi_3       ! ice   effective radius,  (cat 3)     m
- real, dimension(:,:), pointer, contiguous  :: zitot_3           ! ice   mixing ratio, reflectivity    m^6 kg-1
- real, dimension(:,:), pointer, contiguous  :: qiliq_3           ! ice   mixing ratio, mass (liquid)   kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_3           ! ice   specific ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_3m          ! ice   specific ratio, mass (t-)       kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_3           ! ice   specific ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_3           ! ice   specific ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_3           ! ice   specific ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_3       ! ice   effective radius,  (cat 3)      m
+ real, dimension(:,:), pointer, contiguous  :: zitot_3           ! ice   specific ratio, reflectivity    m^6 kg-1
+ real, dimension(:,:), pointer, contiguous  :: qiliq_3           ! ice   specific ratio, mass (liquid)   kg kg-1
 
- real, dimension(:,:), pointer, contiguous  :: qitot_4           ! ice   mixing ratio, mass (total)    kg kg-1
- real, dimension(:,:), pointer, contiguous  :: qirim_4           ! ice   mixing ratio, mass (rime)     kg kg-1
- real, dimension(:,:), pointer, contiguous  :: nitot_4           ! ice   mixing ratio, number          #  kg-1
- real, dimension(:,:), pointer, contiguous  :: birim_4           ! ice   mixing ratio, volume          m3 kg-1
- real, dimension(:,:), pointer, contiguous  :: diag_effi_4       ! ice   effective radius, (cat 4)     m
- real, dimension(:,:), pointer, contiguous  :: zitot_4           ! ice   mixing ratio, reflectivity    m^6 kg-1
- real, dimension(:,:), pointer, contiguous  :: qiliq_4           ! ice   mixing ratio, mass (liquid)   kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_4           ! ice   specific ratio, mass (total)    kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qitot_4m          ! ice   specific ratio, mass (t-)       kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: qirim_4           ! ice   specific ratio, mass (rime)     kg kg-1
+ real, dimension(:,:), pointer, contiguous  :: nitot_4           ! ice   specific ratio, number          #  kg-1
+ real, dimension(:,:), pointer, contiguous  :: birim_4           ! ice   specific ratio, volume          m3 kg-1
+ real, dimension(:,:), pointer, contiguous  :: diag_effi_4       ! ice   effective radius, (cat 4)       m
+ real, dimension(:,:), pointer, contiguous  :: zitot_4           ! ice   specific ratio, reflectivity    m^6 kg-1
+ real, dimension(:,:), pointer, contiguous  :: qiliq_4           ! ice   specific ratio, mass (liquid)   kg kg-1
 
  real, intent(out), dimension(ni,nk) :: ttend                    ! temperature tendency                K s-1
  real, intent(out), dimension(ni,nk) :: qtend                    ! moisture tendency                   kg kg-1 s-1
@@ -1242,6 +1248,7 @@ END subroutine p3_init
 
  real, dimension(ni,nk)  :: theta_m             ! potential temperature (previous step)   K
  real, dimension(ni,nk)  :: qvapm               ! qv (previous step)                      kg kg-1
+ real, dimension(ni,nk)  :: qvapm1              ! qv (specific previous step)             kg kg-1
  real, dimension(ni,nk)  :: theta               ! potential temperature                   K
  real, dimension(ni,nk)  :: pres                ! pressure                                Pa
  real, dimension(ni,nk)  :: DZ                  ! difference in height between levels     m
@@ -1250,6 +1257,11 @@ END subroutine p3_init
  real, dimension(ni,nk)  :: qqdelta,ttdelta     ! for sub_stepping
  real, dimension(ni,nk)  :: iwc                 ! total ice water content
  real, dimension(ni,nk)  :: temp0, qvap0, qc0, qr0, iwc0 ! incoming state variables
+ real, dimension(ni,nk)  :: totmassm            ! total mass specific/ratio t-            kg kg-1
+ real, dimension(ni,nk)  :: totmass             ! total mass specific/ratio t*            kg kg-1
+ real, dimension(ni,nk)  :: totmass_mom         ! totmass on momentum levels              kg kg-1
+ real, dimension(ni,nk)  :: inv_totmassm        ! total mass specific/ratio t-            kg kg-1
+ real, dimension(ni,nk)  :: inv_totmass         ! total mass specific/ratio t*            kg kg-1
 
  real, dimension(ni,nk,n_qiType) :: qi_type     ! diagnostic precipitation types
 
@@ -1285,7 +1297,7 @@ END subroutine p3_init
    n_substep = int((dt-0.1)/max(0.1,dt_max)) + 1
    dt_mp = dt/float(n_substep)
 
-   ! Save initial state for tendency calculation and reset
+   ! Save initial state for tendency calculation and reset (in specific ratios)
    temp0(:,:) = temp(:,:)
    qvap0(:,:) = qvap(:,:)
    qc0(:,:) = qc(:,:)
@@ -1295,12 +1307,66 @@ END subroutine p3_init
    if (n_iceCat > 2) iwc0(:,:) = iwc0(:,:) + qitot_3(:,:)
    if (n_iceCat > 3) iwc0(:,:) = iwc0(:,:) + qitot_4(:,:)
 
+   ! Transform every specific mass to mixing ratio
+   ! Total sum at t-
+   totmassm(:,:) = qvap_m(:,:)+qr_m(:,:)+qc_m(:,:)+qitot_1m(:,:)
+   if (n_iceCat > 1) totmassm(:,:) = totmassm(:,:) + qitot_2m(:,:)
+   if (n_iceCat > 2) totmassm(:,:) = totmassm(:,:) + qitot_3m(:,:)
+   if (n_iceCat > 3) totmassm(:,:) = totmassm(:,:) + qitot_4m(:,:)
+   inv_totmassm(:,:) = 1./(1.-totmassm(:,:))   
+   ! Total sum at t*
+   totmass(:,:) = qvap(:,:)+qr(:,:)+qc(:,:)+qitot_1(:,:)
+   if (n_iceCat > 1) totmass(:,:) = totmass(:,:) + qitot_2(:,:)
+   if (n_iceCat > 2) totmass(:,:) = totmass(:,:) + qitot_3(:,:)
+   if (n_iceCat > 3) totmass(:,:) = totmass(:,:) + qitot_4(:,:) 
+   inv_totmass(:,:) = 1./(1.-totmass(:,:))    
+   ! Water vapour:
+   qvap(:,:) = qvap(:,:)*inv_totmass(:,:)
+   qvapm1(:,:) = qvap_m(:,:)*inv_totmassm(:,:)
+   ! Cloud water:
+   qc(:,:) = qc(:,:)*inv_totmass(:,:)
+   nc(:,:) = nc(:,:)*inv_totmass(:,:)
+   ! Rain water:
+   qr(:,:) = qr(:,:)*inv_totmass(:,:)
+   nr(:,:) = nr(:,:)*inv_totmass(:,:)
+   ! Ice:
+   qitot_1(:,:) = qitot_1(:,:)*inv_totmass(:,:)
+   qirim_1(:,:) = qirim_1(:,:)*inv_totmass(:,:)
+   nitot_1(:,:) = nitot_1(:,:)*inv_totmass(:,:)
+   birim_1(:,:) = birim_1(:,:)*inv_totmass(:,:)
+   if (associated(zitot_1)) zitot_1(:,:) = zitot_1(:,:)*inv_totmass(:,:)
+   if (associated(qiliq_1)) qiliq_1(:,:) = qiliq_1(:,:)*inv_totmass(:,:)
+   if (n_iceCat >= 2) then
+      qitot_2(:,:) = qitot_2(:,:)*inv_totmass(:,:)
+      qirim_2(:,:) = qirim_2(:,:)*inv_totmass(:,:)
+      nitot_2(:,:) = nitot_2(:,:)*inv_totmass(:,:)
+      birim_2(:,:) = birim_2(:,:)*inv_totmass(:,:)
+      if (associated(zitot_2)) zitot_2(:,:) = zitot_2(:,:)*inv_totmass(:,:)
+      if (associated(qiliq_2)) qiliq_2(:,:) = qiliq_2(:,:)*inv_totmass(:,:)
+      if (n_iceCat >= 3) then
+         qitot_3(:,:) = qitot_3(:,:)*inv_totmass(:,:)
+         qirim_3(:,:) = qirim_3(:,:)*inv_totmass(:,:)
+         nitot_3(:,:) = nitot_3(:,:)*inv_totmass(:,:)
+         birim_3(:,:) = birim_3(:,:)*inv_totmass(:,:)
+         if (associated(zitot_3)) zitot_3(:,:) = zitot_3(:,:)*inv_totmass(:,:)
+         if (associated(qiliq_3)) qiliq_3(:,:) = qiliq_3(:,:)*inv_totmass(:,:)
+         if (n_iceCat >= 4) then
+            qitot_4(:,:) = qitot_4(:,:)*inv_totmass(:,:)
+            qirim_4(:,:) = qirim_4(:,:)*inv_totmass(:,:)
+            nitot_4(:,:) = nitot_4(:,:)*inv_totmass(:,:)
+            birim_4(:,:) = birim_4(:,:)*inv_totmass(:,:)
+            if (associated(zitot_4)) zitot_4(:,:) = zitot_4(:,:)*inv_totmass(:,:)
+            if (associated(qiliq_4)) qiliq_4(:,:) = qiliq_4(:,:)*inv_totmass(:,:)
+         endif
+      endif
+   endif
+
+   ! All variables are in mixing ratios
    ! External forcings are distributed evenly over steps
-   ! Note qqdelta is converted from specific to mixing ratio
-   qqdelta = (qvap/(1-qvap)-qvap_m/(1-qvap_m)) / float(n_substep)
+   qqdelta = (qvap-qvapm1) / float(n_substep)
    ttdelta = (temp-temp_m) / float(n_substep)
    ! initialise for the 1st substepping
-   qvap = qvap_m/(1-qvap_m) ! mixing ratio instead of specific humidity
+   qvap = qvapm1
    temp = temp_m
 
   !if (kount == 0) then
@@ -1333,7 +1399,7 @@ END subroutine p3_init
    enddo
    DZ(:,kbot) = gzmom(:,kbot)
 
-  !contruct full ice arrays from individual category arrays:
+  !construct full ice arrays from individual category arrays:
    qitot(:,:,1) = qitot_1(:,:)
    qirim(:,:,1) = qirim_1(:,:)
    nitot(:,:,1) = nitot_1(:,:)
@@ -1435,9 +1501,6 @@ END subroutine p3_init
       endif
 
    enddo substep_loop
-
-   ! retransferring mixing ratio to specific humidity (only t* is needed)
-   qvap = qvap/(1+qvap)
 
    ! Take maximum hail size for all category included
    maxD_hail = maxval(diag_dhmax,3)
@@ -1569,6 +1632,52 @@ END subroutine p3_init
       call physeterror('microphy_p3::mp_p3_wrapper_gem', &
            'Insufficient size for qi_type')
       return
+   endif
+
+   ! Total sum at t+
+   totmass(:,:) = qvap(:,:)+qr(:,:)+qc(:,:)+qitot_1(:,:)
+   if (n_iceCat > 1) totmass(:,:) = totmass(:,:) + qitot_2(:,:)
+   if (n_iceCat > 2) totmass(:,:) = totmass(:,:) + qitot_3(:,:)
+   if (n_iceCat > 3) totmass(:,:) = totmass(:,:) + qitot_4(:,:) 
+   inv_totmass(:,:) = 1./(1.+totmass(:,:)) 
+   ! Water vapour:
+   qvap(:,:) = qvap(:,:)*inv_totmass(:,:)
+   ! Cloud water:
+   qc(:,:) = qc(:,:)*inv_totmass(:,:)
+   nc(:,:) = nc(:,:)*inv_totmass(:,:)
+   ! Rain water:
+   qr(:,:) = qr(:,:)*inv_totmass(:,:)
+   nr(:,:) = nr(:,:)*inv_totmass(:,:)
+   ! Ice:
+   qitot_1(:,:) = qitot_1(:,:)*inv_totmass(:,:)
+   qirim_1(:,:) = qirim_1(:,:)*inv_totmass(:,:)
+   nitot_1(:,:) = nitot_1(:,:)*inv_totmass(:,:)
+   birim_1(:,:) = birim_1(:,:)*inv_totmass(:,:)
+   if (associated(zitot_1)) zitot_1(:,:) = zitot_1(:,:)*inv_totmass(:,:)
+   if (associated(qiliq_1)) qiliq_1(:,:) = qiliq_1(:,:)*inv_totmass(:,:)
+   if (n_iceCat >= 2) then
+      qitot_2(:,:) = qitot_2(:,:)*inv_totmass(:,:)
+      qirim_2(:,:) = qirim_2(:,:)*inv_totmass(:,:)
+      nitot_2(:,:) = nitot_2(:,:)*inv_totmass(:,:)
+      birim_2(:,:) = birim_2(:,:)*inv_totmass(:,:)
+      if (associated(zitot_2)) zitot_2(:,:) = zitot_2(:,:)*inv_totmass(:,:)
+      if (associated(qiliq_2)) qiliq_2(:,:) = qiliq_2(:,:)*inv_totmass(:,:)
+      if (n_iceCat >= 3) then
+         qitot_3(:,:) = qitot_3(:,:)*inv_totmass(:,:)
+         qirim_3(:,:) = qirim_3(:,:)*inv_totmass(:,:)
+         nitot_3(:,:) = nitot_3(:,:)*inv_totmass(:,:)
+         birim_3(:,:) = birim_3(:,:)*inv_totmass(:,:)
+         if (associated(zitot_3)) zitot_3(:,:) = zitot_3(:,:)*inv_totmass(:,:)
+         if (associated(qiliq_3)) qiliq_3(:,:) = qiliq_3(:,:)*inv_totmass(:,:)
+         if (n_iceCat >= 4) then
+            qitot_4(:,:) = qitot_4(:,:)*inv_totmass(:,:)
+            qirim_4(:,:) = qirim_4(:,:)*inv_totmass(:,:)
+            nitot_4(:,:) = nitot_4(:,:)*inv_totmass(:,:)
+            birim_4(:,:) = birim_4(:,:)*inv_totmass(:,:)
+            if (associated(zitot_4)) zitot_4(:,:) = zitot_4(:,:)*inv_totmass(:,:)
+            if (associated(qiliq_4)) qiliq_4(:,:) = qiliq_4(:,:)*inv_totmass(:,:)
+         endif
+      endif
    endif
 
    ! Compute tendencies and reset state

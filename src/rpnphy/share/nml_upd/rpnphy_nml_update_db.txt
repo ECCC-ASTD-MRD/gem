@@ -639,3 +639,10 @@ rm:  physics_cfgs/rad_sun_angle_fix_l
 #------
 fileVersion: 6.3.0-a8 > 6.3.0-a8
 
+#------
+fileVersion: 6.3.0-a8 > 6.3.0-a9
+rm:  physics_cfgs/advecqtbl
+#New:  physics_cfgs/cond_drhc
+#New:  physics_cfgs/cond_sgspdf
+#New:  physics_cfgs/pbl_ae
+#New:  physics_cfgs/pbl_progvar

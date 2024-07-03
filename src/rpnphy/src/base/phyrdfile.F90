@@ -16,24 +16,40 @@
 !**s/r phyrdfile -- Reading file F_fichier_S for the physics package with callback
 !                   routine F_read_cb
 
-      subroutine phyrdfile (F_fichier_S, F_read_cb, F_messg_s, F_myproc)
+module phyrdfile
+   implicit none
+   private
+   public :: phyrdfile1
+
+   integer, parameter, public :: READRAD = 1
+   integer, parameter, public :: READOZO = 2
+
+contains
+   
+   subroutine phyrdfile1(F_fichier_S, F_rad_oz, F_messg_s, F_myproc)
+      use rmn_fst24
+      use rd_ozone, only: rd_ozone1
+      use rd_radtab, only: rd_radtab1
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.inc>
 !
-      character(len=*) F_fichier_S, F_messg_s
-      integer F_myproc
-      external F_read_cb
+      character(len=*), intent(in) :: F_fichier_S, F_messg_s
+      integer, intent(in) :: F_rad_oz
+      integer, intent(in) :: F_myproc
 
 !author
 !     M. Desgagne  - January 2014
 
       integer, parameter :: max_ndim = 1000
       logical found_L
-      integer iun,ilir,inbr,status,ierr
+      integer ilir,inbr,status,ierr
       integer dim(max_ndim)
       real, dimension(1) :: dummy
       real, dimension(:), allocatable :: rbuf
+
+      type(fst_file) :: file
+      logical        :: success
 !
 !-----------------------------------------------------------------
 !
@@ -66,20 +82,27 @@
       call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
 
       status = 0
-      if (F_myproc.eq.0) then
-         iun  = 0
-         ilir = fnom    (iun,trim(F_fichier_S),'STD+RND+OLD+R/O',0)
-         ilir = fstouv  (iun,'RND')
+      if (F_myproc.eq.0) then 
+
+         success = file%open(trim(F_fichier_S),'STD+RND+OLD+R/O')
 
          status = 200
-         call F_read_cb (iun,dummy,dim,status)
+         if (F_rad_oz == READRAD) then
+            call rd_radtab1(file,dummy,dim,status)
+         else if (F_rad_oz == READOZO) then
+            call rd_ozone1(file,dummy,dim,status)
+         endif
          if (status.lt.0) goto 9977
+         
          allocate (rbuf(dim(2)))
          rbuf = 0
          status = 250
-         call F_read_cb (iun,rbuf,dim,status)
-         inbr = fstfrm  (iun)
-         inbr = fclos   (iun)
+         if (F_rad_oz == READRAD) then
+            call rd_radtab1(file,rbuf,dim,status)
+         else if (F_rad_oz == READOZO) then
+            call rd_ozone1(file,rbuf,dim,status)
+         endif
+         success = file%close()
       endif
 
 9977  call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
@@ -89,8 +112,13 @@
          rbuf = 0
       endif
       call RPN_COMM_bcast (rbuf,dim(2),"MPI_REAL",0,"grid",ierr)
+      
       status = 400
-      call F_read_cb (iun,rbuf,dim,status)
+      if (F_rad_oz == READRAD) then
+         call rd_radtab1(file,rbuf,dim,status)
+      else if (F_rad_oz == READOZO) then
+         call rd_ozone1(file,rbuf,dim,status)
+      endif
       deallocate (rbuf) 
 
  9988 call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
@@ -102,4 +130,6 @@
 !-----------------------------------------------------------------
 !
       return
-      end
+   end subroutine phyrdfile1
+
+end module phyrdfile

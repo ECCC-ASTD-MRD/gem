@@ -77,7 +77,7 @@ contains
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
-
+      
       type(phymeta), pointer :: vmeta, var_m
 
       real, pointer, dimension(:), contiguous :: &
@@ -235,7 +235,7 @@ contains
          !#TODO: check that memgap is still filled with NANs on all buses
       else  !IF_DEBUG
          !#TODO: allow vol bus var recycling
-         istat = phymem_busreset(pvars, PHY_VBUSIDX, 0.)
+         istat = phymem_busreset(pvars, PHY_VBUSIDX, F_value=0., F_resetonly_L=.true.)
       endif IF_DEBUG
 
       rcdt1 = 1. / dt
@@ -372,31 +372,39 @@ contains
          end do
       end do
 
-      ! Compute pre-physics budget state
-      if (pb_compute(zcone0, zconq0, en0, pw0, &
-           pvars, nk-1) /= PHY_OK) then
-         call physeterror('phystepinit', &
-              'Problem computing pre-physics budget state')
-         return
-      endif
-      if (associated(zcone0)) zcone0(:) = real(en0(:))
-      if (associated(zconq0)) zconq0(:) = real(pw0(:))
-      if (kount == 0) then
-         if (associated(zcone1)) zcone1(:) = zcone0(:)
-         if (associated(zconq1)) zconq1(:) = zconq0(:)
-      endif
+      
+      IF_CONS: if (lcons) then
+         ! Compute pre-physics budget state
+         if (associated(zcone0).or.associated(zconq0)) then
+            tmp1d = 0.
+            if (.not.associated(zcone0)) zcone0 => tmp1d
+            if (.not.associated(zconq0)) zconq0 => tmp1d          
+            if (pb_compute(zcone0, zconq0, en0, pw0, &
+                 pvars, nk-1) /= PHY_OK) then
+               call physeterror('phystepinit', &
+                    'Problem computing pre-physics budget state')
+               return
+            endif
+            zcone0(:) = real(en0(:))
+            zconq0(:) = real(pw0(:))
+            if (kount == 0) then
+               if (associated(zcone1)) zcone1(:) = zcone0(:)
+               if (associated(zconq1)) zconq1(:) = zconq0(:)
+            endif
+         endif
 
-      ! Compute non-physics (dynamics) budget residual
-      en1(:) = 0.
-      if (associated(zcone1)) en1(:) = dble(zcone1(:))
-      pw1(:) = 0.
-      if (associated(zconq1)) pw1(:) = dble(zconq1(:))
-      if (pb_residual(zconedyn, zconqdyn, en1, pw1, pvars, &
-           delt, nk-1) /= PHY_OK) then
-         call physeterror('phybusinit', &
-              'Problem computing dynamics budget')
-         return
-      endif
+         ! Compute non-physics (dynamics) budget residual
+         if (associated(zconedyn) .or. associated(zconqdyn)) then
+            en1(:) = dble(zcone1(:))
+            pw1(:) = dble(zconq1(:))
+            if (pb_residual(zconedyn, zconqdyn, en1, pw1, pvars, &
+                 delt, nk-1) /= PHY_OK) then
+               call physeterror('phybusinit', &
+                    'Problem computing dynamics budget')
+               return
+            endif
+         endif
+      endif IF_CONS
       
       if (associated(ztadv)) call series_xst(ztadv, 'XT', trnch)
       if (associated(zqadv)) call series_xst(zqadv, 'XQ', trnch)

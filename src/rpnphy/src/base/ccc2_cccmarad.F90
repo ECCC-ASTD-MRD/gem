@@ -45,6 +45,7 @@ contains
       use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
       use ens_perturb, only: ens_spp_get
       use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
+      use ccc2_raddriv, only: ccc2_raddriv3
       use suncos, only: suncos3
       implicit none
 !!!#include <arch_specific.hf>
@@ -139,7 +140,6 @@ contains
       real :: hz, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
       logical :: thisstepisrad,nextstepisrad,thisstepisraduv
-      integer :: il1, il2
       character(len=1) :: niuv
 
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
@@ -173,12 +173,6 @@ contains
       call init2nan(vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag)
       call init2nan(dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr)
       
-      ! use integer variables instead of actual integers
-
-      il1 = 1
-      il2 = ni
-
-
       ! redefine co2, ch4, n2o, f11 and f12 concentrations
       ! following corresponding parameters from /OPTIONR/
 
@@ -291,12 +285,6 @@ contains
               temp, sig, ps, ni, nkm1, nk, kount)
          if (phy_error_L) return
       else
-         if (.not.associated(ztcsl)) ztcsl => dummy1d
-         if (.not.associated(ztcsm)) ztcsm => dummy1d
-         if (.not.associated(ztcsh)) ztcsh => dummy1d
-         if (.not.associated(ztczl)) ztczl => dummy1d
-         if (.not.associated(ztczm)) ztczm => dummy1d
-         if (.not.associated(ztczh)) ztczh => dummy1d
          call prep_cw_rad3(pvars, &
                  temp, qq, ps, sig, &
                  cldfrac, liqwcin, icewcin, liqwpin, icewpin, &
@@ -441,7 +429,7 @@ contains
          pbl(:) = ens_spp_get('aero_pbl', zmrk2, default=1500.)
          call ccc_aerooppro2(tauae, exta, exoma, exomga, fa, absa, &
               temp, shtj, sig, ps, zdlat, zmg, zml, pbl, zmrk2, &
-              aerosolback, il1, il2, ni, nkm1, nk)
+              aerosolback, 1, ni, ni, nkm1, nk)
 
          ! from ozone zonal monthly climatology: interpolate to proper date
          ! and grid, calculate total amount above model top (ptop)
@@ -525,10 +513,10 @@ contains
                  omcs, gcs, &
                  cldfrac, tauae, exta, exoma, exomga, &
                  fa, zmrk2, &
-                 il1, il2, ni, nkm1, nk)
+                 ni, nkm1, nk)
 
             ! Calcul des l'indices UV
-            call ccc2_uvindex2(il1,il2,ni,zfctb,zfatb,salb,ziuvc,ziuva,iuv_method)
+            call ccc2_uvindex2(1,ni,ni,zfctb,zfatb,salb,ziuvc,ziuva,iuv_method)
             if (timings_L) call timing_stop_omp(413)
          endif
 
@@ -552,7 +540,7 @@ contains
               omcs, gcs, taucl, omcl, gcl, &
               cldfrac, tauae, exta, exoma, exomga, &
               fa, absa, rad_sw, rad_lw, zmrk2, .not.DO_UV_ONLY, &
-              il1, il2, ni, nkm1, nk)
+              ni, nkm1, nk)
 
          ! ti (t2): infrared (solar) cooling (heating) rate
          ! fdsi (fdss): infrared (solar) downward flux at surface.
@@ -592,7 +580,10 @@ contains
                  zfctb(i,iuv)= zfctb0(i,iuv) * v1(i)
                  zfcdb(i,iuv)= zfcdb0(i,iuv) * v1(i)
                  zfcfb(i,iuv)= zfcfb0(i,iuv) * v1(i)
-               enddo
+              enddo
+            else
+               zfluxds(i, nk) = 0.
+               zfluxus(i, nk) = 0.
             endif
          enddo
 
@@ -602,6 +593,9 @@ contains
                   zt2(i, k)     = zt20(i, k) * v1(i)
                   zfluxds(i, k) = zfluxds0(i, k) * v1(i)
                   zfluxus(i, k) = zfluxus0(i, k) * v1(i)
+               else
+                  zfluxds(i, k) = 0.
+                  zfluxus(i, k) = 0.
                endif
             enddo
          enddo
@@ -653,6 +647,9 @@ contains
                if (thold(i)) then
                   zfluxds(i, k) = zfluxds0(i, k) * v1(i)
                   zfluxus(i, k) = zfluxus0(i, k) * v1(i)
+               else
+                  zfluxds(i, k) = 0.
+                  zfluxus(i, k) = 0.
                endif
             enddo
          enddo
@@ -695,18 +692,18 @@ contains
       IF_SERIES: if (series_isstep()) then
          call series_xst(zti    , 'ti',   trnch)
          call series_xst(zt2    , 't2',   trnch)
-         call series_xst(zctp   , 'bp',   trnch)
-         call series_xst(zctt   , 'be',   trnch)
+         if (associated(zctp)) call series_xst(zctp   , 'bp',   trnch)
+         if (associated(zctt)) call series_xst(zctt   , 'be',   trnch)
          call series_xst(ztopthw, 'w3',   trnch)
          call series_xst(ztopthi, 'w4',   trnch)
          call series_xst(ziv    , 'iv',   trnch)
          call series_xst(p1     , 'nr',   trnch)
-         call series_xst(ztcc   , 'tcc',  trnch)
-         call series_xst(znt    , 'nt', trnch)
-         call series_xst(zecc   , 'ecc',  trnch)
-         call series_xst(zeccl  , 'eccl', trnch)
-         call series_xst(zeccm  , 'eccm', trnch)
-         call series_xst(zecch  , 'ecch', trnch)
+         if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
+         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
+         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
          call series_xst(zev    , 'ev',   trnch)
          call series_xst(zei    , 'ei',   trnch)
          call series_xst(zap    , 'ap',   trnch)

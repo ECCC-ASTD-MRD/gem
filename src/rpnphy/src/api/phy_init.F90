@@ -18,6 +18,7 @@ module phy_init_mod
    use iso_c_binding
    use rpn_comm_itf_mod
    use wb_itf_mod
+   use clib_itf_mod, only: clib_toupper
    use mu_jdate_mod, only: jdate_from_cmc
    use ptopo_utils, only: ptopo_grid_ipe
    use timestr_mod, only: timestr2step, timestr2sec
@@ -152,7 +153,7 @@ contains
 
       logical :: print_L
       integer :: unout, options, itype, isizeof, ntr, nsurf
-      integer :: ier, p_ni, p_nj, master_pe
+      integer :: ier, p_ni, p_nj, master_pe, n
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
       integer :: minj, maxj, lnj, lnjmax, lj0
@@ -205,6 +206,9 @@ contains
       if (nphyoutlist > 0) then
          ier = wb_get('itf_phy/PHYOUT', phyoutlist_S, nphyoutlist)
          if (.not.WB_IS_OK(ier)) nphyoutlist = 0
+         do n=1,nphyoutlist
+            ier = clib_toupper(phyoutlist_S(n))
+         enddo
       endif
 
       ier = wb_get('itf_phy/DYNOUT', dynout)

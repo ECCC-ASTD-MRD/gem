@@ -628,7 +628,7 @@ contains
     ! Compute subgrid standard deviation of supersaturation (s) on e-levels following Eq. 10 of BCMT95
     sigmas = 0.
     do k=1,nk-1
-       do j=1,n
+       do j=1,n          
           c1coef = sqrt(c1(j,k)*max(zn(j,k),50.)*max(ze(j,k),50.))
           sigmas(j,k) = c1coef * abs(acoef(j,k)*dqwdz(j,k) - bcoef(j,k)*dthldz(j,k))
        end do

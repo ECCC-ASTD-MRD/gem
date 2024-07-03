@@ -14,21 +14,33 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
+module ccc2_gasopts
+   implicit none
+   private
+   public :: ccc2_gasopts5
+   
+contains
+   
 subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
      inpt, mcont, dip, dt,rmu3, lev1, gh, &
-     il1, il2, ilg, lay)
+     nig, ni, lay)
+   use ccc2_tcontl, only: ccc2_tcontl2
+   use ccc2_tline1z_m, only: ccc2_tline1z
+   use ccc2_tline2z_m, only: ccc2_tline2z
+   use ccc2_tline3z_m, only: ccc2_tline3z
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, ib, ig, lev1, il1, il2, mcont(ilg)
-   real taug(ilg,lay)
+   integer, intent(in) :: nig, ni, lay, ib, ig, lev1
+   integer :: mcont(ni)
+   real taug(ni,lay)
    real gw, xx
 
-   real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), co2(ilg,lay), &
-        ch4(ilg,lay), o2(ilg,lay), dip(ilg,lay), &
-        dt(ilg,lay), rmu3(ilg)
-   integer inpt(ilg,lay),lc
-   logical gh
+   real dp(ni,lay), o3(ni,lay), qq(ni,lay), co2(ni,lay), &
+        ch4(ni,lay), o2(ni,lay), dip(ni,lay), &
+        dt(ni,lay), rmu3(ni)
+   integer inpt(ni,lay),lc
+   logical, intent(in) :: gh
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -105,7 +117,7 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
 #include "ccc2_bands.cdk"
 #include "ccc_tracegases.cdk"
 
-   integer i, k, m , init
+   integer i, k, m
    real dto3
 
    if (ib .eq. 1) then
@@ -134,7 +146,7 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
 
       if (ig .eq. 1) then
          do k = lev1, lay
-            do i = il1, il2
+            do i = 1, nig
                m =  inpt(i,k)
                if (inpt(i,k).ge.950) m = inpt(i,k) - 1000
 
@@ -157,7 +169,7 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
          enddo
       else
          do k = lev1, lay
-            do i = il1, il2
+            do i = 1, nig
                dto3      =  dt(i,k) + 23.13
                taug(i,k) =  (cs1o3(1,ig)+ dto3 *( cs1o3(2,ig) + &
                     dto3 * cs1o3(3,ig))) * o3(i,k) * dp(i,k)
@@ -178,12 +190,10 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       if (ig .le. 2) then
          call ccc2_tline2z(taug, cs2h2o(1,1,ig), cs2o2(1,1,ig), qq, o2, &
               dp, dip, dt, inpt, lev1, gh, mtl, &
-              il1, il2, ilg, lay)
+              nig, ni, lay)
       else
-         init=2
          call ccc2_tline1z(taug, cs2h2o(1,1,ig), qq,  dp, dip, &
-              dt, inpt, lev1, gh, mtl, init, &
-              il1, il2, ilg, lay)
+              dt, inpt, lev1, gh, mtl, nig, ni, lay)
       endif
 
       !----------------------------------------------------------------------
@@ -191,7 +201,7 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, nig
             taug(i,k)   =  taug(i,k) + cs2o3(ig) * o3(i,k) * dp(i,k)
          enddo
       enddo
@@ -202,8 +212,8 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       !----------------------------------------------------------------------C
 
       LC =  5
-      call ccc2_TCONTL1(TAUG, CS2CS(1,1,IG), CS2CF(1,1,IG), QQ, DP, DIP, &
-           DT, LC, INPT, MCONT, GH, IL1, IL2, ILG, LAY)
+      call ccc2_TCONTL2(TAUG, CS2CS(1,1,IG), CS2CF(1,1,IG), QQ, DP, DIP, &
+           DT, LC, INPT, MCONT, GH, NIG, NI, LAY)
 
       gw =  gws2(ig)
 
@@ -218,11 +228,11 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       if (ig .le. 2) then
          call ccc2_tline3z(taug, cs3h2o(1,1,ig), cs3co2(1,1,ig), &
               cs3ch4(1,1,ig), qq, co2,ch4, dp, dip, dt, inpt, &
-              lev1, gh, mtl, il1, il2, ilg, lay)
+              lev1, gh, mtl, nig, ni, lay)
       else
          call ccc2_tline2z(taug, cs3h2o(1,1,ig), cs3co2(1,1,ig), qq, co2, &
               dp, dip, dt, inpt, lev1, gh, mtl, &
-              il1, il2, ilg, lay)
+              nig, ni, lay)
       endif
 
       !----------------------------------------------------------------------C
@@ -230,8 +240,8 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       !----------------------------------------------------------------------C
 
       LC =  5
-      call ccc2_TCONTL1(TAUG, CS3CS(1,1,IG), CS3CF(1,1,IG), QQ, DP, DIP, &
-           DT, LC, INPT, MCONT, GH, IL1, IL2, ILG, LAY)
+      call ccc2_TCONTL2(TAUG, CS3CS(1,1,IG), CS3CF(1,1,IG), QQ, DP, DIP, &
+           DT, LC, INPT, MCONT, GH, NIG, NI, LAY)
 
       gw =  gws3(ig)
 
@@ -246,11 +256,11 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       if (ig .le.2) then
          call ccc2_tline3z(taug, cs4h2o(1,1,ig), cs4co2(1,1,ig), &
               cs4ch4(1,1,ig), qq, co2,ch4,dp, dip, dt, inpt, &
-              lev1, gh, mtl, il1, il2, ilg,lay)
+              lev1, gh, mtl, nig, ni,lay)
       else
          call ccc2_tline2z(taug, cs4h2o(1,1,ig), cs4co2(1,1,ig), qq,co2, &
               dp, dip, dt, inpt, lev1, gh, mtl, &
-              il1, il2, ilg,lay)
+              nig, ni,lay)
       endif
 
       !----------------------------------------------------------------------C
@@ -258,8 +268,8 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
       !----------------------------------------------------------------------C
 
       LC =  5
-      call ccc2_TCONTL1(TAUG, CS4CS(1,1,IG), CS4CF(1,1,IG), QQ, DP, DIP, &
-           DT, LC, INPT, MCONT, GH, IL1, IL2, ILG, LAY)
+      call ccc2_TCONTL2(TAUG, CS4CS(1,1,IG), CS4CF(1,1,IG), QQ, DP, DIP, &
+           DT, LC, INPT, MCONT, GH, NIG, NI, LAY)
 
       gw =  gws4(ig)
 
@@ -267,3 +277,5 @@ subroutine ccc2_gasopts5(taug, gw, dp, ib, ig, o3, qq, co2, ch4, o2, &
 
    return
 end subroutine ccc2_gasopts5
+
+end module ccc2_gasopts

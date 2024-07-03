@@ -14,19 +14,27 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P TCONTL - INFRARED WATER VAPOR CONTINUUM
-!
-      subroutine ccc2_tcontl1 (taug, coef1, coef2, s1, dp, dip, dt, &
-                         lc, inpt, mcont, gh, il1, il2, ilg, lay)
-!
+
+module ccc2_tcontl
+   implicit none
+   private
+   public :: ccc2_tcontl2
+   
+contains
+
+      subroutine ccc2_tcontl2(taug, coef1, coef2, s1, dp, dip, dt, &
+                         lc, inpt, mcont, gh, nig, ni, lay)
       implicit none
 !!!#include <arch_specific.hf>
 !
-      integer ilg, lay, lc, il1, il2, mcont(ilg)
-      real taug(ilg,lay), coef1(5,lc), coef2(5,lc)
-      real s1(ilg,lay), dp(ilg,lay), dip(ilg,lay), dt(ilg,lay)
-      integer inpt(ilg,lay)
-      logical gh
-!
+      integer, intent(in) :: ni, lay, lc, nig
+      integer, intent(in) :: mcont(ni)
+      real, intent(inout) :: taug(ni,lay)
+      real, intent(in) :: coef1(5,lc), coef2(5,lc)
+      real, intent(in) :: s1(ni,lay), dp(ni,lay), dip(ni,lay), dt(ni,lay)
+      integer, intent(in) :: inpt(ni,lay)
+      logical, intent(in) :: gh
+
 !Authors
 !
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -62,74 +70,78 @@
 ! mcont  the highest level for water vapor continuum calculation
 !
 !*
-      integer  k, i, j, m, n, nc
-      real x1, y1, x2, y2
+      integer  :: k, i, j, m, n, nc, w1, j1
+      real :: x1, y1, x2, y2
 
-      if (gh)                                                       then
+      if (gh) then
         nc =  29 - lc
       else
         nc =  19 - lc
       endif
-!
-      do 300 i = il1, il2
-      do 200 k = mcont(i), lay
-        if (inpt(1,k) .lt. 950)                                     then
-            j =  inpt(i,k)
-            if (j .ge. nc)                                          then
-              m  =  j - nc + 1
-              n  =  m + 1
-              x1        =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
-                           dt(i,k) * (coef1(3,m) + dt(i,k) * &
+
+      !#opt V6b - a bit faster than 5b... more ugliness
+      do k = minval(mcont(1:nig)), lay
+         IF950: if (inpt(1,k) < 950) then
+            
+            do i = 1, nig
+               j = inpt(i,k)
+               if (j >= nc .and. k >= mcont(i)) then
+                  m  =  j - nc + 1
+                  n  =  m + 1
+                  x1 =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
+                       dt(i,k) * (coef1(3,m) + dt(i,k) * &
+                       (coef1(4,m) + dt(i,k) * coef1(5,m))))
+                  x2 =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
+                       dt(i,k) * (coef1(3,n) + dt(i,k) * &
+                       (coef1(4,n) + dt(i,k) * coef1(5,n))))
+                  y1 =  coef2(1,m) + dt(i,k) * (coef2(2,m) + &
+                       dt(i,k) * (coef2(3,m) + dt(i,k) * &
+                       (coef2(4,m) + dt(i,k) * coef2(5,m))))
+                  y2 =  coef2(1,n) + dt(i,k) * (coef2(2,n) + &
+                       dt(i,k) * (coef2(3,n) + dt(i,k) * &
+                       (coef2(4,n) + dt(i,k) * coef2(5,n))))
+                  taug(i,k) =  taug(i,k) + &
+                       ( (x1 - y1 + (x2 - x1 - y2 + y1) * &
+                       dip(i,k)) * 1.608 * s1(i,k) + &
+                       y1 + (y2 - y1) * dip(i,k) ) * &
+                       s1(i,k) * dp(i,k)
+               endif
+            enddo
+            
+
+         else  !IF950
+            
+            j =  inpt(1,k) - 1000
+            if (j >= nc)  then
+               m  =  j - nc + 1
+               n  =  m + 1
+               do i = 1, nig
+                  if (k >= mcont(i)) then
+                     x1 =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
+                          dt(i,k) * (coef1(3,m) + dt(i,k) * &
                           (coef1(4,m) + dt(i,k) * coef1(5,m))))
-!
-              x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
-                           dt(i,k) * (coef1(3,n) + dt(i,k) * &
+                     x2 =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
+                          dt(i,k) * (coef1(3,n) + dt(i,k) * &
                           (coef1(4,n) + dt(i,k) * coef1(5,n))))
-!
-              y1        =  coef2(1,m) + dt(i,k) * (coef2(2,m) + &
-                           dt(i,k) * (coef2(3,m) + dt(i,k) * &
+                     y1 =  coef2(1,m) + dt(i,k) * (coef2(2,m) + &
+                          dt(i,k) * (coef2(3,m) + dt(i,k) * &
                           (coef2(4,m) + dt(i,k) * coef2(5,m))))
-!
-              y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + &
-                           dt(i,k) * (coef2(3,n) + dt(i,k) * &
+                     y2 =  coef2(1,n) + dt(i,k) * (coef2(2,n) + &
+                          dt(i,k) * (coef2(3,n) + dt(i,k) * &
                           (coef2(4,n) + dt(i,k) * coef2(5,n))))
-!
-              taug(i,k) =  taug(i,k) + &
+                     taug(i,k) =  taug(i,k) + &
                           ( (x1 - y1 + (x2 - x1 - y2 + y1) * &
-                           dip(i,k)) * 1.608 * s1(i,k) + &
-                             y1 + (y2 - y1) * dip(i,k) ) * &
-                            s1(i,k) * dp(i,k)
+                          dip(i,k)) * 1.608 * s1(i,k) + &
+                          y1 + (y2 - y1) * dip(i,k) ) * &
+                          s1(i,k) * dp(i,k)
+                  endif
+               enddo
             endif
-        else
-          j =  inpt(1,k) - 1000
-          m  =  j - nc + 1
-          n  =  m + 1
-          if (j .ge. nc)                                          then
-              x1        =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
-                           dt(i,k) * (coef1(3,m) + dt(i,k) * &
-                          (coef1(4,m) + dt(i,k) * coef1(5,m))))
-!
-              x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
-                           dt(i,k) * (coef1(3,n) + dt(i,k) * &
-                          (coef1(4,n) + dt(i,k) * coef1(5,n))))
-!
-              y1        =  coef2(1,m) + dt(i,k) * (coef2(2,m) + &
-                           dt(i,k) * (coef2(3,m) + dt(i,k) * &
-                          (coef2(4,m) + dt(i,k) * coef2(5,m))))
-!
-              y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + &
-                           dt(i,k) * (coef2(3,n) + dt(i,k) * &
-                          (coef2(4,n) + dt(i,k) * coef2(5,n))))
-!
-              taug(i,k) =  taug(i,k) + &
-                          ( (x1 - y1 + (x2 - x1 - y2 + y1) * &
-                           dip(i,k)) * 1.608 * s1(i,k) + &
-                             y1 + (y2 - y1) * dip(i,k) ) * &
-                            s1(i,k) * dp(i,k)
-          endif
-        endif
-  200   continue
-  300 continue
-!
-      return
-      end
+            
+         endif IF950
+      enddo
+      
+   return
+   end subroutine ccc2_tcontl2
+   
+end module ccc2_tcontl
