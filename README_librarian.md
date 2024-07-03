@@ -41,17 +41,26 @@ Finalize
 emacs src/modelutils/MANIFEST
 ```
 
+# Commit
+```
+component=modelutils
+MYVERSION=$(grep ^VERSION src/${component}/MANIFEST | cut -d: -f2)
+MYVERSION=${MYVERSION# *}
+git commit -a -m "${component}: update VERSION (${component}_${MYVERSION})"
+```
+
 Move patch from GEM dev to modelutils depot
 =======================================
 
 ## Steps to be done in a GEM dev env.
 
-# WARNING: need to "squash the merges" beforehand
+# WARNING: we need to "squash the merges" before proceeding
 # Check if there are merge commits
 ```
 FROM=${ATM_MODEL_VERSION:-__scrap__}
 git rev-list --min-parents=2 --count ${FROM}..HEAD
 ```
+# If >0 then need rebase to linearize history.  Good luck.
 
 ```
 FROM=${ATM_MODEL_VERSION:-__scrap__}
@@ -66,10 +75,16 @@ git format-patch -o patches/${component} \
 ## Steps to be done in the modelutils clone
 
 ```
-mydir=
+mydir=     #<- should be the ${gem_DIR} of the dev directory above
+cd ..      #create the clone outside your gem experiment
+git clone git@gitlab.science.gc.ca:MIG/modelutils.git
+cd modelutils
+modelutils_version=$(grep ^VERSION MANIFEST | cut -d: -f2)
+modelutils_version=${modelutils_version# *}
+mubranch=${modelutils_version%.*}
+mubranch=modelutils_${muversion:-1.8}-branch
+git checkout ${mubranch}
 component=modelutils
-# patchdir=${gemdir:-no-such-dir}/patches/modelutils
-# git am --empty=drop -- ${patchdir}/*.patch
 for item in ${mydir:-no-such-dir}/patches/${component}/*.patch ; do
     if [[ -s ${item} ]] ; then
        git am -3 -k ${item}
@@ -83,8 +98,11 @@ for item in ${mydir:-no-such-dir}/patches/${component}/*.patch ; do
 done
 ```
 
-# commit & tag & push
-
+# Tag & push
+```
+git tag modelutils_${modelutils_version}
+git push origin ${mubranch} modelutils_${modelutils_version}
+```
 
 Documentation
 =============
