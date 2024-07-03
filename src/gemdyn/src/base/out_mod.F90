@@ -14,6 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module out_mod
+   use rmn_fst24
+   
    implicit none
    public
    save
@@ -42,7 +44,6 @@ module out_mod
 ! Out_gridin         | ending   I of entire grid (OutGrid_x1)             |
 ! Out_gridj0         | starting J of entire grid (OutGrid_y0)             |
 ! Out_gridjn         | ending   J of entire grid (OutGrid_y1)             |
-! Out_rewrit_L       | .true. to overwrite, .false. to not overwrite   |
 ! ---------------------------------------------------------------------
 
    character(len=1024) :: Out_dirname_S
@@ -52,17 +53,20 @@ module out_mod
    character(len=1)    :: Out_gridtyp_S, Out_proj_S,Out_unit_S
    character(len=2)    :: Out_typvar_S,Out_prefix_S
    character(len=3)    :: Out_ext_S
-   logical :: Out_rewrit_L
    logical :: Out_post_L, Out_diruse_L, Out_reduc_l
    real    :: Out_rot(8)
 
-   integer Out_unf,Out_date,Out_hour,Out_dateo
-   integer Out_deet,Out_npas,Out_endstepno
+   logical :: success
+   type(fst_file)   :: Out_file   !! Out_unf
+   type(fst_record) :: Out_rec
+   integer Out_ig1, Out_ig2, Out_ig3, Out_ig4 , Out_ip2, Out_ip3, Out_dateo, Out_deet,Out_npas
+
+   integer Out_endstepno
    integer Out_gridi0,Out_gridin
    integer Out_gridj0,Out_gridjn
    integer Out_stride
-   integer Out_ig1, Out_ig2, Out_ig3, Out_ig4
-   integer Out_ixg(8), Out_ip2, Out_ip3
-   integer Out_periodx,Out_periody
+   integer Out_ixg(8)
+
+   integer Out_stk_full, Out_stk_part, Out_stk_size
 
 end module out_mod

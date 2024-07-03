@@ -29,7 +29,6 @@
       use inp_mod
       use numa
       use ptopo
-      use version
       use omp_timing
       use omp_timing
       implicit none

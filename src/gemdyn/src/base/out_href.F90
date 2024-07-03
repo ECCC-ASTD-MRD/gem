@@ -25,6 +25,7 @@
       use out_mod
       use out3
       use ptopo
+      use rmn_fst24
       implicit none
 #include <arch_specific.hf>
 
@@ -39,7 +40,7 @@
                sindx,i0,in,j0,jn,vesion_uencode
       real :: wk
       real, dimension(:), pointer     :: posx,posy
-      real, dimension(:), allocatable :: yy
+      real, dimension(:), allocatable, target :: yy
 
       character(len=1) :: nomvar
       integer :: nbit, knd, lstep
@@ -109,6 +110,18 @@
 
       if ((Out3_iome >= 0) .and. (Ptopo_couleur == 0)) then
 
+         Out_rec%typvar='X'
+         Out_rec%etiket=Out_etik_S
+         Out_rec%dateo=Out_dateo
+         Out_rec%deet=0
+         Out_rec%npas=0
+         Out_rec%ip1=Out_ig1
+         Out_rec%ip2=Out_ig2
+         Out_rec%ip3=Out_ig3
+         Out_rec%pack_bits=32
+         Out_rec%data_bits=32
+         Out_rec%data_type=FST_TYPE_REAL_IEEE
+
          if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
             vesion_uencode    = 1
@@ -157,10 +170,18 @@
             yy(sindx+10+nis:sindx+9+nis+njs)= &
             posy(Out_gridj0:Out_gridj0+njs-1)
 
-            err= fstecr(yy,yy, -32, Out_unf,Out_dateo,0,0,niyy,1,1  ,&
-                        Out_ig1,Out_ig2,Out_ig3,'X','^>',Out_etik_S ,&
-                        familly_uencode_S,vesion_uencode,0,0,0      ,&
-                        5, .true.)
+            Out_rec%nomvar='^>'
+            Out_rec%grtyp=familly_uencode_S
+            Out_rec%ni=niyy
+            Out_rec%nj=1
+            Out_rec%nk=1
+            Out_rec%ig1=vesion_uencode
+            Out_rec%ig2=0
+            Out_rec%ig3=0
+            Out_rec%ig4=0
+            Out_rec%data=c_loc(yy(:))
+
+            success = Out_file%write(Out_rec,rewrite=FST_SKIP)
             deallocate (yy, STAT = err)
 
          else
@@ -173,15 +194,29 @@
                ix2= Ptopo_couleur*4+2
                ix3= Ptopo_couleur*4+3
                ix4= Ptopo_couleur*4+4
-               err=fstecr(posx(Out_gridi0),wk,-32,Out_unf,Out_dateo   ,&
-                    0,0, ni,1,1, Out_ig1,Out_ig2,Out_ig3,'X', '>>'    ,&
-                    Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
-                    Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
-               err=fstecr(posy(Out_gridj0),wk,-32,Out_unf,Out_dateo   ,&
-                    0,0, 1,njs,1,Out_ig1,Out_ig2,Out_ig3,'X', '^^'    ,&
-                    Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
-                    Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
-            end if
+
+
+               Out_rec%nomvar='>>'
+               Out_rec%grtyp=Out_gridtyp_S
+               Out_rec%ni=ni
+               Out_rec%nj=1
+               Out_rec%nk=1
+               Out_rec%ig1=Out_ixg(ix1)
+               Out_rec%ig2=Out_ixg(ix2)
+               Out_rec%ig3=Out_ixg(ix3)
+               Out_rec%ig4=Out_ixg(ix4)
+               Out_rec%data=c_loc(posx(Out_gridi0))
+
+               success = Out_file%write(Out_rec,rewrite=FST_SKIP)
+
+               Out_rec%nomvar='^^'
+               Out_rec%ni=1
+               Out_rec%nj=njs
+               Out_rec%nk=1
+               Out_rec%data=c_loc(posy(Out_gridj0))
+
+               success = Out_file%write(Out_rec,rewrite=FST_SKIP)
+           end if
 
          end if
       end if

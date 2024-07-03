@@ -16,14 +16,13 @@
 !**s/r out_stkecr
 
       subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy, &
-                              meta,nplans, g_id,g_if,g_jd,g_jf )
+                              metaf,nplans, g_id,g_if,g_jd,g_jf )
       use iso_c_binding
       use out_collector, only: block_collect_fullp, Bloc_me
       use HORgrid_options
       use out_options
       use glb_ld
       use out_mod
-      use out_meta
       use out3
       use ptopo
       use omp_timing
@@ -33,8 +32,9 @@
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
-      type (meta_fstecr), dimension(:), pointer :: meta
-
+      type(fst_record), dimension(:), pointer :: metaf
+      type(fst_query) :: query
+      
 #include <rmnlib_basics.hf>
       include "rpn_comm.inc"
 
@@ -119,13 +119,23 @@
                      vec2 = reshape(wk(:,:,k), (/nis*njs,2/))
                      call RPN_COMM_recv ( vec2(1,2), nis*njs, 'MPI_REAL', 1, &
                                                tag, 'GRIDPEERS', stat, err )
+
                      wk(:,:,k) = reshape(vec2, (/nis, wk_njs/))
-                     err = fstecr ( wk(:,:,k),wk,-meta(kk)%nbits,Out_unf, &
-                                    Out_dateo,Out_deet,Out_npas,nis,2*njs,1, &
-                                    meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3 , &
-                                    Out_typvar_S,meta(kk)%nv,Out_etik_S,'U', &
-                                    meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3 , &
-                                    Out_ig4,meta(kk)%dtyp,Out_rewrit_L )
+                     Out_rec=metaf(kk)
+                     Out_rec%typvar=Out_typvar_S
+                     Out_rec%etiket=Out_etik_S
+                     Out_rec%dateo=Out_dateo
+                     Out_rec%deet=Out_deet
+                     Out_rec%npas=Out_npas
+                     Out_rec%grtyp='U'
+                     Out_rec%ni=nis
+                     Out_rec%nj=2*njs
+                     Out_rec%nk=1
+                     Out_rec%ig4=Out_ig4
+                     Out_rec%data=c_loc(wk(:,:,k))
+
+                     success = Out_file%write(Out_rec,rewrite=FST_SKIP)
+
                   else
                      vec1 = reshape(wk(:,:,k), (/nis*njs,1/))
                      call RPN_COMM_send ( vec1     , nis*njs, 'MPI_REAL', 0, &
@@ -140,13 +150,21 @@
                      guwrap => wk(1:nis,1:njs,k)    ; ni= nis
                   end if
 
-                  err = fstecr ( guwrap,guwrap,-meta(kk)%nbits,Out_unf,&
-                              Out_dateo,Out_deet,out_npas,ni,njs,1    ,&
-                              meta(kk)%ip1,meta(kk)%ip2,meta(kk)%ip3  ,&
-                              Out_typvar_S,meta(kk)%nv,Out_etik_S,'Z' ,&
-                              meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3  ,&
-                              Out_ig4,meta(kk)%dtyp,Out_rewrit_L )
-
+                  Out_rec=metaf(kk)
+                  Out_rec%typvar=Out_typvar_S
+                  Out_rec%etiket=Out_etik_S
+                  Out_rec%dateo=Out_dateo
+                  Out_rec%deet=Out_deet
+                  Out_rec%npas=Out_npas
+                  Out_rec%grtyp='Z'
+                  Out_rec%ni=ni
+                  Out_rec%nj=njs
+                  Out_rec%nk=1
+                  Out_rec%ig4=Out_ig4
+                  Out_rec%data=c_loc(guwrap(:,:))
+                  
+                  success = Out_file%write(Out_rec,rewrite=FST_SKIP)
+                  
                end if
 
             end if

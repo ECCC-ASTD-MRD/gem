@@ -15,7 +15,9 @@
 module inp_mod
       use iso_c_binding
       use vGrid_Descriptors
+      use rmn_fst24
       use, intrinsic :: iso_fortran_env
+
       implicit none
       public
       save
@@ -26,8 +28,11 @@ module inp_mod
               Inp_src_GZ_L, Inp_zd_L, Inp_w_L, Inp_qt_L
       integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
               Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
-              Inp_version, Inp_handle , Inp_cmcdate
-      integer, dimension(:), contiguous,pointer :: Inp_list_unf => null()
+              Inp_version, Inp_cmcdate
+
+      type(fst_file) :: Inp_file  
+      type(fst_file), dimension(:), contiguous,pointer :: Inp_list_files => null()
+      
       integer :: Inp_PX_kind, Inp_GZ_kind, Inp_PX_nka, Inp_GZ_nka
       integer :: Inp_comm, Inp_window
       integer, parameter :: Inp_maxNKA=200
