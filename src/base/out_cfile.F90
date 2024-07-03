@@ -5,8 +5,6 @@
 #include <arch_specific.hf>
 !
 !
-      integer, external :: fstfrm
-      integer err
       real dummy
 !
 !----------------------------------------------------------------------
@@ -15,10 +13,8 @@
                          dummy,dummy,dummy,dummy,dummy,dummy,&
                          dummy,dummy,dummy, .true. )
 
-      if ( (Out3_iome >= 0) .and. (Out_unf > 0) ) then
-         err = fstfrm(Out_unf)
-         call fclos(Out_unf)
-         Out_unf = 0
+      if ( (Out3_iome >= 0) .and. Out_file%is_open() ) then
+         success = Out_file%close()
       end if
 !----------------------------------------------------------------------
       return

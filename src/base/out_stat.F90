@@ -16,15 +16,15 @@
 !**s/r out_stat2
 
       subroutine out_stat2
-      use out_meta
+      use out_mod
       implicit none
 #include <arch_specific.hf>
 !
 !--------------------------------------------------------------------
 !
-      print*, 'OUTPUT_STAT: stack size: ', out_stk_size
-      print*, 'OUTPUT_STAT: full stack called: ',out_stk_full,' times'
-      print*, 'OUTPUT_STAT: partial stack called: ',out_stk_part,' times'
+      print*, 'OUTPUT_STAT: stack size: ', Out_stk_size
+      print*, 'OUTPUT_STAT: full stack called: ', Out_stk_full,' times'
+      print*, 'OUTPUT_STAT: partial stack called: ', Out_stk_part,' times'
 !
 !--------------------------------------------------------------------
 !

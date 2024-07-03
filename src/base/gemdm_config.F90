@@ -120,8 +120,6 @@
       P_lmvd_weigh_low_lat  = max(0.,min(1.,P_lmvd_weigh_low_lat ))
       P_lmvd_weigh_high_lat = max(0.,min(1.,P_lmvd_weigh_high_lat))
 
-      Out_rewrit_L   = .false.
-
       if (Out3_close_interval_S == " ") Out3_close_interval_S= '1H'
       err = timestr_parse(Out3_close_interval,Out3_unit_S,Out3_close_interval_S)
       if (Out3_close_interval <= 0.) Out3_close_interval_S= '1H'

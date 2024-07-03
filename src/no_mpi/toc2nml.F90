@@ -88,6 +88,7 @@ subroutine toc2nml
    !
    ! Autor : Andre Plante
    !
+   use rmn_fst24
    use Mod_print_toctoc, only: print_nml
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,VGD_ERROR
    !
@@ -95,10 +96,13 @@ subroutine toc2nml
 #include <arch_specific.hf>
    !
    type(vgrid_descriptor) :: vgd
-   integer, parameter :: lu=10,luo=6
+   type(fst_file) :: file
+   logical :: success
+   
+   integer, parameter :: luo=6
    integer :: stat,npos
    integer, parameter :: ncle=2
-   integer :: fnom,fstouv,fstfrm
+
    character(len=12), parameter :: version='v_1.1.0'
    character(len=256), dimension(ncle) :: cle,val,def
    !
@@ -116,18 +120,12 @@ subroutine toc2nml
       call exit(1)
    end if
    !
-   stat=fnom(lu,val(1),"RND",0)
-   if(stat < 0)then
-      print*,'ERROR with fnom on',trim(val(1))
-      call exit(1)
-   end if
-   stat=fstouv(lu,'RND')
-   if (stat < 0) then
-      print*,'ERROR with fstouv on',trim(val(1))
+   if(.not. file%open(val(1),"RND"))then
+      print*,'ERROR openning file ',trim(val(1))
       call exit(1)
    end if
    !
-   stat = vgd_new(vgd,lu,'fst')
+   stat = vgd_new(vgd,file%get_unit(),'fst')
    if (stat == VGD_ERROR) then
       print*,'ERROR with vgd_new on',trim(val(1))
       call exit(1)
@@ -140,6 +138,6 @@ subroutine toc2nml
    !
    stat=print_nml(vgd,luo)
    !
-   stat=fstfrm(lu)
+   success=file%close()
    !
 end subroutine toc2nml

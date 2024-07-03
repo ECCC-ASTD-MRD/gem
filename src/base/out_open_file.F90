@@ -46,7 +46,7 @@
 
       call datf2p (fdate, Out3_date)
 
-      if ( Out_unf > 0 ) return
+      if ( Out_file%is_open() ) return
 
       write(my_block,'(a,i3.3,a,i3.3)') '-',Ptopo_mycol,'-',Ptopo_myrow
 
@@ -90,8 +90,7 @@
 
       filen= trim(Out_dirname_S)//'/'//trim(filen)
 
-      err= fnom  ( Out_unf, trim(filen), 'STD+RND', 0 )
-      err= fstouv( Out_unf, 'RND' )
+      success= Out_file%open(trim(filen),'STD+RND+R/W')
 !
 !------------------------------------------------------------------
 !
