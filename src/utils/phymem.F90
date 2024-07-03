@@ -6,6 +6,7 @@ module phymem
    use splitst, only: splitst4
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk
    use phy_options, only: debug_mem_L
+   use debug_mod, only: init2nan
    implicit none
    private
 
@@ -37,6 +38,7 @@ module phymem
    integer, parameter, public :: PHY_DBUSIDX = 1
    integer, parameter, public :: PHY_PBUSIDX = 2
    integer, parameter, public :: PHY_VBUSIDX = 3
+   integer, parameter, public :: PHY_UBUSIDX = 3
    integer, parameter, public :: PHY_EBUSIDX = 4
    character(len=1), parameter, public :: PHY_BUSID(PHY_NBUSES) = (/'D', 'P', 'V', 'E'/)
    integer, parameter, public :: gmmflags(PHY_NBUSES) = (/ 0, GMM_FLAG_RSTR, 0, 0/)
@@ -63,6 +65,7 @@ module phymem
       integer :: i0      !# index of first element in the bus pointer, pbuses(ibus)%bptr(i0:in,:)
       integer :: in      !# in=i0+size-1; index of first element in the bus pointer, pbuses(ibus)%bptr(i0:in,:)      
       integer :: init    !# 1 = init/mandatory, 0 otherwise
+      integer :: reset   !# 1 = VBUS init/reset at stepinit, 0 = no reset
       integer :: stag    !# Level staggering information: PHY_STAG_MOM/THERMO/ENERGY
       logical :: wload   !# tracer attribute: T = use in the density calculation (water loaded), 0 otherwise
       logical :: hzd     !# tracer attribute: T = perform horizontal diffusion, 0 otherwise
@@ -133,6 +136,9 @@ module phymem
    logical, save :: isallocated = .false.
    logical, save :: isinit = .false.
 
+   integer, save, pointer :: uidxvlist(:) => NULL()
+   integer, save :: nuidxvlist = -1
+   
 contains
 
    !/@*
@@ -173,6 +179,7 @@ contains
       quiet = .false.
       if (present(F_quiet)) quiet = F_quiet
       istat = clib_toupper(busname)
+!!$      if (busname == 'U') busname = 'V'
       do F_busidx = 1, PHY_NBUSES
          if (busname == PHY_BUSID(F_busidx)) return
       enddo
@@ -243,17 +250,20 @@ contains
 
    
    !/@*
-   function phymem_busreset2(F_pvars, F_busidx, F_value) result(F_istat)
+   function phymem_busreset2(F_pvars, F_busidx, F_value, F_resetonly_L) result(F_istat)
       implicit none
       !@objective Reset whole memory bus to specified value (default zero) for provided memory slice structure (pvars)
       !@arguments
       type(phyvar), pointer, contiguous :: F_pvars(:)
       integer, intent(in) :: F_busidx
       real, intent(in), optional :: F_value
+      logical, intent(in), optional :: F_resetonly_L
       !@return
       integer :: F_istat
       !*@/
       real :: rvalue
+      logical :: resetonly_L
+      integer :: n  !#, ntot
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (F_busidx <1 .and. F_busidx > PHY_NBUSES) then
@@ -266,7 +276,16 @@ contains
       endif
       rvalue = 0.
       if (present(F_value)) rvalue = F_value
-      F_pvars(PHY_BUSIDXV(F_busidx))%data(:) = rvalue
+      resetonly_L = .false.
+      if (present(F_resetonly_L)) resetonly_L = F_resetonly_L
+      if (resetonly_L .and. F_busidx==PHY_VBUSIDX) then
+         if (debug_mem_L) call init2nan(F_pvars(PHY_BUSIDXV(F_busidx))%data)
+         do n=1,nuidxvlist
+           F_pvars(uidxvlist(n))%data = rvalue
+         enddo
+      else
+         F_pvars(PHY_BUSIDXV(F_busidx))%data = rvalue
+      endif
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -405,7 +424,13 @@ contains
          call physeterror('phymem_add', 'VS=(SHAPE) NOT ALLOWED: '//trim(F_string))
          return
       end select
-      
+
+      vmeta%reset = 0
+      if (vmeta%bus == 'U') then
+         vmeta%bus = 'V'
+      elseif (vmeta%bus == 'V') then
+         vmeta%reset = 1
+      endif
       if (.not.any(vmeta%bus == PHY_BUSID(:)))  then
          call physeterror('phymem_add', 'VB=(BUS) NOT ALLOWED: '//trim(F_string))
          return
@@ -479,6 +504,7 @@ contains
          call physeterror('phymem_get_idxv_string', 'Invalid string: '//trim(F_string))
          return
       endif
+!!$      if (vmeta%bus == 'U') vmeta%bus = 'V'
       istat = phymem_find(idxvlist, F_name=vmeta%vname, F_npath='V', F_bpath=vmeta%bus)
       if (istat <= 0) then
          call physeterror('phymem_get_idxv_string', 'Cannot find var for: '//trim(F_string))
@@ -555,6 +581,9 @@ contains
          enddo
           
       enddo DOBUS
+
+      call priv_init_vlist()
+      
       isallocated = .true.
       F_istat = PHY_OK
       !---------------------------------------------------------------
@@ -673,7 +702,15 @@ contains
             DO_PVMETAS: do iv = 1, nphyvars
                !# check bus
                match_L = (nbpath == 0)
-               if (nbpath > 0) match_L = (pvmetas(iv)%meta%bus == buses(ib))
+!!$               if (nbpath > 0) match_L = (pvmetas(iv)%meta%bus == buses(ib))
+               if (nbpath > 0) then
+                  if (buses(ib) == 'U') then
+                     match_L = (pvmetas(iv)%meta%bus == 'V' .and. pvmetas(iv)%meta%reset == 0)
+                  else
+                     match_L = (pvmetas(iv)%meta%bus == buses(ib))
+                  endif
+               endif
+               
                if (.not.match_L) cycle
                !# check names
                IF_NAME: if (name /= ' ') then
@@ -816,6 +853,7 @@ contains
 
       !#TODO: check which one can be updated, insure consistency...
       pvmetas(F_idxv)%meta%init  = F_meta%init
+      pvmetas(F_idxv)%meta%reset = F_meta%reset
       pvmetas(F_idxv)%meta%stag  = F_meta%stag
       pvmetas(F_idxv)%meta%wload = F_meta%wload
       pvmetas(F_idxv)%meta%hzd   = F_meta%hzd
@@ -1131,6 +1169,24 @@ contains
       !---------------------------------------------------------------
       return
    end function priv_checkvar
-   
+
+
+   subroutine priv_init_vlist()
+      integer :: n
+      !---------------------------------------------------------------
+      if (.not.associated(uidxvlist)) allocate(uidxvlist(nphyvars))
+      nuidxvlist = 0
+      uidxvlist = -1
+      do n=1,nphyvars
+         if (pvmetas(n)%meta%ibus == PHY_VBUSIDX) then
+            if (pvmetas(n)%meta%reset == 1) then
+               nuidxvlist = nuidxvlist + 1
+               uidxvlist(nuidxvlist) = n
+            endif
+         endif
+      enddo
+      !---------------------------------------------------------------
+      return
+   end subroutine priv_init_vlist
    
 end module phymem

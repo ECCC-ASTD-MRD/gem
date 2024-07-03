@@ -92,6 +92,8 @@ contains
       call init2nan(l_en0, l_pw0)
 
       ! Pre-radiation state for budget
+      if (associated(zconerad)) zconerad = 0.
+      if (associated(zconqrad)) zconqrad = 0.
       if (pb_compute(zconerad, zconqrad, l_en0, l_pw0, &
            pvars, nkm1) /= PHY_OK) then
          call physeterror('apply_rad_tendencies', &

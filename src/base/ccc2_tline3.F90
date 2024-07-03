@@ -14,21 +14,28 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P TLINE3 - OPTICAL DEPTH FOR THREE MIXED GASES
-!
-      subroutine ccc2_tline3z (taug, coef1, coef2, &
+
+module ccc2_tline3z_m
+   implicit none
+   private
+   public :: ccc2_tline3z
+   
+contains
+   
+      subroutine ccc2_tline3z(taug, coef1, coef2, &
                          coef3, s1, s2, s3, dp, dip, dt, inpt, &
-                         lev1, gh, lc, il1, il2, ilg, lay)
-!
+                         lev1, gh, lc, nig, ni, lay)
       implicit none
 !!!#include <arch_specific.hf>
-!
-      integer ilg, lay, lc, lev1, il1, il2, lay1, lay2
-      real taug(ilg,lay), coef1(5,lc), coef2(5,lc), coef3(5,lc), &
-           s1(ilg,lay), s2(ilg,lay), s3(ilg,lay), dp(ilg,lay), &
-           dip(ilg,lay), dt(ilg,lay)
-      integer inpt(ilg,lay)
-      logical gh
-!
+
+      integer, intent(in) :: ni, lay, lc, lev1, nig
+      real, intent(inout) :: taug(ni,lay)
+      real, intent(in) :: coef1(5,lc), coef2(5,lc), coef3(5,lc), &
+           s1(ni,lay), s2(ni,lay), s3(ni,lay), dp(ni,lay), &
+           dip(ni,lay), dt(ni,lay)
+      integer, intent(in) :: inpt(ni,lay)
+      logical, intent(in) :: gh
+
 !Authors
 !
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -79,96 +86,105 @@
 !Implicites
 !
 #include "ccc_tracegases.cdk"
-!
-      integer k, i, m, n
-      real x1, y1, x2, y2, z1, z2
-!
-      if (gh)                                                       then
-        lay1 =  1
-      else
-        lay1 =  lev1
-      endif
-      lay2   =  lay
-!
-      do 200 k = lay1, lay2
-        if (inpt(1,k) .lt. 950)                                     then
-          do 100 i = il1, il2
+
+      integer :: k, i, m, n, lay1
+      real :: x1, y1, x2, y2, z1, z2
+
+   lay1 = lev1
+   if (gh) lay1 = 1
+
+   DO_K: do k = lay1, lay
+      F_950: if (inpt(1,k) < 950) then
+
+         DO_I1: do i = 1, nig
             m  =  inpt(i,k)
             n  =  m + 1
             x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + dt(i,k) * &
-                        (coef1(3,n) + dt(i,k) * (coef1(4,n) + &
-                         dt(i,k) * coef1(5,n))))
-!
+                 (coef1(3,n) + dt(i,k) * (coef1(4,n) + &
+                 dt(i,k) * coef1(5,n))))
             y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + dt(i,k) * &
-                        (coef2(3,n) + dt(i,k) * (coef2(4,n) + &
-                         dt(i,k) * coef2(5,n))))
-!
+                 (coef2(3,n) + dt(i,k) * (coef2(4,n) + &
+                 dt(i,k) * coef2(5,n))))
             z2        =  coef3(1,n) + dt(i,k) * (coef3(2,n) + dt(i,k) * &
-                        (coef3(3,n) + dt(i,k) * (coef3(4,n) + &
-                         dt(i,k) * coef3(5,n))))
-            if (m .gt. 0)                                           then
-              x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + dt(i,k) * &
-                        (coef1(3,m) + dt(i,k) * (coef1(4,m) + &
-                         dt(i,k) * coef1(5,m))))
-!
-              y1      =  coef2(1,m) + dt(i,k) * (coef2(2,m) + dt(i,k) * &
-                        (coef2(3,m) + dt(i,k) * (coef2(4,m) + &
-                         dt(i,k) * coef2(5,m))))
-!
-              z1      =  coef3(1,m) + dt(i,k) * (coef3(2,m) + dt(i,k) * &
-                        (coef3(3,m) + dt(i,k) * (coef3(4,m) + &
-                         dt(i,k) * coef3(5,m))))
+                 (coef3(3,n) + dt(i,k) * (coef3(4,n) + &
+                 dt(i,k) * coef3(5,n))))
+            IF_M0A: if (m > 0) then
+               x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + dt(i,k) * &
+                    (coef1(3,m) + dt(i,k) * (coef1(4,m) + &
+                    dt(i,k) * coef1(5,m))))
+               y1      =  coef2(1,m) + dt(i,k) * (coef2(2,m) + dt(i,k) * &
+                    (coef2(3,m) + dt(i,k) * (coef2(4,m) + &
+                    dt(i,k) * coef2(5,m))))
+               z1      =  coef3(1,m) + dt(i,k) * (coef3(2,m) + dt(i,k) * &
+                    (coef3(3,m) + dt(i,k) * (coef3(4,m) + &
+                    dt(i,k) * coef3(5,m))))
+               taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) + &
+                    (y1 + (y2 - y1) * dip(i,k)) * s2(i,k) + &
+                    (z1 + (z2 - z1) * dip(i,k)) * s3(i,k)  ) * &
+                    dp(i,k)
             else
-              x1      =  0.0
-              y1      =  0.0
-              z1      =  0.0
-            endif
-!
-            taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) + &
-                          (y1 + (y2 - y1) * dip(i,k)) * s2(i,k) + &
-                          (z1 + (z2 - z1) * dip(i,k)) * s3(i,k)  ) * &
-                           dp(i,k)
-  100     continue
-        else
-          m  =  inpt(1,k) - 1000
-          n  =  m + 1
-          do 150 i = il1, il2
-            x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + dt(i,k) * &
-                        (coef1(3,n) + dt(i,k) * (coef1(4,n) + &
-                         dt(i,k) * coef1(5,n))))
-!
-            y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + dt(i,k) * &
-                        (coef2(3,n) + dt(i,k) * (coef2(4,n) + &
-                         dt(i,k) * coef2(5,n))))
-!
-            z2        =  coef3(1,n) + dt(i,k) * (coef3(2,n) + dt(i,k) * &
-                        (coef3(3,n) + dt(i,k) * (coef3(4,n) + &
-                         dt(i,k) * coef3(5,n))))
-            if (m .gt. 0)                                           then
-              x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + dt(i,k) * &
-                        (coef1(3,m) + dt(i,k) * (coef1(4,m) + &
-                         dt(i,k) * coef1(5,m))))
-!
-              y1      =  coef2(1,m) + dt(i,k) * (coef2(2,m) + dt(i,k) * &
-                        (coef2(3,m) + dt(i,k) * (coef2(4,m) + &
-                         dt(i,k) * coef2(5,m))))
-!
-              z1      =  coef3(1,m) + dt(i,k) * (coef3(2,m) + dt(i,k) * &
-                        (coef3(3,m) + dt(i,k) * (coef3(4,m) + &
-                         dt(i,k) * coef3(5,m))))
-            else
-              x1      =  0.0
-              y1      =  0.0
-              z1      =  0.0
-            endif
-!
-            taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) + &
-                          (y1 + (y2 - y1) * dip(i,k)) * s2(i,k) + &
-                          (z1 + (z2 - z1) * dip(i,k)) * s3(i,k) ) * &
-                           dp(i,k)
-  150     continue
-        endif
-  200 continue
-!
-      return
-      end
+               taug(i,k) = dp(i,k) * ( &
+                    x2 * dip(i,k) * s1(i,k) + &
+                    y2 * dip(i,k) * s2(i,k) + &
+                    z2 * dip(i,k) * s3(i,k) )
+            endif IF_M0A
+         enddo DO_I1
+
+      else  !IF_950
+
+         m  =  inpt(1,k) - 1000
+         n  =  m + 1
+         IF_M0B: if (m > 0) then
+
+            DO_I2: do i = 1, nig
+               x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + dt(i,k) * &
+                    (coef1(3,n) + dt(i,k) * (coef1(4,n) + &
+                    dt(i,k) * coef1(5,n))))
+               y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + dt(i,k) * &
+                    (coef2(3,n) + dt(i,k) * (coef2(4,n) + &
+                    dt(i,k) * coef2(5,n))))
+               z2        =  coef3(1,n) + dt(i,k) * (coef3(2,n) + dt(i,k) * &
+                    (coef3(3,n) + dt(i,k) * (coef3(4,n) + &
+                    dt(i,k) * coef3(5,n))))
+               x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + dt(i,k) * &
+                    (coef1(3,m) + dt(i,k) * (coef1(4,m) + &
+                    dt(i,k) * coef1(5,m))))
+               y1      =  coef2(1,m) + dt(i,k) * (coef2(2,m) + dt(i,k) * &
+                    (coef2(3,m) + dt(i,k) * (coef2(4,m) + &
+                    dt(i,k) * coef2(5,m))))
+               z1      =  coef3(1,m) + dt(i,k) * (coef3(2,m) + dt(i,k) * &
+                    (coef3(3,m) + dt(i,k) * (coef3(4,m) + &
+                    dt(i,k) * coef3(5,m))))
+               taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) + &
+                    (y1 + (y2 - y1) * dip(i,k)) * s2(i,k) + &
+                    (z1 + (z2 - z1) * dip(i,k)) * s3(i,k) ) * &
+                    dp(i,k)
+            enddo DO_I2
+
+         else  !IF_M0b
+
+            DO_I3: do i = 1, nig
+               x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + dt(i,k) * &
+                    (coef1(3,n) + dt(i,k) * (coef1(4,n) + &
+                    dt(i,k) * coef1(5,n))))
+               y2        =  coef2(1,n) + dt(i,k) * (coef2(2,n) + dt(i,k) * &
+                    (coef2(3,n) + dt(i,k) * (coef2(4,n) + &
+                    dt(i,k) * coef2(5,n))))
+               z2        =  coef3(1,n) + dt(i,k) * (coef3(2,n) + dt(i,k) * &
+                    (coef3(3,n) + dt(i,k) * (coef3(4,n) + &
+                    dt(i,k) * coef3(5,n))))
+               taug(i,k) = dp(i,k) * ( &
+                    x2 * dip(i,k) * s1(i,k) + &
+                    y2 * dip(i,k) * s2(i,k) + &
+                    z2 * dip(i,k) * s3(i,k) )
+            enddo DO_I3
+
+         endif IF_M0b
+
+      endif F_950
+   enddo DO_K
+   
+   return
+end subroutine ccc2_tline3z
+
+end module ccc2_tline3z_m

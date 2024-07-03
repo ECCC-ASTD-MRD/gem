@@ -18,7 +18,6 @@ contains
     use phy_options
     use phy_status, only: phy_error_L, PHY_OK
     use mixing_length, only: ml_compute,ML_LMDA
-    use pbl_stabfunc, only: psf_stabfunc
     use ens_perturb, only: ens_spp_get, ens_nc2d
     use pbl_utils, only: TURBULENT, LAMINAR
     use pbl_mtke_utils, only: blcloud, tkealg, &
@@ -132,7 +131,7 @@ contains
     real :: dtfac
     real, dimension(n) :: e_sfc,beta_sfc,tkesrc,ricmin,ricmax,diffcoef
     real, dimension(n,nk) :: dudz,dvdz,wb_ng,f_cs,e_star,asig,ke,diss_term, &
-         shr_term,shr_ng,zero,buoy_term,frac,fm,fh
+         shr_term,shr_ng,zero,buoy_term,frac
     real, dimension(n,nk,3) :: w_cld
 
     ! External symbols
@@ -176,24 +175,16 @@ contains
        end do
     end do
 
-    ! Compute PBL stability functions and inverse Prandtl number (Pr=(fit/fim); pri=(fim/fit))
-    if (psf_stabfunc(rig, z, fm, fh, blend_bottom=pbl_slblend_layer(1), &
-         blend_top=pbl_slblend_layer(2)) /= PHY_OK) then
-       call physeterror('moistke', 'error returned by PBL stability functions')
-       return
-    endif
-    pri = fm/fh
-
     ! Compute mixing and dissipation length scales
     mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
-    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, fnn, z, gzmom, s, se, ps, &
-         enold, buoy, rig, w_cld, f_cs, fm, turbreg, z0, &
-         hpbl, lh, hpar, mrk2, dxdy, tau, kount)
+    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
+         s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
+         hpbl, lh, hpar, vcoef, mrk2, dxdy, tau, kount)
     if (stat /= PHY_OK) then
        call physeterror('moistke', 'error returned by mixing length calculation')
        return
     endif
-
+    
     ! Output length scales for time series
     call series_xst(zn, 'L1', trnch)
     call series_xst(zd, 'L2', trnch)
@@ -291,7 +282,7 @@ contains
        diffcoef(:) = ens_spp_get('tkediff', mrk2, default=pbl_tkediff)
        asig = (GRAV/RGASD) * se/tve
        do k=1,nk
-          ke(:,k) = diffcoef(:)*BLCONST_CK*CLEFAE*zn(:,k)*sqrt(enold(:,k)) * asig(:,k)**2
+          ke(:,k) = diffcoef(:)*BLCONST_CK*CLEFAE*zn(:,k)*sqrt(enold(:,k)) * asig(:,k)**2          
        enddo
 
        ! Compute surface boundary condition
@@ -312,7 +303,7 @@ contains
        if (pbl_tkediff2dt) dtfac = 2.
        call difuvdfj(en,e_star,ke,zero,zero,zero,e_sfc,beta_sfc,s,se,dtfac*tau,4,1.,n,n,n,nk)
        if (phy_error_L) return
-
+       
        ! update TKE for the timestep
        en = max(etrmin2, e_star + tau*en)
 

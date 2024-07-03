@@ -22,12 +22,14 @@ contains
   !/@*
   function phy_step (F_stepcount, F_stepdriver) result(F_istat)
     use wb_itf_mod, only: WB_OK, WB_IS_OK, wb_get
+    use clib_itf_mod, only: clib_toupper
     use str_mod, only: str_concat
     use series_mod, only: series_stepinit, series_stepend
     use phy_status, only: phy_error_L, phy_init_ctrl, PHY_CTRL_INI_OK, PHY_NONE
-    use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L, nphyoutlist, nphystepoutlist, phystepoutlist_S
+    use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L, nphyoutlist, nphystepoutlist, phyoutlist_S, phystepoutlist_S
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb, only: physlb1
+    use phymem, only: phymem_find_idxv, phymem_getmeta, phymeta
 
 #ifdef HAVE_NEMO
     use cpl_itf   , only: cpl_step
@@ -54,10 +56,12 @@ contains
     integer, external :: phyput_input_param, sfc_get_input_param
 
     integer, save :: pslic
+    logical, save :: do_phyoutlist_L = .true.
 
     character(len=1024) :: msg_S, list_S
-    integer :: istat, sfcflxfilt, itmp
+    integer :: istat, sfcflxfilt, itmp, nn, n, idxlist(1)
     real :: gwd_sig, lhn_sig
+    type(phymeta), pointer    :: vmeta
     !---------------------------------------------------------------
     F_istat = RMN_ERR
     if (phy_init_ctrl == PHY_NONE) then
@@ -106,6 +110,25 @@ contains
     if (nphystepoutlist > 0) then
        istat = wb_get('itf_phy/PHYSTEPOUT_V', phystepoutlist_S, itmp)
        if (.not.WB_IS_OK(istat)) nphystepoutlist = 0
+       do n=1,nphystepoutlist
+          nn = phymem_find_idxv(idxlist, phystepoutlist_S(n), F_npath='VO', F_bpath='EPVD', F_quiet=.true.)
+          if (nn > 0) istat = phymem_getmeta(vmeta, idxlist(1))
+          if (nn > 0 .and. RMN_IS_OK(istat)) then
+             phystepoutlist_S(n) = vmeta%oname(1:4)
+             istat = clib_toupper(phystepoutlist_S(n))
+          endif
+       enddo
+    endif
+    if (nphyoutlist > 0 .and. do_phyoutlist_L) then
+       do_phyoutlist_L = .false.
+       do n=1,nphyoutlist
+          nn = phymem_find_idxv(idxlist, phyoutlist_S(n), F_npath='VO', F_bpath='EPVD', F_quiet=.true.)
+          if (nn > 0) istat = phymem_getmeta(vmeta, idxlist(1))
+          if (nn > 0 .and. RMN_IS_OK(istat)) then
+             phyoutlist_S(n) = vmeta%oname(1:4)
+             istat = clib_toupper(phyoutlist_S(n))
+          endif
+       enddo
     endif
     ! if (nphystepoutlist == 0) then
     !    list_S = '[No phy output requested for this step]'
