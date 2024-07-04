@@ -53,7 +53,7 @@
    !# E0 : Volatile  bus, Not reset to Zero every step, NOT saved in GMM for restart, Not required read in phy_input
    !# E1 : Volatile  bus, Not reset to Zero every step, NOT saved in GMM for restart, required read in phy_input
 
-#define ISOUT1(ON) any(phyoutlist_S(1:nphyoutlist) == #ON)
+#define ISOUT1(ON) any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(ON))
 #define ISOUT4(ON1,ON2,ON3,ON4) (debug_alldiag_L.or.ISOUT1(ON1).or.ISOUT1(ON2).or.ISOUT1(ON3).or.ISOUT1(ON4))
 #define ISOUT6(ON1,ON2,ON3,ON4,ON5,ON6) (debug_alldiag_L.or.ISOUT1(ON1).or.ISOUT1(ON2).or.ISOUT1(ON3).or.ISOUT1(ON4).or.ISOUT1(ON5).or.ISOUT1(ON6))
 #define ISOUT12(ON1,ON2,ON3,ON4,ON5,ON6,ON7,ON8,ON9,ON10,ON11,ON12) (ISOUT6(ON1,ON2,ON3,ON4,ON5,ON6).or.ISOUT6(ON7,ON8,ON9,ON10,ON11,ON12))
@@ -983,15 +983,15 @@ PVAR  (udis      , PHYTD_UDIS, UDIS, P0  , LVLM , "VD=U tendency due dissipative
 PVAR  (vdis      , PHYTD_VDIS, VDIS, P0  , LVLM , "VD=V tendency due dissipative processes                        ;")
 
 !Section conservation
-PVARC (cone0     , CONE0     , CE0 , U0  , LVLA , "VD=Thermal energy before physics                               ;                         ", lcons.and.ISOUT12(CE0,CEF,CEFM,CE1,CEA,CEAM,CONE0,CONEPHY,CONEPHYM,CONE1,CONETOT,CONETOTM))
-PVARC (cone1     , CONE1     , CE1 , P0  , LVLA , "VD=Thermal energy after physics                                ;                         ", lcons.and.ISOUT6(CE1,CEA,CEAM,CONE1,CONETOT,CONETOTM))
+PVARC (cone0     , CONE0     , CE0 , U0  , LVLA , "VD=Thermal energy before physics                               ;                         ", lcons)
+PVARC (cone1     , CONE1     , CE1 , P0  , LVLA , "VD=Thermal energy after physics                                ;                         ", lcons)
 
 PVARC (conecnd   , CONECND   , CEC , U0  , LVLA , "VD=Thermal energy residual (condens.)                          ;                         ", lcons)
 PVAROC(conecndm  , CONECNDM  , CECM, P0  , LVLA , "VD=Accumulation of conecnd                                     ;                         ", lmoycons)
 PVARC (conedc    , CONEDC    , CED , U0  , LVLA , "VD=Thermal energy residual (deep conv.)                        ;                         ", lcons)
 PVAROC(conedcm   , CONEDCM   , CEDM, P0  , LVLA , "VD=Accumulation of conedc                                      ;                         ", lmoycons)
 
-PVARC (conedyn   , CONEDYN   , CEY , U0  , LVLA , "VD=Thermal energy residual (dynamics)                          ;                         ", lcons.and.ISOUT4(CONEDYN,CONEDYNM,CEY,CEYM))
+PVARC (conedyn   , CONEDYN   , CEY , U0  , LVLA , "VD=Thermal energy residual (dynamics)                          ;                         ", lcons)
 PVAROC(conedynm  , CONEDYNM  , CEYM, P0  , LVLA , "VD=Accmulation conedyn                                         ;                         ", lmoycons)
 
 PVARC (conemc    , CONEMC    , CEI , U0  , LVLA , "VD=Thermal energy residual (mid-level conv.)                   ;                         ", lcons)
@@ -999,7 +999,7 @@ PVAROC(conemcm   , CONEMCM   , CEIM, P0  , LVLA , "VD=Accumulation of conemc    
 PVARC (conepbl   , CONEPBL   , CEP , U0  , LVLA , "VD=Thermal energy residual (PBL)                               ;                         ", lcons)
 PVAROC(conepblm  , CONEPBLM  , CEPM, P0  , LVLA , "VD=Accumulation of conepbl                                     ;                         ", lmoycons)
 
-PVARC (conephy   , CONEPHY   , CEF , U0  , LVLA , "VD=Thermal energy residual (physics)                           ;                         ", lcons.and.ISOUT4(CONEPHY,CONEPHYM,CEF,CEFM))
+PVARC (conephy   , CONEPHY   , CEF , U0  , LVLA , "VD=Thermal energy residual (physics)                           ;                         ", lcons)
 PVAROC(conephym  , CONEPHYM  , CEFM, P0  , LVLA , "VD=Accmulation conephy                                         ;                         ", lmoycons)
 
 PVARC (conemo    , CONEMO    , CEM , U0  , LVLA , "VD=Thermal energy residual (meth. ox.)                         ;                         ", lcons)
@@ -1009,18 +1009,18 @@ PVAROC(coneradm  , CONERADM  , CERM, P0  , LVLA , "VD=Accumulation of conerad   
 PVARC (conesc    , CONESC    , CES , U0  , LVLA , "VD=Thermal energy residual (shal conv.)                        ;                         ", lcons)
 PVAROC(conescm   , CONESCM   , CESM, P0  , LVLA , "VD=Accumulation of conesc                                      ;                         ", lmoycons)
 
-PVARC (conetot   , CONETOT   , CEA , U0  , LVLA , "VD=Thermal energy residual (full model)                        ;                         ", lcons.and.ISOUT4(CONETOT,CONETOTM,CEA,CEAM))
+PVARC (conetot   , CONETOT   , CEA , U0  , LVLA , "VD=Thermal energy residual (full model)                        ;                         ", lcons)
 PVAROC(conetotm  , CONETOTM  , CEAM, P0  , LVLA , "VD=Accumulation of conetot                                     ;                         ", lcons)
 
-PVARC (conq0     , CONQ0     , CQ0 , U0  , LVLA , "VD=Total water before physics                                  ;                         ", lcons.and.ISOUT12(CQ0,CQF,CQFM,CQ1,CQA,CQAM,CONQ0,CONQPHY,CONQPHYM,CONQ1,CONQTOT,CONQTOTM))
-PVARC (conq1     , CONQ1     , CQ1 , P0  , LVLA , "VD=Total water after physics                                   ;                         ", lcons.and.ISOUT6(CQ1,CQA,CQAM,CONQ1,CONQTOT,CONQTOTM))
+PVARC (conq0     , CONQ0     , CQ0 , U0  , LVLA , "VD=Total water before physics                                  ;                         ", lcons)
+PVARC (conq1     , CONQ1     , CQ1 , P0  , LVLA , "VD=Total water after physics                                   ;                         ", lcons)
 
 PVARC (conqcnd   , CONQCND   , CQC , U0  , LVLA , "VD=Total water residual (condens.)                             ;                         ", lcons)
 PVAROC(conqcndm  , CONQCNDM  , CQCM, P0  , LVLA , "VD=Accumulation of conqcnd                                     ;                         ", lmoycons)
 PVARC (conqdc    , CONQDC    , CQD , U0  , LVLA , "VD=Total water residual (deep conv.)                           ;                         ", lcons)
 PVAROC(conqdcm   , CONQDCM   , CQDM, P0  , LVLA , "VD=Accumulation of conqdc                                      ;                         ", lmoycons)
 
-PVARC (conqdyn   , CONQDYN   , CQY , U0  , LVLA , "VD=Total water residual (dynamics)                             ;                         ", lcons.and.ISOUT4(CONQDYN,CONQDYNM,CQY,CQYM))
+PVARC (conqdyn   , CONQDYN   , CQY , U0  , LVLA , "VD=Total water residual (dynamics)                             ;                         ", lcons)
 PVAROC(conqdynm  , CONQDYNM  , CQYM, P0  , LVLA , "VD=Accmulation conqdyn                                         ;                         ", lmoycons)
 
 PVARC (conqmc    , CONQMC    , CQI , U0  , LVLA , "VD=Total water residual (mid-level conv.)                      ;                         ", lcons)
@@ -1028,7 +1028,7 @@ PVAROC(conqmcm   , CONQMCM   , CQIM, P0  , LVLA , "VD=Accumulation of conqmc    
 PVARC (conqpbl   , CONQPBL   , CQP , U0  , LVLA , "VD=Total water residual (PBL)                                  ;                         ", lcons)
 PVAROC(conqpblm  , CONQPBLM  , CQPM, P0  , LVLA , "VD=Accumulation of conqpbl                                     ;                         ", lmoycons)
 
-PVARC (conqphy   , CONQPHY   , CQF , U0  , LVLA , "VD=Total water residual (physics)                              ;                         ", lcons.and.ISOUT4(CONQPHY,CONQPHYM,CQF,CQFM))
+PVARC (conqphy   , CONQPHY   , CQF , U0  , LVLA , "VD=Total water residual (physics)                              ;                         ", lcons)
 PVAROC(conqphym  , CONQPHYM  , CQFM, P0  , LVLA , "VD=Accmulation conqphy                                         ;                         ", lmoycons)
 
 PVARC (conqmo    , CONQMO    , CQM , U0  , LVLA , "VD=Total water residual (meth. ox.)                            ;                         ", lcons)
@@ -1038,7 +1038,7 @@ PVAROC(conqradm  , CONQRADM  , CQRM, P0  , LVLA , "VD=Accumulation of conqrad   
 PVARC (conqsc    , CONQSC    , CQS , U0  , LVLA , "VD=Total water residual (shal conv.)                           ;                         ", lcons)
 PVAROC(conqscm   , CONQSCM   , CQSM, P0  , LVLA , "VD=Accumulation of conqsc                                      ;                         ", lmoycons)
 
-PVARC (conqtot   , CONQTOT   , CQA , U0  , LVLA , "VD=Total water residual (full model)                           ;                         ", lcons.and.ISOUT4(CONQTOT,CONQTOTM,CQA,CQAM))
+PVARC (conqtot   , CONQTOT   , CQA , U0  , LVLA , "VD=Total water residual (full model)                           ;                         ", lcons)
 PVAROC(conqtotm  , CONQTOTM  , CQAM, P0  , LVLA , "VD=Accumulation of conqtot                                     ;                         ", lmoycons)
 !conservation
 
