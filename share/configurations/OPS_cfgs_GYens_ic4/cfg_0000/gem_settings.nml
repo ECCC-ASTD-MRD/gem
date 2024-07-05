@@ -211,7 +211,7 @@
  KFCRADW    = 1100 ,
  KFCTRIG4   = 0.,0.,0.1,0.1
  kfctrigw   = 0.5, 1., 0.07, -0.03
- cmt_type   = ECMWF_PH2
+ cmt_type   = 'ECMWF_PH2'
  kfcdpdd = 6000.
 
  deep_timeconv='BECHTOLD09'
