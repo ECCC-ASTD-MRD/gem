@@ -166,7 +166,7 @@ subroutine phybusinit(ni,nk)
    
    dwwz = 'd1'
    lsurfonly = (fluvert == 'SURFACE')
-   if (lsurfonly) dwwz = '0'
+   if (lsurfonly) dwwz = 'd0'
    psss = 'p0'
    if (tofd /= 'NIL') psss = 'p1'
    lpcp_frac = lsurfonly .and. (pcptype == 'SPS_FRC')
