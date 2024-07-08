@@ -371,11 +371,11 @@ subroutine iau_apply (F_kount)
          !# Move data to grid with halos; save in GMM
          if (associated(myptr0)) then
             data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
-            deallocate(myptr0, stat=istat)
+            nullify(myptr0)
          end if
          if (associated(myptr1) .and. associated(data1)) then
             data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
-            deallocate(myptr1, stat=istat)
+            nullify(myptr1)
          end if
 
          !# Adapt units and horizontal positioning
