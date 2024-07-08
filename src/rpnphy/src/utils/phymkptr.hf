@@ -45,7 +45,7 @@
 
 #define PVAR(NAME, VN, ON, VB, VS, DESC) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC))
 #define PVARC(NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
-#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == PHYTOSTR(KEYWORD))) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC), F_flags=PHYTOSTR(KEYWORD))
+#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == adjustl(PHYTOSTR(KEYWORD)))) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC), F_flags=PHYTOSTR(KEYWORD))
 #define PVARO(NAME, VN, ON, VB, VS, DESC) if (PVDIAG2(VN,ON)) PVAR(NAME, VN, ON, VB, VS, DESC)
 #define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) if (PVDIAG2(VN,ON) .and. (COND)) PVAR(NAME, VN, ON, VB, VS, DESC)
 
