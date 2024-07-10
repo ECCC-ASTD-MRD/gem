@@ -1,3 +1,8 @@
+#if defined(WITH_GNU) || defined(__GFORTRAN__)
+# define PHYTOSTR(A)  "A"
+#else
+# define PHYTOSTR(A)  #A
+#endif
 
 #ifndef PHYMKPTR
 #define PHYMKPTR
@@ -16,6 +21,12 @@
 #define PHYVAR3DK(NAME, DESC, KEYWORD) PHYVAR3D1(NAME, DESC)
 #define PHYVAR4DK(NAME, DESC, KEYWORD) PHYVAR4D1(NAME, DESC)
 
+#define PVAR(NAME, VN, ON, VB, VS, DESC) integer :: NAME = -1
+#define PVARC(NAME, VN, ON, VB, VS, DESC, COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARO(NAME, VN, ON, VB, VS, DESC) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+   
 #else
 
 #define PHYVAR2D1(NAME, DESC) NAME = phymem_add(DESC//" ; VS=A")
@@ -28,6 +39,15 @@
 #define PHYVAR2DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC//" ; VS=A", F_flags=KEYWORD)
 #define PHYVAR3DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
 #define PHYVAR4DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
+
+#define PVDIAG2(VN,ON) (debug_alldiag_L .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(VN)) .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(ON)))
+#define PVARGS(NAME_, VN_, ON_, VB_, VS_, DESC) "VN="//PHYTOSTR(VN_)//"; ON="//PHYTOSTR(ON_)//"; VB="//VB_//"; VS="//VS_//"; "//DESC
+
+#define PVAR(NAME, VN, ON, VB, VS, DESC) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC))
+#define PVARC(NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == adjustl(PHYTOSTR(KEYWORD)))) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC), F_flags=PHYTOSTR(KEYWORD))
+#define PVARO(NAME, VN, ON, VB, VS, DESC) if (PVDIAG2(VN,ON)) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) if (PVDIAG2(VN,ON) .and. (COND)) PVAR(NAME, VN, ON, VB, VS, DESC)
 
 #endif
 #endif

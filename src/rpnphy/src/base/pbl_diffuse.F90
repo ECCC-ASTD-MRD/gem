@@ -186,7 +186,7 @@ contains
     MKPTR2Dm1(zzn, zn, pvars)
 
     MKPTR2Dm1(tw, wdifv, pvars)
-    MKPTR2Dm1(tl, ldifv, pvars)
+    MKPTR2Dm1(tl, qcdifv, pvars)
     MKPTR2Dm1(zpblsigs, pblsigs, pvars)
     MKPTR2Dm1(zpblq1, pblq1, pvars)
 
@@ -295,7 +295,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for u-component wind
-    if (any([(any((/'tfuu', 'tfuv'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (any([(any((/'TFUU', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
        call atmflux4(zturbuf, tu, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -310,7 +310,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for v-component wind
-    if (any([(any((/'tfvv', 'tfuv'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (any([(any((/'TFVV', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
        call atmflux4(zturbvf, tv, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -357,7 +357,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for moisture
-    if (any(phyoutlist_S == 'tfhu')) then
+    if (any(phyoutlist_S == 'TFHU')) then
        call atmflux4(zturbqf, tconserv_q, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -417,7 +417,7 @@ contains
     tt(:,1:nkm1) = tt(:,1:nkm1) - (1./CPD) * dket(:,1:nkm1)
 
     ! Diagnose atmospheric fluxes for temperature
-    if (any(phyoutlist_S == 'tftt')) then
+    if (any(phyoutlist_S == 'TFTT')) then
        call atmflux4(zturbtf, tt, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif

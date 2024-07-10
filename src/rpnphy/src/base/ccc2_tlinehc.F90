@@ -14,21 +14,28 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P TLINEHC - OPTICAL DEPTH FOR H2O AND CO2
-!
-      subroutine ccc2_tlinehc4 (taug, coef1u, coef1d, &
+
+module ccc2_tlinehc_m
+   implicit none
+   private
+   public :: ccc2_tlinehc2
+   
+contains
+   
+      subroutine ccc2_tlinehc2 (taug, coef1u, coef1d, &
                           coef2u, coef2d, qq, co2, dp, dip, dir, &
-                          dt, inptr, inpt, lev1, il1, il2, ilg, lay)
-!
+                          dt, inptr, inpt, lev1, ni, lay)
       implicit none
 !!!#include <arch_specific.hf>
-!
-      integer ilg, lay, lev1, il1, il2
-      real taug(ilg,lay), coef1u(5,11), coef1d(5,5,7), &
+
+      integer, intent(in) :: ni, lay, lev1
+      real, intent(inout) :: taug(ni,lay)
+      real, intent(in) :: coef1u(5,11), coef1d(5,5,7), &
                           coef2u(5,11), coef2d(5,5,7)
-      real qq(ilg,lay), co2(ilg,lay), dp(ilg,lay), dip(ilg,lay), &
-           dir(ilg,lay), dt(ilg,lay)
-      integer inptr(ilg,lay), inpt(ilg,lay)
-!
+      real, intent(in) :: qq(ni,lay), co2(ni,lay), dp(ni,lay), dip(ni,lay), &
+           dir(ni,lay), dt(ni,lay)
+      integer, intent(in) :: inptr(ni,lay), inpt(ni,lay)
+
 !Authors
 !
 !        J. Li, M. Lazarre, CCCMA, rt code for gcm4
@@ -81,9 +88,11 @@
 
 
 !*
-      do 200 k = lev1, lay
-      if (inpt(1,k) .lt. 950)                                       then
-      do 101 i = il1, il2
+      DO_K: do k = lev1, lay
+
+      IF_INPT950: if (inpt(1,k) .lt. 950)                                       then
+
+      DO_I1: do i = 1, ni
         m       =  inpt(i,k)
         if (m .le. 11)                                              then
           n     =  m + 1
@@ -188,10 +197,13 @@
 !
         taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * qq(i,k) + &
                       (y1 + (y2 - y1) * dip(i,k)) * co2(i,k) ) * dp(i,k)
- 101  continue
-      else
+
+      enddo DO_I1
+     
+      else  !IF_INPT950
+      
       m       =  inpt(1,k) - 1000
-      do 102 i = il1, il2
+      DO_I2: do i = 1, ni
         if (m .le. 11)                                              then
           n     =  m + 1
           if (m .gt. 0)                                             then
@@ -295,9 +307,11 @@
 !
         taug(i,k) = ( (x1 + (x2 - x1) * dip(i,k)) * qq(i,k) + &
                       (y1 + (y2 - y1) * dip(i,k)) * co2(i,k) ) * dp(i,k)
- 102  continue
-      endif
- 200  continue
-!
+      enddo DO_I2
+      endif IF_INPT950
+      enddo DO_K
+
       return
-      end
+   end subroutine ccc2_tlinehc2
+
+end module ccc2_tlinehc_m

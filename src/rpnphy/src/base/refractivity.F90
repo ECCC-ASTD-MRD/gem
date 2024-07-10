@@ -140,6 +140,9 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
    do i=1,ni
       sk  = zdct_lvlmax(i)
       sk1 = zdct_lvlmin(i)
+      zdct_bh(i) = 0.
+      zdct_thick(i) = 0.
+      zdct_lvl(i) = 0.
       if (sk .gt. 0) then
          if (zdct_moref(i,sk1) .le. zdct_moref(i,nk)) then
             zdct_bh(i) = -100
@@ -174,6 +177,7 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
 
    !  find second local max
 
+   zdct_sndmax = 0.
    do i=1,ni
       sk = zdct_lvlmin(i)
       if (sk .gt. 0) then
@@ -188,6 +192,7 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
 
    !  find second local min
 
+   zdct_sndmin = 0.
    do i=1,ni
       sk = zdct_sndmax(i)
       if (sk .gt. 0) then
@@ -203,6 +208,7 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
 
    !  find third local max
 
+   zdct_trdmax = 0.
    do i=1,ni
       sk=zdct_sndmin(i)
       if (sk .gt. 0) then
@@ -217,6 +223,7 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
 
    !  find third local min
 
+   zdct_trdmin = 0.
    do i=1,ni
       sk = zdct_trdmax(i)
       if (sk .gt. 0) then
@@ -234,6 +241,7 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
    !  if dct_lvlmax, dct_sndmax, dct_trdmax have not zero values 
    !  these values indicate k's of local max that are followed higher by min
 
+   zdct_count = 0
    do i=1,ni
       sk  = zdct_lvlmax(i)
       sk1 = zdct_sndmax(i)

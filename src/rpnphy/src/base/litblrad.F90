@@ -15,6 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------
 !/@*
 subroutine litblrad (F_file_S, F_myproc)
+   use phyrdfile, only: phyrdfile1, READRAD
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -76,7 +77,7 @@ subroutine litblrad (F_file_S, F_myproc)
          return
       ENDIF
 
-      call phyrdfile (F_file_S, rd_radtab, 'IRTAB', F_myproc)
+      call phyrdfile1(F_file_S, READRAD, 'IRTAB', F_myproc)
 
 !     inverser les dimensions de bcn, dbcn, th2o et yg3 pour
 !     optimiser l'utilisation de la cache
@@ -132,4 +133,4 @@ subroutine litblrad (F_file_S, F_myproc)
 !-----------------------------------------------------------------
 !
       return
-      end
+   end subroutine litblrad

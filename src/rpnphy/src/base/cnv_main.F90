@@ -108,6 +108,7 @@ contains
       ! (otherwise it is computed automatically)
       !real   :: xtadjd=3600., xtadjs=10800. ! only used if lsettadj = .true.
 
+
       ! Pointer to buses
 
       real, pointer, dimension(:), contiguous :: psm, psp, ztdmaskxdt, zfcpflg, zkkfc, zrckfc, &
@@ -285,6 +286,7 @@ contains
       zcqce= 0.
       pch1 = 0.
       pch1ten = 0.
+      zkkfc = 0.
 
       ! Run selected deep convective scheme
       DEEP_CONVECTION: if (convec == 'SEC') then            ! ajustement convectif sec

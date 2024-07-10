@@ -45,7 +45,6 @@ contains
     !          - Input/Output -
     ! pvars    list of all phy vars (meta + slab data)
     !          - Input -
-    ! se       sigma level for turbulent energy
     ! kount    index of timestep
     ! trnch    number of the slice
     ! ni       horizontal dimension
@@ -62,37 +61,41 @@ contains
     include "tables.cdk"
     include "phyinput.inc"
 
-    integer, external :: neark !#TODO make it a module
+    integer, external :: neark
 
     real, save :: tfilt = 0.1
 
     integer :: i, k, stat, ksl(ni)
     real :: cf1, cf2, eturbtau, uet, ilmot, &
          fhz, fim, fit, hst_local, &
-         b(ni,nkm1*4), xb(ni), xh(ni), fbsurf(ni)
+         b(ni,nkm1*4), xb(ni), xh(ni), fbsurf(ni), zns
 
     real, pointer, dimension(:), contiguous :: zbt_ag, zfrv_ag, zftemp_ag, &
-         zfvap_ag, zhst_ag, zilmo_ag, zz0_ag, ztsurf
+         zfvap_ag, zhst_ag, zilmo_ag, zz0_ag, ztsurf, zqsurf, zz0t_ag, &
+         zdlat, zfcor
     real, pointer, dimension(:), contiguous   :: zalfat, zztsl, zh, zlh, &
          zwstar, zudiag, zvdiag, zhpar, zpmoins, zsdtswd, &
-         zsdtsws, zwge, zwgmax, zwgmin, zdxdy, ztstar
+         zsdtsws, zwge, zwgmax, zwgmin, zdxdy, ztstar, zqstar
 
     real, pointer, dimension(:,:), contiguous :: tke, zenmoins, zkm, zkt, ztmoins, &
          ztve, zze, zzn, zwtng, zwqng, zuwng, zvwng, zqcmoins, zhumoins, &
          zsigm, zsigt, zsigw, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
-         zftot, zlwc, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
+         zftot, zlwc, ziwc, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
          zrig, zshear2, zvcoef, zc1pbl, zbuoy, zmrk2, zdiffen, zdissen, &
-         zqtblplus, zpri, zsige
+         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zqwvarmoins, &
+         zqwvarplus
 
-    real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce, qe
+    real, dimension(ni,nkm1) :: c, x, wk2d, enold, tmom, qmom, te, qce
     !----------------------------------------------------------------
 
     call init2nan(xb, xh, fbsurf)
-    call init2nan(b, c, x, wk2d, enold, tmom, qmom, te, qce, qe)
+    call init2nan(b, c, x, wk2d, enold, tmom, qmom, te, qce)
 
     MKPTR1D(zalfat, alfat, pvars)
     MKPTR1DK(zbt_ag, bt, indx_agrege, pvars)
     MKPTR1D(zdxdy, dxdy, pvars)
+    MKPTR1D(zdlat, dlat, pvars)
+    MKPTR1D(zfcor, fcor, pvars)
     MKPTR1DK(zfrv_ag, frv, indx_agrege, pvars)
     MKPTR1DK(zftemp_ag, ftemp, indx_agrege, pvars)
     MKPTR1DK(zfvap_ag, fvap, indx_agrege, pvars)
@@ -103,6 +106,8 @@ contains
     MKPTR1D(zlh, lhtg, pvars)
 
     MKPTR1D(zpmoins, pmoins, pvars)
+    MKPTR1D(zqstar, qstar, pvars)
+    MKPTR1DK(zqsurf, qsurf, indx_agrege, pvars)
     MKPTR1D(zsdtswd, sdtswd, pvars)
     MKPTR1D(zsdtsws, sdtsws, pvars)
     MKPTR1D(ztstar, tstar, pvars)
@@ -114,9 +119,11 @@ contains
     MKPTR1D(zwgmin, wgmin, pvars)
     MKPTR1D(zwstar, wstar, pvars)
     MKPTR1DK(zz0_ag, z0, indx_agrege, pvars)
+    MKPTR1DK(zz0t_ag, z0t, indx_agrege, pvars)
     MKPTR1D(zztsl, ztsl, pvars)
 
     MKPTR2D(zbuoy, buoy, pvars)
+    MKPTR2D(zbuoyen, buoyen, pvars)
     MKPTR2D(zc1pbl, c1pbl, pvars)
     MKPTR2D(zdiffen, diffen, pvars)
     MKPTR2D(zdissen, dissen, pvars)
@@ -125,11 +132,14 @@ contains
     MKPTR2D(zfblnonloc, fblnonloc, pvars)
     MKPTR2D(zfnn, fnn, pvars)
     MKPTR2D(zftot, ftot, pvars)
+    MKPTR2D(zfxp, fxp, pvars)
     MKPTR2D(zgq, gq, pvars)
     MKPTR2D(zgql, gql, pvars)
     MKPTR2D(zgte, gte, pvars)
     MKPTR2D(zgzmom, gzmom, pvars)
+    MKPTR2D(zgztherm, gztherm, pvars)
     MKPTR2D(zhumoins, humoins, pvars)
+    MKPTR2D(ziwc, iwc, pvars)
     MKPTR2D(zkm, km, pvars)
     MKPTR2D(zkt, kt, pvars)
     MKPTR2D(zlwc, lwc, pvars)
@@ -139,6 +149,7 @@ contains
     MKPTR2D(zrif, rif, pvars)
     MKPTR2D(zrig, rig, pvars)
     MKPTR2D(zshear2, shear2, pvars)
+    MKPTR2D(zshren, shren, pvars)
     MKPTR2D(zsige, sige, pvars)
     MKPTR2D(zsigm, sigm, pvars)
     MKPTR2D(zsigt, sigt, pvars)
@@ -155,24 +166,23 @@ contains
     MKPTR2D(zwtng, wtng, pvars)
     MKPTR2D(zzd, zd, pvars)
     MKPTR2D(zze, ze, pvars)
-    MKPTR2D(zzn, zn, pvars)
 
     MKPTR2D(zmrk2, mrk2, pvars)
 
     if (advectke) then
        MKPTR2D(zenmoins, enmoins, pvars)
        MKPTR2D(tke, enplus, pvars)
+       MKPTR2D(zqwvarmoins, qwvarmoins, pvars)
+       MKPTR2D(zqwvar, qwvarplus, pvars)
     else
-       nullify(zenmoins)
+       nullify(zenmoins, zqwvarmoins)
        MKPTR2D(tke, en, pvars)
+       MKPTR2D(zqwvar, qwvar, pvars)
     endif
-
-    if (advecqtbl) then
-       MKPTR2D(zqtbl, qtblmoins, pvars)
-       MKPTR2D(zqtblplus, qtblplus, pvars)
+    if (znplus > 0) then
+       MKPTR2D(zzn, znplus, pvars)
     else
-       MKPTR2D(zqtbl, qtbl, pvars)
-       nullify(zqtblplus)
+       MKPTR2D(zzn, zn, pvars)
     endif
 
     eturbtau = delt
@@ -185,9 +195,9 @@ contains
     !  initialiser e avec ea,z et h
 
     if (kount == 0) then
-
-       if (.not.any([(any((/'tr/qtbl:m','qtbl     '/) == phyinread_list_s(i)),i=1,phyinread_n)])) zqtbl = 0.
-       if (associated(zqtblplus)) zqtblplus = zqtbl
+       
+       if (.not.any([(any((/'tr/qtbl:m','qtbl     '/) == phyinread_list_s(i)),i=1,phyinread_n)]) .or. &
+            fluvert == 'RPNINT') zqtbl = 0.
 
        INIT_TKE: if (any('en'==phyinread_list_s(1:phyinread_n))) then
           tke = max(tke,0.)
@@ -229,15 +239,10 @@ contains
        end do
     end do
 
-    ! Convective velocity scale w* (passed to MOISTKE3 through XH)
-    if (fluvert == 'RPNINT') then
-       call vint_thermo2mom1(qe ,zhumoins, zvcoef, ni, nkm1)
-    else
-       qe(:,1:nkm1) = zhumoins(:,1:nkm1)
-    endif
+    ! Compute surface layer scales
     stat = neark(zsigt, zpmoins, 1000., ni, nkm1, ksl)
     do i=1,ni
-       xb(i)=1.0+DELTA*qe(i,ksl(i))
+       xb(i)=1.0+DELTA*zhumoins(i,ksl(i))
        xh(i)=(GRAV/(xb(i)*ztve(i,ksl(i)))) * ( xb(i)*zftemp_ag(i) &
             + DELTA*ztve(i,ksl(i))*zfvap_ag(i) )
        fbsurf(i)=xh(i)
@@ -245,17 +250,21 @@ contains
        xh(i) = (zh(i)*xh(i))**(1./3.)
        zwstar(i) = xh(i)
        ztstar(i) = max(zftemp_ag(i)/max(zwstar(i),WSTAR_MIN),0.)
+       zqstar(i) = max(zfvap_ag(i)/max(zwstar(i),WSTAR_MIN),0.)
     enddo
 
     ! Compute diffusion coefficients via TKE and mixing length
     if (fluvert == 'RPNINT') then
 
        call rpnint(tke, zkm, zkt, zpri, zrif, zrig, zbuoy, zshear2, &
-            zdiffen, zdissen, zzn, zzd, enold, zumoins, zvmoins, ztmoins, ztve, zhumoins, &
-            zqtbl, zfbl, zh, zlh, zpmoins, zz0_ag, zfrv_ag, zwstar, zhpar, &
-            zsigt, zsige, zze, zdxdy, zmrk2, zvcoef, eturbtau, kount, ni, nkm1)
+            zbuoyen, zshren, zdiffen, zdissen, zqwvar, zzn, zzd, &
+            enold, zumoins, zvmoins, ztmoins, zhumoins, zlwc, ziwc, zfxp, &
+            zh, zlh, zpmoins, zz0_ag, zz0t_ag, zfrv_ag, zwstar, zqstar, &
+            zhpar, ztsurf, zqsurf, zdlat, zfcor, &
+            zsigm, zsigt, zgzmom, zgztherm, zdxdy, zmrk2, zvcoef, &
+            eturbtau, kount, ni, nkm1)
        if (phy_error_L) return
-
+       
     elseif (fluvert == 'MOISTKE') then
 
        ! Initialize non-gradient fluxes to zero
@@ -263,10 +272,10 @@ contains
        zwqng = 0.
        zuwng = 0.
        zvwng = 0.
-
+       
        call moistke(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
             zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
-            zumoins,zvmoins,ztmoins,ztve,zhumoins,qe,zpmoins,zsigm,zsige,zsigw, &
+            zumoins,zvmoins,ztmoins,ztve,zhumoins,zhumoins,zpmoins,zsigm,zsige,zsigw, &
             zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
             zmrk2,zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
        if (phy_error_L) return
@@ -317,7 +326,10 @@ contains
           fit=beta*fim**2
           fhz=1
        endif
-       if (fluvert /= 'RPNINT') then
+       if (fluvert == 'RPNINT') then
+          zns = KARMAN*(zztsl(i)+zz0_ag(i))/fim
+          zkm(i,nkm1) = uet*zns*fhz
+       else
           zzn(i,nkm1)   = KARMAN*(zztsl(i)+zz0_ag(i))/fim
           zkm(i,nkm1)   = uet*zzn(i,nkm1)*fhz
           zkt(i,nkm1)   = zkm(i,nkm1)*fim/fit

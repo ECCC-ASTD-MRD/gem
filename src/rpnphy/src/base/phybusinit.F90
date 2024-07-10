@@ -42,23 +42,36 @@ subroutine phybusinit(ni,nk)
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
    include "surface.cdk"
+
+   character(len=2), parameter :: E1 = 'e1'
+   character(len=2), parameter :: D1 = 'd1'
+   character(len=2), parameter :: P0 = 'p0'
+   character(len=2), parameter :: P1 = 'p1'
+   character(len=2), parameter :: V0 = 'v0'
+   character(len=2), parameter :: U0 = 'u0'
    
-   character(len=6)  :: nag, nmar, wwz, nuv, isss
+   character(len=4), parameter :: LVLA = 'A'
+   character(len=4), parameter :: LVLA4= 'A*4'
+   character(len=4), parameter :: LVLE = 'E'
+   character(len=4), parameter :: LVLM = 'M'
+   character(len=4), parameter :: LVLM2= 'M*2'
+   character(len=4), parameter :: LVLT = 'T'
+
+   character(len=6)  :: nag, nmar, dwwz, nuv, psss
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
-   logical :: lrslp
    logical :: lkfbe, lshal, lshbkf, lmid
-   logical :: ladvtke, nadvtke, lmoistke
+   logical :: lmoistke, lrpnint
    logical :: lmoyhr, lmoyhrkf, lmoykfsh, lmoymid
    logical :: lgwdsm
    logical :: lccc2
    logical :: lghg, ltrigtau
    logical :: liuv
    logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
-   logical :: lcons, lmoycons
+   logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvqtbl
+   logical :: lpcp_frac, ladvzn
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -93,10 +106,6 @@ subroutine phybusinit(ni,nk)
    
    lbourg3d= (pcptype == 'BOURGE3D')
    lgwdsm  = (sgo_tdfilter > 0.)
-   lrslp   = radslope
-   ladvtke = advectke
-   nadvtke = .not.ladvtke
-   ladvqtbl = advecqtbl
    lmoyhr  = (moyhr > 0 .or. dynout)
    lkfbe   = any(convec == (/ &
         'BECHTOLD', &
@@ -116,21 +125,29 @@ subroutine phybusinit(ni,nk)
         'SPS_FRC', &
         'SPS_H13'  &
         /))
-   lmoistke= (fluvert == 'MOISTKE' .or. fluvert == 'RPNINT')
+   lrpnint = (fluvert == 'RPNINT')
+   ladvzn  = (advectke .and. lrpnint)
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
 
    ! Compute linoz diags only on demand
    do i=1,nphyoutlist
       out_linoz = any(phyoutlist_S(i) == (/ &
-           'ao3 ','ao3c','ach4','an2o','af11','af12',&
-           'zch4','zn2o','zf11','zf12',&
-           'ych4','yn2o','yf11','yf12',&
-           'azo3','azoc','azch','azn2','azf1','azf2',&
-           'ayo3','ayoc','aych','ayn2','ayf1','ayf2',&
-           'ado3','ado1','ado4','ado6','ado7', &
-           'adch','adn2','adf1','adf2' &
-           /))
+           'AO3      ', 'AO3C     ', 'ACH4     ', 'AN2O     ', 'AF11     ','AF12     ', &
+           'ZCH4     ', 'ZN2O     ', 'ZF11     ', 'ZF12     ', &
+           'YCH4     ', 'YN2O     ', 'YF11     ', 'YF12     ', &
+           'AZO3     ', 'AZOC     ', 'AZCH     ', 'AZN2     ', 'AZF1     ','AZF2     ', &
+           'AYO3     ', 'AYOC     ', 'AYCH     ', 'AYN2     ', 'AYF1     ','AYF2     ', &
+           'ADO3     ', 'ADO1     ', 'ADO4     ', 'ADO6     ', 'ADO7     ', &
+           'ADCH     ', 'ADN2     ', 'ADF1     ', 'ADF2     ',  &
+           'O3AVG    ', 'CH4AVG   ', 'N2OAVG   ', 'F11AVG   ', 'F12AVG   ', &
+           'CH4COL   ', 'N2OCOL   ', 'F11COL   ', 'F12COL   ', &
+           'CH4TC    ', 'N2OTC    ', 'F11TC    ', 'F12TC    ', &
+           'O3COLM   ', 'O3CCOLM  ', 'CH4COLM  ', 'N2OCOLM  ', 'F11COLM  ', 'F12COLM  ', &
+           'O3TCM    ', 'O3CTCM   ', 'CH4TCM   ', 'N2OTCM   ', 'F11TCM   ', 'F12TCM   ', &
+           'O3CHMTDM ', 'O1CHMTDM ', 'O4CHMTDM ', 'O6CHMTDM ', 'O7CHMTDM ', &
+           'CH4CHMTDM', 'N2OCHMTDM', 'F11CHMTDM', 'F12CHMTDM' &
+      /))
       if (out_linoz) exit
    enddo
    out_linoz = (out_linoz .or. debug_alldiag_L)
@@ -147,11 +164,11 @@ subroutine phybusinit(ni,nk)
         /)) .and. kntraduv_S /= '')      
 
    
-   wwz = '1'
+   dwwz = 'd1'
    lsurfonly = (fluvert == 'SURFACE')
-   if (lsurfonly) wwz = '0'
-   isss = '0'
-   if (tofd /= 'NIL') isss = '1'
+   if (lsurfonly) dwwz = 'd0'
+   psss = 'p0'
+   if (tofd /= 'NIL') psss = 'p1'
    lpcp_frac = lsurfonly .and. (pcptype == 'SPS_FRC')
 
 
@@ -159,7 +176,11 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.ebdiag .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == &
-           (/'t2i ', 't2im', 'tii ', 'tiim', 'q1i ', 'q1im', 'q2i ', 'q2im'/) &
+           (/ &
+           'T2I   ', 'T2IM  ', 'TII   ', 'TIIM  ', &
+           'Q1I   ', 'Q1IM  ', 'Q2I   ', 'Q2IM  ', &
+           'Q1APP ', 'Q1APPM', 'Q2APP ', 'Q2APPM'  &
+           /) &
            )) ebdiag = .true.
       i = i+1
    enddo
@@ -168,7 +189,10 @@ subroutine phybusinit(ni,nk)
    ! Activate ECMWF diagnostics only if outputs are requested by the user
    i = 1
    do while (.not.ecdiag .and. i <= nphyoutlist)
-      if (any(phyoutlist_S(i) == (/'dqec','tdec','tjec','udec','vdec'/))) ecdiag = .true.
+      if (any(phyoutlist_S(i) == (/ &
+           'DQEC    ', 'TDEC    ', 'TJEC    ', 'UDEC    ', 'VDEC    ', &
+           'QDIAGEC ', 'TDDIAGEC', 'TDIAGEC ', 'UDIAGEC ', 'VDIAGEC '  &
+           /))) ecdiag = .true.
       i = i+1
    enddo
    ecdiag = (ecdiag .or. debug_alldiag_L)
@@ -178,7 +202,10 @@ subroutine phybusinit(ni,nk)
    if (any(bb_keylist(:bb_n) == "LIGHTNING")) then
       i = 1
       do while (.not.llight .and. i <= nphyoutlist)
-         if (any(phyoutlist_S(i) == (/'fdac', 'fdre'/))) llight = .true.
+         if (any(phyoutlist_S(i) == (/ &
+              'FDAC   ', 'FDRE   ', &
+              'AFOUDRE', 'FOUDRE '  &
+              /))) llight = .true.
          i = i+1
       enddo
       llight = (llight .or. debug_alldiag_L)
@@ -189,10 +216,14 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.lrefract .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-           'dcbh', 'dcnb', 'dcll', &
-           'dc1m', 'dc1i', 'dcmr', &
-           'dc2m', 'dc2i', 'dcst', &
-           'dcth', 'dc3m', 'dc3i' &
+           'DCBH      ', 'DCNB      ', 'DCLL      ', &
+           'DC1M      ', 'DC1I      ', 'DCMR      ', &
+           'DC2M      ', 'DC2I      ', 'DCST      ', &
+           'DCTH      ', 'DC3M      ', 'DC3I      ', &
+           'DCT_BH    ', 'DCT_NB    ', 'DCT_LVL   ', &
+           'DCT_LVLMAX', 'DCT_LVLMIN', 'DCT_MOREF ', &
+           'DCT_SNDMAX', 'DCT_SNDMIN', 'DCT_STR   ', &
+           'DCT_THICK ', 'DCT_TRDMAX', 'DCT_TRDMIN'  &
            /))) lrefract = .true.
       i = i+1
    enddo
@@ -203,8 +234,11 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.lwindgust .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-           'wge ', 'wgx ', 'wgn ', &
-           'sdwd', 'sdws'/))) lwindgust = .true.
+           'WGE   ', 'WGX   ', 'WGN   ', &
+           'SDWD  ', 'SDWS  ', &
+           'WGMAX ', 'WGMIN ', &
+           'SDTSWD', 'SDTSWS'  &
+           /))) lwindgust = .true.
       i = i+1
    enddo
    lwindgust = (lwindgust .or. debug_alldiag_L)
@@ -214,18 +248,30 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.lcons .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-           'cec ', 'cecm', &
-           'ced ', 'cedm', 'cep ', &
-           'cepm', 'cem ', 'cemm', &
-           'cer ', 'cerm', 'ces ', &
-           'cesm', 'cqc ', &
-           'cqcm', 'cqd ', 'cqdm', &
-           'cqp ', 'cqpm', 'cqm ', &
-           'cqmm', 'cqr ', 'cqrm', &
-           'cqs ', 'cqsm', 'cey ', &
-           'ceym', 'cef ', 'cefm', &
-           'cqy ', 'cqym', 'cqf ', &
-           'cqfm' &
+           'CEC     ', 'CECM    ', &
+           'CED     ', 'CEDM    ', 'CEP     ', &
+           'CEPM    ', 'CEM     ', 'CEMM    ', &
+           'CER     ', 'CERM    ', 'CES     ', &
+           'CESM    ', 'CQC     ', &
+           'CQCM    ', 'CQD     ', 'CQDM    ', &
+           'CQP     ', 'CQPM    ', 'CQM     ', &
+           'CQMM    ', 'CQR     ', 'CQRM    ', &
+           'CQS     ', 'CQSM    ', 'CEY     ', &
+           'CEYM    ', 'CEF     ', 'CEFM    ', &
+           'CQY     ', 'CQYM    ', 'CQF     ', &
+           'CQFM    ', &
+           'CONECND ', 'CONECNDM', &
+           'CONEDC  ', 'CONEDCM ', 'CONEPBL ', &
+           'CONEPBLM', 'CONEMO  ', 'CONEMOM ', &
+           'CONERAD ', 'CONERADM', &
+           'CONESC  ', 'CONESCM ', 'CONQCND ', &
+           'CONQCNDM', 'CONQDC  ', 'CONQDCM ', &
+           'CONQPBL ', 'CONQPBLM', 'CONQMO  ', &
+           'CONQMOM ', 'CONQRAD ', 'CONQRADM', &
+           'CONQSC  ', 'CONQSCM ', 'CONEDYN ', &
+           'CONEDYNM', 'CONEPHY ', 'CONEPHYM', &
+           'CONQDYN ', 'CONQDYNM', 'CONQPHY ', &
+           'CONQPHYM'  &
            /))) lcons = .true.
       i = i+1
    enddo
@@ -236,12 +282,23 @@ subroutine phybusinit(ni,nk)
    i = 1
    do while (.not.etccdiag .and. i <= nphyoutlist)
       if (any(phyoutlist_S(i) == (/ &
-           'tccm', 'tcsh', 'tshm', 'tcsl', 'tslm', 'tcsm', 'tsmm', &
-           'tczh', 'tzhm', 'tczl', 'tzlm', 'tczm', 'tzmm' &
+           'TCCM', 'TCSH', 'TSHM', 'TCSL', 'TSLM', 'TCSM', 'TSMM', &
+           'TCZH', 'TZHM', 'TCZL', 'TZLM', 'TCZM', 'TZMM' &
            /))) etccdiag = .true.
       i = i+1
    enddo
    etccdiag = (etccdiag .or. debug_alldiag_L)
+   
+   etccdiagout = .false.
+   i = 1
+   do while (.not.etccdiagout .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'TCCM', 'NF  ', 'TSHM', 'TSMM', 'TSLM', 'TZHM', 'TZMM', 'TZLM', &
+           'NTAF' &
+           /))) etccdiagout = .true.
+      i = i+1
+   enddo
+   etccdiagout = (etccdiagout .or. debug_alldiag_L)
 
    
    lhn_init = (lhn /= 'NIL')
@@ -252,9 +309,12 @@ subroutine phybusinit(ni,nk)
       i = 1
       do while (.not.cmt_comp_diag .and. i <= nphyoutlist)
          if (any(phyoutlist_S(i) == (/ &
-              'u6a ', 'u6b ', 'u6c ', 'u6am', 'u6bm', 'u6cm', &
-              'v7a ', 'v7b ', 'v7c ', 'v7am', 'v7bm', 'v7cm', &
-              'u6d ', 'u6dm', 'v7d ', 'v7dm' &
+              'U6A   ', 'U6B   ', 'U6C   ', 'U6AM  ', 'U6BM  ', 'U6CM  ', &
+              'V7A   ', 'V7B   ', 'V7C   ', 'V7AM  ', 'V7BM  ', 'V7CM  ', &
+              'U6D   ', 'U6DM  ', 'V7D   ', 'V7DM  ', &
+              'UFCP1 ', 'UFCP2 ', 'UFCP3 ', 'UFCP1M', 'UFCP2M', 'UFCP3M', &
+              'VFCP1 ', 'VFCP2 ', 'VFCP3 ', 'VFCP1M', 'VFCP2M', 'VFCP3M', &
+              'SUFCP ', 'SUFCPM', 'SVFCP ', 'SVFCPM'  &
               /))) cmt_comp_diag = .true.
          i = i+1
       enddo

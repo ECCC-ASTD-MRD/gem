@@ -59,15 +59,16 @@
 | Name          | Description            |  Default Value | Type |
 | ------------- | ---------------------- | -------------- | ---- |
 | acchr | Time length (hours) for special time accumulated physics variables | 0 | integer |
-| advecqtbl | Boundary layer cloud advect. is active if .true. | .false. | logical |
 | advectke | Turbulent kinetic energy advect. is active if .true. | .false. | logical |
 | clip_tr_l | Clip tracers negative values | .true. | logical |
 | cond_conserve | Conservation corrections for gridscale condensation<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
+| cond_drhc | Account for time-evolution of critical RH in condensation | .false. | logical |
 | cond_evap | Evaporation parameter for Sunqvist gridscale condensation | 2.e-4 | real |
 | cond_hmrst | Minimum cloud mixing ratio (kg/kg) for autoconversion in<br>Sunqvist gridscale condensation | 3.e-4 | real |
 | cond_hu0max | Max allowed values of modified hu00 (threshold relative humidity<br>for stratiform condensation, Sunqvist gridscale condensation) | 0.975 | real |
 | cond_hu0min | Min allowed values of modified hu00 (threshold relative humidity<br>for stratiform condensation, Sunqvist gridscale condensation) | 0.85 | real |
 | cond_iceacc | Dry accretion of ice crystals by snow in Sundqvist (factor) | 5. | real |
+| cond_sgspdf | Distribution of subgrid-scale moisture variance assumed for cloud fraction | 'NIL' | character(len=16) |
 | debug_alldiag_l | Activate computing of all diags, requested for output or not. | .false. | logical |
 | debug_initonly_l | Run only the physics nml+init (skip input and step) | .false. | logical |
 | debug_mem_l | Activate Debug memory mode | .false. | logical |
@@ -121,7 +122,8 @@
 | p3_scpf_on | switch for subgrid cloud/precipitation fraction scheme (SCPF) in microphysics (P3) | .false. | logical |
 | p3_subfact | calibration factor for ice sublimation in microphysics (P3) | 1.0 | real |
 | p3_trplmomi | For triple-moment ice in microphysics (P3) | .false. | logical |
-| p_runlgt | Vectoc lenght physics memory space folding for openMP | -1 | integer |
+| p_runlgt | Vector length physics memory space folding for openMP | -1 | integer |
+| pbl_ae | Coefficient controlling strength of TKE diffusion | 0.35 | real |
 | pbl_cmu_timeavg | Time-averaging of transfer coefficient for momentum to reduce 2-dt<br>oscillations in fluxes | .false. | logical |
 | pbl_conserve | Conservation corrections for PBL scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
 | pbl_cucloud | Include the turbulent effects of trade wind cumulus clouds | .true. | logical |
@@ -134,6 +136,7 @@
 | pbl_mlturb_diss | Apply "turboujo" turbulence conditions to dissipation length scale | .false. | logical |
 | pbl_moistke_legacy_cloud | Run with legacy moistke clouds (no limits on cloud effects) | .false. | logical |
 | pbl_nonloc | Use the non-local PBL cloud formulation<br>- 'NIL   ' : no non-local PBL cloud formulation<br>- 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006) | 'NIL' | character(len=16) |
+| pbl_progvar | Use prognostic equations for subgrid-scale variances of conserved variables | .false. | logical |
 | pbl_ribkg | Use the mixing length to average the Richardson number profile of (potentially)<br>many layers to derive a "background" Ri estimate | .false. | logical |
 | pbl_ricrit | Richardson num. critical values for hysteresis | 1. | real |
 | pbl_shal | PBL representation of boundary layer clouds<br>- 'NIL     ': No Shallow convection<br>- 'CONRES  ': Bulk Richardson number-based turbulent enhancement<br>- 'SHALOW  ': Deprecated (see 1998 RPN physics doc)<br>- 'SHALODQC': Deprecated (see 1998 RPN physics doc)<br>- 'GELEYN  ': Deprecated (see 1998 RPN physics doc) | 'NIL' | character(len=16) |

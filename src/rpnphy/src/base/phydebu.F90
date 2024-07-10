@@ -21,7 +21,7 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L
    use phy_options
    use phymem, only: phymem_alloc
-   use microphy_utils, only: mp_init
+   use microphy_utils, only: mp_init, mp_post_init
    use ghg, only: ghg_init
    use mixing_length, only: ML_CLOSURES
    use ens_perturb, only: ens_spp_map, ENS_OK
@@ -165,6 +165,12 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    ier = phymem_alloc(debug_mem_L)
    if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
 
+   ! Post-initialization steps
+   if (mp_post_init() /= PHY_OK) then
+      call physeterror('phydebu', 'Problem post-initializing microphysics')
+      return
+   endif
+   
    ! moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.
    ! conversion : nombre d'heures --> nombre de pas de temps.
 

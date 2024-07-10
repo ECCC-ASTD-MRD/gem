@@ -443,15 +443,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function pb_condensate(lwc, iwc, F_pvars) result(F_istat)
-    use phybusidx, only: qtbl, qtblplus
+    use phybusidx, only: qtbl
     use microphy_utils, only: mp_lwc, mp_iwc
-    use phy_options, only: advecqtbl
     implicit none
 
     ! Arguments
     real, dimension(:,:), intent(out) :: lwc                    !Liquid water content (kg/kg)
     real, dimension(:,:), intent(out) :: iwc                    !Ice water content (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)           !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)             !All phy vars (meta + slab data)
     integer :: F_istat                                          !Return status of subprogram
 
     ! Internal variables
@@ -472,11 +471,7 @@ contains
     endif
 
     ! Content from other sources
-    if (advecqtbl) then
-       MKPTR2Dm1(zqtbl, qtblplus, F_pvars)
-    else
-       MKPTR2Dm1(zqtbl, qtbl, F_pvars)
-    endif
+    MKPTR2Dm1(zqtbl, qtbl, F_pvars)
     lwc(:,:) = lwc(:,:) + zqtbl(:,:)
 
     ! End of subprogram

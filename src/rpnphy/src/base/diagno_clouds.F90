@@ -67,15 +67,41 @@ contains
       !
       !*@/
 #include "phymkptr.hf"
+#include "nocld.cdk"
 
+      integer, parameter :: TOPC2 = 5000.  !#Top level for cloud tendencies (Pa) (we take 10xtopc in nocld... ad hoc)
+
+      
       real, pointer, dimension(:), contiguous :: ztopthw,ztopthi,znt
       real, pointer, dimension(:), contiguous :: ztcc,zecc,zeccl,zeccm,zecch
       real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
       real, pointer, dimension(:), contiguous :: ztczl,ztczm,ztczh
       real, pointer, dimension(:), contiguous :: zctp,zctt
       real, pointer, dimension(:,:), contiguous :: zlwc
+      integer :: ktopi(ni), k, i, ktop
+      real :: press
+      logical :: needoutput
+      real, target :: dummy1Dni(ni)
       !----------------------------------------------------------------
 
+      needoutput = .false.
+      i = 1
+      do while (.not.needoutput .and. i <= nphystepoutlist)
+         if (any(phystepoutlist_S(i) == (/ &
+              'ECC ', 'ECCH', 'ECCM', 'ECCL', 'TCC ', 'NT  ', &
+              'TCSH', 'TCSM', 'TCSL', 'TCZH', 'TCZM', 'TCZL', &
+              'CTP ', 'CTT ' &
+              /))) needoutput = .true.
+         i = i+1
+      enddo
+      needoutput = (needoutput .or. debug_alldiag_L .or. etccdiagout)
+      if (.not.needoutput) return
+
+#undef MKPTR1DNI
+#undef MKPTR1D
+#define MKPTR1DNI(PNAME,IDXV,VARS)       if (IDXV>0) then ; PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(1:VARS(IDXV)%meta%ni) ; else ; PNAME => dummy1Dni ; endif
+#define MKPTR1D(PNAME,IDXV,VARS)         MKPTR1DNI(PNAME,IDXV,VARS)
+      
       MKPTR1D(zctp, ctp, pvars)
       MKPTR1D(zctt, ctt, pvars)
       MKPTR1D(zecc, ecc, pvars)
@@ -97,12 +123,21 @@ contains
       if (stcond(1:3) /= 'MP_') then
          MKPTR2D(zlwc, lwc, pvars)
       endif
+
+      ktopi = 1
+      do k=1,nkm1-1
+         do i=1,ni
+            press = sig(i,k)*ps(i)
+            if (press < TOPC) ktopi(i) = k
+         enddo
+      enddo
+      ktop = minval(ktopi)  !#Note: this may cause bit pattern change with change of ptopo or runlgt
       
       !#Note: move computations in other function, away from the pointers (opimiz)
       call priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps,  &
         ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
         ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
-        trnch, ni, nkm1, nk)
+        trnch, ni, nkm1, nk, ktop)
 
       !----------------------------------------------------------------
       return
@@ -113,12 +148,12 @@ contains
    subroutine priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps, &
         ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
         ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
-        trnch, ni, nkm1, nk)
+        trnch, ni, nkm1, nk, ktop)
       implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
-      integer, intent(in) :: trnch, ni, nkm1, nk
+      integer, intent(in) :: trnch, ni, nkm1, nk, ktop
       real, intent(in), dimension(ni,nkm1,nbs) :: taucs
       real, intent(in), dimension(ni,nkm1,nbl) :: taucl
       real, intent(in), dimension(ni,nkm1) :: gz, cloud, tt, sig
@@ -132,7 +167,7 @@ contains
 
 #include "cldop.cdk"
 
-      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac
+      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac, mask
       logical, dimension(ni) :: top
       real, dimension(ni,nkm1) :: aird, rec_cdd, vs1
       real, dimension(ni) :: trmin, tmem, trmin2, tmem2
@@ -140,8 +175,8 @@ contains
       integer, dimension(ni) :: ih, ih2, ih3, ib, ib2, ib3    
 
       real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
-      integer :: i, k, k1, ip, l
-      real :: xnu, xnu2
+      integer :: i, k, k1, ip, l, km1, lmax
+      real :: xnu, xnu2, mask1
       !----------------------------------------------------------------
       call init2nan(transmissint, trans_exp, cldfrac)
       call init2nan(aird, rec_cdd, vs1)
@@ -209,43 +244,49 @@ contains
       !     using the cloud optical depth at window region (band 6) to
       !     calculate the emissivity
 
-      do l=1,nk-1
+      do k=2,nk
+         k1 = max(k-2,1)
          do i=1,ni
-            ff(i,l,l)=1.
+            mask(i,k-1) = max(0., sign(1., cloud(i,k1)-0.01))
+         enddo
+      enddo
+      if (etccdiag) then
+         lmax = min(max(maxval(IH), maxval(IB), maxval(IH2), maxval(IB2), maxval(IH3), maxval(IB3)), nk-1)
+      else
+         lmax = min(max(maxval(IH), maxval(IB)), nk-1)
+      endif
+      
+      do l=1,lmax
+         ip = max(ktop, l+1)
+         do i=1,ni
             tmem(i)=1.
             trmin(i)=1.
-            ff2(i,l,l)=1.
             tmem2(i)=1.
             trmin2(i)=1.
+            ff(i,ip-1,l) = 1.
+            ff2(i,ip-1,l) = 1.
          enddo
-         ip=l+1
          do k=ip,nk
-            k1=k-2
-            k1=max0(k1,1)
+            km1 = k-1
             do i=1,ni
-               xnu=1.-cloud(i,k-1)*(1.-trans_exp(i,k-1) )
-               xnu2=1.-cloud(i,k-1)
-               if(cloud(i,k1) < 0.01) then
-                  tmem(i)= ff(i,l,k-1)
-                  trmin(i)= xnu
-                  tmem2(i)= ff2(i,l,k-1)
-                  trmin2(i)= xnu2
-               else
-                  trmin(i)=min(trmin(i),xnu)
-                  trmin2(i)=min(trmin2(i),xnu2)
-               endif
-               ff(i,l,k)= tmem(i) * trmin(i)
-               ff2(i,l,k)= tmem2(i) * trmin2(i)
+               xnu   = 1. - cloud(i,km1)*(1.-trans_exp(i,km1))
+               xnu2  = 1. - cloud(i,km1)
+               mask1 = 1. - mask(i,km1)
+               tmem(i)   = mask(i,km1)*tmem(i)  + mask1*ff(i,km1,l)
+               tmem2(i)  = mask(i,km1)*tmem2(i) + mask1*ff2(i,km1,l)
+               trmin(i)  = mask(i,km1)*min(trmin(i),xnu)   + mask1*xnu
+               trmin2(i) = mask(i,km1)*min(trmin2(i),xnu2) + mask1*xnu2
+               ff(i,k,l) = tmem(i)  * trmin(i)
+               ff2(i,k,l)= tmem2(i) * trmin2(i)
             enddo
          enddo
       enddo
-
-      do  i=1,ni
-         zecc(i) = 1. - ff(i,1,nk)
-         zecch(i) = 1. - ff(i, 1   ,IH(i))
-         zeccm(i) = 1. - ff(i,IH(i),IB(i))
-         zeccl(i) = 1. - ff(i,IB(i),nk   )
-         ztcc(i)   = 1. - ff2(i,1,nk)
+      do i=1,ni
+         zecc(i)  = 1. - ff(i,nk,1)
+         zecch(i) = 1. - ff(i,IH(i),1)
+         zeccm(i) = 1. - ff(i,IB(i),IH(i))
+         zeccl(i) = 1. - ff(i,nk,IB(i))
+         ztcc(i)  = 1. - ff2(i,nk,1)
       enddo
 
       if (stcond(1:3)=='MP_') then
@@ -254,11 +295,7 @@ contains
          enddo
       else
          !#Note: vintage_nt modify cldfrac, need a copy
-         do k = 1, nkm1
-            do i = 1, ni
-               cldfrac(i,k) = cloud(i,k)
-            enddo
-         enddo
+         cldfrac = cloud
          call vintage_nt1( &
               tt, ps, sig, zlwc, &
               cldfrac, znt, trnch, ni, nk, nkm1)
@@ -266,14 +303,14 @@ contains
 
 
       if (etccdiag) then
-         do  i=1,ni
-            ztcsh(i)   = 1. - ff2(i,1,IH2(i))
-            ztcsm(i)   = 1. - ff2(i,IH2(i),IB2(i))
-            ztcsl(i)   = 1. - ff2(i,IB2(i),nk)
+         do i=1,ni
+            ztcsh(i) = 1. - ff2(i,IH2(i),1)
+            ztcsm(i) = 1. - ff2(i,IB2(i),IH2(i))
+            ztcsl(i) = 1. - ff2(i,nk,IB2(i))
             ! to calculate 2-d cloud fraction with calipso-GOCCP height criteria
-            ztczh(i)  = 1. - ff2(i,1,IH3(i))   
-            ztczm(i)  = 1. - ff2(i,IH3(i),IB3(i))
-            ztczl(i)  = 1. - ff2(i,IB3(i),nk)
+            ztczh(i) = 1. - ff2(i,IH3(i),1)   
+            ztczm(i) = 1. - ff2(i,IB3(i),IH3(i))
+            ztczl(i) = 1. - ff2(i,nk,IB3(i))
          enddo
       endif
 

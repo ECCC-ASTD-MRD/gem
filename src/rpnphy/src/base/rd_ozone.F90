@@ -16,19 +16,30 @@
 !**s/r rd_ozone  -- Perform the actual reading and organization of
 !                   the data in the ozone file
 !
-      subroutine rd_ozone (iun, rbuf, dim, status)
+
+module rd_ozone
+   implicit none
+   private
+   public :: rd_ozone1
+      
+contains
+
+   subroutine rd_ozone1(file, rbuf, dim, status)
+      use rmn_fst24
       implicit none
 !!!#include <arch_specific.hf>
 !
-      integer iun,dim(*),status
-      real rbuf(*)
+      type(fst_file), intent(inout) :: file
+      real, intent(inout), target :: rbuf(*)
+      integer, intent(inout) :: dim(:)
+      integer, intent(inout) :: status
 !
 !Author
 !          M. Desgagne (Spring 2008)
 !
 !Arguments
 !          - Input -
-! iun      fortran unit
+! file     RPS STD file object
 !          - Input/Output -
 ! rbuf     read buffer
 !          - Output -
@@ -37,8 +48,10 @@
 #include "radiation.cdk"
 #include "ozopnt.cdk"
 !
-      integer i,ilir,mi,mj,mk,m,NLP,code
-      integer fstinf,fstluk
+      type(fst_record) :: record
+      type(fst_query)  :: query
+      logical          :: success
+      integer :: i,m,NLP,code
 !
 !-----------------------------------------------------------------
 !
@@ -46,8 +59,12 @@
       status = -1
 
       if (code.eq.200) then
-         if (fstinf (iun,NLACL,NPCL,mk,-1,' ',-1,-1,1,' ','O3').lt.0) &
-         return
+         query = file%new_query(nomvar='O3  ')
+         success = query%find_next(record)
+         if (.not. query%find_next(record)) return
+
+         NLACL=record%ni
+         NPCL=record%nj
          dim(1) = 3
          dim(2) = NLACL*NPCL*13 + NLACL + NPCL
          dim(3) = NLACL
@@ -59,16 +76,10 @@
       NLP = NLACL*NPCL
 
       if ( (code.gt.200) .and. (code.le.300) )then
-         ilir = fstinf (iun,mi, mj,mk,-1,' ',-1,-1,-1,' ','ZLAT')
-         if (ilir.lt.0) return
-         ilir = fstluk (rbuf, ilir, mi, mj, mk)
-         ilir = fstinf (iun,mi, mj,mk,-1,' ',-1,-1,-1,' ','PREF')
-         if (ilir.lt.0) return
-         ilir = fstluk (rbuf(NLACL+1), ilir, mi, mj, mk)
+         if (.not. file%read(record,data=c_loc(rbuf),nomvar='ZLAT')) return
+         if (.not. file%read(record,data=c_loc(rbuf(NLACL+1)),nomvar='PREF')) return
          do m=1,12
-            ilir = fstinf (iun,mi,mj,mk,-1,' ',-1,-1,m,' ','O3')
-            if (ilir.lt.0) return
-            ilir = fstluk (rbuf(NLACL+NPCL+(m-1)*NLP+1),ilir,mi,mj,mk)
+            success = file%read(record,data=c_loc(rbuf(NLACL+NPCL+(m-1)*NLP+1)),ip3=m,nomvar='O3  ')
          end do
          status = 0
       endif
@@ -98,4 +109,6 @@
 !-----------------------------------------------------------------
 !
       return
-      end
+   end subroutine rd_ozone1
+
+end module rd_ozone
