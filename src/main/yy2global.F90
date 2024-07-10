@@ -4,11 +4,15 @@
 !COMP_ARCH=PrgEnv-intel-6.0.5 ; -suppress=-C
 !COMP_ARCH=PrgEnv-intel-6.0.5-19.0.5.281 ; -suppress=-C
 
-subroutine yy2global()
+#include "modelutils_build_info.h"
+
+program yy2global
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    ! for forecast (P) or analysis (A) fields
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write
    use clib_itf_mod
+   use app
+   use rmn_fst24
    implicit none
 
    !author  Vivian Lee  Jun.2011
@@ -59,38 +63,41 @@ subroutine yy2global()
    !      NOT allow different grid sizes and force error prints to STDERR
    ! 116- Add new feature to copy Z grids and their grid parameters to output
    !      and remove option to accept separate Yin, Yang files.
+   ! 117- Conversion to FST24
 
    include "rmnlib_basics.inc"
 
    integer, parameter :: maxnfiles=80
    integer, parameter :: maxvar=300
    integer, parameter :: nklemax=6
-   integer, parameter :: nrectot=20000
    real(REAL64), parameter :: pole_8= 90.0d0
    real(REAL64), parameter :: near_pole_8= 89.99999999
    real,    parameter :: pole  = 90.0
 
    integer npos
    type(vgrid_descriptor) :: vgd
+   
+   type(fst_file), allocatable, dimension(:) :: files_yy
+   type(fst_file)  :: file_in,file_out
+   type(fst_record):: record, recordv
+   type(fst_query) :: query, query2
+   logical :: success
 
    character(len=256) :: defaut(nklemax),liste(0:nklemax-1),val(nklemax)
    character(len=256) :: yyfile_S,globfile_S,nml_S
    character(len=256) :: filelist_yy(maxnfiles)
 
-   integer i,j,k,m,ier,iunout,iunyy,NYY,iunnml
-   integer, allocatable, dimension(:) :: unit_yy
-   integer err_iunyy,yyfiles
-   integer ip1,ip2,ip3,ni,nj,nk,datev,key,len,mni,mnj,xni,xnj
-   integer dateo,ni1,nj1,nk1,p1,p2,p3,yni,ynj,gni,gnj,intcode
+   integer i,j,k,m,ier,NYY,iunnml
+   integer yyfiles
+   integer len,mni,mnj,xni,xnj
+   integer datev,ni1,nj1,nk1,p1,p2,p3,yni,ynj,gni,gnj,intcode
 
-   real(REAL64) :: deltat_8,h1_8,h2_8,deg2rad_8,dxla_8,dyla_8,rad2deg_8
-   integer ig1,ig2,ig3,ig4,scrap,myig1,myig2,myig3,myig4
-   integer myni,mynj,myp1,myp2,myp3,pni,pnj
-   integer deet,npas,nbits,datyp,nsubgrids,sgid
+   real(REAL64) :: h1_8,h2_8,deg2rad_8,dxla_8,dyla_8,rad2deg_8
+   integer myig1,myig2,myig3,myig4,myni,mynj,myp1,myp2,myp3,pni,pnj
+   integer nsubgrids,sgid
 
-   character(len=12) :: etiket,yyetiket
-   character(len=4)  :: nomvar
-   character(len=1)  :: typvar,grtyp,mygrtyp
+   character(len=12) :: yyetiket
+   character(len=1)  :: mygrtyp
    character(len=17) :: varlist_S(MAXVAR)
    character(len=4)  :: myvar_S(MAXVAR),myclip_S,print_S
    character(len=7)  :: myinterp_S
@@ -98,12 +105,16 @@ subroutine yy2global()
    integer myinterp(MAXVAR),myvarnum,interp_index,clip_index
    namelist /interp/ varlist_S
 
-   integer, allocatable,dimension(:) :: list_yy,subgrid
-   real, allocatable, dimension(:,:) :: work,gg,vgg,gwork,zwork,zzwork
-   real, allocatable,dimension(:,:) :: workyin,vworkyin,workyinyan,vworkyinyan
+   integer, allocatable,dimension(:) :: subgrid
+   real, allocatable, target, dimension(:,:) :: gg,vgg
+   real, allocatable, dimension(:,:) :: work,zwork,zzwork
+   real, allocatable,dimension(:,:) :: workyin,vworkyin
+   real, pointer ,dimension(:,:) :: workyinyan
+
    real(REAL64), allocatable, dimension(:,:) :: workyan_8,gg_8
    real(REAL64), allocatable, dimension(:,:) :: vworkyan_8,vgg_8
-   real, allocatable, dimension(:) :: xpx,ypx,xglob,yglob
+   real, allocatable, target, dimension(:) :: xglob,yglob
+   real, allocatable, dimension(:) :: xpx,ypx
    real(REAL64),allocatable,dimension(:) :: xpx_8,ypx_8
    real(REAL64), allocatable,dimension(:) :: G_xglob_8,G_yglob_8
    integer, allocatable,dimension (:) :: yan_imx,yan_imy,yan_i,yan_j
@@ -120,12 +131,11 @@ subroutine yy2global()
    deg2rad_8 = (acos(-1.0d0))/180.
    rad2deg_8 = 180./(acos(-1.0d0))
    npos=0
-   iunout=0
-   iunyy=0
    iunnml=0
    yy2enml_L=.false.
 
-   ier = exdb('yy2global','116','NON')
+   app_ptr=app_init(0,'yy2global',YY2GLOBAL_VERSION,'',BUILD_TIMESTAMP)
+   call app_start()
 
    liste(:)  = (/'iyy.       ','inml.      ','oglob.     ','print.     ','liste      ','help       '/)
    defaut(:) = (/'yinyang.fst','yy2e.nml   ','glob.fst   ','1          ','           ','AIDE       '/)
@@ -142,52 +152,48 @@ subroutine yy2global()
    print_L=.false.
    if (trim(print_S).eq.'1') print_L=.true.
 
-   print *,'yyfile_S=',trim(yyfile_S)
-   print *,'namelist file=',trim(nml_S)
-   print *,'globfile_S=',trim(globfile_S)
+   call app_log(APP_INFO,'yyfile_S='//trim(yyfile_S))
+   call app_log(APP_INFO,'namelist file='//trim(nml_S))
+   call app_log(APP_INFO,'globfile_S='//trim(globfile_S))
 
    ! Regardez les repertoires ou les fichiers
    if (clib_isdir(yyfile_S).gt.0) then
-      !     print *,'unit',iunyy,' for ',trim(yyfile_S)
-      print *,'directory found for U grid files'
-      write(*, '(a)') 'directory found for yyfile_S'
+      call app_log(APP_INFO,'directory found for U grid files')
+      call app_log(APP_INFO,'directory found for yyfile_S')
+
       ier=clib_glob(filelist_yy,yyfiles,trim(yyfile_S)//'/*',maxnfiles)
-      write(*, '(a,1x,i0)') 'yyfiles found =',yyfiles
+      write(app_msg, '(a,1x,i0)') 'yyfiles found =',yyfiles
+      call app_log(APP_INFO,app_msg)
       if (yyfiles.eq.0) then
-         write(0, '(a)') 'Problem: No files found in -iyy : ABORT'
-         call qqexit(-1)
+         call app_log(APP_ERROR,'No files found in -iyy')
+         call qqexit(app_end(-1))
       endif
-      allocate(unit_yy(yyfiles))
-      unit_yy(:)=0
+      allocate(files_yy(yyfiles))
       do i=1,yyfiles
-         err_iunyy = fnom(unit_yy(i), filelist_yy(i),'RND+OLD+R/O',0)
-         if (err_iunyy.ne.0) then
-            write(0, '(a)') 'Problem with fnom on file '//trim(filelist_yy(i))//': ABORT'
-            call qqexit(-1)
+         success = files_yy(i)%open(filelist_yy(i),'RND+OLD+R/O')
+         if (.not. success) then
+            call app_log(APP_ERROR,'Cannot open file '//filelist_yy(i))
+            call qqexit(app_end(-1))
          endif
-         !         print *,i,'yinfile=',trim(filelist_yy(i))
-         ier = FSTOUV(unit_yy(i), 'RND')
       enddo
-      ier=fstlnk(unit_yy,yyfiles)
-      iunyy=unit_yy(1)
+      success = fst24_link(files_yy)
+      file_in=files_yy(1)
    else if (clib_isfile(yyfile_S).gt.0) then
-      err_iunyy = fnom(iunyy, yyfile_S,'RND+OLD+R/O',0)
-      if (err_iunyy.ne.0) then
-         write(0, '(a)') 'Problem with file -iyy : ABORT'
-         call qqexit(-1)
+      success = file_in%open(yyfile_S,'RND+OLD+R/O')
+      if (.not. success) then
+         call app_log(APP_ERROR,'Cannot open file '//yyfile_S)
+         call qqexit(app_end(-1))
       endif
-      ier = FSTOUV(iunyy, 'RND')
    else
-      write(0, '(a)') 'ERROR: Opening these input file(s)'
-      write(0, '(a)') 'OR ERROR in: -iyy  '//trim(yyfile_S)
-      call qqexit(-1)
+      call app_log(APP_ERROR,'Cannot open input file(s)')
+      call qqexit(app_end(-1))
    endif
 
    ! Ouverture du fichier namelist
    myvarnum=0
    ier= fnom(iunnml, nml_S,'SEQ+OLD',0)
    if(ier.ne.0) then
-      write(*, '(a)') 'WARNING: file opening failed: for '//trim(nml_S)
+      call app_log(APP_WARNING,'failed to open namelist '//trim(nml_S))
    else
       yy2enml_L = .true.
       do i=1,MAXVAR
@@ -239,9 +245,9 @@ subroutine yy2global()
 100 continue
 
    if (ier.eq.0) then
-      if (myvarnum.eq.0) write(*, '(a)') 'WARNING: Namelist interp not found in '//trim(nml_S)
+      if (myvarnum.eq.0) call app_log(APP_WARNING,'Namelist interp not found in '//trim(nml_S))
    endif
-   if (myvarnum.eq.0) write(*, '(a)') 'WARNING:Will use CUBIC interpolation, NO CLIPPING for ALL variables'
+   if (myvarnum.eq.0) call app_log(APP_WARNING,'Will use CUBIC interpolation, NO CLIPPING for ALL variables')
 900 format('+',30('-'),'+')
 901 format('|',1x,'NOMVAR',1x,'|',' INTERP  ','|',1x,'code| clip|')
 902 format('|',1x,a4,3x,'| ',a7,1x,'|',1x,i3,1x,'|',1x,L3,1x,'|')
@@ -249,35 +255,37 @@ subroutine yy2global()
 
 
    !   Open the output file
-   ier= fnom(iunout, globfile_S,'RND+NEW',0)
-   if(ier.ne.0) then
-      write(0, '(a)') 'ERROR: file opening failed: abort '//trim(globfile_S)
-      call qqexit(ier)
-   else
-      ier = FSTOUV(iunout, 'RND')
-      !     print *,'unit',iunout,' for ',trim(globfile_S)
+   success = file_out%open(globfile_S,'RND+R/W')
+   if (.not. success) then
+      call app_log(APP_ERROR,'Failed to open '//trim(globfile_S))
+      call qqexit(app_end(-1))
    endif
  
    !   Get the complete list of records to do
-   allocate(list_yy(nrectot))
-   ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'P',' ',list_yy,NYY,nrectot)
+   query = file_in%new_query(typvar="P ")
+   NYY=query%find_all()
    if (NYY.eq.0) then
-      print *,'no forecast fields found'
-      ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'A',' ',list_yy,NYY,nrectot)
+      call app_log(APP_INFO,'No forecast fields found')
+      query = file_in%new_query(typvar="A ")
+      NYY=query%find_all()
       if (NYY.eq.0) then
-         print *,'no analysis fields found'
-         ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'C',' ',list_yy,NYY,nrectot)
+         call app_log(APP_INFO,'No analysis fields found')
+         query = file_in%new_query(typvar=" C")
+         NYY=query%find_all()
          if (NYY.eq.0) then
-            write(0, '(a)') 'ERROR: No fields found!!'
-            call qqexit(-1)
+            call app_log(APP_ERROR,'No fields found')
+            call qqexit(app_end(-1))
          else
-            print *,NYY, 'climatology fields found'
+            write(app_msg,*) NYY,'climatology fields found'
+            call app_log(APP_INFO,app_msg)
          endif
       else
-         print *,NYY, 'analysis fields found'
+         write(app_msg,*) NYY,'analysis fields found'
+         call app_log(APP_INFO,app_msg)
       endif
    else
-      print *,NYY, 'forecast fields found'
+      write(app_msg,*) NYY,'forecast fields found'
+      call app_log(APP_INFO,app_msg)
    endif
    sgid=-1
    ugrid_L=.false.
@@ -285,13 +293,10 @@ subroutine yy2global()
    mynj = -1
 
    !   Obtain the grid description from YIN or YINYANG
-   do m=1,NYY
-      ier = FSTPRM(list_yy(m), dateo, deet, npas, NI, NJ, NK,nbits,&
-           datyp, IP1,&
-           IP2, IP3, TYPVAR, NOMVAR, ETIKET, grtyp, IG1, IG2, IG3,&
-           IG4, scrap, scrap, scrap, scrap, scrap, scrap, scrap)
-      if (grtyp.eq.'U') then
-         sgid=ezqkdef(NI,NJ,grtyp,IG1, IG2, IG3,IG4,iunyy)
+   call query%rewind()
+   do while (query % find_next(record))
+      if (record%grtyp.eq.'U') then
+         sgid=ezqkdef(record%ni,record%nj,record%grtyp,record%ig1,record%ig2,record%ig3,record%ig4,file_in%get_unit())
          ugrid_L=.true.
          exit
       endif
@@ -299,15 +304,15 @@ subroutine yy2global()
 
    IF (UGRID_L) THEN !---setup for Ugrid to Global grid
 
-      myni = NI
-      mynj = NJ
-      p1 = ig1
-      p2 = ig2
+      myni = record%ni
+      mynj = record%nj
+      p1 = record%ig1
+      p2 = record%ig2
       p3 = 0
 
       !   Create output tags
-      myp1=ig1+1
-      myp2=ig2+1
+      myp1=record%ig1+1
+      myp2=record%ig2+1
       myp3=0
 
       !   Get latlons for YIN PHI grid
@@ -331,7 +336,7 @@ subroutine yy2global()
 
       !vl REAL SECTION for obtaining YIN-YANG axis
       !    Get rotation for Global grid from Yin
-      ier=ezgxprm(subgrid(1),yni,ynj,grtyp,ig1,ig2,ig3,ig4,&
+      ier=ezgxprm(subgrid(1),yni,ynj,record%grtyp,record%ig1,record%ig2,record%ig3,record%ig4,&
            mygrtyp,myig1,myig2,myig3,myig4)
       allocate(xpx(yni),ypx(ynj),xpx_8(yni),ypx_8(ynj))
       ier=gdgaxes(subgrid(1),xpx,ypx)
@@ -411,7 +416,7 @@ subroutine yy2global()
       print *,'Global takes rotation from YIN: GNI=',GNI,' GNJ=',GNJ
       print *,'*  '
       allocate(gg_8(gni-1,gnj),vgg_8(gni-1,gnj))
-      allocate(gg(gni,gnj),vgg(gni,gnj),gwork(gni,gnj))
+      allocate(gg(gni,gnj),vgg(gni,gnj))
 
       ! Calculate the global grid to put YIN point exactly on the same grid
       ! print *,'The global X array'
@@ -528,42 +533,33 @@ subroutine yy2global()
       enddo
 
       !   These work fields are for UU,VV calculations
-      allocate(workyinyan(yni,ynj*2),vworkyinyan(yni,ynj*2))
       allocate (vworkyin(yni,ynj),vworkyan_8(yni,ynj))
       allocate (workyin(yni,ynj),workyan_8(yni,ynj))
       allocate (work(yni,ynj))
 
    ENDIF !---setup for Ugrid to Global grid
 
-   print *,'Start re-assemble : Yin+Yang -> Global and add Z grids'
-   print *,'*'
+   call app_log(APP_INFO,'Start re-assemble : Yin+Yang -> Global and add Z grids')
 
    !  Now interpolate fields
-   DO_FIELDS: DO m=1,NYY
-      ier = FSTPRM(list_yy(m), dateo, deet, npas, NI, NJ, NK,nbits,&
-           datyp, IP1,IP2, IP3, TYPVAR, NOMVAR, ETIKET, &
-           grtyp, IG1, IG2, IG3, IG4, &
-           scrap, scrap, scrap, scrap, scrap, scrap, scrap)
-      if (grtyp.eq.'Z') then
-         allocate (zwork(ni,nj),zzwork(ni,nj))
-         ier=fstluk(zwork,list_yy(m),NI,NJ,NK)
-         ier = FSTECR(zwork, ZZWORK, -nbits, iunout, dateo,&
-              deet, npas, ni, nj,1,&
-              ip1, ip2, ip3, typvar,nomvar, etiket, 'Z',&
-              ig1, ig2, ig3, ig4, datyp, .false.)
-         deallocate(zwork,zzwork)
+   call query%rewind()
+   do while (query % find_next(record))
+
+      if (record%grtyp.eq.'Z') then
+         success=record%read()
+         success=file_out%write(record)
          cycle
-      else if (myni.ne.ni .or. mynj.ne.nj) then
-         write(0, '(a)') 'ERROR:' //trim(NOMVAR),' is not same grid size!!'
-         call qqexit(-1)
+      else if (myni.ne.record%ni .or. mynj.ne.record%nj) then
+         call app_log(APP_ERROR,trim(record%nomvar)//' is not same grid size')
+         call qqexit(app_end(-1))
       endif
-      deltat_8=(dble(deet)*dble(npas))/3600.0
-      call incdatr(datev,dateo,deltat_8)
-      yyetiket=etiket(1:len_trim(etiket))
-      if (typvar.eq.'C') datev=-1
+      datev=record%datev
+      yyetiket=record%etiket(1:len_trim(record%etiket))
+      if (record%typvar.eq.'C') datev=-1
 
       !  The size of these work fields depend if they are U,V, or PHI grids
-      ier=fstluk(workyinyan,list_yy(m),NI,NJ,NK)
+      success = record%read()
+      call record%get_data_array(workyinyan)
       workyin(:,:)=workyinyan(1:yni,1:ynj)
       work(:,:)=workyinyan(1:yni,ynj+1:ynj*2)
       do j=1,ynj
@@ -573,24 +569,24 @@ subroutine yy2global()
       enddo
 
       ! Special treatment for UU and VV variables
-      if (nomvar.eq."UU") then
+      if (record%nomvar.eq."UU") then
          intcode=2
          clipcode=.false.
          do i=1,myvarnum
-            if (trim(nomvar).eq.trim(myvar_S(i))) then
+            if (trim(record%nomvar).eq.trim(myvar_S(i))) then
                intcode= myinterp(i)
                clipcode=myclip(i)
             endif
          enddo
-         key = fstinf(iunyy,NI1,NJ1,NK1,datev,' ',ip1,ip2,ip3,typvar,"VV")
-         if(key.lt.0) then
-            write(0, '(a)') 'ERROR: cannot find VV in yin file: abort'
-            call qqexit(key)
+         success = file_in%read(recordv,datev=datev,ip1=record%ip1,ip2=record%ip2,ip3=record%ip3,typvar=record%typvar,nomvar="VV  ")
+         if(.not. success) then
+            call app_log(APP_ERROR,'cannot find VV in yin file')
+            call qqexit(app_end(-1))
          endif
 
-         ier=fstluk(vworkyinyan,key,NI,NJ,NK)
-         vworkyin(:,:)=vworkyinyan(1:yni,1:ynj)
-         work(:,:)=vworkyinyan(1:yni,ynj+1:ynj*2)
+         call recordv%get_data_array(workyinyan)
+         vworkyin(:,:)=workyinyan(1:yni,1:ynj)
+         work(:,:)=workyinyan(1:yni,ynj+1:ynj*2)
          do j=1,ynj
             do i=1,yni
                vworkyan_8(i,j)=dble(work(i,j))
@@ -616,22 +612,33 @@ subroutine yy2global()
             enddo
          enddo
 
+         record%data=c_loc(gg)
+         record%ni=gni
+         record%nj=gnj
+         record%etiket=yyetiket
+         record%grtyp='Z'
+         record%ig1=myp1
+         record%ig2=myp2
+         record%ig3=myp3
+         record%ig4=0
+         success = file_out%write(record)
 
-         ier = FSTECR(gg, gWORK, -nbits, iunout, dateo,&
-              deet, npas, gni, gnj,1,&
-              ip1, ip2, ip3, typvar,'UU', yyetiket, 'Z',&
-              myp1, myp2, myp3, 0, datyp, .false.)
+         recordv%data=c_loc(vgg)
+         recordv%ni=gni
+         recordv%nj=gnj
+         recordv%etiket=yyetiket
+         recordv%grtyp='Z'
+         recordv%ig1=myp1
+         recordv%ig2=myp2
+         recordv%ig3=myp3
+         recordv%ig4=0
+         success = file_out%write(recordv)
 
-         ier = FSTECR(vgg, gWORK, -nbits, iunout, dateo,&
-              deet, npas, gni, gnj,1,&
-              ip1, ip2, ip3, typvar,'VV', yyetiket, 'Z',&
-              myp1, myp2, myp3, 0, datyp, .false.)
-
-      else if (nomvar.ne."VV".and.nomvar.ne."UT1".and.nomvar.ne."VT1") then
+      else if (record%nomvar.ne."VV" .and. record%nomvar.ne."UT1" .and. record%nomvar.ne."VT1") then
          intcode=2
          clipcode=.false.
          do i=1,myvarnum
-            if (trim(nomvar).eq.trim(myvar_S(i))) then
+            if (trim(record%nomvar).eq.trim(myvar_S(i))) then
                intcode= myinterp(i)
                clipcode=myclip(i)
             endif
@@ -653,93 +660,96 @@ subroutine yy2global()
             enddo
          enddo
 
-         ier = FSTECR(gg, gWORK, -nbits, iunout, dateo,&
-              deet, npas, gni, gnj,1,&
-              ip1, ip2, ip3, typvar,nomvar, yyetiket, 'Z',&
-              myp1, myp2, myp3, 0, datyp, .false.)
+         record%data=c_loc(gg)
+         record%ni=gni
+         record%nj=gnj
+         record%etiket=yyetiket
+         record%grtyp='Z'
+         record%ig1=myp1
+         record%ig2=myp2
+         record%ig3=myp3
+         record%ig4=0
          ! IEEE output
-         !          ier = FSTECR(gg, gWORK, -32, iunout, dateo,&
-         !                       deet, npas, gni, gnj,1,&
-         !                       ip1, ip2, ip3, typvar,nomvar, yyetiket, 'Z',&
-         !                       myp1, myp2, myp3, 0, 5, .false.)
-      endif
-   enddo DO_FIELDS
+         ! record%datyp=5
+         success = file_out%write(record)
+
+       endif
+   enddo
    if (ugrid_L) deallocate (workyin,vworkyin,workyan_8,vworkyan_8,work)
 
    ! Write out the tictic,tactac and toctoc for new global Z grid
    ! Only one U grid is assumed in input file which is interpolated to new Z grid
    if (ugrid_L) then
-      ier = FSTECR(xglob, gWORK, -32, iunout, dateo,&
-           0, 0, gni, 1,1,&
-           myp1, myp2, myp3, 'X','>>', yyetiket, mygrtyp,&
-           myig1, myig2, myig3, myig4, 5, .true.)
-      ier = FSTECR(yglob, gWORK, -32, iunout, dateo,&
-           0, 0, 1, gnj,1,&
-           myp1, myp2, myp3, 'X','^^', yyetiket, mygrtyp,&
-           myig1, myig2, myig3, myig4, 5, .true.)
-      key = fstinf(iunyy,NI1,NJ1,NK1,-1,' ',p1,p2,p3,' ','!!')
-      if (key.ge.0) then
-         ier = vgd_new(vgd,unit=iunyy,format='fst',ip1=p1,ip2=p2)
+      record%data=c_loc(xglob)
+      record%data_type=5
+      record%data_bits=32
+      record%pack_bits=32
+      record%deet=0
+      record%npas=0
+      record%ni=gni
+      record%nj=1
+      record%nk=1
+      record%etiket=yyetiket
+      record%nomvar='>>'
+      record%typvar='x'
+      record%grtyp=mygrtyp
+      record%ig1=myp1
+      record%ip2=myp2
+      record%ip3=myp3
+      record%ig1=myig1
+      record%ig2=myig2
+      record%ig3=myig3
+      record%ig4=myig4
+      success = file_out%write(record)
+
+      record%data=c_loc(yglob)
+      record%nomvar='^^'
+      record%ni=1
+      record%nj=gnj
+      success = file_out%write(record)
+
+      query = file_in%new_query(nomvar='!!  ',ip1=p1,ip2=p2,ip3=p3)
+      success = query%find_next()
+      if (success) then
+         ier = vgd_new(vgd,unit=file_in%get_unit(),format='fst',ip1=p1,ip2=p2)
          ier = vgd_put(vgd,key='IP_1 - record ip1',value=myp1)
          ier = vgd_put(vgd,key='IP_2 - record ip2',value=myp2)
-         ier = vgd_write(vgd,unit=iunout,format='fst')
+         ier = vgd_write(vgd,unit=file_out%get_unit(),format='fst')
       endif
       deallocate(xglob,yglob)
    endif
 
    ! Write out the tictac pairs for the other Z grid(s)
    ! Assume multiple Z grids from input file to be copied (no interp) over
+   query = file_in%new_query(nomvar=">>  ",typvar="X ")
+   do while (query % find_next(record))
+      success = record%read()
+      success = file_out%write(record)
 
-   ! Re-using variable list_yy, NYY to obtain number of tictac pair records
-   ier = fstinl(iunyy,NI,NJ,NK,-1,' ',-1,-1,-1,'X','>>',list_yy,NYY,nrectot)
-   if (NYY.gt.0) then
-      do m=1,NYY
-         ier = FSTPRM(list_yy(m), dateo, deet, npas, NI, NJ, NK,nbits,&
-              datyp, IP1,IP2, IP3, TYPVAR, NOMVAR, ETIKET, &
-              grtyp, IG1, IG2, IG3, IG4, &
-              scrap, scrap, scrap, scrap, scrap, scrap, scrap)
-         allocate(xglob(ni),zwork(ni,nj))
-         ier=fstluk(xglob,list_yy(m),NI,NJ,NK)
-         ier = FSTECR(xglob, ZWORK, -nbits, iunout, dateo,&
-              deet, npas, ni, nj,1,&
-              ip1, ip2, ip3, typvar,nomvar, etiket, grtyp,&
-              ig1, ig2, ig3, ig4, datyp, .false.)
-         deallocate(xglob,zwork)
-         key = fstinf(iunyy,NI1,NJ1,NK1,-1,' ',ip1,ip2,ip3,typvar,"^^")
-         ier = FSTPRM(key, dateo, deet, npas, NI, NJ, NK,nbits,&
-              datyp, IP1,IP2, IP3, TYPVAR, NOMVAR, ETIKET, &
-              grtyp, IG1, IG2, IG3, IG4, &
-              scrap, scrap, scrap, scrap, scrap, scrap, scrap)
-         allocate(yglob(nj),zwork(ni,nj))
-         ier=fstluk(yglob,key,NI,NJ,NK)
-         ier = FSTECR(yglob, ZWORK, -nbits, iunout, dateo,&
-              deet, npas, ni, nj,1,&
-              ip1, ip2, ip3, typvar,nomvar, etiket, grtyp,&
-              ig1, ig2, ig3, ig4, datyp, .false.)
-         deallocate(zwork,yglob)
-         key = fstinf(iunyy,NI1,NJ1,NK1,-1,' ',ip1,ip2,0,' ','!!')
-         if (key.ge.0) then
-            ier = vgd_new(vgd,unit=iunyy,format='fst',ip1=ip1,ip2=ip2)
-            ier = vgd_put(vgd,key='IP_1 - record ip1',value=ip1)
-            ier = vgd_put(vgd,key='IP_2 - record ip2',value=ip2)
-            ier = vgd_write(vgd,unit=iunout,format='fst')
-         endif
-      enddo
-   endif
+      success = file_in%read(record,nomvar="^^  ",ip1=record%ip1,ip2=record%ip2,ip3=record%ip3)
+      success = file_out%write(record)
+
+      query2 = file_in%new_query(nomvar="!!  ",ip1=record%ip1,ip2=record%ip2,ip3=0)
+      success = query2%find_next()
+      if (success) then
+         ier = vgd_new(vgd,unit=file_in%get_unit(),format='fst',ip1=record%ip1,ip2=record%ip2)
+         ier = vgd_put(vgd,key='IP_1 - record ip1',value=record%ip1)
+         ier = vgd_put(vgd,key='IP_2 - record ip2',value=record%ip2)
+         ier = vgd_write(vgd,unit=file_out%get_unit(),format='fst')
+      endif
+   enddo
 
    ! Deallocate the rest of the variables and close the files
    if (ugrid_L) deallocate(xpx_8,ypx_8,xpx,ypx,gg_8,vgg_8,gg,vgg)
 
 
-   ier=fstfrm(iunyy)
-   ier=fstfrm(iunout)
-   ier = fclos(iunyy)
-   ier = fclos(iunout)
-   if (yy2enml_L) ier = fclos(iunnml)
-   ier = exfin('yy2global','116','NON')
-   stop
+   success = file_in%close()
+   success = file_out%close()
 
-end subroutine yy2global
+   if (yy2enml_L) ier = fclos(iunnml)
+   app_status=app_end(-1)
+
+end program yy2global
 
 
 subroutine yan2global(gg,gni,gnj,G2,ni,nj,x,y,ix,jx,&
