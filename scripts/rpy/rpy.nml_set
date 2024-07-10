@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # Command line arguments
     desc="Set a value, rename variable name or namelists, create new variable or namelist in a Fortran namelist file"
     usage = """
-    %(prog)s [options] [-n namelist] key1=value1 [key2=value2] ...
+    %(prog)s [options] -n namelist key1=value1 [key2=value2] ...
     %(prog)s [options] nml1/key1=value [nml2/key2=value] ...
     %(prog)s [options] -- nml1/key1=value [nml2/key2=value] ...
     """
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         try:
             (key,value) = re.split('=',entry)
         except ValueError:
-            logging.warning('Key/value pairs must be written as key=value or nml/key=value... skipping {}\n'.format(entry))
+            logging.warning('Key/value pairs must be written as "-n nml key=value" or "nml/key=value"... skipping {}\n'.format(entry))
             continue
         try:
             (nml2, key2) = re.split('/',key)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             if namelist.strip():
                 (nml2, key2) = (namelist, key)
             else:
-                logging.warning('Key/value pairs must be written as key=value or nml/key=value... skipping {}\n'.format(entry))
+                logging.warning('Key/value pairs must be written as "-n nml key=value" or "nml/key=value"... skipping {}\n'.format(entry))
                 continue
         (nml2, key2) = (cleanName(nml2), cleanName(key2))
         if not nml2 in cfg.keys():
