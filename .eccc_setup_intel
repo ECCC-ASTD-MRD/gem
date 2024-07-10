@@ -27,20 +27,14 @@ case ${INTEL_SCRIPT_NAME} in
         ;;
 esac
 
-# According to the domain, load corresponding code-tools 
-if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/gpscc3/inteloneapi-${COMPILER_VERSION}
-elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/inteloneapi-${COMPILER_VERSION}
-else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/ECCC/inteloneapi-${COMPILER_VERSION}
-fi
+# Load code-tools 
+. r.load.dot rpn/code-tools/20240514/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20240513
-. r.load.dot rpn/utils/20240513
+. r.load.dot rpn/libs/20240703-alpha
+. r.load.dot rpn/utils/20240703-alpha
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
+. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
 # Load Intel FFTW if on rhel, and if using Intel 2021 or Intel 2022
 if  [[ ${ORDENV_DIST} = "rhel" ]]; then
@@ -50,6 +44,9 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
     elif [[ ${COMPILER_VERSION} = "2021.4.0" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01/rhel-8-amd64-64
+    elif [[ ${COMPILER_VERSION} = "2024.0.1" ]]; then
+        . r.load.dot hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
+        export FFTW_ROOT=/fs/ssm/hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-8-amd64-64
     fi
 fi
 
