@@ -22,11 +22,13 @@
       use path
       use clib_itf_mod
       use inp_base
+      use rmn_fst24
       use, intrinsic :: iso_fortran_env
       implicit none
 
       character(len=*), intent(IN) :: F_datev
-
+    
+      logical :: success
       character(len=2048) fn,root,mesg
       integer, parameter :: n123_dim=3
       integer n123(n123_dim)
@@ -35,7 +37,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      Inp_handle= -1 ; Inp_nfiles= 0 ; err_code= 0 ; i= 0
+      Inp_nfiles= 0 ; err_code= 0 ; i= 0
 
       Inp_datev= F_datev
       call datp2f ( Inp_cmcdate, F_datev )
@@ -51,24 +53,21 @@
          if (unf == 0) goto 33
          read (unf,*,end=33) Inp_nfiles
          if (Inp_nfiles == 0) goto 33
-         allocate (Inp_list_unf(Inp_nfiles))
-         Inp_list_unf= 0
+         allocate (Inp_list_files(Inp_nfiles))
 
  55      read (unf,'(a)',end=33) fn
          i = i+1
          fn= trim(root)//'/'//trim(fn)
 
-         if (fnom (Inp_list_unf(i),trim(fn),'RND+OLD+R/O',0) == 0) then
-            if (fstouv(Inp_list_unf(i) ,'RND') < 0) err_code= -1
-         else
+         if (.not. Inp_list_files(i)%open(trim(fn),'RND+OLD+R/O')) then
             err_code= -1
          end if
          if (err_code == 0) goto 55
  33      if ((Inp_nfiles == 0).or.(i /= Inp_nfiles)) err_code= -1
          if (unf > 0) err= fclos(unf)
          if (err_code == 0) then
-            err= fstlnk ( Inp_list_unf, Inp_nfiles )
-            Inp_handle = Inp_list_unf(1)
+            success = fst24_link(Inp_list_files(1:Inp_nfiles))
+            Inp_file = Inp_list_files(1)
          endif
       endif
       
@@ -84,7 +83,7 @@
       endif
 
       if (Inp_iome >= 0) then
-            err= vgd_new ( Inp_vgd_src, unit=Inp_handle, &
+            err= vgd_new ( Inp_vgd_src, unit=Inp_file%get_unit(), &
                            format='fst', ip1=-1, ip2=-1 )
             if (err == 0) then
                err= vgd_get ( Inp_vgd_src, 'VTBL', vtbl_8, quiet=.true.)

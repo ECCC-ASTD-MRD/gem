@@ -30,13 +30,11 @@
 
       if (Inp_iome >= 0) then
          do i= 1, Inp_nfiles
-            if (fstfrm (Inp_list_unf(i)) == 0) then
-               err_code= fclos (Inp_list_unf(i))
-            else
+            if (.not. Inp_list_files(i)%close()) then
                err_code= -1
             end if
          end do
-         deallocate (Inp_list_unf) ; nullify (Inp_list_unf)
+         deallocate (Inp_list_files) ; nullify (Inp_list_files)
       end if
       err_code = vgd_free(Inp_vgd_src)
 

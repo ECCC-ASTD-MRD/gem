@@ -30,7 +30,6 @@
       use numa
       use wb_itf_mod
       use omp_timing
-      use version
       implicit none
 
       include 'rpn_comm.inc'

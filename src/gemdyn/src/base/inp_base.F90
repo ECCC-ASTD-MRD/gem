@@ -112,6 +112,9 @@ contains
 
       integer function inp_read_mt ( F_var_S, F_hgrid_S, F_dest, &
                          F_nd, F_ip1, F_nka, F_hint_S, F_quiet_L )
+
+      use rmn_fst24
+
       implicit none
 
       character(len=*)          ,intent(in)  :: F_var_S
@@ -124,21 +127,25 @@ contains
       real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
 
       integer, external :: samegrid_gid, samegrid_rot, inp_is_real_wind
-      character(len=1) typ,grd
+      character(len=1) typ
       character(len=4) nomvar,var,dumc
       character(len=12) lab,interp_S
       logical :: quiet_L
       integer, parameter :: nlis = 1024
-      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+
+      type(fst_query)  :: query
+      type(fst_record) :: recs(nlis) 
+      logical          :: success
+      
+       integer i, k, idst, err, nz, &
               liste_sorted(nlis),lislon,maxdim_wk2
       integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
-      integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
-      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
+      integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1, p1
+
       integer, dimension(:  ), allocatable :: zlist
       real :: surface_level
-      real   , dimension(:  ), allocatable :: wk1
+      real   , dimension(:  ), allocatable, target :: wk1
       real   , dimension(:,:), allocatable :: wk4
       real   , dimension(:  ), pointer     :: posx,posy
       real(kind=REAL64) add, mult
@@ -217,33 +224,29 @@ contains
       maxdim_wk2 = 1
       if (Inp_iome >= 0) then
          vcode= -1
-         nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
-                       ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
+         query = Inp_file%new_query(datev=datev,nomvar=nomvar,ip1=ip1)
+         lislon = query%find_all(recs)
+
          if (lislon == 0) goto 999
 
-         err= fstprm (liste(1), DTE, DET, IPAS, n1, n2, n3,&
-                  BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
-                  G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
-
-         src_gid= ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
+         src_gid= ezqkdef (recs(1)%ni,recs(1)%nj,recs(1)%grtyp,recs(1)%ig1,recs(1)%ig2,recs(1)%ig3,recs(1)%ig4,Inp_file%get_unit())
 
          if ((trim(nomvar) == 'URT1').or.(trim(nomvar) == 'VRT1').or.&
              (trim(nomvar) == 'UT1' ).or.(trim(nomvar) == 'VT1' )) then
-             err= samegrid_rot ( src_gid, &
-                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
+             err= samegrid_rot (src_gid, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro)
              if (err < 0) then
                 lislon= 0
                 goto 999
              end if
          end if
 
-         call sort_ip1 (liste,liste_sorted,lislon)
+         call record_sort_ip1 (recs,liste_sorted,lislon)
 
          allocate (F_ip1(max(1,lislon)))
          if (lislon > 1) then
             F_ip1(1:lislon) = liste_sorted(1:lislon)
          else
-            F_ip1(1) = p1
+            F_ip1(1) = recs(1)%ip1
          end if
 
          nz= (lislon + Inp_npes - 1) / Inp_npes
@@ -264,7 +267,7 @@ contains
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
          allocate (wk4(ni_dest*nj_dest,maxdim_wk2))
-         allocate (wk1(n1*n2))
+         allocate (wk1(recs(1)%ni*recs(1)%nj))
 
          interp_S= 'CUBIC'
          if (present(F_hint_S)) interp_S= F_hint_S
@@ -293,10 +296,10 @@ contains
                     Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                     posx, posy)
 
-            if ( GRD == 'U' ) then
+            if ( recs(1)%grtyp == 'U' ) then
               nicore = G_ni-Glb_pil_w-Glb_pil_e
               njcore = G_nj-Glb_pil_s-Glb_pil_n
-              if (n1 >= nicore .and. n2/2 >= njcore) then
+              if (recs(1)%ni >= nicore .and. recs(1)%nj/2 >= njcore) then
                  subid= samegrid_gid ( &
                     src_gid, Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
                     posx(1+Glb_pil_w), posy(1+Glb_pil_s), nicore,njcore )
@@ -319,7 +322,7 @@ contains
          end if
 
          do i=1,local_nk
-            err= fstluk (wk1, liste(kstart+i-1), n1,n2,n3)
+            success=recs(kstart+i-1)%read(data=c_loc(wk1))
             err = ezsint(wk4(1,(idst-1)*nz+i), wk1)
          end do
          if (err == 2) then
@@ -769,6 +772,8 @@ contains
 !                    on proper Arakawa grid u and v respectively
 
       subroutine inp_read_uv ( F_u, F_v, F_target_S, F_ip1, F_nka )
+      use rmn_fst24
+
       implicit none
 
       character(len=*)                  , intent(in)  :: F_target_S
@@ -777,20 +782,23 @@ contains
       real   , dimension(:,:,:), pointer, intent(inout) :: F_u, F_v
 
 !     local variables
-      character(len=1) typ,grd
+      character(len=1) typ
       character(len=4) var
       character(len=12) lab
       integer, parameter :: nlis = 1024
-      integer liste_u(nlis),liste_v(nlis),liste_sorted(nlis),lislon
-      integer i,err, nz, n1,n2,n3, nrec, same_rot, ni_dest, nj_dest
+      integer liste_sorted(nlis),lislon
+      integer i,err, nz, same_rot, ni_dest, nj_dest
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode
       integer dstu_gid,dstv_gid,erru,errv
-      integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
-      real   , dimension(:,:), allocatable :: uhr,vhr
-      real   , dimension(:  ), allocatable :: uv,u,v
-      real   , dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
+      real(kind = real32), dimension(:,:), allocatable :: uhr,vhr
+      real(kind = real32), dimension(:  ), allocatable, target :: uv,u,v
+      real(kind = real32), dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
+
+      type(fst_record) :: recs_u(nlis),recs_v(nlis)
+      type(fst_query)  :: query_u,query_v
+      logical          :: success
+
       common /bcast_i_uv / lislon,nz,same_rot
 !
 !---------------------------------------------------------------------
@@ -803,27 +811,26 @@ contains
 
       if (Inp_iome >= 0) then
          vcode= -1 ; nz= -1 ; same_rot= -1
-         nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
-                       'UU',liste_u,lislon,nlis)
-         nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
-                       'VV',liste_v,lislon,nlis)
+
+         query_u = Inp_file%new_query(datev=Inp_cmcdate,nomvar='UU  ')
+         lislon = query_u%find_all(recs_u)
+
+         query_v = Inp_file%new_query(datev=Inp_cmcdate,nomvar='VV  ')
+         lislon = query_v%find_all(recs_v)
+
          if (lislon == 0) goto 999
 
-         err= fstprm (liste_u(1), DTE, DET, IPAS, n1, n2, n3,&
-                  BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
-                  G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
-
-         src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
+         src_gid = ezqkdef (recs_u(1)%ni,recs_u(1)%nj,recs_u(1)%grtyp,recs_u(1)%ig1,recs_u(1)%ig2,recs_u(1)%ig3,recs_u(1)%ig4,Inp_file%get_unit())
 
          i= lislon
-         call sort_ip1 (liste_u,liste_sorted,i)
-         call sort_ip1 (liste_v,liste_sorted,lislon)
+         call record_sort_ip1 (recs_u,liste_sorted,i)
+         call record_sort_ip1 (recs_v,liste_sorted,lislon)
 
          allocate (F_ip1(max(1,lislon)))
          if (lislon > 1) then
             F_ip1(1:lislon) = liste_sorted(1:lislon)
          else
-            F_ip1(1) = p1
+            F_ip1(1) = recs_u(1)%ip1
          end if
 
          nz= (lislon + Inp_npes - 1) / Inp_npes
@@ -842,7 +849,7 @@ contains
          ni_dest= G_ni+2*G_halox
          nj_dest= G_nj+2*G_haloy
          allocate (uhr(ni_dest*nj_dest,nz),vhr(ni_dest*nj_dest,nz))
-         allocate (u(n1*n2), v(n1*n2))
+         allocate (u(recs_u(1)%ni*recs_u(1)%nj), v(recs_u(1)%ni*recs_u(1)%nj))
          allocate (uv(ni_dest*nj_dest))
 
          if (local_nk > 0) then
@@ -868,8 +875,9 @@ contains
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxv, posyv )
                do i=1,local_nk
-                  err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
-                  err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
+                  success = recs_u(kstart+i-1)%read(data=c_loc(u))
+                  success = recs_v(kstart+i-1)%read(data=c_loc(v))
+ 
                   err = ezdefset ( dstu_gid , src_gid )
                   erru = ezuvint  ( uhr(1,i),uv, u,v )
                   err = ezdefset ( dstv_gid , src_gid )
@@ -894,8 +902,9 @@ contains
                                                       posxu, posyu )
                err = ezdefset ( dst_gid , src_gid )
                do i=1,local_nk
-                  err= fstluk ( u, liste_u(kstart+i-1), n1,n2,n3)
-                  err= fstluk ( v, liste_v(kstart+i-1), n1,n2,n3)
+                  success = recs_u(kstart+i-1)%read(data=c_loc(u))
+                  success = recs_v(kstart+i-1)%read(data=c_loc(v))
+
                   err = ezuvint  ( uhr(1,i),vhr(1,i), u,v )
                end do
                if (err == 2) &
@@ -984,13 +993,12 @@ contains
       vgd = vgd_get ( F_vgd, key='KIND',value=kind,quiet=.true. )==VGD_OK
 
       if (vgd) then
-
          if ( associated (F_sfcL) ) then
             presl=> F_sfcL (1-G_halox:l_ni+G_halox,1-G_haloy:l_nj+G_haloy)
             istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d,sfc_field=pres,&
                                sfc_field_ls=presl, in_log=inlog)
          else
-            istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d, pres, &
+           istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d, pres, &
                                in_log=inlog)
          end if
 
@@ -999,7 +1007,7 @@ contains
          nka= kn-k0+1
          istat= inp_match (F_dest, PX3d%valq, F_ip1, PX3d%ip1, &
                        l_minx,l_maxx,l_miny,l_maxy,nka, PX3d%nk)
-         if (nka /= kn-k0+1) then
+        if (nka /= kn-k0+1) then
             istat=-1
          else
             if (inlog) then
@@ -1030,12 +1038,12 @@ contains
 
       implicit none
 
-      type(vgrid_descriptor) , intent(in ) :: F_vgd
+      type(vgrid_descriptor) , intent(in) :: F_vgd
       integer                , intent(inout) :: F_nk
       integer                , intent(in)  :: Minx,Maxx,Miny,Maxy
-      integer, dimension(:)    , pointer, intent(in ) :: F_ip1,F_gz_ip1
-      real   , dimension(:,:  ), pointer, intent(in ) :: F_sfc,F_sfcL
-      real   , dimension(:,:,:), pointer, intent(in ) :: F_gz
+      integer, dimension(:)    , pointer, intent(in) :: F_ip1,F_gz_ip1
+      real   , dimension(:,:  ), pointer, intent(in) :: F_sfc,F_sfcL
+      real   , dimension(:,:,:), pointer, intent(in) :: F_gz
       real   , dimension(:,:,:), pointer, intent(inout) :: F_dest
 
 !     local variables
