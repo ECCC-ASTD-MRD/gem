@@ -27,6 +27,7 @@
       use lun
       use path
       use geomh
+      use rmn_fst24
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -36,13 +37,17 @@
       character(len=120) :: ofile,ofileU,ofileV,ofileR,etk,etk_ext
       character(len=2024) :: fn
       logical :: radians
-      integer :: unf,unf1,unf2,unf3,unf4,unf5,unf6,err,npack
+      integer :: unf,err
 
+      type(fst_file)   :: file
+      type(fst_record) :: rec
+      logical          :: success
+ 
       logical, parameter :: gauss_L = .false.
       integer :: i,j,i0,j0,ip1,ip2
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
-      real, dimension(:), allocatable :: xposu, yposv, xpos,ypos
-      real, dimension(:,:), allocatable :: mask
+      real, dimension(:), allocatable, target :: xposu, yposv, xpos,ypos
+      real, dimension(:,:), allocatable, target :: mask
       real(kind=REAL64), dimension(:), allocatable :: x_8, y_8
       real(kind=REAL64), parameter :: HALF_8  = 0.5d0
 !
@@ -54,6 +59,15 @@
       fn  = trim(Path_input_S)//'/model_settings.nml'
       Step_dt = 1.
       radians = .false.
+      
+      rec%etiket=etk_ext
+      rec%dateo=0
+      rec%deet=0
+      rec%npas=0
+      rec%data_type=5
+      rec%data_bits=32
+      rec%pack_bits=32
+      rec%nk=1
 
       ofile = 'tape1'
       if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') ofile= 'tape2'
@@ -135,10 +149,7 @@
 
       err = clib_remove(ofile)
 
-      unf1= 0
-      if (fnom(unf1,ofile,'RND',0) >= 0) then
-         err= fstouv (unf1, 'RND')
-      else
+      if (.not. file%open(ofile,'RND+R/W')) then
          print *,'problem opening', trim(ofile)
          stop
       endif
@@ -149,17 +160,28 @@
          etk_ext=trim(etk)
       endif
 
-      npack = -32
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=Grd_ip1
+      rec%ip2=Grd_ip2
+      rec%ip3=Grd_ip3
+      rec%ni=G_ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xpos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-      err = fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, G_ni, 1, 1 , &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, G_nj, 1 , &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=G_nj
+      rec%data=c_loc(ypos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-      err = fstfrm(unf1)
-      err = fclos (unf1)
+      success = file%close()
 
       do i= 1, G_ni
          xposU(i) = (x_8(i) + x_8(i+1)) * HALF_8
@@ -175,46 +197,67 @@
 
       err = clib_remove(ofileU)
 
-      unf2= 0
-      if (fnom(unf2,ofileU,'RND',0) >= 0) then
-         err= fstouv (unf2, 'RND')
-      else
+      if (.not. file%open(ofileU,'RND+R/W')) then
          print *,'problem opening', trim(ofileU)
          stop
       endif
 
-      err = fstecr ( xposU,xposU, npack, unf2, 0, 0, 0, G_ni, 1, 1 , &
-                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, G_nj, 1 , &
-                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=ip1
+      rec%ip2=ip2
+      rec%ip3=Grd_ip3
+      rec%ni=G_ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xposU(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-      err = fstfrm(unf2)
-      err = fclos (unf2)
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=G_nj
+      rec%data=c_loc(ypos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      success = file%close()
+
 ! V grid
       err = clib_remove(ofileV)
 
       call set_igs2 ( ip1,ip2, xpos,yposV,G_ni,G_nj             ,&
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
                       1,G_ni,1,1,G_nj,1)
-      unf3= 0
-      if (fnom(unf3,ofileV,'RND',0) >= 0) then
-         err= fstouv (unf3, 'RND')
-      else
+      if (.not. file%open(ofileV,'RND+R/W')) then
          print *,'problem opening', trim(ofileV)
          stop
       endif
 
-      err = fstecr ( xpos,xpos, npack, unf3, 0, 0, 0, G_ni, 1, 1 , &
-                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( yposV,yposV, npack, unf3, 0, 0, 0, 1, G_nj, 1 , &
-                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=ip1
+      rec%ip2=ip2
+      rec%ip3=Grd_ip3
+      rec%ni=G_ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xpos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-      err = fstfrm(unf3)
-      err = fclos (unf3)
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=G_nj
+      rec%data=c_loc(yposV(:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      success = file%close()
 
 !F grid
       err = clib_remove(ofileR)
@@ -222,33 +265,41 @@
       call set_igs2 ( ip1,ip2, xposU,yposV,G_ni,G_nj             ,&
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
                       1,G_ni,1,1,G_nj,1)
-      unf3= 0
-      if (fnom(unf3,ofileR,'RND',0) >= 0) then
-         err= fstouv (unf3, 'RND')
-      else
+
+      if (.not. file%open(ofileR,'RND+R/W')) then
          print *,'problem opening', trim(ofileR)
          stop
       endif
 
-      err = fstecr ( xposU,xposU, npack, unf3, 0, 0, 0, G_ni, 1, 1 , &
-                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( yposV,yposV, npack, unf3, 0, 0, 0, 1, G_nj, 1 , &
-                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=ip1
+      rec%ip2=ip2
+      rec%ip3=Grd_ip3
+      rec%ni=G_ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xposU(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-      err = fstfrm(unf3)
-      err = fclos (unf3)
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=G_nj
+      rec%data=c_loc(yposV(:))
+      success = file%write(rec,rewrite=FST_SKIP)
 
-
+      success = file%close()
+      
       err = domain_decomp (1, 1, .false.)
       call set_gmm ()
       call nest_set_mem ()
-      unf4=0
-      if (fnom(unf4,trim(ofile)//'_core','RND',0) >= 0) then
-         err= fstouv (unf4, 'RND')
-      else
-         print *,'problem opening', trim(ofile//'_core')
+
+      if (.not. file%open(trim(ofile)//'_core','RND+R/W')) then
+          print *,'problem opening', trim(ofile//'_core')
          stop
       endif
 
@@ -265,16 +316,34 @@
       call set_igs2 ( ip1,ip2, xpos,ypos,ni,nj, &
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,ni,1,1,nj,1)
-      err= fstecr ( xpos,xpos, npack, unf4, 0, 0, 0, ni, 1, 1, &
-                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( ypos,ypos, npack, unf4, 0, 0, 0, 1, nj, 1, &
-                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                    Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-      unf5 = 0
-      err  = fnom(unf5,ofile,'RND',0)
-      err  = fstouv (unf5, 'RND')
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=ip1
+      rec%ip2=ip2
+      rec%ip3=Grd_ip3
+      rec%ni=G_ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xpos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=G_nj
+      rec%data=c_loc(ypos)
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      success = file%close()
+
+      if (.not. file%open(ofile,'RND+R/W')) then
+          print *,'problem opening', ofile
+         stop
+      endif
 
       allocate (mask(G_ni, G_nj))
 
@@ -284,24 +353,30 @@
          enddo
       enddo
 
-      err = fstecr ( mask,mask, npack, unf5, 0, 0, 0, G_ni, G_nj, 1, &
-                     0,0,0,'X','MSKC',etk_ext,'Z'    , &
-                     Grd_ip1,Grd_ip2,Grd_ip3,0, 5, .true. )
+      rec%nomvar='MSKC'
+      rec%typvar='X'
+      rec%grtyp='Z'
+      rec%ip1=0
+      rec%ip2=0
+      rec%ip3=0
+      rec%ni=G_ni
+      rec%nj=G_nj
+      rec%ig1=Grd_ip1
+      rec%ig2=Grd_ip2
+      rec%ig3=Grd_ip3
+      rec%ig4=0
+      rec%data=c_loc(mask(:,:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
       deallocate (mask)
 
-      err= fstfrm(unf4)
-      err= fclos (unf4)
-      err= fstfrm(unf5)
-      err= fclos (unf5)
+      success = file%close()
 
-      unf6=0
-      if (fnom(unf6,trim(ofile)//'_free','RND',0) >= 0) then
-         err= fstouv (unf6, 'RND')
-      else
-         print *,'problem opening', trim(ofile//'_core')
+      if (.not. file%open(trim(ofile)//'_free','RND+R/W')) then
+         print *,'problem opening', trim(ofile)//'_free'
          stop
       endif
-
+ 
       i0= 1    + Grd_extension + Lam_blend_H
       in= G_ni - Grd_extension - Lam_blend_H
       j0= 1    + Grd_extension + Lam_blend_H
@@ -316,15 +391,29 @@
                       xpos,ypos,ni,nj, &
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,ni,1,1,nj,1)
-      err = fstecr ( xpos,xpos, npack, unf6, 0, 0, 0, ni, 1, 1, &
-                     Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
-                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err = fstecr ( ypos,ypos, npack, unf6, 0, 0, 0, 1, nj, 1, &
-                     Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
-                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-      err = fstfrm(unf6)
-      err = fclos (unf6)
+      rec%nomvar='>>'
+      rec%typvar='X'
+      rec%grtyp=Hgc_gxtyp_s
+      rec%ip1=Grd_ip1
+      rec%ip2=Grd_ip2
+      rec%ip3=Grd_ip3
+      rec%ni=ni
+      rec%nj=1
+      rec%ig1=Hgc_ig1ro
+      rec%ig2=Hgc_ig2ro
+      rec%ig3=Hgc_ig3ro
+      rec%ig4=Hgc_ig4ro
+      rec%data=c_loc(xpos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      rec%nomvar='^^'
+      rec%ni=1
+      rec%nj=nj
+      rec%data=c_loc(ypos(:))
+      success = file%write(rec,rewrite=FST_SKIP)
+
+      success = file%close()
 
       deallocate (x_8, y_8, xpos, ypos)
       deallocate (xposU, yposV )

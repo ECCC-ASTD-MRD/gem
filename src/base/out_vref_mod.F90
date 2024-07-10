@@ -71,7 +71,7 @@ contains
        end if
 
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
-       err = vgd_write(vgd,unit=Out_unf,format='fst')
+       err = vgd_write(vgd,unit=Out_file%get_unit(),format='fst')
        err = vgd_free(vgd)
 
     end if
@@ -132,7 +132,7 @@ contains
        end if
 
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
-       err = vgd_write(vgd,unit=Out_unf,format='fst')
+       err = vgd_write(vgd,unit=Out_file%get_unit(),format='fst')
        err = vgd_free(vgd)
        ! there should be en error trapping
 

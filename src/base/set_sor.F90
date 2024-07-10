@@ -183,7 +183,7 @@
            rsti=Step_total+Step_initial+1
       end if
 
-      Out_unf= 0 ; Out_laststep_S = ' '
+      Out_laststep_S = ' '
       Out_ixg(1:4) = ixgall(:,1)  ;  Out_ixg(5:8) = ixgall(:,2)
       Out_rot(1:4) = rotall(:,1)  ;  Out_rot(5:8) = rotall(:,2)
       Out_etik_S   = Out3_etik_s ; Out_gridtyp_S= 'E'

@@ -23,7 +23,6 @@
       use gem_options
       use glb_ld
       use out_mod
-      use out_meta
       implicit none
 #include <arch_specific.hf>
 
@@ -36,13 +35,14 @@
       include 'rmn/convert_ip123.inc'
 
 Interface
-subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &
+subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,metaf,nplans, &
                          g_id,g_if,g_jd,g_jf )
-      use out_meta
+      use out_mod
+      use rmn_fst24
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
-      type (meta_fstecr), dimension(:), pointer :: meta
+      type (fst_record), dimension(:), pointer :: metaf
 End Subroutine out_stkecr
 End Interface
 
@@ -53,12 +53,12 @@ End Interface
       integer modeip1,i,j,k,err
       integer, save :: istk = 0
       real, save, dimension (:,:,:), pointer :: f2c => null()
-      type (meta_fstecr), save, dimension(:), pointer :: meta => null()
+      type (fst_record), save, dimension(:), pointer :: metaf => null()
 !
 !----------------------------------------------------------------------
 !
-      if (.not.associated(meta)) then
-         allocate (meta(out_stk_size))
+      if (.not.associated(metaf)) then
+         allocate (metaf(out_stk_size))
       end if
 
       if (.not.associated(f2c )) then
@@ -66,18 +66,18 @@ End Interface
       end if
 
       if (.not.done) then
-         out_stk_full = 0 ; out_stk_part = 0 ; done = .true.
+         Out_stk_full = 0 ; Out_stk_part = 0 ; done = .true.
       end if
 
       if (F_empty_stk_L) then
          if ( istk > 0) then
             call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
-                               meta,istk, Out_gridi0,Out_gridin,&
+                               metaf,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )
             if (istk < out_stk_size) out_stk_part= out_stk_part + 1
          end if
          istk= 0
-         deallocate (meta, f2c) ; nullify (meta, f2c)
+         deallocate (metaf, f2c) ; nullify (metaf, f2c)
          return
       end if
 
@@ -102,33 +102,34 @@ End Interface
             RP1%lo  = rf(ind_o(k))
             RP1%hi  = RP1%lo
             RP1%kind= kind
-            err= encode_ip ( meta(istk)%ip1,meta(istk)%ip2,&
-                             meta(istk)%ip3,RP1,RP2,RP3 )
+            err= encode_ip ( metaf(istk)%ip1,metaf(istk)%ip2,&
+                             metaf(istk)%ip3,RP1,RP2,RP3 )
          else
-            meta(istk)%ip2= Out_ip2
-            if (Out_ip2>32767) call convip( meta(istk)%ip2, real(Out_ip2), 10, +2, dumc,.false.)
-            meta(istk)%ip3= Out_ip3
-            call convip ( meta(istk)%ip1, rf(ind_o(k)), kind,&
+            metaf(istk)%ip2= Out_ip2
+            if (Out_ip2>32767) call convip( metaf(istk)%ip2, real(Out_ip2), 10, +2, dumc,.false.)
+            metaf(istk)%ip3= Out_ip3
+            call convip ( metaf(istk)%ip1, rf(ind_o(k)), kind,&
                           modeip1,dumc,.false. )
          end if
-         meta(istk)%nv   = nomvar
-         meta(istk)%ig1  = Out_ig1
-         meta(istk)%ig2  = Out_ig2
-         meta(istk)%ig3  = Out_ig3
-         meta(istk)%ni   = Out_gridin - Out_gridi0 + 1
-         meta(istk)%nj   = Out_gridjn - Out_gridj0 + 1
-         meta(istk)%nbits= nbit
+         metaf(istk)%nomvar= nomvar
+         metaf(istk)%ig1  = Out_ig1
+         metaf(istk)%ig2  = Out_ig2
+         metaf(istk)%ig3  = Out_ig3
+         metaf(istk)%ni   = Out_gridin - Out_gridi0 + 1
+         metaf(istk)%nj   = Out_gridjn - Out_gridj0 + 1
+         metaf(istk)%data_bits= 32
+         metaf(istk)%pack_bits= nbit
          if (nbit <= 16) then
-            meta(istk)%dtyp = 134
+            metaf(istk)%data_type = 134
          else
-            meta(istk)%dtyp = 133
+            metaf(istk)%data_type = 133
          endif
          if (istk == out_stk_size) then
             call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
-                               meta,istk, Out_gridi0,Out_gridin,&
+                               metaf,istk, Out_gridi0,Out_gridin,&
                                           Out_gridj0,Out_gridjn )
             istk=0
-            out_stk_full= out_stk_full + 1
+            Out_stk_full= Out_stk_full + 1
          end if
       end do
 !
