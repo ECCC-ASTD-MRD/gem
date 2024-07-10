@@ -1,5 +1,5 @@
 NAME       : modelutils
-VERSION    : 1.8.0-a7
+VERSION    : 1.8.0-a9
 BUILD      : 
 DESCRIPTION: Model utility functions
 SUMMARY    : modelutils is a collection of Fortran tools made for GEM and other models. 
@@ -10,3 +10,8 @@ DOC        : https://wiki.cmc.ec.gc.ca/wiki/Modelutils
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
+
+FLIPIT_VERSION    : 1.2
+YY2GLOBAL_VERSION : 117
+YYENCODE_VERSION  : 3.1
+YYDECODE_VERSION  : 3.1

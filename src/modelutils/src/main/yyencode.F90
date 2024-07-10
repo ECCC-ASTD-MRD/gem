@@ -1,12 +1,15 @@
 
-subroutine yyencode()
+#include "modelutils_build_info.h"
+
+program yyencode
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use app
+   use rmn_fst24
+
    implicit none
    include "rmnlib_basics.inc"
    !@author   M.Desgagne   -   Spring 2012
    !@revision V.Lee Spring 2014 (rewrit in fstecr is not date sensitive)
-!!$   integer, external :: fnom,fstouv,fstinf,fstinl,fstprm,fstluk,exdb,exfin, &
-!!$        fstecr,fstfrm,fclos,fstopl,fstsel,fstlis,fstnbr
 
    character(len=1024) :: LISTEc(3), DEF(3), VAL(3)
    integer NPOS
@@ -15,9 +18,7 @@ subroutine yyencode()
    data DEF    /'/null'  , '/null', '/null' /
 
    character(len=1)    :: family_uencode_S
-   character(len=2)    :: typ_S, grd_S
-   character(len=4)    :: var_S
-   character(len=12)   :: lab_S
+   character(len=4)    :: nvar
    character(len=1024) :: yin_S,yan_S,out_S
 
    integer :: dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -27,15 +28,21 @@ subroutine yyencode()
    integer :: iun1,iun2,iun3,maxni,maxnj,i,datev,niyy,vesion_uencode
    integer :: nlis,lislon, key, ni1,nj1,nk1,ni,nj,err,sindx_yin,sindx
    integer :: yinlislon,yanlislon,taclislon,j
-   integer, dimension(:), allocatable :: liste,niv,yinliste,yanliste,tacliste
+   type(fst_record), dimension(:), allocatable :: liste,niv,yinliste,yanliste,tacliste
 
    real  :: xlat1,xlon1, xlat2,xlon2
-   real, dimension(:),allocatable :: champ, yy
+   real, dimension(:),allocatable, target :: champ, yy
    real(REAL64) :: nhours
 
+   type(fst_file)   :: file_in,file_out,file_yin,file_yan
+   type(fst_record) :: record
+   type(fst_query)  :: query, query2
+   logical          :: success
    !-------------------------------------------------------------------
 
-   err = exdb('YYENCODE','3.0', 'NON')
+   app_ptr=app_init(0,'yyencode',YYENCODE_VERSION,'',BUILD_TIMESTAMP)
+   call app_start()
+
    NPOS = 1
    call CCARD(LISTEc,DEF,VAL,3,NPOS)
    yin_S = val(1)
@@ -44,145 +51,132 @@ subroutine yyencode()
 
    iun1 = 0 ; iun2 = 0 ; iun3 = 0
 
-   if (fnom(iun1,yin_S,'RND+OLD',0) >= 0) then
-      if (fstouv(iun1,'RND') < 0) then
-         write (6,8001) yin_S
-         stop
-      endif
-   else
-      write (6,8000) yin_S
-      stop
-   endif
-   if (fnom(iun2,yan_S,'RND+OLD',0) >= 0) then
-      if (fstouv(iun2,'RND') < 0) then
-         write (6,8001) yan_S
-         stop
-      endif
-   else
-      write (6,8000) yan_S
-      stop
-   endif
-   if (fnom(iun3,out_S,'RND',0) >= 0) then
-      if (fstouv(iun3,'RND') < 0) then
-         write (6,8001) out_S
-         stop
-      endif
-   else
-      write (6,8000) out_S
-      stop
-   endif
+   if (.not. file_out%open(out_S,'RND+R/W')) then
+      call app_log(APP_ERROR,'Unable to open '//trim(out_S))
+      call qqexit(app_end(-1))
+   endif 
 
-   nlis = fstnbr(iun1)
+   if (.not. file_yin%open(yin_S,'RND')) then
+      call app_log(APP_ERROR,'Unable to open '//trim(yin_S))
+      call qqexit(app_end(-1))
+   endif 
+
+   if (.not. file_yan%open(yan_S,'RND')) then
+      call app_log(APP_ERROR,'Unable to open '//trim(yan_S))
+      call qqexit(app_end(-1))
+   endif 
+
+   nlis = file_yin%get_num_records()
    allocate(liste(nlis),niv(nlis),yinliste(nlis),yanliste(nlis),tacliste(nlis))
 
-   err= fstinl(iun1,ni1,nj1,nk1,-1,' ',-1,-1,-1,' ',' ',&
-        liste,lislon,nlis)
-   maxni=0 ; maxnj=0
-   do i=1,lislon
-      err= fstprm (liste(i), dte, det, ipas, ni, nj, nk1, bit , &
-           dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, &
-           g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-      maxni= max(maxni,ni)
-      maxnj= max(maxni,nj)
-   end do
-
+   query = file_yin%new_query()
+   lislon=query%find_all(liste)
 
    if (lislon < 1) then
-      write(6,'(/3x,"NOTHING to DO -- QUIT"/)')
+      call app_log(APP_INFO,'Nothing to do')
+      app_status=app_end(-1)
       stop
    endif
 
-   err= fstinl(iun1,ni,nj1,nk1,-1,' ',-1,-1,-1,' ','>>',&
-        yinliste,yinlislon,nlis)
+   maxni=0 ; maxnj=0
+   do i=1,lislon
+      maxni= max(maxni,liste(i)%ni)
+      maxnj= max(maxni,liste(i)%nj)
+   end do
 
-   if (yinlislon == 0.or.yinliste(1) < 0) then
-      write(6,'(/3x,"YIN positionnal parameters >> not available - ABORT"/)')
-      stop
+   query = file_yin%new_query(nomvar='>>  ')
+   yinlislon=query%find_all(yinliste)
+   call query%free()
+
+   if (yinlislon == 0) then
+      call app_log(APP_ERROR,'YIN positionnal parameters >> not available')
+      call qqexit(app_end(-1))
    endif
 
-   err= fstinl(iun1,ni1,nj,nk1,-1,' ',-1,-1,-1,' ','^^',&
-        tacliste,taclislon,nlis)
-   if (taclislon == 0 .or. tacliste(1) < 0) then
-      write(6,'(/3x,"YIN positionnal parameters ^^ not available - ABORT"/)')
-      stop
+   query = file_yin%new_query(nomvar='^^  ')
+   taclislon=query%find_all(tacliste)
+   call query%free()
+
+   if (taclislon == 0) then
+      call app_log(APP_ERROR,'YIN positionnal parameters ^^ not available')
+      call qqexit(app_end(-1))
    endif
 
    if (taclislon.ne.yinlislon) then
-      write(6,'(/3x,"YIN positionnal parameters not all available - ABORT"/)')
-      stop
+      call app_log(APP_ERROR,'YIN positionnal parameters not all available')
+      call qqexit(app_end(-1))
    endif
 
-   err= fstinl(iun2,ni,nj1,nk1,-1,' ',-1,-1,-1,' ','>>',&
-        yanliste,yanlislon,nlis)
+   query = file_yan%new_query(nomvar='>>  ')
+   yanlislon=query%find_all(yanliste)
+   call query%free()
 
-   if (yanlislon == 0 .or. yanliste(1) < 0) then
-      write(6,'(/3x,"YAN positionnal parameters >> not available - ABORT"/)')
-      stop
+   if (yanlislon == 0) then
+      call app_log(APP_ERROR,'YAN positionnal parameters >> not available')
+      call qqexit(app_end(-1))
    endif
 
-   err= fstinl(iun2,ni1,nj,nk1,-1,' ',-1,-1,-1,' ','^^',&
-        tacliste,taclislon,nlis)
-   if (taclislon == 0 .or. tacliste(1) < 0) then
-      write(6,'(/3x,"YAN positionnal parameters ^^ not available - ABORT"/)')
-      stop
+   query = file_yan%new_query(nomvar='^^  ')
+   taclislon=query%find_all(tacliste)
+   call query%free()
+
+   if (taclislon == 0) then
+      call app_log(APP_ERROR,'YAN positionnal parameters ^^ not available')
+      call qqexit(app_end(-1))
    endif
 
    if (taclislon.ne.yanlislon) then
-      write(6,'(/3x,"YAN positionnal parameters not all available - ABORT"/)')
-      stop
+      call app_log(APP_ERROR,'YAN positionnal parameters not all available')
+      call qqexit(app_end(-1))
    endif
 
    allocate (champ(maxni*2*maxni))
 
    DO_FLDS: do i=1,lislon
-      err= fstprm(liste(i), dte, det, ipas, ni, nj, nk1, bit , &
-           dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, &
-           g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
 
-      nhours = det * ipas / 3600.d0
       datev  = -1
-      if (dte > 0) call incdatr(datev, dte, nhours)
+      if (dte > 0) datev=liste(i)%datev
 
-      key= FSTINF(iun2, NI1, NJ1, NK1, datev, ' ', p1, p2, p3, typ_S, var_S)
+      query = file_yan%new_query(datev=datev,ip1=liste(i)%ip1,ip2=liste(i)%ip2,ip3=liste(i)%ip3,typvar=liste(i)%typvar,nomvar=liste(i)%nomvar)
+      success=query%find_next(record)
+      nvar=trim(liste(i)%nomvar)
 
-      if (var_S == '!!' .or. var_S == '>>' .or. var_S == '^^' .or. var_S == 'META') then
-         if (var_S == '!!') then
-            err = fstluk(champ,liste(i),ni1,nj1,nk1)
-            err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
-                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
-                 g1, g2, g3, g4, dty, .false.)
+      if (nvar == '!!' .or. nvar == '>>' .or. nvar == '^^' .or. nvar == 'META') then
+         if (nvar == '!!') then
+            success = liste(i)%read()
+            success = file_out%write(liste(i))
          endif
-         if (var_S == 'META') then
-            err = fstluk(champ,liste(i),ni1,nj1,nk1)
-            err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
-                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
-                 g1, g2, g3, g4, dty, .false.)
-            key = FSTINF(iun2, NI1, NJ1, NK1, datev, ' ', -1, -1, -1, typ_S, var_S)
-            err = fstluk(champ,key,ni1,nj1,nk1)
-            err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, nj1, &
-                 nk1, p1, p2, p3, typ_S, var_S, lab_S, grd_S, &
-                 g1, g2, g3, g4, dty, .false.)
+         if (nvar == 'META') then
+            success = liste(i)%read()
+            success = file_out%write(liste(i))
+            success = file_yan%read(record,datev=datev,typvar=liste(i)%typvar,nomvar=nvar)
+            success = file_out%write(record)
          endif
       else
-         if (key < 0) then
-            write(6,'(/3x,"Corresponding YAN variable: ",a," NOT FOUND - ABORT"/)') var_S
-            stop
+         if (.not. success) then
+            call app_log(APP_ERROR,'Corresponding YAN variable "\\a\\" NOT FOUND')
+            call qqexit(app_end(-1))
          endif
          g3a  =  1                            ! points de masse
-         g2a = g2
-         if (trim(var_S) == 'UT1' .or. trim(var_S) == 'URT1')  then
+         g2a = liste(i)%ig2
+         if (nvar == 'UT1' .or. nvar == 'URT1')  then
             g3a = 2 ! points U
-            g2a= g2-1
+            g2a= liste(i)%ig2-1
          endif
-         if (trim(var_S) == 'VT1' .or. trim(var_S) == 'VRT1')  then
+         if (nvar == 'VT1' .or. nvar == 'VRT1')  then
             g3a = 3 ! points V
-            g2a= g2-2
+            g2a= liste(i)%ig2-2
          endif
-         err = fstluk(champ,liste(i),ni1,nj1,nk1)
-         err = fstluk(champ(ni1*nj1+1),key,ni1,nj1,nk1)
-         err = FSTECR(champ, champ, -bit, iun3, dte, det, ipas, ni1, 2*nj1, &
-              nk1, p1, p2, p3, typ_S, var_S, lab_S, 'U', &
-              g1, g2a, g3a, 0, dty, .false.)
+
+         success = liste(i)%read(data=c_loc(champ))
+         success = record%read(data=c_loc(champ(liste(i)%ni*liste(i)%nj+1)))
+         nj=liste(i)%nj
+         liste(i)%nj=liste(i)%nj*2
+         liste(i)%ig2=g2a
+         liste(i)%ig3=g3a
+         liste(i)%grtyp='U'
+         success = file_out%write(liste(i),data=c_loc(champ))
+         liste(i)%nj=nj
       endif
 
    enddo DO_FLDS
@@ -191,26 +185,22 @@ subroutine yyencode()
 
    DO_TICTACS: do j=1,yinlislon
 
-      err= fstprm(yinliste(j), dte, det, ipas, ni1, nj1, nk1, bit, &
-           dty, ip1, ip2, ip3, typ_S, var_S, lab_S, grd_S, g1, &
-           g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-
-      call cigaxg('E', xlat1,xlon1, xlat2,xlon2, g1,g2,g3,g4)
+      call cigaxg('E', xlat1,xlon1, xlat2,xlon2, yinliste(j)%ig1,yinliste(j)%ig2,yinliste(j)%ig3,yinliste(j)%ig4)
       do i=1,lislon
-         err= fstprm(liste(i), dte, det, ipas, ni, nj, nk1, bit , &
-              dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1, &
-              g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-         if(trim(var_S).ne.'!!'.and.trim(var_S).ne.'META'.and.&
-              trim(var_S).ne.'>>'.and.trim(var_S).ne.'^^') then
-            if (g1 == ip1 .and. g2 == ip2 .and. g3 == ip3) then
-               if (trim(var_S) == 'UT1' .or. trim(var_S)  ==  'URT1') then
-                  p2a = g2-1
+         nvar=trim(liste(i)%nomvar)
+         ni=liste(i)%ni
+         nj=liste(i)%nj
+
+         if(nvar.ne.'!!' .and. nvar.ne.'META' .and.  nvar.ne.'>>' .and. nvar.ne.'^^') then
+            if (liste(i)%ig1 == yinliste(j)%ip1 .and. liste(i)%ig2 == yinliste(j)%ip2 .and. liste(i)%ig3 == yinliste(j)%ip3) then
+               if (nvar == 'UT1' .or. nvar  ==  'URT1') then
+                  p2a = liste(i)%ig2-1
                   p3a = 2
-               else if (trim(var_S) == 'VT1' .or. trim(var_S) == 'VRT1') then
-                  p2a = g2-2
+               else if (nvar == 'VT1' .or. nvar == 'VRT1') then
+                  p2a = liste(i)%ig2-2
                   p3a = 3
                else
-                  p2a = g2
+                  p2a = liste(i)%ig2
                   p3a = 1
                endif
                exit
@@ -238,8 +228,10 @@ subroutine yyencode()
       yy(sindx+7) = xlon1
       yy(sindx+8) = xlat2
       yy(sindx+9) = xlon2
-      err = fstluk(yy(sindx+10   ),yinliste(j),ni1,nj1,nk1)
-      err = fstluk(yy(sindx+10+ni),tacliste(j),ni1,nj1,nk1)
+
+      success = yinliste(j)%read(data=c_loc(yy(sindx+10   )))
+      success = tacliste(j)%read(data=c_loc(yy(sindx+10+ni)))
+
       yy(sindx+2) = yy(sindx+10      )
       yy(sindx+3) = yy(sindx+ 9+ni   )
       yy(sindx+4) = yy(sindx+10+ni   )
@@ -247,12 +239,7 @@ subroutine yyencode()
       sindx_yin= sindx
 
       !YAN
-
-      err= fstprm(yanliste(j), dte, det, ipas, ni1, nj1, nk1, bit , &
-           dty, p1, p2, p3, typ_S, var_S, lab_S, grd_S, g1   , &
-           g2, g3, g4, swa, lng, dlf, ubc, ex1, ex2, ex3)
-
-      call cigaxg('E', xlat1,xlon1, xlat2,xlon2, g1,g2,g3,g4)
+      call cigaxg('E', xlat1,xlon1, xlat2,xlon2, yanliste(j)%ig1,yanliste(j)%ig2,yanliste(j)%ig3,yanliste(j)%ig4)
 
       sindx   = sindx+10+ni+nj
       yy(sindx  ) = ni
@@ -268,18 +255,35 @@ subroutine yyencode()
       yy(sindx+10    :sindx+9+ni  )= yy(sindx_yin+10   :sindx_yin+9+ni   )
       yy(sindx+10+ni:sindx+9+ni+nj)= yy(sindx_yin+10+ni:sindx_yin+9+ni+nj)
 
-      err = FSTECR(yy, yy, -32, iun3, 0, 0, 0, niyy, 1, 1  , &
-           ip1, p2a,  p3a, 'X', '^>', 'YYG_UE_GEMV4', &
-           family_uencode_S, vesion_uencode,0,0,0, 5, .false.)
+      record%data=c_loc(yy)
+      record%nomvar='^>'
+      record%typvar='X'
+      record%etiket='YYG_UE_GEMV4'
+      record%grtyp=family_uencode_S
+      record%ni=niyy
+      record%nj=1
+      record%nk=1
+      record%ip1=yinliste(j)%ip1
+      record%ip2=p2a
+      record%ip3=p3a
+      record%dateo=0
+      record%deet=0
+      record%npas=0
+      record%data_type=5
+      record%pack_bits=32
+      record%ig1=vesion_uencode
+      record%ig2=0
+      record%ig3=0
+      record%ig4=0
+      success = file_out%write(record)
+
       deallocate(yy, stat=err)
    enddo DO_TICTACS
 
-   err = fstfrm(iun3)
+   success = file_yin%close()
+   success = file_yan%close()
+   success = file_out%close()
 
-   err = exfin('YYENCODE','3.0', 'OK')
+   app_status=app_end(-1)
 
-8000 format (/' Unable to fnom: '  ,a/)
-8001 format (/' Unable to fstouv: ',a/)
-
-   return
-end subroutine yyencode
+end program yyencode
